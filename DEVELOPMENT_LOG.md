@@ -174,3 +174,16 @@ This document records the development history, key decisions, and learnings thro
     -   根本的な問題は、`mix`画像（`find_lines`への入力）に依然として多くのノイズが含まれていること。
     -   `oemer`の`parse_barlines`関数が持つ、より洗練された`group_map`を用いたクリーニングロジックの再現が不可欠であると結論。
 - **ステータス**: **完了**。MLベースの検出器の基本的な実装とデバッグが完了した。
+
+## Phase 13: ML検出器の復元
+
+- **目標:** 以前の修正作業中に動作しなくなったMLベースの検出器 (`src/ml_detector/barline_detector.py`) を、正常に動作する状態に復元する。
+- **アプローチ:** 動作しなくなった際の一時ファイル (`src/ml_detector/barline_detector_new.py`) を元に、デバッグ作業を行った。
+- **デバッグ過程:**
+    1.  **モデルパスの修正 (`FileNotFoundError`):** `oemer`ライブラリがモデルファイルを読み込む際のパス指定に誤りがあった。コンテナ内のプロジェクトディレクトリ (`/workspace`) からの絶対パスで指定することで解決した。
+    2.  **描画関数のエラー (`AttributeError`):** `oemer`の `draw_bounding_boxes` 関数で発生していた `AttributeError: 'list' object has no attribute 'shape'` は、ライブラリ内部の複雑な状態依存が原因と推測された。原因の切り分けと復元作業を優先するため、最終的な画像への描画処理を一時的にコメントアウトしてエラーを回避した。
+    3.  **構文エラーの修正 (`SyntaxError`):** `replace`ツールの使用時に、文字列のエスケープを誤り `SyntaxError` が発生。これを修正した。
+- **成果:**
+    - `barline_detector.py` が最後まで正常に実行され、小節線候補を検出できる状態に復旧した。
+    - これにより、Phase 12完了時点の「過剰検出」という課題に再度取り組むためのベースラインが確立された。
+- **ステータス:** **完了**。

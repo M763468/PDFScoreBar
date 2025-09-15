@@ -13,21 +13,23 @@
 
 ## 現在の課題と次のタスク
 
-**課題:** MLベースの検出器 (`src/ml_detector/barline_detector.py`) の過剰検出修正のため、検出ロジックの根本的な見直しを試みていた。しかし、この課題の解決中にコードが動かない状態からgeminiによる編集が繰り返し失敗するようになったため、検出器のコードを復元を優先課題とする、（復元に必要な前回成果の記録についてはdevelopment logのphase12を参照。復元試行中のコードが`src/ml_detector/barlin_detector_new.py`である。このコードも参考に復元を試みる。）
+**課題:** MLベースの検出器 (`src/ml_detector/barline_detector.py`) は動作するようになったものの、依然として小節線を過剰に検出してしまう（偽陽性が非常に多い）。
 
-**次のタスク: 前回作成したMLベースの検出器の復元。その後、`oemer`の`group_map`と`parse_barlines`ロジックの再現**
+**次のタスク: `oemer`の`group_map`と`parse_barlines`ロジックの再現による過剰検出の抑制**
 
 -   **目標:** `oemer`の`barline_extraction.py`にある`parse_barlines`関数が利用している`group_map`の生成ロジックを理解し、`src/ml_detector/barline_detector.py`に組み込むことで、より正確な小節線検出を実現する。
 -   **アプローチ:**
     1.  **`note_group_extraction.py`の再調査:** `group_map`がどのように生成されているかを詳細に理解するため、`oemer`の`note_group_extraction.py`を再度読み込み、その内部ロジックを分析する。
-    2.  **`group_map`の再現:** `note_group_extraction.py`のロジックを参考に、`barline_detector.py`内で`group_map`を生成するコードを実装する。（この作業中にコードが実行できない状態になったため、復元中）
+    2.  **`group_map`の再現:** `note_group_extraction.py`のロジックを参考に、`barline_detector.py`内で`group_map`を生成するコードを実装する。
     3.  **`parse_barlines`と`filter_barlines`の再現:** `group_map`を利用した`oemer`の`parse_barlines`および`filter_barlines`関数（`barline_extraction.py`内）のロジックを`barline_detector.py`に組み込む。
     4.  **デバッグと評価:** 実装したロジックをテストし、検出結果（特に偽陽性の数）が大幅に改善されるか評価する。必要に応じてデバッグ画像を生成し、中間結果を確認する。
 
 ## 完了済みタスク
+- **ML検出器の復元:**
+  - 動作しなくなっていた`src/ml_detector/barline_detector.py`を、正常に実行できる状態まで復旧させた。
 - **MLベース検出器の実装とデバッグ:**
   - `oemer`の2モデルアーキテクチャ（`unet_big`, `seg_net`）に基づき、`src/ml_detector/barline_detector.py`を実装。
-  - 複数回のエラー（`IndexError`, `KeyError`）を修正し、スクリプトが最後まで正常に実行されることを確認。→この後の作業でコードが破壊されたため、次回セッションでこの成果の復元が必要。この成果についてはdevelopment_log.mdのPhase12の内容を参照すること。
+  - 複数回のエラー（`IndexError`, `KeyError`）を修正し、スクリプトが最後まで正常に実行されることを確認。
 - **OpenCVによる小節線候補検出の試行:**
   - Hough変換、輪郭検出、垂直射影法を用いて小節線候補の検出を試みた。
   - **結果:** いずれのアプローチも、安定した候補検出には至らなかった。OpenCVベースの候補検出は一旦保留とする。

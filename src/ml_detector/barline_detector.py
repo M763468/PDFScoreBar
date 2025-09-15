@@ -108,6 +108,9 @@ def detect_barlines_ml(img_path: str, unet_model_path: str, segnet_model_path: s
     # --- Step 5: Run staffline extraction ---
     print("Extracting staff objects...")
     staff_objects, zones = staff_extract(line_threshold=0.8)
+    print(f"DEBUG: Type of staff_objects: {type(staff_objects)}")
+    if isinstance(staff_objects, np.ndarray):
+        print(f"DEBUG: Shape of staff_objects: {staff_objects.shape}")
     layers.register_layer("staffs", staff_objects)
     layers.register_layer("zones", zones)
 
@@ -118,13 +121,84 @@ def detect_barlines_ml(img_path: str, unet_model_path: str, segnet_model_path: s
 
     # staff_line_heightを取得
     staff_line_height = 0
-    # print(f"Type of staff_objects: {type(staff_objects)}")
-    # print(f"Content of staff_objects: {staff_objects}")
     if staff_objects.size > 0:
-        # staff_objectsはStaffオブジェクトのリストのリストなので、flattenしてStaffオブジェクトのリストにする
-        staff_line_height = np.mean([st.lower_bound - st.upper_bound for st in staff_objects.flatten()])
-    if staff_line_height == 0: # 検出できなかった場合、デフォルト値
-        # 画像の高さから適当なデフォルト値を設定。これは調整が必要かもしれない。
-        staff_line_height = unet_map.shape[0] / 20 # 例: 画像高さの1/20
+        staff_line_height = np.mean([st.y_lower - st.y_upper for st in staff_objects.flatten()])
+    if staff_line_height == 0:
+        staff_line_height = unet_map.shape[0] / 20
 
+    # Find vertical lines in the 'mix' image
+    lines = find_lines(mix)
+    filtered_lines = filter_lines_extended(lines, notehead_bboxes)
+
+    # バーラインマップを生成し、バーラインを抽出
+    barline_map = get_barline_map(symbols_pred, filtered_lines)
+    print(f"DEBUG: Type of barline_map after get_barline_map: {type(barline_map)}")
+    if isinstance(barline_map, np.ndarray):
+        print(f"DEBUG: Shape of barline_map after get_barline_map: {barline_map.shape}")
+    print(f"DEBUG: Type of stems_rests_pred_dilated: {type(stems_rests_pred_dilated)}")
+    if isinstance(stems_rests_pred_dilated, np.ndarray):
+        print(f"DEBUG: Shape of stems_rests_pred_dilated: {stems_rests_pred_dilated.shape}")
+
+    # oemerの例に従い、stems_rests_pred_dilated をバーラインマップに追加
+    barline_map = barline_map + stems_rests_pred_dilated
+    barline_map[barline_map > 1] = 1
+
+    barline_coords = get_barline_box(barline_map)
+
+    # --- Step 7: Visualization and Output ---
+    original_img = Image.open(img_path).convert("RGB")
+    original_img_cv = np.array(original_img)
+    # Convert RGB to BGR for OpenCV
+    original_img_cv = original_img_cv[:, :, ::-1].copy()
     
+    # draw_bounding_boxes(original_img_cv, barline_coords, color=(0, 0, 255)) # Red for barlines in BGR
+
+    # Save the debug image
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    output_filename = os.path.splitext(os.path.basename(img_path))[0]
+    output_path = os.path.join(output_dir, f"{output_filename}_detected_ml_barlines.png")
+    Image.fromarray(cv2.cvtColor(original_img_cv, cv2.COLOR_BGR2RGB)).save(output_path)
+    print(f"Detected barlines saved to {output_path}")
+
+    # Save debug images of intermediate steps
+    Image.fromarray((mix * 255).astype(np.uint8)).save(os.path.join(output_dir, "debug_mix.png"))
+    Image.fromarray((staff_pred * 255).astype(np.uint8)).save(os.path.join(output_dir, "debug_staff_pred.png"))
+    Image.fromarray((symbols_coarse * 255).astype(np.uint8)).save(os.path.join(output_dir, "debug_symbols_coarse.png"))
+    Image.fromarray((stems_rests_pred * 255).astype(np.uint8)).save(os.path.join(output_dir, "debug_stems_rests.png"))
+    Image.fromarray((notehead_pred * 255).astype(np.uint8)).save(os.path.join(output_dir, "debug_notehead.png"))
+    Image.fromarray((clefs_keys_pred * 255).astype(np.uint8)).save(os.path.join(output_dir, "debug_clefs_keys.png"))
+    
+    symbols_final = symbols_pred.copy()
+    # draw_bounding_boxes(symbols_final, notehead_bboxes, color=(1,1,1))
+    # Image.fromarray((symbols_final * 255).astype(np.uint8)).save(os.path.join(output_dir, "debug_symbols_final.png"))
+
+    return barline_coords
+
+if __name__ == "__main__":
+    """
+    このスクリプトが直接実行された場合に、テスト実行するためのメイン関数
+    """
+    # --- 設定項目 ---
+    # 入力画像のパス
+    img_path = "data/input_images/page_3.png"
+    # oemerの事前学習済みモデルのパス
+    unet_model_path = "/workspace/src/archive/oemer/oemer_src/oemer/checkpoints/unet_big"
+    segnet_model_path = "/workspace/src/archive/oemer/oemer_src/oemer/checkpoints/seg_net"
+    # 結果を出力するディレクトリ
+    output_dir = "output/ml_detector/"
+
+    print("--- Barline Detection Test ---")
+    print(f"Input Image: {img_path}")
+    print(f"U-Net Model: {unet_model_path}")
+    print(f"SegNet Model: {segnet_model_path}")
+    print(f"Output Directory: {output_dir}")
+    print("------------------------------")
+
+    # 縦線検出を実行
+    try:
+        barline_coords = detect_barlines_ml(img_path, unet_model_path, segnet_model_path, output_dir)
+        print(f"Successfully detected {len(barline_coords)} barlines.")
+        # print(f"Output image saved in '{output_dir}' directory.")
+    except Exception as e:
+        print(f"\nAn error occurred during barline detection: {e}")

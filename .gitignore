@@ -1,0 +1,35 @@
+# Serena & AI tool folders
+.ai/
+.serena/
+
+# VSCode user settings
+.vscode/
+
+# Python build artifacts and cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+env/
+.toolvenv/
+venv/
+.venv/
+
+# Debug outputs
+debug_outputs/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# NOTE: Be careful about ignoring the 'data' directory.
+# If you have large files you want to ignore inside 'data',
+# list them specifically. For example:
+# data/large_model.pkl
+data/*
+output/*

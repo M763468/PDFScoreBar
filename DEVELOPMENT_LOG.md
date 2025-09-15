@@ -187,3 +187,23 @@ This document records the development history, key decisions, and learnings thro
     - `barline_detector.py` が最後まで正常に実行され、小節線候補を検出できる状態に復旧した。
     - これにより、Phase 12完了時点の「過剰検出」という課題に再度取り組むためのベースラインが確立された。
 - **ステータス:** **完了**。
+
+## Phase 14: `group_map`フィルタリング導入と可視化の修正
+
+- **目標:** `oemer`の高度なフィルタリングロジックを移植して過剰検出を抑制し、その結果を正しく可視化する。
+- **アプローチ:**
+    1. `oemer`の `note_group_extraction.py` と `symbol_extraction.py` を分析し、`group_map` を使ったフィルタリングが偽陽性（特に符幹の誤検出）の除去に有効であると特定。
+    2. 符頭検出 (`note_extract`)、音符ID登録 (`register_note_id`)、音符グループ化 (`group_extract`) の処理を `barline_detector.py` に追加し、`group_map` を生成。
+    3. `symbol_extraction.py` から `parse_barlines` と `filter_barlines` 関数を移植し、`group_map` を使って音符領域をマスクすることで、小節線候補を絞り込むロジックを実装。
+- **成果:**
+    - 小節線の検出数を **600件以上から137件まで大幅に削減**することに成功。
+    - `oemer`のフィルタリングロジックの有効性を確認できた。
+- **デバッグ過程 (可視化):**
+    1. **描画されない問題:** 当初、結果画像に何も描画されない問題が発生。
+    2. **`AttributeError` / `ValueError`:** 調査の結果、`oemer`の描画関数 `draw_bounding_boxes` が内部で管理する状態（レイヤー）に依存しており、我々の環境では型エラーを引き起こしていると判明。
+    3. **独自描画関数の実装:** `oemer`の描画関数への依存を断ち切るため、OpenCVを直接使うシンプルな描画関数 `draw_barlines_on_image` を実装して問題を回避。
+    4. **座標スケーリング問題:** 描画位置がずれる問題が発生。推論時のリサイズされた画像座標を、元の画像座標にスケール変換する処理を追加して解決。
+- **既知の問題:**
+    - いくつかの小節線が検出できていない（偽陰性）。
+    - 実行時にONNX Runtimeが `ConvTranspose` 処理でCPUへのフォールバックを警告しており、GPUが完全には活用されていない。
+- **ステータス:** **完了**。検出器は大幅に改善され、検証可能な状態になった。

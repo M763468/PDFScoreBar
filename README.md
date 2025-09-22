@@ -43,6 +43,11 @@ All development and script execution should be performed inside the provided Doc
 -   **Attaching to the container:** Use your IDE's features (e.g., VS Code Remote - Containers) or the standard `docker exec` command.
 -   **Container Workspace:** The host project directory (`/home/masaki_muramatsu/ws_PDFScoreBar`) is mounted to `/workspace` inside the container. All file paths within scripts executed inside the container should use `/workspace` as their base.
 
+## AI Assistant Guides
+
+-   **Gemini / Codex CLI sessions:** See `docs/AGENTS.md` for the unified bootstrap checklist and execution style.
+-   **Serena helper script:** `setup_scripts/setup.sh` indexes the project and starts the Serena MCP server when needed.
+
 ### How to Use
 
 **Important:** All `python` commands listed below should be executed *inside* the `pdf_score_dev_gpu` Docker container.

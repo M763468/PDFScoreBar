@@ -1,4 +1,5 @@
-#bin/bash
+#!/bin/bash
+
 
 # This script sets up the environment for the project
 # 1) （任意）初回だけプロジェクトを索引化

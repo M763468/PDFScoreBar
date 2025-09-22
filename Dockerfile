@@ -1,7 +1,9 @@
 FROM nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04
 
 # PythonとOpenCVに必要な最小限のシステムライブラリをインストール
-RUN apt-get update && apt-get install -y \
+RUN apt update && apt install -y \
+    sudo \
+    git \
     python3 \
     python3-pip \
     libgl1-mesa-glx \

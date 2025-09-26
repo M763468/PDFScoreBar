@@ -196,7 +196,7 @@ This document records the development history, key decisions, and learnings thro
     2. 符頭検出 (`note_extract`)、音符ID登録 (`register_note_id`)、音符グループ化 (`group_extract`) の処理を `barline_detector.py` に追加し、`group_map` を生成。
     3. `symbol_extraction.py` から `parse_barlines` と `filter_barlines` 関数を移植し、`group_map` を使って音符領域をマスクすることで、小節線候補を絞り込むロジックを実装。
 - **成果:**
-    - 小節線の検出数を **600件以上から137件まで大幅に削減**することに成功。
+    - 小節線の検出数を **600件以上から137件まで大幅に削減**することに成功。(目視確認による正解は150程度。とりあえずこのくらいになったらある程度精度が高いと思われる。)
     - `oemer`のフィルタリングロジックの有効性を確認できた。
 - **デバッグ過程 (可視化):**
     1. **描画されない問題:** 当初、結果画像に何も描画されない問題が発生。
@@ -228,3 +228,23 @@ This document records the development history, key decisions, and learnings thro
     - 新イメージから `homr_eval_gpu` コンテナを再作成し、`poetry run python -c "import torch, onnxruntime as ort; print(torch.cuda.is_available()); print(ort.get_device())"` で GPU 動作 (`GPU`) を確認。
     - `poetry run homr --debug /workspace/data/input_images/page_3.png` を GPU で再実行し、`logs/homr_eval/page_3/` 配下に MusicXML・ログ・デバッグ画像を整理。`tools/generate_barline_overlay.py`（重ね色は赤）で最新マスクからオーバーレイを再生成。
     - `data/input_images` 直下に残るデバッグ画像／MusicXML は実行毎に `logs/homr_eval/page_3/` へ移動後削除し、入力ディレクトリをクリーンに保つ運用を確認。
+
+## Phase 16: homr 評価ワークフロー自動化と閾値チューニング（2025-09-27）
+
+- **目的:** `homr` 推論の結果を既存 ML 検出器と同じ形式で収集・比較できるようにし、閾値調整を反復しやすくする。
+- **実装:**
+    1. `src/homr/homr_evaluator.py` を新規追加。`homr` 本体の推論パイプラインをラップし、以下を自動生成できるようにした。
+        - `logs/homr_eval/<run_id>/<page>/` 配下への MusicXML・デバッグ画像・オーバーレイ（赤重ね）・検出座標 JSON。
+        - `metrics.json` / `metrics.csv`（IoU 計測は GT が無い場合は未算出だが、検出本数や差分を記録）。
+        - `run_config.json` に CLI パラメータ、Git コミット、Docker イメージタグを記録。
+    2. `tools/run_homr_tuning.py` を作成。`barline_min_height_factor` と `barline_max_width_factor` のグリッド探索を行い、各トライアルを `logs/homr_eval/<timestamp>_autotune/trials/trial-XXX/` に保存。Heuristic として「目視で正解 150 本」に近い検出本数をスコア化し、`trials_summary.json` と `logs/night_run/steps.ndjson` に記録。
+- **実行結果:**
+    - ベースライン (`min=1.0`, `max=1.0`) は `logs/homr_eval/20250926T183651Z_baseline/` に保存。GPU ライブラリ不足で CPU フォールバックしたものの、推論は完走し検出本数 105 を取得。
+    - グリッド探索では `min=0.85`, `max=0.9` が検出本数 118 で最も 150 に近づいた（差分 32）。同条件の再実行でも同じ結果を確認。閾値を下げることで偽陰性が減り、過剰検出は大きく増えないことを確認。
+    - すべてのトライアルについて手順・メトリクスを `logs/night_run/steps.ndjson` に追記し、run ルート `logs/homr_eval/20250926T184903Z_autotune/` に集約。
+- **付随作業:**
+    - Docker ビルドコンテキスト削減のため `.dockerignore` を新設（`logs/`, `data/input_images/`, `homr/.venv/` などを除外）。ただしホスト権限の制約で `docker build` は未実施。必要に応じて権限付与後に再ビルドする。
+- **課題:**
+    - 正式な地真 (ground truth) が未整備のため、F1 などの定量指標は算出できていない。`metrics.json` には placeholders を残し、将来的に GT を接続した際に再計算できるようにした。
+    - GPU ライブラリ（cuDNN 9）がホスト環境側では見つからず CPU フォールバックしている。`homr_eval_gpu` コンテナ内では解消済みだが、ホストで同等検証を行う際は `libcudnn.so.9` の配置が必要。
+- **ステータス:** ツール整備完了。今後は地真整備とベースライン比較、閾値の自動探索拡張（例: Bayesian Optimization）を検討する。

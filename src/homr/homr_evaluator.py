@@ -29,6 +29,7 @@ if str(HOMR_REPO) not in sys.path:
     sys.path.insert(0, str(HOMR_REPO))
 
 # pylint: disable=wrong-import-position
+from homr import constants  # type: ignore
 from homr.main import (  # type: ignore
     ProcessingConfig,
     download_weights,
@@ -172,6 +173,18 @@ def parse_args() -> argparse.Namespace:
         "--force-run-id",
         type=str,
         help="Override automatically generated run identifier",
+    )
+    parser.add_argument(
+        "--barline-min-height-factor",
+        type=float,
+        default=1.0,
+        help="Scale factor applied to barline minimum height threshold",
+    )
+    parser.add_argument(
+        "--barline-max-width-factor",
+        type=float,
+        default=1.0,
+        help="Scale factor applied to barline maximum width threshold",
     )
     return parser.parse_args()
 
@@ -337,7 +350,9 @@ def prepare_working_image(image: Path, dest_dir: Path) -> Path:
 
 
 def detect_staffs_with_barlines(
-    image_path: str, config: ProcessingConfig
+    image_path: str,
+    config: ProcessingConfig,
+    tuning: Dict[str, float],
 ) -> Tuple[List[Any], np.ndarray, Any, Future[str], List[Any]]:
     predictions, debug = load_and_preprocess_predictions(
         image_path, config.enable_debug, config.enable_cache
@@ -368,7 +383,22 @@ def detect_staffs_with_barlines(
         and not line.is_overlapping_with_any(all_stems)
     ]
 
-    bar_line_boxes = detect_bar_lines(bar_lines_or_rests, average_note_head_height)
+    min_height_factor = tuning.get("barline_min_height_factor", 1.0)
+    max_width_factor = tuning.get("barline_max_width_factor", 1.0)
+    min_height_threshold = min_height_factor * constants.bar_line_min_height(
+        average_note_head_height
+    )
+    max_width_threshold = max_width_factor * constants.bar_line_max_width(
+        average_note_head_height
+    )
+
+    bar_line_boxes = []
+    for line in bar_lines_or_rests:
+        if line.size[1] < min_height_threshold:
+            continue
+        if line.size[0] > max_width_threshold:
+            continue
+        bar_line_boxes.append(line)
     debug.write_bounding_boxes_alternating_colors("bar_lines", bar_line_boxes)
 
     debug.write_bounding_boxes(
@@ -408,10 +438,11 @@ def run_homr_on_image(
     config: ProcessingConfig,
     xml_args: XmlGeneratorArguments,
     timeout_s: float,
+    tuning: Dict[str, float],
 ) -> Tuple[List[BarlinePrediction], Optional[Path], Tuple[int, int], float]:
     start = time.perf_counter()
     (multi_staffs, preprocessed_image, debug, title_future, bar_line_boxes) = (
-        detect_staffs_with_barlines(str(image_path), config)
+        detect_staffs_with_barlines(str(image_path), config, tuning)
     )
 
     predictions: List[BarlinePrediction] = []
@@ -654,6 +685,8 @@ def write_run_config(
             "cache": args.cache,
             "write_staff_positions": args.write_staff_positions,
             "timeout": args.timeout,
+            "barline_min_height_factor": args.barline_min_height_factor,
+            "barline_max_width_factor": args.barline_max_width_factor,
         },
     }
     path = run_dir / "run_config.json"
@@ -783,6 +816,10 @@ def main() -> None:
 
     per_image_metrics: List[ImageMetrics] = []
     ground_truth_summary: Dict[str, Optional[Path]] = {}
+    tuning = {
+        "barline_min_height_factor": args.barline_min_height_factor,
+        "barline_max_width_factor": args.barline_max_width_factor,
+    }
 
     for image_path in images:
         stem = image_path.stem
@@ -799,7 +836,7 @@ def main() -> None:
         xml_args = XmlGeneratorArguments(False, None, None)
 
         predictions, xml_path, seg_shape, runtime_s = run_homr_on_image(
-            working_image, config, xml_args, args.timeout
+            working_image, config, xml_args, args.timeout, tuning
         )
         transform = compute_transform_info(working_image, seg_shape)
 
@@ -875,6 +912,7 @@ def main() -> None:
 
     extra = {
         "ground_truth": {image: str(path) if path else None for image, path in ground_truth_summary.items()},
+        "tuning": tuning,
     }
     write_metrics_json(run_dir, run_id, per_image_metrics, aggregate, extra)
     write_metrics_csv(run_dir, per_image_metrics, aggregate)

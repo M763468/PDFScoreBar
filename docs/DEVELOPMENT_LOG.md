@@ -207,3 +207,19 @@ This document records the development history, key decisions, and learnings thro
     - いくつかの小節線が検出できていない（偽陰性）。
     - 実行時にONNX Runtimeが `ConvTranspose` 処理でCPUへのフォールバックを警告しており、GPUが完全には活用されていない。
 - **ステータス:** **完了**。検出器は大幅に改善され、検証可能な状態になった。
+
+## Phase 15: homr 評価環境構築
+
+- **目的:** `homr` リポジトリを既存ワークスペースに分離配置し、依存関係の衝突を避けつつ GPU 上で検証できるようにする。
+- **作業内容:**
+    1. `homr` ディレクトリを新規作成し、`git clone https://github.com/liebharc/homr.git homr` で最新ソースを取得。
+    2. CUDA 12.1 ベースの新しい Docker イメージ (`Dockerfile.homr`) を構築し、`homr_eval_gpu` コンテナを `docker run --gpus all` で起動。ホストの `/workspace` をマウントして既存プロジェクトと共有。
+    3. コンテナ内で `poetry install --with dev` を実行し、必要な追加依存 (`onnxruntime-gpu==1.22.0`) を導入。
+        - 実行コマンド:
+          - `docker exec homr_eval_gpu bash -lc 'cd /workspace/homr && poetry install --with dev'`
+          - `docker exec homr_eval_gpu bash -lc 'source /workspace/homr/.venv/bin/activate && pip uninstall -y onnxruntime'`
+          - `docker exec homr_eval_gpu bash -lc 'source /workspace/homr/.venv/bin/activate && pip install onnxruntime-gpu==1.22.0'`
+        - 導入後に `torch.cuda.is_available()` と `onnxruntime.get_device()` を使って GPU 利用可否を確認。
+    4. ログ用 `logs/homr_eval/` とモデル／キャッシュ用 `models/homr/` をホスト側に作成し、コンテナからマウント。
+- **成果:** `homr` 用作業環境とログ／モデル保管先を既存パイプラインと分離。GPU 上での推論実験を準備できた（`onnxruntime` も GPU 利用に切り替え済み）。
+- **課題/次ステップ:** `homr` 推論フローの実入力検証と `oemer` 既存検出器との指標比較を進める。必要に応じて GPU フォールバックの挙動を追加調査する。

@@ -2,6 +2,9 @@ FROM nvidia/cuda:12.1.0-cudnn8-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     POETRY_HOME=/opt/poetry \
+    POETRY_VIRTUALENVS_IN_PROJECT=false \
+    POETRY_VIRTUALENVS_PATH=/opt/poetry/venvs \
+    PIP_NO_CACHE_DIR=1 \
     PATH="/opt/poetry/bin:/root/.local/bin:$PATH"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -16,7 +19,32 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
+# Install cuDNN 9 runtime and development headers required by onnxruntime-gpu 1.22.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libcudnn9-cuda-12 \
+        libcudnn9-dev-cuda-12 \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN curl -sSL https://install.python-poetry.org | python3 -
+
+RUN mkdir -p ${POETRY_VIRTUALENVS_PATH}
+
+WORKDIR /workspace/homr
+
+COPY homr/ ./
+
+# Install the project and its dependencies once at build time so the runtime container only needs a volume mount.
+RUN poetry config virtualenvs.in-project "${POETRY_VIRTUALENVS_IN_PROJECT}" \
+    && poetry config virtualenvs.path "${POETRY_VIRTUALENVS_PATH}" \
+    && poetry install --with dev --no-interaction --no-ansi
+
+# Replace the default CPU-only onnxruntime with the GPU build and ensure commonly used tooling is available.
+RUN VENV_PATH="$(poetry env info --path)" \
+    && "${VENV_PATH}/bin/pip" install --upgrade pip setuptools wheel \
+    && "${VENV_PATH}/bin/pip" uninstall -y onnxruntime \
+    && "${VENV_PATH}/bin/pip" install --no-deps onnxruntime-gpu==1.22.0 \
+    && "${VENV_PATH}/bin/pip" install opencv-python-headless
 
 WORKDIR /workspace
 

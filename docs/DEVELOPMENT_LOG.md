@@ -223,3 +223,8 @@ This document records the development history, key decisions, and learnings thro
     4. ログ用 `logs/homr_eval/` とモデル／キャッシュ用 `models/homr/` をホスト側に作成し、コンテナからマウント。
 - **成果:** `homr` 用作業環境とログ／モデル保管先を既存パイプラインと分離。GPU 上での推論実験を準備できた（`onnxruntime` も GPU 利用に切り替え済み）。
 - **課題/次ステップ:** `homr` 推論フローの実入力検証と `oemer` 既存検出器との指標比較を進める。必要に応じて GPU フォールバックの挙動を追加調査する。
+- **アップデート (2025-09-26):**
+    - `Dockerfile.homr` を刷新し、cuDNN 9 ランタイム／ヘッダーの導入と `poetry install --with dev`、`pip uninstall onnxruntime && pip install onnxruntime-gpu==1.22.0`、`opencv-python-headless` までをビルド時に自動反映。起動後の手動セットアップが不要に。
+    - 新イメージから `homr_eval_gpu` コンテナを再作成し、`poetry run python -c "import torch, onnxruntime as ort; print(torch.cuda.is_available()); print(ort.get_device())"` で GPU 動作 (`GPU`) を確認。
+    - `poetry run homr --debug /workspace/data/input_images/page_3.png` を GPU で再実行し、`logs/homr_eval/page_3/` 配下に MusicXML・ログ・デバッグ画像を整理。`tools/generate_barline_overlay.py`（重ね色は赤）で最新マスクからオーバーレイを再生成。
+    - `data/input_images` 直下に残るデバッグ画像／MusicXML は実行毎に `logs/homr_eval/page_3/` へ移動後削除し、入力ディレクトリをクリーンに保つ運用を確認。

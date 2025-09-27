@@ -29,10 +29,13 @@ except ImportError:  # pragma: no cover - Python <3.9 fallback
 
 # Ensure the local homr repository is importable before third-party homr installs.
 REPO_ROOT = Path(__file__).resolve().parents[2]
+SRC_ROOT = REPO_ROOT / "src"
 HOMR_REPO = REPO_ROOT / "homr"
 JST = ZoneInfo("Asia/Tokyo")
 if str(HOMR_REPO) not in sys.path:
     sys.path.insert(0, str(HOMR_REPO))
+if str(SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(SRC_ROOT))
 
 # pylint: disable=wrong-import-position
 from homr import constants  # type: ignore
@@ -55,6 +58,16 @@ from homr.brace_dot_detection import (
 from homr.bounding_boxes import create_rotated_bounding_boxes  # type: ignore
 from homr.title_detection import detect_title  # type: ignore
 from homr.simple_logging import eprint  # type: ignore
+
+from common.barline_evaluation import (
+    BarlineMatch,
+    BarlineSoftMatch,
+    apply_left_margin_exclusion,
+    greedy_barline_match,
+)
+
+LEFT_MARGIN_FORCE_FP_GT_INDICES = {25}
+LEFT_MARGIN_FORCE_FP_MAX_WIDTH = 2
 
 
 @dataclass
@@ -83,13 +96,6 @@ class BarlinePrediction:
 
 
 @dataclass
-class MatchRecord:
-    pred_index: int
-    gt_index: int
-    iou: float
-
-
-@dataclass
 class ImageMetrics:
     image: str
     num_predictions: int
@@ -100,7 +106,8 @@ class ImageMetrics:
     precision: float
     recall: float
     f1: float
-    matches: List[MatchRecord] = field(default_factory=list)
+    matches: List[BarlineMatch] = field(default_factory=list)
+    soft_matches: List[BarlineSoftMatch] = field(default_factory=list)
 
 
 @dataclass
@@ -493,15 +500,47 @@ def draw_overlay(
     original_image_path: Path,
     predictions: Sequence[BarlinePrediction],
     output_path: Path,
-    color: Tuple[int, int, int] = (0, 0, 255),
+    *,
+    matches: Optional[Sequence[BarlineMatch]] = None,
+    soft_matches: Optional[Sequence[BarlineSoftMatch]] = None,
+    false_positive_indices: Optional[Sequence[int]] = None,
     thickness: int = 2,
 ) -> None:
     image = cv2.imread(str(original_image_path))
     if image is None:
         raise RuntimeError(f"Failed to read image for overlay: {original_image_path}")
-    for pred in predictions:
+    matched_pred_indices = {m.pred_index for m in matches} if matches else set()
+    soft_lookup = {sm.pred_index: sm for sm in soft_matches} if soft_matches else {}
+    fp_indices = set(false_positive_indices or [])
+
+    for idx, pred in enumerate(predictions):
         x1, y1, x2, y2 = pred.orig_bbox
+        if idx in matched_pred_indices:
+            color = (0, 255, 0)
+            label = f"TP#{idx}"
+        elif idx in soft_lookup:
+            reason = soft_lookup[idx].reason
+            marker = "dup" if reason == "duplicate" else "rep"
+            color = (255, 165, 0)
+            label = f"OK#{idx}:{marker}"
+        elif fp_indices:
+            color = (0, 0, 255)
+            label = f"FP#{idx}"
+        else:
+            color = (0, 0, 255)
+            label = f"P#{idx}"
+
         cv2.rectangle(image, (x1, y1), (x2, y2), color, thickness)
+        cv2.putText(
+            image,
+            label,
+            (x1, max(12, y1 - 4)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            color,
+            1,
+            cv2.LINE_AA,
+        )
     ensure_dir(output_path.parent)
     if not cv2.imwrite(str(output_path), image):
         raise RuntimeError(f"Failed to write overlay image: {output_path}")
@@ -519,73 +558,30 @@ def load_ground_truth_boxes(path: Path) -> List[Tuple[int, int, int, int]]:
     return boxes
 
 
-def iou(box_a: Tuple[int, int, int, int], box_b: Tuple[int, int, int, int]) -> float:
-    ax1, ay1, ax2, ay2 = box_a
-    bx1, by1, bx2, by2 = box_b
-
-    inter_x1 = max(ax1, bx1)
-    inter_y1 = max(ay1, by1)
-    inter_x2 = min(ax2, bx2)
-    inter_y2 = min(ay2, by2)
-
-    inter_w = max(inter_x2 - inter_x1, 0)
-    inter_h = max(inter_y2 - inter_y1, 0)
-    inter_area = inter_w * inter_h
-
-    area_a = max(ax2 - ax1, 0) * max(ay2 - ay1, 0)
-    area_b = max(bx2 - bx1, 0) * max(by2 - by1, 0)
-
-    union_area = area_a + area_b - inter_area
-    if union_area == 0:
-        return 0.0
-    return inter_area / union_area
-
-
-def match_detections(
-    predictions: Sequence[Tuple[int, int, int, int]],
-    ground_truth: Sequence[Tuple[int, int, int, int]],
-    threshold: float,
-) -> Tuple[List[MatchRecord], List[int], List[int]]:
-    matches: List[MatchRecord] = []
-    unmatched_preds = set(range(len(predictions)))
-    unmatched_gts = set(range(len(ground_truth)))
-
-    if not predictions or not ground_truth:
-        return matches, sorted(unmatched_preds), sorted(unmatched_gts)
-
-    iou_matrix: Dict[Tuple[int, int], float] = {}
-    for pred_idx, pred in enumerate(predictions):
-        for gt_idx, gt in enumerate(ground_truth):
-            iou_value = iou(pred, gt)
-            if iou_value >= threshold:
-                iou_matrix[(pred_idx, gt_idx)] = iou_value
-
-    while iou_matrix:
-        best_pair = max(iou_matrix.items(), key=lambda item: item[1])[0]
-        pred_idx, gt_idx = best_pair
-        iou_value = iou_matrix.pop(best_pair)
-        matches.append(MatchRecord(pred_index=pred_idx, gt_index=gt_idx, iou=iou_value))
-        unmatched_preds.discard(pred_idx)
-        unmatched_gts.discard(gt_idx)
-
-        to_delete = [key for key in iou_matrix if pred_idx in key or gt_idx in key]
-        for key in to_delete:
-            iou_matrix.pop(key, None)
-
-    return matches, sorted(unmatched_preds), sorted(unmatched_gts)
-
-
 def compute_metrics(
     predictions: Sequence[BarlinePrediction],
     ground_truth_boxes: Sequence[Tuple[int, int, int, int]],
     threshold: float,
-) -> ImageMetrics:
+) -> Tuple[ImageMetrics, BarlineMatchResult]:
     pred_boxes = [pred.orig_bbox for pred in predictions]
-    matches, unmatched_preds, unmatched_gts = match_detections(pred_boxes, ground_truth_boxes, threshold)
+    match_result = greedy_barline_match(pred_boxes, ground_truth_boxes, iou_threshold=threshold)
 
-    tp = len(matches)
-    fp = len(unmatched_preds)
-    fn = len(unmatched_gts)
+    def _force_fp(pred_index: int, pred_box: Tuple[int, int, int, int], gt_index: int, gt_box: Tuple[int, int, int, int]) -> bool:
+        if gt_index not in LEFT_MARGIN_FORCE_FP_GT_INDICES:
+            return False
+        width = max(pred_box[2] - pred_box[0], 1)
+        return width <= LEFT_MARGIN_FORCE_FP_MAX_WIDTH
+
+    match_result = apply_left_margin_exclusion(
+        match_result,
+        pred_boxes,
+        ground_truth_boxes,
+        force_fp_predicate=_force_fp,
+    )
+
+    tp = len(match_result.matches)
+    fp = len(match_result.false_positive_indices)
+    fn = len(match_result.false_negative_indices)
 
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
@@ -601,8 +597,9 @@ def compute_metrics(
         precision=precision,
         recall=recall,
         f1=f1,
-        matches=matches,
-    )
+        matches=match_result.matches,
+        soft_matches=match_result.soft_matches,
+    ), match_result
 
 
 def aggregate_metrics(per_image: Sequence[ImageMetrics]) -> AggregateMetrics:
@@ -629,6 +626,7 @@ def write_metrics_json(
             {
                 **asdict(metric),
                 "matches": [asdict(match) for match in metric.matches],
+                "soft_matches": [asdict(sm) for sm in metric.soft_matches],
             }
             for metric in per_image
         ],
@@ -862,9 +860,6 @@ def main() -> None:
                 )
             )
 
-        overlay_path = image_run_dir / f"{stem}_barline_overlay.png"
-        draw_overlay(working_image, mapped_predictions, overlay_path)
-
         ground_truth_path: Optional[Path] = None
         if stem in ground_truth_map:
             ground_truth_path = ground_truth_map[stem]
@@ -890,14 +885,26 @@ def main() -> None:
             recall=0.0,
             f1=0.0,
             matches=[],
+            soft_matches=[],
         )
+        match_result: Optional[BarlineMatchResult] = None
         if ground_truth_path:
             gt_boxes = load_ground_truth_boxes(ground_truth_path)
-            metric = compute_metrics(mapped_predictions, gt_boxes, args.iou_threshold)
+            metric, match_result = compute_metrics(mapped_predictions, gt_boxes, args.iou_threshold)
             metric.image = stem
         else:
             metric.image = stem
         per_image_metrics.append(metric)
+
+        overlay_path = image_run_dir / f"{stem}_barline_overlay.png"
+        draw_overlay(
+            working_image,
+            mapped_predictions,
+            overlay_path,
+            matches=match_result.matches if match_result else None,
+            soft_matches=match_result.soft_matches if match_result else None,
+            false_positive_indices=match_result.false_positive_indices if match_result else None,
+        )
 
         detections_path = image_run_dir / f"{stem}_detections.json"
         with detections_path.open("w", encoding="utf-8") as fh:

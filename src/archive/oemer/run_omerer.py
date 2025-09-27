@@ -30,15 +30,14 @@ if str(OEMER_SRC) not in sys.path:
 from oemer import layers  # type: ignore
 from oemer.ete import clear_data, extract, teaser  # type: ignore
 
+from common.barline_evaluation import (
+    BarlineMatch,
+    BarlineSoftMatch,
+    greedy_barline_match,
+)
+
 JST = ZoneInfo("Asia/Tokyo")
 DEFAULT_IOU = 0.5
-
-
-@dataclass
-class MatchRecord:
-    pred_index: int
-    gt_index: int
-    iou: float
 
 
 @dataclass
@@ -52,7 +51,8 @@ class ImageMetrics:
     precision: float
     recall: float
     f1: float
-    matches: List[MatchRecord] = field(default_factory=list)
+    matches: List[BarlineMatch] = field(default_factory=list)
+    soft_matches: List[BarlineSoftMatch] = field(default_factory=list)
 
 
 @dataclass
@@ -101,85 +101,67 @@ def extract_barline_boxes() -> List[Tuple[int, int, int, int]]:
     return boxes
 
 
-def save_overlay(image_path: Path, boxes: Sequence[Tuple[int, int, int, int]], output_path: Path) -> None:
+def save_overlay(
+    image_path: Path,
+    boxes: Sequence[Tuple[int, int, int, int]],
+    output_path: Path,
+    *,
+    matches: Optional[Sequence[BarlineMatch]] = None,
+    soft_matches: Optional[Sequence[BarlineSoftMatch]] = None,
+    false_positive_indices: Optional[Sequence[int]] = None,
+) -> None:
     base = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
     if base is None:
         raise RuntimeError(f"Failed to load base image: {image_path}")
     overlay = base.copy()
-    color = (0, 0, 255)
-    for (x1, y1, x2, y2) in boxes:
+
+    matched_pred_indices = {m.pred_index for m in matches} if matches else set()
+    soft_lookup = {sm.pred_index: sm for sm in soft_matches} if soft_matches else {}
+    fp_indices = set(false_positive_indices or [])
+
+    for idx, (x1, y1, x2, y2) in enumerate(boxes):
+        if idx in matched_pred_indices:
+            color = (0, 255, 0)
+            label = f"TP#{idx}"
+        elif idx in soft_lookup:
+            reason = soft_lookup[idx].reason
+            marker = "dup" if reason == "duplicate" else "rep"
+            color = (255, 165, 0)
+            label = f"OK#{idx}:{marker}"
+        elif fp_indices:
+            color = (0, 0, 255)
+            label = f"FP#{idx}"
+        else:
+            color = (0, 0, 255)
+            label = f"P#{idx}"
         cv2.rectangle(overlay, (x1, y1), (x2, y2), color, 2)
+        cv2.putText(
+            overlay,
+            label,
+            (x1, max(12, y1 - 4)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            color,
+            1,
+            cv2.LINE_AA,
+        )
+
     blended = cv2.addWeighted(overlay, 0.65, base, 0.35, 0.0)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     if not cv2.imwrite(str(output_path), blended):
         raise RuntimeError(f"Failed to write overlay: {output_path}")
 
 
-def iou(box_a: Tuple[int, int, int, int], box_b: Tuple[int, int, int, int]) -> float:
-    ax1, ay1, ax2, ay2 = box_a
-    bx1, by1, bx2, by2 = box_b
-
-    inter_x1 = max(ax1, bx1)
-    inter_y1 = max(ay1, by1)
-    inter_x2 = min(ax2, bx2)
-    inter_y2 = min(ay2, by2)
-
-    inter_w = max(inter_x2 - inter_x1, 0)
-    inter_h = max(inter_y2 - inter_y1, 0)
-    inter_area = inter_w * inter_h
-
-    area_a = max(ax2 - ax1, 0) * max(ay2 - ay1, 0)
-    area_b = max(bx2 - bx1, 0) * max(by2 - by1, 0)
-
-    union_area = area_a + area_b - inter_area
-    if union_area == 0:
-        return 0.0
-    return inter_area / union_area
-
-
-def match_detections(
-    predictions: Sequence[Tuple[int, int, int, int]],
-    ground_truth: Sequence[Tuple[int, int, int, int]],
-    threshold: float,
-) -> Tuple[List[MatchRecord], List[int], List[int]]:
-    matches: List[MatchRecord] = []
-    unmatched_preds = set(range(len(predictions)))
-    unmatched_gts = set(range(len(ground_truth)))
-
-    if not predictions or not ground_truth:
-        return matches, sorted(unmatched_preds), sorted(unmatched_gts)
-
-    scores = {}
-    for pred_idx, pred in enumerate(predictions):
-        for gt_idx, gt in enumerate(ground_truth):
-            score = iou(pred, gt)
-            if score >= threshold:
-                scores[(pred_idx, gt_idx)] = score
-
-    while scores:
-        (best_pred, best_gt), best_score = max(scores.items(), key=lambda item: item[1])
-        matches.append(MatchRecord(pred_index=best_pred, gt_index=best_gt, iou=best_score))
-        unmatched_preds.discard(best_pred)
-        unmatched_gts.discard(best_gt)
-        scores = {
-            key: value
-            for key, value in scores.items()
-            if key[0] != best_pred and key[1] != best_gt
-        }
-
-    return matches, sorted(unmatched_preds), sorted(unmatched_gts)
-
-
 def compute_metrics(
     predictions: Sequence[BarlinePrediction],
     ground_truth: Sequence[Tuple[int, int, int, int]],
     threshold: float,
-) -> ImageMetrics:
+) -> Tuple[ImageMetrics, BarlineMatchResult]:
     boxes = [pred.orig_bbox for pred in predictions]
-    matches, unmatched_preds, unmatched_gts = match_detections(boxes, ground_truth, threshold)
-    tp = len(matches)
-    fp = len(unmatched_preds)
-    fn = len(unmatched_gts)
+    match_result = greedy_barline_match(boxes, ground_truth, iou_threshold=threshold)
+    tp = len(match_result.matches)
+    fp = len(match_result.false_positive_indices)
+    fn = len(match_result.false_negative_indices)
     precision = tp / (tp + fp) if (tp + fp) else 0.0
     recall = tp / (tp + fn) if (tp + fn) else 0.0
     f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) else 0.0
@@ -193,8 +175,9 @@ def compute_metrics(
         precision=precision,
         recall=recall,
         f1=f1,
-        matches=matches,
-    )
+        matches=match_result.matches,
+        soft_matches=match_result.soft_matches,
+    ), match_result
 
 
 def aggregate_metrics(per_image: Sequence[ImageMetrics]) -> AggregateMetrics:
@@ -281,11 +264,18 @@ def main() -> None:
             json.dumps(detection_payload, indent=2, ensure_ascii=False)
         )
 
-        save_overlay(image_path, scaled_boxes, page_dir / f"{image_path.stem}_overlay.png")
-
-        metric = compute_metrics(predictions, gt_boxes, DEFAULT_IOU)
+        metric, match_result = compute_metrics(predictions, gt_boxes, DEFAULT_IOU)
         metric.image = image_path.stem
         per_image_metrics.append(metric)
+
+        save_overlay(
+            image_path,
+            scaled_boxes,
+            page_dir / f"{image_path.stem}_overlay.png",
+            matches=match_result.matches,
+            soft_matches=match_result.soft_matches,
+            false_positive_indices=match_result.false_positive_indices,
+        )
 
         if musicxml_path.exists() and musicxml_path.parent != page_dir:
             target_path = page_dir / musicxml_path.name
@@ -299,6 +289,7 @@ def main() -> None:
             {
                 **asdict(metric),
                 "matches": [asdict(match) for match in metric.matches],
+                "soft_matches": [asdict(sm) for sm in metric.soft_matches],
             }
             for metric in per_image_metrics
         ],

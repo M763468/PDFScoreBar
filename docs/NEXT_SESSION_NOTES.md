@@ -1,5 +1,14 @@
 # 次回セッションへの引き継ぎノート
 
+## セッションログ
+
+### 2025-09-27 23:38 JST
+- homr と oemer の比較検証体制を整備し、page_3 GT を用いた評価を進める計画を策定。
+- 次アクション: homr チューニング範囲の棚卸し、oemer ベースラインの再確認、双方の成果物整理ルールの確立。
+- 留意事項: 評価成果物は JST タイムスタンプ付きで `logs/homr_eval/` 等に保存し、再現手順を docs に記録する。
+- oemer 改造メモ: `src/archive/oemer/run_omerer.py` に `layers.get_layer("barlines")` の JSON 出力を追加し、`logs/oemer_eval/<timestamp>_baseline/` で metrics・オーバーレイを管理する。
+
+
 ## プロジェクトの目標
 楽譜PDFを読み込み、小節番号を付与して新しいPDFとして出力するプログラムを作成する。
 
@@ -28,10 +37,10 @@
         -   試行の結果、明らかにhomerを使う方がよい結果になるならば、プロジェクトの主要アプローチをhomerを使ったものに変更し、各種ドキュメントを更新した後、mainにマージする。
 
     -   **直近 TODO:**
-        1. `poetry run homr --debug /workspace/data/evaluation/images/page_3.png` の小節線検出件数と `src/homr/homr_evaluator.py` の `num_predictions` を比較し、完全一致するまで evaluator の前処理・閾値・スケーリングを調整する。必要に応じて純正 homr のデバッグ出力との diff を取得するスクリプトを用意する。
-        2. `page_3.png` 用の ground truth JSON（例: `data/evaluation/annotations/page_003/boxes_sorted.json`）を作成し、評価ツールおよびチューニングスクリプトのデフォルトを差し替える。
-        3. GT を適用した状態で baseline 実行と閾値グリッド探索を `homr_eval_gpu` コンテナ内で再実行し、`logs/homr_eval/<timestamp>/index.md` や `logs/night_run/FINAL_GT_COMPARE.md` に結果を整理する。
-        4. 夜間バッチ実行時のデフォルト GT 設定と確認手順をドキュメント化し、page_1 用 GT を誤用した過去事例の再発を防ぐ。
+        1. `logs/homr_eval/20250927T230640JST_evaluator_page3_gt/metrics.json` で確認した Precision=0.11 / Recall=0.079 のギャップを解消するため、`barline_min_height_factor` / `barline_max_width_factor` / 前処理閾値を調整し、TP の増加と FP の削減を図る。
+        2. 新しい GT（`data/evaluation/annotations/page_003/boxes_sorted.json`）を `tools/run_homr_tuning.py` のデフォルトに組み込み、各トライアルで Precision/Recall を記録する。
+        3. 各パラメータセットについて `tools/generate_barline_overlay.py` + `tools/render_barline_boxes_overlay.py` の 2 種類のオーバーレイを生成し、目視で誤検出・未検出を確認する。
+        4. 改善が得られた設定を `docs/DEVELOPMENT_LOG.md` と `logs/homr_eval/<timestamp>/` に整理し、次セッションへ引き継ぐ。
 
     -   **注意**
         - `homr`のセグメンテーション部分は`oemer`をベースにしているため、結果は変わらないかもしれない。
@@ -114,3 +123,10 @@
     -   セッションの最後に、`DEVELOPMENT_LOG.md`, `NEXT_SESSION_NOTES.md`, `README.md` を更新し、進捗を記録すること。
 -   **テスト／型注釈の進め方:**
     -   現在は技術検証中のコードが多く、将来的に不要になる実装も含まれるため、`pytest` や型注釈 (`mypy`) の整備は重要な箇所から少しずつ段階的に進める。日々の作業の合間に気付いた範囲で対応し、完全移行は急がない。
+
+### homr / oemer 比較実験計画 (2025-09-27)
+- homr 評価: `tools/run_homr_tuning.py` を `--images data/evaluation/images/page_3.png` と `--ground-truth page_3:data/evaluation/annotations/page_003/boxes_sorted.json` で実行し、各トライアルの `barline_min_height_factor` / `barline_max_width_factor` を記録。必ず `poetry run homr --debug` の結果と検出件数を突き合わせる。
+- homr 成果物: `logs/homr_eval/<timestamp>_homr_<desc>/` に `metrics.json` / `metrics.csv` / `compare.md` / `README.md` / オーバーレイ画像 (`tools/generate_barline_overlay.py`, `tools/render_barline_boxes_overlay.py`) を保存。タイムスタンプは JST。
+- oemer baseline: `docker exec pdf_score_dev_gpu bash -lc 'cd /workspace && python src/archive/oemer/run_omerer.py'` をベースに `layers.get_layer("barlines")` を JSON に書き出す処理を追加し、`logs/oemer_eval/<timestamp>_baseline/` に保存。必要に応じて `draw_teaser.py` を利用してオーバーレイを生成。
+- 共通指標: GT (`data/evaluation/annotations/page_003/boxes_sorted.json`) に対する Precision / Recall / F1 と、漏れ・誤検出の目視キャプチャを `compare.md` に整理。
+- ドキュメント更新: 各実験終了後に `docs/DEVELOPMENT_LOG.md` と `docs/NEXTSESSION_LOG.md` を更新し、次回の再現手順と改善ポイントを明記する。

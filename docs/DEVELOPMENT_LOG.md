@@ -254,3 +254,14 @@ This document records the development history, key decisions, and learnings thro
     - 次フェーズでは、純粋な `poetry run homr --debug` 実行時の小節線本数と `homr_evaluator.py` の検出本数を突き合わせ、不一致がある場合は evaluator 側の前処理・閾値・スケーリングを修正する方針とした。
     - Page 3 向け GT JSON を整備し、`tools/run_homr_tuning.py` のデフォルト指定を差し替えたうえで、評価指標（Precision/Recall/F1）を有効値として取得する計画を立てた。GT が整い次第、baseline と閾値スイープを再実施する。
     - Data ディレクトリを `training/`, `evaluation/`, `workbench/` の 3 系統に再編し、対応するスクリプトを新しいパスに更新。`data/README.md` を新設し、命名規約と移行表をまとめた。
+
+## Phase 17: page_3 manual ground truth と評価ギャップの可視化（2024-06-14）
+
+- **目的:** `homr` 検出と実際の楽譜の差分を定量化するために、page_3 の完全な小節線 GT を整備し、評価ワークフローを整備する。
+- **実装・作業:**
+    1. `src/tools/coordinate_annotator.py` を page_3 用に切り替え、Windows 上で 152 本の小節線を目視アノテーション。結果を `data/workbench/drafts/page_003_manual.json` に保存。
+    2. ドラフトを `data/evaluation/annotations/page_003/raw_boxes.json`（生データ）と `boxes_sorted.json`（Y→X ソート＋連番付与）へ昇格。`tools/render_barline_boxes_overlay.py`（新規追加）で GT を可視化し、`logs/homr_eval/20250927T181140JST_evaluator_page3/page_3/page_3_gt_boxes_overlay.png` を生成。
+    3. homr evaluator を GT 付きで再実行（`logs/homr_eval/20250927T230640JST_evaluator_page3_gt/metrics.json`）。検出 105 本に対して GT 152 本、TP=12 / FP=93 / FN=140（Precision=0.11, Recall=0.079）。
+    4. 閾値チューニングを試行。`barline_min_height_factor` を 0.6 まで下げると FP が急増（Precision 0.07）して悪化。`min=1.2`, `max_width=0.8` では検出 98 / TP=13 / FP=85 / FN=139（Precision 0.133, Recall 0.086, `logs/homr_eval/20250927T232054JST_tune_min12_max08/metrics.json`）と僅かな改善を確認。
+    5. デバッグマスク重ね合わせ（`tools/generate_barline_overlay.py`）と GT/検出矩形オーバーレイ（`tools/render_barline_boxes_overlay.py`）の 2 点セットをレビュー手順として `docs/ENVIRONMENTS.md` に追記。以後、この形式で可視確認を実施する方針を確立。
+- **課題/次ステップ:** homr の閾値・前処理を調整し、Precision/Recall を改善する。特に未検出（FN 140件）と符幹の取り違えを解消するパラメータ探索を進める。

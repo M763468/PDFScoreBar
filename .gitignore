@@ -18,7 +18,7 @@ dist/
 env/
 .toolvenv/
 venv/
-.venv/
+.venv*/
 
 # Debug outputs
 debug_outputs/

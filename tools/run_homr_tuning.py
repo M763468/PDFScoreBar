@@ -8,14 +8,20 @@ import json
 import subprocess
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Iterable, List
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:  # pragma: no cover - Python <3.9 fallback
+    from backports.zoneinfo import ZoneInfo  # type: ignore
 
 DEFAULT_TARGET_BARCNT = 150
 VENV_PYTHON = Path("homr/.venv/bin/python")
 EVALUATOR = Path("src/homr/homr_evaluator.py")
 NIGHT_RUN_STEPS = Path("logs/night_run/steps.ndjson")
+JST = ZoneInfo("Asia/Tokyo")
 
 
 @dataclass
@@ -70,8 +76,12 @@ def ensure_python() -> None:
         raise SystemExit(f"Python interpreter not found at {VENV_PYTHON}")
 
 
+def current_jst() -> datetime:
+    return datetime.now(JST)
+
+
 def timestamp() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return current_jst().strftime("%Y-%m-%dT%H:%M:%S") + "JST"
 
 
 def run_trial(
@@ -141,7 +151,7 @@ def main() -> None:
     args = parse_args()
     ensure_python()
 
-    run_root = args.run_root or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ_autotune")
+    run_root = args.run_root or (current_jst().strftime("%Y%m%dT%H%M%S") + "JST_autotune")
     trials: List[TrialResult] = []
     best_score = float("-inf")
     recent_no_improve = 0

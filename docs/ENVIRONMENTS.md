@@ -17,3 +17,15 @@
   - Models/cache: `/workspace/models/homr`
 - Usage: attach with `docker exec -it homr_eval_gpu bash`. `poetry` already manages the venv; run commands from `/workspace/homr` (e.g. `poetry run homr --debug ...`).
 - 2025-09-27: `.dockerignore` を追加してビルドコンテキストを縮小（`logs/`, `homr/.venv/`, 大量画像などを除外）。ホスト権限の都合で `docker build` は未実施。必要に応じて権限付与後に再ビルドすること。
+
+## Data directory layout (2025-09-27)
+- `data/training_pdfs/`: 元となる学習用PDF（ページ毎に画像化して `training_images/` に保存済み）。
+- `data/training_images/`: `training_pdfs/` を画像化したファイル群。`ground_truth_page_1_sorted.json` は `training_images/page_1.png` の小節線矩形を小節番号順に並べたもの。
+- `data/input_pdfs/`: 検証対象のPDF。`input_images/` はここを画像化した結果で、`page_1` は表紙、`page_2` は空白、`page_3` 以降が楽譜。
+- `data/input_images/`: 現在の homr / oemer 検証で利用する画像。**GT を作成する際は page ごとに JSON を命名（例: `ground_truth_page_3_sorted.json`）して `/data` 直下に配置する。**
+- `data/ground_truth_page_1_sorted.json`: 上記の通り `training_images/page_1.png` 用。`input_images/page_3.png` などには利用しないこと。
+
+## Log and artifact policy (2025-09-27)
+- 新規実験ログ・成果物は `logs/` 配下に統一（例: `logs/homr_eval/<timestamp>/`）。Git では `logs/` を一括で無視し、必要な指標は JSON/markdown にまとめてリポジトリに保存。
+- 過去の OMR 実験に使用していた `debug_outputs/` はアーカイブ用途として残しているが、今後は `logs/` に一本化。既存スクリプト（`homr_evaluator.py` など）はすべて `logs/` を前提に出力する。
+- hhmm 形式のタイムスタンプは JST（Asia/Tokyo）で生成される。`20250927T083500JST` のようにサフィックスでタイムゾーンを明示する。

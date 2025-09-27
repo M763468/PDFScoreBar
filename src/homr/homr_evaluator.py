@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -22,9 +22,15 @@ from concurrent.futures import Future
 import cv2  # type: ignore
 import numpy as np
 
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:  # pragma: no cover - Python <3.9 fallback
+    from backports.zoneinfo import ZoneInfo  # type: ignore
+
 # Ensure the local homr repository is importable before third-party homr installs.
 REPO_ROOT = Path(__file__).resolve().parents[2]
 HOMR_REPO = REPO_ROOT / "homr"
+JST = ZoneInfo("Asia/Tokyo")
 if str(HOMR_REPO) not in sys.path:
     sys.path.insert(0, str(HOMR_REPO))
 
@@ -230,14 +236,18 @@ def git_info() -> Dict[str, Optional[str]]:
     }
 
 
-def timestamp_utc() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+def current_jst() -> datetime:
+    return datetime.now(JST)
+
+
+def timestamp_jst() -> str:
+    return current_jst().strftime("%Y-%m-%dT%H:%M:%S") + "JST"
 
 
 def choose_run_id(args: argparse.Namespace) -> str:
     if args.force_run_id:
         return args.force_run_id
-    base = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    base = current_jst().strftime("%Y%m%dT%H%M%S") + "JST"
     if args.run_tag:
         return f"{base}_{args.run_tag}"
     return base
@@ -614,7 +624,7 @@ def write_metrics_json(
 ) -> Path:
     payload = {
         "run_id": run_id,
-        "timestamp": timestamp_utc(),
+        "timestamp": timestamp_jst(),
         "images": [
             {
                 **asdict(metric),
@@ -675,7 +685,7 @@ def write_run_config(
 ) -> Path:
     payload = {
         "run_id": run_id,
-        "timestamp": timestamp_utc(),
+        "timestamp": timestamp_jst(),
         "command": " ".join(shlex.quote(str(arg)) for arg in sys.argv),
         "docker_tag": args.docker_tag,
         "git": git_meta,
@@ -706,7 +716,7 @@ def write_readme(
     lines = [
         f"# homr Evaluation Run {run_id}",
         "",
-        f"- Timestamp: {timestamp_utc()}",
+        f"- Timestamp: {timestamp_jst()}",
         f"- Images: {len(per_image)}",
         f"- IoU threshold: {args.iou_threshold}",
         "",

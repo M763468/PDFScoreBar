@@ -28,30 +28,26 @@
 
 ### 現在の課題と次のタスク
 
-- homr/oemer の判定ロジック見直し: IoU 0.5 では肉眼一致にもかかわらず FP/FN になる事例が多いため、ボックススケールや IoU 閾値、縦マージン付与など評価基準の調整を行う。
-- 前処理パイプライン検討:
-    - PDF→PNG 変換時の解像度・補間方式を含むエクスポート手順を見直し、入力画質を改善する。
-    - homr/oemer を段（staff）単位にクロップして推論するフローを検討する。
-    - 各前処理案について実施内容と評価指標（オーバーレイ、Precision/Recall など）を `logs/` と docs に記録し、比較可能な形で残す。
+1. **homr / oemer の判定ロジック見直し**
+   - IoU 0.5 判定で発生している FP/FN を洗い出し、ボックススケールや縦方向マージン、閾値を調整して共通評価手順を確立する。(tools/render_detection_quality_overlay.pyを用いて肉眼での確認を行いつつ進める。)
+   - 改善後の指標と可視化を整理し、以降の実験に適用する。
 
-**課題:**
-1. homr: バーラインのTP/FP/FN分布で誤差要因を切り分け、Recall改善の糸口を探る。
-2. oemer: バーライン候補の閾値設計が甘く、FPが多い。
-3. GPUフォールバック: oemer推論でONNXがConvTransposeをCPUに落としている。
+2. **oemer 実行時の GPU フォールバック解消**
+   - ConvTranspose が CPU に落ちる原因（cuDNN 互換性・プロバイダ設定など）を調査し、コンテナ内ライブラリを調整して GPU 推論に戻す。
+   - GPU 化後に homr と同条件で性能を比較する。
 
-**次のタスク:**
+3. **oemer 出力の homr 換算・可視化整備**
+   - `run_omerer.py` を拡張し、homr と同形式の detections / metrics / オーバーレイを出力する。
+   - `group_map` など中間マップを保存して、判定ロジック改修時に参照できるようにする。
 
-1. homr バーライン評価
-    - TP/FP/FNオーバーレイをもとにケース分類。
-    - stem/clef除去マスクは別タスクとして再設計。
-    - `barline_min_height_factor`/`max_width_factor`探索は継続。
-2. homr 画像前処理検討
-    - 照度補正・縦線モルフォロジ・top-hat強調などを小規模評価。
-3. oemer フィルタ調整
-    - `min_height_unit_ratio`/`group_map`閾値の再検討。
-    - オーバーレイでFP/FNを確認しつつ改善案を試す。
-4. GPU最適化
-    - ConvTransposeのCPUフォールバック原因調査が完了次第、対応策を検討。
+4. **前処理パイプライン検討とミニ実験**
+   - PDF→PNG 変換時の解像度・補間方式や staff 単位クロップなどのパイプライン案を整理する。
+   - 照度補正、縦線モルフォロジ、top-hat 等の前処理を homr/oemer 両方で小規模評価し、結果を統一形式で記録する。
+
+5. **個別モデルの閾値・マスク調整**
+   - homr: stem/clef 除去マスクを再設計し、`barline_min_height_factor` / `barline_max_width_factor` を再チューニングする。
+   - oemer: `min_height_unit_ratio` などの閾値を調整し、可視化で検証する。
+
 
 ## 完了済みタスク
 - **`group_map`フィルタリング導入と可視化の修正:**

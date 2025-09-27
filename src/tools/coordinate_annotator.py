@@ -3,8 +3,8 @@ import json
 import os
 
 # --- Configuration ---
-IMAGE_PATH = "data/training_images/page_1.png"
-GROUND_TRUTH_OUTPUT_PATH = "data/ground_truth_page_1_new.json"
+IMAGE_PATH = "data/training/images/page_1.png"
+GROUND_TRUTH_OUTPUT_PATH = "data/training/annotations/page_001/raw_boxes.json"
 BARLINE_RECT_WIDTH = 5  # Width of the rectangle when converting a line to a box
 MAX_DISPLAY_WIDTH = 1200 # Maximum width for display
 MAX_DISPLAY_HEIGHT = 800 # Maximum height for display

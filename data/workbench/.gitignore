@@ -1,0 +1,6 @@
+# Ignore workbench scratch assets; keep placeholders.
+*
+!.gitignore
+!.gitkeep
+!captures/
+!drafts/

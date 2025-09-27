@@ -1,0 +1,5 @@
+# Keep directory skeleton; rely on subdir .gitignore files to filter assets.
+*.tmp
+*.bak
+!.gitignore
+!.gitkeep

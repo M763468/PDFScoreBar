@@ -67,7 +67,7 @@ def add_measure_numbers(image_path, output_path, barlines):
 
 if __name__ == "__main__":
     # --- Configuration ---
-    IMAGE_PATH = "data/input_images/page_3.png"
+    IMAGE_PATH = "data/evaluation/images/page_3.png"
     OUTPUT_PATH = "output/gemini_opencv/page_3_with_measure_numbers.png"
 
     # This high-quality barline data is provided by Gemini.

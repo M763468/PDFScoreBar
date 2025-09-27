@@ -1,0 +1,4 @@
+# Ignore captures except directory keepers.
+*
+!.gitignore
+!.gitkeep

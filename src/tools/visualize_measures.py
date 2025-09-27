@@ -49,7 +49,7 @@ def visualize_measures(image_path, json_path):
 
 if __name__ == "__main__":
     # 入力画像とJSONファイルのパス
-    image_path = "data/training_images/page_1.png"
-    json_path = "data/ground_truth_page_1_sorted.json"
+    image_path = "data/training/images/page_1.png"
+    json_path = "data/training/annotations/page_001/boxes_sorted.json"
 
     visualize_measures(image_path, json_path)

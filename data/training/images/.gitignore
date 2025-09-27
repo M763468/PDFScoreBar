@@ -1,0 +1,4 @@
+# Ignore actual training images; keep placeholder.
+*
+!.gitignore
+!.gitkeep

@@ -1,0 +1,4 @@
+# Ignore training PDFs; keep placeholder.
+*
+!.gitignore
+!.gitkeep

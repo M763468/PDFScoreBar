@@ -121,7 +121,7 @@ def classify_candidates_in_batches(candidates, original_pil_img, model, batch_si
 
 # --- Main Orchestration ---
 def main():
-    image_path = "/workspace/data/input_images/page_3.png"
+    image_path = "/workspace/data/evaluation/images/page_3.png"
     output_image_path = "/workspace/output/gemini_results/page_3_hybrid_detected.png"
     
     print("1. Detecting vertical line candidates with OpenCV...")

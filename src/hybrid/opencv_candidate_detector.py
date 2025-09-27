@@ -103,7 +103,7 @@ def detect_vertical_line_candidates(image_path):
 
 # --- Main execution block for standalone testing ---
 if __name__ == "__main__":
-    image_path = "/workspace/data/input_images/page_3.png"
+    image_path = "/workspace/data/evaluation/images/page_3.png"
     output_image_path = "/workspace/debug_outputs/opencv_candidates_visualization.png"
     
     print(f"1. Detecting vertical line candidates in {image_path} using Vertical Projection with Staff Removal...")

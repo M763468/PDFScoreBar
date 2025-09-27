@@ -28,8 +28,8 @@
         -   試行の結果、明らかにhomerを使う方がよい結果になるならば、プロジェクトの主要アプローチをhomerを使ったものに変更し、各種ドキュメントを更新した後、mainにマージする。
 
     -   **直近 TODO:**
-        1. `poetry run homr --debug /workspace/data/input_images/page_3.png` の小節線検出件数と `src/homr/homr_evaluator.py` の `num_predictions` を比較し、完全一致するまで evaluator の前処理・閾値・スケーリングを調整する。必要に応じて純正 homr のデバッグ出力との diff を取得するスクリプトを用意する。
-        2. `page_3.png` 用の ground truth JSON（例: `data/ground_truth_page_3_sorted.json`）を作成し、評価ツールおよびチューニングスクリプトのデフォルトを差し替える。
+        1. `poetry run homr --debug /workspace/data/evaluation/images/page_3.png` の小節線検出件数と `src/homr/homr_evaluator.py` の `num_predictions` を比較し、完全一致するまで evaluator の前処理・閾値・スケーリングを調整する。必要に応じて純正 homr のデバッグ出力との diff を取得するスクリプトを用意する。
+        2. `page_3.png` 用の ground truth JSON（例: `data/evaluation/annotations/page_003/boxes_sorted.json`）を作成し、評価ツールおよびチューニングスクリプトのデフォルトを差し替える。
         3. GT を適用した状態で baseline 実行と閾値グリッド探索を `homr_eval_gpu` コンテナ内で再実行し、`logs/homr_eval/<timestamp>/index.md` や `logs/night_run/FINAL_GT_COMPARE.md` に結果を整理する。
         4. 夜間バッチ実行時のデフォルト GT 設定と確認手順をドキュメント化し、page_1 用 GT を誤用した過去事例の再発を防ぐ。
 

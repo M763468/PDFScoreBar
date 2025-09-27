@@ -2,12 +2,15 @@
 
 This project aims to develop a Python-based tool that automatically adds measure numbers to sheet music provided in PDF format.
 
+> **Status notice (2024-06-14):** Active development is concentrated on the `homr`-based evaluation workflow and related tooling. Historical experiments remain documented below; when in doubt, prefer the up-to-date references in `docs/ENVIRONMENTS.md`, `docs/DEVELOPMENT_LOG.md`, and `docs/NEXT_SESSION_NOTES.md`.
+
 ## Core Technology
 
-This tool utilizes a hybrid approach, combining the power of Google's Gemini for advanced image recognition and OpenCV for precise image manipulation.
+This tool currently explores multiple detection backends (legacy Gemini + OpenCV hybrid, `oemer`-inspired ML detector, and the `homr` pipeline). The README captures high-level concepts; see the docs mentioned above for day-to-day workflows.
 
--   **Gemini (The Brain):** Analyzes the sheet music image to accurately identify the coordinates of all barlines, using in-context learning for improved accuracy.
--   **OpenCV (The Hands):** Takes the coordinate data from Gemini to draw measure numbers onto the image and save the final output.
+-   **Gemini + OpenCV (historical baseline):** Provided early prototypes combining LLM-assisted barline proposals with classical post-processing.
+-   **oemer-derived ML detector:** Two-stage segmentation and filtering pipeline implemented under `src/ml_detector/`.
+-   **homr integration:** Transformer-based OMR system under active evaluation inside a dedicated Docker environment.
 
 ## Directory Structure
 
@@ -20,10 +23,16 @@ The project is organized as follows:
 ├── NEXT_SESSION_NOTES.md
 ├── DEVELOPMENT_LOG.md
 ├── data/
-│   ├── input_pdfs/       # Place source PDFs to be processed here.
-│   ├── training_pdfs/    # PDFs with existing measure numbers for training/fine-tuning.
-│   ├── input_images/       # PNGs converted from source PDFs.
-│   └── ground_truth_page_1.json # Ground truth data for in-context learning.
+│   ├── README.md         # Data management policy and directory map
+│   ├── training/
+│   │   ├── pdfs/         # Source PDFs for annotated training material
+│   │   ├── images/       # Page images converted from the training PDFs
+│   │   └── annotations/  # Ground truth JSON grouped per page (page_xxx/)
+│   ├── evaluation/
+│   │   ├── pdfs/         # PDFs under evaluation
+│   │   ├── images/       # Converted evaluation images (e.g., page_3.png)
+│   │   └── annotations/  # Evaluation GT (to be added as page_xxx/)
+│   └── workbench/        # Temporary captures and legacy drafts
 ├── output/
 │   └── ...
 ├── src/
@@ -57,7 +66,7 @@ All development and script execution should be performed inside the provided Doc
 docker exec pdf_score_dev_gpu python src/pdf_to_images.py
 ```
 
-1.  **Prepare PDF:** Place the sheet music PDF you want to process into the `data/input_pdfs/` directory.
+1.  **Prepare PDF:** Place the sheet music PDF you want to process into the `data/evaluation/pdfs/` directory (see `data/README.md` for details).
 
 2.  **Convert PDF to Images:** Run the conversion script.
     ```bash

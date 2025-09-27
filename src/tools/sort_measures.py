@@ -39,6 +39,6 @@ def group_and_sort_measures(input_file, output_file):
         json.dump(sorted_data, f, indent=2, ensure_ascii=False)
 
 if __name__ == "__main__":
-    input_file = "data/ground_truth_page_1_new.json"
-    output_file = "data/ground_truth_page_1_sorted.json"
+    input_file = "data/training/annotations/page_001/raw_boxes.json"
+    output_file = "data/training/annotations/page_001/boxes_sorted.json"
     group_and_sort_measures(input_file, output_file)

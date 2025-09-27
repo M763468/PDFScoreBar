@@ -304,7 +304,7 @@ if __name__ == "__main__":
     """
     # --- 設定項目 ---
     # 入力画像のパス
-    img_path = "data/input_images/page_3.png"
+    img_path = "data/evaluation/images/page_3.png"
     # oemerの事前学習済みモデルのパス
     unet_model_path = "/workspace/src/archive/oemer/oemer_src/oemer/checkpoints/unet_big"
     segnet_model_path = "/workspace/src/archive/oemer/oemer_src/oemer/checkpoints/seg_net"

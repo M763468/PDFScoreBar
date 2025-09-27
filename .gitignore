@@ -34,4 +34,10 @@ Thumbs.db
 # list them specifically. For example:
 # data/large_model.pkl
 data/*
+!data/.gitignore
+!data/README.md
+!data/training/
+!data/evaluation/
+!data/workbench/
+!data/**/.gitkeep
 output/*

@@ -37,7 +37,7 @@ def run_omerer_on_images(image_folder, output_folder, target_pages):
             f.close()
 
 if __name__ == "__main__":
-    image_dir = "/workspace/data/input_images"
+    image_dir = "/workspace/data/evaluation/images"
     output_dir = "/workspace/output/oemer"
     # 楽譜が映っているページ番号を指定 (3ページ目のみ)
     target_pages = [3]

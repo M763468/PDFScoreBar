@@ -1,0 +1,4 @@
+# Ignore draft artifacts; keep placeholder and intentional files.
+*
+!.gitignore
+!.gitkeep

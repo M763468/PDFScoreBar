@@ -136,7 +136,7 @@ def parse_args() -> argparse.Namespace:
         "--ground-truth",
         action="append",
         default=[],
-        help="Mapping of image stem to ground truth JSON, e.g. page_1:data/ground_truth_page_1.json",
+        help="Mapping of image stem to ground truth JSON, e.g. page_001:data/training/annotations/page_001/boxes_sorted.json",
     )
     parser.add_argument(
         "--ground-truth-dir",

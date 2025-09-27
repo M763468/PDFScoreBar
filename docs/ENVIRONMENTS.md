@@ -18,12 +18,21 @@
 - Usage: attach with `docker exec -it homr_eval_gpu bash`. `poetry` already manages the venv; run commands from `/workspace/homr` (e.g. `poetry run homr --debug ...`).
 - 2025-09-27: `.dockerignore` を追加してビルドコンテキストを縮小（`logs/`, `homr/.venv/`, 大量画像などを除外）。ホスト権限の都合で `docker build` は未実施。必要に応じて権限付与後に再ビルドすること。
 
-## Data directory layout (2025-09-27)
-- `data/training_pdfs/`: 元となる学習用PDF（ページ毎に画像化して `training_images/` に保存済み）。
-- `data/training_images/`: `training_pdfs/` を画像化したファイル群。`ground_truth_page_1_sorted.json` は `training_images/page_1.png` の小節線矩形を小節番号順に並べたもの。
-- `data/input_pdfs/`: 検証対象のPDF。`input_images/` はここを画像化した結果で、`page_1` は表紙、`page_2` は空白、`page_3` 以降が楽譜。
-- `data/input_images/`: 現在の homr / oemer 検証で利用する画像。**GT を作成する際は page ごとに JSON を命名（例: `ground_truth_page_3_sorted.json`）して `/data` 直下に配置する。**
-- `data/ground_truth_page_1_sorted.json`: 上記の通り `training_images/page_1.png` 用。`input_images/page_3.png` などには利用しないこと。
+## Data directory layout (2024-06-14 年版)
+- `data/README.md`: データ管理方針と命名規約のまとめ。更新時は必ずここにも反映する。
+- `data/training/`
+  - `pdfs/`: 学習用 PDF（例: IMSLP 由来のスコア）。
+  - `images/`: 上記 PDF をページ単位で画像化したもの（`page_1.png` など）。
+  - `annotations/`: ページごとの Ground Truth を `page_00x/` ディレクトリに整理。`raw_boxes.json` → 手動アノテーション直後、`boxes_sorted.json` → 小節番号順に整列済み。
+- `data/evaluation/`
+  - `pdfs/`: 検証対象の PDF（`おもちゃの交響曲_bass.pdf` 等）。
+  - `images/`: 評価対象 PDF を画像化したもの。`page_1` は表紙、`page_2` は空白、`page_3` 以降が楽譜。
+  - `annotations/`: 評価用 Ground Truth を `page_00x/` ごとに配置予定（例: `page_003/boxes_sorted.json`）。
+- `data/workbench/`
+  - `captures/`: 作業途中の切り出しや比較素材。
+  - `drafts/`: 旧版 GT や一次データ（コミット前に棚卸しする）。
+
+> メモ: 既存の `page_1.png` などゼロ埋めでないファイルは順次 `page_001.png` 形式へ移行する。リネーム時はコードとドキュメントの参照先を更新すること。
 
 ## Log and artifact policy (2025-09-27)
 - 新規実験ログ・成果物は `logs/` 配下に統一（例: `logs/homr_eval/<timestamp>/`）。Git では `logs/` を一括で無視し、必要な指標は JSON/markdown にまとめてリポジトリに保存。

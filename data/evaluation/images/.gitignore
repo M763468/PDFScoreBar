@@ -1,0 +1,4 @@
+# Ignore evaluation images; keep placeholder.
+*
+!.gitignore
+!.gitkeep

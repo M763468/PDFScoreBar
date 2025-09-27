@@ -1,0 +1,10 @@
+# Ignore all data assets by default; allow documentation and directory skeletons.
+*
+!.gitignore
+!README.md
+!training/
+!evaluation/
+!workbench/
+!training/**
+!evaluation/**
+!workbench/**

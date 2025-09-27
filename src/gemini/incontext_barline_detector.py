@@ -127,8 +127,8 @@ def main():
         return
 
     # --- Parameters ---
-    image_to_analyze = "data/input_images/page_3.png"
-    ground_truth_file = "data/ground_truth_page_1_sorted.json"
+    image_to_analyze = "data/evaluation/images/page_3.png"
+    ground_truth_file = "data/evaluation/annotations/page_003/boxes_sorted.json"
     output_directory = "output/gemini_results"
     MODEL_NAME = "gemini-1.5-flash-latest" # Change to "gemini-1.5-flash-latest" for flash model
 

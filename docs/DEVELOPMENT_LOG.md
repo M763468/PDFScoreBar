@@ -226,8 +226,8 @@ This document records the development history, key decisions, and learnings thro
 - **アップデート (2025-09-26):**
     - `Dockerfile.homr` を刷新し、cuDNN 9 ランタイム／ヘッダーの導入と `poetry install --with dev`、`pip uninstall onnxruntime && pip install onnxruntime-gpu==1.22.0`、`opencv-python-headless` までをビルド時に自動反映。起動後の手動セットアップが不要に。
     - 新イメージから `homr_eval_gpu` コンテナを再作成し、`poetry run python -c "import torch, onnxruntime as ort; print(torch.cuda.is_available()); print(ort.get_device())"` で GPU 動作 (`GPU`) を確認。
-    - `poetry run homr --debug /workspace/data/input_images/page_3.png` を GPU で再実行し、`logs/homr_eval/page_3/` 配下に MusicXML・ログ・デバッグ画像を整理。`tools/generate_barline_overlay.py`（重ね色は赤）で最新マスクからオーバーレイを再生成。
-    - `data/input_images` 直下に残るデバッグ画像／MusicXML は実行毎に `logs/homr_eval/page_3/` へ移動後削除し、入力ディレクトリをクリーンに保つ運用を確認。
+    - `poetry run homr --debug /workspace/data/evaluation/images/page_3.png` を GPU で再実行し、`logs/homr_eval/page_3/` 配下に MusicXML・ログ・デバッグ画像を整理。`tools/generate_barline_overlay.py`（重ね色は赤）で最新マスクからオーバーレイを再生成。
+    - `data/evaluation/images` 直下に残るデバッグ画像／MusicXML は実行毎に `logs/homr_eval/page_3/` へ移動後削除し、入力ディレクトリをクリーンに保つ運用を確認。
 
 ## Phase 16: homr 評価ワークフロー自動化と閾値チューニング（2025-09-27）
 
@@ -243,7 +243,7 @@ This document records the development history, key decisions, and learnings thro
     - グリッド探索では `min=0.85`, `max=0.9` が検出本数 118 で最も 150 に近づいた（差分 32）。同条件の再実行でも同じ結果を確認。閾値を下げることで偽陰性が減り、過剰検出は大きく増えないことを確認。
     - すべてのトライアルについて手順・メトリクスを `logs/night_run/steps.ndjson` に追記し、run ルート `logs/homr_eval/20250926T184903Z_autotune/` に集約。
 - **付随作業:**
-    - Docker ビルドコンテキスト削減のため `.dockerignore` を新設（`logs/`, `data/input_images/`, `homr/.venv/` などを除外）。ただしホスト権限の制約で `docker build` は未実施。必要に応じて権限付与後に再ビルドする。
+    - Docker ビルドコンテキスト削減のため `.dockerignore` を新設（`logs/`, `data/evaluation/images/`, `homr/.venv/` などを除外）。ただしホスト権限の制約で `docker build` は未実施。必要に応じて権限付与後に再ビルドする。
 - **課題:**
     - 正式な地真 (ground truth) が未整備のため、F1 などの定量指標は算出できていない。`metrics.json` には placeholders を残し、将来的に GT を接続した際に再計算できるようにした。
     - GPU ライブラリ（cuDNN 9）がホスト環境側では見つからず CPU フォールバックしている。`homr_eval_gpu` コンテナ内では解消済みだが、ホストで同等検証を行う際は `libcudnn.so.9` の配置が必要。
@@ -253,3 +253,4 @@ This document records the development history, key decisions, and learnings thro
     - `.gitignore` に `logs/` を追加済みだが、今回の事後処理で誤って追跡された成果物を削除できたことを確認。今後も成果物は `logs/` 配下に生成するが Git 管理はしない運用を徹底する。
     - 次フェーズでは、純粋な `poetry run homr --debug` 実行時の小節線本数と `homr_evaluator.py` の検出本数を突き合わせ、不一致がある場合は evaluator 側の前処理・閾値・スケーリングを修正する方針とした。
     - Page 3 向け GT JSON を整備し、`tools/run_homr_tuning.py` のデフォルト指定を差し替えたうえで、評価指標（Precision/Recall/F1）を有効値として取得する計画を立てた。GT が整い次第、baseline と閾値スイープを再実施する。
+    - Data ディレクトリを `training/`, `evaluation/`, `workbench/` の 3 系統に再編し、対応するスクリプトを新しいパスに更新。`data/README.md` を新設し、命名規約と移行表をまとめた。

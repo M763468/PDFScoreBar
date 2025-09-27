@@ -41,8 +41,8 @@ def visualize_ground_truth(image_path, ground_truth_path, output_path):
         print(f"An error occurred during visualization: {e}")
 
 if __name__ == "__main__":
-    image_path = "data/training_images/page_1.png"
-    ground_truth_path = "data/ground_truth_page_1.json"
+    image_path = "data/training/images/page_1.png"
+    ground_truth_path = "data/training/annotations/page_001/raw_boxes.json"
     output_path = "output/gemini_results/page_1_ground_truth_visualized.png"
 
     visualize_ground_truth(image_path, ground_truth_path, output_path)

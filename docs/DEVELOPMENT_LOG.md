@@ -248,3 +248,8 @@ This document records the development history, key decisions, and learnings thro
     - 正式な地真 (ground truth) が未整備のため、F1 などの定量指標は算出できていない。`metrics.json` には placeholders を残し、将来的に GT を接続した際に再計算できるようにした。
     - GPU ライブラリ（cuDNN 9）がホスト環境側では見つからず CPU フォールバックしている。`homr_eval_gpu` コンテナ内では解消済みだが、ホストで同等検証を行う際は `libcudnn.so.9` の配置が必要。
 - **ステータス:** ツール整備完了。今後は地真整備とベースライン比較、閾値の自動探索拡張（例: Bayesian Optimization）を検討する。
+- **アップデート (2025-09-27 午前):**
+    - ログ出力を大量に含んでいたコミット（`夜間実行の各種結果`）を切り離し、`bot/overnight` を再構成した上で `feature/homr-eval-20240614` に fast-forward マージ。コード変更のみを履歴に残すよう整理した。
+    - `.gitignore` に `logs/` を追加済みだが、今回の事後処理で誤って追跡された成果物を削除できたことを確認。今後も成果物は `logs/` 配下に生成するが Git 管理はしない運用を徹底する。
+    - 次フェーズでは、純粋な `poetry run homr --debug` 実行時の小節線本数と `homr_evaluator.py` の検出本数を突き合わせ、不一致がある場合は evaluator 側の前処理・閾値・スケーリングを修正する方針とした。
+    - Page 3 向け GT JSON を整備し、`tools/run_homr_tuning.py` のデフォルト指定を差し替えたうえで、評価指標（Precision/Recall/F1）を有効値として取得する計画を立てた。GT が整い次第、baseline と閾値スイープを再実施する。

@@ -23,6 +23,7 @@ venv/
 # Debug outputs
 debug_outputs/
 logs/
+homr/
 
 # OS generated files
 .DS_Store

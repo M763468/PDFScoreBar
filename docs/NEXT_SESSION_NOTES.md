@@ -23,46 +23,35 @@
 ## 現在の課題と次のタスク
 
 **課題:**
-1.  **パフォーマンス（GPU未使用）:** 実行時にONNX Runtimeが `ConvTranspose` 処理でCPUへフォールバックしている旨の警告を多数出力しており、GPUの性能を最大限に活用できていない。
+1.  **パフォーマンス（GPU未使用）:** oemer実行時にONNX Runtimeが `ConvTranspose` 処理でCPUへフォールバックしている旨の警告を多数出力しており、GPUの性能を最大限に活用できていない。
 2.  **検出漏れの存在（偽陰性）:** `oemer`のフィルタリングロジック導入により、誤検出は大幅に減ったものの、いくつかの本来検出されるべき小節線が検出されなくなっている。
+
+### 現在の課題と次のタスク
+
+- homr/oemer の判定ロジック見直し: IoU 0.5 では肉眼一致にもかかわらず FP/FN になる事例が多いため、ボックススケールや IoU 閾値、縦マージン付与など評価基準の調整を行う。
+- 前処理パイプライン検討:
+    - PDF→PNG 変換時の解像度・補間方式を含むエクスポート手順を見直し、入力画質を改善する。
+    - homr/oemer を段（staff）単位にクロップして推論するフローを検討する。
+    - 各前処理案について実施内容と評価指標（オーバーレイ、Precision/Recall など）を `logs/` と docs に記録し、比較可能な形で残す。
+
+**課題:**
+1. homr: バーラインのTP/FP/FN分布で誤差要因を切り分け、Recall改善の糸口を探る。
+2. oemer: バーライン候補の閾値設計が甘く、FPが多い。
+3. GPUフォールバック: oemer推論でONNXがConvTransposeをCPUに落としている。
 
 **次のタスク:**
 
-1. **別のAIモデルの検討**
-    -   **目標:** `oemer`のREADMEのSPECIAL MENTIONによると、`https://github.com/liebharc/homr`のリポジトリがよりrobustでよい結果をもたらすらしい。記述を確認したうえで、このリポジトリを用いて同様にmusicxmlの作成や小節線検出を実行し、精度を比較する。こちらの方が明らかに良い結果ならば、こちらを利用する。
-    -   **アプローチ:**
-        -   この作業専用のブランチを作成し`oemer`の結果と分離して作業をできるようにする。
-        -   `homr`を適切なディレクトリにサブモジュールとしてgit cloneする。
-        -   musicxml作成結果や小節線抽出に特化した結果、適切な中間画像などを出力し、`oemer`を使用した場合と比較する。必要ならばこの作業のために専用のdockerコンテナを新たに作成してもよい。(その場合、dockerコンテナ内部でgemini-cliを使うことができるようにすることで、直接attachしながらgeminiを使うようにする。)
-        -   試行の結果、明らかにhomerを使う方がよい結果になるならば、プロジェクトの主要アプローチをhomerを使ったものに変更し、各種ドキュメントを更新した後、mainにマージする。
-
-    -   **直近 TODO:**
-        1. `logs/homr_eval/20250927T230640JST_evaluator_page3_gt/metrics.json` で確認した Precision=0.11 / Recall=0.079 のギャップを解消するため、`barline_min_height_factor` / `barline_max_width_factor` / 前処理閾値を調整し、TP の増加と FP の削減を図る。
-        2. 新しい GT（`data/evaluation/annotations/page_003/boxes_sorted.json`）を `tools/run_homr_tuning.py` のデフォルトに組み込み、各トライアルで Precision/Recall を記録する。
-        3. 各パラメータセットについて `tools/generate_barline_overlay.py` + `tools/render_barline_boxes_overlay.py` の 2 種類のオーバーレイを生成し、目視で誤検出・未検出を確認する。
-        4. 改善が得られた設定を `docs/DEVELOPMENT_LOG.md` と `logs/homr_eval/<timestamp>/` に整理し、次セッションへ引き継ぐ。
-
-    -   **注意**
-        - `homr`のセグメンテーション部分は`oemer`をベースにしているため、結果は変わらないかもしれない。
-        - `homr`のREADMEによると、`homr`は内部で以下のリポジトリをベースにしたtransformerモデルを使用している。必要に応じてこちらも参考にすること。
-        - `https://github.com/NetEase/Polyphonic-TrOMR`
-
-2.  **GPUパフォーマンスの最適化:**
-    -   **目標:** （1.がうまくいく場合は不要）`oemer`のCPUへのフォールバックを解消し、GPUを最大限活用して処理を高速化する。
-    -   **アプローチ:**
-        -   `onnxruntime-gpu` と、インストールされている `CUDA`, `cuDNN` のバージョン間の互換性を調査する。
-        -   `ConvTranspose` 処理がCUDAでサポートされていない問題について、ONNXコミュニティの情報を検索し、既知の回避策（モデル変換時のオプション指定など）がないか調べる。
-        - 　この作業は`perf/gpu-optimization`ブランチを使用する。
-    -   **注意**
-            - 基本的に1.が成功すれば不要だが、もし`homr`でも同様にGPUが使えずCPUにフォールバックするなどの問題が発生した場合はその調査を行う。
-
-3.  **検出漏れの調査と改善:**
-    -   **目標:** （1.で十分な精度が得られる場合は不要）`oemer`を用いた手法による偽陰性を減らし、検出精度をさらに向上させる。
-    -   **アプローチ:**
-        -   `parse_barlines` や `filter_barlines` 内のパラメータ（特に高さの閾値 `min_height_unit_ratio` など）を調整し、検出漏れした小節線が拾えるか試す。
-        -   中間画像（`barline_cand`, `sym_barline_map` など）をデバッグ出力し、検出漏れした小節線がどの段階で候補から消えているかを特定する。
-    -   **注意**
-            - 基本的に1.が成功すれば不要だが、もし`homr`でも同様に精度の問題があればその解決のための調査を行う。
+1. homr バーライン評価
+    - TP/FP/FNオーバーレイをもとにケース分類。
+    - stem/clef除去マスクは別タスクとして再設計。
+    - `barline_min_height_factor`/`max_width_factor`探索は継続。
+2. homr 画像前処理検討
+    - 照度補正・縦線モルフォロジ・top-hat強調などを小規模評価。
+3. oemer フィルタ調整
+    - `min_height_unit_ratio`/`group_map`閾値の再検討。
+    - オーバーレイでFP/FNを確認しつつ改善案を試す。
+4. GPU最適化
+    - ConvTransposeのCPUフォールバック原因調査が完了次第、対応策を検討。
 
 ## 完了済みタスク
 - **`group_map`フィルタリング導入と可視化の修正:**
@@ -125,6 +114,9 @@
     -   現在は技術検証中のコードが多く、将来的に不要になる実装も含まれるため、`pytest` や型注釈 (`mypy`) の整備は重要な箇所から少しずつ段階的に進める。日々の作業の合間に気付いた範囲で対応し、完全移行は急がない。
 
 ### homr / oemer 比較実験計画 (2025-09-27)
+- 2025-09-28 01:05 JST: homr evaluator で `barline_min_height_factor`×`barline_max_width_factor` を再スイープ (`logs/homr_eval/20250928T00*`)。F1 は 0.104 (13TP/85FP/139FN) で頭打ち、まずはオーバーレイで TP/FP/FN を分類して要因を整理し、その後に stem/clef 除去マスクの再設計を個別タスクとして進める。
+- 2025-09-28 01:06 JST: oemer 版 evaluator (`src/archive/oemer/run_omerer.py`) を整備し、`logs/oemer_eval/20250928T005938JST_baseline/` で TP=10 / FP=126 / FN=142 (Precision 0.074, Recall 0.066) を確認。`symbol_extraction.parse_barlines` の `min_height_unit_ratio` や `group_map` マスク調整を次ステップ候補に追加。
+- 2025-09-28: homr CLI (`logs/homr_eval/20250928T001723JST_homr_cli_page3/`) と evaluator (`logs/homr_eval/20250928T001916JST_evaluator_page3_default/`) の検出本数がともに105本で一致することを確認。次は `barline_min_height_factor` や前処理ロジックの調整、および oemer パイプラインのバウンディングボックス JSON 化を実施する。
 - homr 評価: `tools/run_homr_tuning.py` を `--images data/evaluation/images/page_3.png` と `--ground-truth page_3:data/evaluation/annotations/page_003/boxes_sorted.json` で実行し、各トライアルの `barline_min_height_factor` / `barline_max_width_factor` を記録。必ず `poetry run homr --debug` の結果と検出件数を突き合わせる。
 - homr 成果物: `logs/homr_eval/<timestamp>_homr_<desc>/` に `metrics.json` / `metrics.csv` / `compare.md` / `README.md` / オーバーレイ画像 (`tools/generate_barline_overlay.py`, `tools/render_barline_boxes_overlay.py`) を保存。タイムスタンプは JST。
 - oemer baseline: `docker exec pdf_score_dev_gpu bash -lc 'cd /workspace && python src/archive/oemer/run_omerer.py'` をベースに `layers.get_layer("barlines")` を JSON に書き出す処理を追加し、`logs/oemer_eval/<timestamp>_baseline/` に保存。必要に応じて `draw_teaser.py` を利用してオーバーレイを生成。

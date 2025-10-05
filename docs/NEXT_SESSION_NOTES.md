@@ -13,12 +13,7 @@
 楽譜PDFを読み込み、小節番号を付与して新しいPDFとして出力するプログラムを作成する。
 
 ## 現在の主要アプローチ
-**`oemer`のアーキテクチャを参考にした機械学習（ML）ベースのアプローチ (`src/ml_detector/barline_detector.py`) を採用する。**
-
-- **役割分担:**
-    - **`unet_big`モデル:** 五線譜と音楽記号（全体）を大まかに分類する。
-    - **`seg_net`モデル:** 音楽記号をさらに細かく（符頭、符幹/休符、音部記号/調号など）に分類する。
-    - **後処理:** `oemer`の高度なフィルタリングロジックを移植し、モデルの出力結果から小節線を高精度で抽出する。
+`homr` 評価パイプラインと `oemer` ベースラインを並行運用し、共通のマッチングロジックで精度を比較・改善する。`src/ml_detector/barline_detector.py` は oemer のアーキテクチャを踏まえた派生実装として維持しつつ、評価成果物を `logs/` 配下に統一フォーマットで保存する。
 
 ## 現在の課題と次のタスク
 
@@ -26,7 +21,7 @@
 1.  **パフォーマンス（GPU未使用）:** oemer実行時にONNX Runtimeが `ConvTranspose` 処理でCPUへフォールバックしている旨の警告を多数出力しており、GPUの性能を最大限に活用できていない。
 2.  **検出漏れの存在（偽陰性）:** `oemer`のフィルタリングロジック導入により、誤検出は大幅に減ったものの、いくつかの本来検出されるべき小節線が検出されなくなっている。
 
-### 現在の課題と次のタスク
+### アクションプラン
 
 1. **homr / oemer の判定ロジック見直し**
    - 共通マッチャの仕様をドキュメント化し、公式評価 run をリランして成果物を更新する。
@@ -117,4 +112,4 @@
 - homr 成果物: `logs/homr_eval/<timestamp>_homr_<desc>/` に `metrics.json` / `metrics.csv` / `compare.md` / `README.md` / オーバーレイ画像 (`tools/generate_barline_overlay.py`, `tools/render_barline_boxes_overlay.py`) を保存。タイムスタンプは JST。
 - oemer baseline: `docker exec pdf_score_dev_gpu bash -lc 'cd /workspace && python src/archive/oemer/run_omerer.py'` をベースに `layers.get_layer("barlines")` を JSON に書き出す処理を追加し、`logs/oemer_eval/<timestamp>_baseline/` に保存。必要に応じて `draw_teaser.py` を利用してオーバーレイを生成。
 - 共通指標: GT (`data/evaluation/annotations/page_003/boxes_sorted.json`) に対する Precision / Recall / F1 と、漏れ・誤検出の目視キャプチャを `compare.md` に整理。
-- ドキュメント更新: 各実験終了後に `docs/DEVELOPMENT_LOG.md` と `docs/NEXTSESSION_LOG.md` を更新し、次回の再現手順と改善ポイントを明記する。
+- ドキュメント更新: 各実験終了後に `docs/DEVELOPMENT_LOG.md` と `docs/NEXT_SESSION_NOTES.md` を更新し、次回の再現手順と改善ポイントを明記する。

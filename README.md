@@ -20,8 +20,11 @@ The project is organized as follows:
 ./
 ├── Dockerfile
 ├── README.md
-├── NEXT_SESSION_NOTES.md
-├── DEVELOPMENT_LOG.md
+├── docs/
+│   ├── NEXT_SESSION_NOTES.md  # Session handover notes
+│   ├── DEVELOPMENT_LOG.md     # History and key decisions
+│   ├── ENVIRONMENTS.md        # Environment setup and usage
+│   └── AGENTS.md              # Assistant runbook
 ├── data/
 │   ├── README.md         # Data management policy and directory map
 │   ├── training/
@@ -37,7 +40,7 @@ The project is organized as follows:
 │   └── ...
 ├── src/
 │   ├── gemini/
-│   │   └── incontext_barline_detector.py # Main script for barline detection.
+│   │   └── incontext_barline_detector.py # Legacy Gemini prototype.
 │   ├── pdf_to_images.py      # Script to convert PDFs to PNGs.
 │   ├── add_measure_numbers.py  # (Legacy) Simple script to draw numbers.
 │   └── archive/            # Deprecated scripts.
@@ -59,25 +62,17 @@ All development and script execution should be performed inside the provided Doc
 
 ### How to Use
 
-**Important:** All `python` commands listed below should be executed *inside* the `pdf_score_dev_gpu` Docker container.
+**Important:** All evaluation commands should be executed *inside* the `pdf_score_dev_gpu` Docker container. Refer to `docs/ENVIRONMENTS.md` for container lifecycle and helper scripts.
 
-**Example:**
-```bash
-docker exec pdf_score_dev_gpu python src/pdf_to_images.py
-```
+1.  **Prepare PDFs:** Place the score you want to analyse in `data/evaluation/pdfs/` (see `data/README.md` for naming rules).
 
-1.  **Prepare PDF:** Place the sheet music PDF you want to process into the `data/evaluation/pdfs/` directory (see `data/README.md` for details).
-
-2.  **Convert PDF to Images:** Run the conversion script.
+2.  **Convert PDF to Images:** Generate page images before running detectors.
     ```bash
     python src/pdf_to_images.py
     ```
 
-3.  **Run Barline Detection:**
-    -   The main script for detection is `src/gemini/incontext_barline_detector.py`.
-    -   This script is currently configured to use example data. You may need to edit the file to change the target image.
-    -   Run the script:
-        ```bash
-        docker exec pdf_score_dev_gpu python src/gemini/incontext_barline_detector.py
-        ```
-    -   The script will output the detected coordinates. (Drawing functionality is TBD).
+3.  **Run Detection & Evaluation:**
+    -   The active workflow pairs the `homr` evaluator with the `oemer` baseline; follow the run commands and parameter notes in `docs/ENVIRONMENTS.md` and `docs/NEXT_SESSION_NOTES.md`.
+    -   Store metrics and overlays under `logs/` using the timestamped layout described in those docs so results stay comparable across runs.
+
+**Historical prototype:** The Gemini + OpenCV experiment (`src/gemini/incontext_barline_detector.py`) remains for reference but is no longer maintained as the primary detection flow.

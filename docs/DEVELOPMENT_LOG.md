@@ -2,6 +2,8 @@
 
 This document records the development history, key decisions, and learnings throughout the project.
 
+**Current focus (2025-09):** homr evaluator と oemer ベースラインの比較・改善ワークフローを中心に、共通指標による評価ログ整備と GPU 実行環境の安定化を進めている。最新フェーズの詳細は Phase 15 以降を参照。
+
 ## Phase 1: OMR-based Approach (Initial Attempt)
 
 -   **Goal:** Use a full-fledged Optical Music Recognition (OMR) library to convert the score to a machine-readable format (MusicXML) and extract barline information from it.
@@ -18,12 +20,12 @@ This document records the development history, key decisions, and learnings thro
 -   **Key Learning:** Rule-based computer vision is powerful but can be brittle. It requires extensive, manual parameter tuning and struggles to generalize.
 -   **Status:** This approach was **superseded**.
 
-## Phase 3: Gemini-OpenCV Hybrid Approach (Current)
+## Phase 3: Gemini-OpenCV Hybrid Approach (Historical)
 
 -   **Goal:** Leverage the strengths of both a powerful AI model and a robust image processing library.
 -   **Tools Used:** `add_measure_numbers.py`
 -   **Process:** Gemini for recognition, OpenCV for execution.
--   **Status:** This is the **current, active approach** for the project.
+-   **Status:** Historical prototype. 現在は homr/oemer ワークフローに軸足を移している。
 
 ## Phase 4: Environment Setup and Ground Truth Creation
 
@@ -269,3 +271,12 @@ This document records the development history, key decisions, and learnings thro
 - **アップデート (2025-09-28 01:05 JST):** homr evaluator の閾値スイープを追加実施。`min_height_factor` を 1.1/1.3、`max_width_factor` を 0.7/0.8/0.9 へ振ったが F1 は 0.104 (13TP/85FP/139FN, run: `logs/homr_eval/20250928T002852JST_tune_min12_max07/`) と前回水準に留まった。`min=1.3` では予測41本・Precision 0.244・Recall 0.066 (run: `logs/homr_eval/20250928T002639JST_tune_min13_max08`)、`min=1.1` は Precision 0.117・Recall 0.079 と僅差。スタッフ検出以降の前処理を見直さない限り Recall 改善は頭打ちと判断。
 - **アップデート (2025-09-28 01:06 JST):** `src/archive/oemer/run_omerer.py` を再設計し、oemer からバーライン座標を取得→原寸へ再スケール→ `logs/oemer_eval/<run_id>/` に検出 JSON・オーバーレイ・MusicXML・metrics を保存できるようにした。基準実行 `logs/oemer_eval/20250928T005938JST_baseline/` は TP=10 / FP=126 / FN=142 (Precision 0.074, Recall 0.066)。oemer も本数は多いが正解との重なりが少なく、`symbol_extraction` 周辺のフィルタ調整が必要。
 - **アップデート (2025-09-28 22:40 JST):** homr / oemer 共通のバーライン判定ロジックを刷新。IoU 算出前に細幅矩形へ最小幅＋余白パディングを適用し、`greedy_barline_match` で重複線／リピート記号を例外的に OK 判定へ送る枠組みを導入。あわせて homr 側では GT index 25 向け 2px 幅予測（左端のリピート柱）を強制 FP に戻す例外を付加。既存ログ (`20250928T001916JST_evaluator_page3_default`, `20250928T005938JST_baseline`) を新ロジックで再評価し、homr=TP95/FP2/FN57、oemer=TP120/FP3/FN32 まで改善。公式 run は時間節約のため未リラン。
+
+
+## 2025-09-28 Feedback: Avoid model/graph edits for GPU fallback
+- Night run で oemer の ConvTranspose CPU fallback を “モデル側パディング修正”等で解消していたが、
+  これは将来的な学習互換性や再現性にリスクがあるため採用しない。
+- 方針を修正：GPU fallback の解消は「環境・プロバイダ・ライブラリ設定」に限定し、
+  モデル定義・ONNXグラフ・重みは不変（read-only）とする。
+- 直近のモデル関連変更は破棄し、ブランチをクリーンに戻した。
+- 次回以降の night run はこの方針に基づいて再実行する。

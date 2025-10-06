@@ -8,6 +8,15 @@
 - 留意事項: 評価成果物は JST タイムスタンプ付きで `logs/homr_eval/` 等に保存し、再現手順を docs に記録する。
 - oemer 改造メモ: `src/archive/oemer/run_omerer.py` に `layers.get_layer("barlines")` の JSON 出力を追加し、`logs/oemer_eval/<timestamp>_baseline/` で metrics・オーバーレイを管理する。
 
+### 2025-10-06 01:59 JST
+- onnxruntime の CUDA プロバイダ設定（`cudnn_conv_use_max_workspace=1`, `cudnn_conv_algo_search=EXHAUSTIVE`）を `src/archive/oemer/run_omerer.py` へ組み込み、`logs/oemer_eval/20251006T015540JST_baseline/ort_profiles/` と `runtime/` にプロファイル・プロバイダ情報を保存。
+- homr (`logs/homr_eval/20251006T015717JST_official-gpu/`) と oemer (`logs/oemer_eval/20251006T015540JST_baseline/`) を再評価し、`logs/compare_homr_oemer_20251006T0159.md` に指標まとめを追加。
+
+### 2025-10-06 02:35 JST
+- `data/workbench/preprocessing/20251006T0218/` で vertical closing / top-hat の前処理を作成。homr は `20251006T021820JST_preproc-vclose` (TP104/FP4/FN48), `20251006T022024JST_preproc-tophat` (TP23/FP0/FN129)。oemer は `20251006T022205JST_baseline` (TP133/FP0/FN19) と `20251006T022313JST_baseline` (TP45/FP1/FN107)。
+- vertical closing の手法は `src/common/preprocessing.py` の `vertical_closing_blend` へ実装済み。CLI `tools/apply_vertical_closing.py` を (例: `homr/.venv/bin/python tools/apply_vertical_closing.py ...`) から `--kernel-height 7` / `--closing-blend 0.4` で再生成できる。現行成果物の再現例は `output/preprocessing_tests/page_3_vclose_test.png`。
+- homr 閾値スイープ (`20251006T022434JST_tune-min12-max08`, `20251006T022635JST_tune-min08-max12`) と oemer `OEMER_MIN_BARLINE_UNIT_RATIO` 調整 (`20251006T022916JST_baseline`, `20251006T023028JST_baseline`) を実施。結果サマリは `logs/experiments/20251006_preproc_threshold/README.md` に整理。
+
 
 ## プロジェクトの目標
 楽譜PDFを読み込み、小節番号を付与して新しいPDFとして出力するプログラムを作成する。
@@ -18,19 +27,20 @@
 ## 現在の課題と次のタスク
 
 **課題:**
-1.  **パフォーマンス（GPU未使用）:** oemer実行時にONNX Runtimeが `ConvTranspose` 処理でCPUへフォールバックしている旨の警告を多数出力しており、GPUの性能を最大限に活用できていない。
+1.  **パフォーマンス（GPUフォールバック監視）:** onnxruntime の Conv/ConvTranspose は CUDA 実行へ調整済み。`transformer_memcpy` 警告や ReduceProd の CPU 実行が残るため、プロファイルとプロバイダログを継続監視し、必要なら追加対策を検討する。
 2.  **検出漏れの存在（偽陰性）:** `oemer`のフィルタリングロジック導入により、誤検出は大幅に減ったものの、いくつかの本来検出されるべき小節線が検出されなくなっている。
 
 ### アクションプラン
 
 1. **homr / oemer の判定ロジック見直し**
-   - 共通マッチャの仕様をドキュメント化し、公式評価 run をリランして成果物を更新する。
+   - 共通マッチャの仕様を `docs/BARLINE_MATCHER.md` に集約し、公式評価 run と整合するように維持する。
+   - 公式評価 run をリランして成果物を更新する。
    - 例外処理を追加した左端リピート柱以外の FP 事例を洗い出し、必要なら追加ルールを検討する。
    - 完了済みの処理でほぼOKなのでこれ以上の改善は後回しでよい。
 
 2. **oemer 実行時の GPU フォールバック解消**
-   - ConvTranspose が CPU に落ちる原因（cuDNN 互換性・プロバイダ設定など）を調査し、コンテナ内ライブラリを調整して GPU 推論に戻す。
-   - GPU 化後に homr と同条件で性能を比較する。
+   - onnxruntime の CUDA プロバイダ設定（`cudnn_conv_use_max_workspace=1`, `cudnn_conv_algo_search=EXHAUSTIVE`）を `src/archive/oemer/run_omerer.py` へ組み込み、`logs/oemer_eval/<run>/runtime/` と `ort_profiles/` にプロファイル・ログを保存する。
+   - プロファイル付き再評価（homr `20251006T015717JST_official-gpu` / oemer `20251006T015540JST_baseline`）を基準に性能比較と追加調整を行う。
 
 3. **oemer 出力の homr 換算・可視化整備**
    - `run_omerer.py` を拡張し、homr と同形式の detections / metrics / オーバーレイを出力する。
@@ -47,7 +57,7 @@
 
 ## 完了済みタスク
 - **homr / oemer 判定ロジック改修と再評価:**
-  - 共通のバーラインマッチャを整備し、細幅線のパディング・重複判定・リピート例外処理を導入。既存ログで TP/FP が期待通りに再分類されることを確認した。
+  - 共通のバーラインマッチャを整備し、細幅線のパディング・重複判定・リピート例外処理を導入。詳細仕様は `docs/BARLINE_MATCHER.md` を参照。既存ログで TP/FP が期待通りに再分類されることを確認した。
 - **ML検出器の復元:**
   - 動作しなくなっていた`src/ml_detector/barline_detector.py`を、正常に実行できる状態まで復旧させた。
 - **MLベース検出器の実装とデバッグ:**
@@ -108,6 +118,10 @@
 - 2025-09-28 01:05 JST: homr evaluator で `barline_min_height_factor`×`barline_max_width_factor` を再スイープ (`logs/homr_eval/20250928T00*`)。F1 は 0.104 (13TP/85FP/139FN) で頭打ち、まずはオーバーレイで TP/FP/FN を分類して要因を整理し、その後に stem/clef 除去マスクの再設計を個別タスクとして進める。
 - 2025-09-28 01:06 JST: oemer 版 evaluator (`src/archive/oemer/run_omerer.py`) を整備し、`logs/oemer_eval/20250928T005938JST_baseline/` で TP=10 / FP=126 / FN=142 (Precision 0.074, Recall 0.066) を確認。`symbol_extraction.parse_barlines` の `min_height_unit_ratio` や `group_map` マスク調整を次ステップ候補に追加。
 - 2025-09-28: homr CLI (`logs/homr_eval/20250928T001723JST_homr_cli_page3/`) と evaluator (`logs/homr_eval/20250928T001916JST_evaluator_page3_default/`) の検出本数がともに105本で一致することを確認。次は `barline_min_height_factor` や前処理ロジックの調整、および oemer パイプラインのバウンディングボックス JSON 化を実施する。
+- 2025-10-06 01:32 JST: homr official evaluator (`logs/homr_eval/20251006T013220JST_official/`) => TP=95 / FP=2 / FN=57 (Precision 0.979, Recall 0.625, F1 0.763)。FP index 45 は system 5 付近の細片、index 83 は左端リピート柱 (GT25) 強制 FP。細片除去ロジックの再調整候補として記録。
+- 2025-10-06 01:35 JST: oemer baseline rerun (`logs/oemer_eval/20251006T013456JST_baseline/`) => TP=120 / FP=2 / FN=32 (Precision 0.984, Recall 0.789, F1 0.876)。FP index 29 は staff 0 上部の孤立縦片、index 58 は x=410px 付近の共通ノイズ。`min_height_unit_ratio` や連結成分フィルタでの除去を検討。
+- 2025-10-06 02:06 JST: oemer baseline (`logs/oemer_eval/20251006T020616JST_baseline/`) で `detections/`・`overlays/`・`params.json`・`run_config.json` を生成し、homr 互換レイアウトを確認。
+- 2025-10-06 02:35 JST: 前処理 (vertical closing / top-hat) と閾値スイープの結果を `logs/experiments/20251006_preproc_threshold/README.md` に集約。homr は vertical closing で TP104/FP4、oemer は TP133/FP0 まで改善。
 - homr 評価: `tools/run_homr_tuning.py` を `--images data/evaluation/images/page_3.png` と `--ground-truth page_3:data/evaluation/annotations/page_003/boxes_sorted.json` で実行し、各トライアルの `barline_min_height_factor` / `barline_max_width_factor` を記録。必ず `poetry run homr --debug` の結果と検出件数を突き合わせる。
 - homr 成果物: `logs/homr_eval/<timestamp>_homr_<desc>/` に `metrics.json` / `metrics.csv` / `compare.md` / `README.md` / オーバーレイ画像 (`tools/generate_barline_overlay.py`, `tools/render_barline_boxes_overlay.py`) を保存。タイムスタンプは JST。
 - oemer baseline: `docker exec pdf_score_dev_gpu bash -lc 'cd /workspace && python src/archive/oemer/run_omerer.py'` をベースに `layers.get_layer("barlines")` を JSON に書き出す処理を追加し、`logs/oemer_eval/<timestamp>_baseline/` に保存。必要に応じて `draw_teaser.py` を利用してオーバーレイを生成。

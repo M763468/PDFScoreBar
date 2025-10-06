@@ -19,6 +19,12 @@
 
 
 ## プロジェクトの目標
+### 2025-10-06 22:15 JST
+- PDF→PNG 変換のパラメータスイープを実施。`src/pdf_to_images.py` を拡張し、`.venv_pdf` で `pymupdf/opencv-python-headless/onnxruntime` 等を整備。`data/workbench/pdf_render/20251006T2038/` に `dpi144/200/288` × `area/linear/lanczos` の再サンプリング結果を生成。
+- homr 評価 (`logs/homr_eval/20251006T21xxxxJST_pdfdpi*`) と oemer 評価 (`output/oemer_eval_tests/20251006T21xxxxJST_pdfdpi*`) を CPU 実行で再取得。DPI 200 + area リサイズが最良 (homr F1=0.786, oemer F1=0.908)。高 DPI × lanczos/linear はリコール低下。
+- 詳細メトリクスと比較は `logs_user/experiments/20251006_pdf_render/README.md` を参照。GPU 環境での再現時は `OEMER_IMAGE_OVERRIDE` と `tools/apply_vertical_closing.py` を併用して同一画像群を供給すること。
+
+## プロジェクトの目標
 楽譜PDFを読み込み、小節番号を付与して新しいPDFとして出力するプログラムを作成する。
 
 ## 現在の主要アプローチ

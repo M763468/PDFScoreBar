@@ -277,6 +277,7 @@ This document records the development history, key decisions, and learnings thro
 - **アップデート (2025-10-06 02:06 JST):** `run_omerer.py` が homr 互換の成果物を出力（`detections/`, `overlays/`, `params.json`, `run_config.json`）。検証 run `logs/oemer_eval/20251006T020616JST_baseline/` で構成とメトリクスを確認。
 - **アップデート (2025-10-06 02:35 JST):** `logs/experiments/20251006_preproc_threshold/README.md` に homr/oemer の前処理・閾値スイープ結果を整理。homr vertical closing (`20251006T021820JST_preproc-vclose`) は TP104/FP4/FN48、oemer vertical closing (`20251006T022205JST_baseline`) は TP133/FP0/FN19 を達成。top-hat 系や過度な閾値変更では検出が大幅に低下。
 - **アップデート (2025-10-06 20:24 JST):** vertical closing 前処理を `src/common/preprocessing.py` に `vertical_closing_blend` として定義し、CLI `tools/apply_vertical_closing.py` (要 `homr/.venv`) を追加。`kernel_height=7` / `closing_blend=0.4` でテスト画像 (`output/preprocessing_tests/page_3_vclose_test.png`) を生成し、既存成果物の再現性を確認した。
+- **アップデート (2025-10-06 22:15 JST):** PDF→PNG レンダリングの DPI / 補間スイープを実施。`src/pdf_to_images.py` を CLI 化し、`data/workbench/pdf_render/20251006T2038/` に `dpi144/200/288` × `area/linear/lanczos` のページ画像を作成。CPU 実行ながら homr (`20251006T2125xxJST_pdfdpi*`) では `dpi200_area` が TP101/FP4/FN51 (F1=0.786)、oemer (`output/oemer_eval_tests/20251006T214400JST_pdfdpi200-area`) は TP128/FP2/FN24 (F1=0.908) とベースラインを上回った。結果サマリを `logs_user/experiments/20251006_pdf_render/README.md` に整理し、GPU 環境での再評価用に `.venv_pdf` 依存パッケージも列挙。
 
 
 

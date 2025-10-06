@@ -93,10 +93,10 @@
 
 ## 開発環境
 
--   **Dockerコンテナ:** `pdf_score_dev_gpu`
--   **プロジェクトディレクトリ:** `/workspace` (コンテナ内)
--   **Python環境:** コンテナ内のPython 3.10
--   **主要ライブラリ:** `opencv-python`, `numpy`, `Pillow`, `google-generativeai`
+-   **Dockerコンテナ:** `pdf_score_dev_gpu` (oemer / ユーティリティ), `homr_eval_gpu` (homr evaluator)
+-   **プロジェクトディレクトリ:** `/workspace` (各コンテナ共通)
+-   **Python環境:** コンテナ内の Python 3.10 (`homr_eval_gpu` では homr 専用 venv を利用)
+-   **主要ライブラリ:** `opencv-python`, `numpy`, `Pillow`, `google-generativeai`, `pymupdf`, `onnxruntime` など
 
 ## 申し送り事項
 
@@ -104,7 +104,8 @@
     -   SerenaのMCPサーバーとプロジェクトインデックスは、セッション開始時に`start.sh`により起動する必要がある。
     - 　編集機能などでエラーが発生したらserenaを停止してAIエージェント自身の機能を使う。
 -   **Dockerコンテナの起動:**
--   セッション開始時に、`docker start pdf_score_dev_gpu` コマンドでコンテナを起動すること。
+    -   homr 評価は `homr_eval_gpu`、oemer/ユーティリティは `pdf_score_dev_gpu` を使用する。
+    -   セッション開始時に `docker start pdf_score_dev_gpu homr_eval_gpu` で双方を起動し、用途ごとに使い分けること。
 -   **ドキュメント更新:**
     -   セッションの最後に、`DEVELOPMENT_LOG.md`, `NEXT_SESSION_NOTES.md`, `README.md` を更新し、進捗を記録すること。
 -   **テスト／型注釈の進め方:**

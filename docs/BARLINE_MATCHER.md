@@ -1,0 +1,51 @@
+# Shared Barline Matcher Specification
+
+## Overview
+The `src/common/barline_evaluation.py` module provides the shared matcher that both homr and oemer pipelines use for comparing predicted barline boxes against ground truth. The matcher normalises slender barline geometry, performs IoU-based greedy matching, and classifies near-miss cases so downstream reports can promote or demote detections consistently.
+
+## Geometry Normalisation
+- Each predicted and ground-truth box is padded via `expand_barline_box` before IoU measurement.
+- Default parameters (imported by both pipelines):
+  - `BARLINE_DEFAULT_MIN_WIDTH = 12`
+  - `BARLINE_X_MARGIN = 3`
+  - `BARLINE_Y_MARGIN = 3`
+- The padding keeps box centres fixed, guarantees a minimum width, and clamps to the image bounds when provided. This mitigates tiny-width discrepancies that otherwise drive IoU to zero.
+
+## Greedy Matching
+1. Build a dense IoU matrix using the padded boxes and the configured IoU threshold (`iou_threshold` is typically 0.5 in evaluators).
+2. While any IoU entries remain, greedily choose the highest-scoring pair and remove its row and column.
+3. Record the hard matches as `(prediction_index, ground_truth_index, iou)` tuples.
+
+During the matrix construction the matcher also records, for each prediction, two "best" references:
+- **Strong best** – requires vertical overlap ≥ `BARLINE_VERTICAL_OVERLAP_THRESHOLD` (0.6).
+- **Fallback best** – best IoU regardless of overlap, with tie-breaking by overlap then X-distance.
+These records feed the soft-match classification described below.
+
+## Duplicate & Repeat Classification
+After greedy pairing, unmatched predictions are revisited:
+- **Duplicate (`reason="duplicate"`)** when
+  - IoU with fallback best ≥ `BARLINE_DUPLICATE_IOU_THRESHOLD` (0.3) and
+  - X-distance ≤ `BARLINE_DUPLICATE_X_TOLERANCE` (12 px).
+- **Repeat-like (`reason="repeat_like"`)** when
+  - Vertical overlap ≥ `BARLINE_REPEAT_OVERLAP_THRESHOLD` (0.8),
+  - X-distance between duplicate tolerance and `BARLINE_REPEAT_X_TOLERANCE` (40 px).
+
+Predictions that do not satisfy either rule are treated as hard false positives.
+
+## Left-margin Exclusion Rule
+`apply_left_margin_exclusion` runs after matching to reclassify select detections as false positives. The homr evaluator currently uses:
+- `LEFT_MARGIN_FORCE_FP_GT_INDICES = {25}`
+- `LEFT_MARGIN_FORCE_FP_MAX_WIDTH = 2`
+
+For any match where the GT index is in the set and the predicted width ≤ 2 px, the detection is forcibly demoted to an FP and the GT becomes an FN. This covers the narrow repeat pillar on the left edge that we intentionally ignore.
+
+When `margin_x` is provided (unused at present) the helper also demotes predictions whose centres fall inside the margin alongside their matched GT centres, allowing configurable left gutter suppression for other scores.
+
+## Output Contract
+The matcher returns a `BarlineMatchResult` with:
+- `matches`: confirmed TP pairs
+- `false_positive_indices`: unmatched predictions after duplicate/repeat filtering
+- `false_negative_indices`: unmatched ground truth boxes
+- `soft_matches`: duplicate/repeat-like records that remain associated with their GT index but are not counted as TP.
+
+Evaluators serialise these results into `metrics.json`, `metrics.csv`, overlay images, and human-readable `compare.md` artefacts under `logs/<pipeline>/<timestamp>/`.

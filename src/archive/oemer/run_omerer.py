@@ -4,7 +4,11 @@
 from __future__ import annotations
 
 import importlib.util
+import functools
 import json
+import os
+import shutil
+import subprocess
 import sys
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
@@ -29,6 +33,7 @@ if str(OEMER_SRC) not in sys.path:
 
 from oemer import layers  # type: ignore
 from oemer.ete import clear_data, extract, teaser  # type: ignore
+from oemer import symbol_extraction as oemer_symbol_extraction  # type: ignore
 
 from common.barline_evaluation import (
     BarlineMatch,
@@ -112,7 +117,7 @@ def save_overlay(
 ) -> None:
     base = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
     if base is None:
-        raise RuntimeError(f"Failed to load base image: {image_path}")
+        raise RuntimeError(f"Failed to load base image: {source_path}")
     overlay = base.copy()
 
     matched_pred_indices = {m.pred_index for m in matches} if matches else set()
@@ -198,134 +203,262 @@ def main() -> None:
     run_root = REPO_ROOT / "logs/oemer_eval" / run_id("baseline")
     run_root.mkdir(parents=True, exist_ok=True)
 
-    gt_boxes = load_ground_truth(gt_path)
-    per_image_metrics: List[ImageMetrics] = []
+    provider_dump_dir = run_root / "runtime"
+    profile_dir = run_root / "ort_profiles"
+    detections_dir = run_root / "detections"
+    overlays_dir = run_root / "overlays"
+    provider_dump_dir.mkdir(parents=True, exist_ok=True)
+    profile_dir.mkdir(parents=True, exist_ok=True)
+    detections_dir.mkdir(parents=True, exist_ok=True)
+    overlays_dir.mkdir(parents=True, exist_ok=True)
 
-    for page in target_pages:
-        image_path = image_dir / f"page_{page}.png"
-        if not image_path.exists():
-            raise FileNotFoundError(f"Image not found: {image_path}")
+    prev_env = {}
+    env_updates = {
+        "OEMER_ORT_PROFILE_DIR": str(profile_dir),
+        "OEMER_PROVIDER_DUMP_DIR": str(provider_dump_dir),
+    }
+    optional_defaults = {
+        "OEMER_LOG_PROVIDERS": "1",
+        "OEMER_CUDNN_MAX_WORKSPACE": "1",
+        "OEMER_CUDNN_CONV_ALGO_SEARCH": "EXHAUSTIVE",
+    }
 
-        page_dir = run_root / image_path.stem
-        page_dir.mkdir(parents=True, exist_ok=True)
+    def set_env(key: str, value: str, *, overwrite: bool = True) -> None:
+        if key not in prev_env:
+            prev_env[key] = os.environ.get(key)
+        if overwrite or key not in os.environ:
+            os.environ[key] = value
 
-        clear_data()
-        args = type("Args", (), {
-            "img_path": str(image_path),
-            "output_path": str(page_dir / f"{image_path.stem}.musicxml"),
-            "use_tf": False,
-            "save_cache": False,
-            "without_deskew": False,
-        })()
+    set_env("OEMER_ORT_PROFILE_DIR", str(profile_dir))
+    set_env("OEMER_PROVIDER_DUMP_DIR", str(provider_dump_dir))
+    set_env("OEMER_LOG_PROVIDERS", "1", overwrite=False)
+    set_env("OEMER_CUDNN_MAX_WORKSPACE", "1", overwrite=False)
+    set_env("OEMER_CUDNN_CONV_ALGO_SEARCH", "EXHAUSTIVE", overwrite=False)
 
-        musicxml_path = Path(extract(args))
-        teaser_image = teaser()
-        teaser_path = page_dir / f"{image_path.stem}_teaser.png"
-        teaser_image.save(teaser_path)
+    tracked_keys = set(env_updates.keys()) | set(optional_defaults.keys())
+    runtime_env = {key: os.environ.get(key) for key in sorted(tracked_keys)}
 
-        boxes = extract_barline_boxes()
-        processed_image = layers.get_layer("original_image")
-        base_image = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
-        if base_image is None:
-            raise RuntimeError(f"Failed to load base image: {image_path}")
-        proc_h, proc_w = processed_image.shape[:2]
-        base_h, base_w = base_image.shape[:2]
-        scale_x = base_w / float(proc_w)
-        scale_y = base_h / float(proc_h)
-
-        scaled_boxes = [
-            (
-                int(round(x1 * scale_x)),
-                int(round(y1 * scale_y)),
-                int(round(x2 * scale_x)),
-                int(round(y2 * scale_y)),
+    original_symbol_extract = None
+    min_barline_ratio_env = os.environ.get("OEMER_MIN_BARLINE_UNIT_RATIO")
+    if min_barline_ratio_env:
+        runtime_env["OEMER_MIN_BARLINE_UNIT_RATIO"] = min_barline_ratio_env
+    if min_barline_ratio_env:
+        try:
+            min_barline_ratio = float(min_barline_ratio_env)
+            original_symbol_extract = oemer_symbol_extraction.extract
+            oemer_symbol_extraction.extract = functools.partial(
+                original_symbol_extract,
+                min_barline_h_unit_ratio=min_barline_ratio,
             )
-            for (x1, y1, x2, y2) in boxes
-        ]
+        except ValueError:
+            original_symbol_extract = None
 
-        predictions = [BarlinePrediction(orig_bbox=box) for box in scaled_boxes]
+    processed_images = []
 
-        detection_payload = {
-            "predictions": [
+    try:
+        gt_boxes = load_ground_truth(gt_path)
+        per_image_metrics: List[ImageMetrics] = []
+
+        for page in target_pages:
+            override_path = os.environ.get(f"OEMER_IMAGE_OVERRIDE_PAGE_{page}") or os.environ.get("OEMER_IMAGE_OVERRIDE")
+            source_path = Path(override_path) if override_path else image_dir / f"page_{page}.png"
+            if not source_path.exists():
+                raise FileNotFoundError(f"Image not found: {source_path}")
+
+            canonical_name = f"page_{page}"
+            page_dir = run_root / canonical_name
+            page_dir.mkdir(parents=True, exist_ok=True)
+            processed_images.append(str(source_path))
+
+            clear_data()
+            args = type("Args", (), {
+                "img_path": str(source_path),
+                "output_path": str(page_dir / f"{canonical_name}.musicxml"),
+                "use_tf": False,
+                "save_cache": False,
+                "without_deskew": False,
+            })()
+
+            musicxml_path = Path(extract(args))
+            teaser_image = teaser()
+            teaser_path = page_dir / f"{canonical_name}_teaser.png"
+            teaser_image.save(teaser_path)
+
+            boxes = extract_barline_boxes()
+            processed_image = layers.get_layer("original_image")
+            base_image = cv2.imread(str(source_path), cv2.IMREAD_COLOR)
+            if base_image is None:
+                raise RuntimeError(f"Failed to load base image: {source_path}")
+            proc_h, proc_w = processed_image.shape[:2]
+            base_h, base_w = base_image.shape[:2]
+            scale_x = base_w / float(proc_w)
+            scale_y = base_h / float(proc_h)
+
+            scaled_boxes = [
+                (
+                    int(round(x1 * scale_x)),
+                    int(round(y1 * scale_y)),
+                    int(round(x2 * scale_x)),
+                    int(round(y2 * scale_y)),
+                )
+                for (x1, y1, x2, y2) in boxes
+            ]
+
+            predictions = [BarlinePrediction(orig_bbox=box) for box in scaled_boxes]
+
+            detection_payload = {
+                "predictions": [
+                    {
+                        "barline_location": list(scaled),
+                        "source_bbox": list(raw),
+                    }
+                    for scaled, raw in zip(scaled_boxes, boxes)
+                ],
+                "meta": {
+                    "detector": "oemer",
+                    "image": str(source_path),
+                    "timestamp": timestamp_jst(),
+                    "scale": {"x": scale_x, "y": scale_y},
+                },
+            }
+            detection_path = page_dir / f"{canonical_name}_detections.json"
+            detection_json = json.dumps(detection_payload, indent=2, ensure_ascii=False)
+            detection_path.write_text(detection_json)
+            (detections_dir / f"{canonical_name}.json").write_text(detection_json)
+
+            metric, match_result = compute_metrics(predictions, gt_boxes, DEFAULT_IOU)
+            metric.image = canonical_name
+            per_image_metrics.append(metric)
+
+            overlay_path = page_dir / f"{canonical_name}_overlay.png"
+            save_overlay(
+                source_path,
+                scaled_boxes,
+                overlay_path,
+                matches=match_result.matches,
+                soft_matches=match_result.soft_matches,
+                false_positive_indices=match_result.false_positive_indices,
+            )
+            shutil.copyfile(overlay_path, overlays_dir / f"{canonical_name}.png")
+
+            if musicxml_path.exists() and musicxml_path.parent != page_dir:
+                target_path = page_dir / musicxml_path.name
+                target_path.write_bytes(musicxml_path.read_bytes())
+
+        aggregate = aggregate_metrics(per_image_metrics)
+        payload = {
+            "run_id": run_root.name,
+            "timestamp": timestamp_jst(),
+            "images": [
                 {
-                    "barline_location": list(scaled),
-                    "source_bbox": list(raw),
+                    **asdict(metric),
+                    "matches": [asdict(match) for match in metric.matches],
+                    "soft_matches": [asdict(sm) for sm in metric.soft_matches],
                 }
-                for scaled, raw in zip(scaled_boxes, boxes)
+                for metric in per_image_metrics
             ],
-            "meta": {
+            "aggregate": asdict(aggregate),
+            "extra": {
                 "detector": "oemer",
-                "image": str(image_path),
-                "timestamp": timestamp_jst(),
-                "scale": {"x": scale_x, "y": scale_y},
+                "ground_truth": {metric.image: str(gt_path) for metric in per_image_metrics},
+                "iou_threshold": DEFAULT_IOU,
             },
         }
-        (page_dir / f"{image_path.stem}_detections.json").write_text(
-            json.dumps(detection_payload, indent=2, ensure_ascii=False)
-        )
+        (run_root / "metrics.json").write_text(json.dumps(payload, indent=2, ensure_ascii=False))
 
-        metric, match_result = compute_metrics(predictions, gt_boxes, DEFAULT_IOU)
-        metric.image = image_path.stem
-        per_image_metrics.append(metric)
-
-        save_overlay(
-            image_path,
-            scaled_boxes,
-            page_dir / f"{image_path.stem}_overlay.png",
-            matches=match_result.matches,
-            soft_matches=match_result.soft_matches,
-            false_positive_indices=match_result.false_positive_indices,
-        )
-
-        if musicxml_path.exists() and musicxml_path.parent != page_dir:
-            target_path = page_dir / musicxml_path.name
-            target_path.write_bytes(musicxml_path.read_bytes())
-
-    aggregate = aggregate_metrics(per_image_metrics)
-    payload = {
-        "run_id": run_root.name,
-        "timestamp": timestamp_jst(),
-        "images": [
-            {
-                **asdict(metric),
-                "matches": [asdict(match) for match in metric.matches],
-                "soft_matches": [asdict(sm) for sm in metric.soft_matches],
-            }
-            for metric in per_image_metrics
-        ],
-        "aggregate": asdict(aggregate),
-        "extra": {
-            "detector": "oemer",
-            "ground_truth": {metric.image: str(gt_path) for metric in per_image_metrics},
-            "iou_threshold": DEFAULT_IOU,
-        },
-    }
-    (run_root / "metrics.json").write_text(json.dumps(payload, indent=2, ensure_ascii=False))
-
-    csv_lines = [
-        "image,num_predictions,num_ground_truth,true_positives,false_positives,false_negatives,precision,recall,f1",
-    ]
-    for metric in per_image_metrics:
+        csv_lines = [
+            "image,num_predictions,num_ground_truth,true_positives,false_positives,false_negatives,precision,recall,f1",
+        ]
+        for metric in per_image_metrics:
+            csv_lines.append(
+                f"{metric.image},{metric.num_predictions},{metric.num_ground_truth},{metric.true_positives},{metric.false_positives},{metric.false_negatives},{metric.precision:.6f},{metric.recall:.6f},{metric.f1:.6f}"
+            )
         csv_lines.append(
-            f"{metric.image},{metric.num_predictions},{metric.num_ground_truth},{metric.true_positives},{metric.false_positives},{metric.false_negatives},{metric.precision:.6f},{metric.recall:.6f},{metric.f1:.6f}"
+            f"aggregate,-,-,{aggregate.true_positives},{aggregate.false_positives},{aggregate.false_negatives},{aggregate.precision:.6f},{aggregate.recall:.6f},{aggregate.f1:.6f}"
         )
-    csv_lines.append(
-        f"aggregate,-,-,{aggregate.true_positives},{aggregate.false_positives},{aggregate.false_negatives},{aggregate.precision:.6f},{aggregate.recall:.6f},{aggregate.f1:.6f}"
-    )
-    (run_root / "metrics.csv").write_text("\n".join(csv_lines) + "\n")
+        (run_root / "metrics.csv").write_text("\n".join(csv_lines) + "\n")
 
-    summary = [
-        "# oemer Evaluation Run",
-        f"- Run ID: {run_root.name}",
-        f"- Timestamp: {timestamp_jst()}",
-        f"- Images processed: {len(per_image_metrics)}",
-        f"- Ground truth: {gt_path}",
-        "",
-        "Outputs are stored per image under this directory.",
-    ]
-    (run_root / "README.md").write_text("\n".join(summary) + "\n")
+        summary = [
+            "# oemer Evaluation Run",
+            f"- Run ID: {run_root.name}",
+            f"- Timestamp: {timestamp_jst()}",
+            f"- Images processed: {len(per_image_metrics)}",
+            f"- Ground truth: {gt_path}",
+            "",
+            "Outputs are stored per image under this directory.",
+        ]
+        (run_root / "README.md").write_text("\n".join(summary) + "\n")
 
-    print(f"oemer evaluation artifacts written to {run_root}")
+        params = {
+            "images": processed_images,
+            "ground_truth": str(gt_path),
+            "target_pages": target_pages,
+            "iou_threshold": DEFAULT_IOU,
+            "provider_dump_dir": str(provider_dump_dir),
+            "profile_dir": str(profile_dir),
+            "runtime_env": runtime_env,
+        }
+        (run_root / "params.json").write_text(json.dumps(params, indent=2, ensure_ascii=False))
+
+        git_commit = git_branch = git_status = None
+        try:
+            git_commit = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+        except subprocess.CalledProcessError:
+            pass
+        try:
+            git_branch = subprocess.run(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+        except subprocess.CalledProcessError:
+            pass
+        try:
+            git_status = subprocess.run(
+                ["git", "status", "-sb"],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+        except subprocess.CalledProcessError:
+            pass
+
+        run_config = {
+            "run_id": run_root.name,
+            "timestamp": timestamp_jst(),
+            "command": "python src/archive/oemer/run_omerer.py",
+            "images": processed_images,
+            "ground_truth": str(gt_path),
+            "target_pages": target_pages,
+            "provider_dump_dir": str(provider_dump_dir),
+            "ort_profile_dir": str(profile_dir),
+            "runtime_env": runtime_env,
+            "git": {
+                "commit": git_commit,
+                "branch": git_branch,
+                "status": git_status,
+            },
+        }
+        (run_root / "run_config.json").write_text(json.dumps(run_config, indent=2, ensure_ascii=False))
+
+        print(f"oemer evaluation artifacts written to {run_root}")
+    finally:
+        if original_symbol_extract is not None:
+            oemer_symbol_extraction.extract = original_symbol_extract
+        for key, value in prev_env.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
 
 
 if __name__ == "__main__":

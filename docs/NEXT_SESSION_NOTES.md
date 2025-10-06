@@ -18,11 +18,10 @@
 - homr 閾値スイープ (`20251006T022434JST_tune-min12-max08`, `20251006T022635JST_tune-min08-max12`) と oemer `OEMER_MIN_BARLINE_UNIT_RATIO` 調整 (`20251006T022916JST_baseline`, `20251006T023028JST_baseline`) を実施。結果サマリは `logs/experiments/20251006_preproc_threshold/README.md` に整理。
 
 
-## プロジェクトの目標
 ### 2025-10-06 22:15 JST
-- PDF→PNG 変換のパラメータスイープを実施。`src/pdf_to_images.py` を拡張し、`.venv_pdf` で `pymupdf/opencv-python-headless/onnxruntime` 等を整備。`data/workbench/pdf_render/20251006T2038/` に `dpi144/200/288` × `area/linear/lanczos` の再サンプリング結果を生成。
-- homr 評価 (`logs/homr_eval/20251006T21xxxxJST_pdfdpi*`) と oemer 評価 (`output/oemer_eval_tests/20251006T21xxxxJST_pdfdpi*`) を CPU 実行で再取得。DPI 200 + area リサイズが最良 (homr F1=0.786, oemer F1=0.908)。高 DPI × lanczos/linear はリコール低下。
-- 詳細メトリクスと比較は `logs_user/experiments/20251006_pdf_render/README.md` を参照。GPU 環境での再現時は `OEMER_IMAGE_OVERRIDE` と `tools/apply_vertical_closing.py` を併用して同一画像群を供給すること。
+- PDF→PNG 変換パラメータをスイープし、`src/pdf_to_images.py` の CLI 化と `.venv_pdf` 環境整備（`pymupdf`, `opencv-python-headless`, `onnxruntime` など）を実施。出力は `data/workbench/pdf_render/20251006T2038/` に保存。
+- homr (`logs/homr_eval/20251006T21xxxxJST_pdfdpi*`) と oemer (`output/oemer_eval_tests/20251006T21xxxxJST_pdfdpi*`) を CPU 実行で再評価。`dpi=200` + area リサイズが現状ベスト (homr F1=0.786, oemer F1=0.908)。高 DPI × lanczos/linear はリコールが悪化。
+- 詳細メトリクスは `logs_user/experiments/20251006_pdf_render/README.md` に集約。GPU 再検証時は `OEMER_IMAGE_OVERRIDE` と `tools/apply_vertical_closing.py` で同一画像を生成する。
 
 ## プロジェクトの目標
 楽譜PDFを読み込み、小節番号を付与して新しいPDFとして出力するプログラムを作成する。
@@ -33,34 +32,25 @@
 ## 現在の課題と次のタスク
 
 **課題:**
-1.  **パフォーマンス（GPUフォールバック監視）:** onnxruntime の Conv/ConvTranspose は CUDA 実行へ調整済み。`transformer_memcpy` 警告や ReduceProd の CPU 実行が残るため、プロファイルとプロバイダログを継続監視し、必要なら追加対策を検討する。
-2.  **検出漏れの存在（偽陰性）:** `oemer`のフィルタリングロジック導入により、誤検出は大幅に減ったものの、いくつかの本来検出されるべき小節線が検出されなくなっている。
+1.  **GPU 環境との差分検証:** PDF→PNG 再サンプリング結果は CPU 実行のみ。GPU コンテナでの homr/oemer 精度とパフォーマンスを確認し、比較ログを更新する必要がある。
+2.  **oemer ランナーの柔軟性不足:** `run_omerer.py` が環境変数オーバーライドや CPU 実行時の権限問題に対応しておらず、カスタムコピーが必要になっている。
+3.  **パフォーマンス警告の監視:** CUDA 実行時の `transformer_memcpy` 警告や一部演算の CPU フォールバックが引き続き発生している。
+4.  **偽陰性の残存:** homr/oemer ともに符幹・縦片で取りこぼしがあり、追加フィルタとマスク設計が未完了。
 
 ### アクションプラン
 
-1. **homr / oemer の判定ロジック見直し**
-   - 共通マッチャの仕様を `docs/BARLINE_MATCHER.md` に集約し、公式評価 run と整合するように維持する。
-   - 公式評価 run をリランして成果物を更新する。
-   - 例外処理を追加した左端リピート柱以外の FP 事例を洗い出し、必要なら追加ルールを検討する。
-   - 完了済みの処理でほぼOKなのでこれ以上の改善は後回しでよい。
-
-2. **oemer 実行時の GPU フォールバック解消**
-   - onnxruntime の CUDA プロバイダ設定（`cudnn_conv_use_max_workspace=1`, `cudnn_conv_algo_search=EXHAUSTIVE`）を `src/archive/oemer/run_omerer.py` へ組み込み、`logs/oemer_eval/<run>/runtime/` と `ort_profiles/` にプロファイル・ログを保存する。
-   - プロファイル付き再評価（homr `20251006T015717JST_official-gpu` / oemer `20251006T015540JST_baseline`）を基準に性能比較と追加調整を行う。
-
-3. **oemer 出力の homr 換算・可視化整備**
-   - `run_omerer.py` を拡張し、homr と同形式の detections / metrics / オーバーレイを出力する。
-   - `group_map` など中間マップを保存して、判定ロジック改修時に参照できるようにする。
-
-4. **前処理パイプライン検討とミニ実験**
-   - PDF→PNG 変換時の解像度・補間方式や staff 単位クロップ（GTもstaff単位cropして比較しないとページ単位でとして過去の実験と整合性が取れないことに注意）などのパイプライン案を整理する。
-   - 照度補正、縦線モルフォロジ、top-hat 等の前処理を homr/oemer 両方で小規模評価し、結果を統一形式で記録する。
-
-5. **個別モデルの閾値・マスク調整**
-   - homr: stem/clef 除去マスクを再設計し、`barline_min_height_factor` / `barline_max_width_factor` を再チューニングする。
-   - oemer: `min_height_unit_ratio` などの閾値を調整し、可視化で検証する。
-
-
+1. **PDF レンダリングの GPU 再評価**
+   - `pdf_score_dev_gpu` コンテナで `src/pdf_to_images.py` を使用し、`dpi=200`/`area` を含むレンダリングを再生成。
+   - homr/oemer を GPU 設定で実行し、`logs/compare_homr_oemer_*.md` と `logs_user/experiments/20251006_pdf_render/README.md` を更新。
+   - CPU 結果との差分（TP/FP/FN・プロファイル）を記録し、再現手順を明文化。
+2. **oemer ランナーの環境対応**
+   - `run_omerer.py` に `OEMER_OUTPUT_ROOT`・`OEMER_RUN_PREFIX` などの環境変数を正式サポートし、CPU 実行時でも書き込み/抽出が失敗しないようエラーハンドリングを追加。
+   - `.venv_pdf` で使用した依存パッケージを `docs/ENVIRONMENTS.md` へ追記し、CPU フォールバック手順を共有。
+3. **マッチャ/フィルタ調整の継続**
+   - 共有マッチャ仕様 (`docs/BARLINE_MATCHER.md`) と実装差異を定期的に照合し、縦片に対する例外処理やマスク調整を検討。
+   - 偽陰性が集中する座標をホットスポットとして `logs/homr_eval/`・`logs/oemer_eval/` のオーバーレイにタグ付けする。
+4. **GPU プロバイダ監視**
+   - onnxruntime のプロバイダ/プロファイルログを定期点検し、必要に応じてライブラリ更新や env チューニングを記録。
 ## 完了済みタスク
 - **homr / oemer 判定ロジック改修と再評価:**
   - 共通のバーラインマッチャを整備し、細幅線のパディング・重複判定・リピート例外処理を導入。詳細仕様は `docs/BARLINE_MATCHER.md` を参照。既存ログで TP/FP が期待通りに再分類されることを確認した。

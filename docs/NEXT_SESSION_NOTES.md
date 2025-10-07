@@ -37,17 +37,21 @@
 3.  **パフォーマンス警告の監視:** CUDA 実行時の `transformer_memcpy` 警告や一部演算の CPU フォールバックが引き続き発生している。
 4.  **偽陰性の残存:** homr/oemer ともに符幹・縦片で取りこぼしがあり、追加フィルタとマスク設計が未完了。
 
-### アクションプラン
+### 次回タスクリスト (優先度順)
 
-1. **マッチャ/フィルタ調整の継続**
-   - 共有マッチャ仕様 (`docs/BARLINE_MATCHER.md`) と実装差異を定期的に照合し、縦片に対する例外処理やマスク調整を検討。
-   - 偽陰性が集中する座標をホットスポットとして `logs/homr_eval/`・`logs/oemer_eval/` のオーバーレイにタグ付けする。
-2. **GPU プロバイダ監視**
-   - onnxruntime のプロバイダ/プロファイルログを定期点検し、必要に応じてライブラリ更新や env チューニングを記録。
-3. **SVC モデル互換性の調査**
-   - 2025-10-07: `rests.model` をコンテナ内でロードし、`scikit-learn 1.7.2` 実行環境で `InconsistentVersionWarning` (学習時 `SVC`=1.2.0) が再現することを確認。
-   - 対応案: (a) GPU / CPU 両イメージで `scikit-learn==1.2.0` にダウングレードする（他依存への影響を pipdeptree で確認）、(b) 1.7.2 相当で再エクスポートした `sklearn_models/*.model` を用意する。
-   - 決定待ち: どちらの方針を採用するか合意し、Dockerfile への反映とリグレッションチェック手順を整理する。
+1. **SVC モデル互換性の解消**
+   - `sklearn_models/*.model` をロードした際の `InconsistentVersionWarning (学習 SVC=1.2.0, 実行 scikit-learn 1.7.2)` を解消する。
+   - 手順候補: (a) 両 Docker イメージで `scikit-learn==1.2.0` へピン留めし、`pipdeptree` で依存衝突がないか確認する。(b) 現行 1.7.2 環境でモデルを再エクスポートして差し替え、Regression run で指標差分を確認する。
+   - 決定後は Dockerfile / docs / blockers を更新し、`logs/oemer_eval` のリランで警告が消えたことを証跡化する。
+2. **GPU プロバイダ・transformer_memcpy 監視の再実施**
+   - 最新イメージで homr / oemer を GPU 実行し、`ort_providers.json` / ORT プロファイルを再取得する。
+   - `transformer_memcpy` 警告が残る場合は onnxruntime 設定や CUDA バージョンを追加調整し、調査結果を `logs/night_run/` と docs に反映する。
+3. **偽陰性ホットスポットのマーキングとマッチャ調整**
+   - `logs/homr_eval/`・`logs/oemer_eval/` のオーバーレイに FN ホットスポットを注記し、縦片・符幹の取りこぼしを特定する。
+   - `docs/BARLINE_MATCHER.md` と実装を突き合わせ、必要なら前処理マスクや `greedy_barline_match` の例外処理を更新する。
+4. **run_omerer 環境変数サポートのスモークテスト整備**
+   - `OEMER_*` 環境変数経由でのパス解決・失敗ハンドリングをカバーする簡易テスト or スクリプトを追加し、将来の依存更新での回 regressions を防ぐ。
+   - CLI 例: `python -m pytest` 代替の軽量チェックや `tools/` 補助スクリプトを用意し、ドキュメント化する。
 ## 完了済みタスク
 - **GPU 再評価・ランナー拡張 (2025-10-07):** `src/pdf_to_images.py` で生成した `20251007T011612JST_gpu` の PNG を用いて homr/oemer を GPU 実行。`logs/homr_eval/20251007T015010JST_pdfdpi_gpu` と `logs/oemer_eval/20251007T021852JST_pdfdpi_gpu_dpi144_area` 〜 `20251007T022310JST_pdfdpi_gpu_dpi288_lanczos` に成果物を整理し、`run_omerer.py` に出力先・画像・GT の環境変数サポートと MusicXML 例外処理を追加。`logs_user/experiments/20251006_pdf_render/README.md` に GPU 指標を追記。
 - **Docker イメージの再ビルド (2025-10-07):** `pdf_score_dev_gpu:20251007b` / `homr_eval:20251007b` を構築し、各コンテナを再作成。pip / poetry で依存導入を確認し、onnxruntime と torch の GPU 利用を検証済み。tzdata も同梱し、ZoneInfo('Asia/Tokyo') の利用エラーを解消。

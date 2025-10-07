@@ -46,27 +46,25 @@ PRE-RUN INTEGRITY CHECK (MANDATORY)
 
 # === Tasks ===
 
-TASK 1: Docker / コンテナ環境整備
-- `.venv_pdf` で判明した依存（pymupdf, opencv-python-headless, onnxruntime, pillow, scipy, scikit-learn, matplotlib など）を `pdf_score_dev_gpu` / `homr_eval_gpu` イメージへ取り込み、GPU 実行時も CPU フォールバックがコンテナ内で完結するようにする。
-- Dockerfile の更新・再ビルド・タグ付け・コンテナ再構築・動作確認を実施し、変更点は `docs/ENVIRONMENTS.md`, `docs/DEVELOPMENT_LOG.md`, `docs/NEXT_SESSION_NOTES.md` などに記録する。
+TASK 1: SVC / scikit-learn 互換性の解消
+- `sklearn_models/*.model` を読み込む際の `InconsistentVersionWarning (SVC 1.2.0 → scikit-learn 1.7.2)` を解決する。
+- アプローチを決定する: (a) GPU / CPU イメージの `scikit-learn` を 1.2.0 にピン留めし、副作用を `pipdeptree` で確認する。(b) 現行 1.7.2 環境でモデルを再エクスポートして差し替える。
+- 選択した方針を Dockerfile・docs に反映し、再ビルド後に oemer を再実行して警告が消えたことを `logs/night_run/` に記録する。
 
-TASK 2: PDF→PNG パラメータの GPU 再評価
-- `pdf_score_dev_gpu` / `homr_eval_gpu` で `src/pdf_to_images.py` を用いて `dpi=200` + area（および比較用の設定）を再レンダリング。必要な場合 `OEMER_IMAGE_OVERRIDE` などを活用。
-- homr・oemer を GPU 設定で再実行し、`logs/compare_homr_oemer_*.md` と `logs_user/experiments/20251006_pdf_render/README.md` に CPU 結果との差分（TP/FP/FN、推論時間、プロファイルなど）を追記。
-- 上記作業で環境や依存が変わった場合は TASK 1 の要領で Docker イメージを更新し、ドキュメントにも反映する。
+TASK 2: GPU プロバイダ / transformer_memcpy 監視の再実施
+- Rebuilt イメージで homr / oemer を GPU 実行し、`runtime/`・`ort_profiles/`・プロバイダダンプを再取得する。
+- `transformer_memcpy` などの警告が残る場合は onnxruntime 設定・CUDA バージョン・環境変数を調整し、改善内容と結果を docs / logs にまとめる。
+- 調整に伴う依存変更は Docker イメージへ反映し、検証コマンド (`pip list`, `onnxruntime.get_device()`) を添付する。
 
-TASK 3: oemer ランナーの環境対応強化
-- `run_omerer.py` に `OEMER_OUTPUT_ROOT`, `OEMER_RUN_PREFIX`, `OEMER_IMAGE_DIR`, `OEMER_GROUND_TRUTH` などの環境変数を正式サポートし、CPU 実行時でも書き込みや MusicXML 抽出が失敗しないようにエラーハンドリングを整備。
-- `.venv_pdf` 相当の依存が必要な場合は Docker イメージにも取り込み、変更が生じたら再ビルド＋ドキュメント更新を行う。
-- 変更内容と手順を `docs/ENVIRONMENTS.md`、`docs/DEVELOPMENT_LOG.md` に追記。
+TASK 3: 偽陰性ホットスポットのマーキングとマッチャ調整
+- `logs/homr_eval/` と `logs/oemer_eval/` のオーバーレイへ FN ホットスポット注記を追加し、縦片・符幹の取りこぼしを可視化する。
+- `docs/BARLINE_MATCHER.md` と実装を突き合わせて調整案を検証し、必要に応じて前処理・マスク・マッチャ例外処理を更新する。
+- 変更の効果を再評価し、指標差分を `logs/compare_homr_oemer_*.md` および実験 README に追記する。
 
-TASK 4: GPU プロバイダ・パフォーマンス監視
-- CUDA 実行時の `transformer_memcpy` 警告や部分的な CPU フォールバックを再点検し、必要に応じて onnxruntime／CUDA 設定やライブラリバージョンの調整を記録。
-- 調整により環境が変わる場合は Docker イメージ更新とドキュメント反映を忘れず実施。
-
-TASK 5: 精度向上施策の継続
-- 偽陰性ホットスポット分析（縦片・符幹の除去）、マスク／閾値調整、追加前処理検証など、精度改善を目的とした試行を計画的に実施。
-- 結果は `logs/` 配下に整理し、学びを `docs/DEVELOPMENT_LOG.md`, `docs/NEXT_SESSION_NOTES.md` へ反映。
+TASK 4: run_omerer 環境変数サポートのスモークテスト整備
+- `OEMER_OUTPUT_ROOT` 等の環境変数が正しく解決されることを確認するスモークテストまたは補助スクリプトを追加する。
+- MusicXML 生成失敗時のハンドリング (extract_error.txt 等) もカバーし、回帰発生時に再現できるよう手順を docs に記録する。
+- テスト実行結果は `logs/night_run/steps.ndjson` と `DEVELOPMENT_LOG.md` へ残す。
 
 EXECUTION
 - Start now under these rules.

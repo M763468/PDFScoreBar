@@ -308,3 +308,8 @@ This document records the development history, key decisions, and learnings thro
 
 - homr GPU スイープ (`logs/homr_eval/20251007T015010JST_pdfdpi_gpu/`) のメトリクスを整理し、各バリアントの入力パスと TP/FP/FN を `Variant Summary` として README に追記。`logs_user/experiments/20251006_pdf_render/README.md` へも GPU 版テーブルと観察メモを追加し、CPU/GPU の差分を横比較できるようにした。
 - oemer の `sklearn_models/rests.model` をコンテナ上で読み込み、実行時 `scikit-learn 1.7.2` と学習時 `SVC 1.2.0` の不整合で `InconsistentVersionWarning` が出ることを確認。`NEXT_SESSION_NOTES.md` にダウングレード (==1.2.0) とモデル再エクスポートの 2 案を明記し、`logs/night_run/blockers.md` にも記録。
+
+## 2025-10-08 Decision: scikit-learn downgrade path
+
+- SVC ピクル (`sklearn_models/*.model`) の互換性問題に対し、当面はコンテナ内の `scikit-learn` を 1.2.0 へダウングレードする方針を採択。`pipdeptree` で依存関係を確認しつつ Dockerfile を更新し、リビルド後に oemer を再実行して警告が解消されたことを記録する。
+- 1.7.2 での再エクスポート（案B）はログを保持したまま保留。将来的にモデルファインチューニング等を行う際に再検討し、再エクスポート時にバージョン管理を整理する。

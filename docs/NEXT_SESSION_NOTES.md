@@ -41,8 +41,9 @@
 
 1. **SVC モデル互換性の解消**
    - `sklearn_models/*.model` をロードした際の `InconsistentVersionWarning (学習 SVC=1.2.0, 実行 scikit-learn 1.7.2)` を解消する。
-   - 手順候補: (a) 両 Docker イメージで `scikit-learn==1.2.0` へピン留めし、`pipdeptree` で依存衝突がないか確認する。(b) 現行 1.7.2 環境でモデルを再エクスポートして差し替え、Regression run で指標差分を確認する。
-   - 決定後は Dockerfile / docs / blockers を更新し、`logs/oemer_eval` のリランで警告が消えたことを証跡化する。
+   - **方針:** 当面は両 Docker イメージで `scikit-learn==1.2.0` へダウングレードし、`pipdeptree` で依存衝突がないか確認した上で再ビルド・検証する。
+   - 案B（1.7.2 環境でモデル再エクスポート）はログを残したまま保留し、将来的にファインチューニングやモデル更新が必要になった際に再検討する。
+   - ダウングレード後は Dockerfile / docs / blockers を更新し、`logs/oemer_eval` のリランで警告が消えたことを証跡化する。
 2. **GPU プロバイダ・transformer_memcpy 監視の再実施**
    - 最新イメージで homr / oemer を GPU 実行し、`ort_providers.json` / ORT プロファイルを再取得する。
    - `transformer_memcpy` 警告が残る場合は onnxruntime 設定や CUDA バージョンを追加調整し、調査結果を `logs/night_run/` と docs に反映する。

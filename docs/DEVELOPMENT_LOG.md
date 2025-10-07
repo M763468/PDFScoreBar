@@ -304,3 +304,7 @@ This document records the development history, key decisions, and learnings thro
 - oemer ランナー (`src/archive/oemer/run_omerer.py`) を環境変数駆動に拡張。`OEMER_OUTPUT_ROOT`・`OEMER_RUN_PREFIX`・`OEMER_IMAGE_DIR`・`OEMER_IMAGE_OVERRIDE`・`OEMER_GROUND_TRUTH`・`OEMER_TARGET_PAGES` を解釈し、MusicXML 生成失敗時も `extract_error.txt` 等を出力しつつ評価を継続できるようにした。
 - 上記拡張後に GPU 実行を再開し、`logs/oemer_eval/20251007T021852JST_pdfdpi_gpu_dpi144_area`〜`20251007T022310JST_pdfdpi_gpu_dpi288_lanczos` を生成。dpi200_area で TP=134 / FP=3 / FN=18 (F1=0.927) を達成し、CPU 時 (F1=0.908) より Recall が改善したことを確認。
 
+## 2025-10-07 Late-night Sync: GPU evaluation docs & sklearn warning
+
+- homr GPU スイープ (`logs/homr_eval/20251007T015010JST_pdfdpi_gpu/`) のメトリクスを整理し、各バリアントの入力パスと TP/FP/FN を `Variant Summary` として README に追記。`logs_user/experiments/20251006_pdf_render/README.md` へも GPU 版テーブルと観察メモを追加し、CPU/GPU の差分を横比較できるようにした。
+- oemer の `sklearn_models/rests.model` をコンテナ上で読み込み、実行時 `scikit-learn 1.7.2` と学習時 `SVC 1.2.0` の不整合で `InconsistentVersionWarning` が出ることを確認。`NEXT_SESSION_NOTES.md` にダウングレード (==1.2.0) とモデル再エクスポートの 2 案を明記し、`logs/night_run/blockers.md` にも記録。

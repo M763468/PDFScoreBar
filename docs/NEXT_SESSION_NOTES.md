@@ -45,7 +45,9 @@
 2. **GPU プロバイダ監視**
    - onnxruntime のプロバイダ/プロファイルログを定期点検し、必要に応じてライブラリ更新や env チューニングを記録。
 3. **SVC モデル互換性の調査**
-   - oemer 実行時に発生する `InconsistentVersionWarning (SVC 1.2.0 → scikit-learn 1.7.2)` の解消方針を検討。互換性のある scikit-learn wheel を用意するか、モデル資産を再生成するための手順を整理する。
+   - 2025-10-07: `rests.model` をコンテナ内でロードし、`scikit-learn 1.7.2` 実行環境で `InconsistentVersionWarning` (学習時 `SVC`=1.2.0) が再現することを確認。
+   - 対応案: (a) GPU / CPU 両イメージで `scikit-learn==1.2.0` にダウングレードする（他依存への影響を pipdeptree で確認）、(b) 1.7.2 相当で再エクスポートした `sklearn_models/*.model` を用意する。
+   - 決定待ち: どちらの方針を採用するか合意し、Dockerfile への反映とリグレッションチェック手順を整理する。
 ## 完了済みタスク
 - **GPU 再評価・ランナー拡張 (2025-10-07):** `src/pdf_to_images.py` で生成した `20251007T011612JST_gpu` の PNG を用いて homr/oemer を GPU 実行。`logs/homr_eval/20251007T015010JST_pdfdpi_gpu` と `logs/oemer_eval/20251007T021852JST_pdfdpi_gpu_dpi144_area` 〜 `20251007T022310JST_pdfdpi_gpu_dpi288_lanczos` に成果物を整理し、`run_omerer.py` に出力先・画像・GT の環境変数サポートと MusicXML 例外処理を追加。`logs_user/experiments/20251006_pdf_render/README.md` に GPU 指標を追記。
 - **Docker イメージの再ビルド (2025-10-07):** `pdf_score_dev_gpu:20251007b` / `homr_eval:20251007b` を構築し、各コンテナを再作成。pip / poetry で依存導入を確認し、onnxruntime と torch の GPU 利用を検証済み。tzdata も同梱し、ZoneInfo('Asia/Tokyo') の利用エラーを解消。

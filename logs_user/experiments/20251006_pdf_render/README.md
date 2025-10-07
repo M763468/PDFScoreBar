@@ -2,7 +2,7 @@
 
 This experiment renders `data/evaluation/pdfs/おもちゃの交響曲_bass.pdf` page 3 with varying DPI and interpolation settings via the new `src/pdf_to_images.py` helper. All images are resized back to the baseline height 792 px (width 593 px) to keep detector input resolutions consistent. Rendered assets live under `data/workbench/pdf_render/20251006T2038/`.
 
-Homr and oemer were re-evaluated against `data/evaluation/annotations/page_003/boxes_sorted.json` using the generated images. Runs were executed on CPU (no CUDA providers available), so timings are not comparable to container GPU runs.
+Homr and oemer were re-evaluated against `data/evaluation/annotations/page_003/boxes_sorted.json` using the generated images. The initial sweep ran on CPU (no CUDA providers available), and we repeated the best settings on the rebuilt GPU containers (`pdf_score_dev_gpu:20251007b`, `homr_eval:20251007b`) for direct comparison; timings are therefore reported separately.
 
 ## Image Variants
 
@@ -25,6 +25,16 @@ Homr and oemer were re-evaluated against `data/evaluation/annotations/page_003/b
 | dpi288_area | `20251006T212701JST_pdfdpi288-area` | 94 | 6 | 58 | 0.9400 | 0.6184 | 0.7460 |
 | dpi288_linear | `20251006T212841JST_pdfdpi288-linear` | 94 | 4 | 58 | 0.9592 | 0.6184 | 0.7520 |
 | dpi288_lanczos | `20251006T212930JST_pdfdpi288-lanczos` | 83 | 4 | 69 | 0.9540 | 0.5461 | 0.6946 |
+
+## homr Metrics (GPU runs 20251007T015010JST_pdfdpi_gpu)
+
+| Variant | Run ID | TP | FP | FN | Precision | Recall | F1 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| dpi144_area | `20251007T015010JST_pdfdpi_gpu:dpi144_area` | 91 | 4 | 61 | 0.958 | 0.599 | 0.737 |
+| dpi200_area | `20251007T015010JST_pdfdpi_gpu:dpi200_area` | 100 | 4 | 52 | 0.962 | 0.658 | 0.781 |
+| dpi288_area | `20251007T015010JST_pdfdpi_gpu:dpi288_area` | 94 | 6 | 58 | 0.940 | 0.618 | 0.746 |
+| dpi288_linear | `20251007T015010JST_pdfdpi_gpu:dpi288_linear` | 94 | 4 | 58 | 0.959 | 0.618 | 0.752 |
+| dpi288_lanczos | `20251007T015010JST_pdfdpi_gpu:dpi288_lanczos` | 83 | 4 | 69 | 0.954 | 0.546 | 0.695 |
 
 ## oemer Metrics
 
@@ -49,15 +59,14 @@ Homr and oemer were re-evaluated against `data/evaluation/annotations/page_003/b
 
 ## Observations
 
-- Rendering at 200 DPI and downsampling with area interpolation provided the best overall gains: homr F1 +0.023 (0.786 vs. 0.763) and oemer F1 +0.032 (0.908 vs. 0.876) with modest FP changes.
-- Higher DPI with the same interpolation (`dpi288_area`) still improves oemer performance but homr recall regresses slightly compared to the 200 DPI setting, suggesting diminishing returns beyond ~200 DPI for the current pipeline.
-- Interpolation choice matters: linear/lanczos at 288 DPI kept precision high but significantly reduced recall, likely due to over-sharpened staff lines triggering oemer symbol failures and homr staff grouping collapse.
-- The lanczos variant also triggered repeated MusicXML build failures (now caught and logged) and produced the weakest metrics for both detectors.
-- CPU execution (no CUDA providers) is markedly slower; each oemer run took ~5 minutes. Profiles and provider dumps remain under the run directories for reproducibility.
+- Rendering at 200 DPI and downsampling with area interpolation continues to be the best compromise: homr (TP=100/FP=4/FN=52, F1=0.781) and oemer (TP=134/FP=3/FN=18, F1=0.927) on GPU improve recall vs. the CPU sweep while keeping precision high.
+- GPU reruns closely match the CPU counts (each homr variant differs by ≤±1 barline), confirming the evaluator pipeline is deterministic across containers.
+- oemer benefits more from CUDA than homr: the GPU runs cut inference latency and add +6 TP over CPU for `dpi200_area`, whereas 288 DPI with linear/lanczos still under-performs due to staff fragmentation.
+- Interpolation choice remains critical: linear/lanczos sharpened images still trade recall for precision, and the lanczos variant continues to trigger MusicXML extraction retries (caught by the new error handling).
+- CPU execution remains several minutes slower per variant; GPU profiles and provider dumps are archived with each run for reproducibility.
 
 ## Artifacts
 
-- homr outputs: `logs/homr_eval/20251006T21*JST_pdfdpi*/`
-- oemer outputs: `output/oemer_eval_tests/20251006T21*JST_pdfdpi*/`
-- Rendered PNGs: `data/workbench/pdf_render/20251006T2038/`
-
+- homr outputs: `logs/homr_eval/20251006T21*JST_pdfdpi*/`, `logs/homr_eval/20251007T015010JST_pdfdpi_gpu/`
+- oemer outputs: `output/oemer_eval_tests/20251006T21*JST_pdfdpi*/`, `logs/oemer_eval/20251007T021852JST_pdfdpi_gpu_*`
+- Rendered PNGs: `data/workbench/pdf_render/20251006T2038/`, `data/workbench/pdf_render/20251007T011612JST_gpu/`

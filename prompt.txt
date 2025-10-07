@@ -48,8 +48,8 @@ PRE-RUN INTEGRITY CHECK (MANDATORY)
 
 TASK 1: SVC / scikit-learn 互換性の解消
 - `sklearn_models/*.model` を読み込む際の `InconsistentVersionWarning (SVC 1.2.0 → scikit-learn 1.7.2)` を解決する。
-- アプローチを決定する: (a) GPU / CPU イメージの `scikit-learn` を 1.2.0 にピン留めし、副作用を `pipdeptree` で確認する。(b) 現行 1.7.2 環境でモデルを再エクスポートして差し替える。
-- 選択した方針を Dockerfile・docs に反映し、再ビルド後に oemer を再実行して警告が消えたことを `logs/night_run/` に記録する。
+- **決定方針:** GPU / CPU イメージの `scikit-learn` を 1.2.0 にダウングレードし、副作用を `pipdeptree` で確認した上で Dockerfile を更新・再ビルドする。
+- リビルド後に oemer を再実行して警告が消えたことを `logs/night_run/` に記録する。案B（1.7.2 でのモデル再エクスポート）はログに残したまま保留し、将来的なファインチューニング時に再検討する。
 
 TASK 2: GPU プロバイダ / transformer_memcpy 監視の再実施
 - Rebuilt イメージで homr / oemer を GPU 実行し、`runtime/`・`ort_profiles/`・プロバイダダンプを再取得する。

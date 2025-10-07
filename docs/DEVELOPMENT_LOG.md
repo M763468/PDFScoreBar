@@ -289,3 +289,18 @@ This document records the development history, key decisions, and learnings thro
   モデル定義・ONNXグラフ・重みは不変（read-only）とする。
 - 直近のモデル関連変更は破棄し、ブランチをクリーンに戻した。
 - 次回以降の night run はこの方針に基づいて再実行する。
+
+## 2025-10-07 Update: Docker image dependency alignment
+
+- `.venv_pdf` で使用していた PyMuPDF / opencv-python-headless / onnxruntime-gpu / Pillow / SciPy / scikit-learn / matplotlib / coloredlogs を Dockerfile および Dockerfile.homr に追加し、コンテナ環境だけで PDF→PNG レンダリングや CPU フォールバックを再現できるようにした。
+- Docker CLI 復旧後に `docker build -t pdf_score_dev_gpu:20251007 .` / `docker build -t homr_eval:20251007 -f Dockerfile.homr .` を実行し、両コンテナを再作成。`pip list` と `poetry run python -m pip list` で依存導入を確認し、`onnxruntime.get_device()` / `torch.cuda.is_available()` で GPU 利用も再確認。
+- tzdata 追加のため両 Dockerfile を再調整し、`pdf_score_dev_gpu:20251007b` / `homr_eval:20251007b` を再ビルド。コンテナを作り直して `Asia/Tokyo` タイムゾーン利用が可能であること (`zoneinfo.ZoneInfo('Asia/Tokyo')`) を確認。
+
+
+## 2025-10-07 Update: GPU PDFレンダリング再評価と oemer ランナー拡張
+
+- `src/pdf_to_images.py` を `pdf_score_dev_gpu:20251007b` コンテナ上で実行し、`data/workbench/pdf_render/20251007T011612JST_gpu/` に `dpi144/200/288` × `area/linear/lanczos` の PNG を再生成。
+- homr evaluator (`logs/homr_eval/20251007T015010JST_pdfdpi_gpu/`) を GPU で実行し、dpi200_area で TP=100 / FP=4 / FN=52 (F1=0.781) を取得。CPU 実行時 (F1=0.786) と同水準の精度を確認しつつ、全バリアントの GPU 指標を `logs_user/experiments/20251006_pdf_render/README.md` に追記。
+- oemer ランナー (`src/archive/oemer/run_omerer.py`) を環境変数駆動に拡張。`OEMER_OUTPUT_ROOT`・`OEMER_RUN_PREFIX`・`OEMER_IMAGE_DIR`・`OEMER_IMAGE_OVERRIDE`・`OEMER_GROUND_TRUTH`・`OEMER_TARGET_PAGES` を解釈し、MusicXML 生成失敗時も `extract_error.txt` 等を出力しつつ評価を継続できるようにした。
+- 上記拡張後に GPU 実行を再開し、`logs/oemer_eval/20251007T021852JST_pdfdpi_gpu_dpi144_area`〜`20251007T022310JST_pdfdpi_gpu_dpi288_lanczos` を生成。dpi200_area で TP=134 / FP=3 / FN=18 (F1=0.927) を達成し、CPU 時 (F1=0.908) より Recall が改善したことを確認。
+

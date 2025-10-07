@@ -3,7 +3,7 @@
 CONTEXT & RULES
 - Repo: /home/masaki_muramatsu/ws_PDFScoreBar
 - Branch: bot/overnight exclusively; do not touch main/develop.
-- Operate ONLY inside the container. EXCEPTION: host-side docker pull/build/restart is allowed if required; record commands and image tags.
+- Operate ONLY inside the container. EXCEPTION: host-side docker pull/build/restart/rm is allowed if required; record commands and image tags.
 - Host must remain clean.
 - Ground-truth values are NOT in docs/ directly; their locations are written in docs/*.md (esp. docs/NEXT_SESSION_NOTES.md). Always consult docs/ first and then load the actual GT from its declared location.
 - **MODEL IMMUTABILITY**: Do NOT modify model definitions, ONNX graphs, or weights (.onnx, .pt, .pth, files under src/*model*/). Any such change must be reverted immediately.

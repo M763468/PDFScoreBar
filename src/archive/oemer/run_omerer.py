@@ -13,7 +13,7 @@ import sys
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import List, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 import cv2
 
@@ -73,6 +73,22 @@ class AggregateMetrics:
 @dataclass
 class BarlinePrediction:
     orig_bbox: Tuple[int, int, int, int]
+
+
+DEFAULT_IMAGE_DIR = REPO_ROOT / "data/evaluation/images"
+DEFAULT_GROUND_TRUTH = REPO_ROOT / "data/evaluation/annotations/page_003/boxes_sorted.json"
+DEFAULT_TARGET_PAGES = [3]
+DEFAULT_OUTPUT_ROOT = REPO_ROOT / "logs/oemer_eval"
+DEFAULT_RUN_PREFIX = "baseline"
+
+
+def resolve_repo_path(value: Optional[str], *, default: Path) -> Path:
+    if not value:
+        return default
+    candidate = Path(value).expanduser()
+    if not candidate.is_absolute():
+        candidate = REPO_ROOT / candidate
+    return candidate
 
 
 def timestamp_jst() -> str:
@@ -196,11 +212,32 @@ def aggregate_metrics(per_image: Sequence[ImageMetrics]) -> AggregateMetrics:
 
 
 def main() -> None:
-    image_dir = Path("/workspace/data/evaluation/images")
-    gt_path = Path("/workspace/data/evaluation/annotations/page_003/boxes_sorted.json")
-    target_pages = [3]
+    output_root = resolve_repo_path(os.environ.get("OEMER_OUTPUT_ROOT"), default=DEFAULT_OUTPUT_ROOT)
+    run_prefix = os.environ.get("OEMER_RUN_PREFIX", DEFAULT_RUN_PREFIX)
+    force_run_id = os.environ.get("OEMER_FORCE_RUN_ID")
 
-    run_root = REPO_ROOT / "logs/oemer_eval" / run_id("baseline")
+    image_dir = resolve_repo_path(os.environ.get("OEMER_IMAGE_DIR"), default=DEFAULT_IMAGE_DIR)
+    gt_path = resolve_repo_path(os.environ.get("OEMER_GROUND_TRUTH"), default=DEFAULT_GROUND_TRUTH)
+
+    target_pages_env = os.environ.get("OEMER_TARGET_PAGES")
+    if target_pages_env:
+        parsed_pages = []
+        for token in target_pages_env.split(","):
+            token = token.strip()
+            if not token:
+                continue
+            try:
+                parsed_pages.append(int(token))
+            except ValueError as exc:
+                raise ValueError(f"Invalid OEMER_TARGET_PAGES entry: {token}") from exc
+        if not parsed_pages:
+            raise ValueError("OEMER_TARGET_PAGES was provided but no valid page indices were parsed")
+        target_pages = sorted(set(parsed_pages))
+    else:
+        target_pages = list(DEFAULT_TARGET_PAGES)
+
+    run_id_value = force_run_id or run_id(run_prefix)
+    run_root = output_root / run_id_value
     run_root.mkdir(parents=True, exist_ok=True)
 
     provider_dump_dir = run_root / "runtime"
@@ -236,7 +273,22 @@ def main() -> None:
     set_env("OEMER_CUDNN_CONV_ALGO_SEARCH", "EXHAUSTIVE", overwrite=False)
 
     tracked_keys = set(env_updates.keys()) | set(optional_defaults.keys())
-    runtime_env = {key: os.environ.get(key) for key in sorted(tracked_keys)}
+    runtime_env = {
+        "OEMER_OUTPUT_ROOT": str(output_root),
+        "OEMER_RUN_PREFIX": run_prefix,
+        "OEMER_IMAGE_DIR": str(image_dir),
+        "OEMER_GROUND_TRUTH": str(gt_path),
+        "OEMER_TARGET_PAGES": ",".join(str(p) for p in target_pages),
+    }
+    if force_run_id:
+        runtime_env["OEMER_FORCE_RUN_ID"] = force_run_id
+    for key in sorted(tracked_keys):
+        runtime_env[key] = os.environ.get(key)
+    override_keys = ["OEMER_IMAGE_OVERRIDE"] + [f"OEMER_IMAGE_OVERRIDE_PAGE_{page}" for page in target_pages]
+    for key in override_keys:
+        value = os.environ.get(key)
+        if value:
+            runtime_env[key] = value
 
     original_symbol_extract = None
     min_barline_ratio_env = os.environ.get("OEMER_MIN_BARLINE_UNIT_RATIO")
@@ -266,6 +318,13 @@ def main() -> None:
                 raise FileNotFoundError(f"Image not found: {source_path}")
 
             canonical_name = f"page_{page}"
+            stem = source_path.stem
+            if stem.startswith('page_'):
+                suffix = stem.split('page_', 1)[1]
+                if suffix.isdigit() and len(suffix) == 3:
+                    canonical_name = f"page_{suffix}"
+                else:
+                    canonical_name = stem
             page_dir = run_root / canonical_name
             page_dir.mkdir(parents=True, exist_ok=True)
             processed_images.append(str(source_path))
@@ -279,20 +338,45 @@ def main() -> None:
                 "without_deskew": False,
             })()
 
-            musicxml_path = Path(extract(args))
-            teaser_image = teaser()
-            teaser_path = page_dir / f"{canonical_name}_teaser.png"
-            teaser_image.save(teaser_path)
+            extract_error = None
+            musicxml_path = Path(args.output_path)
+            try:
+                extract_result = extract(args)
+                if extract_result:
+                    musicxml_path = Path(extract_result)
+            except Exception as exc:
+                extract_error = exc
+                (page_dir / "extract_error.txt").write_text(f"{type(exc).__name__}: {exc}\n")
+            else:
+                try:
+                    teaser_image = teaser()
+                    teaser_path = page_dir / f"{canonical_name}_teaser.png"
+                    teaser_image.save(teaser_path)
+                except Exception as teaser_exc:
+                    (page_dir / "teaser_error.txt").write_text(f"{type(teaser_exc).__name__}: {teaser_exc}\n")
 
-            boxes = extract_barline_boxes()
-            processed_image = layers.get_layer("original_image")
+            try:
+                boxes = extract_barline_boxes()
+            except Exception as box_exc:
+                boxes = []
+                (page_dir / "barline_extract_error.txt").write_text(f"{type(box_exc).__name__}: {box_exc}\n")
+
             base_image = cv2.imread(str(source_path), cv2.IMREAD_COLOR)
             if base_image is None:
                 raise RuntimeError(f"Failed to load base image: {source_path}")
-            proc_h, proc_w = processed_image.shape[:2]
-            base_h, base_w = base_image.shape[:2]
-            scale_x = base_w / float(proc_w)
-            scale_y = base_h / float(proc_h)
+
+            scale_x = scale_y = 1.0
+            try:
+                processed_image = layers.get_layer("original_image")
+                proc_h, proc_w = processed_image.shape[:2]
+                if proc_w and proc_h:
+                    base_h, base_w = base_image.shape[:2]
+                    scale_x = base_w / float(proc_w)
+                    scale_y = base_h / float(proc_h)
+                else:
+                    processed_image = None
+            except Exception:
+                processed_image = None
 
             scaled_boxes = [
                 (
@@ -306,6 +390,17 @@ def main() -> None:
 
             predictions = [BarlinePrediction(orig_bbox=box) for box in scaled_boxes]
 
+            meta = {
+                "detector": "oemer",
+                "image": str(source_path),
+                "timestamp": timestamp_jst(),
+                "scale": {"x": scale_x, "y": scale_y},
+            }
+            if extract_error:
+                meta["extract_error"] = f"{type(extract_error).__name__}: {extract_error}"
+            if override_path:
+                meta["image_override"] = override_path
+
             detection_payload = {
                 "predictions": [
                     {
@@ -314,12 +409,7 @@ def main() -> None:
                     }
                     for scaled, raw in zip(scaled_boxes, boxes)
                 ],
-                "meta": {
-                    "detector": "oemer",
-                    "image": str(source_path),
-                    "timestamp": timestamp_jst(),
-                    "scale": {"x": scale_x, "y": scale_y},
-                },
+                "meta": meta,
             }
             detection_path = page_dir / f"{canonical_name}_detections.json"
             detection_json = json.dumps(detection_payload, indent=2, ensure_ascii=False)
@@ -396,6 +486,9 @@ def main() -> None:
             "iou_threshold": DEFAULT_IOU,
             "provider_dump_dir": str(provider_dump_dir),
             "profile_dir": str(profile_dir),
+            "output_root": str(output_root),
+            "run_prefix": run_prefix,
+            "force_run_id": force_run_id,
             "runtime_env": runtime_env,
         }
         (run_root / "params.json").write_text(json.dumps(params, indent=2, ensure_ascii=False))
@@ -441,6 +534,9 @@ def main() -> None:
             "target_pages": target_pages,
             "provider_dump_dir": str(provider_dump_dir),
             "ort_profile_dir": str(profile_dir),
+            "output_root": str(output_root),
+            "run_prefix": run_prefix,
+            "force_run_id": force_run_id,
             "runtime_env": runtime_env,
             "git": {
                 "commit": git_commit,

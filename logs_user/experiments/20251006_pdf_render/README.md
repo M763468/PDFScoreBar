@@ -36,6 +36,16 @@ Homr and oemer were re-evaluated against `data/evaluation/annotations/page_003/b
 | dpi288_area | `20251006T214947JST_pdfdpi288-area` | 126 | 3 | 26 | 0.9767 | 0.8289 | 0.8968 |
 | dpi288_linear | `20251006T215532JST_pdfdpi288-linear` | 104 | 1 | 48 | 0.9905 | 0.6842 | 0.8093 |
 | dpi288_lanczos | `20251006T220803JST_pdfdpi288-lanczos` | 86 | 1 | 66 | 0.9885 | 0.5658 | 0.7197 |
+## oemer Metrics (GPU runs 20251007T021852JST_pdfdpi_gpu_dpi144_area ... 20251007T022310JST_pdfdpi_gpu_dpi288_lanczos)
+
+| Variant | Run ID | TP | FP | FN | Precision | Recall | F1 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| dpi144_area | `20251007T021852JST_pdfdpi_gpu_dpi144_area` | 129 | 1 | 23 | 0.992 | 0.849 | 0.915 |
+| dpi200_area | `20251007T021954JST_pdfdpi_gpu_dpi200_area` | 134 | 3 | 18 | 0.978 | 0.882 | 0.927 |
+| dpi288_area | `20251007T022056JST_pdfdpi_gpu_dpi288_area` | 120 | 0 | 32 | 1.000 | 0.789 | 0.882 |
+| dpi288_linear | `20251007T022158JST_pdfdpi_gpu_dpi288_linear` | 94 | 2 | 58 | 0.979 | 0.618 | 0.758 |
+| dpi288_lanczos | `20251007T022310JST_pdfdpi_gpu_dpi288_lanczos` | 86 | 3 | 66 | 0.966 | 0.566 | 0.714 |
+
 
 ## Observations
 

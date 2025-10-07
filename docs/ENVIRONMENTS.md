@@ -5,6 +5,7 @@
 - Image: built from `Dockerfile` (base `nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04`).
 - Persistent container: `docker start pdf_score_dev_gpu` → attach with `docker exec -it pdf_score_dev_gpu bash` (workdir `/workspace`).
 - Notes: hosts project source; continue using for `oemer`/ML detector workflows.
+- 2025-10-07: Dockerfile updated and image rebuilt as `pdf_score_dev_gpu:20251007b`; container re-created with baked `.venv_pdf` dependencies (PyMuPDF 1.26.4, opencv-python-headless 4.12.0.88, onnxruntime-gpu 1.22.0, Pillow 11.3.0, SciPy 1.15.3, scikit-learn 1.7.2, matplotlib 3.10.6, coloredlogs 15.0.1) plus tzdata. Verified via `pip list` inside container.
 
 ## homr_eval_gpu (2024-06-14 → refreshed 2025-09-26)
 - Purpose: isolate `homr` evaluation environment with separate dependencies.
@@ -16,6 +17,7 @@
   - Logs: `/workspace/logs/homr_eval`
   - Models/cache: `/workspace/models/homr`
 - Usage: attach with `docker exec -it homr_eval_gpu bash`. `poetry` already manages the venv; run commands from `/workspace/homr` (e.g. `poetry run homr --debug ...`).
+- 2025-10-07: Dockerfile.homr rebuilt as `homr_eval:20251007b` with `.venv_pdf` parity packages inside the Poetry venv (PyMuPDF 1.26.4, opencv-python-headless 4.12.0.88, onnxruntime-gpu 1.22.0, Pillow 11.3.0, SciPy 1.15.3, scikit-learn 1.7.2, matplotlib 3.10.6, coloredlogs 15.0.1) plus tzdata; `homr_eval_gpu` container recreated and packages verified via `poetry run python -m pip list`.
 - 2025-09-27: `.dockerignore` を追加してビルドコンテキストを縮小（`logs/`, `homr/.venv/`, 大量画像などを除外）。ホスト権限の都合で `docker build` は未実施。必要に応じて権限付与後に再ビルドすること。
 
 ## Data directory layout (2024-06-14 年版)

@@ -1,11 +1,14 @@
 FROM nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 # PythonとOpenCVに必要な最小限のシステムライブラリをインストール
 RUN apt update && apt install -y \
     sudo \
     git \
     python3 \
     python3-pip \
+    tzdata \
     libgl1-mesa-glx \
     libgtk-3-0 \
     libglib2.0-0 \
@@ -21,7 +24,17 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 WORKDIR /workspace
 
 # 必要なPythonライブラリをインストール
-RUN pip install --no-cache-dir PyMuPDF opencv-python google-generativeai oemer
+RUN pip install --no-cache-dir \
+    PyMuPDF==1.26.4 \
+    opencv-python-headless==4.12.0.88 \
+    onnxruntime-gpu==1.22.0 \
+    pillow==11.3.0 \
+    scipy==1.15.3 \
+    scikit-learn==1.7.2 \
+    matplotlib==3.10.6 \
+    coloredlogs==15.0.1 \
+    google-generativeai \
+    oemer
 
 # コンテナ起動時のデフォルトコマンド
 CMD ["bash"]

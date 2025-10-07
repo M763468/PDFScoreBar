@@ -39,19 +39,16 @@
 
 ### アクションプラン
 
-1. **PDF レンダリングの GPU 再評価**
-   - `pdf_score_dev_gpu` コンテナで `src/pdf_to_images.py` を使用し、`dpi=200`/`area` を含むレンダリングを再生成。
-   - homr/oemer を GPU 設定で実行し、`logs/compare_homr_oemer_*.md` と `logs_user/experiments/20251006_pdf_render/README.md` を更新。
-   - CPU 結果との差分（TP/FP/FN・プロファイル）を記録し、再現手順を明文化。
-2. **oemer ランナーの環境対応**
-   - `run_omerer.py` に `OEMER_OUTPUT_ROOT`・`OEMER_RUN_PREFIX` などの環境変数を正式サポートし、CPU 実行時でも書き込み/抽出が失敗しないようエラーハンドリングを追加。
-   - `.venv_pdf` で使用した依存パッケージを `docs/ENVIRONMENTS.md` へ追記し、CPU フォールバック手順を共有。
-3. **マッチャ/フィルタ調整の継続**
+1. **マッチャ/フィルタ調整の継続**
    - 共有マッチャ仕様 (`docs/BARLINE_MATCHER.md`) と実装差異を定期的に照合し、縦片に対する例外処理やマスク調整を検討。
    - 偽陰性が集中する座標をホットスポットとして `logs/homr_eval/`・`logs/oemer_eval/` のオーバーレイにタグ付けする。
-4. **GPU プロバイダ監視**
+2. **GPU プロバイダ監視**
    - onnxruntime のプロバイダ/プロファイルログを定期点検し、必要に応じてライブラリ更新や env チューニングを記録。
+3. **SVC モデル互換性の調査**
+   - oemer 実行時に発生する `InconsistentVersionWarning (SVC 1.2.0 → scikit-learn 1.7.2)` の解消方針を検討。互換性のある scikit-learn wheel を用意するか、モデル資産を再生成するための手順を整理する。
 ## 完了済みタスク
+- **GPU 再評価・ランナー拡張 (2025-10-07):** `src/pdf_to_images.py` で生成した `20251007T011612JST_gpu` の PNG を用いて homr/oemer を GPU 実行。`logs/homr_eval/20251007T015010JST_pdfdpi_gpu` と `logs/oemer_eval/20251007T021852JST_pdfdpi_gpu_dpi144_area` 〜 `20251007T022310JST_pdfdpi_gpu_dpi288_lanczos` に成果物を整理し、`run_omerer.py` に出力先・画像・GT の環境変数サポートと MusicXML 例外処理を追加。`logs_user/experiments/20251006_pdf_render/README.md` に GPU 指標を追記。
+- **Docker イメージの再ビルド (2025-10-07):** `pdf_score_dev_gpu:20251007b` / `homr_eval:20251007b` を構築し、各コンテナを再作成。pip / poetry で依存導入を確認し、onnxruntime と torch の GPU 利用を検証済み。tzdata も同梱し、ZoneInfo('Asia/Tokyo') の利用エラーを解消。
 - **homr / oemer 判定ロジック改修と再評価:**
   - 共通のバーラインマッチャを整備し、細幅線のパディング・重複判定・リピート例外処理を導入。詳細仕様は `docs/BARLINE_MATCHER.md` を参照。既存ログで TP/FP が期待通りに再分類されることを確認した。
 - **ML検出器の復元:**

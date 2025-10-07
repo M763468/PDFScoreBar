@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libgl1 \
     libglib2.0-0 \
+    tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 # Install cuDNN 9 runtime and development headers required by onnxruntime-gpu 1.22.
@@ -41,10 +42,17 @@ RUN poetry config virtualenvs.in-project "${POETRY_VIRTUALENVS_IN_PROJECT}" \
 
 # Replace the default CPU-only onnxruntime with the GPU build and ensure commonly used tooling is available.
 RUN VENV_PATH="$(poetry env info --path)" \
-    && "${VENV_PATH}/bin/pip" install --upgrade pip setuptools wheel \
+    && "${VENV_PATH}/bin/pip" install --no-cache-dir --upgrade pip setuptools wheel \
     && "${VENV_PATH}/bin/pip" uninstall -y onnxruntime \
     && "${VENV_PATH}/bin/pip" install --no-deps onnxruntime-gpu==1.22.0 \
-    && "${VENV_PATH}/bin/pip" install opencv-python-headless
+    && "${VENV_PATH}/bin/pip" install --no-cache-dir \
+        PyMuPDF==1.26.4 \
+        opencv-python-headless==4.12.0.88 \
+        pillow==11.3.0 \
+        scipy==1.15.3 \
+        scikit-learn==1.7.2 \
+        matplotlib==3.10.6 \
+        coloredlogs==15.0.1
 
 WORKDIR /workspace
 

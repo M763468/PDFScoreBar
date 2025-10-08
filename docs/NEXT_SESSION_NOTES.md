@@ -32,99 +32,24 @@
 ## 現在の課題と次のタスク
 
 **課題:**
-1.  **GPU 環境との差分検証:** PDF→PNG 再サンプリング結果は CPU 実行のみ。GPU コンテナでの homr/oemer 精度とパフォーマンスを確認し、比較ログを更新する必要がある。
-2.  **oemer ランナーの柔軟性不足:** `run_omerer.py` が環境変数オーバーライドや CPU 実行時の権限問題に対応しておらず、カスタムコピーが必要になっている。
-3.  **パフォーマンス警告の監視:** CUDA 実行時の `transformer_memcpy` 警告や一部演算の CPU フォールバックが引き続き発生している。
-4.  **偽陰性の残存:** homr/oemer ともに符幹・縦片で取りこぼしがあり、追加フィルタとマスク設計が未完了。
-
+1.  **transformer_memcpy 警告の緩和:** homr / oemer の CUDA 実行で継続する `transformer_memcpy` 警告を抑制するため、ONNX Runtime 設定やバージョンアップ、CUDA Graph 化の可否を検証する。
+2.  **FN ホットスポットの削減:** GT 18, 26, 31–36, 40, 46, 60, 63, 70, 74 の縦片が両パイプラインで未検出。前処理・マッチャ補正・評価ロジックを見直し、改善案を試作する。
+3.  **homr 偽陽性の抑制:** `--barline-min-height-factor` を緩めると FP が増えるため、stem マスクや post-filter など追加フィルタでリコールと Precision を両立させる。
+4.  **oemer 長尺ジョブの安定化:** 環境変数スモークテストは追加済み。複数ページ実行時のログ採取・失敗時の復旧手順整備を進める。
 ### 次回タスクリスト (優先度順)
 
-1. **SVC モデル互換性の解消**
-   - `sklearn_models/*.model` をロードした際の `InconsistentVersionWarning (学習 SVC=1.2.0, 実行 scikit-learn 1.7.2)` を解消する。
-   - **方針:** 当面は両 Docker イメージで `scikit-learn==1.2.0` へダウングレードし、`pipdeptree` で依存衝突がないか確認した上で再ビルド・検証する。
-   - 案B（1.7.2 環境でモデル再エクスポート）はログを残したまま保留し、将来的にファインチューニングやモデル更新が必要になった際に再検討する。
-   - ダウングレード後は Dockerfile / docs / blockers を更新し、`logs/oemer_eval` のリランで警告が消えたことを証跡化する。
-2. **GPU プロバイダ・transformer_memcpy 監視の再実施**
-   - 最新イメージで homr / oemer を GPU 実行し、`ort_providers.json` / ORT プロファイルを再取得する。
-   - `transformer_memcpy` 警告が残る場合は onnxruntime 設定や CUDA バージョンを追加調整し、調査結果を `logs/night_run/` と docs に反映する。
-3. **偽陰性ホットスポットのマーキングとマッチャ調整**
-   - `logs/homr_eval/`・`logs/oemer_eval/` のオーバーレイに FN ホットスポットを注記し、縦片・符幹の取りこぼしを特定する。
-   - `docs/BARLINE_MATCHER.md` と実装を突き合わせ、必要なら前処理マスクや `greedy_barline_match` の例外処理を更新する。
-4. **run_omerer 環境変数サポートのスモークテスト整備**
-   - `OEMER_*` 環境変数経由でのパス解決・失敗ハンドリングをカバーする簡易テスト or スクリプトを追加し、将来の依存更新での回 regressions を防ぐ。
-   - CLI 例: `python -m pytest` 代替の軽量チェックや `tools/` 補助スクリプトを用意し、ドキュメント化する。
-## 完了済みタスク
-- **GPU 再評価・ランナー拡張 (2025-10-07):** `src/pdf_to_images.py` で生成した `20251007T011612JST_gpu` の PNG を用いて homr/oemer を GPU 実行。`logs/homr_eval/20251007T015010JST_pdfdpi_gpu` と `logs/oemer_eval/20251007T021852JST_pdfdpi_gpu_dpi144_area` 〜 `20251007T022310JST_pdfdpi_gpu_dpi288_lanczos` に成果物を整理し、`run_omerer.py` に出力先・画像・GT の環境変数サポートと MusicXML 例外処理を追加。`logs_user/experiments/20251006_pdf_render/README.md` に GPU 指標を追記。
-- **Docker イメージの再ビルド (2025-10-07):** `pdf_score_dev_gpu:20251007b` / `homr_eval:20251007b` を構築し、各コンテナを再作成。pip / poetry で依存導入を確認し、onnxruntime と torch の GPU 利用を検証済み。tzdata も同梱し、ZoneInfo('Asia/Tokyo') の利用エラーを解消。
-- **homr / oemer 判定ロジック改修と再評価:**
-  - 共通のバーラインマッチャを整備し、細幅線のパディング・重複判定・リピート例外処理を導入。詳細仕様は `docs/BARLINE_MATCHER.md` を参照。既存ログで TP/FP が期待通りに再分類されることを確認した。
-- **ML検出器の復元:**
-  - 動作しなくなっていた`src/ml_detector/barline_detector.py`を、正常に実行できる状態まで復旧させた。
-- **MLベース検出器の実装とデバッグ:**
-  - `oemer`の2モデルアーキテクチャに基づき、`barline_detector.py`を実装し、実行できる状態にした。
-- **OpenCVによる小節線候補検出の試行:**
-  - Hough変換、輪郭検出、垂直射影法を試みたが、安定した候補検出には至らなかったため、アプローチを保留とした。
-
-## 将来的な検討事項（長期展望）
-
-### 精度向上戦略
-
--   **機械学習アプローチの調査:**
-    -   `oemer`が利用している`CVC-MUSCIMA++`のような、音楽認識に特化した公開データセットや学習済みモデルを調査する。既存の特化モデルを利用することで、高精度な検出が期待できる。
--   **LLMの役割変更（画像生成タスクへの転換）:**
-    -   Geminiに座標を直接出力させるのではなく、「画像上で小節線を赤色で描き直させる」というタスクを依頼する。生成された画像から赤色の線を検出するのはOpenCVにとって容易なため、LLMが苦手な座標特定を、得意な画像生成タスクに置き換える。
--   **他のLLMとの比較・連携:**
-    -   ChatGPTやMicrosoft Copilotなど、他の画像認識能力を持つLLMに同じタスクを行わせ、結果を比較検討する。
-    -   複数のLLMによる合議制（アンサンブル学習）で、さらに正確な検出を目指す。
--   **専用モデルの作成:**
-    -   IMSLP等の公開ライブラリから大量の番号付き楽譜を収集し、それを教師データとして、小節線検出に特化した独自の機械学習モデルをファインチューニングまたは新規作成する。
-        -   *課題:* データ収集の自動化と、サイトへの負荷の問題を考慮する必要がある。また、既存モデルの使用するならば何を使うのか、独自モデルの場合はモデル構造自体を検討する必要がある。
-        - oemerのページを見ると、以下のデータセットを使っている。
-            - https://zenodo.org/records/4012193
-            - https://pages.cvc.uab.es/cvcmuscima/index_database.html
-
-### 機能拡張
-
--   **不完全小節の認識:** アウフタクトや終止小節を認識し、番号付けのルールを調整する。
--   **複数小節をまとめた休みの認識** 数小節の休みは休符記号の上に数字を書くことでその数字分の小節数を省略して記譜することがある。この記譜法を認識する。
--   **複数ページ対応:** PDF全体のページをループ処理し、一括で番号を付与する。
--   **CLIツールの作成:** コマンドライン引数で入力PDFや出力先を指定できるようにし、ツールの利便性を向上させる。
-
-### 最終的なアーキテクチャ
-
--   スクリプト内部から専用モデル（またはGemini APIなどのLLMのAPIなど）を呼び出し、座標取得から描画、PDFとして再結合しての出力までをワンストップで行う、スクリプト化を目指す。
+1. **transformer_memcpy 対策の検証**
+   - onnxruntime のセッション設定や 1.24 系へのアップデートを試し、`providers.json` / ORT プロファイルで差分を記録する。
+2. **FN ホットスポットの改善案を試作**
+   - 前処理・マッチャ例外・閾値調整を組み合わせ、homr / oemer の比較ランを作成して `logs/compare_homr_oemer_*.md` に差分を追記する。
+3. **homr の偽陽性抑制フィルタ実装**
+   - stem マスクや幅フィルタ、post-filter を試し、リコールと Precision のトレードオフを評価する。
+4. **oemer 長尺ジョブの実地テスト**
+   - 複数ページの夜間ジョブを走らせ、`logs/night_run/` に失敗時の復旧手順・ログ整理手順を追記する。
 
 
-## 開発環境
-
--   **Dockerコンテナ:** `pdf_score_dev_gpu` (oemer / ユーティリティ), `homr_eval_gpu` (homr evaluator)
--   **プロジェクトディレクトリ:** `/workspace` (各コンテナ共通)
--   **Python環境:** コンテナ内の Python 3.10 (`homr_eval_gpu` では homr 専用 venv を利用)
--   **主要ライブラリ:** `opencv-python`, `numpy`, `Pillow`, `google-generativeai`, `pymupdf`, `onnxruntime` など
-
-## 申し送り事項
-
--   **Serenaの利用について:**
-    -   SerenaのMCPサーバーとプロジェクトインデックスは、セッション開始時に`start.sh`により起動する必要がある。
-    - 　編集機能などでエラーが発生したらserenaを停止してAIエージェント自身の機能を使う。
--   **Dockerコンテナの起動:**
-    -   homr 評価は `homr_eval_gpu`、oemer/ユーティリティは `pdf_score_dev_gpu` を使用する。
-    -   セッション開始時に `docker start pdf_score_dev_gpu homr_eval_gpu` で双方を起動し、用途ごとに使い分けること。
--   **ドキュメント更新:**
-    -   セッションの最後に、`DEVELOPMENT_LOG.md`, `NEXT_SESSION_NOTES.md`, `README.md` を更新し、進捗を記録すること。
--   **テスト／型注釈の進め方:**
-    -   現在は技術検証中のコードが多く、将来的に不要になる実装も含まれるため、`pytest` や型注釈 (`mypy`) の整備は重要な箇所から少しずつ段階的に進める。日々の作業の合間に気付いた範囲で対応し、完全移行は急がない。
-
-### homr / oemer 比較実験計画 (2025-09-27)
-- 2025-09-28 01:05 JST: homr evaluator で `barline_min_height_factor`×`barline_max_width_factor` を再スイープ (`logs/homr_eval/20250928T00*`)。F1 は 0.104 (13TP/85FP/139FN) で頭打ち、まずはオーバーレイで TP/FP/FN を分類して要因を整理し、その後に stem/clef 除去マスクの再設計を個別タスクとして進める。
-- 2025-09-28 01:06 JST: oemer 版 evaluator (`src/archive/oemer/run_omerer.py`) を整備し、`logs/oemer_eval/20250928T005938JST_baseline/` で TP=10 / FP=126 / FN=142 (Precision 0.074, Recall 0.066) を確認。`symbol_extraction.parse_barlines` の `min_height_unit_ratio` や `group_map` マスク調整を次ステップ候補に追加。
-- 2025-09-28: homr CLI (`logs/homr_eval/20250928T001723JST_homr_cli_page3/`) と evaluator (`logs/homr_eval/20250928T001916JST_evaluator_page3_default/`) の検出本数がともに105本で一致することを確認。次は `barline_min_height_factor` や前処理ロジックの調整、および oemer パイプラインのバウンディングボックス JSON 化を実施する。
-- 2025-10-06 01:32 JST: homr official evaluator (`logs/homr_eval/20251006T013220JST_official/`) => TP=95 / FP=2 / FN=57 (Precision 0.979, Recall 0.625, F1 0.763)。FP index 45 は system 5 付近の細片、index 83 は左端リピート柱 (GT25) 強制 FP。細片除去ロジックの再調整候補として記録。
-- 2025-10-06 01:35 JST: oemer baseline rerun (`logs/oemer_eval/20251006T013456JST_baseline/`) => TP=120 / FP=2 / FN=32 (Precision 0.984, Recall 0.789, F1 0.876)。FP index 29 は staff 0 上部の孤立縦片、index 58 は x=410px 付近の共通ノイズ。`min_height_unit_ratio` や連結成分フィルタでの除去を検討。
-- 2025-10-06 02:06 JST: oemer baseline (`logs/oemer_eval/20251006T020616JST_baseline/`) で `detections/`・`overlays/`・`params.json`・`run_config.json` を生成し、homr 互換レイアウトを確認。
-- 2025-10-06 02:35 JST: 前処理 (vertical closing / top-hat) と閾値スイープの結果を `logs/experiments/20251006_preproc_threshold/README.md` に集約。homr は vertical closing で TP104/FP4、oemer は TP133/FP0 まで改善。
-- homr 評価: `tools/run_homr_tuning.py` を `--images data/evaluation/images/page_3.png` と `--ground-truth page_3:data/evaluation/annotations/page_003/boxes_sorted.json` で実行し、各トライアルの `barline_min_height_factor` / `barline_max_width_factor` を記録。必ず `poetry run homr --debug` の結果と検出件数を突き合わせる。
-- homr 成果物: `logs/homr_eval/<timestamp>_homr_<desc>/` に `metrics.json` / `metrics.csv` / `compare.md` / `README.md` / オーバーレイ画像 (`tools/generate_barline_overlay.py`, `tools/render_barline_boxes_overlay.py`) を保存。タイムスタンプは JST。
-- oemer baseline: `docker exec pdf_score_dev_gpu bash -lc 'cd /workspace && python src/archive/oemer/run_omerer.py'` をベースに `layers.get_layer("barlines")` を JSON に書き出す処理を追加し、`logs/oemer_eval/<timestamp>_baseline/` に保存。必要に応じて `draw_teaser.py` を利用してオーバーレイを生成。
-- 共通指標: GT (`data/evaluation/annotations/page_003/boxes_sorted.json`) に対する Precision / Recall / F1 と、漏れ・誤検出の目視キャプチャを `compare.md` に整理。
-- ドキュメント更新: 各実験終了後に `docs/DEVELOPMENT_LOG.md` と `docs/NEXT_SESSION_NOTES.md` を更新し、次回の再現手順と改善ポイントを明記する。
+### 2025-10-08 20:10 JST
+- Dockerfile 2イメージを scikit-learn 1.2.0 系に揃え、GPU 再評価を実施 (homr 20251008T195044JST_gpu_sklearn120, oemer 20251008T195311JST_gpu_sklearn120)。
+- transformer_memcpy 警告は継続。ORT_DISABLE_MEMCPY=1 の試行では差分なし。
+- FN ホットスポット (GT 18,26,31–36,40,46,60,63,70,74) をオーバーレイ化し、homr チューニングの回帰も確認。
+- tools/smoke_test_run_omerer_env.py で OEMER_* 環境変数のスモークテストを追加。

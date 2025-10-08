@@ -25,12 +25,13 @@ WORKDIR /workspace
 
 # 必要なPythonライブラリをインストール
 RUN pip install --no-cache-dir \
+    numpy==1.26.4 \
     PyMuPDF==1.26.4 \
-    opencv-python-headless==4.12.0.88 \
+    opencv-python-headless==4.10.0.84 \
     onnxruntime-gpu==1.22.0 \
     pillow==11.3.0 \
     scipy==1.15.3 \
-    scikit-learn==1.7.2 \
+    scikit-learn==1.2.0 \
     matplotlib==3.10.6 \
     coloredlogs==15.0.1 \
     google-generativeai \

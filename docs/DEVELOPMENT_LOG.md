@@ -313,3 +313,18 @@ This document records the development history, key decisions, and learnings thro
 
 - SVC ピクル (`sklearn_models/*.model`) の互換性問題に対し、当面はコンテナ内の `scikit-learn` を 1.2.0 へダウングレードする方針を採択。`pipdeptree` で依存関係を確認しつつ Dockerfile を更新し、リビルド後に oemer を再実行して警告が解消されたことを記録する。
 - 1.7.2 での再エクスポート（案B）はログを保持したまま保留。将来的にモデルファインチューニング等を行う際に再検討し、再エクスポート時にバージョン管理を整理する。
+## 2025-10-08 Update: scikit-learn downgrade & GPU reruns
+
+- `Dockerfile` と `Dockerfile.homr` の依存ピンを `numpy==1.26.4`, `opencv-python-headless==4.10.0.84`, `scikit-learn==1.2.0` に揃え、再ビルドした `pdf_score_dev_gpu:20251008b_sklearn120` / `homr_eval:20251008c_sklearn120` イメージへ反映。Poetry 側でも `pyproject.toml` の制約を緩和して 1.26 系 numpy と 4.10 系 OpenCV を許容した。
+- `tools/smoke_test_run_omerer_env.py` を追加し、`OEMER_*` 環境変数が `run_omerer.main` に正しく流れることをダミー資材でスモークテストできるようにした。
+- GPU 再評価を実施: homr (`logs/homr_eval/20251008T195044JST_gpu_sklearn120/`) で TP=95 / FP=2 / FN=57 (F1=0.763)、oemer (`logs/oemer_eval/20251008T195311JST_gpu_sklearn120/`) で TP=120 / FP=2 / FN=32 (F1=0.876)。どちらも `transformer_memcpy` 警告が継続し、`ORT_DISABLE_MEMCPY=1` でのリトライでも改善なし。
+- 両パイプラインの検出品質オーバーレイ (`page_3/page_3_detection_quality.png`) を作成し、共通の FN ホットスポット (GT 18, 26, 31–36, 40, 46, 60, 63, 70, 74) を抽出。縦方向の細いリピート柱や stem 片が未検出であることを確認し、`logs/night_run/fn_hotspots_20251008.json` に一覧化した。
+- homr の `--barline-min-height-factor 0.9` 試行 (`logs/homr_eval/20251008T200423JST_gpu_sklearn120_min0p9/`) は TP=98 / FP=8 / FN=54 (F1=0.760) と偽陽性が増えたため不採用。
+
+
+## 2025-10-08 Night Run Highlights
+- Dockerfile and Dockerfile.homr now pin numpy 1.26.4, opencv-python-headless 4.10.0.84, and scikit-learn 1.2.0; rebuilt images pdf_score_dev_gpu:20251008b_sklearn120 and homr_eval:20251008c_sklearn120.
+- Added tools/smoke_test_run_omerer_env.py to patch run_omerer.main with dummy assets and assert OEMER_* overrides work.
+- GPU reruns: homr logs/homr_eval/20251008T195044JST_gpu_sklearn120 (TP 95 / FP 2 / FN 57, F1 0.763) and oemer logs/oemer_eval/20251008T195311JST_gpu_sklearn120 (TP 120 / FP 2 / FN 32, F1 0.876). ORT_DISABLE_MEMCPY=1 trials left transformer_memcpy warnings unchanged.
+- Detection-quality overlays (page_3/page_3_detection_quality.png) highlight shared FN hotspots at GT indices 18, 26, 31-36, 40, 46, 60, 63, 70, 74; these correspond to thin repeat pillars and stem fragments that both pipelines miss.
+- homr tuning sample (--barline-min-height-factor 0.9) increased recall slightly (TP 98 / FN 54) but added six FP (F1 0.760); recorded as regression.

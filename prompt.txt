@@ -46,23 +46,21 @@ PRE-RUN INTEGRITY CHECK (MANDATORY)
 
 # === Tasks ===
 
-TASK 1: transformer_memcpy 警告の解消調査
-- homr / oemer の GPU 実行時に発生する `transformer_memcpy` 警告を抑制する。
-- onnxruntime のバージョンや session_options、CUDA Graph の有効化などを試し、効果とログ差分を `docs/` と `logs/night_run/` に記録する。
-- プロバイダダンプ・ORT プロファイル・再現コマンドを残し、改善または未解決理由をまとめる。
+TASK 1: 共通 FN ホットスポットの可視化
+- `logs/homr_eval/20251013T224304JST_fn_heuristic_v3` と `logs/oemer_eval/20251013T224534JST_fn_heuristic_v3` の未検出箇所を抽出し、オーバーレイとメモ (例: `logs/night_run/common_fn_20251013.md`) でパターン分類を行う。
+- 生成物は次回分析で参照できるよう timestamp 付きで保存する。
 
-TASK 2: FN ホットスポットの改善
-- 両パイプラインが共通で取りこぼしている GT 18, 26, 31–36, 40, 46, 60, 63, 70, 74 の縦片に対し、前処理やマッチャ例外・閾値調整を検討する。
-- 施策ごとに homr / oemer を再評価し、`logs/compare_homr_oemer_*.md` と検証 README に差分を追記する。
-- 成果物 (オーバーレイ、metrics) はタイムスタンプ付きディレクトリへ保存する。
+TASK 2: ヒューリスティク由来 FP の抑制
+- homr 追加ヒューリスティクが生む FP (座標付近: 212/369, 179/243, 315/154) を対象に、左右濃度差・上下マージン・notehead マスク等のフィルタ案を実装・評価する。
+- 精度/再現率の変化を記録し、実験ログに追記する。
 
-TASK 3: homr 偽陽性抑制の強化
-- `--barline-min-height-factor` を緩めた際に急増する FP を抑えるため、stem マスクや post-filter、幅フィルタ等の候補を試作する。
-- Precision / Recall のトレードオフを測定し、最有望案を docs/NEXT_SESSION_NOTES.md に整理する。
+TASK 3: oemer マルチページ運用の正式化
+- 実ページ＋GT を用意し `OEMER_TARGET_PAGES` で連続ページ処理を走らせる。途中失敗時の復旧手順を `docs/ENVIRONMENTS.md` および `logs/night_run/` に整理する。
+- 必要に応じて補助スクリプトや設定テンプレートを追加する。
 
-TASK 4: oemer 長尺ジョブの安定化
-- `run_omerer` の環境変数スモークテストに加え、複数ページ・長時間の GPU ジョブを実行してログと復旧手順を整備する。
-- 失敗時の再現ステップを `logs/night_run/` と docs に追記し、必要な補助スクリプトや設定を洗い出す。
+TASK 4: onnxruntime 1.24 系検証計画
+- サンドボックスで `onnxruntime-gpu` の新バージョンを試し、`transformer_memcpy` 挙動と CUDA Graph 有効化の可否を確認する。
+- 影響範囲と更新判断をまとめ、Dockerfile 更新が必要かどうかを docs に記録する。
 
 EXECUTION
 - Start now under these rules.

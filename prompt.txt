@@ -54,13 +54,13 @@ TASK 2: ヒューリスティク由来 FP の抑制
 - homr 追加ヒューリスティクが生む FP (座標付近: 212/369, 179/243, 315/154) を対象に、左右濃度差・上下マージン・notehead マスク等のフィルタ案を実装・評価する。
 - 精度/再現率の変化を記録し、実験ログに追記する。
 
-TASK 3: GT 作成支援ツールの試作
-- 既存検出を下絵として利用し、クリック操作で GT を確定できる簡易アノテーション UI / スクリプトを実装する。
-- 試作品で得られたワークフローや出力フォーマットを docs/NEXT_SESSION_NOTES.md に反映する。
-
-TASK 4: onnxruntime 1.24 系検証計画
+TASK 3: onnxruntime 1.24 系検証計画
 - サンドボックスで `onnxruntime-gpu` の新バージョンを試し、`transformer_memcpy` 挙動と CUDA Graph 有効化の可否を確認する。
 - 影響範囲と更新判断をまとめ、Dockerfile 更新が必要かどうかを docs に記録する。
+
+TASK 4: GT 作成支援ツールの試作
+- 既存検出を下絵として利用し、クリック操作で GT を確定できる簡易アノテーション UI / スクリプトを実装する。
+- 試作品で得られたワークフローや出力フォーマットを docs/NEXT_SESSION_NOTES.md に反映する。
 
 EXECUTION
 - Start now under these rules.

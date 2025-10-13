@@ -40,8 +40,8 @@
 **課題:**
 1.  **未回収 FN の分類:** 共通 FN {21, 69, 97, 101, 103, 147} と homr 固有の落ち (例: 26, 97, 112) を可視化し、パターン毎の対処方針を検討する。
 2.  **ヒューリスティク起因の FP 抑制:** 追加された縦線 (例: x≈212,179,315) を stem などと切り分けるフィルタ（左右濃度差や notehead マスク）を設計する。
-3.  **GT 作成支援ツールの試作:** 既存検出を下絵にしてクリックで GT を確定できる軽量ツールを試作し、操作感と出力形式を検証する。
-4.  **onnxruntime アップグレード調査:** 1.24 系などで CUDA Graph が有効化されるか、`transformer_memcpy` ノード挿入が改善するかを検証し、更新可否を判断する。
+3.  **onnxruntime アップグレード調査:** 1.24 系などで CUDA Graph が有効化されるか、`transformer_memcpy` ノード挿入が改善するかを検証し、更新可否を判断する。
+4.  **GT 作成支援ツールの試作:** 既存検出を下絵にしてクリックで GT を確定できる軽量ツールを試作し、操作感と出力形式を検証する。
 
 
 ### 次回タスクリスト (優先度順)
@@ -49,10 +49,10 @@
    - `tools/render_barline_boxes_overlay.py` で homr/oemer 双方の未検出箇所を比較し、原因別にメモを作成 (`logs/night_run/common_fn_20251013.md` を予定)。
 2. **ヒューリスティク FP 向けフィルタ試作**
    - 左右窓の濃度差・上下マージン・notehead マスクなどを評価し、`logs/homr_eval/20251013T224304JST_fn_heuristic_v3` をベースに FP 7→≦4 を目標に追加ランを作成する。
-3. **GT 作成支援ツールの試作**
-   - 既存検出を下絵として利用し、クリック操作で GT を確定できる簡易スクリプトを実装・テストする。
-4. **onnxruntime 1.24 系のテスト計画作成**
+3. **onnxruntime 1.24 系のテスト計画作成**
    - サンドボックスで新バージョンを試し、`transformer_memcpy` 挙動と CUDA Graph 対応の可否を評価。影響が大きい場合のみ Dockerfile 更新を検討する。
+4. **GT 作成支援ツールの試作**
+   - 既存検出を下絵として利用し、クリック操作で GT を確定できる簡易スクリプトを実装・テストする。
 
 ## 完了済みタスク
 - **GPU 再評価・ランナー拡張 (2025-10-07):** `src/pdf_to_images.py` で生成した `20251007T011612JST_gpu` の PNG を用いて homr/oemer を GPU 実行。`logs/homr_eval/20251007T015010JST_pdfdpi_gpu` と `logs/oemer_eval/20251007T021852JST_pdfdpi_gpu_dpi144_area` 〜 `20251007T022310JST_pdfdpi_gpu_dpi288_lanczos` に成果物を整理し、`run_omerer.py` に出力先・画像・GT の環境変数サポートと MusicXML 例外処理を追加。`logs_user/experiments/20251006_pdf_render/README.md` に GPU 指標を追記。

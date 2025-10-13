@@ -26,7 +26,7 @@ COMMITS
 - Obtain approval before committing; each commit should correspond to a task or subtask with a clear message.
 
 STOP CONDITIONS
-- Run unattended until today 8:30 JST.
+- Run unattended until tomorrow 8:30 JST.
 - If tasks below finish early, re-read docs/NEXT_SESSION_NOTES.md and pick the next unresolved task.
 - If no actionable tasks remain, stop and produce FINAL_SUMMARY.md with “all tasks complete” + recommended next directions.
 - If progress stalls (no improvements / blocked), stop early and record reasons in blockers.md.
@@ -46,25 +46,23 @@ PRE-RUN INTEGRITY CHECK (MANDATORY)
 
 # === Tasks ===
 
-TASK 1: SVC / scikit-learn 互換性の解消
-- `sklearn_models/*.model` を読み込む際の `InconsistentVersionWarning (SVC 1.2.0 → scikit-learn 1.7.2)` を解決する。
-- **決定方針:** GPU / CPU イメージの `scikit-learn` を 1.2.0 にダウングレードし、副作用を `pipdeptree` で確認した上で Dockerfile を更新・再ビルドする。
-- リビルド後に oemer を再実行して警告が消えたことを `logs/night_run/` に記録する。案B（1.7.2 でのモデル再エクスポート）はログに残したまま保留し、将来的なファインチューニング時に再検討する。
+TASK 1: transformer_memcpy 警告の解消調査
+- homr / oemer の GPU 実行時に発生する `transformer_memcpy` 警告を抑制する。
+- onnxruntime のバージョンや session_options、CUDA Graph の有効化などを試し、効果とログ差分を `docs/` と `logs/night_run/` に記録する。
+- プロバイダダンプ・ORT プロファイル・再現コマンドを残し、改善または未解決理由をまとめる。
 
-TASK 2: GPU プロバイダ / transformer_memcpy 監視の再実施
-- Rebuilt イメージで homr / oemer を GPU 実行し、`runtime/`・`ort_profiles/`・プロバイダダンプを再取得する。
-- `transformer_memcpy` などの警告が残る場合は onnxruntime 設定・CUDA バージョン・環境変数を調整し、改善内容と結果を docs / logs にまとめる。
-- 調整に伴う依存変更は Docker イメージへ反映し、検証コマンド (`pip list`, `onnxruntime.get_device()`) を添付する。
+TASK 2: FN ホットスポットの改善
+- 両パイプラインが共通で取りこぼしている GT 18, 26, 31–36, 40, 46, 60, 63, 70, 74 の縦片に対し、前処理やマッチャ例外・閾値調整を検討する。
+- 施策ごとに homr / oemer を再評価し、`logs/compare_homr_oemer_*.md` と検証 README に差分を追記する。
+- 成果物 (オーバーレイ、metrics) はタイムスタンプ付きディレクトリへ保存する。
 
-TASK 3: 偽陰性ホットスポットのマーキングとマッチャ調整
-- `logs/homr_eval/` と `logs/oemer_eval/` のオーバーレイへ FN ホットスポット注記を追加し、縦片・符幹の取りこぼしを可視化する。
-- `docs/BARLINE_MATCHER.md` と実装を突き合わせて調整案を検証し、必要に応じて前処理・マスク・マッチャ例外処理を更新する。
-- 変更の効果を再評価し、指標差分を `logs/compare_homr_oemer_*.md` および実験 README に追記する。
+TASK 3: homr 偽陽性抑制の強化
+- `--barline-min-height-factor` を緩めた際に急増する FP を抑えるため、stem マスクや post-filter、幅フィルタ等の候補を試作する。
+- Precision / Recall のトレードオフを測定し、最有望案を docs/NEXT_SESSION_NOTES.md に整理する。
 
-TASK 4: run_omerer 環境変数サポートのスモークテスト整備
-- `OEMER_OUTPUT_ROOT` 等の環境変数が正しく解決されることを確認するスモークテストまたは補助スクリプトを追加する。
-- MusicXML 生成失敗時のハンドリング (extract_error.txt 等) もカバーし、回帰発生時に再現できるよう手順を docs に記録する。
-- テスト実行結果は `logs/night_run/steps.ndjson` と `DEVELOPMENT_LOG.md` へ残す。
+TASK 4: oemer 長尺ジョブの安定化
+- `run_omerer` の環境変数スモークテストに加え、複数ページ・長時間の GPU ジョブを実行してログと復旧手順を整備する。
+- 失敗時の再現ステップを `logs/night_run/` と docs に追記し、必要な補助スクリプトや設定を洗い出す。
 
 EXECUTION
 - Start now under these rules.

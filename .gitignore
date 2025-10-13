@@ -24,6 +24,7 @@ venv/
 debug_outputs/
 logs/
 /homr/
+temp.txt
 
 # OS generated files
 .DS_Store

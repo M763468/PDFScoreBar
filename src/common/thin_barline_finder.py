@@ -1,0 +1,137 @@
+"""Heuristics for recovering thin vertical barlines missed by primary detectors."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterable, List, Sequence, Tuple
+
+import cv2
+import numpy as np
+
+Box = Tuple[int, int, int, int]
+
+
+@dataclass(frozen=True)
+class ThinBarlineConfig:
+    min_height: int = 18
+    max_height: int = 24
+    max_width: int = 4
+    pixel_threshold: int = 200
+    y_merge_tolerance: int = 4
+    y_center_tolerance: int = 8
+    x_center_tolerance: int = 4
+    adjacent_min_intensity: int = 185
+
+
+def _centroid(box: Box) -> Tuple[float, float]:
+    x1, y1, x2, y2 = box
+    return (x1 + x2) / 2.0, (y1 + y2) / 2.0
+
+
+def _is_close(candidate: Box, existing: Sequence[Box], *, cfg: ThinBarlineConfig) -> bool:
+    cx, cy = _centroid(candidate)
+    for box in existing:
+        ex, ey = _centroid(box)
+        if abs(cx - ex) <= cfg.x_center_tolerance and abs(cy - ey) <= cfg.y_center_tolerance:
+            return True
+    return False
+
+
+def detect_thin_vertical_runs(
+    image_path: Path,
+    existing_boxes: Iterable[Box],
+    *,
+    config: ThinBarlineConfig | None = None,
+) -> List[Box]:
+    """Detect slender vertical runs likely corresponding to missed barlines.
+
+    The detector scans binary columns for contiguous runs of dark pixels whose
+    height matches typical staff spans (≈18–22 px). It merges neighbouring
+    columns, filters out candidates close to existing predictions, and returns
+    additional bounding boxes in image coordinates.
+    """
+
+    cfg = config or ThinBarlineConfig()
+    image = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
+    if image is None:
+        raise FileNotFoundError(f"Failed to load image for thin barline detection: {image_path}")
+
+    # Treat darker pixels (ink) as 1, background as 0.
+    binary = (image < cfg.pixel_threshold).astype(np.uint8)
+    height, width = binary.shape
+
+    runs: List[Tuple[int, int, int]] = []  # (x, y_start, y_end)
+    for x in range(width):
+        column = binary[:, x]
+        y = 0
+        while y < height:
+            # Skip background
+            while y < height and column[y] == 0:
+                y += 1
+            if y >= height:
+                break
+            start = y
+            while y < height and column[y]:
+                y += 1
+            run_height = y - start
+            if cfg.min_height <= run_height <= cfg.max_height:
+                runs.append((x, start, y))
+
+    if not runs:
+        return []
+
+    # Merge adjacent columns that represent the same vertical run.
+    runs.sort()
+    merged: List[Box] = []
+    idx = 0
+    while idx < len(runs):
+        x, y1, y2 = runs[idx]
+        current_x1 = x
+        current_x2 = x + 1
+        current_y1 = y1
+        current_y2 = y2
+        idx += 1
+        while idx < len(runs):
+            nx, ny1, ny2 = runs[idx]
+            # Allow a 1 px gap between columns and small vertical wobble.
+            if nx - current_x2 <= 1 and abs(ny1 - current_y1) <= cfg.y_merge_tolerance and abs(ny2 - current_y2) <= cfg.y_merge_tolerance:
+                current_x2 = nx + 1
+                current_y1 = min(current_y1, ny1)
+                current_y2 = max(current_y2, ny2)
+                idx += 1
+            else:
+                break
+        if current_x2 - current_x1 <= cfg.max_width:
+            merged.append((current_x1, current_y1, current_x2, current_y2))
+
+    if not merged:
+        return []
+
+    existing = list(existing_boxes)
+    candidates: List[Box] = []
+    for box in merged:
+        if _is_close(box, existing, cfg=cfg):
+            continue
+        x1, y1, x2, y2 = box
+        roi = image[y1:y2, x1:x2]
+        if roi.size == 0:
+            continue
+        mean_intensity = float(np.mean(roi))
+        if mean_intensity >= cfg.pixel_threshold:
+            # Likely background noise; skip.
+            continue
+        left = image[y1:y2, max(0, x1 - 3) : x1]
+        right = image[y1:y2, x2 : min(width, x2 + 3)]
+        if left.size == 0 or right.size == 0:
+            continue
+        if float(np.mean(left)) < cfg.adjacent_min_intensity:
+            continue
+        if float(np.mean(right)) < cfg.adjacent_min_intensity:
+            continue
+        candidates.append(box)
+
+    return candidates
+
+
+__all__ = ["ThinBarlineConfig", "detect_thin_vertical_runs"]

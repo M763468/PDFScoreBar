@@ -65,6 +65,7 @@ from common.barline_evaluation import (
     apply_left_margin_exclusion,
     greedy_barline_match,
 )
+from common.thin_barline_finder import detect_thin_vertical_runs
 
 LEFT_MARGIN_FORCE_FP_GT_INDICES = {25}
 LEFT_MARGIN_FORCE_FP_MAX_WIDTH = 2
@@ -859,6 +860,40 @@ def main() -> None:
                     staff_index=pred.staff_index,
                 )
             )
+
+        extra_barlines = detect_thin_vertical_runs(
+            working_image,
+            [prediction.orig_bbox for prediction in mapped_predictions],
+        )
+
+        def _centre(box: Tuple[int, int, int, int]) -> Tuple[float, float]:
+            x1, y1, x2, y2 = box
+            return (x1 + x2) / 2.0, (y1 + y2) / 2.0
+
+        for box in extra_barlines:
+            cx_extra, cy_extra = _centre(box)
+            replaced = False
+            for idx, pred in enumerate(mapped_predictions):
+                cx_existing, cy_existing = _centre(pred.orig_bbox)
+                if abs(cx_existing - cx_extra) <= 2:
+                    if abs(cy_existing - cy_extra) > 4:
+                        mapped_predictions[idx] = BarlinePrediction(
+                            pred_bbox=box,
+                            orig_bbox=box,
+                            system_index=-2,
+                            staff_index=-1,
+                        )
+                    replaced = True
+                    break
+            if not replaced:
+                mapped_predictions.append(
+                    BarlinePrediction(
+                        pred_bbox=box,
+                        orig_bbox=box,
+                        system_index=-2,
+                        staff_index=-1,
+                    )
+                )
 
         ground_truth_path: Optional[Path] = None
         if stem in ground_truth_map:

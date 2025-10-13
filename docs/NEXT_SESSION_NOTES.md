@@ -23,6 +23,12 @@
 - homr (`logs/homr_eval/20251006T21xxxxJST_pdfdpi*`) と oemer (`output/oemer_eval_tests/20251006T21xxxxJST_pdfdpi*`) を CPU 実行で再評価。`dpi=200` + area リサイズが現状ベスト (homr F1=0.786, oemer F1=0.908)。高 DPI × lanczos/linear はリコールが悪化。
 - 詳細メトリクスは `logs_user/experiments/20251006_pdf_render/README.md` に集約。GPU 再検証時は `OEMER_IMAGE_OVERRIDE` と `tools/apply_vertical_closing.py` で同一画像を生成する。
 
+### 2025-10-13 13:50 JST
+- `common/ort_config.py` を追加し、`HOMR_ORT_LOG_SEVERITY_LEVEL` / `OEMER_ORT_LOG_SEVERITY_LEVEL` で `transformer_memcpy` 警告を抑制できるようにした（=3 で抑制を確認）。`*_CUDA_ENABLE_CUDA_GRAPH=1` は "graph capture unsupported" で失敗することを記録。
+- 細幅バーライン補完ヒューリスティク (`common/thin_barline_finder.py`) を homr / oemer に適用。`logs/homr_eval/20251013T224304JST_fn_heuristic_v3` (TP116/FP7/FN36, F1=0.844) と `logs/oemer_eval/20251013T224534JST_fn_heuristic_v3` (TP135/FP6/FN17, F1=0.922)。共通 FN は {21, 69, 97, 101, 103, 147}。
+- homr ヒューリスティク由来の FP を高さフィルタ (18–24 px) と既存検出の置換で抑制し、FP=7、precision=0.943 まで改善。
+- oemer の長時間ジョブを模擬するため `data/workbench/pdf_render/20251013_longrun/page_{3..7}.png` を作成し、`logs/oemer_eval/20251013T224921JST_longrun_fn_heuristic_v3` として 5 ページ連続で GPU 実行。エラーなく完走し、プロバイダ・プロファイルも出力された。
+
 ## プロジェクトの目標
 楽譜PDFを読み込み、小節番号を付与して新しいPDFとして出力するプログラムを作成する。
 
@@ -32,21 +38,21 @@
 ## 現在の課題と次のタスク
 
 **課題:**
-1.  **transformer_memcpy 警告の緩和:** homr / oemer の CUDA 実行で継続する `transformer_memcpy` 警告を抑制するため、ONNX Runtime 設定やバージョンアップ、CUDA Graph 化の可否を検証する。
-2.  **FN ホットスポットの削減:** GT 18, 26, 31–36, 40, 46, 60, 63, 70, 74 の縦片が両パイプラインで未検出。homr/oemer ともに符幹・縦片で取りこぼしがある。前処理・追加フィルタ、マスク・マッチャ補正・評価ロジックなどを見直し、改善案を試作する。
-3.  **homr 偽陽性の抑制:** `--barline-min-height-factor` を緩めた際に増える FP を抑えるべく、stem マスクや post-filter など追加フィルタで Precision / Recall のバランスを取る。
-4.  **oemer 長尺ジョブの安定化:** 環境変数スモークテストに加え、複数ページの長時間ジョブでもログ・復旧手順を整備し、再現性を確保する。
+1.  **未回収 FN の分類:** 共通 FN {21, 69, 97, 101, 103, 147} と homr 固有の落ち (例: 26, 97, 112) を可視化し、パターン毎の対処方針を検討する。
+2.  **ヒューリスティク起因の FP 抑制:** 追加された縦線 (例: x≈212,179,315) を stem などと切り分けるフィルタ（左右濃度差や notehead マスク）を設計する。
+3.  **oemer 長尺ジョブの正式整備:** 実ページ複数 + 対応 GT で長時間ランを行い、途中失敗時のリカバリ手順とログ整理フローをドキュメント化する。
+4.  **onnxruntime アップグレード調査:** 1.24 系などで CUDA Graph が有効化されるか、`transformer_memcpy` ノード挿入が改善するかを検証し、更新可否を判断する。
 
 
 ### 次回タスクリスト (優先度順)
-1. **transformer_memcpy 対策の検証**
-   - onnxruntime の session_options や 1.24 系へのアップデート、CUDA Graph 化などを試し、`providers.json` / ORT プロファイルで差分を記録する。
-2. **FN ホットスポットの改善案を試作**
-   - 前処理・マッチャ例外・閾値調整を組み合わせ、homr / oemer の比較ランを作成して `logs/compare_homr_oemer_*.md` に差分を追記する。
-3. **homr の偽陽性抑制フィルタ実装**
-   - stem マスクや幅フィルタ、post-filter を試し、Precision / Recall のトレードオフを評価しつつドキュメント化する。
-4. **oemer 長尺ジョブの実地テスト**
-   - 複数ページの夜間ジョブを走らせ、`logs/night_run/` に復旧手順とログ整理手順を追記する。
+1. **共通 FN のオーバーレイ作成**
+   - `tools/render_barline_boxes_overlay.py` で homr/oemer 双方の未検出箇所を比較し、原因別にメモを作成 (`logs/night_run/common_fn_20251013.md` を予定)。
+2. **ヒューリスティク FP 向けフィルタ試作**
+   - 左右窓の濃度差・上下マージン・notehead マスクなどを評価し、`logs/homr_eval/20251013T224304JST_fn_heuristic_v3` をベースに FP 7→≦4 を目標に追加ランを作成する。
+3. **oemer マルチページ運用の正規化**
+   - 実ページと GT を整備し、`OEMER_TARGET_PAGES` を用いた連続処理 + 失敗時のリトライ手順を `docs/ENVIRONMENTS.md` / `logs/night_run/` に反映する。
+4. **onnxruntime 1.24 系のテスト計画作成**
+   - サンドボックスで新バージョンを試し、`transformer_memcpy` 挙動と CUDA Graph 対応の可否を評価。影響が大きい場合のみ Dockerfile 更新を検討する。
 
 ## 完了済みタスク
 - **GPU 再評価・ランナー拡張 (2025-10-07):** `src/pdf_to_images.py` で生成した `20251007T011612JST_gpu` の PNG を用いて homr/oemer を GPU 実行。`logs/homr_eval/20251007T015010JST_pdfdpi_gpu` と `logs/oemer_eval/20251007T021852JST_pdfdpi_gpu_dpi144_area` 〜 `20251007T022310JST_pdfdpi_gpu_dpi288_lanczos` に成果物を整理し、`run_omerer.py` に出力先・画像・GT の環境変数サポートと MusicXML 例外処理を追加。`logs_user/experiments/20251006_pdf_render/README.md` に GPU 指標を追記。

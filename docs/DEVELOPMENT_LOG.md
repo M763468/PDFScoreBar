@@ -328,3 +328,13 @@ This document records the development history, key decisions, and learnings thro
 - GPU reruns: homr logs/homr_eval/20251008T195044JST_gpu_sklearn120 (TP 95 / FP 2 / FN 57, F1 0.763) and oemer logs/oemer_eval/20251008T195311JST_gpu_sklearn120 (TP 120 / FP 2 / FN 32, F1 0.876). ORT_DISABLE_MEMCPY=1 trials left transformer_memcpy warnings unchanged.
 - Detection-quality overlays (page_3/page_3_detection_quality.png) highlight shared FN hotspots at GT indices 18, 26, 31-36, 40, 46, 60, 63, 70, 74; these correspond to thin repeat pillars and stem fragments that both pipelines miss.
 - homr tuning sample (--barline-min-height-factor 0.9) increased recall slightly (TP 98 / FN 54) but added six FP (F1 0.760); recorded as regression.
+
+## 2025-10-13 transformer_memcpy suppression & thin-bar heuristics
+- Added `src/common/ort_config.py` and wired it into `homr` + `oemer` so that `HOMR_ORT_LOG_SEVERITY_LEVEL` / `OEMER_ORT_LOG_SEVERITY_LEVEL` and optional provider option JSON can be injected. Setting severity to `3` suppresses the CUDA `transformer_memcpy` warnings; forcing `*_CUDA_ENABLE_CUDA_GRAPH=1` still raises "graph capture unsupported", which is now recorded in the run logs.
+- Implemented `src/common/thin_barline_finder.py` to recover narrow barlines by scanning per-column ink runs, merging neighbouring columns, and rejecting candidates that reuse existing detections. The helper backfills both evaluators (homr: `20251013T224304JST_fn_heuristic_v3`, oemer: `20251013T224534JST_fn_heuristic_v3`).
+  - homr metrics improved from TP 101 / FP 4 / FN 51 (F1 0.786 @ `20251013T221209JST_transformer_memcpy_baseline`) to TP 116 / FP 7 / FN 36 (F1 0.844). Remaining shared FN: {21, 69, 97, 101, 103, 147}; we still have three heuristic-origin FP at (212,369), (179,243), (315,154) that need a follow-up filter.
+  - oemer metrics moved from TP 134 / FP 3 / FN 18 (F1 0.927 @ `20251013T220537JST_transformer_memcpy_baseline`) to TP 135 / FP 6 / FN 17 (F1 0.922). Slight precision drop but recall is stable; common FN indices overlap with homr as above + {21, 69, 147}.
+- Recorded the heuristic pass/fail attempts:
+  - `OEMER_CUDA_ENABLE_CUDA_GRAPH=1` and `HOMR_CUDA_ENABLE_CUDA_GRAPH=1` both fail fast with explicit error; runs are archived under `20251013T221903JST_transformer_memcpy_cuda_graph` and `20251013T222214JST_transformer_memcpy_cuda_graph`.
+  - Tightening the heuristic height window to 18–24 px reduced false positives (homr FP 9 → 7, oemer FP 8 → 6) without losing recall.
+- Stress-tested `run_omerer.py` with a five-page loop (`logs/oemer_eval/20251013T224921JST_longrun_fn_heuristic_v3`) by duplicating `page_003.png` to `page_{3-7}.png`. The long job completed on GPU with profiling artifacts for each stage and no stability issues.

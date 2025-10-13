@@ -40,6 +40,7 @@ from common.barline_evaluation import (
     BarlineSoftMatch,
     greedy_barline_match,
 )
+from common.thin_barline_finder import detect_thin_vertical_runs
 
 JST = ZoneInfo("Asia/Tokyo")
 DEFAULT_IOU = 0.5
@@ -390,12 +391,37 @@ def main() -> None:
 
             predictions = [BarlinePrediction(orig_bbox=box) for box in scaled_boxes]
 
+            def _centre(box: Tuple[int, int, int, int]) -> Tuple[float, float]:
+                x1, y1, x2, y2 = box
+                return (x1 + x2) / 2.0, (y1 + y2) / 2.0
+
+            extra_boxes = detect_thin_vertical_runs(source_path, [p.orig_bbox for p in predictions])
+            for extra in extra_boxes:
+                box_tuple = (int(extra[0]), int(extra[1]), int(extra[2]), int(extra[3]))
+                cx_extra, cy_extra = _centre(box_tuple)
+                replaced = False
+                for idx, pred in enumerate(predictions):
+                    cx_existing, cy_existing = _centre(pred.orig_bbox)
+                    if abs(cx_existing - cx_extra) <= 2:
+                        if abs(cy_existing - cy_extra) > 4:
+                            predictions[idx] = BarlinePrediction(orig_bbox=box_tuple)
+                            scaled_boxes[idx] = box_tuple
+                            boxes[idx] = box_tuple
+                        replaced = True
+                        break
+                if not replaced:
+                    predictions.append(BarlinePrediction(orig_bbox=box_tuple))
+                    scaled_boxes.append(box_tuple)
+                    boxes.append(box_tuple)
+
             meta = {
                 "detector": "oemer",
                 "image": str(source_path),
                 "timestamp": timestamp_jst(),
                 "scale": {"x": scale_x, "y": scale_y},
             }
+            if extra_boxes:
+                meta["heuristic_barlines"] = len(extra_boxes)
             if extract_error:
                 meta["extract_error"] = f"{type(extract_error).__name__}: {extract_error}"
             if override_path:

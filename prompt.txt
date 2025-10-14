@@ -60,13 +60,15 @@ TASK 3: テスト追加とドキュメント更新
 - `src/common/thin_barline_finder.py` に対するユニットテストを追加し、主要ケース（真の細柱 / stem ノイズ）をカバーする。
 - `docs/BARLINE_MATCHER.md` など関連ドキュメントへ新ヒューリスティクを反映する。
 
-TASK 4: GT 作成フロー拡張
+TASK 4: GT 作成フロー拡張 (USER-ASSIST; manual GT操作待ち)
 - `tools/barline_gt_helper.py` を活用して page_004 以降の GT を整備し、homr/oemer 双方で評価ランを追加する。
 - 新 GT と評価結果を docs/NEXT_SESSION_NOTES.md に反映する。
+- Codex 単独セッションでは進行不可。ユーザー作業の再開予定を `docs/NEXT_SESSION_NOTES.md` へ記録して待機する。
 
-TASK 5: onnxruntime 1.24 系監視
+TASK 5: onnxruntime 1.24 系監視 (USER-SCHEDULED)
 - PyPI の onnxruntime-gpu 1.24.x を定期的に確認し、公開されたら sandbox 手順 (`logs/night_run/ort_1_24_plan.md`) を実行する。
 - CUDA Graph / transformer_memcpy の挙動を確認し、結果を docs と night-run ログへ記録する。
+- 自動監視は未整備。ユーザーが確認したタイミングと結果を `docs/NEXT_SESSION_NOTES.md` に残し、Codex は報告待ちとする。
 
 EXECUTION
 - Start now under these rules.

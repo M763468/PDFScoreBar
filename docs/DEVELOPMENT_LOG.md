@@ -338,3 +338,10 @@ This document records the development history, key decisions, and learnings thro
   - `OEMER_CUDA_ENABLE_CUDA_GRAPH=1` and `HOMR_CUDA_ENABLE_CUDA_GRAPH=1` both fail fast with explicit error; runs are archived under `20251013T221903JST_transformer_memcpy_cuda_graph` and `20251013T222214JST_transformer_memcpy_cuda_graph`.
   - Tightening the heuristic height window to 18–24 px reduced false positives (homr FP 9 → 7, oemer FP 8 → 6) without losing recall.
 - Stress-tested `run_omerer.py` with a five-page loop (`logs/oemer_eval/20251013T224921JST_longrun_fn_heuristic_v3`) by duplicating `page_003.png` to `page_{3-7}.png`. The long job completed on GPU with profiling artifacts for each stage and no stability issues.
+
+
+## 2025-10-14 Common FN audit & thin-bar FP filter
+- 共通 FN ホットスポット抽出: `logs/night_run/common_fn_20251014T005323JST/` に homr/oemer 両パイプラインの FN オーバーレイ (`homr_detection_quality.png`, `oemer_detection_quality.png`, 共通のみ `common_fn_overlay.png`) とメモ `common_fn_20251014T005323JST.md` を追加。共有 FN は `gt_index {21, 69, 97, 101, 103, 147}` で、幅 4 px・高さ 18–22 px のリピート柱プロファイルであることを再確認。
+- homr 薄バーラインヒューリスティク見直し: `src/common/thin_barline_finder.py` に標準偏差フィルタと左右暗度比判定を追加し、stem 起因 FP (pred #74/#115/#117) を除去。新ラン `logs/homr_eval/20251014T010752JST_fpfilter/` で TP=118 (+2), FP=4 (-3), FN=34 (-2), Precision=0.967, Recall=0.776, F1=0.861 を確認。差分サマリは `logs/night_run/fp_filter_20251014T010752JST/fp_filter_report.md`。
+- onnxruntime-gpu 1.24 サンドボックス: PyPI に 1.23.0 までしか公開されておらず導入不能。今後 wheels が出た際の手順 (分離ターゲットへインストール → encoder ONNX を CUDA EP で実行し `transformer_memcpy` / CUDA Graph を再評価) を `logs/night_run/ort_1_24_plan.md` に整理し、ブロッカーとして記録。
+- GT 補助ツール試作: 検出結果をクリック選択で採択できる `tools/barline_gt_helper.py` を追加。`poetry run python ../tools/barline_gt_helper.py --image <img> --detections <json> --output <dst> [--preload <gt>]` で起動し、選択した矩形を GT JSON 形式で保存できる。

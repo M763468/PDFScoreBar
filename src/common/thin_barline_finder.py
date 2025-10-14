@@ -18,10 +18,14 @@ class ThinBarlineConfig:
     max_height: int = 24
     max_width: int = 4
     pixel_threshold: int = 200
+    dark_pixel_threshold: int = 120
     y_merge_tolerance: int = 4
     y_center_tolerance: int = 8
     x_center_tolerance: int = 4
     adjacent_min_intensity: int = 185
+    max_intensity_std: float = 60.0
+    notehead_dark_ratio: float = 0.21
+    notehead_std_floor: float = 45.0
 
 
 def _centroid(box: Box) -> Tuple[float, float]:
@@ -125,9 +129,20 @@ def detect_thin_vertical_runs(
         right = image[y1:y2, x2 : min(width, x2 + 3)]
         if left.size == 0 or right.size == 0:
             continue
-        if float(np.mean(left)) < cfg.adjacent_min_intensity:
+        left_mean = float(np.mean(left))
+        right_mean = float(np.mean(right))
+        if left_mean < cfg.adjacent_min_intensity:
             continue
-        if float(np.mean(right)) < cfg.adjacent_min_intensity:
+        if right_mean < cfg.adjacent_min_intensity:
+            continue
+        std_intensity = float(np.std(roi))
+        if std_intensity > cfg.max_intensity_std:
+            continue
+        dark_threshold = cfg.dark_pixel_threshold
+        left_dark_ratio = float(np.count_nonzero(left < dark_threshold)) / left.size
+        right_dark_ratio = float(np.count_nonzero(right < dark_threshold)) / right.size
+        if max(left_dark_ratio, right_dark_ratio) > cfg.notehead_dark_ratio and std_intensity >= cfg.notehead_std_floor:
+            # Neighbouring regions still contain dense ink (likely noteheads); reject.
             continue
         candidates.append(box)
 

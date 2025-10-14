@@ -46,21 +46,25 @@ PRE-RUN INTEGRITY CHECK (MANDATORY)
 
 # === Tasks ===
 
-TASK 1: 共通 FN ホットスポットの可視化
-- `logs/homr_eval/20251013T224304JST_fn_heuristic_v3` と `logs/oemer_eval/20251013T224534JST_fn_heuristic_v3` の未検出箇所を抽出し、オーバーレイとメモ (例: `logs/night_run/common_fn_20251013.md`) でパターン分類を行う。
-- 生成物は次回分析で参照できるよう timestamp 付きで保存する。
+TASK 1: 共通 FN 再検出と再評価
+- gt {21,69,97,101,103,147} を中心に補完ロジックを拡張し、homr ランで改善度を記録する。
+- ペア柱復元や margin 調整など複数案を試し、成果物を timestamp 付きで保存する。
 
-TASK 2: ヒューリスティク由来 FP の抑制
-- homr 追加ヒューリスティクが生む FP (座標付近: 212/369, 179/243, 315/154) を対象に、左右濃度差・上下マージン・notehead マスク等のフィルタ案を実装・評価する。
-- 精度/再現率の変化を記録し、実験ログに追記する。
+TASK 2: oemer への薄バー抑制ロジック移植
+- homr で追加した std/暗度フィルタを oemer evaluator に反映し、精度/再現率の比較ログを `logs/oemer_eval/` に出力する。
+- 差分が出た場合は docs と night-run ログへ記録する。
 
-TASK 3: onnxruntime 1.24 系検証計画
-- サンドボックスで `onnxruntime-gpu` の新バージョンを試し、`transformer_memcpy` 挙動と CUDA Graph 有効化の可否を確認する。
-- 影響範囲と更新判断をまとめ、Dockerfile 更新が必要かどうかを docs に記録する。
+TASK 3: テスト追加とドキュメント更新
+- `src/common/thin_barline_finder.py` に対するユニットテストを追加し、主要ケース（真の細柱 / stem ノイズ）をカバーする。
+- `docs/BARLINE_MATCHER.md` など関連ドキュメントへ新ヒューリスティクを反映する。
 
-TASK 4: GT 作成支援ツールの試作
-- 既存検出を下絵として利用し、クリック操作で GT を確定できる簡易アノテーション UI / スクリプトを実装する。
-- 試作品で得られたワークフローや出力フォーマットを docs/NEXT_SESSION_NOTES.md に反映する。
+TASK 4: GT 作成フロー拡張
+- `tools/barline_gt_helper.py` を活用して page_004 以降の GT を整備し、homr/oemer 双方で評価ランを追加する。
+- 新 GT と評価結果を docs/NEXT_SESSION_NOTES.md に反映する。
+
+TASK 5: onnxruntime 1.24 系監視
+- PyPI の onnxruntime-gpu 1.24.x を定期的に確認し、公開されたら sandbox 手順 (`logs/night_run/ort_1_24_plan.md`) を実行する。
+- CUDA Graph / transformer_memcpy の挙動を確認し、結果を docs と night-run ログへ記録する。
 
 EXECUTION
 - Start now under these rules.

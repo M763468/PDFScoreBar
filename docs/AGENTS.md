@@ -1,27 +1,33 @@
-# Agent Policy for this repo
+# Agent Policy for This Repo
 
-## Session bootstrap
-Perform these steps at the start of every new Gemini CLI or Codex CLI session before making changes:
+This guide captures the required bootstrapping steps and execution etiquette for assistants working in the PDF Score Measure Number project.
 
-1. **起動確認:** Docker コンテナ `pdf_score_dev_gpu` を稼働させる。
+## Session Bootstrap Checklist
+必ず最初に以下を確認・実行する。
+
+1. **起動確認:** `docker ps --filter name=pdf_score_dev_gpu -a` で状態を確認し、停止中なら起動する。
    ```bash
    docker start pdf_score_dev_gpu
    ```
-   開発コマンドをホストから実行する場合は、`docker exec pdf_score_dev_gpu <command>` を用い、コンテナ内 `/workspace` パスを前提とする。
+   ホストから開発コマンドを実行する場合は `docker exec pdf_score_dev_gpu <command>` を使い、コンテナ内 `/workspace` を前提とする。
 
-2. **Serena 初期化（任意）:** CLI からプロジェクト情報を参照できるようにする。
-   エージェント自身がserena mcpサーバーを起動できる場合は不要
+2. **homr 評価が必要な場合:** `docker ps --filter name=homr_eval_gpu -a` で稼働確認し、停止中であれば起動する。
+   ```bash
+   docker start homr_eval_gpu
+   ```
+   `homr` リポジトリ直下でのコマンドは `docker exec homr_eval_gpu bash -lc '<command>'` を使う。参照前に `docs/ENVIRONMENTS.md` の「Runtime Containers」を読み、パラメータやマウント先を確認してから作業に入る。
+
+3. **Serena 初期化（必要に応じて）:** リポジトリ構造に大きな変更が入った場合のみ実行する。
    ```bash
    bash setup_scripts/setup.sh
    ```
-   スクリプトは Serena のプロジェクトインデックス作成と SSE MCP サーバー (port 9121) の起動を行う。
+   スクリプトは Serena のプロジェクトインデックス作成と SSE MCP サーバー (port 9121) を起動する。すでにサーバーが稼働済みであれば省略可。
 
-## Docker maintenance
-- 依存関係を更新したら最新のイメージをビルドする。
-  ```bash
-  docker build -t pdf_score_dev_gpu .
-  ```
-- 古いコンテナを入れ替える際は stop/remove → create の順に実行する。
+## Container Maintenance
+- 依存関係を更新したら `docker build -t pdf_score_dev_gpu .` で最新イメージを作り直す。
+- `homr` 関連の更新がある場合は `docker build -t homr_eval -f Dockerfile.homr .` で `homr_eval_gpu` 用イメージを再構築する。
+- 不要になった旧イメージは `docker images` で確認し、`docker image prune -f` もしくは `docker rmi <image>` で早めに削除してストレージを空ける。
+- コンテナ再作成時は stop/remove → create の順序を守る。
   ```bash
   docker rm -f pdf_score_dev_gpu
   docker run -dit --name pdf_score_dev_gpu --gpus all \
@@ -29,21 +35,28 @@ Perform these steps at the start of every new Gemini CLI or Codex CLI session be
     -v /home/masaki_muramatsu/.ssh:/root/.ssh:ro \
     -w /workspace pdf_score_dev_gpu tail -f /dev/null
   ```
-  `tail -f /dev/null` を指定することで常時起動状態を維持し、`docker exec -it pdf_score_dev_gpu bash` での作業がすぐ行える。
+  `tail -f /dev/null` により常時起動を維持し、`docker exec -it pdf_score_dev_gpu bash` ですぐ作業できる。
 
-## Execution style
-- コマンド実行前に目的を簡潔に共有し、必要最小限のツールで情報を取得する（`rg`・`ls`・`sed` 等）。
-- 変更後は関連テストやスクリプト（`pytest -q` など）をコンテナ内で実行し、結果を報告する。
+## Execution Style Guidelines
+- コマンド実行前に目的を共有し、`rg`・`ls`・`sed` など最小限のツールで情報を取得する。
+- 変更後は関連テストやスクリプト（例: `pytest -q`）をコンテナ内で実行し、結果を報告する。
 - 作業終了時には差分と未完了事項を要約する。
 
-## End-of-session docs
-ユーザーと合意の上で以下の Markdown を更新する：
+## Required Documentation Updates
+セッション完了時はユーザーと合意の上で以下を更新する：
 - `docs/DEVELOPMENT_LOG.md` – 主要な作業内容と意思決定
 - `docs/NEXT_SESSION_NOTES.md` – 次回タスクや未解決事項
-- `README.md` – プロジェクト全体のセットアップや利用方法の変更があった場合のみ
+- `README.md` – プロジェクト全体のセットアップや利用方法に変更があった場合のみ
 
-## Project context quick links
-- プロジェクト概要・利用方法: `README.md`
-- 開発履歴と意思決定: `docs/DEVELOPMENT_LOG.md`
-- 現在の計画やメモ: `docs/NEXT_SESSION_NOTES.md`
-- エージェント運用ガイド: `docs/AGENTS.md`
+## Kickoff Checklist
+- `docs/README.md` でドキュメントマップを確認し、続けて `docs/NEXT_SESSION_NOTES.md` の「現在の優先事項」を読む。
+- 直近の環境変更は `docs/ENVIRONMENTS.md` の更新履歴を参照する。
+- 着手前に既存の `logs/` やデータ出力先をざっと確認し、重複実験を避ける。
+
+## Maintenance Notes
+- 作業完了後は `docs/NEXT_SESSION_NOTES.md` の「最近の差分サマリ」を最新状態にし、詳細な出来事は `docs/DEVELOPMENT_LOG.md` の該当フェーズへ追記する。
+- `prompt.txt` と `docs/README.md` の開始手順が乖離していないかを週次など定期的に確認し、差異があれば `docs/NEXT_SESSION_NOTES.md` へメモしたうえで調整する。
+- ログ出力や artefact の命名規約（`logs/<pipeline>/<timestamp>/...` など）を守り、不要になった成果物は整理してからセッションを閉じる。
+
+## Reference Map
+全体像と関連ドキュメントの位置付けは `docs/README.md` を参照すること。

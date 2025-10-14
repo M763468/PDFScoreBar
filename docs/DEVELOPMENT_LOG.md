@@ -2,7 +2,13 @@
 
 This document records the development history, key decisions, and learnings throughout the project.
 
-**Current focus (2025-09):** homr evaluator と oemer ベースラインの比較・改善ワークフローを中心に、共通指標による評価ログ整備と GPU 実行環境の安定化を進めている。最新フェーズの詳細は Phase 15 以降を参照。
+## How to Use This Log
+- フェーズごとに Goal / Process / Outcome / Status をまとめ、完了後に追記する。
+- 新しいフェーズは時系列順に追加し、関連するログやスクリプトをリポジトリ相対パスでリンクする。
+- 重要な意思決定や設計変更は、対応するドキュメント（例: `docs/BARLINE_MATCHER.md`）にも反映させる。
+
+## Current Focus (2025-09)
+homr evaluator と oemer ベースラインの比較・改善ワークフローを中心に、共通指標による評価ログ整備と GPU 実行環境の安定化を進めている。最新フェーズの詳細は Phase 15 以降を参照。
 
 ## Phase 1: OMR-based Approach (Initial Attempt)
 
@@ -282,54 +288,61 @@ This document records the development history, key decisions, and learnings thro
 
 
 
-## 2025-09-28 Feedback: Avoid model/graph edits for GPU fallback
+## Phase 18: GPU fallback対応方針の見直し（2025-09-28）
 - Night run で oemer の ConvTranspose CPU fallback を “モデル側パディング修正”等で解消していたが、
   これは将来的な学習互換性や再現性にリスクがあるため採用しない。
 - 方針を修正：GPU fallback の解消は「環境・プロバイダ・ライブラリ設定」に限定し、
   モデル定義・ONNXグラフ・重みは不変（read-only）とする。
 - 直近のモデル関連変更は破棄し、ブランチをクリーンに戻した。
 - 次回以降の night run はこの方針に基づいて再実行する。
+- **ステータス:** GPU fallback は環境設定で解決する方針を確定し、モデル変更案は撤回済み。
 
-## 2025-10-07 Update: Docker image dependency alignment
+## Phase 19: Docker依存パリティの確立（2025-10-07）
 
 - `.venv_pdf` で使用していた PyMuPDF / opencv-python-headless / onnxruntime-gpu / Pillow / SciPy / scikit-learn / matplotlib / coloredlogs を Dockerfile および Dockerfile.homr に追加し、コンテナ環境だけで PDF→PNG レンダリングや CPU フォールバックを再現できるようにした。
 - Docker CLI 復旧後に `docker build -t pdf_score_dev_gpu:20251007 .` / `docker build -t homr_eval:20251007 -f Dockerfile.homr .` を実行し、両コンテナを再作成。`pip list` と `poetry run python -m pip list` で依存導入を確認し、`onnxruntime.get_device()` / `torch.cuda.is_available()` で GPU 利用も再確認。
 - tzdata 追加のため両 Dockerfile を再調整し、`pdf_score_dev_gpu:20251007b` / `homr_eval:20251007b` を再ビルド。コンテナを作り直して `Asia/Tokyo` タイムゾーン利用が可能であること (`zoneinfo.ZoneInfo('Asia/Tokyo')`) を確認。
+- **ステータス:** Docker イメージの依存パリティと GPU 可用性を確認済み。タイムゾーン設定も統一された。
 
 
-## 2025-10-07 Update: GPU PDFレンダリング再評価と oemer ランナー拡張
+## Phase 20: GPU PDFレンダリング再評価と oemer ランナー拡張（2025-10-07）
 
 - `src/pdf_to_images.py` を `pdf_score_dev_gpu:20251007b` コンテナ上で実行し、`data/workbench/pdf_render/20251007T011612JST_gpu/` に `dpi144/200/288` × `area/linear/lanczos` の PNG を再生成。
 - homr evaluator (`logs/homr_eval/20251007T015010JST_pdfdpi_gpu/`) を GPU で実行し、dpi200_area で TP=100 / FP=4 / FN=52 (F1=0.781) を取得。CPU 実行時 (F1=0.786) と同水準の精度を確認しつつ、全バリアントの GPU 指標を `logs_user/experiments/20251006_pdf_render/README.md` に追記。
 - oemer ランナー (`src/archive/oemer/run_omerer.py`) を環境変数駆動に拡張。`OEMER_OUTPUT_ROOT`・`OEMER_RUN_PREFIX`・`OEMER_IMAGE_DIR`・`OEMER_IMAGE_OVERRIDE`・`OEMER_GROUND_TRUTH`・`OEMER_TARGET_PAGES` を解釈し、MusicXML 生成失敗時も `extract_error.txt` 等を出力しつつ評価を継続できるようにした。
 - 上記拡張後に GPU 実行を再開し、`logs/oemer_eval/20251007T021852JST_pdfdpi_gpu_dpi144_area`〜`20251007T022310JST_pdfdpi_gpu_dpi288_lanczos` を生成。dpi200_area で TP=134 / FP=3 / FN=18 (F1=0.927) を達成し、CPU 時 (F1=0.908) より Recall が改善したことを確認。
+- **ステータス:** GPU 上での homr/oemer 再評価とランナー拡張が完了。dpi200_area 設定を暫定ベストとして採用。
 
-## 2025-10-07 Late-night Sync: GPU evaluation docs & sklearn warning
+## Phase 21: GPU評価メモ集約と sklearn 警告調査（2025-10-07）
 
 - homr GPU スイープ (`logs/homr_eval/20251007T015010JST_pdfdpi_gpu/`) のメトリクスを整理し、各バリアントの入力パスと TP/FP/FN を `Variant Summary` として README に追記。`logs_user/experiments/20251006_pdf_render/README.md` へも GPU 版テーブルと観察メモを追加し、CPU/GPU の差分を横比較できるようにした。
 - oemer の `sklearn_models/rests.model` をコンテナ上で読み込み、実行時 `scikit-learn 1.7.2` と学習時 `SVC 1.2.0` の不整合で `InconsistentVersionWarning` が出ることを確認。`NEXT_SESSION_NOTES.md` にダウングレード (==1.2.0) とモデル再エクスポートの 2 案を明記し、`logs/night_run/blockers.md` にも記録。
+- **ステータス:** GPU 評価メモを共有し、scikit-learn バージョン不整合を課題としてログに登録済み。
 
-## 2025-10-08 Decision: scikit-learn downgrade path
+## Phase 22: scikit-learn ダウングレード方針決定（2025-10-08）
 
 - SVC ピクル (`sklearn_models/*.model`) の互換性問題に対し、当面はコンテナ内の `scikit-learn` を 1.2.0 へダウングレードする方針を採択。`pipdeptree` で依存関係を確認しつつ Dockerfile を更新し、リビルド後に oemer を再実行して警告が解消されたことを記録する。
 - 1.7.2 での再エクスポート（案B）はログを保持したまま保留。将来的にモデルファインチューニング等を行う際に再検討し、再エクスポート時にバージョン管理を整理する。
-## 2025-10-08 Update: scikit-learn downgrade & GPU reruns
+- **ステータス:** ダウングレード方針を承認し、実装は Phase 23 で実施。
+## Phase 23: 依存ダウングレード適用と GPU 再評価（2025-10-08）
 
 - `Dockerfile` と `Dockerfile.homr` の依存ピンを `numpy==1.26.4`, `opencv-python-headless==4.10.0.84`, `scikit-learn==1.2.0` に揃え、再ビルドした `pdf_score_dev_gpu:20251008b_sklearn120` / `homr_eval:20251008c_sklearn120` イメージへ反映。Poetry 側でも `pyproject.toml` の制約を緩和して 1.26 系 numpy と 4.10 系 OpenCV を許容した。
 - `tools/smoke_test_run_omerer_env.py` を追加し、`OEMER_*` 環境変数が `run_omerer.main` に正しく流れることをダミー資材でスモークテストできるようにした。
 - GPU 再評価を実施: homr (`logs/homr_eval/20251008T195044JST_gpu_sklearn120/`) で TP=95 / FP=2 / FN=57 (F1=0.763)、oemer (`logs/oemer_eval/20251008T195311JST_gpu_sklearn120/`) で TP=120 / FP=2 / FN=32 (F1=0.876)。どちらも `transformer_memcpy` 警告が継続し、`ORT_DISABLE_MEMCPY=1` でのリトライでも改善なし。
 - 両パイプラインの検出品質オーバーレイ (`page_3/page_3_detection_quality.png`) を作成し、共通の FN ホットスポット (GT 18, 26, 31–36, 40, 46, 60, 63, 70, 74) を抽出。縦方向の細いリピート柱や stem 片が未検出であることを確認し、`logs/night_run/fn_hotspots_20251008.json` に一覧化した。
 - homr の `--barline-min-height-factor 0.9` 試行 (`logs/homr_eval/20251008T200423JST_gpu_sklearn120_min0p9/`) は TP=98 / FP=8 / FN=54 (F1=0.760) と偽陽性が増えたため不採用。
+- **ステータス:** 依存ダウングレードを適用し GPU 評価を更新。`transformer_memcpy` 警告と細バー FN は継続課題。
 
 
-## 2025-10-08 Night Run Highlights
+## Phase 24: Night Run ハイライト（2025-10-08）
 - Dockerfile and Dockerfile.homr now pin numpy 1.26.4, opencv-python-headless 4.10.0.84, and scikit-learn 1.2.0; rebuilt images pdf_score_dev_gpu:20251008b_sklearn120 and homr_eval:20251008c_sklearn120.
 - Added tools/smoke_test_run_omerer_env.py to patch run_omerer.main with dummy assets and assert OEMER_* overrides work.
 - GPU reruns: homr logs/homr_eval/20251008T195044JST_gpu_sklearn120 (TP 95 / FP 2 / FN 57, F1 0.763) and oemer logs/oemer_eval/20251008T195311JST_gpu_sklearn120 (TP 120 / FP 2 / FN 32, F1 0.876). ORT_DISABLE_MEMCPY=1 trials left transformer_memcpy warnings unchanged.
 - Detection-quality overlays (page_3/page_3_detection_quality.png) highlight shared FN hotspots at GT indices 18, 26, 31-36, 40, 46, 60, 63, 70, 74; these correspond to thin repeat pillars and stem fragments that both pipelines miss.
 - homr tuning sample (--barline-min-height-factor 0.9) increased recall slightly (TP 98 / FN 54) but added six FP (F1 0.760); recorded as regression.
+- **ステータス:** Night run の成果を整理し、共通 FN と `transformer_memcpy` 警告の解消を継続的に追跡。
 
-## 2025-10-13 transformer_memcpy suppression & thin-bar heuristics
+## Phase 25: transformer_memcpy 制御と薄バー補完ヒューリスティク（2025-10-13）
 - Added `src/common/ort_config.py` and wired it into `homr` + `oemer` so that `HOMR_ORT_LOG_SEVERITY_LEVEL` / `OEMER_ORT_LOG_SEVERITY_LEVEL` and optional provider option JSON can be injected. Setting severity to `3` suppresses the CUDA `transformer_memcpy` warnings; forcing `*_CUDA_ENABLE_CUDA_GRAPH=1` still raises "graph capture unsupported", which is now recorded in the run logs.
 - Implemented `src/common/thin_barline_finder.py` to recover narrow barlines by scanning per-column ink runs, merging neighbouring columns, and rejecting candidates that reuse existing detections. The helper backfills both evaluators (homr: `20251013T224304JST_fn_heuristic_v3`, oemer: `20251013T224534JST_fn_heuristic_v3`).
   - homr metrics improved from TP 101 / FP 4 / FN 51 (F1 0.786 @ `20251013T221209JST_transformer_memcpy_baseline`) to TP 116 / FP 7 / FN 36 (F1 0.844). Remaining shared FN: {21, 69, 97, 101, 103, 147}; we still have three heuristic-origin FP at (212,369), (179,243), (315,154) that need a follow-up filter.
@@ -338,10 +351,12 @@ This document records the development history, key decisions, and learnings thro
   - `OEMER_CUDA_ENABLE_CUDA_GRAPH=1` and `HOMR_CUDA_ENABLE_CUDA_GRAPH=1` both fail fast with explicit error; runs are archived under `20251013T221903JST_transformer_memcpy_cuda_graph` and `20251013T222214JST_transformer_memcpy_cuda_graph`.
   - Tightening the heuristic height window to 18–24 px reduced false positives (homr FP 9 → 7, oemer FP 8 → 6) without losing recall.
 - Stress-tested `run_omerer.py` with a five-page loop (`logs/oemer_eval/20251013T224921JST_longrun_fn_heuristic_v3`) by duplicating `page_003.png` to `page_{3-7}.png`. The long job completed on GPU with profiling artifacts for each stage and no stability issues.
+- **ステータス:** `transformer_memcpy` 抑制と薄バー補完を実装。残存 FP/FN の追加フィルタ検討と CUDA Graph 対応は未解決。
 
 
-## 2025-10-14 Common FN audit & thin-bar FP filter
+## Phase 26: Common FN audit と薄バー FP フィルタ（2025-10-14）
 - 共通 FN ホットスポット抽出: `logs/night_run/common_fn_20251014T005323JST/` に homr/oemer 両パイプラインの FN オーバーレイ (`homr_detection_quality.png`, `oemer_detection_quality.png`, 共通のみ `common_fn_overlay.png`) とメモ `common_fn_20251014T005323JST.md` を追加。共有 FN は `gt_index {21, 69, 97, 101, 103, 147}` で、幅 4 px・高さ 18–22 px のリピート柱プロファイルであることを再確認。
 - homr 薄バーラインヒューリスティク見直し: `src/common/thin_barline_finder.py` に標準偏差フィルタと左右暗度比判定を追加し、stem 起因 FP (pred #74/#115/#117) を除去。新ラン `logs/homr_eval/20251014T010752JST_fpfilter/` で TP=118 (+2), FP=4 (-3), FN=34 (-2), Precision=0.967, Recall=0.776, F1=0.861 を確認。差分サマリは `logs/night_run/fp_filter_20251014T010752JST/fp_filter_report.md`。
 - onnxruntime-gpu 1.24 サンドボックス: PyPI に 1.23.0 までしか公開されておらず導入不能。今後 wheels が出た際の手順 (分離ターゲットへインストール → encoder ONNX を CUDA EP で実行し `transformer_memcpy` / CUDA Graph を再評価) を `logs/night_run/ort_1_24_plan.md` に整理し、ブロッカーとして記録。
 - GT 補助ツール試作: 検出結果をクリック選択で採択できる `tools/barline_gt_helper.py` を追加。`poetry run python ../tools/barline_gt_helper.py --image <img> --detections <json> --output <dst> [--preload <gt>]` で起動し、選択した矩形を GT JSON 形式で保存できる。
+- **ステータス:** 共通 FN の再検出策と薄バー補正の検証を継続中。onnxruntime 1.24 の公開待ちと GT 補助ツールの運用確立が次のアクション。

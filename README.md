@@ -2,7 +2,7 @@
 
 This project aims to develop a Python-based tool that automatically adds measure numbers to sheet music provided in PDF format.
 
-> **Status notice (2024-06-14):** Active development is concentrated on the `homr`-based evaluation workflow and related tooling. Historical experiments remain documented below; when in doubt, prefer the up-to-date references in `docs/ENVIRONMENTS.md`, `docs/DEVELOPMENT_LOG.md`, and `docs/NEXT_SESSION_NOTES.md`.
+> **Status notice (2024-06-14):** Active development is concentrated on the `homr`-based evaluation workflow and related tooling. Historical experiments remain documented below; when in doubt, start from `docs/README.md` for the current documentation map and follow the pointers there.
 
 ## Core Technology
 
@@ -21,6 +21,7 @@ The project is organized as follows:
 ├── Dockerfile
 ├── README.md
 ├── docs/
+│   ├── README.md            # Documentation index and update policy
 │   ├── NEXT_SESSION_NOTES.md  # Session handover notes
 │   ├── DEVELOPMENT_LOG.md     # History and key decisions
 │   ├── ENVIRONMENTS.md        # Environment setup and usage

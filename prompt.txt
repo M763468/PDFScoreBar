@@ -1,4 +1,5 @@
 # === Unified Init Contract + Tasks (Model-Immutable Edition) ===
+# Docs index: docs/README.md (last synced 2025-10-14). Follow its navigation table before proceeding.
 
 CONTEXT & RULES
 - Repo: /home/masaki_muramatsu/ws_PDFScoreBar
@@ -6,6 +7,7 @@ CONTEXT & RULES
 - Operate ONLY inside the container. EXCEPTION: host-side docker pull/build/restart/rm is allowed if required; record commands and image tags.
 - Host must remain clean.
 - Ground-truth values are NOT in docs/ directly; their locations are written in docs/*.md (esp. docs/NEXT_SESSION_NOTES.md). Always consult docs/ first and then load the actual GT from its declared location.
+- Start-of-session review: read `docs/README.md` → `docs/NEXT_SESSION_NOTES.md` (現在の優先事項) → `docs/ENVIRONMENTS.md`（最新の環境更新） before running any code; jot down relevant deltas.
 - **MODEL IMMUTABILITY**: Do NOT modify model definitions, ONNX graphs, or weights (.onnx, .pt, .pth, files under src/*model*/). Any such change must be reverted immediately.
 - This session is unattended. Do not ask questions. If information seems missing: (1) read docs/, (2) if still unclear, choose a reasonable default and log the assumption.
 
@@ -69,4 +71,5 @@ TASK 5: onnxruntime 1.24 系監視
 EXECUTION
 - Start now under these rules.
 - On completion or blockers, echo the path to FINAL_SUMMARY.md and exit.
+- Keep this prompt aligned with `docs/README.md`; if you notice mismatches, document them in `docs/NEXT_SESSION_NOTES.md` and update the prompt once tasks settle.
 # === End ===

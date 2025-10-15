@@ -870,13 +870,32 @@ def main() -> None:
             x1, y1, x2, y2 = box
             return (x1 + x2) / 2.0, (y1 + y2) / 2.0
 
+        def _vertical_overlap_fraction(box_a: Tuple[int, int, int, int], box_b: Tuple[int, int, int, int]) -> float:
+            top = max(box_a[1], box_b[1])
+            bottom = min(box_a[3], box_b[3])
+            if bottom <= top:
+                return 0.0
+            overlap = bottom - top
+            height_a = max(box_a[3] - box_a[1], 1)
+            height_b = max(box_b[3] - box_b[1], 1)
+            return overlap / float(max(height_a, height_b))
+
         for box in extra_barlines:
             cx_extra, cy_extra = _centre(box)
+            box_height = max(box[3] - box[1], 1)
             replaced = False
             for idx, pred in enumerate(mapped_predictions):
-                cx_existing, cy_existing = _centre(pred.orig_bbox)
-                if abs(cx_existing - cx_extra) <= 2:
-                    if abs(cy_existing - cy_extra) > 4:
+                existing_box = pred.orig_bbox
+                cx_existing, cy_existing = _centre(existing_box)
+                if abs(cx_existing - cx_extra) > 2:
+                    continue
+
+                existing_height = max(existing_box[3] - existing_box[1], 1)
+                centre_gap = abs(cy_existing - cy_extra)
+                vertical_overlap = _vertical_overlap_fraction(existing_box, box)
+
+                if vertical_overlap >= 0.6:
+                    if box_height > existing_height:
                         mapped_predictions[idx] = BarlinePrediction(
                             pred_bbox=box,
                             orig_bbox=box,
@@ -885,6 +904,21 @@ def main() -> None:
                         )
                     replaced = True
                     break
+
+                max_height = max(box_height, existing_height)
+                if centre_gap <= max_height:
+                    if box_height >= existing_height:
+                        mapped_predictions[idx] = BarlinePrediction(
+                            pred_bbox=box,
+                            orig_bbox=box,
+                            system_index=-2,
+                            staff_index=-1,
+                        )
+                    replaced = True
+                    break
+
+                # Same X column but belonging to a different staff system; keep scanning.
+
             if not replaced:
                 mapped_predictions.append(
                     BarlinePrediction(

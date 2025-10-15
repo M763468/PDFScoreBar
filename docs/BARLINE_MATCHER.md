@@ -48,4 +48,13 @@ The matcher returns a `BarlineMatchResult` with:
 - `false_negative_indices`: unmatched ground truth boxes
 - `soft_matches`: duplicate/repeat-like records that remain associated with their GT index but are not counted as TP.
 
+## Thin Barline Recovery Heuristics (2025-10-15)
+The shared `common/thin_barline_finder.py` helper supplements detector output with slender pillars that primary models miss. Recent updates introduced:
+
+- **Vertical split awareness**: candidates sharing an X coordinate now coexist when their vertical centres differ by more than a staff height, avoiding inadvertent overwrites between systems.
+- **Adjacency relaxation**: if the immediate 3 px neighbour is slightly dark but a wider 6 px window returns to background brightness, the barline is kept. This captures repeat pillars nested beside stems.
+- **STD fallback**: 1–4 px wide pillars may tolerate higher intensity variance (≤80) when both neighbours read as background, covering mixed black/white pairs observed in GT indices {97,147}.
+
+These heuristics reduced the shared false-negative set on `page_003` from six entries to four while keeping FP growth bounded (homr run `20251015T010556JST_fn_vertical_split_v5`: TP=148 FP=8 FN=4, precision 0.949/recall 0.974). The same logic propagates to the OEMER evaluator (`20251015T010745JST_baseline`: TP=152 FP=6 FN=0).
+
 Evaluators serialise these results into `metrics.json`, `metrics.csv`, overlay images, and human-readable `compare.md` artefacts under `logs/<pipeline>/<timestamp>/`.

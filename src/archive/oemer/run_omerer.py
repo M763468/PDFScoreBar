@@ -395,20 +395,51 @@ def main() -> None:
                 x1, y1, x2, y2 = box
                 return (x1 + x2) / 2.0, (y1 + y2) / 2.0
 
+            def _vertical_overlap_fraction(box_a: Tuple[int, int, int, int], box_b: Tuple[int, int, int, int]) -> float:
+                top = max(box_a[1], box_b[1])
+                bottom = min(box_a[3], box_b[3])
+                if bottom <= top:
+                    return 0.0
+                overlap = bottom - top
+                height_a = max(box_a[3] - box_a[1], 1)
+                height_b = max(box_b[3] - box_b[1], 1)
+                return overlap / float(max(height_a, height_b))
+
             extra_boxes = detect_thin_vertical_runs(source_path, [p.orig_bbox for p in predictions])
             for extra in extra_boxes:
                 box_tuple = (int(extra[0]), int(extra[1]), int(extra[2]), int(extra[3]))
                 cx_extra, cy_extra = _centre(box_tuple)
+                box_height = max(box_tuple[3] - box_tuple[1], 1)
                 replaced = False
                 for idx, pred in enumerate(predictions):
-                    cx_existing, cy_existing = _centre(pred.orig_bbox)
-                    if abs(cx_existing - cx_extra) <= 2:
-                        if abs(cy_existing - cy_extra) > 4:
+                    existing_box = pred.orig_bbox
+                    cx_existing, cy_existing = _centre(existing_box)
+                    if abs(cx_existing - cx_extra) > 2:
+                        continue
+
+                    existing_height = max(existing_box[3] - existing_box[1], 1)
+                    centre_gap = abs(cy_existing - cy_extra)
+                    vertical_overlap = _vertical_overlap_fraction(existing_box, box_tuple)
+
+                    if vertical_overlap >= 0.6:
+                        if box_height > existing_height:
                             predictions[idx] = BarlinePrediction(orig_bbox=box_tuple)
                             scaled_boxes[idx] = box_tuple
                             boxes[idx] = box_tuple
                         replaced = True
                         break
+
+                    max_height = max(box_height, existing_height)
+                    if centre_gap <= max_height:
+                        if box_height >= existing_height:
+                            predictions[idx] = BarlinePrediction(orig_bbox=box_tuple)
+                            scaled_boxes[idx] = box_tuple
+                            boxes[idx] = box_tuple
+                        replaced = True
+                        break
+
+                    # Same X column but separate staff system; keep scanning for other overlaps.
+
                 if not replaced:
                     predictions.append(BarlinePrediction(orig_bbox=box_tuple))
                     scaled_boxes.append(box_tuple)

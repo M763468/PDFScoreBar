@@ -23,7 +23,10 @@ class ThinBarlineConfig:
     y_center_tolerance: int = 8
     x_center_tolerance: int = 4
     adjacent_min_intensity: int = 185
+    adjacent_relaxed_span: int = 6
+    adjacent_relaxed_dark_ratio: float = 0.18
     max_intensity_std: float = 60.0
+    max_intensity_std_relaxed: float = 80.0
     notehead_dark_ratio: float = 0.21
     notehead_std_floor: float = 45.0
 
@@ -66,6 +69,7 @@ def detect_thin_vertical_runs(
     height, width = binary.shape
 
     runs: List[Tuple[int, int, int]] = []  # (x, y_start, y_end)
+    min_height_relaxed = max(cfg.min_height - 1, 1)
     for x in range(width):
         column = binary[:, x]
         y = 0
@@ -80,6 +84,8 @@ def detect_thin_vertical_runs(
                 y += 1
             run_height = y - start
             if cfg.min_height <= run_height <= cfg.max_height:
+                runs.append((x, start, y))
+            elif min_height_relaxed <= run_height <= cfg.max_height:
                 runs.append((x, start, y))
 
     if not runs:
@@ -129,18 +135,68 @@ def detect_thin_vertical_runs(
         right = image[y1:y2, x2 : min(width, x2 + 3)]
         if left.size == 0 or right.size == 0:
             continue
-        left_mean = float(np.mean(left))
-        right_mean = float(np.mean(right))
-        if left_mean < cfg.adjacent_min_intensity:
+
+        def _window_metrics(window: np.ndarray) -> Tuple[float | None, float | None]:
+            if window.size == 0:
+                return None, None
+            mean = float(np.mean(window))
+            ratio = float(np.count_nonzero(window < cfg.dark_pixel_threshold)) / window.size
+            return mean, ratio
+
+        left_mean, left_dark_ratio = _window_metrics(left)
+        right_mean, right_dark_ratio = _window_metrics(right)
+
+        def _relaxed_metrics(is_left: bool) -> Tuple[float | None, float | None]:
+            span = max(cfg.adjacent_relaxed_span, 0)
+            if span <= 3:
+                return None, None
+            if is_left:
+                start = max(0, x1 - span)
+                end = max(0, x1 - 3)
+            else:
+                start = min(width, x2 + 3)
+                end = min(width, x2 + span)
+            if end <= start:
+                return None, None
+            window = image[y1:y2, start:end]
+            if window.size == 0:
+                return None, None
+            return _window_metrics(window)
+
+        left_ok = left_mean is not None and left_mean >= cfg.adjacent_min_intensity
+        if not left_ok:
+            relaxed_mean, relaxed_dark = _relaxed_metrics(True)
+            if (
+                relaxed_mean is not None
+                and relaxed_mean >= cfg.adjacent_min_intensity
+                and (relaxed_dark is None or relaxed_dark <= cfg.adjacent_relaxed_dark_ratio)
+            ):
+                left_ok = True
+        if not left_ok:
             continue
-        if right_mean < cfg.adjacent_min_intensity:
+
+        right_ok = right_mean is not None and right_mean >= cfg.adjacent_min_intensity
+        if not right_ok:
+            relaxed_mean, relaxed_dark = _relaxed_metrics(False)
+            if (
+                relaxed_mean is not None
+                and relaxed_mean >= cfg.adjacent_min_intensity
+                and (relaxed_dark is None or relaxed_dark <= cfg.adjacent_relaxed_dark_ratio)
+            ):
+                right_ok = True
+        if not right_ok:
             continue
+
         std_intensity = float(np.std(roi))
         if std_intensity > cfg.max_intensity_std:
-            continue
-        dark_threshold = cfg.dark_pixel_threshold
-        left_dark_ratio = float(np.count_nonzero(left < dark_threshold)) / left.size
-        right_dark_ratio = float(np.count_nonzero(right < dark_threshold)) / right.size
+            box_width = max(box[2] - box[0], 1)
+            if not (
+                box_width <= 4
+                and left_ok
+                and right_ok
+                and std_intensity <= cfg.max_intensity_std_relaxed
+            ):
+                continue
         if max(left_dark_ratio, right_dark_ratio) > cfg.notehead_dark_ratio and std_intensity >= cfg.notehead_std_floor:
             # Neighbouring regions still contain dense ink (likely noteheads); reject.
             continue

@@ -48,17 +48,17 @@ PRE-RUN INTEGRITY CHECK (MANDATORY)
 
 # === Tasks ===
 
-TASK 1: 共通 FN 再検出と再評価
-- gt {21,69,97,101,103,147} を中心に補完ロジックを拡張し、homr ランで改善度を記録する。
-- ペア柱復元や margin 調整など複数案を試し、成果物を timestamp 付きで保存する。
+TASK 1: 残留 FN の分析と是正策立案
+- 最新 homr ラン `logs/homr_eval/20251015T010556JST_fn_vertical_split_v5` を基に、未回収 GT {25,65,128,137} の原因を切り分ける（左マージン強制 FP との衝突、局所ノイズ等）。
+- 必要に応じて追加オーバーレイ/統計を `logs/night_run/` 配下へ保存し、改善案を docs/night-run ログへ記録する。
 
-TASK 2: oemer への薄バー抑制ロジック移植
-- homr で追加した std/暗度フィルタを oemer evaluator に反映し、精度/再現率の比較ログを `logs/oemer_eval/` に出力する。
-- 差分が出た場合は docs と night-run ログへ記録する。
+TASK 2: 共通 FP 抑制ヒューリスティクの検討
+- homr/oemer 双方で残る FP を抽出し、stem/ノイズとの判別指標（周辺濃度、連結成分 etc.）をプロトタイプ化する。
+- 施策候補をまとめ、効果を `logs/homr_eval/` および `logs/oemer_eval_codex/` の追試で検証予定。
 
-TASK 3: テスト追加とドキュメント更新
-- `src/common/thin_barline_finder.py` に対するユニットテストを追加し、主要ケース（真の細柱 / stem ノイズ）をカバーする。
-- `docs/BARLINE_MATCHER.md` など関連ドキュメントへ新ヒューリスティクを反映する。
+TASK 3: 長期回帰チェックの準備
+- 現行ヒューリスティクを他ページ/複数 PDF に適用するためのリグレッション計画を作成し、必要なスクリプトや run.sh テンプレートを整備する。
+- 実行は次セッション以降とし、準備内容と未実施事項を docs/NEXT_SESSION_NOTES.md に追記する。
 
 TASK 4: GT 作成フロー拡張 (USER-ASSIST; manual GT操作待ち)
 - `tools/barline_gt_helper.py` を活用して page_004 以降の GT を整備し、homr/oemer 双方で評価ランを追加する。

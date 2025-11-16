@@ -15,7 +15,7 @@ import time
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 from concurrent.futures import Future
 
@@ -67,7 +67,7 @@ from common.barline_evaluation import (
 )
 from common.thin_barline_finder import detect_thin_vertical_runs
 
-LEFT_MARGIN_FORCE_FP_GT_INDICES = {25}
+LEFT_MARGIN_FORCE_FP_GT_INDICES: Set[int] = set()
 LEFT_MARGIN_FORCE_FP_MAX_WIDTH = 2
 
 

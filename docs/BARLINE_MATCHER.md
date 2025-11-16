@@ -33,11 +33,7 @@ After greedy pairing, unmatched predictions are revisited:
 Predictions that do not satisfy either rule are treated as hard false positives.
 
 ## Left-margin Exclusion Rule
-`apply_left_margin_exclusion` runs after matching to reclassify select detections as false positives. The homr evaluator currently uses:
-- `LEFT_MARGIN_FORCE_FP_GT_INDICES = {25}`
-- `LEFT_MARGIN_FORCE_FP_MAX_WIDTH = 2`
-
-For any match where the GT index is in the set and the predicted width ≤ 2 px, the detection is forcibly demoted to an FP and the GT becomes an FN. This covers the narrow repeat pillar on the left edge that we intentionally ignore.
+`apply_left_margin_exclusion` runs after matching to reclassify select detections as false positives. The homr evaluator currently keeps the guard disabled (`LEFT_MARGIN_FORCE_FP_GT_INDICES = set()`), so no matches are demoted by default. When re-enabled, any GT index listed in the set and matched to a predicted width ≤ `LEFT_MARGIN_FORCE_FP_MAX_WIDTH` (2 px) will be forced back to an FP to suppress intentionally ignored left-gutter pillars.
 
 When `margin_x` is provided (unused at present) the helper also demotes predictions whose centres fall inside the margin alongside their matched GT centres, allowing configurable left gutter suppression for other scores.
 
@@ -54,6 +50,8 @@ The shared `common/thin_barline_finder.py` helper supplements detector output wi
 - **Vertical split awareness**: candidates sharing an X coordinate now coexist when their vertical centres differ by more than a staff height, avoiding inadvertent overwrites between systems.
 - **Adjacency relaxation**: if the immediate 3 px neighbour is slightly dark but a wider 6 px window returns to background brightness, the barline is kept. This captures repeat pillars nested beside stems.
 - **STD fallback**: 1–4 px wide pillars may tolerate higher intensity variance (≤80) when both neighbours read as background, covering mixed black/white pairs observed in GT indices {97,147}.
+- **Single-side guard** (2025-10-17): when one neighbour is confidently background and the opposite side is dark because of a stem/dynamics cluster, detections survive as long as the dark window is not fully inked (`single_side_dark_ratio ≤ 0.6`). The notehead rejection now requires both neighbours to be dense when this override triggers.
+- **Vertical gap closing** (2025-10-17): a 3 px tall morphological closing bridges short ledger/rest gaps before run-length analysis, enabling recovery of split pillars like GT 137.
 
 These heuristics reduced the shared false-negative set on `page_003` from six entries to four while keeping FP growth bounded (homr run `20251015T010556JST_fn_vertical_split_v5`: TP=148 FP=8 FN=4, precision 0.949/recall 0.974). The same logic propagates to the OEMER evaluator (`20251015T010745JST_baseline`: TP=152 FP=6 FN=0).
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Sequence, Tuple
+from typing import Dict, Iterable, List, Sequence, Tuple
 
 import cv2
 import numpy as np
@@ -29,6 +29,13 @@ class ThinBarlineConfig:
     max_intensity_std_relaxed: float = 80.0
     notehead_dark_ratio: float = 0.21
     notehead_std_floor: float = 45.0
+    allow_single_side_bright: bool = True
+    single_side_dark_ratio: float = 0.6
+    vertical_gap_fill: int = 2
+    left_margin_limit: int = 80
+    cluster_x_tolerance: int = 2
+    cluster_reject_count: int = 4
+    cluster_reject_span: int = 120
 
 
 def _centroid(box: Box) -> Tuple[float, float]:
@@ -66,6 +73,9 @@ def detect_thin_vertical_runs(
 
     # Treat darker pixels (ink) as 1, background as 0.
     binary = (image < cfg.pixel_threshold).astype(np.uint8)
+    if cfg.vertical_gap_fill > 0:
+        kernel = np.ones((cfg.vertical_gap_fill + 1, 1), dtype=np.uint8)
+        binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
     height, width = binary.shape
 
     runs: List[Tuple[int, int, int]] = []  # (x, y_start, y_end)
@@ -124,6 +134,10 @@ def detect_thin_vertical_runs(
         if _is_close(box, existing, cfg=cfg):
             continue
         x1, y1, x2, y2 = box
+        cx, _ = _centroid(box)
+        if cfg.left_margin_limit > 0 and cx <= cfg.left_margin_limit:
+            # Skip left margin artefacts (e.g. gutter pillars)
+            continue
         roi = image[y1:y2, x1:x2]
         if roi.size == 0:
             continue
@@ -172,8 +186,6 @@ def detect_thin_vertical_runs(
                 and (relaxed_dark is None or relaxed_dark <= cfg.adjacent_relaxed_dark_ratio)
             ):
                 left_ok = True
-        if not left_ok:
-            continue
 
         right_ok = right_mean is not None and right_mean >= cfg.adjacent_min_intensity
         if not right_ok:
@@ -184,7 +196,14 @@ def detect_thin_vertical_runs(
                 and (relaxed_dark is None or relaxed_dark <= cfg.adjacent_relaxed_dark_ratio)
             ):
                 right_ok = True
-        if not right_ok:
+
+        adjacency_ok = left_ok and right_ok
+        single_side_override = False
+        if not adjacency_ok and cfg.allow_single_side_bright and (left_ok ^ right_ok):
+            failing_ratio = left_dark_ratio if not left_ok else right_dark_ratio
+            if failing_ratio is None or failing_ratio <= cfg.single_side_dark_ratio:
+                single_side_override = True
+        if not adjacency_ok and not single_side_override:
             continue
 
         std_intensity = float(np.std(roi))
@@ -192,17 +211,47 @@ def detect_thin_vertical_runs(
             box_width = max(box[2] - box[0], 1)
             if not (
                 box_width <= 4
-                and left_ok
-                and right_ok
+                and ((left_ok and right_ok) or single_side_override)
                 and std_intensity <= cfg.max_intensity_std_relaxed
             ):
                 continue
-        if max(left_dark_ratio, right_dark_ratio) > cfg.notehead_dark_ratio and std_intensity >= cfg.notehead_std_floor:
+        left_dark = bool(left_dark_ratio is not None and left_dark_ratio > cfg.notehead_dark_ratio)
+        right_dark = bool(right_dark_ratio is not None and right_dark_ratio > cfg.notehead_dark_ratio)
+        reject_notehead = False
+        if single_side_override:
+            reject_notehead = left_dark and right_dark
+        else:
+            reject_notehead = left_dark or right_dark
+        if reject_notehead and std_intensity >= cfg.notehead_std_floor:
             # Neighbouring regions still contain dense ink (likely noteheads); reject.
             continue
         candidates.append(box)
 
-    return candidates
+    if not candidates:
+        return []
+
+    bucket_width = max(cfg.cluster_x_tolerance, 1)
+    clustered: Dict[int, List[Box]] = {}
+    for box in candidates:
+        cx, _ = _centroid(box)
+        key = int(round(cx / bucket_width)) * bucket_width
+        clustered.setdefault(key, []).append(box)
+
+    filtered: List[Box] = []
+    for bucket_boxes in clustered.values():
+        if (
+            cfg.cluster_reject_count > 0
+            and len(bucket_boxes) >= cfg.cluster_reject_count
+            and cfg.cluster_reject_span > 0
+        ):
+            min_y = min(box[1] for box in bucket_boxes)
+            max_y = max(box[3] for box in bucket_boxes)
+            if max_y - min_y >= cfg.cluster_reject_span:
+                # Treat tall multi-staff columns without prior detections as noise.
+                continue
+        filtered.extend(bucket_boxes)
+
+    return filtered
 
 
 __all__ = ["ThinBarlineConfig", "detect_thin_vertical_runs"]

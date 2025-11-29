@@ -238,7 +238,7 @@ def detect_thin_vertical_runs(
         clustered.setdefault(key, []).append(box)
 
     filtered: List[Box] = []
-    for bucket_boxes in clustered.values():
+    for key, bucket_boxes in clustered.items():
         if (
             cfg.cluster_reject_count > 0
             and len(bucket_boxes) >= cfg.cluster_reject_count
@@ -247,8 +247,19 @@ def detect_thin_vertical_runs(
             min_y = min(box[1] for box in bucket_boxes)
             max_y = max(box[3] for box in bucket_boxes)
             if max_y - min_y >= cfg.cluster_reject_span:
-                # Treat tall multi-staff columns without prior detections as noise.
-                continue
+                # Before rejecting, check if the cluster aligns with existing detections.
+                # If so, it's likely a valid (but fragmented) barline, not noise.
+                is_near_existing = False
+                for e_box in existing:
+                    e_cx, _ = _centroid(e_box)
+                    # The cluster key `key` represents the horizontal center of the bucket.
+                    if abs(key - e_cx) < cfg.x_center_tolerance * 2:
+                        is_near_existing = True
+                        break
+                
+                if not is_near_existing:
+                    # Treat tall multi-staff columns without prior detections as noise.
+                    continue
         filtered.extend(bucket_boxes)
 
     return filtered

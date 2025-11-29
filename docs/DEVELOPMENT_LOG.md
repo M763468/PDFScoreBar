@@ -360,3 +360,17 @@ homr evaluator と oemer ベースラインの比較・改善ワークフロー�
 - onnxruntime-gpu 1.24 サンドボックス: PyPI に 1.23.0 までしか公開されておらず導入不能。今後 wheels が出た際の手順 (分離ターゲットへインストール → encoder ONNX を CUDA EP で実行し `transformer_memcpy` / CUDA Graph を再評価) を `logs/night_run/ort_1_24_plan.md` に整理し、ブロッカーとして記録。
 - GT 補助ツール試作: 検出結果をクリック選択で採択できる `tools/barline_gt_helper.py` を追加。`poetry run python ../tools/barline_gt_helper.py --image <img> --detections <json> --output <dst> [--preload <gt>]` で起動し、選択した矩形を GT JSON 形式で保存できる。
 - **ステータス:** 共通 FN の再検出策と薄バー補正の検証を継続中。onnxruntime 1.24 の公開待ちと GT 補助ツールの運用確立が次のアクション。
+
+## Phase 27: thin_barline_finder 改良と評価 (2025-11-29)
+
+- **目標**: `thin_barline_finder` における、有効な小節線が誤って除去される False Negative (FN) の解消。
+- **変更内容**: `thin_barline_finder` のクラスタガードロジックを修正。縦に長いが断片化したクラスタが、既存の検出に近接している場合に除去されないよう調整。これにより、複数スタッフにまたがる有効な小節線が誤検出として扱われるのを防ぐ。
+- **評価**:
+    - 影響調査のため、以前 FN が発生したスコアに対して標準評価パイプラインを再実行。
+    - 評価ログ: `logs/eval_2025_11_29_1764397202/`
+- **結果**:
+    - **Previous FN Resolved**: 以前の FN は完全に解消され、False Negatives は 0 に (Recall = 1.000)。
+    - **False Positive Impact**: False Positives が 59 から 62 に微増 (+3)。
+    - **Metrics**: TP=152, FP=62, FN=0, Precision=0.710, Recall=1.000, F1=0.831。
+- **ステータス**: **完了**。主要なFNは解消されたが、新規FPの分析と抑制が次の課題。
+

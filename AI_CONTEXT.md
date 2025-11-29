@@ -4,11 +4,12 @@ The project goal is to develop an automated bar numbering tool for PDF scores, e
 
 ## Last Significant Update (2025-11-29)
 - Action: Modified the `thin_barline_finder` cluster guard. The logic now checks for nearby existing detections before rejecting a tall, fragmented cluster. This prevents the guard from incorrectly removing valid barlines that span multiple staves.
-- Result: The fix is implemented. The original FN case is believed to be resolved, pending verification.
+- Result: The fix has been verified. The original FN case is resolved. New metrics: TP=152, FP=62, FN=0 (Precision=0.710, Recall=1.000, F1=0.831). There was a slight increase of 3 False Positives compared to the previous run (59 to 62).
+- Log directory: `logs/eval_2025_11_29_1764397202/`
 
 ## Current Next Step
-Verify the fix by running the evaluation pipeline on the score that previously produced the False Negative. Confirm that the barline is now correctly detected and that no new regressions (new FNs or FPs) have been introduced.
+Analyze the 3 newly introduced False Positives from the latest evaluation run to identify their cause.
 
 ## Blocking Issues
-None. Verification of the fix is the immediate priority.
+None. Investigation of new False Positives is the immediate priority.
 ---

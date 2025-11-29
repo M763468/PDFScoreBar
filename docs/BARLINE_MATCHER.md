@@ -42,7 +42,16 @@ The matcher returns a `BarlineMatchResult` with:
 - `matches`: confirmed TP pairs
 - `false_positive_indices`: unmatched predictions after duplicate/repeat filtering
 - `false_negative_indices`: unmatched ground truth boxes
-- `soft_matches`: duplicate/repeat-like records that remain associated with their GT index but are not counted as TP.
+- `soft_matches`: duplicate/repeat-like records that remain associated with their GT index but are not counted as TP. In visualization overlays, these are typically labeled "OK".
+
+## Overlay Visualization
+When evaluation scripts (e.g., `src/homr/homr_evaluator.py`) generate overlay images, the following visual semantics are used to represent detection quality:
+
+-   **Green Box (`TP#{index}`)**: **True Positive**. The detection correctly matched a ground truth barline.
+-   **Red Box (`FP#{index}`)**: **False Positive**. The detection did not match any ground truth barline and was not classified as a soft match.
+-   **Orange Box (`OK#{index}:dup` or `OK#{index}:rep`)**: **Soft Match**. A plausible but incorrect detection that is explicitly ignored in the final TP/FP/FN metrics.
+    -   `OK...:dup`: A **duplicate** detection that overlaps with a ground truth barline that was already successfully matched by a better prediction.
+    -   `OK...:rep`: A **repeat-like** detection, often a repeat sign or thick note stem, that is visually similar to a barline.
 
 ## Thin Barline Recovery Heuristics (2025-10-15)
 The shared `common/thin_barline_finder.py` helper supplements detector output with slender pillars that primary models miss. Recent updates introduced:

@@ -503,3 +503,19 @@ homr evaluator と oemer ベースラインの比較・改善ワークフロー�
 - **Documentation**: Updated `docs/ENVIRONMENTS.md` to reflect this new standard, including the canonical command to use for `homr` evaluations.
 - **Status**: Complete. The standardized workflow is now documented.
 
+### Heuristic 1 Evaluation Result (2025-12-01)
+- **Goal**: Implement and evaluate Heuristic 1 (Notehead Proximity Rejection) to reduce False Positives (FP) from the baseline of 35, while maintaining zero False Negatives (FN).
+- **Outcome**: The evaluation resulted in a **catastrophic failure**.
+  - **Metrics**:
+    - Baseline (2025-11-30): TP=152, FP=35, FN=0, Precision=0.813, Recall=1.000, F1=0.897
+    - Heuristic 1 (2025-12-01): TP=52, FP=2, FN=100, Precision=0.963, Recall=0.342, F1=0.505
+  - While FPs were drastically reduced (35 → 2), this came at the cost of an unacceptable explosion in FNs (0 → 100). Recall collapsed from 100% to 34.2%, causing the F1 score to plummet.
+- **Analysis**:
+  - Visual inspection of the evaluation overlay image revealed the root cause: the `notehead_pred` mask used for proximity checking was overly aggressive and noisy.
+  - Many true barlines were incorrectly rejected because parts of the notehead mask extended too far, causing the proximity filter to misclassify valid barlines as being adjacent to noteheads.
+- **Conclusion**:
+  - Heuristic 1, in its current form, is **not viable** and must not be enabled.
+  - The preliminary diagnosis points to issues with the alignment, scaling, or inherent noise of the `notehead_pred` mask when used as a rejection criterion.
+  - **Next Steps**: The immediate priority is to analyze the notehead mask generation process. Before re-attempting this heuristic, it is crucial to investigate why the mask is so inaccurate and explore methods to create a cleaner, more precisely aligned mask for proximity filtering. Safer context-based alternatives should also be considered.
+- **Status**: **Failed**. Heuristic 1 is disabled. Further work is blocked pending an investigation into the quality of the notehead segmentation mask.
+

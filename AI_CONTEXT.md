@@ -2,16 +2,21 @@
 ## Project Status
 The project goal is to develop an automated bar numbering tool for PDF scores, evaluating and improving two model pipelines: `homr` and `oemer`.
 
-## Last Significant Update (2025-12-XX, Phase 30 Design)
-- Action: Completed the design phase for context-based False Positive (FP) reduction. Analyzed the remaining ~35 FPs (mostly note stems) and designed three new heuristics leveraging musical context (notehead proximity, staff span, note group maps).
-- Result: A clear, incremental plan has been formulated to implement and test these heuristics, starting with the lowest-risk "notehead proximity rejection" (Heuristic 1).
-- Conclusion: The project has a well-defined path forward to address the practical limits of the current geometry-based heuristics. The next phase will involve implementation and testing.
+## Last Significant Update (2025-12-01, Phase 31)
+- Action: Standardized the `homr` evaluation log path and executed an evaluation of Heuristic 1 (notehead proximity rejection).
+- Result: The Heuristic 1 evaluation resulted in a catastrophic failure, with a massive increase in False Negatives (FN=100) that collapsed the F1 score, even though False Positives (FP) were reduced.
+- Conclusion: The current implementation of Heuristic 1 is not viable and has been disabled. The root cause appears to be an overly aggressive notehead mask.
 
 ## Current Next Step
-Proceed with stem-context based FP reduction. The first step is to prepare for the experiment of Heuristic 1 (notehead proximity rejection). This involves investigating the architecture for passing context (like a notehead mask) to the post-processing stage.
+The immediate priority is to conduct a root cause analysis of the Heuristic 1 failure. This involves:
+- Analyzing why Heuristic 1 (notehead proximity) failed catastrophically.
+- Inspecting how the `notehead_pred` / notehead mask is generated, scaled, and aligned with the original image.
+- Determining why the mask covers too much area, causing valid barlines to be incorrectly rejected as stems.
+- Designing safer, more targeted stem-context heuristics or alternative ways to use contextual information for FP reduction.
 
 ## Blocking Issues
-A design is needed for how to pass contextual information (e.g., `notehead_pred` mask) to the `thin_barline_finder` or a subsequent filtering step. An approach where filtering is applied as a post-processing step within the main evaluator script is being considered.
+- Heuristic 1 is currently disabled due to the unacceptable increase in False Negatives.
+- Further progress on context-based FP reduction is blocked until the quality and application of the notehead segmentation mask are understood and improved.
 
 ## Evaluation / Reproduction
 - To re-run the homr evaluation for page_3, use the `homr_eval_gpu` container and the canonical command (see `docs/ENVIRONMENTS.md`).

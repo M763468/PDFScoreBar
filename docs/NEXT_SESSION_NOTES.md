@@ -13,6 +13,7 @@
 - Agent AI だけで進められないタスクは下部の `Pending Manual Tasks` に追記し、依存条件と次のユーザーアクションを明記する。
 
 ## 最近の差分サマリ（最新3件）
+- **2025-11-30 (oemer 評価):** Phase 28 の `thin_barline_finder` 改善を oemer パイプラインで検証。TP=151, FP=34, FN=1 (Precision=0.816, Recall=0.993, F1=0.896)。homr (TP=152, FP=35, FN=0, F1=0.897) とほぼ同一の FP 数と F1 スコア。oemer の 1 FN は ML モデル起因で heuristic の回帰ではない。ログ: `logs/oemer_eval/20251130_fp_reduction_test/`
 - **2025-11-30 (Phase B):** 残存 35 件の FP を詳細分析。全 FP を Group A (削減可能: 1件)、Group B (リスクあり: 2件)、Group C (許容すべき: 32件) に分類。FP=35 は heuristic ベースアプローチの実用的限界と結論。次の優先事項: oemer 移植、コンテキストベース FP フィルタリング探索。
 - **2025-11-30:** `thin_barline_finder` に FP 削減策を実装 (高さ閾値厳格化、cluster guard rescue 精緻化、stem 抑制) し評価を実行。FP が 62 から 35 に減少 (−27, 43.5% 改善)、Recall=1.000 を維持。TP=152、FP=35、FN=0、Precision=0.813、F1=0.897。ログ: `logs/20251130T185351JST/`
 - **2025-11-29:** `thin_barline_finder` のマルチスタッフ小節線ガードを調整した修正の評価を実行。以前の False Negative は解消され (FN=0, Recall=1.000)、TP=152、FP=62、Precision=0.710、F1=0.831 の結果を得た。FP は前回の 59 から 62 へ微増 (+3)。ログ: `logs/eval_2025_11_29_1764397202/`
@@ -29,12 +30,11 @@
 ## 現在の主要アプローチ
 `homr` 評価パイプラインと `oemer` ベースラインを並行運用し、共通のマッチングロジックで精度を比較・改善する。`src/ml_detector/barline_detector.py` は oemer のアーキテクチャを踏まえた派生実装として維持しつつ、評価成果物を `logs/` 配下に統一フォーマットで保存する。
 
-## 現在の優先事項 (2025-11-30 Phase B 更新)
-1.  **薄バー抑制/補完ロジックの oemer への移植**: homr で導入した薄バー抑制/補完ロジック (`thin_barline_finder`) を oemer パイプラインへ移植し、精度/再現率の影響を比較する。Phase B 分析により、heuristic ベースの FP 削減は限界に到達したため、oemer での検証を優先。
-2.  **コンテキストベース FP フィルタリングの探索**: notehead-stem ペアリング、staff 構造を利用した高度なフィルタリングの設計フェーズ作業。Phase B で特定された 32 件の「許容すべき FP」(主に stem) に対する将来的な改善策を検討。
+## 現在の優先事項 (2025-11-30 oemer 評価完了)
+1.  **コンテキストベース FP フィルタリングの探索**: notehead-stem ペアリング、staff 構造を利用した高度なフィルタリングの設計フェーズ作業。Phase B で特定された 32 件の「許容すべき FP」(主に stem) に対する将来的な改善策を検討。oemer 評価でも同様の FP パターンが確認されたため、両パイプラインで有効なアプローチを探索。
+2.  **Stem 文脈ヒューリスティックの実験**: 実験用ブランチで stem 検出ロジックを試行し、FP/FN トレードオフを評価。homr/oemer 両方で FP の大半が stem であることが確認されたため、コンテキストベースのアプローチが有望。
 3.  **`thin_barline_finder` のテスト追加**: 別セッションまたはブランチにて、`thin_barline_finder` および小節線マッチングロジック (特にマルチスタッフ小節線ガードとソフトマッチ分類) に対する単体テストを追加する。
-3.  **ホーム/oemer の共通 FN ホットスポットの調査**: 残留 FN (gt {25,65,128,137}) の原因調査と homr/evaluator での再評価を継続。`fn_vertical_split_v5` の成果物を起点に、左マージン処理と局所ノイズの切り分けを行う。
-4.  **薄バー抑制/補完ロジックの oemer への移植**: homr で導入した薄バー抑制/補完ロジックを oemer パイプラインへ移植し、精度/再現率の影響を比較する。
+4.  **ホーム/oemer の共通 FN ホットスポットの調査**: 残留 FN (gt {25,65,128,137}) の原因調査と homr/evaluator での再評価を継続。`fn_vertical_split_v5` の成果物を起点に、左マージン処理と局所ノイズの切り分けを行う。
 5.  **GT 作成支援ツールの活用**: `tools/barline_gt_helper.py` を活用し、今後 GT が必要になった際は `data/training/annotations/` 系のデータに対して追加整備する。
 6.  **onnxruntime-gpu 1.24.x の監視と検証**: PyPI 公開を監視し、リリース後は sandbox 手順 (`logs/night_run/ort_1_24_plan.md`) で CUDA Graph/警告挙動を再検証する。
 

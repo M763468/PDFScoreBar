@@ -13,6 +13,7 @@
 - Agent AI だけで進められないタスクは下部の `Pending Manual Tasks` に追記し、依存条件と次のユーザーアクションを明記する。
 
 ## 最近の差分サマリ（最新3件）
+- **2025-12-XX (Phase 30 設計):** 文脈ベースの FP 削減策を設計。残存 35 FP を stem 隣接、floating stem 等に分類し、notehead マスク等を利用した3つの新 heuristic (Notehead Proximity, Staff Span, Group Map) を提案。Heuristic 1 (notehead 近接) から段階的に実装・評価する計画を策定。
 - **2025-11-30 (oemer 評価):** Phase 28 の `thin_barline_finder` 改善を oemer パイプラインで検証。TP=151, FP=34, FN=1 (Precision=0.816, Recall=0.993, F1=0.896)。homr (TP=152, FP=35, FN=0, F1=0.897) とほぼ同一の FP 数と F1 スコア。oemer の 1 FN は ML モデル起因で heuristic の回帰ではない。ログ: `logs/oemer_eval/20251130_fp_reduction_test/`
 - **2025-11-30 (Phase B):** 残存 35 件の FP を詳細分析。全 FP を Group A (削減可能: 1件)、Group B (リスクあり: 2件)、Group C (許容すべき: 32件) に分類。FP=35 は heuristic ベースアプローチの実用的限界と結論。次の優先事項: oemer 移植、コンテキストベース FP フィルタリング探索。
 - **2025-11-30:** `thin_barline_finder` に FP 削減策を実装 (高さ閾値厳格化、cluster guard rescue 精緻化、stem 抑制) し評価を実行。FP が 62 から 35 に減少 (−27, 43.5% 改善)、Recall=1.000 を維持。TP=152、FP=35、FN=0、Precision=0.813、F1=0.897。ログ: `logs/20251130T185351JST/`
@@ -30,9 +31,9 @@
 ## 現在の主要アプローチ
 `homr` 評価パイプラインと `oemer` ベースラインを並行運用し、共通のマッチングロジックで精度を比較・改善する。`src/ml_detector/barline_detector.py` は oemer のアーキテクチャを踏まえた派生実装として維持しつつ、評価成果物を `logs/` 配下に統一フォーマットで保存する。
 
-## 現在の優先事項 (2025-11-30 oemer 評価完了)
-1.  **コンテキストベース FP フィルタリングの探索**: notehead-stem ペアリング、staff 構造を利用した高度なフィルタリングの設計フェーズ作業。Phase B で特定された 32 件の「許容すべき FP」(主に stem) に対する将来的な改善策を検討。oemer 評価でも同様の FP パターンが確認されたため、両パイプラインで有効なアプローチを探索。
-2.  **Stem 文脈ヒューリスティックの実験**: 実験用ブランチで stem 検出ロジックを試行し、FP/FN トレードオフを評価。homr/oemer 両方で FP の大半が stem であることが確認されたため、コンテキストベースのアプローチが有望。
+## 現在の優先事項 (2025-12-XX stem-context 設計完了)
+1.  **stem-context に基づいた FP 抑制の実装計画**: Phase 30 で設計した Heuristic 1 (notehead 近接リジェクト) を実装し、テストするための具体的な準備を進める。
+2.  **homr evaluator への文脈情報 (`notehead_pred`) 受け渡しの調査**: Heuristic 1 の実装に先立ち、`homr_evaluator.py` 内で生成される `notehead_pred` マスクを、`thin_barline_finder` またはその後段のフィルタリング処理に渡すためのアーキテクチャを調査・設計する。
 3.  **`thin_barline_finder` のテスト追加**: 別セッションまたはブランチにて、`thin_barline_finder` および小節線マッチングロジック (特にマルチスタッフ小節線ガードとソフトマッチ分類) に対する単体テストを追加する。
 4.  **ホーム/oemer の共通 FN ホットスポットの調査**: 残留 FN (gt {25,65,128,137}) の原因調査と homr/evaluator での再評価を継続。`fn_vertical_split_v5` の成果物を起点に、左マージン処理と局所ノイズの切り分けを行う。
 5.  **GT 作成支援ツールの活用**: `tools/barline_gt_helper.py` を活用し、今後 GT が必要になった際は `data/training/annotations/` 系のデータに対して追加整備する。

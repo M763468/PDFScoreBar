@@ -2,19 +2,14 @@
 ## Project Status
 The project goal is to develop an automated bar numbering tool for PDF scores, evaluating and improving two model pipelines: `homr` and `oemer`.
 
-## Last Significant Update (2025-11-30, oemer Evaluation)
-- Action: Validated Phase 28 `thin_barline_finder` improvements on oemer pipeline. Ran evaluation on same test score as homr to compare FP reduction effectiveness across both pipelines.
-- Result: 
-  - **homr**: TP=152, FP=35, FN=0, Precision=0.813, Recall=1.000, F1=0.897
-  - **oemer**: TP=151, FP=34, FN=1, Precision=0.816, Recall=0.993, F1=0.896
-  - FP counts nearly identical (34 vs 35), F1 scores nearly identical (0.896 vs 0.897)
-  - oemer's 1 FN is due to ML model limitations, not heuristic regression
-- Conclusion: Phase 28 FP reduction improvements are confirmed as shared improvements for both pipelines. Heuristic-based FP reduction has reached practical limit in both homr and oemer. Remaining FPs (32-35) are mostly stems requiring context-aware filtering.
-- Log directories: `logs/20251130T185351JST/` (homr), `logs/oemer_eval/20251130_fp_reduction_test/` (oemer)
+## Last Significant Update (2025-12-XX, Phase 30 Design)
+- Action: Completed the design phase for context-based False Positive (FP) reduction. Analyzed the remaining ~35 FPs (mostly note stems) and designed three new heuristics leveraging musical context (notehead proximity, staff span, note group maps).
+- Result: A clear, incremental plan has been formulated to implement and test these heuristics, starting with the lowest-risk "notehead proximity rejection" (Heuristic 1).
+- Conclusion: The project has a well-defined path forward to address the practical limits of the current geometry-based heuristics. The next phase will involve implementation and testing.
 
 ## Current Next Step
-Explore context-based FP filtering approaches (notehead-stem pairing, staff structure analysis). Design and experiment with stem-context heuristics to address remaining 32-35 FPs that are geometrically similar to barlines.
+Proceed with stem-context based FP reduction. The first step is to prepare for the experiment of Heuristic 1 (notehead proximity rejection). This involves investigating the architecture for passing context (like a notehead mask) to the post-processing stage.
 
 ## Blocking Issues
-None. Context-based FP filtering and stem-context experiments are next priorities.
+A design is needed for how to pass contextual information (e.g., `notehead_pred` mask) to the `thin_barline_finder` or a subsequent filtering step. An approach where filtering is applied as a post-processing step within the main evaluator script is being considered.
 ---

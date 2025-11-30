@@ -490,3 +490,16 @@ homr evaluator と oemer ベースラインの比較・改善ワークフロー�
     - **絶対条件**: False Negative (FN) が 0 を維持すること (Recall 1.000 の維持)。FN の増加は許容しない。
 - **ステータス**: **設計完了**。次のステップは Heuristic 1 の実装と評価準備。
 
+## Phase 31: Log Path Standardization for homr Evaluation (2025-12-01)
+
+- **Goal**: To clarify and standardize the output log paths for `homr` evaluations to prevent confusion.
+- **Process**:
+    - Investigated why `homr` evaluation logs (e.g., for run `20251201T_homr_heuristic1`) were expected in one location (`logs/`) but appeared in another (`logs/homr_eval/`).
+    - Confirmed that runs using `--output-root /workspace/logs/homr_eval` correctly placed logs inside `/workspace/logs/homr_eval` in the container, which maps to `logs/homr_eval/` on the host.
+    - A temporary issue where the `logs/homr_eval/` directory was not immediately visible on the host was attributed to a transient volume or caching issue with the local environment, as the directory was present inside the container and appeared later on the host. It was not a code bug.
+- **Outcome**:
+    - To avoid future confusion, a decision was made to standardize all `homr` evaluations on using the absolute path `--output-root /workspace/logs/homr_eval`.
+    - This ensures all `homr` runs consistently write to the `logs/homr_eval/` directory on the host.
+- **Documentation**: Updated `docs/ENVIRONMENTS.md` to reflect this new standard, including the canonical command to use for `homr` evaluations.
+- **Status**: Complete. The standardized workflow is now documented.
+

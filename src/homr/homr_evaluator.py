@@ -66,6 +66,7 @@ from homr.simple_logging import eprint  # type: ignore
 
 from common.barline_evaluation import (
     BarlineMatch,
+    BarlineMatchResult,
     BarlineSoftMatch,
     apply_left_margin_exclusion,
     greedy_barline_match,
@@ -75,10 +76,16 @@ from common.thin_barline_finder import detect_thin_vertical_runs
 LEFT_MARGIN_FORCE_FP_GT_INDICES: Set[int] = set()
 LEFT_MARGIN_FORCE_FP_MAX_WIDTH = 2
 
+# Configuration for stem-context based False Positive reduction heuristics.
+STEM_CONTEXT_HEURISTICS = {
+    "enabled": True,
+    "notehead_proximity_threshold_px": 5,
+}
+
 
 @dataclass
 class TransformInfo:
-    original_shape: Tuple[int, int]
+    original_shape: Tuple[int, int]  # width, height
     crop_box: Tuple[int, int, int, int]  # x, y, w, h
     resize_shape: Tuple[int, int]
     seg_shape: Tuple[int, int]
@@ -376,11 +383,22 @@ def detect_staffs_with_barlines(
     image_path: str,
     config: ProcessingConfig,
     tuning: Dict[str, float],
-) -> Tuple[List[Any], np.ndarray, Any, Future[str], List[Any]]:
+) -> Tuple[List[Any], np.ndarray, Any, Future[str], List[Any], np.ndarray]:
+    """
+    Runs the core homr staff and symbol detection pipeline.
+
+    Returns:
+        A tuple containing the multi-staffs, preprocessed image, debug object,
+        title future, detected bar line boxes, and the notehead prediction mask.
+    """
     predictions, debug = load_and_preprocess_predictions(
         image_path, config.enable_debug, config.enable_cache
     )
     symbols = predict_symbols(debug, predictions)
+
+    # The notehead mask is crucial for context-based filtering. The `predictions`
+    # object from load_and_preprocess_predictions contains the raw numpy array.
+    notehead_mask = predictions.notehead
 
     symbols.staff_fragments = break_wide_fragments(symbols.staff_fragments)
     debug.write_bounding_boxes("staff_fragments", symbols.staff_fragments)
@@ -453,7 +471,64 @@ def detect_staffs_with_barlines(
     )
     debug.write_all_bounding_boxes_alternating_colors("notes", multi_staffs, notes)
 
-    return multi_staffs, predictions.preprocessed, debug, title_future, bar_line_boxes
+    return (
+        multi_staffs,
+        predictions.preprocessed,
+        debug,
+        title_future,
+        bar_line_boxes,
+        notehead_mask,
+    )
+
+
+def filter_detections_by_notehead_proximity(
+    detections: List[BarlinePrediction],
+    notehead_mask: np.ndarray,
+    proximity_threshold_px: int,
+) -> Tuple[List[BarlinePrediction], List[BarlinePrediction]]:
+    """
+    Filters barline detections that are horizontally close to noteheads, which
+    are likely to be stems.
+
+    This heuristic is designed to be conservative to avoid creating False Negatives.
+    It only rejects a candidate if it's immediately adjacent to a notehead.
+
+    Args:
+        detections: List of detected barline boxes in original image coordinates.
+        notehead_mask: Binary mask of notehead locations in original image coordinates.
+        proximity_threshold_px: The horizontal distance in pixels to check for noteheads.
+
+    Returns:
+        A tuple containing (kept_detections, rejected_detections).
+    """
+    kept_detections = []
+    rejected_detections = []
+    mask_h, mask_w = notehead_mask.shape
+
+    for pred in detections:
+        x1, y1, x2, y2 = pred.orig_bbox
+
+        # Define a horizontal search window around the detection
+        search_x1 = max(0, x1 - proximity_threshold_px)
+        search_x2 = min(mask_w, x2 + proximity_threshold_px)
+
+        # Clamp vertical coordinates to mask boundaries
+        y1_clamped = max(0, y1)
+        y2_clamped = min(mask_h, y2)
+
+        if y1_clamped >= y2_clamped or search_x1 >= search_x2:
+            # Invalid box, keep it to be safe and let evaluation handle it
+            kept_detections.append(pred)
+            continue
+
+        # Check for any notehead pixels in the search window
+        search_window = notehead_mask[y1_clamped:y2_clamped, search_x1:search_x2]
+        if np.any(search_window):
+            rejected_detections.append(pred)
+        else:
+            kept_detections.append(pred)
+
+    return kept_detections, rejected_detections
 
 
 def run_homr_on_image(
@@ -462,9 +537,9 @@ def run_homr_on_image(
     xml_args: XmlGeneratorArguments,
     timeout_s: float,
     tuning: Dict[str, float],
-) -> Tuple[List[BarlinePrediction], Optional[Path], Tuple[int, int], float]:
+) -> Tuple[List[BarlinePrediction], Optional[Path], Tuple[int, int], float, np.ndarray]:
     start = time.perf_counter()
-    (multi_staffs, preprocessed_image, debug, title_future, bar_line_boxes) = (
+    (multi_staffs, preprocessed_image, debug, title_future, bar_line_boxes, notehead_mask) = (
         detect_staffs_with_barlines(str(image_path), config, tuning)
     )
 
@@ -499,7 +574,7 @@ def run_homr_on_image(
         debug.clean_debug_files_from_previous_runs()
 
     runtime_s = time.perf_counter() - start
-    return predictions, xml_path, seg_shape, runtime_s
+    return predictions, xml_path, seg_shape, runtime_s, notehead_mask
 
 
 def draw_overlay(
@@ -509,6 +584,7 @@ def draw_overlay(
     *,
     matches: Optional[Sequence[BarlineMatch]] = None,
     soft_matches: Optional[Sequence[BarlineSoftMatch]] = None,
+    rejected_detections: Optional[Sequence[BarlinePrediction]] = None,
     false_positive_indices: Optional[Sequence[int]] = None,
     thickness: int = 2,
 ) -> None:
@@ -547,6 +623,17 @@ def draw_overlay(
             1,
             cv2.LINE_AA,
         )
+
+    if rejected_detections:
+        for pred in rejected_detections:
+            x1, y1, x2, y2 = pred.orig_bbox
+            color = (128, 0, 128)  # Purple for rejected stems
+            label = "REJECTED_STEM"
+            cv2.rectangle(image, (x1, y1), (x2, y2), color, thickness)
+            cv2.putText(
+                image, label, (x1, max(12, y1 - 4)), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1, cv2.LINE_AA
+            )
+
     ensure_dir(output_path.parent)
     if not cv2.imwrite(str(output_path), image):
         raise RuntimeError(f"Failed to write overlay image: {output_path}")
@@ -849,11 +936,11 @@ def main() -> None:
         )
         xml_args = XmlGeneratorArguments(False, None, None)
 
-        predictions, xml_path, seg_shape, runtime_s = run_homr_on_image(
+        predictions, xml_path, seg_shape, runtime_s, notehead_mask = run_homr_on_image(
             working_image, config, xml_args, args.timeout, tuning
         )
         transform = compute_transform_info(working_image, seg_shape)
-
+        
         mapped_predictions: List[BarlinePrediction] = []
         for pred in predictions:
             orig_bbox = map_pred_to_orig(pred.pred_bbox, transform)
@@ -934,6 +1021,24 @@ def main() -> None:
                     )
                 )
 
+        # --- Heuristic 1: Notehead Proximity Rejection ---
+        rejected_by_heuristic: List[BarlinePrediction] = []
+        if STEM_CONTEXT_HEURISTICS["enabled"]:
+            # Resize notehead mask to match the original image coordinate system.
+            # homr's transform.original_shape is (width, height), which is what
+            # cv2.resize's dsize parameter expects.
+            notehead_mask_resized = cv2.resize(
+                notehead_mask.astype(np.uint8),
+                dsize=transform.original_shape,
+                interpolation=cv2.INTER_NEAREST,
+            )
+            mapped_predictions, rejected_by_heuristic = filter_detections_by_notehead_proximity(
+                mapped_predictions,
+                notehead_mask_resized,
+                STEM_CONTEXT_HEURISTICS["notehead_proximity_threshold_px"],
+            )
+        # --- End Heuristic 1 ---
+
         ground_truth_path: Optional[Path] = None
         if stem in ground_truth_map:
             ground_truth_path = ground_truth_map[stem]
@@ -977,6 +1082,7 @@ def main() -> None:
             overlay_path,
             matches=match_result.matches if match_result else None,
             soft_matches=match_result.soft_matches if match_result else None,
+            rejected_detections=rejected_by_heuristic,
             false_positive_indices=match_result.false_positive_indices if match_result else None,
         )
 

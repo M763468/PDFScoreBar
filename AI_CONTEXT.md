@@ -12,4 +12,8 @@ Proceed with stem-context based FP reduction. The first step is to prepare for t
 
 ## Blocking Issues
 A design is needed for how to pass contextual information (e.g., `notehead_pred` mask) to the `thin_barline_finder` or a subsequent filtering step. An approach where filtering is applied as a post-processing step within the main evaluator script is being considered.
+
+## Evaluation / Reproduction
+- To re-run the homr evaluation for page_3, use the `homr_eval_gpu` container and the canonical command (see `docs/ENVIRONMENTS.md`).
+- Evaluation outputs are now standardized under `logs/homr_eval/<run_id>/`.
 ---

@@ -50,3 +50,32 @@ This document describes the runtime containers, storage layout, and log-handling
 - JSON 由来の矩形確認: `tools/render_barline_boxes_overlay.py --base data/evaluation/images/<page>.png --boxes <path/to/boxes.json> --output logs/.../<timestamp>_boxes_overlay.png`
 - いずれの画像も `logs/homr_eval/<run>/` 配下に保存し、レビュー時にはこの2種類のオーバーレイをセットで提示する。
 - 修正点の共有には `src/tools/coordinate_annotator.py` を利用し、対象ページの `IMAGE_PATH` / `GROUND_TRUTH_OUTPUT_PATH` を切り替えて矩形を再指定する。保存後は `tools/render_barline_boxes_overlay.py` で差分確認を行う。
+
+## homr Evaluation Workflow and Log Paths
+
+This section defines the standardized procedure for running barline detection evaluations with the `homr` pipeline.
+
+- **Container**: All `homr` evaluations must be run inside the `homr_eval_gpu` container.
+
+- **Canonical Command**: The following command structure should be used for all evaluations. It ensures consistency in execution environment, paths, and logging.
+
+  ```bash
+  docker exec homr_eval_gpu bash -c "
+    cd /workspace/homr &&
+    poetry run python /workspace/src/homr/homr_evaluator.py \
+      --images /workspace/data/evaluation/images/page_3.png \
+      --ground-truth page_3:/workspace/data/evaluation/annotations/page_003/boxes_sorted.json \
+      --output-root /workspace/logs/homr_eval \
+      --force-run-id <your_run_id>
+  "
+  ```
+  - `<your_run_id>` should be a descriptive identifier, e.g., `20251201T_homr_heuristic1`.
+
+- **Log Output Paths**:
+  - **Canonical Path**: With the standardized command, all evaluation artifacts (metrics, overlays, etc.) will appear on the host machine under:
+    - `logs/homr_eval/<your_run_id>/`
+    - Example: `logs/homr_eval/20251201T_homr_heuristic1/metrics.json`
+  - **Historical Path**: Older runs (e.g., Phase 28 baseline, `20251130T185351JST`) used a different output root (`--output-root logs`). Their outputs are located directly under `logs/` on the host:
+    - Example: `logs/20251130T185351JST/metrics.json`
+  - This difference is expected. The standardization on `/workspace/logs/homr_eval` aims to prevent future confusion. A temporary issue on 2025-12-01 where new logs were not immediately visible on the host was determined to be a transient environment/volume visibility problem, not a code bug.
+

@@ -131,9 +131,18 @@ def detect_thin_vertical_runs(
     existing = list(existing_boxes)
     candidates: List[Box] = []
     for box in merged:
+        x1, y1, x2, y2 = box
+        box_width = x2 - x1
+        box_height = y2 - y1
+
+        # 1. Tighten Height Thresholds: Reject very short vertical fragments for W=1.
+        # Restrict min_height_relaxed so it is only applied when width >= 2.
+        if box_width < 2 and box_height < cfg.min_height:
+            continue
+
         if _is_close(box, existing, cfg=cfg):
             continue
-        x1, y1, x2, y2 = box
+        
         cx, _ = _centroid(box)
         if cfg.left_margin_limit > 0 and cx <= cfg.left_margin_limit:
             # Skip left margin artefacts (e.g. gutter pillars)
@@ -203,6 +212,13 @@ def detect_thin_vertical_runs(
             failing_ratio = left_dark_ratio if not left_ok else right_dark_ratio
             if failing_ratio is None or failing_ratio <= cfg.single_side_dark_ratio:
                 single_side_override = True
+        
+        # 3. Light Stem-Suppression Heuristic
+        # If W=1 AND one side is significantly darker (notehead-side),
+        # AND height is relatively short (e.g. < 20), reject.
+        if single_side_override and box_width == 1 and box_height < 20:
+             continue
+
         if not adjacency_ok and not single_side_override:
             continue
 
@@ -260,6 +276,27 @@ def detect_thin_vertical_runs(
                 if not is_near_existing:
                     # Treat tall multi-staff columns without prior detections as noise.
                     continue
+                else:
+                    # 2. Refine Cluster Guard Rescue Logic
+                    # If rescuing, only keep "strong" candidates to avoid rescuing noise.
+                    # Criteria: Height >= 20 OR very low std dev (clean line).
+                    rescued_boxes = []
+                    for box in bucket_boxes:
+                        h = box[3] - box[1]
+                        # Calculate std again or assume it passed earlier checks.
+                        # We don't have std here easily without re-calculating.
+                        # Let's rely on height as requested.
+                        if h >= 20:
+                            rescued_boxes.append(box)
+                        else:
+                            # Optional: check std if we want to be fancy, but let's stick to height for now.
+                            # We can re-calculate std if needed, but it's expensive.
+                            # Let's trust the height heuristic.
+                            pass
+                    bucket_boxes = rescued_boxes
+                    if not bucket_boxes:
+                        continue
+
         filtered.extend(bucket_boxes)
 
     return filtered

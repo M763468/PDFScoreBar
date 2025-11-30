@@ -2,14 +2,14 @@
 ## Project Status
 The project goal is to develop an automated bar numbering tool for PDF scores, evaluating and improving two model pipelines: `homr` and `oemer`.
 
-## Last Significant Update (2025-11-29)
-- Action: Modified the `thin_barline_finder` cluster guard. The logic now checks for nearby existing detections before rejecting a tall, fragmented cluster. This prevents the guard from incorrectly removing valid barlines that span multiple staves.
-- Result: The fix has been verified. The original FN case is resolved. New metrics: TP=152, FP=62, FN=0 (Precision=0.710, Recall=1.000, F1=0.831). There was a slight increase of 3 False Positives compared to the previous run (59 to 62).
-- Log directory: `logs/eval_2025_11_29_1764397202/`
+## Last Significant Update (2025-11-30)
+- Action: Implemented FP reduction strategies in `thin_barline_finder`: (1) tightened height thresholds for W=1 candidates, (2) refined cluster guard rescue logic to require H≥20, (3) added light stem-suppression heuristic for single-side-override cases with W=1 and H<20.
+- Result: Evaluation completed successfully. New metrics: TP=152, FP=35, FN=0 (Precision=0.813, Recall=1.000, F1=0.897). FP reduced from 62 to 35 (−27, 43.5% improvement). Perfect recall maintained.
+- Log directory: `logs/20251130T185351JST/`
 
 ## Current Next Step
-Analyze the 3 newly introduced False Positives from the latest evaluation run to identify their cause.
+Analyze the remaining 35 FPs to determine whether further reduction is possible without compromising recall.
 
 ## Blocking Issues
-None. Investigation of new False Positives is the immediate priority.
+None. FP analysis is the immediate priority.
 ---

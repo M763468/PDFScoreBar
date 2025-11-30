@@ -32,10 +32,15 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SRC_ROOT = REPO_ROOT / "src"
 HOMR_REPO = REPO_ROOT / "homr"
 JST = ZoneInfo("Asia/Tokyo")
-if str(SRC_ROOT) not in sys.path:
-    sys.path.insert(0, str(SRC_ROOT))
-if str(HOMR_REPO) not in sys.path:
-    sys.path.insert(0, str(HOMR_REPO))
+
+# Force paths to front to ensure correct import order
+if str(SRC_ROOT) in sys.path:
+    sys.path.remove(str(SRC_ROOT))
+sys.path.insert(0, str(SRC_ROOT))
+
+if str(HOMR_REPO) in sys.path:
+    sys.path.remove(str(HOMR_REPO))
+sys.path.insert(0, str(HOMR_REPO))
 
 # pylint: disable=wrong-import-position
 from homr import constants  # type: ignore

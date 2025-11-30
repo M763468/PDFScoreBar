@@ -374,3 +374,23 @@ homr evaluator と oemer ベースラインの比較・改善ワークフロー�
     - **Metrics**: TP=152, FP=62, FN=0, Precision=0.710, Recall=1.000, F1=0.831。
 - **ステータス**: **完了**。主要なFNは解消されたが、新規FPの分析と抑制が次の課題。
 
+## Phase 28: False Positive 削減と評価 (2025-11-30)
+
+- **目標**: Phase 27 で導入された 3 件の新規 FP を含む、全 62 件の False Positives を分析し、Recall=1.000 を維持しつつ FP を削減する。
+- **分析**:
+    - 62 件の FP を分類: 53 件が "Thin Barline Candidate" (H=18-24, W=1-4 だが誤検出)、9 件が "Other Vertical Fragment" (H<18 の短い縦線)。
+    - 新規 FP 4 件 (Indices 120, 121, 234, 249) を特定。これらは cluster guard の緩和により rescue されたが、実際にはノイズであった。
+- **変更内容**:
+    1. **Height Threshold の厳格化**: W=1 の候補に対して `min_height_relaxed` を無効化し、H<18 の短い断片を除去。
+    2. **Cluster Guard Rescue の精緻化**: rescue 対象を H≥20 に制限し、ノイズの rescue を防止。
+    3. **Stem Suppression Heuristic**: `single_side_override` かつ W=1 かつ H<20 の候補を除去 (stem の可能性が高い)。
+- **評価**:
+    - 評価ログ: `logs/20251130T185351JST/`
+    - Docker コンテナ `homr_eval_gpu` 内で `homr_evaluator.py` を実行。
+- **結果**:
+    - **FP 大幅削減**: FP が 62 から 35 に減少 (−27, 43.5% 改善)。
+    - **Recall 維持**: FN=0, Recall=1.000 を維持。
+    - **Metrics**: TP=152, FP=35, FN=0, Precision=0.813, Recall=1.000, F1=0.897。
+    - Precision が 0.710 から 0.813 に向上 (+0.103)、F1 が 0.831 から 0.897 に向上 (+0.066)。
+- **ステータス**: **完了**。FP 削減に成功し、Recall を維持。残存 35 件の FP に対する追加削減の可能性を次フェーズで検討。
+

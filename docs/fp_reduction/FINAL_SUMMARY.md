@@ -3,7 +3,7 @@
 > [!NOTE]
 > This document is a focused summary of the FP-reduction optimization project (Dec 2025).
 > For the full chronological development history of the entire repository, see [docs/DEVELOPMENT_LOG.md](../DEVELOPMENT_LOG.md).
-> **Note**: Scripts mentioned here (e.g., `analyze_fps.py`) have been moved to `experiments/fp_reduction/`.
+> **Repo Restructure (Dec 2025)**: Scripts mentioned here (e.g., `analyze_fps.py`) have been moved to `experiments/fp_reduction/`.
 
 ## 1. プロジェクト目的
 **「Page 3」における誤検出（False Positive: FP）の削減**

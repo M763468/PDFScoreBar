@@ -1,4 +1,9 @@
-# Project## Documentation Modules
+# Project Documentation Index
+
+> [!NOTE]
+> **Repo Restructure (Dec 2025)**: Scripts have moved to `experiments/` and `tools/`. External repos are in `external/`. If documentation references old paths (`src/tools`, `homr/`), please adjust accordingly.
+
+## Documentation Modules
 
 ### FP Reduction (Dec 2025)
 - [Final Summary](fp_reduction/FINAL_SUMMARY.md): Executive summary and conclusions.

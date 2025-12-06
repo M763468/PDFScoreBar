@@ -3,6 +3,7 @@
 > [!NOTE]
 > This document summarizes the heuristic experiments for FP reduction (Dec 2025).
 > For the full project context and history, see [docs/DEVELOPMENT_LOG.md](../DEVELOPMENT_LOG.md).
+> **Note**: Experimental scripts moved to `experiments/fp_reduction/`.
 
 ## Objective
 Reduce False Positives (FPs) in barline detection on `page_3` without introducing False Negatives (FNs).

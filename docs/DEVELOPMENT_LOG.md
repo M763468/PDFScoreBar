@@ -1,4 +1,6 @@
 # Global Development Log
+> [!NOTE]
+> **Path Warning (Dec 2025)**: The repository has been restructured. Older log entries may reference paths like `src/archive`, `tools/fp_reduction`, or root `homr/`. These are now located in `experiments/`, `experiments/fp_reduction/`, and `external/` respectively.
 
 This document records the complete development history, key decisions, and learnings throughout the entire project lifespan.
 For a focused summary of the recent "FP Reduction Project" (Dec 2025), see also [docs/fp_reduction/FINAL_SUMMARY.md](fp_reduction/FINAL_SUMMARY.md).

@@ -1,3 +1,4 @@
+# NOTE (2025-12 repo restructure): This script may still assume pre-restructure paths (src/tools, tools/fp_reduction). Adjust imports if reusing.
 #!/usr/bin/env python3
 """Analyze tight duplicate resolution dry-run results."""
 

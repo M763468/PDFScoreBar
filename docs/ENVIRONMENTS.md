@@ -1,6 +1,14 @@
-# Environments
+# Environment & Tooling Guide
 
-This document describes the runtime containers, storage layout, and log-handling conventions used in the project.
+> [!NOTE]
+> **Path Changes (Dec 2025)**: The repository has been restructured.
+> - Tools previously in `src/tools/` are now in `tools/`.
+> - `homr` and `oemer` repositories are now in `external/`.
+> - Analysis scripts are in `experiments/`.
+> If you see older paths in logs or docs, please adjust accordingly.
+
+This document describes how to use the provided tools (now located in `tools/`) and Docker environments.
+, storage layout, and log-handling conventions used in the project.
 
 ## Runtime Containers
 

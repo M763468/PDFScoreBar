@@ -1,3 +1,3 @@
 [submodule "src/archive/oemer/oemer_src"]
-	path = src/archive/oemer/oemer_src
+	path = external/oemer/oemer_src
 	url = https://github.com/BreezeWhite/oemer

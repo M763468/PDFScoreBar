@@ -4,6 +4,16 @@ This project aims to develop a Python-based tool that automatically adds measure
 
 > **Status notice (2024-06-14):** Active development is concentrated on the `homr`-based evaluation workflow and related tooling. Historical experiments remain documented below; when in doubt, start from `docs/README.md` for the current documentation map and follow the pointers there.
 
+## Repository Structure
+
+- **`src/`**: Stable, core application code (`homr`, `ml_detector`, `common`).
+- **`external/`**: Cloned third-party libraries (`homr`, `oemer`).
+- **`tools/`**: Reusable utility scripts (`visualize_*.py`, etc.).
+- **`experiments/`**: Experimental scripts and analysis (`fp_reduction/`, `gemini/`, `hybrid/`).
+- **`docs/`**: Documentation and notes.
+
+## License
+
 ## Core Technology
 
 This tool currently explores multiple detection backends (legacy Gemini + OpenCV hybrid, `oemer`-inspired ML detector, and the `homr` pipeline). The README captures high-level concepts; see the docs mentioned above for day-to-day workflows.

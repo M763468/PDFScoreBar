@@ -4,8 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
+import collections
 import csv
 import json
+import logging
 import os
 import shlex
 import shutil
@@ -77,9 +80,20 @@ LEFT_MARGIN_FORCE_FP_GT_INDICES: Set[int] = set()
 LEFT_MARGIN_FORCE_FP_MAX_WIDTH = 2
 
 # Configuration for stem-context based False Positive reduction heuristics.
+# Configuration for stem-context based False Positive reduction heuristics.
+# Configuration for stem-context based False Positive reduction heuristics.
 STEM_CONTEXT_HEURISTICS = {
     "enabled": True,
     "notehead_proximity_threshold_px": 5,
+    "min_overlap_px": 5,
+    "max_height_px": 24,
+    "max_width_px": 4,
+    "staff_crossing_enabled": False,
+    "min_staff_crossings": 3,
+    "cluster_resolution_dry_run": False,
+    "cluster_gap_threshold_px": 15,
+    "tight_duplicate_dry_run": False,
+    "measure_grid_export": True,
 }
 
 
@@ -383,22 +397,24 @@ def detect_staffs_with_barlines(
     image_path: str,
     config: ProcessingConfig,
     tuning: Dict[str, float],
-) -> Tuple[List[Any], np.ndarray, Any, Future[str], List[Any], np.ndarray]:
+) -> Tuple[List[Any], np.ndarray, Any, Future[str], List[Any], np.ndarray, np.ndarray]:
     """
     Runs the core homr staff and symbol detection pipeline.
 
     Returns:
         A tuple containing the multi-staffs, preprocessed image, debug object,
-        title future, detected bar line boxes, and the notehead prediction mask.
+        title future, detected bar line boxes, the notehead prediction mask,
+        and the staff prediction mask.
     """
     predictions, debug = load_and_preprocess_predictions(
         image_path, config.enable_debug, config.enable_cache
     )
     symbols = predict_symbols(debug, predictions)
 
-    # The notehead mask is crucial for context-based filtering. The `predictions`
-    # object from load_and_preprocess_predictions contains the raw numpy array.
+    # The notehead and staff masks are crucial for context-based filtering.
+    # The `predictions` object from load_and_preprocess_predictions contains the raw numpy arrays.
     notehead_mask = predictions.notehead
+    staff_mask = predictions.staff
 
     symbols.staff_fragments = break_wide_fragments(symbols.staff_fragments)
     debug.write_bounding_boxes("staff_fragments", symbols.staff_fragments)
@@ -478,6 +494,7 @@ def detect_staffs_with_barlines(
         title_future,
         bar_line_boxes,
         notehead_mask,
+        staff_mask,
     )
 
 
@@ -485,18 +502,35 @@ def filter_detections_by_notehead_proximity(
     detections: List[BarlinePrediction],
     notehead_mask: np.ndarray,
     proximity_threshold_px: int,
+    min_overlap_px: int,
+    max_height_px: int,
+    max_width_px: int,
+    staff_mask: Optional[np.ndarray] = None,
+    min_staff_crossings: int = 0,
+    check_staff_crossing: bool = False,
 ) -> Tuple[List[BarlinePrediction], List[BarlinePrediction]]:
     """
     Filters barline detections that are horizontally close to noteheads, which
     are likely to be stems.
 
     This heuristic is designed to be conservative to avoid creating False Negatives.
-    It only rejects a candidate if it's immediately adjacent to a notehead.
+    It only rejects a candidate if it matches ALL of the following:
+      1. Within `proximity_threshold_px` of a notehead.
+      2. Pixel overlap with notehead mask >= `min_overlap_px`.
+      3. Height < `max_height_px` (short stems).
+      4. Width < `max_width_px` (thin stems).
 
     Args:
         detections: List of detected barline boxes in original image coordinates.
-        notehead_mask: Binary mask of notehead locations in original image coordinates.
+        notehead_mask: Binary (0/255) or (0/1) mask of notehead locations in original image coordinates.
         proximity_threshold_px: The horizontal distance in pixels to check for noteheads.
+        min_overlap_px: Minimum intersection area to consider a rejection.
+        max_height_px: Maximum height to consider a rejection.
+        max_width_px: Maximum width to consider a rejection.
+
+        check_staff_crossing: If True, `staff_mask` and `min_staff_crossings` are used to reject low-crossing candidates.
+        staff_mask: Binary (0/255) mask of staff lines. Required if `check_staff_crossing` is True.
+        min_staff_crossings: Minimum crossings required to KEEP a candidate IF overlap is low.
 
     Returns:
         A tuple containing (kept_detections, rejected_detections).
@@ -504,32 +538,682 @@ def filter_detections_by_notehead_proximity(
     kept_detections = []
     rejected_detections = []
     mask_h, mask_w = notehead_mask.shape
-
+    
     for pred in detections:
         x1, y1, x2, y2 = pred.orig_bbox
+        width = x2 - x1
+        height = y2 - y1
 
+        # Check dimensions first (fastest)
+        # Note: These criteria are for REJECTION.
+        # Original Heuristic 1 ("Safe Filter"):
+        # REJECT if (Dist < 5) AND (Height < 24) AND (Width < 4) AND (Overlap >= 5)
+        
+        # Dimensions check allows us to skip Heuristic 1 if dimensions don't match FP profile
+        is_small_candidate = (height < max_height_px) and (width < max_width_px)
+        
         # Define a horizontal search window around the detection
         search_x1 = max(0, x1 - proximity_threshold_px)
         search_x2 = min(mask_w, x2 + proximity_threshold_px)
 
         # Clamp vertical coordinates to mask boundaries
-        y1_clamped = max(0, y1)
-        y2_clamped = min(mask_h, y2)
+        y1_clamped = max(0, min(mask_h, y1))
+        y2_clamped = max(0, min(mask_h, y2))
 
         if y1_clamped >= y2_clamped or search_x1 >= search_x2:
-            # Invalid box, keep it to be safe and let evaluation handle it
             kept_detections.append(pred)
             continue
 
-        # Check for any notehead pixels in the search window
+        # Extract regions
+        box_x1 = max(0, min(mask_w, x1))
+        box_x2 = max(0, min(mask_w, x2))
+        
+        # Proximity check window
         search_window = notehead_mask[y1_clamped:y2_clamped, search_x1:search_x2]
-        if np.any(search_window):
-            rejected_detections.append(pred)
+        is_proximal = np.any(search_window)
+        
+        if not is_proximal:
+             kept_detections.append(pred)
+             continue
+             
+        # Overlap check
+        if box_x1 >= box_x2:
+             overlap_area = 0
         else:
-            kept_detections.append(pred)
+             box_window = notehead_mask[y1_clamped:y2_clamped, box_x1:box_x2]
+             overlap_area = np.count_nonzero(box_window)
+        
+        # --- Heuristic 1: Safe Filter (Small + High Overlap) ---
+        if is_small_candidate and overlap_area >= min_overlap_px:
+            rejected_detections.append(pred)
+            continue
+            
+        # --- Heuristic 2: Staff-Crossing Validation (Low Overlap + Low Crossing) ---
+        # Only check if it wasn't already rejected by Heuristic 1, and heuristic 2 IS enabled.
+        # Note: We are currently inside a block where is_proximal is True.
+        # Heuristic 2 targets candidates that have LOW overlap (< min_overlap_px) but ARE proximal.
+        
+        if check_staff_crossing and staff_mask is not None and overlap_area < min_overlap_px:
+            num_crossings = count_staff_crossings(pred.orig_bbox, staff_mask)
+            if num_crossings < min_staff_crossings:
+                rejected_detections.append(pred)
+                continue
+
+        kept_detections.append(pred)
 
     return kept_detections, rejected_detections
 
+
+def count_staff_crossings(
+    bbox: Tuple[int, int, int, int],
+    staff_mask: np.ndarray,
+) -> int:
+    """
+    Counts the number of staff line crossings for a vertical barline candidate.
+    
+    A "crossing" is defined as a transition from background -> staff -> background
+    along the vertical slice at the candidate's x-coordinate.
+    
+    Args:
+        bbox: Bounding box (x1, y1, x2, y2) in original image coordinates.
+        staff_mask: Binary (0/255) staff mask in original image coordinates.
+    
+    Returns:
+        Number of distinct staff line crossings.
+    """
+    x1, y1, x2, y2 = bbox
+    mask_h, mask_w = staff_mask.shape
+    
+    # Use center x-coordinate
+    cx = (x1 + x2) // 2
+    if cx < 0 or cx >= mask_w:
+        return 0
+    
+    # Clamp y range
+    y1_clamped = max(0, min(mask_h, y1))
+    y2_clamped = max(0, min(mask_h, y2))
+    
+    if y1_clamped >= y2_clamped:
+        return 0
+    
+    # Extract vertical slice
+    vertical_slice = staff_mask[y1_clamped:y2_clamped, cx]
+    
+    # Binarize (in case it's 0/1 instead of 0/255)
+    binary_slice = (vertical_slice > 0).astype(np.uint8)
+    
+    # Count transitions: 0->1 (entering staff line)
+    # A crossing is a contiguous run of 1s
+    crossings = 0
+    in_staff = False
+    
+    for val in binary_slice:
+        if val == 1 and not in_staff:
+            crossings += 1
+            in_staff = True
+        elif val == 0:
+            in_staff = False
+    
+    return crossings
+
+
+    return crossings
+
+
+def resolve_clusters_dry_run(
+    predictions: List[BarlinePrediction],
+    notehead_mask: np.ndarray,
+    stem: str,
+    output_dir: Path,
+    base_gap_threshold: int = 15,
+) -> None:
+    """
+    Dry-run implementation of Cluster Resolution Heuristic.
+    Groups barline candidates by proximity and determines which ones WOULD be removed.
+    Writes decisions to candidate_clusters.csv.
+    
+    Logic:
+    1. Group by Staff.
+    2. Cluster by horizontal distance (gap <= 15px).
+    3. Score each candidate (Strength = Height + Overlap*2).
+    4. Resolve:
+       - Tight (<4px): Keep Best (Duplicate).
+       - Medium (4-15px): Keep Both if Double Barline (Strong+Strong), else Keep Strongest.
+    """
+    mask_h, mask_w = notehead_mask.shape
+    
+    # 1. Group by Staff
+    grouped = collections.defaultdict(list)
+    for idx, pred in enumerate(predictions):
+        key = (pred.system_index, pred.staff_index)
+        grouped[key].append((idx, pred))
+        
+    cluster_rows = []
+    
+    for (sys_idx, staff_idx), items in grouped.items():
+        # Sort by x-center
+        items.sort(key=lambda item: (item[1].orig_bbox[0] + item[1].orig_bbox[2]) / 2)
+        
+        # 2. Form Clusters
+        clusters = []
+        if not items:
+            continue
+            
+        current_cluster = [items[0]]
+        
+        for i in range(1, len(items)):
+            prev = items[i-1][1]
+            curr = items[i][1]
+            
+            prev_cx = (prev.orig_bbox[0] + prev.orig_bbox[2]) / 2
+            curr_cx = (curr.orig_bbox[0] + curr.orig_bbox[2]) / 2
+            gap = curr_cx - prev_cx
+            
+            if gap <= base_gap_threshold:
+                current_cluster.append(items[i])
+            else:
+                clusters.append(current_cluster)
+                current_cluster = [items[i]]
+        clusters.append(current_cluster)
+        
+        # 3. Resolve Clusters
+        for c_id, cluster in enumerate(clusters):
+            # Calculate scores for all in cluster
+            scored_cluster = []
+            for original_idx, pred in cluster:
+                x1, y1, x2, y2 = pred.orig_bbox
+                h = y2 - y1
+                
+                # Re-calculate overlap (expensive but necessary if not passed)
+                # Optimization: Could pass pre-computed stats, but for dry run this is fine.
+                y1_c = max(0, min(mask_h, y1))
+                y2_c = max(0, min(mask_h, y2))
+                x1_c = max(0, min(mask_w, x1))
+                x2_c = max(0, min(mask_w, x2))
+                
+                if x1_c >= x2_c or y1_c >= y2_c:
+                    overlap_area = 0.0
+                else:
+                    box_window = notehead_mask[y1_c:y2_c, x1_c:x2_c]
+                    overlap_area = float(np.count_nonzero(box_window))
+                
+                # SCORE FORMULA
+                score = float(h) + (overlap_area * 2.0)
+                scored_cluster.append({
+                    "pred": pred,
+                    "idx": original_idx,
+                    "score": score,
+                    "height": h,
+                    "overlap": overlap_area,
+                    "decision": "KEEP", # Default
+                    "reason": "SOLITARY" if len(cluster) == 1 else "BEST"
+                })
+            
+            # Resolution Logic
+            if len(scored_cluster) > 1:
+                # Sort by Score Descending
+                scored_cluster.sort(key=lambda x: x["score"], reverse=True)
+                primary = scored_cluster[0]
+                primary["decision"] = "KEEP"
+                primary["reason"] = "BEST"
+                
+                prim_cx = (primary["pred"].orig_bbox[0] + primary["pred"].orig_bbox[2]) / 2
+                
+                for secondary in scored_cluster[1:]:
+                    sec_cx = (secondary["pred"].orig_bbox[0] + secondary["pred"].orig_bbox[2]) / 2
+                    dist = abs(sec_cx - prim_cx)
+                    
+                    if dist < 4.0:
+                        # TIGHT CLUSTER -> Duplicate -> Remove Weaker
+                        secondary["decision"] = "REMOVE"
+                        secondary["reason"] = "DUPLICATE"
+                    else:
+                        # MEDIUM CLUSTER (4-15px) -> Potential Double Barline
+                        # Check Strength Profile
+                        # Double Barline Candidates passed Safe Filter, so H>=24 or Ov>=5 if small.
+                        # Score Threshold: > 25 (e.g. H=25, Ov=0 OR H=15, Ov=5 -> Score 25)
+                        
+                        is_strong = secondary["score"] > 25.0
+                        primary_is_strong = primary["score"] > 25.0
+                        
+                        if is_strong and primary_is_strong:
+                            secondary["decision"] = "KEEP"
+                            secondary["reason"] = "DOUBLE_BARLINE"
+                        else:
+                            secondary["decision"] = "REMOVE"
+                            secondary["reason"] = "WEAK_NEIGHBOR"
+
+            # 4. Log Decisions
+            for item in scored_cluster:
+                 cluster_rows.append({
+                     "image": stem,
+                     "pred_index": item["idx"],
+                     "cluster_id": c_id,
+                     "x_center": (item["pred"].orig_bbox[0] + item["pred"].orig_bbox[2]) / 2,
+                     "score": item["score"],
+                     "height": item["height"],
+                     "overlap": item["overlap"],
+                     "decision": item["decision"],
+                     "reason": item["reason"]
+                 })
+
+    # Save CSV
+    csv_path = output_dir / f"{stem}_candidate_clusters.csv"
+    if not cluster_rows:
+        return
+
+    with csv_path.open("w", encoding="utf-8", newline="") as fh:
+        fieldnames = [
+            "image", "pred_index", "cluster_id", "x_center", "score", 
+            "height", "overlap", "decision", "reason"
+        ]
+        writer = csv.DictWriter(fh, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(cluster_rows)
+
+
+def resolve_tight_duplicates_dry_run(
+    predictions: List[BarlinePrediction],
+    notehead_mask: np.ndarray,
+    stem: str,
+    output_dir: Path,
+) -> None:
+    """
+    Phase 12: Tight Duplicate Merging (Dry Run).
+    Groups candidates on same staff with gap <= 3px AND Vertical IoU >= 0.5.
+    Keeps the Strongest. Output to tight_duplicates_candidates.csv.
+    """
+    mask_h, mask_w = notehead_mask.shape
+    
+    # 1. Group by Staff
+    grouped = collections.defaultdict(list)
+    for idx, pred in enumerate(predictions):
+        key = (pred.system_index, pred.staff_index)
+        grouped[key].append((idx, pred))
+        
+    rows = []
+    
+    for (sys_idx, staff_idx), items in grouped.items():
+        # Sort by x-center
+        items.sort(key=lambda item: (item[1].orig_bbox[0] + item[1].orig_bbox[2]) / 2)
+        
+        # 2. Form Clusters (Gap <= 3px)
+        clusters = []
+        if not items:
+            continue
+            
+        current_cluster = [items[0]]
+        
+        for i in range(1, len(items)):
+            prev = items[i-1][1]
+            curr = items[i][1]
+            
+            prev_cx = (prev.orig_bbox[0] + prev.orig_bbox[2]) / 2
+            curr_cx = (curr.orig_bbox[0] + curr.orig_bbox[2]) / 2
+            gap = curr_cx - prev_cx
+            
+            if gap <= 3.0:
+                current_cluster.append(items[i])
+            else:
+                clusters.append(current_cluster)
+                current_cluster = [items[i]]
+        clusters.append(current_cluster)
+        
+        # 3. Resolve & Filter by Vertical IoU
+        for c_id, cluster in enumerate(clusters):
+            if len(cluster) == 1:
+                # Log Solitary
+                item = cluster[0]
+                rows.append({
+                    "image": stem,
+                    "pred_index": item[0],
+                    "cluster_id": c_id,
+                    "x_center": (item[1].orig_bbox[0] + item[1].orig_bbox[2])/2,
+                    "decision": "KEEP",
+                    "reason": "SOLITARY"
+                })
+                continue
+                
+            # Check vertical overlaps in cluster pairwise or group-wise
+            # Simplification: In a tight cluster <3px, we assume transitivity if sorted
+            # Verify adjacent pairs have Y-IoU >= 0.5. If not, split cluster?
+            # For simplicity: Keep the whole cluster together, but only mark removal if IoU holds.
+            # Actually, standard logic: Find Best in cluster. Remove others ONLY IF they overlap vertically with Best.
+            
+            # Score first
+            scored_cluster = []
+            for original_idx, pred in cluster:
+                x1, y1, x2, y2 = pred.orig_bbox
+                h = y2 - y1
+                # Overlap
+                y1_c = max(0, min(mask_h, y1))
+                y2_c = max(0, min(mask_h, y2))
+                x1_c = max(0, min(mask_w, x1))
+                x2_c = max(0, min(mask_w, x2))
+                if x1_c >= x2_c or y1_c >= y2_c:
+                    overlap_area = 0.0
+                else:
+                    box_window = notehead_mask[y1_c:y2_c, x1_c:x2_c]
+                    overlap_area = float(np.count_nonzero(box_window))
+                
+                score = float(h) + (overlap_area * 2.0)
+                scored_cluster.append({
+                    "pred": pred,
+                    "idx": original_idx,
+                    "score": score,
+                    "y_span": (y1, y2)
+                })
+            
+            # Sort by Score Descending
+            scored_cluster.sort(key=lambda x: x["score"], reverse=True)
+            primary = scored_cluster[0]
+            
+            # Log Primary
+            rows.append({
+                 "image": stem,
+                 "pred_index": primary["idx"],
+                 "cluster_id": c_id,
+                 "x_center": (primary["pred"].orig_bbox[0] + primary["pred"].orig_bbox[2])/2,
+                 "decision": "KEEP",
+                 "reason": "BEST"
+            })
+            
+            # Check others
+            py1, py2 = primary["y_span"]
+            
+            for secondary in scored_cluster[1:]:
+                sy1, sy2 = secondary["y_span"]
+                
+                # Vertical IoU
+                inter_y1 = max(py1, sy1)
+                inter_y2 = min(py2, sy2)
+                inter_h = max(0, inter_y2 - inter_y1)
+                
+                union_h = (py2 - py1) + (sy2 - sy1) - inter_h
+                iou_y = inter_h / union_h if union_h > 0 else 0.0
+                
+                if iou_y >= 0.5:
+                    decision = "REMOVE"
+                    reason = "DUPLICATE"
+                else:
+                    decision = "KEEP"
+                    reason = "NO_OVERLAP"
+                    
+                rows.append({
+                     "image": stem,
+                     "pred_index": secondary["idx"],
+                     "cluster_id": c_id,
+                     "x_center": (secondary["pred"].orig_bbox[0] + secondary["pred"].orig_bbox[2])/2,
+                     "decision": decision,
+                     "reason": reason
+                })
+
+    csv_path = output_dir / f"{stem}_tight_duplicates_candidates.csv"
+    if not rows:
+        return
+        
+    with csv_path.open("w", encoding="utf-8", newline="") as fh:
+        fieldnames = [
+            "image", "pred_index", "cluster_id", "x_center", "decision", "reason"
+        ]
+        writer = csv.DictWriter(fh, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def export_measure_grid_candidates(
+    predictions: List[BarlinePrediction],
+    notehead_mask: np.ndarray,
+    stem: str,
+    output_dir: Path,
+) -> None:
+    """
+    Phase 13: Export data for Measure Grid Consistency (DP) validation.
+    Saves candidate stats + score + gaps to measure_grid_candidates.csv.
+    """
+    mask_h, mask_w = notehead_mask.shape
+    
+    # Group by Staff
+    grouped = collections.defaultdict(list)
+    for idx, pred in enumerate(predictions):
+        key = (pred.system_index, pred.staff_index)
+        grouped[key].append((idx, pred))
+        
+    rows = []
+    
+    for (sys_idx, staff_idx), items in grouped.items():
+        # Sort by x-center
+        items.sort(key=lambda item: (item[1].orig_bbox[0] + item[1].orig_bbox[2]) / 2)
+        
+        for original_idx, pred in items:
+            x1, y1, x2, y2 = pred.orig_bbox
+            h = y2 - y1
+            
+            # Recalculate overlap for scoring
+            y1_c = max(0, min(mask_h, y1))
+            y2_c = max(0, min(mask_h, y2))
+            x1_c = max(0, min(mask_w, x1))
+            x2_c = max(0, min(mask_w, x2))
+            
+            if x1_c >= x2_c or y1_c >= y2_c:
+                overlap_area = 0.0
+            else:
+                box_window = notehead_mask[y1_c:y2_c, x1_c:x2_c]
+                overlap_area = float(np.count_nonzero(box_window))
+            
+            # Score
+            score = float(h) + (overlap_area * 2.0)
+            
+            rows.append({
+                "image": stem,
+                "pred_index": original_idx,
+                "system_index": sys_idx,
+                "staff_index": staff_idx,
+                "x_center": (x1 + x2) / 2,
+                "width": x2 - x1,
+                "height": h,
+                "overlap": overlap_area,
+                "score": score
+            })
+
+    csv_path = output_dir / f"{stem}_measure_grid_candidates.csv"
+    if not rows:
+        return
+        
+    with csv_path.open("w", encoding="utf-8", newline="") as fh:
+        fieldnames = [
+            "image", "pred_index", "system_index", "staff_index", 
+            "x_center", "width", "height", "overlap", "score"
+        ]
+        writer = csv.DictWriter(fh, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def compute_candidate_stats(
+    predictions: List[BarlinePrediction],
+    notehead_mask: np.ndarray,
+    staff_mask: np.ndarray,
+    stem: str,
+    output_dir: Path,
+) -> None:
+    """
+    Computes and saves statistics for each candidate barline to a CSV file.
+    Stats include: width, height, distance to nearest notehead, intersection w/ notehead,
+    and number of staff line crossings.
+    """
+    mask_h, mask_w = notehead_mask.shape
+    stats_rows = []
+
+    # Pre-compute distance transform for fast distance queries
+    # dist_map[y, x] = distance to nearest zero pixel.
+    # So we invert the mask: noteheads are 1 (non-zero), background 0.
+    # We want distance to nearest Notehead (non-zero).
+    # Invert: noteheads=0, background=1.
+    # cv2.distanceTransform calculates distance to nearest ZERO pixel.
+    # So we want noteheads to be 0.
+    inverted_mask = cv2.bitwise_not(notehead_mask)
+    dist_map = cv2.distanceTransform(inverted_mask, cv2.DIST_L2, 5)
+
+    for idx, pred in enumerate(predictions):
+        x1, y1, x2, y2 = pred.orig_bbox
+        w = x2 - x1
+        h = y2 - y1
+        cx = (x1 + x2) // 2
+        cy = (y1 + y2) // 2
+        
+        # Clamp to mask bounds
+        c_y1 = max(0, min(mask_h - 1, y1))
+        c_y2 = max(0, min(mask_h - 1, y2))
+        c_x1 = max(0, min(mask_w - 1, x1))
+        c_x2 = max(0, min(mask_w - 1, x2))
+        
+        if c_y1 >= c_y2 or c_x1 >= c_x2:
+            min_dist = 9999.0
+            overlap_area = 0
+        else:
+            # 1. Distance to nearest notehead
+            # Extract distance map region
+            dist_region = dist_map[c_y1:c_y2, c_x1:c_x2]
+            min_dist = float(np.min(dist_region))
+            
+            # 2. Intersection (direct overlap)
+            # Mask region is > 0 where noteheads are.
+            mask_region = notehead_mask[c_y1:c_y2, c_x1:c_x2]
+            overlap_count = np.count_nonzero(mask_region)
+            overlap_area = float(overlap_count)
+
+        # Count staff crossings
+        num_crossings = count_staff_crossings(pred.orig_bbox, staff_mask)
+        
+        stats_rows.append({
+            "image": stem,
+            "pred_index": idx,
+            "x1": x1, "y1": y1, "x2": x2, "y2": y2,
+            "width": w,
+            "height": h,
+            "min_dist_to_notehead": min_dist,
+            "overlap_area": overlap_area,
+            "num_staff_crossings": num_crossings,
+        })
+    
+    csv_path = output_dir / f"{stem}_candidate_stats.csv"
+    if not stats_rows:
+        return
+
+    with csv_path.open("w", encoding="utf-8", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=stats_rows[0].keys())
+        writer.writeheader()
+        writer.writerows(stats_rows)
+
+def compute_and_save_gap_stats(
+    predictions: List[BarlinePrediction],
+    stem: str,
+    output_dir: Path,
+) -> None:
+    """
+    Computes horizontal gaps between adjacent barlines on the same staff/system
+    and saves to CSV.
+    """
+    # Group by staff/system
+    # Structure: { (system_idx, staff_idx): [ (pred_idx, pred_obj), ... ] }
+    grouped = collections.defaultdict(list)
+    for idx, pred in enumerate(predictions):
+        key = (pred.system_index, pred.staff_index)
+        grouped[key].append((idx, pred))
+    
+    rows = []
+    
+    for (sys_idx, staff_idx), items in grouped.items():
+        # Sort by x-center
+        items.sort(key=lambda item: (item[1].orig_bbox[0] + item[1].orig_bbox[2]) / 2)
+        
+        for i, (original_idx, pred) in enumerate(items):
+            x1, y1, x2, y2 = pred.orig_bbox
+            cx = (x1 + x2) / 2
+            
+            # Gap to prev
+            if i > 0:
+                prev_pred = items[i-1][1]
+                prev_cx = (prev_pred.orig_bbox[0] + prev_pred.orig_bbox[2]) / 2
+                gap_to_prev = cx - prev_cx
+            else:
+                gap_to_prev = -1.0 # Sentinel for "First in staff"
+                
+            # Gap to next
+            if i < len(items) - 1:
+                next_pred = items[i+1][1]
+                next_cx = (next_pred.orig_bbox[0] + next_pred.orig_bbox[2]) / 2
+                gap_to_next = next_cx - cx
+            else:
+                gap_to_next = -1.0 # Sentinel for "Last in staff"
+                
+            rows.append({
+                "image": stem,
+                "pred_index": original_idx,
+                "system_index": sys_idx,
+                "staff_index": staff_idx,
+                "x_center": cx,
+                "gap_to_prev": gap_to_prev,
+                "gap_to_next": gap_to_next,
+                "width": x2 - x1,
+                "height": y2 - y1,
+            })
+            
+    csv_path = output_dir / f"{stem}_candidate_gaps.csv"
+    if not rows:
+        return
+
+    with csv_path.open("w", encoding="utf-8", newline="") as fh:
+        fieldnames = [
+            "image", "pred_index", "system_index", "staff_index", 
+            "x_center", "gap_to_prev", "gap_to_next", "width", "height"
+        ]
+        writer = csv.DictWriter(fh, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+def save_debug_staff_overlay(
+    image_path: Path,
+    staff_mask: np.ndarray,
+    output_path: Path,
+) -> None:
+    original = cv2.imread(str(image_path))
+    if original is None:
+        return
+    
+    # Create green overlay for staff lines
+    overlay = original.copy()
+    overlay[staff_mask > 0] = [0, 255, 0]  # BGR green
+    
+    # Alpha blend
+    alpha = 0.3
+    cv2.addWeighted(overlay, alpha, original, 1 - alpha, 0, original)
+    
+    cv2.imwrite(str(output_path), original)
+
+def save_debug_mask_overlay(
+    image_path: Path,
+    notehead_mask: np.ndarray,
+    output_path: Path,
+) -> None:
+    original = cv2.imread(str(image_path))
+    if original is None:
+        return
+    
+    # Create red overlay for mask
+    # Mask is uint8 (0 or >0)
+    # Resize already matches original shape
+    
+    overlay = original.copy()
+    # Where mask is active, set to Red
+    overlay[notehead_mask > 0] = [0, 0, 255]  # BGR
+    
+    # Alpha blend
+    alpha = 0.5
+    cv2.addWeighted(overlay, alpha, original, 1 - alpha, 0, original)
+    
+    cv2.imwrite(str(output_path), original)
 
 def run_homr_on_image(
     image_path: Path,
@@ -537,9 +1221,9 @@ def run_homr_on_image(
     xml_args: XmlGeneratorArguments,
     timeout_s: float,
     tuning: Dict[str, float],
-) -> Tuple[List[BarlinePrediction], Optional[Path], Tuple[int, int], float, np.ndarray]:
+) -> Tuple[List[BarlinePrediction], Optional[Path], Tuple[int, int], float, np.ndarray, np.ndarray]:
     start = time.perf_counter()
-    (multi_staffs, preprocessed_image, debug, title_future, bar_line_boxes, notehead_mask) = (
+    (multi_staffs, preprocessed_image, debug, title_future, bar_line_boxes, notehead_mask, staff_mask) = (
         detect_staffs_with_barlines(str(image_path), config, tuning)
     )
 
@@ -574,7 +1258,7 @@ def run_homr_on_image(
         debug.clean_debug_files_from_previous_runs()
 
     runtime_s = time.perf_counter() - start
-    return predictions, xml_path, seg_shape, runtime_s, notehead_mask
+    return predictions, xml_path, seg_shape, runtime_s, notehead_mask, staff_mask
 
 
 def draw_overlay(
@@ -936,7 +1620,7 @@ def main() -> None:
         )
         xml_args = XmlGeneratorArguments(False, None, None)
 
-        predictions, xml_path, seg_shape, runtime_s, notehead_mask = run_homr_on_image(
+        predictions, xml_path, seg_shape, runtime_s, notehead_mask, staff_mask = run_homr_on_image(
             working_image, config, xml_args, args.timeout, tuning
         )
         transform = compute_transform_info(working_image, seg_shape)
@@ -1023,21 +1707,95 @@ def main() -> None:
 
         # --- Heuristic 1: Notehead Proximity Rejection ---
         rejected_by_heuristic: List[BarlinePrediction] = []
+
+        eprint(f"DEBUG: notehead_mask shape={notehead_mask.shape} dtype={notehead_mask.dtype}")
+        eprint(f"DEBUG: notehead_mask min={notehead_mask.min()} max={notehead_mask.max()} unique={np.unique(notehead_mask)[:10]}")
+        eprint(f"DEBUG: staff_mask shape={staff_mask.shape} dtype={staff_mask.dtype}")
+        eprint(f"DEBUG: staff_mask min={staff_mask.min()} max={staff_mask.max()} unique={np.unique(staff_mask)[:10]}")
+        
+        # FIX: content is 0/1. Scale to 0/255 for correct bitwise operations and resize interpolation
+        notehead_mask_255 = (notehead_mask * 255).astype(np.uint8)
+        staff_mask_255 = (staff_mask * 255).astype(np.uint8)
+
+        # Always compute resized masks for diagnostics/stats
+        notehead_mask_resized = cv2.resize(
+            notehead_mask_255,
+            dsize=transform.original_shape,
+            interpolation=cv2.INTER_NEAREST,
+        )
+        
+        staff_mask_resized = cv2.resize(
+            staff_mask_255,
+            dsize=transform.original_shape,
+            interpolation=cv2.INTER_NEAREST,
+        )
+
+        # DIAGNOSTICS: Save mask overlays (ENABLED for data collection)
+        save_debug_mask_overlay(
+            working_image, 
+            notehead_mask_resized, 
+            image_run_dir / f"{stem}_debug_notehead_resized_overlay.png"
+        )
+        
+        save_debug_staff_overlay(
+            working_image,
+            staff_mask_resized,
+            image_run_dir / f"{stem}_debug_staff_resized_overlay.png"
+        )
+
+        # DIAGNOSTICS: Compute and save stats for ALL candidates (ENABLED for data collection)
+        compute_candidate_stats(
+            mapped_predictions,
+            notehead_mask_resized,
+            staff_mask_resized,
+            stem,
+            image_run_dir
+        )
+
         if STEM_CONTEXT_HEURISTICS["enabled"]:
-            # Resize notehead mask to match the original image coordinate system.
-            # homr's transform.original_shape is (width, height), which is what
-            # cv2.resize's dsize parameter expects.
-            notehead_mask_resized = cv2.resize(
-                notehead_mask.astype(np.uint8),
-                dsize=transform.original_shape,
-                interpolation=cv2.INTER_NEAREST,
-            )
             mapped_predictions, rejected_by_heuristic = filter_detections_by_notehead_proximity(
                 mapped_predictions,
                 notehead_mask_resized,
                 STEM_CONTEXT_HEURISTICS["notehead_proximity_threshold_px"],
+                STEM_CONTEXT_HEURISTICS["min_overlap_px"],
+                STEM_CONTEXT_HEURISTICS["max_height_px"],
+                STEM_CONTEXT_HEURISTICS["max_width_px"],
+                staff_mask_resized,
+                STEM_CONTEXT_HEURISTICS["min_staff_crossings"],
+                STEM_CONTEXT_HEURISTICS["staff_crossing_enabled"],
             )
         # --- End Heuristic 1 ---
+
+        # DIAGNOSTICS: Compute gaps (Phase 10)
+        compute_and_save_gap_stats(mapped_predictions, stem, image_run_dir)
+
+        # DIAGNOSTICS: Cluster Resolution Dry Run (Phase 11)
+        if STEM_CONTEXT_HEURISTICS.get("cluster_resolution_dry_run", False):
+            resolve_clusters_dry_run(
+                mapped_predictions, 
+                notehead_mask_resized, 
+                stem, 
+                image_run_dir,
+                STEM_CONTEXT_HEURISTICS.get("cluster_gap_threshold_px", 15)
+            )
+
+        # DIAGNOSTICS: Tight Duplicate Dry Run (Phase 12)
+        if STEM_CONTEXT_HEURISTICS.get("tight_duplicate_dry_run", False):
+            resolve_tight_duplicates_dry_run(
+                mapped_predictions,
+                notehead_mask_resized,
+                stem,
+                image_run_dir
+            )
+
+        # DIAGNOSTICS: Measure Grid Export (Phase 13)
+        if STEM_CONTEXT_HEURISTICS.get("measure_grid_export", False):
+            export_measure_grid_candidates(
+                mapped_predictions,
+                notehead_mask_resized,
+                stem,
+                image_run_dir
+            )
 
         ground_truth_path: Optional[Path] = None
         if stem in ground_truth_map:

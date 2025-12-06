@@ -1,5 +1,14 @@
 # Agent Policy for This Repo
 
+## Agent Roles
+
+### FP Reduction Agent (Completed Dec 2025)
+- **Scope**: Reduce False Positives in barline detection.
+- **Status**: Visual heuristics exhausted. Only "Safe Filter" enabled.
+- **Reference**: `docs/fp_reduction/FINAL_SUMMARY.md`. Future agents working on GUI or Models should read this first.
+
+### General Coding Agentpo
+
 This guide captures the required bootstrapping steps and execution etiquette for assistants working in the PDF Score Measure Number project.
 
 ## Session Bootstrap Checklist

@@ -48,6 +48,12 @@ The project is organized as follows:
 └── ...
 ```
 
+## Barline FP Reduction Project (Dec 2025)
+We have completed an extensive heuristic optimization project to reduce False Positives (FPs) in barline detection on `page_3`.
+- **Outcome**: Reduced FPs by ~15% (35 -> 30) with **0 False Negatives**.
+- **Conclusion**: Visual heuristics are exhausted. Remaining FPs are indistinguishable from fragmented TPs.
+- **Details**: See [FINAL_SUMMARY.md](docs/fp_reduction/FINAL_SUMMARY.md).
+
 ## Development Environment
 
 All development and script execution should be performed inside the provided Docker container to ensure consistency.

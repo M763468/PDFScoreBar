@@ -1,6 +1,8 @@
-# Development Log
+# Global Development Log
 
-This document records the development history, key decisions, and learnings throughout the project.
+This document records the complete development history, key decisions, and learnings throughout the entire project lifespan.
+For a focused summary of the recent "FP Reduction Project" (Dec 2025), see also [docs/fp_reduction/FINAL_SUMMARY.md](fp_reduction/FINAL_SUMMARY.md).
+
 
 ## How to Use This Log
 - フェーズごとに Goal / Process / Outcome / Status をまとめ、完了後に追記する。
@@ -519,3 +521,68 @@ homr evaluator と oemer ベースラインの比較・改善ワークフロー�
   - **Next Steps**: The immediate priority is to analyze the notehead mask generation process. Before re-attempting this heuristic, it is crucial to investigate why the mask is so inaccurate and explore methods to create a cleaner, more precisely aligned mask for proximity filtering. Safer context-based alternatives should also be considered.
 - **Status**: **Failed**. Heuristic 1 is disabled. Further work is blocked pending an investigation into the quality of the notehead segmentation mask.
 
+### Phase 6-8: Data-Driven Repair & Staff-Crossing Failure (2025-12-06)
+
+#### 1. Repair of Heuristic 1 (Safe Filter)
+- **Goal**: Fix the 100 FN catastrophe from Phase 31.
+- **Diagnosis**: The `notehead_pred` mask was `0/1` but `cv2.resize` and `distanceTransform` expected `0/255`, leading to an empty mask and aggressive rejections.
+- **Fix**: Scaled mask to 0/255. Implemented "Safe Filter" based on stats: `REJECT if (Dist < 5) AND (Height < 24) AND (Overlap >= 5)`.
+- **Outcome**:
+  - **TP**: 152 (100% Recall restored).
+  - **FP**: 30 (Reduction of 5).
+  - **Status**: **Success**. Enabled as baseline.
+
+#### 2. Heuristic 2 Attempt (Staff-Crossing Validation)
+- **Goal**: Target the remaining 30 FPs, mostly "stems" with low notehead overlap (`< 5px`).
+- **Hypothesis**: True barlines cross all 5 lines; Stems cross 1-2.
+- **Implementation**: `REJECT if (crossings < 3) AND (overlap < 5)`.
+- **Result**: **Failure**.
+  - **Metrics**: 18 False Negatives introduced (Recall 0.88).
+  - **Analysis**: 20 True Positives were found to be **small segments** (Height ~20px) with low overlap and low crossings (0-2).
+  - **Conclusion**: Local geometry (Height, Overlap, Crossings) is insufficient to distinguish these specific short barlines from stems. The heuristic targeted "Small + Low Overlap + Low Crossing", which covers both stems and fragmented barlines.
+- **Action**: Rolled back (disabled flag). Baseline metrics (152/30) restored.
+- **Status**: **Failed/Disabled**. Future work must use vertical alignment/context.
+
+#### 3. Heuristic 3 Attempt (Cluster Resolution) & Phase 10-11
+- **Goal**: Resolve "Clutter" (FPs < 15px from TPs) by keeping only the strongest candidate in a cluster.
+- **Hypothesis**: True Barlines are stronger (Score = Height + Overlap*2) than clutter stems.
+- **Analysis**:
+  - **Phase 10 (Gaps)**: Confirmed 97% of FPs and 37% of TPs are clustered (< 15px).
+  - **Phase 11 (Dry Run)**: Tested `Keep Strongest` logic.
+- **Result**: **Safety Failure**.
+  - **Metrics**: Would remove 16 FPs, but also **57 True Positives**.
+  - **Root Cause**: Many TPs are fragmented (short/low overlap), making them "weaker" than nearby stems or artifacts.
+- **Conclusion**: Winner-take-all based on local strength is unsafe. Local approaches are exhausted.
+- **Reference**: `cluster_resolution_failure.md`.
+- **Next Steps**: Pivot to conservative duplicate removal only (Phase 12).
+
+#### 4. Heuristic 4 Attempt (Tight Duplicate Merging) & Phase 12
+- **Goal**: Safely merge only "obvious duplicates" (`gap <= 3px`, `Vertical IoU >= 0.5`).
+- **Hypothesis**: TPs won't be this close/overlapping; only soft match artifacts will.
+- **Result**: **Safety Failure**.
+  - **Metrics**: Removed 3 TPs. Removed 0 Soft/FPs.
+  - **Analysis**: "Tight Double Barlines" (valid music features) exist at this granularity. Soft matches were not caught (likely gaps > 3px).
+- **Critical Conclusion**: **All Local Heuristics Exhausted**.
+  - Simple Proximity (Heuristic 1) - **Active (Baseline)**.
+  - Staff Crossing (Heuristic 2) - **Unsafe**.
+  - Cluster/Neighbor Resolution (Heuristic 3) - **Unsafe**.
+  - Tight Duplicate Merging (Heuristic 4) - **Unsafe**.
+- **Pivot**: We must move to **Global Context**.
+  - **Strategy**: Measure Grid Consistency (Dynamic Programming).
+  - **Idea**: Find the optimal subset of lines that form a valid rhythmic grid (regular spacing), treating FPs as "clutter" that breaks the grid pattern.
+  - **Phase**: 13 (Design & Diagnosis).
+
+#### 5. Heuristic 5 Attempt (Measure Grid Consistency) & Phase 13-14
+- **Goal**: Use Dynamic Programming to find the optimal set of barlines that form regular measures, penalizing "clutter gaps".
+- **Hypothesis**: TPs will form a regular grid (gap > W_min), while FPs will create "too small" gaps.
+- **Analysis (Phase 14)**:
+  - **Gap Statistics**:
+    - **TPs**: Min Gap = 0.0px. **68%** of TPs have a gap < 4px (duplicates, tight double barlines).
+    - **FPs**: 80% have a gap < 4px.
+  - **Result**: **No Separability**.
+    - Any penalty on small gaps (to kill FPs) kills 68% of TPs.
+    - Allowing small gaps (Penalty=0) keeps all FPs.
+- **Final Conclusion**:
+  - Neither Local Geometry (Height, Crossing) nor Context (Clustering, Grid) can safely separate the remaining 30 FPs from the fragmented TPs on `page_3`.
+  - **STOP OPTIMIZATION**.
+  - **Final Stable State**: Heuristic 1 (Notehead Proximity AND-Filter) enabled. Metrics: 152 TP, 30 FP, 0 FN.

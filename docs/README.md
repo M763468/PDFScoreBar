@@ -1,4 +1,12 @@
-# Project Documentation Index
+# Project## Documentation Modules
+
+### FP Reduction (Dec 2025)
+- [Final Summary](fp_reduction/FINAL_SUMMARY.md): Executive summary and conclusions.
+- [Development Log](fp_reduction/development_log.md): Detailed chronological history of experiments.
+- [Walkthrough](fp_reduction/walkthrough.md): Phase-by-phase results.
+- [Roadmap](future/roadmap.md): Future work proposals (GUI, Model Retraining).
+
+### Original Documentation
 
 Use this document as the entry point when onboarding a new contributor or wrapping up a work session. It explains what each artefact under `docs/` covers and when to update it so information stays consistent.
 

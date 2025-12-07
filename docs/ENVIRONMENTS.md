@@ -87,3 +87,36 @@ This section defines the standardized procedure for running barline detection ev
     - Example: `logs/20251130T185351JST/metrics.json`
   - This difference is expected. The standardization on `/workspace/logs/homr_eval` aims to prevent future confusion. A temporary issue on 2025-12-01 where new logs were not immediately visible on the host was determined to be a transient environment/volume visibility problem, not a code bug.
 
+### Model Experiments Environment (feature/barline_model_experiments)
+
+This section documents the setup and usage of the virtual environments and key commands for the model-based barline detection experiments conducted in the `feature/barline_model_experiments` worktree.
+
+-   **Worktree Location**: The current project worktree is located at `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp`.
+-   **Virtual Environments**:
+    -   `.venv_yolo`: Used for YOLO-World experiments. Contains `ultralytics` and its dependencies.
+    -   `.venv_omr_dln`: Used for OMR-DLN (dmgonzalez8/OMR) experiments. Contains `ultralytics`, `torch`, `torchvision`, `opencv-python-headless` and other dependencies.
+
+-   **Key Commands**:
+
+    ```bash
+    # YOLO-World synthetic sanity test
+    source .venv_yolo/bin/activate
+    python tools/create_synthetic_image.py
+    python experiments/models/eval_yolo_world.py \
+        --image data/workbench/synthetic_barline_test.png \
+        --gt data/workbench/dummy_gt.json \
+        --output-dir logs/model_experiments/yolo_world/synth_test \
+        --conf 0.05
+    ```
+
+    ```bash
+    # OMR-DLN (measure-based) evaluation on page_3
+    source .venv_omr_dln/bin/activate
+    python experiments/models/eval_omr_dln.py \
+        --image data/evaluation/images/page_3.png \
+        --gt data/evaluation/annotations/page_003/boxes_sorted.json \
+        --output-dir logs/model_experiments/omr_dln/run_001 \
+        --conf 0.25
+    ```
+-   **Important Note**: These environments are strictly for **evaluation of existing pretrained models only**. They are not set up for training new models or for creating new annotated datasets.
+

@@ -1,6 +1,32 @@
 # Global Development Log
+
 > [!NOTE]
 > **Path Warning (Dec 2025)**: The repository has been restructured. Older log entries may reference paths like `src/archive`, `tools/fp_reduction`, or root `homr/`. These are now located in `experiments/`, `experiments/fp_reduction/`, and `external/` respectively.
+
+
+## 2025-12-07: GUI Helper Tool for FP Inspection
+
+**Summary**: Created a lightweight GUI tool (`tools/gui_helper`) to manually inspect and verify barline detections.
+
+**Motivation**:
+- Reducing the final ~30 False Positives requires human-in-the-loop verification, as they are geometrically identical to True Positives.
+- Need a way to quickly visualize detections on the score image and mark them as "ignored".
+
+**Technical Implementation**:
+- **Stack**: Flask (Python) + Plain HTML/JS + Pillow.
+- **Architecture**:
+  - `app.py`: Serves the UI and handles saving decisions to `manual_ignore.json`.
+  - `main.js`: Handles frontend rendering and interaction.
+  - **Visualization**: Implemented responsive overlay scaling. Fixed coordinate system mismatch (`pred_bbox` vs `orig_bbox`) to ensure perfect alignment.
+- **Data Source**: Configurable via `tools/gui_helper/config.py`. Currently pointed to `logs/homr_eval/20251206T_homr_heuristic_final/page_3/`.
+
+**Current Status**:
+- Fully functional for `page_3`.
+- Supports toggling candidates and saving the ignore list.
+- **Next Steps**: Support multi-page browsing and integrate the `manual_ignore.json` into the main evaluation pipeline.
+
+## 2025-12-06: Repository Restructuring
+**Path Warning (Dec 2025)**: The repository has been restructured. Older log entries may reference paths like `src/archive`, `tools/fp_reduction`, or root `homr/`. These are now located in `experiments/`, `experiments/fp_reduction/`, and `external/` respectively.
 
 This document records the complete development history, key decisions, and learnings throughout the entire project lifespan.
 For a focused summary of the recent "FP Reduction Project" (Dec 2025), see also [docs/fp_reduction/FINAL_SUMMARY.md](fp_reduction/FINAL_SUMMARY.md).

@@ -61,3 +61,15 @@ To change the page or metrics file being inspected, edit:
 Currently inspecting:
 - **Run**: `20251206T_homr_heuristic_final`
 - **File**: `page_3/page_3_detections.json`
+
+## Limitations & Assumptions
+- **Comparison Only**: This tool is designed for **rapid inspection** and **manual verification**. It is NOT a full production-grade annotation platform.
+- **Single Page**: Currently hardcoded to load a single page defined in `config.py`. To view other pages, you must manually update `IMAGE_PATH` and `METRICS_PATH`.
+- **Browser-Based**: Relies on the browser's rendering engine. If the image is extremely large (e.g., >100MB), performance may degrade.
+
+## Future Extensions
+To expand this tool for the full dataset, consider the following:
+1. **Multi-Page Support**: Add a "Next/Prev" button and a route to load different images dynamically.
+2. **Annotation Integration**: Automatically load `manual_ignore.json` on startup to pre-mark previously ignored items.
+3. **Pipeline Integration**: Modify `homr_evaluator.py` to read `manual_ignore.json` and filter out marked FPs during metric calculation.
+4. **Keyboard Shortcuts**: Add `j/k` for navigation and `x` to toggle ignore status for faster workflow.

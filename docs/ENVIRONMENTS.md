@@ -8,7 +8,13 @@
 > If you see older paths in logs or docs, please adjust accordingly.
 
 This document describes how to use the provided tools (now located in `tools/`) and Docker environments.
-, storage layout, and log-handling conventions used in the project.
+
+## GUI Helper Environment
+- **Tool Location**: `tools/gui_helper/`
+- **Execution**: Runs directly on the Host (WSL/Linux), **no Docker required**.
+- **Dependencies**: Minimal. Requires `flask` and `Pillow`.
+- **Display**: Served via HTTP (`localhost:5000`), allowing usage in any browser (no X11 forwarding needed).
+- **Note**: Ensure `config.py` points to valid image/JSON paths on your host filesystem.
 
 ## Runtime Containers
 

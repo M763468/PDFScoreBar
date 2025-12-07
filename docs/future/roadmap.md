@@ -34,3 +34,12 @@
 
 ## 結論
 短期的には **1. GUI 補助** の実装を推奨します。H2〜H5 で作成したロジックは「削除」には危険すぎますが、「警告」には有用な特徴量を含んでいます。これらを再利用可能です。
+
+## Progress Update (Dec 2025)
+**Status**: The recommendation to build a GUI Helper (Approach 1) has been adopted.
+- **Initial Implementation**: `tools/gui_helper` created (Dec 7, 2025).
+- **Features**: Supports overlay inspection and manual "ignore" marking for `page_3`.
+- **Future Roadmap**:
+  - Support multi-page browsing.
+  - Integrate with `manual_ignore.json` for automated FP filtering in the pipeline.
+  - Implement the "Warning flag" visualization mentioned in Approach 1.

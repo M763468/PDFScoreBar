@@ -64,6 +64,15 @@ We have completed an extensive heuristic optimization project to reduce False Po
 - **Conclusion**: Visual heuristics are exhausted. Remaining FPs are indistinguishable from fragmented TPs.
 - **Details**: See [FINAL_SUMMARY.md](docs/fp_reduction/FINAL_SUMMARY.md).
 
+## GUI Helper Tool
+
+The `tools/gui_helper` is a lightweight browser-based tool for visual inspection of detection results.
+It allows for rapid manual verification of False Positives (FPs).
+
+- **Location**: `tools/gui_helper/`
+- **Docs**: [README.md](tools/gui_helper/README.md)
+- **Status**: Experimental (supports page 3 inspection)
+
 ## Development Environment
 
 All development and script execution should be performed inside the provided Docker container to ensure consistency.

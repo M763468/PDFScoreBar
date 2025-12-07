@@ -15,9 +15,13 @@ The optimization of visual heuristics for barline detection has concluded.
 
 ## Recommended Next Sessions
 
-### 1. GUI Helper Tool
-**Objective**: Create a visualizer that loads `homr_evaluator` outputs (CSVs) and highlights "Warning" candidates (e.g., those flagged by H2-H5 logics).
-**Goal**: Allow valid TPs to be kept while manually cleaning FPs efficiently.
+### 1. GUI Helper Tool (Active)
+**Status**: Initial version created (`tools/gui_helper`).
+**Objective**: Expand the tool to support efficient FP cleanup for the entire dataset.
+**Next Steps**:
+- Add support for browsing multiple pages (currently hardcoded to `page_3`).
+- Integrate `manual_ignore.json` output into the evaluation pipeline to automatically exclude marked FPs.
+- Add keyboard shortcuts for faster review.
 
 ### 2. Model Retraining Investigation
 **Objective**: Analyze why the SegNet model fragments barlines.

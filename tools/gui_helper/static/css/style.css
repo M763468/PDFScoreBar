@@ -1,0 +1,84 @@
+/* 
+   Style for the image container 
+   -----------------------------
+   position: relative;
+   This creates a new "positioning context". 
+   Any child element with "position: absolute" will be positioned 
+   relative to the top-left corner of THIS container, not the entire page body.
+*/
+#image-container {
+    position: relative;
+    display: inline-block;
+    /* Wraps tightly around the image */
+    margin-top: 20px;
+    border: 1px solid #ccc;
+}
+
+/* 
+   Style for the score image 
+   -------------------------
+   We ensure it displays as a block to avoid extra whitespace spacing.
+   We do NOT set width/height to 100% here, because we want 
+   the original pixel size for accurate overlay positioning.
+*/
+#score-image {
+    display: block;
+    max-width: 100%;
+    /* Allow browser to scale image down if window is small */
+    height: auto;
+    /* Maintain aspect ratio */
+}
+
+/* 
+   Style for the Barline Overlay Boxes 
+   -----------------------------------
+   position: absolute;
+   This removes the element from the normal document flow and allows us
+   to specify exact "top" and "left" pixel coordinates relative to #image-container.
+*/
+.barline-box {
+    position: absolute;
+
+    /* Visual style to make it easy to see */
+    border: 2px solid blue;
+    /* Blue border */
+    background-color: rgba(0, 0, 255, 0.2);
+    /* Semi-transparent blue fill */
+
+    /* 
+       pointer-events: none (optional for now)
+       This would allow clicks to pass through to the element behind it.
+       For Step 2.3 (Interaction), we will likely REMOVE this so we can click the box.
+       For now, let's leave it clickable (default) as we will add listeners later.
+    */
+    cursor: pointer;
+    /* Suggests interactivity for the future */
+}
+
+/*
+   Style for "Ignored" Barline Boxes
+   ---------------------------------
+   This class is added via Javascript when the user clicks a box.
+   It visually indicates that this barline has been marked as a False Positive using a red color.
+*/
+.barline-box.ignored {
+    border-color: red;
+    background-color: rgba(255, 0, 0, 0.4);
+    /* Stronger red/semi-transparent */
+}
+
+/* 
+   Basic page layout stuff
+*/
+body {
+    font-family: sans-serif;
+    padding: 20px;
+    background-color: #f9f9f9;
+}
+
+.info {
+    background: #fff;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}

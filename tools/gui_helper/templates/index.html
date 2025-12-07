@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Barline GUI Helper</title>
+    <!-- Link to our CSS file -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <div class="info">
+        <h1>Barline Inspector (Step 2.2 Read-only)</h1>
+        <p><strong>Configured Image:</strong> /image</p>
+        <p><strong>Loaded Barlines:</strong> {{ barlines|length }} candidates</p>
+        <p><em>Note: The overlay now automatically scales to match the image size. Resizing the window will re-align the
+                boxes.</em></p>
+    </div>
+
+    <!-- 
+       Container for the image and overlay.
+       The ID 'image-container' is used in CSS to set 'position: relative'.
+    -->
+    <div id="image-container">
+        <!-- 
+           The Sheet Music Image.
+           ID 'score-image' is referenced in JS.
+           We do NOT set a fixed width/height here to allow it to render at natural pixel size.
+        -->
+        <img src="{{ image_url }}" alt="Score Page" id="score-image">
+
+        <!-- Overlays will be injected here by Javascript -->
+    </div>
+
+    <!-- 
+       Control Panel 
+       -------------
+    -->
+    <div class="controls" style="margin-top: 20px;">
+        <button id="save-button" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">
+            Save ignored barlines
+        </button>
+        <span style="margin-left: 10px; color: #555;">
+            Click boxes to mark them as ignored (red). Then press the button to save.
+        </span>
+    </div>
+
+    <!-- 
+       Expose Data to Javascript 
+       -------------------------
+       We use the Jinja2 filter '|tojson' to convert the Python list of dictionaries 
+       into a valid Javascript JSON object.
+       
+       Variable: BARLINES
+       Source: Flask 'barlines' variable (from metrics.json predictions)
+       Structure: Array of objects, each having:
+         { "pred_bbox": [x1, y1, x2, y2], "system_index": ..., ... }
+    -->
+    <script>
+        const BARLINES = {{ barlines | tojson }};
+        console.log("Data loaded from Flask:", BARLINES.length + " items.");
+    </script>
+
+    <!-- Link to our main Javascript logic -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+</body>
+
+</html>

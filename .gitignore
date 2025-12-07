@@ -22,7 +22,6 @@ venv/
 
 # Debug outputs
 debug_outputs/
-logs/
 /homr/
 temp.txt
 

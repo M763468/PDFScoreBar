@@ -117,3 +117,30 @@ This is a **negative but inconclusive** result. While YOLO-World completely fail
 **Artifacts**:
 - Report: [`experiments/models/yolo_world/README.md`](../../experiments/models/yolo_world/README.md)
 - Logs: `logs/model_experiments/yolo_world/run_001/`
+
+### OMR-DLN (YOLOv8 Measure-Based) Evaluation (Dec 2025)
+
+**Model**: YOLOv8m (from `dmgonzalez8/OMR` repo)  
+**Strategy**: Infer barlines from measure detections
+
+**Process**:
+- Used the OMR-DLN YOLOv8m measure detector (DeepScoresV2) and inferred barlines from the left/right edges of each detected measure box (via `eval_omr_dln.py`).
+- Input: `data/evaluation/images/page_3.png`
+- Model: `YOLOv8m_Measures.pt`
+- Confidence threshold: 0.25
+
+**Key Metrics on page_3**:
+- TP = 137, FP = 17, FN = 15
+- Precision ≈ 0.890, Recall ≈ 0.901, F1 ≈ 0.895
+
+**Comparison to homr baseline (TP=152, FP=30, FN=0, F1≈0.910)**:
+- **False Positives:** Significant improvement (17 FP vs 30 FP).
+- **False Negatives:** Significant regression (15 FN vs 0 FN).
+- **Recall:** Unacceptable for current measure numbering goal (0.901 vs 1.000).
+
+**Conclusion**:
+OMR-DLN (YOLOv8m measure-based inference) is clearly better at rejecting false positives (achieving higher precision) than our current `homr` baseline. However, its recall (0.901) is too low for a task like measure numbering, which requires 100% detection of all true barlines. It is **NOT** a standalone replacement for the `homr` baseline in its current form. It could, however, be a future candidate in a hybrid pipeline (e.g., a high-recall detector + OMR-DLN filtering for false positives) or be used to generate a strong set of initial candidates for a refinement step.
+
+**Artifacts**:
+- Report: [`experiments/models/omr_dln/README.md`](../../experiments/models/omr_dln/README.md)
+- Logs: `logs/model_experiments/omr_dln/run_001/`

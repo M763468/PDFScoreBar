@@ -670,3 +670,36 @@ Zero-shot open-vocabulary models trained on natural images cannot directly trans
 - Report: `experiments/models/yolo_world/README.md`
 - Logs: `logs/model_experiments/yolo_world/run_001/`
 - Documentation: `docs/model_experiments/`
+
+## Phase 27: OMR-DLN (YOLOv8) Measure-Based Evaluation (Dec 2025)
+
+**Model**: YOLOv8m (from `dmgonzalez8/OMR` repo)  
+**Strategy**: Measure-based detection with inferred barlines.
+
+**Idea**:
+The initial plan to detect barlines directly with a symbol-detection model was invalid, as the model was not trained on a "barline" class. The strategy was pivoted to use the repository's other model, which was trained to detect full **measures**. Barlines are then inferred from the left and right edges of each detected measure box.
+
+**Experiment**:
+- Input: `data/evaluation/images/page_3.png`
+- Model: `YOLOv8m_Measures.pt`
+- Confidence threshold: 0.25
+- Evaluation Script: `experiments/models/eval_omr_dln.py`
+
+**Results on page_3**:
+| Metric | Value | Homr Baseline |
+|---|---|---|
+| True Positives | 137 | 152 |
+| False Positives| 17 | 30 |
+| False Negatives| 15 | 0 |
+| **Precision** | **0.890** | 0.833 |
+| **Recall** | **0.901** | **1.000** |
+| **F1-Score** | 0.895 | 0.910 |
+
+**Conclusion**:
+The OMR-DLN measure-based approach is **promising but not immediately usable**.
+- **Strength**: It significantly reduced the number of False Positives by nearly half compared to the `homr` baseline (17 vs. 30), demonstrating superior precision.
+- **Weakness**: It introduced 15 False Negatives, causing recall to drop to 90%. For the primary goal of measure counting, 100% recall is critical.
+This model is therefore not a drop-in replacement for `homr`, but it demonstrates that a learning-based approach can drastically improve precision. Future work could involve combining this model with a high-recall heuristic to fix the missed barlines.
+
+### Status
+**In Progress** - OMR-DLN evaluation complete. The results are a trade-off: better precision, but worse recall.

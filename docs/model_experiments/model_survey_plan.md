@@ -1,7 +1,7 @@
 # Model Survey Plan: Evaluation Phase
 
 **Date**: Dec 2025
-**Status**: In Progress - YOLO-World Complete
+**Status**: In Progress - OMR-DLN Complete
 **Branch**: `feature/barline_model_experiments`
 
 ---
@@ -13,13 +13,29 @@ We have transitioned from heuristic optimization to **Model Survey Mode**. The g
 
 | Priority | Model Family | Repository | Strategy |
 | :--- | :--- | :--- | :--- |
-| **1** | **YOLO-World** | [ultralytics/ultralytics](https://github.com/ultralytics/ultralytics) | **Zero-Shot Detection**. Prompt model with "barline", "vertical line". |
-| **2** | **Grounding DINO** | [IDEA-Research/GroundingDINO](https://github.com/IDEA-Research/GroundingDINO) | **open-set Object Detection**. Best-in-class zero-shot performance. |
-| **3** | **Homr (Tuned)** | [liebharc/homr](https://github.com/liebharc/homr) | **Baseline**. Continue to use as reference. |
+| **1** | **OMR-DLN (YOLOv8)** | [dmgonzalez8/OMR](https://github.com/dmgonzalez8/OMR) | **Pretrained Detector**. Use model fine-tuned on DeepScoresV2. |
+| **2** | **YOLO-World** | [ultralytics/ultralytics](https://github.com/ultralytics/ultralytics) | **Zero-Shot Detection**. Prompt model with "barline", "vertical line". |
+| **3** | **Grounding DINO** | [IDEA-Research/GroundingDINO](https://github.com/IDEA-Research/GroundingDINO) | **Open-set Object Detection**. Best-in-class zero-shot performance. |
+| **4** | **Homr (Tuned)** | [liebharc/homr](https://github.com/liebharc/homr) | **Baseline**. Continue to use as reference. |
 
 *Note: Standard COCO detectors (YOLOv8, Mask R-CNN) are unlikely to work without training. We prioritize Open-Vocabulary models.*
 
 ## 3. Evaluation Checklist
+
+### OMR-DLN (YOLOv8) (Complete ✓)
+- [x] **Setup**: Clone repo `dmgonzalez8/OMR` to `external/omr_dln`.
+- [x] **Setup**: Create venv and install dependencies (`ultralytics`).
+- [x] **Setup**: Locate and download pretrained weights from repository's Google Drive link.
+- [x] **Experiment**:
+    - Input: `data/evaluation/images/page_3.png`
+    - Model: YOLOv8m trained on DeepScoresV2 for measure detection.
+    - Confidence Threshold: 0.25
+- [x] **Analysis**:
+    - Visual Inspection: Overlay boxes on image.
+    - Quantitative: Compute precision/recall against `page_3` GT.
+- [x] **Report**: Document findings in `experiments/models/omr_dln/README.md`.
+
+**Result Summary**: Achieved high precision (0.890) with significantly reduced FPs (17), but introduced 15 FNs (recall 0.901), making it unsuitable as a standalone replacement for measure numbering without 100% recall.
 
 ### YOLO-World (Complete ✓)
 - [x] **Setup**: Clone repo to `external/`, install dependencies.

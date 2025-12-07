@@ -42,3 +42,4 @@ data/*
 !data/workbench/
 !data/**/.gitkeep
 output/*
+*.pt

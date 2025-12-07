@@ -588,3 +588,85 @@ homr evaluator と oemer ベースラインの比較・改善ワークフロー�
   - Neither Local Geometry (Height, Crossing) nor Context (Clustering, Grid) can safely separate the remaining 30 FPs from the fragmented TPs on `page_3`.
   - **STOP OPTIMIZATION**.
   - **Final Stable State**: Heuristic 1 (Notehead Proximity AND-Filter) enabled. Metrics: 152 TP, 30 FP, 0 FN.
+---
+
+## Phase 26: Model-Based Barline Detection Experiments (Dec 2025)
+
+### Goal
+Transition from heuristic-based optimization to model-based evaluation. Assess whether pretrained computer vision models can outperform the current baseline (Homr + Safe Filter: 152 TP / 30 FP / 0 FN) without requiring dataset creation or fine-tuning.
+
+### Context
+After exhausting heuristic approaches in Phase 25, the remaining 30 False Positives on `page_3` are geometrically indistinguishable from fragmented True Positives. Further improvement requires models that can learn semantic differences between barlines and stems.
+
+### Process
+
+#### Branch Setup
+- Created dedicated worktree: `~/ws_PDFScoreBar_model_exp`
+- Branch: `feature/barline_model_experiments`
+- Established evaluation-only scope (no training, no dataset creation)
+
+#### Documentation
+- Updated `docs/model_experiments/barline_detection_future_plan.md` with revised objectives
+- Created `docs/model_experiments/model_survey_plan.md` with prioritized model list
+- Defined standardized evaluation protocol
+
+#### Phase 5: YOLO-World Zero-Shot Evaluation (2025-12-07)
+
+**Model**: YOLOv8x-Worldv2 (Ultralytics)  
+**Strategy**: Zero-shot open-vocabulary detection with text prompts
+
+**Setup**:
+- Cloned `ultralytics` repository to `external/yolo_world`
+- Created isolated virtual environment (`.venv_yolo`)
+- Developed evaluation script: `experiments/models/eval_yolo_world.py`
+
+**Experiment**:
+- Input: `data/evaluation/images/page_3.png`
+- Prompts: `["barline", "vertical line", "measure line"]`
+- Confidence threshold: 0.05
+- Ground truth: 152 barlines
+
+**Results**:
+| Metric | Value |
+|--------|-------|
+| True Positives | 0 |
+| False Positives | 1 |
+| False Negatives | 152 |
+| **Recall** | **0.0%** |
+| **Precision** | 0.0% |
+
+**Observations**:
+- Model produced virtually no detections despite explicit text prompts
+- Zero-shot transfer from natural images (COCO/LVIS) to music notation failed completely
+- Single FP was likely an artifact or misclassification
+
+**Interpretation**:
+This is a **negative but inconclusive** result. The complete failure suggests:
+1. **Domain mismatch**: Music scores differ fundamentally from natural images
+2. **Prompt limitations**: Text prompts may be insufficient for this visual domain
+3. **Preprocessing needs**: Staff removal or contrast enhancement might be required
+
+**Key Learning**:
+Zero-shot open-vocabulary models trained on natural images cannot directly transfer to specialized domains like music notation without:
+- Domain-specific fine-tuning
+- Specialized preprocessing pipelines
+- Or alternative model architectures designed for document/diagram analysis
+
+### Outcome
+- ✗ YOLO-World zero-shot approach **failed** for barline detection
+- ✓ Established complete evaluation infrastructure and protocol
+- ✓ Documented negative result to inform future model selection
+
+### Next Steps
+1. Evaluate **Grounding DINO** (next priority candidate)
+2. Consider controlled sanity checks on YOLO-World configuration
+3. If all zero-shot models fail, pivot to fine-tuning strategy or alternative approaches
+
+### Status
+**In Progress** - YOLO-World evaluation complete, proceeding to next candidate model.
+
+### Related Files
+- Evaluation script: `experiments/models/eval_yolo_world.py`
+- Report: `experiments/models/yolo_world/README.md`
+- Logs: `logs/model_experiments/yolo_world/run_001/`
+- Documentation: `docs/model_experiments/`

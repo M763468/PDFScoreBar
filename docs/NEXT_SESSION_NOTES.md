@@ -41,8 +41,9 @@ The optimization of visual heuristics for barline detection has concluded.
     - [ ] Set up a minimal evaluation wrapper (similar to `eval_yolo_world.py` / `eval_omr_dln.py`).
     - [ ] Evaluate on `data/evaluation/images/page_3.png` with our GT.
     - [ ] Record TP/FP/FN, Precision, Recall, F1.
-    - [ ] Summarize pros/cons vs homr baseline.
+- [ ] Summarize pros/cons vs homr baseline.
 - [ ] **Next Candidate:** Grounding DINO (Priority 2 in `model_survey_plan.md`) should be evaluated next if no other DeepScores-trained YOLO variants are easily found with weights.
+  - Status 2025-12-10: first run (`logs/model_experiments/grounding_dino/run_001`) yielded TP=0/FP=2/FN=152 (F1=0). When running inside the container with the host repo mounted, install `libglib2.0-0` + `build-essential`, pin `numpy==1.26.4`, and rebuild GroundingDINO ops via `pip install --no-build-isolation --no-deps -e external/grounding_dino` before execution.
 
 #### Track 2: Heuristics & Ideas for homr-side improvements
 - [ ] Revisit heuristic ideas from previous phases (e.g., Phase 28 continuation ideas for context-aware filtering like notehead-stem pairing, staff span validation, or note group map exclusion) that were put on hold.

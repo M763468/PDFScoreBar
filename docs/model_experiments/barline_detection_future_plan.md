@@ -144,3 +144,29 @@ OMR-DLN (YOLOv8m measure-based inference) is clearly better at rejecting false p
 **Artifacts**:
 - Report: [`experiments/models/omr_dln/README.md`](../../experiments/models/omr_dln/README.md)
 - Logs: `logs/model_experiments/omr_dln/run_001/`
+### Hybrid Detector (homr + OMR-DLN Filter) Evaluation (Dec 2025)
+
+**Model**: homr (baseline) filtered by OMR-DLN (YOLOv8m measure detector + inferred barlines)  
+**Date**: 2025-12-11  
+**Input**: `data/evaluation/images/page_3.png`  
+**Filter Logic**: homr detections are kept only if they have an IoU >= 0.5 overlap with any OMR-DLN detection.  
+
+**Results**:
+- **True Positives (TP)**: 17
+- **False Positives (FP)**: 0
+- **False Negatives (FN)**: 135
+- **Precision**: 1.0 (100.0%)
+- **Recall**: 0.1118 (11.2%)
+- **F1**: 0.2012
+
+**Comparison to homr baseline (TP=152, FP=30, FN=0, F1≈0.910)**:
+- **False Positives:** Significant improvement (0 FP vs 30 FP). Achieved desired 100% precision.
+- **False Negatives:** Significant regression (135 FN vs 0 FN). This filtering approach aggressively removed many True Positives.
+- **Recall:** Unacceptably low. The current filtering logic is too strict for barline detection, as it leads to a massive loss of True Positives.
+
+**Conclusion**:
+The simple filtering approach (homr detections supported by OMR-DLN) successfully eliminated all False Positives from the homr baseline, achieving a perfect precision of 1.0. However, this came at the cost of an extremely low recall, discarding over 88% of True Positives. This indicates that a more nuanced hybrid strategy is required, such as a scoring-based reconciliation or a less aggressive filtering mechanism, possibly involving threshold tuning or a more sophisticated rule set.
+
+**Artifacts**:
+- Script: [`experiments/gemini/hybrid_barline_detector.py`](../../experiments/gemini/hybrid_barline_detector.py)
+- Logs: `logs/model_experiments/hybrid_detector/run_001/`

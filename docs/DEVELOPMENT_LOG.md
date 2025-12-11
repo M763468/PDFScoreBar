@@ -590,7 +590,7 @@ homr evaluator と oemer ベースラインの比較・改善ワークフロー�
   - **Final Stable State**: Heuristic 1 (Notehead Proximity AND-Filter) enabled. Metrics: 152 TP, 30 FP, 0 FN.
 ---
 
-## Phase 26: Model-Based Barline Detection Experiments (Dec 2025)
+## Phase 32: Model-Based Barline Detection Experiments (Dec 2025)
 
 ### Goal
 Transition from heuristic-based optimization to model-based evaluation. Assess whether pretrained computer vision models can outperform the current baseline (Homr + Safe Filter: 152 TP / 30 FP / 0 FN) without requiring dataset creation or fine-tuning.
@@ -671,7 +671,7 @@ Zero-shot open-vocabulary models trained on natural images cannot directly trans
 - Logs: `logs/model_experiments/yolo_world/run_001/`
 - Documentation: `docs/model_experiments/`
 
-## Phase 27: OMR-DLN (YOLOv8) Measure-Based Evaluation (Dec 2025)
+## Phase 33: OMR-DLN (YOLOv8) Measure-Based Evaluation (Dec 2025)
 
 **Model**: YOLOv8m (from `dmgonzalez8/OMR` repo)  
 **Strategy**: Measure-based detection with inferred barlines.
@@ -703,3 +703,14 @@ This model is therefore not a drop-in replacement for `homr`, but it demonstrate
 
 ### Status
 **In Progress** - OMR-DLN evaluation complete. The results are a trade-off: better precision, but worse recall.
+
+## Phase 34 (2025-12): External Model Evaluation – GroundingDINO (Abandoned)
+- **Goal:** Benchmark GroundingDINO as a barline detector on `page_3.png` (152 GT barlines) using the official SwinT OGC weights.
+- **Setup:** New image `groundingdino-eval` image (CUDA 11.8, torch 2.0.1+cu118) with baked deps (`build-essential`, `libglib2.0-0`, `numpy==1.26.4`, `pip install --no-build-isolation --no-deps -e external/grounding_dino`) and weights at `external/grounding_dino/weights/groundingdino_swint_ogc.pth`. Evaluations run via `experiments/models/eval_grounding_dino.py`.
+- **Runs:**  
+  - `run_001`: prompt=barline, thresholds=0.35/0.25 → TP=0, FP=2, FN=152.  
+  - `run_005`: prompt=barline, thresholds=0.05/0.05 → TP=0, FP=18, FN=152.  
+  - `run_006`: prompt="vertical barline in sheet music", thresholds=0.05/0.05 → TP=0, FP=22, FN=152.  
+  - `run_007`: 2× upscaled image+GT, prompt=barline, thresholds=0.05/0.05 → TP=0, FP=18, FN=152.
+- **Diagnosis:** All predictions are wide horizontal boxes (min width ≈195px at 1×, ≈379px at 2×); no tall/narrow barlines produced. Input scaling and prompt tweaks do not change the failure mode. GT/image scale matches; issue is model behaviour, not evaluation.
+- **Status:** GroundingDINO is **abandoned** for barline detection without finetuning. Shift focus to other candidate models/heuristics.

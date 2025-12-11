@@ -1,162 +1,112 @@
-# NOTE (2025-12 repo restructure): This script may still assume pre-restructure paths (src/tools, tools/fp_reduction). Adjust imports if reusing.
-import cv2
-import numpy as np
-import os
-import google.generativeai as genai
-from PIL import Image, ImageDraw, ImageFont
+import argparse
 import json
-import sys
 import os
+import sys
+from pathlib import Path
 
-# Add the workspace root to the Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+# Add root project dir to path to import common modules
+sys.path.append(str(Path(__file__).resolve().parents[3])) # Adjust path to reach project root
 
-# --- Configuration ---
-# APIキーを環境変数から取得
-API_KEY = os.getenv("GEMINI_API_KEY")
-if not API_KEY:
-    raise ValueError("GEMINI_API_KEY environment variable not set.")
-genai.configure(api_key=API_KEY)
+from src.common.barline_evaluation import greedy_barline_match, BarlineMatchResult
 
-# デバッグ用の出力ディレクトリ
-DEBUG_OUTPUT_DIR = "/workspace/debug_outputs/"
-os.makedirs(DEBUG_OUTPUT_DIR, exist_ok=True)
+def parse_args():
+    parser = argparse.ArgumentParser(description="Evaluate Hybrid Barline Detector (homr + OMR-DLN filter)")
+    parser.add_argument("--homr-predictions", type=str, required=True, help="Path to homr detections JSON")
+    parser.add_argument("--omr-dln-predictions", type=str, required=True, help="Path to OMR-DLN detections JSON")
+    parser.add_argument("--gt", type=str, required=True, help="Path to Ground Truth JSON for barlines")
+    parser.add_argument("--output-dir", type=str, required=True, help="Directory to save logs/results")
+    parser.add_argument("--iou-threshold", type=float, default=0.5, help="IoU threshold for filtering and evaluation")
+    return parser.parse_args()
 
-from src.hybrid.opencv_candidate_detector import detect_vertical_line_candidates
+def load_predictions(file_path, type="homr"):
+    with open(file_path, 'r') as f:
+        data = json.load(f)
+    
+    if type == "homr":
+        # homr detections have {'predictions': [{'orig_bbox': [x1, y1, x2, y2]}, ...]}
+        return [p['orig_bbox'] for p in data['predictions']]
+    elif type == "omr_dln":
+        # OMR-DLN detections are directly a list of [x1, y1, x2, y2]
+        return data
+    else:
+        raise ValueError("Unknown prediction type")
 
-# --- Batch Classification with Gemini ---
-def classify_single_batch(batch_candidates, original_pil_img, model, batch_num):
-    """
-    Creates a composite image for a single batch of candidates and asks Gemini to classify them.
-    """
-    if not batch_candidates:
-        return []
+def load_gt_boxes(gt_path):
+    """Loads ground truth barlines."""
+    with open(gt_path, 'r') as f:
+        data = json.load(f)
+    return [item["barline_location"] for item in data]
 
-    # --- Create Composite Image for Batch ---
-    margin = 10
-    max_h = 0
-    cropped_images = []
-    # The candidate list for this batch is a slice of the original candidates list
-    for (x1, y1), (x2, y2) in batch_candidates:
-        left, top = max(0, min(x1, x2) - margin), max(0, min(y1, y2))
-        right, bottom = min(original_pil_img.width, max(x1, x2) + margin), min(original_pil_img.height, max(y1, y2))
-        if left >= right or top >= bottom: continue
-        cropped = original_pil_img.crop((left, top, right, bottom))
-        cropped_images.append(cropped)
-        if cropped.height > max_h: max_h = cropped.height
+def calculate_iou(box1, box2):
+    # box format: [x1, y1, x2, y2]
+    x1_inter = max(box1[0], box2[0])
+    y1_inter = max(box1[1], box2[1])
+    x2_inter = min(box1[2], box2[2])
+    y2_inter = min(box1[3], box2[3])
 
-    if not cropped_images:
-        return []
+    inter_area = max(0, x2_inter - x1_inter) * max(0, y2_inter - y1_inter)
 
-    # Arrange in a grid
-    cols = 5
-    rows = (len(cropped_images) + cols - 1) // cols
-    # Estimate cell width based on average width of this batch
-    avg_w = sum(img.width for img in cropped_images) // len(cropped_images) if cropped_images else 20
-    cell_w = avg_w + 40 # Add padding
-    canvas = Image.new('RGB', (cols * cell_w, rows * (max_h + 40)), 'white')
-    draw = ImageDraw.Draw(canvas)
-    try:
-        font = ImageFont.truetype("DejaVuSans.ttf", 15)
-    except IOError:
-        font = ImageFont.load_default()
+    box1_area = (box1[2] - box1[0]) * (box1[3] - box1[1])
+    box2_area = (box2[2] - box2[0]) * (box2[3] - box2[1])
 
-    candidate_map = {}
-    for i, cropped in enumerate(cropped_images):
-        row, col = divmod(i, cols)
-        x_offset, y_offset = col * cell_w, row * (max_h + 40)
-        canvas.paste(cropped, (x_offset + 10, y_offset + 20))
-        # Use a 1-based index for display
-        draw.text((x_offset + 10, y_offset), f"Candidate {i+1}", fill="black", font=font)
-        # Map the 1-based index to the original candidate coordinate
-        candidate_map[i+1] = batch_candidates[i]
+    union_area = box1_area + box2_area - inter_area
+    if union_area == 0:
+        return 0.0
+    return inter_area / union_area
 
-    # Save a debug image for each batch
-    composite_image_path = os.path.join(DEBUG_OUTPUT_DIR, f"debug_composite_batch_{batch_num}.png")
-    canvas.save(composite_image_path)
-    print(f"Saved composite image for batch {batch_num} to {composite_image_path}")
-
-    # --- Prompt Gemini ---
-    prompt = f"""
-    The following image contains {len(cropped_images)} numbered regions cropped from a musical score.
-    Each region shows a potential barline.
-    Please identify which of these regions are actual barlines.
-    Return your answer as a single JSON array of numbers corresponding to the candidates that are barlines.
-    For example: [1, 3, 4, 8, 12]
-    """
-
-    response_text = ""
-    try:
-        response = model.generate_content([prompt, canvas])
-        response_text = response.text
-        # Find the JSON part of the response
-        json_str = response_text[response_text.find('['):response_text.rfind(']')+1]
-        print(f"Gemini response for batch {batch_num} (raw): {response_text}")
-        print(f"Extracted JSON string for batch {batch_num}: {json_str}")
-        confirmed_indices = json.loads(json_str)
-        # Return the original coordinates of the confirmed barlines
-        return [candidate_map[i] for i in confirmed_indices if i in candidate_map]
-    except (json.JSONDecodeError, ValueError, KeyError) as e:
-        print(f"Error processing Gemini response for batch {batch_num}: {e}")
-        print(f"Full response was: {response_text}")
-        return []
-    except Exception as e:
-        # This will catch the image size error specifically if it happens again
-        print(f"An unexpected error occurred during Gemini API call for batch {batch_num}: {e}")
-        return []
-
-def classify_candidates_in_batches(candidates, original_pil_img, model, batch_size=100):
-    """
-    Processes candidates in batches to avoid creating excessively large images.
-    """
-    all_confirmed_barlines = []
-    for i in range(0, len(candidates), batch_size):
-        batch_candidates = candidates[i:i + batch_size]
-        batch_num = (i // batch_size) + 1
-        print(f"--- Processing Batch {batch_num} ({len(batch_candidates)} candidates) ---")
-        confirmed_in_batch = classify_single_batch(batch_candidates, original_pil_img, model, batch_num)
-        if confirmed_in_batch:
-            all_confirmed_barlines.extend(confirmed_in_batch)
-        print(f"--- Finished Batch {batch_num}. Found {len(confirmed_in_batch)} confirmed barlines in this batch. ---")
-    return all_confirmed_barlines
-
-# --- Main Orchestration ---
 def main():
-    image_path = "/workspace/data/evaluation/images/page_3.png"
-    output_image_path = "/workspace/output/gemini_results/page_3_hybrid_detected.png"
+    args = parse_args()
+    os.makedirs(args.output_dir, exist_ok=True)
+
+    # Load predictions
+    homr_preds = load_predictions(args.homr_predictions, type="homr")
+    omr_dln_preds = load_predictions(args.omr_dln_predictions, type="omr_dln")
     
-    print("1. Detecting vertical line candidates with OpenCV...")
-    candidates, original_img_rgb = detect_vertical_line_candidates(image_path)
-    if original_img_rgb is None: return
-    print(f"Found {len(candidates)} candidates.")
+    # Hybrid Filtering Logic
+    filtered_predictions = []
+    for homr_box in homr_preds:
+        is_supported_by_omr_dln = False
+        for omr_dln_box in omr_dln_preds:
+            if calculate_iou(homr_box, omr_dln_box) >= args.iou_threshold:
+                is_supported_by_omr_dln = True
+                break
+        if is_supported_by_omr_dln:
+            filtered_predictions.append(homr_box)
 
-    original_pil_img = Image.fromarray(original_img_rgb)
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
-    
-    print("\n2. Classifying candidates in batches with Gemini...")
-    # Set a reasonable batch size to avoid the image size limit
-    confirmed_barlines = classify_candidates_in_batches(candidates, original_pil_img, model, batch_size=100)
+    # Load Ground Truth
+    gt_boxes = load_gt_boxes(args.gt)
 
-    print(f"3. Found {len(confirmed_barlines)} total confirmed barlines.")
+    # Evaluate
+    match_result = greedy_barline_match(filtered_predictions, gt_boxes, iou_threshold=args.iou_threshold)
 
-    # Visualize and save
-    output_img = cv2.imread(image_path)
-    # Sort barlines by their x-coordinate to number them correctly
-    confirmed_barlines.sort(key=lambda line: line[0][0])
-    for i, ((x1, y1), (x2, y2)) in enumerate(confirmed_barlines):
-        cv2.line(output_img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        cv2.putText(output_img, str(i + 1), (min(x1, x2) - 20, min(y1, y2) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+    tp = len(match_result.matches)
+    fp = len(match_result.false_positive_indices)
+    fn = len(match_result.false_negative_indices)
 
-    cv2.imwrite(output_image_path, output_img)
-    print(f"\n4. Saved final image with measure numbers to {output_image_path}")
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
-    coordinates_path = "/workspace/output/gemini_results/page_3_hybrid_coordinates.json"
-    # Convert numpy types for JSON serialization
-    barlines_for_json = [[(int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1]))] for p1, p2 in confirmed_barlines]
-    with open(coordinates_path, 'w') as f:
-        json.dump(barlines_for_json, f, indent=4)
-    print(f"Saved barline coordinates to {coordinates_path}")
+    metrics = {
+        "TP": tp, "FP": fp, "FN": fn,
+        "Precision": precision, "Recall": recall, "F1": f1,
+        "Num_homr_preds": len(homr_preds),
+        "Num_omr_dln_preds": len(omr_dln_preds),
+        "Num_filtered_preds": len(filtered_predictions),
+        "Num_GT": len(gt_boxes)
+    }
 
+    print("\n--- Hybrid Detector Evaluation Results ---")
+    print(json.dumps(metrics, indent=2))
+
+    # Save results
+    metrics_path = os.path.join(args.output_dir, "hybrid_metrics.json")
+    with open(metrics_path, "w") as f:
+        json.dump(metrics, f, indent=2)
+        
+    predictions_path = os.path.join(args.output_dir, "hybrid_predictions.json")
+    with open(predictions_path, "w") as f:
+        json.dump(filtered_predictions, f)
 
 if __name__ == "__main__":
     main()

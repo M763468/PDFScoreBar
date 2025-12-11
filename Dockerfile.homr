@@ -33,7 +33,7 @@ RUN mkdir -p ${POETRY_VIRTUALENVS_PATH}
 
 WORKDIR /workspace/homr
 
-COPY homr/ ./
+COPY external/homr/ ./
 
 # Install the project and its dependencies once at build time so the runtime container only needs a volume mount.
 RUN poetry config virtualenvs.in-project "${POETRY_VIRTUALENVS_IN_PROJECT}" \

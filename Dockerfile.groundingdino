@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     python3.10 \
     python3.10-venv \
     python3-pip \
+    build-essential \
     libgl1-mesa-glx \
     libglib2.0-0 \
     libsm6 \
@@ -44,7 +45,10 @@ RUN pip install transformers==4.31.0 && \
 COPY --chown=$USERNAME:$USERNAME . /home/$USERNAME/ws_PDFScoreBar_model_exp
 WORKDIR /home/$USERNAME/ws_PDFScoreBar_model_exp
 
-RUN pip install -e external/grounding_dino
+# Pin NumPy <2 to avoid `_ARRAY_API` failures with torch/torchvision wheels
+RUN pip install numpy==1.26.4
+# Build GroundingDINO ops against the pinned torch/NumPy; avoid build isolation to reuse installed deps
+RUN pip install --no-build-isolation --no-deps -e external/grounding_dino
 
 # 6. Download model weights
 RUN mkdir -p external/grounding_dino/weights && \

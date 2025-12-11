@@ -60,7 +60,16 @@ The environment is now believed to be fully configured and correct. The next and
 - GroundingDINO の重みを `external/grounding_dino/weights/groundingdino_swint_ogc.pth` に取得済み。
 - 初回評価 (run_001) を完了し、結果と可視化を `logs/model_experiments/grounding_dino/run_001/` に保存（TP=0, FP=2, FN=152, F1=0.0）。
 
+## 追加トライ (2025-12-10)
+- **Dockerfile update**: `Dockerfile.groundingdino` に `build-essential` 追加、`numpy==1.26.4` をビルド時にピン止めし、`pip install --no-build-isolation --no-deps -e external/grounding_dino` に変更（C++ ops をビルド時に完了させる方針）。
+- **run_005**: prompt=`barline`, box/text threshold=0.05。検出18件 (すべてFP、TP=0/FN=152)。全予測が幅195〜583pxの横長ボックスで、縦線を拾えていない。
+- **run_006**: prompt=`vertical barline in sheet music`（here-doc で多語プロンプトを正しく渡す）、threshold=0.05。検出22件 (すべてFP)。同様に横長ボックスのみ。
+- **run_007**: 画像/GTを2x拡大して評価 (prompt=`barline`, threshold=0.05)。検出18件、TP=0/FP=18/FN=152。横長ボックスのみで変化なし。入力スケール変更では改善せず。
+- 予測のアスペクト比確認: 最小幅195px、width/height 最小0.75。細い縦線を出せていないため、評価のスケールミスではなくモデルの検出失敗と判断。
+- 入力画像サイズ: 593x792px。GroundingDINO の `RandomResize([800], max_size=1333)` でほぼ等倍。GT座標系とスケールは一致している。
+- 多語プロンプトを渡す場合、shell 引数で潰れるため `run_eval.sh` のようなスクリプト経由で `--prompt "..."` を渡すこと。
+
 ## Next Steps
 - Dockerfile.groundingdino に `libglib2.0-0` / `build-essential` / `numpy==1.26.4` / `pip install --no-build-isolation --no-deps -e external/grounding_dino` を焼き込み、ホストマウント実行でも再ビルド不要にする。
-- プロンプト/閾値探索（例: prompt 文言変更、`--box-threshold`/`--text-threshold` を下げる）で再評価する。
-- 実行前チェック: `_C` so が存在するか (`external/grounding_dino/groundingdino/_C*.so`) と NumPy バージョンが <2 であることを確認。
+- モデルの検出が横長ボックスに偏るため、単なる閾値・プロンプト調整では改善見込みが低い。追加で試すなら (a) 画像を 2x などに拡大して解像度を上げる（GTも同じ倍率で拡大してから評価）→ **run_007 で無改善**、(b) 予測後に縦長ボックスのみ残す簡易フィルタを挟む、の順で軽く確認する。
+- 実行前チェック: `_C` so が存在するか (`external/grounding_dino/groundingdino/_C*.so`) と NumPy バージョンが <2 であることを確認。多語プロンプトはスクリプト経由で渡す。

@@ -22,7 +22,7 @@ This document describes how to use the provided tools (now located in `tools/`) 
 ### homr_eval_gpu (2024-06-14 → refreshed 2025-09-26)
 - Purpose: isolate `homr` evaluation environment with separate dependencies.
 - Build image: `docker build -t homr_eval -f Dockerfile.homr .` (CUDA 12.1 runtime + cuDNN 9; Poetry installs `homr` with dev deps inside `/opt/poetry/venvs`).
-- Container creation: `docker run --gpus all -d --name homr_eval_gpu -v /home/masaki_muramatsu/ws_PDFScoreBar:/workspace -w /workspace homr_eval tail -f /dev/null`.
+- Container creation: `docker run --gpus all -d --name homr_eval_gpu -v "$(pwd):/workspace" -w /workspace homr_eval tail -f /dev/null`.
 - Post-create steps: environment is ready immediately. Run GPU sanity check if needed:
   - `docker exec homr_eval_gpu bash -lc 'cd /workspace/homr && poetry run python -c "import torch, onnxruntime as ort; print(torch.cuda.is_available()); print(ort.get_device())"'`
 - Host mount directories:
@@ -69,14 +69,13 @@ This section defines the standardized procedure for running barline detection ev
 
   ```bash
   docker exec homr_eval_gpu bash -c "
-    cd /workspace/homr &&
-    poetry run python /workspace/src/homr/homr_evaluator.py \
-      --images /workspace/data/evaluation/images/page_3.png \
-      --ground-truth page_3:/workspace/data/evaluation/annotations/page_003/boxes_sorted.json \
-      --output-root /workspace/logs/homr_eval \
-      --force-run-id <your_run_id>
-  "
-  ```
+      cd /workspace/external/homr &&
+        poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py \
+          --images /workspace/data/evaluation/images/page_3.png \
+          --ground-truth page_3:/workspace/data/evaluation/annotations/page_003/boxes_sorted.json \
+          --output-root /workspace/logs/homr_eval \
+          --force-run-id <your_run_id>
+    "  ```
   - `<your_run_id>` should be a descriptive identifier, e.g., `20251201T_homr_heuristic1`.
 
 - **Log Output Paths**:

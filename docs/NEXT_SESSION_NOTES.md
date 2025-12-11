@@ -44,6 +44,8 @@ The optimization of visual heuristics for barline detection has concluded.
 - [ ] Summarize pros/cons vs homr baseline.
 - [ ] **Next Candidate:** Grounding DINO (Priority 2 in `model_survey_plan.md`) should be evaluated next if no other DeepScores-trained YOLO variants are easily found with weights.
   - Status 2025-12-10: first run (`logs/model_experiments/grounding_dino/run_001`) yielded TP=0/FP=2/FN=152 (F1=0). When running inside the container with the host repo mounted, install `libglib2.0-0` + `build-essential`, pin `numpy==1.26.4`, and rebuild GroundingDINO ops via `pip install --no-build-isolation --no-deps -e external/grounding_dino` before execution.
+  - Additional runs: `run_005` (prompt=barline, thresholds=0.05) → TP=0/FP=18/FN=152; `run_006` (prompt=“vertical barline in sheet music”, thresholds=0.05) → TP=0/FP=22/FN=152. Predictions are wide horizontal boxes (min width ≈195px), so misses stem from detector behavior rather than eval scale.
+  - Upscaled eval: `run_007` (2x image/GT, prompt=barline, thresholds=0.05) → TP=0/FP=18/FN=152. No improvement; detector still outputs wide boxes. Dockerfile updated to bake in build-essential, numpy pin, and no-build-isolation install for GroundingDINO.
 
 #### Track 2: Heuristics & Ideas for homr-side improvements
 - [ ] Revisit heuristic ideas from previous phases (e.g., Phase 28 continuation ideas for context-aware filtering like notehead-stem pairing, staff span validation, or note group map exclusion) that were put on hold.

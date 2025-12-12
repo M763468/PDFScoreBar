@@ -1,90 +1,106 @@
-"""Image preprocessing helpers shared across evaluation scripts."""
-
-from __future__ import annotations
-
-from pathlib import Path
-from typing import Union
-
 import cv2
 import numpy as np
+import os
+from typing import Optional
 
-
-def _to_grayscale(image: np.ndarray) -> np.ndarray:
-    """Return a grayscale view of the image without modifying the original."""
-
-    if image.ndim == 2:
-        return image
-    if image.ndim == 3 and image.shape[2] in (3, 4):
-        conversion = cv2.COLOR_BGRA2GRAY if image.shape[2] == 4 else cv2.COLOR_BGR2GRAY
-        return cv2.cvtColor(image, conversion)
-    raise ValueError("Unsupported image shape for grayscale conversion: %s" % (image.shape,))
-
-
-def vertical_closing_blend(
+def apply_vertical_closing(
     image: np.ndarray,
-    *,
-    kernel_height: int = 7,
-    closing_blend: float = 0.4,
+    kernel_height: int = 50,
+    kernel_width: int = 1,
+    binarize: bool = True,
+    debug_dir: Optional[str] = None,
 ) -> np.ndarray:
-    """Enhance vertical barlines by blending a morphological closing.
+    """
+    Applies a vertical closing operation to an image to connect broken vertical lines.
 
     Args:
-        image: Input image in BGR, BGRA, or single-channel grayscale format.
-        kernel_height: Height of the vertical structuring element used for closing.
-        closing_blend: Weight of the closed image in the final blend (0..1).
+        image: The input image (NumPy array). Can be grayscale or BGR.
+        kernel_height: The height of the morphological kernel. This should be chosen
+                       based on the maximum expected gap between line segments.
+        kernel_width: The width of the morphological kernel. This should be small
+                      to avoid merging adjacent vertical lines.
+        binarize: If True, applies Otsu's binarization to the image before the
+                  morphological operation. Set to False if the input is already
+                  binary or doesn't require it.
+        debug_dir: If specified, saves intermediate images to this directory.
 
     Returns:
-        Processed image with the same channel configuration as the input.
-
-    Raises:
-        ValueError: If the kernel height or blend factor is outside the allowed range.
+        The processed image, converted back to 3-channel BGR.
     """
+    if debug_dir:
+        os.makedirs(debug_dir, exist_ok=True)
 
-    if kernel_height < 1:
-        raise ValueError("kernel_height must be >= 1")
-    if closing_blend < 0 or closing_blend > 1:
-        raise ValueError("closing_blend must be within [0, 1]")
-
-    gray = _to_grayscale(image)
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, int(kernel_height)))
-    closed = cv2.morphologyEx(gray, cv2.MORPH_CLOSE, kernel)
-    original_weight = 1.0 - closing_blend
-    blended = cv2.addWeighted(gray, original_weight, closed, closing_blend, 0.0)
-
-    if image.ndim == 2:
-        return blended
     if image.ndim == 3 and image.shape[2] == 3:
-        return cv2.cvtColor(blended, cv2.COLOR_GRAY2BGR)
-    if image.ndim == 3 and image.shape[2] == 4:
-        bgr = cv2.cvtColor(blended, cv2.COLOR_GRAY2BGR)
-        alpha = image[:, :, 3]
-        return np.dstack((bgr, alpha))
-    raise ValueError("Unsupported image shape: %s" % (image.shape,))
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+        gray_image = image
+
+    if debug_dir:
+        cv2.imwrite(os.path.join(debug_dir, "00_grayscale.png"), gray_image)
+
+    if binarize:
+        # Thresholding can help isolate the lines from the background.
+        # THRESH_BINARY_INV is used assuming dark lines on a light background.
+        _, processed_image = cv2.threshold(
+            gray_image, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+        )
+        if debug_dir:
+            cv2.imwrite(os.path.join(debug_dir, "01_binarized.png"), processed_image)
+    else:
+        processed_image = gray_image
+
+    # Define a tall, thin kernel to close vertical gaps.
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_width, kernel_height))
+
+    # Apply the closing operation.
+    closed_image = cv2.morphologyEx(processed_image, cv2.MORPH_CLOSE, kernel)
+    if debug_dir:
+        cv2.imwrite(os.path.join(debug_dir, "02_closed.png"), closed_image)
+
+    # Invert the image back to dark lines on a light background if binarization was used.
+    if binarize:
+        final_processed_image = cv2.bitwise_not(closed_image)
+        if debug_dir:
+            cv2.imwrite(os.path.join(debug_dir, "03_inverted.png"), final_processed_image)
+    else:
+        final_processed_image = closed_image
+
+    # Convert back to a 3-channel BGR format, as this is a common input
+    # format for many computer vision models.
+    final_image = cv2.cvtColor(final_processed_image, cv2.COLOR_GRAY2BGR)
+
+    if debug_dir:
+        cv2.imwrite(os.path.join(debug_dir, "99_final_output.png"), final_image)
+
+    return final_image
 
 
-def vertical_closing_blend_file(
-    input_path: Union[str, Path],
-    output_path: Union[str, Path],
-    *,
-    kernel_height: int = 7,
-    closing_blend: float = 0.4,
-    ensure_parent: bool = True,
-) -> Path:
-    """Apply :func:`vertical_closing_blend` and persist the result."""
+def apply_super_resolution(image: np.ndarray, model_path: str, model_name: str, scale: int) -> np.ndarray:
+    """
+    Applies super-resolution to an image using OpenCV's dnn_superres module.
 
-    src_path = Path(input_path)
-    dst_path = Path(output_path)
-    image = cv2.imread(str(src_path), cv2.IMREAD_UNCHANGED)
-    if image is None:
-        raise FileNotFoundError(f"Unable to load image: {src_path}")
-    processed = vertical_closing_blend(
-        image,
-        kernel_height=kernel_height,
-        closing_blend=closing_blend,
-    )
-    if ensure_parent:
-        dst_path.parent.mkdir(parents=True, exist_ok=True)
-    if not cv2.imwrite(str(dst_path), processed):
-        raise IOError(f"Failed to write processed image: {dst_path}")
-    return dst_path
+    Args:
+        image: The input image (NumPy array).
+        model_path: Path to the pre-trained super-resolution model file.
+        model_name: The name of the model algorithm (e.g., 'fsrcnn').
+        scale: The upscale factor (e.g., 2, 3, 4).
 
+    Returns:
+        The upscaled image as a NumPy array.
+    """
+    sr = cv2.dnn_superres.DnnSuperResImpl_create()
+    sr.readModel(str(model_path))
+    sr.setModel(model_name, scale)
+    
+    # Check if the image has 3 channels, if not, convert it.
+    # DNN SuperRes models typically expect 3-channel BGR images.
+    if image.ndim != 3 or image.shape[2] != 3:
+        # Convert grayscale to BGR
+        print("Input image is not 3-channel, converting to BGR for super-resolution.")
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+
+    print(f"Upscaling image by factor of {scale} using {model_name}...")
+    result = sr.upsample(image)
+    print("Upscaling complete.")
+    
+    return result

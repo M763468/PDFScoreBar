@@ -714,3 +714,39 @@ This model is therefore not a drop-in replacement for `homr`, but it demonstrate
   - `run_007`: 2× upscaled image+GT, prompt=barline, thresholds=0.05/0.05 → TP=0, FP=18, FN=152.
 - **Diagnosis:** All predictions are wide horizontal boxes (min width ≈195px at 1×, ≈379px at 2×); no tall/narrow barlines produced. Input scaling and prompt tweaks do not change the failure mode. GT/image scale matches; issue is model behaviour, not evaluation.
 - **Status:** GroundingDINO is **abandoned** for barline detection without finetuning. Shift focus to other candidate models/heuristics.
+
+## Phase 35: Preprocessing with Morphological Operations (Abandoned)
+
+- **Goal**: Reduce False Positives (FPs) in `homr` and False Negatives (FNs) in `OMR-DLN` by applying preprocessing to the input image.
+- **Approach**: Based on an idea from `docs/notes/IDEAS.md`, attempt to connect faint or broken vertical lines using morphological transformations (Vertical Closing) from OpenCV before feeding the image to the models.
+- **Experiment 1 (homr)**:
+    - A preprocessing step was added to `homr_evaluator.py`.
+    - **`binarize=True` attempt**: The initial run with binarization (`run_vc_debug`) failed. Debugging revealed that while the binarized image itself looked reasonable (`01_binarized.png`), the subsequent closing operation corrupted the image data in a way that was incompatible with `homr`, leading to `RuntimeError: No staffs found`.
+    - **`binarize=False` attempt**: An attempt without binarization (`run_vc_nobinarize`) also failed, this time with `RuntimeError: No noteheads found`.
+    - **Parameter Sweep**: A parameter sweep on `kernel_height` (`run_parameter_sweep`) was conducted to see if a weaker transformation would work. However, all tested parameters resulted in the same `No staffs found` error.
+    - **Experiment 2 (OMR-DLN)**:
+        - The `eval_omr_dln.py` script was modified to accept a `kernel_height` parameter and run with `binarize=True`.
+        - A parameter sweep for `kernel_height` over `[15, 10, 5]` was executed.
+        - **Result**: Complete failure. For all tested parameters, the model failed to detect any correct measures and recall remained at 0%. This confirms that the binarization + closing approach is fundamentally incompatible with the OMR-DLN model as well.
+- **Conclusion**:
+    - Both the `homr` and `OMR-DLN` models are highly sensitive to aggressive, pixel-level preprocessing like binarization and morphological closing.
+    - These operations, while intuitive, alter the image characteristics (texture, gradient, intensity distribution) that the models rely on for detection, leading to a catastrophic drop in recognition performance.
+    - Therefore, the strategy of applying morphological transformations directly to the input image is **not viable and is abandoned**.
+- **Status**: **Abandoned**.
+
+## Phase 36: Preprocessing with Super-Resolution (Lightweight FSRCNN)
+
+- **Goal**: Improve `homr` and `OMR-DLN` detection performance by applying super-resolution to the input image.
+- **Approach**: Utilize the OpenCV `dnn_superres` module with a `FSRCNN_x2.pb` model for lightweight super-resolution.
+- **Experiment 1 (homr)**:
+    - `homr_evaluator.py` was modified to incorporate the super-resolution preprocessing step and adjusted GT scaling.
+    - **Result**: TP=92, FP=113, FN=60 (Precision=0.448, Recall=0.605, F1=0.515). This represents a significant degradation in performance compared to the baseline (F1=0.897).
+    - **Analysis**: While super-resolution aims to enhance image quality, it appears to alter crucial image characteristics (e.g., fine textures, edge definitions) that `homr`'s internal segmentation models rely on. This led to a substantial loss of detection capability.
+- **Experiment 2 (OMR-DLN)**:
+    - `eval_omr_dln.py` was modified to incorporate the super-resolution preprocessing step and GT scaling.
+    - **Result**: TP=135, FP=30, FN=17 (Precision=0.818, Recall=0.888, F1=0.851). This shows a slight degradation in performance compared to the OMR-DLN baseline (F1=0.895).
+    - **Analysis**: Similar to `homr`, lightweight super-resolution did not provide a beneficial effect for `OMR-DLN`. The altered image characteristics likely negatively impacted the YOLO model's ability to accurately detect measures.
+- **Conclusion**:
+    - Lightweight super-resolution (OpenCV `dnn_superres` with `FSRCNN_x2`) failed to improve the performance of either `homr` or `OMR-DLN`. Both models experienced performance degradation or no improvement.
+    - The hypothesis that simply increasing resolution would aid detection without affecting crucial model-specific features was not supported by these experiments.
+- **Status**: **Abandoned (for lightweight SR)**.

@@ -23,8 +23,9 @@ This document describes how to use the provided tools (now located in `tools/`) 
 - Purpose: isolate `homr` evaluation environment with separate dependencies.
 - Build image: `docker build -t homr_eval -f Dockerfile.homr .` (CUDA 12.1 runtime + cuDNN 9; Poetry installs `homr` with dev deps inside `/opt/poetry/venvs`).
 - Container creation: `docker run --gpus all -d --name homr_eval_gpu -v "$(pwd):/workspace" -w /workspace homr_eval tail -f /dev/null`.
-- Post-create steps: environment is ready immediately. Run GPU sanity check if needed:
-  - `docker exec homr_eval_gpu bash -lc 'cd /workspace/homr && poetry run python -c "import torch, onnxruntime as ort; print(torch.cuda.is_available()); print(ort.get_device())"'`
+- Post-create steps: After creating the container, dependencies must be explicitly installed.
+  - **Install Dependencies**: Run `docker exec homr_eval_gpu bash -c "cd /workspace/external/homr && poetry install"` to ensure all packages from `poetry.lock` are installed in the virtual environment. This is necessary to avoid `ModuleNotFoundError` for packages like `cv2`.
+  - **GPU Sanity Check**: `docker exec homr_eval_gpu bash -lc 'cd /workspace/external/homr && poetry run python -c "import torch, onnxruntime as ort; print(torch.cuda.is_available()); print(ort.get_device())"'`
 - Host mount directories:
   - Logs: `/workspace/logs/homr_eval`
   - Models/cache: `/workspace/models/homr`

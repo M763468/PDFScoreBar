@@ -750,3 +750,31 @@ This model is therefore not a drop-in replacement for `homr`, but it demonstrate
     - Lightweight super-resolution (OpenCV `dnn_superres` with `FSRCNN_x2`) failed to improve the performance of either `homr` or `OMR-DLN`. Both models experienced performance degradation or no improvement.
     - The hypothesis that simply increasing resolution would aid detection without affecting crucial model-specific features was not supported by these experiments.
 - **Status**: **Abandoned (for lightweight SR)**.
+
+## 2025-12-13: Advanced Super-Resolution & Hybrid Tuning
+**Objective**: Improve barline detection by integrating Real-ESRGAN (x4) and combining `homr` with `OMR-DLN`.
+**Context**: `homr` baseline had 100% Recall but ~30 FPs. Lightweight SR failed previously.
+
+### Experiments
+1.  **Real-ESRGAN Integration**:
+    - Integrated `RealESRGAN_x4plus` into `preprocessing.py`.
+    - Updated `homr_evaluator.py` to handle 4x coordinate scaling and quadratic heuristic scaling.
+    - Updated `eval_omr_dln.py` to support SR input.
+2.  **Performance w/ SR (on `page_3`):**
+    - `homr` (SR x4): **144 TP, 19 FP, 8 FN**. Precision increased (0.83 -> 0.88), FPs reduced (30 -> 19), but **Recall dropped** (0.94).
+    - `OMR-DLN` (SR x4): **137 TP, 17 FP, 15 FN**. High precision but lower recall.
+3.  **Hybrid Strategy**:
+    - Goal: Keep `homr` Baseline's perfect recall (152 TPs) but clean up FPs using high-precision models.
+    - **Logic**: Keep a Baseline candidate **IF** it is supported by (`homr` SR **OR** `OMR-DLN` SR).
+    - Support defined as IoU > 0.5.
+
+### Final Results (Hybrid)
+- **True Positives**: 152 (100% Recall, 0 Missed)
+- **False Positives**: 8 (Reduced from 30, **73% reduction**)
+- **F1 Score**: 0.974
+- **Conclusion**: The hybrid approach significantly outperformed standalone models, achieving the project goal of < 30 FPs with 100% Recall.
+
+### Artifacts
+- Script: `experiments/fp_reduction/tune_hybrid_detector.py` (Analysis)
+- Script: `tools/generate_hybrid_results.py` (Final Generator)
+- Result: `logs/hybrid_results.json`

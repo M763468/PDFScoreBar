@@ -9,15 +9,17 @@ import numpy as np
 from ultralytics import YOLO
 
 # Add root project dir to path to import common modules
-sys.path.append(str(Path(__file__).resolve().parents[2]))
+REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.append(str(REPO_ROOT))
 from src.common.barline_evaluation import greedy_barline_match, BarlineMatchResult
+from src.common.preprocessing import apply_advanced_sr
 
 # --- Configuration ---
 # NOTE TO USER: Please download the pretrained model weights from the Google Drive link
 # in the 'dmgonzalez8/OMR' repository. From the available models, download the 
 # YOLOv8m model trained for MEASURE detection.
 # Rename it to 'YOLOv8m_Measures.pt' and place it in the directory below.
-MODEL_PATH = "external/omr_dln/models/public_models/YOLOv8m_Measures.pt"
+MODEL_PATH = REPO_ROOT / "external/omr_dln/models/public_models/YOLOv8m_Measures.pt"
 BARLINE_WIDTH = 4 # px, width of inferred barline boxes for evaluation
 
 def parse_args():
@@ -26,6 +28,7 @@ def parse_args():
     parser.add_argument("--gt", type=str, required=True, help="Path to GT JSON for barlines")
     parser.add_argument("--output-dir", type=str, required=True, help="Directory to save logs/results")
     parser.add_argument("--conf", type=float, default=0.25, help="Confidence threshold for measure detection")
+    parser.add_argument("--enable-sr", action="store_true", help="Enable Super-Resolution (Real-ESRGAN x4)")
     return parser.parse_args()
 
 def load_gt_boxes(gt_path):
@@ -61,37 +64,63 @@ def main():
     
     print(f"Loading model: {MODEL_PATH}...")
     model = YOLO(MODEL_PATH)
+
+    # --- Preprocessing (SR) ---
+    img_bgr = cv2.imread(args.image)
+    if img_bgr is None:
+        print(f"Error: could not read {args.image}")
+        sys.exit(1)
+
+    sr_scale = 1
+    if args.enable_sr:
+        sr_scale = 4
+        print(f"Applying SR (x{sr_scale})...")
+        img_bgr = apply_advanced_sr(img_bgr, model_name='RealESRGAN_x4plus', scale=sr_scale)
+        # We pass the upscaled image (numpy array) to YOLO directly
+        inference_input = img_bgr
+    else:
+        inference_input = args.image # Path string or numpy array
     
     # --- Inference ---
-    print(f"Running measure detection on {args.image} with conf={args.conf}...")
-    results = model.predict(args.image, conf=args.conf, save=False)
+    print(f"Running measure detection on image (shape {img_bgr.shape}) with conf={args.conf}...")
+    results = model.predict(inference_input, conf=args.conf, save=False)
     result = results[0]
     
     # --- Process Detections ---
-    img_viz = cv2.imread(args.image)
-    h, w, _ = img_viz.shape
+    # Result boxes will be in coordinates of the INFERENCE INPUT (upscaled or original)
+    img_viz = img_bgr.copy() # Use the image we ran inference on for viz
+    # h, w, _ = img_viz.shape # Already known
     
     measure_boxes = []
     for box in result.boxes:
         x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
         conf = float(box.conf[0].cpu().numpy())
         
-        # Cast to int for processing and serialization
-        measure_boxes.append((int(x1), int(y1), int(x2), int(y2)))
+        # Cast to int
+        mx1, my1, mx2, my2 = int(x1), int(y1), int(x2), int(y2)
+        measure_boxes.append((mx1, my1, mx2, my2))
         
-        # Draw detected MEASURE box on viz image
-        cv2.rectangle(img_viz, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2) # Green for measures
-        cv2.putText(img_viz, f"measure {conf:.2f}", (int(x1), int(y1) - 10), 
+        # Viz on upscaled
+        cv2.rectangle(img_viz, (mx1, my1), (mx2, my2), (0, 255, 0), 2)
+        cv2.putText(img_viz, f"measure {conf:.2f}", (mx1, my1 - 10), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
     # --- Infer Barlines ---
-    pred_barlines = infer_barlines_from_measures(measure_boxes)
+    # These are in INFERENCE space
+    pred_barlines_inference = infer_barlines_from_measures(measure_boxes)
     
-    # Draw INFERRED barlines on viz image
-    for (x1, y1, x2, y2) in pred_barlines:
-        # Use a different color to distinguish inferred barlines
-        cv2.rectangle(img_viz, (x1, y1), (x2, y2), (255, 0, 0), 1) # Blue for barlines
+    # Scale back to 1x for metrics
+    pred_barlines_1x = []
+    for (x1, y1, x2, y2) in pred_barlines_inference:
+        # Scale coords
+        pred_barlines_1x.append(
+            (int(x1/sr_scale), int(y1/sr_scale), int(x2/sr_scale), int(y2/sr_scale))
+        )
         
+        # Viz lines on upscaled image
+        cv2.rectangle(img_viz, (x1, y1), (x2, y2), (255, 0, 0), 1)
+
+    # Use prediction_vis.jpg for viz
     viz_path = os.path.join(args.output_dir, "prediction_vis.jpg")
     cv2.imwrite(viz_path, img_viz)
     print(f"Saved visualization to {viz_path}")
@@ -99,10 +128,12 @@ def main():
     # --- Evaluation ---
     print("Loading Ground Truth barlines...")
     gt_boxes = load_gt_boxes(args.gt)
-    print(f"Loaded {len(gt_boxes)} GT boxes.")
-    print(f"Detected {len(measure_boxes)} measures, inferring {len(pred_barlines)} barlines.")
+    # GT is 1x.
     
-    match_result = greedy_barline_match(pred_barlines, gt_boxes)
+    print(f"Loaded {len(gt_boxes)} GT boxes.")
+    print(f"Detected {len(measure_boxes)} measures, inferring {len(pred_barlines_1x)} barlines (1x scaled).")
+    
+    match_result = greedy_barline_match(pred_barlines_1x, gt_boxes)
     
     tp = len(match_result.matches)
     fp = len(match_result.false_positive_indices)
@@ -116,7 +147,7 @@ def main():
         "TP": tp, "FP": fp, "FN": fn,
         "Precision": precision, "Recall": recall, "F1": f1,
         "Num_Measure_Preds": len(measure_boxes),
-        "Num_Barline_Preds": len(pred_barlines),
+        "Num_Barline_Preds": len(pred_barlines_1x),
         "Num_GT": len(gt_boxes)
     }
     
@@ -130,7 +161,7 @@ def main():
         
     predictions_path = os.path.join(args.output_dir, "predictions.json")
     with open(predictions_path, "w") as f:
-        json.dump(pred_barlines, f)
+        json.dump(pred_barlines_1x, f)
 
 if __name__ == "__main__":
     main()

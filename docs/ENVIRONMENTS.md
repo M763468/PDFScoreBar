@@ -118,5 +118,43 @@ This section documents the setup and usage of the virtual environments and key c
         --output-dir logs/model_experiments/omr_dln/run_001 \
         --conf 0.25
     ```
+
 -   **Important Note**: These environments are strictly for **evaluation of existing pretrained models only**. They are not set up for training new models or for creating new annotated datasets.
+
+## Advanced Super-Resolution & Hybrid Methodology (2025-12-13)
+
+### 1. homr Evaluation with Real-ESRGAN
+Run inside `homr_eval_gpu`. Requires `--enable-sr` flag.
+```bash
+cd /workspace/external/homr
+poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py \
+    --images /workspace/data/evaluation/images/page_3.png \
+    --ground-truth page_3:/workspace/data/evaluation/annotations/page_003/boxes_sorted.json \
+    --output-root /workspace/logs/homr_eval_sr \
+    --enable-sr
+```
+
+### 2. OMR-DLN Evaluation with Real-ESRGAN
+Run inside `homr_eval_gpu` (requires `ultralytics` installed via poetry).
+```bash
+cd /workspace/external/homr
+poetry run python /workspace/experiments/models/eval_omr_dln.py \
+    --image /workspace/data/evaluation/images/page_3.png \
+    --gt /workspace/data/evaluation/annotations/page_003/boxes_sorted.json \
+    --output-dir /workspace/logs/omr_dln_sr \
+    --enable-sr
+```
+
+### 3. Hybrid Analysis & Result Generation
+Combines results from Baseline (no SR), `homr` (SR), and `OMR-DLN` (SR).
+```bash
+# Analyze and Generate Final Results
+poetry run python /workspace/tools/generate_hybrid_results.py \
+    --baseline <path_to_baseline_json> \
+    --sr <path_to_homr_sr_json> \
+    --omr <path_to_omr_sr_json> \
+    --gt <path_to_gt_json> \
+    --output /workspace/logs/hybrid_results.json
+```
+
 

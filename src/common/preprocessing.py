@@ -78,24 +78,13 @@ def apply_vertical_closing(
 def apply_super_resolution(image: np.ndarray, model_path: str, model_name: str, scale: int) -> np.ndarray:
     """
     Applies super-resolution to an image using OpenCV's dnn_superres module.
-
-    Args:
-        image: The input image (NumPy array).
-        model_path: Path to the pre-trained super-resolution model file.
-        model_name: The name of the model algorithm (e.g., 'fsrcnn').
-        scale: The upscale factor (e.g., 2, 3, 4).
-
-    Returns:
-        The upscaled image as a NumPy array.
+    (Legacy/Lightweight models like FSRCNN).
     """
     sr = cv2.dnn_superres.DnnSuperResImpl_create()
     sr.readModel(str(model_path))
     sr.setModel(model_name, scale)
     
-    # Check if the image has 3 channels, if not, convert it.
-    # DNN SuperRes models typically expect 3-channel BGR images.
     if image.ndim != 3 or image.shape[2] != 3:
-        # Convert grayscale to BGR
         print("Input image is not 3-channel, converting to BGR for super-resolution.")
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
@@ -104,3 +93,64 @@ def apply_super_resolution(image: np.ndarray, model_path: str, model_name: str, 
     print("Upscaling complete.")
     
     return result
+
+def apply_advanced_sr(image: np.ndarray, model_name: str = 'RealESRGAN_x4plus', scale: int = 4) -> np.ndarray:
+    """
+    Applies advanced super-resolution using Real-ESRGAN.
+    Requires torch and realesrgan installed.
+    
+    Args:
+        image: Input image (BGR numpy array).
+        model_name: "RealESRGAN_x4plus" or other supported models.
+        scale: Upscale factor (default 4).
+        
+    Returns:
+        Upscaled image.
+    """
+    try:
+        import torch
+        from basicsr.archs.rrdbnet_arch import RRDBNet
+        from realesrgan import RealESRGANer
+    except ImportError as e:
+        print(f"Error importing Real-ESRGAN dependencies: {e}")
+        print("Please ensure torch, basicsr, and realesrgan are installed.")
+        return image
+    
+    # Check device
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Real-ESRGAN using device: {device}")
+    
+    # Setup model
+    # currently supporting x4plus
+    if model_name == 'RealESRGAN_x4plus':
+        model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
+        netscale = 4
+        # Official release path
+        model_path = 'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth'
+    else:
+        print(f"Model {model_name} not explicitly supported in this helper, trying defaults.")
+        # Fallback
+        model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
+        netscale = 4
+        model_path = 'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth'
+
+    upsampler = RealESRGANer(
+        scale=netscale,
+        model_path=model_path,
+        model=model,
+        tile=0, 
+        tile_pad=10,
+        pre_pad=0,
+        half=True if 'cuda' in str(device) else False,
+        device=device,
+    )
+
+    if image.ndim != 3 or image.shape[2] != 3:
+         image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+
+    try:
+        output, _ = upsampler.enhance(image, outscale=scale)
+        return output
+    except Exception as e:
+        print(f"Real-ESRGAN inference failed: {e}")
+        return image

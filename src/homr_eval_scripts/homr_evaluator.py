@@ -74,7 +74,8 @@ from common.barline_evaluation import (
     apply_left_margin_exclusion,
     greedy_barline_match,
 )
-from common.thin_barline_finder import detect_thin_vertical_runs
+from common.thin_barline_finder import detect_thin_vertical_runs, ThinBarlineConfig
+from common.preprocessing import apply_advanced_sr
 
 LEFT_MARGIN_FORCE_FP_GT_INDICES: Set[int] = set()
 LEFT_MARGIN_FORCE_FP_MAX_WIDTH = 2
@@ -225,6 +226,11 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=1.0,
         help="Scale factor applied to barline maximum width threshold",
+    )
+    parser.add_argument(
+        "--enable-sr",
+        action="store_true",
+        help="Enable Super-Resolution (Real-ESRGAN x4) preprocessing",
     )
     return parser.parse_args()
 
@@ -1611,6 +1617,17 @@ def main() -> None:
         image_run_dir = run_dir / stem
         working_image = prepare_working_image(image_path, image_run_dir)
 
+        sr_scale = 1
+        if args.enable_sr:
+            sr_scale = 4
+            eprint(f"Applying Super-Resolution (x{sr_scale}) to {stem}...")
+            img_bgr = cv2.imread(str(working_image))
+            if img_bgr is not None:
+                upscaled = apply_advanced_sr(img_bgr, model_name='RealESRGAN_x4plus', scale=sr_scale)
+                cv2.imwrite(str(working_image), upscaled)
+            else:
+                eprint(f"Warning: Failed to load {working_image} for SR.")
+
         config = ProcessingConfig(
             True,
             args.cache,
@@ -1637,9 +1654,39 @@ def main() -> None:
                 )
             )
 
+        # Scale ThinBarlineConfig if SR is enabled
+        tb_config = ThinBarlineConfig()
+        if sr_scale > 1:
+            tb_config = ThinBarlineConfig(
+                min_height=tb_config.min_height * sr_scale,
+                max_height=tb_config.max_height * sr_scale,
+                max_width=tb_config.max_width * sr_scale,
+                y_merge_tolerance=tb_config.y_merge_tolerance * sr_scale,
+                y_center_tolerance=tb_config.y_center_tolerance * sr_scale,
+                x_center_tolerance=tb_config.x_center_tolerance * sr_scale,
+                adjacent_relaxed_span=tb_config.adjacent_relaxed_span * sr_scale,
+                vertical_gap_fill=tb_config.vertical_gap_fill * sr_scale,
+                left_margin_limit=tb_config.left_margin_limit * sr_scale,
+                cluster_x_tolerance=tb_config.cluster_x_tolerance * sr_scale,
+                cluster_reject_span=tb_config.cluster_reject_span * sr_scale,
+                # Intensity / Ratio thresholds remain same
+                pixel_threshold=tb_config.pixel_threshold,
+                dark_pixel_threshold=tb_config.dark_pixel_threshold,
+                adjacent_min_intensity=tb_config.adjacent_min_intensity,
+                adjacent_relaxed_dark_ratio=tb_config.adjacent_relaxed_dark_ratio,
+                max_intensity_std=tb_config.max_intensity_std,
+                max_intensity_std_relaxed=tb_config.max_intensity_std_relaxed,
+                notehead_dark_ratio=tb_config.notehead_dark_ratio,
+                notehead_std_floor=tb_config.notehead_std_floor,
+                allow_single_side_bright=tb_config.allow_single_side_bright,
+                single_side_dark_ratio=tb_config.single_side_dark_ratio,
+                cluster_reject_count=tb_config.cluster_reject_count,
+            )
+
         extra_barlines = detect_thin_vertical_runs(
             working_image,
             [prediction.orig_bbox for prediction in mapped_predictions],
+            config=tb_config,
         )
 
         def _centre(box: Tuple[int, int, int, int]) -> Tuple[float, float]:
@@ -1753,16 +1800,26 @@ def main() -> None:
         )
 
         if STEM_CONTEXT_HEURISTICS["enabled"]:
+            # Scale heuristics parameters if SR is enabled
+            h_config = STEM_CONTEXT_HEURISTICS.copy()
+            if sr_scale > 1:
+                h_config["notehead_proximity_threshold_px"] *= sr_scale
+                # Area overlap scales quadratically (sr_scale^2)
+                h_config["min_overlap_px"] *= (sr_scale * sr_scale)
+                h_config["max_height_px"] *= sr_scale
+                h_config["max_width_px"] *= sr_scale
+                h_config["cluster_gap_threshold_px"] *= sr_scale
+            
             mapped_predictions, rejected_by_heuristic = filter_detections_by_notehead_proximity(
                 mapped_predictions,
                 notehead_mask_resized,
-                STEM_CONTEXT_HEURISTICS["notehead_proximity_threshold_px"],
-                STEM_CONTEXT_HEURISTICS["min_overlap_px"],
-                STEM_CONTEXT_HEURISTICS["max_height_px"],
-                STEM_CONTEXT_HEURISTICS["max_width_px"],
+                h_config["notehead_proximity_threshold_px"],
+                h_config["min_overlap_px"],
+                h_config["max_height_px"],
+                h_config["max_width_px"],
                 staff_mask_resized,
-                STEM_CONTEXT_HEURISTICS["min_staff_crossings"],
-                STEM_CONTEXT_HEURISTICS["staff_crossing_enabled"],
+                h_config["min_staff_crossings"],
+                h_config["staff_crossing_enabled"],
             )
         # --- End Heuristic 1 ---
 
@@ -1824,19 +1881,56 @@ def main() -> None:
             matches=[],
             soft_matches=[],
         )
-        match_result: Optional[BarlineMatchResult] = None
+        per_image_metrics.append(metric)
+
+        # Scale predictions back to 1x for JSON export and correct metric calculation logic if external tools use it
+        # BUT wait: compute_metrics logic (above) assumes pred_boxes are compatible with gt_boxes.
+        # If we passed UP-SCALED mapped_predictions to compute_metrics, we would have 0 matches.
+        # FIX: We need a separate list for metrics calculation that is scaled down.
+        
+        # Retroactive fix: The metric calculation above (lines 1830) used `mapped_predictions` (Upscaled).
+        # We must re-do the metric calc with scaled-down predictions.
+        
+        metrics_predictions: List[BarlinePrediction] = []
+        for pred in mapped_predictions:
+            # Scale down bbox to original 1x coords
+            orig_1x = tuple(int(c / sr_scale) for c in pred.orig_bbox)
+            metrics_predictions.append(BarlinePrediction(
+                pred_bbox=pred.pred_bbox, # This is internal homr bbox
+                orig_bbox=orig_1x,
+                system_index=pred.system_index,
+                staff_index=pred.staff_index
+            ))
+            
+        # Re-compute metrics with 1x predictions
+        metric = ImageMetrics(
+            image=stem,
+            num_predictions=len(metrics_predictions),
+            num_ground_truth=0,
+            true_positives=0,
+            false_positives=len(metrics_predictions),
+            false_negatives=0,
+            precision=0.0,
+            recall=0.0,
+            f1=0.0,
+            matches=[],
+            soft_matches=[]
+        )
+        match_result = None
         if ground_truth_path:
             gt_boxes = load_ground_truth_boxes(ground_truth_path)
-            metric, match_result = compute_metrics(mapped_predictions, gt_boxes, args.iou_threshold)
+            metric, match_result = compute_metrics(metrics_predictions, gt_boxes, args.iou_threshold)
             metric.image = stem
         else:
             metric.image = stem
-        per_image_metrics.append(metric)
+            
+        # Replace the last appended metric
+        per_image_metrics[-1] = metric
 
         overlay_path = image_run_dir / f"{stem}_barline_overlay.png"
         draw_overlay(
             working_image,
-            mapped_predictions,
+            mapped_predictions, # Draw on UPSCALED image with UPSCALED preds
             overlay_path,
             matches=match_result.matches if match_result else None,
             soft_matches=match_result.soft_matches if match_result else None,
@@ -1856,7 +1950,7 @@ def main() -> None:
                             "system_index": pred.system_index,
                             "staff_index": pred.staff_index,
                         }
-                        for pred in mapped_predictions
+                        for pred in metrics_predictions # Save 1x predictions
                     ],
                 },
                 fh,

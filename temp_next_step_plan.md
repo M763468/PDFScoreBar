@@ -1,65 +1,42 @@
-# Work Plan for Next Session: Preprocessing and Hybrid Tuning
 
-This plan outlines the next steps based on `docs/NEXT_SESSION_NOTES.md` to achieve the objective of minimizing False Positives (FPs) while strictly maintaining 100% Recall for barline detection, anchored by `homr`.
+# Next Steps Plan
 
-## Current Status:
-- Barline FP Reduction is LOCALLY COMPLETE (30 FPs remaining).
-- Previous attempts with Vertical Closing and Lightweight Super-Resolution (FSRCNN) have FAILED and been ABANDONED due to performance degradation.
+> [!IMPORTANT]
+> **Documentation Policy**: Documentation (e.g., `docs/DEVELOPMENT_LOG.md`, `docs/ENVIRONMENTS.md`) must be updated proactively whenever new scripts, findings, or artifacts are produced, even if not explicitly listed as a step.
 
-## Primary Objective:
-- Implement a hybrid detection method that minimizes False Positives (FPs) while strictly maintaining 100% Recall, anchored by `homr`.
+## Phase 1: Simple Hybrid Pipeline Scripts
+**Goal**: Automate the current multi-step hybrid process for easier testing.
 
-## Detailed Plan:
+1.  **Create `tools/run_hybrid_pipeline.sh`**:
+    -   Sequential execution of: `homr` (Baseline) -> `homr` (SR) -> `OMR-DLN` (SR) -> `generate_hybrid_results.py`.
+    -   Inputs: Image Path, Run ID/Output Dir.
+2.  **Documentation**:
+    -   Update `docs/ENVIRONMENTS.md` with the location and usage of this new script.
 
-### Track 1: Preprocessing Experiments
+## Phase 2: Preliminary Generalization
+**Goal**: Verify hybrid method robustness on unseen data.
 
-**Task 1.1: Advanced Super-Resolution Research and Integration (Based on 1.3 in NEXT_SESSION_NOTES)**
-- **Goal:** Identify, integrate, and evaluate a state-of-the-art super-resolution (SR) model to improve image quality for `homr` and `OMR-DLN` without destructive side effects.
-- **Subtasks:**
-    1.  **Research SOTA SR Models:** Investigate models like Real-ESRGAN or others from SRZoo that provide high-quality output. Focus on models with established Python implementations or readily available pre-trained weights.
-        -   *Deliverable:* Selection of a candidate SR model and identification of its repository/implementation details.
-    2.  **Integrate SR Model:** Clone the selected SR model's repository into `external/` or otherwise integrate necessary components.
-        -   *Deliverable:* SR model code/dependencies present in `external/`.
-    3.  **Implement SR Function:** Create a new function (e.g., `apply_advanced_super_resolution`) in `src/common/preprocessing.py` or a dedicated script within `tools/` that utilizes the integrated SR model. This function should be configurable (e.g., for upscaling factors like x2, x4).
-        -   *Deliverable:* New SR function available for use.
-    4.  **Evaluate Advanced SR on `homr`:** Apply the new SR preprocessing to input images and evaluate its impact on `homr`'s performance (TP, FP, FN, Precision, Recall, F1). Test with different upscaling factors (x2, x4 if applicable).
-        -   *Deliverable:* Evaluation logs and summary for `homr`.
-    5.  **Evaluate Advanced SR on `OMR-DLN`:** Apply the new SR preprocessing to input images and evaluate its impact on `OMR-DLN`'s performance. Test with different upscaling factors (x2, x4 if applicable).
-        -   *Deliverable:* Evaluation logs and summary for `OMR-DLN`.
+1.  **Prepare Targets**:
+    -   **Training Set**: Use `data/training/images/page_10.png` and `page_15.png`.
+    -   **New PDF**: Run `src/pdf_to_images.py` on `data/evaluation/pdfs/Va_Prokofiev_Symphony1.pdf` to generate test images (Pick 1-2 pages, excluding title/blank pages).
+2.  **Run Pipeline**:
+    -   Execute `run_hybrid_pipeline.sh` on the selected images.
+    -   Output maps to `logs/hybrid_generalization/<image_name>`.
+3.  **Manual Review**:
+    -   User visualizes outputs (overlays).
+    -   Log observations (success/failure) in `docs/DEVELOPMENT_LOG.md`.
 
-**Task 1.2: Combined Approach (Advanced SR + Gentle Vertical Closing) (Based on 1.4 in NEXT_SESSION_NOTES)**
-- **Goal:** If Advanced SR proves successful, explore its combination with a gentle vertical closing operation.
-- **Subtasks:**
-    1.  **Create Combined Pipeline:** Develop a processing pipeline that first applies the successful Advanced SR, and then a mild `apply_vertical_closing` (with `kernel_height` e.g., `[3, 5]`).
-    2.  **Evaluate Combined Approach on `homr`:** Test the combined pipeline and evaluate its impact on `homr`'s performance.
-    3.  **Evaluate Combined Approach on `OMR-DLN`:** Test the combined pipeline and evaluate its impact on `OMR-DLN`'s performance.
-    -   *Pre-requisite:* Successful completion of Task 1.1.
+## Phase 3: Deep FP Analysis
+**Goal**: Eliminate remaining FPs (e.g., 8 on `page_3`) using consistency logic.
 
-### Track 2: Hybrid Method Parameter Tuning
+1.  **Staff Line Consistency Experiment**:
+    -   Script: `experiments/fp_reduction/analyze_staff_consistency.py`.
+    -   Logic: Group barlines by system; reject outliers that deviate from the system's top/bottom linear trend.
+2.  **Evaluation**:
+    -   Run on `page_3` and Phase 2 targets.
+    -   Quantify FP reduction vs. Recall loss.
+3.  **Documentation**:
+    -   Record detailed findings, logic, and results in `docs/DEVELOPMENT_LOG.md`.
 
-**Task 2.1: Create Parameter Tuning Script (Based on 2.1 in NEXT_SESSION_NOTES)**
-- **Goal:** Develop a script to systematically tune hybrid detector parameters.
-- **Subtasks:**
-    1.  **Develop `tune_hybrid_detector.py`:** Create `experiments/fp_reduction/tune_hybrid_detector.py`. This script should:
-        -   Accept `homr` and `OMR-DLN` detection JSON files as input.
-        -   Allow adjustment of `homr` confidence threshold, `OMR-DLN` confidence threshold, and IoU threshold for matching detections.
-        -   Output `TP, FP, FN` for each parameter combination.
-        -   *Deliverable:* Functional tuning script.
-
-**Task 2.2: Execute Parameter Sweep (Based on 2.2 in NEXT_SESSION_NOTES)**
-- **Goal:** Run a comprehensive parameter sweep to identify optimal hybrid configurations.
-- **Subtasks:**
-    1.  **Define Parameter Ranges:** Specify appropriate ranges and step sizes for confidence (e.g., 0.1 to 0.9, step 0.1) and IoU (e.g., 0.1 to 0.5, step 0.05).
-    2.  **Execute Sweep:** Run `tune_hybrid_detector.py` for all defined parameter combinations.
-        -   *Deliverable:* Comprehensive log of `TP, FP, FN` for all combinations.
-
-**Task 2.3: Analyze Tuning Results (Based on 2.3 in NEXT_SESSION_NOTES)**
-- **Goal:** Identify the optimal hybrid configuration that meets the objective.
-- **Subtasks:**
-    1.  **Filter for 100% Recall:** Identify all parameter combinations where `FN=0`.
-    2.  **Select Lowest FP:** From the 100% recall set, select the combination with the lowest number of False Positives.
-        -   *Deliverable:* Optimal hybrid parameters and their performance metrics.
-
-### Documentation & Logging
-- Ensure all logs and experimental outputs are saved in `logs/model_experiments/preprocessing_and_tuning/` with structured naming.
-- Update `docs/NEXT_SESSION_NOTES.md` with findings and next steps upon completion of major tasks.
+## Phase 4: Future Optimization (Deferred)
+*See `docs/notes/technical_debt.md`.*

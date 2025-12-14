@@ -121,6 +121,26 @@ This section documents the setup and usage of the virtual environments and key c
 
 -   **Important Note**: These environments are strictly for **evaluation of existing pretrained models only**. They are not set up for training new models or for creating new annotated datasets.
 
+### PDF Rendering Environment (.venv_pdf)
+
+This environment is used for converting PDF scores into images using `src/pdf_to_images.py`.
+
+-   **Creation**:
+    ```bash
+    uv venv .venv_pdf
+    source .venv_pdf/bin/activate
+    uv pip install pymupdf opencv-python-headless numpy
+    ```
+
+-   **Usage**:
+    ```bash
+    source .venv_pdf/bin/activate
+    python src/pdf_to_images.py \
+        --pdf data/evaluation/pdfs/target.pdf \
+        --output-dir data/evaluation/images/target_subdir \
+        --prefix page
+    ```
+
 ## Advanced Super-Resolution & Hybrid Methodology (2025-12-13)
 
 ### 1. homr Evaluation with Real-ESRGAN
@@ -155,6 +175,17 @@ poetry run python /workspace/tools/generate_hybrid_results.py \
     --omr <path_to_omr_sr_json> \
     --gt <path_to_gt_json> \
     --output /workspace/logs/hybrid_results.json
+```
+
+### 4. Automated Hybrid Pipeline
+The `run_hybrid_pipeline.sh` script automates steps 1-3 (Baseline -> SR -> OMR -> Hybrid).
+
+```bash
+# Run full pipeline (with GT for metrics)
+./tools/run_hybrid_pipeline.sh --image data/training/images/page_10.png --run-id page_10_test --gt data/training/annotations/page_010/boxes_sorted.json
+
+# Run inference only (no GT)
+./tools/run_hybrid_pipeline.sh --image data/evaluation/images/new_score.png --run-id new_score_test
 ```
 
 

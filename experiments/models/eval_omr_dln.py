@@ -25,7 +25,7 @@ BARLINE_WIDTH = 4 # px, width of inferred barline boxes for evaluation
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluate OMR-DLN (YOLOv8 Measure Detection) for Barline Detection")
     parser.add_argument("--image", type=str, required=True, help="Path to input image")
-    parser.add_argument("--gt", type=str, required=True, help="Path to GT JSON for barlines")
+    parser.add_argument("--gt", type=str, help="Path to GT JSON for barlines (optional)")
     parser.add_argument("--output-dir", type=str, required=True, help="Directory to save logs/results")
     parser.add_argument("--conf", type=float, default=0.25, help="Confidence threshold for measure detection")
     parser.add_argument("--enable-sr", action="store_true", help="Enable Super-Resolution (Real-ESRGAN x4)")
@@ -52,116 +52,123 @@ def infer_barlines_from_measures(measure_boxes):
     return barlines
 
 def main():
-    args = parse_args()
-    
-    os.makedirs(args.output_dir, exist_ok=True)
-    
-    # --- Model Loading ---
-    if not Path(MODEL_PATH).exists():
-        print(f"FATAL: Model not found at {MODEL_PATH}")
-        print("Please download the pretrained YOLOv8m measure detection model, rename it, and place it in the correct directory.")
-        sys.exit(1)
-    
-    print(f"Loading model: {MODEL_PATH}...")
-    model = YOLO(MODEL_PATH)
-
-    # --- Preprocessing (SR) ---
-    img_bgr = cv2.imread(args.image)
-    if img_bgr is None:
-        print(f"Error: could not read {args.image}")
-        sys.exit(1)
-
-    sr_scale = 1
-    if args.enable_sr:
-        sr_scale = 4
-        print(f"Applying SR (x{sr_scale})...")
-        img_bgr = apply_advanced_sr(img_bgr, model_name='RealESRGAN_x4plus', scale=sr_scale)
-        # We pass the upscaled image (numpy array) to YOLO directly
-        inference_input = img_bgr
-    else:
-        inference_input = args.image # Path string or numpy array
-    
-    # --- Inference ---
-    print(f"Running measure detection on image (shape {img_bgr.shape}) with conf={args.conf}...")
-    results = model.predict(inference_input, conf=args.conf, save=False)
-    result = results[0]
-    
-    # --- Process Detections ---
-    # Result boxes will be in coordinates of the INFERENCE INPUT (upscaled or original)
-    img_viz = img_bgr.copy() # Use the image we ran inference on for viz
-    # h, w, _ = img_viz.shape # Already known
-    
-    measure_boxes = []
-    for box in result.boxes:
-        x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
-        conf = float(box.conf[0].cpu().numpy())
+    try:
+        print("--- DEBUG: OMR-DLN Script Start ---", file=sys.stderr)
+        args = parse_args()
         
-        # Cast to int
-        mx1, my1, mx2, my2 = int(x1), int(y1), int(x2), int(y2)
-        measure_boxes.append((mx1, my1, mx2, my2))
+        os.makedirs(args.output_dir, exist_ok=True)
         
-        # Viz on upscaled
-        cv2.rectangle(img_viz, (mx1, my1), (mx2, my2), (0, 255, 0), 2)
-        cv2.putText(img_viz, f"measure {conf:.2f}", (mx1, my1 - 10), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        # --- Model Loading ---
+        print(f"--- DEBUG: Checking model path: {MODEL_PATH} ---", file=sys.stderr)
+        if not Path(MODEL_PATH).exists():
+            print(f"FATAL: Model not found at {MODEL_PATH}", file=sys.stderr)
+            print("Please download the pretrained YOLOv8m measure detection model, rename it, and place it in the correct directory.", file=sys.stderr)
+            sys.exit(1)
+        
+        print("--- DEBUG: Image loaded ---", file=sys.stderr)
+        img_bgr = cv2.imread(args.image)
+        if img_bgr is None:
+            raise FileNotFoundError(f"Could not load image: {args.image}")
 
-    # --- Infer Barlines ---
-    # These are in INFERENCE space
-    pred_barlines_inference = infer_barlines_from_measures(measure_boxes)
-    
-    # Scale back to 1x for metrics
-    pred_barlines_1x = []
-    for (x1, y1, x2, y2) in pred_barlines_inference:
-        # Scale coords
-        pred_barlines_1x.append(
-            (int(x1/sr_scale), int(y1/sr_scale), int(x2/sr_scale), int(y2/sr_scale))
-        )
-        
-        # Viz lines on upscaled image
-        cv2.rectangle(img_viz, (x1, y1), (x2, y2), (255, 0, 0), 1)
+        sr_scale = 1
+        if args.enable_sr:
+            sr_scale = 4
+            print(f"--- DEBUG: Applying SR (x{sr_scale})... ---", file=sys.stderr)
+            img_bgr = apply_advanced_sr(img_bgr, model_name='RealESRGAN_x4plus', scale=sr_scale)
+            inference_input = img_bgr
+            print("--- DEBUG: SR applied ---", file=sys.stderr)
+        else:
+            inference_input = args.image
 
-    # Use prediction_vis.jpg for viz
-    viz_path = os.path.join(args.output_dir, "prediction_vis.jpg")
-    cv2.imwrite(viz_path, img_viz)
-    print(f"Saved visualization to {viz_path}")
+        print(f"--- DEBUG: Loading model: {MODEL_PATH} ---", file=sys.stderr)
+        model = YOLO(MODEL_PATH)
+        print("--- DEBUG: Model loaded successfully ---", file=sys.stderr)
     
-    # --- Evaluation ---
-    print("Loading Ground Truth barlines...")
-    gt_boxes = load_gt_boxes(args.gt)
-    # GT is 1x.
-    
-    print(f"Loaded {len(gt_boxes)} GT boxes.")
-    print(f"Detected {len(measure_boxes)} measures, inferring {len(pred_barlines_1x)} barlines (1x scaled).")
-    
-    match_result = greedy_barline_match(pred_barlines_1x, gt_boxes)
-    
-    tp = len(match_result.matches)
-    fp = len(match_result.false_positive_indices)
-    fn = len(match_result.false_negative_indices)
-    
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-    
-    metrics = {
-        "TP": tp, "FP": fp, "FN": fn,
-        "Precision": precision, "Recall": recall, "F1": f1,
-        "Num_Measure_Preds": len(measure_boxes),
-        "Num_Barline_Preds": len(pred_barlines_1x),
-        "Num_GT": len(gt_boxes)
-    }
-    
-    print("\n--- OMR-DLN Evaluation Results ---")
-    print(json.dumps(metrics, indent=2))
-    
-    # Save artifacts
-    metrics_path = os.path.join(args.output_dir, "metrics.json")
-    with open(metrics_path, "w") as f:
-        json.dump(metrics, f, indent=2)
+        # --- Inference ---
+        print(f"--- DEBUG: Running prediction with conf={args.conf} ---", file=sys.stderr)
+        results = model.predict(inference_input, conf=args.conf, save=False)
+        result = results[0]
+        print("--- DEBUG: Prediction finished ---", file=sys.stderr)
         
-    predictions_path = os.path.join(args.output_dir, "predictions.json")
-    with open(predictions_path, "w") as f:
-        json.dump(pred_barlines_1x, f)
+        # --- Process Detections ---
+        img_viz = img_bgr.copy()
+        
+        measure_boxes = []
+        for box in result.boxes:
+            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+            conf = float(box.conf[0].cpu().numpy())
+            
+            mx1, my1, mx2, my2 = int(x1), int(y1), int(x2), int(y2)
+            measure_boxes.append((mx1, my1, mx2, my2))
+            
+            cv2.rectangle(img_viz, (mx1, my1), (mx2, my2), (0, 255, 0), 2)
+            cv2.putText(img_viz, f"measure {conf:.2f}", (mx1, my1 - 10), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+        pred_barlines_inference = infer_barlines_from_measures(measure_boxes)
+        
+        pred_barlines_1x = []
+        for (x1, y1, x2, y2) in pred_barlines_inference:
+            pred_barlines_1x.append(
+                (int(x1/sr_scale), int(y1/sr_scale), int(x2/sr_scale), int(y2/sr_scale))
+            )
+            cv2.rectangle(img_viz, (x1, y1), (x2, y2), (255, 0, 0), 1)
+
+        viz_path = os.path.join(args.output_dir, "prediction_vis.jpg")
+        cv2.imwrite(viz_path, img_viz)
+        print(f"Saved visualization to {viz_path}")
+        
+        # --- Evaluation ---
+        if args.gt:
+            print("Loading Ground Truth barlines...")
+            gt_boxes = load_gt_boxes(args.gt)
+            
+            print(f"Loaded {len(gt_boxes)} GT boxes.")
+            print(f"Detected {len(measure_boxes)} measures, inferring {len(pred_barlines_1x)} barlines (1x scaled).")
+            
+            match_result = greedy_barline_match(pred_barlines_1x, gt_boxes)
+            
+            tp = len(match_result.matches)
+            fp = len(match_result.false_positive_indices)
+            fn = len(match_result.false_negative_indices)
+            
+            precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+            recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+            f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+            
+            metrics = {
+                "TP": tp, "FP": fp, "FN": fn,
+                "Precision": precision, "Recall": recall, "F1": f1,
+                "Num_Measure_Preds": len(measure_boxes),
+                "Num_Barline_Preds": len(pred_barlines_1x),
+                "Num_GT": len(gt_boxes)
+            }
+            
+            print("\n--- OMR-DLN Evaluation Results ---")
+            print(json.dumps(metrics, indent=2))
+            
+            metrics_path = os.path.join(args.output_dir, "metrics.json")
+            with open(metrics_path, "w") as f:
+                json.dump(metrics, f, indent=2)
+        else:
+            print("\n--- OMR-DLN Inference ---")
+            print(f"Detected {len(measure_boxes)} measures, inferred {len(pred_barlines_1x)} barlines.")
+            print("No Ground Truth provided, skipping metrics calculation.")
+
+        predictions_path = os.path.join(args.output_dir, "predictions.json")
+        with open(predictions_path, "w") as f:
+            json.dump(pred_barlines_1x, f)
+        
+        print("--- DEBUG: Script End ---", file=sys.stderr)
+
+    except Exception as e:
+        # Catch ANY exception and write to a file
+        with open("/workspace/logs/omr_dln_error.log", "w") as f:
+            f.write(f"An exception occurred: {type(e).__name__}\n")
+            f.write(str(e) + "\n")
+            import traceback
+            f.write(traceback.format_exc())
+
 
 if __name__ == "__main__":
     main()

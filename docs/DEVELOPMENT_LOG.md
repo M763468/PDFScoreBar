@@ -778,3 +778,42 @@ This model is therefore not a drop-in replacement for `homr`, but it demonstrate
 - Script: `experiments/fp_reduction/tune_hybrid_detector.py` (Analysis)
 - Script: `tools/generate_hybrid_results.py` (Final Generator)
 - Result: `logs/hybrid_results.json`
+
+## 2025-12-14: Robustness Verification (Phase 2) Resume
+
+- **Objective**: Resume robustness verification on Page 10, Page 15, and Prokofiev Symphony 1, which was interrupted by a system error.
+- **Bug Fix**:
+    - Identified a `UnboundLocalError` in `experiments/models/eval_omr_dln.py` (missing image load).
+    - Fixed by adding `cv2.imread` before SR processing.
+- **Progress**:
+  
+-   **Phase 2**: Re-started OMR SR step for Page 10 (Target A) after fixing `UnboundLocalError`. Process is currently running (long duration expected due to SR).
+-   **Phase 3 (Exploratory)**: Implemented `analyze_staff_consistency.py` to test system-level consistency filtering.
+    -   Executed on Page 3 (`page_3_detections.json` from baseline).
+    -   **Observation**: Detected a significant coordinate mismatch between `homr` predictions (bottom-page) and legacy GT (top-page?).
+
+    -   **Metrics**: Recall verification (TP) invalid due to mismatch.
+    -   **FP Reduction**: The heuristic successfully identified line clusters (Systems) and filtered out ~85% of outliers (216 -> 32 candidates).
+- **Phase 3 Analysis (2025-12-14)**:
+  - **Metric Consensus**: `homr` baseline evaluation uses padding (`expand_barline_box`, min_width=12) which absorbs minor misalignments. Reconciled metrics script `experiments/fp_reduction/unified_metric.py` confirms **Baseline TP=152, FP=30, FN=0**.
+  - **Staff Consistency Filter**: Initial run with Unified Metrics shows **TP=24, FP=2, FN=128**.
+    - Diagnosis: Clustering logic likely merged distinct systems into 2 large blocks (N=183, N=39), causing median-based filtering to reject valid barlines.
+    - Status: Heuristic needs tuning (better system separation).
+  - **Conclusion**: Coordinate "mismatch" was a metric definition issue. Baseline data is valid.
+    - **Page 15**: Pending OMR step.
+    - **Prokofiev**: Found SR step (Step 2) incomplete (missing detections). Re-scheduling SR step.
+
+- **Phase 3 Tolerance Sweep & Hybrid Evaluation (2025-12-15)**:
+  - **Baseline Results (homr baseline, N=222)**:
+    - Ratio-based tolerance 0.3 (2.6px): TP=149, FP=5, FN=3 (83% FP reduction from baseline FP=30)
+    - Precision: 96.8%, Recall: 98.0%, F1: 0.974
+  - **Hybrid Results (logs/hybrid_results.json, N=177)**:
+    - Input baseline: TP=152, FP=8, FN=0 (Precision=95.0%, Recall=100%)
+    - **Best configuration**: Tolerance 5-7px (absolute) or Ratio 0.3-0.4
+    - **Optimal**: Ratio 0.4 (3.5px): TP=150, FP=2, FN=2 (75% FP reduction, 8→2)
+    - **Perfect recall**: Tolerance 5-7px: TP=152, FP=2, FN=0 (Precision=98.7%, Recall=100%)
+  - **Key Findings**:
+    - Ratio-based tolerance adapts to staff spacing, outperforms absolute tolerances
+    - Hybrid pipeline benefits significantly from consistency filter (FP: 8→2)
+    - Remaining 2 FPs likely require context-based filtering (notehead proximity, stem analysis)
+  - **Artifacts**: `logs/phase3_staff_consistency/20251215_*_page3/`

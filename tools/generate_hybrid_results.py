@@ -36,16 +36,20 @@ def main():
     parser.add_argument("--baseline", type=Path, required=True)
     parser.add_argument("--sr", type=Path, required=True)
     parser.add_argument("--omr", type=Path, required=True)
-    parser.add_argument("--gt", type=Path, required=True)
+    parser.add_argument("--gt", type=Path, help="Path to Ground Truth JSON (optional)")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
     baseline_boxes = load_json_boxes(args.baseline)
     sr_boxes = load_json_boxes(args.sr)
     omr_boxes = load_json_boxes(args.omr)
-    gt_boxes = load_json_boxes(args.gt)
-
-    print(f"Loaded {len(baseline_boxes)} Baseline, {len(sr_boxes)} SR, {len(omr_boxes)} OMR, {len(gt_boxes)} GT.")
+    
+    gt_boxes = []
+    if args.gt:
+        gt_boxes = load_json_boxes(args.gt)
+        print(f"Loaded {len(baseline_boxes)} Baseline, {len(sr_boxes)} SR, {len(omr_boxes)} OMR, {len(gt_boxes)} GT.")
+    else:
+        print(f"Loaded {len(baseline_boxes)} Baseline, {len(sr_boxes)} SR, {len(omr_boxes)} OMR. (No GT provided)")
 
     # Apply Hybrid Rule: Keep Baseline if supported by SR or OMR
     hybrid_preds = []
@@ -55,26 +59,27 @@ def main():
             
     print(f"Hybrid Predictions: {len(hybrid_preds)}")
 
-    # Compute Final Metrics
-    match_result = greedy_barline_match(hybrid_preds, gt_boxes)
-    
-    tp = len(match_result.matches)
-    fp = len(match_result.false_positive_indices)
-    fn = len(match_result.false_negative_indices)
-    soft = len(match_result.soft_matches)
-    
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-    
-    print("\n--- Final Hybrid Metrics ---")
-    print(f"TP: {tp}")
-    print(f"FP: {fp}")
-    print(f"FN: {fn}")
-    print(f"Soft Matches: {soft}")
-    print(f"Precision: {precision:.4f}")
-    print(f"Recall: {recall:.4f}")
-    print(f"F1: {f1:.4f}")
+    # Compute Final Metrics only if GT is present
+    if args.gt:
+        match_result = greedy_barline_match(hybrid_preds, gt_boxes)
+        
+        tp = len(match_result.matches)
+        fp = len(match_result.false_positive_indices)
+        fn = len(match_result.false_negative_indices)
+        soft = len(match_result.soft_matches)
+        
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        
+        print("\n--- Final Hybrid Metrics ---")
+        print(f"TP: {tp}")
+        print(f"FP: {fp}")
+        print(f"FN: {fn}")
+        print(f"Soft Matches: {soft}")
+        print(f"Precision: {precision:.4f}")
+        print(f"Recall: {recall:.4f}")
+        print(f"F1: {f1:.4f}")
     
     # Save Results
     with open(args.output, 'w') as f:

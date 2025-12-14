@@ -22,4 +22,5 @@ It is not part of the formal documentation or development log.
     - REAL-ESRGANが遅いという問題
         - 適切にGPUを使ったりすればもっと早かったはず。
         - モデルの初期化が毎回行われたりしていないか？
+        - そもそもGPUが適切に使用できていない可能性もある。要調査。
         - REAL-ESRGAN以外の方法を使うならば、その超解像モデルを使っても効果が下がらないことを確認する必要がある。

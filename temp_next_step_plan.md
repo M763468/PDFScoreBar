@@ -65,8 +65,13 @@
         -   Reject candidates that deviate significantly (> threshold) from the system's vertical span trend.
 
 3.  **Evaluation**:
-    -   [x] Run on `page_3` (with GT) to measure FP reduction vs Recall loss. (Alignment Diagnosed: See diagnosis_report.md)
+    -   [x] Run on `page_3` (with GT) to measure FP reduction vs Recall loss. **COMPLETE: 98.7% precision, 100% recall**
+    -   [x] Run on Page 10 (qualitative) - **COMPLETE: 13 rows, 100% kept, staff_space=11.85px**
     -   [ ] Run on Phase 2 images (qualitative) to ensure no regressions on valid barlines.
 
-## Phase 4: Future Optimization (Deferred)
+## Phase 4: Further reduce of FPs
+*See `docs/NEXT_SESSION_NOTES.md`.*
+Details should be updated at the start of the next session.
+
+## Phase 5: Future Optimization (Deferred)
 *See `docs/notes/technical_debt.md`.*

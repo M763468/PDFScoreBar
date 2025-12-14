@@ -817,3 +817,13 @@ This model is therefore not a drop-in replacement for `homr`, but it demonstrate
     - Hybrid pipeline benefits significantly from consistency filter (FP: 8→2)
     - Remaining 2 FPs likely require context-based filtering (notehead proximity, stem analysis)
   - **Artifacts**: `logs/phase3_staff_consistency/20251215_*_page3/`
+  - **Final Report**: `logs/phase3_staff_consistency/20251215_hybrid_ratio_sweep_page3/hybrid_filter_summary.md`
+    - Comprehensive analysis of hybrid pipeline performance
+    - Production-ready configuration: Tolerance 5-7px or Ratio 0.3-0.4
+    - Benchmark results: 98.7% precision, 100% recall on page_3
+
+- **Page 10 Qualitative Check (2025-12-15)**:
+  - Applied row-based filter to hybrid detections (322 barlines, no GT available)
+  - Results: 13 rows found, staff_space=11.85px, 100% barlines kept (all passed filter)
+  - Interpretation: Clean hybrid detections or tolerances may be loose for this page
+  - Artifacts: `logs/phase3_staff_consistency/20251215_page10_qualitative/`

@@ -23,63 +23,44 @@
 3. Geometric filter alone achieves 98.7% precision with perfect recall
 4. Remaining 2 FPs require context-based analysis
 
-## Page 10 Qualitative Generalization Check (2025-12-15)
+## Page 10 Qualitative Generalization Check (2025-12-16)
 
-**Type**: Qualitative only (no GT evaluation by design)
+**Status**: ✅ **COMPLETE**
 
-### Results
-- **Input**: 322 hybrid detections
-- **Rows found**: 13 (clustering successful)
-- **Noise points**: 0 (all barlines assigned)
-- **Staff space**: 11.85px (vs 8.70px on page_3)
+### Summary
+- To resolve the poor detection quality found previously, the Page 10 analysis was re-run to correctly mirror the successful Page 3 methodology.
+- Existing intermediate results from the original `page_10_hybrid_test` run (`baseline`, `sr`, `omr_sr`) were used to generate the correct `hybrid_predictions.json` file, ensuring the full consensus logic was applied.
+- The `tolerance_sweep.py` script (used for Page 3) was temporarily modified to support qualitative-only analysis (no GT) and was run on the corrected hybrid predictions.
 
-### Filter Behavior
-All configurations kept **100% of barlines** (322/322):
-- Absolute 5px: 100% kept
-- Absolute 7px: 100% kept
-- Ratio 0.3 (3.6px): 100% kept
-- Ratio 0.4 (4.7px): 100% kept
+### Findings
+- The resulting debug overlay (`debug_qualitative_ratio_0.3.jpg`) shows a significant improvement in detection quality. The number of raw detections is much lower (128 vs. 322), and obvious false positives have been eliminated by the hybrid consensus step.
+- **New Finding (FN)**: However, the corrected analysis reveals a high number of False Negatives (FN). Many true barlines are not being detected. This is particularly noticeable for barlines at the very end of a staff system, which seem to be universally missed.
+- This confirms the hypothesis that the previous poor quality was due to skipping the hybrid filtering step and reveals a new recall problem to be addressed.
 
-### Interpretation
-- **Positive**: Hybrid pipeline produces very clean detections on Page 10
-- **Positive**: Row clustering generalizes well (13 rows found)
-- **Positive**: Staff space estimation adapts correctly (11.85px vs 8.70px)
-- **Note**: 100% pass rate suggests either:
-  1. Excellent detection quality (no FPs), OR
-  2. Tolerances may be too loose for this page
+### Key Artifacts (NEW)
+- **Corrected Output Directory**: `logs/phase3_staff_consistency/20251216_page10_hybrid_filter_FIXED/`
+- **Corrected Debug Overlay**: `debug_qualitative_ratio_0.3.jpg` in the directory above.
+- **Qualitative Summary**: `qualitative_summary.json` in the directory above.
+- **Note**: The `tolerance_sweep.py` and `generate_hybrid_results.py` scripts have been reverted to their original state.
 
-### Artifacts
-- Results: `logs/phase3_staff_consistency/20251215_page10_qualitative/`
-- Debug overlays: `debug_ratio_0.3.jpg`, `debug_ratio_0.4.jpg`
-- Report: `qualitative_report.md`
+## Page 15 Generalization Check (2025-12-16)
 
-### Known Issue: Page 10 Visualization
-- **Problem**: Debug overlays show scale mismatch between barline detections and source image
-- **Difference**: Page 3 overlays display correctly, Page 10 does not
-- **Likely cause**: Inconsistent image/coordinate handling in visualization path
-- **Status**: Known issue, deferred to next session (no fix attempted)
-- **Impact**: Does not affect filter logic or statistics, only visual validation
+**Status**: ✅ **COMPLETE** (Qualitative)
 
-## Page 15 Execution Plan
+### Summary
+- Following the same procedure as the corrected Page 10 analysis, the full hybrid pipeline was applied to Page 15.
+- The `generate_hybrid_results.py` script (with temporary modifications) was used to create the correct `hybrid_predictions.json`.
+- The `tolerance_sweep.py` script (also temporarily modified) was then run to perform a qualitative analysis.
 
-**Manual Execution by User** (not AI agent):
-- Page 15 hybrid detection will be executed manually in separate terminal
-- AI agent is NOT responsible for running Page 15
-- Next session will only:
-  1. Verify existing outputs exist
-  2. Apply Phase 3 row-based filter
-  3. Document results
+### Findings
+- The hybrid consensus mechanism significantly reduced the number of initial detections (from 154/146/242 down to 90), which successfully eliminated most obvious false positives before the geometric filter was even applied.
+- The geometric filter then removed a few more outliers, resulting in a visually clean set of detections.
+- **(User Comment)** Similar to Page 10, there appears to be a high number of False Negatives (FN), especially at the end of staff systems. This is a high-priority recall issue, but is **blocked** pending user review and potential creation of new GT data.
 
-**Command for Manual Execution**:
-```bash
-# Run from project root
-./tools/run_hybrid_pipeline.sh \
-    --image data/training/images/page_15.png \
-    --run-id page_15_hybrid_test
-```
-
-**Expected Output Location**:
-- `logs/hybrid_generalization/page_15_hybrid_test/omr_sr/predictions.json`
+### Key Artifacts
+- **Output Directory**: `logs/phase3_staff_consistency/20251216_page15_hybrid_filter/`
+- **Debug Overlay**: `debug_qualitative_ratio_0.3.jpg` in the directory above.
+- **Qualitative Summary**: `qualitative_summary.json` in the directory above.
 
 ## What Was Completed
 
@@ -102,9 +83,31 @@ All configurations kept **100% of barlines** (322/322):
 
 ## Remaining Work / Next Session Tasks
 
-### Immediate (small task remain in Phase 3)
-1.  Fix issue in **Page 10 Qualitative Generalization Check**
-2.  Do remained task of **Page 15 Execution Plan**
+### High Priority
+1.  **Investigate False Negative (FN) Issue**: Both Page 10 and Page 15 analyses show that the hybrid pipeline fails to detect many true barlines, especially at the end of staff systems. This is now the primary issue to resolve. The investigation should start by analyzing the inputs to `generate_hybrid_results.py` to see which model (baseline, sr, or omr) is failing to detect these barlines.
+2.  **Investigate Slow Super-Resolution (SR) Performance**: The SR step (`realesrgan`) is unacceptably slow and causes timeouts. Investigate the cause by checking the implementation in `homr_evaluator.py` and `eval_omr_dln.py`, reviewing the official Real-ESRGAN repository for known performance issues or alternative models, and exploring potential optimizations. One potential optimization is to clone the `realesrgan` repository into `external/` and import its classes/models directly rather than using the current method.
+
+#### Slow Super-Resolution (SR) Performance Investigation
+
+**Status**: 🚧 **IN PROGRESS** (Blocked)
+
+**Goal**: Improve the performance of the Real-ESRGAN super-resolution step, which currently causes timeouts when running the full hybrid pipeline.
+
+**Steps Taken**:
+- Cloned the official `xinntao/Real-ESRGAN` repository into `external/realesrgan`.
+- Created a dedicated Python virtual environment `.venv_realesrgan` and installed `external/realesrgan/requirements.txt` into it using `uv`.
+- Modified `src/common/preprocessing.py` to attempt to import and use the `realesrgan` library directly from the locally cloned source code, rather than the pip-installed package. This also defers model downloading and caching to the `RealESRGANer` class.
+
+**Current Blocking Issue**:
+- When attempting to test the modified `apply_advanced_sr` function by running `experiments/models/eval_omr_dln.py` within the newly created `.venv_realesrgan` environment, a `ModuleNotFoundError: No module named 'ultralytics'` occurred.
+- This indicates that `eval_omr_dln.py` has dependencies (specifically `ultralytics`) that are not present in `.venv_realesrgan`.
+
+**Next Steps (for next session)**:
+- Identify all missing dependencies for `eval_omr_dln.py` (likely via its own `requirements.txt` or manual inspection).
+- Install these missing dependencies into `.venv_realesrgan`.
+- Re-run `eval_omr_dln.py` to test the performance of the local Real-ESRGAN integration and verify it functions correctly without timeouts.
+- Analyze any observed performance improvements or new issues.
+- **IMPORTANT**: Revert the changes to `src/common/preprocessing.py` after testing, unless decided otherwise.
 
 ### Phase 4
 3. **Analyze remaining 2 FPs** on page_3 hybrid results
@@ -119,14 +122,8 @@ All configurations kept **100% of barlines** (322/322):
    - Target: FP < 2 while maintaining Recall ≥ 98%
 
 ### Generalization Testing
-5. **Apply filter to Page 10**
-   - Test ratio-based tolerance on different musical content
-   - Validate staff_space estimation robustness
-   - Compare results with page_3
-
-6. **Page 15 evaluation** (when OMR complete)
-   - Full pipeline validation
-   - Cross-page consistency check
+5. **(COMPLETED FOR NOW)** **Apply filter to Page 10**
+6. **(COMPLETED FOR NOW)** **Page 15 evaluation**
 
 ### Documentation & Deployment
 7. **Update analyze_staff_consistency.py**

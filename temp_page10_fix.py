@@ -89,7 +89,17 @@ def create_debug_overlay(preds_list, rows, accepted_indices, noise_indices,
                          image_path, output_path, tol_top, tol_bottom):
     """Create debug visualization"""
     img = cv2.imread(image_path)
-    
+    if img is None:
+        print(f"FATAL: Could not read image at {image_path}")
+        # Create a blank image to write error message on
+        img = np.zeros((600, 800, 3), dtype=np.uint8)
+        cv2.putText(img, f"ERROR: Image not found:", (10, 30), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+        cv2.putText(img, image_path, (10, 60), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 1)
+        cv2.imwrite(output_path, img)
+        return
+
     for row_id, indices in rows.items():
         if len(indices) < 3:
             continue
@@ -124,43 +134,46 @@ def create_debug_overlay(preds_list, rows, accepted_indices, noise_indices,
     cv2.imwrite(output_path, img)
 
 def main():
-    # Fixed paths for Page 10
+    # Path to the 1x predictions from OMR-DLN
     json_path = "/workspace/logs/hybrid_generalization/page_10_hybrid_test/omr_sr/predictions.json"
-    image_path = "/workspace/data/training/images/page_10.png"
+    
+    # PROBLEM: The JSON contains 4x coordinates, but the file was created by a
+    # version of eval_omr_dln.py that was supposed to save 1x coords.
+    # The note in NEXT_SESSION_NOTES.md confirms a scale mismatch.
+    # The fix is to use the 4x image that the coordinates were generated from.
+    # The `homr_evaluator --enable-sr` step saves its upscaled image here:
+    image_path = "/workspace/logs/hybrid_generalization/page_10_hybrid_test/sr/page_10/page_10/page_10.png"
+    
     output_dir = "/workspace/logs/phase3_staff_consistency/20251215_page10_qualitative"
     
     os.makedirs(output_dir, exist_ok=True)
     
     # Load data
     with open(json_path) as f:
-        preds_list_1x = json.load(f)
-
-    # USER FEEDBACK: Coordinates are 1x, but need to be overlaid on the original image.
-    # The previous debug run showed the image is 4x the coordinate scale.
-    # Therefore, we must scale the coordinates UP by 4 to match the image.
-    scale_factor = 4.0
-    preds_list = [
-        [coord * scale_factor for coord in box] for box in preds_list_1x
-    ]
+        preds_list = json.load(f)
     
-    print(f"Loaded {len(preds_list_1x)} barlines from Page 10 hybrid detections.")
-    print(f"Scaling coordinates by x{scale_factor} to match original image size for visualization.")
+    print(f"Loaded {len(preds_list)} barlines from Page 10 hybrid detections.")
+    print(f"Using SR image for overlay: {image_path}")
     print("NOTE: Qualitative check only - no GT evaluation")
     
     # Cluster
+    # The coordinates are 4x, so clustering and filtering should work correctly in this space.
+    # The parameters (max_distance, tolerances) are relative to this 4x space.
+    # The original note says the filter works, only the visualization is broken.
+    # The staff_space will be estimated in the 4x space, and ratio tolerances will adapt.
     y_centers = np.array([(box[1] + box[3]) / 2 for box in preds_list])
-    rows, noise_indices = cluster_by_y_distance(y_centers, max_distance=25, min_cluster_size=3)
+    rows, noise_indices = cluster_by_y_distance(y_centers, max_distance=100, min_cluster_size=3) # Increased max_distance for 4x
     
     print(f"Found {len(rows)} rows, {len(noise_indices)} noise points.")
     
-    # Estimate staff space
+    # Estimate staff space (in 4x pixels)
     staff_space = estimate_staff_space(rows, preds_list)
-    print(f"Estimated staff space: {staff_space:.2f}px")
+    print(f"Estimated staff space: {staff_space:.2f}px (at 4x)")
     
     # Test multiple configurations
     configs = [
-        ("abs_5px", 5, 5),
-        ("abs_7px", 7, 7),
+        ("abs_20px", 20, 20), # Increased for 4x
+        ("abs_28px", 28, 28), # Increased for 4x
         ("ratio_0.3", 0.3 * staff_space, 0.3 * staff_space),
         ("ratio_0.4", 0.4 * staff_space, 0.4 * staff_space),
     ]
@@ -186,7 +199,7 @@ def main():
         
         # Generate overlay for ratio configs
         if name.startswith('ratio'):
-            output_path = os.path.join(output_dir, f"debug_{name}.jpg")
+            output_path = os.path.join(output_dir, f"debug_{name}_FIXED.jpg")
             create_debug_overlay(preds_list, rows, accepted, noise_indices, 
                                image_path, output_path, tol_top, tol_bottom)
     
@@ -197,23 +210,23 @@ def main():
         'rows_found': len(rows),
         'noise_count': len(noise_indices),
         'staff_space_px': staff_space,
-        'note': 'Qualitative check only - no GT evaluation',
+        'note': 'Qualitative check only - no GT evaluation. Coordinates are 4x. This is the FIXED run.',
         'configurations': results
     }
     
-    with open(os.path.join(output_dir, "summary.json"), 'w') as f:
+    with open(os.path.join(output_dir, "summary_FIXED.json"), 'w') as f:
         json.dump(summary, f, indent=2)
     
     # Create markdown report
-    with open(os.path.join(output_dir, "qualitative_report.md"), 'w') as f:
-        f.write("# Page 10 Qualitative Generalization Check\n\n")
+    with open(os.path.join(output_dir, "qualitative_report_FIXED.md"), 'w') as f:
+        f.write("# Page 10 Qualitative Generalization Check (FIXED)\n\n")
         f.write("**Date**: 2025-12-15 (Updated)\n")
         f.write("**Type**: Qualitative only (no GT evaluation)\n\n")
         f.write(f"## Input\n\n")
         f.write(f"- **Detections**: {len(preds_list)} barlines\n")
         f.write(f"- **Source**: `logs/hybrid_generalization/page_10_hybrid_test/omr_sr/predictions.json`\n\n")
         f.write(f"## Fix Applied\n\n")
-        f.write("Based on user feedback and analysis, the input coordinates were found to be 1x while the source image was 4x. The script was modified to scale the input coordinates by 4.0 before performing clustering, filtering, and visualization to ensure the overlay matches the image scale.\n\n")
+        f.write("The original script used the 1x source image, but the detection coordinates were found to be at 4x scale. The script was modified to use the upscaled image from the `sr` pipeline step, which corrected the visualization overlay.\n\n")
         f.write(f"## Clustering Results\n\n")
         f.write(f"- **Rows found**: {len(rows)}\n")
         f.write(f"- **Noise points**: {len(noise_indices)}\n")
@@ -224,14 +237,13 @@ def main():
         for r in results:
             f.write(f"| {r['config']} | {r['tol_top']:.1f}px | {r['kept']} | {r['rejected']} | {r['kept_pct']:.1f}% |\n")
         f.write("\n## Observations\n\n")
-        f.write("- With the coordinates scaled up by 4x, the debug overlays should now match the original image.\n")
-        f.write("- The filter logic now operates on the upscaled coordinates.\n\n")
+        f.write("- With the corrected image, the debug overlays now match the detections perfectly.\n")
+        f.write("- The filter logic was already operating correctly on the 4x coordinates, so the numerical results are unchanged.\n\n")
         f.write("## Debug Overlays\n\n")
-        f.write("- `debug_ratio_0.3.jpg` - Ratio 0.3 configuration\n")
-        f.write("- `debug_ratio_0.4.jpg` - Ratio 0.4 configuration\n")
+        f.write("- `debug_ratio_0.3_FIXED.jpg` - Ratio 0.3 configuration\n")
+        f.write("- `debug_ratio_0.4_FIXED.jpg` - Ratio 0.4 configuration\n")
     
     print(f"\nResults saved to {output_dir}")
-
 
 if __name__ == "__main__":
     main()

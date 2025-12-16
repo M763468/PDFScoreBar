@@ -1,0 +1,1 @@
+# Session log cleared. Ready for next session.

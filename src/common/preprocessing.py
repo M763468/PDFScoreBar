@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import os
+import sys
 from typing import Optional
 
 def apply_vertical_closing(
@@ -129,13 +130,16 @@ def apply_advanced_sr(image: np.ndarray, model_name: str = 'RealESRGAN_x4plus', 
     if model_name == 'RealESRGAN_x4plus':
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
         netscale = 4
-        # Let the upsampler handle the model path. It will download to a default location.
-        model_path = None
+        # The local RealESRGANer implementation expects a file path.
+        # We construct the path to where the model should be. It will be downloaded
+        # by the library if it doesn't exist.
+        model_path = os.path.join(realesrgan_path, 'weights', f'{model_name}.pth')
     else:
         print(f"Model {model_name} not explicitly supported. A default will be used, but may not be optimal.")
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
         netscale = 4
-        model_path = None
+        model_path = os.path.join(realesrgan_path, 'weights', 'RealESRGAN_x4plus.pth') # Fallback
+
 
     try:
         upsampler = RealESRGANer(

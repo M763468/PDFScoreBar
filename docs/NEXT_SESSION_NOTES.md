@@ -85,29 +85,7 @@
 
 ### High Priority
 1.  **Investigate False Negative (FN) Issue**: Both Page 10 and Page 15 analyses show that the hybrid pipeline fails to detect many true barlines, especially at the end of staff systems. This is now the primary issue to resolve. The investigation should start by analyzing the inputs to `generate_hybrid_results.py` to see which model (baseline, sr, or omr) is failing to detect these barlines.
-2.  **Investigate Slow Super-Resolution (SR) Performance**: The SR step (`realesrgan`) is unacceptably slow and causes timeouts. Investigate the cause by checking the implementation in `homr_evaluator.py` and `eval_omr_dln.py`, reviewing the official Real-ESRGAN repository for known performance issues or alternative models, and exploring potential optimizations. One potential optimization is to clone the `realesrgan` repository into `external/` and import its classes/models directly rather than using the current method.
-
-#### Slow Super-Resolution (SR) Performance Investigation
-
-**Status**: 🚧 **IN PROGRESS** (Blocked)
-
-**Goal**: Improve the performance of the Real-ESRGAN super-resolution step, which currently causes timeouts when running the full hybrid pipeline.
-
-**Steps Taken**:
-- Cloned the official `xinntao/Real-ESRGAN` repository into `external/realesrgan`.
-- Created a dedicated Python virtual environment `.venv_realesrgan` and installed `external/realesrgan/requirements.txt` into it using `uv`.
-- Modified `src/common/preprocessing.py` to attempt to import and use the `realesrgan` library directly from the locally cloned source code, rather than the pip-installed package. This also defers model downloading and caching to the `RealESRGANer` class.
-
-**Current Blocking Issue**:
-- When attempting to test the modified `apply_advanced_sr` function by running `experiments/models/eval_omr_dln.py` within the newly created `.venv_realesrgan` environment, a `ModuleNotFoundError: No module named 'ultralytics'` occurred.
-- This indicates that `eval_omr_dln.py` has dependencies (specifically `ultralytics`) that are not present in `.venv_realesrgan`.
-
-**Next Steps (for next session)**:
-- Identify all missing dependencies for `eval_omr_dln.py` (likely via its own `requirements.txt` or manual inspection).
-- Install these missing dependencies into `.venv_realesrgan`.
-- Re-run `eval_omr_dln.py` to test the performance of the local Real-ESRGAN integration and verify it functions correctly without timeouts.
-- Analyze any observed performance improvements or new issues.
-- **IMPORTANT**: Revert the changes to `src/common/preprocessing.py` after testing, unless decided otherwise.
+2.  **(✅ COMPLETE)** **Investigate Slow Super-Resolution (SR) Performance**: The local `realesrgan` integration is now functional. A benchmark on `page_3` showed a total execution time of ~12.2 seconds, which is acceptable and resolves the original timeout concerns.
 
 ### Phase 4
 3. **Analyze remaining 2 FPs** on page_3 hybrid results

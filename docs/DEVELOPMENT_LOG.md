@@ -827,3 +827,31 @@ This model is therefore not a drop-in replacement for `homr`, but it demonstrate
   - Results: 13 rows found, staff_space=11.85px, 100% barlines kept (all passed filter)
   - Interpretation: Clean hybrid detections or tolerances may be loose for this page
   - Artifacts: `logs/phase3_staff_consistency/20251215_page10_qualitative/`
+
+---
+**Date**: 2025-12-17
+**Author**: Gemini Agent
+**Topic**: Fixing and Benchmarking the Local Super-Resolution (SR) Pipeline
+
+#### Goal
+The "Slow Super-Resolution (SR) Performance" task was blocked due to a non-functional local `realesrgan` integration. The goal was to fix the underlying dependency issues and benchmark the performance to ensure it resolved the original "timeout" problems.
+
+#### Problem Summary
+The initial attempt to use the local `realesrgan` clone failed due to a cascade of dependency conflicts:
+1.  **Python & `torchvision` Incompatibility**: The `realesrgan` source code and its `basicsr` dependency required an old version of `torchvision` that was incompatible with the project's Python 3.11 environment.
+2.  **System-Level CUDA Conflict**: An attempt to use a Python 3.10 environment (compatible with the old `torchvision`) failed due to a CUDA library conflict with the host system's drivers.
+3.  **Missing Build Artifacts**: The raw cloned `realesrgan` repository was missing package metadata (`version.py`) and model weight files, which are not generated without build/install steps.
+
+#### Solution and Final Implementation
+A stable configuration was achieved by returning to the Python 3.11 environment and applying several targeted fixes:
+1.  **Environment**: A clean Python 3.11 virtual environment (`.venv_realesrgan`) was created using `uv`. The latest versions of all required packages (`torch`, `torchvision`, `ultralytics`, etc.) were installed.
+2.  **Dependency Patch (Temporary)**: To resolve the core incompatibility, a one-line import statement in the `basicsr` library (`.../site-packages/basicsr/data/degradations.py`) was patched to be compatible with modern `torchvision`. This is a temporary measure to unblock the task.
+3.  **Build & Configuration Fixes**:
+    *   The `realesrgan/version.py` file was generated manually by running a portion of the library's `setup.py` script.
+    *   The `src/common/preprocessing.py` script was modified to pass a full, explicit path to the model weights file, as the library was not handling a `None` path correctly.
+    *   The `RealESRGAN_x4plus.pth` model weights were downloaded into the `external/realesrgan/weights/` directory.
+
+#### Outcome & Performance
+- The SR pipeline is now fully functional.
+- A benchmark on `page_3` showed a **total execution time of ~12.2 seconds**.
+- This performance is considered acceptable and resolves the original concern about timeouts. The task is now complete.

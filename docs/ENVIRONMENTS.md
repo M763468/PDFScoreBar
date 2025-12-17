@@ -21,6 +21,7 @@ This document describes how to use the provided tools (now located in `tools/`) 
 
 ### homr_eval_gpu (2024-06-14 → refreshed 2025-09-26)
 - Purpose: isolate `homr` evaluation environment with separate dependencies.
+- **Note**: This environment is NOT suitable for running Super-Resolution (SR) tasks with Real-ESRGAN, as it lacks the necessary dependencies and patches. Use `sr_eval_gpu` instead.
 - Build image: `docker build -t homr_eval -f Dockerfile.homr .` (CUDA 12.1 runtime + cuDNN 9; Poetry installs `homr` with dev deps inside `/opt/poetry/venvs`).
 - Container creation: `docker run --gpus all -d --name homr_eval_gpu -v "$(pwd):/workspace" -w /workspace homr_eval tail -f /dev/null`.
 - Post-create steps: After creating the container, dependencies must be explicitly installed.
@@ -32,6 +33,15 @@ This document describes how to use the provided tools (now located in `tools/`) 
 - Usage: attach with `docker exec -it homr_eval_gpu bash`. `poetry` already manages the venv; run commands from `/workspace/homr` (e.g. `poetry run homr --debug ...`).
 - 2025-10-07: Dockerfile.homr rebuilt as `homr_eval:20251007b` with `.venv_pdf` parity packages inside the Poetry venv (PyMuPDF 1.26.4, opencv-python-headless 4.12.0.88, onnxruntime-gpu 1.22.0, Pillow 11.3.0, SciPy 1.15.3, scikit-learn 1.7.2, matplotlib 3.10.6, coloredlogs 15.0.1) plus tzdata; `homr_eval_gpu` container recreated and packages verified via `poetry run python -m pip list`.
 - 2025-09-27: `.dockerignore` を追加してビルドコンテキストを縮小（`logs/`, `homr/.venv/`, 大量画像などを除外）。ホスト権限の都合で `docker build` は未実施。必要に応じて権限付与後に再ビルドすること。
+
+### sr_eval_gpu
+- Purpose: Dedicated environment for Super-Resolution (SR) enabled barline detection experiments using Real-ESRGAN. This environment includes all necessary patches and dependencies for functional SR.
+- Image: built from `Dockerfile.sr_eval` (base `nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04`).
+- Build image: `docker build -t sr_eval -f Dockerfile.sr_eval .`
+- Container creation: `docker run --gpus all -d --name sr_eval_gpu -v "$(pwd):/workspace" -w /workspace sr_eval tail -f /dev/null`.
+- Usage: attach with `docker exec -it sr_eval_gpu bash`. All `uv` managed dependencies are in `/opt/venv_sr`.
+    - To run scripts: `docker exec sr_eval_gpu bash -c "/opt/venv_sr/bin/python <script_path>"`
+    - For example: `docker exec sr_eval_gpu bash -c "/opt/venv_sr/bin/python experiments/models/eval_omr_dln.py --enable-sr ..."`
 
 ## Data Directory Layout
 - `data/README.md`: データ管理方針と命名規約のまとめ。更新時は必ずここにも反映する。

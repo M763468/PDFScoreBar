@@ -63,13 +63,18 @@ echo "Run ID: $RUN_ID"
 echo "GT: ${CONTAINER_GT:-(None)}" 
 echo "Output: $OUTPUT_ROOT"
 
+# SR evaluation container + interpreter.
+# This script assumes `sr_eval_gpu` was built from `Dockerfile.sr_eval` and is running.
+CONTAINER_NAME="sr_eval_gpu"
+CONTAINER_PY="/opt/venv_sr/bin/python"
+
 # Ensure output directory exists on host (mapped to container)
 mkdir -p "$HOST_OUTPUT_ROOT"
 
 # 1. homr Baseline
 echo ""
 echo "--- Step 1: homr Baseline ---"
-CMD_BASELINE="cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py \
+CMD_BASELINE="$CONTAINER_PY /workspace/src/homr_eval_scripts/homr_evaluator.py \
     --images \"$CONTAINER_IMAGE\" \
     --output-root \"$OUTPUT_ROOT/baseline\" \
     --force-run-id \"$STEM\""
@@ -79,12 +84,12 @@ if [[ -n "$CONTAINER_GT" ]]; then
 fi
 
 echo "Running: $CMD_BASELINE"
-docker exec homr_eval_gpu bash -c "$CMD_BASELINE"
+docker exec "$CONTAINER_NAME" bash -lc "$CMD_BASELINE"
 
 # 2. homr SR
 echo ""
 echo "--- Step 2: homr SR ---"
-CMD_SR="cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py \
+CMD_SR="$CONTAINER_PY /workspace/src/homr_eval_scripts/homr_evaluator.py \
     --images \"$CONTAINER_IMAGE\" \
     --output-root \"$OUTPUT_ROOT/sr\" \
     --force-run-id \"$STEM\" \
@@ -95,12 +100,12 @@ if [[ -n "$CONTAINER_GT" ]]; then
 fi
 
 echo "Running: $CMD_SR"
-docker exec homr_eval_gpu bash -c "$CMD_SR"
+docker exec "$CONTAINER_NAME" bash -lc "$CMD_SR"
 
 # 3. OMR-DLN SR
 echo ""
 echo "--- Step 3: OMR-DLN SR ---"
-CMD_OMR="cd /workspace/external/homr && poetry run python /workspace/experiments/models/eval_omr_dln.py \
+CMD_OMR="$CONTAINER_PY /workspace/experiments/models/eval_omr_dln.py \
     --image \"$CONTAINER_IMAGE\" \
     --output-dir \"$OUTPUT_ROOT/omr_sr\" \
     --enable-sr"
@@ -110,7 +115,7 @@ if [[ -n "$CONTAINER_GT" ]]; then
 fi
 
 echo "Running: $CMD_OMR"
-docker exec homr_eval_gpu bash -c "$CMD_OMR"
+docker exec "$CONTAINER_NAME" bash -lc "$CMD_OMR"
 
 # 4. Generate Hybrid Results
 echo ""
@@ -130,7 +135,7 @@ SR_JSON="$OUTPUT_ROOT/sr/$STEM/$STEM/${STEM}_detections.json"
 OMR_JSON="$OUTPUT_ROOT/omr_sr/predictions.json"
 HYBRID_JSON="$OUTPUT_ROOT/hybrid_predictions.json"
 
-CMD_HYBRID="cd /workspace/external/homr && poetry run python /workspace/tools/generate_hybrid_results.py \
+CMD_HYBRID="$CONTAINER_PY /workspace/tools/generate_hybrid_results.py \
     --baseline \"$BASELINE_JSON\" \
     --sr \"$SR_JSON\" \
     --omr \"$OMR_JSON\" \
@@ -141,7 +146,7 @@ if [[ -n "$CONTAINER_GT" ]]; then
 fi
 
 echo "Running: $CMD_HYBRID"
-docker exec homr_eval_gpu bash -c "$CMD_HYBRID"
+docker exec "$CONTAINER_NAME" bash -lc "$CMD_HYBRID"
 
 echo ""
 echo "=== Hybrid Pipeline Completed ==="

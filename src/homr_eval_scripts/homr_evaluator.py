@@ -33,7 +33,12 @@ except ImportError:  # pragma: no cover - Python <3.9 fallback
 # Ensure the local homr repository is importable before third-party homr installs.
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SRC_ROOT = REPO_ROOT / "src"
-HOMR_REPO = REPO_ROOT / "homr"
+
+# Repo layout note:
+# - Historical layout: <repo>/homr
+# - Current layout:   <repo>/external/homr
+_HOMR_CANDIDATES = (REPO_ROOT / "homr", REPO_ROOT / "external" / "homr")
+HOMR_REPO = next((p for p in _HOMR_CANDIDATES if (p / "homr").exists()), _HOMR_CANDIDATES[1])
 JST = ZoneInfo("Asia/Tokyo")
 
 # Force paths to front to ensure correct import order
@@ -1619,14 +1624,30 @@ def main() -> None:
 
         sr_scale = 1
         if args.enable_sr:
-            sr_scale = 4
-            eprint(f"Applying Super-Resolution (x{sr_scale}) to {stem}...")
+            requested_sr_scale = 4
+            eprint(f"Applying Super-Resolution (x{requested_sr_scale}) to {stem}...")
             img_bgr = cv2.imread(str(working_image))
-            if img_bgr is not None:
-                upscaled = apply_advanced_sr(img_bgr, model_name='RealESRGAN_x4plus', scale=sr_scale)
-                cv2.imwrite(str(working_image), upscaled)
-            else:
+            if img_bgr is None:
                 eprint(f"Warning: Failed to load {working_image} for SR.")
+            else:
+                original_h, original_w = img_bgr.shape[:2]
+                upscaled = apply_advanced_sr(
+                    img_bgr, model_name="RealESRGAN_x4plus", scale=requested_sr_scale
+                )
+                up_h, up_w = upscaled.shape[:2]
+                inferred_scale = round(up_w / original_w) if original_w else 1
+
+                # Only treat SR as enabled if the output resolution actually increased.
+                if inferred_scale >= 2 and up_w >= original_w * 2 and up_h >= original_h * 2:
+                    sr_scale = inferred_scale
+                else:
+                    eprint(
+                        f"Warning: SR output resolution did not increase "
+                        f"({original_w}x{original_h} -> {up_w}x{up_h}); treating as no-SR."
+                    )
+                    sr_scale = 1
+
+                cv2.imwrite(str(working_image), upscaled)
 
         config = ProcessingConfig(
             True,

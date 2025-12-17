@@ -146,7 +146,9 @@ def apply_advanced_sr(image: np.ndarray, model_name: str = 'RealESRGAN_x4plus', 
             scale=netscale,
             model_path=model_path, # Pass None to let it use its default model download logic
             model=model,
-            tile=0, 
+            # tile=0 processes the whole image at once and can be extremely slow / OOM on large pages.
+            # Use a conservative tiling default for large inputs while keeping the original behaviour for small images.
+            tile=0 if max(image.shape[:2]) <= 1000 else 512,
             tile_pad=10,
             pre_pad=0,
             half=True if 'cuda' in str(device) else False,

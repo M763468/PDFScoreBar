@@ -72,11 +72,23 @@ def main():
 
         sr_scale = 1
         if args.enable_sr:
-            sr_scale = 4
-            print(f"--- DEBUG: Applying SR (x{sr_scale})... ---", file=sys.stderr)
-            img_bgr = apply_advanced_sr(img_bgr, model_name='RealESRGAN_x4plus', scale=sr_scale)
+            requested_sr_scale = 4
+            original_h, original_w = img_bgr.shape[:2]
+            print(f"--- DEBUG: Applying SR (x{requested_sr_scale})... ---", file=sys.stderr)
+            img_bgr = apply_advanced_sr(img_bgr, model_name="RealESRGAN_x4plus", scale=requested_sr_scale)
+            up_h, up_w = img_bgr.shape[:2]
+            inferred_scale = round(up_w / original_w) if original_w else 1
+            if inferred_scale >= 2 and up_w >= original_w * 2 and up_h >= original_h * 2:
+                sr_scale = inferred_scale
+            else:
+                print(
+                    f"--- WARN: SR output resolution did not increase "
+                    f"({original_w}x{original_h} -> {up_w}x{up_h}); treating as no-SR. ---",
+                    file=sys.stderr,
+                )
+                sr_scale = 1
             inference_input = img_bgr
-            print("--- DEBUG: SR applied ---", file=sys.stderr)
+            print(f"--- DEBUG: SR applied (effective scale x{sr_scale}) ---", file=sys.stderr)
         else:
             inference_input = args.image
 

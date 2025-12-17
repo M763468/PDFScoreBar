@@ -1,239 +1,51 @@
 # Next Session Notes
 
-**Last Updated**: 2025-12-15  
-**Current Phase**: Phase 3 Complete, Ready for Phase 4
+**Last Updated**: 2025-12-17
+**Current Phase**: Phase 4 (Context Filtering & Final Polish)
+
+---
+### Note for AI Assistant (Operational Rule)
+-   The `docs/SESSION_LOG.md` file must **not** be completely overwritten. During a session, new findings and logs should be appended, or only relevant sections should be edited. The file should only be cleared with explicit user permission.
+---
 
 ## Current Status
 
 ### Phase 3: Geometric FP Reduction ✅ **COMPLETE**
+- **Method**: Row-based consistency filter.
+- **Documented Best Result**: On `page_3` hybrid detections, this filter achieves **TP=152, FP=2, FN=0**. This is the official baseline for the start of Phase 4.
 
-**Best Results Achieved** (page_3, hybrid pipeline):
-- **Input**: TP=152, FP=8, FN=0 (Precision=95.0%)
-- **After Filter**: TP=152, FP=2, FN=0 (Precision=**98.7%**, Recall=**100%**)
-- **Configuration**: Tolerance 5-7px (absolute) or Ratio 0.3-0.4 × staff_space
-
-**Method**: Row-based consistency filter
-- Manual Y-distance clustering (groups barlines into rows)
-- Per-row median top/bottom reference
-- Reject barlines deviating beyond tolerance
-
-**Key Learnings**:
-1. Ratio-based tolerance (relative to staff spacing) outperforms absolute pixel values
-2. Hybrid pipeline (SR + homr) starts with 73% fewer FPs than baseline (8 vs 30)
-3. Geometric filter alone achieves 98.7% precision with perfect recall
-4. Remaining 2 FPs require context-based analysis
-
-## Page 10 Qualitative Generalization Check (2025-12-16)
-
-**Status**: ✅ **COMPLETE**
-
-### Summary
-- To resolve the poor detection quality found previously, the Page 10 analysis was re-run to correctly mirror the successful Page 3 methodology.
-- Existing intermediate results from the original `page_10_hybrid_test` run (`baseline`, `sr`, `omr_sr`) were used to generate the correct `hybrid_predictions.json` file, ensuring the full consensus logic was applied.
-- The `tolerance_sweep.py` script (used for Page 3) was temporarily modified to support qualitative-only analysis (no GT) and was run on the corrected hybrid predictions.
-
-### Findings
-- The resulting debug overlay (`debug_qualitative_ratio_0.3.jpg`) shows a significant improvement in detection quality. The number of raw detections is much lower (128 vs. 322), and obvious false positives have been eliminated by the hybrid consensus step.
-- **New Finding (FN)**: However, the corrected analysis reveals a high number of False Negatives (FN). Many true barlines are not being detected. This is particularly noticeable for barlines at the very end of a staff system, which seem to be universally missed.
-- This confirms the hypothesis that the previous poor quality was due to skipping the hybrid filtering step and reveals a new recall problem to be addressed.
-
-### Key Artifacts (NEW)
-- **Corrected Output Directory**: `logs/phase3_staff_consistency/20251216_page10_hybrid_filter_FIXED/`
-- **Corrected Debug Overlay**: `debug_qualitative_ratio_0.3.jpg` in the directory above.
-- **Qualitative Summary**: `qualitative_summary.json` in the directory above.
-- **Note**: The `tolerance_sweep.py` and `generate_hybrid_results.py` scripts have been reverted to their original state.
-
-## Page 15 Generalization Check (2025-12-16)
-
-**Status**: ✅ **COMPLETE** (Qualitative)
-
-### Summary
-- Following the same procedure as the corrected Page 10 analysis, the full hybrid pipeline was applied to Page 15.
-- The `generate_hybrid_results.py` script (with temporary modifications) was used to create the correct `hybrid_predictions.json`.
-- The `tolerance_sweep.py` script (also temporarily modified) was then run to perform a qualitative analysis.
-
-### Findings
-- The hybrid consensus mechanism significantly reduced the number of initial detections (from 154/146/242 down to 90), which successfully eliminated most obvious false positives before the geometric filter was even applied.
-- The geometric filter then removed a few more outliers, resulting in a visually clean set of detections.
-- **(User Comment)** Similar to Page 10, there appears to be a high number of False Negatives (FN), especially at the end of staff systems. This is a high-priority recall issue, but is **blocked** pending user review and potential creation of new GT data.
-
-### Key Artifacts
-- **Output Directory**: `logs/phase3_staff_consistency/20251216_page15_hybrid_filter/`
-- **Debug Overlay**: `debug_qualitative_ratio_0.3.jpg` in the directory above.
-- **Qualitative Summary**: `qualitative_summary.json` in the directory above.
-
-## What Was Completed
-
-### Phase 1: Baseline Evaluation ✅
-- Established homr baseline: TP=152, FP=30, FN=0 on page_3
-- Created unified_metric.py (homr-equivalent evaluation with padding)
-- Resolved metric definition mismatch (expand_barline_box with min_width=12px)
-
-### Phase 2: Hybrid Pipeline ✅
-- Integrated SR (super-resolution) preprocessing
-- Achieved 73% FP reduction: 30 → 8 FPs
-- Validated on page_3, page_10
-
-### Phase 3: Geometric FP Reduction ✅
-- Implemented row-based consistency filter
-- Conducted tolerance sweep (absolute + ratio-based)
-- **Baseline results**: FP 30→5 (83% reduction, Precision 96.8%)
-- **Hybrid results**: FP 8→2 (75% reduction, Precision 98.7%)
-- Production-ready configuration identified
+### Phase 4: Context & Pixel Filtering (In Progress)
+- **Goal**: Start from the `TP=152, FP=2` baseline and implement a context-based filter to achieve **`TP=152, FP=0, FN=0`**.
+- **Action Taken**: A "Note Head Collision" filter has been implemented as a pixel-based heuristic in `experiments/fp_reduction/analyze_staff_consistency.py`.
+    -   **Mechanism 1 (Note Head Heuristic)**: The `--max-end-ink-density` argument filters detections if there is high ink density at the top/bottom corners of the bounding box. This is designed to identify and remove note stems attached to note heads.
+    -   **Mechanism 2 (Faint Artifact Filter)**: The `--min-bbox-ink-density` argument filters detections with very low average ink density within their bounding box.
+- **Current State**: Initial analysis confirmed these filters can target the remaining FPs, but tuning was hampered by an incorrect baseline and a coordinate scaling issue (which is now resolved). The immediate next step is to reproduce the correct baseline and then properly tune these new filters.
 
 ## Remaining Work / Next Session Tasks
 
 ### High Priority
-1.  **(✅ COMPLETE)** **Create Reproducible SR Evaluation Environment**: Created `Dockerfile.sr_eval` + `sr_eval_gpu` container for SR-enabled evaluation (Real-ESRGAN + homr + OMR-DLN). Verified end-to-end by running `tools/run_hybrid_pipeline.sh` on page_3 with GT; artifacts under `logs/hybrid_generalization/sr_eval_smoke_page3/`.
-2.  **(✅ COMPLETE)** **Investigate False Negative (FN) Issue**: Root cause was a coordinate scaling mismatch: SR/OMR predictions were effectively collapsed to ~1/4 width (max_x2 ≈ 675) on page_10/page_15, which caused the hybrid rule (“baseline supported by SR or OMR”) to drop most right-side barlines (appearing as massive FN). Fixed by (a) adding tiling for Real-ESRGAN on large images and (b) only applying bbox `sr_scale` division when SR output resolution actually increases.
-    - Old bug evidence:
-      - `logs/hybrid_generalization/page_10_hybrid_test/` (collapsed SR/OMR width, max_x2 ≈ 675)
-      - `logs/hybrid_generalization/page_15_hybrid_test/` (collapsed SR/OMR width, max_x2 ≈ 675)
-    - Fixed reruns:
-      - `logs/hybrid_generalization/sr_eval_page10_check2/`
-      - `logs/hybrid_generalization/sr_eval_page15_check2/`
-    - Qualitative overlays:
-      - `logs/phase3_staff_consistency/20251217_page10_hybrid_recall_fix_check/`
-      - `logs/phase3_staff_consistency/20251217_page15_hybrid_recall_fix_check/`
-3.  **(✅ COMPLETE)** **Investigate Slow Super-Resolution (SR) Performance**: The local `realesrgan` integration is now functional. A benchmark on `page_3` showed a total execution time of ~12.2 seconds, which is acceptable and resolves the original timeout concerns.
+1.  **Reproduce `TP=152, FP=2` Baseline**:
+    -   Tune the **geometric filter** parameters (`--tol-ratio`, etc.) in `analyze_staff_consistency.py` to replicate the documented best result of `TP=152, FP=2, FN=0`. My previous runs resulted in an inferior `TP=150, FP=2, FN=2`, which must be corrected first.
 
-### Phase 4
-3. **Analyze remaining 2 FPs** on page_3 hybrid results
-   - Confirmed: after Phase 3 filter (abs_tol=5) on page_3 hybrid detections, exactly **2 FPs** remain (TP=152, FP=2, FN=0).
-   - Remaining FP boxes:
-     - `(335, 230, 336, 253)`
-     - `(479, 449, 480, 469)`
-   - Analysis artifacts:
-     - `logs/phase3_staff_consistency/20251217_page3_remaining_fp_analysis/page3_remaining_fp_abs_tol5_overlay.jpg`
-     - `logs/phase3_staff_consistency/20251217_page3_remaining_fp_analysis/crops/fp1_crop.png`
-     - `logs/phase3_staff_consistency/20251217_page3_remaining_fp_analysis/crops/fp2_crop.png`
+2.  **Tune Note Head & Pixel Filters**:
+    -   Starting from the correct `TP=152, FP=2` baseline, apply and tune the `--min-bbox-ink-density` and `--max-end-ink-density` filters.
+    -   The goal is to find thresholds that eliminate the 2 FPs while retaining all 152 TPs.
 
-4. **Implement context-based filters** (if needed)
-   - Notehead proximity check
-   - Stem attachment analysis
-   - Width/aspect ratio filtering
-   - Target: FP < 2 while maintaining Recall ≥ 98%
-   - Staff-crossing heuristic (investigation status):
-     - Current staff-crossing configuration is **unsafe as-is** (massive FN / recall collapse in `logs/hybrid_generalization/sr_eval_page3_staffcross5/`).
-     - Keep investigation open for one more controlled round with:
-       - parameter sweeps (e.g., lower thresholds / alternative aggregation logic if applicable)
-       - intermediate debug dumps + visual overlays (per-candidate staff crossing counts, pre/post-filter boxes) to identify why valid barlines are removed
-     - In parallel, continue exploring alternative context cues (notehead/stem proximity, layout constraints, etc.).
+3.  **Advanced Context Filters (Fallback Plan)**:
+    -   If a perfect threshold cannot be found on the low-resolution image, this remains the necessary next step. It involves scaling coordinates up to the high-res `data/training/images/page_3.png` to perform a more detailed pixel analysis, which should provide a clearer signal to distinguish faint objects.
 
-### Generalization Testing
-5. **(COMPLETED FOR NOW)** **Apply filter to Page 10**
-6. **(COMPLETED FOR NOW)** **Page 15 evaluation**
+### Low Priority
+4.  **Generalization Testing (Page 10, 15)**:
+    -   Once a stable filter configuration is found for `page_3`, apply it to other pages to test for regressions.
 
-### Documentation & Deployment
-7. **(✅ COMPLETE)** **Update analyze_staff_consistency.py**
-   - Default to ratio-based tolerance (recommended ratio 0.3-0.4 via `--tol-ratio`; ratio mode toggled by `--use-ratio-tolerance/--no-use-ratio-tolerance`)
-   - Added CLI args: `--cluster-max-dist`, `--min-row-count`, `--staff-space`, `--tol-top-px`, `--tol-bottom-px`
-   - Added staff_space estimation and persisted it into `metrics.json` config output
-   - Script: `experiments/fp_reduction/analyze_staff_consistency.py`
-
-8. **Create deployment guide**
-   - Recommended configuration
-   - Performance benchmarks
-   - Troubleshooting common issues
-
-### Low Priority Follow-ups
-9. **Container output ownership**: artifacts under `logs/` can become `root`-owned when generated via `docker exec` as root; consider running container/exec with user mapping to avoid host-side cleanup friction.
-10. **Hybrid pipeline logging robustness**: `tools/run_hybrid_pipeline.sh` can fail `tee` when the run output directory doesn’t exist yet; consider ensuring the host log directory exists before piping to `tee`.
+5.  **Documentation & Deployment**:
+    -   Finalize the recommended pipeline configuration.
+    -   Create a master script `run_full_evaluation.py` that chains Hybrid Pipeline -> Geometric Filter -> (Optional) Pixel Filter.
 
 ## Key Artifacts & Locations
+- **Main Filter Script**: `experiments/fp_reduction/analyze_staff_consistency.py`
+- **Correct Image for Analysis**: `data/evaluation/images/page_3.png`
 
-### Scripts
-- **Main filter**: `experiments/fp_reduction/analyze_staff_consistency.py`
-- **Tolerance sweep**: `experiments/fp_reduction/tolerance_sweep.py`
-- **Unified metric**: `experiments/fp_reduction/unified_metric.py`
-
-### Results & Reports
-- **Hybrid final summary**: `logs/phase3_staff_consistency/20251215_hybrid_ratio_sweep_page3/hybrid_filter_summary.md`
-- **Tolerance sweep**: `logs/phase3_staff_consistency/20251215_tolerance_sweep_page3/`
-- **Baseline sweep**: `logs/phase3_staff_consistency/20251214_dbscan_filter_page3/`
-
-### Documentation
-- **Development log**: `docs/DEVELOPMENT_LOG.md` (append-only, authoritative history)
-- **Project plan**: `temp_next_step_plan.md` (task checklist)
-- **This file**: `docs/NEXT_SESSION_NOTES.md` (current status + next steps)
-
-### Data Files
-- **Hybrid detections**: `logs/hybrid_results.json` (177 detections, page_3)
-- **Baseline detections**: `logs/homr_eval/baseline_for_hybrid/page_3/page_3_detections.json` (222 detections)
-- **Ground truth**: `data/evaluation/annotations/page_003/boxes_sorted.json` (152 GT)
-
-### Scripts & Commands
-
-**For Hybrid Detection** (manual execution):
-```bash
-# Run from project root
-./tools/run_hybrid_pipeline.sh \
-    --image <path_to_image> \
-    --run-id <run_identifier>
-
-# Example for Page 15:
-./tools/run_hybrid_pipeline.sh \
-    --image data/training/images/page_15.png \
-    --run-id page_15_hybrid_test
-```
-
-**For Row-Based Consistency Filter**:
-
-*With GT evaluation (quantitative)*:
-```bash
-# Run inside Docker container
-docker exec homr_eval_gpu bash -c "cd /workspace/external/homr && \
-  poetry run python /workspace/experiments/fp_reduction/tolerance_sweep.py \
-    --json <detections.json> \
-    --image <source_image.png> \
-    --gt <ground_truth.json> \
-    --output <output_directory>"
-```
-
-*Without GT (qualitative only)*:
-```bash
-# Modify page10_qualitative.py paths and run:
-docker exec homr_eval_gpu bash -c "cd /workspace/external/homr && \
-  poetry run python /workspace/experiments/fp_reduction/page10_qualitative.py"
-```
-
-**Key Scripts**:
-- Hybrid pipeline: `tools/run_hybrid_pipeline.sh`
-- Tolerance sweep: `experiments/fp_reduction/tolerance_sweep.py`
-- Qualitative check: `experiments/fp_reduction/page10_qualitative.py`
-- Unified metric: `experiments/fp_reduction/unified_metric.py`
-
-## Configuration Reference
-
-### Optimal Settings (Production)
-
-```python
-# For hybrid pipeline on page_3
-CONFIG = {
-    "CLUSTER_MAX_DIST": 25,      # Row clustering threshold
-    "MIN_ROW_COUNT": 3,          # Minimum barlines per row
-    "USE_RATIO_TOLERANCE": True, # Enable adaptive tolerance
-    "TOLERANCE_RATIO": 0.35,     # 0.3-0.4 recommended
-    # Fallback absolute tolerances:
-    "TOL_TOP_PX": 6,
-    "TOL_BOTTOM_PX": 6
-}
-```
-
-### Performance Benchmarks (page_3)
-
-| Pipeline | Configuration | TP | FP | FN | Precision | Recall |
-|----------|---------------|----|----|----|-----------| -------|
-| Baseline | No filter | 152 | 30 | 0 | 83.5% | 100% |
-| Baseline | Ratio 0.3 | 149 | 5 | 3 | 96.8% | 98.0% |
-| **Hybrid** | **Tol 5-7px** | **152** | **2** | **0** | **98.7%** | **100%** |
-
-## Notes for Next Session
-
-- Phase 3 geometric filtering is **production-ready** for hybrid pipeline
-- Focus should shift to:
-  1. Analyzing remaining 2 FPs (what are they?)
-  2. Generalization testing (Page 10, Page 15)
-  3. Optional: Context-based filters for final polish
-- No heavy OMR reruns needed
-- All evaluation uses unified_metric (homr-equivalent)
+### Data Notes
+-   **Evaluation Images** (`data/evaluation/images/`): Low Res (~600-800px width). Use these for `hybrid_results.json` coordinates.
+-   **Training Images** (`data/training/images/`): High Res (~2500-3500px width). Use for high-quality visualization or deep learning training.

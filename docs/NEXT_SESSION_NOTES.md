@@ -84,35 +84,61 @@
 ## Remaining Work / Next Session Tasks
 
 ### High Priority
-1.  **Investigate False Negative (FN) Issue**: Both Page 10 and Page 15 analyses show that the hybrid pipeline fails to detect many true barlines, especially at the end of staff systems. This is now the primary issue to resolve. The investigation should start by analyzing the inputs to `generate_hybrid_results.py` to see which model (baseline, sr, or omr) is failing to detect these barlines.
-2.  **(✅ COMPLETE)** **Investigate Slow Super-Resolution (SR) Performance**: The local `realesrgan` integration is now functional. A benchmark on `page_3` showed a total execution time of ~12.2 seconds, which is acceptable and resolves the original timeout concerns.
+1.  **(✅ COMPLETE)** **Create Reproducible SR Evaluation Environment**: Created `Dockerfile.sr_eval` + `sr_eval_gpu` container for SR-enabled evaluation (Real-ESRGAN + homr + OMR-DLN). Verified end-to-end by running `tools/run_hybrid_pipeline.sh` on page_3 with GT; artifacts under `logs/hybrid_generalization/sr_eval_smoke_page3/`.
+2.  **(✅ COMPLETE)** **Investigate False Negative (FN) Issue**: Root cause was a coordinate scaling mismatch: SR/OMR predictions were effectively collapsed to ~1/4 width (max_x2 ≈ 675) on page_10/page_15, which caused the hybrid rule (“baseline supported by SR or OMR”) to drop most right-side barlines (appearing as massive FN). Fixed by (a) adding tiling for Real-ESRGAN on large images and (b) only applying bbox `sr_scale` division when SR output resolution actually increases.
+    - Old bug evidence:
+      - `logs/hybrid_generalization/page_10_hybrid_test/` (collapsed SR/OMR width, max_x2 ≈ 675)
+      - `logs/hybrid_generalization/page_15_hybrid_test/` (collapsed SR/OMR width, max_x2 ≈ 675)
+    - Fixed reruns:
+      - `logs/hybrid_generalization/sr_eval_page10_check2/`
+      - `logs/hybrid_generalization/sr_eval_page15_check2/`
+    - Qualitative overlays:
+      - `logs/phase3_staff_consistency/20251217_page10_hybrid_recall_fix_check/`
+      - `logs/phase3_staff_consistency/20251217_page15_hybrid_recall_fix_check/`
+3.  **(✅ COMPLETE)** **Investigate Slow Super-Resolution (SR) Performance**: The local `realesrgan` integration is now functional. A benchmark on `page_3` showed a total execution time of ~12.2 seconds, which is acceptable and resolves the original timeout concerns.
 
 ### Phase 4
 3. **Analyze remaining 2 FPs** on page_3 hybrid results
-   - Visual inspection of FP patterns
-   - Identify distinguishing features vs true barlines
-   - Visual inspection of overlays recommended
+   - Confirmed: after Phase 3 filter (abs_tol=5) on page_3 hybrid detections, exactly **2 FPs** remain (TP=152, FP=2, FN=0).
+   - Remaining FP boxes:
+     - `(335, 230, 336, 253)`
+     - `(479, 449, 480, 469)`
+   - Analysis artifacts:
+     - `logs/phase3_staff_consistency/20251217_page3_remaining_fp_analysis/page3_remaining_fp_abs_tol5_overlay.jpg`
+     - `logs/phase3_staff_consistency/20251217_page3_remaining_fp_analysis/crops/fp1_crop.png`
+     - `logs/phase3_staff_consistency/20251217_page3_remaining_fp_analysis/crops/fp2_crop.png`
 
 4. **Implement context-based filters** (if needed)
    - Notehead proximity check
    - Stem attachment analysis
    - Width/aspect ratio filtering
    - Target: FP < 2 while maintaining Recall ≥ 98%
+   - Staff-crossing heuristic (investigation status):
+     - Current staff-crossing configuration is **unsafe as-is** (massive FN / recall collapse in `logs/hybrid_generalization/sr_eval_page3_staffcross5/`).
+     - Keep investigation open for one more controlled round with:
+       - parameter sweeps (e.g., lower thresholds / alternative aggregation logic if applicable)
+       - intermediate debug dumps + visual overlays (per-candidate staff crossing counts, pre/post-filter boxes) to identify why valid barlines are removed
+     - In parallel, continue exploring alternative context cues (notehead/stem proximity, layout constraints, etc.).
 
 ### Generalization Testing
 5. **(COMPLETED FOR NOW)** **Apply filter to Page 10**
 6. **(COMPLETED FOR NOW)** **Page 15 evaluation**
 
 ### Documentation & Deployment
-7. **Update analyze_staff_consistency.py**
-   - Set ratio-based mode as default (ratio=0.3-0.4)
-   - Add command-line arguments for tolerance configuration
-   - Include staff_space estimation in output
+7. **(✅ COMPLETE)** **Update analyze_staff_consistency.py**
+   - Default to ratio-based tolerance (recommended ratio 0.3-0.4 via `--tol-ratio`; ratio mode toggled by `--use-ratio-tolerance/--no-use-ratio-tolerance`)
+   - Added CLI args: `--cluster-max-dist`, `--min-row-count`, `--staff-space`, `--tol-top-px`, `--tol-bottom-px`
+   - Added staff_space estimation and persisted it into `metrics.json` config output
+   - Script: `experiments/fp_reduction/analyze_staff_consistency.py`
 
 8. **Create deployment guide**
    - Recommended configuration
    - Performance benchmarks
    - Troubleshooting common issues
+
+### Low Priority Follow-ups
+9. **Container output ownership**: artifacts under `logs/` can become `root`-owned when generated via `docker exec` as root; consider running container/exec with user mapping to avoid host-side cleanup friction.
+10. **Hybrid pipeline logging robustness**: `tools/run_hybrid_pipeline.sh` can fail `tee` when the run output directory doesn’t exist yet; consider ensuring the host log directory exists before piping to `tee`.
 
 ## Key Artifacts & Locations
 

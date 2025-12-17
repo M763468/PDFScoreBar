@@ -25,6 +25,9 @@ debug_outputs/
 logs/
 temp.txt
 
+# Local build logs (keep out of repo root)
+docker_build_*.log
+
 # OS generated files
 .DS_Store
 Thumbs.db
@@ -42,3 +45,9 @@ data/*
 !data/**/.gitkeep
 output/*
 *.pt
+
+# Third-party clones (kept locally under external/)
+external/homr/
+external/omr_dln/
+external/realesrgan/
+external/grounding_dino/

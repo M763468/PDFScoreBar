@@ -49,3 +49,33 @@
 ### Data Notes
 -   **Evaluation Images** (`data/evaluation/images/`): Low Res (~600-800px width). Use these for `hybrid_results.json` coordinates.
 -   **Training Images** (`data/training/images/`): High Res (~2500-3500px width). Use for high-quality visualization or deep learning training.
+
+---
+## Clarification / Update: Baseline Clarification (2025-12-18)
+
+- The historically best documented result (**TP=152, FP=2, FN=0**) is believed to originate from a **HYBRID detector setup** (e.g., combining multiple detector outputs such as `homr` + `omr-dln` + `sr`, rather than `homr+sr` alone).
+- There is **uncertainty** about whether this baseline is reproducible using **`homr+sr` only**.
+- Therefore, reproducing the baseline must begin by **confirming the exact detector inputs / composition** that produced the `TP=152, FP=2, FN=0` metrics (which detector outputs were included, and how they were combined).
+
+---
+## Clarification / Update: Note Head Context Clarification (2025-12-18)
+
+- **Original intended design (intent)**:
+  - Filter false barline detections using **geometric interaction** between **barlines** and **notehead detections** (barline ↔ notehead collision), where noteheads are produced by an OMR model (e.g., `homr`).
+- **Current implemented approach (implementation)**:
+  - A **pixel ink-density heuristic** (“note head collision” via ink density at bbox ends) implemented in `experiments/fp_reduction/analyze_staff_consistency.py` (e.g., `--max-end-ink-density` / `--min-bbox-ink-density`).
+- This **implementation-vs-intent mismatch** must be reviewed and resolved **before** tuning thresholds, to avoid optimizing the wrong mechanism.
+
+---
+## Clarification / Update: Updated Immediate Plan (2025-12-18)
+
+1. **Re-document and reproduce the true baseline** (including the detector composition that produced TP=152, FP=2, FN=0).
+2. **Identify the concrete 2 remaining FP instances** (IDs / coordinates / references) that remain after the true baseline pipeline.
+3. **Re-evaluate note head context design** (geometry-based using notehead detections vs pixel-based heuristics) *before* any threshold tuning.
+
+---
+## Clarification / Update: Note Head Context Design Decision (2025-12-18)
+
+- Based on inspection of the two remaining FP instances on `page_3` (both visually consistent with **note stems / note components**), the recommended direction is to implement a **geometry-based notehead context filter**.
+- This should **not** be “notehead-only collision”; it should use `homr` symbol context that includes stems (preferably **`notehead_with_stems`** mask/geometry) to avoid missing cases where the notehead mask alone is sparse.
+- Threshold tuning remains explicitly out of scope until after this geometry-vs-pixel design is implemented and validated.

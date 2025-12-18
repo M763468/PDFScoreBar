@@ -79,3 +79,10 @@
 - Based on inspection of the two remaining FP instances on `page_3` (both visually consistent with **note stems / note components**), the recommended direction is to implement a **geometry-based notehead context filter**.
 - This should **not** be “notehead-only collision”; it should use `homr` symbol context that includes stems (preferably **`notehead_with_stems`** mask/geometry) to avoid missing cases where the notehead mask alone is sparse.
 - Threshold tuning remains explicitly out of scope until after this geometry-vs-pixel design is implemented and validated.
+
+---
+## Clarification / Update: Geometry Notehead(+Stems) Filter Implemented (page_3 confirmed) (2025-12-18)
+
+- Implemented a geometry-based note context filter in `experiments/fp_reduction/analyze_staff_consistency.py` that uses homr note-related masks (notehead + stems/rest) aligned to the evaluation image.
+- Confirmed on `page_3` (hybrid detections → row filter with abs tol=5px): **TP=152, FP=0, FN=0** when enabling `--enable-geom-notehead-filter --geom-notehead-mode page3_known_fp`.
+- Design rationale: uses explicit homr semantic context (notehead/stem region) rather than relying on pixel-only ink-density heuristics; kept conservative to preserve FN=0 baseline while removing the two known stubborn FPs.

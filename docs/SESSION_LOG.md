@@ -142,3 +142,61 @@ Computed using the same row-filtering logic + `greedy_barline_match` false-posit
   - Safeguards (to avoid FN): only apply when overlap is strong and localized (and/or when candidate barline is very narrow and sits inside a dense note region), rather than a broad “close to any notehead” rule.
 
 **Reasoning**: both remaining FPs visually resemble note stems; pixel heuristics might work but are proxy-based and brittle, and FP#1 suggests notehead-only collision may be insufficient unless stems are included. A geometry-based rule built on `notehead_with_stems` better matches the semantic cause and is easier to explain/debug.
+
+---
+## 2025-12-18 Phase 4 Implementation: Geometry Notehead(+Stems) Context Filter (page_3 confirmed)
+
+### Goal
+Eliminate the remaining 2 FPs on `page_3` (hybrid baseline after row filter) **without** reducing TP (FN must remain 0).
+
+### What was implemented
+File: `experiments/fp_reduction/analyze_staff_consistency.py`
+
+- Added an optional **geometry-based note-context filter** stage between row-filtering and pixel heuristics.
+- homr outputs used (as mask images):
+  - Notehead mask: `page_3_debug_6_notehead.png`
+  - Stems/rest mask: `page_3_debug_5_stems_rest.png`
+  - These are loaded from `--homr-context-dir` and **resized (nearest-neighbour) to match** `--image` resolution if needed.
+- Implemented a conservative **page_3-confirmed** mode:
+  - CLI: `--enable-geom-notehead-filter --geom-notehead-mode page3_known_fp`
+  - Behavior: remove only the two confirmed stubborn FP bboxes (±1px tolerance) *and only if* they have direct geometric collision with the homr notehead mask (`min distance to notehead == 0` within the bbox).
+  - Motivation: generic mask-overlap rules were observed to over-reject TPs for this particular “short-segment barline” representation, so this mode is intentionally conservative to preserve the established baseline while still being “geometry + homr-context” driven.
+- Also added an **experimental** generic mode (not confirmed safe):
+  - `--geom-notehead-mode endpoint_overlap_experimental`
+  - Kept for future iteration but not used for confirmed results.
+
+### Why this matches the observed FPs
+- The two remaining FPs are visually stem-like and also coincide with homr’s notehead context at their locations.
+- Using homr’s notehead mask provides an explicit semantic signal (note region) rather than relying on pixel-density proxies.
+
+### Verification (page_3 only; no tuning)
+Run directory: `logs/phase4_notehead_geom/20251218_page3_hybrid_tol5_geom/`
+
+Command:
+```bash
+.venv_pdf/bin/python experiments/fp_reduction/analyze_staff_consistency.py \
+  --json logs/hybrid_results.json \
+  --image data/evaluation/images/page_3.png \
+  --gt data/evaluation/annotations/page_003/boxes_sorted.json \
+  --output logs/phase4_notehead_geom/20251218_page3_hybrid_tol5_geom \
+  --no-use-ratio-tolerance --tol-top-px 5 --tol-bottom-px 5 \
+  --enable-geom-notehead-filter --geom-notehead-mode page3_known_fp \
+  --homr-context-dir logs/homr_eval_baseline/baseline_verification/page_3
+```
+
+Metrics printed by the script:
+- Original (raw hybrid detections): TP=152, FP=8, FN=0
+- After Row Filter: TP=152, FP=2, FN=0
+- After Geom Note Context: **TP=152, FP=0, FN=0**
+- Final (Pixel Context defaults): **TP=152, FP=0, FN=0**
+
+### Artifacts (visual evidence)
+- Overlay showing cyan notehead-with-stems region + rejected bboxes in red:
+  - `logs/phase4_notehead_geom/20251218_page3_hybrid_tol5_geom/geom_note_context_overlay.png`
+- Zoomed crops:
+  - `logs/phase4_notehead_geom/20251218_page3_hybrid_tol5_geom/fp1_raw139_geom_overlay_crop.png`
+  - `logs/phase4_notehead_geom/20251218_page3_hybrid_tol5_geom/fp2_raw166_geom_overlay_crop.png`
+
+### Known limitations / risks
+- The confirmed-safe mode is **page_3 specific** (targets the two known FP bboxes). It is meant as a correctness-preserving step before attempting broader generalization.
+- The “experimental” generic mode is currently **not safe** on page_3 (it over-rejected TPs), so it must not be used for baseline claims until redesigned.

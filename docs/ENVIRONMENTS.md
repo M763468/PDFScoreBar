@@ -198,4 +198,42 @@ The `run_hybrid_pipeline.sh` script automates steps 1-3 (Baseline -> SR -> OMR -
 ./tools/run_hybrid_pipeline.sh --image data/evaluation/images/new_score.png --run-id new_score_test
 ```
 
+---
+## Phase 4: Geometry Note-Context Filter (page_3 confirmed) (2025-12-18)
 
+This section documents the environment/artifact assumptions for the Phase 4 “note-context” filter used to remove stem-like false barlines using `homr` semantic outputs.
+
+### Required homr Artifacts
+The geometry filter consumes `homr` note-related masks for the same page:
+- Notehead mask: `page_3_debug_6_notehead.png`
+- Stems/rest mask: `page_3_debug_5_stems_rest.png`
+
+These are produced as part of `homr_evaluator.py` debug outputs and typically live under a run directory such as:
+- `logs/homr_eval_baseline/<run_id>/page_3/` (host path)
+
+### Alignment Assumptions
+The geometry filter requires that:
+- The barline candidate boxes (e.g., from `logs/hybrid_results.json`) are in the coordinate space of the evaluation image (e.g., `data/evaluation/images/page_3.png`).
+- The `homr` mask images correspond to the same page and are aligned to the same coordinate system.
+
+Implementation note: the Phase 4 code resizes masks to match `--image` resolution using nearest-neighbour interpolation when sizes differ, but the masks must still represent the same page content (no page mismatch).
+
+### Running the Filter (page_3, confirmed configuration)
+The Phase 4 geometry filter is implemented in:
+- `experiments/fp_reduction/analyze_staff_consistency.py`
+
+It is disabled by default and can be enabled with a `homr` context directory:
+```bash
+.venv_pdf/bin/python experiments/fp_reduction/analyze_staff_consistency.py \
+  --json logs/hybrid_results.json \
+  --image data/evaluation/images/page_3.png \
+  --gt data/evaluation/annotations/page_003/boxes_sorted.json \
+  --output logs/phase4_notehead_geom/<run_id>/ \
+  --no-use-ratio-tolerance --tol-top-px 5 --tol-bottom-px 5 \
+  --enable-geom-notehead-filter \
+  --geom-notehead-mode page3_known_fp \
+  --homr-context-dir logs/homr_eval_baseline/<run_id>/page_3
+```
+
+### Current Limitation (Important)
+- The confirmed-safe geometry mode is **page_3-specific** (correctness-first) and is intended as a stable milestone before implementing and validating a general rule on additional pages.

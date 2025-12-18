@@ -88,6 +88,20 @@ We completed an extensive heuristic optimization project to reduce False Positiv
 
 ---
 
+## Current Capability (Phase 4, page_3 confirmed)
+
+The current best-known evaluation pipeline for `page_3` (hybrid detector outputs) is:
+
+1. **Hybrid detection** (multi-model OMR pipeline; produces `logs/hybrid_results.json`)
+2. **Row-based geometric consistency filter** (Phase 3)
+3. **Optional geometry-based note-context filter** (Phase 4)
+
+With Phase 4 enabled, the pipeline is confirmed to reach **TP=152, FP=0, FN=0** on `page_3` by using `homr` note-related outputs (notehead + stems) as semantic context to reject stem-like false barlines.
+
+### Status & Limitations
+- Confirmed correctness milestone is **`page_3` only**.
+- The Phase 4 note-context filter is intentionally conservative and correctness-first; broader generalization to other pages remains planned work.
+
 ## Count barline project　（未着手） 
 検出した小節線と、楽譜の中の複数小節の休みの検出や楽章の分割を使って最終的に小節番号をつけるプログラムとして完成させる
 Detect Barlineを適用するかの「楽譜かどうか」の判断もできる必要がある

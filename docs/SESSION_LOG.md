@@ -200,3 +200,58 @@ Metrics printed by the script:
 ### Known limitations / risks
 - The confirmed-safe mode is **page_3 specific** (targets the two known FP bboxes). It is meant as a correctness-preserving step before attempting broader generalization.
 - The “experimental” generic mode is currently **not safe** on page_3 (it over-rejected TPs), so it must not be used for baseline claims until redesigned.
+
+## Phase 4b FN Investigation (page_3, endpoint_overlap_experimental) - 2025-12-19
+
+### 1. Summary
+This investigation reproduces the TP-loss (FN) failure mode when using the generic `endpoint_overlap_experimental` geometry filter. The goal is to identify which TPs are rejected and why.
+
+### 2. Command
+```bash
+.venv_pdf/bin/python temp_analyze_staff_consistency.py \
+    --json logs/hybrid_results.json \
+    --image data/evaluation/images/page_3.png \
+    --gt data/evaluation/annotations/page_003/boxes_sorted.json \
+    --output logs/phase4b_fn_investigation/20251219_213522_page3_endpoint_overlap_experimental/ \
+    --enable-geom-notehead-filter \
+    --geom-notehead-mode endpoint_overlap_experimental \
+    --homr-context-dir logs/homr_eval_baseline/baseline_verification/page_3/ \
+    --no-use-ratio-tolerance \
+    --tol-top-px 5 \
+    --tol-bottom-px 5
+```
+
+### 3. Metrics
+- **After Row Filter (Baseline)**: TP=152, FP=2, FN=0
+- **After Geom Note Context**: TP=27, FP=0, FN=125
+- **Result**: Confirmed a loss of **125 TPs** due to the geometry filter.
+
+### 4. FN Candidate List (Rejected True Positives)
+The following 125 True Positives were rejected by the filter. The reason for all is `endpoint_overlap_notehead_with_stems`. Overlap values indicate the number of pixels from the note/stem mask found in the top/bottom endpoint regions of the barline candidate.
+
+
+
+
+### 5. Diagnosis & Root Cause Analysis
+
+Based on the investigation, the root cause of the 125 TP rejections is the over-aggressive nature of the `endpoint_overlap_experimental` geometry filter.
+
+**1. Geometric Condition for Rejection:**
+The rule rejects a barline candidate if a small circular neighborhood (radius `r`) around its top or bottom endpoint contains any pixels from the combined `notehead_with_stems` mask. For the rejected TPs (FNs), the overlap values were significant (e.g., 'overlap(T/B)=15/14', 'overlap(T/B)=32/29'), indicating a substantial collision with the note context mask.
+
+**2. Visual Pattern (Inferred from Overlays):**
+The generated overlays show that the rejected true barlines are positioned very close to notes or other musical symbols. The cyan `notehead_with_stems` mask, which is dilated for tolerance, bleeds into the endpoint regions of these barlines. The red rectangle marking the rejected barline clearly shows an intersection with the cyan mask at its vertical extremities.
+
+**3. Root Cause Pattern:**
+The fundamental assumption of the rule—that true barline endpoints are geometrically isolated from all note context—is incorrect. In dense musical scores, it is common for:
+- Noteheads to be placed immediately adjacent to a barline.
+- Stems or flags of notes to curve or extend near the vertical path of a barline.
+- Ledger lines to exist near the top or bottom of a barline.
+
+The current implementation has two main weaknesses:
+- **Rule is Too Simplistic:** It checks for *any* overlap, failing to distinguish between a barline that happens to be *near* a note versus a stem that is *part of* a note.
+- **Mask is Too Expansive:** The process of creating the `notehead_with_stems` mask involves dilation and distance transforms. While intended to connect stems to noteheads, this process enlarges the note-related regions, causing them to encroach upon and collide with legitimate, nearby barlines.
+
+**Conclusion:**
+The TP loss is a direct result of a rule that is not robust enough to handle the geometric density of real-world sheet music. The filter incorrectly flags valid barlines that are simply close to other musical symbols as being part of those symbols. To move forward, a more nuanced rule is needed that can analyze the nature of the collision, not just its existence.
+

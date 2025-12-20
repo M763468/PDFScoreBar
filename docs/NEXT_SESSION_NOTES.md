@@ -25,6 +25,11 @@
   - This is explicitly **page_3 confirmed** and intentionally **page-specific** (not yet generalized).
 - **Phase 4b (in progress)**:
   - Next work is to generalize the geometry note-context idea **without TP loss** (avoid introducing FNs) and validate on additional pages.
+  - **2025-12-20 confirmed (page_3)**: A ratio-based, notehead-only geometry rule (no `notehead_with_stems`, no “any overlap”) achieved **TP=152, FP=0, FN=0** using `endpoint_ratio_overlap` with anisotropic endpoint regions:
+    - `--geom-endpoint-x-radius-scale 0.12` (rx=1px at staff_space≈8.7px)
+    - `--geom-endpoint-y-radius-scale 0.8`  (ry=7px at staff_space≈8.7px)
+    - FN-safe / FP=0 threshold window: `--geom-endpoint-ratio-threshold` in **[0.035, 0.042]** (example: 0.04)
+    - Artifacts: `logs/phase4b_endpoint_ratio/20251220_page3_rx1_ry7_thr0p04`
 - **Note (superseded focus)**: Pixel ink-density heuristics remain available, but page_3 correctness was achieved via geometry-based `homr` note-context; threshold tuning is deferred until a general, FN-safe rule is established.
 
 ## Remaining Work / Next Session Tasks

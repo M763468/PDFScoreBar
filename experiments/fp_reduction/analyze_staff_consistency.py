@@ -198,7 +198,7 @@ def _build_notehead_with_stems_mask(notehead_mask, stems_rest_mask, staff_space_
     return ((notehead_dil > 0) | stems_near_notehead).astype(np.uint8) * 255
 
 
-def _geom_filter_note_context(preds, notehead_mask, stems_rest_mask, staff_space_px):
+def _geom_filter_note_context(preds, notehead_mask, stems_rest_mask, staff_space_px, endpoint_radius_scale=0.6):
     """
     Conservative geometry filter intended to remove stem-like false barlines.
 
@@ -220,7 +220,7 @@ def _geom_filter_note_context(preds, notehead_mask, stems_rest_mask, staff_space
     # Endpoint neighborhood size: conservative and staff-relative.
     # NOTE: This endpoint-only rule proved too aggressive on page_3 with current hybrid boxes
     # (many true barlines are encoded as short segments inside the staff region).
-    r = max(2, int(round(staff_space_px * 0.6)))
+    r = max(2, int(round(staff_space_px * endpoint_radius_scale)))
 
     for i, box in enumerate(preds):
         x1, y1, x2, y2 = map(int, box)
@@ -272,6 +272,113 @@ def _geom_filter_note_context(preds, notehead_mask, stems_rest_mask, staff_space
     return kept, debug, notehead_with_stems
 
 
+def _geom_filter_note_context_ratio(
+    preds,
+    notehead_mask,
+    staff_space_px,
+    threshold,
+    endpoint_radius_scale=0.6,
+    endpoint_x_radius_scale=None,
+    endpoint_y_radius_scale=None,
+):
+    """
+    Filters candidates based on the ratio of notehead pixels in their endpoint regions.
+
+    Rule:
+    - Reject if the ratio of notehead pixels to total pixels in the combined endpoint
+      regions exceeds a given threshold.
+    - This uses ONLY the notehead_mask, not stems, for a more conservative check.
+    """
+    h, w = notehead_mask.shape[:2]
+    kept = []
+    rejected = []
+    scored = []
+
+    # Endpoint region half-sizes (x/y), staff-relative.
+    # If x/y scales aren't explicitly set, fall back to the legacy single-scale radius.
+    x_scale = endpoint_radius_scale if endpoint_x_radius_scale is None else endpoint_x_radius_scale
+    y_scale = endpoint_radius_scale if endpoint_y_radius_scale is None else endpoint_y_radius_scale
+    rx = max(1, int(round(staff_space_px * x_scale)))
+    ry = max(2, int(round(staff_space_px * y_scale)))
+
+    for i, box in enumerate(preds):
+        x1, y1, x2, y2 = map(int, box)
+        x1 = max(0, min(w - 1, x1))
+        x2 = max(0, min(w - 1, x2))
+        y1 = max(0, min(h - 1, y1))
+        y2 = max(0, min(h - 1, y2))
+
+        xm = (x1 + x2) // 2
+
+        # Top endpoint region
+        tx1, tx2 = max(0, xm - rx), min(w, xm + rx + 1)
+        ty1, ty2 = max(0, y1 - ry), min(h, y1 + ry + 1)
+
+        # Bottom endpoint region
+        bx1, bx2 = max(0, xm - rx), min(w, xm + rx + 1)
+        by1, by2 = max(0, y2 - ry), min(h, y2 + ry + 1)
+
+        top_region = notehead_mask[ty1:ty2, tx1:tx2]
+        bot_region = notehead_mask[by1:by2, bx1:bx2]
+
+        notehead_pixels_top = np.count_nonzero(top_region)
+        notehead_pixels_bottom = np.count_nonzero(bot_region)
+        
+        area_top = top_region.size
+        area_bottom = bot_region.size
+        
+        total_notehead_pixels = notehead_pixels_top + notehead_pixels_bottom
+        total_area = area_top + area_bottom
+
+        if total_area == 0:
+            overlap_ratio = 0.0
+        else:
+            overlap_ratio = total_notehead_pixels / total_area
+
+        scored.append(
+            {
+                "index": i,
+                "bbox": [x1, y1, x2, y2],
+                "endpoint_overlap_ratio": float(overlap_ratio),
+                "notehead_pixels_top": int(notehead_pixels_top),
+                "notehead_pixels_bottom": int(notehead_pixels_bottom),
+                "area_top": int(area_top),
+                "area_bottom": int(area_bottom),
+                "endpoint_radius_px": {"x": int(rx), "y": int(ry)},
+            }
+        )
+
+        if overlap_ratio > threshold:
+            rejected.append(
+                {
+                    "index": i,
+                    "bbox": [x1, y1, x2, y2],
+                    "reason": "endpoint_ratio_overlap",
+                    "overlap_ratio": float(overlap_ratio),
+                    "threshold": threshold,
+                    "endpoint_radius_px": {"x": int(rx), "y": int(ry)},
+                }
+            )
+            continue
+
+        kept.append(box)
+
+    debug = {
+        "config": {
+            "mode": "endpoint_ratio_overlap",
+            "threshold": threshold,
+            "endpoint_radius_scale": endpoint_radius_scale,
+            "endpoint_x_radius_scale": endpoint_x_radius_scale,
+            "endpoint_y_radius_scale": endpoint_y_radius_scale,
+            "endpoint_radius_px": {"x": int(rx), "y": int(ry)},
+        },
+        "scores": scored,
+        "rejected": rejected,
+    }
+    # Return notehead_mask for potential visualization, similar to the other function
+    return kept, debug, notehead_mask
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--json", required=True)
@@ -295,12 +402,37 @@ def parse_args():
         "--geom-notehead-mode",
         type=str,
         default="page3_known_fp",
-        choices=["page3_known_fp", "endpoint_overlap_experimental"],
+        choices=["page3_known_fp", "endpoint_overlap_experimental", "endpoint_ratio_overlap"],
         help=(
             "Geometry note-context filter mode. "
             "'page3_known_fp' removes only the two confirmed page_3 FPs (conservative, page_3-only). "
-            "'endpoint_overlap_experimental' is a generic heuristic that is NOT confirmed safe yet."
+            "'endpoint_overlap_experimental' is a generic heuristic that is NOT confirmed safe yet. "
+            "'endpoint_ratio_overlap' uses a ratio-based overlap metric with notehead-only masks."
         ),
+    )
+    parser.add_argument(
+        "--geom-endpoint-ratio-threshold",
+        type=float,
+        default=0.1,
+        help="Rejection threshold for the 'endpoint_ratio_overlap' mode.",
+    )
+    parser.add_argument(
+        "--geom-endpoint-radius-scale",
+        type=float,
+        default=0.6,
+        help="Endpoint region radius as a multiple of staff_space (used by geometry note-context modes).",
+    )
+    parser.add_argument(
+        "--geom-endpoint-x-radius-scale",
+        type=float,
+        default=None,
+        help="Optional: x-half-size of endpoint region as a multiple of staff_space (ratio mode).",
+    )
+    parser.add_argument(
+        "--geom-endpoint-y-radius-scale",
+        type=float,
+        default=None,
+        help="Optional: y-half-size of endpoint region as a multiple of staff_space (ratio mode).",
     )
     parser.add_argument(
         "--homr-context-dir",
@@ -421,16 +553,34 @@ def main():
                 notehead_path = args.homr_notehead_mask
                 stems_path = args.homr_stems_rest_mask
 
-            if not notehead_path or not stems_path:
-                print("Error: geom notehead filter enabled but homr mask paths are not provided. Skipping.")
+            notehead_path_provided = notehead_path is not None
+            stems_path_provided = stems_path is not None
+
+            # Stems/rest are only needed for modes that use the combined mask (or visualize it).
+            stems_needed = args.geom_notehead_mode in ["endpoint_overlap_experimental", "page3_known_fp"]
+
+            if not notehead_path_provided or (stems_needed and not stems_path_provided):
+                print(f"Error: geom notehead filter enabled but required homr mask paths are not provided (notehead: {notehead_path_provided}, stems_needed: {stems_needed}, stems: {stems_path_provided}). Skipping.")
             else:
                 try:
                     notehead_mask = _load_binary_mask(notehead_path, target_hw=target_hw)
-                    stems_rest_mask = _load_binary_mask(stems_path, target_hw=target_hw)
+                    stems_rest_mask = None
+                    if stems_needed:
+                        stems_rest_mask = _load_binary_mask(stems_path, target_hw=target_hw)
                     if args.geom_notehead_mode == "endpoint_overlap_experimental":
                         geom_filtered_preds, geom_debug, geom_notehead_with_stems = _geom_filter_note_context(
-                            row_filtered_preds, notehead_mask, stems_rest_mask, staff_space
+                            row_filtered_preds, notehead_mask, stems_rest_mask, staff_space,
+                            endpoint_radius_scale=args.geom_endpoint_radius_scale,
                         )
+                    elif args.geom_notehead_mode == "endpoint_ratio_overlap":
+                        geom_filtered_preds, geom_debug, geom_notehead_with_stems = _geom_filter_note_context_ratio(
+                            row_filtered_preds, notehead_mask, staff_space,
+                            threshold=args.geom_endpoint_ratio_threshold,
+                            endpoint_radius_scale=args.geom_endpoint_radius_scale,
+                            endpoint_x_radius_scale=args.geom_endpoint_x_radius_scale,
+                            endpoint_y_radius_scale=args.geom_endpoint_y_radius_scale,
+                        )
+                        # note: geom_notehead_with_stems here is just the notehead_mask for visualization
                     else:
                         # page_3 only: remove only the two stubborn, confirmed remaining FPs.
                         # This is intentionally conservative to guarantee FN=0 for the established baseline.

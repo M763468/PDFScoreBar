@@ -255,3 +255,85 @@ The current implementation has two main weaknesses:
 **Conclusion:**
 The TP loss is a direct result of a rule that is not robust enough to handle the geometric density of real-world sheet music. The filter incorrectly flags valid barlines that are simply close to other musical symbols as being part of those symbols. To move forward, a more nuanced rule is needed that can analyze the nature of the collision, not just its existence.
 
+---
+## 2025-12-20 Session Start (NEW session)
+
+### Confirmed constraints loaded (from `docs/NEXT_SESSION_NOTES.md`)
+- Phase 4a (page_3 correctness milestone) is COMPLETE.
+- We are in Phase 4b (generalization without TP loss).
+- “Any overlap” with `notehead_with_stems` is forbidden (known to cause massive FN; combined masks too expansive and also overlap true barlines).
+- Use **ratio-based endpoint overlap** with **notehead-only** masks.
+- Page_3 **FN=0 is a hard constraint**.
+
+### Baseline check (as reference)
+- With `logs/hybrid_results.json` + row filter (abs tol=5px): `TP=152, FP=2, FN=0` (unchanged).
+
+### Experiment 1: Existing `endpoint_ratio_overlap` (square endpoint region) was not sufficient
+Command example:
+```bash
+.venv_pdf/bin/python experiments/fp_reduction/analyze_staff_consistency.py \
+  --json logs/hybrid_results.json \
+  --image data/evaluation/images/page_3.png \
+  --gt data/evaluation/annotations/page_003/boxes_sorted.json \
+  --output logs/phase4b_endpoint_ratio/20251220_page3_thr0p1 \
+  --no-use-ratio-tolerance --tol-top-px 5 --tol-bottom-px 5 \
+  --enable-geom-notehead-filter --geom-notehead-mode endpoint_ratio_overlap \
+  --geom-endpoint-ratio-threshold 0.1 \
+  --homr-context-dir logs/homr_eval_baseline/baseline_verification/page_3 \
+  --min-bbox-ink-density 0.0 --max-end-ink-density 1.0
+```
+Observed behavior:
+- At `threshold=0.1`: caused `FN=1` while keeping `FP=2` (rejects a TP but does not remove the two remaining FPs).
+- At `threshold>=0.12`: `FN=0` but also no FP reduction (`FP=2` remains).
+
+### Implementation updates (to enable ratio experiments)
+File: `experiments/fp_reduction/analyze_staff_consistency.py`
+- Added per-candidate scoring output for ratio mode (`geom_debug.scores` in `metrics.json`) so we can inspect distributions without forcing rejections.
+- Fixed mask loading so stems/rest masks are not required for `endpoint_ratio_overlap` mode.
+- Added configurable endpoint region geometry:
+  - `--geom-endpoint-x-radius-scale`
+  - `--geom-endpoint-y-radius-scale`
+  - (kept `--geom-endpoint-radius-scale` as legacy fallback)
+
+### Experiment 2: Anisotropic endpoint region (narrow x, taller y) achieved FN-safe FP removal on page_3
+Key idea:
+- Keep the **ratio definition** unchanged, but define endpoint regions with **separate x/y half-sizes** (still staff-relative), using **notehead-only** masks.
+
+Confirmed working configuration (page_3):
+- `--geom-notehead-mode endpoint_ratio_overlap`
+- `--geom-endpoint-x-radius-scale 0.12`  (rx=1 px at staff_space≈8.7px)
+- `--geom-endpoint-y-radius-scale 0.8`   (ry=7 px at staff_space≈8.7px)
+- Threshold window that kept FN=0 and removed both remaining FPs:
+  - `--geom-endpoint-ratio-threshold` in **[0.035, 0.042]**
+
+Representative run (threshold 0.04):
+```bash
+.venv_pdf/bin/python experiments/fp_reduction/analyze_staff_consistency.py \
+  --json logs/hybrid_results.json \
+  --image data/evaluation/images/page_3.png \
+  --gt data/evaluation/annotations/page_003/boxes_sorted.json \
+  --output logs/phase4b_endpoint_ratio/20251220_page3_rx1_ry7_thr0p04 \
+  --no-use-ratio-tolerance --tol-top-px 5 --tol-bottom-px 5 \
+  --enable-geom-notehead-filter --geom-notehead-mode endpoint_ratio_overlap \
+  --geom-endpoint-ratio-threshold 0.04 \
+  --geom-endpoint-radius-scale 0.6 \
+  --geom-endpoint-x-radius-scale 0.12 \
+  --geom-endpoint-y-radius-scale 0.8 \
+  --homr-context-dir logs/homr_eval_baseline/baseline_verification/page_3 \
+  --min-bbox-ink-density 0.0 --max-end-ink-density 1.0
+```
+Metrics:
+- After Row Filter: `TP=152, FP=2, FN=0`
+- After Geom Note Context: `TP=152, FP=0, FN=0`
+
+Artifact directories:
+- `logs/phase4b_endpoint_ratio/20251220_page3_rx1_ry7_thr0p035`
+- `logs/phase4b_endpoint_ratio/20251220_page3_rx1_ry7_thr0p038`
+- `logs/phase4b_endpoint_ratio/20251220_page3_rx1_ry7_thr0p04`
+- `logs/phase4b_endpoint_ratio/20251220_page3_rx1_ry7_thr0p042`
+- (failure bounds for reference) `logs/phase4b_endpoint_ratio/20251220_page3_rx1_ry7_thr0p03` (FN>0) and `...thr0p045` (FP=1)
+
+### Notes / Assumptions
+- Assumption: It is acceptable (within “ratio-based endpoint overlap”) to use **different x/y half-sizes** for the endpoint regions, as long as the overlap ratio formula is exactly:
+  - `(notehead pixels in top endpoint region + notehead pixels in bottom endpoint region) / (area(top)+area(bottom))`
+- This is confirmed **page_3-only** so far; cross-page validation remains pending.

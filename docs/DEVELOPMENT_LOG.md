@@ -994,3 +994,14 @@ endpoint_overlap_ratio =
 ### Status
 - **Confirmed (page_3)**: the notehead-only ratio rule can remove the final two hybrid baseline FPs without TP loss when using anisotropic endpoint regions and a threshold within the safe window above.
 - **Pending cross-page validation**: behavior on other pages/publishers is not yet confirmed and must be validated visually (no GT) before declaring Phase 4 completion.
+
+## Phase 5a: FN-only GT Tooling & Environment Notes (2025-12-20)
+
+## Phase 5a: FN-only GT Tooling & Environment Notes (2025-12-20)
+
+*Details regarding tool refactoring and environment setup have been moved to `docs/SESSION_LOG.md` to maintain log hygiene.*
+
+### 4. Status
+- Tools are refactored and ready.
+- User instructions prepared for handoff.
+- Waiting for user to upload `fn_only.json` files before proceeding to automatic attribution.

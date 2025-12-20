@@ -419,3 +419,101 @@ For each output directory above:
   - the ratio signal is systematically lower on these images and needs re-scaling (not attempted here), or
   - notehead masks / alignment differ such that endpoint regions rarely contain notehead pixels.
 - Next step depends on visual review: if obvious FPs remain in green, we may need to revisit scaling/gating (Phase 4b), but **no redesign** was done in this session.
+
+## 2025-12-20 Phase 5a Start (FN Attribution)
+
+### Goal
+- Select page(s) for FN-only partial GT.
+- Verify GT creation tooling (FN-only workflow).
+- Plan FN attribution runs.
+
+### 1. Page Selection
+Target pages from NEXT_SESSION_NOTES:
+- data/training/images/page_10.png
+- data/training/images/page_15.png
+- data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png
+- data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png
+
+### 2. GT Tooling Verification
+Verified tooling for FN-only workflow:
+- **Annotation**: `tools/coordinate_annotator.py` (manual bbox input).
+- **Sorting/Formatting**: `tools/sort_measures.py` (standardizes JSON).
+- **Visualization**: `tools/render_barline_boxes_overlay.py` (renders partial GT).
+
+**Action**: Created annotation directories:
+- `data/training/annotations/page_010/`
+- `data/training/annotations/page_015/`
+- `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/`
+- `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/`
+
+**Next Step (User/Agent)**:
+Run `tools/coordinate_annotator.py` for each page to create `fn_only.json` (containing ONLY missing barlines).
+
+### 3. FN Attribution Plan
+**Objective**: Attribute each bbox in `fn_only.json` to a pipeline stage.
+
+**Logic (per FN bbox)**:
+1. **homr miss**: Check overlap (IoU>0.5) with homr raw predictions.
+   - Source: `logs/hybrid_generalization/.../baseline/.../metrics.json` (check structure) or re-run homr if raw json missing.
+2. **omr-dln miss**: Check overlap with omr-dln predictions.
+   - Source: `logs/hybrid_generalization/.../omr_sr/predictions.json`
+3. **Hybrid Integration Loss**: Present in homr/omr but missing from hybrid output.
+   - Source: `logs/hybrid_generalization/.../hybrid_predictions.json`
+4. **Row/Context Filter Removal**: Present in hybrid but removed by post-processing filters.
+   - Action: Run `experiments/fp_reduction/analyze_staff_consistency.py` with `--gt fn_only.json` and check if they are "Refiltered" (though logically if they are in hybrid but not final, they are removed).
+
+**Execution Command (Draft)**:
+```bash
+# Example for page_10
+python experiments/fp_reduction/analyze_fn_attribution.py \
+  --fn-gt data/training/annotations/page_010/fn_only.json \
+  --homr-json logs/hybrid_generalization/page_10_hybrid_test/baseline/page_10/measure_candidates.json \
+  --omr-json logs/hybrid_generalization/page_10_hybrid_test/omr_sr/predictions.json \
+  --hybrid-json logs/hybrid_generalization/page_10_hybrid_test/hybrid_predictions.json
+```
+*(Note: script `analyze_fn_attribution.py` needs to be created or we use manual inspection script)*
+
+
+## Phase 5a: FN-only GT Tooling & Environment Notes (Moved from DEVELOPMENT_LOG.md)
+
+### 1. Tool Refactoring
+The original tooling (`coordinate_annotator.py`, `sort_measures.py`) had hardcoded paths, making it difficult to use for multiple pages.
+- **Action**: Refactored both scripts to use `argparse` for CLI-based file path selection.
+- **Benefit**: User can now run the same tool for any page without editing code.
+
+### 2. Environment Strategy: Windows vs WSL
+- **Constraint**: `tools/coordinate_annotator.py` relies on `cv2.imshow` and mouse callbacks (GUI).
+- **Decision**: Users on WSL (without a configured X server/WSLg) CANNOT run this tool directly.
+- **Recommendation**: Run the annotation tool on **native Windows**.
+  - **Setup**: Install Python and `pip install opencv-python`.
+  - **Sync**: Copy target images from WSL to Windows, annotate, then copy the JSON back to WSL.
+
+### 3. Usage Guide (FN-only GT)
+A streamlined process for the user:
+1.  **Identify FNs**: Use existing visual overlays (e.g., from hybrid or baseline runs) to find missed barlines.
+2.  **Annotate**: Draw bounding boxes *only* for missing barlines using `coordinate_annotator.py`.
+3.  **Sort**: Sort the output using `sort_measures.py` to standardize the format.
+4.  **Upload**: Place the final JSON in the `data/training/annotations/Result` or `data/evaluation2/annotations/...` directory.
+
+### 4. Status
+- Tools are refactored and ready.
+- User instructions prepared for handoff.
+- Waiting for user to upload `fn_only.json` files before proceeding to automatic attribution.
+
+## 2025-12-21 Maintenance: Processed Manual FN-only GT
+
+**Objective**: Clean up logs and process user-provided manual annotations to unblock Phase 5a.
+
+### Actions Taken
+1.  **Log Correction**: Moved "Phase 5a: FN-only GT Tooling & Environment Notes" from `DEVELOPMENT_LOG.md` to `SESSION_LOG.md` to preserve log hierarchy.
+2.  **GT Processing**: Identified manual FN-only annotation files in `logs/output/`:
+    - `beethovem_page10_raw.json` -> `data/training/annotations/page_010/fn_only.json`
+    - `beethoven_page15_raw.json` -> `data/training/annotations/page_015/fn_only.json`
+    - `prokofiev_page1_raw.json` -> `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/fn_only.json`
+    - `prokofiev_page4_raw.json` -> `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/fn_only.json`
+3.  **Standardization**: Sorted all raw JSONs using `tools/sort_measures.py` and saved as canonical `fn_only.json`.
+4.  **Verification**: Generated visual overlays (`fn_only_overlay.png`) in the respective annotation directories.
+
+### Status
+- All `fn_only.json` files are in place.
+- Phase 5a is unblocked and ready for **FN Attribution Execution**.

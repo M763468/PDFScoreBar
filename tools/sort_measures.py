@@ -38,7 +38,15 @@ def group_and_sort_measures(input_file, output_file):
     with open(output_file, 'w') as f:
         json.dump(sorted_data, f, indent=2, ensure_ascii=False)
 
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Sort barline measures by Y (staff) and X.")
+    parser.add_argument("input_file", help="Path to the input JSON (raw annotations)")
+    parser.add_argument("output_file", help="Path to save the sorted JSON")
+    args = parser.parse_args()
+
+    group_and_sort_measures(args.input_file, args.output_file)
+    print(f"Sorted measures saved to {args.output_file}")
+
 if __name__ == "__main__":
-    input_file = "data/training/annotations/page_001/raw_boxes.json"
-    output_file = "data/training/annotations/page_001/boxes_sorted.json"
-    group_and_sort_measures(input_file, output_file)
+    main()

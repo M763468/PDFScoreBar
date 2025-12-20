@@ -517,3 +517,122 @@ A streamlined process for the user:
 ### Status
 - All `fn_only.json` files are in place.
 - Phase 5a is unblocked and ready for **FN Attribution Execution**.
+
+## Phase 5a: FN Attribution
+
+Date: Sun Dec 21 02:14:29 JST 2025
+
+### Objective
+For each FN-only GT bbox, identify WHERE in the pipeline the barline was lost.
+
+### Methodology
+An analysis script (`experiments/fp_reduction/analyze_fn_attribution.py`) was created to attribute each FN.
+The script uses pre-existing model outputs from runs in `logs/hybrid_generalization/`.
+An IoU threshold of 0.4 was used for matching.
+FNs were categorized as:
+- `post_filter_removal`: Present in hybrid output, but removed by post-processing.
+- `hybrid_integration_loss`: Present in `homr` or `omr-dln` raw output, but missing from hybrid output.
+- `ambiguous`: Not present in any source model output.
+
+### Results
+
+```
+================================================================================
+FN Attribution Analysis Results
+================================================================================
+
+--- Per-Page Breakdown ---
+
+--- Beethoven page_10 ---
+  FN ID: N/A, BBox: [2081, 414, 2085, 490], Label: ambiguous
+  FN ID: N/A, BBox: [2523, 425, 2527, 501], Label: ambiguous
+  FN ID: N/A, BBox: [406, 643, 410, 725], Label: ambiguous
+  FN ID: N/A, BBox: [2531, 654, 2535, 709], Label: ambiguous
+  FN ID: N/A, BBox: [494, 910, 498, 987], Label: ambiguous
+  FN ID: N/A, BBox: [2531, 900, 2535, 981], Label: ambiguous
+  FN ID: N/A, BBox: [2539, 1156, 2543, 1227], Label: hybrid_integration_loss
+  FN ID: N/A, BBox: [480, 1396, 484, 1461], Label: ambiguous
+  FN ID: N/A, BBox: [2534, 1380, 2538, 1450], Label: ambiguous
+  FN ID: N/A, BBox: [516, 1620, 520, 1701], Label: ambiguous
+  FN ID: N/A, BBox: [2528, 1603, 2532, 1696], Label: ambiguous
+  FN ID: N/A, BBox: [2539, 1860, 2543, 1930], Label: hybrid_integration_loss
+  FN ID: N/A, BBox: [478, 2100, 482, 2192], Label: ambiguous
+  FN ID: N/A, BBox: [1402, 2105, 1406, 2187], Label: hybrid_integration_loss
+  FN ID: N/A, BBox: [2536, 2089, 2540, 2176], Label: ambiguous
+  FN ID: N/A, BBox: [485, 2345, 489, 2421], Label: ambiguous
+  FN ID: N/A, BBox: [2545, 2350, 2549, 2432], Label: ambiguous
+  FN ID: N/A, BBox: [2545, 2585, 2549, 2661], Label: ambiguous
+  FN ID: N/A, BBox: [1249, 2825, 1253, 2901], Label: ambiguous
+  FN ID: N/A, BBox: [2536, 2803, 2540, 2880], Label: ambiguous
+  FN ID: N/A, BBox: [507, 3038, 511, 3114], Label: ambiguous
+  FN ID: N/A, BBox: [2536, 3016, 2540, 3120], Label: ambiguous
+  FN ID: N/A, BBox: [505, 3267, 509, 3343], Label: ambiguous
+  FN ID: N/A, BBox: [2539, 3256, 2543, 3332], Label: ambiguous
+--------------------
+
+--- Beethoven page_15 ---
+  FN ID: N/A, BBox: [2525, 381, 2529, 452], Label: ambiguous
+  FN ID: N/A, BBox: [2525, 621, 2529, 709], Label: ambiguous
+  FN ID: N/A, BBox: [1524, 834, 1528, 927], Label: ambiguous
+  FN ID: N/A, BBox: [2141, 840, 2145, 927], Label: ambiguous
+  FN ID: N/A, BBox: [2266, 829, 2270, 921], Label: ambiguous
+  FN ID: N/A, BBox: [2463, 850, 2467, 916], Label: ambiguous
+  FN ID: N/A, BBox: [2533, 1058, 2537, 1150], Label: ambiguous
+  FN ID: N/A, BBox: [524, 1270, 528, 1347], Label: ambiguous
+  FN ID: N/A, BBox: [2534, 1270, 2538, 1352], Label: ambiguous
+  FN ID: N/A, BBox: [529, 1489, 533, 1565], Label: ambiguous
+  FN ID: N/A, BBox: [2296, 1483, 2300, 1554], Label: ambiguous
+  FN ID: N/A, BBox: [2536, 1483, 2540, 1565], Label: ambiguous
+  FN ID: N/A, BBox: [2539, 1685, 2543, 1756], Label: ambiguous
+  FN ID: N/A, BBox: [636, 1909, 640, 1996], Label: ambiguous
+  FN ID: N/A, BBox: [2534, 1914, 2538, 1980], Label: ambiguous
+  FN ID: N/A, BBox: [2531, 2127, 2535, 2203], Label: ambiguous
+  FN ID: N/A, BBox: [679, 2340, 683, 2416], Label: hybrid_integration_loss
+  FN ID: N/A, BBox: [2539, 2340, 2543, 2443], Label: ambiguous
+  FN ID: N/A, BBox: [679, 2830, 683, 2896], Label: ambiguous
+  FN ID: N/A, BBox: [2539, 2803, 2543, 2907], Label: ambiguous
+  FN ID: N/A, BBox: [2545, 3043, 2549, 3130], Label: hybrid_integration_loss
+  FN ID: N/A, BBox: [2395, 3278, 2399, 3338], Label: ambiguous
+--------------------
+
+--- Prokofiev page_001 ---
+  FN ID: N/A, BBox: [2193, 1453, 2197, 1536], Label: ambiguous
+  FN ID: N/A, BBox: [1005, 1701, 1009, 1790], Label: ambiguous
+  FN ID: N/A, BBox: [2329, 2150, 2333, 2239], Label: ambiguous
+  FN ID: N/A, BBox: [1921, 2623, 1925, 2706], Label: ambiguous
+  FN ID: N/A, BBox: [1238, 3557, 1242, 3657], Label: ambiguous
+  FN ID: N/A, BBox: [2470, 3563, 2474, 3651], Label: ambiguous
+--------------------
+
+--- Prokofiev page_004 ---
+  FN ID: N/A, BBox: [2651, 520, 2655, 632], Label: ambiguous
+  FN ID: N/A, BBox: [2101, 791, 2105, 874], Label: ambiguous
+  FN ID: N/A, BBox: [1386, 1045, 1390, 1134], Label: ambiguous
+  FN ID: N/A, BBox: [2429, 1051, 2433, 1128], Label: ambiguous
+  FN ID: N/A, BBox: [2137, 2068, 2141, 2150], Label: ambiguous
+  FN ID: N/A, BBox: [2175, 2440, 2179, 2517], Label: ambiguous
+  FN ID: N/A, BBox: [739, 3185, 743, 3285], Label: ambiguous
+  FN ID: N/A, BBox: [1094, 3190, 1098, 3267], Label: ambiguous
+  FN ID: N/A, BBox: [1915, 3427, 1919, 3504], Label: ambiguous
+  FN ID: N/A, BBox: [2001, 3415, 2005, 3504], Label: ambiguous
+  FN ID: N/A, BBox: [2349, 3433, 2353, 3510], Label: ambiguous
+  FN ID: N/A, BBox: [2571, 3433, 2575, 3498], Label: ambiguous
+--------------------
+
+================================================================================
+--- Aggregate Summary ---
+{
+  "total": {
+    "ambiguous": 59,
+    "hybrid_integration_loss": 5
+  },
+  "Beethoven": {
+    "ambiguous": 41,
+    "hybrid_integration_loss": 5
+  },
+  "Prokofiev": {
+    "ambiguous": 18
+  }
+}
+================================================================================
+```

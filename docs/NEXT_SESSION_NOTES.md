@@ -1,7 +1,7 @@
 # Next Session Notes
 
-**Last Updated**: 2025-12-20  
-**Current Phase**: Phase 5 (FN Attribution & Recovery)
+**Last Updated**: 2025-12-21
+**Current Phase**: Phase 5b: FN Recovery (Planning: Detailed)
 
 ---
 ### Note for AI Assistant (Operational Rule)
@@ -10,70 +10,69 @@
 
 ## Phase 5 — FN Attribution & Recovery (Current Plan)
 
-### Confirmed Context (Phase Transition)
-- **Phase 4 is complete (FP reduction)**: FP problem is effectively solved on `page_3` with **FP=0 and FN=0**, and cross-dataset review indicates the rule is conservative and does **not** introduce new FNs.
-- **FN is a new upstream problem**: remaining FN cases observed in cross-dataset validation are **not caused by the Phase 4b geometry filter** (it did not trigger on those pages).
-
-### Phase 5a — FN Attribution (Next Actions)
-**Goal**: Create FN-only partial GT for a limited page set, then attribute each FN to an upstream cause.
-
-1) **Select a limited page set (where FN is observed)**
-- Training (same work): `data/training/images/page_10.png`, `data/training/images/page_15.png`
-- Evaluation2 (new work/publisher): `data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png`, `.../page_004.png`
-
-2) **Create partial GT (FN-only)**
-- For each page, create an FN-only JSON containing **only missing barline bboxes**.
-- Keep FN-only GT separate from any full GT (this is for attribution/recovery, not a full benchmark).
-
-3) **Attribute each FN bbox (one of)**
-- **homr miss**: missing from homr baseline detections.
-- **omr-dln miss**: missing from omr-dln predictions.
-- **hybrid integration loss**: present in a detector output but absent from hybrid predictions (consensus rule).
-- **row/context filter removal**: present in hybrid predictions but removed by row filtering or later filters.
-
-**Deliverable**: per-page FN attribution table (one row per FN bbox) linking to visual overlays and intermediate JSONs.
-
-### Phase 5b — FN Recovery Strategies (After Attribution)
-**Goal**: Recover FN per category while preserving Phase 4 FP guarantees.
-
-- **homr miss**: homr parameter tuning / SR enablement, controlled preprocessing variants, conservative detector fallback/union.
-- **omr-dln miss**: confidence/SR tuning, conservative fallback detector for sparse layouts, model swap only if unavoidable.
-- **hybrid integration loss**: revise consensus gating and matching robustness (coordinate representation / near-match handling).
-- **row/context filter removal**: conditional bypass/relaxation tied to FN-only GT evidence; avoid global loosening.
-
-### Phase 5c — Verification Strategy
-**Goal**: Verify “FN recovered without FP regression” without requiring full GT on every dataset.
-
-- **Primary (FN-only GT)**: count FN-only GT boxes matched by final predictions on the selected pages.
-- **Hard regression guard**: keep `page_3` as a full-GT regression test and require **TP=152, FP=0, FN=0** to remain true.
-- **Qualitative guard (no GT pages)**: overlays must show no obvious new stem-like FPs in dense note regions.
-
-### GT Tooling (Planning Reference; Do Not Execute Here)
-**Existing page_3 GT workflow (reusable for FN-only GT)**
-- Manual annotation: `tools/coordinate_annotator.py` → draft JSON (dict records with `barline_location`).
-- Promote + ordering: draft → `raw_boxes.json`, then `tools/sort_measures.py` → `boxes_sorted.json`.
-- Visual verification: `tools/render_barline_boxes_overlay.py --base <page.png> --boxes <boxes_sorted.json> --output <overlay.png>`.
-
-**FN-only partial GT using the same workflow**
-- Annotate **only missing barlines** into a page-specific draft JSON.
-- Optionally generate `boxes_sorted.json` for consistent ordering (treat `measure_number` as an “FN id” if convenient).
-- Verify via overlay renders before using it for attribution/recovery checks.
+### Phase 5a Results (Confirmed) ✅ COMPLETE
+**Conclusion**: False Negatives are fundamentally a **detector recall problem**.
+- **~92% Ambiguous**: Not detected by either `homr` (SR) nor `omr-dln` (SR).
+- **~8% Hybrid Loss**: Detected by at least one model but lost during integration.
+- **Phase 4 Filters are Safe**: Post-processing geometric/pixel filters are **not** the cause of these FNs.
 
 ---
+
+## Phase 5b — FN Recovery Strategies (Planning: Detailed)
+
+This phase aims to recover FNs (especially the "ambiguous" majority) without regressing the confirmed `FP=0` baseline on `page_3`.
+
+### B1) Improve candidate generation / detector recall (Primary)
+**Hypothesis**: Lowering confidence thresholds or creating a naive union of detectors will recover "ambiguous" FNs.
+- **What to test**:
+  - **homr**: Relax confidence thresholds for barline candidates. Check internal parameters for thin-line sensitivity.
+  - **omr-dln**: Relax YOLO confidence threshold (`--conf`).
+  - **Detector Union**: Create a union of raw `homr` + `omr-dln` outputs (before hybrid consensus logic) to maximize recall.
+  - **Fallback Generator**: Implement a lightweight classical CV proposer (Hough Transform / Vertical Projection) for "obvious" lines missed by ML.
+- **Risks**: High risk of introducing FPs.
+- **Mitigation**: Rely on the **Phase 4 filters** (proven robust) to clean up the increased candidate pool.
+
+### B2) Hybrid integration fixes (Secondary)
+**Hypothesis**: The intersection-heavy logic of the current hybrid merger discards valid single-model detections.
+- **What to test**:
+  - Switch merge logic from "Consensus/Intersection" to "Union" or "Score-weighted Union".
+  - Tune IoU thresholds and coordinate rounding for matching.
+- **Expected Outcome**: Recovery of the ~8% "hybrid_integration_loss" FNs.
+- **Risks**: Low. Cheap to implement.
+
+### B3) Pipeline-level gating
+**Hypothesis**: Different pages (dense vs sparse, clean vs noisy) may require different pipelines.
+- **What to change**:
+  - Implement logic to conditionally apply specific detectors or fallbacks based on page characteristics (if needed).
+- **Regression Guard**: Ensure `page_3` always runs its strict regression-tested path.
+
+### B4) Evaluation Protocol for Phase 5b
+**Standard**:
+1.  **FN Recovery**: Measure recall improvement on the 4 FN-only GT pages (`page_10`, `page_15`, `Prokofiev_001`, `Prokofiev_004`).
+2.  **FP Regression Guard**: **MUST** run full `page_3` pipeline after any change.
+    - **Pass Criteria**: `TP=152, FP=0, FN=0`.
+3.  **Qualitative Check**: Visual overlay inspection on non-GT pages to spot obvious new FPs.
+4.  **Stop Condition**: If a change recovers FNs but creates stubborn FPs on `page_3`, rollback or refine filters.
+
+---
+
+## Phase 4 Summary (Quick Reference)
+
+**Status**: ✅ COMPLETE & SAFE
+- **Canonical Result**: `page_3` hybrid pipeline → **TP=152, FP=0, FN=0**.
+- **Method**: Row-based geometric consistency + Notehead-context geometric filter (Ratio-based endpoint overlap).
+- **Safety**: Cross-dataset review confirmed this logic is conservative and does not introduce FNs.
+- **Details**: See `docs/DEVELOPMENT_LOG.md`.
+
+---
+
 ## Completed Phases (Short Summary)
 
 ### Phase 3 ✅ COMPLETE (Row-Consistency Filter)
-- Confirmed baseline on `page_3` hybrid detections: **TP=152, FP=2, FN=0**.
 - Durable details: `docs/DEVELOPMENT_LOG.md`, `docs/fp_reduction/FINAL_SUMMARY.md`.
 
-### Phase 4 ✅ COMPLETE (FP Reduction)
-- Confirmed `page_3`: **TP=152, FP=0, FN=0**.
-- Cross-dataset review: geometry rule is conservative and **does not introduce new FNs**; FN is treated as upstream.
-- Durable details and commands: `docs/DEVELOPMENT_LOG.md`.
-
 ---
-## Historical / Superseded Notes (Kept for Context)
-
-- Phase 4b “generalization without TP loss” planning is superseded by Phase 5 and kept only as context.
-- Known-unsafe (historical lesson): “any overlap” hard rejection with expansive/combined masks can cause massive FN; do not revive.
-- Hybrid-baseline provenance note: treat hybrid detector composition and matching assumptions as explicit variables when attributing FN upstream.
+## Historical / Superseded Notes
+- Phase 4b planning is superseded by Phase 5.
+- "Any overlap" masks are forbidden (unsafe).
+- Previous experiments are archived in `experiments/`.

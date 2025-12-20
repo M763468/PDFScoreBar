@@ -30,6 +30,9 @@ confusion and duplication.
 
 ## Current Project Status (2025-12-15)
 
+**Update (2025-12-20)**: Phase 4 (FP reduction) is complete, and the current focus is **Phase 5: FN Attribution & Recovery**.
+See `docs/NEXT_SESSION_NOTES.md` for the active plan and confirmed status.
+
 **Phase 3: Geometric FP Reduction** ✅ **COMPLETE**
 
 - **Best Results** (page_3, hybrid pipeline):
@@ -127,4 +130,3 @@ Examples:
 ---
 
 ## Repository Structure (Summary)
-

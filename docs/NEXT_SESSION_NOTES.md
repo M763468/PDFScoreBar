@@ -1,135 +1,79 @@
 # Next Session Notes
 
-**Last Updated**: 2025-12-18
-**Current Phase**: Phase 4b (Generalization without TP loss) — Phase 4a (page_3 milestone) COMPLETE
+**Last Updated**: 2025-12-20  
+**Current Phase**: Phase 5 (FN Attribution & Recovery)
 
 ---
 ### Note for AI Assistant (Operational Rule)
--   The `docs/SESSION_LOG.md` file must **not** be completely overwritten. During a session, new findings and logs should be appended, or only relevant sections should be edited. The file should only be cleared with explicit user permission.
+- The `docs/SESSION_LOG.md` file must **not** be completely overwritten. During a session, new findings and logs should be appended, or only relevant sections should be edited. The file should only be cleared with explicit user permission.
 ---
 
-## Current Status
+## Phase 5 — FN Attribution & Recovery (Current Plan)
 
-### Phase 3: Geometric FP Reduction ✅ **COMPLETE**
-- **Method**: Row-based consistency filter.
-- **Documented Best Result**: On `page_3` hybrid detections, this filter achieves **TP=152, FP=2, FN=0**. This is the official baseline for the start of Phase 4.
+### Confirmed Context (Phase Transition)
+- **Phase 4 is complete (FP reduction)**: FP problem is effectively solved on `page_3` with **FP=0 and FN=0**, and cross-dataset review indicates the rule is conservative and does **not** introduce new FNs.
+- **FN is a new upstream problem**: remaining FN cases observed in cross-dataset validation are **not caused by the Phase 4b geometry filter** (it did not trigger on those pages).
 
-### Phase 4: Context & Pixel Filtering (In Progress)
-- **Goal**: Start from the `TP=152, FP=2` baseline and implement a context-based filter to achieve **`TP=152, FP=0, FN=0`**.
-- **Action Taken**: A "Note Head Collision" filter has been implemented as a pixel-based heuristic in `experiments/fp_reduction/analyze_staff_consistency.py`.
-    -   **Mechanism 1 (Note Head Heuristic)**: The `--max-end-ink-density` argument filters detections if there is high ink density at the top/bottom corners of the bounding box. This is designed to identify and remove note stems attached to note heads.
-    -   **Mechanism 2 (Faint Artifact Filter)**: The `--min-bbox-ink-density` argument filters detections with very low average ink density within their bounding box.
-- **Phase 4a (page_3 correctness milestone) ✅ COMPLETE (2025-12-18)**:
-  - Confirmed on `page_3` (hybrid detections → row filter abs tol=5px): **TP=152, FP=0, FN=0** using:
-    - `--enable-geom-notehead-filter --geom-notehead-mode page3_known_fp`
-  - This is explicitly **page_3 confirmed** and intentionally **page-specific** (not yet generalized).
-- **Phase 4b (in progress)**:
-  - Next work is to generalize the geometry note-context idea **without TP loss** (avoid introducing FNs) and validate on additional pages.
-  - **2025-12-20 confirmed (page_3)**: A ratio-based, notehead-only geometry rule (no `notehead_with_stems`, no “any overlap”) achieved **TP=152, FP=0, FN=0** using `endpoint_ratio_overlap` with anisotropic endpoint regions:
-    - `--geom-endpoint-x-radius-scale 0.12` (rx=1px at staff_space≈8.7px)
-    - `--geom-endpoint-y-radius-scale 0.8`  (ry=7px at staff_space≈8.7px)
-    - FN-safe / FP=0 threshold window: `--geom-endpoint-ratio-threshold` in **[0.035, 0.042]** (example: 0.04)
-    - Artifacts: `logs/phase4b_endpoint_ratio/20251220_page3_rx1_ry7_thr0p04`
-- **Note (superseded focus)**: Pixel ink-density heuristics remain available, but page_3 correctness was achieved via geometry-based `homr` note-context; threshold tuning is deferred until a general, FN-safe rule is established.
+### Phase 5a — FN Attribution (Next Actions)
+**Goal**: Create FN-only partial GT for a limited page set, then attribute each FN to an upstream cause.
 
-## Remaining Work / Next Session Tasks
+1) **Select a limited page set (where FN is observed)**
+- Training (same work): `data/training/images/page_10.png`, `data/training/images/page_15.png`
+- Evaluation2 (new work/publisher): `data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png`, `.../page_004.png`
 
-### High Priority
-1.  **Reproduce `TP=152, FP=2` Baseline**: ✅ **COMPLETE** (2025-12-18)
-    - Confirmed by running `experiments/fp_reduction/analyze_staff_consistency.py` on `logs/hybrid_results.json` with abs tol=5px and observing **After Row Filter: TP=152, FP=2, FN=0**.
+2) **Create partial GT (FN-only)**
+- For each page, create an FN-only JSON containing **only missing barline bboxes**.
+- Keep FN-only GT separate from any full GT (this is for attribution/recovery, not a full benchmark).
 
-2.  **Identify the concrete 2 remaining FP instances**: ✅ **COMPLETE** (2025-12-18)
-    - Confirmed remaining FPs (after row filter, before Phase 4) on `page_3` hybrid baseline:
-      - raw_idx=139, bbox=[335, 230, 336, 253]
-      - raw_idx=166, bbox=[479, 449, 480, 469]
+3) **Attribute each FN bbox (one of)**
+- **homr miss**: missing from homr baseline detections.
+- **omr-dln miss**: missing from omr-dln predictions.
+- **hybrid integration loss**: present in a detector output but absent from hybrid predictions (consensus rule).
+- **row/context filter removal**: present in hybrid predictions but removed by row filtering or later filters.
 
-3.  **Geometry notehead(+stems) context filter implemented & confirmed**: ✅ **COMPLETE** (2025-12-18)
-    - Implemented in `experiments/fp_reduction/analyze_staff_consistency.py`.
-    - Confirmed on `page_3` with `--enable-geom-notehead-filter --geom-notehead-mode page3_known_fp` achieving **TP=152, FP=0, FN=0** (page_3 only).
+**Deliverable**: per-page FN attribution table (one row per FN bbox) linking to visual overlays and intermediate JSONs.
 
-4.  **Tune Note Head & Pixel Filters**: ⚠️ **Superseded / Deferred** (as of 2025-12-18)
-    - The original pixel-threshold tuning plan no longer blocks page_3 correctness (FP=0 achieved via geometry note-context).
-    - Do not resume threshold tuning until a general, FN-safe geometry rule is established (Phase 4b).
+### Phase 5b — FN Recovery Strategies (After Attribution)
+**Goal**: Recover FN per category while preserving Phase 4 FP guarantees.
 
-5.  **Advanced Context Filters (Fallback Plan)**: ⚠️ **Superseded / Deferred** (as of 2025-12-18)
-    - High-res pixel analysis is no longer the immediate next step for page_3 correctness.
-    - Keep as a fallback only if Phase 4b generalization cannot be made FN-safe using homr semantic outputs.
+- **homr miss**: homr parameter tuning / SR enablement, controlled preprocessing variants, conservative detector fallback/union.
+- **omr-dln miss**: confidence/SR tuning, conservative fallback detector for sparse layouts, model swap only if unavoidable.
+- **hybrid integration loss**: revise consensus gating and matching robustness (coordinate representation / near-match handling).
+- **row/context filter removal**: conditional bypass/relaxation tied to FN-only GT evidence; avoid global loosening.
 
-### Low Priority
-6.  **Generalization Testing (Page 10, 15)**:
-    - After Phase 4b establishes a general rule that keeps **FN=0** on `page_3`, apply it to other pages and record regressions.
+### Phase 5c — Verification Strategy
+**Goal**: Verify “FN recovered without FP regression” without requiring full GT on every dataset.
 
-7.  **Documentation & Deployment**:
-    - Finalize the recommended pipeline configuration (after Phase 4b general rule is stable).
-    - Create a master script `run_full_evaluation.py` that chains Hybrid Pipeline -> Geometric Filter -> (Optional) Note-Context Filter.
+- **Primary (FN-only GT)**: count FN-only GT boxes matched by final predictions on the selected pages.
+- **Hard regression guard**: keep `page_3` as a full-GT regression test and require **TP=152, FP=0, FN=0** to remain true.
+- **Qualitative guard (no GT pages)**: overlays must show no obvious new stem-like FPs in dense note regions.
+
+### GT Tooling (Planning Reference; Do Not Execute Here)
+**Existing page_3 GT workflow (reusable for FN-only GT)**
+- Manual annotation: `tools/coordinate_annotator.py` → draft JSON (dict records with `barline_location`).
+- Promote + ordering: draft → `raw_boxes.json`, then `tools/sort_measures.py` → `boxes_sorted.json`.
+- Visual verification: `tools/render_barline_boxes_overlay.py --base <page.png> --boxes <boxes_sorted.json> --output <overlay.png>`.
+
+**FN-only partial GT using the same workflow**
+- Annotate **only missing barlines** into a page-specific draft JSON.
+- Optionally generate `boxes_sorted.json` for consistent ordering (treat `measure_number` as an “FN id” if convenient).
+- Verify via overlay renders before using it for attribution/recovery checks.
 
 ---
-## Next Session Focus: Generalization without TP loss (Phase 4b)
+## Completed Phases (Short Summary)
 
-### Primary Investigation (must keep FN=0 on page_3)
-1. **Determine why generic geometry modes caused TP loss (FNs) on page_3**
-   - Reproduce the failure mode (e.g., `--geom-notehead-mode endpoint_overlap_experimental`) and identify exactly which TPs are being rejected.
-   - For rejected TPs, record the geometric conditions that triggered rejection (overlap location, mask density, proximity, etc.).
+### Phase 3 ✅ COMPLETE (Row-Consistency Filter)
+- Confirmed baseline on `page_3` hybrid detections: **TP=152, FP=2, FN=0**.
+- Durable details: `docs/DEVELOPMENT_LOG.md`, `docs/fp_reduction/FINAL_SUMMARY.md`.
 
-2. **Design a safer general rule (or gating strategy)**
-   - Goal: preserve **TP=152, FN=0** on `page_3` while still removing stem-like artifacts.
-   - Expected output: a revised geometry rule that is explainable and debug-friendly (with overlays and per-rejection reasons).
-
-### Secondary (only after page_3 is FN-safe)
-3. **Generalize to additional pages**
-   - Apply the revised rule to Page 10 and Page 15 and record metrics / regressions.
-
-### Success Criteria (explicit)
-- Must keep **FN=0** on `page_3` (no TP drop) in the generalized mode.
-- Should not introduce new FNs on other pages; FP reduction is secondary until safety is proven.
-
-## Key Artifacts & Locations
-- **Main Filter Script**: `experiments/fp_reduction/analyze_staff_consistency.py`
-- **Correct Image for Analysis**: `data/evaluation/images/page_3.png`
-
-### Data Notes
--   **Evaluation Images** (`data/evaluation/images/`): Low Res (~600-800px width). Use these for `hybrid_results.json` coordinates.
--   **Training Images** (`data/training/images/`): High Res (~2500-3500px width). Use for high-quality visualization or deep learning training.
+### Phase 4 ✅ COMPLETE (FP Reduction)
+- Confirmed `page_3`: **TP=152, FP=0, FN=0**.
+- Cross-dataset review: geometry rule is conservative and **does not introduce new FNs**; FN is treated as upstream.
+- Durable details and commands: `docs/DEVELOPMENT_LOG.md`.
 
 ---
-## Clarification / Update: Baseline Clarification (2025-12-18)
+## Historical / Superseded Notes (Kept for Context)
 
-- The historically best documented result (**TP=152, FP=2, FN=0**) is believed to originate from a **HYBRID detector setup** (e.g., combining multiple detector outputs such as `homr` + `omr-dln` + `sr`, rather than `homr+sr` alone).
-- There is **uncertainty** about whether this baseline is reproducible using **`homr+sr` only**.
-- Therefore, reproducing the baseline must begin by **confirming the exact detector inputs / composition** that produced the `TP=152, FP=2, FN=0` metrics (which detector outputs were included, and how they were combined).
-
----
-## Clarification / Update: Note Head Context Clarification (2025-12-18)
-
-- **Original intended design (intent)**:
-  - Filter false barline detections using **geometric interaction** between **barlines** and **notehead detections** (barline ↔ notehead collision), where noteheads are produced by an OMR model (e.g., `homr`).
-- **Current implemented approach (implementation)**:
-  - A **pixel ink-density heuristic** (“note head collision” via ink density at bbox ends) implemented in `experiments/fp_reduction/analyze_staff_consistency.py` (e.g., `--max-end-ink-density` / `--min-bbox-ink-density`).
-- This **implementation-vs-intent mismatch** must be reviewed and resolved **before** tuning thresholds, to avoid optimizing the wrong mechanism.
-
----
-## Clarification / Update: Updated Immediate Plan (2025-12-18)
-
-1. **Re-document and reproduce the true baseline** (including the detector composition that produced TP=152, FP=2, FN=0).
-2. **Identify the concrete 2 remaining FP instances** (IDs / coordinates / references) that remain after the true baseline pipeline.
-3. **Re-evaluate note head context design** (geometry-based using notehead detections vs pixel-based heuristics) *before* any threshold tuning.
-
----
-## Clarification / Update: Note Head Context Design Decision (2025-12-18)
-
-- Based on inspection of the two remaining FP instances on `page_3` (both visually consistent with **note stems / note components**), the recommended direction is to implement a **geometry-based notehead context filter**.
-- This should **not** be “notehead-only collision”; it should use `homr` symbol context that includes stems (preferably **`notehead_with_stems`** mask/geometry) to avoid missing cases where the notehead mask alone is sparse.
-- Threshold tuning remains explicitly out of scope until after this geometry-vs-pixel design is implemented and validated.
-
----
-## Clarification / Update: Geometry Notehead(+Stems) Filter Implemented (page_3 confirmed) (2025-12-18)
-
-- Implemented a geometry-based note context filter in `experiments/fp_reduction/analyze_staff_consistency.py` that uses homr note-related masks (notehead + stems/rest) aligned to the evaluation image.
-- Confirmed on `page_3` (hybrid detections → row filter with abs tol=5px): **TP=152, FP=0, FN=0** when enabling `--enable-geom-notehead-filter --geom-notehead-mode page3_known_fp`.
-- Design rationale: uses explicit homr semantic context (notehead/stem region) rather than relying on pixel-only ink-density heuristics; kept conservative to preserve FN=0 baseline while removing the two known stubborn FPs.
-
----
-## Clarification / Update: Documentation Consolidation Completed Elsewhere (2025-12-18)
-
-- Confirmed Phase 4 (page_3) results and usage notes have been migrated into long-lived docs (`docs/DEVELOPMENT_LOG.md`, repo root `README.md`, and `docs/ENVIRONMENTS.md`).
-- This file (`docs/NEXT_SESSION_NOTES.md`) is updated here only to keep the next-session plan accurate; it is not the durable source of truth for the Phase 4 milestone record.
+- Phase 4b “generalization without TP loss” planning is superseded by Phase 5 and kept only as context.
+- Known-unsafe (historical lesson): “any overlap” hard rejection with expansive/combined masks can cause massive FN; do not revive.
+- Hybrid-baseline provenance note: treat hybrid detector composition and matching assumptions as explicit variables when attributing FN upstream.

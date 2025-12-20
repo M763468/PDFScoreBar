@@ -383,7 +383,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--json", required=True)
     parser.add_argument("--image", required=True)
-    parser.add_argument("--gt", required=True)
+    parser.add_argument("--gt", default=None, help="Optional: ground truth JSON for metric computation.")
     parser.add_argument("--output", required=True)
     parser.add_argument("--cluster-max-dist", type=float, default=25.0)
     parser.add_argument("--min-row-count", type=int, default=3)
@@ -476,8 +476,12 @@ def main():
     
     # 1. Load Data
     preds_list = load_json(args.json)
-    gt_boxes = load_gt(args.gt)
-    print(f"Loaded {len(preds_list)} barlines, {len(gt_boxes)} GT.")
+    gt_boxes = None
+    if args.gt:
+        gt_boxes = load_gt(args.gt)
+        print(f"Loaded {len(preds_list)} barlines, {len(gt_boxes)} GT.")
+    else:
+        print(f"Loaded {len(preds_list)} barlines. (No GT provided)")
 
     # 2. Cluster Barlines by Y-position
     y_centers = np.array([(box[1] + box[3]) / 2 for box in preds_list])
@@ -672,19 +676,31 @@ def main():
 
     final_preds = pixel_filtered_preds
     
-    old_metrics = evaluate_detections(preds_list, gt_boxes)
-    # The row_filtered_preds are the ones after step 3 in my mental model
-    row_filter_metrics = evaluate_detections(row_filtered_preds, gt_boxes) 
-    geom_filter_metrics = evaluate_detections(row_then_geom_preds, gt_boxes)
-    # new_metrics should be the final_preds
-    new_metrics = evaluate_detections(final_preds, gt_boxes)
+    old_metrics = None
+    row_filter_metrics = None
+    geom_filter_metrics = None
+    new_metrics = None
+    if gt_boxes is not None:
+        old_metrics = evaluate_detections(preds_list, gt_boxes)
+        # The row_filtered_preds are the ones after step 3 in my mental model
+        row_filter_metrics = evaluate_detections(row_filtered_preds, gt_boxes)
+        geom_filter_metrics = evaluate_detections(row_then_geom_preds, gt_boxes)
+        # new_metrics should be the final_preds
+        new_metrics = evaluate_detections(final_preds, gt_boxes)
     
     print("\n--- Results ---")
-    print(f"Original (raw detections): TP={old_metrics['TP']}, FP={old_metrics['FP']}, FN={old_metrics['FN']}")
-    print(f"After Row Filter: TP={row_filter_metrics['TP']}, FP={row_filter_metrics['FP']}, FN={row_filter_metrics['FN']}")
-    if args.enable_geom_notehead_filter:
-        print(f"After Geom Note Context: TP={geom_filter_metrics['TP']}, FP={geom_filter_metrics['FP']}, FN={geom_filter_metrics['FN']}")
-    print(f"Final Filtered (Pixel Context): TP={new_metrics['TP']}, FP={new_metrics['FP']}, FN={new_metrics['FN']}")
+    if old_metrics is not None:
+        print(f"Original (raw detections): TP={old_metrics['TP']}, FP={old_metrics['FP']}, FN={old_metrics['FN']}")
+        print(f"After Row Filter: TP={row_filter_metrics['TP']}, FP={row_filter_metrics['FP']}, FN={row_filter_metrics['FN']}")
+        if args.enable_geom_notehead_filter:
+            print(f"After Geom Note Context: TP={geom_filter_metrics['TP']}, FP={geom_filter_metrics['FP']}, FN={geom_filter_metrics['FN']}")
+        print(f"Final Filtered (Pixel Context): TP={new_metrics['TP']}, FP={new_metrics['FP']}, FN={new_metrics['FN']}")
+    else:
+        print(f"Original (raw detections): count={len(preds_list)}")
+        print(f"After Row Filter: count={len(row_filtered_preds)}")
+        if args.enable_geom_notehead_filter:
+            print(f"After Geom Note Context: count={len(row_then_geom_preds)}")
+        print(f"Final Filtered (Pixel Context): count={len(final_preds)}")
     
     # Save metrics
     res = {
@@ -704,19 +720,83 @@ def main():
             "MAX_END_INK_DENSITY": args.max_end_ink_density,
         },
         "original": old_metrics,
-        "row_filtered": row_filter_metrics, # New entry
+        "row_filtered": row_filter_metrics,
         "geom_filtered": geom_filter_metrics if args.enable_geom_notehead_filter else None,
         "geom_debug": geom_debug,
-        "filtered": new_metrics, # This is now after pixel filters
-        "filtered_counts": { # New entry
+        "filtered": new_metrics,
+        "filtered_counts": {
             "by_min_ink_density": filtered_by_min_ink_density,
             "by_max_end_ink_density": filtered_by_max_end_ink_density,
+        },
+        "counts": {
+            "raw": len(preds_list),
+            "after_row_filter": len(row_filtered_preds),
+            "after_geom_filter": len(row_then_geom_preds),
+            "final_after_pixel_filters": len(final_preds),
         },
         "rows_found": len(rows),
         "noise_count": len(noise_indices)
     }
     with open(os.path.join(args.output, "metrics.json"), 'w') as f:
         json.dump(res, f, indent=2)
+
+    # Cross-validation helper: write per-candidate decisions for ratio mode.
+    if args.enable_geom_notehead_filter and geom_debug is not None:
+        scores = geom_debug.get("scores")
+        rejected = geom_debug.get("rejected", [])
+        if isinstance(scores, list):
+            rejected_indices = {int(item.get("index")) for item in rejected if "index" in item}
+            rows_out = []
+            for s in scores:
+                idx = int(s.get("index"))
+                decision = "removed" if idx in rejected_indices else "kept"
+                bbox = s.get("bbox", [])
+                ratio = s.get("endpoint_overlap_ratio", None)
+                rows_out.append(
+                    {
+                        "candidate_id": idx,
+                        "bbox": bbox,
+                        "endpoint_overlap_ratio": ratio,
+                        "decision": decision,
+                        "notehead_pixels_top": s.get("notehead_pixels_top"),
+                        "notehead_pixels_bottom": s.get("notehead_pixels_bottom"),
+                        "area_top": s.get("area_top"),
+                        "area_bottom": s.get("area_bottom"),
+                        "endpoint_radius_px": s.get("endpoint_radius_px"),
+                    }
+                )
+
+            # JSONL for easy grep/diff
+            jsonl_path = os.path.join(args.output, "candidates_geom_ratio.jsonl")
+            with open(jsonl_path, "w") as fh:
+                for row in rows_out:
+                    fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+            # CSV for spreadsheet inspection
+            try:
+                import csv
+
+                csv_path = os.path.join(args.output, "candidates_geom_ratio.csv")
+                with open(csv_path, "w", newline="") as fh:
+                    writer = csv.DictWriter(
+                        fh,
+                        fieldnames=[
+                            "candidate_id",
+                            "bbox",
+                            "endpoint_overlap_ratio",
+                            "decision",
+                            "notehead_pixels_top",
+                            "notehead_pixels_bottom",
+                            "area_top",
+                            "area_bottom",
+                            "endpoint_radius_px",
+                        ],
+                    )
+                    writer.writeheader()
+                    for row in rows_out:
+                        writer.writerow(row)
+            except Exception as e:
+                print(f"Warning: failed to write candidates CSV: {e}")
 
     # Optional overlay for geom notehead filter debugging.
     if args.enable_geom_notehead_filter and geom_debug is not None and geom_notehead_with_stems is not None:
@@ -746,6 +826,21 @@ def main():
                     )
 
                 cv2.imwrite(os.path.join(args.output, "geom_note_context_overlay.png"), overlay)
+
+                # Cross-validation overlay: kept vs removed (ratio mode only).
+                scores = geom_debug.get("scores")
+                if isinstance(scores, list):
+                    kept_removed = base.copy()
+                    m = geom_notehead_with_stems > 0
+                    kept_removed[m] = (kept_removed[m] * (1 - alpha) + cyan[m] * alpha).astype(np.uint8)
+
+                    rejected_indices = {int(item.get("index")) for item in geom_debug.get("rejected", []) if "index" in item}
+                    for s in scores:
+                        idx = int(s.get("index"))
+                        x1, y1, x2, y2 = map(int, s.get("bbox"))
+                        color = (0, 0, 255) if idx in rejected_indices else (0, 255, 0)
+                        cv2.rectangle(kept_removed, (x1, y1), (x2, y2), color, 2)
+                    cv2.imwrite(os.path.join(args.output, "geom_kept_removed_overlay.png"), kept_removed)
         except Exception as e:
             print(f"Warning: failed to write geom overlay: {e}")
     

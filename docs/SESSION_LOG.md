@@ -337,3 +337,85 @@ Artifact directories:
 - Assumption: It is acceptable (within “ratio-based endpoint overlap”) to use **different x/y half-sizes** for the endpoint regions, as long as the overlap ratio formula is exactly:
   - `(notehead pixels in top endpoint region + notehead pixels in bottom endpoint region) / (area(top)+area(bottom))`
 - This is confirmed **page_3-only** so far; cross-page validation remains pending.
+
+---
+## 2025-12-20 Consolidation + Cross-Dataset Validation (NO GT; Visual Inspection Required)
+
+### Phase A) Documentation consolidation (durable)
+- Appended a durable consolidation entry to `docs/DEVELOPMENT_LOG.md` (Phase 4a + Phase 4b):
+  - Included the exact ratio definition, confirmed page_3 parameters, and reproducible commands.
+  - Labeled “Confirmed (page_3)” vs “Pending cross-page validation”.
+
+### Phase B) Cross-dataset validation (NO GT; exploratory)
+**Important**: These runs have **no GT**. Any interpretation must be based on the generated overlays + per-candidate logs (visual inspection).
+
+#### Rule under test (fixed; not redesigned)
+- `endpoint_ratio_overlap` geometry mode
+- **notehead-only** mask
+- anisotropic endpoint regions (staff-relative)
+- Threshold in confirmed page_3 safe window: `0.035–0.042` (ran `0.035`, `0.04`, `0.042`)
+
+#### B1) Training pages (same work, different pages)
+
+##### Page 10
+- Input image: `data/training/images/page_10.png`
+- Hybrid detections used (existing artifact): `logs/hybrid_generalization/page_10_hybrid_test/hybrid_predictions.json` (count=128)
+  - Note: regenerating hybrid with current `tools/generate_hybrid_results.py` on-host produced 0 preds; to avoid breaking provenance, I used the existing hybrid artifact for this visual cross-check.
+- Outputs (visual-inspection artifacts):
+  - `logs/phase4b_cross_validation/training/page_10/`
+  - `logs/phase4b_cross_validation/training/page_10/run_thr0p035/`
+  - `logs/phase4b_cross_validation/training/page_10/run_thr0p042/`
+- Observed (quantitative-only; still needs visual inspection):
+  - At all thresholds in 0.035–0.042: geometry removed **0** candidates.
+  - Endpoint ratio distribution (thr=0.04 run): max≈0.018 < 0.035 ⇒ rule did not trigger.
+
+##### Page 15
+- Input image: `data/training/images/page_15.png`
+- Hybrid detections used (existing artifact): `logs/hybrid_generalization/page_15_hybrid_test/hybrid_predictions.json` (count=90)
+- Outputs:
+  - `logs/phase4b_cross_validation/training/page_15/`
+  - `logs/phase4b_cross_validation/training/page_15/run_thr0p035/`
+  - `logs/phase4b_cross_validation/training/page_15/run_thr0p042/`
+- Observed (quantitative-only; still needs visual inspection):
+  - At all thresholds in 0.035–0.042: geometry removed **0** candidates.
+  - Endpoint ratio distribution (thr=0.04 run): max≈0.024 < 0.035 ⇒ rule did not trigger.
+
+#### B2) New publisher/work (Prokofiev, Symphony No.1, Viola part)
+
+##### Page selection rationale
+- Selected `page_001` (first page) and `page_004` (mid-page) as representative samples.
+
+##### Hybrid pipeline runs (docker / sr_eval_gpu)
+- `bash tools/run_hybrid_pipeline.sh --image data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png --run-id phase4b_cv_prokofiev_va_page_001`
+  - Hybrid preds count reported by pipeline: 74
+  - Source artifact: `logs/hybrid_generalization/phase4b_cv_prokofiev_va_page_001/hybrid_predictions.json`
+- `bash tools/run_hybrid_pipeline.sh --image data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png --run-id phase4b_cv_prokofiev_va_page_004`
+  - Hybrid preds count reported by pipeline: 103
+  - Source artifact: `logs/hybrid_generalization/phase4b_cv_prokofiev_va_page_004/hybrid_predictions.json`
+
+##### Ratio-rule evaluation runs (NO GT)
+- Outputs:
+  - `logs/phase4b_cross_validation/evaluation2_prokofiev_va/page_001/`
+  - `logs/phase4b_cross_validation/evaluation2_prokofiev_va/page_001/run_thr0p035/`
+  - `logs/phase4b_cross_validation/evaluation2_prokofiev_va/page_001/run_thr0p042/`
+  - `logs/phase4b_cross_validation/evaluation2_prokofiev_va/page_004/`
+  - `logs/phase4b_cross_validation/evaluation2_prokofiev_va/page_004/run_thr0p035/`
+  - `logs/phase4b_cross_validation/evaluation2_prokofiev_va/page_004/run_thr0p042/`
+- Observed (quantitative-only; still needs visual inspection):
+  - At all thresholds in 0.035–0.042: geometry removed **0** candidates on both pages.
+  - Endpoint ratio maxima:
+    - page_001: max≈0.032 < 0.035
+    - page_004: max≈0.027 < 0.035
+
+#### Visual inspection checklist (for reviewer)
+For each output directory above:
+- `geom_kept_removed_overlay.png`: verify whether any obvious stem-like false positives exist among the kept (green) boxes.
+- `candidates_geom_ratio.csv` / `candidates_geom_ratio.jsonl`: inspect highest `endpoint_overlap_ratio` candidates and check if they correspond to suspicious detections.
+
+#### Interpretation (exploratory; not a success/failure claim)
+- With the **page_3-confirmed threshold window**, the ratio-rule appears **very conservative** on the tested non-page_3 datasets (it did not trigger at all).
+- This could mean:
+  - hybrid detections are already clean on these pages, or
+  - the ratio signal is systematically lower on these images and needs re-scaling (not attempted here), or
+  - notehead masks / alignment differ such that endpoint regions rarely contain notehead pixels.
+- Next step depends on visual review: if obvious FPs remain in green, we may need to revisit scaling/gating (Phase 4b), but **no redesign** was done in this session.

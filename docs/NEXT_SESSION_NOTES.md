@@ -32,6 +32,28 @@ This phase aims to recover FNs (especially the "ambiguous" majority) without reg
 - **Risks**: High risk of introducing FPs.
 - **Mitigation**: Rely on the **Phase 4 filters** (proven robust) to clean up the increased candidate pool.
 
+#### B1.1 Confirmed Result: homr min-height relaxation (Tested & Rejected — Ineffective)
+- **Result**: Relaxing `--barline-min-height-factor` (1.0 → 0.8 → 0.6) recovered **zero** additional FN candidates across FN-only GT pages.
+- **FN recovery**: 0 on `page_10`, `page_15`, `Prokofiev_001`, `Prokofiev_004`.
+- **FP risk**: High (significant FP increases in raw homr output).
+- **Regression**: Raw-level regression observed on `page_3` at factor=0.6.
+- **Clarification**: The page_3 regression refers to **raw homr output**, not the final Phase 4 pipeline; Phase 4 FP=0 safety is **not** contradicted.
+
+#### B1.1 Confirmed Result: omr-dln sweep + raw union (Measurement only)
+- **omr-dln conf sweep**: FN-only recovery is flat at **22/64** for `conf=0.1..0.5`; page_3 raw FP stays ~**17–20**.
+- **raw union (homr ∪ omr-dln)**: FN-only recovery improves to **36/64** (FN total **28**), but page_3 raw FP rises to ~**47–50**.
+- **Interpretation**: conf tuning alone is not promising; raw union boosts recall but introduces raw FP risk. No hybrid integration yet.
+
+#### Remaining B1.1 Recall Experiments (Planned)
+- [ ] **omr-dln** recall behavior (confidence threshold sweeps; raw outputs).
+- [ ] **Detector union**: raw `homr ∪ omr-dln` (pre-hybrid).
+- [ ] **Detector union (SR)**: `homr+SR ∪ omr-dln` (if feasible).
+- [ ] **Comparison**: recall gain vs FP risk across homr, omr-dln, and unions.
+
+#### B1.1 Planning Note (Parameter Surface)
+- **Question**: Are there other homr parameters affecting barline recall besides `--barline-min-height-factor`?
+- **Action item**: Audit homr barline-related parameters (config / CLI / code) and produce a short reference table later (parameter → effect → risk).
+
 ### B2) Hybrid integration fixes (Secondary)
 **Hypothesis**: The intersection-heavy logic of the current hybrid merger discards valid single-model detections.
 - **What to test**:

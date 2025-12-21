@@ -116,3 +116,15 @@ This phase aims to recover FNs (especially the "ambiguous" majority) without reg
 - Phase 4b planning is superseded by Phase 5.
 - "Any overlap" masks are forbidden (unsafe).
 - Previous experiments are archived in `experiments/`.
+
+### Phase 5b status update (analysis)
+- **Phase4 filter verification**: pixel ink-density filter is effectively disabled in the canonical Phase4 command (`--min-bbox-ink-density 0.0`, `--max-end-ink-density 1.0`); FP=0 is achieved by **row filter + geom note-context**.
+- **FN trace breakdown (64 FN-only targets)**: detector-miss **35**, merge-loss **29**, row/notehead loss **0**.
+
+**Open problems**:
+- Design a **mid-strict merge** (between hybrid merge and raw union) to rescue the 29 merge-loss FN without reintroducing unsafe FP.
+- Investigate **detector-miss FN (35/64)** in a later phase; merge tuning cannot recover these.
+
+**Next-session goals**:
+- Specify and evaluate a mid-strict merge candidate (still safe vs Phase4) using existing artifacts.
+- Plan a detector-miss investigation track (what additional detectors or cues are needed), without executing yet.

@@ -224,3 +224,20 @@ Interpretation: generalized ratio filter did not preserve page_3 baseline (TP=15
   - `.../classified/analysis_report.md`
 - Top labels overall: tp_same_position=1393, margin_artifact=128, text_region=78 (others smaller).
 - Per-page top labels are dominated by tp_same_position (duplicates/near matches).
+
+## Phase 5b analysis: Phase4 filter verification + FN trace breakdown (2025-12-22) 
+- Verified Phase4 filter usage (code + log): 
+  - experiments/fp_reduction/analyze_staff_consistency.py always executes pixel context filtering, but Phase4 reproducible commands set `--min-bbox-ink-density 0.0` and `--max-end-ink-density 1.0`, which is effectively a no-op (accept all boxes). 
+  - Phase4 FP=0 on page_3 is therefore attributable to **row filter + geometry note-context filter** (page3_known_fp / endpoint_ratio), not pixel ink-density heuristics. 
+  - Evidence: docs/DEVELOPMENT_LOG.md Phase 4a command block (2025-12-18/20) uses `--min-bbox-ink-density 0.0 --max-end-ink-density 1.0` and explicitly describes pixel-only heuristics as secondary/experimental. 
+  
+- FN-only GT trace categorization (from `logs/phase5b/trace_stage_analysis/20251221T222504/fn_trace_table.csv`): 
+  - **Detector-miss (homr+omr both miss): 35/64** 
+  - **Merge-loss (detected by homr or omr, lost at merge): 29/64** 
+  - **Row/notehead loss: 0/64** (no FN-only targets were first lost after merge) 
+  - Per page: 
+    - page_10: detector-miss 9, merge-loss 15 
+    - page_15: detector-miss 15, merge-loss 7 
+    - page_001: detector-miss 1, merge-loss 5 
+    - page_004: detector-miss 10, merge-loss 2 
+  - Key takeaway: merge is the dominant **pipeline** bottleneck for detector-hit FN, but **detector-miss (35/64)** is a separate limitation not solvable by merge tuning alone.

@@ -77,6 +77,9 @@ This phase aims to recover FNs (especially the "ambiguous" majority) without reg
 - Implemented a page-agnostic endpoint_ratio notehead filter for evaluation only; outputs and overlays are under `logs/phase5b/notehead_geom_eval/20251221T141710/`.
 - Union→(row + generalized geom) results: `page_3` **TP=151, FP=24, FN=1**; FN-only recovery **33/64** (see overlays for review).
 
+**Phase5b2 hygiene step (analysis only):**
+- Overlay semantics normalized, margin-like unmatched-kept classified, and stage counts verified under `logs/phase5b/notehead_geom_eval/20251221T141710/analysis_20251221T145756/`.
+
 ### B3) Pipeline-level gating
 **Hypothesis**: Different pages (dense vs sparse, clean vs noisy) may require different pipelines.
 - **What to change**:

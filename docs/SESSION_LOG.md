@@ -175,3 +175,18 @@ Interpretation: union inputs do not preserve FP=0 after Phase4 on page_3 (FP=26)
 | FN-only total | 33 | n/a | 31 | n/a | n/a |
 
 Interpretation: generalized ratio filter did not preserve page_3 baseline (TP=151, FP=24, FN=1) and FN-only recovery dropped to 33/64. Requires visual review of overlays.
+
+## Phase 5b2 analysis/visualization hygiene (2025-12-21)
+
+- Analysis folder: `logs/phase5b/notehead_geom_eval/20251221T141710/analysis_20251221T145756/`
+- Overlays README: `logs/phase5b/notehead_geom_eval/20251221T141710/analysis_20251221T145756/overlays/README.md`
+- Stage counts: `logs/phase5b/notehead_geom_eval/20251221T141710/analysis_20251221T145756/stage_counts.md`
+- Margin breakdown: `logs/phase5b/notehead_geom_eval/20251221T141710/analysis_20251221T145756/fp_margin_breakdown.md`
+
+| Page | union_raw | row_kept | row_rejected | geom_kept | geom_rejected | matched | unmatched | fn |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| page_3 | 504 | 480 | 24 | 460 | 20 | 151 | 24 | 1 |
+| page_10 | 548 | 481 | 67 | 481 | 0 | 15 | 441 | 9 |
+| page_15 | 384 | 344 | 40 | 344 | 0 | 11 | 319 | 11 |
+| page_001 | 257 | 231 | 26 | 229 | 2 | 4 | 220 | 2 |
+| page_004 | 370 | 321 | 49 | 321 | 0 | 3 | 307 | 9 |

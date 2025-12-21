@@ -44,6 +44,11 @@ This phase aims to recover FNs (especially the "ambiguous" majority) without reg
 - **raw union (homr ∪ omr-dln)**: FN-only recovery improves to **36/64** (FN total **28**), but page_3 raw FP rises to ~**47–50**.
 - **Interpretation**: conf tuning alone is not promising; raw union boosts recall but introduces raw FP risk. No hybrid integration yet.
 
+#### B1.1 vs B2 Clarification (Planning)
+- The completed **raw union** measurement is a detector-level check (B1.1) and also informs B2 because B2 considers union-like merge logic.
+- B2’s core question is different: whether **hybrid merge logic** causes integration-loss FNs and can be fixed.
+- Next step is **not** “adopt union,” but to **measure union outputs after Phase 4 filters** to see if FP=0 is preserved and how much FN recovery remains.
+
 #### Remaining B1.1 Recall Experiments (Planned)
 - [ ] **omr-dln** recall behavior (confidence threshold sweeps; raw outputs).
 - [ ] **Detector union**: raw `homr ∪ omr-dln` (pre-hybrid).
@@ -61,6 +66,16 @@ This phase aims to recover FNs (especially the "ambiguous" majority) without reg
   - Tune IoU thresholds and coordinate rounding for matching.
 - **Expected Outcome**: Recovery of the ~8% "hybrid_integration_loss" FNs.
 - **Risks**: Low. Cheap to implement.
+- **Immediate measurement**: Evaluate union outputs **after Phase 4 filters** to verify FP=0 safety and net FN recovery (no pipeline changes yet).
+
+**Recent check (measurement only):**
+- Baseline Phase 4 on `page_3`: **TP=152, FP=0, FN=0** (reproduced).
+- Union→Phase4 on `page_3`: **TP=152, FP=26, FN=0** → not safe under current Phase 4 filters.
+- FN-only pages post-filter recovery: **34/64** (row filter only; geom notehead disabled outside `page_3`).
+
+**Phase5-only generalized geom notehead eval (union inputs):**
+- Implemented a page-agnostic endpoint_ratio notehead filter for evaluation only; outputs and overlays are under `logs/phase5b/notehead_geom_eval/20251221T141710/`.
+- Union→(row + generalized geom) results: `page_3` **TP=151, FP=24, FN=1**; FN-only recovery **33/64** (see overlays for review).
 
 ### B3) Pipeline-level gating
 **Hypothesis**: Different pages (dense vs sparse, clean vs noisy) may require different pipelines.

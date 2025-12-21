@@ -115,3 +115,63 @@
 | omr-dln conf=0.5 | 7 | 7 | 5 | 3 | 42 | 17 |  |
 | union(homr, omr-dln) conf=0.5 | 16 | 12 | 5 | 3 | 28 | 47 |  |
 - Consulted `docs/ENVIRONMENTS.md` for environment and logs/ conventions before cleanup.
+
+## Phase 5b B2 union→Phase4 filter check (2025-12-21)
+
+- Consulted `docs/ENVIRONMENTS.md` before running filters.
+- Run root: `logs/phase5b/b2_phase4_filter_check/20251221T132439/`
+- Union source inputs:
+  - homr raw: `logs/phase5b_homr_recall/homr_factor_1p0/<page>/*_detections.json`
+  - omr-dln raw: `logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5/<page>/predictions.json`
+  - union builder: `experiments/phase5b_b2_phase4_filter_check/build_union_inputs.py`
+- Phase4 filter entry point: `experiments/fp_reduction/analyze_staff_consistency.py`
+- Baseline (page_3):
+  - `python experiments/fp_reduction/analyze_staff_consistency.py --json logs/hybrid_results.json --image data/evaluation/images/page_3.png --gt data/evaluation/annotations/page_003/boxes_sorted.json --output logs/phase5b/b2_phase4_filter_check/20251221T132439/baseline_page3 --no-use-ratio-tolerance --tol-top-px 5 --tol-bottom-px 5 --staff-space 8.7 --enable-geom-notehead-filter --geom-notehead-mode page3_known_fp --homr-context-dir logs/homr_eval_baseline/baseline_verification/page_3`
+  - Note: needed `.venv_pdf` for `cv2`.
+- Union page_3: same command with `--json logs/phase5b/b2_phase4_filter_check/20251221T132439/union_inputs/page_3_union.json` and output `.../union_page3`.
+- Union FN-only pages: row filter only (geom notehead disabled) with `--no-use-ratio-tolerance --tol-top-px 5 --tol-bottom-px 5`, outputs under `.../union_fn_pages/`.
+- Summary table: `logs/phase5b/b2_phase4_filter_check/20251221T132439/summary_table.md`
+- Overlay outputs:
+  - `logs/phase5b/b2_phase4_filter_check/20251221T132439/overlays/page_3_union_phase4_fp.png`
+  - `logs/phase5b/b2_phase4_filter_check/20251221T132439/overlays/page_3_union_phase4_all_with_fp_highlight.png`
+  - `logs/phase5b/b2_phase4_filter_check/20251221T132439/overlays/README.md`
+
+| Variant | page_3 final FP | page_3 TP/FN | FN-only recovery (post-Phase4) | Notes |
+| --- | --- | --- | --- | --- |
+| Baseline Phase4 (page_3) | 0 | 152/0 | n/a | Phase4 repro via analyze_staff_consistency |
+| Union→Phase4 (page_3) | 26 | 152/0 | n/a | union inputs, geom notehead enabled |
+| Union→Phase4 (FN-only pages) | n/a | n/a | 34/64 | geom notehead disabled; row filter only |
+
+Interpretation: union inputs do not preserve FP=0 after Phase4 on page_3 (FP=26). FN-only recovery drops to 34/64 after row filtering.
+
+## Phase 5b generalized geom notehead filter (Phase5-only eval) (2025-12-21)
+
+- Masks located (no new homr runs):
+  - page_3: `logs/phase5b_homr_recall/homr_factor_1p0/page_3/page_3_debug_6_notehead.png`
+  - page_10: `logs/phase5b_homr_recall/homr_factor_1p0/page_10/page_10_debug_6_notehead.png`
+  - page_15: `logs/phase5b_homr_recall/homr_factor_1p0/page_15/page_15_debug_6_notehead.png`
+  - page_001: `logs/phase5b_homr_recall/homr_factor_1p0/page_001/page_001_debug_6_notehead.png`
+  - page_004: `logs/phase5b_homr_recall/homr_factor_1p0/page_004/page_004_debug_6_notehead.png`
+- Union inputs (no detector reruns):
+  - `logs/phase5b/union_inputs/20251221T141710/<page>_union.json`
+  - built from homr `logs/phase5b_homr_recall/homr_factor_1p0/<page>/*_detections.json` + omr-dln `logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5/<page>/predictions.json`
+- Phase5-only script:
+  - `experiments/phase5b_notehead_geom/run_union_notehead_geom_eval.py`
+  - defaults: endpoint_ratio_threshold=0.1, endpoint_radius_scale=0.6, row tol=5px
+- Command:
+  - `python experiments/phase5b_notehead_geom/run_union_notehead_geom_eval.py --run-root logs/phase5b/notehead_geom_eval/20251221T141710 --union-root logs/phase5b/union_inputs/20251221T141710`
+  - Required `.venv_pdf` for cv2.
+- Outputs:
+  - `logs/phase5b/notehead_geom_eval/20251221T141710/summary_table.md`
+  - Overlays: `logs/phase5b/notehead_geom_eval/20251221T141710/overlays/`
+
+| Page | TP | FP | FN | kept | rejected |
+| --- | --- | --- | --- | --- | --- |
+| page_3 | 151 | 24 | 1 | 460 | 20 |
+| page_10 | 15 | 441 | 9 | 481 | 0 |
+| page_15 | 11 | 319 | 11 | 344 | 0 |
+| page_001 | 4 | 220 | 2 | 229 | 2 |
+| page_004 | 3 | 307 | 9 | 321 | 0 |
+| FN-only total | 33 | n/a | 31 | n/a | n/a |
+
+Interpretation: generalized ratio filter did not preserve page_3 baseline (TP=151, FP=24, FN=1) and FN-only recovery dropped to 33/64. Requires visual review of overlays.

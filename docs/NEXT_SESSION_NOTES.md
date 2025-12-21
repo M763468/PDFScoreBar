@@ -1,7 +1,7 @@
 # Next Session Notes
 
-**Last Updated**: 2025-12-21
-**Current Phase**: Phase 5b: FN Recovery (Planning: Detailed)
+**Last Updated**: 2025-12-22
+**Current Phase**: Phase 5b: FN Recovery (Strategy 1 Confirmed)
 
 ---
 ### Note for AI Assistant (Operational Rule)
@@ -18,17 +18,12 @@
 
 ---
 
-## Phase 5b — FN Recovery Strategies (Planning: Detailed)
+## Phase 5b — FN Recovery Strategies (In Progress)
 
 This phase aims to recover FNs (especially the "ambiguous" majority) without regressing the confirmed `FP=0` baseline on `page_3`.
 
 ### B1) Improve candidate generation / detector recall (Primary)
 **Hypothesis**: Lowering confidence thresholds or creating a naive union of detectors will recover "ambiguous" FNs.
-- **What to test**:
-  - **homr**: Relax confidence thresholds for barline candidates. Check internal parameters for thin-line sensitivity.
-  - **omr-dln**: Relax YOLO confidence threshold (`--conf`).
-  - **Detector Union**: Create a union of raw `homr` + `omr-dln` outputs (before hybrid consensus logic) to maximize recall.
-  - **Fallback Generator**: Implement a lightweight classical CV proposer (Hough Transform / Vertical Projection) for "obvious" lines missed by ML.
 - **Risks**: High risk of introducing FPs.
 - **Mitigation**: Rely on the **Phase 4 filters** (proven robust) to clean up the increased candidate pool.
 
@@ -55,10 +50,6 @@ This phase aims to recover FNs (especially the "ambiguous" majority) without reg
 - [ ] **Detector union (SR)**: `homr+SR ∪ omr-dln` (if feasible).
 - [ ] **Comparison**: recall gain vs FP risk across homr, omr-dln, and unions.
 
-#### B1.1 Planning Note (Parameter Surface)
-- **Question**: Are there other homr parameters affecting barline recall besides `--barline-min-height-factor`?
-- **Action item**: Audit homr barline-related parameters (config / CLI / code) and produce a short reference table later (parameter → effect → risk).
-
 ### B2) Hybrid integration fixes (Secondary)
 **Hypothesis**: The intersection-heavy logic of the current hybrid merger discards valid single-model detections.
 - **What to test**:
@@ -67,6 +58,22 @@ This phase aims to recover FNs (especially the "ambiguous" majority) without reg
 - **Expected Outcome**: Recovery of the ~8% "hybrid_integration_loss" FNs.
 - **Risks**: Low. Cheap to implement.
 - **Immediate measurement**: Evaluate union outputs **after Phase 4 filters** to verify FP=0 safety and net FN recovery (no pipeline changes yet).
+
+#### B2.1 Confirmed Union (Strategy 1) Implemented & Evaluated ✅
+- **Description**: A symmetric merge rule. A candidate is kept if it represents a consensus (IoU > 0.5) between **any two** detectors (`baseline`+`sr`, `baseline`+`omr`, or `sr`+`omr`).
+- **Implementation**: Added as a `--merge-strategy` flag to `tools/generate_hybrid_results.py`.
+- **FN Recovery (after Phase 4 row-filter)**:
+  - **Total Recovered: 5 / 29** (17.2%)
+  - `page_10`: Recovered **5** FNs.
+  - `page_15`, `page_001`, `page_004`: Recovered **0** FNs.
+- **FP Regression Guard (`page_3`)**: **PASSED**
+  - The strategy introduced 8 FPs at the merge stage.
+  - The existing Phase 4 filters (row + geom note-context) **successfully removed all 8 FPs**, resulting in a final score of **TP=152, FP=0, FN=0**.
+- **Conclusion**: **"Confirmed Union" is the new baseline merge strategy.** It is safe and provides a modest but real improvement in FN recovery. This supersedes previous implicit baseline merge behavior.
+
+#### **Next Steps (B2)**
+- [ ] **Investigate Row Filter FN on `page_10`**: The row filter incorrectly removed one TP recovered by the new merge. This should be analyzed.
+- [ ] **Design & Evaluate Strategy 2 ("Promiscuous Union")**: If more FN recovery is needed, this is the next logical step. It is expected to be higher-risk than Strategy 1.
 
 **Recent check (measurement only):**
 - Baseline Phase 4 on `page_3`: **TP=152, FP=0, FN=0** (reproduced).
@@ -120,11 +127,3 @@ This phase aims to recover FNs (especially the "ambiguous" majority) without reg
 ### Phase 5b status update (analysis)
 - **Phase4 filter verification**: pixel ink-density filter is effectively disabled in the canonical Phase4 command (`--min-bbox-ink-density 0.0`, `--max-end-ink-density 1.0`); FP=0 is achieved by **row filter + geom note-context**.
 - **FN trace breakdown (64 FN-only targets)**: detector-miss **35**, merge-loss **29**, row/notehead loss **0**.
-
-**Open problems**:
-- Design a **mid-strict merge** (between hybrid merge and raw union) to rescue the 29 merge-loss FN without reintroducing unsafe FP.
-- Investigate **detector-miss FN (35/64)** in a later phase; merge tuning cannot recover these.
-
-**Next-session goals**:
-- Specify and evaluate a mid-strict merge candidate (still safe vs Phase4) using existing artifacts.
-- Plan a detector-miss investigation track (what additional detectors or cues are needed), without executing yet.

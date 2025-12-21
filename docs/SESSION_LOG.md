@@ -46,7 +46,8 @@
 **Conclusion**: FN is fundamentally a detector / candidate-generation problem.
 
 ---
-\n## Session \n- Read README.md, docs/README.md, docs/NEXT_SESSION_NOTES.md. Ready to proceed.
+## Session 
+- Read README.md, docs/README.md, docs/NEXT_SESSION_NOTES.md. Ready to proceed.
 
 ## Phase 5b B1.1 homr recall relaxation (2025-12-21)
 
@@ -80,7 +81,7 @@
   - `logs/phase5b/b1_1/omrdln_sweep/20251221T123707/summary_table.md`
 
 ### Summary table (FN-only recovery + page_3 raw FP)
-| Variant | page_10 TP | page_15 TP | page_001 TP | page_004 TP | FN total | page_3 FP | Notes |
+| Variant | page_10 TP | page_15 TP | page_001 TP | page_004 TP | FN total | page_3 FP | Notes | 
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | omr-dln conf=0.1 | 7 | 7 | 5 | 3 | 42 | 20 |  |
 | union(homr, omr-dln) conf=0.1 | 7 | 7 | 5 | 3 | 42 | 154 |  |
@@ -102,7 +103,7 @@
 ### Correction (union evaluation)
 - Updated union evaluation to use homr `orig_bbox` (matches homr evaluator). Recomputed summary:
 
-| Variant | page_10 TP | page_15 TP | page_001 TP | page_004 TP | FN total | page_3 FP | Notes |
+| Variant | page_10 TP | page_15 TP | page_001 TP | page_004 TP | FN total | page_3 FP | Notes | 
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | omr-dln conf=0.1 | 7 | 7 | 5 | 3 | 42 | 20 |  |
 | union(homr, omr-dln) conf=0.1 | 16 | 12 | 5 | 3 | 28 | 50 |  |
@@ -136,7 +137,7 @@
   - `logs/phase5b/b2_phase4_filter_check/20251221T132439/overlays/page_3_union_phase4_all_with_fp_highlight.png`
   - `logs/phase5b/b2_phase4_filter_check/20251221T132439/overlays/README.md`
 
-| Variant | page_3 final FP | page_3 TP/FN | FN-only recovery (post-Phase4) | Notes |
+| Variant | page_3 final FP | page_3 TP/FN | FN-only recovery (post-Phase4) | Notes | 
 | --- | --- | --- | --- | --- |
 | Baseline Phase4 (page_3) | 0 | 152/0 | n/a | Phase4 repro via analyze_staff_consistency |
 | Union→Phase4 (page_3) | 26 | 152/0 | n/a | union inputs, geom notehead enabled |
@@ -165,14 +166,14 @@ Interpretation: union inputs do not preserve FP=0 after Phase4 on page_3 (FP=26)
   - `logs/phase5b/notehead_geom_eval/20251221T141710/summary_table.md`
   - Overlays: `logs/phase5b/notehead_geom_eval/20251221T141710/overlays/`
 
-| Page | TP | FP | FN | kept | rejected |
+| Page | TP | FP | FN | kept | rejected | 
 | --- | --- | --- | --- | --- | --- |
-| page_3 | 151 | 24 | 1 | 460 | 20 |
-| page_10 | 15 | 441 | 9 | 481 | 0 |
-| page_15 | 11 | 319 | 11 | 344 | 0 |
-| page_001 | 4 | 220 | 2 | 229 | 2 |
-| page_004 | 3 | 307 | 9 | 321 | 0 |
-| FN-only total | 33 | n/a | 31 | n/a | n/a |
+| page_3 | 151 | 24 | 1 | 460 | 20 | 
+| page_10 | 15 | 441 | 9 | 481 | 0 | 
+| page_15 | 11 | 319 | 11 | 344 | 0 | 
+| page_001 | 4 | 220 | 2 | 229 | 2 | 
+| page_004 | 3 | 307 | 9 | 321 | 0 | 
+| FN-only total | 33 | n/a | 31 | n/a | n/a | 
 
 Interpretation: generalized ratio filter did not preserve page_3 baseline (TP=151, FP=24, FN=1) and FN-only recovery dropped to 33/64. Requires visual review of overlays.
 
@@ -183,13 +184,13 @@ Interpretation: generalized ratio filter did not preserve page_3 baseline (TP=15
 - Stage counts: `logs/phase5b/notehead_geom_eval/20251221T141710/analysis_20251221T145756/stage_counts.md`
 - Margin breakdown: `logs/phase5b/notehead_geom_eval/20251221T141710/analysis_20251221T145756/fp_margin_breakdown.md`
 
-| Page | union_raw | row_kept | row_rejected | geom_kept | geom_rejected | matched | unmatched | fn |
+| Page | union_raw | row_kept | row_rejected | geom_kept | geom_rejected | matched | unmatched | fn | 
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| page_3 | 504 | 480 | 24 | 460 | 20 | 151 | 24 | 1 |
-| page_10 | 548 | 481 | 67 | 481 | 0 | 15 | 441 | 9 |
-| page_15 | 384 | 344 | 40 | 344 | 0 | 11 | 319 | 11 |
-| page_001 | 257 | 231 | 26 | 229 | 2 | 4 | 220 | 2 |
-| page_004 | 370 | 321 | 49 | 321 | 0 | 3 | 307 | 9 |
+| page_3 | 504 | 480 | 24 | 460 | 20 | 151 | 24 | 1 | 
+| page_10 | 548 | 481 | 67 | 481 | 0 | 15 | 441 | 9 | 
+| page_15 | 384 | 344 | 40 | 344 | 0 | 11 | 319 | 11 | 
+| page_001 | 257 | 231 | 26 | 229 | 2 | 4 | 220 | 2 | 
+| page_004 | 370 | 321 | 49 | 321 | 0 | 3 | 307 | 9 | 
 
 ## Phase 5b2 review tool (lightweight labeling UI) (2025-12-21)
 
@@ -241,3 +242,35 @@ Interpretation: generalized ratio filter did not preserve page_3 baseline (TP=15
     - page_001: detector-miss 1, merge-loss 5 
     - page_004: detector-miss 10, merge-loss 2 
   - Key takeaway: merge is the dominant **pipeline** bottleneck for detector-hit FN, but **detector-miss (35/64)** is a separate limitation not solvable by merge tuning alone.
+
+## Phase 5b3 mid-strict merge: Strategy 1 Confirmed Union (2025-12-22)
+
+### Implementation
+- Modified `tools/generate_hybrid_results.py` to include a `--merge-strategy` flag. The `confirmed_union` option implements a symmetric merge logic where a barline is kept if it has consensus from any two of the three detectors (`baseline`, `sr`, `omr`).
+- Evaluation script: `tools/run_confirmed_union_eval.sh`.
+- Evaluation artifacts root: `logs/phase5b_confirmed_union_eval/`.
+
+### Evaluation Results
+
+#### Regression Guard: `page_3`
+- **Merge-stage FP increase:** The new merge strategy introduced 8 FPs at the merge stage (TP=152, FP=8, FN=0).
+- **After All Filters:** TP=152, FP=0, FN=0.
+- **Conclusion:** The `confirmed_union` strategy **is safe** and does not cause an FP regression on `page_3`. The existing filters successfully removed the 8 FPs introduced by the looser merge.
+
+#### FN-only Pages Recovery
+- **Total Merge-Loss FNs (target for recovery):** 29
+- **Recovered FNs (Post-Filter):** 5
+- **Recovery Rate:** 17.2%
+
+| Page | GT Count | Final TP | Final FN | Merge-Loss FNs | Recovered |
+|---|---|---|---|---|---|
+| page_10 | 24 | 14 | 10 | 15 | **5** |
+| page_15 | 22 | 7 | 15 | 7 | **0** |
+| page_001 | 6 | 0 | 6 | 5 | **0** |
+| page_004 | 12 | 0 | 12 | 2 | **0** |
+| **Total** | **64** | **21** | **43** | **29** | **5** |
+
+### Next Steps & Context
+- Document restoration was performed in this step.
+- Strategy 1 is now the new baseline for merge logic.
+- Strategy 2 ("Promiscuous Union") is the next candidate for investigation if more FN recovery is deemed necessary.

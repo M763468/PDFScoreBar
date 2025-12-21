@@ -38,6 +38,13 @@ def main():
     parser.add_argument("--omr", type=Path, required=True)
     parser.add_argument("--gt", type=Path, help="Path to Ground Truth JSON (optional)")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--merge-strategy",
+        type=str,
+        default="phase4_hybrid",
+        choices=["phase4_hybrid", "confirmed_union"],
+        help="Merge strategy to use.",
+    )
     args = parser.parse_args()
 
     baseline_boxes = load_json_boxes(args.baseline)
@@ -51,11 +58,25 @@ def main():
     else:
         print(f"Loaded {len(baseline_boxes)} Baseline, {len(sr_boxes)} SR, {len(omr_boxes)} OMR. (No GT provided)")
 
-    # Apply Hybrid Rule: Keep Baseline if supported by SR or OMR
+    
     hybrid_preds = []
-    for box in baseline_boxes:
-        if has_match(box, sr_boxes) or has_match(box, omr_boxes):
-            hybrid_preds.append(box)
+    if args.merge_strategy == "phase4_hybrid":
+        # Apply Hybrid Rule: Keep Baseline if supported by SR or OMR
+        for box in baseline_boxes:
+            if has_match(box, sr_boxes) or has_match(box, omr_boxes):
+                hybrid_preds.append(box)
+    elif args.merge_strategy == "confirmed_union":
+        # "Confirmed Union": Keep if any two detectors agree
+        confirmed_preds_set = set()
+        # Case 1 & 2: Baseline is supported by SR or OMR
+        for box in baseline_boxes:
+            if has_match(box, sr_boxes) or has_match(box, omr_boxes):
+                confirmed_preds_set.add(tuple(box))
+        # Case 3: SR is supported by OMR
+        for box in sr_boxes:
+            if has_match(box, omr_boxes):
+                confirmed_preds_set.add(tuple(box))
+        hybrid_preds = [list(b) for b in confirmed_preds_set]
             
     print(f"Hybrid Predictions: {len(hybrid_preds)}")
 

@@ -190,3 +190,37 @@ Interpretation: generalized ratio filter did not preserve page_3 baseline (TP=15
 | page_15 | 384 | 344 | 40 | 344 | 0 | 11 | 319 | 11 |
 | page_001 | 257 | 231 | 26 | 229 | 2 | 4 | 220 | 2 |
 | page_004 | 370 | 321 | 49 | 321 | 0 | 3 | 307 | 9 |
+
+## Phase 5b2 review tool (lightweight labeling UI) (2025-12-21)
+
+- Exported review box JSONs (no detector reruns):
+  - `logs/phase5b/notehead_geom_eval/20251221T141710/review_overlay_20251221T154134/data/manifest.json`
+  - per-page boxes: `.../data/page_<page>_boxes.json`
+- Label config: `experiments/phase5b_notehead_geom/review_tool/labels.json`
+- Review UI:
+  - `experiments/phase5b_notehead_geom/review_tool/server.py`
+  - `experiments/phase5b_notehead_geom/review_tool/index.html`
+- How to run:
+  - `python experiments/phase5b_notehead_geom/review_tool/server.py --data-root logs/phase5b/notehead_geom_eval/20251221T141710/review_overlay_20251221T154134/data --label-root logs/phase5b/notehead_geom_eval/20251221T141710/review_labels/20251221T155938 --labels-config experiments/phase5b_notehead_geom/review_tool/labels.json --port 8008`
+  - Open: `http://127.0.0.1:8008`
+- Labels saved to: `logs/phase5b/notehead_geom_eval/20251221T141710/review_labels/20251221T155938/<page>_labels.json`
+- Summary export (button in UI): `.../review_labels/20251221T155938/summary.md`
+
+## Phase 5b2 image-based review (no GUI) (2025-12-21)
+
+- Review folder: `logs/phase5b/notehead_geom_eval/20251221T141710/image_review_20251221T171219/`
+- Manual workflow: move per-box images from the review folder into `classified/<label>/` to assign labels. Images left in root are unclassified.
+- Image index: `.../image_index.json`
+- Analyzer script:
+  - `python experiments/phase5b_notehead_geom/analyze_image_classification.py --review-root logs/phase5b/notehead_geom_eval/20251221T141710/image_review_20251221T171219`
+  - Outputs: `.../classified/summary.md` and `.../classified/summary.csv`
+
+## Phase 5b2 image review analysis (2025-12-21)
+
+- Analyzer run: `python3 experiments/phase5b_notehead_geom/analyze_image_classification.py --review-root logs/phase5b/notehead_geom_eval/20251221T141710/image_review_20251221T171219`
+- Outputs:
+  - `.../classified/summary.md`
+  - `.../classified/summary.csv`
+  - `.../classified/analysis_report.md`
+- Top labels overall: tp_same_position=1393, margin_artifact=128, text_region=78 (others smaller).
+- Per-page top labels are dominated by tp_same_position (duplicates/near matches).

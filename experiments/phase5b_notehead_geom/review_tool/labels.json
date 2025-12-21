@@ -1,0 +1,10 @@
+{
+  "labels": [
+    "stem_like",
+    "margin_artifact",
+    "text_region",
+    "staffline_noise",
+    "other",
+    "unsure"
+  ]
+}

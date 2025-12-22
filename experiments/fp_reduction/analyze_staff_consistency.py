@@ -844,7 +844,11 @@ def main():
         except Exception as e:
             print(f"Warning: failed to write geom overlay: {e}")
     
-    print(f"\nSaved results to {args.output}")
+    # Save the final predictions as well
+    with open(os.path.join(args.output, "filtered_barlines.json"), 'w') as f:
+        json.dump(final_preds, f, indent=2)
+
+    print(f"\\nSaved results to {args.output}")
 
 if __name__ == "__main__":
     main()

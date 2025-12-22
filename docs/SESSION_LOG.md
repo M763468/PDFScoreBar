@@ -305,3 +305,45 @@ Interpretation: generalized ratio filter did not preserve page_3 baseline (TP=15
 ### Comparison vs. Strategy 1
 - Strategy 2 recovers **21** merge-loss FNs, compared to **5** from Strategy 1.
 - The `page_3` regression check is inconclusive due to the failing notehead geometry filter, but the initial results show `FP=2` after the row filter, which is a regression from `FP=0`.
+
+## Phase 5b3: Strategy 2 — page_3 re-evaluation with geom notehead
+
+### Execution
+- The `page_3` evaluation for `promiscuous_union` was re-run using the canonical Phase 4 filter command from `docs/DEVELOPMENT_LOG.md`.
+- This ensures the `geom-notehead-mode page3_known_fp` filter is correctly applied.
+- The `homr-context-dir` was corrected to `logs/homr_eval_baseline/baseline_verification/page_3`.
+- The geometry notehead filter **executed successfully** without errors.
+
+### Final Metrics (`page_3`)
+- **Final Result:** TP=150, FP=0, FN=2
+
+### FP Breakdown by Stage
+- **After merge:** 8 FPs
+- **After row filter:** 2 FPs
+- **After geom notehead filter:** 0 FPs
+
+### Verdict
+- The full Phase 4 filter pipeline successfully removes all False Positives introduced by the `promiscuous_union` merge strategy.
+- However, the strategy introduces **2 new False Negatives** that were not present in the baseline.
+- **Regression guard FAILED**. While FP-clean, the drop in recall (TP 152 -> 150) is a regression.
+
+## Phase 5b3: Strategy 2 page_3 FN=2 root cause (2025-12-23)
+
+**Summary of Current State:**
+- Strategy 2 (`promiscuous_union`) with full Phase 4 filters results in TP=150, FP=0, FN=2 on `page_3`.
+- The goal is to explain why these 2 FNs occur.
+
+**Actions Taken:**
+1.  Modified `experiments/fp_reduction/analyze_staff_consistency.py` to save `filtered_barlines.json` to the output directory, which was necessary to get the final predictions for the baseline.
+2.  Re-ran `tools/run_promiscuous_union_eval_page3.sh` to generate the correct final filtered predictions for Strategy 2 on `page_3`.
+3.  Generated `logs/hybrid_results.json` using `tools/generate_hybrid_results.py` to provide input for the baseline Phase 4 evaluation.
+4.  Re-ran the canonical Phase 4 filter to generate the baseline `filtered_barlines.json` at `logs/phase4_baseline_repro/filtered_barlines.json`.
+5.  Developed a Python diagnostic script (`tmp/diagnose_fn_deeper.py`) to trace the FNs through the `promiscuous_union` merge process. This script re-implements the clustering logic from `generate_hybrid_results.py` to analyze why specific ground truth boxes are missed.
+
+**Current Blockage:**
+- The diagnostic script `tmp/diagnose_fn_deeper.py` is ready in concept but has repeatedly timed out when attempting to write it to disk using `create_text_file`. This is likely due to the size of the script combined with inlined dependencies from `src/common/barline_evaluation.py`.
+
+**Where to Restart Next:**
+- The primary task for the next session will be to **successfully deploy and execute `tmp/diagnose_fn_deeper.py`**.
+- This can be achieved by writing the script in smaller chunks or by ensuring the `PYTHONPATH` is correctly set during execution so that the `src.common.barline_evaluation` module can be imported directly, rather than inlining its functions.
+- Once the script runs, analyze its output to determine the root cause category for each of the 2 FNs (GT Indices 126 and 141) as per the original goal (Cause A: dropped at merge due to <2 detectors, or Cause B: bbox drift).

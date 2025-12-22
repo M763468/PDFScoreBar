@@ -38,6 +38,7 @@ FILTER_OUTPUT_DIR="$OUTPUT_DIR/${PAGE}_filtered_output"
     --no-use-ratio-tolerance --tol-top-px 5 --tol-bottom-px 5 \
     --enable-geom-notehead-filter \
     --geom-notehead-mode page3_known_fp \
-    --homr-context-dir "$HOMR_CONTEXT_DIR"
+    --homr-context-dir logs/homr_eval_baseline/baseline_verification/page_3 \
+    --min-bbox-ink-density 0.0 --max-end-ink-density 1.0
 
 echo "--- page_3 regression check complete ---"

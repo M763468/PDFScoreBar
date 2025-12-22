@@ -274,3 +274,34 @@ Interpretation: generalized ratio filter did not preserve page_3 baseline (TP=15
 - Document restoration was performed in this step.
 - Strategy 1 is now the new baseline for merge logic.
 - Strategy 2 ("Promiscuous Union") is the next candidate for investigation if more FN recovery is deemed necessary.
+
+## Phase 5b3: Mid-Strict Merge Strategy 2 (Promiscuous Union) — Evaluation
+
+### Implementation
+- Added a new `--merge-strategy` option, `promiscuous_union`, to `tools/generate_hybrid_results.py`.
+- This strategy performs a greedy clustering of all detections from `baseline`, `sr`, and `omr`.
+- A candidate is kept if its cluster contains detections from at least two different sources.
+- Evaluation scripts `tools/run_promiscuous_union_eval.sh` and `tools/run_promiscuous_union_eval_page3.sh` were created to run the evaluation.
+
+### Evaluation Results
+
+#### Regression Guard: `page_3`
+- **After All Filters:** TP=150, FP=2, FN=2.
+- **WARNING:** The notehead geometry filter failed to execute due to a missing `homr-context-dir`. The reported `FP=2` is therefore not a reliable measure of the full Phase 4 pipeline. The raw merge output had 8 FPs, which the row filter reduced to 2.
+
+#### FN-only Pages Recovery
+- **Total Merge-Loss FNs (target for recovery):** 29
+- **Recovered FNs (Post-Filter):** 21
+- **Recovery Rate:** 72.4%
+
+| Page | GT Count | Final TP | Final FN | Merge-Loss FNs | Recovered |
+|---|---|---|---|---|---|
+| page_10 | 24 | 14 | 10 | 15 | **14** |
+| page_15 | 22 | 7 | 15 | 7 | **7** |
+| page_001 | 6 | 0 | 6 | 5 | **0** |
+| page_004 | 12 | 0 | 12 | 2 | **0** |
+| **Total** | **64** | **21** | **43** | **29** | **21** |
+
+### Comparison vs. Strategy 1
+- Strategy 2 recovers **21** merge-loss FNs, compared to **5** from Strategy 1.
+- The `page_3` regression check is inconclusive due to the failing notehead geometry filter, but the initial results show `FP=2` after the row filter, which is a regression from `FP=0`.

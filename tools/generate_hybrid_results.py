@@ -31,6 +31,24 @@ def has_match(query_box, references, iou_thresh=0.5):
             return True
     return False
 
+def cluster_boxes(boxes_with_source, iou_thresh=0.5):
+    clusters = []
+    for box, source in boxes_with_source:
+        matched_cluster = None
+        for cluster in clusters:
+            for cluster_box, _ in cluster:
+                if barline_iou(box, cluster_box) > iou_thresh:
+                    matched_cluster = cluster
+                    break
+            if matched_cluster:
+                break
+        
+        if matched_cluster:
+            matched_cluster.append((box, source))
+        else:
+            clusters.append([(box, source)])
+    return clusters
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--baseline", type=Path, required=True)
@@ -42,7 +60,7 @@ def main():
         "--merge-strategy",
         type=str,
         default="phase4_hybrid",
-        choices=["phase4_hybrid", "confirmed_union"],
+        choices=["phase4_hybrid", "confirmed_union", "promiscuous_union"],
         help="Merge strategy to use.",
     )
     args = parser.parse_args()
@@ -77,6 +95,20 @@ def main():
             if has_match(box, omr_boxes):
                 confirmed_preds_set.add(tuple(box))
         hybrid_preds = [list(b) for b in confirmed_preds_set]
+    elif args.merge_strategy == "promiscuous_union":
+        # "Promiscuous Union": Keep if a cluster has at least two unique sources
+        all_boxes_with_source = []
+        all_boxes_with_source.extend([(box, "baseline") for box in baseline_boxes])
+        all_boxes_with_source.extend([(box, "sr") for box in sr_boxes])
+        all_boxes_with_source.extend([(box, "omr") for box in omr_boxes])
+        
+        clusters = cluster_boxes(all_boxes_with_source)
+        
+        for cluster in clusters:
+            sources = {source for _, source in cluster}
+            if len(sources) >= 2:
+                # Take the first box in the cluster as the representative
+                hybrid_preds.append(list(cluster[0][0]))
             
     print(f"Hybrid Predictions: {len(hybrid_preds)}")
 

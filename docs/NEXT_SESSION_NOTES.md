@@ -1,12 +1,48 @@
 # Next Session Notes
 
 **Last Updated**: 2025-12-22
-**Current Phase**: Phase 5b: FN Recovery (Strategy 1 Confirmed)
+**Current Phase**: Phase 6: Detector-miss FN recovery (next)
 
 ---
 ### Note for AI Assistant (Operational Rule)
 - The `docs/SESSION_LOG.md` file must **not** be completely overwritten. During a session, new findings and logs should be appended, or only relevant sections should be edited. The file should only be cleared with explicit user permission.
 ---
+
+## Phase 5b Final Summary (Closed)
+
+### A) Summary
+Phase 5b focused on hybrid/merge behavior to recover **merge-loss** false negatives without regressing the `page_3` safety baseline.
+
+**Confirmed conclusions:**
+- **Merge is the dominant pipeline FN bottleneck** for detector-hit cases: merge-loss **29/64** vs detector-miss **35/64**.
+- **Strategy 2 (promiscuous_union) + IoU-central representative** restores the `page_3` regression guard and rescues **20/29** merge-loss targets (post-filter).
+- **Phase 4 safety is preserved**: `page_3` final **TP=152, FP=0, FN=0** under the canonical row + geom notehead filter.
+- Remaining FNs are primarily **detector-miss** and are now the main focus.
+
+### B) Final Decisions
+- **Current best merge candidate**: Strategy 2 (`promiscuous_union`) with IoU-central representative selection.
+- **Confirmed Union (Strategy 1)** remains safe but has insufficient merge-loss recovery (5/29).
+- **Deferred**: further merge/cluster tuning is paused; proceed to detector-miss recovery.
+
+### C) Reusable Assets
+**Scripts**
+- `tools/generate_hybrid_results.py` (merge strategies, including `promiscuous_union`).
+- `tools/run_promiscuous_union_eval_page3.sh` (page_3 full Phase 4 regression guard).
+- `tools/run_promiscuous_union_eval.sh` (FN-only pages, row-only filter).
+
+**Key logs/artifacts**
+- Merge-loss trace targets: `logs/phase5b/trace_stage_analysis/20251221T222504/fn_trace_table.csv`
+- Strategy 2 (IoU-central) eval outputs:
+  - `logs/phase5b_promiscuous_union_eval/` (merge + row + geom for page_3; row-only for FN-only pages)
+  - Page 3 filtered outputs: `logs/phase5b_promiscuous_union_eval/page_3_filtered_output/`
+- Merge-loss rescue comparison (before vs after rep fix):
+  - `logs/phase5b_promiscuous_union_eval_repfix_compare/merge_loss_rescue_summary.md`
+  - `logs/phase5b_promiscuous_union_eval_repfix_compare/merge_loss_rescue_summary.json`
+- Rep-fix comparison inputs (pre-fix merge outputs): `logs/phase5b_promiscuous_union_eval_before_repfix/`
+
+### D) Phase Transition Note
+**Next phase goal**: detector-miss FN recovery.  
+Merge/hybrid tuning is **closed** for now; revisit only if detector-miss solutions introduce new merge regressions.
 
 ## Phase 5 — FN Attribution & Recovery (Current Plan)
 

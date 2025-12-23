@@ -49,6 +49,26 @@ def cluster_boxes(boxes_with_source, iou_thresh=0.5):
             clusters.append([(box, source)])
     return clusters
 
+
+def choose_representative(cluster):
+    """Pick a representative box for a cluster.
+
+    Choose the box with the highest total IoU to the rest of the cluster.
+    """
+    boxes = [box for box, _ in cluster]
+    if not boxes:
+        return None
+
+    best_box = None
+    best_score = -1.0
+    for box in boxes:
+        score = sum(barline_iou(box, other) for other in boxes)
+        if score > best_score:
+            best_score = score
+            best_box = box
+
+    return best_box
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--baseline", type=Path, required=True)
@@ -68,7 +88,7 @@ def main():
     baseline_boxes = load_json_boxes(args.baseline)
     sr_boxes = load_json_boxes(args.sr)
     omr_boxes = load_json_boxes(args.omr)
-    
+
     gt_boxes = []
     if args.gt:
         gt_boxes = load_json_boxes(args.gt)
@@ -76,7 +96,6 @@ def main():
     else:
         print(f"Loaded {len(baseline_boxes)} Baseline, {len(sr_boxes)} SR, {len(omr_boxes)} OMR. (No GT provided)")
 
-    
     hybrid_preds = []
     if args.merge_strategy == "phase4_hybrid":
         # Apply Hybrid Rule: Keep Baseline if supported by SR or OMR
@@ -101,30 +120,31 @@ def main():
         all_boxes_with_source.extend([(box, "baseline") for box in baseline_boxes])
         all_boxes_with_source.extend([(box, "sr") for box in sr_boxes])
         all_boxes_with_source.extend([(box, "omr") for box in omr_boxes])
-        
+
         clusters = cluster_boxes(all_boxes_with_source)
-        
+
         for cluster in clusters:
             sources = {source for _, source in cluster}
             if len(sources) >= 2:
-                # Take the first box in the cluster as the representative
-                hybrid_preds.append(list(cluster[0][0]))
-            
+                representative = choose_representative(cluster)
+                if representative is not None:
+                    hybrid_preds.append(list(representative))
+
     print(f"Hybrid Predictions: {len(hybrid_preds)}")
 
     # Compute Final Metrics only if GT is present
     if args.gt:
         match_result = greedy_barline_match(hybrid_preds, gt_boxes)
-        
+
         tp = len(match_result.matches)
         fp = len(match_result.false_positive_indices)
         fn = len(match_result.false_negative_indices)
         soft = len(match_result.soft_matches)
-        
+
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
         f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-        
+
         print("\n--- Final Hybrid Metrics ---")
         print(f"TP: {tp}")
         print(f"FP: {fp}")
@@ -133,7 +153,7 @@ def main():
         print(f"Precision: {precision:.4f}")
         print(f"Recall: {recall:.4f}")
         print(f"F1: {f1:.4f}")
-    
+
     # Save Results
     with open(args.output, 'w') as f:
         json.dump(hybrid_preds, f, indent=2)

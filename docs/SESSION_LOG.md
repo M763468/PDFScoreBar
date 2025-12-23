@@ -347,3 +347,104 @@ Interpretation: generalized ratio filter did not preserve page_3 baseline (TP=15
 - The primary task for the next session will be to **successfully deploy and execute `tmp/diagnose_fn_deeper.py`**.
 - This can be achieved by writing the script in smaller chunks or by ensuring the `PYTHONPATH` is correctly set during execution so that the `src.common.barline_evaluation` module can be imported directly, rather than inlining its functions.
 - Once the script runs, analyze its output to determine the root cause category for each of the 2 FNs (GT Indices 126 and 141) as per the original goal (Cause A: dropped at merge due to <2 detectors, or Cause B: bbox drift).
+---
+## 2025-12-23 Session Start
+
+- Read `README.md`, `docs/README.md`, `docs/NEXT_SESSION_NOTES.md`.
+- Ready to proceed with short-iteration work.
+
+---
+## Phase 5b3: Strategy 2 — page_3 FN regression root cause
+
+**Baseline final**: FN = 0 (no missing GTs).
+**Strategy 2 final**: FN indices = **126, 141**.
+
+### FN Trace Table (page_3)
+| GT idx | GT bbox | merge | row | geom | final | cause |
+| --- | --- | --- | --- | --- | --- | --- |
+| 126 | [116, 645, 120, 667] | no | no | no | no | **B** |
+| 141 | [550, 691, 554, 715] | no | no | no | no | **B** |
+
+### Cluster Findings (cause B details)
+- **GT 126**: A **baseline+omr** cluster exists, but the representative chosen was `(114, 642, 115, 662)` with IoU **0.495** (just below 0.5). The same cluster contains an **omr** box `(116, 646, 117, 665)` with IoU **0.722**. There is also a **baseline-only** cluster with IoU **0.964**, but it is excluded because it has only one source.
+- **GT 141**: A **baseline+sr** cluster exists, but the representative chosen was `(544, 694, 548, 712)` with IoU **0.421**. The same cluster contains **baseline/sr** boxes `(549, 693, 553, 713)` with IoU **0.781**. Representative choice causes mismatch.
+
+**Conclusion**: Both FNs are caused by **representative bbox drift inside multi-source clusters** (cause B). The merge stage has supporting detections, but the chosen representative misses IoU 0.5, so the GT is lost before row/geom filters.
+
+---
+## Phase 5b3: Strategy2 representative selection fix — implementation & evaluation
+
+### Implementation
+- **Representative rule**: Option A (IoU-central). For each cluster, pick the box with the highest total IoU to the other cluster members.
+- Modified `tools/generate_hybrid_results.py` (`promiscuous_union` only) to use `choose_representative()`.
+
+### Evaluation (page_3 with full Phase4 filters)
+- **Final metrics**: TP=152, FP=0, FN=0 (regression resolved).
+- Stage counts (from `metrics.json`): raw=168 → row=161 → geom=159 → final=159.
+- Outputs:
+  - `logs/phase5b_promiscuous_union_eval/page_3_hybrid_preds.json`
+  - `logs/phase5b_promiscuous_union_eval/page_3_filtered_output/metrics.json`
+  - `logs/phase5b_promiscuous_union_eval/page_3_filtered_output/filtered_barlines.json`
+
+### FN-only pages (row-only filter)
+- **FN-only recovery total (post-filter)**: 20 / 64 (previous Strategy2 was 21 / 64).
+- Per-page final metrics (TP/FP/FN):
+  - page_10: TP=13, FP=130, FN=11
+  - page_15: TP=7, FP=93, FN=15
+  - page_001: TP=0, FP=68, FN=6
+  - page_004: TP=0, FP=97, FN=12
+- Stage counts (raw → row → final) and metrics live in:
+  - `logs/phase5b_promiscuous_union_eval/page_10_filtered_output/metrics.json`
+  - `logs/phase5b_promiscuous_union_eval/page_15_filtered_output/metrics.json`
+  - `logs/phase5b_promiscuous_union_eval/page_001_filtered_output/metrics.json`
+  - `logs/phase5b_promiscuous_union_eval/page_004_filtered_output/metrics.json`
+
+### Duplicate-like proxy (IoU > 0.9 among final kept)
+- page_3: 0 duplicate pairs
+- page_10: 0 duplicate pairs
+- page_15: 0 duplicate pairs
+- page_001: 0 duplicate pairs
+- page_004: 0 duplicate pairs
+
+### Overlays
+- page_3 final (TP/FP + GT, with GT126/GT141 highlighted):
+  - `logs/phase5b_promiscuous_union_eval/overlays_20251223T021500/page_3_final_tp_fp_gt126_141.png`
+- page_10 final (FN-only GT overlay):
+  - `logs/phase5b_promiscuous_union_eval/overlays_20251223T021500/page_10_final_tp_fp_fnonly.png`
+
+### Notes
+- No additional non-FN pages evaluated: available `omr_sr` artifacts are only for pages 3, 10, 15, 001, 004.
+
+---
+## Phase 5b3: Strategy2 merge-loss (29) rescue re-computation (before vs after representative fix)
+
+### Merge-loss target set
+- Defined from `logs/phase5b/trace_stage_analysis/20251221T222504/fn_trace_table.csv`.
+- Criteria: pages {page_10, page_15, page_001, page_004} with `in_merge=False` and at least one of `in_baseline/in_sr/in_omr=True`.
+- Total targets: **29**.
+
+### Rescue counts (before vs after)
+| Variant | rescued_at_merge | rescued_post_filter |
+| --- | --- | --- |
+| before | 22 | 21 |
+| after | 21 | 20 |
+| delta (after - before) | -1 | -1 |
+
+Per-page breakdown (targets / rescued):
+| Page | targets | before_merge | before_final | after_merge | after_final |
+| --- | --- | --- | --- | --- | --- |
+| page_10 | 15 | 15 | 14 | 14 | 13 |
+| page_15 | 7 | 7 | 7 | 7 | 7 |
+| page_001 | 5 | 0 | 0 | 0 | 0 |
+| page_004 | 2 | 0 | 0 | 0 | 0 |
+
+Targets rescued before but lost after:
+- page_10 gt_index=12
+
+### Interpretation
+- IoU-central representative fixes page_3 regression but **slightly reduces** merge-loss rescue (21→20 post-filter), driven by page_10.
+- Strategy2 post-filter rescue remains well above Strategy1 (5/29), but it is **not strictly better** than pre-fix Strategy2 on merge-loss targets.
+
+Summary outputs:
+- `logs/phase5b_promiscuous_union_eval_repfix_compare/merge_loss_rescue_summary.json`
+- `logs/phase5b_promiscuous_union_eval_repfix_compare/merge_loss_rescue_summary.md`

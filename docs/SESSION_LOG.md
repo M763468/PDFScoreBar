@@ -60,3 +60,28 @@ Phase 5b (merge / hybrid investigation) is closed. See `docs/NEXT_SESSION_NOTES.
 
 ### 4) Detector-side work (future, not now)
 - Only after GT quality is validated: consider detector parameter changes, additional detectors, or structural candidate generation.
+
+---
+## Session Notes (2025-12-22)
+
+- Read `README.md`, `docs/README.md`, and `docs/NEXT_SESSION_NOTES.md` for current goals, documentation map, and confirmed state.
+- No new confirmations yet; no updates made to `docs/NEXT_SESSION_NOTES.md`.
+
+---
+## Session Notes (2025-12-25) — Detector-miss FN review
+
+- Confirmed detector-miss FN count: 35 (page_10=9, page_15=15, page_001=1, page_004=10) from `logs/phase5b/trace_stage_analysis/20251221T222504/fn_trace_table.csv`.
+- Visualization artifacts verified: `logs/phase6_detector_miss/visual_review/<page>/fn_*.png` (35 total; per-page montages present).
+- Classification outputs (coarse buckets): `logs/phase6_detector_miss/detector_miss_classification.csv` and `logs/phase6_detector_miss/detector_miss_classification.md`.
+- Category counts: `logs/phase6_detector_miss/detector_miss_category_counts.csv`.
+
+---
+## Session Notes (2025-12-22) — Detector-miss near-hit recheck
+
+- Generated near-hit review overlays with relaxed tolerance (TOL_X=12px, TOL_Y=8px; crop margins 40x60px).
+- Output overlays: `logs/phase6_detector_miss/near_hit_review/<page>/fn_*.png`.
+- Classification tables: `logs/phase6_detector_miss/near_hit_review/near_hit_classification.csv` and `.md`.
+- Category breakdown: `logs/phase6_detector_miss/near_hit_review/near_hit_summary.csv` and `.md`.
+- Aggregate counts: true_detector_miss=11, near_hit_gt_misaligned=19, ambiguous=5.
+
+---

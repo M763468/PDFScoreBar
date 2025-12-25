@@ -3,13 +3,21 @@ let currentIndex = 0;
 let currentItem = null;
 let currentTemplate = null;
 let currentStatus = "unchanged";
-let bbox = null; // [x1,y1,x2,y2] in image coords
+let rawBBox = null; // [x1,y1,x2,y2] in x4 coords
+let displayScale = 0.5;
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const itemList = document.getElementById("itemList");
 const itemMeta = document.getElementById("itemMeta");
 const saveStatus = document.getElementById("saveStatus");
+const showGreen = document.getElementById("showGreen");
+const scaleSelect = document.getElementById("scaleSelect");
+const debugToggle = document.getElementById("debugToggle");
+const debugPanel = document.getElementById("debugPanel");
+const debugCoords = document.getElementById("debugCoords");
+const debugBbox = document.getElementById("debugBbox");
+const debugLog = document.getElementById("debugLog");
 
 const statusButtons = {
   unchanged: document.getElementById("statusUnchanged"),
@@ -38,6 +46,17 @@ function setStatus(status) {
   });
 }
 
+function setScale(value) {
+  displayScale = value;
+  if (image.complete) {
+    canvas.width = Math.round(image.width * displayScale);
+    canvas.height = Math.round(image.height * displayScale);
+    canvas.style.width = `${canvas.width}px`;
+    canvas.style.height = `${canvas.height}px`;
+    draw();
+  }
+}
+
 function renderList() {
   itemList.innerHTML = "";
   items.forEach((item, idx) => {
@@ -58,8 +77,10 @@ function loadItem() {
   itemMeta.textContent = `${currentItem.page} / fn_${String(currentItem.gt_index).padStart(3, "0")}`;
   saveStatus.textContent = "";
   image.onload = () => {
-    canvas.width = image.width;
-    canvas.height = image.height;
+    canvas.width = Math.round(image.width * displayScale);
+    canvas.height = Math.round(image.height * displayScale);
+    canvas.style.width = `${canvas.width}px`;
+    canvas.style.height = `${canvas.height}px`;
     draw();
   };
   image.src = `/file?path=${encodeURIComponent(currentItem.image)}`;
@@ -67,30 +88,50 @@ function loadItem() {
   fetchJSON(`/api/template?path=${encodeURIComponent(currentItem.template)}`).then((data) => {
     currentTemplate = data;
     const baseBox = data.edited_bbox || data.scaled_gt_bbox;
-    bbox = [...baseBox];
+    rawBBox = [...baseBox];
     setStatus(data.status || "unchanged");
     draw();
   });
 }
 
+function rawToDisplay(box) {
+  return box.map((v) => v * displayScale);
+}
+
+function displayToRaw(value) {
+  return value / displayScale;
+}
+
 function draw() {
   if (!image.complete) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(image, 0, 0);
-  if (!bbox) return;
+  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+  if (!rawBBox) return;
 
-  const [x1, y1, x2, y2] = bbox;
+  const [x1, y1, x2, y2] = rawToDisplay(rawBBox);
   ctx.lineWidth = 2;
   ctx.strokeStyle = currentStatus === "invalid" ? "#ff8a80" : "#ff00ff";
   ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
 
+  if (showGreen.checked && currentTemplate && currentTemplate.nearby_detections) {
+    ctx.strokeStyle = "#00ff66";
+    ctx.lineWidth = 1;
+    currentTemplate.nearby_detections.forEach((det) => {
+      const [dx1, dy1, dx2, dy2] = rawToDisplay(det);
+      ctx.strokeRect(dx1, dy1, dx2 - dx1, dy2 - dy1);
+    });
+  }
+
   if (currentStatus !== "invalid") {
     drawHandles();
+  }
+  if (debugToggle.checked) {
+    updateDebug();
   }
 }
 
 function drawHandles() {
-  const [x1, y1, x2, y2] = bbox;
+  const [x1, y1, x2, y2] = rawToDisplay(rawBBox);
   const handles = [
     [x1, y1],
     [x2, y1],
@@ -98,22 +139,24 @@ function drawHandles() {
     [x1, y2],
   ];
   ctx.fillStyle = "#00e5ff";
+  const size = HANDLE_SIZE;
   handles.forEach(([hx, hy]) => {
-    ctx.fillRect(hx - HANDLE_SIZE / 2, hy - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE);
+    ctx.fillRect(hx - size / 2, hy - size / 2, size, size);
   });
 }
 
 function hitHandle(x, y) {
-  const [x1, y1, x2, y2] = bbox;
+  const [x1, y1, x2, y2] = rawToDisplay(rawBBox);
   const handles = [
     [x1, y1],
     [x2, y1],
     [x2, y2],
     [x1, y2],
   ];
+  const size = HANDLE_SIZE;
   for (let i = 0; i < handles.length; i++) {
     const [hx, hy] = handles[i];
-    if (Math.abs(x - hx) <= HANDLE_SIZE && Math.abs(y - hy) <= HANDLE_SIZE) {
+    if (Math.abs(x - hx) <= size && Math.abs(y - hy) <= size) {
       return i;
     }
   }
@@ -121,12 +164,12 @@ function hitHandle(x, y) {
 }
 
 function pointInBox(x, y) {
-  const [x1, y1, x2, y2] = bbox;
+  const [x1, y1, x2, y2] = rawToDisplay(rawBBox);
   return x >= x1 && x <= x2 && y >= y1 && y <= y2;
 }
 
 canvas.addEventListener("mousedown", (e) => {
-  if (!bbox || currentStatus === "invalid") return;
+  if (!rawBBox || currentStatus === "invalid") return;
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
@@ -134,9 +177,14 @@ canvas.addEventListener("mousedown", (e) => {
   if (handle !== null) {
     dragMode = "resize";
     dragHandle = handle;
+    logDebug(`mousedown: handle ${handle}`);
   } else if (pointInBox(x, y)) {
     dragMode = "move";
-    dragOffset = { x: x - bbox[0], y: y - bbox[1] };
+    const [x1, y1] = rawToDisplay(rawBBox);
+    dragOffset = { x: x - x1, y: y - y1 };
+    logDebug("mousedown: inside bbox");
+  } else {
+    logDebug("mousedown: miss");
   }
 });
 
@@ -147,23 +195,25 @@ canvas.addEventListener("mousemove", (e) => {
   const y = e.clientY - rect.top;
 
   if (dragMode === "move") {
-    const width = bbox[2] - bbox[0];
-    const height = bbox[3] - bbox[1];
-    let nx1 = x - dragOffset.x;
-    let ny1 = y - dragOffset.y;
-    bbox = [nx1, ny1, nx1 + width, ny1 + height];
+    const width = rawBBox[2] - rawBBox[0];
+    const height = rawBBox[3] - rawBBox[1];
+    let nx1 = displayToRaw(x - dragOffset.x);
+    let ny1 = displayToRaw(y - dragOffset.y);
+    rawBBox = [nx1, ny1, nx1 + width, ny1 + height];
   } else if (dragMode === "resize") {
-    let [x1, y1, x2, y2] = bbox;
+    let [x1, y1, x2, y2] = rawBBox;
+    const ix = displayToRaw(x);
+    const iy = displayToRaw(y);
     if (dragHandle === 0) {
-      x1 = x; y1 = y;
+      x1 = ix; y1 = iy;
     } else if (dragHandle === 1) {
-      x2 = x; y1 = y;
+      x2 = ix; y1 = iy;
     } else if (dragHandle === 2) {
-      x2 = x; y2 = y;
+      x2 = ix; y2 = iy;
     } else if (dragHandle === 3) {
-      x1 = x; y2 = y;
+      x1 = ix; y2 = iy;
     }
-    bbox = [x1, y1, x2, y2];
+    rawBBox = [x1, y1, x2, y2];
   }
   normalizeBBox();
   draw();
@@ -180,21 +230,21 @@ canvas.addEventListener("mouseup", () => {
 });
 
 function normalizeBBox() {
-  let [x1, y1, x2, y2] = bbox;
+  let [x1, y1, x2, y2] = rawBBox;
   if (x2 < x1) [x1, x2] = [x2, x1];
   if (y2 < y1) [y1, y2] = [y2, y1];
-  bbox = [x1, y1, x2, y2].map((v) => Math.max(0, Math.round(v)));
+  rawBBox = [x1, y1, x2, y2].map((v) => Math.max(0, Math.round(v)));
 }
 
 function save() {
-  if (!currentItem || !bbox) return;
+  if (!currentItem || !rawBBox) return;
   fetch("/api/save", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       path: currentItem.template,
       status: currentStatus,
-      edited_bbox: bbox,
+      edited_bbox: rawBBox,
     }),
   }).then(() => {
     saveStatus.textContent = "Saved";
@@ -212,6 +262,40 @@ nextBtn.onclick = () => {
 };
 
 saveBtn.onclick = save;
+showGreen.onchange = draw;
+scaleSelect.onchange = () => {
+  setScale(parseFloat(scaleSelect.value));
+};
+debugToggle.onchange = () => {
+  debugPanel.style.display = debugToggle.checked ? "block" : "none";
+  draw();
+};
+
+function logDebug(message) {
+  if (!debugToggle.checked) return;
+  const line = document.createElement("div");
+  line.textContent = message;
+  debugLog.prepend(line);
+  while (debugLog.childElementCount > 12) {
+    debugLog.removeChild(debugLog.lastChild);
+  }
+}
+
+function updateDebug() {
+  if (!rawBBox) return;
+  const [x1, y1, x2, y2] = rawBBox;
+  debugBbox.textContent = `bbox raw=[${x1},${y1},${x2},${y2}] display=[${Math.round(x1 * displayScale)},${Math.round(y1 * displayScale)},${Math.round(x2 * displayScale)},${Math.round(y2 * displayScale)}]`;
+}
+
+canvas.addEventListener("mousemove", (e) => {
+  if (!debugToggle.checked) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const rx = Math.round(displayToRaw(x));
+  const ry = Math.round(displayToRaw(y));
+  debugCoords.textContent = `mouse display=[${Math.round(x)},${Math.round(y)}] raw=[${rx},${ry}]`;
+});
 
 statusButtons.unchanged.onclick = () => setStatus("unchanged");
 statusButtons.edited.onclick = () => setStatus("edited");
@@ -233,5 +317,6 @@ fetchJSON("/api/items").then((data) => {
     return;
   }
   renderList();
+  setScale(parseFloat(scaleSelect.value));
   loadItem();
 });

@@ -98,3 +98,26 @@ Phase 5b (merge / hybrid investigation) is closed. See `docs/NEXT_SESSION_NOTES.
 - Smoke confirmation (test copy):
   - Root: `logs/phase6_detector_miss/gt_fix_review_test`
   - Save call updated `logs/phase6_detector_miss/gt_fix_review_test/page_10/fn_010/edit_template.json` to status=edited, edited_bbox=[11, 22, 33, 44].
+
+---
+## Phase 6: GT relabel GUI usability fixes (2025-12-25 JST)
+
+- Fixes: added display scale control, corrected canvas sizing/drawing to respect scale, and added debug mode with coordinate readouts + hit-test logs.
+- Interaction: bbox drag/resize now uses display-space hit-testing and maps back to raw x4 coords; handles and stroke are fixed-size in screen pixels.
+- UI: legend clarified (pink GT editable, green detector reference), green boxes toggle, debug panel/log.
+- How to verify: enable Debug, click bbox (log shows inside/handle), drag to update bbox and observe raw/display coords update, then Save.
+
+---
+## Phase 6: Apply GUI edits + near-hit recheck (2025-12-25 JST)
+
+- Sanity check: scanned `logs/phase6_detector_miss/gt_fix_review/**/edit_template.json`.
+  - Status counts: edited=24, unchanged=0, invalid=0, pending=0.
+  - No format issues detected (edited_bbox present and within crop bounds).
+- Applied edits (corrected GT):
+  - `. .venv_omr_dln/bin/activate && python3 tools/gt_relabel_support.py apply --candidates logs/phase6_detector_miss/gt_fix_plan/gt_fix_candidates.csv --out-root logs/phase6_detector_miss/gt_fix_review --corrected-root logs/phase6_detector_miss/gt_fix_review/gt_corrected`
+  - Outputs: `logs/phase6_detector_miss/gt_fix_review/gt_corrected/<page>/fn_only_corrected.json`, `logs/phase6_detector_miss/gt_fix_review/gt_corrected/diff_summary.csv`
+- Near-hit recheck (corrected GT):
+  - `. .venv_omr_dln/bin/activate && python3 tools/gt_relabel_support.py near-hit --candidates logs/phase6_detector_miss/gt_fix_plan/gt_fix_candidates.csv --corrected-root logs/phase6_detector_miss/gt_fix_review/gt_corrected --out-root logs/phase6_detector_miss/gt_fix_review/near_hit_recheck`
+  - Outputs: `logs/phase6_detector_miss/gt_fix_review/near_hit_recheck/near_hit_recheck.csv`, `near_hit_recheck_summary.json`
+- Counts (after correction, full detector-miss set): true_detector_miss=11, near_hit_gt_misaligned=19, ambiguous=5 (unchanged).
+- Report: `logs/phase6_detector_miss/gt_fix_review/RECHECK_REPORT.md` (includes per-item delta table, remaining true misses list).

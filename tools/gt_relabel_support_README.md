@@ -78,6 +78,11 @@ python3 tools/gt_relabel_gui/server.py \
 Open in a browser (WSL): `http://127.0.0.1:8010` (or `http://<wsl-ip>:8010` from Windows).
 Edits are saved back into each `edit_template.json` with updated `status` and `edited_bbox`.
 
+### Display scale + Debug mode
+- Use the **Display scale** dropdown (0.25/0.5/1.0) to control on-screen size. This does **not** change coordinates saved to JSON.
+- Enable **Debug** to see mouse coords (display + raw x4) and bbox coords, plus hit-test logs.
+- Debug checklist: click bbox -> log shows “inside bbox”; click handle -> log shows “handle N”; drag updates bbox numbers.
+
 ## Optional: custom page config
 If you need custom GT/image/detection paths, pass `--page-config` with a JSON file:
 ```json

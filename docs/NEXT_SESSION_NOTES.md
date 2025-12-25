@@ -1,13 +1,36 @@
 # Next Session Notes
 
-**Last Updated**: 2025-12-22
-**Current Phase**: Phase 6: Detector-miss FN recovery (next)
+**Last Updated**: 2025-12-25
+**Current Phase**: Phase 6 complete → next session starts detector-side FN work (remaining 10)
 
 ---
 ### Note for AI Assistant (Operational Rule)
 - The `docs/SESSION_LOG.md` file must **not** be completely overwritten. During a session, new findings and logs should be appended, or only relevant sections should be edited. The file should only be cleared with explicit user permission.
 ---
 
+## Current Starting Point (Confirmed)
+- GT cleanup completed for all 35 detector-miss items.
+- Post-GT recheck: resolved=25, remaining true detector-miss=10 (total=35).
+  - Summary: `logs/phase6_detector_miss/gt_fix_review_full/near_hit_recheck/near_hit_recheck_summary.json`
+  - Remaining list + categories: `logs/phase6_detector_miss/gt_fix_review_full/POST_GT_RECHECK_SUMMARY.md`
+- Merge / filter / GT are closed for the remaining 10 cases; next session begins detector-side work on these items.
+
+## Phase 6 outcome (confirmed)
+- Detector-miss total: 35
+- Post-GT recheck: resolved 25 / remaining true detector-miss 10
+- Remaining true detector-miss cases (detector-side work needed):
+  - page_004 fn_000 (end_barline)
+  - page_004 fn_003 (text_dynamic_overlap)
+  - page_004 fn_005 (dense_chord_accidental)
+  - page_004 fn_008 (text_dynamic_overlap)
+  - page_004 fn_011 (double_or_repeat_bar)
+  - page_10 fn_000 (end_barline)
+  - page_15 fn_003 (text_dynamic_overlap)
+  - page_15 fn_007 (notehead_overlap)
+  - page_15 fn_010 (dense_chord_accidental)
+  - page_15 fn_021 (double_or_repeat_bar)
+
+---
 ## Phase 5b Final Summary (Closed)
 
 ### A) Summary
@@ -41,10 +64,9 @@ Phase 5b focused on hybrid/merge behavior to recover **merge-loss** false negati
 - Rep-fix comparison inputs (pre-fix merge outputs): `logs/phase5b_promiscuous_union_eval_before_repfix/`
 
 ### D) Phase Transition Note
-**Next phase goal**: detector-miss FN recovery.  
-Merge/hybrid tuning is **closed** for now; revisit only if detector-miss solutions introduce new merge regressions.
+Phase 5b is closed; merge/hybrid tuning remains paused unless future detector-side changes introduce regressions.
 
-## Phase 5 — FN Attribution & Recovery (Current Plan)
+## Phase 5 — FN Attribution & Recovery (Confirmed)
 
 ### Phase 5a Results (Confirmed) ✅ COMPLETE
 **Conclusion**: False Negatives are fundamentally a **detector recall problem**.
@@ -54,9 +76,9 @@ Merge/hybrid tuning is **closed** for now; revisit only if detector-miss solutio
 
 ---
 
-## Phase 5b — FN Recovery Strategies (In Progress)
+## Phase 5b — FN Recovery Strategies (Closed, historical detail)
 
-This phase aims to recover FNs (especially the "ambiguous" majority) without regressing the confirmed `FP=0` baseline on `page_3`.
+This phase aimed to recover FNs (especially the "ambiguous" majority) without regressing the confirmed `FP=0` baseline on `page_3`.
 
 ### B1) Improve candidate generation / detector recall (Primary)
 **Hypothesis**: Lowering confidence thresholds or creating a naive union of detectors will recover "ambiguous" FNs.

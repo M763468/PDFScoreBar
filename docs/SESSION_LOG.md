@@ -76,12 +76,25 @@ Phase 5b (merge / hybrid investigation) is closed. See `docs/NEXT_SESSION_NOTES.
 - Category counts: `logs/phase6_detector_miss/detector_miss_category_counts.csv`.
 
 ---
-## Session Notes (2025-12-22) — Detector-miss near-hit recheck
+## Phase 6: GT relabel tool smoke test (2025-12-25 JST)
 
-- Generated near-hit review overlays with relaxed tolerance (TOL_X=12px, TOL_Y=8px; crop margins 40x60px).
-- Output overlays: `logs/phase6_detector_miss/near_hit_review/<page>/fn_*.png`.
-- Classification tables: `logs/phase6_detector_miss/near_hit_review/near_hit_classification.csv` and `.md`.
-- Category breakdown: `logs/phase6_detector_miss/near_hit_review/near_hit_summary.csv` and `.md`.
-- Aggregate counts: true_detector_miss=11, near_hit_gt_misaligned=19, ambiguous=5.
+- Fix: SyntaxError in `tools/gt_relabel_support.py` caused by escaped quotes (\"image\"); corrected to normal quotes.
+- Change: added optional `--limit` flag for `prepare` to enable a tiny smoke test.
+- Smoke test command:
+  - `. .venv_omr_dln/bin/activate && python tools/gt_relabel_support.py prepare --candidates logs/phase6_detector_miss/gt_fix_plan/gt_fix_candidates.csv --limit 2`
+- Outputs created:
+  - `logs/phase6_detector_miss/gt_fix_review/page_10/fn_010/crop_x4.png`
+  - `logs/phase6_detector_miss/gt_fix_review/page_10/fn_010/edit_template.json`
+  - `logs/phase6_detector_miss/gt_fix_review/page_10/fn_018/crop_x4.png`
+  - `logs/phase6_detector_miss/gt_fix_review/page_10/fn_018/edit_template.json`
 
 ---
+## Phase 6: GT relabel GUI added (2025-12-25 JST)
+
+- Added minimal browser-based bbox editor: `tools/gt_relabel_gui/server.py`, `tools/gt_relabel_gui/index.html`, `tools/gt_relabel_gui/app.js`.
+- Run command:
+  - `python3 tools/gt_relabel_gui/server.py --root logs/phase6_detector_miss/gt_fix_review --port 8010 --host 0.0.0.0`
+- Edits are saved back into each `edit_template.json` (status + edited_bbox), keeping other fields intact.
+- Smoke confirmation (test copy):
+  - Root: `logs/phase6_detector_miss/gt_fix_review_test`
+  - Save call updated `logs/phase6_detector_miss/gt_fix_review_test/page_10/fn_010/edit_template.json` to status=edited, edited_bbox=[11, 22, 33, 44].

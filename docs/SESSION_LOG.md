@@ -121,3 +121,57 @@ Phase 5b (merge / hybrid investigation) is closed. See `docs/NEXT_SESSION_NOTES.
   - Outputs: `logs/phase6_detector_miss/gt_fix_review/near_hit_recheck/near_hit_recheck.csv`, `near_hit_recheck_summary.json`
 - Counts (after correction, full detector-miss set): true_detector_miss=11, near_hit_gt_misaligned=19, ambiguous=5 (unchanged).
 - Report: `logs/phase6_detector_miss/gt_fix_review/RECHECK_REPORT.md` (includes per-item delta table, remaining true misses list).
+
+---
+## Phase 6: GT fix coverage + corrected GT verification (2025-12-25 JST)
+
+- Candidate coverage audit:
+  - candidates.csv rows: 24
+  - edit_template.json count: 24
+  - audit outputs: `logs/phase6_detector_miss/gt_fix_review/coverage_audit.csv` and `.md`
+- Apply verification (sampled 5 edited items):
+  - `logs/phase6_detector_miss/gt_fix_review/apply_verification.md`
+  - Edited bboxes map to corrected GT entries (sampled matches).
+- Near-hit recheck diff summary:
+  - `logs/phase6_detector_miss/gt_fix_review/near_hit_diff_summary.md`
+  - recheck summary: resolved=24, remaining_miss=0, total=24
+
+---
+## Phase 6: GT cleanup scope alignment (2025-12-25 JST)
+
+- Clarified that gt_fix_candidates.csv (24 items) is a batch1 subset of the 35 detector-miss set.
+- Full detector-miss list: `logs/phase6_detector_miss/gt_fix_plan/detector_miss_full_list.csv` (+ .md).
+- Remaining items (batch2): `logs/phase6_detector_miss/gt_fix_plan/gt_fix_remaining_list.csv` (+ .md).
+- Batch alignment summary: `logs/phase6_detector_miss/gt_fix_plan/batch_alignment_summary.md`.
+- Note: “resolved=24/24” applies only to batch1 (24 items), not the full 35 detector-miss set.
+
+---
+## Phase 6: Batch2 (remaining 11) GT review preparation (2025-12-25 JST)
+
+- Prepared batch2 artifacts (no edits applied yet):
+  - `logs/phase6_detector_miss/gt_fix_review_batch2/<page>/fn_<id>/{crop_x4.png,edit_template.json}`
+- Baseline near-hit check (no GT edits):
+  - `. .venv_omr_dln/bin/activate && python3 tools/gt_relabel_support.py near-hit --candidates logs/phase6_detector_miss/gt_fix_plan/gt_fix_remaining_list.csv --corrected-root logs/phase6_detector_miss/gt_fix_review_batch2/gt_corrected_baseline --out-root logs/phase6_detector_miss/gt_fix_review_batch2/near_hit_baseline`
+  - Outputs: `near_hit_baseline/near_hit_recheck.csv`, `near_hit_recheck_summary.json`, plus `near_hit_classification.csv` and `near_hit_counts.md`.
+- Batch2 preliminary classification summary: `logs/phase6_detector_miss/gt_fix_review_batch2/batch2_classification_summary.md`.
+- Results are preliminary and intended to match batch1 parity checks.
+
+---
+## Phase 6: Batch2 visual-only review setup (2025-12-25 JST)
+
+- Batch2 artifacts verified under `logs/phase6_detector_miss/gt_fix_review_batch2/` (all 11 items have crop_x4.png + edit_template.json).
+- GUI command for batch2:
+  - `python3 tools/gt_relabel_gui/server.py --root logs/phase6_detector_miss/gt_fix_review_batch2 --port 8010 --host 0.0.0.0`
+- Review policy: visual-only; default decision is unchanged unless GT is clearly broken.
+- Phase 6 ends after Batch2 review (and optional minimal GT edits).
+- Review checklist template: `logs/phase6_detector_miss/gt_fix_review_batch2/REVIEW_NOTES.md`.
+
+---
+## Phase 6: Post-GT-correction detector-miss summary (2025-12-25 JST)
+
+- Consolidated corrected GT across batch1+batch2 into `logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/`.
+- Recheck run (full 35):
+  - `. .venv_omr_dln/bin/activate && python3 tools/gt_relabel_support.py near-hit --candidates logs/phase6_detector_miss/gt_fix_plan/detector_miss_full_list.csv --corrected-root logs/phase6_detector_miss/gt_fix_review_full/gt_corrected --out-root logs/phase6_detector_miss/gt_fix_review_full/near_hit_recheck`
+- Summary counts (from `near_hit_recheck_summary.json`): resolved=25, remaining_miss=10, total=35.
+- Remaining true detector-miss list + category counts: `logs/phase6_detector_miss/gt_fix_review_full/POST_GT_RECHECK_SUMMARY.md`.
+- Detector-side work remains for the 10 unresolved items; GT corrections complete.

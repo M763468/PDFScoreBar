@@ -1005,3 +1005,30 @@ endpoint_overlap_ratio =
 - Tools are refactored and ready.
 - User instructions prepared for handoff.
 - Waiting for user to upload `fn_only.json` files before proceeding to automatic attribution.
+
+## Phase 5b2 — Merge / Filter Limits and FN Attribution (2025-12-21)
+
+- **Key decisions / conclusions:**
+  - Generalized (page-agnostic) geometry notehead filtering on union inputs did **not** preserve the page_3 safety baseline; FP remained high and FN recovery regressed compared to Phase 4 safety targets.
+  - Stage-level analysis of union outputs confirmed that geometry/row filters were not the primary cause of FN on FN-only pages; the remaining FN signal was not recoverable via merge/filter tuning alone.
+  - Review tooling (lightweight UI + image-based workflows) was adopted to classify large volumes of union/overlay boxes and to support attribution analysis.
+- **Consequence for next phases:**
+  - Merge/filter tuning deemed insufficient for FN recovery; pivot to Phase 6 GT cleanup and detector-miss attribution as the next required step.
+
+## Phase 6: GT Cleanup & Validation (2025-12-25)
+
+- **Goal:** Validate and correct detector-miss GT boxes to isolate true detector-side misses.
+- **Process:**
+  - Visual review of detector-miss set and selective GT relabeling on enlarged crops.
+  - Human-in-the-loop GUI editing via `tools/gt_relabel_gui/` with edits stored in per-item `edit_template.json`.
+  - Batch processing split into 24 (near-hit/ambiguous) + 11 (remaining) for staged validation.
+  - Consolidated corrected GT into a single corrected set for full recheck.
+- **Outcome:** GT cleanup completed; post-GT recheck performed on all 35 detector-miss items.
+- **Status:** Phase 6 completed; remaining misses are detector-side only.
+
+**Key artifacts**:
+- Batch1 corrected GT: `logs/phase6_detector_miss/gt_fix_review/gt_corrected/`
+- Batch2 corrected GT: `logs/phase6_detector_miss/gt_fix_review_batch2/gt_corrected/`
+- Consolidated corrected GT: `logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/`
+- Post-GT recheck: `logs/phase6_detector_miss/gt_fix_review_full/near_hit_recheck/`
+- Remaining miss list: `logs/phase6_detector_miss/gt_fix_review_full/POST_GT_RECHECK_SUMMARY.md`

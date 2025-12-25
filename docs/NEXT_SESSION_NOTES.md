@@ -1,7 +1,7 @@
 # Next Session Notes
 
 **Last Updated**: 2025-12-25
-**Current Phase**: Phase 6 complete → next session starts detector-side FN work (remaining 10)
+**Current Phase**: Post‑Phase 6 → start detector‑side FN analysis (remaining 10)
 
 ---
 ### Note for AI Assistant (Operational Rule)
@@ -29,6 +29,10 @@
   - page_15 fn_007 (notehead_overlap)
   - page_15 fn_010 (dense_chord_accidental)
   - page_15 fn_021 (double_or_repeat_bar)
+
+### Next session start
+- Begin detector-side analysis focused on the 10 remaining items above.
+- GT/merge/filter are considered closed for these cases.
 
 ---
 ## Phase 5b Final Summary (Closed)

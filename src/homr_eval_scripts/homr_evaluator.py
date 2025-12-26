@@ -63,7 +63,7 @@ from homr.music_xml_generator import XmlGeneratorArguments, generate_xml  # type
 from homr.resize import calc_target_image_size  # type: ignore
 from homr.staff_detection import break_wide_fragments, detect_staff  # type: ignore
 from homr.note_detection import combine_noteheads_with_stems, add_notes_to_staffs  # type: ignore
-from homr.bar_line_detection import detect_bar_lines  # type: ignore
+from homr.bar_line_detection import detect_bar_lines, prepare_bar_line_image  # type: ignore
 from homr.brace_dot_detection import (
     find_braces_brackets_and_grand_staff_lines,
     prepare_brace_dot_image,
@@ -237,6 +237,36 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Enable Super-Resolution (Real-ESRGAN x4) preprocessing",
     )
+    parser.add_argument(
+        "--gen-vertical-run",
+        action="store_true",
+        help="Enable staff-constrained vertical run-length candidate generator",
+    )
+    parser.add_argument(
+        "--gen-barline-cc-relaxed",
+        action="store_true",
+        help="Enable relaxed CC extraction on bar_line_img",
+    )
+    parser.add_argument(
+        "--gen-sobel-vertical",
+        action="store_true",
+        help="Enable staff-constrained vertical Sobel candidate generator",
+    )
+    parser.add_argument(
+        "--gen-vertical-run-no-staff",
+        action="store_true",
+        help="Enable vertical run-length candidate generator without staff mask",
+    )
+    parser.add_argument(
+        "--gen-barline-cc-tiny",
+        action="store_true",
+        help="Enable tiny CC extraction on bar_line_img (min_size=(1,1))",
+    )
+    parser.add_argument(
+        "--gen-sobel-no-staff",
+        action="store_true",
+        help="Enable vertical Sobel candidate generator without staff mask",
+    )
     return parser.parse_args()
 
 
@@ -397,6 +427,62 @@ def map_pred_to_orig(box: Tuple[int, int, int, int], transform: TransformInfo) -
     return (x1_clamped, y1_clamped, x2_clamped, y2_clamped)
 
 
+def _ensure_mask_shape(mask: np.ndarray, target_shape: Tuple[int, int]) -> np.ndarray:
+    if mask.shape[:2] == target_shape:
+        return mask
+    return cv2.resize(mask, (target_shape[1], target_shape[0]), interpolation=cv2.INTER_NEAREST)
+
+
+def generate_vertical_run_candidates(
+    preprocessed: np.ndarray,
+    staff_mask: Optional[np.ndarray],
+    *,
+    min_run: int = 20,
+    dark_threshold: int = 80,
+) -> List[Any]:
+    gray = cv2.cvtColor(preprocessed, cv2.COLOR_BGR2GRAY)
+    dark = (gray < dark_threshold).astype(np.uint8) * 255
+    if staff_mask is not None:
+        staff_mask = _ensure_mask_shape(staff_mask, gray.shape[:2])
+        masked = cv2.bitwise_and(dark, dark, mask=(staff_mask > 0).astype(np.uint8))
+    else:
+        masked = dark
+    kernel = np.ones((min_run, 1), np.uint8)
+    vertical = cv2.morphologyEx(masked, cv2.MORPH_OPEN, kernel)
+    return create_rotated_bounding_boxes(vertical, skip_merging=True, min_size=(1, min_run))
+
+
+def generate_barline_cc_relaxed(stems_rest_mask: np.ndarray) -> List[Any]:
+    bar_line_img = prepare_bar_line_image(stems_rest_mask)
+    return create_rotated_bounding_boxes(bar_line_img, skip_merging=True, min_size=(1, 3))
+
+
+def generate_barline_cc_tiny(stems_rest_mask: np.ndarray) -> List[Any]:
+    bar_line_img = prepare_bar_line_image(stems_rest_mask)
+    return create_rotated_bounding_boxes(bar_line_img, skip_merging=True, min_size=(1, 1))
+
+
+def generate_sobel_vertical_candidates(
+    preprocessed: np.ndarray,
+    staff_mask: Optional[np.ndarray],
+    *,
+    sobel_threshold: int = 60,
+    min_run: int = 15,
+) -> List[Any]:
+    gray = cv2.cvtColor(preprocessed, cv2.COLOR_BGR2GRAY)
+    sobelx = cv2.Sobel(gray, cv2.CV_16S, 1, 0, ksize=3)
+    absx = cv2.convertScaleAbs(sobelx)
+    edges = (absx > sobel_threshold).astype(np.uint8) * 255
+    if staff_mask is not None:
+        staff_mask = _ensure_mask_shape(staff_mask, gray.shape[:2])
+        masked = cv2.bitwise_and(edges, edges, mask=(staff_mask > 0).astype(np.uint8))
+    else:
+        masked = edges
+    kernel = np.ones((min_run, 1), np.uint8)
+    vertical = cv2.morphologyEx(masked, cv2.MORPH_OPEN, kernel)
+    return create_rotated_bounding_boxes(vertical, skip_merging=True, min_size=(1, min_run))
+
+
 def prepare_working_image(image: Path, dest_dir: Path) -> Path:
     ensure_dir(dest_dir)
     dest_path = dest_dir / image.name
@@ -421,6 +507,32 @@ def detect_staffs_with_barlines(
         image_path, config.enable_debug, config.enable_cache
     )
     symbols = predict_symbols(debug, predictions)
+
+    extra_bar_lines: List[Any] = []
+    if tuning.get("gen_vertical_run"):
+        extra_bar_lines.extend(
+            generate_vertical_run_candidates(predictions.preprocessed, predictions.staff)
+        )
+    if tuning.get("gen_barline_cc_relaxed"):
+        extra_bar_lines.extend(generate_barline_cc_relaxed(predictions.stems_rest))
+    if tuning.get("gen_sobel_vertical"):
+        extra_bar_lines.extend(
+            generate_sobel_vertical_candidates(predictions.preprocessed, predictions.staff)
+        )
+    if tuning.get("gen_vertical_run_no_staff"):
+        extra_bar_lines.extend(
+            generate_vertical_run_candidates(predictions.preprocessed, None)
+        )
+    if tuning.get("gen_barline_cc_tiny"):
+        extra_bar_lines.extend(generate_barline_cc_tiny(predictions.stems_rest))
+    if tuning.get("gen_sobel_no_staff"):
+        extra_bar_lines.extend(
+            generate_sobel_vertical_candidates(predictions.preprocessed, None)
+        )
+    if extra_bar_lines:
+        symbols.bar_lines.extend(extra_bar_lines)
+        debug.write_bounding_boxes_alternating_colors("bar_lines_extra", extra_bar_lines)
+        eprint(f"Added {len(extra_bar_lines)} extra bar line candidates")
 
     # The notehead and staff masks are crucial for context-based filtering.
     # The `predictions` object from load_and_preprocess_predictions contains the raw numpy arrays.
@@ -1615,6 +1727,12 @@ def main() -> None:
     tuning = {
         "barline_min_height_factor": args.barline_min_height_factor,
         "barline_max_width_factor": args.barline_max_width_factor,
+        "gen_vertical_run": args.gen_vertical_run,
+        "gen_barline_cc_relaxed": args.gen_barline_cc_relaxed,
+        "gen_sobel_vertical": args.gen_sobel_vertical,
+        "gen_vertical_run_no_staff": args.gen_vertical_run_no_staff,
+        "gen_barline_cc_tiny": args.gen_barline_cc_tiny,
+        "gen_sobel_no_staff": args.gen_sobel_no_staff,
     }
 
     for image_path in images:

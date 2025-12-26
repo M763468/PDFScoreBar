@@ -322,3 +322,343 @@ Assumptions/uncertainties:
 ### [Clarification] Detection vs evaluation
 - The assumption that “red lines in CC overlays represent detected barline strokes” is **incorrect** for our overlays; the red lines are GT. The alternating colors in `debug_11_bar_lines.png` are purely visual and represent already-filtered `bar_line_boxes`.
 - A visually “correct-enough” barline could still be labeled FN if its predicted bbox is short/shifted and fails IoU/geometry matching. However, in the inspected FN cases, the nearest predicted bbox is both **much smaller** and **spatially offset** relative to GT (see `[Segmentation Check] GT vs predicted bbox geometry`), indicating that the failure is **not purely strict IoU matching** but also candidate geometry/placement.
+
+### [Work Unit 1] Pipeline map + failure inventory (2025-12-26 22:54 JST)
+- Objective / hypothesis
+  - Objective: Map the exact barline pipeline stages with code references and enumerate the specific, observed failure points for fn_011/fn_021.
+  - Hypothesis: The FN cases reflect a concrete failure in candidate generation or coordinate mapping, not just evaluation IoU strictness.
+- What I checked / changed
+  - Re-opened `README.md`, `docs/README.md`, and `docs/NEXT_SESSION_NOTES.md` to re-anchor to project goal and current phase focus.
+  - Located the core segmentation → bar_line_boxes → mapping → detections.json → eval flow in `external/homr/homr/main.py` and `src/homr_eval_scripts/homr_evaluator.py`.
+- Commands run
+  - `sed -n '1,80p' README.md`
+  - `sed -n '1,120p' docs/README.md`
+  - `sed -n '1,120p' docs/NEXT_SESSION_NOTES.md`
+  - `rg -n "def load_and_preprocess_predictions" -S external/homr/homr src/homr_eval_scripts/homr_evaluator.py`
+  - `sed -n '60,120p' external/homr/homr/main.py`
+  - `sed -n '100,260p' external/homr/homr/main.py`
+  - `rg -n "bar_line" src/homr_eval_scripts/homr_evaluator.py`
+  - `sed -n '420,520p' src/homr_eval_scripts/homr_evaluator.py`
+  - `rg -n "map_pred_to_orig|compute_transform_info|mapped_predictions" -S src/homr_eval_scripts/homr_evaluator.py`
+  - `sed -n '320,420p' src/homr_eval_scripts/homr_evaluator.py`
+  - `rg -n "def compute_metrics" -S src/homr_eval_scripts/homr_evaluator.py`
+  - `sed -n '1320,1405p' src/homr_eval_scripts/homr_evaluator.py`
+  - `rg -n "detections.json" -S src/homr_eval_scripts/homr_evaluator.py`
+  - `sed -n '1880,2005p' src/homr_eval_scripts/homr_evaluator.py`
+- Key results (numbers + qualitative)
+  - **Pipeline map (code-referenced)**
+    - Segmentation + preprocessing: `external/homr/homr/main.py:68-116` (`load_and_preprocess_predictions` → `filter_predictions` → `make_lines_stronger`), fed by `extract(...)` in `get_predictions`.
+    - Symbol extraction: `external/homr/homr/main.py:117-126` (`prepare_bar_line_image` on `predictions.stems_rest` → `create_rotated_bounding_boxes(..., skip_merging=True, min_size=(1,5))` → `symbols.bar_lines`).
+    - Barline filtering (overlap + size): `external/homr/homr/main.py:216-223` and eval path `src/homr_eval_scripts/homr_evaluator.py:447-470` (exclude overlaps with noteheads/stems; apply `barline_min_height_factor` + `barline_max_width_factor`).
+    - Debug output (barline candidates): `debug.write_bounding_boxes_alternating_colors("bar_lines", bar_line_boxes)` in `external/homr/homr/main.py:222-223` and `src/homr_eval_scripts/homr_evaluator.py:470`.
+    - Mapping to original image coords: `compute_transform_info` and `map_pred_to_orig` in `src/homr_eval_scripts/homr_evaluator.py:344-399`.
+    - Detections export: `detections.json` creation in `src/homr_eval_scripts/homr_evaluator.py:1954-1975` (writes 1x `orig_bbox`).
+    - Evaluation: `compute_metrics` in `src/homr_eval_scripts/homr_evaluator.py:1349-1405` (IoU-based matching via `greedy_barline_match`).
+  - **Failure inventory (fn_011 / fn_021)**
+    - F1: **Nearest predicted bbox is small + offset from GT**, so evaluation reports FN even with predictions present.
+      - Evidence: approach-B detections in `logs/homr_eval/20251226T_approachB_page004/page_004/page_004_detections.json` and `logs/homr_eval/20251226T_approachB_page15/page_15/page_15_detections.json` (nearest pred centers are ~333px and ~153px from GT, widths/heights ~0.25–0.33 of GT). This is visualized in `logs/validation/20251226_target_checks/page_004_fn_011_20251226T_approachB_page004_gt_pred_overlay.png` and `logs/validation/20251226_target_checks/page_15_fn_021_20251226T_approachB_page15_gt_pred_overlay.png`.
+    - F2: **Unknown whether bar_line_boxes exist near GT pre-mapping** (to be resolved in Work Unit 2).
+      - Evidence gap: `debug_11_bar_lines` images show bar_line_boxes after filtering, but we have not yet isolated whether any box intersects the GT region in those debug outputs or whether candidates are dropped earlier (e.g., size/overlap filter).
+    - F3: **Possible coordinate mapping distortion** remains open (to be tested).
+      - Evidence gap: mapping applies autocrop offsets + resize + seg scale in `compute_transform_info`/`map_pred_to_orig`, but we have not validated whether a consistent offset/scale mismatch exists for these FN cases.
+- Artifacts saved (paths)
+  - Existing overlays: `logs/validation/20251226_target_checks/page_004_fn_011_20251226T_approachB_page004_gt_pred_overlay.png`, `logs/validation/20251226_target_checks/page_15_fn_021_20251226T_approachB_page15_gt_pred_overlay.png`
+  - Existing detections: `logs/homr_eval/20251226T_approachB_page004/page_004/page_004_detections.json`, `logs/homr_eval/20251226T_approachB_page15/page_15/page_15_detections.json`
+- Conclusion / next work unit
+  - Conclusion: The current pipeline stages and evidence show the FN cases are not recovered because the nearest predicted boxes are undersized and displaced relative to GT. The precise drop point (candidate generation vs filtering vs mapping) is still unverified.
+  - Next work unit: Audit candidate conversion near GT (Work Unit 2) by checking `debug_11_bar_lines` boxes and reconstructing boxes from the underlying mask/CCs to identify which step drops or shifts candidates.
+
+### [Work Unit 2] Candidate conversion audit near GT (2025-12-26 23:24 JST)
+- Objective / hypothesis
+  - Objective: Determine whether bar_line_boxes exist near GT pre-filter, and if/where they are dropped (overlap filter, size filter, or mapping).
+  - Hypothesis: For fn_021 (page_15), candidates exist pre-filter but are removed by size thresholds; for fn_011 (page_004), candidates never overlap even at raw stage.
+- Commands run
+  - `docker exec -i homr_eval_gpu bash -lc 'python3 -m pip install scipy requests typing_extensions musicxml pillow scikit-image onnxruntime rapidocr_onnxruntime torch --index-url https://download.pytorch.org/whl/cpu'`
+  - `docker exec -i homr_eval_gpu bash -lc 'cd /workspace && python3 - <<"PY" ... PY'` (barline stage audit; see outputs below)
+  - `ls -l /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/homr_eval/20251226T_approachB_page004/page_004/page_004_debug_11_bar_lines.png /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/homr_eval/20251226T_approachB_page15/page_15/page_15_debug_11_bar_lines.png`
+- Key results + decision
+  - Full debug image paths (existence confirmed):
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/homr_eval/20251226T_approachB_page004/page_004/page_004_debug_11_bar_lines.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/homr_eval/20251226T_approachB_page15/page_15/page_15_debug_11_bar_lines.png`
+  - **page_004 fn_011 (GT=2569,3420,2581,3506)**
+    - Raw bar_line_boxes (pre-overlap filter): `max_iou=0.0`, closest dist=21.83 px, closest orig bbox=(2550,3441,2559,3470).
+    - Overlap-filtered: `max_iou=0.0` (same closest box), so no overlap exists even before filtering.
+    - Size-filtered: `max_iou=0.0`, closest dist=84.91 px (closest box shifts), so size filter further moves away but the miss already exists.
+    - Decision: Failure is **not caused by overlap/size filters**; candidate overlap is absent at raw stage (generation/mapping mismatch).
+  - **page_15 fn_021 (GT=2402,3272,2417,3348)**
+    - Raw bar_line_boxes: `max_iou=0.1447`, closest dist=16.62 px, closest orig bbox=(2406,3286,2417,3301) → **overlapping candidate exists**.
+    - Overlap-filtered: `max_iou=0.0421` (still overlapping but degraded).
+    - Size-filtered: `max_iou=0.0`, closest dist=196.50 px, closest orig bbox=(2209,3275,2217,3346) → **size filter removes all overlap**.
+    - Decision: For fn_021, the candidate is **lost at size filtering** (barline_min_height/max_width), after some overlap survives earlier filters.
+  - Runtime note: onnxruntime reported no CUDA provider; inference used CPU inside container.
+- Artifacts saved (full paths)
+  - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_wu2_candidate_audit/page_004_20251226T_approachB_page004_barline_stage_boxes.json`
+  - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_wu2_candidate_audit/page_004_20251226T_approachB_page004_barline_stage_summary.json`
+  - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_wu2_candidate_audit/page_15_20251226T_approachB_page15_barline_stage_boxes.json`
+  - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_wu2_candidate_audit/page_15_20251226T_approachB_page15_barline_stage_summary.json`
+- Conclusion / next work unit
+  - Conclusion: fn_011 (page_004) is a **pre-filter mismatch** (no raw overlap), while fn_021 (page_15) is **removed by size filtering**.
+  - Next: Propose normalization ideas aligned to these confirmed drop points (Work Unit 3).
+
+### [Work Unit 3] Normalization proposals (2025-12-26 23:24 JST)
+- Objective / hypothesis
+  - Objective: Propose normalization ideas targeting the confirmed drop points, then rank by impact/risk with a minimal evaluation plan.
+  - Hypothesis: Geometry normalization (height/width/center adjustments) will reduce GT mismatch for fn_011 and prevent size-filter loss for fn_021 without full algorithm redesign.
+- Commands run
+  - None (proposal-only, based on WU2 evidence).
+- Key results + decision
+  - Proposal A (Size-threshold normalization before size filter):
+    - Mechanism: For each raw/overlap-filtered bar_line_box, normalize height to staff-derived expected barline height and clamp width to max-width before applying `barline_min_height`/`barline_max_width` thresholds. This preserves candidates that are “nearly barline-sized” but currently fall just outside size bounds.
+    - Targets: **fn_021** (page_15) where raw overlap exists but is removed at size filter.
+    - Risk: May admit short vertical noise; moderate FP risk but constrained by size normalization.
+    - Evaluation: Re-run page_15 and page_3; success if IoU>0.5 for fn_021 and page_3 TP=152 FP=0 FN=0 remains.
+  - Proposal B (Post-mapping center/height snapping to staff metrics):
+    - Mechanism: After mapping to orig coords, snap barline bbox center x to nearest strong vertical mask centroid and expand y to staff line span (or N staff spaces). This addresses near-miss offsets/short boxes without changing candidate generation.
+    - Targets: **fn_011** (page_004) where raw overlap is 0 but nearest candidate is close (~22px), suggesting normalization could bridge the gap.
+    - Risk: Could shift true positives into noteheads or align to wrong staff; must be constrained by staff proximity.
+    - Evaluation: Page_004 fn_011 recovery check + page_3 guard. Success if overlap emerges without FP regression.
+  - Proposal C (Split size filter into “strict” + “lenient if mask evidence”):
+    - Mechanism: Retain size-filter thresholds for general candidates, but allow a lenient path if the candidate is supported by mask density (bar_line_img) within a local window.
+    - Targets: **fn_021** (size-filter loss) and potentially **fn_011** if mask evidence is strong but box is undersized.
+    - Risk: Mask-based leniency may increase FP where stems are dense; needs tight window and verticality constraints.
+    - Evaluation: Same as above; additionally check FP clusters near dense chords.
+  - Ranking (impact vs risk):
+    - High impact / moderate risk: Proposal A (directly addresses size-filter loss for fn_021).
+    - Medium impact / higher risk: Proposal B (may fix fn_011 but risks misalignment on other bars).
+    - Medium impact / higher risk: Proposal C (mask-based leniency could reintroduce FPs).
+- Artifacts saved (full paths)
+  - None (proposal-only).
+- Conclusion / next work unit
+  - Conclusion: With fn_021 lost at size filtering and fn_011 missing raw overlap, normalization should focus on size normalization (fn_021) and staff-aligned snapping (fn_011) as separate experiments. Next step: choose a minimal normalization experiment and run fn_011/fn_021 + page_3 guard.
+
+### [Work Unit 4] Proposal A implementation + eval (2025-12-26 23:45 JST)
+- Objective / hypothesis
+  - Objective: Apply size-threshold normalization before size filtering and test recovery for fn_021 while preserving page_3 guard.
+  - Hypothesis: Clamping bar_line_box height/width to staff-derived thresholds would allow fn_021 to survive size filtering without major FP increase.
+- What I changed / tested
+  - Implemented normalization in `src/homr_eval_scripts/homr_evaluator.py` (clamp size before min-height/max-width checks).
+  - Switched to canonical GPU environment per `docs/ENVIRONMENTS.md`: `homr_eval_gpu` + Poetry venv.
+  - Installed `onnxruntime-gpu==1.22.0` in Poetry venv; verified CUDAExecutionProvider.
+- Commands run
+  - `docker exec -i homr_eval_gpu bash -lc 'cd /workspace/external/homr && poetry install'`
+  - `docker exec -i homr_eval_gpu bash -lc 'cd /workspace/external/homr && poetry run python -m pip install onnxruntime-gpu==1.22.0'`
+  - `docker exec -i homr_eval_gpu bash -lc 'cd /workspace/external/homr && poetry run python - <<"PY" ... ort.get_device() ... PY'`
+  - `docker exec -i homr_eval_gpu bash -lc 'cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/evaluation/images/page_15.png --ground-truth page_15:/workspace/logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/page_15/fn_only_corrected.json --output-root /workspace/logs/homr_eval --force-run-id 20251226T_wu4_normA_page15'`
+  - `docker exec -i homr_eval_gpu bash -lc 'cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/evaluation/images/page_3.png --ground-truth page_3:/workspace/data/evaluation/annotations/page_003/boxes_sorted.json --output-root /workspace/logs/homr_eval --force-run-id 20251226T_wu4_normA_page3_guard'`
+- Key results (quantitative + qualitative)
+  - GPU provider confirmed: `onnxruntime` reports `device=GPU`, providers include `CUDAExecutionProvider`.
+  - page_15 metrics (run `20251226T_wu4_normA_page15`): TP=9, FP=189, FN=13.
+  - page_3 guard (run `20251226T_wu4_normA_page3_guard`): TP=149, FP=190, FN=3 — **severe regression** vs baseline (TP=152 FP=0 FN=0).
+  - fn_021 recovery check: best IoU with final predictions is 0.1225 (below threshold); still FN.
+- Artifacts saved (FULL paths + color legend)
+  - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/homr_eval/20251226T_wu4_normA_page15/metrics.json`
+  - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/homr_eval/20251226T_wu4_normA_page3_guard/metrics.json`
+  - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_wu4_normA_visuals/page_15_fn_021_gt_red_norm_green_pred_yellow_overlay.png`
+    - Color legend: Red = GT bbox, Green = nearest normalized candidate (post-overlap, pre-size filter), Yellow = nearest final prediction (post-size filter, detections.json).
+- Conclusion / next step
+  - Proposal A **does not recover fn_021** and **breaks the page_3 guard**; not viable as-is.
+
+### [Work Unit 5] fn_011 diagnostic under Proposal A (2025-12-26 23:45 JST)
+- Objective / hypothesis
+  - Objective: Check whether Proposal A incidentally improves fn_011 geometry without adding new logic.
+  - Hypothesis: Normalization might reduce the GT–candidate gap, even if fn_011 remains FN.
+- What I changed / tested
+  - Generated GT vs raw (overlap-filtered) vs normalized candidate overlay for fn_011 using the same normalization rule.
+- Commands run
+  - `docker exec -i homr_eval_gpu bash -lc 'cd /workspace/external/homr && poetry run python - <<"PY" ... overlay generation ... PY'`
+- Key results (quantitative + qualitative)
+  - Nearest raw candidate distance: 21.83 px (box 2550,3441,2559,3470).
+  - Nearest normalized candidate distance: 21.66 px (box 2550,3424,2559,3488).
+  - Improvement is marginal; fn_011 remains a miss (no IoU >= 0.5 candidate).
+- Artifacts saved (FULL paths + color legend)
+  - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_wu4_normA_visuals/page_004_fn_011_gt_red_raw_blue_norm_green_overlay.png`
+    - Color legend: Red = GT bbox, Blue = nearest candidate before normalization (post-overlap filter), Green = nearest candidate after normalization (pre-size filter).
+- Conclusion / next step
+  - Proposal A does not meaningfully improve fn_011; still unsolved.
+
+### [Work Unit 6] Decision checkpoint (2025-12-26 23:45 JST)
+- Objective / hypothesis
+  - Objective: Decide whether Proposal A is acceptable and whether Proposal B is justified.
+  - Hypothesis: Given fn_021 remains FN and page_3 regresses, Proposal A should be rejected and rolled back; Proposal B is justified for fn_011 pre-filter mismatch.
+- What I changed / tested
+  - No further changes; decision based on Work Units 4–5 results.
+- Commands run
+  - None.
+- Key results (quantitative + qualitative)
+  - Proposal A outcome: **No fn_021 recovery** (best IoU 0.1225), **page_3 guard failed** (TP=149 FP=190 FN=3).
+  - fn_011 remains pre-filter mismatch; normalization does not bridge the gap.
+- Artifacts saved (FULL paths + color legend)
+  - Refer to Work Units 4–5 artifacts above.
+- Conclusion / next step
+  - Proposal A is **not acceptable** due to severe regression and no FN recovery; change should be reverted before next experiment.
+  - Proposal B (staff-aligned snapping / mapping normalization) is now justified as the next diagnostic experiment for fn_011, after rollback of Proposal A.
+
+### [Work Unit 7] Cross-FN drop-point audit (2025-12-26 23:45 JST)
+- Objective / hypothesis
+  - Objective: For all 10 remaining detector-miss cases, locate the first pipeline stage where overlap is lost and quantify distribution.
+  - Hypothesis: Most FN are lost pre-filter (candidate generation/segmentation), not at overlap/size filters.
+- What I checked / tested
+  - Used `logs/phase6_detector_miss/detector_miss_classification.csv` for GT bboxes + categories.
+  - Ran stage-by-stage audit on raw, overlap-filtered, size-filtered candidates with GT IoU and center-distance; computed mask evidence using `bar_line_img`.
+  - Note: `page_10.png` is absent in evaluation images; used `/workspace/data/training/images/page_10.png` as the only available image for page_10 FN audit.
+- Commands run
+  - `docker exec -i homr_eval_gpu bash -lc 'cd /workspace/external/homr && poetry run python - <<"PY" ... fn_stage_audit ... PY'`
+- Key results (quantitative + qualitative)
+  - Stage loss distribution (10 total): pre_filter=7, overlap_filter=1, size_filter=2, mapping_issue=0.
+  - Per-FN summary (raw/overlap/size max IoU, mask evidence):
+    - page_004 fn_000 end_barline: raw_iou=0.000 → pre_filter, mask=True
+    - page_004 fn_003 text_dynamic_overlap: raw_iou=0.000 → pre_filter, mask=False
+    - page_004 fn_005 dense_chord_accidental: raw_iou=0.000 → pre_filter, mask=True
+    - page_004 fn_008 text_dynamic_overlap: raw_iou=0.751 → overlap_filter, mask=True
+    - page_004 fn_011 double_or_repeat_bar: raw_iou=0.000 → pre_filter, mask=True
+    - page_10 fn_000 end_barline: raw_iou=0.089 → size_filter, mask=True
+    - page_15 fn_003 text_dynamic_overlap: raw_iou=0.295 → size_filter, mask=True
+    - page_15 fn_007 notehead_overlap: raw_iou=0.000 → pre_filter, mask=False
+    - page_15 fn_010 dense_chord_accidental: raw_iou=0.000 → pre_filter, mask=False
+    - page_15 fn_021 double_or_repeat_bar: raw_iou=0.000 → pre_filter, mask=False
+- Artifacts saved (FULL paths)
+  - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_wu7_fn_audit/fn_stage_audit.json`
+  - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_wu7_fn_audit/fn_stage_audit.csv`
+  - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_wu7_fn_audit/fn_stage_audit_summary.json`
+- Conclusion / implication
+  - The dominant failure class is **pre-filter loss** (7/10), implying segmentation/candidate generation gaps rather than size/overlap filtering. Size-filter loss exists but is minor (2/10). No mapping issues detected.
+
+### [Work Unit 8] Failure-class consolidation (2025-12-26 23:45 JST)
+- Objective / hypothesis
+  - Objective: Group FN by drop-point + category to identify scalable fixes.
+  - Hypothesis: Pre-filter losses cluster across multiple categories, suggesting a single candidate-generation intervention could help several FN.
+- What I checked / tested
+  - Clustered FN by `stage_loss` and category using `fn_stage_audit.csv`.
+- Commands run
+  - `.venv_pdf/bin/python - <<'PY' ... cluster counts from fn_stage_audit.csv ... PY`
+- Key results (quantitative + qualitative)
+  - Dominant class: pre_filter (7 FN) spanning end_barline, dense_chord_accidental, double_or_repeat_bar, notehead_overlap, text_dynamic_overlap.
+  - Secondary class: size_filter (2 FN) spanning end_barline + text_dynamic_overlap.
+  - Minor class: overlap_filter (1 FN) in text_dynamic_overlap.
+  - Ranked potential impact by class size:
+    1) pre_filter (7)
+    2) size_filter (2)
+    3) overlap_filter (1)
+- Artifacts saved (FULL paths)
+  - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_wu7_fn_audit/fn_stage_audit.csv`
+- Conclusion / implication
+  - A single intervention that boosts **pre-filter candidate generation** is most likely to reduce FN count across multiple categories.
+
+### [Work Unit 9] Select ONE high-impact intervention (proposal only) (2025-12-26 23:45 JST)
+- Objective / hypothesis
+  - Objective: Choose one minimal, high-leverage change targeting the largest FN cluster (pre-filter loss).
+  - Hypothesis: Adding a lightweight, image-based vertical-run candidate generator (staff-constrained) will recover multiple pre-filter FN without major redesign.
+- What I checked / tested
+  - No code changes; proposal based on Work Units 7–8 audit distribution.
+- Commands run
+  - None.
+- Key results (quantitative + qualitative)
+  - **Chosen intervention**: Add a supplemental candidate path that detects thin vertical runs directly on the grayscale image (or bar_line_img) within staff-mask regions, then merges into bar_line_boxes before overlap/size filters.
+    - Where: immediately after `predict_symbols()` / before overlap filtering in `src/homr_eval_scripts/homr_evaluator.py`.
+    - Why: pre_filter loss suggests missing candidates; vertical-run detector can supply candidates when segmentation misses thin/occluded bars.
+  - Minimal experiment plan:
+    - Pages: page_004, page_10, page_15 (all remaining FN pages).
+    - Guard: page_3 Phase 4 baseline (TP=152 FP=0 FN=0).
+    - Success criteria:
+      - At least 3/7 pre_filter FN gain non-zero IoU (>=0.1) with new candidates before final filtering.
+      - No page_3 regression beyond +10 FP in raw candidates (final filtered output must remain FP=0).
+- Artifacts saved (FULL paths)
+  - None (proposal-only).
+- Conclusion / implication
+  - Next step is to implement the supplemental candidate generator and re-run the three FN pages + page_3 guard; stop if FP regression exceeds threshold.
+
+### [Experiment Batch 1] Lightweight candidate generators (2025-12-27 00:39 JST)
+- Candidate generator(s) tested
+  - gen1_vertical_run: staff-constrained vertical run-length detector (dark_threshold=80, min_run=20, morphological open with (20x1) kernel).
+  - gen2_barline_cc_relaxed: relaxed CC extraction on bar_line_img (min_size=(1,3)).
+  - gen3_sobel_vertical: staff-constrained vertical Sobel detector (sobel_threshold=60, min_run=15, morphological open (15x1)).
+- Parameters used
+  - Defaults as implemented in `src/homr_eval_scripts/homr_evaluator.py` (see functions `generate_vertical_run_candidates`, `generate_barline_cc_relaxed`, `generate_sobel_vertical_candidates`).
+- Pages evaluated
+  - page_004, page_10 (from `/workspace/data/training/images/page_10.png`), page_15 (FN-only GT)
+  - page_3 guard (Phase 4 baseline check)
+- FN recovered (count + which FN)
+  - gen1_vertical_run: 0 recovered; all 10 missed.
+  - gen2_barline_cc_relaxed: 0 recovered; all 10 missed.
+  - gen3_sobel_vertical: 0 recovered; all 10 missed.
+- FP impact (raw + final)
+  - gen1_vertical_run:
+    - page_004: num_pred=170, FP=170, FN=12
+    - page_10: num_pred=237, FP=216, FN=7
+    - page_15: num_pred=154, FP=141, FN=14
+    - page_3 guard: num_pred=222, FP=30, FN=0
+  - gen2_barline_cc_relaxed:
+    - page_004: num_pred=272, FP=272, FN=12
+    - page_10: num_pred=393, FP=351, FN=7
+    - page_15: num_pred=264, FP=238, FN=14
+    - page_3 guard: num_pred=327, FP=31, FN=0
+  - gen3_sobel_vertical:
+    - page_004: num_pred=170, FP=170, FN=12
+    - page_10: num_pred=237, FP=216, FN=7
+    - page_15: num_pred=154, FP=141, FN=14
+    - page_3 guard: num_pred=222, FP=30, FN=0
+- Artifacts (FULL paths, color legends)
+  - Overlay (Red=GT, Green=Pred): `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_batch1_overlays/gen1_vertical_run/20251226T_batch1_gen1_page_004_page_004_gt_red_pred_green_overlay.png`
+  - Overlay (Red=GT, Green=Pred): `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_batch1_overlays/gen1_vertical_run/20251226T_batch1_gen1_page_10_page_10_gt_red_pred_green_overlay.png`
+  - Overlay (Red=GT, Green=Pred): `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_batch1_overlays/gen1_vertical_run/20251226T_batch1_gen1_page_15_page_15_gt_red_pred_green_overlay.png`
+  - Overlay (Red=GT, Green=Pred): `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_batch1_overlays/gen1_vertical_run/20251226T_batch1_gen1_page3_guard_page_3_gt_red_pred_green_overlay.png`
+  - Overlay (Red=GT, Green=Pred): `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_batch1_overlays/gen2_barline_cc_relaxed/20251226T_batch1_gen2_page_004_page_004_gt_red_pred_green_overlay.png`
+  - Overlay (Red=GT, Green=Pred): `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_batch1_overlays/gen2_barline_cc_relaxed/20251226T_batch1_gen2_page_10_page_10_gt_red_pred_green_overlay.png`
+  - Overlay (Red=GT, Green=Pred): `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_batch1_overlays/gen2_barline_cc_relaxed/20251226T_batch1_gen2_page_15_page_15_gt_red_pred_green_overlay.png`
+  - Overlay (Red=GT, Green=Pred): `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_batch1_overlays/gen2_barline_cc_relaxed/20251226T_batch1_gen2_page3_guard_page_3_gt_red_pred_green_overlay.png`
+  - Overlay (Red=GT, Green=Pred): `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_batch1_overlays/gen3_sobel_vertical/20251226T_batch1_gen3_page_004_page_004_gt_red_pred_green_overlay.png`
+  - Overlay (Red=GT, Green=Pred): `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_batch1_overlays/gen3_sobel_vertical/20251226T_batch1_gen3_page_10_page_10_gt_red_pred_green_overlay.png`
+  - Overlay (Red=GT, Green=Pred): `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_batch1_overlays/gen3_sobel_vertical/20251226T_batch1_gen3_page_15_page_15_gt_red_pred_green_overlay.png`
+  - Overlay (Red=GT, Green=Pred): `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_batch1_overlays/gen3_sobel_vertical/20251226T_batch1_gen3_page3_guard_page_3_gt_red_pred_green_overlay.png`
+  - Summary JSON: `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_batch1_overlays/batch1_summary.json`
+  - Metrics brief JSON: `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251226T_batch1_overlays/batch1_metrics_brief.json`
+- Decision (keep / discard / refine)
+  - All three generators failed to recover any remaining FN and added FP (especially gen2); **discard** as-is.
+  - Note: initial multi-command batch timed out; remaining runs completed individually afterward.
+
+### [Experiment Batch 2] No-staff-mask + tiny-CC variants (2025-12-27 01:19 JST)
+- Objective / hypothesis: Test additional candidate generators (no staff mask and tiny CC) to increase FN recall without assuming a single FN cause.
+- What I checked / tested: Ran gen4 vertical-run no staff mask, gen5 tiny CC on bar_line_img, gen6 sobel vertical no staff mask on page_004/page_10/page_15 + page_3 guard. Generated GT+pred overlays for each run.
+- Commands run:
+  - `docker exec homr_eval_gpu bash -lc 'cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/evaluation/images/page_3.png --ground-truth page_3:/workspace/data/evaluation/annotations/page_003/boxes_sorted.json --output-root /workspace/logs/homr_eval --force-run-id 20251227T_batch2_gen4_page3_guard --gen-vertical-run-no-staff'`
+  - `docker exec homr_eval_gpu bash -lc 'cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/evaluation/images/page_15.png --ground-truth page_15:/workspace/logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/page_15/fn_only_corrected.json --output-root /workspace/logs/homr_eval --force-run-id 20251227T_batch2_gen5_page_15 --gen-barline-cc-tiny'`
+  - `docker exec homr_eval_gpu bash -lc 'cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/evaluation/images/page_3.png --ground-truth page_3:/workspace/data/evaluation/annotations/page_003/boxes_sorted.json --output-root /workspace/logs/homr_eval --force-run-id 20251227T_batch2_gen5_page3_guard --gen-barline-cc-tiny'`
+  - `docker exec homr_eval_gpu bash -lc 'cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/evaluation/images/page_15.png --ground-truth page_15:/workspace/logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/page_15/fn_only_corrected.json --output-root /workspace/logs/homr_eval --force-run-id 20251227T_batch2_gen6_page_15 --gen-sobel-no-staff'`
+  - `docker exec homr_eval_gpu bash -lc 'cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/evaluation/images/page_3.png --ground-truth page_3:/workspace/data/evaluation/annotations/page_003/boxes_sorted.json --output-root /workspace/logs/homr_eval --force-run-id 20251227T_batch2_gen6_page3_guard --gen-sobel-no-staff'`
+  - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/.venv_pdf/bin/python /tmp/summarize_batch2_metrics.py`
+  - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/.venv_pdf/bin/python /tmp/summarize_batch2_recovered.py`
+  - `bash /tmp/render_batch2_overlays.sh`
+- Key results (quantitative + qualitative):
+  - gen4_vertical_run_no_staff:
+    - page_004: TP=0 FP=210 FN=12 (0/12 recovered)
+    - page_10: TP=18 FP=340 FN=6 (18/24 recovered)
+    - page_15: TP=14 FP=256 FN=8 (14/22 recovered)
+    - page_3 guard: TP=152 FP=30 FN=0 (FP +30 vs baseline)
+  - gen5_barline_cc_tiny:
+    - page_004: TP=0 FP=272 FN=12 (0/12 recovered)
+    - page_10: TP=17 FP=351 FN=7 (17/24 recovered)
+    - page_15: TP=8 FP=238 FN=14 (8/22 recovered)
+    - page_3 guard: TP=152 FP=31 FN=0 (FP +31 vs baseline)
+  - gen6_sobel_no_staff:
+    - page_004: TP=3 FP=342 FN=9 (3/12 recovered)
+    - page_10: TP=19 FP=460 FN=5 (19/24 recovered)
+    - page_15: TP=15 FP=354 FN=7 (15/22 recovered)
+    - page_3 guard: TP=152 FP=55 FN=0 (FP +55 vs baseline)
+  - Overall: no generator recovers any FN on page_004 beyond 3/12 for gen6; FP inflation increases significantly for guard page.
+- Artifacts saved (FULL paths + color legend):
+  - Color legend for ALL overlays: Red=GT boxes, Green=predicted boxes (from `*_detections.json`).
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/gen4_vertical_run_no_staff/page_004_20251227T_batch2_gen4_page_004_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/gen4_vertical_run_no_staff/page_10_20251227T_batch2_gen4_page_10_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/gen4_vertical_run_no_staff/page_15_20251227T_batch2_gen4_page_15_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/gen4_vertical_run_no_staff/page_3_20251227T_batch2_gen4_page3_guard_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/gen5_barline_cc_tiny/page_004_20251227T_batch2_gen5_page_004_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/gen5_barline_cc_tiny/page_10_20251227T_batch2_gen5_page_10_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/gen5_barline_cc_tiny/page_15_20251227T_batch2_gen5_page_15_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/gen5_barline_cc_tiny/page_3_20251227T_batch2_gen5_page3_guard_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/gen6_sobel_no_staff/page_004_20251227T_batch2_gen6_page_004_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/gen6_sobel_no_staff/page_10_20251227T_batch2_gen6_page_10_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/gen6_sobel_no_staff/page_15_20251227T_batch2_gen6_page_15_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/gen6_sobel_no_staff/page_3_20251227T_batch2_gen6_page3_guard_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/batch2_metrics_brief.json
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/batch2_recovered_gt_indices.json
+- Conclusion / implication: Additional candidate generators (no staff mask + tiny CC + sobel no staff mask) still fail to recover page_004 FN; page_3 guard FP regressions worsen. None are suitable as-is for recall gains; next step is to inspect candidate generation quality vs GT for the persistent FN set to find a shared drop point or adjust normalization.

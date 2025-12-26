@@ -662,3 +662,88 @@ Assumptions/uncertainties:
   - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/batch2_metrics_brief.json
   - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/batch2_recovered_gt_indices.json
 - Conclusion / implication: Additional candidate generators (no staff mask + tiny CC + sobel no staff mask) still fail to recover page_004 FN; page_3 guard FP regressions worsen. None are suitable as-is for recall gains; next step is to inspect candidate generation quality vs GT for the persistent FN set to find a shared drop point or adjust normalization.
+
+### [Work Unit A] Base generator selection + baseline metrics (2025-12-27 02:09 JST)
+- Objective / hypothesis: Use gen4_vertical_run_no_staff as base (lower FP than gen6) and confirm baseline metrics on page_10/page_15 FN-only and page_3 guard.
+- What I checked / tested: Rechecked repo docs once (README.md, docs/README.md, docs/NEXT_SESSION_NOTES.md). Ran base generator on page_10/page_15/page_3 guard with new run ids after adding staff-overlap filter option (left at default 0.0, so no change in behavior).
+- Commands run:
+  - `bash /tmp/run_batch3_base.sh`
+  - `docker exec homr_eval_gpu bash -lc 'cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/evaluation/images/page_3.png --ground-truth page_3:/workspace/data/evaluation/annotations/page_003/boxes_sorted.json --output-root /workspace/logs/homr_eval --force-run-id 20251227T_batch3_base_page3_guard --gen-vertical-run-no-staff'`
+  - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/.venv_pdf/bin/python /tmp/summarize_batch3_metrics.py`
+- Key results (quantitative + qualitative):
+  - page_10 (base): TP=18 FP=340 FN=6 (recall 0.75)
+  - page_15 (base): TP=14 FP=256 FN=8 (recall 0.636)
+  - page_3 guard (base): TP=152 FP=30 FN=0
+- Artifacts saved (FULL paths + color legend):
+  - Metrics summary JSON: /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/batch3_metrics_brief.json
+- Conclusion / implication: gen4_vertical_run_no_staff remains the base; FP on page_3 still +30 vs baseline, so we proceed to FP sampling and cheap filter variants.
+
+### [Work Unit B] FP sampling on page_3 (2025-12-27 02:09 JST)
+- Objective / hypothesis: Sample FP patterns from page_3 to guide cheap geometry-based filters.
+- What I checked / tested: Sampled 20 FP boxes from base generator (page_3) and generated overlay + 10 FP crops.
+- Commands run:
+  - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/.venv_pdf/bin/python /tmp/sample_fp_overlays.py --base /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/data/evaluation/images/page_3.png --gt /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/data/evaluation/annotations/page_003/boxes_sorted.json --pred /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/homr_eval/20251227T_batch3_base_page3_guard/page_3/page_3_detections.json --metrics /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/homr_eval/20251227T_batch3_base_page3_guard/metrics.json --output-overlay /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_fp_sampling/page_3_base_gt_red_pred_green_fp_blue_overlay.png --output-crops-dir /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_fp_sampling/crops`
+- Key results (quantitative + qualitative):
+  - Sampled FP indices: [0, 1, 4, 14, 28, 29, 31, 42, 45, 48, 63, 73, 77, 91, 105, 109, 110, 111, 112, 116]
+- Artifacts saved (FULL paths + color legend):
+  - Overlay legend: Red=GT boxes, Green=all predictions, Blue=sampled FP predictions.
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_fp_sampling/page_3_base_gt_red_pred_green_fp_blue_overlay.png
+  - Crop legend: Blue=sampled FP prediction.
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_fp_sampling/crops/fp000_pred_blue_crop.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_fp_sampling/crops/fp001_pred_blue_crop.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_fp_sampling/crops/fp004_pred_blue_crop.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_fp_sampling/crops/fp014_pred_blue_crop.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_fp_sampling/crops/fp028_pred_blue_crop.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_fp_sampling/crops/fp029_pred_blue_crop.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_fp_sampling/crops/fp031_pred_blue_crop.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_fp_sampling/crops/fp042_pred_blue_crop.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_fp_sampling/crops/fp045_pred_blue_crop.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_fp_sampling/crops/fp048_pred_blue_crop.png
+- Conclusion / implication: FP patterns are captured for filter tuning; proceed to staff-overlap filter variants.
+
+### [Work Unit C] Staff-overlap filter variants (2025-12-27 02:09 JST)
+- Objective / hypothesis: Add a cheap geometry filter (staff mask overlap ratio) to reduce FP while preserving FN-only recall.
+- What I changed / tested: Implemented optional staff-overlap filter (`--barline-staff-overlap-min`) and ran 5 threshold variants (0.1–0.5) with gen4 base on page_10/page_15/page_3 guard. Generated GT+pred overlays for each variant/page.
+- Commands run:
+  - `docker exec homr_eval_gpu bash -lc '... --force-run-id 20251227T_batch3_v0p1_page_10 --gen-vertical-run-no-staff --barline-staff-overlap-min 0.1'`
+  - `docker exec homr_eval_gpu bash -lc '... --force-run-id 20251227T_batch3_v0p1_page_15 --gen-vertical-run-no-staff --barline-staff-overlap-min 0.1'`
+  - `docker exec homr_eval_gpu bash -lc '... --force-run-id 20251227T_batch3_v0p1_page3_guard --gen-vertical-run-no-staff --barline-staff-overlap-min 0.1'`
+  - `docker exec homr_eval_gpu bash -lc '... --force-run-id 20251227T_batch3_v0p2_page_10 --gen-vertical-run-no-staff --barline-staff-overlap-min 0.2'`
+  - `docker exec homr_eval_gpu bash -lc '... --force-run-id 20251227T_batch3_v0p2_page_15 --gen-vertical-run-no-staff --barline-staff-overlap-min 0.2'`
+  - `docker exec homr_eval_gpu bash -lc '... --force-run-id 20251227T_batch3_v0p2_page3_guard --gen-vertical-run-no-staff --barline-staff-overlap-min 0.2'`
+  - `docker exec homr_eval_gpu bash -lc '... --force-run-id 20251227T_batch3_v0p3_page_10 --gen-vertical-run-no-staff --barline-staff-overlap-min 0.3'`
+  - `docker exec homr_eval_gpu bash -lc '... --force-run-id 20251227T_batch3_v0p3_page_15 --gen-vertical-run-no-staff --barline-staff-overlap-min 0.3'`
+  - `docker exec homr_eval_gpu bash -lc '... --force-run-id 20251227T_batch3_v0p3_page3_guard --gen-vertical-run-no-staff --barline-staff-overlap-min 0.3'`
+  - `docker exec homr_eval_gpu bash -lc '... --force-run-id 20251227T_batch3_v0p4_page_10 --gen-vertical-run-no-staff --barline-staff-overlap-min 0.4'`
+  - `docker exec homr_eval_gpu bash -lc '... --force-run-id 20251227T_batch3_v0p4_page_15 --gen-vertical-run-no-staff --barline-staff-overlap-min 0.4'`
+  - `docker exec homr_eval_gpu bash -lc '... --force-run-id 20251227T_batch3_v0p4_page3_guard --gen-vertical-run-no-staff --barline-staff-overlap-min 0.4'`
+  - `docker exec homr_eval_gpu bash -lc '... --force-run-id 20251227T_batch3_v0p5_page_10 --gen-vertical-run-no-staff --barline-staff-overlap-min 0.5'`
+  - `docker exec homr_eval_gpu bash -lc '... --force-run-id 20251227T_batch3_v0p5_page_15 --gen-vertical-run-no-staff --barline-staff-overlap-min 0.5'`
+  - `docker exec homr_eval_gpu bash -lc '... --force-run-id 20251227T_batch3_v0p5_page3_guard --gen-vertical-run-no-staff --barline-staff-overlap-min 0.5'`
+  - `bash /tmp/render_batch3_variant_overlays.sh`
+  - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/.venv_pdf/bin/python /tmp/summarize_batch3_metrics.py`
+- Key results (quantitative + qualitative):
+  - v0p1 (min overlap 0.1): page_10 TP=18 FP=332 FN=6; page_15 TP=14 FP=238 FN=8; page_3 TP=152 FP=30 FN=0 (no guard improvement)
+  - v0p2 (0.2): page_10 TP=17 FP=328 FN=7; page_15 TP=12 FP=231 FN=10; page_3 TP=150 FP=29 FN=2 (guard FN regression)
+  - v0p3 (0.3): page_10 TP=13 FP=265 FN=11; page_15 TP=6 FP=179 FN=16; page_3 TP=120 FP=29 FN=32 (major recall regression)
+  - v0p4 (0.4): page_10 TP=0 FP=81 FN=24; page_15 TP=2 FP=44 FN=20; page_3 TP=120 FP=29 FN=32 (collapse)
+  - v0p5 (0.5): page_10 TP=0 FP=81 FN=24; page_15 TP=0 FP=44 FN=22; page_3 TP=120 FP=29 FN=32 (collapse)
+- Artifacts saved (FULL paths + color legend):
+  - Color legend for ALL overlays: Red=GT boxes, Green=predicted boxes (from `*_detections.json`).
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/overlays/20251227T_batch3_v0p1_page_10/page_10_20251227T_batch3_v0p1_page_10_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/overlays/20251227T_batch3_v0p1_page_15/page_15_20251227T_batch3_v0p1_page_15_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/overlays/20251227T_batch3_v0p1_page3_guard/page_3_20251227T_batch3_v0p1_page3_guard_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/overlays/20251227T_batch3_v0p2_page_10/page_10_20251227T_batch3_v0p2_page_10_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/overlays/20251227T_batch3_v0p2_page_15/page_15_20251227T_batch3_v0p2_page_15_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/overlays/20251227T_batch3_v0p2_page3_guard/page_3_20251227T_batch3_v0p2_page3_guard_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/overlays/20251227T_batch3_v0p3_page_10/page_10_20251227T_batch3_v0p3_page_10_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/overlays/20251227T_batch3_v0p3_page_15/page_15_20251227T_batch3_v0p3_page_15_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/overlays/20251227T_batch3_v0p3_page3_guard/page_3_20251227T_batch3_v0p3_page3_guard_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/overlays/20251227T_batch3_v0p4_page_10/page_10_20251227T_batch3_v0p4_page_10_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/overlays/20251227T_batch3_v0p4_page_15/page_15_20251227T_batch3_v0p4_page_15_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/overlays/20251227T_batch3_v0p4_page3_guard/page_3_20251227T_batch3_v0p4_page3_guard_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/overlays/20251227T_batch3_v0p5_page_10/page_10_20251227T_batch3_v0p5_page_10_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/overlays/20251227T_batch3_v0p5_page_15/page_15_20251227T_batch3_v0p5_page_15_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/overlays/20251227T_batch3_v0p5_page3_guard/page_3_20251227T_batch3_v0p5_page3_guard_gt_red_pred_green_overlay.png
+  - Metrics summary JSON: /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/batch3_metrics_brief.json
+- Conclusion / implication: Staff-overlap filter reduces FP modestly at 0.1 but does not improve page_3 FP (still +30) and higher thresholds rapidly destroy recall and staff detection. This filter alone is not sufficient for aggressive FP reduction without major recall loss.

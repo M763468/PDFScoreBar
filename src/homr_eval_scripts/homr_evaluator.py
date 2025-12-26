@@ -233,6 +233,24 @@ def parse_args() -> argparse.Namespace:
         help="Scale factor applied to barline maximum width threshold",
     )
     parser.add_argument(
+        "--barline-staff-overlap-min",
+        type=float,
+        default=0.0,
+        help="Minimum staff mask overlap ratio required to keep a barline candidate",
+    )
+    parser.add_argument(
+        "--barline-edge-margin-x",
+        type=int,
+        default=0,
+        help="Reject barline candidates within this x-margin of page edges",
+    )
+    parser.add_argument(
+        "--barline-edge-margin-y",
+        type=int,
+        default=0,
+        help="Reject barline candidates within this y-margin of page edges",
+    )
+    parser.add_argument(
         "--enable-sr",
         action="store_true",
         help="Enable Super-Resolution (Real-ESRGAN x4) preprocessing",
@@ -562,6 +580,45 @@ def detect_staffs_with_barlines(
         if not line.is_overlapping_with_any(all_noteheads)
         and not line.is_overlapping_with_any(all_stems)
     ]
+
+    staff_overlap_min = tuning.get("barline_staff_overlap_min", 0.0)
+    edge_margin_x = int(tuning.get("barline_edge_margin_x", 0))
+    edge_margin_y = int(tuning.get("barline_edge_margin_y", 0))
+    if staff_overlap_min > 0.0 or edge_margin_x > 0 or edge_margin_y > 0:
+        filtered_lines = []
+        dropped = 0
+        mask_h = staff_mask.shape[0] if staff_mask is not None else 0
+        mask_w = staff_mask.shape[1] if staff_mask is not None else 0
+        for line in bar_lines_or_rests:
+            x1, y1, x2, y2 = map(int, line.to_bounding_box().box)
+            if edge_margin_x > 0 and mask_w > 0:
+                if x1 < edge_margin_x or x2 > (mask_w - edge_margin_x):
+                    dropped += 1
+                    continue
+            if edge_margin_y > 0 and mask_h > 0:
+                if y1 < edge_margin_y or y2 > (mask_h - edge_margin_y):
+                    dropped += 1
+                    continue
+            if staff_overlap_min > 0.0 and staff_mask is not None:
+                x1c = max(0, min(mask_w, x1))
+                x2c = max(0, min(mask_w, x2))
+                y1c = max(0, min(mask_h, y1))
+                y2c = max(0, min(mask_h, y2))
+                if x2c <= x1c or y2c <= y1c:
+                    dropped += 1
+                    continue
+                area = (x2c - x1c) * (y2c - y1c)
+                overlap = int(staff_mask[y1c:y2c, x1c:x2c].sum())
+                ratio = overlap / float(area) if area > 0 else 0.0
+                if ratio < staff_overlap_min:
+                    dropped += 1
+                    continue
+            filtered_lines.append(line)
+        bar_lines_or_rests = filtered_lines
+        eprint(
+            f"Barline staff-overlap/edge filter kept {len(bar_lines_or_rests)} candidates, "
+            f"dropped {dropped}"
+        )
 
     min_height_factor = tuning.get("barline_min_height_factor", 1.0)
     max_width_factor = tuning.get("barline_max_width_factor", 1.0)
@@ -1727,6 +1784,9 @@ def main() -> None:
     tuning = {
         "barline_min_height_factor": args.barline_min_height_factor,
         "barline_max_width_factor": args.barline_max_width_factor,
+        "barline_staff_overlap_min": args.barline_staff_overlap_min,
+        "barline_edge_margin_x": args.barline_edge_margin_x,
+        "barline_edge_margin_y": args.barline_edge_margin_y,
         "gen_vertical_run": args.gen_vertical_run,
         "gen_barline_cc_relaxed": args.gen_barline_cc_relaxed,
         "gen_sobel_vertical": args.gen_sobel_vertical,

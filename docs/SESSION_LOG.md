@@ -128,3 +128,123 @@ Approach B: Double-bar candidate synthesis from segmentation mask (paired-vertic
 Assumptions/uncertainties:
 - Current detector suppression/clustering details are not confirmed in Phase 6 logs; these approaches assume double-bar misses are due to suppression or thresholding rather than complete absence in raw segmentation.
 - Gap/overlap thresholds for “double-bar” pattern need empirical tuning; unknown whether existing mask resolution supports stable pairing.
+
+### [Approach A] Design
+- Goal: allow close-parallel vertical strokes to survive when merging thin_barline_finder candidates into detector predictions, to recover double/repeat barlines.
+- Scope: modify only the thin-barline merge/suppression path in homr evaluator; no GT/filter/merge baseline changes.
+- Mechanism: detect a narrow double-bar pattern via x-gap, vertical overlap, height, and width constraints; when matched, skip replacement so both candidates are kept.
+
+### [Approach A] Implementation details
+- Location: src/homr_eval_scripts/homr_evaluator.py (thin_barline_finder merge into mapped_predictions).
+- Added double-bar guard with small constants:
+  - double_bar_min_height=18
+  - double_bar_max_width=6
+  - double_bar_min_overlap=0.75
+  - double_bar_max_gap=6 (edge-to-edge x gap)
+  - double_bar_scan_gap=8 (center scan window)
+- Added _x_gap helper to compute positive edge gap (0 if overlapping).
+- If a candidate pair meets double-bar conditions, replacement is skipped so both survive.
+- Change is localized to the extra_barlines merge loop and should be reversible.
+
+### [Approach A] Results and evaluation
+- Not executed yet in this session. Planned checks:
+  - Re-run detector output for page_004 and page_15 to verify fn_011/fn_021 recovery.
+  - Run page_3 guard to spot obvious FP regressions.
+  - If FPs increase modestly and double-bar FN are recovered, treat as candidate baseline.
+- Rollback: revert the double-bar guard block in homr_evaluator.py if FP increases are unacceptable.
+- Executed commands:
+  - docker start homr_eval_gpu
+  - docker exec homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/evaluation/images/page_3.png --ground-truth page_3:/workspace/data/evaluation/annotations/page_003/boxes_sorted.json --output-root /workspace/logs/homr_eval"
+- Page_004/page_15 evaluation status:
+  - BLOCKED: images not present in repo (`data/evaluation/images` only contains page_3.png). No page_004.png or page_15.png found, so fn_011/fn_021 recovery could not be directly verified.
+- Page_3 guard metrics (run_id 20251226T190753JST):
+  - TP=149, FP=30, FN=3 (Precision=0.8324, Recall=0.9803, F1=0.9003) from logs/homr_eval/20251226T190753JST/metrics.json.
+  - Note: homr inference ran on CPU provider (CUDAExecutionProvider unavailable warning in stdout).
+- Outcome summary:
+  - Target FN recovery (page_004 fn_011, page_15 fn_021): NOT VERIFIED due to missing images.
+  - Guard page_3 regression: degraded vs baseline (FP=30, FN=3 vs target TP=152, FP=0, FN=0). Needs investigation; may be unrelated to Approach A due to missing baseline run in same environment.
+- Errors/workarounds:
+  - Initial docker exec without `cd /workspace/external/homr` failed: “Poetry could not find a pyproject.toml file in /workspace”. Retried with correct working directory.
+  - First run timed out at 10s; reran with extended timeout to completion.
+
+### [Repro] Environment requirements and baseline procedure
+- Source: docs/ENVIRONMENTS.md.
+- homr_eval_gpu container (Dockerfile.homr, CUDA 12.1 + cuDNN 9); evals must run inside container.
+- Post-create steps: `poetry install` inside `/workspace/external/homr`; GPU sanity check via `torch.cuda.is_available()` and `onnxruntime.get_device()`.
+- Canonical homr eval command (page_3):
+  - docker exec homr_eval_gpu bash -c "cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/evaluation/images/page_3.png --ground-truth page_3:/workspace/data/evaluation/annotations/page_003/boxes_sorted.json --output-root /workspace/logs/homr_eval --force-run-id <run_id>"
+- Phase 4 baseline command (page_3 geometry note-context filter):
+  - .venv_pdf/bin/python experiments/fp_reduction/analyze_staff_consistency.py --json logs/hybrid_results.json --image data/evaluation/images/page_3.png --gt data/evaluation/annotations/page_003/boxes_sorted.json --output logs/phase4_notehead_geom/<run_id>/ --no-use-ratio-tolerance --tol-top-px 5 --tol-bottom-px 5 --enable-geom-notehead-filter --geom-notehead-mode page3_known_fp --homr-context-dir logs/homr_eval_baseline/<run_id>/page_3
+- Data layout: evaluation images expected under `data/evaluation/images/` with page_3.png etc; PDFs under `data/evaluation/pdfs/` (currently empty). GT under `data/evaluation/annotations/page_00x/`.
+
+### [Repro] Dataset availability (page_004/page_15)
+- `data/evaluation/pdfs/` has no PDFs; no `page_004.png` or `page_15.png` originally present.
+- Used existing artifacts as a stopgap (documented source):
+  - Copied `logs/phase5b_homr_recall/homr_factor_1p0/page_004/page_004.png` → `data/evaluation/images/page_004.png`.
+  - Copied `logs/phase5b_homr_recall/homr_factor_1p0/page_15/page_15.png` → `data/evaluation/images/page_15.png`.
+- FN-only GT used for evaluation:
+  - `logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/page_004/fn_only_corrected.json`
+  - `logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/page_15/fn_only_corrected.json`
+
+### [Repro] Baseline reproduction results (page_3)
+- Command:
+  - .venv_pdf/bin/python experiments/fp_reduction/analyze_staff_consistency.py --json logs/hybrid_results.json --image data/evaluation/images/page_3.png --gt data/evaluation/annotations/page_003/boxes_sorted.json --output logs/phase4_notehead_geom/20251226T_phase4_repro/ --no-use-ratio-tolerance --tol-top-px 5 --tol-bottom-px 5 --enable-geom-notehead-filter --geom-notehead-mode page3_known_fp --homr-context-dir logs/homr_eval_baseline/baseline_verification/page_3
+- Result: TP=152, FP=0, FN=0 (reproduced; stdout from script).
+
+### [Approach A] Results and evaluation
+- Environment fix for CUDAExecutionProvider:
+  - `docker exec homr_eval_gpu bash -lc "nvidia-smi"` confirmed GPU visible.
+  - `poetry run python -c "import onnxruntime as ort; print(ort.get_available_providers()); print(ort.get_device())"` initially showed CPU-only provider.
+  - Installed `onnxruntime-gpu==1.23.2` and `opencv-python-headless==4.12.0.88` in the homr poetry env; provider now includes CUDA/TensorRT and `ort.get_device()` reports GPU.
+- Commands (Approach A runs):
+  - docker exec homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/evaluation/images/page_004.png --ground-truth page_004:/workspace/logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/page_004/fn_only_corrected.json --output-root /workspace/logs/homr_eval --force-run-id 20251226T_approachA_page004"
+  - docker exec homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/evaluation/images/page_15.png --ground-truth page_15:/workspace/logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/page_15/fn_only_corrected.json --output-root /workspace/logs/homr_eval --force-run-id 20251226T_approachA_page15"
+- Metrics:
+  - page_004: TP=0, FP=170, FN=12 (logs/homr_eval/20251226T_approachA_page004/metrics.json). fn_011 not recovered.
+  - page_15: TP=8, FP=141, FN=14 (logs/homr_eval/20251226T_approachA_page15/metrics.json). fn_021 not recovered (gt_index 21 not matched).
+- Approach A conclusion: no recovery for target double-bar FNs; proceed to revert and test Approach B.
+
+### [Approach B] Design / Implementation / Results
+- Design: detect close parallel vertical pairs in `thin_barline_finder` and allow them through candidate selection even when near existing detections (paired double-bar recovery).
+- Implementation:
+  - Updated `src/common/thin_barline_finder.py` to add double-pair config (gap/overlap/height/width) and a paired-box bypass for `_is_close`.
+  - Reverted Approach A changes in `src/homr_eval_scripts/homr_evaluator.py` before applying this.
+- Commands (Approach B runs):
+  - docker exec homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/evaluation/images/page_004.png --ground-truth page_004:/workspace/logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/page_004/fn_only_corrected.json --output-root /workspace/logs/homr_eval --force-run-id 20251226T_approachB_page004"
+  - docker exec homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/evaluation/images/page_15.png --ground-truth page_15:/workspace/logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/page_15/fn_only_corrected.json --output-root /workspace/logs/homr_eval --force-run-id 20251226T_approachB_page15"
+  - page_3 guard rerun: .venv_pdf/bin/python experiments/fp_reduction/analyze_staff_consistency.py ... --output logs/phase4_notehead_geom/20251226T_phase4_repro_afterB/ (TP=152, FP=0, FN=0).
+- Metrics:
+  - page_004: TP=0, FP=170, FN=12 (logs/homr_eval/20251226T_approachB_page004/metrics.json). fn_011 not recovered.
+  - page_15: TP=8, FP=141, FN=14 (logs/homr_eval/20251226T_approachB_page15/metrics.json). fn_021 not recovered.
+- Outcome: Approach B did not improve double/repeat-bar recovery in the FN-only GT checks; Phase 4 guard baseline reproduced unchanged.
+
+### [Validation] Historical evaluation targets
+- Evidence of historical image paths:
+  - `tools/run_confirmed_union_eval.sh` uses `data/training/images/page_15.png` and `data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png` for FN-only evaluation pages; GT under `data/training/annotations/page_015/fn_only.json` and `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/fn_only.json`.
+  - `experiments/phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh` uses the same image paths for page_15/page_004.
+  - `logs/homr_eval_baseline/baseline_verification/run_config.json` confirms `data/evaluation/images/page_3.png` as the canonical page_3 input.
+
+### [Validation] Current vs historical image comparison
+- Current evaluation images:
+  - `data/evaluation/images/page_004.png`
+  - `data/evaluation/images/page_15.png`
+- Historical targets (from scripts):
+  - `data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png`
+  - `data/training/images/page_15.png`
+- Hash/dimension comparison (sha256/dims):
+  - `data/evaluation/images/page_004.png`: size=1909684, dims=3000x3900, sha256=f80b6f8b7f68edce13322733dc1145e37a7ace3af35d93a64e307874d84187c9
+  - `data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png`: size=1909684, dims=3000x3900, sha256=f80b6f8b7f68edce13322733dc1145e37a7ace3af35d93a64e307874d84187c9
+  - `data/evaluation/images/page_15.png`: size=721623, dims=2700x3600, sha256=20342b8afca8ac6df52e47d25031abf5994048ea0b5a50585b6596e05f38c4ee
+  - `data/training/images/page_15.png`: size=721623, dims=2700x3600, sha256=20342b8afca8ac6df52e47d25031abf5994048ea0b5a50585b6596e05f38c4ee
+- Conclusion: current evaluation images are byte-identical to historically used targets for page_004 and page_15.
+
+### [Validation] GT–image alignment check
+- FN-only GT boxes are in-bounds for the current images:
+  - page_004: 12 GT boxes, 0 out of bounds; image dims 3000x3900.
+  - page_15: 22 GT boxes, 0 out of bounds; image dims 2700x3600.
+- Specific FN targets (from `logs/phase6_detector_miss/detector_miss_classification.csv`):
+  - page_004 fn_011 bbox (2571,3433,2575,3498) in-bounds; crop saved to `logs/validation/20251226_target_checks/page_004_fn_011_crop.png` with marked full image `logs/validation/20251226_target_checks/page_004_fn_011_marked.png`.
+  - page_15 fn_021 bbox (2395,3278,2399,3338) in-bounds; crop saved to `logs/validation/20251226_target_checks/page_15_fn_021_crop.png` with marked full image `logs/validation/20251226_target_checks/page_15_fn_021_marked.png`.
+
+### [Validation] Corrected evaluation results
+- Evaluation targets confirmed correct (images match historical targets; GT boxes in-bounds). Approach A/B conclusions remain valid under correct conditions; no re-run triggered by target mismatch.

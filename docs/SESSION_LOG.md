@@ -248,3 +248,77 @@ Assumptions/uncertainties:
 
 ### [Validation] Corrected evaluation results
 - Evaluation targets confirmed correct (images match historical targets; GT boxes in-bounds). Approach A/B conclusions remain valid under correct conditions; no re-run triggered by target mismatch.
+
+### [Segmentation Check] GT vs predicted bbox geometry
+- Source predictions: `logs/homr_eval/20251226T_approachB_page004/page_004/page_004_detections.json`, `logs/homr_eval/20251226T_approachB_page15/page_15/page_15_detections.json`.
+- page_004 fn_011:
+  - GT bbox: (2571,3433,2575,3498) (w=4, h=65).
+  - Nearest predicted bbox (by center distance): (2432,3154,2433,3173) (w=1, h=19).
+  - Center delta: dx=-140.5, dy=-302.0, dist=333.08 px.
+  - Size ratios (pred/GT): w_ratio=0.25, h_ratio=0.29.
+  - Interpretation: horizontally shifted left and vertically above; much smaller than GT (not oversized).
+- page_15 fn_021:
+  - GT bbox: (2395,3278,2399,3338) (w=4, h=60).
+  - Nearest predicted bbox (by center distance): (2289,3189,2290,3209) (w=1, h=20).
+  - Center delta: dx=-107.5, dy=-109.0, dist=153.09 px.
+  - Size ratios (pred/GT): w_ratio=0.25, h_ratio=0.33.
+  - Interpretation: shifted left/up; smaller than GT (not oversized).
+- Conclusion: nearest predictions are **horizontally shifted and vertically misaligned** relative to GT; they are **smaller**, not oversized, suggesting missing/shifted candidate generation rather than NMS suppression.
+
+### [Segmentation Check] Barline mask inspection
+- Masks used (resized to original image dimensions):
+  - `logs/homr_eval/20251226T_approachB_page004/page_004/page_004_debug_11_bar_lines.png`
+  - `logs/homr_eval/20251226T_approachB_page15/page_15/page_15_debug_11_bar_lines.png`
+- GT bbox mask occupancy (nonzero pixels within GT box after resize):
+  - page_004 fn_011: mask_gt_nonzero=237
+  - page_15 fn_021: mask_gt_nonzero=232
+- Saved evidence (with run_id):
+  - `logs/validation/20251226_target_checks/page_004_fn_011_20251226T_approachB_page004_barline_mask_crop.png`
+  - `logs/validation/20251226_target_checks/page_004_fn_011_20251226T_approachB_page004_barline_mask_overlay.png`
+  - `logs/validation/20251226_target_checks/page_004_fn_011_20251226T_approachB_page004_barline_mask_overlay_crop.png`
+  - `logs/validation/20251226_target_checks/page_15_fn_021_20251226T_approachB_page15_barline_mask_crop.png`
+  - `logs/validation/20251226_target_checks/page_15_fn_021_20251226T_approachB_page15_barline_mask_overlay.png`
+  - `logs/validation/20251226_target_checks/page_15_fn_021_20251226T_approachB_page15_barline_mask_overlay_crop.png`
+- Interpretation: barline mask has nonzero pixels inside the GT box for both cases, but the nearest predicted candidates are shifted/undersized; suggests segmentation evidence exists but is not converted into aligned candidates.
+
+### [Root Cause] GT vs pred overlay confirmation
+- Approach B overlays reviewed (paths in `logs/validation/20251226_target_checks/`):
+  - `page_004_fn_011_20251226T_approachB_page004_gt_pred_overlay.png`
+  - `page_15_fn_021_20251226T_approachB_page15_gt_pred_overlay.png`
+- Nearest predicted bbox measured (also used in overlays):
+  - page_004 fn_011 nearest pred: (2432,3154,2433,3173) — far above/left of GT.
+  - page_15 fn_021 nearest pred: (2289,3189,2290,3209) — left/up of GT.
+- Large green bbox near GT:
+  - page_004 fn_011: no predicted bbox within ±200px window around GT.
+  - page_15 fn_021: only a thin predicted bbox within window (2289,3189,2290,3209); no oversized bbox near GT.
+
+### [Root Cause] CC bbox from mask near GT
+- Connected-components on resized barline mask (`page_*_debug_11_bar_lines.png`), windowed around GT:
+  - page_004 fn_011: 1 component intersects GT window; full-image bbox approx (2491,3353)-(2655,3578).
+  - page_15 fn_021: 1 component intersects GT window; full-image bbox approx (2315,3198)-(2479,3418).
+- Saved CC debug overlays:
+  - `logs/validation/20251226_target_checks/page_004_fn_011_20251226T_approachB_page004_cc_mask_overlay_crop.png`
+  - `logs/validation/20251226_target_checks/page_15_fn_021_20251226T_approachB_page15_cc_mask_overlay_crop.png`
+- Interpretation: mask contains a large connected component spanning the GT region, but detections.json does not include a corresponding bbox. This suggests a failure in converting mask components to candidate boxes (likely in staff-level parsing or mapping), rather than NMS suppression.
+
+### [Root Cause] Coordinate transform tracing
+- Candidate generation path:
+  - `run_homr_on_image()` extracts `bar_line_boxes` from homr debug symbols and creates `BarlinePrediction(pred_bbox=...)` in segmentation coordinates (see `src/homr_eval_scripts/homr_evaluator.py` around predictions list creation).
+  - `compute_transform_info()` + `map_pred_to_orig()` map segmentation coords to original image coords (same file, around mapping to `orig_bbox`).
+  - `metrics_predictions` later rescale for JSON export; `detections.json` stores 1x coords from `metrics_predictions`.
+- Observed mismatch: segmentation mask (debug_11_bar_lines) resized to original image shows a large component overlapping GT, but no matching prediction exists near GT.
+- Likely failure point: conversion from `bar_line_boxes` (symbol extraction) into `pred_bbox`, or staff parsing that drops/relocates the component before it becomes a prediction; not an NMS stage.
+
+### [Clarification] CC mask visualization semantics
+- `page_*_debug_11_bar_lines.png` is produced by `debug.write_bounding_boxes_alternating_colors("bar_lines", bar_line_boxes)` in `external/homr/homr/main.py:222-223` (homr core) and mirrored in `src/homr_eval_scripts/homr_evaluator.py:470` (eval path). These images show the **bar_line_boxes** after filtering (notehead/stem overlap + min height/max width thresholds), drawn in alternating colors; the colors are purely visual (see `external/homr/homr/debug.py:15-33,87-108`).
+- In the CC overlay crops I generated (e.g., `logs/validation/20251226_target_checks/page_004_fn_011_20251226T_approachB_page004_cc_mask_overlay_crop.png`), **red vertical lines are the GT boxes** drawn by our overlay script, not segmentation detections. **Green boxes** are connected-component (CC) bboxes computed from a binarized version of `page_*_debug_11_bar_lines.png`. These CC boxes are debug-only and do **not** imply a direct detection in `detections.json`.
+- Because `debug_11_bar_lines` already visualizes **filtered bar_line_boxes**, any “red/green” lines in that debug image are **candidates that should correspond to detections**, but the overlay’s colors are ours and should not be interpreted as pipeline semantics.
+
+### [Clarification] Red-line path through pipeline
+- Segmentation output flows as: `predictions.stems_rest` → `prepare_bar_line_image()` (dilate) → `create_rotated_bounding_boxes(..., skip_merging=True)` → `symbols.bar_lines` (rotated boxes) in `external/homr/homr/main.py:117-126`.
+- These candidates are filtered by overlap with noteheads/stems and by size thresholds (`barline_min_height_factor`, `barline_max_width_factor`), producing `bar_line_boxes` in `src/homr_eval_scripts/homr_evaluator.py:447-470` (or `external/homr/homr/main.py:216-223` in core). These `bar_line_boxes` are what are written to `debug_11_bar_lines.png` and what become predictions in `detections.json`.
+- Therefore, if a visible vertical “stroke” is only present in our CC overlay (from binarizing the debug image or mask), it is **not necessarily** a detection candidate; only `bar_line_boxes` make it into `detections.json`.
+
+### [Clarification] Detection vs evaluation
+- The assumption that “red lines in CC overlays represent detected barline strokes” is **incorrect** for our overlays; the red lines are GT. The alternating colors in `debug_11_bar_lines.png` are purely visual and represent already-filtered `bar_line_boxes`.
+- A visually “correct-enough” barline could still be labeled FN if its predicted bbox is short/shifted and fails IoU/geometry matching. However, in the inspected FN cases, the nearest predicted bbox is both **much smaller** and **spatially offset** relative to GT (see `[Segmentation Check] GT vs predicted bbox geometry`), indicating that the failure is **not purely strict IoU matching** but also candidate geometry/placement.

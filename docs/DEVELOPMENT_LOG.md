@@ -1063,8 +1063,13 @@ endpoint_overlap_ratio =
 
 **Hypothesis update (visual evidence driven):**
 - GT-vs-pred overlays from the Approach B runs show **no overlapping prediction** at the FN locations (best IoU=0 for both fn_011/fn_021), indicating the failure is not just NMS suppression.
-- This shifts the likely failure upstream: missing or mis-formed candidates from segmentation/mask generation, or geometry normalization producing candidates too far from the GT locations.
-- Next measurements (not yet executed): quantify GT vs predicted bbox center distance and size ratios; inspect `page_*_debug_11_bar_lines.png` masks for presence/absence of the double-bar strokes; check whether any large component spans the double-bar region but is normalized away.
+- This shifts the likely failure upstream: mask evidence exists but candidate geometry is **shifted and undersized** relative to GT, suggesting normalization or coordinate mapping issues rather than suppression.
+- Confirmed measurements (Approach B runs): 
+  - page_004 fn_011: nearest predicted center offset dx=-140.5, dy=-302.0 (dist=333.1px), predicted size 1x19 vs GT 4x65.
+  - page_15 fn_021: nearest predicted center offset dx=-107.5, dy=-109.0 (dist=153.1px), predicted size 1x20 vs GT 4x60.
+  - Barline mask nonzero inside GT boxes (after resize): page_004=237 pixels, page_15=232 pixels.
+  - See mask overlays/crops under `logs/validation/20251226_target_checks/` with run IDs in filenames.
+ - Connected-components on resized barline masks show **large components spanning the GT region** (page_004 approx 2491,3353–2655,3578; page_15 approx 2315,3198–2479,3418), yet no corresponding prediction appears in `detections.json`. This points to a loss or remapping in the symbol-to-bbox conversion stage rather than NMS.
 
 **Visual evidence (for future inspection):**
 - Base GT crops and marked pages: `logs/validation/20251226_target_checks/page_004_fn_011_crop.png`, `page_004_fn_011_marked.png`, `page_15_fn_021_crop.png`, `page_15_fn_021_marked.png`.

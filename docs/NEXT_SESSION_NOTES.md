@@ -1,6 +1,6 @@
 # Next Session Notes
 
-**Last Updated**: 2025-12-25
+**Last Updated**: 2025-12-26
 **Current Phase**: Post‑Phase 6 → start detector‑side FN analysis (remaining 10)
 
 ---
@@ -33,6 +33,14 @@
 ### Next session start
 - Begin detector-side analysis focused on the 10 remaining items above.
 - GT/merge/filter are considered closed for these cases.
+
+### Short-term plan (post double-bar investigation)
+- Detector-side post-processing for double/repeat bars is considered exhausted (Approach A/B did not recover fn_011/fn_021 under verified targets).
+- Next focus: segmentation/mask-level inspection and/or preprocessing strategies that leverage strong auxiliary signals (e.g., stem detection), guided by visual evidence.
+- Concrete next questions:
+  - Are the double-bar strokes present in the segmentation masks at all?
+  - If present, how are they broken, merged, or suppressed before candidate generation?
+  - If absent, what preprocessing or mask-level cues might reintroduce them?
 
 ---
 ## Phase 5b Final Summary (Closed)

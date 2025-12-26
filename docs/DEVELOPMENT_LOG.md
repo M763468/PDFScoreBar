@@ -1032,3 +1032,44 @@ endpoint_overlap_ratio =
 - Consolidated corrected GT: `logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/`
 - Post-GT recheck: `logs/phase6_detector_miss/gt_fix_review_full/near_hit_recheck/`
 - Remaining miss list: `logs/phase6_detector_miss/gt_fix_review_full/POST_GT_RECHECK_SUMMARY.md`
+
+## Phase 7: Double/Repeat Barline FN Investigation (Closed) (2025-12-26)
+
+- **Expectation (why it should work):**
+  - The remaining double/repeat-bar FN (page_004 fn_011, page_15 fn_021) were labeled as “multiple close verticals (double bar)” in Phase 6 review, so a detector-side suppression relaxation or paired-vertical detection was expected to recover them without changing GT or filters.
+- **What was attempted:**
+  - **Approach A (suppression relaxation)**: allow close parallel verticals to survive in detector-side post-processing (initially implemented in `src/homr_eval_scripts/homr_evaluator.py`, then reverted).
+  - **Approach B (paired-vertical detection)**: added paired-vertical acceptance in `src/common/thin_barline_finder.py` to preserve double-bar candidates.
+  - **Environment + reproducibility fix**: restored GPU provider inside `homr_eval_gpu` (CUDAExecutionProvider available), reproduced Phase 4 baseline using canonical command, and verified evaluation targets.
+- **Evidence collected:**
+  - **Historical targets confirmed (stable references)**:
+    - `tools/run_confirmed_union_eval.sh` and `experiments/phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh` use:
+      - page_15 image `data/training/images/page_15.png` with `data/training/annotations/page_015/fn_only.json`.
+      - page_004 image `data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png` with `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/fn_only.json`.
+    - `logs/homr_eval_baseline/baseline_verification/run_config.json` records `data/evaluation/images/page_3.png` as the canonical page_3 input.
+  - **Image identity checks (hash + dimensions)**:
+    - page_004: `data/evaluation/images/page_004.png` size=1909684, dims=3000x3900, sha256=f80b6f8b7f68edce13322733dc1145e37a7ace3af35d93a64e307874d84187c9 (identical to `data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png`).
+    - page_15: `data/evaluation/images/page_15.png` size=721623, dims=2700x3600, sha256=20342b8afca8ac6df52e47d25031abf5994048ea0b5a50585b6596e05f38c4ee (identical to `data/training/images/page_15.png`).
+  - **Phase 4 baseline reproduced (page_3)**:
+    - Command: `.venv_pdf/bin/python experiments/fp_reduction/analyze_staff_consistency.py --json logs/hybrid_results.json --image data/evaluation/images/page_3.png --gt data/evaluation/annotations/page_003/boxes_sorted.json --output logs/phase4_notehead_geom/20251226T_phase4_repro/ --no-use-ratio-tolerance --tol-top-px 5 --tol-bottom-px 5 --enable-geom-notehead-filter --geom-notehead-mode page3_known_fp --homr-context-dir logs/homr_eval_baseline/baseline_verification/page_3`
+    - Output: `logs/phase4_notehead_geom/20251226T_phase4_repro/` (TP=152, FP=0, FN=0).
+  - **Quantitative results (FN-only GT)**:
+    - Approach A metrics: `logs/homr_eval/20251226T_approachA_page004/metrics.json` (page_004 TP=0 FP=170 FN=12), `logs/homr_eval/20251226T_approachA_page15/metrics.json` (page_15 TP=8 FP=141 FN=14).
+    - Approach B metrics: `logs/homr_eval/20251226T_approachB_page004/metrics.json` (page_004 TP=0 FP=170 FN=12), `logs/homr_eval/20251226T_approachB_page15/metrics.json` (page_15 TP=8 FP=141 FN=14).
+- **Conclusion (closed investigation):**
+  - Detector-side post-processing approaches (A/B) do **not** recover double/repeat-bar FN (fn_011, fn_021).
+  - The failure is **not** due to evaluation mismatch or environment issues; targets were verified and baseline was reproduced.
+  - These FN are likely **upstream** (segmentation/mask generation), not suppression.
+
+**Hypothesis update (visual evidence driven):**
+- GT-vs-pred overlays from the Approach B runs show **no overlapping prediction** at the FN locations (best IoU=0 for both fn_011/fn_021), indicating the failure is not just NMS suppression.
+- This shifts the likely failure upstream: missing or mis-formed candidates from segmentation/mask generation, or geometry normalization producing candidates too far from the GT locations.
+- Next measurements (not yet executed): quantify GT vs predicted bbox center distance and size ratios; inspect `page_*_debug_11_bar_lines.png` masks for presence/absence of the double-bar strokes; check whether any large component spans the double-bar region but is normalized away.
+
+**Visual evidence (for future inspection):**
+- Base GT crops and marked pages: `logs/validation/20251226_target_checks/page_004_fn_011_crop.png`, `page_004_fn_011_marked.png`, `page_15_fn_021_crop.png`, `page_15_fn_021_marked.png`.
+- GT + predicted overlay (Approach B run IDs): 
+  - `logs/validation/20251226_target_checks/page_004_fn_011_20251226T_approachB_page004_gt_pred_overlay.png`
+  - `logs/validation/20251226_target_checks/page_004_fn_011_20251226T_approachB_page004_gt_pred_crop.png`
+  - `logs/validation/20251226_target_checks/page_15_fn_021_20251226T_approachB_page15_gt_pred_overlay.png`
+  - `logs/validation/20251226_target_checks/page_15_fn_021_20251226T_approachB_page15_gt_pred_crop.png`

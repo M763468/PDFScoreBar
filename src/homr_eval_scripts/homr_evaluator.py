@@ -261,14 +261,54 @@ def parse_args() -> argparse.Namespace:
         help="Enable staff-constrained vertical run-length candidate generator",
     )
     parser.add_argument(
+        "--gen-vertical-run-weak",
+        action="store_true",
+        help="Enable weaker staff-constrained vertical run-length generator (lower min-run, higher threshold)",
+    )
+    parser.add_argument(
         "--gen-barline-cc-relaxed",
         action="store_true",
         help="Enable relaxed CC extraction on bar_line_img",
     )
     parser.add_argument(
+        "--gen-barline-cc-dilated",
+        action="store_true",
+        help="Enable dilated CC extraction on bar_line_img",
+    )
+    parser.add_argument(
         "--gen-sobel-vertical",
         action="store_true",
         help="Enable staff-constrained vertical Sobel candidate generator",
+    )
+    parser.add_argument(
+        "--gen-sobel-vertical-weak",
+        action="store_true",
+        help="Enable weaker staff-constrained vertical Sobel generator (lower threshold)",
+    )
+    parser.add_argument(
+        "--gen-column-sum-staff",
+        action="store_true",
+        help="Enable staff-masked column-sum candidate generator",
+    )
+    parser.add_argument(
+        "--gen-column-sum-weak",
+        action="store_true",
+        help="Enable weaker staff-masked column-sum candidate generator",
+    )
+    parser.add_argument(
+        "--gen-column-sum-no-staff",
+        action="store_true",
+        help="Enable column-sum candidate generator without staff mask",
+    )
+    parser.add_argument(
+        "--gen-hough-vertical",
+        action="store_true",
+        help="Enable staff-masked Hough vertical line candidate generator",
+    )
+    parser.add_argument(
+        "--gen-hough-vertical-weak",
+        action="store_true",
+        help="Enable weaker staff-masked Hough vertical line generator",
     )
     parser.add_argument(
         "--gen-vertical-run-no-staff",
@@ -470,9 +510,28 @@ def generate_vertical_run_candidates(
     return create_rotated_bounding_boxes(vertical, skip_merging=True, min_size=(1, min_run))
 
 
+def generate_vertical_run_candidates_weak(
+    preprocessed: np.ndarray,
+    staff_mask: Optional[np.ndarray],
+) -> List[Any]:
+    return generate_vertical_run_candidates(
+        preprocessed,
+        staff_mask,
+        min_run=10,
+        dark_threshold=130,
+    )
+
+
 def generate_barline_cc_relaxed(stems_rest_mask: np.ndarray) -> List[Any]:
     bar_line_img = prepare_bar_line_image(stems_rest_mask)
     return create_rotated_bounding_boxes(bar_line_img, skip_merging=True, min_size=(1, 3))
+
+
+def generate_barline_cc_dilated(stems_rest_mask: np.ndarray) -> List[Any]:
+    bar_line_img = prepare_bar_line_image(stems_rest_mask)
+    kernel = np.ones((5, 1), np.uint8)
+    dilated = cv2.dilate(bar_line_img, kernel, iterations=1)
+    return create_rotated_bounding_boxes(dilated, skip_merging=True, min_size=(1, 3))
 
 
 def generate_barline_cc_tiny(stems_rest_mask: np.ndarray) -> List[Any]:
@@ -499,6 +558,79 @@ def generate_sobel_vertical_candidates(
     kernel = np.ones((min_run, 1), np.uint8)
     vertical = cv2.morphologyEx(masked, cv2.MORPH_OPEN, kernel)
     return create_rotated_bounding_boxes(vertical, skip_merging=True, min_size=(1, min_run))
+
+
+def generate_sobel_vertical_candidates_weak(
+    preprocessed: np.ndarray,
+    staff_mask: Optional[np.ndarray],
+) -> List[Any]:
+    return generate_sobel_vertical_candidates(
+        preprocessed,
+        staff_mask,
+        sobel_threshold=40,
+        min_run=10,
+    )
+
+
+def generate_column_sum_candidates(
+    preprocessed: np.ndarray,
+    staff_mask: Optional[np.ndarray],
+    *,
+    min_column_sum: int = 20,
+    dark_threshold: int = 120,
+) -> List[Any]:
+    gray = cv2.cvtColor(preprocessed, cv2.COLOR_BGR2GRAY)
+    dark = (gray < dark_threshold).astype(np.uint8) * 255
+    if staff_mask is not None:
+        staff_mask = _ensure_mask_shape(staff_mask, gray.shape[:2])
+        masked = cv2.bitwise_and(dark, dark, mask=(staff_mask > 0).astype(np.uint8))
+    else:
+        masked = dark
+    col_counts = (masked > 0).sum(axis=0)
+    active = col_counts >= min_column_sum
+    if not np.any(active):
+        return []
+    vertical = np.zeros_like(masked)
+    vertical[:, active] = masked[:, active]
+    return create_rotated_bounding_boxes(vertical, skip_merging=True, min_size=(1, min_column_sum))
+
+
+def generate_hough_vertical_candidates(
+    preprocessed: np.ndarray,
+    staff_mask: Optional[np.ndarray],
+    *,
+    canny_low: int = 50,
+    canny_high: int = 150,
+    hough_threshold: int = 50,
+    min_line_length: int = 25,
+    max_line_gap: int = 6,
+    max_dx_ratio: float = 0.15,
+) -> List[Any]:
+    gray = cv2.cvtColor(preprocessed, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, canny_low, canny_high)
+    if staff_mask is not None:
+        staff_mask = _ensure_mask_shape(staff_mask, gray.shape[:2])
+        edges = cv2.bitwise_and(edges, edges, mask=(staff_mask > 0).astype(np.uint8))
+    lines = cv2.HoughLinesP(
+        edges,
+        rho=1,
+        theta=np.pi / 180.0,
+        threshold=hough_threshold,
+        minLineLength=min_line_length,
+        maxLineGap=max_line_gap,
+    )
+    if lines is None:
+        return []
+    line_mask = np.zeros_like(edges)
+    for (x1, y1, x2, y2) in lines.reshape(-1, 4):
+        dy = y2 - y1
+        dx = x2 - x1
+        if abs(dy) < min_line_length:
+            continue
+        if abs(dx) > max(2, int(abs(dy) * max_dx_ratio)):
+            continue
+        cv2.line(line_mask, (x1, y1), (x2, y2), 255, 1)
+    return create_rotated_bounding_boxes(line_mask, skip_merging=True, min_size=(1, min_line_length))
 
 
 def prepare_working_image(image: Path, dest_dir: Path) -> Path:
@@ -531,11 +663,57 @@ def detect_staffs_with_barlines(
         extra_bar_lines.extend(
             generate_vertical_run_candidates(predictions.preprocessed, predictions.staff)
         )
+    if tuning.get("gen_vertical_run_weak"):
+        extra_bar_lines.extend(
+            generate_vertical_run_candidates_weak(predictions.preprocessed, predictions.staff)
+        )
     if tuning.get("gen_barline_cc_relaxed"):
         extra_bar_lines.extend(generate_barline_cc_relaxed(predictions.stems_rest))
+    if tuning.get("gen_barline_cc_dilated"):
+        extra_bar_lines.extend(generate_barline_cc_dilated(predictions.stems_rest))
     if tuning.get("gen_sobel_vertical"):
         extra_bar_lines.extend(
             generate_sobel_vertical_candidates(predictions.preprocessed, predictions.staff)
+        )
+    if tuning.get("gen_sobel_vertical_weak"):
+        extra_bar_lines.extend(
+            generate_sobel_vertical_candidates_weak(
+                predictions.preprocessed, predictions.staff
+            )
+        )
+    if tuning.get("gen_column_sum_staff"):
+        extra_bar_lines.extend(
+            generate_column_sum_candidates(
+                predictions.preprocessed, predictions.staff
+            )
+        )
+    if tuning.get("gen_column_sum_weak"):
+        extra_bar_lines.extend(
+            generate_column_sum_candidates(
+                predictions.preprocessed,
+                predictions.staff,
+                min_column_sum=12,
+                dark_threshold=140,
+            )
+        )
+    if tuning.get("gen_hough_vertical"):
+        extra_bar_lines.extend(
+            generate_hough_vertical_candidates(
+                predictions.preprocessed, predictions.staff
+            )
+        )
+    if tuning.get("gen_hough_vertical_weak"):
+        extra_bar_lines.extend(
+            generate_hough_vertical_candidates(
+                predictions.preprocessed,
+                predictions.staff,
+                canny_low=30,
+                canny_high=120,
+                hough_threshold=30,
+                min_line_length=15,
+                max_line_gap=8,
+                max_dx_ratio=0.2,
+            )
         )
     if tuning.get("gen_vertical_run_no_staff"):
         extra_bar_lines.extend(
@@ -546,6 +724,12 @@ def detect_staffs_with_barlines(
     if tuning.get("gen_sobel_no_staff"):
         extra_bar_lines.extend(
             generate_sobel_vertical_candidates(predictions.preprocessed, None)
+        )
+    if tuning.get("gen_column_sum_no_staff"):
+        extra_bar_lines.extend(
+            generate_column_sum_candidates(
+                predictions.preprocessed, None
+            )
         )
     if extra_bar_lines:
         symbols.bar_lines.extend(extra_bar_lines)
@@ -1788,8 +1972,16 @@ def main() -> None:
         "barline_edge_margin_x": args.barline_edge_margin_x,
         "barline_edge_margin_y": args.barline_edge_margin_y,
         "gen_vertical_run": args.gen_vertical_run,
+        "gen_vertical_run_weak": args.gen_vertical_run_weak,
         "gen_barline_cc_relaxed": args.gen_barline_cc_relaxed,
+        "gen_barline_cc_dilated": args.gen_barline_cc_dilated,
         "gen_sobel_vertical": args.gen_sobel_vertical,
+        "gen_sobel_vertical_weak": args.gen_sobel_vertical_weak,
+        "gen_column_sum_staff": args.gen_column_sum_staff,
+        "gen_column_sum_weak": args.gen_column_sum_weak,
+        "gen_column_sum_no_staff": args.gen_column_sum_no_staff,
+        "gen_hough_vertical": args.gen_hough_vertical,
+        "gen_hough_vertical_weak": args.gen_hough_vertical_weak,
         "gen_vertical_run_no_staff": args.gen_vertical_run_no_staff,
         "gen_barline_cc_tiny": args.gen_barline_cc_tiny,
         "gen_sobel_no_staff": args.gen_sobel_no_staff,

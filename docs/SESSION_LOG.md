@@ -747,3 +747,139 @@ Assumptions/uncertainties:
   - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/overlays/20251227T_batch3_v0p5_page3_guard/page_3_20251227T_batch3_v0p5_page3_guard_gt_red_pred_green_overlay.png
   - Metrics summary JSON: /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch3_variants/batch3_metrics_brief.json
 - Conclusion / implication: Staff-overlap filter reduces FP modestly at 0.1 but does not improve page_3 FP (still +30) and higher thresholds rapidly destroy recall and staff detection. This filter alone is not sufficient for aggressive FP reduction without major recall loss.
+
+### [Experiment Batch 4] Weak vertical-run/sobel + dilated CC generators (GPU) (2025-12-27 06:30 JST)
+- Objective / hypothesis: expand candidate generation (Lane A) with weaker vertical-run + weaker Sobel + dilated CC on bar_line_img to recover FN across multiple pages without focusing on single FN.
+- What I checked / tested:
+  - Re-opened `README.md`, `docs/README.md`, `docs/NEXT_SESSION_NOTES.md` to confirm phase goals and constraints.
+  - Verified CUDA provider in `homr_eval_gpu` via `poetry run` (torch.cuda True, ort device GPU).
+  - Implemented new candidate generators in `src/homr_eval_scripts/homr_evaluator.py`:
+    - `--gen-vertical-run-weak` (min_run=10, dark_threshold=130)
+    - `--gen-sobel-vertical-weak` (sobel_threshold=40, min_run=10)
+    - `--gen-barline-cc-dilated` (vertical dilation kernel 5x1)
+  - Ran GPU evaluations with `poetry run` (CUDAExecutionProvider) on page_10/page_15/page_004 (FN-only GT) and page_3 guard.
+  - Generated GT vs pred overlays for every run (Red=GT, Green=pred).
+- Commands run:
+  - GPU sanity check: `docker exec -i homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python -c 'import torch, onnxruntime as ort; print(torch.cuda.is_available()); print(ort.get_device())'"`
+  - Example eval (all runs listed below in run_ids):
+    - `docker exec -i homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/training/images/page_10.png --ground-truth page_10:/workspace/logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/page_10/fn_only_corrected.json --output-root /workspace/logs/homr_eval --force-run-id 20251227T_batch4b_vrunweak_page_10 --gen-vertical-run-weak"`
+  - Overlay generation (container, GT+pred): `docker exec -i homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python /workspace/tmp/render_gt_pred_overlay.py --base <base> --gt <gt> --pred <pred_json> --output <overlay>"`
+- Key results (quantitative + qualitative):
+  - No FN recovery observed; FN counts are same or worse vs previous gen4 baseline.
+  - `20251227T_batch4b_vrunweak_*`:
+    - page_10: TP=17 FP=216 FN=7
+    - page_15: TP=8 FP=141 FN=14
+    - page_004: TP=0 FP=170 FN=12
+    - page_3: TP=152 FP=30 FN=0
+  - `20251227T_batch4b_sobelweak_*`:
+    - page_10: TP=17 FP=216 FN=7
+    - page_15: TP=8 FP=141 FN=14
+    - page_004: TP=0 FP=170 FN=12
+    - page_3: TP=152 FP=30 FN=0
+  - `20251227T_batch4b_ccdilated_*`:
+    - page_10: TP=17 FP=352 FN=7
+    - page_15: TP=8 FP=239 FN=14
+    - page_004: TP=0 FP=274 FN=12
+    - page_3: TP=152 FP=32 FN=0
+- Artifacts saved (FULL paths + color legend):
+  - Metrics summary: `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch4b_metrics_summary.json`
+  - Overlays (Red=GT, Green=pred):
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch4b_overlays/20251227T_batch4b_vrunweak_page_10/page_10_20251227T_batch4b_vrunweak_page_10_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch4b_overlays/20251227T_batch4b_vrunweak_page_15/page_15_20251227T_batch4b_vrunweak_page_15_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch4b_overlays/20251227T_batch4b_vrunweak_page_004/page_004_20251227T_batch4b_vrunweak_page_004_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch4b_overlays/20251227T_batch4b_vrunweak_page3_guard/page_3_20251227T_batch4b_vrunweak_page3_guard_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch4b_overlays/20251227T_batch4b_sobelweak_page_10/page_10_20251227T_batch4b_sobelweak_page_10_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch4b_overlays/20251227T_batch4b_sobelweak_page_15/page_15_20251227T_batch4b_sobelweak_page_15_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch4b_overlays/20251227T_batch4b_sobelweak_page_004/page_004_20251227T_batch4b_sobelweak_page_004_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch4b_overlays/20251227T_batch4b_sobelweak_page3_guard/page_3_20251227T_batch4b_sobelweak_page3_guard_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch4b_overlays/20251227T_batch4b_ccdilated_page_10/page_10_20251227T_batch4b_ccdilated_page_10_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch4b_overlays/20251227T_batch4b_ccdilated_page_15/page_15_20251227T_batch4b_ccdilated_page_15_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch4b_overlays/20251227T_batch4b_ccdilated_page_004/page_004_20251227T_batch4b_ccdilated_page_004_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch4b_overlays/20251227T_batch4b_ccdilated_page3_guard/page_3_20251227T_batch4b_ccdilated_page3_guard_gt_red_pred_green_overlay.png`
+- Decision (keep / discard / next):
+  - Discard these three weak/dilated generators for FN recovery (no FN gains; FP increases). Next step should try a different candidate-generation family (Lane A) rather than FP compression on failed candidates.
+
+### [Experiment Batch 5] Column-sum candidate generators (staff/no-staff) (2025-12-27 07:10 JST)
+- Objective / hypothesis: test a different candidate-generation family (column-sum projection of dark pixels) to increase recall across FN pages.
+- What I checked / tested:
+  - Implemented column-sum candidates in `src/homr_eval_scripts/homr_evaluator.py` with three toggles:
+    - `--gen-column-sum-staff` (min_column_sum=20, dark_threshold=120)
+    - `--gen-column-sum-weak` (min_column_sum=12, dark_threshold=140)
+    - `--gen-column-sum-no-staff` (min_column_sum=20, dark_threshold=120)
+  - Ran GPU evaluations on page_10/page_15/page_004 FN-only GT and page_3 guard for each variant.
+  - Generated GT vs pred overlays (Red=GT, Green=pred).
+- Commands run:
+  - Example eval: `docker exec -i homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/training/images/page_10.png --ground-truth page_10:/workspace/logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/page_10/fn_only_corrected.json --output-root /workspace/logs/homr_eval --force-run-id 20251227T_batch5_colsumstaff_page_10 --gen-column-sum-staff"`
+  - Overlay generation: `docker exec -i homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python /workspace/tmp/render_gt_pred_overlay.py --base <base> --gt <gt> --pred <pred_json> --output <overlay>"`
+- Key results (quantitative + qualitative):
+  - No FN recovery; results match batch4 patterns.
+  - `20251227T_batch5_colsumstaff_*`:
+    - page_10: TP=17 FP=216 FN=7
+    - page_15: TP=8 FP=141 FN=14
+    - page_004: TP=0 FP=170 FN=12
+    - page_3: TP=152 FP=30 FN=0
+  - `20251227T_batch5_colsumweak_*`:
+    - page_10: TP=17 FP=216 FN=7
+    - page_15: TP=8 FP=141 FN=14
+    - page_004: TP=0 FP=170 FN=12
+    - page_3: TP=152 FP=30 FN=0
+  - `20251227T_batch5_colsum_nostaff_*`:
+    - page_10: TP=17 FP=222 FN=7
+    - page_15: TP=8 FP=146 FN=14
+    - page_004: TP=0 FP=171 FN=12
+    - page_3: TP=152 FP=33 FN=0
+- Artifacts saved (FULL paths + color legend):
+  - Metrics summary: `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch5_metrics_summary.json`
+  - Overlays (Red=GT, Green=pred):
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch5_overlays/20251227T_batch5_colsumstaff_page_10/page_10_20251227T_batch5_colsumstaff_page_10_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch5_overlays/20251227T_batch5_colsumstaff_page_15/page_15_20251227T_batch5_colsumstaff_page_15_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch5_overlays/20251227T_batch5_colsumstaff_page_004/page_004_20251227T_batch5_colsumstaff_page_004_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch5_overlays/20251227T_batch5_colsumstaff_page3_guard/page_3_20251227T_batch5_colsumstaff_page3_guard_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch5_overlays/20251227T_batch5_colsumweak_page_10/page_10_20251227T_batch5_colsumweak_page_10_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch5_overlays/20251227T_batch5_colsumweak_page_15/page_15_20251227T_batch5_colsumweak_page_15_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch5_overlays/20251227T_batch5_colsumweak_page_004/page_004_20251227T_batch5_colsumweak_page_004_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch5_overlays/20251227T_batch5_colsumweak_page3_guard/page_3_20251227T_batch5_colsumweak_page3_guard_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch5_overlays/20251227T_batch5_colsum_nostaff_page_10/page_10_20251227T_batch5_colsum_nostaff_page_10_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch5_overlays/20251227T_batch5_colsum_nostaff_page_15/page_15_20251227T_batch5_colsum_nostaff_page_15_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch5_overlays/20251227T_batch5_colsum_nostaff_page_004/page_004_20251227T_batch5_colsum_nostaff_page_004_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch5_overlays/20251227T_batch5_colsum_nostaff_page3_guard/page_3_20251227T_batch5_colsum_nostaff_page3_guard_gt_red_pred_green_overlay.png`
+- Decision (keep / discard / next):
+  - Discard column-sum generators for FN recovery (no FN gains, FP rises). Next: switch to a new candidate family (e.g., staff-height normalized vertical CC on stems_rest or stem-mask-subtracted detector) rather than further FP compression on these failed candidates.
+
+### [Experiment Batch 6] Hough vertical line candidates (staff-masked) (2025-12-27 07:30 JST)
+- Objective / hypothesis: try Hough-based vertical line extraction to introduce a new candidate family with different sensitivity to faint/fragmented bars.
+- What I checked / tested:
+  - Implemented `generate_hough_vertical_candidates` in `src/homr_eval_scripts/homr_evaluator.py`.
+  - Added flags:
+    - `--gen-hough-vertical`
+    - `--gen-hough-vertical-weak` (lower thresholds, shorter min length)
+  - Ran GPU evaluations on page_10/page_15/page_004 FN-only GT and page_3 guard for both variants.
+  - Generated GT vs pred overlays (Red=GT, Green=pred).
+- Commands run:
+  - Example eval: `docker exec -i homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/training/images/page_10.png --ground-truth page_10:/workspace/logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/page_10/fn_only_corrected.json --output-root /workspace/logs/homr_eval --force-run-id 20251227T_batch6_hough_page_10 --gen-hough-vertical"`
+  - Overlay generation: `docker exec -i homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python /workspace/tmp/render_gt_pred_overlay.py --base <base> --gt <gt> --pred <pred_json> --output <overlay>"`
+- Key results (quantitative + qualitative):
+  - No FN recovery observed (metrics essentially identical to previous candidate generators).
+  - `20251227T_batch6_hough_*`:
+    - page_10: TP=17 FP=216 FN=7
+    - page_15: TP=8 FP=141 FN=14
+    - page_004: TP=0 FP=170 FN=12
+    - page_3: TP=152 FP=30 FN=0
+  - `20251227T_batch6_houghweak_*`:
+    - page_10: TP=17 FP=216 FN=7
+    - page_15: TP=8 FP=142 FN=14
+    - page_004: TP=0 FP=170 FN=12
+    - page_3: TP=152 FP=30 FN=0
+- Artifacts saved (FULL paths + color legend):
+  - Metrics summary: `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch6_metrics_summary.json`
+  - Overlays (Red=GT, Green=pred):
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch6_overlays/20251227T_batch6_hough_page_10/page_10_20251227T_batch6_hough_page_10_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch6_overlays/20251227T_batch6_hough_page_15/page_15_20251227T_batch6_hough_page_15_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch6_overlays/20251227T_batch6_hough_page_004/page_004_20251227T_batch6_hough_page_004_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch6_overlays/20251227T_batch6_hough_page3_guard/page_3_20251227T_batch6_hough_page3_guard_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch6_overlays/20251227T_batch6_houghweak_page_10/page_10_20251227T_batch6_houghweak_page_10_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch6_overlays/20251227T_batch6_houghweak_page_15/page_15_20251227T_batch6_houghweak_page_15_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch6_overlays/20251227T_batch6_houghweak_page_004/page_004_20251227T_batch6_houghweak_page_004_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch6_overlays/20251227T_batch6_houghweak_page3_guard/page_3_20251227T_batch6_houghweak_page3_guard_gt_red_pred_green_overlay.png`
+- Decision (keep / discard / next):
+  - Discard Hough candidates (no FN recovery, FP unchanged). Next: move to a different candidate family using segmentation masks directly (e.g., stem-mask-subtracted vertical CC or staff-height normalized mask dilation) rather than further edge-based detectors.

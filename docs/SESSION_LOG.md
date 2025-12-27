@@ -883,3 +883,146 @@ Assumptions/uncertainties:
     - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch6_overlays/20251227T_batch6_houghweak_page3_guard/page_3_20251227T_batch6_houghweak_page3_guard_gt_red_pred_green_overlay.png`
 - Decision (keep / discard / next):
   - Discard Hough candidates (no FN recovery, FP unchanged). Next: move to a different candidate family using segmentation masks directly (e.g., stem-mask-subtracted vertical CC or staff-height normalized mask dilation) rather than further edge-based detectors.
+
+### [Experiment Batch 7] Hybrid signal: homr + omr-dln (staff-mask gated union) (2025-12-27 08:40 JST)
+- Objective / hypothesis: add a new input signal (omr-dln measure detections) and merge with homr detections, using homr staff masks to gate omr-dln barlines before union.
+- What was tried:
+  - Historical check: `docs/DEVELOPMENT_LOG.md` shows prior OpenCV-only Hough/vertical projection attempts failed; this batch is meaningfully different because it uses omr-dln measure detections + homr staff masks (hybrid signal).
+  - Ran fresh homr baseline (no extra generators) for pages:
+    - `logs/homr_eval/20251227T_batch7_homr_page_10/`
+    - `logs/homr_eval/20251227T_batch7_homr_page_15/`
+    - `logs/homr_eval/20251227T_batch7_homr_page_004/`
+    - `logs/homr_eval/20251227T_batch7_homr_page3_guard/`
+  - Ran omr-dln eval for pages (measure→barline inference):
+    - `logs/model_experiments/omr_dln/batch7/page_10/`
+    - `logs/model_experiments/omr_dln/batch7/page_15/`
+    - `logs/model_experiments/omr_dln/batch7/page_004/`
+    - `logs/model_experiments/omr_dln/batch7/page_3_guard/`
+  - Implemented hybrid merge tool: `tools/hybrid_omr_dln_union.py` (uses staff-mask overlap filter, unions homr + omr-dln, clusters by IoU).
+  - Ran hybrid merge for staff-overlap thresholds 0.1 and 0.2.
+- Key results:
+  - Homr baseline: page_10 TP=17 FP=216 FN=7; page_15 TP=8 FP=141 FN=14; page_004 TP=0 FP=170 FN=12; page_3 TP=152 FP=30 FN=0.
+  - Hybrid (overlap=0.1): page_15 improves slightly (TP=9, FN=13) but page_3 regresses (FN=1, FP=32); page_004 still TP=0.
+  - Hybrid (overlap=0.2): no improvement; similar to homr baseline.
+  - Metrics summary: `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch7_hybrid_metrics_summary.json`.
+- Artifacts saved (FULL paths + color legend):
+  - Overlays (Red=GT, Green=pred):
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch7_hybrid/overlays/overlap_0.1/page_10_overlap_0.1_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch7_hybrid/overlays/overlap_0.1/page_15_overlap_0.1_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch7_hybrid/overlays/overlap_0.1/page_004_overlap_0.1_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch7_hybrid/overlays/overlap_0.1/page_3_overlap_0.1_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch7_hybrid/overlays/overlap_0.2/page_10_overlap_0.2_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch7_hybrid/overlays/overlap_0.2/page_15_overlap_0.2_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch7_hybrid/overlays/overlap_0.2/page_004_overlap_0.2_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch7_hybrid/overlays/overlap_0.2/page_3_overlap_0.2_gt_red_pred_green_overlay.png`
+- Decision (keep / discard / next):
+  - Discard overlap-gated union as a primary FN solution (minimal FN gain; page_3 guard regression). Next: try staff-normalized remapping of omr-dln barlines before union.
+
+### [Experiment Batch 8] Hybrid signal: omr-dln barlines normalized to homr staff mask (2025-12-27 08:55 JST)
+- Objective / hypothesis: normalize omr-dln barline y-span to homr staff mask columns before union, aiming to convert omr-dln signal into better-aligned barline boxes.
+- What was tried:
+  - Extended `tools/hybrid_omr_dln_union.py` with `--normalize-omr-to-staff` (per-column y-span from staff mask).
+  - Ran hybrid with normalization + min staff overlap 0.05 on page_004/page_10/page_15 + page_3 guard.
+- Key results:
+  - No FN recovery; FP increases significantly (page_3 FP=68, FN=1).
+  - Metrics summary (per page): `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch8_hybrid_norm/page_10_metrics.json` (page_10 TP=17 FP=282 FN=7), `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch8_hybrid_norm/page_15_metrics.json` (TP=8 FP=188 FN=14), `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch8_hybrid_norm/page_004_metrics.json` (TP=0 FP=213 FN=12), `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch8_hybrid_norm/page_3_metrics.json` (TP=151 FP=68 FN=1).
+- Artifacts saved (FULL paths + color legend):
+  - Overlays (Red=GT, Green=pred):
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch8_hybrid_norm/overlays/page_10_norm_overlap0p05_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch8_hybrid_norm/overlays/page_15_norm_overlap0p05_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch8_hybrid_norm/overlays/page_004_norm_overlap0p05_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch8_hybrid_norm/overlays/page_3_norm_overlap0p05_gt_red_pred_green_overlay.png`
+- Decision (keep / discard / next):
+  - Discard normalization-based hybrid (no FN recovery, strong FP regression). Next: switch to a different hybrid signal use, such as omr-dln measure count per staff driving barline count reconciliation rather than box union.
+
+### [Experiment Batch 9] OMR-DLN staff-band reconstruction (measure edges → staff-wide bars) (2025-12-27 09:10 JST)
+- Objective / hypothesis: use omr-dln measure edges as x-anchors and reconstruct per-staff barlines using homr staff mask bands; count-based reconstruction might recover missing bars even if geometry differs.
+- What was tried:
+  - Implemented `tools/omr_dln_staff_barlines.py` to:
+    - extract staff bands from homr staff mask (`*_debug_3_staff.png`)
+    - dedupe omr-dln barline x centers
+    - generate staff-spanning bars at each x per staff band
+  - Ran for page_004/page_10/page_15 + page_3 guard using omr-dln batch7 predictions and homr batch7 staff masks.
+- Key results:
+  - Massive over-generation; IoU evaluation collapses (TP≈0, FP thousands). This approach is not viable as-is.
+  - Example metrics: page_10 TP=0 FP=4707 FN=24; page_3 TP=0 FP=2202 FN=152.
+- Artifacts saved (FULL paths + color legend):
+  - Overlays (Red=GT, Green=pred):
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch9_staffcount/overlays/page_10_staffcount_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch9_staffcount/overlays/page_15_staffcount_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch9_staffcount/overlays/page_004_staffcount_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch9_staffcount/overlays/page_3_staffcount_gt_red_pred_green_overlay.png`
+  - Metrics JSONs:
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch9_staffcount/page_10_metrics.json`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch9_staffcount/page_15_metrics.json`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch9_staffcount/page_004_metrics.json`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch9_staffcount/page_3_metrics.json`
+- Decision (keep / discard / next):
+  - Discard staff-band reconstruction (explodes FP; no FN recovery). Next: target omr-dln signal with per-staff measure grouping and limited x-selection (e.g., use omr-dln measure boxes only where homr detections are missing per staff).
+
+### [Experiment Batch 10] Edge-crop re-detection (left/right strips) (2025-12-27 09:30 JST)
+- Objective: change WHERE detection is applied by re-running homr on left/right edge crops to recover edge-concentrated FN.
+- What was tried:
+  - Cropped left/right strips (18% width) for page_004/page_10/page_15/page_3; ran homr on each crop in `homr_eval_gpu`.
+  - Initial right-crop for page_3 failed with `RuntimeError: No staffs found`; reran with wider right crop (25%).
+  - Merged crop detections back to full coordinates using `tools/edge_crop_homr_merge.py` and evaluated vs GT.
+- Key results:
+  - No FN recovery; merged results match base homr metrics.
+  - page_10: TP=17 FP=216 FN=7
+  - page_15: TP=8 FP=141 FN=14
+  - page_004: TP=0 FP=170 FN=12
+  - page_3: TP=151 FP=30 FN=1 (slight regression vs guard)
+- Artifacts saved (FULL paths + color legend):
+  - Crops: `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch10_edgecrop/inputs/`
+  - Merged preds: `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch10_edgecrop/merged/`
+  - Overlays (Red=GT, Green=pred):
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch10_edgecrop/overlays/page_10_edgecrop_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch10_edgecrop/overlays/page_15_edgecrop_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch10_edgecrop/overlays/page_004_edgecrop_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch10_edgecrop/overlays/page_3_edgecrop_gt_red_pred_green_overlay.png`
+- Decision (keep / discard / next):
+  - Discard edge-crop strategy (no FN recovery). Next: try multi-scale detection (upscaled images) to change input view without new candidate logic.
+
+### [Experiment Batch 11] Multi-scale input (x2 upscaled homr + merge) (2025-12-27 09:55 JST)
+- Objective: change input view by running homr on 2x upscaled images and merging scaled predictions back to original coordinates.
+- What was tried:
+  - Created 2x upscaled images under `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch11_upscale/inputs/`.
+  - Ran homr on x2 images (run_ids: `20251227T_batch11_x2_page_10`, `_page_15`, `_page_004`, `_page_3`).
+  - Merged scaled detections with base homr (`20251227T_batch7_homr_*`) using `tools/scale_merge_homr_preds.py`.
+- Key results:
+  - No FN recovery; FP increases on guard (page_3 FP=118, FN=1).
+  - page_10: TP=17 FP=219 FN=7
+  - page_15: TP=8 FP=142 FN=14
+  - page_004: TP=0 FP=179 FN=12
+  - page_3: TP=151 FP=118 FN=1
+- Artifacts saved (FULL paths + color legend):
+  - Merged metrics: `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch11_upscale/merged/page_3_metrics.json`
+  - Overlays (Red=GT, Green=pred):
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch11_upscale/overlays/page_10_x2merge_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch11_upscale/overlays/page_15_x2merge_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch11_upscale/overlays/page_004_x2merge_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch11_upscale/overlays/page_3_x2merge_gt_red_pred_green_overlay.png`
+- Decision (keep / discard / next):
+  - Discard multi-scale x2 (no FN recovery, FP regression). Next: dense-region re-detection based on notehead mask windows.
+
+### [Experiment Batch 12] Dense-region re-detection (notehead mask windows) (2025-12-27 10:15 JST)
+- Objective: change WHERE detection is applied by re-running homr on dense notehead regions (top-2 windows per page) and merging back.
+- What was tried:
+  - Initial attempt with smaller windows failed (`RuntimeError: No staffs found`), so reran with larger windows (50% width, 30% height).
+  - Generated crops via `tools/dense_region_crops.py`, ran homr on each crop (run_ids `20251227T_batch12r_dense_*`), merged with base using `tools/multi_crop_merge.py`.
+- Key results:
+  - No FN recovery; FP increases slightly. page_004 remains TP=0.
+  - page_10: TP=17 FP=220 FN=7
+  - page_15: TP=8 FP=150 FN=14
+  - page_004: TP=0 FP=186 FN=12
+  - page_3: TP=151 FP=50 FN=1
+- Artifacts saved (FULL paths + color legend):
+  - Crop metadata: `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch12_dense_retry/page_10/crops.json` (similar for page_15/page_004/page_3)
+  - Merged metrics: `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch12_dense_retry/merged/page_3_metrics.json`
+  - Overlays (Red=GT, Green=pred):
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch12_dense_retry/overlays/page_10_dense_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch12_dense_retry/overlays/page_15_dense_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch12_dense_retry/overlays/page_004_dense_gt_red_pred_green_overlay.png`
+    - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch12_dense_retry/overlays/page_3_dense_gt_red_pred_green_overlay.png`
+- Decision (keep / discard / next):
+  - Discard dense-window re-detection (no FN recovery). Multiple input-view strategies have failed; remaining progress likely requires detector retraining or architectural change to surface missing signal.

@@ -1026,3 +1026,325 @@ Assumptions/uncertainties:
     - `/home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch12_dense_retry/overlays/page_3_dense_gt_red_pred_green_overlay.png`
 - Decision (keep / discard / next):
   - Discard dense-window re-detection (no FN recovery). Multiple input-view strategies have failed; remaining progress likely requires detector retraining or architectural change to surface missing signal.
+
+### [Work Unit 16] Structural per-band resample with max target (2025-12-28 01:35 JST)
+- Objective / hypothesis
+  - Test whether switching per-system target count from median to max (per-band resample) avoids zero-target collapse and improves staff-level bar counts.
+- What I checked / tested
+  - Ran tools/structural_omr_per_band.py with --target-mode max (min_gap=8, gap_factor=1.5, width=4) on page_004/page_10/page_15/page_3.
+  - Initial attempt failed due to incorrect GT path (data/evaluation/annotations/page_*.json); corrected to fn_only GT for page_004/page_10/page_15 and full GT for page_3.
+- Commands run
+  - RUN_ID=20251227T_batch16_structural_max
+  - tools/structural_omr_per_band.py --target-mode max --min-gap 8 --gap-factor 1.5 --width 4
+  - tmp/render_gt_pred_overlay.py for each page
+- Key results (quantitative + qualitative)
+  - page_004: staff_count_matches=17/25 (GT is FN-only, so counts are partial); many bands still target_count>0 with zero GT count → not a meaningful count match for FN-only GT.
+  - page_10: staff_count_matches=16/22 (GT is FN-only, partial; many bands zero GT count).
+  - page_15: staff_count_matches=10/19 (GT is FN-only, partial; many bands zero GT count).
+  - page_3: staff_count_matches=22/26; predicted counts over-expanded (e.g., target_count=27 for multiple bands vs GT 16–30) → count alignment still poor.
+  - Conclusion: max-target mode avoids zero targets but does not align counts; still too many predictions and mismatched counts on page_3.
+- Artifacts saved (FULL paths + color legend)
+  - Overlays (Red=GT boxes, Green=predicted structural bars):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch16_structural_max/page_004/page_004_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch16_structural_max/page_10/page_10_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch16_structural_max/page_15/page_15_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch16_structural_max/page_3/page_3_gt_red_pred_green_overlay.png
+  - Metrics JSON:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch16_structural_max/page_004/page_004_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch16_structural_max/page_10/page_10_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch16_structural_max/page_15/page_15_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch16_structural_max/page_3/page_3_metrics.json
+- Conclusion / next step
+  - Max-target resample is still misaligned and does not yield meaningful staff count agreement; move to a new structural strategy that uses cross-staff consensus x-positions (support threshold) and then propagates to all bands.
+
+### [Work Unit 17] System-level consensus x positions (support>=50%) (2025-12-28 01:36 JST)
+- Objective / hypothesis
+  - Test a structural inference approach: cluster OMR barline x-positions per system and keep clusters supported by >=50% of bands, then propagate to all bands.
+- What I checked / tested
+  - Added tools/structural_omr_system_consensus.py (system-level clustering + support threshold).
+  - Ran with min_gap=8, gap_factor=1.5, min_support_frac=0.5 on page_004/page_10/page_15/page_3.
+- Commands run
+  - tools/structural_omr_system_consensus.py --min-gap 8 --gap-factor 1.5 --min-support-frac 0.5
+  - tmp/render_gt_pred_overlay.py for each page
+- Key results (quantitative + qualitative)
+  - page_004: num_preds=0 (support too strict; no clusters reached threshold).
+  - page_10: num_preds=71 (preds only in single-band systems; multi-band systems dropped).
+  - page_15: num_preds=0 (support threshold too high; no cluster kept).
+  - page_3: num_preds=0 (support threshold too high; no cluster kept).
+  - Conclusion: support>=50% eliminates nearly all clusters; too strict for this signal.
+- Artifacts saved (FULL paths + color legend)
+  - Overlays (Red=GT boxes, Green=predicted structural bars):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch17_system_consensus/page_004/page_004_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch17_system_consensus/page_10/page_10_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch17_system_consensus/page_15/page_15_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch17_system_consensus/page_3/page_3_gt_red_pred_green_overlay.png
+  - Metrics JSON:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch17_system_consensus/page_004/page_004_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch17_system_consensus/page_10/page_10_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch17_system_consensus/page_15/page_15_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch17_system_consensus/page_3/page_3_metrics.json
+- Decision / next step
+  - Lower support threshold (min_support_frac=0.2) to allow weak cross-staff consensus while still requiring some support; re-run same strategy.
+
+### [Work Unit 18] System-level consensus x positions (support>=20%) (2025-12-28 01:37 JST)
+- Objective / hypothesis
+  - Relax cross-staff consensus threshold to allow weak support clusters to propagate across staves.
+- What I checked / tested
+  - Ran tools/structural_omr_system_consensus.py with min_support_frac=0.2, min_support=1.
+- Commands run
+  - tools/structural_omr_system_consensus.py --min-gap 8 --gap-factor 1.5 --min-support 1 --min-support-frac 0.2
+  - tmp/render_gt_pred_overlay.py for each page
+- Key results (quantitative + qualitative)
+  - page_004: num_preds=81; system-level clusters kept with low support; counts remain small and uneven.
+  - page_10: num_preds=187; large counts in some systems, zero in others (systems with no omr boxes remain empty).
+  - page_15: num_preds=38 (2 bars per staff across system); support threshold still too high for most clusters.
+  - page_3: num_preds=0 (support_thresh=5; no clusters meet threshold).
+  - Conclusion: still unstable; for page_3 clusters never reach support threshold; lowering further collapses to global union and overcount (already tested in Batch 13). This strategy not yielding reliable count recovery.
+- Artifacts saved (FULL paths + color legend)
+  - Overlays (Red=GT boxes, Green=predicted structural bars):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch17b_system_consensus_support0p2/page_004/page_004_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch17b_system_consensus_support0p2/page_10/page_10_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch17b_system_consensus_support0p2/page_15/page_15_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch17b_system_consensus_support0p2/page_3/page_3_gt_red_pred_green_overlay.png
+  - Metrics JSON:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch17b_system_consensus_support0p2/page_004/page_004_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch17b_system_consensus_support0p2/page_10/page_10_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch17b_system_consensus_support0p2/page_15/page_15_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch17b_system_consensus_support0p2/page_3/page_3_metrics.json
+- Decision / next step
+  - Abandon support-based consensus clustering; move to a different structural signal: infer bars from notehead/stem density gaps within staff bands (measure boundary inference by spacing).
+
+### [Work Unit 19] Gap-fit structural inference from OMR x spacing (2025-12-28 01:42 JST)
+- Objective / hypothesis
+  - Infer bar count per system from OMR x spacing (median gap) and fit evenly spaced bar positions across each system.
+- What I checked / tested
+  - Added tools/structural_gap_fit.py and ran with min_gap=8, gap_factor=1.5, min_count=2.
+- Commands run
+  - tools/structural_gap_fit.py --min-gap 8 --gap-factor 1.5 --min-count 2
+  - tmp/render_gt_pred_overlay.py for each page
+- Key results (quantitative + qualitative)
+  - page_004: num_preds=282; fit_count up to 20 in one system; still large overcount.
+  - page_10: num_preds=198; fit_count 14–21 in several systems (overcount vs FN-only GT; unclear benefit).
+  - page_15: num_preds=1919 (fit_count=101; median_gap=27) → catastrophic overcount.
+  - page_3: num_preds=1150 (fit_count=50; median_gap=12) → catastrophic overcount.
+  - Conclusion: gap-fit using median spacing massively overestimates bar counts when OMR x positions are dense; abandon.
+- Artifacts saved (FULL paths + color legend)
+  - Overlays (Red=GT boxes, Green=predicted structural bars):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch19_gap_fit/page_004/page_004_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch19_gap_fit/page_10/page_10_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch19_gap_fit/page_15/page_15_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch19_gap_fit/page_3/page_3_gt_red_pred_green_overlay.png
+  - Metrics JSON:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch19_gap_fit/page_004/page_004_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch19_gap_fit/page_10/page_10_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch19_gap_fit/page_15/page_15_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch19_gap_fit/page_3/page_3_metrics.json
+- Decision / next step
+  - Gap-fit overestimates bar count; abandon. Next attempt: clamp fitted count using an anchor band count (max per system) and apply light resampling to match anchor count (structural normalization without expansion).
+
+### [Work Unit 20] System union resample to anchor count (2025-12-28 01:43 JST)
+- Objective / hypothesis
+  - Use union of OMR x positions per system, resampled to the max per-band count (anchor count), then propagate to all bands.
+- What I checked / tested
+  - Added tools/structural_system_union_resample.py and ran with min_gap=8, gap_factor=1.5.
+- Commands run
+  - tools/structural_system_union_resample.py --min-gap 8 --gap-factor 1.5
+  - tmp/render_gt_pred_overlay.py for each page
+- Key results (quantitative + qualitative)
+  - page_004: num_preds=187; counts match anchor per system (5/8/7/13), still large vs FN-only GT.
+  - page_10: num_preds=197; counts match anchors, many systems zero (no input signal).
+  - page_15: num_preds=304; counts fixed at 16 per band (anchor count), still large.
+  - page_3: num_preds=621; counts fixed at 27 per band (anchor count), still large vs GT.
+  - Conclusion: union-resample behaves like anchor propagation; does not reduce count mismatch or recover FN reliably.
+- Artifacts saved (FULL paths + color legend)
+  - Overlays (Red=GT boxes, Green=predicted structural bars):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch20_union_resample/page_004/page_004_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch20_union_resample/page_10/page_10_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch20_union_resample/page_15/page_15_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch20_union_resample/page_3/page_3_gt_red_pred_green_overlay.png
+  - Metrics JSON:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch20_union_resample/page_004/page_004_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch20_union_resample/page_10/page_10_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch20_union_resample/page_15/page_15_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch20_union_resample/page_3/page_3_metrics.json
+- Decision / next step
+  - Union-resample does not reduce count mismatch; move to a different structural signal: enforce per-system bar counts using known staff line counts from homr (musicxml measure count per system) with calibration to anchor counts.
+
+### [Work Unit 21] Notehead-gap structural inference (percentile=10) (2025-12-28 01:45 JST)
+- Objective / hypothesis
+  - Infer barlines as x positions with very low notehead density across each system (using homr notehead mask).
+- What I checked / tested
+  - Added tools/structural_notehead_gaps.py and ran with percentile=10, min_gap=8.
+- Commands run
+  - tools/structural_notehead_gaps.py --percentile 10 --min-gap 8 --gap-factor 1.5
+  - tmp/render_gt_pred_overlay.py for each page
+- Key results (quantitative + qualitative)
+  - page_004: num_preds=1915; gap_count 47–121 per system → massive overcount.
+  - page_10: num_preds=3067; gap_count 99–163 per system → massive overcount.
+  - page_15: num_preds=551; gap_count=29 per system → still too many.
+  - page_3: num_preds=872; gap_count=28/76 per system → still too many.
+  - Conclusion: notehead gaps at percentile=10 are too frequent; raw notehead density is not a reliable proxy for barlines.
+- Artifacts saved (FULL paths + color legend)
+  - Overlays (Red=GT boxes, Green=predicted structural bars):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch21_notehead_gaps_p10/page_004/page_004_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch21_notehead_gaps_p10/page_10/page_10_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch21_notehead_gaps_p10/page_15/page_15_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch21_notehead_gaps_p10/page_3/page_3_gt_red_pred_green_overlay.png
+  - Metrics JSON:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch21_notehead_gaps_p10/page_004/page_004_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch21_notehead_gaps_p10/page_10/page_10_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch21_notehead_gaps_p10/page_15/page_15_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch21_notehead_gaps_p10/page_3/page_3_metrics.json
+- Decision / next step
+  - Notehead-gap heuristic overproduces bars; abandon this signal. Next attempt: use stem mask to derive vertical barline likelihood (column sum in stem mask) and enforce consistent count per system by peak selection.
+
+### [Work Unit 22] Stem-mask peak selection with OMR count targets (2025-12-28 01:47 JST)
+- Objective / hypothesis
+  - Use homr stem mask as positional signal and OMR per-system max count as target; select top stem peaks per system to place bars.
+- What I checked / tested
+  - Added tools/structural_stem_peak_select.py and ran with min_gap=8, gap_factor=1.5.
+- Commands run
+  - tools/structural_stem_peak_select.py --min-gap 8 --gap-factor 1.5
+  - tmp/render_gt_pred_overlay.py for each page
+- Key results (quantitative + qualitative)
+  - page_004: num_preds=187; counts identical to anchor approach (5/8/7/13 per system).
+  - page_10: num_preds=197; counts identical to anchor approach (16/19/15/13/14/16 where present).
+  - page_15: num_preds=304; counts fixed at 16 per band.
+  - page_3: num_preds=621; counts fixed at 27 per band.
+  - Conclusion: positional signal changes, but counts remain driven by OMR and still mismatch; no net FN recovery.
+- Artifacts saved (FULL paths + color legend)
+  - Overlays (Red=GT boxes, Green=predicted structural bars):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch22_stem_peak_anchor/page_004/page_004_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch22_stem_peak_anchor/page_10/page_10_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch22_stem_peak_anchor/page_15/page_15_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch22_stem_peak_anchor/page_3/page_3_gt_red_pred_green_overlay.png
+  - Metrics JSON:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch22_stem_peak_anchor/page_004/page_004_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch22_stem_peak_anchor/page_10/page_10_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch22_stem_peak_anchor/page_15/page_15_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch22_stem_peak_anchor/page_3/page_3_metrics.json
+- Decision / next step
+  - OMR-driven count targets dominate; this hybrid does not reduce count mismatch. Next attempt: derive target counts from musicxml measure count per system (not global) and then align stem/OMR positions to that target.
+
+### [Work Unit 23] MusicXML per-system count resample (2025-12-28 01:51 JST)
+- Objective / hypothesis
+  - Use homr MusicXML measure count distributed across systems to set target bar counts per system; resample OMR union positions to that target.
+- What I checked / tested
+  - Added tools/structural_musicxml_system_resample.py and ran with min_gap=8, gap_factor=1.5.
+- Commands run
+  - tools/structural_musicxml_system_resample.py --min-gap 8 --gap-factor 1.5
+  - tmp/render_gt_pred_overlay.py for each page
+- Key results (quantitative + qualitative)
+  - page_004: total_measures=96 → target_count ~19–20; num_preds=399 (overcount vs FN-only GT).
+  - page_10: total_measures=148 → target_count ~13–14; num_preds=161.
+  - page_15: total_measures=107 → target_count=107; num_preds=2033 (catastrophic overcount).
+  - page_3: total_measures=129 → target_count ~64–65; num_preds=1495 (catastrophic overcount).
+  - Conclusion: MusicXML measure counts are too large to drive bar counts; unsuitable for this stage.
+- Artifacts saved (FULL paths + color legend)
+  - Overlays (Red=GT boxes, Green=predicted structural bars):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch23_musicxml_system/page_004/page_004_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch23_musicxml_system/page_10/page_10_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch23_musicxml_system/page_15/page_15_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch23_musicxml_system/page_3/page_3_gt_red_pred_green_overlay.png
+  - Metrics JSON:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch23_musicxml_system/page_004/page_004_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch23_musicxml_system/page_10/page_10_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch23_musicxml_system/page_15/page_15_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch23_musicxml_system/page_3/page_3_metrics.json
+- Decision / next step
+  - MusicXML per-system counts are too large; abandon. Next attempt: combine homr + omr counts conservatively and resample union positions.
+
+### [Work Unit 24] Dual-count median target (homr + omr) (2025-12-28 01:51 JST)
+- Objective / hypothesis
+  - Use both homr and omr counts per system; set target to median of max counts, then resample union positions to that target.
+- What I checked / tested
+  - Added tools/structural_dual_count_resample.py (median target) and ran with min_gap=8.
+- Commands run
+  - tools/structural_dual_count_resample.py --target-mode median --min-gap 8
+  - tmp/render_gt_pred_overlay.py for each page
+- Key results (quantitative + qualitative)
+  - page_004: num_preds=195; target counts 4/4/9/8/11 per system (still high vs FN-only GT).
+  - page_10: num_preds=190; target counts 2/14/18/3/1/13/12/13/14 (mixed, some zero systems still empty).
+  - page_15: num_preds=285; target count 15 per band.
+  - page_3: num_preds=644; target count 28 per band.
+  - Conclusion: median target reduces counts slightly but remains far above GT and does not recover FN reliably.
+- Artifacts saved (FULL paths + color legend)
+  - Overlays (Red=GT boxes, Green=predicted structural bars):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch24_dual_count/page_004/page_004_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch24_dual_count/page_10/page_10_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch24_dual_count/page_15/page_15_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch24_dual_count/page_3/page_3_gt_red_pred_green_overlay.png
+  - Metrics JSON:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch24_dual_count/page_004/page_004_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch24_dual_count/page_10/page_10_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch24_dual_count/page_15/page_15_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch24_dual_count/page_3/page_3_metrics.json
+- Decision / next step
+  - Try more conservative target (min of max counts) to reduce overcount.
+
+### [Work Unit 25] Dual-count min target (homr + omr) (2025-12-28 01:51 JST)
+- Objective / hypothesis
+  - Use conservative target count per system = min(max_omr, max_homr) and resample union positions to that target.
+- What I checked / tested
+  - Ran tools/structural_dual_count_resample.py with --target-mode min.
+- Commands run
+  - tools/structural_dual_count_resample.py --target-mode min --min-gap 8
+  - tmp/render_gt_pred_overlay.py for each page
+- Key results (quantitative + qualitative)
+  - page_004: num_preds=162; target counts 4/8/7/10 (system 0 stays 0).
+  - page_10: num_preds=167; target counts 13/17/11/12/13/13 (zero systems remain empty).
+  - page_15: num_preds=285; target count 15 per band.
+  - page_3: num_preds=621; target count 27 per band.
+  - Conclusion: conservative target reduces counts slightly but still far above GT and does not resolve FN reliably.
+- Artifacts saved (FULL paths + color legend)
+  - Overlays (Red=GT boxes, Green=predicted structural bars):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25_dual_count_min/page_004/page_004_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25_dual_count_min/page_10/page_10_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25_dual_count_min/page_15/page_15_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25_dual_count_min/page_3/page_3_gt_red_pred_green_overlay.png
+  - Metrics JSON:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25_dual_count_min/page_004/page_004_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25_dual_count_min/page_10/page_10_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25_dual_count_min/page_15/page_15_metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25_dual_count_min/page_3/page_3_metrics.json
+- Decision / next step
+  - Dual-count resampling still fails to match counts; remaining options likely require retraining or upstream model changes, or a dedicated measure-grid model. Consider stopping if no new structural signals remain.
+
+### [Work Unit 26] Sanity checks + coordinate fix for dual-count batch (2025-12-28 06:16 JST)
+- Objective / hypothesis
+  - Validate coordinate alignment for structural batches; ensure overlays/metrics are in full-image coordinates and sanity checks pass.
+- What I checked / tested
+  - Detected coordinate mismatch: staff masks are resized (e.g., 1681x2186) while OMR boxes are in full-image coords (e.g., 3000x3900). This invalidated prior overlays.
+  - Fixed tools/structural_dual_count_resample.py to scale boxes using base image size and clamp outputs to image bounds.
+  - Re-ran batch as 20251227T_batch25c_dual_count_min_scaled with new overlay scripts that burn legend + base/gt/pred paths.
+  - Generated pred-center scatter overlays with quadrant counts.
+- Commands run
+  - tools/structural_dual_count_resample.py --base-image <full image> --target-mode min
+  - tools/render_gt_pred_overlay_with_legend.py (legend + base/gt/pred paths baked)
+  - tools/render_pred_scatter_with_legend.py (legend + quadrant counts baked)
+- Key results (quantitative + qualitative)
+  - Coordinate sanity: pred_out_of_bounds=0 for page_004/page_10/page_15/page_3 after scaling/clamp.
+  - Pred-center quadrant counts (from scatter JSON):
+    - page_004: q1=40 q2=68 q3=66 q4=67
+    - page_10: q1=60 q2=70 q3=65 q4=82
+    - page_15: q1=72 q2=72 q3=80 q4=80
+    - page_3:  q1=80 q2=100 q3=128 q4=154
+  - Note: crop/upscale sanity not applicable to this batch (no crop strategy used).
+- Artifacts saved (FULL paths + color legend)
+  - Overlays (Red=GT boxes, Green=pred boxes):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25c_dual_count_min_scaled/page_004/page_004_gt_red_pred_green_overlay_legend.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25c_dual_count_min_scaled/page_10/page_10_gt_red_pred_green_overlay_legend.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25c_dual_count_min_scaled/page_15/page_15_gt_red_pred_green_overlay_legend.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25c_dual_count_min_scaled/page_3/page_3_gt_red_pred_green_overlay_legend.png
+  - Pred-center scatter (Green=pred center dots):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25c_dual_count_min_scaled/page_004/page_004_pred_scatter_green_legend.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25c_dual_count_min_scaled/page_10/page_10_pred_scatter_green_legend.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25c_dual_count_min_scaled/page_15/page_15_pred_scatter_green_legend.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25c_dual_count_min_scaled/page_3/page_3_pred_scatter_green_legend.png
+  - Quadrant count JSON:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25c_dual_count_min_scaled/page_004/page_004_pred_scatter_quadrants.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25c_dual_count_min_scaled/page_10/page_10_pred_scatter_quadrants.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25c_dual_count_min_scaled/page_15/page_15_pred_scatter_quadrants.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25c_dual_count_min_scaled/page_3/page_3_pred_scatter_quadrants.json
+- Conclusion / next step
+  - Coordinate sanity now passes for batch25c; prior batch25 results are invalid due to mismatched coordinate systems. Future batches must use base-image scaling and legend-burned overlays before interpretation.

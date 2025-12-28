@@ -1348,3 +1348,502 @@ Assumptions/uncertainties:
     - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch25c_dual_count_min_scaled/page_3/page_3_pred_scatter_quadrants.json
 - Conclusion / next step
   - Coordinate sanity now passes for batch25c; prior batch25 results are invalid due to mismatched coordinate systems. Future batches must use base-image scaling and legend-burned overlays before interpretation.
+
+### [Work Unit 27] FN crop evidence extraction (GT-based) (2025-12-28 01:55 JST)
+- Objective / hypothesis
+  - Visually confirm every FN barline and document context + image-based miss hypotheses using GT-centered crops.
+- What I checked / tested
+  - Generated GT-centered crops with overlays (Red=GT, Green=gen4 preds, Blue=staff mask) for all FN in page_004/page_10/page_15.
+  - Visually inspected each crop (all 58).
+- Commands run
+  - .venv_omr_dln/bin/python tools/make_fn_crops.py (page_004/page_10/page_15)
+- Key results (numbers + qualitative)
+  - All FN GT barlines are visually present in crops.
+  - Preds are frequently adjacent/offset (near-miss), especially at right-edge end bars and in dense symbol regions.
+  - Double/repeat bars appear in multiple FN; gen4 often predicts only one line or shifts.
+- FN table (page, fn_id, type, context, hypothesis)
+  | page | fn_id | type | context | hypothesis |
+  | --- | --- | --- | --- | --- |
+  | page_004 | fn_000 | end/double | right edge + dense notes | edge + thicker stroke under-detected |
+  | page_004 | fn_001 | single | dense notes + slur | vertical stroke fragmented by noteheads |
+  | page_004 | fn_002 | double/repeat | dense notes | paired bars not modeled; only one line detected |
+  | page_004 | fn_003 | single | stems/notes | overlap with stems reduces vertical run |
+  | page_004 | fn_004 | end/double | right edge | prediction shifted to edge; GT slightly left |
+  | page_004 | fn_005 | single | accidentals + slur | vertical line occluded by accidentals |
+  | page_004 | fn_006 | single | noteheads + accidentals | fragmented vertical run |
+  | page_004 | fn_007 | single | accidentals near right | occlusion by accidental head |
+  | page_004 | fn_008 | single | rest block + right edge | rest block + short vertical continuity |
+  | page_004 | fn_009 | single | slur + notes | slur intersection weakens vertical continuity |
+  | page_004 | fn_010 | single | slur/beam below | beam slant masks vertical segment |
+  | page_004 | fn_011 | double/repeat | dense chord cluster | paired bars + dense overlap; near-miss |
+  | page_10 | fn_000 | single | mid-staff notes | pred offset; near-miss alignment |
+  | page_10 | fn_001 | end/double | right edge | pred shifted to edge; GT slightly left |
+  | page_10 | fn_002 | single | text “sempre pp” | text overlap + noteheads |
+  | page_10 | fn_003 | end/double | right edge | edge bias + double bar thickness |
+  | page_10 | fn_004 | single | stems/notes | pred offset; partial overlap |
+  | page_10 | fn_005 | end/double | right edge | edge + thick bar; pred shifted |
+  | page_10 | fn_006 | end/double | right edge | GT at edge; pred shifted |
+  | page_10 | fn_007 | single | lower staff | vertical extent mismatch; partial overlap |
+  | page_10 | fn_008 | end/double | right edge | pred captures adjacent barline |
+  | page_10 | fn_009 | single | notes | x-shift near-miss |
+  | page_10 | fn_010 | end/double | right edge + beams | thick bar + edge bias |
+  | page_10 | fn_011 | end/double | right edge | edge bias, pred shifted |
+  | page_10 | fn_012 | single | dense notes | partial overlap; vertical extent mismatch |
+  | page_10 | fn_013 | single | text “ff” | text overlap + offset |
+  | page_10 | fn_014 | end/double | right edge | pred shifted right |
+  | page_10 | fn_015 | single | dense notes | pred aligns to adjacent barline |
+  | page_10 | fn_016 | single | sparse notes | x-shift; near-miss |
+  | page_10 | fn_017 | end/double | right edge | pred shifted right |
+  | page_10 | fn_018 | single | notes | x-shift near-miss |
+  | page_10 | fn_019 | end/double | right edge | pred shifted right |
+  | page_10 | fn_020 | single | text “pp” | text overlap + offset |
+  | page_10 | fn_021 | double/repeat | right edge + G.P. text | paired bars; pred picks wrong line |
+  | page_10 | fn_022 | single | dense notes | vertical extent mismatch |
+  | page_10 | fn_023 | end/double | right edge | pred shifted right |
+  | page_15 | fn_000 | end/double | right edge | edge bias + thick bar |
+  | page_15 | fn_001 | end/double | right edge + text | text overlap + edge shift |
+  | page_15 | fn_002 | single | dense chord | occlusion by dense notes |
+  | page_15 | fn_003 | single | slur + dense notes | slur intersection + offset |
+  | page_15 | fn_004 | single | text + slur | text overlap; occluded |
+  | page_15 | fn_005 | double/repeat | clef + dense notes | paired bars; pred offset |
+  | page_15 | fn_006 | end/double | right edge | pred shifted right |
+  | page_15 | fn_007 | single | dense notes | x-shift near-miss |
+  | page_15 | fn_008 | end/double | right edge | pred shifted right |
+  | page_15 | fn_009 | single | notes + slur | x-shift + short vertical |
+  | page_15 | fn_010 | double/repeat | dense notes | paired bars; pred takes one line |
+  | page_15 | fn_011 | end/double | right edge | pred shifted right |
+  | page_15 | fn_012 | end/double | right edge | pred shifted right |
+  | page_15 | fn_013 | double/repeat | dense notes | double bar; pred offset |
+  | page_15 | fn_014 | end/double | right edge | pred shifted right |
+  | page_15 | fn_015 | double/repeat | right edge | paired bars; pred on one line |
+  | page_15 | fn_016 | single | dense notes + tie | overlap with tie; short continuity |
+  | page_15 | fn_017 | end/double | right edge | pred shifted right |
+  | page_15 | fn_018 | double/repeat | dense notes | paired bars; pred offset |
+  | page_15 | fn_019 | end/double | right edge | pred shifted right |
+  | page_15 | fn_020 | end/double | right edge | pred shifted right |
+  | page_15 | fn_021 | double/repeat | dense chord + text | paired bars + overlap; pred on wrong line |
+- Artifacts saved (FULL paths)
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_004/page_004_fn_000_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_004/page_004_fn_001_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_004/page_004_fn_002_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_004/page_004_fn_003_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_004/page_004_fn_004_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_004/page_004_fn_005_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_004/page_004_fn_006_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_004/page_004_fn_007_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_004/page_004_fn_008_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_004/page_004_fn_009_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_004/page_004_fn_010_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_004/page_004_fn_011_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_000_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_001_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_002_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_003_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_004_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_005_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_006_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_007_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_008_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_009_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_010_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_011_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_012_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_013_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_014_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_015_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_016_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_017_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_018_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_019_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_020_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_021_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_022_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_023_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_000_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_001_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_002_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_003_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_004_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_005_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_006_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_007_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_008_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_009_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_010_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_011_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_012_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_013_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_014_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_015_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_016_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_017_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_018_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_019_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_020_crop_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_021_crop_overlay.png
+- Conclusion / next step
+  - Phase 1 complete with visual confirmation of all FN crops. Proceed to Phase 2 clustering using these crops.
+
+### [Work Unit 28] FN clustering (image-driven) (2025-12-28 14:46 JST)
+- Objective / hypothesis
+  - Cluster FN into visual archetypes using GT crop overlays to prioritize targeted FN-only experiments.
+- What I checked / tested
+  - Reviewed all FN crop overlays under /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/ (page_004/page_10/page_15).
+- Cluster definitions + membership
+  - Cluster A: Right-edge end/double bars (edge-biased, thick end bars)
+    - Membership: page_004 fn_000, fn_004, fn_008; page_10 fn_001, fn_003, fn_005, fn_006, fn_008, fn_010, fn_011, fn_014, fn_017, fn_019, fn_023; page_15 fn_000, fn_001, fn_006, fn_008, fn_011, fn_012, fn_014, fn_017, fn_019, fn_020
+    - Representative crops:
+      - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_003_crop_overlay.png
+      - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_012_crop_overlay.png
+      - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_004/page_004_fn_000_crop_overlay.png
+    - Recoverability: high (edge-specific reinforcement likely helps)
+  - Cluster B: Double/repeat bars (paired verticals; one line missed)
+    - Membership: page_004 fn_002, fn_011; page_10 fn_021; page_15 fn_005, fn_010, fn_013, fn_015, fn_018, fn_021
+    - Representative crops:
+      - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_004/page_004_fn_002_crop_overlay.png
+      - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_021_crop_overlay.png
+      - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_013_crop_overlay.png
+    - Recoverability: medium (needs explicit double-bar handling)
+  - Cluster C: Dense symbol overlap (notes/accidentals/slurs crossing barline)
+    - Membership: page_004 fn_001, fn_003, fn_005, fn_006, fn_007, fn_009, fn_010; page_10 fn_002, fn_004, fn_012, fn_013, fn_015, fn_018, fn_020, fn_022; page_15 fn_002, fn_003, fn_004, fn_007, fn_009, fn_016
+    - Representative crops:
+      - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_004/page_004_fn_005_crop_overlay.png
+      - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_012_crop_overlay.png
+      - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_016_crop_overlay.png
+    - Recoverability: medium/low (occlusion + fragmentation)
+  - Cluster D: Near-miss offset (pred exists but shifted)
+    - Membership: cross-cutting; primary examples: page_10 fn_000, fn_004, fn_009, fn_015, fn_018; page_15 fn_002, fn_003, fn_007, fn_009; page_004 fn_003, fn_006
+    - Representative crops:
+      - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_10/page_10_fn_000_crop_overlay.png
+      - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_15/page_15_fn_007_crop_overlay.png
+      - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_crops/page_004/page_004_fn_006_crop_overlay.png
+    - Recoverability: medium (snap-to-peak might fix)
+- Priority order for Phase 3
+  1) Cluster A (right-edge) — highest frequency, visually consistent
+  2) Cluster B (double/repeat) — distinct geometry, targeted rule
+  3) Cluster D (near-miss offset) — potentially fixable by snapping
+  4) Cluster C (dense overlap) — hardest (occlusion)
+- Conclusion / next step
+  - Proceed to Phase 3: edge-specialist (Cluster A) and double-bar handler (Cluster B) on FN crops with two parameter variants each.
+
+### [Work Unit 29] Phase 3: Edge-specialist on FN crops (params A/B) (2025-12-28 14:49 JST)
+- Objective / hypothesis
+  - Recover right-edge end/double bars by searching for tall vertical runs within rightmost crop region.
+- What I checked / tested
+  - Ran edge method on Cluster A FN crops with two parameter sets.
+- Commands run
+  - tools/fn_crop_experiment.py --method edge (paramA: min_height_ratio=0.6, edge_margin_ratio=0.25)
+  - tools/fn_crop_experiment.py --method edge (paramB: min_height_ratio=0.75, edge_margin_ratio=0.2)
+- Key results (quantitative + qualitative)
+  - edge_v1_paramA recovered 0/24 FNs; edge_v1_paramB recovered 0/24 FNs.
+  - Visual inspection shows green (new) often overlaps baseline or misses GT red; no clear recovery.
+- Visual evidence inspected (FULL paths)
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_experiments/edge_v1_paramA/page_004/page_004_fn_000_edge_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_experiments/edge_v1_paramA/page_10/page_10_fn_003_edge_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_experiments/edge_v1_paramB/page_15/page_15_fn_012_edge_overlay.png
+- Decision
+  - Discard edge-specialist approach (no FN recovery in crops).
+
+### [Work Unit 30] Phase 3: Double-bar handler on FN crops (params A/B) (2025-12-28 14:49 JST)
+- Objective / hypothesis
+  - Detect paired verticals with small x-gap and output double-bar candidates.
+- What I checked / tested
+  - Ran double-bar detection on Cluster B FN crops with two gap ranges.
+- Commands run
+  - tools/fn_crop_experiment.py --method double (paramA: min_height_ratio=0.6, gap 2–4)
+  - tools/fn_crop_experiment.py --method double (paramB: min_height_ratio=0.6, gap 2–8)
+- Key results (quantitative + qualitative)
+  - double_v1_paramA recovered 0/9 FNs; double_v1_paramB recovered 0/9 FNs.
+  - Visual inspection shows green candidates offset from red or on the wrong vertical line; no recovery.
+- Visual evidence inspected (FULL paths)
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_experiments/double_v1_paramA/page_004/page_004_fn_002_double_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_experiments/double_v1_paramA/page_10/page_10_fn_021_double_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_experiments/double_v1_paramB/page_15/page_15_fn_013_double_overlay.png
+- Decision
+  - Discard double-bar handler (no FN recovery in crops).
+
+### [Work Unit 31] Phase 3: Near-miss snap-to-peak on FN crops (params A/B) (2025-12-28 14:49 JST)
+- Objective / hypothesis
+  - Shift baseline preds to local vertical-ink peak within a small window to fix near-miss offsets.
+- What I checked / tested
+  - Ran snap method on Cluster D FN crops with two window sizes.
+- Commands run
+  - tools/fn_crop_experiment.py --method snap (paramA: snap_window=6)
+  - tools/fn_crop_experiment.py --method snap (paramB: snap_window=12)
+- Key results (quantitative + qualitative)
+  - snap_v1_paramA recovered 5/11 FNs; snap_v1_paramB recovered 4/11 FNs.
+  - Recovered FN IDs:
+    - paramA: page_10 fn_004, fn_015; page_15 fn_002, fn_003, fn_009
+    - paramB: page_10 fn_004, fn_015; page_15 fn_003, fn_009
+  - Visual inspection confirms green moved onto red for recovered cases; no obvious new FP within crops.
+- Visual evidence inspected (FULL paths)
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_experiments/snap_v1_paramA/page_10/page_10_fn_000_snap_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_experiments/snap_v1_paramA/page_10/page_10_fn_009_snap_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/FN_experiments/snap_v1_paramA/page_15/page_15_fn_007_snap_overlay.png
+- Decision
+  - Keep snap_v1_paramA as candidate strategy (>=30% recovery in Cluster D). Proceed to Phase 4 GT-free formulation.
+
+### [Work Unit 32] Phase 4: GT-free snap-to-peak reformulation (2025-12-28 14:51 JST)
+- Objective / hypothesis
+  - Convert snap-to-peak crop success into GT-free rule using only base image + baseline preds.
+- What I checked / tested
+  - Implemented GT-free snapping (tools/gtfree_snap_peak.py) and applied to full page_15.
+  - Visualized full-page overlay with legend for evaluation.
+- Commands run
+  - tools/gtfree_snap_peak.py --base page_15.png --pred page_15_detections.json --window 6
+  - tools/render_gt_pred_overlay_with_legend.py (Red=GT, Green=snapped preds)
+- Key results (quantitative + qualitative)
+  - page_15 FN-only recovery (IoU>=0.1): 6/22 recovered.
+  - Visual inspection shows several near-miss bars align after snapping; no obvious scale/coord anomaly.
+- Visual evidence inspected (FULL paths)
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/gtfree_snap_small/page_15_full_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/gtfree_snap_small/phase4_crop/page_15_fn_002_snap_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/gtfree_snap_small/phase4_crop/page_15_fn_003_snap_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/gtfree_snap_small/phase4_crop/page_15_fn_009_snap_overlay.png
+- Decision
+  - GT-free snap-to-peak passes Phase 4 (some FN recovery). Proceed to Phase 5 full-page validation on page_004/page_10/page_15/page_3.
+
+### [Work Unit 33] Phase 5: Full-page validation of GT-free snap-to-peak (2025-12-28 14:53 JST)
+- Objective / hypothesis
+  - Validate GT-free snap-to-peak on full pages (page_004/page_10/page_15/page_3 guard) and visually inspect for bias/FP.
+- What I checked / tested
+  - Ran gtfree_snap_peak.py on full images using baseline gen4 preds with window=6.
+  - Generated full-page overlays with legend.
+- Commands run
+  - tools/gtfree_snap_peak.py --window 6 (page_004/page_10/page_15/page_3)
+  - tools/render_gt_pred_overlay_with_legend.py (Red=GT, Green=snapped preds)
+- Key results (quantitative + qualitative)
+  - Recovered (IoU>=0.1): page_004 1/12, page_10 5/24, page_15 6/22, page_3 25/152.
+  - Visual inspection: snapped preds align slightly better on some near-miss bars; no obvious spatial bias, but limited overall FN recovery.
+- Visual evidence inspected (FULL paths)
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_phase5_snap_full/page_004/page_004_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_phase5_snap_full/page_10/page_10_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_phase5_snap_full/page_15/page_15_gt_red_pred_green_overlay.png
+  - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_phase5_snap_full/page_3/page_3_gt_red_pred_green_overlay.png
+- Decision
+  - Keep snap-to-peak as a minor improvement but insufficient for major FN reduction; other clusters remain unsolved (edge + double + dense overlap).
+
+### [Work Unit 34] Approach shift: vertical ink evidence review (2025-12-28 15:59 JST)
+- Objective / hypothesis
+  - Resolve hypothesis conflict by visually verifying whether past vertical-ish detectors already produced usable ink evidence near GT FNs.
+- What I checked / tested
+  - Re-opened baseline gen4 overlays and produced evidence sheets for sobelweak, vrunweak, ccdilated, colsumweak, houghweak (page_004/page_10/page_15/page_3 each).
+- Overlays opened (FULL paths)
+  - Baseline gen4:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/gen4_vertical_run_no_staff/page_004_20251227T_batch2_gen4_page_004_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/gen4_vertical_run_no_staff/page_10_20251227T_batch2_gen4_page_10_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/gen4_vertical_run_no_staff/page_15_20251227T_batch2_gen4_page_15_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251227T_batch2_overlays/gen4_vertical_run_no_staff/page_3_20251227T_batch2_gen4_page3_guard_gt_red_pred_green_overlay.png
+  - Evidence sheets:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/sobelweak/page_004_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/sobelweak/page_10_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/sobelweak/page_15_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/sobelweak/page_3_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/vrunweak/page_004_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/vrunweak/page_10_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/vrunweak/page_15_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/vrunweak/page_3_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/ccdilated/page_004_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/ccdilated/page_10_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/ccdilated/page_15_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/ccdilated/page_3_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/colsumweak/page_004_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/colsumweak/page_10_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/colsumweak/page_15_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/colsumweak/page_3_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/houghweak/page_004_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/houghweak/page_10_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/houghweak/page_15_evidence.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/vertical_ink_review/houghweak/page_3_evidence.png
+- Per-method ink evidence judgement (visual)
+  - sobelweak: Mixed; some green near red bars but still sparse at right-edge FNs.
+  - vrunweak: Mixed; similar to gen4 with sparse near-miss.
+  - ccdilated: Mixed; more green around stems/notes, but still inconsistent at FN GT columns.
+  - colsumweak: Mixed; green concentrated at many stem columns, sometimes coincident with GT, high FP.
+  - houghweak: Mixed; green sparse and biased; some FN columns still empty.
+- Hypothesis update
+  - Several FN bars look clean/continuous, yet vertical-ink detectors often fail to place green at GT columns; failure is not solely fragmentation.
+  - Prior “occlusion” hypothesis is not sufficient; the signal often does not reach candidate placement even when barlines are visually clear.
+- Next step
+  - Reuse the densest vertical-ink family (colsum/ccdilated) as a raw ink-field and build a GT-free selection stage rather than new detectors.
+
+### [Work Unit 35] Approach shift: template-guided vertical ink scanning (2025-12-28 16:40 JST)
+- Objective / hypothesis
+  - Test a new approach (ink-density along barline-shaped probes) distinct from sobel/hough/colsum; resolve conflict with visual evidence.
+- What I checked / tested
+  - Created trusted barline templates from page_3 GT-aligned gen4 preds (template length ~21–24 px).
+  - Applied GT-guided template scanning across each FN crop (top-1 and top-5 probes) and visually inspected overlays.
+- Commands run
+  - tools/select_trusted_templates.py (page_3)
+  - tools/fn_template_scan.py (page_004/page_10/page_15)
+- Evidence inspected (FULL paths)
+  - Templates:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/template_barlines/page_3/page_3_template_00.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/template_barlines/page_3/page_3_template_01.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/template_barlines/page_3/page_3_template_02.png
+  - FN scan overlays (examples inspected across pages):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/fn_template_scan/page_004/page_004_fn_000_scan_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/fn_template_scan/page_004/page_004_fn_002_scan_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/fn_template_scan/page_004/page_004_fn_011_scan_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/fn_template_scan/page_10/page_10_fn_001_scan_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/fn_template_scan/page_10/page_10_fn_012_scan_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/fn_template_scan/page_10/page_10_fn_021_scan_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/fn_template_scan/page_15/page_15_fn_003_scan_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/fn_template_scan/page_15/page_15_fn_010_scan_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/fn_template_scan/page_15/page_15_fn_021_scan_overlay.png
+- Visual judgement (Phase 1)
+  - Mixed: several FN crops show top-1 probe close to GT, but multiple cases align to neighboring stems/accidentals rather than the barline column.
+  - Clean/continuous barlines exist visually, yet ink probe sometimes peaks on stems; confirms failure is not purely fragmentation.
+- Decision
+  - Continue to complete full FN overlay inspection before declaring success; current evidence suggests only partial alignment (<30% of FN) without further constraints. If full scan review stays below threshold, abandon this idea.
+
+### [Work Unit 36] Approach shift: staff-aligned full-height probes (2025-12-28 17:12 JST)
+- Objective / hypothesis
+  - Test staff-aligned full-height probe scoring (ink ratio + staff crossings + continuity) to see if top-K probes align with FN GT columns.
+  - This differs from prior edge/ink detectors by enforcing staff-consistent, full-height probe scoring.
+- What I changed / tested
+  - Fixed JSON output key in `tools/staff_probe_scan.py` (`topk 🟨` -> `topk`) to align with `tools/fn_probe_overlay.py`.
+  - Ran staff probe scan on page_004/page_10/page_15 using homr staff masks (inside homr_eval_gpu via poetry to access cv2).
+  - Generated FN crop overlays for all FN using top-K probes (Red=GT, Green=top-1 probe, Yellow=top-K probes, Blue=staff bounds).
+  - Visually inspected EVERY FN overlay (58 total) + full-page probe overlays.
+- Commands run
+  - `docker exec homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python /workspace/tools/staff_probe_scan.py --base /workspace/logs/homr_eval/20251227T_batch2_gen4_page_004/page_004/page_004.png --staff-mask /workspace/logs/homr_eval/20251227T_batch2_gen4_page_004/page_004/page_004_debug_3_staff.png --gt /workspace/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/fn_only.json --output-dir /workspace/logs/validation/20251228T_probe_scan/page_004 --page-id page_004 --probe-step 2 --topk 10"`
+  - `docker exec homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python /workspace/tools/staff_probe_scan.py --base /workspace/logs/homr_eval/20251227T_batch2_gen4_page_10/page_10/page_10.png --staff-mask /workspace/logs/homr_eval/20251227T_batch2_gen4_page_10/page_10/page_10_debug_3_staff.png --gt /workspace/data/training/annotations/page_010/fn_only.json --output-dir /workspace/logs/validation/20251228T_probe_scan/page_10 --page-id page_10 --probe-step 2 --topk 10"`
+  - `docker exec homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python /workspace/tools/staff_probe_scan.py --base /workspace/logs/homr_eval/20251227T_batch2_gen4_page_15/page_15/page_15.png --staff-mask /workspace/logs/homr_eval/20251227T_batch2_gen4_page_15/page_15/page_15_debug_3_staff.png --gt /workspace/data/training/annotations/page_015/fn_only.json --output-dir /workspace/logs/validation/20251228T_probe_scan/page_15 --page-id page_15 --probe-step 2 --topk 10"`
+  - `docker exec homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python /workspace/tools/fn_probe_overlay.py --base /workspace/logs/homr_eval/20251227T_batch2_gen4_page_004/page_004/page_004.png --gt /workspace/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/fn_only.json --probe-scores /workspace/logs/validation/20251228T_probe_scan/page_004/page_004_probe_scores.json --staff-mask /workspace/logs/homr_eval/20251227T_batch2_gen4_page_004/page_004/page_004_debug_3_staff.png --page-id page_004 --output-dir /workspace/logs/validation/20251228T_probe_scan/page_004_fn --topk 10"`
+  - `docker exec homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python /workspace/tools/fn_probe_overlay.py --base /workspace/logs/homr_eval/20251227T_batch2_gen4_page_10/page_10/page_10.png --gt /workspace/data/training/annotations/page_010/fn_only.json --probe-scores /workspace/logs/validation/20251228T_probe_scan/page_10/page_10_probe_scores.json --staff-mask /workspace/logs/homr_eval/20251227T_batch2_gen4_page_10/page_10/page_10_debug_3_staff.png --page-id page_10 --output-dir /workspace/logs/validation/20251228T_probe_scan/page_10_fn --topk 10"`
+  - `docker exec homr_eval_gpu bash -lc "cd /workspace/external/homr && poetry run python /workspace/tools/fn_probe_overlay.py --base /workspace/logs/homr_eval/20251227T_batch2_gen4_page_15/page_15/page_15.png --gt /workspace/data/training/annotations/page_015/fn_only.json --probe-scores /workspace/logs/validation/20251228T_probe_scan/page_15/page_15_probe_scores.json --staff-mask /workspace/logs/homr_eval/20251227T_batch2_gen4_page_15/page_15/page_15_debug_3_staff.png --page-id page_15 --output-dir /workspace/logs/validation/20251228T_probe_scan/page_15_fn --topk 10"`
+- Key results (quantitative + qualitative)
+  - Probe near GT (±3px) rate: page_004=4/12 (33.3%), page_10=4/24 (16.7%), page_15=1/22 (4.5%). Overall 9/58 (15.5%) < 30% threshold → FAIL.
+  - Visual inspection shows top-1/top-K probes frequently align to stems or dense note clusters; many clean barlines do not appear in top-K (even when staff_line_crossings=5 is satisfied by non-bar ink).
+  - This indicates the staff-aligned scoring still favors dense vertical ink over true barlines and is insufficient as-is.
+- Artifacts saved (FULL paths + color legend)
+  - Full-page probe overlays (Red=GT, Yellow=all probes, Blue=staff bounds):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_004/page_004_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10/page_10_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15/page_15_probe_overlay.png
+  - FN crop overlays (Red=GT, Green=top-1 probe, Yellow=top-K probes, Blue=staff bounds) — ALL inspected:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_004_fn/page_004_fn_000_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_004_fn/page_004_fn_001_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_004_fn/page_004_fn_002_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_004_fn/page_004_fn_003_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_004_fn/page_004_fn_004_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_004_fn/page_004_fn_005_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_004_fn/page_004_fn_006_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_004_fn/page_004_fn_007_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_004_fn/page_004_fn_008_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_004_fn/page_004_fn_009_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_004_fn/page_004_fn_010_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_004_fn/page_004_fn_011_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_000_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_001_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_002_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_003_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_004_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_005_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_006_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_007_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_008_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_009_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_010_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_011_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_012_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_013_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_014_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_015_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_016_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_017_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_018_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_019_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_020_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_021_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_022_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_10_fn/page_10_fn_023_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_000_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_001_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_002_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_003_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_004_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_005_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_006_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_007_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_008_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_009_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_010_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_011_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_012_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_013_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_014_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_015_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_016_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_017_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_018_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_019_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_020_probe_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_scan/page_15_fn/page_15_fn_021_probe_overlay.png
+- Conclusion / next step
+  - FAIL: staff-aligned full-height probes do not align with FN GT columns at sufficient rate (9/58, 15.5%).
+  - Abandon this probe-scoring formulation; need a different structural inference strategy (do not proceed to Phase 4/5 for this approach).
+
+### Refinement: variable-length staff-aligned vertical probes (2025-12-28 17:30 JST)
+- Objective / hypothesis
+  - Refine staff-aligned probe scoring with variable probe lengths, vertical sliding, multi-preprocessing variants, and a soft notehead penalty.
+  - Previous FAIL judgement was premature because it used fixed-length probes and raw grayscale only.
+- Phase 0 — Image sanity reset (required)
+  - Verified base images are overlay-free and match original scans; no colored text/paths, no downscale.
+  - In-container check (color pixel count should be 0):
+    - page_004 base vs ref: color_pixels=0, shape=(3900,3000)
+    - page_10 base vs ref: color_pixels=0, shape=(3600,2700)
+    - page_15 base vs ref: color_pixels=0, shape=(3600,2700)
+  - Checksums (host):
+    - logs/homr_eval/20251227T_batch2_gen4_page_004/page_004/page_004.png sha256=f80b6f8b7f68edce13322733dc1145e37a7ace3af35d93a64e307874d84187c9
+    - logs/homr_eval/20251227T_batch2_gen4_page_10/page_10/page_10.png sha256=92d604c35c2c55fb597fd25c8a4b125f1283cfd5c6ea471a9c770b1a60aac8ff
+    - logs/homr_eval/20251227T_batch2_gen4_page_15/page_15/page_15.png sha256=20342b8afca8ac6df52e47d25031abf5994048ea0b5a50585b6596e05f38c4ee
+- Phase 1 — Preprocessing sweep
+  - Variants generated: raw_gray, adaptive mean, adaptive gaussian, staff_suppressed.
+  - Staff bounds overlays (NO GT):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_004/raw_gray/page_004_raw_gray_staff_bounds.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_004/adap_mean/page_004_adap_mean_staff_bounds.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_004/adap_gauss/page_004_adap_gauss_staff_bounds.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_004/staff_suppressed/page_004_staff_suppressed_staff_bounds.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_10/raw_gray/page_10_raw_gray_staff_bounds.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_10/adap_mean/page_10_adap_mean_staff_bounds.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_10/adap_gauss/page_10_adap_gauss_staff_bounds.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_10/staff_suppressed/page_10_staff_suppressed_staff_bounds.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_15/raw_gray/page_15_raw_gray_staff_bounds.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_15/adap_mean/page_15_adap_mean_staff_bounds.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_15/adap_gauss/page_15_adap_gauss_staff_bounds.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_15/staff_suppressed/page_15_staff_suppressed_staff_bounds.png
+- Phase 2 — Variable-length probe scan
+  - Lengths: 0.7/0.85/1.0/1.1 × staff height; vertical sliding enabled; notehead mask penalty (soft).
+  - Ran in homr_eval_gpu with y-step=4 (y-step=2 timed out at 120s).
+  - Probe overlays (NO GT):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_004/raw_gray/page_004_raw_gray_all_probes.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_004/raw_gray/page_004_raw_gray_top10.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_004/raw_gray/page_004_raw_gray_top1.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_10/raw_gray/page_10_raw_gray_all_probes.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_10/raw_gray/page_10_raw_gray_top10.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_10/raw_gray/page_10_raw_gray_top1.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_15/raw_gray/page_15_raw_gray_all_probes.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_15/raw_gray/page_15_raw_gray_top10.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_15/raw_gray/page_15_raw_gray_top1.png
+- Phase 3 — Visualization (no GT)
+  - Inspected top1 overlays for all 3 pages; top-1 probes still often align to dense note clusters.
+- Phase 4 — FN-focused check (GT allowed)
+  - Created combined FN overlays aggregating all variants (Red=GT, Green=best probe near GT, Yellow=top probes, Blue=staff bounds).
+  - Summary (near GT within ±3px, any variant/length):
+    - page_004: 4/12
+    - page_10: 5/24
+    - page_15: 3/22
+  - Best hits are mostly raw_gray or staff_suppressed; adaptive binarization rarely wins.
+  - Example hit overlays (full paths):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_004_fn_multi/page_004_fn_001_probe_multi_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_10_fn_multi/page_10_fn_012_probe_multi_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_15_fn_multi/page_15_fn_012_probe_multi_overlay.png
+  - All FN overlays (multi-variant) are stored here:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_004_fn_multi/
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_10_fn_multi/
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/20251228T_probe_refine/page_15_fn_multi/
+- What remains unknown / next
+  - Current scoring still prefers stems/clustered note ink even with staff-consistent length + notehead penalty.
+  - Need to adjust scoring to penalize stem-like continuity or introduce staff-line crossing uniformity more strongly before deciding to stop.

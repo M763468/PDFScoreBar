@@ -1847,3 +1847,133 @@ Assumptions/uncertainties:
 - What remains unknown / next
   - Current scoring still prefers stems/clustered note ink even with staff-consistent length + notehead penalty.
   - Need to adjust scoring to penalize stem-like continuity or introduce staff-line crossing uniformity more strongly before deciding to stop.
+
+### Correctness gate: Phase6 GT provenance + GT-only overlay validation (2025-12-28 19:20 JST)
+- Objective / hypothesis
+  - Confirm that Phase 6 corrected GT is being used and is itself aligned; verify GT-only overlays on clean base images.
+- What I checked / tested
+  - Located active GT paths used by scripts: `tools/run_confirmed_union_eval.sh`, `tools/run_promiscuous_union_eval.sh`, and Phase 5b scripts.
+  - Found Phase 6 corrected GT artifacts under `logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/` per `docs/DEVELOPMENT_LOG.md` Phase 6.
+  - Compared SHA256 and bbox lists between current `fn_only.json` and Phase 6 corrected outputs.
+  - Generated GT-only overlays using clean base images (no burned overlays) with empty pred list.
+- Key results (quantitative + qualitative)
+  - Current FN-only GT files are NOT identical to Phase 6 corrected outputs:
+    - page_004: data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/fn_only.json (sha256=920f...) ≠ logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/page_004/fn_only_corrected.json (sha256=613d...)
+    - page_10: data/training/annotations/page_010/fn_only.json (sha256=fc27...) ≠ logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/page_10/fn_only_corrected.json (sha256=b676...)
+    - page_15: data/training/annotations/page_015/fn_only.json (sha256=c847...) ≠ logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/page_15/fn_only_corrected.json (sha256=a072...)
+  - Phase 6 corrected GT has same counts but small coordinate differences vs current fn_only.json (example: page_10 fn_001 uses x=2540 in corrected vs x=2523 in current).
+  - GT-only overlays (Red=GT, Green=pred none) show GT boxes visually aligned on base images for all pages (no obvious global shift). For each page, checked multiple GT boxes across top/mid/bottom systems; all appeared visually on barlines or staff-end bars.
+- Artifacts saved (FULL paths + color legend)
+  - GT-only overlays (Red=GT, Green=pred none) using Phase 6 corrected GT:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/gt_only_overlays/20251228T_phase0/page_004_gt_only_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/gt_only_overlays/20251228T_phase0/page_10_gt_only_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/gt_only_overlays/20251228T_phase0/page_15_gt_only_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/gt_only_overlays/20251228T_phase0/page_3_gt_only_overlay.png
+- Conclusion / next step
+  - For correctness, further evaluation MUST use Phase 6 corrected GT files under `logs/phase6_detector_miss/gt_fix_review_full/gt_corrected/`.
+  - Proceeded to pipeline regression in Phase 1 using corrected GT (see next work unit).
+
+### Pipeline regression test: per-staff/system crop+merge (page_3 success → FN pages) (2025-12-28 19:35 JST)
+- Objective / hypothesis
+  - Reproduce the page_3 run that generated per-staff/system crops (run_id 20251226T190738JST) and apply the same crop+merge pipeline to FN pages.
+- What I checked / tested
+  - Located historical run: `logs/homr_eval/20251226T190738JST/` contains `page_3_staff-*_input.jpg` confirming per-staff crops in that run.
+  - Identified command in `logs/homr_eval/20251226T190738JST/run.sh`: standard `homr_evaluator.py` on full page_3 input; staff crops are internal to homr (not a separate external crop pipeline).
+  - Re-ran the same command (GPU, homr_eval_gpu) as `20251228T_phase1_page3_repro` to confirm reproducibility and crop+merge behavior.
+  - Ran same evaluator on FN pages with Phase 6 corrected GT: `20251228T_phase1_page004_repro`, `20251228T_phase1_page10_repro`, `20251228T_phase1_page15_repro`.
+- Key results (quantitative + qualitative)
+  - page_3 repro metrics: TP=152, FP=30, FN=0 (matches baseline_verification metrics; this is the per-staff crop+merge behavior).
+  - FN pages under same pipeline (Phase 6 corrected GT):
+    - page_004: TP=0 FP=170 FN=12
+    - page_10: TP=17 FP=216 FN=7
+    - page_15: TP=8 FP=141 FN=14
+  - This confirms per-staff cropping is already part of homr and does not recover the remaining FN on these pages.
+- Artifacts saved (FULL paths + color legend)
+  - Metrics:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/homr_eval/20251228T_phase1_page3_repro/metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/homr_eval/20251228T_phase1_page004_repro/metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/homr_eval/20251228T_phase1_page10_repro/metrics.json
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/homr_eval/20251228T_phase1_page15_repro/metrics.json
+  - Overlays (Red=GT, Green=pred):
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/phase1_cropmerge/20251228T_phase1/page_3_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/phase1_cropmerge/20251228T_phase1/page_004_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/phase1_cropmerge/20251228T_phase1/page_10_gt_red_pred_green_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/phase1_cropmerge/20251228T_phase1/page_15_gt_red_pred_green_overlay.png
+- Conclusion / next step
+  - The “page_3 success” is the standard homr pipeline with internal per-staff crops; reproducing it does not recover remaining FN on FN pages.
+  - Proceed to Phase 2 only after confirming GT-near ink profiles (pending).
+
+### GT-free investigation: page_3 success conditions (GT-free) (2025-12-28 20:05 JST)
+- Objective / hypothesis
+  - Reconstruct page_3 success conditions without GT/metrics; identify common settings across FN=0 runs.
+- What I checked / tested
+  - Enumerated page_3 runs with FN=0 from `logs/homr_eval/**/metrics.json` and `logs/homr_eval_baseline/**/metrics.json`.
+  - Extracted run_config parameters + input image resolution (PNG IHDR parsing; no cv2 needed on host).
+- page_3 success conditions (GT-free)
+  - CONFIRMED (log evidence):
+    - Input image path: `/workspace/data/evaluation/images/page_3.png` in all FN=0 runs.
+    - Input resolution: 593x792 (PNG IHDR) for page_3 input.
+    - `barline_min_height_factor=1.0`, `barline_max_width_factor=1.0` in all FN=0 runs.
+    - No non-default `gen_*` flags required for FN=0 (baseline_verification, baseline_for_hybrid, and phase1_page3_repro have no gen_* set).
+  - SUSPECTED (inferred):
+    - Internal per-staff crop/dewarp pipeline is active (staff-*_input.jpg artifacts exist in some runs).
+  - UNKNOWN (missing logs):
+    - homr git commit/sha (run_config.json has git fields null).
+    - staff mask parameterization (not recorded in run_config.json; only implicit by homr version).
+- Runs with FN=0 (page_3):
+  - 20251226T_batch1_gen1_page3_guard
+  - 20251226T_batch1_gen2_page3_guard
+  - 20251226T_batch1_gen3_page3_guard
+  - 20251227T_batch2_gen4_page3_guard
+  - 20251227T_batch2_gen5_page3_guard
+  - 20251227T_batch2_gen6_page3_guard
+  - 20251227T_batch3_base_page3_guard
+  - 20251227T_batch3_v0p1_page3_guard
+  - 20251227T_batch4b_ccdilated_page3_guard
+  - 20251227T_batch4b_sobelweak_page3_guard
+  - 20251227T_batch4b_vrunweak_page3_guard
+  - 20251227T_batch5_colsum_nostaff_page3_guard
+  - 20251227T_batch5_colsumstaff_page3_guard
+  - 20251227T_batch5_colsumweak_page3_guard
+  - 20251227T_batch6_hough_page3_guard
+  - 20251227T_batch6_houghweak_page3_guard
+  - 20251227T_batch7_homr_page3_guard
+  - 20251228T_phase1_page3_repro
+  - baseline_for_hybrid
+  - baseline_verification
+- Conclusion / next step
+  - Page_3 FN=0 conditions are consistent across runs and do not depend on special gen_* flags; differences likely stem from input data differences (page_004/10/15 vs page_3) or unlogged homr internals.
+
+### GT-free investigation: homr parameter experiments worth revisiting after GT fix (2025-12-28 20:10 JST)
+- Objective
+  - Reclassify historical homr parameter sweeps under current FN framing (no reruns).
+- What I checked
+  - Extracted tuning flags from `logs/homr_eval/**/metrics.json` to identify experiments with non-default `gen_*` flags.
+- Homr parameter experiments worth revisiting after GT fix
+  - gen_vertical_run (20251226T_batch1_gen1_*): potential recall boost but likely FP heavy; worth rechecking with correct GT post-fix.
+  - gen_barline_cc_relaxed (20251226T_batch1_gen2_*): may recover weak bars if CC thresholding is the bottleneck.
+  - gen_sobel_vertical (20251226T_batch1_gen3_*): may detect strong vertical ink in dense zones.
+  - gen_vertical_run_no_staff sweeps (20251227T_batch3_v0p1..v0p5_*): systematic thresholds already explored; likely low yield but can be rechecked if GT changes significantly.
+  - gen_barline_cc_dilated (20251227T_batch4b_ccdilated_*): could help if fragmentation existed; probably low given visual evidence, but noted.
+  - column-sum (20251227T_batch5_*), hough (20251227T_batch6_*): previously high FP; only revisit if GT corrections change counts or if used as ink-field rather than detector.
+- Conclusion
+  - No non-default barline_min_height/max_width sweeps appear in logs; threshold exploration likely absent or logged elsewhere.
+
+### GT-free investigation: omr-dln staff-level feasibility check (2025-12-28 20:25 JST)
+- Objective
+  - Run omr-dln on staff crops without GT and check if bar-like signals appear.
+- What I checked / tested
+  - No prior omr-dln staff-crop runs found under `logs/**/omr_dln*`.
+  - Ran omr-dln inference on two homr staff crops from `logs/homr_eval/20251226T190738JST/page_3/` (staff-0 and staff-1).
+  - Generated overlays (Green=pred, Blue=staff bounds) and context sheets (left=full page, right=staff crop overlay).
+- Artifacts (FULL paths)
+  - Staff crop overlays:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/omrdln_staff_infer/20251228T_phaseC/page_3_staff-0/staff_pred_overlay.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/omrdln_staff_infer/20251228T_phaseC/page_3_staff-1/staff_pred_overlay.png
+  - Context sheets:
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/omrdln_staff_infer/20251228T_phaseC/page_3_staff-0/context_sheet.png
+    - /home/masaki_muramatsu/ws_PDFScoreBar_model_exp/logs/validation/omrdln_staff_infer/20251228T_phaseC/page_3_staff-1/context_sheet.png
+- Qualitative note
+  - Vertical bar-like signals DO appear in staff-crop outputs (green boxes aligned to measure boundaries).
+- Conclusion / next step
+  - Staff-level omr-dln inference is feasible and produces candidate barline signals without GT. Next step post-GT fix: define staff-crop-to-page merge and apply to FN pages without metrics.

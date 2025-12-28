@@ -1078,3 +1078,26 @@ endpoint_overlap_ratio =
   - `logs/validation/20251226_target_checks/page_004_fn_011_20251226T_approachB_page004_gt_pred_crop.png`
   - `logs/validation/20251226_target_checks/page_15_fn_021_20251226T_approachB_page15_gt_pred_overlay.png`
   - `logs/validation/20251226_target_checks/page_15_fn_021_20251226T_approachB_page15_gt_pred_crop.png`
+
+## Phase 6b: GT Rebuild (2025-12-29)
+
+- **Goal:** Rebuild full GT for pages 001/004/10/15 using the browser GT editor (zoom/pan + add/delete + type labels).
+- **Outcome:** GT rebuilt and saved as raw + sorted JSON; editor config updated to reuse rebuilt GT for future edits.
+- **Artifacts (logs):**
+  - `logs/phase6_detector_miss/gt_rebuild/page_001_raw.json`
+  - `logs/phase6_detector_miss/gt_rebuild/page_001_boxes_sorted.json`
+  - `logs/phase6_detector_miss/gt_rebuild/page_004_raw.json`
+  - `logs/phase6_detector_miss/gt_rebuild/page_004_boxes_sorted.json`
+  - `logs/phase6_detector_miss/gt_rebuild/page_10_raw.json`
+  - `logs/phase6_detector_miss/gt_rebuild/page_10_boxes_sorted.json`
+  - `logs/phase6_detector_miss/gt_rebuild/page_15_raw.json`
+  - `logs/phase6_detector_miss/gt_rebuild/page_15_boxes_sorted.json`
+- **Artifacts (data copies):**
+  - `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/raw_boxes_v20251229.json`
+  - `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/boxes_sorted_v20251229.json`
+  - `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/raw_boxes_v20251229.json`
+  - `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/boxes_sorted_v20251229.json`
+  - `data/training/annotations/page_010/raw_boxes_v20251229.json`
+  - `data/training/annotations/page_010/boxes_sorted_v20251229.json`
+  - `data/training/annotations/page_015/raw_boxes_v20251229.json`
+  - `data/training/annotations/page_015/boxes_sorted_v20251229.json`

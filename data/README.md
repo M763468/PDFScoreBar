@@ -29,9 +29,11 @@ data/
 - `training/` と `evaluation/` の実データは `.gitignore` で非追跡化済み。公開したい Ground Truth などを共有する場合は、該当フォルダの `.gitignore` を調整するか `git add -f` で明示的に追加する。
 - `workbench/` は作業途中のファイル置き場として利用し、コミット前に不要なものを削除する。
 - Ground Truth 作成フローの例:
-  1. `coordinate_annotator.py` で矩形を描画し、`training/annotations/page_xxx/raw_boxes.json` として保存。
-  2. `sort_measures.py` で `boxes_sorted.json` を生成。
-  3. 必要に応じて検証スクリプトやドキュメントにリンクを追記。
+  1. ブラウザ版 GT エディタ（`tools/gt_relabel_gui`）で矩形を追加/削除し、`raw` と `boxes_sorted` を保存。
+  2. 必要に応じて `sort_measures.py` で再ソート。
+  3. 検証スクリプトやドキュメントにリンクを追記。
+
+> Note: `tools/coordinate_annotator.py` は **LEGACY**。ズーム/パンが弱く正確な作業に不向き。
 
 ## 既存データの対応表（2024-06-14 時点）
 - 旧 `data/training_images/page_1.png` → `data/training/images/page_1.png`

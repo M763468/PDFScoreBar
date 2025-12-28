@@ -120,6 +120,18 @@ This phase aimed to recover FNs (especially the "ambiguous" majority) without re
 - [ ] **Detector union (SR)**: `homr+SR ∪ omr-dln` (if feasible).
 - [ ] **Comparison**: recall gain vs FP risk across homr, omr-dln, and unions.
 
+## Recent Updates (2025-12-29)
+- GT再整備完了（page_001 / page_004 / page_10 / page_15）。
+  - Logs: `logs/phase6_detector_miss/gt_rebuild/`
+  - Data copies: `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/*_v20251229.json`,
+    `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/*_v20251229.json`,
+    `data/training/annotations/page_010/*_v20251229.json`,
+    `data/training/annotations/page_015/*_v20251229.json`
+- GTエディタの再編集用設定は `logs/phase6_detector_miss/gt_rebuild/gt_editor_config.json`
+  - editable source は `gt_rebuild`（再編集時はここから再開）
+  - reference は `fn_only_corrected` のみ
+- 既知のUI挙動: ページ切り替え時に未保存の手描きbboxがリセットされる（保存後なら問題なし）
+
 ### B2) Hybrid integration fixes (Secondary)
 **Hypothesis**: The intersection-heavy logic of the current hybrid merger discards valid single-model detections.
 - **What to test**:

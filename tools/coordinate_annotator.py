@@ -1,3 +1,4 @@
+"""LEGACY: use tools/gt_relabel_gui (gt-editor mode) for new GT creation."""
 import cv2
 import json
 import os

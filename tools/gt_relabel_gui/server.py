@@ -11,6 +11,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+Box = tuple[int, int, int, int]
 
 
 @dataclass
@@ -67,19 +68,122 @@ def item_payload(item: Item, root: Path) -> dict:
     }
 
 
+def load_boxes(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    data = json.loads(path.read_text())
+    records = data.get("predictions") if isinstance(data, dict) and "predictions" in data else data
+    boxes: list[dict] = []
+    if isinstance(records, list):
+        for rec in records:
+            if isinstance(rec, list) and len(rec) == 4:
+                boxes.append({"bbox": [int(v) for v in rec]})
+                continue
+            if isinstance(rec, dict):
+                bbox = rec.get("barline_location") or rec.get("orig_bbox") or rec.get("pred_bbox")
+                if bbox and len(bbox) == 4:
+                    entry = {"bbox": [int(v) for v in bbox]}
+                    if rec.get("barline_type") or rec.get("type"):
+                        entry["barline_type"] = rec.get("barline_type") or rec.get("type")
+                    boxes.append(entry)
+    return boxes
+
+
+def group_and_sort_boxes(boxes: list[dict], y_threshold: int) -> list[dict]:
+    grouped: list[list[dict]] = []
+    for item in boxes:
+        box = item["bbox"]
+        y_center = (box[1] + box[3]) / 2.0
+        for group in grouped:
+            ref = group[0]["bbox"]
+            ref_y = (ref[1] + ref[3]) / 2.0
+            if abs(y_center - ref_y) < y_threshold:
+                group.append(item)
+                break
+        else:
+            grouped.append([item])
+
+    for group in grouped:
+        group.sort(key=lambda b: b["bbox"][0])
+
+    sorted_records = []
+    measure_number = 1
+    for group in grouped:
+        for item in group:
+            box = item["bbox"]
+            sorted_records.append(
+                {
+                    "measure_number": measure_number,
+                    "number_location": [0, 0, 0, 0],
+                    "barline_location": [int(v) for v in box],
+                    "barline_type": item.get("barline_type", "barline"),
+                }
+            )
+            measure_number += 1
+    return sorted_records
+
+
+def normalize_gt_records(boxes: list[dict]) -> list[dict]:
+    return [
+        {
+            "measure_number": 0,
+            "number_location": [0, 0, 0, 0],
+            "barline_location": [int(v) for v in item["bbox"]],
+            "barline_type": item.get("barline_type", "barline"),
+        }
+        for item in boxes
+    ]
+
+
+def parse_payload_boxes(payload: list) -> list[dict]:
+    boxes: list[dict] = []
+    for item in payload:
+        if isinstance(item, dict):
+            bbox = item.get("bbox") or item.get("barline_location") or item.get("orig_bbox") or item.get("pred_bbox")
+            if bbox and len(bbox) == 4:
+                entry = {"bbox": tuple(int(v) for v in bbox)}
+                if item.get("barline_type") or item.get("type"):
+                    entry["barline_type"] = item.get("barline_type") or item.get("type")
+                boxes.append(entry)
+        elif isinstance(item, list) and len(item) == 4:
+            boxes.append({"bbox": tuple(int(v) for v in item)})
+    return boxes
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         if parsed.path == "/":
-            self._serve_file(self.server.ui_root / "index.html")
+            ui = "index.html" if self.server.mode == "relabel" else "index_gt.html"
+            self._serve_file(self.server.ui_root / ui)
             return
         if parsed.path == "/app.js":
             self._serve_file(self.server.ui_root / "app.js")
+            return
+        if parsed.path == "/app_gt.js":
+            self._serve_file(self.server.ui_root / "app_gt.js")
             return
         if parsed.path == "/api/items":
             items = scan_items(self.server.root)
             payload = [item_payload(item, self.server.root) for item in items]
             self._serve_json({"items": payload})
+            return
+        if parsed.path == "/api/pages" and self.server.mode == "gt":
+            self._serve_json({"pages": self.server.gt_config})
+            return
+        if parsed.path == "/api/boxes":
+            qs = parse_qs(parsed.query)
+            rel = qs.get("path", [None])[0]
+            if not rel:
+                self.send_error(400, "Missing path")
+                return
+            try:
+                path = safe_path(self.server.root, rel)
+            except ValueError:
+                self.send_error(403, "Invalid path")
+                return
+            boxes = load_boxes(path)
+            self._serve_json({"boxes": boxes})
             return
         if parsed.path == "/api/template":
             qs = parse_qs(parsed.query)
@@ -116,6 +220,31 @@ class Handler(BaseHTTPRequestHandler):
             return
         body = self.rfile.read(int(self.headers.get("Content-Length", "0")))
         payload = json.loads(body.decode("utf-8"))
+        if self.server.mode == "gt":
+            page = payload.get("page")
+            boxes = payload.get("boxes", [])
+            if not page:
+                self.send_error(400, "Missing page")
+                return
+            config = next((p for p in self.server.gt_config if p["name"] == page), None)
+            if not config:
+                self.send_error(404, "Unknown page")
+                return
+            raw_path = safe_path(self.server.root, config["output_raw"])
+            sorted_path = safe_path(self.server.root, config["output_sorted"])
+            parsed_boxes = parse_payload_boxes(boxes)
+            raw_records = normalize_gt_records(parsed_boxes)
+            sorted_records = group_and_sort_boxes(
+                parsed_boxes,
+                int(config.get("y_threshold", 50)),
+            )
+            raw_path.parent.mkdir(parents=True, exist_ok=True)
+            sorted_path.parent.mkdir(parents=True, exist_ok=True)
+            raw_path.write_text(json.dumps(raw_records, indent=2))
+            sorted_path.write_text(json.dumps(sorted_records, indent=2))
+            self._serve_json({"raw": str(raw_path), "sorted": str(sorted_path), "count": len(boxes)})
+            return
+
         rel = payload.get("path")
         if not rel:
             self.send_error(400, "Missing path")
@@ -165,16 +294,29 @@ class Handler(BaseHTTPRequestHandler):
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument("--root", type=Path)
+    parser.add_argument("--mode", choices=["relabel", "gt"], default="relabel")
+    parser.add_argument("--config", type=Path, help="GT editor config JSON (gt mode)")
     parser.add_argument("--port", type=int, default=8010)
     parser.add_argument("--host", default="0.0.0.0")
     args = parser.parse_args()
 
     server = HTTPServer((args.host, args.port), Handler)
     server.ui_root = Path(__file__).resolve().parent
-    server.root = args.root.resolve()
+    server.mode = args.mode
+    if args.mode == "gt":
+        if not args.config:
+            raise SystemExit("--config is required in gt mode")
+        server.root = (args.root or REPO_ROOT).resolve()
+        config_data = json.loads(args.config.read_text())
+        server.gt_config = config_data.get("pages", config_data)
+    else:
+        if not args.root:
+            raise SystemExit("--root is required in relabel mode")
+        server.root = args.root.resolve()
 
-    print(f"GT relabel GUI running: http://{args.host}:{args.port}")
+    mode_label = "GT editor" if args.mode == "gt" else "GT relabel"
+    print(f"{mode_label} GUI running: http://{args.host}:{args.port}")
     server.serve_forever()
 
 

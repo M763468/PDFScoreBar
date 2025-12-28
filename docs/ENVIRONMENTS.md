@@ -68,7 +68,23 @@ This document describes how to use the provided tools (now located in `tools/`) 
 - homr デバッグマスクの可視化: `tools/generate_barline_overlay.py --base data/evaluation/images/<page>.png --mask logs/.../page_<n>_debug_8_bar_line_img.png --output logs/.../<timestamp>_debug_overlay.png`
 - JSON 由来の矩形確認: `tools/render_barline_boxes_overlay.py --base data/evaluation/images/<page>.png --boxes <path/to/boxes.json> --output logs/.../<timestamp>_boxes_overlay.png`
 - いずれの画像も `logs/homr_eval/<run>/` 配下に保存し、レビュー時にはこの2種類のオーバーレイをセットで提示する。
-- 修正点の共有には `src/tools/coordinate_annotator.py` を利用し、対象ページの `IMAGE_PATH` / `GROUND_TRUTH_OUTPUT_PATH` を切り替えて矩形を再指定する。保存後は `tools/render_barline_boxes_overlay.py` で差分確認を行う。
+- 修正点の共有には `tools/gt_relabel_gui` の GT エディタを優先利用する（ブラウザ上で拡大縮小・削除・追加が可能）。
+- `tools/coordinate_annotator.py` は **LEGACY** として残している（ズーム/パンが弱く正確なGT作業に不向き）。
+
+### GT Editor (browser, recommended)
+Run the browser-based GT editor with a config file:
+```bash
+python3 tools/gt_relabel_gui/server.py \
+  --mode gt \
+  --config logs/phase6_detector_miss/gt_rebuild/gt_editor_config.json \
+  --port 8010 \
+  --host 0.0.0.0
+```
+Open in a browser: `http://127.0.0.1:8010`
+
+The editor writes:
+- `output_raw` (unsorted GT)
+- `output_sorted` (sorted GT with measure_number)
 
 ## homr Evaluation Workflow and Log Paths
 

@@ -2,7 +2,7 @@
 
 This project aims to develop a Python-based tool that automatically adds measure numbers to sheet music provided in PDF format.
 
-> **Status notice (2024-06-14):** Active development is concentrated on the `homr`-based evaluation workflow and related tooling. Historical experiments remain documented below; when in doubt, start from `docs/README.md` for the current documentation map and follow the pointers there.
+> **Status notice (2025-12-30):** Active development is focused on detector-side FN analysis after a GT rebuild/recheck. The current confirmed state and next actions live in `docs/NEXT_SESSION_NOTES.md`. Historical experiments remain documented below; start from `docs/README.md` for the up-to-date documentation map.
 
 
 ---
@@ -61,6 +61,7 @@ The project is organized as follows:
 │   │   ├── pdfs/         # PDFs under evaluation
 │   │   ├── images/       # Converted evaluation images (e.g., page_3.png)
 │   │   └── annotations/  # Evaluation GT (to be added as page_xxx/)
+│   ├── evaluation2/      # Newer evaluation set (current GT rebuild lives here)
 │   └── workbench/        # Temporary captures and legacy drafts
 ├── output/
 │   └── ...
@@ -78,30 +79,23 @@ The project is organized as follows:
 homr, oemerなどのAIやそれらのhaybrid検出、ヒューリスティック後処理などを検討する。
 独自モデルなども考慮に入れ、正確な小節線検出を目指す
 
-### Barline FP Reduction Project (Dec 2025)
+### Barline FP Reduction Project (Dec 2025, Historical)
 
-We completed an extensive heuristic optimization project to reduce False Positives (FPs) in barline detection on `page_3`.
+An extensive heuristic optimization project reduced False Positives (FPs) in barline detection on `page_3`.
 
-- **Outcome**: Reduced FPs with **0 False Negatives**
-- **Conclusion**: Visual heuristics are exhausted; remaining FPs are indistinguishable from fragmented TPs
-- **Details**: See `docs/fp_reduction/FINAL_SUMMARY.md`
+- **Outcome**: Achieved FP reductions while preserving FN=0 on the legacy page_3 setup
+- **Conclusion**: Visual heuristics are largely exhausted; remaining FPs are hard to separate from fragmented TPs
+- **Details (historical, likely stale)**: `docs/fp_reduction/FINAL_SUMMARY.md` (note: this subtree is ~3 weeks behind current work)
 
 ---
 
-## Current Capability (Phase 4 complete; Phase 5 planned)
+## Current Focus (Post-Phase 6)
 
-The current best-known evaluation pipeline for `page_3` (hybrid detector outputs) is:
+The latest confirmed state (GT rebuild + recheck) and next actions are tracked in `docs/NEXT_SESSION_NOTES.md`. In brief:
 
-1. **Hybrid detection** (multi-model OMR pipeline; produces `logs/hybrid_results.json`)
-2. **Row-based geometric consistency filter** (Phase 3)
-3. **Optional geometry-based note-context filter** (Phase 4)
-
-With Phase 4 enabled, the pipeline is confirmed to reach **TP=152, FP=0, FN=0** on `page_3` by using `homr` note-related outputs (notehead context) to reject stem-like false barlines.
-
-### Status & Limitations
-- Confirmed correctness milestone is **`page_3` only**.
-- Phase 4 (FP reduction) is **complete**; cross-dataset review indicates the FP rule is conservative and does not introduce new false negatives.
-- Remaining false negatives observed on other pages are treated as an **upstream attribution/recovery problem** (Phase 5), not a Phase 4 regression.
+- **GT cleanup complete** for all 35 detector-miss items; **10 true detector-miss cases remain** after recheck.
+- **Baseline**: `var88` (clefs_keys left filter + `probe_notehead_dilate=13` + `notehead_dilate=7`) maintains **FN=0** in the current evaluation set.
+- **Next steps**: detector-side FN analysis and FP-source cleanup (clef/time/rest/accidental/stem), prioritizing no FN regressions.
 
 ## Count barline project　（未着手） 
 検出した小節線と、楽譜の中の複数小節の休みの検出や楽章の分割を使って最終的に小節番号をつけるプログラムとして完成させる

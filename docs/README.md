@@ -28,21 +28,15 @@ confusion and duplication.
 
 ---
 
-## Current Project Status (2025-12-15)
+## Current Project Status (2025-12-30)
 
-**Update (2025-12-20)**: Phase 4 (FP reduction) is complete, and the current focus is **Phase 5: FN Attribution & Recovery**.
-See `docs/NEXT_SESSION_NOTES.md` for the active plan and confirmed status.
+**Update (2025-12-30)**: GT rebuild + recheck is complete. The current focus is **detector-side FN analysis** for the remaining 10 true detector-miss cases.
+See `docs/NEXT_SESSION_NOTES.md` for the confirmed baseline, logs, and next actions.
 
-**Phase 3: Geometric FP Reduction** ✅ **COMPLETE**
-
-- **Best Results** (page_3, hybrid pipeline):
-  - TP=152, FP=2, FN=0
-  - Precision=98.7%, Recall=100%
-- **Method**: Row-based consistency filter with ratio-based tolerance
-- **Status**: Production-ready configuration identified
-- **Conclusion**:
-  - Geometric filtering is no longer the bottleneck
-  - Remaining errors require context-level reasoning or model improvement
+**Recent confirmed state (high-level)**:
+- GT cleanup completed for 35 detector-miss candidates; 10 remain after recheck.
+- Baseline `var88` keeps FN=0 on the rebuilt evaluation set.
+- Next work targets FP-source cleanup without reintroducing FN.
 
 ---
 
@@ -55,9 +49,9 @@ Use the table below to quickly locate what you need.
 |---------------------|----------|
 | Latest confirmed results | `docs/NEXT_SESSION_NOTES.md` |
 | Historical decisions and outcomes | `docs/DEVELOPMENT_LOG.md` |
-| Phase 3 final report | `docs/fp_reduction/FINAL_SUMMARY.md` |
-| Detailed Phase 1–2 history | `docs/fp_reduction/development_log.md` |
-| Phase-by-phase walkthrough | `docs/fp_reduction/walkthrough.md` |
+| Phase 3 final report (historical, likely stale) | `docs/fp_reduction/FINAL_SUMMARY.md` |
+| Detailed Phase 1–2 history (historical, likely stale) | `docs/fp_reduction/development_log.md` |
+| Phase-by-phase walkthrough (historical, likely stale) | `docs/fp_reduction/walkthrough.md` |
 | Latest qualitative overlays | `logs/phase3_staff_consistency/` |
 | Hybrid filter summary | `logs/phase3_staff_consistency/**/hybrid_filter_summary.md` |
 
@@ -98,11 +92,11 @@ Use the table below to quickly locate what you need.
 
 ## Phase-Specific Documentation
 
-### FP Reduction (Phase 1–3)
+### FP Reduction (Phase 1–3, Historical)
 
 - **Final Summary**  
   `docs/fp_reduction/FINAL_SUMMARY.md`  
-  Executive summary of the FP reduction effort.
+  Executive summary of the FP reduction effort. Note: this subtree is ~3 weeks behind current work.
 
 - **Development Log (Phase 1–2)**  
   `docs/fp_reduction/development_log.md`  

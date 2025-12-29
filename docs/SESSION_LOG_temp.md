@@ -412,3 +412,143 @@ This log has been cleaned to retain only confirmed Phase 6 results and reference
 
 **結果**
 - var2/var3/var4 すべて v2 と同一（TP/FP/FN 変化なし）
+
+---
+## 2025-12-29 カテゴリ1 追加調整（var5/var6: morph）
+
+**作業目的 / 方針 / 位置づけ**
+- 右端バーライン回復の探索手段をモルフォロジー縦線強調に変更し、制約有無で比較。
+
+**作業時間**
+- 2025-12-29 07:10 JST 前後
+
+**調整内容**
+- var5: morph（制約なし）
+- var6: morph（staff帯高さを超える成分は除外）
+
+**視覚確認ログ**
+- 各ページの `endbar_debug.png`/`endbar_debug.json` に探索幅・バンド範囲・候補列を記録。
+  - 例: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var5/per_page/page_001/endbar_debug.png`
+
+**試した結果（出力ディレクトリのみ）**
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var5/`
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var6/`
+
+**結果**
+- var5/var6 とも v2 と同一（TP/FP/FN 変化なし）
+
+---
+## 2025-12-29 カテゴリ1 追加調整（var7/var8: hough）
+
+**作業目的 / 方針 / 位置づけ**
+- 右端バーライン回復の探索手段をHough縦線検出に変更し、制約有無で比較。
+
+**作業時間**
+- 2025-12-29 07:30 JST 前後
+
+**調整内容**
+- var7: hough（制約なし）
+- var8: hough（staff帯高さを超える成分は除外）
+
+**視覚確認ログ**
+- 各ページの `endbar_debug.png`/`endbar_debug.json` に探索幅・バンド範囲・候補列を記録。
+  - 例: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var7/per_page/page_001/endbar_debug.png`
+
+**試した結果（出力ディレクトリのみ）**
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var7/`
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var8/`
+
+**結果**
+- var7/var8 とも v2 と同一（TP/FP/FN 変化なし）
+
+---
+## 2025-12-29 カテゴリ1 追加調整（var9/var10: runlen）
+
+**作業目的 / 方針 / 位置づけ**
+- 右端バーライン回復の探索手段を縦ラン長（run-length）に変更し、制約有無で比較。
+
+**作業時間**
+- 2025-12-29 07:50 JST 前後
+
+**調整内容**
+- var9: runlen（制約なし）
+- var10: runlen（staff帯高さを超える成分は除外）
+
+**視覚確認ログ**
+- 各ページの `endbar_debug.png`/`endbar_debug.json` に探索幅・バンド範囲・候補列を記録。
+  - 例: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var9/per_page/page_001/endbar_debug.png`
+
+**試した結果（出力ディレクトリのみ）**
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var9/`
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var10/`
+
+**結果**
+- var9/var10 とも v2 と同一（TP/FP/FN 変化なし）
+
+---
+## 2025-12-29 カテゴリ1 失敗原因レポート
+
+**作業目的 / 方針 / 位置づけ**
+- 右端バーライン回復が失敗した理由を、debugログの集計から整理。
+
+**作業時間**
+- 2025-12-29 08:10 JST 前後
+
+**作成物**
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/endbar_debug_report.md`
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/endbar_failure_report.md`
+
+---
+## 2025-12-29 カテゴリ1 追加調整（var11: barline_mask）
+
+**作業目的 / 方針 / 位置づけ**
+- homr の barline mask (`*_debug_8_bar_line_img.png`) を使った右端バーライン回復を試行。
+
+**作業時間**
+- 2025-12-29 08:40 JST 前後
+
+**調整内容**
+- var11: barline_mask（制約なし）
+
+**視覚確認ログ**
+- 各ページの `endbar_debug.png`/`endbar_debug.json` に探索幅・バンド範囲・候補列を記録。
+  - 例: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var11/per_page/page_001/endbar_debug.png`
+
+**試した結果（出力ディレクトリのみ）**
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var11/`
+
+**結果**
+- var11 も v2 と同一（TP/FP/FN 変化なし）
+
+---
+## 2025-12-29 カテゴリ1 追加探索（var12-15: staff_anchor/adaptive/lsd/omr）
+
+**作業目的 / 方針 / 位置づけ**
+- カテゴリ1（右端バーライン回復）の探索手段を追加し、同条件で比較。
+- staff anchor / adaptive threshold / LSD / OMR-DLN 由来の x を新たに検証。
+
+**作業時間**
+- 2025-12-29 09:10 JST 前後
+
+**変更したファイルの場所**
+- `tools/run_gt_rebuild_hybrid_eval.py`（endbar の新手法追加）
+
+**調整内容**
+- var12: staff_anchor
+- var13: adaptive threshold
+- var14: LSD
+- var15: OMR-DLN x anchor
+
+**視覚確認ログ**
+- 各ページの `endbar_debug.png`/`endbar_debug.json` に探索幅・バンド範囲・候補列を記録。
+  - 例: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var12/per_page/page_001/endbar_debug.png`
+
+**試した結果（出力ディレクトリのみ）**
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var12/`
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var13/`
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var14/`
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var15/`
+
+**結果**
+- var12: TPの変化なし / FN改善なし、FPが大幅増（staff anchor の誤候補増）。
+- var13-15: v2 と同一（TP/FP/FN 変化なし）。

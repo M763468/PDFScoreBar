@@ -36,6 +36,8 @@ class PageSpec:
     notehead_mask: Path
     staff_mask: Path
     staff_mask_alt: Path
+    barline_mask: Path
+    omr_preds: Path
     union_preds: Path
 
 
@@ -51,6 +53,13 @@ def load_preds(path: Path) -> List[Box]:
             if bbox:
                 preds.append(tuple(map(int, bbox)))
     return preds
+
+
+def load_omr_preds(path: Path) -> List[Box]:
+    data = json.loads(path.read_text())
+    if isinstance(data, list):
+        return [tuple(map(int, item)) for item in data if isinstance(item, list) and len(item) == 4]
+    return []
 
 
 def load_gt(path: Path) -> List[Box]:
@@ -137,6 +146,17 @@ def load_staff_mask(path: Path, target_hw: Tuple[int, int]) -> np.ndarray:
     img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
     if img is None:
         raise FileNotFoundError(f"Failed to load staff mask: {path}")
+    _, bin_mask = cv2.threshold(img, 1, 255, cv2.THRESH_BINARY)
+    if bin_mask.shape[:2] != target_hw:
+        h, w = target_hw
+        bin_mask = cv2.resize(bin_mask, (w, h), interpolation=cv2.INTER_NEAREST)
+    return bin_mask
+
+
+def load_barline_mask(path: Path, target_hw: Tuple[int, int]) -> np.ndarray:
+    img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
+    if img is None:
+        raise FileNotFoundError(f"Failed to load barline mask: {path}")
     _, bin_mask = cv2.threshold(img, 1, 255, cv2.THRESH_BINARY)
     if bin_mask.shape[:2] != target_hw:
         h, w = target_hw
@@ -285,6 +305,786 @@ def detect_end_barlines(
     return candidates
 
 
+def detect_end_barlines_from_mask(
+    mask: np.ndarray,
+    staff_mask: np.ndarray,
+    existing_boxes: Sequence[Box],
+    *,
+    search_width: int = 40,
+    min_height_ratio: float = 0.6,
+    x_merge_tol: int = 4,
+    debug_path: Path | None = None,
+) -> List[Box]:
+    h, w = mask.shape[:2]
+    bands = staff_bands_from_mask(staff_mask)
+    if not bands:
+        return []
+
+    def has_existing(x_center: float, y1: int, y2: int) -> bool:
+        for bx1, by1, bx2, by2 in existing_boxes:
+            cy = (by1 + by2) / 2.0
+            if cy < y1 or cy > y2:
+                continue
+            cx = (bx1 + bx2) / 2.0
+            if abs(cx - x_center) <= x_merge_tol:
+                return True
+        return False
+
+    candidates: List[Box] = []
+    debug_records = []
+    x_start = max(0, w - search_width)
+    for y1, y2 in bands:
+        band_h = max(1, y2 - y1 + 1)
+        band = (mask[y1 : y2 + 1, x_start:w] > 0).astype(np.uint8)
+        col_sums = band.sum(axis=0)
+        min_ink = int(round(band_h * min_height_ratio))
+        valid_cols = np.where(col_sums >= min_ink)[0]
+        if valid_cols.size == 0:
+            debug_records.append({"band": [y1, y2], "status": "no_valid_cols", "min_ink": min_ink})
+            continue
+        col = int(valid_cols[-1]) + x_start
+        x_center = float(col)
+        if has_existing(x_center, y1, y2):
+            debug_records.append({"band": [y1, y2], "status": "existing", "col": col})
+            continue
+        candidates.append((max(0, col - 1), y1, min(w - 1, col + 1), y2))
+        debug_records.append({"band": [y1, y2], "status": "accepted", "col": col})
+
+    if debug_path is not None:
+        overlay = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+        mask_overlay = overlay.copy()
+        for y1, y2 in bands:
+            cv2.rectangle(mask_overlay, (0, y1), (w - 1, y2), (255, 255, 0), -1)
+        overlay = cv2.addWeighted(mask_overlay, 0.2, overlay, 0.8, 0.0)
+        cv2.rectangle(overlay, (x_start, 0), (w - 1, h - 1), (0, 255, 255), 1)
+        for rec in debug_records:
+            col = rec.get("col")
+            if col is None:
+                continue
+            color = (0, 255, 0) if rec["status"] == "accepted" else (0, 0, 255)
+            cv2.line(overlay, (col, 0), (col, h - 1), color, 1)
+        debug_path.parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(debug_path), overlay)
+        debug_json = debug_path.with_suffix(".json")
+        debug_json.write_text(
+            json.dumps(
+                {
+                    "params": {
+                        "method": "barline_mask",
+                        "search_width": search_width,
+                        "min_height_ratio": min_height_ratio,
+                        "x_merge_tol": x_merge_tol,
+                    },
+                    "bands": bands,
+                    "records": debug_records,
+                },
+                indent=2,
+            )
+        )
+    return candidates
+
+
+def detect_end_barlines_morph(
+    base_img: np.ndarray,
+    staff_mask: np.ndarray,
+    existing_boxes: Sequence[Box],
+    *,
+    search_width: int = 40,
+    min_height_ratio: float = 0.6,
+    morph_kernel_scale: float = 0.6,
+    constrain_height: bool = False,
+    x_merge_tol: int = 4,
+    debug_path: Path | None = None,
+) -> List[Box]:
+    gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
+    _, ink = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    ink = (ink > 0).astype(np.uint8)
+
+    h, w = ink.shape[:2]
+    bands = staff_bands_from_mask(staff_mask)
+    if not bands:
+        return []
+
+    def has_existing(x_center: float, y1: int, y2: int) -> bool:
+        for bx1, by1, bx2, by2 in existing_boxes:
+            cy = (by1 + by2) / 2.0
+            if cy < y1 or cy > y2:
+                continue
+            cx = (bx1 + bx2) / 2.0
+            if abs(cx - x_center) <= x_merge_tol:
+                return True
+        return False
+
+    candidates: List[Box] = []
+    debug_records = []
+    x_start = max(0, w - search_width)
+    for y1, y2 in bands:
+        band_h = max(1, y2 - y1 + 1)
+        band = ink[y1 : y2 + 1, x_start:w]
+        k_h = max(3, int(round(band_h * morph_kernel_scale)))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, k_h))
+        closed = cv2.morphologyEx(band, cv2.MORPH_CLOSE, kernel)
+
+        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(closed, connectivity=8)
+        for idx in range(1, num_labels):
+            x, y, bw, bh, area = stats[idx]
+            if bh < int(round(band_h * min_height_ratio)):
+                continue
+            if constrain_height and bh > band_h:
+                debug_records.append({"band": [y1, y2], "status": "too_tall", "bbox": [x, y, bw, bh]})
+                continue
+            col = x + bw // 2 + x_start
+            x_center = float(col)
+            if has_existing(x_center, y1, y2):
+                debug_records.append({"band": [y1, y2], "status": "existing", "col": col})
+                continue
+            candidates.append((max(0, col - 1), y1, min(w - 1, col + 1), y2))
+            debug_records.append({"band": [y1, y2], "status": "accepted", "col": col, "bbox": [x, y, bw, bh]})
+
+    if debug_path is not None:
+        overlay = base_img.copy()
+        mask_overlay = overlay.copy()
+        for y1, y2 in bands:
+            cv2.rectangle(mask_overlay, (0, y1), (w - 1, y2), (255, 255, 0), -1)
+        overlay = cv2.addWeighted(mask_overlay, 0.2, overlay, 0.8, 0.0)
+        cv2.rectangle(overlay, (x_start, 0), (w - 1, h - 1), (0, 255, 255), 1)
+        for rec in debug_records:
+            col = rec.get("col")
+            if col is None:
+                continue
+            color = (0, 255, 0) if rec["status"] == "accepted" else (0, 0, 255)
+            cv2.line(overlay, (col, 0), (col, h - 1), color, 1)
+        debug_path.parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(debug_path), overlay)
+        debug_json = debug_path.with_suffix(".json")
+        debug_json.write_text(
+            json.dumps(
+                {
+                    "params": {
+                        "method": "morph",
+                        "search_width": search_width,
+                        "min_height_ratio": min_height_ratio,
+                        "morph_kernel_scale": morph_kernel_scale,
+                        "constrain_height": constrain_height,
+                        "x_merge_tol": x_merge_tol,
+                    },
+                    "bands": bands,
+                    "records": debug_records,
+                },
+                indent=2,
+            )
+        )
+    return candidates
+
+
+def detect_end_barlines_hough(
+    base_img: np.ndarray,
+    staff_mask: np.ndarray,
+    existing_boxes: Sequence[Box],
+    *,
+    search_width: int = 40,
+    min_height_ratio: float = 0.6,
+    constrain_height: bool = False,
+    canny1: int = 50,
+    canny2: int = 150,
+    hough_threshold: int = 30,
+    min_line_ratio: float = 0.6,
+    max_line_gap: int = 6,
+    x_merge_tol: int = 4,
+    debug_path: Path | None = None,
+) -> List[Box]:
+    gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, canny1, canny2)
+
+    h, w = edges.shape[:2]
+    bands = staff_bands_from_mask(staff_mask)
+    if not bands:
+        return []
+
+    def has_existing(x_center: float, y1: int, y2: int) -> bool:
+        for bx1, by1, bx2, by2 in existing_boxes:
+            cy = (by1 + by2) / 2.0
+            if cy < y1 or cy > y2:
+                continue
+            cx = (bx1 + bx2) / 2.0
+            if abs(cx - x_center) <= x_merge_tol:
+                return True
+        return False
+
+    candidates: List[Box] = []
+    debug_records = []
+    x_start = max(0, w - search_width)
+
+    for y1, y2 in bands:
+        band_h = max(1, y2 - y1 + 1)
+        roi = edges[y1 : y2 + 1, x_start:w]
+        min_line_len = int(round(band_h * min_line_ratio))
+        lines = cv2.HoughLinesP(
+            roi,
+            rho=1,
+            theta=np.pi / 180,
+            threshold=hough_threshold,
+            minLineLength=min_line_len,
+            maxLineGap=max_line_gap,
+        )
+        if lines is None:
+            debug_records.append({"band": [y1, y2], "status": "no_lines"})
+            continue
+        for line in lines[:, 0]:
+            x1, y1l, x2, y2l = map(int, line.tolist())
+            dx = abs(x2 - x1)
+            dy = abs(y2l - y1l)
+            if dy < int(round(band_h * min_height_ratio)):
+                continue
+            if dx > 2:
+                continue
+            if constrain_height and dy > band_h:
+                debug_records.append({"band": [y1, y2], "status": "too_tall", "line": line.tolist()})
+                continue
+            col = x1 + x_start
+            x_center = float(col)
+            if has_existing(x_center, y1, y2):
+                debug_records.append({"band": [y1, y2], "status": "existing", "col": col})
+                continue
+            candidates.append((max(0, col - 1), y1, min(w - 1, col + 1), y2))
+            debug_records.append({"band": [y1, y2], "status": "accepted", "col": col, "line": line.tolist()})
+
+    if debug_path is not None:
+        overlay = base_img.copy()
+        mask_overlay = overlay.copy()
+        for y1, y2 in bands:
+            cv2.rectangle(mask_overlay, (0, y1), (w - 1, y2), (255, 255, 0), -1)
+        overlay = cv2.addWeighted(mask_overlay, 0.2, overlay, 0.8, 0.0)
+        cv2.rectangle(overlay, (x_start, 0), (w - 1, h - 1), (0, 255, 255), 1)
+        for rec in debug_records:
+            col = rec.get("col")
+            if col is None:
+                continue
+            color = (0, 255, 0) if rec["status"] == "accepted" else (0, 0, 255)
+            cv2.line(overlay, (col, 0), (col, h - 1), color, 1)
+        debug_path.parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(debug_path), overlay)
+        debug_json = debug_path.with_suffix(".json")
+        debug_json.write_text(
+            json.dumps(
+                {
+                    "params": {
+                        "method": "hough",
+                        "search_width": search_width,
+                        "min_height_ratio": min_height_ratio,
+                        "constrain_height": constrain_height,
+                        "canny1": canny1,
+                        "canny2": canny2,
+                        "hough_threshold": hough_threshold,
+                        "min_line_ratio": min_line_ratio,
+                        "max_line_gap": max_line_gap,
+                    },
+                    "bands": bands,
+                    "records": debug_records,
+                },
+                indent=2,
+            )
+        )
+    return candidates
+
+
+def detect_end_barlines_runlen(
+    base_img: np.ndarray,
+    staff_mask: np.ndarray,
+    existing_boxes: Sequence[Box],
+    *,
+    search_width: int = 40,
+    min_height_ratio: float = 0.6,
+    constrain_height: bool = False,
+    x_merge_tol: int = 4,
+    debug_path: Path | None = None,
+) -> List[Box]:
+    gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
+    _, ink = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    ink = (ink > 0).astype(np.uint8)
+
+    h, w = ink.shape[:2]
+    bands = staff_bands_from_mask(staff_mask)
+    if not bands:
+        return []
+
+    def has_existing(x_center: float, y1: int, y2: int) -> bool:
+        for bx1, by1, bx2, by2 in existing_boxes:
+            cy = (by1 + by2) / 2.0
+            if cy < y1 or cy > y2:
+                continue
+            cx = (bx1 + bx2) / 2.0
+            if abs(cx - x_center) <= x_merge_tol:
+                return True
+        return False
+
+    candidates: List[Box] = []
+    debug_records = []
+    x_start = max(0, w - search_width)
+
+    for y1, y2 in bands:
+        band_h = max(1, y2 - y1 + 1)
+        min_len = int(round(band_h * min_height_ratio))
+        band = ink[y1 : y2 + 1, x_start:w]
+        for col_idx in range(band.shape[1]):
+            col = band[:, col_idx]
+            # compute max run length of 1s
+            max_run = 0
+            run = 0
+            for v in col:
+                if v:
+                    run += 1
+                    if run > max_run:
+                        max_run = run
+                else:
+                    run = 0
+            if max_run < min_len:
+                continue
+            if constrain_height and max_run > band_h:
+                debug_records.append({"band": [y1, y2], "status": "too_tall", "col": col_idx})
+                continue
+            x_abs = x_start + col_idx
+            if has_existing(float(x_abs), y1, y2):
+                debug_records.append({"band": [y1, y2], "status": "existing", "col": x_abs})
+                continue
+            candidates.append((max(0, x_abs - 1), y1, min(w - 1, x_abs + 1), y2))
+            debug_records.append({"band": [y1, y2], "status": "accepted", "col": x_abs, "max_run": max_run})
+
+    if debug_path is not None:
+        overlay = base_img.copy()
+        mask_overlay = overlay.copy()
+        for y1, y2 in bands:
+            cv2.rectangle(mask_overlay, (0, y1), (w - 1, y2), (255, 255, 0), -1)
+        overlay = cv2.addWeighted(mask_overlay, 0.2, overlay, 0.8, 0.0)
+        cv2.rectangle(overlay, (x_start, 0), (w - 1, h - 1), (0, 255, 255), 1)
+        for rec in debug_records:
+            col = rec.get("col")
+            if col is None:
+                continue
+            color = (0, 255, 0) if rec["status"] == "accepted" else (0, 0, 255)
+            cv2.line(overlay, (col, 0), (col, h - 1), color, 1)
+        debug_path.parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(debug_path), overlay)
+        debug_json = debug_path.with_suffix(".json")
+        debug_json.write_text(
+            json.dumps(
+                {
+                    "params": {
+                        "method": "runlen",
+                        "search_width": search_width,
+                        "min_height_ratio": min_height_ratio,
+                        "constrain_height": constrain_height,
+                        "x_merge_tol": x_merge_tol,
+                    },
+                    "bands": bands,
+                    "records": debug_records,
+                },
+                indent=2,
+            )
+        )
+    return candidates
+
+
+def detect_end_barlines_staff_anchor(
+    base_img: np.ndarray,
+    staff_mask: np.ndarray,
+    existing_boxes: Sequence[Box],
+    *,
+    search_width: int = 40,
+    min_height_ratio: float = 0.6,
+    anchor_pad: int = 4,
+    x_merge_tol: int = 4,
+    debug_path: Path | None = None,
+) -> List[Box]:
+    gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
+    _, ink = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    ink = (ink > 0).astype(np.uint8)
+
+    h, w = ink.shape[:2]
+    bands = staff_bands_from_mask(staff_mask)
+    if not bands:
+        return []
+
+    def has_existing(x_center: float, y1: int, y2: int) -> bool:
+        for bx1, by1, bx2, by2 in existing_boxes:
+            cy = (by1 + by2) / 2.0
+            if cy < y1 or cy > y2:
+                continue
+            cx = (bx1 + bx2) / 2.0
+            if abs(cx - x_center) <= x_merge_tol:
+                return True
+        return False
+
+    candidates: List[Box] = []
+    debug_records = []
+    for y1, y2 in bands:
+        band = staff_mask[y1 : y2 + 1, :]
+        ys, xs = np.where(band > 0)
+        if xs.size == 0:
+            debug_records.append({"band": [y1, y2], "status": "no_staff_anchor"})
+            continue
+        anchor_x = int(xs.max())
+        x_start = max(0, anchor_x - search_width)
+        x_end = min(w, anchor_x + anchor_pad + 1)
+        band_h = max(1, y2 - y1 + 1)
+        min_ink = int(round(band_h * min_height_ratio))
+        band_ink = ink[y1 : y2 + 1, x_start:x_end]
+        col_sums = band_ink.sum(axis=0)
+        valid_cols = np.where(col_sums >= min_ink)[0]
+        if valid_cols.size == 0:
+            debug_records.append(
+                {
+                    "band": [y1, y2],
+                    "status": "no_valid_cols",
+                    "anchor_x": anchor_x,
+                    "min_ink": min_ink,
+                }
+            )
+            continue
+        col = int(valid_cols[-1]) + x_start
+        x_center = float(col)
+        if has_existing(x_center, y1, y2):
+            debug_records.append(
+                {"band": [y1, y2], "status": "existing", "col": col, "anchor_x": anchor_x}
+            )
+            continue
+        candidates.append((max(0, col - 1), y1, min(w - 1, col + 1), y2))
+        debug_records.append(
+            {"band": [y1, y2], "status": "accepted", "col": col, "anchor_x": anchor_x}
+        )
+
+    if debug_path is not None:
+        overlay = base_img.copy()
+        mask_overlay = overlay.copy()
+        for y1, y2 in bands:
+            cv2.rectangle(mask_overlay, (0, y1), (w - 1, y2), (255, 255, 0), -1)
+        overlay = cv2.addWeighted(mask_overlay, 0.2, overlay, 0.8, 0.0)
+        for rec in debug_records:
+            anchor_x = rec.get("anchor_x")
+            if anchor_x is not None:
+                cv2.line(overlay, (anchor_x, 0), (anchor_x, h - 1), (0, 165, 255), 1)
+            col = rec.get("col")
+            if col is None:
+                continue
+            color = (0, 255, 0) if rec["status"] == "accepted" else (0, 0, 255)
+            cv2.line(overlay, (col, 0), (col, h - 1), color, 1)
+        debug_path.parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(debug_path), overlay)
+        debug_json = debug_path.with_suffix(".json")
+        debug_json.write_text(
+            json.dumps(
+                {
+                    "params": {
+                        "method": "staff_anchor",
+                        "search_width": search_width,
+                        "min_height_ratio": min_height_ratio,
+                        "anchor_pad": anchor_pad,
+                        "x_merge_tol": x_merge_tol,
+                    },
+                    "bands": bands,
+                    "records": debug_records,
+                },
+                indent=2,
+            )
+        )
+    return candidates
+
+
+def detect_end_barlines_adaptive(
+    base_img: np.ndarray,
+    staff_mask: np.ndarray,
+    existing_boxes: Sequence[Box],
+    *,
+    search_width: int = 40,
+    min_height_ratio: float = 0.6,
+    adapt_block_size: int = 25,
+    adapt_c: int = 5,
+    x_merge_tol: int = 4,
+    debug_path: Path | None = None,
+) -> List[Box]:
+    gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
+    h, w = gray.shape[:2]
+    bands = staff_bands_from_mask(staff_mask)
+    if not bands:
+        return []
+
+    block_size = adapt_block_size if adapt_block_size % 2 == 1 else adapt_block_size + 1
+    block_size = max(3, block_size)
+
+    def has_existing(x_center: float, y1: int, y2: int) -> bool:
+        for bx1, by1, bx2, by2 in existing_boxes:
+            cy = (by1 + by2) / 2.0
+            if cy < y1 or cy > y2:
+                continue
+            cx = (bx1 + bx2) / 2.0
+            if abs(cx - x_center) <= x_merge_tol:
+                return True
+        return False
+
+    candidates: List[Box] = []
+    debug_records = []
+    x_start = max(0, w - search_width)
+    for y1, y2 in bands:
+        band_h = max(1, y2 - y1 + 1)
+        min_ink = int(round(band_h * min_height_ratio))
+        band_gray = gray[y1 : y2 + 1, x_start:w]
+        if band_gray.size == 0:
+            continue
+        band_bin = cv2.adaptiveThreshold(
+            band_gray,
+            255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY_INV,
+            block_size,
+            adapt_c,
+        )
+        band_ink = (band_bin > 0).astype(np.uint8)
+        col_sums = band_ink.sum(axis=0)
+        valid_cols = np.where(col_sums >= min_ink)[0]
+        if valid_cols.size == 0:
+            debug_records.append(
+                {"band": [y1, y2], "status": "no_valid_cols", "min_ink": min_ink}
+            )
+            continue
+        col = int(valid_cols[-1]) + x_start
+        x_center = float(col)
+        if has_existing(x_center, y1, y2):
+            debug_records.append({"band": [y1, y2], "status": "existing", "col": col})
+            continue
+        candidates.append((max(0, col - 1), y1, min(w - 1, col + 1), y2))
+        debug_records.append({"band": [y1, y2], "status": "accepted", "col": col})
+
+    if debug_path is not None:
+        overlay = base_img.copy()
+        mask_overlay = overlay.copy()
+        for y1, y2 in bands:
+            cv2.rectangle(mask_overlay, (0, y1), (w - 1, y2), (255, 255, 0), -1)
+        overlay = cv2.addWeighted(mask_overlay, 0.2, overlay, 0.8, 0.0)
+        cv2.rectangle(overlay, (x_start, 0), (w - 1, h - 1), (0, 255, 255), 1)
+        for rec in debug_records:
+            col = rec.get("col")
+            if col is None:
+                continue
+            color = (0, 255, 0) if rec["status"] == "accepted" else (0, 0, 255)
+            cv2.line(overlay, (col, 0), (col, h - 1), color, 1)
+        debug_path.parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(debug_path), overlay)
+        debug_json = debug_path.with_suffix(".json")
+        debug_json.write_text(
+            json.dumps(
+                {
+                    "params": {
+                        "method": "adaptive",
+                        "search_width": search_width,
+                        "min_height_ratio": min_height_ratio,
+                        "adapt_block_size": block_size,
+                        "adapt_c": adapt_c,
+                        "x_merge_tol": x_merge_tol,
+                    },
+                    "bands": bands,
+                    "records": debug_records,
+                },
+                indent=2,
+            )
+        )
+    return candidates
+
+
+def detect_end_barlines_lsd(
+    base_img: np.ndarray,
+    staff_mask: np.ndarray,
+    existing_boxes: Sequence[Box],
+    *,
+    search_width: int = 40,
+    min_height_ratio: float = 0.6,
+    vertical_tol: int = 2,
+    x_merge_tol: int = 4,
+    debug_path: Path | None = None,
+) -> List[Box]:
+    gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
+    h, w = gray.shape[:2]
+    bands = staff_bands_from_mask(staff_mask)
+    if not bands:
+        return []
+
+    lsd = cv2.createLineSegmentDetector(cv2.LSD_REFINE_ADV)
+
+    def has_existing(x_center: float, y1: int, y2: int) -> bool:
+        for bx1, by1, bx2, by2 in existing_boxes:
+            cy = (by1 + by2) / 2.0
+            if cy < y1 or cy > y2:
+                continue
+            cx = (bx1 + bx2) / 2.0
+            if abs(cx - x_center) <= x_merge_tol:
+                return True
+        return False
+
+    candidates: List[Box] = []
+    debug_records = []
+    x_start = max(0, w - search_width)
+
+    for y1, y2 in bands:
+        band_h = max(1, y2 - y1 + 1)
+        min_len = band_h * min_height_ratio
+        band_gray = gray[y1 : y2 + 1, x_start:w]
+        lines = lsd.detect(band_gray)[0]
+        best_x = None
+        if lines is not None:
+            for (x1, y1_l, x2, y2_l) in lines.reshape(-1, 4):
+                if abs(x1 - x2) > vertical_tol:
+                    continue
+                length = abs(y2_l - y1_l)
+                if length < min_len:
+                    continue
+                x_mean = (x1 + x2) * 0.5 + x_start
+                if best_x is None or x_mean > best_x:
+                    best_x = x_mean
+        if best_x is None:
+            debug_records.append({"band": [y1, y2], "status": "no_vertical"})
+            continue
+        x_center = float(best_x)
+        if has_existing(x_center, y1, y2):
+            debug_records.append({"band": [y1, y2], "status": "existing", "col": x_center})
+            continue
+        col = int(round(best_x))
+        candidates.append((max(0, col - 1), y1, min(w - 1, col + 1), y2))
+        debug_records.append({"band": [y1, y2], "status": "accepted", "col": col})
+
+    if debug_path is not None:
+        overlay = base_img.copy()
+        mask_overlay = overlay.copy()
+        for y1, y2 in bands:
+            cv2.rectangle(mask_overlay, (0, y1), (w - 1, y2), (255, 255, 0), -1)
+        overlay = cv2.addWeighted(mask_overlay, 0.2, overlay, 0.8, 0.0)
+        cv2.rectangle(overlay, (x_start, 0), (w - 1, h - 1), (0, 255, 255), 1)
+        for rec in debug_records:
+            col = rec.get("col")
+            if col is None:
+                continue
+            color = (0, 255, 0) if rec["status"] == "accepted" else (0, 0, 255)
+            cv2.line(overlay, (int(round(col)), 0), (int(round(col)), h - 1), color, 1)
+        debug_path.parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(debug_path), overlay)
+        debug_json = debug_path.with_suffix(".json")
+        debug_json.write_text(
+            json.dumps(
+                {
+                    "params": {
+                        "method": "lsd",
+                        "search_width": search_width,
+                        "min_height_ratio": min_height_ratio,
+                        "vertical_tol": vertical_tol,
+                        "x_merge_tol": x_merge_tol,
+                    },
+                    "bands": bands,
+                    "records": debug_records,
+                },
+                indent=2,
+            )
+        )
+    return candidates
+
+
+def detect_end_barlines_omr(
+    base_img: np.ndarray,
+    staff_mask: np.ndarray,
+    barline_mask: np.ndarray | None,
+    omr_preds: Sequence[Box],
+    existing_boxes: Sequence[Box],
+    *,
+    min_height_ratio: float = 0.6,
+    x_merge_tol: int = 4,
+    debug_path: Path | None = None,
+) -> List[Box]:
+    gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
+    _, ink = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    ink = (ink > 0).astype(np.uint8)
+
+    h, w = ink.shape[:2]
+    bands = staff_bands_from_mask(staff_mask)
+    if not bands:
+        return []
+
+    def has_existing(x_center: float, y1: int, y2: int) -> bool:
+        for bx1, by1, bx2, by2 in existing_boxes:
+            cy = (by1 + by2) / 2.0
+            if cy < y1 or cy > y2:
+                continue
+            cx = (bx1 + bx2) / 2.0
+            if abs(cx - x_center) <= x_merge_tol:
+                return True
+        return False
+
+    candidates: List[Box] = []
+    debug_records = []
+    for y1, y2 in bands:
+        band_h = max(1, y2 - y1 + 1)
+        min_ink = int(round(band_h * min_height_ratio))
+        xs = []
+        for bx1, by1, bx2, by2 in omr_preds:
+            cy = (by1 + by2) / 2.0
+            if y1 <= cy <= y2:
+                xs.append((bx1 + bx2) * 0.5)
+        if not xs:
+            debug_records.append({"band": [y1, y2], "status": "no_omr"})
+            continue
+        x_center = float(max(xs))
+        col = int(round(x_center))
+        if has_existing(x_center, y1, y2):
+            debug_records.append({"band": [y1, y2], "status": "existing", "col": col})
+            continue
+        x1 = max(0, col - 1)
+        x2 = min(w, col + 2)
+        band_ink = ink[y1 : y2 + 1, x1:x2]
+        ink_sum = int(band_ink.sum())
+        if ink_sum < min_ink:
+            debug_records.append(
+                {"band": [y1, y2], "status": "low_ink", "col": col, "ink": ink_sum}
+            )
+            continue
+        if barline_mask is not None:
+            band_mask = (barline_mask[y1 : y2 + 1, x1:x2] > 0).astype(np.uint8)
+            mask_sum = int(band_mask.sum())
+            if mask_sum < min_ink:
+                debug_records.append(
+                    {"band": [y1, y2], "status": "mask_low", "col": col, "mask": mask_sum}
+                )
+                continue
+        candidates.append((x1, y1, min(w - 1, col + 1), y2))
+        debug_records.append({"band": [y1, y2], "status": "accepted", "col": col})
+
+    if debug_path is not None:
+        overlay = base_img.copy()
+        mask_overlay = overlay.copy()
+        for y1, y2 in bands:
+            cv2.rectangle(mask_overlay, (0, y1), (w - 1, y2), (255, 255, 0), -1)
+        overlay = cv2.addWeighted(mask_overlay, 0.2, overlay, 0.8, 0.0)
+        for rec in debug_records:
+            col = rec.get("col")
+            if col is None:
+                continue
+            color = (0, 255, 0) if rec["status"] == "accepted" else (0, 0, 255)
+            cv2.line(overlay, (int(round(col)), 0), (int(round(col)), h - 1), color, 1)
+        debug_path.parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(debug_path), overlay)
+        debug_json = debug_path.with_suffix(".json")
+        debug_json.write_text(
+            json.dumps(
+                {
+                    "params": {
+                        "method": "omr",
+                        "min_height_ratio": min_height_ratio,
+                        "x_merge_tol": x_merge_tol,
+                    },
+                    "bands": bands,
+                    "records": debug_records,
+                },
+                indent=2,
+            )
+        )
+    return candidates
+
+
 def geom_notehead_ratio_filter(
     preds: Sequence[Box],
     notehead_mask: np.ndarray,
@@ -406,6 +1206,34 @@ def main() -> None:
     parser.add_argument("--endbar-right-clear-ratio", type=float, default=0.08)
     parser.add_argument("--endbar-staff-mask-mode", choices=["staff", "staffs"], default="staff")
     parser.add_argument("--endbar-debug", action="store_true")
+    parser.add_argument(
+        "--endbar-method",
+        choices=[
+            "projection",
+            "morph",
+            "hough",
+            "runlen",
+            "barline_mask",
+            "staff_anchor",
+            "adaptive",
+            "lsd",
+            "omr",
+        ],
+        default="projection",
+    )
+    parser.add_argument("--endbar-morph-kernel-scale", type=float, default=0.6)
+    parser.add_argument("--endbar-morph-constrain-height", action="store_true")
+    parser.add_argument("--endbar-hough-constrain-height", action="store_true")
+    parser.add_argument("--endbar-runlen-constrain-height", action="store_true")
+    parser.add_argument("--endbar-anchor-pad", type=int, default=4)
+    parser.add_argument("--endbar-adapt-block-size", type=int, default=25)
+    parser.add_argument("--endbar-adapt-c", type=int, default=5)
+    parser.add_argument("--endbar-lsd-vertical-tol", type=int, default=2)
+    parser.add_argument(
+        "--omr-preds-root",
+        type=Path,
+        default=REPO_ROOT / "logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5",
+    )
     args = parser.parse_args()
 
     pages = [
@@ -416,6 +1244,8 @@ def main() -> None:
             notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_6_notehead.png",
             staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_3_staff.png",
             staff_mask_alt=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_15_staffs.png",
+            barline_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_8_bar_line_img.png",
+            omr_preds=args.omr_preds_root / "page_001" / "predictions.json",
             union_preds=args.union_root / "page_001_hybrid_preds.json",
         ),
         PageSpec(
@@ -425,6 +1255,8 @@ def main() -> None:
             notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_6_notehead.png",
             staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_3_staff.png",
             staff_mask_alt=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_15_staffs.png",
+            barline_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_8_bar_line_img.png",
+            omr_preds=args.omr_preds_root / "page_004" / "predictions.json",
             union_preds=args.union_root / "page_004_hybrid_preds.json",
         ),
         PageSpec(
@@ -434,6 +1266,8 @@ def main() -> None:
             notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_6_notehead.png",
             staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_3_staff.png",
             staff_mask_alt=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_15_staffs.png",
+            barline_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_8_bar_line_img.png",
+            omr_preds=args.omr_preds_root / "page_10" / "predictions.json",
             union_preds=args.union_root / "page_10_hybrid_preds.json",
         ),
         PageSpec(
@@ -443,6 +1277,8 @@ def main() -> None:
             notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_6_notehead.png",
             staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_3_staff.png",
             staff_mask_alt=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_15_staffs.png",
+            barline_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_8_bar_line_img.png",
+            omr_preds=args.omr_preds_root / "page_15" / "predictions.json",
             union_preds=args.union_root / "page_15_hybrid_preds.json",
         ),
     ]
@@ -494,16 +1330,101 @@ def main() -> None:
             debug_path = None
             if args.endbar_debug:
                 debug_path = out_dir / "endbar_debug.png"
-            added_end = detect_end_barlines(
-                base_img,
-                staff_mask,
-                geom_kept,
-                search_width=args.endbar_search_width,
-                min_height_ratio=args.endbar_min_height_ratio,
-                right_clear_width=args.endbar_right_clear_width,
-                right_clear_ratio=args.endbar_right_clear_ratio,
-                debug_path=debug_path,
-            )
+            if args.endbar_method == "projection":
+                added_end = detect_end_barlines(
+                    base_img,
+                    staff_mask,
+                    geom_kept,
+                    search_width=args.endbar_search_width,
+                    min_height_ratio=args.endbar_min_height_ratio,
+                    right_clear_width=args.endbar_right_clear_width,
+                    right_clear_ratio=args.endbar_right_clear_ratio,
+                    debug_path=debug_path,
+                )
+            elif args.endbar_method == "morph":
+                added_end = detect_end_barlines_morph(
+                    base_img,
+                    staff_mask,
+                    geom_kept,
+                    search_width=args.endbar_search_width,
+                    min_height_ratio=args.endbar_min_height_ratio,
+                    morph_kernel_scale=args.endbar_morph_kernel_scale,
+                    constrain_height=args.endbar_morph_constrain_height,
+                    debug_path=debug_path,
+                )
+            elif args.endbar_method == "hough":
+                added_end = detect_end_barlines_hough(
+                    base_img,
+                    staff_mask,
+                    geom_kept,
+                    search_width=args.endbar_search_width,
+                    min_height_ratio=args.endbar_min_height_ratio,
+                    constrain_height=args.endbar_hough_constrain_height,
+                    debug_path=debug_path,
+                )
+            elif args.endbar_method == "runlen":
+                added_end = detect_end_barlines_runlen(
+                    base_img,
+                    staff_mask,
+                    geom_kept,
+                    search_width=args.endbar_search_width,
+                    min_height_ratio=args.endbar_min_height_ratio,
+                    constrain_height=args.endbar_runlen_constrain_height,
+                    debug_path=debug_path,
+                )
+            elif args.endbar_method == "barline_mask":
+                barline_mask = load_barline_mask(page.barline_mask, base_img.shape[:2])
+                added_end = detect_end_barlines_from_mask(
+                    barline_mask,
+                    staff_mask,
+                    geom_kept,
+                    search_width=args.endbar_search_width,
+                    min_height_ratio=args.endbar_min_height_ratio,
+                    debug_path=debug_path,
+                )
+            elif args.endbar_method == "staff_anchor":
+                added_end = detect_end_barlines_staff_anchor(
+                    base_img,
+                    staff_mask,
+                    geom_kept,
+                    search_width=args.endbar_search_width,
+                    min_height_ratio=args.endbar_min_height_ratio,
+                    anchor_pad=args.endbar_anchor_pad,
+                    debug_path=debug_path,
+                )
+            elif args.endbar_method == "adaptive":
+                added_end = detect_end_barlines_adaptive(
+                    base_img,
+                    staff_mask,
+                    geom_kept,
+                    search_width=args.endbar_search_width,
+                    min_height_ratio=args.endbar_min_height_ratio,
+                    adapt_block_size=args.endbar_adapt_block_size,
+                    adapt_c=args.endbar_adapt_c,
+                    debug_path=debug_path,
+                )
+            elif args.endbar_method == "lsd":
+                added_end = detect_end_barlines_lsd(
+                    base_img,
+                    staff_mask,
+                    geom_kept,
+                    search_width=args.endbar_search_width,
+                    min_height_ratio=args.endbar_min_height_ratio,
+                    vertical_tol=args.endbar_lsd_vertical_tol,
+                    debug_path=debug_path,
+                )
+            else:
+                barline_mask = load_barline_mask(page.barline_mask, base_img.shape[:2])
+                omr_preds = load_omr_preds(page.omr_preds)
+                added_end = detect_end_barlines_omr(
+                    base_img,
+                    staff_mask,
+                    barline_mask,
+                    omr_preds,
+                    geom_kept,
+                    min_height_ratio=args.endbar_min_height_ratio,
+                    debug_path=debug_path,
+                )
             if added_end:
                 geom_kept = geom_kept + added_end
 

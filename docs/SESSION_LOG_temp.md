@@ -1219,3 +1219,189 @@ This log has been cleaned to retain only confirmed Phase 6 results and reference
 - var64: aspect除去(2.0), min_height=10, max_width=6
   - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var64/`
   - page_15 で FN=0 に回復（notehead_filtered消失）
+
+---
+## 2025-12-30 endpoint window拡大の再試行（var65-67）
+
+**作業目的 / 方針 / 位置づけ**
+- var64 を新基準とし、endpoint window拡大でFP削減を狙う（FN=0維持を最優先）。
+
+**作業時間**
+- 2025-12-30 18:25 JST 前後
+
+**試した結果**
+- var65: endpoint_x_scale=0.16, probe_endpoint_x_scale=0.05
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var65/`
+  - 既存と同一のTP/FP/FN（改善なし）
+- var66: endpoint_y_scale=0.9, probe_endpoint_y_scale=0.9
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var66/`
+  - page_001でFP増加
+- var67: x_scale=0.16 + y_scale=0.9（probe側も拡大）
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var67/`
+  - page_001でFP増加
+
+---
+## 2025-12-30 endpoint_x_scale 再拡大（var68-70）
+
+**作業目的 / 方針 / 位置づけ**
+- var64 基準（aspectフィルタ有効）で endpoint_x_scale を0.22〜0.26へ拡大し、FP削減効果を再確認。
+
+**作業時間**
+- 2025-12-30 18:50 JST 前後
+
+**試した結果**
+- var68: endpoint_x_scale=0.22
+- var69: endpoint_x_scale=0.24
+- var70: endpoint_x_scale=0.26
+  - いずれも `var64` と同一のTP/FP/FN（改善なし）
+
+---
+## 2025-12-30 notehead/aspectフィルタ後のoverlay再確認
+
+**作業目的 / 方針 / 位置づけ**
+- endpoint_x_scale拡大がFPに影響しない理由を確認するため、aspectフィルタ後のnotehead maskとendpoint windowを可視化。
+
+**作業時間**
+- 2025-12-30 19:05 JST 前後
+
+**試した結果**
+- var64（aspectフィルタあり）:
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var64/notehead_analysis_aspect/`
+- var38（aspectフィルタなし/旧設定）:
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var38/notehead_analysis_baseline/`
+
+---
+## 2025-12-30 notehead mask dilate強化 + endpoint window拡大（分析のみ）
+
+**作業目的 / 方針 / 位置づけ**
+- aspectフィルタ後のnotehead maskが小さく見えるため、dilate強化とendpoint window拡大の視覚確認を実施。
+- FP + notehead mask + endpoint windowを1枚に重ねたoverlayを出力。
+
+**作業時間**
+- 2025-12-30 19:25 JST 前後
+
+**試した結果**
+- dilate=7:
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var64/notehead_analysis_dilate7/`
+- dilate=7 + endpoint_scale(x1.7,y1.1):
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var64/notehead_analysis_dilate7_scale/`
+
+---
+## 2025-12-30 endpoint window描画修正 + dilate/endpoint拡大の再評価
+
+**作業目的 / 方針 / 位置づけ**
+- endpoint window の描画が分かりにくいため overlay を改善し、dilate強化とendpoint拡大を再評価。
+
+**作業時間**
+- 2025-12-30 19:50 JST 前後
+
+**変更したファイルの場所**
+- `tools/run_gt_rebuild_hybrid_eval.py`（notehead_dilate追加）
+- `tools/notehead_filter_analysis.py`（endpoint window描画強化/scale追加）
+
+**試した結果**
+- overlay再出力:
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var64/notehead_analysis_dilate7_v2/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var64/notehead_analysis_dilate7_scale_v2/`
+- var71: notehead_dilate=7, probe_notehead_dilate=7（endpoint拡大なし）
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var71/`
+- var72: notehead_dilate=7 + endpoint拡大（x~0.238,y~0.88 / probe x~0.068,y~0.88）
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var72/`
+
+---
+## 2025-12-30 threshold調整（dilate=7固定）
+
+**作業目的 / 方針 / 位置づけ**
+- notehead_dilate=7 を固定し、endpoint_ratio_threshold を調整してFP削減を狙う。
+
+**作業時間**
+- 2025-12-30 20:20 JST 前後
+
+**試した結果**
+- var73: threshold=0.25
+- var74: threshold=0.30
+- var75: threshold=0.35
+  - いずれも FP が増加（var71より悪化）
+
+---
+## 2025-12-30 probe側パラメータ探索（dilate=7固定）
+
+**作業目的 / 方針 / 位置づけ**
+- notehead_dilate=7固定のまま、probe側のendpoint_x_scale と probe_notehead_dilate を調整しFP削減を探索。
+
+**作業時間**
+- 2025-12-30 20:45 JST 前後
+
+**試した結果**
+- var76: probe_endpoint_x_scale=0.05
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var76_probe_x_0p05/`
+- var77: probe_endpoint_x_scale=0.06
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var77_probe_x_0p06/`
+- var78: probe_endpoint_x_scale=0.08
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var78_probe_x_0p08/`
+- var79: probe_notehead_dilate=5
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var79_probe_dilate_5/`
+- var80: probe_notehead_dilate=9
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var80_probe_dilate_9/`
+- いずれも FN=0 維持。
+- probe_notehead_dilate=9 (var80) がFP大幅削減。
+
+---
+## 2025-12-30 probe_notehead_dilate 追加探索（dilate=7固定）
+
+**作業目的 / 方針 / 位置づけ**
+- probe_notehead_dilate を 9 よりさらに拡大して FP 改善の余地を確認。
+
+**作業時間**
+- 2025-12-30 21:05 JST 前後
+
+**試した結果**
+- var81: probe_notehead_dilate=11
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var81_probe_dilate_11/`
+- var82: probe_notehead_dilate=13
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var82_probe_dilate_13/`
+- いずれも FN=0 維持。
+- var82 がさらにFP削減。
+
+---
+## 2025-12-30 probe_notehead_dilate 追加探索（15以上）
+
+**作業目的 / 方針 / 位置づけ**
+- probe_notehead_dilate を 15/17/19 まで拡大し、FP削減の限界とFN発生を確認。
+
+**作業時間**
+- 2025-12-30 21:20 JST 前後
+
+**試した結果**
+- var83: probe_notehead_dilate=15
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var83_probe_dilate_15/`
+  - FNが再発（page_001/004/015）
+- var84: probe_notehead_dilate=17
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var84_probe_dilate_17/`
+  - FNが再発（page_001/004/015）
+- var85: probe_notehead_dilate=19
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var85_probe_dilate_19/`
+  - FNが再発（page_001/004/015）
+
+---
+## 2025-12-30 clefs_keys maskによる左端FP除去フィルタ
+
+**作業目的 / 方針 / 位置づけ**
+- 左端の縦線束（音部記号/調号由来）を除去するため、HOMRのclefs_keysマスクを用いたフィルタを追加。
+
+**作業時間**
+- 2025-12-30 22:05 JST 前後
+
+**変更したファイルの場所**
+- `tools/run_gt_rebuild_hybrid_eval.py`（clefs_keys mask読み込み・filter追加）
+
+**試した結果**
+- var86: left_margin=0.20, overlap>=0.05, dilate=3
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var86_clef_filter/`
+  - FP大幅削減だが page_15でFN=1
+- var87: left_margin=0.15, overlap>=0.05, dilate=3
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var87_clef_filter/`
+  - FN=0, FPは減少するがvar86より多い
+- var88: left_margin=0.20, overlap>=0.30, dilate=3
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var88_clef_filter/`
+  - FN=0維持でFP最小（現時点の最良）

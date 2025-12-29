@@ -162,6 +162,8 @@ def main() -> None:
     parser.add_argument("--notehead-max-aspect", type=float, default=0.0)
     parser.add_argument("--notehead-min-height", type=int, default=0)
     parser.add_argument("--notehead-max-width", type=int, default=0)
+    parser.add_argument("--endpoint-scale-x", type=float, default=1.0)
+    parser.add_argument("--endpoint-scale-y", type=float, default=1.0)
     parser.add_argument("--override-threshold", type=float, default=-1.0)
     args = parser.parse_args()
 
@@ -216,8 +218,8 @@ def main() -> None:
             mask = cv2.dilate(mask, kernel, iterations=1)
         geom_debug_path = page_dir / "geom_debug.json"
         config = json.loads(geom_debug_path.read_text())["config"]
-        rx = int(config["endpoint_radius_px"]["x"])
-        ry = int(config["endpoint_radius_px"]["y"])
+        rx = int(round(config["endpoint_radius_px"]["x"] * args.endpoint_scale_x))
+        ry = int(round(config["endpoint_radius_px"]["y"] * args.endpoint_scale_y))
         threshold = float(config["threshold"]) if args.override_threshold < 0 else args.override_threshold
 
         fp_boxes = load_boxes(page_dir / "fp_boxes.json")
@@ -244,11 +246,16 @@ def main() -> None:
         overlay = cv2.addWeighted(mask_vis, alpha, overlay, 1 - alpha, 0.0)
         draw_boxes(overlay, fp_boxes, (0, 0, 255), 2)
         draw_boxes(overlay, notehead_fn, (255, 0, 255), 3)
+        for item in fp_stats:
+            tx1, ty1, tx2, ty2 = item["top_region"]
+            bx1, by1, bx2, by2 = item["bottom_region"]
+            cv2.rectangle(overlay, (tx1, ty1), (tx2, ty2), (0, 200, 255), 1)
+            cv2.rectangle(overlay, (bx1, by1), (bx2, by2), (0, 200, 255), 1)
         for item in fn_stats:
             tx1, ty1, tx2, ty2 = item["top_region"]
             bx1, by1, bx2, by2 = item["bottom_region"]
-            cv2.rectangle(overlay, (tx1, ty1), (tx2, ty2), (0, 255, 255), 1)
-            cv2.rectangle(overlay, (bx1, by1), (bx2, by2), (0, 255, 255), 1)
+            cv2.rectangle(overlay, (tx1, ty1), (tx2, ty2), (0, 255, 255), 2)
+            cv2.rectangle(overlay, (bx1, by1), (bx2, by2), (0, 255, 255), 2)
         overlay_path = out_root / f"{page.name}_notehead_overlay.png"
         cv2.imwrite(str(overlay_path), overlay)
 
@@ -273,6 +280,9 @@ def main() -> None:
             "fn_notehead_count": len(fn_stats),
             "threshold": threshold,
             "mask_dilate": args.mask_dilate,
+            "endpoint_scale_x": args.endpoint_scale_x,
+            "endpoint_scale_y": args.endpoint_scale_y,
+            "endpoint_radius_px": {"x": rx, "y": ry},
             "fp_ratio_ge_0.3": sum(1 for r in fp_stats if r["overlap_ratio"] >= 0.3),
             "fn_ratio_ge_0.3": sum(1 for r in fn_stats if r["overlap_ratio"] >= 0.3),
             "fp_ratio_ge_threshold": sum(1 for r in fp_stats if r["overlap_ratio"] >= threshold),

@@ -34,6 +34,7 @@ class PageSpec:
     image: Path
     gt: Path
     notehead_mask: Path
+    clefs_keys_mask: Path
     staff_mask: Path
     staff_mask_alt: Path
     barline_mask: Path
@@ -239,6 +240,49 @@ def filter_notehead_components(
     return (filtered * 255).astype(np.uint8)
 
 
+def filter_clefs_keys_overlap(
+    preds: Sequence[Box],
+    clefs_keys_mask: np.ndarray,
+    left_margin_ratio: float,
+    min_overlap_ratio: float,
+) -> Tuple[List[Box], Dict[str, object]]:
+    h, w = clefs_keys_mask.shape[:2]
+    kept: List[Box] = []
+    rejected: List[Dict[str, object]] = []
+    left_limit = int(round(w * left_margin_ratio))
+    for idx, box in enumerate(preds):
+        x1, y1, x2, y2 = map(int, box)
+        x1 = max(0, min(w - 1, x1))
+        x2 = max(0, min(w - 1, x2))
+        y1 = max(0, min(h - 1, y1))
+        y2 = max(0, min(h - 1, y2))
+        xm = (x1 + x2) // 2
+        if xm > left_limit:
+            kept.append((x1, y1, x2, y2))
+            continue
+        region = clefs_keys_mask[y1 : y2 + 1, x1 : x2 + 1]
+        overlap = 0.0
+        if region.size:
+            overlap = float(np.count_nonzero(region)) / float(region.size)
+        if overlap >= min_overlap_ratio:
+            rejected.append(
+                {
+                    "index": idx,
+                    "bbox": [x1, y1, x2, y2],
+                    "overlap_ratio": overlap,
+                }
+            )
+            continue
+        kept.append((x1, y1, x2, y2))
+    debug = {
+        "left_margin_ratio": left_margin_ratio,
+        "left_margin_px": left_limit,
+        "min_overlap_ratio": min_overlap_ratio,
+        "rejected": rejected,
+    }
+    return kept, debug
+
+
 def load_staff_mask(path: Path, target_hw: Tuple[int, int]) -> np.ndarray:
     img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
     if img is None:
@@ -254,6 +298,17 @@ def load_barline_mask(path: Path, target_hw: Tuple[int, int]) -> np.ndarray:
     img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
     if img is None:
         raise FileNotFoundError(f"Failed to load barline mask: {path}")
+    _, bin_mask = cv2.threshold(img, 1, 255, cv2.THRESH_BINARY)
+    if bin_mask.shape[:2] != target_hw:
+        h, w = target_hw
+        bin_mask = cv2.resize(bin_mask, (w, h), interpolation=cv2.INTER_NEAREST)
+    return bin_mask
+
+
+def load_clefs_keys_mask(path: Path, target_hw: Tuple[int, int]) -> np.ndarray:
+    img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
+    if img is None:
+        raise FileNotFoundError(f"Failed to load clefs_keys mask: {path}")
     _, bin_mask = cv2.threshold(img, 1, 255, cv2.THRESH_BINARY)
     if bin_mask.shape[:2] != target_hw:
         h, w = target_hw
@@ -1648,6 +1703,16 @@ def main() -> None:
         help="Remove connected components smaller than this area in the notehead mask.",
     )
     parser.add_argument(
+        "--notehead-dilate",
+        type=int,
+        default=0,
+        help="Dilate the notehead mask before geom filtering.",
+    )
+    parser.add_argument("--filter-clefs-keys", action="store_true")
+    parser.add_argument("--clefs-keys-dilate", type=int, default=0)
+    parser.add_argument("--clefs-keys-left-margin-ratio", type=float, default=0.2)
+    parser.add_argument("--clefs-keys-overlap-min", type=float, default=0.05)
+    parser.add_argument(
         "--notehead-max-aspect",
         type=float,
         default=0.0,
@@ -1743,6 +1808,7 @@ def main() -> None:
             image=REPO_ROOT / "data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png",
             gt=REPO_ROOT / "logs/phase6_detector_miss/gt_rebuild/page_001_boxes_sorted.json",
             notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_6_notehead.png",
+            clefs_keys_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_7_clefs_keys.png",
             staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_3_staff.png",
             staff_mask_alt=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_15_staffs.png",
             barline_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_8_bar_line_img.png",
@@ -1754,6 +1820,7 @@ def main() -> None:
             image=REPO_ROOT / "data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png",
             gt=REPO_ROOT / "logs/phase6_detector_miss/gt_rebuild/page_004_boxes_sorted.json",
             notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_6_notehead.png",
+            clefs_keys_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_7_clefs_keys.png",
             staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_3_staff.png",
             staff_mask_alt=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_15_staffs.png",
             barline_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_8_bar_line_img.png",
@@ -1765,6 +1832,7 @@ def main() -> None:
             image=REPO_ROOT / "data/training/images/page_10.png",
             gt=REPO_ROOT / "logs/phase6_detector_miss/gt_rebuild/page_10_boxes_sorted.json",
             notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_6_notehead.png",
+            clefs_keys_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_7_clefs_keys.png",
             staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_3_staff.png",
             staff_mask_alt=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_15_staffs.png",
             barline_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_8_bar_line_img.png",
@@ -1776,6 +1844,7 @@ def main() -> None:
             image=REPO_ROOT / "data/training/images/page_15.png",
             gt=REPO_ROOT / "logs/phase6_detector_miss/gt_rebuild/page_15_boxes_sorted.json",
             notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_6_notehead.png",
+            clefs_keys_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_7_clefs_keys.png",
             staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_3_staff.png",
             staff_mask_alt=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_15_staffs.png",
             barline_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_8_bar_line_img.png",
@@ -1808,6 +1877,13 @@ def main() -> None:
             args.notehead_min_height,
             args.notehead_max_width,
         )
+        notehead_mask = dilate_mask(notehead_mask, args.notehead_dilate)
+        clefs_keys_mask = None
+        if args.filter_clefs_keys:
+            clefs_keys_mask = load_clefs_keys_mask(
+                page.clefs_keys_mask, base_img.shape[:2]
+            )
+            clefs_keys_mask = dilate_mask(clefs_keys_mask, args.clefs_keys_dilate)
         gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
         gt_boxes = load_gt(page.gt)
 
@@ -1838,6 +1914,7 @@ def main() -> None:
         geom_debug["notehead_mask_filter"] = {
             "open_kernel": args.notehead_open_kernel,
             "min_area": args.notehead_min_area,
+            "dilate": args.notehead_dilate,
             "max_aspect": args.notehead_max_aspect,
             "min_height": args.notehead_min_height,
             "max_width": args.notehead_max_width,
@@ -1993,6 +2070,7 @@ def main() -> None:
                 added_geom_debug["notehead_mask_filter"] = {
                     "open_kernel": args.notehead_open_kernel,
                     "min_area": args.notehead_min_area,
+                    "dilate": args.notehead_dilate,
                     "probe_dilate": args.probe_notehead_dilate,
                     "max_aspect": args.notehead_max_aspect,
                     "min_height": args.notehead_min_height,
@@ -2070,6 +2148,21 @@ def main() -> None:
                 (out_dir / "end_recovered_geom.json").write_text(json.dumps(added_geom, indent=2))
                 (out_dir / "end_recovered_geom_debug.json").write_text(json.dumps(added_geom_debug, indent=2))
                 geom_kept = geom_kept + added_geom
+
+        if args.filter_clefs_keys and clefs_keys_mask is not None:
+            before = len(geom_kept)
+            geom_kept, clef_debug = filter_clefs_keys_overlap(
+                geom_kept,
+                clefs_keys_mask,
+                args.clefs_keys_left_margin_ratio,
+                args.clefs_keys_overlap_min,
+            )
+            clef_debug["before"] = before
+            clef_debug["after"] = len(geom_kept)
+            clef_debug["clefs_keys_dilate"] = args.clefs_keys_dilate
+            (out_dir / "clefs_keys_filter.json").write_text(
+                json.dumps(clef_debug, indent=2)
+            )
 
         match = greedy_barline_match(list(geom_kept), list(gt_boxes), iou_threshold=0.5)
         tp = len(match.matches)

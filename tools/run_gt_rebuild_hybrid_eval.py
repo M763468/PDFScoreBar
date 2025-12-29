@@ -189,6 +189,56 @@ def load_notehead_mask(path: Path, target_hw: Tuple[int, int]) -> np.ndarray:
     return bin_mask
 
 
+def denoise_notehead_mask(
+    mask: np.ndarray,
+    open_kernel: int,
+    min_area: int,
+) -> np.ndarray:
+    """Remove small speckles from notehead mask without erasing true noteheads."""
+    cleaned = (mask > 0).astype(np.uint8)
+    if open_kernel and open_kernel > 1:
+        kernel = np.ones((open_kernel, open_kernel), np.uint8)
+        cleaned = cv2.morphologyEx(cleaned, cv2.MORPH_OPEN, kernel)
+    if min_area and min_area > 0:
+        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
+            cleaned, connectivity=8
+        )
+        filtered = np.zeros_like(cleaned)
+        for label in range(1, num_labels):
+            if stats[label, cv2.CC_STAT_AREA] >= min_area:
+                filtered[labels == label] = 1
+        cleaned = filtered
+    return (cleaned * 255).astype(np.uint8)
+
+
+def filter_notehead_components(
+    mask: np.ndarray,
+    max_aspect_ratio: float,
+    min_height_px: int,
+    max_width_px: int,
+) -> np.ndarray:
+    """Remove tall, thin components that are likely barlines or stems."""
+    if max_aspect_ratio <= 0:
+        return mask
+    binary = (mask > 0).astype(np.uint8)
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
+        binary, connectivity=8
+    )
+    filtered = np.zeros_like(binary)
+    for label in range(1, num_labels):
+        x, y, w, h, area = stats[label]
+        if min_height_px and h < min_height_px:
+            filtered[labels == label] = 1
+            continue
+        if max_width_px and w > max_width_px:
+            filtered[labels == label] = 1
+            continue
+        aspect = h / max(w, 1)
+        if aspect <= max_aspect_ratio:
+            filtered[labels == label] = 1
+    return (filtered * 255).astype(np.uint8)
+
+
 def load_staff_mask(path: Path, target_hw: Tuple[int, int]) -> np.ndarray:
     img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
     if img is None:
@@ -1376,6 +1426,72 @@ def filter_multiband_consensus(
     return kept, {"before": len(boxes), "after": len(kept), "records": records}
 
 
+def filter_right_ink(
+    boxes: Sequence[Box],
+    gray: np.ndarray,
+    *,
+    ink_threshold: int,
+    right_width: int,
+    max_ratio: float,
+) -> Tuple[List[Box], Dict[str, object]]:
+    if not boxes:
+        return [], {"before": 0, "after": 0}
+    h, w = gray.shape[:2]
+    kept: List[Box] = []
+    records = []
+    for box in boxes:
+        x1, y1, x2, y2 = map(int, box)
+        x1 = max(0, min(w - 1, x1))
+        x2 = max(0, min(w - 1, x2))
+        y1 = max(0, min(h - 1, y1))
+        y2 = max(0, min(h - 1, y2))
+        rx1 = min(w - 1, x2 + 1)
+        rx2 = min(w - 1, x2 + max(1, right_width))
+        region = (gray[y1 : y2 + 1, rx1 : rx2 + 1] < ink_threshold).astype(np.uint8)
+        ratio = float(region.mean()) if region.size else 0.0
+        records.append({"bbox": [x1, y1, x2, y2], "right_ratio": ratio})
+        if ratio <= max_ratio:
+            kept.append((x1, y1, x2, y2))
+    return kept, {"before": len(boxes), "after": len(kept), "records": records}
+
+
+def filter_thinness(
+    boxes: Sequence[Box],
+    gray: np.ndarray,
+    *,
+    ink_threshold: int,
+    max_width_px: int,
+) -> Tuple[List[Box], Dict[str, object]]:
+    if not boxes:
+        return [], {"before": 0, "after": 0}
+    h, w = gray.shape[:2]
+    kept: List[Box] = []
+    records = []
+    for box in boxes:
+        x1, y1, x2, y2 = map(int, box)
+        x1 = max(0, min(w - 1, x1))
+        x2 = max(0, min(w - 1, x2))
+        y1 = max(0, min(h - 1, y1))
+        y2 = max(0, min(h - 1, y2))
+        region = (gray[y1 : y2 + 1, x1 : x2 + 1] < ink_threshold).astype(np.uint8)
+        max_run = 0
+        for row in range(region.shape[0]):
+            row_vec = region[row]
+            run = 0
+            row_max = 0
+            for v in row_vec:
+                if v:
+                    run += 1
+                    row_max = max(row_max, run)
+                else:
+                    run = 0
+            max_run = max(max_run, row_max)
+        records.append({"bbox": [x1, y1, x2, y2], "max_row_width": max_run})
+        if max_run <= max_width_px:
+            kept.append((x1, y1, x2, y2))
+    return kept, {"before": len(boxes), "after": len(kept), "records": records}
+
+
 def geom_notehead_ratio_filter(
     preds: Sequence[Box],
     notehead_mask: np.ndarray,
@@ -1451,6 +1567,13 @@ def geom_notehead_ratio_filter(
     return kept, debug
 
 
+def dilate_mask(mask: np.ndarray, kernel_size: int) -> np.ndarray:
+    if kernel_size <= 0:
+        return mask
+    kernel = np.ones((kernel_size, kernel_size), dtype=np.uint8)
+    return cv2.dilate(mask, kernel, iterations=1)
+
+
 def draw_boxes(base: np.ndarray, boxes: Sequence[Box], color: Tuple[int, int, int], thickness: int, label: str):
     for idx, (x1, y1, x2, y2) in enumerate(boxes):
         cv2.rectangle(base, (x1, y1), (x2, y2), color, thickness)
@@ -1512,6 +1635,36 @@ def main() -> None:
     parser.add_argument("--endpoint-ratio-threshold", type=float, default=0.04)
     parser.add_argument("--endpoint-x-scale", type=float, default=0.12)
     parser.add_argument("--endpoint-y-scale", type=float, default=0.8)
+    parser.add_argument(
+        "--notehead-open-kernel",
+        type=int,
+        default=0,
+        help="Apply MORPH_OPEN with this kernel size to denoise the notehead mask.",
+    )
+    parser.add_argument(
+        "--notehead-min-area",
+        type=int,
+        default=0,
+        help="Remove connected components smaller than this area in the notehead mask.",
+    )
+    parser.add_argument(
+        "--notehead-max-aspect",
+        type=float,
+        default=0.0,
+        help="Remove tall thin components with height/width above this ratio.",
+    )
+    parser.add_argument(
+        "--notehead-min-height",
+        type=int,
+        default=0,
+        help="Minimum height in px to consider for aspect filtering.",
+    )
+    parser.add_argument(
+        "--notehead-max-width",
+        type=int,
+        default=0,
+        help="Keep components wider than this width (px) regardless of aspect.",
+    )
     parser.add_argument("--cluster-max-dist", type=float, default=25.0)
     parser.add_argument("--min-row-count", type=int, default=3)
     parser.add_argument("--tol-top-px", type=float, default=5.0)
@@ -1569,6 +1722,14 @@ def main() -> None:
     parser.add_argument("--probe-filter-multiband", action="store_true")
     parser.add_argument("--probe-multiband-x-tol", type=int, default=3)
     parser.add_argument("--probe-multiband-min-bands", type=int, default=2)
+    parser.add_argument("--probe-filter-right-ink", action="store_true")
+    parser.add_argument("--probe-right-ink-width", type=int, default=6)
+    parser.add_argument("--probe-right-ink-max-ratio", type=float, default=0.25)
+    parser.add_argument("--probe-filter-thinness", action="store_true")
+    parser.add_argument("--probe-thinness-max-width", type=int, default=4)
+    parser.add_argument("--probe-endpoint-x-scale", type=float, default=-1.0)
+    parser.add_argument("--probe-endpoint-y-scale", type=float, default=-1.0)
+    parser.add_argument("--probe-notehead-dilate", type=int, default=0)
     parser.add_argument(
         "--omr-preds-root",
         type=Path,
@@ -1638,6 +1799,15 @@ def main() -> None:
         if base_img is None:
             raise FileNotFoundError(f"Failed to load image: {page.image}")
         notehead_mask = load_notehead_mask(page.notehead_mask, base_img.shape[:2])
+        notehead_mask = denoise_notehead_mask(
+            notehead_mask, args.notehead_open_kernel, args.notehead_min_area
+        )
+        notehead_mask = filter_notehead_components(
+            notehead_mask,
+            args.notehead_max_aspect,
+            args.notehead_min_height,
+            args.notehead_max_width,
+        )
         gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
         gt_boxes = load_gt(page.gt)
 
@@ -1665,6 +1835,13 @@ def main() -> None:
             args.endpoint_x_scale,
             args.endpoint_y_scale,
         )
+        geom_debug["notehead_mask_filter"] = {
+            "open_kernel": args.notehead_open_kernel,
+            "min_area": args.notehead_min_area,
+            "max_aspect": args.notehead_max_aspect,
+            "min_height": args.notehead_min_height,
+            "max_width": args.notehead_max_width,
+        }
         added_end = []
         if args.enable_end_barline_recovery:
             staff_mask_path = page.staff_mask if args.endbar_staff_mask_mode == "staff" else page.staff_mask_alt
@@ -1800,14 +1977,27 @@ def main() -> None:
                         args.probe_row_tol_top,
                         args.probe_row_tol_bottom,
                     )
+                probe_notehead_mask = dilate_mask(
+                    notehead_mask, args.probe_notehead_dilate
+                )
+                probe_x_scale = args.endpoint_x_scale if args.probe_endpoint_x_scale <= 0 else args.probe_endpoint_x_scale
+                probe_y_scale = args.endpoint_y_scale if args.probe_endpoint_y_scale <= 0 else args.probe_endpoint_y_scale
                 added_geom, added_geom_debug = geom_notehead_ratio_filter(
                     added_row,
-                    notehead_mask,
+                    probe_notehead_mask,
                     staff_space,
                     args.endpoint_ratio_threshold,
-                    args.endpoint_x_scale,
-                    args.endpoint_y_scale,
+                    probe_x_scale,
+                    probe_y_scale,
                 )
+                added_geom_debug["notehead_mask_filter"] = {
+                    "open_kernel": args.notehead_open_kernel,
+                    "min_area": args.notehead_min_area,
+                    "probe_dilate": args.probe_notehead_dilate,
+                    "max_aspect": args.notehead_max_aspect,
+                    "min_height": args.notehead_min_height,
+                    "max_width": args.notehead_max_width,
+                }
                 added_geom_pre_mask = list(added_geom)
                 if args.probe_barline_mask_min_ratio > 0:
                     barline_mask = load_mask(page.barline_mask, base_img.shape[:2])
@@ -1856,6 +2046,23 @@ def main() -> None:
                         min_bands=args.probe_multiband_min_bands,
                     )
                     (out_dir / "end_recovered_multiband.json").write_text(json.dumps(multi_debug, indent=2))
+                if args.probe_filter_right_ink:
+                    added_geom, right_debug = filter_right_ink(
+                        added_geom,
+                        gray,
+                        ink_threshold=args.probe_ink_threshold,
+                        right_width=args.probe_right_ink_width,
+                        max_ratio=args.probe_right_ink_max_ratio,
+                    )
+                    (out_dir / "end_recovered_right_ink.json").write_text(json.dumps(right_debug, indent=2))
+                if args.probe_filter_thinness:
+                    added_geom, thin_debug = filter_thinness(
+                        added_geom,
+                        gray,
+                        ink_threshold=args.probe_ink_threshold,
+                        max_width_px=args.probe_thinness_max_width,
+                    )
+                    (out_dir / "end_recovered_thinness.json").write_text(json.dumps(thin_debug, indent=2))
                 (out_dir / "end_recovered_row.json").write_text(json.dumps(added_row, indent=2))
                 (out_dir / "end_recovered_geom_pre_mask.json").write_text(
                     json.dumps(added_geom_pre_mask, indent=2)

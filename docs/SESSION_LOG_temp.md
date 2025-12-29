@@ -1096,3 +1096,126 @@ This log has been cleaned to retain only confirmed Phase 6 results and reference
 **試した結果**
 - var52: probe_vertical_run_ratio=0.75
   - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var52/`
+
+---
+## 2025-12-30 追加FPフィルタ評価（案1-3）
+
+**作業目的 / 方針 / 位置づけ**
+- FN=0固定条件で、追加FPフィルタを順に試す。
+
+**作業時間**
+- 2025-12-30 03:00 JST 前後
+
+**試した結果**
+- var53: right-ink フィルタ
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var53/`
+- var54: right-ink + thinness
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var54/`
+- var55: right-ink + thinness + multiband(weak)
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var55/`
+
+---
+## 2025-12-30 notehead再利用案の試験（probe側のみ）
+
+**作業目的 / 方針 / 位置づけ**
+- notehead maskを膨張させ、probe候補のendpoint窓を小さくして判定する方式を試す。
+
+**作業時間**
+- 2025-12-30 03:20 JST 前後
+
+**変更したファイルの場所**
+- `tools/run_gt_rebuild_hybrid_eval.py`（probe用endpointスケール/マスク拡張）
+
+**試した結果**
+- var56: probe_notehead_dilate=3, probe_endpoint_x_scale=0.06
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var56/`
+
+---
+## 2025-12-30 notehead再利用案のパラメータ探索（x縮小→dilate強化）
+
+**作業目的 / 方針 / 位置づけ**
+- FN低減のため endpoint_x_scale をさらに縮小し、次に notehead膨張を強める。
+
+**作業時間**
+- 2025-12-30 03:50 JST 前後
+
+**試した結果**
+- var57: probe_endpoint_x_scale=0.05
+- var58: probe_endpoint_x_scale=0.04
+- var59: probe_notehead_dilate=5 + probe_endpoint_x_scale=0.04
+
+---
+## 2025-12-30 notehead maskのノイズ除去導入（実装のみ）
+
+**作業目的 / 方針 / 位置づけ**
+- notehead maskの小さな白点ノイズがFN要因になりうるため、maskにノイズ除去を適用できるようにする。
+- 開口処理(MORPH_OPEN)と小領域除去の2段階をオプション化。評価と解析ツールに同じ設定を適用可能にする。
+
+**作業時間**
+- 2025-12-30 16:25 JST 前後
+
+**変更したファイルの場所**
+- `tools/run_gt_rebuild_hybrid_eval.py`
+- `tools/notehead_filter_analysis.py`
+- `tools/notehead_fn_cause_analysis.py`
+
+**試した結果**
+- 実装のみ（評価は未実行）
+
+---
+## 2025-12-30 notehead maskノイズ除去の再評価（var60-62）
+
+**作業目的 / 方針 / 位置づけ**
+- notehead maskの小さい白点ノイズがFN要因になりうるため、MORPH_OPENと小領域除去を適用し再評価。
+
+**作業時間**
+- 2025-12-30 17:05 JST 前後
+
+**変更したファイルの場所**
+- `tools/run_gt_rebuild_hybrid_eval.py`
+- `tools/notehead_filter_analysis.py`
+- `tools/notehead_fn_cause_analysis.py`
+
+**試した結果**
+- var60: notehead_open_kernel=3, notehead_min_area=0
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var60/`
+- var61: notehead_open_kernel=3, notehead_min_area=20
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var61/`
+- var62: notehead_open_kernel=5, notehead_min_area=20
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var62/`
+- いずれも page_15 で FN=1 が残存（notehead_filtered）。
+- notehead_fn_cause_analysis を各varに出力済み。
+
+---
+## 2025-12-30 notehead mask可視化（var62）
+
+**作業目的 / 方針 / 位置づけ**
+- notehead maskが実際に存在するかを目視確認するため、denoise+dilate後のmaskを重畳したoverlayを作成。
+
+**作業時間**
+- 2025-12-30 17:30 JST 前後
+
+**試した結果**
+- `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var62/notehead_filter_analysis_denoise/`
+  - `page_15_notehead_overlay.png` などにマスク重畳。
+
+---
+## 2025-12-30 notehead誤検出(縦長)の除去
+
+**作業目的 / 方針 / 位置づけ**
+- notehead maskがダブルバー等の縦長成分を含むため、縦長成分を除去してnotehead filterの誤判定を防ぐ。
+
+**作業時間**
+- 2025-12-30 18:05 JST 前後
+
+**変更したファイルの場所**
+- `tools/run_gt_rebuild_hybrid_eval.py`
+- `tools/notehead_filter_analysis.py`
+- `tools/notehead_fn_cause_analysis.py`
+
+**試した結果**
+- var63: aspect除去(3.0), min_height=20, max_width=6
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var63/`
+- var64: aspect除去(2.0), min_height=10, max_width=6
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var64/`
+  - page_15 で FN=0 に回復（notehead_filtered消失）

@@ -44,6 +44,50 @@ def load_notehead_mask(path: Path, shape: tuple[int, int]) -> np.ndarray:
     return (mask > 0).astype(np.uint8)
 
 
+def denoise_notehead_mask(mask: np.ndarray, open_kernel: int, min_area: int) -> np.ndarray:
+    cleaned = (mask > 0).astype(np.uint8)
+    if open_kernel and open_kernel > 1:
+        kernel = np.ones((open_kernel, open_kernel), np.uint8)
+        cleaned = cv2.morphologyEx(cleaned, cv2.MORPH_OPEN, kernel)
+    if min_area and min_area > 0:
+        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
+            cleaned, connectivity=8
+        )
+        filtered = np.zeros_like(cleaned)
+        for label in range(1, num_labels):
+            if stats[label, cv2.CC_STAT_AREA] >= min_area:
+                filtered[labels == label] = 1
+        cleaned = filtered
+    return cleaned
+
+
+def filter_notehead_components(
+    mask: np.ndarray,
+    max_aspect_ratio: float,
+    min_height_px: int,
+    max_width_px: int,
+) -> np.ndarray:
+    if max_aspect_ratio <= 0:
+        return mask
+    binary = (mask > 0).astype(np.uint8)
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
+        binary, connectivity=8
+    )
+    filtered = np.zeros_like(binary)
+    for label in range(1, num_labels):
+        x, y, w, h, area = stats[label]
+        if min_height_px and h < min_height_px:
+            filtered[labels == label] = 1
+            continue
+        if max_width_px and w > max_width_px:
+            filtered[labels == label] = 1
+            continue
+        aspect = h / max(w, 1)
+        if aspect <= max_aspect_ratio:
+            filtered[labels == label] = 1
+    return filtered
+
+
 def endpoint_overlap_ratio(
     notehead_mask: np.ndarray,
     box: Box,
@@ -113,6 +157,11 @@ def main() -> None:
     parser.add_argument("--analysis-root", type=Path, required=True, help="postfilter_analysis_v3 path")
     parser.add_argument("--overlay-alpha", type=float, default=0.35)
     parser.add_argument("--mask-dilate", type=int, default=0)
+    parser.add_argument("--notehead-open-kernel", type=int, default=0)
+    parser.add_argument("--notehead-min-area", type=int, default=0)
+    parser.add_argument("--notehead-max-aspect", type=float, default=0.0)
+    parser.add_argument("--notehead-min-height", type=int, default=0)
+    parser.add_argument("--notehead-max-width", type=int, default=0)
     parser.add_argument("--override-threshold", type=float, default=-1.0)
     args = parser.parse_args()
 
@@ -153,6 +202,15 @@ def main() -> None:
         if base_img is None:
             raise FileNotFoundError(f"Missing image: {page.image}")
         mask = load_notehead_mask(page.notehead_mask, base_img.shape[:2])
+        mask = denoise_notehead_mask(
+            mask, args.notehead_open_kernel, args.notehead_min_area
+        )
+        mask = filter_notehead_components(
+            mask,
+            args.notehead_max_aspect,
+            args.notehead_min_height,
+            args.notehead_max_width,
+        )
         if args.mask_dilate > 0:
             kernel = np.ones((args.mask_dilate, args.mask_dilate), dtype=np.uint8)
             mask = cv2.dilate(mask, kernel, iterations=1)

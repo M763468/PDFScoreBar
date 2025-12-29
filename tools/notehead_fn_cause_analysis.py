@@ -45,6 +45,50 @@ def load_notehead_mask(path: Path, shape: tuple[int, int]) -> np.ndarray:
     return (mask > 0).astype(np.uint8)
 
 
+def denoise_notehead_mask(mask: np.ndarray, open_kernel: int, min_area: int) -> np.ndarray:
+    cleaned = (mask > 0).astype(np.uint8)
+    if open_kernel and open_kernel > 1:
+        kernel = np.ones((open_kernel, open_kernel), np.uint8)
+        cleaned = cv2.morphologyEx(cleaned, cv2.MORPH_OPEN, kernel)
+    if min_area and min_area > 0:
+        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
+            cleaned, connectivity=8
+        )
+        filtered = np.zeros_like(cleaned)
+        for label in range(1, num_labels):
+            if stats[label, cv2.CC_STAT_AREA] >= min_area:
+                filtered[labels == label] = 1
+        cleaned = filtered
+    return cleaned
+
+
+def filter_notehead_components(
+    mask: np.ndarray,
+    max_aspect_ratio: float,
+    min_height_px: int,
+    max_width_px: int,
+) -> np.ndarray:
+    if max_aspect_ratio <= 0:
+        return mask
+    binary = (mask > 0).astype(np.uint8)
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
+        binary, connectivity=8
+    )
+    filtered = np.zeros_like(binary)
+    for label in range(1, num_labels):
+        x, y, w, h, area = stats[label]
+        if min_height_px and h < min_height_px:
+            filtered[labels == label] = 1
+            continue
+        if max_width_px and w > max_width_px:
+            filtered[labels == label] = 1
+            continue
+        aspect = h / max(w, 1)
+        if aspect <= max_aspect_ratio:
+            filtered[labels == label] = 1
+    return filtered
+
+
 def endpoint_windows(box: Box, rx: int, ry: int, shape: tuple[int, int]) -> tuple[Box, Box]:
     h, w = shape[:2]
     x1, y1, x2, y2 = map(int, box)
@@ -93,6 +137,11 @@ def main() -> None:
     parser.add_argument("--analysis-root", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--iou-threshold", type=float, default=0.5)
+    parser.add_argument("--notehead-open-kernel", type=int, default=0)
+    parser.add_argument("--notehead-min-area", type=int, default=0)
+    parser.add_argument("--notehead-max-aspect", type=float, default=0.0)
+    parser.add_argument("--notehead-min-height", type=int, default=0)
+    parser.add_argument("--notehead-max-width", type=int, default=0)
     args = parser.parse_args()
 
     pages = [
@@ -132,6 +181,15 @@ def main() -> None:
         if base_img is None:
             raise FileNotFoundError(f"Missing image: {page.image}")
         mask = load_notehead_mask(page.notehead_mask, base_img.shape[:2])
+        mask = denoise_notehead_mask(
+            mask, args.notehead_open_kernel, args.notehead_min_area
+        )
+        mask = filter_notehead_components(
+            mask,
+            args.notehead_max_aspect,
+            args.notehead_min_height,
+            args.notehead_max_width,
+        )
         geom_debug = json.loads((page_dir / "geom_debug.json").read_text())["config"]
         rx = int(geom_debug["endpoint_radius_px"]["x"])
         ry = int(geom_debug["endpoint_radius_px"]["y"])
@@ -207,6 +265,32 @@ def main() -> None:
         cv2.imwrite(str(overlay_path), overlay)
 
         (out_root / f"{page.name}_notehead_fn_causes.json").write_text(json.dumps(records, indent=2))
+
+        # Per-FN crops with notehead mask overlay.
+        for idx, rec in enumerate(records):
+            if "candidate_bbox" not in rec:
+                continue
+            cand = tuple(rec["candidate_bbox"])
+            x1, y1, x2, y2 = cand
+            pad = 40
+            cx1 = max(0, x1 - pad)
+            cy1 = max(0, y1 - pad)
+            cx2 = min(base_img.shape[1] - 1, x2 + pad)
+            cy2 = min(base_img.shape[0] - 1, y2 + pad)
+            crop = base_img[cy1 : cy2 + 1, cx1 : cx2 + 1].copy()
+            mask_crop = (mask[cy1 : cy2 + 1, cx1 : cx2 + 1] * 255).astype(np.uint8)
+            mask_vis = cv2.applyColorMap(mask_crop, cv2.COLORMAP_OCEAN)
+            crop = cv2.addWeighted(mask_vis, 0.4, crop, 0.6, 0.0)
+            top, bot = endpoint_windows(cand, rx, ry, mask.shape[:2])
+            # Shift to crop coordinates.
+            top = (top[0] - cx1, top[1] - cy1, top[2] - cx1, top[3] - cy1)
+            bot = (bot[0] - cx1, bot[1] - cy1, bot[2] - cx1, bot[3] - cy1)
+            cand_local = (x1 - cx1, y1 - cy1, x2 - cx1, y2 - cy1)
+            draw_boxes(crop, [cand_local], (0, 165, 255), 2)
+            draw_boxes(crop, [top, bot], (0, 255, 255), 1)
+            draw_boxes(crop, [tuple(v - o for v, o in zip(rec["fn_bbox"], (cx1, cy1, cx1, cy1)))], (255, 0, 255), 2)
+            crop_path = out_root / f"{page.name}_fn_{idx:02d}_crop.png"
+            cv2.imwrite(str(crop_path), crop)
         summary[page.name] = {
             "fn_notehead_count": len(notehead_fn),
             "with_candidate_match": sum(1 for r in records if "candidate_bbox" in r),

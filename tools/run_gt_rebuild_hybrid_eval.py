@@ -34,6 +34,8 @@ class PageSpec:
     image: Path
     gt: Path
     notehead_mask: Path
+    staff_mask: Path
+    staff_mask_alt: Path
     union_preds: Path
 
 
@@ -129,6 +131,158 @@ def load_notehead_mask(path: Path, target_hw: Tuple[int, int]) -> np.ndarray:
         h, w = target_hw
         bin_mask = cv2.resize(bin_mask, (w, h), interpolation=cv2.INTER_NEAREST)
     return bin_mask
+
+
+def load_staff_mask(path: Path, target_hw: Tuple[int, int]) -> np.ndarray:
+    img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
+    if img is None:
+        raise FileNotFoundError(f"Failed to load staff mask: {path}")
+    _, bin_mask = cv2.threshold(img, 1, 255, cv2.THRESH_BINARY)
+    if bin_mask.shape[:2] != target_hw:
+        h, w = target_hw
+        bin_mask = cv2.resize(bin_mask, (w, h), interpolation=cv2.INTER_NEAREST)
+    return bin_mask
+
+
+def staff_bands_from_mask(mask: np.ndarray) -> List[Tuple[int, int]]:
+    rows = np.where(mask.sum(axis=1) > 0)[0]
+    if rows.size == 0:
+        return []
+    bands: List[Tuple[int, int]] = []
+    start = rows[0]
+    prev = rows[0]
+    for y in rows[1:]:
+        if y == prev + 1:
+            prev = y
+            continue
+        bands.append((int(start), int(prev)))
+        start = y
+        prev = y
+    bands.append((int(start), int(prev)))
+    return bands
+
+
+def detect_end_barlines(
+    base_img: np.ndarray,
+    staff_mask: np.ndarray,
+    existing_boxes: Sequence[Box],
+    *,
+    search_width: int = 40,
+    min_height_ratio: float = 0.6,
+    right_clear_width: int = 10,
+    right_clear_ratio: float = 0.08,
+    x_merge_tol: int = 4,
+    debug_path: Path | None = None,
+) -> List[Box]:
+    gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
+    _, ink = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    ink = (ink > 0).astype(np.uint8)
+
+    h, w = ink.shape[:2]
+    bands = staff_bands_from_mask(staff_mask)
+    if not bands:
+        return []
+
+    def has_existing(x_center: float, y1: int, y2: int) -> bool:
+        for bx1, by1, bx2, by2 in existing_boxes:
+            cy = (by1 + by2) / 2.0
+            if cy < y1 or cy > y2:
+                continue
+            cx = (bx1 + bx2) / 2.0
+            if abs(cx - x_center) <= x_merge_tol:
+                return True
+        return False
+
+    candidates: List[Box] = []
+    debug_records = []
+    x_start = max(0, w - search_width)
+    for y1, y2 in bands:
+        band_h = max(1, y2 - y1 + 1)
+        band_ink = ink[y1 : y2 + 1, x_start:w]
+        col_sums = band_ink.sum(axis=0)
+        min_ink = int(round(band_h * min_height_ratio))
+        valid_cols = np.where(col_sums >= min_ink)[0]
+        if valid_cols.size == 0:
+            debug_records.append(
+                {
+                    "band": [y1, y2],
+                    "status": "no_valid_cols",
+                    "min_ink": min_ink,
+                }
+            )
+            continue
+        col = int(valid_cols[-1]) + x_start
+        x_center = float(col)
+        if has_existing(x_center, y1, y2):
+            debug_records.append(
+                {
+                    "band": [y1, y2],
+                    "status": "existing",
+                    "col": col,
+                    "min_ink": min_ink,
+                }
+            )
+            continue
+        right_x1 = min(w, col + 2)
+        right_x2 = min(w, col + 2 + right_clear_width)
+        if right_x1 < right_x2:
+            right_window = ink[y1 : y2 + 1, right_x1:right_x2]
+            right_ratio = float(right_window.mean()) if right_window.size else 0.0
+            if right_ratio > right_clear_ratio:
+                debug_records.append(
+                    {
+                        "band": [y1, y2],
+                        "status": "right_blocked",
+                        "col": col,
+                        "right_ratio": right_ratio,
+                    }
+                )
+                continue
+        debug_records.append(
+            {
+                "band": [y1, y2],
+                "status": "accepted",
+                "col": col,
+            }
+        )
+        candidates.append((max(0, col - 1), y1, min(w - 1, col + 1), y2))
+
+    if debug_path is not None:
+        overlay = base_img.copy()
+        mask_overlay = overlay.copy()
+        # Staff bands (cyan)
+        for y1, y2 in bands:
+            cv2.rectangle(mask_overlay, (0, y1), (w - 1, y2), (255, 255, 0), -1)
+        overlay = cv2.addWeighted(mask_overlay, 0.2, overlay, 0.8, 0.0)
+        # Right search window (yellow)
+        cv2.rectangle(overlay, (x_start, 0), (w - 1, h - 1), (0, 255, 255), 1)
+        # Candidate columns
+        for rec in debug_records:
+            col = rec.get("col")
+            if col is None:
+                continue
+            color = (0, 255, 0) if rec["status"] == "accepted" else (0, 0, 255)
+            cv2.line(overlay, (col, 0), (col, h - 1), color, 1)
+        debug_path.parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(debug_path), overlay)
+        debug_json = debug_path.with_suffix(".json")
+        debug_json.write_text(
+            json.dumps(
+                {
+                    "params": {
+                        "search_width": search_width,
+                        "min_height_ratio": min_height_ratio,
+                        "right_clear_width": right_clear_width,
+                        "right_clear_ratio": right_clear_ratio,
+                        "x_merge_tol": x_merge_tol,
+                    },
+                    "bands": bands,
+                    "records": debug_records,
+                },
+                indent=2,
+            )
+        )
+    return candidates
 
 
 def geom_notehead_ratio_filter(
@@ -245,6 +399,13 @@ def main() -> None:
     parser.add_argument("--min-row-count", type=int, default=3)
     parser.add_argument("--tol-top-px", type=float, default=5.0)
     parser.add_argument("--tol-bottom-px", type=float, default=5.0)
+    parser.add_argument("--enable-end-barline-recovery", action="store_true")
+    parser.add_argument("--endbar-search-width", type=int, default=40)
+    parser.add_argument("--endbar-min-height-ratio", type=float, default=0.6)
+    parser.add_argument("--endbar-right-clear-width", type=int, default=10)
+    parser.add_argument("--endbar-right-clear-ratio", type=float, default=0.08)
+    parser.add_argument("--endbar-staff-mask-mode", choices=["staff", "staffs"], default="staff")
+    parser.add_argument("--endbar-debug", action="store_true")
     args = parser.parse_args()
 
     pages = [
@@ -253,6 +414,8 @@ def main() -> None:
             image=REPO_ROOT / "data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png",
             gt=REPO_ROOT / "logs/phase6_detector_miss/gt_rebuild/page_001_boxes_sorted.json",
             notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_6_notehead.png",
+            staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_3_staff.png",
+            staff_mask_alt=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_15_staffs.png",
             union_preds=args.union_root / "page_001_hybrid_preds.json",
         ),
         PageSpec(
@@ -260,6 +423,8 @@ def main() -> None:
             image=REPO_ROOT / "data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png",
             gt=REPO_ROOT / "logs/phase6_detector_miss/gt_rebuild/page_004_boxes_sorted.json",
             notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_6_notehead.png",
+            staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_3_staff.png",
+            staff_mask_alt=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_15_staffs.png",
             union_preds=args.union_root / "page_004_hybrid_preds.json",
         ),
         PageSpec(
@@ -267,6 +432,8 @@ def main() -> None:
             image=REPO_ROOT / "data/training/images/page_10.png",
             gt=REPO_ROOT / "logs/phase6_detector_miss/gt_rebuild/page_10_boxes_sorted.json",
             notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_6_notehead.png",
+            staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_3_staff.png",
+            staff_mask_alt=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_15_staffs.png",
             union_preds=args.union_root / "page_10_hybrid_preds.json",
         ),
         PageSpec(
@@ -274,6 +441,8 @@ def main() -> None:
             image=REPO_ROOT / "data/training/images/page_15.png",
             gt=REPO_ROOT / "logs/phase6_detector_miss/gt_rebuild/page_15_boxes_sorted.json",
             notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_6_notehead.png",
+            staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_3_staff.png",
+            staff_mask_alt=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_15_staffs.png",
             union_preds=args.union_root / "page_15_hybrid_preds.json",
         ),
     ]
@@ -307,6 +476,9 @@ def main() -> None:
             args.tol_bottom_px,
         )
 
+        out_dir = per_page_root / page.name
+        out_dir.mkdir(parents=True, exist_ok=True)
+
         geom_kept, geom_debug = geom_notehead_ratio_filter(
             row_filtered,
             notehead_mask,
@@ -315,6 +487,25 @@ def main() -> None:
             args.endpoint_x_scale,
             args.endpoint_y_scale,
         )
+        added_end = []
+        if args.enable_end_barline_recovery:
+            staff_mask_path = page.staff_mask if args.endbar_staff_mask_mode == "staff" else page.staff_mask_alt
+            staff_mask = load_staff_mask(staff_mask_path, base_img.shape[:2])
+            debug_path = None
+            if args.endbar_debug:
+                debug_path = out_dir / "endbar_debug.png"
+            added_end = detect_end_barlines(
+                base_img,
+                staff_mask,
+                geom_kept,
+                search_width=args.endbar_search_width,
+                min_height_ratio=args.endbar_min_height_ratio,
+                right_clear_width=args.endbar_right_clear_width,
+                right_clear_ratio=args.endbar_right_clear_ratio,
+                debug_path=debug_path,
+            )
+            if added_end:
+                geom_kept = geom_kept + added_end
 
         match = greedy_barline_match(list(geom_kept), list(gt_boxes), iou_threshold=0.5)
         tp = len(match.matches)
@@ -323,12 +514,11 @@ def main() -> None:
         precision = tp / (tp + fp) if (tp + fp) else 0.0
         recall = tp / (tp + fn) if (tp + fn) else 0.0
         f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0.0
-
-        out_dir = per_page_root / page.name
-        out_dir.mkdir(parents=True, exist_ok=True)
         (out_dir / "row_filtered.json").write_text(json.dumps(row_filtered, indent=2))
         (out_dir / "geom_kept.json").write_text(json.dumps(geom_kept, indent=2))
         (out_dir / "geom_debug.json").write_text(json.dumps(geom_debug, indent=2))
+        if added_end:
+            (out_dir / "end_recovered.json").write_text(json.dumps(added_end, indent=2))
         (out_dir / "metrics.json").write_text(
             json.dumps(
                 {

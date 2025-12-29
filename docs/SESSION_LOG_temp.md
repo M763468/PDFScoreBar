@@ -266,3 +266,149 @@ This log has been cleaned to retain only confirmed Phase 6 results and reference
 
 **メモ**
 - `logs_user/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead` → `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_v1` に移動。
+
+---
+## 2025-12-29 FN分類の作業記録
+
+**作業目的 / 方針 / 位置づけ**
+- v2オーバーレイからFNを分類し、短期計画をSESSION_LOG_tempに記述。
+
+**作業時間**
+- 2025-12-29 06:10 JST 前後
+
+**変更したファイル（概要のみ）**
+- `docs/SESSION_LOG_temp.md`
+
+---
+## 2025-12-29 Phase5b（promiscuous_union）適用の再確認
+
+**作業目的 / 方針 / 位置づけ**
+- Phase5bでのベスト（promiscuous_union + IoU-central代表）を現行のhybrid+filtersに反映できるか確認。
+
+**作業時間**
+- 2025-12-29 05:40 JST 前後
+
+**前提 / 仮定**
+- promiscous_unionの出力は `logs/phase5b_promiscuous_union_eval/*_hybrid_preds.json` を利用。
+- row + notehead filter は `tools/run_gt_rebuild_hybrid_eval.py` と同一設定。
+
+**参照スクリプト（Phase5b成果）**
+- `tools/generate_hybrid_results.py`（merge-strategy=promiscuous_union）
+- `tools/run_promiscuous_union_eval.sh`
+- `tools/run_promiscuous_union_eval_page3.sh`
+
+**試した結果（出力ディレクトリのみ）**
+- `logs/gt_rebuild_hybrid_eval/20251229T_promiscuous_row_notehead_v1/`
+
+**結果（summary_table）**
+- page_001: TP=64 FP=0 FN=14
+- page_004: TP=97 FP=0 FN=15
+- page_10: TP=150 FP=0 FN=4
+- page_15: TP=105 FP=0 FN=7
+
+**結論**
+- promiscuous_union を現行の row + notehead filter に適用しても、v2 baseline と指標は同一。
+- 以前はうまくいったはずなのになぜか？
+  - SR込みのhomrなども前回は含んでいたような記憶があるがそれをやってないかも（要検証）
+  - SR込みの内容を行う場合、画像スケールの不一致に注意
+
+**追加確認（5b2の実行条件の詳細）**
+- `tools/run_promiscuous_union_eval.sh` の入力は baseline/SR/OMR いずれも `logs/hybrid_generalization/*/sr_eval_*_check2` 系の **SR 由来アーティファクト**。
+- FN-onlyページ（page_001/004/10/15）は **row-only**（geom notehead filter は OFF）。
+- page_3 のみ **geom notehead filter ON**（`logs/phase5b_promiscuous_union_eval/page_3_filtered_output/metrics.json`）。
+  - `HOMR_CONTEXT_DIR=logs/homr_eval_baseline/baseline_verification/page_3`
+- 参考: `logs/phase5b_promiscuous_union_eval/*_filtered_output/metrics.json` に上記設定が記録されている。
+
+**5b2条件の再評価（SR込み vs 現行+SR）**
+- 実行スクリプト: `tools/run_phase5b_srcheck.sh`
+  - v1: SR由来アーティファクトのみでpromiscuous_union生成
+  - v2: 現行homr_eval出力 + SR/OMR(SR由来)でpromiscuous_union生成
+- 出力:
+  - `logs/gt_rebuild_hybrid_eval/20251229T_phase5b_srcheck/v1_sr_artifacts/summary_table.md`
+  - `logs/gt_rebuild_hybrid_eval/20251229T_phase5b_srcheck/v2_current_plus_sr/summary_table.md`
+- 結果: v1とv2は同一（TP/FP/FNの差分なし）
+  - page_001: TP=64 FP=0 FN=14
+  - page_004: TP=97 FP=0 FN=15
+  - page_10: TP=150 FP=0 FN=4
+  - page_15: TP=105 FP=0 FN=7
+
+
+---
+## FN分類と短期計画（GT再整備 v2 / hybrid+filters 評価）(2025-12-29)
+
+- 参照オーバーレイ:
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_v2/overlays/page_001_tp_fp_fn.png`
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_v2/overlays/page_004_tp_fp_fn.png`
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_v2/overlays/page_10_tp_fp_fn.png`
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_v2/overlays/page_15_tp_fp_fn.png`
+
+- 目視分類（短期の仮分類）
+  - **終止線/右端バーライン系**: 行末右端に集中しているFN（終止/ダブルの可能性を含む）。
+  - **二重線/リピート系**: 近接した2本縦線が片方のみ検出/代表選択で落ちる疑い。
+  - **高密度音符/ステム付近**: 密な符頭・ステム群の中で縦線が欠落。
+  - **テキスト/強弱記号近傍**: “p/ff/cresc”等の文字・ダイナミクス近傍で縦線が弱くなる箇所。
+
+- 短期計画（カテゴリ別）
+  1. **終止線/右端バーライン系**
+     - staff mask 内で「行末近傍の縦線スキャン」を追加し候補補完。
+     - 右端縦線は「右側にステム連続がない」条件で採用。: 「staffが続いていない」条件による評価もできそう
+  2. **二重線/リピート系**
+     - 近接縦線ペア（x差小）をペア許容する後処理を追加。
+     - `double_barline` GT に合わせて2本→1候補化の比較を行う。
+  3. **高密度音符/ステム付近**
+     - notehead 近傍でも縦方向連結成分長が十分なら救済。
+     - staff帯の column-sum / CC を候補生成として追加検討。
+  4. **テキスト/強弱記号近傍**
+     - テキスト領域に重なる縦線でも、staff帯貫通長が閾値超なら採用。
+     - 文字領域との競合を避ける優先度付きマージを検討。
+
+---
+## 2025-12-29 カテゴリ1（終止線/右端バーライン）試行
+
+**作業目的 / 方針 / 位置づけ**
+- 右端バーラインの回復（カテゴリ1）を hybrid+filters 結果に追加する実験。
+
+**作業時間**
+- 2025-12-29 06:30 JST 前後
+
+**前提 / 仮定**
+- staff mask は homr debug の `*_debug_3_staff.png` を使用。
+- 右端検索幅=40px、縦線高さ比>=0.6、右側の黒密度<=0.08で採用。
+- 既存候補とx中心差<=4pxなら追加しない。
+
+**変更したファイル（概要のみ）**
+- `tools/run_gt_rebuild_hybrid_eval.py`（終止線回復の追加）
+
+**試した結果（出力ディレクトリのみ）**
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar_v1/`
+
+**結果**
+- 追加候補なし（end_recovered.json は生成されず）
+- 指標は v2 と同一（TP/FP/FN 変化なし）
+
+---
+## 2025-12-29 カテゴリ1 追加調整（var2/var3/var4）
+
+**作業目的 / 方針 / 位置づけ**
+- 右端バーライン回復のパラメータ調整を順次実施し、影響を比較。
+- search幅/高さ比/スタッフ帯レンジを段階的に変更。
+
+**作業時間**
+- 2025-12-29 06:50 JST 前後
+
+**調整内容**
+- var2: search_width=80
+- var3: min_height_ratio=0.5
+- var4: staff mask を `_debug_15_staffs.png` に変更
+
+**視覚確認ログ**
+- 各ページの `endbar_debug.png`/`endbar_debug.json` に探索幅・バンド範囲・候補列を記録。
+  - 例: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var2/per_page/page_001/endbar_debug.png`
+
+**試した結果（出力ディレクトリのみ）**
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var2/`
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var3/`
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var4/`
+
+**結果**
+- var2/var3/var4 すべて v2 と同一（TP/FP/FN 変化なし）

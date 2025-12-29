@@ -293,6 +293,40 @@ def filter_clefs_keys_overlap(
     return kept, debug
 
 
+def filter_barline_clefs_low(
+    preds: Sequence[Box],
+    barline_mask: np.ndarray,
+    clefs_mask: np.ndarray,
+    barline_ratio_max: float,
+    clefs_ratio_max: float,
+) -> Tuple[List[Box], Dict[str, object]]:
+    kept: List[Box] = []
+    rejected: List[Dict[str, object]] = []
+    for idx, box in enumerate(preds):
+        x1, y1, x2, y2 = map(int, box)
+        barline_region = barline_mask[y1 : y2 + 1, x1 : x2 + 1]
+        clefs_region = clefs_mask[y1 : y2 + 1, x1 : x2 + 1]
+        barline_ratio = float(barline_region.mean()) if barline_region.size else 0.0
+        clefs_ratio = float(clefs_region.mean()) if clefs_region.size else 0.0
+        if barline_ratio < barline_ratio_max and clefs_ratio < clefs_ratio_max:
+            rejected.append(
+                {
+                    "index": idx,
+                    "bbox": [x1, y1, x2, y2],
+                    "barline_ratio": barline_ratio,
+                    "clefs_ratio": clefs_ratio,
+                }
+            )
+            continue
+        kept.append((x1, y1, x2, y2))
+    debug = {
+        "barline_ratio_max": barline_ratio_max,
+        "clefs_ratio_max": clefs_ratio_max,
+        "rejected": rejected,
+    }
+    return kept, debug
+
+
 def filter_min_height_ratio(
     preds: Sequence[Box],
     staff_mask: np.ndarray,
@@ -1868,6 +1902,9 @@ def main() -> None:
     parser.add_argument("--clefs-keys-max-aspect", type=float, default=0.0)
     parser.add_argument("--clefs-keys-min-height", type=int, default=0)
     parser.add_argument("--clefs-keys-max-width", type=int, default=0)
+    parser.add_argument("--filter-barline-clefs-low", action="store_true")
+    parser.add_argument("--barline-low-ratio", type=float, default=0.02)
+    parser.add_argument("--clefs-low-ratio", type=float, default=0.02)
     parser.add_argument("--barline-min-height-ratio", type=float, default=0.0)
     parser.add_argument(
         "--barline-min-height-mask",
@@ -2348,6 +2385,23 @@ def main() -> None:
             }
             (out_dir / "clefs_keys_filter.json").write_text(
                 json.dumps(clef_debug, indent=2)
+            )
+
+        if args.filter_barline_clefs_low:
+            barline_mask = load_mask(page.barline_mask, base_img.shape[:2])
+            clefs_mask = load_mask(page.clefs_keys_mask, base_img.shape[:2])
+            before = len(geom_kept)
+            geom_kept, bc_debug = filter_barline_clefs_low(
+                geom_kept,
+                barline_mask,
+                clefs_mask,
+                args.barline_low_ratio,
+                args.clefs_low_ratio,
+            )
+            bc_debug["before"] = before
+            bc_debug["after"] = len(geom_kept)
+            (out_dir / "barline_clefs_low_filter.json").write_text(
+                json.dumps(bc_debug, indent=2)
             )
 
         if args.barline_min_height_ratio > 0:

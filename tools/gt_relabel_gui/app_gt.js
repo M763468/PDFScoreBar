@@ -13,6 +13,7 @@ const ctx = canvas.getContext("2d");
 const pageList = document.getElementById("pageList");
 const pageMeta = document.getElementById("pageMeta");
 const saveStatus = document.getElementById("saveStatus");
+const dirtyStatus = document.getElementById("dirtyStatus");
 const stats = document.getElementById("stats");
 const layerList = document.getElementById("layerList");
 const legend = document.getElementById("legend");
@@ -23,6 +24,7 @@ const saveBtn = document.getElementById("saveBtn");
 const modeSelectBtn = document.getElementById("modeSelectBtn");
 const modeDrawBtn = document.getElementById("modeDrawBtn");
 const deleteBtn = document.getElementById("deleteBtn");
+const dedupBtn = document.getElementById("dedupBtn");
 const typeSelect = document.getElementById("typeSelect");
 
 let image = new Image();
@@ -37,12 +39,15 @@ let dragMode = null;
 let dragHandle = null;
 let dragOffset = { x: 0, y: 0 };
 let spaceDown = false;
+let dirty = false;
 
 const HANDLE_SIZE = 8;
 const HIT_PADDING = 6;
 const EDITABLE_COLOR = "#00c2d1";
 const SELECTED_COLOR = "#ff8a00";
 const DRAW_COLOR = "#ff3b30";
+const DEDUP_X_TOL = 3;
+const DEDUP_Y_OVERLAP = 0.7;
 
 function fetchJSON(url) {
   return fetch(url).then((r) => r.json());
@@ -62,8 +67,7 @@ function renderPageList() {
     div.className = "list-item" + (idx === currentIndex ? " active" : "");
     div.textContent = page.name;
     div.onclick = () => {
-      currentIndex = idx;
-      loadPage();
+      saveThenSwitch(idx);
     };
     pageList.appendChild(div);
   });
@@ -144,6 +148,8 @@ function loadPage() {
   currentPage = pages[currentIndex];
   selectedIndex = null;
   saveStatus.textContent = "";
+  dirty = false;
+  updateDirtyStatus();
   pageMeta.textContent = `${currentPage.name}`;
 
   image.onload = () => {
@@ -462,6 +468,7 @@ canvas.addEventListener("mousemove", (e) => {
       editableBoxes[selectedIndex].bbox = [x1, y1, x2, y2];
     }
     editableBoxes[selectedIndex].bbox = normalizeBox(editableBoxes[selectedIndex].bbox);
+    setDirty(true);
     draw();
   }
 });
@@ -482,6 +489,7 @@ canvas.addEventListener("mouseup", (e) => {
     isDrawing = false;
     drawStart = null;
     syncTypeSelect();
+    setDirty(true);
     draw();
   }
   dragMode = null;
@@ -526,12 +534,13 @@ function deleteSelected() {
   selectedIndex = null;
   updateStats();
   syncTypeSelect();
+  setDirty(true);
   draw();
 }
 
 function save() {
   if (!currentPage) return;
-  fetch("/api/save", {
+  return fetch("/api/save", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -540,29 +549,32 @@ function save() {
     }),
   }).then(() => {
     saveStatus.textContent = "Saved";
+    setDirty(false);
   });
 }
 
 prevBtn.onclick = () => {
-  currentIndex = Math.max(0, currentIndex - 1);
-  loadPage();
+  const nextIndex = Math.max(0, currentIndex - 1);
+  saveThenSwitch(nextIndex);
 };
 
 nextBtn.onclick = () => {
-  currentIndex = Math.min(pages.length - 1, currentIndex + 1);
-  loadPage();
+  const nextIndex = Math.min(pages.length - 1, currentIndex + 1);
+  saveThenSwitch(nextIndex);
 };
 
 saveBtn.onclick = save;
 modeSelectBtn.onclick = () => setMode("select");
 modeDrawBtn.onclick = () => setMode("draw");
 deleteBtn.onclick = deleteSelected;
+dedupBtn.onclick = () => runAutoDedup();
 typeSelect.onchange = () => {
   if (selectedIndex !== null && editableBoxes[selectedIndex]) {
     editableBoxes[selectedIndex].type = typeSelect.value;
   } else {
     currentType = typeSelect.value;
   }
+  setDirty(true);
   draw();
 };
 
@@ -594,4 +606,64 @@ function syncTypeSelect() {
   } else {
     typeSelect.value = currentType;
   }
+}
+
+function setDirty(next) {
+  dirty = next;
+  updateDirtyStatus();
+}
+
+function updateDirtyStatus() {
+  dirtyStatus.textContent = dirty ? "Unsaved changes" : "";
+}
+
+function saveThenSwitch(nextIndex) {
+  if (nextIndex === currentIndex) return;
+  if (!dirty) {
+    currentIndex = nextIndex;
+    loadPage();
+    return;
+  }
+  save().then(() => {
+    currentIndex = nextIndex;
+    loadPage();
+  });
+}
+
+function runAutoDedup() {
+  if (!editableBoxes.length) return;
+  const toRemove = new Set();
+  const sorted = editableBoxes
+    .map((b, idx) => ({ idx, box: b.bbox }))
+    .sort((a, b) => ((a.box[0] + a.box[2]) / 2) - ((b.box[0] + b.box[2]) / 2));
+
+  for (let i = 0; i < sorted.length; i++) {
+    if (toRemove.has(sorted[i].idx)) continue;
+    const [x1a, y1a, x2a, y2a] = sorted[i].box;
+    const cxa = (x1a + x2a) / 2;
+    const ha = Math.abs(y2a - y1a);
+    for (let j = i + 1; j < sorted.length; j++) {
+      if (toRemove.has(sorted[j].idx)) continue;
+      const [x1b, y1b, x2b, y2b] = sorted[j].box;
+      const cxb = (x1b + x2b) / 2;
+      const dx = Math.abs(cxb - cxa);
+      if (dx > DEDUP_X_TOL) break;
+      const overlap = Math.max(0, Math.min(y2a, y2b) - Math.max(y1a, y1b));
+      const minH = Math.max(1, Math.min(Math.abs(y2a - y1a), Math.abs(y2b - y1b)));
+      const overlapRatio = overlap / minH;
+      if (overlapRatio >= DEDUP_Y_OVERLAP) {
+        const hb = Math.abs(y2b - y1b);
+        const removeIdx = ha >= hb ? sorted[j].idx : sorted[i].idx;
+        toRemove.add(removeIdx);
+      }
+    }
+  }
+
+  if (!toRemove.size) return;
+  editableBoxes = editableBoxes.filter((_, idx) => !toRemove.has(idx));
+  selectedIndex = null;
+  updateStats();
+  syncTypeSelect();
+  setDirty(true);
+  draw();
 }

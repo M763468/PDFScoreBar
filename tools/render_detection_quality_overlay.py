@@ -15,7 +15,7 @@ Color = Tuple[int, int, int]
 
 TP_COLOR: Color = (0, 255, 0)     # Green
 FP_COLOR: Color = (0, 0, 255)     # Red
-FN_COLOR: Color = (0, 215, 255)   # Gold
+FN_COLOR: Color = (255, 0, 255)   # Magenta (more visible on white)
 
 
 def load_boxes(json_path: Path) -> List[Tuple[int, int, int, int]]:
@@ -43,13 +43,16 @@ def load_detections(json_path: Path) -> List[Tuple[int, int, int, int]]:
     return boxes
 
 
-def load_matches(metrics_path: Path) -> Tuple[Set[int], Set[int]]:
+def load_matches(metrics_path: Path, image_key: str) -> Tuple[Set[int], Set[int]]:
     with metrics_path.open() as handle:
         payload = json.load(handle)
     images = payload.get("images", [])
     if not images:
         return set(), set()
-    matches = images[0].get("matches", [])
+    target = next((img for img in images if img.get("image") == image_key), None)
+    if not target:
+        return set(), set()
+    matches = target.get("matches", [])
     matched_preds = {int(m["pred_index"]) for m in matches}
     matched_gts = {int(m["gt_index"]) for m in matches}
     return matched_preds, matched_gts
@@ -87,6 +90,7 @@ def main() -> None:
     parser.add_argument("--metrics", required=True, type=Path)
     parser.add_argument("--ground-truth", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--image-key", required=True, help="Image key in metrics.json (e.g., page_001)")
     parser.add_argument("--thickness", type=int, default=2)
     args = parser.parse_args()
 
@@ -96,7 +100,7 @@ def main() -> None:
 
     det_boxes = load_detections(args.detections)
     gt_boxes = load_boxes(args.ground_truth)
-    matched_preds, matched_gts = load_matches(args.metrics)
+    matched_preds, matched_gts = load_matches(args.metrics, args.image_key)
 
     all_pred_indices = set(range(len(det_boxes)))
     all_gt_indices = set(range(len(gt_boxes)))

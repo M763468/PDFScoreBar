@@ -146,32 +146,123 @@ This log has been cleaned to retain only confirmed Phase 6 results and reference
 - 再編集用の設定は `logs/phase6_detector_miss/gt_rebuild/gt_editor_config.json` を更新（editable=gt_rebuild / reference=fn_only_corrected）。
 
 ---
-## 2025-12-29 GT再構築ツールのtype追加
+## 2025-12-29 新GTでの再評価（homr evaluator）
 
 **作業目的 / 方針 / 位置づけ**
-- type に double_barline を追加し、二重線を1本のbboxで記録可能にする。
+- GT再整備後の再評価で、真に対処すべきFN/FPを再確認する。
 
 **作業時間**
-- 2025-12-29 02:20 JST 前後
+- 2025-12-29 04:06 JST 前後
 
 **変更したファイル（概要のみ）**
-- `tools/gt_relabel_gui/index_gt.html`
+- 変更なし（評価ログ生成のみ）
 
 **試した結果（出力ディレクトリのみ）**
-- 未確認（ブラウザでの動作確認待ち）
+- `logs/homr_eval/20251229T_gt_rebuild_eval/`
+  - page_001: TP=73 FP=30 FN=12
+  - page_004: TP=99 FP=71 FN=20
+  - page_10: TP=152 FP=85 FN=6
+  - page_15: TP=105 FP=47 FN=7
+  - aggregate: TP=429 FP=233 FN=45 (Precision=0.6480 / Recall=0.9051 / F1=0.7553)
 
 ---
-## 2025-12-29 GT再構築ツールの編集対象拡張
+## 2025-12-29 GT可視化/編集ツールの改善（FN可視化・重複削除・自動保存）
 
 **作業目的 / 方針 / 位置づけ**
-- fn_only / fn_only_corrected 由来のbboxも編集可能にし、由来ごとの色・凡例を表示。
+- FNが見えるオーバーレイを作成し、改善対象の確認を容易にする。
+- GTエディタで近接重複の削除支援とページ切替時の自動保存を追加する。
 
 **作業時間**
-- 2025-12-29 02:10 JST 前後
+- 2025-12-29 04:20 JST 前後
+
+**前提 / 仮定**
+- 近接重複は x中心差 <= 3px かつ縦方向重なり率 >= 0.7 を重複として扱う。
+- 重複検出時は高さが小さい方を削除対象とする。
+- ページ切替時は自動で保存してから切り替える（未保存保持より再現性優先）。
+- homr_evalログ配下への書き込み権限が無い可能性があるため、FN/TP/FPオーバーレイは `logs_user/` に出力する。
 
 **変更したファイル（概要のみ）**
-- `tools/gt_relabel_gui/app_gt.js`
-- `logs/phase6_detector_miss/gt_rebuild/gt_editor_config.json`
+- `tools/gt_relabel_gui/index_gt.html`（Auto Dedupボタン/dirty表示）
+- `tools/gt_relabel_gui/app_gt.js`（dirty追跡/自動保存/近接重複削除）
+- `tools/render_detection_quality_overlay.py`（--image-key対応で複数ページのmetricsに対応）
 
 **試した結果（出力ディレクトリのみ）**
-- 未確認（ブラウザでの動作確認待ち）
+- `logs/gt_rebuild_eval_overlays/`
+  - `page_001_detection_quality.png`
+  - `page_004_detection_quality.png`
+  - `page_10_detection_quality.png`
+  - `page_15_detection_quality.png`
+
+---
+## 2025-12-29 GT再整備後の再評価（hybrid + row + notehead filter）
+
+**作業目的 / 方針 / 位置づけ**
+- GT再整備後に、hybrid( homr + omr-dln union ) + row filter + notehead filter を適用した結果で再評価。
+
+**作業時間**
+- 2025-12-29 04:40 JST 前後
+
+**前提 / 仮定**
+- hybrid 予測は `logs/phase5b_confirmed_union_eval/*_hybrid_preds.json` を使用。
+- notehead mask は `logs/homr_eval/20251229T_gt_rebuild_eval/<page>/*_debug_6_notehead.png` を使用。
+- notehead filter は page_3 成功時の ratio 近傍を採用（endpoint_ratio_threshold=0.04, x_scale=0.12, y_scale=0.8）。
+- 出力先は権限の都合で `logs_user/` に統一。
+
+**変更したファイル（概要のみ）**
+- `tools/run_gt_rebuild_hybrid_eval.py`
+
+**試した結果（出力ディレクトリのみ）**
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_v1/`
+  - summary_table.md
+  - overlays/page_001_tp_fp_fn.png
+  - overlays/page_004_tp_fp_fn.png
+  - overlays/page_10_tp_fp_fn.png
+  - overlays/page_15_tp_fp_fn.png
+  - per_page/<page>/metrics.json
+
+**結果（summary_table）**
+- page_001: TP=68 FP=0 FN=17
+- page_004: TP=97 FP=0 FN=22
+- page_10: TP=150 FP=0 FN=8
+- page_15: TP=103 FP=2 FN=9
+
+---
+## 2025-12-29 GT更新後の再評価（v2）とログ整理
+
+**作業目的 / 方針 / 位置づけ**
+- page_15 のGT追加後、hybrid + row + notehead filter を再評価。
+- FNオーバーレイ色の視認性改善、FP crop 出力、ログの `logs/` 集約。
+- 再実行手順をスクリプト化。
+
+**作業時間**
+- 2025-12-29 05:10 JST 前後
+
+**前提 / 仮定**
+- GTは `logs/phase6_detector_miss/gt_rebuild/*_boxes_sorted.json` を最新として使用。
+- FN色はマゼンタで視認性を優先。
+- 既存ログを `logs_user/` から `logs/` に移動できる範囲で実施。
+
+**変更したファイル（概要のみ）**
+- `tools/run_gt_rebuild_hybrid_eval.py`（FN色変更、FP crop 出力、GT参照パス更新）
+- `tools/render_detection_quality_overlay.py`（FN色変更）
+- `tools/run_gt_rebuild_hybrid_eval.sh`（再評価の簡易実行）
+
+**試した結果（出力ディレクトリのみ）**
+- `logs/gt_rebuild_eval_overlays/`（FN色更新）
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_v2/`
+  - summary_table.md
+  - overlays/page_001_tp_fp_fn.png
+  - overlays/page_004_tp_fp_fn.png
+  - overlays/page_10_tp_fp_fn.png
+  - overlays/page_15_tp_fp_fn.png
+  - per_page/<page>/metrics.json
+  - per_page/<page>/fp_crops/ (FPがあれば保存)
+
+**結果（summary_table v2）**
+- page_001: TP=64 FP=0 FN=14
+- page_004: TP=97 FP=0 FN=15
+- page_10: TP=150 FP=0 FN=4
+- page_15: TP=105 FP=0 FN=7
+
+**メモ**
+- `logs_user/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead` → `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_v1` に移動。

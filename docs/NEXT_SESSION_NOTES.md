@@ -131,6 +131,12 @@ This phase aimed to recover FNs (especially the "ambiguous" majority) without re
   - editable source は `gt_rebuild`（再編集時はここから再開）
   - reference は `fn_only_corrected` のみ
 - 既知のUI挙動: ページ切り替え時に未保存の手描きbboxがリセットされる（保存後なら問題なし）
+- 新GT再評価ログ: `logs/homr_eval/20251229T_gt_rebuild_eval/`
+  - page_001: TP=73 FP=30 FN=12
+  - page_004: TP=99 FP=71 FN=20
+  - page_10: TP=152 FP=85 FN=6
+  - page_15: TP=105 FP=47 FN=7
+  - aggregate: TP=429 FP=233 FN=45 (P=0.6480 / R=0.9051 / F1=0.7553)
 
 ### B2) Hybrid integration fixes (Secondary)
 **Hypothesis**: The intersection-heavy logic of the current hybrid merger discards valid single-model detections.

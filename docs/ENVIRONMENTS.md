@@ -86,6 +86,18 @@ The editor writes:
 - `output_raw` (unsorted GT)
 - `output_sorted` (sorted GT with measure_number)
 
+#### GT Rebuild Config (2025-12-29)
+The rebuilt GT session can be re-opened using the saved config:
+```bash
+python3 tools/gt_relabel_gui/server.py \
+  --mode gt \
+  --config logs/phase6_detector_miss/gt_rebuild/gt_editor_config.json \
+  --port 8010 \
+  --host 0.0.0.0
+```
+- Reuse point: `logs/phase6_detector_miss/gt_rebuild/gt_editor_config.json`
+- Outputs (authoritative GT for rebuild): `logs/phase6_detector_miss/gt_rebuild/`
+
 ## homr Evaluation Workflow and Log Paths
 
 This section defines the standardized procedure for running barline detection evaluations with the `homr` pipeline.

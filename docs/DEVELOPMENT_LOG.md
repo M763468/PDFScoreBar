@@ -1101,3 +1101,99 @@ endpoint_overlap_ratio =
   - `data/training/annotations/page_010/boxes_sorted_v20251229.json`
   - `data/training/annotations/page_015/raw_boxes_v20251229.json`
   - `data/training/annotations/page_015/boxes_sorted_v20251229.json`
+
+## Phase 6c: GT Rebuild FP Reduction (2025-12-29 to 2025-12-30)
+
+- **Goal:** Re-evaluate rebuilt GT and reduce FP while preserving FN=0 across pages 001/004/10/15.
+- **Primary script:** `tools/run_gt_rebuild_hybrid_eval.py` (hybrid + row filter + notehead filter + probe scan).
+- **Run roots:** `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/` and `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/`.
+
+### 2025-12-29: Endbar Recovery + Probe Scan Exploration (var1-var41)
+
+- **Goal:** Recover end-barline FNs and validate probe-scan approach with GT-rebuild pages (001/004/10/15).
+- **Run family:** `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/`
+- **Pre-probe baselines:** `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_v1/`, `..._v2/`, and `..._endbar_v1/` (no new gains; used for overlay comparisons).
+- **var1-var4:** search width / min-height ratio / staff mask source changes; no metric change vs v2 baseline.
+  - `var2` (search_width=80), `var3` (min_height_ratio=0.5), `var4` (staff mask `_debug_15_staffs.png`).
+- **var5-var6:** morphology-based vertical-line extensions (with/without staff-height constraint); no metric change.
+- **var7-var8:** Hough-based vertical line search (with/without staff-height constraint); no metric change.
+- **var9-var10:** run-length based vertical line search (with/without staff-height constraint); no metric change.
+- **var11:** barline-mask assisted search; no metric change.
+- **var12-var15:** staff-anchor/adaptive threshold/LSD/OMR-DLN x anchor.
+  - `var12` increased FP significantly; `var13-15` no change.
+- **var16:** first probe_scan pipeline; produced probe ratio logs for ink peaks.
+  - Probe ratio outputs: `logs/gt_probe_ratio/20251229T_probe_ratio_var16/`, `..._v2/`, `..._v4/`.
+  - Candidate extraction: `logs/gt_probe_candidates/20251229T_probe_candidates_v1/`.
+- **var17-var19:** probe_scan tuning (probe_width/min_ratio/refine_window) + FN peak analysis.
+  - FN analysis logs: `logs/gt_probe_analysis/20251229T_fn_probe_analysis_v1/` .. `..._v4/`.
+- **var20-var24:** sweep for min_ratio / max_per_band / refine_window / min_peak_distance; mixed FP, no consistent gains.
+- **var25-var26:** `max_per_band=0` with `min_peak_distance` 2/1; **var25 achieved FN=0** (pre-filter).
+- **var27-var28:** row + notehead filter re-apply post probe; no FP improvement.
+- **var31-var33:** row-condition changes + barline mask; no net gain; additional postfilter analysis outputs.
+  - Postfilter analysis: `.../var28/postfilter_analysis/`, `.../postfilter_analysis_v2/`, `.../var31/postfilter_analysis_v3/`, `.../var33/postfilter_analysis_v4/`.
+- **var34-var41:** endpoint window scale sweeps (x/y); used to study FP/FN sensitivity.
+
+### 2025-12-30: Endpoint/Notehead Parameter Sweeps (var42-var79)
+
+- **Run family:** `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/`
+- **var42-var48:** endpoint_x_scale + threshold tuning; `var48` kept FN=0 under this series.
+- **var49-var52:** vertical-run probe filters (ratio + staff overlap); FN reappeared in var50, relaxed in var52.
+- **var53-var55:** right-ink / thinness / multiband filters; no consistent FP reduction.
+- **var56-var59:** probe endpoint_x_scale + probe_notehead_dilate tweaks; mixed results, no stable improvement.
+- **var60-var62:** notehead mask denoise (open + min_area); led to var62 notehead visual analysis.
+  - Analysis: `.../var62/notehead_filter_analysis_denoise/`.
+- **var63-var64:** aspect/min-height/max-width filtering; var64 became a temporary base for scale testing.
+- **var65-var67:** endpoint window 확대 (x/y) with var64 base; no clear FP reduction without FN risk.
+- **var68-var70:** endpoint_x_scale re-expansion (0.22–0.26); no change vs var64.
+- **var71-var72:** notehead_dilate=7 with/without endpoint expansion; no clear gains.
+- **var73-var75:** threshold increases (0.25–0.35); FP increased.
+- **var76-var78:** probe endpoint_x_scale sweep (0.05–0.08); no stable improvement.
+- **var79:** probe_notehead_dilate=5 (followed by var80+ in later sweeps).
+
+### 2025-12-30: FP Reduction Baseline + Clefs/Notehead Filters (var80-var111)
+
+- **Baseline (adopted):** `var88_clef_filter`
+  - **Config:** clefs_keys left filter + `probe_notehead_dilate=13` + `notehead_dilate=7` (aspect filter active).
+  - **Logs:** `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var88_clef_filter/`
+  - **Overlays:** `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var88_clef_filter/overlays/`
+- **var80-var85:** probe_notehead_dilate sweep (11..21). Best was `var82` (=13). `var83+` reintroduced FN.
+  - Logs: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var80_probe_notehead_dilate11/` .. `var85_probe_notehead_dilate21/`
+- **var86-var88:** clefs_keys left filter sweep. `var88` adopted as baseline.
+  - Logs: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var86_clef_filter_l0p12/` .. `var88_clef_filter/`
+- **var89-var92:** clefs_keys full apply (FN increase).
+  - Logs: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var89_clef_full_0p20/` .. `var92_clef_full_0p40/`
+  - FP/FN crops: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var90_clef_full_0p30/clefs_keys_fp_fn_crops/`
+- **var93-var98:** clefs_keys two-zone apply (FN increase).
+  - Logs: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var93_clef_twozone_0p20_0p10/` .. `var98_clef_twozone_0p20_0p30/`
+  - Diff overlays: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var95_clef_twozone/overlays_diff_vs_var88/`
+- **var99-var101:** min-height ratio filter (no change).
+  - Logs: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var99_minheight_0p60/` .. `var101_minheight_0p70/`
+  - Diff overlays: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var101_minheight_0p70/overlays_diff_vs_var88/`
+- **var102-var105:** clefs_keys shape refine (open/min-area/aspect/min-height/max-width; no change).
+  - Logs: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var102_clefshape_open2/` .. `var105_clefshape_aspect2/`
+  - FP/FN crops: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var105_clefshape_aspect2/clefs_keys_fp_fn_crops/`
+  - Diff overlays: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var105_clefshape_aspect2/overlays_diff_vs_var88/`
+- **var106-var108:** stem-outside-staff filter (no change).
+  - Logs: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var106_stem_outside_0p60/` .. `var108_stem_outside_0p80/`
+- **var109-var111:** clefs_keys full apply + denoise (FN persists).
+  - Logs: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var109_clef_full_denoise1/` .. `var111_clef_full_denoise3/`
+
+**Notes and learnings:**
+- clefs_keys mask is reliable on the left margin, but central/time-key signatures caused FN when applied globally.
+- Aspect-filtered notehead masks are required; without them, double-bar strokes are mis-labeled as noteheads and trigger FN.
+- The var groups above remain useful as “what was this log” references for future audits.
+
+### Supporting 2025-12 Diagnostics and Evaluations (Reference)
+
+- **Dec 26–27 Page 3 guard sweeps:** Multiple generator variants (vertical run, CC, Sobel, column-sum, Hough, homr) were tested; FP-heavy and not adopted. Logs are under `logs/homr_eval/20251226T_batch1_*` .. `logs/homr_eval/20251227T_batch7_homr_page3_guard` (full list in `docs/SESSION_LOG.md`).
+- **Dec 27 batch2 runs:** page_004/10/15 batch outputs recorded for later checks; no new method adopted. Logs: `logs/homr_eval/20251227T_batch2_gen4_page_004/`, `...page_10/`, `...page_15/`.
+- **Dec 28 probe scan validation:** FN probe overlays + refine comparisons (raw/adaptive/staff-suppressed). Logs: `logs/validation/20251228T_probe_scan/`, `logs/validation/20251228T_probe_refine/`.
+- **Dec 28 crop/merge reproducibility:** homr_eval re-runs with corrected GT and overlays; confirmed staff-crop behavior. Logs: `logs/homr_eval/20251228T_phase1_page3_repro/`, `...page004_repro/`, `...page10_repro/`, `...page15_repro/`, and `logs/validation/phase1_cropmerge/20251228T_phase1/`.
+- **Dec 28 GT-only overlays:** baseline GT visualization (reference-only). Logs: `logs/validation/gt_only_overlays/20251228T_phase0/`.
+- **Dec 28 OMR-DLN staff inference sanity:** staff-0/1 overlays + context sheets; analysis-only. Logs: `logs/validation/omrdln_staff_infer/20251228T_phaseC/`.
+- **Dec 29 GT rebuild eval:** post-GT metrics re-evaluated (homr_eval). Logs: `logs/homr_eval/20251229T_gt_rebuild_eval/`.
+- **Dec 29 endbar checks:** homr eval runs for endbar variants and guard. Logs: `logs/homr_eval/20251229T_endbar3_page004/`, `...page10/`, `...page3_guard/`.
+- **Dec 29 probe ratio & candidates:** ink-ratio plots and probe candidates for FN recovery; analysis-only. Logs: `logs/gt_probe_ratio/20251229T_probe_ratio_var16/` (plus v2/v4) and `logs/gt_probe_candidates/20251229T_probe_candidates_v1/`.
+- **Dec 29 probe analysis:** FN peak analysis iterations; analysis-only. Logs: `logs/gt_probe_analysis/20251229T_fn_probe_analysis_v1/` .. `..._v4/`.
+- **Dec 29 phase5b SR check:** summary tables comparing SR variants; no new baseline adopted. Logs: `logs/gt_rebuild_hybrid_eval/20251229T_phase5b_srcheck/`.
+- **Dec 29 remaining FN overlay check:** promisc-union overlay review; no changes adopted. Logs: `logs/phase6_detector_miss/remaining_fn_overlays/20251229T_promiscuous_union_overlay_check/`.

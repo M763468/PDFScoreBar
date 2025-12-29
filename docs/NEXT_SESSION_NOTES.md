@@ -114,13 +114,7 @@ This phase aimed to recover FNs (especially the "ambiguous" majority) without re
 - B2’s core question is different: whether **hybrid merge logic** causes integration-loss FNs and can be fixed.
 - Next step is **not** “adopt union,” but to **measure union outputs after Phase 4 filters** to see if FP=0 is preserved and how much FN recovery remains.
 
-#### Remaining B1.1 Recall Experiments (Planned)
-- [ ] **omr-dln** recall behavior (confidence threshold sweeps; raw outputs).
-- [ ] **Detector union**: raw `homr ∪ omr-dln` (pre-hybrid).
-- [ ] **Detector union (SR)**: `homr+SR ∪ omr-dln` (if feasible).
-- [ ] **Comparison**: recall gain vs FP risk across homr, omr-dln, and unions.
-
-## Recent Updates (2025-12-29)
+## Recent Updates (2025-12-29,30)
 - GT再整備完了（page_001 / page_004 / page_10 / page_15）。
   - Logs: `logs/phase6_detector_miss/gt_rebuild/`
   - Data copies: `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/*_v20251229.json`,
@@ -137,6 +131,21 @@ This phase aimed to recover FNs (especially the "ambiguous" majority) without re
   - page_10: TP=152 FP=85 FN=6
   - page_15: TP=105 FP=47 FN=7
   - aggregate: TP=429 FP=233 FN=45 (P=0.6480 / R=0.9051 / F1=0.7553)
+
+- FP削減の現行ベースは `var88`（clefs_keys左端フィルタ + probe_notehead_dilate=13 + notehead_dilate=7）。
+  - Logs: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var88_clef_filter/`
+  - Overlays: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var88_clef_filter/overlays/`
+- clefs_keys全域/2ゾーン適用はFN増加で不採用（var89-98 / var109-111）。
+  - 比較用crop: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var90_clef_full_0p30/clefs_keys_fp_fn_crops/`
+  - 比較用crop: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var105_clefshape_aspect2/clefs_keys_fp_fn_crops/`
+  - 差分overlay: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var95_clef_twozone/overlays_diff_vs_var88/`
+  - 差分overlay: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var101_minheight_0p70/overlays_diff_vs_var88/`
+- GT再編集は `logs/phase6_detector_miss/gt_rebuild/gt_editor_config.json` から再開可能（保存後の手描きbboxは保持、ページ切替時の未保存分はリセットされる点に注意）。
+- probe_scanの有効性確認:
+  - var16でink_ratio可視化を実施しピーク検出の有効性を確認（`logs/gt_probe_ratio/20251229T_probe_ratio_var16/` 系）。
+  - var25で **FN=0**（`max_per_band=0`, `min_peak_distance=2`）を達成（`logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var25/`）。
+- notehead maskはダブルバー誤検出が原因でFNを生むため、aspectフィルタ適用が必須。
+- clefs_keysは左端のみ有効で、中央適用はFN増加のため不採用。
 
 ### B2) Hybrid integration fixes (Secondary)
 **Hypothesis**: The intersection-heavy logic of the current hybrid merger discards valid single-model detections.

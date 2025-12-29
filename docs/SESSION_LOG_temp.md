@@ -819,3 +819,280 @@ This log has been cleaned to retain only confirmed Phase 6 results and reference
 - var25（probe_scan, max_per_band=0, min_peak_distance=2）で **全ページ FN=0** を達成。
 - ただし FP は大幅に増加しており、以降の段階でフィルタリングで抑制する前提。
 - 出力: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var25/`
+
+---
+## 2025-12-29 probe_scan + row/notehead フィルタ適用確認（var27）
+
+**作業目的 / 方針 / 位置づけ**
+- row filter / notehead filter を含む現行パイプラインで FP が減るかを確認。
+
+**作業時間**
+- 2025-12-29 17:40 JST 前後
+
+**試した結果**
+- var27: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var27/`
+- 結果は var25 と同一（FP低減なし）
+
+---
+## 2025-12-29 probe_scan 後段フィルタ再適用（var28）
+
+**作業目的 / 方針 / 位置づけ**
+- probe候補に row filter + notehead filter を再適用してFP抑制を確認。
+
+**作業時間**
+- 2025-12-29 18:10 JST 前後
+
+**変更したファイルの場所**
+- `tools/run_gt_rebuild_hybrid_eval.py`（added_endにrow/noteheadフィルタ適用）
+
+**試した結果**
+- var28: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var28/`
+- 結果: FP大幅減、ただしFNが再発
+
+---
+## 2025-12-29 post-filter 再発FN/残存FP 分析
+
+**作業目的 / 方針 / 位置づけ**
+- probe候補への後段フィルタ適用後に再発したFNと残存FPの性質を分析。
+
+**作業時間**
+- 2025-12-29 18:40 JST 前後
+
+**変更したファイルの場所**
+- `tools/probe_postfilter_analysis.py`
+
+**試した結果**
+- 出力: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var28/postfilter_analysis/`
+- overlay:
+  - `*_filter_effects.png`（probe候補/row除外/notehead除外/FN）
+  - `*_fp_remaining.png`（残存FP）
+
+---
+## 2025-12-29 post-filter 分析 v2（barline_iou基準）
+
+**作業目的 / 方針 / 位置づけ**
+- FN再発の原因分類を評価コードと同じ barline_iou で再計算。
+
+**作業時間**
+- 2025-12-29 19:10 JST 前後
+
+**変更したファイルの場所**
+- `tools/probe_postfilter_analysis.py`（barline_iou使用）
+
+**試した結果**
+- 出力: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var28/postfilter_analysis_v2/`
+
+---
+## 2025-12-29 probe後段 row条件変更 & barline mask併用（var31-32）
+
+**作業目的 / 方針 / 位置づけ**
+- probe候補のrow filterを緩める or 前段の行情報を再利用。
+- barline maskの最小比率で追加フィルタを実施。
+
+**作業時間**
+- 2025-12-29 20:00 JST 前後
+
+**変更したファイルの場所**
+- `tools/run_gt_rebuild_hybrid_eval.py`（row統計再利用/緩和, barline mask閾値）
+
+**試した結果**
+- var31: recluster + row緩和 + barline mask
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var31/`
+- var32: reuse_rows + barline mask
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var32/`
+- postfilter analysis:
+  - `.../var31/postfilter_analysis_v3/`
+  - `.../var32/postfilter_analysis_v3/`
+
+---
+## 2025-12-29 notehead filter 挙動分析（overlay付き）
+
+**作業目的 / 方針 / 位置づけ**
+- notehead filterの判定と目視のズレを分析。
+
+**作業時間**
+- 2025-12-29 21:00 JST 前後
+
+**変更したファイルの場所**
+- `tools/notehead_filter_analysis.py`
+
+**試した結果**
+- 出力: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var32/notehead_analysis/`
+- overlay: `*_notehead_overlay.png`
+
+---
+## 2025-12-29 notehead filter 視認性/窓拡大の確認
+
+**作業目的 / 方針 / 位置づけ**
+- notehead mask重畳の視認性を上げる。
+- endpoint窓を拡大した場合のoverlap変化を確認。
+
+**作業時間**
+- 2025-12-29 21:30 JST 前後
+
+**試した結果**
+- overlay強化: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var32/notehead_analysis_alpha65/`
+- endpoint窓×2: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var32/notehead_analysis_rx2/summary.json`
+
+---
+## 2025-12-29 notehead filter 誤判定の調査（拡張計測）
+
+**作業目的 / 方針 / 位置づけ**
+- notehead mask拡張と閾値緩和の影響を確認。
+- FNとなった候補のendpoint領域で実際にnoteheadが重なっているかを調べる。
+
+**作業時間**
+- 2025-12-29 21:40 JST 前後
+
+**変更したファイルの場所**
+- `tools/notehead_filter_analysis.py`（mask拡張・endpoint領域表示・詳細統計）
+
+**試した結果**
+- mask拡張: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var32/notehead_analysis_dilate1/`
+- 閾値緩和: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var32/notehead_analysis_thresh20/`
+
+---
+## 2025-12-29 notehead filter endpoint領域可視化
+
+**作業目的 / 方針 / 位置づけ**
+- endpoint領域の形状を目視確認するためのoverlayを作成。
+
+**作業時間**
+- 2025-12-29 22:00 JST 前後
+
+**変更したファイルの場所**
+- `tools/notehead_filter_analysis.py`（endpoint領域オーバーレイ追加）
+
+**試した結果**
+- 出力: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var32/notehead_analysis_endpoint/`
+- `*_endpoint_windows.png`
+
+---
+## 2025-12-29 notehead filter endpoint領域可視化 v2（FPも表示）
+
+**作業目的 / 方針 / 位置づけ**
+- endpoint領域が少なく見える問題を解消するため、FP候補のendpointも描画。
+
+**作業時間**
+- 2025-12-29 22:20 JST 前後
+
+**変更したファイルの場所**
+- `tools/notehead_filter_analysis.py`（endpoint領域の描画対象拡張）
+
+**試した結果**
+- 出力: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var32/notehead_analysis_endpoint_v2/`
+- `*_endpoint_windows.png`
+
+---
+## 2025-12-29 barline maskの影響を分離（var33）
+
+**作業目的 / 方針 / 位置づけ**
+- notehead vs barline mask のFN要因を分離するため、geom_pre_maskを保存。
+
+**作業時間**
+- 2025-12-29 22:50 JST 前後
+
+**変更したファイルの場所**
+- `tools/run_gt_rebuild_hybrid_eval.py`（end_recovered_geom_pre_mask.jsonを保存）
+- `tools/probe_postfilter_analysis.py`（barline_mask_filtered分類追加）
+
+**試した結果**
+- var33: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var33/`
+- 分析: `.../var33/postfilter_analysis_v4/`
+
+---
+## 2025-12-29 notehead endpoint横拡張（barline mask無効）
+
+**作業目的 / 方針 / 位置づけ**
+- barline maskを外し、endpoint横拡張でFP削減効果を確認。
+
+**作業時間**
+- 2025-12-29 23:20 JST 前後
+
+**試した結果**
+- var34: baseline（endpoint_x_scale=0.12, barline mask無効）
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var34/`
+- var35: endpoint_x_scale=0.24
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var35/`
+- var36: endpoint_x_scale=0.36
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var36/`
+
+---
+## 2025-12-29 endpoint_x/y 探索（barline mask無効）
+
+**作業目的 / 方針 / 位置づけ**
+- 新たなFPが増えない範囲で最大の endpoint_x_scale を探索し、その上で y_scale を拡大。\n
+**作業時間**
+- 2025-12-30 00:10 JST 前後
+
+**試した結果**
+- x_scale 探索: var37 (0.20), var38 (0.22), var39 (0.24)
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var37/`
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var38/`
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var39/`
+- y_scale 拡大: var40 (0.9), var41 (1.0) with x_scale=0.22
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var40/`
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var41/`
+
+---
+## 2025-12-30 endpoint_x_scale 再探索（FN=0維持狙い）
+
+**作業目的 / 方針 / 位置づけ**
+- default近傍のx_scaleでFN=0維持可能な範囲を探索。
+
+**作業時間**
+- 2025-12-30 00:30 JST 前後
+
+**試した結果**
+- var42: x_scale=0.14
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var42/`
+- var43: x_scale=0.16
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var43/`
+- var44: x_scale=0.18
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var44/`
+
+---
+## 2025-12-30 endpoint_x_scale+threshold 調整（FN=0優先）
+
+**作業目的 / 方針 / 位置づけ**
+- x_scaleを小さめに維持しつつ、threshold調整でFN=0を達成。
+
+**作業時間**
+- 2025-12-30 01:00 JST 前後
+
+**試した結果**
+- var45: x_scale=0.14, threshold=0.08（FN=1）
+- var46: x_scale=0.14, threshold=0.12（FN=1）
+- var47: x_scale=0.20, threshold=0.08（FN=1）
+- var48: x_scale=0.14, threshold=0.20（FN=0）
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var48/`
+
+---
+## 2025-12-30 追加フィルタ順次評価（var49-51）
+
+**作業目的 / 方針 / 位置づけ**
+- 固定条件（x_scale=0.14, threshold=0.20）で追加フィルタの効果を順番に評価。
+
+**作業時間**
+- 2025-12-30 02:00 JST 前後
+
+**試した結果**
+- var49: vertical run filterのみ
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var49/`
+- var50: vertical run + staff overlap
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var50/`
+- var51: vertical run + staff overlap + multiband
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var51/`
+
+---
+## 2025-12-30 vertical-run閾値調整（FN=1解消）
+
+**作業目的 / 方針 / 位置づけ**
+- var50のFN=1を解消するため、vertical-run比率を緩和。
+
+**作業時間**
+- 2025-12-30 02:30 JST 前後
+
+**試した結果**
+- var52: probe_vertical_run_ratio=0.75
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var52/`

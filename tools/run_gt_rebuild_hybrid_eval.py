@@ -131,6 +131,53 @@ def row_filter(
     return [preds[i] for i in sorted(accepted_indices)]
 
 
+def build_row_stats(
+    preds: Sequence[Box],
+    cluster_max_dist: float,
+    min_row_count: int,
+) -> List[Dict[str, float]]:
+    if not preds:
+        return []
+    y_centers = np.array([(box[1] + box[3]) / 2 for box in preds])
+    rows, _ = cluster_by_y_distance(y_centers, cluster_max_dist, min_row_count)
+    stats: List[Dict[str, float]] = []
+    for indices in rows.values():
+        if len(indices) < min_row_count:
+            continue
+        tops = [preds[i][1] for i in indices]
+        bottoms = [preds[i][3] for i in indices]
+        centers = [y_centers[i] for i in indices]
+        stats.append(
+            {
+                "center": float(np.median(centers)),
+                "top": float(np.median(tops)),
+                "bottom": float(np.median(bottoms)),
+            }
+        )
+    return stats
+
+
+def row_filter_with_stats(
+    preds: Sequence[Box],
+    row_stats: Sequence[Dict[str, float]],
+    max_dist: float,
+    tol_top: float,
+    tol_bottom: float,
+) -> List[Box]:
+    if not preds or not row_stats:
+        return []
+    accepted: List[Box] = []
+    for box in preds:
+        _, y1, _, y2 = box
+        cy = (y1 + y2) / 2.0
+        closest = min(row_stats, key=lambda row: abs(row["center"] - cy))
+        if abs(closest["center"] - cy) > max_dist:
+            continue
+        if abs(y1 - closest["top"]) <= tol_top and abs(y2 - closest["bottom"]) <= tol_bottom:
+            accepted.append(box)
+    return accepted
+
+
 def load_notehead_mask(path: Path, target_hw: Tuple[int, int]) -> np.ndarray:
     img = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
     if img is None:
@@ -1233,6 +1280,102 @@ def detect_probe_scan(
     return candidates
 
 
+def filter_vertical_run(
+    boxes: Sequence[Box],
+    gray: np.ndarray,
+    *,
+    ink_threshold: int,
+    min_run_ratio: float,
+) -> Tuple[List[Box], Dict[str, object]]:
+    if not boxes:
+        return [], {"before": 0, "after": 0}
+    h, w = gray.shape[:2]
+    kept: List[Box] = []
+    records = []
+    for box in boxes:
+        x1, y1, x2, y2 = map(int, box)
+        x1 = max(0, min(w - 1, x1))
+        x2 = max(0, min(w - 1, x2))
+        y1 = max(0, min(h - 1, y1))
+        y2 = max(0, min(h - 1, y2))
+        region = (gray[y1 : y2 + 1, x1 : x2 + 1] < ink_threshold).astype(np.uint8)
+        if region.size == 0:
+            continue
+        max_run = 0
+        for col in range(region.shape[1]):
+            col_vec = region[:, col]
+            run = 0
+            for v in col_vec:
+                if v:
+                    run += 1
+                    max_run = max(max_run, run)
+                else:
+                    run = 0
+        height = max(1, y2 - y1 + 1)
+        ratio = max_run / float(height)
+        records.append({"bbox": [x1, y1, x2, y2], "max_run": max_run, "ratio": ratio})
+        if ratio >= min_run_ratio:
+            kept.append((x1, y1, x2, y2))
+    return kept, {"before": len(boxes), "after": len(kept), "records": records}
+
+
+def filter_staff_overlap(
+    boxes: Sequence[Box],
+    staff_mask: np.ndarray,
+    *,
+    min_ratio: float,
+) -> Tuple[List[Box], Dict[str, object]]:
+    if not boxes:
+        return [], {"before": 0, "after": 0}
+    h, w = staff_mask.shape[:2]
+    kept: List[Box] = []
+    records = []
+    for box in boxes:
+        x1, y1, x2, y2 = map(int, box)
+        x1 = max(0, min(w - 1, x1))
+        x2 = max(0, min(w - 1, x2))
+        y1 = max(0, min(h - 1, y1))
+        y2 = max(0, min(h - 1, y2))
+        region = staff_mask[y1 : y2 + 1, x1 : x2 + 1]
+        ratio = float(region.mean()) if region.size else 0.0
+        records.append({"bbox": [x1, y1, x2, y2], "staff_ratio": ratio})
+        if ratio >= min_ratio:
+            kept.append((x1, y1, x2, y2))
+    return kept, {"before": len(boxes), "after": len(kept), "records": records}
+
+
+def filter_multiband_consensus(
+    boxes: Sequence[Box],
+    staff_bands: Sequence[Tuple[int, int]],
+    *,
+    x_tol: int,
+    min_bands: int,
+) -> Tuple[List[Box], Dict[str, object]]:
+    if not boxes:
+        return [], {"before": 0, "after": 0}
+    centers = [((b[0] + b[2]) / 2.0, (b[1] + b[3]) / 2.0) for b in boxes]
+    band_indices = []
+    for _, cy in centers:
+        band_idx = None
+        for i, (y1, y2) in enumerate(staff_bands):
+            if y1 <= cy <= y2:
+                band_idx = i
+                break
+        band_indices.append(band_idx)
+    kept: List[Box] = []
+    records = []
+    for idx, (cx, _) in enumerate(centers):
+        bands = set()
+        for j, (cx2, _) in enumerate(centers):
+            if abs(cx2 - cx) <= x_tol:
+                if band_indices[j] is not None:
+                    bands.add(band_indices[j])
+        records.append({"bbox": list(boxes[idx]), "band_count": len(bands)})
+        if len(bands) >= min_bands:
+            kept.append(boxes[idx])
+    return kept, {"before": len(boxes), "after": len(kept), "records": records}
+
+
 def geom_notehead_ratio_filter(
     preds: Sequence[Box],
     notehead_mask: np.ndarray,
@@ -1323,6 +1466,32 @@ def draw_boxes(base: np.ndarray, boxes: Sequence[Box], color: Tuple[int, int, in
         )
 
 
+def load_mask(path: Path, shape: tuple[int, int]) -> np.ndarray:
+    if not path.exists():
+        return np.zeros(shape, dtype=np.uint8)
+    mask = cv2.imread(str(path), cv2.IMREAD_GRAYSCALE)
+    if mask is None:
+        return np.zeros(shape, dtype=np.uint8)
+    if mask.shape[:2] != shape:
+        mask = cv2.resize(mask, (shape[1], shape[0]), interpolation=cv2.INTER_NEAREST)
+    return (mask > 0).astype(np.uint8)
+
+
+def classify_fp(fp_boxes: Sequence[Box], barline_mask: np.ndarray) -> list[dict]:
+    results = []
+    for idx, (x1, y1, x2, y2) in enumerate(fp_boxes):
+        band_mask = barline_mask[y1 : y2 + 1, x1 : x2 + 1]
+        barline_ratio = float(band_mask.mean()) if band_mask.size else 0.0
+        results.append(
+            {
+                "index": idx,
+                "bbox": [x1, y1, x2, y2],
+                "barline_mask_ratio": barline_ratio,
+            }
+        )
+    return results
+
+
 def save_crops(base: np.ndarray, boxes: Sequence[Box], out_dir: Path, prefix: str, pad: int = 12) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     h, w = base.shape[:2]
@@ -1387,6 +1556,19 @@ def main() -> None:
     parser.add_argument("--probe-band-height-mode", choices=["staff", "median_box"], default="staff")
     parser.add_argument("--probe-band-height-scale", type=float, default=1.0)
     parser.add_argument("--probe-band-height-min", type=int, default=10)
+    parser.add_argument("--probe-row-filter-mode", choices=["recluster", "reuse_rows"], default="recluster")
+    parser.add_argument("--probe-row-min-count", type=int, default=2)
+    parser.add_argument("--probe-row-max-dist", type=float, default=30.0)
+    parser.add_argument("--probe-row-tol-top", type=float, default=12.0)
+    parser.add_argument("--probe-row-tol-bottom", type=float, default=12.0)
+    parser.add_argument("--probe-barline-mask-min-ratio", type=float, default=0.0)
+    parser.add_argument("--probe-filter-vertical-run", action="store_true")
+    parser.add_argument("--probe-vertical-run-ratio", type=float, default=0.8)
+    parser.add_argument("--probe-filter-staff-overlap", action="store_true")
+    parser.add_argument("--probe-staff-overlap-min", type=float, default=0.1)
+    parser.add_argument("--probe-filter-multiband", action="store_true")
+    parser.add_argument("--probe-multiband-x-tol", type=int, default=3)
+    parser.add_argument("--probe-multiband-min-bands", type=int, default=2)
     parser.add_argument(
         "--omr-preds-root",
         type=Path,
@@ -1456,11 +1638,13 @@ def main() -> None:
         if base_img is None:
             raise FileNotFoundError(f"Failed to load image: {page.image}")
         notehead_mask = load_notehead_mask(page.notehead_mask, base_img.shape[:2])
+        gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
         gt_boxes = load_gt(page.gt)
 
         y_centers = np.array([(box[1] + box[3]) / 2 for box in preds])
         rows, _ = cluster_by_y_distance(y_centers, args.cluster_max_dist, args.min_row_count)
         staff_space = estimate_staff_space(rows, preds)
+        base_row_stats = build_row_stats(preds, args.cluster_max_dist, args.min_row_count)
 
         row_filtered = row_filter(
             preds,
@@ -1600,7 +1784,85 @@ def main() -> None:
                     debug_path=debug_path,
                 )
             if added_end:
-                geom_kept = geom_kept + added_end
+                if args.probe_row_filter_mode == "reuse_rows":
+                    added_row = row_filter_with_stats(
+                        added_end,
+                        base_row_stats,
+                        args.probe_row_max_dist,
+                        args.probe_row_tol_top,
+                        args.probe_row_tol_bottom,
+                    )
+                else:
+                    added_row = row_filter(
+                        added_end,
+                        args.probe_row_max_dist,
+                        args.probe_row_min_count,
+                        args.probe_row_tol_top,
+                        args.probe_row_tol_bottom,
+                    )
+                added_geom, added_geom_debug = geom_notehead_ratio_filter(
+                    added_row,
+                    notehead_mask,
+                    staff_space,
+                    args.endpoint_ratio_threshold,
+                    args.endpoint_x_scale,
+                    args.endpoint_y_scale,
+                )
+                added_geom_pre_mask = list(added_geom)
+                if args.probe_barline_mask_min_ratio > 0:
+                    barline_mask = load_mask(page.barline_mask, base_img.shape[:2])
+                    before = len(added_geom)
+                    added_geom = [
+                        box
+                        for box in added_geom
+                        if barline_mask[box[1] : box[3] + 1, box[0] : box[2] + 1].mean()
+                        >= args.probe_barline_mask_min_ratio
+                    ]
+                    after = len(added_geom)
+                    (out_dir / "end_recovered_barline_mask.json").write_text(
+                        json.dumps(
+                            {
+                                "min_ratio": args.probe_barline_mask_min_ratio,
+                                "before": before,
+                                "after": after,
+                            },
+                            indent=2,
+                        )
+                    )
+                if args.probe_filter_vertical_run:
+                    added_geom, vr_debug = filter_vertical_run(
+                        added_geom,
+                        gray,
+                        ink_threshold=args.probe_ink_threshold,
+                        min_run_ratio=args.probe_vertical_run_ratio,
+                    )
+                    (out_dir / "end_recovered_vertical_run.json").write_text(json.dumps(vr_debug, indent=2))
+                if args.probe_filter_staff_overlap:
+                    staff_mask_used = staff_mask if args.endbar_staff_mask_mode == "staff" else staff_mask
+                    added_geom, staff_debug = filter_staff_overlap(
+                        added_geom,
+                        staff_mask_used,
+                        min_ratio=args.probe_staff_overlap_min,
+                    )
+                    (out_dir / "end_recovered_staff_overlap.json").write_text(json.dumps(staff_debug, indent=2))
+                if args.probe_filter_multiband:
+                    band_mask_path = page.staff_mask if args.endbar_staff_mask_mode == "staff" else page.staff_mask_alt
+                    staff_mask_used = load_staff_mask(band_mask_path, base_img.shape[:2])
+                    bands = staff_bands_from_mask(staff_mask_used)
+                    added_geom, multi_debug = filter_multiband_consensus(
+                        added_geom,
+                        bands,
+                        x_tol=args.probe_multiband_x_tol,
+                        min_bands=args.probe_multiband_min_bands,
+                    )
+                    (out_dir / "end_recovered_multiband.json").write_text(json.dumps(multi_debug, indent=2))
+                (out_dir / "end_recovered_row.json").write_text(json.dumps(added_row, indent=2))
+                (out_dir / "end_recovered_geom_pre_mask.json").write_text(
+                    json.dumps(added_geom_pre_mask, indent=2)
+                )
+                (out_dir / "end_recovered_geom.json").write_text(json.dumps(added_geom, indent=2))
+                (out_dir / "end_recovered_geom_debug.json").write_text(json.dumps(added_geom_debug, indent=2))
+                geom_kept = geom_kept + added_geom
 
         match = greedy_barline_match(list(geom_kept), list(gt_boxes), iou_threshold=0.5)
         tp = len(match.matches)
@@ -1642,6 +1904,19 @@ def main() -> None:
         (out_dir / "fn_boxes.json").write_text(json.dumps(fn_boxes, indent=2))
         (out_dir / "fp_boxes.json").write_text(json.dumps(fp_boxes, indent=2))
         (out_dir / "tp_boxes.json").write_text(json.dumps(tp_boxes, indent=2))
+        barline_mask = load_mask(page.barline_mask, base_img.shape[:2])
+        fp_class = classify_fp(fp_boxes, barline_mask)
+        (out_dir / "fp_classification.json").write_text(json.dumps(fp_class, indent=2))
+        if fn_boxes:
+            fn_overlay = base_img.copy()
+            draw_boxes(fn_overlay, fn_boxes, FN_COLOR, 3, "FN#")
+            fn_overlay_path = overlays_root / f"{page.name}_fn_only.png"
+            cv2.imwrite(str(fn_overlay_path), fn_overlay)
+        if fp_boxes:
+            fp_overlay = base_img.copy()
+            draw_boxes(fp_overlay, fp_boxes, FP_COLOR, 2, "FP#")
+            fp_overlay_path = overlays_root / f"{page.name}_fp_only.png"
+            cv2.imwrite(str(fp_overlay_path), fp_overlay)
 
         summary_rows.append(
             {

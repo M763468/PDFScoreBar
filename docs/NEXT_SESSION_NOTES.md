@@ -15,25 +15,6 @@
   - Remaining list + categories: `logs/phase6_detector_miss/gt_fix_review_full/POST_GT_RECHECK_SUMMARY.md`
 - Merge / filter / GT are closed for the remaining 10 cases; next session begins detector-side work on these items.
 
-## Phase 6 outcome (confirmed)
-- Detector-miss total: 35
-- Post-GT recheck: resolved 25 / remaining true detector-miss 10
-- Remaining true detector-miss cases (detector-side work needed):
-  - page_004 fn_000 (end_barline)
-  - page_004 fn_003 (text_dynamic_overlap)
-  - page_004 fn_005 (dense_chord_accidental)
-  - page_004 fn_008 (text_dynamic_overlap)
-  - page_004 fn_011 (double_or_repeat_bar)
-  - page_10 fn_000 (end_barline)
-  - page_15 fn_003 (text_dynamic_overlap)
-  - page_15 fn_007 (notehead_overlap)
-  - page_15 fn_010 (dense_chord_accidental)
-  - page_15 fn_021 (double_or_repeat_bar)
-
-### Next session start
-- Begin detector-side analysis focused on the 10 remaining items above.
-- GT/merge/filter are considered closed for these cases.
-
 ### Short-term plan (next actions)
 - **Current baseline:** var88（clefs_keys left + probe_notehead_dilate=13 + notehead_dilate=7, FN=0維持）.
 - **Next focus:** FP起因（clef/time/rest/accidental/stem）の整理と追加マスク/フィルタの検討.

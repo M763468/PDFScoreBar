@@ -4,16 +4,6 @@ This area is reserved for free-form thinking, scratchpad notes, and future ideas
 It is not part of the formal documentation or development log.
 
 - **FN, FPへの対処**:     
-    - FNが検出できない問題
-        - 原始的だが以下の方法はどうか
-            - 既存の検出済みbarlinebboxと同等の判定バーを作る
-            - 五線に沿ってstaffの中を走査：黒インク率との衝突率が高いとき、縦線があるはず
-        - 手法の有効性評価
-            - GUIで、検出済みbarlineと同等の判定バーを移動できるようにする：スライダー操作が可能だと便利
-            - 判定バーと衝突する黒インク率を計算：FNのところでもきちんと値が上がるなら有効と思われる。
-                - FP含む結果評価overlayにさらに判定バーが重ねて表示されるGUIにすることで、「FNの位置で衝突率がどうか」を判定できる。
-            - 黒インク判定や判定バーの太さはパラメータで調整が必要な可能性あり（guiから操作できるとよい）
-            - ログも記録して結果を再利用可能にする。
 
 
 - **処理速度に関する問題**

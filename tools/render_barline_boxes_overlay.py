@@ -33,10 +33,17 @@ def iter_bboxes(json_path: Path) -> Iterable[tuple[list[int], int]]:
         records = payload
 
     for record in records:
-        bbox = record.get("barline_location") or record.get("orig_bbox")
+        if isinstance(record, list) and len(record) == 4:
+            # Direct coordinate list [x1, y1, x2, y2]
+            yield record, None
+            continue
+            
+        # Dictionary format
+        measure = record.get("measure_number")
+        bbox = record.get("barline_location") or record.get("orig_bbox") or record.get("pred_bbox")
+        
         if not bbox or len(bbox) != 4:
             continue
-        measure = record.get("measure_number")
         yield bbox, measure
 
 

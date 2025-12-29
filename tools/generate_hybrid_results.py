@@ -1,0 +1,163 @@
+
+import json
+import argparse
+import sys
+from pathlib import Path
+
+# Add repo root to sys path
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.append(str(REPO_ROOT))
+
+from src.common.barline_evaluation import greedy_barline_match, barline_iou, BarlineMatchResult
+
+def load_json_boxes(path: Path):
+    with open(path, 'r') as f:
+        data = json.load(f)
+    if isinstance(data, list):
+        if not data: return []
+        if isinstance(data[0], list): return [tuple(x) for x in data]
+        if isinstance(data[0], dict) and "barline_location" in data[0]: return [tuple(item["barline_location"]) for item in data]
+    elif isinstance(data, dict):
+        if "predictions" in data:
+            boxes = []
+            for pred in data["predictions"]:
+                if "orig_bbox" in pred: boxes.append(tuple(pred["orig_bbox"]))
+            return boxes
+    return []
+
+def has_match(query_box, references, iou_thresh=0.5):
+    for ref in references:
+        if barline_iou(query_box, ref) > iou_thresh:
+            return True
+    return False
+
+def cluster_boxes(boxes_with_source, iou_thresh=0.5):
+    clusters = []
+    for box, source in boxes_with_source:
+        matched_cluster = None
+        for cluster in clusters:
+            for cluster_box, _ in cluster:
+                if barline_iou(box, cluster_box) > iou_thresh:
+                    matched_cluster = cluster
+                    break
+            if matched_cluster:
+                break
+        
+        if matched_cluster:
+            matched_cluster.append((box, source))
+        else:
+            clusters.append([(box, source)])
+    return clusters
+
+
+def choose_representative(cluster):
+    """Pick a representative box for a cluster.
+
+    Choose the box with the highest total IoU to the rest of the cluster.
+    """
+    boxes = [box for box, _ in cluster]
+    if not boxes:
+        return None
+
+    best_box = None
+    best_score = -1.0
+    for box in boxes:
+        score = sum(barline_iou(box, other) for other in boxes)
+        if score > best_score:
+            best_score = score
+            best_box = box
+
+    return best_box
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--baseline", type=Path, required=True)
+    parser.add_argument("--sr", type=Path, required=True)
+    parser.add_argument("--omr", type=Path, required=True)
+    parser.add_argument("--gt", type=Path, help="Path to Ground Truth JSON (optional)")
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--merge-strategy",
+        type=str,
+        default="phase4_hybrid",
+        choices=["phase4_hybrid", "confirmed_union", "promiscuous_union"],
+        help="Merge strategy to use.",
+    )
+    args = parser.parse_args()
+
+    baseline_boxes = load_json_boxes(args.baseline)
+    sr_boxes = load_json_boxes(args.sr)
+    omr_boxes = load_json_boxes(args.omr)
+
+    gt_boxes = []
+    if args.gt:
+        gt_boxes = load_json_boxes(args.gt)
+        print(f"Loaded {len(baseline_boxes)} Baseline, {len(sr_boxes)} SR, {len(omr_boxes)} OMR, {len(gt_boxes)} GT.")
+    else:
+        print(f"Loaded {len(baseline_boxes)} Baseline, {len(sr_boxes)} SR, {len(omr_boxes)} OMR. (No GT provided)")
+
+    hybrid_preds = []
+    if args.merge_strategy == "phase4_hybrid":
+        # Apply Hybrid Rule: Keep Baseline if supported by SR or OMR
+        for box in baseline_boxes:
+            if has_match(box, sr_boxes) or has_match(box, omr_boxes):
+                hybrid_preds.append(box)
+    elif args.merge_strategy == "confirmed_union":
+        # "Confirmed Union": Keep if any two detectors agree
+        confirmed_preds_set = set()
+        # Case 1 & 2: Baseline is supported by SR or OMR
+        for box in baseline_boxes:
+            if has_match(box, sr_boxes) or has_match(box, omr_boxes):
+                confirmed_preds_set.add(tuple(box))
+        # Case 3: SR is supported by OMR
+        for box in sr_boxes:
+            if has_match(box, omr_boxes):
+                confirmed_preds_set.add(tuple(box))
+        hybrid_preds = [list(b) for b in confirmed_preds_set]
+    elif args.merge_strategy == "promiscuous_union":
+        # "Promiscuous Union": Keep if a cluster has at least two unique sources
+        all_boxes_with_source = []
+        all_boxes_with_source.extend([(box, "baseline") for box in baseline_boxes])
+        all_boxes_with_source.extend([(box, "sr") for box in sr_boxes])
+        all_boxes_with_source.extend([(box, "omr") for box in omr_boxes])
+
+        clusters = cluster_boxes(all_boxes_with_source)
+
+        for cluster in clusters:
+            sources = {source for _, source in cluster}
+            if len(sources) >= 2:
+                representative = choose_representative(cluster)
+                if representative is not None:
+                    hybrid_preds.append(list(representative))
+
+    print(f"Hybrid Predictions: {len(hybrid_preds)}")
+
+    # Compute Final Metrics only if GT is present
+    if args.gt:
+        match_result = greedy_barline_match(hybrid_preds, gt_boxes)
+
+        tp = len(match_result.matches)
+        fp = len(match_result.false_positive_indices)
+        fn = len(match_result.false_negative_indices)
+        soft = len(match_result.soft_matches)
+
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+
+        print("\n--- Final Hybrid Metrics ---")
+        print(f"TP: {tp}")
+        print(f"FP: {fp}")
+        print(f"FN: {fn}")
+        print(f"Soft Matches: {soft}")
+        print(f"Precision: {precision:.4f}")
+        print(f"Recall: {recall:.4f}")
+        print(f"F1: {f1:.4f}")
+
+    # Save Results
+    with open(args.output, 'w') as f:
+        json.dump(hybrid_preds, f, indent=2)
+    print(f"Saved hybrid predictions to {args.output}")
+
+if __name__ == "__main__":
+    main()

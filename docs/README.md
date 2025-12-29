@@ -1,39 +1,132 @@
 # Project Documentation Index
 
 > [!NOTE]
-> **Repo Restructure (Dec 2025)**: Scripts have moved to `experiments/` and `tools/`. External repos are in `external/`. If documentation references old paths (`src/tools`, `homr/`), please adjust accordingly.
+> This document is the entry point for understanding the current state,
+> history, and structure of the project.
+>
+> If you are new to this repository, start here.
+
+---
+
+## How to Read This Repository (Important)
+
+This repository contains multiple layers of documentation, each serving
+a different time scale and purpose.
+
+Understanding which document to read (or update) is essential to avoid
+confusion and duplication.
+
+### Documentation by Time Scale
+
+| Time Scale | Document | Purpose |
+|----------|----------|---------|
+| **Very Long Term** | `README.md` (repo root) | Ultimate project vision and scope |
+| **Long Term** | `docs/README.md` (this file) | Project map and documentation index |
+| **Mid Term** | `docs/NEXT_SESSION_NOTES.md` | Current confirmed state and allowed work areas |
+| **Short Term** | `docs/SESSION_LOG.md` | Per-session working notes (messy is OK) |
+| **Historical Facts** | `docs/DEVELOPMENT_LOG.md` | Append-only authoritative record |
+
+---
+
+## Current Project Status (2025-12-15)
+
+**Update (2025-12-20)**: Phase 4 (FP reduction) is complete, and the current focus is **Phase 5: FN Attribution & Recovery**.
+See `docs/NEXT_SESSION_NOTES.md` for the active plan and confirmed status.
+
+**Phase 3: Geometric FP Reduction** ✅ **COMPLETE**
+
+- **Best Results** (page_3, hybrid pipeline):
+  - TP=152, FP=2, FN=0
+  - Precision=98.7%, Recall=100%
+- **Method**: Row-based consistency filter with ratio-based tolerance
+- **Status**: Production-ready configuration identified
+- **Conclusion**:
+  - Geometric filtering is no longer the bottleneck
+  - Remaining errors require context-level reasoning or model improvement
+
+---
+
+## Where to Find Results and Artifacts
+
+This project produces a large number of intermediate and final artifacts.
+Use the table below to quickly locate what you need.
+
+| What you want to see | Location |
+|---------------------|----------|
+| Latest confirmed results | `docs/NEXT_SESSION_NOTES.md` |
+| Historical decisions and outcomes | `docs/DEVELOPMENT_LOG.md` |
+| Phase 3 final report | `docs/fp_reduction/FINAL_SUMMARY.md` |
+| Detailed Phase 1–2 history | `docs/fp_reduction/development_log.md` |
+| Phase-by-phase walkthrough | `docs/fp_reduction/walkthrough.md` |
+| Latest qualitative overlays | `logs/phase3_staff_consistency/` |
+| Hybrid filter summary | `logs/phase3_staff_consistency/**/hybrid_filter_summary.md` |
+
+---
 
 ## Documentation Modules
 
-### FP Reduction (Dec 2025)
-- [Final Summary](fp_reduction/FINAL_SUMMARY.md): Executive summary and conclusions.
-- [Development Log](fp_reduction/development_log.md): Detailed chronological history of experiments.
-- [Walkthrough](fp_reduction/walkthrough.md): Phase-by-phase results.
-- [Roadmap](future/roadmap.md): Future work proposals (GUI, Model Retraining).
+### Core Documentation
 
-### Original Documentation
+- **`docs/NEXT_SESSION_NOTES.md`**  
+  **Purpose**: Mid-term, human-readable summary of the current confirmed state.  
+  This file answers:
+  - What phase are we in?
+  - What is already confirmed and stable?
+  - What problem areas are we allowed to work on next?
 
-Use this document as the entry point when onboarding a new contributor or wrapping up a work session. It explains what each artefact under `docs/` covers and when to update it so information stays consistent.
+- **`docs/SESSION_LOG.md`**  
+  **Purpose**: Short-term working log for each session.  
+  - Free-form
+  - Chronological
+  - May contain mistakes, speculation, or dead ends  
+  Nothing here is considered final.
 
-## Quick Navigation
-- **Day-to-day work:** `docs/NEXT_SESSION_NOTES.md` (daily start checklist, delta summary, handover log)
-- **Development history:** `docs/DEVELOPMENT_LOG.md`
-- **Environment reference:** `docs/ENVIRONMENTS.md`
-- **Assistant playbook:** `docs/AGENTS.md`
-- **Algorithm specs:** `docs/BARLINE_MATCHER.md`
+- **`docs/DEVELOPMENT_LOG.md`**  
+  **Purpose**: Authoritative historical record.  
+  - Append-only
+  - Records confirmed facts, decisions, and outcomes
+  - Always links to concrete artifacts (logs, scripts, configs)
+  - Never rewritten
 
-## When to Update What
+- **`docs/ENVIRONMENTS.md`**  
+  Runtime containers, dependencies, and execution instructions.
 
-| Document | Primary Purpose | Update Trigger |
-| --- | --- | --- |
-| `docs/NEXT_SESSION_NOTES.md` | Daily start checklist and latest deltas | End of focused work blocks or planning discussions |
-| `docs/DEVELOPMENT_LOG.md` | Chronological record of major phases and decisions (historical archive) | When a milestone finishes or a new approach is adopted |
-| `docs/ENVIRONMENTS.md` | Runtime container facts, data layout, logging policy | Whenever container images, dependencies, or directory policies change |
-| `docs/AGENTS.md` | Checklist for AI assistants and automation guidelines | When the bootstrap or execution policy changes |
-| `docs/BARLINE_MATCHER.md` | Specification for the shared barline matcher | After algorithm updates that affect matcher behaviour |
+- **`docs/AGENTS.md`**  
+  Rules and expectations for AI assistants (Gemini / Codex / CLI usage).
 
-## Notes for Contributors
-- Keep dated sections in reverse-chronological order so the most recent information is easy to find.
-- For `docs/NEXT_SESSION_NOTES.md`, maintain the **最近の差分サマリ**（最新3件）を最新状態にし、詳細な出来事は `docs/DEVELOPMENT_LOG.md` の該当フェーズへ記録する。
-- Link back to artefacts (logs, scripts, configs) using repository-relative paths.
-- Prefer updating an existing document over duplicating content. If a new document is unavoidable, add it to the table above.
+---
+
+## Phase-Specific Documentation
+
+### FP Reduction (Phase 1–3)
+
+- **Final Summary**  
+  `docs/fp_reduction/FINAL_SUMMARY.md`  
+  Executive summary of the FP reduction effort.
+
+- **Development Log (Phase 1–2)**  
+  `docs/fp_reduction/development_log.md`  
+  Detailed early-phase experimentation history.
+
+- **Walkthrough**  
+  `docs/fp_reduction/walkthrough.md`  
+  Phase-by-phase explanation of methodology and results.
+
+---
+
+## Logs and Experimental Outputs
+
+Experimental outputs are stored under `logs/` using timestamped directories.
+
+General rules:
+- Each run produces its own directory
+- Scripts and configurations used for the run should be traceable from the log
+- Qualitative overlays (images) live next to quantitative summaries
+
+Examples:
+- `logs/phase3_staff_consistency/20251215_hybrid_ratio_sweep_page3/`
+- `logs/phase3_staff_consistency/20251216_page10_hybrid_filter_FIXED/`
+
+---
+
+## Repository Structure (Summary)

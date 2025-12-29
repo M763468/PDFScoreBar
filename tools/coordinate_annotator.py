@@ -1,10 +1,13 @@
+"""LEGACY: use tools/gt_relabel_gui (gt-editor mode) for new GT creation."""
 import cv2
 import json
 import os
 
 # --- Configuration ---
-IMAGE_PATH = "data/evaluation/images/page_3.png"
-GROUND_TRUTH_OUTPUT_PATH = "data/workbench/drafts/page_003_manual.json"
+# --- Configuration ---
+# Set via CLI args
+IMAGE_PATH = None
+GROUND_TRUTH_OUTPUT_PATH = None
 BARLINE_RECT_WIDTH = 5  # Width of the rectangle when converting a line to a box
 MAX_DISPLAY_WIDTH = 1200 # Maximum width for display
 MAX_DISPLAY_HEIGHT = 800 # Maximum height for display
@@ -98,12 +101,38 @@ def save_annotations():
 
 # --- Main Function ---
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Manual coordinate annotator for barlines.")
+    parser.add_argument("image_path", help="Path to the input image")
+    parser.add_argument("output_path", help="Path to save the JSON output")
+    args = parser.parse_args()
+
     global original_img, display_img, drawing_display_img, annotations, scale_factor
+    global IMAGE_PATH, GROUND_TRUTH_OUTPUT_PATH
+    
+    IMAGE_PATH = args.image_path
+    GROUND_TRUTH_OUTPUT_PATH = args.output_path
 
     original_img = cv2.imread(IMAGE_PATH)
     if original_img is None:
         print(f"Error: Could not load image from {IMAGE_PATH}")
         return
+
+    # Load existing annotations if file exists
+    if os.path.exists(GROUND_TRUTH_OUTPUT_PATH):
+        try:
+            with open(GROUND_TRUTH_OUTPUT_PATH, 'r') as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    for item in data:
+                        if 'barline_location' in item:
+                            annotations.append({
+                                'type': 'barline',
+                                'coords': item['barline_location']
+                            })
+            print(f"Loaded {len(annotations)} existing annotations from {GROUND_TRUTH_OUTPUT_PATH}")
+        except Exception as e:
+            print(f"Warning: Could not load existing annotations: {e}")
 
     # Calculate resize factor
     h, w = original_img.shape[:2]
@@ -127,7 +156,7 @@ def main():
     print(f"Image: {IMAGE_PATH} (Original: {w}x{h}, Display: {display_img.shape[1]}x{display_img.shape[0]}, Scale: {scale_factor:.2f})")
     print("Left-click to define start and end points of a barline.")
     print("Press 'z' to undo last annotation.")
-    print("Press 's' to save annotations to {GROUND_TRUTH_OUTPUT_PATH}.")
+    print("Press 's' to save annotations to output file.")
     print("Press 'q' to quit.")
 
     while True:

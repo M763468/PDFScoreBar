@@ -36,6 +36,10 @@ class ThinBarlineConfig:
     cluster_x_tolerance: int = 2
     cluster_reject_count: int = 4
     cluster_reject_span: int = 120
+    double_pair_max_gap: int = 6
+    double_pair_min_overlap: float = 0.75
+    double_pair_min_height: int = 18
+    double_pair_max_width: int = 6
 
 
 def _centroid(box: Box) -> Tuple[float, float]:
@@ -128,6 +132,36 @@ def detect_thin_vertical_runs(
     if not merged:
         return []
 
+    def _vertical_overlap_ratio(box_a: Box, box_b: Box) -> float:
+        top = max(box_a[1], box_b[1])
+        bottom = min(box_a[3], box_b[3])
+        if bottom <= top:
+            return 0.0
+        overlap = bottom - top
+        height_a = max(box_a[3] - box_a[1], 1)
+        height_b = max(box_b[3] - box_b[1], 1)
+        return overlap / float(max(height_a, height_b))
+
+    paired_boxes: set[Box] = set()
+    for i in range(len(merged) - 1):
+        a = merged[i]
+        for j in range(i + 1, len(merged)):
+            b = merged[j]
+            gap = b[0] - a[2] if a[2] <= b[0] else a[0] - b[2]
+            if gap <= 0:
+                continue
+            if gap > cfg.double_pair_max_gap:
+                break
+            overlap = _vertical_overlap_ratio(a, b)
+            if overlap < cfg.double_pair_min_overlap:
+                continue
+            if min(a[3] - a[1], b[3] - b[1]) < cfg.double_pair_min_height:
+                continue
+            if max(a[2] - a[0], b[2] - b[0]) > cfg.double_pair_max_width:
+                continue
+            paired_boxes.add(a)
+            paired_boxes.add(b)
+
     existing = list(existing_boxes)
     candidates: List[Box] = []
     for box in merged:
@@ -140,7 +174,7 @@ def detect_thin_vertical_runs(
         if box_width < 2 and box_height < cfg.min_height:
             continue
 
-        if _is_close(box, existing, cfg=cfg):
+        if box not in paired_boxes and _is_close(box, existing, cfg=cfg):
             continue
         
         cx, _ = _centroid(box)

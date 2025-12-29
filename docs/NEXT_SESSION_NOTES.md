@@ -1,31 +1,76 @@
 # Next Session Notes
 
-## Project Status: Barline FP Reduction
-**Status**: **LOCALLY COMPLETE** (Dec 2025)
+**Last Updated**: 2025-12-30
+**Current Phase**: Post‑Phase 6 → start detector‑side FN analysis (remaining 10)
 
-The optimization of visual heuristics for barline detection has concluded.
-- **Heuristic 1 (Safe Filter)** is enabled.
-- All other heuristics (H2-H5) are disabled.
-- **Result**: 30 FPs remaining (irreducible without risking TPs).
+---
+### Note for AI Assistant (Operational Rule)
+- The `docs/SESSION_LOG.md` file must **not** be completely overwritten. During a session, new findings and logs should be appended, or only relevant sections should be edited. The file should only be cleared with explicit user permission.
+---
 
-## Documentation & Tools
-- **Summary**: `docs/fp_reduction/FINAL_SUMMARY.md`
-- **Logs**: `docs/fp_reduction/development_log.md`
-- **Scripts**: `tools/fp_reduction/*.py`
+## Current Starting Point (Confirmed)
+- GT cleanup completed for all 35 detector-miss items.
+- Post-GT recheck: resolved=25, remaining true detector-miss=10 (total=35).
+  - Summary: `logs/phase6_detector_miss/gt_fix_review_full/near_hit_recheck/near_hit_recheck_summary.json`
+  - Remaining list + categories: `logs/phase6_detector_miss/gt_fix_review_full/POST_GT_RECHECK_SUMMARY.md`
+- Merge / filter / GT are closed for the remaining 10 cases; next session begins detector-side work on these items.
 
-## Recommended Next Sessions
+## Phase 6 outcome (confirmed)
+- Detector-miss total: 35
+- Post-GT recheck: resolved 25 / remaining true detector-miss 10
+- Remaining true detector-miss cases (detector-side work needed):
+  - page_004 fn_000 (end_barline)
+  - page_004 fn_003 (text_dynamic_overlap)
+  - page_004 fn_005 (dense_chord_accidental)
+  - page_004 fn_008 (text_dynamic_overlap)
+  - page_004 fn_011 (double_or_repeat_bar)
+  - page_10 fn_000 (end_barline)
+  - page_15 fn_003 (text_dynamic_overlap)
+  - page_15 fn_007 (notehead_overlap)
+  - page_15 fn_010 (dense_chord_accidental)
+  - page_15 fn_021 (double_or_repeat_bar)
 
-### 1. GUI Helper Tool (Active)
-**Status**: Initial version created (`tools/gui_helper`).
-**Objective**: Expand the tool to support efficient FP cleanup for the entire dataset.
-**Next Steps**:
-- Add support for browsing multiple pages (currently hardcoded to `page_3`).
-- Integrate `manual_ignore.json` output into the evaluation pipeline to automatically exclude marked FPs.
-- Add keyboard shortcuts for faster review.
+### Next session start
+- Begin detector-side analysis focused on the 10 remaining items above.
+- GT/merge/filter are considered closed for these cases.
 
-### 2. Model Retraining Investigation
-**Objective**: Analyze why the SegNet model fragments barlines.
-**Action**: Check training data quality or experiment with varying the probability threshold (currently fixed).
+### Short-term plan (next actions)
+- **Current baseline:** var88（clefs_keys left + probe_notehead_dilate=13 + notehead_dilate=7, FN=0維持）.
+- **Next focus:** FP起因（clef/time/rest/accidental/stem）の整理と追加マスク/フィルタの検討.
+- **Plan:**
+  - homr出力から追加マスク可能性を再調査（symbols等の信頼度含む）.
+  - 新フィルタ設計→var派生評価（FN=0維持を最優先）.
+  - 成果はlogs/で比較し、最終採用のみNEXT_SESSION_NOTESに残す.
 
-### 3. External Model Evaluation
-**Objective**: Benchmark other OMR libraries (e.g., commercially available APIs or newer research models) on `page_3`.
+## Recent Updates (2025-12-29,30)
+- GT再整備完了（page_001 / page_004 / page_10 / page_15）。
+  - Logs: `logs/phase6_detector_miss/gt_rebuild/`
+  - Data copies: `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/*_v20251229.json`,
+    `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/*_v20251229.json`,
+    `data/training/annotations/page_010/*_v20251229.json`,
+    `data/training/annotations/page_015/*_v20251229.json`
+- GTエディタの再編集用設定は `logs/phase6_detector_miss/gt_rebuild/gt_editor_config.json`
+  - editable source は `gt_rebuild`（再編集時はここから再開）
+  - reference は `fn_only_corrected` のみ
+- 既知のUI挙動: ページ切り替え時に未保存の手描きbboxがリセットされる（保存後なら問題なし）
+- 新GT再評価ログ: `logs/homr_eval/20251229T_gt_rebuild_eval/`
+  - page_001: TP=73 FP=30 FN=12
+  - page_004: TP=99 FP=71 FN=20
+  - page_10: TP=152 FP=85 FN=6
+  - page_15: TP=105 FP=47 FN=7
+  - aggregate: TP=429 FP=233 FN=45 (P=0.6480 / R=0.9051 / F1=0.7553)
+
+- FP削減の現行ベースは `var88`（clefs_keys左端フィルタ + probe_notehead_dilate=13 + notehead_dilate=7）。
+  - Logs: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var88_clef_filter/`
+  - Overlays: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var88_clef_filter/overlays/`
+- clefs_keys全域/2ゾーン適用はFN増加で不採用（var89-98 / var109-111）。
+  - 比較用crop: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var90_clef_full_0p30/clefs_keys_fp_fn_crops/`
+  - 比較用crop: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var105_clefshape_aspect2/clefs_keys_fp_fn_crops/`
+  - 差分overlay: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var95_clef_twozone/overlays_diff_vs_var88/`
+  - 差分overlay: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var101_minheight_0p70/overlays_diff_vs_var88/`
+- GT再編集は `logs/phase6_detector_miss/gt_rebuild/gt_editor_config.json` から再開可能（保存後の手描きbboxは保持、ページ切替時の未保存分はリセットされる点に注意）。
+- probe_scanの有効性確認:
+  - var16でink_ratio可視化を実施しピーク検出の有効性を確認（`logs/gt_probe_ratio/20251229T_probe_ratio_var16/` 系）。
+  - var25で **FN=0**（`max_per_band=0`, `min_peak_distance=2`）を達成（`logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var25/`）。
+- notehead maskはダブルバー誤検出が原因でFNを生むため、aspectフィルタ適用が必須。
+- clefs_keysは左端のみ有効で、中央適用はFN増加のため不採用。

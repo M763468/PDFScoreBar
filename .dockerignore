@@ -1,22 +1,27 @@
-.git
-.gitignore
+# Ignore virtual environments
+.venv*/
+
+# Ignore log directories
 logs/
-output/
-debug_outputs/
-musicxml_output/
-models/
-data/input_images/
-data/input_pdfs/
-data/training_images/
-data/training_pdfs/
-*.pyc
+logs_user/
+
+# Ignore data directory
+data/
+
+# Python artifacts
 __pycache__/
-*.png
-*.jpg
-*.jpeg
-*.pdf
-*.onnx
-*.pt
-homr/.venv/
-src/tools/.toolvenv/
-setup_scripts/logs/
+*.pyc
+*.tmp
+*.swp
+
+# Version control and agent-specific files
+.git/
+.dockerignore
+.gitignore
+.gitmodules
+.serena/
+
+# Exclude other external dependencies not needed for this SR image
+external/omr_dln/
+external/grounding_dino/
+external/models/

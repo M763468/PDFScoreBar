@@ -1,0 +1,58 @@
+# Dockerfile for Grounding DINO Evaluation
+# This Dockerfile creates a controlled environment with the specific dependencies required.
+
+# 1. Base Image: Use an official NVIDIA CUDA image with CUDA 11.8 and cuDNN 8 on Ubuntu 22.04
+FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+
+# 2. Set up environment
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+    git \
+    wget \
+    python3.10 \
+    python3.10-venv \
+    python3-pip \
+    build-essential \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user
+ARG USERNAME=user
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+USER $USERNAME
+WORKDIR /home/$USERNAME
+
+# 3. Create a Python virtual environment
+RUN python3.10 -m venv venv_groundingdino
+ENV PATH="/home/$USERNAME/venv_groundingdino/bin:$PATH"
+
+# 4. Install Python dependencies using pip
+# First, install the correct PyTorch version for CUDA 11.8 and Python 3.10
+RUN pip install torch==2.0.1+cu118 torchvision==0.15.2+cu118 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
+
+# Install transformers and other dependencies
+COPY --chown=$USERNAME:$USERNAME external/grounding_dino/requirements.txt /tmp/requirements.txt
+RUN pip install transformers==4.31.0 && \
+    pip install -r /tmp/requirements.txt
+
+# 5. Copy project source and build Grounding DINO
+COPY --chown=$USERNAME:$USERNAME . /home/$USERNAME/ws_PDFScoreBar_model_exp
+WORKDIR /home/$USERNAME/ws_PDFScoreBar_model_exp
+
+# Pin NumPy <2 to avoid `_ARRAY_API` failures with torch/torchvision wheels
+RUN pip install numpy==1.26.4
+# Build GroundingDINO ops against the pinned torch/NumPy; avoid build isolation to reuse installed deps
+RUN pip install --no-build-isolation --no-deps -e external/grounding_dino
+
+# 6. Download model weights
+RUN mkdir -p external/grounding_dino/weights && \
+    wget -q https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth -O external/grounding_dino/weights/groundingdino_swint_ogc.pth
+
+# 7. Set the default command to bash
+CMD ["bash"]

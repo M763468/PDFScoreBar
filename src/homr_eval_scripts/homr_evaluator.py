@@ -33,7 +33,12 @@ except ImportError:  # pragma: no cover - Python <3.9 fallback
 # Ensure the local homr repository is importable before third-party homr installs.
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SRC_ROOT = REPO_ROOT / "src"
-HOMR_REPO = REPO_ROOT / "homr"
+
+# Repo layout note:
+# - Historical layout: <repo>/homr
+# - Current layout:   <repo>/external/homr
+_HOMR_CANDIDATES = (REPO_ROOT / "homr", REPO_ROOT / "external" / "homr")
+HOMR_REPO = next((p for p in _HOMR_CANDIDATES if (p / "homr").exists()), _HOMR_CANDIDATES[1])
 JST = ZoneInfo("Asia/Tokyo")
 
 # Force paths to front to ensure correct import order
@@ -58,7 +63,7 @@ from homr.music_xml_generator import XmlGeneratorArguments, generate_xml  # type
 from homr.resize import calc_target_image_size  # type: ignore
 from homr.staff_detection import break_wide_fragments, detect_staff  # type: ignore
 from homr.note_detection import combine_noteheads_with_stems, add_notes_to_staffs  # type: ignore
-from homr.bar_line_detection import detect_bar_lines  # type: ignore
+from homr.bar_line_detection import detect_bar_lines, prepare_bar_line_image  # type: ignore
 from homr.brace_dot_detection import (
     find_braces_brackets_and_grand_staff_lines,
     prepare_brace_dot_image,
@@ -74,7 +79,8 @@ from common.barline_evaluation import (
     apply_left_margin_exclusion,
     greedy_barline_match,
 )
-from common.thin_barline_finder import detect_thin_vertical_runs
+from common.thin_barline_finder import detect_thin_vertical_runs, ThinBarlineConfig
+from common.preprocessing import apply_advanced_sr
 
 LEFT_MARGIN_FORCE_FP_GT_INDICES: Set[int] = set()
 LEFT_MARGIN_FORCE_FP_MAX_WIDTH = 2
@@ -96,6 +102,8 @@ STEM_CONTEXT_HEURISTICS = {
     "measure_grid_export": True,
 }
 
+
+Box = Tuple[int, int, int, int]
 
 @dataclass
 class TransformInfo:
@@ -225,6 +233,104 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=1.0,
         help="Scale factor applied to barline maximum width threshold",
+    )
+    parser.add_argument(
+        "--barline-staff-overlap-min",
+        type=float,
+        default=0.0,
+        help="Minimum staff mask overlap ratio required to keep a barline candidate",
+    )
+    parser.add_argument(
+        "--barline-edge-margin-x",
+        type=int,
+        default=0,
+        help="Reject barline candidates within this x-margin of page edges",
+    )
+    parser.add_argument(
+        "--barline-edge-margin-y",
+        type=int,
+        default=0,
+        help="Reject barline candidates within this y-margin of page edges",
+    )
+    parser.add_argument(
+        "--enable-sr",
+        action="store_true",
+        help="Enable Super-Resolution (Real-ESRGAN x4) preprocessing",
+    )
+    parser.add_argument(
+        "--gen-vertical-run",
+        action="store_true",
+        help="Enable staff-constrained vertical run-length candidate generator",
+    )
+    parser.add_argument(
+        "--gen-vertical-run-weak",
+        action="store_true",
+        help="Enable weaker staff-constrained vertical run-length generator (lower min-run, higher threshold)",
+    )
+    parser.add_argument(
+        "--gen-barline-cc-relaxed",
+        action="store_true",
+        help="Enable relaxed CC extraction on bar_line_img",
+    )
+    parser.add_argument(
+        "--gen-barline-cc-dilated",
+        action="store_true",
+        help="Enable dilated CC extraction on bar_line_img",
+    )
+    parser.add_argument(
+        "--gen-sobel-vertical",
+        action="store_true",
+        help="Enable staff-constrained vertical Sobel candidate generator",
+    )
+    parser.add_argument(
+        "--gen-sobel-vertical-weak",
+        action="store_true",
+        help="Enable weaker staff-constrained vertical Sobel generator (lower threshold)",
+    )
+    parser.add_argument(
+        "--gen-column-sum-staff",
+        action="store_true",
+        help="Enable staff-masked column-sum candidate generator",
+    )
+    parser.add_argument(
+        "--gen-column-sum-weak",
+        action="store_true",
+        help="Enable weaker staff-masked column-sum candidate generator",
+    )
+    parser.add_argument(
+        "--gen-column-sum-no-staff",
+        action="store_true",
+        help="Enable column-sum candidate generator without staff mask",
+    )
+    parser.add_argument(
+        "--gen-hough-vertical",
+        action="store_true",
+        help="Enable staff-masked Hough vertical line candidate generator",
+    )
+    parser.add_argument(
+        "--gen-hough-vertical-weak",
+        action="store_true",
+        help="Enable weaker staff-masked Hough vertical line generator",
+    )
+    parser.add_argument(
+        "--gen-vertical-run-no-staff",
+        action="store_true",
+        help="Enable vertical run-length candidate generator without staff mask",
+    )
+    parser.add_argument(
+        "--gen-barline-cc-tiny",
+        action="store_true",
+        help="Enable tiny CC extraction on bar_line_img (min_size=(1,1))",
+    )
+    parser.add_argument(
+        "--gen-sobel-no-staff",
+        action="store_true",
+        help="Enable vertical Sobel candidate generator without staff mask",
+    )
+    parser.add_argument(
+        "--enable-end-barline-recovery",
+        action="store_true",
+        help="Enable post-processing to recover staff-end barlines",
     )
     return parser.parse_args()
 
@@ -386,6 +492,154 @@ def map_pred_to_orig(box: Tuple[int, int, int, int], transform: TransformInfo) -
     return (x1_clamped, y1_clamped, x2_clamped, y2_clamped)
 
 
+def _ensure_mask_shape(mask: np.ndarray, target_shape: Tuple[int, int]) -> np.ndarray:
+    if mask.shape[:2] == target_shape:
+        return mask
+    return cv2.resize(mask, (target_shape[1], target_shape[0]), interpolation=cv2.INTER_NEAREST)
+
+
+def generate_vertical_run_candidates(
+    preprocessed: np.ndarray,
+    staff_mask: Optional[np.ndarray],
+    *,
+    min_run: int = 20,
+    dark_threshold: int = 80,
+) -> List[Any]:
+    gray = cv2.cvtColor(preprocessed, cv2.COLOR_BGR2GRAY)
+    dark = (gray < dark_threshold).astype(np.uint8) * 255
+    if staff_mask is not None:
+        staff_mask = _ensure_mask_shape(staff_mask, gray.shape[:2])
+        masked = cv2.bitwise_and(dark, dark, mask=(staff_mask > 0).astype(np.uint8))
+    else:
+        masked = dark
+    kernel = np.ones((min_run, 1), np.uint8)
+    vertical = cv2.morphologyEx(masked, cv2.MORPH_OPEN, kernel)
+    return create_rotated_bounding_boxes(vertical, skip_merging=True, min_size=(1, min_run))
+
+
+def generate_vertical_run_candidates_weak(
+    preprocessed: np.ndarray,
+    staff_mask: Optional[np.ndarray],
+) -> List[Any]:
+    return generate_vertical_run_candidates(
+        preprocessed,
+        staff_mask,
+        min_run=10,
+        dark_threshold=130,
+    )
+
+
+def generate_barline_cc_relaxed(stems_rest_mask: np.ndarray) -> List[Any]:
+    bar_line_img = prepare_bar_line_image(stems_rest_mask)
+    return create_rotated_bounding_boxes(bar_line_img, skip_merging=True, min_size=(1, 3))
+
+
+def generate_barline_cc_dilated(stems_rest_mask: np.ndarray) -> List[Any]:
+    bar_line_img = prepare_bar_line_image(stems_rest_mask)
+    kernel = np.ones((5, 1), np.uint8)
+    dilated = cv2.dilate(bar_line_img, kernel, iterations=1)
+    return create_rotated_bounding_boxes(dilated, skip_merging=True, min_size=(1, 3))
+
+
+def generate_barline_cc_tiny(stems_rest_mask: np.ndarray) -> List[Any]:
+    bar_line_img = prepare_bar_line_image(stems_rest_mask)
+    return create_rotated_bounding_boxes(bar_line_img, skip_merging=True, min_size=(1, 1))
+
+
+def generate_sobel_vertical_candidates(
+    preprocessed: np.ndarray,
+    staff_mask: Optional[np.ndarray],
+    *,
+    sobel_threshold: int = 60,
+    min_run: int = 15,
+) -> List[Any]:
+    gray = cv2.cvtColor(preprocessed, cv2.COLOR_BGR2GRAY)
+    sobelx = cv2.Sobel(gray, cv2.CV_16S, 1, 0, ksize=3)
+    absx = cv2.convertScaleAbs(sobelx)
+    edges = (absx > sobel_threshold).astype(np.uint8) * 255
+    if staff_mask is not None:
+        staff_mask = _ensure_mask_shape(staff_mask, gray.shape[:2])
+        masked = cv2.bitwise_and(edges, edges, mask=(staff_mask > 0).astype(np.uint8))
+    else:
+        masked = edges
+    kernel = np.ones((min_run, 1), np.uint8)
+    vertical = cv2.morphologyEx(masked, cv2.MORPH_OPEN, kernel)
+    return create_rotated_bounding_boxes(vertical, skip_merging=True, min_size=(1, min_run))
+
+
+def generate_sobel_vertical_candidates_weak(
+    preprocessed: np.ndarray,
+    staff_mask: Optional[np.ndarray],
+) -> List[Any]:
+    return generate_sobel_vertical_candidates(
+        preprocessed,
+        staff_mask,
+        sobel_threshold=40,
+        min_run=10,
+    )
+
+
+def generate_column_sum_candidates(
+    preprocessed: np.ndarray,
+    staff_mask: Optional[np.ndarray],
+    *,
+    min_column_sum: int = 20,
+    dark_threshold: int = 120,
+) -> List[Any]:
+    gray = cv2.cvtColor(preprocessed, cv2.COLOR_BGR2GRAY)
+    dark = (gray < dark_threshold).astype(np.uint8) * 255
+    if staff_mask is not None:
+        staff_mask = _ensure_mask_shape(staff_mask, gray.shape[:2])
+        masked = cv2.bitwise_and(dark, dark, mask=(staff_mask > 0).astype(np.uint8))
+    else:
+        masked = dark
+    col_counts = (masked > 0).sum(axis=0)
+    active = col_counts >= min_column_sum
+    if not np.any(active):
+        return []
+    vertical = np.zeros_like(masked)
+    vertical[:, active] = masked[:, active]
+    return create_rotated_bounding_boxes(vertical, skip_merging=True, min_size=(1, min_column_sum))
+
+
+def generate_hough_vertical_candidates(
+    preprocessed: np.ndarray,
+    staff_mask: Optional[np.ndarray],
+    *,
+    canny_low: int = 50,
+    canny_high: int = 150,
+    hough_threshold: int = 50,
+    min_line_length: int = 25,
+    max_line_gap: int = 6,
+    max_dx_ratio: float = 0.15,
+) -> List[Any]:
+    gray = cv2.cvtColor(preprocessed, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, canny_low, canny_high)
+    if staff_mask is not None:
+        staff_mask = _ensure_mask_shape(staff_mask, gray.shape[:2])
+        edges = cv2.bitwise_and(edges, edges, mask=(staff_mask > 0).astype(np.uint8))
+    lines = cv2.HoughLinesP(
+        edges,
+        rho=1,
+        theta=np.pi / 180.0,
+        threshold=hough_threshold,
+        minLineLength=min_line_length,
+        maxLineGap=max_line_gap,
+    )
+    if lines is None:
+        return []
+    line_mask = np.zeros_like(edges)
+    for (x1, y1, x2, y2) in lines.reshape(-1, 4):
+        dy = y2 - y1
+        dx = x2 - x1
+        if abs(dy) < min_line_length:
+            continue
+        if abs(dx) > max(2, int(abs(dy) * max_dx_ratio)):
+            continue
+        cv2.line(line_mask, (x1, y1), (x2, y2), 255, 1)
+    return create_rotated_bounding_boxes(line_mask, skip_merging=True, min_size=(1, min_line_length))
+
+
 def prepare_working_image(image: Path, dest_dir: Path) -> Path:
     ensure_dir(dest_dir)
     dest_path = dest_dir / image.name
@@ -410,6 +664,84 @@ def detect_staffs_with_barlines(
         image_path, config.enable_debug, config.enable_cache
     )
     symbols = predict_symbols(debug, predictions)
+
+    extra_bar_lines: List[Any] = []
+    if tuning.get("gen_vertical_run"):
+        extra_bar_lines.extend(
+            generate_vertical_run_candidates(predictions.preprocessed, predictions.staff)
+        )
+    if tuning.get("gen_vertical_run_weak"):
+        extra_bar_lines.extend(
+            generate_vertical_run_candidates_weak(predictions.preprocessed, predictions.staff)
+        )
+    if tuning.get("gen_barline_cc_relaxed"):
+        extra_bar_lines.extend(generate_barline_cc_relaxed(predictions.stems_rest))
+    if tuning.get("gen_barline_cc_dilated"):
+        extra_bar_lines.extend(generate_barline_cc_dilated(predictions.stems_rest))
+    if tuning.get("gen_sobel_vertical"):
+        extra_bar_lines.extend(
+            generate_sobel_vertical_candidates(predictions.preprocessed, predictions.staff)
+        )
+    if tuning.get("gen_sobel_vertical_weak"):
+        extra_bar_lines.extend(
+            generate_sobel_vertical_candidates_weak(
+                predictions.preprocessed, predictions.staff
+            )
+        )
+    if tuning.get("gen_column_sum_staff"):
+        extra_bar_lines.extend(
+            generate_column_sum_candidates(
+                predictions.preprocessed, predictions.staff
+            )
+        )
+    if tuning.get("gen_column_sum_weak"):
+        extra_bar_lines.extend(
+            generate_column_sum_candidates(
+                predictions.preprocessed,
+                predictions.staff,
+                min_column_sum=12,
+                dark_threshold=140,
+            )
+        )
+    if tuning.get("gen_hough_vertical"):
+        extra_bar_lines.extend(
+            generate_hough_vertical_candidates(
+                predictions.preprocessed, predictions.staff
+            )
+        )
+    if tuning.get("gen_hough_vertical_weak"):
+        extra_bar_lines.extend(
+            generate_hough_vertical_candidates(
+                predictions.preprocessed,
+                predictions.staff,
+                canny_low=30,
+                canny_high=120,
+                hough_threshold=30,
+                min_line_length=15,
+                max_line_gap=8,
+                max_dx_ratio=0.2,
+            )
+        )
+    if tuning.get("gen_vertical_run_no_staff"):
+        extra_bar_lines.extend(
+            generate_vertical_run_candidates(predictions.preprocessed, None)
+        )
+    if tuning.get("gen_barline_cc_tiny"):
+        extra_bar_lines.extend(generate_barline_cc_tiny(predictions.stems_rest))
+    if tuning.get("gen_sobel_no_staff"):
+        extra_bar_lines.extend(
+            generate_sobel_vertical_candidates(predictions.preprocessed, None)
+        )
+    if tuning.get("gen_column_sum_no_staff"):
+        extra_bar_lines.extend(
+            generate_column_sum_candidates(
+                predictions.preprocessed, None
+            )
+        )
+    if extra_bar_lines:
+        symbols.bar_lines.extend(extra_bar_lines)
+        debug.write_bounding_boxes_alternating_colors("bar_lines_extra", extra_bar_lines)
+        eprint(f"Added {len(extra_bar_lines)} extra bar line candidates")
 
     # The notehead and staff masks are crucial for context-based filtering.
     # The `predictions` object from load_and_preprocess_predictions contains the raw numpy arrays.
@@ -439,6 +771,45 @@ def detect_staffs_with_barlines(
         if not line.is_overlapping_with_any(all_noteheads)
         and not line.is_overlapping_with_any(all_stems)
     ]
+
+    staff_overlap_min = tuning.get("barline_staff_overlap_min", 0.0)
+    edge_margin_x = int(tuning.get("barline_edge_margin_x", 0))
+    edge_margin_y = int(tuning.get("barline_edge_margin_y", 0))
+    if staff_overlap_min > 0.0 or edge_margin_x > 0 or edge_margin_y > 0:
+        filtered_lines = []
+        dropped = 0
+        mask_h = staff_mask.shape[0] if staff_mask is not None else 0
+        mask_w = staff_mask.shape[1] if staff_mask is not None else 0
+        for line in bar_lines_or_rests:
+            x1, y1, x2, y2 = map(int, line.to_bounding_box().box)
+            if edge_margin_x > 0 and mask_w > 0:
+                if x1 < edge_margin_x or x2 > (mask_w - edge_margin_x):
+                    dropped += 1
+                    continue
+            if edge_margin_y > 0 and mask_h > 0:
+                if y1 < edge_margin_y or y2 > (mask_h - edge_margin_y):
+                    dropped += 1
+                    continue
+            if staff_overlap_min > 0.0 and staff_mask is not None:
+                x1c = max(0, min(mask_w, x1))
+                x2c = max(0, min(mask_w, x2))
+                y1c = max(0, min(mask_h, y1))
+                y2c = max(0, min(mask_h, y2))
+                if x2c <= x1c or y2c <= y1c:
+                    dropped += 1
+                    continue
+                area = (x2c - x1c) * (y2c - y1c)
+                overlap = int(staff_mask[y1c:y2c, x1c:x2c].sum())
+                ratio = overlap / float(area) if area > 0 else 0.0
+                if ratio < staff_overlap_min:
+                    dropped += 1
+                    continue
+            filtered_lines.append(line)
+        bar_lines_or_rests = filtered_lines
+        eprint(
+            f"Barline staff-overlap/edge filter kept {len(bar_lines_or_rests)} candidates, "
+            f"dropped {dropped}"
+        )
 
     min_height_factor = tuning.get("barline_min_height_factor", 1.0)
     max_width_factor = tuning.get("barline_max_width_factor", 1.0)
@@ -602,6 +973,194 @@ def filter_detections_by_notehead_proximity(
         kept_detections.append(pred)
 
     return kept_detections, rejected_detections
+
+
+def _cluster_by_y_centers(y_centers: List[float], max_distance: float) -> List[List[int]]:
+    if not y_centers:
+        return []
+    sorted_indices = np.argsort(y_centers)
+    sorted_y = [y_centers[i] for i in sorted_indices]
+    clusters: List[List[int]] = []
+    current_cluster = [int(sorted_indices[0])]
+    for idx in range(1, len(sorted_y)):
+        if sorted_y[idx] - sorted_y[idx - 1] <= max_distance:
+            current_cluster.append(int(sorted_indices[idx]))
+        else:
+            clusters.append(current_cluster)
+            current_cluster = [int(sorted_indices[idx])]
+    clusters.append(current_cluster)
+    return clusters
+
+
+def _scan_vertical_line(
+    gray: np.ndarray,
+    y_top: int,
+    y_bottom: int,
+    x_center: float,
+    *,
+    search_half_width: int,
+    dark_threshold: int,
+    min_dark_ratio: float,
+    right_band_px: int,
+    right_dark_ratio_max: float,
+    line_width: int,
+) -> Optional[Box]:
+    h, w = gray.shape[:2]
+    y1 = max(0, min(h - 1, y_top))
+    y2 = max(0, min(h, y_bottom))
+    if y2 <= y1:
+        return None
+
+    x_start = max(0, int(round(x_center - search_half_width)))
+    x_end = min(w - 1, int(round(x_center + search_half_width)))
+    if x_end < x_start:
+        return None
+
+    best = None
+    best_ratio = 0.0
+    for x in range(x_start, x_end + 1):
+        x1 = x
+        x2 = min(w, x + line_width)
+        if x2 <= x1:
+            continue
+        column = gray[y1:y2, x1:x2]
+        dark_ratio = float(np.mean(column < dark_threshold))
+        if dark_ratio < min_dark_ratio:
+            continue
+
+        rx1 = min(w, x2)
+        rx2 = min(w, x2 + right_band_px)
+        if rx2 <= rx1:
+            continue
+        right_band = gray[y1:y2, rx1:rx2]
+        right_dark_ratio = float(np.mean(right_band < dark_threshold))
+        if right_dark_ratio > right_dark_ratio_max:
+            continue
+
+        if dark_ratio > best_ratio:
+            best_ratio = dark_ratio
+            best = (x1, y1, x2, y2)
+
+    return best
+
+
+def recover_end_barlines(
+    image_path: Path,
+    detections: Sequence[BarlinePrediction],
+    staff_mask: Optional[np.ndarray] = None,
+) -> List[BarlinePrediction]:
+    if len(detections) < 3:
+        return []
+
+    gray = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
+    if gray is None:
+        return []
+
+    if staff_mask is not None:
+        staff_mask = _ensure_mask_shape(staff_mask, gray.shape[:2])
+
+    heights = [max(1, pred.orig_bbox[3] - pred.orig_bbox[1]) for pred in detections]
+    median_height = float(np.median(heights)) if heights else 20.0
+    row_cluster_px = max(18, int(round(median_height * 1.4)))
+    min_height_px = max(14, int(round(median_height * 0.8)))
+
+    x_ref_global: Optional[float] = None
+    if staff_mask is None:
+        centers_x = [(pred.orig_bbox[0] + pred.orig_bbox[2]) / 2.0 for pred in detections]
+        max_center_x = max(centers_x)
+
+        x_bin_width = 8
+        min_bin_count = 2
+        max_x_gap_px = 40
+        bins: Dict[int, int] = {}
+        for cx in centers_x:
+            key = int(round(cx / x_bin_width))
+            bins[key] = bins.get(key, 0) + 1
+
+        candidate_bins = [
+            (key, count)
+            for key, count in bins.items()
+            if count >= min_bin_count and (key * x_bin_width) >= (max_center_x - max_x_gap_px)
+        ]
+        if not candidate_bins:
+            return []
+
+        rightmost_key = max(candidate_bins, key=lambda item: item[0])[0]
+        x_ref_global = rightmost_key * x_bin_width
+        if x_ref_global < gray.shape[1] * 0.7:
+            return []
+
+    staff_groups: Dict[int, List[int]] = {}
+    for idx, pred in enumerate(detections):
+        if pred.staff_index >= 0:
+            staff_groups.setdefault(pred.staff_index, []).append(idx)
+
+    row_groups: List[List[int]]
+    if staff_groups:
+        row_groups = [group for group in staff_groups.values() if len(group) >= 2]
+    else:
+        y_centers = [(pred.orig_bbox[1] + pred.orig_bbox[3]) / 2.0 for pred in detections]
+        row_groups = _cluster_by_y_centers(y_centers, row_cluster_px)
+
+    added: List[BarlinePrediction] = []
+    search_half_width = max(8, int(round(median_height * 0.45)))
+    x_tolerance_px = max(6, int(round(median_height * 0.25)))
+
+    for group in row_groups:
+        cluster_boxes = [detections[i].orig_bbox for i in group]
+        y_top = min(box[1] for box in cluster_boxes)
+        y_bottom = max(box[3] for box in cluster_boxes)
+        if (y_bottom - y_top) < min_height_px:
+            continue
+
+        if staff_mask is not None:
+            y1 = max(0, min(staff_mask.shape[0] - 1, y_top))
+            y2 = max(0, min(staff_mask.shape[0], y_bottom))
+            if y2 <= y1:
+                continue
+            row_mask = staff_mask[y1:y2]
+            cols = np.where(row_mask.any(axis=0))[0]
+            if cols.size == 0:
+                continue
+            x_ref = float(np.percentile(cols, 98))
+        else:
+            if x_ref_global is None:
+                continue
+            x_ref = x_ref_global
+
+        if x_ref < gray.shape[1] * 0.7:
+            continue
+
+        if any(abs(((box[0] + box[2]) / 2.0) - x_ref) <= x_tolerance_px for box in cluster_boxes):
+            continue
+
+        candidate = _scan_vertical_line(
+            gray,
+            y_top,
+            y_bottom,
+            x_ref,
+            search_half_width=search_half_width,
+            dark_threshold=120,
+            min_dark_ratio=0.5,
+            right_band_px=4,
+            right_dark_ratio_max=0.25,
+            line_width=2,
+        )
+        if not candidate:
+            continue
+
+        added.append(
+            BarlinePrediction(
+                pred_bbox=candidate,
+                orig_bbox=candidate,
+                system_index=-3,
+                staff_index=-1,
+            )
+        )
+
+    if added:
+        eprint(f"End barline recovery added {len(added)} candidates")
+    return added
 
 
 def count_staff_crossings(
@@ -1269,6 +1828,7 @@ def draw_overlay(
     matches: Optional[Sequence[BarlineMatch]] = None,
     soft_matches: Optional[Sequence[BarlineSoftMatch]] = None,
     rejected_detections: Optional[Sequence[BarlinePrediction]] = None,
+    added_detections: Optional[Sequence[BarlinePrediction]] = None,
     false_positive_indices: Optional[Sequence[int]] = None,
     thickness: int = 2,
 ) -> None:
@@ -1316,6 +1876,23 @@ def draw_overlay(
             cv2.rectangle(image, (x1, y1), (x2, y2), color, thickness)
             cv2.putText(
                 image, label, (x1, max(12, y1 - 4)), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1, cv2.LINE_AA
+            )
+
+    if added_detections:
+        for pred in added_detections:
+            x1, y1, x2, y2 = pred.orig_bbox
+            color = (255, 0, 0)  # Blue for end-barline recovery
+            label = "END_RECOVERED"
+            cv2.rectangle(image, (x1, y1), (x2, y2), color, thickness + 1)
+            cv2.putText(
+                image,
+                label,
+                (x1, max(12, y1 - 4)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.4,
+                color,
+                1,
+                cv2.LINE_AA,
             )
 
     ensure_dir(output_path.parent)
@@ -1604,12 +2181,56 @@ def main() -> None:
     tuning = {
         "barline_min_height_factor": args.barline_min_height_factor,
         "barline_max_width_factor": args.barline_max_width_factor,
+        "barline_staff_overlap_min": args.barline_staff_overlap_min,
+        "barline_edge_margin_x": args.barline_edge_margin_x,
+        "barline_edge_margin_y": args.barline_edge_margin_y,
+        "gen_vertical_run": args.gen_vertical_run,
+        "gen_vertical_run_weak": args.gen_vertical_run_weak,
+        "gen_barline_cc_relaxed": args.gen_barline_cc_relaxed,
+        "gen_barline_cc_dilated": args.gen_barline_cc_dilated,
+        "gen_sobel_vertical": args.gen_sobel_vertical,
+        "gen_sobel_vertical_weak": args.gen_sobel_vertical_weak,
+        "gen_column_sum_staff": args.gen_column_sum_staff,
+        "gen_column_sum_weak": args.gen_column_sum_weak,
+        "gen_column_sum_no_staff": args.gen_column_sum_no_staff,
+        "gen_hough_vertical": args.gen_hough_vertical,
+        "gen_hough_vertical_weak": args.gen_hough_vertical_weak,
+        "gen_vertical_run_no_staff": args.gen_vertical_run_no_staff,
+        "gen_barline_cc_tiny": args.gen_barline_cc_tiny,
+        "gen_sobel_no_staff": args.gen_sobel_no_staff,
     }
 
     for image_path in images:
         stem = image_path.stem
         image_run_dir = run_dir / stem
         working_image = prepare_working_image(image_path, image_run_dir)
+
+        sr_scale = 1
+        if args.enable_sr:
+            requested_sr_scale = 4
+            eprint(f"Applying Super-Resolution (x{requested_sr_scale}) to {stem}...")
+            img_bgr = cv2.imread(str(working_image))
+            if img_bgr is None:
+                eprint(f"Warning: Failed to load {working_image} for SR.")
+            else:
+                original_h, original_w = img_bgr.shape[:2]
+                upscaled = apply_advanced_sr(
+                    img_bgr, model_name="RealESRGAN_x4plus", scale=requested_sr_scale
+                )
+                up_h, up_w = upscaled.shape[:2]
+                inferred_scale = round(up_w / original_w) if original_w else 1
+
+                # Only treat SR as enabled if the output resolution actually increased.
+                if inferred_scale >= 2 and up_w >= original_w * 2 and up_h >= original_h * 2:
+                    sr_scale = inferred_scale
+                else:
+                    eprint(
+                        f"Warning: SR output resolution did not increase "
+                        f"({original_w}x{original_h} -> {up_w}x{up_h}); treating as no-SR."
+                    )
+                    sr_scale = 1
+
+                cv2.imwrite(str(working_image), upscaled)
 
         config = ProcessingConfig(
             True,
@@ -1637,9 +2258,39 @@ def main() -> None:
                 )
             )
 
+        # Scale ThinBarlineConfig if SR is enabled
+        tb_config = ThinBarlineConfig()
+        if sr_scale > 1:
+            tb_config = ThinBarlineConfig(
+                min_height=tb_config.min_height * sr_scale,
+                max_height=tb_config.max_height * sr_scale,
+                max_width=tb_config.max_width * sr_scale,
+                y_merge_tolerance=tb_config.y_merge_tolerance * sr_scale,
+                y_center_tolerance=tb_config.y_center_tolerance * sr_scale,
+                x_center_tolerance=tb_config.x_center_tolerance * sr_scale,
+                adjacent_relaxed_span=tb_config.adjacent_relaxed_span * sr_scale,
+                vertical_gap_fill=tb_config.vertical_gap_fill * sr_scale,
+                left_margin_limit=tb_config.left_margin_limit * sr_scale,
+                cluster_x_tolerance=tb_config.cluster_x_tolerance * sr_scale,
+                cluster_reject_span=tb_config.cluster_reject_span * sr_scale,
+                # Intensity / Ratio thresholds remain same
+                pixel_threshold=tb_config.pixel_threshold,
+                dark_pixel_threshold=tb_config.dark_pixel_threshold,
+                adjacent_min_intensity=tb_config.adjacent_min_intensity,
+                adjacent_relaxed_dark_ratio=tb_config.adjacent_relaxed_dark_ratio,
+                max_intensity_std=tb_config.max_intensity_std,
+                max_intensity_std_relaxed=tb_config.max_intensity_std_relaxed,
+                notehead_dark_ratio=tb_config.notehead_dark_ratio,
+                notehead_std_floor=tb_config.notehead_std_floor,
+                allow_single_side_bright=tb_config.allow_single_side_bright,
+                single_side_dark_ratio=tb_config.single_side_dark_ratio,
+                cluster_reject_count=tb_config.cluster_reject_count,
+            )
+
         extra_barlines = detect_thin_vertical_runs(
             working_image,
             [prediction.orig_bbox for prediction in mapped_predictions],
+            config=tb_config,
         )
 
         def _centre(box: Tuple[int, int, int, int]) -> Tuple[float, float]:
@@ -1753,18 +2404,36 @@ def main() -> None:
         )
 
         if STEM_CONTEXT_HEURISTICS["enabled"]:
+            # Scale heuristics parameters if SR is enabled
+            h_config = STEM_CONTEXT_HEURISTICS.copy()
+            if sr_scale > 1:
+                h_config["notehead_proximity_threshold_px"] *= sr_scale
+                # Area overlap scales quadratically (sr_scale^2)
+                h_config["min_overlap_px"] *= (sr_scale * sr_scale)
+                h_config["max_height_px"] *= sr_scale
+                h_config["max_width_px"] *= sr_scale
+                h_config["cluster_gap_threshold_px"] *= sr_scale
+            
             mapped_predictions, rejected_by_heuristic = filter_detections_by_notehead_proximity(
                 mapped_predictions,
                 notehead_mask_resized,
-                STEM_CONTEXT_HEURISTICS["notehead_proximity_threshold_px"],
-                STEM_CONTEXT_HEURISTICS["min_overlap_px"],
-                STEM_CONTEXT_HEURISTICS["max_height_px"],
-                STEM_CONTEXT_HEURISTICS["max_width_px"],
+                h_config["notehead_proximity_threshold_px"],
+                h_config["min_overlap_px"],
+                h_config["max_height_px"],
+                h_config["max_width_px"],
                 staff_mask_resized,
-                STEM_CONTEXT_HEURISTICS["min_staff_crossings"],
-                STEM_CONTEXT_HEURISTICS["staff_crossing_enabled"],
+                h_config["min_staff_crossings"],
+                h_config["staff_crossing_enabled"],
             )
         # --- End Heuristic 1 ---
+
+        added_end_barlines: List[BarlinePrediction] = []
+        if args.enable_end_barline_recovery:
+            added_end_barlines = recover_end_barlines(
+                working_image, mapped_predictions, staff_mask_resized
+            )
+            if added_end_barlines:
+                mapped_predictions.extend(added_end_barlines)
 
         # DIAGNOSTICS: Compute gaps (Phase 10)
         compute_and_save_gap_stats(mapped_predictions, stem, image_run_dir)
@@ -1824,23 +2493,61 @@ def main() -> None:
             matches=[],
             soft_matches=[],
         )
-        match_result: Optional[BarlineMatchResult] = None
+        per_image_metrics.append(metric)
+
+        # Scale predictions back to 1x for JSON export and correct metric calculation logic if external tools use it
+        # BUT wait: compute_metrics logic (above) assumes pred_boxes are compatible with gt_boxes.
+        # If we passed UP-SCALED mapped_predictions to compute_metrics, we would have 0 matches.
+        # FIX: We need a separate list for metrics calculation that is scaled down.
+        
+        # Retroactive fix: The metric calculation above (lines 1830) used `mapped_predictions` (Upscaled).
+        # We must re-do the metric calc with scaled-down predictions.
+        
+        metrics_predictions: List[BarlinePrediction] = []
+        for pred in mapped_predictions:
+            # Scale down bbox to original 1x coords
+            orig_1x = tuple(int(c / sr_scale) for c in pred.orig_bbox)
+            metrics_predictions.append(BarlinePrediction(
+                pred_bbox=pred.pred_bbox, # This is internal homr bbox
+                orig_bbox=orig_1x,
+                system_index=pred.system_index,
+                staff_index=pred.staff_index
+            ))
+            
+        # Re-compute metrics with 1x predictions
+        metric = ImageMetrics(
+            image=stem,
+            num_predictions=len(metrics_predictions),
+            num_ground_truth=0,
+            true_positives=0,
+            false_positives=len(metrics_predictions),
+            false_negatives=0,
+            precision=0.0,
+            recall=0.0,
+            f1=0.0,
+            matches=[],
+            soft_matches=[]
+        )
+        match_result = None
         if ground_truth_path:
             gt_boxes = load_ground_truth_boxes(ground_truth_path)
-            metric, match_result = compute_metrics(mapped_predictions, gt_boxes, args.iou_threshold)
+            metric, match_result = compute_metrics(metrics_predictions, gt_boxes, args.iou_threshold)
             metric.image = stem
         else:
             metric.image = stem
-        per_image_metrics.append(metric)
+            
+        # Replace the last appended metric
+        per_image_metrics[-1] = metric
 
         overlay_path = image_run_dir / f"{stem}_barline_overlay.png"
         draw_overlay(
             working_image,
-            mapped_predictions,
+            mapped_predictions, # Draw on UPSCALED image with UPSCALED preds
             overlay_path,
             matches=match_result.matches if match_result else None,
             soft_matches=match_result.soft_matches if match_result else None,
             rejected_detections=rejected_by_heuristic,
+            added_detections=added_end_barlines,
             false_positive_indices=match_result.false_positive_indices if match_result else None,
         )
 
@@ -1856,7 +2563,7 @@ def main() -> None:
                             "system_index": pred.system_index,
                             "staff_index": pred.staff_index,
                         }
-                        for pred in mapped_predictions
+                        for pred in metrics_predictions # Save 1x predictions
                     ],
                 },
                 fh,

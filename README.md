@@ -4,12 +4,27 @@ This project aims to develop a Python-based tool that automatically adds measure
 
 > **Status notice (2024-06-14):** Active development is concentrated on the `homr`-based evaluation workflow and related tooling. Historical experiments remain documented below; when in doubt, start from `docs/README.md` for the current documentation map and follow the pointers there.
 
+
+---
+## Ultimate Goal (Very Long Term)
+
+Automatically add correct measure numbers to PDF sheet music with minimal human intervention.
+
+The long-term vision is a system that is:
+- Robust across publishers and layouts
+- Explainable and debuggable
+- Practical as a preprocessing tool for musicians and researchers
+
+This repository serves as an experimental and research-driven workspace toward that goal.
+---
+
+
 ## Repository Structure
 
-- **`src/`**: Stable, core application code (`homr`, `ml_detector`, `common`).
-- **`external/`**: Cloned third-party libraries (`homr`, `oemer`).
-- **`tools/`**: Reusable utility scripts (`visualize_*.py`, etc.).
-- **`experiments/`**: Experimental scripts and analysis (`fp_reduction/`, `gemini/`, `hybrid/`).
+- **`src/`**: Stable, core application code.
+- **`external/`**: Cloned third-party libraries.
+- **`tools/`**: Reusable utility scripts.
+- **`experiments/`**: Experimental scripts and analysis.
 - **`docs/`**: Documentation and notes.
 
 ## License
@@ -58,11 +73,45 @@ The project is organized as follows:
 └── ...
 ```
 
-## Barline FP Reduction Project (Dec 2025)
-We have completed an extensive heuristic optimization project to reduce False Positives (FPs) in barline detection on `page_3`.
-- **Outcome**: Reduced FPs by ~15% (35 -> 30) with **0 False Negatives**.
-- **Conclusion**: Visual heuristics are exhausted. Remaining FPs are indistinguishable from fragmented TPs.
-- **Details**: See [FINAL_SUMMARY.md](docs/fp_reduction/FINAL_SUMMARY.md).
+## Detect Barline project
+楽譜（の画像）から小節線を検出する機能
+homr, oemerなどのAIやそれらのhaybrid検出、ヒューリスティック後処理などを検討する。
+独自モデルなども考慮に入れ、正確な小節線検出を目指す
+
+### Barline FP Reduction Project (Dec 2025)
+
+We completed an extensive heuristic optimization project to reduce False Positives (FPs) in barline detection on `page_3`.
+
+- **Outcome**: Reduced FPs with **0 False Negatives**
+- **Conclusion**: Visual heuristics are exhausted; remaining FPs are indistinguishable from fragmented TPs
+- **Details**: See `docs/fp_reduction/FINAL_SUMMARY.md`
+
+---
+
+## Current Capability (Phase 4 complete; Phase 5 planned)
+
+The current best-known evaluation pipeline for `page_3` (hybrid detector outputs) is:
+
+1. **Hybrid detection** (multi-model OMR pipeline; produces `logs/hybrid_results.json`)
+2. **Row-based geometric consistency filter** (Phase 3)
+3. **Optional geometry-based note-context filter** (Phase 4)
+
+With Phase 4 enabled, the pipeline is confirmed to reach **TP=152, FP=0, FN=0** on `page_3` by using `homr` note-related outputs (notehead context) to reject stem-like false barlines.
+
+### Status & Limitations
+- Confirmed correctness milestone is **`page_3` only**.
+- Phase 4 (FP reduction) is **complete**; cross-dataset review indicates the FP rule is conservative and does not introduce new false negatives.
+- Remaining false negatives observed on other pages are treated as an **upstream attribution/recovery problem** (Phase 5), not a Phase 4 regression.
+
+## Count barline project　（未着手） 
+検出した小節線と、楽譜の中の複数小節の休みの検出や楽章の分割を使って最終的に小節番号をつけるプログラムとして完成させる
+Detect Barlineを適用するかの「楽譜かどうか」の判断もできる必要がある
+
+## Application（未着手） 
+これまでの結果をすべて使って、アプリケーションの形にまとめる
+pdfを入れたら、実用的な処理時間で小節番号付きのPDFが戻ってくることが必要
+
+
 
 ## GUI Helper Tool
 
@@ -75,11 +124,13 @@ It allows for rapid manual verification of False Positives (FPs).
 
 ## Development Environment
 
-All development and script execution should be performed inside the provided Docker container to ensure consistency.
+All development and evaluation should be performed inside the provided Docker container.
 
--   **Container Name:** `pdf_score_dev_gpu`
--   **Attaching to the container:** Use your IDE's features (e.g., VS Code Remote - Containers) or the standard `docker exec` command.
--   **Container Workspace:** The host project directory (`/home/masaki_muramatsu/ws_PDFScoreBar`) is mounted to `/workspace` inside the container. All file paths within scripts executed inside the container should use `/workspace` as their base.
+- **Container name**: `pdf_score_dev_gpu`
+- **Workspace mount**: Project root → `/workspace`
+- All script paths inside the container assume `/workspace` as base.
+
+See `docs/ENVIRONMENTS.md` for details.
 
 ## AI Assistant Guides
 

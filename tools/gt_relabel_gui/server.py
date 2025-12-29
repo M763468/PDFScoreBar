@@ -8,6 +8,7 @@ import mimetypes
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+import time
 from urllib.parse import parse_qs, urlparse
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -215,6 +216,24 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         parsed = urlparse(self.path)
+        if parsed.path == "/api/probe_log":
+            body = self.rfile.read(int(self.headers.get("Content-Length", "0")))
+            payload = json.loads(body.decode("utf-8"))
+            page = payload.get("page", "unknown")
+            probe = payload.get("probe", {})
+            record = {
+                "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                "page": page,
+                "probe": probe,
+                "selected": payload.get("selected"),
+            }
+            log_dir = (self.server.root / "logs" / "gt_probe").resolve()
+            log_dir.mkdir(parents=True, exist_ok=True)
+            log_path = log_dir / f"{page}_probe_log.jsonl"
+            with log_path.open("a", encoding="utf-8") as fh:
+                fh.write(json.dumps(record) + "\n")
+            self._serve_json({"path": str(log_path), "status": "ok"})
+            return
         if parsed.path != "/api/save":
             self.send_error(404, "Not found")
             return

@@ -26,6 +26,20 @@ const modeDrawBtn = document.getElementById("modeDrawBtn");
 const deleteBtn = document.getElementById("deleteBtn");
 const dedupBtn = document.getElementById("dedupBtn");
 const typeSelect = document.getElementById("typeSelect");
+const probeEnable = document.getElementById("probeEnable");
+const probeUseSelected = document.getElementById("probeUseSelected");
+const probeX = document.getElementById("probeX");
+const probeWidth = document.getElementById("probeWidth");
+const probeY = document.getElementById("probeY");
+const probeHeight = document.getElementById("probeHeight");
+const probeThreshold = document.getElementById("probeThreshold");
+const probeLogBtn = document.getElementById("probeLogBtn");
+const probeXValue = document.getElementById("probeXValue");
+const probeWidthValue = document.getElementById("probeWidthValue");
+const probeYValue = document.getElementById("probeYValue");
+const probeHeightValue = document.getElementById("probeHeightValue");
+const probeThresholdValue = document.getElementById("probeThresholdValue");
+const probeRatio = document.getElementById("probeRatio");
 
 let image = new Image();
 let viewScale = 1.0;
@@ -46,8 +60,13 @@ const HIT_PADDING = 6;
 const EDITABLE_COLOR = "#00c2d1";
 const SELECTED_COLOR = "#ff8a00";
 const DRAW_COLOR = "#ff3b30";
+const PROBE_COLOR = "#b000ff";
 const DEDUP_X_TOL = 3;
 const DEDUP_Y_OVERLAP = 0.7;
+
+let probeCanvas = document.createElement("canvas");
+let probeCtx = probeCanvas.getContext("2d");
+let lastProbe = null;
 
 function fetchJSON(url) {
   return fetch(url).then((r) => r.json());
@@ -116,6 +135,11 @@ function renderLayers() {
   drawDot.style.background = DRAW_COLOR;
   legend.appendChild(makeLegend("Draw preview", drawDot));
 
+  const probeDot = document.createElement("span");
+  probeDot.className = "dot";
+  probeDot.style.background = PROBE_COLOR;
+  legend.appendChild(makeLegend("Probe bar", probeDot));
+
   layerList.querySelectorAll("input[type=checkbox]").forEach((cb) => {
     cb.onchange = (e) => {
       if (cb.id === "showEditable") {
@@ -154,6 +178,18 @@ function loadPage() {
 
   image.onload = () => {
     resetView();
+    probeCanvas.width = image.width;
+    probeCanvas.height = image.height;
+    probeCtx.drawImage(image, 0, 0);
+    probeX.max = Math.max(0, image.width - 1);
+    probeY.max = Math.max(0, image.height - 1);
+    if (parseInt(probeX.value, 10) === 0) {
+      probeX.value = Math.max(0, image.width - 20);
+    }
+    if (parseInt(probeY.value, 10) === 0) {
+      probeY.value = Math.floor(image.height * 0.5);
+    }
+    updateProbeLabels();
     draw();
   };
   image.src = `/file?path=${encodeURIComponent(currentPage.image)}`;
@@ -338,6 +374,19 @@ function draw() {
     ctx.lineWidth = 2;
     ctx.strokeRect(drawStart.x, drawStart.y, drawStart.w, drawStart.h);
   }
+
+  if (probeEnable.checked) {
+    const probe = computeProbe();
+    if (probe) {
+      const p1 = imgToCanvas({ x: probe.x1, y: probe.y1 });
+      const p2 = imgToCanvas({ x: probe.x2, y: probe.y2 });
+      ctx.strokeStyle = PROBE_COLOR;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+      ctx.fillStyle = "rgba(176, 0, 255, 0.12)";
+      ctx.fillRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+    }
+  }
 }
 
 function normalizeBox(box) {
@@ -515,6 +564,10 @@ window.addEventListener("resize", () => {
 });
 
 window.addEventListener("keydown", (e) => {
+  const tag = e.target && e.target.tagName ? e.target.tagName.toLowerCase() : "";
+  if (tag === "input" || tag === "select" || tag === "textarea") {
+    return;
+  }
   if (e.key === " ") spaceDown = true;
   if (e.key === "ArrowLeft") prevBtn.click();
   if (e.key === "ArrowRight") nextBtn.click();
@@ -578,6 +631,56 @@ typeSelect.onchange = () => {
   draw();
 };
 
+function logProbe() {
+  if (!currentPage || !probeEnable.checked) return;
+  const probe = computeProbe();
+  if (!probe) return;
+  const payload = {
+    page: currentPage.name,
+    probe: {
+      x1: probe.x1,
+      y1: probe.y1,
+      x2: probe.x2,
+      y2: probe.y2,
+      ratio: probe.ratio,
+      threshold: probe.threshold,
+      source: probeUseSelected.checked ? "selected" : "manual",
+    },
+    selected: selectedIndex !== null ? editableBoxes[selectedIndex]?.bbox : null,
+  };
+  fetch("/api/probe_log", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).then(() => {
+    saveStatus.textContent = "Probe logged";
+  });
+}
+
+probeEnable.onchange = () => draw();
+probeUseSelected.onchange = () => draw();
+probeX.oninput = () => {
+  updateProbeLabels();
+  draw();
+};
+probeWidth.oninput = () => {
+  updateProbeLabels();
+  draw();
+};
+probeY.oninput = () => {
+  updateProbeLabels();
+  draw();
+};
+probeHeight.oninput = () => {
+  updateProbeLabels();
+  draw();
+};
+probeThreshold.oninput = () => {
+  updateProbeLabels();
+  draw();
+};
+probeLogBtn.onclick = logProbe;
+
 fetchJSON("/api/pages").then((data) => {
   pages = data.pages || [];
   if (!pages.length) {
@@ -615,6 +718,53 @@ function setDirty(next) {
 
 function updateDirtyStatus() {
   dirtyStatus.textContent = dirty ? "Unsaved changes" : "";
+}
+
+function updateProbeLabels() {
+  probeXValue.textContent = probeX.value;
+  probeWidthValue.textContent = probeWidth.value;
+  probeYValue.textContent = probeY.value;
+  probeHeightValue.textContent = probeHeight.value;
+  probeThresholdValue.textContent = probeThreshold.value;
+}
+
+function computeProbe() {
+  if (!image.complete) return null;
+  let y1;
+  let y2;
+  if (probeUseSelected.checked && selectedIndex !== null && editableBoxes[selectedIndex]) {
+    const box = editableBoxes[selectedIndex].bbox;
+    y1 = Math.round(Math.min(box[1], box[3]));
+    y2 = Math.round(Math.max(box[1], box[3]));
+  } else {
+    const centerY = parseInt(probeY.value, 10);
+    const bandH = parseInt(probeHeight.value, 10);
+    y1 = Math.max(0, Math.round(centerY - bandH / 2));
+    y2 = Math.min(image.height - 1, Math.round(centerY + bandH / 2));
+  }
+
+  const centerX = parseInt(probeX.value, 10);
+  const width = parseInt(probeWidth.value, 10);
+  const x1 = Math.max(0, Math.round(centerX - width / 2));
+  const x2 = Math.min(image.width - 1, Math.round(centerX + width / 2));
+
+  const regionW = Math.max(1, x2 - x1 + 1);
+  const regionH = Math.max(1, y2 - y1 + 1);
+  const data = probeCtx.getImageData(x1, y1, regionW, regionH).data;
+  const threshold = parseInt(probeThreshold.value, 10);
+  let black = 0;
+  const total = regionW * regionH;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    if (lum < threshold) black += 1;
+  }
+  const ratio = total ? black / total : 0;
+  lastProbe = { x1, y1, x2, y2, ratio, threshold };
+  probeRatio.textContent = ratio.toFixed(3);
+  return lastProbe;
 }
 
 function saveThenSwitch(nextIndex) {

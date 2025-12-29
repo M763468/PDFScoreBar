@@ -552,3 +552,270 @@ This log has been cleaned to retain only confirmed Phase 6 results and reference
 **結果**
 - var12: TPの変化なし / FN改善なし、FPが大幅増（staff anchor の誤候補増）。
 - var13-15: v2 と同一（TP/FP/FN 変化なし）。
+
+---
+## 2025-12-29 FN/FP 対処アイデア検証GUI（Probe bar）
+
+**作業目的 / 方針 / 位置づけ**
+- IDEAS.md の「判定バー + 黒インク率」案をGUI上で評価できるように実装。
+
+**作業時間**
+- 2025-12-29 10:10 JST 前後
+
+**変更したファイルの場所**
+- `tools/gt_relabel_gui/index_gt.html`
+- `tools/gt_relabel_gui/app_gt.js`
+- `tools/gt_relabel_gui/server.py`
+
+**試した結果**
+- 実装のみ（動作確認はこれから）
+- ログは `logs/gt_probe/` に JSONL で記録
+
+---
+## 2025-12-29 GT GUI: Probe bar + FN参照レイヤ追加
+
+**作業目的 / 方針 / 位置づけ**
+- GUI操作性改善（スライダー操作時のページ移動抑止）。
+- FN可視化用の参照レイヤを追加できる設定ファイルを用意。
+- FN抽出を評価スクリプトから書き出せるように準備。
+
+**作業時間**
+- 2025-12-29 10:40 JST 前後
+
+**変更したファイルの場所**
+- `tools/gt_relabel_gui/app_gt.js`
+- `tools/run_gt_rebuild_hybrid_eval.py`
+- `logs/phase6_detector_miss/gt_rebuild/gt_editor_config_with_fn.json`
+
+**試した結果**
+- 実装のみ（動作確認はこれから）
+
+---
+## 2025-12-29 Probe bar 候補抽出（自動スキャン）
+
+**作業目的 / 方針 / 位置づけ**
+- probe bar で得られた「高いink ratio」傾向を自動スキャンに落とし込み、FN候補を抽出する。
+
+**作業時間**
+- 2025-12-29 11:10 JST 前後
+
+**変更したファイルの場所**
+- `tools/probe_bar_candidates.py`
+- `logs/phase6_detector_miss/gt_rebuild/gt_editor_config_with_fn_probe.json`
+
+**試した結果**
+- 候補抽出の出力: `logs/gt_probe_candidates/20251229T_probe_candidates_v1/`
+- GUI参照用config: `logs/phase6_detector_miss/gt_rebuild/gt_editor_config_with_fn_probe.json`
+
+---
+## 2025-12-29 Probe scan によるバーライン回復（var16）
+
+**作業目的 / 方針 / 位置づけ**
+- GUIで有効性が示唆された「判定バー＋ink ratio」を、barline回復手段として組み込んで評価。
+- numpyベースでスキャンし、局所ピークを候補として追加。
+
+**作業時間**
+- 2025-12-29 12:20 JST 前後
+
+**変更したファイルの場所**
+- `tools/run_gt_rebuild_hybrid_eval.py`
+
+**調整内容**
+- endbar method: `probe_scan`
+- `probe_width=4`, `ink_threshold=180`, `min_ratio=0.85`, `min_peak_distance=6`, `max_per_band=8`
+
+**視覚確認ログ**
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var16/per_page/*/endbar_debug.png`
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var16/per_page/*/endbar_debug.json`
+
+**試した結果（出力ディレクトリのみ）**
+- `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var16/`
+
+**結果**
+- FNは改善せず、FPが大幅増（probe scan は高感度すぎる可能性）。
+
+---
+## 2025-12-29 Probe ratio 可視化（staff別グラフ）
+
+**作業目的 / 方針 / 位置づけ**
+- staffごとの x方向 ink ratio を可視化し、GT/FP位置との対応を確認する。
+
+**作業時間**
+- 2025-12-29 13:00 JST 前後
+
+**変更したファイルの場所**
+- `tools/probe_ratio_plot.py`
+
+**試した結果**
+- 出力: `logs/gt_probe_ratio/20251229T_probe_ratio_var16/`（pageごとのratio_band_XX.png）
+
+---
+## 2025-12-29 Probe ratio 可視化 v2（FN帯のみ・GT/FN/FP表示・譜面薄重畳）
+
+**作業目的 / 方針 / 位置づけ**
+- FNを含むstaff bandのみを可視化し、GT/FN/FPの位置とink ratioピークを対応づける。
+- 判定バー幅を既存予測の中央値で自動決定し、楽譜の薄い重畳でx位置の対応を確認しやすくする。
+
+**作業時間**
+- 2025-12-29 13:25 JST 前後
+
+**変更したファイルの場所**
+- `tools/probe_ratio_plot.py`
+
+**試した結果**
+- 出力: `logs/gt_probe_ratio/20251229T_probe_ratio_var16_v2/`
+- オプション: `--only-fn-bands --probe-width-mode median_pred --overlay-score-alpha 0.18`
+
+---
+## 2025-12-29 Probe ratio 可視化 v4（band抽出修正）
+
+**作業目的 / 方針 / 位置づけ**
+- staff band抽出が空になる不具合を修正し、グラフ画像を出力。
+
+**作業時間**
+- 2025-12-29 13:40 JST 前後
+
+**変更したファイルの場所**
+- `tools/probe_ratio_plot.py`（maskのy座標をunique化）
+
+**試した結果**
+- 出力: `logs/gt_probe_ratio/20251229T_probe_ratio_var16_v4/`
+
+---
+## 2025-12-29 Probe scan 改善（局所最大への再アライン）
+
+**作業目的 / 方針 / 位置づけ**
+- 閾値超え位置の近傍でink ratio最大となるxに再アラインし、候補をその位置で追加。
+
+**作業時間**
+- 2025-12-29 14:10 JST 前後
+
+**変更したファイルの場所**
+- `tools/run_gt_rebuild_hybrid_eval.py`（probe_scanにrefine_window追加）
+
+**調整内容**
+- var17: probe_scan (probe_width=9, min_ratio=0.85, refine_window=4)
+
+**試した結果**
+- 出力: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var17/`
+- overlay: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var17/overlays/*_tp_fp_fn.png`
+
+---
+## 2025-12-29 FN周辺 ink ratio 解析（probe_scan原因調査）
+
+**作業目的 / 方針 / 位置づけ**
+- FN位置でink ratioが高いのに候補追加されない理由を調査。
+
+**作業時間**
+- 2025-12-29 14:40 JST 前後
+
+**変更したファイルの場所**
+- `tools/probe_fn_analysis.py`
+
+**試した結果**
+- v1: staff band高さで解析 → すべて below_threshold
+  - `logs/gt_probe_analysis/20251229T_fn_probe_analysis_v1/`
+- v2: FN bbox 高さで解析（width=9） → すべて below_threshold
+  - `logs/gt_probe_analysis/20251229T_fn_probe_analysis_v2/`
+- v3: FN bbox 高さ + width=3 で解析 → 多くが ok / peak_far_or_filtered
+  - `logs/gt_probe_analysis/20251229T_fn_probe_analysis_v3/`
+
+---
+## 2025-12-29 Probe scan 改善（幅3px + barline高さ）
+
+**作業目的 / 方針 / 位置づけ**
+- FN周辺のink ratio解析結果を反映し、判定バー幅と高さの設定を修正。
+
+**作業時間**
+- 2025-12-29 15:10 JST 前後
+
+**変更したファイルの場所**
+- `tools/run_gt_rebuild_hybrid_eval.py`（probe_scanのband高さ制御追加）
+
+**調整内容**
+- var18: probe_scan
+  - `probe_width=3`
+  - `probe_min_peak_distance=3`
+  - `probe_max_per_band=6`
+  - `probe_band_height_mode=median_box`
+  - `probe_band_height_min=12`
+
+**試した結果**
+- 出力: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var18/`
+- overlay: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var18/overlays/*_tp_fp_fn.png`
+
+---
+## 2025-12-29 FN再分析 & probe_scan パラメータ調整（var19）
+
+**作業目的 / 方針 / 位置づけ**
+- var18で残ったFN周辺のink ratio解析を行い、ピーク選別条件を緩めて再評価。
+
+**作業時間**
+- 2025-12-29 15:40 JST 前後
+
+**変更したファイルの場所**
+- 解析スクリプトのみ（新規ファイル追加なし）
+
+**試した結果**
+- FN解析: `logs/gt_probe_analysis/20251229T_fn_probe_analysis_v4/`
+- var19: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var19/`
+  - `probe_width=3, min_ratio=0.8, min_peak_distance=2, max_per_band=12`
+  - overlay: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var19/overlays/*_tp_fp_fn.png`
+
+---
+## 2025-12-29 probe_scan パラメータ一括比較（var20-22）
+
+**作業目的 / 方針 / 位置づけ**
+- FN残りを解決するため、min_ratio / max_per_band / refine_window を個別に変更し効果を比較。
+
+**作業時間**
+- 2025-12-29 16:10 JST 前後
+
+**試した結果**
+- var20: min_ratio=0.75
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var20/`
+- var21: max_per_band=16
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var21/`
+- var22: refine_window=6（他はvar19同等）
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var22/`
+
+---
+## 2025-12-29 probe_scan パラメータ追加比較（var23-24）
+
+**作業目的 / 方針 / 位置づけ**
+- max_per_band と min_peak_distance の調整効果を比較。
+
+**作業時間**
+- 2025-12-29 16:40 JST 前後
+
+**試した結果**
+- var23: max_per_band=20
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var23/`
+- var24: min_peak_distance=1
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var24/`
+
+---
+## 2025-12-29 probe_scan FN完全ゼロ化の試行（var25-26）
+
+**作業目的 / 方針 / 位置づけ**
+- max_per_band制限を解除し、FNの完全回復を優先。
+
+**作業時間**
+- 2025-12-29 17:10 JST 前後
+
+**変更したファイルの場所**
+- `tools/run_gt_rebuild_hybrid_eval.py`（max_per_band=0 で無制限）
+
+**試した結果**
+- var25: max_per_band=0, min_peak_distance=2
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var25/`
+- var26: max_per_band=0, min_peak_distance=1
+  - `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var26/`
+
+  
+---
+## 2025-12-29 probe_scan FNゼロ達成（重要）
+
+- var25（probe_scan, max_per_band=0, min_peak_distance=2）で **全ページ FN=0** を達成。
+- ただし FP は大幅に増加しており、以降の段階でフィルタリングで抑制する前提。
+- 出力: `logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var25/`

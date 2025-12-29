@@ -37,6 +37,36 @@
         <button id="dedupBtn" class="btn">Auto Dedup</button>
       </div>
       <div class="row">
+        <label class="small"><input type="checkbox" id="probeEnable" /> Probe bar</label>
+      </div>
+      <div class="row small">
+        <label>Use selected height <input type="checkbox" id="probeUseSelected" checked /></label>
+      </div>
+      <div class="row small">
+        <label>Probe X <input type="range" id="probeX" min="0" max="100" value="0" /></label>
+        <span id="probeXValue">0</span>px
+      </div>
+      <div class="row small">
+        <label>Probe width <input type="range" id="probeWidth" min="1" max="12" value="3" /></label>
+        <span id="probeWidthValue">3</span>px
+      </div>
+      <div class="row small">
+        <label>Probe Y <input type="range" id="probeY" min="0" max="100" value="0" /></label>
+        <span id="probeYValue">0</span>px
+      </div>
+      <div class="row small">
+        <label>Band height <input type="range" id="probeHeight" min="10" max="200" value="60" /></label>
+        <span id="probeHeightValue">60</span>px
+      </div>
+      <div class="row small">
+        <label>Ink threshold <input type="range" id="probeThreshold" min="0" max="255" value="180" /></label>
+        <span id="probeThresholdValue">180</span>
+      </div>
+      <div class="row small">
+        <button id="probeLogBtn" class="btn">Log Probe</button>
+        <span>Ink ratio: <strong id="probeRatio">-</strong></span>
+      </div>
+      <div class="row">
         <label class="small" for="typeSelect">Type</label>
         <select id="typeSelect">
           <option value="barline">barline</option>

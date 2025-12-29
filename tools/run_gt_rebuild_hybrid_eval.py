@@ -1085,6 +1085,154 @@ def detect_end_barlines_omr(
     return candidates
 
 
+def detect_probe_scan(
+    base_img: np.ndarray,
+    staff_mask: np.ndarray,
+    existing_boxes: Sequence[Box],
+    *,
+    probe_width: int = 4,
+    ink_threshold: int = 180,
+    min_ratio: float = 0.85,
+    min_peak_distance: int = 6,
+    refine_window: int = 4,
+    max_per_band: int = 8,
+    band_height_mode: str = "staff",
+    band_height_scale: float = 1.0,
+    band_height_min: int = 10,
+    x_merge_tol: int = 4,
+    debug_path: Path | None = None,
+) -> List[Box]:
+    gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
+    ink = (gray < ink_threshold).astype(np.uint8)
+    h, w = ink.shape[:2]
+    bands = staff_bands_from_mask(staff_mask)
+    if not bands:
+        return []
+
+    width = max(1, int(probe_width))
+    kernel = np.ones(width, dtype=np.int32)
+
+    def has_existing(x_center: float, y1: int, y2: int) -> bool:
+        for bx1, by1, bx2, by2 in existing_boxes:
+            cy = (by1 + by2) / 2.0
+            if cy < y1 or cy > y2:
+                continue
+            cx = (bx1 + bx2) / 2.0
+            if abs(cx - x_center) <= x_merge_tol:
+                return True
+        return False
+
+    global_heights = [abs(by2 - by1) for _, by1, _, by2 in existing_boxes if abs(by2 - by1) > 0]
+    global_height = int(np.median(global_heights)) if global_heights else 0
+
+    candidates: List[Box] = []
+    debug_records = []
+    for band_idx, (y1, y2) in enumerate(bands):
+        band_center = int(round((y1 + y2) / 2))
+        band_h = max(1, y2 - y1 + 1)
+        if band_height_mode == "median_box":
+            heights = [
+                abs(by2 - by1)
+                for _, by1, _, by2 in existing_boxes
+                if y1 <= (by1 + by2) / 2.0 <= y2 and abs(by2 - by1) > 0
+            ]
+            median_h = int(np.median(heights)) if heights else global_height
+            target_h = max(band_height_min, int(round(median_h * band_height_scale))) if median_h else band_h
+        else:
+            target_h = band_h
+        band_y1 = max(0, int(round(band_center - target_h / 2)))
+        band_y2 = min(h - 1, int(round(band_center + target_h / 2)))
+        band = ink[band_y1 : band_y2 + 1, :]
+        band_h = max(1, band_y2 - band_y1 + 1)
+        col_sums = band.sum(axis=0)
+        stripe_sums = np.convolve(col_sums, kernel, mode="same")
+        ratios = stripe_sums / float(band_h * width)
+        if ratios.size < 3:
+            continue
+        peaks = np.where(
+            (ratios >= min_ratio)
+            & (ratios >= np.roll(ratios, 1))
+            & (ratios >= np.roll(ratios, -1))
+        )[0]
+        if peaks.size == 0:
+            debug_records.append({"band": [y1, y2], "status": "no_peaks", "band_idx": band_idx})
+            continue
+        peak_scores = [(int(x), float(ratios[x])) for x in peaks]
+        peak_scores.sort(key=lambda item: item[1], reverse=True)
+        selected: list[tuple[int, float]] = []
+        for x, score in peak_scores:
+            if any(abs(x - sx) < min_peak_distance for sx, _ in selected):
+                continue
+            selected.append((x, score))
+            if max_per_band > 0 and len(selected) >= max_per_band:
+                break
+        for x, score in selected:
+            left = max(0, int(x - refine_window))
+            right = min(len(ratios) - 1, int(x + refine_window))
+            if right >= left:
+                local_idx = int(left + np.argmax(ratios[left : right + 1]))
+            else:
+                local_idx = int(x)
+            x1 = max(0, int(round(local_idx - width / 2)))
+            x2 = min(w - 1, int(round(local_idx + width / 2)))
+            if has_existing(float(local_idx), y1, y2):
+                debug_records.append(
+                    {
+                        "band": [band_y1, band_y2],
+                        "status": "existing",
+                        "col": local_idx,
+                        "ratio": float(ratios[local_idx]),
+                        "seed_col": x,
+                    }
+                )
+                continue
+            candidates.append((x1, band_y1, x2, band_y2))
+            debug_records.append(
+                {
+                    "band": [band_y1, band_y2],
+                    "status": "accepted",
+                    "col": local_idx,
+                    "ratio": float(ratios[local_idx]),
+                    "seed_col": x,
+                }
+            )
+
+    if debug_path is not None:
+        overlay = base_img.copy()
+        mask_overlay = overlay.copy()
+        for y1, y2 in bands:
+            cv2.rectangle(mask_overlay, (0, y1), (w - 1, y2), (255, 255, 0), -1)
+        overlay = cv2.addWeighted(mask_overlay, 0.2, overlay, 0.8, 0.0)
+        for rec in debug_records:
+            col = rec.get("col")
+            if col is None:
+                continue
+            color = (0, 255, 0) if rec["status"] == "accepted" else (0, 0, 255)
+            cv2.line(overlay, (int(col), 0), (int(col), h - 1), color, 1)
+        debug_path.parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(debug_path), overlay)
+        debug_json = debug_path.with_suffix(".json")
+        debug_json.write_text(
+            json.dumps(
+                {
+                    "params": {
+                        "method": "probe_scan",
+                        "probe_width": width,
+                        "ink_threshold": ink_threshold,
+                        "min_ratio": min_ratio,
+                        "min_peak_distance": min_peak_distance,
+                        "max_per_band": max_per_band,
+                        "x_merge_tol": x_merge_tol,
+                    },
+                    "bands": bands,
+                    "records": debug_records,
+                },
+                indent=2,
+            )
+        )
+    return candidates
+
+
 def geom_notehead_ratio_filter(
     preds: Sequence[Box],
     notehead_mask: np.ndarray,
@@ -1218,6 +1366,7 @@ def main() -> None:
             "adaptive",
             "lsd",
             "omr",
+            "probe_scan",
         ],
         default="projection",
     )
@@ -1229,6 +1378,15 @@ def main() -> None:
     parser.add_argument("--endbar-adapt-block-size", type=int, default=25)
     parser.add_argument("--endbar-adapt-c", type=int, default=5)
     parser.add_argument("--endbar-lsd-vertical-tol", type=int, default=2)
+    parser.add_argument("--probe-width", type=int, default=4)
+    parser.add_argument("--probe-ink-threshold", type=int, default=180)
+    parser.add_argument("--probe-min-ratio", type=float, default=0.85)
+    parser.add_argument("--probe-min-peak-distance", type=int, default=6)
+    parser.add_argument("--probe-max-per-band", type=int, default=8)
+    parser.add_argument("--probe-refine-window", type=int, default=4)
+    parser.add_argument("--probe-band-height-mode", choices=["staff", "median_box"], default="staff")
+    parser.add_argument("--probe-band-height-scale", type=float, default=1.0)
+    parser.add_argument("--probe-band-height-min", type=int, default=10)
     parser.add_argument(
         "--omr-preds-root",
         type=Path,
@@ -1413,6 +1571,22 @@ def main() -> None:
                     vertical_tol=args.endbar_lsd_vertical_tol,
                     debug_path=debug_path,
                 )
+            elif args.endbar_method == "probe_scan":
+                added_end = detect_probe_scan(
+                    base_img,
+                    staff_mask,
+                    geom_kept,
+                    probe_width=args.probe_width,
+                    ink_threshold=args.probe_ink_threshold,
+                    min_ratio=args.probe_min_ratio,
+                    min_peak_distance=args.probe_min_peak_distance,
+                    refine_window=args.probe_refine_window,
+                    max_per_band=args.probe_max_per_band,
+                    band_height_mode=args.probe_band_height_mode,
+                    band_height_scale=args.probe_band_height_scale,
+                    band_height_min=args.probe_band_height_min,
+                    debug_path=debug_path,
+                )
             else:
                 barline_mask = load_barline_mask(page.barline_mask, base_img.shape[:2])
                 omr_preds = load_omr_preds(page.omr_preds)
@@ -1465,6 +1639,9 @@ def main() -> None:
         overlay_path = overlays_root / f"{page.name}_tp_fp_fn.png"
         cv2.imwrite(str(overlay_path), overlay)
         save_crops(base_img, fp_boxes, out_dir / "fp_crops", "FP_")
+        (out_dir / "fn_boxes.json").write_text(json.dumps(fn_boxes, indent=2))
+        (out_dir / "fp_boxes.json").write_text(json.dumps(fp_boxes, indent=2))
+        (out_dir / "tp_boxes.json").write_text(json.dumps(tp_boxes, indent=2))
 
         summary_rows.append(
             {

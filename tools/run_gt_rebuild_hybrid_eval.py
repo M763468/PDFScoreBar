@@ -245,11 +245,14 @@ def filter_clefs_keys_overlap(
     clefs_keys_mask: np.ndarray,
     left_margin_ratio: float,
     min_overlap_ratio: float,
+    right_margin_ratio: float,
+    min_overlap_ratio_right: float,
 ) -> Tuple[List[Box], Dict[str, object]]:
     h, w = clefs_keys_mask.shape[:2]
     kept: List[Box] = []
     rejected: List[Dict[str, object]] = []
     left_limit = int(round(w * left_margin_ratio))
+    right_limit = int(round(w * right_margin_ratio)) if right_margin_ratio > 0 else None
     for idx, box in enumerate(preds):
         x1, y1, x2, y2 = map(int, box)
         x1 = max(0, min(w - 1, x1))
@@ -257,19 +260,23 @@ def filter_clefs_keys_overlap(
         y1 = max(0, min(h - 1, y1))
         y2 = max(0, min(h - 1, y2))
         xm = (x1 + x2) // 2
-        if xm > left_limit:
+        if xm > left_limit and (right_limit is None or xm < right_limit):
             kept.append((x1, y1, x2, y2))
             continue
         region = clefs_keys_mask[y1 : y2 + 1, x1 : x2 + 1]
         overlap = 0.0
         if region.size:
             overlap = float(np.count_nonzero(region)) / float(region.size)
-        if overlap >= min_overlap_ratio:
+        threshold = min_overlap_ratio
+        if right_limit is not None and xm >= right_limit:
+            threshold = min_overlap_ratio_right
+        if overlap >= threshold:
             rejected.append(
                 {
                     "index": idx,
                     "bbox": [x1, y1, x2, y2],
                     "overlap_ratio": overlap,
+                    "threshold": threshold,
                 }
             )
             continue
@@ -278,6 +285,107 @@ def filter_clefs_keys_overlap(
         "left_margin_ratio": left_margin_ratio,
         "left_margin_px": left_limit,
         "min_overlap_ratio": min_overlap_ratio,
+        "right_margin_ratio": right_margin_ratio,
+        "right_margin_px": right_limit,
+        "min_overlap_ratio_right": min_overlap_ratio_right,
+        "rejected": rejected,
+    }
+    return kept, debug
+
+
+def filter_min_height_ratio(
+    preds: Sequence[Box],
+    staff_mask: np.ndarray,
+    min_height_ratio: float,
+) -> Tuple[List[Box], Dict[str, object]]:
+    if min_height_ratio <= 0:
+        return list(preds), {"min_height_ratio": min_height_ratio, "rejected": []}
+    bands = staff_bands_from_mask(staff_mask)
+    band_heights = [abs(y2 - y1) + 1 for y1, y2 in bands] if bands else []
+    fallback_height = int(np.median(band_heights)) if band_heights else 0
+    kept: List[Box] = []
+    rejected: List[Dict[str, object]] = []
+    for idx, box in enumerate(preds):
+        x1, y1, x2, y2 = map(int, box)
+        yc = (y1 + y2) // 2
+        band_h = fallback_height
+        for by1, by2 in bands:
+            if by1 <= yc <= by2:
+                band_h = abs(by2 - by1) + 1
+                break
+        min_h = int(round(band_h * min_height_ratio)) if band_h else 0
+        height = abs(y2 - y1) + 1
+        if min_h and height < min_h:
+            rejected.append(
+                {
+                    "index": idx,
+                    "bbox": [x1, y1, x2, y2],
+                    "height": height,
+                    "band_height": band_h,
+                    "min_height": min_h,
+                }
+            )
+            continue
+        kept.append((x1, y1, x2, y2))
+    debug = {
+        "min_height_ratio": min_height_ratio,
+        "fallback_height": fallback_height,
+        "band_count": len(bands),
+        "rejected": rejected,
+    }
+    return kept, debug
+
+
+def filter_stem_outside_staff(
+    preds: Sequence[Box],
+    staff_mask: np.ndarray,
+    max_height_ratio: float,
+    min_band_cover: float,
+) -> Tuple[List[Box], Dict[str, object]]:
+    if max_height_ratio <= 0:
+        return list(preds), {"max_height_ratio": max_height_ratio, "rejected": []}
+    bands = staff_bands_from_mask(staff_mask)
+    band_heights = [abs(y2 - y1) + 1 for y1, y2 in bands] if bands else []
+    fallback_height = int(np.median(band_heights)) if band_heights else 0
+    kept: List[Box] = []
+    rejected: List[Dict[str, object]] = []
+    for idx, box in enumerate(preds):
+        x1, y1, x2, y2 = map(int, box)
+        yc = (y1 + y2) // 2
+        band_y1, band_y2 = None, None
+        band_h = fallback_height
+        for by1, by2 in bands:
+            if by1 <= yc <= by2:
+                band_y1, band_y2 = by1, by2
+                band_h = abs(by2 - by1) + 1
+                break
+        if band_y1 is None and bands:
+            band_y1, band_y2 = bands[0]
+            band_h = abs(band_y2 - band_y1) + 1
+        height = abs(y2 - y1) + 1
+        max_h = int(round(band_h * max_height_ratio)) if band_h else 0
+        cover = 1.0
+        if band_y1 is not None and band_y2 is not None and height > 0:
+            inter = max(0, min(y2, band_y2) - max(y1, band_y1) + 1)
+            cover = inter / float(height)
+        if max_h and height > max_h and cover < min_band_cover:
+            rejected.append(
+                {
+                    "index": idx,
+                    "bbox": [x1, y1, x2, y2],
+                    "height": height,
+                    "band_height": band_h,
+                    "max_height": max_h,
+                    "band_cover": cover,
+                }
+            )
+            continue
+        kept.append((x1, y1, x2, y2))
+    debug = {
+        "max_height_ratio": max_height_ratio,
+        "min_band_cover": min_band_cover,
+        "fallback_height": fallback_height,
+        "band_count": len(bands),
         "rejected": rejected,
     }
     return kept, debug
@@ -314,6 +422,47 @@ def load_clefs_keys_mask(path: Path, target_hw: Tuple[int, int]) -> np.ndarray:
         h, w = target_hw
         bin_mask = cv2.resize(bin_mask, (w, h), interpolation=cv2.INTER_NEAREST)
     return bin_mask
+
+
+def refine_clefs_keys_mask(
+    mask: np.ndarray,
+    open_kernel: int,
+    min_area: int,
+    max_aspect_ratio: float,
+    min_height_px: int,
+    max_width_px: int,
+) -> np.ndarray:
+    cleaned = (mask > 0).astype(np.uint8)
+    if open_kernel and open_kernel > 1:
+        kernel = np.ones((open_kernel, open_kernel), np.uint8)
+        cleaned = cv2.morphologyEx(cleaned, cv2.MORPH_OPEN, kernel)
+    if min_area and min_area > 0:
+        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
+            cleaned, connectivity=8
+        )
+        filtered = np.zeros_like(cleaned)
+        for label in range(1, num_labels):
+            if stats[label, cv2.CC_STAT_AREA] >= min_area:
+                filtered[labels == label] = 1
+        cleaned = filtered
+    if max_aspect_ratio and max_aspect_ratio > 0:
+        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
+            cleaned, connectivity=8
+        )
+        filtered = np.zeros_like(cleaned)
+        for label in range(1, num_labels):
+            x, y, w, h, area = stats[label]
+            if min_height_px and h < min_height_px:
+                filtered[labels == label] = 1
+                continue
+            if max_width_px and w > max_width_px:
+                filtered[labels == label] = 1
+                continue
+            aspect = h / max(w, 1)
+            if aspect <= max_aspect_ratio:
+                filtered[labels == label] = 1
+        cleaned = filtered
+    return (cleaned * 255).astype(np.uint8)
 
 
 def staff_bands_from_mask(mask: np.ndarray) -> List[Tuple[int, int]]:
@@ -1712,6 +1861,26 @@ def main() -> None:
     parser.add_argument("--clefs-keys-dilate", type=int, default=0)
     parser.add_argument("--clefs-keys-left-margin-ratio", type=float, default=0.2)
     parser.add_argument("--clefs-keys-overlap-min", type=float, default=0.05)
+    parser.add_argument("--clefs-keys-right-margin-ratio", type=float, default=-1.0)
+    parser.add_argument("--clefs-keys-overlap-min-right", type=float, default=0.0)
+    parser.add_argument("--clefs-keys-open-kernel", type=int, default=0)
+    parser.add_argument("--clefs-keys-min-area", type=int, default=0)
+    parser.add_argument("--clefs-keys-max-aspect", type=float, default=0.0)
+    parser.add_argument("--clefs-keys-min-height", type=int, default=0)
+    parser.add_argument("--clefs-keys-max-width", type=int, default=0)
+    parser.add_argument("--barline-min-height-ratio", type=float, default=0.0)
+    parser.add_argument(
+        "--barline-min-height-mask",
+        choices=["staff", "staffs"],
+        default="staff",
+    )
+    parser.add_argument("--barline-stem-max-height-ratio", type=float, default=0.0)
+    parser.add_argument("--barline-stem-min-band-cover", type=float, default=0.6)
+    parser.add_argument(
+        "--barline-stem-mask",
+        choices=["staff", "staffs"],
+        default="staffs",
+    )
     parser.add_argument(
         "--notehead-max-aspect",
         type=float,
@@ -1882,6 +2051,14 @@ def main() -> None:
         if args.filter_clefs_keys:
             clefs_keys_mask = load_clefs_keys_mask(
                 page.clefs_keys_mask, base_img.shape[:2]
+            )
+            clefs_keys_mask = refine_clefs_keys_mask(
+                clefs_keys_mask,
+                args.clefs_keys_open_kernel,
+                args.clefs_keys_min_area,
+                args.clefs_keys_max_aspect,
+                args.clefs_keys_min_height,
+                args.clefs_keys_max_width,
             )
             clefs_keys_mask = dilate_mask(clefs_keys_mask, args.clefs_keys_dilate)
         gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
@@ -2156,12 +2333,60 @@ def main() -> None:
                 clefs_keys_mask,
                 args.clefs_keys_left_margin_ratio,
                 args.clefs_keys_overlap_min,
+                args.clefs_keys_right_margin_ratio,
+                args.clefs_keys_overlap_min_right,
             )
             clef_debug["before"] = before
             clef_debug["after"] = len(geom_kept)
             clef_debug["clefs_keys_dilate"] = args.clefs_keys_dilate
+            clef_debug["refine"] = {
+                "open_kernel": args.clefs_keys_open_kernel,
+                "min_area": args.clefs_keys_min_area,
+                "max_aspect": args.clefs_keys_max_aspect,
+                "min_height": args.clefs_keys_min_height,
+                "max_width": args.clefs_keys_max_width,
+            }
             (out_dir / "clefs_keys_filter.json").write_text(
                 json.dumps(clef_debug, indent=2)
+            )
+
+        if args.barline_min_height_ratio > 0:
+            staff_mask_path = (
+                page.staff_mask
+                if args.barline_min_height_mask == "staff"
+                else page.staff_mask_alt
+            )
+            staff_mask = load_staff_mask(staff_mask_path, base_img.shape[:2])
+            before = len(geom_kept)
+            geom_kept, height_debug = filter_min_height_ratio(
+                geom_kept, staff_mask, args.barline_min_height_ratio
+            )
+            height_debug["before"] = before
+            height_debug["after"] = len(geom_kept)
+            height_debug["mask"] = args.barline_min_height_mask
+            (out_dir / "min_height_filter.json").write_text(
+                json.dumps(height_debug, indent=2)
+            )
+
+        if args.barline_stem_max_height_ratio > 0:
+            staff_mask_path = (
+                page.staff_mask
+                if args.barline_stem_mask == "staff"
+                else page.staff_mask_alt
+            )
+            staff_mask = load_staff_mask(staff_mask_path, base_img.shape[:2])
+            before = len(geom_kept)
+            geom_kept, stem_debug = filter_stem_outside_staff(
+                geom_kept,
+                staff_mask,
+                args.barline_stem_max_height_ratio,
+                args.barline_stem_min_band_cover,
+            )
+            stem_debug["before"] = before
+            stem_debug["after"] = len(geom_kept)
+            stem_debug["mask"] = args.barline_stem_mask
+            (out_dir / "stem_outside_filter.json").write_text(
+                json.dumps(stem_debug, indent=2)
             )
 
         match = greedy_barline_match(list(geom_kept), list(gt_boxes), iou_threshold=0.5)

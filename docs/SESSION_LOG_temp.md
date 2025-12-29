@@ -1405,3 +1405,178 @@ This log has been cleaned to retain only confirmed Phase 6 results and reference
 - var88: left_margin=0.20, overlap>=0.30, dilate=3
   - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var88_clef_filter/`
   - FN=0維持でFP最小（現時点の最良）
+
+---
+## 2025-12-30 clefs_keys 全域適用の探索
+
+**作業目的 / 方針 / 位置づけ**
+- clefs_keys フィルタを左端限定せず全域適用し、FP削減とFN増加のトレードオフを確認。
+
+**作業時間**
+- 2025-12-30 22:40 JST 前後
+
+**試した結果**
+- var89: 全域適用 + overlap>=0.20
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var89_clef_full_0p20/`
+  - FN大幅増加
+- var90: 全域適用 + overlap>=0.30
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var90_clef_full_0p30/`
+  - FN大幅増加
+- var91: 全域適用 + overlap>=0.40
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var91_clef_full_0p40/`
+  - FN増加
+- var92: 全域適用 + overlap>=0.50
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var92_clef_full_0p50/`
+  - FN増加
+
+---
+## 2025-12-30 clefs_keys 2ゾーン適用（左端+中央弱め）
+
+**作業目的 / 方針 / 位置づけ**
+- 左端は従来の強いフィルタ、中央は弱めの閾値でclefs_keysを適用する2ゾーン方式を試験。
+
+**作業時間**
+- 2025-12-30 23:00 JST 前後
+
+**試した結果**
+- var93: left=0.20/0.30, right=0.20/0.60
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var93_clef_twozone/`
+  - FN増加
+- var94: left=0.20/0.30, right=0.25/0.60
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var94_clef_twozone/`
+  - FN増加
+- var95: left=0.20/0.30, right=0.30/0.60
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var95_clef_twozone/`
+  - FN増加
+
+---
+## 2025-12-30 clefs_keys 2ゾーン適用（中央閾値を緩和）
+
+**作業目的 / 方針 / 位置づけ**
+- 2ゾーン方式の中央側閾値をさらに緩め、FNを抑制しつつFP削減できるか確認。
+
+**作業時間**
+- 2025-12-30 23:20 JST 前後
+
+**試した結果**
+- var96: right=0.30/0.80
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var96_clef_twozone_loose/`
+  - FNが再発
+- var97: right=0.30/0.90
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var97_clef_twozone_veryloose/`
+  - FNが再発
+
+---
+## 2025-12-30 clefs_keys 2ゾーン適用（中央狭域）
+
+**作業目的 / 方針 / 位置づけ**
+- 中央ゾーンを狭めた場合のFN影響を確認。
+
+**作業時間**
+- 2025-12-30 23:35 JST 前後
+
+**試した結果**
+- var98: right=0.12/0.60
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var98_clef_twozone_small/`
+  - FN増加（改善せず）
+
+---
+## 2025-12-30 clefs_keys 2ゾーン適用の差分可視化
+
+**作業目的 / 方針 / 位置づけ**
+- 基準(var88)と2ゾーン試験(var95)のFP/FN差分を可視化し、増減箇所を明確化する。
+
+**作業時間**
+- 2025-12-30 23:40 JST 前後
+
+**試した結果**
+- 差分overlay:
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var95_clef_twozone/overlays_diff_vs_var88/`
+
+---
+## 2025-12-30 長さ閾値フィルタ試行
+
+**作業目的 / 方針 / 位置づけ**
+- var88基準（clefs_keys左端フィルタ + probe_dilate=13）を固定し、box高さに基づく最小長さフィルタを試行。
+
+**作業時間**
+- 2025-12-30 23:55 JST 前後
+
+**変更したファイルの場所**
+- `tools/run_gt_rebuild_hybrid_eval.py`（min height filter追加）
+
+**試した結果**
+- var99: min_height_ratio=0.50
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var99_minheight_0p50/`
+- var100: min_height_ratio=0.60
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var100_minheight_0p60/`
+- var101: min_height_ratio=0.70
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var101_minheight_0p70/`
+- 全て var88 と同一のTP/FP/FN（改善なし）。
+
+**差分可視化**
+- var101 vs var88 差分:
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var101_minheight_0p70/overlays_diff_vs_var88/`
+
+---
+## 2025-12-31 clefs_keys形状改善 + stem外延フィルタの試行
+
+**作業目的 / 方針 / 位置づけ**
+- clefs_keys マスクの形状改善（縮小/除去）で中央の誤検出を抑制できるか確認。
+- stemが五線の外に伸びるケースを除外する長さ/カバー率フィルタを試行。
+
+**作業時間**
+- 2025-12-31 00:10 JST 前後
+
+**変更したファイルの場所**
+- `tools/run_gt_rebuild_hybrid_eval.py`（clefs_keys refine, stem outside filter追加）
+
+**試した結果**
+- clefs_keys形状改善:
+  - var102: open=2
+  - var103: open=3
+  - var104: min_area=80
+  - var105: aspect=2.0, min_height=12, max_width=6
+  - すべて var88 と同一のTP/FP/FN（改善なし）
+- stem外延フィルタ:
+  - var106: max_height_ratio=1.4
+  - var107: max_height_ratio=1.6
+  - var108: max_height_ratio=1.8
+  - すべて var88 と同一のTP/FP/FN（改善なし）
+
+**差分可視化**
+- clefs_keys形状改善（var105 vs var88）:
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var105_clefshape_aspect2/overlays_diff_vs_var88/`
+
+---
+## 2025-12-31 clefs_keys全体/縮小適用のFP/FN可視化
+
+**作業目的 / 方針 / 位置づけ**
+- clefs_keys全体適用(全域)と形状縮小適用のFP/FNを比較するため、近傍cropとmask重畳を出力。
+
+**作業時間**
+- 2025-12-31 00:40 JST 前後
+
+**試した結果**
+- 全域適用（var90）:
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var90_clef_full_0p30/clefs_keys_fp_fn_crops/`
+- 形状縮小適用（var105）:
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var105_clefshape_aspect2/clefs_keys_fp_fn_crops/`
+
+---
+## 2025-12-31 clefs_keys全域適用 + ノイズ除去強化
+
+**作業目的 / 方針 / 位置づけ**
+- clefs_keys 全域適用時のFN増加がノイズ由来かを確認するため、マスクのノイズ除去強化を試行。
+
+**作業時間**
+- 2025-12-31 01:05 JST 前後
+
+**試した結果**
+- var109: open=3, min_area=80
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var109_clef_full_denoise3_area80/`
+- var110: open=5, min_area=120
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var110_clef_full_denoise5_area120/`
+- var111: open=5, min_area=120 + aspect=2.0/min_height=12/max_width=6
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var111_clef_full_denoise5_area120_aspect2/`
+- いずれも FN が残り、全域適用は安全域に戻らず。

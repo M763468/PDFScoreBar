@@ -233,6 +233,12 @@ The `run_hybrid_pipeline.sh` script automates steps 1-3 (Baseline -> SR -> OMR -
 ```
 
 ---
+## Reproducibility checks (required)
+- Always record **commit hash + full command + output path** for any baseline/adopted result.
+- Explicitly pin parameters that are easy to miss (`probe_row_filter_mode`, `probe_endpoint_x_scale`, `probe_endpoint_y_scale`).
+- Before reruns, verify that `union_root`, GT, and mask paths point to the same dataset version used originally.
+
+---
 ## Phase 4: Geometry Note-Context Filter (page_3 confirmed) (2025-12-18)
 
 This section documents the environment/artifact assumptions for the Phase 4 “note-context” filter used to remove stem-like false barlines using `homr` semantic outputs.

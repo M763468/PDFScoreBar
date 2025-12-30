@@ -23,6 +23,11 @@
   - 新フィルタ設計→var派生評価（FN=0維持を最優先）.
   - 成果はlogs/で比較し、最終採用のみNEXT_SESSION_NOTESに残す.
 
+### Reproducibility rules (must record)
+- Baseline /採用結果は **commit hash + 再現コマンド + 出力パス** を必ず記載。
+- `probe_row_filter_mode` / `probe_endpoint_x_scale` など暗黙に効くパラメータは **明示指定** する。
+- `union_root` / GT / masks のパスが正しいか、再実行前に再確認する。
+
 ## Recent Updates (2025-12-29,30)
 - GT再整備完了（page_001 / page_004 / page_10 / page_15）。
   - Logs: `logs/phase6_detector_miss/gt_rebuild/`

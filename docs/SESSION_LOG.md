@@ -201,6 +201,33 @@
 **結果**
 - いずれもTP/FPの分離が弱く、単独の閾値ではFN=0維持が困難と判断。
 
+## 2025-12-30 コミット切替でのvar18/19/25再現試行
+
+**作業目的 / 方針 / 位置づけ**
+- 2025-12-29 のSESSION_LOG_temp.mdに記載されていたprobe_scan条件（var18/19/25）を、当時に近いコミットで再現する。
+
+**作業時間**
+- 2025-12-30 14:51:25 JST - 2025-12-30 14:52:44 JST
+
+**検証内容（作用機序）**
+- `git stash` で現行変更を退避し、`3d0bf23` に checkout（detached HEAD）。
+- var18/19/25のprobe_scan条件を指定（median_box前提）。
+  - var18: probe_width=3, min_peak_distance=3, max_per_band=6, band_height_min=12
+  - var19: probe_width=3, min_ratio=0.8, min_peak_distance=2, max_per_band=12
+  - var25: min_peak_distance=2, max_per_band=0
+- 他はvar88相当設定（clefs_keys left + notehead aspect + endpoint設定）。
+
+**結果（要点）**
+- いずれもFNが残り、var88（FN=0）には未到達。
+  - var18: page_001 FN=14 / page_004 FN=12 / page_10 FN=3 / page_15 FN=7
+  - var19: page_001 FN=10 / page_004 FN=6 / page_10 FN=2 / page_15 FN=6
+  - var25: page_001 FN=2 / page_004 FN=5 / page_10 FN=2 / page_15 FN=1
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251230T145125_repro_var18_commit3d0b/`
+- `logs/gt_rebuild_hybrid_eval/20251230T145208_repro_var19_commit3d0b/`
+- `logs/gt_rebuild_hybrid_eval/20251230T145244_repro_var25_commit3d0b/`
+
 ## 2025-12-30 page3過去条件の再現確認
 
 **作業目的 / 方針 / 位置づけ**
@@ -752,6 +779,64 @@
 
 **補足**
 - var88ログのタイムスタンプは `20251230T_hybrid_row_notehead_endbar` で、上記コミット時刻と近接。
+
+## 2025-12-30 コミット切替でのvar88再現試行
+
+**作業目的 / 方針 / 位置づけ**
+- 当時のコードに近いコミットへ切り替え、var88の再現可否を確認。
+
+**作業時間**
+- 2025-12-30 14:40:10 JST - 2025-12-30 14:40:33 JST
+
+**検証内容（作用機序）**
+- `git stash` で現行変更を退避し、`3d0bf23` に checkout（detached HEAD）。
+- var88相当パラメータを指定し、`probe_band_height_mode=median_box` で再実行。
+
+**結果（要点）**
+- FNが残り、var88（FN=0）には未到達。
+  - page_001: TP=71 FP=1 FN=7
+  - page_004: TP=105 FP=5 FN=7
+  - page_10: TP=151 FP=1 FN=3
+  - page_15: TP=107 FP=5 FN=5
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251230T144033_repro_var88_commit3d0b/`
+
+## 2025-12-30 var88生成時刻とコミット整合の再確認
+
+**作業目的 / 方針 / 位置づけ**
+- var88生成時点のコードがどのコミットに近いかを再確認する。
+
+**作業時間**
+- 2025-12-30 15:04:04 JST
+
+**確認内容**
+- var88ログの `summary_table.md` / `clefs_keys_filter.json` のmtimeは 2025-12-29 18:41台。
+- `tools/run_gt_rebuild_hybrid_eval.py` のコミット時刻は以下:
+  - `21235f4`: 2025-12-29 18:53（clefs_keys導入）
+  - `36ed3c7`: 2025-12-29 17:06
+
+**補足**
+- var88ログにclefs_keys_filterが含まれるため、コード状態は少なくとも `21235f4` と同等以上。
+- mtimeがコミット時刻より前に見えるため、当時の未コミット状態で実行された可能性がある。
+
+## 2025-12-30 コミット21235f4でのvar88再現試行
+
+**作業目的 / 方針 / 位置づけ**
+- clefs_keys導入後のコミット（21235f4）でvar88が再現できるか確認。
+
+**作業時間**
+- 2025-12-30 15:04:04 JST - 2025-12-30 15:04:25 JST
+
+**結果（要点）**
+- 3d0bf23時と同様にFNが残り、var88（FN=0）には未到達。
+  - page_001: TP=71 FP=1 FN=7
+  - page_004: TP=105 FP=5 FN=7
+  - page_10: TP=151 FP=1 FN=3
+  - page_15: TP=107 FP=5 FN=5
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251230T150404_repro_var88_commit21235f4/`
 
 ## 2025-12-30 var88完全一致の再現手順（復旧）
 

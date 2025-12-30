@@ -1468,6 +1468,8 @@ def detect_probe_scan(
     probe_width: int = 4,
     ink_threshold: int = 180,
     min_ratio: float = 0.85,
+    extend_scale: float = 1.0,
+    extend_max_ratio: float = 1.0,
     min_peak_distance: int = 6,
     refine_window: int = 4,
     max_per_band: int = 8,
@@ -1519,9 +1521,22 @@ def detect_probe_scan(
         band_y2 = min(h - 1, int(round(band_center + target_h / 2)))
         band = ink[band_y1 : band_y2 + 1, :]
         band_h = max(1, band_y2 - band_y1 + 1)
+        ext_band = None
+        ext_band_h = None
+        ext_ratios = None
+        if extend_scale > 1.0:
+            ext_h = max(band_h, int(round(target_h * extend_scale)))
+            ext_y1 = max(0, int(round(band_center - ext_h / 2)))
+            ext_y2 = min(h - 1, int(round(band_center + ext_h / 2)))
+            ext_band = ink[ext_y1 : ext_y2 + 1, :]
+            ext_band_h = max(1, ext_y2 - ext_y1 + 1)
         col_sums = band.sum(axis=0)
         stripe_sums = np.convolve(col_sums, kernel, mode="same")
         ratios = stripe_sums / float(band_h * width)
+        if ext_band is not None:
+            ext_col_sums = ext_band.sum(axis=0)
+            ext_stripe_sums = np.convolve(ext_col_sums, kernel, mode="same")
+            ext_ratios = ext_stripe_sums / float(ext_band_h * width)
         if ratios.size < 3:
             continue
         peaks = np.where(
@@ -1550,6 +1565,20 @@ def detect_probe_scan(
                 local_idx = int(x)
             x1 = max(0, int(round(local_idx - width / 2)))
             x2 = min(w - 1, int(round(local_idx + width / 2)))
+            if ext_ratios is not None and extend_max_ratio < 1.0:
+                ext_ratio = float(ext_ratios[local_idx])
+                if ext_ratio >= extend_max_ratio:
+                    debug_records.append(
+                        {
+                            "band": [band_y1, band_y2],
+                            "status": "extended_ratio",
+                            "col": local_idx,
+                            "ratio": float(ratios[local_idx]),
+                            "extended_ratio": ext_ratio,
+                            "seed_col": x,
+                        }
+                    )
+                    continue
             if has_existing(float(local_idx), y1, y2):
                 debug_records.append(
                     {
@@ -1557,6 +1586,7 @@ def detect_probe_scan(
                         "status": "existing",
                         "col": local_idx,
                         "ratio": float(ratios[local_idx]),
+                        "extended_ratio": float(ext_ratios[local_idx]) if ext_ratios is not None else None,
                         "seed_col": x,
                     }
                 )
@@ -1568,6 +1598,7 @@ def detect_probe_scan(
                     "status": "accepted",
                     "col": local_idx,
                     "ratio": float(ratios[local_idx]),
+                    "extended_ratio": float(ext_ratios[local_idx]) if ext_ratios is not None else None,
                     "seed_col": x,
                 }
             )
@@ -1595,6 +1626,8 @@ def detect_probe_scan(
                         "probe_width": width,
                         "ink_threshold": ink_threshold,
                         "min_ratio": min_ratio,
+                        "extend_scale": extend_scale,
+                        "extend_max_ratio": extend_max_ratio,
                         "min_peak_distance": min_peak_distance,
                         "max_per_band": max_per_band,
                         "x_merge_tol": x_merge_tol,
@@ -2058,6 +2091,8 @@ def main() -> None:
     parser.add_argument("--probe-width", type=int, default=4)
     parser.add_argument("--probe-ink-threshold", type=int, default=180)
     parser.add_argument("--probe-min-ratio", type=float, default=0.85)
+    parser.add_argument("--probe-extend-scale", type=float, default=1.0)
+    parser.add_argument("--probe-extend-max-ratio", type=float, default=1.0)
     parser.add_argument("--probe-min-peak-distance", type=int, default=6)
     parser.add_argument("--probe-max-per-band", type=int, default=8)
     parser.add_argument("--probe-refine-window", type=int, default=4)
@@ -2104,6 +2139,18 @@ def main() -> None:
             barline_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_8_bar_line_img.png",
             omr_preds=args.omr_preds_root / "page_001" / "predictions.json",
             union_preds=args.union_root / "page_001_hybrid_preds.json",
+        ),
+        PageSpec(
+            name="page_3",
+            image=REPO_ROOT / "data/evaluation/images/page_3.png",
+            gt=REPO_ROOT / "data/evaluation/annotations/page_003/boxes_sorted.json",
+            notehead_mask=REPO_ROOT / "logs/homr_eval/baseline_for_hybrid/page_3/page_3_debug_6_notehead.png",
+            clefs_keys_mask=REPO_ROOT / "logs/homr_eval/baseline_for_hybrid/page_3/page_3_debug_7_clefs_keys.png",
+            staff_mask=REPO_ROOT / "logs/homr_eval/baseline_for_hybrid/page_3/page_3_debug_3_staff.png",
+            staff_mask_alt=REPO_ROOT / "logs/homr_eval/baseline_for_hybrid/page_3/page_3_debug_15_staffs.png",
+            barline_mask=REPO_ROOT / "logs/homr_eval/baseline_for_hybrid/page_3/page_3_debug_11_bar_lines.png",
+            omr_preds=args.omr_preds_root / "page_3" / "predictions.json",
+            union_preds=args.union_root / "page_3_hybrid_preds.json",
         ),
         PageSpec(
             name="page_004",
@@ -2359,6 +2406,8 @@ def main() -> None:
                     probe_width=args.probe_width,
                     ink_threshold=args.probe_ink_threshold,
                     min_ratio=args.probe_min_ratio,
+                    extend_scale=args.probe_extend_scale,
+                    extend_max_ratio=args.probe_extend_max_ratio,
                     min_peak_distance=args.probe_min_peak_distance,
                     refine_window=args.probe_refine_window,
                     max_per_band=args.probe_max_per_band,

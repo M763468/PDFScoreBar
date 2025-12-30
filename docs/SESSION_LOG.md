@@ -1392,6 +1392,149 @@
 - detections整列の有無で結果差は小さい。
 - 弱い条件ではFN=0を維持しつつFPを2件除去できる可能性がある。
 
+## 2025-12-31 probe scanの拡張判定（長い判定バー）実装
+
+**作業目的 / 方針 / 位置づけ**
+- stem-like FP対策として、probe scanの判定バーを長くし、全長ink ratioで除去する仕組みを追加。
+
+**作業時間**
+- 2025-12-31 01:35:00 JST
+
+**実行内容**
+- `detect_probe_scan`に拡張判定バー（extend_scale）と全長ink ratio（extend_max_ratio）を追加。
+- CLIに `--probe-extend-scale` / `--probe-extend-max-ratio` を追加。
+
+**所見**
+- 実装のみ完了。評価は次工程で実施。
+
+## 2025-12-31 probe scan拡張バーの評価（page_3含む）
+
+**作業目的 / 方針 / 位置づけ**
+- 伸長判定バー（extend_scale + extend_max_ratio）がstem-like FP削減に効くかを評価。
+- page_3を含む5ページで評価。
+
+**作業時間**
+- 2025-12-31 01:50:00 JST
+
+**実行内容**
+- 既存条件に `--probe-extend-scale` / `--probe-extend-max-ratio` を追加して比較。
+- page_3のマスクは `logs/homr_eval/baseline_for_hybrid/page_3/` を使用。
+- baseline（extend_scale=1.0, extend_max_ratio=1.0）も作成。
+
+**実行コマンド**
+- baseline:  
+  `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/probe_extend_baseline --union-root logs/phase5b_confirmed_union_eval ... --probe-extend-scale 1.0 --probe-extend-max-ratio 1.0`
+- sweep:  
+  `... --output-root logs/gt_rebuild_hybrid_eval/probe_extend_s1.3_r0p90 --probe-extend-scale 1.3 --probe-extend-max-ratio 0.90`  
+  `... --output-root logs/gt_rebuild_hybrid_eval/probe_extend_s1.6_r0p90 --probe-extend-scale 1.6 --probe-extend-max-ratio 0.90`  
+  `... --output-root logs/gt_rebuild_hybrid_eval/probe_extend_s2.0_r0p90 --probe-extend-scale 2.0 --probe-extend-max-ratio 0.90`
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/probe_extend_baseline/summary_table.md`
+- `logs/gt_rebuild_hybrid_eval/probe_extend_s1.3_r0p90/summary_table.md`
+- `logs/gt_rebuild_hybrid_eval/probe_extend_s1.6_r0p90/summary_table.md`
+- `logs/gt_rebuild_hybrid_eval/probe_extend_s2.0_r0p90/summary_table.md`
+
+**集計（全ページ合算）**
+- baseline: TP=606, FP=42, FN=2
+- s1.3_r0p90: TP=604, FP=37, FN=4
+- s1.6_r0p90: TP=606, FP=39, FN=2
+- s2.0_r0p90: TP=606, FP=42, FN=2
+
+**所見**
+- extend_scale=1.6はFNを増やさずFPを3件削減（42→39）。
+- extend_scale=1.3はFPをさらに削減するがFNが増加。
+
+## 2025-12-31 page_3のFN=2の原因調査
+
+**作業目的 / 方針 / 位置づけ**
+- probe_extend評価で発生したpage_3のFN=2について、除去段階を特定する。
+
+**作業時間**
+- 2025-12-31 02:20:00 JST
+
+**実行内容**
+- `probe_extend_baseline/per_page/page_3/fn_boxes.json` を確認。
+- row_filtered / end_recovered_* / geom_kept / clefs_keys_filter の各段階で該当boxが残るかを検証。
+
+**結果**
+- FNボックス:
+  - [114, 537, 118, 555]
+  - [116, 645, 120, 667]
+- row_filteredには存在するが、geom_keptには残らない。
+- geom_debugではoverlap_ratio=0.0で拒否されておらず、clefs_keys_filterで除外されている。
+  - clefs_keys_filter rejected:
+    - bbox [115, 536, 116, 557] overlap_ratio=0.9545 (>0.3)
+    - bbox [118, 646, 119, 667] overlap_ratio=0.7727 (>0.3)
+
+**所見**
+- page_3のFN=2は clefs_keys フィルタによる除去が原因。
+
+## 2025-12-31 clefs_keysの緩和でFN=0を回復
+
+**作業目的 / 方針 / 位置づけ**
+- page_3のFN=2を解消するため、clefs_keysの適用範囲（left_margin_ratio）を緩和。
+
+**作業時間**
+- 2025-12-31 02:40:00 JST
+
+**実行内容**
+- clefs_keys_left_margin_ratioを0.18/0.15で比較し、FN=0条件を探索。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/clefs_left_0p18_baseline/summary_table.md`
+- `logs/gt_rebuild_hybrid_eval/clefs_left_0p15_baseline/summary_table.md`
+
+**集計（全ページ合算）**
+- left=0.18: TP=608, FP=42, FN=0
+- left=0.15: TP=608, FP=65, FN=0
+
+**所見**
+- left=0.18でFN=0を維持しつつFPの増加なし（left=0.15はFP増）。
+- 基準設定として clefs_keys_left_margin_ratio=0.18 を採用。
+
+## 2025-12-31 probe extend再評価（clefs_keys緩和後）
+
+**作業目的 / 方針 / 位置づけ**
+- clefs_keys_left_margin_ratio=0.18 を基準に probe extend を再評価。
+
+**作業時間**
+- 2025-12-31 02:50:00 JST
+
+**実行内容**
+- baseline（extendなし）と extend_scale=1.6 / extend_max_ratio=0.90 を比較。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/clefs_left_0p18_baseline/summary_table.md`
+- `logs/gt_rebuild_hybrid_eval/clefs_left_0p18_extend_s1.6_r0p90/summary_table.md`
+
+**集計（全ページ合算）**
+- baseline: TP=608, FP=42, FN=0
+- extend_s1.6_r0p90: TP=608, FP=39, FN=0
+
+**所見**
+- FN=0を維持しつつFPを3件削減できたため、probe extendは有効。
+
+## 2025-12-31 page_3の残存FP（clefs_left_0p18基準）
+
+**作業目的 / 方針 / 位置づけ**
+- page_3で残るFPの位置と性質を確認し、過去のFP=0条件との差分を特定するための材料整理。
+
+**作業時間**
+- 2025-12-31 03:05:00 JST
+
+**確認内容**
+- `clefs_left_0p18_baseline` と `clefs_left_0p18_extend_s1.6_r0p90` は同じFP（page_3=3件）。
+- FP座標:
+  - [335, 230, 336, 253]
+  - [479, 449, 480, 469]
+  - [132, 684, 136, 704]
+- マスク重なり: barline/notes=1.0, notehead/stems_rest/symbols=0.0（clefs_keysは1件のみ0.124）。
+
+**所見**
+- page_3のFPはclefs_keysやnotehead由来ではなく、barline由来の細線候補。
+- probe extendによる増減はなく、基準（clefs_left_0p18）時点で存在。
+
 ## 2025-12-31 core0.50適用後の残存FP再分類と可視化
 
 **作業目的 / 方針 / 位置づけ**

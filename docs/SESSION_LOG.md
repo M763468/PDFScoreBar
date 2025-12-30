@@ -858,3 +858,473 @@
 
 **実行コマンド（完全一致）**
 - `.venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/repro_var88_from_logs_reuse_rows_probe_eps --union-root logs/phase5b_confirmed_union_eval --endpoint-ratio-threshold 0.20 --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.20 --clefs-keys-overlap-min 0.30 --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff --probe-width 3 --probe-ink-threshold 180 --probe-min-ratio 0.80 --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 --probe-band-height-mode median_box --probe-band-height-scale 1.0 --probe-band-height-min 10 --probe-notehead-dilate 13 --probe-row-filter-mode reuse_rows --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80`
+
+## 2025-12-30 resumeセッションによるvar88復元の確認
+
+**作業目的 / 方針 / 位置づけ**
+- resumeしたセッションで、var88の完全一致再現が確認されたことを反映する。
+
+**作業時間**
+- 2025-12-30 18:05:00 JST
+
+**確認内容**
+- 完全一致の再現ログ: `logs/gt_rebuild_hybrid_eval/repro_var88_from_logs_reuse_rows_probe_eps/`
+- 再現条件は上記「var88完全一致の再現手順（復旧）」のコマンドと一致。
+
+**次の作業予定**
+- var88完全一致の再現条件を前提に、残存FPの可視化（overlay + crop）を再生成。
+- FPの原因カテゴリ（clef/accidental/stem/装飾）の比率をページ別に集計し、除去ルール候補を1つに絞る。
+
+## 2025-12-30 var88復元結果のFP可視化（postfilter_analysis）
+
+**作業目的 / 方針 / 位置づけ**
+- resumeセッションで復元されたvar88の結果に対し、FP残存の可視化を再生成。
+
+**作業時間**
+- 2025-12-30 18:43:28 JST
+
+**実行内容**
+- `tools/probe_postfilter_analysis.py` を使用し、FP残存とendbarフィルタの効果を可視化。
+
+**出力ログ**
+- `logs/probe_postfilter_analysis/20251230T184328_var88_repro/`
+  - `page_XXX_fp_remaining.png`
+  - `page_XXX_filter_effects.png`
+  - `summary.json`
+
+## 2025-12-30 var88復元結果のFP原因分布（マスク重なり）
+
+**作業目的 / 方針 / 位置づけ**
+- var88復元結果のFPに対し、homr中間マスクとの重なりで原因カテゴリの当たりを付ける。
+
+**作業時間**
+- 2025-12-30 18:45:00 JST
+
+**検証内容（作用機序）**
+- FP boxごとにマスク重なり率を算出（clefs_keys / stems_rest / notehead / barline / symbols / notes）。
+- 閾値0.2以上の重なり数、および最大重なりラベルを集計。
+
+**出力ログ**
+- `logs/fp_category_analysis/20251230T184500_var88_repro/`
+  - `summary.json`
+  - `page_XXX_fp_mask_ratios.json`
+
+## 2025-12-30 FPマスク重ね合わせクロップの作成
+
+**作業目的 / 方針 / 位置づけ**
+- FPに対する各マスク（clefs_keys / stems_rest / notehead / barline / symbols / notes）の重なりを目視確認する。
+
+**作業時間**
+- 2025-12-30 19:00:00 JST
+
+**実行内容**
+- var88復元結果のFPを最大6件/ページ抽出し、マスクの重ね合わせクロップを生成。
+
+**出力ログ**
+- `logs/fp_mask_crops/20251230T190000_var88_repro/`
+  - `page_XXX/fp_XX_mask_overlay.png`
+
+## 2025-12-30 FPマスク重ね合わせの目視確認（全ページ）
+
+**作業目的 / 方針 / 位置づけ**
+- 各ページのFPクロップ（最大6件/ページ）を目視し、マスクの実用性を判断。
+
+**作業時間**
+- 2025-12-30 19:05:00 JST
+
+**目視所見（要点）**
+- notesマスクは全FPに強く重なり、識別用途には不向き（過検出気味）。
+- symbolsマスクは局所的で一貫性が弱く、単独ルールに使いにくい。
+- clefs_keysはpage_004/15で重なりが目立つが、page_001/10では弱い。
+- barline/stems_restはpage_001/15で重なりが目立つが、TPにも重なる可能性が高い。
+
+**統計（threshold=0.2）**
+- 集計元: `logs/fp_category_analysis/20251230T184500_var88_repro/summary.json`
+- aggregate (FP=39):
+  - mask_counts_ge_0p2: clefs_keys=9, stems_rest=15, notehead=2, barline=17, symbols=1, notes=39
+  - top_label_counts: notes=33, barline=5, clefs_keys=1
+
+## 2025-12-30 FP×マスク成分の衝突統計（clefs_keys / barline）
+
+**作業目的 / 方針 / 位置づけ**
+- マスク「含有」(connected component中心ヒット) を使った判定が安全かをFP/TPで比較。
+
+**作業時間**
+- 2025-12-30 19:30:00 JST
+
+**実行内容**
+- clefs_keys / barline の connected components を算出し、FP/TPで中心ヒット数とoverlap比率を集計。
+
+**出力ログ**
+- `logs/fp_component_analysis/20251230T193000_var88_repro/summary.json`
+
+**集計結果（全ページ合算）**
+- clefs_keys:
+  - center_hit: FP 6/39, TP 9/456
+  - overlap>=0.2: FP 9/39, TP 16/456
+  - overlap>=0.5: FP 8/39, TP 7/456
+- barline:
+  - center_hit: FP 17/39, TP 436/456
+  - overlap>=0.2: FP 17/39, TP 451/456
+  - overlap>=0.5: FP 16/39, TP 439/456
+
+## 2025-12-30 clefs_keys内接コア×endpoint windowによるFP除去テスト
+
+**作業目的 / 方針 / 位置づけ**
+- clefs_keysマスクの「内接コア」（distance transformで縮約した成分）と、barline候補のendpoint windowの重なりでFP除去できるかを検証。
+- 画像解像度差の影響を避けるため、endpoint windowはbarline median height 比でスケール。
+
+**作業時間**
+- 2025-12-30 19:50:00 JST
+
+**実行内容**
+- clefs_keys mask componentをdistance transformで縮約し、コア円（core_scale=0.7）を生成。
+- barline候補の上端/下端にendpoint windowを作成し、コア円との重なりがあれば除去。
+- 2パターン（rx/ryスケール）を比較。
+
+**出力ログ**
+- `logs/clefs_keys_endpoint_core/20251230T195000_var88_repro/summary.json`
+- `logs/clefs_keys_endpoint_core/20251230T195000_var88_repro/rx0p04_ry0p80/`
+  - `page_XXX_removed.json`
+- `logs/clefs_keys_endpoint_core/20251230T195000_var88_repro/rx0p06_ry0p60/`
+  - `page_XXX_removed.json`
+
+**結果（全ページ合算）**
+- rx0p04_ry0p80: TP=425, FP=31, FN=31（removed=51）
+- rx0p06_ry0p60: TP=424, FP=30, FN=32（removed=53）
+
+**所見**
+- いずれの設定でもFNが大きく増加（var88基準のFN=0から悪化）。
+- clefs_keysの内接コアを使っても、現在のendpoint window設定ではTPを巻き込みやすい。
+
+## 2025-12-30 clefs_keys内接コアのsweep（core_scale 0.4-0.7）+ 可視化
+
+**作業目的 / 方針 / 位置づけ**
+- clefs_keys内接コアの縮小がFNを抑えつつFP低減できるかを確認。
+- 既存結果とsweep結果を比較できるよう、除去対象のoverlay+cropを出力。
+
+**作業時間**
+- 2025-12-30 21:50:00 JST
+
+**実行内容**
+- clefs_keysマスクからdistance transformで内接コアを生成（core_scale=0.4/0.5/0.6/0.7）。
+- endpoint windowはbarline median height比で2パターン（rx0.04/ry0.80, rx0.06/ry0.60）。
+- 候補はgeom_keptを用い、評価はgreedy_barline_match(iou=0.5)でTP/FP/FNを算出。
+- 除去候補ごとに「コア(緑)+候補(赤)+endpoint window(黄)」のoverlay cropを出力。
+
+**出力ログ**
+- `logs/clefs_keys_endpoint_core_sweep/20251230T215027_var88_repro_geomkept/summary.json`
+- `logs/clefs_keys_endpoint_core_sweep/20251230T215027_var88_repro_geomkept/core0.40/`
+- `logs/clefs_keys_endpoint_core_sweep/20251230T215027_var88_repro_geomkept/core0.50/`
+- `logs/clefs_keys_endpoint_core_sweep/20251230T215027_var88_repro_geomkept/core0.60/`
+- `logs/clefs_keys_endpoint_core_sweep/20251230T215027_var88_repro_geomkept/core0.70/`
+
+**結果（全ページ合算）**
+- core0.40:
+  - rx0p04_ry0p80: TP=453, FP=38, FN=21（removed=8）
+  - rx0p06_ry0p60: TP=453, FP=38, FN=21（removed=8）
+- core0.50:
+  - rx0p04_ry0p80: TP=453, FP=38, FN=21（removed=8）
+  - rx0p06_ry0p60: TP=453, FP=38, FN=21（removed=8）
+- core0.60:
+  - rx0p04_ry0p80: TP=455, FP=38, FN=19（removed=4）
+  - rx0p06_ry0p60: TP=455, FP=38, FN=19（removed=4）
+- core0.70:
+  - rx0p04_ry0p80: TP=457, FP=39, FN=17（removed=0）
+  - rx0p06_ry0p60: TP=457, FP=39, FN=17（removed=0）
+
+**所見**
+- core_scaleを縮小してもFPはほぼ変わらず、FNが残る傾向。
+- 2つのendpoint window設定で差がほぼ出ない。
+
+## 2025-12-30 clefs_keys内接コアsweepの可視化（FPと新規FNのみ）
+
+**作業目的 / 方針 / 位置づけ**
+- 既存FPと新規FNのみを可視化し、clefs_keysマスクとの衝突判定の妥当性を確認。
+- 元マスクと内接コアを同時に重ねて表示（元マスク=青、コア=緑）。
+
+**作業時間**
+- 2025-12-30 22:55:00 JST
+
+**実行内容**
+- clefs_keysマスクが元画像と解像度不一致のため、画像サイズへ最近傍リサイズして重ね合わせ。
+- FPはbaseline（var88）fp_boxesから抽出、FNは「除去されたTP（barline_iou>=0.5）」として定義。
+- 可視化は各設定ごとに「FPクロップ」「FNクロップ」のみ保存。
+
+**出力ログ**
+- `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T225523_var88_repro_geomkept/summary.json`
+- `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T225523_var88_repro_geomkept/core0.40/`
+- `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T225523_var88_repro_geomkept/core0.50/`
+- `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T225523_var88_repro_geomkept/core0.60/`
+- `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T225523_var88_repro_geomkept/core0.70/`
+
+**集計（全ページ合算）**
+- core0.40:
+  - rx0p04_ry0p80: baseline FP=39, new FN=5, removed FP=9
+  - rx0p06_ry0p60: baseline FP=39, new FN=5, removed FP=10
+- core0.50:
+  - rx0p04_ry0p80: baseline FP=39, new FN=0, removed FP=6
+  - rx0p06_ry0p60: baseline FP=39, new FN=0, removed FP=8
+- core0.60:
+  - rx0p04_ry0p80: baseline FP=39, new FN=0, removed FP=1
+  - rx0p06_ry0p60: baseline FP=39, new FN=0, removed FP=3
+- core0.70:
+  - rx0p04_ry0p80: baseline FP=39, new FN=0, removed FP=1
+  - rx0p06_ry0p60: baseline FP=39, new FN=0, removed FP=1
+
+**所見**
+- マスクと画像の解像度差が原因で「clef以外に当たって見える」ケースが発生していたため、今回リサイズして可視化を再生成。
+- core0.5以上では新規FNは出ないが、FP除去も限定的。
+
+## 2025-12-30 core0.4/0.5の比較可視化（removed FP識別 + マスクノイズ除去）
+
+**作業目的 / 方針 / 位置づけ**
+- core0.4とcore0.5を並列に比較し、FP除去の成功/不成功を可視化で判別可能にする。
+- clefs_keysマスクの軽いノイズ除去（denoise_v1）を試し、FN増加なしでFP除去が改善するか確認。
+
+**作業時間**
+- 2025-12-30 23:25:00 JST
+
+**実行内容**
+- 可視化対象は「baseline FP」と「新規FN（除去されたTP）」のみ。
+- removed FPは枠色をマゼンタ、未除去FPは赤で表示し、ラベルで識別。
+- マスクは元マスクを青、内接コアを緑で重ね合わせ。
+- denoise_v1: 3x3 opening + 小面積成分除去（area < max(20, (median_height*0.1)^2)）。
+
+**出力ログ**
+- `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T232521_var88_repro_geomkept/summary.json`
+- `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T232521_var88_repro_geomkept/raw/`
+- `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T232521_var88_repro_geomkept/denoise_v1/`
+
+**集計（全ページ合算）**
+- raw core0.4:
+  - rx0p04_ry0p80: baseline FP=39, removed FP=9, new FN=5
+  - rx0p06_ry0p60: baseline FP=39, removed FP=10, new FN=5
+- raw core0.5:
+  - rx0p04_ry0p80: baseline FP=39, removed FP=6, new FN=0
+  - rx0p06_ry0p60: baseline FP=39, removed FP=8, new FN=0
+- denoise_v1 core0.4:
+  - rx0p04_ry0p80: baseline FP=39, removed FP=9, new FN=5
+  - rx0p06_ry0p60: baseline FP=39, removed FP=10, new FN=5
+- denoise_v1 core0.5:
+  - rx0p04_ry0p80: baseline FP=39, removed FP=6, new FN=0
+  - rx0p06_ry0p60: baseline FP=39, removed FP=8, new FN=0
+
+**所見**
+- denoise_v1はrawと同等で、FP除去やFN抑制に変化は見られなかった。
+
+## 2025-12-30 ノイズ除去手法の比較（raw / denoise_v1 / denoise_area / denoise_height）
+
+**作業目的 / 方針 / 位置づけ**
+- ノイズ除去でFNを増やさずにFP除去が改善できるかを確認（core0.40/0.50を同時に比較）。
+- 各手法についてFP/NEW_FNの可視化を生成し目視確認。
+
+**作業時間**
+- 2025-12-30 23:40:00 JST
+
+**実行内容**
+- mask_modes: raw / denoise_v1 / denoise_area / denoise_height。
+- denoise_area: 小面積成分除去（area < max(30, (median_height*0.20)^2)）。
+- denoise_height: 低い成分除去（height < max(8, median_height*0.40)）。
+- 可視化はbaseline FPとNEW_FNのみ（removed FPはマゼンタ枠で識別）。
+
+**出力ログ**
+- `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T234203_var88_repro_geomkept/summary.json`
+- `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T234203_var88_repro_geomkept/raw/`
+- `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T234203_var88_repro_geomkept/denoise_v1/`
+- `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T234203_var88_repro_geomkept/denoise_area/`
+- `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T234203_var88_repro_geomkept/denoise_height/`
+
+**集計（全ページ合算）**
+- raw:
+  - core0.40: removed FP=9-10, new FN=5
+  - core0.50: removed FP=6-8, new FN=0
+- denoise_v1:
+  - core0.40: removed FP=9-10, new FN=5
+  - core0.50: removed FP=6-8, new FN=0
+- denoise_area:
+  - core0.40: removed FP=9-10, new FN=4
+  - core0.50: removed FP=6-8, new FN=0
+- denoise_height:
+  - core0.40: removed FP=8-9, new FN=5
+  - core0.50: removed FP=7, new FN=0
+
+**所見**
+- core0.40のFNは残り、ノイズ除去で完全には解消できていない。
+- core0.50は全手法でFN=0を維持し、FP除去は6-8件程度で安定。
+
+## 2025-12-30 core0.40のみ除去できるFPの確認 + core0.45試行
+
+**作業目的 / 方針 / 位置づけ**
+- core0.40で除去できるがcore0.50で残るFPを特定し、別手法での除去可否を検討。
+- 中間値core0.45の可能性を確認。
+
+**作業時間**
+- 2025-12-30 23:50:00 JST
+
+**実行内容**
+- raw core0.40 vs core0.50（rx0p06_ry0p60）で除去FPの差分を抽出。
+- core0.45（raw/denoise_area/denoise_height）で可視化と統計を作成。
+
+**出力ログ**
+- 差分リスト: `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T234203_var88_repro_geomkept/only40_not50.json`
+- core0.45可視化: `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T234949_var88_repro_geomkept/summary.json`
+- core0.45画像: `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T234949_var88_repro_geomkept/*/core0.45/`
+
+**差分（core0.40のみ除去されるFP）**
+- page_15: 2件
+  - [1568, 1075, 1572, 1149]
+  - [2422, 850, 2424, 922]
+
+**core0.45集計（全ページ合算）**
+- raw:
+  - rx0p04_ry0p80: removed FP=8, new FN=4
+  - rx0p06_ry0p60: removed FP=10, new FN=4
+- denoise_area:
+  - rx0p04_ry0p80: removed FP=8, new FN=4
+  - rx0p06_ry0p60: removed FP=10, new FN=4
+- denoise_height:
+  - rx0p04_ry0p80: removed FP=8, new FN=4
+  - rx0p06_ry0p60: removed FP=9, new FN=4
+
+**所見**
+- core0.45はFNが残り、core0.50の「FN=0」を維持できない。
+
+## 2025-12-31 core0.50採用の決定
+
+**作業目的 / 方針 / 位置づけ**
+- clefs_keys内接コア方式はcore0.50でFN=0を維持できるため、これを採用値として固定する。
+
+**作業時間**
+- 2025-12-31 00:10:00 JST
+
+**決定事項**
+- clefs_keys内接コアはcore0.50を採用（endpoint windowはrx0p04_ry0p80/0p06_ry0p60のいずれもFN=0）。
+
+**次の作業方針**
+- 局所形状フィルタを試行した後、音符密度の観点のフィルタを検討する。
+
+## 2025-12-31 局所形状フィルタ（thin/short component）試行
+
+**作業目的 / 方針 / 位置づけ**
+- clefs_keys近傍の細い/短い成分を用いてFPを除去できるか確認。
+- core0.50（採用値）後に局所形状フィルタを適用。
+
+**作業時間**
+- 2025-12-31 00:10:00 JST
+
+**実行内容**
+- clefs_keysマスクのconnected componentsを算出し、成分の高さ/幅が閾値以下なら該当候補を除去。
+- 閾値は median_height 比で4通り（hr=0.7/0.9, wr=0.15/0.20）。
+- 可視化はbaseline FPとNEW_FNのみ（removed FPはマゼンタ枠で識別）。
+
+**出力ログ**
+- `logs/local_shape_filter/20251231T000929_var88_repro/summary.json`
+- `logs/local_shape_filter/20251231T000929_var88_repro/hr0.70_wr0.15/`
+- `logs/local_shape_filter/20251231T000929_var88_repro/hr0.90_wr0.15/`
+- `logs/local_shape_filter/20251231T000929_var88_repro/hr0.70_wr0.20/`
+- `logs/local_shape_filter/20251231T000929_var88_repro/hr0.90_wr0.20/`
+
+**集計（全ページ合算）**
+- hr0.70_wr0.15: TP=429, FP=28, FN=45, removed FP=2, new FN=34
+- hr0.90_wr0.15: TP=428, FP=28, FN=46, removed FP=2, new FN=35
+- hr0.70_wr0.20: TP=429, FP=28, FN=45, removed FP=2, new FN=34
+- hr0.90_wr0.20: TP=428, FP=28, FN=46, removed FP=2, new FN=35
+
+**所見**
+- 局所形状（thin/short成分）基準はTPを大きく巻き込み、FNが大幅に増加。
+- FP除去効果は小さく（2件）、実用性が低い。
+
+## 2025-12-31 音符密度フィルタ（小節間隔に基づく近接除去）試行
+
+**作業目的 / 方針 / 位置づけ**
+- 小節線間隔の分布から「極端に狭い候補」を除去する音符密度フィルタを評価。
+- core0.50適用後にフィルタを重ねる。
+
+**作業時間**
+- 2025-12-31 00:30:00 JST
+
+**実行内容**
+- 候補をy中心クラスタで行単位にグルーピング（row_tol = median_height*0.6）。
+- 同一行内のbarline間隔中央値に対し、最小間隔が ratio * median_spacing 未満なら除去。
+- ratio = 0.25 / 0.30 / 0.35 / 0.40。
+- 可視化はbaseline FPとNEW_FNのみ（removed FPはマゼンタ枠で識別）。
+
+**出力ログ**
+- `logs/density_filter/20251231T001324_var88_repro/summary.json`
+- `logs/density_filter/20251231T001324_var88_repro/ratio0.25/`
+- `logs/density_filter/20251231T001324_var88_repro/ratio0.30/`
+- `logs/density_filter/20251231T001324_var88_repro/ratio0.35/`
+- `logs/density_filter/20251231T001324_var88_repro/ratio0.40/`
+
+**集計（全ページ合算）**
+- ratio0.25: TP=209, FP=23, FN=265, removed FP=5, new FN=510
+- ratio0.30: TP=205, FP=23, FN=269, removed FP=5, new FN=515
+- ratio0.35: TP=204, FP=22, FN=270, removed FP=6, new FN=516
+- ratio0.40: TP=204, FP=21, FN=270, removed FP=7, new FN=516
+
+**所見**
+- 近接除去が過剰でFNが大幅に増加し、現状の定義では実用性が低い。
+
+## 2025-12-31 音符密度フィルタ（noteheadマスク併用）試行
+
+**作業目的 / 方針 / 位置づけ**
+- 小節間隔の近接条件に加え、noteheadマスクの空白判定を導入し、過剰なFNを抑制できるか確認。
+- core0.50適用後にフィルタを重ねる。
+
+**作業時間**
+- 2025-12-31 00:40:00 JST
+
+**実行内容**
+- staffマスクのconnected componentsで行を定義し、同一行内の候補をx順に並べて間隔中央値を算出。
+- 近接候補（min_dist < ratio * median_spacing）かつ gap内notehead=0 の場合のみ除去。
+- 除去対象はbarlineマスクの重なりが小さい側を優先。
+- ratio = 0.20 / 0.25 / 0.30。
+- 可視化はbaseline FPとNEW_FNのみ（removed FPはマゼンタ枠で識別）。
+
+**出力ログ**
+- `logs/density_filter_notehead/20251231T002445_var88_repro/summary.json`
+- `logs/density_filter_notehead/20251231T002445_var88_repro/ratio0.20/`
+- `logs/density_filter_notehead/20251231T002445_var88_repro/ratio0.25/`
+- `logs/density_filter_notehead/20251231T002445_var88_repro/ratio0.30/`
+
+**集計（全ページ合算）**
+- ratio0.20: TP=457, FP=30, FN=17, removed FP=0, new FN=0
+- ratio0.25: TP=457, FP=30, FN=17, removed FP=0, new FN=0
+- ratio0.30: TP=457, FP=30, FN=17, removed FP=0, new FN=0
+
+**所見**
+- notehead空白条件を加えてもFPは除去できず、効果なし。
+
+## 2025-12-31 HOMR出力に拍子情報があるかの確認
+
+**作業目的 / 方針 / 位置づけ**
+- 拍子・拍数などの情報をHOMR出力から取得可能かを確認。
+
+**作業時間**
+- 2025-12-31 01:00:00 JST
+
+**実行内容**
+- homr_eval出力内のJSON/CSV/XMLから拍子関連のキーを検索。
+- detections.jsonを確認。
+
+**所見**
+- homr_evalのJSON/CSVには拍子情報が見当たらない。
+- 拍子情報が確実に含まれるのはmusicxmlのみ（現状の中間マスクには明示的な拍子ラベルがない）。
+
+## 2025-12-31 musicxmlの拍子・音符情報の利用方針検討
+
+**作業目的 / 方針 / 位置づけ**
+- musicxmlから拍子・音符情報を取り出し、画像側の密度フィルタの補助に使えるかを検討。
+- 位置情報は使わず、拍子や音符内容のみを参照する方針。
+
+**作業時間**
+- 2025-12-31 01:20:00 JST
+
+**実行内容**
+- `page_001.musicxml`を確認し、`<time>`タグが存在することを確認。
+- homrの`detections.json`はbboxとsystem/staff indexのみで拍子情報はないことを再確認。
+
+**所見**
+- 拍子変更はmusicxml内のmeasure単位で取得可能（変拍子対応の可能性あり）。
+- ただし、measure順序を画像側のbarline候補に対応付ける必要があるため、homr barline順序（system_index/staff_index/x順）との簡易アラインが必要。

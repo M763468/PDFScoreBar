@@ -132,6 +132,28 @@ def row_filter(
     return [preds[i] for i in sorted(accepted_indices)]
 
 
+def row_filter_with_staff_bands(
+    preds: Sequence[Box],
+    staff_bands: Sequence[Tuple[int, int]],
+    tol_top: float,
+    tol_bottom: float,
+) -> List[Box]:
+    accepted_indices = set()
+    for band_top, band_bottom in staff_bands:
+        for i, box in enumerate(preds):
+            _, y1, _, y2 = map(int, box)
+            if abs(y1 - band_top) <= tol_top and abs(y2 - band_bottom) <= tol_bottom:
+                accepted_indices.add(i)
+    return [preds[i] for i in sorted(accepted_indices)]
+
+
+def median_barline_height(preds: Sequence[Box]) -> float:
+    if not preds:
+        return 0.0
+    heights = [abs(int(y2) - int(y1)) for _, y1, _, y2 in preds]
+    return float(np.median(heights)) if heights else 0.0
+
+
 def build_row_stats(
     preds: Sequence[Box],
     cluster_max_dist: float,
@@ -247,6 +269,7 @@ def filter_clefs_keys_overlap(
     min_overlap_ratio: float,
     right_margin_ratio: float,
     min_overlap_ratio_right: float,
+    apply_mode: str,
 ) -> Tuple[List[Box], Dict[str, object]]:
     h, w = clefs_keys_mask.shape[:2]
     kept: List[Box] = []
@@ -260,9 +283,19 @@ def filter_clefs_keys_overlap(
         y1 = max(0, min(h - 1, y1))
         y2 = max(0, min(h - 1, y2))
         xm = (x1 + x2) // 2
-        if xm > left_limit and (right_limit is None or xm < right_limit):
-            kept.append((x1, y1, x2, y2))
-            continue
+        if apply_mode == "margins":
+            if xm > left_limit and (right_limit is None or xm < right_limit):
+                kept.append((x1, y1, x2, y2))
+                continue
+        elif apply_mode == "center":
+            if right_limit is None:
+                if xm <= left_limit:
+                    kept.append((x1, y1, x2, y2))
+                    continue
+            else:
+                if xm <= left_limit or xm >= right_limit:
+                    kept.append((x1, y1, x2, y2))
+                    continue
         region = clefs_keys_mask[y1 : y2 + 1, x1 : x2 + 1]
         overlap = 0.0
         if region.size:
@@ -288,6 +321,7 @@ def filter_clefs_keys_overlap(
         "right_margin_ratio": right_margin_ratio,
         "right_margin_px": right_limit,
         "min_overlap_ratio_right": min_overlap_ratio_right,
+        "apply_mode": apply_mode,
         "rejected": rejected,
     }
     return kept, debug
@@ -499,21 +533,27 @@ def refine_clefs_keys_mask(
     return (cleaned * 255).astype(np.uint8)
 
 
-def staff_bands_from_mask(mask: np.ndarray) -> List[Tuple[int, int]]:
+def staff_bands_from_mask(
+    mask: np.ndarray,
+    gap_tolerance: int = 1,
+    min_height: int = 1,
+) -> List[Tuple[int, int]]:
     rows = np.where(mask.sum(axis=1) > 0)[0]
     if rows.size == 0:
         return []
     bands: List[Tuple[int, int]] = []
-    start = rows[0]
-    prev = rows[0]
+    start = int(rows[0])
+    prev = int(rows[0])
     for y in rows[1:]:
-        if y == prev + 1:
-            prev = y
+        if int(y) - prev <= gap_tolerance:
+            prev = int(y)
             continue
-        bands.append((int(start), int(prev)))
-        start = y
-        prev = y
-    bands.append((int(start), int(prev)))
+        if prev - start + 1 >= min_height:
+            bands.append((start, prev))
+        start = int(y)
+        prev = int(y)
+    if prev - start + 1 >= min_height:
+        bands.append((start, prev))
     return bands
 
 
@@ -1737,14 +1777,21 @@ def geom_notehead_ratio_filter(
     threshold: float,
     endpoint_x_scale: float,
     endpoint_y_scale: float,
+    *,
+    endpoint_scale_base: str,
+    barline_height_px: float,
 ):
     h, w = notehead_mask.shape[:2]
     kept: List[Box] = []
     rejected: List[Dict[str, object]] = []
     scores: List[Dict[str, object]] = []
 
-    rx = max(1, int(round(staff_space_px * endpoint_x_scale)))
-    ry = max(2, int(round(staff_space_px * endpoint_y_scale)))
+    base_len = staff_space_px
+    if endpoint_scale_base == "barline_height":
+        base_len = barline_height_px if barline_height_px > 0 else staff_space_px * 4.0
+
+    rx = max(1, int(round(base_len * endpoint_x_scale)))
+    ry = max(2, int(round(base_len * endpoint_y_scale)))
 
     for i, box in enumerate(preds):
         x1, y1, x2, y2 = map(int, box)
@@ -1798,6 +1845,9 @@ def geom_notehead_ratio_filter(
             "endpoint_x_radius_scale": endpoint_x_scale,
             "endpoint_y_radius_scale": endpoint_y_scale,
             "endpoint_radius_px": {"x": int(rx), "y": int(ry)},
+            "endpoint_scale_base": endpoint_scale_base,
+            "barline_height_px": float(barline_height_px),
+            "scale_base_len": float(base_len),
         },
         "scores": scores,
         "rejected": rejected,
@@ -1874,6 +1924,12 @@ def main() -> None:
     parser.add_argument("--endpoint-x-scale", type=float, default=0.12)
     parser.add_argument("--endpoint-y-scale", type=float, default=0.8)
     parser.add_argument(
+        "--endpoint-scale-base",
+        choices=["staff_space", "barline_height"],
+        default="staff_space",
+        help="Base length used for endpoint window scaling.",
+    )
+    parser.add_argument(
         "--notehead-open-kernel",
         type=int,
         default=0,
@@ -1893,10 +1949,22 @@ def main() -> None:
     )
     parser.add_argument("--filter-clefs-keys", action="store_true")
     parser.add_argument("--clefs-keys-dilate", type=int, default=0)
+    parser.add_argument(
+        "--clefs-keys-erode",
+        type=int,
+        default=0,
+        help="Erode the clefs_keys mask to shrink sensitive regions.",
+    )
     parser.add_argument("--clefs-keys-left-margin-ratio", type=float, default=0.2)
     parser.add_argument("--clefs-keys-overlap-min", type=float, default=0.05)
     parser.add_argument("--clefs-keys-right-margin-ratio", type=float, default=-1.0)
     parser.add_argument("--clefs-keys-overlap-min-right", type=float, default=0.0)
+    parser.add_argument(
+        "--clefs-keys-apply-mode",
+        choices=["margins", "center", "full"],
+        default="margins",
+        help="Apply clefs_keys filtering on margins, center, or full width.",
+    )
     parser.add_argument("--clefs-keys-open-kernel", type=int, default=0)
     parser.add_argument("--clefs-keys-min-area", type=int, default=0)
     parser.add_argument("--clefs-keys-max-aspect", type=float, default=0.0)
@@ -1940,6 +2008,22 @@ def main() -> None:
     parser.add_argument("--min-row-count", type=int, default=3)
     parser.add_argument("--tol-top-px", type=float, default=5.0)
     parser.add_argument("--tol-bottom-px", type=float, default=5.0)
+    parser.add_argument(
+        "--row-band-mode",
+        choices=["preds", "staff_mask"],
+        default="preds",
+        help="Row filter bands from predictions or staff mask.",
+    )
+    parser.add_argument(
+        "--row-band-mask",
+        choices=["staff", "staffs"],
+        default="staff",
+        help="Which staff mask to use when row-band-mode=staff_mask.",
+    )
+    parser.add_argument("--row-band-pad", type=int, default=2)
+    parser.add_argument("--row-band-gap-tol", type=int, default=2)
+    parser.add_argument("--row-band-min-height", type=int, default=3)
+    parser.add_argument("--row-band-debug", action="store_true")
     parser.add_argument("--enable-end-barline-recovery", action="store_true")
     parser.add_argument("--endbar-search-width", type=int, default=40)
     parser.add_argument("--endbar-min-height-ratio", type=float, default=0.6)
@@ -2098,6 +2182,9 @@ def main() -> None:
                 args.clefs_keys_max_width,
             )
             clefs_keys_mask = dilate_mask(clefs_keys_mask, args.clefs_keys_dilate)
+            if args.clefs_keys_erode > 0:
+                kernel = np.ones((args.clefs_keys_erode, args.clefs_keys_erode), dtype=np.uint8)
+                clefs_keys_mask = cv2.erode(clefs_keys_mask, kernel, iterations=1)
         gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
         gt_boxes = load_gt(page.gt)
 
@@ -2106,17 +2193,56 @@ def main() -> None:
         staff_space = estimate_staff_space(rows, preds)
         base_row_stats = build_row_stats(preds, args.cluster_max_dist, args.min_row_count)
 
-        row_filtered = row_filter(
-            preds,
-            args.cluster_max_dist,
-            args.min_row_count,
-            args.tol_top_px,
-            args.tol_bottom_px,
-        )
+        staff_mask = None
+        staff_bands = []
+        if args.row_band_mode == "staff_mask":
+            staff_mask_path = page.staff_mask if args.row_band_mask == "staff" else page.staff_mask_alt
+            staff_mask = load_staff_mask(staff_mask_path, base_img.shape[:2])
+            staff_bands = staff_bands_from_mask(
+                staff_mask,
+                gap_tolerance=args.row_band_gap_tol,
+                min_height=args.row_band_min_height,
+            )
+            if args.row_band_pad:
+                staff_bands = [
+                    (y1 - args.row_band_pad, y2 + args.row_band_pad) for y1, y2 in staff_bands
+                ]
+
+        if args.row_band_mode == "staff_mask" and staff_bands:
+            row_filtered = row_filter_with_staff_bands(
+                preds,
+                staff_bands,
+                args.tol_top_px,
+                args.tol_bottom_px,
+            )
+        else:
+            row_filtered = row_filter(
+                preds,
+                args.cluster_max_dist,
+                args.min_row_count,
+                args.tol_top_px,
+                args.tol_bottom_px,
+            )
 
         out_dir = per_page_root / page.name
         out_dir.mkdir(parents=True, exist_ok=True)
 
+        if args.row_band_debug and staff_bands:
+            debug_overlay = base_img.copy()
+            h, w = debug_overlay.shape[:2]
+            for y1, y2 in staff_bands:
+                y1 = max(0, min(h - 1, int(y1)))
+                y2 = max(0, min(h - 1, int(y2)))
+                cv2.rectangle(debug_overlay, (0, y1), (w - 1, y2), (0, 255, 255), -1)
+            debug_overlay = cv2.addWeighted(debug_overlay, 0.2, base_img, 0.8, 0.0)
+            draw_boxes(debug_overlay, row_filtered, (0, 255, 0), 1, "R#")
+            cv2.imwrite(str(out_dir / "row_band_debug.png"), debug_overlay)
+
+        barline_height_px = median_barline_height(row_filtered)
+        if staff_bands:
+            band_heights = [abs(y2 - y1) for y1, y2 in staff_bands]
+            if band_heights:
+                barline_height_px = float(np.median(band_heights))
         geom_kept, geom_debug = geom_notehead_ratio_filter(
             row_filtered,
             notehead_mask,
@@ -2124,6 +2250,8 @@ def main() -> None:
             args.endpoint_ratio_threshold,
             args.endpoint_x_scale,
             args.endpoint_y_scale,
+            endpoint_scale_base=args.endpoint_scale_base,
+            barline_height_px=barline_height_px,
         )
         geom_debug["notehead_mask_filter"] = {
             "open_kernel": args.notehead_open_kernel,
@@ -2273,6 +2401,7 @@ def main() -> None:
                 )
                 probe_x_scale = args.endpoint_x_scale if args.probe_endpoint_x_scale <= 0 else args.probe_endpoint_x_scale
                 probe_y_scale = args.endpoint_y_scale if args.probe_endpoint_y_scale <= 0 else args.probe_endpoint_y_scale
+                added_barline_height_px = median_barline_height(added_row)
                 added_geom, added_geom_debug = geom_notehead_ratio_filter(
                     added_row,
                     probe_notehead_mask,
@@ -2280,6 +2409,8 @@ def main() -> None:
                     args.endpoint_ratio_threshold,
                     probe_x_scale,
                     probe_y_scale,
+                    endpoint_scale_base=args.endpoint_scale_base,
+                    barline_height_px=added_barline_height_px,
                 )
                 added_geom_debug["notehead_mask_filter"] = {
                     "open_kernel": args.notehead_open_kernel,
@@ -2372,10 +2503,12 @@ def main() -> None:
                 args.clefs_keys_overlap_min,
                 args.clefs_keys_right_margin_ratio,
                 args.clefs_keys_overlap_min_right,
+                args.clefs_keys_apply_mode,
             )
             clef_debug["before"] = before
             clef_debug["after"] = len(geom_kept)
             clef_debug["clefs_keys_dilate"] = args.clefs_keys_dilate
+            clef_debug["clefs_keys_erode"] = args.clefs_keys_erode
             clef_debug["refine"] = {
                 "open_kernel": args.clefs_keys_open_kernel,
                 "min_area": args.clefs_keys_min_area,

@@ -752,3 +752,24 @@
 
 **補足**
 - var88ログのタイムスタンプは `20251230T_hybrid_row_notehead_endbar` で、上記コミット時刻と近接。
+
+## 2025-12-30 var88完全一致の再現手順（復旧）
+
+**作業目的 / 方針 / 位置づけ**
+- var88のFN=0/FP低の結果を、現行スクリプトと完全一致で再現する。
+
+**作業時間**
+- 2025-12-30 17:45:00 JST
+
+**実施内容**
+- 重要差分の特定:
+  - `probe_row_filter_mode=reuse_rows` に変更すると end_recovered_row が一致。
+  - `probe_endpoint_x_scale=0.04` を明示すると end_recovered_geom が一致。
+- 上記差分を反映することで `var88_clef_filter` のTP/FP/FNが完全一致。
+
+**再現環境**
+- commit: `f41fa96c9bd7d73201913001ac592e50ce625e3c`
+- output: `logs/gt_rebuild_hybrid_eval/repro_var88_from_logs_reuse_rows_probe_eps/`
+
+**実行コマンド（完全一致）**
+- `.venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/repro_var88_from_logs_reuse_rows_probe_eps --union-root logs/phase5b_confirmed_union_eval --endpoint-ratio-threshold 0.20 --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.20 --clefs-keys-overlap-min 0.30 --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff --probe-width 3 --probe-ink-threshold 180 --probe-min-ratio 0.80 --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 --probe-band-height-mode median_box --probe-band-height-scale 1.0 --probe-band-height-min 10 --probe-notehead-dilate 13 --probe-row-filter-mode reuse_rows --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80`

@@ -44,6 +44,9 @@
 - FP削減の現行ベースは `var88`（clefs_keys左端フィルタ + probe_notehead_dilate=13 + notehead_dilate=7）。
   - Logs: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var88_clef_filter/`
   - Overlays: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var88_clef_filter/overlays/`
+  - Repro (commit `f41fa96c9bd7d73201913001ac592e50ce625e3c`):
+    - Output: `logs/gt_rebuild_hybrid_eval/repro_var88_from_logs_reuse_rows_probe_eps/`
+    - `.venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/repro_var88_from_logs_reuse_rows_probe_eps --union-root logs/phase5b_confirmed_union_eval --endpoint-ratio-threshold 0.20 --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.20 --clefs-keys-overlap-min 0.30 --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff --probe-width 3 --probe-ink-threshold 180 --probe-min-ratio 0.80 --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 --probe-band-height-mode median_box --probe-band-height-scale 1.0 --probe-band-height-min 10 --probe-notehead-dilate 13 --probe-row-filter-mode reuse_rows --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80`
 - clefs_keys全域/2ゾーン適用はFN増加で不採用（var89-98 / var109-111）。
   - 比較用crop: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var90_clef_full_0p30/clefs_keys_fp_fn_crops/`
   - 比較用crop: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var105_clefshape_aspect2/clefs_keys_fp_fn_crops/`

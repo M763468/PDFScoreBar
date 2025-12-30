@@ -1328,3 +1328,98 @@
 **所見**
 - 拍子変更はmusicxml内のmeasure単位で取得可能（変拍子対応の可能性あり）。
 - ただし、measure順序を画像側のbarline候補に対応付ける必要があるため、homr barline順序（system_index/staff_index/x順）との簡易アラインが必要。
+
+## 2025-12-31 musicxml補助の密度フィルタ（試作・独立スクリプト）
+
+**作業目的 / 方針 / 位置づけ**
+- musicxmlの拍子/音符数を参照し、近接小節の除去判定を弱く補助できるか試す。
+- 既存結果と干渉しない独立スクリプトで実験。
+
+**作業時間**
+- 2025-12-31 01:40:00 JST
+
+**実行内容**
+- `tools/musicxml_density_filter.py` を新規作成（既存結果は参照のみ）。
+- musicxmlからmeasure単位の拍子/音符数/休符数/総durationを抽出。
+- core0.50後の候補をstaff行ごとに並べ、隣接間隔とmusicxmlの音符数で除去判定。
+- 除去は「min_notes以上」「spacing比率<thr」「gap内notehead密度が低い」のみ。
+
+**実行コマンド**
+- `PYTHONPATH=. .venv_pdf/bin/python tools/musicxml_density_filter.py --run-tag 20251231T_musicxml_density_try`
+
+**出力ログ**
+- `logs/musicxml_density_filter/20251231T_musicxml_density_try/summary.json`
+- `logs/musicxml_density_filter/20251231T_musicxml_density_try/page_XXX/pair_stats.json`
+- `logs/musicxml_density_filter/20251231T_musicxml_density_try/page_XXX/fp_*.png`
+- `logs/musicxml_density_filter/20251231T_musicxml_density_try/page_XXX/fn_*.png`
+
+**集計（全ページ合算）**
+- TP=451, FP=28, FN=23
+- removed FP=2, new FN=12
+
+**所見**
+- 除去効果は小さく、FNが増加。簡易アラインでは十分に安全な条件になっていない。
+
+## 2025-12-31 musicxml方式の改善（detections整列 + 弱い条件）
+
+**作業目的 / 方針 / 位置づけ**
+- homr detectionsのstaff_index/x順でmeasure順序を整列し、musicxml方式のアライン精度を改善。
+- FN増加を抑えるため、除去条件を弱めた設定を試行。
+
+**作業時間**
+- 2025-12-31 02:10:00 JST
+
+**実行内容**
+- `--use-detections-align` を追加し、staff単位でdetections順を使用。
+- 弱い条件（min_notes, notehead_density_max, ratio）を変更して再評価。
+
+**実行コマンド**
+- `PYTHONPATH=. .venv_pdf/bin/python tools/musicxml_density_filter.py --run-tag 20251231T_musicxml_density_align --use-detections-align`
+- `PYTHONPATH=. .venv_pdf/bin/python tools/musicxml_density_filter.py --run-tag 20251231T_musicxml_density_align_weak1 --use-detections-align --ratio 0.25 --min-notes 12 --notehead-density-max 0.01`
+- `PYTHONPATH=. .venv_pdf/bin/python tools/musicxml_density_filter.py --run-tag 20251231T_musicxml_density_align_weak2 --use-detections-align --ratio 0.25 --min-notes 16 --notehead-density-max 0.005`
+
+**出力ログ**
+- `logs/musicxml_density_filter/20251231T_musicxml_density_align/summary.json`
+- `logs/musicxml_density_filter/20251231T_musicxml_density_align_weak1/summary.json`
+- `logs/musicxml_density_filter/20251231T_musicxml_density_align_weak2/summary.json`
+
+**集計（全ページ合算）**
+- align (ratio0.30/min_notes8/density0.02): TP=451, FP=28, FN=23, removed FP=2, new FN=12
+- weak1 (ratio0.25/min_notes12/density0.01): TP=457, FP=28, FN=17, removed FP=2, new FN=0
+- weak2 (ratio0.25/min_notes16/density0.005): TP=457, FP=28, FN=17, removed FP=2, new FN=0
+
+**所見**
+- detections整列の有無で結果差は小さい。
+- 弱い条件ではFN=0を維持しつつFPを2件除去できる可能性がある。
+
+## 2025-12-31 core0.50適用後の残存FP再分類と可視化
+
+**作業目的 / 方針 / 位置づけ**
+- musicxml適用前（core0.50のみ適用）の残存FPを再分類し、原因調査に必要な可視化を作成。
+
+**作業時間**
+- 2025-12-31 01:15:00 JST
+
+**実行内容**
+- core0.50（clefs_keys内接コア）適用後の残存FPを抽出。
+- homrマスク（symbols / stems_rest / notehead / clefs_keys / barline / notes）との重なり比率を計算。
+- 全FPについてマスク重ね合わせ可視化（FPボックス付き）を生成。
+
+**出力ログ**
+- `logs/fp_reclass_core0p50/20251231T011423_var88_repro/summary.json`
+- `logs/fp_reclass_core0p50/20251231T011423_var88_repro/page_001/`
+- `logs/fp_reclass_core0p50/20251231T011423_var88_repro/page_004/`
+- `logs/fp_reclass_core0p50/20251231T011423_var88_repro/page_10/`
+- `logs/fp_reclass_core0p50/20251231T011423_var88_repro/page_15/`
+ - `logs/fp_reclass_core0p50/20251231T011423_var88_repro/by_category/`
+   - `page_XXX/{clefs_keys|notehead|stems_rest|symbols|barline_only}/`
+ - `logs/fp_reclass_core0p50/20251231T011423_var88_repro/by_category/index.json`
+
+**集計（全ページ合算）**
+- 残存FP合計=31（page_001=12, page_004=5, page_10=4, page_15=10）
+- mask_counts_ge_0p2:
+  - symbols=1, stems_rest=14, notehead=2, clefs_keys=2, barline=31, notes=31
+
+**所見**
+- 残存FPはbarline/notesマスクに強く重なる（識別には使いにくい）。
+- stems_restの重なりが比較的多い（14件）ため、局所的な追加フィルタ候補として再検討余地あり。

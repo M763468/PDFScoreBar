@@ -200,3 +200,555 @@
 
 **結果**
 - いずれもTP/FPの分離が弱く、単独の閾値ではFN=0維持が困難と判断。
+
+## 2025-12-30 page3過去条件の再現確認
+
+**作業目的 / 方針 / 位置づけ**
+- page3で過去にFP=FN=0を達成した処理順序・条件が現在も再現できるか確認。
+
+**作業時間**
+- 2025-12-30 03:08:12 JST
+
+**実行コマンド（再現用）**
+- `.venv_pdf/bin/python experiments/fp_reduction/analyze_staff_consistency.py --json logs/hybrid_results.json --image data/evaluation/images/page_3.png --gt data/evaluation/annotations/page_003/boxes_sorted.json --output logs/phase4_notehead_geom/20251230T_phase4_repro_check --no-use-ratio-tolerance --tol-top-px 5 --tol-bottom-px 5 --enable-geom-notehead-filter --geom-notehead-mode page3_known_fp --homr-context-dir logs/homr_eval_baseline/baseline_verification/page_3`
+
+**結果**
+- Original: TP=152 FP=8 FN=0
+- Row filter: TP=152 FP=2 FN=0
+- Geom note context: TP=152 FP=0 FN=0
+- Final: TP=152 FP=0 FN=0
+
+**出力ログ**
+- `logs/phase4_notehead_geom/20251230T_phase4_repro_check/`
+
+## 2025-12-30 案A: 近接候補の最小間隔ルール（全ページ検証）
+
+**作業目的 / 方針 / 位置づけ**
+- 近接候補のX間隔が極端に狭い場合に、短い方をFPとして落とすルールを試す。
+- グローバル閾値で有効かどうかを5ページで検証。
+
+**作業時間**
+- 2025-12-30 03:35:40 JST
+
+**検証内容（作用機序）**
+- rowクラスタ（Y距離でクラスタ化）内の候補をX中心でソートし、隣接間隔が中央値の `thr` 倍未満なら短い方を除外。
+- thr は 0.2 / 0.25 / 0.3 をスイープ。
+- 使用preds:
+  - page_001/004/10/15: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var88_clef_filter/per_page/<page>/geom_kept.json`
+  - page_3: `logs/phase5b_confirmed_union_eval/page_3_hybrid_preds.json`
+- GT:
+  - page_001/004/10/15: `logs/phase6_detector_miss/gt_rebuild/page_xxx_boxes_sorted.json`
+  - page_3: `data/evaluation/annotations/page_003/boxes_sorted.json`
+
+**実行コマンド（再現用）**
+- `.venv_pdf/bin/python - <<'PY' ... (spacing rule sweep) ... PY`
+  - 出力: `logs/phase4_notehead_geom/20251230T_spacing_rule_sweep/metrics.json`
+
+**結果（要点）**
+- page_004でFNが発生（thr=0.2でもFN=3）し、FN=0条件を満たせない。
+- page_001でもthr>=0.25でFNが発生。
+- page_3はFPが減らず、除去数のみ増加（多数候補が落ちる）。
+
+**結果ログ**
+- `logs/phase4_notehead_geom/20251230T_spacing_rule_sweep/metrics.json`
+
+## 2025-12-30 案B: endpoint windowのY拡張スイープ（page3）
+
+**作業目的 / 方針 / 位置づけ**
+- 低音・高音のnoteheadとの衝突不足に対し、endpoint windowのY方向拡張が有効か再検証。
+- endpoint_ratio_overlap方式でYスケールのみ変更。
+
+**作業時間**
+- 2025-12-30 03:47:05 JST
+
+**検証内容（作用機序）**
+- `analyze_staff_consistency.py` の `--geom-notehead-mode endpoint_ratio_overlap` を使用。
+- `endpoint_x_radius_scale=0.6` 固定、`endpoint_y_radius_scale` を 0.6/0.8/1.0/1.2/1.5 でスイープ。
+- page3のみ評価（GTあり）。
+
+**実行コマンド（再現用）**
+- `.venv_pdf/bin/python experiments/fp_reduction/analyze_staff_consistency.py --json logs/hybrid_results.json --image data/evaluation/images/page_3.png --gt data/evaluation/annotations/page_003/boxes_sorted.json --output logs/phase4_notehead_geom/20251230T_endpoint_ratio_y0.8 --no-use-ratio-tolerance --tol-top-px 5 --tol-bottom-px 5 --enable-geom-notehead-filter --geom-notehead-mode endpoint_ratio_overlap --geom-endpoint-ratio-threshold 0.1 --geom-endpoint-x-radius-scale 0.6 --geom-endpoint-y-radius-scale 0.8 --homr-context-dir logs/homr_eval_baseline/baseline_verification/page_3`
+- 0.6/1.0/1.2/1.5 も同様に output を変更して実行。
+
+**結果（要点）**
+- y=0.6: TP=151 / FP=2 / FN=1（FN発生）
+- y=0.8/1.0/1.2/1.5: TP=152 / FP=2 / FN=0（FN=0維持だがFPは残存）
+
+**可視化ログ**
+- `logs/phase4_notehead_geom/20251230T_endpoint_ratio_y0.8/geom_kept_removed_overlay.png`
+- `logs/phase4_notehead_geom/20251230T_endpoint_ratio_y0.8/geom_note_context_overlay.png`
+
+## 2025-12-30 残存FPのendpoint衝突+row band可視化（全ページ）
+
+**作業目的 / 方針 / 位置づけ**
+- 残存FPがrow bandから外れているか、notehead endpoint衝突があるかを可視化して原因を特定。
+- page3は過去にFP=FN=0だったため、後段追加候補の挙動を確認する。
+
+**作業時間**
+- 2025-12-30 07:39:59 JST
+
+**検証内容（作用機序）**
+- eval_rootの `fp_boxes.json` を対象に、notehead maskとendpoint windowの衝突を描画。
+- row bandは `filtered_preds.json` のYクラスタから推定（cluster_by_y_distance）。
+- endpoint windowは暫定で page3既知の半径 (rx=5, ry=7) を使用。
+
+**実行コマンド（再現用）**
+- `.venv_pdf/bin/python tools/render_fp_notehead_overlays.py --eval-root logs/gt_rebuild_hybrid_eval/20251230T_var88_barline_clefs_low_geomkept --output-root logs/fp_notehead_overlay/20251230T073959_var88_barline_clefs_low --endpoint-rx 5 --endpoint-ry 7`
+
+**出力ログ**
+- まとめ: `logs/fp_notehead_overlay/20251230T073959_var88_barline_clefs_low/summary.json`
+- 各ページoverlay: `logs/fp_notehead_overlay/20251230T073959_var88_barline_clefs_low/page_XXX_fp_notehead_overlay.png`
+- endpoint window: `logs/fp_notehead_overlay/20251230T073959_var88_barline_clefs_low/page_XXX_fp_endpoint_windows.png`
+- FP crops: `logs/fp_notehead_overlay/20251230T073959_var88_barline_clefs_low/per_page/page_XXX/fp_crops/`
+
+## 2025-12-30 homr中間マスクの棚卸しとFP重なり集計
+
+**作業目的 / 方針 / 位置づけ**
+- homrのdebug出力にどのマスクが存在するかを整理し、FPとの重なり傾向を把握。
+- omr-dln側に中間マスクがあるかも確認。
+
+**作業時間**
+- 2025-12-30 07:46:18 JST
+
+**実施内容**
+- homr evalディレクトリから `*_debug_*.png` を収集して一覧化。
+- 残存FP（barline_clefs_low後）と各マスクの重なり比率を集計。
+- omr-dlnの出力を確認（中間マスクは未確認、predictionsのみ）。
+
+**結果（要点）**
+- homr debugで利用可能な主なマスク:
+  - `debug_5_stems_rest`, `debug_6_notehead`, `debug_7_clefs_keys`, `debug_8_bar_line_img`, `debug_11_bar_lines`
+- FPの箱全体に対するマスク重なり（ratio>=0.1）:
+  - notehead/stems_restはほぼゼロ（endpoint衝突は別扱い）
+  - clefs_keysはpage_001で1件のみ
+  - bar_line_imgはpage_001/3で1件程度
+  - bar_linesは全FPで高い（FP/TP両方に高反応の可能性）
+- omr-dln出力は `logs/omr_dln_sr/predictions.json` のみで、マスクは未確認。
+
+**出力ログ**
+- mask一覧: `logs/mask_inventory/20251230T074400_homr_debug_masks.json`
+- FP重なり統計: `logs/mask_inventory/20251230T074618_fp_mask_overlap.json`
+
+## 2025-12-30 案B sweep（raw/end_recovered基準）※不適合のため参考
+
+**作業目的 / 方針 / 位置づけ**
+- endpoint_ratio_overlapを全ページで一括スイープ。
+- ただし raw/end_recovered を直接入力したため、row filterが過剰に強くなりFNが大量発生。
+
+**作業時間**
+- 2025-12-30 07:48:05 JST
+
+**結果（要点）**
+- FNが大幅増加。現行パイプラインの評価と整合しないため参考扱い。
+
+**出力ログ**
+- `logs/endpoint_ratio_sweep/20251230T074805_var88_end_recovered/summary.json`
+
+## 2025-12-30 案B sweep（row_filtered基準）※不適合のため参考
+
+**作業目的 / 方針 / 位置づけ**
+- row_filteredを入力にendpoint_ratio_overlapを適用。
+- row_filtered自体がGTとの一致が弱いことが判明（TPが低い）。
+
+**作業時間**
+- 2025-12-30 07:52:46 JST
+
+**結果（要点）**
+- row_filteredの段階でFNが大幅に発生し、評価に不向きと判断。
+
+**出力ログ**
+- `logs/endpoint_ratio_sweep/20251230T075246_row_filtered/summary.json`
+
+## 2025-12-30 案B sweep（filtered_preds基準：有効）
+
+**作業目的 / 方針 / 位置づけ**
+- barline_clefs_low後の `filtered_preds.json` を基準にendpoint_ratio_overlapを適用。
+- 既存条件と整合した状態でFN影響を評価。
+
+**作業時間**
+- 2025-12-30 07:55:32 JST
+
+**結果（要点）**
+- FN=0を維持できる設定が複数あり（例: thr=0.10, y=0.80/1.00/1.20）。
+- FP削減は限定的で、page_3のみ1件減（7→6）程度。
+- より攻めた設定（thr=0.08）ではpage_001/004/15にFNが発生。
+
+**出力ログ**
+- summary: `logs/endpoint_ratio_sweep/20251230T075532_filtered_preds/summary.json`
+- config別結果: `logs/endpoint_ratio_sweep/20251230T075532_filtered_preds/thr_0.10_y0.80/<page>/metrics.json`
+- FN可視化（FN発生時のみ）:
+  - `logs/endpoint_ratio_sweep/20251230T075532_filtered_preds/thr_0.08_y0.80/page_001/page_001_fn_overlay.png`
+  - `logs/endpoint_ratio_sweep/20251230T075532_filtered_preds/thr_0.08_y0.80/page_004/page_004_fn_overlay.png`
+  - `logs/endpoint_ratio_sweep/20251230T075532_filtered_preds/thr_0.08_y0.80/page_15/page_15_fn_overlay.png`
+
+## 2025-12-30 row bandとstaff maskの比較（row定義確認）
+
+**作業目的 / 方針 / 位置づけ**
+- row filterのrow bandが五線幅より広く見える件を確認。
+- staff mask（debug_3_staff）からのbandと、preds由来row bandの比較を可視化。
+
+**作業時間**
+- 2025-12-30 08:48:52 JST
+
+**検証内容（作用機序）**
+- staff mask行の非ゼロ連続領域をband化し、row band（predsクラスタのmin/max）と重ねて可視化。
+
+**実行コマンド（再現用）**
+- `.venv_pdf/bin/python tools/render_row_band_compare.py --output-root logs/row_band_compare/20251230T084852_filtered_preds`
+
+**出力ログ**
+- まとめ: `logs/row_band_compare/20251230T084852_filtered_preds/summary.json`
+- overlay: `logs/row_band_compare/20251230T084852_filtered_preds/page_3_row_vs_staff.png` ほか各ページ
+
+## 2025-12-30 endpoint window基準の再確認（staff_space vs barline高さ）
+
+**作業目的 / 方針 / 位置づけ**
+- endpoint windowが画像解像度差に依存していないかを検証。
+- staff_space と barline高さ（box高さ）・staff mask band高さを比較。
+
+**作業時間**
+- 2025-12-30 09:11:02 JST
+
+**検証内容（作用機序）**
+- `filtered_preds.json` のbarline高さ中央値を算出。
+- `debug_3_staff` / `debug_15_staffs` のband高さを比較。
+
+**結果（要点）**
+- barline高さ中央値はページ間で大きく異なり（page_001≈84px, page_3≈20px）。
+- `debug_3_staff` は「五線線のみ」の薄いband（高さ≈6px）で、row band用途には狭すぎる。
+- `debug_15_staffs` は全体が1band化されるため、row band用途には不適。
+
+**補足**
+- barline高さ比率でendpoint windowを決める再設計が必要だが、基準とするband/heightの取り方が課題。
+
+## 2025-12-30 endpoint windowスケール再検討（barline高さ基準のsweep）
+
+**作業目的 / 方針 / 位置づけ**
+- `endpoint_scale_base=barline_height` を導入し、barline高さ基準のスイープを実施。
+- probe_scanあり/なしの挙動差を確認。
+
+**作業時間**
+- 2025-12-30 09:15:19 JST
+
+**変更点（既存スクリプト拡張）**
+- `tools/run_gt_rebuild_hybrid_eval.py` に以下を追加:
+  - `--endpoint-scale-base {staff_space,barline_height}`
+  - row band用 `--row-band-mode` / `--row-band-mask` / `--row-band-debug`
+  - clefs_keys用 `--clefs-keys-apply-mode` / `--clefs-keys-erode`
+
+**実施したスイープ**
+- barline高さ基準（x=0.035, y=0.20/0.25/0.30, thr=0.12/0.16/0.20）
+  - `logs/gt_rebuild_hybrid_eval/20251230T091519_endpoint_base_barline/`
+  - 既存設定と整合せずFNが大きく増加（endbar回復不足と推定）。
+- barline高さ基準（x=0.08, y=0.35/0.45/0.55, thr=0.12/0.16/0.20）
+  - `logs/gt_rebuild_hybrid_eval/20251230T092322_endpoint_base_barline_x0p08/`
+  - FNが解消せず（FP=0, FN=40で固定）。
+- probe_scan併用
+  - `logs/gt_rebuild_hybrid_eval/20251230T092852_endpoint_base_barline_x0p08_probe/`
+  - FN=40が維持。endbar復元がvar88と一致しない。
+
+**補足**
+- control runでもvar88のFN=0が再現できず、union_root/scan条件が一致していない可能性が高い。
+  - control: `logs/gt_rebuild_hybrid_eval/20251230T093054_control_var88/`
+  - probe_x=0.04指定でも同じ: `logs/gt_rebuild_hybrid_eval/20251230T093312_control_var88_probe0p04/`
+
+## 2025-12-30 row band定義の再評価（staff mask使用）
+
+**作業目的 / 方針 / 位置づけ**
+- row filterでstaff maskを使うとどうなるかを確認。
+
+**作業時間**
+- 2025-12-30 09:35:30 JST
+
+**検証内容**
+- `--row-band-mode staff_mask --row-band-mask staff --row-band-debug` を使用。
+
+**結果（要点）**
+- row_kept=0となりrow filterが極端に厳しすぎる。
+- `debug_3_staff` は五線線のみでbandが薄く、row filterのbandには不適。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251230T093530_rowband_staffmask/`
+  - per_pageの `row_band_debug.png` にband可視化あり。
+
+## 2025-12-30 clefs_keys再検討（全幅適用 + erode）
+
+**作業目的 / 方針 / 位置づけ**
+- left限定を超えた適用を再検討。mask縮小(erode)でFN悪化を抑制できるか確認。
+
+**作業時間**
+- 2025-12-30 09:36:23 JST
+
+**検証内容**
+- apply_mode=full, erode=3/5 を試行（overlap_min=0.3）。
+
+**結果（要点）**
+- erode=3ではFPが一部減少（page_001, page_004）し、FNは増加しなかった。
+- erode=5ではFPが増加傾向。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251230T093623_clef_full_erode/var_erode3/summary_table.md`
+- `logs/gt_rebuild_hybrid_eval/20251230T093623_clef_full_erode/var_erode5/summary_table.md`
+
+## 2025-12-30 var88再現の再試行（現行スクリプト）
+
+**作業目的 / 方針 / 位置づけ**
+- 既存のvar88結果を現行 `tools/run_gt_rebuild_hybrid_eval.py` で再現できるか確認する。
+- var88の `geom_debug.json` / `clefs_keys_filter.json` からパラメータを抽出し、同一条件で再実行。
+
+**作業時間**
+- 2025-12-30 10:32:15 JST
+
+**検証内容（作用機序）**
+- noteheadフィルタ: open_kernel=5, min_area=20, dilate=7, max_aspect=2.0, min_height=10, max_width=6
+- clefs_keys left: dilate=3, left_margin_ratio=0.20, overlap_min=0.30
+- endpoint overlap: threshold=0.20, endpoint_x_scale=0.14, endpoint_y_scale=0.80
+- endbar: probe_scan 有効、probe_endpoint_x_scale=0.04, probe_endpoint_y_scale=0.80, probe_notehead_dilate=13
+
+**結果（要点）**
+- var88と一致せず、FNが残存（page_001 FN=14 / page_004 FN=15 / page_10 FN=4 / page_15 FN=7）。
+- end_recovered件数が不足しており、probe_scanの設定差が主因の可能性が高い。
+  - page_001 end_recovered: var88=830 vs repro=524
+  - page_001 end_recovered_row: var88=323 vs repro=109
+  - page_001 end_recovered_geom: var88=106 vs repro=83
+
+**出力ログ**
+- 再現試行: `logs/gt_rebuild_hybrid_eval/20251230T103215_repro_var88/`
+- 比較元: `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var88_clef_filter/`
+
+## 2025-12-30 var88再現の追加試行（probe scan緩和）
+
+**作業目的 / 方針 / 位置づけ**
+- end_recovered件数の不足を補うため、probe_scanのピーク抽出条件を緩和して再現性を確認。
+
+**作業時間**
+- 2025-12-30 10:36:49 JST
+
+**検証内容（作用機序）**
+- `probe_min_peak_distance=2`, `probe_max_per_band=0` に変更（他はvar88設定と同じ）。
+
+**結果（要点）**
+- endbar候補が増えすぎてFPが爆発、var88再現には不適。
+- FNは解消せず（page_001 FN=14など）。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251230T103649_repro_var88_probe_loose/`
+
+## 2025-12-30 var88再現の追加試行（probe_min_ratio / probe_width）
+
+**作業目的 / 方針 / 位置づけ**
+- probe_scanの検出数不足を補うため、閾値と幅の影響を確認。
+
+**作業時間**
+- 2025-12-30 10:38:26 JST - 2025-12-30 10:39:23 JST
+
+**検証内容（作用機序）**
+- `probe_min_ratio=0.8`（他はvar88設定）
+- `probe_width=2`（他はvar88設定）
+
+**結果（要点）**
+- 検出数はほぼ増えず、FNは維持（page_001 FN=14のまま）。
+- var88のend_recovered件数(830)には届かない。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251230T103826_repro_var88_probe_ratio0p8/`
+- `logs/gt_rebuild_hybrid_eval/20251230T103923_repro_var88_probe_w2/`
+
+## 2025-12-30 var88再現の追加試行（probe row / ink / max_per_band）
+
+**作業目的 / 方針 / 位置づけ**
+- probe_scanの不足要因を切り分けるため、row条件・ink閾値・max_per_bandを個別に変更。
+
+**作業時間**
+- 2025-12-30 10:41:32 JST - 2025-12-30 10:45:11 JST
+
+**検証内容（作用機序）**
+- rowを緩和: `probe_row_min_count=1`, `probe_row_max_dist=40`, `probe_row_tol_top=20`, `probe_row_tol_bottom=20`
+- ink閾値変更: `probe_ink_threshold=200`
+- 検出上限変更: `probe_max_per_band=12`
+- row再利用: `probe_row_filter_mode=reuse_rows`
+
+**結果（要点）**
+- row緩和とmax_per_band=12はFP増加のみでFN改善に寄与せず。
+- ink閾値変更はほぼ影響なし。
+- reuse_rowsは追加回復が消失（end_recovered_row=0）。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251230T104132_repro_var88_probe_row_loose/`
+- `logs/gt_rebuild_hybrid_eval/20251230T104216_repro_var88_probe_ink200/`
+- `logs/gt_rebuild_hybrid_eval/20251230T104348_repro_var88_probe_max12/`
+- `logs/gt_rebuild_hybrid_eval/20251230T104511_repro_var88_probe_reuse_rows/`
+
+## 2025-12-30 var88再現の追加試行（probe band height mode）
+
+**作業目的 / 方針 / 位置づけ**
+- var88のend_recovered高さが約85pxであるため、probe_scanのband height modeを再検討。
+
+**作業時間**
+- 2025-12-30 10:46:36 JST - 2025-12-30 10:49:29 JST
+
+**検証内容（作用機序）**
+- `probe_band_height_mode=median_box` を試行（barline高さをbandに反映）。
+- 追加で `probe_max_per_band=0`, `probe_min_peak_distance=2`, `probe_min_ratio=0.7` を段階的に調整。
+
+**結果（要点）**
+- median_boxでFNが大幅に減少（page_001 FN=7, page_004 FN=7 まで改善）。
+- max_per_band=0 + min_peak_distance=2でFNは2〜5に減少。
+- min_ratio=0.7まで下げるとFN=0に近づくがFPが増加。
+- var88（FN=0, FP低）には未到達だが、band height modeが主要因であることが判明。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251230T104636_repro_var88_probe_medianbox/`
+- `logs/gt_rebuild_hybrid_eval/20251230T104742_repro_var88_medianbox_max0/`
+- `logs/gt_rebuild_hybrid_eval/20251230T104836_repro_var88_medianbox_max0_min2/`
+- `logs/gt_rebuild_hybrid_eval/20251230T104929_repro_var88_medianbox_max0_min2_ratio0p7/`
+
+## 2025-12-30 run_gt_rebuild_hybrid_eval.py のgit履歴確認
+
+**作業目的 / 方針 / 位置づけ**
+- 現行スクリプトの形になったタイミングと、aspect filter等の有効化条件を確認。
+- var88再現不一致の原因候補を絞るための履歴確認。
+
+**作業時間**
+- 2025-12-30 11:06:30 JST
+
+**確認内容**
+- `git log --follow` で主要コミットを確認。
+  - 36ed3c7: notehead maskのdenoise/ aspect filter追加（デフォルトは無効）。
+  - 21235f4: clefs_keysフィルタ導入 + notehead_dilate追加（デフォルトは無効）。
+- 現行の `--notehead-max-aspect` / `--notehead-min-height` / `--notehead-max-width` はデフォルト0で、**明示指定時のみ有効**。
+
+**補足**
+- var88の `geom_debug.json` には `max_aspect=2.0, min_height=10, max_width=6` が記録されているため、aspect filterは**実行時に明示指定されている**。
+
+## 2025-12-30 sweep 1: probe_band_height_mode
+
+**作業目的 / 方針 / 位置づけ**
+- var88再現の主要差分候補として、probe_scanのband height modeを比較。
+
+**作業時間**
+- 2025-12-30 14:13:07 JST - 2025-12-30 14:13:39 JST
+
+**検証内容（作用機序）**
+- var88と同一パラメータで `probe_band_height_mode` を `staff` / `median_box` で比較。
+
+**結果（要点）**
+- `staff` はFNが多く再現できず（page_001 FN=14）。
+- `median_box` はFNが大きく減少（page_001 FN=7）。  
+  → var88のend_recovered高さ（~85px）に整合し、再現に重要な差分と判断。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251230T141307_sweep_bandheight_staff/`
+- `logs/gt_rebuild_hybrid_eval/20251230T141339_sweep_bandheight_median/`
+
+## 2025-12-30 sweep 2: probe_min_ratio / probe_max_per_band
+
+**作業目的 / 方針 / 位置づけ**
+- `probe_band_height_mode=median_box` を前提に、peak抽出条件の不一致を確認する。
+
+**作業時間**
+- 2025-12-30 14:14:45 JST - 2025-12-30 14:18:25 JST
+
+**検証内容（作用機序）**
+- `probe_min_ratio ∈ {0.75, 0.80, 0.85}`  
+- `probe_max_per_band ∈ {6, 8, 10}`  
+- 他はvar88設定（clefs_keys left + notehead aspect + probe_notehead_dilate=13）。
+
+**結果（要点）**
+- FNは改善するが、どの組合せでもFN=0には届かない。  
+  - 例: ratio=0.85, max_per_band=10 → page_001/004/10/15 FN=5/5/3/5
+- ここでは「probe_min_ratio / max_per_band だけでは再現不能」なことを確認。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.75_max6/`
+- `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.75_max8/`
+- `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.75_max10/`
+- `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.80_max6/`
+- `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.80_max8/`
+- `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.80_max10/`
+- `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.85_max6/`
+- `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.85_max8/`
+- `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.85_max10/`
+
+## 2025-12-30 sweep 3: endbar_staff_mask_mode
+
+**作業目的 / 方針 / 位置づけ**
+- endbarのstaff mask選択（staff / staffs）の不一致を確認する。
+
+**作業時間**
+- 2025-12-30 14:18:57 JST - 2025-12-30 14:19:30 JST
+
+**検証内容（作用機序）**
+- `probe_band_height_mode=median_box`, `probe_min_ratio=0.85`, `probe_max_per_band=10` を固定。
+- `endbar_staff_mask_mode` を `staff` / `staffs` で比較。
+
+**結果（要点）**
+- `staffs` はendbar回復がほぼ消失（FNが増加）。  
+- `staff` は回復が維持されるがFN=0には届かない。  
+  → var88再現には **staff** が必須で、staffsは不一致要因と判断。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251230T141857_sweep_endbar_mask_staff/`
+- `logs/gt_rebuild_hybrid_eval/20251230T141930_sweep_endbar_mask_staffs/`
+
+## 2025-12-30 指定コマンドの実行確認（CLI差分の検証）
+
+**作業目的 / 方針 / 位置づけ**
+- ユーザー指定のコマンドをそのまま実行し、現行スクリプトとのCLI差分を確認。
+
+**作業時間**
+- 2025-12-30 14:24:10 JST
+
+**結果（要点）**
+- 現行 `tools/run_gt_rebuild_hybrid_eval.py` では `--union-root` が必須で、`--run-tag` / `--images` / `--ground-truth` / `--probe-scan` / `--probe-endpoint-ratio-threshold` は未定義。
+- 指定コマンドは別バージョンのCLI仕様である可能性が高い。
+
+**補足**
+- `--probe-scan` 相当は現行では `--enable-end-barline-recovery --endbar-method probe_scan`。
+- `--probe-endpoint-ratio-threshold` 相当は現行では `--endpoint-ratio-threshold` のみで個別指定不可。
+
+## 2025-12-30 CLI対応のgit履歴調査（run-tag / images / ground-truth）
+
+**作業目的 / 方針 / 位置づけ**
+- 指定コマンドに含まれるCLIがどの時点のコードに対応していたかを特定。
+- 変更のタイミングと理由を把握。
+
+**作業時間**
+- 2025-12-30 14:33:20 JST
+
+**確認内容**
+- `tools/run_gt_rebuild_hybrid_eval.py` の履歴では `--run-tag` / `--images` / `--ground-truth` / `--probe-scan` の記録がなく、該当CLIが存在した痕跡は見つからない。
+- `src/homr_eval_scripts/homr_evaluator.py` に `--images` / `--run-tag` / `--ground-truth` が存在し、初回導入は `b244f5c`（2025-12-12）コミット。
+  - コミット理由: homr評価スクリプトの再配置・評価パイプライン整理（commit messageに記載）。
+- `probe-scan` オプションは homr_evaluator には存在せず、現行リポジトリ内で一致するCLIは未確認。
+
+## 2025-12-30 SESSION_LOG_temp.md の履歴確認
+
+**作業目的 / 方針 / 位置づけ**
+- 過去セッションのコマンド記録が残っている可能性を確認。
+
+**作業時間**
+- 2025-12-30 14:36:50 JST
+
+**確認内容**
+- `docs/SESSION_LOG_temp.md` は 2025-12-29 周辺のコミットに存在。
+- 当該ログ内には homr evaluator 実行や endbar 回復の記述はあるが、`--images` / `--ground-truth` / `--run-tag` の具体コマンド記載は見つからない。
+
+**補足**
+- 該当コマンドは `homr_evaluator.py` のCLI仕様に一致するため、var88とは別系統の評価手順だった可能性が高い。
+
+## 2025-12-30 var88当日のスクリプト更新タイミング確認
+
+**作業目的 / 方針 / 位置づけ**
+- var88生成時点に近い `tools/run_gt_rebuild_hybrid_eval.py` のコミット時刻を確認。
+
+**作業時間**
+- 2025-12-30 14:41:05 JST
+
+**確認内容**
+- 2025-12-30 03:04:54 の `3d0bf23` で barline/clefs_keys_ratio フィルタが追加。
+- 2025-12-29 21:07:29 の `4225adf` で clef key調査。
+- 2025-12-29 18:53:26 の `21235f4` で記号フィルタ導入。
+
+**補足**
+- var88ログのタイムスタンプは `20251230T_hybrid_row_notehead_endbar` で、上記コミット時刻と近接。

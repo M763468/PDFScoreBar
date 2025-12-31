@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Staff Scan Inspector</title>
+    <style>
+      body { margin: 0; font-family: Arial, sans-serif; display: flex; height: 100vh; }
+      #sidebar { width: 360px; border-right: 1px solid #ccc; padding: 12px; overflow-y: auto; }
+      #main { flex: 1; display: flex; flex-direction: column; }
+      #toolbar { padding: 8px; border-bottom: 1px solid #ccc; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+      #canvasWrap { flex: 1; display: flex; flex-direction: column; background: #111; overflow: hidden; }
+      #canvasWrap.grab { cursor: grab; }
+      #canvasWrap.grabbing { cursor: grabbing; }
+      #imageCanvas { flex: 1; background: #111; }
+      #profilePanel { display: flex; gap: 12px; padding: 8px; border-top: 1px solid #ccc; background: #f9f9f9; height: 220px; box-sizing: border-box; }
+      #profileCanvas { width: 360px; height: 180px; border: 1px solid #ccc; background: #fff; }
+      #recordInfo { flex: 1; font-size: 12px; white-space: pre-wrap; max-height: 200px; overflow: auto; }
+      .btn { padding: 6px 10px; border: 1px solid #999; background: #f5f5f5; cursor: pointer; }
+      .list-item { padding: 4px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 12px; }
+      .list-item.active { background: #eef6ff; }
+      .small { font-size: 12px; color: #555; }
+      .status-row { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+      .divider { margin: 10px 0; border-bottom: 1px solid #ddd; }
+      #slider { width: 100%; }
+      #scanSlider { width: 100%; }
+      #statusBadge { font-weight: bold; }
+      a.small { color: #2b78c5; text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <div id="sidebar">
+      <div><strong>Staff Scan Inspector</strong></div>
+      <div class="status-row">
+        <label class="small">Page:
+          <select id="pageSelect"></select>
+        </label>
+      </div>
+      <div class="divider"></div>
+      <div><strong>Horizontal Scan</strong></div>
+      <div class="status-row">
+        <label class="small">Y position:
+          <input id="scanSlider" type="range" min="0" max="0" value="0" />
+        </label>
+      </div>
+      <div class="status-row">
+        <label class="small">Band height:
+          <input id="bandHeight" type="number" min="1" value="6" style="width: 60px;" />
+        </label>
+        <label class="small">Ink threshold:
+          <input id="inkThreshold" type="number" min="1" max="255" value="180" style="width: 70px;" />
+        </label>
+      </div>
+      <div class="status-row">
+        <button id="saveScanBtn" class="btn">Save scan log</button>
+      </div>
+      <div class="small" id="scanInfo">-</div>
+      <div class="divider"></div>
+      <div><strong>Data</strong></div>
+      <div class="small" id="rowBandLink">-</div>
+    </div>
+    <div id="main">
+      <div id="toolbar">
+        <label class="small">Display scale:
+          <select id="scaleSelect">
+            <option value="0.25" selected>0.25</option>
+            <option value="0.5">0.5</option>
+            <option value="0.75">0.75</option>
+            <option value="1.0">1.0</option>
+            <option value="1.5">1.5</option>
+          </select>
+        </label>
+        <button id="fitWidthBtn" class="btn">Fit width</button>
+        <span class="small">Zoom: mouse wheel / Pan: Space + Drag</span>
+        <span class="small">Row band debug image + horizontal scan bar.</span>
+      </div>
+      <div id="canvasWrap">
+        <canvas id="imageCanvas"></canvas>
+      </div>
+      <div id="profilePanel">
+        <canvas id="profileCanvas" width="360" height="180"></canvas>
+        <div id="recordInfo">No record loaded.</div>
+      </div>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>

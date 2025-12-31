@@ -109,7 +109,7 @@ function createOverlayBox(barline, index, scaleX, scaleY) {
     box.style.height = height + "px";
     box.title = `ID: ${index}`;
 
-    // Restore "ignored" state if previously marked? 
+    // Restore "ignored" state if previously marked?
     // For this simple version, we lose state on resize unless we track it.
     // OPTIONAL IMPROVEMENT: Check a global set of ignored IDs here.
     // For now, let's just make sure click toggling works.

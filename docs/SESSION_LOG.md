@@ -2040,6 +2040,19 @@
 **追加対応**
 - METRICSが無い場合でも、`SCAN_PATH` が存在すれば `/scan` の画面を表示するように変更。
 
+## 2025-12-31 scan GUIのフィルタ/詳細表示追加
+
+**作業目的 / 方針 / 位置づけ**
+- 垂直線が多すぎて視認性が悪いため、フィルタとフォーカス表示を追加。
+
+**作業時間**
+- 2025-12-31 16:10:00 JST
+
+**変更内容**
+- `/scan` に filterチェックボックス・statusフィルタ・focus mode を追加。
+- クリックしたrecordのJSONを右側に表示。
+- `/` のメイン機能を復元し、/scanへのリンクを追加。
+
 **出力ログ**
 - `logs/gt_rebuild_hybrid_eval/20251231T152500_rowband_pad_sweep/`
   - `rowpad_ratio0p05/`
@@ -2077,3 +2090,90 @@
 **所見**
 - row_stats bandが「検出boxの高さ中央値」に依存しているため、当該行の検出が短いと band が五線内側に入る。
 - その結果、ext top 側の ratio が上がり `extended_top_ratio` によりFNが生じる。
+
+## 2025-12-31 staff scan GUIの切り出し
+
+**作業目的 / 方針 / 位置づけ**
+- 既存のgui_helperを元に戻し、水平scanのinkratio確認用GUIを独立させる。
+
+**作業時間**
+- 2025-12-31 17:10:00 JST
+
+**対応内容**
+- `tools/gui_helper/` を元の構成に復元（app.py, config.py, index.html, main.js）。
+- 新GUIを `tools/gui_helper_for_staff_scan/` に作成。
+  - `server.py`（軽量HTTPサーバ）
+  - `index.html` / `app.js`（gt_relabel_guiに近いUI配置）
+
+**使い方**
+- 起動例:
+  - `python3 tools/gui_helper_for_staff_scan/server.py --root logs/gt_rebuild_hybrid_eval/20251231T154529_probe_ext_tb0p35_rowstats_hscan_padR0p50_lr0p60_ml5_debug_rowband_profile`
+- `per_page/page_*/endbar_debug.json` と `endbar_debug_crops/` を読み込む。
+- 右側のプロファイルに `scan_row_profile` を線グラフ表示。
+- `Row band debug` から `row_band_debug.png` を開ける。
+
+## 2025-12-31 staff scan GUIの描画失敗対策
+
+**作業目的 / 方針 / 位置づけ**
+- 黒枠のみ表示される場合に原因を可視化するため、画像ロード失敗時のエラー描画を追加。
+
+**作業時間**
+- 2025-12-31 17:30:00 JST
+
+**対応内容**
+- `tools/gui_helper_for_staff_scan/app.js` に画像ロード失敗時のプレースホルダ描画を追加。
+- `recordInfo` に `image_path` を含め、どの画像が対象か確認できるようにした。
+
+## 2025-12-31 staff scan GUIのページ未検出表示
+
+**作業目的 / 方針 / 位置づけ**
+- `No record loaded.` の原因が `per_page` 未検出か判別できるようにする。
+
+**作業時間**
+- 2025-12-31 17:40:00 JST
+
+**対応内容**
+- `tools/gui_helper_for_staff_scan/server.py` の `/api/pages` に `root/per_page/page_count` を追加。
+- `tools/gui_helper_for_staff_scan/app.js` でページ未検出時に root/per_page を表示。
+
+## 2025-12-31 staff scan GUIの横スキャンUI整理
+
+**作業目的 / 方針 / 位置づけ**
+- crop単位ではなくrow_band_debugを使った横スキャン確認に切り替える。
+
+**作業時間**
+- 2025-12-31 18:05:00 JST
+
+**対応内容**
+- `tools/gui_helper_for_staff_scan/index.html` を横スキャンUI向けに再構成。
+- `tools/gui_helper_for_staff_scan/app.js` を以下に変更:
+  - row_band_debug画像を表示し、Yスライダーで横スキャン位置を移動。
+  - band height / ink_threshold を入力し、ink ratioを即時計算表示。
+  - scan結果を `scan_log_*.json` として保存できるようにした。
+
+## 2025-12-31 staff scan GUIの表示スケール調整
+
+**作業目的 / 方針 / 位置づけ**
+- 画像が大きすぎて操作UIが隠れる問題に対応。
+
+**作業時間**
+- 2025-12-31 18:20:00 JST
+
+**対応内容**
+- `tools/gui_helper_for_staff_scan/index.html` の初期スケールを 0.5 に変更。
+- `Fit width` ボタンを追加し、表示幅に合わせる機能を追加。
+- プロファイル領域を固定高さにしてUIが隠れないようにした。
+
+## 2025-12-31 staff scan GUIの操作性改善
+
+**作業目的 / 方針 / 位置づけ**
+- row_band_debug上で横スキャンを操作しやすくする（ズーム/パン/保存形式）。
+
+**作業時間**
+- 2025-12-31 18:45:00 JST
+
+**対応内容**
+- 初期スケールを 0.25 に変更。
+- マウスホイールでズーム、Space+ドラッグでパン。
+- pred_band 由来の水平線（青）を重ね表示。
+- 保存は `scan_logs/scan_log_{page}.json` に追記・ソート保存する方式へ変更。

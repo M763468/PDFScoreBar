@@ -558,6 +558,61 @@ def staff_bands_from_mask(
     return bands
 
 
+def scan_staff_band_from_ink(
+    ink: np.ndarray,
+    x_center: int,
+    y1: int,
+    y2: int,
+    scan_width: int,
+    line_ratio: float,
+    min_lines: int,
+    gap_tolerance: int = 1,
+) -> Tuple[int, int] | None:
+    """Estimate staff band by horizontal scan around x_center within [y1, y2]."""
+    h, w = ink.shape[:2]
+    x1 = max(0, int(x_center - scan_width // 2))
+    x2 = min(w - 1, int(x_center + scan_width // 2))
+    if x2 <= x1 or y2 <= y1:
+        return None
+    strip = ink[y1 : y2 + 1, x1 : x2 + 1]
+    if strip.size == 0:
+        return None
+    row_ratio = strip.sum(axis=1) / float(strip.shape[1])
+    rows = np.where(row_ratio >= line_ratio)[0]
+    if rows.size == 0:
+        return None
+    groups = []
+    start = int(rows[0])
+    prev = int(rows[0])
+    for r in rows[1:]:
+        if int(r) - prev <= gap_tolerance:
+            prev = int(r)
+            continue
+        groups.append((start, prev))
+        start = int(r)
+        prev = int(r)
+    groups.append((start, prev))
+    if len(groups) < min_lines:
+        return None
+    # Choose the tightest window of `min_lines` groups (staff lines),
+    # favoring higher ink ratios to avoid stray lines outside the staff.
+    best = None
+    for i in range(0, len(groups) - min_lines + 1):
+        j = i + min_lines - 1
+        span = groups[j][1] - groups[i][0]
+        mean_ratio = float(row_ratio[groups[i][0] : groups[j][1] + 1].mean())
+        if best is None or span < best[0] or (span == best[0] and mean_ratio > best[1]):
+            best = (span, mean_ratio, i, j)
+    if best is None:
+        return None
+    _, _, i, j = best
+    top = y1 + groups[i][0]
+    bottom = y1 + groups[j][1]
+    if bottom < top:
+        return None
+    return (int(top), int(bottom))
+
+
 def detect_end_barlines(
     base_img: np.ndarray,
     staff_mask: np.ndarray,
@@ -1466,6 +1521,19 @@ def detect_probe_scan(
     staff_mask: np.ndarray,
     existing_boxes: Sequence[Box],
     *,
+    band_source: str = "staff_mask",
+    band_cluster_max_dist: float = 25.0,
+    band_min_row_count: int = 3,
+    row_stats: Sequence[Dict[str, float]] | None = None,
+    staff_space: float = 0.0,
+    band_row_pad_ratio: float = 0.0,
+    band_row_pad_staff_mult: float = 0.0,
+    band_scan_width: int = 40,
+    band_scan_line_ratio: float = 0.5,
+    band_scan_min_lines: int = 3,
+    band_scan_pad: int = 0,
+    band_scan_pad_ratio: float = 0.0,
+    save_row_profile: bool = False,
     probe_width: int = 4,
     ink_threshold: int = 180,
     min_ratio: float = 0.85,
@@ -1485,7 +1553,22 @@ def detect_probe_scan(
     gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
     ink = (gray < ink_threshold).astype(np.uint8)
     h, w = ink.shape[:2]
-    bands = staff_bands_from_mask(staff_mask)
+    if band_source in ("existing_boxes", "horiz_scan", "row_stats"):
+        if band_source == "row_stats" and row_stats is not None:
+            bands = [
+                (int(stat["top"]), int(stat["bottom"]))
+                for stat in row_stats
+                if stat["bottom"] >= stat["top"]
+            ]
+        else:
+            row_stats_local = build_row_stats(existing_boxes, band_cluster_max_dist, band_min_row_count)
+            bands = [
+                (int(stat["top"]), int(stat["bottom"]))
+                for stat in row_stats_local
+                if stat["bottom"] >= stat["top"]
+            ]
+    else:
+        bands = staff_bands_from_mask(staff_mask)
     if not bands:
         return []
 
@@ -1522,22 +1605,45 @@ def detect_probe_scan(
     candidates: List[Box] = []
     debug_records = []
     for band_idx, (y1, y2) in enumerate(bands):
+        scan_base_y1 = y1
+        scan_base_y2 = y2
+        if band_source == "horiz_scan":
+            if band_scan_pad_ratio > 0:
+                pad = int(round((y2 - y1 + 1) * band_scan_pad_ratio))
+            else:
+                pad = int(band_scan_pad)
+            if pad > 0:
+                scan_base_y1 = max(0, int(y1) - pad)
+                scan_base_y2 = min(h - 1, int(y2) + pad)
         band_center = int(round((y1 + y2) / 2))
         band_h = max(1, y2 - y1 + 1)
-        if band_height_mode == "median_box":
-            heights = [
-                abs(by2 - by1)
-                for _, by1, _, by2 in existing_boxes
-                if y1 <= (by1 + by2) / 2.0 <= y2 and abs(by2 - by1) > 0
-            ]
-            median_h = int(np.median(heights)) if heights else global_height
-            target_h = max(band_height_min, int(round(median_h * band_height_scale))) if median_h else band_h
+        if band_source == "row_stats":
+            band_y1 = max(0, int(y1))
+            band_y2 = min(h - 1, int(y2))
+            pad = 0
+            if band_row_pad_ratio > 0:
+                pad = int(round((band_y2 - band_y1 + 1) * band_row_pad_ratio))
+            elif band_row_pad_staff_mult > 0 and staff_space > 0:
+                pad = int(round(staff_space * band_row_pad_staff_mult))
+            if pad > 0:
+                band_y1 = max(0, band_y1 - pad)
+                band_y2 = min(h - 1, band_y2 + pad)
         else:
-            target_h = band_h
-        band_y1 = max(0, int(round(band_center - target_h / 2)))
-        band_y2 = min(h - 1, int(round(band_center + target_h / 2)))
+            if band_height_mode == "median_box":
+                heights = [
+                    abs(by2 - by1)
+                    for _, by1, _, by2 in existing_boxes
+                    if y1 <= (by1 + by2) / 2.0 <= y2 and abs(by2 - by1) > 0
+                ]
+                median_h = int(np.median(heights)) if heights else global_height
+                target_h = max(band_height_min, int(round(median_h * band_height_scale))) if median_h else band_h
+            else:
+                target_h = band_h
+            band_y1 = max(0, int(round(band_center - target_h / 2)))
+            band_y2 = min(h - 1, int(round(band_center + target_h / 2)))
         band = ink[band_y1 : band_y2 + 1, :]
         band_h = max(1, band_y2 - band_y1 + 1)
+        target_h = band_h
         ext_band = None
         ext_band_h = None
         ext_ratios = None
@@ -1601,6 +1707,70 @@ def detect_probe_scan(
             x1 = max(0, int(round(local_idx - width / 2)))
             x2 = min(w - 1, int(round(local_idx + width / 2)))
             pred_band = closest_existing_band(float(local_idx), y1, y2)
+            scan_band = None
+            scan_row_ratio_mean = None
+            scan_row_ratio_max = None
+            scan_row_ratio_lines = None
+            scan_top_h = None
+            scan_bottom_h = None
+            scan_row_profile = None
+            if band_source == "horiz_scan":
+                scan_band = scan_staff_band_from_ink(
+                    ink,
+                    int(local_idx),
+                    scan_base_y1,
+                    scan_base_y2,
+                    band_scan_width,
+                    band_scan_line_ratio,
+                    band_scan_min_lines,
+                )
+            if band_source in ("horiz_scan", "row_stats") and scan_base_y2 > scan_base_y1:
+                full_strip = ink[scan_base_y1 : scan_base_y2 + 1, :]
+                row_ratio_full = full_strip.sum(axis=1) / float(full_strip.shape[1])
+                if row_ratio_full.size > 0:
+                    scan_row_ratio_mean = float(row_ratio_full.mean())
+                    scan_row_ratio_max = float(row_ratio_full.max())
+                    scan_row_ratio_lines = int((row_ratio_full >= band_scan_line_ratio).sum())
+                    if save_row_profile:
+                        scan_row_profile = [float(v) for v in row_ratio_full.tolist()]
+            if scan_band is not None:
+                scan_y1, scan_y2 = scan_band
+            else:
+                scan_y1, scan_y2 = band_y1, band_y2
+            scan_h = max(1, scan_y2 - scan_y1 + 1)
+            scan_ratio = None
+            scan_ext_ratio = None
+            scan_top_ratio = None
+            scan_bottom_ratio = None
+            scan_ext_y1 = None
+            scan_ext_y2 = None
+            if band_source == "horiz_scan":
+                sx1 = max(0, int(round(local_idx - width / 2)))
+                sx2 = min(w - 1, int(round(local_idx + width / 2)))
+                scan_ratio = float(ink[scan_y1 : scan_y2 + 1, sx1 : sx2 + 1].sum()) / float(
+                    scan_h * max(1, sx2 - sx1 + 1)
+                )
+                if extend_scale > 1.0:
+                    ext_h = max(scan_h, int(round(scan_h * extend_scale)))
+                    scan_center = int(round((scan_y1 + scan_y2) / 2))
+                    scan_ext_y1 = max(0, int(round(scan_center - ext_h / 2)))
+                    scan_ext_y2 = min(h - 1, int(round(scan_center + ext_h / 2)))
+                    ext_h = max(1, scan_ext_y2 - scan_ext_y1 + 1)
+                    scan_ext_ratio = float(
+                        ink[scan_ext_y1 : scan_ext_y2 + 1, sx1 : sx2 + 1].sum()
+                    ) / float(ext_h * max(1, sx2 - sx1 + 1))
+                    top_h_scan = max(0, scan_y1 - scan_ext_y1)
+                    bottom_h_scan = max(0, scan_ext_y2 - scan_y2)
+                    scan_top_h = int(top_h_scan)
+                    scan_bottom_h = int(bottom_h_scan)
+                    if top_h_scan > 0:
+                        scan_top_ratio = float(
+                            ink[scan_ext_y1:scan_y1, sx1 : sx2 + 1].sum()
+                        ) / float(top_h_scan * max(1, sx2 - sx1 + 1))
+                    if bottom_h_scan > 0:
+                        scan_bottom_ratio = float(
+                            ink[scan_y2 + 1 : scan_ext_y2 + 1, sx1 : sx2 + 1].sum()
+                        ) / float(bottom_h_scan * max(1, sx2 - sx1 + 1))
             record_base = {
                 "band": [band_y1, band_y2],
                 "staff_band": [y1, y2],
@@ -1608,7 +1778,76 @@ def detect_probe_scan(
                 "ext_band": [int(ext_y1), int(ext_y2)] if ext_y1 is not None and ext_y2 is not None else None,
                 "top_h": int(top_h),
                 "bottom_h": int(bottom_h),
+                "scan_band": [int(scan_y1), int(scan_y2)] if scan_band is not None else None,
+                "scan_ext_band": [int(scan_ext_y1), int(scan_ext_y2)]
+                if scan_ext_y1 is not None and scan_ext_y2 is not None
+                else None,
+                "scan_base_band": [int(scan_base_y1), int(scan_base_y2)]
+                if band_source == "horiz_scan"
+                else None,
+                "scan_row_ratio_mean": scan_row_ratio_mean,
+                "scan_row_ratio_max": scan_row_ratio_max,
+                "scan_row_ratio_lines": scan_row_ratio_lines,
+                "scan_top_h": scan_top_h,
+                "scan_bottom_h": scan_bottom_h,
+                "scan_row_profile": scan_row_profile,
             }
+            if scan_ratio is not None and scan_ratio < min_ratio:
+                debug_records.append(
+                    {
+                        "status": "scan_ratio_low",
+                        "col": local_idx,
+                        "ratio": scan_ratio,
+                        "extended_ratio": scan_ext_ratio,
+                        "top_ratio": scan_top_ratio,
+                        "bottom_ratio": scan_bottom_ratio,
+                        "seed_col": x,
+                        **record_base,
+                    }
+                )
+                continue
+            if scan_ext_ratio is not None and extend_max_ratio < 1.0 and scan_ext_ratio >= extend_max_ratio:
+                debug_records.append(
+                    {
+                        "status": "extended_ratio_scan",
+                        "col": local_idx,
+                        "ratio": scan_ratio,
+                        "extended_ratio": scan_ext_ratio,
+                        "top_ratio": scan_top_ratio,
+                        "bottom_ratio": scan_bottom_ratio,
+                        "seed_col": x,
+                        **record_base,
+                    }
+                )
+                continue
+            if scan_top_ratio is not None and extend_top_max_ratio < 1.0 and scan_top_ratio >= extend_top_max_ratio:
+                debug_records.append(
+                    {
+                        "status": "extended_top_ratio_scan",
+                        "col": local_idx,
+                        "ratio": scan_ratio,
+                        "extended_ratio": scan_ext_ratio,
+                        "top_ratio": scan_top_ratio,
+                        "bottom_ratio": scan_bottom_ratio,
+                        "seed_col": x,
+                        **record_base,
+                    }
+                )
+                continue
+            if scan_bottom_ratio is not None and extend_bottom_max_ratio < 1.0 and scan_bottom_ratio >= extend_bottom_max_ratio:
+                debug_records.append(
+                    {
+                        "status": "extended_bottom_ratio_scan",
+                        "col": local_idx,
+                        "ratio": scan_ratio,
+                        "extended_ratio": scan_ext_ratio,
+                        "top_ratio": scan_top_ratio,
+                        "bottom_ratio": scan_bottom_ratio,
+                        "seed_col": x,
+                        **record_base,
+                    }
+                )
+                continue
             if ext_ratios is not None and extend_max_ratio < 1.0:
                 ext_ratio = float(ext_ratios[local_idx])
                 if ext_ratio >= extend_max_ratio:
@@ -1703,19 +1942,31 @@ def detect_probe_scan(
         debug_json.write_text(
             json.dumps(
                 {
-                    "params": {
-                        "method": "probe_scan",
-                        "probe_width": width,
-                        "ink_threshold": ink_threshold,
-                        "min_ratio": min_ratio,
-                        "extend_scale": extend_scale,
-                        "extend_max_ratio": extend_max_ratio,
-                        "extend_top_max_ratio": extend_top_max_ratio,
-                        "extend_bottom_max_ratio": extend_bottom_max_ratio,
-                        "min_peak_distance": min_peak_distance,
-                        "max_per_band": max_per_band,
-                        "x_merge_tol": x_merge_tol,
-                    },
+                "params": {
+                    "method": "probe_scan",
+                    "band_source": band_source,
+                    "band_cluster_max_dist": band_cluster_max_dist,
+                    "band_min_row_count": band_min_row_count,
+                    "band_row_stats_count": len(row_stats) if row_stats is not None else None,
+                    "band_row_pad_ratio": band_row_pad_ratio,
+                    "band_row_pad_staff_mult": band_row_pad_staff_mult,
+                    "band_scan_width": band_scan_width,
+                    "band_scan_line_ratio": band_scan_line_ratio,
+                    "band_scan_min_lines": band_scan_min_lines,
+                    "band_scan_pad": band_scan_pad,
+                    "band_scan_pad_ratio": band_scan_pad_ratio,
+                    "save_row_profile": save_row_profile,
+                    "probe_width": width,
+                    "ink_threshold": ink_threshold,
+                    "min_ratio": min_ratio,
+                    "extend_scale": extend_scale,
+                    "extend_max_ratio": extend_max_ratio,
+                    "extend_top_max_ratio": extend_top_max_ratio,
+                    "extend_bottom_max_ratio": extend_bottom_max_ratio,
+                    "min_peak_distance": min_peak_distance,
+                    "max_per_band": max_per_band,
+                    "x_merge_tol": x_merge_tol,
+                },
                     "bands": bands,
                     "records": debug_records,
                 },
@@ -1742,6 +1993,9 @@ def detect_probe_scan(
                 continue
             band = rec.get("band")
             pred_band = rec.get("pred_band")
+            scan_band = rec.get("scan_band")
+            scan_ext_band = rec.get("scan_ext_band")
+            scan_base_band = rec.get("scan_base_band")
             if pred_band:
                 py1, py2 = pred_band
                 py1 = max(cy1, int(py1)) - cy1
@@ -1757,17 +2011,57 @@ def detect_probe_scan(
                 ey1 = max(cy1, int(ey1)) - cy1
                 ey2 = min(cy2, int(ey2)) - cy1
                 cv2.rectangle(crop, (0, ey1), (crop.shape[1] - 1, ey2), (0, 0, 255), 1)
+            if scan_base_band:
+                sb1, sb2 = scan_base_band
+                sb1 = max(cy1, int(sb1)) - cy1
+                sb2 = min(cy2, int(sb2)) - cy1
+                cv2.rectangle(crop, (0, sb1), (crop.shape[1] - 1, sb2), (0, 255, 255), 1)
+            if scan_band:
+                sy1, sy2 = scan_band
+                sy1 = max(cy1, int(sy1)) - cy1
+                sy2 = min(cy2, int(sy2)) - cy1
+                cv2.rectangle(crop, (0, sy1), (crop.shape[1] - 1, sy2), (0, 165, 255), 1)
+            if scan_ext_band:
+                sey1, sey2 = scan_ext_band
+                sey1 = max(cy1, int(sey1)) - cy1
+                sey2 = min(cy2, int(sey2)) - cy1
+                cv2.rectangle(crop, (0, sey1), (crop.shape[1] - 1, sey2), (128, 0, 255), 1)
             cv2.line(crop, (int(col - cx1), 0), (int(col - cx1), crop.shape[0] - 1), (0, 0, 255), 1)
             ratio = rec.get("ratio")
             top_ratio = rec.get("top_ratio")
             bottom_ratio = rec.get("bottom_ratio")
             ext_ratio = rec.get("extended_ratio")
+            scan_row_ratio_mean = rec.get("scan_row_ratio_mean")
+            scan_row_ratio_max = rec.get("scan_row_ratio_max")
+            scan_row_ratio_lines = rec.get("scan_row_ratio_lines")
+            scan_top_h = rec.get("scan_top_h")
+            scan_bottom_h = rec.get("scan_bottom_h")
             label = f"{rec.get('status','')} r={ratio:.2f} ext={ext_ratio:.2f}" if ratio is not None and ext_ratio is not None else rec.get("status","")
             cv2.putText(crop, label, (2, 14), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
             if top_ratio is not None:
                 cv2.putText(crop, f"top={top_ratio:.2f} <{extend_top_max_ratio:.2f}", (2, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 0), 1)
             if bottom_ratio is not None:
                 cv2.putText(crop, f"bot={bottom_ratio:.2f} <{extend_bottom_max_ratio:.2f}", (2, 42), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 255), 1)
+            if scan_row_ratio_mean is not None and scan_row_ratio_max is not None:
+                cv2.putText(
+                    crop,
+                    f"row_mean={scan_row_ratio_mean:.2f} row_max={scan_row_ratio_max:.2f} lines={scan_row_ratio_lines}",
+                    (2, 56),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.4,
+                    (0, 0, 0),
+                    1,
+                )
+            if scan_top_h is not None or scan_bottom_h is not None:
+                cv2.putText(
+                    crop,
+                    f"top_h={scan_top_h} bot_h={scan_bottom_h}",
+                    (2, 70),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.4,
+                    (0, 0, 0),
+                    1,
+                )
             name = f"{idx:04d}_{rec.get('status','status')}_col{col}.png"
             cv2.imwrite(str(crop_dir / name), crop)
     return candidates
@@ -2229,6 +2523,20 @@ def main() -> None:
     parser.add_argument("--probe-width", type=int, default=4)
     parser.add_argument("--probe-ink-threshold", type=int, default=180)
     parser.add_argument("--probe-min-ratio", type=float, default=0.85)
+    parser.add_argument(
+        "--probe-band-source",
+        choices=["staff_mask", "existing_boxes", "horiz_scan", "row_stats"],
+        default="staff_mask",
+        help="Source for probe scan bands.",
+    )
+    parser.add_argument("--probe-band-scan-width", type=int, default=40)
+    parser.add_argument("--probe-band-scan-line-ratio", type=float, default=0.5)
+    parser.add_argument("--probe-band-scan-min-lines", type=int, default=3)
+    parser.add_argument("--probe-band-scan-pad", type=int, default=0)
+    parser.add_argument("--probe-band-scan-pad-ratio", type=float, default=0.0)
+    parser.add_argument("--probe-band-row-pad-ratio", type=float, default=0.0)
+    parser.add_argument("--probe-band-row-pad-staff-mult", type=float, default=0.0)
+    parser.add_argument("--probe-debug-save-row-profile", action="store_true")
     parser.add_argument("--probe-extend-scale", type=float, default=1.0)
     parser.add_argument("--probe-extend-max-ratio", type=float, default=1.0)
     parser.add_argument("--probe-extend-top-max-ratio", type=float, default=1.0)
@@ -2420,14 +2728,22 @@ def main() -> None:
         out_dir = per_page_root / page.name
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        if args.row_band_debug and staff_bands:
+        if args.row_band_debug:
             debug_overlay = base_img.copy()
             h, w = debug_overlay.shape[:2]
-            for y1, y2 in staff_bands:
-                y1 = max(0, min(h - 1, int(y1)))
-                y2 = max(0, min(h - 1, int(y2)))
-                cv2.rectangle(debug_overlay, (0, y1), (w - 1, y2), (0, 255, 255), -1)
-            debug_overlay = cv2.addWeighted(debug_overlay, 0.2, base_img, 0.8, 0.0)
+            if staff_bands:
+                for y1, y2 in staff_bands:
+                    y1 = max(0, min(h - 1, int(y1)))
+                    y2 = max(0, min(h - 1, int(y2)))
+                    cv2.rectangle(debug_overlay, (0, y1), (w - 1, y2), (0, 255, 255), -1)
+                debug_overlay = cv2.addWeighted(debug_overlay, 0.2, base_img, 0.8, 0.0)
+            else:
+                row_stats = build_row_stats(preds, args.cluster_max_dist, args.min_row_count)
+                for stat in row_stats:
+                    y1 = max(0, min(h - 1, int(stat["top"])))
+                    y2 = max(0, min(h - 1, int(stat["bottom"])))
+                    cv2.rectangle(debug_overlay, (0, y1), (w - 1, y2), (0, 255, 255), -1)
+                debug_overlay = cv2.addWeighted(debug_overlay, 0.2, base_img, 0.8, 0.0)
             draw_boxes(debug_overlay, row_filtered, (0, 255, 0), 1, "R#")
             cv2.imwrite(str(out_dir / "row_band_debug.png"), debug_overlay)
 
@@ -2560,6 +2876,19 @@ def main() -> None:
                     base_img,
                     staff_mask,
                     geom_kept,
+                    band_source=args.probe_band_source,
+                    band_cluster_max_dist=args.cluster_max_dist,
+                    band_min_row_count=args.min_row_count,
+                    row_stats=base_row_stats if args.probe_band_source == "row_stats" else None,
+                    staff_space=staff_space,
+                    band_row_pad_ratio=args.probe_band_row_pad_ratio,
+                    band_row_pad_staff_mult=args.probe_band_row_pad_staff_mult,
+                    band_scan_width=args.probe_band_scan_width,
+                    band_scan_line_ratio=args.probe_band_scan_line_ratio,
+                    band_scan_min_lines=args.probe_band_scan_min_lines,
+                    band_scan_pad=args.probe_band_scan_pad,
+                    band_scan_pad_ratio=args.probe_band_scan_pad_ratio,
+                    save_row_profile=args.probe_debug_save_row_profile,
                     probe_width=args.probe_width,
                     ink_threshold=args.probe_ink_threshold,
                     min_ratio=args.probe_min_ratio,

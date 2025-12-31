@@ -1824,3 +1824,256 @@
 
 **可視化対象の注意**
 - page3はbaseline FPのみで新規FNが無いため、FPのクロップのみ表示される。
+
+## 2025-12-31 staffmask非使用のbandモード（既存box由来）試行
+
+**作業目的 / 方針 / 位置づけ**
+- staffmaskのずれ対策として、既存小節線boxの上下端からbandを生成するモードを追加。
+
+**作業時間**
+- 2025-12-31 05:30:14 JST
+
+**変更内容（作用機序）**
+- `--probe-band-source existing_boxes` で staffmaskではなく既存boxのrow統計（top/bottom中央値）からbandを生成。
+- band生成は `build_row_stats`（cluster_max_dist/min_row_count）に準拠。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T113014_probe_ext_tb0p35_boxesband_debug/`
+  - `per_page/page_3/endbar_debug.json`
+  - `analysis_fp_fn_crops/baseline_fp_removed/`
+  - `analysis_fp_fn_crops/baseline_fp_kept/`
+  - `analysis_fp_fn_crops/new_fn/`
+
+## 2025-12-31 probe scan bandの水平スキャン（horiz_scan）試行
+
+**作業目的 / 方針 / 位置づけ**
+- staffmaskのズレ回避のため、列方向（xごと）に水平スキャンで五線帯域を推定するモードを追加。
+
+**作業時間**
+- 2025-12-31 05:45:43 JST
+
+**変更内容（作用機序）**
+- `--probe-band-source horiz_scan` を追加。
+- 既存box由来の粗いband（row_stats）内で、x位置の左右幅 `probe-band-scan-width` のink率を計算し、
+  一定比率以上の行をstaff line候補として抽出。
+- 抽出行の上端/下端をscan bandとして使用し、ext bandをscan band中心に拡張。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T114543_probe_ext_tb0p35_hscan_debug/`
+  - `per_page/page_3/endbar_debug.json`
+  - `analysis_fp_fn_crops/baseline_fp_removed/`
+  - `analysis_fp_fn_crops/baseline_fp_kept/`
+  - `analysis_fp_fn_crops/new_fn/`
+
+## 2025-12-31 horiz_scanの粗band拡張（scan pad）
+
+**作業目的 / 方針 / 位置づけ**
+- 既存box由来の粗bandが狭く、scan bandがずれる問題への対処として上下に拡張して再スキャン。
+
+**作業時間**
+- 2025-12-31 05:52:59 JST
+
+**変更内容**
+- `--probe-band-scan-pad` を追加（粗bandの上下拡張幅）。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T115259_probe_ext_tb0p35_hscan_pad20_debug/`
+  - `per_page/page_3/endbar_debug.json`
+  - `analysis_fp_fn_crops/baseline_fp_removed/`
+  - `analysis_fp_fn_crops/baseline_fp_kept/`
+  - `analysis_fp_fn_crops/new_fn/`
+
+## 2025-12-31 horiz_scanのpad比率化＋段全体ink ratioログ
+
+**作業目的 / 方針 / 位置づけ**
+- 解像度差に耐えるため、scan padをpxではなく比率で指定。
+- 段全体（scan base band）でのink ratio統計をログ化し、不合理値の原因確認に備える。
+
+**作業時間**
+- 2025-12-31 06:23:26 JST
+
+**変更内容**
+- `--probe-band-scan-pad-ratio` を追加（粗band高さに対する比率）。
+- scan base bandの row_ratio_mean / row_ratio_max / row_ratio_lines をdebug記録。
+- scan_top_h / scan_bottom_h をdebug記録。
+- debug cropに scan base band（黄）、scan band（橙）、scan ext band（紫）を描画。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T122326_probe_ext_tb0p35_hscan_padR0p50_debug/`
+  - `per_page/page_3/endbar_debug.json`
+  - `analysis_fp_fn_crops/baseline_fp_removed/`
+  - `analysis_fp_fn_crops/baseline_fp_kept/`
+  - `analysis_fp_fn_crops/new_fn/`
+
+**調査メモ（page_004_fn05）**
+- FN box: [2101, 791, 2105, 874]
+- baseline geom近傍: IoU=0.48（[2100, 807, 2104, 889]）
+- debug status: `scan_ratio_low`（scan_ratio=0.76 < min_ratio=0.80）
+- scan_base_band=[762, 929], scan_band=[802, 888], scan_top_h=26, scan_bottom_h=26
+
+## 2025-12-31 horiz_scanのline_ratio/min_lines強化（ズレ抑制）
+
+**作業目的 / 方針 / 位置づけ**
+- 五線外の線を拾ってしまう問題への対処として、line_ratioを引き上げ、min_linesを5に固定。
+- scan bandの抽出は「最小スパンの5ライン窓」を選択するよう改善。
+
+**作業時間**
+- 2025-12-31 06:33:52 JST
+
+**変更内容**
+- `scan_staff_band_from_ink` で最小スパンの `min_lines` 窓を選択するよう変更。
+- scan padは比率指定（pad_ratio=0.5）で維持。
+- line_ratio=0.6, min_lines=5 で再実行。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T123352_probe_ext_tb0p35_hscan_padR0p50_lr0p60_ml5_debug/`
+  - `per_page/page_3/endbar_debug.json`
+  - `analysis_fp_fn_crops/baseline_fp_removed/`
+  - `analysis_fp_fn_crops/baseline_fp_kept/`
+  - `analysis_fp_fn_crops/new_fn/`
+
+## 2025-12-31 row filter bandの可視化拡張（predsモード）
+
+**作業目的 / 方針 / 位置づけ**
+- row filterがstaff bandと同じかを確認するため、predsモードでもrow bandを可視化。
+
+**作業時間**
+- 2025-12-31 06:40:00 JST
+
+**変更内容**
+- `--row-band-debug` 時、staff bandが無い場合は `build_row_stats` のtop/bottomで帯域を描画。
+
+**出力ログ（再実行時に生成）**
+- `per_page/<page>/row_band_debug.png`
+
+## 2025-12-31 row band可視化付きの再実行
+
+**作業目的 / 方針 / 位置づけ**
+- row filterが参照する帯域（preds由来）を可視化し、scan bandとの整合性を確認。
+
+**作業時間**
+- 2025-12-31 14:07:56 JST
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T140756_probe_ext_tb0p35_hscan_padR0p50_lr0p60_ml5_debug_rowband/`
+  - `per_page/<page>/row_band_debug.png`
+  - `analysis_fp_fn_crops/baseline_fp_removed/`
+  - `analysis_fp_fn_crops/baseline_fp_kept/`
+  - `analysis_fp_fn_crops/new_fn/`
+
+## 2025-12-31 row_stats基準のprobe bandモード試行
+
+**作業目的 / 方針 / 位置づけ**
+- row band（preds由来）をprobe band基準として活用するモードを追加し評価。
+
+**作業時間**
+- 2025-12-31 14:24:33 JST
+
+**変更内容**
+- `--probe-band-source row_stats` を追加（row_filterのrow_statsをbandとして利用）。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T142433_probe_ext_tb0p35_rowstats_hscan_padR0p50_lr0p60_ml5_debug_rowband/`
+  - `per_page/<page>/row_band_debug.png`
+  - `analysis_fp_fn_crops/baseline_fp_removed/`
+  - `analysis_fp_fn_crops/baseline_fp_kept/`
+  - `analysis_fp_fn_crops/new_fn/`
+
+## 2025-12-31 row_stats band固定のprobe band試行
+
+**作業目的 / 方針 / 位置づけ**
+- row_stats bandが正確であるため、probe bandをrow_stats bandに固定して再評価。
+
+**作業時間**
+- 2025-12-31 15:08:40 JST
+
+**変更内容**
+- `probe-band-source=row_stats` の場合、probe bandをrow_statsのtop/bottomそのままに固定。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T150840_probe_ext_tb0p35_rowstats_hscan_padR0p50_lr0p60_ml5_debug_rowband/`
+  - `per_page/<page>/row_band_debug.png`
+  - `analysis_fp_fn_crops/baseline_fp_removed/`
+  - `analysis_fp_fn_crops/baseline_fp_kept/`
+  - `analysis_fp_fn_crops/new_fn/`
+
+## 2025-12-31 row_stats bandの上下パディング追加（比率/スタッフ空間）
+
+**作業目的 / 方針 / 位置づけ**
+- row_stats bandが内側に寄る問題への対処として、上下パディングを導入。
+- 比率指定と staff_space 倍率指定の両方式を追加し、sweepで評価する。
+
+**作業時間**
+- 2025-12-31 15:20:00 JST
+
+**変更内容**
+- `--probe-band-row-pad-ratio` を追加（row_stats band 高さに対する比率）。
+- `--probe-band-row-pad-staff-mult` を追加（staff_space 倍率）。
+
+## 2025-12-31 scan GUIの下準備（row profile保存 + GUI追加）
+
+**作業目的 / 方針 / 位置づけ**
+- GUIで横向きのinkratio分布を確認できるように、scan row profileを保存し可視化画面を追加。
+
+**作業時間**
+- 2025-12-31 15:45:29 JST
+
+**変更内容**
+- `--probe-debug-save-row-profile` を追加し、scan_row_profile を `endbar_debug.json` に保存。
+- GUIヘルパに `/scan` を追加し、クリックしたrecordのrow profileを描画。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T154529_probe_ext_tb0p35_rowstats_hscan_padR0p50_lr0p60_ml5_debug_rowband_profile/`
+  - `per_page/page_001/endbar_debug.json`
+
+## 2025-12-31 GUIエラー回避（missing metrics）
+
+**作業目的 / 方針 / 位置づけ**
+- GUI起動時に既存metricsが無い場合でも `/scan` に到達できるように修正。
+
+**作業時間**
+- 2025-12-31 15:50:00 JST
+
+**変更内容**
+- `tools/gui_helper/app.py` の `/` でMETRICSが無い場合は空の画面を表示（warning付き）。
+
+**追加対応**
+- METRICSが無い場合でも、`SCAN_PATH` が存在すれば `/scan` の画面を表示するように変更。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T152500_rowband_pad_sweep/`
+  - `rowpad_ratio0p05/`
+  - `rowpad_ratio0p10/`
+  - `rowpad_ratio0p15/`
+  - `rowpad_staff0p5/`
+  - `rowpad_staff1p0/`
+  - `rowpad_staff1p5/`
+
+**集計（全ページ合算）**
+- rowpad_ratio0p05: TP=605 FP=7 FN=3
+- rowpad_ratio0p10: TP=605 FP=6 FN=3
+- rowpad_ratio0p15: TP=573 FP=4 FN=35
+- rowpad_staff0p5: TP=568 FP=2 FN=40
+- rowpad_staff1p0: TP=568 FP=2 FN=40
+- rowpad_staff1p5: TP=568 FP=2 FN=40
+
+**所見**
+- ratio 0.05/0.10 はFN=3まで減少するがFN=0には届かない。
+- staff_space倍率はFN増が大きく不適。
+
+## 2025-12-31 page_001のrow band内側ずれの原因調査
+
+**作業目的 / 方針 / 位置づけ**
+- row_stats bandが五線内側に入る原因を特定し、FN発生の原因を確認する。
+
+**作業時間**
+- 2025-12-31 15:20:00 JST
+
+**調査内容**
+- page_001のfn00 box: `[1005, 1701, 1009, 1790]`
+- debug record: band/staff_band `[1709, 1787]`、pred_band `[1709, 1788]`
+- row_filteredから再計算したrow_stats: top/bottom が **1709/1787.5**（同一行のmin/med/maxがほぼ同値）
+
+**所見**
+- row_stats bandが「検出boxの高さ中央値」に依存しているため、当該行の検出が短いと band が五線内側に入る。
+- その結果、ext top 側の ratio が上がり `extended_top_ratio` によりFNが生じる。

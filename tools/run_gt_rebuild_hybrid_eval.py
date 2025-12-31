@@ -34,6 +34,7 @@ class PageSpec:
     image: Path
     gt: Path
     notehead_mask: Path
+    stems_rest_mask: Path
     clefs_keys_mask: Path
     staff_mask: Path
     staff_mask_alt: Path
@@ -1470,6 +1471,8 @@ def detect_probe_scan(
     min_ratio: float = 0.85,
     extend_scale: float = 1.0,
     extend_max_ratio: float = 1.0,
+    extend_top_max_ratio: float = 1.0,
+    extend_bottom_max_ratio: float = 1.0,
     min_peak_distance: int = 6,
     refine_window: int = 4,
     max_per_band: int = 8,
@@ -1499,6 +1502,20 @@ def detect_probe_scan(
                 return True
         return False
 
+    def closest_existing_band(x_center: float, y1: int, y2: int) -> Tuple[int, int] | None:
+        best = None
+        best_dx = None
+        for bx1, by1, bx2, by2 in existing_boxes:
+            cy = (by1 + by2) / 2.0
+            if cy < y1 or cy > y2:
+                continue
+            cx = (bx1 + bx2) / 2.0
+            dx = abs(cx - x_center)
+            if best_dx is None or dx < best_dx:
+                best_dx = dx
+                best = (int(by1), int(by2))
+        return best
+
     global_heights = [abs(by2 - by1) for _, by1, _, by2 in existing_boxes if abs(by2 - by1) > 0]
     global_height = int(np.median(global_heights)) if global_heights else 0
 
@@ -1524,6 +1541,12 @@ def detect_probe_scan(
         ext_band = None
         ext_band_h = None
         ext_ratios = None
+        ext_top_ratios = None
+        ext_bottom_ratios = None
+        ext_y1 = None
+        ext_y2 = None
+        top_h = 0
+        bottom_h = 0
         if extend_scale > 1.0:
             ext_h = max(band_h, int(round(target_h * extend_scale)))
             ext_y1 = max(0, int(round(band_center - ext_h / 2)))
@@ -1533,10 +1556,22 @@ def detect_probe_scan(
         col_sums = band.sum(axis=0)
         stripe_sums = np.convolve(col_sums, kernel, mode="same")
         ratios = stripe_sums / float(band_h * width)
-        if ext_band is not None:
+        if ext_band is not None and ext_y1 is not None and ext_y2 is not None:
             ext_col_sums = ext_band.sum(axis=0)
             ext_stripe_sums = np.convolve(ext_col_sums, kernel, mode="same")
             ext_ratios = ext_stripe_sums / float(ext_band_h * width)
+            top_h = max(0, band_y1 - ext_y1)
+            bottom_h = max(0, ext_y2 - band_y2)
+            if top_h > 0:
+                top_band = ink[ext_y1:band_y1, :]
+                top_col_sums = top_band.sum(axis=0)
+                top_stripe_sums = np.convolve(top_col_sums, kernel, mode="same")
+                ext_top_ratios = top_stripe_sums / float(top_h * width)
+            if bottom_h > 0:
+                bottom_band = ink[band_y2 + 1 : ext_y2 + 1, :]
+                bottom_col_sums = bottom_band.sum(axis=0)
+                bottom_stripe_sums = np.convolve(bottom_col_sums, kernel, mode="same")
+                ext_bottom_ratios = bottom_stripe_sums / float(bottom_h * width)
         if ratios.size < 3:
             continue
         peaks = np.where(
@@ -1565,41 +1600,88 @@ def detect_probe_scan(
                 local_idx = int(x)
             x1 = max(0, int(round(local_idx - width / 2)))
             x2 = min(w - 1, int(round(local_idx + width / 2)))
+            pred_band = closest_existing_band(float(local_idx), y1, y2)
+            record_base = {
+                "band": [band_y1, band_y2],
+                "staff_band": [y1, y2],
+                "pred_band": list(pred_band) if pred_band is not None else None,
+                "ext_band": [int(ext_y1), int(ext_y2)] if ext_y1 is not None and ext_y2 is not None else None,
+                "top_h": int(top_h),
+                "bottom_h": int(bottom_h),
+            }
             if ext_ratios is not None and extend_max_ratio < 1.0:
                 ext_ratio = float(ext_ratios[local_idx])
                 if ext_ratio >= extend_max_ratio:
                     debug_records.append(
                         {
-                            "band": [band_y1, band_y2],
                             "status": "extended_ratio",
                             "col": local_idx,
                             "ratio": float(ratios[local_idx]),
                             "extended_ratio": ext_ratio,
+                            "top_ratio": float(ext_top_ratios[local_idx]) if ext_top_ratios is not None else None,
+                            "bottom_ratio": float(ext_bottom_ratios[local_idx]) if ext_bottom_ratios is not None else None,
                             "seed_col": x,
+                            **record_base,
+                        }
+                    )
+                    continue
+            if ext_top_ratios is not None and extend_top_max_ratio < 1.0:
+                top_ratio = float(ext_top_ratios[local_idx])
+                if top_ratio >= extend_top_max_ratio:
+                    debug_records.append(
+                        {
+                            "status": "extended_top_ratio",
+                            "col": local_idx,
+                            "ratio": float(ratios[local_idx]),
+                            "extended_ratio": float(ext_ratios[local_idx]) if ext_ratios is not None else None,
+                            "top_ratio": top_ratio,
+                            "bottom_ratio": float(ext_bottom_ratios[local_idx]) if ext_bottom_ratios is not None else None,
+                            "seed_col": x,
+                            **record_base,
+                        }
+                    )
+                    continue
+            if ext_bottom_ratios is not None and extend_bottom_max_ratio < 1.0:
+                bottom_ratio = float(ext_bottom_ratios[local_idx])
+                if bottom_ratio >= extend_bottom_max_ratio:
+                    debug_records.append(
+                        {
+                            "status": "extended_bottom_ratio",
+                            "col": local_idx,
+                            "ratio": float(ratios[local_idx]),
+                            "extended_ratio": float(ext_ratios[local_idx]) if ext_ratios is not None else None,
+                            "top_ratio": float(ext_top_ratios[local_idx]) if ext_top_ratios is not None else None,
+                            "bottom_ratio": bottom_ratio,
+                            "seed_col": x,
+                            **record_base,
                         }
                     )
                     continue
             if has_existing(float(local_idx), y1, y2):
                 debug_records.append(
                     {
-                        "band": [band_y1, band_y2],
                         "status": "existing",
                         "col": local_idx,
                         "ratio": float(ratios[local_idx]),
                         "extended_ratio": float(ext_ratios[local_idx]) if ext_ratios is not None else None,
+                        "top_ratio": float(ext_top_ratios[local_idx]) if ext_top_ratios is not None else None,
+                        "bottom_ratio": float(ext_bottom_ratios[local_idx]) if ext_bottom_ratios is not None else None,
                         "seed_col": x,
+                        **record_base,
                     }
                 )
                 continue
             candidates.append((x1, band_y1, x2, band_y2))
             debug_records.append(
                 {
-                    "band": [band_y1, band_y2],
                     "status": "accepted",
                     "col": local_idx,
                     "ratio": float(ratios[local_idx]),
                     "extended_ratio": float(ext_ratios[local_idx]) if ext_ratios is not None else None,
+                    "top_ratio": float(ext_top_ratios[local_idx]) if ext_top_ratios is not None else None,
+                    "bottom_ratio": float(ext_bottom_ratios[local_idx]) if ext_bottom_ratios is not None else None,
                     "seed_col": x,
+                    **record_base,
                 }
             )
 
@@ -1628,6 +1710,8 @@ def detect_probe_scan(
                         "min_ratio": min_ratio,
                         "extend_scale": extend_scale,
                         "extend_max_ratio": extend_max_ratio,
+                        "extend_top_max_ratio": extend_top_max_ratio,
+                        "extend_bottom_max_ratio": extend_bottom_max_ratio,
                         "min_peak_distance": min_peak_distance,
                         "max_per_band": max_per_band,
                         "x_merge_tol": x_merge_tol,
@@ -1638,6 +1722,54 @@ def detect_probe_scan(
                 indent=2,
             )
         )
+        crop_dir = debug_path.parent / "endbar_debug_crops"
+        crop_dir.mkdir(parents=True, exist_ok=True)
+        for idx, rec in enumerate(debug_records):
+            col = rec.get("col")
+            if col is None:
+                continue
+            ext_band = rec.get("ext_band")
+            if ext_band:
+                cy1, cy2 = ext_band
+            else:
+                cy1, cy2 = rec.get("band", [0, h - 1])
+            cx1 = max(0, int(col) - width * 6)
+            cx2 = min(w - 1, int(col) + width * 6)
+            cy1 = max(0, int(cy1))
+            cy2 = min(h - 1, int(cy2))
+            crop = base_img[cy1 : cy2 + 1, cx1 : cx2 + 1].copy()
+            if crop.size == 0:
+                continue
+            band = rec.get("band")
+            pred_band = rec.get("pred_band")
+            if pred_band:
+                py1, py2 = pred_band
+                py1 = max(cy1, int(py1)) - cy1
+                py2 = min(cy2, int(py2)) - cy1
+                cv2.rectangle(crop, (0, py1), (crop.shape[1] - 1, py2), (0, 255, 0), 1)
+            if band:
+                by1, by2 = band
+                by1 = max(cy1, int(by1)) - cy1
+                by2 = min(cy2, int(by2)) - cy1
+                cv2.rectangle(crop, (0, by1), (crop.shape[1] - 1, by2), (255, 0, 0), 1)
+            if ext_band:
+                ey1, ey2 = ext_band
+                ey1 = max(cy1, int(ey1)) - cy1
+                ey2 = min(cy2, int(ey2)) - cy1
+                cv2.rectangle(crop, (0, ey1), (crop.shape[1] - 1, ey2), (0, 0, 255), 1)
+            cv2.line(crop, (int(col - cx1), 0), (int(col - cx1), crop.shape[0] - 1), (0, 0, 255), 1)
+            ratio = rec.get("ratio")
+            top_ratio = rec.get("top_ratio")
+            bottom_ratio = rec.get("bottom_ratio")
+            ext_ratio = rec.get("extended_ratio")
+            label = f"{rec.get('status','')} r={ratio:.2f} ext={ext_ratio:.2f}" if ratio is not None and ext_ratio is not None else rec.get("status","")
+            cv2.putText(crop, label, (2, 14), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
+            if top_ratio is not None:
+                cv2.putText(crop, f"top={top_ratio:.2f} <{extend_top_max_ratio:.2f}", (2, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 0), 1)
+            if bottom_ratio is not None:
+                cv2.putText(crop, f"bot={bottom_ratio:.2f} <{extend_bottom_max_ratio:.2f}", (2, 42), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 255), 1)
+            name = f"{idx:04d}_{rec.get('status','status')}_col{col}.png"
+            cv2.imwrite(str(crop_dir / name), crop)
     return candidates
 
 
@@ -1957,6 +2089,12 @@ def main() -> None:
     parser.add_argument("--endpoint-x-scale", type=float, default=0.12)
     parser.add_argument("--endpoint-y-scale", type=float, default=0.8)
     parser.add_argument(
+        "--endpoint-mask-mode",
+        choices=["notehead", "notehead_stems", "stems_rest"],
+        default="notehead",
+        help="Mask used for endpoint overlap ratio filtering.",
+    )
+    parser.add_argument(
         "--endpoint-scale-base",
         choices=["staff_space", "barline_height"],
         default="staff_space",
@@ -2093,6 +2231,8 @@ def main() -> None:
     parser.add_argument("--probe-min-ratio", type=float, default=0.85)
     parser.add_argument("--probe-extend-scale", type=float, default=1.0)
     parser.add_argument("--probe-extend-max-ratio", type=float, default=1.0)
+    parser.add_argument("--probe-extend-top-max-ratio", type=float, default=1.0)
+    parser.add_argument("--probe-extend-bottom-max-ratio", type=float, default=1.0)
     parser.add_argument("--probe-min-peak-distance", type=int, default=6)
     parser.add_argument("--probe-max-per-band", type=int, default=8)
     parser.add_argument("--probe-refine-window", type=int, default=4)
@@ -2133,6 +2273,7 @@ def main() -> None:
             image=REPO_ROOT / "data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png",
             gt=REPO_ROOT / "logs/phase6_detector_miss/gt_rebuild/page_001_boxes_sorted.json",
             notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_6_notehead.png",
+            stems_rest_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_5_stems_rest.png",
             clefs_keys_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_7_clefs_keys.png",
             staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_3_staff.png",
             staff_mask_alt=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_15_staffs.png",
@@ -2145,6 +2286,7 @@ def main() -> None:
             image=REPO_ROOT / "data/evaluation/images/page_3.png",
             gt=REPO_ROOT / "data/evaluation/annotations/page_003/boxes_sorted.json",
             notehead_mask=REPO_ROOT / "logs/homr_eval/baseline_for_hybrid/page_3/page_3_debug_6_notehead.png",
+            stems_rest_mask=REPO_ROOT / "logs/homr_eval/baseline_for_hybrid/page_3/page_3_debug_5_stems_rest.png",
             clefs_keys_mask=REPO_ROOT / "logs/homr_eval/baseline_for_hybrid/page_3/page_3_debug_7_clefs_keys.png",
             staff_mask=REPO_ROOT / "logs/homr_eval/baseline_for_hybrid/page_3/page_3_debug_3_staff.png",
             staff_mask_alt=REPO_ROOT / "logs/homr_eval/baseline_for_hybrid/page_3/page_3_debug_15_staffs.png",
@@ -2157,6 +2299,7 @@ def main() -> None:
             image=REPO_ROOT / "data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png",
             gt=REPO_ROOT / "logs/phase6_detector_miss/gt_rebuild/page_004_boxes_sorted.json",
             notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_6_notehead.png",
+            stems_rest_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_5_stems_rest.png",
             clefs_keys_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_7_clefs_keys.png",
             staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_3_staff.png",
             staff_mask_alt=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_15_staffs.png",
@@ -2169,6 +2312,7 @@ def main() -> None:
             image=REPO_ROOT / "data/training/images/page_10.png",
             gt=REPO_ROOT / "logs/phase6_detector_miss/gt_rebuild/page_10_boxes_sorted.json",
             notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_6_notehead.png",
+            stems_rest_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_5_stems_rest.png",
             clefs_keys_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_7_clefs_keys.png",
             staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_3_staff.png",
             staff_mask_alt=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_15_staffs.png",
@@ -2181,6 +2325,7 @@ def main() -> None:
             image=REPO_ROOT / "data/training/images/page_15.png",
             gt=REPO_ROOT / "logs/phase6_detector_miss/gt_rebuild/page_15_boxes_sorted.json",
             notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_6_notehead.png",
+            stems_rest_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_5_stems_rest.png",
             clefs_keys_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_7_clefs_keys.png",
             staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_3_staff.png",
             staff_mask_alt=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_15_staffs.png",
@@ -2215,6 +2360,7 @@ def main() -> None:
             args.notehead_max_width,
         )
         notehead_mask = dilate_mask(notehead_mask, args.notehead_dilate)
+        stems_rest_mask = load_mask(page.stems_rest_mask, base_img.shape[:2])
         clefs_keys_mask = None
         if args.filter_clefs_keys:
             clefs_keys_mask = load_clefs_keys_mask(
@@ -2290,9 +2436,19 @@ def main() -> None:
             band_heights = [abs(y2 - y1) for y1, y2 in staff_bands]
             if band_heights:
                 barline_height_px = float(np.median(band_heights))
+        endpoint_mask_mode = args.endpoint_mask_mode
+        if endpoint_mask_mode == "notehead":
+            endpoint_mask = notehead_mask
+        elif endpoint_mask_mode == "stems_rest":
+            endpoint_mask = (stems_rest_mask > 0).astype(np.uint8) * 255
+        else:
+            endpoint_mask = (
+                ((notehead_mask > 0) | (stems_rest_mask > 0)).astype(np.uint8) * 255
+            )
+
         geom_kept, geom_debug = geom_notehead_ratio_filter(
             row_filtered,
-            notehead_mask,
+            endpoint_mask,
             staff_space,
             args.endpoint_ratio_threshold,
             args.endpoint_x_scale,
@@ -2301,6 +2457,7 @@ def main() -> None:
             barline_height_px=barline_height_px,
         )
         geom_debug["notehead_mask_filter"] = {
+            "mask_mode": endpoint_mask_mode,
             "open_kernel": args.notehead_open_kernel,
             "min_area": args.notehead_min_area,
             "dilate": args.notehead_dilate,
@@ -2408,6 +2565,8 @@ def main() -> None:
                     min_ratio=args.probe_min_ratio,
                     extend_scale=args.probe_extend_scale,
                     extend_max_ratio=args.probe_extend_max_ratio,
+                    extend_top_max_ratio=args.probe_extend_top_max_ratio,
+                    extend_bottom_max_ratio=args.probe_extend_bottom_max_ratio,
                     min_peak_distance=args.probe_min_peak_distance,
                     refine_window=args.probe_refine_window,
                     max_per_band=args.probe_max_per_band,

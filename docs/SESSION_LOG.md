@@ -1566,3 +1566,261 @@
 **所見**
 - 残存FPはbarline/notesマスクに強く重なる（識別には使いにくい）。
 - stems_restの重なりが比較的多い（14件）ため、局所的な追加フィルタ候補として再検討余地あり。
+
+
+## 2025-12-31 endpoint mask拡張（案A/B）評価
+
+**作業目的 / 方針 / 位置づけ**
+- noteheadのみのendpoint判定に対し、notehead+stems（案A）とstems_rest単独（案B）を評価。
+- clefs_left_0p18 + probe_extend_s1.6_r0p90 を基準設定として比較。
+
+**作業時間**
+- 2025-12-31 03:20:00 JST
+
+**実行内容**
+- `--endpoint-mask-mode notehead_stems`（案A）と `--endpoint-mask-mode stems_rest`（案B）を追加。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/clefs_left_0p18_extend_s1.6_r0p90_notehead_stems/summary_table.md`
+- `logs/gt_rebuild_hybrid_eval/clefs_left_0p18_extend_s1.6_r0p90_stems_rest/summary_table.md`
+
+**集計（全ページ合算）**
+- baseline（notehead）: TP=608, FP=39, FN=0
+- notehead_stems: TP=597, FP=39, FN=11
+- stems_rest: TP=601, FP=39, FN=7
+
+**所見**
+- 案A/BはいずれもFNが増加（現状の閾値では不適）。
+
+## 2025-12-31 案A/Bのendpoint ratio sweep（刻み増加）
+
+**作業目的 / 方針 / 位置づけ**
+- 案A（notehead_stems）/案B（stems_rest）のendpoint ratio閾値を細かい刻みでsweepし、FN増加なしでFP削減できるか検証。
+- baselineは clefs_keys_left_margin_ratio=0.18 + probe extend (scale=1.6, max_ratio=0.90) を維持。
+
+**作業時間**
+- 2025-12-31 03:11:23 JST
+
+**作業メモ**
+- sweep範囲は 0.22〜0.40 を 0.02刻み（必要に応じて追加検証）。
+- 初回実行は `--run-tag` が未対応でエラー。`--output-root` を各runで個別ディレクトリに変更して再実行する。
+- sweep一括実行は120秒でタイムアウト。`20251231T031242_notehead_stems_thr0p22〜0p32` まで生成済み。残りは分割実行で継続。
+
+**実行内容**
+- 案A（notehead_stems）: 0.22〜0.40（0.02刻み）
+- 案B（stems_rest）: 0.22〜0.40（0.02刻み）
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T031242_notehead_stems_thr0p22/` 〜 `..._thr0p40/`
+- `logs/gt_rebuild_hybrid_eval/20251231T031242_stems_rest_thr0p22/` 〜 `..._thr0p40/`
+
+**集計（全ページ合算）**
+- 案A（notehead_stems）:
+  - 0.22: TP=599 FP=48 FN=9
+  - 0.24: TP=604 FP=112 FN=4
+  - 0.26: TP=606 FP=279 FN=2
+  - 0.28: TP=608 FP=341 FN=0
+  - 0.30: TP=608 FP=344 FN=0
+  - 0.32: TP=608 FP=352 FN=0
+  - 0.34: TP=608 FP=384 FN=0
+  - 0.36: TP=608 FP=394 FN=0
+  - 0.38: TP=608 FP=404 FN=0
+  - 0.40: TP=608 FP=421 FN=0
+- 案B（stems_rest）:
+  - 0.22: TP=601 FP=48 FN=7
+  - 0.24: TP=605 FP=112 FN=3
+  - 0.26: TP=606 FP=279 FN=2
+  - 0.28: TP=608 FP=341 FN=0
+  - 0.30: TP=608 FP=344 FN=0
+  - 0.32: TP=608 FP=352 FN=0
+  - 0.34: TP=608 FP=384 FN=0
+  - 0.36: TP=608 FP=394 FN=0
+  - 0.38: TP=608 FP=404 FN=0
+  - 0.40: TP=608 FP=421 FN=0
+
+**所見**
+- FN=0は0.28以上で達成するが、FPが大幅増加（baseline FP=39に対して >300）。
+- 0.22〜0.26はFPは低めだがFNが発生（FN=2〜9）。
+
+## 2025-12-31 局所経常フィルタ候補（min_height_ratio / stem_outside_staff）の再評価
+
+**作業目的 / 方針 / 位置づけ**
+- 次のフィルタとして、既存実装の `barline_min_height_ratio` と `barline_stem_max_height_ratio` を全ページに適用し、
+  FN=0維持 + page3のFP削減が可能かを確認。
+- baselineは `clefs_keys_left_margin_ratio=0.18` + `barline_clefs_low` + `probe_extend` を維持。
+
+**作業時間**
+- 2025-12-31 03:53:51 JST
+
+**実行内容**
+- min_height_ratio（staffsマスク）: 0.02 / 0.03
+- stem_outside_staff（staffsマスク）: max_height_ratio 0.04 / 0.06, min_band_cover 0.8
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T035351_minheight_staffs_r0p02/`
+- `logs/gt_rebuild_hybrid_eval/20251231T035351_minheight_staffs_r0p03/`
+- `logs/gt_rebuild_hybrid_eval/20251231T035351_stem_staffs_r0p04/`
+- `logs/gt_rebuild_hybrid_eval/20251231T035351_stem_staffs_r0p06/`
+
+**集計（全ページ合算）**
+- min_height staffs r0.02: FN増（page_10 FN=2, page_15 FN=3）
+- min_height staffs r0.03: ほぼ全ページで壊滅的FN
+- stem staffs r0.04: baselineと同等（FP変化なし, FN=0）
+- stem staffs r0.06: baselineと同等（FP変化なし, FN=0）
+
+**所見**
+- min_height_ratioはFN増加が避けられず不適。
+- stem_outside_staff（staffs）はFP削減効果がなく、page3の残存FP（3件）は残る。
+
+## 2025-12-31 probe scan拡張の上下ink ratio分離（実装）
+
+**作業目的 / 方針 / 位置づけ**
+- probe scanの拡張バーに対し、上はみ出し/下はみ出しのink ratioを別々に評価してstem-like FPを抑制できるか検証。
+- 既存の `extend_scale`/`extend_max_ratio` に加え、上下の閾値を導入。
+
+**作業時間**
+- 2025-12-31 04:05:00 JST
+
+**変更内容（作用機序）**
+- 拡張バーを `top` / `bottom` に分割し、それぞれのink ratioを計算。
+- `--probe-extend-top-max-ratio` / `--probe-extend-bottom-max-ratio` を追加。
+
+**変更したファイル**
+- `tools/run_gt_rebuild_hybrid_eval.py`
+
+
+
+## 2025-12-31 probe scan上下ink ratioの試行
+
+**作業目的 / 方針 / 位置づけ**
+- 追加した上下ink ratio閾値で、FN=0を維持しながらFP削減できるか評価。
+
+**作業時間**
+- 2025-12-31 04:07:30 JST
+
+**実行内容**
+- `probe_extend_scale=1.6`, `probe_extend_max_ratio=0.90` は固定。
+- 上下閾値: 0.25 / 0.35 / 0.50（top=bottom）。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T094531_probe_ext_tb0p25/`
+- `logs/gt_rebuild_hybrid_eval/20251231T094531_probe_ext_tb0p35/`
+- `logs/gt_rebuild_hybrid_eval/20251231T094531_probe_ext_tb0p50/`
+
+**集計（全ページ合算）**
+- tb0.25: FN増（page_001 FN=6, page_004 FN=4, page_15 FN=4）
+- tb0.35: FN増（page_001 FN=1, page_004 FN=4, page_15 FN=1）
+- tb0.50: FN増（page_001 FN=1, page_004 FN=1）
+
+**所見**
+- 上下ink ratioでの除去はFN増加を招き、現状のままでは採用不可。
+- page3のFPは2件まで減るがFNが増えるため不採用。
+
+## 2025-12-31 probe scan上下ink ratio可視化（debug）
+
+**作業目的 / 方針 / 位置づけ**
+- 上下のink ratio値と判定バー（band / ext_band）を可視化し、閾値の妥当性を目視検証できるようにする。
+
+**作業時間**
+- 2025-12-31 04:03:59 JST
+
+**実行内容**
+- `--endbar-debug` を有効化し、probe scanのdebug画像/JSON/クロップを出力。
+- 例: `probe-extend-top-max-ratio=0.35`, `probe-extend-bottom-max-ratio=0.35`。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T100359_probe_ext_tb0p35_debug/`
+  - `per_page/page_3/endbar_debug.png`
+  - `per_page/page_3/endbar_debug.json`
+  - `per_page/page_3/endbar_debug_crops/`
+
+**補足**
+- cropには band（黄）/top（シアン）/bottom（マゼンタ）枠と、ratio値が描画される。
+
+## 2025-12-31 probe scanのFP/FN要因可視化（targeted crops）
+
+**作業目的 / 方針 / 位置づけ**
+- クロップ範囲が狭く判読しづらかったため、FP/FNに絞って拡大クロップを再生成。
+- 「過去FPがどうなったか」「新規FNがどのような原因か」を追跡可能にする。
+
+**作業時間**
+- 2025-12-31 04:12:00 JST
+
+**実行内容**
+- baseline（20251231T034745）とprobe_ext_tb0p35_debugを比較。
+- baseline FPを「kept/removed」に分類し、new FNを抽出。
+- 各対象について 60px マージンの拡大クロップを生成し、probe scanのband/ext band/ratioを重ね描画。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T100359_probe_ext_tb0p35_debug/analysis_fp_fn_crops/`
+  - `baseline_fp_removed/`
+  - `baseline_fp_kept/`
+  - `new_fn/`
+
+## 2025-12-31 probe scan debugの再生成（staff band表示・拡大crop）
+
+**作業目的 / 方針 / 位置づけ**
+- staff bandとprobe bandのズレを確認できるよう、staff bandを可視化に追加。
+- クロップ範囲拡大・文字はみ出し防止のため上部パディングを追加。
+
+**作業時間**
+- 2025-12-31 04:47:16 JST
+
+**実行内容**
+- debug JSONに `staff_band` を追加。
+- targeted cropsで staff band（緑）/ probe band（黄）/ ext band（白）を描画。
+- margin=120px, 上部パディング=24px。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T104716_probe_ext_tb0p35_debug/`
+  - `per_page/page_3/endbar_debug.json`
+  - `per_page/page_3/endbar_debug_crops/`
+  - `analysis_fp_fn_crops/baseline_fp_removed/`
+  - `analysis_fp_fn_crops/baseline_fp_kept/`
+  - `analysis_fp_fn_crops/new_fn/`
+
+## 2025-12-31 probe scan可視化の修正（pred band/色変更）
+
+**作業目的 / 方針 / 位置づけ**
+- staff bandがずれて見える問題への対応として、probe scan前の既存小節線（pred band）を可視化に採用。
+- 背景白に対して視認性が低い色を変更。
+
+**作業時間**
+- 2025-12-31 05:01:47 JST
+
+**変更内容**
+- debug JSONに `pred_band`（既存小節線boxの上下端）を追加。
+- 可視化色変更: pred band=緑 / probe band=青 / ext band=赤。
+- targeted cropsは margin=120px, 上部パディング=30px に更新。
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T110147_probe_ext_tb0p35_debug/`
+  - `per_page/page_3/endbar_debug.json`
+  - `per_page/page_3/endbar_debug_crops/`
+  - `analysis_fp_fn_crops/baseline_fp_removed/`
+  - `analysis_fp_fn_crops/baseline_fp_kept/`
+  - `analysis_fp_fn_crops/new_fn/`
+
+## 2025-12-31 probe scanのband定義とズレ原因の整理（調査）
+
+**作業目的 / 方針 / 位置づけ**
+- bandの定義と判定機序を明確化し、五線とのズレ原因を調査。
+
+**作業時間**
+- 2025-12-31 05:10:00 JST
+
+**band定義 / 判定機序（現状）**
+- staff band: `staff_mask` から抽出した staff_bands の (y1, y2)。probe scanの行分割の基準。
+- probe band（band）: staff band中心に、`median_box` 高さ（同一band内の既存box高さ中央値）を当てて算出した (band_y1, band_y2)。
+- ext band: probe band中心に `extend_scale` 倍の高さを持つ帯域（ext_y1, ext_y2）。
+- pred band: probe scan前の既存box（geom_kept）から、同一staff band内かつ最も近いxのboxの上下端。
+- 判定：probe band内でratioを計算し、ext band全体・上側・下側のink ratioを閾値判定。
+
+**ズレ要因の仮説**
+- staff band自体がstaffマスク由来で五線とズレる場合がある。
+- probe bandは staff band中心 + median_box 高さなので、既存boxや五線位置とズレる可能性がある。
+- ext bandも probe band中心で上下等分のため、五線の実上下と非対称にずれる。
+- pred bandが表示されないのは、対象col付近で同一staff bandに既存boxが存在しないため。
+
+**可視化対象の注意**
+- page3はbaseline FPのみで新規FNが無いため、FPのクロップのみ表示される。

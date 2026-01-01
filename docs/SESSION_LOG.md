@@ -8,6 +8,9 @@
 - 2025-12-29 00:30:57 JST - 2025-12-29 00:57:01 JST
 **変更したファイル（概要のみ）**
 - `src/homr_eval_scripts/homr_evaluator.py`（end barline recovery の追加、overlay に END_RECOVERED ラベル付与）
+**実行したコマンド**
+- 結果再現用。状況に応じてcommit idなども。
+
 **試した結果（出力ディレクトリのみ）**
 - 省略
 ---
@@ -2177,3 +2180,650 @@
 - マウスホイールでズーム、Space+ドラッグでパン。
 - pred_band 由来の水平線（青）を重ね表示。
 - 保存は `scan_logs/scan_log_{page}.json` に追記・ソート保存する方式へ変更。
+
+## 2025-12-31 row ink profile 出力追加
+
+**作業目的 / 方針 / 位置づけ**
+- 全体スキャンで行ごとのink ratioとピーク位置を可視化する。
+
+**作業時間**
+- 2025-12-31 19:10:00 JST
+
+**対応内容**
+- `tools/run_gt_rebuild_hybrid_eval.py` に `--row-ink-profile` 系の出力を追加。
+  - `row_ink_profile.json`（row_ratio, peaks, threshold）
+  - `row_ink_profile.png`（縦軸=行、横軸=ratio、ピークを赤線）
+
+## 2025-12-31 row ink profile 実行（最新baseline）
+
+**作業目的 / 方針 / 位置づけ**
+- 全ページのrow ink profileを出力して五線ピークの分布を確認する。
+
+**作業時間**
+- 2025-12-31 19:30:00 JST
+
+**実行コマンド**
+- `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20251231T_row_ink_profile_baseline --union-root logs/phase5b_confirmed_union_eval --row-ink-profile --row-ink-profile-min-ratio 0.2`
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T_row_ink_profile_baseline/per_page/page_001/row_ink_profile.png`
+- `logs/gt_rebuild_hybrid_eval/20251231T_row_ink_profile_baseline/per_page/page_004/row_ink_profile.png`
+- `logs/gt_rebuild_hybrid_eval/20251231T_row_ink_profile_baseline/per_page/page_10/row_ink_profile.png`
+- `logs/gt_rebuild_hybrid_eval/20251231T_row_ink_profile_baseline/per_page/page_15/row_ink_profile.png`
+- `logs/gt_rebuild_hybrid_eval/20251231T_row_ink_profile_baseline/per_page/page_3/row_ink_profile.png`
+
+## 2025-12-31 row ink profile + analysis_fp_fn_crops（baseline再現）
+
+**作業目的 / 方針 / 位置づけ**
+- 最新baseline条件でrow ink profileを出力し、従来形式のFP/FN可視化を生成する。
+
+**作業時間**
+- 2025-12-31 19:50:00 JST
+
+**実行コマンド**
+- `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20251231T185049_row_ink_profile_baseline --union-root logs/phase5b_confirmed_union_eval --endpoint-ratio-threshold 0.20 --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff --probe-width 3 --probe-ink-threshold 180 --probe-min-ratio 0.80 --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 --probe-band-height-mode median_box --probe-band-height-scale 1.0 --probe-band-height-min 10 --probe-notehead-dilate 13 --probe-row-filter-mode reuse_rows --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 --row-ink-profile --row-ink-profile-min-ratio 0.2 --analysis-baseline-root logs/gt_rebuild_hybrid_eval/20251231T034745_baseline_notehead_barline_clefs_low`
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T185049_row_ink_profile_baseline/analysis_fp_fn_crops/`
+  - `baseline_fp_kept/`
+  - `baseline_fp_removed/`
+  - `new_fn/`
+
+## 2025-12-31 probe_ext_tb0p35 + row_ink_profile + analysis_fp_fn_crops 再生成
+
+**作業目的 / 方針 / 位置づけ**
+- 2025-12-31 15:20頃の条件（horiz_scan + extend）と同等の結果を再現し、
+  従来形式の `analysis_fp_fn_crops` を再生成する。
+
+**作業時間**
+- 2025-12-31 19:50:00 JST
+
+**実行コマンド**
+- `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20251231T191051_probe_ext_tb0p35_hscan_lr0p60_padR0p50_ml5_rowink_baseline --union-root logs/phase5b_confirmed_union_eval --endpoint-ratio-threshold 0.20 --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff --endbar-debug --probe-width 3 --probe-ink-threshold 180 --probe-min-ratio 0.80 --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 --probe-band-height-mode median_box --probe-band-height-scale 1.0 --probe-band-height-min 10 --probe-notehead-dilate 13 --probe-row-filter-mode reuse_rows --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.35 --probe-extend-bottom-max-ratio 0.35 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 --row-ink-profile --row-ink-profile-min-ratio 0.2 --analysis-baseline-root logs/gt_rebuild_hybrid_eval/20251231T034745_baseline_notehead_barline_clefs_low`
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T191051_probe_ext_tb0p35_hscan_lr0p60_padR0p50_ml5_rowink_baseline/analysis_fp_fn_crops/`
+  - `baseline_fp_kept/`
+  - `baseline_fp_removed/`
+  - `new_fn/`
+
+**再現確認**
+- `summary_table.md` は `logs/gt_rebuild_hybrid_eval/20251231T123352_probe_ext_tb0p35_hscan_padR0p50_lr0p60_ml5_debug/summary_table.md` と一致。
+
+## 2025-12-31 analysis_fp_fn_crops のdebug対応改善
+
+**作業目的 / 方針 / 位置づけ**
+- FN/FPクロップ内でのband表示ずれと情報不足を改善する。
+
+**作業時間**
+- 2025-12-31 20:10:00 JST
+
+**対応内容**
+- debug recordの選択を「同一staff_band内で最も近いcol」に変更。
+- cropに `scan_top_h / scan_bottom_h` を併記。
+- 色の意味:
+  - pred_band: 緑
+  - band: 青
+  - ext_band: 赤
+  - scan_base_band: 黄
+  - scan_band: オレンジ
+  - scan_ext_band: 紫
+  - col: 赤縦線
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T192137_probe_ext_tb0p35_hscan_lr0p60_padR0p50_ml5_rowink_baseline_fixrec/analysis_fp_fn_crops/`
+  - `baseline_fp_kept/`
+  - `baseline_fp_removed/`
+  - `new_fn/`
+
+## 2025-12-31 new_fn 目視確認と原因整理
+
+**作業目的 / 方針 / 位置づけ**
+- new_fnの原因を分類し、はみだし評価の再設計に使う。
+
+**作業時間**
+- 2025-12-31 20:25:00 JST
+
+**確認対象**
+- `logs/gt_rebuild_hybrid_eval/20251231T192137_probe_ext_tb0p35_hscan_lr0p60_padR0p50_ml5_rowink_baseline_fixrec/analysis_fp_fn_crops/new_fn/`
+
+**所見（代表例）**
+- page_001_fn01/02:
+  - status=extended_top_ratio（scanではなくext_top_ratios由来）
+  - band（青）はrow_stats由来で五線内側に入っているため、top_ratioが過大評価される。
+- page_001_fn03:
+  - status=extended_top_ratio_scan だが scan_band=None → bandにフォールバックしている。
+  - scan_staff_band_from_ink が失敗している可能性。
+- page_004_fn00/01/02/03:
+  - status=scan_ratio_low（ratio≈0.77–0.80）で除去。
+  - 固定閾値min_ratioが薄い小節線に対して厳しい可能性。
+- page_004_fn04:
+  - status=extended_bottom_ratio_scan（bot≈0.81）で除去。
+  - 下方向の記号/文字の被りによるbottom_ratio過大が疑わしい。
+
+**次の見直し候補**
+- band_source=horiz_scan 時は ext_top_ratios / ext_bottom_ratios を無効化し、scan_*のみで判定する。
+- scan_band が None の場合は pred_band へフォールバック。
+- scan_ratio は絶対閾値ではなく「局所ピーク比（相対）」で判定する（閾値固定を回避）。
+
+## 2025-12-31 probe_scan補正 (1) non-scan extend無効化
+
+**作業目的 / 方針 / 位置づけ**
+- horiz_scan時にext_top/bottom由来の除去を無効化し、FN低減を検証する。
+
+**作業時間**
+- 2025-12-31 21:58:39 JST
+
+**実行コマンド**
+- `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20251231T215839_probe_ext_tb0p35_hscan_disable_non_scan_extend --union-root logs/phase5b_confirmed_union_eval ... --probe-scan-disable-non-scan-extend`
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T215839_probe_ext_tb0p35_hscan_disable_non_scan_extend/analysis_fp_fn_crops/`
+
+**集計（summary_table）**
+- page_001: TP=76 FP=0 FN=2
+- page_3: TP=152 FP=2 FN=0
+- page_004: TP=105 FP=1 FN=7
+- page_10: TP=154 FP=0 FN=0
+- page_15: TP=112 FP=2 FN=0
+
+## 2025-12-31 probe_scan補正 (2) scan_bandのpred_bandフォールバック
+
+**作業目的 / 方針 / 位置づけ**
+- scan_bandがNoneの場合にpred_bandへフォールバックし、FN低減を検証する。
+
+**作業時間**
+- 2025-12-31 21:59:36 JST
+
+**実行コマンド**
+- `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20251231T215936_probe_ext_tb0p35_hscan_fallback_pred_band --union-root logs/phase5b_confirmed_union_eval ... --probe-scan-fallback-pred-band`
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T215936_probe_ext_tb0p35_hscan_fallback_pred_band/analysis_fp_fn_crops/`
+
+**集計（summary_table）**
+- page_001: TP=74 FP=0 FN=4
+- page_3: TP=152 FP=2 FN=0
+- page_004: TP=106 FP=1 FN=6
+- page_10: TP=154 FP=0 FN=0
+- page_15: TP=112 FP=2 FN=0
+
+## 2025-12-31 new_fn比較（補正(1)/(2)）
+
+**作業目的 / 方針 / 位置づけ**
+- (1)(2)のnew_fnの原因を比較し、次の改善に繋げる。
+
+**作業時間**
+- 2025-12-31 22:10:00 JST
+
+**確認対象**
+- `logs/gt_rebuild_hybrid_eval/20251231T215839_probe_ext_tb0p35_hscan_disable_non_scan_extend/analysis_fp_fn_crops/new_fn/`
+- `logs/gt_rebuild_hybrid_eval/20251231T215936_probe_ext_tb0p35_hscan_fallback_pred_band/analysis_fp_fn_crops/new_fn/`
+
+**所見**
+- (1)は`scan_ratio_low`が大半（page_004で5件）で、min_ratio=0.80が厳しいために落ちている。
+- (1)のpage_001は`scan_ratio_low`+`extended_top_ratio_scan`の2件。青線ズレはscan_band側の狭さと上側の符頭干渉の影響が疑わしい。
+- (2)は`extended_top_ratio`（非scan側）が再度発生（page_001で2件）し、(1)よりFNが悪化。
+- (2)のpage_004は`scan_ratio_low`が4件で(1)より1件減るが、全体では(1)の方が安定。
+
+## 2025-12-31 scan_ratioをピーク相対比で評価
+
+**作業目的 / 方針 / 位置づけ**
+- 固定min_ratioではなく、行内ピークに対する相対比でscan_ratioを評価する。
+
+**作業時間**
+- 2025-12-31 22:10:00 JST
+
+**実行コマンド**
+- `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20251231T221000_probe_ext_tb0p35_hscan_relratio --union-root logs/phase5b_confirmed_union_eval ... --probe-width 2 --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.9 --probe-scan-peak-band-height 4 --probe-scan-disable-non-scan-extend`
+
+**出力ログ**
+- `logs/gt_rebuild_hybrid_eval/20251231T221000_probe_ext_tb0p35_hscan_relratio/analysis_fp_fn_crops/`
+
+**集計（summary_table）**
+- page_001: TP=75 FP=0 FN=3
+- page_3: TP=152 FP=2 FN=0
+- page_004: TP=110 FP=0 FN=2
+- page_10: TP=154 FP=0 FN=0
+- page_15: TP=112 FP=3 FN=0
+
+## 2025-12-31 scan_bandをピーク位置に寄せる
+
+**作業目的 / 方針 / 位置づけ**
+- scan_bandの中心をrow_ratioピーク位置に寄せてtop/bottom判定を安定化させる。
+
+**作業時間**
+- 2025-12-31 23:13:21 JST
+
+**実行コマンド**
+- `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20251231T231321_probe_ext_tb0p35_hscan_relratio_peakcenter --union-root logs/phase5b_confirmed_union_eval ... --probe-scan-center-on-peak --probe-scan-peak-band-height 4 --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.9`
+
+**集計（summary_table）**
+- page_001: TP=64 FP=1 FN=14
+- page_3: TP=152 FP=2 FN=0
+- page_004: TP=97 FP=1 FN=15
+- page_10: TP=150 FP=0 FN=4
+- page_15: TP=105 FP=0 FN=7
+
+**所見**
+- scan_bandのピーク寄せはFNが大幅に増加し、現状の設定では不適。
+
+## 2025-12-31 x方向ピーク救済（細線判定）
+
+**作業目的 / 方針 / 位置づけ**
+- Y方向のはみだしがあっても、x方向のピークが鋭い場合は「細い線」とみなして救済する。
+
+**実装方針（簡潔）**
+- scan_band内でx方向の比率列 `scan_ratios_full` を計算。
+- 該当列の比率 / 周辺中央値（window=12）を `xpeak` として算出。
+- `xpeak >= 1.6` の場合は top/bottom 由来の除去を回避（rescue）。
+- cropに `xpeak` を併記。
+
+**作業時間**
+- 2025-12-31 23:56:37 JST
+
+**実行コマンド**
+- `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20251231T235637_probe_ext_tb0p35_hscan_relratio_xpeak_rescue --union-root logs/phase5b_confirmed_union_eval ... --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6`
+
+**集計（summary_table）**
+- page_001: TP=76 FP=2 FN=2
+- page_3: TP=152 FP=2 FN=0
+- page_004: TP=112 FP=1 FN=0
+- page_10: TP=154 FP=0 FN=0
+- page_15: TP=112 FP=11 FN=0
+
+**所見**
+- page_004はFN=0まで回復。
+- FPが増加（特にpage_15）するため、救済条件が緩い可能性がある。
+
+## 2026-01-01 x方向ピーク救済のパラメータ比較
+
+**作業目的 / 方針 / 位置づけ**
+- xpeak救済の強さを調整し、FP増加を抑えつつFNを維持できるか確認。
+
+**作業時間**
+- 2026-01-01 00:50:00 JST
+
+**実行コマンド**
+- r1.8: `... --output-root logs/gt_rebuild_hybrid_eval/20260101T005036_probe_ext_tb0p35_hscan_relratio_xpeak_r1p8 --probe-scan-x-peak-ratio-min 1.8`
+- w18: `... --output-root logs/gt_rebuild_hybrid_eval/20260101T005139_probe_ext_tb0p35_hscan_relratio_xpeak_w18 --probe-scan-x-peak-window 18`
+- overhang0.2: `... --output-root logs/gt_rebuild_hybrid_eval/20260101T005235_probe_ext_tb0p35_hscan_relratio_xpeak_overhang0p2 --probe-scan-x-peak-max-overhang 0.2`
+
+**集計（summary_table）**
+- r1.8: page_001 FP=2 FN=2 / page_004 FP=1 FN=0 / page_15 FP=11 FN=0
+- w18: page_001 FP=2 FN=2 / page_004 FP=1 FN=0 / page_15 FP=11 FN=0
+- overhang0.2: page_001 FP=0 FN=3 / page_004 FP=0 FN=2 / page_15 FP=3 FN=0
+
+**所見**
+- r1.8 / w18 はFP増加が改善せず。
+- overhang0.2 はFP増加を抑えるが、FNが再増。
+
+## 2026-01-01 xpeak救済の対象限定
+
+**作業目的 / 方針 / 位置づけ**
+- 救済対象を限定し、FP増加を抑えられるか検証。
+
+**作業時間**
+- 2026-01-01 01:12:54 JST
+
+**実行コマンド**
+- ratioのみ救済:  
+  `... --output-root logs/gt_rebuild_hybrid_eval/20260101T011254_probe_ext_tb0p35_hscan_relratio_xpeak_rescue_ratio --probe-scan-x-peak-rescue-mode ratio`
+- top/bottomのみ救済:  
+  `... --output-root logs/gt_rebuild_hybrid_eval/20260101T011254_probe_ext_tb0p35_hscan_relratio_xpeak_rescue_topbottom --probe-scan-x-peak-rescue-mode topbottom`
+- both:  
+  `... --output-root logs/gt_rebuild_hybrid_eval/20260101T011254_probe_ext_tb0p35_hscan_relratio_xpeak_rescue_both --probe-scan-x-peak-rescue-mode both`
+
+**集計（summary_table）**
+- ratio: page_001 FP=2 FN=2 / page_004 FP=1 FN=0 / page_15 FP=11 FN=0
+- topbottom: page_001 FP=0 FN=3 / page_004 FP=0 FN=2 / page_15 FP=3 FN=0
+- both: page_001 FP=0 FN=3 / page_004 FP=0 FN=2 / page_15 FP=3 FN=0
+
+**所見**
+- ratio救済はFP増加が改善せず。
+- topbottom/both はFPを抑えるがFNが増える（overhang0.2相当）。
+
+## 2026-01-01 xpeak分割救済（全分割でピーク必須）
+
+**作業目的 / 方針 / 位置づけ**
+- scan_bandを短く分割し、全分割でxpeakが立つ場合のみ救済する。
+
+**作業時間**
+- 2026-01-01 01:37:21 JST
+
+**実行コマンド**
+- `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20260101T013721_probe_ext_tb0p35_hscan_relratio_xpeak_segmented --union-root logs/phase5b_confirmed_union_eval ... --probe-scan-x-peak-segment-height 4 --probe-scan-x-peak-segment-pass-ratio 1.0 --probe-scan-x-peak-segment-source scan_band`
+
+**集計（summary_table）**
+- page_001: TP=75 FP=0 FN=3
+- page_3: TP=152 FP=2 FN=0
+- page_004: TP=110 FP=0 FN=2
+- page_10: TP=154 FP=0 FN=0
+- page_15: TP=112 FP=3 FN=0
+
+**所見**
+- topbottom救済と同等の結果で、改善は見られなかった。
+
+## 2026-01-01 scan_ext_band分割 & staff-peak無視の検証
+
+**作業目的 / 方針 / 位置づけ**
+- (順序1) scan_ext_band分割救済の効果を確認。
+- (順序2) 五線ピーク付近（行方向）の行を無視してxpeakを計算する。
+
+**作業時間**
+- 2026-01-01 01:53:00 JST
+
+**実行コマンド**
+- scan_ext_band分割:  
+  `... --output-root logs/gt_rebuild_hybrid_eval/20260101T015308_probe_ext_tb0p35_hscan_relratio_xpeak_extseg --probe-scan-x-peak-segment-source scan_ext_band`
+- staff-peak無視(r=1):  
+  `... --output-root logs/gt_rebuild_hybrid_eval/20260101T015421_probe_ext_tb0p35_hscan_relratio_xpeak_ignore_staffpeak --probe-scan-x-peak-ignore-staff-peak --probe-scan-x-peak-ignore-radius 1`
+- staff-peak無視(r=1, ratio=2.0):  
+  `... --output-root logs/gt_rebuild_hybrid_eval/20260101T015528_probe_ext_tb0p35_hscan_relratio_xpeak_ignore_staffpeak_r2 --probe-scan-x-peak-ignore-staff-peak --probe-scan-x-peak-ignore-radius 1 --probe-scan-x-peak-ratio-min 2.0`
+- staff-peak無視(r=1, ratio=2.0, window=8):  
+  `... --output-root logs/gt_rebuild_hybrid_eval/20260101T015636_probe_ext_tb0p35_hscan_relratio_xpeak_ignore_staffpeak_r2_w8 --probe-scan-x-peak-ignore-staff-peak --probe-scan-x-peak-ignore-radius 1 --probe-scan-x-peak-ratio-min 2.0 --probe-scan-x-peak-window 8`
+
+**集計（summary_table）**
+- scan_ext_band分割: page_001 FP=0 FN=3 / page_004 FP=0 FN=2 / page_15 FP=3 FN=0
+- staff-peak無視(r=1): page_001 FP=0 FN=3 / page_004 FP=0 FN=2 / page_15 FP=3 FN=0
+- staff-peak無視(r=1, ratio=2.0): page_001 FP=0 FN=3 / page_004 FP=0 FN=2 / page_15 FP=3 FN=0
+- staff-peak無視(r=1, ratio=2.0, window=8): page_001 FP=0 FN=3 / page_004 FP=0 FN=2 / page_15 FP=3 FN=0
+
+**所見**
+- いずれも topbottom救済と同等で改善は見られなかった。
+
+## 2026-01-01 top/bottom判定とxpeak救済の仕様整理
+
+**作業目的 / 方針 / 位置づけ**
+- top/bottom閾値とxpeak救済の計算定義を明文化し、引き継ぎで混乱しないようにする。
+
+**作業時間**
+- 2026-01-01 01:25:00 JST
+
+**仕様（概要）**
+- top_ratio / bottom_ratio は `scan_ext_band` の上下領域の黒画素比率で判定。
+- xpeak は `scan_band` 内の x方向ピーク強度（近傍中央値比）で判定。
+
+## 2026-01-01 暫定まとめ（引き継ぎ用）
+
+**背景 / 現在の課題**
+- 小節線検出は5ページ（page_001, page_3, page_004, page_10, page_15）で FN=0 を維持しつつ FP を削減する方針。
+- 直近は probe_scan を用いた「五線はみだし評価（top/bottom）」で FP を減らす試行。
+- 問題: top/bottom 判定が厳しく、薄い小節線で FN が増える。  
+  また scan_band/row_stats のズレがあると top_ratio が過大評価される。
+
+**基準（baseline）**
+- baseline root: `logs/gt_rebuild_hybrid_eval/20251231T034745_baseline_notehead_barline_clefs_low`
+- summary_table では全ページ FN=0（page_3もFP=3まで削減）
+- clefs_keys left margin=0.18, barline_clefs_low(0.02) を含む。
+
+**直近の中核ロジック**
+- `detect_probe_scan` に複数の拡張判定を追加:
+  - `probe-extend-*` で ext_band top/bottom ratio 判定
+  - `--probe-use-peak-relative-ratio`（scan_ratioを行内ピーク比で評価）
+  - `--probe-scan-disable-non-scan-extend`（horiz_scan時にext_top/ext_bottomを無効化）
+  - `--probe-scan-x-peak-rescue`（x方向ピークが鋭いなら救済）
+
+**top/bottom比の定義（horiz_scan）**
+- `scan_band`（オレンジ）: 五線帯として判定する高さ範囲。
+- `scan_ext_band`（紫）: `scan_band` を上下に `extend_scale` 倍した帯。
+- `top_ratio` = `top_region`（scan_extの上側）内の黒画素比率  
+  `top_region = [scan_ext_y1 : scan_y1)` の縦帯（候補x幅）
+- `bottom_ratio` = `bottom_region`（scan_extの下側）内の黒画素比率  
+  `bottom_region = (scan_y2 : scan_ext_y2]` の縦帯（候補x幅）
+- `top_ratio >= probe-extend-top-max-ratio` または  
+  `bottom_ratio >= probe-extend-bottom-max-ratio` で除去。
+
+**xpeak救済の定義（細線判定）**
+- scan_band内で x方向の比率列を作成:  
+  `scan_ratios_full[x] = (scan_band内の縦ストライプ黒画素数) / (scan_band高 * probe_width)`
+- 近傍中央値（window=scan_x_peak_window）に対する比率を `xpeak` とする:  
+  `xpeak = scan_ratios_full[local_idx] / median(neighbors)`
+- `xpeak >= scan_x_peak_ratio_min` の場合、  
+  top/bottom由来の除去を「救済」して残す。
+- rescue対象は `--probe-scan-x-peak-rescue-mode` で制限可能:
+  - `ratio`: scan_ratio_rel_low のみ救済
+  - `topbottom`: top/bottom のみ救済
+  - `both`: 両方救済
+- new GUI: `tools/gui_helper_for_staff_scan/`（row_band_debug上で横scan確認）
+
+**最近の評価（代表run）**
+- 15:20頃条件再現（horiz_scan + extend）  
+  `logs/gt_rebuild_hybrid_eval/20251231T191051_probe_ext_tb0p35_hscan_lr0p60_padR0p50_ml5_rowink_baseline/`
+- peak relative ratio（細い判定帯）  
+  `logs/gt_rebuild_hybrid_eval/20251231T221000_probe_ext_tb0p35_hscan_relratio/`
+  - page_004 FNは減ったが page_001 FNが残る
+- xpeak救済（細線判定）  
+  `logs/gt_rebuild_hybrid_eval/20251231T235637_probe_ext_tb0p35_hscan_relratio_xpeak_rescue/`
+  - page_004 FN=0 まで回復したが FPが増加（page_15で顕著）
+- xpeak調整（r1.8 / w18 / overhang0.2）  
+  - `20260101T005036_probe_ext_tb0p35_hscan_relratio_xpeak_r1p8`  
+  - `20260101T005139_probe_ext_tb0p35_hscan_relratio_xpeak_w18`  
+  - `20260101T005235_probe_ext_tb0p35_hscan_relratio_xpeak_overhang0p2`  
+  → FPとFNのトレードオフが大きく、改善は限定的。
+
+**現時点の所感**
+- “divisi 2段”は別途対応が必要（page_004_fn00など）。
+- 多くのFNは閾値（scan_ratio / top/bottom）由来で、細い帯にするとピークが見えやすい。
+- xpeak救済は有望だが、救済条件が緩いとFPが増える。
+
+
+**再実行コマンド例（最新）**
+- 例（xpeak救済あり）:
+  `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/<run> --union-root logs/phase5b_confirmed_union_eval --endpoint-ratio-threshold 0.20 --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff --endbar-debug --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.80 --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 --probe-band-height-mode median_box --probe-band-height-scale 1.0 --probe-band-height-min 10 --probe-notehead-dilate 13 --probe-row-filter-mode reuse_rows --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.35 --probe-extend-bottom-max-ratio 0.35 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 --row-ink-profile --row-ink-profile-min-ratio 0.2 --analysis-baseline-root logs/gt_rebuild_hybrid_eval/20251231T034745_baseline_notehead_barline_clefs_low --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.9 --probe-scan-peak-band-height 4 --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6`
+
+**引き継ぎ用メモ（2026-01-01 追加）**
+- x方向scanの判定は「まず閾値(min_ratio)で候補を取る → その後、scan_peak_ratio_local を使った相対比(peak_relative_ratio)判定で落とす」流れ。  
+  peak判定とmin_ratio判定がずれていると、scan_ratio_rel_lowが出てFN/FPに繋がる可能性あり。
+- `scan_x_peak_rescue_mode=both` は過去にFP増の結果が出たことがある。  
+  ただし、他フィルタ順序や追加除去が入ると挙動が変わる可能性あり。
+- `extend_top/bottom_max_ratio` の緩和スイープは未実施に近い（明確なログが無い）。  
+  ただし緩めるとFP増のリスクが高いので、先に閾値の影響評価ログを残してから実施する。
+- `page_001_fn02` は青線(=scan_band)のずれが再発している。  
+  row_band自体は合っているケースが多いので、row_bandからscan_band作成のロジックを再確認する必要あり。
+
+**直近の計画（検討事項）**
+1) 「閾値 → peak」フローのズレによる影響評価（scan_ratio_rel_lowのFNがどこで生じるかを整理）。  
+2) `scan_x_peak_rescue_mode=both` を再検証（FP増を他フィルタで抑えられるかを見る）。  
+3) `extend_top/bottom_max_ratio` を小さな幅でsweep（FP増リスク確認のため最小限）。  
+4) `page_001_fn02` のscan_bandずれ原因の切り分け（row_band基準のscan_band生成やpeak band高さの再確認）。
+
+## 2026-01-01 追加メモ（作業継続）
+
+**作業時間**
+- 2026-01-01 02:05:00 JST
+
+**(1) scan_ratio_rel_low の原因整理**
+- 対象run: `logs/gt_rebuild_hybrid_eval/20260101T013721_probe_ext_tb0p35_hscan_relratio_xpeak_segmented`
+- FNの内訳:
+  - page_001: 3件
+    - 2件が `scan_ratio_rel_low`（peak_relative_ratio=0.877/0.837、scan_peak_ratio_local=1.0なので相対比=scan_ratio）
+    - 1件が `extended_top_ratio_scan`（top_ratio=0.58）
+  - page_004: 2件
+    - `extended_bottom_ratio_scan` (bottom_ratio=1.0)
+    - `extended_top_ratio_scan` (top_ratio=0.359)
+- `scan_ratio_rel_low` は peak_relative_ratio < probe-peak-ratio-min が原因（おそらく 0.9）。  
+  peak_relative_ratio が scan_ratio と一致しているので、「閾値判定とピークのズレ」の影響が大きい可能性。
+
+**(4) page_001_fn02 の scan_band ずれ確認**
+- page_001 fn02 box: `[2671,1698,2679,1787]`
+- endbar_debug record:
+  - staff_band=[1709,1787], pred_band=[1709,1786], band=[1709,1787]
+  - scan_band=None, scan_ext_band=[1685,1811]
+  - top_ratio=0.583 (extend_top_max_ratio=0.35 超過)
+- row_filter基準 (`end_recovered_row.json`) の該当rowは `[365,1709,367,1787]` と一致。
+- データ上は row_band と band が一致しており、blue線(=band)のはずだが、  
+  提示画像では青線が五線内に入り込んで見えるため、  
+  **画像の対象run/recordの取り違え or 描画の理解ズレ** の可能性がある。  
+  → 次は「page_001_fn02.png が本当にこのrunの該当recordか」再確認が必要。
+
+**(3) extend_top/bottom_max_ratio の小幅sweep**
+- 目的: はみ出し閾値を緩和してFNを減らせるか確認（FP増リスクの確認）。
+- 対象run:
+  - `20260101T_extend_tb0p40_hscan_relratio_xpeak_segmented`
+  - `20260101T_extend_tb0p45_hscan_relratio_xpeak_segmented`
+  - `20260101T_extend_tb0p50_hscan_relratio_xpeak_segmented`
+- 集計（summary_table）:
+  - tb0.40: page_001 FN=3 / page_004 FN=1 / page_3 FP=2 / page_15 FP=3（FPは変化なし）
+  - tb0.45: page_001 FN=3 / page_004 FN=1 / page_3 FP=2 / page_15 FP=3
+  - tb0.50: page_001 FN=3 / page_004 FN=1 / page_3 FP=2 / page_15 FP=3
+- 所見:
+  - page_004 のFNは 2→1 に改善したが、page_001 のFNは変わらず。
+  - FPはほぼ変化せず（page_3 FP=2, page_15 FP=3 のまま）。
+  - 今後の基準値は **extend_top/bottom_max_ratio=0.40** を採用する方針（FN削減があるため）。
+
+**(1) probe-peak-ratio-min のsweep（extend=0.40固定）**
+- 対象run:
+  - `20260101T_peakratio_0p80_tb0p40_hscan_relratio_xpeak_segmented`
+  - `20260101T_peakratio_0p85_tb0p40_hscan_relratio_xpeak_segmented`
+  - `20260101T_peakratio_0p90_tb0p40_hscan_relratio_xpeak_segmented`
+- 集計（summary_table）:
+  - 0.80: page_001 FN=1 / page_004 FP=2 FN=1 / page_10 FP=1
+  - 0.85: page_001 FN=2 / page_004 FP=1 FN=1 / page_10 FP=0
+  - 0.90: page_001 FN=3 / page_004 FP=0 FN=1 / page_10 FP=0
+- 所見:
+  - peak_ratio を下げると page_001 のFNが減る一方、page_004やpage_10のFPが増える傾向。
+  - 0.85 は FP増が抑えられているが page_001 FN=2 が残る。
+
+**(救済) 右端barline一致による救済 (rightmost rescue)**
+- 目的: 各行の右端barlineは概ね一致するという仮定で、右端近傍の候補を救済。
+- 実装:
+  - bandごとの「受理済み候補の最大x」を集計し、最大xの一定割合以上のみを採用（rightmost_min_ratio）。
+  - その中央値を target とし、`abs(x-target) <= tolerance` の rejected 候補を救済。
+  - 救済対象ステータス: scan_ratio_low / scan_ratio_rel_low / extended_*_scan。
+- 実行run:
+  - `20260101T_peakratio0p85_tb0p40_rightmost6`（min_ratio=0.85, tol=6）→ rescue 0件
+  - `20260101T_peakratio0p85_tb0p40_rightmost15_r0p90`
+    - min_ratio=0.90, tolerance=15, min_rows=3
+    - `rightmost_rescued` = 5件
+    - summary: page_001 FN=1 (2→1), FP変化なし / page_004 FN=1 / page_15 FP=3
+- 所見:
+  - tol=6 では一致判定が厳しすぎて救済ゼロ。
+  - tol=15 + rightmost_min_ratio=0.90 で page_001 のFNが1つ減少。
+
+**rightmost救済の可視化（惜しかった候補の確認）**
+- 対象run: `logs/gt_rebuild_hybrid_eval/20260101T_peakratio0p85_tb0p40_rightmost15_r0p90`
+- 可視化出力:
+  - `logs/gt_rebuild_hybrid_eval/20260101T_peakratio0p85_tb0p40_rightmost15_r0p90/rightmost_rescue_viz/`
+  - `rightmost_rescue_summary.json` に target/max_col/picks を記録
+- 近傍の差分（delta）分布の例:
+  - page_001: closest deltas = 3, 26, 39, 41, 57
+  - page_004: closest deltas = 5, 6, 16, 22, 85
+  - page_10: closest deltas = 3, 4, 13, 24, 40
+  - page_15: closest deltas = 3, 6, 11, 15, 21
+- これより、tol=15はpage_001で2件目(26)に届かず、  
+  tol>=26で追加救済の余地がある。
+
+**rightmost救済のtolerance sweep**
+- 対象run:
+  - `20260101T_peakratio0p85_tb0p40_rightmost20_r0p90`
+  - `20260101T_peakratio0p85_tb0p40_rightmost26_r0p90`
+  - `20260101T_peakratio0p85_tb0p40_rightmost30_r0p90`
+- summaryは tol=15 と同じ（page_001 FN=1 / page_004 FN=1、FP変化なし）
+- rescue件数は増加（tol=20:6件、tol=26:9件、tol=30:9件）だが、指標は変わらず。
+- 残存FNのstatus:
+  - page_001: `scan_ratio_rel_low` (col=2476)
+  - page_004: `extended_bottom_ratio_scan` (col=2138)
+  → いずれも右端ターゲットから距離が大きく、rightmost救済の対象外。
+
+## 2026-01-01 引き継ぎメモ（最新版・この節のみ参照）
+
+**目的**
+- 5ページ（page_001, page_3, page_004, page_10, page_15）で **FN=0維持 + FP削減**。
+- 直近は probe_scan 拡張判定（top/bottom はみ出し + peak_relative_ratio + xpeak救済）を評価中。
+
+**確定パラメータ（現在の基準）**
+- `probe-extend-top-max-ratio=0.40`
+- `probe-extend-bottom-max-ratio=0.40`
+- `probe-peak-ratio-min=0.85`
+- その他ベースは `20251231T034745_baseline_notehead_barline_clefs_low` に準拠。
+
+**最新の代表run**
+- `logs/gt_rebuild_hybrid_eval/20260101T_peakratio0p85_tb0p40_rightmost15_r0p90`
+  - page_001 FN=1 / page_004 FN=1 / page_3 FP=2 / page_15 FP=3 / page_10 FN=0
+  - rightmost救済で page_001 FNが2→1に改善。
+
+**rightmost救済の結論**
+- tol=15/20/26/30 と sweepしたが、指標は改善せず（page_001 FN=1が残る）。
+- 残存FNは右端ターゲットから距離が大きく、rightmost救済の対象外。
+- 可視化:  
+  `logs/gt_rebuild_hybrid_eval/20260101T_peakratio0p85_tb0p40_rightmost15_r0p90/rightmost_rescue_viz/`
+
+**残存FNの内訳**
+- page_001: `scan_ratio_rel_low` (col=2476)  
+  → ratio救済を入れれば救える可能性が高い。
+- page_004: `extended_bottom_ratio_scan` (col=2138)  
+  → divisi対応（bottom側除外）など別ロジックが必要。
+
+**(1) scan_ratio_rel_low 限定救済の試行**
+- 実行run:
+  - `20260101T_peakratio0p85_tb0p40_rightmost15_r0p90_ratiorescue`
+- 追加パラメータ:
+  - `--probe-scan-ratio-rel-rescue`
+  - `--probe-scan-ratio-rel-rescue-min 0.83`
+  - `--probe-scan-ratio-rel-rescue-xpeak-min 2.0`
+  - `--probe-scan-ratio-rel-rescue-max-overhang 0.10`
+- summary:
+  - page_001 FN=1 / page_004 FN=1 / page_3 FP=2 / page_15 FP=3 / page_10 FN=0
+  - rescue件数: `scan_ratio_rel_low_rescued_limited = 5`
+- 所見:
+  - scan_ratio_rel_low のFNは救済されたが、page_001の残存FNは `extended_top_ratio_scan` に変化。
+  - page_001残存FN (col=2675): top_ratio=0.58 が閾値超過のため未救済。
+
+**(1補足) rightmost定義更新 + ratio救済の再評価（時刻付きrun）**
+- 対象run: `logs/gt_rebuild_hybrid_eval/20260101T043521_peakratio0p85_tb0p40_rightmost15_r0p90_ratiorescue_rtupdate`
+- 変更点:
+  - rightmost救済時に「global target 近傍の rejected を段ごとの rightmost に反映」する定義更新。
+  - debug params に scan関連/救済関連パラメータを追加。
+- summary:
+  - page_001 FN=0（救済成功） / page_004 FN=1 / page_3 FP=2 / page_15 FP=3
+- page_001のrightmost_rescued:
+  - col=2675, delta=3.0, staff_band=[1709,1787]
+
+**次の作業候補**
+1) scan_ratio_rel_low の限定救済（page_001のFNを解消できるか確認）
+2) divisi検出（row_ink_profile の二峰性で bottom_ratio を無効化）
+3) 追加のFP抑制は、上記でFN=0を回復後に再検討
+
+## 2026-01-01 Divisi対応の検討と方針提案
+
+**作業目的 / 方針 / 位置づけ**
+- **page_004 の残存FN (col=2138)** を解消するための Divisi（段分かれ）対応の検討。
+- 当該FNは、1つのパート譜が2段に分かれている箇所で、隣接する段の音符成分を「はみ出し」と誤認して `extended_bottom_ratio_scan` 等で除去されている可能性が高い。
+
+**現状分析**
+- `endbar_debug.json` より、FN付近（col=2138）では `Band: [2073, 2159]` と `Band: [2228, 2312]` という2つの近接した行が認識されている。
+- 行間距離は約69pxであり、現在の `extend_scale=1.6`（高さ86pxに対し片側約26pxの拡張）では次段の五線自体には届かないはずだが、段間の記号や音符、あるいはBandの定義位置の微妙なズレにより `BottomRatio: 1.0`（上段）や `TopRatio: 1.0`（下段）が発生し、互いに除去し合っている状態。
+
+**提案手法: 近接行を考慮した判定緩和**
+1.  **行間距離の考慮**: `probe_scan` 実行時、対象行の上下に近接する別の `staff_band` が存在するかを確認する。
+2.  **緩和措置**:
+    - 近接行が存在する方向（上または下）のはみ出し判定（`extended_top/bottom_max_ratio`）をスキップ、または閾値を大幅に緩和する。
+    - 「はみ出し」が「隣接する自パートの音符」である可能性が高いため、これを許容する設計とする。
+3.  **代替案（Row Ink Profile併用）**: 行単体で見た際も、Divisi箇所では五線外へのインクのはみ出しが定常的に発生するため、行内のインク分布の広がり（分散やエッジ強度）を見て「はみ出し判定」自体の重みを調整する。
+
+**次のアクション**
+1.  `tools/run_gt_rebuild_hybrid_eval.py` に「近接行検知」ロジックを追加し、はみ出し判定を条件付きで緩和するプロトタイプを作成。
+2.  `page_004` で FN=0 が達成されるか、および他ページで FP が過剰に増えないかを確認する。
+
+## 2026-01-01 Divisi対応の再検討と実装計画 (v2)
+
+**フィードバックに基づく分析**
+- 単純な行間距離判定では「詰まったレイアウト」をDivisiと誤認するリスクがある。
+- FNの原因は隣接音符ではなく、「上下の段を結ぶ小節線（連結線）」が `extend` 領域ではみ出し判定されている可能性が高い。
+- Divisiの特徴として「上下段で小節線位置が一致する（Alignment）」ことは強力な必要条件。
+
+**ブラッシュアップされた実装方針**
+1.  **Divisi候補の特定 (Alignment Check)**:
+    - 行間距離が近いペアに対し、既存検出候補（`geom_kept`）のX座標分布を照合する。
+    - 上下の段でX座標が近似する候補が複数ペア存在する場合、「同期した行群（Divisi）」と判定する。
+    
+2.  **連結線の許容 (Connector Rescue)**:
+    - Divisi判定された行において、近接行方向への「はみ出し（`top/bottom_ratio`）」が検出された場合、以下の条件で救済する。
+    - **条件**: そのX位置において、対となる行（ペア）側にも小節線候補が存在する、あるいは十分なインクが存在し「上下が連結されている」とみなせる場合。
+    
+3.  **多段対応**:
+    - ペア判定を連鎖させ、N段のDivisiグループとして扱える設計とする。
+
+**次のアクション**
+- `tools/run_gt_rebuild_hybrid_eval.py` に「小節線アライメント検知」によるDivisi判定と、それに基づく「連結線救済」ロジックを実装する。

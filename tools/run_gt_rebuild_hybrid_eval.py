@@ -18,7 +18,7 @@ import sys
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(REPO_ROOT))
 
-from src.common.barline_evaluation import greedy_barline_match
+from src.common.barline_evaluation import barline_iou, greedy_barline_match
 
 Box = Tuple[int, int, int, int]
 Color = Tuple[int, int, int]
@@ -1537,6 +1537,8 @@ def detect_probe_scan(
     probe_width: int = 4,
     ink_threshold: int = 180,
     min_ratio: float = 0.85,
+    use_peak_relative_ratio: bool = False,
+    peak_ratio_min: float = 0.9,
     extend_scale: float = 1.0,
     extend_max_ratio: float = 1.0,
     extend_top_max_ratio: float = 1.0,
@@ -1548,6 +1550,32 @@ def detect_probe_scan(
     band_height_scale: float = 1.0,
     band_height_min: int = 10,
     x_merge_tol: int = 4,
+    scan_fallback_pred_band: bool = False,
+    scan_disable_non_scan_extend: bool = False,
+    scan_peak_band_height: int = 0,
+    scan_center_on_peak: bool = False,
+    scan_x_peak_rescue: bool = False,
+    scan_x_peak_window: int = 12,
+    scan_x_peak_ratio_min: float = 1.6,
+    scan_x_peak_max_overhang: float = 1.0,
+    scan_x_peak_rescue_mode: str = "topbottom",
+    scan_x_peak_segment_height: int = 0,
+    scan_x_peak_segment_pass_ratio: float = 1.0,
+    scan_x_peak_segment_source: str = "scan_band",
+    scan_x_peak_ignore_staff_peak: bool = False,
+    scan_x_peak_ignore_radius: int = 1,
+    scan_rightmost_rescue: bool = False,
+    scan_rightmost_tolerance: int = 6,
+    scan_rightmost_min_rows: int = 3,
+    scan_rightmost_min_ratio: float = 0.85,
+    scan_ratio_rel_rescue: bool = False,
+    scan_ratio_rel_rescue_min: float = 0.0,
+    scan_ratio_rel_rescue_xpeak_min: float = 0.0,
+    scan_ratio_rel_rescue_max_overhang: float = 1.0,
+    divisi_rescue: bool = False,
+    divisi_dist_ratio: float = 1.2,
+    divisi_align_tol: int = 4,
+    divisi_align_min_count: int = 2,
     debug_path: Path | None = None,
 ) -> List[Box]:
     gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
@@ -1602,7 +1630,106 @@ def detect_probe_scan(
     global_heights = [abs(by2 - by1) for _, by1, _, by2 in existing_boxes if abs(by2 - by1) > 0]
     global_height = int(np.median(global_heights)) if global_heights else 0
 
+    # Identify Divisi groups based on proximity and barline alignment
+    divisi_map: Dict[int, Dict[str, bool]] = {}  # band_idx -> {'has_top': bool, 'has_bottom': bool}
+    if divisi_rescue and len(bands) > 1:
+        # 1. Group bands by proximity
+        adj_groups = []
+        b_heights = [y2 - y1 + 1 for y1, y2 in bands]
+        avg_h = float(np.mean(b_heights)) if b_heights else float(global_height)
+        dist_thresh = avg_h * divisi_dist_ratio
+        
+        current_group = [0]
+        for i in range(1, len(bands)):
+            prev_y2 = bands[i-1][1]
+            curr_y1 = bands[i][0]
+            dist = curr_y1 - prev_y2
+            if dist < dist_thresh:
+                current_group.append(i)
+            else:
+                if len(current_group) > 1:
+                    adj_groups.append(current_group)
+                current_group = [i]
+        if len(current_group) > 1:
+            adj_groups.append(current_group)
+            
+        # 2. Validate groups by barline alignment
+        # Collect peaks from all bands to use for alignment check
+        band_xs: Dict[int, List[float]] = {i: [] for i in range(len(bands))}
+        
+        # Add existing boxes
+        for bx1, by1, bx2, by2 in existing_boxes:
+            cy = (by1 + by2) / 2.0
+            cx = (bx1 + bx2) / 2.0
+            best_bi = -1
+            best_dy = float('inf')
+            for i, (by1_b, by2_b) in enumerate(bands):
+                if by1_b <= cy <= by2_b:
+                    band_xs[i].append(cx)
+                    best_bi = -1
+                    break
+                dy = min(abs(cy - by1_b), abs(cy - by2_b))
+                if dy < best_dy:
+                    best_dy = dy
+                    best_bi = i
+            if best_bi != -1:
+                band_xs[best_bi].append(cx)
+
+        # Pre-scan for peaks in all bands
+        for i, (y1, y2) in enumerate(bands):
+            # Calculate band Y similar to main loop logic
+            band_center = int(round((y1 + y2) / 2))
+            band_h = max(1, y2 - y1 + 1)
+            target_h = band_h
+            if band_source == "row_stats":
+                # Simplified for pre-scan: use band as is or with pad
+                band_y1, band_y2 = y1, y2
+            else:
+                if band_height_mode == "median_box":
+                    # Simplified: use global or band_h for pre-scan speed
+                    target_h = band_h 
+                band_y1 = max(0, int(round(band_center - target_h / 2)))
+                band_y2 = min(h - 1, int(round(band_center + target_h / 2)))
+            
+            band_img = ink[band_y1 : band_y2 + 1, :]
+            if band_img.size == 0: continue
+            
+            col_sums = band_img.sum(axis=0)
+            stripe_sums = np.convolve(col_sums, kernel, mode="same")
+            ratios = stripe_sums / float(max(1, band_y2 - band_y1 + 1) * width)
+            
+            # Find peaks (use lower threshold for structural analysis)
+            divisi_min_ratio = 0.5
+            if ratios.size >= 3:
+                peak_indices = np.where(
+                    (ratios >= divisi_min_ratio)
+                    & (ratios >= np.roll(ratios, 1))
+                    & (ratios >= np.roll(ratios, -1))
+                )[0]
+                for px in peak_indices:
+                    band_xs[i].append(float(px))
+
+        for grp in adj_groups:
+            for k in range(len(grp) - 1):
+                idx_a = grp[k]
+                idx_b = grp[k+1]
+                xs_a = sorted(band_xs[idx_a])
+                xs_b = sorted(band_xs[idx_b])
+                match_count = 0
+                for xa in xs_a:
+                    for xb in xs_b:
+                        if abs(xa - xb) <= divisi_align_tol:
+                            match_count += 1
+                            break
+                if match_count >= divisi_align_min_count:
+                    if idx_a not in divisi_map: divisi_map[idx_a] = {'has_top': False, 'has_bottom': False}
+                    if idx_b not in divisi_map: divisi_map[idx_b] = {'has_top': False, 'has_bottom': False}
+                    divisi_map[idx_a]['has_bottom'] = True
+                    divisi_map[idx_b]['has_top'] = True
+
     candidates: List[Box] = []
+    accepted_by_band: dict[int, list[float]] = {}
+    rejected_records: list[dict] = []
     debug_records = []
     for band_idx, (y1, y2) in enumerate(bands):
         scan_base_y1 = y1
@@ -1714,6 +1841,14 @@ def detect_probe_scan(
             scan_top_h = None
             scan_bottom_h = None
             scan_row_profile = None
+            scan_peak_ratio = None
+            scan_peak_row = None
+            scan_x_peak_ratio = None
+            scan_x_peak_neighbor_median = None
+            scan_x_peak_segment_min = None
+            scan_x_peak_segment_pass = None
+            scan_x_peak_ignored_rows = 0
+            rescue_reason = None
             if band_source == "horiz_scan":
                 scan_band = scan_staff_band_from_ink(
                     ink,
@@ -1731,12 +1866,23 @@ def detect_probe_scan(
                     scan_row_ratio_mean = float(row_ratio_full.mean())
                     scan_row_ratio_max = float(row_ratio_full.max())
                     scan_row_ratio_lines = int((row_ratio_full >= band_scan_line_ratio).sum())
+                    scan_peak_ratio = scan_row_ratio_max
+                    if scan_peak_ratio is not None:
+                        peak_idx = int(np.argmax(row_ratio_full))
+                        scan_peak_row = int(scan_base_y1 + peak_idx)
                     if save_row_profile:
                         scan_row_profile = [float(v) for v in row_ratio_full.tolist()]
             if scan_band is not None:
                 scan_y1, scan_y2 = scan_band
+            elif scan_fallback_pred_band and pred_band is not None:
+                scan_y1, scan_y2 = pred_band
             else:
                 scan_y1, scan_y2 = band_y1, band_y2
+            if band_source == "horiz_scan" and scan_center_on_peak and scan_peak_row is not None:
+                peak_h = scan_peak_band_height if scan_peak_band_height > 0 else scan_h
+                peak_h = max(1, int(peak_h))
+                scan_y1 = max(0, int(scan_peak_row - peak_h // 2))
+                scan_y2 = min(h - 1, int(scan_y1 + peak_h - 1))
             scan_h = max(1, scan_y2 - scan_y1 + 1)
             scan_ratio = None
             scan_ext_ratio = None
@@ -1750,6 +1896,69 @@ def detect_probe_scan(
                 scan_ratio = float(ink[scan_y1 : scan_y2 + 1, sx1 : sx2 + 1].sum()) / float(
                     scan_h * max(1, sx2 - sx1 + 1)
                 )
+                if scan_x_peak_rescue:
+                    def compute_xpeak(band_y1: int, band_y2: int) -> Optional[float]:
+                        if band_y2 < band_y1:
+                            return None
+                        scan_strip = ink[band_y1 : band_y2 + 1, :]
+                        if scan_strip.size == 0:
+                            return None
+                        if scan_x_peak_ignore_staff_peak and scan_peak_row is not None:
+                            rel_peak = int(scan_peak_row - band_y1)
+                            radius = max(0, int(scan_x_peak_ignore_radius))
+                            y_start = max(0, rel_peak - radius)
+                            y_end = min(scan_strip.shape[0] - 1, rel_peak + radius)
+                            if y_start <= y_end:
+                                scan_strip = scan_strip.copy()
+                                scan_strip[y_start : y_end + 1, :] = 0
+                                nonlocal scan_x_peak_ignored_rows
+                                scan_x_peak_ignored_rows += (y_end - y_start + 1)
+                        scan_col_sums = scan_strip.sum(axis=0)
+                        scan_stripe_sums = np.convolve(scan_col_sums, kernel, mode="same")
+                        band_h = max(1, band_y2 - band_y1 + 1)
+                        scan_ratios_full = scan_stripe_sums / float(band_h * width)
+                        wsize = max(1, int(scan_x_peak_window))
+                        left = max(0, int(local_idx - wsize))
+                        right = min(len(scan_ratios_full) - 1, int(local_idx + wsize))
+                        if right < left:
+                            return None
+                        neighbor_vals = [scan_ratios_full[i] for i in range(left, right + 1) if i != local_idx]
+                        if not neighbor_vals:
+                            return None
+                        neighbor_median = float(np.median(neighbor_vals))
+                        if neighbor_median <= 0:
+                            return None
+                        return float(scan_ratios_full[local_idx]) / neighbor_median
+
+                    scan_x_peak_ratio = compute_xpeak(scan_y1, scan_y2)
+                    if scan_x_peak_ratio is not None:
+                        scan_x_peak_neighbor_median = scan_x_peak_ratio
+                    if scan_x_peak_segment_height > 0:
+                        seg_source_y1 = scan_y1
+                        seg_source_y2 = scan_y2
+                        if scan_x_peak_segment_source == "scan_ext_band" and scan_ext_y1 is not None and scan_ext_y2 is not None:
+                            seg_source_y1 = scan_ext_y1
+                            seg_source_y2 = scan_ext_y2
+                        seg_h = max(1, int(scan_x_peak_segment_height))
+                        segs = []
+                        for seg_y in range(seg_source_y1, seg_source_y2 + 1, seg_h):
+                            seg_y2 = min(seg_source_y2, seg_y + seg_h - 1)
+                            seg_ratio = compute_xpeak(seg_y, seg_y2)
+                            if seg_ratio is not None:
+                                segs.append(seg_ratio)
+                        if segs:
+                            scan_x_peak_segment_min = float(min(segs))
+                            pass_count = sum(1 for v in segs if v >= scan_x_peak_ratio_min)
+                            scan_x_peak_segment_pass = pass_count / float(len(segs))
+                scan_peak_ratio_local = None
+                if scan_peak_row is not None:
+                    peak_y1 = scan_peak_row
+                    peak_h = scan_peak_band_height if scan_peak_band_height > 0 else scan_h
+                    peak_y2 = min(h - 1, int(peak_y1 + peak_h - 1))
+                    if peak_y1 <= peak_y2:
+                        scan_peak_ratio_local = float(
+                            ink[peak_y1 : peak_y2 + 1, sx1 : sx2 + 1].sum()
+                        ) / float(max(1, peak_y2 - peak_y1 + 1) * max(1, sx2 - sx1 + 1))
                 if extend_scale > 1.0:
                     ext_h = max(scan_h, int(round(scan_h * extend_scale)))
                     scan_center = int(round((scan_y1 + scan_y2) / 2))
@@ -1791,38 +2000,150 @@ def detect_probe_scan(
                 "scan_top_h": scan_top_h,
                 "scan_bottom_h": scan_bottom_h,
                 "scan_row_profile": scan_row_profile,
+                "scan_peak_ratio": scan_peak_ratio,
+                "scan_peak_row": scan_peak_row,
+                "scan_peak_ratio_local": scan_peak_ratio_local,
+                "scan_x_peak_ratio": scan_x_peak_ratio,
+                "scan_x_peak_neighbor_median": scan_x_peak_neighbor_median,
+                "scan_x_peak_segment_min": scan_x_peak_segment_min,
+                "scan_x_peak_segment_pass": scan_x_peak_segment_pass,
+                "scan_x_peak_ignored_rows": scan_x_peak_ignored_rows,
             }
+            if use_peak_relative_ratio and scan_peak_ratio_local:
+                peak_relative_ratio = scan_ratio / max(scan_peak_ratio_local, 1e-6)
+            else:
+                peak_relative_ratio = None
             if scan_ratio is not None and scan_ratio < min_ratio:
-                debug_records.append(
+                rec = {
+                    "status": "scan_ratio_low",
+                    "col": local_idx,
+                    "ratio": scan_ratio,
+                    "extended_ratio": scan_ext_ratio,
+                    "top_ratio": scan_top_ratio,
+                    "bottom_ratio": scan_bottom_ratio,
+                    "peak_relative_ratio": peak_relative_ratio,
+                    "seed_col": x,
+                    **record_base,
+                }
+                debug_records.append(rec)
+                rejected_records.append(
                     {
-                        "status": "scan_ratio_low",
+                        "band_idx": band_idx,
+                        "col": float(local_idx),
+                        "box": (x1, band_y1, x2, band_y2),
+                        "record": rec,
+                    }
+                )
+                continue
+            if use_peak_relative_ratio and peak_relative_ratio is not None and peak_relative_ratio < peak_ratio_min:
+                if scan_x_peak_rescue and scan_x_peak_ratio is not None and scan_x_peak_ratio >= scan_x_peak_ratio_min:
+                    if scan_x_peak_rescue_mode in ("ratio", "both"):
+                        rec = {
+                            "status": "scan_ratio_rel_low_rescued",
+                            "col": local_idx,
+                            "ratio": scan_ratio,
+                            "extended_ratio": scan_ext_ratio,
+                            "top_ratio": scan_top_ratio,
+                            "bottom_ratio": scan_bottom_ratio,
+                            "peak_relative_ratio": peak_relative_ratio,
+                            "seed_col": x,
+                            **record_base,
+                        }
+                        debug_records.append(rec)
+                        continue
+                rescue_ok = (
+                    scan_ratio_rel_rescue
+                    and peak_relative_ratio is not None
+                    and peak_relative_ratio >= scan_ratio_rel_rescue_min
+                    and scan_x_peak_ratio is not None
+                    and scan_x_peak_ratio >= scan_ratio_rel_rescue_xpeak_min
+                    and (scan_top_ratio is None or scan_top_ratio <= scan_ratio_rel_rescue_max_overhang)
+                    and (scan_bottom_ratio is None or scan_bottom_ratio <= scan_ratio_rel_rescue_max_overhang)
+                )
+                if rescue_ok:
+                    rec = {
+                        "status": "scan_ratio_rel_low_rescued_limited",
                         "col": local_idx,
                         "ratio": scan_ratio,
                         "extended_ratio": scan_ext_ratio,
                         "top_ratio": scan_top_ratio,
                         "bottom_ratio": scan_bottom_ratio,
+                        "peak_relative_ratio": peak_relative_ratio,
                         "seed_col": x,
                         **record_base,
+                    }
+                    debug_records.append(rec)
+                    candidates.append((x1, band_y1, x2, band_y2))
+                    accepted_by_band.setdefault(band_idx, []).append(float(local_idx))
+                    continue
+                rec = {
+                    "status": "scan_ratio_rel_low",
+                    "col": local_idx,
+                    "ratio": scan_ratio,
+                    "extended_ratio": scan_ext_ratio,
+                    "top_ratio": scan_top_ratio,
+                    "bottom_ratio": scan_bottom_ratio,
+                    "peak_relative_ratio": peak_relative_ratio,
+                    "seed_col": x,
+                    **record_base,
+                }
+                debug_records.append(rec)
+                rejected_records.append(
+                    {
+                        "band_idx": band_idx,
+                        "col": float(local_idx),
+                        "box": (x1, band_y1, x2, band_y2),
+                        "record": rec,
                     }
                 )
                 continue
             if scan_ext_ratio is not None and extend_max_ratio < 1.0 and scan_ext_ratio >= extend_max_ratio:
-                debug_records.append(
+                rec = {
+                    "status": "extended_ratio_scan",
+                    "col": local_idx,
+                    "ratio": scan_ratio,
+                    "extended_ratio": scan_ext_ratio,
+                    "top_ratio": scan_top_ratio,
+                    "bottom_ratio": scan_bottom_ratio,
+                    "seed_col": x,
+                    **record_base,
+                }
+                debug_records.append(rec)
+                rejected_records.append(
                     {
-                        "status": "extended_ratio_scan",
-                        "col": local_idx,
-                        "ratio": scan_ratio,
-                        "extended_ratio": scan_ext_ratio,
-                        "top_ratio": scan_top_ratio,
-                        "bottom_ratio": scan_bottom_ratio,
-                        "seed_col": x,
-                        **record_base,
+                        "band_idx": band_idx,
+                        "col": float(local_idx),
+                        "box": (x1, band_y1, x2, band_y2),
+                        "record": rec,
                     }
                 )
                 continue
             if scan_top_ratio is not None and extend_top_max_ratio < 1.0 and scan_top_ratio >= extend_top_max_ratio:
-                debug_records.append(
-                    {
+                is_divisi_link = False
+                if divisi_rescue and band_idx in divisi_map and divisi_map[band_idx]["has_top"]:
+                    is_divisi_link = True
+                
+                rescue_ok = False
+                if is_divisi_link:
+                    rescue_ok = True
+                else:
+                    rescue_ok = (
+                        scan_x_peak_rescue_mode in ("topbottom", "both") and
+                        scan_x_peak_rescue
+                        and scan_x_peak_ratio is not None
+                        and scan_x_peak_ratio >= scan_x_peak_ratio_min
+                        and (scan_top_ratio is None or scan_top_ratio <= scan_x_peak_max_overhang)
+                        and (scan_bottom_ratio is None or scan_bottom_ratio <= scan_x_peak_max_overhang)
+                    )
+                    if scan_x_peak_segment_height > 0 and scan_x_peak_segment_pass is not None:
+                        rescue_ok = rescue_ok and (scan_x_peak_segment_pass >= scan_x_peak_segment_pass_ratio)
+                
+                if rescue_ok:
+                    rescue_reason = "top_divisi" if is_divisi_link else "top_xpeak"
+                    # Rescued: pass to next checks (do not continue/return, allowing fall-through to accepted)
+                    pass
+                else:
+                    rec = {
                         "status": "extended_top_ratio_scan",
                         "col": local_idx,
                         "ratio": scan_ratio,
@@ -1832,11 +2153,41 @@ def detect_probe_scan(
                         "seed_col": x,
                         **record_base,
                     }
-                )
-                continue
+                    debug_records.append(rec)
+                    rejected_records.append(
+                        {
+                            "band_idx": band_idx,
+                            "col": float(local_idx),
+                            "box": (x1, band_y1, x2, band_y2),
+                            "record": rec,
+                        }
+                    )
+                    continue
             if scan_bottom_ratio is not None and extend_bottom_max_ratio < 1.0 and scan_bottom_ratio >= extend_bottom_max_ratio:
-                debug_records.append(
-                    {
+                is_divisi_link = False
+                if divisi_rescue and band_idx in divisi_map and divisi_map[band_idx]["has_bottom"]:
+                    is_divisi_link = True
+
+                rescue_ok = False
+                if is_divisi_link:
+                    rescue_ok = True
+                else:
+                    rescue_ok = (
+                        scan_x_peak_rescue_mode in ("topbottom", "both") and
+                        scan_x_peak_rescue
+                        and scan_x_peak_ratio is not None
+                        and scan_x_peak_ratio >= scan_x_peak_ratio_min
+                        and (scan_top_ratio is None or scan_top_ratio <= scan_x_peak_max_overhang)
+                        and (scan_bottom_ratio is None or scan_bottom_ratio <= scan_x_peak_max_overhang)
+                    )
+                    if scan_x_peak_segment_height > 0 and scan_x_peak_segment_pass is not None:
+                        rescue_ok = rescue_ok and (scan_x_peak_segment_pass >= scan_x_peak_segment_pass_ratio)
+
+                if rescue_ok:
+                    rescue_reason = "bot_divisi" if is_divisi_link else "bot_xpeak"
+                    pass
+                else:
+                    rec = {
                         "status": "extended_bottom_ratio_scan",
                         "col": local_idx,
                         "ratio": scan_ratio,
@@ -1846,56 +2197,65 @@ def detect_probe_scan(
                         "seed_col": x,
                         **record_base,
                     }
-                )
-                continue
-            if ext_ratios is not None and extend_max_ratio < 1.0:
-                ext_ratio = float(ext_ratios[local_idx])
-                if ext_ratio >= extend_max_ratio:
-                    debug_records.append(
+                    debug_records.append(rec)
+                    rejected_records.append(
                         {
-                            "status": "extended_ratio",
-                            "col": local_idx,
-                            "ratio": float(ratios[local_idx]),
-                            "extended_ratio": ext_ratio,
-                            "top_ratio": float(ext_top_ratios[local_idx]) if ext_top_ratios is not None else None,
-                            "bottom_ratio": float(ext_bottom_ratios[local_idx]) if ext_bottom_ratios is not None else None,
-                            "seed_col": x,
-                            **record_base,
+                            "band_idx": band_idx,
+                            "col": float(local_idx),
+                            "box": (x1, band_y1, x2, band_y2),
+                            "record": rec,
                         }
                     )
                     continue
-            if ext_top_ratios is not None and extend_top_max_ratio < 1.0:
-                top_ratio = float(ext_top_ratios[local_idx])
-                if top_ratio >= extend_top_max_ratio:
-                    debug_records.append(
-                        {
-                            "status": "extended_top_ratio",
-                            "col": local_idx,
-                            "ratio": float(ratios[local_idx]),
-                            "extended_ratio": float(ext_ratios[local_idx]) if ext_ratios is not None else None,
-                            "top_ratio": top_ratio,
-                            "bottom_ratio": float(ext_bottom_ratios[local_idx]) if ext_bottom_ratios is not None else None,
-                            "seed_col": x,
-                            **record_base,
-                        }
-                    )
-                    continue
-            if ext_bottom_ratios is not None and extend_bottom_max_ratio < 1.0:
-                bottom_ratio = float(ext_bottom_ratios[local_idx])
-                if bottom_ratio >= extend_bottom_max_ratio:
-                    debug_records.append(
-                        {
-                            "status": "extended_bottom_ratio",
-                            "col": local_idx,
-                            "ratio": float(ratios[local_idx]),
-                            "extended_ratio": float(ext_ratios[local_idx]) if ext_ratios is not None else None,
-                            "top_ratio": float(ext_top_ratios[local_idx]) if ext_top_ratios is not None else None,
-                            "bottom_ratio": bottom_ratio,
-                            "seed_col": x,
-                            **record_base,
-                        }
-                    )
-                    continue
+            if not (scan_disable_non_scan_extend and band_source == "horiz_scan"):
+                if ext_ratios is not None and extend_max_ratio < 1.0:
+                    ext_ratio = float(ext_ratios[local_idx])
+                    if ext_ratio >= extend_max_ratio:
+                        debug_records.append(
+                            {
+                                "status": "extended_ratio",
+                                "col": local_idx,
+                                "ratio": float(ratios[local_idx]),
+                                "extended_ratio": ext_ratio,
+                                "top_ratio": float(ext_top_ratios[local_idx]) if ext_top_ratios is not None else None,
+                                "bottom_ratio": float(ext_bottom_ratios[local_idx]) if ext_bottom_ratios is not None else None,
+                                "seed_col": x,
+                                **record_base,
+                            }
+                        )
+                        continue
+                if ext_top_ratios is not None and extend_top_max_ratio < 1.0:
+                    top_ratio = float(ext_top_ratios[local_idx])
+                    if top_ratio >= extend_top_max_ratio:
+                        debug_records.append(
+                            {
+                                "status": "extended_top_ratio",
+                                "col": local_idx,
+                                "ratio": float(ratios[local_idx]),
+                                "extended_ratio": float(ext_ratios[local_idx]) if ext_ratios is not None else None,
+                                "top_ratio": top_ratio,
+                                "bottom_ratio": float(ext_bottom_ratios[local_idx]) if ext_bottom_ratios is not None else None,
+                                "seed_col": x,
+                                **record_base,
+                            }
+                        )
+                        continue
+                if ext_bottom_ratios is not None and extend_bottom_max_ratio < 1.0:
+                    bottom_ratio = float(ext_bottom_ratios[local_idx])
+                    if bottom_ratio >= extend_bottom_max_ratio:
+                        debug_records.append(
+                            {
+                                "status": "extended_bottom_ratio",
+                                "col": local_idx,
+                                "ratio": float(ratios[local_idx]),
+                                "extended_ratio": float(ext_ratios[local_idx]) if ext_ratios is not None else None,
+                                "top_ratio": float(ext_top_ratios[local_idx]) if ext_top_ratios is not None else None,
+                                "bottom_ratio": bottom_ratio,
+                                "seed_col": x,
+                                **record_base,
+                            }
+                        )
+                        continue
             if has_existing(float(local_idx), y1, y2):
                 debug_records.append(
                     {
@@ -1911,9 +2271,10 @@ def detect_probe_scan(
                 )
                 continue
             candidates.append((x1, band_y1, x2, band_y2))
+            accepted_by_band.setdefault(band_idx, []).append(float(local_idx))
             debug_records.append(
                 {
-                    "status": "accepted",
+                    "status": "accepted" if rescue_reason is None else f"accepted_{rescue_reason}",
                     "col": local_idx,
                     "ratio": float(ratios[local_idx]),
                     "extended_ratio": float(ext_ratios[local_idx]) if ext_ratios is not None else None,
@@ -1923,6 +2284,124 @@ def detect_probe_scan(
                     **record_base,
                 }
             )
+
+    if scan_rightmost_rescue and accepted_by_band:
+        rightmost_by_band_map = {
+            band_idx: max(xs) for band_idx, xs in accepted_by_band.items() if xs
+        }
+        rightmost_values = list(rightmost_by_band_map.values())
+        if rightmost_values:
+            max_col = max(rightmost_values)
+            if scan_rightmost_min_ratio > 0:
+                rightmost_values = [x for x in rightmost_values if x >= max_col * scan_rightmost_min_ratio]
+            if not rightmost_values:
+                rightmost_values = [max_col]
+            target = float(np.median(rightmost_values))
+            if not rejected_records:
+                for rec in debug_records:
+                    if rec.get("status") not in {
+                        "scan_ratio_low",
+                        "scan_ratio_rel_low",
+                        "extended_ratio_scan",
+                        "extended_top_ratio_scan",
+                        "extended_bottom_ratio_scan",
+                    }:
+                        continue
+                    col = rec.get("col")
+                    band = rec.get("band")
+                    if col is None or band is None:
+                        continue
+                    bx1 = max(0, int(round(col - width / 2)))
+                    bx2 = min(w - 1, int(round(col + width / 2)))
+                    rejected_records.append(
+                        {
+                            "band_idx": None,
+                            "col": float(col),
+                            "box": (bx1, int(band[0]), bx2, int(band[1])),
+                            "record": rec,
+                        }
+                    )
+            band_updates: dict[int, float] = {}
+            for rec in rejected_records:
+                band = rec["record"].get("staff_band")
+                if not band:
+                    continue
+                col = float(rec["col"])
+                if abs(col - target) > scan_rightmost_tolerance:
+                    continue
+                band_key = int(band[0] * 10000 + band[1])
+                prev = band_updates.get(band_key)
+                if prev is None or abs(col - target) < abs(prev - target):
+                    band_updates[band_key] = col
+            updated_values = []
+            for band_idx, col in rightmost_by_band_map.items():
+                band = bands[band_idx]
+                band_key = int(band[0] * 10000 + band[1])
+                updated_values.append(band_updates.get(band_key, col))
+            inliers = [x for x in updated_values if abs(x - target) <= scan_rightmost_tolerance]
+            if len(inliers) >= scan_rightmost_min_rows:
+                rescued_cols: set[int] = set()
+                rescue_statuses = {
+                    "scan_ratio_low",
+                    "scan_ratio_rel_low",
+                    "extended_ratio_scan",
+                    "extended_top_ratio_scan",
+                    "extended_bottom_ratio_scan",
+                }
+                for rec in rejected_records:
+                    rec_status = rec["record"].get("status")
+                    if rec_status not in rescue_statuses:
+                        continue
+                    col = float(rec["col"])
+                    if abs(col - target) > scan_rightmost_tolerance:
+                        continue
+                    col_i = int(round(col))
+                    if col_i in rescued_cols:
+                        continue
+                    box = rec["box"]
+                    if has_existing(col, box[1], box[3]):
+                        continue
+                    candidates.append(box)
+                    rescued_cols.add(col_i)
+                    debug_records.append(
+                        {
+                            "status": "rightmost_rescued",
+                            "col": col,
+                            "ratio": rec["record"].get("ratio"),
+                            "extended_ratio": rec["record"].get("extended_ratio"),
+                            "top_ratio": rec["record"].get("top_ratio"),
+                            "bottom_ratio": rec["record"].get("bottom_ratio"),
+                            "seed_col": rec["record"].get("seed_col"),
+                            "rightmost_target": target,
+                            "rightmost_delta": float(col - target),
+                            "rightmost_band_updated": bool(band_updates),
+                            **{k: rec["record"].get(k) for k in [
+                                "band",
+                                "staff_band",
+                                "pred_band",
+                                "ext_band",
+                                "top_h",
+                                "bottom_h",
+                                "scan_band",
+                                "scan_ext_band",
+                                "scan_base_band",
+                                "scan_row_ratio_mean",
+                                "scan_row_ratio_max",
+                                "scan_row_ratio_lines",
+                                "scan_top_h",
+                                "scan_bottom_h",
+                                "scan_row_profile",
+                                "scan_peak_ratio",
+                                "scan_peak_row",
+                                "scan_peak_ratio_local",
+                                "scan_x_peak_ratio",
+                                "scan_x_peak_neighbor_median",
+                                "scan_x_peak_segment_min",
+                                "scan_x_peak_segment_pass",
+                                "scan_x_peak_ignored_rows",
+                            ]},
+                        }
+                    )
 
     if debug_path is not None:
         overlay = base_img.copy()
@@ -1966,8 +2445,31 @@ def detect_probe_scan(
                     "min_peak_distance": min_peak_distance,
                     "max_per_band": max_per_band,
                     "x_merge_tol": x_merge_tol,
+                    "use_peak_relative_ratio": use_peak_relative_ratio,
+                    "peak_ratio_min": peak_ratio_min,
+                    "scan_peak_band_height": scan_peak_band_height,
+                    "scan_center_on_peak": scan_center_on_peak,
+                    "scan_x_peak_rescue": scan_x_peak_rescue,
+                    "scan_x_peak_window": scan_x_peak_window,
+                    "scan_x_peak_ratio_min": scan_x_peak_ratio_min,
+                    "scan_x_peak_max_overhang": scan_x_peak_max_overhang,
+                    "scan_x_peak_rescue_mode": scan_x_peak_rescue_mode,
+                    "scan_x_peak_segment_height": scan_x_peak_segment_height,
+                    "scan_x_peak_segment_pass_ratio": scan_x_peak_segment_pass_ratio,
+                    "scan_x_peak_segment_source": scan_x_peak_segment_source,
+                    "scan_x_peak_ignore_staff_peak": scan_x_peak_ignore_staff_peak,
+                    "scan_x_peak_ignore_radius": scan_x_peak_ignore_radius,
+                    "scan_rightmost_rescue": scan_rightmost_rescue,
+                    "scan_rightmost_tolerance": scan_rightmost_tolerance,
+                    "scan_rightmost_min_rows": scan_rightmost_min_rows,
+                    "scan_rightmost_min_ratio": scan_rightmost_min_ratio,
+                    "scan_ratio_rel_rescue": scan_ratio_rel_rescue,
+                    "scan_ratio_rel_rescue_min": scan_ratio_rel_rescue_min,
+                    "scan_ratio_rel_rescue_xpeak_min": scan_ratio_rel_rescue_xpeak_min,
+                    "scan_ratio_rel_rescue_max_overhang": scan_ratio_rel_rescue_max_overhang,
                 },
                     "bands": bands,
+                    "divisi_map": divisi_map,
                     "records": debug_records,
                 },
                 indent=2,
@@ -2336,6 +2838,297 @@ def draw_boxes(base: np.ndarray, boxes: Sequence[Box], color: Tuple[int, int, in
         )
 
 
+def write_row_ink_profile(
+    gray: np.ndarray,
+    out_dir: Path,
+    *,
+    ink_threshold: int,
+    min_ratio: float,
+    min_distance: int,
+) -> None:
+    ink = (gray < ink_threshold).astype(np.uint8)
+    h, w = ink.shape[:2]
+    if h == 0 or w == 0:
+        return
+    row_ratio = ink.sum(axis=1) / float(w)
+    candidates = []
+    for y in range(1, len(row_ratio) - 1):
+        if row_ratio[y] < min_ratio:
+            continue
+        if row_ratio[y] >= row_ratio[y - 1] and row_ratio[y] >= row_ratio[y + 1]:
+            candidates.append(y)
+    ranked = sorted(candidates, key=lambda y: row_ratio[y], reverse=True)
+    selected: list[int] = []
+    for y in ranked:
+        if any(abs(y - s) < min_distance for s in selected):
+            continue
+        selected.append(y)
+    peaks = sorted(selected)
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "row_ink_profile.json").write_text(
+        json.dumps(
+            {
+                "ink_threshold": ink_threshold,
+                "min_ratio": min_ratio,
+                "min_distance": min_distance,
+                "row_ratio": [float(v) for v in row_ratio.tolist()],
+                "peaks": peaks,
+            },
+            indent=2,
+        )
+    )
+
+    plot_w = 400
+    plot = np.full((h, plot_w, 3), 255, dtype=np.uint8)
+    thresh_x = int(round(min_ratio * (plot_w - 1)))
+    if 0 <= thresh_x < plot_w:
+        plot[:, thresh_x : thresh_x + 1] = (200, 200, 200)
+    for y, ratio in enumerate(row_ratio):
+        x = int(round(ratio * (plot_w - 1)))
+        x = max(0, min(plot_w - 1, x))
+        plot[y, x] = (0, 0, 0)
+    for y in peaks:
+        plot[y, :] = (0, 0, 255)
+    cv2.imwrite(str(out_dir / "row_ink_profile.png"), plot)
+
+
+def match_boxes_by_iou(
+    baseline_boxes: Sequence[Box],
+    target_boxes: Sequence[Box],
+    *,
+    iou_threshold: float,
+) -> Tuple[List[Box], List[Box]]:
+    matched = []
+    unmatched = []
+    remaining = list(target_boxes)
+    for bbox in baseline_boxes:
+        best_idx = None
+        best_iou = 0.0
+        for idx, cand in enumerate(remaining):
+            iou = barline_iou(bbox, cand)
+            if iou > best_iou:
+                best_iou = iou
+                best_idx = idx
+        if best_idx is not None and best_iou >= iou_threshold:
+            matched.append(bbox)
+            remaining.pop(best_idx)
+        else:
+            unmatched.append(bbox)
+    return matched, unmatched
+
+
+def draw_debug_bands(
+    crop: np.ndarray,
+    *,
+    cy1: int,
+    cy2: int,
+    col: Optional[int],
+    pred_band: Optional[Sequence[int]],
+    band: Optional[Sequence[int]],
+    ext_band: Optional[Sequence[int]],
+    scan_base_band: Optional[Sequence[int]],
+    scan_band: Optional[Sequence[int]],
+    scan_ext_band: Optional[Sequence[int]],
+) -> None:
+    if pred_band:
+        py1, py2 = pred_band
+        py1 = max(cy1, int(py1)) - cy1
+        py2 = min(cy2, int(py2)) - cy1
+        cv2.rectangle(crop, (0, py1), (crop.shape[1] - 1, py2), (0, 255, 0), 1)
+    if band:
+        by1, by2 = band
+        by1 = max(cy1, int(by1)) - cy1
+        by2 = min(cy2, int(by2)) - cy1
+        cv2.rectangle(crop, (0, by1), (crop.shape[1] - 1, by2), (255, 0, 0), 1)
+    if ext_band:
+        ey1, ey2 = ext_band
+        ey1 = max(cy1, int(ey1)) - cy1
+        ey2 = min(cy2, int(ey2)) - cy1
+        cv2.rectangle(crop, (0, ey1), (crop.shape[1] - 1, ey2), (0, 0, 255), 1)
+    if scan_base_band:
+        sb1, sb2 = scan_base_band
+        sb1 = max(cy1, int(sb1)) - cy1
+        sb2 = min(cy2, int(sb2)) - cy1
+        cv2.rectangle(crop, (0, sb1), (crop.shape[1] - 1, sb2), (0, 255, 255), 1)
+    if scan_band:
+        sy1, sy2 = scan_band
+        sy1 = max(cy1, int(sy1)) - cy1
+        sy2 = min(cy2, int(sy2)) - cy1
+        cv2.rectangle(crop, (0, sy1), (crop.shape[1] - 1, sy2), (0, 165, 255), 1)
+    if scan_ext_band:
+        sey1, sey2 = scan_ext_band
+        sey1 = max(cy1, int(sey1)) - cy1
+        sey2 = min(cy2, int(sey2)) - cy1
+        cv2.rectangle(crop, (0, sey1), (crop.shape[1] - 1, sey2), (128, 0, 255), 1)
+    if col is not None:
+        cx = int(col)
+        if 0 <= cx < crop.shape[1]:
+            cv2.line(crop, (cx, 0), (cx, crop.shape[0] - 1), (0, 0, 255), 1)
+
+
+def pick_debug_record(records: Sequence[Dict[str, Any]], box: Box) -> Optional[Dict[str, Any]]:
+    if not records:
+        return None
+    cx = (box[0] + box[2]) / 2.0
+    cy = (box[1] + box[3]) / 2.0
+    best = None
+    best_dist = None
+    for rec in records:
+        col = rec.get("col")
+        if col is None:
+            continue
+        staff_band = rec.get("staff_band")
+        if staff_band and len(staff_band) == 2:
+            if cy < staff_band[0] or cy > staff_band[1]:
+                continue
+        dist = abs(col - cx)
+        if best_dist is None or dist < best_dist:
+            best_dist = dist
+            best = rec
+    if best is not None:
+        return best
+    for rec in records:
+        col = rec.get("col")
+        if col is None:
+            continue
+        dist = abs(col - cx)
+        if best_dist is None or dist < best_dist:
+            best_dist = dist
+            best = rec
+    return best
+
+
+def save_analysis_crops(
+    base_img: np.ndarray,
+    boxes: Sequence[Box],
+    out_dir: Path,
+    *,
+    margin: int,
+    label: str,
+    color: Tuple[int, int, int],
+    name_prefix: str,
+    name_suffix: str,
+    debug_records: Optional[Sequence[Dict[str, Any]]] = None,
+) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    h, w = base_img.shape[:2]
+    for idx, (x1, y1, x2, y2) in enumerate(boxes):
+        cx1 = max(0, int(x1) - margin)
+        cy1 = max(0, int(y1) - margin)
+        cx2 = min(w - 1, int(x2) + margin)
+        cy2 = min(h - 1, int(y2) + margin)
+        crop = base_img[cy1 : cy2 + 1, cx1 : cx2 + 1].copy()
+        if crop.size == 0:
+            continue
+        rx1 = int(x1) - cx1
+        ry1 = int(y1) - cy1
+        rx2 = int(x2) - cx1
+        ry2 = int(y2) - cy1
+        rec = pick_debug_record(debug_records or [], (x1, y1, x2, y2))
+        if rec:
+            draw_debug_bands(
+                crop,
+                cy1=cy1,
+                cy2=cy2,
+                col=rec.get("col"),
+                pred_band=rec.get("pred_band"),
+                band=rec.get("band"),
+                ext_band=rec.get("ext_band"),
+                scan_base_band=rec.get("scan_base_band"),
+                scan_band=rec.get("scan_band"),
+                scan_ext_band=rec.get("scan_ext_band"),
+            )
+            ratio = rec.get("ratio")
+            ext_ratio = rec.get("extended_ratio")
+            top_ratio = rec.get("top_ratio")
+            bottom_ratio = rec.get("bottom_ratio")
+            scan_top_h = rec.get("scan_top_h")
+            scan_bottom_h = rec.get("scan_bottom_h")
+            scan_x_peak_ratio = rec.get("scan_x_peak_ratio")
+            scan_x_peak_segment_pass = rec.get("scan_x_peak_segment_pass")
+            scan_x_peak_ignored_rows = rec.get("scan_x_peak_ignored_rows")
+            if ratio is not None and ext_ratio is not None:
+                cv2.putText(
+                    crop,
+                    f"{label} r={ratio:.2f} ext={ext_ratio:.2f}",
+                    (5, 14),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.4,
+                    color,
+                    1,
+                    cv2.LINE_AA,
+                )
+            if top_ratio is not None:
+                cv2.putText(
+                    crop,
+                    f"top={top_ratio:.2f} h={scan_top_h}",
+                    (5, 28),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.4,
+                    (255, 255, 0),
+                    1,
+                    cv2.LINE_AA,
+                )
+            if bottom_ratio is not None:
+                cv2.putText(
+                    crop,
+                    f"bot={bottom_ratio:.2f} h={scan_bottom_h}",
+                    (5, 42),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.4,
+                    (255, 0, 255),
+                    1,
+                    cv2.LINE_AA,
+                )
+            if scan_x_peak_ratio is not None:
+                cv2.putText(
+                    crop,
+                    f"xpeak={scan_x_peak_ratio:.2f}",
+                    (5, 56),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.4,
+                    (0, 128, 255),
+                    1,
+                    cv2.LINE_AA,
+                )
+            if scan_x_peak_segment_pass is not None:
+                cv2.putText(
+                    crop,
+                    f"xseg={scan_x_peak_segment_pass:.2f}",
+                    (5, 70),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.4,
+                    (0, 128, 255),
+                    1,
+                    cv2.LINE_AA,
+                )
+            if scan_x_peak_ignored_rows is not None and scan_x_peak_ignored_rows > 0:
+                cv2.putText(
+                    crop,
+                    f"xignore={scan_x_peak_ignored_rows}",
+                    (5, 84),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.4,
+                    (0, 128, 255),
+                    1,
+                    cv2.LINE_AA,
+                )
+        cv2.rectangle(crop, (rx1, ry1), (rx2, ry2), color, 2)
+        cv2.putText(
+            crop,
+            label,
+            (5, crop.shape[0] - 6),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            color,
+            1,
+            cv2.LINE_AA,
+        )
+        out_path = out_dir / f"{name_prefix}{idx:02d}{name_suffix}.png"
+        cv2.imwrite(str(out_path), crop)
+
+
 def load_mask(path: Path, shape: tuple[int, int]) -> np.ndarray:
     if not path.exists():
         return np.zeros(shape, dtype=np.uint8)
@@ -2489,6 +3282,13 @@ def main() -> None:
     parser.add_argument("--row-band-gap-tol", type=int, default=2)
     parser.add_argument("--row-band-min-height", type=int, default=3)
     parser.add_argument("--row-band-debug", action="store_true")
+    parser.add_argument("--row-ink-profile", action="store_true")
+    parser.add_argument("--row-ink-profile-threshold", type=int, default=-1)
+    parser.add_argument("--row-ink-profile-min-ratio", type=float, default=0.2)
+    parser.add_argument("--row-ink-profile-min-distance", type=int, default=3)
+    parser.add_argument("--analysis-baseline-root", type=Path, default=None)
+    parser.add_argument("--analysis-iou-threshold", type=float, default=0.5)
+    parser.add_argument("--analysis-crop-margin", type=int, default=120)
     parser.add_argument("--enable-end-barline-recovery", action="store_true")
     parser.add_argument("--endbar-search-width", type=int, default=40)
     parser.add_argument("--endbar-min-height-ratio", type=float, default=0.6)
@@ -2547,6 +3347,38 @@ def main() -> None:
     parser.add_argument("--probe-band-height-mode", choices=["staff", "median_box"], default="staff")
     parser.add_argument("--probe-band-height-scale", type=float, default=1.0)
     parser.add_argument("--probe-band-height-min", type=int, default=10)
+    parser.add_argument("--probe-scan-fallback-pred-band", action="store_true")
+    parser.add_argument("--probe-scan-disable-non-scan-extend", action="store_true")
+    parser.add_argument("--probe-use-peak-relative-ratio", action="store_true")
+    parser.add_argument("--probe-peak-ratio-min", type=float, default=0.9)
+    parser.add_argument("--probe-scan-peak-band-height", type=int, default=0)
+    parser.add_argument("--probe-scan-center-on-peak", action="store_true")
+    parser.add_argument("--probe-scan-x-peak-rescue", action="store_true")
+    parser.add_argument("--probe-scan-x-peak-window", type=int, default=12)
+    parser.add_argument("--probe-scan-x-peak-ratio-min", type=float, default=1.6)
+    parser.add_argument("--probe-scan-x-peak-max-overhang", type=float, default=1.0)
+    parser.add_argument(
+        "--probe-scan-x-peak-rescue-mode",
+        choices=["topbottom", "ratio", "both"],
+        default="topbottom",
+    )
+    parser.add_argument("--probe-scan-x-peak-segment-height", type=int, default=0)
+    parser.add_argument("--probe-scan-x-peak-segment-pass-ratio", type=float, default=1.0)
+    parser.add_argument(
+        "--probe-scan-x-peak-segment-source",
+        choices=["scan_band", "scan_ext_band"],
+        default="scan_band",
+    )
+    parser.add_argument("--probe-scan-x-peak-ignore-staff-peak", action="store_true")
+    parser.add_argument("--probe-scan-x-peak-ignore-radius", type=int, default=1)
+    parser.add_argument("--probe-scan-rightmost-rescue", action="store_true")
+    parser.add_argument("--probe-scan-rightmost-tolerance", type=int, default=6)
+    parser.add_argument("--probe-scan-rightmost-min-rows", type=int, default=3)
+    parser.add_argument("--probe-scan-rightmost-min-ratio", type=float, default=0.85)
+    parser.add_argument("--probe-scan-ratio-rel-rescue", action="store_true")
+    parser.add_argument("--probe-scan-ratio-rel-rescue-min", type=float, default=0.0)
+    parser.add_argument("--probe-scan-ratio-rel-rescue-xpeak-min", type=float, default=0.0)
+    parser.add_argument("--probe-scan-ratio-rel-rescue-max-overhang", type=float, default=1.0)
     parser.add_argument("--probe-row-filter-mode", choices=["recluster", "reuse_rows"], default="recluster")
     parser.add_argument("--probe-row-min-count", type=int, default=2)
     parser.add_argument("--probe-row-max-dist", type=float, default=30.0)
@@ -2568,6 +3400,10 @@ def main() -> None:
     parser.add_argument("--probe-endpoint-x-scale", type=float, default=-1.0)
     parser.add_argument("--probe-endpoint-y-scale", type=float, default=-1.0)
     parser.add_argument("--probe-notehead-dilate", type=int, default=0)
+    parser.add_argument("--probe-divisi-rescue", action="store_true")
+    parser.add_argument("--probe-divisi-dist-ratio", type=float, default=1.2)
+    parser.add_argument("--probe-divisi-align-tol", type=int, default=4)
+    parser.add_argument("--probe-divisi-align-min-count", type=int, default=2)
     parser.add_argument(
         "--omr-preds-root",
         type=Path,
@@ -2651,6 +3487,9 @@ def main() -> None:
     per_page_root.mkdir(parents=True, exist_ok=True)
 
     summary_rows = []
+    analysis_root = None
+    if args.analysis_baseline_root:
+        analysis_root = output_root / "analysis_fp_fn_crops"
 
     for page in pages:
         preds = load_preds(page.union_preds)
@@ -2727,6 +3566,18 @@ def main() -> None:
 
         out_dir = per_page_root / page.name
         out_dir.mkdir(parents=True, exist_ok=True)
+
+        if args.row_ink_profile:
+            threshold = args.row_ink_profile_threshold
+            if threshold < 0:
+                threshold = args.probe_ink_threshold
+            write_row_ink_profile(
+                gray,
+                out_dir,
+                ink_threshold=threshold,
+                min_ratio=args.row_ink_profile_min_ratio,
+                min_distance=args.row_ink_profile_min_distance,
+            )
 
         if args.row_band_debug:
             debug_overlay = base_img.copy()
@@ -2902,6 +3753,34 @@ def main() -> None:
                     band_height_mode=args.probe_band_height_mode,
                     band_height_scale=args.probe_band_height_scale,
                     band_height_min=args.probe_band_height_min,
+                    scan_fallback_pred_band=args.probe_scan_fallback_pred_band,
+                    scan_disable_non_scan_extend=args.probe_scan_disable_non_scan_extend,
+                    use_peak_relative_ratio=args.probe_use_peak_relative_ratio,
+                    peak_ratio_min=args.probe_peak_ratio_min,
+                    scan_peak_band_height=args.probe_scan_peak_band_height,
+                    scan_center_on_peak=args.probe_scan_center_on_peak,
+                    scan_x_peak_rescue=args.probe_scan_x_peak_rescue,
+                    scan_x_peak_window=args.probe_scan_x_peak_window,
+                    scan_x_peak_ratio_min=args.probe_scan_x_peak_ratio_min,
+                    scan_x_peak_max_overhang=args.probe_scan_x_peak_max_overhang,
+                    scan_x_peak_rescue_mode=args.probe_scan_x_peak_rescue_mode,
+                    scan_x_peak_segment_height=args.probe_scan_x_peak_segment_height,
+                    scan_x_peak_segment_pass_ratio=args.probe_scan_x_peak_segment_pass_ratio,
+                    scan_x_peak_segment_source=args.probe_scan_x_peak_segment_source,
+                    scan_x_peak_ignore_staff_peak=args.probe_scan_x_peak_ignore_staff_peak,
+                    scan_x_peak_ignore_radius=args.probe_scan_x_peak_ignore_radius,
+                    scan_rightmost_rescue=args.probe_scan_rightmost_rescue,
+                    scan_rightmost_tolerance=args.probe_scan_rightmost_tolerance,
+                    scan_rightmost_min_rows=args.probe_scan_rightmost_min_rows,
+                    scan_rightmost_min_ratio=args.probe_scan_rightmost_min_ratio,
+                    scan_ratio_rel_rescue=args.probe_scan_ratio_rel_rescue,
+                    scan_ratio_rel_rescue_min=args.probe_scan_ratio_rel_rescue_min,
+                    scan_ratio_rel_rescue_xpeak_min=args.probe_scan_ratio_rel_rescue_xpeak_min,
+                    scan_ratio_rel_rescue_max_overhang=args.probe_scan_ratio_rel_rescue_max_overhang,
+                    divisi_rescue=args.probe_divisi_rescue,
+                    divisi_dist_ratio=args.probe_divisi_dist_ratio,
+                    divisi_align_tol=args.probe_divisi_align_tol,
+                    divisi_align_min_count=args.probe_divisi_align_min_count,
                     debug_path=debug_path,
                 )
             else:
@@ -3166,6 +4045,58 @@ def main() -> None:
             draw_boxes(fp_overlay, fp_boxes, FP_COLOR, 2, "FP#")
             fp_overlay_path = overlays_root / f"{page.name}_fp_only.png"
             cv2.imwrite(str(fp_overlay_path), fp_overlay)
+
+        if analysis_root and args.analysis_baseline_root:
+            baseline_dir = args.analysis_baseline_root / "per_page" / page.name
+            baseline_fp_path = baseline_dir / "fp_boxes.json"
+            debug_path = out_dir / "endbar_debug.json"
+            debug_records = None
+            if debug_path.exists():
+                try:
+                    debug_records = json.loads(debug_path.read_text()).get("records", [])
+                except Exception:
+                    debug_records = None
+            if baseline_fp_path.exists():
+                baseline_fp = json.loads(baseline_fp_path.read_text())
+                kept_fp, removed_fp = match_boxes_by_iou(
+                    baseline_fp,
+                    fp_boxes,
+                    iou_threshold=args.analysis_iou_threshold,
+                )
+                save_analysis_crops(
+                    base_img,
+                    kept_fp,
+                    analysis_root / "baseline_fp_kept",
+                    margin=args.analysis_crop_margin,
+                    label="KEPT",
+                    color=(0, 200, 0),
+                    name_prefix=f"{page.name}_fp",
+                    name_suffix="_kept",
+                    debug_records=debug_records,
+                )
+                save_analysis_crops(
+                    base_img,
+                    removed_fp,
+                    analysis_root / "baseline_fp_removed",
+                    margin=args.analysis_crop_margin,
+                    label="REMOVED",
+                    color=(255, 0, 255),
+                    name_prefix=f"{page.name}_fp",
+                    name_suffix="_removed",
+                    debug_records=debug_records,
+                )
+            if fn_boxes:
+                save_analysis_crops(
+                    base_img,
+                    fn_boxes,
+                    analysis_root / "new_fn",
+                    margin=args.analysis_crop_margin,
+                    label="NEW_FN",
+                    color=(0, 0, 255),
+                    name_prefix=f"{page.name}_fn",
+                    name_suffix="",
+                    debug_records=debug_records,
+                )
 
         summary_rows.append(
             {

@@ -2827,3 +2827,186 @@
 
 **次のアクション**
 - `tools/run_gt_rebuild_hybrid_eval.py` に「小節線アライメント検知」によるDivisi判定と、それに基づく「連結線救済」ロジックを実装する。
+
+## 2026-01-01 Divisi対応実装と評価 (page_004 FN=0達成)
+
+**作業目的 / 方針 / 位置づけ**
+- `page_004` のFN解消のため、Divisi救済ロジックを実装し評価。
+- 同時に、救済された候補が `candidates` に追加されないバグ（`continue` 文の誤用）を修正。
+
+**実装内容**
+- `detect_probe_scan` に以下を追加:
+  - プレ・スキャンによる全バンドのピーク検出と `divisi_map` 構築（アライメント判定）。
+  - `divisi_rescue` オプション有効時、Divisi認定された行のはみ出し判定を緩和。
+  - 救済時の `continue` を `pass` に修正し、後続の追加処理へ流すように変更。
+  - 救済理由を `status` に記録（例: `accepted_top_divisi`）。
+
+**評価結果 (v9_fix_xpeak_mode)**
+- コマンド概要: `divisi_rescue=True`, `x_peak_rescue_mode=ratio`, `align_tol=10`.
+- 結果:
+  - **page_004**: **FN=0** / FP=2 (Divisi救済成功、FPも抑制)
+  - **page_15**: **FP=3** (xpeak救済をratio限定にしたことでFP増加を抑制)
+  - **page_001**: **FN=1** (副作用またはパラメータ要因でFN再発)
+  - page_3 / page_10: FN=0 維持。
+
+**現状の課題**
+- `page_001` のFN=1（col=2473付近）は、`probe_scan` では救済されている（`scan_ratio_rel_low_rescued`）ものの、後続の `row_filter` で除去されている。
+- `row_filter` の許容範囲を広げても救われていないため、詳細な調査が必要。
+
+**次のアクション**
+- `page_001` FN の `row_filter` 除去原因を数値レベルで特定する。
+- 全ページ FN=0 を達成するパラメータセットを確定する。
+
+## 2026-01-01 最終評価と結果まとめ
+
+**作業目的**
+- 全ページ FN=0 の達成と FP の抑制。
+- `page_001` の FN=1 の原因調査と解消。
+
+**実施内容**
+1.  **page_001 FN の調査**:
+    - `row_filter` で除去されていたが、許容範囲 (`tol`) を広げても救済されず。
+    - 詳細調査の結果、候補のY座標が `row_stats` と適合していても、`probe_scan` の出力段階で何らかの理由（`min_ratio` 足切り等）で欠落している可能性が高い。
+    - `min_ratio` を 0.75 に下げて再評価したが、FNは解消されず、逆に他ページのFPが増加したため不採用。
+
+2.  **パラメータ調整とバグ修正**:
+    - `scan_x_peak_rescue_mode` が機能していないバグを修正し、`page_15` のFPを抑制。
+    - `page_004` は `divisi_rescue` により FN=0 を達成。
+
+**最終結果 (採用: v9_fix_xpeak_mode)**
+- **ログ**: `logs/gt_rebuild_hybrid_eval/20260101T_divisi_rescue_v9_fix_xpeak_mode`
+- **コマンド**:
+  ```bash
+  PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+    --output-root logs/gt_rebuild_hybrid_eval/20260101T_divisi_rescue_v9_fix_xpeak_mode \
+    --union-root logs/phase5b_confirmed_union_eval \
+    --endpoint-ratio-threshold 0.20 \
+    --endpoint-x-scale 0.14 \
+    --endpoint-y-scale 0.80 \
+    --notehead-open-kernel 5 \
+    --notehead-min-area 20 \
+    --notehead-dilate 7 \
+    --notehead-max-aspect 2.0 \
+    --notehead-min-height 10 \
+    --notehead-max-width 6 \
+    --filter-clefs-keys \
+    --clefs-keys-dilate 3 \
+    --clefs-keys-left-margin-ratio 0.18 \
+    --clefs-keys-overlap-min 0.30 \
+    --filter-barline-clefs-low \
+    --barline-low-ratio 0.02 \
+    --clefs-low-ratio 0.02 \
+    --enable-end-barline-recovery \
+    --endbar-method probe_scan \
+    --endbar-staff-mask-mode staff \
+    --endbar-debug \
+    --probe-width 2 \
+    --probe-ink-threshold 180 \
+    --probe-min-ratio 0.80 \
+    --probe-min-peak-distance 2 \
+    --probe-max-per-band 0 \
+    --probe-refine-window 4 \
+    --probe-band-height-mode median_box \
+    --probe-band-height-scale 1.0 \
+    --probe-band-height-min 10 \
+    --probe-notehead-dilate 13 \
+    --probe-row-filter-mode reuse_rows \
+    --probe-band-source horiz_scan \
+    --probe-band-scan-line-ratio 0.6 \
+    --probe-band-scan-min-lines 5 \
+    --probe-band-scan-pad-ratio 0.5 \
+    --probe-extend-scale 1.6 \
+    --probe-extend-max-ratio 0.9 \
+    --probe-extend-top-max-ratio 0.40 \
+    --probe-extend-bottom-max-ratio 0.40 \
+    --probe-endpoint-x-scale 0.04 \
+    --probe-endpoint-y-scale 0.80 \
+    --row-ink-profile \
+    --row-ink-profile-min-ratio 0.2 \
+    --analysis-baseline-root logs/gt_rebuild_hybrid_eval/20251231T034745_baseline_notehead_barline_clefs_low \
+    --probe-scan-disable-non-scan-extend \
+    --probe-use-peak-relative-ratio \
+    --probe-peak-ratio-min 0.85 \
+    --probe-scan-peak-band-height 4 \
+    --probe-scan-x-peak-rescue \
+    --probe-scan-x-peak-window 12 \
+    --probe-scan-x-peak-ratio-min 1.6 \
+    --probe-scan-x-peak-rescue-mode ratio \
+    --probe-scan-rightmost-rescue \
+    --probe-scan-rightmost-tolerance 15 \
+    --probe-scan-rightmost-min-rows 3 \
+    --probe-scan-rightmost-min-ratio 0.90 \
+    --probe-scan-ratio-rel-rescue \
+    --probe-scan-ratio-rel-rescue-min 0.83     --probe-scan-ratio-rel-rescue-xpeak-min 2.0     --probe-scan-ratio-rel-rescue-max-overhang 0.10     --probe-divisi-rescue     --probe-divisi-dist-ratio 1.2     --probe-divisi-align-tol 10     --probe-divisi-align-min-count 2
+  ```
+
+**集計結果**
+| Page | TP | FP | FN | 備考 |
+| --- | --- | --- | --- | --- |
+| page_001 | 77 | 0 | **1** | 残存課題。`scan_ratio_rel_low_rescued` だが `row_filter` で脱落か。 |
+| page_004 | 112 | 2 | **0** | Divisi救済成功。 |
+| page_3 | 152 | 2 | 0 | ベースライン維持。 |
+| page_10 | 154 | 0 | 0 | 安定。 |
+| page_15 | 112 | 3 | 0 | FP増加を抑制しつつ維持。 |
+
+**結論**
+- Divisi対応 (`page_004` FN=0) は成功。
+- `page_001` の1件を除き、FN=0 を達成。
+- 今後は `page_001` のFN原因を `row_filter` の挙動レベルで深く解析し、必要であれば `probe_scan` 出力に対するフィルタのバイパスや緩和を検討する。
+
+## 2026-01-01 probe scan後のrow filterの検討と改善案
+
+**作業目的 / 方針 / 位置づけ**
+- `page_001` の FN=1 の原因が、`probe_scan` 後の `row_filter` にあることを受け、当該フィルタのロジックと適用の正当性を再検討する。
+
+**考察：検出器依存の行統計による救済阻害**
+- 現状、`probe_scan` で復元された候補 (`added_end`) は、既存検出器 (`homr` / `omr`) の結果から作成された `base_row_stats` と照合 (`row_filter_with_stats`) される。
+- `page_001` のように検出器が行単位で見逃している場合、`base_row_stats` 自体が欠落するか、許容範囲が不正確になり、`probe_scan` が救い出した正解候補を再度捨ててしまうという「自己矛盾」が生じている。
+- `probe_scan` は既に五線バンドの制約下で動作しているため、垂直位置の正当性は探索段階で一定程度担保されている。
+
+**改善案の提案**
+- **案A: row filter のバイパス**: `probe_scan` の結果に対しては `row_filter` を適用せず、そのまま後続の形状フィルタ (`geom_notehead_filter`) へ渡す。垂直位置に関しては `probe_scan` のバンド情報を全面的に信頼する。
+- **案B: 統計情報の動的補完**: `probe_scan` で得られた候補を `base_row_stats` に追加して統計を再計算し、その後にフィルタをかける。実装は複雑になるが、全体の整合性は高まる。
+- **案C: 独立した行フィルタリング**: 既存検出器の統計に依存せず、`added_end` 自身の集合の中でクラスタリングを行い、行としての整合性（一定数以上の候補が並んでいるか）を確認する独自のチェックを行う。
+
+**次のアクション**
+- まずは最もシンプルな「案A (バイパス)」を試行し、`page_001` の FN=0 達成と、他ページでの FP 増加リスクを評価する。
+
+## 2026-01-02 Session Resume: Page 001 FN Fix (Row Filter Bypass)
+
+**Context & Status**
+- Resuming from previous session (2026-01-01).
+- **Goal:** Fix the persistent FN=1 on `page_001` (col=2473) while maintaining FN=0 on other pages and low FP.
+- **Current State:**
+  - `tools/run_gt_rebuild_hybrid_eval.py` contains uncommitted changes implementing `probe_row_filter_mode="bypass"` and some fixes to `rightmost` rescue logic (trusted candidates).
+  - Previous analysis suggested the `page_001` FN was rescued by `probe_scan` but dropped by `row_filter`.
+- **Plan:**
+  1.  Execute evaluation with `--probe-row-filter-mode bypass` based on the `v9_fix_xpeak_mode` configuration.
+  2.  Verify if `page_001` FN is resolved and check for side effects (FP increase) on other pages.
+
+## 2026-01-02 評価結果: Row Filter Bypass + Rescue Bug Fix
+
+**実施内容**
+1.  `tools/run_gt_rebuild_hybrid_eval.py` の `probe_row_filter_mode` に `bypass` オプションを追加。
+2.  同ファイルの `detect_probe_scan` 内にあった `scan_x_peak_rescue_mode` による無条件救済バグを修正（削除）。
+3.  `probe-scan-ratio-rel-rescue-max-overhang` を `0.10` から `0.60` に緩和（`page_001` のTP救済のため）。
+
+**評価結果 (20260102T_bypass_row_filter_fix_rescue)**
+- **コマンド概要**: `bypass` mode, `fix_rescue` bug, `max_overhang=0.60`.
+
+| Page | TP | FP | FN | 判定 |
+| --- | --- | --- | --- | --- |
+| page_001 | 78 | 0 | **0** | **FN=0 達成！** (Bypass効果) |
+| page_004 | 112 | 2 | 0 | バグ修正によりFP増加なし（2件維持） |
+| page_3 | 152 | 2 | 0 | 維持 |
+| page_10 | 154 | 0 | 0 | 維持 |
+| page_15 | 112 | 3 | 0 | 維持 |
+
+**考察**
+- `row_filter` をバイパスすることで、検出器が行を見落としていても `probe_scan` が独自に見つけた候補を採用できるようになった。
+- `scan_ratio_rel_rescue` のバグ修正とパラメータ調整により、過剰な救済（FP）を防ぎつつ、必要な救済（TP）を行うバランスが取れた。
+- 全5ページで **FN=0** を達成。
+
+**次のアクション**
+- 変更をコミット。
+- 残存FP（合計7件）の削減に着手。

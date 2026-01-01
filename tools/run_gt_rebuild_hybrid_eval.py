@@ -1729,6 +1729,7 @@ def detect_probe_scan(
 
     candidates: List[Box] = []
     accepted_by_band: dict[int, list[float]] = {}
+    trusted_accepted_by_band: dict[int, list[float]] = {}
     rejected_records: list[dict] = []
     debug_records = []
     for band_idx, (y1, y2) in enumerate(bands):
@@ -2036,21 +2037,7 @@ def detect_probe_scan(
                 )
                 continue
             if use_peak_relative_ratio and peak_relative_ratio is not None and peak_relative_ratio < peak_ratio_min:
-                if scan_x_peak_rescue and scan_x_peak_ratio is not None and scan_x_peak_ratio >= scan_x_peak_ratio_min:
-                    if scan_x_peak_rescue_mode in ("ratio", "both"):
-                        rec = {
-                            "status": "scan_ratio_rel_low_rescued",
-                            "col": local_idx,
-                            "ratio": scan_ratio,
-                            "extended_ratio": scan_ext_ratio,
-                            "top_ratio": scan_top_ratio,
-                            "bottom_ratio": scan_bottom_ratio,
-                            "peak_relative_ratio": peak_relative_ratio,
-                            "seed_col": x,
-                            **record_base,
-                        }
-                        debug_records.append(rec)
-                        continue
+
                 rescue_ok = (
                     scan_ratio_rel_rescue
                     and peak_relative_ratio is not None
@@ -2075,6 +2062,7 @@ def detect_probe_scan(
                     debug_records.append(rec)
                     candidates.append((x1, band_y1, x2, band_y2))
                     accepted_by_band.setdefault(band_idx, []).append(float(local_idx))
+                    # Rescued items are not added to trusted_accepted_by_band
                     continue
                 rec = {
                     "status": "scan_ratio_rel_low",
@@ -2272,6 +2260,9 @@ def detect_probe_scan(
                 continue
             candidates.append((x1, band_y1, x2, band_y2))
             accepted_by_band.setdefault(band_idx, []).append(float(local_idx))
+            if rescue_reason is None:
+                trusted_accepted_by_band.setdefault(band_idx, []).append(float(local_idx))
+            
             debug_records.append(
                 {
                     "status": "accepted" if rescue_reason is None else f"accepted_{rescue_reason}",
@@ -2286,8 +2277,10 @@ def detect_probe_scan(
             )
 
     if scan_rightmost_rescue and accepted_by_band:
+        # Use trusted pool for median target to avoid shift from rescued items
+        pool = trusted_accepted_by_band if trusted_accepted_by_band else accepted_by_band
         rightmost_by_band_map = {
-            band_idx: max(xs) for band_idx, xs in accepted_by_band.items() if xs
+            band_idx: max(xs) for band_idx, xs in pool.items() if xs
         }
         rightmost_values = list(rightmost_by_band_map.values())
         if rightmost_values:
@@ -3379,7 +3372,7 @@ def main() -> None:
     parser.add_argument("--probe-scan-ratio-rel-rescue-min", type=float, default=0.0)
     parser.add_argument("--probe-scan-ratio-rel-rescue-xpeak-min", type=float, default=0.0)
     parser.add_argument("--probe-scan-ratio-rel-rescue-max-overhang", type=float, default=1.0)
-    parser.add_argument("--probe-row-filter-mode", choices=["recluster", "reuse_rows"], default="recluster")
+    parser.add_argument("--probe-row-filter-mode", choices=["recluster", "reuse_rows", "bypass"], default="recluster")
     parser.add_argument("--probe-row-min-count", type=int, default=2)
     parser.add_argument("--probe-row-max-dist", type=float, default=30.0)
     parser.add_argument("--probe-row-tol-top", type=float, default=12.0)
@@ -3804,6 +3797,8 @@ def main() -> None:
                         args.probe_row_tol_top,
                         args.probe_row_tol_bottom,
                     )
+                elif args.probe_row_filter_mode == "bypass":
+                    added_row = list(added_end)
                 else:
                     added_row = row_filter(
                         added_end,

@@ -1516,6 +1516,61 @@ def detect_end_barlines_omr(
     return candidates
 
 
+
+def merge_vertical_aligned_boxes(boxes: Sequence[Box], x_tol: float = 5.0) -> List[Box]:
+    if not boxes:
+        return []
+    
+    # Sort by x coordinate
+    sorted_boxes = sorted(boxes, key=lambda b: (b[0] + b[2]) / 2)
+    
+    merged_groups = []
+    current_group = []
+    
+    for box in sorted_boxes:
+        cx = (box[0] + box[2]) / 2
+        if not current_group:
+            current_group.append(box)
+            continue
+        
+        last_cx = (current_group[-1][0] + current_group[-1][2]) / 2
+        if abs(cx - last_cx) <= x_tol:
+            current_group.append(box)
+        else:
+            merged_groups.append(current_group)
+            current_group = [box]
+    if current_group:
+        merged_groups.append(current_group)
+        
+    final_boxes = []
+    for group in merged_groups:
+        # Merge vertically overlapping or adjacent boxes in the group
+        # Sort by top y
+        group.sort(key=lambda b: b[1])
+        
+        merged_in_group = []
+        if not group: continue
+        
+        curr = list(group[0])
+        for i in range(1, len(group)):
+            next_box = group[i]
+            # Check overlap or adjacency
+            # We use a small vertical tolerance
+            y_gap_tol = 5 
+            if next_box[1] <= curr[3] + y_gap_tol:
+                # Merge
+                curr[0] = min(curr[0], next_box[0])
+                curr[1] = min(curr[1], next_box[1])
+                curr[2] = max(curr[2], next_box[2])
+                curr[3] = max(curr[3], next_box[3])
+            else:
+                merged_in_group.append(tuple(curr))
+                curr = list(next_box)
+        merged_in_group.append(tuple(curr))
+        final_boxes.extend(merged_in_group)
+        
+    return final_boxes
+
 def detect_probe_scan(
     base_img: np.ndarray,
     staff_mask: np.ndarray,
@@ -3798,7 +3853,7 @@ def main() -> None:
                         args.probe_row_tol_bottom,
                     )
                 elif args.probe_row_filter_mode == "bypass":
-                    added_row = list(added_end)
+                    added_row = merge_vertical_aligned_boxes(added_end, x_tol=5.0)
                 else:
                     added_row = row_filter(
                         added_end,

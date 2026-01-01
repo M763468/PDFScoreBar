@@ -2992,6 +2992,7 @@
 3.  `probe-scan-ratio-rel-rescue-max-overhang` を `0.10` から `0.60` に緩和（`page_001` のTP救済のため）。
 
 **評価結果 (20260102T_bypass_row_filter_fix_rescue)**
+- **出力ディレクトリ**: `logs/gt_rebuild_hybrid_eval/20260102T_bypass_row_filter_fix_rescue`
 - **コマンド概要**: `bypass` mode, `fix_rescue` bug, `max_overhang=0.60`.
 
 | Page | TP | FP | FN | 判定 |
@@ -3010,3 +3011,45 @@
 **次のアクション**
 - 変更をコミット。
 - 残存FP（合計7件）の削減に着手。
+
+## 2026-01-02 11:30 重複結合の実装と全ページFN=0の達成
+
+**作業目的 / 方針**
+- `page_001` の FN=1 を `bypass` モードで解消。
+- `probe_scan` 結果に含まれる「同一X座標の断片化したボックス」を結合し、FP数を整理する。
+
+**実装内容**
+- `tools/run_gt_rebuild_hybrid_eval.py` に `merge_vertical_aligned_boxes` 関数を追加。
+- 近接するX座標（tol=5px）を持つボックス群をグループ化し、垂直方向に重なりや隣接がある場合に単一のボックスに結合するロジック。
+- `bypass` モード実行時にこの結合処理を通すように変更。
+
+**評価実行 (20260102T_bypass_row_filter_fix_rescue_dedup)**
+- **目的**: 結合ロジックの有効性とFN=0の維持確認。
+- **出力ディレクトリ**: `logs/gt_rebuild_hybrid_eval/20260102T_bypass_row_filter_fix_rescue_dedup`
+- **実行コマンド**:
+  ```bash
+  PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py 
+    --output-root logs/gt_rebuild_hybrid_eval/20260102T_bypass_row_filter_fix_rescue_dedup 
+    --union-root logs/phase5b_confirmed_union_eval 
+    --endpoint-ratio-threshold 0.20 --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 
+    --notehead-dilate 7 --filter-clefs-keys --enable-end-barline-recovery 
+    --endbar-method probe_scan --probe-row-filter-mode bypass 
+    --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-max-overhang 0.60 
+    --probe-divisi-rescue --probe-scan-rightmost-rescue
+  ```
+- **結果**:
+  - **page_001: FN=0** (TP=78)
+  - **page_15: FP=2** (3→2に減少、重複が1つにまとまったため)
+  - **全ページ FN=0 維持**。
+
+**追加フィルタの試行と失敗 (20260102T_bypass_dedup_filters)**
+- **出力ディレクトリ**: `logs/gt_rebuild_hybrid_eval/20260102T_bypass_dedup_filters`
+- **内容**: `probe-filter-vertical-run` (0.75) などを適用。
+- **結果**: `page_001` で FN=1 が再発。
+- **考察**: `probe_scan` で救済している TP (col=2473) は、インクの連続性がわずかに閾値を下回る（断続的な点線状になっている）ため、形状フィルタを厳しくすると脱落する。
+- **結論**: 現在の `bypass` + `merge` 構成を暫定ベストとする。
+
+**現在のベストパラメータ構成 (FN=0)**
+- `probe_row_filter_mode`: `bypass`
+- `probe-scan-ratio-rel-rescue-max-overhang`: `0.60`
+- `merge_vertical_aligned_boxes` による後処理有効

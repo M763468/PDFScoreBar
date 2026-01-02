@@ -1790,5 +1790,37 @@
       463
     ],
     "barline_type": "barline"
+  },
+  {
+    "measure_number": 113,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      710,
+      2598,
+      712,
+      2668
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 114,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1569,
+      1071,
+      1571,
+      1145
+    ],
+    "barline_type": "barline"
   }
 ]

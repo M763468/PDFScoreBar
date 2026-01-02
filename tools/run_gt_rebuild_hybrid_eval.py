@@ -1743,8 +1743,8 @@ def detect_probe_scan(
                 if band_height_mode == "median_box":
                     # Simplified: use global or band_h for pre-scan speed
                     target_h = band_h 
-                band_y1 = max(0, int(round(band_center - target_h / 2)))
-                band_y2 = min(h - 1, int(round(band_center + target_h / 2)))
+                band_y1 = max(0, int(band_center - target_h // 2))
+                band_y2 = min(h - 1, int(band_center + target_h // 2))
             
             band_img = ink[band_y1 : band_y2 + 1, :]
             if band_img.size == 0: continue
@@ -1822,8 +1822,8 @@ def detect_probe_scan(
                 target_h = max(band_height_min, int(round(median_h * band_height_scale))) if median_h else band_h
             else:
                 target_h = band_h
-            band_y1 = max(0, int(round(band_center - target_h / 2)))
-            band_y2 = min(h - 1, int(round(band_center + target_h / 2)))
+            band_y1 = max(0, int(band_center - target_h // 2))
+            band_y2 = min(h - 1, int(band_center + target_h // 2))
         band = ink[band_y1 : band_y2 + 1, :]
         band_h = max(1, band_y2 - band_y1 + 1)
         target_h = band_h
@@ -1903,6 +1903,7 @@ def detect_probe_scan(
             scan_x_peak_neighbor_median = None
             scan_x_peak_segment_min = None
             scan_x_peak_segment_pass = None
+            scan_peak_ratio_local = None
             scan_x_peak_ignored_rows = 0
             rescue_reason = None
             if band_source == "horiz_scan":
@@ -3368,40 +3369,40 @@ def main() -> None:
     parser.add_argument("--endbar-adapt-block-size", type=int, default=25)
     parser.add_argument("--endbar-adapt-c", type=int, default=5)
     parser.add_argument("--endbar-lsd-vertical-tol", type=int, default=2)
-    parser.add_argument("--probe-width", type=int, default=4)
+    parser.add_argument("--probe-width", type=int, default=2)
     parser.add_argument("--probe-ink-threshold", type=int, default=180)
-    parser.add_argument("--probe-min-ratio", type=float, default=0.85)
+    parser.add_argument("--probe-min-ratio", type=float, default=0.8)
     parser.add_argument(
         "--probe-band-source",
         choices=["staff_mask", "existing_boxes", "horiz_scan", "row_stats"],
-        default="staff_mask",
+        default="horiz_scan",
         help="Source for probe scan bands.",
     )
     parser.add_argument("--probe-band-scan-width", type=int, default=40)
-    parser.add_argument("--probe-band-scan-line-ratio", type=float, default=0.5)
-    parser.add_argument("--probe-band-scan-min-lines", type=int, default=3)
+    parser.add_argument("--probe-band-scan-line-ratio", type=float, default=0.6)
+    parser.add_argument("--probe-band-scan-min-lines", type=int, default=5)
     parser.add_argument("--probe-band-scan-pad", type=int, default=0)
-    parser.add_argument("--probe-band-scan-pad-ratio", type=float, default=0.0)
+    parser.add_argument("--probe-band-scan-pad-ratio", type=float, default=0.5)
     parser.add_argument("--probe-band-row-pad-ratio", type=float, default=0.0)
     parser.add_argument("--probe-band-row-pad-staff-mult", type=float, default=0.0)
     parser.add_argument("--probe-debug-save-row-profile", action="store_true")
-    parser.add_argument("--probe-extend-scale", type=float, default=1.0)
-    parser.add_argument("--probe-extend-max-ratio", type=float, default=1.0)
-    parser.add_argument("--probe-extend-top-max-ratio", type=float, default=1.0)
-    parser.add_argument("--probe-extend-bottom-max-ratio", type=float, default=1.0)
-    parser.add_argument("--probe-min-peak-distance", type=int, default=6)
-    parser.add_argument("--probe-max-per-band", type=int, default=8)
+    parser.add_argument("--probe-extend-scale", type=float, default=1.6)
+    parser.add_argument("--probe-extend-max-ratio", type=float, default=0.9)
+    parser.add_argument("--probe-extend-top-max-ratio", type=float, default=0.4)
+    parser.add_argument("--probe-extend-bottom-max-ratio", type=float, default=0.4)
+    parser.add_argument("--probe-min-peak-distance", type=int, default=2)
+    parser.add_argument("--probe-max-per-band", type=int, default=0)
     parser.add_argument("--probe-refine-window", type=int, default=4)
     parser.add_argument("--probe-band-height-mode", choices=["staff", "median_box"], default="staff")
     parser.add_argument("--probe-band-height-scale", type=float, default=1.0)
     parser.add_argument("--probe-band-height-min", type=int, default=10)
     parser.add_argument("--probe-scan-fallback-pred-band", action="store_true")
     parser.add_argument("--probe-scan-disable-non-scan-extend", action="store_true")
-    parser.add_argument("--probe-use-peak-relative-ratio", action="store_true")
-    parser.add_argument("--probe-peak-ratio-min", type=float, default=0.9)
-    parser.add_argument("--probe-scan-peak-band-height", type=int, default=0)
+    parser.add_argument("--probe-use-peak-relative-ratio", default=True, action="store_true")
+    parser.add_argument("--probe-peak-ratio-min", type=float, default=0.85)
+    parser.add_argument("--probe-scan-peak-band-height", type=int, default=4)
     parser.add_argument("--probe-scan-center-on-peak", action="store_true")
-    parser.add_argument("--probe-scan-x-peak-rescue", action="store_true")
+    parser.add_argument("--probe-scan-x-peak-rescue", default=True, action="store_true")
     parser.add_argument("--probe-scan-x-peak-window", type=int, default=12)
     parser.add_argument("--probe-scan-x-peak-ratio-min", type=float, default=1.6)
     parser.add_argument("--probe-scan-x-peak-max-overhang", type=float, default=1.0)
@@ -3419,13 +3420,13 @@ def main() -> None:
     )
     parser.add_argument("--probe-scan-x-peak-ignore-staff-peak", action="store_true")
     parser.add_argument("--probe-scan-x-peak-ignore-radius", type=int, default=1)
-    parser.add_argument("--probe-scan-rightmost-rescue", action="store_true")
-    parser.add_argument("--probe-scan-rightmost-tolerance", type=int, default=6)
+    parser.add_argument("--probe-scan-rightmost-rescue", default=True, action="store_true")
+    parser.add_argument("--probe-scan-rightmost-tolerance", type=int, default=15)
     parser.add_argument("--probe-scan-rightmost-min-rows", type=int, default=3)
-    parser.add_argument("--probe-scan-rightmost-min-ratio", type=float, default=0.85)
-    parser.add_argument("--probe-scan-ratio-rel-rescue", action="store_true")
-    parser.add_argument("--probe-scan-ratio-rel-rescue-min", type=float, default=0.0)
-    parser.add_argument("--probe-scan-ratio-rel-rescue-xpeak-min", type=float, default=0.0)
+    parser.add_argument("--probe-scan-rightmost-min-ratio", type=float, default=0.9)
+    parser.add_argument("--probe-scan-ratio-rel-rescue", default=True, action="store_true")
+    parser.add_argument("--probe-scan-ratio-rel-rescue-min", type=float, default=0.83)
+    parser.add_argument("--probe-scan-ratio-rel-rescue-xpeak-min", type=float, default=2.0)
     parser.add_argument("--probe-scan-ratio-rel-rescue-max-overhang", type=float, default=1.0)
     parser.add_argument("--probe-row-filter-mode", choices=["recluster", "reuse_rows", "bypass"], default="recluster")
     parser.add_argument("--probe-row-min-count", type=int, default=2)

@@ -77,9 +77,9 @@ def main() -> None:
     ap.add_argument(
         "--thinking-level",
         type=str,
-        default="medium",
+        default=None,
         choices=["minimal", "low", "medium", "high"],
-        help="Thinking level for Gemini reasoning.",
+        help="Thinking level for Gemini reasoning (Gemini 2.0+ only).",
     )
     ap.add_argument(
         "--output-mode",
@@ -134,12 +134,19 @@ def main() -> None:
         "high": types.MediaResolution.MEDIA_RESOLUTION_HIGH,
     }[media_resolution]
 
-    thinking_level_enum = {
-        "minimal": types.ThinkingLevel.MINIMAL,
-        "low": types.ThinkingLevel.LOW,
-        "medium": types.ThinkingLevel.MEDIUM,
-        "high": types.ThinkingLevel.HIGH,
-    }[args.thinking_level]
+    config_args = {
+        "response_mime_type": "application/json",
+        "media_resolution": media_resolution_enum,
+    }
+
+    if args.thinking_level:
+        thinking_level_enum = {
+            "minimal": types.ThinkingLevel.MINIMAL,
+            "low": types.ThinkingLevel.LOW,
+            "medium": types.ThinkingLevel.MEDIUM,
+            "high": types.ThinkingLevel.HIGH,
+        }[args.thinking_level]
+        config_args["thinking_config"] = types.ThinkingConfig(thinking_level=thinking_level_enum)
 
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
@@ -151,11 +158,7 @@ def main() -> None:
                 mime_type=f"image/{image_format.lower()}",
             ),
         ],
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            media_resolution=media_resolution_enum,
-            thinking_config=types.ThinkingConfig(thinking_level=thinking_level_enum),
-        ),
+        config=types.GenerateContentConfig(**config_args),
     )
 
     # Expect JSON array in text

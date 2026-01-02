@@ -4099,3 +4099,20 @@ C) LLM利用時の工夫
 D) pipeline側の改善
 - FP=0の中間結果で確定TPを固定し、残りだけをprobe scan/後段へ。
 - row_filtered + notehead filterを通過した部分は安全集合として扱う運用を検討。
+
+## 2026-01-02 Gemini 1.5 Flash System-Level Review with CoT+Rescue Prompt
+- **Purpose**: Test if adding a "Rescue" logic to the Chain-of-Thought prompt prevents False Negatives (TP marked as False) observed in strict mode.
+- **Method**: 
+  - Used `temp_review_images/prompt_cot_rescue.txt` with `gemini-1.5-flash-latest`.
+  - Tested on `system_06_L` (contains FP id 171) and `system_03_L` (contains TP id 168).
+- **Results**:
+  - `system_06_L` (FP id 171): Marked as **TRUE** (False Positive).
+    - Reason: "Straight, vertical line... positioned at expected measure boundary... not attached to any note symbol".
+    - Regression from strict mode which correctly rejected it.
+  - `system_03_L` (TP id 168): Marked as **TRUE** (True Positive).
+    - Reason: "Straight, vertical line... matches style of surrounding confirmed barlines...".
+    - Improvement from strict mode which incorrectly rejected it.
+- **Conclusion**:
+  - The "Rescue" logic successfully fixed the False Negative (TP 168 is now True).
+  - However, it swung too far and accepted the False Positive (FP 171 is now True).
+  - Gemini 1.5 Flash appears to struggle with distinguishing subtle visual artifacts (slight slant/thinness) when the prompt encourages acceptance based on alignment/spacing context.

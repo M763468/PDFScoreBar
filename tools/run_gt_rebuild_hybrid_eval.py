@@ -362,6 +362,67 @@ def filter_barline_clefs_low(
     return kept, debug
 
 
+def filter_clefs_keys_thin_vertical(
+    preds: Sequence[Box],
+    clefs_mask: np.ndarray,
+    barline_mask: np.ndarray,
+    overlap_min: float,
+    max_width: int,
+    min_height: int,
+    barline_ratio_max: float,
+    left_margin_ratio: float,
+    right_margin_ratio: float,
+) -> Tuple[List[Box], Dict[str, object]]:
+    kept: List[Box] = []
+    rejected: List[Dict[str, object]] = []
+    h, w = clefs_mask.shape[:2]
+    left_limit = int(round(w * left_margin_ratio))
+    right_limit = int(round(w * right_margin_ratio)) if right_margin_ratio > 0 else None
+    for idx, box in enumerate(preds):
+        x1, y1, x2, y2 = map(int, box)
+        xm = (x1 + x2) // 2
+        if left_margin_ratio > 0 and xm > left_limit:
+            if right_limit is None or xm < right_limit:
+                kept.append((x1, y1, x2, y2))
+                continue
+        w = x2 - x1 + 1
+        h = y2 - y1 + 1
+        clefs_region = clefs_mask[y1 : y2 + 1, x1 : x2 + 1]
+        barline_region = barline_mask[y1 : y2 + 1, x1 : x2 + 1]
+        clefs_ratio = float(clefs_region.mean()) if clefs_region.size else 0.0
+        barline_ratio = float(barline_region.mean()) if barline_region.size else 0.0
+        if (
+            w <= max_width
+            and h >= min_height
+            and clefs_ratio >= overlap_min
+            and barline_ratio < barline_ratio_max
+        ):
+            rejected.append(
+                {
+                    "index": idx,
+                    "bbox": [x1, y1, x2, y2],
+                    "width": w,
+                    "height": h,
+                    "clefs_ratio": clefs_ratio,
+                    "barline_ratio": barline_ratio,
+                }
+            )
+            continue
+        kept.append((x1, y1, x2, y2))
+    debug = {
+        "overlap_min": overlap_min,
+        "max_width": max_width,
+        "min_height": min_height,
+        "barline_ratio_max": barline_ratio_max,
+        "left_margin_ratio": left_margin_ratio,
+        "left_margin_px": left_limit,
+        "right_margin_ratio": right_margin_ratio,
+        "right_margin_px": right_limit,
+        "rejected": rejected,
+    }
+    return kept, debug
+
+
 def filter_min_height_ratio(
     preds: Sequence[Box],
     staff_mask: np.ndarray,
@@ -3277,6 +3338,13 @@ def main() -> None:
     parser.add_argument("--clefs-keys-max-aspect", type=float, default=0.0)
     parser.add_argument("--clefs-keys-min-height", type=int, default=0)
     parser.add_argument("--clefs-keys-max-width", type=int, default=0)
+    parser.add_argument("--filter-clefs-keys-thin", action="store_true")
+    parser.add_argument("--clefs-keys-thin-overlap-min", type=float, default=0.2)
+    parser.add_argument("--clefs-keys-thin-max-width", type=int, default=3)
+    parser.add_argument("--clefs-keys-thin-min-height", type=int, default=0)
+    parser.add_argument("--clefs-keys-thin-barline-max", type=float, default=0.2)
+    parser.add_argument("--clefs-keys-thin-left-margin-ratio", type=float, default=0.0)
+    parser.add_argument("--clefs-keys-thin-right-margin-ratio", type=float, default=0.0)
     parser.add_argument("--filter-barline-clefs-low", action="store_true")
     parser.add_argument("--barline-low-ratio", type=float, default=0.02)
     parser.add_argument("--clefs-low-ratio", type=float, default=0.02)
@@ -3985,6 +4053,26 @@ def main() -> None:
             }
             (out_dir / "clefs_keys_filter.json").write_text(
                 json.dumps(clef_debug, indent=2)
+            )
+
+        if args.filter_clefs_keys_thin and clefs_keys_mask is not None:
+            barline_mask = load_mask(page.barline_mask, base_img.shape[:2])
+            before = len(geom_kept)
+            geom_kept, clef_thin_debug = filter_clefs_keys_thin_vertical(
+                geom_kept,
+                clefs_keys_mask,
+                barline_mask,
+                args.clefs_keys_thin_overlap_min,
+                args.clefs_keys_thin_max_width,
+                args.clefs_keys_thin_min_height,
+                args.clefs_keys_thin_barline_max,
+                args.clefs_keys_thin_left_margin_ratio,
+                args.clefs_keys_thin_right_margin_ratio,
+            )
+            clef_thin_debug["before"] = before
+            clef_thin_debug["after"] = len(geom_kept)
+            (out_dir / "clefs_keys_thin_filter.json").write_text(
+                json.dumps(clef_thin_debug, indent=2)
             )
 
         if args.filter_barline_clefs_low:

@@ -3130,3 +3130,549 @@
 **次のアクション**
 - コードの「完全な巻き戻し」ではなく、現在のズレを吸収できるよう `endpoint-ratio-threshold` を 0.20 から 0.25 程度に緩和し、まずは TP=78 に相当する検出を安定させる。
 - その状態で、本来の目的である「GT修正によるFP削減（見かけのFPの解消）」を確認する。
+
+## 2026-01-02 Best repro check: endpoint-ratio-threshold=0.25
+
+**Purpose**
+- Start best-repro verification by relaxing `endpoint-ratio-threshold` to absorb band mismatch noted in 13:00 log.
+
+**Command**
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T123143_best_repro_ep025 \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-ratio-threshold 0.25 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+```
+
+**Results** (from `logs/gt_rebuild_hybrid_eval/20260102T123143_best_repro_ep025/summary_table.md`)
+| Page | TP | FP | FN | row_kept | geom_kept |
+| --- | --- | --- | --- | --- | --- |
+| page_001 | 78 | 145 | 0 | 109 | 290 |
+| page_3 | 152 | 2 | 0 | 292 | 290 |
+| page_004 | 113 | 47 | 0 | 148 | 232 |
+| page_10 | 154 | 27 | 0 | 246 | 287 |
+| page_15 | 114 | 141 | 0 | 168 | 351 |
+
+**Notes**
+- FN=0 is achieved on all pages with `endpoint-ratio-threshold=0.25`, but FP is very high on pages 001/004/10/15.
+- Next step: compare with `endpoint-ratio-threshold=0.20` under the same explicit parameter set to quantify FP delta and decide if 0.25 is acceptable or if we need a targeted fix instead.
+
+## 2026-01-02 Best repro check: endpoint-ratio-threshold=0.20
+
+**Purpose**
+- Compare FP impact vs `endpoint-ratio-threshold=0.25` under the same explicit parameter set.
+
+**Command**
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T123143_best_repro_ep020 \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+```
+
+**Results** (from `logs/gt_rebuild_hybrid_eval/20260102T123143_best_repro_ep020/summary_table.md`)
+| Page | TP | FP | FN | row_kept | geom_kept |
+| --- | --- | --- | --- | --- | --- |
+| page_001 | 78 | 110 | 0 | 109 | 249 |
+| page_3 | 152 | 2 | 0 | 292 | 290 |
+| page_004 | 113 | 30 | 0 | 148 | 211 |
+| page_10 | 154 | 26 | 0 | 246 | 286 |
+| page_15 | 114 | 130 | 0 | 168 | 337 |
+
+**Notes**
+- FN=0 is maintained, and FP decreases vs `endpoint-ratio-threshold=0.25` but remains very high on pages 001/004/10/15.
+- This suggests the FN issue is not from endpoint-ratio alone; need to revisit the best baseline/filters used in `20260102T_bypass_row_filter_fix_rescue_dedup` and reconcile with current defaults.
+
+## 2026-01-02 Best repro check: dedup params (minimal flags)
+
+**Purpose**
+- Re-run the previously noted “bypass + dedup” command shape to compare against current default changes.
+
+**Command**
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T123143_best_repro_dedup_params \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-ratio-threshold 0.20 --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-dilate 7 --filter-clefs-keys \
+  --enable-end-barline-recovery --endbar-method probe_scan \
+  --probe-row-filter-mode bypass \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-divisi-rescue --probe-scan-rightmost-rescue
+```
+
+**Results** (from `logs/gt_rebuild_hybrid_eval/20260102T123143_best_repro_dedup_params/summary_table.md`)
+| Page | TP | FP | FN | row_kept | geom_kept |
+| --- | --- | --- | --- | --- | --- |
+| page_001 | 71 | 42 | 7 | 109 | 165 |
+| page_3 | 125 | 0 | 27 | 292 | 233 |
+| page_004 | 107 | 18 | 6 | 148 | 184 |
+| page_10 | 154 | 19 | 0 | 246 | 275 |
+| page_15 | 112 | 43 | 2 | 168 | 233 |
+
+**Notes**
+- This minimal-flag run regresses heavily (FN on page_001/page_3/page_004/page_15). It is not comparable to the “full explicit parameter” runs above.
+- Indicates we must keep the full parameter set (band source/extend/peak/scan) consistent when reproducing older results.
+
+## 2026-01-02 Best repro baseline recovery from debug artifacts
+
+**Reference (best-run artifact timestamps)**
+- `logs/gt_rebuild_hybrid_eval/20260102T_bypass_row_filter_fix_rescue_dedup/summary_table.md`: 2026-01-02 01:18:47 +0900
+
+**Recent git history (for provenance)**
+- `tools/run_gt_rebuild_hybrid_eval.py`: `e2de491` → `a8f6030` → `2d4cfc9` → `6de614e` → `b29878c`
+- `data/training/annotations/page_015/boxes_sorted_v20251229.json`: `e2de491` → `6ccf051`
+
+**Recovered params from debug artifacts**
+- `per_page/*/endbar_debug.json` provided the full probe-scan params (band source/extend/peak/scan/rescue).
+- `per_page/*/barline_clefs_low_filter.json` showed `barline_ratio_max=0.02`, `clefs_ratio_max=0.02`.
+- `per_page/*/end_recovered_geom_debug.json` provided notehead mask settings (`open_kernel=5`, `min_area=20`, `dilate=7`, `probe_dilate=13`, `max_aspect=2.0`, `min_height=10`, `max_width=6`) and probe endpoint scales (`x=0.04`, `y=0.80`).
+
+## 2026-01-02 Best repro check: full params from debug (baseline)
+
+**Command**
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-notehead-dilate 13 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+```
+
+**Results** (from `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams/summary_table.md`)
+| Page | TP | FP | FN | row_kept | geom_kept |
+| --- | --- | --- | --- | --- | --- |
+| page_001 | 78 | 3 | 0 | 109 | 129 |
+| page_3 | 152 | 2 | 0 | 292 | 290 |
+| page_004 | 113 | 2 | 0 | 148 | 176 |
+| page_10 | 154 | 0 | 0 | 246 | 251 |
+| page_15 | 114 | 8 | 0 | 168 | 191 |
+
+**Notes**
+- This reproduces FN=0 across all pages with low FP, much closer to the earlier “best” run.
+- The critical delta vs earlier high-FP runs was enabling `filter_barline_clefs_low` and restoring probe endpoint scales + notehead/probe-notehead params from debug artifacts.
+
+## 2026-01-02 Parameter search coverage check (from SESSION_LOG)
+
+**Already explored (avoid repeating)**
+- probe_band_height_mode (staff vs median_box) sweep
+- probe_min_ratio / probe_max_per_band sweeps
+- endbar_staff_mask_mode sweep
+- endpoint ratio sweeps (notehead_stems / stems_rest, and filtered_preds configs)
+- clefs_keys endpoint core sweeps + visualizations
+- local shape filter (thin/short component) trials
+- density filters (with/without notehead mask)
+- probe_scan extend_top/bottom_max_ratio sweep
+- probe-peak-ratio-min sweep (extend fixed)
+- rightmost rescue tolerance sweep
+- scan_ratio_rel_low rescue trials
+
+**Next candidate (not yet swept)**
+- barline/clefs low-ratio thresholds (currently set to 0.02) and their impact on FP/FN in the recovered baseline.
+
+## 2026-01-02 FP image review: filter_barline_clefs_low + GT-add check (page_004)
+
+**Page 004 FP boxes (current best repro)**
+- From `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams/per_page/page_004/fp_boxes.json`:
+  - FP_0: `[1422, 2227, 1424, 2313]`
+  - FP_1: `[2376, 2431, 2378, 2517]`
+- FP crops checked: `per_page/page_004/fp_crops/FP_0.png`, `FP_1.png`.
+
+**filter_barline_clefs_low effectiveness**
+- `barline_clefs_low_filter.json` shows it rejected 2 boxes at x~337 with zero barline/clefs overlap:
+  - `[337, 2073, 339, 2159]`, `[338, 2227, 340, 2313]`.
+- The remaining FPs are at x~1422 and x~2376; they are not affected by this filter.
+- Conclusion: `filter_barline_clefs_low` is useful for left-margin candidates but does not target the current page_004 FPs.
+
+**GT addition check for page_004**
+- Current GT file searched: `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/boxes_sorted_v20251229.json`.
+- No exact or near match (±2px) for the two FP boxes above.
+- This run therefore still treats those boxes as FP; GT addition for page_004 does not appear in the active GT source used here.
+- Next: confirm which GT file was edited for the page_004 addition and re-run with that GT if needed.
+
+## 2026-01-02 GT addition trace check (commit e2de4910)
+
+- `git show --stat e2de4910f5d29b4c5089ccf4be8081f68d2afd64` shows GT edits only for `data/training/annotations/page_015/boxes_sorted_v20251229.json`.
+- No committed changes for `page_004` GT appear in that commit, so the current eval (which reads `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/boxes_sorted_v20251229.json`) will still treat the two page_004 boxes as FP.
+- Need confirmation of the exact GT file edited for page_004 so evaluation can target that source.
+
+## 2026-01-02 GT fix applied: page_004 missing barline
+
+**Change**
+- Added missing GT barline to `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/boxes_sorted_v20251229.json`.
+- New entry: `barline_location=[1422,2228,1424,2312]` (measure_number=121 placeholder).
+
+**Rationale**
+- This corresponds to the missing GT noted in the 2026-01-02 session log (`page_004_fp01_kept.png`) and the FP list in `20260102T_bypass_row_filter_fix_rescue_dedup`.
+- Measure numbers are not used by eval; appended with next available id to avoid renumbering.
+
+**Next**
+- Re-run best-repro eval to confirm this FP is cleared.
+
+## 2026-01-02 page_004 GT fix applied to active GT source
+
+**GT source used by eval**
+- `tools/run_gt_rebuild_hybrid_eval.py` uses `logs/phase6_detector_miss/gt_rebuild/page_004_boxes_sorted.json` (not `data/evaluation2/...`).
+
+**Change**
+- Added barline `[1422,2228,1424,2312]` as `measure_number=114` to `logs/phase6_detector_miss/gt_rebuild/page_004_boxes_sorted.json`.
+
+**Re-eval**
+- Output: `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams_gtfix_p4b/summary_table.md`
+- Results:
+  - page_004: TP 113→114, FP 2→1 (GT addition took effect).
+  - Other pages unchanged.
+
+**Note**
+- `analysis_fp_fn_crops` is not generated by default in this eval run; remember to add crop generation in future checks when visual confirmation is needed.
+
+## 2026-01-02 FP review (visual) and candidate filters
+
+**Sources**
+- FP crops from `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams_gtfix_p4b/per_page/*/fp_crops/`.
+
+**Visual classification (quick pass)**
+- page_004 FP_0: looks like thin vertical line embedded in dense note/beam region; not left-margin, likely stem/beam artifact.
+  - Candidate filters: notehead/stem context masks, density/beam proximity filters (not barline_clefs_low).
+
+- page_001 FP_0/1/2: thin vertical fragments adjacent to noteheads; appear stem-like or beam-related.
+  - Candidate filters: notehead/stems overlap ratio, local shape filter (thin/short), endpoint proximity to noteheads.
+
+- page_3 FP_0/1: short vertical fragments near noteheads; likely stem artifacts (consistent with earlier phase 4 note-context filter).
+  - Candidate filters: notehead/stems mask intersection (page_3 already has confirmed note-context filter).
+
+- page_15 FP_0..7: multiple thin vertical fragments; several appear connected to stems/flag/beam areas.
+  - Candidate filters: notehead/stems overlap, local shape filters; possibly rightmost rescue constraints if these are near-right edge fragments (needs x-position check).
+
+**Next**
+- Pull FP box coordinates and overlay them with homr masks to classify by source (clef/time/rest/stem/accidental) using existing mask overlap tooling.
+- Prioritize filters already known to be safe (notehead/stem overlap, local shape) and avoid repeating prior sweeps.
+
+## 2026-01-02 FP mask-overlap classification (note_context check)
+
+**Run**
+- Script: ad-hoc overlap stats using homr masks (notehead/stems/clefs) on FP boxes.
+- Output: `logs/fp_mask_overlap/20260102T142837_best_repro/summary.json`
+- Per-page details: `logs/fp_mask_overlap/20260102T142837_best_repro/<page>_fp_mask_overlap.json`
+
+**Summary (counts with overlap >= thresholds)**
+- page_001 (FP=3): stems overlap >=0.3 for all 3; notehead overlap ~0.
+- page_004 (FP=1): clefs overlap >=0.3 for 1; stems/notehead overlap ~0.
+- page_15 (FP=8): stems overlap >=0.3 for 6 (>=0.2 for 6, >=0.1 for 8); notehead overlap negligible; clefs overlap minor (1).
+- page_3 (FP=2): union notehead+stems overlap >=0.1 for 1; weak overall.
+
+**Interpretation**
+- Most remaining FPs are stem/beam-adjacent (strong stems mask overlap), so a note_context filter using `notehead_stems` is likely effective.
+- page_004 leftover FP aligns with clefs mask overlap (clefs_keys context), not notehead/stems.
+
+**Next**
+- Evaluate endpoint mask mode `notehead_stems` (note_context) against the current baseline to quantify FN impact.
+
+## 2026-01-02 Evaluation: endpoint_mask_mode=notehead_stems (note_context)
+
+**Command**
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T143030_best_repro_notehead_stems \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-mask-mode notehead_stems \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-notehead-dilate 13 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+```
+
+**Results** (from `logs/gt_rebuild_hybrid_eval/20260102T143030_best_repro_notehead_stems/summary_table.md`)
+| Page | TP | FP | FN | row_kept | geom_kept |
+| --- | --- | --- | --- | --- | --- |
+| page_001 | 78 | 3 | 0 | 109 | 129 |
+| page_3 | 144 | 2 | 8 | 292 | 267 |
+| page_004 | 113 | 1 | 1 | 148 | 171 |
+| page_10 | 154 | 0 | 0 | 246 | 250 |
+| page_15 | 110 | 9 | 4 | 168 | 186 |
+
+**Conclusion**
+- `notehead_stems` reduces geom_kept but introduces FN (page_3/004/15), so it is **not safe** as a global switch.
+- Consider page-specific application (page_3) or use it only in post-analysis, not default filtering.
+
+## 2026-01-02 Note-context auto-apply feasibility (TP vs FP overlap)
+
+**Run**
+- Script: TP/FP overlap stats using homr masks (notehead/stems/clefs/barline).
+- Output: `logs/fp_mask_overlap/20260102T142837_best_repro_tp_fp/summary.json`
+- Details: `logs/fp_mask_overlap/20260102T142837_best_repro_tp_fp/<page>_fp_mask_overlap.json` and `<page>_tp_mask_overlap.json`.
+
+**Key findings**
+- `stems` overlap is high for both FP and TP across pages:
+  - Example: page_001 TP stems>=0.3: 56/78; FP stems>=0.3: 3/3.
+  - page_004 TP stems>=0.3: 85/114; FP stems>=0.3: 0/1 (FP is clefs-related).
+  - page_15 TP stems>=0.3: 104/114; FP stems>=0.3: 6/8.
+- `notehead_stems` overlap thresholds do **not** separate FP from TP (TPs are often high overlap too).
+- `clefs` overlap only catches the remaining page_004 FP; TP clefs overlap is non-trivial (e.g., page_004 clefs>=0.2: 5/114).
+- `barline` overlap is high for nearly all TP and FP (not discriminative).
+
+**Conclusion**
+- Automatic note_context gating based solely on mask overlap ratios is **not safe**: it would remove many TP.
+- If note_context is to be used, it must be combined with additional constraints (shape/length/spacing) or confined to post-analysis.
+
+## 2026-01-02 Composite rule feasibility (mask overlap + shape)
+
+**Run**
+- Stats + rule evaluation output: `logs/fp_mask_overlap/20260102T145200_composite_rules/summary.json`
+- Per-page stats: `logs/fp_mask_overlap/20260102T145200_composite_rules/<page>_{fp,tp}_stats.json`
+
+**Findings**
+- FP heights are similar to TP heights on pages 001/004/15 (FP ~71–87px, TP ~74–85px).
+- FP widths are mostly 3px; some TP widths are also 3px (not separable by width alone).
+- Simple composite rules (stems overlap + short height + thin width) either remove 0 FP or remove non-trivial TP.
+  - Example rule `height>=60 & width<=3 & stems>=0.2 & notehead<0.05`:
+    - page_001: FP 3/3 but TP 9/78 (too many TP).
+    - page_004: FP 0/1 TP 8/114 (ineffective).
+    - page_15: FP 6/8 TP 3/114 (still TP loss).
+    - page_3 unaffected, but global rule is unsafe.
+
+**Conclusion**
+- Current mask overlap + basic shape constraints do **not** provide a safe global auto-gating for note_context.
+- A safer approach likely requires additional structural constraints (e.g., staff-distance consistency, multi-bar alignment) or targeted filtering by specific mask categories (clefs/time/rest) rather than stems alone.
+
+## 2026-01-02 Composite rule visuals (TP/FP + masks)
+
+**Outputs**
+- `logs/fp_mask_overlap/20260102T150231_visuals/<page>_mask_fp_overlay.png`
+- `logs/fp_mask_overlap/20260102T150231_visuals/<page>_mask_fp_tp_overlay.png`
+
+**Legend**
+- Masks: notehead (blue), stems (green), clefs (yellow), barline (red)
+- Boxes: FP (magenta), TP (green)
+
+## 2026-01-02 FP condition flags + per-FP mask crops
+
+**Outputs**
+- Summary JSON: `logs/fp_mask_overlap/20260102T152021_fp_conditions/summary.json`
+- Per-page conditions: `logs/fp_mask_overlap/20260102T152021_fp_conditions/<page>_fp_conditions.json`
+- Per-FP crops w/ masks: `logs/fp_mask_overlap/20260102T152021_fp_conditions/<page>/fp_XX_mask_overlay.png`
+
+**Flags (computed)**
+- `notehead_touch`: notehead endpoint overlap >= 0.05
+- `stem_overlap`: stems overlap >= 0.2
+- `clefs_overlap`: clefs overlap >= 0.2
+- `barline_low`: barline overlap < 0.2
+- `thin_width`: width <= 3
+
+## 2026-01-02 FP detailed review (mask overlay crops)
+
+**page_004 (FP_00)**
+- Visual: magenta line coincides with clefs (yellow mask), looks like sharp symbol vertical stroke; not near notehead/stems.
+- Likely category: clefs_keys/sharp fragment.
+- Candidate: clefs_keys-local filter (e.g., reject thin verticals inside clefs_keys overlap region) with care for TP overlap.
+
+**page_001 (FP_00/01/02)**
+- Visual: thin vertical fragments, aligned to staff, adjacent to noteheads/beam; strong stems overlap, no notehead endpoint touch.
+- Likely category: stem/beam fragments.
+- Candidate: stem-context filter needs extra structure (e.g., reject if stem overlap high AND barline mask low AND local vertical run discontinuous). Simple overlap thresholds are unsafe.
+
+**page_15 (FP_00..07)**
+- Visual: mostly thin vertical fragments; many overlap stems (green), some near clefs (FP_06).
+- FP_06 shows strong clefs overlap (yellow), similar to sharp-like fragment.
+- Candidate: split into stem-fragment group vs clefs/sharp group; consider separate handling.
+
+**page_3 (FP_00/01)**
+- Visual: short vertical fragments near noteheads; one has notehead endpoint touch.
+- Candidate: requires more nuanced rule; simple notehead/stem overlap would remove TP.
+
+**Next**
+- Identify safe discriminants beyond mask overlap (e.g., staff-line crossing count, vertical continuity within staff, alignment across multiple rows).
+
+## 2026-01-02 clefs_keys thin-vertical filter trial
+
+**Command**
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T152021_best_repro_clefs_thin \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-mask-mode notehead \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --filter-clefs-keys-thin --clefs-keys-thin-overlap-min 0.2 --clefs-keys-thin-max-width 3 --clefs-keys-thin-barline-max 0.2 \
+  --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-notehead-dilate 13 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+```
+
+**Results**
+| Page | TP | FP | FN | row_kept | geom_kept |
+| --- | --- | --- | --- | --- | --- |
+| page_001 | 77 | 3 | 1 | 109 | 128 |
+| page_3 | 152 | 2 | 0 | 292 | 290 |
+| page_004 | 111 | 0 | 3 | 148 | 171 |
+| page_10 | 154 | 0 | 0 | 246 | 251 |
+| page_15 | 112 | 8 | 2 | 168 | 188 |
+
+**Conclusion**
+- FP reduced on page_004 (1→0) but FN introduced on page_004/page_001/page_15.
+- Current default thresholds for clefs_keys thin filter are **too aggressive** for global use.
+- Needs tighter constraints (e.g., clefs-only band / left-margin restriction / barline-mask constraints) before re-testing.
+
+## 2026-01-02 clefs_keys thin filter (left-margin only)
+
+**Command**
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T152021_best_repro_clefs_thin_left \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-mask-mode notehead \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --filter-clefs-keys-thin --clefs-keys-thin-overlap-min 0.2 --clefs-keys-thin-max-width 3 --clefs-keys-thin-barline-max 0.2 --clefs-keys-thin-left-margin-ratio 0.20 \
+  --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-notehead-dilate 13 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+```
+
+**Results**
+| Page | TP | FP | FN | row_kept | geom_kept |
+| --- | --- | --- | --- | --- | --- |
+| page_001 | 78 | 3 | 0 | 109 | 129 |
+| page_3 | 152 | 2 | 0 | 292 | 290 |
+| page_004 | 114 | 1 | 0 | 148 | 176 |
+| page_10 | 154 | 0 | 0 | 246 | 251 |
+| page_15 | 114 | 8 | 0 | 168 | 191 |
+
+**Conclusion**
+- Left-margin-only clefs_keys-thin filter does **not** remove the remaining page_004 FP (x~2376 is outside left margin), but avoids FN regressions.
+- This suggests clefs_keys-thin should be a targeted center/region filter rather than left-margin-only.
+
+## 2026-01-02 clefs_keys thin filter (center band)
+
+**Command**
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T152021_best_repro_clefs_thin_center \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-mask-mode notehead \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --filter-clefs-keys-thin --clefs-keys-thin-overlap-min 0.2 --clefs-keys-thin-max-width 3 --clefs-keys-thin-barline-max 0.2 --clefs-keys-thin-left-margin-ratio 0.20 --clefs-keys-thin-right-margin-ratio 0.80 \
+  --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-notehead-dilate 13 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+```
+
+**Results**
+| Page | TP | FP | FN | row_kept | geom_kept |
+| --- | --- | --- | --- | --- | --- |
+| page_001 | 78 | 3 | 0 | 109 | 129 |
+| page_3 | 152 | 2 | 0 | 292 | 290 |
+| page_004 | 113 | 1 | 1 | 148 | 174 |
+| page_10 | 154 | 0 | 0 | 246 | 251 |
+| page_15 | 113 | 8 | 1 | 168 | 189 |
+
+**Conclusion**
+- Center-band clefs_keys-thin still introduces FN (page_004/page_15) while not removing the target FP.
+- This suggests the remaining FP is either not sufficiently isolated by clefs_mask thresholding, or TP overlap is too high in the center region.

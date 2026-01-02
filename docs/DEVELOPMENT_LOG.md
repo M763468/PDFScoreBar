@@ -1228,3 +1228,2137 @@ endpoint_overlap_ratio =
 - **Dec 29 probe analysis:** FN peak analysis iterations; analysis-only. Logs: `logs/gt_probe_analysis/20251229T_fn_probe_analysis_v1/` .. `..._v4/`.
 - **Dec 29 phase5b SR check:** summary tables comparing SR variants; no new baseline adopted. Logs: `logs/gt_rebuild_hybrid_eval/20251229T_phase5b_srcheck/`.
 - **Dec 29 remaining FN overlay check:** promisc-union overlay review; no changes adopted. Logs: `logs/phase6_detector_miss/remaining_fn_overlays/20251229T_promiscuous_union_overlay_check/`.
+
+
+### 2025-12-29 End barline recovery (prototype)
+- **Timestamp**: 2025-12-29 00:30:57
+- **Intent**: - 残り10件のFNのうち、end barline を最初の対象として回復するための後処理を追加。 - 検出器本体は変えず、homr evaluator の post-processing として「右端候補 x + 縦線検出 + 右側stem排除」を試行。
+- **Result**:
+  N/A
+
+### 2025-12-30 var88確認と残存FPの目視レビュー
+- **Timestamp**: 2025-12-30 01:04:42
+- **Intent**: - var88の実装・パラメータ・出力を確認し、残存FPの傾向を把握。 - homr/omr-dlnの中間マスク活用の可能性を前提に、FP原因を画像ベースで整理。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var88_clef_filter/summary_table.md`
+
+### 2025-12-30 FP重なり分析の対象整理（page3含む）
+- **Timestamp**: 2025-12-30 01:17:13
+- **Intent**: - 4ページ+page3に対して、FPと中間マスクの重なり分析を行うための入力を確定。 - 画像処理ベースで使えるマスク（stems/rest, symbols, notes, barline, notehead等）を優先。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var88_clef_filter/per_page/`
+  - `logs/homr_eval/20251229T_gt_rebuild_eval/page_xxx/page_xxx_debug_17_notes.png`
+  - `logs/homr_eval/20251229T_gt_rebuild_eval/page_xxx/page_xxx_debug_4_symbols.png`
+  - `logs/homr_eval/20251229T_gt_rebuild_eval/page_xxx/page_xxx_debug_5_stems_rest.png`
+  - `logs/homr_eval/20251229T_gt_rebuild_eval/page_xxx/page_xxx_debug_6_notehead.png`
+  - `logs/homr_eval/20251229T_gt_rebuild_eval/page_xxx/page_xxx_debug_8_bar_line_img.png`
+  - `logs/homr_eval_baseline/baseline_verification/page_3/page_3_debug_`
+  - `logs/phase5b/b2_phase4_filter_check/20251221T132439/overlays/page_3_union_phase4_fp_boxes.json`
+
+### 2025-12-30 FP×中間マスク重なり分析（リサイズ前提）
+- **Timestamp**: 2025-12-30 01:28:01
+- **Intent**: - var88のFP/TPに対して、homr中間マスクの重なり率を数値化し、除去ルール設計の当たりを付ける。 - マスクは `load_mask` と同様に元画像サイズへリサイズして比較。
+- **Result**:
+  N/A
+
+### 2025-12-30 候補ルールの整理と安全性確認
+- **Timestamp**: 2025-12-30 01:31:44
+- **Intent**: - FN=0を崩さない条件でFPを落とせるルールを抽出。 - 既存マスク（barline / clefs_keys）を使った軽量ルールを最優先で検討。
+- **Result**:
+  N/A
+
+### 2025-12-30 page3 GTを使った安全性確認
+- **Timestamp**: 2025-12-30 02:06:43
+- **Intent**: - docs/ENVIRONMENTS.md の記載に従い、page3のGTを使用して候補ルールのFN影響を確認。 - 既存の barline matcher（`greedy_barline_match`）で正確性を担保。
+- **Result**:
+  - base: TP=152 / FP=8 / FN=0
+  - filtered: TP=152 / FP=7 / FN=0
+  - 除去予測数: 3（FP減少は1）
+- **Logs**:
+  - `logs/phase5b_confirmed_union_eval/page_3_hybrid_preds.json`
+
+### 2025-12-30 低barline+低clefsフィルタの実装
+- **Timestamp**: 2025-12-30 02:09:21
+- **Intent**: - 候補ルールをコード化し、var88の評価パイプラインで再実行できるようにする。 - 作用機序をログとして残し、次回のスイープが容易になるようにする。
+- **Result**:
+  N/A
+
+### 2025-12-30 var88出力に対するフィルタ効果の再評価
+- **Timestamp**: 2025-12-30 02:12:43
+- **Intent**: - 新フィルタの評価を、既存var88出力（geom_kept）に対して行い、FN影響を確実に判定。 - 既存の barline matcher を使い、4ページ+page3で評価。
+- **Result**:
+  - page_001: FP 12 → 7（除去=5, TP=78 維持）
+  - page_004: FP 12 → 8（除去=4, TP=112 維持）
+  - page_10: FP 4 → 0（除去=4, TP=154 維持）
+  - page_15: FP 11 → 10（除去=1, TP=112 維持）
+  - page_3: FP 8 → 7（除去=3, TP=152 維持, FN=0）
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var88_clef_filter/per_page/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T_var88_barline_clefs_low_geomkept/overlays/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T_var88_barline_clefs_low_geomkept/per_page/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T_var88_barline_clefs_low_geomkept/summary_table.md`
+  - `logs/phase6_detector_miss/gt_rebuild/page_xxx_boxes_sorted.json`
+
+### 2025-12-30 残存FPの可視化確認
+- **Timestamp**: 2025-12-30 02:27:31
+- **Intent**: - 残っているFPを画像で確認し、次のフィルタ方針を検討。
+- **Result**:
+  N/A
+
+### 2025-12-30 union_root確認と可視化ログの整備
+- **Timestamp**: 2025-12-30 02:30:55
+- **Intent**: - union_rootの正規パスをドキュメントから特定し、再評価時の誤りを防ぐ。 - 今回の可視化ログの位置をSESSION_LOGに明記する。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T_var88_barline_clefs_low_geomkept/overlays/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T_var88_barline_clefs_low_geomkept/per_page/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T_var88_barline_clefs_low_geomkept/summary_table.md`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2025-12-30 追加指標の分離可能性チェック
+- **Timestamp**: 2025-12-30 02:40:33
+- **Intent**: - 残存FPに対し、簡易指標でTP/FPの分離が可能かを確認。
+- **Result**:
+  - いずれもTP/FPの分離が弱く、単独の閾値ではFN=0維持が困難と判断。
+
+### 2025-12-30 コミット切替でのvar18/19/25再現試行
+- **Timestamp**: 2025-12-30 14:51:25
+- **Intent**: - 2025-12-29 のSESSION_LOG_temp.mdに記載されていたprobe_scan条件（var18/19/25）を、当時に近いコミットで再現する。
+- **Result**:
+  - いずれもFNが残り、var88（FN=0）には未到達。
+    - var18: page_001 FN=14 / page_004 FN=12 / page_10 FN=3 / page_15 FN=7
+    - var19: page_001 FN=10 / page_004 FN=6 / page_10 FN=2 / page_15 FN=6
+    - var25: page_001 FN=2 / page_004 FN=5 / page_10 FN=2 / page_15 FN=1
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T145125_repro_var18_commit3d0b/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T145208_repro_var19_commit3d0b/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T145244_repro_var25_commit3d0b/`
+
+### 2025-12-30 page3過去条件の再現確認
+- **Timestamp**: 2025-12-30 03:08:12
+- **Intent**: - page3で過去にFP=FN=0を達成した処理順序・条件が現在も再現できるか確認。
+- **Result**:
+  - Original: TP=152 FP=8 FN=0
+  - Row filter: TP=152 FP=2 FN=0
+  - Geom note context: TP=152 FP=0 FN=0
+  - Final: TP=152 FP=0 FN=0
+- **Command**:
+  ```bash
+  - `.venv_pdf/bin/python experiments/fp_reduction/analyze_staff_consistency.py --json logs/hybrid_results.json --image data/evaluation/images/page_3.png --gt data/evaluation/annotations/page_003/boxes_sorted.json --output logs/phase4_notehead_geom/20251230T_phase4_repro_check --no-use-ratio-tolerance --tol-top-px 5 --tol-bottom-px 5 --enable-geom-notehead-filter --geom-notehead-mode page3_known_fp --homr-context-dir logs/homr_eval_baseline/baseline_verification/page_3`
+  ```
+- **Logs**:
+  - `logs/homr_eval_baseline/baseline_verification/page_3`
+  - `logs/hybrid_results.json`
+  - `logs/phase4_notehead_geom/20251230T_phase4_repro_check`
+  - `logs/phase4_notehead_geom/20251230T_phase4_repro_check/`
+
+### 2025-12-30 案A: 近接候補の最小間隔ルール（全ページ検証）
+- **Timestamp**: 2025-12-30 03:35:40
+- **Intent**: - 近接候補のX間隔が極端に狭い場合に、短い方をFPとして落とすルールを試す。 - グローバル閾値で有効かどうかを5ページで検証。
+- **Result**:
+  - page_004でFNが発生（thr=0.2でもFN=3）し、FN=0条件を満たせない。
+  - page_001でもthr>=0.25でFNが発生。
+  - page_3はFPが減らず、除去数のみ増加（多数候補が落ちる）。
+- **Command**:
+  ```bash
+  - `.venv_pdf/bin/python - <<'PY' ... (spacing rule sweep) ... PY`
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var88_clef_filter/per_page/`
+  - `logs/phase4_notehead_geom/20251230T_spacing_rule_sweep/metrics.json`
+  - `logs/phase5b_confirmed_union_eval/page_3_hybrid_preds.json`
+  - `logs/phase6_detector_miss/gt_rebuild/page_xxx_boxes_sorted.json`
+
+### 2025-12-30 案B: endpoint windowのY拡張スイープ（page3）
+- **Timestamp**: 2025-12-30 03:47:05
+- **Intent**: - 低音・高音のnoteheadとの衝突不足に対し、endpoint windowのY方向拡張が有効か再検証。 - endpoint_ratio_overlap方式でYスケールのみ変更。
+- **Result**:
+  - y=0.6: TP=151 / FP=2 / FN=1（FN発生）
+  - y=0.8/1.0/1.2/1.5: TP=152 / FP=2 / FN=0（FN=0維持だがFPは残存）
+- **Command**:
+  ```bash
+  - `.venv_pdf/bin/python experiments/fp_reduction/analyze_staff_consistency.py --json logs/hybrid_results.json --image data/evaluation/images/page_3.png --gt data/evaluation/annotations/page_003/boxes_sorted.json --output logs/phase4_notehead_geom/20251230T_endpoint_ratio_y0.8 --no-use-ratio-tolerance --tol-top-px 5 --tol-bottom-px 5 --enable-geom-notehead-filter --geom-notehead-mode endpoint_ratio_overlap --geom-endpoint-ratio-threshold 0.1 --geom-endpoint-x-radius-scale 0.6 --geom-endpoint-y-radius-scale 0.8 --homr-context-dir logs/homr_eval_baseline/baseline_verification/page_3`
+  ```
+- **Logs**:
+  - `logs/homr_eval_baseline/baseline_verification/page_3`
+  - `logs/hybrid_results.json`
+  - `logs/phase4_notehead_geom/20251230T_endpoint_ratio_y0.8`
+  - `logs/phase4_notehead_geom/20251230T_endpoint_ratio_y0.8/geom_kept_removed_overlay.png`
+  - `logs/phase4_notehead_geom/20251230T_endpoint_ratio_y0.8/geom_note_context_overlay.png`
+
+### 2025-12-30 残存FPのendpoint衝突+row band可視化（全ページ）
+- **Timestamp**: 2025-12-30 07:39:59
+- **Intent**: - 残存FPがrow bandから外れているか、notehead endpoint衝突があるかを可視化して原因を特定。 - page3は過去にFP=FN=0だったため、後段追加候補の挙動を確認する。
+- **Result**:
+  N/A
+- **Command**:
+  ```bash
+  - `.venv_pdf/bin/python tools/render_fp_notehead_overlays.py --eval-root logs/gt_rebuild_hybrid_eval/20251230T_var88_barline_clefs_low_geomkept --output-root logs/fp_notehead_overlay/20251230T073959_var88_barline_clefs_low --endpoint-rx 5 --endpoint-ry 7`
+  ```
+- **Logs**:
+  - `logs/fp_notehead_overlay/20251230T073959_var88_barline_clefs_low`
+  - `logs/fp_notehead_overlay/20251230T073959_var88_barline_clefs_low/page_XXX_fp_endpoint_windows.png`
+  - `logs/fp_notehead_overlay/20251230T073959_var88_barline_clefs_low/page_XXX_fp_notehead_overlay.png`
+  - `logs/fp_notehead_overlay/20251230T073959_var88_barline_clefs_low/per_page/page_XXX/fp_crops/`
+  - `logs/fp_notehead_overlay/20251230T073959_var88_barline_clefs_low/summary.json`
+  - `logs/gt_rebuild_hybrid_eval/20251230T_var88_barline_clefs_low_geomkept`
+
+### 2025-12-30 homr中間マスクの棚卸しとFP重なり集計
+- **Timestamp**: 2025-12-30 07:46:18
+- **Intent**: - homrのdebug出力にどのマスクが存在するかを整理し、FPとの重なり傾向を把握。 - omr-dln側に中間マスクがあるかも確認。
+- **Result**:
+  - homr debugで利用可能な主なマスク:
+    - `debug_5_stems_rest`, `debug_6_notehead`, `debug_7_clefs_keys`, `debug_8_bar_line_img`, `debug_11_bar_lines`
+  - FPの箱全体に対するマスク重なり（ratio>=0.1）:
+    - notehead/stems_restはほぼゼロ（endpoint衝突は別扱い）
+    - clefs_keysはpage_001で1件のみ
+    - bar_line_imgはpage_001/3で1件程度
+    - bar_linesは全FPで高い（FP/TP両方に高反応の可能性）
+  - omr-dln出力は `logs/omr_dln_sr/predictions.json` のみで、マスクは未確認。
+- **Logs**:
+  - `logs/mask_inventory/20251230T074400_homr_debug_masks.json`
+  - `logs/mask_inventory/20251230T074618_fp_mask_overlap.json`
+  - `logs/omr_dln_sr/predictions.json`
+
+### 2025-12-30 案B sweep（raw/end_recovered基準）※不適合のため参考
+- **Timestamp**: 2025-12-30 07:48:05
+- **Intent**: - endpoint_ratio_overlapを全ページで一括スイープ。 - ただし raw/end_recovered を直接入力したため、row filterが過剰に強くなりFNが大量発生。
+- **Result**:
+  - FNが大幅増加。現行パイプラインの評価と整合しないため参考扱い。
+- **Logs**:
+  - `logs/endpoint_ratio_sweep/20251230T074805_var88_end_recovered/summary.json`
+
+### 2025-12-30 案B sweep（row_filtered基準）※不適合のため参考
+- **Timestamp**: 2025-12-30 07:52:46
+- **Intent**: - row_filteredを入力にendpoint_ratio_overlapを適用。 - row_filtered自体がGTとの一致が弱いことが判明（TPが低い）。
+- **Result**:
+  - row_filteredの段階でFNが大幅に発生し、評価に不向きと判断。
+- **Logs**:
+  - `logs/endpoint_ratio_sweep/20251230T075246_row_filtered/summary.json`
+
+### 2025-12-30 案B sweep（filtered_preds基準：有効）
+- **Timestamp**: 2025-12-30 07:55:32
+- **Intent**: - barline_clefs_low後の `filtered_preds.json` を基準にendpoint_ratio_overlapを適用。 - 既存条件と整合した状態でFN影響を評価。
+- **Result**:
+  - FN=0を維持できる設定が複数あり（例: thr=0.10, y=0.80/1.00/1.20）。
+  - FP削減は限定的で、page_3のみ1件減（7→6）程度。
+  - より攻めた設定（thr=0.08）ではpage_001/004/15にFNが発生。
+- **Logs**:
+  - `logs/endpoint_ratio_sweep/20251230T075532_filtered_preds/summary.json`
+  - `logs/endpoint_ratio_sweep/20251230T075532_filtered_preds/thr_0.08_y0.80/page_001/page_001_fn_overlay.png`
+  - `logs/endpoint_ratio_sweep/20251230T075532_filtered_preds/thr_0.08_y0.80/page_004/page_004_fn_overlay.png`
+  - `logs/endpoint_ratio_sweep/20251230T075532_filtered_preds/thr_0.08_y0.80/page_15/page_15_fn_overlay.png`
+  - `logs/endpoint_ratio_sweep/20251230T075532_filtered_preds/thr_0.10_y0.80/`
+
+### 2025-12-30 row bandとstaff maskの比較（row定義確認）
+- **Timestamp**: 2025-12-30 08:48:52
+- **Intent**: - row filterのrow bandが五線幅より広く見える件を確認。 - staff mask（debug_3_staff）からのbandと、preds由来row bandの比較を可視化。
+- **Result**:
+  N/A
+- **Command**:
+  ```bash
+  - `.venv_pdf/bin/python tools/render_row_band_compare.py --output-root logs/row_band_compare/20251230T084852_filtered_preds`
+  ```
+- **Logs**:
+  - `logs/row_band_compare/20251230T084852_filtered_preds`
+  - `logs/row_band_compare/20251230T084852_filtered_preds/page_3_row_vs_staff.png`
+  - `logs/row_band_compare/20251230T084852_filtered_preds/summary.json`
+
+### 2025-12-30 endpoint window基準の再確認（staff_space vs barline高さ）
+- **Timestamp**: 2025-12-30 09:11:02
+- **Intent**: - endpoint windowが画像解像度差に依存していないかを検証。 - staff_space と barline高さ（box高さ）・staff mask band高さを比較。
+- **Result**:
+  - barline高さ中央値はページ間で大きく異なり（page_001≈84px, page_3≈20px）。
+  - `debug_3_staff` は「五線線のみ」の薄いband（高さ≈6px）で、row band用途には狭すぎる。
+  - `debug_15_staffs` は全体が1band化されるため、row band用途には不適。
+
+### 2025-12-30 endpoint windowスケール再検討（barline高さ基準のsweep）
+- **Timestamp**: 2025-12-30 09:15:19
+- **Intent**: - `endpoint_scale_base=barline_height` を導入し、barline高さ基準のスイープを実施。 - probe_scanあり/なしの挙動差を確認。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T091519_endpoint_base_barline/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T092322_endpoint_base_barline_x0p08/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T092852_endpoint_base_barline_x0p08_probe/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T093054_control_var88/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T093312_control_var88_probe0p04/`
+
+### 2025-12-30 row band定義の再評価（staff mask使用）
+- **Timestamp**: 2025-12-30 09:35:30
+- **Intent**: - row filterでstaff maskを使うとどうなるかを確認。
+- **Result**:
+  - row_kept=0となりrow filterが極端に厳しすぎる。
+  - `debug_3_staff` は五線線のみでbandが薄く、row filterのbandには不適。
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T093530_rowband_staffmask/`
+
+### 2025-12-30 clefs_keys再検討（全幅適用 + erode）
+- **Timestamp**: 2025-12-30 09:36:23
+- **Intent**: - left限定を超えた適用を再検討。mask縮小(erode)でFN悪化を抑制できるか確認。
+- **Result**:
+  - erode=3ではFPが一部減少（page_001, page_004）し、FNは増加しなかった。
+  - erode=5ではFPが増加傾向。
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T093623_clef_full_erode/var_erode3/summary_table.md`
+  - `logs/gt_rebuild_hybrid_eval/20251230T093623_clef_full_erode/var_erode5/summary_table.md`
+
+### 2025-12-30 var88再現の再試行（現行スクリプト）
+- **Timestamp**: 2025-12-30 10:32:15
+- **Intent**: - 既存のvar88結果を現行 `tools/run_gt_rebuild_hybrid_eval.py` で再現できるか確認する。 - var88の `geom_debug.json` / `clefs_keys_filter.json` からパラメータを抽出し、同一条件で再実行。
+- **Result**:
+  - var88と一致せず、FNが残存（page_001 FN=14 / page_004 FN=15 / page_10 FN=4 / page_15 FN=7）。
+  - end_recovered件数が不足しており、probe_scanの設定差が主因の可能性が高い。
+    - page_001 end_recovered: var88=830 vs repro=524
+    - page_001 end_recovered_row: var88=323 vs repro=109
+    - page_001 end_recovered_geom: var88=106 vs repro=83
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T103215_repro_var88/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T_hybrid_row_notehead_endbar/var88_clef_filter/`
+
+### 2025-12-30 var88再現の追加試行（probe scan緩和）
+- **Timestamp**: 2025-12-30 10:36:49
+- **Intent**: - end_recovered件数の不足を補うため、probe_scanのピーク抽出条件を緩和して再現性を確認。
+- **Result**:
+  - endbar候補が増えすぎてFPが爆発、var88再現には不適。
+  - FNは解消せず（page_001 FN=14など）。
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T103649_repro_var88_probe_loose/`
+
+### 2025-12-30 var88再現の追加試行（probe_min_ratio / probe_width）
+- **Timestamp**: 2025-12-30 10:38:26
+- **Intent**: - probe_scanの検出数不足を補うため、閾値と幅の影響を確認。
+- **Result**:
+  - 検出数はほぼ増えず、FNは維持（page_001 FN=14のまま）。
+  - var88のend_recovered件数(830)には届かない。
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T103826_repro_var88_probe_ratio0p8/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T103923_repro_var88_probe_w2/`
+
+### 2025-12-30 var88再現の追加試行（probe row / ink / max_per_band）
+- **Timestamp**: 2025-12-30 10:41:32
+- **Intent**: - probe_scanの不足要因を切り分けるため、row条件・ink閾値・max_per_bandを個別に変更。
+- **Result**:
+  - row緩和とmax_per_band=12はFP増加のみでFN改善に寄与せず。
+  - ink閾値変更はほぼ影響なし。
+  - reuse_rowsは追加回復が消失（end_recovered_row=0）。
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T104132_repro_var88_probe_row_loose/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T104216_repro_var88_probe_ink200/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T104348_repro_var88_probe_max12/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T104511_repro_var88_probe_reuse_rows/`
+
+### 2025-12-30 var88再現の追加試行（probe band height mode）
+- **Timestamp**: 2025-12-30 10:46:36
+- **Intent**: - var88のend_recovered高さが約85pxであるため、probe_scanのband height modeを再検討。
+- **Result**:
+  - median_boxでFNが大幅に減少（page_001 FN=7, page_004 FN=7 まで改善）。
+  - max_per_band=0 + min_peak_distance=2でFNは2〜5に減少。
+  - min_ratio=0.7まで下げるとFN=0に近づくがFPが増加。
+  - var88（FN=0, FP低）には未到達だが、band height modeが主要因であることが判明。
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T104636_repro_var88_probe_medianbox/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T104742_repro_var88_medianbox_max0/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T104836_repro_var88_medianbox_max0_min2/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T104929_repro_var88_medianbox_max0_min2_ratio0p7/`
+
+### 2025-12-30 run_gt_rebuild_hybrid_eval.py のgit履歴確認
+- **Timestamp**: 2025-12-30 11:06:30
+- **Intent**: - 現行スクリプトの形になったタイミングと、aspect filter等の有効化条件を確認。 - var88再現不一致の原因候補を絞るための履歴確認。
+- **Result**:
+  N/A
+
+### 2025-12-30 sweep 1: probe_band_height_mode
+- **Timestamp**: 2025-12-30 14:13:07
+- **Intent**: - var88再現の主要差分候補として、probe_scanのband height modeを比較。
+- **Result**:
+  - `staff` はFNが多く再現できず（page_001 FN=14）。
+  - `median_box` はFNが大きく減少（page_001 FN=7）。  
+    → var88のend_recovered高さ（~85px）に整合し、再現に重要な差分と判断。
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T141307_sweep_bandheight_staff/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T141339_sweep_bandheight_median/`
+
+### 2025-12-30 sweep 2: probe_min_ratio / probe_max_per_band
+- **Timestamp**: 2025-12-30 14:14:45
+- **Intent**: - `probe_band_height_mode=median_box` を前提に、peak抽出条件の不一致を確認する。
+- **Result**:
+  - FNは改善するが、どの組合せでもFN=0には届かない。  
+    - 例: ratio=0.85, max_per_band=10 → page_001/004/10/15 FN=5/5/3/5
+  - ここでは「probe_min_ratio / max_per_band だけでは再現不能」なことを確認。
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.75_max10/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.75_max6/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.75_max8/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.80_max10/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.80_max6/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.80_max8/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.85_max10/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.85_max6/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T141445_sweep_probe_ratio0.85_max8/`
+
+### 2025-12-30 sweep 3: endbar_staff_mask_mode
+- **Timestamp**: 2025-12-30 14:18:57
+- **Intent**: - endbarのstaff mask選択（staff / staffs）の不一致を確認する。
+- **Result**:
+  - `staffs` はendbar回復がほぼ消失（FNが増加）。  
+  - `staff` は回復が維持されるがFN=0には届かない。  
+    → var88再現には **staff** が必須で、staffsは不一致要因と判断。
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T141857_sweep_endbar_mask_staff/`
+  - `logs/gt_rebuild_hybrid_eval/20251230T141930_sweep_endbar_mask_staffs/`
+
+### 2025-12-30 指定コマンドの実行確認（CLI差分の検証）
+- **Timestamp**: 2025-12-30 14:24:10
+- **Intent**: - ユーザー指定のコマンドをそのまま実行し、現行スクリプトとのCLI差分を確認。
+- **Result**:
+  - 現行 `tools/run_gt_rebuild_hybrid_eval.py` では `--union-root` が必須で、`--run-tag` / `--images` / `--ground-truth` / `--probe-scan` / `--probe-endpoint-ratio-threshold` は未定義。
+  - 指定コマンドは別バージョンのCLI仕様である可能性が高い。
+
+### 2025-12-30 CLI対応のgit履歴調査（run-tag / images / ground-truth）
+- **Timestamp**: 2025-12-30 14:33:20
+- **Intent**: - 指定コマンドに含まれるCLIがどの時点のコードに対応していたかを特定。 - 変更のタイミングと理由を把握。
+- **Result**:
+  N/A
+
+### 2025-12-30 SESSION_LOG_temp.md の履歴確認
+- **Timestamp**: 2025-12-30 14:36:50
+- **Intent**: - 過去セッションのコマンド記録が残っている可能性を確認。
+- **Result**:
+  N/A
+
+### 2025-12-30 var88当日のスクリプト更新タイミング確認
+- **Timestamp**: 2025-12-30 14:41:05
+- **Intent**: - var88生成時点に近い `tools/run_gt_rebuild_hybrid_eval.py` のコミット時刻を確認。
+- **Result**:
+  N/A
+
+### 2025-12-30 コミット切替でのvar88再現試行
+- **Timestamp**: 2025-12-30 14:40:10
+- **Intent**: - 当時のコードに近いコミットへ切り替え、var88の再現可否を確認。
+- **Result**:
+  - FNが残り、var88（FN=0）には未到達。
+    - page_001: TP=71 FP=1 FN=7
+    - page_004: TP=105 FP=5 FN=7
+    - page_10: TP=151 FP=1 FN=3
+    - page_15: TP=107 FP=5 FN=5
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T144033_repro_var88_commit3d0b/`
+
+### 2025-12-30 var88生成時刻とコミット整合の再確認
+- **Timestamp**: 2025-12-30 15:04:04
+- **Intent**: - var88生成時点のコードがどのコミットに近いかを再確認する。
+- **Result**:
+  N/A
+
+### 2025-12-30 コミット21235f4でのvar88再現試行
+- **Timestamp**: 2025-12-30 15:04:04
+- **Intent**: - clefs_keys導入後のコミット（21235f4）でvar88が再現できるか確認。
+- **Result**:
+  - 3d0bf23時と同様にFNが残り、var88（FN=0）には未到達。
+    - page_001: TP=71 FP=1 FN=7
+    - page_004: TP=105 FP=5 FN=7
+    - page_10: TP=151 FP=1 FN=3
+    - page_15: TP=107 FP=5 FN=5
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251230T150404_repro_var88_commit21235f4/`
+
+### 2025-12-30 var88完全一致の再現手順（復旧）
+- **Timestamp**: 2025-12-30 17:45:00
+- **Intent**: - var88のFN=0/FP低の結果を、現行スクリプトと完全一致で再現する。
+- **Result**:
+  N/A
+- **Command**:
+  ```bash
+  - `.venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/repro_var88_from_logs_reuse_rows_probe_eps --union-root logs/phase5b_confirmed_union_eval --endpoint-ratio-threshold 0.20 --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.20 --clefs-keys-overlap-min 0.30 --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff --probe-width 3 --probe-ink-threshold 180 --probe-min-ratio 0.80 --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 --probe-band-height-mode median_box --probe-band-height-scale 1.0 --probe-band-height-min 10 --probe-notehead-dilate 13 --probe-row-filter-mode reuse_rows --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80`
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/repro_var88_from_logs_reuse_rows_probe_eps`
+  - `logs/gt_rebuild_hybrid_eval/repro_var88_from_logs_reuse_rows_probe_eps/`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2025-12-30 resumeセッションによるvar88復元の確認
+- **Timestamp**: 2025-12-30 18:05:00
+- **Intent**: - resumeしたセッションで、var88の完全一致再現が確認されたことを反映する。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/repro_var88_from_logs_reuse_rows_probe_eps/`
+
+### 2025-12-30 var88復元結果のFP可視化（postfilter_analysis）
+- **Timestamp**: 2025-12-30 18:43:28
+- **Intent**: - resumeセッションで復元されたvar88の結果に対し、FP残存の可視化を再生成。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/probe_postfilter_analysis/20251230T184328_var88_repro/`
+
+### 2025-12-30 var88復元結果のFP原因分布（マスク重なり）
+- **Timestamp**: 2025-12-30 18:45:00
+- **Intent**: - var88復元結果のFPに対し、homr中間マスクとの重なりで原因カテゴリの当たりを付ける。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/fp_category_analysis/20251230T184500_var88_repro/`
+
+### 2025-12-30 FPマスク重ね合わせクロップの作成
+- **Timestamp**: 2025-12-30 19:00:00
+- **Intent**: - FPに対する各マスク（clefs_keys / stems_rest / notehead / barline / symbols / notes）の重なりを目視確認する。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/fp_mask_crops/20251230T190000_var88_repro/`
+
+### 2025-12-30 FPマスク重ね合わせの目視確認（全ページ）
+- **Timestamp**: 2025-12-30 19:05:00
+- **Intent**: - 各ページのFPクロップ（最大6件/ページ）を目視し、マスクの実用性を判断。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/fp_category_analysis/20251230T184500_var88_repro/summary.json`
+
+### 2025-12-30 FP×マスク成分の衝突統計（clefs_keys / barline）
+- **Timestamp**: 2025-12-30 19:30:00
+- **Intent**: - マスク「含有」(connected component中心ヒット) を使った判定が安全かをFP/TPで比較。
+- **Result**:
+  - clefs_keys:
+    - center_hit: FP 6/39, TP 9/456
+    - overlap>=0.2: FP 9/39, TP 16/456
+    - overlap>=0.5: FP 8/39, TP 7/456
+  - barline:
+    - center_hit: FP 17/39, TP 436/456
+    - overlap>=0.2: FP 17/39, TP 451/456
+    - overlap>=0.5: FP 16/39, TP 439/456
+- **Logs**:
+  - `logs/fp_component_analysis/20251230T193000_var88_repro/summary.json`
+
+### 2025-12-30 clefs_keys内接コア×endpoint windowによるFP除去テスト
+- **Timestamp**: 2025-12-30 19:50:00
+- **Intent**: - clefs_keysマスクの「内接コア」（distance transformで縮約した成分）と、barline候補のendpoint windowの重なりでFP除去できるかを検証。 - 画像解像度差の影響を避けるため、endpoint windowはbarline median height 比でスケール。
+- **Result**:
+  - rx0p04_ry0p80: TP=425, FP=31, FN=31（removed=51）
+  - rx0p06_ry0p60: TP=424, FP=30, FN=32（removed=53）
+- **Logs**:
+  - `logs/clefs_keys_endpoint_core/20251230T195000_var88_repro/rx0p04_ry0p80/`
+  - `logs/clefs_keys_endpoint_core/20251230T195000_var88_repro/rx0p06_ry0p60/`
+  - `logs/clefs_keys_endpoint_core/20251230T195000_var88_repro/summary.json`
+
+### 2025-12-30 clefs_keys内接コアのsweep（core_scale 0.4-0.7）+ 可視化
+- **Timestamp**: 2025-12-30 21:50:00
+- **Intent**: - clefs_keys内接コアの縮小がFNを抑えつつFP低減できるかを確認。 - 既存結果とsweep結果を比較できるよう、除去対象のoverlay+cropを出力。
+- **Result**:
+  - core0.40:
+    - rx0p04_ry0p80: TP=453, FP=38, FN=21（removed=8）
+    - rx0p06_ry0p60: TP=453, FP=38, FN=21（removed=8）
+  - core0.50:
+    - rx0p04_ry0p80: TP=453, FP=38, FN=21（removed=8）
+    - rx0p06_ry0p60: TP=453, FP=38, FN=21（removed=8）
+  - core0.60:
+    - rx0p04_ry0p80: TP=455, FP=38, FN=19（removed=4）
+    - rx0p06_ry0p60: TP=455, FP=38, FN=19（removed=4）
+  - core0.70:
+    - rx0p04_ry0p80: TP=457, FP=39, FN=17（removed=0）
+    - rx0p06_ry0p60: TP=457, FP=39, FN=17（removed=0）
+- **Logs**:
+  - `logs/clefs_keys_endpoint_core_sweep/20251230T215027_var88_repro_geomkept/core0.40/`
+  - `logs/clefs_keys_endpoint_core_sweep/20251230T215027_var88_repro_geomkept/core0.50/`
+  - `logs/clefs_keys_endpoint_core_sweep/20251230T215027_var88_repro_geomkept/core0.60/`
+  - `logs/clefs_keys_endpoint_core_sweep/20251230T215027_var88_repro_geomkept/core0.70/`
+  - `logs/clefs_keys_endpoint_core_sweep/20251230T215027_var88_repro_geomkept/summary.json`
+
+### 2025-12-30 clefs_keys内接コアsweepの可視化（FPと新規FNのみ）
+- **Timestamp**: 2025-12-30 22:55:00
+- **Intent**: - 既存FPと新規FNのみを可視化し、clefs_keysマスクとの衝突判定の妥当性を確認。 - 元マスクと内接コアを同時に重ねて表示（元マスク=青、コア=緑）。
+- **Result**:
+  - core0.40:
+    - rx0p04_ry0p80: baseline FP=39, new FN=5, removed FP=9
+    - rx0p06_ry0p60: baseline FP=39, new FN=5, removed FP=10
+  - core0.50:
+    - rx0p04_ry0p80: baseline FP=39, new FN=0, removed FP=6
+    - rx0p06_ry0p60: baseline FP=39, new FN=0, removed FP=8
+  - core0.60:
+    - rx0p04_ry0p80: baseline FP=39, new FN=0, removed FP=1
+    - rx0p06_ry0p60: baseline FP=39, new FN=0, removed FP=3
+  - core0.70:
+    - rx0p04_ry0p80: baseline FP=39, new FN=0, removed FP=1
+    - rx0p06_ry0p60: baseline FP=39, new FN=0, removed FP=1
+- **Logs**:
+  - `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T225523_var88_repro_geomkept/core0.40/`
+  - `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T225523_var88_repro_geomkept/core0.50/`
+  - `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T225523_var88_repro_geomkept/core0.60/`
+  - `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T225523_var88_repro_geomkept/core0.70/`
+  - `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T225523_var88_repro_geomkept/summary.json`
+
+### 2025-12-30 core0.4/0.5の比較可視化（removed FP識別 + マスクノイズ除去）
+- **Timestamp**: 2025-12-30 23:25:00
+- **Intent**: - core0.4とcore0.5を並列に比較し、FP除去の成功/不成功を可視化で判別可能にする。 - clefs_keysマスクの軽いノイズ除去（denoise_v1）を試し、FN増加なしでFP除去が改善するか確認。
+- **Result**:
+  - raw core0.4:
+    - rx0p04_ry0p80: baseline FP=39, removed FP=9, new FN=5
+    - rx0p06_ry0p60: baseline FP=39, removed FP=10, new FN=5
+  - raw core0.5:
+    - rx0p04_ry0p80: baseline FP=39, removed FP=6, new FN=0
+    - rx0p06_ry0p60: baseline FP=39, removed FP=8, new FN=0
+  - denoise_v1 core0.4:
+    - rx0p04_ry0p80: baseline FP=39, removed FP=9, new FN=5
+    - rx0p06_ry0p60: baseline FP=39, removed FP=10, new FN=5
+  - denoise_v1 core0.5:
+    - rx0p04_ry0p80: baseline FP=39, removed FP=6, new FN=0
+    - rx0p06_ry0p60: baseline FP=39, removed FP=8, new FN=0
+- **Logs**:
+  - `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T232521_var88_repro_geomkept/denoise_v1/`
+  - `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T232521_var88_repro_geomkept/raw/`
+  - `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T232521_var88_repro_geomkept/summary.json`
+
+### 2025-12-30 ノイズ除去手法の比較（raw / denoise_v1 / denoise_area / denoise_height）
+- **Timestamp**: 2025-12-30 23:40:00
+- **Intent**: - ノイズ除去でFNを増やさずにFP除去が改善できるかを確認（core0.40/0.50を同時に比較）。 - 各手法についてFP/NEW_FNの可視化を生成し目視確認。
+- **Result**:
+  - raw:
+    - core0.40: removed FP=9-10, new FN=5
+    - core0.50: removed FP=6-8, new FN=0
+  - denoise_v1:
+    - core0.40: removed FP=9-10, new FN=5
+    - core0.50: removed FP=6-8, new FN=0
+  - denoise_area:
+    - core0.40: removed FP=9-10, new FN=4
+    - core0.50: removed FP=6-8, new FN=0
+  - denoise_height:
+    - core0.40: removed FP=8-9, new FN=5
+    - core0.50: removed FP=7, new FN=0
+- **Logs**:
+  - `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T234203_var88_repro_geomkept/denoise_area/`
+  - `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T234203_var88_repro_geomkept/denoise_height/`
+  - `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T234203_var88_repro_geomkept/denoise_v1/`
+  - `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T234203_var88_repro_geomkept/raw/`
+  - `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T234203_var88_repro_geomkept/summary.json`
+
+### 2025-12-30 core0.40のみ除去できるFPの確認 + core0.45試行
+- **Timestamp**: 2025-12-30 23:50:00
+- **Intent**: - core0.40で除去できるがcore0.50で残るFPを特定し、別手法での除去可否を検討。 - 中間値core0.45の可能性を確認。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T234203_var88_repro_geomkept/only40_not50.json`
+  - `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T234949_var88_repro_geomkept/`
+  - `logs/clefs_keys_endpoint_core_sweep_visuals/20251230T234949_var88_repro_geomkept/summary.json`
+
+### 2025-12-31 core0.50採用の決定
+- **Timestamp**: 2025-12-31 00:10:00
+- **Intent**: - clefs_keys内接コア方式はcore0.50でFN=0を維持できるため、これを採用値として固定する。
+- **Result**:
+  N/A
+
+### 2025-12-31 局所形状フィルタ（thin/short component）試行
+- **Timestamp**: 2025-12-31 00:10:00
+- **Intent**: - clefs_keys近傍の細い/短い成分を用いてFPを除去できるか確認。 - core0.50（採用値）後に局所形状フィルタを適用。
+- **Result**:
+  - hr0.70_wr0.15: TP=429, FP=28, FN=45, removed FP=2, new FN=34
+  - hr0.90_wr0.15: TP=428, FP=28, FN=46, removed FP=2, new FN=35
+  - hr0.70_wr0.20: TP=429, FP=28, FN=45, removed FP=2, new FN=34
+  - hr0.90_wr0.20: TP=428, FP=28, FN=46, removed FP=2, new FN=35
+- **Logs**:
+  - `logs/local_shape_filter/20251231T000929_var88_repro/hr0.70_wr0.15/`
+  - `logs/local_shape_filter/20251231T000929_var88_repro/hr0.70_wr0.20/`
+  - `logs/local_shape_filter/20251231T000929_var88_repro/hr0.90_wr0.15/`
+  - `logs/local_shape_filter/20251231T000929_var88_repro/hr0.90_wr0.20/`
+  - `logs/local_shape_filter/20251231T000929_var88_repro/summary.json`
+
+### 2025-12-31 音符密度フィルタ（小節間隔に基づく近接除去）試行
+- **Timestamp**: 2025-12-31 00:30:00
+- **Intent**: - 小節線間隔の分布から「極端に狭い候補」を除去する音符密度フィルタを評価。 - core0.50適用後にフィルタを重ねる。
+- **Result**:
+  - ratio0.25: TP=209, FP=23, FN=265, removed FP=5, new FN=510
+  - ratio0.30: TP=205, FP=23, FN=269, removed FP=5, new FN=515
+  - ratio0.35: TP=204, FP=22, FN=270, removed FP=6, new FN=516
+  - ratio0.40: TP=204, FP=21, FN=270, removed FP=7, new FN=516
+- **Logs**:
+  - `logs/density_filter/20251231T001324_var88_repro/ratio0.25/`
+  - `logs/density_filter/20251231T001324_var88_repro/ratio0.30/`
+  - `logs/density_filter/20251231T001324_var88_repro/ratio0.35/`
+  - `logs/density_filter/20251231T001324_var88_repro/ratio0.40/`
+  - `logs/density_filter/20251231T001324_var88_repro/summary.json`
+
+### 2025-12-31 音符密度フィルタ（noteheadマスク併用）試行
+- **Timestamp**: 2025-12-31 00:40:00
+- **Intent**: - 小節間隔の近接条件に加え、noteheadマスクの空白判定を導入し、過剰なFNを抑制できるか確認。 - core0.50適用後にフィルタを重ねる。
+- **Result**:
+  - ratio0.20: TP=457, FP=30, FN=17, removed FP=0, new FN=0
+  - ratio0.25: TP=457, FP=30, FN=17, removed FP=0, new FN=0
+  - ratio0.30: TP=457, FP=30, FN=17, removed FP=0, new FN=0
+- **Logs**:
+  - `logs/density_filter_notehead/20251231T002445_var88_repro/ratio0.20/`
+  - `logs/density_filter_notehead/20251231T002445_var88_repro/ratio0.25/`
+  - `logs/density_filter_notehead/20251231T002445_var88_repro/ratio0.30/`
+  - `logs/density_filter_notehead/20251231T002445_var88_repro/summary.json`
+
+### 2025-12-31 HOMR出力に拍子情報があるかの確認
+- **Timestamp**: 2025-12-31 01:00:00
+- **Intent**: - 拍子・拍数などの情報をHOMR出力から取得可能かを確認。
+- **Result**:
+  N/A
+
+### 2025-12-31 musicxmlの拍子・音符情報の利用方針検討
+- **Timestamp**: 2025-12-31 01:20:00
+- **Intent**: - musicxmlから拍子・音符情報を取り出し、画像側の密度フィルタの補助に使えるかを検討。 - 位置情報は使わず、拍子や音符内容のみを参照する方針。
+- **Result**:
+  N/A
+
+### 2025-12-31 musicxml補助の密度フィルタ（試作・独立スクリプト）
+- **Timestamp**: 2025-12-31 01:40:00
+- **Intent**: - musicxmlの拍子/音符数を参照し、近接小節の除去判定を弱く補助できるか試す。 - 既存結果と干渉しない独立スクリプトで実験。
+- **Result**:
+  - TP=451, FP=28, FN=23
+  - removed FP=2, new FN=12
+- **Command**:
+  ```bash
+  - `PYTHONPATH=. .venv_pdf/bin/python tools/musicxml_density_filter.py --run-tag 20251231T_musicxml_density_try`
+  ```
+- **Logs**:
+  - `logs/musicxml_density_filter/20251231T_musicxml_density_try/page_XXX/fn_`
+  - `logs/musicxml_density_filter/20251231T_musicxml_density_try/page_XXX/fp_`
+  - `logs/musicxml_density_filter/20251231T_musicxml_density_try/page_XXX/pair_stats.json`
+  - `logs/musicxml_density_filter/20251231T_musicxml_density_try/summary.json`
+
+### 2025-12-31 musicxml方式の改善（detections整列 + 弱い条件）
+- **Timestamp**: 2025-12-31 02:10:00
+- **Intent**: - homr detectionsのstaff_index/x順でmeasure順序を整列し、musicxml方式のアライン精度を改善。 - FN増加を抑えるため、除去条件を弱めた設定を試行。
+- **Result**:
+  - align (ratio0.30/min_notes8/density0.02): TP=451, FP=28, FN=23, removed FP=2, new FN=12
+  - weak1 (ratio0.25/min_notes12/density0.01): TP=457, FP=28, FN=17, removed FP=2, new FN=0
+  - weak2 (ratio0.25/min_notes16/density0.005): TP=457, FP=28, FN=17, removed FP=2, new FN=0
+- **Command**:
+  ```bash
+  - `PYTHONPATH=. .venv_pdf/bin/python tools/musicxml_density_filter.py --run-tag 20251231T_musicxml_density_align --use-detections-align`
+  ```
+- **Logs**:
+  - `logs/musicxml_density_filter/20251231T_musicxml_density_align/summary.json`
+  - `logs/musicxml_density_filter/20251231T_musicxml_density_align_weak1/summary.json`
+  - `logs/musicxml_density_filter/20251231T_musicxml_density_align_weak2/summary.json`
+
+### 2025-12-31 probe scanの拡張判定（長い判定バー）実装
+- **Timestamp**: 2025-12-31 01:35:00
+- **Intent**: - stem-like FP対策として、probe scanの判定バーを長くし、全長ink ratioで除去する仕組みを追加。
+- **Result**:
+  N/A
+
+### 2025-12-31 probe scan拡張バーの評価（page_3含む）
+- **Timestamp**: 2025-12-31 01:50:00
+- **Intent**: - 伸長判定バー（extend_scale + extend_max_ratio）がstem-like FP削減に効くかを評価。 - page_3を含む5ページで評価。
+- **Result**:
+  - baseline: TP=606, FP=42, FN=2
+  - s1.3_r0p90: TP=604, FP=37, FN=4
+  - s1.6_r0p90: TP=606, FP=39, FN=2
+  - s2.0_r0p90: TP=606, FP=42, FN=2
+- **Command**:
+  ```bash
+  `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/probe_extend_baseline --union-root logs/phase5b_confirmed_union_eval ... --probe-extend-scale 1.0 --probe-extend-max-ratio 1.0`
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/probe_extend_baseline`
+  - `logs/gt_rebuild_hybrid_eval/probe_extend_baseline/summary_table.md`
+  - `logs/gt_rebuild_hybrid_eval/probe_extend_s1.3_r0p90`
+  - `logs/gt_rebuild_hybrid_eval/probe_extend_s1.3_r0p90/summary_table.md`
+  - `logs/gt_rebuild_hybrid_eval/probe_extend_s1.6_r0p90`
+  - `logs/gt_rebuild_hybrid_eval/probe_extend_s1.6_r0p90/summary_table.md`
+  - `logs/gt_rebuild_hybrid_eval/probe_extend_s2.0_r0p90`
+  - `logs/gt_rebuild_hybrid_eval/probe_extend_s2.0_r0p90/summary_table.md`
+  - `logs/homr_eval/baseline_for_hybrid/page_3/`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2025-12-31 page_3のFN=2の原因調査
+- **Timestamp**: 2025-12-31 02:20:00
+- **Intent**: - probe_extend評価で発生したpage_3のFN=2について、除去段階を特定する。
+- **Result**:
+  - FNボックス:
+    - [114, 537, 118, 555]
+    - [116, 645, 120, 667]
+  - row_filteredには存在するが、geom_keptには残らない。
+  - geom_debugではoverlap_ratio=0.0で拒否されておらず、clefs_keys_filterで除外されている。
+    - clefs_keys_filter rejected:
+      - bbox [115, 536, 116, 557] overlap_ratio=0.9545 (>0.3)
+      - bbox [118, 646, 119, 667] overlap_ratio=0.7727 (>0.3)
+
+### 2025-12-31 clefs_keysの緩和でFN=0を回復
+- **Timestamp**: 2025-12-31 02:40:00
+- **Intent**: - page_3のFN=2を解消するため、clefs_keysの適用範囲（left_margin_ratio）を緩和。
+- **Result**:
+  - left=0.18: TP=608, FP=42, FN=0
+  - left=0.15: TP=608, FP=65, FN=0
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/clefs_left_0p15_baseline/summary_table.md`
+  - `logs/gt_rebuild_hybrid_eval/clefs_left_0p18_baseline/summary_table.md`
+
+### 2025-12-31 probe extend再評価（clefs_keys緩和後）
+- **Timestamp**: 2025-12-31 02:50:00
+- **Intent**: - clefs_keys_left_margin_ratio=0.18 を基準に probe extend を再評価。
+- **Result**:
+  - baseline: TP=608, FP=42, FN=0
+  - extend_s1.6_r0p90: TP=608, FP=39, FN=0
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/clefs_left_0p18_baseline/summary_table.md`
+  - `logs/gt_rebuild_hybrid_eval/clefs_left_0p18_extend_s1.6_r0p90/summary_table.md`
+
+### 2025-12-31 page_3の残存FP（clefs_left_0p18基準）
+- **Timestamp**: 2025-12-31 03:05:00
+- **Intent**: - page_3で残るFPの位置と性質を確認し、過去のFP=0条件との差分を特定するための材料整理。
+- **Result**:
+  N/A
+
+### 2025-12-31 core0.50適用後の残存FP再分類と可視化
+- **Timestamp**: 2025-12-31 01:15:00
+- **Intent**: - musicxml適用前（core0.50のみ適用）の残存FPを再分類し、原因調査に必要な可視化を作成。
+- **Result**:
+  - 残存FP合計=31（page_001=12, page_004=5, page_10=4, page_15=10）
+  - mask_counts_ge_0p2:
+    - symbols=1, stems_rest=14, notehead=2, clefs_keys=2, barline=31, notes=31
+- **Logs**:
+  - `logs/fp_reclass_core0p50/20251231T011423_var88_repro/by_category/`
+  - `logs/fp_reclass_core0p50/20251231T011423_var88_repro/by_category/index.json`
+  - `logs/fp_reclass_core0p50/20251231T011423_var88_repro/page_001/`
+  - `logs/fp_reclass_core0p50/20251231T011423_var88_repro/page_004/`
+  - `logs/fp_reclass_core0p50/20251231T011423_var88_repro/page_10/`
+  - `logs/fp_reclass_core0p50/20251231T011423_var88_repro/page_15/`
+  - `logs/fp_reclass_core0p50/20251231T011423_var88_repro/summary.json`
+
+### 2025-12-31 endpoint mask拡張（案A/B）評価
+- **Timestamp**: 2025-12-31 03:20:00
+- **Intent**: - noteheadのみのendpoint判定に対し、notehead+stems（案A）とstems_rest単独（案B）を評価。 - clefs_left_0p18 + probe_extend_s1.6_r0p90 を基準設定として比較。
+- **Result**:
+  - baseline（notehead）: TP=608, FP=39, FN=0
+  - notehead_stems: TP=597, FP=39, FN=11
+  - stems_rest: TP=601, FP=39, FN=7
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/clefs_left_0p18_extend_s1.6_r0p90_notehead_stems/summary_table.md`
+  - `logs/gt_rebuild_hybrid_eval/clefs_left_0p18_extend_s1.6_r0p90_stems_rest/summary_table.md`
+
+### 2025-12-31 案A/Bのendpoint ratio sweep（刻み増加）
+- **Timestamp**: 2025-12-31 03:11:23
+- **Intent**: - 案A（notehead_stems）/案B（stems_rest）のendpoint ratio閾値を細かい刻みでsweepし、FN増加なしでFP削減できるか検証。 - baselineは clefs_keys_left_margin_ratio=0.18 + probe extend (scale=1.6, max_ratio=0.90) を維持。
+- **Result**:
+  - 案A（notehead_stems）:
+    - 0.22: TP=599 FP=48 FN=9
+    - 0.24: TP=604 FP=112 FN=4
+    - 0.26: TP=606 FP=279 FN=2
+    - 0.28: TP=608 FP=341 FN=0
+    - 0.30: TP=608 FP=344 FN=0
+    - 0.32: TP=608 FP=352 FN=0
+    - 0.34: TP=608 FP=384 FN=0
+    - 0.36: TP=608 FP=394 FN=0
+    - 0.38: TP=608 FP=404 FN=0
+    - 0.40: TP=608 FP=421 FN=0
+  - 案B（stems_rest）:
+    - 0.22: TP=601 FP=48 FN=7
+    - 0.24: TP=605 FP=112 FN=3
+    - 0.26: TP=606 FP=279 FN=2
+    - 0.28: TP=608 FP=341 FN=0
+    - 0.30: TP=608 FP=344 FN=0
+    - 0.32: TP=608 FP=352 FN=0
+    - 0.34: TP=608 FP=384 FN=0
+    - 0.36: TP=608 FP=394 FN=0
+    - 0.38: TP=608 FP=404 FN=0
+    - 0.40: TP=608 FP=421 FN=0
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T031242_notehead_stems_thr0p22/`
+  - `logs/gt_rebuild_hybrid_eval/20251231T031242_stems_rest_thr0p22/`
+
+### 2025-12-31 局所経常フィルタ候補（min_height_ratio / stem_outside_staff）の再評価
+- **Timestamp**: 2025-12-31 03:53:51
+- **Intent**: - 次のフィルタとして、既存実装の `barline_min_height_ratio` と `barline_stem_max_height_ratio` を全ページに適用し、   FN=0維持 + page3のFP削減が可能かを確認。 - baselineは `clefs_keys_left_margin_ratio=0.18` + `barline_clefs_low` + `probe_extend` を維持。
+- **Result**:
+  - min_height staffs r0.02: FN増（page_10 FN=2, page_15 FN=3）
+  - min_height staffs r0.03: ほぼ全ページで壊滅的FN
+  - stem staffs r0.04: baselineと同等（FP変化なし, FN=0）
+  - stem staffs r0.06: baselineと同等（FP変化なし, FN=0）
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T035351_minheight_staffs_r0p02/`
+  - `logs/gt_rebuild_hybrid_eval/20251231T035351_minheight_staffs_r0p03/`
+  - `logs/gt_rebuild_hybrid_eval/20251231T035351_stem_staffs_r0p04/`
+  - `logs/gt_rebuild_hybrid_eval/20251231T035351_stem_staffs_r0p06/`
+
+### 2025-12-31 probe scan拡張の上下ink ratio分離（実装）
+- **Timestamp**: 2025-12-31 04:05:00
+- **Intent**: - probe scanの拡張バーに対し、上はみ出し/下はみ出しのink ratioを別々に評価してstem-like FPを抑制できるか検証。 - 既存の `extend_scale`/`extend_max_ratio` に加え、上下の閾値を導入。
+- **Result**:
+  N/A
+
+### 2025-12-31 probe scan上下ink ratioの試行
+- **Timestamp**: 2025-12-31 04:07:30
+- **Intent**: - 追加した上下ink ratio閾値で、FN=0を維持しながらFP削減できるか評価。
+- **Result**:
+  - tb0.25: FN増（page_001 FN=6, page_004 FN=4, page_15 FN=4）
+  - tb0.35: FN増（page_001 FN=1, page_004 FN=4, page_15 FN=1）
+  - tb0.50: FN増（page_001 FN=1, page_004 FN=1）
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T094531_probe_ext_tb0p25/`
+  - `logs/gt_rebuild_hybrid_eval/20251231T094531_probe_ext_tb0p35/`
+  - `logs/gt_rebuild_hybrid_eval/20251231T094531_probe_ext_tb0p50/`
+
+### 2025-12-31 probe scan上下ink ratio可視化（debug）
+- **Timestamp**: 2025-12-31 04:03:59
+- **Intent**: - 上下のink ratio値と判定バー（band / ext_band）を可視化し、閾値の妥当性を目視検証できるようにする。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T100359_probe_ext_tb0p35_debug/`
+
+### 2025-12-31 probe scanのFP/FN要因可視化（targeted crops）
+- **Timestamp**: 2025-12-31 04:12:00
+- **Intent**: - クロップ範囲が狭く判読しづらかったため、FP/FNに絞って拡大クロップを再生成。 - 「過去FPがどうなったか」「新規FNがどのような原因か」を追跡可能にする。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T100359_probe_ext_tb0p35_debug/analysis_fp_fn_crops/`
+
+### 2025-12-31 probe scan debugの再生成（staff band表示・拡大crop）
+- **Timestamp**: 2025-12-31 04:47:16
+- **Intent**: - staff bandとprobe bandのズレを確認できるよう、staff bandを可視化に追加。 - クロップ範囲拡大・文字はみ出し防止のため上部パディングを追加。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T104716_probe_ext_tb0p35_debug/`
+
+### 2025-12-31 probe scan可視化の修正（pred band/色変更）
+- **Timestamp**: 2025-12-31 05:01:47
+- **Intent**: - staff bandがずれて見える問題への対応として、probe scan前の既存小節線（pred band）を可視化に採用。 - 背景白に対して視認性が低い色を変更。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T110147_probe_ext_tb0p35_debug/`
+
+### 2025-12-31 probe scanのband定義とズレ原因の整理（調査）
+- **Timestamp**: 2025-12-31 05:10:00
+- **Intent**: - bandの定義と判定機序を明確化し、五線とのズレ原因を調査。
+- **Result**:
+  N/A
+
+### 2025-12-31 staffmask非使用のbandモード（既存box由来）試行
+- **Timestamp**: 2025-12-31 05:30:14
+- **Intent**: - staffmaskのずれ対策として、既存小節線boxの上下端からbandを生成するモードを追加。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T113014_probe_ext_tb0p35_boxesband_debug/`
+
+### 2025-12-31 probe scan bandの水平スキャン（horiz_scan）試行
+- **Timestamp**: 2025-12-31 05:45:43
+- **Intent**: - staffmaskのズレ回避のため、列方向（xごと）に水平スキャンで五線帯域を推定するモードを追加。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T114543_probe_ext_tb0p35_hscan_debug/`
+
+### 2025-12-31 horiz_scanの粗band拡張（scan pad）
+- **Timestamp**: 2025-12-31 05:52:59
+- **Intent**: - 既存box由来の粗bandが狭く、scan bandがずれる問題への対処として上下に拡張して再スキャン。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T115259_probe_ext_tb0p35_hscan_pad20_debug/`
+
+### 2025-12-31 horiz_scanのpad比率化＋段全体ink ratioログ
+- **Timestamp**: 2025-12-31 06:23:26
+- **Intent**: - 解像度差に耐えるため、scan padをpxではなく比率で指定。 - 段全体（scan base band）でのink ratio統計をログ化し、不合理値の原因確認に備える。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T122326_probe_ext_tb0p35_hscan_padR0p50_debug/`
+
+### 2025-12-31 horiz_scanのline_ratio/min_lines強化（ズレ抑制）
+- **Timestamp**: 2025-12-31 06:33:52
+- **Intent**: - 五線外の線を拾ってしまう問題への対処として、line_ratioを引き上げ、min_linesを5に固定。 - scan bandの抽出は「最小スパンの5ライン窓」を選択するよう改善。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T123352_probe_ext_tb0p35_hscan_padR0p50_lr0p60_ml5_debug/`
+
+### 2025-12-31 row filter bandの可視化拡張（predsモード）
+- **Timestamp**: 2025-12-31 06:40:00
+- **Intent**: - row filterがstaff bandと同じかを確認するため、predsモードでもrow bandを可視化。
+- **Result**:
+  N/A
+
+### 2025-12-31 row band可視化付きの再実行
+- **Timestamp**: 2025-12-31 14:07:56
+- **Intent**: - row filterが参照する帯域（preds由来）を可視化し、scan bandとの整合性を確認。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T140756_probe_ext_tb0p35_hscan_padR0p50_lr0p60_ml5_debug_rowband/`
+
+### 2025-12-31 row_stats基準のprobe bandモード試行
+- **Timestamp**: 2025-12-31 14:24:33
+- **Intent**: - row band（preds由来）をprobe band基準として活用するモードを追加し評価。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T142433_probe_ext_tb0p35_rowstats_hscan_padR0p50_lr0p60_ml5_debug_rowband/`
+
+### 2025-12-31 row_stats band固定のprobe band試行
+- **Timestamp**: 2025-12-31 15:08:40
+- **Intent**: - row_stats bandが正確であるため、probe bandをrow_stats bandに固定して再評価。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T150840_probe_ext_tb0p35_rowstats_hscan_padR0p50_lr0p60_ml5_debug_rowband/`
+
+### 2025-12-31 row_stats bandの上下パディング追加（比率/スタッフ空間）
+- **Timestamp**: 2025-12-31 15:20:00
+- **Intent**: - row_stats bandが内側に寄る問題への対処として、上下パディングを導入。 - 比率指定と staff_space 倍率指定の両方式を追加し、sweepで評価する。
+- **Result**:
+  N/A
+
+### 2025-12-31 scan GUIの下準備（row profile保存 + GUI追加）
+- **Timestamp**: 2025-12-31 15:45:29
+- **Intent**: - GUIで横向きのinkratio分布を確認できるように、scan row profileを保存し可視化画面を追加。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T154529_probe_ext_tb0p35_rowstats_hscan_padR0p50_lr0p60_ml5_debug_rowband_profile/`
+
+### 2025-12-31 GUIエラー回避（missing metrics）
+- **Timestamp**: 2025-12-31 15:50:00
+- **Intent**: - GUI起動時に既存metricsが無い場合でも `/scan` に到達できるように修正。
+- **Result**:
+  N/A
+
+### 2025-12-31 scan GUIのフィルタ/詳細表示追加
+- **Timestamp**: 2025-12-31 16:10:00
+- **Intent**: - 垂直線が多すぎて視認性が悪いため、フィルタとフォーカス表示を追加。
+- **Result**:
+  - rowpad_ratio0p05: TP=605 FP=7 FN=3
+  - rowpad_ratio0p10: TP=605 FP=6 FN=3
+  - rowpad_ratio0p15: TP=573 FP=4 FN=35
+  - rowpad_staff0p5: TP=568 FP=2 FN=40
+  - rowpad_staff1p0: TP=568 FP=2 FN=40
+  - rowpad_staff1p5: TP=568 FP=2 FN=40
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T152500_rowband_pad_sweep/`
+
+### 2025-12-31 page_001のrow band内側ずれの原因調査
+- **Timestamp**: 2025-12-31 15:20:00
+- **Intent**: - row_stats bandが五線内側に入る原因を特定し、FN発生の原因を確認する。
+- **Result**:
+  N/A
+
+### 2025-12-31 staff scan GUIの切り出し
+- **Timestamp**: 2025-12-31 17:10:00
+- **Intent**: - 既存のgui_helperを元に戻し、水平scanのinkratio確認用GUIを独立させる。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T154529_probe_ext_tb0p35_rowstats_hscan_padR0p50_lr0p60_ml5_debug_rowband_profile`
+
+### 2025-12-31 staff scan GUIの描画失敗対策
+- **Timestamp**: 2025-12-31 17:30:00
+- **Intent**: - 黒枠のみ表示される場合に原因を可視化するため、画像ロード失敗時のエラー描画を追加。
+- **Result**:
+  N/A
+
+### 2025-12-31 staff scan GUIのページ未検出表示
+- **Timestamp**: 2025-12-31 17:40:00
+- **Intent**: - `No record loaded.` の原因が `per_page` 未検出か判別できるようにする。
+- **Result**:
+  N/A
+
+### 2025-12-31 staff scan GUIの横スキャンUI整理
+- **Timestamp**: 2025-12-31 18:05:00
+- **Intent**: - crop単位ではなくrow_band_debugを使った横スキャン確認に切り替える。
+- **Result**:
+  N/A
+
+### 2025-12-31 staff scan GUIの表示スケール調整
+- **Timestamp**: 2025-12-31 18:20:00
+- **Intent**: - 画像が大きすぎて操作UIが隠れる問題に対応。
+- **Result**:
+  N/A
+
+### 2025-12-31 staff scan GUIの操作性改善
+- **Timestamp**: 2025-12-31 18:45:00
+- **Intent**: - row_band_debug上で横スキャンを操作しやすくする（ズーム/パン/保存形式）。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/scan_log_`
+
+### 2025-12-31 row ink profile 出力追加
+- **Timestamp**: 2025-12-31 19:10:00
+- **Intent**: - 全体スキャンで行ごとのink ratioとピーク位置を可視化する。
+- **Result**:
+  N/A
+
+### 2025-12-31 row ink profile 実行（最新baseline）
+- **Timestamp**: 2025-12-31 19:30:00
+- **Intent**: - 全ページのrow ink profileを出力して五線ピークの分布を確認する。
+- **Result**:
+  N/A
+- **Command**:
+  ```bash
+  - `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20251231T_row_ink_profile_baseline --union-root logs/phase5b_confirmed_union_eval --row-ink-profile --row-ink-profile-min-ratio 0.2`
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T_row_ink_profile_baseline`
+  - `logs/gt_rebuild_hybrid_eval/20251231T_row_ink_profile_baseline/per_page/page_001/row_ink_profile.png`
+  - `logs/gt_rebuild_hybrid_eval/20251231T_row_ink_profile_baseline/per_page/page_004/row_ink_profile.png`
+  - `logs/gt_rebuild_hybrid_eval/20251231T_row_ink_profile_baseline/per_page/page_10/row_ink_profile.png`
+  - `logs/gt_rebuild_hybrid_eval/20251231T_row_ink_profile_baseline/per_page/page_15/row_ink_profile.png`
+  - `logs/gt_rebuild_hybrid_eval/20251231T_row_ink_profile_baseline/per_page/page_3/row_ink_profile.png`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2025-12-31 row ink profile + analysis_fp_fn_crops（baseline再現）
+- **Timestamp**: 2025-12-31 19:50:00
+- **Intent**: - 最新baseline条件でrow ink profileを出力し、従来形式のFP/FN可視化を生成する。
+- **Result**:
+  N/A
+- **Command**:
+  ```bash
+  - `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20251231T185049_row_ink_profile_baseline --union-root logs/phase5b_confirmed_union_eval --endpoint-ratio-threshold 0.20 --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff --probe-width 3 --probe-ink-threshold 180 --probe-min-ratio 0.80 --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 --probe-band-height-mode median_box --probe-band-height-scale 1.0 --probe-band-height-min 10 --probe-notehead-dilate 13 --probe-row-filter-mode reuse_rows --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 --row-ink-profile --row-ink-profile-min-ratio 0.2 --analysis-baseline-root logs/gt_rebuild_hybrid_eval/20251231T034745_baseline_notehead_barline_clefs_low`
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T034745_baseline_notehead_barline_clefs_low`
+  - `logs/gt_rebuild_hybrid_eval/20251231T185049_row_ink_profile_baseline`
+  - `logs/gt_rebuild_hybrid_eval/20251231T185049_row_ink_profile_baseline/analysis_fp_fn_crops/`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2025-12-31 probe_ext_tb0p35 + row_ink_profile + analysis_fp_fn_crops 再生成
+- **Timestamp**: 2025-12-31 19:50:00
+- **Intent**: - 2025-12-31 15:20頃の条件（horiz_scan + extend）と同等の結果を再現し、   従来形式の `analysis_fp_fn_crops` を再生成する。
+- **Result**:
+  N/A
+- **Command**:
+  ```bash
+  - `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20251231T191051_probe_ext_tb0p35_hscan_lr0p60_padR0p50_ml5_rowink_baseline --union-root logs/phase5b_confirmed_union_eval --endpoint-ratio-threshold 0.20 --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff --endbar-debug --probe-width 3 --probe-ink-threshold 180 --probe-min-ratio 0.80 --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 --probe-band-height-mode median_box --probe-band-height-scale 1.0 --probe-band-height-min 10 --probe-notehead-dilate 13 --probe-row-filter-mode reuse_rows --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.35 --probe-extend-bottom-max-ratio 0.35 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 --row-ink-profile --row-ink-profile-min-ratio 0.2 --analysis-baseline-root logs/gt_rebuild_hybrid_eval/20251231T034745_baseline_notehead_barline_clefs_low`
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T034745_baseline_notehead_barline_clefs_low`
+  - `logs/gt_rebuild_hybrid_eval/20251231T123352_probe_ext_tb0p35_hscan_padR0p50_lr0p60_ml5_debug/summary_table.md`
+  - `logs/gt_rebuild_hybrid_eval/20251231T191051_probe_ext_tb0p35_hscan_lr0p60_padR0p50_ml5_rowink_baseline`
+  - `logs/gt_rebuild_hybrid_eval/20251231T191051_probe_ext_tb0p35_hscan_lr0p60_padR0p50_ml5_rowink_baseline/analysis_fp_fn_crops/`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2025-12-31 analysis_fp_fn_crops のdebug対応改善
+- **Timestamp**: 2025-12-31 20:10:00
+- **Intent**: - FN/FPクロップ内でのband表示ずれと情報不足を改善する。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T192137_probe_ext_tb0p35_hscan_lr0p60_padR0p50_ml5_rowink_baseline_fixrec/analysis_fp_fn_crops/`
+
+### 2025-12-31 new_fn 目視確認と原因整理
+- **Timestamp**: 2025-12-31 20:25:00
+- **Intent**: - new_fnの原因を分類し、はみだし評価の再設計に使う。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T192137_probe_ext_tb0p35_hscan_lr0p60_padR0p50_ml5_rowink_baseline_fixrec/analysis_fp_fn_crops/new_fn/`
+
+### 2025-12-31 probe_scan補正 (1) non-scan extend無効化
+- **Timestamp**: 2025-12-31 21:58:39
+- **Intent**: - horiz_scan時にext_top/bottom由来の除去を無効化し、FN低減を検証する。
+- **Result**:
+  - page_001: TP=76 FP=0 FN=2
+  - page_3: TP=152 FP=2 FN=0
+  - page_004: TP=105 FP=1 FN=7
+  - page_10: TP=154 FP=0 FN=0
+  - page_15: TP=112 FP=2 FN=0
+- **Command**:
+  ```bash
+  - `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20251231T215839_probe_ext_tb0p35_hscan_disable_non_scan_extend --union-root logs/phase5b_confirmed_union_eval ... --probe-scan-disable-non-scan-extend`
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T215839_probe_ext_tb0p35_hscan_disable_non_scan_extend`
+  - `logs/gt_rebuild_hybrid_eval/20251231T215839_probe_ext_tb0p35_hscan_disable_non_scan_extend/analysis_fp_fn_crops/`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2025-12-31 probe_scan補正 (2) scan_bandのpred_bandフォールバック
+- **Timestamp**: 2025-12-31 21:59:36
+- **Intent**: - scan_bandがNoneの場合にpred_bandへフォールバックし、FN低減を検証する。
+- **Result**:
+  - page_001: TP=74 FP=0 FN=4
+  - page_3: TP=152 FP=2 FN=0
+  - page_004: TP=106 FP=1 FN=6
+  - page_10: TP=154 FP=0 FN=0
+  - page_15: TP=112 FP=2 FN=0
+- **Command**:
+  ```bash
+  - `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20251231T215936_probe_ext_tb0p35_hscan_fallback_pred_band --union-root logs/phase5b_confirmed_union_eval ... --probe-scan-fallback-pred-band`
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T215936_probe_ext_tb0p35_hscan_fallback_pred_band`
+  - `logs/gt_rebuild_hybrid_eval/20251231T215936_probe_ext_tb0p35_hscan_fallback_pred_band/analysis_fp_fn_crops/`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2025-12-31 new_fn比較（補正(1)/(2)）
+- **Timestamp**: 2025-12-31 22:10:00
+- **Intent**: - (1)(2)のnew_fnの原因を比較し、次の改善に繋げる。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T215839_probe_ext_tb0p35_hscan_disable_non_scan_extend/analysis_fp_fn_crops/new_fn/`
+  - `logs/gt_rebuild_hybrid_eval/20251231T215936_probe_ext_tb0p35_hscan_fallback_pred_band/analysis_fp_fn_crops/new_fn/`
+
+### 2025-12-31 scan_ratioをピーク相対比で評価
+- **Timestamp**: 2025-12-31 22:10:00
+- **Intent**: - 固定min_ratioではなく、行内ピークに対する相対比でscan_ratioを評価する。
+- **Result**:
+  - page_001: TP=75 FP=0 FN=3
+  - page_3: TP=152 FP=2 FN=0
+  - page_004: TP=110 FP=0 FN=2
+  - page_10: TP=154 FP=0 FN=0
+  - page_15: TP=112 FP=3 FN=0
+- **Command**:
+  ```bash
+  - `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20251231T221000_probe_ext_tb0p35_hscan_relratio --union-root logs/phase5b_confirmed_union_eval ... --probe-width 2 --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.9 --probe-scan-peak-band-height 4 --probe-scan-disable-non-scan-extend`
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T221000_probe_ext_tb0p35_hscan_relratio`
+  - `logs/gt_rebuild_hybrid_eval/20251231T221000_probe_ext_tb0p35_hscan_relratio/analysis_fp_fn_crops/`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2025-12-31 scan_bandをピーク位置に寄せる
+- **Timestamp**: 2025-12-31 23:13:21
+- **Intent**: - scan_bandの中心をrow_ratioピーク位置に寄せてtop/bottom判定を安定化させる。
+- **Result**:
+  - page_001: TP=64 FP=1 FN=14
+  - page_3: TP=152 FP=2 FN=0
+  - page_004: TP=97 FP=1 FN=15
+  - page_10: TP=150 FP=0 FN=4
+  - page_15: TP=105 FP=0 FN=7
+- **Command**:
+  ```bash
+  - `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20251231T231321_probe_ext_tb0p35_hscan_relratio_peakcenter --union-root logs/phase5b_confirmed_union_eval ... --probe-scan-center-on-peak --probe-scan-peak-band-height 4 --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.9`
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T231321_probe_ext_tb0p35_hscan_relratio_peakcenter`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2025-12-31 x方向ピーク救済（細線判定）
+- **Timestamp**: 2025-12-31 23:56:37
+- **Intent**: - Y方向のはみだしがあっても、x方向のピークが鋭い場合は「細い線」とみなして救済する。
+- **Result**:
+  - page_001: TP=76 FP=2 FN=2
+  - page_3: TP=152 FP=2 FN=0
+  - page_004: TP=112 FP=1 FN=0
+  - page_10: TP=154 FP=0 FN=0
+  - page_15: TP=112 FP=11 FN=0
+- **Command**:
+  ```bash
+  - `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20251231T235637_probe_ext_tb0p35_hscan_relratio_xpeak_rescue --union-root logs/phase5b_confirmed_union_eval ... --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6`
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T235637_probe_ext_tb0p35_hscan_relratio_xpeak_rescue`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2026-01-01 x方向ピーク救済のパラメータ比較
+- **Timestamp**: 2026-01-01 00:50:00
+- **Intent**: - xpeak救済の強さを調整し、FP増加を抑えつつFNを維持できるか確認。
+- **Result**:
+  - r1.8: page_001 FP=2 FN=2 / page_004 FP=1 FN=0 / page_15 FP=11 FN=0
+  - w18: page_001 FP=2 FN=2 / page_004 FP=1 FN=0 / page_15 FP=11 FN=0
+  - overhang0.2: page_001 FP=0 FN=3 / page_004 FP=0 FN=2 / page_15 FP=3 FN=0
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260101T005036_probe_ext_tb0p35_hscan_relratio_xpeak_r1p8`
+  - `logs/gt_rebuild_hybrid_eval/20260101T005139_probe_ext_tb0p35_hscan_relratio_xpeak_w18`
+  - `logs/gt_rebuild_hybrid_eval/20260101T005235_probe_ext_tb0p35_hscan_relratio_xpeak_overhang0p2`
+
+### 2026-01-01 xpeak救済の対象限定
+- **Timestamp**: 2026-01-01 01:12:54
+- **Intent**: - 救済対象を限定し、FP増加を抑えられるか検証。
+- **Result**:
+  - ratio: page_001 FP=2 FN=2 / page_004 FP=1 FN=0 / page_15 FP=11 FN=0
+  - topbottom: page_001 FP=0 FN=3 / page_004 FP=0 FN=2 / page_15 FP=3 FN=0
+  - both: page_001 FP=0 FN=3 / page_004 FP=0 FN=2 / page_15 FP=3 FN=0
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260101T011254_probe_ext_tb0p35_hscan_relratio_xpeak_rescue_both`
+  - `logs/gt_rebuild_hybrid_eval/20260101T011254_probe_ext_tb0p35_hscan_relratio_xpeak_rescue_ratio`
+  - `logs/gt_rebuild_hybrid_eval/20260101T011254_probe_ext_tb0p35_hscan_relratio_xpeak_rescue_topbottom`
+
+### 2026-01-01 xpeak分割救済（全分割でピーク必須）
+- **Timestamp**: 2026-01-01 01:37:21
+- **Intent**: - scan_bandを短く分割し、全分割でxpeakが立つ場合のみ救済する。
+- **Result**:
+  - page_001: TP=75 FP=0 FN=3
+  - page_3: TP=152 FP=2 FN=0
+  - page_004: TP=110 FP=0 FN=2
+  - page_10: TP=154 FP=0 FN=0
+  - page_15: TP=112 FP=3 FN=0
+- **Command**:
+  ```bash
+  - `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/20260101T013721_probe_ext_tb0p35_hscan_relratio_xpeak_segmented --union-root logs/phase5b_confirmed_union_eval ... --probe-scan-x-peak-segment-height 4 --probe-scan-x-peak-segment-pass-ratio 1.0 --probe-scan-x-peak-segment-source scan_band`
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260101T013721_probe_ext_tb0p35_hscan_relratio_xpeak_segmented`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2026-01-01 scan_ext_band分割 & staff-peak無視の検証
+- **Timestamp**: 2026-01-01 01:53:00
+- **Intent**: - (順序1) scan_ext_band分割救済の効果を確認。 - (順序2) 五線ピーク付近（行方向）の行を無視してxpeakを計算する。
+- **Result**:
+  - scan_ext_band分割: page_001 FP=0 FN=3 / page_004 FP=0 FN=2 / page_15 FP=3 FN=0
+  - staff-peak無視(r=1): page_001 FP=0 FN=3 / page_004 FP=0 FN=2 / page_15 FP=3 FN=0
+  - staff-peak無視(r=1, ratio=2.0): page_001 FP=0 FN=3 / page_004 FP=0 FN=2 / page_15 FP=3 FN=0
+  - staff-peak無視(r=1, ratio=2.0, window=8): page_001 FP=0 FN=3 / page_004 FP=0 FN=2 / page_15 FP=3 FN=0
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260101T015308_probe_ext_tb0p35_hscan_relratio_xpeak_extseg`
+  - `logs/gt_rebuild_hybrid_eval/20260101T015421_probe_ext_tb0p35_hscan_relratio_xpeak_ignore_staffpeak`
+  - `logs/gt_rebuild_hybrid_eval/20260101T015528_probe_ext_tb0p35_hscan_relratio_xpeak_ignore_staffpeak_r2`
+  - `logs/gt_rebuild_hybrid_eval/20260101T015636_probe_ext_tb0p35_hscan_relratio_xpeak_ignore_staffpeak_r2_w8`
+
+### 2026-01-01 top/bottom判定とxpeak救済の仕様整理
+- **Timestamp**: 2026-01-01 01:25:00
+- **Intent**: - top/bottom閾値とxpeak救済の計算定義を明文化し、引き継ぎで混乱しないようにする。
+- **Result**:
+  N/A
+
+### 2026-01-01 暫定まとめ（引き継ぎ用）
+- **Timestamp**: 2026-01-01
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Command**:
+  ```bash
+  `PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py --output-root logs/gt_rebuild_hybrid_eval/<run> --union-root logs/phase5b_confirmed_union_eval --endpoint-ratio-threshold 0.20 --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff --endbar-debug --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.80 --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 --probe-band-height-mode median_box --probe-band-height-scale 1.0 --probe-band-height-min 10 --probe-notehead-dilate 13 --probe-row-filter-mode reuse_rows --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.35 --probe-extend-bottom-max-ratio 0.35 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 --row-ink-profile --row-ink-profile-min-ratio 0.2 --analysis-baseline-root logs/gt_rebuild_hybrid_eval/20251231T034745_baseline_notehead_barline_clefs_low --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.9 --probe-scan-peak-band-height 4 --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6`
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/`
+  - `logs/gt_rebuild_hybrid_eval/20251231T034745_baseline_notehead_barline_clefs_low`
+  - `logs/gt_rebuild_hybrid_eval/20251231T191051_probe_ext_tb0p35_hscan_lr0p60_padR0p50_ml5_rowink_baseline/`
+  - `logs/gt_rebuild_hybrid_eval/20251231T221000_probe_ext_tb0p35_hscan_relratio/`
+  - `logs/gt_rebuild_hybrid_eval/20251231T235637_probe_ext_tb0p35_hscan_relratio_xpeak_rescue/`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2026-01-01 追加メモ（作業継続）
+- **Timestamp**: 2026-01-01 02:05:00
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260101T013721_probe_ext_tb0p35_hscan_relratio_xpeak_segmented`
+  - `logs/gt_rebuild_hybrid_eval/20260101T_peakratio0p85_tb0p40_rightmost15_r0p90`
+  - `logs/gt_rebuild_hybrid_eval/20260101T_peakratio0p85_tb0p40_rightmost15_r0p90/rightmost_rescue_viz/`
+
+### 2026-01-01 引き継ぎメモ（最新版・この節のみ参照）
+- **Timestamp**: 2026-01-01
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260101T043521_peakratio0p85_tb0p40_rightmost15_r0p90_ratiorescue_rtupdate`
+  - `logs/gt_rebuild_hybrid_eval/20260101T_peakratio0p85_tb0p40_rightmost15_r0p90`
+  - `logs/gt_rebuild_hybrid_eval/20260101T_peakratio0p85_tb0p40_rightmost15_r0p90/rightmost_rescue_viz/`
+
+### 2026-01-01 Divisi対応の検討と方針提案
+- **Timestamp**: 2026-01-01
+- **Intent**: - **page_004 の残存FN (col=2138)** を解消するための Divisi（段分かれ）対応の検討。 - 当該FNは、1つのパート譜が2段に分かれている箇所で、隣接する段の音符成分を「はみ出し」と誤認して `extended_bottom_ratio_scan` 等で除去されている可能性が高い。
+- **Result**:
+  N/A
+
+### 2026-01-01 Divisi対応の再検討と実装計画 (v2)
+- **Timestamp**: 2026-01-01
+- **Intent**: N/A
+- **Result**:
+  N/A
+
+### 2026-01-01 Divisi対応実装と評価 (page_004 FN=0達成)
+- **Timestamp**: 2026-01-01
+- **Intent**: - `page_004` のFN解消のため、Divisi救済ロジックを実装し評価。 - 同時に、救済された候補が `candidates` に追加されないバグ（`continue` 文の誤用）を修正。
+- **Result**:
+  N/A
+
+### 2026-01-01 最終評価と結果まとめ
+- **Timestamp**: 2026-01-01
+- **Intent**: - 全ページ FN=0 の達成と FP の抑制。 - `page_001` の FN=1 の原因調査と解消。
+- **Result**:
+  | Page | TP | FP | FN | 備考 |
+  | --- | --- | --- | --- | --- |
+  | page_001 | 77 | 0 | **1** | 残存課題。`scan_ratio_rel_low_rescued` だが `row_filter` で脱落か。 |
+  | page_004 | 112 | 2 | **0** | Divisi救済成功。 |
+  | page_3 | 152 | 2 | 0 | ベースライン維持。 |
+  | page_10 | 154 | 0 | 0 | 安定。 |
+  | page_15 | 112 | 3 | 0 | FP増加を抑制しつつ維持。 |
+- **Command**:
+  ```bash
+  PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20251231T034745_baseline_notehead_barline_clefs_low`
+  - `logs/gt_rebuild_hybrid_eval/20260101T_divisi_rescue_v9_fix_xpeak_mode`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2026-01-01 probe scan後のrow filterの検討と改善案
+- **Timestamp**: 2026-01-01
+- **Intent**: - `page_001` の FN=1 の原因が、`probe_scan` 後の `row_filter` にあることを受け、当該フィルタのロジックと適用の正当性を再検討する。
+- **Result**:
+  N/A
+
+### 2026-01-02 Session Resume: Page 001 FN Fix (Row Filter Bypass)
+- **Timestamp**: 2026-01-02
+- **Intent**: - Resuming from previous session (2026-01-01). - **Goal:** Fix the persistent FN=1 on `page_001` (col=2473) while maintaining FN=0 on other pages and low FP. - **Current State:**   - `tools/run_gt_rebuild_hybrid_eval.py` contains uncommitted changes implementing `probe_row_filter_mode="bypass"` and some fixes to `rightmost` rescue logic (trusted candidates).   - Previous analysis suggested the `page_001` FN was rescued by `probe_scan` but dropped by `row_filter`. - **Plan:**   1.  Execute evaluation with `--probe-row-filter-mode bypass` based on the `v9_fix_xpeak_mode` configuration.   2.  Verify if `page_001` FN is resolved and check for side effects (FP increase) on other pages.
+- **Result**:
+  N/A
+
+### 2026-01-02 評価結果: Row Filter Bypass + Rescue Bug Fix
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T_bypass_row_filter_fix_rescue`
+
+### 2026-01-02 11:30 重複結合の実装と全ページFN=0の達成
+- **Timestamp**: 2026-01-02
+- **Intent**: - `page_001` の FN=1 を `bypass` モードで解消。 - `probe_scan` 結果に含まれる「同一X座標の断片化したボックス」を結合し、FP数を整理する。
+- **Result**:
+  - **出力ディレクトリ**: `logs/gt_rebuild_hybrid_eval/20260102T_bypass_dedup_filters`
+  - **内容**: `probe-filter-vertical-run` (0.75) などを適用。
+  - **結果**: `page_001` で FN=1 が再発。
+  - **考察**: `probe_scan` で救済している TP (col=2473) は、インクの連続性がわずかに閾値を下回る（断続的な点線状になっている）ため、形状フィルタを厳しくすると脱落する。
+  - **結論**: 現在の `bypass` + `merge` 構成を暫定ベストとする。
+- **Command**:
+  ```bash
+  PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T_bypass_dedup_filters`
+  - `logs/gt_rebuild_hybrid_eval/20260102T_bypass_row_filter_fix_rescue_dedup`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2026-01-02 GTデータの不備修正による精度適正化
+- **Timestamp**: 2026-01-02
+- **Intent**: - FN=0 達成後の評価結果を精査したところ、以下の3件が実際には正解（TP）であるにもかかわらず、GTに登録がないためにFPとしてカウントされていることを確認。 - これらをGTに追加し、真の精度（FP=0）を達成する。
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T_bypass_row_filter_fix_rescue_dedup/analysis_fp_fn_crops/baseline_fp_kept/`
+
+### 2026-01-02 12:00 GT修正後の再評価と現状確認
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+
+### 2026-01-02 12:30 ベストパラメータ復元による精度再現の試行
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+
+### 2026-01-02 13:00 パラメータ復元後の精度乖離と追加調査
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+
+### 2026-01-02 Best repro check: endpoint-ratio-threshold=0.25
+- **Timestamp**: 2026-01-02
+- **Intent**: - Start best-repro verification by relaxing `endpoint-ratio-threshold` to absorb band mismatch noted in 13:00 log.
+- **Result**:
+  - FN=0 is achieved on all pages with `endpoint-ratio-threshold=0.25`, but FP is very high on pages 001/004/10/15.
+  - Next step: compare with `endpoint-ratio-threshold=0.20` under the same explicit parameter set to quantify FP delta and decide if 0.25 is acceptable or if we need a targeted fix instead.
+- **Command**:
+  ```bash
+  PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T123143_best_repro_ep025 \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-ratio-threshold 0.25 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T123143_best_repro_ep025`
+  - `logs/gt_rebuild_hybrid_eval/20260102T123143_best_repro_ep025/summary_table.md`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2026-01-02 Best repro check: endpoint-ratio-threshold=0.20
+- **Timestamp**: 2026-01-02
+- **Intent**: - Compare FP impact vs `endpoint-ratio-threshold=0.25` under the same explicit parameter set.
+- **Result**:
+  - FN=0 is maintained, and FP decreases vs `endpoint-ratio-threshold=0.25` but remains very high on pages 001/004/10/15.
+  - This suggests the FN issue is not from endpoint-ratio alone; need to revisit the best baseline/filters used in `20260102T_bypass_row_filter_fix_rescue_dedup` and reconcile with current defaults.
+- **Command**:
+  ```bash
+  PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T123143_best_repro_ep020 \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T123143_best_repro_ep020`
+  - `logs/gt_rebuild_hybrid_eval/20260102T123143_best_repro_ep020/summary_table.md`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2026-01-02 Best repro check: dedup params (minimal flags)
+- **Timestamp**: 2026-01-02
+- **Intent**: - Re-run the previously noted “bypass + dedup” command shape to compare against current default changes.
+- **Result**:
+  - This minimal-flag run regresses heavily (FN on page_001/page_3/page_004/page_15). It is not comparable to the “full explicit parameter” runs above.
+  - Indicates we must keep the full parameter set (band source/extend/peak/scan) consistent when reproducing older results.
+- **Command**:
+  ```bash
+  PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T123143_best_repro_dedup_params \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-ratio-threshold 0.20 --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-dilate 7 --filter-clefs-keys \
+  --enable-end-barline-recovery --endbar-method probe_scan \
+  --probe-row-filter-mode bypass \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-divisi-rescue --probe-scan-rightmost-rescue
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T123143_best_repro_dedup_params`
+  - `logs/gt_rebuild_hybrid_eval/20260102T123143_best_repro_dedup_params/summary_table.md`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2026-01-02 Best repro baseline recovery from debug artifacts
+- **Timestamp**: 2026-01-02 01:18:47
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T_bypass_row_filter_fix_rescue_dedup/summary_table.md`
+
+### 2026-01-02 Best repro check: full params from debug (baseline)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  - This reproduces FN=0 across all pages with low FP, much closer to the earlier “best” run.
+  - The critical delta vs earlier high-FP runs was enabling `filter_barline_clefs_low` and restoring probe endpoint scales + notehead/probe-notehead params from debug artifacts.
+- **Command**:
+  ```bash
+  PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-notehead-dilate 13 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams`
+  - `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams/summary_table.md`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2026-01-02 Parameter search coverage check (from SESSION_LOG)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+
+### 2026-01-02 FP image review: filter_barline_clefs_low + GT-add check (page_004)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams/per_page/page_004/fp_boxes.json`
+
+### 2026-01-02 GT addition trace check (commit e2de4910)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+
+### 2026-01-02 GT fix applied: page_004 missing barline
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+
+### 2026-01-02 page_004 GT fix applied to active GT source
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams_gtfix_p4b/summary_table.md`
+  - `logs/phase6_detector_miss/gt_rebuild/page_004_boxes_sorted.json`
+
+### 2026-01-02 FP review (visual) and candidate filters
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams_gtfix_p4b/per_page/`
+
+### 2026-01-02 FP mask-overlap classification (note_context check)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/fp_mask_overlap/20260102T142837_best_repro/`
+  - `logs/fp_mask_overlap/20260102T142837_best_repro/summary.json`
+
+### 2026-01-02 Evaluation: endpoint_mask_mode=notehead_stems (note_context)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  - `notehead_stems` reduces geom_kept but introduces FN (page_3/004/15), so it is **not safe** as a global switch.
+  - Consider page-specific application (page_3) or use it only in post-analysis, not default filtering.
+- **Command**:
+  ```bash
+  PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T143030_best_repro_notehead_stems \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-mask-mode notehead_stems \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-notehead-dilate 13 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T143030_best_repro_notehead_stems`
+  - `logs/gt_rebuild_hybrid_eval/20260102T143030_best_repro_notehead_stems/summary_table.md`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2026-01-02 Note-context auto-apply feasibility (TP vs FP overlap)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/fp_mask_overlap/20260102T142837_best_repro_tp_fp/`
+  - `logs/fp_mask_overlap/20260102T142837_best_repro_tp_fp/summary.json`
+
+### 2026-01-02 Composite rule feasibility (mask overlap + shape)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/fp_mask_overlap/20260102T145200_composite_rules/`
+  - `logs/fp_mask_overlap/20260102T145200_composite_rules/summary.json`
+
+### 2026-01-02 Composite rule visuals (TP/FP + masks)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/fp_mask_overlap/20260102T150231_visuals/`
+
+### 2026-01-02 FP condition flags + per-FP mask crops
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/fp_mask_overlap/20260102T152021_fp_conditions/`
+  - `logs/fp_mask_overlap/20260102T152021_fp_conditions/summary.json`
+
+### 2026-01-02 FP detailed review (mask overlay crops)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+
+### 2026-01-02 clefs_keys thin-vertical filter trial
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  | Page | TP | FP | FN | row_kept | geom_kept |
+  | --- | --- | --- | --- | --- | --- |
+  | page_001 | 77 | 3 | 1 | 109 | 128 |
+  | page_3 | 152 | 2 | 0 | 292 | 290 |
+  | page_004 | 111 | 0 | 3 | 148 | 171 |
+  | page_10 | 154 | 0 | 0 | 246 | 251 |
+  | page_15 | 112 | 8 | 2 | 168 | 188 |
+- **Command**:
+  ```bash
+  PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T152021_best_repro_clefs_thin \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-mask-mode notehead \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --filter-clefs-keys-thin --clefs-keys-thin-overlap-min 0.2 --clefs-keys-thin-max-width 3 --clefs-keys-thin-barline-max 0.2 \
+  --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-notehead-dilate 13 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T152021_best_repro_clefs_thin`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2026-01-02 clefs_keys thin filter (left-margin only)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  | Page | TP | FP | FN | row_kept | geom_kept |
+  | --- | --- | --- | --- | --- | --- |
+  | page_001 | 78 | 3 | 0 | 109 | 129 |
+  | page_3 | 152 | 2 | 0 | 292 | 290 |
+  | page_004 | 114 | 1 | 0 | 148 | 176 |
+  | page_10 | 154 | 0 | 0 | 246 | 251 |
+  | page_15 | 114 | 8 | 0 | 168 | 191 |
+- **Command**:
+  ```bash
+  PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T152021_best_repro_clefs_thin_left \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-mask-mode notehead \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --filter-clefs-keys-thin --clefs-keys-thin-overlap-min 0.2 --clefs-keys-thin-max-width 3 --clefs-keys-thin-barline-max 0.2 --clefs-keys-thin-left-margin-ratio 0.20 \
+  --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-notehead-dilate 13 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T152021_best_repro_clefs_thin_left`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2026-01-02 clefs_keys thin filter (center band)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  | Page | TP | FP | FN | row_kept | geom_kept |
+  | --- | --- | --- | --- | --- | --- |
+  | page_001 | 78 | 3 | 0 | 109 | 129 |
+  | page_3 | 152 | 2 | 0 | 292 | 290 |
+  | page_004 | 113 | 1 | 1 | 148 | 174 |
+  | page_10 | 154 | 0 | 0 | 246 | 251 |
+  | page_15 | 113 | 8 | 1 | 168 | 189 |
+- **Command**:
+  ```bash
+  PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T152021_best_repro_clefs_thin_center \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-mask-mode notehead \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --filter-clefs-keys-thin --clefs-keys-thin-overlap-min 0.2 --clefs-keys-thin-max-width 3 --clefs-keys-thin-barline-max 0.2 --clefs-keys-thin-left-margin-ratio 0.20 --clefs-keys-thin-right-margin-ratio 0.80 \
+  --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-notehead-dilate 13 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T152021_best_repro_clefs_thin_center`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2026-01-02 FP symbol-mask analysis (sharp/flat/natural heuristics)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/fp_symbol_analysis/20260102T154200/`
+  - `logs/fp_symbol_analysis/20260102T154200/summary.json`
+
+### 2026-01-02 LLM score design (v1) + candidate count estimate
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  - FP score range: [-0.805, 1.880] (14 FP total)
+  - FN score range: [1.058, 1.702] (13 FN total from notehead_stems run)
+  - Threshold to include all FP: 1.8805
+    - This includes all FN, but also 603/612 TP (too many)
+- **Logs**:
+  - `logs/fp_llm_score/20260102T160500/summary.json`
+
+### 2026-01-02 Safe-filtered candidate ranking (LLM shortlist)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/fp_llm_score/20260102T171337_safe_rank/`
+  - `logs/fp_llm_score/20260102T171337_safe_rank/ranked_candidates.json`
+  - `logs/fp_llm_score/20260102T171337_safe_rank/summary.json`
+
+### 2026-01-02 Safe filters impact (candidate reduction)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams_gtfix_p4b`
+
+### 2026-01-02 Safe filter test: barline_min_height_ratio=0.9
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  | Page | TP | FP | FN | row_kept | geom_kept |
+  | --- | --- | --- | --- | --- | --- |
+  | page_001 | 78 | 3 | 0 | 109 | 129 |
+  | page_3 | 152 | 2 | 0 | 292 | 290 |
+  | page_004 | 114 | 1 | 0 | 148 | 176 |
+  | page_10 | 154 | 0 | 0 | 246 | 251 |
+  | page_15 | 94 | 5 | 20 | 168 | 155 |
+- **Command**:
+  ```bash
+  PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T171337_best_repro_minheight \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-mask-mode notehead \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 \
+  --barline-min-height-ratio 0.9 --barline-min-height-mask staff \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-notehead-dilate 13 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T171337_best_repro_minheight`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2026-01-02 Safe filter test: probe_filter_multiband
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  | Page | TP | FP | FN | row_kept | geom_kept |
+  | --- | --- | --- | --- | --- | --- |
+  | page_001 | 67 | 0 | 11 | 109 | 112 |
+  | page_3 | 152 | 2 | 0 | 292 | 290 |
+  | page_004 | 101 | 0 | 13 | 148 | 153 |
+  | page_10 | 150 | 0 | 4 | 246 | 246 |
+  | page_15 | 105 | 0 | 9 | 168 | 168 |
+- **Command**:
+  ```bash
+  PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T171337_best_repro_multiband \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-mask-mode notehead \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-notehead-dilate 13 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2 \
+  --probe-filter-multiband --probe-multiband-x-tol 6 --probe-multiband-min-bands 3
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T171337_best_repro_multiband`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2026-01-02 Safe filter test: barline_stem_max_height_ratio=0.7
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  | Page | TP | FP | FN | row_kept | geom_kept |
+  | --- | --- | --- | --- | --- | --- |
+  | page_001 | 78 | 3 | 0 | 109 | 129 |
+  | page_3 | 152 | 2 | 0 | 292 | 290 |
+  | page_004 | 114 | 1 | 0 | 148 | 176 |
+  | page_10 | 154 | 0 | 0 | 246 | 251 |
+  | page_15 | 114 | 8 | 0 | 168 | 191 |
+- **Command**:
+  ```bash
+  PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T171337_best_repro_stemheight \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-mask-mode notehead \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 \
+  --barline-stem-max-height-ratio 0.7 --barline-stem-min-band-cover 0.6 --barline-stem-mask staffs \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-notehead-dilate 13 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+  ```
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T171337_best_repro_stemheight`
+  - `logs/phase5b_confirmed_union_eval`
+
+### 2026-01-02 System-level candidate packaging (staff systems)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/llm_system_candidates/20260102T173000/`
+  - `logs/llm_system_candidates/20260102T173000/summary.json`
+
+### 2026-01-02 LLM page-level trial prep: page_15
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/llm_page_candidates/20260102T180000_page15/page_15_candidates.json`
+  - `logs/llm_page_candidates/20260102T180000_page15/page_15_candidates_overlay.png`
+
+### 2026-01-02 Gemini page-level review script (standalone)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Command**:
+  ```bash
+  export GEMINI_API_KEY=YOUR_KEY
+.venv_pdf/bin/python tools/gemini_candidate_review.py \
+  --image logs/llm_page_candidates/20260102T180000_page15/page_15_candidates_overlay.png \
+  --candidates logs/llm_page_candidates/20260102T180000_page15/page_15_candidates.json \
+  --output logs/llm_page_candidates/20260102T180000_page15/page_15_gemini_response.json \
+  --model gemini-1.5-flash
+  ```
+- **Logs**:
+  - `logs/llm_page_candidates/20260102T180000_page15/page_15_candidates.json`
+  - `logs/llm_page_candidates/20260102T180000_page15/page_15_candidates_overlay.png`
+  - `logs/llm_page_candidates/20260102T180000_page15/page_15_gemini_response.json`
+
+### 2026-01-02 Gemini script: .env loading support
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+
+### 2026-01-02 Gemini page-level trial (page_15, 50 candidates)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Command**:
+  ```bash
+  .venv_pdf/bin/python tools/gemini_candidate_review.py \
+  --image logs/llm_page_candidates/20260102T180000_page15/page_15_candidates_overlay.png \
+  --candidates logs/llm_page_candidates/20260102T180000_page15/page_15_candidates.json \
+  --output logs/llm_page_candidates/20260102T180000_page15/page_15_gemini_response.json \
+  --model models/gemini-flash-latest \
+  --max-candidates 50 \
+  --output-mode false_only
+  ```
+- **Logs**:
+  - `logs/llm_page_candidates/20260102T180000_page15/page_15_candidates.json`
+  - `logs/llm_page_candidates/20260102T180000_page15/page_15_candidates_overlay.png`
+  - `logs/llm_page_candidates/20260102T180000_page15/page_15_gemini_response.json`
+
+### 2026-01-02 Gemini trial verification (page_15, 50 candidates)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  - Gemini returned 7 `false` labels (from first 50 candidates).
+  - All 7 were **not** in `fp_boxes` for page_15 (FP hits = 0, false positives = 7).
+
+### 2026-01-02 Gemini false labels: ID list + crops
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/llm_page_candidates/20260102T180000_page15/misclassified_false_crops/`
+  - `logs/llm_page_candidates/20260102T180000_page15/misclassified_false_ids.json`
+
+### 2026-01-02 LLM segment review (page15 split2)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/llm_system_candidates/20260102T192123_page_15_split2/.`
+
+### 2026-01-02 Gemini segment test (page15, 2-staff segments)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/llm_system_candidates/20260102T192123_page_15_split2/.`
+  - `logs/llm_system_candidates/20260102T192123_page_15_split2/segment_eval/fp_hit_crops/`
+  - `logs/llm_system_candidates/20260102T192123_page_15_split2/segment_eval/fp_missed_crops/`
+  - `logs/llm_system_candidates/20260102T192123_page_15_split2/segment_eval/tp_false_crops/`
+
+### 2026-01-02 Gemini 3 trial (page15, 2-staff segments)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/llm_system_candidates/20260102T192123_page_15_split2/segment_eval_gemini3_flash/fp_hit_crops/`
+  - `logs/llm_system_candidates/20260102T192123_page_15_split2/segment_eval_gemini3_flash/fp_missed_crops/`
+  - `logs/llm_system_candidates/20260102T192123_page_15_split2/segment_eval_gemini3_flash/tp_false_crops/`
+
+### 2026-01-02 Gemini 3 Flash strict prompt + 1-system segments (page15)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/llm_system_candidates/20260102T210201_page_15_split1/`
+  - `logs/llm_system_candidates/20260102T210201_page_15_split1/segment_eval_gemini3_flash_strict/fp_hit_crops/`
+  - `logs/llm_system_candidates/20260102T210201_page_15_split1/segment_eval_gemini3_flash_strict/fp_missed_crops/`
+  - `logs/llm_system_candidates/20260102T210201_page_15_split1/segment_eval_gemini3_flash_strict/tp_false_crops/`
+
+### 2026-01-02 Pre-probe candidate FP check (row_filtered)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams_gtfix_p4b/per_page/`
+  - `logs/preprobe_tp_check/20260102T213424/page_3_row_filtered_fp.json`
+  - `logs/preprobe_tp_check/20260102T213424/summary.json`
+
+### 2026-01-02 Pre-probe + notehead filter check
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/preprobe_notehead_check/20260102T225243/`
+
+### 2026-01-02 Search for FP=0 runs
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/gt_rebuild_hybrid_eval/`
+  - `logs/gt_rebuild_hybrid_eval/20251231T_row_ink_profile_baseline`
+
+### 2026-01-02 Gemini 3 Flash with confirmed-TP examples (page15 split1 LR)
+- **Timestamp**: 2026-01-02
+- **Intent**: N/A
+- **Result**:
+  N/A
+- **Logs**:
+  - `logs/llm_system_candidates/20260102T230141_page_15_split1_lr_notehead/segment_eval_gemini3_flash_strict_examples/`

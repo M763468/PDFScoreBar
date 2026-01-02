@@ -63,3 +63,55 @@
   - var25で **FN=0**（`max_per_band=0`, `min_peak_distance=2`）を達成（`logs/gt_rebuild_hybrid_eval/20251229T_hybrid_row_notehead_endbar/var25/`）。
 - notehead maskはダブルバー誤検出が原因でFNを生むため、aspectフィルタ適用が必須。
 - clefs_keysは左端のみ有効で、中央適用はFN増加のため不採用。
+
+## Unmerged Session Notes (From SESSION_LOG)
+## 2026-01-02 LLMまとめと今後の方針
+### 1. Gemini評価のまとめ
+- 2段まとめ + Gemini-Flash (初期): FP hit 4/8, TP false 4。
+- 1段分割 + Gemini-3 Flash (strict prompt): FP hit 6/8, TP false 10。
+- 確定TP(緑)を手本にしたLR分割 + notehead縦マージン拡張 + Gemini-3 Flash:
+  - 残り候補 21件、緑=170件。
+  - 途中でクォータ上限により4セグメント未取得。
+  - 取得済み分では FP hit 1/8, TP false 2 (暫定)。
+- LLMはFPを拾えるが、TP誤判定が残り、安定的な自動除去には不十分。
+
+### 2. 確定TP集合の方針
+- FP=0の中間結果として `20251231T_row_ink_profile_baseline` を採用可能。
+  - per_page metrics: page_001/004/10/15/3 がすべて FP=0 (FNは残る)。
+  - このgeom_keptを「確定TP」として除外し、残りのみLLM判定に回す構成が有望。
+
+### 3. 今後の検討方針 (候補)
+A) LLMはレビュー用途に限定
+- FP候補をさらに絞り込んで人手確認 or LLM確認数を最小化。
+- 例: 1段→左右分割＋notehead縦パディング、タイル化してAPI回数削減。
+
+B) 非LLMの信頼度再スコアリング強化
+- notehead/stem/clef mask距離・交差率の追加特徴。
+- staff band内の縦連続性/インク率を使ったスコアリング。
+- 確定TP集合との差分を「疑義候補」として順位付け。
+
+C) LLM利用時の工夫
+- 画像あたりの候補数を絞り、最終的なFP候補だけ送る。
+- 確定TP(緑)を手本に残す方式は継続候補。
+- 可能なら1画像にタイル化してリクエスト数削減。
+
+D) pipeline側の改善
+- FP=0の中間結果で確定TPを固定し、残りだけをprobe scan/後段へ。
+- row_filtered + notehead filterを通過した部分は安全集合として扱う運用を検討。
+
+## 2026-01-02 Gemini 1.5 Flash System-Level Review with CoT+Rescue Prompt
+- **Purpose**: Test if adding a "Rescue" logic to the Chain-of-Thought prompt prevents False Negatives (TP marked as False) observed in strict mode.
+- **Method**: 
+  - Used `temp_review_images/prompt_cot_rescue.txt` with `gemini-1.5-flash-latest`.
+  - Tested on `system_06_L` (contains FP id 171) and `system_03_L` (contains TP id 168).
+- **Results**:
+  - `system_06_L` (FP id 171): Marked as **TRUE** (False Positive).
+    - Reason: "Straight, vertical line... positioned at expected measure boundary... not attached to any note symbol".
+    - Regression from strict mode which correctly rejected it.
+  - `system_03_L` (TP id 168): Marked as **TRUE** (True Positive).
+    - Reason: "Straight, vertical line... matches style of surrounding confirmed barlines...".
+    - Improvement from strict mode which incorrectly rejected it.
+- **Conclusion**:
+  - The "Rescue" logic successfully fixed the False Negative (TP 168 is now True).
+  - However, it swung too far and accepted the False Positive (FP 171 is now True).
+  - Gemini 1.5 Flash appears to struggle with distinguishing subtle visual artifacts (slight slant/thinness) when the prompt encourages acceptance based on alignment/spacing context.

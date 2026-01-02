@@ -19,6 +19,7 @@ env/
 .toolvenv/
 venv/
 .venv*/
+.env
 
 # Debug outputs
 debug_outputs/

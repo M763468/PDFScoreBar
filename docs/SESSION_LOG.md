@@ -3676,3 +3676,426 @@ PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
 **Conclusion**
 - Center-band clefs_keys-thin still introduces FN (page_004/page_15) while not removing the target FP.
 - This suggests the remaining FP is either not sufficiently isolated by clefs_mask thresholding, or TP overlap is too high in the center region.
+
+## 2026-01-02 FP symbol-mask analysis (sharp/flat/natural heuristics)
+
+**Outputs**
+- `logs/fp_symbol_analysis/20260102T154200/summary.json`
+- Per-page stats: `logs/fp_symbol_analysis/20260102T154200/<page>_fp_symbol_stats.json`
+- Per-FP overlays: `logs/fp_symbol_analysis/20260102T154200/<page>/fp_XX_symbols_overlay.png`
+
+**Heuristic**
+- Compute symbol mask vertical/horizontal stroke ratios in padded crop.
+- Guess:
+  - `sharp_like`: vert_ratio>0.12 and horiz_ratio>0.04
+  - `flat_like`: vert_ratio>0.12 and horiz_ratio<0.02
+  - `other`: otherwise
+
+**Note**
+- This is exploratory and intended to visually verify symbol-shape separation before turning into a hard filter.
+
+## 2026-01-02 LLM score design (v1) + candidate count estimate
+
+**Score definition (lower = more suspicious)**
+```
+score = 2.0*barline_ratio
+      - 1.2*stems_ratio
+      - 1.0*clefs_ratio
+      - 0.6*notehead_ratio
+      - 0.6*notehead_endpoint_ratio
+      - 0.05*thin_width
+```
+- Computed on best repro (`20260102T134300_best_repro_fullparams_gtfix_p4b`) for FP/TP.
+- FN samples taken from notehead_stems run (`20260102T143030_best_repro_notehead_stems`).
+
+**Outputs**
+- `logs/fp_llm_score/20260102T160500/summary.json`
+- Per-page: `<page>_{fp,tp,fn}_scores.json`
+
+**Results**
+- FP score range: [-0.805, 1.880] (14 FP total)
+- FN score range: [1.058, 1.702] (13 FN total from notehead_stems run)
+- Threshold to include all FP: 1.8805
+  - This includes all FN, but also 603/612 TP (too many)
+
+**Conclusion**
+- v1 score is not discriminative enough for auto-gating; it can still be used for *ranking* candidates for LLM review.
+- We should use score to rank and then cap candidate count (e.g., top-N lowest scores) rather than thresholding all FP.
+
+## 2026-01-02 Safe-filtered candidate ranking (LLM shortlist)
+
+**Score**
+- Same v1 score (barline vs stems/clefs/notehead/endpoint/thin) applied to *geom_kept* after safe filters.
+
+**Outputs**
+- `logs/fp_llm_score/20260102T171337_safe_rank/ranked_candidates.json`
+- Top-N crops: `logs/fp_llm_score/20260102T171337_safe_rank/<page>/cand_XXXX_score_*.png`
+- Summary: `logs/fp_llm_score/20260102T171337_safe_rank/summary.json`
+
+**Counts (N=30)**
+- total candidates: 1037
+- selected 30: FP=2, TP=22 (remaining 6 are unknown/other)
+
+**Note**
+- Current v1 score is too weak: top-30 still dominated by TP. We need either better features or a larger N for LLM review.
+
+## 2026-01-02 Safe filters impact (candidate reduction)
+
+**Run base**
+- `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams_gtfix_p4b`
+- Safe filters applied: `filter_clefs_keys` (left margin) + `filter_barline_clefs_low`
+
+**Candidate counts (geom_kept)**
+- total geom_kept: 1037
+- per-page:
+  - page_001: 129 (clefs_keys 151→130, barline_clefs_low 130→129)
+  - page_004: 176 (clefs_keys 210→178, barline_clefs_low 178→176)
+  - page_10: 251 (clefs_keys 255→253, barline_clefs_low 253→251)
+  - page_15: 191 (clefs_keys 194→192, barline_clefs_low 192→191)
+  - page_3: 290 (clefs_keys 292→290, barline_clefs_low 290→290)
+
+**Note**
+- These two filters reduce candidates modestly (~3-15% per page). If further reduction is needed for LLM gating, additional safe filters or stronger thresholds will be required.
+
+## 2026-01-02 Safe filter test: barline_min_height_ratio=0.9
+
+**Command**
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T171337_best_repro_minheight \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-mask-mode notehead \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 \
+  --barline-min-height-ratio 0.9 --barline-min-height-mask staff \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-notehead-dilate 13 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+```
+
+**Results**
+| Page | TP | FP | FN | row_kept | geom_kept |
+| --- | --- | --- | --- | --- | --- |
+| page_001 | 78 | 3 | 0 | 109 | 129 |
+| page_3 | 152 | 2 | 0 | 292 | 290 |
+| page_004 | 114 | 1 | 0 | 148 | 176 |
+| page_10 | 154 | 0 | 0 | 246 | 251 |
+| page_15 | 94 | 5 | 20 | 168 | 155 |
+
+**Conclusion**
+- `barline_min_height_ratio=0.9` introduces significant FN on page_15 (20), so it is **not safe**.
+
+## 2026-01-02 Safe filter test: probe_filter_multiband
+
+**Command**
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T171337_best_repro_multiband \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-mask-mode notehead \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-notehead-dilate 13 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2 \
+  --probe-filter-multiband --probe-multiband-x-tol 6 --probe-multiband-min-bands 3
+```
+
+**Results**
+| Page | TP | FP | FN | row_kept | geom_kept |
+| --- | --- | --- | --- | --- | --- |
+| page_001 | 67 | 0 | 11 | 109 | 112 |
+| page_3 | 152 | 2 | 0 | 292 | 290 |
+| page_004 | 101 | 0 | 13 | 148 | 153 |
+| page_10 | 150 | 0 | 4 | 246 | 246 |
+| page_15 | 105 | 0 | 9 | 168 | 168 |
+
+**Conclusion**
+- `probe_filter_multiband` is **not safe** (introduces FN across multiple pages).
+
+## 2026-01-02 Safe filter test: barline_stem_max_height_ratio=0.7
+
+**Command**
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/run_gt_rebuild_hybrid_eval.py \
+  --output-root logs/gt_rebuild_hybrid_eval/20260102T171337_best_repro_stemheight \
+  --union-root logs/phase5b_confirmed_union_eval \
+  --endpoint-mask-mode notehead \
+  --endpoint-ratio-threshold 0.20 \
+  --endpoint-x-scale 0.14 --endpoint-y-scale 0.80 \
+  --notehead-open-kernel 5 --notehead-min-area 20 --notehead-dilate 7 \
+  --notehead-max-aspect 2.0 --notehead-min-height 10 --notehead-max-width 6 \
+  --filter-clefs-keys --clefs-keys-dilate 3 --clefs-keys-left-margin-ratio 0.18 --clefs-keys-overlap-min 0.30 \
+  --filter-barline-clefs-low --barline-low-ratio 0.02 --clefs-low-ratio 0.02 \
+  --barline-stem-max-height-ratio 0.7 --barline-stem-min-band-cover 0.6 --barline-stem-mask staffs \
+  --enable-end-barline-recovery --endbar-method probe_scan --endbar-staff-mask-mode staff \
+  --probe-width 2 --probe-ink-threshold 180 --probe-min-ratio 0.8 \
+  --probe-min-peak-distance 2 --probe-max-per-band 0 --probe-refine-window 4 \
+  --probe-band-height-mode staff --probe-band-height-scale 1.0 --probe-band-height-min 10 \
+  --probe-band-source horiz_scan --probe-band-scan-line-ratio 0.6 --probe-band-scan-min-lines 5 --probe-band-scan-pad-ratio 0.5 \
+  --probe-extend-scale 1.6 --probe-extend-max-ratio 0.9 --probe-extend-top-max-ratio 0.40 --probe-extend-bottom-max-ratio 0.40 \
+  --probe-scan-disable-non-scan-extend --probe-use-peak-relative-ratio --probe-peak-ratio-min 0.85 --probe-scan-peak-band-height 4 \
+  --probe-scan-x-peak-rescue --probe-scan-x-peak-window 12 --probe-scan-x-peak-ratio-min 1.6 \
+  --probe-scan-rightmost-rescue --probe-scan-rightmost-tolerance 15 --probe-scan-rightmost-min-rows 3 --probe-scan-rightmost-min-ratio 0.90 \
+  --probe-scan-ratio-rel-rescue --probe-scan-ratio-rel-rescue-min 0.83 --probe-scan-ratio-rel-rescue-xpeak-min 2.0 --probe-scan-ratio-rel-rescue-max-overhang 0.60 \
+  --probe-row-filter-mode bypass \
+  --probe-notehead-dilate 13 --probe-endpoint-x-scale 0.04 --probe-endpoint-y-scale 0.80 \
+  --probe-divisi-rescue --probe-divisi-dist-ratio 1.2 --probe-divisi-align-tol 10 --probe-divisi-align-min-count 2
+```
+
+**Results**
+| Page | TP | FP | FN | row_kept | geom_kept |
+| --- | --- | --- | --- | --- | --- |
+| page_001 | 78 | 3 | 0 | 109 | 129 |
+| page_3 | 152 | 2 | 0 | 292 | 290 |
+| page_004 | 114 | 1 | 0 | 148 | 176 |
+| page_10 | 154 | 0 | 0 | 246 | 251 |
+| page_15 | 114 | 8 | 0 | 168 | 191 |
+
+**Conclusion**
+- `barline_stem_max_height_ratio=0.7` is safe (no FN regression), but it does not reduce FP.
+
+## 2026-01-02 System-level candidate packaging (staff systems)
+
+**Outputs**
+- `logs/llm_system_candidates/20260102T173000/summary.json`
+- Per-page system metadata: `logs/llm_system_candidates/20260102T173000/<page>_systems.json`
+- System crops with candidate boxes: `logs/llm_system_candidates/20260102T173000/<page>/system_XX_cands_*_min_*.png`
+
+**Summary**
+- page_001: 2 systems, 1 with candidates (lowest min_score ~0.694)
+- page_004: 3 systems, 3 with candidates (lowest min_score ~-0.306)
+- page_10: 6 systems, 4 with candidates (lowest min_score ~0.565)
+- page_15: 1 system, 1 with candidates (lowest min_score ~-0.938)
+- page_3: 2 systems, 1 with candidates (lowest min_score ~0.586)
+
+**Note**
+- System crops give ~10 systems across 5 pages, which is likely a manageable unit for LLM review.
+- Next: decide how many systems per page to send (e.g., lowest min_score N systems) for free-tier constraints.
+
+## 2026-01-02 LLM page-level trial prep: page_15
+
+**Inputs**
+- Overlay image with candidate IDs: `logs/llm_page_candidates/20260102T180000_page15/page_15_candidates_overlay.png`
+- Candidate JSON: `logs/llm_page_candidates/20260102T180000_page15/page_15_candidates.json`
+- Candidate count: 191
+
+**Note**
+- Candidates are from `geom_kept` in `20260102T134300_best_repro_fullparams_gtfix_p4b` (safe filters applied).
+- Next: send image + JSON to Gemini and collect `{id, is_barline, confidence}`.
+
+## 2026-01-02 Gemini page-level review script (standalone)
+
+**Script**
+- `tools/gemini_candidate_review.py`
+
+**Usage**
+```bash
+export GEMINI_API_KEY=YOUR_KEY
+.venv_pdf/bin/python tools/gemini_candidate_review.py \
+  --image logs/llm_page_candidates/20260102T180000_page15/page_15_candidates_overlay.png \
+  --candidates logs/llm_page_candidates/20260102T180000_page15/page_15_candidates.json \
+  --output logs/llm_page_candidates/20260102T180000_page15/page_15_gemini_response.json \
+  --model gemini-1.5-flash
+```
+
+**Notes**
+- Script is independent from existing evaluation pipelines.
+- Outputs the raw JSON array returned by Gemini.
+
+## 2026-01-02 Gemini script: .env loading support
+
+**Update**
+- `tools/gemini_candidate_review.py` now supports `--env-file` (default `.env`) and a minimal parser for `KEY=VALUE`.
+- If the API key env var is not set, it falls back to the `.env` value.
+
+## 2026-01-02 Gemini page-level trial (page_15, 50 candidates)
+
+**Command**
+```bash
+.venv_pdf/bin/python tools/gemini_candidate_review.py \
+  --image logs/llm_page_candidates/20260102T180000_page15/page_15_candidates_overlay.png \
+  --candidates logs/llm_page_candidates/20260102T180000_page15/page_15_candidates.json \
+  --output logs/llm_page_candidates/20260102T180000_page15/page_15_gemini_response.json \
+  --model models/gemini-flash-latest \
+  --max-candidates 50 \
+  --output-mode false_only
+```
+
+**Output**
+- `logs/llm_page_candidates/20260102T180000_page15/page_15_gemini_response.json`
+- Returned 7 candidates as `is_barline=false` (from first 50 IDs).
+
+**Note**
+- This was a quick test to avoid timeouts; next step is to evaluate accuracy vs GT and decide batch size.
+
+## 2026-01-02 Gemini trial verification (page_15, 50 candidates)
+
+**Result vs GT**
+- Gemini returned 7 `false` labels (from first 50 candidates).
+- All 7 were **not** in `fp_boxes` for page_15 (FP hits = 0, false positives = 7).
+
+**Conclusion**
+- Current prompt/setup is misclassifying TP as non-barline in this quick test.
+- Need to adjust prompt or reduce candidate load per request to improve accuracy.
+
+## 2026-01-02 Gemini false labels: ID list + crops
+
+**Outputs**
+- IDs: `logs/llm_page_candidates/20260102T180000_page15/misclassified_false_ids.json`
+- Crops: `logs/llm_page_candidates/20260102T180000_page15/misclassified_false_crops/`
+
+**Notes**
+- These are the 7 candidates marked `false` by Gemini in the 50-candidate page_15 test.
+- Next: use these crops to inspect why Gemini rejected true barlines and adjust prompting.
+
+## 2026-01-02 LLM segment review (page15 split2)
+- Prepared 2-staff segments with overlays in logs/llm_system_candidates/20260102T192123_page_15_split2/.
+- Attempted Gemini calls (models/gemini-flash-latest) for segments 00/01/03/04/05 with output-mode=all.
+- All five calls timed out after 10s in sandbox; likely blocked by network restriction. Will rerun with escalated network permission.
+
+## 2026-01-02 Gemini segment test (page15, 2-staff segments)
+- Segmented page_15 into 6 overlays (2 systems each) in logs/llm_system_candidates/20260102T192123_page_15_split2/.
+- Ran Gemini (models/gemini-flash-latest, output-mode=all) for segments 00/01/03/04/05 after approval.
+- FP in page_15: ids [169,171,172,175,178,179,185,186].
+- Gemini results summary (per segment):
+  - segment_00: FP=1, FP false=0, TP false=0
+  - segment_01: FP=1, FP false=0, TP false=2
+  - segment_03: FP=2, FP false=0, TP false=0
+  - segment_04: FP=2, FP false=2, TP false=0
+  - segment_05: FP=2, FP false=2, TP false=2
+- Overall FP hit: 4/8 (ids [169,175,179,186]); FP missed: 4/8 (ids [171,172,178,185]).
+- TP misclassified as false: ids [26,176,187,188].
+- Crops saved for review:
+  - FP missed: logs/llm_system_candidates/20260102T192123_page_15_split2/segment_eval/fp_missed_crops/
+  - FP hit: logs/llm_system_candidates/20260102T192123_page_15_split2/segment_eval/fp_hit_crops/
+  - TP false: logs/llm_system_candidates/20260102T192123_page_15_split2/segment_eval/tp_false_crops/
+
+## 2026-01-02 Gemini 3 trial (page15, 2-staff segments)
+- Installed google-genai (uv pip install google-genai) and migrated tools/gemini_candidate_review.py to google.genai.
+- Added media_resolution and thinking_level options (ultra_high mapped to high).
+- Gemini 3 Pro Image preview call failed due to free-tier quota 0 for gemini-3-pro-image.
+- Ran Gemini 3 Flash preview on segments 00/01/03/04/05 with media_resolution=ultra_high and thinking_level=medium.
+- Results summary (overall):
+  - FP hit: 5/8 (ids [169,171,172,178,185])
+  - FP missed: 3/8 (ids [175,179,186])
+  - TP misclassified as false: 18 ids [8,39,47,50,61,64,70,107,113,125,146,161,170,176,177,180,182,190]
+- Crops saved for review:
+  - FP missed: logs/llm_system_candidates/20260102T192123_page_15_split2/segment_eval_gemini3_flash/fp_missed_crops/
+  - FP hit: logs/llm_system_candidates/20260102T192123_page_15_split2/segment_eval_gemini3_flash/fp_hit_crops/
+  - TP false: logs/llm_system_candidates/20260102T192123_page_15_split2/segment_eval_gemini3_flash/tp_false_crops/
+
+## 2026-01-02 Gemini 3 Flash strict prompt + 1-system segments (page15)
+- Created 1-system segments: logs/llm_system_candidates/20260102T210201_page_15_split1/ (12 segments total).
+- FP segments sent: 00,02,06,08,09,10,11.
+- Used strict prompt (prompt_strict.txt), media_resolution=ultra_high, thinking_level=medium.
+- Results:
+  - FP hit: 6/8 (ids [169,171,172,175,178,179])
+  - FP missed: 2/8 (ids [185,186])
+  - TP misclassified as false: 10 ids [15,18,27,82,105,118,141,159,176,190]
+- Crops saved:
+  - FP missed: logs/llm_system_candidates/20260102T210201_page_15_split1/segment_eval_gemini3_flash_strict/fp_missed_crops/
+  - FP hit: logs/llm_system_candidates/20260102T210201_page_15_split1/segment_eval_gemini3_flash_strict/fp_hit_crops/
+  - TP false: logs/llm_system_candidates/20260102T210201_page_15_split1/segment_eval_gemini3_flash_strict/tp_false_crops/
+
+## 2026-01-02 Pre-probe candidate FP check (row_filtered)
+- Checked row_filtered.json (pre-probe stage) from best repro: logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams_gtfix_p4b/per_page/*/row_filtered.json
+- Results (TP/FP/FN) saved to logs/preprobe_tp_check/20260102T213424/summary.json
+  - page_001: TP=64 FP=0 FN=14
+  - page_004: TP=97 FP=0 FN=17
+  - page_10: TP=150 FP=0 FN=4
+  - page_15: TP=105 FP=0 FN=9
+  - page_3: TP=152 FP=2 FN=0
+- page_3 FP boxes saved in logs/preprobe_tp_check/20260102T213424/page_3_row_filtered_fp.json
+
+## 2026-01-02 Pre-probe + notehead filter check
+- Computed geom_notehead from row_filtered (pre-probe) using notehead mask, same params as best repro.
+- Output: logs/preprobe_notehead_check/20260102T225243/
+- Summary (TP/FP/FN):
+  - page_001: TP=64 FP=0 FN=14
+  - page_004: TP=97 FP=0 FN=17
+  - page_10: TP=150 FP=0 FN=4
+  - page_15: TP=105 FP=0 FN=9
+  - page_3: TP=152 FP=2 FN=0
+- page_3 still has FP=2 even after notehead context filter (same as row_filtered).
+
+## 2026-01-02 Search for FP=0 runs
+- Scanned logs/gt_rebuild_hybrid_eval/**/per_page/*/metrics.json for FP=0.
+- Found a run with FP=0 for all pages including page_3:
+  - logs/gt_rebuild_hybrid_eval/20251231T_row_ink_profile_baseline
+  - per_page metrics: page_001 TP64 FP0 FN14; page_004 TP97 FP0 FN15; page_10 TP150 FP0 FN4; page_15 TP105 FP0 FN7; page_3 TP152 FP0 FN0
+- This run has no end_recovered.json outputs (probe scan likely disabled); outputs include row_filtered.json, geom_kept.json, row_ink_profile.json.
+
+## 2026-01-02 Gemini 3 Flash with confirmed-TP examples (page15 split1 LR)
+- Built LR-split segments with notehead-based vertical padding and confirmed-TP overlay (green) using FP=0 run (20251231T_row_ink_profile_baseline). Remaining candidates (pink) = 21.
+- Prompt includes instructions to use green lines as true barline examples.
+- Gemini 3 Flash (ultra_high + thinking=medium) called for 13 segments; quota hit mid-run.
+- Missing responses: system_08_R, system_09_R, system_10_R, system_11_L.
+- Partial eval on available responses (remaining FP set: [169,171,172,175,178,179,185,186]):
+  - FP hit: [172]
+  - FP missed: [171,178,185]
+  - TP false: [168,174]
+- Results saved under:
+  logs/llm_system_candidates/20260102T230141_page_15_split1_lr_notehead/segment_eval_gemini3_flash_strict_examples/
+
+## 2026-01-02 LLMまとめと今後の方針
+### 1. Gemini評価のまとめ
+- 2段まとめ + Gemini-Flash (初期): FP hit 4/8, TP false 4。
+- 1段分割 + Gemini-3 Flash (strict prompt): FP hit 6/8, TP false 10。
+- 確定TP(緑)を手本にしたLR分割 + notehead縦マージン拡張 + Gemini-3 Flash:
+  - 残り候補 21件、緑=170件。
+  - 途中でクォータ上限により4セグメント未取得。
+  - 取得済み分では FP hit 1/8, TP false 2 (暫定)。
+- LLMはFPを拾えるが、TP誤判定が残り、安定的な自動除去には不十分。
+
+### 2. 確定TP集合の方針
+- FP=0の中間結果として `20251231T_row_ink_profile_baseline` を採用可能。
+  - per_page metrics: page_001/004/10/15/3 がすべて FP=0 (FNは残る)。
+  - このgeom_keptを「確定TP」として除外し、残りのみLLM判定に回す構成が有望。
+
+### 3. 今後の検討方針 (候補)
+A) LLMはレビュー用途に限定
+- FP候補をさらに絞り込んで人手確認 or LLM確認数を最小化。
+- 例: 1段→左右分割＋notehead縦パディング、タイル化してAPI回数削減。
+
+B) 非LLMの信頼度再スコアリング強化
+- notehead/stem/clef mask距離・交差率の追加特徴。
+- staff band内の縦連続性/インク率を使ったスコアリング。
+- 確定TP集合との差分を「疑義候補」として順位付け。
+
+C) LLM利用時の工夫
+- 画像あたりの候補数を絞り、最終的なFP候補だけ送る。
+- 確定TP(緑)を手本に残す方式は継続候補。
+- 可能なら1画像にタイル化してリクエスト数削減。
+
+D) pipeline側の改善
+- FP=0の中間結果で確定TPを固定し、残りだけをprobe scan/後段へ。
+- row_filtered + notehead filterを通過した部分は安全集合として扱う運用を検討。

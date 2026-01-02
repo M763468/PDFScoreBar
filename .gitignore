@@ -24,6 +24,7 @@ venv/
 # Debug outputs
 debug_outputs/
 logs/
+logs
 temp.txt
 
 # Local build logs (keep out of repo root)

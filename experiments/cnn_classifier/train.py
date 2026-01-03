@@ -7,7 +7,6 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms, models
 from pathlib import Path
 from PIL import Image
-import cv2
 import glob
 import os
 import yaml
@@ -32,9 +31,7 @@ class BarlineDataset(Dataset):
         label = self.labels[idx]
 
         # Load image
-        img = cv2.imread(str(path))
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = Image.fromarray(img)
+        img = Image.open(path).convert("RGB")
 
         if self.transform:
             img = self.transform(img)
@@ -42,20 +39,13 @@ class BarlineDataset(Dataset):
         return img, torch.tensor(label, dtype=torch.float32)
 
 # --- Model ---
-def get_model():
-    # Use MobileNetV3 Small for lightweight inference TODO: adjust as needed. is this the best choice?
-    model = models.mobilenet_v3_small(pretrained=True)
-
-    # Modify classifier for binary classification
-    # MobileNetV3 classifier structure:
-    # (classifier): Sequential(
-    #   (0): Linear(...)
-    #   (1): Hardswish()
-    #   (2): Dropout(...)
-    #   (3): Linear(..., out_features=1000)
-    # )
-    in_features = model.classifier[3].in_features
-    model.classifier[3] = nn.Linear(in_features, 1)
+def get_model(model_name='mobilenet_v3_small'):
+    if model_name == 'mobilenet_v3_small':
+        model = models.mobilenet_v3_small(pretrained=True)
+        in_features = model.classifier[3].in_features
+        model.classifier[3] = nn.Linear(in_features, 1)
+    else:
+        raise ValueError(f"Model {model_name} not supported.")
 
     return model
 
@@ -72,6 +62,8 @@ def get_args():
     parser.add_argument("--img-size", type=int, nargs=2, help="Image size (height, width).")
     parser.add_argument("--seed", type=int, help="Random seed for reproducibility.")
     parser.add_argument("--log-dir", type=str, help="Directory for TensorBoard logs.")
+    parser.add_argument("--model-name", type=str, help="Name of the model to use.")
+    parser.add_argument("--train-val-split", type=float, help="Train/validation split ratio.")
 
     args = parser.parse_args()
 
@@ -79,7 +71,14 @@ def get_args():
         with open(args.config, 'r') as f:
             config_args = yaml.safe_load(f)
 
-        for key, value in config_args.items():
+        # Create a new namespace to avoid conflicts
+        config_ns = argparse.Namespace(**config_args)
+
+        # Get the defaults from the parser
+        defaults = parser.parse_args([])
+
+        # Update args with config values only if they were not specified on the command line
+        for key, value in vars(config_ns).items():
             if getattr(args, key) is None:
                 setattr(args, key, value)
 
@@ -118,8 +117,8 @@ def train(args):
     # Data Loaders
     dataset = BarlineDataset(tp_dir, fp_dir, transform=transform)
 
-    # Simple split (80/20)
-    train_size = int(0.8 * len(dataset))
+    # Simple split
+    train_size = int(args.train_val_split * len(dataset))
     val_size = len(dataset) - train_size
 
     generator = torch.Generator().manual_seed(args.seed) if args.seed is not None else None
@@ -131,7 +130,7 @@ def train(args):
     print(f"Training samples: {len(train_dataset)}, Validation samples: {len(val_dataset)}")
 
     # Model, Loss, Optimizer
-    model = get_model().to(DEVICE)
+    model = get_model(args.model_name).to(DEVICE)
     criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 

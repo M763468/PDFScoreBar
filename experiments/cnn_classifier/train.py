@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
+from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms, models
 from pathlib import Path
 from PIL import Image
@@ -41,9 +42,20 @@ class BarlineDataset(Dataset):
 
 # --- Model ---
 def get_model():
+    # Use MobileNetV3 Small for lightweight inference TODO: adjust as needed. is this the best choice?
     model = models.mobilenet_v3_small(pretrained=True)
+
+    # Modify classifier for binary classification
+    # MobileNetV3 classifier structure:
+    # (classifier): Sequential(
+    #   (0): Linear(...)
+    #   (1): Hardswish()
+    #   (2): Dropout(...)
+    #   (3): Linear(..., out_features=1000)
+    # )
     in_features = model.classifier[3].in_features
     model.classifier[3] = nn.Linear(in_features, 1)
+
     return model
 
 # --- Training Loop ---
@@ -57,6 +69,7 @@ def get_args():
     parser.add_argument("--learning-rate", type=float, default=0.001, help="Learning rate for the optimizer.")
     parser.add_argument("--img-size", type=int, nargs=2, default=[256, 128], help="Image size (height, width).")
     parser.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility.")
+    parser.add_argument("--log-dir", type=str, default=None, help="Directory for TensorBoard logs.")
     return parser.parse_args()
 
 def train(args):
@@ -65,6 +78,12 @@ def train(args):
 
     print(f"Using device: {DEVICE}")
 
+    # TensorBoard
+    if args.log_dir:
+        writer = SummaryWriter(log_dir=args.log_dir)
+    else:
+        writer = None
+
     # Paths
     work_dir = Path(args.work_dir)
     tp_dir = Path(args.tp_dir) if args.tp_dir else work_dir / "tp_crops"
@@ -72,6 +91,8 @@ def train(args):
 
     if not tp_dir.exists() or not fp_dir.exists():
         print("Error: Crop directories not found.")
+        if writer:
+            writer.close()
         return
 
     # Transforms
@@ -122,23 +143,37 @@ def train(args):
             correct += (preds == labels).sum().item()
             total += labels.size(0)
 
+        train_loss = running_loss / len(train_loader)
         train_acc = correct / total
-        print(f"Epoch {epoch+1}/{args.epochs}, Loss: {running_loss/len(train_loader):.4f}, Train Acc: {train_acc:.4f}")
+        print(f"Epoch {epoch+1}/{args.epochs}, Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}")
 
         # Validation
         model.eval()
         val_correct = 0
         val_total = 0
+        val_loss = 0
         with torch.no_grad():
             for inputs, labels in val_loader:
                 inputs, labels = inputs.to(DEVICE), labels.to(DEVICE).unsqueeze(1)
                 outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                val_loss += loss.item()
                 preds = (torch.sigmoid(outputs) > 0.5).float()
                 val_correct += (preds == labels).sum().item()
                 val_total += labels.size(0)
 
         if val_total > 0:
-            print(f"Validation Acc: {val_correct/val_total:.4f}")
+            val_acc = val_correct / val_total
+            val_loss /= len(val_loader)
+            print(f"Validation Acc: {val_acc:.4f}, Validation Loss: {val_loss:.4f}")
+            if writer:
+                writer.add_scalar('Loss/train', train_loss, epoch)
+                writer.add_scalar('Accuracy/train', train_acc, epoch)
+                writer.add_scalar('Loss/validation', val_loss, epoch)
+                writer.add_scalar('Accuracy/validation', val_acc, epoch)
+
+    if writer:
+        writer.close()
 
     # Save Model
     save_path = work_dir / "cnn_classifier_v1.pth"

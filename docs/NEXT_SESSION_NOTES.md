@@ -1,6 +1,6 @@
 # Next Session Notes
 
-**Last Updated**: 2026-01-03
+**Last Updated**: 2026-01-04
 **Current Phase**: **Plan A (Measure Numbering)** & **Plan B (CNN Training)** Parallel Execution
 
 ---
@@ -8,16 +8,15 @@
 
 The project is currently split into two parallel tracks to address the "False Positive (FP) Reduction" bottleneck and advance the overall "Measure Numbering" goal.
 
-1.  **Track A (Measure Numbering):** Focus on the logic and data structures for assigning measure numbers to detected barlines. This work is independent of the detector's perfection.
+1.  **Track A (Measure Numbering):** Focus on the logic and data structures for assigning measure numbers to detected barlines.
     *   **Worktree:** `ws_PDFScoreBar_model_exp` (Current)
     *   **Branch:** `feature/measure_numbering`
     *   **Active Log:** `docs/DEVLOG_MEASURE_NUMBERING.md`
 
-2.  **Track B (CNN Training):** Focus on training a lightweight CNN (e.g., MobileNetV3) to filter out FPs (stems, artifacts) that Gemini 1.5 Flash struggled with.
+2.  **Track B (CNN Training):** Focus on training a lightweight CNN to filter out FPs.
     *   **Worktree:** `../ws_PDFScoreBar_training`
     *   **Branch:** `experiment/cnn_classifier`
     *   **Active Log:** `docs/DEVLOG_CNN_TRAINING.md`
-    *   **Handover Note:** See `docs/HANDOVER_TO_TRAINING_AGENT.md` for setup instructions.
 
 ---
 
@@ -40,36 +39,35 @@ The project is currently split into two parallel tracks to address the "False Po
 - **Divisi:** Leverage existing barline-detection context where possible; concrete rule TBD.
 - **Output:** Start with JSON (measure index + barline bbox + page/system position), then optionally render.
 
-**Immediate Tasks (Issue-Ready, No Real Data Needed):**
-1.  **Scope/Spec Draft:** Define measure numbering rules and open questions (upbeat detection, movement boundaries, multi-measure rests, divisi handling).
-2.  **Input/Output Schema:** Propose JSON schemas for barline input and measure output.
-3.  **Data Structure Design:** Define classes for `Measure`, `StaffSystem`, and `Page`.
-4.  **Traversal/Numbering Core:** Specify algorithm to traverse barlines and assign numbers with reset hooks.
-5.  **Unit Test Scaffold:** Create minimal fixtures and tests for traversal + numbering.
 
-**Immediate Tasks (Needs Real Data / Deferred):**
-1.  **Input Contract:** Confirm exact detector output path + JSON keys from real logs.
-2.  **Upbeat (Anacrusis) Rules:** Determine detection criteria from real scores.
-3.  **Movement Boundary Detection:** Decide auto-detection rules after observing examples.
-4.  **Multi-measure Rest Handling:** Evaluate OCR/template approach on real pages.
-5.  **Divisi Handling:** Validate reuse of existing barline context on real outputs.
+### Completed Work (Session 2026-01-04)
+1.  **Scaffolding**: Created `src/measure_numbering` package and `types.py` (Data Structures: `Barline`, `Staff`, `System`, `Score`).
+2.  **System Inference Logic (`builder.py`)**:
+    *   **Decision**: Geometric heuristic (clustering by gap) was found unreliable.
+    *   **Implementation**: Simplified logic to rely on **Explicit System Index** (from upstream metadata) or fallback to **Single System per Page**.
+    *    Verified with unit tests using synthetic data.
+3.  **Basic Numbering Logic (`numbering.py`)**:
+    *   Implemented `MeasureNumberer` which assigns sequential numbers to measures within defined systems.
+    *   Verified with unit tests (single system and multi-page flow).
 
-## Track B: CNN Training (Training Worktree)
+### Remaining Work / Next Steps
+1.  **Real Data Verification**:
+    *   Test `SystemBuilder` and `MeasureNumberer` against real `homr` outputs.
+    *   **Blocker**: Current `homr` detection JSONs often lack explicit "Staff" bounding boxes, which are required for `SystemBuilder`. Need to extract staff info from `staff_mask` or `homr` internal logs.
+2.  **Integration**:
+    *   Create a pipeline script: `Input JSON` -> `Builder` -> `Numberer` -> `Output JSON`.
+3.  **Advanced Logic (Deferred)**:
+    *   **Upbeat (Anacrusis)**: Handling partial first measures.
+    *   **Multi-measure Rests**: Reading rest numbers.
+    *   **Repeats / Segno**: Handling non-linear numbering flow.
 
-**Goal:** Train a binary classifier (Barline vs. Artifact) using crops from `logs/`.
-
-**Status:**
-- Worktree created at `../ws_PDFScoreBar_training`.
-- `logs/` symlinked to share data.
-- **Action:** Open a new terminal, `cd ../ws_PDFScoreBar_training`, and instruct the AI to read `docs/HANDOVER_TO_TRAINING_AGENT.md`.
+### Key Artifacts
+- `src/measure_numbering/types.py`: Core data classes (`unsafe_hash=True` for set ops).
+- `src/measure_numbering/builder.py`: System grouping logic.
+- `src/measure_numbering/numbering.py`: Measure numbering logic.
+- `docs/SESSION_LOG.md`: Detailed activity log.
 
 ---
 
-## Historical Context (Pre-Split)
-
-See `docs/DEVELOPMENT_LOG.md` for all activities prior to 2026-01-03, including:
-- Phase 6 Detector Miss Analysis
-- Gemini 1.5 Flash Experiments (CoT + Rescue Prompt)
-- Hybrid Detector Tuning (var88 baseline)
-
-**Confirmed Baseline (Detector):** `var88` (clefs_keys left + probe_notehead_dilate=13 + notehead_dilate=7) achieves FN=0 but leaves some FPs. Track B aims to filter these.
+## Track B: CNN Training (Training Worktree)
+(See `docs/DEVLOG_CNN_TRAINING.md` in the training worktree for details)

@@ -5,12 +5,12 @@ from enum import Enum
 # Simple Bounding Box type: (x1, y1, x2, y2)
 # Using a class for clarity, or just a tuple. Let's use a simple alias for now,
 # but a dataclass is better for type safety and methods later.
-@dataclass
+@dataclass(unsafe_hash=True)
 class BBox:
-    x1: float
-    y1: float
-    x2: float
-    y2: float
+    x1: int
+    y1: int
+    x2: int
+    y2: int
 
     @property
     def width(self) -> float:
@@ -32,7 +32,7 @@ class BarlineType(Enum):
     REPEAT_END = "REPEAT_END"
     UNKNOWN = "UNKNOWN"
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Barline:
     bbox: BBox
     type: BarlineType = BarlineType.SINGLE
@@ -56,8 +56,10 @@ class Staff:
     """
     bbox: BBox
     barlines: List[Barline] = field(default_factory=list)
-    # Measures can be computed from barlines.
-    # But usually we might want to store them explicitly after processing.
+    
+    # Metadata for system inference
+    system_index: Optional[int] = None # Explicit index from upstream (homr)
+    bracket_group: Optional[int] = None # ID of the bracket this staff belongs to
 
 @dataclass
 class System:

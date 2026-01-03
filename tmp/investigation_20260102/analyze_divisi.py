@@ -15,7 +15,7 @@ def analyze_divisi(page_dir):
         divisi_map = data.get("divisi_map", {})
 
     print(f"--- Divisi Analysis for {os.path.basename(page_dir)} ---")
-    
+
     # Find band for col 1423
     target_col = 1423
     for rec in records:
@@ -28,15 +28,15 @@ def analyze_divisi(page_dir):
                     if by1 <= cy <= by2:
                         best_idx = idx
                         break
-                
+
                 print(f"Found Candidate at Col {target_col}: Band Index {best_idx}")
                 print(f"  Band: {bands[best_idx]}")
-                
+
                 # Check Divisi Map
                 if str(best_idx) in divisi_map:
                     info = divisi_map[str(best_idx)]
                     print(f"  Divisi Info: {info}")
-                    
+
                     # Check linked band
                     if info.get("has_top"):
                         print(f"  Has Top Link. Top Band: {bands[best_idx-1]}")

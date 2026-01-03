@@ -1,0 +1,11 @@
+work_dir: "logs/cnn_barline_classification/training"
+tp_dir: null
+fp_dir: null
+epochs: 10
+batch_size: 16
+learning_rate: 0.001
+img_size: [256, 128]
+seed: null
+log_dir: null
+model_name: "mobilenet_v3_small"
+train_val_split: 0.8

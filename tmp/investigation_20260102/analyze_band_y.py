@@ -14,11 +14,11 @@ def analyze_band_y(page_dir):
 
     y_centers = []
     target_y = None
-    
+
     for rec in records:
         status = rec.get("status")
         if status and ("accepted" in status or "rescued" in status):
-            band = rec.get("band") 
+            band = rec.get("band")
             if band:
                 cy = (band[0] + band[1]) / 2
                 # Check if in Band 0
@@ -30,7 +30,7 @@ def analyze_band_y(page_dir):
     print(f"Band 0 Candidates: {len(y_centers)}")
     # print(f"Y Centers: {y_centers}")
     print(f"Target (2473) Y: {target_y}")
-    
+
     if y_centers:
         print(f"Min: {min(y_centers)}, Max: {max(y_centers)}, Range: {max(y_centers)-min(y_centers)}")
 

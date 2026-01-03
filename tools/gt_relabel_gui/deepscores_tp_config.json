@@ -1,0 +1,11 @@
+{
+  "pages": [
+    {
+      "name": "deepscores_page_1",
+      "image": "/mnt/d/datasets/DeepScoresV2/ds2_dense/segmentation/lg-101766503886095953-aug-beethoven--page-1_seg.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/deepscores_tp/lg-101766503886095953-aug-beethoven--page-1_raw.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/deepscores_tp/lg-101766503886095953-aug-beethoven--page-1_sorted.json",
+      "y_threshold": 50
+    }
+  ]
+}

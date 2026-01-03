@@ -19,11 +19,13 @@ env/
 .toolvenv/
 venv/
 .venv*/
+.venv*
 .env
 
 # Debug outputs
 debug_outputs/
 logs/
+logs
 temp.txt
 
 # Local build logs (keep out of repo root)

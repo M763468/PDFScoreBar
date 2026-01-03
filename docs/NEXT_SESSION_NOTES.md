@@ -25,11 +25,34 @@ The project is currently split into two parallel tracks to address the "False Po
 
 **Goal:** Design and implement the system to count measures based on detected barlines.
 
-**Immediate Tasks:**
-1.  **Directory Setup:** Create `src/measure_numbering/` (or similar).
-2.  **Data Structure Design:** Define classes for `Measure`, `StaffSystem`, and `Page`.
-3.  **Multi-measure Rest Logic:** Implement OCR/Template Matching to read numbers above H-bar rests (using OpenCV/Tesseract).
-4.  **Graph/Sequence Logic:** Implement algorithm to traverse barlines and assign numbers, handling anomalies (upbeats, repeats - effectively or simplistically).
+**Best Baseline Snapshot (Detector Output):**
+- **Source Run:** `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams`
+- **Totals:** TP=611 / FP=15 / FN=0
+- **Summary:** `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams/summary_table.md`
+- **Pinned Copy:** `logs/gt_rebuild_hybrid_eval/_best/summary.md` (update this when a better run is confirmed)
+
+**Spec Draft (v0, open questions explicitly allowed):**
+- **Input:** Use detector output from `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams` (exact JSON schema/path to be confirmed).
+- **Numbering Core:** Count measures left-to-right, top-to-bottom by staff system; default start at 1.
+- **Upbeat (Anacrusis):** Detection TBD; treat as “measure 0” or “not counted” until rules are defined.
+- **Movement Boundaries:** Auto-detect TBD; allow manual reset points as an interim rule.
+- **Multi-measure Rests:** Detection/reading of rest-number notation TBD.
+- **Divisi:** Leverage existing barline-detection context where possible; concrete rule TBD.
+- **Output:** Start with JSON (measure index + barline bbox + page/system position), then optionally render.
+
+**Immediate Tasks (Issue-Ready, No Real Data Needed):**
+1.  **Scope/Spec Draft:** Define measure numbering rules and open questions (upbeat detection, movement boundaries, multi-measure rests, divisi handling).
+2.  **Input/Output Schema:** Propose JSON schemas for barline input and measure output.
+3.  **Data Structure Design:** Define classes for `Measure`, `StaffSystem`, and `Page`.
+4.  **Traversal/Numbering Core:** Specify algorithm to traverse barlines and assign numbers with reset hooks.
+5.  **Unit Test Scaffold:** Create minimal fixtures and tests for traversal + numbering.
+
+**Immediate Tasks (Needs Real Data / Deferred):**
+1.  **Input Contract:** Confirm exact detector output path + JSON keys from real logs.
+2.  **Upbeat (Anacrusis) Rules:** Determine detection criteria from real scores.
+3.  **Movement Boundary Detection:** Decide auto-detection rules after observing examples.
+4.  **Multi-measure Rest Handling:** Evaluate OCR/template approach on real pages.
+5.  **Divisi Handling:** Validate reuse of existing barline context on real outputs.
 
 ## Track B: CNN Training (Training Worktree)
 

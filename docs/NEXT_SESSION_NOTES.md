@@ -101,7 +101,7 @@ D) pipeline側の改善
 
 ## 2026-01-02 Gemini 1.5 Flash System-Level Review with CoT+Rescue Prompt
 - **Purpose**: Test if adding a "Rescue" logic to the Chain-of-Thought prompt prevents False Negatives (TP marked as False) observed in strict mode.
-- **Method**: 
+- **Method**:
   - Used `temp_review_images/prompt_cot_rescue.txt` with `gemini-1.5-flash-latest`.
   - Tested on `system_06_L` (contains FP id 171) and `system_03_L` (contains TP id 168).
 - **Results**:

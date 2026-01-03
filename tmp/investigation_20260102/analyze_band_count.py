@@ -16,7 +16,7 @@ def analyze_band_count(page_dir):
 
     print(f"--- Band Analysis for {os.path.basename(page_dir)} ---")
     band_counts = {}
-    
+
     for rec in records:
         status = rec.get("status")
         # accepted系 または scan_ratio_rel_low_rescued系 をカウント

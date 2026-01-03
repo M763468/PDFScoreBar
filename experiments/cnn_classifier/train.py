@@ -10,6 +10,7 @@ from PIL import Image
 import cv2
 import glob
 import os
+import yaml
 
 # --- Configuration ---
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -61,16 +62,28 @@ def get_model():
 # --- Training Loop ---
 def get_args():
     parser = argparse.ArgumentParser(description="Train a CNN for barline classification.")
-    parser.add_argument("--work-dir", type=str, default="logs/cnn_barline_classification/training", help="Working directory for logs and models.")
+    parser.add_argument("--config", type=str, default=None, help="Path to a config file.")
+    parser.add_argument("--work-dir", type=str, help="Working directory for logs and models.")
     parser.add_argument("--tp-dir", type=str, help="Directory of true positive crops. Overrides work-dir.")
     parser.add_argument("--fp-dir", type=str, help="Directory of false positive crops. Overrides work-dir.")
-    parser.add_argument("--epochs", type=int, default=10, help="Number of training epochs.")
-    parser.add_argument("--batch-size", type=int, default=16, help="Batch size for training and validation.")
-    parser.add_argument("--learning-rate", type=float, default=0.001, help="Learning rate for the optimizer.")
-    parser.add_argument("--img-size", type=int, nargs=2, default=[256, 128], help="Image size (height, width).")
-    parser.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility.")
-    parser.add_argument("--log-dir", type=str, default=None, help="Directory for TensorBoard logs.")
-    return parser.parse_args()
+    parser.add_argument("--epochs", type=int, help="Number of training epochs.")
+    parser.add_argument("--batch-size", type=int, help="Batch size for training and validation.")
+    parser.add_argument("--learning-rate", type=float, help="Learning rate for the optimizer.")
+    parser.add_argument("--img-size", type=int, nargs=2, help="Image size (height, width).")
+    parser.add_argument("--seed", type=int, help="Random seed for reproducibility.")
+    parser.add_argument("--log-dir", type=str, help="Directory for TensorBoard logs.")
+
+    args = parser.parse_args()
+
+    if args.config:
+        with open(args.config, 'r') as f:
+            config_args = yaml.safe_load(f)
+
+        for key, value in config_args.items():
+            if getattr(args, key) is None:
+                setattr(args, key, value)
+
+    return args
 
 def train(args):
     if args.seed is not None:

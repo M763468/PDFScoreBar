@@ -17,14 +17,14 @@ def iou(boxA, boxB):
 def check_source(page_dir):
     fp_path = os.path.join(page_dir, "fp_boxes.json")
     recovered_path = os.path.join(page_dir, "end_recovered_geom.json") # Probe results (geom filtered)
-    
+
     if not os.path.exists(fp_path):
         print(f"FP path not found: {fp_path}")
         return
 
     with open(fp_path, 'r') as f:
         fp_boxes = json.load(f)
-    
+
     recovered_boxes = []
     if os.path.exists(recovered_path):
         with open(recovered_path, 'r') as f:
@@ -32,7 +32,7 @@ def check_source(page_dir):
 
     print(f"--- Source Analysis for {os.path.basename(page_dir)} ---")
     print(f"Total FPs: {len(fp_boxes)}")
-    
+
     for i, fp in enumerate(fp_boxes):
         is_probe = False
         for rec in recovered_boxes:
@@ -40,7 +40,7 @@ def check_source(page_dir):
             if fp == rec or iou(fp, rec) > 0.9:
                 is_probe = True
                 break
-        
+
         source = "PROBE" if is_probe else "BASELINE (OMR/Union)"
         print(f"FP #{i} {fp}: {source}")
 

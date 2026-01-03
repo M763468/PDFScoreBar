@@ -18,7 +18,7 @@ def analyze_fp(page_dir):
 
     with open(fp_path, 'r') as f:
         fp_boxes = json.load(f)
-    
+
     with open(debug_path, 'r') as f:
         debug_data = json.load(f)
         records = debug_data.get("records", [])
@@ -28,7 +28,7 @@ def analyze_fp(page_dir):
 
     for i, fp_box in enumerate(fp_boxes):
         print(f"\nFP #{i}: {fp_box}")
-        
+
         best_match = None
         min_dist = float('inf')
 
@@ -42,11 +42,11 @@ def analyze_fp(page_dir):
                 continue
 
             dist = center_dist(fp_box, rec_box)
-            if dist < 20: 
+            if dist < 20:
                 if dist < min_dist:
                     min_dist = dist
                     best_match = rec
-        
+
         if best_match:
             print(f"  Matched Candidate: Status={best_match.get('status')}")
             print(f"  Reject Reason: {best_match.get('reject_reason')}")

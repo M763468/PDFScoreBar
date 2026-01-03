@@ -1,7 +1,7 @@
 # Next Session Notes
 
-**Last Updated**: 2025-12-30
-**Current Phase**: Post‑Phase 6 → start detector‑side FN analysis (remaining 10)
+**Last Updated**: 2026-01-03
+**Current Phase**: CNN classifier dataset integration (DeepScores + local TP/FP)
 
 ---
 ### Note for AI Assistant (Operational Rule)
@@ -65,6 +65,26 @@
 - clefs_keysは左端のみ有効で、中央適用はFN増加のため不採用。
 
 ## Unmerged Session Notes (From SESSION_LOG)
+## 2026-01-03 CNN classifier dataset integration (planned)
+### Goal
+- Rebuild CNN classifier training dataset by re-cropping local TP/FP and integrating DeepScores V2 Dense.
+
+### Key decisions
+- **Re-crop required**: existing TP/FP crops have coordinate drift due to resolution differences.
+- **DeepScores**: use Dense subset only for now.
+- **Dense path**: `/mnt/d/datasets/DeepScoresV2/ds2_dense`
+- **Output dataset**: create a dedicated directory under `/mnt/d/datasets/` (proposed name: `cnn_classifier_v1`).
+
+### Next actions (order)
+1. Re-crop local TP/FP from original images using rebuilt GT.
+2. Convert DeepScores Dense into the same training format.
+3. Merge datasets and define split (avoid leakage by source/page).
+4. Sanity checks (counts, class balance, size distribution).
+5. Update training to point at the new dataset.
+
+### Environment note
+- CNN classifier training uses a dedicated virtualenv copied from current `.venv` with a new, descriptive name (record in `docs/ENVIRONMENTS.md`).
+
 ## 2026-01-02 LLMまとめと今後の方針
 ### 1. Gemini評価のまとめ
 - 2段まとめ + Gemini-Flash (初期): FP hit 4/8, TP false 4。

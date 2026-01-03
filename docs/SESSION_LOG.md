@@ -1,6 +1,6 @@
 # Session Log (Measure Numbering Track)
 
-**Last Updated**: 2026-01-03
+**Last Updated**: 2026-01-04
 **Context**: This log tracks the design and implementation of the "Measure Numbering" system (Plan A) in the `feature/measure_numbering` branch.
 
 ---
@@ -64,5 +64,22 @@ src/
 - *Answer*: Yes, `homr` provides `system_index` in its JSON. We should leverage that if available, but keep a fallback logic for raw bbox inputs.
 - *Refinement*: The `builder.py` should accept a generic "DetectionResult" object and normalize it.
 
-### Next Action
-- Implement `src/measure_numbering/types.py` and `src/measure_numbering/__init__.py`.
+---
+
+## 2026-01-04 Scaffolding Implementation
+
+**Goal**: Implement the initial data structures (`types.py`) and directory structure for the measure numbering system.
+
+### Actions Taken
+- Created directory `src/measure_numbering`.
+- Created `src/measure_numbering/__init__.py`.
+- Created `src/measure_numbering/types.py` with `BBox`, `Barline`, `Staff`, `Measure`, `System`, `Page`, `Score` dataclasses.
+- Verified imports using a script.
+
+### Results
+- `types.py` is established.
+- `BBox` usage is provisional (defined locally for now).
+
+### Next Steps
+1.  **System Inference Logic**: Implement logic to group staves into systems.
+2.  **Basic Numbering Logic**: Implement linear numbering.

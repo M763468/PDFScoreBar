@@ -136,6 +136,8 @@ def extract_local_tp_fp(
     crop_scale,
     min_crop_h,
     max_crop_h,
+    predictions_root=None,
+    candidate_filename="geom_kept.json",
 ):
     tp_dir = output_root / "local" / "tp"
     fp_dir = output_root / "local" / "fp"
@@ -154,7 +156,7 @@ def extract_local_tp_fp(
     for page in DEFAULT_PAGES:
         image_path = repo_root / page["image"]
         gt_path = repo_root / page["gt"]
-        preds_path = repo_root / page["preds"]
+        # preds_path unused if predictions_root is provided
         img = cv2.imread(str(image_path))
         if img is None:
             raise FileNotFoundError(f"Image not found: {image_path}")
@@ -180,39 +182,103 @@ def extract_local_tp_fp(
             cv2.imwrite(str(save_path), crop)
             tp_count += 1
 
-        with preds_path.open("r") as f:
-            pred_boxes = json.load(f)
-        matched_indices = set()
-        for gt_box in gt_boxes:
-            best_iou = 0.0
-            best_idx = -1
-            for i, pred_box in enumerate(pred_boxes):
-                iou = barline_iou(gt_box, pred_box)
-                if iou > best_iou:
-                    best_iou = iou
-                    best_idx = i
-            if best_iou > iou_threshold:
-                matched_indices.add(best_idx)
+        if predictions_root:
+            # Load candidates from logs
+            filename = candidate_filename.replace("{page}", page["name"])
+            
+            cand_path = Path(predictions_root) / "per_page" / page["name"] / filename
+            if not cand_path.exists():
+                cand_path = Path(predictions_root) / page["name"] / filename
 
-        fp_indices = [i for i in range(len(pred_boxes)) if i not in matched_indices]
-        for idx in fp_indices:
-            box = pred_boxes[idx]
-            x1, y1, x2, y2 = box
-            cx = int(round((x1 + x2) / 2))
-            cy = int(round((y1 + y2) / 2))
-            local_w, local_h = crop_size_from_bbox(
-                box,
-                scale,
-                aspect_ratio,
-                min_h,
-                max_h,
-                min_w,
-                max_w,
-            )
-            crop = center_crop(img, cx, cy, local_w, local_h)
-            save_path = fp_dir / f"{page['name']}_fp_{idx:05d}.png"
-            cv2.imwrite(str(save_path), crop)
-            fp_count += 1
+            if not cand_path.exists():
+                print(f"Warning: Candidate file not found for {page['name']} at {cand_path}")
+                continue
+                
+            with cand_path.open("r") as f:
+                data = json.load(f)
+            
+            if isinstance(data, list):
+                candidates = data
+            elif isinstance(data, dict) and "scores" in data:
+                candidates = [item["bbox"] for item in data["scores"]]
+            else:
+                print(f"Unknown JSON format in {candidate_filename}")
+                candidates = []
+
+            # Auto-detect scale mismatch REMOVED. 
+            # Reason: Incompatible with pure FP files (fp_boxes.json) which have 0 overlap by definition.
+            # Auto-scale logic would find 0 matches at scale 1.0 and pick random scales that have accidental overlap.
+            # Reverting to fixed scale (assume 1.0 for fp_boxes.json as in v2).
+            best_scale = 1.0
+            
+            # Filter matches: if candidate overlaps GT, it's a TP (already handled above), so skip.
+            # Only keep non-matching candidates as FP (Hard Negatives).
+            fp_candidates = []
+            for raw_cand in candidates:
+                cand = [x * best_scale for x in raw_cand] # Apply scale (1.0)
+                is_match = False
+                for gt_box in gt_boxes:
+                    iou = barline_iou(gt_box, cand)
+                    if iou > iou_threshold: 
+                        is_match = True
+                        break
+                if not is_match:
+                    fp_candidates.append(cand)
+            
+            for idx, box in enumerate(fp_candidates):
+                x1, y1, x2, y2 = box
+                cx = int(round((x1 + x2) / 2))
+                cy = int(round((y1 + y2) / 2))
+                local_w, local_h = crop_size_from_bbox(
+                    box,
+                    scale,
+                    aspect_ratio,
+                    min_h,
+                    max_h,
+                    min_w,
+                    max_w,
+                )
+                crop = center_crop(img, cx, cy, local_w, local_h)
+                save_path = fp_dir / f"{page['name']}_fp_{idx:05d}.png"
+                cv2.imwrite(str(save_path), crop)
+                fp_count += 1
+
+        else:
+            # Fallback to dynamic FP generation (legacy)
+            preds_path = repo_root / page["preds"]
+            with preds_path.open("r") as f:
+                pred_boxes = json.load(f)
+            matched_indices = set()
+            for gt_box in gt_boxes:
+                best_iou = 0.0
+                best_idx = -1
+                for i, pred_box in enumerate(pred_boxes):
+                    iou = barline_iou(gt_box, pred_box)
+                    if iou > best_iou:
+                        best_iou = iou
+                        best_idx = i
+                if best_iou > iou_threshold:
+                    matched_indices.add(best_idx)
+
+            fp_indices = [i for i in range(len(pred_boxes)) if i not in matched_indices]
+            for idx in fp_indices:
+                box = pred_boxes[idx]
+                x1, y1, x2, y2 = box
+                cx = int(round((x1 + x2) / 2))
+                cy = int(round((y1 + y2) / 2))
+                local_w, local_h = crop_size_from_bbox(
+                    box,
+                    scale,
+                    aspect_ratio,
+                    min_h,
+                    max_h,
+                    min_w,
+                    max_w,
+                )
+                crop = center_crop(img, cx, cy, local_w, local_h)
+                save_path = fp_dir / f"{page['name']}_fp_{idx:05d}.png"
+                cv2.imwrite(str(save_path), crop)
+                fp_count += 1
 
     return tp_count, fp_count
 
@@ -300,7 +366,6 @@ def extract_deepscores_tp_from_segmentation(
     palette_index,
     min_area,
     min_height,
-    vertical_ratio,
     max_total,
     seg_offset,
     seg_count,
@@ -333,8 +398,7 @@ def extract_deepscores_tp_from_segmentation(
                 continue
             if comp["h"] < min_height:
                 continue
-            if (comp["h"] / max(1, comp["w"])) < vertical_ratio:
-                continue
+            # Logic for vertical_ratio check removed as per user request to relax filters
             x1, y1, x2, y2 = comp["bbox"]
             cx = int(round((x1 + x2) / 2))
             cy = int(round((y1 + y2) / 2))
@@ -492,6 +556,17 @@ def main():
         default="/mnt/d/datasets/DeepScoresV2/ds2_dense",
         help="DeepScores V2 Dense root.",
     )
+    parser.add_argument(
+        "--predictions-root",
+        type=Path,
+        help="Path to the root of the predictions logs (e.g. logs/gt_rebuild_hybrid_eval/...) containing per_page/{page}/fp_boxes.json. If provided, explicit FP boxes are used.",
+    )
+    parser.add_argument(
+        "--fp-source-file",
+        type=str,
+        default="geom_kept.json",
+        help="Filename in the predictions-root/per_page/{page}/ directory to load as FP candidates (default: geom_kept.json). GT subtraction is applied.",
+    )
     parser.add_argument("--crop-width", type=int, default=128)
     parser.add_argument("--crop-height", type=int, default=256)
     parser.add_argument(
@@ -549,6 +624,8 @@ def main():
                 args.crop_scale,
                 args.min_crop_height,
                 args.max_crop_height,
+                predictions_root=args.predictions_root,
+                candidate_filename=args.fp_source_file,
             )
             print(f"Local crops: TP={tp_count}, FP={fp_count}")
         if not args.skip_deepscores and not args.skip_deepscores_fp:
@@ -573,7 +650,7 @@ def main():
                 args.tp_palette_index,
                 args.tp_min_area,
                 args.tp_min_height,
-                args.tp_vertical_ratio,
+                # args.tp_vertical_ratio removed
                 args.tp_max_total,
                 args.tp_seg_offset,
                 args.tp_seg_count,

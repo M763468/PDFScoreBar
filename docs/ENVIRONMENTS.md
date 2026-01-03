@@ -16,6 +16,24 @@ This document describes how to use the provided tools (now located in `tools/`) 
 - **Display**: Served via HTTP (`localhost:5000`), allowing usage in any browser (no X11 forwarding needed).
 - **Note**: Ensure `config.py` points to valid image/JSON paths on your host filesystem.
 
+## CNN Classifier Environment (Host / uv)
+- **Purpose**: Train the CNN classifier used to filter barline false positives.
+- **Virtualenv**: `.venv_cnn_classifier` (copied from the current `.venv` contents).
+- **Rebuild**:
+  ```bash
+  uv venv .venv_cnn_classifier
+  uv pip sync experiments/cnn_classifier/requirements_cnn_classifier_venv.txt
+  ```
+- **Dataset**: `/mnt/d/datasets/cnn_classifier_v1` (override with `CNN_DATASET_ROOT` env var).
+- **Dataset build**:
+  ```bash
+  .venv_cnn_classifier/bin/python tools/cnn_classifier/build_cnn_dataset.py
+  ```
+- **Training**:
+  ```bash
+  .venv_cnn_classifier/bin/python experiments/cnn_classifier/train.py
+  ```
+
 ## Runtime Containers
 
 ### pdf_score_dev_gpu

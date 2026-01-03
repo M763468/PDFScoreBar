@@ -16,6 +16,9 @@ NUM_EPOCHS = 10
 IMG_SIZE = (256, 128) # H, W - consistent with crop logic TODO: adjust as needed
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 WORK_DIR = Path("logs/cnn_barline_classification/training") # Adjust relative to execution root
+DATASET_ROOT = Path(os.getenv("CNN_DATASET_ROOT", "/mnt/d/datasets/cnn_classifier_v1"))
+TRAIN_SPLIT_DIR = DATASET_ROOT / "splits" / "train"
+VAL_SPLIT_DIR = DATASET_ROOT / "splits" / "val"
 
 # --- Dataset ---
 class BarlineDataset(Dataset):
@@ -66,11 +69,20 @@ def train():
     print(f"Using device: {DEVICE}")
     
     # Paths　TODO: データセット再作成：元の画像の解像度の違いから、TP/FPのcrop画像の範囲がずれている可能性あり+ダウンロードしたデータから作った追加データセットへのパス移動
-    tp_dir = WORK_DIR / "tp_crops"
-    fp_dir = WORK_DIR / "fp_crops_enhanced"
+    if (TRAIN_SPLIT_DIR / "tp").exists() and (TRAIN_SPLIT_DIR / "fp").exists():
+        train_tp_dir = TRAIN_SPLIT_DIR / "tp"
+        train_fp_dir = TRAIN_SPLIT_DIR / "fp"
+        val_tp_dir = VAL_SPLIT_DIR / "tp"
+        val_fp_dir = VAL_SPLIT_DIR / "fp"
+    else:
+        train_tp_dir = WORK_DIR / "tp_crops"
+        train_fp_dir = WORK_DIR / "fp_crops_enhanced"
+        val_tp_dir = None
+        val_fp_dir = None
     
-    if not tp_dir.exists() or not fp_dir.exists():
+    if not train_tp_dir.exists() or not train_fp_dir.exists():
         print("Error: Crop directories not found.")
+        print(f"Checked: {train_tp_dir}, {train_fp_dir}")
         return
 
     # Transforms
@@ -81,12 +93,13 @@ def train():
     ]) # TODO: データ拡張を追加検討
 
     # Data Loaders
-    dataset = BarlineDataset(tp_dir, fp_dir, transform=transform)
-    
-    # Simple split (80/20)
-    train_size = int(0.8 * len(dataset))
-    val_size = len(dataset) - train_size
-    train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
+    train_dataset = BarlineDataset(train_tp_dir, train_fp_dir, transform=transform)
+    if val_tp_dir and val_tp_dir.exists() and val_fp_dir and val_fp_dir.exists():
+        val_dataset = BarlineDataset(val_tp_dir, val_fp_dir, transform=transform)
+    else:
+        val_size = max(1, int(0.2 * len(train_dataset)))
+        train_size = len(train_dataset) - val_size
+        train_dataset, val_dataset = torch.utils.data.random_split(train_dataset, [train_size, val_size])
     
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=2)

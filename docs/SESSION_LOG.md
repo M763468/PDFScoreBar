@@ -60,3 +60,22 @@ DeepScores V2 Dense is the best candidate. It provides sufficient volume and var
     *   Artifact: `logs/cnn_classifier_v1.pth`.
 
 **Status:** The pipeline is functional. It successfully loads data, trains, and saves a model. The poor validation performance confirms the need for the DeepScores V2 dataset to improve generalization.
+
+## 2026-01-03: CNN Classifier Dataset Integration (DeepScores + Local)
+**Actions:**
+1. Added `tools/cnn_classifier/build_cnn_dataset.py` to re-crop local TP/FP and integrate DeepScores V2 Dense negatives.
+2. Built dataset at `/mnt/d/datasets/cnn_classifier_v1` with local TP=612 / FP=497 and DeepScores negatives=5000.
+3. Generated splits and metadata under `/mnt/d/datasets/cnn_classifier_v1/splits` and `/mnt/d/datasets/cnn_classifier_v1/metadata`.
+4. Updated `experiments/cnn_classifier/train.py` to use split-based dataset layout (override via `CNN_DATASET_ROOT`).
+5. Created `.venv_cnn_classifier` environment and saved dependency lock to `experiments/cnn_classifier/requirements_cnn_classifier_venv.txt`.
+6. Documented CNN classifier environment setup in `docs/ENVIRONMENTS.md`.
+
+## 2026-01-03: Local Crop Scale Fix (page_3 resolution)
+**Actions:**
+1. Updated local TP/FP cropping to scale crop size by barline bbox height (fixes page_3 over-wide crops due to low resolution).
+2. Rebuilt local crops and splits in `/mnt/d/datasets/cnn_classifier_v1` (DeepScores negatives unchanged).
+
+## 2026-01-03: Local Crop Scale Adjustment (bbox-scale v2)
+**Actions:**
+1. Changed local TP/FP crop sizing to `bbox_height * scale` with clamp (`--crop-scale 3.0`, min/max height 48/256).
+2. Rebuilt local crops and splits in `/mnt/d/datasets/cnn_classifier_v1` to reduce page_3 over-wide crops.

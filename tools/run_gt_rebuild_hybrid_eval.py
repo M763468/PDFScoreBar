@@ -1581,19 +1581,19 @@ def detect_end_barlines_omr(
 def merge_vertical_aligned_boxes(boxes: Sequence[Box], x_tol: float = 5.0) -> List[Box]:
     if not boxes:
         return []
-    
+
     # Sort by x coordinate
     sorted_boxes = sorted(boxes, key=lambda b: (b[0] + b[2]) / 2)
-    
+
     merged_groups = []
     current_group = []
-    
+
     for box in sorted_boxes:
         cx = (box[0] + box[2]) / 2
         if not current_group:
             current_group.append(box)
             continue
-        
+
         last_cx = (current_group[-1][0] + current_group[-1][2]) / 2
         if abs(cx - last_cx) <= x_tol:
             current_group.append(box)
@@ -1602,22 +1602,22 @@ def merge_vertical_aligned_boxes(boxes: Sequence[Box], x_tol: float = 5.0) -> Li
             current_group = [box]
     if current_group:
         merged_groups.append(current_group)
-        
+
     final_boxes = []
     for group in merged_groups:
         # Merge vertically overlapping or adjacent boxes in the group
         # Sort by top y
         group.sort(key=lambda b: b[1])
-        
+
         merged_in_group = []
         if not group: continue
-        
+
         curr = list(group[0])
         for i in range(1, len(group)):
             next_box = group[i]
             # Check overlap or adjacency
             # We use a small vertical tolerance
-            y_gap_tol = 5 
+            y_gap_tol = 5
             if next_box[1] <= curr[3] + y_gap_tol:
                 # Merge
                 curr[0] = min(curr[0], next_box[0])
@@ -1629,7 +1629,7 @@ def merge_vertical_aligned_boxes(boxes: Sequence[Box], x_tol: float = 5.0) -> Li
                 curr = list(next_box)
         merged_in_group.append(tuple(curr))
         final_boxes.extend(merged_in_group)
-        
+
     return final_boxes
 
 def detect_probe_scan(
@@ -1754,7 +1754,7 @@ def detect_probe_scan(
         b_heights = [y2 - y1 + 1 for y1, y2 in bands]
         avg_h = float(np.mean(b_heights)) if b_heights else float(global_height)
         dist_thresh = avg_h * divisi_dist_ratio
-        
+
         current_group = [0]
         for i in range(1, len(bands)):
             prev_y2 = bands[i-1][1]
@@ -1768,11 +1768,11 @@ def detect_probe_scan(
                 current_group = [i]
         if len(current_group) > 1:
             adj_groups.append(current_group)
-            
+
         # 2. Validate groups by barline alignment
         # Collect peaks from all bands to use for alignment check
         band_xs: Dict[int, List[float]] = {i: [] for i in range(len(bands))}
-        
+
         # Add existing boxes
         for bx1, by1, bx2, by2 in existing_boxes:
             cy = (by1 + by2) / 2.0
@@ -1803,17 +1803,17 @@ def detect_probe_scan(
             else:
                 if band_height_mode == "median_box":
                     # Simplified: use global or band_h for pre-scan speed
-                    target_h = band_h 
+                    target_h = band_h
                 band_y1 = max(0, int(band_center - target_h // 2))
                 band_y2 = min(h - 1, int(band_center + target_h // 2))
-            
+
             band_img = ink[band_y1 : band_y2 + 1, :]
             if band_img.size == 0: continue
-            
+
             col_sums = band_img.sum(axis=0)
             stripe_sums = np.convolve(col_sums, kernel, mode="same")
             ratios = stripe_sums / float(max(1, band_y2 - band_y1 + 1) * width)
-            
+
             # Find peaks (use lower threshold for structural analysis)
             divisi_min_ratio = 0.5
             if ratios.size >= 3:
@@ -2227,7 +2227,7 @@ def detect_probe_scan(
                 is_divisi_link = False
                 if divisi_rescue and band_idx in divisi_map and divisi_map[band_idx]["has_top"]:
                     is_divisi_link = True
-                
+
                 rescue_ok = False
                 if is_divisi_link:
                     rescue_ok = True
@@ -2242,7 +2242,7 @@ def detect_probe_scan(
                     )
                     if scan_x_peak_segment_height > 0 and scan_x_peak_segment_pass is not None:
                         rescue_ok = rescue_ok and (scan_x_peak_segment_pass >= scan_x_peak_segment_pass_ratio)
-                
+
                 if rescue_ok:
                     rescue_reason = "top_divisi" if is_divisi_link else "top_xpeak"
                     # Rescued: pass to next checks (do not continue/return, allowing fall-through to accepted)
@@ -2379,7 +2379,7 @@ def detect_probe_scan(
             accepted_by_band.setdefault(band_idx, []).append(float(local_idx))
             if rescue_reason is None:
                 trusted_accepted_by_band.setdefault(band_idx, []).append(float(local_idx))
-            
+
             debug_records.append(
                 {
                     "status": "accepted" if rescue_reason is None else f"accepted_{rescue_reason}",

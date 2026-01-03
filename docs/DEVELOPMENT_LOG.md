@@ -1578,7 +1578,7 @@ endpoint_overlap_ratio =
 - **Intent**: - var88再現の主要差分候補として、probe_scanのband height modeを比較。
 - **Result**:
   - `staff` はFNが多く再現できず（page_001 FN=14）。
-  - `median_box` はFNが大きく減少（page_001 FN=7）。  
+  - `median_box` はFNが大きく減少（page_001 FN=7）。
     → var88のend_recovered高さ（~85px）に整合し、再現に重要な差分と判断。
 - **Logs**:
   - `logs/gt_rebuild_hybrid_eval/20251230T141307_sweep_bandheight_staff/`
@@ -1588,7 +1588,7 @@ endpoint_overlap_ratio =
 - **Timestamp**: 2025-12-30 14:14:45
 - **Intent**: - `probe_band_height_mode=median_box` を前提に、peak抽出条件の不一致を確認する。
 - **Result**:
-  - FNは改善するが、どの組合せでもFN=0には届かない。  
+  - FNは改善するが、どの組合せでもFN=0には届かない。
     - 例: ratio=0.85, max_per_band=10 → page_001/004/10/15 FN=5/5/3/5
   - ここでは「probe_min_ratio / max_per_band だけでは再現不能」なことを確認。
 - **Logs**:
@@ -1606,8 +1606,8 @@ endpoint_overlap_ratio =
 - **Timestamp**: 2025-12-30 14:18:57
 - **Intent**: - endbarのstaff mask選択（staff / staffs）の不一致を確認する。
 - **Result**:
-  - `staffs` はendbar回復がほぼ消失（FNが増加）。  
-  - `staff` は回復が維持されるがFN=0には届かない。  
+  - `staffs` はendbar回復がほぼ消失（FNが増加）。
+  - `staff` は回復が維持されるがFN=0には届かない。
     → var88再現には **staff** が必須で、staffsは不一致要因と判断。
 - **Logs**:
   - `logs/gt_rebuild_hybrid_eval/20251230T141857_sweep_endbar_mask_staff/`

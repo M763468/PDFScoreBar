@@ -247,3 +247,13 @@ The local TP extraction uses all GT boxes (line 165-181 in `build_cnn_dataset.py
     *   Page 4: **394 FPs**.
     *   Page 001: (Not present in Batch 23, will yield 0 local FPs but DeepScores negatives still apply).
 *   **Conclusion**: This source provides ~4000 local Hard Negatives, far exceeding the previous ~100. Combined with strict filtering, this eliminates label noise (Overlap) while providing the rich training signal requested.
+
+## Recovered Considerations from Deleted TODOs (from train.py in commit e89e374)
+The following considerations were noted in `tools/cnn_classifier/train.py` but lost during the merge:
+1.  **Dataset Recreation**: "TODO: データセット再作成：元の画像の解像度の違いから、TP/FPのcrop画像の範囲がずれている可能性あり+ダウンロードしたデータから作った追加データセットへのパス移動" (Targeting this now).
+2.  **Model Selection**: "Use MobileNetV3 Small for lightweight inference TODO: adjust as needed. is this the best choice?".
+3.  **Data Augmentation**: "TODO: データ拡張を追加検討".
+4.  **Hyperparameters**:
+    *   `BATCH_SIZE = 16`: "Small batch size for limited resources TODO: adjust as needed".
+    *   `IMG_SIZE = (256, 128)`: "consistent with crop logic TODO: adjust as needed".
+    *   `optimizer`: "is this the best optimizer?".

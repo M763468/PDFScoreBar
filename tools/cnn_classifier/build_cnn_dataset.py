@@ -7,6 +7,8 @@ import shutil
 from pathlib import Path
 
 import cv2
+import numpy as np
+from PIL import Image
 
 
 DEFAULT_PAGES = [
@@ -81,6 +83,30 @@ def center_crop(img, cx, cy, crop_w, crop_h):
             value=[255, 255, 255],
         )
     return crop
+
+
+def load_palette_index(seg_path: Path) -> np.ndarray:
+    seg_img = Image.open(seg_path)
+    if seg_img.mode != "P":
+        seg_img = seg_img.convert("P")
+    return np.array(seg_img)
+
+
+def find_components(mask: np.ndarray):
+    num, labels, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
+    comps = []
+    for idx in range(1, num):
+        x, y, w, h, area = stats[idx].tolist()
+        comps.append(
+            {
+                "label": idx,
+                "bbox": [x, y, x + w - 1, y + h - 1],
+                "w": w,
+                "h": h,
+                "area": area,
+            }
+        )
+    return comps
 
 
 def crop_size_from_bbox(
@@ -266,11 +292,74 @@ def extract_deepscores_negatives(
     return total
 
 
+def extract_deepscores_tp_from_segmentation(
+    ds_root,
+    output_root,
+    crop_w,
+    crop_h,
+    palette_index,
+    min_area,
+    min_height,
+    vertical_ratio,
+    max_total,
+    seg_offset,
+    seg_count,
+):
+    output_dir = output_root / "deepscores" / "tp"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    existing = len(list(output_dir.glob("*.png")))
+    if max_total is not None and existing >= max_total:
+        return existing
+
+    total = existing
+    seg_root = ds_root / "segmentation"
+    img_root = ds_root / "images"
+    seg_files = sorted(seg_root.glob("*_seg.png"))
+    if seg_offset:
+        seg_files = seg_files[seg_offset:]
+    if seg_count:
+        seg_files = seg_files[:seg_count]
+    for seg_path in seg_files:
+        if max_total is not None and total >= max_total:
+            break
+        seg_np = load_palette_index(seg_path)
+        mask = (seg_np == palette_index).astype(np.uint8) * 255
+        comps = find_components(mask)
+        for comp in comps:
+            if max_total is not None and total >= max_total:
+                break
+            if comp["area"] < min_area:
+                continue
+            if comp["h"] < min_height:
+                continue
+            if (comp["h"] / max(1, comp["w"])) < vertical_ratio:
+                continue
+            x1, y1, x2, y2 = comp["bbox"]
+            cx = int(round((x1 + x2) / 2))
+            cy = int(round((y1 + y2) / 2))
+            # match segmentation filename to image filename
+            image_name = seg_path.name.replace("_seg.png", ".png")
+            image_path = img_root / image_name
+            img = cv2.imread(str(image_path))
+            if img is None:
+                continue
+            crop = center_crop(img, cx, cy, crop_w, crop_h)
+            save_path = output_dir / (
+                f"{seg_path.stem}_idx{comp['label']}_x{x1}_y{y1}.png"
+            )
+            if not save_path.exists():
+                cv2.imwrite(str(save_path), crop)
+                total += 1
+    return total
+
+
 def build_samples(output_root):
     samples = []
     local_tp = sorted((output_root / "local" / "tp").glob("*.png"))
     local_fp = sorted((output_root / "local" / "fp").glob("*.png"))
     ds_fp = sorted((output_root / "deepscores" / "fp").glob("*.png"))
+    ds_tp = sorted((output_root / "deepscores" / "tp").glob("*.png"))
 
     for path in local_tp:
         group = path.name.split("_tp_")[0]
@@ -287,6 +376,12 @@ def build_samples(output_root):
         group = parts[2] if len(parts) > 2 else path.stem
         samples.append(
             {"path": path, "label": 0, "source": "deepscores", "group": group}
+        )
+    for path in ds_tp:
+        parts = path.stem.split("_")
+        group = parts[2] if len(parts) > 2 else path.stem
+        samples.append(
+            {"path": path, "label": 1, "source": "deepscores", "group": group}
         )
     return samples
 
@@ -412,7 +507,9 @@ def main():
     parser.add_argument("--max-per-image", type=int, default=5)
     parser.add_argument("--max-total", type=int, default=10000)
     parser.add_argument("--skip-local", action="store_true", help="Skip local TP/FP extraction.")
-    parser.add_argument("--skip-deepscores", action="store_true", help="Skip DeepScores extraction.")
+    parser.add_argument("--skip-deepscores", action="store_true", help="Skip DeepScores extraction (TP+FP).")
+    parser.add_argument("--skip-deepscores-fp", action="store_true", help="Skip DeepScores FP extraction.")
+    parser.add_argument("--skip-deepscores-tp", action="store_true", help="Skip DeepScores TP extraction.")
     parser.add_argument("--only-split", action="store_true", help="Only (re)build splits/metadata.")
     parser.add_argument(
         "--neg-prefix",
@@ -429,6 +526,13 @@ def main():
     parser.add_argument("--train-ratio", type=float, default=0.8)
     parser.add_argument("--val-ratio", type=float, default=0.1)
     parser.add_argument("--test-ratio", type=float, default=0.1)
+    parser.add_argument("--tp-palette-index", type=int, default=3)
+    parser.add_argument("--tp-min-area", type=int, default=30)
+    parser.add_argument("--tp-min-height", type=int, default=30)
+    parser.add_argument("--tp-vertical-ratio", type=float, default=3.0)
+    parser.add_argument("--tp-max-total", type=int, default=None)
+    parser.add_argument("--tp-seg-offset", type=int, default=0)
+    parser.add_argument("--tp-seg-count", type=int, default=0)
 
     args = parser.parse_args()
     output_root = Path(args.output_root)
@@ -447,7 +551,7 @@ def main():
                 args.max_crop_height,
             )
             print(f"Local crops: TP={tp_count}, FP={fp_count}")
-        if not args.skip_deepscores:
+        if not args.skip_deepscores and not args.skip_deepscores_fp:
             ds_count = extract_deepscores_negatives(
                 Path(args.deepscores_root),
                 output_root,
@@ -460,6 +564,21 @@ def main():
                 args.seed,
             )
             print(f"DeepScores negatives: {ds_count}")
+        if not args.skip_deepscores and not args.skip_deepscores_tp:
+            tp_count = extract_deepscores_tp_from_segmentation(
+                Path(args.deepscores_root),
+                output_root,
+                args.crop_width,
+                args.crop_height,
+                args.tp_palette_index,
+                args.tp_min_area,
+                args.tp_min_height,
+                args.tp_vertical_ratio,
+                args.tp_max_total,
+                args.tp_seg_offset,
+                args.tp_seg_count,
+            )
+            print(f"DeepScores TP (palette {args.tp_palette_index}): {tp_count}")
 
     samples = build_samples(output_root)
     ratios = {

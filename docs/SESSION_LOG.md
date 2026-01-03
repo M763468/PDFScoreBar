@@ -79,3 +79,34 @@ DeepScores V2 Dense is the best candidate. It provides sufficient volume and var
 **Actions:**
 1. Changed local TP/FP crop sizing to `bbox_height * scale` with clamp (`--crop-scale 3.0`, min/max height 48/256).
 2. Rebuilt local crops and splits in `/mnt/d/datasets/cnn_classifier_v1` to reduce page_3 over-wide crops.
+
+## 2026-01-03: DeepScores Segmentation Check
+**Actions:**
+1. Verified DeepScores Dense segmentation is paletted; palette indices map to `categories[].color`.
+2. No `barline` category present; sampled barline-like columns map to palette index 0 (background).
+3. Conclusion: segmentation images do not provide barline TP directly.
+
+## 2026-01-03: DeepScores Segmentation Sampling (manual TP boxes)
+**Actions:**
+1. Read manually drawn TP boxes from `logs/deepscores_tp/lg-101766503886095953-aug-beethoven--page-1_raw.json`.
+2. Sampled segmentation palette values inside 28 boxes; dominant indices were 0/3 (unknown/background) and 165 (staff).
+3. No distinct barline-specific palette color found.
+
+## 2026-01-03: DeepScores Segmentation Visual Crops
+**Actions:**
+1. Exported per-box segmentation crops with palette stats to `logs/deepscores_tp/visuals/` for manual color inspection.
+
+## 2026-01-03: DeepScores Palette Component Crops
+**Actions:**
+1. Extracted connected components for palette index 165 (staff color) across 5 segmentation images.
+2. Saved crops and overlays under `logs/deepscores_tp/color_components/` with per-image summaries in `summary.json`.
+
+## 2026-01-03: DeepScores Index 3 Vertical Components
+**Actions:**
+1. Confirmed palette index 3 contains vertical components that align with barlines (based on manual TP boxes).
+2. Generated full-image overlays and crops for index 3 across 5 segmentation images under `logs/deepscores_tp/index3_all/`.
+
+## 2026-01-03: DeepScores TP Extraction (index 3)
+**Actions:**
+1. Added segmentation-based TP extraction in `tools/cnn_classifier/build_cnn_dataset.py` (palette index 3, vertical filter).
+2. Started full-dataset TP extraction in background; log at `logs/deepscores_tp/deepscores_tp_build.log`.

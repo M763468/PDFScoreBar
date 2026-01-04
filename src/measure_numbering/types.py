@@ -34,8 +34,9 @@ class BarlineType(Enum):
 
 @dataclass(unsafe_hash=True)
 class Barline:
+    """Represents a vertical barline detected in the score."""
     bbox: BBox
-    type: BarlineType = BarlineType.SINGLE
+    is_ghost: bool = False # If True, this is a logical marker (e.g. system start) not a detected line.
 
 @dataclass
 class Measure:

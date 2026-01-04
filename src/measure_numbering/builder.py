@@ -69,6 +69,6 @@ class SystemBuilder:
                 if inter_y2 > inter_y1:
                     overlap_h = inter_y2 - inter_y1
                     staff_h = s_y2 - s_y1
-                    # Significant overlap
-                    if overlap_h > staff_h * 0.5:
+                    # Significant overlap: relax to 0.2 or 10px min
+                    if overlap_h > staff_h * 0.2 or overlap_h > 10:
                         staff.barlines.append(bar)

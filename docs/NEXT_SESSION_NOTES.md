@@ -49,17 +49,26 @@ The project is currently split into two parallel tracks to address the "False Po
 3.  **Basic Numbering Logic (`numbering.py`)**:
     *   Implemented `MeasureNumberer` which assigns sequential numbers to measures within defined systems.
     *   Verified with unit tests (single system and multi-page flow).
+4.  **Real Data Verification & Logic Refinement**:
+    *   Tested against Page 10 real detection output.
+    *   **Deduplication**: Implemented 15px threshold to merge redundant detector candidates.
+    *   **Implicit Start**: Added logic to detect and complete missing first measures (ghost barlines).
+    *   **Coordinate Scaling**: Identified and resolved downscaling issues in `homr` staff masks.
+    *   **Visualization**: Confirmed correctness with centered measure numbers and transparent overlays.
 
 ### Remaining Work / Next Steps
-1.  **Real Data Verification**:
-    *   Test `SystemBuilder` and `MeasureNumberer` against real `homr` outputs.
-    *   **Blocker**: Current `homr` detection JSONs often lack explicit "Staff" bounding boxes, which are required for `SystemBuilder`. Need to extract staff info from `staff_mask` or `homr` internal logs.
-2.  **Integration**:
-    *   Create a pipeline script: `Input JSON` -> `Builder` -> `Numberer` -> `Output JSON`.
-3.  **Advanced Logic (Deferred)**:
-    *   **Upbeat (Anacrusis)**: Handling partial first measures.
-    *   **Multi-measure Rests**: Reading rest numbers.
-    *   **Repeats / Segno**: Handling non-linear numbering flow.
+1.  **Production-ready Integration**:
+    *   Combine `Detector JSON` + `Staff Mask PNG` + `Numbering Logic` into a single standalone pipeline script.
+    *   Automate the coordinate scaling logic based on image metadata.
+2.  **Advanced System Inference**:
+    *   Integrate `homr` bracket/brace detection to automatically group staves into systems (e.g. Piano grand staff).
+    *   Currently, we use a "1 staff = 1 system" assumption for parts, which needs generalization.
+3.  **Multi-page & Performance Verification**:
+    *   Run the numbering pipeline on full multi-page PDFs to ensure state (measure count) is correctly preserved.
+    *   Measure processing time for a typical 10-page score.
+4.  **Special Musical Logic**:
+    *   **Upbeats (Anacrusis)**: Formal detection or manual overrides.
+    *   **Repeats / Segno**: Handling non-linear flow (if logical measure count differs from graphical sequence).
 
 ### Key Artifacts
 - `src/measure_numbering/types.py`: Core data classes (`unsafe_hash=True` for set ops).

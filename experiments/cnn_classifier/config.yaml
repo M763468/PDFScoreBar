@@ -32,6 +32,7 @@ sp_density: 0.02
 
 # --- Evaluation ---
 optimize_threshold: true
+save_interval: 5
 
 # --- Debug / Profiling ---
 timing: true

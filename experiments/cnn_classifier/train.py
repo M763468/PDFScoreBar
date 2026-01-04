@@ -231,6 +231,9 @@ def get_args():
     parser.add_argument("--freeze-backbone-epochs", type=int, default=0, help="Freeze backbone for N epochs.")
     parser.add_argument("--sp-p", type=float, default=0.3, help="Salt&Pepper probability.")
     parser.add_argument("--sp-density", type=float, default=0.02, help="Salt&Pepper density.")
+    
+    # Checkpointing
+    parser.add_argument("--save-interval", type=int, default=0, help="Save model checkpoint every N epochs (0 to disable).")
 
     # System / Optimizer
     parser.add_argument("--weight-decay", type=float, default=1e-2, help="Weight decay for optimizer.")
@@ -518,6 +521,12 @@ def train(args):
                 save_path = work_dir / "cnn_classifier_best.pth"
                 torch.save(model.state_dict(), save_path)
                 print(f"New best model saved to {save_path}")
+
+        # Regular Checkpoint
+        if args.save_interval > 0 and (epoch + 1) % args.save_interval == 0:
+            save_path = work_dir / f"cnn_classifier_epoch_{epoch+1}.pth"
+            torch.save(model.state_dict(), save_path)
+            print(f"Checkpoint saved to {save_path}")
 
     if writer:
         writer.close()

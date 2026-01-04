@@ -168,6 +168,7 @@ def main():
     parser.add_argument("--threshold", type=float, default=0.5)
     parser.add_argument("--run-prefix", default="eval2", help="Only process run directories starting with this prefix")
     parser.add_argument("--skip-existing", action="store_true", help="Skip processing if output file already exists")
+    parser.add_argument("--candidates-file", default="hybrid_predictions.json", help="Filename of candidate JSON in run dir")
     args = parser.parse_args()
 
     # Load Config for Model Params (optional, but good for consistency)
@@ -188,8 +189,9 @@ def main():
     gpu_norm = GPUNormalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]).to(DEVICE)
 
     # Find JSONs
-    json_files = list(Path(args.json_root).rglob("hybrid_predictions.json"))
-    print(f"Found {len(json_files)} prediction files total.")
+    # We search for the specific candidate file instead of hybrid_predictions.json
+    json_files = list(Path(args.json_root).rglob(args.candidates_file))
+    print(f"Found {len(json_files)} candidate files ({args.candidates_file}) total.")
 
     output_root = Path(args.output_root)
     output_root.mkdir(parents=True, exist_ok=True)

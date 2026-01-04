@@ -55,3 +55,6 @@ external/omr_dln/
 external/realesrgan/
 external/grounding_dino/
 temp_review_images/
+
+# Large datasets
+datasets/

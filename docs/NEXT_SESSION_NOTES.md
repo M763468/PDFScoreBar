@@ -20,10 +20,15 @@
 - **Previous Phase**: Hybrid Pipeline (Phase 6) achieved FN=0 but stalled at ~100 FPs/page. Shifted to CNN for final precision.
 
 ## 2. Immediate Tasks (Next Session)
-**Priority**: Implement### B. Execute Training
-1.  **Command** (Optimized for SSD + VRAM):
+**Priority**: Implement### A. Training Code Refactoring (`experiments/cnn_classifier/train.py`)
+> [!WARNING]
+> Training on `/mnt/` (Windows drives) is unstable with high parallelism (Errno 19).
+> **Strongly Recommended**: Move dataset to Linux native partition (`~/datasets/...`).
+### B. Execute Training
+1.  **Command** (Optimized for SSD + VRAM, running on WSL Native):
     ```bash
-    CNN_DATASET_ROOT=/mnt/s/dev/datasets/cnn_classifier_final_v2_fixed \
+    # Assuming dataset is moved to ~/datasets/cnn_classifier_final_v2_fixed
+    CNN_DATASET_ROOT=~/datasets/cnn_classifier_final_v2_fixed \
     .venv_cnn_classifier/bin/python experiments/cnn_classifier/train.py \
     --model-name resnet18 \
     --epochs 30 \
@@ -31,6 +36,7 @@
     --log-dir logs/cnn_final_res18 \
     --work-dir logs/cnn_final_res18
     ```
+    *   **Note**: You can also use `--config experiments/cnn_classifier/config.yaml` to manage all advanced parameters (AMP, Compile, Imbalance, Augmentation, etc.).
     *   **Note**: `num_workers=8` and `pin_memory=True` are now default in `train.py` to faster loading.
 2.  **Monitor**: check TensorBoard for F1-score convergence.
     - **Methods**:

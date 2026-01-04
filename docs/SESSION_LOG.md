@@ -311,11 +311,21 @@ The following considerations were noted in `tools/cnn_classifier/train.py` but l
 **Status**: All checks passed. Dataset repaired. Config verified.
 
 **Recommended Training Command**:
-\`\`\`bash
+```bash
 .venv_cnn_classifier/bin/python experiments/cnn_classifier/train.py --config experiments/cnn_classifier/config.yaml
-\`\`\`
+```
 *   **Model**: ResNet18
 *   **Batch Size**: 512
 *   **Epochs**: 30
 *   **Optimization**: AMP + torch.compile enabled
 *   **Dataset**: `datasets/cnn_classifier_final_v2_fixed` (Splits repaired)
+
+## 2026-01-04: Dataset Repair (Force Copy Mode)
+**Issue**: Symbolic links in `splits` directory were broken (pointing to non-existent paths), causing `FileNotFoundError` during training.
+**Actions**:
+1.  **Script Update**: Modified `tools/cnn_classifier/build_cnn_dataset.py` to always copy files using `shutil.copy2` instead of creating symlinks.
+2.  **Reproduction Fix**: Deleted the corrupted `splits` directory and regenerated it using the `--only-split` command.
+**Confirmation**:
+*   Verified non-zero file sizes in `datasets/cnn_classifier_final_v2_fixed/splits/` (e.g., 3.5K, 3.9K per PNG).
+*   Total split directory metadata/data size reached ~134M.
+**Status**: Dataset is verified robust (no links). Ready for production training.

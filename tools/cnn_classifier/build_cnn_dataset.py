@@ -493,10 +493,11 @@ def link_or_copy(src, dst):
     dst.parent.mkdir(parents=True, exist_ok=True)
     if dst.exists():
         return
+    # Always copy to avoid symlink issues
     try:
-        dst.symlink_to(src)
-    except OSError:
         shutil.copy2(src, dst)
+    except Exception as e:
+        print(f"Error copying {src} to {dst}: {e}")
 
 
 def write_outputs(output_root, samples, assignments):

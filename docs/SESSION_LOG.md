@@ -386,3 +386,19 @@ The following considerations were noted in `tools/cnn_classifier/train.py` but l
       --model-path logs/cnn_barline_classification/training_resnet18_b320/cnn_classifier_best.pth \
       --skip-existing --run-prefix eval2
     ```
+
+### Analysis of Upstream Candidate Generation (`tools/run_gt_rebuild_hybrid_eval.py`)
+**Objective**: Understand how the legacy pipeline increased candidates to resolve False Negatives.
+
+**Key Mechanisms Identified**:
+1.  **Candidate Expansion via `probe_scan`**:
+    *   **Band Identification**: Uses initial consensus barlines as anchors to identify vertical regions (bands) where barlines should exist.
+    *   **Ink Density Scanning**: Scans these bands horizontally for high ink-density peaks, picking up lines missed by segmentation-based detectors (homr/OMR-DLN).
+    *   **Rescue Logic**: Includes specialized routines (`scan_x_peak_rescue`, `scan_rightmost_rescue`) to recover faint or edge-of-page barlines.
+2.  **Refinement via Multi-stage Filtering**:
+    *   **`row_filter`**: Ensures new candidates align with the vertical height and position of existing barline rows.
+    *   **`geom_notehead_ratio_filter`**: Filters out stems by checking proximity to detected noteheads (using a dilated notehead mask).
+    *   **Structural Filters**: Applies overlap checks for clefs/keys and enforces minimum height ratios relative to staff height.
+
+**Conclusion**: The current `run_hybrid_pipeline.sh` only performs the consensus step and lacks this "Expansion & Refinement" stage. The observed False Negatives are likely due to barlines being missed by the initial detectors and never being "probed" for in the image. Integrating a version of this logic is the likely next step for improving recall.
+

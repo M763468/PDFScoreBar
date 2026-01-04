@@ -32,15 +32,26 @@ fi
 
 # Resolve paths
 REPO_ROOT=$(pwd)
-ABS_IMAGE=$(realpath "$IMAGE_PATH")
 
-if [[ "$ABS_IMAGE" != "$REPO_ROOT"* ]]; then
-    echo "Error: Image must be inside the repository ($REPO_ROOT)."
-    exit 1
+# Improved path handling to support symlinks (like data/evaluation2)
+if [[ "$IMAGE_PATH" != /* ]]; then
+    # Relative path: Assume it is inside the repo
+    CONTAINER_IMAGE="/workspace/$IMAGE_PATH"
+else
+    # Absolute path: Try to relativize
+    ABS_IMAGE=$(realpath "$IMAGE_PATH")
+    if [[ "$ABS_IMAGE" == "$REPO_ROOT"* ]]; then
+        CONTAINER_IMAGE="/workspace${ABS_IMAGE#$REPO_ROOT}"
+    else
+        # Fallback: Check if it matches the structure even if realpath drifted (symlinks)
+        # But for now, just warn and try strictly mapping if possible, or fail.
+        # However, for this fix, we primarily trust the relative path provided.
+        echo "Error: Absolute path provided matches outside repository or symlink resolution failed."
+        echo "Repo: $REPO_ROOT"
+        echo "Image: $ABS_IMAGE"
+        exit 1
+    fi
 fi
-
-# Convert to container paths
-CONTAINER_IMAGE="/workspace${ABS_IMAGE#$REPO_ROOT}"
 STEM=$(basename "$IMAGE_PATH" .png)
 
 CONTAINER_GT=""

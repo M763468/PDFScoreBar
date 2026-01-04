@@ -251,7 +251,7 @@ The local TP extraction uses all GT boxes (line 165-181 in `build_cnn_dataset.py
 ## Recovered Considerations from Deleted TODOs (from train.py in commit e89e374)
 The following considerations were noted in `tools/cnn_classifier/train.py` but lost during the merge:
 1.  **Dataset Recreation**: "TODO: データセット再作成：元の画像の解像度の違いから、TP/FPのcrop画像の範囲がずれている可能性あり+ダウンロードしたデータから作った追加データセットへのパス移動" (Targeting this now).
-2.  **Model Selection**: "Use MobileNetV3 Small for lightweight inference TODO: adjust as needed. is this the best choice?".
+2.  **Model Selection**: "Use MobileNetV3 Small for lightweight inference TODO: adjust as needed. is this the best choice?."
 3.  **Data Augmentation**: "TODO: データ拡張を追加検討".
 4.  **Hyperparameters**:
     *   `BATCH_SIZE = 16`: "Small batch size for limited resources TODO: adjust as needed".
@@ -348,3 +348,41 @@ The following considerations were noted in `tools/cnn_classifier/train.py` but l
     *   **Bug Fix**: Fixed `UnboundLocalError` for `work_dir`.
 
 **Status**: Ready for optimized training run.
+
+## 2026-01-04: Validation of CNN Classifier on Evaluation2 Set
+**Objective**: Validate the trained ResNet18 model on a new dataset (`data/evaluation2/pdfs`) without GT, using visual inspection.
+
+**Actions**:
+1.  **Data Preparation**:
+    *   Converted `Va_Prokofiev_Symphony1.pdf` and `Va__Prokofiev_Symphony5.pdf` to images in `data/evaluation2/images`.
+2.  **Pipeline Debugging**:
+    *   Encountered path resolution issues with symlinked data directories in `tools/run_hybrid_pipeline.sh`.
+    *   **Fix**: Modified `tools/run_hybrid_pipeline.sh` to correctly handle relative paths and disable strict repository root checks when running with symlinked data.
+3.  **Candidate Generation**:
+    *   Created `run_batch_candidates.sh` to batch process all 30+ pages.
+    *   Started batch processing in background (Log: `batch_run.log`).
+    *   *Note*: Processing takes ~10 mins/page due to SR steps.
+4.  **Inference & Visualization**:
+    *   Created `experiments/cnn_classifier/inference_visualize.py` to load candidates, infer, and generate overlays.
+    *   **Feature Update**: Added `_all_candidates.png` output to visualize raw candidates (Blue) alongside filtered results (Green/Red).
+    *   **Visual Refinement**: Increased box thickness and added score labels to improve visibility on high-resolution images.
+    *   **Fix**: Improved parsing logic in the inference script to handle subdirectory names containing underscores.
+
+**Preliminary Findings (Investigation of False Negatives)**:
+*   **Visual Audit**: Checked `eval2_Va_Prokofiev_Symphony1_page_002`. Identified several barlines missing from the final result (FN).
+*   **Root Cause Diagnosis**: 
+    *   Audit of `_all_candidates.png` revealed that the missing barlines are **not present even in the raw candidate set**.
+    *   **Conclusion**: The issue lies **upstream** in the Hybrid Pipeline (homr / OMR-DLN detection steps) rather than the CNN classifier filtering logic. The classifier cannot accept what the detector does not propose.
+*   **Next Action**: Investigate why the hybrid pipeline is failing to propose these barlines on the `evaluation2` set (potential scale or resolution mismatch in detector configurations).
+
+**Execution Status**:
+*   Batch detection job is ongoing.
+*   Visualization script is ready for incremental runs:
+    ```bash
+    .venv_cnn_classifier/bin/python experiments/cnn_classifier/inference_visualize.py \
+      --image-root data/evaluation2/images \
+      --json-root logs/hybrid_generalization \
+      --output-root logs/cnn_validation_eval2 \
+      --model-path logs/cnn_barline_classification/training_resnet18_b320/cnn_classifier_best.pth \
+      --skip-existing --run-prefix eval2
+    ```

@@ -134,6 +134,192 @@ def process_page(run_dir: Path, image_root: Path):
     with open(out_relaxed, 'w') as f:
         json.dump(final_relaxed_list, f, indent=2)
 
+    # --- Step 3: Ultraloose Probe Scan (Aggressive Recall) ---
+    # Attempting to reach FN=0 by very loose thresholds
+    candidates_ultraloose = detect_probe_scan(
+        base_img=img,
+        staff_mask=staff_mask,
+        existing_boxes=existing_boxes, 
+        
+        # Enable Rescue
+        scan_x_peak_rescue=True,
+        scan_rightmost_rescue=True,
+        divisi_rescue=True,
+        scan_x_peak_rescue_mode="topbottom",
+        
+        # ULTRALOOSE Thresholds
+        probe_width=4,
+        ink_threshold=200, # Higher to catch faint ink (0-200 considered ink)
+        min_ratio=0.50, # Drastically lowered
+        scan_center_on_peak=True,
+        scan_x_peak_ratio_min=1.2, # Very low peak requirement
+        scan_rightmost_min_ratio=0.50,
+        
+        # Source
+        band_source="row_stats", 
+    )
+    
+    # Combine
+    final_ultraloose = set(existing_boxes)
+    for c in candidates_ultraloose:
+        final_ultraloose.add(c)
+    
+    final_ultraloose_list = sorted(list(final_ultraloose))
+    
+    # Save Ultraloose
+    out_ultraloose = run_dir / "expanded_candidates_ultraloose.json"
+    with open(out_ultraloose, 'w') as f:
+        json.dump(final_ultraloose_list, f, indent=2)
+
+    # --- Step 4: User Specified Params ---
+    # probe_width=2, ink=180, ratio=0.5
+    candidates_user = detect_probe_scan(
+        base_img=img,
+        staff_mask=staff_mask,
+        existing_boxes=existing_boxes, 
+        
+        # Enable Rescue
+        scan_x_peak_rescue=True,
+        scan_rightmost_rescue=True,
+        divisi_rescue=True,
+        scan_x_peak_rescue_mode="topbottom",
+        
+        # USER Params
+        probe_width=2,  # Thinner probe
+        ink_threshold=180, # Standard ink
+        min_ratio=0.50, # Low ratio
+        scan_center_on_peak=True,
+        scan_x_peak_ratio_min=1.2, # Matching Ultraloose assumption
+        scan_rightmost_min_ratio=0.50, # Matching min_ratio
+        
+        # Source
+        band_source="row_stats", 
+    )
+    
+    # Combine
+    final_user = set(existing_boxes)
+    for c in candidates_user:
+        final_user.add(c)
+    
+    final_user_list = sorted(list(final_user))
+    
+    # Save User
+    out_user = run_dir / "expanded_candidates_user.json"
+    with open(out_user, 'w') as f:
+        json.dump(final_user_list, f, indent=2)
+
+    # --- Step 5: Hyperlapse Probe Scan (Max Recall) ---
+    # User requested to catch EVERYTHING, accepting noise.
+    candidates_hyper = detect_probe_scan(
+        base_img=img,
+        staff_mask=staff_mask,
+        existing_boxes=existing_boxes, 
+        
+        # Enable Rescue
+        scan_x_peak_rescue=True,
+        scan_rightmost_rescue=True,
+        divisi_rescue=True,
+        scan_x_peak_rescue_mode="topbottom",
+        
+        # HYPERLAPSE Thresholds
+        probe_width=4,
+        ink_threshold=220, # Very sensitive to faint ink (almost any gray)
+        min_ratio=0.10, # Accept almost any vertical interruptions
+        scan_center_on_peak=True,
+        scan_x_peak_ratio_min=1.01, # Disable peak dominance check (accept flat peaks)
+        scan_rightmost_min_ratio=0.10,
+        
+        # Source
+        band_source="row_stats", 
+    )
+    
+    # Combine
+    final_hyper = set(existing_boxes)
+    for c in candidates_hyper:
+        final_hyper.add(c)
+    
+    final_hyper_list = sorted(list(final_hyper))
+    
+    # Save Hyper
+    out_hyper = run_dir / "expanded_candidates_hyper.json"
+    with open(out_hyper, 'w') as f:
+        json.dump(final_hyper_list, f, indent=2)
+
+    # --- Step 6: Needle Probe Scan (Width=1) ---
+    # User requested Width=1 with previous ink params.
+    candidates_needle = detect_probe_scan(
+        base_img=img,
+        staff_mask=staff_mask,
+        existing_boxes=existing_boxes, 
+        
+        # Enable Rescue
+        scan_x_peak_rescue=True,
+        scan_rightmost_rescue=True,
+        divisi_rescue=True,
+        scan_x_peak_rescue_mode="topbottom",
+        
+        # NEEDLE Thresholds
+        probe_width=1,  # Single pixel scan
+        ink_threshold=180, # Keep as per UserParams
+        min_ratio=0.50,
+        scan_center_on_peak=True,
+        scan_x_peak_ratio_min=1.2, 
+        scan_rightmost_min_ratio=0.50,
+        
+        # Source
+        band_source="row_stats", 
+    )
+    
+    # Combine
+    final_needle = set(existing_boxes)
+    for c in candidates_needle:
+        final_needle.add(c)
+    
+    final_needle_list = sorted(list(final_needle))
+    
+    # Save Needle
+    out_needle = run_dir / "expanded_candidates_needle.json"
+    with open(out_needle, 'w') as f:
+        json.dump(final_needle_list, f, indent=2)
+
+    # --- Step 7: No Peak Condition (User Request) ---
+    # Disabling peak sharpness check entirely.
+    candidates_nopeak = detect_probe_scan(
+        base_img=img,
+        staff_mask=staff_mask,
+        existing_boxes=existing_boxes, 
+        
+        # Enable Rescue
+        scan_x_peak_rescue=True,
+        scan_rightmost_rescue=True,
+        divisi_rescue=True,
+        scan_x_peak_rescue_mode="topbottom",
+        
+        # NO PEAK Thresholds (Ultraloose base)
+        probe_width=4,
+        ink_threshold=200, 
+        min_ratio=0.50,
+        scan_center_on_peak=True,
+        scan_x_peak_ratio_min=0.0, # DISABLED (Accept any local max)
+        scan_rightmost_min_ratio=0.10, # Very loose
+        max_per_band=0, # DISABLED limit (Default 8) to catch all peaks
+        
+        # Source
+        band_source="row_stats", 
+    )
+    
+    # Combine
+    final_nopeak = set(existing_boxes)
+    for c in candidates_nopeak:
+        final_nopeak.add(c)
+    
+    final_nopeak_list = sorted(list(final_nopeak))
+    
+    # Save NoPeak
+    out_nopeak = run_dir / "expanded_candidates_nopeak.json"
+    with open(out_nopeak, 'w') as f:
+        json.dump(final_nopeak_list, f, indent=2)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--logs-root", required=True, help="Root directory containing run dirs (e.g. logs/hybrid_generalization)")

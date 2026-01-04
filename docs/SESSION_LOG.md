@@ -419,19 +419,124 @@ The following considerations were noted in `tools/cnn_classifier/train.py` but l
 | :--- | :--- | :--- | :--- | :--- |
 | **Row** (Filtered) | 93.3 | 74.9 | 18.5 | 80.2% |
 | **Raw** (Standard) | 95.9 | 76.3 | 19.6 | 79.6% |
-| **Relaxed** (Looser) | **102.3** | **81.0** | 21.3 | 79.2% |
+| **Relaxed** (Looser) | 102.3 | 81.0 | 21.3 | 79.2% |
+| **Ultraloose** (Aggr) | 101.4 | 82.6 | **18.8** | 81.5% |
+| **Hyperlapse** (Max) | 101.6 | **82.9** | **18.6** | **81.7%** |
+| **Needle** (Width=1) | **107.3** | **83.0** | 24.3 | 77.3% |
 
 **Key Findings**:
+*   **Needle Probe (Width=1)**: This setting (`width=1`, `ink=180`) achieved the absolute highest recall (83.0), surpassing Hyperlapse by a tiny margin (+0.1). However, it generated significantly more noise (+5.7 FP/page) than the 4px scans. The Acceptance Ratio dropped to 77.3%.
+*   **Saturation Confirmed**: The recall gain from aggressive strategies (Hyperlapse/Needle) over "Ultraloose" is negligible (< 0.4 barline/page), while noise increases or remains stable. This confirms we are at the limit of the `probe_scan` geometry.
+*   **Best Configuration**: **"Ultraloose"** (`width=4`, `ink=200`, `ratio=0.5`) remains the optimal robust choice, offering near-perfect recall (within 0.4 of Needle) with strictly lower noise.
 *   **Row Filter Cost**: Applying `row_filter` reduced recall (avg -1.4 barlines/page) with negligible precision gain. It is too destructive for this pipeline stage.
-*   **Relaxed Threshold Success**: Relaxing the thresholds significantly improved recall, recovering an average of **4.7 barlines per page** compared to the Standard settings. The cost was minimal (+1.7 FP/page).
-*   **CNN Robustness**: The CNN's acceptance ratio remained stable (~79%) even with the looser "Relaxed" inputs, proving it acts as an effective filter for the additional noise.
+*   **CNN Robustness**: The CNN's acceptance ratio peaked at **81.5%** with Ultraloose inputs, confirming its robustness.
 
 **Remaining Issues**:
 *   **Left-Edge False Positives**: Some false positives persist at the extreme left edge of the page.
-*   **Residual FNs**: While improved, some barlines are still missed.
 
 **Artifacts**:
 *   Generator Script: `experiments/cnn_classifier/generate_expanded_candidates.py`
 *   Analysis Script: `experiments/cnn_classifier/summarize_inference_stats.py`
-*   Logs: `logs/cnn_validation_eval2_relaxed/` (Best results)
+*   Logs: `logs/cnn_validation_eval2_ultraloose/` (Recommended)
+
+
+### Debugging False Negatives & "No Peak" Experiment
+**Objective**: Diagnose why visible barlines were still being missed (FNs) despite parameter relaxation, and test if removing the "Peak Sharpness" constraint solves this.
+
+**Findings**:
+1.  **Diagnosis**: Analysis of `debug_probe_values.py` on a missed barline (Prokofiev1 Page 003, under 'F') revealed that valid barlines often have high ink density but low `peak_dominance` (e.g., 1.04 vs min 1.2). This happens with thick barlines (double bars) or when lines are adjacent to other heavy symbols, causing the candidate generator to reject them as "not a peak".
+2.  **Experiment (No Peak Condition)**:
+    *   **Configuration**: `min_ratio=0.50`, `scan_x_peak_ratio_min=0.0` (Disabled), `max_per_band=0` (Unlimited).
+    *   **Hypothesis**: By removing the peak check and count limits, we flood the CNN with every local maximum that meets the ink threshold, relying on the model's superior discrimination.
+    *   **Results**:
+        *   **Candidate Explosion**: Candidates per page jumped from ~100 to **~592**.
+        *   **Recall Breakthrough**: The number of candidates *accepted* by the CNN as barlines increased by **+65%** (from 82.6 to **136.7** per page). This confirms that previous heuristics were suppressing ~50 valid barlines per page.
+        *   **New Challenge**: While the CNN effectively rejected ~455 false candidates, the absolute number of False Positives (FPs) has likely increased due to the sheer volume of inputs. The user noted "FPs are appearing", indicating the model isn't perfect.
+
+**Conclusion**:
+The heuristic-based filtering in Candidate Generation was the primary bottleneck for Recall. The "No Peak" strategy successfully uncaps Recall but shifts the burden entirely to the CNN. The next phase must focus on analyzing and reducing these residual False Positives, possibly by retraining the model on these "hard negatives" or applying post-classification filters.
+
+### Reproduction Details: Experiment 7 (No Peak)
+To replicate this experiment, use the following parameters and commands:
+
+**1. Candidate Generation**
+*   **Script**: `experiments/cnn_classifier/generate_expanded_candidates.py`
+*   **Parameters** (in `detect_probe_scan`):
+    *   `band_source="row_stats"`
+    *   `probe_width=4`, `ink_threshold=200`, `min_ratio=0.50`
+    *   `scan_x_peak_ratio_min=0.0` (DISABLED)
+    *   `scan_rightmost_min_ratio=0.10`
+    *   `max_per_band=0` (DISABLED)
+*   **Command**:
+    ```bash
+    .venv_pdf/bin/python experiments/cnn_classifier/generate_expanded_candidates.py \
+      --logs-root logs/hybrid_generalization \
+      --image-root data/evaluation2/images
+    ```
+    *Output*: `logs/hybrid_generalization/<run_id>/expanded_candidates_nopeak.json`
+
+**2. Inference**
+*   **Script**: `experiments/cnn_classifier/inference_visualize.py`
+*   **Model**: `logs/cnn_barline_classification/training_resnet18_b320/cnn_classifier_best.pth`
+*   **Command**:
+    ```bash
+    .venv_cnn_classifier/bin/python experiments/cnn_classifier/inference_visualize.py \
+      --json-root logs/hybrid_generalization \
+      --image-root data/evaluation2/images \
+      --output-root logs/cnn_validation_eval2_nopeak \
+      --model-path logs/cnn_barline_classification/training_resnet18_b320/cnn_classifier_best.pth \
+      --candidates-file expanded_candidates_nopeak.json
+    ```
+
+**3. Metrics Analysis**
+*   **Script**: `experiments/cnn_classifier/summarize_inference_stats.py`
+*   **Command**:
+    ```bash
+    .venv_pdf/bin/python experiments/cnn_classifier/summarize_inference_stats.py \
+      Ultraloose:logs/cnn_validation_eval2_ultraloose \
+### Ad-hoc Debugging Tools & Scripts
+The following temporary scripts were created and used during this session to diagnose the False Negative issue. They are not part of the main pipeline but are preserved for reproducibility.
+
+**1. `experiments/cnn_classifier/debug_probe_values.py`**
+*   **Purpose**: Deep inspection of `detect_probe_scan` logic. Dumps per-pixel column metrics (`ink_ratio`, `peak_dominance`, `reject_reason`) within a specific scan band to a CSV file. Used to understand why the "F" barline was rejected.
+*   **Usage**:
+    ```bash
+    .venv_pdf/bin/python experiments/cnn_classifier/debug_probe_values.py \
+        --image-path data/evaluation2/images/prokofiev1/page_003.png \
+        --json-path logs/hybrid_generalization/eval2_prokofiev1_page_003/hybrid_predictions.json \
+        --output-path logs/cnn_validation_eval2_user/debug_band0.csv \
+        --band-index 0
+    ```
+
+**2. `experiments/cnn_classifier/analyze_no_peak.py`**
+*   **Purpose**: Simulates the "No Peak" logic on the CSV output from `debug_probe_values.py`. Counts and identifies candidates that would be accepted if the `peak_dominance` check were removed.
+*   **Usage**:
+    ```bash
+    .venv_pdf/bin/python experiments/cnn_classifier/analyze_no_peak.py
+    ```
+    *(Note: Reads hardcoded path `logs/cnn_validation_eval2_user/debug_band0.csv` internally)*
+
+**3. `experiments/cnn_classifier/debug_visualize_col.py`**
+*   **Purpose**: Visualizes specific X-coordinates (candidates) on the page image as red vertical lines. Used to show the user exactly which candidates were being rejected or would be accepted under new logic.
+*   **Usage**:
+    ```bash
+    .venv_pdf/bin/python experiments/cnn_classifier/debug_visualize_col.py \
+        --image-path data/evaluation2/images/prokofiev1/page_003.png \
+        --output-path logs/cnn_validation_eval2_user/debug_no_peak_vis.png \
+        --band-y1 523 --band-y2 608 \
+        --x-cols <comma_separated_x_values>
+    ```
+
+**4. `experiments/cnn_classifier/visualize_scan_bands.py`**
+*   **Purpose**: Visualizes the scan bands (search regions) generated by `band_source="row_stats"`. Used to confirm that the missing barline was indeed inside a valid search band and not excluded by the band definition itself.
+*   **Usage**:
+    ```bash
+    .venv_pdf/bin/python experiments/cnn_classifier/visualize_scan_bands.py \
+        --image-path data/evaluation2/images/prokofiev1/page_003.png \
+        --json-path logs/hybrid_generalization/eval2_prokofiev1_page_003/hybrid_predictions.json \
+        --output-path logs/cnn_validation_eval2_user/debug_bands_vis.png
+    ```
+
+
+
 

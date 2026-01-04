@@ -4,11 +4,13 @@ import csv
 import json
 import random
 import shutil
+import sys
 from pathlib import Path
 
 import cv2
 import numpy as np
 from PIL import Image
+from tqdm import tqdm
 
 
 DEFAULT_PAGES = [
@@ -164,7 +166,9 @@ def extract_local_tp_fp(
             gt_data = json.load(f)
         gt_boxes = [entry["barline_location"] for entry in gt_data]
 
-        for i, box in enumerate(gt_boxes):
+        gt_boxes = [entry["barline_location"] for entry in gt_data]
+
+        for i, box in enumerate(tqdm(gt_boxes, desc=f"{page['name']} GT", leave=False)):
             x1, y1, x2, y2 = box
             cx = int(round((x1 + x2) / 2))
             cy = int(round((y1 + y2) / 2))
@@ -225,7 +229,7 @@ def extract_local_tp_fp(
                 if not is_match:
                     fp_candidates.append(cand)
             
-            for idx, box in enumerate(fp_candidates):
+            for idx, box in enumerate(tqdm(fp_candidates, desc=f"{page['name']} FP", leave=False)):
                 x1, y1, x2, y2 = box
                 cx = int(round((x1 + x2) / 2))
                 cy = int(round((y1 + y2) / 2))
@@ -261,7 +265,7 @@ def extract_local_tp_fp(
                     matched_indices.add(best_idx)
 
             fp_indices = [i for i in range(len(pred_boxes)) if i not in matched_indices]
-            for idx in fp_indices:
+            for idx in tqdm(fp_indices, desc=f"{page['name']} FP-Legacy", leave=False):
                 box = pred_boxes[idx]
                 x1, y1, x2, y2 = box
                 cx = int(round((x1 + x2) / 2))
@@ -319,7 +323,9 @@ def extract_deepscores_negatives(
         images = {str(img["id"]): img for img in data["images"]}
         annotations = data["annotations"]
 
-        for img_id, img_info in images.items():
+        annotations = data["annotations"]
+
+        for img_id, img_info in tqdm(images.items(), desc=f"Scanning {split_name}"):
             if max_total is not None and total >= max_total:
                 return total
             ann_ids = img_info.get("ann_ids", [])
@@ -385,7 +391,7 @@ def extract_deepscores_tp_from_segmentation(
         seg_files = seg_files[seg_offset:]
     if seg_count:
         seg_files = seg_files[:seg_count]
-    for seg_path in seg_files:
+    for seg_path in tqdm(seg_files, desc="Scanning DeepScores Seg"):
         if max_total is not None and total >= max_total:
             break
         seg_np = load_palette_index(seg_path)
@@ -505,7 +511,7 @@ def write_outputs(output_root, samples, assignments):
         }
 
     rows = []
-    for idx, sample in enumerate(samples):
+    for idx, sample in enumerate(tqdm(samples, desc="Writing Samples")):
         split = assignments[sample["path"]]
         label = sample["label"]
         suffix = sample["path"].suffix

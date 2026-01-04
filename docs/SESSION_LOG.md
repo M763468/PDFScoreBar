@@ -257,3 +257,23 @@ The following considerations were noted in `tools/cnn_classifier/train.py` but l
     *   `BATCH_SIZE = 16`: "Small batch size for limited resources TODO: adjust as needed".
     *   `IMG_SIZE = (256, 128)`: "consistent with crop logic TODO: adjust as needed".
     *   `optimizer`: "is this the best optimizer?".
+## 2026-01-04: Training Script Refactoring
+**Action**: Rewrote `experiments/cnn_classifier/train.py` to support robust training.
+**Features Added**:
+1.  **Data Augmentation**:
+    *   `GaussianBlur` (Radius 0.5-1.5, p=0.3) for ink bleed simulation.
+    *   `AddSaltPepperNoise` (Density 0.02, p=0.3) for dirty scan simulation.
+    *   `ColorJitter` (Brightness/Contrast 0.3) for fading.
+    *   `RandomAffine` (Vertical shift 10%, Rotation +/- 2deg) for geometric robustness.
+2.  **Class Imbalance**:
+    *   Implemented `WeightedRandomSampler` to balance TP/FP capability in each batch.
+    *   Automatically calculates weights based on loaded dataset.
+3.  **Metrics**:
+    *   Added `Precision`, `Recall`, `F1-score` logging to console and TensorBoard.
+    *   Added model checkpointing based on **Best Val F1**.
+4.  **Model**:
+    *   Added support for `resnet18` via `--model-name` argument.
+**Verification**:
+*   Performed smoke test on `cnn_classifier_v1` (26k samples).
+*   Confirmed `tensorboard` and `pyyaml` dependencies installed.
+*   Confirmed training loop and augmentation pipeline (including new transforms) execute without error.

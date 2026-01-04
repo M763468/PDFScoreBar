@@ -126,3 +126,82 @@ Constructed a verification pipeline script (`tools/verify_measure_numbering_pipe
 - `logs/experiments/page_004_system_test/numbering.json`
 - `logs/experiments/page_004_system_test/overlay_default.png`
 
+## 2026-01-04 Geometric System Inference (Divisi Logic) Implementation
+
+**Goal**: Implement logic to automatically group staves into systems based on vertical alignment of barlines (addressing Divisi without explicit brackets).
+
+### Actions Taken
+1.  **Analyzed Historical Logic**:
+    *   Examined "divisi rescue" logic in `tools/run_gt_rebuild_hybrid_eval.py` (commit `6de614e`).
+    *   Extracted key heuristics: Vertical Proximity (threshold 1.2-1.5x height) and Barline Alignment (tolerance 4-10px, count >= 2).
+2.  **Implemented `_group_by_geometry` in `SystemBuilder`**:
+    *   Added `_group_by_geometry` method to `src/measure_numbering/builder.py`.
+    *   Logic:
+        *   Uses Union-Find to group staves.
+        *   Iterates adjacent staves sorted by Y.
+        *   Links staves if `gap < 1.5 * avg_height` AND `aligned_barlines >= 2` (tolerance 10px).
+    *   Updated `SystemBuilder.build_systems` to use this as the default strategy when explicit indices are missing (replacing the "Single System" fallback).
+3.  **Updated Pipeline Configuration**:
+    *   Changed `assume_one_staff_per_system` default to `False` in `src/measure_numbering/pipeline.py` to enable the builder's inference logic by default.
+
+### Results
+-   **Verification Target**: Page 004 (Prokofiev), which was previously incorrectly identified as 13 single systems.
+-   **Outcome**:
+    *   Ran `tools/add_measure_numbers.py` (v2).
+    *   Input: 13 extracted staff bands (from noisy mask).
+    *   Output: 7 Systems.
+    *   Grouping: `[1, 1, 1, 1, 1, 5, 3]` (Staves 5-9 grouped, Staves 10-12 grouped).
+    *   This correctly reflects the divisi structure (Quintet + Triplet) observed in the score.
+-   **Conclusion**: The geometric inference logic provides a robust fallback for scores/divisi parts where explicit system brackets are missing or unreliable.
+
+**Artifacts**:
+-   `src/measure_numbering/builder.py` (Updated)
+-   `logs/experiments/verify_divisi_page004_v2.json`
+
+### Analysis of Divisi Mis-grouping (2026-01-04)
+
+**Issue**: On `page_004`, Staves 6-13 were incorrectly grouped into a 5-staff system and a 3-staff system (`[..., 5, 3]`), whereas the user indicates only the 6th and 7th visual rows are divisi.
+
+**Logic Current State**:
+1.  **Vertical Proximity**: `Gap < AvgHeight * 1.5`.
+    -   On Page 004, `AvgHeight` is ~161px, so `Threshold` is ~242px.
+    -   Analysis shows **ALL** adjacent staff pairs on this page passed this check (Max gap was 150px).
+    -   *Finding*: The distance threshold is too loose for this dense page; distinct systems are closer than the threshold.
+2.  **Barline Alignment**: `X-Alignment` of 2+ lines.
+    -   Staff 9 and 10 were grouped because they have aligned barlines (same metric structure), even though they belong to different systems.
+    -   *Critical Flaw*: The current logic checks for **alignment** (logical X) but not **connection** (physical Y-continuity). True multi-staff systems usually have barlines drawn *through* the inter-staff space, or at least very close.
+
+**Conclusion**:
+The current geometric logic is too aggressive for dense scores with consistent metric layouts. It successfully groups divisi, but also erroneously merges separate systems that happen to be aligned vertically.
+Future fix must likely enforce **physical barline connection** (or explicit segment in the gap) rather than just logical alignment.
+
+### Divisi Logic Refinement: Physical Connectivity (2026-01-04)
+
+**Objective**: Correct the false positives in Divisi grouping (where separate aligned systems were merged) by introducing a check for physical vertical connections (barlines spanning the gap).
+
+**Methodology**:
+1.  **Initial Attempt (Gap Connectivity)**: Checked for *any* vertical ink in the inter-staff gap.
+    -   *Result*: Successfully identified Divisi on P1/004, but caused massive false positives on Prokofiev 5 (e.g., Page 015) due to mask overlaps and noise being interpreted as connections.
+2.  **Refined Logic (Aligned Connectivity)**: Restricted the connectivity check to **only** the X-coordinates where barlines are already aligned.
+    -   *Logic*: `_check_aligned_connection` in `SystemBuilder`.
+    -   *Process*:
+        1.  Find pairs of barlines between adjacent staves with `abs(center_x1 - center_x2) <= 10px`.
+        2.  For each pair, extract the vertical strip in the gap between them.
+        3.  Check for a solid vertical line using morphological opening (kernel height ~80% of gap).
+        4.  Group staves ONLY if at least one such connected pair is found.
+
+**Verification Results**:
+-   **Batch Run**: Ran on all Prokofiev 1 & 5 images using `tools/verify_divisi_batch.py`.
+-   **Prokofiev 1 Page 004** (Target): Correctly identified the Divisi pair (`[2]`) in an otherwise single-staff page.
+-   **Prokofiev 5**:
+    -   Page 015 (Problematic): Correctly identified as all single-staff systems (`[]`), eliminating the false 6-staff group.
+    -   Pages 007, 009, 011, etc.: All correctly identified as single-staff.
+-   **Command**:
+    ```bash
+    .venv_omr_dln/bin/python tools/verify_divisi_batch.py \
+      --image-dirs data/evaluation2/images/prokofiev1 data/evaluation2/images/prokofiev5 \
+      --mask-root logs/hybrid_generalization \
+      --output-dir logs/experiments/batch_divisi_verification_v2
+    ```
+
+**Status**: Divisi logic is now robust against layout noise while maintaining sensitivity to true bracketed/connected systems.

@@ -141,7 +141,8 @@ def main():
         'barlines': barline_boxes,
         'staff_mask': args.staff_mask,
         'image_size': (w, h),
-        'page_number': args.page_number
+        'page_number': args.page_number,
+        'image': img_ref
     }
     
     score = pipeline.run_sequential([page_data], start_number=args.start_number)

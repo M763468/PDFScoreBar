@@ -43,9 +43,10 @@ The project is currently split into two parallel tracks to address the "False Po
 ### Completed Work (Session 2026-01-04)
 1.  **Scaffolding**: Created `src/measure_numbering` package and `types.py` (Data Structures: `Barline`, `Staff`, `System`, `Score`).
 2.  **System Inference Logic (`builder.py`)**:
-    *   **Decision**: Geometric heuristic (clustering by gap) was found unreliable.
-    *   **Implementation**: Simplified logic to rely on **Explicit System Index** (from upstream metadata) or fallback to **Single System per Page**.
-    *    Verified with unit tests using synthetic data.
+    *   **Decision**: Geometric heuristic (clustering by gap) was initially unreliable.
+    *   **Implementation**: Simplified logic to fallback to **Single System per Page** or **Explicit System Index** first.
+    *   **Refinement**: Implemented **Geometric Grouping for Divisi**, prioritizing **Aligned Physical Connectivity** (vertical ink check at aligned barline positions) to correctly handle multi-staff systems without false positives.
+    *    Verified with unit tests and batch runs on Prokofiev 1 & 5.
 3.  **Basic Numbering Logic (`numbering.py`)**:
     *   Implemented `MeasureNumberer` which assigns sequential numbers to measures within defined systems.
     *   Verified with unit tests (single system and multi-page flow).
@@ -55,20 +56,19 @@ The project is currently split into two parallel tracks to address the "False Po
     *   **Implicit Start**: Added logic to detect and complete missing first measures (ghost barlines).
     *   **Coordinate Scaling**: Identified and resolved downscaling issues in `homr` staff masks.
     *   **Visualization**: Confirmed correctness with centered measure numbers and transparent overlays.
+    *   **Divisi Verification**: Confirmed robust grouping on Prokofiev dataset, distinguishing true divisi from coincidental alignment (e.g., elimination of false positives on Prokofiev 5).
 
 ### Remaining Work / Next Steps
 1.  **Production-ready Integration**:
     *   Combine `Detector JSON` + `Staff Mask PNG` + `Numbering Logic` into a single standalone pipeline script.
     *   Automate the coordinate scaling logic based on image metadata.
-2.  **Advanced System Inference**:
-    *   Integrate `homr` bracket/brace detection to automatically group staves into systems (e.g. Piano grand staff).
-    *   Currently, we use a "1 staff = 1 system" assumption for parts, which needs generalization.
+2.  **Special Musical Logic**:
+    *   **Multi-measure Rests**: Logic to parse and handle numerical representations of multiple empty measures (e.g., "4" above a rest) to increment the measure count correctly.
+    *   **Upbeats (Anacrusis)**: Formal detection or manual overrides.
+    *   **Repeats / Segno**: Handling non-linear flow (if logical measure count differs from graphical sequence).
 3.  **Multi-page & Performance Verification**:
     *   Run the numbering pipeline on full multi-page PDFs to ensure state (measure count) is correctly preserved.
     *   Measure processing time for a typical 10-page score.
-4.  **Special Musical Logic**:
-    *   **Upbeats (Anacrusis)**: Formal detection or manual overrides.
-    *   **Repeats / Segno**: Handling non-linear flow (if logical measure count differs from graphical sequence).
 
 ### Key Artifacts
 - `src/measure_numbering/types.py`: Core data classes (`unsafe_hash=True` for set ops).

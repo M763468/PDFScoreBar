@@ -79,7 +79,8 @@ class MeasureNumberingPipeline:
                      staff_mask_path: Path, 
                      image_size: Tuple[int, int], 
                      page_number: int = 1,
-                     assume_one_staff_per_system: bool = True) -> Page:
+                     assume_one_staff_per_system: bool = False,
+                     image: Optional[np.ndarray] = None) -> Page:
         """
         Processes a single page and returns a populated Page object.
         """
@@ -95,7 +96,8 @@ class MeasureNumberingPipeline:
                 staff.system_index = i
         
         # 4. Group staves into systems and assign barlines
-        systems = self.builder.build_systems(staves, barlines)
+        # Image is passed for connectivity check in geometric grouping
+        systems = self.builder.build_systems(staves, barlines, image=image)
         
         page = Page(
             systems=systems, 
@@ -114,6 +116,7 @@ class MeasureNumberingPipeline:
         - 'staff_mask': Path
         - 'image_size': (W, H)
         - 'page_number': int
+        - 'image': Optional[np.ndarray] (Source image for connectivity checks)
         """
         score = Score()
         for data in page_data_list:
@@ -121,7 +124,8 @@ class MeasureNumberingPipeline:
                 data['barlines'],
                 Path(data['staff_mask']),
                 data['image_size'],
-                data.get('page_number', 1)
+                data.get('page_number', 1),
+                image=data.get('image')
             )
             score.pages.append(page)
             

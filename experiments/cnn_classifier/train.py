@@ -17,7 +17,7 @@ from tqdm import tqdm
 # --- Configuration ---
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DEFAULT_WORK_DIR = Path("logs/cnn_barline_classification/training")
-DATASET_ROOT = Path(os.getenv("CNN_DATASET_ROOT", "/mnt/d/datasets/cnn_classifier_v1"))
+DATASET_ROOT = Path(os.getenv("CNN_DATASET_ROOT", "/mnt/s/dev/datasets/cnn_classifier_v1"))
 TRAIN_SPLIT_DIR = DATASET_ROOT / "splits" / "train"
 VAL_SPLIT_DIR = DATASET_ROOT / "splits" / "val"
 
@@ -282,8 +282,8 @@ def train(args):
         sampler = None
         shuffle = True
 
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=shuffle, sampler=sampler, num_workers=2)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=2)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=shuffle, sampler=sampler, num_workers=8, pin_memory=True)
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=8, pin_memory=True)
     
     print(f"Training samples: {len(train_dataset)}, Validation samples: {len(val_dataset)}")
 

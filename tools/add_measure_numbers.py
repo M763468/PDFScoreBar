@@ -91,6 +91,24 @@ def score_to_dict(score: Score) -> dict:
         data["pages"].append(page_data)
     return data
 
+def normalize_barlines(raw_data):
+    """Normalizes various barline JSON formats into a list of [x1, y1, x2, y2]."""
+    if not raw_data:
+        return []
+    
+    normalized = []
+    for item in raw_data:
+        if isinstance(item, list) and len(item) == 4:
+            normalized.append(item)
+        elif isinstance(item, dict):
+            # Try GT format: {"barline_location": [x1, y1, x2, y2]}
+            if "barline_location" in item:
+                normalized.append(item["barline_location"])
+            # Try flat dict: {"x1": ..., "y1": ...}
+            elif all(k in item for k in ["x1", "y1", "x2", "y2"]):
+                normalized.append([item["x1"], item["y1"], item["x2"], item["y2"]])
+    return normalized
+
 def main():
     parser = argparse.ArgumentParser(description="Add measure numbers to detected barlines.")
     parser.add_argument("--barlines", type=Path, required=True, help="Path to detected barlines JSON")
@@ -105,7 +123,8 @@ def main():
 
     # Load barlines
     with open(args.barlines, 'r') as f:
-        barline_boxes = json.load(f)
+        raw_barlines = json.load(f)
+    barline_boxes = normalize_barlines(raw_barlines)
 
     # Get image size
     img_ref = cv2.imread(str(args.image))

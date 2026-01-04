@@ -101,3 +101,28 @@ Constructed a verification pipeline script (`tools/verify_measure_numbering_pipe
 - `src/measure_numbering/pipeline.py`
 - `tools/add_measure_numbers.py`
 - `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams/per_page/page_10/final_numbering.json`
+
+## 2026-01-04 Multi-Staff System (Divisi) Investigation
+
+**Goal**: Evaluate numbering logic on a page with divisi (multiple staves per system).
+
+### Methodology
+1. **Target**: `page_004` from `Va_Prokofiev_Symphony1`.
+2. **Inputs**:
+   - Image: `data/evaluation2/images/prokofiev1/page_004.png`
+   - Barlines (GT): `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/boxes_sorted_v20251229.json`
+   - Staff Mask: `logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_3_staff.png`
+3. **Execution**: Ran `tools/add_measure_numbers.py` with default "1 staff = 1 system" assumption.
+
+### Results
+- Generated `logs/experiments/page_004_system_test/overlay_default.png`.
+- **Observations**:
+  - The page has 8 staves.
+  - Groups like staves 5, 6, 7 (y ~2600-3300) appear to be part of a single divisi system.
+  - Default logic treats them as separate systems, resulting in sequential (incorrect) numbering for each staff in the divisi section.
+  - This confirms the need for system grouping logic.
+
+**Artifacts**:
+- `logs/experiments/page_004_system_test/numbering.json`
+- `logs/experiments/page_004_system_test/overlay_default.png`
+

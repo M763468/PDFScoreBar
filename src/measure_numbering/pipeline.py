@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class StaffExtractor:
     """Extracts staff regions (BBoxes) from a binary staff mask image."""
-    def __init__(self, min_height: int = 10, min_width_ratio: float = 0.3):
+    def __init__(self, min_height: int = 10, min_width_ratio: float = 0.1):
         self.min_height = min_height
         self.min_width_ratio = min_width_ratio
 
@@ -28,12 +28,21 @@ class StaffExtractor:
         scale_x = target_w / w_mask
         scale_y = target_h / h_mask
 
-        # Binarize and dilate to merge staff lines into solid bands
+        # Binarize
         _, bin_mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
-        kernel = np.ones((20, 1), np.uint8)
-        dilated = cv2.dilate(bin_mask, kernel, iterations=1)
         
-        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(dilated, connectivity=8)
+        # Merge staff lines and horizontal fragments
+        # Vertical kernel to merge 5 lines into one band
+        v_kernel = np.ones((20, 1), np.uint8)
+        # Horizontal kernel to bridge small gaps between staff fragments
+        h_kernel = np.ones((1, 50), np.uint8)
+        
+        processed = cv2.dilate(bin_mask, v_kernel, iterations=1)
+        processed = cv2.morphologyEx(processed, cv2.MORPH_CLOSE, h_kernel)
+        
+        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(processed, connectivity=8)
+        
+        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(processed, connectivity=8)
         
         staves = []
         for i in range(1, num_labels):

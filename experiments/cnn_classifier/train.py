@@ -285,15 +285,18 @@ def train(args):
 
     print(f"Using device: {DEVICE}")
 
+    # Paths
+    work_dir = Path(args.work_dir) if args.work_dir else DEFAULT_WORK_DIR
+    work_dir.mkdir(parents=True, exist_ok=True)
+
     # TensorBoard
     if args.log_dir:
         writer = SummaryWriter(log_dir=args.log_dir)
     else:
-        writer = None
-
-    # Paths
-    work_dir = Path(args.work_dir) if args.work_dir else DEFAULT_WORK_DIR
-    work_dir.mkdir(parents=True, exist_ok=True)
+        # Default to work_dir/runs
+        log_dir = work_dir / "runs"
+        writer = SummaryWriter(log_dir=log_dir)
+        print(f"TensorBoard logging enabled at {log_dir}")
     
     use_explicit_dirs = args.tp_dir or args.fp_dir
 
@@ -423,7 +426,10 @@ def train(args):
              for param in model.fc.parameters():
                 param.requires_grad = True
     
-    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.learning_rate, weight_decay=args.weight_decay)
+    optimizer = optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=args.learning_rate, weight_decay=args.weight_decay)
+    
+    # Scheduler
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
     
     scaler = torch.amp.GradScaler('cuda', enabled=args.amp)
 
@@ -436,8 +442,9 @@ def train(args):
             print("Unfreezing backbone...")
             for param in model.parameters():
                 param.requires_grad = True
-            # Re-create optimizer to include all params
-            optimizer = optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
+            # Re-create optimizer to include all params (and reset scheduler)
+            optimizer = optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
+            scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs - epoch)
 
         model.train()
         running_loss = 0.0
@@ -539,6 +546,7 @@ def train(args):
                 writer.add_scalar('F1/train', train_f1, epoch)
                 writer.add_scalar('Loss/val', val_loss, epoch)
                 writer.add_scalar('F1/val', val_f1, epoch)
+                writer.add_scalar('LR', scheduler.get_last_lr()[0], epoch)
                 
             # Save best model
             if val_f1 > best_val_metric:
@@ -552,6 +560,8 @@ def train(args):
             save_path = work_dir / f"cnn_classifier_epoch_{epoch+1}.pth"
             torch.save(model.state_dict(), save_path)
             print(f"Checkpoint saved to {save_path}")
+
+        scheduler.step()
 
     if writer:
         writer.close()

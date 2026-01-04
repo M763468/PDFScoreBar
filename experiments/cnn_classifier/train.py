@@ -175,7 +175,7 @@ def find_optimal_threshold(model, val_loader, device, gpu_transform=None, amp=Fa
             if gpu_transform:
                 inputs = gpu_transform(inputs)
             
-            with torch.cuda.amp.autocast(enabled=amp):
+            with torch.amp.autocast('cuda', enabled=amp):
                 outputs = model(inputs)
             probs = torch.sigmoid(outputs)
             all_probs.append(probs.cpu())
@@ -205,50 +205,75 @@ def find_optimal_threshold(model, val_loader, device, gpu_transform=None, amp=Fa
 
 # --- Training Loop ---
 def get_args():
+    DEFAULTS = {
+        "epochs": 20,
+        "batch_size": 32,
+        "learning_rate": 1e-4,
+        "img_size": [256, 128],
+        "seed": 42,
+        "model_name": 'mobilenet_v3_small',
+        "train_val_split": 0.8,
+        "compile_mode": "reduce-overhead",
+        "imbalance": 'sampler',
+        "freeze_backbone_epochs": 0,
+        "sp_p": 0.3,
+        "sp_density": 0.02,
+        "weight_decay": 1e-2,
+        "num_workers": 8,
+        "prefetch_factor": 2,
+        "save_interval": 0,
+    }
+
     parser = argparse.ArgumentParser(description="Train a CNN for barline classification.")
     parser.add_argument("--config", type=str, default=None, help="Path to a config file.")
     parser.add_argument("--work-dir", type=str, help="Working directory for logs and models.")
     parser.add_argument("--tp-dir", type=str, help="Directory of true positive crops.")
     parser.add_argument("--fp-dir", type=str, help="Directory of false positive crops.")
-    parser.add_argument("--epochs", type=int, default=20, help="Number of training epochs.")
-    parser.add_argument("--batch-size", type=int, default=32, help="Batch size.")
-    parser.add_argument("--learning-rate", type=float, default=1e-4, help="Learning rate.")
-    parser.add_argument("--img-size", type=int, nargs=2, default=[256, 128], help="Image size (height, width).")
-    parser.add_argument("--seed", type=int, default=42, help="Random seed.")
+    parser.add_argument("--epochs", type=int, default=None, help=f"Number of training epochs (default: {DEFAULTS['epochs']}).")
+    parser.add_argument("--batch-size", type=int, default=None, help=f"Batch size (default: {DEFAULTS['batch_size']}).")
+    parser.add_argument("--learning-rate", type=float, default=None, help=f"Learning rate (default: {DEFAULTS['learning_rate']}).")
+    parser.add_argument("--img-size", type=int, nargs=2, default=None, help=f"Image size (height, width) (default: {DEFAULTS['img_size']}).")
+    parser.add_argument("--seed", type=int, default=None, help=f"Random seed (default: {DEFAULTS['seed']}).")
     parser.add_argument("--log-dir", type=str, help="Directory for TensorBoard logs.")
-    parser.add_argument("--model-name", type=str, default='mobilenet_v3_small', help="Model name.")
-    parser.add_argument("--train-val-split", type=float, default=0.8, help="Train/validation split ratio.")
+    parser.add_argument("--model-name", type=str, default=None, help=f"Model name (default: {DEFAULTS['model_name']}).")
+    parser.add_argument("--train-val-split", type=float, default=None, help=f"Train/validation split ratio (default: {DEFAULTS['train_val_split']}).")
     parser.add_argument("--no-augment", action='store_true', help="Disable augmentation.")
     
     # New Arguments
     parser.add_argument("--amp", action='store_true', help="Enable Automatic Mixed Precision (AMP).")
     parser.add_argument("--compile", action='store_true', help="Enable torch.compile (PyTorch 2+).")
-    parser.add_argument("--compile-mode", type=str, default="reduce-overhead", help="torch.compile mode.")
+    parser.add_argument("--compile-mode", type=str, default=None, help=f"torch.compile mode (default: {DEFAULTS['compile_mode']}).")
     parser.add_argument("--channels-last", action='store_true', help="Use Channels Last memory format.")
-    parser.add_argument("--imbalance", type=str, choices=['pos_weight', 'sampler', 'none'], default='sampler', help="Strategy for class imbalance.")
+    parser.add_argument("--imbalance", type=str, choices=['pos_weight', 'sampler', 'none'], default=None, help=f"Strategy for class imbalance (default: {DEFAULTS['imbalance']}).")
     parser.add_argument("--optimize-threshold", action='store_true', help="Find optimal threshold on validation.")
     parser.add_argument("--timing", action='store_true', help="Enable detailed timing profiling.")
-    parser.add_argument("--freeze-backbone-epochs", type=int, default=0, help="Freeze backbone for N epochs.")
-    parser.add_argument("--sp-p", type=float, default=0.3, help="Salt&Pepper probability.")
-    parser.add_argument("--sp-density", type=float, default=0.02, help="Salt&Pepper density.")
+    parser.add_argument("--freeze-backbone-epochs", type=int, default=None, help=f"Freeze backbone for N epochs (default: {DEFAULTS['freeze_backbone_epochs']}).")
+    parser.add_argument("--sp-p", type=float, default=None, help=f"Salt&Pepper probability (default: {DEFAULTS['sp_p']}).")
+    parser.add_argument("--sp-density", type=float, default=None, help=f"Salt&Pepper density (default: {DEFAULTS['sp_density']}).")
     
     # Checkpointing
-    parser.add_argument("--save-interval", type=int, default=0, help="Save model checkpoint every N epochs (0 to disable).")
+    parser.add_argument("--save-interval", type=int, default=None, help=f"Save model checkpoint every N epochs (default: {DEFAULTS['save_interval']}).")
 
     # System / Optimizer
-    parser.add_argument("--weight-decay", type=float, default=1e-2, help="Weight decay for optimizer.")
-    parser.add_argument("--num-workers", type=int, default=8, help="Number of dataloader workers.")
-    parser.add_argument("--prefetch-factor", type=int, default=2, help="Dataloader prefetch factor.")
+    parser.add_argument("--weight-decay", type=float, default=None, help=f"Weight decay for optimizer (default: {DEFAULTS['weight_decay']}).")
+    parser.add_argument("--num-workers", type=int, default=None, help=f"Number of dataloader workers (default: {DEFAULTS['num_workers']}).")
+    parser.add_argument("--prefetch-factor", type=int, default=None, help=f"Dataloader prefetch factor (default: {DEFAULTS['prefetch_factor']}).")
 
     args = parser.parse_args()
 
+    # Priority: CLI > Config > Defaults
     if args.config:
         with open(args.config, 'r') as f:
             config_args = yaml.safe_load(f)
-        config_ns = argparse.Namespace(**config_args)
-        for key, value in vars(config_ns).items():
+        for key, value in config_args.items():
+            # Only set if NOT provided via CLI (CLI args are None if not set now)
             if getattr(args, key) is None:
                 setattr(args, key, value)
+
+    # Apply defaults for anything still None
+    for key, value in DEFAULTS.items():
+        if getattr(args, key) is None:
+            setattr(args, key, value)
 
     return args
 
@@ -400,7 +425,7 @@ def train(args):
     
     optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.learning_rate, weight_decay=args.weight_decay)
     
-    scaler = torch.cuda.amp.GradScaler(enabled=args.amp)
+    scaler = torch.amp.GradScaler('cuda', enabled=args.amp)
 
     best_val_metric = 0.0
 
@@ -438,7 +463,7 @@ def train(args):
 
             optimizer.zero_grad()
             
-            with torch.cuda.amp.autocast(enabled=args.amp):
+            with torch.amp.autocast('cuda', enabled=args.amp):
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
             
@@ -489,7 +514,7 @@ def train(args):
                     inputs = inputs.to(memory_format=torch.channels_last)
                 inputs = gpu_val_transform(inputs)
                 
-                with torch.cuda.amp.autocast(enabled=args.amp):
+                with torch.amp.autocast('cuda', enabled=args.amp):
                     outputs = model(inputs)
                     loss = criterion(outputs, labels)
                 

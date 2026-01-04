@@ -329,3 +329,22 @@ The following considerations were noted in `tools/cnn_classifier/train.py` but l
 *   Verified non-zero file sizes in `datasets/cnn_classifier_final_v2_fixed/splits/` (e.g., 3.5K, 3.9K per PNG).
 *   Total split directory metadata/data size reached ~134M.
 **Status**: Dataset is verified robust (no links). Ready for production training.
+
+## 2026-01-04: Training Script Refinement (config priority & API update)
+**Objective**: Fix configuration loading precedence and resolve API deprecation warnings.
+
+**Changes**:
+1.  **Config Precedence Fix**:
+    *   Identified that `argparse` default values were overriding `config.yaml` settings.
+    *   Refactored `train.py` to use `None` as parser defaults and apply fallback values manually after config merging.
+    *   Verified priority: `Command Line > config.yaml > Hardcoded Defaults`.
+2.  **API Modernization**:
+    *   Updated `torch.cuda.amp` calls to modern `torch.amp` API to resolve `FutureWarning`.
+    *   `autocast` now explicitly uses `device_type='cuda'`.
+3.  **Periodic Checkpointing**:
+    *   Added `--save-interval` (and `save_interval` in config).
+    *   Model checkpoints are now saved every N epochs (e.g., `cnn_classifier_epoch_5.pth`).
+**Verification**:
+*   User confirmed `epochs: 30` and `batch_size: 512` are now correctly respected (observed via step count and epoch display).
+*   Verified `FutureWarning` is resolved.
+**Status**: Script is fully optimized and stable. Ready for final training run.

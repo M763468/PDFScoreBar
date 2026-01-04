@@ -1,4 +1,7 @@
 
+# [EXPERIMENTAL] Statistical analysis of barline gaps and overlaps.
+# Used to diagnose duplication issues in detector output on 2026-01-04.
+
 import json
 import numpy as np
 from pathlib import Path

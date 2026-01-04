@@ -1,4 +1,7 @@
 
+# [EXPERIMENTAL] Utility to reconstruct final detector output from intermediate logs.
+# Created on 2026-01-04 to simulate production input for numbering tests.
+
 import json
 from pathlib import Path
 from typing import List, Tuple

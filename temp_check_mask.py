@@ -1,4 +1,7 @@
 
+# [EXPERIMENTAL] Temporary debug script to check mask dimensions and values.
+# Created on 2026-01-04.
+
 import cv2
 import numpy as np
 from pathlib import Path

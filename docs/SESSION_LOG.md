@@ -76,6 +76,28 @@ Constructed a verification pipeline script (`tools/verify_measure_numbering_pipe
 
 **Conclusion**: The logic for deduplication and implicit start completion is approved for production use. The pipeline reliably handles noisy detector output and ensures logical measure continuity.
 
+## 2026-01-04 Production Integration
+
+**Goal**: Formalize the numbering pipeline into a reusable package and CLI tool.
+
+### Actions Taken
+1.  **Implemented `MeasureNumberingPipeline`** (`src/measure_numbering/pipeline.py`):
+    *   Integrates `StaffExtractor`, `SystemBuilder`, and `MeasureNumberer`.
+    *   Automates coordinate scaling from `homr` mask space to original image space.
+2.  **Created `tools/add_measure_numbers.py`**:
+    *   Standard CLI interface for processing detection results.
+    *   Supports single/multi-page processing (via sequential list).
+    *   Outputs structured JSON containing pages, systems, staves, and numbered measures.
+    *   Provides optional high-quality visualization overlay generation.
+3.  **Legacy Script Sanitization**:
+    *   Marked `temp_verify_numbering.py`, `tools/visualize_measure_numbering.py`, and other experimental scripts with `[EXPERIMENTAL]` headers.
+
+### Results
+-   **Verification**: Successfully ran the integrated tool on Page 10.
+-   **Output**: Generated `final_numbering.json` and `final_pipeline_overlay.png`.
+-   The numbering system is now ready for production use and further extension (e.g., bracket-based system inference).
+
 **Artifacts**:
-- `tools/visualize_measure_numbering.py`: Updated visualization script.
-- `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams/per_page/page_10/measure_numbering_overlay_final.png`: Final verification image.
+- `src/measure_numbering/pipeline.py`
+- `tools/add_measure_numbers.py`
+- `logs/gt_rebuild_hybrid_eval/20260102T134300_best_repro_fullparams/per_page/page_10/final_numbering.json`

@@ -1,4 +1,8 @@
 
+# [EXPERIMENTAL] Visualization script for measure numbering overlays.
+# Used for qualitative review of the numbering logic on 2026-01-04.
+# This logic is now integrated into tools/add_measure_numbers.py.
+
 import json
 import cv2
 import numpy as np

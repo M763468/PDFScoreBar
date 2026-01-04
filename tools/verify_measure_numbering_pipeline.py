@@ -1,4 +1,8 @@
 
+# [EXPERIMENTAL] Logic verification pipeline used for real-data proof of concept.
+# Created on 2026-01-04. Refers to Page 10 specific paths.
+# See src/measure_numbering/pipeline.py for the integrated version.
+
 import json
 import cv2
 import numpy as np

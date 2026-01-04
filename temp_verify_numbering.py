@@ -1,4 +1,8 @@
 
+# [EXPERIMENTAL] Temporary verification script for measure numbering logic.
+# This script was used during the initial validation phase on 2026-01-04.
+# Use src/measure_numbering/pipeline.py for production workflows.
+
 import json
 import cv2
 import numpy as np

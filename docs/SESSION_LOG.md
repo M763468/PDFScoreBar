@@ -205,3 +205,50 @@ Future fix must likely enforce **physical barline connection** (or explicit segm
     ```
 
 **Status**: Divisi logic is now robust against layout noise while maintaining sensitivity to true bracketed/connected systems.
+
+## 2026-01-05 Measure Attribute Injection System Implementation
+
+**Goal**: Enable manual overrides for special musical cases (Anacrusis, Multi-measure rests) via external configuration.
+
+### Actions Taken
+1.  **Extended Data Model**: Added `MeasureAttribute` to `src/measure_numbering/types.py` and linked it to `Measure`.
+2.  **Enhanced Numbering Logic**: 
+    - Updated `MeasureNumberer.number_score` to accept a list of overrides.
+    - Implemented `set_number` (to force a specific number, e.g., 0 for Anacrusis) and `skip` (to jump N measures for long rests).
+3.  **CLI Integration**: Updated `tools/add_measure_numbers.py` to support `--config <path_to_json>`.
+
+### Usage Guide
+
+To handle musical exceptions, create a JSON file (e.g., `overrides.json`):
+
+```json
+{
+  "measure_overrides": [
+    {
+      "page": 0,
+      "system": 0,
+      "measure": 0,
+      "set_number": 0,
+      "comment": "Anacrusis (starts numbering from 0)"
+    },
+    {
+      "page": 1,
+      "system": 2,
+      "measure": 5,
+      "skip": 3,
+      "comment": "Multi-measure rest (4 bars total, jumps next number by +4)"
+    }
+  ]
+}
+```
+
+*Note: Indices (page, system, measure) are 0-based.*
+
+**Execution Command**:
+```bash
+python tools/add_measure_numbers.py \n    --barlines logs/your_run/barlines.json \n    --staff-mask logs/your_run/staff_mask.png \n    --image data/images/page_001.png \n    --config overrides.json \n    --output-json results.json \n    --output-overlay overlay.png
+```
+
+### Verification
+- Created `tests/test_numbering_overrides.py` covering both `set_number` and `skip` scenarios.
+- Results: `OK` (Ran 2 tests).

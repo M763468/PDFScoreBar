@@ -1,5 +1,5 @@
-from typing import List, Optional
-from .types import System, Measure, Score, Barline, Page, BBox
+from typing import List, Optional, Dict, Any
+from .types import System, Measure, Score, Barline, Page, BBox, MeasureAttribute
 
 class MeasureNumberer:
     """
@@ -10,7 +10,7 @@ class MeasureNumberer:
     DEDUPLICATION_THRESHOLD = 15 # px: merge barlines closer than this
     IMPLICIT_START_THRESHOLD = 50 # px: if first barline is > this from edge, assume hidden measure
 
-    def number_score(self, score: Score, start_number: int = 1) -> int:
+    def number_score(self, score: Score, start_number: int = 1, overrides: Optional[List[Dict[str, Any]]] = None) -> int:
         """
         Numbers all pages and systems in a score sequentially.
         Returns the next available measure number.
@@ -19,19 +19,30 @@ class MeasureNumberer:
         if not score.pages:
             return current_number
 
-        for page in score.pages:
-            for system in page.systems:
-                current_number = self.number_system(system, current_number)
+        # Map overrides by (page_index, system_index, measure_index) for fast lookup
+        ov_map = {}
+        if overrides:
+            for ov in overrides:
+                key = (ov.get("page"), ov.get("system"), ov.get("measure"))
+                ov_map[key] = ov
+
+        for p_idx, page in enumerate(score.pages):
+            for s_idx, system in enumerate(page.systems):
+                # Prepare system-specific overrides
+                sys_ov = {m_idx: ov for (p, s, m_idx), ov in ov_map.items() if p == p_idx and s == s_idx}
+                current_number = self.number_system(system, current_number, overrides=sys_ov)
         
         return current_number
 
-    def number_system(self, system: System, start_number: int) -> int:
+    def number_system(self, system: System, start_number: int, overrides: Optional[Dict[int, Any]] = None) -> int:
         """
         Creates Measure objects for a single system and assigns numbers.
         Returns the next start number.
         """
         if not system.staves:
             return start_number
+        
+        overrides = overrides or {}
 
         # 1. Collect and Deduplicate barlines in the system
         all_barlines = set()
@@ -48,8 +59,6 @@ class MeasureNumberer:
         sys_y2 = max(s.bbox.y2 for s in system.staves)
 
         # 3. Detect and insert Implicit Start if necessary
-        # If the first barline is significantly far from the staff start,
-        # there's a missing first measure (e.g. after clef).
         if sorted_barlines:
             first_bar = sorted_barlines[0]
             if first_bar.bbox.x1 - sys_x1 > self.IMPLICIT_START_THRESHOLD:
@@ -61,14 +70,25 @@ class MeasureNumberer:
         system.measures = []
         
         if not sorted_barlines:
-            # If no barlines detected at all, the whole system is effectively 1 unknown measure?
-            # Or 0 measures. Let's keep it 0 for now as it's safer.
             pass
         else:
             for i in range(len(sorted_barlines) - 1):
                 left_bar = sorted_barlines[i]
                 right_bar = sorted_barlines[i+1]
                 
+                # Check for overrides
+                attr = None
+                ov = overrides.get(i)
+                if ov:
+                    attr = MeasureAttribute(
+                        skip=ov.get("skip", 0),
+                        set_number=ov.get("set_number"),
+                        comment=ov.get("comment", "")
+                    )
+                
+                if attr and attr.set_number is not None:
+                    current_number = attr.set_number
+
                 # Create Measure
                 m_x1 = left_bar.bbox.x2
                 m_x2 = right_bar.bbox.x1
@@ -77,10 +97,14 @@ class MeasureNumberer:
                     number=current_number,
                     start_bar=left_bar,
                     end_bar=right_bar,
-                    bbox=BBox(m_x1, sys_y1, m_x2, sys_y2)
+                    bbox=BBox(m_x1, sys_y1, m_x2, sys_y2),
+                    attribute=attr
                 )
                 system.measures.append(measure)
-                current_number += 1
+                
+                # Increment for next measure
+                increment = 1 + (attr.skip if attr else 0)
+                current_number += increment
                 
         return current_number
 

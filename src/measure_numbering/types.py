@@ -39,6 +39,13 @@ class Barline:
     is_ghost: bool = False # If True, this is a logical marker (e.g. system start) not a detected line.
 
 @dataclass
+class MeasureAttribute:
+    """Manual override for a specific measure's behavior."""
+    skip: int = 0  # Number of additional measures to skip (for multi-measure rests)
+    set_number: Optional[int] = None  # Force a specific number
+    comment: str = ""
+
+@dataclass
 class Measure:
     """
     Represents a musical measure.
@@ -47,6 +54,7 @@ class Measure:
     start_bar: Optional[Barline]  # None for the start of a system (implicit)
     end_bar: Optional[Barline]    # None for the end of a system (implicit) or open?
     bbox: BBox # The bounding region of the measure on the staff
+    attribute: Optional[MeasureAttribute] = None
     
     # We might want to link to the Staff it belongs to, but let's keep it simple tree for now.
 

@@ -117,6 +117,7 @@ def main():
     parser.add_argument("--output-json", type=Path, help="Path to save the resulting numbering JSON")
     parser.add_argument("--output-overlay", type=Path, help="Path to save the visualization overlay PNG")
     parser.add_argument("--start-number", type=int, default=1, help="Starting measure number")
+    parser.add_argument("--config", type=Path, help="Path to config JSON with overrides")
     parser.add_argument("--page-number", type=int, default=1, help="Page number for the input data")
     
     args = parser.parse_args()
@@ -125,6 +126,13 @@ def main():
     with open(args.barlines, 'r') as f:
         raw_barlines = json.load(f)
     barline_boxes = normalize_barlines(raw_barlines)
+
+    # Load config overrides
+    overrides = None
+    if args.config:
+        with open(args.config, 'r') as f:
+            config_data = json.load(f)
+            overrides = config_data.get("measure_overrides")
 
     # Get image size
     img_ref = cv2.imread(str(args.image))
@@ -145,7 +153,19 @@ def main():
         'image': img_ref
     }
     
-    score = pipeline.run_sequential([page_data], start_number=args.start_number)
+    # Run pipeline
+    score = score = Score()
+    page = pipeline.process_page(
+        page_data['barlines'],
+        Path(page_data['staff_mask']),
+        page_data['image_size'],
+        page_data.get('page_number', 1),
+        image=page_data.get('image')
+    )
+    score.pages.append(page)
+    
+    # Apply numbering with overrides
+    pipeline.numberer.number_score(score, start_number=args.start_number, overrides=overrides)
 
     # Save JSON
     if args.output_json:

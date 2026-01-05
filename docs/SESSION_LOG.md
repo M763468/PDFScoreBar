@@ -594,3 +594,64 @@ The following temporary scripts were created and used during this session to dia
     *   Renames to `boxes_sorted_v20260106.json`.
 2.  **Execution**: Copied 25 verified GT files to their permanent location.
 **Result**: 25 New Ground Truth files added to `evaluation2` dataset.
+
+## Phase 8: New Data Evaluation & No Peak Execution
+**Date**: 2026-01-06
+**Objective**: Evaluate 3 new scores (`Shosrakovich-Sym5-Va`, `Shostakovich-Festival_Overture_Va`, `Sibelius-Violin_Concerto-Viola`) and generate "No Peak" candidates for Hard Negative Mining.
+
+### 1. Reproduction Commands
+All steps were executed using the `.venv_cnn_classifier` environment (except where noted) and `tools/` scripts.
+
+#### A. Data Preparation
+- **PDF -> Image**:
+  ```bash
+  python3 tools/convert_eval2_pdfs.py
+  ```
+  *(Generates images in `data/evaluation2/images/`)*
+
+#### B. Hybrid Pipeline (Batch)
+- **Script**: `tools/run_eval2_batch.py` (calls `tools/run_hybrid_pipeline.sh`)
+- **Action**: Runs HOMR (Baseline), Real-ESRGAN (SR), OMR-DLN (SR), and Hybrid Consensus for all images.
+- **Command**:
+  ```bash
+  python3 tools/run_eval2_batch.py
+  ```
+- **Output**: `logs/hybrid_generalization/eval2_<score>_<page>/`
+
+#### C. Candidate Generation (No Peak)
+- **Script**: `tools/run_eval2_no_peak.py`
+- **Logic**: Generates candidates using "No Peak" parameters (disabling sharpness checks) to maximize recall.
+- **Parameters**:
+  - `band_source="row_stats"`
+  - `probe_width=4`, `ink_threshold=180`
+  - `scan_x_peak_ratio_min=0.0` (Key: Peak Check Disabled)
+  - `scan_rightmost_min_ratio=0.0`
+  - `max_per_band=100` (Key: Limit Increased)
+  - `min_ratio=0.85`
+- **Command**:
+  ```bash
+  .venv_cnn_classifier/bin/python tools/run_eval2_no_peak.py
+  ```
+- **Output**: `logs/hybrid_generalization/.../pipeline2_no_peak_candidates.json`
+
+#### D. Candidate Generation (Baseline + Filtered)
+- **Script**: `tools/run_eval2_filter.py`
+- **Logic**: Applies heuristic filters (Row Filter + Notehead Filter) to the Baseline results.
+- **Command**:
+  ```bash
+  .venv_cnn_classifier/bin/python tools/run_eval2_filter.py
+  ```
+- **Output**: `logs/hybrid_generalization/.../pipeline1_baseline_filtered.json`
+
+#### E. Visualization
+- **Script**: `tools/visualize_eval2.py`
+- **Command**:
+  ```bash
+  .venv_cnn_classifier/bin/python tools/visualize_eval2.py
+  ```
+- **Output**: `logs/hybrid_generalization/.../overlay_*.png`
+
+### 2. Results Location
+- **Images**: `data/evaluation2/images/`
+- **Logs & JSONs**: `logs/hybrid_generalization/`
+- **Key Artifact**: `pipeline2_no_peak_candidates.json` (Source for Hard Negative Mining)

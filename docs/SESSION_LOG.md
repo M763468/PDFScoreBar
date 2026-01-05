@@ -494,6 +494,10 @@ To replicate this experiment, use the following parameters and commands:
     ```bash
     .venv_pdf/bin/python experiments/cnn_classifier/summarize_inference_stats.py \
       Ultraloose:logs/cnn_validation_eval2_ultraloose \
+      NoPeak:logs/cnn_validation_eval2_nopeak
+    ```
+    *(Note: Reads logs to compare strategies)*
+
 ### Ad-hoc Debugging Tools & Scripts
 The following temporary scripts were created and used during this session to diagnose the False Negative issue. They are not part of the main pipeline but are preserved for reproducibility.
 
@@ -537,6 +541,56 @@ The following temporary scripts were created and used during this session to dia
         --output-path logs/cnn_validation_eval2_user/debug_bands_vis.png
     ```
 
+## 2026-01-05: Provisional GT Creation for Evaluation2 (Prokofiev)
 
+**Objective**: Prepare a baseline Ground Truth (GT) for the `evaluation2` dataset (Prokofiev) to enable manual refinement.
 
+**Strategy**:
+1.  **Source**: Use "Peak-enabled" candidates ("Ultraloose" configuration) to minimize initial noise (compared to "No Peak").
+2.  **Filter**: Apply the trained CNN classifier (`ResNet18`) and keep candidates with `Score > 0.5`.
+3.  **Output**: Generate "Provisional GT" JSON files compatible with the `gt_relabel_gui` tool.
 
+**Actions**:
+1.  **Script Creation**: Created `tools/cnn_classifier/create_provisional_gt.py`.
+    *   **Usage**: `.venv_cnn_classifier/bin/python tools/cnn_classifier/create_provisional_gt.py --scored-root logs/cnn_validation_eval2_ultraloose --output-root data/evaluation2/annotations_provisional`
+    *   Reads `*_scored.json` from `logs/cnn_validation_eval2_ultraloose/`.
+    *   Filters boxes with `score > 0.5`.
+    *   Saves result to `data/evaluation2/annotations_provisional/{subdir}/{page_name}.json`.
+2.  **Execution**: Generated GT for 33 pages (Prokofiev1, Prokofiev5).
+3.  **GUI Config**: Created `tools/cnn_classifier/create_gt_gui_config.py` and generated `tools/gt_relabel_gui/evaluation2_config.json`.
+    *   **Usage**: `python tools/cnn_classifier/create_gt_gui_config.py --json-root data/evaluation2/annotations_provisional --image-root data/evaluation2/images --output-config tools/gt_relabel_gui/evaluation2_config.json`
+    *   Maps each image to its provisional GT JSON.
+    *   Enables the user to load this config in `gt_relabel_gui` and manually correct the boxes (remove FPs).
+
+**Artifacts**:
+*   Provisional GT: `data/evaluation2/annotations_provisional/`
+*   GUI Config: `tools/gt_relabel_gui/evaluation2_config.json`
+*   Usage:
+    ```bash
+    # Run the GUI with the new config
+    python tools/gt_relabel_gui/server.py --mode gt --config tools/gt_relabel_gui/evaluation2_config.json
+    ```
+
+## 2026-01-05: Provisional GT & Config Refinement (User Feedback)
+**Issues Reported**:
+1.  **Black Images**: GUI was not displaying images because config contained paths resolving to symlink targets (outside repo root), which the server blocked.
+2.  **Duplicates**: `prokofiev1` was a duplicate of `Va_Prokofiev_Symphony1`.
+3.  **Redundant Work**: `Va_Prokofiev_Symphony1` pages 001/004 already have GT.
+4.  **Missing BBox**: GUI showed images but not boxes because `app_gt.js` expected `editable` field which was missing.
+
+**Fixes**:
+1.  **Path Resolution**: Modified `tools/cnn_classifier/create_gt_gui_config.py` to use absolute paths preserving the repo structure.
+2.  **Server Security**: Updated `tools/gt_relabel_gui/server.py` to use `os.path.abspath` for safer symlink support.
+3.  **Filtering**: Updated script to exclude duplicates and existing GT.
+4.  **Config Field**: Added `editable` field to config.
+5.  **Regeneration**: Re-ran the script. Config now contains 25 valid pages.
+
+## 2026-01-06: GT Finalization
+**Objective**: Archive the manually corrected Ground Truth files.
+**Action**:
+1.  **Finalization Script**: Created `tools/cnn_classifier/finalize_gt.py`.
+    *   **Usage**: `python tools/cnn_classifier/finalize_gt.py` (Copies `*_sorted.json` to `data/evaluation2/annotations/` as `boxes_sorted_v20260106.json`).
+    *   Copies `*_sorted.json` from `annotations_provisional` to `data/evaluation2/annotations/`.
+    *   Renames to `boxes_sorted_v20260106.json`.
+2.  **Execution**: Copied 25 verified GT files to their permanent location.
+**Result**: 25 New Ground Truth files added to `evaluation2` dataset.

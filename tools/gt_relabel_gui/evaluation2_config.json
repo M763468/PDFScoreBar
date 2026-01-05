@@ -1,0 +1,204 @@
+{
+  "pages": [
+    {
+      "name": "Va_Prokofiev_Symphony1/page_002",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Va_Prokofiev_Symphony1/page_002.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Va_Prokofiev_Symphony1/page_002.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Va_Prokofiev_Symphony1/page_002_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Va_Prokofiev_Symphony1/page_002.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "Va_Prokofiev_Symphony1/page_003",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Va_Prokofiev_Symphony1/page_003.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Va_Prokofiev_Symphony1/page_003.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Va_Prokofiev_Symphony1/page_003_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Va_Prokofiev_Symphony1/page_003.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "Va_Prokofiev_Symphony1/page_005",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Va_Prokofiev_Symphony1/page_005.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Va_Prokofiev_Symphony1/page_005.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Va_Prokofiev_Symphony1/page_005_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Va_Prokofiev_Symphony1/page_005.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "Va_Prokofiev_Symphony1/page_006",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Va_Prokofiev_Symphony1/page_006.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Va_Prokofiev_Symphony1/page_006.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Va_Prokofiev_Symphony1/page_006_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Va_Prokofiev_Symphony1/page_006.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_001",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_001.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_001.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_001_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_001.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_002",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_002.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_002.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_002_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_002.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_003",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_003.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_003.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_003_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_003.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_004",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_004.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_004.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_004_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_004.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_005",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_005.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_005.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_005_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_005.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_007",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_007.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_007.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_007_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_007.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_008",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_008.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_008.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_008_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_008.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_009",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_009.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_009.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_009_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_009.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_010",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_010.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_010.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_010_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_010.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_011",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_011.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_011.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_011_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_011.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_013",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_013.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_013.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_013_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_013.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_014",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_014.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_014.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_014_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_014.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_015",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_015.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_015.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_015_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_015.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_016",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_016.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_016.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_016_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_016.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_017",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_017.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_017.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_017_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_017.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_018",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_018.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_018.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_018_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_018.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_019",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_019.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_019.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_019_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_019.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_020",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_020.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_020.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_020_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_020.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_021",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_021.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_021.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_021_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_021.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_022",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_022.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_022.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_022_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_022.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "prokofiev5/page_023",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev5/page_023.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_023.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_023_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/prokofiev5/page_023.json",
+      "y_threshold": 50
+    }
+  ]
+}

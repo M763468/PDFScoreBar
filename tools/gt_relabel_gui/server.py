@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import mimetypes
+import os
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
@@ -25,10 +26,28 @@ class Item:
 
 
 def safe_path(root: Path, rel: str) -> Path:
-    candidate = (root / rel).resolve() if not Path(rel).is_absolute() else Path(rel).resolve()
-    if root not in candidate.parents and candidate != root:
-        raise ValueError("Path outside root.")
-    return candidate
+    # Use os.path.abspath to normalize ".." but preserve symlinks
+    # This allows serving files pointed to by symlinks inside root (e.g. data -> ../other/data)
+    # while preventing traversal out of root via ".."
+    
+    # If rel is absolute, trust it IF it starts with root (string-wise)
+    # If rel is relative, join with root
+    
+    # Note: rel comes from the client or config, usually absolute path in config mode.
+    # We must ensure that string-wise it is inside root.
+    
+    abs_path = os.path.abspath(rel) if os.path.isabs(rel) else os.path.abspath(root / rel)
+    root_abs = os.path.abspath(root)
+    
+    if os.path.commonpath([root_abs, abs_path]) == root_abs:
+        # It is logically inside root. Now we return a Path object.
+        # However, for file operations, we might want to return the Path object that RESOLVES to the target
+        # if the code uses .resolve() later. 
+        # But existing code uses path.read_text() etc.
+        # Returning Path(abs_path) is correct.
+        return Path(abs_path)
+        
+    raise ValueError(f"Path outside root: {abs_path}")
 
 
 def scan_items(root: Path) -> list[Item]:

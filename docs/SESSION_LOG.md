@@ -1,6 +1,6 @@
 # Session Log (Measure Numbering Track)
 
-**Last Updated**: 2026-01-04
+**Last Updated**: 2026-01-06
 **Context**: This log tracks the design and implementation of the "Measure Numbering" system (Plan A) in the `feature/measure_numbering` branch.
 
 ---
@@ -326,8 +326,6 @@ A region is considered a candidate for a multi-measure rest number if:
     - Page 010: `logs/experiments/rest_roi_test_page10/gt_roi_overlay_v4_eroded.png`
 - **Numbering Data**: `logs/experiments/rest_roi_batch_test/page_xxx/numbering.json`
 
-**Status**: ROI extraction logic is now capable of handling high-register notes and filtering out thin symbol noise (G.P., etc.). Robustness verification on complex pages (Divisi) is ongoing.
-
 ## 2026-01-05 GT Error Investigation (Page 004 M6)
 
 **Issue**: Measure 6 (M6) on Page 004 was identified as a rest candidate but appeared to be in an invalid location.
@@ -357,10 +355,74 @@ Logic to identify potential multi-measure rests by finding measures with low not
 
 **Example Usage**:
 ```bash
-.venv_omr_dln/bin/python tools/visualize_rest_rois.py \n    --numbering-json logs/numbering.json \n    --notehead-mask logs/homr/mask.png \n    --image data/page.png \n    --output-image overlay.png \n    --vertical-margin 80 \n    --erode-iter 1
+.venv_omr_dln/bin/python tools/visualize_rest_rois.py \
+    --numbering-json logs/numbering.json \
+    --notehead-mask logs/homr/mask.png \
+    --image data/page.png \
+    --output-image overlay.png \
+    --vertical-margin 80 \
+    --erode-iter 1
 ```
 
 ### 2. Debugging Helpers
 - **`tools/batch_rest_roi_test.py`**: Runs the extraction pipeline on multiple pages (hardcoded config).
 - **`tools/debug_rest_candidates.py`**: Prints detailed pixel counts (original vs eroded) for specific measures.
 - **`tools/crop_debug_image.py`**: Crops a specific bbox from an image for inspection.
+
+## 2026-01-06 Multi-measure Rest Number Recognition
+
+**Goal**: Automatically read the numbers from "empty" measures (Multi-measure Rests) and apply them to the numbering sequence.
+
+### Actions Taken
+1.  **Engine Selection**:
+    -   Initially tried `pytesseract` (Tesseract OCR), but system dependencies were missing in the user environment.
+    -   Switched to `RapidOCR` (ONNX Runtime), which was already used in `homr/title_detection.py`.
+    -   Installed `rapidocr_onnxruntime` in `.venv_omr_dln`.
+2.  **Implementation**:
+    -   Created **`tools/generate_numbering_overrides.py`**.
+    -   **Workflow**:
+        1.  Extracts ROI images using the `extract_rest_rois` logic (density check).
+        2.  Preprocesses images (Otsu thresholding, inversion, denoising).
+        3.  Runs `RapidOCR`.
+        4.  **Filtering**: Adopts a conservative policy—rejects any text containing letters (to avoid "Viol. II", "Legni 7" etc.). Only pure digits (or with basic symbols) are accepted.
+        5.  Outputs `overrides.json` with `skip: N-1`.
+3.  **Verification (Page 10)**:
+    -   Generated overrides for Page 10.
+    -   **Results**:
+        -   M120: Recognized "4" -> Generated `skip: 3`.
+        -   M67: Recognized "3" -> Generated `skip: 2`.
+        -   M111 ("Legni 7") and M77 ("Viol.11") were correctly rejected by the filter.
+    -   **Integration Check**: Ran `add_measure_numbers.py` with the generated overrides.
+    -   **Confirmed**:
+        -   M122 (was M120 before shift) correctly skipped 4 measures.
+        -   Next measure starts at **126** (122 + 4).
+
+### Key Findings
+-   **Index Stability**: Even if previous overrides shift the logical measure numbers (e.g., M120 becomes M122), the `overrides.json` targets the **physical measure index** (e.g., `measure: 12`). This ensures the override is applied to the correct visual measure regardless of the logical number shift.
+
+**Artifacts**:
+-   `tools/generate_numbering_overrides.py`
+-   `logs/experiments/ocr_test/final_numbering.json` (Verified Output)
+
+## 2026-01-06 Batch Verification on Evaluation Set
+
+**Goal**: Verify the numbering and multi-measure rest detection pipeline on the `evaluation2` dataset (Prokofiev 1 & 5).
+
+### Methodology
+1.  **Script**: Created `tools/batch_verify_numbering.py`.
+    -   Dynamically locates GT barline files (`boxes_sorted_*.json`) to handle file naming updates.
+    -   Executes the full pipeline: Initial Numbering -> Override Generation (OCR) -> Final Numbering with Overrides.
+2.  **Dataset**:
+    -   **Prokofiev 1**: Pages 1-6.
+    -   **Prokofiev 5**: Pages 1-23.
+    -   **Inputs**: Used Ground Truth barlines and `homr` baseline masks.
+
+### Results
+-   **Execution**: Successfully processed 27/29 pages.
+    -   2 pages (Prokofiev 5 P006, P012) skipped due to missing sorted barline files in GT.
+-   **Output**: Generated visualization overlays for all successful pages in `logs/experiments/batch_verification_20260106/`.
+-   **Fix**: Patched `tools/generate_numbering_overrides.py` to handle empty ROI crops gracefully (preventing OpenCV errors on edge-case barlines).
+
+**Artifacts**:
+-   `tools/batch_verify_numbering.py`
+-   `logs/experiments/batch_verification_20260106/` (Contains JSONs and Overlays)

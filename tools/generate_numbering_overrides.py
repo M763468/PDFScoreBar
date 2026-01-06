@@ -34,34 +34,40 @@ def preprocess_image(img):
 def extract_number_from_text(text):
     """
     Extract a valid multi-measure rest number from text.
-    Conservative Policy:
-    - Text must NOT contain letters (A-Z, a-z).
-    - Can contain digits, whitespace, and common symbols (.-=).
-    - Must contain exactly one integer sequence.
-    - Value must be >= 2.
+    Relaxed Policy:
+    - Reject if contains Blacklisted words (Instruments, Techniques).
+    - Accept if contains any integer >= 2.
+    - If multiple integers, pick the largest one.
     """
     if not text:
         return None
         
-    # 1. Check for forbidden characters (Letters)
-    if re.search(r'[a-zA-Z]', text):
-        return None # Reject strings with letters (e.g., "Viol.11", "Legni 7")
+    # 1. Blacklist check
+    blacklist = ["Viol", "Vc", "Cb", "Fl", "Ob", "Cl", "Fag", "Cor", "Tr", "Timp", "Pizz", "Arco", "Div", "Legni", "Solo", "Tutti"]
+    for word in blacklist:
+        if word.lower() in text.lower():
+            return None 
     
     # 2. Extract all digit sequences
     numbers = re.findall(r'\d+', text)
-    
-    # 3. Must have exactly one number
-    if len(numbers) != 1:
+    if not numbers:
         return None
     
-    try:
-        val = int(numbers[0])
-        if val >= 2:
-            return val
-    except:
-        pass
-        
-    return None
+    # 3. Pick best number
+    valid_nums = []
+    for n_str in numbers:
+        try:
+            val = int(n_str)
+            if val >= 2:
+                valid_nums.append(val)
+        except:
+            pass
+            
+    if not valid_nums:
+        return None
+    
+    # Return the largest valid number found
+    return max(valid_nums)
 
 def main():
     parser = argparse.ArgumentParser(description="Generate numbering overrides from multi-measure rest OCR.")
@@ -129,12 +135,20 @@ def main():
                 pixel_count = cv2.countNonZero(roi_mask)
                 
                 if pixel_count <= args.threshold:
-                    # Candidate Found. Extract ROI for OCR.
-                    # ROI: Top half + margin
-                    roi_y1 = max(0, y1 - 30)
-                    roi_y2 = min(h_img, y1 + (y2 - y1) // 2 + 30)
+                    # ROI Extraction (Expanded)
+                    # Expand X by 10px, Y by dynamic amount (up to 70% of height downwards)
                     
-                    roi_img = image[roi_y1:roi_y2, x1:x2]
+                    x_margin = 10
+                    roi_x1 = max(0, x1 - x_margin)
+                    roi_x2 = min(w_img, x2 + x_margin)
+                    
+                    roi_y1 = max(0, y1 - 30)
+                    # Old: y1 + (y2 - y1) // 2 + 30
+                    # New: y1 + (y2 - y1) * 0.7 + 30 (To capture lower parts of large numbers)
+                    roi_y2_limit = y1 + int((y2 - y1) * 0.7) + 30
+                    roi_y2 = min(h_img, roi_y2_limit)
+                    
+                    roi_img = image[roi_y1:roi_y2, roi_x1:roi_x2]
                     
                     if roi_img.size == 0:
                         print(f"  [WARN] Empty ROI for P{page_num} S{sys_idx} M{m_num} bbox={bbox}")
@@ -155,14 +169,7 @@ def main():
                                 print(f"  [FOUND] P{page_num} S{sys_idx} M{m_num}: Text='{text}' -> Count={number}")
                                 
                                 overrides.append({
-                                    "page": page_num - 1, # overrides uses 0-based page index? Need to check types.py or logic.
-                                                          # numbering.json page_number usually starts at 1.
-                                                          # Let's check logic: numbering.py uses 0-based index for list access usually.
-                                                          # But let's assume 'page' in override refers to the index in the pages list.
-                                                          # Actually, add_measure_numbers.py iterates pages.
-                                                          # Let's verify override format in numbering.py:
-                                                          # It matches `attr.page == page_idx`. So it needs 0-based index.
-                                                          # If page_number in json is 1, then page_idx is 0.
+                                    "page": page_num - 1, 
                                     "system": sys_idx,
                                     "measure": m_idx,
                                     "skip": number - 1,

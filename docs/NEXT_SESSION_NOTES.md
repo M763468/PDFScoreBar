@@ -59,16 +59,18 @@ The project is currently split into two parallel tracks to address the "False Po
     *   **Divisi Verification**: Confirmed robust grouping on Prokofiev dataset, distinguishing true divisi from coincidental alignment (e.g., elimination of false positives on Prokofiev 5).
 
 ### Remaining Work / Next Steps
-1.  **Production-ready Integration**:
+1.  **Refine Multi-measure Rest Recognition** (Ongoing):
+    *   **Expand ROI Upwards**: Adjust cropping to prevent cutting off the top of large rest numbers.
+    *   **Spatial Filtering**: Prioritize digits near the measure center to avoid misidentifying practice numbers as rest counts.
+2.  **Production-ready Integration**:
     *   Combine `Detector JSON` + `Staff Mask PNG` + `Numbering Logic` into a single standalone pipeline script.
     *   Automate the coordinate scaling logic based on image metadata.
-2.  **Special Musical Logic**:
-    *   **Multi-measure Rests**: Logic to parse and handle numerical representations of multiple empty measures (e.g., "4" above a rest) to increment the measure count correctly.
+3.  **Special Musical Logic**:
     *   **Upbeats (Anacrusis)**: Formal detection or manual overrides.
     *   **Repeats / Segno**: Handling non-linear flow (if logical measure count differs from graphical sequence).
-3.  **Multi-page & Performance Verification**:
+4.  **Multi-page & Performance Verification**:
     *   Run the numbering pipeline on full multi-page PDFs to ensure state (measure count) is correctly preserved.
-    *   Measure processing time for a typical 10-page score.
+    *   Implement movement boundary detection to reset numbering.
 
 ### Key Artifacts
 - `src/measure_numbering/types.py`: Core data classes (`unsafe_hash=True` for set ops).

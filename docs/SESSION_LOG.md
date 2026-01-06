@@ -426,3 +426,60 @@ Logic to identify potential multi-measure rests by finding measures with low not
 **Artifacts**:
 -   `tools/batch_verify_numbering.py`
 -   `logs/experiments/batch_verification_20260106/` (Contains JSONs and Overlays)
+
+## 2026-01-06 OCR Diagnostic Visualization
+
+**Goal**: Investigate why some multi-measure rests are missed or incorrectly recognized by the OCR pipeline.
+
+### Methodology
+1.  **Tool**: Created `tools/debug_ocr_candidates.py`.
+    -   Visualizes all ROI candidates (red boxes) on the original image.
+    -   Annotates each candidate with:
+        -   Pixel count (density).
+        -   Raw OCR result (including failed/rejected texts).
+    -   Supports configurable `threshold` to simulate relaxed detection criteria.
+2.  **Batch Execution**: Created `tools/batch_debug_ocr.py`.
+    -   Runs the visualizer on all evaluation pages with two settings:
+        1.  `threshold=50` (Standard): To see what the current pipeline sees.
+        2.  `threshold=200` (Relaxed): To see what *could* be seen if we allowed more noise (e.g., for detecting missed rests).
+
+### Results
+-   **Output**: Generated debug overlays in `logs/experiments/ocr_debug_20260106/`.
+-   **Purpose**: These images allow visual inspection of False Negatives (missed candidates) and OCR failures (bad text).
+
+**Artifacts**:
+-   `tools/debug_ocr_candidates.py`
+-   `tools/batch_debug_ocr.py`
+-   `logs/experiments/ocr_debug_20260106/`
+
+## 2026-01-06 ROI Expansion and Filter Relaxation (Fixing FN)
+
+**Issue**: Some valid multi-measure rests were missed because:
+1.  ROI was too small (cutting off large numbers).
+2.  OCR included noise text (rejected by strict filter).
+
+**Fix Implemented**:
+1.  **ROI Expansion**: Increased horizontal margin by 10px and vertical coverage downwards to 70% of measure height (plus 30px margin), capturing taller numbers.
+2.  **Relaxed Filter**:
+    -   Replaced strict "No Letters" rule with a **Blacklist** (e.g., "Viol", "Arco").
+    -   Allows mixed text as long as it contains a valid integer >= 2.
+    -   Selects the largest valid integer if multiple are found.
+3.  **Safety**: Added explicit check for empty ROI images to prevent OpenCV errors.
+
+**Verification**:
+-   Re-ran batch verification (`batch_verification_20260106_v2`) and debug visualization (`ocr_debug_20260106_v2`).
+-   Confirmed processing success on all pages including previously failing ones (Prokofiev 1 P005/006).
+
+**Artifacts**:
+-   `tools/generate_numbering_overrides.py` (Updated)
+-   `logs/experiments/batch_verification_20260106_v2/`
+
+### Remaining Challenges (Identified 2026-01-06)
+
+**1. ROI Cutoff (Top)**:
+- Some numbers are still being cut off at the top edge of the ROI.
+- *Proposed Fix*: Expand the vertical margin upwards (further above the staff) to ensure large numbers are fully captured.
+
+**2. Practice Number Confusion**:
+- OCR sometimes picks up rehearsal/practice numbers (often located near the start of a measure or above the staff) and treats them as multi-measure rest counts.
+- *Proposed Fix*: Implement spatial filtering to prioritize digits located near the **horizontal center** of the measure, which is the standard placement for multi-measure rest numbers.

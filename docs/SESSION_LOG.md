@@ -655,3 +655,39 @@ All steps were executed using the `.venv_cnn_classifier` environment (except whe
 - **Images**: `data/evaluation2/images/`
 - **Logs & JSONs**: `logs/hybrid_generalization/`
 - **Key Artifact**: `pipeline2_no_peak_candidates.json` (Source for Hard Negative Mining)
+## 2026-01-06: GT Editor Usability Improvements
+
+### Task
+Improve `tools/gt_relabel_gui` (GT Editor) efficiency for new dataset annotation (Shostakovich/Sibelius).
+
+### Changes Implemented
+Modified `tools/gt_relabel_gui/app_gt.js` to add:
+1.  **Multi-Selection**: 
+    -   Hold `Shift` + Click to select multiple boxes.
+    -   Clicking without `Shift` clears selection (unless clicking on an already selected item, which preserves the group for dragging).
+2.  **Group Operations**:
+    -   **Move**: Dragging one selected box moves all selected boxes together.
+    -   **Delete**: Pressing `Delete` or `Backspace` removes all selected boxes.
+    -   **Type Change**: Changing the type in the dropdown updates all selected boxes.
+3.  **Keyboard Shortcuts**:
+    -   `d` or `n`: Switch to **Draw** mode.
+    -   `s` or `v`: Switch to **Select** mode.
+    -   `Delete` / `Backspace`: Delete selected.
+    -   `Ctrl+S` / `Cmd+S`: Save.
+
+### Verification (Usability Test)
+To verify these changes, run the GT editor:
+```bash
+python3 tools/gt_relabel_gui/server.py \
+  --mode gt \
+  --config logs/phase6_detector_miss/gt_rebuild/gt_editor_config.json \
+  --port 8010
+```
+Then perform the following checks in the browser:
+1.  **Select Multiple**: Click a box, then Shift+Click another. Both should highlight (orange).
+2.  **Move Group**: Drag one of the selected boxes. Both should move.
+3.  **Delete Group**: Press `Delete`. Both should disappear.
+4.  **Shortcuts**: Press `d` (cursor changes to crosshair), then `s` (cursor changes to arrow).
+
+### Automated Tests
+- Created `tests/test_gt_gui_server.py` to verify the server serves the updated JavaScript containing the new logic. Test passed.

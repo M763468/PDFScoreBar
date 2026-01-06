@@ -4,7 +4,7 @@ let currentPage = null;
 let editableBoxes = [];
 let referenceLayers = [];
 let editableSources = [];
-let selectedIndex = null;
+let selectedIndices = new Set(); // Changed from selectedIndex to Set
 let mode = "select";
 let currentType = "barline";
 
@@ -51,7 +51,8 @@ let isDrawing = false;
 let drawStart = null;
 let dragMode = null;
 let dragHandle = null;
-let dragOffset = { x: 0, y: 0 };
+let dragStartMouse = { x: 0, y: 0 }; // For group move
+let initialBoxStates = new Map(); // For group move: index -> box
 let spaceDown = false;
 let dirty = false;
 
@@ -170,7 +171,7 @@ function makeLegend(label, dotEl) {
 
 function loadPage() {
   currentPage = pages[currentIndex];
-  selectedIndex = null;
+  selectedIndices.clear();
   saveStatus.textContent = "";
   dirty = false;
   updateDirtyStatus();
@@ -289,7 +290,7 @@ function canvasToImg(pt) {
   };
 }
 
-function drawBoxes(boxes, color, thickness, highlightSelected) {
+function drawBoxes(boxes, color, thickness, highlightIndices) {
   const baseColor = color;
   ctx.lineWidth = thickness;
   boxes.forEach((b, idx) => {
@@ -300,10 +301,6 @@ function drawBoxes(boxes, color, thickness, highlightSelected) {
     const p1 = imgToCanvas({ x: x1, y: y1 });
     const p2 = imgToCanvas({ x: x2, y: y2 });
     ctx.strokeRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
-    if (highlightSelected && idx === selectedIndex) {
-      drawSelectedBox(p1, p2, box);
-      ctx.lineWidth = thickness;
-    }
   });
 }
 
@@ -320,21 +317,33 @@ function drawHandles(p1, p2, color) {
   });
 }
 
-function drawSelectedBox(p1, p2, box) {
+function drawSelectedBox(index) {
+  const item = editableBoxes[index];
+  if (!item) return;
+  const box = item.bbox;
+  const [x1, y1, x2, y2] = box;
+  const p1 = imgToCanvas({ x: x1, y: y1 });
+  const p2 = imgToCanvas({ x: x2, y: y2 });
+
   ctx.strokeStyle = SELECTED_COLOR;
   ctx.lineWidth = 3;
   ctx.strokeRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
   ctx.fillStyle = "rgba(255, 138, 0, 0.15)";
   ctx.fillRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
-  drawHandles(p1, p2, SELECTED_COLOR);
-  drawTypeLabel(p1, box);
+  
+  // Draw handles only if it's the only one selected (simplifies resize UI)
+  if (selectedIndices.size === 1) {
+    drawHandles(p1, p2, SELECTED_COLOR);
+  }
+  
+  // Label for primary or all? All is fine.
+  drawTypeLabel(p1, item, index);
 }
 
-function drawTypeLabel(p1, box) {
-  if (!box || selectedIndex === null) return;
-  const label = editableBoxes[selectedIndex]?.type || "barline";
-  const source = editableBoxes[selectedIndex]?.source || "base";
-  const text = `${label} (${source})`;
+function drawTypeLabel(p1, item, index) {
+  const label = item.type || "barline";
+  const source = item.source || "base";
+  const text = `${label} (${source}) [#${index}]`;
   ctx.font = "12px Arial";
   const textWidth = ctx.measureText(text).width;
   ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
@@ -355,18 +364,18 @@ function draw() {
     editableBoxes.forEach((box) => {
       const source = editableSources.find((s) => s.label === box.source);
       if (source && !source.visible) return;
-      drawBoxes([box], box.color || EDITABLE_COLOR, 2, false);
+      drawBoxes([box], box.color || EDITABLE_COLOR, 2);
     });
   }
   referenceLayers.forEach((layer) => {
     if (!layer.visible) return;
-    drawBoxes(layer.boxes, layer.color, 1, false);
+    drawBoxes(layer.boxes, layer.color, 1);
   });
-  if (showEditable && showEditable.checked && selectedIndex !== null && editableBoxes[selectedIndex]) {
-    const box = editableBoxes[selectedIndex].bbox;
-    const p1 = imgToCanvas({ x: box[0], y: box[1] });
-    const p2 = imgToCanvas({ x: box[2], y: box[3] });
-    drawSelectedBox(p1, p2, box);
+  
+  if (showEditable && showEditable.checked) {
+      selectedIndices.forEach(idx => {
+          drawSelectedBox(idx);
+      });
   }
 
   if (isDrawing && drawStart) {
@@ -450,28 +459,67 @@ canvas.addEventListener("mousedown", (e) => {
     return;
   }
 
-  if (selectedIndex !== null && editableBoxes[selectedIndex]) {
-    const handle = hitHandle(pt, editableBoxes[selectedIndex].bbox);
-    if (handle !== null) {
-      dragMode = "resize";
-      dragHandle = handle;
-      return;
-    }
-    if (pointInBox(pt, editableBoxes[selectedIndex].bbox)) {
-      dragMode = "move";
-      const [x1, y1] = imgToCanvas({ x: editableBoxes[selectedIndex].bbox[0], y: editableBoxes[selectedIndex].bbox[1] });
-      dragOffset = { x: pt.x - x1, y: pt.y - y1 };
-      return;
+  // Handle Resize logic (only if exactly one item is selected)
+  if (selectedIndices.size === 1) {
+    const singleIdx = [...selectedIndices][0];
+    if (editableBoxes[singleIdx]) {
+        const handle = hitHandle(pt, editableBoxes[singleIdx].bbox);
+        if (handle !== null) {
+            dragMode = "resize";
+            dragHandle = handle;
+            // dragIndex implicitly singleIdx
+            return;
+        }
     }
   }
 
-  selectedIndex = null;
+  // Hit test for boxes
+  let clickedIndex = null;
   for (let i = editableBoxes.length - 1; i >= 0; i--) {
     if (pointInBox(pt, editableBoxes[i].bbox)) {
-      selectedIndex = i;
+      clickedIndex = i;
       break;
     }
   }
+
+  // Selection Logic
+  if (clickedIndex !== null) {
+      if (e.shiftKey) {
+          // Toggle
+          if (selectedIndices.has(clickedIndex)) {
+              selectedIndices.delete(clickedIndex);
+          } else {
+              selectedIndices.add(clickedIndex);
+          }
+      } else {
+          // Normal click
+          if (!selectedIndices.has(clickedIndex)) {
+              // Clicked on a new one -> Clear others and select this
+              selectedIndices.clear();
+              selectedIndices.add(clickedIndex);
+          }
+          // If clicked on already selected one, keep selection (to allow dragging group)
+          // (Usually, on mouseup without drag we might reduce selection, but keeping it is safe)
+      }
+      
+      // Start Move if valid selection
+      if (selectedIndices.has(clickedIndex)) {
+          dragMode = "move";
+          dragStartMouse = pt;
+          initialBoxStates.clear();
+          selectedIndices.forEach(idx => {
+              if (editableBoxes[idx]) {
+                initialBoxStates.set(idx, [...editableBoxes[idx].bbox]);
+              }
+          });
+      }
+  } else {
+      // Clicked on empty space
+      if (!e.shiftKey) {
+          selectedIndices.clear();
+      }
+  }
+
   syncTypeSelect();
   draw();
 });
@@ -496,15 +544,36 @@ canvas.addEventListener("mousemove", (e) => {
     return;
   }
 
-  if (dragMode && selectedIndex !== null) {
-    const imgPt = canvasToImg(pt);
-    let [x1, y1, x2, y2] = editableBoxes[selectedIndex].bbox;
-    if (dragMode === "move") {
-      const width = x2 - x1;
-      const height = y2 - y1;
-      const origin = canvasToImg({ x: pt.x - dragOffset.x, y: pt.y - dragOffset.y });
-      editableBoxes[selectedIndex].bbox = [origin.x, origin.y, origin.x + width, origin.y + height];
-    } else if (dragMode === "resize") {
+  if (dragMode === "move") {
+      // Delta in canvas pixels
+      const dx = (pt.x - dragStartMouse.x) / viewScale;
+      const dy = (pt.y - dragStartMouse.y) / viewScale;
+
+      selectedIndices.forEach(idx => {
+         const orig = initialBoxStates.get(idx);
+         if (orig) {
+             const [ox1, oy1, ox2, oy2] = orig;
+             // Calculate width/height from original to preserve size
+             const w = ox2 - ox1;
+             const h = oy2 - oy1;
+             // New top-left
+             const nx1 = ox1 + dx;
+             const ny1 = oy1 + dy;
+             // New bottom-right
+             const nx2 = nx1 + w;
+             const ny2 = ny1 + h;
+             editableBoxes[idx].bbox = normalizeBox([nx1, ny1, nx2, ny2]);
+         }
+      });
+      setDirty(true);
+      draw();
+      return;
+  }
+  
+  if (dragMode === "resize" && selectedIndices.size === 1) {
+      const idx = [...selectedIndices][0];
+      const imgPt = canvasToImg(pt);
+      let [x1, y1, x2, y2] = editableBoxes[idx].bbox;
       if (dragHandle === 0) {
         x1 = imgPt.x; y1 = imgPt.y;
       } else if (dragHandle === 1) {
@@ -514,11 +583,9 @@ canvas.addEventListener("mousemove", (e) => {
       } else if (dragHandle === 3) {
         x1 = imgPt.x; y2 = imgPt.y;
       }
-      editableBoxes[selectedIndex].bbox = [x1, y1, x2, y2];
-    }
-    editableBoxes[selectedIndex].bbox = normalizeBox(editableBoxes[selectedIndex].bbox);
-    setDirty(true);
-    draw();
+      editableBoxes[idx].bbox = normalizeBox([x1, y1, x2, y2]);
+      setDirty(true);
+      draw();
   }
 });
 
@@ -532,17 +599,24 @@ canvas.addEventListener("mouseup", (e) => {
     const imgStart = canvasToImg({ x: drawStart.x, y: drawStart.y });
     const imgEnd = canvasToImg(end);
     const newBox = normalizeBox([imgStart.x, imgStart.y, imgEnd.x, imgEnd.y]);
-    editableBoxes.push({ bbox: newBox, type: currentType, source: "manual", color: DRAW_COLOR });
-    selectedIndex = editableBoxes.length - 1;
-    updateStats();
+    
+    // Ensure min size to avoid accidental clicks creating boxes
+    if (Math.abs(newBox[2]-newBox[0]) > 2 && Math.abs(newBox[3]-newBox[1]) > 2) {
+        editableBoxes.push({ bbox: newBox, type: currentType, source: "manual", color: DRAW_COLOR });
+        selectedIndices.clear();
+        selectedIndices.add(editableBoxes.length - 1);
+        updateStats();
+        setDirty(true);
+    }
+    
     isDrawing = false;
     drawStart = null;
     syncTypeSelect();
-    setDirty(true);
     draw();
   }
   dragMode = null;
   dragHandle = null;
+  initialBoxStates.clear();
 });
 
 canvas.addEventListener("wheel", (e) => {
@@ -571,10 +645,14 @@ window.addEventListener("keydown", (e) => {
   if (e.key === " ") spaceDown = true;
   if (e.key === "ArrowLeft") prevBtn.click();
   if (e.key === "ArrowRight") nextBtn.click();
-  if (e.key.toLowerCase() === "n") setMode("draw");
-  if (e.key.toLowerCase() === "v") setMode("select");
+  // New shortcuts
+  if (e.key.toLowerCase() === "n" || e.key.toLowerCase() === "d") setMode("draw");
+  if (e.key.toLowerCase() === "v" || e.key.toLowerCase() === "s") setMode("select");
   if (e.key === "Delete" || e.key === "Backspace") deleteSelected();
-  if (e.key.toLowerCase() === "s") save();
+  if (e.key.toLowerCase() === "s" && (e.ctrlKey || e.metaKey)) { // Ctrl+S for save
+      e.preventDefault();
+      save();
+  }
 });
 
 window.addEventListener("keyup", (e) => {
@@ -582,9 +660,15 @@ window.addEventListener("keyup", (e) => {
 });
 
 function deleteSelected() {
-  if (selectedIndex === null) return;
-  editableBoxes.splice(selectedIndex, 1);
-  selectedIndex = null;
+  if (selectedIndices.size === 0) return;
+  
+  // Convert to array and sort descending
+  const indices = [...selectedIndices].sort((a, b) => b - a);
+  indices.forEach(idx => {
+      editableBoxes.splice(idx, 1);
+  });
+  
+  selectedIndices.clear();
   updateStats();
   syncTypeSelect();
   setDirty(true);
@@ -622,8 +706,10 @@ modeDrawBtn.onclick = () => setMode("draw");
 deleteBtn.onclick = deleteSelected;
 dedupBtn.onclick = () => runAutoDedup();
 typeSelect.onchange = () => {
-  if (selectedIndex !== null && editableBoxes[selectedIndex]) {
-    editableBoxes[selectedIndex].type = typeSelect.value;
+  if (selectedIndices.size > 0) {
+      selectedIndices.forEach(idx => {
+          if (editableBoxes[idx]) editableBoxes[idx].type = typeSelect.value;
+      });
   } else {
     currentType = typeSelect.value;
   }
@@ -635,6 +721,11 @@ function logProbe() {
   if (!currentPage || !probeEnable.checked) return;
   const probe = computeProbe();
   if (!probe) return;
+  
+  // Use first selected or null
+  const primaryIdx = (selectedIndices.size > 0) ? [...selectedIndices][0] : null;
+  const selectedBox = (primaryIdx !== null && editableBoxes[primaryIdx]) ? editableBoxes[primaryIdx].bbox : null;
+
   const payload = {
     page: currentPage.name,
     probe: {
@@ -646,7 +737,7 @@ function logProbe() {
       threshold: probe.threshold,
       source: probeUseSelected.checked ? "selected" : "manual",
     },
-    selected: selectedIndex !== null ? editableBoxes[selectedIndex]?.bbox : null,
+    selected: selectedBox,
   };
   fetch("/api/probe_log", {
     method: "POST",
@@ -704,8 +795,10 @@ function updateStats() {
 }
 
 function syncTypeSelect() {
-  if (selectedIndex !== null && editableBoxes[selectedIndex]) {
-    typeSelect.value = editableBoxes[selectedIndex].type || "barline";
+  // If mixed selection, maybe just show currentType or the first one
+  if (selectedIndices.size > 0) {
+    const idx = [...selectedIndices][0];
+    if (editableBoxes[idx]) typeSelect.value = editableBoxes[idx].type || "barline";
   } else {
     typeSelect.value = currentType;
   }
@@ -732,8 +825,10 @@ function computeProbe() {
   if (!image.complete) return null;
   let y1;
   let y2;
-  if (probeUseSelected.checked && selectedIndex !== null && editableBoxes[selectedIndex]) {
-    const box = editableBoxes[selectedIndex].bbox;
+  const primaryIdx = (selectedIndices.size > 0) ? [...selectedIndices][0] : null;
+  
+  if (probeUseSelected.checked && primaryIdx !== null && editableBoxes[primaryIdx]) {
+    const box = editableBoxes[primaryIdx].bbox;
     y1 = Math.round(Math.min(box[1], box[3]));
     y2 = Math.round(Math.max(box[1], box[3]));
   } else {
@@ -811,7 +906,7 @@ function runAutoDedup() {
 
   if (!toRemove.size) return;
   editableBoxes = editableBoxes.filter((_, idx) => !toRemove.has(idx));
-  selectedIndex = null;
+  selectedIndices.clear();
   updateStats();
   syncTypeSelect();
   setDirty(true);

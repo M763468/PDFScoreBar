@@ -691,3 +691,89 @@ Then perform the following checks in the browser:
 
 ### Automated Tests
 - Created `tests/test_gt_gui_server.py` to verify the server serves the updated JavaScript containing the new logic. Test passed.
+
+## 2026-01-06: Investigation of Double Barline GT
+
+### Objective
+Investigate how `double_barline` is currently annotated in the Ground Truth and how it impacts the CNN classifier training, following the user's observation that "detecting single lines is preferred".
+
+### Findings
+1.  **GT State**:
+    -   Verified on `Va_Prokofiev_Symphony1/page_006` and `page_015`.
+    -   Double barlines are annotated as **single wide bounding boxes** (approx 19-24px width) encompassing both lines.
+    -   Pixel intensity analysis confirmed **two distinct ink peaks** within these single boxes.
+2.  **Impact on CNN Pipeline**:
+    -   **TP Extraction**: `build_cnn_dataset.py` extracts these wide boxes as valid "Barline" samples. The CNN learns that "two parallel lines" is a valid Barline class.
+    -   **Candidate Matching Risk**: If the detector proposes individual lines (narrow boxes), they may have low IoU with the wide GT box. This could lead to:
+        -   Valid single lines being rejected as False Positives (if matching is strict).
+        -   The CNN being confused if it receives a "Single Line" crop (from detector) but was trained on "Double Line" crops (from GT) for that specific location.
+
+### Conclusion & Recommendation
+-   **Current Status**: Inconsistent with the "Line Detector" philosophy.
+-   **Future Action**: To support "single line detection followed by grouping", the GT data should be refactored to split `double_barline` boxes into two separate `barline` boxes.
+-   **Action Taken**: Investigation only. No code or data changes performed in this session.
+
+## 2026-01-06: Comprehensive Audit of Double Barline Annotations
+
+### Objective
+Verify if `double_barline` annotations consistently contain inner individual `barline` boxes across the entire dataset, to determine if the dataset supports "single line detection".
+
+### Methodology
+-   Script: `experiments/cnn_classifier/audit_double_barline_overlaps.py`
+-   Logic: For every `double_barline` (or similar special type), count how many normal `barline` boxes are spatially contained (>80% overlap) within it.
+
+### Findings
+The dataset is **inconsistent** regarding double barline representation:
+
+1.  **Duplicate Representation (Group + Individuals)**:
+    -   **Pattern**: A wide `double_barline` box covers the group, and 2 individual `barline` boxes exist inside it.
+    -   **Pages**: Mostly found in the **newly created Prokofiev GT (v20260106)**.
+        -   `Va_Prokofiev_Symphony1`: Pages `003`, `005`, `006`
+        -   `prokofiev5`: Pages `004`, `005`, `008`, `023`
+    -   **Implication**: These pages are ready for "single line detection" training if we simply exclude the `double_barline` class.
+
+2.  **Group-Only Representation (Lumped)**:
+    -   **Pattern**: Only the wide `double_barline` box exists. No individual lines are annotated inside.
+    -   **Pages**: Found in **older Training data** and some Prokofiev pages.
+        -   `training`: Pages `010`, `015` (Beethoven)
+        -   `Va_Prokofiev_Symphony1`: Pages `001`, `002`, `004`
+        -   `prokofiev5`: Page `009`
+    -   **Implication**: These pages **cannot** be used for "single line detection" training as is. The CNN would learn "wide block" as TP, and single line candidates would likely be rejected (low IoU).
+
+### Action Items
+-   **Data Cleanup**: To unify the pipeline, "Group-Only" annotations should be split into individual barlines.
+-   **Training Filter**: Once split, the training data builder should be configured to ignore the `double_barline` class (using only the `barline` class) to force the model to learn single line appearance.
+
+###　追加メモ　目視でGTのミスを見つけたところ
+- prokofiev1 page4 一番上の段の右はじ
+- prkofiev5 page2 一番下の列の4/4で線が抜けてる？
+- prokofiev5 page3 上から二段目と下から五段目にGTのミスあり
+
+- prokofiev5 page13 roiが狭くて数字見切れ
+
+## Next Session Plan
+
+### 1. Fix Double Barline Annotations
+-   **Goal**: Standardize double barline annotations to support "single line detection".
+-   **Target**: Pages with "Lumped Only" annotations (e.g., `Va_Prokofiev_Symphony1/page_004`, `prokofiev5/page_009`).
+-   **Action**: Use the GT Editor to manually split wide `double_barline` boxes into two individual `barline` boxes.
+-   **Config**: The updated `evaluation2_config.json` includes these pages pointing to their existing GT files.
+
+### 2. Create GT for Shostakovich & Sibelius
+-   **Goal**: Expand the Ground Truth dataset to include new scores.
+-   **Target**:
+    -   `Shosrakovich-Sym5-Va`
+    -   `Shostakovich-Festival_Overture_Va`
+    -   `Sibelius-Violin_Concerto-Viola`
+-   **Action**: Use the GT Editor to verify and correct candidate boxes.
+    -   **Source**: `pipeline1_baseline_filtered.json` (Hybrid Baseline + Heuristics).
+-   **Config**: The updated `evaluation2_config.json` includes these pages.
+
+### Ready to Start
+Run the GT Editor with the comprehensive config:
+```bash
+python3 tools/gt_relabel_gui/server.py \
+  --mode gt \
+  --config tools/gt_relabel_gui/evaluation2_config.json \
+  --port 8010
+```

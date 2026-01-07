@@ -66,7 +66,9 @@ def process_page(work_name, page_num, image_path, barline_path, mask_root, outpu
         "--notehead-mask", str(notehead_mask),
         "--image", str(image_path),
         "--output-overrides", str(overrides_json),
-        "--vertical-margin", "80",
+        "--vertical-margin-check", "10",
+        "--vertical-margin-ocr", "80",
+        "--threshold", "150",
         "--erode-iter", "1"
     ]
     if not run_command(cmd_2, "Generate Overrides"): return

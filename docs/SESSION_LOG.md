@@ -483,3 +483,75 @@ Logic to identify potential multi-measure rests by finding measures with low not
 **2. Practice Number Confusion**:
 - OCR sometimes picks up rehearsal/practice numbers (often located near the start of a measure or above the staff) and treats them as multi-measure rest counts.
 - *Proposed Fix*: Implement spatial filtering to prioritize digits located near the **horizontal center** of the measure, which is the standard placement for multi-measure rest numbers.
+
+---
+
+## 2026-01-07 Multi-Measure Rest Logic Improvements (ROI & Spatial Filter)
+
+**Goal**: Address top-edge cutoff of large numbers and confusion with rehearsal marks.
+
+### Actions Taken
+1.  **ROI Vertical Expansion**: Upward margin increased to `80px` to capture large numbers.
+2.  **Spatial Filtering**: Implemented logic to reject OCR text centered more than 35% away from the ROI horizontal center (effectively filters out left-aligned rehearsal marks).
+
+## 2026-01-07 Structural Solution: H-Bar Detection & Hybrid ROI
+
+**Goal**: Implement a robust structural filter to distinguish multi-measure rests from other musical elements, addressing the failure of simple parameter tuning.
+
+### Strategic Pivot
+Parameter tuning proved insufficient because:
+-   **Assumption Error**: "Numbers are inside the staff" is incorrect; they often sit high above.
+-   **Noise Sensitivity**: Naive density thresholds (empty measure check) fail on dirty scores.
+
+### Implementation: Structural H-Bar Filter
+Instead of relying solely on "emptiness", the system now enforces a **Physical Shape Requirement**.
+
+1.  **H-Bar Detection Algorithm (`detect_hbar`)**:
+    *   **Preprocessing**: Binarizes the ROI using Otsu's method (inverted).
+    *   **Morphological Search**: Applies `cv2.morphologyEx` with `MORPH_OPEN` using a **Horizontal Rectangle Kernel**.
+    *   **Kernel Geometry**: Width is dynamic: `k_width = max(15, int(measure_width * 0.3))`. (30% of measure width ensures it catches the characteristic heavy horizontal bar).
+    *   **Verification**: Counts non-zero pixels in the resulting "lines only" image. A threshold of `> 20 pixels` is used to confirm a significant H-bar presence.
+    *   **Impact**: Non-rest measures (e.g., rehearsal marks with no rest, or normal notes with no beams) are rejected before OCR.
+
+2.  **Hybrid ROI Strategy (Separation of Concerns)**:
+Recognizing that detection and extraction have different spatial requirements:
+    *   **Detection ROI (Strict)**: Uses a **10px vertical margin**. This focuses the Density check and H-Bar detection on the **staff area**. This prevents capturing noteheads or text from adjacent staves, solving the "M17 False Jump" issue.
+    *   **Extraction ROI (Relaxed)**: Uses an **80px vertical margin**. This is used *only* for OCR *after* the structural check has passed. It ensures that large rest numbers sitting high above the staff are fully captured without including noise from neighboring rows.
+
+3.  **Refined Parameters**:
+    *   **Threshold**: `150` (Relaxed density check allowed by the H-Bar safety net).
+    *   **Spatial Filter**: `20%` (Text center must be within central 40% of measure width).
+
+## 2026-01-07 Refinement of Structural Solution (v4)
+
+**Goal**: Fix persistent OCR failures (missing thin numbers) and Rehearsal Mark false positives (offset numbers).
+
+### Feedback Analysis
+-   **Prokofiev 1 P3 M7 (Missed 3)**: OCR returned `NO TEXT`. The number "3" was too thin or fragmented for detection.
+-   **Prokofiev 5 P8 M63 (False 38)**: OCR detected "38" (Rehearsal Mark). It passed the previous 20% spatial filter (13% offset).
+-   **Prokofiev 5 P9 M63 (Missed 7)**: OCR returned garbage.
+
+### Implementation Refinements
+1.  **Preprocessing**:
+    *   **Removed Denoising** (`MORPH_OPEN`): It was erasing thin numbers like "3" and "7".
+    *   **Added Dilation**: `cv2.dilate` (kernel 2x2, iter=1) to thicken text characters before OCR. This successfully recovered the "3" in P1/P3/M7.
+2.  **Spatial Filter**:
+    *   **Tightened to 10%**: Changed deviation limit from 20% to **10%** (0.10).
+    *   **Result**: P5/P8/M63 ("38") was rejected (offset 13% > 10%). Valid rest numbers (usually <5% offset) should still pass.
+
+## 2026-01-07 Current Investigation: Performance Analysis & Failure Root Causes
+
+**Context**: User reports that accuracy is still insufficient and many errors remain. Diminishing returns from parameter tuning.
+
+### Remaining Issues (Reported)
+-   **Prokofiev 1**: Page 3 M7 (Missed 3), Page 4 M204 (Missed 2), M207, M210, Page 5 M34, M36, Page 6 M86.
+-   **Prokofiev 5**: Page 1 M1, M6, Page 2 M26, M27, M28, M29, Page 8 M101 (Jump to 38?), Page 9 M63 (Missed 7), Page 17 M1.
+
+### Planned Investigation Strategy
+1.  **Visual ROI Audit**: Extract and save ROI images (H-Bar check area vs. OCR area) for every failed measure to identify why structural filters or OCR are failing.
+2.  **Failure Classification**:
+    -   **H-Bar FN**: Real rest, but H-bar not detected (too thin? skewed?).
+    -   **OCR FN**: H-bar detected, but number not read (too faint? too large? misread as letters?).
+    -   **Spatial Filter FP/FN**: Valid numbers rejected as off-center, or rehearsal marks accepted as centered.
+    -   **Density FN**: Notehead mask contains too much noise, causing measure to be skipped.
+3.  **Enhanced Filtering**: Consider bracket detection `[]` to exclude rehearsal marks.

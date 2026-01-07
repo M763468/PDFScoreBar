@@ -5,7 +5,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_002.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_002/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_002/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_002/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_002/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -13,7 +13,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_003.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_003/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_003/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_003/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_003/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -21,7 +21,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_004.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_004/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_004/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_004/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_004/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -29,7 +29,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_005.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_005/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_005/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_005/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_005/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -37,7 +37,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_006.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_006/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_006/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_006/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_006/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -45,7 +45,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_007.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_007/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_007/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_007/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_007/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -53,7 +53,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_008.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_008/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_008/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_008/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_008/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -61,7 +61,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_009.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_009/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_009/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_009/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_009/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -69,7 +69,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_010.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_010/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_010/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_010/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_010/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -77,7 +77,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_012.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_012/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_012/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_012/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_012/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -85,7 +85,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_013.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_013/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_013/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_013/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_013/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -93,7 +93,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_014.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_014/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_014/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_014/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_014/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -101,7 +101,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_015.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_015/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_015/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_015/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_015/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -109,7 +109,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_016.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_016/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_016/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_016/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_016/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -117,7 +117,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_018.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_018/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_018/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_018/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_018/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -125,7 +125,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_019.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_019/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_019/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_019/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_019/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -133,7 +133,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_020.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_020/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_020/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_020/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_020/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -141,7 +141,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_021.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_021/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_021/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_021/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_021/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -149,7 +149,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_022.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_022/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_022/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_022/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_022/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -157,7 +157,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_024.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_024/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_024/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_024/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_024/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -165,7 +165,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_025.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_025/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_025/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_025/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_025/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -173,7 +173,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_001.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_001/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_001/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shostakovich-Festival_Overture_Va_page_001/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_001/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -181,7 +181,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_002.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_002/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_002/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shostakovich-Festival_Overture_Va_page_002/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_002/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -189,7 +189,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_003.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_003/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_003/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shostakovich-Festival_Overture_Va_page_003/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_003/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -197,7 +197,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_004.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_004/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_004/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shostakovich-Festival_Overture_Va_page_004/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_004/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -205,7 +205,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_005.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_005/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_005/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shostakovich-Festival_Overture_Va_page_005/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_005/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -213,7 +213,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_006.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_006/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_006/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shostakovich-Festival_Overture_Va_page_006/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_006/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -221,7 +221,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_007.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_007/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_007/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shostakovich-Festival_Overture_Va_page_007/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_007/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -229,7 +229,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_008.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_008/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_008/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shostakovich-Festival_Overture_Va_page_008/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_008/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -237,7 +237,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_009.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_009/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_009/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Shostakovich-Festival_Overture_Va_page_009/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_009/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -245,7 +245,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_001.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_001/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_001/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Sibelius-Violin_Concerto-Viola_page_001/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_001/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -253,7 +253,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_002.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_002/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_002/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Sibelius-Violin_Concerto-Viola_page_002/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_002/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -261,7 +261,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_003.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_003/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_003/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Sibelius-Violin_Concerto-Viola_page_003/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_003/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -269,7 +269,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_004.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_004/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_004/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Sibelius-Violin_Concerto-Viola_page_004/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_004/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -277,7 +277,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_005.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_005/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_005/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Sibelius-Violin_Concerto-Viola_page_005/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_005/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -285,7 +285,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_006.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_006/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_006/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Sibelius-Violin_Concerto-Viola_page_006/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_006/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -293,7 +293,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_007.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_007/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_007/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Sibelius-Violin_Concerto-Viola_page_007/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_007/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -301,7 +301,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_008.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_008/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_008/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Sibelius-Violin_Concerto-Viola_page_008/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_008/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -309,7 +309,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_009.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_009/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_009/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Sibelius-Violin_Concerto-Viola_page_009/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_009/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -317,7 +317,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_010.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_010/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_010/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_Sibelius-Violin_Concerto-Viola_page_010/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_010/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -373,7 +373,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev1/page_001.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_001/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_001/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_prokofiev1_page_001/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_001/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -381,7 +381,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev1/page_002.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_002/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_002/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_prokofiev1_page_002/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_002/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -389,7 +389,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev1/page_003.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_003/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_003/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_prokofiev1_page_003/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_003/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -397,7 +397,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev1/page_004.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_004/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_004/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_prokofiev1_page_004/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_004/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -405,7 +405,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev1/page_005.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_005/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_005/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_prokofiev1_page_005/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_005/boxes_sorted.json",
       "y_threshold": 50
     },
     {
@@ -413,7 +413,7 @@
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev1/page_006.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_006/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_006/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/logs/hybrid_generalization/eval2_prokofiev1_page_006/pipeline1_baseline_filtered.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_006/boxes_sorted.json",
       "y_threshold": 50
     },
     {

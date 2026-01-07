@@ -744,10 +744,10 @@ The dataset is **inconsistent** regarding double barline representation:
 -   **Data Cleanup**: To unify the pipeline, "Group-Only" annotations should be split into individual barlines.
 -   **Training Filter**: Once split, the training data builder should be configured to ignore the `double_barline` class (using only the `barline` class) to force the model to learn single line appearance.
 
-###　追加メモ　目視でGTのミスを見つけたところ
+###　追加メモ　目視でGTのミスを見つけたところ→1/7に対応済み
 - prokofiev1 page4 一番上の段の右はじ
-- prkofiev5 page2 一番下の列の4/4で線が抜けてる？
-- prokofiev5 page3 上から二段目と下から五段目にGTのミスあり
+- prkofiev5 page2 一番下の列の4/4で線が抜けてる　一番上の段のナチュラルの前
+- prokofiev5 page3 上から二段目右端と下から五段目にGTのミスあり
 
 - prokofiev5 page13 roiが狭くて数字見切れ
 

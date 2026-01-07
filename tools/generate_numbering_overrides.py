@@ -206,17 +206,28 @@ def main():
                             for res in ocr_result:
                                 box = res[0] # [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
                                 text = res[1]
+                                score = res[2]
                                 
-                                # Calculate text center X
+                                # Calculate text center
                                 xs = [p[0] for p in box]
+                                ys = [p[1] for p in box]
                                 text_center_x = sum(xs) / len(xs)
+                                text_center_y = sum(ys) / len(ys)
                                 
-                                # Check distance from center (allow 10% deviation)
+                                # 1. Y-Check: Text must be inside or below the staff top line
+                                # ROI starts at y1 - margin_ocr. Staff top is at relative y = margin_ocr.
+                                # Allow a small tolerance (e.g. 5px above) if needed, but strict is safer.
+                                staff_top_y = args.vertical_margin_ocr
+                                is_inside_staff = text_center_y >= (staff_top_y - 5)
+                                
+                                # 2. Spatial Filter: Check distance from center (allow 30% deviation)
                                 dist = abs(text_center_x - center_x)
-                                if dist < (roi_w * 0.10):
+                                is_centered = dist < (roi_w * 0.30)
+                                
+                                if is_centered and is_inside_staff:
                                     valid_texts.append(text)
                                 else:
-                                    print(f"    [IGNORE] Text '{text}' too far from center (dist={dist:.1f}, limit={roi_w*0.10:.1f})")
+                                    print(f"    [IGNORE] Text '{text}' rejected: dist={dist:.1f} (limit={roi_w*0.30:.1f}), Y={text_center_y:.1f} (StaffTop={staff_top_y})")
 
                             if valid_texts:
                                 # Combine filtered text

@@ -555,3 +555,64 @@ Recognizing that detection and extraction have different spatial requirements:
     -   **Spatial Filter FP/FN**: Valid numbers rejected as off-center, or rehearsal marks accepted as centered.
     -   **Density FN**: Notehead mask contains too much noise, causing measure to be skipped.
 3.  **Enhanced Filtering**: Consider bracket detection `[]` to exclude rehearsal marks.
+
+# Session Log: Investigation of Numbering Failures (2026-01-08)
+
+**Context**: Following the implementation of H-Bar detection and Hybrid ROI (v5), significant errors persist. This session focuses on gathering visual evidence and analyzing root causes without applying immediate code fixes.
+
+## 1. Visual Evidence Extraction
+
+**Goal**: Generate cropped images for reported failure locations to visualize what the OCR and Structural Filters are "seeing".
+
+**Action**:
+- Created `tools/export_failure_crops.py`.
+- Features:
+    - Extracts `Context Crop` (200px padding) to see surroundings (rehearsal marks, layout).
+    - Extracts `OCR ROI` (80px vertical margin) to see the exact input to RapidOCR.
+    - Extracts `Mask ROI` to see the notehead density mask.
+- Executed on reported targets in Prokofiev 1 and 5.
+- Output Directory: `logs/experiments/failure_crops_20260108/`
+
+## 2. Failure Analysis & Categorization
+
+Based on the debug logs and visual audit logic, failure modes are categorized as follows:
+
+### A. Structural Filter Collisions (H-Bar False Positives)
+*   **Issue**: Non-rest elements are being detected as H-Bars.
+*   **Example**: Prokofiev 5 Page 8 M63.
+    *   **Observation**: A Rehearsal Mark `[38]` was identified as a 38-bar rest.
+    *   **Cause**: The top/bottom lines of the box bracket `[]` or the beam of a note are being detected as a "thick horizontal line" by the current morphological kernel (`width * 0.3`). The 10px density check failed to exclude it (likely low notehead density if it's just a cue/rehearsal).
+*   **Example**: Prokofiev 1 Page 1 M17.
+    *   **Observation**: Normal measures with beams are flagged as having H-Bars.
+
+### B. OCR Hallucination & Sensitivity (False Negatives/Positives)
+*   **Issue**: RapidOCR fails on thin fonts or misreads noise.
+*   **Example**: Prokofiev 1 Page 3 M7.
+    *   **Observation**: The number "3" was missed (`NO TEXT`) or misread as `I` or `L`.
+    *   **Partial Fix**: Adding `Dilation` (v5) helped, but it is fragile.
+*   **Example**: Prokofiev 5 Page 9 M63.
+    *   **Observation**: OCR read "47" (offset Rehearsal Mark) but missed the "7" (Rest count).
+
+### C. Logical & Layout Issues
+*   **Issue**: Discrepancy between "Visual Measure Index" and "Logical Number".
+*   **Example**: Prokofiev 1 Page 4 M204.
+    *   **Cause**: The user counts global measures (204), but the tool resets numbering per page (M1..M100). This makes debugging specific measures difficult without a translation layer.
+
+## 3. Proposed Countermeasures (Draft)
+
+To move beyond parameter tuning, we need **Semantic Feature Extraction**:
+
+1.  **Advanced H-Bar Validation (Vertical Isolation)**:
+    *   True rest H-bars are floating. They do not intersect with vertical stems.
+    *   **Logic**: Check for vertical lines crossing the detected H-bar. If crossings exist -> It is a Beam -> Reject.
+
+2.  **Rehearsal Mark Classifier**:
+    *   Rehearsal marks have distinct features: Box `[]`, Circle, or specific position (Left/Top).
+    *   **Logic**: Detect box contours. If text is inside a box -> Rehearsal Mark -> Reject.
+
+3.  **Multi-Hypothesis OCR**:
+    *   Run OCR with multiple preprocessing settings (Normal, Dilated, Eroded) and ensemble the results to catch thin numbers without bloating bold ones.
+
+## 4. Next Steps
+-   Implement `tools/detect_hbar_refined.py` to test "Vertical Isolation" logic on the exported failure crops.
+-   Do not modify the main pipeline until the new H-bar logic is proven on the bad crops.

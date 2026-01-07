@@ -213,14 +213,22 @@ def main():
                                         score = res[2]
                                         
                                         xs = [p[0] for p in box]
+                                        ys = [p[1] for p in box]
                                         text_center_x = sum(xs) / len(xs)
+                                        text_center_y = sum(ys) / len(ys)
+                                        
+                                        # Y-Center Check (Relative to Staff Top)
+                                        # ROI starts at y1 - margin_ocr.
+                                        # Staff top is at y = margin_ocr.
+                                        staff_top_y = args.vertical_margin_ocr
+                                        is_inside_staff = text_center_y >= staff_top_y
                                         
                                         # Check distance from center (allow 10% deviation)
                                         dist = abs(text_center_x - center_x)
                                         is_centered = dist < (roi_w * 0.10)
                                         
                                         if force_check:
-                                            print(f"    [OCR] '{text}' score={score:.2f} dist={dist:.1f}/{roi_w*0.10:.1f} centered={is_centered}")
+                                            print(f"    [OCR] '{text}' score={score:.2f} dist={dist:.1f} Y={text_center_y:.1f} (StaffTop={staff_top_y}) Inside={is_inside_staff}")
                                         
                                         if is_centered:
                                             valid_texts.append(text)

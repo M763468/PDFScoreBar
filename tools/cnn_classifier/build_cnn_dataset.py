@@ -287,6 +287,361 @@ def extract_local_tp_fp(
     return tp_count, fp_count
 
 
+def find_latest_gt(page_dir: Path) -> Path | None:
+    preferred = page_dir / "boxes_sorted_v20260106.json"
+    if preferred.exists():
+        return preferred
+    fallback = page_dir / "boxes_sorted.json"
+    if fallback.exists():
+        return fallback
+    return None
+
+
+def load_eval2_pages(annotations_root: Path):
+    pages = []
+    for score_dir in sorted(annotations_root.iterdir()):
+        if not score_dir.is_dir():
+            continue
+        for page_dir in sorted(score_dir.iterdir()):
+            if not page_dir.is_dir():
+                continue
+            gt_path = find_latest_gt(page_dir)
+            if not gt_path:
+                continue
+            pages.append(
+                {
+                    "score": score_dir.name,
+                    "page": page_dir.name,
+                    "gt": gt_path,
+                }
+            )
+    return pages
+
+
+def extract_eval2_tp_fp(
+    repo_root,
+    output_root,
+    crop_w,
+    crop_h,
+    iou_threshold,
+    crop_scale,
+    min_crop_h,
+    max_crop_h,
+    annotations_root,
+    images_root,
+    candidates_root,
+    candidate_filename,
+):
+    tp_dir = output_root / "eval2" / "tp"
+    fp_dir = output_root / "eval2" / "fp"
+    tp_dir.mkdir(parents=True, exist_ok=True)
+    fp_dir.mkdir(parents=True, exist_ok=True)
+
+    scale = crop_scale
+    aspect_ratio = crop_w / crop_h
+    min_h = min_crop_h
+    max_h = max_crop_h
+    min_w = max(16, int(round(min_h * aspect_ratio)))
+    max_w = max(32, int(round(max_h * aspect_ratio)))
+
+    tp_count = 0
+    fp_count = 0
+    pages = load_eval2_pages(annotations_root)
+    for page in pages:
+        score = page["score"]
+        page_name = page["page"]
+        image_path = images_root / score / f"{page_name}.png"
+        if not image_path.exists():
+            print(f"Warning: eval2 image not found: {image_path}")
+            continue
+        img = cv2.imread(str(image_path))
+        if img is None:
+            print(f"Warning: eval2 image failed to load: {image_path}")
+            continue
+        with page["gt"].open("r") as f:
+            gt_data = json.load(f)
+        try:
+            gt_boxes = normalize_gt_boxes(gt_data)
+        except ValueError as exc:
+            print(f"Warning: {page['gt']} - {exc}")
+            continue
+
+        for i, box in enumerate(
+            tqdm(gt_boxes, desc=f"{score}/{page_name} GT", leave=False)
+        ):
+            x1, y1, x2, y2 = box
+            cx = int(round((x1 + x2) / 2))
+            cy = int(round((y1 + y2) / 2))
+            local_w, local_h = crop_size_from_bbox(
+                box,
+                scale,
+                aspect_ratio,
+                min_h,
+                max_h,
+                min_w,
+                max_w,
+            )
+            crop = center_crop(img, cx, cy, local_w, local_h)
+            save_path = tp_dir / f"{score}_{page_name}_tp_{i:05d}.png"
+            cv2.imwrite(str(save_path), crop)
+            tp_count += 1
+
+        run_dir = candidates_root / f"eval2_{score}_{page_name}"
+        cand_path = run_dir / candidate_filename
+        if not cand_path.exists():
+            print(f"Warning: eval2 candidate file not found: {cand_path}")
+            continue
+
+        with cand_path.open("r") as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            candidates = data
+        elif isinstance(data, dict) and "scores" in data:
+            candidates = [item["bbox"] for item in data["scores"]]
+        else:
+            print(f"Unknown JSON format in {cand_path}")
+            candidates = []
+
+        fp_candidates = []
+        for raw_cand in candidates:
+            cand = [x * 1.0 for x in raw_cand]
+            is_match = False
+            for gt_box in gt_boxes:
+                iou = barline_iou(gt_box, cand)
+                if iou > iou_threshold:
+                    is_match = True
+                    break
+            if not is_match:
+                fp_candidates.append(cand)
+
+        for idx, box in enumerate(
+            tqdm(fp_candidates, desc=f"{score}/{page_name} FP", leave=False)
+        ):
+            x1, y1, x2, y2 = box
+            cx = int(round((x1 + x2) / 2))
+            cy = int(round((y1 + y2) / 2))
+            local_w, local_h = crop_size_from_bbox(
+                box,
+                scale,
+                aspect_ratio,
+                min_h,
+                max_h,
+                min_w,
+                max_w,
+            )
+            crop = center_crop(img, cx, cy, local_w, local_h)
+            save_path = fp_dir / f"{score}_{page_name}_fp_{idx:05d}.png"
+            cv2.imwrite(str(save_path), crop)
+            fp_count += 1
+
+    return tp_count, fp_count
+
+
+def normalize_gt_boxes(gt_data):
+    if isinstance(gt_data, list):
+        if not gt_data:
+            return []
+        first = gt_data[0]
+        if isinstance(first, dict):
+            if "barline_location" in first:
+                return [entry["barline_location"] for entry in gt_data]
+            if "bbox" in first:
+                return [entry["bbox"] for entry in gt_data]
+        if isinstance(first, (list, tuple)) and len(first) == 4:
+            return gt_data
+    if isinstance(gt_data, dict):
+        if "boxes" in gt_data:
+            return gt_data["boxes"]
+        if "annotations" in gt_data:
+            return [
+                entry["barline_location"]
+                for entry in gt_data["annotations"]
+                if "barline_location" in entry
+            ]
+    raise ValueError("Unknown GT format for evaluation2")
+
+
+def load_staff_boxes_by_filename(ds_root: Path):
+    staff_map = {}
+    for split_name in ("deepscores_train.json", "deepscores_test.json"):
+        json_path = ds_root / split_name
+        if not json_path.exists():
+            continue
+        with json_path.open("r") as f:
+            data = json.load(f)
+        staff_ids = {
+            cid for cid, c in data.get("categories", {}).items() if c.get("name") == "staff"
+        }
+        if not staff_ids:
+            continue
+        images = {str(img["id"]): img for img in data.get("images", [])}
+        annotations = data.get("annotations", {})
+        for img_id, img in images.items():
+            ann_ids = img.get("ann_ids", [])
+            staff_boxes = []
+            for ann_id in ann_ids:
+                ann = annotations.get(str(ann_id))
+                if not ann:
+                    continue
+                cat_ids = ann.get("cat_id", [])
+                if any(cid in staff_ids for cid in cat_ids):
+                    x1, y1, x2, y2 = ann["a_bbox"]
+                    staff_boxes.append(
+                        (int(round(x1)), int(round(y1)), int(round(x2)), int(round(y2)))
+                    )
+            if staff_boxes:
+                staff_map[img["filename"]] = staff_boxes
+    return staff_map
+
+
+def expand_boxes_to_staff_boxes(boxes, staff_boxes, img_h):
+    if not staff_boxes:
+        return list(boxes)
+    staff_centers = [(y1 + y2) / 2.0 for _, y1, _, y2 in staff_boxes]
+    expanded = []
+    for x1, y1, x2, y2 in boxes:
+        cy = (y1 + y2) / 2.0
+        best_idx = None
+        for idx, (_, sy1, _, sy2) in enumerate(staff_boxes):
+            if sy1 <= cy <= sy2:
+                best_idx = idx
+                break
+        if best_idx is None:
+            dists = [abs(cy - c) for c in staff_centers]
+            best_idx = int(np.argmin(dists))
+        _, sy1, _, sy2 = staff_boxes[best_idx]
+        sy1 = max(0, sy1)
+        sy2 = min(img_h - 1, sy2)
+        expanded.append((x1, sy1, x2, sy2))
+    return expanded
+
+
+def extract_deepscores_probe_fp(
+    ds_root,
+    output_root,
+    crop_w,
+    crop_h,
+    iou_threshold,
+    crop_scale,
+    min_crop_h,
+    max_crop_h,
+    tp_palette_index,
+    tp_min_area,
+    tp_min_height,
+    max_total,
+    seg_offset,
+    seg_count,
+):
+    from tools.run_gt_rebuild_hybrid_eval import detect_probe_scan
+
+    fp_dir = output_root / "deepscores_probe" / "fp"
+    fp_dir.mkdir(parents=True, exist_ok=True)
+
+    existing = len(list(fp_dir.glob("*.png")))
+    if max_total is not None and existing >= max_total:
+        return existing
+
+    scale = crop_scale
+    aspect_ratio = crop_w / crop_h
+    min_h = min_crop_h
+    max_h = max_crop_h
+    min_w = max(16, int(round(min_h * aspect_ratio)))
+    max_w = max(32, int(round(max_h * aspect_ratio)))
+
+    seg_root = ds_root / "segmentation"
+    img_root = ds_root / "images"
+    seg_files = sorted(seg_root.glob("*_seg.png"))
+    if seg_offset:
+        seg_files = seg_files[seg_offset:]
+    if seg_count:
+        seg_files = seg_files[:seg_count]
+
+    staff_boxes_by_name = load_staff_boxes_by_filename(ds_root)
+
+    total = existing
+    for seg_path in tqdm(seg_files, desc="DeepScores probe FP"):
+        if max_total is not None and total >= max_total:
+            break
+        seg_np = load_palette_index(seg_path)
+        mask = (seg_np == tp_palette_index).astype(np.uint8) * 255
+        comps = find_components(mask)
+        tp_boxes = []
+        for comp in comps:
+            if comp["area"] < tp_min_area:
+                continue
+            if comp["h"] < tp_min_height:
+                continue
+            x1, y1, x2, y2 = comp["bbox"]
+            tp_boxes.append((x1, y1, x2, y2))
+        if not tp_boxes:
+            continue
+
+        image_name = seg_path.name.replace("_seg.png", ".png")
+        image_path = img_root / image_name
+        img = cv2.imread(str(image_path))
+        if img is None:
+            continue
+
+        staff_boxes = staff_boxes_by_name.get(image_name)
+        if not staff_boxes:
+            continue
+
+        staff_mask = np.zeros(img.shape[:2], dtype=np.uint8)
+        candidates = detect_probe_scan(
+            base_img=img,
+            staff_mask=staff_mask,
+            existing_boxes=tp_boxes,
+            band_source="row_stats",
+            scan_x_peak_rescue=True,
+            scan_rightmost_rescue=True,
+            divisi_rescue=True,
+            scan_x_peak_rescue_mode="topbottom",
+            probe_width=4,
+            ink_threshold=200,
+            min_ratio=0.50,
+            scan_center_on_peak=True,
+            scan_x_peak_ratio_min=0.0,
+            scan_rightmost_min_ratio=0.10,
+            max_per_band=0,
+        )
+
+        tp_boxes = expand_boxes_to_staff_boxes(tp_boxes, staff_boxes, img.shape[0])
+        candidates = expand_boxes_to_staff_boxes(candidates, staff_boxes, img.shape[0])
+
+        fp_boxes = []
+        for cand in candidates:
+            is_match = False
+            for gt_box in tp_boxes:
+                iou = barline_iou(gt_box, cand)
+                if iou > iou_threshold:
+                    is_match = True
+                    break
+            if not is_match:
+                fp_boxes.append(cand)
+
+        for idx, box in enumerate(fp_boxes):
+            if max_total is not None and total >= max_total:
+                break
+            x1, y1, x2, y2 = box
+            cx = int(round((x1 + x2) / 2))
+            cy = int(round((y1 + y2) / 2))
+            local_w, local_h = crop_size_from_bbox(
+                box,
+                scale,
+                aspect_ratio,
+                min_h,
+                max_h,
+                min_w,
+                max_w,
+            )
+            crop = center_crop(img, cx, cy, local_w, local_h)
+            save_path = fp_dir / f"{seg_path.stem}_fp_{idx:05d}.png"
+            if not save_path.exists():
+                cv2.imwrite(str(save_path), crop)
+                total += 1
+
+    return total
+
 def category_matches(name, prefixes, names):
     if name in names:
         return True
@@ -428,8 +783,11 @@ def build_samples(output_root):
     samples = []
     local_tp = sorted((output_root / "local" / "tp").glob("*.png"))
     local_fp = sorted((output_root / "local" / "fp").glob("*.png"))
+    eval2_tp = sorted((output_root / "eval2" / "tp").glob("*.png"))
+    eval2_fp = sorted((output_root / "eval2" / "fp").glob("*.png"))
     ds_fp = sorted((output_root / "deepscores" / "fp").glob("*.png"))
     ds_tp = sorted((output_root / "deepscores" / "tp").glob("*.png"))
+    ds_probe_fp = sorted((output_root / "deepscores_probe" / "fp").glob("*.png"))
 
     for path in local_tp:
         group = path.name.split("_tp_")[0]
@@ -441,11 +799,27 @@ def build_samples(output_root):
         samples.append(
             {"path": path, "label": 0, "source": "local", "group": group}
         )
+    for path in eval2_tp:
+        group = path.name.split("_tp_")[0]
+        samples.append(
+            {"path": path, "label": 1, "source": "eval2", "group": group}
+        )
+    for path in eval2_fp:
+        group = path.name.split("_fp_")[0]
+        samples.append(
+            {"path": path, "label": 0, "source": "eval2", "group": group}
+        )
     for path in ds_fp:
         parts = path.stem.split("_")
         group = parts[2] if len(parts) > 2 else path.stem
         samples.append(
             {"path": path, "label": 0, "source": "deepscores", "group": group}
+        )
+    for path in ds_probe_fp:
+        parts = path.stem.split("_")
+        group = parts[2] if len(parts) > 2 else path.stem
+        samples.append(
+            {"path": path, "label": 0, "source": "deepscores_probe", "group": group}
         )
     for path in ds_tp:
         parts = path.stem.split("_")
@@ -589,9 +963,15 @@ def main():
     parser.add_argument("--max-per-image", type=int, default=5)
     parser.add_argument("--max-total", type=int, default=10000)
     parser.add_argument("--skip-local", action="store_true", help="Skip local TP/FP extraction.")
+    parser.add_argument("--skip-eval2", action="store_true", help="Skip evaluation2 TP/FP extraction.")
     parser.add_argument("--skip-deepscores", action="store_true", help="Skip DeepScores extraction (TP+FP).")
     parser.add_argument("--skip-deepscores-fp", action="store_true", help="Skip DeepScores FP extraction.")
     parser.add_argument("--skip-deepscores-tp", action="store_true", help="Skip DeepScores TP extraction.")
+    parser.add_argument(
+        "--deepscores-probe-fp",
+        action="store_true",
+        help="Add DeepScores probe-scan FP extraction (hard negatives).",
+    )
     parser.add_argument("--only-split", action="store_true", help="Only (re)build splits/metadata.")
     parser.add_argument(
         "--neg-prefix",
@@ -615,6 +995,44 @@ def main():
     parser.add_argument("--tp-max-total", type=int, default=None)
     parser.add_argument("--tp-seg-offset", type=int, default=0)
     parser.add_argument("--tp-seg-count", type=int, default=0)
+    parser.add_argument(
+        "--eval2-annotations-root",
+        type=Path,
+        default=Path("data/evaluation2/annotations"),
+    )
+    parser.add_argument(
+        "--eval2-images-root",
+        type=Path,
+        default=Path("data/evaluation2/images"),
+    )
+    parser.add_argument(
+        "--eval2-candidates-root",
+        type=Path,
+        default=Path("logs/hybrid_generalization"),
+    )
+    parser.add_argument(
+        "--eval2-candidate-file",
+        type=str,
+        default="expanded_candidates_nopeak.json",
+    )
+    parser.add_argument(
+        "--deepscores-probe-max-total",
+        type=int,
+        default=None,
+        help="Max total crops for DeepScores probe-scan FP extraction.",
+    )
+    parser.add_argument(
+        "--deepscores-probe-seg-offset",
+        type=int,
+        default=0,
+        help="Segmentation offset for DeepScores probe FP scan.",
+    )
+    parser.add_argument(
+        "--deepscores-probe-seg-count",
+        type=int,
+        default=0,
+        help="Segmentation count for DeepScores probe FP scan.",
+    )
 
     args = parser.parse_args()
     output_root = Path(args.output_root)
@@ -635,6 +1053,22 @@ def main():
                 candidate_filename=args.fp_source_file,
             )
             print(f"Local crops: TP={tp_count}, FP={fp_count}")
+        if not args.skip_eval2:
+            tp_count, fp_count = extract_eval2_tp_fp(
+                repo_root,
+                output_root,
+                args.crop_width,
+                args.crop_height,
+                args.iou_threshold,
+                args.crop_scale,
+                args.min_crop_height,
+                args.max_crop_height,
+                repo_root / args.eval2_annotations_root,
+                repo_root / args.eval2_images_root,
+                repo_root / args.eval2_candidates_root,
+                args.eval2_candidate_file,
+            )
+            print(f"Eval2 crops: TP={tp_count}, FP={fp_count}")
         if not args.skip_deepscores and not args.skip_deepscores_fp:
             ds_count = extract_deepscores_negatives(
                 Path(args.deepscores_root),
@@ -663,6 +1097,24 @@ def main():
                 args.tp_seg_count,
             )
             print(f"DeepScores TP (palette {args.tp_palette_index}): {tp_count}")
+        if not args.skip_deepscores and args.deepscores_probe_fp:
+            probe_count = extract_deepscores_probe_fp(
+                Path(args.deepscores_root),
+                output_root,
+                args.crop_width,
+                args.crop_height,
+                args.iou_threshold,
+                args.crop_scale,
+                args.min_crop_height,
+                args.max_crop_height,
+                args.tp_palette_index,
+                args.tp_min_area,
+                args.tp_min_height,
+                args.deepscores_probe_max_total,
+                args.deepscores_probe_seg_offset,
+                args.deepscores_probe_seg_count,
+            )
+            print(f"DeepScores probe FP: {probe_count}")
 
     samples = build_samples(output_root)
     ratios = {

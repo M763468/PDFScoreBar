@@ -813,3 +813,39 @@ python3 tools/gt_relabel_gui/server.py \
 - Log shows `short(FP)=0` after expansion (example from run):
   - `short(TP)=56/60 short(Cand)=271/271` (before)
   - `short(TP)=0/60 short(Cand)=0/271 short(FP)=0/259 after_expand=True` (after)
+
+## 2026-01-08: No Peak Candidates for Shostakovich/Sibelius (Expanded)
+
+**Context:** Need `expanded_candidates_nopeak.json` for Shostakovich + Sibelius runs to match prior eval2 No Peak generation.
+
+**Script (same as prior runs):**
+`experiments/cnn_classifier/generate_expanded_candidates.py` (uses `detect_probe_scan` with rescue logic).
+
+**Commands:**
+```bash
+.venv_pdf/bin/python experiments/cnn_classifier/generate_expanded_candidates.py \
+  --logs-root logs/hybrid_generalization \
+  --image-root data/evaluation2/images \
+  --run-prefix eval2_Shos
+
+.venv_pdf/bin/python experiments/cnn_classifier/generate_expanded_candidates.py \
+  --logs-root logs/hybrid_generalization \
+  --image-root data/evaluation2/images \
+  --run-prefix eval2_Sibelius
+```
+
+**Result:**
+- Shostakovich (34 runs) and Sibelius (10 runs) processed; `expanded_candidates_nopeak.json` created for each run.
+- **Skipped (no existing boxes to build bands):**
+  - `logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_001`
+  - `logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_011`
+  - `logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_017`
+  - `logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_023`
+
+**Plan (user request):**
+- A background process is regenerating missing boxes for those skipped pages.
+- After regeneration completes, re-run GT consolidation (gt_relabel_guiのgtモードを利用した手動補正) and build the dataset that mixes:
+  - eval2 No Peak FP (expanded candidates),
+  - DeepScores TP (segmentation index 3),
+  - DeepScores FP (annotations),
+  - DeepScores probe-scan FP (from today’s probe-scan pipeline).

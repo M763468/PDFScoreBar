@@ -777,3 +777,39 @@ python3 tools/gt_relabel_gui/server.py \
   --config tools/gt_relabel_gui/evaluation2_config.json \
   --port 8010
 ```
+→1/7よるから1/8 AM 1:45ごろにに一応すべてGTを作成した。
+
+## 2026-01-08: DeepScores Probe-Scan FP Height Fix (Staff BBox)
+
+**Context:** While validating DeepScores probe-scan FP generation, FP boxes were visually too short (not covering the full staff height).
+
+**Investigation:**
+- Verified DeepScores annotations include `staff` category (color index 165).
+- Sampled a DeepScores page and confirmed staff bbox heights are consistent (e.g., ~66-67px for `lg-82076072-aug-gonville--page-3.png`).
+- The short FP lines were caused by probe-scan candidates keeping short band heights before expansion.
+
+**Fix / Approach:**
+- Updated `tools/cnn_classifier/visualize_deepscores_probe_scan.py` to:
+  - Load staff bboxes from DeepScores `deepscores_train.json` / `deepscores_test.json`.
+  - Expand TP and probe-scan candidates to **staff bbox height** (forced).
+  - Add log output to quantify “short” boxes pre/post expansion.
+  - Optionally draw staff bboxes (blue) for visual verification.
+
+**Reproduction (visual + logs):**
+```bash
+.venv_cnn_classifier/bin/python tools/cnn_classifier/visualize_deepscores_probe_scan.py \
+  --deepscores-root /mnt/d/datasets/DeepScoresV2/ds2_dense \
+  --output-dir logs/cnn_classifier/deepscores_probe_scan_vis \
+  --sample-count 5 --seed 42 \
+  --staff-source annotations \
+  --force-staff-box-height \
+  --draw-staff-boxes \
+  --log-short-stats
+```
+
+**Expected Result:**
+- Blue rectangles = staff bboxes from annotations.
+- FP/TP boxes align to staff height (no short FP boxes after expansion).
+- Log shows `short(FP)=0` after expansion (example from run):
+  - `short(TP)=56/60 short(Cand)=271/271` (before)
+  - `short(TP)=0/60 short(Cand)=0/271 short(FP)=0/259 after_expand=True` (after)

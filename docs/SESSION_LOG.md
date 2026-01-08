@@ -1,6 +1,6 @@
 # Session Log (Measure Numbering Track)
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-01-08
 **Context**: This log tracks the design and implementation of the "Measure Numbering" system (Plan A) in the `feature/measure_numbering` branch.
 
 ---
@@ -616,3 +616,107 @@ To move beyond parameter tuning, we need **Semantic Feature Extraction**:
 ## 4. Next Steps
 -   Implement `tools/detect_hbar_refined.py` to test "Vertical Isolation" logic on the exported failure crops.
 -   Do not modify the main pipeline until the new H-bar logic is proven on the bad crops.
+
+## 2026-01-08 Failure Visualization (ROI + OCR Labels)
+
+**Context**: Some "failure" samples include measures that contain notes. To clarify the situation, new diagnostics are needed that show OCR outputs and rest-count decisions directly on the page and crops.
+
+**Actions Taken**:
+- Added `tools/analyze_failure_cases.py` to generate:
+  - Page-level ROI overlays with OCR text + inferred rest-count labels.
+  - Context crops (`*_context.png`) with the same labels.
+  - ROI crops (`*_hbar_roi.png`, `*_ocr_roi.png`) with overlaid text labels.
+- Created `tools/failure_targets.json` to centralize the current failure list.
+
+**Outputs**:
+- `logs/experiments/failure_analysis_*/page_overlays/*_roi_overlay.png`
+- `logs/experiments/failure_analysis_*/**/*_context.png`
+- `logs/experiments/failure_analysis_*/analysis_report.json` + `analysis_report.csv`
+
+**Update (Fix)**:
+- Adjusted the failure analysis tool to draw ROI overlays per-page (not just target-measure matches).
+- Added candidate gating via density + H-bar, plus `--overlay-all` to draw all measures when needed.
+- Added fallback to `numbering_base.json` if `numbering_final.json` is missing.
+- Added `--all-pages` to generate ROI overlays for every page, and `--number-roi` to label each ROI index.
+
+**Update (Multi-measure Rest GT GUI)**:
+- Added a dedicated GUI mode for entering multi-measure rest counts (defaults to 1, edit only rest>1 cases).
+- Generated Prokofiev (1 & 5) config: `data/evaluation2/rest_gt_config_prokofiev.json`.
+- Output root: `data/evaluation2/rest_gt/<work>/page_xxx/rest_gt.json`.
+- Pages missing numbering JSON (skipped): `prokofiev5/page_006`, `prokofiev5/page_012`.
+
+## 2026-01-08 Multi-measure Rest GT Preparation (Prokofiev)
+
+**Progress since last commit**:
+- Built a new **Multi-measure Rest GT GUI** (rest mode) under `tools/gt_relabel_gui/`:
+  - UI: `index_rest.html`, logic: `app_rest.js`.
+  - Allows selecting measure ROI and entering rest-count (default=1).
+  - Outputs only overrides with `rest_count > 1`.
+- Added config generator: `tools/gt_relabel_gui/build_rest_gt_config.py`.
+- Generated config for Prokofiev 1 & 5:
+  - `data/evaluation2/rest_gt_config_prokofiev.json`
+  - Output path per page: `data/evaluation2/rest_gt/<work>/page_xxx/rest_gt.json`
+
+**GT regeneration investigation (numbering_*.json)**:
+`tools/add_measure_numbers.py` requires:
+1. **Barlines JSON (GT)**: `data/evaluation2/annotations/<work>/page_xxx/boxes_sorted_*.json`
+2. **Staff mask**: `logs/hybrid_generalization/eval2_<work>_page_xxx/.../page_xxx_debug_3_staff.png`
+3. **Page image**: `data/evaluation2/images/<work>/page_xxx.png`
+(Optional for OCR-based overrides: notehead mask `page_xxx_debug_6_notehead.png`)
+
+**Missing GT (blocking numbering regeneration)**:
+- `data/evaluation2/annotations/prokofiev5/page_006` (absent)
+- `data/evaluation2/annotations/prokofiev5/page_012` (absent)
+
+**Available data confirmed**:
+- Images exist:
+  - `data/evaluation2/images/prokofiev5/page_006.png`
+  - `data/evaluation2/images/prokofiev5/page_012.png`
+- Staff/notehead masks exist:
+  - `logs/hybrid_generalization/eval2_prokofiev5_page_006/.../page_006_debug_3_staff.png`
+  - `logs/hybrid_generalization/eval2_prokofiev5_page_006/.../page_006_debug_6_notehead.png`
+  - (same structure for `page_012`)
+
+**Next action**:
+- Reconstruct missing GT barlines for `prokofiev5/page_006` and `page_012` to enable `numbering_*.json` regeneration.
+
+**Reproducible commands (this session)**:
+1) Failure visualization overlays (all pages, numbered ROIs):
+```bash
+.venv_omr_dln/bin/python tools/analyze_failure_cases.py \
+  --all-pages --overlay-all --number-roi \
+  --output-dir logs/experiments/failure_analysis_allpages_20260108
+```
+Outputs:
+- `logs/experiments/failure_analysis_allpages_20260108/page_overlays/*_roi_overlay.png`
+- `logs/experiments/failure_analysis_allpages_20260108/analysis_report.json`
+- `logs/experiments/failure_analysis_allpages_20260108/analysis_report.csv`
+
+2) Multi-measure rest GT GUI config generation (Prokofiev 1 & 5):
+```bash
+.venv_omr_dln/bin/python tools/gt_relabel_gui/build_rest_gt_config.py \
+  --images-root data/evaluation2/images \
+  --numbering-root logs/experiments/batch_verification_20260107_v5 \
+  --output data/evaluation2/rest_gt_config_prokofiev.json \
+  --rest-gt-root data/evaluation2/rest_gt
+```
+Notes:
+- Skips pages with missing `numbering_*.json` (currently `prokofiev5/page_006`, `prokofiev5/page_012`).
+
+3) Launch Multi-measure Rest GT GUI:
+```bash
+python3 tools/gt_relabel_gui/server.py \
+  --mode rest \
+  --config data/evaluation2/rest_gt_config_prokofiev.json \
+  --host 0.0.0.0 \
+  --port 8010
+```
+
+**Planned next steps after GT creation**:
+- Create GT barlines for `prokofiev5/page_006` and `page_012` under `data/evaluation2/annotations/prokofiev5/`.
+- Regenerate `numbering_*.json` for those pages using:
+  - barlines JSON (GT)
+  - staff mask PNG
+  - page image PNG
+- Re-run rest GT GUI config generation to include the regenerated pages.
+- Run rest GT annotation pass for all pages (populate `data/evaluation2/rest_gt/.../rest_gt.json`).

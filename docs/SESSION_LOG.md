@@ -935,26 +935,28 @@ python3 tools/gt_relabel_gui/server.py \
     *   **Splits Generation**: In progress. Due to the large number of files (~80k), the splitting process (populating `splits/` directory) was interrupted by timeouts.
     *   **Output Root**: `/mnt/d/datasets/cnn_classifier_v3_hardneg`.
 
-## 2026-01-10: Dataset Repair (Prokofiev5 Page 004 GT Fix)
+## 2026-01-10: Dataset Repair (Prokofiev5 Page 004 GT Fix & Deduplication)
 
-**Issue**: User identified a missing barline annotation in `prokofiev5/page_004` (evaluation2) during dataset validation.
+**Issue**: 
+1.  **GT Error**: Missing barline annotation in `prokofiev5/page_004`.
+2.  **Duplicates**: `prokofiev1` was found to be a duplicate of `Va_Prokofiev_Symphony1`.
+
 **Action**:
-1.  **GT Correction**: User corrected the annotation using `gt_relabel_gui`. Updated GT saved to `data/evaluation2/annotations/prokofiev5/page_004/boxes_sorted_v20260106.json` (overwritten or timestamp updated).
-2.  **Targeted Dataset Update**:
-    *   Created temporary script `tools/cnn_classifier/update_single_page.py` to regenerate TPs and FPs for only `prokofiev5/page_004`.
-    *   Removed ~523 existing crops for this page.
-    *   Extracted new crops: TP=60, FP=464.
-3.  **Dataset Re-split**:
-    *   Ran `build_cnn_dataset.py --only-split` to propagate changes to the `splits` directory.
-    *   Enabled `os.link` in `build_cnn_dataset.py` to speed up this process (hardlinking instead of copying).
-    *   Final Dataset Size: ~82,744 samples.
+1.  **GT Correction**: User corrected `prokofiev5/page_004` using `gt_relabel_gui`.
+2.  **Targeted Update**: Regenerated crops for `prokofiev5/page_004` (TP=60, FP=464).
+3.  **Deduplication**: Removed ~4,912 files corresponding to `prokofiev1` from the dataset.
+4.  **Final Stats** (`cnn_classifier_v3_hardneg`):
+    *   **Train**: 62,895
+    *   **Val**: 8,276
+    *   **Test**: 6,661
+    *   **Total**: ~77,832 samples.
+
+**Status**: Dataset is clean and ready.
 
 ## 2026-01-10: Ready for Training (Hard Negative Mining)
 
-**Status**: Dataset `cnn_classifier_v3_hardneg` is fully populated (~82k samples) and consistent with the corrected Ground Truth.
-
 **Recommended Training Command**:
-To train `resnet18` on the new dataset, overriding the v2 config paths:
+To train `resnet18` on the new dataset:
 
 ```bash
 .venv_cnn_classifier/bin/python experiments/cnn_classifier/train.py \
@@ -962,9 +964,8 @@ To train `resnet18` on the new dataset, overriding the v2 config paths:
     --tp-dir /mnt/d/datasets/cnn_classifier_v3_hardneg/splits/train/tp \
     --fp-dir /mnt/d/datasets/cnn_classifier_v3_hardneg/splits/train/fp \
     --work-dir logs/cnn_barline_classification/training_resnet18_v3_hardneg \
-    --epochs 50 \
+    --epochs 30 \
     --batch-size 256
 ```
-*(Batch size reduced slightly from 320 to 256 to account for potential VRAM overhead with more varied data, though 320 might still work).*
 
 

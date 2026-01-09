@@ -843,9 +843,46 @@ python3 tools/gt_relabel_gui/server.py \
   - `logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_023`
 
 **Plan (user request):**
-- A background process is regenerating missing boxes for those skipped pages.
+- A background process is regenerating missing boxes for those skipped pages.　(prokofiev5のpage6,12とshostakovichの017,023は実際に真っ白の空白ページ（楽譜ではない）なのでスキップでよい)→regenerateは完了。詳しくはこの後の作業記録参照。
 - After regeneration completes, re-run GT consolidation (gt_relabel_guiのgtモードを利用した手動補正) and build the dataset that mixes:
   - eval2 No Peak FP (expanded candidates),
   - DeepScores TP (segmentation index 3),
   - DeepScores FP (annotations),
   - DeepScores probe-scan FP (from today’s probe-scan pipeline).
+
+
+## 2026-01-09: Fix homr crash on eval2 Shosrakovich-Sym5-Va page 011
+
+**Objective**: Fix homr crash on `eval2_Shosrakovich-Sym5-Va_page_011` and regenerate candidates/overlays. Skip known blank pages.
+
+**Findings**:
+* `homr_evaluator.py` crashed with `cv2.resize` assertion (`inv_scale_x > 0`) during staff parsing. Root cause: `center_image_on_canvas` received an invalid canvas size (negative/zero dimension) when preparing a staff crop.
+* Pages `prokofiev5/page_006`, `prokofiev5/page_012`, `Shosrakovich-Sym5-Va/page_017`, `Shosrakovich-Sym5-Va/page_023` are effectively blank (near-white) and should be skipped.
+
+**Fix (Container Patch)**:
+* Patched `center_image_on_canvas` in the **sr_eval_gpu container** file `/workspace/external/homr/homr/staff_parsing.py` to guard against invalid canvas sizes.
+* On invalid image/canvas size, the function logs a warning and returns a blank white canvas instead of calling `cv2.resize`.
+* Note: This patch lives **inside the running container**, not in the host repo. It will be lost if the container is rebuilt.
+
+**Re-run (page 011 only)**:
+* Ran `tools/run_hybrid_pipeline.sh` for `eval2_Shosrakovich-Sym5-Va_page_011` successfully after the patch.
+* Hybrid generation completed:
+  - Loaded 49 Baseline, 47 SR, 108 OMR
+  - Hybrid Predictions: 44
+* Regenerated expanded candidates via `experiments/cnn_classifier/generate_expanded_candidates.py`.
+* Regenerated `pipeline2_no_peak_candidates.json` using `detect_probe_scan` (No Peak params).
+* Re-scored with CNN (`logs/cnn_barline_classification/training_resnet18_b320/cnn_classifier_best.pth`).
+* Rebuilt overlays via `tools/visualize_eval2.py`.
+
+**Outputs (page 011)**:
+* `logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_011/hybrid_predictions.json` (44 boxes)
+* `logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_011/pipeline2_no_peak_candidates.json` (151 boxes)
+* `logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_011/pipeline2_no_peak_filtered_cnn.json` (90 boxes)
+* `logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_011/overlay_pipeline1_baseline_filtered.png`
+* `logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_011/overlay_pipeline2_no_peak.png`
+
+**Skipped pages (blank)**:
+* `logs/hybrid_generalization/eval2_prokofiev5_page_006`
+* `logs/hybrid_generalization/eval2_prokofiev5_page_012`
+* `logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_017`
+* `logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_023`

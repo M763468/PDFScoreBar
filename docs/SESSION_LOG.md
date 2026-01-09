@@ -968,4 +968,37 @@ To train `resnet18` on the new dataset:
     --batch-size 256
 ```
 
+## 2026-01-10: Training Results Analysis (ResNet18 Hard Negative Mining)
+
+**Execution**: Trained for 50 epochs (user extended from 30).
+**Metrics**:
+*   **Best Validation F1**: **0.9946** (Epoch 19).
+*   **Final Epoch (49)**: Train F1: 0.9989 / Val F1: 0.9930.
+*   **Overfitting**: Slight overfitting observed after Epoch 20. Validation Loss increased from ~0.013 (Epoch 19) to ~0.028 (Epoch 49), while Train Loss continued to drop to near zero.
+
+**Conclusion**:
+*   The "Hard Negative Mining" strategy was highly effective, boosting F1 from ~0.83 (previous baseline) to >0.99.
+## 2026-01-10: Error Analysis & Visualization
+
+**Objective**: Visualize and analyze the remaining errors (0.44% FN, 0.40% FP) to determine if further action is needed.
+
+**Analysis**:
+*   **False Negatives (Missed Barlines)**:
+    *   Mostly specific to **Sibelius Viola (Page 10)** and **Shostakovich (Page 12)**.
+    *   Likely due to faint lines, specific font styles, or low contrast in these scans.
+    *   Some errors on **Prokofiev Page 1** (Cover/Title page) where layout is irregular.
+*   **False Positives (Noise)**:
+    *   **DeepScores**: Vertical artifacts like long stems or clef parts.
+    *   **Prokofiev Page 1**: Decorative borders or text characters ('I', '/') misclassified as barlines.
+    *   **Prokofiev Pages 3, 5**: Dense note stems or ledger lines mimicking vertical lines.
+
+**Visual Artifacts**:
+*   **False Negatives**: `logs/cnn_error_analysis/error_summary_fn.png`
+*   **False Positives**: `logs/cnn_error_analysis/error_summary_fp.png`
+
+**Conclusion**: The model is performing exceptionally well (>99% F1). The remaining errors are edge cases (cover pages, extreme noise) that are better handled by the downstream pipeline (structural rules) rather than more training. The model is **accepted for integration**.
+
+→見るとFP側の結果にGTのミスらしきものがかなり混じっている+前回は正解できていたものもFNになってたりする
+GTを修正して再学習した方がよさそう。
+
 

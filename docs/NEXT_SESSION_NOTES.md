@@ -21,15 +21,15 @@
 
 ## 2. Immediate Tasks (Next Session)
 
-### A. Hard Negative Mining (Priority 1)
-**Objective**: Retrain the CNN model using "No Peak" candidates + Validated GT.
-1.  **Generate Negatives**: **Completed**. Dataset `cnn_classifier_v3_hardneg` created (~82k samples).
-2.  **Dataset Augmentation**: **Completed**. Splits and metadata rebuilt.
-3.  **Retrain**:
-    *   **Action**: Execute training command (ResNet18).
-    *   Command: See `SESSION_LOG.md`.
+### A. Hard Negative Mining (Completed)
+**Results**: ResNet18 trained on `cnn_classifier_v3_hardneg` achieved **Val F1: 0.9946**.
+*   **Best Model**: `logs/cnn_barline_classification/training_resnet18_v3_hardneg/cnn_classifier_best.pth`.
 
-### B. Pipeline Finalization
+### B. Pipeline Finalization (Priority 1)
+- **Develop Production Script**: Create `inference_filter.py`.
+- **Integration**: Update `run_hybrid_pipeline.sh`.
+
+### C. GT Completion (Completed)
 - **Develop Production Script**: Create `inference_filter.py`.
 - **Integration**: Update `run_hybrid_pipeline.sh`.
 

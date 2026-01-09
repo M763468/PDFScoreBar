@@ -886,3 +886,35 @@ python3 tools/gt_relabel_gui/server.py \
 * `logs/hybrid_generalization/eval2_prokofiev5_page_012`
 * `logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_017`
 * `logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_023`
+
+## 2026-01-09: Preparation for Missing GT (Shostakovich Page 11)
+
+**Objective**: Prepare config for manual GT correction for missing Shostakovich pages (specifically page 11, and page 01 which was also regenerated).
+
+**Actions**:
+1.  **Consolidate JSONs**:
+    *   Created `data/evaluation2/annotations_provisional/Shosrakovich-Sym5-Va/`.
+    *   Copied `pipeline2_no_peak_filtered_cnn.json` from `logs/hybrid_generalization/eval2_Shosrakovich-Sym5-Va_page_001` and `page_011` to this directory.
+2.  **Generate Config**:
+    *   Ran `tools/cnn_classifier/create_gt_gui_config.py`.
+    *   Output: `tools/gt_relabel_gui/evaluation2_shos_fix_config.json`.
+    *   Result: Config contains 2 pages ready for editing.
+
+**Next Steps**:
+*   Run the GT Editor with the new config:
+    ```bash
+    python3 tools/gt_relabel_gui/server.py --mode gt --config tools/gt_relabel_gui/evaluation2_shos_fix_config.json
+    ```
+
+## 2026-01-09: GT Finalization (Shostakovich Page 11)
+
+**Objective**: Finalize the manual GT correction for Shostakovich Page 11.
+
+**Actions**:
+1.  **User Manual Correction**: User corrected `page_011` using the GT Editor. `page_001` was identified as a cover page and skipped.
+2.  **Finalization**:
+    *   Copied `data/evaluation2/annotations_provisional/Shosrakovich-Sym5-Va/page_011_sorted.json` to `data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_011/boxes_sorted_v20260109.json`.
+    *   `page_001` was excluded from the final dataset.
+
+**Status**: Shostakovich GT set is now complete (valid pages).
+

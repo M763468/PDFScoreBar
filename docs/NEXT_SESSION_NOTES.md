@@ -37,6 +37,10 @@
 - **Develop Production Script**: Create `inference_filter.py`.
 - **Integration**: Update `run_hybrid_pipeline.sh`.
 
+### C. GT Completion (Completed)
+- **Shostakovich Missing Pages**: `page_011` finalized as `boxes_sorted_v20260109.json`. `page_001` skipped (cover page).
+- **Status**: All `evaluation2` pages are now accounted for.
+
 ## 3. Reference Configs
 - **Best Model (Current)**: `logs/cnn_barline_classification/training_resnet18_b320/cnn_classifier_best.pth`
 - **Candidate Generator**: `experiments/cnn_classifier/generate_expanded_candidates.py`

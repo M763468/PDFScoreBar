@@ -1,0 +1,20 @@
+{
+  "pages": [
+    {
+      "name": "Shosrakovich-Sym5-Va/page_001",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_001.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Shosrakovich-Sym5-Va/page_001.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Shosrakovich-Sym5-Va/page_001_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Shosrakovich-Sym5-Va/page_001.json",
+      "y_threshold": 50
+    },
+    {
+      "name": "Shosrakovich-Sym5-Va/page_011",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_011.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Shosrakovich-Sym5-Va/page_011.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Shosrakovich-Sym5-Va/page_011_sorted.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations_provisional/Shosrakovich-Sym5-Va/page_011.json",
+      "y_threshold": 50
+    }
+  ]
+}

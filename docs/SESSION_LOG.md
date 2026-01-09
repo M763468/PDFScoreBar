@@ -916,5 +916,55 @@ python3 tools/gt_relabel_gui/server.py \
     *   Copied `data/evaluation2/annotations_provisional/Shosrakovich-Sym5-Va/page_011_sorted.json` to `data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_011/boxes_sorted_v20260109.json`.
     *   `page_001` was excluded from the final dataset.
 
-**Status**: Shostakovich GT set is now complete (valid pages).
+## 2026-01-09: Hard Negative Mining Dataset (v3)
+
+**Objective**: Create `cnn_classifier_v3_hardneg` incorporating:
+1.  **Local & Eval2**: TPs from GT (including new Shostakovich GT), FPs from "No Peak" candidates (Hard Negatives).
+2.  **DeepScores**: TPs (30k from v2), Negatives (8.5k), **Probe Scan FPs** (10k new hard negatives from staff probing).
+
+**Actions**:
+1.  **Script Update**:
+    *   Updated `tools/cnn_classifier/build_cnn_dataset.py` to:
+        *   Dynamically find the latest GT version (picks `v20260109` over others).
+        *   Fix `sys.path` issue for importing `detect_probe_scan`.
+        *   Use `os.link` (hardlink) for faster dataset splitting.
+2.  **Dataset Construction**:
+    *   **TP/FP Extraction**: Completed.
+        *   DeepScores Probe FPs generated (10,000 samples).
+        *   DeepScores TPs hardlinked from v2.
+    *   **Splits Generation**: In progress. Due to the large number of files (~80k), the splitting process (populating `splits/` directory) was interrupted by timeouts.
+    *   **Output Root**: `/mnt/d/datasets/cnn_classifier_v3_hardneg`.
+
+## 2026-01-10: Dataset Repair (Prokofiev5 Page 004 GT Fix)
+
+**Issue**: User identified a missing barline annotation in `prokofiev5/page_004` (evaluation2) during dataset validation.
+**Action**:
+1.  **GT Correction**: User corrected the annotation using `gt_relabel_gui`. Updated GT saved to `data/evaluation2/annotations/prokofiev5/page_004/boxes_sorted_v20260106.json` (overwritten or timestamp updated).
+2.  **Targeted Dataset Update**:
+    *   Created temporary script `tools/cnn_classifier/update_single_page.py` to regenerate TPs and FPs for only `prokofiev5/page_004`.
+    *   Removed ~523 existing crops for this page.
+    *   Extracted new crops: TP=60, FP=464.
+3.  **Dataset Re-split**:
+    *   Ran `build_cnn_dataset.py --only-split` to propagate changes to the `splits` directory.
+    *   Enabled `os.link` in `build_cnn_dataset.py` to speed up this process (hardlinking instead of copying).
+    *   Final Dataset Size: ~82,744 samples.
+
+## 2026-01-10: Ready for Training (Hard Negative Mining)
+
+**Status**: Dataset `cnn_classifier_v3_hardneg` is fully populated (~82k samples) and consistent with the corrected Ground Truth.
+
+**Recommended Training Command**:
+To train `resnet18` on the new dataset, overriding the v2 config paths:
+
+```bash
+.venv_cnn_classifier/bin/python experiments/cnn_classifier/train.py \
+    --config experiments/cnn_classifier/config.yaml \
+    --tp-dir /mnt/d/datasets/cnn_classifier_v3_hardneg/splits/train/tp \
+    --fp-dir /mnt/d/datasets/cnn_classifier_v3_hardneg/splits/train/fp \
+    --work-dir logs/cnn_barline_classification/training_resnet18_v3_hardneg \
+    --epochs 50 \
+    --batch-size 256
+```
+*(Batch size reduced slightly from 320 to 256 to account for potential VRAM overhead with more varied data, though 320 might still work).*
+
 

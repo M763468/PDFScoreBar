@@ -2,6 +2,7 @@
 import argparse
 import csv
 import json
+import os
 import random
 import shutil
 import sys
@@ -288,13 +289,15 @@ def extract_local_tp_fp(
 
 
 def find_latest_gt(page_dir: Path) -> Path | None:
-    preferred = page_dir / "boxes_sorted_v20260106.json"
-    if preferred.exists():
-        return preferred
-    fallback = page_dir / "boxes_sorted.json"
-    if fallback.exists():
-        return fallback
-    return None
+    # Find all matching files
+    candidates = list(page_dir.glob("boxes_sorted*.json"))
+    if not candidates:
+        return None
+    # Sort by name descending (v20260109 > v20260106 > .json)
+    # Note: '_' (95) > '.' (46), so boxes_sorted_... comes after boxes_sorted.json in ascending
+    # so in descending, boxes_sorted_... comes first.
+    candidates.sort(key=lambda p: p.name, reverse=True)
+    return candidates[0]
 
 
 def load_eval2_pages(annotations_root: Path):
@@ -532,14 +535,23 @@ def extract_deepscores_probe_fp(
     seg_offset,
     seg_count,
 ):
-    from tools.run_gt_rebuild_hybrid_eval import detect_probe_scan
-
     fp_dir = output_root / "deepscores_probe" / "fp"
     fp_dir.mkdir(parents=True, exist_ok=True)
 
     existing = len(list(fp_dir.glob("*.png")))
     if max_total is not None and existing >= max_total:
         return existing
+
+    # Add repo root/tools to sys.path to import detect_probe_scan
+    tools_dir = ds_root.parents[2] / "tools" # This ds_root usage is risky if ds_root is absolute path elsewhere.
+    # Better: repo_root is calculated in main, but not passed here.
+    # Let's assume we are running from repo root or calculate it relative to this file.
+    this_file = Path(__file__).resolve()
+    repo_root = this_file.parents[2]
+    if str(repo_root / "tools") not in sys.path:
+        sys.path.append(str(repo_root / "tools"))
+    
+    from run_gt_rebuild_hybrid_eval import detect_probe_scan
 
     scale = crop_scale
     aspect_ratio = crop_w / crop_h
@@ -867,11 +879,13 @@ def link_or_copy(src, dst):
     dst.parent.mkdir(parents=True, exist_ok=True)
     if dst.exists():
         return
-    # Always copy to avoid symlink issues
     try:
-        shutil.copy2(src, dst)
-    except Exception as e:
-        print(f"Error copying {src} to {dst}: {e}")
+        os.link(src, dst)
+    except OSError:
+        try:
+            shutil.copy2(src, dst)
+        except Exception as e:
+            print(f"Error copying {src} to {dst}: {e}")
 
 
 def write_outputs(output_root, samples, assignments):

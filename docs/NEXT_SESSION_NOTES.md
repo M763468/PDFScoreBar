@@ -23,15 +23,11 @@
 
 ### A. Hard Negative Mining (Priority 1)
 **Objective**: Retrain the CNN model using "No Peak" candidates + Validated GT.
-1.  **Generate Negatives**:
-    - Use `expanded_candidates_nopeak.json` (need to generate for all 25 pages if not already done).
-    - Compare against the **Finalized GT** (`boxes_sorted_v20260106.json`).
-    - Candidates NOT in GT = **Hard Negatives**.
-2.  **Dataset Augmentation**:
-    - Create `cnn_classifier_v3_hardneg`.
-    - Mix in the new hard negatives.
+1.  **Generate Negatives**: **Completed**. Dataset `cnn_classifier_v3_hardneg` created (~82k samples).
+2.  **Dataset Augmentation**: **Completed**. Splits and metadata rebuilt.
 3.  **Retrain**:
-    - Train ResNet18 on Dataset v3.
+    *   **Action**: Execute training command (ResNet18).
+    *   Command: See `SESSION_LOG.md`.
 
 ### B. Pipeline Finalization
 - **Develop Production Script**: Create `inference_filter.py`.

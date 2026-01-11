@@ -842,7 +842,10 @@ def build_samples(output_root):
     return samples
 
 
-def assign_splits(samples, ratios, seed):
+def assign_splits(samples, ratios, seed, force_train=None):
+    if force_train is None:
+        force_train = []
+    
     rng = random.Random(seed)
     group_to_samples = {}
     for sample in samples:
@@ -854,14 +857,25 @@ def assign_splits(samples, ratios, seed):
     split_targets = {k: int(len(samples) * v) for k, v in ratios.items()}
     split_counts = {k: 0 for k in ratios}
     split_groups = {k: [] for k in ratios}
+    
+    # 1. Handle Forced Groups First
+    remaining_groups = []
+    
+    for group in groups:
+        if group in force_train:
+            split_groups["train"].append(group)
+            split_counts["train"] += len(group_to_samples[group])
+        else:
+            remaining_groups.append(group)
 
     def split_score(split_key):
         target = split_targets.get(split_key, 1)
-        if target == 0:
-            return split_counts[split_key]
+        # Avoid division by zero if target is 0
+        if target <= 0: return float('inf') 
         return split_counts[split_key] / target
 
-    groups_sorted = sorted(groups, key=lambda g: len(group_to_samples[g]), reverse=True)
+    # 2. Greedily assign the rest
+    groups_sorted = sorted(remaining_groups, key=lambda g: len(group_to_samples[g]), reverse=True)
     for group in groups_sorted:
         split_key = min(split_counts.keys(), key=split_score)
         split_groups[split_key].append(group)
@@ -1048,8 +1062,19 @@ def main():
         help="Segmentation count for DeepScores probe FP scan.",
     )
 
+    parser.add_argument(
+        "--force-train",
+        type=str,
+        action="append",
+        help="Group name to force into training split.",
+    )
+
     args = parser.parse_args()
     output_root = Path(args.output_root)
+    # ... (lines 1067-1147 omitted for brevity in replacement, so I must target specific blocks)
+    # Actually I should split this into two edits or use multi_replace.
+    # Let's use multi_replace_file_content.
+
     repo_root = Path(__file__).resolve().parents[2]
 
     if not args.only_split:
@@ -1136,7 +1161,7 @@ def main():
         "val": args.val_ratio,
         "test": args.test_ratio,
     }
-    assignments = assign_splits(samples, ratios, args.seed)
+    assignments = assign_splits(samples, ratios, args.seed, force_train=args.force_train)
     write_outputs(output_root, samples, assignments)
     print(f"Dataset built at: {output_root}")
 

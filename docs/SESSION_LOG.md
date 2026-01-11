@@ -1102,3 +1102,142 @@ GTを修正して再学習した方がよさそう。
     -   Regenerated `data/evaluation/images/page_3_x4.png` using SR.
     -   Regenerated `.../boxes_sorted_v20260111_x4.json` and `.../expanded_candidates_nopeak_x4.json` to match the new 4x coordinate space.
     -   The dataset build script `build_cnn_dataset.py` will now consume these high-quality SR inputs.
+
+## 2026-01-11: Final Training Dataset & Model Training
+
+**Dataset Build**:
+*   **Script**: `tools/cnn_classifier/build_cnn_dataset.py`
+*   **Result**: Built dataset at `/mnt/d/datasets/cnn_classifier_v1`.
+    *   Total Samples: 68,395
+    *   Includes: Expanded `Angerer` (SR Upscaled) and `Beethoven` pages.
+    *   Includes: DeepScores hard negatives (from segmentation masks).
+    *   Note: Output directory `/mnt/d/datasets/cnn_classifier_v1` was used (default).
+
+**Model Training**:
+*   **Command**:
+    ```bash
+    .venv_cnn_classifier/bin/python experiments/cnn_classifier/train.py \
+        --config experiments/cnn_classifier/config.yaml \
+        --tp-dir /mnt/d/datasets/cnn_classifier_v1/splits/train/tp \
+        --fp-dir /mnt/d/datasets/cnn_classifier_v1/splits/train/fp \
+        --work-dir logs/cnn_barline_classification/training_resnet18_sr_experiment \
+        --epochs 30 \
+        --batch-size 256
+    ```
+*   **Model**: ResNet18
+*   **Goal**: Evaluate if SR upscaling and expanded data improves performance, especially on low-res inputs.
+
+## 2026-01-11: Training Results (ResNet18 + SR + Expanded Data)
+
+**Training Log**: `logs/cnn_barline_classification/training_resnet18_sr_experiment`
+
+**Validation Results (Epoch 30)**:
+*   F1: 0.9956
+*   Acc: 0.9952
+
+**Test Set Evaluation**:
+*   Script: `tools/eval_test_split.py` (Temp)
+*   Split: `/mnt/d/datasets/cnn_classifier_v1/splits/test`
+*   **Result**:
+    *   **F1 Score**: **0.9966**
+    *   **Recall**: **0.9990**
+    *   **Precision**: **0.9941**
+    *   **Accuracy**: **0.9963**
+    *   TP: 6117, FP: 36, FN: 6, TN: 5137
+
+**Conclusion**: The model performance is excellent (>99.6% F1). The addition of SR-upscaled Angerer data and expanded Beethoven pages has resulted in a highly robust classifier.
+
+## 2026-01-11: Error Visualization
+
+**Objective**: Visualize FP/FN errors on original images to understand failure modes.
+**Script**: `experiments/cnn_classifier/visualize_test_errors.py` (Temporary)
+**Results**:
+*   **Angerer (Page 3)**: **0 Errors**. SR Upscaling was perfectly effective.
+*   **Beethoven (Page 15)**: **0 Errors**.
+*   **Beethoven (Page 10)**: **27 Errors** (FP/FN mix).
+    *   Visualization saved to: `logs/cnn_barline_classification/training_resnet18_sr_experiment/visualizations/page_10_errors.jpg`
+*   **Eval2 Pages**: 15 Errors (skipped visualization).
+
+**Conclusion**: The low-resolution Angerer page is no longer a problem. The remaining errors are concentrated on Beethoven Page 10, likely due to specific layout or annotation ambiguity.
+
+## 2026-01-11: Expanded Error Visualization
+
+**User Request**: Visualize errors for other datasets (Prokofiev, Sibelius, Shostakovich).
+**Actions**: Updated `visualize_test_errors.py` to support Eval2 paths.
+**Results**:
+*   **Prokofiev Symphony 1 (Page 1)**: 6 Errors.
+*   **Prokofiev Symphony 5 (Page 1)**: 1 Error.
+*   **Prokofiev Symphony 5 (Page 13)**: 2 Errors.
+*   **Shostakovich Sym 5 (Page 16)**: 6 Errors.
+*   **Beethoven (Page 10)**: 27 Errors (Previously reported).
+
+**Artifacts**: Overlay images saved in `logs/cnn_barline_classification/training_resnet18_sr_experiment/visualizations/`.
+
+## 2026-01-11: User Feedback & Analysis
+
+**User Reviews**:
+1.  **Practical Robustness**: while F1 > 0.99 is statistically good, having **27 errors on a single page (Beethoven Page 10)** renders the system practically weak for that specific score.
+2.  **False Positives (FP)**:
+    *   User observed "FPs" where a barline clearly exists visually.
+    *   **Hypothesis**: This implies either **Missing GT** (annotation error) or **IoU Failure** (prediction not overlapping GT enough).
+3.  **False Negatives (FN)**:
+    *   Since `expanded_candidates` produces many boxes, the user wants to verify if an FN (Missed GT) has a *positive prediction* (or at least a candidate) very close to it.
+    *   If a prediction exists nearby but failed the IoU check (>0.5), it might still be useful for a human-in-the-loop workflow.
+4.  **Workflow**:
+    *   Consider a mechanism for manual correction after selection.
+
+**Next Actions**:
+*   Investigate the specific FPs on Beethoven Page 10 (GT missing vs IoU).
+*   Analyze FNs for "Near Misses" (candidates within N pixels).
+
+## 2026-01-11: Detailed Error Analysis (Page 10)
+
+**Objective**: Determine why "valid" barlines are FPs and if FNs are recoverable.
+**Method**: Geometric analysis of 25 errors on Page 10 using `experiments/cnn_classifier/analyze_error_types.py`.
+
+**Findings**:
+*   **False Positives (24 analysed)**:
+    *   **11 Near Hits (46%)**: Predictions within 50px of a GT but failed IoU > 0.5. These are alignment issues or "sloppy" candidates.
+    *   **13 Ghosts (54%)**: Predictions > 50px from any GT. Given high model confidence (>0.8) and user feedback, these are almost certainly **Missing Ground Truth**.
+*   **False Negatives (1)**:
+    *   **Hard Miss**: No positive prediction within 650px. The visual feature was completely rejected.
+
+**Conclusion**:
+*   The high FP rate on Page 10 is largely due to **Missing GT (Ghosts)** and **strict IoU (Near Hits)**.
+*   The model is actually performing *better* than the metrics suggest (detecting unlabelled barlines).
+*   **Manual Correction** is essential to handle the "Near Hits" (selecting the candidate) and confirm the "Ghosts".
+
+## 2026-01-11: Comparative Error Analysis (All Pages)
+
+**User Request**: Analyze why Page 10 has significantly more FPs than other pages.
+**Objective**: Compare error types (Ghost vs Near Hit) across all test set pages.
+
+**Results Table**:
+
+| Page | Total FP | **Ghost (Missing GT)** | **Near Hit (IoU < 0.5)** | FN |
+| :--- | :--- | :--- | :--- | :--- |
+| **page_10 (Beethoven)** | **26** | **13** | **11** | 1 |
+| Shosrakovich-Sym5-Va p16 | 6 | 0 | 6 | 0 |
+| Prokofiev Sym5 p13 | 2 | 2 | 0 | 0 |
+| Prokofiev Sym1 p1 | 1 | 1 | 0 | 5 |
+| Prokofiev Sym5 p1 | 1 | 0 | 1 | 0 |
+
+**Conclusion**:
+*   **Page 10 is an outlier**: It is the *only* page with a massive number of "Ghost" errors (13), confirming that it suffers uniquely from missing ground truth annotations compared to other pages.
+*   **Other Pages**: Errors are either very sparse (Prokofiev) or purely "Near Hits" (Shostakovich), indicating better GT quality or cleaner alignment.
+*   **Visual Confirmation**: Classified overlays (Green=Near Hit, Orange=Ghost) saved to `logs/cnn_barline_classification/training_resnet18_sr_experiment/visualizations_classified/`.
+
+## 2026-01-11: User Correction & Retraining Plan
+
+**Correction on "Ghosts"**:
+*   **Page 10 (Beethoven)**: User verified that the "Ghost" errors are **Actual False Positives**. The model is incorrectly detecting lines in non-barline areas. GT is correct.
+*   **Prokofiev 5 (p13)**: Confirmed Actual FPs.
+*   **Shostakovich (p16)**: **End Bar Issue**. The GT encloses the entire thick end bar. The model detects multiple thin lines *inside* the thick bar, which count as FPs.
+*   **Prokofiev 1 (p1)**: Confirmed **Missing GT**. The user has **fixed this in the GUI**.
+
+**Implications**:
+1.  **Page 10**: The high FP rate is a genuine model failure (Hard Negatives), not a label noise issue.
+2.  **Prokofiev 1**: The dataset needs to be rebuilt to include the newly labeled samples.
+
+**Action Plan**:
+dataset rebuild -> retrain.

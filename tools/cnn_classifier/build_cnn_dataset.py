@@ -23,9 +23,9 @@ DEFAULT_PAGES = [
     },
     {
         "name": "page_3",
-        "image": "logs/homr_eval/baseline_for_hybrid/page_3/page_3.png",
-        "gt": "data/evaluation/annotations/page_003/boxes_sorted.json",
-        "preds": "logs/phase5b_confirmed_union_eval/page_3_hybrid_preds.json",
+        "image": "data/evaluation/images/page_3_x4.png",
+        "gt": "data/evaluation/annotations/page_003/boxes_sorted_v20260111_x4.json",
+        "preds": "data/evaluation/annotations/page_003/expanded_candidates_nopeak_x4.json",
     },
     {
         "name": "page_004",
@@ -35,15 +35,15 @@ DEFAULT_PAGES = [
     },
     {
         "name": "page_10",
-        "image": "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10.png",
-        "gt": "logs/phase6_detector_miss/gt_rebuild/page_10_boxes_sorted.json",
-        "preds": "logs/phase5b_confirmed_union_eval/page_10_hybrid_preds.json",
+        "image": "data/training/images/page_10.png",
+        "gt": "data/training/annotations/page_010/boxes_sorted_v20260111.json",
+        "preds": "data/training/annotations/page_010/expanded_candidates_nopeak.json",
     },
     {
         "name": "page_15",
-        "image": "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15.png",
-        "gt": "logs/phase6_detector_miss/gt_rebuild/page_15_boxes_sorted.json",
-        "preds": "logs/phase5b_confirmed_union_eval/page_15_hybrid_preds.json",
+        "image": "data/training/images/page_15.png",
+        "gt": "data/training/annotations/page_015/boxes_sorted_v20260111.json",
+        "preds": "data/training/annotations/page_015/expanded_candidates_nopeak.json",
     },
 ]
 

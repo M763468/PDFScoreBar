@@ -1049,3 +1049,56 @@ GTを修正して再学習した方がよさそう。
     - Output: 
 
 **Dataset Status**: All manual edits have been integrated and verified.
+
+## 2026-01-11: Training Data Expansion Preparation
+
+**Objective**: Prepare  &  (Beethoven) and  (Angerer) for GT labeling/correction.
+**Actions**:
+1.  **Probe Scan**: Generated  for all 3 pages using .
+    - Merged existing annotations (v20251229) with new "No Peak" candidates.
+2.  **Config Creation**: Created .
+    - **Editable**: Points to  (for FP sorting).
+    - **Output**: Points to  (as new valid GT).
+
+## 2026-01-11: Training Data Expansion - Config Refinement
+
+**User Request**: Switch labeling base from "Probe Scan Results" (too noisy) to "Past Annotations" (cleaner).
+**Action**: Updated .
+-   **Editable Source**:
+    -   Beethoven pages: 
+    -   Angerer page: 
+-   **Output Target**: Remains .
+
+## 2026-01-11: Training Data Expansion - GT Finalized
+
+**Objective**: finalize manual GT for new training/eval samples.
+**Outcome**:
+-   User performed labeling via GUI.
+-   Files created:
+    -    (Beethoven)
+    -    (Beethoven)
+    -    (Angerer)
+-   Status: These files are now the latest Ground Truth for these pages.
+
+## 2026-01-11: Dataset Configuration Update
+
+**Objective**: Incorporate expanded training data into CNN dataset build logic.
+**Changes**:
+1.  **Low Resolution Handling**: Upscaled  by 4x.
+    -   Image: 
+    -   GT: 
+    -   Candidates: 
+2.  **Dataset Script**: Updated .
+    -   : Points to x4 files.
+    -   , : Points to new  GT and .
+
+## 2026-01-11: Super Resolution for Low-Res Data
+
+**User Request**: Use Super Resolution (SR) instead of standard interpolation for upscaling `Angerer`.
+**Actions**:
+1.  **Tooling**: Installed `realesrgan` and patched `basicsr` dependency issues in the virtual env.
+2.  **Processing**: Updated `upscale_lowres_gt.py` to use `RealESRGAN_x4plus`.
+3.  **Result**:
+    -   Regenerated `data/evaluation/images/page_3_x4.png` using SR.
+    -   Regenerated `.../boxes_sorted_v20260111_x4.json` and `.../expanded_candidates_nopeak_x4.json` to match the new 4x coordinate space.
+    -   The dataset build script `build_cnn_dataset.py` will now consume these high-quality SR inputs.

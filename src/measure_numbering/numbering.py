@@ -9,6 +9,7 @@ class MeasureNumberer:
     # Constants for logic thresholds
     DEDUPLICATION_THRESHOLD = 15 # px: merge barlines closer than this
     IMPLICIT_START_THRESHOLD = 50 # px: if first barline is > this from edge, assume hidden measure
+    MIN_MEASURE_WIDTH = 25 # px: reject intervals narrower than this (e.g. double barlines)
 
     def number_score(self, score: Score, start_number: int = 1, overrides: Optional[List[Dict[str, Any]]] = None) -> int:
         """
@@ -76,6 +77,13 @@ class MeasureNumberer:
                 left_bar = sorted_barlines[i]
                 right_bar = sorted_barlines[i+1]
                 
+                m_x1 = left_bar.bbox.x2
+                m_x2 = right_bar.bbox.x1
+                
+                # Check for insufficient width (e.g. double barline gap)
+                if (m_x2 - m_x1) < self.MIN_MEASURE_WIDTH:
+                    continue
+                
                 # Check for overrides
                 attr = None
                 ov = overrides.get(i)
@@ -90,9 +98,6 @@ class MeasureNumberer:
                     current_number = attr.set_number
 
                 # Create Measure
-                m_x1 = left_bar.bbox.x2
-                m_x2 = right_bar.bbox.x1
-                
                 measure = Measure(
                     number=current_number,
                     start_bar=left_bar,

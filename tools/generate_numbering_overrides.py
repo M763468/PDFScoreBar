@@ -417,19 +417,31 @@ def main():
                                 
                                 roi_staff_mask_full = None
                                 if staff_mask is not None:
-                                     sy1 = max(0, roi_y1_ocr)
-                                     sy2 = min(staff_mask.shape[0], roi_y2_ocr)
-                                     sx1 = max(0, roi_x1)
-                                     sx2 = min(staff_mask.shape[1], roi_x2)
+                                     # Scale coordinates to mask space
+                                     sy1 = int(max(0, roi_y1_ocr) * scale_y)
+                                     sy2 = int(min(h_img, roi_y2_ocr) * scale_y)
+                                     sx1 = int(max(0, roi_x1) * scale_x)
+                                     sx2 = int(min(w_img, roi_x2) * scale_x)
+                                     
+                                     # Clamp to mask dimensions
+                                     sy2 = min(staff_mask.shape[0], sy2)
+                                     sx2 = min(staff_mask.shape[1], sx2)
+
                                      if sy2 > sy1 and sx2 > sx1:
                                         roi_staff_mask_full = staff_mask[sy1:sy2, sx1:sx2]
 
                                 roi_notehead_mask_full = None
                                 if mask is not None:
-                                     sy1 = max(0, roi_y1_ocr)
-                                     sy2 = min(mask.shape[0], roi_y2_ocr)
-                                     sx1 = max(0, roi_x1)
-                                     sx2 = min(mask.shape[1], roi_x2)
+                                     # Scale coordinates to mask space
+                                     sy1 = int(max(0, roi_y1_ocr) * scale_y)
+                                     sy2 = int(min(h_img, roi_y2_ocr) * scale_y)
+                                     sx1 = int(max(0, roi_x1) * scale_x)
+                                     sx2 = int(min(w_img, roi_x2) * scale_x)
+                                     
+                                     # Clamp to mask dimensions
+                                     sy2 = min(mask.shape[0], sy2)
+                                     sx2 = min(mask.shape[1], sx2)
+
                                      if sy2 > sy1 and sx2 > sx1:
                                         roi_notehead_mask_full = mask[sy1:sy2, sx1:sx2]
                                 

@@ -844,3 +844,46 @@ Significant improvement in rejecting normal measures with rehearsal marks, but N
 **Raw Mask Paths for next verification**:
 - Page 4 Notehead Mask: `logs/hybrid_generalization/eval2_prokofiev5_page_004/baseline/page_004/page_004/page_004_debug_6_notehead.png`
 - Page 8 Notehead Mask: `logs/hybrid_generalization/eval2_prokofiev5_page_008/baseline/page_008/page_008/page_008_debug_6_notehead.png`
+
+## 2026-01-11: Mask Scaling Fix and Verification
+
+### Issue Confirmation
+- **Method**: Created `tools/debug_mask_alignment.py` to visualize the alignment between original images and `homr` masks.
+- **Finding**: Confirmed that `homr` masks are approximately **0.53x** the size of the original images (`3071x4311` vs `1618x2271`).
+- **Root Cause**: The `generate_numbering_overrides.py` script calculated scale factors but **failed to apply them** when slicing the mask for specific measure ROIs. This caused the "Musical Element Check" (Notehead/Stem density) to examine incorrect layout regions, leading to random False Positives/Negatives.
+
+### Fix Implementation
+- **Script**: `tools/generate_numbering_overrides.py`
+- **Change**: Applied `scale_x` and `scale_y` transformations to ROI coordinates before slicing `notehead_mask` and `staff_mask`.
+
+### Verification (Prokofiev 5 Page 008)
+- **Previous State**: Measures 16 and 18 were incorrectly rejected because "Noteheads" were found (due to misalignment looking at wrong area).
+- **Post-Fix State**:
+  - Ran override generation on Page 008.
+  - **Result**: Successfully auto-detected 4 multi-measure rests in System 4 and 5 (corresponding to the problematic area).
+  - The "found noteheads" rejection is resolved.
+
+### Next Steps
+- The "Musical Element Check" logic is now operating on valid data. We can proceed to trust its results for further parameter tuning.
+- Re-run batch verification on the full dataset to evaluate the true performance of the current MMR detection logic.
+
+## Session 2026-01-12: Phase 1.5 Fixes & Dataset Prep
+### Summary
+Addressed user feedback regarding the "End Bar" double-counting issue and prepared the infrastructure for massive GT annotation for the classifier.
+1.  **End Bar Logic Fix**:
+    *   Identified that thin+thick double barlines were being counted as separate measures.
+    *   Updated `MeasureNumberer.number_system` in `src/measure_numbering/numbering.py` to enforce `MIN_MEASURE_WIDTH = 25`.
+    *   Verified via `tools/debug_end_bar_removal.py` (visualization script created).
+2.  **Dataset Robustness**:
+    *   Updated `tools/create_mmr_train_data.py` to include a 20px padding (margin) around measure crops to prevent text truncation ("見切れ").
+3.  **GT Config Expansion**:
+    *   Created `tools/batch_gen_numbering_for_all.py` to generate explicit measure numbering for all datasets (Shostakovich, Sibelius, etc.).
+    *   Updated `tools/gt_relabel_gui/build_rest_gt_config.py` to scan for these files and generate a comprehensive `rest_gt_config_all.json`.
+    *   **Result**: 68 pages configured for annotation. (Note: Shostakovich Sym5 skipped due to missing barline data).
+4.  **Ad-hoc Fixes**:
+    *   **Prokofiev 5 Page 005**: User reported persistent end-bar issue. Identified stale `numbering_initial.json` and force-regenerated it. Verified removal of the 6px wide gap measure.
+    *   **Va Prokofiev 1 Page 004**: Synced user's manual GT update to `numbering_initial.json`.
+
+### Next Steps
+*   **User**: Complete GT annotation using the generated config.
+*   **System**: Proceed to Classifier Training (Track B) once data is available.

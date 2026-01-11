@@ -58,14 +58,24 @@ The project is currently split into two parallel tracks to address the "False Po
     *   **Visualization**: Confirmed correctness with centered measure numbers and transparent overlays.
     *   **Divisi Verification**: Confirmed robust grouping on Prokofiev dataset, distinguishing true divisi from coincidental alignment (e.g., elimination of false positives on Prokofiev 5).
 
+### Completed Work (Session 2026-01-12)
+1.  **Refine Multi-measure Rest Recognition**:
+    *   **Phase 1.5 Logic Fixes (Completed)**:
+        *   **End Bar Fix**: Implemented `MIN_MEASURE_WIDTH=25px` in `src/measure_numbering/numbering.py` to prevent counting end bars as separate measures.
+        *   **Dataset Padding**: Updated `tools/create_mmr_train_data.py` to add 20px margin around measure crops.
+        *   **Config Generation**: Created `data/evaluation2/rest_gt_config_all.json` covering all 68 evaluation pages for GT annotation.
+    *   **Evaluation**: Re-ran batch evaluation (F1=0.53) - confirmed heuristics are insufficient, mandating the classifier approach.
+
 ### Remaining Work / Next Steps
-1.  **Refine Multi-measure Rest Recognition** (Ongoing):
-    *   **Expand ROI Upwards**: Adjust cropping to prevent cutting off the top of large rest numbers.
-    *   **Spatial Filtering**: Prioritize digits near the measure center to avoid misidentifying practice numbers as rest counts.
-2.  **Production-ready Integration**:
+1.  **Phase 2: Classifier-based MMR Detection** (Immediate):
+    *   **User Action**: Run GT GUI with `rest_gt_config_all.json` to annotate `Shostakovich` and `Sibelius`.
+    *   **Dataset Gen**: Run `tools/create_mmr_train_data.py` to build the full training set (Positive/Negative crops).
+    *   **Model Training**: Train lightweight CNN (Track B).
+    *   **Integration**: Replace logic in `generate_numbering_overrides.py` with model inference.
+2.  **Phase 3: OCR Selector (Planned)**:
+    *   Train a secondary model or object detector to identify *which* number to read within a multi-measure rest (handling rehearsal marks vs rest counts).
+3.  **Production-ready Integration**:
     *   Combine `Detector JSON` + `Staff Mask PNG` + `Numbering Logic` into a single standalone pipeline script.
-    *   Automate the coordinate scaling logic based on image metadata.
-3.  **Special Musical Logic**:
     *   **Upbeats (Anacrusis)**: Formal detection or manual overrides.
     *   **Repeats / Segno**: Handling non-linear flow (if logical measure count differs from graphical sequence).
 4.  **Multi-page & Performance Verification**:

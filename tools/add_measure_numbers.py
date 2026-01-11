@@ -119,6 +119,7 @@ def main():
     parser.add_argument("--start-number", type=int, default=1, help="Starting measure number")
     parser.add_argument("--config", type=Path, help="Path to config JSON with overrides")
     parser.add_argument("--page-number", type=int, default=1, help="Page number for the input data")
+    parser.add_argument("--force-single-system", action="store_true", help="Treat each staff as a separate system (disable divisi logic)")
     
     args = parser.parse_args()
 
@@ -160,6 +161,7 @@ def main():
         Path(page_data['staff_mask']),
         page_data['image_size'],
         page_data.get('page_number', 1),
+        assume_one_staff_per_system=args.force_single_system,
         image=page_data.get('image')
     )
     score.pages.append(page)

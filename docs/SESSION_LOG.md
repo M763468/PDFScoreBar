@@ -887,3 +887,82 @@ Addressed user feedback regarding the "End Bar" double-counting issue and prepar
 ### Next Steps
 *   **User**: Complete GT annotation using the generated config.
 *   **System**: Proceed to Classifier Training (Track B) once data is available.
+
+## Session 2026-01-12 (Part 2): MMR Classifier Training & Integration
+### Summary
+Completed the pipeline transition from heuristic-based Multi-measure Rest detection to a robust CNN-based classifier approach.
+
+### 1. Dataset Generation
+*   **Refactor**: Rewrote `tools/create_mmr_train_data.py` to support flexible config-based loading (`--configs`), solving path issues with expansion data.
+*   **Execution**:
+    ```bash
+    python tools/create_mmr_train_data.py \
+      --configs data/evaluation2/rest_gt_config_all.json data/evaluation2/rest_gt_config_expansion.json \
+      --output-root data/mmr_dataset_v1
+    ```
+*   **Stats**: ~3700 total samples, 192 positive (Rest) samples.
+
+### 2. Model Training
+*   **Script**: Created `tools/train_mmr_classifier.py` (PyTorch, ResNet18, No sklearn dependency).
+*   **Execution**:
+    ```bash
+    python tools/train_mmr_classifier.py --data-root data/mmr_dataset_v1 --epochs 20 --batch-size 32
+    ```
+*   **Performance**:
+    *   **Validation F1**: > 0.99
+    *   **Convergence**: Reached optimal performance by Epoch 9.
+
+### 3. Integration & Verification
+*   **Inference Script**: Created `tools/generate_numbering_overrides_cnn.py` and replaced the original `tools/generate_numbering_overrides.py` with it.
+    *   *Note*: The original heuristic script was renamed to `tools/generate_numbering_overrides_heuristic.py`.
+    *   The new script accepts legacy arguments for drop-in compatibility.
+*   **End Bar Fix Verified**: Checked Prokofiev 5 Page 023. No measures < 25px width were generated, confirming the `MIN_MEASURE_WIDTH` fix is active in the full pipeline.
+
+### 4. Evaluation Results (Prokofiev 5)
+Ran batch verification on the full Prokofiev 5 dataset.
+*   **Command**:
+    ```bash
+    python tools/batch_verify_numbering.py --output-dir logs/experiments/batch_cnnv1
+    ```
+*   **Metrics**:
+    *   **Precision**: 93.8% (45/48)
+    *   **Recall**: 90.0% (45/50)
+    *   **F1 Score**: 91.8%
+*   **Analysis**: Significant improvement over heuristics. Remaining errors are primarily OCR-level (correct detection of rest, but wrong number text read).
+
+### Artifacts Updated
+*   `walkthrough.md`: Added final evaluation metrics and visual verification of Page 008 (Success) and Page 023 (End Bar Fix).
+*   `task.md`: Marked all Phase 2 tasks as complete.
+
+## Appendix: Tool Encyclopedia
+
+Below is a categorized list of scripts in the `tools/` directory and their primary purpose. This section aims to reduce confusion and assist in future re-use of the developed infrastructure.
+
+### 1. MMR Pipeline (Multi-measure Rest)
+- **`tools/generate_numbering_overrides.py`**: The "Stage 2" production script. Uses a CNN classifier (Stage 1) to find candidates and refined OCR (Stage 2) to extract rest counts.
+- **`tools/evaluate_rest_detection.py`**: The quantitative evaluation script. Separates Stage 1 (Classifier) and Stage 2 (OCR) metrics.
+- **`tools/analyze_mmr_errors.py`**: Generates a detailed report with visual crops for all MMR detection errors (FPs and FNs).
+- **`tools/organize_mmr_errors.py`**: Categorizes detection errors into specific directories for focused debugging.
+- **`tools/mmr_training/`**:
+    - `create_mmr_train_data.py`: Generates training crops (balanced classes) from annotated datasets.
+    - `train_mmr_classifier.py`: Trains the ResNet18 binary classifier.
+    - `visualize_rest_rois.py` / `extract_rest_rois.py`: Exploration tools for ROI density analysis.
+
+### 2. Measure Numbering & Systems
+- **`tools/add_measure_numbers.py`**: The main production script for applying measure numbers to detected barlines using staff masks and optional overrides.
+- **`tools/verify_measure_numbering_pipeline.py`**: End-to-end verification of the numbering engine.
+- **`tools/compare_batch_structure.py`**: Audit tool to identify measure count discrepancies between different numbering versions.
+
+### 3. Annotation & GT Helpers
+- **`tools/gt_relabel_gui/`**: A suite of browser-based tools for annotating barlines and multi-measure rests.
+- **`tools/coordinate_annotator.py`**: CLI-based manual annotation helper.
+- **`tools/sort_measures.py`**: Sorts barline detections into chronological order for numbering.
+
+### 4. General Diagnostics
+- **`tools/inspect_errors.py`**: A simple visualizer to compare GT vs Predicted barlines on a score page.
+- **`tools/debug_mask_alignment.py`**: Diagnoses coordinate shifts between staff masks and original images.
+- **`tools/render_barline_boxes_overlay.py`**: Generates high-quality overlays of barline detections.
+
+### 5. Historical / Sweep Scripts
+- **`run_omr_dln_sweep.sh`**: Runs a parameter sweep for the OMR-DLN pipeline.
+- **`tools/run_hybrid_pipeline.sh`**: Executes the legacy hybrid barline detection pipeline.

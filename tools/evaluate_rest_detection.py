@@ -16,7 +16,6 @@ def map_global_index_to_coords(numbering_data):
     """
     mapping = []
     if "pages" in numbering_data:
-        # Assuming single page per file in this batch context
         page = numbering_data["pages"][0]
         for s_idx, system in enumerate(page["systems"]):
             for m_idx, measure in enumerate(system["measures"]):
@@ -25,171 +24,142 @@ def map_global_index_to_coords(numbering_data):
 
 def evaluate_rest_detection(eval_root, overrides_root):
     """
-    Evaluates Multi-measure Rest detection performance.
+    Evaluates MMR detection with stage separation and robustness to index shifts.
     """
-    
     results = []
     
-    # Iterate over Ground Truth files
     gt_files = sorted(list(eval_root.glob("**/rest_gt.json")))
     
-    total_tp = 0
-    total_fp = 0
-    total_fn = 0
+    total_gt_rests = 0
+    total_det_tp = 0 # Classifier Found (any count)
+    total_det_fp = 0 # Classifier Found (hallucination)
+    
+    total_pipeline_tp = 0 # Classifier + OCR Correct
+    total_pipeline_fp = 0 # Incorrect count or hallucination
     
     for gt_path in gt_files:
-        # Determine work and page from path
-        # Expected: .../rest_gt/<work>/<page>/rest_gt.json
         parts = gt_path.parts
         page_name = parts[-2]
         work_name = parts[-3]
         
-        # Load GT
-        try:
-            gt_data = load_json(gt_path)
-            gt_items = gt_data.get("overrides", []) # List of {measure_index, rest_count}
-        except Exception as e:
-            print(f"Error loading GT {gt_path}: {e}")
-            continue
-
-        # Load Definitions (Predictions)
-        # Expected: .../<work>/<page>/overrides.json
         page_dir = overrides_root / work_name / page_name
         pred_path = page_dir / "overrides.json"
         numbering_path = page_dir / "numbering_initial.json"
         
         if not pred_path.exists() or not numbering_path.exists():
-            print(f"Prediction or Numbering not found for {work_name}/{page_name}")
-            # All GTs are FNs
-            fn = len(gt_items)
-            results.append({
-                "Work": work_name,
-                "Page": page_name,
-                "TP": 0,
-                "FP": 0,
-                "FN": fn
-            })
-            total_fn += fn
             continue
             
         try:
-            pred_data = load_json(pred_path)
-            pred_overrides = pred_data.get("measure_overrides", []) # {system, measure, skip}
-            
+            gt_data = load_json(gt_path).get("overrides", [])
+            pred_data = load_json(pred_path).get("measure_overrides", [])
             numbering_data = load_json(numbering_path)
             global_map = map_global_index_to_coords(numbering_data)
-        except Exception as e:
-            print(f"Error loading Pred/Numbering {pred_path}: {e}")
-            continue
-            
-        # Build GT Map: (system, measure) -> skip
-        gt_map = {}
-        valid_gt = True
-        for item in gt_items:
-            g_idx = item['measure_index']
-            count = item['rest_count']
-            if count < 2: continue # Ignore 1-bar rests (not MMR)
-            
-            if g_idx >= len(global_map):
-                print(f"Warning: GT index {g_idx} out of bounds for {work_name}/{page_name}")
-                valid_gt = False
-                break
-                
-            s_idx, m_idx = global_map[g_idx]
-            gt_map[(s_idx, m_idx)] = count - 1 # skip = count - 1
-            
-        if not valid_gt:
-            continue
-            
-        # Build Pred Map: (system, measure) -> skip
+        except: continue
+
+        # 1. Build Pred Map (system, measure) -> count
         pred_map = {}
-        for item in pred_overrides:
+        for item in pred_data:
             key = (item['system'], item['measure'])
-            pred_map[key] = item['skip']
-            
-        tp = 0
-        fp = 0
-        fn = 0
+            pred_map[key] = item['skip'] + 1
+
+        # 2. Build GT Map (measure_index) -> count
+        gt_map = {item['measure_index']: item['rest_count'] for item in gt_data if item['rest_count'] >= 2}
+        total_gt_rests += len(gt_map)
+
+        # 3. Robust Matching (Shift Search)
+        best_shift = 0
+        max_tps = 0
         
-        # Check TPs and FNs (Iterate GT)
-        # Match requirement: Location matches AND skip count matches (exact)
-        for key, skip_val in gt_map.items():
-            if key in pred_map:
-                if pred_map[key] == skip_val:
-                    tp += 1
-                else:
-                    # Location match but Count mismatch
-                    # Penalize as missed the correct one => FN
-                    # And predicted a wrong one => FP
-                    fn += 1 
-                    fp += 1
-                    # print(f"Mismatch {work_name}/{page_name} {key}: GT={skip_val} Pred={pred_map[key]}")
-            else:
-                fn += 1
-                # print(f"Missed {work_name}/{page_name} {key}")
-                
-        # Check FPs (Iterate Preds not in GT)
-        for key, skip_val in pred_map.items():
-            if key not in gt_map:
-                fp += 1
-                # print(f"False Positive {work_name}/{page_name} {key}")
-                
+        for s in [-2, -1, 0, 1, 2]:
+            current_tps = 0
+            for g_idx in gt_map.keys():
+                target_idx = g_idx + s
+                if 0 <= target_idx < len(global_map):
+                    key = global_map[target_idx]
+                    if key in pred_map:
+                        current_tps += 1
+            if current_tps > max_tps:
+                max_tps = current_tps
+                best_shift = s
+        
+        if best_shift != 0:
+            print(f"  [INFO] Detected index shift of {best_shift:+} for {page_name}")
+
+        # 4. Local Evaluation (Using best shift)
+        loc_det_tp = 0
+        loc_pipe_tp = 0
+        
+        matched_keys = set()
+        for g_idx, gt_count in gt_map.items():
+            target_idx = g_idx + best_shift
+            if 0 <= target_idx < len(global_map):
+                key = global_map[target_idx]
+                if key in pred_map:
+                    matched_keys.add(key)
+                    loc_det_tp += 1
+                    if pred_map[key] == gt_count:
+                        loc_pipe_tp += 1
+        
+        # All other preds are FP
+        loc_det_fp = len(pred_data) - loc_det_tp
+        loc_pipe_fp = len(pred_data) - loc_pipe_tp
+
         results.append({
             "Work": work_name,
             "Page": page_name,
-            "TP": tp,
-            "FP": fp,
-            "FN": fn
+            "GT": len(gt_map),
+            "Shift": f"{best_shift:+}",
+            "Det_TP": loc_det_tp,
+            "Det_FP": loc_det_fp,
+            "Pipe_TP": loc_pipe_tp,
+            "Pipe_FP": loc_pipe_fp
         })
         
-        total_tp += tp
-        total_fp += fp
-        total_fn += fn
+        total_det_tp += loc_det_tp
+        total_det_fp += loc_det_fp
+        total_pipeline_tp += loc_pipe_tp
+        total_pipeline_fp += loc_pipe_fp
 
     df = pd.DataFrame(results)
     
-    precision = total_tp / (total_tp + total_fp) if (total_tp + total_fp) > 0 else 0
-    recall = total_tp / (total_tp + total_fn) if (total_tp + total_fn) > 0 else 0
-    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    det_prec = total_det_tp / (total_det_tp + total_det_fp) if (total_det_tp + total_det_fp) > 0 else 0
+    det_rec = total_det_tp / total_gt_rests if total_gt_rests > 0 else 0
     
-    print("\n--- Evaluation Results ---")
-    try:
-        print(df.to_markdown(index=False))
-    except:
-        print(df.to_string(index=False))
-        
-    print("\n--- Summary ---")
-    print(f"Total Pages: {len(results)}")
-    print(f"Total GT Rests: {total_tp + total_fn}")
-    print(f"True Positives: {total_tp}")
-    print(f"False Positives: {total_fp}")
-    print(f"False Negatives: {total_fn}")
-    print(f"Precision: {precision:.4f}")
-    print(f"Recall:    {recall:.4f}")
-    print(f"F1 Score:  {f1:.4f}")
+    pipe_prec = total_pipeline_tp / (total_pipeline_tp + total_pipeline_fp) if (total_pipeline_tp + total_pipeline_fp) > 0 else 0
+    pipe_rec = total_pipeline_tp / total_gt_rests if total_gt_rests > 0 else 0
+    
+    print("\n--- MMR Detection Evaluation (Robust Match) ---")
+    print(df.to_string(index=False))
+    
+    print("\n--- Summary Metrics ---")
+    print(f"Stage 1: Candidate Detection (Classifier)")
+    print(f"  Precision: {det_prec:.4f}")
+    print(f"  Recall:    {det_rec:.4f} ({total_det_tp}/{total_gt_rests})")
+    print(f"Stage 2: Full Pipeline (Candidate + OCR)")
+    print(f"  Precision: {pipe_prec:.4f}")
+    print(f"  Recall:    {pipe_rec:.4f} ({total_pipeline_tp}/{total_gt_rests})")
     
     # Save results
-    output_res_csv = overrides_root / "mmr_evaluation_results.csv"
+    output_res_csv = overrides_root / "mmr_eval_robust.csv"
     df.to_csv(output_res_csv, index=False)
     
-    summary_md = overrides_root / "mmr_evaluation_summary.md"
+    summary_md = overrides_root / "mmr_eval_robust_summary.md"
     with open(summary_md, "w") as f:
-        f.write("# Multi-measure Rest Detection Evaluation\n\n")
-        f.write(f"- Precision: **{precision:.4f}**\n")
-        f.write(f"- Recall:    **{recall:.4f}**\n")
-        f.write(f"- F1 Score:  **{f1:.4f}**\n\n")
+        f.write("# MMR Detection Evaluation (Robust Match)\n\n")
+        f.write("### Stage 1: Classifier (Candidate Detection)\n")
+        f.write(f"- Precision: **{det_prec:.4f}**\n")
+        f.write(f"- Recall:    **{det_rec:.4f}**\n\n")
+        f.write("### Stage 2: Full Pipeline (OCR Included)\n")
+        f.write(f"- Precision: **{pipe_prec:.4f}**\n")
+        f.write(f"- Recall:    **{pipe_rec:.4f}**\n\n")
         f.write("## Per Page Details\n")
-        try:
-            f.write(df.to_markdown(index=False))
-        except:
-            f.write(df.to_string(index=False))
+        f.write(df.to_markdown(index=False))
 
     print(f"\nSaved report to {summary_md}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--eval-root", type=Path, required=True, help="Root of rest_gt data")
-    parser.add_argument("--overrides-root", type=Path, required=True, help="Root of prediction outputs")
+    parser.add_argument("--eval-root", type=Path, required=True)
+    parser.add_argument("--overrides-root", type=Path, required=True)
     args = parser.parse_args()
-    
     evaluate_rest_detection(args.eval_root, args.overrides_root)

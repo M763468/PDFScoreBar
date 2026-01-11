@@ -65,13 +65,15 @@ The project is currently split into two parallel tracks to address the "False Po
         *   **Dataset Padding**: Updated `tools/create_mmr_train_data.py` to add 20px margin around measure crops.
         *   **Config Generation**: Created `data/evaluation2/rest_gt_config_all.json` covering all 68 evaluation pages for GT annotation.
     *   **Evaluation**: Re-ran batch evaluation (F1=0.53) - confirmed heuristics are insufficient, mandating the classifier approach.
+    *   **Phase 2: Classifier-based MMR Detection (Completed)**:
+        *   **Dataset**: Generated ~3700 samples (192 Rest) using config-based script.
+        *   **Training**: Trained ResNet18 (Validation F1 > 0.99).
+        *   **Integration**: Replaced heuristic script with CNN inference. Verified on Prokofiev 5 (Precision 94%, Recall 90%).
 
 ### Remaining Work / Next Steps
-1.  **Phase 2: Classifier-based MMR Detection** (Immediate):
-    *   **User Action**: Run GT GUI with `rest_gt_config_all.json` to annotate `Shostakovich` and `Sibelius`.
-    *   **Dataset Gen**: Run `tools/create_mmr_train_data.py` to build the full training set (Positive/Negative crops).
-    *   **Model Training**: Train lightweight CNN (Track B).
-    *   **Integration**: Replace logic in `generate_numbering_overrides.py` with model inference.
+1.  **Refine & Scale Evaluation**:
+    *   **Expand**: Run batch verification on `Shostakovich` and `Sibelius` datasets (requires fixing directory paths).
+    *   **OCR Refinement**: Detailed diagnosis of the few remaining "detected but wrong number" errors.
 2.  **Phase 3: OCR Selector (Planned)**:
     *   Train a secondary model or object detector to identify *which* number to read within a multi-measure rest (handling rehearsal marks vs rest counts).
 3.  **Production-ready Integration**:
@@ -81,14 +83,20 @@ The project is currently split into two parallel tracks to address the "False Po
 4.  **Multi-page & Performance Verification**:
     *   Run the numbering pipeline on full multi-page PDFs to ensure state (measure count) is correctly preserved.
     *   Implement movement boundary detection to reset numbering.
+5.  **Divisi Logic Improvement (New)**:
+    *   **Finding**: The current "Aligned Physical Connectivity" check (vertical ink) is too eager on single-staff pages with noise or extended barline ink (e.g., `Angerer_Kinder_Symphony`), causing false positive system grouping.
+    *   **Action**: Refine the `SystemBuilder` logic. Potential ideas:
+        *   Require *multiple* aligned connections (not just 1).
+        *   Check for system brackets/braces (if available from detection).
+        *   Adaptive thresholding based on page-wide statistics.
 
 ### Key Artifacts
-- `src/measure_numbering/types.py`: Core data classes (`unsafe_hash=True` for set ops).
-- `src/measure_numbering/builder.py`: System grouping logic.
-- `src/measure_numbering/numbering.py`: Measure numbering logic.
+- `tools/train_mmr_classifier.py`: Training script.
+- `tools/generate_numbering_overrides_cnn.py`: Inference script (integrated).
+- `mmr_classifier_best.pth`: Trained model weights.
 - `docs/SESSION_LOG.md`: Detailed activity log.
 
 ---
 
-## Track B: CNN Training (Training Worktree)
-(See `docs/DEVLOG_CNN_TRAINING.md` in the training worktree for details)
+## Track B: CNN Training (Merged)
+This track is now merged back into the main workflow as the classifier has been successfully trained and integrated.

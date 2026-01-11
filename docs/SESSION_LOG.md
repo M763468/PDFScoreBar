@@ -1002,3 +1002,50 @@ To train `resnet18` on the new dataset:
 GTを修正して再学習した方がよさそう。
 
 
+
+## 2026-01-10: Error Analysis Overlays Generation
+**Objective**: Generate full-page overlays to assist user in locating GT errors (Missing/Wrong annotations).
+**Action**:
+1. Ran `inference_visualize.py` on all `eval2` pages using the best model (v3 hardneg) and 'No Peak' candidates.
+2. Output directory: `logs/cnn_correction_overlays/`.
+
+## 2026-01-11: Fix GT Discrepancy (Va_Prokofiev vs prokofiev1)
+
+**Issue**: Visualization showed valid barlines as False Positives in  pages.
+**Cause**: The visualization script used  GT files which were older and less complete than the corresponding  files (despite representing the same pages).
+**Fix**:
+1.  **Synchronized GT**: Copied  from  (pages 001-006) to  as .
+2.  **Updated Config**: Pointed  to the new files.
+3.  **Verification**:
+    -   Ran  to confirm file identity.
+    -   Ran  to generate corrected overlays in .
+
+**Outcome**:  GT is now up-to-date. Visualization should be consistent.
+
+## 2026-01-11: Data Unification & Config Fix
+
+**Actions**:
+1.  **Duplicate Removal**: Deleted  annotations and images, as data was consolidated into .
+2.  **Config Cleanup**: Removed  entries from .
+3.  **Config Fix**: Added missing entry for  pointing to .
+
+## 2026-01-11: Manual GT Correction & Finalization (Va_Prokofiev)
+
+**Objective**: Incorporate manual maintenance of  GT performed via .
+**Actions**:
+1.  **Verification**: Confirmed that  for pages 001-006 were updated (timestamps ~11:28).
+2.  **Visualization**: Regenerated overlays for the entire dataset using the updated GT.
+    - Output: 
+    - Confirmed pages like  now reflect the manual corrections.
+
+**Dataset Status**:  is now fully synchronized with the user's manual edits.
+
+## 2026-01-11: Manual GT Correction & Finalization (Other Scores)
+
+**Objective**: Incorporate manual maintenance of , , and  GT performed via .
+**Actions**:
+1.  **Verification**: Confirmed recent updates (timestamps ~11:40-11:57) for multiple pages in these directories.
+2.  **Visualization**: Regenerated overlays for the entire dataset using the updated GT.
+    - Output: 
+
+**Dataset Status**: All manual edits have been integrated and verified.

@@ -73,6 +73,14 @@
       "y_threshold": 50
     },
     {
+      "name": "Shosrakovich-Sym5-Va/page_011",
+      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_011.png",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_011/raw_boxes.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_011/boxes_sorted_v20260109.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_011/boxes_sorted_v20260109.json",
+      "y_threshold": 50
+    },
+    {
       "name": "Shosrakovich-Sym5-Va/page_012",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Shosrakovich-Sym5-Va/page_012.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Shosrakovich-Sym5-Va/page_012/raw_boxes.json",
@@ -324,96 +332,48 @@
       "name": "Va_Prokofiev_Symphony1/page_001",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/output_raw.json",
-      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/boxes_sorted_v20251229.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/boxes_sorted_v20251229.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/boxes_sorted_v20260111.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/boxes_sorted_v20260111.json",
       "y_threshold": 50
     },
     {
       "name": "Va_Prokofiev_Symphony1/page_002",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Va_Prokofiev_Symphony1/page_002.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_002/output_raw.json",
-      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_002/boxes_sorted_v20260106.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_002/boxes_sorted_v20260106.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_002/boxes_sorted_v20260111.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_002/boxes_sorted_v20260111.json",
       "y_threshold": 50
     },
     {
       "name": "Va_Prokofiev_Symphony1/page_003",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Va_Prokofiev_Symphony1/page_003.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_003/output_raw.json",
-      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_003/boxes_sorted_v20260106.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_003/boxes_sorted_v20260106.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_003/boxes_sorted_v20260111.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_003/boxes_sorted_v20260111.json",
       "y_threshold": 50
     },
     {
       "name": "Va_Prokofiev_Symphony1/page_004",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/output_raw.json",
-      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/boxes_sorted_v20251229.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/boxes_sorted_v20251229.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/boxes_sorted_v20260111.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/boxes_sorted_v20260111.json",
       "y_threshold": 50
     },
     {
       "name": "Va_Prokofiev_Symphony1/page_005",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Va_Prokofiev_Symphony1/page_005.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_005/output_raw.json",
-      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_005/boxes_sorted_v20260106.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_005/boxes_sorted_v20260106.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_005/boxes_sorted_v20260111.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_005/boxes_sorted_v20260111.json",
       "y_threshold": 50
     },
     {
       "name": "Va_Prokofiev_Symphony1/page_006",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/Va_Prokofiev_Symphony1/page_006.png",
       "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_006/output_raw.json",
-      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_006/boxes_sorted_v20260106.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_006/boxes_sorted_v20260106.json",
-      "y_threshold": 50
-    },
-    {
-      "name": "prokofiev1/page_001",
-      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev1/page_001.png",
-      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_001/raw_boxes.json",
-      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_001/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_001/boxes_sorted.json",
-      "y_threshold": 50
-    },
-    {
-      "name": "prokofiev1/page_002",
-      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev1/page_002.png",
-      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_002/raw_boxes.json",
-      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_002/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_002/boxes_sorted.json",
-      "y_threshold": 50
-    },
-    {
-      "name": "prokofiev1/page_003",
-      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev1/page_003.png",
-      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_003/raw_boxes.json",
-      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_003/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_003/boxes_sorted.json",
-      "y_threshold": 50
-    },
-    {
-      "name": "prokofiev1/page_004",
-      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev1/page_004.png",
-      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_004/raw_boxes.json",
-      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_004/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_004/boxes_sorted.json",
-      "y_threshold": 50
-    },
-    {
-      "name": "prokofiev1/page_005",
-      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev1/page_005.png",
-      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_005/raw_boxes.json",
-      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_005/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_005/boxes_sorted.json",
-      "y_threshold": 50
-    },
-    {
-      "name": "prokofiev1/page_006",
-      "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/images/prokofiev1/page_006.png",
-      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_006/raw_boxes.json",
-      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_006/boxes_sorted.json",
-      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/prokofiev1/page_006/boxes_sorted.json",
+      "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_006/boxes_sorted_v20260111.json",
+      "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_006/boxes_sorted_v20260111.json",
       "y_threshold": 50
     },
     {

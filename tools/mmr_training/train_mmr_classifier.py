@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 from torchvision import transforms, models
+from torchvision.models import ResNet18_Weights
 from PIL import Image, ImageDraw, ImageFont
 from pathlib import Path
 import numpy as np
@@ -239,6 +240,14 @@ def load_fonts_from_dir(dir_path):
         return []
     return [str(p) for p in dir_path.rglob("*") if p.suffix.lower() in {".ttf", ".otf"}]
 
+def _get_progress_bar():
+    try:
+        from tqdm import tqdm
+        return tqdm
+    except Exception:
+        return None
+
+
 def train_model(args):
     set_seed()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -353,7 +362,7 @@ def train_model(args):
     
     # 2. Define Model
     # Use ResNet18 (Pretrained)
-    model = models.resnet18(pretrained=True)
+    model = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
     # Modify final layer for binary classification
     # ResNet18 fc in: 512, out: 1000
     model.fc = nn.Linear(model.fc.in_features, 1)
@@ -372,11 +381,17 @@ def train_model(args):
     # 3. Training Loop
     best_f1 = 0.0
     
+    tqdm = _get_progress_bar()
+
     for epoch in range(args.epochs):
         model.train()
         running_loss = 0.0
-        
-        for images, labels in train_loader:
+
+        train_iter = train_loader
+        if tqdm:
+            train_iter = tqdm(train_loader, desc=f"Train {epoch+1}/{args.epochs}", leave=False)
+
+        for images, labels in train_iter:
             images = images.to(device)
             labels = labels.unsqueeze(1).to(device)
             
@@ -396,7 +411,11 @@ def train_model(args):
         val_targets = []
         
         with torch.no_grad():
-            for images, labels in val_loader:
+            val_iter = val_loader
+            if tqdm:
+                val_iter = tqdm(val_loader, desc=f"Val {epoch+1}/{args.epochs}", leave=False)
+
+            for images, labels in val_iter:
                 images = images.to(device)
                 labels = labels.unsqueeze(1).to(device)
                 outputs = model(images)

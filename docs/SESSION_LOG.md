@@ -1187,3 +1187,46 @@ Run **Global Evaluation v5** to quantify the impact of Horizontal Merging across
 
 ### Next Step
 - User will run MMR retraining in the background.
+
+## 2026-01-XX: MMR Text-Noise Training + Global Eval (v7?)
+
+### Training Summary (Text-Noise + Staff Mask)
+- **Command**: Used `data/mmr_dataset_v2`, batch size 224, epochs 30, text-noise + staff-mask constraints.
+- **TensorBoard (val)**:
+  - `val/f1`: **0.9737**
+  - `val/prec`: **0.9487**
+  - `val/rec`: **1.0000**
+  - `val/acc`: **0.9973**
+  - Training loss converged (`loss/train`: **0.0074** at epoch 30).
+
+### Global Eval (Text-Noise Model)
+- **Output Dir**: `logs/experiments/global_mmr_eval_textnoise`
+- **Stage 1 (Classifier)**:
+  - Precision: **1.0000**
+  - Recall:    **0.8750** (154/176)
+- **Stage 2 (Pipeline + OCR)**:
+  - Precision: **0.9481** (146/154)
+  - Recall:    **0.8295** (146/176)
+
+### Residual Errors (Pipeline)
+- **FN-heavy Pages**: Sibelius p001–p006, Shostakovich-Festival p001/p002/p004/p009, Prokofiev5 p005/p009/p019, Prokofiev1 p001/p003, Shostakovich-Sym5 p010/p015/p022.
+- **FP Pages (Pipeline)**: Shostakovich-Sym5 p010/p022, Festival p002, Sibelius p001/p002, Prokofiev1 p001, Prokofiev5 p005/p009.
+
+### Current Evaluation Snapshot (Known Results)
+- **Dataset**: `data/mmr_dataset_v2` (Pos=183, Neg=4045)
+- **Model Output**: `tools/mmr_training/models/mmr_classifier_best_textnoise.pth`
+- **Training (val)**: F1 **0.9737**, Precision **0.9487**, Recall **1.0000**, Acc **0.9973** (epoch 30)
+- **Global Eval**: Stage1 P/R **1.0000 / 0.8750**, Stage2 P/R **0.9481 / 0.8295**
+
+### Handover (Next Session)
+1. **FN Analysis**:
+   - Focus pages: Sibelius p001–p006, Shostakovich-Festival p001/p002/p004/p009, Prokofiev5 p005/p009/p019, Prokofiev1 p001/p003, Shostakovich-Sym5 p010/p015/p022.
+   - Use `tools/analyze_mmr_errors.py` or `tools/organize_mmr_errors.py` to collect FN crops and verify whether misses are classifier or OCR.
+2. **Classifier Threshold Tuning**:
+   - Consider lowering `--rescue-threshold` or adjusting OCR score gating for low-prob candidates.
+3. **OCR Post-Processing**:
+   - Review FP pages (Festival p002, Sibelius p001/p002, Prokofiev1 p001, Prokofiev5 p005/p009, Sym5 p010/p022) for tempo/rehearsal interference.
+   - Check if additional geometric penalties are needed for left-anchored rehearsal marks.
+4. **Data Expansion**:
+   - Add targeted positives from FN pages (text-heavy rests in Sibelius/Festival) to improve recall without inflating FP.
+   - Option: increase text-noise probability or add specific terms observed in errors.

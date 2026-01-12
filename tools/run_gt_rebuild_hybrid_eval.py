@@ -2361,6 +2361,7 @@ def detect_probe_scan(
                             }
                         )
                         continue
+            
             if has_existing(float(local_idx), y1, y2):
                 debug_records.append(
                     {

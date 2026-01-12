@@ -72,6 +72,7 @@ def center_crop(img, cx, cy, crop_w, crop_h):
 def process_dir(log_dir, model, gpu_norm, threshold=0.5):
     candidates_path = log_dir / "pipeline2_no_peak_candidates.json"
     if not candidates_path.exists():
+        print(f"DEBUG: Candidates path missing: {candidates_path}")
         return False
 
     # Check if inputs needed are present
@@ -96,7 +97,7 @@ def process_dir(log_dir, model, gpu_norm, threshold=0.5):
         page_num = "_".join(parts[page_idx:]) # page_002
     except ValueError:
         # Fallback for weird names
-        print(f"Skipping {log_dir.name}: parsing failed")
+        print(f"Skipping {log_dir.name}: parsing failed components={parts}")
         return False
         
     image_path = Path(f"data/evaluation2/images/{score_name}/{page_num}.png")
@@ -106,6 +107,13 @@ def process_dir(log_dir, model, gpu_norm, threshold=0.5):
 
     if not image_path.exists():
         print(f"Image not found for {log_dir.name}: {image_path}")
+        # Try brute force
+        # print("DEBUG: Trying brute force find...")
+        # found = list(Path("data/evaluation2/images").rglob(f"{page_num}.png"))
+        # if found:
+        #     image_path = found[0]
+        #     print(f"DEBUG: Found at {image_path}")
+        # else:
         return False
 
     with open(candidates_path, 'r') as f:

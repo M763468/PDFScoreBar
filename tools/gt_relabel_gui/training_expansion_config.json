@@ -5,7 +5,7 @@
             "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/training/images/page_10.png",
             "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/training/annotations/page_010/raw_boxes_v20260111.json",
             "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/training/annotations/page_010/boxes_sorted_v20260111.json",
-            "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/training/annotations/page_010/boxes_sorted_v20251229.json",
+            "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/training/annotations/page_010/boxes_sorted_v20260111.json",
             "y_threshold": 50
         },
         {
@@ -13,7 +13,7 @@
             "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/training/images/page_15.png",
             "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/training/annotations/page_015/raw_boxes_v20260111.json",
             "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/training/annotations/page_015/boxes_sorted_v20260111.json",
-            "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/training/annotations/page_015/boxes_sorted_v20251229.json",
+            "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/training/annotations/page_015/boxes_sorted_v20260111.json",
             "y_threshold": 50
         },
         {
@@ -21,7 +21,7 @@
             "image": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation/images/page_3.png",
             "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation/annotations/page_003/raw_boxes_v20260111.json",
             "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation/annotations/page_003/boxes_sorted_v20260111.json",
-            "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation/annotations/page_003/boxes_sorted.json",
+            "editable": "/home/masaki_muramatsu/ws_PDFScoreBar_training/data/evaluation/annotations/page_003/boxes_sorted_v20260111.json",
             "y_threshold": 50
         }
     ]

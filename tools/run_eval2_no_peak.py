@@ -61,7 +61,7 @@ def process_run(run_dir: Path, img_root: Path):
         
         # Standard Width/Ink
         probe_width=4,
-        ink_threshold=180,
+        ink_threshold=210,
         
         # No Peak Parameters
         scan_x_peak_ratio_min=0.0,      # Disable peak sharpness check

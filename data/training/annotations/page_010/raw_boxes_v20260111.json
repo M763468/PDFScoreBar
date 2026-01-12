@@ -920,9 +920,9 @@
       0
     ],
     "barline_location": [
-      1839,
-      3268,
-      1855,
+      1840,
+      3267,
+      1846,
       3339
     ],
     "barline_type": "double_barline"
@@ -1160,10 +1160,10 @@
       0
     ],
     "barline_location": [
-      2531,
-      3036,
-      2549,
-      3112
+      2539,
+      3032,
+      2547,
+      3107
     ],
     "barline_type": "barline"
   },
@@ -2524,6 +2524,22 @@
       646,
       2545,
       720
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 0,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1850,
+      3268,
+      1854,
+      3339
     ],
     "barline_type": "barline"
   }

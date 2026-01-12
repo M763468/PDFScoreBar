@@ -111,37 +111,61 @@ def main():
         # For each candidate, find best GT overlap
         
         fp_boxes = [] # Green (Model Yes, GT No)
-        fn_boxes = [] # Red (Model No, GT Yes - via candidate)
+        fn_cnn_boxes = [] # Red (Model No, GT Yes - via candidate)
+        fn_det_boxes = [] # Yellow (No Candidate)
+        
+        # 1. Match Candidates to GT
+        gt_matched = [False] * len(gt_boxes)
         
         for cand in candidates:
             box = cand["bbox"]
             score = cand["score"]
             
-            # Find max IoU with any GT
-            max_iou = 0
-            for gt in gt_boxes:
+            # Find Best GT Match
+            best_iou = 0
+            best_gt_idx = -1
+            
+            for idx, gt in enumerate(gt_boxes):
                 iou = compute_iou(box, gt)
-                if iou > max_iou:
-                    max_iou = iou
+                if iou > best_iou:
+                    best_iou = iou
+                    best_gt_idx = idx
             
-            is_matched = max_iou > 0.5
-            is_accepted = score > args.threshold
+            is_matched_gt = (best_iou > 0.5)
+            is_accepted = (score > args.threshold)
             
-            if is_accepted and not is_matched:
-                fp_boxes.append(cand) # FP
-            elif not is_accepted and is_matched:
-                fn_boxes.append(cand) # FN (Candidate found it, but classifier rejected)
+            if is_matched_gt:
+                # This candidate corresponds to a GT
+                gt_matched[best_gt_idx] = True # Consumed by at least one candidate (regardless of score)
+                
+                if not is_accepted:
+                    fn_cnn_boxes.append(cand) # Found by detector, rejected by CNN
+            else:
+                # No matching GT
+                if is_accepted:
+                    fp_boxes.append(cand) # FP (Hallucination)
+
+        # 2. Identify Detector Misses (GT with NO matching candidate)
+        for idx, is_covered in enumerate(gt_matched):
+            if not is_covered:
+                fn_det_boxes.append(gt_boxes[idx])
         
         # Draw
         overlay = img.copy()
         
-        # 1. Draw GT (Blue, thin) - Reference
+        # Draw GT (Blue, thin) - Reference
         for gt in gt_boxes:
             x1, y1, x2, y2 = map(int, gt)
-            cv2.rectangle(overlay, (x1, y1), (x2, y2), (255, 0, 0), 1) # Blue
+            cv2.rectangle(overlay, (x1, y1), (x2, y2), (255, 0, 0), 1)
             
-        # 2. Draw FN (Red, thick) - Classifier missed it
-        for item in fn_boxes:
+        # Draw Detector Misses (Yellow, thick)
+        for box in fn_det_boxes:
+            x1, y1, x2, y2 = map(int, box)
+            cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 255, 255), 2) # Yellow
+            cv2.putText(overlay, "Miss", (x1, y1-2), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1)
+
+        # Draw CNN Misses (Red, thick)
+        for item in fn_cnn_boxes:
             box = item["bbox"]
             score = item["score"]
             x1, y1, x2, y2 = map(int, box)

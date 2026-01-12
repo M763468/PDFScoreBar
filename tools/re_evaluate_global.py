@@ -1,0 +1,171 @@
+
+import json
+import argparse
+import sys
+from pathlib import Path
+from tqdm import tqdm
+import csv
+from collections import defaultdict
+
+# Add repo root to sys path
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.append(str(REPO_ROOT))
+
+from src.common.barline_evaluation import greedy_barline_match
+
+def find_gt_file(gt_root, subdir, page_name):
+    base_dir = Path(gt_root) / subdir / page_name
+    if not base_dir.exists(): return None
+    candidates = list(base_dir.glob("boxes_sorted*.json"))
+    if candidates:
+        candidates.sort(reverse=True)
+        return candidates[0]
+    f = base_dir / "boxes_sorted.json"
+    if f.exists(): return f
+    return None
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--scored-root", required=True)
+    parser.add_argument("--gt-root", required=True)
+    parser.add_argument("--output-csv", required=True)
+    parser.add_argument("--threshold", type=float, default=0.5)
+    args = parser.parse_args()
+
+    scored_files = list(Path(args.scored_root).rglob("*_scored.json"))
+    stats = []
+
+    print(f"Processing {len(scored_files)} scored files with greedy_barline_match...")
+
+    for json_path in tqdm(scored_files):
+        run_id = json_path.stem.replace("_scored", "")
+        # ... (rest of loop logic is fine)
+        parts = run_id.split('_')
+        
+        # Check if filename has 'page' info
+        has_page = "page" in parts
+        
+        # If not, try parent directory name
+        if not has_page:
+            run_id = json_path.parent.name
+            parts = run_id.split('_')
+        
+        print(f"DEBUG: Processing {json_path}")
+        print(f"DEBUG: run_id={run_id}, parts={parts}")
+
+        try:
+            page_idx = -1
+            for i, p in enumerate(parts):
+                if p == "page":
+                    page_idx = i
+                    break
+            if page_idx == -1: 
+                print("DEBUG: 'page' keyword not found")
+                continue
+            subdir = "_".join(parts[1:page_idx])
+            page_name = "_".join(parts[page_idx:])
+            print(f"DEBUG: subdir={subdir}, page_name={page_name}")
+        except Exception as e:
+            print(f"DEBUG: Exception parsing: {e}")
+            continue
+
+        with open(json_path, 'r') as f:
+            candidates = json.load(f)
+
+        gt_path = find_gt_file(args.gt_root, subdir, page_name)
+        if not gt_path: 
+            print(f"DEBUG: GT not found for {subdir}/{page_name} in {args.gt_root}")
+            continue
+
+        with open(gt_path, 'r') as f:
+            gt_data = json.load(f)
+        
+        gt_boxes = []
+        for item in gt_data:
+            if isinstance(item, list): gt_boxes.append(tuple(item[:4]))
+            elif isinstance(item, dict):
+                if "box" in item: gt_boxes.append(tuple(item["box"]))
+                elif "barline_location" in item: gt_boxes.append(tuple(item["barline_location"]))
+
+        accepted_candidates = [tuple(c["bbox"]) for c in candidates if c["score"] > args.threshold]
+        
+        # USE GREEDY MATCH
+        match_result = greedy_barline_match(accepted_candidates, gt_boxes)
+        
+        tp = len(match_result.matches)
+        fp = len(match_result.false_positive_indices)
+        fn_total = len(match_result.false_negative_indices)
+        
+        # Detector vs CNN breakdown for FNs
+        # (A GT is a Detector Miss if NO candidate in the entire set (even < threshold) hits it)
+        all_candidate_boxes = [tuple(c["bbox"]) for c in candidates]
+        fn_cnn = 0
+        fn_det = 0
+        for fn_idx in match_result.false_negative_indices:
+            found_by_detector = False
+            gt_box = gt_boxes[fn_idx]
+            for cand in all_candidate_boxes:
+                # Use simple 0.5 IoU for detector hit check
+                # (Ideally use barline_iou with padding, but consistent with evaluate_accuracy_batch.py)
+                from src.common.barline_evaluation import barline_iou
+                if barline_iou(cand, gt_box) > 0.5:
+                    found_by_detector = True
+                    break
+            
+            if found_by_detector:
+                fn_cnn += 1
+            else:
+                fn_det += 1
+
+        stats.append({
+            "score": subdir,
+            "page": page_name,
+            "tp": tp,
+            "fp": fp,
+            "fn_total": fn_total,
+            "fn_cnn": fn_cnn,
+            "fn_det": fn_det,
+            "gt_count": len(gt_boxes)
+        })
+
+    # Output Aggregate Summary
+    agg = defaultdict(lambda: {"tp": 0, "fp": 0, "fn": 0, "fn_cnn": 0, "fn_det": 0, "gt": 0, "pages": 0})
+    for s in stats:
+        b = agg[s["score"]]
+        b["tp"] += s["tp"]
+        b["fp"] += s["fp"]
+        b["fn"] += s["fn_total"]
+        b["fn_cnn"] += s["fn_cnn"]
+        b["fn_det"] += s["fn_det"]
+        b["gt"] += s["gt_count"]
+        b["pages"] += 1
+
+    print("\n=== Professional Evaluation Summary (Greedy Match) ===")
+    print(f"{'Score':<35} | {'Pages':<5} | {'TP':<5} | {'FP':<5} | {'FN(T)':<5} | {'FN(C)':<5} | {'FN(D)':<5} | {'Recall':<6} | {'Prec':<6}")
+    print("-" * 110)
+    
+    total_tp, total_fp, total_fn, total_cnn, total_det, total_gt = 0, 0, 0, 0, 0, 0
+    for score, data in sorted(agg.items()):
+        tp, fp, fn, gt = data["tp"], data["fp"], data["fn"], data["gt"]
+        total_tp += tp; total_fp += fp; total_fn += fn; total_cnn += data["fn_cnn"]; total_det += data["fn_det"]; total_gt += gt
+        recall = tp / gt if gt > 0 else 0
+        prec = tp / (tp + fp) if (tp + fp) > 0 else 0
+        print(f"{score:<35} | {data['pages']:<5} | {tp:<5} | {fp:<5} | {fn:<5} | {data['fn_cnn']:<5} | {data['fn_det']:<5} | {recall:.1%} | {prec:.1%}")
+
+    g_recall = total_tp / total_gt if total_gt > 0 else 0
+    g_prec = total_tp / (total_tp + total_fp) if (total_tp + total_fp) > 0 else 0
+    print("-" * 110)
+    print(f"{'GLOBAL TOTAL':<35} | {'-':<5} | {total_tp:<5} | {total_fp:<5} | {total_fn:<5} | {total_cnn:<5} | {total_det:<5} | {g_recall:.1%} | {g_prec:.1%}")
+
+    # Save CSV
+    if not stats:
+        print("No stats collected!")
+        return
+
+    with open(args.output_csv, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=stats[0].keys())
+        writer.writeheader()
+        writer.writerows(stats)
+
+if __name__ == "__main__":
+    main()

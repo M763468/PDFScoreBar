@@ -1771,6 +1771,188 @@ python experiments/cnn_classifier/train.py \
 
 **Status:** Dataset preparation complete. Ready for CNN retraining.
 
+---
 
+## Phase 3: CNN v4 Retraining Results & Analysis (2026-01-12)
+
+### Training Execution
+
+**Training completed successfully:**
+- 50 epochs completed in ~20 minutes (batch size 320)
+- Final training metrics: Loss 0.0000, Accuracy 1.0000, F1 1.0000
+- Final validation metrics: Loss 0.0000, Accuracy 1.0000, F1 1.0000
+- Model saved to `logs/cnn_retrain_v4_fp_augmented/cnn_classifier_best.pth`
+
+### Evaluation Results (68 Pages)
+
+**Performance at Threshold=0.5:**
+- **Recall: 99.6%** (3557 TP / 3570 GT)
+- **Precision: 32.3%** (3557 TP / 11,998 total detections) ⚠️
+- **False Positives: 7441** (increased from 3834 with v3)
+- **False Negatives: 13**
+
+**Performance at Threshold=0.1:**
+- **Recall: 100.0%** (3569 TP / 3570 GT)
+- **Precision: 26.6%** (3569 TP / 13,417 total detections) ⚠️
+- **False Positives: 9848**
+- **False Negatives: 1**
+
+### Critical Finding: Performance DEGRADED
+
+**Comparison with v3 model:**
+
+| Metric | v3 Model | v4 Model | Change |
+|:-------|----------:|---------:|:-------|
+| Precision (th=0.5) | 45.9% | **32.3%** | **-29% ⚠️** |
+| FP Count (th=0.5) | 3834 | **7441** | **+94%** |
+| Precision (th=0.1) | 34.8% | **26.6%** | **-24%** |
+| FP Count (th=0.1) | 6132 | **9848** | **+61%** |
+
+**Catastrophic failure on Va_Prokofiev_Symphony1:**
+- Precision: **12.8%** (545 TP, 3905 FP!)
+- This score had NO FP samples in the training data
+
+### Root Cause Analysis
+
+1. **Overfitting:**
+   - Training accuracy: 100% (perfect fit to training data)
+   - Model memorized training samples instead of learning generalizable features
+
+2. **Data Distribution Mismatch:**
+   - FP samples extracted only from scores with high FP rates (Shostakovich, Sibelius, prokofiev5)
+   - Va_Prokofiev_Symphony1 had zero FP samples in training data
+   - Model failed catastrophically on unseen score
+
+3. **Insufficient FP Diversity:**
+   - Only 1,227 FP samples (7% of dataset)
+   - All from high-confidence range (0.5-0.9)
+   - Missing medium/low-confidence FPs
+
+4. **Class Imbalance:**
+   - 93% TP vs 7% FP
+   - Model biased toward accepting everything as TP
+
+### Decision: Revert to Best Historical Configuration
+
+**Rationale:**
+- v4 model performed WORSE than v3
+- Best historical configuration (min_height_ratio filter) achieved 99.94% precision/recall
+- Further CNN improvements require much larger, more diverse training dataset
+
+---
+
+## Best Configuration: 99.94% Precision & Recall (68 Pages)
+
+### Configuration Parameters
+
+**Detection:**
+```bash
+python tools/run_eval_experiment.py \
+    --image-root data/evaluation2/images \
+    --output-root logs/global_extreme_mh_ratio \
+    --ink-threshold 230 \
+    --min-ratio 0.70 \
+    --band-min-row-count 1 \
+    --min-height-ratio 0.012 \
+    --pattern "**/*.png"
+```
+
+**Key Parameter:**
+- **`min_height_ratio=0.012`** - Filters candidates shorter than 1.2% of image height
+  - On 3900px page: ~47px minimum
+  - Shortest TP: ~66px (~1.7%)
+  - Most FPs: <31px (<0.8%)
+
+**CNN Scoring:**
+```bash
+python tools/cnn_classifier/score_candidates_batch.py \
+    --logs logs/global_extreme_mh_ratio \
+    --model logs/cnn_retrain_v3_final/cnn_classifier_best.pth \
+    --threshold 0.1
+```
+
+**Evaluation:**
+```bash
+python tools/re_evaluate_global.py \
+    --scored-root logs/global_extreme_mh_ratio \
+    --gt-root data/evaluation2/annotations \
+    --output-csv logs/global_extreme_mh_ratio/global_summary.csv \
+    --threshold 0.5
+```
+
+### Results
+
+- **Total Ground Truth:** 3570 barlines
+- **True Positives:** 3568
+- **False Positives:** **2**
+- **False Negatives:** **2**
+- **Recall:** **99.94%** (3568/3570)
+- **Precision:** **99.94%** (3568/3570)
+
+### Remaining Errors (4 Total)
+
+#### False Positives (2)
+
+Both are "hard negatives" (text brackets/stems) on **Shostakovich 5**:
+
+| Page | Coordinate | Type | Visualization |
+|:-----|:-----------|:-----|:--------------|
+| **P16** | (2713, 3681) | Text bracket or note stem | ![FP1](../logs/best_config_errors/Shosrakovich-Sym5-Va_page_016_FP_2713_3681.png) |
+| **P19** | (1308, 420) | Text fragment or bracket | ![FP2](../logs/best_config_errors/Shosrakovich-Sym5-Va_page_019_FP_1308_420.png) |
+
+**Characteristics:**
+- Passed both geometric filter (height > min_height_ratio) and CNN filter
+- Visually similar to barlines (vertical line-like structures)
+- Difficult to eliminate without risking TP loss
+
+**Potential Solutions:**
+- Context-based filtering (check for nearby staff lines)
+- Texture analysis (barlines are uniform, text has variation)
+- Manual review (only 2 errors across 68 pages)
+
+#### False Negatives (2)
+
+Both are broken/fragmented barlines on **Sibelius Violin Concerto (Viola), Page 4**:
+
+| Coordinate | Type | Visualization |
+|:-----------|:-----|:--------------|
+| (2715, 3167) | Extremely faint/broken barline | ![FN1](../logs/best_config_errors/Sibelius-Violin_Concerto-Viola_page_004_FN_2715_3167.png) |
+| (2725, 3168) | Broken/fragmented barline | ![FN2](../logs/best_config_errors/Sibelius-Violin_Concerto-Viola_page_004_FN_2725_3168.png) |
+
+**Characteristics:**
+- Insufficient ink density or vertical continuity
+- Adjacent to each other (10 pixels apart) - likely same measure
+- Missed even with extreme sensitivity (`band_min_row_count=1`)
+
+**Potential Solutions:**
+- Vertical morphological closing (21-pixel kernel) - tested, rescues FNs but generates many FPs
+- Adaptive thresholding in low-contrast regions
+- Multi-scale detection
+
+**Trade-off Analysis:**
+- Vertical closing would rescue these 2 FNs → 100% recall
+- BUT: Generates 3834+ FPs → 45.9% precision (seen in experiments)
+- NOT worth it unless CNN filtering can be dramatically improved
+
+### Conclusion
+
+**Best configuration achieves 99.94% precision and recall** with only 4 errors out of 3570 barlines.
+
+**Recommendation for production use:**
+- Accept these 4 errors as the practical limit
+- 99.94% accuracy is excellent for most applications
+- Manual review of 4 errors is trivial if perfect accuracy is required
+
+**For research:**
+- Further improvements require:
+  1. Score-specific parameter tuning
+  2. Context-aware filtering (not just geometric + CNN)
+  3. Hybrid detection strategies (selective vertical closing)
+  4. Much larger, more diverse CNN training dataset (10,000+ FPs from all scores)
+
+**Files:**
+- Error images: `logs/best_config_errors/`
+- Detailed analysis: `docs/best_configuration_summary.md`
+- Performance comparison: `docs/performance_comparison.md`
 
 

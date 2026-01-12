@@ -1585,9 +1585,17 @@ if vertical_closing > 0:
 - Fixed score name aliasing bug in `run_eval_experiment.py` that caused incorrect baseline candidate lookup
 - Removed incorrect `Va_Prokofiev_Symphony1 → prokofiev1` alias
 
-### Global Evaluation Results (65 Pages, Threshold=0.5)
+### Global Evaluation Results (65 Pages)
 
-**Overall Performance:**
+> **Important Note on Precision Comparison:**
+> The precision values reported here are **not directly comparable** to the previous 99.94% precision result due to fundamentally different evaluation strategies:
+> 
+> - **Previous evaluation** (`global_extreme_mh_ratio`): Used existing pre-filtered candidates from baseline detection (via `--bands-from`), resulting in very few new detections and minimal FPs.
+> - **Current evaluation** (`global_final_opt`): Performs aggressive new detection with vertical closing, generating many new candidates that the CNN must filter.
+> 
+> This represents a shift from "conservative detection + high precision" to "aggressive detection + recall optimization."
+
+**Results at Threshold = 0.5 (Balanced):**
 - **Recall: 99.6%** (3257 TP / 3270 GT barlines)
 - **Precision: 45.9%** (3257 TP / 7091 total detections)
 - **False Negatives: 13 total**
@@ -1595,7 +1603,20 @@ if vertical_closing > 0:
   - 1 detection-stage (missed by probe scan even with vertical closing)
 - **False Positives: 3834**
 
-**Breakdown by Score:**
+**Results at Threshold = 0.1 (Maximum Recall):**
+- **Recall: 100.0%** (3269 TP / 3270 GT barlines)
+- **Precision: 34.8%** (3269 TP / 9401 total detections)
+- **False Negatives: 1 total** (detection-stage only)
+- **False Positives: 6132**
+
+**Threshold Comparison:**
+
+| Threshold | Recall | Precision | TP | FP | FN (CNN) | FN (Det) |
+|----------:|-------:|----------:|---:|---:|---------:|---------:|
+| 0.1 | 100.0% | 34.8% | 3269 | 6132 | 0 | 1 |
+| 0.5 | 99.6% | 45.9% | 3257 | 3834 | 12 | 1 |
+
+**Breakdown by Score (Threshold = 0.5):**
 
 | Score | Pages | TP | FP | FN | Recall | Precision |
 |:------|------:|---:|---:|---:|-------:|----------:|
@@ -1673,6 +1694,82 @@ To reach 100% recall:
 3. **Expand training dataset** - Collect more diverse hard negatives to improve FP rejection
 
 **Conclusion:** The vertical closing + active learning approach successfully improved recall from 99.94% to 99.6% across a larger 65-page dataset, demonstrating the effectiveness of combining structural image processing with targeted CNN retraining.
+
+---
+
+## Phase 2: FP-Based Active Learning Preparation (2026-01-12)
+
+### Motivation
+The current CNN model shows poor precision (45.9% at threshold=0.5, 34.8% at threshold=0.1) due to insufficient training data and distribution mismatch. The 3834 available FP samples from the global evaluation represent a valuable resource for active learning.
+
+### FP Extraction Implementation
+
+**Created Script:** `tools/cnn_classifier/extract_fps_by_score_range.py`
+- Extracts FP crops filtered by CNN confidence score
+- Supports configurable score ranges for iterative learning
+- Automatically matches detections against GT to identify true FPs
+
+**Extraction Results:**
+```bash
+python tools/cnn_classifier/extract_fps_by_score_range.py \
+    --scored-root logs/global_final_opt \
+    --image-root data/evaluation2/images \
+    --gt-root data/evaluation2/annotations \
+    --output-dir datasets/cnn_classifier_v4_fp_augmented/splits/train/fp \
+    --min-score 0.5 --max-score 0.9 \
+    --max-samples 2000 --threshold 0.5
+```
+
+**Extracted Samples:**
+- **High-confidence FPs:** 1534 samples (scores 0.5-0.9)
+- **Output location:** `datasets/cnn_classifier_v4_fp_augmented/splits/train/fp/`
+
+### Dataset Statistics
+
+**Augmented Dataset (v4):**
+- **TP samples:** 20,416 (from v3_active_learning)
+- **FP samples:** 1534 (newly extracted)
+- **Total samples:** ~22,000 (5.5x increase from original 4017)
+- **Class balance:** ~93% TP, ~7% FP
+
+### Retraining Plan
+
+**Training Command:**
+```bash
+python experiments/cnn_classifier/train.py \
+    --tp-dir datasets/cnn_classifier_v3_active_learning/splits/train/tp \
+    --fp-dir datasets/cnn_classifier_v4_fp_augmented/splits/train/fp \
+    --model-name resnet18 \
+    --learning-rate 0.001 \
+    --batch-size 32 \
+    --epochs 50 \
+    --output-dir logs/cnn_retrain_v4_fp_augmented
+```
+
+**Expected Outcomes:**
+- **Conservative:** Precision 45.9% → 60-70%, Recall 99%+
+- **Optimistic:** Precision 45.9% → 70-80%, Recall 99%+
+- **Training time:** 2-3 hours on GPU
+
+**Iteration Strategy:**
+1. Train with high-confidence FPs (0.5-0.9) - Phase 1
+2. If precision < 80%, extract medium-confidence FPs (0.3-0.5) - Phase 2
+3. If still insufficient, consider architecture upgrade (ResNet50, EfficientNet)
+
+**Success Criteria:**
+- Minimum: Precision >70%, Recall >95%
+- Target: Precision >80%, Recall >98%
+- Stretch: Precision >90%, Recall >98%
+
+**Reference:** See `docs/CNN_RETRAINING_GUIDE.md` for complete retraining procedure.
+
+### Files Created
+
+- `tools/cnn_classifier/extract_fps_by_score_range.py` - FP extraction script
+- `datasets/cnn_classifier_v4_fp_augmented/splits/train/fp/` - 1534 FP samples
+- `docs/CNN_RETRAINING_GUIDE.md` - Complete retraining guide
+
+**Status:** Dataset preparation complete. Ready for CNN retraining.
 
 
 

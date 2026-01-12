@@ -1142,3 +1142,48 @@ Run **Global Evaluation v5** to quantify the impact of Horizontal Merging across
 - **FN**: 22 (+1 from v5b)
 - **Mismatch**: 8 (-3 from v5b)
 - **Key Takeaway**: Achieved the best overall performance with 100% precision. The tempo mark penalty and expanded margin successfully addressed the main remaining error categories from Phase 3.
+
+## 2026-01-XX: MMR FN Mitigation (Text Noise + Staff Mask + Dataset Refresh)
+
+### Goals
+- Reduce MMR false negatives by improving robustness to text overlays.
+- Enable text-noise augmentation at training time with staff-mask constraints.
+- Refresh dataset with newly added rest GT entries (including expansion page).
+
+### Actions Taken
+1. **Training Pipeline Enhancements** (`tools/mmr_training/train_mmr_classifier.py`):
+   - Added **TextNoiseOverlay** augmentation applied **per-epoch** (Positive only).
+   - Integrated **staff mask–aware placement** to avoid text fully inside staff area.
+   - Enabled **random font sampling from zip/dir** (e.g., Cormorant/Garamond/Libre/Playfair zip).
+   - Switched optimizer to **AdamW** and added **CosineAnnealingLR**.
+   - Enabled **TensorBoard logging** (optional) and increased default batch size to 64.
+   - Kept **WeightedRandomSampler** enabled by default.
+
+2. **Dataset Builder Updates** (`tools/mmr_training/create_mmr_train_data.py`):
+   - Added optional **staff mask crop export** for each sample.
+   - Added support to **auto-discover staff masks** from:
+     - `logs/hybrid_generalization` / `logs/homr_eval_baseline` (`*_debug_3_staff.png`)
+     - DeepScores segmentation (`*_seg.png`) via **staff label id = 165**.
+   - Added missing GT-only config: `data/evaluation2/rest_gt_config_missing.json`.
+
+3. **Expansion Page 003 Fix**:
+   - Identified missing measure ROIs due to low-res `page_3.png` numbering.
+   - Regenerated **x4-scaled barlines** + used **original staff mask** (pipeline auto-scales).
+   - Produced updated `numbering_x4.json` and overlay for verification.
+   - Updated config to use `page_3_x4.png` with scaled numbering.
+
+4. **Dataset Refresh**:
+   - Rebuilt dataset with configs:
+     - `data/evaluation2/rest_gt_config_all.json`
+     - `data/evaluation2/rest_gt_config_expansion.json`
+     - `data/evaluation2/rest_gt_config_missing.json`
+   - New counts: **Pos=183 / Neg=4045** in `data/mmr_dataset_v2`.
+
+### Key Artifacts
+- `data/evaluation2/rest_gt_config_missing.json`
+- `logs/cache_expansion_gen/expansion_eval_page_003/numbering_x4.json`
+- `logs/cache_expansion_gen/expansion_eval_page_003/debug_overlay_x4.png`
+- `data/mmr_dataset_v2`
+
+### Next Step
+- User will run MMR retraining in the background.

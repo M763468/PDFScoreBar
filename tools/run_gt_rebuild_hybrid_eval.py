@@ -1692,10 +1692,14 @@ def detect_probe_scan(
     divisi_dist_ratio: float = 1.2,
     divisi_align_tol: int = 4,
     divisi_align_min_count: int = 2,
+    vertical_closing: int = 0,
     debug_path: Path | None = None,
 ) -> List[Box]:
     gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
     ink = (gray < ink_threshold).astype(np.uint8)
+    if vertical_closing > 0:
+        kernel = np.ones((vertical_closing, 1), np.uint8)
+        ink = cv2.morphologyEx(ink, cv2.MORPH_CLOSE, kernel)
     h, w = ink.shape[:2]
     if band_source in ("existing_boxes", "horiz_scan", "row_stats"):
         if band_source == "row_stats" and row_stats is not None:

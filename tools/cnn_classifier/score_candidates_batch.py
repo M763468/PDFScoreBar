@@ -70,6 +70,10 @@ def center_crop(img, cx, cy, crop_w, crop_h):
     return crop
 
 def process_dir(log_dir, model, gpu_norm, threshold=0.5):
+    scored_json_path = log_dir / "pipeline2_no_peak_scored.json"
+    if scored_json_path.exists():
+        return True # Already processed
+
     candidates_path = log_dir / "pipeline2_no_peak_candidates.json"
     if not candidates_path.exists():
         print(f"DEBUG: Candidates path missing: {candidates_path}")
@@ -102,22 +106,26 @@ def process_dir(log_dir, model, gpu_norm, threshold=0.5):
         
     image_path = Path(f"data/evaluation2/images/{score_name}/{page_num}.png")
     if not image_path.exists():
-         # Try finding
-         pass 
-
-    if not image_path.exists():
-        print(f"Image not found for {log_dir.name}: {image_path}")
-        # Try brute force
-        # print("DEBUG: Trying brute force find...")
-        # found = list(Path("data/evaluation2/images").rglob(f"{page_num}.png"))
-        # if found:
-        #     image_path = found[0]
-        #     print(f"DEBUG: Found at {image_path}")
-        # else:
-        return False
+        print(f"DEBUG: Default path failed: {image_path}. Trying fallback search...")
+        found = list(Path("data/evaluation2/images").rglob(f"{page_num}.png"))
+        if found:
+            # Prefer path containing score_name
+            for fpath in found:
+                if score_name in str(fpath):
+                    image_path = fpath
+                    print(f"DEBUG: Resolved to {image_path} via rglob+score_name")
+                    break
+            else:
+                image_path = found[0]
+                print(f"DEBUG: Resolved to {image_path} via rglob (first match)")
+        else:
+            print(f"Error: Image not found for {log_dir.name} ({score_name}/{page_num})")
+            return False
 
     with open(candidates_path, 'r') as f:
         candidates = json.load(f)
+    
+    print(f"DEBUG: Processing {log_dir.name}: {len(candidates)} candidates")
         
     if not candidates:
         return True # Processed (empty)
@@ -143,14 +151,28 @@ def process_dir(log_dir, model, gpu_norm, threshold=0.5):
         batch_tensors.append(tensor)
         
     if not batch_tensors:
+        # Save empty results to allow evaluation to proceed
+        with open(log_dir / "pipeline2_no_peak_scored.json", 'w') as f:
+            json.dump([], f, indent=2)
+        with open(log_dir / "pipeline2_no_peak_filtered_cnn.json", 'w') as f:
+            json.dump([], f, indent=2)
         return True
 
-    batch_t = torch.stack(batch_tensors).to(DEVICE)
-    batch_t = gpu_norm(batch_t)
+    # Prepare batch and run inference in smaller chunks
+    scores_list = []
+    batch_size = 64
     
-    with torch.no_grad():
-        logits = model(batch_t)
-        scores = torch.sigmoid(logits).cpu().numpy().flatten()
+    for i in range(0, len(batch_tensors), batch_size):
+        chunk = batch_tensors[i : i + batch_size]
+        batch_t = torch.stack(chunk).to(DEVICE)
+        batch_t = gpu_norm(batch_t)
+        
+        with torch.no_grad():
+            logits = model(batch_t)
+            chunk_scores = torch.sigmoid(logits).cpu().numpy().flatten()
+            scores_list.append(chunk_scores)
+            
+    scores = np.concatenate(scores_list)
         
     scored_results = []
     filtered_boxes = []

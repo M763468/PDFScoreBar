@@ -30,6 +30,7 @@ def main():
     parser.add_argument("--bands-from", type=Path, default=None, help="JSON file OR directory root with existing boxes to define bands")
     parser.add_argument("--band-min-row-count", type=int, default=1)
     parser.add_argument("--min-height-ratio", type=float, default=0.012, help="Minimum height ratio (relative to image height) of candidate to keep")
+    parser.add_argument("--vertical-closing", type=int, default=0)
     args = parser.parse_args()
 
     args.output_root.mkdir(parents=True, exist_ok=True)
@@ -58,16 +59,9 @@ def main():
         stem = img_path.stem # e.g. page_002
         
         # Infer score name if not provided
-        if args.score_name:
-            current_score_name = args.score_name
-        else:
-            current_score_name = img_path.parent.name
-            
-        # Naming Alias Map (Image Dir -> Baseline JSON Name)
-        score_alias = {
-            "Va_Prokofiev_Symphony1": "prokofiev1",
-        }
-        baseline_score_name = score_alias.get(current_score_name, current_score_name)
+        current_score_name = args.score_name if args.score_name else img_path.parent.name
+        # Construction run_id and resolve baseline path
+        baseline_score_name = current_score_name
         
         # Construct run_id
         # For output we keep consistent with folder name if possible, or alias?
@@ -87,10 +81,15 @@ def main():
         # Resolve existing boxes
         existing_boxes = []
         if bands_is_dir:
-            # Try to find corresponding json file
-            # Pattern: eval2_{BaselineScoreName}_{Page}_scored.json
-            cand_json_name = f"eval2_{baseline_score_name}_{stem}_scored.json"
-            cand_path = args.bands_from / cand_json_name
+            # Try to find corresponding json file in subdirectory
+            # Directory name: eval2_{BaselineScoreName}_{Page}
+            # File name: pipeline2_no_peak_scored.json (output of scoring)
+            run_subdir = f"eval2_{baseline_score_name}_{stem}"
+            cand_path = args.bands_from / run_subdir / "pipeline2_no_peak_scored.json"
+            if not cand_path.exists():
+                # Fallback to older naming if any
+                cand_path = args.bands_from / f"{run_subdir}_scored.json"
+                
             if not cand_path.exists():
                 print(f"Warning: Baseline candidates not found for {run_id} at {cand_path}")
                 # Try recursive search if needed, but strict naming is safer
@@ -125,7 +124,8 @@ def main():
             scan_x_peak_ratio_min=0.0,
             scan_rightmost_min_ratio=0.0,
             max_per_band=100,
-            scan_center_on_peak=True
+            scan_center_on_peak=True,
+            vertical_closing=args.vertical_closing
         )
 
 

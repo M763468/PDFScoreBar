@@ -52,7 +52,9 @@ def analyze_all_processed(eval_root, overrides_root, model_path, device):
     images_dir = output_dir / "images"
     images_dir.mkdir(exist_ok=True)
     
-    processed_pages = sorted(list(overrides_root.glob("prokofiev5/page_*")))
+    # Scan all works (depth 2: work/page/overrides.json)
+    processed_pages = sorted(list(overrides_root.glob("*/*/overrides.json")))
+    processed_pages = [p.parent for p in processed_pages] # Get page dir
     
     report_items = []
     summary_data = []
@@ -65,15 +67,23 @@ def analyze_all_processed(eval_root, overrides_root, model_path, device):
         numb_path = page_dir / "numbering_initial.json"
         gt_path = eval_root / work_name / page_name / "rest_gt.json"
         img_path = Path(f"data/evaluation2/images/{work_name}/{page_name}.png")
+        if not img_path.exists():
+            # Try alt path for prokofiev1
+            if work_name == "Va_Prokofiev_Symphony1":
+                img_path = Path(f"data/evaluation2/images/prokofiev1/{page_name}.png")
         
         if not gt_path.exists(): continue
             
-        print(f"Analyzing {page_name}...")
+        print(f"Analyzing {work_name}/{page_name}...")
         
         gt_data = json.load(open(gt_path)).get("overrides", [])
         pred_data = json.load(open(pred_path)).get("measure_overrides", [])
         numb_data = json.load(open(numb_path))
         img = cv2.imread(str(img_path))
+        
+        if img is None:
+            print(f"Error loading image: {img_path}")
+            continue
         
         global_map = map_global_index_to_coords(numb_data)
                 
@@ -126,18 +136,18 @@ def analyze_all_processed(eval_root, overrides_root, model_path, device):
                         mm_found += 1
                     
                     report_items.append({
-                        "Page": page_name, "Status": status, "Loc": f"S{key[0]} M{key[1]}",
+                        "Work": work_name, "Page": page_name, "Status": status, "Loc": f"S{key[0]} M{key[1]}",
                         "GT": gt_count, "Pred": pred_count, "Prob": f"{prob:.3f}",
-                        "Image": f"{status}_{page_name}_s{key[0]}_m{key[1]}.jpg",
+                        "Image": f"{work_name}_{status}_{page_name}_s{key[0]}_m{key[1]}.jpg",
                         "Raw": c_crop, "Bbox": bbox, "FullImg": img
                     })
                 else:
                     status = "FN"
                     fn_found += 1
                     report_items.append({
-                        "Page": page_name, "Status": status, "Loc": f"S{key[0]} M{key[1]}",
+                        "Work": work_name, "Page": page_name, "Status": status, "Loc": f"S{key[0]} M{key[1]}",
                         "GT": gt_count, "Pred": "-", "Prob": f"{prob:.3f}",
-                        "Image": f"{status}_{page_name}_s{key[0]}_m{key[1]}.jpg",
+                        "Image": f"{work_name}_{status}_{page_name}_s{key[0]}_m{key[1]}.jpg",
                         "Raw": c_crop, "Bbox": bbox, "FullImg": img
                     })
             else:
@@ -161,31 +171,30 @@ def analyze_all_processed(eval_root, overrides_root, model_path, device):
                 
                 status = "FP"
                 report_items.append({
-                    "Page": page_name, "Status": status, "Loc": f"S{key[0]} M{key[1]}",
+                    "Work": work_name, "Page": page_name, "Status": status, "Loc": f"S{key[0]} M{key[1]}",
                     "GT": "-", "Pred": pred_count, "Prob": f"{prob:.3f}",
-                    "Image": f"{status}_{page_name}_s{key[0]}_m{key[1]}.jpg",
+                    "Image": f"{work_name}_{status}_{page_name}_s{key[0]}_m{key[1]}.jpg",
                     "Raw": c_crop, "Bbox": bbox, "FullImg": img
                 })
 
-        summary_data.append({"Page": page_name, "Shift": f"{best_shift:+}", "TP": tp_found, "FP": fp_found, "FN": fn_found, "MM": mm_found})
+        summary_data.append({"Work": work_name, "Page": page_name, "Shift": f"{best_shift:+}", "TP": tp_found, "FP": fp_found, "FN": fn_found, "MM": mm_found})
 
     # Save Images and Write Report
-    ocr_engine = RapidOCR()
     with open(output_dir / "investigation_v2.md", "w") as f:
         f.write("# MMR Investigation Report V2 (Robust index matching)\n\n")
         f.write("Detected and corrected per-page index shifts. Decoupled Classifier (Prob) and OCR (Pred) results.\n\n")
         
         f.write("## 1. Summary\n")
-        f.write("| Page | Shift | TP | FP | FN | Mismatch |\n")
-        f.write("| --- | --- | --- | --- | --- | --- |\n")
+        f.write("| Work | Page | Shift | TP | FP | FN | Mismatch |\n")
+        f.write("| --- | --- | --- | --- | --- | --- | --- | --- |\n")
         for s in summary_data:
-            f.write(f"| {s['Page']} | {s['Shift']} | {s['TP']} | {s['FP']} | {s['FN']} | {s['MM']} |\n")
+            f.write(f"| {s['Work']} | {s['Page']} | {s['Shift']} | {s['TP']} | {s['FP']} | {s['FN']} | {s['MM']} |\n")
             
         f.write("\n## 2. Details\n")
-        f.write("| Page | Status | Loc | GT | Pred | Prob | OCR Raw | Image |\n")
-        f.write("| --- | --- | --- | --- | --- | --- | --- | --- |\n")
+        f.write("| Work | Page | Status | Loc | GT | Pred | Prob | OCR Raw | Image |\n")
+        f.write("| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
         
-        for item in sorted(report_items, key=lambda x: (x['Page'], x['Loc'])):
+        for item in sorted(report_items, key=lambda x: (x['Work'], x['Page'], x['Loc'])):
             # OCR stage analysis
             o_crop = item['FullImg'][max(0, item['Bbox'][1]-80):min(item['FullImg'].shape[0], item['Bbox'][3]+20), max(0, item['Bbox'][0]-20):min(item['FullImg'].shape[1], item['Bbox'][2]+20)]
             # Predict raw text for report
@@ -201,14 +210,14 @@ def analyze_all_processed(eval_root, overrides_root, model_path, device):
             st = item['Status']
             if st != "TP": st = f"**{st}**"
             
-            f.write(f"| {item['Page']} | {st} | {item['Loc']} | {item['GT']} | {item['Pred']} | {item['Prob']} | {ocr_raw} | ![]({images_dir.name}/{item['Image']}) |\n")
+            f.write(f"| {item['Work']} | {item['Page']} | {st} | {item['Loc']} | {item['GT']} | {item['Pred']} | {item['Prob']} | {ocr_raw} | ![]({images_dir.name}/{item['Image']}) |\n")
 
     print(f"Report generated: {output_dir / 'investigation_v2.md'}")
 
 if __name__ == "__main__":
     analyze_all_processed(
         Path("data/evaluation2/rest_gt"),
-        Path("logs/experiments/batch_cnnv1"),
-        Path("mmr_classifier_best.pth"),
+        Path("logs/experiments/2026-01-12_MMR_Global_Eval_v6_Polish"),
+        Path("tools/mmr_training/models/mmr_classifier_best.pth"),
         torch.device("cuda" if torch.cuda.is_available() else "cpu")
     )

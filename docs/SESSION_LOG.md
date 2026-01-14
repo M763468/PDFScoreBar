@@ -1230,3 +1230,53 @@ Run **Global Evaluation v5** to quantify the impact of Horizontal Merging across
 4. **Data Expansion**:
    - Add targeted positives from FN pages (text-heavy rests in Sibelius/Festival) to improve recall without inflating FP.
    - Option: increase text-noise probability or add specific terms observed in errors.
+
+## 2026-01-14: Confirmed Global Evaluation (Robust Match)
+
+### Evaluation Context
+- **Date**: 2026-01-14
+- **Model**: `tools/mmr_training/models/mmr_classifier_best_textnoise.pth`
+- **Script**: `tools/global_batch_mmr_eval.py` (updated with `--model-path` support)
+- **Output**: `logs/experiments/global_mmr_eval_current_model`
+
+### Results
+| Stage | Precision | Recall | TP | FP | Total GT |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Stage 1: Classifier** | **0.9872** | **0.8750** | 154 | 2 | 176 |
+| **Stage 2: Full Pipeline (OCR)** | **0.9359** | **0.8295** | 146 | 10 | 176 |
+
+### Analysis
+1.  **High Precision**: The classifier remains robust (98.7% Precision).
+2.  **Recall Gap**: The main bottleneck is Recall (87.5%), specifically in **Shostakovich Festival Overture** and **Sibelius**.
+3.  **OCR Degradation**: The OCR stage reduces Recall by ~4.5% and Precision by ~5.1%. This indicates the OCR step is filtering out valid candidates (lowering recall) and misidentifying noise as numbers (lowering precision).
+
+### Action Plan
+1.  **FN Analysis**: Detailed visual inspection of misses in Festival Overture/Sibelius.
+2.  **OCR Refinement**: Investigate why OCR is rejecting valid candidates and hallucinating numbers.
+
+## 2026-01-14: FN Analysis & Root Cause Identification
+
+### Analysis Execution
+- **Tool**: `tools/organize_mmr_errors.py` (Iterated over all works)
+- **Method**: Re-ran classifier on GT locations to distinguish between "Low Prob" (Classifier Miss) and "High Prob but Rejected" (OCR Failure).
+
+### Key Findings
+1.  **Classifier Recall is Near-Perfect**: The analysis script found **0 Classifier Misses (FNs)** where `Prob < 0.5`.
+    - This contradicts the Global Eval "Stage 1 Recall" of 87.5%.
+    - **Reason**: The Global Eval script counts an item as "Stage 1 TP" only if it appears in `overrides.json`. However, `generate_numbering_overrides.py` *discards* high-confidence classifier detections if OCR returns no valid number.
+2.  **The Real Bottleneck: OCR Rejection**:
+    - Almost all "Misses" appear in the analysis as **"FN (No Number)"** with `Prob >= 0.5` (often > 0.9).
+    - **Examples**:
+        - `Sibelius-Violin_Concerto-Viola`: `S8M0` (GT=3) -> OCR read "E3, 1". Rejected/Misparsed.
+        - `Prokofiev5`: `S0M3` (GT=3) -> OCR read "P3, 118., 1".
+        - `page_004 S6M8` -> OCR read "None".
+3.  **Conclusion**: The CNN model is robust. The 12.5% "Recall Gap" is actually an **Integration Gap** where valid detections are dropped because the OCR engine fails to extract a clean integer from the crop.
+
+### Corrective Action Strategy
+1.  **Relax OCR Acceptance**: For detections with `Prob > 0.9` (Very High Confidence), we must try harder to salvage a number.
+2.  **Improve OCR Logic**:
+    - Handle "E3" -> "3".
+    - Handle "15, tt" -> "15".
+    - Use the "Rescue" logic more aggressively for High-Prob candidates.
+    - Potential "Fall-back" mode: If Prob is high but OCR is empty, use a larger crop or different preprocessing?
+3.  **Immediate Next Step**: Modify `tools/generate_numbering_overrides.py` to improve OCR robustness for high-confidence candidates.

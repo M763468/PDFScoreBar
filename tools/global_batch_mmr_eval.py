@@ -12,7 +12,7 @@ def run_command(cmd, desc):
         return False
     return True
 
-def process_page(work_name, page_num, image_path, barline_path, mask_root, output_root, threshold, rescue_threshold):
+def process_page(work_name, page_num, image_path, barline_path, mask_root, output_root, threshold, rescue_threshold, model_path=None):
     page_str = f"page_{page_num:03d}"
     
     # Mask path mapping
@@ -70,6 +70,9 @@ def process_page(work_name, page_num, image_path, barline_path, mask_root, outpu
         "--threshold", str(threshold),
         "--rescue-threshold", str(rescue_threshold)
     ]
+    if model_path:
+        cmd_2.extend(["--model-path", str(model_path)])
+
     if not run_command(cmd_2, "Generate Overrides"): return False
 
     # 3. Final Numbering
@@ -91,6 +94,7 @@ def main():
     parser.add_argument("--output-dir", type=Path, default=Path("logs/experiments/global_mmr_eval_v1"))
     parser.add_argument("--threshold", type=float, default=0.5)
     parser.add_argument("--rescue-threshold", type=float, default=0.1)
+    parser.add_argument("--model-path", type=Path, default=None)
     args = parser.parse_args()
     
     mask_root = Path("logs/hybrid_generalization")
@@ -134,7 +138,7 @@ def main():
                 continue
             gt_barlines = barlines[-1]
             
-            process_page(work, page_num, img_path, gt_barlines, mask_root, args.output_dir, args.threshold, args.rescue_threshold)
+            process_page(work, page_num, img_path, gt_barlines, mask_root, args.output_dir, args.threshold, args.rescue_threshold, args.model_path)
 
     # Finally run the evaluation script if we have any results
     print("\n=== GLOBAL EVALUATION ===")

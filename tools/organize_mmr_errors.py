@@ -57,7 +57,10 @@ def organize_errors(eval_root, overrides_root, model_path, device):
     stage1_dir.mkdir(exist_ok=True)
     stage2_dir.mkdir(exist_ok=True)
     
-    processed_pages = sorted(list(overrides_root.glob("prokofiev5/page_*")))
+    processed_pages = []
+    for work_dir in overrides_root.iterdir():
+        if work_dir.is_dir() and work_dir.name != "categorized_errors":
+            processed_pages.extend(sorted(list(work_dir.glob("page_*"))))
     
     s1_items = []
     s2_items = []
@@ -195,11 +198,18 @@ def organize_errors(eval_root, overrides_root, model_path, device):
 
     print(f"Organized analysis complete. See {base_dir}")
 
+import argparse
+
 if __name__ == "__main__":
-    analyze_all_processed = organize_errors
-    analyze_all_processed(
-        Path("data/evaluation2/rest_gt"),
-        Path("logs/experiments/batch_cnnv1"),
-        Path("mmr_classifier_best.pth"),
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--eval-root", type=Path, default=Path("data/evaluation2/rest_gt"))
+    parser.add_argument("--overrides-root", type=Path, required=True)
+    parser.add_argument("--model-path", type=Path, required=True)
+    args = parser.parse_args()
+
+    organize_errors(
+        args.eval_root,
+        args.overrides_root,
+        args.model_path,
         torch.device("cuda" if torch.cuda.is_available() else "cpu")
     )

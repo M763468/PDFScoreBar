@@ -46,6 +46,7 @@ data/*
 !data/**/.gitkeep
 output/*
 *.pt
+*.pth
 
 # Third-party clones (kept locally under external/)
 external/homr/

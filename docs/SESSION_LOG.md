@@ -484,7 +484,8 @@ Logic to identify potential multi-measure rests by finding measures with low not
 - OCR sometimes picks up rehearsal/practice numbers (often located near the start of a measure or above the staff) and treats them as multi-measure rest counts.
 - *Proposed Fix*: Implement spatial filtering to prioritize digits located near the **horizontal center** of the measure, which is the standard placement for multi-measure rest numbers.
 
---- 
+---
+
 
 ## 2026-01-07 Multi-Measure Rest Logic Improvements (ROI & Spatial Filter)
 
@@ -679,41 +680,6 @@ To move beyond parameter tuning, we need **Semantic Feature Extraction**:
 
 **Next action**:
 - Reconstruct missing GT barlines for `prokofiev5/page_006` and `page_012` under `data/evaluation2/annotations/prokofiev5/`.
-
-**Reproducible commands (this session)**:
-1) Failure visualization overlays (all pages, numbered ROIs):
-```bash
-.venv_omr_dln/bin/python tools/analyze_failure_cases.py \
-  --all-pages --overlay-all --number-roi \
-  --output-dir logs/experiments/failure_analysis_allpages_20260108
-```
-Outputs:
-- `logs/experiments/failure_analysis_allpages_20260108/page_overlays/*_roi_overlay.png`
-- `logs/experiments/failure_analysis_allpages_20260108/analysis_report.json`
-- `logs/experiments/failure_analysis_allpages_20260108/analysis_report.csv`
-
-2) Multi-measure rest GT GUI config generation (Prokofiev 1 & 5):
-```bash
-.venv_omr_dln/bin/python tools/gt_relabel_gui/build_rest_gt_config.py \
-  --images-root data/evaluation2/images \
-  --numbering-root logs/experiments/batch_verification_20260107_v5 \
-  --output data/evaluation2/rest_gt_config_prokofiev.json \
-  --rest-gt-root data/evaluation2/rest_gt
-```
-Notes:
-- Skips pages with missing `numbering_*.json` (currently `prokofiev5/page_006`, `prokofiev5/page_012`).
-
-3) Launch Multi-measure Rest GT GUI:
-```bash
-python3 tools/gt_relabel_gui/server.py \
-  --mode rest \
-  --config data/evaluation2/rest_gt_config_prokofiev.json \
-  --host 0.0.0.0 \
-  --port 8010
-```
-
-**Planned next steps after GT creation**:
-- Create GT barlines for `prokofiev5/page_006` and `page_012` under `data/evaluation2/annotations/prokofiev5/`.
 - Regenerate `numbering_*.json` for those pages using:
   - barlines JSON (GT)
   - staff mask PNG
@@ -1006,7 +972,7 @@ The refined logic works very well, but residual errors remain:
 
 
 ### 3. Root Cause Analysis
-The primary remaining failure mode is the **"Max Number" Heuristic**. 
+The primary remaining failure mode is the **"Max Number" Heuristic**.
 The current OCR Post-Processing simply picks the *largest integer* found in the crop.
 ```python
 # Current Logic
@@ -1042,7 +1008,7 @@ Running full evaluation to quantify improvement.
 ### Global Evaluation v4 Results (Geometric Scoring)
 
 **Quantitative Summary**:
-| Metric | Score | Note |
+| Metric | Count | Rate (Approx) |
 | :--- | :--- | :--- |
 | **Total Pages** | 59 | - |
 | **True Positives (TP)** | **172** | **83.5%** |
@@ -1080,7 +1046,7 @@ Following the geometric scoring update, we targeted the remaining "hard" failure
 - **Shostakovich Page 014 (S2 M0)**: Previously `5 5` -> Mismatch `5`. Now correctly merges to `50`. **SUCCESS**.
 
 #### 2. Low Confidence Rescue (Recovering FNs)
-**Problem**: The Classifier sometimes misses some rests (FNs) due to noisy backgrounds (Prob < 0.5).
+**Problem**: The Classifier (Stage 1) sometimes assigns low probability (< 0.5) to valid rests in noisy contexts (Prokofiev/Sibelius), pruning them before OCR runs.
 **Solution**:
 - Lowered the detection threshold to `0.1`.
 - If `0.1 < Prob < 0.5`: Only accept the candidate **IF** the OCR returns a "High Quality" result (Geometric Score > 60).
@@ -1204,7 +1170,7 @@ Run **Global Evaluation v5** to quantify the impact of Horizontal Merging across
 - **Stage 1 (Classifier)**:
   - Precision: **1.0000**
   - Recall:    **0.8750** (154/176)
-- **Stage 2 (Full Pipeline (OCR))**:
+- **Stage 2 (Pipeline + OCR)**:
   - Precision: **0.9481** (146/154)
   - Recall:    **0.8295** (146/176)
 
@@ -1248,7 +1214,7 @@ Run **Global Evaluation v5** to quantify the impact of Horizontal Merging across
 ### Analysis
 1.  **High Precision**: The classifier remains robust (98.7% Precision).
 2.  **Recall Gap**: The main bottleneck is Recall (87.5%), specifically in **Shostakovich Festival Overture** and **Sibelius**.
-3.  **OCR Degradation**: The OCR stage reduces Recall by ~4.5% and Precision by ~5.1%. This indicates the OCR step is filtering out valid candidates (lowering recall) and misidentifying noise as numbers (lowering precision).
+3.  **OCR Degradation**: The OCR stage reduces Recall by ~4.5% and Precision by ~5.1%. This indicates the OCR step is filtering out valid candidates (lowering recall) and misidentring noise as numbers (lowering precision).
 
 ### Action Plan
 1.  **FN Analysis**: Detailed visual inspection of misses in Festival Overture/Sibelius.
@@ -1316,4 +1282,31 @@ Ran global evaluation on the `Sibelius-Violin_Concerto-Viola` dataset.
 
 ### Conclusion
 The combination of **Crop Expansion** (to catch numbers below staff) and **Retry Logic** successfully unlocked the latent performance of the MMR Classifier for the Sibelius dataset.
+
+## Next Session Plan: Improving Stage 2 Recall
+
+**Objective**: Raise Stage 2 Recall (Correct Number Recognition) from ~80% to >90% by addressing "Wrong Number" errors (e.g., reading "12" as "9").
+
+**Proposed Strategies**:
+
+1.  **H-Bar Anchor Alignment (Geometric Refinement)**
+    *   **Problem**: Currently, we use the *measure center* to score candidates. However, measures can be wide or uneven.
+    *   **Solution**: Use the **H-Bar center** as the "Gravity Well". The rest number is semantically tied to the H-bar symbol.
+    *   **Implementation**: Pass the detected H-Bar coordinates from the density check phase to the OCR selection logic. Heavily penalize numbers that are not vertically aligned with the H-Bar.
+
+2.  **Test-Time Augmentation (TTA) for OCR**
+    *   **Problem**: Slanted or skewed staff lines cut through digits, causing dropouts (e.g., "1" in "12" gets treated as a barline).
+    *   **Solution**: Add **Rotation** (+/- 1~2 degrees) and **Scaling** (0.9x, 1.1x) to the `preprocess_image_ocr_variant` retry loop.
+    *   **Expected Outcome**: Recover split or damaged digits.
+
+3.  **Component Analysis for "Split Numbers"**
+    *   **Problem**: "12" is read as "1" and "2" separately.
+    *   **Solution**: Refine `merge_ocr_results`. Instead of just bounding box proximity, analyze the *text* vector. If two digits are horizontally adjacent and on the same baseline, force merge them even if the gap is slightly larger than currently allowed.
+
+4.  **Error-Specific Heuristics (Confusion Matrix)**
+    *   **Action**: Collect the specific misread pairs from the Sibelius evaluation (e.g., `12`->`9`).
+    *   **Logic**: If specific fonts confuse `1` and `I` or `l`, add specific character replacements in the cleaning phase.
+
+**Next Action**: Implement Strategy 1 & 2 in `tools/generate_numbering_overrides.py` and measure impact on Sibelius.
 ```
+} new_string { 

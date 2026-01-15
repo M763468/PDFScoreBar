@@ -58,14 +58,22 @@ def predict_crop(model, cv2_img, device):
     return prob
 
 # --- OCR Helpers (Reused) ---
-def preprocess_image_ocr(img):
+def preprocess_image_ocr_variant(img, mode='standard'):
     if img is None: return None
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     binary_white_bg = cv2.bitwise_not(binary)
-    kernel = np.ones((2,2), np.uint8)
-    dilated = cv2.dilate(binary_white_bg, kernel, iterations=1)
-    padded = cv2.copyMakeBorder(dilated, 20, 20, 20, 20, cv2.BORDER_CONSTANT, value=255)
+    
+    if mode == 'no_dilate':
+        final = binary_white_bg
+    elif mode == 'heavy_dilate':
+        kernel = np.ones((3,3), np.uint8)
+        final = cv2.dilate(binary_white_bg, kernel, iterations=1)
+    else: # standard
+        kernel = np.ones((2,2), np.uint8)
+        final = cv2.dilate(binary_white_bg, kernel, iterations=1)
+        
+    padded = cv2.copyMakeBorder(final, 20, 20, 20, 20, cv2.BORDER_CONSTANT, value=255)
     return padded
 
 def merge_ocr_results(ocr_result):
@@ -162,10 +170,15 @@ def select_best_candidate(ocr_result, img_width, img_height):
         # Text filtering
         if any(b.lower() in text.lower() for b in blacklist):
             continue
+
+        # --- Text Cleaning (New) ---
+        # Handle "E3", "P3" patterns often seen in errors
+        clean_text = re.sub(r'^[EP](\d)', r'\1', text)
+        clean_text = re.sub(r'[.,;]', '', clean_text) # Remove punctuation noise
             
         # Extract numbers
         # We look for all integers >= 2
-        nums_found = re.findall(r'\d+', text)
+        nums_found = re.findall(r'\d+', clean_text)
         if not nums_found:
             continue
         
@@ -218,6 +231,12 @@ def select_best_candidate(ocr_result, img_width, img_height):
                 # 5. Length penalty for large numbers that don't fit typical MMR distributions
                 if val > 100:
                     score -= 50
+                
+                # 6. Width vs Value Sanity (New)
+                # If number is large (>20) but image width is small (<100px), it's likely a misread (e.g. text noise)
+                # This helps resolve cases where "3" is competing with "118" in a small measure.
+                if val > 20 and img_width < 100:
+                    score -= 200 # Disqualify
 
                 candidates.append({
                     'val': val,
@@ -363,55 +382,72 @@ def main():
                 if prob > rescue_threshold:
                     # Candidate for Multi-measure Rest (Potential)
                     
-                    # 2. RUN OCR (REFINED)
-                    staves = system.get("staves", [])
-                    stave_results = []
+                    # 2. RUN OCR (REFINED with Retry)
                     
-                    for s_idx_local, stave in enumerate(staves):
-                        s_bbox = stave["bbox"]
-                        margin_y = 80 # Match analysis script for higher recall
-                        sy1, sy2 = s_bbox[1], s_bbox[3]
-                        
-                        ox1 = max(0, x1 - 10)
-                        ox2 = min(w_img, x2 + 10)
-                        oy1 = max(0, sy1 - margin_y)
-                        oy2 = min(h_img, sy2 + 10)
-                        
-                        stave_crop = image[oy1:oy2, ox1:ox2]
-                        proc_img = preprocess_image_ocr(stave_crop)
-                        if proc_img is None: continue
-                        
-                        ocr_res, _ = ocr_engine(proc_img)
-                        
-                        # Use new geometric selection
-                        # crop size is passed to normalize coordinates
-                        found_num, geo_score, dbg = select_best_candidate(ocr_res, ox2-ox1, oy2-oy1)
-                        if found_num:
-                            stave_results.append((found_num, geo_score, dbg))
-                    
-                    # Selection Logic
                     found_number = None
                     final_score = 0
                     final_debug = ""
                     
-                    if stave_results:
-                        # Sort by Score first? Or Vote?
-                        # Voting is safer for multi-stave consistencies
-                        from collections import Counter
-                        nums = [r[0] for r in stave_results]
-                        counts = Counter(nums)
-                        found_number = counts.most_common(1)[0][0]
+                    # Retry modes
+                    modes = ['standard']
+                    if prob > threshold:
+                        # Only retry if we are fairly confident there IS something
+                        modes = ['standard', 'no_dilate', 'heavy_dilate']
                         
-                        # Get best score for this number
-                        best_entry = max([r for r in stave_results if r[0] == found_number], key=lambda x: x[1])
-                        final_score = best_entry[1]
-                        final_debug = best_entry[2]
+                    for mode in modes:
+                        staves = system.get("staves", [])
+                        stave_results = []
                         
-                        # LOGICAL CHECK: Width vs Number
-                        m_width = x2 - x1
-                        if found_number > 20 and m_width < 100:
-                            print(f"  [REJECTED] P{page_num} S{sys_idx} M{m_num}: Number {found_number} too large for width {m_width}")
-                            found_number = None
+                        for s_idx_local, stave in enumerate(staves):
+                            s_bbox = stave["bbox"]
+                            margin_y = 80 # Match analysis script for higher recall
+                            sy1, sy2 = s_bbox[1], s_bbox[3]
+                            
+                            ox1 = max(0, x1 - 30)
+                            ox2 = min(w_img, x2 + 30)
+                            oy1 = max(0, sy1 - margin_y)
+                            oy2 = min(h_img, sy2 + 80)
+                            
+                            stave_crop = image[oy1:oy2, ox1:ox2]
+                            proc_img = preprocess_image_ocr_variant(stave_crop, mode=mode)
+                            if proc_img is None: continue
+                            
+                            ocr_res, _ = ocr_engine(proc_img)
+                            
+                            # Use new geometric selection
+                            # crop size is passed to normalize coordinates
+                            found_num, geo_score, dbg = select_best_candidate(ocr_res, ox2-ox1, oy2-oy1)
+                            if found_num:
+                                stave_results.append((found_num, geo_score, dbg))
+                            else:
+                                 stave_results.append((None, 0, f""))
+                        
+                        # Selection Logic for this mode
+                        current_found_number = None
+                        
+                        valid_stave_results = [r for r in stave_results if r[0] is not None]
+                        
+                        if valid_stave_results:
+                            from collections import Counter
+                            nums = [r[0] for r in valid_stave_results]
+                            counts = Counter(nums)
+                            current_found_number = counts.most_common(1)[0][0]
+                            
+                            # Get best score
+                            best_entry = max([r for r in valid_stave_results if r[0] == current_found_number], key=lambda x: x[1])
+                            
+                            # LOGICAL CHECK: Width vs Number
+                            m_width = x2 - x1
+                            if current_found_number > 20 and m_width < 100:
+                                # Reject
+                                current_found_number = None
+                            else:
+                                # Accept this mode's result
+                                found_number = current_found_number
+                                final_score = best_entry[1]
+                                final_debug = best_entry[2]
+                                break # Stop retrying if we found something valid
+                    
                     
                     # 3. DECISION: High Confidence vs Rescue
                     is_valid_detection = False

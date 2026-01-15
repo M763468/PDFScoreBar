@@ -95,6 +95,7 @@ def main():
     parser.add_argument("--threshold", type=float, default=0.5)
     parser.add_argument("--rescue-threshold", type=float, default=0.1)
     parser.add_argument("--model-path", type=Path, default=None)
+    parser.add_argument("--filter", type=str, default=None, help="Filter works by name (case-insensitive)")
     args = parser.parse_args()
     
     mask_root = Path("logs/hybrid_generalization")
@@ -104,6 +105,10 @@ def main():
     # Discovery: iterate through annotation directories
     works = [d.name for d in ann_root.iterdir() if d.is_dir()]
     
+    if args.filter:
+        print(f"Filtering works by '{args.filter}'...")
+        works = [w for w in works if args.filter.lower() in w.lower()]
+        
     for work in sorted(works):
         print(f"\n=== Work: {work} ===")
         work_ann_dir = ann_root / work

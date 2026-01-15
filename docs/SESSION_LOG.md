@@ -736,7 +736,7 @@ Replaced the simplistic "Residual Ink Check" with a more intelligent "Musical El
 ### Key Changes
 - **Notehead Check**: Uses `notehead_mask` to detect noteheads within the measure, excluding areas identified as H-Bars or OCR text.
 - **Vertical Stem Check**: Uses morphological opening to detect vertical lines (stems) in the staff area, ignoring margins to avoid barlines.
-- **Improved OCR Filtering**:
+- **Improved OCR Filtering**: 
     - Relaxed Y-range to allow counts above the staff.
     - Strict X-centering and "Edge Rejection" to filter out Rehearsal Marks.
 - **Enhanced Debugging**: Added `debug_ocr_v5.png` with color-coded results (Green: Found, Red: Rejected w/ reason).
@@ -972,7 +972,7 @@ The refined logic works very well, but residual errors remain:
 
 
 ### 3. Root Cause Analysis
-The primary remaining failure mode is the **"Max Number" Heuristic**.
+The primary remaining failure mode is the **"Max Number" Heuristic**. 
 The current OCR Post-Processing simply picks the *largest integer* found in the crop.
 ```python
 # Current Logic
@@ -1008,7 +1008,7 @@ Running full evaluation to quantify improvement.
 ### Global Evaluation v4 Results (Geometric Scoring)
 
 **Quantitative Summary**:
-| Metric | Count | Rate (Approx) |
+| Metric | Score | Note |
 | :--- | :--- | :--- |
 | **Total Pages** | 59 | - |
 | **True Positives (TP)** | **172** | **83.5%** |
@@ -1170,7 +1170,7 @@ Run **Global Evaluation v5** to quantify the impact of Horizontal Merging across
 - **Stage 1 (Classifier)**:
   - Precision: **1.0000**
   - Recall:    **0.8750** (154/176)
-- **Stage 2 (Pipeline + OCR)**:
+- **Stage 2 (Full Pipeline + OCR)**:
   - Precision: **0.9481** (146/154)
   - Recall:    **0.8295** (146/176)
 
@@ -1214,7 +1214,7 @@ Run **Global Evaluation v5** to quantify the impact of Horizontal Merging across
 ### Analysis
 1.  **High Precision**: The classifier remains robust (98.7% Precision).
 2.  **Recall Gap**: The main bottleneck is Recall (87.5%), specifically in **Shostakovich Festival Overture** and **Sibelius**.
-3.  **OCR Degradation**: The OCR stage reduces Recall by ~4.5% and Precision by ~5.1%. This indicates the OCR step is filtering out valid candidates (lowering recall) and misidentring noise as numbers (lowering precision).
+3.  **OCR Degradation**: The OCR stage reduces Recall by ~4.5% and Precision by ~5.1%. This indicates the OCR step is filtering out valid candidates (lowering recall) and misidentifying noise as numbers (lowering precision).
 
 ### Action Plan
 1.  **FN Analysis**: Detailed visual inspection of misses in Festival Overture/Sibelius.
@@ -1308,5 +1308,59 @@ The combination of **Crop Expansion** (to catch numbers below staff) and **Retry
     *   **Logic**: If specific fonts confuse `1` and `I` or `l`, add specific character replacements in the cleaning phase.
 
 **Next Action**: Implement Strategy 1 & 2 in `tools/generate_numbering_overrides.py` and measure impact on Sibelius.
-```
-} new_string { 
+
+## 2026-01-15: Attempted Improvement (H-Bar Anchor + TTA) - REJECTED
+
+### Hypothesis
+Stage 2 Precision/Recall could be improved by:
+1.  **H-Bar Anchor**: Using the centroid of the detected H-Bar as a "Gravity Well" instead of the measure center, penalizing candidates that are vertically misaligned with the rest symbol.
+2.  **Test-Time Augmentation (TTA)**: Retrying OCR with rotation (+/- 2 deg) and scaling (0.9x) to recover digits split by staff lines or slant.
+
+### Experiment
+Implemented `detect_hbar_centroid` and extended the OCR retry loop with TTA. Evaluation was run on the `Sibelius` dataset.
+
+### Results
+| Metric | Baseline (v3) | Experiment (v4) | Delta |
+| :--- | :--- | :--- | :--- |
+| **Stage 2 Recall** | 80.6% (25/31) | 77.4% (24/31) | **-3.2%** |
+
+### Failure Analysis
+*   **Performance Regression**: The strict vertical penalty based on H-Bar position caused valid candidates to be rejected. In Sibelius, rest numbers are sometimes placed significantly above or below the H-Bar (or the H-Bar detection itself was noisy), leading to score degradation.
+*   **Conclusion**: The heuristic was too aggressive. The changes to `tools/generate_numbering_overrides.py` were reverted.
+
+## 2026-01-15 (Part 2): MMR Failure Analysis (Visual Audit)
+
+**Objective**: Visually analyze OCR failures to understand root causes of "Wrong Number" errors and inform the next iteration of the improvement plan.
+
+**Methodology**:
+- Used `tools/analyze_mmr_failures_v2.py` to generate debug crops for failing measures in Sibelius, Prokofiev 5, and Festival Overture.
+- The script overlays OCR bounding boxes, text results, H-Bar centroids, and geometric metrics (`dx`, `dy`, `hbar_dy`) on context-aware crops.
+
+### Key Findings
+
+1.  **CJK Character Hallucination**:
+    - **Problem**: The OCR engine frequently misinterprets musical symbols (H-bars, rests) as CJK characters, especially "二" (2) and "三" (3).
+    - **Evidence**: `Sibelius P3 M19` found '二' (conf=0.55, hbar_dy=0.03), which has near-perfect vertical alignment, making it a dangerous false positive if translated to a digit.
+
+2.  **Edge Noise from Rehearsal Marks**:
+    - **Problem**: Digits from rehearsal marks or measure numbers at the far left/right of a measure are detected.
+    - **Evidence**: `Festival P4 M0` found '9' with excellent vertical alignment (`hbar_dy=0.07`) but a very large horizontal offset (`dx=0.42`).
+
+3.  **Low Confidence vs. Geometric Score**:
+    - **Problem**: Correct but low-confidence OCR results lose out to high-confidence noise.
+    - **Evidence**: `Sibelius P3 M25` detected the correct '12' (`conf=0.63`, `hbar_dy=0.06`) but also noisy '4' (`conf=1.00`, `hbar_dy=0.22`). A naive "best confidence" approach would fail.
+
+4.  **H-Bar Anchor Stability**:
+    - **Finding**: The H-Bar centroid is a very stable vertical anchor (`hbar_dy` is consistently low for true positives). The previous experiment failed due to an overly aggressive penalty, not a flaw in the anchor itself.
+
+### Updated Plan for Stage 2 Recall
+
+Based on the visual analysis, the next iteration will focus on more robust filtering and scoring:
+
+1.  **CJK Character Filtering**: Explicitly remove any OCR results containing CJK characters from the candidate list in `select_best_candidate`. This is a high-priority, low-risk fix.
+2.  **Reinforced Geometric Scoring**: Re-introduce the H-Bar anchor, but with a more balanced approach:
+    - **High Horizontal Penalty**: If a candidate's horizontal distance from the center (`dx`) is greater than a strict threshold (e.g., `> 0.3`), apply a massive score penalty to eliminate edge noise like rehearsal marks.
+    - **Moderate Vertical Penalty**: Use a less aggressive weight for the vertical H-Bar anchor penalty (`y_weight = 150` instead of 300) to avoid wrongly penalizing valid numbers that have slight vertical offsets.
+3.  **H-Bar Quality Check**: Only use the H-Bar anchor if the detected H-bar has a sufficient relative size (e.g., width > 20% of measure width), preventing anchoring on small noise artifacts. This avoids dependency on absolute resolution.
+
+**Next Action**: Implement the refined CJK filtering and reinforced geometric scoring in `tools/generate_numbering_overrides.py`.

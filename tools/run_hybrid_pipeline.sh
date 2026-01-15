@@ -74,6 +74,8 @@ echo "Run ID: $RUN_ID"
 echo "GT: ${CONTAINER_GT:-(None)}" 
 echo "Output: $OUTPUT_ROOT"
 
+START_TOTAL=$(date +%s)
+
 # SR evaluation container + interpreter.
 # This script assumes `sr_eval_gpu` was built from `Dockerfile.sr_eval` and is running.
 CONTAINER_NAME="sr_eval_gpu"
@@ -84,6 +86,7 @@ mkdir -p "$HOST_OUTPUT_ROOT"
 
 # 1. homr Baseline
 echo ""
+START_STEP1=$(date +%s)
 echo "--- Step 1: homr Baseline ---"
 CMD_BASELINE="$CONTAINER_PY /workspace/src/homr_eval_scripts/homr_evaluator.py \
     --images \"$CONTAINER_IMAGE\" \
@@ -96,9 +99,11 @@ fi
 
 echo "Running: $CMD_BASELINE"
 docker exec "$CONTAINER_NAME" bash -lc "$CMD_BASELINE"
+END_STEP1=$(date +%s)
 
 # 2. homr SR
 echo ""
+START_STEP2=$(date +%s)
 echo "--- Step 2: homr SR ---"
 CMD_SR="$CONTAINER_PY /workspace/src/homr_eval_scripts/homr_evaluator.py \
     --images \"$CONTAINER_IMAGE\" \
@@ -112,9 +117,11 @@ fi
 
 echo "Running: $CMD_SR"
 docker exec "$CONTAINER_NAME" bash -lc "$CMD_SR"
+END_STEP2=$(date +%s)
 
 # 3. OMR-DLN SR
 echo ""
+START_STEP3=$(date +%s)
 echo "--- Step 3: OMR-DLN SR ---"
 CMD_OMR="$CONTAINER_PY /workspace/experiments/models/eval_omr_dln.py \
     --image \"$CONTAINER_IMAGE\" \
@@ -127,19 +134,12 @@ fi
 
 echo "Running: $CMD_OMR"
 docker exec "$CONTAINER_NAME" bash -lc "$CMD_OMR"
+END_STEP3=$(date +%s)
 
 # 4. Generate Hybrid Results
 echo ""
+START_STEP4=$(date +%s)
 echo "--- Step 4: Hybrid Generation ---"
-
-# Locate inputs
-# homr_evaluator creates <output_root>/<run_id>/<stem>/<stem>_detections.json
-# Here run_id is forced to STEM.
-# So: $OUTPUT_ROOT/baseline/$STEM/$STEM/$STEM_detections.json ... wait.
-# Let's re-read homr_evaluator logic.
-# run_dir = args.output_root / run_id
-# image_run_dir = run_dir / stem
-# detections_path = image_run_dir / f"{stem}_detections.json"
 
 BASELINE_JSON="$OUTPUT_ROOT/baseline/$STEM/$STEM/${STEM}_detections.json"
 SR_JSON="$OUTPUT_ROOT/sr/$STEM/$STEM/${STEM}_detections.json"
@@ -158,6 +158,17 @@ fi
 
 echo "Running: $CMD_HYBRID"
 docker exec "$CONTAINER_NAME" bash -lc "$CMD_HYBRID"
+END_STEP4=$(date +%s)
+END_TOTAL=$(date +%s)
+
+echo ""
+echo "=== Hybrid Pipeline Performance Summary ==="
+echo "Step 1 (homr Baseline): $((END_STEP1 - START_STEP1))s"
+echo "Step 2 (homr SR)      : $((END_STEP2 - START_STEP2))s"
+echo "Step 3 (OMR-DLN SR)   : $((END_STEP3 - START_STEP3))s"
+echo "Step 4 (Hybrid Gen)   : $((END_STEP4 - START_STEP4))s"
+echo "-------------------------------------------"
+echo "Total Time            : $((END_TOTAL - START_TOTAL))s"
 
 echo ""
 echo "=== Hybrid Pipeline Completed ==="

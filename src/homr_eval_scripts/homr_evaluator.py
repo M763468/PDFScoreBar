@@ -2232,6 +2232,37 @@ def main() -> None:
 
                 cv2.imwrite(str(working_image), upscaled)
 
+        # Optimization: Create a downscaled proxy for Homr inference if image is huge (e.g. SR)
+        inference_image_path = working_image
+        proxy_scale = 1.0
+        
+        # Read the current working image (SR or Original) to check dimensions
+        img_check = cv2.imread(str(working_image))
+        sr_h, sr_w = 0, 0
+        proxy_scale_x = 1.0
+        proxy_scale_y = 1.0
+        
+        if img_check is not None:
+            sr_h, sr_w = img_check.shape[:2]
+            pixels = sr_h * sr_w
+            target_pixels = 3.5 * 1000 * 1000 # Target ~3.5MP for Homr Inference
+            
+            if pixels > target_pixels * 1.5:
+                proxy_scale = (pixels / target_pixels) ** 0.5
+                proxy_w = int(sr_w / proxy_scale)
+                proxy_h = int(sr_h / proxy_scale)
+                
+                # Re-calculate exact scale based on integer dimensions
+                proxy_scale_x = sr_w / proxy_w
+                proxy_scale_y = sr_h / proxy_h
+                
+                eprint(f"Creating Proxy for Homr Inference: {sr_w}x{sr_h} -> {proxy_w}x{proxy_h} (Scale: {proxy_scale:.2f})")
+                proxy_img = cv2.resize(img_check, (proxy_w, proxy_h))
+                
+                proxy_path = image_run_dir / f"{stem}_proxy.png"
+                cv2.imwrite(str(proxy_path), proxy_img)
+                inference_image_path = proxy_path
+
         config = ProcessingConfig(
             True,
             args.cache,
@@ -2242,17 +2273,27 @@ def main() -> None:
         xml_args = XmlGeneratorArguments(False, None, None)
 
         predictions, xml_path, seg_shape, runtime_s, notehead_mask, staff_mask = run_homr_on_image(
-            working_image, config, xml_args, args.timeout, tuning
+            inference_image_path, config, xml_args, args.timeout, tuning
         )
-        transform = compute_transform_info(working_image, seg_shape)
+        transform = compute_transform_info(inference_image_path, seg_shape)
         
         mapped_predictions: List[BarlinePrediction] = []
         for pred in predictions:
-            orig_bbox = map_pred_to_orig(pred.pred_bbox, transform)
+            # Map Seg -> Proxy (or Original if no proxy)
+            orig_bbox_proxy = map_pred_to_orig(pred.pred_bbox, transform)
+            
+            # Map Proxy -> SR (High Res)
+            x1, y1, x2, y2 = orig_bbox_proxy
+            if inference_image_path != working_image:
+                x1 = int(round(x1 * proxy_scale_x))
+                y1 = int(round(y1 * proxy_scale_y))
+                x2 = int(round(x2 * proxy_scale_x))
+                y2 = int(round(y2 * proxy_scale_y))
+            
             mapped_predictions.append(
                 BarlinePrediction(
                     pred_bbox=pred.pred_bbox,
-                    orig_bbox=orig_bbox,
+                    orig_bbox=(x1, y1, x2, y2),
                     system_index=pred.system_index,
                     staff_index=pred.staff_index,
                 )
@@ -2369,15 +2410,16 @@ def main() -> None:
         staff_mask_255 = (staff_mask * 255).astype(np.uint8)
 
         # Always compute resized masks for diagnostics/stats
+        # IMPORTANT: Resize to SR/Working Image dimensions, not Proxy dimensions!
         notehead_mask_resized = cv2.resize(
             notehead_mask_255,
-            dsize=transform.original_shape,
+            dsize=(sr_w, sr_h),
             interpolation=cv2.INTER_NEAREST,
         )
         
         staff_mask_resized = cv2.resize(
             staff_mask_255,
-            dsize=transform.original_shape,
+            dsize=(sr_w, sr_h),
             interpolation=cv2.INTER_NEAREST,
         )
 

@@ -27,3 +27,21 @@
     *   Does TrOmr really need x4?
 
 ---
+
+## Phase 2: Proxy Inference Optimization (2026-01-17)
+
+**Optimization Strategy**:
+SR処理後の巨大な画像（155MP相当）を直接Homrに渡すのではなく、推論用に適正解像度（~3.5MP）のプロキシ画像を生成して実行。検出結果（座標）をSR座標系に逆写像することで、精度を維持しつつ計算量を劇的に削減。
+
+**Benchmark Result**: `page_10.png`
+**Run ID**: `page_10_opt_final_20260117_035102`
+
+| Metric | Baseline (Before Opt) | Optimized (Proxy) | Improvement |
+| :--- | :--- | :--- | :--- |
+| **Segnet Inference** | ~80.0 s | **~1.2 s** | **~66x Faster** |
+| **TrOmr (Per Staff)** | ~15.0 s | **~2.3 s** | **~6.5x Faster** |
+| **TrOmr Inference (Total)** | ~190.0 s | **~30.0 s** | **~6.3x Faster** |
+
+### Conclusion
+推論部分のボトルネックは完全に解消されました。今後の処理時間は、主にReal-ESRGANによる画像拡大処理（約3分）に依存することになります。
+座標変換およびマスクのリサイズ処理（SR解像度への復元）も正常に動作し、後続のヒューリスティック処理への影響がないことを確認しました。

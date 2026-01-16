@@ -110,3 +110,30 @@ Dockerコンテナ内のソースコード (`homr/main.py`, `inference_segnet.py
 *   **最適化案**: TrOmr に入力する前に、切り出した五線譜画像を「標準サイズ（高さ128px等）」にリサイズ（ダウンサンプル）する。TrOmrの認識結果（XML）は座標変換で4xに戻すか、そもそもSRの恩恵を受けにくい工程として割り切る。
 
 ---
+
+## Phase 2: Implementation of Proxy Inference Optimization (2026-01-17)
+
+### Objective
+Implement the "Proxy Inference" strategy to eliminate the performance bottleneck in Step 2 (Homr SR) without modifying external repositories.
+
+### Changes
+- **Modified**: `src/homr_eval_scripts/homr_evaluator.py`
+    - Added logic to check if the input image (SR or large original) exceeds 5.25MP.
+    - If exceeded, creates a temporary downscaled proxy image (~3.5MP).
+    - Executes Homr inference on the proxy image.
+    - Maps detected bounding box coordinates back to the high-resolution coordinate system.
+    - Ensures segmentation masks are resized to full resolution for downstream heuristics.
+- **Infrastucture**: Re-created `sr_eval_gpu` container with correct workspace mount point (`/home/masaki_muramatsu/ws_PDFScoreBar`).
+- **Data Migration**: Copied `external/realesrgan` from the legacy workspace to ensure SR functionality.
+
+### Verification Results (Page 10)
+- **Segnet Speedup**: ~80s → **1.2s (~66x improvement)**.
+- **TrOmr Speedup**: ~15s/staff → **2.3s/staff (~6.5x improvement)**.
+- **Total Pipeline Impact**: Step 2 Homr processing time (excluding SR generation) reduced from ~4.5 min to **< 40s**.
+
+### Status
+- **Proxy Inference**: Successfully implemented and verified for performance.
+- **Documentation**: Updated `docs/performance_comparison.md` with Phase 2 results.
+- **Remaining Task**: Perform a full end-to-end benchmark with Real-ESRGAN enabled to confirm accuracy parity and final timing.
+
+TODO: この方式によって検出される小節線などの結果が既存方式から　劣化していないことを確認する必要がある。

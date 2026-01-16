@@ -1,0 +1,11 @@
+{
+  "pages": [
+    {
+      "name": "prokofiev1_page_003",
+      "image": "data/evaluation2/images/prokofiev1/page_003.png",
+      "numbering": "logs/experiments/batch_verification_20260107_v5/prokofiev1/page_003/numbering_base.json",
+      "rest_gt": "logs/experiments/rest_gt/prokofiev1/page_003/rest_gt.json",
+      "output": "logs/experiments/rest_gt/prokofiev1/page_003/rest_gt.json"
+    }
+  ]
+}

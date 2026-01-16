@@ -174,7 +174,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         if parsed.path == "/":
-            ui = "index.html" if self.server.mode == "relabel" else "index_gt.html"
+            if self.server.mode == "relabel":
+                ui = "index.html"
+            elif self.server.mode == "rest":
+                ui = "index_rest.html"
+            else:
+                ui = "index_gt.html"
             self._serve_file(self.server.ui_root / ui)
             return
         if parsed.path == "/app.js":
@@ -183,12 +188,15 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/app_gt.js":
             self._serve_file(self.server.ui_root / "app_gt.js")
             return
+        if parsed.path == "/app_rest.js":
+            self._serve_file(self.server.ui_root / "app_rest.js")
+            return
         if parsed.path == "/api/items":
             items = scan_items(self.server.root)
             payload = [item_payload(item, self.server.root) for item in items]
             self._serve_json({"items": payload})
             return
-        if parsed.path == "/api/pages" and self.server.mode == "gt":
+        if parsed.path == "/api/pages" and self.server.mode in {"gt", "rest"}:
             self._serve_json({"pages": self.server.gt_config})
             return
         if parsed.path == "/api/boxes":
@@ -282,6 +290,21 @@ class Handler(BaseHTTPRequestHandler):
             sorted_path.write_text(json.dumps(sorted_records, indent=2))
             self._serve_json({"raw": str(raw_path), "sorted": str(sorted_path), "count": len(boxes)})
             return
+        if self.server.mode == "rest":
+            page = payload.get("page")
+            overrides = payload.get("overrides", [])
+            if not page:
+                self.send_error(400, "Missing page")
+                return
+            config = next((p for p in self.server.gt_config if p["name"] == page), None)
+            if not config:
+                self.send_error(404, "Unknown page")
+                return
+            output_path = safe_path(self.server.root, config["output"])
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(json.dumps({"page": page, "overrides": overrides}, indent=2))
+            self._serve_json({"output": str(output_path), "count": len(overrides)})
+            return
 
         rel = payload.get("path")
         if not rel:
@@ -333,7 +356,7 @@ class Handler(BaseHTTPRequestHandler):
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path)
-    parser.add_argument("--mode", choices=["relabel", "gt"], default="relabel")
+    parser.add_argument("--mode", choices=["relabel", "gt", "rest"], default="relabel")
     parser.add_argument("--config", type=Path, help="GT editor config JSON (gt mode)")
     parser.add_argument("--port", type=int, default=8010)
     parser.add_argument("--host", default="0.0.0.0")
@@ -342,9 +365,9 @@ def main() -> None:
     server = HTTPServer((args.host, args.port), Handler)
     server.ui_root = Path(__file__).resolve().parent
     server.mode = args.mode
-    if args.mode == "gt":
+    if args.mode in {"gt", "rest"}:
         if not args.config:
-            raise SystemExit("--config is required in gt mode")
+            raise SystemExit("--config is required in gt/rest mode")
         server.root = (args.root or REPO_ROOT).resolve()
         config_data = json.loads(args.config.read_text())
         server.gt_config = config_data.get("pages", config_data)
@@ -353,7 +376,12 @@ def main() -> None:
             raise SystemExit("--root is required in relabel mode")
         server.root = args.root.resolve()
 
-    mode_label = "GT editor" if args.mode == "gt" else "GT relabel"
+    if args.mode == "gt":
+        mode_label = "GT editor"
+    elif args.mode == "rest":
+        mode_label = "Multi-rest GT editor"
+    else:
+        mode_label = "GT relabel"
     print(f"{mode_label} GUI running: http://{args.host}:{args.port}")
     server.serve_forever()
 

@@ -2,9 +2,8 @@
 
 This project aims to develop a Python-based tool that automatically adds measure numbers to sheet music provided in PDF format.
 
-> **Status notice (2026-01-03 - CNN Training Worktree):** This worktree (`experiment/cnn_classifier`) is dedicated to training a lightweight CNN classifier for barline false positive reduction. Active logs for this session are in `docs/DEVLOG_CNN_TRAINING.md`.
+> **Status notice (2026-01-16):** The measure-numbering pipeline and MMR OCR/CNN work have been integrated in this repo. The authoritative history is in `docs/DEVLOG_MEASURE_NUMBERING.md`. CNN training history is in `docs/DEVLOG_CNN_TRAINING.md`. Historical logs (pre-2026-01-03) are preserved in `docs/DEVELOPMENT_LOG.md`. Start from `docs/README.md` for the up-to-date documentation map.
 
-> **Status notice (2025-12-30):** Active development is focused on detector-side FN analysis after a GT rebuild/recheck. The current confirmed state and next actions live in `docs/NEXT_SESSION_NOTES.md`. Historical experiments remain documented below; start from `docs/README.md` for the up-to-date documentation map.
 
 
 ---

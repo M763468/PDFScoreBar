@@ -250,6 +250,21 @@ The `run_hybrid_pipeline.sh` script automates steps 1-3 (Baseline -> SR -> OMR -
 ./tools/run_hybrid_pipeline.sh --image data/evaluation/images/new_score.png --run-id new_score_test
 ```
 
+### 5. `sr_eval_gpu_opt` Container (2026-01-16)
+Used for the optimized hybrid pipeline in the `ws_PDFScoreBar_training` worktree.
+To resolve symlinks (e.g., `external/homr` pointing to the main repo) inside the container, the main repository path is also mounted.
+
+- **Creation Command**:
+  ```bash
+  docker run -itd --gpus all \
+    --name sr_eval_gpu_opt \
+    -v /home/masaki_muramatsu/ws_PDFScoreBar_training:/workspace \
+    -v /home/masaki_muramatsu/ws_PDFScoreBar_training/.serena:/root/.serena \
+    -v /home/masaki_muramatsu/ws_PDFScoreBar:/home/masaki_muramatsu/ws_PDFScoreBar \
+    sr_eval
+  ```
+- **Reason**: The worktree uses a symlink for `external/homr` that points to an absolute path in the main repo. Standard mounting of just the worktree breaks this link inside the container. Mounting both paths allows the symlink to resolve correctly.
+
 ---
 ## Reproducibility checks (required)
 - Always record **commit hash + full command + output path** for any baseline/adopted result.

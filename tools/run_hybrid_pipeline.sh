@@ -65,8 +65,9 @@ if [[ -n "$GT_PATH" ]]; then
 fi
 
 # Define Output Root in Container
-OUTPUT_ROOT="/workspace/logs/hybrid_generalization/$RUN_ID"
-HOST_OUTPUT_ROOT="logs/hybrid_generalization/$RUN_ID"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+OUTPUT_ROOT="/workspace/logs/hybrid_pipeline_bench/${RUN_ID}_${TIMESTAMP}"
+HOST_OUTPUT_ROOT="logs/hybrid_pipeline_bench/${RUN_ID}_${TIMESTAMP}"
 
 echo "=== Running Hybrid Pipeline ==="
 echo "Image: $CONTAINER_IMAGE ($STEM)"
@@ -123,10 +124,16 @@ END_STEP2=$(date +%s)
 echo ""
 START_STEP3=$(date +%s)
 echo "--- Step 3: OMR-DLN SR ---"
+
+# Locate the SR image generated in Step 2
+# Structure: $OUTPUT_ROOT/sr/$STEM/$STEM/$STEM.png (or similar)
+# Note: homr_evaluator saves the image as $STEM.png inside $OUTPUT_ROOT/sr/$STEM/$STEM/
+SR_IMG_PATH="$OUTPUT_ROOT/sr/$STEM/$STEM/${STEM}.png"
+
 CMD_OMR="$CONTAINER_PY /workspace/experiments/models/eval_omr_dln.py \
     --image \"$CONTAINER_IMAGE\" \
     --output-dir \"$OUTPUT_ROOT/omr_sr\" \
-    --enable-sr"
+    --pre-computed-sr \"$SR_IMG_PATH\""
 
 if [[ -n "$CONTAINER_GT" ]]; then
     CMD_OMR="$CMD_OMR --gt \"$CONTAINER_GT\""

@@ -1427,3 +1427,27 @@ Modified `tools/generate_numbering_overrides.py`:
 
 ### Conclusion
 H-Bar masking effectively solved the selection priority conflict between musical symbols and text. The pipeline is now significantly closer to the >90% recall target.
+
+## 2026-01-16: 傾き補正 (Deskewing) および TTA (Rotation) の導入試行 - 保留
+
+### Hypothesis
+OCRの誤読（例：「26」を「9」と誤認）の主要因が楽譜の傾きや歪みにあると仮定し、画像の水平化（Deskew）または微小回転を加えた複数試行（TTA）によって精度を改善する。
+
+### Implementation
+Modified `tools/generate_numbering_overrides.py`:
+*   **自動傾き補正**: HoughLinesPを用いて五線の角度を検出し、画像を水平に回転させる `rotate_image` 処理を追加。
+*   **回転TTA**: Retryループ内に回転角（±2度）のバリエーションを追加。標準の処理で失敗した場合に、少し角度を変えて再試行する仕組みを構築。
+*   **デフォルトOFFのフラグ化**: `--enable-rotation-tta` オプションでのみ回転TTAを有効化し、デフォルトでは無効。
+
+### Results (Sibelius Dataset)
+| Metric | H-Bar Masking (v6) | TTA Rotation (v7) | Delta |
+| :--- | :--- | :--- | :--- |
+| **Stage 2 Recall (Pipeline)** | 87.1% (27/31) | 87.1% (27/31) | 0.0% |
+| **Stage 2 Precision** | 90.0% | 90.0% | 0.0% |
+
+### Failure Analysis
+*   **効果の限定**: Sibelius Page 1の「26」が「9R」と誤読されるケースにおいて、TTA（+1度）により「1 2R」と読みが変化するなどの兆候は見られたが、正解の「26」を導き出すには至らなかった。
+*   **角度検出の難しさ**: クロップされた小さな画像内では、五線以外の記号（タイやスラー）の影響を受け、正確な角度検出が不安定になる傾向がある。
+
+### Conclusion
+単純な回転補正のみでは、現在のフォント依存の誤読や複雑な重なりを解消するには不十分であった。本ロジックは実装済み（Retryループ内に統合）とするが、劇的なRecall向上には繋がらなかったため、さらなる前処理の検討が必要。

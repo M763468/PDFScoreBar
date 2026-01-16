@@ -102,8 +102,25 @@ def mask_hbar_candidates(img, staff_top_rel, staff_height):
             
     return masked_img
 
-def preprocess_image_ocr_variant(img, mode='standard'):
+def rotate_image(image, angle):
+    """
+    Rotate the image around its center.
+    """
+    if angle == 0: return image
+    (h, w) = image.shape[:2]
+    center = (w // 2, h // 2)
+    M = cv2.getRotationMatrix2D(center, angle, 1.0)
+    # Use BORDER_REPLICATE to avoid black borders affecting OCR
+    rotated = cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+    return rotated
+
+def preprocess_image_ocr_variant(img, mode='standard', angle=0):
     if img is None: return None
+    
+    # Apply rotation (TTA)
+    if angle != 0:
+        img = rotate_image(img, angle)
+
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     binary_white_bg = cv2.bitwise_not(binary)
@@ -373,6 +390,7 @@ def main():
     # Threshold handling
     parser.add_argument("--threshold", type=float, default=0.5, help="High Confidence Threshold")
     parser.add_argument("--rescue-threshold", type=float, default=0.1, help="Low Confidence Rescue Threshold")
+    parser.add_argument("--enable-rotation-tta", action="store_true", help="Enable OCR retry with +/-2 deg rotations")
     
     args = parser.parse_args()
     
@@ -460,13 +478,26 @@ def main():
                     final_score = 0
                     final_debug = ""
                     
-                    # Retry modes
-                    modes = ['standard']
+                    # Retry modes: List of (mode_name, angle)
+                    # Standard run
+                    variants = [('standard', 0)]
+                    
                     if prob > threshold:
-                        # Only retry if we are fairly confident there IS something
-                        modes = ['standard', 'no_dilate', 'heavy_dilate']
+                        # High Confidence: Retry heavily
+                        variants = [
+                            ('standard', 0),
+                            ('no_dilate', 0),
+                            ('heavy_dilate', 0),
+                        ]
+                        if args.enable_rotation_tta:
+                            variants.extend([
+                                ('standard', -2),
+                                ('standard', 2),
+                                ('heavy_dilate', -2),
+                                ('heavy_dilate', 2),
+                            ])
                         
-                    for mode in modes:
+                    for mode, angle in variants:
                         staves = system.get("staves", [])
                         stave_results = []
                         
@@ -489,7 +520,7 @@ def main():
                             s_h = s_bbox[3] - s_bbox[1]
                             stave_crop = mask_hbar_candidates(stave_crop, margin_y, s_h)
                             
-                            proc_img = preprocess_image_ocr_variant(stave_crop, mode=mode)
+                            proc_img = preprocess_image_ocr_variant(stave_crop, mode=mode, angle=angle)
                             if proc_img is None: continue
                             
                             ocr_res, _ = ocr_engine(proc_img)

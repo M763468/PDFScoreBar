@@ -1,5 +1,8 @@
 # Session Log (Measure Numbering Track)
 
+**NOTE**: This log is now an archive. The authoritative, up-to-date record is
+`docs/DEVLOG_MEASURE_NUMBERING.md`. This file is kept for historical reference.
+
 **Last Updated**: 2026-01-08
 **Context**: This log tracks the design and implementation of the "Measure Numbering" system (Plan A) in the `feature/measure_numbering` branch.
 

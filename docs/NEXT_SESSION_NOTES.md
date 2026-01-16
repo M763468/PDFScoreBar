@@ -3,6 +3,10 @@
 **Last Updated**: 2026-01-04
 **Current Phase**: **Plan A (Measure Numbering)** & **Plan B (CNN Training)** Parallel Execution
 
+**NOTE**: This file is now a historical snapshot. For the authoritative,
+up-to-date status and reproducible details, see
+`docs/DEVLOG_MEASURE_NUMBERING.md`.
+
 ---
 ## Overview: Parallel Tracks
 

@@ -58,6 +58,50 @@ def predict_crop(model, cv2_img, device):
     return prob
 
 # --- OCR Helpers (Reused) ---
+def mask_hbar_candidates(img, staff_top_rel, staff_height):
+    """
+    Detects and masks the H-bar symbol (heavy horizontal line) to prevent OCR from reading it as '2' or '1'.
+    """
+    if img is None: return img
+    
+    # 1. Preprocess for shape detection
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    
+    # 2. Isolate thick objects (H-Bars are thick)
+    # Erode vertically to remove staff lines (typically 2-3px)
+    v_erode_kernel = np.ones((4, 1), np.uint8) 
+    thick_objects = cv2.erode(binary, v_erode_kernel, iterations=1)
+    thick_objects = cv2.dilate(thick_objects, v_erode_kernel, iterations=1)
+    
+    # 3. Find contours
+    contours, _ = cv2.findContours(thick_objects, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    masked_img = img.copy()
+    staff_center = staff_top_rel + staff_height / 2.0
+    
+    for cnt in contours:
+        x, y, w, h = cv2.boundingRect(cnt)
+        cy = y + h / 2.0
+        
+        # Criteria for H-Bar
+        # 1. Wide enough (e.g., > 50px)
+        # 2. Centered on staff (within ~30px)
+        # 3. Not too tall (avoid masking large text blocks if they merge)
+        dist_center = abs(cy - staff_center)
+        
+        # Determine if this is an H-bar
+        if w > 40 and h > 4 and dist_center < 40:
+            # Mask it with white color
+            # Add padding to cover serifs
+            pad = 5
+            cv2.rectangle(masked_img, (max(0, x-pad), max(0, y-pad)), 
+                          (min(img.shape[1], x+w+pad), min(img.shape[0], y+h+pad)), 
+                          (255, 255, 255), -1)
+            # print(f"[DEBUG] Masked H-Bar candidate: w={w} h={h} dist={dist_center:.1f}")
+            
+    return masked_img
+
 def preprocess_image_ocr_variant(img, mode='standard'):
     if img is None: return None
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -111,22 +155,50 @@ def merge_ocr_results(ocr_result):
         # 1. Vertical alignment (centers close or significant overlap)
         c_cy = (c_y1 + c_y2) / 2
         n_cy = (n_y1 + n_y2) / 2
-        vertical_aligned = abs(c_cy - n_cy) < (min(c_h, n_h) * 0.5)
+        
+        # Calculate alignment metrics
+        min_h = min(c_h, n_h)
+        
+        vertical_diff = abs(c_cy - n_cy)
+        vertical_aligned_loose = vertical_diff < (min_h * 0.5)
+        vertical_aligned_strict = vertical_diff < (min_h * 0.2)
 
         # 2. Horizontal proximity (gap small relative to height)
         gap = n_x1 - c_x2
-        # Allow small negative gap (overlap) or small positive gap
-        horizontal_close = gap < (min(c_h, n_h) * 0.3) # Stricter gap for digits
+        
+        # Strategy 3: Dynamic Gap Tolerance (Enhanced)
+        c_clean = c_txt.strip()
+        n_clean = n_txt.strip()
+        
+        # Check for digits or 1-lookalikes (common in split numbers)
+        digit_pat = r'^[\dIl|!i\]\[]$'
+        is_potential_split = bool(re.match(digit_pat, c_clean) and re.match(digit_pat, n_clean))
+        
+        gap_threshold = min_h * 0.3 # Default strict
+        
+        if is_potential_split:
+             # Relax vertical alignment requirement for split digits
+             # If strictly aligned, allow HUGE gap. If loosely aligned, allow moderate gap.
+             if vertical_aligned_strict:
+                 gap_threshold = min_h * 1.5 
+             elif vertical_aligned_loose:
+                 gap_threshold = min_h * 0.8
+        
+        horizontal_close = gap < gap_threshold
 
         # 3. Height similarity (digits in a number should have similar heights)
         height_diff = abs(c_h - n_h) / max(c_h, n_h)
-        height_similar = height_diff < 0.2 # Allow up to 20% diff
+        # If potential split of 1 and something else, height diff can be larger (1 is often detected shorter)
+        if is_potential_split:
+             height_similar = height_diff < 0.4
+        else:
+             height_similar = height_diff < 0.25
         
         # 4. Content is digits
         txt_merged = c_txt + n_txt
         is_digit_pattern = bool(re.match(r'^\d+$', txt_merged))
 
-        if vertical_aligned and horizontal_close and height_similar and is_digit_pattern:
+        if vertical_aligned_loose and horizontal_close and height_similar and is_digit_pattern:
             # Merge!
             # New box points: min_x, min_y, max_x, max_y
             mx1 = min(c_xs + n_xs)
@@ -409,6 +481,14 @@ def main():
                             oy2 = min(h_img, sy2 + 80)
                             
                             stave_crop = image[oy1:oy2, ox1:ox2]
+                            
+                            # NEW: Mask H-Bar before OCR
+                            # Calculate staff relative position
+                            # Staff top in crop is margin_y (80)
+                            # Staff height is s_bbox[3] - s_bbox[1]
+                            s_h = s_bbox[3] - s_bbox[1]
+                            stave_crop = mask_hbar_candidates(stave_crop, margin_y, s_h)
+                            
                             proc_img = preprocess_image_ocr_variant(stave_crop, mode=mode)
                             if proc_img is None: continue
                             

@@ -1364,3 +1364,66 @@ Based on the visual analysis, the next iteration will focus on more robust filte
 3.  **H-Bar Quality Check**: Only use the H-Bar anchor if the detected H-bar has a sufficient relative size (e.g., width > 20% of measure width), preventing anchoring on small noise artifacts. This avoids dependency on absolute resolution.
 
 **Next Action**: Implement the refined CJK filtering and reinforced geometric scoring in `tools/generate_numbering_overrides.py`.
+
+## 2026-01-16: Strategy 3 Implementation (Component Analysis) - RESULTS
+
+### Hypothesis
+Stage 2 Recall can be improved by force-merging split digits (e.g., "1" and "2" -> "12") using relaxed geometric constraints when the text components are single digits or lookalikes.
+
+### Implementation
+Modified `tools/generate_numbering_overrides.py`:
+*   **Refined `merge_ocr_results`**:
+    *   Added check for single-digit candidates (including "I", "l", "|").
+    *   Significantly increased gap tolerance (up to 1.5x height) if candidates are strictly vertically aligned.
+    *   Relaxed height similarity check for potential split digits.
+
+### Results (Sibelius Dataset)
+| Metric | Baseline (v3) | Strategy 3 (v5) | Delta |
+| :--- | :--- | :--- | :--- |
+| **Stage 1 Recall (Detection)** | 96.8% (30/31) | 96.8% (30/31) | 0.0% |
+| **Stage 2 Recall (Pipeline)** | 80.6% (25/31) | 80.6% (25/31) | 0.0% |
+
+### Failure Analysis (Why no improvement?)
+The remaining errors in Sibelius are **not** simple adjacent split digits.
+1.  **H-Bar Hallucination (Selection Error)**:
+    *   **Case**: Page 6, M0 (GT "12").
+    *   **Observation**: OCR finds "2" (likely the H-bar symbol interpreted as "2") and "12" (the real number).
+    *   **Problem**: "2" is geometrically perfect (centered `dy=0.04`, `dx=0.14`). "12" is penalized for being off-center (`dy=0.25`, `dx=0.22`), likely displaced by text ("Adagio di").
+    *   **Lesson**: Merging didn't fail (the "12" was intact). The *selector* picked the wrong candidate because the H-bar itself was detected as a high-confidence digit "2".
+
+2.  **OCR Rotation/Confusion**:
+    *   **Case**: Page 1, M0 (GT "26" -> "9").
+    *   **Case**: Page 1, M14 (GT "9" -> "6").
+    *   **Problem**: Likely rotation issues or font confusion, not splitting.
+
+### Conclusion
+Strategy 3 is robust and safe (didn't break anything), but the current error set is dominated by **Selection Logic** failures (choosing noise/symbols over real numbers) rather than **Segmentation** failures (split digits). Future work must address the "H-Bar as Digit" hallucination or relax centering penalties for numbers competing with H-bars.
+
+## 2026-01-16: H-Bar Masking Implementation - SUCCESS
+
+### Hypothesis
+Stage 2 Recall is bottlenecked by "H-Bar Hallucination," where the OCR engine misreads the thick rest symbol (H-bar) as a digit (e.g., "2" or "二"). Masking this symbol before OCR will eliminate high-confidence noise and allow the correct rest numbers to be selected.
+
+### Implementation
+Modified `tools/generate_numbering_overrides.py`:
+*   **H-Bar Detection**: Added `mask_hbar_candidates` using morphological operations (vertical erosion) to isolate thick horizontal blocks centered on the staff.
+*   **Pre-OCR Masking**: The detected H-bars are whited out in the OCR crop before passing to the RapidOCR engine.
+*   **Synergy**: Combined with Strategy 3 (Split Digit Merging) to handle cases where digits are split by staff lines.
+
+### Results (Sibelius Dataset)
+| Metric | Baseline (v3) | H-Bar Masking (v6) | Improvement |
+| :--- | :--- | :--- | :--- |
+| **Stage 1 Recall (Detection)** | 96.8% (30/31) | 96.8% (30/31) | 0.0% |
+| **Stage 2 Recall (Pipeline)** | 80.6% (25/31) | **87.1% (27/31)** | **+6.5%** |
+| **Stage 2 Precision** | 83.3% | **90.0%** | **+6.7%** |
+
+### Key Improvements
+*   **Sibelius P6 M0**: Correctly identified "12" by masking the H-bar that was previously misread as "2".
+*   **Sibelius P3**: Achieved 100% Pipeline Recall for this page.
+
+### Remaining Issues
+*   **Rotation/Font Confusion**: A few cases remain (e.g., "26" read as "9" on P1) which likely require Test-Time Augmentation (TTA) or better preprocessing for slanted staves.
+*   **Precision**: Still some noise from rehearsal marks, though reduced.
+
+### Conclusion
+H-Bar masking effectively solved the selection priority conflict between musical symbols and text. The pipeline is now significantly closer to the >90% recall target.

@@ -136,4 +136,115 @@ Implement the "Proxy Inference" strategy to eliminate the performance bottleneck
 - **Documentation**: Updated `docs/performance_comparison.md` with Phase 2 results.
 - **Remaining Task**: Perform a full end-to-end benchmark with Real-ESRGAN enabled to confirm accuracy parity and final timing.
 
-TODO: この方式によって検出される小節線などの結果が既存方式から　劣化していないことを確認する必要がある。
+TODO: この方式によって検出される小節線などの結果が既存方式から劣化していないことを確認する必要がある。
+
+---
+
+## Phase 3: End-to-End Verification & Dependency Repair (2026-01-17)
+
+### Status Update
+- **OMR-DLN repo restored**: Cloned `external/omr_dln` from upstream (`dmgonzalez8/OMR`).
+- **Model weights downloaded**: Pulled Google Drive model pack and placed into `external/omr_dln/models/public_models/` without overwriting existing files.
+- **Real-ESRGAN import fixed**: Installed `external/realesrgan` into `/opt/venv_sr` inside `sr_eval_gpu`.
+- **Pipeline re-run (no GT)**:
+  - Run ID: `page_10_opt_final_bench_v2`
+  - Output: `logs/hybrid_pipeline_bench/page_10_opt_final_bench_v2_20260117_143744`
+  - Summary: Step1 88s / Step2 380s / Step3 12s / Step4 0s / Total 480s
+  - Counts: Baseline 233, SR 156, OMR-DLN 320 (measures->barlines), Hybrid 152
+
+### Follow-up
+- Run the full pipeline **with GT** to record accuracy metrics.
+- Investigate why Step 2 Segnet time is ~75s during SR (proxy inference expected to be ~1–2s).
+
+### GT Benchmark Results (2026-01-17)
+- **Run ID**: `page_10_opt_final_bench_v2_gt`
+- **Output**: `logs/hybrid_pipeline_bench/page_10_opt_final_bench_v2_gt_20260117_145206`
+- **OMR-DLN Metrics**:
+  - TP 121 / FP 62 / FN 38
+  - Precision 0.6612 / Recall 0.7610 / F1 0.7076
+- **Hybrid Metrics**:
+  - TP 149 / FP 1 / FN 10 / Soft Matches 2
+  - Precision 0.9933 / Recall 0.9371 / F1 0.9644
+- **Performance Summary**:
+  - Step1 86s / Step2 399s / Step3 6s / Step4 0s / Total 491s
+- **Open Issue**: SR Step2 Segnet still ~75s even when proxy image (1620x2160) is used; likely GPU/CPU fallback or unexpected path usage.
+
+### Diagnostics (2026-01-17)
+- Added Segnet ONNXRuntime provider logging to confirm CUDA vs CPU path:
+  - `external/homr/homr/segmentation/inference_segnet.py` now logs available/selected ORT providers at model init.
+
+### Provider Check Run (2026-01-17)
+- **Run ID**: `page_10_opt_final_bench_v2_gt_providers`
+- **Output**: `logs/hybrid_pipeline_bench/page_10_opt_final_bench_v2_gt_providers_20260117_150628`
+- **Segnet ORT providers**:
+  - Available: `['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider']`
+  - Selected: `['CUDAExecutionProvider', 'CPUExecutionProvider']`
+- **Observation**: SR Step2 Segnet still ~75s despite CUDA provider selected, so slowdown is not a CPU fallback.
+
+### Segnet Slowdown Root Cause (2026-01-17)
+- **Repro**: Running Real-ESRGAN in-process causes subsequent Segnet inference to take ~75s.
+- **Fix**: `torch.cuda.empty_cache()` restores Segnet time to <1s in the same process.
+- **Change**: Added CUDA cache clear after SR in `src/homr_eval_scripts/homr_evaluator.py`.
+
+### Cache Fix Verification (2026-01-17)
+- **Run ID**: `page_10_opt_final_bench_v2_gt_cachefix`
+- **Output**: `logs/hybrid_pipeline_bench/page_10_opt_final_bench_v2_gt_cachefix_20260117_152207`
+- **Result**: SR Step2 Segnet back to ~1.2s; total time dropped to 259s.
+- **Performance Summary**:
+  - Step1 86s / Step2 167s / Step3 6s / Step4 0s / Total 259s
+
+### Multi-page Verification (2026-01-17)
+- **Run ID**: `page_15_opt_cachefix`
+- **Output**: `logs/hybrid_pipeline_bench/page_15_opt_cachefix_20260117_160346`
+- **OMR-DLN Metrics**:
+  - TP 84 / FP 53 / FN 35
+  - Precision 0.6131 / Recall 0.7059 / F1 0.6563
+- **Hybrid Metrics**:
+  - TP 106 / FP 2 / FN 13
+  - Precision 0.9815 / Recall 0.8908 / F1 0.9339
+- **Performance Summary**:
+  - Step1 107s / Step2 206s / Step3 8s / Step4 0s / Total 321s
+
+### Multi-page Verification (2026-01-17) - page_3
+- **Run ID**: `page_3_opt_cachefix`
+- **Output**: `logs/hybrid_pipeline_bench/page_3_opt_cachefix_20260117_161347`
+- **OMR-DLN Metrics**:
+  - TP 138 / FP 16 / FN 16
+  - Precision 0.8961 / Recall 0.8961 / F1 0.8961
+- **Hybrid Metrics**:
+  - TP 152 / FP 9 / FN 2 / Soft Matches 18
+  - Precision 0.9441 / Recall 0.9870 / F1 0.9651
+- **Performance Summary**:
+  - Step1 130s / Step2 167s / Step3 5s / Step4 0s / Total 302s
+
+### SR Reuse Validation (2026-01-17) - page_3
+- **Run ID**: `page_3_opt_reuse_sr`
+- **Output**: `logs/hybrid_pipeline_bench/page_3_opt_reuse_sr_20260117_162654`
+- **Command (SR step)**:
+  - `/workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/evaluation/images/page_3.png --output-root /workspace/logs/hybrid_pipeline_bench/page_3_opt_reuse_sr_20260117_162654/sr --force-run-id page_3 --enable-sr --ground-truth page_3:/workspace/data/evaluation/annotations/page_003/boxes_sorted.json --pre-computed-sr /workspace/logs/hybrid_pipeline_bench/page_3_opt_cachefix_20260117_161347/sr/page_3/page_3/page_3.png`
+- **Accuracy (baseline homr)**:
+  - TP 154 / FP 30 / FN 0
+  - Precision 0.8370 / Recall 1.0000 / F1 0.9112
+- **Accuracy (SR homr)**:
+  - TP 144 / FP 24 / FN 10
+  - Precision 0.8571 / Recall 0.9351 / F1 0.8944
+- **Accuracy (OMR-DLN)**:
+  - TP 138 / FP 16 / FN 16
+  - Precision 0.8961 / Recall 0.8961 / F1 0.8961
+- **Timing**:
+  - No stage timing artifacts were generated for this run; `tools/run_hybrid_pipeline.sh` output needs to be captured (e.g., `tee logs/opt_reuse_sr.log`) to confirm the time saved by reusing SR.
+- **Hybrid Metrics**:
+  - `hybrid_predictions.json` exists, but no hybrid metrics file was generated; if needed, run a metrics step against GT.
+- **Dependency Note**:
+  - `external/omr_dln/README.md` points to a Google Drive link for model downloads. The current files in `external/omr_dln/models/public_models/` were preserved; their original source remains unverified, so do not delete them.
+- **Serena Code Structure Scan**:
+  - `src/homr_eval_scripts/homr_evaluator.py` contains core pipeline functions (`parse_args`, `run_homr_on_image`, `compute_metrics`, `aggregate_metrics`, `write_*`) and helper classes (`TransformInfo`, `BarlinePrediction`, `ImageMetrics`, `AggregateMetrics`).
+
+### End-of-Session Checklist (2026-01-17)
+- **Debug logging**: Keep Segnet provider diagnostics available via `HOMR_DEBUG_PROVIDERS=1`; do not remove debug mode support.
+- **Timing capture needed**: Re-run the SR reuse test with `tools/run_hybrid_pipeline.sh | tee logs/opt_reuse_sr.log` to record stage timings.
+- **Hybrid metrics**: If needed, compute metrics for `logs/hybrid_pipeline_bench/page_3_opt_reuse_sr_20260117_162654/hybrid_predictions.json`.
+- **Next experiments (order)**:
+  - SR reuse timing confirmation (page_3 or page_10).
+  - x2 or lighter SR model experiment.
+  - ESRGAN tile-size tuning.

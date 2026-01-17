@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-    echo "Usage: $0 --image <path> --run-id <id> [--gt <path>]"
+    echo "Usage: $0 --image <path> --run-id <id> [--gt <path>] [--sr-image <path>]"
     echo ""
     echo "Orchestrates the Hybrid Barline Detection Pipeline:"
     echo "1. homr Baseline (Standard)"
@@ -15,12 +15,14 @@ usage() {
 IMAGE_PATH=""
 RUN_ID=""
 GT_PATH=""
+SR_IMAGE_PATH=""
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --image) IMAGE_PATH="$2"; shift ;;
         --run-id) RUN_ID="$2"; shift ;;
         --gt) GT_PATH="$2"; shift ;;
+        --sr-image) SR_IMAGE_PATH="$2"; shift ;;
         *) echo "Unknown parameter: $1"; usage ;;
     esac
     shift
@@ -64,6 +66,16 @@ if [[ -n "$GT_PATH" ]]; then
     CONTAINER_GT="/workspace${ABS_GT#$REPO_ROOT}"
 fi
 
+CONTAINER_SR_IMAGE=""
+if [[ -n "$SR_IMAGE_PATH" ]]; then
+    ABS_SR=$(realpath "$SR_IMAGE_PATH")
+    if [[ "$ABS_SR" != "$REPO_ROOT"* ]]; then
+        echo "Error: SR image must be inside the repository."
+        exit 1
+    fi
+    CONTAINER_SR_IMAGE="/workspace${ABS_SR#$REPO_ROOT}"
+fi
+
 # Define Output Root in Container
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 OUTPUT_ROOT="/workspace/logs/hybrid_pipeline_bench/${RUN_ID}_${TIMESTAMP}"
@@ -73,6 +85,7 @@ echo "=== Running Hybrid Pipeline ==="
 echo "Image: $CONTAINER_IMAGE ($STEM)"
 echo "Run ID: $RUN_ID"
 echo "GT: ${CONTAINER_GT:-(None)}" 
+echo "SR: ${CONTAINER_SR_IMAGE:-(None)}"
 echo "Output: $OUTPUT_ROOT"
 
 START_TOTAL=$(date +%s)
@@ -114,6 +127,9 @@ CMD_SR="$CONTAINER_PY /workspace/src/homr_eval_scripts/homr_evaluator.py \
 
 if [[ -n "$CONTAINER_GT" ]]; then
     CMD_SR="$CMD_SR --ground-truth \"$STEM:$CONTAINER_GT\""
+fi
+if [[ -n "$CONTAINER_SR_IMAGE" ]]; then
+    CMD_SR="$CMD_SR --pre-computed-sr \"$CONTAINER_SR_IMAGE\""
 fi
 
 echo "Running: $CMD_SR"

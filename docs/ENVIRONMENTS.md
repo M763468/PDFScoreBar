@@ -248,7 +248,20 @@ The `run_hybrid_pipeline.sh` script automates steps 1-3 (Baseline -> SR -> OMR -
 
 # Run inference only (no GT)
 ./tools/run_hybrid_pipeline.sh --image data/evaluation/images/new_score.png --run-id new_score_test
+
+# Reuse a precomputed SR image to skip SR generation in Step 2
+./tools/run_hybrid_pipeline.sh \
+  --image data/evaluation/images/page_3.png \
+  --run-id page_3_reuse_sr \
+  --gt data/evaluation/annotations/page_003/boxes_sorted.json \
+  --sr-image logs/hybrid_pipeline_bench/<run_id>/sr/page_3/page_3/page_3.png
 ```
+
+### Optional Debug Logging
+- **Segnet ORT provider logging** (for CUDA/CPU diagnostics):
+  ```bash
+  export HOMR_DEBUG_PROVIDERS=1
+  ```
 
 ### 5. `sr_eval_gpu_opt` Container (2026-01-16)
 Used for the optimized hybrid pipeline in the `ws_PDFScoreBar_training` worktree.

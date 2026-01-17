@@ -9,6 +9,12 @@ Define the end-to-end pipeline from image input to measure-numbered output, incl
 user correction points for barlines and multi-measure rest (MMR) counts. This is a
 planning-only phase; feature implementation will happen in child branches.
 
+### Implementation Strategy
+Phase 1 (now): Build a minimal, end-to-end orchestrator that reuses existing scripts to
+produce final outputs in a single run (thin wrapper + stable run directory layout).
+Phase 2 (later): Based on Phase 1 observations, refactor for bottleneck removal,
+deduplication, optimization, and parallelization.
+
 ## Scope
 - Input: single-page or multi-page score images.
 - Output: measure-numbered JSON + optional overlays.
@@ -186,11 +192,13 @@ logs/pipeline_runs/<run_id>/
 - Barlines correction UI: extend existing GT GUI or provide a lightweight editor?
 - Multi-page numbering state: how to handle movement boundaries?
 - Default selection of staff masks across runs.
+- What observed bottlenecks in Phase 1 should drive Phase 2 redesign (I/O, model load, OCR)?
 
 ## Next Actions (This Branch)
 - Document the data contracts for barline corrections and MMR overrides.
-- Identify the minimal set of scripts to stitch into a single CLI entry point.
+- Identify the minimal set of scripts to stitch into a single CLI entry point (Phase 1).
 - Enumerate user touchpoints and UX expectations for corrections.
+- Add a Phase 2 note outlining intended optimization targets (parallelization, I/O, model reuse).
 
 ---
 ## Data Contracts (Draft)
@@ -236,32 +244,105 @@ logs/pipeline_runs/<run_id>/
 - `set_number` overrides the displayed measure number only for the target measure.
 
 ---
-## CLI Design (Draft)
+## Config-Driven Orchestrator (Draft)
 
 ### Single Entry Point (Planned)
-`tools/run_full_pipeline.py` (new)
+`tools/run_full_pipeline.py` (new) + YAML config
 
-**Inputs**:
-- `--images`: list or glob of page images
-- `--barlines`: detector output JSON (per-page or combined)
-- `--staff-mask-root`: root directory for staff masks
-- `--overrides`: path to measure overrides JSON (optional)
-- `--barline-overrides`: path to barline corrections JSON (optional)
-- `--output-dir`: run directory
+**Inputs (via config)**:
+- `config.yaml` path (primary)
+- optional CLI overrides for `run_id` and `output_root`
 
 **Outputs**:
-- `outputs/numbering_base.json`
-- `outputs/numbering_final.json`
-- `outputs/numbering_overlay.png` (optional)
-- `intermediate/overrides_mmr.json`
-- `intermediate/barlines_corrected.json`
+- `logs/full_pipeline_runs/<run_id>/outputs/numbering_base.json`
+- `logs/full_pipeline_runs/<run_id>/outputs/numbering_final.json`
+- `logs/full_pipeline_runs/<run_id>/outputs/numbering_overlay.png` (optional)
+- `logs/full_pipeline_runs/<run_id>/intermediate/overrides_mmr.json`
+- `logs/full_pipeline_runs/<run_id>/intermediate/barlines_corrected.json`
+
+**Config Structure (Draft)**:
+```yaml
+run:
+  run_id: "2026-01-16_demo_001"  # optional; auto if missing
+  output_root: "logs/full_pipeline_runs"
+inputs:
+  pdf_path: "data/scores/demo/score.pdf"
+  pdf_to_images:
+    output_dir: "logs/preprocess/demo_pages"
+    dpi: 300
+    pages: null            # optional: "1,2,5" (1-based indices)
+    target_width: null     # optional resize in pixels
+    target_height: null    # optional resize in pixels
+    interpolation: "area"  # nearest|linear|area|cubic|lanczos
+    prefix: "page"
+    format: "png"
+    overwrite: false
+    alpha: false
+    image_glob: "page_*.png"
+  barlines_root: "logs/hybrid_generalization"
+  barlines_pattern: "{page_run}/pipeline2_no_peak_filtered_cnn.json"
+  staff_mask_pattern: "{page_run}/baseline/{page_id}/{page_id}/{page_id}_debug_3_staff.png"
+  page_runs: ["eval2_prokofiev1_page_001"]  # optional explicit list; defaults to inferred
+  barline_overrides: "logs/overrides/barline_overrides.json"  # optional
+  measure_overrides: "logs/overrides/overrides_user.json"     # optional
+steps:
+  pdf_to_images: true
+  filter_pages: true
+  apply_barline_overrides: true
+  numbering_base: true
+  mmr_overrides: true
+  apply_measure_overrides: true
+  overlay: false
+filters:
+  blank_page: "auto"    # planned: detect empty/near-empty pages
+  staff_detect: "auto"  # planned: drop pages where homr fails to detect staff
+  user_exclude: []      # optional: 1-based page indices to skip
+mmr:
+  model_path: "models/mmr_cnn.pt"
+  ocr_lang: "eng"
+numbering:
+  config_path: null   # optional extra config for add_measure_numbers.py
+```
 
 **Behavior**:
-1. Apply `barline_overrides.json` to barline detections.
-2. Run `tools/add_measure_numbers.py` to produce `numbering_base.json`.
-3. Run `tools/generate_numbering_overrides.py` to produce MMR overrides.
-4. Apply `overrides.json` (user + MMR) to produce final numbering.
-5. Write overlays if requested.
+1. Resolve `run_id` and create `logs/full_pipeline_runs/<run_id>/...`.
+2. If `pdf_to_images` enabled, call `src/pdf_to_images.py` and record a page list.
+3. If `filter_pages` enabled, drop blank or non-music pages (planned detection).
+4. Apply `barline_overrides.json` to barline detections (if enabled).
+5. Run `tools/add_measure_numbers.py` to produce `numbering_base.json`.
+6. Run `tools/generate_numbering_overrides.py` to produce MMR overrides.
+7. Apply `overrides_user.json` (user + MMR) to produce final numbering.
+8. Write overlays if requested.
+
+**Notes**:
+- `src/pdf_to_images.py` is the canonical PDF renderer (see `docs/ENVIRONMENTS.md` for the
+  `.venv_pdf` environment). Parameter names mirror the script options.
+- Page filtering strategies (planned): near-empty page detection, homr staff detection failure,
+  and explicit user exclusion list. Any of these can be used initially; refined later.
+- For Phase 1, barlines/staff masks are resolved via `barlines_root` + pattern templates
+  (`{page_run}`, `{page_id}` placeholders). Multi-page PDFs can list `page_runs` explicitly.
+- `page_id` is derived from `pdf_to_images.prefix` and 1-based index (e.g., `page_001`),
+  matching the hybrid output naming convention.
+
+---
+## Existing Hybrid Output Structure (Observed)
+
+### Example Root (Per-Page Runs)
+`logs/hybrid_generalization/eval2_prokofiev1_page_001/`
+
+### Barline Candidates / CNN Filtering
+- Pre-CNN candidates: `pipeline2_no_peak_candidates.json` (list of bboxes)
+- CNN scores: `pipeline2_no_peak_scored.json` (list of `{bbox, score}`)
+- Final barlines after CNN: `pipeline2_no_peak_filtered_cnn.json` (list of bboxes)
+- Alternate baseline: `pipeline1_baseline_filtered.json` (list of bboxes)
+
+### Staff Mask (Homr Output)
+`baseline/page_001/page_001/page_001_debug_3_staff.png`
+
+### Implication for Phase 1 Config
+- Prefer `pipeline2_no_peak_filtered_cnn.json` as barlines source.
+- Resolve barlines/staff masks via `barlines_root` + template patterns.
+- For multi-page PDFs, either infer `page_runs` or specify them explicitly.
 
 ### Compatibility
 - Continue to support direct use of existing scripts for ad-hoc runs.

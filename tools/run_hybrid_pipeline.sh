@@ -75,8 +75,8 @@ echo "GT: ${CONTAINER_GT:-(None)}"
 echo "Output: $OUTPUT_ROOT"
 
 # SR evaluation container + interpreter.
-# This script assumes `sr_eval_gpu` was built from `Dockerfile.sr_eval` and is running.
-CONTAINER_NAME="sr_eval_gpu"
+# This script assumes `sr_eval_gpu` (or specified container) was built from `Dockerfile.sr_eval` and is running.
+CONTAINER_NAME="${CONTAINER_NAME:-sr_eval_gpu}"
 CONTAINER_PY="/opt/venv_sr/bin/python"
 
 # Ensure output directory exists on host (mapped to container)

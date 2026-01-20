@@ -10,6 +10,7 @@ import subprocess
 import sys
 import shutil
 import time
+import os
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -155,7 +156,7 @@ def _run_detection_step(
     3. CNN Scoring (Host) -> Filtered Candidates
     """
     det_cfg = _get_nested(config, "detection", default={}) or {}
-    container_name = det_cfg.get("container_name", "sr_eval_gpu")
+    container_name = det_cfg.get("container_name", "sr_eval_gpu_exp")
     hybrid_root = Path(det_cfg.get("hybrid_output_root", "logs/hybrid_generalization"))
     
     # 1. Hybrid Detection
@@ -187,7 +188,14 @@ def _run_detection_step(
             "--image", img_arg,
             "--run-id", hybrid_run_id
         ]
-        _run_command(cmd, dry_run=dry_run)
+        
+        # Pass CONTAINER_NAME via environment
+        env = dict(os.environ)
+        env["CONTAINER_NAME"] = container_name
+        
+        print(f"Running: {' '.join(cmd)} (CONTAINER_NAME={container_name})")
+        if not dry_run:
+            subprocess.run(cmd, check=True, env=env)
         commands.append(cmd)
 
     # 2. Probe Scan (Candidate Expansion)

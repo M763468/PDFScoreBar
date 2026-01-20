@@ -40,7 +40,7 @@ steps:
   overlay: false
 
 detection:
-  container_name: sr_eval_gpu
+  container_name: sr_eval_gpu_exp
   hybrid_output_root: logs/hybrid_generalization
   ink_threshold: 230
   min_ratio: 0.70

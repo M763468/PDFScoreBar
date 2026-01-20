@@ -31,6 +31,7 @@ def main():
     parser.add_argument("--band-min-row-count", type=int, default=1)
     parser.add_argument("--min-height-ratio", type=float, default=0.012, help="Minimum height ratio (relative to image height) of candidate to keep")
     parser.add_argument("--vertical-closing", type=int, default=0)
+    parser.add_argument("--staff-mask-dir", type=Path, default=None, help="Root directory containing staff masks (e.g. *_debug_3_staff.png)")
     args = parser.parse_args()
 
     args.output_root.mkdir(parents=True, exist_ok=True)
@@ -51,6 +52,19 @@ def main():
         elif args.bands_from.is_dir():
             bands_is_dir = True
             print(f"Will resolve bands from directory: {args.bands_from}")
+
+    # Index staff masks if provided
+    staff_mask_map = {}
+    if args.staff_mask_dir and args.staff_mask_dir.exists():
+        print(f"Indexing staff masks in {args.staff_mask_dir}...")
+        # Look for typical homr output pattern
+        for p in args.staff_mask_dir.rglob("*_debug_3_staff.png"):
+            # Key by stem of the original page. Usually the mask is named "{stem}_debug_3_staff.png"
+            # So we strip the suffix.
+            # Filename: page_001_debug_3_staff.png -> stem: page_001
+            stem_key = p.name.replace("_debug_3_staff.png", "")
+            staff_mask_map[stem_key] = p
+        print(f"Found {len(staff_mask_map)} staff masks")
 
     images = list(args.image_root.glob(args.pattern))
     print(f"Found {len(images)} images in {args.image_root}")
@@ -75,8 +89,25 @@ def main():
             print(f"Failed to load {img_path}")
             continue
 
-        # Staff mask - dummy for row_stats mode
-        staff_mask = np.zeros(img.shape[:2], dtype=np.uint8)
+        # Resolve Staff Mask
+        staff_mask = None
+        band_source = "row_stats"
+        
+        if stem in staff_mask_map:
+            mask_path = staff_mask_map[stem]
+            loaded_mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
+            if loaded_mask is not None:
+                # Resize if needed
+                if loaded_mask.shape[:2] != img.shape[:2]:
+                    loaded_mask = cv2.resize(loaded_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
+                staff_mask = loaded_mask
+                band_source = "staff_mask"
+                # print(f"[{stem}] Using staff mask from {mask_path}")
+        
+        if staff_mask is None:
+            # Fallback to dummy
+            staff_mask = np.zeros(img.shape[:2], dtype=np.uint8)
+            # print(f"[{stem}] No staff mask found, using row_stats")
         
         # Resolve existing boxes
         existing_boxes = []
@@ -84,35 +115,52 @@ def main():
             # Try to find corresponding json file in subdirectory
             # Directory name: eval2_{BaselineScoreName}_{Page}
             # File name: pipeline2_no_peak_scored.json (output of scoring)
+            # Or from hybrid output: hybrid_predictions.json
+            
+            # 1. Try hybrid/pipeline2 style structure
             run_subdir = f"eval2_{baseline_score_name}_{stem}"
             cand_path = args.bands_from / run_subdir / "pipeline2_no_peak_scored.json"
+            
+            # 2. Try simple filename match in directory (e.g. flat directory of jsons)
             if not cand_path.exists():
-                # Fallback to older naming if any
-                cand_path = args.bands_from / f"{run_subdir}_scored.json"
-                
+                cand_path = args.bands_from / f"{stem}.json"
+
+            # 3. Try hybrid_generalization structure (if bands_from points to run root)
+            # Structure: <bands_from>/baseline/<stem>/<stem>/<stem>_detections.json ... 
+            # Actually user said "Hybrid結果". Usually that's hybrid_predictions.json but per page?
+            # If the user passes the ROOT of hybrid run, we might find it.
+            # But run_hybrid_pipeline.sh output is complex.
+            # Let's assume the user stages the hybrid jsons or points to a dir with accessible jsons.
+            
             if not cand_path.exists():
-                print(f"Warning: Baseline candidates not found for {run_id} at {cand_path}")
-                # Try recursive search if needed, but strict naming is safer
+                # print(f"Warning: Baseline candidates not found for {run_id} at {cand_path}")
                 pass
             else:
                 with open(cand_path) as f:
                     data = json.load(f)
+                    # Handle hybrid_results.json format {"predictions": [...]}
+                    if isinstance(data, dict) and "predictions" in data:
+                        data = data["predictions"]
+                        
                     for item in data:
-                        if isinstance(item, dict) and "bbox" in item:
-                            existing_boxes.append(tuple(item["bbox"]))
+                        if isinstance(item, dict):
+                            # hybrid results might have "pred_bbox" or "bbox"
+                            bbox = item.get("bbox", item.get("pred_bbox"))
+                            if bbox:
+                                existing_boxes.append(tuple(bbox))
                         elif isinstance(item, list) and len(item) == 4:
                             existing_boxes.append(tuple(item))
         else:
             existing_boxes = global_bands if global_bands else []
 
         if not existing_boxes and args.bands_from:
-            print(f"Warning: No bands loaded for {run_id}")
+            print(f"[{stem}] Warning: No bands/existing boxes loaded")
 
         candidates = detect_probe_scan(
             base_img=img,
             staff_mask=staff_mask,
             existing_boxes=existing_boxes,
-            band_source="row_stats",
+            band_source=band_source,
             band_min_row_count=args.band_min_row_count,
             scan_x_peak_rescue=True,
             scan_rightmost_rescue=True,

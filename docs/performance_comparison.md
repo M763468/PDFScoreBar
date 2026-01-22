@@ -85,3 +85,32 @@ SR処理後の巨大な画像（155MP相当）を直接Homrに渡すのではな
 | **Step 3: OMR-DLN SR** | **5 s** | Pre-computed SR input |
 | **Step 4: Hybrid Gen** | **0 s** | |
 | **Total** | **302 s** | |
+
+---
+
+## Phase 4: SR Cache Reuse Validation (2026-01-23)
+
+**Objective**: Quantify the time saved by reusing pre-computed SR images (skipping Real-ESRGAN generation).
+
+### Benchmark Result: `page_3.png` (Small Image)
+**Run ID**: `page_3_reuse_sr_timed_v2`
+
+| Metric | With SR Gen (Phase 3) | Reuse SR (Phase 4) | Impact |
+| :--- | :--- | :--- | :--- |
+| **Step 2 Duration** | 167 s | 161 s | **-6 s** |
+| **Total Duration** | 302 s | 308 s* | ~Neutral |
+
+*Note: Total time includes variance in Step 1 initialization. The direct impact on Step 2 is minimal for small images.*
+
+### Benchmark Result: `page_10.png` (Large Image)
+**Run ID**: `page_10_reuse_sr_timed_v1`
+
+| Metric | With SR Gen (Phase 3) | Reuse SR (Phase 4) | Impact |
+| :--- | :--- | :--- | :--- |
+| **Step 2 Duration** | 167 s | 113 s | **-54 s** |
+| **Total Duration** | 259 s | 205 s | **-54 s (~20% faster)** |
+
+### Conclusion
+*   **Significant Gain on Large Images**: Reusing SR saves ~1 minute per page for large/dense scores like `page_10`.
+*   **Minimal Gain on Small Images**: For `page_3`, the SR generation overhead is small enough that reusing it yields negligible wall-clock improvement.
+*   **Strategy**: Caching/Reuse is highly recommended for batch processing or iterative tuning on large scores.

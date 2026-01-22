@@ -75,7 +75,7 @@ bash tools/run_hybrid_pipeline.sh --image data/training/images/page_10.png --run
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | Page 10 | ~11 min | ~2 min | **~7 min** | ~1.5 min | <1s |
 
-**Key Findings:**
+**Key Findings**:
 - **Step 2 (Homr SR)** is the primary bottleneck. 解像度が4倍になったことで、Segnetが約47倍、TrOmrが約3.5倍低速化している。
 - **Step 3 (OMR-DLN SR)** に冗長な超解像（SR）処理が含まれている（Step 2と同じ計算を繰り返している）。
 - **検出精度の分析**: SR版は単なる高精細化ではなく、強力なノイズフィルタとして機能している（Baselineの237個からSRの160個へ絞り込み）。スキップは不可。
@@ -248,3 +248,30 @@ TODO: この方式によって検出される小節線などの結果が既存�
   - SR reuse timing confirmation (page_3 or page_10).
   - x2 or lighter SR model experiment.
   - ESRGAN tile-size tuning.
+
+---
+
+## Phase 4: SR Cache Reuse Validation (2026-01-23)
+
+### Objective
+Quantify the potential time savings of "caching" or reusing pre-computed SR images (skipping Real-ESRGAN generation) in the pipeline.
+
+### Benchmark Result: `page_3.png` (Small Image: 0.47 MP)
+- **Run ID**: `page_3_reuse_sr_timed_v2`
+- **Output**: `logs/hybrid_pipeline_bench/page_3_reuse_sr_timed_v2_20260122_235056`
+- **Performance Summary**:
+  - Step 2 (Homr SR) Time: **161s** (vs 167s with SR gen)
+  - Impact: **-6s** (Negligible)
+  - Conclusion: For small images, the overhead of Python startup and model loading dominates; SR generation itself is fast enough that caching yields little wall-clock benefit for single runs.
+
+### Benchmark Result: `page_10.png` (Large Image: 9.72 MP)
+- **Run ID**: `page_10_reuse_sr_timed_v1`
+- **Output**: `logs/hybrid_pipeline_bench/page_10_reuse_sr_timed_v1_20260123_001424`
+- **Performance Summary**:
+  - Step 2 (Homr SR) Time: **113s** (vs 167s with SR gen)
+  - Impact: **-54s** (~20% improvement in total pipeline time)
+  - Conclusion: For standard/large scores, avoiding redundant SR generation saves significant time (~1 min per page).
+
+### Outcome
+- The value of SR caching is confirmed for full-page score processing.
+- Results documented in `docs/performance_comparison.md`.

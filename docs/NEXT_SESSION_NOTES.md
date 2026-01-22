@@ -5,26 +5,44 @@
 
 ---
 
-## 1. Current Status (2026-01-17)
-- **Proxy Inference Strategy**: Implemented in `src/homr_eval_scripts/homr_evaluator.py`.
-- **Performance Gain**:
-    - Segnet: ~66x speedup (Proxy used).
-    - TrOmr: ~6.5x speedup (Proxy used).
-- **Remaining Bottleneck**: Real-ESRGAN generation takes ~120-180s per page, dominating the pipeline.
+## 1. Current Status (2026-01-23)
+- **Proxy Inference Strategy**: Implemented and verified (Phase 2).
+    - **Performance Gain**: Segnet ~66x speedup, TrOmr ~6.5x speedup.
+    - **Bottleneck Shift**: Inference is no longer the bottleneck. Real-ESRGAN generation (~120-180s/page) now dominates.
+- **SR Reuse Validation (Phase 4)**: Verified.
+    - **Page 10 (Large)**: ~54s reduction (~20% total time). Reuse is highly effective for large images.
+    - **Page 3 (Small)**: Negligible reduction.
+- **Documentation**: Benchmarks recorded in `docs/performance_comparison.md`.
 
-## 2. Immediate Tasks (Phase 3 & 4)
+## 2. Tasks
 
-### Phase 3: End-to-End Verification
-*   [ ] **Full Benchmark Run**: Execute `tools/run_hybrid_pipeline.sh` on `page_10.png` with SR enabled.
-*   [ ] **Accuracy Check**: Compare `baseline` vs `optimized` output using `tools/compare_hybrid_results.py`.
+### Phase 5: Advanced Optimization (Next)
+#### A. Real-ESRGAN Tuning (Priority: High)
+*   [ ] **Tile Size Experiment**: Benchmark `tile=1024` vs `tile=512` vs `no_tile` to see if SR generation itself can be faster.
+*   [ ] **Padding Tuning**: Check if `tile_pad` reduction affects edge artifacts or speed.
+*   [ ] **Precision**: Ensure `fp16` is strictly enabled.
 
-### Phase 4: Expansion & Tuning
-*   [ ] **Multi-page Validation**: Run on `page_15`, `page_3`.
-*   [ ] **Parameter Tuning**: Verify `target_pixels = 3.5MP` threshold.
+#### B. Batch Processing Architecture (Priority: Medium)
+*   [ ] **Python Loop Implementation**: Modify `homr_evaluator.py` to accept a directory or glob pattern.
+*   [ ] **Memory Management**: Implement explicit `gc.collect()` and `torch.cuda.empty_cache()` calls between images to prevent OOM.
+
+#### C. SR Decoupling (Priority: Medium)
+*   [ ] **Extract SR Tool**: Create `tools/generate_sr_image.py`.
+*   [ ] **Caching**: Implement opt-in hash-based caching (`--use-cache`) for development iteration.
+
+### Completed Tasks (Phase 3 & 4)
+#### Phase 3: End-to-End Verification (Done)
+*   [x] **Full Benchmark Run**: Executed `tools/run_hybrid_pipeline.sh` on `page_10.png` with SR enabled.
+*   [x] **Accuracy Check**: Compared `baseline` vs `optimized` output. Accuracy maintained.
+
+#### Phase 4: Expansion & Tuning (Done)
+*   [x] **Multi-page Validation**: Ran on `page_15`, `page_3`. Verified stability.
+*   [x] **Parameter Tuning**: Verified `target_pixels = 3.5MP` threshold is effective.
+*   [x] **SR Reuse Validation**: Quantified impact of caching SR images (Page 10: -54s).
 
 ---
 
-## 3. Future Optimization Strategy (Phase 5)
+## 3. Detailed Optimization Strategy (Reference)
 
 This section details specific technical strategies to further reduce execution time and prepare for efficient batch processing of multiple images.
 
@@ -66,9 +84,15 @@ This section details specific technical strategies to further reduce execution t
 
 ## 4. Reference Commands
 ```bash
-# Full Benchmark Run
-bash tools/run_hybrid_pipeline.sh --image data/training/images/page_10.png --run-id page_10_final_bench
+# Full Benchmark Run (with SR generation)
+bash tools/run_hybrid_pipeline.sh --image data/training/images/page_10.png --run-id page_10_bench_v3
+
+# Benchmark with SR Reuse
+bash tools/run_hybrid_pipeline.sh \
+  --image data/training/images/page_10.png \
+  --run-id page_10_reuse_test \
+  --sr-image logs/hybrid_pipeline_bench/previous_run/sr/page_10/page_10/page_10.png
 
 # Compare Results
-python3 tools/compare_hybrid_results.py logs/hybrid_pipeline_bench/baseline_run/sr/page_10/page_10_detections.json logs/hybrid_pipeline_bench/optimized_run/sr/page_10/page_10_detections.json
+python3 tools/compare_hybrid_results.py logs/bench/baseline_run.json logs/bench/optimized_run.json
 ```

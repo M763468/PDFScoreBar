@@ -22,10 +22,18 @@
 *   [ ] **Padding Tuning**: Check if `tile_pad` reduction affects edge artifacts or speed.
 *   [x] **Precision**: Verified `fp16` is enabled by default on CUDA.
 
-#### B. Batch Processing Architecture (Priority: High)
-*   [ ] **Python Loop Implementation**: Modify `homr_evaluator.py` to accept a directory or glob pattern.
-*   [ ] **Model Persistence**: Load SR and Homr models once for multiple images.
-*   [ ] **Memory Management**: Implement explicit `gc.collect()` and `torch.cuda.empty_cache()` calls between images.
+#### B. Batch Processing Architecture (Migrated)
+**Decision (2026-01-24)**: This task is migrated to merge with the `plan/full_pipeline_workflow` initiative.
+- **Reason**: The "Python Loop" optimization is functionally identical to the "End-to-End Orchestrator" planned in the full pipeline workflow. Developing them separately would cause redundancy.
+- **Next Step**: Merge `feature/pipeline_optimization` and continue work in a new branch based on `plan/full_pipeline_workflow`.
+
+#### C. SR Decoupling & Caching (Pending)
+*   Migration to the new orchestrator will naturally handle this via `generate_sr_image.py` or internal method calls.
+
+## 4. Optimization Conclusion (2026-01-24)
+- **Real-ESRGAN**: Tuning is considered complete. `tile=512` (Auto) + `fp16` is the optimal configuration for 8GB VRAM. Further gains would require TensorRT or model architecture changes, which are out of scope.
+- **Inference**: Proxy Inference strategy effectively solved the bottleneck.
+- **Pipeline**: The remaining overhead is purely "Cold Start" (Python startup & Model loading), which will be addressed by the Batch Processing Architecture (Phase 5B/Orchestrator).
 
 #### B. Batch Processing Architecture (Priority: Medium)
 *   [ ] **Python Loop Implementation**: Modify `homr_evaluator.py` to accept a directory or glob pattern.

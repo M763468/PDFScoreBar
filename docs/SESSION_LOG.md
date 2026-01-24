@@ -131,3 +131,21 @@ nohup bash /tmp/run_full_pipeline_toy_bass.sh > /tmp/full_pipeline_toy_bass.log 
   - **Phase 1**: Provisional orchestration of existing standalone tools. Focus on correctness of the full flow (CNN detection -> Numbering).
   - **Phase 2**: Optimization and unification into a single efficient program.
 - **Requirement**: The full pipeline is not considered "complete" for Phase 1 until it successfully integrates the measure numbering step (counting measures) *after* CNN-based detection.
+
+## 2026-01-24: Toy Symphony Full Pipeline Test (Partial Failure)
+
+### Context
+- Attempted to run the full pipeline on `Toy Symphony (Bass)` using `tools/run_full_pipeline.py`.
+- The pipeline includes PDF conversion, Hybrid Detection (Baseline + SR), Probe Scan, CNN Scoring, and Numbering.
+
+### Outcome
+- **PDF Conversion**: Success (after fixing overwrite logic).
+- **Page Filtering**: Success. Cover page (page 1) and blank page (page 2) were correctly skipped by the orchestrator after detection failed/returned no staves.
+- **Detection (Page 3 - Score)**:
+  - **Baseline**: Completed successfully.
+  - **Super-Resolution (SR)**: **Timed out**. The SR process (Real-ESRGAN x4 + TrOmr inference) took longer than the 5-minute timeout limit of the CLI tool, causing the orchestration script to terminate.
+  - Consequently, downstream steps (Probe Scan, CNN, Numbering) were not executed.
+
+### Decision
+- Proceed with **manual recovery** using the successfully generated **Baseline** results for Page 3.
+- Skip SR for this verification to prioritize checking the end-to-end flow (Detection -> Numbering).

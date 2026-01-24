@@ -43,6 +43,7 @@ produce final outputs in a single run (thin wrapper + stable run directory layou
 Phase 2 (later): Based on Phase 1 observations, refactor for bottleneck removal,
 deduplication, optimization, and parallelization.
 **Goal**: Consolidate into a single, efficient, optimized application. This phase begins only after the Phase 1 flow is verified to work correctly.
+**Task**: Consolidate dispersed Python virtual environments (.venv_pdf, .venv_omr_dln, etc.) into a unified environment or a well-defined container strategy to eliminate runtime inconsistencies.
 
 ## Scope
 - Input: single-page or multi-page score images.

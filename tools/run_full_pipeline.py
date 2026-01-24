@@ -54,17 +54,18 @@ def _ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
-def _build_pdf_command(config: Dict[str, Any]) -> List[str]:
+def _build_pdf_command(config: Dict[str, Any], run_dir: Path) -> List[str]:
     pdf_path = _get_nested(config, "inputs", "pdf_path")
     pdf_opts = _get_nested(config, "inputs", "pdf_to_images", default={}) or {}
     if not pdf_path:
         raise ValueError("inputs.pdf_path is required when pdf_to_images is enabled.")
-    output_dir = pdf_opts.get("output_dir")
-    if not output_dir:
-        raise ValueError("inputs.pdf_to_images.output_dir is required.")
+    
+    # Force output to run directory
+    output_dir = run_dir / "inputs" / "images"
+    _ensure_dir(output_dir)
 
     cmd = [
-        sys.executable,
+        str(PROJECT_ROOT / ".venv_pdf/bin/python"),
         "src/pdf_to_images.py",
         "--pdf",
         str(pdf_path),
@@ -85,8 +86,10 @@ def _build_pdf_command(config: Dict[str, Any]) -> List[str]:
         cmd += ["--prefix", str(pdf_opts["prefix"])]
     if pdf_opts.get("format"):
         cmd += ["--format", str(pdf_opts["format"])]
-    if pdf_opts.get("overwrite"):
-        cmd.append("--overwrite")
+    
+    # Always overwrite inside the run directory
+    cmd.append("--overwrite")
+    
     if pdf_opts.get("alpha"):
         cmd.append("--alpha")
     return cmd
@@ -99,12 +102,20 @@ def _run_command(cmd: List[str], *, dry_run: bool) -> None:
     subprocess.run(cmd, check=True)
 
 
-def _collect_images(config: Dict[str, Any]) -> List[Path]:
+def _collect_images(config: Dict[str, Any], run_dir: Path) -> List[Path]:
     pdf_opts = _get_nested(config, "inputs", "pdf_to_images", default={}) or {}
-    output_dir = pdf_opts.get("output_dir")
+    # Use the forced output directory
+    output_dir = run_dir / "inputs" / "images"
     image_glob = pdf_opts.get("image_glob", "page_*.png")
-    if not output_dir:
-        raise ValueError("inputs.pdf_to_images.output_dir is required to collect images.")
+    
+    if not output_dir.exists():
+         # If PDF conversion didn't run, check config for external source
+         external_dir = pdf_opts.get("output_dir")
+         if external_dir:
+             output_dir = Path(external_dir)
+         else:
+             raise ValueError("PDF images not found. Enable pdf_to_images or specify output_dir.")
+
     images = sorted(Path(output_dir).glob(image_glob))
     if not images:
         raise FileNotFoundError(f"No images found in {output_dir} matching {image_glob}")
@@ -195,7 +206,11 @@ def _run_detection_step(
         
         print(f"Running: {' '.join(cmd)} (CONTAINER_NAME={container_name})")
         if not dry_run:
-            subprocess.run(cmd, check=True, env=env)
+            # Allow failure (e.g. no staffs found on cover page)
+            res = subprocess.run(cmd, check=False, env=env)
+            if res.returncode != 0:
+                print(f"Warning: Detection failed for {img_path.name} (exit code {res.returncode}). Skipping.")
+                continue
         commands.append(cmd)
 
     # 2. Probe Scan (Candidate Expansion)
@@ -707,11 +722,11 @@ def main() -> None:
     
     # --- Step 1: PDF to Images ---
     if _get_nested(config, "steps", "pdf_to_images", default=False):
-        pdf_cmd = _build_pdf_command(config)
+        pdf_cmd = _build_pdf_command(config, run_dir)
         commands.append(pdf_cmd)
         _run_command(pdf_cmd, dry_run=args.dry_run)
 
-    images = _collect_images(config)
+    images = _collect_images(config, run_dir)
     page_ids = _resolve_page_ids(config, images)
     
     # --- Step 2: Detection ---

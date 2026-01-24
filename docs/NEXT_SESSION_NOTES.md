@@ -38,8 +38,11 @@ planning-only phase; feature implementation will happen in child branches.
 ### Implementation Strategy
 Phase 1 (now): Build a minimal, end-to-end orchestrator that reuses existing scripts to
 produce final outputs in a single run (thin wrapper + stable run directory layout).
+**Crucial Requirement**: This phase must demonstrate a working flow from CNN-based barline detection directly into measure numbering (counting) and MMR overrides. It is a "loose coupling" of existing standalone tools.
+
 Phase 2 (later): Based on Phase 1 observations, refactor for bottleneck removal,
 deduplication, optimization, and parallelization.
+**Goal**: Consolidate into a single, efficient, optimized application. This phase begins only after the Phase 1 flow is verified to work correctly.
 
 ## Scope
 - Input: single-page or multi-page score images.

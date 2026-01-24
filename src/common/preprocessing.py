@@ -95,7 +95,15 @@ def apply_super_resolution(image: np.ndarray, model_path: str, model_name: str, 
     
     return result
 
-def apply_advanced_sr(image: np.ndarray, model_name: str = 'RealESRGAN_x4plus', scale: int = 4) -> np.ndarray:
+def apply_advanced_sr(
+    image: np.ndarray, 
+    model_name: str = 'RealESRGAN_x4plus', 
+    scale: int = 4,
+    tile: Optional[int] = None,
+    tile_pad: int = 10,
+    pre_pad: int = 0,
+    fp32: bool = False,
+) -> np.ndarray:
     """
     Applies advanced super-resolution using a locally cloned Real-ESRGAN repository.
     
@@ -103,6 +111,10 @@ def apply_advanced_sr(image: np.ndarray, model_name: str = 'RealESRGAN_x4plus', 
         image: Input image (BGR numpy array).
         model_name: "RealESRGAN_x4plus" or other supported models.
         scale: Upscale factor (default 4).
+        tile: Tile size for processing (0 for auto/none).
+        tile_pad: Padding for tiles.
+        pre_pad: Pre-padding.
+        fp32: If True, uses full precision (fp32). If False, tries to use fp16 on CUDA.
         
     Returns:
         Upscaled image.
@@ -142,16 +154,30 @@ def apply_advanced_sr(image: np.ndarray, model_name: str = 'RealESRGAN_x4plus', 
 
 
     try:
+        # Determine tiling strategy
+        if tile is None or tile == -1:
+            # Default auto logic
+            # tile=0 processes the whole image at once and can be extremely slow / OOM on large pages.
+            # Use a conservative tiling default for large inputs while keeping the original behaviour for small images.
+            tile_size = 0 if max(image.shape[:2]) <= 1000 else 512
+        else:
+            tile_size = tile
+
+        # Determine precision
+        # half=True means fp16. So if fp32 is requested, half should be False.
+        # Also ensure device is cuda for half.
+        use_half = False
+        if 'cuda' in str(device) and not fp32:
+            use_half = True
+
         upsampler = RealESRGANer(
             scale=netscale,
             model_path=model_path, # Pass None to let it use its default model download logic
             model=model,
-            # tile=0 processes the whole image at once and can be extremely slow / OOM on large pages.
-            # Use a conservative tiling default for large inputs while keeping the original behaviour for small images.
-            tile=0 if max(image.shape[:2]) <= 1000 else 512,
-            tile_pad=10,
-            pre_pad=0,
-            half=True if 'cuda' in str(device) else False,
+            tile=tile_size,
+            tile_pad=tile_pad,
+            pre_pad=pre_pad,
+            half=use_half,
             device=device,
         )
 
@@ -166,6 +192,7 @@ def apply_advanced_sr(image: np.ndarray, model_name: str = 'RealESRGAN_x4plus', 
         if image.ndim != 3 or image.shape[2] != 3:
              image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
+        print(f"DEBUG: Calling enhance with tile={tile_size}, tile_pad={tile_pad}, pre_pad={pre_pad}, half={use_half}")
         output, _ = upsampler.enhance(image, outscale=scale)
         return output
     except Exception as e:

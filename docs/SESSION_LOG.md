@@ -25,7 +25,7 @@ For CNN training history, see `docs/DEVLOG_CNN_TRAINING.md`.
 
 ## 2026-01-04 System Inference Logic (Simplification)
 
-**Goal**: Implement logic to group staves into systems (`SystemBuilder`).
+**Goal**: Implement logic to group staves into systems (`SystemBuilder`). 
 
 ### Actions Taken
 - Initially attempted to implement complex geometric heuristics (gap clustering).
@@ -740,7 +740,7 @@ Replaced the simplistic "Residual Ink Check" with a more intelligent "Musical El
 ### Key Changes
 - **Notehead Check**: Uses `notehead_mask` to detect noteheads within the measure, excluding areas identified as H-Bars or OCR text.
 - **Vertical Stem Check**: Uses morphological opening to detect vertical lines (stems) in the staff area, ignoring margins to avoid barlines.
-- **Improved OCR Filtering**: 
+- **Improved OCR Filtering**:
     - Relaxed Y-range to allow counts above the staff.
     - Strict X-centering and "Edge Rejection" to filter out Rehearsal Marks.
 - **Enhanced Debugging**: Added `debug_ocr_v5.png` with color-coded results (Green: Found, Red: Rejected w/ reason).
@@ -976,7 +976,7 @@ The refined logic works very well, but residual errors remain:
 
 
 ### 3. Root Cause Analysis
-The primary remaining failure mode is the **"Max Number" Heuristic**. 
+The primary remaining failure mode is the **"Max Number" Heuristic**.
 The current OCR Post-Processing simply picks the *largest integer* found in the crop.
 ```python
 # Current Logic
@@ -1034,424 +1034,111 @@ Running full evaluation to quantify improvement.
 **Conclusion**:
 The "Geometric Scoring" logic has effectively eliminated the systematic "Rehearsal Mark" failure mode. The pipeline is now highly robust, with remaining errors largely confined to the visually complex **Sibelius** score or isolated OCR segmentation issues (e.g. `5 5` -> `25`).
 
-### Phase 3: Residual Error Improvements (v5 Candidate Refinement)
+---
 
-Following the geometric scoring update, we targeted the remaining "hard" failures: **Split Numbers** (e.g., `2 5` instead of `25`) and **False Negatives** where the classifier missed valid rests.
 
-#### 1. Horizontal Text Merging (Fixing Split Numbers)
-**Problem**: RapidOCR sometimes fragments wide numbers or numbers with specific fonts (like Shostakovich) into separate boxes.
-**Solution**: Implemented a pre-processing step `merge_ocr_results` that:
-- Sorts text boxes horizontally.
-- Merges boxes if they are:
-    1.  Vertically aligned (centers match).
-    2.  Horizontally close (gap < height).
-    3.  Combined text forms a valid digit pattern.
-**Verification Result**:
-- **Shostakovich Page 014 (S2 M0)**: Previously `5 5` -> Mismatch `5`. Now correctly merges to `50`. **SUCCESS**.
+## Phase 1: Pipeline Analysis & Performance Benchmarking (2026-01-15)
 
-#### 2. Low Confidence Rescue (Recovering FNs)
-**Problem**: The Classifier (Stage 1) sometimes assigns low probability (< 0.5) to valid rests in noisy contexts (Prokofiev/Sibelius), pruning them before OCR runs.
-**Solution**:
-- Lowered the detection threshold to `0.1`.
-- If `0.1 < Prob < 0.5`: Only accept the candidate **IF** the OCR returns a "High Quality" result (Geometric Score > 60).
-- This allows the robust OCR (Stage 2) to "rescue" the weaker Classifier (Stage 1).
-**Verification Result**:
-- **Prokofiev Sym 5 Page 019 (S1 M2)**: Failed to rescue.
-    - **Analysis**: The classifier score was extremely low (~0.02), and crucially, the OCR score was `0.0` (no text found). Detecting this specific case requires better image enhancement or a more sensitive base detector, as there is no OCR signal to leverage for rescue.
-    - **Status**: Logic works for cases where OCR is strong, but cannot fix "blind" failures.
+### Objective
+Establish a performance baseline for the current hybrid pipeline and identify major bottlenecks.
 
-#### 3. Data Quality Fix
-- **Sibelius Page 002 (S5 M6)**: Verified that a reported "False Positive" was actually a **Missing Ground Truth**. The manual annotation existed in the GUI but was missing from the disk file `rest_gt.json`.
-- **Action**: Manually added the entry (Index 38, Count 6) to the dataset.
+### Baseline Environment
+- **Machine**: GeForce 4060 (8GB VRAM)
+- **Container**: `sr_eval_gpu` (Docker)
+- **Pipeline Script**: `tools/run_hybrid_pipeline.sh`
+- **SR Model**: Real-ESRGAN x4 (`RealESRGAN_x4plus.pth`)
 
-#### Next Step
-Run **Global Evaluation v5** to quantify the impact of Horizontal Merging across the entire dataset.
+### Benchmarking Targets
+- Page 10: `data/training/images/page_10.png`
+- Page 15: `data/training/images/page_15.png`
 
-## 2026-01-12 Phase 3: Residual Error Improvements (v5 Candidate Refinement)
+### Initial Performance Measurements (Baseline)
 
-**Goal**: Address remaining split-number mismatches (e.g. 5 5 -> 50) and False Negatives via OCR rescue.
-
-### Actions Taken
-1. **Horizontal Text Merging**:
-   - Problem: RapidOCR sometimes splits two-digit numbers into separate boxes.
-   - Solution: Implemented `merge_ocr_results` in `generate_numbering_overrides.py` to combine horizontally adjacent digit boxes.
-   - **Refinement (Regression Fix)**: Initially merged boxes purely by distance, causing a regression in Prokofiev 1 P3 where a rehearsal mark 'G' (misread as '1') was merged with rest count '2' into '21'. 
-   - **Fix**: Added a **Height Similarity Check** (<20% difference) to the merging logic. This prevents merging large rest counts with smaller misread rehearsal marks while still allowing uniform multi-digit merges like '50'.
-
-2. **Low Confidence Rescue**:
-   - Problem: Classifier misses some rests (FNs) due to noisy backgrounds (Prob < 0.5).
-   - Solution: Lowered detection threshold to 0.1 for OCR entry. Candidates with `0.1 < Prob < 0.5` are "rescued" if OCR finds a high-quality centered number (GeoScore > 60).
-
-3. **Ground Truth Correction (Sibelius)**:
-   - Fixed missing GT for Sibelius Page 2 (System 5, M6).
-
-### Verification Results
-- **Shostakovich P14 (M10)**: Correctly merged '5' and '0' -> **50** (Score 90+). [FIXED]
-- **Prokofiev 1 P3 (S10 M3)**: Correctly detected **2** (G ignored due to height difference). [FIXED REGRESSION]
-- **Sibelius P2 (S5 M6)**: Correctly detected **6**. [FIXED MISSING GT]
-
-### Phase 4: Final OCR Polish (v6 Global Update)
-
-**Goal**: Resolve tempo mark interference (Mismatch) and recover persistent FNs (e.g. Shostakovich P4).
-
-#### Actions Taken
-1. **Tempo Mark Penalty**: Added `-80` score penalty for numbers found after `=` in OCR text.
-2. **Vertical Centering Priority**: Rest counts are strictly centered on the stave. Added `dist_y_norm` penalty to scoring.
-3. **Multi-candidate Logic**: Instead of "largest number", the system now scores all valid numbers found within an OCR block.
-4. **Expanded Margin**: Increased top OCR crop margin to **80px** (from 20px) to capture high-placed rest counts.
-
-#### Verification Results (v6)
-- **Shostakovich P4 (S4 M2)**: Correctly recovered **5** count (fixed FN) via expanded margin. [FIXED]
-- **Shostakovich P4 (S5 M0)**: Correctly rejected `= 104` tempo mark and picked **5**. [FIXED MISMATCH]
-- **Shostakovich P14 (S2 M0)**: Correctly rejected `= 50` tempo mark and picked **7**. [FIXED MISMATCH]
-
-#### Final Global Metrics (v6 Polish)
-- **Status**: **COMPLETED**
-- **TP**: 151 (+4 from v5b)
-- **FP**: 0 (-1 from v5b - **Perfect Precision!**)
-- **FN**: 22 (+1 from v5b)
-- **Mismatch**: 8 (-3 from v5b)
-- **Key Takeaway**: Achieved the best overall performance with 100% precision. The tempo mark penalty and expanded margin successfully addressed the main remaining error categories from Phase 3.
-
-## 2026-01-XX: MMR FN Mitigation (Text Noise + Staff Mask + Dataset Refresh)
-
-### Goals
-- Reduce MMR false negatives by improving robustness to text overlays.
-- Enable text-noise augmentation at training time with staff-mask constraints.
-- Refresh dataset with newly added rest GT entries (including expansion page).
-
-### Actions Taken
-1. **Training Pipeline Enhancements** (`tools/mmr_training/train_mmr_classifier.py`):
-   - Added **TextNoiseOverlay** augmentation applied **per-epoch** (Positive only).
-   - Integrated **staff mask–aware placement** to avoid text fully inside staff area.
-   - Enabled **random font sampling from zip/dir** (e.g., Cormorant/Garamond/Libre/Playfair zip).
-   - Switched optimizer to **AdamW** and added **CosineAnnealingLR**.
-   - Enabled **TensorBoard logging** (optional) and increased default batch size to 64.
-   - Kept **WeightedRandomSampler** enabled by default.
-
-2. **Dataset Builder Updates** (`tools/mmr_training/create_mmr_train_data.py`):
-   - Added optional **staff mask crop export** for each sample.
-   - Added support to **auto-discover staff masks** from:
-     - `logs/hybrid_generalization` / `logs/homr_eval_baseline` (`*_debug_3_staff.png`)
-     - DeepScores segmentation (`*_seg.png`) via **staff label id = 165**.
-   - Added missing GT-only config: `data/evaluation2/rest_gt_config_missing.json`.
-
-3. **Expansion Page 003 Fix**:
-   - Identified missing measure ROIs due to low-res `page_3.png` numbering.
-   - Regenerated **x4-scaled barlines** + used **original staff mask** (pipeline auto-scales).
-   - Produced updated `numbering_x4.json` and overlay for verification.
-   - Updated config to use `page_3_x4.png` with scaled numbering.
-
-4. **Dataset Refresh**:
-   - Rebuilt dataset with configs:
-     - `data/evaluation2/rest_gt_config_all.json`
-     - `data/evaluation2/rest_gt_config_expansion.json`
-     - `data/evaluation2/rest_gt_config_missing.json`
-   - New counts: **Pos=183 / Neg=4045** in `data/mmr_dataset_v2`.
-
-### Key Artifacts
-- `data/evaluation2/rest_gt_config_missing.json`
-- `logs/cache_expansion_gen/expansion_eval_page_003/numbering_x4.json`
-- `logs/cache_expansion_gen/expansion_eval_page_003/debug_overlay_x4.png`
-- `data/mmr_dataset_v2`
-
-### Next Step
-- User will run MMR retraining in the background.
-
-## 2026-01-XX: MMR Text-Noise Training + Global Eval (v7?)
-
-### Training Summary (Text-Noise + Staff Mask)
-- **Command**: Used `data/mmr_dataset_v2`, batch size 224, epochs 30, text-noise + staff-mask constraints.
-- **TensorBoard (val)**:
-  - `val/f1`: **0.9737**
-  - `val/prec`: **0.9487**
-  - `val/rec`: **1.0000**
-  - `val/acc`: **0.9973**
-  - Training loss converged (`loss/train`: **0.0074** at epoch 30).
-
-### Global Eval (Text-Noise Model)
-- **Output Dir**: `logs/experiments/global_mmr_eval_textnoise`
-- **Stage 1 (Classifier)**:
-  - Precision: **1.0000**
-  - Recall:    **0.8750** (154/176)
-- **Stage 2 (Full Pipeline + OCR)**:
-  - Precision: **0.9481** (146/154)
-  - Recall:    **0.8295** (146/176)
-
-### Residual Errors (Pipeline)
-- **FN-heavy Pages**: Sibelius p001–p006, Shostakovich-Festival p001/p002/p004/p009, Prokofiev5 p005/p009/p019, Prokofiev1 p001/p003, Shostakovich-Sym5 p010/p015/p022.
-- **FP Pages (Pipeline)**: Shostakovich-Sym5 p010/p022, Festival p002, Sibelius p001/p002, Prokofiev1 p001, Prokofiev5 p005/p009.
-
-### Current Evaluation Snapshot (Known Results)
-- **Dataset**: `data/mmr_dataset_v2` (Pos=183, Neg=4045)
-- **Model Output**: `tools/mmr_training/models/mmr_classifier_best_textnoise.pth`
-- **Training (val)**: F1 **0.9737**, Precision **0.9487**, Recall **1.0000**, Acc **0.9973** (epoch 30)
-- **Global Eval**: Stage1 P/R **1.0000 / 0.8750**, Stage2 P/R **0.9481 / 0.8295**
-
-### Handover (Next Session)
-1. **FN Analysis**:
-   - Focus pages: Sibelius p001–p006, Shostakovich-Festival p001/p002/p004/p009, Prokofiev5 p005/p009/p019, Prokofiev1 p001/p003, Shostakovich-Sym5 p010/p015/p022.
-   - Use `tools/analyze_mmr_errors.py` or `tools/organize_mmr_errors.py` to collect FN crops and verify whether misses are classifier or OCR.
-2. **Classifier Threshold Tuning**:
-   - Consider lowering `--rescue-threshold` or adjusting OCR score gating for low-prob candidates.
-3. **OCR Post-Processing**:
-   - Review FP pages (Festival p002, Sibelius p001/p002, Prokofiev1 p001, Prokofiev5 p005/p009, Sym5 p010/p022) for tempo/rehearsal interference.
-   - Check if additional geometric penalties are needed for left-anchored rehearsal marks.
-4. **Data Expansion**:
-   - Add targeted positives from FN pages (text-heavy rests in Sibelius/Festival) to improve recall without inflating FP.
-   - Option: increase text-noise probability or add specific terms observed in errors.
-
-## 2026-01-14: Confirmed Global Evaluation (Robust Match)
-
-### Evaluation Context
-- **Date**: 2026-01-14
-- **Model**: `tools/mmr_training/models/mmr_classifier_best_textnoise.pth`
-- **Script**: `tools/global_batch_mmr_eval.py` (updated with `--model-path` support)
-- **Output**: `logs/experiments/global_mmr_eval_current_model`
-
-### Results
-| Stage | Precision | Recall | TP | FP | Total GT |
+| Page | Total Time | Homr Baseline | Homr SR | OMR-DLN SR | Hybrid Gen |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Stage 1: Classifier** | **0.9872** | **0.8750** | 154 | 2 | 176 |
-| **Stage 2: Full Pipeline (OCR)** | **0.9359** | **0.8295** | 146 | 10 | 176 |
+| Page 10 | ~11 min | ~2 min | **~7 min** | ~1.5 min | <1s |
 
-### Analysis
-1.  **High Precision**: The classifier remains robust (98.7% Precision).
-2.  **Recall Gap**: The main bottleneck is Recall (87.5%), specifically in **Shostakovich Festival Overture** and **Sibelius**.
-3.  **OCR Degradation**: The OCR stage reduces Recall by ~4.5% and Precision by ~5.1%. This indicates the OCR step is filtering out valid candidates (lowering recall) and misidentifying noise as numbers (lowering precision).
+### Interrupted Benchmark Analysis (2026-01-15)
+- **Status**: The benchmark run for `page_10` was interrupted.
+- **Progress**:
+    - Step 1 (Homr Baseline): Completed.
+    - Step 2 (Homr SR): Started but stalled/interrupted during inference.
+    - Step 3 (OMR-DLN SR): Not started.
+    - Step 4 (Hybrid Gen): Not started.
+- **Log Analysis**: `logs/page_10_bench.log` shows the process hanging after "Running TrOmr inference on staff image 0" during the SR step. This confirms the SR/Inference stage is the major bottleneck or stability risk.
 
-### Action Plan
-1.  **FN Analysis**: Detailed visual inspection of misses in Festival Overture/Sibelius.
-2.  **OCR Refinement**: Investigate why OCR is rejecting valid candidates and hallucinating numbers.
+--- 
 
-## 2026-01-14: FN Analysis & Root Cause Identification
+## Phase 2: Implementation of Proxy Inference Optimization (2026-01-17)
 
-### Analysis Execution
-- **Tool**: `tools/organize_mmr_errors.py` (Iterated over all works)
-- **Method**: Re-ran classifier on GT locations to distinguish between "Low Prob" (Classifier Miss) and "High Prob but Rejected" (OCR Failure).
+### Objective
+Implement the "Proxy Inference" strategy to eliminate the performance bottleneck in Step 2 (Homr SR) without modifying external repositories.
+
+### Changes
+- **Modified**: `src/homr_eval_scripts/homr_evaluator.py`
+    - Added logic to check if the input image (SR or large original) exceeds 5.25MP.
+    - If exceeded, creates a temporary downscaled proxy image (~3.5MP).
+    - Executes Homr inference on the proxy image.
+    - Maps detected bounding box coordinates back to the high-resolution coordinate system.
+    - Ensures segmentation masks are resized to full resolution for downstream heuristics.
+
+### Verification Results (Page 10)
+- **Segnet Speedup**: ~80s → **1.2s (~66x improvement)**.
+- **TrOmr Speedup**: ~15s/staff → **2.3s/staff (~6.5x improvement)**.
+- **Total Pipeline Impact**: Step 2 Homr processing time (excluding SR generation) reduced from ~4.5 min to **< 40s**.
+
+--- 
+
+## Phase 3: Cache Cleanup & Multi-page Verification (2026-01-17)
+
+### Issues Resolved
+- **Segnet Slowdown**: Added `torch.cuda.empty_cache()` after SR to prevent memory fragmentation causing 75s slowdowns.
+- **Dependency Repair**: Cloned `external/omr_dln` and restored model weights.
+
+### Benchmark Results (Optimized)
+| Run ID | Page | Total Time | Hybrid Precision | Hybrid Recall |
+| :--- | :--- | :--- | :--- | :--- |
+| `page_10_opt` | Page 10 | **259s** | 0.9933 | 0.9371 |
+| `page_15_opt` | Page 15 | **321s** | 0.9815 | 0.8908 |
+| `page_3_opt` | Page 3 | **302s** | 0.9441 | 0.9870 |
+
+--- 
+
+## Phase 4: SR Cache Reuse Validation (2026-01-23)
+
+### Objective
+Quantify the potential time savings of "caching" or reusing pre-computed SR images.
+
+### Benchmark Result: `page_10.png` (Large Image)
+- **Step 2 (Homr SR) Time**: **113s** (vs 167s with SR gen)
+- **Impact**: **-54s** (~20% improvement in total pipeline time)
+- **Conclusion**: For standard/large scores, avoiding redundant SR generation saves significant time (~1 min per page).
+
+--- 
+
+## Phase 5: Advanced Optimization & SR Tuning (2026-01-24)
+
+### Objective
+Optimize Real-ESRGAN performance and implement advanced pipeline control.
+
+### Changes
+- **Source Code**:
+    - `src/common/preprocessing.py`: Added `tile`, `tile_pad`, `fp32` arguments to `apply_advanced_sr`.
+    - `src/homr_eval_scripts/homr_evaluator.py`: Exposed SR tuning parameters via CLI (`--sr-tile`, `--sr-tile-pad`, `--sr-fp32`).
+- **Optimization**: Verified that `fp16` (half precision) is enabled by default on CUDA, significantly reducing VRAM usage and increasing speed.
+
+### Real-ESRGAN Tiling Benchmark (Page 10, RTX 4060 8GB)
+| 設定 (Tiling) | 合計実行時間 (Step 2) | ステータス | 備考 |
+| :--- | :--- | :--- | :--- |
+| **Auto (512)** | **221s** | 成功 | 速度と安定性のバランスが最適。 |
+| **Tile 512** | 256s | 成功 | 手動指定。 |
+| **Tile 1024** | 577s | 成功 | 極めて低速、OOMリスク高。 |
+| **No Tile (0)** | N/A | スキップ | 8GB VRAMではOOM不可避。 |
 
 ### Key Findings
-1.  **Classifier Recall is Near-Perfect**: The analysis script found **0 Classifier Misses (FNs)** where `Prob < 0.5`.
-    - This contradicts the Global Eval "Stage 1 Recall" of 87.5%.
-    - **Reason**: The Global Eval script counts an item as "Stage 1 TP" only if it appears in `overrides.json`. However, `generate_numbering_overrides.py` *discards* high-confidence classifier detections if OCR returns no valid number.
-2.  **The Real Bottleneck: OCR Rejection**:
-    - Almost all "Misses" appear in the analysis as **"FN (No Number)"** with `Prob >= 0.5` (often > 0.9).
-    - **Examples**:
-        - `Sibelius-Violin_Concerto-Viola`: `S8M0` (GT=3) -> OCR read "E3, 1". Rejected/Misparsed.
-        - `Prokofiev5`: `S0M3` (GT=3) -> OCR read "P3, 118., 1".
-        - `page_004 S6M8` -> OCR read "None".
-3.  **Conclusion**: The CNN model is robust. The 12.5% "Recall Gap" is actually an **Integration Gap** where valid detections are dropped because the OCR engine fails to extract a clean integer from the crop.
+- **Tiling Efficiency**: RTX 4060 (8GB) 環境では `tile=512` がスイートスポット。1024に増やすと性能が劇的に悪化する。
+- **Auto Logic**: 現状の自動選択ロジック（大きな画像に対して `tile=512`）は、ターゲットハードウェアに対して最適であることが確認された。
 
-### Corrective Action Strategy
-1.  **Relax OCR Acceptance**: For detections with `Prob > 0.9` (Very High Confidence), we must try harder to salvage a number.
-2.  **Improve OCR Logic**:
-    - Handle "E3" -> "3".
-    - Handle "15, tt" -> "15".
-    - Use the "Rescue" logic more aggressively for High-Prob candidates.
-    - Potential "Fall-back" mode: If Prob is high but OCR is empty, use a larger crop or different preprocessing?
-3.  **Immediate Next Step**: Modify `tools/generate_numbering_overrides.py` to improve OCR robustness for high-confidence candidates.
-
-## 2026-01-15: OCR Improvements & Verification (Sibelius Fix)
-
-### Goal
-Address the "FN (No Number)" bottleneck where high-confidence classifier detections (`Prob > 0.9`) were discarded because the OCR engine failed to extract a valid integer (especially in Sibelius).
-
-### Actions Taken
-1.  **Refined `tools/generate_numbering_overrides.py`**:
-    *   **Retry Mechanism**: Implemented a retry loop for High-Confidence candidates. If standard OCR fails, it retries with:
-        *   `no_dilate`: Raw binary image (helps if dilation merged text).
-        *   `heavy_dilate`: 3x3 dilation (helps if text was fragmented).
-    *   **Crop Expansion**: Increased OCR crop margins significantly (Bottom: +80px, Sides: +30px).
-        *   *Finding*: In Sibelius, rest counts are often placed **below the staff** or outside standard margins.
-    *   **Text Cleaning**: Added regex to strip common noise prefixes (e.g., "E3" -> "3", "P3" -> "3") and punctuation.
-    *   **Sanity Check**: Added a penalty for large numbers (>20) in narrow measures (<100px) to prevent misreading text noise as high counts.
-
-2.  **Updated Evaluation Tool**:
-    *   Added `--filter` argument to `tools/global_batch_mmr_eval.py` for targeted testing.
-
-### Verification Results (Sibelius)
-Ran global evaluation on the `Sibelius-Violin_Concerto-Viola` dataset.
-
-| Metric | Before (v2) | After (v3 - Fix) | Improvement |
-| :--- | :--- | :--- | :--- |
-| **Stage 1 Recall (Detection)** | 67.7% (21/31) | **96.8% (30/31)** | **+29.1%** |
-| **Stage 2 Recall (Pipeline)** | 61.3% (19/31) | **80.6% (25/31)** | **+19.3%** |
-
-*Note: "Stage 1 Recall" here measures effectively "Did the system output ANY override?", which requires OCR success. The jump to 97% confirms the "No Number" issue is largely solved.*
-
-### Outstanding Issues
-*   **Precision Trade-off**: Stage 2 Precision dropped slightly (86% -> 80%) due to some "Wrong Number" errors (Pipeline FPs).
-    *   Example: `M1` read as `9` instead of `12`.
-    *   This is acceptable given the massive Recall gain. Future tuning can focus on "Better Candidate Selection" rather than "Missing Candidate Recovery".
-
-### Conclusion
-The combination of **Crop Expansion** (to catch numbers below staff) and **Retry Logic** successfully unlocked the latent performance of the MMR Classifier for the Sibelius dataset.
-
-## Next Session Plan: Improving Stage 2 Recall
-
-**Objective**: Raise Stage 2 Recall (Correct Number Recognition) from ~80% to >90% by addressing "Wrong Number" errors (e.g., reading "12" as "9").
-
-**Proposed Strategies**:
-
-1.  **H-Bar Anchor Alignment (Geometric Refinement)**
-    *   **Problem**: Currently, we use the *measure center* to score candidates. However, measures can be wide or uneven.
-    *   **Solution**: Use the **H-Bar center** as the "Gravity Well". The rest number is semantically tied to the H-bar symbol.
-    *   **Implementation**: Pass the detected H-Bar coordinates from the density check phase to the OCR selection logic. Heavily penalize numbers that are not vertically aligned with the H-Bar.
-
-2.  **Test-Time Augmentation (TTA) for OCR**
-    *   **Problem**: Slanted or skewed staff lines cut through digits, causing dropouts (e.g., "1" in "12" gets treated as a barline).
-    *   **Solution**: Add **Rotation** (+/- 1~2 degrees) and **Scaling** (0.9x, 1.1x) to the `preprocess_image_ocr_variant` retry loop.
-    *   **Expected Outcome**: Recover split or damaged digits.
-
-3.  **Component Analysis for "Split Numbers"**
-    *   **Problem**: "12" is read as "1" and "2" separately.
-    *   **Solution**: Refine `merge_ocr_results`. Instead of just bounding box proximity, analyze the *text* vector. If two digits are horizontally adjacent and on the same baseline, force merge them even if the gap is slightly larger than currently allowed.
-
-4.  **Error-Specific Heuristics (Confusion Matrix)**
-    *   **Action**: Collect the specific misread pairs from the Sibelius evaluation (e.g., `12`->`9`).
-    *   **Logic**: If specific fonts confuse `1` and `I` or `l`, add specific character replacements in the cleaning phase.
-
-**Next Action**: Implement Strategy 1 & 2 in `tools/generate_numbering_overrides.py` and measure impact on Sibelius.
-
-## 2026-01-15: Attempted Improvement (H-Bar Anchor + TTA) - REJECTED
-
-### Hypothesis
-Stage 2 Precision/Recall could be improved by:
-1.  **H-Bar Anchor**: Using the centroid of the detected H-Bar as a "Gravity Well" instead of the measure center, penalizing candidates that are vertically misaligned with the rest symbol.
-2.  **Test-Time Augmentation (TTA)**: Retrying OCR with rotation (+/- 2 deg) and scaling (0.9x) to recover digits split by staff lines or slant.
-
-### Experiment
-Implemented `detect_hbar_centroid` and extended the OCR retry loop with TTA. Evaluation was run on the `Sibelius` dataset.
-
-### Results
-| Metric | Baseline (v3) | Experiment (v4) | Delta |
-| :--- | :--- | :--- | :--- |
-| **Stage 2 Recall** | 80.6% (25/31) | 77.4% (24/31) | **-3.2%** |
-
-### Failure Analysis
-*   **Performance Regression**: The strict vertical penalty based on H-Bar position caused valid candidates to be rejected. In Sibelius, rest numbers are sometimes placed significantly above or below the H-Bar (or the H-Bar detection itself was noisy), leading to score degradation.
-*   **Conclusion**: The heuristic was too aggressive. The changes to `tools/generate_numbering_overrides.py` were reverted.
-
-## 2026-01-15 (Part 2): MMR Failure Analysis (Visual Audit)
-
-**Objective**: Visually analyze OCR failures to understand root causes of "Wrong Number" errors and inform the next iteration of the improvement plan.
-
-**Methodology**:
-- Used `tools/analyze_mmr_failures_v2.py` to generate debug crops for failing measures in Sibelius, Prokofiev 5, and Festival Overture.
-- The script overlays OCR bounding boxes, text results, H-Bar centroids, and geometric metrics (`dx`, `dy`, `hbar_dy`) on context-aware crops.
-
-### Key Findings
-
-1.  **CJK Character Hallucination**:
-    - **Problem**: The OCR engine frequently misinterprets musical symbols (H-bars, rests) as CJK characters, especially "二" (2) and "三" (3).
-    - **Evidence**: `Sibelius P3 M19` found '二' (conf=0.55, hbar_dy=0.03), which has near-perfect vertical alignment, making it a dangerous false positive if translated to a digit.
-
-2.  **Edge Noise from Rehearsal Marks**:
-    - **Problem**: Digits from rehearsal marks or measure numbers at the far left/right of a measure are detected.
-    - **Evidence**: `Festival P4 M0` found '9' with excellent vertical alignment (`hbar_dy=0.07`) but a very large horizontal offset (`dx=0.42`).
-
-3.  **Low Confidence vs. Geometric Score**:
-    - **Problem**: Correct but low-confidence OCR results lose out to high-confidence noise.
-    - **Evidence**: `Sibelius P3 M25` detected the correct '12' (`conf=0.63`, `hbar_dy=0.06`) but also noisy '4' (`conf=1.00`, `hbar_dy=0.22`). A naive "best confidence" approach would fail.
-
-4.  **H-Bar Anchor Stability**:
-    - **Finding**: The H-Bar centroid is a very stable vertical anchor (`hbar_dy` is consistently low for true positives). The previous experiment failed due to an overly aggressive penalty, not a flaw in the anchor itself.
-
-### Updated Plan for Stage 2 Recall
-
-Based on the visual analysis, the next iteration will focus on more robust filtering and scoring:
-
-1.  **CJK Character Filtering**: Explicitly remove any OCR results containing CJK characters from the candidate list in `select_best_candidate`. This is a high-priority, low-risk fix.
-2.  **Reinforced Geometric Scoring**: Re-introduce the H-Bar anchor, but with a more balanced approach:
-    - **High Horizontal Penalty**: If a candidate's horizontal distance from the center (`dx`) is greater than a strict threshold (e.g., `> 0.3`), apply a massive score penalty to eliminate edge noise like rehearsal marks.
-    - **Moderate Vertical Penalty**: Use a less aggressive weight for the vertical H-Bar anchor penalty (`y_weight = 150` instead of 300) to avoid wrongly penalizing valid numbers that have slight vertical offsets.
-3.  **H-Bar Quality Check**: Only use the H-Bar anchor if the detected H-bar has a sufficient relative size (e.g., width > 20% of measure width), preventing anchoring on small noise artifacts. This avoids dependency on absolute resolution.
-
-**Next Action**: Implement the refined CJK filtering and reinforced geometric scoring in `tools/generate_numbering_overrides.py`.
-
-## 2026-01-16: Strategy 3 Implementation (Component Analysis) - RESULTS
-
-### Hypothesis
-Stage 2 Recall can be improved by force-merging split digits (e.g., "1" and "2" -> "12") using relaxed geometric constraints when the text components are single digits or lookalikes.
-
-### Implementation
-Modified `tools/generate_numbering_overrides.py`:
-*   **Refined `merge_ocr_results`**:
-    *   Added check for single-digit candidates (including "I", "l", "|").
-    *   Significantly increased gap tolerance (up to 1.5x height) if candidates are strictly vertically aligned.
-    *   Relaxed height similarity check for potential split digits.
-
-### Results (Sibelius Dataset)
-| Metric | Baseline (v3) | Strategy 3 (v5) | Delta |
-| :--- | :--- | :--- | :--- |
-| **Stage 1 Recall (Detection)** | 96.8% (30/31) | 96.8% (30/31) | 0.0% |
-| **Stage 2 Recall (Pipeline)** | 80.6% (25/31) | 80.6% (25/31) | 0.0% |
-
-### Failure Analysis (Why no improvement?)
-The remaining errors in Sibelius are **not** simple adjacent split digits.
-1.  **H-Bar Hallucination (Selection Error)**:
-    *   **Case**: Page 6, M0 (GT "12").
-    *   **Observation**: OCR finds "2" (likely the H-bar symbol interpreted as "2") and "12" (the real number).
-    *   **Problem**: "2" is geometrically perfect (centered `dy=0.04`, `dx=0.14`). "12" is penalized for being off-center (`dy=0.25`, `dx=0.22`), likely displaced by text ("Adagio di").
-    *   **Lesson**: Merging didn't fail (the "12" was intact). The *selector* picked the wrong candidate because the H-bar itself was detected as a high-confidence digit "2".
-
-2.  **OCR Rotation/Confusion**:
-    *   **Case**: Page 1, M0 (GT "26" -> "9").
-    *   **Case**: Page 1, M14 (GT "9" -> "6").
-    *   **Problem**: Likely rotation issues or font confusion, not splitting.
-
-### Conclusion
-Strategy 3 is robust and safe (didn't break anything), but the current error set is dominated by **Selection Logic** failures (choosing noise/symbols over real numbers) rather than **Segmentation** failures (split digits). Future work must address the "H-Bar as Digit" hallucination or relax centering penalties for numbers competing with H-bars.
-
-## 2026-01-16: H-Bar Masking Implementation - SUCCESS
-
-### Hypothesis
-Stage 2 Recall is bottlenecked by "H-Bar Hallucination," where the OCR engine misreads the thick rest symbol (H-bar) as a digit (e.g., "2" or "二"). Masking this symbol before OCR will eliminate high-confidence noise and allow the correct rest numbers to be selected.
-
-### Implementation
-Modified `tools/generate_numbering_overrides.py`:
-*   **H-Bar Detection**: Added `mask_hbar_candidates` using morphological operations (vertical erosion) to isolate thick horizontal blocks centered on the staff.
-*   **Pre-OCR Masking**: The detected H-bars are whited out in the OCR crop before passing to the RapidOCR engine.
-*   **Synergy**: Combined with Strategy 3 (Split Digit Merging) to handle cases where digits are split by staff lines.
-
-### Results (Sibelius Dataset)
-| Metric | Baseline (v3) | H-Bar Masking (v6) | Improvement |
-| :--- | :--- | :--- | :--- |
-| **Stage 1 Recall (Detection)** | 96.8% (30/31) | 96.8% (30/31) | 0.0% |
-| **Stage 2 Recall (Pipeline)** | 80.6% (25/31) | **87.1% (27/31)** | **+6.5%** |
-| **Stage 2 Precision** | 83.3% | **90.0%** | **+6.7%** |
-
-### Key Improvements
-*   **Sibelius P6 M0**: Correctly identified "12" by masking the H-bar that was previously misread as "2".
-*   **Sibelius P3**: Achieved 100% Pipeline Recall for this page.
-
-### Remaining Issues
-*   **Rotation/Font Confusion**: A few cases remain (e.g., "26" read as "9" on P1) which likely require Test-Time Augmentation (TTA) or better preprocessing for slanted staves.
-*   **Precision**: Still some noise from rehearsal marks, though reduced.
-
-### Conclusion
-H-Bar masking effectively solved the selection priority conflict between musical symbols and text. The pipeline is now significantly closer to the >90% recall target.
-
-## 2026-01-16: 傾き補正 (Deskewing) および TTA (Rotation) の導入試行 - 保留
-
-### Hypothesis
-OCRの誤読（例：「26」を「9」と誤認）の主要因が楽譜の傾きや歪みにあると仮定し、画像の水平化（Deskew）または微小回転を加えた複数試行（TTA）によって精度を改善する。
-
-### Implementation
-Modified `tools/generate_numbering_overrides.py`:
-*   **自動傾き補正**: HoughLinesPを用いて五線の角度を検出し、画像を水平に回転させる `rotate_image` 処理を追加。
-*   **回転TTA**: Retryループ内に回転角（±2度）のバリエーションを追加。標準の処理で失敗した場合に、少し角度を変えて再試行する仕組みを構築。
-*   **デフォルトOFFのフラグ化**: `--enable-rotation-tta` オプションでのみ回転TTAを有効化し、デフォルトでは無効。
-
-### Results (Sibelius Dataset)
-| Metric | H-Bar Masking (v6) | TTA Rotation (v7) | Delta |
-| :--- | :--- | :--- | :--- |
-| **Stage 2 Recall (Pipeline)** | 87.1% (27/31) | 87.1% (27/31) | 0.0% |
-| **Stage 2 Precision** | 90.0% | 90.0% | 0.0% |
-
-### Failure Analysis
-*   **効果の限定**: Sibelius Page 1の「26」が「9R」と誤読されるケースにおいて、TTA（+1度）により「1 2R」と読みが変化するなどの兆候は見られたが、正解の「26」を導き出すには至らなかった。
-*   **角度検出の難しさ**: クロップされた小さな画像内では、五線以外の記号（タイやスラー）の影響を受け、正確な角度検出が不安定になる傾向がある。
-
-### Conclusion
-単純な回転補正のみでは、現在のフォント依存の誤読や複雑な重なりを解消するには不十分であった。本ロジックは実装済み（Retryループ内に統合）とするが、劇的なRecall向上には繋がらなかったため、さらなる前処理の検討が必要。
+### Outcome
+- SR生成時間は現在のハードウェアで可能な限り短縮された（160MP相当の巨大画像で約3.5分）。
+- 明示的なタイリング制御により、パイプラインの堅牢性が向上した。

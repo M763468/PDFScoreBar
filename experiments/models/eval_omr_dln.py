@@ -29,6 +29,7 @@ def parse_args():
     parser.add_argument("--output-dir", type=str, required=True, help="Directory to save logs/results")
     parser.add_argument("--conf", type=float, default=0.25, help="Confidence threshold for measure detection")
     parser.add_argument("--enable-sr", action="store_true", help="Enable Super-Resolution (Real-ESRGAN x4)")
+    parser.add_argument("--pre-computed-sr", type=str, help="Path to pre-computed SR image (skips SR inference)")
     return parser.parse_args()
 
 def load_gt_boxes(gt_path):
@@ -66,31 +67,57 @@ def main():
             sys.exit(1)
         
         print("--- DEBUG: Image loaded ---", file=sys.stderr)
-        img_bgr = cv2.imread(args.image)
-        if img_bgr is None:
+        original_img_bgr = cv2.imread(args.image)
+        if original_img_bgr is None:
             raise FileNotFoundError(f"Could not load image: {args.image}")
-
+        
+        # Use the loaded original image as the default inference input
+        inference_input = original_img_bgr
         sr_scale = 1
-        if args.enable_sr:
+
+        if args.pre_computed_sr:
+             print(f"--- DEBUG: Loading pre-computed SR image: {args.pre_computed_sr} ---", file=sys.stderr)
+             sr_img_bgr = cv2.imread(args.pre_computed_sr)
+             if sr_img_bgr is None:
+                 raise FileNotFoundError(f"Could not load pre-computed SR image: {args.pre_computed_sr}")
+             
+             original_h, original_w = original_img_bgr.shape[:2]
+             up_h, up_w = sr_img_bgr.shape[:2]
+             
+             # Calculate scale
+             inferred_scale = round(up_w / original_w) if original_w else 1
+             if inferred_scale >= 2:
+                 sr_scale = inferred_scale
+                 inference_input = sr_img_bgr
+                 print(f"--- DEBUG: Using pre-computed SR image (scale x{sr_scale}) ---", file=sys.stderr)
+             else:
+                 print(f"--- WARN: Pre-computed SR image resolution is not significantly higher. Treating as 1x. ---", file=sys.stderr)
+                 inference_input = sr_img_bgr # Still use it, but scale is 1
+                 
+        elif args.enable_sr:
             requested_sr_scale = 4
-            original_h, original_w = img_bgr.shape[:2]
+            original_h, original_w = original_img_bgr.shape[:2]
             print(f"--- DEBUG: Applying SR (x{requested_sr_scale})... ---", file=sys.stderr)
-            img_bgr = apply_advanced_sr(img_bgr, model_name="RealESRGAN_x4plus", scale=requested_sr_scale)
-            up_h, up_w = img_bgr.shape[:2]
+            # Use original_img_bgr as source
+            sr_img_bgr = apply_advanced_sr(original_img_bgr, model_name="RealESRGAN_x4plus", scale=requested_sr_scale)
+            
+            up_h, up_w = sr_img_bgr.shape[:2]
             inferred_scale = round(up_w / original_w) if original_w else 1
             if inferred_scale >= 2 and up_w >= original_w * 2 and up_h >= original_h * 2:
                 sr_scale = inferred_scale
+                inference_input = sr_img_bgr
             else:
                 print(
                     f"--- WARN: SR output resolution did not increase "
                     f"({original_w}x{original_h} -> {up_w}x{up_h}); treating as no-SR. ---",
                     file=sys.stderr,
                 )
-                sr_scale = 1
-            inference_input = img_bgr
+                inference_input = original_img_bgr # Fallback to original
+            
             print(f"--- DEBUG: SR applied (effective scale x{sr_scale}) ---", file=sys.stderr)
-        else:
-            inference_input = args.image
+        
+        # Determine img_bgr for visualization (use inference input)
+        img_bgr = inference_input
 
         print(f"--- DEBUG: Loading model: {MODEL_PATH} ---", file=sys.stderr)
         model = YOLO(MODEL_PATH)

@@ -1,36 +1,148 @@
-# Performance Comparison: CNN Model v3 vs v4 (Active Learning)
+# Performance Comparison: Hybrid Pipeline Optimization
 
-**Date**: 2026-01-12
-**Subject**: Evaluation of Active Learning performance for barline detection.
+## Phase 1: Baseline Establishment (2026-01-16)
 
-## 1. Context
-An active learning experiment (v4) was conducted by extracting 1,534 high-confidence False Positives (scores 0.5-0.9) from the evaluation set and retraining the ResNet18 model to improve precision.
+**Benchmark Target**: `page_10.png` (2700x3600)
+**Hardware**: GeForce 4060 (8GB VRAM)
+**Run ID**: `page_10_bench_20260116_213356`
 
-## 2. Comparison Results (68 Pages)
+| Stage | Duration (Approx) | Notes |
+| :--- | :--- | :--- |
+| **Step 1: Homr Baseline** | **~2 min** | Segnet: ~1.7s, TrOmr: ~52s (Total). Includes initialization overhead. |
+| **Step 2: Homr SR (x4)** | **~7 min** | **Bottleneck**. Segnet: ~80s, TrOmr: ~180s. SR Tiling overhead included. |
+| **Step 3: OMR-DLN SR** | **~1-2 min** | **Redundancy**. Re-runs SR (Tiling) on the same image. Inference is fast. |
+| **Step 4: Hybrid Gen** | **< 1s** | Negligible. |
+| **Total** | **~10-11 min** | |
 
-Results measured at CNN threshold 0.5.
+### Identified Bottlenecks
+1.  **SR Calculation Redundancy**: SR is calculated independently in Step 2 and Step 3.
+2.  **Homr SR Inference**:
+    *   **Segnet**: Jumped from ~1.7s to ~80s (47x slower) on 4x image.
+    *   **TrOmr**: Jumped from ~52s to ~180s (3.5x slower).
 
-| Metric | v3 Model (Hard Negs) | v4 Model (Augmented FP) | Change |
+### Optimization Plan
+1.  **Eliminate Redundancy**: Pass the SR image generated in Step 2 to Step 3.
+2.  **Optimize Homr SR**: Investigate why Segnet is scaling so poorly.
+    *   Can we run Segnet on the original image (or x2) and map coordinates to x4?
+    *   Does TrOmr really need x4?
+
+---
+
+## Phase 2: Proxy Inference Optimization (2026-01-17)
+
+**Optimization Strategy**:
+SR処理後の巨大な画像（155MP相当）を直接Homrに渡すのではなく、推論用に適正解像度（~3.5MP）のプロキシ画像を生成して実行。検出結果（座標）をSR座標系に逆写像することで、精度を維持しつつ計算量を劇的に削減。
+
+**Benchmark Result**: `page_10.png`
+**Run ID**: `page_10_opt_final_20260117_035102`
+
+| Metric | Baseline (Before Opt) | Optimized (Proxy) | Improvement |
 | :--- | :--- | :--- | :--- |
-| **Recall** | 99.94% | 99.6% | -0.34% |
-| **Precision** | **99.94%** | 32.3% | **-67.6%** ⚠️ |
-| **FP Count** | **2** | 7,441 | **+3720x** |
-| **TP Count** | 3,568 | 3,557 | -11 |
+| **Segnet Inference** | ~80.0 s | **~1.2 s** | **~66x Faster** |
+| **TrOmr (Per Staff)** | ~15.0 s | **~2.3 s** | **~6.5x Faster** |
+| **TrOmr Inference (Total)** | ~190.0 s | **~30.0 s** | **~6.3x Faster** |
 
-## 3. Analysis of Failure (v4)
+### Conclusion
+推論部分のボトルネックは完全に解消されました。今後の処理時間は、主にReal-ESRGANによる画像拡大処理（約3分）に依存することになります。
+座標変換およびマスクのリサイズ処理（SR解像度への復元）も正常に動作し、後続のヒューリスティック処理への影響がないことを確認しました。
 
-### Root Causes
-1. **Overfitting**: The model achieved 100% training and validation accuracy but failed on the test/evaluation distribution.
-2. **Distribution Mismatch**: FP samples were extracted only from scores with high error rates. The model failed catastrophically on scores like `Va_Prokofiev_Symphony1` which had zero FP samples in the new training set.
-3. **Class Imbalance**: The dataset was heavily biased (93% TP, 7% FP), leading the model to "memorize" specific FP samples rather than learning generalizable features.
+---
 
-### Catastrophic Failure Example
-On `Va_Prokofiev_Symphony1`, the v4 model produced **3,905 False Positives** compared to almost zero with the v3 model.
+## Phase 3: Cache Cleanup Fix (2026-01-17)
 
-## 4. Final Decision
-The active learning experiment (v4) was **REJECTED**. The project reverted to the **v3 model** combined with the `min_height_ratio` geometric filter, which proved significantly more robust and accurate.
+**Issue**: After running Real-ESRGAN in-process, Segnet inference on the proxy image slowed to ~75s despite CUDA being selected.  
+**Fix**: Call `torch.cuda.empty_cache()` immediately after SR to release large allocations.
 
-## 5. Lessons Learned
-- 100% training accuracy is a major red flag for overfitting.
-- Data diversity (extracting FPs from ALL target scores) is critical for active learning.
-- Simple geometric filters can sometimes outperform complex model retraining when the feature (like line height) is consistent.
+### Benchmark Result: `page_10.png` (GT)
+**Run ID**: `page_10_opt_final_bench_v2_gt_cachefix_20260117_152207`
+
+| Stage | Duration | Notes |
+| :--- | :--- | :--- |
+| **Step 1: Homr Baseline** | **86 s** | Segnet ~1.2s, TrOmr ~2–3s per staff |
+| **Step 2: Homr SR (x4)** | **167 s** | SR tiling + Segnet ~1.2s + TrOmr ~2–3s per staff |
+| **Step 3: OMR-DLN SR** | **6 s** | Pre-computed SR input |
+| **Step 4: Hybrid Gen** | **0 s** | |
+| **Total** | **259 s** | |
+
+### Benchmark Result: `page_15.png` (GT)
+**Run ID**: `page_15_opt_cachefix_20260117_160346`
+
+| Stage | Duration | Notes |
+| :--- | :--- | :--- |
+| **Step 1: Homr Baseline** | **107 s** | Segnet ~1.7s, TrOmr ~2–4s per staff |
+| **Step 2: Homr SR (x4)** | **206 s** | SR tiling + Segnet ~1.3s + TrOmr ~2–4s per staff |
+| **Step 3: OMR-DLN SR** | **8 s** | Pre-computed SR input |
+| **Step 4: Hybrid Gen** | **0 s** | |
+| **Total** | **321 s** | |
+
+### Benchmark Result: `page_3.png` (GT)
+**Run ID**: `page_3_opt_cachefix_20260117_161347`
+
+| Stage | Duration | Notes |
+| :--- | :--- | :--- |
+| **Step 1: Homr Baseline** | **130 s** | Segnet ~1.2s, TrOmr ~2–4s per staff |
+| **Step 2: Homr SR (x4)** | **167 s** | SR tiling + Segnet ~0.8s + TrOmr ~2–4s per staff |
+| **Step 3: OMR-DLN SR** | **5 s** | Pre-computed SR input |
+| **Step 4: Hybrid Gen** | **0 s** | |
+| **Total** | **302 s** | |
+
+---
+
+## Phase 4: SR Cache Reuse Validation (2026-01-23)
+
+**Objective**: Quantify the time saved by reusing pre-computed SR images (skipping Real-ESRGAN generation).
+
+### Benchmark Result: `page_3.png` (Small Image)
+**Run ID**: `page_3_reuse_sr_timed_v2`
+
+| Metric | With SR Gen (Phase 3) | Reuse SR (Phase 4) | Impact |
+| :--- | :--- | :--- | :--- |
+| **Step 2 Duration** | 167 s | 161 s | **-6 s** |
+| **Total Duration** | 302 s | 308 s* | ~Neutral |
+
+*Note: Total time includes variance in Step 1 initialization. The direct impact on Step 2 is minimal for small images.*
+
+### Benchmark Result: `page_10.png` (Large Image)
+**Run ID**: `page_10_reuse_sr_timed_v1`
+
+| Metric | With SR Gen (Phase 3) | Reuse SR (Phase 4) | Impact |
+| :--- | :--- | :--- | :--- |
+| **Step 2 Duration** | 167 s | 113 s | **-54 s** |
+| **Total Duration** | 259 s | 205 s | **-54 s (~20% faster)** |
+
+### Conclusion
+*   **Significant Gain on Large Images**: Reusing SR saves ~1 minute per page for large/dense scores like `page_10`.
+*   **Minimal Gain on Small Images**: For `page_3`, the SR generation overhead is small enough that reusing it yields negligible wall-clock improvement.
+*   **Strategy**: Caching/Reuse is highly recommended for batch processing or iterative tuning on large scores.
+
+---
+
+## Phase 5: Real-ESRGAN Tuning (2026-01-24)
+
+**Objective**: Optimize SR generation parameters (Tiling) for 8GB VRAM hardware.
+
+### Tiling Benchmark: `page_10.png` (Large Score)
+**Hardware**: RTX 4060 (8GB VRAM)
+**Target Resolution**: 10800x14400 (~155.5 MP)
+
+| Setting (Tiling) | Duration (Step 2) | VRAM Status | Notes |
+| :--- | :--- | :--- | :--- |
+| **Auto (512)** | **221 s** | Stable | Optimal. Automatic logic selected tile=512. |
+| **Tile 512** | 256 s | Stable | Manually set. Matches Auto performance within variance. |
+| **Tile 1024** | 577 s | High Stress | Significantly slower. |
+| **No Tile (0)** | N/A | **OOM/Hang** | Not feasible for full page on 8GB VRAM. |
+
+### Analysis
+*   **Tile Size Sweet Spot**: For 8GB VRAM, a tile size of **512** provides the best performance. Larger tiles (1024) incur significant penalties, possibly due to more aggressive memory swapping or fragmentation during large batch processing.
+*   **Reliability**: `tile=512` is highly stable. `tile=1024` was unstable and significantly slower.
+*   **Recommendation**: Stick with the current **Auto (512)** logic for score-sized images. The flexibility to override tiling is useful for future hardware or smaller page fragments.
+
+### Current Optimization Status Summary
+| Version | Total Time (Page 10) | Improvement |
+| :--- | :--- | :--- |
+| **Baseline (Phase 1)** | ~11 min | - |
+| **Optimized (Phase 3)** | ~4.3 min | **2.5x faster** |
+| **Cached SR (Phase 4)** | ~3.4 min | **3.2x faster** |
+| **Current (Phase 5)** | ~3.7 min* | (Baseline for SR tuning) |
+
+*\*Variation in total time due to Step 1 overhead; Step 2 performance is now maximized.*

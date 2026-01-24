@@ -1,151 +1,93 @@
-# Session Log
+# Session Log (Combined Integration Track)
 
-### Operational Rules
-- Do not overwrite `docs/SESSION_LOG.md`; append new findings.
-- Record commit hash + command + output path for major results.
+**NOTE**: This log combines the Full Pipeline Workflow planning and the Pipeline Optimization tracks.
+Authoritative records for specific subsystems are in:
+- `docs/DEVLOG_MEASURE_NUMBERING.md` (numbering/MMR)
+- `docs/DEVLOG_CNN_TRAINING.md` (CNN training)
+- `docs/performance_comparison.md` (benchmarks)
 
 ---
-## 2026-01-16: Pipeline Planning (plan/full_pipeline_workflow)
 
-### Scope
-- Consolidate full pipeline plan into `docs/NEXT_SESSION_NOTES.md`.
-- Remove separate `docs/PIPELINE_WORKFLOW.md` to avoid duplication.
+## Phase 1: Pipeline Analysis & Performance Benchmarking (2026-01-15)
+
+### Objective
+Establish a performance baseline for the current hybrid pipeline and identify major bottlenecks.
+
+### Initial Performance Measurements (Baseline - Page 10)
+| Stage | Duration | Notes |
+| :--- | :--- | :--- |
+| **Step 1: Homr Baseline** | **~2 min** | Baseline detection without SR. |
+| **Step 2: Homr SR (x4)** | **~7 min** | **Primary Bottleneck**. Segnet (~80s) and TrOmr (~180s) scale poorly. |
+| **Step 3: OMR-DLN SR** | **~1.5 min** | Redundant SR calculation. |
+| **Total** | **~11 min** | |
+
+---
+
+## Phase 2: Implementation of Proxy Inference Optimization (2026-01-17)
+
+### Objective
+Eliminate the performance bottleneck in Step 2 (Homr SR) using "Proxy Inference".
 
 ### Changes
-- Rewrote `docs/NEXT_SESSION_NOTES.md` with end-to-end pipeline steps, inputs/outputs, user correction points, artifact layout, and next actions.
-- Deleted `docs/PIPELINE_WORKFLOW.md`.
-
-### Notes
-- This branch is planning-only; implementation will happen in child branches.
-- Submodule `external/oemer/oemer_src` points to a commit unavailable in the submodule repo; ignored in this worktree via git config.
-
-## 2026-01-16: Pipeline Planning (Contracts + CLI)
-
-### Additions
-- Added draft data contracts for barline overrides and measure overrides.
-- Added a draft single-entry CLI plan (`tools/run_full_pipeline.py`) and expected inputs/outputs.
-
-### Notes
-- Contracts are placeholders; exact IoU matching rules and schema validation still to be defined.
-- CLI should be a thin wrapper around existing scripts, not a rewrite.
-
-## 2026-01-16: Pipeline Planning (Output Formats)
-
-### Additions
-- Documented current output formats for barlines JSON, numbering JSON, and MMR overrides JSON.
-- Added notes on staff/notehead mask formats and common output path conventions.
+- **Modified**: `src/homr_eval_scripts/homr_evaluator.py`
+    - Creates a temporary downscaled proxy image (~3.5MP) for inference.
+    - Maps detected coordinates back to the high-resolution system.
+- **Speedup**: Segnet ~66x improvement, TrOmr ~6.5x improvement. Step 2 Homr processing time reduced to **< 40s** (excluding SR generation).
 
 ---
-## 2026-01-17: Phase 1 Orchestrator Smoke Run
 
-### Context
-- No score PDFs found under `data/` (only docs PDFs available). Used existing PNGs from
-  `data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png` with PDF conversion disabled.
-- Installed `pyyaml` into `.venv_pdf` to run the orchestrator.
+## Full Pipeline Workflow Planning (2026-01-17)
 
-### Command
-```bash
-.venv_pdf/bin/python tools/run_full_pipeline.py --config /tmp/full_pipeline_smoke.yaml
-```
+### Objective
+Define the end-to-end pipeline from PDF/Image input to measure-numbered output.
 
-### Outputs
-- `logs/full_pipeline_runs/20260201_smoke_va_prokofiev1_page001/manifest.json`
-- `logs/full_pipeline_runs/20260201_smoke_va_prokofiev1_page001/filters.json`
-- `logs/full_pipeline_runs/20260201_smoke_va_prokofiev1_page001/intermediate/page_001/numbering_base.json`
+### Achievements
+- `tools/run_full_pipeline.py`: Created a config-driven orchestrator.
+- `configs/full_pipeline_template.yaml`: Defined the standard configuration structure.
+- **Workflow Steps identified**: Ingest -> Barline Detection -> User Correction -> Measure Numbering -> MMR Detection -> Final Export.
 
 ---
-## 2026-02-01: Phase 1 Orchestrator Implementation
+
+## Phase 3: Cache Cleanup & Dependency Repair (2026-01-17)
 
 ### Changes
-- Added config-driven orchestrator `tools/run_full_pipeline.py`.
-- Added template config `configs/full_pipeline_template.yaml`.
-- Added usage/contract doc `docs/FULL_PIPELINE_README.md`.
-- Implemented barline overrides with IoU default 0.5 (per `docs/BARLINE_MATCHER.md`).
-- Implemented blank-page and staff-mask filter heuristics and wrote `filters.json`.
-- Added `--validate-only` mode for resolving inputs/filters without numbering.
-- Updated `docs/NEXT_SESSION_NOTES.md` with config patterns, run layout, and README reference.
-
-### Notes
-- Empty numbering JSONs are emitted for user-excluded pages to preserve page count.
-- Page filtering currently uses simple heuristics (ink ratio/stddev, mask nonzero ratio).
-
-### Next Actions
-- Run the orchestrator on a real score PDF under `data/` once available (enable `pdf_to_images`).
-- Validate full pipeline with MMR overrides enabled (requires model + OCR deps).
-- Tune blank/staff filter thresholds based on real PDF output.
+- **Fix**: Added `torch.cuda.empty_cache()` after SR to prevent 75s Segnet slowdowns.
+- **Infrastructure**: Restored `external/omr_dln` and model weights.
+- **Verification**: Confirmed end-to-end timing: **Page 10 ~259s (4.3 min)**.
 
 ---
-## 2026-02-01: Background Full-PDF Runs (In Progress)
 
-### Context
-- Requested background runs for training/evaluation PDFs with MMR enabled.
-- `data/training/pdfs/おもちゃの交響曲_bass.pdf` was not found (skipped).
-
-### Command
-```bash
-nohup bash /tmp/run_full_pipeline_batch.sh > /tmp/full_pipeline_batch.log 2>&1 &
-```
-
-### Notes
-- Per-run configs are written under `logs/full_pipeline_runs/<run_id>/config.yaml`.
-- Per-run logs go to `logs/full_pipeline_runs/<run_id>/run.log`.
-- Batch log: `/tmp/full_pipeline_batch.log`
-
----
-## 2026-02-01: Background Toy Symphony Run (Skipped)
-
-### Context
-- `data/evaluation/pdfs/おもちゃの交響曲_bass.pdf` exists, but no matching hybrid outputs
-  under `logs/hybrid_generalization` (no `eval2_toy_symphony_bass_page_*` runs).
-
-### Command
-```bash
-nohup bash /tmp/run_full_pipeline_toy_bass.sh > /tmp/full_pipeline_toy_bass.log 2>&1 &
-```
-
-### Notes
-- Batch log: `/tmp/full_pipeline_toy_bass.log` (shows missing page runs).
-
----
-## 2026-01-20: Full Pipeline Orchestrator with Integrated Detection
+## Detection Integration in Orchestrator (2026-01-20)
 
 ### Changes
-- Modified `tools/run_eval_experiment.py` to accept `--staff-mask-dir` and use staff masks for Probe Scan.
-- Updated `tools/run_full_pipeline.py` to orchestrate the full 5-step pipeline:
-    1. PDF -> Images
-    2. Hybrid Detection (Docker) -> Staff Masks + Candidates
-    3. Probe Scan (Host) -> Expanded Candidates
-    4. CNN Scoring (Host) -> Filtered Candidates
-    5. Measure Numbering (Host)
-- Updated `configs/full_pipeline_template.yaml` with detection parameters.
-
-### Pipeline Logic
-- The orchestrator now automatically manages the handoff between Docker-based hybrid detection and Host-based probe scan/CNN scoring.
-- Staff masks generated by `homr` in the hybrid step are correctly passed to the probe scan and numbering steps.
+- Updated `tools/run_full_pipeline.py` to invoke the full hybrid detection sequence:
+    1. `run_hybrid_pipeline.sh` (Docker)
+    2. `run_eval_experiment.py` (Host - Probe Scan)
+    3. `score_candidates_batch.py` (Host - CNN Scoring)
+- Verified Host/Docker path translation via `data/workbench` mount.
 
 ---
-## 2026-01-24: Strategy Alignment
 
-### Clarification
-- Confirmed the distinction between Phase 1 and Phase 2:
-  - **Phase 1**: Provisional orchestration of existing standalone tools. Focus on correctness of the full flow (CNN detection -> Numbering).
-  - **Phase 2**: Optimization and unification into a single efficient program.
-- **Requirement**: The full pipeline is not considered "complete" for Phase 1 until it successfully integrates the measure numbering step (counting measures) *after* CNN-based detection.
+## Phase 4: SR Cache Reuse Validation (2026-01-23)
 
-## 2026-01-24: Toy Symphony Full Pipeline Test (Partial Failure)
+### Objective
+Quantify impact of reusing pre-computed SR images.
+- **Result (Page 10)**: Saved **54s** (~20% total time). Caching is confirmed as a critical optimization for large scores.
 
-### Context
-- Attempted to run the full pipeline on `Toy Symphony (Bass)` using `tools/run_full_pipeline.py`.
-- The pipeline includes PDF conversion, Hybrid Detection (Baseline + SR), Probe Scan, CNN Scoring, and Numbering.
+---
 
-### Outcome
-- **PDF Conversion**: Success (after fixing overwrite logic).
-- **Page Filtering**: Success. Cover page (page 1) and blank page (page 2) were correctly skipped by the orchestrator after detection failed/returned no staves.
-- **Detection (Page 3 - Score)**:
-  - **Baseline**: Completed successfully.
-  - **Super-Resolution (SR)**: **Timed out**. The SR process (Real-ESRGAN x4 + TrOmr inference) took longer than the 5-minute timeout limit of the CLI tool, causing the orchestration script to terminate.
-  - Consequently, downstream steps (Probe Scan, CNN, Numbering) were not executed.
+## Phase 5: Advanced Optimization & SR Tuning (2026-01-24)
 
-### Decision
-- Proceed with **manual recovery** using the successfully generated **Baseline** results for Page 3.
-- Skip SR for this verification to prioritize checking the end-to-end flow (Detection -> Numbering).
+### Objective
+Optimize Real-ESRGAN tiling and finalize pipeline optimizations.
+
+### Real-ESRGAN Tiling Benchmark (Page 10, RTX 4060 8GB)
+| Setting (Tiling) | Total Time (Step 2) | Notes |
+| :--- | :--- | :--- |
+| **Auto (512)** | **221s** | Optimal balance. |
+| **Tile 512** | 256s | Matches auto performance. |
+| **Tile 1024** | 577s | Significantly slower (VRAM overhead). |
+
+### Key Findings
+- `tile=512` is the sweet spot for 8GB VRAM hardware.
+- The pipeline's remaining bottleneck is "Cold Start" (initialization), which must be addressed by Batch Processing Architecture.

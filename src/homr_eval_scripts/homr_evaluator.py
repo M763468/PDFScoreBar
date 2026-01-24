@@ -258,6 +258,28 @@ def parse_args() -> argparse.Namespace:
         help="Enable Super-Resolution (Real-ESRGAN x4) preprocessing",
     )
     parser.add_argument(
+        "--sr-tile",
+        type=int,
+        default=-1,
+        help="Tile size for SR (-1=auto/default). 0=force no tiling (fastest but high VRAM). 512=conservative tiling.",
+    )
+    parser.add_argument(
+        "--sr-tile-pad",
+        type=int,
+        default=10,
+        help="Tile padding for SR (overlap pixels).",
+    )
+    parser.add_argument(
+        "--sr-fp32",
+        action="store_true",
+        help="Force full precision (fp32) for SR. Default is fp16 (half) if CUDA available.",
+    )
+    parser.add_argument(
+        "--pre-computed-sr",
+        type=Path,
+        help="Path to a pre-computed SR image (skips SR inference)",
+    )
+    parser.add_argument(
         "--gen-vertical-run",
         action="store_true",
         help="Enable staff-constrained vertical run-length candidate generator",
@@ -2206,7 +2228,30 @@ def main() -> None:
         working_image = prepare_working_image(image_path, image_run_dir)
 
         sr_scale = 1
-        if args.enable_sr:
+        if args.pre_computed_sr is not None:
+            sr_source = args.pre_computed_sr
+            if not sr_source.exists():
+                raise FileNotFoundError(f"Pre-computed SR image not found: {sr_source}")
+            original_img = cv2.imread(str(working_image))
+            if original_img is None:
+                eprint(f"Warning: Failed to load {working_image} for SR scale inference.")
+            else:
+                original_h, original_w = original_img.shape[:2]
+                sr_img = cv2.imread(str(sr_source))
+                if sr_img is None:
+                    raise FileNotFoundError(f"Failed to load pre-computed SR image: {sr_source}")
+                up_h, up_w = sr_img.shape[:2]
+                inferred_scale = round(up_w / original_w) if original_w else 1
+                if inferred_scale >= 2 and up_w >= original_w * 2 and up_h >= original_h * 2:
+                    sr_scale = inferred_scale
+                else:
+                    eprint(
+                        f"Warning: Pre-computed SR output resolution did not increase "
+                        f"({original_w}x{original_h} -> {up_w}x{up_h}); treating as no-SR."
+                    )
+                    sr_scale = 1
+                cv2.imwrite(str(working_image), sr_img)
+        elif args.enable_sr:
             requested_sr_scale = 4
             eprint(f"Applying Super-Resolution (x{requested_sr_scale}) to {stem}...")
             img_bgr = cv2.imread(str(working_image))
@@ -2215,7 +2260,12 @@ def main() -> None:
             else:
                 original_h, original_w = img_bgr.shape[:2]
                 upscaled = apply_advanced_sr(
-                    img_bgr, model_name="RealESRGAN_x4plus", scale=requested_sr_scale
+                    img_bgr,
+                    model_name="RealESRGAN_x4plus",
+                    scale=requested_sr_scale,
+                    tile=args.sr_tile,
+                    tile_pad=args.sr_tile_pad,
+                    fp32=args.sr_fp32,
                 )
                 up_h, up_w = upscaled.shape[:2]
                 inferred_scale = round(up_w / original_w) if original_w else 1
@@ -2231,6 +2281,47 @@ def main() -> None:
                     sr_scale = 1
 
                 cv2.imwrite(str(working_image), upscaled)
+                # Real-ESRGAN uses PyTorch and can leave large CUDA allocations.
+                # Clear the cache so subsequent ONNXRuntime inference doesn't stall.
+                try:
+                    import torch
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                        torch.cuda.synchronize()
+                        eprint("Cleared CUDA cache after SR.")
+                except Exception:
+                    pass
+
+        # Optimization: Create a downscaled proxy for Homr inference if image is huge (e.g. SR)
+        inference_image_path = working_image
+        proxy_scale = 1.0
+        
+        # Read the current working image (SR or Original) to check dimensions
+        img_check = cv2.imread(str(working_image))
+        sr_h, sr_w = 0, 0
+        proxy_scale_x = 1.0
+        proxy_scale_y = 1.0
+        
+        if img_check is not None:
+            sr_h, sr_w = img_check.shape[:2]
+            pixels = sr_h * sr_w
+            target_pixels = 3.5 * 1000 * 1000 # Target ~3.5MP for Homr Inference
+            
+            if pixels > target_pixels * 1.5:
+                proxy_scale = (pixels / target_pixels) ** 0.5
+                proxy_w = int(sr_w / proxy_scale)
+                proxy_h = int(sr_h / proxy_scale)
+                
+                # Re-calculate exact scale based on integer dimensions
+                proxy_scale_x = sr_w / proxy_w
+                proxy_scale_y = sr_h / proxy_h
+                
+                eprint(f"Creating Proxy for Homr Inference: {sr_w}x{sr_h} -> {proxy_w}x{proxy_h} (Scale: {proxy_scale:.2f})")
+                proxy_img = cv2.resize(img_check, (proxy_w, proxy_h))
+                
+                proxy_path = image_run_dir / f"{stem}_proxy.png"
+                cv2.imwrite(str(proxy_path), proxy_img)
+                inference_image_path = proxy_path
 
         config = ProcessingConfig(
             True,
@@ -2242,17 +2333,27 @@ def main() -> None:
         xml_args = XmlGeneratorArguments(False, None, None)
 
         predictions, xml_path, seg_shape, runtime_s, notehead_mask, staff_mask = run_homr_on_image(
-            working_image, config, xml_args, args.timeout, tuning
+            inference_image_path, config, xml_args, args.timeout, tuning
         )
-        transform = compute_transform_info(working_image, seg_shape)
+        transform = compute_transform_info(inference_image_path, seg_shape)
         
         mapped_predictions: List[BarlinePrediction] = []
         for pred in predictions:
-            orig_bbox = map_pred_to_orig(pred.pred_bbox, transform)
+            # Map Seg -> Proxy (or Original if no proxy)
+            orig_bbox_proxy = map_pred_to_orig(pred.pred_bbox, transform)
+            
+            # Map Proxy -> SR (High Res)
+            x1, y1, x2, y2 = orig_bbox_proxy
+            if inference_image_path != working_image:
+                x1 = int(round(x1 * proxy_scale_x))
+                y1 = int(round(y1 * proxy_scale_y))
+                x2 = int(round(x2 * proxy_scale_x))
+                y2 = int(round(y2 * proxy_scale_y))
+            
             mapped_predictions.append(
                 BarlinePrediction(
                     pred_bbox=pred.pred_bbox,
-                    orig_bbox=orig_bbox,
+                    orig_bbox=(x1, y1, x2, y2),
                     system_index=pred.system_index,
                     staff_index=pred.staff_index,
                 )
@@ -2369,15 +2470,16 @@ def main() -> None:
         staff_mask_255 = (staff_mask * 255).astype(np.uint8)
 
         # Always compute resized masks for diagnostics/stats
+        # IMPORTANT: Resize to SR/Working Image dimensions, not Proxy dimensions!
         notehead_mask_resized = cv2.resize(
             notehead_mask_255,
-            dsize=transform.original_shape,
+            dsize=(sr_w, sr_h),
             interpolation=cv2.INTER_NEAREST,
         )
         
         staff_mask_resized = cv2.resize(
             staff_mask_255,
-            dsize=transform.original_shape,
+            dsize=(sr_w, sr_h),
             interpolation=cv2.INTER_NEAREST,
         )
 

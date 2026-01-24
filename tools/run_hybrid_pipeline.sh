@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-    echo "Usage: $0 --image <path> --run-id <id> [--gt <path>]"
+    echo "Usage: $0 --image <path> --run-id <id> [--gt <path>] [--sr-image <path>]"
     echo ""
     echo "Orchestrates the Hybrid Barline Detection Pipeline:"
     echo "1. homr Baseline (Standard)"
@@ -15,12 +15,14 @@ usage() {
 IMAGE_PATH=""
 RUN_ID=""
 GT_PATH=""
+SR_IMAGE_PATH=""
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --image) IMAGE_PATH="$2"; shift ;;
         --run-id) RUN_ID="$2"; shift ;;
         --gt) GT_PATH="$2"; shift ;;
+        --sr-image) SR_IMAGE_PATH="$2"; shift ;;
         *) echo "Unknown parameter: $1"; usage ;;
     esac
     shift
@@ -64,15 +66,29 @@ if [[ -n "$GT_PATH" ]]; then
     CONTAINER_GT="/workspace${ABS_GT#$REPO_ROOT}"
 fi
 
+CONTAINER_SR_IMAGE=""
+if [[ -n "$SR_IMAGE_PATH" ]]; then
+    ABS_SR=$(realpath "$SR_IMAGE_PATH")
+    if [[ "$ABS_SR" != "$REPO_ROOT"* ]]; then
+        echo "Error: SR image must be inside the repository."
+        exit 1
+    fi
+    CONTAINER_SR_IMAGE="/workspace${ABS_SR#$REPO_ROOT}"
+fi
+
 # Define Output Root in Container
-OUTPUT_ROOT="/workspace/logs/hybrid_generalization/$RUN_ID"
-HOST_OUTPUT_ROOT="logs/hybrid_generalization/$RUN_ID"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+OUTPUT_ROOT="/workspace/logs/hybrid_pipeline_bench/${RUN_ID}_${TIMESTAMP}"
+HOST_OUTPUT_ROOT="logs/hybrid_pipeline_bench/${RUN_ID}_${TIMESTAMP}"
 
 echo "=== Running Hybrid Pipeline ==="
 echo "Image: $CONTAINER_IMAGE ($STEM)"
 echo "Run ID: $RUN_ID"
 echo "GT: ${CONTAINER_GT:-(None)}" 
+echo "SR: ${CONTAINER_SR_IMAGE:-(None)}"
 echo "Output: $OUTPUT_ROOT"
+
+START_TOTAL=$(date +%s)
 
 # SR evaluation container + interpreter.
 # This script assumes `sr_eval_gpu` (or specified container) was built from `Dockerfile.sr_eval` and is running.
@@ -84,6 +100,7 @@ mkdir -p "$HOST_OUTPUT_ROOT"
 
 # 1. homr Baseline
 echo ""
+START_STEP1=$(date +%s)
 echo "--- Step 1: homr Baseline ---"
 CMD_BASELINE="$CONTAINER_PY /workspace/src/homr_eval_scripts/homr_evaluator.py \
     --images \"$CONTAINER_IMAGE\" \
@@ -96,9 +113,11 @@ fi
 
 echo "Running: $CMD_BASELINE"
 docker exec "$CONTAINER_NAME" bash -lc "$CMD_BASELINE"
+END_STEP1=$(date +%s)
 
 # 2. homr SR
 echo ""
+START_STEP2=$(date +%s)
 echo "--- Step 2: homr SR ---"
 CMD_SR="$CONTAINER_PY /workspace/src/homr_eval_scripts/homr_evaluator.py \
     --images \"$CONTAINER_IMAGE\" \
@@ -109,17 +128,28 @@ CMD_SR="$CONTAINER_PY /workspace/src/homr_eval_scripts/homr_evaluator.py \
 if [[ -n "$CONTAINER_GT" ]]; then
     CMD_SR="$CMD_SR --ground-truth \"$STEM:$CONTAINER_GT\""
 fi
+if [[ -n "$CONTAINER_SR_IMAGE" ]]; then
+    CMD_SR="$CMD_SR --pre-computed-sr \"$CONTAINER_SR_IMAGE\""
+fi
 
 echo "Running: $CMD_SR"
 docker exec "$CONTAINER_NAME" bash -lc "$CMD_SR"
+END_STEP2=$(date +%s)
 
 # 3. OMR-DLN SR
 echo ""
+START_STEP3=$(date +%s)
 echo "--- Step 3: OMR-DLN SR ---"
+
+# Locate the SR image generated in Step 2
+# Structure: $OUTPUT_ROOT/sr/$STEM/$STEM/$STEM.png (or similar)
+# Note: homr_evaluator saves the image as $STEM.png inside $OUTPUT_ROOT/sr/$STEM/$STEM/
+SR_IMG_PATH="$OUTPUT_ROOT/sr/$STEM/$STEM/${STEM}.png"
+
 CMD_OMR="$CONTAINER_PY /workspace/experiments/models/eval_omr_dln.py \
     --image \"$CONTAINER_IMAGE\" \
     --output-dir \"$OUTPUT_ROOT/omr_sr\" \
-    --enable-sr"
+    --pre-computed-sr \"$SR_IMG_PATH\""
 
 if [[ -n "$CONTAINER_GT" ]]; then
     CMD_OMR="$CMD_OMR --gt \"$CONTAINER_GT\""
@@ -127,19 +157,12 @@ fi
 
 echo "Running: $CMD_OMR"
 docker exec "$CONTAINER_NAME" bash -lc "$CMD_OMR"
+END_STEP3=$(date +%s)
 
 # 4. Generate Hybrid Results
 echo ""
+START_STEP4=$(date +%s)
 echo "--- Step 4: Hybrid Generation ---"
-
-# Locate inputs
-# homr_evaluator creates <output_root>/<run_id>/<stem>/<stem>_detections.json
-# Here run_id is forced to STEM.
-# So: $OUTPUT_ROOT/baseline/$STEM/$STEM/$STEM_detections.json ... wait.
-# Let's re-read homr_evaluator logic.
-# run_dir = args.output_root / run_id
-# image_run_dir = run_dir / stem
-# detections_path = image_run_dir / f"{stem}_detections.json"
 
 BASELINE_JSON="$OUTPUT_ROOT/baseline/$STEM/$STEM/${STEM}_detections.json"
 SR_JSON="$OUTPUT_ROOT/sr/$STEM/$STEM/${STEM}_detections.json"
@@ -158,6 +181,17 @@ fi
 
 echo "Running: $CMD_HYBRID"
 docker exec "$CONTAINER_NAME" bash -lc "$CMD_HYBRID"
+END_STEP4=$(date +%s)
+END_TOTAL=$(date +%s)
+
+echo ""
+echo "=== Hybrid Pipeline Performance Summary ==="
+echo "Step 1 (homr Baseline): $((END_STEP1 - START_STEP1))s"
+echo "Step 2 (homr SR)      : $((END_STEP2 - START_STEP2))s"
+echo "Step 3 (OMR-DLN SR)   : $((END_STEP3 - START_STEP3))s"
+echo "Step 4 (Hybrid Gen)   : $((END_STEP4 - START_STEP4))s"
+echo "-------------------------------------------"
+echo "Total Time            : $((END_TOTAL - START_TOTAL))s"
 
 echo ""
 echo "=== Hybrid Pipeline Completed ==="

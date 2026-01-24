@@ -17,10 +17,15 @@
 ## 2. Tasks
 
 ### Phase 5: Advanced Optimization (Next)
-#### A. Real-ESRGAN Tuning (Priority: High)
-*   [ ] **Tile Size Experiment**: Benchmark `tile=1024` vs `tile=512` vs `no_tile` to see if SR generation itself can be faster.
+#### A. Real-ESRGAN Tuning (Done)
+*   [x] **Tile Size Experiment**: Benchmarked `tile=1024` vs `tile=512`. `tile=512` is optimal for 8GB VRAM.
 *   [ ] **Padding Tuning**: Check if `tile_pad` reduction affects edge artifacts or speed.
-*   [ ] **Precision**: Ensure `fp16` is strictly enabled.
+*   [x] **Precision**: Verified `fp16` is enabled by default on CUDA.
+
+#### B. Batch Processing Architecture (Priority: High)
+*   [ ] **Python Loop Implementation**: Modify `homr_evaluator.py` to accept a directory or glob pattern.
+*   [ ] **Model Persistence**: Load SR and Homr models once for multiple images.
+*   [ ] **Memory Management**: Implement explicit `gc.collect()` and `torch.cuda.empty_cache()` calls between images.
 
 #### B. Batch Processing Architecture (Priority: Medium)
 *   [ ] **Python Loop Implementation**: Modify `homr_evaluator.py` to accept a directory or glob pattern.

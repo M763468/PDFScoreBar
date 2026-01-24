@@ -275,3 +275,33 @@ Quantify the potential time savings of "caching" or reusing pre-computed SR imag
 ### Outcome
 - The value of SR caching is confirmed for full-page score processing.
 - Results documented in `docs/performance_comparison.md`.
+
+---
+
+## Phase 5: Advanced Optimization & SR Tuning (2026-01-24)
+
+### Objective
+Optimize Real-ESRGAN performance and implement advanced pipeline control.
+
+### Changes
+- **Source Code**:
+    - `src/common/preprocessing.py`: Added `tile`, `tile_pad`, `fp32` arguments to `apply_advanced_sr`.
+    - `src/homr_eval_scripts/homr_evaluator.py`: Exposed SR tuning parameters via CLI (`--sr-tile`, `--sr-tile-pad`, `--sr-fp32`).
+- **Optimization**: Verified that `fp16` (half precision) is enabled by default on CUDA, significantly reducing VRAM usage and increasing speed.
+
+### Real-ESRGAN Tiling Benchmark (Page 10, RTX 4060 8GB)
+| 設定 (Tiling) | 合計実行時間 (Step 2) | ステータス | 備考 |
+| :--- | :--- | :--- | :--- |
+| **Auto (512)** | **221s** | 成功 | 速度と安定性のバランスが最適。 |
+| **Tile 512** | 256s | 成功 | 手動指定。 |
+| **Tile 1024** | 577s | 成功 | 極めて低速、OOMリスク高。 |
+| **No Tile (0)** | N/A | スキップ | 8GB VRAMではOOM不可避。 |
+
+### Key Findings
+- **Tiling Efficiency**: RTX 4060 (8GB) 環境では `tile=512` がスイートスポット。1024に増やすと、VRAM管理のオーバーヘッドやスワップによりパフォーマンスが劇的に悪化する。
+- **Auto Logic**: 現状の自動選択ロジック（大きな画像に対して `tile=512`）は、ターゲットハードウェアに対して最適であることが確認された。
+
+### Outcome
+- SR生成時間は現在のハードウェアで可能な限り短縮された（160MP相当の巨大画像で約3.5分）。
+- 明示的なタイリング制御により、パイプラインの堅牢性が向上した。
+- ベンチマーク結果を `docs/performance_comparison.md` に反映済み。

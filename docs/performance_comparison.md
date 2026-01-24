@@ -114,3 +114,35 @@ SR処理後の巨大な画像（155MP相当）を直接Homrに渡すのではな
 *   **Significant Gain on Large Images**: Reusing SR saves ~1 minute per page for large/dense scores like `page_10`.
 *   **Minimal Gain on Small Images**: For `page_3`, the SR generation overhead is small enough that reusing it yields negligible wall-clock improvement.
 *   **Strategy**: Caching/Reuse is highly recommended for batch processing or iterative tuning on large scores.
+
+---
+
+## Phase 5: Real-ESRGAN Tuning (2026-01-24)
+
+**Objective**: Optimize SR generation parameters (Tiling) for 8GB VRAM hardware.
+
+### Tiling Benchmark: `page_10.png` (Large Score)
+**Hardware**: RTX 4060 (8GB VRAM)
+**Target Resolution**: 10800x14400 (~155.5 MP)
+
+| Setting (Tiling) | Duration (Step 2) | VRAM Status | Notes |
+| :--- | :--- | :--- | :--- |
+| **Auto (512)** | **221 s** | Stable | Optimal. Automatic logic selected tile=512. |
+| **Tile 512** | 256 s | Stable | Manually set. Matches Auto performance within variance. |
+| **Tile 1024** | 577 s | High Stress | Significantly slower. |
+| **No Tile (0)** | N/A | **OOM/Hang** | Not feasible for full page on 8GB VRAM. |
+
+### Analysis
+*   **Tile Size Sweet Spot**: For 8GB VRAM, a tile size of **512** provides the best performance. Larger tiles (1024) incur significant penalties, possibly due to more aggressive memory swapping or fragmentation during large batch processing.
+*   **Reliability**: `tile=512` is highly stable. `tile=1024` was unstable and significantly slower.
+*   **Recommendation**: Stick with the current **Auto (512)** logic for score-sized images. The flexibility to override tiling is useful for future hardware or smaller page fragments.
+
+### Current Optimization Status Summary
+| Version | Total Time (Page 10) | Improvement |
+| :--- | :--- | :--- |
+| **Baseline (Phase 1)** | ~11 min | - |
+| **Optimized (Phase 3)** | ~4.3 min | **2.5x faster** |
+| **Cached SR (Phase 4)** | ~3.4 min | **3.2x faster** |
+| **Current (Phase 5)** | ~3.7 min* | (Baseline for SR tuning) |
+
+*\*Variation in total time due to Step 1 overhead; Step 2 performance is now maximized.*

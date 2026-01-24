@@ -258,6 +258,23 @@ def parse_args() -> argparse.Namespace:
         help="Enable Super-Resolution (Real-ESRGAN x4) preprocessing",
     )
     parser.add_argument(
+        "--sr-tile",
+        type=int,
+        default=-1,
+        help="Tile size for SR (-1=auto/default). 0=force no tiling (fastest but high VRAM). 512=conservative tiling.",
+    )
+    parser.add_argument(
+        "--sr-tile-pad",
+        type=int,
+        default=10,
+        help="Tile padding for SR (overlap pixels).",
+    )
+    parser.add_argument(
+        "--sr-fp32",
+        action="store_true",
+        help="Force full precision (fp32) for SR. Default is fp16 (half) if CUDA available.",
+    )
+    parser.add_argument(
         "--pre-computed-sr",
         type=Path,
         help="Path to a pre-computed SR image (skips SR inference)",
@@ -2243,7 +2260,12 @@ def main() -> None:
             else:
                 original_h, original_w = img_bgr.shape[:2]
                 upscaled = apply_advanced_sr(
-                    img_bgr, model_name="RealESRGAN_x4plus", scale=requested_sr_scale
+                    img_bgr,
+                    model_name="RealESRGAN_x4plus",
+                    scale=requested_sr_scale,
+                    tile=args.sr_tile,
+                    tile_pad=args.sr_tile_pad,
+                    fp32=args.sr_fp32,
                 )
                 up_h, up_w = upscaled.shape[:2]
                 inferred_scale = round(up_w / original_w) if original_w else 1

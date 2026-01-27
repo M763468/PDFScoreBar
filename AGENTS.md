@@ -42,10 +42,18 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 
 ## 6. Project-Specific Overrides
 
-This section is for project-level custom commands, rules, or environment-specific guidelines.
+### Environment & Execution
+- **Check Environments First**: Before executing any code, you **MUST** read `docs/ENVIRONMENTS.md`. This project uses a mix of Docker containers (`pdf_score_dev_gpu`, `homr_eval_gpu`, etc.) and host-based virtual environments (`.venv_pdf`, etc.). Identify the correct environment for your task.
+- **Docker Preference**: Prefer running tasks inside the appropriate Docker container whenever possible to ensure reproducibility.
+- **Host Execution**: Some tools (e.g., `gui_helper`) are designed to run on the host. Follow the specific instructions in `docs/ENVIRONMENTS.md`.
 
-- **(Example)** All backend services must be started using `./scripts/start_backend.sh`.
-- **(Example)** Before submitting, run `./tools/pre_commit_check.sh` to verify your changes.
+### Logs & Artifacts
+- **Output Directory**: All experiment logs, metrics, and generated artifacts must be saved under the `logs/` directory. Use structured subdirectories (e.g., `logs/<experiment_name>/<timestamp>/`) to avoid clutter.
+- **Cleanup**: Do not leave temporary files in the project root.
+
+### Dependencies
+- **Strict Control**: Do not modify `requirements.txt`, `pyproject.toml`, or `Dockerfile` unless the task explicitly requires dependency updates.
+- **No Unauthorized Libraries**: Do not install new libraries without user approval.
 
 ## 7. Skills
 

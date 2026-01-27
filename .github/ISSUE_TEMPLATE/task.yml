@@ -1,0 +1,60 @@
+name: "Task / 雑務・リファクタ・ドキュメント"
+description: "小さめの作業や整備"
+title: "[Task] <短い要約>"
+labels:
+  - "task"
+  - "priority:med"
+  - "scope:small"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ブランチ運用
+        AIエージェントが作業するブランチを指定します。未定なら空欄でもOKで、あとからコメント等で指定できます。
+
+  - type: input
+    id: base_branch
+    attributes:
+      label: "Base branch"
+      description: "作業ブランチの元となる親ブランチ名を指定します。"
+      placeholder: "例: feature/<topic-name>"
+
+  - type: input
+    id: branch_name
+    attributes:
+      label: "Branch name"
+      description: "AIが作成する作業ブランチ名を指定します。"
+      placeholder: "例: feature/123-update-docs"
+
+  - type: input
+    id: pr_base
+    attributes:
+      label: "PR base"
+      description: "PRの向き先となるブランチ（通常はBase branchと同じ）"
+      placeholder: "例: feature/<topic-name>"
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: "Goal"
+      placeholder: "例: README に使い方を追記する"
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: "Done"
+      description: "完了判定を箇条書きで。"
+      placeholder: |
+        - README に CLI 例が追加されている
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: "Notes"
+      description: "注意点や関連リンクなど。"
+    validations:
+      required: false

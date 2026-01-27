@@ -1,0 +1,101 @@
+name: "Bug / バグ修正"
+description: "不具合の報告と修正依頼"
+title: "[Bug] <短い要約>"
+labels:
+  - "bug"
+  - "priority:med"
+  - "scope:small"
+  - "priority:med"
+  - "scope:small"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🐛 Bug Report
+        再現手順・期待動作・実際の動作を具体的に書いてください。
+
+  - type: markdown
+    attributes:
+      value: |
+        ## ブランチ運用
+        AIエージェントが作業するブランチを指定します。未定なら空欄でもOKで、あとからコメント等で指定できます。
+
+  - type: input
+    id: base_branch
+    attributes:
+      label: "Base branch"
+      description: "作業ブランチの元となる親ブランチ名を指定します。"
+      placeholder: "例: feature/<topic-name>"
+
+  - type: input
+    id: branch_name
+    attributes:
+      label: "Branch name"
+      description: "AIが作成する作業ブランチ名を指定します。"
+      placeholder: "例: feature/123-fix-bug"
+
+  - type: input
+    id: pr_base
+    attributes:
+      label: "PR base"
+      description: "PRの向き先となるブランチ（通常はBase branchと同じ）"
+      placeholder: "例: feature/<topic-name>"
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: "再現手順"
+      description: "最小手順で書く。"
+      placeholder: |
+        1. utacopy run input.wav --out out/
+        2. out/ を確認
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "期待動作"
+      placeholder: "例: out/ に processed.wav が生成される"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: "実際の動作"
+      placeholder: "例: out/ が生成されず、エラーで終了する"
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: "環境"
+      description: "OS / Python / GPU など。"
+      placeholder: |
+        OS:
+        Python:
+        GPU:
+        その他:
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: "ログ / エラーメッセージ"
+      description: "可能なら貼り付け。"
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "受け入れ条件（修正完了の定義）"
+      placeholder: |
+        - 上記再現手順でエラーが発生しない
+        - 想定出力が生成される
+    validations:
+      required: true

@@ -1,4 +1,3 @@
-
 # Script: analyze_staff_consistency.py
 # Purpose: Filter false positive barlines using DBSCAN clustering (Row-Based).
 # Environment: 'homr_eval_gpu' container.
@@ -6,12 +5,13 @@
 import argparse
 import json
 import os
-import cv2
-import numpy as np
 import sys
 
+import cv2
+import numpy as np
+
 # Ensure workspace root is in path
-sys.path.insert(0, '/workspace')
+sys.path.insert(0, "/workspace")
 
 try:
     from experiments.fp_reduction.unified_metric import evaluate_detections
@@ -19,27 +19,28 @@ except ImportError:
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     from unified_metric import evaluate_detections
 
+
 def analyze_bbox_pixel_context(image, bbox):
     """
     Analyzes pixel context of a given bounding box in the image.
     Returns calculated metrics like mean ink density, top/bottom ink density.
     """
     x1, y1, x2, y2 = map(int, bbox)
-    
-    pad = 10 # Context padding
+
+    pad = 10  # Context padding
     h_img, w_img = image.shape[:2]
     cx1 = max(0, x1 - pad)
     cy1 = max(0, y1 - pad)
     cx2 = min(w_img, x2 + pad)
     cy2 = min(h_img, y2 + pad)
-    
+
     crop = image[cy1:cy2, cx1:cx2]
     if crop.size == 0:
         return {"bin_mean": 0.0, "top_ink_density": 0.0, "bottom_ink_density": 0.0}
 
     gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
     _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    
+
     # Bbox's mean ink density (only the actual bbox area, not the padded crop)
     bbox_in_crop_x1 = x1 - cx1
     bbox_in_crop_y1 = y1 - cy1
@@ -53,36 +54,49 @@ def analyze_bbox_pixel_context(image, bbox):
     bbox_in_crop_y2 = min(crop.shape[0], bbox_in_crop_y2)
 
     bbox_binary_region = binary[bbox_in_crop_y1:bbox_in_crop_y2, bbox_in_crop_x1:bbox_in_crop_x2]
-    bin_mean_ink_density = np.sum(bbox_binary_region) / (255.0 * bbox_binary_region.size) if bbox_binary_region.size > 0 else 0.0
+    bin_mean_ink_density = (
+        np.sum(bbox_binary_region) / (255.0 * bbox_binary_region.size)
+        if bbox_binary_region.size > 0
+        else 0.0
+    )
 
     # Ink Density at Top/Bottom Corners (Blob detection heuristic)
-    corner_size = 3 # 3x3 pixel square
-    
+    corner_size = 3  # 3x3 pixel square
+
     def get_corner_ink_density(bin_img, corner_x, corner_y, size):
         x_start = max(0, corner_x)
         y_start = max(0, corner_y)
         x_end = min(bin_img.shape[1], corner_x + size)
         y_end = min(bin_img.shape[0], corner_y + size)
-        
+
         if x_end <= x_start or y_end <= y_start:
             return 0.0
-        
+
         corner_region = bin_img[y_start:y_end, x_start:x_end]
-        return np.sum(corner_region) / (255.0 * corner_region.size) if corner_region.size > 0 else 0.0
+        return (
+            np.sum(corner_region) / (255.0 * corner_region.size) if corner_region.size > 0 else 0.0
+        )
 
     top_left_density = get_corner_ink_density(binary, x1 - cx1, y1 - cy1, corner_size)
-    top_right_density = get_corner_ink_density(binary, x2 - cx1 - corner_size, y1 - cy1, corner_size)
-    bottom_left_density = get_corner_ink_density(binary, x1 - cx1, y2 - cy1 - corner_size, corner_size)
-    bottom_right_density = get_corner_ink_density(binary, x2 - cx1 - corner_size, y2 - cy1 - corner_size, corner_size)
+    top_right_density = get_corner_ink_density(
+        binary, x2 - cx1 - corner_size, y1 - cy1, corner_size
+    )
+    bottom_left_density = get_corner_ink_density(
+        binary, x1 - cx1, y2 - cy1 - corner_size, corner_size
+    )
+    bottom_right_density = get_corner_ink_density(
+        binary, x2 - cx1 - corner_size, y2 - cy1 - corner_size, corner_size
+    )
 
     top_ink_density = (top_left_density + top_right_density) / 2.0
     bottom_ink_density = (bottom_left_density + bottom_right_density) / 2.0
-    
+
     return {
         "bin_mean": float(bin_mean_ink_density),
         "top_ink_density": float(top_ink_density),
-        "bottom_ink_density": float(bottom_ink_density)
+        "bottom_ink_density": float(bottom_ink_density),
     }
+
 
 def get_iou(boxA, boxB):
     """
@@ -99,6 +113,7 @@ def get_iou(boxA, boxB):
     iou = interArea / float(boxAArea + boxBArea - interArea)
     return iou
 
+
 def cluster_by_y_distance(y_centers, max_distance=25, min_cluster_size=3):
     """
     Simple clustering: group points within max_distance of each other.
@@ -107,31 +122,32 @@ def cluster_by_y_distance(y_centers, max_distance=25, min_cluster_size=3):
     # Sort by Y
     sorted_indices = np.argsort(y_centers)
     sorted_y = y_centers[sorted_indices]
-    
+
     clusters = []
     current_cluster = [sorted_indices[0]]
-    
+
     for i in range(1, len(sorted_y)):
-        if sorted_y[i] - sorted_y[i-1] <= max_distance:
+        if sorted_y[i] - sorted_y[i - 1] <= max_distance:
             current_cluster.append(sorted_indices[i])
         else:
             clusters.append(current_cluster)
             current_cluster = [sorted_indices[i]]
     clusters.append(current_cluster)
-    
+
     # Filter by size and separate noise
     valid_clusters = {}
     noise = []
     cluster_id = 0
-    
+
     for cluster in clusters:
         if len(cluster) >= min_cluster_size:
             valid_clusters[cluster_id] = cluster
             cluster_id += 1
         else:
             noise.extend(cluster)
-    
+
     return valid_clusters, noise
+
 
 def estimate_staff_space(rows, preds_list):
     """
@@ -198,7 +214,9 @@ def _build_notehead_with_stems_mask(notehead_mask, stems_rest_mask, staff_space_
     return ((notehead_dil > 0) | stems_near_notehead).astype(np.uint8) * 255
 
 
-def _geom_filter_note_context(preds, notehead_mask, stems_rest_mask, staff_space_px, endpoint_radius_scale=0.6):
+def _geom_filter_note_context(
+    preds, notehead_mask, stems_rest_mask, staff_space_px, endpoint_radius_scale=0.6
+):
     """
     Conservative geometry filter intended to remove stem-like false barlines.
 
@@ -212,7 +230,9 @@ def _geom_filter_note_context(preds, notehead_mask, stems_rest_mask, staff_space
     """
     h, w = notehead_mask.shape[:2]
 
-    notehead_with_stems = _build_notehead_with_stems_mask(notehead_mask, stems_rest_mask, staff_space_px)
+    notehead_with_stems = _build_notehead_with_stems_mask(
+        notehead_mask, stems_rest_mask, staff_space_px
+    )
 
     kept = []
     rejected = []
@@ -244,8 +264,8 @@ def _geom_filter_note_context(preds, notehead_mask, stems_rest_mask, staff_space
         by1 = max(0, y2 - r)
         by2 = min(h - 1, y2 + r)
 
-        top_overlap = int(np.count_nonzero(notehead_with_stems[ty1:ty2 + 1, tx1:tx2 + 1]))
-        bot_overlap = int(np.count_nonzero(notehead_with_stems[by1:by2 + 1, bx1:bx2 + 1]))
+        top_overlap = int(np.count_nonzero(notehead_with_stems[ty1 : ty2 + 1, tx1 : tx2 + 1]))
+        bot_overlap = int(np.count_nonzero(notehead_with_stems[by1 : by2 + 1, bx1 : bx2 + 1]))
 
         # Strong, localized collision at an endpoint => likely a stem attached to a notehead.
         if top_overlap > 0 or bot_overlap > 0:
@@ -323,10 +343,10 @@ def _geom_filter_note_context_ratio(
 
         notehead_pixels_top = np.count_nonzero(top_region)
         notehead_pixels_bottom = np.count_nonzero(bot_region)
-        
+
         area_top = top_region.size
         area_bottom = bot_region.size
-        
+
         total_notehead_pixels = notehead_pixels_top + notehead_pixels_bottom
         total_area = area_top + area_bottom
 
@@ -383,21 +403,27 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--json", required=True)
     parser.add_argument("--image", required=True)
-    parser.add_argument("--gt", default=None, help="Optional: ground truth JSON for metric computation.")
+    parser.add_argument(
+        "--gt", default=None, help="Optional: ground truth JSON for metric computation."
+    )
     parser.add_argument("--output", required=True)
     parser.add_argument("--cluster-max-dist", type=float, default=25.0)
     parser.add_argument("--min-row-count", type=int, default=3)
 
     # Tolerance configuration:
     # Default: ratio-based tolerance with ratio 0.35 (recommended 0.3-0.4).
-    parser.add_argument("--use-ratio-tolerance", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument(
+        "--use-ratio-tolerance", action=argparse.BooleanOptionalAction, default=True
+    )
     parser.add_argument("--tol-ratio", type=float, default=0.35)
     parser.add_argument("--staff-space", type=float, default=None)
     parser.add_argument("--tol-top-px", type=float, default=6.0)
     parser.add_argument("--tol-bottom-px", type=float, default=6.0)
 
     # Geometry-based note context filter (disabled by default; enable explicitly).
-    parser.add_argument("--enable-geom-notehead-filter", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument(
+        "--enable-geom-notehead-filter", action=argparse.BooleanOptionalAction, default=False
+    )
     parser.add_argument(
         "--geom-notehead-mode",
         type=str,
@@ -443,37 +469,54 @@ def parse_args():
             "(expects page_3_debug_6_notehead.png and page_3_debug_5_stems_rest.png for page_3)."
         ),
     )
-    parser.add_argument("--homr-notehead-mask", type=str, default=None, help="Path to homr notehead mask image.")
-    parser.add_argument("--homr-stems-rest-mask", type=str, default=None, help="Path to homr stems/rest mask image.")
+    parser.add_argument(
+        "--homr-notehead-mask", type=str, default=None, help="Path to homr notehead mask image."
+    )
+    parser.add_argument(
+        "--homr-stems-rest-mask", type=str, default=None, help="Path to homr stems/rest mask image."
+    )
 
     # New pixel-based filter arguments
-    parser.add_argument("--min-bbox-ink-density", type=float, default=0.0, help="Minimum mean ink density (0-1) for a bbox to be considered valid.")
-    parser.add_argument("--max-end-ink-density", type=float, default=1.0, help="Maximum ink density (0-1) at top/bottom corners for a bbox to be considered a pure barline (to filter noteheads).")
+    parser.add_argument(
+        "--min-bbox-ink-density",
+        type=float,
+        default=0.0,
+        help="Minimum mean ink density (0-1) for a bbox to be considered valid.",
+    )
+    parser.add_argument(
+        "--max-end-ink-density",
+        type=float,
+        default=1.0,
+        help="Maximum ink density (0-1) at top/bottom corners for a bbox to be considered a pure barline (to filter noteheads).",
+    )
     return parser.parse_args()
 
+
 def load_json(path):
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         data = json.load(f)
     raw = data["predictions"] if isinstance(data, dict) and "predictions" in data else data
     preds = []
     for item in raw:
-        if isinstance(item, list): 
+        if isinstance(item, list):
             preds.append(item)
-        elif isinstance(item, dict): 
+        elif isinstance(item, dict):
             preds.append(item.get("orig_bbox", item.get("bbox", item.get("pred_bbox"))))
     return preds
 
+
 def load_gt(path):
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         data = json.load(f)
     if isinstance(data, list) and len(data) > 0 and "barline_location" in data[0]:
         return [x["barline_location"] for x in data]
     return data
 
+
 def main():
     args = parse_args()
     os.makedirs(args.output, exist_ok=True)
-    
+
     # 1. Load Data
     preds_list = load_json(args.json)
     gt_boxes = None
@@ -485,16 +528,18 @@ def main():
 
     # 2. Cluster Barlines by Y-position
     y_centers = np.array([(box[1] + box[3]) / 2 for box in preds_list])
-    
+
     rows, noise_indices = cluster_by_y_distance(
-        y_centers, 
+        y_centers,
         max_distance=args.cluster_max_dist,
         min_cluster_size=args.min_row_count,
     )
-    
+
     print(f"Clustering found {len(rows)} row clusters. Noise points: {len(noise_indices)}.")
 
-    staff_space = args.staff_space if args.staff_space is not None else estimate_staff_space(rows, preds_list)
+    staff_space = (
+        args.staff_space if args.staff_space is not None else estimate_staff_space(rows, preds_list)
+    )
     if args.use_ratio_tolerance:
         tol_top = args.tol_ratio * staff_space
         tol_bottom = args.tol_ratio * staff_space
@@ -504,36 +549,38 @@ def main():
         tol_bottom = args.tol_bottom_px
         tol_mode = "absolute"
 
-    print(f"Estimated staff_space: {staff_space:.2f}px | tol_mode={tol_mode} | tol_top={tol_top:.2f}px tol_bottom={tol_bottom:.2f}px")
-    
+    print(
+        f"Estimated staff_space: {staff_space:.2f}px | tol_mode={tol_mode} | tol_top={tol_top:.2f}px tol_bottom={tol_bottom:.2f}px"
+    )
+
     # 3. Filter Per Row
     accepted_indices = set()
     # img_vis for row filter viz is not used if pixel filters are active, so commenting out
-    # img_vis = cv2.imread(args.image) 
-    
+    # img_vis = cv2.imread(args.image)
+
     for row_id, indices in rows.items():
         if len(indices) < args.min_row_count:
             continue
-            
+
         # Collect coords
         tops = [preds_list[i][1] for i in indices]
         bottoms = [preds_list[i][3] for i in indices]
-        
+
         # Calculate Reference (Median)
         ref_top = np.median(tops)
         ref_bottom = np.median(bottoms)
-        
+
         for i in indices:
             box = preds_list[i]
             x1, y1, x2, y2 = map(int, box)
-            
+
             # Check Consistency
             top_dev = abs(y1 - ref_top)
             bot_dev = abs(y2 - ref_bottom)
-            
+
             if top_dev <= tol_top and bot_dev <= tol_bottom:
                 accepted_indices.add(i)
-                
+
     # 4. Filter Per Row - populate row_filtered_preds
     row_filtered_preds = [preds_list[i] for i in sorted(list(accepted_indices))]
 
@@ -561,10 +608,15 @@ def main():
             stems_path_provided = stems_path is not None
 
             # Stems/rest are only needed for modes that use the combined mask (or visualize it).
-            stems_needed = args.geom_notehead_mode in ["endpoint_overlap_experimental", "page3_known_fp"]
+            stems_needed = args.geom_notehead_mode in [
+                "endpoint_overlap_experimental",
+                "page3_known_fp",
+            ]
 
             if not notehead_path_provided or (stems_needed and not stems_path_provided):
-                print(f"Error: geom notehead filter enabled but required homr mask paths are not provided (notehead: {notehead_path_provided}, stems_needed: {stems_needed}, stems: {stems_path_provided}). Skipping.")
+                print(
+                    f"Error: geom notehead filter enabled but required homr mask paths are not provided (notehead: {notehead_path_provided}, stems_needed: {stems_needed}, stems: {stems_path_provided}). Skipping."
+                )
             else:
                 try:
                     notehead_mask = _load_binary_mask(notehead_path, target_hw=target_hw)
@@ -572,17 +624,26 @@ def main():
                     if stems_needed:
                         stems_rest_mask = _load_binary_mask(stems_path, target_hw=target_hw)
                     if args.geom_notehead_mode == "endpoint_overlap_experimental":
-                        geom_filtered_preds, geom_debug, geom_notehead_with_stems = _geom_filter_note_context(
-                            row_filtered_preds, notehead_mask, stems_rest_mask, staff_space,
-                            endpoint_radius_scale=args.geom_endpoint_radius_scale,
+                        geom_filtered_preds, geom_debug, geom_notehead_with_stems = (
+                            _geom_filter_note_context(
+                                row_filtered_preds,
+                                notehead_mask,
+                                stems_rest_mask,
+                                staff_space,
+                                endpoint_radius_scale=args.geom_endpoint_radius_scale,
+                            )
                         )
                     elif args.geom_notehead_mode == "endpoint_ratio_overlap":
-                        geom_filtered_preds, geom_debug, geom_notehead_with_stems = _geom_filter_note_context_ratio(
-                            row_filtered_preds, notehead_mask, staff_space,
-                            threshold=args.geom_endpoint_ratio_threshold,
-                            endpoint_radius_scale=args.geom_endpoint_radius_scale,
-                            endpoint_x_radius_scale=args.geom_endpoint_x_radius_scale,
-                            endpoint_y_radius_scale=args.geom_endpoint_y_radius_scale,
+                        geom_filtered_preds, geom_debug, geom_notehead_with_stems = (
+                            _geom_filter_note_context_ratio(
+                                row_filtered_preds,
+                                notehead_mask,
+                                staff_space,
+                                threshold=args.geom_endpoint_ratio_threshold,
+                                endpoint_radius_scale=args.geom_endpoint_radius_scale,
+                                endpoint_x_radius_scale=args.geom_endpoint_x_radius_scale,
+                                endpoint_y_radius_scale=args.geom_endpoint_y_radius_scale,
+                            )
                         )
                         # note: geom_notehead_with_stems here is just the notehead_mask for visualization
                     else:
@@ -614,68 +675,88 @@ def main():
                             y1 = max(0, min(target_hw[0] - 1, y1))
                             y2 = max(0, min(target_hw[0] - 1, y2))
 
-                            is_known = any(_bbox_matches([x1, y1, x2, y2], t, tol_px=1) for t in known_fp_bboxes)
+                            is_known = any(
+                                _bbox_matches([x1, y1, x2, y2], t, tol_px=1)
+                                for t in known_fp_bboxes
+                            )
                             if not is_known:
                                 kept.append(b)
                                 continue
 
-                            region = dist_to_notehead[y1:y2 + 1, x1:x2 + 1]
+                            region = dist_to_notehead[y1 : y2 + 1, x1 : x2 + 1]
                             min_dist = float(np.min(region)) if region.size else float("inf")
                             if min_dist <= 0.0:
                                 rejected.append(
-                                    {"index": idx, "bbox": [x1, y1, x2, y2], "reason": "page3_known_fp_notehead_collision"}
+                                    {
+                                        "index": idx,
+                                        "bbox": [x1, y1, x2, y2],
+                                        "reason": "page3_known_fp_notehead_collision",
+                                    }
                                 )
                                 continue
 
                             kept.append(b)
 
                         geom_filtered_preds = kept
-                        geom_notehead_with_stems = _build_notehead_with_stems_mask(notehead_mask, stems_rest_mask, staff_space)
+                        geom_notehead_with_stems = _build_notehead_with_stems_mask(
+                            notehead_mask, stems_rest_mask, staff_space
+                        )
                         geom_debug = {
-                            "config": {"mode": "page3_known_fp", "known_fp_bboxes": known_fp_bboxes},
+                            "config": {
+                                "mode": "page3_known_fp",
+                                "known_fp_bboxes": known_fp_bboxes,
+                            },
                             "rejected": rejected,
                         }
                 except Exception as e:
-                    print(f"Error loading/applying homr masks for geom notehead filter: {e}. Skipping.")
+                    print(
+                        f"Error loading/applying homr masks for geom notehead filter: {e}. Skipping."
+                    )
 
     row_then_geom_preds = geom_filtered_preds
-    
+
     # 5. Apply Pixel Context Filters
     pixel_filtered_preds = []
     filtered_by_min_ink_density = 0
     filtered_by_max_end_ink_density = 0
-    
+
     # Load image for pixel analysis
     img = cv2.imread(args.image)
     if img is None:
-        print(f"Error: Could not load image from {args.image} for pixel context analysis. Skipping pixel filters.")
-        pixel_filtered_preds = row_then_geom_preds # Skip pixel filters if image not loaded
+        print(
+            f"Error: Could not load image from {args.image} for pixel context analysis. Skipping pixel filters."
+        )
+        pixel_filtered_preds = row_then_geom_preds  # Skip pixel filters if image not loaded
     else:
-        print(f"\nApplying pixel context filters ({len(row_then_geom_preds)} candidates from row/geom filtering)...")
-        
+        print(
+            f"\nApplying pixel context filters ({len(row_then_geom_preds)} candidates from row/geom filtering)..."
+        )
+
         for pred_bbox in row_then_geom_preds:
             context_metrics = analyze_bbox_pixel_context(img, pred_bbox)
-            
+
             bin_mean = context_metrics["bin_mean"]
             top_ink = context_metrics["top_ink_density"]
             bottom_ink = context_metrics["bottom_ink_density"]
-            
-            pass_min_ink_density = (bin_mean >= args.min_bbox_ink_density)
-            pass_max_end_ink_density = not (top_ink > args.max_end_ink_density or bottom_ink > args.max_end_ink_density)
-            
+
+            pass_min_ink_density = bin_mean >= args.min_bbox_ink_density
+            pass_max_end_ink_density = not (
+                top_ink > args.max_end_ink_density or bottom_ink > args.max_end_ink_density
+            )
+
             # Actual filtering logic
             if not pass_min_ink_density:
                 filtered_by_min_ink_density += 1
                 continue
-            
+
             if not pass_max_end_ink_density:
                 filtered_by_max_end_ink_density += 1
                 continue
-            
+
             pixel_filtered_preds.append(pred_bbox)
 
     final_preds = pixel_filtered_preds
-    
+
     old_metrics = None
     row_filter_metrics = None
     geom_filter_metrics = None
@@ -687,21 +768,29 @@ def main():
         geom_filter_metrics = evaluate_detections(row_then_geom_preds, gt_boxes)
         # new_metrics should be the final_preds
         new_metrics = evaluate_detections(final_preds, gt_boxes)
-    
+
     print("\n--- Results ---")
     if old_metrics is not None:
-        print(f"Original (raw detections): TP={old_metrics['TP']}, FP={old_metrics['FP']}, FN={old_metrics['FN']}")
-        print(f"After Row Filter: TP={row_filter_metrics['TP']}, FP={row_filter_metrics['FP']}, FN={row_filter_metrics['FN']}")
+        print(
+            f"Original (raw detections): TP={old_metrics['TP']}, FP={old_metrics['FP']}, FN={old_metrics['FN']}"
+        )
+        print(
+            f"After Row Filter: TP={row_filter_metrics['TP']}, FP={row_filter_metrics['FP']}, FN={row_filter_metrics['FN']}"
+        )
         if args.enable_geom_notehead_filter:
-            print(f"After Geom Note Context: TP={geom_filter_metrics['TP']}, FP={geom_filter_metrics['FP']}, FN={geom_filter_metrics['FN']}")
-        print(f"Final Filtered (Pixel Context): TP={new_metrics['TP']}, FP={new_metrics['FP']}, FN={new_metrics['FN']}")
+            print(
+                f"After Geom Note Context: TP={geom_filter_metrics['TP']}, FP={geom_filter_metrics['FP']}, FN={geom_filter_metrics['FN']}"
+            )
+        print(
+            f"Final Filtered (Pixel Context): TP={new_metrics['TP']}, FP={new_metrics['FP']}, FN={new_metrics['FN']}"
+        )
     else:
         print(f"Original (raw detections): count={len(preds_list)}")
         print(f"After Row Filter: count={len(row_filtered_preds)}")
         if args.enable_geom_notehead_filter:
             print(f"After Geom Note Context: count={len(row_then_geom_preds)}")
         print(f"Final Filtered (Pixel Context): count={len(final_preds)}")
-    
+
     # Save metrics
     res = {
         "config": {
@@ -735,9 +824,9 @@ def main():
             "final_after_pixel_filters": len(final_preds),
         },
         "rows_found": len(rows),
-        "noise_count": len(noise_indices)
+        "noise_count": len(noise_indices),
     }
-    with open(os.path.join(args.output, "metrics.json"), 'w') as f:
+    with open(os.path.join(args.output, "metrics.json"), "w") as f:
         json.dump(res, f, indent=2)
 
     # Cross-validation helper: write per-candidate decisions for ratio mode.
@@ -799,7 +888,11 @@ def main():
                 print(f"Warning: failed to write candidates CSV: {e}")
 
     # Optional overlay for geom notehead filter debugging.
-    if args.enable_geom_notehead_filter and geom_debug is not None and geom_notehead_with_stems is not None:
+    if (
+        args.enable_geom_notehead_filter
+        and geom_debug is not None
+        and geom_notehead_with_stems is not None
+    ):
         try:
             base = cv2.imread(args.image)
             if base is not None:
@@ -832,23 +925,32 @@ def main():
                 if isinstance(scores, list):
                     kept_removed = base.copy()
                     m = geom_notehead_with_stems > 0
-                    kept_removed[m] = (kept_removed[m] * (1 - alpha) + cyan[m] * alpha).astype(np.uint8)
+                    kept_removed[m] = (kept_removed[m] * (1 - alpha) + cyan[m] * alpha).astype(
+                        np.uint8
+                    )
 
-                    rejected_indices = {int(item.get("index")) for item in geom_debug.get("rejected", []) if "index" in item}
+                    rejected_indices = {
+                        int(item.get("index"))
+                        for item in geom_debug.get("rejected", [])
+                        if "index" in item
+                    }
                     for s in scores:
                         idx = int(s.get("index"))
                         x1, y1, x2, y2 = map(int, s.get("bbox"))
                         color = (0, 0, 255) if idx in rejected_indices else (0, 255, 0)
                         cv2.rectangle(kept_removed, (x1, y1), (x2, y2), color, 2)
-                    cv2.imwrite(os.path.join(args.output, "geom_kept_removed_overlay.png"), kept_removed)
+                    cv2.imwrite(
+                        os.path.join(args.output, "geom_kept_removed_overlay.png"), kept_removed
+                    )
         except Exception as e:
             print(f"Warning: failed to write geom overlay: {e}")
-    
+
     # Save the final predictions as well
-    with open(os.path.join(args.output, "filtered_barlines.json"), 'w') as f:
+    with open(os.path.join(args.output, "filtered_barlines.json"), "w") as f:
         json.dump(final_preds, f, indent=2)
 
     print(f"\\nSaved results to {args.output}")
+
 
 if __name__ == "__main__":
     main()

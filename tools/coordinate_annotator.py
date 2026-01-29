@@ -1,7 +1,9 @@
 """LEGACY: use tools/gt_relabel_gui (gt-editor mode) for new GT creation."""
-import cv2
+
 import json
 import os
+
+import cv2
 
 # --- Configuration ---
 # --- Configuration ---
@@ -9,16 +11,17 @@ import os
 IMAGE_PATH = None
 GROUND_TRUTH_OUTPUT_PATH = None
 BARLINE_RECT_WIDTH = 5  # Width of the rectangle when converting a line to a box
-MAX_DISPLAY_WIDTH = 1200 # Maximum width for display
-MAX_DISPLAY_HEIGHT = 800 # Maximum height for display
+MAX_DISPLAY_WIDTH = 1200  # Maximum width for display
+MAX_DISPLAY_HEIGHT = 800  # Maximum height for display
 
 # --- Global Variables ---
-original_img = None # Stores the original high-resolution image
+original_img = None  # Stores the original high-resolution image
 display_img = None  # Stores the image resized for display
-drawing_display_img = None # Image for drawing annotations on display_img
+drawing_display_img = None  # Image for drawing annotations on display_img
 scale_factor = 1.0  # Scale factor from original to display size
 annotations = []  # List of {'type': 'barline', 'coords': [x1, y1, x2, y2]} (original coords)
-current_points = [] # Stores the two clicks for a single annotation (display coords)
+current_points = []  # Stores the two clicks for a single annotation (display coords)
+
 
 # --- Mouse Callback Function ---
 def mouse_callback(event, x, y, flags, param):
@@ -46,18 +49,22 @@ def mouse_callback(event, x, y, flags, param):
             x_end = x_center + BARLINE_RECT_WIDTH // 2
 
             # Store as a barline annotation (original coords)
-            annotations.append({
-                'type': 'barline',
-                'coords': [x_start, y_min, x_end, y_max]
-            })
-            current_points = [] # Reset for next annotation
+            annotations.append({"type": "barline", "coords": [x_start, y_min, x_end, y_max]})
+            current_points = []  # Reset for next annotation
             draw_annotations()
 
     elif event == cv2.EVENT_MOUSEMOVE and len(current_points) == 1:
         # Draw a temporary line from the first point to the current mouse position (on display_img)
         drawing_display_img = display_img.copy()
-        cv2.line(drawing_display_img, current_points[0], (int(x/scale_factor), int(y/scale_factor)), (0, 255, 255), 2) # Cyan temporary line
+        cv2.line(
+            drawing_display_img,
+            current_points[0],
+            (int(x / scale_factor), int(y / scale_factor)),
+            (0, 255, 255),
+            2,
+        )  # Cyan temporary line
         cv2.imshow("Annotator", drawing_display_img)
+
 
 # --- Drawing Function ---
 def draw_annotations():
@@ -65,20 +72,29 @@ def draw_annotations():
     drawing_display_img = display_img.copy()
 
     for ann in annotations:
-        coords_orig = ann['coords']
+        coords_orig = ann["coords"]
         # Convert original coords to display coords for drawing
         x1_disp = int(coords_orig[0] * scale_factor)
         y1_disp = int(coords_orig[1] * scale_factor)
         x2_disp = int(coords_orig[2] * scale_factor)
         y2_disp = int(coords_orig[3] * scale_factor)
 
-        if ann['type'] == 'barline':
+        if ann["type"] == "barline":
             # Draw as a rectangle for visualization of the saved format
-            cv2.rectangle(drawing_display_img, (x1_disp, y1_disp), (x2_disp, y2_disp), (0, 255, 0), 2) # Green for barlines
+            cv2.rectangle(
+                drawing_display_img, (x1_disp, y1_disp), (x2_disp, y2_disp), (0, 255, 0), 2
+            )  # Green for barlines
             # Optionally, draw the line itself for clarity
-            cv2.line(drawing_display_img, ((x1_disp + x2_disp) // 2, y1_disp), ((x1_disp + x2_disp) // 2, y2_disp), (0, 0, 255), 1) # Thin red line
+            cv2.line(
+                drawing_display_img,
+                ((x1_disp + x2_disp) // 2, y1_disp),
+                ((x1_disp + x2_disp) // 2, y2_disp),
+                (0, 0, 255),
+                1,
+            )  # Thin red line
 
     cv2.imshow("Annotator", drawing_display_img)
+
 
 # --- Save Annotations ---
 def save_annotations():
@@ -86,22 +102,26 @@ def save_annotations():
     # For ground truth, we need measure_number, number_location, barline_location
     # This tool only captures barline_location for now. User will need to manually add measure_number and number_location.
     for i, ann in enumerate(annotations):
-        output_data.append({
-            "measure_number": i + 1, # Placeholder, user needs to adjust
-            "number_location": [0,0,0,0], # Placeholder, user needs to adjust
-            "barline_location": ann['coords']
-        })
+        output_data.append(
+            {
+                "measure_number": i + 1,  # Placeholder, user needs to adjust
+                "number_location": [0, 0, 0, 0],  # Placeholder, user needs to adjust
+                "barline_location": ann["coords"],
+            }
+        )
 
     output_dir = os.path.dirname(GROUND_TRUTH_OUTPUT_PATH)
     os.makedirs(output_dir, exist_ok=True)
 
-    with open(GROUND_TRUTH_OUTPUT_PATH, 'w') as f:
+    with open(GROUND_TRUTH_OUTPUT_PATH, "w") as f:
         json.dump(output_data, f, indent=2)
     print(f"Annotations saved to {GROUND_TRUTH_OUTPUT_PATH}")
+
 
 # --- Main Function ---
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="Manual coordinate annotator for barlines.")
     parser.add_argument("image_path", help="Path to the input image")
     parser.add_argument("output_path", help="Path to save the JSON output")
@@ -109,7 +129,7 @@ def main():
 
     global original_img, display_img, drawing_display_img, annotations, scale_factor
     global IMAGE_PATH, GROUND_TRUTH_OUTPUT_PATH
-    
+
     IMAGE_PATH = args.image_path
     GROUND_TRUTH_OUTPUT_PATH = args.output_path
 
@@ -121,15 +141,14 @@ def main():
     # Load existing annotations if file exists
     if os.path.exists(GROUND_TRUTH_OUTPUT_PATH):
         try:
-            with open(GROUND_TRUTH_OUTPUT_PATH, 'r') as f:
+            with open(GROUND_TRUTH_OUTPUT_PATH, "r") as f:
                 data = json.load(f)
                 if isinstance(data, list):
                     for item in data:
-                        if 'barline_location' in item:
-                            annotations.append({
-                                'type': 'barline',
-                                'coords': item['barline_location']
-                            })
+                        if "barline_location" in item:
+                            annotations.append(
+                                {"type": "barline", "coords": item["barline_location"]}
+                            )
             print(f"Loaded {len(annotations)} existing annotations from {GROUND_TRUTH_OUTPUT_PATH}")
         except Exception as e:
             print(f"Warning: Could not load existing annotations: {e}")
@@ -153,7 +172,9 @@ def main():
     draw_annotations()
 
     print("\n--- Coordinate Annotator Tool ---")
-    print(f"Image: {IMAGE_PATH} (Original: {w}x{h}, Display: {display_img.shape[1]}x{display_img.shape[0]}, Scale: {scale_factor:.2f})")
+    print(
+        f"Image: {IMAGE_PATH} (Original: {w}x{h}, Display: {display_img.shape[1]}x{display_img.shape[0]}, Scale: {scale_factor:.2f})"
+    )
     print("Left-click to define start and end points of a barline.")
     print("Press 'z' to undo last annotation.")
     print("Press 's' to save annotations to output file.")
@@ -161,19 +182,20 @@ def main():
 
     while True:
         key = cv2.waitKey(1) & 0xFF
-        if key == ord('q'):
+        if key == ord("q"):
             break
-        elif key == ord('z'):
+        elif key == ord("z"):
             if annotations:
                 annotations.pop()
                 print("Last annotation undone.")
                 draw_annotations()
             else:
                 print("No annotations to undo.")
-        elif key == ord('s'):
+        elif key == ord("s"):
             save_annotations()
 
     cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     main()

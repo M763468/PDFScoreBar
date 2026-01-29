@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """Minimal GT relabel GUI server (no external deps)."""
+
 from __future__ import annotations
 
 import argparse
 import json
 import mimetypes
 import os
+import time
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-import time
 from urllib.parse import parse_qs, urlparse
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -29,24 +30,24 @@ def safe_path(root: Path, rel: str) -> Path:
     # Use os.path.abspath to normalize ".." but preserve symlinks
     # This allows serving files pointed to by symlinks inside root (e.g. data -> ../other/data)
     # while preventing traversal out of root via ".."
-    
+
     # If rel is absolute, trust it IF it starts with root (string-wise)
     # If rel is relative, join with root
-    
+
     # Note: rel comes from the client or config, usually absolute path in config mode.
     # We must ensure that string-wise it is inside root.
-    
+
     abs_path = os.path.abspath(rel) if os.path.isabs(rel) else os.path.abspath(root / rel)
     root_abs = os.path.abspath(root)
-    
+
     if os.path.commonpath([root_abs, abs_path]) == root_abs:
         # It is logically inside root. Now we return a Path object.
         # However, for file operations, we might want to return the Path object that RESOLVES to the target
-        # if the code uses .resolve() later. 
+        # if the code uses .resolve() later.
         # But existing code uses path.read_text() etc.
         # Returning Path(abs_path) is correct.
         return Path(abs_path)
-        
+
     raise ValueError(f"Path outside root: {abs_path}")
 
 
@@ -159,7 +160,12 @@ def parse_payload_boxes(payload: list) -> list[dict]:
     boxes: list[dict] = []
     for item in payload:
         if isinstance(item, dict):
-            bbox = item.get("bbox") or item.get("barline_location") or item.get("orig_bbox") or item.get("pred_bbox")
+            bbox = (
+                item.get("bbox")
+                or item.get("barline_location")
+                or item.get("orig_bbox")
+                or item.get("pred_bbox")
+            )
             if bbox and len(bbox) == 4:
                 entry = {"bbox": tuple(int(v) for v in bbox)}
                 if item.get("barline_type") or item.get("type"):
@@ -288,7 +294,9 @@ class Handler(BaseHTTPRequestHandler):
             sorted_path.parent.mkdir(parents=True, exist_ok=True)
             raw_path.write_text(json.dumps(raw_records, indent=2))
             sorted_path.write_text(json.dumps(sorted_records, indent=2))
-            self._serve_json({"raw": str(raw_path), "sorted": str(sorted_path), "count": len(boxes)})
+            self._serve_json(
+                {"raw": str(raw_path), "sorted": str(sorted_path), "count": len(boxes)}
+            )
             return
         if self.server.mode == "rest":
             page = payload.get("page")

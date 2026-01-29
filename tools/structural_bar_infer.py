@@ -7,7 +7,6 @@ from typing import Dict, List, Tuple
 import cv2
 import numpy as np
 
-
 Box = Tuple[int, int, int, int]
 
 

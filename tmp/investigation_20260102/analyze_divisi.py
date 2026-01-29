@@ -1,14 +1,13 @@
-
 import json
 import os
-import sys
+
 
 def analyze_divisi(page_dir):
     debug_path = os.path.join(page_dir, "endbar_debug.json")
     if not os.path.exists(debug_path):
         return
 
-    with open(debug_path, 'r') as f:
+    with open(debug_path, "r") as f:
         data = json.load(f)
         records = data.get("records", [])
         bands = data.get("bands", [])
@@ -39,14 +38,21 @@ def analyze_divisi(page_dir):
 
                     # Check linked band
                     if info.get("has_top"):
-                        print(f"  Has Top Link. Top Band: {bands[best_idx-1]}")
+                        print(f"  Has Top Link. Top Band: {bands[best_idx - 1]}")
                         # Check candidates in top band at 1423
                         top_cands = []
                         for r in records:
-                            if r.get("band") and r["band"][0] >= bands[best_idx-1][0] and r["band"][1] <= bands[best_idx-1][1]:
+                            if (
+                                r.get("band")
+                                and r["band"][0] >= bands[best_idx - 1][0]
+                                and r["band"][1] <= bands[best_idx - 1][1]
+                            ):
                                 if abs(r.get("col", -999) - target_col) < 20:
                                     top_cands.append(r)
                         print(f"  Top Candidates near {target_col}: {top_cands}")
 
+
 if __name__ == "__main__":
-    analyze_divisi("logs/gt_rebuild_hybrid_eval/20260102T_bypass_row_filter_fix_rescue_dedup/per_page/page_004")
+    analyze_divisi(
+        "logs/gt_rebuild_hybrid_eval/20260102T_bypass_row_filter_fix_rescue_dedup/per_page/page_004"
+    )

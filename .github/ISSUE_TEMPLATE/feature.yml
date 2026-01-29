@@ -1,0 +1,119 @@
+name: "Feature / 新機能"
+description: "新機能や実装タスクの提案"
+title: "[Feature] <短い要約>"
+labels:
+  - "feature"
+  - "priority:med"
+  - "scope:medium"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ✨ Feature Issue
+        目的・背景・入出力を明確に書くことで、AIエージェントが迷わず実装できます。
+
+  - type: markdown
+    attributes:
+      value: |
+        ## ブランチ運用
+        AIエージェントが作業するブランチを指定します。未定なら空欄でもOKで、あとからコメント等で指定できます。
+
+  - type: input
+    id: base_branch
+    attributes:
+      label: "Base branch"
+      description: "作業ブランチの元となる親ブランチ名を指定します。"
+      placeholder: "例: feature/<topic-name>"
+
+  - type: input
+    id: branch_name
+    attributes:
+      label: "Branch name"
+      description: "AIが作成する作業ブランチ名を指定します。"
+      placeholder: "例: feature/123-new-feature"
+
+  - type: input
+    id: pr_base
+    attributes:
+      label: "PR base"
+      description: "PRの向き先となるブランチ（通常はBase branchと同じ）"
+      placeholder: "例: feature/<topic-name>"
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: "Goal（このIssueで達成したいこと）"
+      description: "最終的に達成したい成果を簡潔に記述。"
+      placeholder: "例: input.wav を処理して out/ に MIDI を生成できるようにする"
+    validations:
+      required: true
+
+  - type: textarea
+    id: background
+    attributes:
+      label: "Background / Context（なぜ必要か）"
+      description: "背景・課題・前提を記述。"
+      placeholder: "例: 現状は手作業で前処理しているため再現性が低い"
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: "Scope（In / Out）"
+      description: "このIssueでやること／やらないことを明確に。"
+      placeholder: |
+        In:
+        - Demucs を呼び出して vocals.wav / piano.wav を生成
+        Out:
+        - 学習やモデル改良
+        - GUI対応
+    validations:
+      required: true
+
+  - type: textarea
+    id: io
+    attributes:
+      label: "Inputs / Outputs（入出力仕様）"
+      description: "入力と出力（ファイル名・形式・ディレクトリ）を明記。"
+      placeholder: |
+        Input:
+        - input.wav (44.1kHz stereo)
+        Output:
+        - out/separated/vocals.wav
+        - out/separated/piano.wav
+    validations:
+      required: true
+
+  - type: textarea
+    id: cli
+    attributes:
+      label: "CLI usage example（想定コマンド）"
+      description: "実行例（CLI名は仮でOK）。"
+      placeholder: |
+        utacopy run input.wav --out out/ --steps separate
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "Acceptance Criteria（完了条件）"
+      description: "機械的に判定できるDone条件。"
+      placeholder: |
+        - コマンドが exit code 0 で終了する
+        - out/separated/vocals.wav と out/separated/piano.wav が生成され再生できる
+        - README に実行手順が追記されている
+    validations:
+      required: true
+
+  - type: textarea
+    id: implementation_notes
+    attributes:
+      label: "Implementation Notes（実装メモ）"
+      description: "設計方針、ライブラリ、注意点など。"
+      placeholder: |
+        - subprocess で demucs を呼び出す
+        - 同一入力ならスキップできるオプションがあると良い
+    validations:
+      required: false

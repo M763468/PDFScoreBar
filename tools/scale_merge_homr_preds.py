@@ -4,8 +4,7 @@ import json
 from pathlib import Path
 from typing import List, Tuple
 
-from src.common.barline_evaluation import greedy_barline_match, barline_iou
-
+from src.common.barline_evaluation import barline_iou, greedy_barline_match
 
 Box = Tuple[int, int, int, int]
 
@@ -65,7 +64,9 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", type=Path, required=True, help="Base homr detections.json")
     ap.add_argument("--scaled", type=Path, required=True, help="Upscaled homr detections.json")
-    ap.add_argument("--scale-factor", type=float, required=True, help="Scale factor to map upscaled -> original")
+    ap.add_argument(
+        "--scale-factor", type=float, required=True, help="Scale factor to map upscaled -> original"
+    )
     ap.add_argument("--cluster-iou", type=float, default=0.5)
     ap.add_argument("--gt", type=Path, help="GT json (optional)")
     ap.add_argument("--output", type=Path, required=True)
@@ -91,7 +92,9 @@ def main() -> None:
 
     if args.gt and args.gt.exists():
         gt_data = json.loads(args.gt.read_text())
-        gt_boxes = [tuple(item["barline_location"]) for item in gt_data if "barline_location" in item]
+        gt_boxes = [
+            tuple(item["barline_location"]) for item in gt_data if "barline_location" in item
+        ]
         match = greedy_barline_match(final_boxes, gt_boxes)
         tp = len(match.matches)
         fp = len(match.false_positive_indices)

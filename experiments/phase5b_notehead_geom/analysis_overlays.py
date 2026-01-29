@@ -8,6 +8,7 @@ Generates:
   - provenance (homr-only / omr-dln-only / both)
   - margin breakdown overlays and tables
 """
+
 from __future__ import annotations
 
 import argparse
@@ -223,7 +224,9 @@ def evaluate(preds: Sequence[Box], gt: Sequence[Box]) -> Dict[str, float]:
     }
 
 
-def draw_boxes(base: np.ndarray, boxes: Sequence[Box], color: Tuple[int, int, int], thickness: int) -> None:
+def draw_boxes(
+    base: np.ndarray, boxes: Sequence[Box], color: Tuple[int, int, int], thickness: int
+) -> None:
     for x1, y1, x2, y2 in boxes:
         cv2.rectangle(base, (x1, y1), (x2, y2), color, thickness)
 
@@ -262,7 +265,8 @@ def main() -> None:
             gt=REPO_ROOT / "data/evaluation/annotations/page_003/boxes_sorted.json",
             notehead_mask=REPO_ROOT
             / "logs/phase5b_homr_recall/homr_factor_1p0/page_3/page_3_debug_6_notehead.png",
-            homr_raw=REPO_ROOT / "logs/phase5b_homr_recall/homr_factor_1p0/page_3/page_3_detections.json",
+            homr_raw=REPO_ROOT
+            / "logs/phase5b_homr_recall/homr_factor_1p0/page_3/page_3_detections.json",
             omr_raw=REPO_ROOT
             / "logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5/page_3/predictions.json",
         ),
@@ -272,7 +276,8 @@ def main() -> None:
             gt=REPO_ROOT / "data/training/annotations/page_010/fn_only.json",
             notehead_mask=REPO_ROOT
             / "logs/phase5b_homr_recall/homr_factor_1p0/page_10/page_10_debug_6_notehead.png",
-            homr_raw=REPO_ROOT / "logs/phase5b_homr_recall/homr_factor_1p0/page_10/page_10_detections.json",
+            homr_raw=REPO_ROOT
+            / "logs/phase5b_homr_recall/homr_factor_1p0/page_10/page_10_detections.json",
             omr_raw=REPO_ROOT
             / "logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5/page_10/predictions.json",
         ),
@@ -282,7 +287,8 @@ def main() -> None:
             gt=REPO_ROOT / "data/training/annotations/page_015/fn_only.json",
             notehead_mask=REPO_ROOT
             / "logs/phase5b_homr_recall/homr_factor_1p0/page_15/page_15_debug_6_notehead.png",
-            homr_raw=REPO_ROOT / "logs/phase5b_homr_recall/homr_factor_1p0/page_15/page_15_detections.json",
+            homr_raw=REPO_ROOT
+            / "logs/phase5b_homr_recall/homr_factor_1p0/page_15/page_15_detections.json",
             omr_raw=REPO_ROOT
             / "logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5/page_15/predictions.json",
         ),
@@ -293,7 +299,8 @@ def main() -> None:
             / "data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/fn_only.json",
             notehead_mask=REPO_ROOT
             / "logs/phase5b_homr_recall/homr_factor_1p0/page_001/page_001_debug_6_notehead.png",
-            homr_raw=REPO_ROOT / "logs/phase5b_homr_recall/homr_factor_1p0/page_001/page_001_detections.json",
+            homr_raw=REPO_ROOT
+            / "logs/phase5b_homr_recall/homr_factor_1p0/page_001/page_001_detections.json",
             omr_raw=REPO_ROOT
             / "logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5/page_001/predictions.json",
         ),
@@ -304,7 +311,8 @@ def main() -> None:
             / "data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/fn_only.json",
             notehead_mask=REPO_ROOT
             / "logs/phase5b_homr_recall/homr_factor_1p0/page_004/page_004_debug_6_notehead.png",
-            homr_raw=REPO_ROOT / "logs/phase5b_homr_recall/homr_factor_1p0/page_004/page_004_detections.json",
+            homr_raw=REPO_ROOT
+            / "logs/phase5b_homr_recall/homr_factor_1p0/page_004/page_004_detections.json",
             omr_raw=REPO_ROOT
             / "logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5/page_004/predictions.json",
         ),
@@ -373,7 +381,9 @@ def main() -> None:
         # Overlay: rejected by stage
         rejected_overlay = base_img.copy()
         draw_boxes(rejected_overlay, row_rejected, (0, 165, 255), 2)  # orange
-        draw_boxes(rejected_overlay, [tuple(item["bbox"]) for item in geom_rejected], (0, 0, 255), 2)
+        draw_boxes(
+            rejected_overlay, [tuple(item["bbox"]) for item in geom_rejected], (0, 0, 255), 2
+        )
         cv2.imwrite(str(overlay_root / f"{page.name}_rejected_by_stage.png"), rejected_overlay)
 
         # Overlay: provenance of final kept
@@ -394,7 +404,9 @@ def main() -> None:
 
         # Margin classification for unmatched kept
         band_px = max(40, int(0.05 * base_img.shape[1]))
-        unmatched = fp_boxes if page.name == "page_3" else [geom_kept[i] for i in sorted(fp_indices)]
+        unmatched = (
+            fp_boxes if page.name == "page_3" else [geom_kept[i] for i in sorted(fp_indices)]
+        )
         margin_counts = {"left": 0, "right": 0, "interior": 0}
         for box in unmatched:
             margin_counts[classify_margin(box, base_img.shape[1], band_px)] += 1
@@ -415,7 +427,9 @@ def main() -> None:
         margin_overlay = base_img.copy()
         for box in unmatched:
             cls = classify_margin(box, base_img.shape[1], band_px)
-            color = (0, 0, 255) if cls == "left" else (0, 128, 255) if cls == "right" else (0, 255, 255)
+            color = (
+                (0, 0, 255) if cls == "left" else (0, 128, 255) if cls == "right" else (0, 255, 255)
+            )
             draw_boxes(margin_overlay, [box], color, 3)
         cv2.imwrite(str(overlay_root / f"{page.name}_margin_class.png"), margin_overlay)
 

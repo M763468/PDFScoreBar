@@ -3,17 +3,18 @@
 Trace stage survival for FN targets and union-only FPs using existing artifacts.
 No detector reruns, no filter changes.
 """
+
 from __future__ import annotations
 
 import argparse
 import csv
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Sequence, Tuple
 
 import numpy as np
-import sys
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(REPO_ROOT))
@@ -133,40 +134,62 @@ def main() -> None:
             name="page_3",
             gt=Path("data/evaluation/annotations/page_003/boxes_sorted.json"),
             baseline=Path("logs/homr_eval/baseline_for_hybrid/page_3/page_3_detections.json"),
-            sr=Path("logs/hybrid_generalization/sr_eval_smoke_page3/sr/page_3/page_3/page_3_detections.json"),
+            sr=Path(
+                "logs/hybrid_generalization/sr_eval_smoke_page3/sr/page_3/page_3/page_3_detections.json"
+            ),
             omr=Path("logs/hybrid_generalization/sr_eval_smoke_page3/omr_sr/predictions.json"),
             union=Path("logs/phase5b/union_inputs/20251221T141710/page_3_union.json"),
         ),
         PageSpec(
             name="page_10",
             gt=Path("data/training/annotations/page_010/fn_only.json"),
-            baseline=Path("logs/hybrid_generalization/page_10_hybrid_test/baseline/page_10/page_10/page_10_detections.json"),
-            sr=Path("logs/hybrid_generalization/page_10_hybrid_test/sr/page_10/page_10/page_10_detections.json"),
+            baseline=Path(
+                "logs/hybrid_generalization/page_10_hybrid_test/baseline/page_10/page_10/page_10_detections.json"
+            ),
+            sr=Path(
+                "logs/hybrid_generalization/page_10_hybrid_test/sr/page_10/page_10/page_10_detections.json"
+            ),
             omr=Path("logs/hybrid_generalization/page_10_hybrid_test/omr_sr/predictions.json"),
             union=Path("logs/phase5b/union_inputs/20251221T141710/page_10_union.json"),
         ),
         PageSpec(
             name="page_15",
             gt=Path("data/training/annotations/page_015/fn_only.json"),
-            baseline=Path("logs/hybrid_generalization/page_15_hybrid_test/baseline/page_15/page_15/page_15_detections.json"),
-            sr=Path("logs/hybrid_generalization/page_15_hybrid_test/sr/page_15/page_15/page_15_detections.json"),
+            baseline=Path(
+                "logs/hybrid_generalization/page_15_hybrid_test/baseline/page_15/page_15/page_15_detections.json"
+            ),
+            sr=Path(
+                "logs/hybrid_generalization/page_15_hybrid_test/sr/page_15/page_15/page_15_detections.json"
+            ),
             omr=Path("logs/hybrid_generalization/page_15_hybrid_test/omr_sr/predictions.json"),
             union=Path("logs/phase5b/union_inputs/20251221T141710/page_15_union.json"),
         ),
         PageSpec(
             name="page_001",
             gt=Path("data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/fn_only.json"),
-            baseline=Path("logs/hybrid_generalization/phase4b_cv_prokofiev_va_page_001/baseline/page_001/page_001/page_001_detections.json"),
-            sr=Path("logs/hybrid_generalization/phase4b_cv_prokofiev_va_page_001/sr/page_001/page_001/page_001_detections.json"),
-            omr=Path("logs/hybrid_generalization/phase4b_cv_prokofiev_va_page_001/omr_sr/predictions.json"),
+            baseline=Path(
+                "logs/hybrid_generalization/phase4b_cv_prokofiev_va_page_001/baseline/page_001/page_001/page_001_detections.json"
+            ),
+            sr=Path(
+                "logs/hybrid_generalization/phase4b_cv_prokofiev_va_page_001/sr/page_001/page_001/page_001_detections.json"
+            ),
+            omr=Path(
+                "logs/hybrid_generalization/phase4b_cv_prokofiev_va_page_001/omr_sr/predictions.json"
+            ),
             union=Path("logs/phase5b/union_inputs/20251221T141710/page_001_union.json"),
         ),
         PageSpec(
             name="page_004",
             gt=Path("data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/fn_only.json"),
-            baseline=Path("logs/hybrid_generalization/phase4b_cv_prokofiev_va_page_004/baseline/page_004/page_004/page_004_detections.json"),
-            sr=Path("logs/hybrid_generalization/phase4b_cv_prokofiev_va_page_004/sr/page_004/page_004/page_004_detections.json"),
-            omr=Path("logs/hybrid_generalization/phase4b_cv_prokofiev_va_page_004/omr_sr/predictions.json"),
+            baseline=Path(
+                "logs/hybrid_generalization/phase4b_cv_prokofiev_va_page_004/baseline/page_004/page_004/page_004_detections.json"
+            ),
+            sr=Path(
+                "logs/hybrid_generalization/phase4b_cv_prokofiev_va_page_004/sr/page_004/page_004/page_004_detections.json"
+            ),
+            omr=Path(
+                "logs/hybrid_generalization/phase4b_cv_prokofiev_va_page_004/omr_sr/predictions.json"
+            ),
             union=Path("logs/phase5b/union_inputs/20251221T141710/page_004_union.json"),
         ),
     ]
@@ -208,7 +231,9 @@ def main() -> None:
         writer.writeheader()
         writer.writerows(fn_rows)
     with fn_md.open("w") as fh:
-        fh.write("| page | gt_index | in_baseline | in_sr | in_omr | in_merge | in_row | in_notehead |\n")
+        fh.write(
+            "| page | gt_index | in_baseline | in_sr | in_omr | in_merge | in_row | in_notehead |\n"
+        )
         fh.write("| --- | --- | --- | --- | --- | --- | --- | --- |\n")
         for row in fn_rows:
             fh.write(

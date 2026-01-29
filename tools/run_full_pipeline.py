@@ -6,13 +6,12 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 import subprocess
 import sys
-import shutil
 import time
-import os
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 # Add project root to path to allow imports from src
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -32,9 +31,7 @@ def _load_yaml(path: Path) -> Dict[str, Any]:
     try:
         import yaml  # type: ignore
     except ImportError as exc:
-        raise SystemExit(
-            "PyYAML is required. Install it in the current environment."
-        ) from exc
+        raise SystemExit("PyYAML is required. Install it in the current environment.") from exc
     data = yaml.safe_load(path.read_text())
     if not isinstance(data, dict):
         raise ValueError("Config root must be a mapping.")
@@ -59,7 +56,7 @@ def _build_pdf_command(config: Dict[str, Any], run_dir: Path) -> List[str]:
     pdf_opts = _get_nested(config, "inputs", "pdf_to_images", default={}) or {}
     if not pdf_path:
         raise ValueError("inputs.pdf_path is required when pdf_to_images is enabled.")
-    
+
     # Force output to run directory
     output_dir = run_dir / "inputs" / "images"
     _ensure_dir(output_dir)
@@ -86,10 +83,10 @@ def _build_pdf_command(config: Dict[str, Any], run_dir: Path) -> List[str]:
         cmd += ["--prefix", str(pdf_opts["prefix"])]
     if pdf_opts.get("format"):
         cmd += ["--format", str(pdf_opts["format"])]
-    
+
     # Always overwrite inside the run directory
     cmd.append("--overwrite")
-    
+
     if pdf_opts.get("alpha"):
         cmd.append("--alpha")
     return cmd
@@ -107,14 +104,14 @@ def _collect_images(config: Dict[str, Any], run_dir: Path) -> List[Path]:
     # Use the forced output directory
     output_dir = run_dir / "inputs" / "images"
     image_glob = pdf_opts.get("image_glob", "page_*.png")
-    
+
     if not output_dir.exists():
-         # If PDF conversion didn't run, check config for external source
-         external_dir = pdf_opts.get("output_dir")
-         if external_dir:
-             output_dir = Path(external_dir)
-         else:
-             raise ValueError("PDF images not found. Enable pdf_to_images or specify output_dir.")
+        # If PDF conversion didn't run, check config for external source
+        external_dir = pdf_opts.get("output_dir")
+        if external_dir:
+            output_dir = Path(external_dir)
+        else:
+            raise ValueError("PDF images not found. Enable pdf_to_images or specify output_dir.")
 
     images = sorted(Path(output_dir).glob(image_glob))
     if not images:
@@ -153,12 +150,7 @@ def _check_and_start_container(container_name: str, dry_run: bool) -> None:
 
 
 def _run_detection_step(
-    config: Dict[str, Any],
-    images: List[Path],
-    page_ids: List[str],
-    run_id: str,
-    *,
-    dry_run: bool
+    config: Dict[str, Any], images: List[Path], page_ids: List[str], run_id: str, *, dry_run: bool
 ) -> Dict[str, Any]:
     """
     Orchestrates the detection pipeline:
@@ -169,20 +161,20 @@ def _run_detection_step(
     det_cfg = _get_nested(config, "detection", default={}) or {}
     container_name = det_cfg.get("container_name", "sr_eval_gpu_exp")
     hybrid_root = Path(det_cfg.get("hybrid_output_root", "logs/hybrid_generalization"))
-    
+
     # 1. Hybrid Detection
     _check_and_start_container(container_name, dry_run)
-    
+
     hybrid_run_id = run_id  # Use same run_id for hybrid output
     hybrid_output_dir = hybrid_root / hybrid_run_id
-    
+
     commands = []
-    
+
     print("--- Step 2.1: Hybrid Detection (Docker) ---")
     # Run hybrid pipeline for each image
     # Note: run_hybrid_pipeline.sh takes one image.
     hybrid_script = "tools/run_hybrid_pipeline.sh"
-    
+
     for img_path in images:
         # We need absolute path for the script to resolve it correctly inside/outside docker mapping logic
         # But script expects path relative to repo root usually or absolute.
@@ -193,23 +185,20 @@ def _run_detection_step(
         except ValueError:
             img_arg = str(img_path.resolve())
 
-        cmd = [
-            "bash",
-            hybrid_script,
-            "--image", img_arg,
-            "--run-id", hybrid_run_id
-        ]
-        
+        cmd = ["bash", hybrid_script, "--image", img_arg, "--run-id", hybrid_run_id]
+
         # Pass CONTAINER_NAME via environment
         env = dict(os.environ)
         env["CONTAINER_NAME"] = container_name
-        
+
         print(f"Running: {' '.join(cmd)} (CONTAINER_NAME={container_name})")
         if not dry_run:
             # Allow failure (e.g. no staffs found on cover page)
             res = subprocess.run(cmd, check=False, env=env)
             if res.returncode != 0:
-                print(f"Warning: Detection failed for {img_path.name} (exit code {res.returncode}). Skipping.")
+                print(
+                    f"Warning: Detection failed for {img_path.name} (exit code {res.returncode}). Skipping."
+                )
                 continue
         commands.append(cmd)
 
@@ -218,22 +207,29 @@ def _run_detection_step(
     # Output for probe scan
     probe_output_root = Path(f"logs/full_pipeline_runs/{run_id}/intermediate/probe_scan")
     _ensure_dir(probe_output_root)
-    
+
     # run_eval_experiment.py arguments
     # It scans --image-root. We need to point it to the directory containing our images.
     # Our images are in config['inputs']['pdf_to_images']['output_dir']
     image_root = _get_nested(config, "inputs", "pdf_to_images", "output_dir")
-    
+
     cmd_probe = [
         sys.executable,
         "tools/run_eval_experiment.py",
-        "--image-root", str(image_root),
-        "--output-root", str(probe_output_root),
-        "--bands-from", str(hybrid_output_dir),  # Use Hybrid output as existing boxes
-        "--staff-mask-dir", str(hybrid_output_dir), # Use Hybrid output for staff masks
-        "--ink-threshold", str(det_cfg.get("ink_threshold", 230)),
-        "--min-ratio", str(det_cfg.get("min_ratio", 0.70)),
-        "--min-height-ratio", str(det_cfg.get("min_height_ratio", 0.012)),
+        "--image-root",
+        str(image_root),
+        "--output-root",
+        str(probe_output_root),
+        "--bands-from",
+        str(hybrid_output_dir),  # Use Hybrid output as existing boxes
+        "--staff-mask-dir",
+        str(hybrid_output_dir),  # Use Hybrid output for staff masks
+        "--ink-threshold",
+        str(det_cfg.get("ink_threshold", 230)),
+        "--min-ratio",
+        str(det_cfg.get("min_ratio", 0.70)),
+        "--min-height-ratio",
+        str(det_cfg.get("min_height_ratio", 0.012)),
     ]
     _run_command(cmd_probe, dry_run=dry_run)
     commands.append(cmd_probe)
@@ -243,38 +239,38 @@ def _run_detection_step(
     cnn_model = det_cfg.get("cnn_model_path")
     if not cnn_model:
         raise ValueError("detection.cnn_model_path is required.")
-        
+
     cmd_score = [
         sys.executable,
         "tools/cnn_classifier/score_candidates_batch.py",
-        "--logs", str(probe_output_root),
-        "--model", str(cnn_model),
-        "--threshold", str(det_cfg.get("cnn_threshold", 0.1)),
+        "--logs",
+        str(probe_output_root),
+        "--model",
+        str(cnn_model),
+        "--threshold",
+        str(det_cfg.get("cnn_threshold", 0.1)),
     ]
     _run_command(cmd_score, dry_run=dry_run)
     commands.append(cmd_score)
-    
+
     return {
         "commands": commands,
         "hybrid_output_dir": hybrid_output_dir,
-        "probe_output_dir": probe_output_root
+        "probe_output_dir": probe_output_root,
     }
 
 
 def _resolve_paths_from_detection(
-    probe_output_dir: Path,
-    hybrid_output_dir: Path,
-    page_ids: List[str],
-    images: List[Path]
+    probe_output_dir: Path, hybrid_output_dir: Path, page_ids: List[str], images: List[Path]
 ) -> List[Dict[str, str]]:
     """
     Resolves barlines and staff masks from the results of the detection step.
-    
+
     Barlines: probe_output_dir / <run_id_for_page> / pipeline2_no_peak_filtered_cnn.json
     Staff Mask: hybrid_output_dir / baseline / <stem> / <stem> / <stem>_debug_3_staff.png
     """
     resolved = []
-    
+
     # We need to find staff masks.
     # The structure in hybrid_output_dir is: baseline / <stem> / <stem> / <stem>_debug_3_staff.png
     # OR sometimes: <hybrid_run>/baseline/<stem>/<stem>/...
@@ -291,39 +287,41 @@ def _resolve_paths_from_detection(
         # The run_eval_experiment creates subdirs like: eval2_<ScoreName>_<stem>
         # But if score name inference failed, it might be just eval2_<parent>_<stem>
         # We need to find the directory corresponding to this page in probe_output_dir.
-        
+
         # Heuristic: look for directory ending with `_{stem}` inside probe_output_dir
         candidate_dirs = list(probe_output_dir.glob(f"*_{stem}"))
         if not candidate_dirs:
             # Fallback check
             candidate_dirs = list(probe_output_dir.glob(f"*{stem}*"))
-        
+
         barlines_path = None
         if candidate_dirs:
             # Pick the most likely one (exact match suffix preferred)
             # If multiple, take first (or warn)
             target_dir = candidate_dirs[0]
             barlines_path = target_dir / "pipeline2_no_peak_filtered_cnn.json"
-        
+
         # Staff Mask
         staff_mask_path = staff_mask_map.get(stem)
-        
+
         if not barlines_path or not barlines_path.exists():
-             # Warning only here, will be caught later if needed
-             print(f"Warning: Barlines not found for {page_id} (stem: {stem})")
-             barlines_path = Path("MISSING_BARLINES.json")
-        
+            # Warning only here, will be caught later if needed
+            print(f"Warning: Barlines not found for {page_id} (stem: {stem})")
+            barlines_path = Path("MISSING_BARLINES.json")
+
         if not staff_mask_path or not staff_mask_path.exists():
-             print(f"Warning: Staff mask not found for {page_id} (stem: {stem})")
-             staff_mask_path = Path("MISSING_STAFF_MASK.png")
-             
-        resolved.append({
-            "page_id": page_id,
-            "page_run": stem, # Using stem as run identifier local
-            "barlines_json": str(barlines_path),
-            "staff_mask": str(staff_mask_path)
-        })
-        
+            print(f"Warning: Staff mask not found for {page_id} (stem: {stem})")
+            staff_mask_path = Path("MISSING_STAFF_MASK.png")
+
+        resolved.append(
+            {
+                "page_id": page_id,
+                "page_run": stem,  # Using stem as run identifier local
+                "barlines_json": str(barlines_path),
+                "staff_mask": str(staff_mask_path),
+            }
+        )
+
     return resolved
 
 
@@ -338,14 +336,14 @@ def _resolve_barlines_and_masks_config(
     barlines_pattern = _get_nested(config, "inputs", "barlines_pattern")
     staff_mask_pattern = _get_nested(config, "inputs", "staff_mask_pattern")
     if not barlines_root or not barlines_pattern or not staff_mask_pattern:
-        raise ValueError("barlines_root/barlines_pattern/staff_mask_pattern are required when detection is skipped.")
+        raise ValueError(
+            "barlines_root/barlines_pattern/staff_mask_pattern are required when detection is skipped."
+        )
     barlines_root = Path(barlines_root)
     resolved: List[Dict[str, str]] = []
     excluded_page_ids = excluded_page_ids or set()
     for page_id, page_run in zip(page_ids, page_runs):
-        barlines_path = barlines_root / barlines_pattern.format(
-            page_run=page_run, page_id=page_id
-        )
+        barlines_path = barlines_root / barlines_pattern.format(page_run=page_run, page_id=page_id)
         staff_mask_path = barlines_root / staff_mask_pattern.format(
             page_run=page_run, page_id=page_id
         )
@@ -353,7 +351,7 @@ def _resolve_barlines_and_masks_config(
             if not barlines_path.exists():
                 print(f"Warning: Missing barlines JSON: {barlines_path}")
             if not staff_mask_path.exists():
-                 print(f"Warning: Missing staff mask: {staff_mask_path}")
+                print(f"Warning: Missing staff mask: {staff_mask_path}")
         resolved.append(
             {
                 "page_id": page_id,
@@ -367,6 +365,7 @@ def _resolve_barlines_and_masks_config(
 
 def _write_manifest(path: Path, manifest: Dict[str, Any]) -> None:
     path.write_text(json.dumps(manifest, indent=2, ensure_ascii=True))
+
 
 def _load_json(path: Path) -> Any:
     return json.loads(path.read_text())
@@ -472,7 +471,9 @@ def _apply_barline_overrides(
     return kept, stats
 
 
-def _is_blank_page(image_path: Path, config: Dict[str, Any]) -> Tuple[Optional[bool], Dict[str, float]]:
+def _is_blank_page(
+    image_path: Path, config: Dict[str, Any]
+) -> Tuple[Optional[bool], Dict[str, float]]:
     blank_cfg = _get_nested(config, "filters", "blank_page_config", default={}) or {}
     pixel_threshold = int(blank_cfg.get("pixel_threshold", 245))
     max_ink_ratio = float(blank_cfg.get("max_ink_ratio", 0.003))
@@ -487,7 +488,9 @@ def _is_blank_page(image_path: Path, config: Dict[str, Any]) -> Tuple[Optional[b
     return is_blank, {"ink_ratio": ink_ratio, "stddev": stddev}
 
 
-def _staff_detect_failed(mask_path: Path, config: Dict[str, Any]) -> Tuple[Optional[bool], Dict[str, float]]:
+def _staff_detect_failed(
+    mask_path: Path, config: Dict[str, Any]
+) -> Tuple[Optional[bool], Dict[str, float]]:
     staff_cfg = _get_nested(config, "filters", "staff_detect_config", default={}) or {}
     min_nonzero_ratio = float(staff_cfg.get("min_nonzero_ratio", 0.001))
     if not mask_path.exists():
@@ -523,13 +526,21 @@ def _resolve_page_filters(
         zip(page_ids, images, resolved), start=1
     ):
         blank_manual = _manual_flag(blank_filter, idx)
-        if blank_manual is None and isinstance(blank_filter, str) and blank_filter.lower() == "auto":
+        if (
+            blank_manual is None
+            and isinstance(blank_filter, str)
+            and blank_filter.lower() == "auto"
+        ):
             blank_value, blank_metrics = _is_blank_page(image_path, config)
         else:
             blank_value, blank_metrics = blank_manual, {}
 
         staff_manual = _manual_flag(staff_filter, idx)
-        if staff_manual is None and isinstance(staff_filter, str) and staff_filter.lower() == "auto":
+        if (
+            staff_manual is None
+            and isinstance(staff_filter, str)
+            and staff_filter.lower() == "auto"
+        ):
             staff_value, staff_metrics = _staff_detect_failed(
                 Path(resolved_item["staff_mask"]), config
             )
@@ -640,11 +651,11 @@ def _build_generate_overrides_cmd(
 def _resolve_page_runs(config: Dict[str, Any], page_ids: List[str]) -> List[str]:
     page_runs = _get_nested(config, "inputs", "page_runs")
     if page_runs and isinstance(page_runs, list):
-         # Explicit page runs
-         if len(page_runs) != len(page_ids):
-             raise ValueError("inputs.page_runs length must match number of pages.")
-         return [str(item) for item in page_runs]
-    
+        # Explicit page runs
+        if len(page_runs) != len(page_ids):
+            raise ValueError("inputs.page_runs length must match number of pages.")
+        return [str(item) for item in page_runs]
+
     # Infer if not provided (safe defaults)
     return page_ids
 
@@ -684,7 +695,7 @@ def _build_manifest(
                 page_ids, images, page_runs, resolved
             )
         ],
-        "commands": [{"step": f"command_{i+1}", "cmd": cmd} for i, cmd in enumerate(commands)],
+        "commands": [{"step": f"command_{i + 1}", "cmd": cmd} for i, cmd in enumerate(commands)],
     }
 
 
@@ -719,7 +730,7 @@ def main() -> None:
         _ensure_dir(directory)
 
     commands: List[List[str]] = []
-    
+
     # --- Step 1: PDF to Images ---
     if _get_nested(config, "steps", "pdf_to_images", default=False):
         pdf_cmd = _build_pdf_command(config, run_dir)
@@ -728,29 +739,29 @@ def main() -> None:
 
     images = _collect_images(config, run_dir)
     page_ids = _resolve_page_ids(config, images)
-    
+
     # --- Step 2: Detection ---
     run_detection = _get_nested(config, "steps", "detection", default=False)
     probe_output_dir = None
     hybrid_output_dir = None
-    
+
     if run_detection:
-        det_result = _run_detection_step(
-            config, images, page_ids, run_id, dry_run=args.dry_run
-        )
+        det_result = _run_detection_step(config, images, page_ids, run_id, dry_run=args.dry_run)
         commands.extend(det_result["commands"])
         probe_output_dir = det_result["probe_output_dir"]
         hybrid_output_dir = det_result["hybrid_output_dir"]
-    
+
     # Resolve Inputs for Numbering
     # If detection ran, resolve from there. Else resolve from config patterns (legacy/cache).
-    
+
     excluded_indices = _get_user_exclude_indices(config)
     excluded_page_ids = {page_ids[idx - 1] for idx in excluded_indices if 1 <= idx <= len(page_ids)}
-    
+
     if run_detection and probe_output_dir and hybrid_output_dir:
-        resolved = _resolve_paths_from_detection(probe_output_dir, hybrid_output_dir, page_ids, images)
-        page_runs = page_ids # Local run assumption
+        resolved = _resolve_paths_from_detection(
+            probe_output_dir, hybrid_output_dir, page_ids, images
+        )
+        page_runs = page_ids  # Local run assumption
     else:
         page_runs = _resolve_page_runs(config, page_ids)
         resolved = _resolve_barlines_and_masks_config(
@@ -765,10 +776,10 @@ def main() -> None:
     barline_override_payload = None
     if barline_overrides_path:
         barline_override_payload = _load_json(Path(barline_overrides_path))
-    barline_override_cfg = _get_nested(config, "inputs", "barline_overrides_config", default={}) or {}
-    barline_iou_threshold = float(
-        barline_override_cfg.get("iou_threshold", 0.5)
+    barline_override_cfg = (
+        _get_nested(config, "inputs", "barline_overrides_config", default={}) or {}
     )
+    barline_iou_threshold = float(barline_override_cfg.get("iou_threshold", 0.5))
     barline_min_width = int(barline_override_cfg.get("min_width", BARLINE_DEFAULT_MIN_WIDTH))
     barline_x_margin = int(barline_override_cfg.get("x_margin", BARLINE_X_MARGIN))
     barline_y_margin = int(barline_override_cfg.get("y_margin", BARLINE_Y_MARGIN))
@@ -776,7 +787,9 @@ def main() -> None:
     if user_overrides_path:
         user_overrides_payload = _load_json(Path(user_overrides_path))
 
-    force_single_system = bool(_get_nested(config, "numbering", "force_single_system", default=False))
+    force_single_system = bool(
+        _get_nested(config, "numbering", "force_single_system", default=False)
+    )
     enable_rotation_tta = bool(_get_nested(config, "mmr", "enable_rotation_tta", default=False))
     model_path = _get_nested(config, "mmr", "model_path")
     model_path = Path(model_path) if model_path else None
@@ -845,7 +858,7 @@ def main() -> None:
                     _write_json(corrected_path, corrected)
             else:
                 if not args.dry_run and barlines_path.exists():
-                     corrected_path.write_text(barlines_path.read_text())
+                    corrected_path.write_text(barlines_path.read_text())
                 barline_override_stats[page_id] = {
                     "removed": 0,
                     "added": 0,
@@ -893,7 +906,9 @@ def main() -> None:
                 mmr_overrides_payload = _load_json(overrides_mmr)
 
         if (step_apply or step_overlay) and not args.validate_only:
-            overrides_payload = _merge_measure_overrides(mmr_overrides_payload, user_overrides_payload)
+            overrides_payload = _merge_measure_overrides(
+                mmr_overrides_payload, user_overrides_payload
+            )
             combined_path = page_intermediate / "overrides_combined.json"
             if not args.dry_run:
                 _write_json(combined_path, overrides_payload)
@@ -934,7 +949,7 @@ def main() -> None:
         run_dir=run_dir,
         images=images,
         page_ids=page_ids,
-        page_runs=page_runs, # Now may be just page_ids
+        page_runs=page_runs,  # Now may be just page_ids
         resolved=resolved,
         commands=commands,
         page_statuses=page_statuses,

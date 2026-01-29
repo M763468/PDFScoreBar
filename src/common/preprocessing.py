@@ -1,8 +1,10 @@
-import cv2
-import numpy as np
 import os
 import sys
 from typing import Optional
+
+import cv2
+import numpy as np
+
 
 def apply_vertical_closing(
     image: np.ndarray,
@@ -76,7 +78,9 @@ def apply_vertical_closing(
     return final_image
 
 
-def apply_super_resolution(image: np.ndarray, model_path: str, model_name: str, scale: int) -> np.ndarray:
+def apply_super_resolution(
+    image: np.ndarray, model_path: str, model_name: str, scale: int
+) -> np.ndarray:
     """
     Applies super-resolution to an image using OpenCV's dnn_superres module.
     (Legacy/Lightweight models like FSRCNN).
@@ -84,7 +88,7 @@ def apply_super_resolution(image: np.ndarray, model_path: str, model_name: str, 
     sr = cv2.dnn_superres.DnnSuperResImpl_create()
     sr.readModel(str(model_path))
     sr.setModel(model_name, scale)
-    
+
     if image.ndim != 3 or image.shape[2] != 3:
         print("Input image is not 3-channel, converting to BGR for super-resolution.")
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
@@ -92,12 +96,13 @@ def apply_super_resolution(image: np.ndarray, model_path: str, model_name: str, 
     print(f"Upscaling image by factor of {scale} using {model_name}...")
     result = sr.upsample(image)
     print("Upscaling complete.")
-    
+
     return result
 
+
 def apply_advanced_sr(
-    image: np.ndarray, 
-    model_name: str = 'RealESRGAN_x4plus', 
+    image: np.ndarray,
+    model_name: str = "RealESRGAN_x4plus",
     scale: int = 4,
     tile: Optional[int] = None,
     tile_pad: int = 10,
@@ -106,7 +111,7 @@ def apply_advanced_sr(
 ) -> np.ndarray:
     """
     Applies advanced super-resolution using a locally cloned Real-ESRGAN repository.
-    
+
     Args:
         image: Input image (BGR numpy array).
         model_name: "RealESRGAN_x4plus" or other supported models.
@@ -115,43 +120,50 @@ def apply_advanced_sr(
         tile_pad: Padding for tiles.
         pre_pad: Pre-padding.
         fp32: If True, uses full precision (fp32). If False, tries to use fp16 on CUDA.
-        
+
     Returns:
         Upscaled image.
     """
     # Add the cloned repo to the path to ensure local source is used
-    realesrgan_path = os.path.abspath(os.path.join(__file__, '../../..', 'external', 'realesrgan'))
+    realesrgan_path = os.path.abspath(os.path.join(__file__, "../../..", "external", "realesrgan"))
     if realesrgan_path not in sys.path:
         sys.path.insert(0, realesrgan_path)
 
     try:
         import torch
-        from realesrgan import RealESRGANer
         from basicsr.archs.rrdbnet_arch import RRDBNet
+        from realesrgan import RealESRGANer
     except ImportError as e:
         print(f"Error importing Real-ESRGAN dependencies from local source: {e}")
-        print("Please ensure you have cloned the repository to 'external/realesrgan' and installed its requirements.")
+        print(
+            "Please ensure you have cloned the repository to 'external/realesrgan' and installed its requirements."
+        )
         return image
-    
+
     # Check device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Real-ESRGAN using device: {device}")
-    
+
     # The RealESRGANer will handle model download and caching automatically
     # when model_path is not specified. It looks for models in the 'weights' directory.
-    if model_name == 'RealESRGAN_x4plus':
-        model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
+    if model_name == "RealESRGAN_x4plus":
+        model = RRDBNet(
+            num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4
+        )
         netscale = 4
         # The local RealESRGANer implementation expects a file path.
         # We construct the path to where the model should be. It will be downloaded
         # by the library if it doesn't exist.
-        model_path = os.path.join(realesrgan_path, 'weights', f'{model_name}.pth')
+        model_path = os.path.join(realesrgan_path, "weights", f"{model_name}.pth")
     else:
-        print(f"Model {model_name} not explicitly supported. A default will be used, but may not be optimal.")
-        model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
+        print(
+            f"Model {model_name} not explicitly supported. A default will be used, but may not be optimal."
+        )
+        model = RRDBNet(
+            num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4
+        )
         netscale = 4
-        model_path = os.path.join(realesrgan_path, 'weights', 'RealESRGAN_x4plus.pth') # Fallback
-
+        model_path = os.path.join(realesrgan_path, "weights", "RealESRGAN_x4plus.pth")  # Fallback
 
     try:
         # Determine tiling strategy
@@ -167,12 +179,12 @@ def apply_advanced_sr(
         # half=True means fp16. So if fp32 is requested, half should be False.
         # Also ensure device is cuda for half.
         use_half = False
-        if 'cuda' in str(device) and not fp32:
+        if "cuda" in str(device) and not fp32:
             use_half = True
 
         upsampler = RealESRGANer(
             scale=netscale,
-            model_path=model_path, # Pass None to let it use its default model download logic
+            model_path=model_path,  # Pass None to let it use its default model download logic
             model=model,
             tile=tile_size,
             tile_pad=tile_pad,
@@ -183,16 +195,17 @@ def apply_advanced_sr(
 
         # The upsampler expects the model file in its `weights` dir. Let's trigger a download if needed.
         # This is a bit of a hack, but it forces the download if the file isn't there.
-        if not os.path.exists(os.path.join(realesrgan_path, 'weights', f'{model_name}.pth')):
-             print("Model not found locally, RealESRGANer will attempt to download it...")
-             # The constructor should handle this, but let's be explicit.
-             pass
-
+        if not os.path.exists(os.path.join(realesrgan_path, "weights", f"{model_name}.pth")):
+            print("Model not found locally, RealESRGANer will attempt to download it...")
+            # The constructor should handle this, but let's be explicit.
+            pass
 
         if image.ndim != 3 or image.shape[2] != 3:
-             image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
-        print(f"DEBUG: Calling enhance with tile={tile_size}, tile_pad={tile_pad}, pre_pad={pre_pad}, half={use_half}")
+        print(
+            f"DEBUG: Calling enhance with tile={tile_size}, tile_pad={tile_pad}, pre_pad={pre_pad}, half={use_half}"
+        )
         output, _ = upsampler.enhance(image, outscale=scale)
         return output
     except Exception as e:

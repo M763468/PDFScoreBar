@@ -3,6 +3,7 @@
 Export review box sets from existing union inputs (no detector reruns).
 Writes per-page JSON with box categories + provenance, and a manifest.json.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -199,7 +200,8 @@ def main() -> None:
             gt=REPO_ROOT / "data/evaluation/annotations/page_003/boxes_sorted.json",
             notehead_mask=REPO_ROOT
             / "logs/phase5b_homr_recall/homr_factor_1p0/page_3/page_3_debug_6_notehead.png",
-            homr_raw=REPO_ROOT / "logs/phase5b_homr_recall/homr_factor_1p0/page_3/page_3_detections.json",
+            homr_raw=REPO_ROOT
+            / "logs/phase5b_homr_recall/homr_factor_1p0/page_3/page_3_detections.json",
             omr_raw=REPO_ROOT
             / "logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5/page_3/predictions.json",
             overlay=args.overlay_root / "page_3_final_matched_vs_unmatched.png",
@@ -210,7 +212,8 @@ def main() -> None:
             gt=REPO_ROOT / "data/training/annotations/page_010/fn_only.json",
             notehead_mask=REPO_ROOT
             / "logs/phase5b_homr_recall/homr_factor_1p0/page_10/page_10_debug_6_notehead.png",
-            homr_raw=REPO_ROOT / "logs/phase5b_homr_recall/homr_factor_1p0/page_10/page_10_detections.json",
+            homr_raw=REPO_ROOT
+            / "logs/phase5b_homr_recall/homr_factor_1p0/page_10/page_10_detections.json",
             omr_raw=REPO_ROOT
             / "logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5/page_10/predictions.json",
             overlay=args.overlay_root / "page_10_final_matched_vs_unmatched.png",
@@ -221,7 +224,8 @@ def main() -> None:
             gt=REPO_ROOT / "data/training/annotations/page_015/fn_only.json",
             notehead_mask=REPO_ROOT
             / "logs/phase5b_homr_recall/homr_factor_1p0/page_15/page_15_debug_6_notehead.png",
-            homr_raw=REPO_ROOT / "logs/phase5b_homr_recall/homr_factor_1p0/page_15/page_15_detections.json",
+            homr_raw=REPO_ROOT
+            / "logs/phase5b_homr_recall/homr_factor_1p0/page_15/page_15_detections.json",
             omr_raw=REPO_ROOT
             / "logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5/page_15/predictions.json",
             overlay=args.overlay_root / "page_15_final_matched_vs_unmatched.png",
@@ -233,7 +237,8 @@ def main() -> None:
             / "data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/fn_only.json",
             notehead_mask=REPO_ROOT
             / "logs/phase5b_homr_recall/homr_factor_1p0/page_001/page_001_debug_6_notehead.png",
-            homr_raw=REPO_ROOT / "logs/phase5b_homr_recall/homr_factor_1p0/page_001/page_001_detections.json",
+            homr_raw=REPO_ROOT
+            / "logs/phase5b_homr_recall/homr_factor_1p0/page_001/page_001_detections.json",
             omr_raw=REPO_ROOT
             / "logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5/page_001/predictions.json",
             overlay=args.overlay_root / "page_001_final_matched_vs_unmatched.png",
@@ -245,7 +250,8 @@ def main() -> None:
             / "data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/fn_only.json",
             notehead_mask=REPO_ROOT
             / "logs/phase5b_homr_recall/homr_factor_1p0/page_004/page_004_debug_6_notehead.png",
-            homr_raw=REPO_ROOT / "logs/phase5b_homr_recall/homr_factor_1p0/page_004/page_004_detections.json",
+            homr_raw=REPO_ROOT
+            / "logs/phase5b_homr_recall/homr_factor_1p0/page_004/page_004_detections.json",
             omr_raw=REPO_ROOT
             / "logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5/page_004/predictions.json",
             overlay=args.overlay_root / "page_004_final_matched_vs_unmatched.png",
@@ -287,7 +293,7 @@ def main() -> None:
         gt_boxes = load_gt(page.gt)
         match = greedy_barline_match(geom_kept, gt_boxes, iou_threshold=0.5)
         tp_indices = {m.pred_index for m in match.matches}
-        fp_indices = set(match.false_positive_indices)
+        set(match.false_positive_indices)
         fn_indices = set(match.false_negative_indices)
 
         entries = []

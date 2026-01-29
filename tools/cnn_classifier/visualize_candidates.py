@@ -1,9 +1,7 @@
-
 import json
-import cv2
-import numpy as np
 from pathlib import Path
-import shutil
+
+import cv2
 
 DEFAULT_PAGES = [
     {
@@ -38,6 +36,7 @@ DEFAULT_PAGES = [
     },
 ]
 
+
 def barline_iou(box1, box2):
     x1_1, y1_1, x2_1, y2_1 = box1
     x1_2, y1_2, x2_2, y2_2 = box2
@@ -52,31 +51,33 @@ def barline_iou(box1, box2):
     area2 = (x2_2 - x1_2 + 1) * (y2_2 - y1_2 + 1)
     return inter_area / float(area1 + area2 - inter_area)
 
+
 import argparse
+
 
 def visualize_candidates(output_dir, predictions_root=None, fp_source_file="fp_boxes.json"):
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
-    
+
     repo_root = Path.cwd()
-    iou_threshold = 0.1 # Stricter filtering: if overlap > 0.1, consider it Ambiguous/TP and remove from FP set.
-    
+    iou_threshold = 0.1  # Stricter filtering: if overlap > 0.1, consider it Ambiguous/TP and remove from FP set.
+
     for page in DEFAULT_PAGES:
         print(f"Processing {page['name']}...")
         img_path = repo_root / page["image"]
         gt_path = repo_root / page["gt"]
-        
+
         if not img_path.exists():
             print(f"Image missing: {img_path}")
             continue
-            
+
         img = cv2.imread(str(img_path))
         vis_img = img.copy()
-        
+
         with gt_path.open("r") as f:
             gt_data = json.load(f)
         gt_boxes = [entry["barline_location"] for entry in gt_data]
-        
+
         # Draw TP Candidates (Green) - These are ALL GT boxes currently
         for box in gt_boxes:
             x1, y1, x2, y2 = map(int, box)
@@ -86,13 +87,13 @@ def visualize_candidates(output_dir, predictions_root=None, fp_source_file="fp_b
         if predictions_root:
             # Construct path with fallback and template substitution
             filename = fp_source_file.replace("{page}", page["name"])
-            
+
             # Try per_page structure first (standard)
             fp_json_path = Path(predictions_root) / "per_page" / page["name"] / filename
             if not fp_json_path.exists():
                 # Try flattened structure (e.g. validatiion logs)
                 fp_json_path = Path(predictions_root) / page["name"] / filename
-            
+
             if fp_json_path.exists():
                 with fp_json_path.open("r") as f:
                     data = json.load(f)
@@ -112,39 +113,41 @@ def visualize_candidates(output_dir, predictions_root=None, fp_source_file="fp_b
                 # Better: Check which scale maximizes IoU with GT (since we know GT matches Image)
                 best_scale = 1.0
                 best_match_count = -1
-                
+
                 # Scales to test: 1.0 (No change), 0.24 (300->72dpi), 0.5 (2x), 2.0, 4.16 (72->300dpi)
-                test_scales = [1.0, 0.24, 0.5, 0.333, 0.125] 
-                
+                test_scales = [1.0, 0.24, 0.5, 0.333, 0.125]
+
                 # Check if we have enough boxes to test
                 if len(candidates) > 0 and len(gt_boxes) > 0:
                     for scale in test_scales:
                         matches = 0
-                        for c_box in candidates: # Test ALL candidates
+                        for c_box in candidates:  # Test ALL candidates
                             s_box = [x * scale for x in c_box]
                             for g_box in gt_boxes:
-                                if barline_iou(g_box, s_box) > 0.1: # Loose check
+                                if barline_iou(g_box, s_box) > 0.1:  # Loose check
                                     matches += 1
                                     break
                         if matches > best_match_count:
                             best_match_count = matches
                             best_scale = scale
-                    
+
                     if best_scale != 1.0:
-                         print(f"  [Auto-Scale] Detected scale mismatch! Applying scale {best_scale:.3f} (Matches: {best_match_count})")
+                        print(
+                            f"  [Auto-Scale] Detected scale mismatch! Applying scale {best_scale:.3f} (Matches: {best_match_count})"
+                        )
 
                 fp_count = 0
                 for raw_box in candidates:
                     # Apply detected scale
                     box = [coord * best_scale for coord in raw_box]
-                    
+
                     # Check if this candidate matches any GT
                     is_match = False
                     for gt_box in gt_boxes:
-                         if barline_iou(gt_box, box) > iou_threshold:
-                             is_match = True
-                             break
-                    
+                        if barline_iou(gt_box, box) > iou_threshold:
+                            is_match = True
+                            break
+
                     if not is_match:
                         x1, y1, x2, y2 = map(int, map(round, box))
                         cv2.rectangle(vis_img, (x1, y1), (x2, y2), (0, 0, 255), 2)
@@ -157,7 +160,7 @@ def visualize_candidates(output_dir, predictions_root=None, fp_source_file="fp_b
             preds_path = repo_root / page["preds"]
             with preds_path.open("r") as f:
                 pred_boxes = json.load(f)
-            
+
             # Identify Matching
             matched_indices = set()
             for gt_box in gt_boxes:
@@ -176,22 +179,27 @@ def visualize_candidates(output_dir, predictions_root=None, fp_source_file="fp_b
                 box = pred_boxes[idx]
                 x1, y1, x2, y2 = map(int, box)
                 cv2.rectangle(vis_img, (x1, y1), (x2, y2), (0, 0, 255), 2)
-            
+
             # Also Draw Matched Predictions (Blue) - only in legacy mode where we have all preds
             for idx in matched_indices:
-                 box = pred_boxes[idx]
-                 x1, y1, x2, y2 = map(int, box)
-                 cv2.rectangle(vis_img, (x1-2, y1-2), (x2+2, y2+2), (255, 0, 0), 1)
+                box = pred_boxes[idx]
+                x1, y1, x2, y2 = map(int, box)
+                cv2.rectangle(vis_img, (x1 - 2, y1 - 2), (x2 + 2, y2 + 2), (255, 0, 0), 1)
 
         save_file = output_path / f"{page['name']}_candidates_vis.png"
         cv2.imwrite(str(save_file), vis_img)
         print(f"Saved: {save_file}")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", default="logs/cnn_classifier/candidate_vis")
-    parser.add_argument("--predictions-root", type=Path, help="Root of predictions logs for explicit FP boxes")
-    parser.add_argument("--fp-source-file", default="fp_boxes.json", help="Filename to load as FP candidates")
+    parser.add_argument(
+        "--predictions-root", type=Path, help="Root of predictions logs for explicit FP boxes"
+    )
+    parser.add_argument(
+        "--fp-source-file", default="fp_boxes.json", help="Filename to load as FP candidates"
+    )
     args = parser.parse_args()
-    
+
     visualize_candidates(args.output_dir, args.predictions_root, args.fp_source_file)

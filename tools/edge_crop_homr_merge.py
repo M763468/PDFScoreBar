@@ -4,8 +4,7 @@ import json
 from pathlib import Path
 from typing import List, Tuple
 
-from src.common.barline_evaluation import greedy_barline_match, barline_iou
-
+from src.common.barline_evaluation import barline_iou, greedy_barline_match
 
 Box = Tuple[int, int, int, int]
 
@@ -89,7 +88,9 @@ def main() -> None:
 
     if args.gt and args.gt.exists():
         gt_data = json.loads(args.gt.read_text())
-        gt_boxes = [tuple(item["barline_location"]) for item in gt_data if "barline_location" in item]
+        gt_boxes = [
+            tuple(item["barline_location"]) for item in gt_data if "barline_location" in item
+        ]
         match = greedy_barline_match(final_boxes, gt_boxes)
         tp = len(match.matches)
         fp = len(match.false_positive_indices)

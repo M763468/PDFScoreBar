@@ -53,7 +53,9 @@ def compute_staff_height(mask: np.ndarray) -> float:
     return float(np.median(heights))
 
 
-def draw_boxes(img: np.ndarray, boxes: List[Box], color: Tuple[int, int, int], thickness: int = 2) -> None:
+def draw_boxes(
+    img: np.ndarray, boxes: List[Box], color: Tuple[int, int, int], thickness: int = 2
+) -> None:
     for x1, y1, x2, y2 in boxes:
         cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), color, thickness)
 
@@ -95,7 +97,7 @@ def main() -> None:
 
     base_h, base_w = base.shape[:2]
     staff_h, staff_w = staff.shape[:2]
-    scale_x = base_w / float(staff_w)
+    base_w / float(staff_w)
     scale_y = base_h / float(staff_h)
     staff_height = compute_staff_height(staff) * scale_y
     margin = int(round(staff_height * args.margin_factor))

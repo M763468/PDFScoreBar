@@ -119,7 +119,11 @@ def detect_thin_vertical_runs(
         while idx < len(runs):
             nx, ny1, ny2 = runs[idx]
             # Allow a 1 px gap between columns and small vertical wobble.
-            if nx - current_x2 <= 1 and abs(ny1 - current_y1) <= cfg.y_merge_tolerance and abs(ny2 - current_y2) <= cfg.y_merge_tolerance:
+            if (
+                nx - current_x2 <= 1
+                and abs(ny1 - current_y1) <= cfg.y_merge_tolerance
+                and abs(ny2 - current_y2) <= cfg.y_merge_tolerance
+            ):
                 current_x2 = nx + 1
                 current_y1 = min(current_y1, ny1)
                 current_y2 = max(current_y2, ny2)
@@ -176,7 +180,7 @@ def detect_thin_vertical_runs(
 
         if box not in paired_boxes and _is_close(box, existing, cfg=cfg):
             continue
-        
+
         cx, _ = _centroid(box)
         if cfg.left_margin_limit > 0 and cx <= cfg.left_margin_limit:
             # Skip left margin artefacts (e.g. gutter pillars)
@@ -246,12 +250,12 @@ def detect_thin_vertical_runs(
             failing_ratio = left_dark_ratio if not left_ok else right_dark_ratio
             if failing_ratio is None or failing_ratio <= cfg.single_side_dark_ratio:
                 single_side_override = True
-        
+
         # 3. Light Stem-Suppression Heuristic
         # If W=1 AND one side is significantly darker (notehead-side),
         # AND height is relatively short (e.g. < 20), reject.
         if single_side_override and box_width == 1 and box_height < 20:
-             continue
+            continue
 
         if not adjacency_ok and not single_side_override:
             continue
@@ -266,7 +270,9 @@ def detect_thin_vertical_runs(
             ):
                 continue
         left_dark = bool(left_dark_ratio is not None and left_dark_ratio > cfg.notehead_dark_ratio)
-        right_dark = bool(right_dark_ratio is not None and right_dark_ratio > cfg.notehead_dark_ratio)
+        right_dark = bool(
+            right_dark_ratio is not None and right_dark_ratio > cfg.notehead_dark_ratio
+        )
         reject_notehead = False
         if single_side_override:
             reject_notehead = left_dark and right_dark
@@ -306,7 +312,7 @@ def detect_thin_vertical_runs(
                     if abs(key - e_cx) < cfg.x_center_tolerance * 2:
                         is_near_existing = True
                         break
-                
+
                 if not is_near_existing:
                     # Treat tall multi-staff columns without prior detections as noise.
                     continue

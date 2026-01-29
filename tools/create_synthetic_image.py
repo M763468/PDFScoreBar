@@ -1,7 +1,8 @@
+import os
 
 import cv2
 import numpy as np
-import os
+
 
 def create_synthetic_image(output_path: str, width: int = 512, height: int = 512):
     """
@@ -30,6 +31,7 @@ def create_synthetic_image(output_path: str, width: int = 512, height: int = 512
     # Save the image
     cv2.imwrite(output_path, image)
     print(f"Synthetic image saved to {output_path}")
+
 
 if __name__ == "__main__":
     # Default path for the output image

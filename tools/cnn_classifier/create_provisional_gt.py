@@ -1,14 +1,17 @@
-import json
-import os
-import re
-from pathlib import Path
 import argparse
+import json
+from pathlib import Path
+
 
 def main():
     parser = argparse.ArgumentParser(description="Generate Provisional GT from Scored Candidates")
-    parser.add_argument("--scored-root", required=True, help="Directory containing *_scored.json files")
+    parser.add_argument(
+        "--scored-root", required=True, help="Directory containing *_scored.json files"
+    )
     parser.add_argument("--output-root", required=True, help="Directory to save provisional GT")
-    parser.add_argument("--threshold", type=float, default=0.5, help="Score threshold to accept as Barline")
+    parser.add_argument(
+        "--threshold", type=float, default=0.5, help="Score threshold to accept as Barline"
+    )
     args = parser.parse_args()
 
     scored_root = Path(args.scored_root)
@@ -22,7 +25,7 @@ def main():
     # page_idx = parts.index("page")
     # subdir = "_".join(parts[1:page_idx])
     # page_name = "_".join(parts[page_idx:])
-    
+
     files = list(scored_root.glob("*_scored.json"))
     print(f"Found {len(files)} scored files.")
 
@@ -31,12 +34,12 @@ def main():
         filename = fpath.name
         # Remove suffix
         run_id = filename.replace("_scored.json", "")
-        
-        parts = run_id.split('_')
+
+        parts = run_id.split("_")
         if "page" not in parts:
             print(f"Skipping {filename}: 'page' not found in name")
             continue
-            
+
         try:
             page_idx = parts.index("page")
         except ValueError:
@@ -50,9 +53,9 @@ def main():
         # page_name usually includes "page_xxx"
         # parts[page_idx:] gives ['page', '001'] etc.
         page_name = "_".join(parts[page_idx:])
-        
+
         # Read scored candidates
-        with open(fpath, 'r') as f:
+        with open(fpath, "r") as f:
             candidates = json.load(f)
 
         # Filter
@@ -66,21 +69,22 @@ def main():
         # Save
         out_dir = output_root / subdir
         out_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Save as plain JSON list of boxes
         out_path = out_dir / f"{page_name}.json"
-        
+
         # Also support the format expected by some tools: {"predictions": [{"orig_bbox": ...}]}
-        # But simple list is usually fine. Let's stick to simple list for now, 
+        # But simple list is usually fine. Let's stick to simple list for now,
         # as load_boxes supports it.
-        
-        with open(out_path, 'w') as f:
+
+        with open(out_path, "w") as f:
             json.dump(accepted_boxes, f, indent=2)
-            
+
         count += 1
         print(f"Saved {len(accepted_boxes)} boxes to {out_path}")
 
     print(f"Processed {count} files.")
+
 
 if __name__ == "__main__":
     main()

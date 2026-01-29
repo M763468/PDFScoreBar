@@ -46,7 +46,16 @@ def main() -> None:
         cx = int(round((x1 + x2) / 2))
         cy = int(round((y1 + y2) / 2))
         cv2.circle(overlay, (cx, cy), 10, (255, 255, 255), -1, cv2.LINE_AA)
-        cv2.putText(overlay, str(i), (cx - 5, cy + 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2, cv2.LINE_AA)
+        cv2.putText(
+            overlay,
+            str(i),
+            (cx - 5, cy + 5),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 0, 0),
+            2,
+            cv2.LINE_AA,
+        )
 
     legend = [
         f"Method: {args.method} | Run: {args.run_id}",

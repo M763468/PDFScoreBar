@@ -6,8 +6,7 @@ import re
 
 import cv2
 import google.generativeai as genai
-import numpy as np
-import google.api_core.exceptions
+
 
 def configure_api_key():
     """Configure the Gemini API key from environment variables."""
@@ -18,15 +17,17 @@ def configure_api_key():
     genai.configure(api_key=api_key)
     return True
 
+
 def encode_image(image_path):
     """Encodes an image file to a base64 string."""
     with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode('utf-8')
+        return base64.b64encode(image_file.read()).decode("utf-8")
+
 
 def load_ground_truth(json_path):
     """Loads the ground truth data from a JSON file."""
     try:
-        with open(json_path, 'r') as f:
+        with open(json_path, "r") as f:
             return json.load(f)
     except FileNotFoundError:
         print(f"Error: Ground truth file not found at {json_path}")
@@ -34,6 +35,7 @@ def load_ground_truth(json_path):
     except json.JSONDecodeError:
         print(f"Error: Could not decode JSON from {json_path}")
         return None
+
 
 def generate_prompt_with_examples(image_to_analyze_path, ground_truth_path):
     """Generates the prompt for barline detection using in-context examples."""
@@ -46,10 +48,12 @@ def generate_prompt_with_examples(image_to_analyze_path, ground_truth_path):
     # Create a more descriptive example format
     descriptive_examples = []
     for item in ground_truth_data:
-        descriptive_examples.append({
-            "comment": "This is a standard barline, a thin vertical line separating measures.",
-            "barline_location": item["barline_location"]
-        })
+        descriptive_examples.append(
+            {
+                "comment": "This is a standard barline, a thin vertical line separating measures.",
+                "barline_location": item["barline_location"],
+            }
+        )
 
     examples_str = json.dumps({"barlines": descriptive_examples}, indent=2)
 
@@ -64,18 +68,16 @@ def generate_prompt_with_examples(image_to_analyze_path, ground_truth_path):
         "   - The vertical lines of key signatures (sharps and flats).",
         "   - Thick double barlines or final barlines (for now, only detect single, thin barlines).",
         "Step 3: For each remaining barline, provide its bounding box coordinates in the format `[x_start, y_start, x_end, y_end]`.",
-        "Step 4: Return your final output as a single, valid JSON object. This object must have a single key, \"barlines\", which contains a list of the coordinate arrays you found.",
+        'Step 4: Return your final output as a single, valid JSON object. This object must have a single key, "barlines", which contains a list of the coordinate arrays you found.',
         "\nHere is an example of a correctly formatted output based on a different score. I have included comments to help your understanding.",
         f"--- EXAMPLE START ---\n{examples_str}\n--- EXAMPLE END ---",
         "Now, analyze the following image and provide the coordinates of all barlines you can find. Remember to only detect the single, thin barlines and ignore all other vertical lines.",
         "Image to analyze:",
-        {
-            "mime_type": "image/png",
-            "data": encoded_image
-        }
+        {"mime_type": "image/png", "data": encoded_image},
     ]
 
     return prompt_parts
+
 
 def detect_barlines_with_gemini(prompt, model_name):
     """Calls the Gemini API to detect barlines and returns the cleaned JSON string."""
@@ -86,7 +88,9 @@ def detect_barlines_with_gemini(prompt, model_name):
         model = genai.GenerativeModel(model_name)
         response = model.generate_content(prompt)
         print("--- API Response Received ---")
-        cleaned_json = re.sub(r'^```json\s*|\s*```', '', response.text, flags=re.MULTILINE | re.DOTALL).strip()
+        cleaned_json = re.sub(
+            r"^```json\s*|\s*```", "", response.text, flags=re.MULTILINE | re.DOTALL
+        ).strip()
         return cleaned_json
     except Exception as e:
         print(f"An error occurred during the API call: {e}")
@@ -106,7 +110,7 @@ def draw_and_save_results(image_path, detected_data, output_dir):
 
         for item in barlines:
             x1, y1, x2, y2 = item["barline_location"]
-            cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2) # Green color, 2px thickness
+            cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)  # Green color, 2px thickness
 
         # Ensure output directory exists
         os.makedirs(output_dir, exist_ok=True)
@@ -122,6 +126,7 @@ def draw_and_save_results(image_path, detected_data, output_dir):
     except Exception as e:
         print(f"An error occurred during image processing or saving: {e}")
 
+
 def main():
     """Main function to run the barline detection and evaluation."""
     if not configure_api_key():
@@ -131,7 +136,7 @@ def main():
     image_to_analyze = "data/evaluation/images/page_3.png"
     ground_truth_file = "data/evaluation/annotations/page_003/boxes_sorted.json"
     output_directory = "output/gemini_results"
-    MODEL_NAME = "gemini-1.5-flash-latest" # Change to "gemini-1.5-flash-latest" for flash model
+    MODEL_NAME = "gemini-1.5-flash-latest"  # Change to "gemini-1.5-flash-latest" for flash model
 
     print(f"Starting analysis for: {image_to_analyze}")
     print(f"Using ground truth from: {ground_truth_file}")
@@ -155,6 +160,7 @@ def main():
             print("\n--- Error: Failed to parse JSON from API response ---")
     else:
         print("\n--- No result from detection ---")
+
 
 if __name__ == "__main__":
     main()

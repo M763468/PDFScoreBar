@@ -6,13 +6,11 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
 import cv2
-
 
 BoxType = Tuple[int, int, int, int]
 
@@ -44,7 +42,7 @@ class AnnotatorState:
 
 
 COLOR_PENDING = (0, 215, 255)  # gold
-COLOR_SELECTED = (0, 200, 0)   # green
+COLOR_SELECTED = (0, 200, 0)  # green
 COLOR_PRELOAD = (255, 128, 0)  # blue-ish
 COLOR_MANUAL_PENDING = (255, 255, 0)  # cyan
 
@@ -108,7 +106,9 @@ def prepare_state(args: argparse.Namespace) -> AnnotatorState:
         if coords in existing_map:
             existing_map[coords].identifier = identifier
             continue
-        boxes.append(AnnotatedBox(coords=coords, source="detected", selected=selected, identifier=identifier))
+        boxes.append(
+            AnnotatedBox(coords=coords, source="detected", selected=selected, identifier=identifier)
+        )
 
     boxes.sort(key=lambda b: (b.coords[0], b.coords[1]))
     return AnnotatorState(image=image, display_image=display_image, scale=scale, boxes=boxes)
@@ -134,7 +134,16 @@ def draw(state: AnnotatorState) -> None:
 
         cv2.rectangle(canvas, (x1d, y1d), (x2d, y2d), color, 2)
         label = box.identifier or "?"
-        cv2.putText(canvas, label, (x1d, max(0, y1d - 6)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1, cv2.LINE_AA)
+        cv2.putText(
+            canvas,
+            label,
+            (x1d, max(0, y1d - 6)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.45,
+            color,
+            1,
+            cv2.LINE_AA,
+        )
 
     if state.manual_points:
         pt1 = state.manual_points[0]
@@ -271,8 +280,12 @@ def run_gui(state: AnnotatorState, output_path: Path) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--image", required=True, type=Path, help="Score page image")
-    parser.add_argument("--detections", required=True, type=Path, help="Detector JSON with predictions")
-    parser.add_argument("--output", required=True, type=Path, help="Destination JSON for curated GT")
+    parser.add_argument(
+        "--detections", required=True, type=Path, help="Detector JSON with predictions"
+    )
+    parser.add_argument(
+        "--output", required=True, type=Path, help="Destination JSON for curated GT"
+    )
     parser.add_argument("--preload", type=Path, help="Optional existing GT to pre-select / merge")
     parser.add_argument("--max-width", type=int, default=1400, help="Maximum display width")
     parser.add_argument("--max-height", type=int, default=900, help="Maximum display height")

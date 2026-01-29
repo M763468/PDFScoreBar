@@ -11,7 +11,6 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -325,7 +324,9 @@ def apply_edits(args: argparse.Namespace) -> None:
             with Image.open(image_path) as img:
                 image_size = img.size
 
-        edit_path = out_root / candidate.page / f"fn_{candidate.gt_index:03d}" / "edit_template.json"
+        edit_path = (
+            out_root / candidate.page / f"fn_{candidate.gt_index:03d}" / "edit_template.json"
+        )
         if not edit_path.exists():
             raise FileNotFoundError(f"Missing edit template: {edit_path}")
         meta = read_json(edit_path)
@@ -377,7 +378,9 @@ def apply_edits(args: argparse.Namespace) -> None:
 
     summary_path = corrected_root / "diff_summary.csv"
     with summary_path.open("w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["page", "gt_index", "status", "old_bbox", "new_bbox"])
+        writer = csv.DictWriter(
+            f, fieldnames=["page", "gt_index", "status", "old_bbox", "new_bbox"]
+        )
         writer.writeheader()
         writer.writerows(summary_rows)
 
@@ -440,7 +443,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="GT relabel support (human-in-the-loop)")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    prepare_parser = subparsers.add_parser("prepare", help="Generate enlarged crops and edit templates")
+    prepare_parser = subparsers.add_parser(
+        "prepare", help="Generate enlarged crops and edit templates"
+    )
     prepare_parser.add_argument("--candidates", required=True)
     prepare_parser.add_argument("--page-config", default=None)
     prepare_parser.add_argument("--out-root", default="logs/phase6_detector_miss/gt_fix_review")
@@ -449,22 +454,34 @@ def main() -> None:
     prepare_parser.add_argument("--margin-y", type=int, default=120)
     prepare_parser.add_argument("--tol-x", type=int, default=12)
     prepare_parser.add_argument("--tol-y", type=int, default=8)
-    prepare_parser.add_argument("--resize-method", choices=["nearest", "bicubic", "lanczos"], default="nearest")
-    prepare_parser.add_argument("--limit", type=int, default=None, help="Limit number of candidates for a quick smoke test")
+    prepare_parser.add_argument(
+        "--resize-method", choices=["nearest", "bicubic", "lanczos"], default="nearest"
+    )
+    prepare_parser.add_argument(
+        "--limit", type=int, default=None, help="Limit number of candidates for a quick smoke test"
+    )
     prepare_parser.set_defaults(func=prepare)
 
-    apply_parser = subparsers.add_parser("apply", help="Apply edited templates to generate corrected GT")
+    apply_parser = subparsers.add_parser(
+        "apply", help="Apply edited templates to generate corrected GT"
+    )
     apply_parser.add_argument("--candidates", required=True)
     apply_parser.add_argument("--page-config", default=None)
     apply_parser.add_argument("--out-root", default="logs/phase6_detector_miss/gt_fix_review")
-    apply_parser.add_argument("--corrected-root", default="logs/phase6_detector_miss/gt_fix_review/gt_corrected")
+    apply_parser.add_argument(
+        "--corrected-root", default="logs/phase6_detector_miss/gt_fix_review/gt_corrected"
+    )
     apply_parser.set_defaults(func=apply_edits)
 
     check_parser = subparsers.add_parser("near-hit", help="Re-run near-hit check on corrected GT")
     check_parser.add_argument("--candidates", required=True)
     check_parser.add_argument("--page-config", default=None)
-    check_parser.add_argument("--corrected-root", default="logs/phase6_detector_miss/gt_fix_review/gt_corrected")
-    check_parser.add_argument("--out-root", default="logs/phase6_detector_miss/gt_fix_review/near_hit_recheck")
+    check_parser.add_argument(
+        "--corrected-root", default="logs/phase6_detector_miss/gt_fix_review/gt_corrected"
+    )
+    check_parser.add_argument(
+        "--out-root", default="logs/phase6_detector_miss/gt_fix_review/near_hit_recheck"
+    )
     check_parser.add_argument("--tol-x", type=int, default=12)
     check_parser.add_argument("--tol-y", type=int, default=8)
     check_parser.set_defaults(func=near_hit_check)

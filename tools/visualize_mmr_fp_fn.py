@@ -4,6 +4,7 @@ Visualize MMR FP/FN/Mismatch cases from a global eval run.
 
 Reads mmr_eval_robust.csv and produces per-page overlays with error boxes.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -14,7 +15,6 @@ from pathlib import Path
 from typing import Dict, Iterable, Tuple
 
 from PIL import Image, ImageDraw, ImageFont
-
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -115,7 +115,9 @@ def load_pred_overrides(path: Path, sys_meas_to_idx: Dict[Tuple[int, int], int])
     return pred
 
 
-def draw_label(draw: ImageDraw.ImageDraw, x: int, y: int, text: str, color: Tuple[int, int, int]) -> None:
+def draw_label(
+    draw: ImageDraw.ImageDraw, x: int, y: int, text: str, color: Tuple[int, int, int]
+) -> None:
     font = ImageFont.load_default()
     text_w, text_h = draw.textsize(text, font=font)
     pad = 2
@@ -147,13 +149,13 @@ def visualize_page(
 
         if gt_count is not None and pred_count is None:
             color = (255, 0, 0)  # FN
-            label = f"FN R{idx+1} gt={gt_count}"
+            label = f"FN R{idx + 1} gt={gt_count}"
         elif gt_count is None and pred_count is not None:
             color = (255, 165, 0)  # FP
-            label = f"FP R{idx+1} pred={pred_count}"
+            label = f"FP R{idx + 1} pred={pred_count}"
         elif gt_count != pred_count:
             color = (128, 0, 128)  # Mismatch
-            label = f"MM R{idx+1} gt={gt_count} pred={pred_count}"
+            label = f"MM R{idx + 1} gt={gt_count} pred={pred_count}"
         else:
             # Correct prediction; skip to keep overlay focused.
             continue

@@ -3,13 +3,14 @@
 
 This script is standalone and does not depend on existing evaluation scripts.
 """
+
 from __future__ import annotations
 
 import argparse
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 
 def load_candidates(path: Path) -> List[Dict[str, Any]]:
@@ -66,7 +67,9 @@ def main() -> None:
     ap.add_argument("--api-key-env", type=str, default="GEMINI_API_KEY")
     ap.add_argument("--prompt", type=Path, default=None, help="Optional prompt template file")
     ap.add_argument("--env-file", type=Path, default=Path(".env"))
-    ap.add_argument("--max-candidates", type=int, default=0, help="Limit candidates for quick tests.")
+    ap.add_argument(
+        "--max-candidates", type=int, default=0, help="Limit candidates for quick tests."
+    )
     ap.add_argument(
         "--media-resolution",
         type=str,

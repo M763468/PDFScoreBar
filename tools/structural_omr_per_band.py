@@ -7,7 +7,6 @@ from typing import Dict, List, Tuple
 import cv2
 import numpy as np
 
-
 Box = Tuple[int, int, int, int]
 
 
@@ -67,7 +66,9 @@ def assign_boxes_to_bands(boxes: List[Box], bands: List[Tuple[int, int, int, int
     return counts
 
 
-def group_bands_into_systems(bands: List[Tuple[int, int, int, int]], gap_factor: float) -> List[List[int]]:
+def group_bands_into_systems(
+    bands: List[Tuple[int, int, int, int]], gap_factor: float
+) -> List[List[int]]:
     if not bands:
         return []
     heights = [b[3] - b[1] for b in bands]
@@ -103,7 +104,9 @@ def resample_positions(xs: List[int], target: int) -> List[int]:
     return [int(round(min_x + i * step)) for i in range(target)]
 
 
-def build_predictions(bands: List[Tuple[int, int, int, int]], per_band_xs: Dict[int, List[int]], width: int) -> List[Box]:
+def build_predictions(
+    bands: List[Tuple[int, int, int, int]], per_band_xs: Dict[int, List[int]], width: int
+) -> List[Box]:
     preds: List[Box] = []
     half = max(1, width // 2)
     for i, (x1, y1, x2, y2) in enumerate(bands):

@@ -1,8 +1,10 @@
-import cv2
-import numpy as np
 import os
 
+import cv2
+import numpy as np
+
 DEBUG_OUTPUT_DIR = "/workspace/debug_outputs/"
+
 
 def detect_barlines(image_path):
     img = cv2.imread(image_path)
@@ -13,7 +15,7 @@ def detect_barlines(image_path):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # --- Preprocessing: Gaussian Blur for noise reduction ---
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0) # 5x5のカーネルでガウシアンブラー
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)  # 5x5のカーネルでガウシアンブラー
 
     # --- Preprocessing: CLAHE for contrast enhancement ---
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
@@ -31,7 +33,9 @@ def detect_barlines(image_path):
 
     # --- 垂直線の検出 (ハフ変換) ---
     vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 30))
-    vertical_lines_img = cv2.morphologyEx(no_staff_img, cv2.MORPH_OPEN, vertical_kernel, iterations=1)
+    vertical_lines_img = cv2.morphologyEx(
+        no_staff_img, cv2.MORPH_OPEN, vertical_kernel, iterations=1
+    )
 
     # ハフ変換で直線検出
     lines = cv2.HoughLinesP(vertical_lines_img, 1, np.pi / 180, 20, minLineLength=5, maxLineGap=10)
@@ -40,11 +44,11 @@ def detect_barlines(image_path):
     if lines is not None:
         for line in lines:
             x1, y1, x2, y2 = line[0]
-            length = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+            length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
             angle_rad = np.arctan2(y2 - y1, x2 - x1)
             angle_deg = np.degrees(angle_rad)
 
-            is_vertical = (abs(angle_deg) > 80 and abs(angle_deg) < 100)
+            is_vertical = abs(angle_deg) > 80 and abs(angle_deg) < 100
 
             if is_vertical and length > 30:
                 barlines.append(((x1, y1), (x2, y2)))
@@ -62,9 +66,10 @@ def detect_barlines(image_path):
 
     return barlines
 
+
 if __name__ == "__main__":
     image_path = "/workspace/images/page_3.png"
     detected_barlines = detect_barlines(image_path)
     print(f"Detected {len(detected_barlines)} barlines.")
     for i, barline in enumerate(detected_barlines):
-        print(f"Barline {i+1}: {barline}")
+        print(f"Barline {i + 1}: {barline}")

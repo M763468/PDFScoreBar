@@ -35,7 +35,9 @@ def extract_staff_bands(mask_path: Path, min_height: int = 10) -> List[Tuple[int
     return bands
 
 
-def group_bands_into_systems(bands: List[Tuple[int, int, int, int]], gap_factor: float) -> List[List[int]]:
+def group_bands_into_systems(
+    bands: List[Tuple[int, int, int, int]], gap_factor: float
+) -> List[List[int]]:
     if not bands:
         return []
     heights = [b[3] - b[1] for b in bands]
@@ -52,7 +54,9 @@ def group_bands_into_systems(bands: List[Tuple[int, int, int, int]], gap_factor:
     return systems
 
 
-def assign_boxes_to_bands(boxes: List[Box], bands: List[Tuple[int, int, int, int]]) -> Dict[int, List[int]]:
+def assign_boxes_to_bands(
+    boxes: List[Box], bands: List[Tuple[int, int, int, int]]
+) -> Dict[int, List[int]]:
     per_band: Dict[int, List[int]] = {i: [] for i in range(len(bands))}
     for x1, y1, x2, y2 in boxes:
         cx = int(round((x1 + x2) / 2))
@@ -79,7 +83,9 @@ def dedupe_x_centers(xs: List[int], min_gap: int) -> List[int]:
     return deduped
 
 
-def build_predictions(bands: List[Tuple[int, int, int, int]], per_band_xs: Dict[int, List[int]], width: int) -> List[Box]:
+def build_predictions(
+    bands: List[Tuple[int, int, int, int]], per_band_xs: Dict[int, List[int]], width: int
+) -> List[Box]:
     preds: List[Box] = []
     half = max(1, width // 2)
     for i, (x1, y1, x2, y2) in enumerate(bands):

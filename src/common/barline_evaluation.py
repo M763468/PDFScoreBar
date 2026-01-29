@@ -262,10 +262,7 @@ def greedy_barline_match(
             false_positive_indices.append(pred_idx)
             continue
 
-        if (
-            best_score >= duplicate_iou_threshold
-            and x_distance <= duplicate_x_tolerance
-        ):
+        if best_score >= duplicate_iou_threshold and x_distance <= duplicate_x_tolerance:
             soft_matches.append(
                 BarlineSoftMatch(
                     pred_index=pred_idx,
@@ -309,9 +306,7 @@ def apply_left_margin_exclusion(
     *,
     margin_x: Optional[float] = None,
     max_width: Optional[int] = None,
-    force_fp_predicate: Optional[
-        callable[[int, Box, int, Box], bool]
-    ] = None,
+    force_fp_predicate: Optional[callable[[int, Box, int, Box], bool]] = None,
 ) -> BarlineMatchResult:
     """Reclassify matches whose centres fall within a left margin as false positives."""
 
@@ -331,7 +326,9 @@ def apply_left_margin_exclusion(
         pred_width = max(pred_box[2] - pred_box[0], 1)
 
         force_fp = False
-        if force_fp_predicate and force_fp_predicate(match.pred_index, pred_box, match.gt_index, gt_box):
+        if force_fp_predicate and force_fp_predicate(
+            match.pred_index, pred_box, match.gt_index, gt_box
+        ):
             force_fp = True
 
         if not force_fp and margin_x is not None:
@@ -348,9 +345,7 @@ def apply_left_margin_exclusion(
         else:
             adjusted_matches.append(match)
 
-    adjusted_soft = [
-        sm for sm in match_result.soft_matches if sm.pred_index not in removed_preds
-    ]
+    adjusted_soft = [sm for sm in match_result.soft_matches if sm.pred_index not in removed_preds]
 
     return BarlineMatchResult(
         matches=adjusted_matches,

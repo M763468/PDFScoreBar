@@ -127,6 +127,26 @@ All development and evaluation should be performed inside the provided Docker co
 
 See `docs/ENVIRONMENTS.md` for details.
 
+## Development Commands
+
+This project uses a `Makefile` to simplify common development tasks.
+Ensure you have `uv` installed.
+
+- **Check code style (lint):**
+  ```bash
+  make lint
+  ```
+
+- **Format code:**
+  ```bash
+  make format
+  ```
+
+- **Show available commands:**
+  ```bash
+  make help
+  ```
+
 ## AI Assistant Guides
 
 -   **Gemini / Codex CLI sessions:** See `docs/AGENTS.md` for the unified bootstrap checklist and execution style.

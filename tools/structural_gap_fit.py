@@ -35,7 +35,9 @@ def extract_staff_bands(mask_path: Path, min_height: int = 10) -> List[Tuple[int
     return bands
 
 
-def group_bands_into_systems(bands: List[Tuple[int, int, int, int]], gap_factor: float) -> List[List[int]]:
+def group_bands_into_systems(
+    bands: List[Tuple[int, int, int, int]], gap_factor: float
+) -> List[List[int]]:
     if not bands:
         return []
     heights = [b[3] - b[1] for b in bands]
@@ -52,7 +54,9 @@ def group_bands_into_systems(bands: List[Tuple[int, int, int, int]], gap_factor:
     return systems
 
 
-def assign_boxes_to_bands(boxes: List[Box], bands: List[Tuple[int, int, int, int]]) -> Dict[int, List[int]]:
+def assign_boxes_to_bands(
+    boxes: List[Box], bands: List[Tuple[int, int, int, int]]
+) -> Dict[int, List[int]]:
     per_band: Dict[int, List[int]] = {i: [] for i in range(len(bands))}
     for x1, y1, x2, y2 in boxes:
         cx = int(round((x1 + x2) / 2))
@@ -90,13 +94,18 @@ def fit_positions(xs: List[int], min_count: int) -> Tuple[List[int], Dict[str, f
     est_count = int(round((xs[-1] - xs[0]) / median_gap)) + 1
     est_count = max(est_count, min_count)
     if est_count <= 1:
-        return [int(round((xs[0] + xs[-1]) / 2))], {"count": float(est_count), "median_gap": median_gap}
+        return [int(round((xs[0] + xs[-1]) / 2))], {
+            "count": float(est_count),
+            "median_gap": median_gap,
+        }
     step = (xs[-1] - xs[0]) / float(est_count - 1)
     fitted = [int(round(xs[0] + i * step)) for i in range(est_count)]
     return fitted, {"count": float(est_count), "median_gap": median_gap}
 
 
-def build_predictions(bands: List[Tuple[int, int, int, int]], per_band_xs: Dict[int, List[int]], width: int) -> List[Box]:
+def build_predictions(
+    bands: List[Tuple[int, int, int, int]], per_band_xs: Dict[int, List[int]], width: int
+) -> List[Box]:
     preds: List[Box] = []
     half = max(1, width // 2)
     for i, (x1, y1, x2, y2) in enumerate(bands):

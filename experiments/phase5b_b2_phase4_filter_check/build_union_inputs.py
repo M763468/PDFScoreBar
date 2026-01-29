@@ -39,9 +39,15 @@ def union_boxes(a: Sequence[Box], b: Sequence[Box]) -> List[Box]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Build union(homr, omr-dln) inputs for Phase 4 filter checks.")
-    parser.add_argument("--homr-json", type=Path, required=True, help="Homr detections JSON with predictions.")
-    parser.add_argument("--omr-json", type=Path, required=True, help="OMR-DLN predictions JSON (list of boxes).")
+    parser = argparse.ArgumentParser(
+        description="Build union(homr, omr-dln) inputs for Phase 4 filter checks."
+    )
+    parser.add_argument(
+        "--homr-json", type=Path, required=True, help="Homr detections JSON with predictions."
+    )
+    parser.add_argument(
+        "--omr-json", type=Path, required=True, help="OMR-DLN predictions JSON (list of boxes)."
+    )
     parser.add_argument("--output-json", type=Path, required=True, help="Output union JSON path.")
     args = parser.parse_args()
 

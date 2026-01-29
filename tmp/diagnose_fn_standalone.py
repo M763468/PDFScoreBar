@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
-import sys
-from typing import Iterable, List, Optional, Sequence, Tuple
+from typing import Optional, Tuple
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 Box = Tuple[int, int, int, int]
@@ -12,6 +11,7 @@ BARLINE_DEFAULT_MIN_WIDTH = 12
 BARLINE_X_MARGIN = 3
 BARLINE_Y_MARGIN = 3
 
+
 def _ensure_ordered(box: Box) -> Box:
     x1, y1, x2, y2 = box
     if x2 < x1:
@@ -19,6 +19,7 @@ def _ensure_ordered(box: Box) -> Box:
     if y2 < y1:
         y1, y2 = y2, y1
     return x1, y1, x2, y2
+
 
 def expand_barline_box(
     box: Box,
@@ -59,6 +60,7 @@ def expand_barline_box(
 
     return padded_x1, padded_y1, padded_x2, padded_y2
 
+
 def barline_iou(
     box_a: Box,
     box_b: Box,
@@ -92,9 +94,11 @@ def barline_iou(
         return 0.0
     return inter_area / union_area
 
+
 # --- End of inlined functions ---
 
 import subprocess
+
 
 def load_json_boxes(path):
     try:
@@ -103,10 +107,10 @@ def load_json_boxes(path):
     except (FileNotFoundError, subprocess.CalledProcessError):
         print(f"ERROR: File not found at {path}")
         return None
-        
+
     if not data:
         return []
-    
+
     boxes = []
     # Handle different JSON structures
     if isinstance(data, dict) and "predictions" in data:
@@ -120,14 +124,15 @@ def load_json_boxes(path):
         boxes = [tuple(item["barline_location"]) for item in data]
     else:
         boxes = [tuple(item) for item in data]
-        
+
     return boxes
+
 
 def find_matches_for_gt(gt_boxes, pred_boxes, iou_thresh=0.5):
     matches = {}
     if not gt_boxes or not pred_boxes:
         return matches
-        
+
     for i, gt_box in enumerate(gt_boxes):
         best_iou = 0
         best_pred_idx = -1
@@ -136,20 +141,28 @@ def find_matches_for_gt(gt_boxes, pred_boxes, iou_thresh=0.5):
             if iou > best_iou:
                 best_iou = iou
                 best_pred_idx = j
-        
+
         if best_iou > iou_thresh:
-            matches[i] = {"pred_idx": best_pred_idx, "iou": best_iou, "pred_box": pred_boxes[best_pred_idx]}
+            matches[i] = {
+                "pred_idx": best_pred_idx,
+                "iou": best_iou,
+                "pred_box": pred_boxes[best_pred_idx],
+            }
     return matches
+
 
 def main():
     # --- Paths ---
     gt_path = REPO_ROOT / "data/evaluation/annotations/page_003/boxes_sorted.json"
-    
+
     baseline_final_path = REPO_ROOT / "logs/phase4_baseline_repro/filtered_barlines.json"
-    
+
     s2_merged_path = REPO_ROOT / "logs/phase5b_promiscuous_union_eval/page_3_hybrid_preds.json"
-    s2_final_path = REPO_ROOT / "logs/phase5b_promiscuous_union_eval/page_3_filtered_output/filtered_barlines.json"
-    
+    s2_final_path = (
+        REPO_ROOT
+        / "logs/phase5b_promiscuous_union_eval/page_3_filtered_output/filtered_barlines.json"
+    )
+
     # --- Load Data ---
     gt_boxes = load_json_boxes(gt_path)
     baseline_final_boxes = load_json_boxes(baseline_final_path)
@@ -177,34 +190,46 @@ def main():
     for gt_idx in fn_gt_indices:
         gt_box = gt_boxes[gt_idx]
         result_row = {"gt_index": gt_idx, "gt_box": gt_box}
-        
+
         # Check merge stage
         merge_match = find_matches_for_gt([gt_box], s2_merged_boxes)
         if 0 in merge_match:
             result_row["in_s2_merge_output"] = "Yes"
             result_row["s2_merge_iou"] = f"{merge_match[0]['iou']:.3f}"
-            result_row["s2_merge_box"] = merge_match[0]['pred_box']
+            result_row["s2_merge_box"] = merge_match[0]["pred_box"]
         else:
             result_row["in_s2_merge_output"] = "No"
             result_row["s2_merge_iou"] = "N/A"
             result_row["s2_merge_box"] = "N/A"
-            
+
         results.append(result_row)
 
     # --- Print results table ---
     print("\n--- FN Root Cause Analysis ---")
-    print(f"{'GT Index':<10} | {'In Merge?':<10} | {'Merge IoU':<10} | {'GT Bbox':<30} | {'Merge Bbox'}")
+    print(
+        f"{'GT Index':<10} | {'In Merge?':<10} | {'Merge IoU':<10} | {'GT Bbox':<30} | {'Merge Bbox'}"
+    )
     print("-" * 90)
     for row in results:
-        print(f"{row['gt_index']:<10} | {row['in_s2_merge_output']:<10} | {row['s2_merge_iou']:<10} | {str(row['gt_box']):<30} | {row['s2_merge_box']}")
-        
+        print(
+            f"{row['gt_index']:<10} | {row['in_s2_merge_output']:<10} | {row['s2_merge_iou']:<10} | {str(row['gt_box']):<30} | {row['s2_merge_box']}"
+        )
+
     # --- Deeper dive for dropped boxes ---
     print("\n--- Deeper Dive on Dropped Barlines ---")
-    
-    raw_baseline_path = REPO_ROOT / "logs/hybrid_generalization/sr_eval_smoke_page3/baseline/page_3/page_3/page_3_detections.json"
-    raw_sr_path = REPO_ROOT / "logs/hybrid_generalization/sr_eval_smoke_page3/sr/page_3/page_3/page_3_detections.json"
-    raw_omr_path = REPO_ROOT / "logs/hybrid_generalization/sr_eval_smoke_page3/omr_sr/predictions.json"
-    
+
+    raw_baseline_path = (
+        REPO_ROOT
+        / "logs/hybrid_generalization/sr_eval_smoke_page3/baseline/page_3/page_3/page_3_detections.json"
+    )
+    raw_sr_path = (
+        REPO_ROOT
+        / "logs/hybrid_generalization/sr_eval_smoke_page3/sr/page_3/page_3/page_3_detections.json"
+    )
+    raw_omr_path = (
+        REPO_ROOT / "logs/hybrid_generalization/sr_eval_smoke_page3/omr_sr/predictions.json"
+    )
+
     raw_baseline_boxes = load_json_boxes(raw_baseline_path)
     raw_sr_boxes = load_json_boxes(raw_sr_path)
     raw_omr_boxes = load_json_boxes(raw_omr_path)
@@ -213,11 +238,11 @@ def main():
         if row["in_s2_merge_output"] == "No":
             gt_idx = row["gt_index"]
             gt_box = row["gt_box"]
-            
+
             baseline_support = find_matches_for_gt([gt_box], raw_baseline_boxes)
             sr_support = find_matches_for_gt([gt_box], raw_sr_boxes)
             omr_support = find_matches_for_gt([gt_box], raw_omr_boxes)
-            
+
             support_count = 0
             sources = []
             if 0 in baseline_support:
@@ -233,7 +258,10 @@ def main():
             print(f"GT Index {gt_idx}:")
             print(f"  - Support from {support_count} detectors: {sources}")
             if support_count < 2:
-                print("  - CONCLUSION: Dropped at merge because cluster had < 2 detectors (Cause A).")
+                print(
+                    "  - CONCLUSION: Dropped at merge because cluster had < 2 detectors (Cause A)."
+                )
+
 
 if __name__ == "__main__":
     main()

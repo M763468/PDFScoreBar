@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Generate probe-bar candidates using ink ratio scanning within staff bands."""
+
 from __future__ import annotations
 
 import argparse
@@ -104,27 +105,33 @@ def main() -> None:
         PageSpec(
             name="page_001",
             image=REPO_ROOT / "data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png",
-            staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_3_staff.png",
+            staff_mask=REPO_ROOT
+            / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_3_staff.png",
         ),
         PageSpec(
             name="page_004",
             image=REPO_ROOT / "data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png",
-            staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_3_staff.png",
+            staff_mask=REPO_ROOT
+            / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_3_staff.png",
         ),
         PageSpec(
             name="page_10",
             image=REPO_ROOT / "data/training/images/page_10.png",
-            staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_3_staff.png",
+            staff_mask=REPO_ROOT
+            / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_3_staff.png",
         ),
         PageSpec(
             name="page_15",
             image=REPO_ROOT / "data/training/images/page_15.png",
-            staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_3_staff.png",
+            staff_mask=REPO_ROOT
+            / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_3_staff.png",
         ),
     ]
     if args.staff_mask_mode == "staffs":
         for page in pages:
-            page.staff_mask = page.staff_mask.with_name(page.staff_mask.name.replace("debug_3_staff", "debug_15_staffs"))
+            page.staff_mask = page.staff_mask.with_name(
+                page.staff_mask.name.replace("debug_3_staff", "debug_15_staffs")
+            )
 
     output_root = args.output_root
     output_root.mkdir(parents=True, exist_ok=True)

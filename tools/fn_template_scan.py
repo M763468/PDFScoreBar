@@ -143,12 +143,14 @@ def main() -> None:
         out_path = args.output_dir / f"{args.page_id}_fn_{idx:03d}_scan_overlay.png"
         cv2.imwrite(str(out_path), crop)
 
-        summary.append({
-            "fn_id": idx,
-            "overlay": str(out_path),
-            "top_scores": topk,
-            "template_len": template_len,
-        })
+        summary.append(
+            {
+                "fn_id": idx,
+                "overlay": str(out_path),
+                "top_scores": topk,
+                "template_len": template_len,
+            }
+        )
 
     (args.output_dir / "summary.json").write_text(json.dumps(summary, indent=2))
 

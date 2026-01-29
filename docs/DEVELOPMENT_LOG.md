@@ -3362,3 +3362,17 @@ endpoint_overlap_ratio =
   N/A
 - **Logs**:
   - `logs/llm_system_candidates/20260102T230141_page_15_split1_lr_notehead/segment_eval_gemini3_flash_strict_examples/`
+## 2026-01-30: Makefileによる開発ワークフローの標準化 (Issue #6)
+
+**目標**: 開発タスク（Lint/Format）を標準化し、コード品質の維持を容易にする。
+
+**実施内容**:
+- プロジェクトルートに `Makefile` を作成。`ruff` を使用した `lint` および `format` ターゲットを実装。
+- `pyproject.toml` を更新し、`ruff` の設定（除外ディレクトリ、無視ルール、isort設定）を最適化。
+- 全230ファイル以上のコードを一括フォーマットし、検出された100件以上の警告（未定義変数、不正な例外処理、循環インポート等）を修正。
+- `README.md` および `AGENTS.md` を更新し、AIエージェントを含む開発者への品質基準を明記。
+
+**成果**:
+- PR #11 により、全CIチェックがグリーンの状態でマージ完了。
+- 今後は `make lint` / `make format` を実行するだけで、一貫したスタイルと静的解析チェックを適用可能。
+- AIエージェントに対しても、提出前のチェックを義務化。

@@ -9,16 +9,13 @@ is in `docs/DEVLOG_MEASURE_NUMBERING.md` (measure numbering/MMR) and
 
 ---
 
-## 1. Current Status (2026-01-24)
-- **Proxy Inference Strategy**: Implemented and verified (Phase 2).
-    - **Performance Gain**: Segnet ~66x speedup, TrOmr ~6.5x speedup.
-    - **Bottleneck Shift**: Inference is no longer the bottleneck. Real-ESRGAN generation (~120-180s/page) now dominates.
-- **Real-ESRGAN Tuning (Phase 5A)**: Completed.
-    - **Optimal Config**: `tile=512` (Auto) + `fp16` is the best balance for RTX 4060 (8GB).
-    - **CLI Control**: Added `--sr-tile`, `--sr-tile-pad`, `--sr-fp32` to `homr_evaluator.py`.
-- **SR Reuse Validation (Phase 4)**: Verified.
-    - **Page 10 (Large)**: ~54s reduction (~20% total time). Reuse is highly effective for large images.
-- **Documentation**: Benchmarks recorded in `docs/performance_comparison.md`.
+## 1. Current Status (2026-01-30)
+- **Standardization (Issue #6)**: Makefile and Lint/Format workflow fully implemented.
+    - All 230+ files formatted and linted.
+    - PR #11 merged into `main`.
+    - AI Agent policy updated to require `make lint/format` before submission.
+- **Proxy Inference Strategy**: Verified (speedup achieved).
+- **Real-ESRGAN**: Optimized for RTX 4060.
 
 ## 2. Tasks & Strategy (Updated)
 

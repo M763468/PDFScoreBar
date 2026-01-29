@@ -2,7 +2,7 @@
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -169,7 +169,9 @@ def main() -> None:
     if staff.shape[:2] != base.shape[:2]:
         staff = cv2.resize(staff, (base.shape[1], base.shape[0]), interpolation=cv2.INTER_NEAREST)
     if notehead is not None and notehead.shape[:2] != base.shape[:2]:
-        notehead = cv2.resize(notehead, (base.shape[1], base.shape[0]), interpolation=cv2.INTER_NEAREST)
+        notehead = cv2.resize(
+            notehead, (base.shape[1], base.shape[0]), interpolation=cv2.INTER_NEAREST
+        )
 
     gray = cv2.cvtColor(base, cv2.COLOR_BGR2GRAY)
     bands = extract_staff_bands(staff)

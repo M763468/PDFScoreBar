@@ -4,6 +4,7 @@ Generate image-based review artifacts for Phase 5b2 (no detector reruns).
 
 Default style: one image per box (cropped with context).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -109,12 +110,14 @@ def main() -> None:
         {
             "name": "page_001",
             "image": REPO_ROOT / "data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png",
-            "gt": REPO_ROOT / "data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/fn_only.json",
+            "gt": REPO_ROOT
+            / "data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/fn_only.json",
         },
         {
             "name": "page_004",
             "image": REPO_ROOT / "data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png",
-            "gt": REPO_ROOT / "data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/fn_only.json",
+            "gt": REPO_ROOT
+            / "data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/fn_only.json",
         },
         {
             "name": "page_10",

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Plot ink-ratio curves per staff band with GT/FP markers."""
+
 from __future__ import annotations
 
 import argparse
@@ -110,7 +111,9 @@ def draw_ratio_plot(
     cv2.putText(plot, "GT", (60, 14), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 200, 0), 1)
     cv2.putText(plot, "FN", (90, 14), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (200, 0, 200), 1)
     cv2.putText(plot, "FP", (120, 14), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 1)
-    cv2.putText(plot, f"thr={threshold:.2f}", (150, 14), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 140, 255), 1)
+    cv2.putText(
+        plot, f"thr={threshold:.2f}", (150, 14), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 140, 255), 1
+    )
     return plot
 
 
@@ -134,31 +137,37 @@ def main() -> None:
         PageSpec(
             name="page_001",
             image=REPO_ROOT / "data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png",
-            staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_3_staff.png",
+            staff_mask=REPO_ROOT
+            / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_3_staff.png",
             gt=REPO_ROOT / "logs/phase6_detector_miss/gt_rebuild/page_001_boxes_sorted.json",
         ),
         PageSpec(
             name="page_004",
             image=REPO_ROOT / "data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png",
-            staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_3_staff.png",
+            staff_mask=REPO_ROOT
+            / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_3_staff.png",
             gt=REPO_ROOT / "logs/phase6_detector_miss/gt_rebuild/page_004_boxes_sorted.json",
         ),
         PageSpec(
             name="page_10",
             image=REPO_ROOT / "data/training/images/page_10.png",
-            staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_3_staff.png",
+            staff_mask=REPO_ROOT
+            / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_3_staff.png",
             gt=REPO_ROOT / "logs/phase6_detector_miss/gt_rebuild/page_10_boxes_sorted.json",
         ),
         PageSpec(
             name="page_15",
             image=REPO_ROOT / "data/training/images/page_15.png",
-            staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_3_staff.png",
+            staff_mask=REPO_ROOT
+            / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_3_staff.png",
             gt=REPO_ROOT / "logs/phase6_detector_miss/gt_rebuild/page_15_boxes_sorted.json",
         ),
     ]
     if args.staff_mask_mode == "staffs":
         for page in pages:
-            page.staff_mask = page.staff_mask.with_name(page.staff_mask.name.replace("debug_3_staff", "debug_15_staffs"))
+            page.staff_mask = page.staff_mask.with_name(
+                page.staff_mask.name.replace("debug_3_staff", "debug_15_staffs")
+            )
 
     output_root = args.output_root
     output_root.mkdir(parents=True, exist_ok=True)
@@ -258,7 +267,9 @@ def main() -> None:
             # Overlay faint staff image to keep x alignment intuitive.
             band_img = base_img[y1 : y2 + 1, :]
             if band_img.size:
-                band_resized = cv2.resize(band_img, (width, args.plot_height), interpolation=cv2.INTER_AREA)
+                band_resized = cv2.resize(
+                    band_img, (width, args.plot_height), interpolation=cv2.INTER_AREA
+                )
                 alpha = min(max(args.overlay_score_alpha, 0.0), 0.9)
                 plot = cv2.addWeighted(band_resized, alpha, plot, 1 - alpha, 0.0)
             cv2.putText(

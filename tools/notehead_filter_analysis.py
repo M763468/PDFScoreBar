@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Analyze notehead filter behavior for remaining FP and notehead-filtered FN."""
+
 from __future__ import annotations
 
 import argparse
@@ -50,9 +51,7 @@ def denoise_notehead_mask(mask: np.ndarray, open_kernel: int, min_area: int) -> 
         kernel = np.ones((open_kernel, open_kernel), np.uint8)
         cleaned = cv2.morphologyEx(cleaned, cv2.MORPH_OPEN, kernel)
     if min_area and min_area > 0:
-        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
-            cleaned, connectivity=8
-        )
+        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(cleaned, connectivity=8)
         filtered = np.zeros_like(cleaned)
         for label in range(1, num_labels):
             if stats[label, cv2.CC_STAT_AREA] >= min_area:
@@ -70,9 +69,7 @@ def filter_notehead_components(
     if max_aspect_ratio <= 0:
         return mask
     binary = (mask > 0).astype(np.uint8)
-    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
-        binary, connectivity=8
-    )
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(binary, connectivity=8)
     filtered = np.zeros_like(binary)
     for label in range(1, num_labels):
         x, y, w, h, area = stats[label]
@@ -145,7 +142,9 @@ def endpoint_overlap_detail(
     }
 
 
-def draw_boxes(img: np.ndarray, boxes: Iterable[Box], color: tuple[int, int, int], thickness: int) -> None:
+def draw_boxes(
+    img: np.ndarray, boxes: Iterable[Box], color: tuple[int, int, int], thickness: int
+) -> None:
     for x1, y1, x2, y2 in boxes:
         cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness)
 
@@ -154,7 +153,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--eval-root", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
-    parser.add_argument("--analysis-root", type=Path, required=True, help="postfilter_analysis_v3 path")
+    parser.add_argument(
+        "--analysis-root", type=Path, required=True, help="postfilter_analysis_v3 path"
+    )
     parser.add_argument("--overlay-alpha", type=float, default=0.35)
     parser.add_argument("--mask-dilate", type=int, default=0)
     parser.add_argument("--notehead-open-kernel", type=int, default=0)
@@ -183,12 +184,14 @@ def main() -> None:
         PageSpec(
             name="page_10",
             image=REPO_ROOT / "data/training/images/page_10.png",
-            notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_6_notehead.png",
+            notehead_mask=REPO_ROOT
+            / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_6_notehead.png",
         ),
         PageSpec(
             name="page_15",
             image=REPO_ROOT / "data/training/images/page_15.png",
-            notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_6_notehead.png",
+            notehead_mask=REPO_ROOT
+            / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_6_notehead.png",
         ),
     ]
 
@@ -204,9 +207,7 @@ def main() -> None:
         if base_img is None:
             raise FileNotFoundError(f"Missing image: {page.image}")
         mask = load_notehead_mask(page.notehead_mask, base_img.shape[:2])
-        mask = denoise_notehead_mask(
-            mask, args.notehead_open_kernel, args.notehead_min_area
-        )
+        mask = denoise_notehead_mask(mask, args.notehead_open_kernel, args.notehead_min_area)
         mask = filter_notehead_components(
             mask,
             args.notehead_max_aspect,
@@ -220,7 +221,9 @@ def main() -> None:
         config = json.loads(geom_debug_path.read_text())["config"]
         rx = int(round(config["endpoint_radius_px"]["x"] * args.endpoint_scale_x))
         ry = int(round(config["endpoint_radius_px"]["y"] * args.endpoint_scale_y))
-        threshold = float(config["threshold"]) if args.override_threshold < 0 else args.override_threshold
+        threshold = (
+            float(config["threshold"]) if args.override_threshold < 0 else args.override_threshold
+        )
 
         fp_boxes = load_boxes(page_dir / "fp_boxes.json")
         fn_report_path = args.analysis_root / f"{page.name}_fn_report.json"
@@ -228,7 +231,9 @@ def main() -> None:
         if fn_report_path.exists():
             fn_report = json.loads(fn_report_path.read_text())
             notehead_fn = [
-                tuple(item["bbox"]) for item in fn_report if item.get("reason") == "notehead_filtered"
+                tuple(item["bbox"])
+                for item in fn_report
+                if item.get("reason") == "notehead_filtered"
             ]
 
         fp_stats = []
@@ -273,8 +278,12 @@ def main() -> None:
         endpoint_overlay_path = out_root / f"{page.name}_endpoint_windows.png"
         cv2.imwrite(str(endpoint_overlay_path), endpoint_overlay)
 
-        (out_root / f"{page.name}_fp_notehead_stats.json").write_text(json.dumps(fp_stats, indent=2))
-        (out_root / f"{page.name}_fn_notehead_stats.json").write_text(json.dumps(fn_stats, indent=2))
+        (out_root / f"{page.name}_fp_notehead_stats.json").write_text(
+            json.dumps(fp_stats, indent=2)
+        )
+        (out_root / f"{page.name}_fn_notehead_stats.json").write_text(
+            json.dumps(fn_stats, indent=2)
+        )
         summary[page.name] = {
             "fp_count": len(fp_stats),
             "fn_notehead_count": len(fn_stats),

@@ -1,26 +1,32 @@
-
-from ultralytics import YOLO
-import cv2
 import json
-import torch
+
+import cv2
 import pandas as pd
+import torch
+from ultralytics import YOLO
 
 # Define paths
-model_path = 'external/omr_dln/models/public_models/YOLOv8m_Measures.pt'
-image_path = 'data/evaluation/images/page_3.png'
-output_json_path = 'logs/model_experiments/omr_dln/predictions_measures_model.json'
-output_image_path = 'logs/model_experiments/omr_dln/page_3_overlay_measures_model.png'
-labels_csv_path = 'external/omr_dln/yolo/new_labels.csv'
+model_path = "external/omr_dln/models/public_models/YOLOv8m_Measures.pt"
+image_path = "data/evaluation/images/page_3.png"
+output_json_path = "logs/model_experiments/omr_dln/predictions_measures_model.json"
+output_image_path = "logs/model_experiments/omr_dln/page_3_overlay_measures_model.png"
+labels_csv_path = "external/omr_dln/yolo/new_labels.csv"
 
 # Create output directory if it doesn't exist
 import os
-os.makedirs('logs/model_experiments/omr_dln', exist_ok=True)
+
+os.makedirs("logs/model_experiments/omr_dln", exist_ok=True)
 
 # Load labels
 raw_labels = pd.read_csv(labels_csv_path)
-raw_labels['label'] -= 1
-unique_labels = raw_labels[['label', 'name']].drop_duplicates(subset=['label']).sort_values(by=['label']).reset_index(drop=True)
-class_names = dict(zip(unique_labels['label'], unique_labels['name']))
+raw_labels["label"] -= 1
+unique_labels = (
+    raw_labels[["label", "name"]]
+    .drop_duplicates(subset=["label"])
+    .sort_values(by=["label"])
+    .reset_index(drop=True)
+)
+class_names = dict(zip(unique_labels["label"], unique_labels["name"]))
 
 
 # Load the model
@@ -31,7 +37,7 @@ print("Model loaded.")
 # Check if GPU is available and move model to GPU
 if torch.cuda.is_available():
     print("GPU is available, moving model to GPU.")
-    model.to('cuda')
+    model.to("cuda")
 else:
     print("GPU not available, running on CPU.")
 
@@ -52,18 +58,18 @@ for result in results:
     for box in boxes:
         class_id = int(box.cls[0])
         detected_classes.add(class_id)
-        
+
         x1, y1, x2, y2 = box.xyxy[0]
         x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-        
+
         detection = {
-            'class_id': class_id,
-            'class_name': class_names.get(class_id, 'Unknown'),
-            'box_2d': [x1, y1, x2, y2],
-            'score': float(box.conf[0])
+            "class_id": class_id,
+            "class_name": class_names.get(class_id, "Unknown"),
+            "box_2d": [x1, y1, x2, y2],
+            "score": float(box.conf[0]),
         }
         all_detections.append(detection)
-        
+
         # Draw bounding box on the image
         label = f"{class_names.get(class_id, 'Unknown')}: {box.conf[0]:.2f}"
         cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
@@ -71,7 +77,7 @@ for result in results:
 
 # Save all detections to JSON
 print(f"Saving {len(all_detections)} detections to {output_json_path}...")
-with open(output_json_path, 'w') as f:
+with open(output_json_path, "w") as f:
     json.dump(all_detections, f, indent=4)
 
 # Save the visualized image

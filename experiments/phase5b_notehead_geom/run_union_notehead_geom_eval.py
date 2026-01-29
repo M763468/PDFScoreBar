@@ -8,6 +8,7 @@ Defaults:
   - endpoint_radius_scale: 0.6
   - row filter: absolute tol_top=5, tol_bottom=5, cluster_max_dist=25, min_row_count=3
 """
+
 from __future__ import annotations
 
 import argparse
@@ -231,7 +232,9 @@ def evaluate(preds: Sequence[Box], gt: Sequence[Box]) -> Dict[str, float]:
     return {"TP": tp, "FP": fp, "FN": fn, "Precision": precision, "Recall": recall, "F1": f1}
 
 
-def draw_boxes(base: np.ndarray, boxes: Sequence[Box], color: Tuple[int, int, int], thickness: int) -> None:
+def draw_boxes(
+    base: np.ndarray, boxes: Sequence[Box], color: Tuple[int, int, int], thickness: int
+) -> None:
     for x1, y1, x2, y2 in boxes:
         cv2.rectangle(base, (x1, y1), (x2, y2), color, thickness)
 
@@ -311,7 +314,9 @@ def main() -> None:
 
         y_centers = np.array([(box[1] + box[3]) / 2 for box in preds])
         rows, _ = cluster_by_y_distance(y_centers, args.cluster_max_dist, args.min_row_count)
-        staff_space = args.staff_space if args.staff_space is not None else estimate_staff_space(rows, preds)
+        staff_space = (
+            args.staff_space if args.staff_space is not None else estimate_staff_space(rows, preds)
+        )
 
         row_filtered = row_filter(
             preds,
@@ -386,7 +391,9 @@ def main() -> None:
             f"| {row['page']} | {row['tp']} | {row['fp']} | {row['fn']} | {row['kept']} | {row['rejected']} |"
         )
     if fn_total_gt > 0:
-        summary_table.append(f"| FN-only total | {fn_total_tp} | n/a | {fn_total_gt - fn_total_tp} | n/a | n/a |")
+        summary_table.append(
+            f"| FN-only total | {fn_total_tp} | n/a | {fn_total_gt - fn_total_tp} | n/a | n/a |"
+        )
 
     (run_root / "summary_table.md").write_text("\n".join(summary_table) + "\n")
 

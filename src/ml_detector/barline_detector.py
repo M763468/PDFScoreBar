@@ -1,29 +1,43 @@
 import os
+
 import cv2
 import numpy as np
-from PIL import Image
-import pickle
-
-from oemer.inference import inference, resize_image
-from oemer.barline_extraction import get_barline_box, get_barline_map
-from oemer.bbox import find_lines, draw_bounding_boxes, get_center, get_bbox, rm_merge_overlap_bbox, draw_lines
-from oemer import layers
-from oemer.staffline_extraction import extract as staff_extract
-from oemer.notehead_extraction import extract as note_extract
-from oemer.note_group_extraction import extract as group_extract
-from oemer.utils import get_unit_size, slope_to_degree
-from oemer.general_filtering_rules import filter_out_of_range_bbox
 import scipy.ndimage
+from oemer import layers
+from oemer.bbox import (
+    draw_lines,
+    find_lines,
+    get_bbox,
+    get_center,
+    rm_merge_overlap_bbox,
+)
+from oemer.general_filtering_rules import filter_out_of_range_bbox
+from oemer.inference import inference
+from oemer.note_group_extraction import extract as group_extract
+from oemer.notehead_extraction import extract as note_extract
+from oemer.staffline_extraction import extract as staff_extract
+from oemer.utils import get_unit_size, slope_to_degree
+from PIL import Image
+
 
 def get_degree(line):
     return np.rad2deg(np.arctan2(line[3] - line[1], line[2] - line[0]))
+
 
 def check_overlap(box1, box2):
     # box = (x1, y1, x2, y2)
     return not (box1[2] < box2[0] or box1[0] > box2[2] or box1[3] < box2[1] or box1[1] > box2[3])
 
-def filter_lines_extended(lines, notehead_bboxes, min_degree=75, extension_ratio=0.5, max_width_ratio=0.4, min_height_ratio=3.5):
-    staffs = layers.get_layer('staffs')
+
+def filter_lines_extended(
+    lines,
+    notehead_bboxes,
+    min_degree=75,
+    extension_ratio=0.5,
+    max_width_ratio=0.4,
+    min_height_ratio=3.5,
+):
+    staffs = layers.get_layer("staffs")
 
     lines = filter_out_of_range_bbox(lines)
     min_y = min([st.y_upper for st in staffs.reshape(-1, 1).squeeze()])
@@ -69,18 +83,21 @@ def filter_lines_extended(lines, notehead_bboxes, min_degree=75, extension_ratio
 
 
 def register_note_id() -> None:
-    symbols = layers.get_layer('symbols_pred')
-    layer = layers.get_layer('note_id')
-    notes = layers.get_layer('notes')
+    symbols = layers.get_layer("symbols_pred")
+    layer = layers.get_layer("note_id")
+    notes = layers.get_layer("notes")
     for idx, note in enumerate(notes):
         x1, y1, x2, y2 = note.bbox
-        yi, xi = np.where(symbols[y1:y2, x1:x2]>0)
+        yi, xi = np.where(symbols[y1:y2, x1:x2] > 0)
         yi += y1
         xi += x1
         layer[yi, xi] = idx
         notes[idx].id = idx
 
-def draw_barlines_on_image(img: np.ndarray, bboxes: list, color=(0, 0, 255), thickness=2) -> np.ndarray:
+
+def draw_barlines_on_image(
+    img: np.ndarray, bboxes: list, color=(0, 0, 255), thickness=2
+) -> np.ndarray:
     """Draws bounding boxes directly on the image using OpenCV."""
     img_copy = img.copy()
     for bbox in bboxes:
@@ -91,7 +108,7 @@ def draw_barlines_on_image(img: np.ndarray, bboxes: list, color=(0, 0, 255), thi
 
 def filter_barlines(lines: list, min_height_unit_ratio: float = 3.75) -> np.ndarray:
     lines = filter_out_of_range_bbox(lines)
-    lines = rm_merge_overlap_bbox(lines, mode='merge', overlap_ratio=0)
+    lines = rm_merge_overlap_bbox(lines, mode="merge", overlap_ratio=0)
 
     # First round check, with line mode.
     valid_lines = []
@@ -100,7 +117,7 @@ def filter_barlines(lines: list, min_height_unit_ratio: float = 3.75) -> np.ndar
         unit_size = get_unit_size(*get_center(line))
 
         # Check slope. Degree should be within 80~100.
-        deg = slope_to_degree(y2-y1, x2-x1)
+        deg = slope_to_degree(y2 - y1, x2 - x1)
         if abs(deg) < 75:
             continue
 
@@ -112,7 +129,7 @@ def filter_barlines(lines: list, min_height_unit_ratio: float = 3.75) -> np.ndar
         return np.array([])
     max_x = np.max(valid_lines[..., 2])
     max_y = np.max(valid_lines[..., 3])
-    data = np.zeros((max_y+10, max_x+10, 3))
+    data = np.zeros((max_y + 10, max_x + 10, 3))
     data = draw_lines(valid_lines, data, width=1)
     boxes = get_bbox(data[..., 1])
     valid_box = []
@@ -122,29 +139,30 @@ def filter_barlines(lines: list, min_height_unit_ratio: float = 3.75) -> np.ndar
 
         # Check height
         if (y2 - y1) < unit_size * min_height_unit_ratio:
-          continue
+            continue
 
         valid_box.append(box)
 
     # Check overall height. Filter out height below threshold after norm.
     if not valid_box:
         return np.array([])
-    valid_box = sorted(valid_box, key=lambda box:box[3]-box[1])
+    valid_box = sorted(valid_box, key=lambda box: box[3] - box[1])
     heights = [b[3] - b[1] for b in valid_box]
     top_5 = np.mean(heights[-5:])
     if top_5 == 0:
-        return np.array([]) # Avoid division by zero
+        return np.array([])  # Avoid division by zero
     norm = np.array(heights) / top_5
     idx = np.where(norm > 0.5)[0]
     valid_box = np.array(valid_box)[idx]
 
     return valid_box
 
+
 def parse_barlines(
-    group_map: np.ndarray, 
-    stems_rests: np.ndarray, 
-    symbols: np.ndarray, 
-    min_height_unit_ratio: float = 3.75
+    group_map: np.ndarray,
+    stems_rests: np.ndarray,
+    symbols: np.ndarray,
+    min_height_unit_ratio: float = 3.75,
 ) -> np.ndarray:
     # Create a binary mask from group_map
     notes_mask = np.where(group_map > -1, 1, 0)
@@ -163,16 +181,16 @@ def parse_barlines(
 
     # Check for overlapping regions between barline candidates and other symbols
     sym_barline_map = np.zeros_like(no_note)
-    for i in range(1, bnum+1):
-        idx = (bar_label == i)
+    for i in range(1, bnum + 1):
+        idx = bar_label == i
         region = sym_label[idx]
         labels = set(np.unique(region))
         if 0 in labels:
             labels.remove(0)
         for label in labels:
-            sym_idx = (sym_label == label)
+            sym_idx = sym_label == label
             sym_barline_map[sym_idx] += no_note[sym_idx]
-    sym_barline_map[sym_barline_map>0] = 1
+    sym_barline_map[sym_barline_map > 0] = 1
 
     lines = find_lines(sym_barline_map)
     line_box = filter_barlines(lines, min_height_unit_ratio)
@@ -181,9 +199,10 @@ def parse_barlines(
     return line_box
 
 
-
-def detect_barlines_ml(img_path: str, unet_model_path: str, segnet_model_path: str, output_dir: str):
-    group_map = None # Initialize group_map
+def detect_barlines_ml(
+    img_path: str, unet_model_path: str, segnet_model_path: str, output_dir: str
+):
+    group_map = None  # Initialize group_map
     """
     Detects barlines in a sheet music image using a two-model approach inspired by oemer.
     1. unet_big: Separates stafflines and a broad 'symbols' category.
@@ -203,13 +222,13 @@ def detect_barlines_ml(img_path: str, unet_model_path: str, segnet_model_path: s
     clefs_keys_pred = np.where(seg_map == 3, 1, 0).astype(np.uint8)
 
     # Get notehead bounding boxes
-    notehead_bboxes = get_bbox(notehead_pred)
+    get_bbox(notehead_pred)
 
     # --- Step 3: Dilate symbol masks to remove more noise ---
-    kernel = np.ones((5,5), np.uint8)
-    stems_rests_pred_dilated = cv2.dilate(stems_rests_pred, kernel, iterations = 1)
-    notehead_pred_dilated = cv2.dilate(notehead_pred, kernel, iterations = 1)
-    clefs_keys_pred_dilated = cv2.dilate(clefs_keys_pred, kernel, iterations = 1)
+    kernel = np.ones((5, 5), np.uint8)
+    stems_rests_pred_dilated = cv2.dilate(stems_rests_pred, kernel, iterations=1)
+    notehead_pred_dilated = cv2.dilate(notehead_pred, kernel, iterations=1)
+    clefs_keys_pred_dilated = cv2.dilate(clefs_keys_pred, kernel, iterations=1)
 
     # --- Step 4: Combine predictions and register layers ---
     symbols_pred = symbols_coarse + clefs_keys_pred + stems_rests_pred
@@ -233,23 +252,22 @@ def detect_barlines_ml(img_path: str, unet_model_path: str, segnet_model_path: s
     # --- Step 5a: Extract noteheads ---
     print("Extracting noteheads...")
     notes = note_extract()
-    layers.register_layer('notes', np.array(notes))
+    layers.register_layer("notes", np.array(notes))
 
     # --- Step 5b: Register note_id layer ---
     print("Registering note_id layer...")
-    layers.register_layer('note_id', np.zeros(symbols_pred.shape, dtype=np.int64)-1)
+    layers.register_layer("note_id", np.zeros(symbols_pred.shape, dtype=np.int64) - 1)
     register_note_id()
 
     # --- Step 5c: Extract note groups to get group_map ---
     print("Extracting note groups...")
     note_groups, group_map = group_extract()
-    layers.register_layer('note_groups', np.array(note_groups))
-    layers.register_layer('group_map', group_map)
+    layers.register_layer("note_groups", np.array(note_groups))
+    layers.register_layer("group_map", group_map)
 
     # --- Step 6: Barline detection logic ---
     print("Detecting barlines...")
     barline_coords = parse_barlines(group_map, stems_rests_pred, symbols_pred)
-
 
     # --- Step 7: Visualization and Output ---
     original_img = Image.open(img_path).convert("RGB")
@@ -266,15 +284,12 @@ def detect_barlines_ml(img_path: str, unet_model_path: str, segnet_model_path: s
     scaled_barline_coords = []
     for box in barline_coords:
         x1, y1, x2, y2 = box
-        scaled_box = (
-            int(x1 * scale_x),
-            int(y1 * scale_y),
-            int(x2 * scale_x),
-            int(y2 * scale_y)
-        )
+        scaled_box = (int(x1 * scale_x), int(y1 * scale_y), int(x2 * scale_x), int(y2 * scale_y))
         scaled_barline_coords.append(scaled_box)
-    
-    img_with_boxes = draw_barlines_on_image(original_img_cv, scaled_barline_coords, color=(0, 0, 255))
+
+    img_with_boxes = draw_barlines_on_image(
+        original_img_cv, scaled_barline_coords, color=(0, 0, 255)
+    )
 
     # Save the debug image
     if not os.path.exists(output_dir):
@@ -286,17 +301,28 @@ def detect_barlines_ml(img_path: str, unet_model_path: str, segnet_model_path: s
 
     # Save debug images of intermediate steps
     # Image.fromarray((mix * 255).astype(np.uint8)).save(os.path.join(output_dir, "debug_mix.png"))
-    Image.fromarray((staff_pred * 255).astype(np.uint8)).save(os.path.join(output_dir, "debug_staff_pred.png"))
-    Image.fromarray((symbols_coarse * 255).astype(np.uint8)).save(os.path.join(output_dir, "debug_symbols_coarse.png"))
-    Image.fromarray((stems_rests_pred * 255).astype(np.uint8)).save(os.path.join(output_dir, "debug_stems_rests.png"))
-    Image.fromarray((notehead_pred * 255).astype(np.uint8)).save(os.path.join(output_dir, "debug_notehead.png"))
-    Image.fromarray((clefs_keys_pred * 255).astype(np.uint8)).save(os.path.join(output_dir, "debug_clefs_keys.png"))
-    
-    symbols_final = symbols_pred.copy()
+    Image.fromarray((staff_pred * 255).astype(np.uint8)).save(
+        os.path.join(output_dir, "debug_staff_pred.png")
+    )
+    Image.fromarray((symbols_coarse * 255).astype(np.uint8)).save(
+        os.path.join(output_dir, "debug_symbols_coarse.png")
+    )
+    Image.fromarray((stems_rests_pred * 255).astype(np.uint8)).save(
+        os.path.join(output_dir, "debug_stems_rests.png")
+    )
+    Image.fromarray((notehead_pred * 255).astype(np.uint8)).save(
+        os.path.join(output_dir, "debug_notehead.png")
+    )
+    Image.fromarray((clefs_keys_pred * 255).astype(np.uint8)).save(
+        os.path.join(output_dir, "debug_clefs_keys.png")
+    )
+
+    symbols_pred.copy()
     # draw_bounding_boxes(symbols_final, notehead_bboxes, color=(1,1,1))
     # Image.fromarray((symbols_final * 255).astype(np.uint8)).save(os.path.join(output_dir, "debug_symbols_final.png"))
 
     return barline_coords
+
 
 if __name__ == "__main__":
     """
@@ -320,7 +346,9 @@ if __name__ == "__main__":
 
     # 縦線検出を実行
     try:
-        barline_coords = detect_barlines_ml(img_path, unet_model_path, segnet_model_path, output_dir)
+        barline_coords = detect_barlines_ml(
+            img_path, unet_model_path, segnet_model_path, output_dir
+        )
         print("\nBarline detection process completed successfully.")
         print(f"Output image saved in '{output_dir}' directory.")
     except Exception as e:

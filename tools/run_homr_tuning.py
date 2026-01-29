@@ -106,7 +106,9 @@ def run_trial(
     for image in images:
         cmd.extend(["--images", image])
 
-    result = subprocess.run(cmd, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    result = subprocess.run(
+        cmd, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+    )
     if result.returncode != 0:
         print(result.stdout, file=sys.stderr)
         raise SystemExit(f"Trial {run_id} failed with return code {result.returncode}")
@@ -160,10 +162,14 @@ def main() -> None:
         for jdx, max_factor in enumerate(args.max_factors, start=1):
             trial_idx = len(trials) + 1
             trial_id = f"{run_root}/trials/trial-{trial_idx:03d}"
-            metrics_path = run_trial(args.images, args.output_root, trial_id, min_factor, max_factor)
+            metrics_path = run_trial(
+                args.images, args.output_root, trial_id, min_factor, max_factor
+            )
             num_predictions = load_num_predictions(metrics_path)
             score = -abs(num_predictions - args.target)
-            trial = TrialResult(trial_id, min_factor, max_factor, num_predictions, score, metrics_path)
+            trial = TrialResult(
+                trial_id, min_factor, max_factor, num_predictions, score, metrics_path
+            )
             trials.append(trial)
             append_step_log(trial)
 

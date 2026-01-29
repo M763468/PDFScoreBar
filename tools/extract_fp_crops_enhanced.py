@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import json
-import cv2
-import os
 from pathlib import Path
-import numpy as np
+
+import cv2
+
 
 def barline_iou(box1, box2):
     x1_1, y1_1, x2_1, y2_1 = box1
@@ -23,6 +23,7 @@ def barline_iou(box1, box2):
 
     return inter_area / float(area1 + area2 - inter_area)
 
+
 def extract_fp_crops():
     repo_root = Path(__file__).resolve().parents[1]
     output_dir = repo_root / "logs/fp_crops_enhanced"
@@ -33,47 +34,47 @@ def extract_fp_crops():
             "name": "page_001",
             "image": repo_root / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001.png",
             "gt": repo_root / "logs/phase6_detector_miss/gt_rebuild/page_001_boxes_sorted.json",
-            "preds": repo_root / "logs/phase5b_confirmed_union_eval/page_001_hybrid_preds.json"
+            "preds": repo_root / "logs/phase5b_confirmed_union_eval/page_001_hybrid_preds.json",
         },
         {
             "name": "page_3",
             "image": repo_root / "logs/homr_eval/baseline_for_hybrid/page_3/page_3.png",
             "gt": repo_root / "data/evaluation/annotations/page_003/boxes_sorted.json",
-            "preds": repo_root / "logs/phase5b_confirmed_union_eval/page_3_hybrid_preds.json"
+            "preds": repo_root / "logs/phase5b_confirmed_union_eval/page_3_hybrid_preds.json",
         },
         {
             "name": "page_004",
             "image": repo_root / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004.png",
             "gt": repo_root / "logs/phase6_detector_miss/gt_rebuild/page_004_boxes_sorted.json",
-            "preds": repo_root / "logs/phase5b_confirmed_union_eval/page_004_hybrid_preds.json"
+            "preds": repo_root / "logs/phase5b_confirmed_union_eval/page_004_hybrid_preds.json",
         },
         {
             "name": "page_10",
             "image": repo_root / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10.png",
             "gt": repo_root / "logs/phase6_detector_miss/gt_rebuild/page_10_boxes_sorted.json",
-            "preds": repo_root / "logs/phase5b_confirmed_union_eval/page_10_hybrid_preds.json"
+            "preds": repo_root / "logs/phase5b_confirmed_union_eval/page_10_hybrid_preds.json",
         },
         {
             "name": "page_15",
             "image": repo_root / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15.png",
             "gt": repo_root / "logs/phase6_detector_miss/gt_rebuild/page_15_boxes_sorted.json",
-            "preds": repo_root / "logs/phase5b_confirmed_union_eval/page_15_hybrid_preds.json"
-        }
+            "preds": repo_root / "logs/phase5b_confirmed_union_eval/page_15_hybrid_preds.json",
+        },
     ]
 
     total_fp_count = 0
     for page in pages:
         print(f"Processing {page['name']}...")
-        img = cv2.imread(str(page['image']))
+        img = cv2.imread(str(page["image"]))
         if img is None:
             print(f"Error: Could not read image {page['image']}")
             continue
 
-        with open(page['gt'], 'r') as f:
+        with open(page["gt"], "r") as f:
             gt_data = json.load(f)
-            gt_boxes = [entry['barline_location'] for entry in gt_data]
+            gt_boxes = [entry["barline_location"] for entry in gt_data]
 
-        with open(page['preds'], 'r') as f:
+        with open(page["preds"], "r") as f:
             pred_boxes = json.load(f)
 
         # Match preds to GT to find FPs
@@ -118,7 +119,9 @@ def extract_fp_crops():
                 pad_y2 = h_half - (cy2 - cy)
                 pad_x1 = w_half - (cx - cx1)
                 pad_x2 = w_half - (cx2 - cx)
-                crop = cv2.copyMakeBorder(crop, pad_y1, pad_y2, pad_x1, pad_x2, cv2.BORDER_CONSTANT, value=[255, 255, 255])
+                crop = cv2.copyMakeBorder(
+                    crop, pad_y1, pad_y2, pad_x1, pad_x2, cv2.BORDER_CONSTANT, value=[255, 255, 255]
+                )
 
             save_path = output_dir / f"{page['name']}_fp_{idx:04d}.png"
             cv2.imwrite(str(save_path), crop)
@@ -127,6 +130,7 @@ def extract_fp_crops():
         total_fp_count += page_fp_count
 
     print(f"Extraction complete. Total FP crops: {total_fp_count}")
+
 
 if __name__ == "__main__":
     extract_fp_crops()

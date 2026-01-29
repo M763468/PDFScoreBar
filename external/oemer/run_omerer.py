@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import importlib.util
 import functools
 import json
 import os
@@ -32,8 +31,8 @@ if str(OEMER_SRC) not in sys.path:
     sys.path.insert(0, str(OEMER_SRC))
 
 from oemer import layers  # type: ignore
-from oemer.ete import clear_data, extract, teaser  # type: ignore
 from oemer import symbol_extraction as oemer_symbol_extraction  # type: ignore
+from oemer.ete import clear_data, extract, teaser  # type: ignore
 
 from common.barline_evaluation import (
     BarlineMatch,
@@ -213,7 +212,9 @@ def aggregate_metrics(per_image: Sequence[ImageMetrics]) -> AggregateMetrics:
 
 
 def main() -> None:
-    output_root = resolve_repo_path(os.environ.get("OEMER_OUTPUT_ROOT"), default=DEFAULT_OUTPUT_ROOT)
+    output_root = resolve_repo_path(
+        os.environ.get("OEMER_OUTPUT_ROOT"), default=DEFAULT_OUTPUT_ROOT
+    )
     run_prefix = os.environ.get("OEMER_RUN_PREFIX", DEFAULT_RUN_PREFIX)
     force_run_id = os.environ.get("OEMER_FORCE_RUN_ID")
 
@@ -232,7 +233,9 @@ def main() -> None:
             except ValueError as exc:
                 raise ValueError(f"Invalid OEMER_TARGET_PAGES entry: {token}") from exc
         if not parsed_pages:
-            raise ValueError("OEMER_TARGET_PAGES was provided but no valid page indices were parsed")
+            raise ValueError(
+                "OEMER_TARGET_PAGES was provided but no valid page indices were parsed"
+            )
         target_pages = sorted(set(parsed_pages))
     else:
         target_pages = list(DEFAULT_TARGET_PAGES)
@@ -285,7 +288,9 @@ def main() -> None:
         runtime_env["OEMER_FORCE_RUN_ID"] = force_run_id
     for key in sorted(tracked_keys):
         runtime_env[key] = os.environ.get(key)
-    override_keys = ["OEMER_IMAGE_OVERRIDE"] + [f"OEMER_IMAGE_OVERRIDE_PAGE_{page}" for page in target_pages]
+    override_keys = ["OEMER_IMAGE_OVERRIDE"] + [
+        f"OEMER_IMAGE_OVERRIDE_PAGE_{page}" for page in target_pages
+    ]
     for key in override_keys:
         value = os.environ.get(key)
         if value:
@@ -313,15 +318,17 @@ def main() -> None:
         per_image_metrics: List[ImageMetrics] = []
 
         for page in target_pages:
-            override_path = os.environ.get(f"OEMER_IMAGE_OVERRIDE_PAGE_{page}") or os.environ.get("OEMER_IMAGE_OVERRIDE")
+            override_path = os.environ.get(f"OEMER_IMAGE_OVERRIDE_PAGE_{page}") or os.environ.get(
+                "OEMER_IMAGE_OVERRIDE"
+            )
             source_path = Path(override_path) if override_path else image_dir / f"page_{page}.png"
             if not source_path.exists():
                 raise FileNotFoundError(f"Image not found: {source_path}")
 
             canonical_name = f"page_{page}"
             stem = source_path.stem
-            if stem.startswith('page_'):
-                suffix = stem.split('page_', 1)[1]
+            if stem.startswith("page_"):
+                suffix = stem.split("page_", 1)[1]
                 if suffix.isdigit() and len(suffix) == 3:
                     canonical_name = f"page_{suffix}"
                 else:
@@ -331,13 +338,17 @@ def main() -> None:
             processed_images.append(str(source_path))
 
             clear_data()
-            args = type("Args", (), {
-                "img_path": str(source_path),
-                "output_path": str(page_dir / f"{canonical_name}.musicxml"),
-                "use_tf": False,
-                "save_cache": False,
-                "without_deskew": False,
-            })()
+            args = type(
+                "Args",
+                (),
+                {
+                    "img_path": str(source_path),
+                    "output_path": str(page_dir / f"{canonical_name}.musicxml"),
+                    "use_tf": False,
+                    "save_cache": False,
+                    "without_deskew": False,
+                },
+            )()
 
             extract_error = None
             musicxml_path = Path(args.output_path)
@@ -354,13 +365,17 @@ def main() -> None:
                     teaser_path = page_dir / f"{canonical_name}_teaser.png"
                     teaser_image.save(teaser_path)
                 except Exception as teaser_exc:
-                    (page_dir / "teaser_error.txt").write_text(f"{type(teaser_exc).__name__}: {teaser_exc}\n")
+                    (page_dir / "teaser_error.txt").write_text(
+                        f"{type(teaser_exc).__name__}: {teaser_exc}\n"
+                    )
 
             try:
                 boxes = extract_barline_boxes()
             except Exception as box_exc:
                 boxes = []
-                (page_dir / "barline_extract_error.txt").write_text(f"{type(box_exc).__name__}: {box_exc}\n")
+                (page_dir / "barline_extract_error.txt").write_text(
+                    f"{type(box_exc).__name__}: {box_exc}\n"
+                )
 
             base_image = cv2.imread(str(source_path), cv2.IMREAD_COLOR)
             if base_image is None:
@@ -395,7 +410,9 @@ def main() -> None:
                 x1, y1, x2, y2 = box
                 return (x1 + x2) / 2.0, (y1 + y2) / 2.0
 
-            def _vertical_overlap_fraction(box_a: Tuple[int, int, int, int], box_b: Tuple[int, int, int, int]) -> float:
+            def _vertical_overlap_fraction(
+                box_a: Tuple[int, int, int, int], box_b: Tuple[int, int, int, int]
+            ) -> float:
                 top = max(box_a[1], box_b[1])
                 bottom = min(box_a[3], box_b[3])
                 if bottom <= top:
@@ -601,7 +618,9 @@ def main() -> None:
                 "status": git_status,
             },
         }
-        (run_root / "run_config.json").write_text(json.dumps(run_config, indent=2, ensure_ascii=False))
+        (run_root / "run_config.json").write_text(
+            json.dumps(run_config, indent=2, ensure_ascii=False)
+        )
 
         print(f"oemer evaluation artifacts written to {run_root}")
     finally:

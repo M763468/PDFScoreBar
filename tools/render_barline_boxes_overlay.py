@@ -37,11 +37,11 @@ def iter_bboxes(json_path: Path) -> Iterable[tuple[list[int], int]]:
             # Direct coordinate list [x1, y1, x2, y2]
             yield record, None
             continue
-            
+
         # Dictionary format
         measure = record.get("measure_number")
         bbox = record.get("barline_location") or record.get("orig_bbox") or record.get("pred_bbox")
-        
+
         if not bbox or len(bbox) != 4:
             continue
         yield bbox, measure
@@ -50,10 +50,18 @@ def iter_bboxes(json_path: Path) -> Iterable[tuple[list[int], int]]:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", required=True, type=Path, help="Path to the original page image")
-    parser.add_argument("--boxes", required=True, type=Path, help="JSON file containing barline boxes")
-    parser.add_argument("--output", required=True, type=Path, help="Destination for the rendered overlay")
-    parser.add_argument("--color", default="0,0,255", help="Comma separated B,G,R color (default: red)")
-    parser.add_argument("--thickness", type=int, default=2, help="Rectangle thickness in pixels (default: 2)")
+    parser.add_argument(
+        "--boxes", required=True, type=Path, help="JSON file containing barline boxes"
+    )
+    parser.add_argument(
+        "--output", required=True, type=Path, help="Destination for the rendered overlay"
+    )
+    parser.add_argument(
+        "--color", default="0,0,255", help="Comma separated B,G,R color (default: red)"
+    )
+    parser.add_argument(
+        "--thickness", type=int, default=2, help="Rectangle thickness in pixels (default: 2)"
+    )
     parser.add_argument(
         "--alpha",
         type=float,
@@ -108,4 +116,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

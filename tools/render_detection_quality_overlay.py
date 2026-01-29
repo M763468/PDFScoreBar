@@ -6,16 +6,15 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import List, Set, Tuple
 
 import cv2
 
-
 Color = Tuple[int, int, int]
 
-TP_COLOR: Color = (0, 255, 0)     # Green
-FP_COLOR: Color = (0, 0, 255)     # Red
-FN_COLOR: Color = (255, 0, 255)   # Magenta (more visible on white)
+TP_COLOR: Color = (0, 255, 0)  # Green
+FP_COLOR: Color = (0, 0, 255)  # Red
+FN_COLOR: Color = (255, 0, 255)  # Magenta (more visible on white)
 
 
 def load_boxes(json_path: Path) -> List[Tuple[int, int, int, int]]:
@@ -90,7 +89,9 @@ def main() -> None:
     parser.add_argument("--metrics", required=True, type=Path)
     parser.add_argument("--ground-truth", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--image-key", required=True, help="Image key in metrics.json (e.g., page_001)")
+    parser.add_argument(
+        "--image-key", required=True, help="Image key in metrics.json (e.g., page_001)"
+    )
     parser.add_argument("--thickness", type=int, default=2)
     args = parser.parse_args()
 

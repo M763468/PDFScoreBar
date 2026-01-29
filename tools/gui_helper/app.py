@@ -1,15 +1,16 @@
 import json
 import os
-from flask import Flask, render_template, send_file
+
 import config
+from flask import Flask, render_template, send_file
 
 # Create the Flask application instance.
 # 'template_folder' tells Flask where to look for HTML files.
 # 'static_folder' tells Flask where to look for CSS/JS files.
-app = Flask(__name__, template_folder='templates', static_folder='static')
+app = Flask(__name__, template_folder="templates", static_folder="static")
 
 
-@app.route('/')
+@app.route("/")
 def index():
     """
     Main Route (Root URL)
@@ -24,20 +25,20 @@ def index():
     if not os.path.exists(detections_path):
         return f"Error: File not found at {detections_path}", 404
 
-    with open(detections_path, 'r') as f:
+    with open(detections_path, "r") as f:
         data = json.load(f)
 
     # 2. Extract predictions.
     #    We pass this list to the HTML template so Javascript can use it.
-    predictions = data.get('predictions', [])
+    predictions = data.get("predictions", [])
 
     # 3. Render the 'index.html' template.
     #    We pass the 'predictions' list as a variable named 'barlines'.
     #    We also pass the image source URL (see the /image route below).
-    return render_template('index.html', barlines=predictions, image_url='/image')
+    return render_template("index.html", barlines=predictions, image_url="/image")
 
 
-@app.route('/image')
+@app.route("/image")
 def serve_image():
     """
     Image Route
@@ -50,10 +51,10 @@ def serve_image():
     if not os.path.exists(image_path):
         return "Error: Image not found", 404
 
-    return send_file(image_path, mimetype='image/png')
+    return send_file(image_path, mimetype="image/png")
 
 
-@app.route('/save_decisions', methods=['POST'])
+@app.route("/save_decisions", methods=["POST"])
 def save_decisions():
     """
     Save Decisions Route
@@ -68,10 +69,10 @@ def save_decisions():
 
     # 1. Parse the JSON data from the request body
     data = request.get_json()
-    if not data or 'ignored_ids' not in data:
+    if not data or "ignored_ids" not in data:
         return {"status": "error", "message": "Missing ignored_ids"}, 400
 
-    ignored_ids = data['ignored_ids']
+    ignored_ids = data["ignored_ids"]
 
     # 2. Basic validation: ensure it's a list
     if not isinstance(ignored_ids, list):
@@ -79,15 +80,13 @@ def save_decisions():
 
     # 3. Create the output dictionary with a timestamp
     import datetime
-    output_data = {
-        "ignored_ids": ignored_ids,
-        "updated_at": datetime.datetime.now().isoformat()
-    }
+
+    output_data = {"ignored_ids": ignored_ids, "updated_at": datetime.datetime.now().isoformat()}
 
     # 4. Write to the file
     target_file = config.MANUAL_IGNORE_PATH
     try:
-        with open(target_file, 'w') as f:
+        with open(target_file, "w") as f:
             json.dump(output_data, f, indent=2)
 
         print(f"Successfully saved {len(ignored_ids)} ignored IDs to {target_file}")
@@ -98,9 +97,9 @@ def save_decisions():
         return {"status": "error", "message": str(e)}, 500
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # usage: python tools/gui_helper/app.py
     # This runs the development server on localhost:5000
-    print(f"Starting GUI Helper...")
+    print("Starting GUI Helper...")
     print(f"Loading data from: {config.METRICS_PATH}")
     app.run(debug=True, port=5000)

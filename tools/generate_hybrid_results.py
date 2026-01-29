@@ -1,6 +1,5 @@
-
-import json
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -8,28 +7,35 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(REPO_ROOT))
 
-from src.common.barline_evaluation import greedy_barline_match, barline_iou, BarlineMatchResult
+from src.common.barline_evaluation import barline_iou, greedy_barline_match
+
 
 def load_json_boxes(path: Path):
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         data = json.load(f)
     if isinstance(data, list):
-        if not data: return []
-        if isinstance(data[0], list): return [tuple(x) for x in data]
-        if isinstance(data[0], dict) and "barline_location" in data[0]: return [tuple(item["barline_location"]) for item in data]
+        if not data:
+            return []
+        if isinstance(data[0], list):
+            return [tuple(x) for x in data]
+        if isinstance(data[0], dict) and "barline_location" in data[0]:
+            return [tuple(item["barline_location"]) for item in data]
     elif isinstance(data, dict):
         if "predictions" in data:
             boxes = []
             for pred in data["predictions"]:
-                if "orig_bbox" in pred: boxes.append(tuple(pred["orig_bbox"]))
+                if "orig_bbox" in pred:
+                    boxes.append(tuple(pred["orig_bbox"]))
             return boxes
     return []
+
 
 def has_match(query_box, references, iou_thresh=0.5):
     for ref in references:
         if barline_iou(query_box, ref) > iou_thresh:
             return True
     return False
+
 
 def cluster_boxes(boxes_with_source, iou_thresh=0.5):
     clusters = []
@@ -42,7 +48,7 @@ def cluster_boxes(boxes_with_source, iou_thresh=0.5):
                     break
             if matched_cluster:
                 break
-        
+
         if matched_cluster:
             matched_cluster.append((box, source))
         else:
@@ -69,6 +75,7 @@ def choose_representative(cluster):
 
     return best_box
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--baseline", type=Path, required=True)
@@ -92,9 +99,13 @@ def main():
     gt_boxes = []
     if args.gt:
         gt_boxes = load_json_boxes(args.gt)
-        print(f"Loaded {len(baseline_boxes)} Baseline, {len(sr_boxes)} SR, {len(omr_boxes)} OMR, {len(gt_boxes)} GT.")
+        print(
+            f"Loaded {len(baseline_boxes)} Baseline, {len(sr_boxes)} SR, {len(omr_boxes)} OMR, {len(gt_boxes)} GT."
+        )
     else:
-        print(f"Loaded {len(baseline_boxes)} Baseline, {len(sr_boxes)} SR, {len(omr_boxes)} OMR. (No GT provided)")
+        print(
+            f"Loaded {len(baseline_boxes)} Baseline, {len(sr_boxes)} SR, {len(omr_boxes)} OMR. (No GT provided)"
+        )
 
     hybrid_preds = []
     if args.merge_strategy == "phase4_hybrid":
@@ -155,9 +166,10 @@ def main():
         print(f"F1: {f1:.4f}")
 
     # Save Results
-    with open(args.output, 'w') as f:
+    with open(args.output, "w") as f:
         json.dump(hybrid_preds, f, indent=2)
     print(f"Saved hybrid predictions to {args.output}")
+
 
 if __name__ == "__main__":
     main()

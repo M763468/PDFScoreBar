@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Render overlays for remaining FN targets with detector predictions."""
+
 from __future__ import annotations
 
 import argparse
@@ -10,7 +11,6 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
 import cv2
-
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -38,7 +38,9 @@ def load_boxes(path: Path) -> List[Box]:
             boxes.append(tuple(map(int, record)))
             continue
         if isinstance(record, dict):
-            bbox = record.get("barline_location") or record.get("orig_bbox") or record.get("pred_bbox")
+            bbox = (
+                record.get("barline_location") or record.get("orig_bbox") or record.get("pred_bbox")
+            )
             if bbox and len(bbox) == 4:
                 boxes.append(tuple(map(int, bbox)))
     return boxes
@@ -77,10 +79,7 @@ def get_page_paths(page: str) -> Optional[PagePaths]:
     if not image.exists():
         return None
     homr_json = (
-        REPO_ROOT
-        / "logs/phase5b_homr_recall/homr_factor_1p0"
-        / page
-        / f"{page}_detections.json"
+        REPO_ROOT / "logs/phase5b_homr_recall/homr_factor_1p0" / page / f"{page}_detections.json"
     )
     omr_json = (
         REPO_ROOT
@@ -89,10 +88,14 @@ def get_page_paths(page: str) -> Optional[PagePaths]:
         / "predictions.json"
     )
     hybrid_json = REPO_ROOT / "logs/phase5b_promiscuous_union_eval" / f"{page}_hybrid_preds.json"
-    return PagePaths(name=page, image=image, homr_json=homr_json, omr_json=omr_json, hybrid_json=hybrid_json)
+    return PagePaths(
+        name=page, image=image, homr_json=homr_json, omr_json=omr_json, hybrid_json=hybrid_json
+    )
 
 
-def draw_boxes(base: "cv2.Mat", boxes: Iterable[Box], color: Tuple[int, int, int], thickness: int) -> None:
+def draw_boxes(
+    base: "cv2.Mat", boxes: Iterable[Box], color: Tuple[int, int, int], thickness: int
+) -> None:
     for x1, y1, x2, y2 in boxes:
         cv2.rectangle(base, (x1, y1), (x2, y2), color, thickness)
 
@@ -136,7 +139,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
-    recheck_csv = REPO_ROOT / "logs/phase6_detector_miss/gt_fix_review_full/near_hit_recheck/near_hit_recheck.csv"
+    recheck_csv = (
+        REPO_ROOT
+        / "logs/phase6_detector_miss/gt_fix_review_full/near_hit_recheck/near_hit_recheck.csv"
+    )
     classification_csv = REPO_ROOT / "logs/phase6_detector_miss/detector_miss_classification.csv"
 
     targets = load_remaining_fn_targets(recheck_csv, classification_csv)

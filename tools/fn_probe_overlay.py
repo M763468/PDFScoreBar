@@ -123,7 +123,9 @@ def main() -> None:
             if abs(p["x"] - cx) <= args.gt_window:
                 near = True
                 break
-        summary.append({"fn_id": idx, "overlay": str(out_path), "probe_near_gt": near, "topk": topk})
+        summary.append(
+            {"fn_id": idx, "overlay": str(out_path), "probe_near_gt": near, "topk": topk}
+        )
 
     (args.output_dir / "summary.json").write_text(json.dumps(summary, indent=2))
 

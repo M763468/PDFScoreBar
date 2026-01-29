@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Staff scan inspection GUI server (no external deps)."""
+
 from __future__ import annotations
 
 import argparse
@@ -175,7 +176,9 @@ class Handler(BaseHTTPRequestHandler):
             existing.append(payload)
             existing.sort(key=lambda item: (item.get("y", 0), item.get("band_height", 0)))
             path.write_text(json.dumps({"scan_log": existing}, indent=2))
-            self._serve_json({"status": "ok", "path": str(path), "count": len(existing), "items": existing})
+            self._serve_json(
+                {"status": "ok", "path": str(path), "count": len(existing), "items": existing}
+            )
             return
         self.send_error(404, "Not found")
 

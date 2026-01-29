@@ -15,7 +15,7 @@ import argparse
 from pathlib import Path
 
 import cv2
-import numpy as np
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -66,7 +66,9 @@ def main() -> None:
         raise SystemExit(f"Failed to load mask image: {args.mask}")
 
     if base.shape[:2] != mask_raw.shape[:2]:
-        mask_raw = cv2.resize(mask_raw, (base.shape[1], base.shape[0]), interpolation=cv2.INTER_NEAREST)
+        mask_raw = cv2.resize(
+            mask_raw, (base.shape[1], base.shape[0]), interpolation=cv2.INTER_NEAREST
+        )
 
     _, mask_binary = cv2.threshold(mask_raw, 0, 255, cv2.THRESH_BINARY)
     mask_bool = mask_binary > 0

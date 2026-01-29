@@ -1,7 +1,7 @@
-import argparse
 import json
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
+
 
 def calculate_iou(boxA, boxB):
     """
@@ -20,6 +20,7 @@ def calculate_iou(boxA, boxB):
         return 0
     return interArea / unionArea
 
+
 def find_match(gt_bbox, pred_bboxes, iou_threshold):
     """
     Find if a matching prediction exists for a given ground truth bbox.
@@ -30,12 +31,13 @@ def find_match(gt_bbox, pred_bboxes, iou_threshold):
             return True
     return False
 
+
 def load_json_predictions(path):
     """Load bboxes from a JSON file."""
     if not path or not Path(path).exists():
         # print(f"Warning: Prediction file not found: {path}")
         return []
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         data = json.load(f)
 
     # Handles lists of {"bbox": [x1,y1,x2,y2]}
@@ -43,7 +45,7 @@ def load_json_predictions(path):
         return data
     # Handles lists of [x1, y1, x2, y2]
     if isinstance(data, list) and len(data) > 0 and isinstance(data[0], list):
-         return [{"bbox": bbox} for bbox in data]
+        return [{"bbox": bbox} for bbox in data]
     # Handles homr _detections.json format
     if isinstance(data, dict) and "predictions" in data:
         bboxes = [p["orig_bbox"] for p in data.get("predictions", [])]
@@ -82,7 +84,7 @@ def analyze_page(page_context, iou_threshold):
             "fn_id": fn_id,
             "bbox": fn_bbox["bbox"],
             "attribution_label": "",
-            "evidence": {}
+            "evidence": {},
         }
 
         is_in_hybrid = find_match(fn_bbox, hybrid_preds, iou_threshold)
@@ -107,6 +109,7 @@ def analyze_page(page_context, iou_threshold):
         results.append(analysis)
 
     return results
+
 
 def main():
     IOU_THRESHOLD = 0.4
@@ -140,7 +143,7 @@ def main():
             "stem": "page_004",
             "run_dir": "logs/hybrid_generalization/phase4b_cv_prokofiev_va_page_004",
             "fn_gt": "data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/fn_only.json",
-        }
+        },
     ]
 
     all_results = []
@@ -149,16 +152,16 @@ def main():
     for page in PAGES:
         run_dir = page["run_dir"]
         stem = page["stem"]
-        
+
         # This path structure is strange, but confirmed from file listings
         homr_base_path = f"{run_dir}/baseline/{stem}/{stem}/{stem}_detections.json"
         homr_sr_path = f"{run_dir}/sr/{stem}/{stem}/{stem}_detections.json"
-        
+
         # Some older runs might not have this deep structure
         if not Path(homr_base_path).exists():
-             homr_base_path = f"{run_dir}/baseline/{stem}/{stem}_detections.json"
+            homr_base_path = f"{run_dir}/baseline/{stem}/{stem}_detections.json"
         if not Path(homr_sr_path).exists():
-             homr_sr_path = f"{run_dir}/sr/{stem}/{stem}_detections.json"
+            homr_sr_path = f"{run_dir}/sr/{stem}/{stem}_detections.json"
 
         context = {
             "fn_gt": page["fn_gt"],
@@ -178,23 +181,24 @@ def main():
             aggregate_summary[page["dataset"]][label] += 1
 
     # --- Output Results ---
-    print("="*80)
+    print("=" * 80)
     print("FN Attribution Analysis Results")
-    print("="*80)
+    print("=" * 80)
 
     print("\n--- Per-Page Breakdown ---")
     for page_res in all_results:
         print(f"\n--- {page_res['page']} ---")
         for item in page_res["results"]:
-            print(f"  FN ID: {item['fn_id']}, BBox: {item['bbox']}, Label: {item['attribution_label']}")
+            print(
+                f"  FN ID: {item['fn_id']}, BBox: {item['bbox']}, Label: {item['attribution_label']}"
+            )
             # print(f"    Evidence: {item['evidence']}")
-        print("-"*20)
+        print("-" * 20)
 
-
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("--- Aggregate Summary ---")
     print(json.dumps(aggregate_summary, indent=2))
-    print("="*80)
+    print("=" * 80)
 
 
 if __name__ == "__main__":

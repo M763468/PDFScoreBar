@@ -73,7 +73,7 @@ def compute_scores(gray: np.ndarray, band: Box, staff_lines: List[int], step: in
     crop = gray[y1:y2, x1:x2]
     if crop.size == 0:
         return []
-    ink = (255 - crop)
+    ink = 255 - crop
     _, bin_img = cv2.threshold(ink, 160, 255, cv2.THRESH_BINARY)
     h, w = bin_img.shape
     results = []
@@ -120,7 +120,9 @@ def rank_probes(probes: List[Dict], topk: int) -> List[Dict]:
     return probes_sorted[:topk]
 
 
-def draw_boxes(img: np.ndarray, boxes: List[Box], color: Tuple[int, int, int], thickness: int = 2) -> None:
+def draw_boxes(
+    img: np.ndarray, boxes: List[Box], color: Tuple[int, int, int], thickness: int = 2
+) -> None:
     for x1, y1, x2, y2 in boxes:
         cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), color, thickness)
 

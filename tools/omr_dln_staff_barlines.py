@@ -9,7 +9,6 @@ import numpy as np
 
 from src.common.barline_evaluation import greedy_barline_match
 
-
 Box = Tuple[int, int, int, int]
 
 
@@ -61,7 +60,9 @@ def build_staff_barlines(xs: List[int], bands: List[Tuple[int, int]], width: int
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--omr", type=Path, required=True, help="omr-dln predictions.json")
-    ap.add_argument("--staff-mask", type=Path, required=True, help="homr staff mask image (debug_3_staff.png)")
+    ap.add_argument(
+        "--staff-mask", type=Path, required=True, help="homr staff mask image (debug_3_staff.png)"
+    )
     ap.add_argument("--gt", type=Path, help="GT json (optional)")
     ap.add_argument("--output", type=Path, required=True)
     ap.add_argument("--metrics", type=Path, required=True)
@@ -85,7 +86,9 @@ def main() -> None:
 
     if args.gt and args.gt.exists():
         gt_data = json.loads(args.gt.read_text())
-        gt_boxes = [tuple(item["barline_location"]) for item in gt_data if "barline_location" in item]
+        gt_boxes = [
+            tuple(item["barline_location"]) for item in gt_data if "barline_location" in item
+        ]
         match = greedy_barline_match(preds, gt_boxes)
         tp = len(match.matches)
         fp = len(match.false_positive_indices)

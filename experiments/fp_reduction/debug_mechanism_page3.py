@@ -214,7 +214,7 @@ def main():
     cv2.imwrite(os.path.join(args.output, "B2_Filter_Result.jpg"), vis_b2)
 
     # --- 4. Diff Analysis ---
-    filt_stats = run_evaluation(accepted_preds, gt)  # Note: accepted_preds is a subset list
+    run_evaluation(accepted_preds, gt)  # Note: accepted_preds is a subset list
     # We need to map accepted_preds back to original indices to know which TPs were lost.
     # Actually, base_stats['tp_indices'] tells us which ORIGINAL indices were TPs.
     # If an index in base_stats['tp_indices'] is NOT in accepted_indices, it was LOST.

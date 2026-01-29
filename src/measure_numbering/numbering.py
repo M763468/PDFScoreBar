@@ -63,7 +63,7 @@ class MeasureNumberer:
 
         # 2. System and Staff geometry
         sys_x1 = min(s.bbox.x1 for s in system.staves)
-        sys_x2 = max(s.bbox.x2 for s in system.staves)
+        max(s.bbox.x2 for s in system.staves)
         sys_y1 = min(s.bbox.y1 for s in system.staves)
         sys_y2 = max(s.bbox.y2 for s in system.staves)
 

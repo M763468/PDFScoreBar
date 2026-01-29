@@ -106,7 +106,7 @@ def extract_number_from_text(text):
             val = int(n_str)
             if val >= 2:
                 valid_nums.append(val)
-        except:
+        except Exception:
             pass
 
     if not valid_nums:

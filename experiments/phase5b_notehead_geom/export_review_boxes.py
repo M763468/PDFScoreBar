@@ -293,7 +293,7 @@ def main() -> None:
         gt_boxes = load_gt(page.gt)
         match = greedy_barline_match(geom_kept, gt_boxes, iou_threshold=0.5)
         tp_indices = {m.pred_index for m in match.matches}
-        fp_indices = set(match.false_positive_indices)
+        set(match.false_positive_indices)
         fn_indices = set(match.false_negative_indices)
 
         entries = []

@@ -27,7 +27,6 @@ def debug_band_scan(
     ink_threshold = 200
     min_ratio = 0.50
     scan_x_peak_ratio_min = 1.2
-    scan_center_on_peak = True
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     ink = (gray < ink_threshold).astype(np.uint8)

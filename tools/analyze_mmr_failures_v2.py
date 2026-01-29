@@ -108,7 +108,6 @@ def main():
 
         # Find measure
         measure = None
-        sys_idx = -1
 
         # Flatten measure list to find by global index? Or assume system/measure structure?
         # The target_m_idx from user is likely 0-based index in the page's measure list

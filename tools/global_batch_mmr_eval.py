@@ -29,13 +29,13 @@ def process_page(
     # Mask path mapping
     mask_dir = mask_root / f"eval2_{work_name}_{page_str}/baseline/{page_str}/{page_str}"
     staff_mask = mask_dir / f"{page_str}_debug_3_staff.png"
-    notehead_mask = mask_dir / f"{page_str}_debug_6_notehead.png"
+    mask_dir / f"{page_str}_debug_6_notehead.png"
 
     if not staff_mask.exists():
         # Try alternate path if first one fails
         mask_dir = mask_root / f"eval2_{work_name}_{page_str}/baseline"
         staff_mask = mask_dir / f"{page_str}_debug_3_staff.png"
-        notehead_mask = mask_dir / f"{page_str}_debug_6_notehead.png"
+        mask_dir / f"{page_str}_debug_6_notehead.png"
 
     if not staff_mask.exists():
         print(f"Skipping {work_name} {page_str}: Staff mask not found.")

@@ -62,7 +62,6 @@ def main():
             barlines.append(bbox)
 
     # 4. Check Connectivity for adjacent pairs
-    results = []
 
     debug_img = img.copy()
 

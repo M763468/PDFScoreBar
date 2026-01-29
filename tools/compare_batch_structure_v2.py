@@ -12,7 +12,7 @@ def compare_batches(old_root, new_root, config_paths):
         pages = config.get("pages", config)
 
         for entry in pages:
-            name = entry["name"]
+            entry["name"]
             old_rel = entry.get("numbering")
             if not old_rel:
                 continue
@@ -91,7 +91,7 @@ def compare_batches(old_root, new_root, config_paths):
                                 "Diff": c_new - c_old,
                             }
                         )
-                except:
+                except Exception:
                     pass
 
     if all_results:
@@ -104,7 +104,6 @@ def compare_batches(old_root, new_root, config_paths):
 
 
 if __name__ == "__main__":
-
     REPO_ROOT = Path("/home/masaki_muramatsu/ws_PDFScoreBar_model_exp")
     compare_batches(
         REPO_ROOT,  # Absolute paths in config will be used mostly

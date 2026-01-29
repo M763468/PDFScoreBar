@@ -97,7 +97,7 @@ def main() -> None:
 
     base_h, base_w = base.shape[:2]
     staff_h, staff_w = staff.shape[:2]
-    scale_x = base_w / float(staff_w)
+    base_w / float(staff_w)
     scale_y = base_h / float(staff_h)
     staff_height = compute_staff_height(staff) * scale_y
     margin = int(round(staff_height * args.margin_factor))

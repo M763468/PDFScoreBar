@@ -32,7 +32,7 @@ def debug_measure(img_path, target_coords, title):
     for res in ocr_res:
         print(f"  {res[1]} (conf={res[2]:.2f})")
 
-    val, score, debug = select_best_candidate(ocr_res, proc.shape[1], proc.shape[0])
+    val, score, debug = select_best_candidate(ocr_res, crop.shape[1], crop.shape[0])
     print(f"Result: {val} (Score: {score:.2f}, Debug: {debug})")
 
 

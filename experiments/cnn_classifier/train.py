@@ -478,7 +478,7 @@ def train(args):
         weight_pos = 1.0 / n_pos
         weight_neg = 1.0 / n_neg
         samples_weight = torch.tensor(
-            [weight_pos if l == 1 else weight_neg for l in labels], dtype=torch.float
+            [weight_pos if lbl == 1 else weight_neg for lbl in labels], dtype=torch.float
         )
         sampler = WeightedRandomSampler(samples_weight, len(samples_weight))
         print("Using WeightedRandomSampler")

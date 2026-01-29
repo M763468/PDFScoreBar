@@ -1649,8 +1649,8 @@ def compute_candidate_stats(
         x1, y1, x2, y2 = pred.orig_bbox
         w = x2 - x1
         h = y2 - y1
-        cx = (x1 + x2) // 2
-        cy = (y1 + y2) // 2
+        (x1 + x2) // 2
+        (y1 + y2) // 2
 
         # Clamp to mask bounds
         c_y1 = max(0, min(mask_h - 1, y1))

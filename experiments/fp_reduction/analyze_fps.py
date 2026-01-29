@@ -44,7 +44,7 @@ def analyze_fps(metrics_path, stats_path, detections_path):
 
     # Load detections for system/staff info
     with open(detections_path, "r") as f:
-        detections = json.load(f)
+        json.load(f)
 
     # Analyze FPs
     print("=" * 80)

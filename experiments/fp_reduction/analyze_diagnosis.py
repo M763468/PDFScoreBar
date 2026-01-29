@@ -15,8 +15,8 @@ def analyze(metrics_path, stats_path):
     # The JSON structure has "images": [ ... ]
     page_metrics = next(m for m in metrics["images"] if "page_3" in m["image"])
 
-    tp_indices = set(m["pred_index"] for m in page_metrics["matches"])
-    fp_indices = (
+    set(m["pred_index"] for m in page_metrics["matches"])
+    (
         set(page_metrics["false_positives_indices"])
         if "false_positives_indices" in page_metrics
         else set()

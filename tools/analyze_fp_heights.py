@@ -54,7 +54,7 @@ def main():
             page_idx = parts.index("page")
             subdir = "_".join(parts[:page_idx])
             page_name = "_".join(parts[page_idx:])
-        except:
+        except Exception:
             continue
 
         # GT Path

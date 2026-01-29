@@ -379,7 +379,7 @@ def select_best_candidate(ocr_result, img_width, img_height):
                         "debug": f"dx={dist_x_norm:.2f},dy={dist_y_norm:.2f},h={h_ratio:.2f}",
                     }
                 )
-            except:
+            except Exception:
                 pass
 
     if not candidates:
@@ -426,7 +426,7 @@ def extract_number_from_text(text):
             val = int(n_str)
             if val >= 2:
                 valid_nums.append(val)
-        except:
+        except Exception:
             pass
     if not valid_nums:
         return None

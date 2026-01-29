@@ -67,8 +67,8 @@ def analyze():
 
     for idx, box in enumerate(barlines_data):
         bx1, by1, bx2, by2 = box
-        b_mid_y = (by1 + by2) / 2
-        b_h = by2 - by1
+        (by1 + by2) / 2
+        by2 - by1
 
         assigned = False
         for i, (sy1, sy2) in enumerate(staff_bands):
@@ -104,7 +104,7 @@ def analyze():
 
         # Check gaps
         prev_x2 = -1
-        prev_idx = -1
+        prev_center_x = 0
 
         for j, b in enumerate(bars):
             x1, y1, x2, y2 = b
@@ -122,7 +122,6 @@ def analyze():
                     print(f"    Box 2: {b}")
 
             prev_x2 = x2
-            prev_center_x = center_x
 
         # Check rightmost
         last_bar = bars[-1]

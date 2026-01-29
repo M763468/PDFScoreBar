@@ -11,7 +11,7 @@ import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import cv2
 import numpy as np
@@ -2010,7 +2010,7 @@ def detect_probe_scan(
             else:
                 scan_y1, scan_y2 = band_y1, band_y2
             if band_source == "horiz_scan" and scan_center_on_peak and scan_peak_row is not None:
-                peak_h = scan_peak_band_height if scan_peak_band_height > 0 else scan_h
+                peak_h = scan_peak_band_height if scan_peak_band_height > 0 else band_h
                 peak_h = max(1, int(peak_h))
                 scan_y1 = max(0, int(scan_peak_row - peak_h // 2))
                 scan_y2 = min(h - 1, int(scan_y1 + peak_h - 1))

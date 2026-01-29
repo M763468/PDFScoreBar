@@ -135,9 +135,9 @@ def run_verification():
     page.systems = systems
 
     print(f"Built {len(systems)} systems.")
-    for i, sys in enumerate(systems):
-        print(f"  System {i}: {len(sys.staves)} staves")
-        for j, staff in enumerate(sys.staves):
+    for i, system in enumerate(systems):
+        print(f"  System {i}: {len(system.staves)} staves")
+        for j, staff in enumerate(system.staves):
             print(f"    Staff {j}: {len(staff.barlines)} barlines assigned")
 
     # Number Measures

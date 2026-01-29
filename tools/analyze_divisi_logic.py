@@ -38,7 +38,6 @@ def main():
     avg_height = sum(heights) / len(heights)
     DIVISI_DIST_RATIO = 1.5
     dist_threshold = avg_height * DIVISI_DIST_RATIO
-    ALIGN_TOL = 10
 
     print(f"Avg Height: {avg_height:.2f}")
     print(f"Dist Threshold: {dist_threshold:.2f}")

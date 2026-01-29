@@ -63,8 +63,8 @@ def detect_hbar(roi_img):
     for cnt in contours:
         x, y, cw, ch = cv2.boundingRect(cnt)
 
-        aspect = cw / float(ch)
-        width_ratio = cw / float(w)
+        cw / float(ch)
+        cw / float(w)
         # print(f"    [DEBUG H-BAR CANDIDATE] AR={aspect:.2f}, WR={width_ratio:.2f} (w={cw}, h={ch})")
 
         # 1. Aspect Ratio Check (Horizontal Bar)
@@ -131,7 +131,7 @@ def extract_number_from_text(text):
             val = int(n_str)
             if val >= 2:
                 valid_nums.append(val)
-        except:
+        except Exception:
             pass
 
     if not valid_nums:
@@ -376,9 +376,9 @@ def main():
     _, bin_mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
     if args.erode_iter > 0:
         kernel = np.ones((3, 3), np.uint8)
-        proc_mask = cv2.erode(bin_mask, kernel, iterations=args.erode_iter)
+        cv2.erode(bin_mask, kernel, iterations=args.erode_iter)
     else:
-        proc_mask = bin_mask
+        pass
 
     overrides = []
 

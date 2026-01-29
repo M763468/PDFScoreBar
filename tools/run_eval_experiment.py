@@ -13,7 +13,7 @@ sys.path.append(str(REPO_ROOT))
 # Import logic (assuming these are available in PYTHONPATH or via relative import)
 # If direct import fails, we might need to adjust sys.path more carefully
 try:
-    from tools.run_gt_rebuild_hybrid_eval import detect_probe_scan, load_preds
+    from tools.run_gt_rebuild_hybrid_eval import detect_probe_scan
 except ImportError:
     # Fallback to src imports if available, or try to find where detect_probe_scan is
     # Based on previous context, it is in tools/run_gt_rebuild_hybrid_eval.py

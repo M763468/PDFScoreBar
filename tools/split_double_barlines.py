@@ -103,7 +103,6 @@ def process_file(json_path, image_root, output_vis_dir, dry_run=True):
         print(f"Failed to load image: {image_path}")
         return 0, []
 
-    new_data = []
     changes = []
 
     # We assume 'data' is a list of dicts (GT format)
@@ -131,7 +130,7 @@ def process_file(json_path, image_root, output_vis_dir, dry_run=True):
 
         if bar_type == "double_barline" and bbox:
             x1, y1, x2, y2 = [int(v) for v in bbox]
-            w = x2 - x1
+            x2 - x1
 
             # Extract crop
             crop = image[y1:y2, x1:x2]

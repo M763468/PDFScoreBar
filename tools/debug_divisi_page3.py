@@ -102,8 +102,8 @@ def main():
 
     systems = builder.build_systems(staves, barlines, image=img)
     print(f"\nTotal Systems Built: {len(systems)}")
-    for i, sys in enumerate(systems):
-        print(f"System {i + 1}: {len(sys.staves)} staves")
+    for i, system in enumerate(systems):
+        print(f"System {i + 1}: {len(system.staves)} staves")
 
 
 if __name__ == "__main__":

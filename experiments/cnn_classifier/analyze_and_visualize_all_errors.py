@@ -299,7 +299,6 @@ def analyze_page(group, source, error_list, meta):
 
     # Get Positive FP Boxes for FN revocery check
     # (Any box the model Predicted=1, even if it's an FP candidate)
-    full_page_results_indices = []  # We need to know which candidates were predicted positive in the FULL SET
     # But here 'error_list' only has ERRORS.
     # To correctly judge "Recoverable", we strictly need ALL positive predictions (including Hits).
     # However, approximations: A Hard Miss usually means NO candidates.

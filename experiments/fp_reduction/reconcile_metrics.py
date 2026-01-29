@@ -91,9 +91,6 @@ def main():
     best_ious = []
     example_failures = []  # (GT, BestPred, IoU)
 
-    tp_count = 0
-    matched_preds = set()
-
     for i, g in enumerate(gt):
         best_iou = 0
         best_p_idx = -1
@@ -130,8 +127,6 @@ def main():
     print(f"GT with IoU >= 0.1: {np.sum(best_ious >= 0.1)}")
 
     # Simple Greedy Evaluation (Standard)
-    matches = 0
-    used_p = set()
     # Sort by IoU to prioritize best fit? Standard is often greedy by conf, or Hungarian.
     # Here we just iterate GT.
 

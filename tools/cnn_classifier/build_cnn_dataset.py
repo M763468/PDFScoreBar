@@ -538,7 +538,7 @@ def extract_deepscores_probe_fp(
         return existing
 
     # Add repo root/tools to sys.path to import detect_probe_scan
-    tools_dir = (
+    (
         ds_root.parents[2] / "tools"
     )  # This ds_root usage is risky if ds_root is absolute path elsewhere.
     # Better: repo_root is calculated in main, but not passed here.

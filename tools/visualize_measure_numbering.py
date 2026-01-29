@@ -138,8 +138,8 @@ def run_visualization():
     # 2. Draw Barlines
     # Collect all barlines that ended up in systems (including ghosts)
     all_processed_barlines = set()
-    for sys in page.systems:
-        for staff in sys.staves:
+    for sys_obj in page.systems:
+        for staff in sys_obj.staves:
             all_processed_barlines.update(staff.barlines)
         # Also include ghosts from measures
         for m in sys.measures:

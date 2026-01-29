@@ -68,17 +68,13 @@ def visualize_deepscores_filters(ds_root, sample_count=1):
         for comp in comps:
             x1, y1, x2, y2 = comp["bbox"]
             color = (0, 255, 0)  # Green (Pass)
-            rejection_reason = None
 
             if comp["area"] < min_area:
                 color = (255, 255, 0)  # Cyan (Area fail)
-                rejection_reason = "Area"
             elif comp["h"] < min_height:
                 color = (0, 0, 255)  # Red (Height fail)
-                rejection_reason = "Height"
             elif (comp["h"] / max(1, comp["w"])) < vertical_ratio:
                 color = (255, 0, 255)  # Magenta (Ratio fail)
-                rejection_reason = "Ratio"
 
             # Thick line for visibility
             cv2.rectangle(vis_img, (x1, y1), (x2, y2), color, 3)

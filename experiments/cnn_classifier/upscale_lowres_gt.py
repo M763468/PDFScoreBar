@@ -16,7 +16,6 @@ def upscale_page(image_path, gt_path, output_image_path, output_gt_path, scale=4
         raise ValueError(f"Failed to load {image_path}")
 
     # Setup RealESRGAN
-    model_name = "RealESRGAN_x4plus"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
 

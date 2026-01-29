@@ -55,7 +55,7 @@ def evaluate_rest_detection(eval_root, overrides_root):
             pred_data = load_json(pred_path).get("measure_overrides", [])
             numbering_data = load_json(numbering_path)
             global_map = map_global_index_to_coords(numbering_data)
-        except:
+        except Exception:
             continue
 
         # 1. Build Pred Map (system, measure) -> count

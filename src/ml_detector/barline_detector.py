@@ -222,7 +222,7 @@ def detect_barlines_ml(
     clefs_keys_pred = np.where(seg_map == 3, 1, 0).astype(np.uint8)
 
     # Get notehead bounding boxes
-    notehead_bboxes = get_bbox(notehead_pred)
+    get_bbox(notehead_pred)
 
     # --- Step 3: Dilate symbol masks to remove more noise ---
     kernel = np.ones((5, 5), np.uint8)
@@ -317,7 +317,7 @@ def detect_barlines_ml(
         os.path.join(output_dir, "debug_clefs_keys.png")
     )
 
-    symbols_final = symbols_pred.copy()
+    symbols_pred.copy()
     # draw_bounding_boxes(symbols_final, notehead_bboxes, color=(1,1,1))
     # Image.fromarray((symbols_final * 255).astype(np.uint8)).save(os.path.join(output_dir, "debug_symbols_final.png"))
 

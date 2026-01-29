@@ -36,7 +36,7 @@ def load_local_gt(json_path: str) -> Tuple[List[Staff], List[Barline]]:
 
             bbox = pred.get("orig_bbox") or pred.get("pred_bbox")
             x1, y1, x2, y2 = bbox
-            sys_idx = pred.get("system_index")
+            pred.get("system_index")
 
             # Treat everything as barline first
             barlines.append(Barline(bbox=BBox(x1, y1, x2, y2)))

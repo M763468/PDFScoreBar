@@ -1,21 +1,8 @@
 # [EXPERIMENTAL] Utility to reconstruct final detector output from intermediate logs.
 # Created on 2026-01-04 to simulate production input for numbering tests.
 
-import json
-from pathlib import Path
-from typing import List
-
-
-def load_json(path: Path):
-    with open(path, "r") as f:
-        return json.load(f)
-
-
-def bboxes_match(b1: List[int], b2: List[int], tol: int = 1) -> bool:
-    return all(abs(v1 - v2) <= tol for v1, v2 in zip(b1, b2))
-
-
 import argparse
+import json
 from pathlib import Path
 from typing import List
 

@@ -290,7 +290,7 @@ def train_model(args):
     labels_1 = [1] * len(paths_1)
 
     all_paths = paths_0 + paths_1
-    all_labels = labels_0 + labels_1
+    labels_0 + labels_1
 
     print(f"Total Data: {len(all_paths)} (Pos: {len(paths_1)}, Neg: {len(paths_0)})")
 

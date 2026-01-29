@@ -41,7 +41,7 @@ def snap_boxes_to_peaks(base: np.ndarray, boxes: List[Box], window: int) -> List
         if hi <= lo:
             peak = cx
         else:
-            peak = int(np.argmax(col_sum[lo:hi + 1]) + lo)
+            peak = int(np.argmax(col_sum[lo : hi + 1]) + lo)
         width = max(1, x2 - x1)
         half = max(1, width // 2)
         snapped.append((peak - half, y1, peak + half, y2))

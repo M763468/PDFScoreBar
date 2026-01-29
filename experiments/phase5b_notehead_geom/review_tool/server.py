@@ -3,12 +3,12 @@
 Minimal review tool server (no external deps).
 Serves static UI and saves labels to JSON.
 """
+
 from __future__ import annotations
 
 import argparse
 import json
 import mimetypes
-import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse

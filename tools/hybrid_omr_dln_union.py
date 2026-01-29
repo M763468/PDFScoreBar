@@ -2,13 +2,12 @@
 import argparse
 import json
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
 
-from src.common.barline_evaluation import greedy_barline_match, barline_iou
-
+from src.common.barline_evaluation import barline_iou, greedy_barline_match
 
 Box = Tuple[int, int, int, int]
 
@@ -154,7 +153,9 @@ def main() -> None:
     if args.gt and args.gt.exists():
         gt_data = json.loads(args.gt.read_text())
         if isinstance(gt_data, list):
-            gt_boxes = [tuple(item["barline_location"]) for item in gt_data if "barline_location" in item]
+            gt_boxes = [
+                tuple(item["barline_location"]) for item in gt_data if "barline_location" in item
+            ]
         else:
             gt_boxes = []
         match = greedy_barline_match(final_boxes, gt_boxes)

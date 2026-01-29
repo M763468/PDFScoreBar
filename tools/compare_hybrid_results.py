@@ -7,6 +7,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(REPO_ROOT))
 
+
 # Reuse the overlap logic from temp_analyze_overlap.py but make it robust
 def compute_iou(boxA, boxB):
     # box: [x1, y1, x2, y2]
@@ -27,32 +28,34 @@ def compute_iou(boxA, boxB):
     iou = interArea / denominator
     return iou
 
+
 def load_predictions(json_path):
-    with open(json_path, 'r') as f:
+    with open(json_path, "r") as f:
         data = json.load(f)
-    
+
     # Handle different formats if necessary
     # Format 1: List of dicts with 'barline_location' (Standard Hybrid Output)
     # Format 2: List of lists (Simple Box List)
-    
+
     boxes = []
     if isinstance(data, list):
         if not data:
             return []
         if isinstance(data[0], dict):
-             if 'barline_location' in data[0]:
-                 boxes = [item['barline_location'] for item in data]
-             elif 'orig_bbox' in data[0]:
-                 boxes = [item['orig_bbox'] for item in data]
-             else:
-                 print(f"Warning: Unknown dict format in {json_path}. Keys: {data[0].keys()}")
+            if "barline_location" in data[0]:
+                boxes = [item["barline_location"] for item in data]
+            elif "orig_bbox" in data[0]:
+                boxes = [item["orig_bbox"] for item in data]
+            else:
+                print(f"Warning: Unknown dict format in {json_path}. Keys: {data[0].keys()}")
         elif isinstance(data[0], list):
             boxes = data
     else:
         print(f"Error: JSON root is not a list in {json_path}")
         return []
-        
+
     return boxes
+
 
 def main():
     parser = argparse.ArgumentParser(description="Compare two hybrid prediction JSON files.")
@@ -61,7 +64,7 @@ def main():
     parser.add_argument("--iou", type=float, default=0.95, help="IoU threshold for strict matching")
     args = parser.parse_args()
 
-    print(f"--- Comparing Hybrid Results ---")
+    print("--- Comparing Hybrid Results ---")
     print(f"Baseline: {args.baseline}")
     print(f"Target:   {args.target}")
 
@@ -78,10 +81,10 @@ def main():
     # Check matches (Target -> Baseline)
     matched_count = 0
     unmatched_indices = []
-    
+
     # Simple greedy matching
     # Note: For strict regression testing, we want 1-to-1 matching, but for now coverage is key.
-    
+
     for i, t_box in enumerate(target_boxes):
         found = False
         for b_box in base_boxes:
@@ -94,7 +97,9 @@ def main():
             unmatched_indices.append(i)
 
     match_rate = matched_count / len(target_boxes) if target_boxes else 0
-    print(f"\nMatches (Target found in Baseline, IoU >= {args.iou}): {matched_count}/{len(target_boxes)} ({match_rate:.2%})")
+    print(
+        f"\nMatches (Target found in Baseline, IoU >= {args.iou}): {matched_count}/{len(target_boxes)} ({match_rate:.2%})"
+    )
 
     if unmatched_indices:
         print(f"Unmatched Target Indices: {unmatched_indices}")
@@ -115,9 +120,11 @@ def main():
             reverse_matched += 1
         else:
             lost_indices.append(i)
-            
+
     loss_rate = reverse_matched / len(base_boxes) if base_boxes else 0
-    print(f"Retention (Baseline found in Target, IoU >= {args.iou}): {reverse_matched}/{len(base_boxes)} ({loss_rate:.2%})")
+    print(
+        f"Retention (Baseline found in Target, IoU >= {args.iou}): {reverse_matched}/{len(base_boxes)} ({loss_rate:.2%})"
+    )
 
     if lost_indices:
         print(f"Lost Baseline Indices: {lost_indices}")
@@ -129,6 +136,7 @@ def main():
     else:
         print("\nWARNING: Results differ.")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

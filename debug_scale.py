@@ -1,7 +1,5 @@
-
 import json
-import numpy as np
-from pathlib import Path
+
 
 def barline_iou(box1, box2):
     x1_1, y1_1, x2_1, y2_1 = box1
@@ -16,6 +14,7 @@ def barline_iou(box1, box2):
     area1 = (x2_1 - x1_1 + 1) * (y2_1 - y1_1 + 1)
     area2 = (x2_2 - x1_2 + 1) * (y2_2 - y1_2 + 1)
     return inter_area / float(area1 + area2 - inter_area)
+
 
 gt_path = "data/evaluation/annotations/page_003/boxes_sorted.json"
 pred_path = "logs/validation/20251227T_batch23_musicxml_system/page_3/page_3_preds.json"

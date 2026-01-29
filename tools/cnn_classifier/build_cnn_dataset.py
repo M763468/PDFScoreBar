@@ -13,7 +13,6 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
-
 DEFAULT_PAGES = [
     {
         "name": "page_001",
@@ -190,7 +189,7 @@ def extract_local_tp_fp(
         if predictions_root:
             # Load candidates from logs
             filename = candidate_filename.replace("{page}", page["name"])
-            
+
             cand_path = Path(predictions_root) / "per_page" / page["name"] / filename
             if not cand_path.exists():
                 cand_path = Path(predictions_root) / page["name"] / filename
@@ -198,10 +197,10 @@ def extract_local_tp_fp(
             if not cand_path.exists():
                 print(f"Warning: Candidate file not found for {page['name']} at {cand_path}")
                 continue
-                
+
             with cand_path.open("r") as f:
                 data = json.load(f)
-            
+
             if isinstance(data, list):
                 candidates = data
             elif isinstance(data, dict) and "scores" in data:
@@ -210,26 +209,26 @@ def extract_local_tp_fp(
                 print(f"Unknown JSON format in {candidate_filename}")
                 candidates = []
 
-            # Auto-detect scale mismatch REMOVED. 
+            # Auto-detect scale mismatch REMOVED.
             # Reason: Incompatible with pure FP files (fp_boxes.json) which have 0 overlap by definition.
             # Auto-scale logic would find 0 matches at scale 1.0 and pick random scales that have accidental overlap.
             # Reverting to fixed scale (assume 1.0 for fp_boxes.json as in v2).
             best_scale = 1.0
-            
+
             # Filter matches: if candidate overlaps GT, it's a TP (already handled above), so skip.
             # Only keep non-matching candidates as FP (Hard Negatives).
             fp_candidates = []
             for raw_cand in candidates:
-                cand = [x * best_scale for x in raw_cand] # Apply scale (1.0)
+                cand = [x * best_scale for x in raw_cand]  # Apply scale (1.0)
                 is_match = False
                 for gt_box in gt_boxes:
                     iou = barline_iou(gt_box, cand)
-                    if iou > iou_threshold: 
+                    if iou > iou_threshold:
                         is_match = True
                         break
                 if not is_match:
                     fp_candidates.append(cand)
-            
+
             for idx, box in enumerate(tqdm(fp_candidates, desc=f"{page['name']} FP", leave=False)):
                 x1, y1, x2, y2 = box
                 cx = int(round((x1 + x2) / 2))
@@ -369,9 +368,7 @@ def extract_eval2_tp_fp(
             print(f"Warning: {page['gt']} - {exc}")
             continue
 
-        for i, box in enumerate(
-            tqdm(gt_boxes, desc=f"{score}/{page_name} GT", leave=False)
-        ):
+        for i, box in enumerate(tqdm(gt_boxes, desc=f"{score}/{page_name} GT", leave=False)):
             x1, y1, x2, y2 = box
             cx = int(round((x1 + x2) / 2))
             cy = int(round((y1 + y2) / 2))
@@ -417,9 +414,7 @@ def extract_eval2_tp_fp(
             if not is_match:
                 fp_candidates.append(cand)
 
-        for idx, box in enumerate(
-            tqdm(fp_candidates, desc=f"{score}/{page_name} FP", leave=False)
-        ):
+        for idx, box in enumerate(tqdm(fp_candidates, desc=f"{score}/{page_name} FP", leave=False)):
             x1, y1, x2, y2 = box
             cx = int(round((x1 + x2) / 2))
             cy = int(round((y1 + y2) / 2))
@@ -543,14 +538,16 @@ def extract_deepscores_probe_fp(
         return existing
 
     # Add repo root/tools to sys.path to import detect_probe_scan
-    tools_dir = ds_root.parents[2] / "tools" # This ds_root usage is risky if ds_root is absolute path elsewhere.
+    tools_dir = (
+        ds_root.parents[2] / "tools"
+    )  # This ds_root usage is risky if ds_root is absolute path elsewhere.
     # Better: repo_root is calculated in main, but not passed here.
     # Let's assume we are running from repo root or calculate it relative to this file.
     this_file = Path(__file__).resolve()
     repo_root = this_file.parents[2]
     if str(repo_root / "tools") not in sys.path:
         sys.path.append(str(repo_root / "tools"))
-    
+
     from run_gt_rebuild_hybrid_eval import detect_probe_scan
 
     scale = crop_scale
@@ -654,6 +651,7 @@ def extract_deepscores_probe_fp(
 
     return total
 
+
 def category_matches(name, prefixes, names):
     if name in names:
         return True
@@ -724,7 +722,10 @@ def extract_deepscores_negatives(
                 cx = int(round((x1 + x2) / 2))
                 cy = int(round((y1 + y2) / 2))
                 crop = center_crop(img, cx, cy, crop_w, crop_h)
-                save_path = output_dir / f"{split_name.replace('.json','')}_{img_id}_{ann['comments'].split(';')[0]}.png"
+                save_path = (
+                    output_dir
+                    / f"{split_name.replace('.json', '')}_{img_id}_{ann['comments'].split(';')[0]}.png"
+                )
                 if not save_path.exists():
                     cv2.imwrite(str(save_path), crop)
                     total += 1
@@ -782,9 +783,7 @@ def extract_deepscores_tp_from_segmentation(
             if img is None:
                 continue
             crop = center_crop(img, cx, cy, crop_w, crop_h)
-            save_path = output_dir / (
-                f"{seg_path.stem}_idx{comp['label']}_x{x1}_y{y1}.png"
-            )
+            save_path = output_dir / (f"{seg_path.stem}_idx{comp['label']}_x{x1}_y{y1}.png")
             if not save_path.exists():
                 cv2.imwrite(str(save_path), crop)
                 total += 1
@@ -803,49 +802,35 @@ def build_samples(output_root):
 
     for path in local_tp:
         group = path.name.split("_tp_")[0]
-        samples.append(
-            {"path": path, "label": 1, "source": "local", "group": group}
-        )
+        samples.append({"path": path, "label": 1, "source": "local", "group": group})
     for path in local_fp:
         group = path.name.split("_fp_")[0]
-        samples.append(
-            {"path": path, "label": 0, "source": "local", "group": group}
-        )
+        samples.append({"path": path, "label": 0, "source": "local", "group": group})
     for path in eval2_tp:
         group = path.name.split("_tp_")[0]
-        samples.append(
-            {"path": path, "label": 1, "source": "eval2", "group": group}
-        )
+        samples.append({"path": path, "label": 1, "source": "eval2", "group": group})
     for path in eval2_fp:
         group = path.name.split("_fp_")[0]
-        samples.append(
-            {"path": path, "label": 0, "source": "eval2", "group": group}
-        )
+        samples.append({"path": path, "label": 0, "source": "eval2", "group": group})
     for path in ds_fp:
         parts = path.stem.split("_")
         group = parts[2] if len(parts) > 2 else path.stem
-        samples.append(
-            {"path": path, "label": 0, "source": "deepscores", "group": group}
-        )
+        samples.append({"path": path, "label": 0, "source": "deepscores", "group": group})
     for path in ds_probe_fp:
         parts = path.stem.split("_")
         group = parts[2] if len(parts) > 2 else path.stem
-        samples.append(
-            {"path": path, "label": 0, "source": "deepscores_probe", "group": group}
-        )
+        samples.append({"path": path, "label": 0, "source": "deepscores_probe", "group": group})
     for path in ds_tp:
         parts = path.stem.split("_")
         group = parts[2] if len(parts) > 2 else path.stem
-        samples.append(
-            {"path": path, "label": 1, "source": "deepscores", "group": group}
-        )
+        samples.append({"path": path, "label": 1, "source": "deepscores", "group": group})
     return samples
 
 
 def assign_splits(samples, ratios, seed, force_train=None):
     if force_train is None:
         force_train = []
-    
+
     rng = random.Random(seed)
     group_to_samples = {}
     for sample in samples:
@@ -857,10 +842,10 @@ def assign_splits(samples, ratios, seed, force_train=None):
     split_targets = {k: int(len(samples) * v) for k, v in ratios.items()}
     split_counts = {k: 0 for k in ratios}
     split_groups = {k: [] for k in ratios}
-    
+
     # 1. Handle Forced Groups First
     remaining_groups = []
-    
+
     for group in groups:
         if group in force_train:
             split_groups["train"].append(group)
@@ -871,7 +856,8 @@ def assign_splits(samples, ratios, seed, force_train=None):
     def split_score(split_key):
         target = split_targets.get(split_key, 1)
         # Avoid division by zero if target is 0
-        if target <= 0: return float('inf') 
+        if target <= 0:
+            return float("inf")
         return split_counts[split_key] / target
 
     # 2. Greedily assign the rest
@@ -991,10 +977,18 @@ def main():
     parser.add_argument("--max-per-image", type=int, default=5)
     parser.add_argument("--max-total", type=int, default=10000)
     parser.add_argument("--skip-local", action="store_true", help="Skip local TP/FP extraction.")
-    parser.add_argument("--skip-eval2", action="store_true", help="Skip evaluation2 TP/FP extraction.")
-    parser.add_argument("--skip-deepscores", action="store_true", help="Skip DeepScores extraction (TP+FP).")
-    parser.add_argument("--skip-deepscores-fp", action="store_true", help="Skip DeepScores FP extraction.")
-    parser.add_argument("--skip-deepscores-tp", action="store_true", help="Skip DeepScores TP extraction.")
+    parser.add_argument(
+        "--skip-eval2", action="store_true", help="Skip evaluation2 TP/FP extraction."
+    )
+    parser.add_argument(
+        "--skip-deepscores", action="store_true", help="Skip DeepScores extraction (TP+FP)."
+    )
+    parser.add_argument(
+        "--skip-deepscores-fp", action="store_true", help="Skip DeepScores FP extraction."
+    )
+    parser.add_argument(
+        "--skip-deepscores-tp", action="store_true", help="Skip DeepScores TP extraction."
+    )
     parser.add_argument(
         "--deepscores-probe-fp",
         action="store_true",

@@ -1,13 +1,13 @@
 import json
-import sys
 import os
+
 
 def analyze_band_y(page_dir):
     debug_path = os.path.join(page_dir, "endbar_debug.json")
     if not os.path.exists(debug_path):
         return
 
-    with open(debug_path, 'r') as f:
+    with open(debug_path, "r") as f:
         data = json.load(f)
         records = data.get("records", [])
         bands = data.get("bands", [])
@@ -32,7 +32,12 @@ def analyze_band_y(page_dir):
     print(f"Target (2473) Y: {target_y}")
 
     if y_centers:
-        print(f"Min: {min(y_centers)}, Max: {max(y_centers)}, Range: {max(y_centers)-min(y_centers)}")
+        print(
+            f"Min: {min(y_centers)}, Max: {max(y_centers)}, Range: {max(y_centers) - min(y_centers)}"
+        )
+
 
 if __name__ == "__main__":
-    analyze_band_y("logs/gt_rebuild_hybrid_eval/20260102T_bypass_row_filter_fix_rescue/per_page/page_001")
+    analyze_band_y(
+        "logs/gt_rebuild_hybrid_eval/20260102T_bypass_row_filter_fix_rescue/per_page/page_001"
+    )

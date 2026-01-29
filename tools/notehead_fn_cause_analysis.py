@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """Analyze which notehead overlap caused FN after notehead filter."""
+
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional
 
 import cv2
 import numpy as np
-
-import sys
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(REPO_ROOT))
@@ -51,9 +51,7 @@ def denoise_notehead_mask(mask: np.ndarray, open_kernel: int, min_area: int) -> 
         kernel = np.ones((open_kernel, open_kernel), np.uint8)
         cleaned = cv2.morphologyEx(cleaned, cv2.MORPH_OPEN, kernel)
     if min_area and min_area > 0:
-        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
-            cleaned, connectivity=8
-        )
+        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(cleaned, connectivity=8)
         filtered = np.zeros_like(cleaned)
         for label in range(1, num_labels):
             if stats[label, cv2.CC_STAT_AREA] >= min_area:
@@ -71,9 +69,7 @@ def filter_notehead_components(
     if max_aspect_ratio <= 0:
         return mask
     binary = (mask > 0).astype(np.uint8)
-    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
-        binary, connectivity=8
-    )
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(binary, connectivity=8)
     filtered = np.zeros_like(binary)
     for label in range(1, num_labels):
         x, y, w, h, area = stats[label]
@@ -115,7 +111,9 @@ def endpoint_overlap(mask: np.ndarray, box: Box, rx: int, ry: int) -> float:
     return 0.0 if total_area == 0 else total_notehead / total_area
 
 
-def draw_boxes(img: np.ndarray, boxes: Iterable[Box], color: tuple[int, int, int], thickness: int) -> None:
+def draw_boxes(
+    img: np.ndarray, boxes: Iterable[Box], color: tuple[int, int, int], thickness: int
+) -> None:
     for x1, y1, x2, y2 in boxes:
         cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness)
 
@@ -160,12 +158,14 @@ def main() -> None:
         PageSpec(
             name="page_10",
             image=REPO_ROOT / "data/training/images/page_10.png",
-            notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_6_notehead.png",
+            notehead_mask=REPO_ROOT
+            / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_6_notehead.png",
         ),
         PageSpec(
             name="page_15",
             image=REPO_ROOT / "data/training/images/page_15.png",
-            notehead_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_6_notehead.png",
+            notehead_mask=REPO_ROOT
+            / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_6_notehead.png",
         ),
     ]
 
@@ -181,9 +181,7 @@ def main() -> None:
         if base_img is None:
             raise FileNotFoundError(f"Missing image: {page.image}")
         mask = load_notehead_mask(page.notehead_mask, base_img.shape[:2])
-        mask = denoise_notehead_mask(
-            mask, args.notehead_open_kernel, args.notehead_min_area
-        )
+        mask = denoise_notehead_mask(mask, args.notehead_open_kernel, args.notehead_min_area)
         mask = filter_notehead_components(
             mask,
             args.notehead_max_aspect,
@@ -264,7 +262,9 @@ def main() -> None:
         overlay_path = out_root / f"{page.name}_notehead_fn_causes.png"
         cv2.imwrite(str(overlay_path), overlay)
 
-        (out_root / f"{page.name}_notehead_fn_causes.json").write_text(json.dumps(records, indent=2))
+        (out_root / f"{page.name}_notehead_fn_causes.json").write_text(
+            json.dumps(records, indent=2)
+        )
 
         # Per-FN crops with notehead mask overlay.
         for idx, rec in enumerate(records):
@@ -288,7 +288,12 @@ def main() -> None:
             cand_local = (x1 - cx1, y1 - cy1, x2 - cx1, y2 - cy1)
             draw_boxes(crop, [cand_local], (0, 165, 255), 2)
             draw_boxes(crop, [top, bot], (0, 255, 255), 1)
-            draw_boxes(crop, [tuple(v - o for v, o in zip(rec["fn_bbox"], (cx1, cy1, cx1, cy1)))], (255, 0, 255), 2)
+            draw_boxes(
+                crop,
+                [tuple(v - o for v, o in zip(rec["fn_bbox"], (cx1, cy1, cx1, cy1)))],
+                (255, 0, 255),
+                2,
+            )
             crop_path = out_root / f"{page.name}_fn_{idx:02d}_crop.png"
             cv2.imwrite(str(crop_path), crop)
         summary[page.name] = {

@@ -53,7 +53,9 @@ def compute_staff_height(mask: np.ndarray) -> float:
     return float(np.median(heights))
 
 
-def draw_boxes(img: np.ndarray, boxes: List[Box], color: Tuple[int, int, int], thickness: int = 2) -> None:
+def draw_boxes(
+    img: np.ndarray, boxes: List[Box], color: Tuple[int, int, int], thickness: int = 2
+) -> None:
     for x1, y1, x2, y2 in boxes:
         cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), color, thickness)
 
@@ -78,7 +80,9 @@ def iou(a: Box, b: Box) -> float:
     return inter / float(area_a + area_b - inter)
 
 
-def detect_edge_bars(crop: np.ndarray, min_height_ratio: float, edge_margin_ratio: float) -> List[Box]:
+def detect_edge_bars(
+    crop: np.ndarray, min_height_ratio: float, edge_margin_ratio: float
+) -> List[Box]:
     gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
     ink = 255 - gray
     _, bin_img = cv2.threshold(ink, 160, 255, cv2.THRESH_BINARY)
@@ -108,7 +112,9 @@ def detect_edge_bars(crop: np.ndarray, min_height_ratio: float, edge_margin_rati
     return [(gx1, 0, gx2 + 1, h)]
 
 
-def detect_double_bars(crop: np.ndarray, min_height_ratio: float, gap_min: int, gap_max: int) -> List[Box]:
+def detect_double_bars(
+    crop: np.ndarray, min_height_ratio: float, gap_min: int, gap_max: int
+) -> List[Box]:
     gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
     ink = 255 - gray
     _, bin_img = cv2.threshold(ink, 160, 255, cv2.THRESH_BINARY)
@@ -195,7 +201,7 @@ def snap_baseline_to_peak(crop: np.ndarray, baseline: List[Box], window: int) ->
         if hi <= lo:
             peak = cx
         else:
-            peak = int(np.argmax(col_sum[lo:hi + 1]) + lo)
+            peak = int(np.argmax(col_sum[lo : hi + 1]) + lo)
         width = max(1, x2 - x1)
         half = max(1, width // 2)
         snapped.append((peak - half, 0, peak + half, h))
@@ -217,7 +223,9 @@ def main() -> None:
     ap.add_argument("--page-id", type=str, required=True)
     ap.add_argument("--fn-indices", type=str, required=True)
     ap.add_argument("--margin-factor", type=float, default=1.5)
-    ap.add_argument("--method", type=str, choices=["edge", "double", "fragment", "snap"], required=True)
+    ap.add_argument(
+        "--method", type=str, choices=["edge", "double", "fragment", "snap"], required=True
+    )
     ap.add_argument("--min-height-ratio", type=float, default=0.6)
     ap.add_argument("--edge-margin-ratio", type=float, default=0.2)
     ap.add_argument("--gap-min", type=int, default=2)

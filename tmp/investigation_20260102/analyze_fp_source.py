@@ -1,7 +1,6 @@
-
 import json
 import os
-import sys
+
 
 def iou(boxA, boxB):
     xA = max(boxA[0], boxB[0])
@@ -11,23 +10,27 @@ def iou(boxA, boxB):
     interArea = max(0, xB - xA) * max(0, yB - yA)
     boxAArea = (boxA[2] - boxA[0]) * (boxA[3] - boxA[1])
     boxBArea = (boxB[2] - boxB[0]) * (boxB[3] - boxB[1])
-    if boxAArea + boxBArea - interArea == 0: return 0
+    if boxAArea + boxBArea - interArea == 0:
+        return 0
     return interArea / float(boxAArea + boxBArea - interArea)
+
 
 def check_source(page_dir):
     fp_path = os.path.join(page_dir, "fp_boxes.json")
-    recovered_path = os.path.join(page_dir, "end_recovered_geom.json") # Probe results (geom filtered)
+    recovered_path = os.path.join(
+        page_dir, "end_recovered_geom.json"
+    )  # Probe results (geom filtered)
 
     if not os.path.exists(fp_path):
         print(f"FP path not found: {fp_path}")
         return
 
-    with open(fp_path, 'r') as f:
+    with open(fp_path, "r") as f:
         fp_boxes = json.load(f)
 
     recovered_boxes = []
     if os.path.exists(recovered_path):
-        with open(recovered_path, 'r') as f:
+        with open(recovered_path, "r") as f:
             recovered_boxes = json.load(f)
 
     print(f"--- Source Analysis for {os.path.basename(page_dir)} ---")
@@ -43,6 +46,7 @@ def check_source(page_dir):
 
         source = "PROBE" if is_probe else "BASELINE (OMR/Union)"
         print(f"FP #{i} {fp}: {source}")
+
 
 if __name__ == "__main__":
     root_dir = "logs/gt_rebuild_hybrid_eval/20260102T_bypass_row_filter_fix_rescue/per_page"

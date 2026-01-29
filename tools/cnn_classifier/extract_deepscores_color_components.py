@@ -74,7 +74,9 @@ def main():
         type=Path,
         default=Path("/mnt/d/datasets/DeepScoresV2/ds2_dense/segmentation"),
     )
-    parser.add_argument("--output-root", type=Path, default=Path("logs/deepscores_tp/color_components"))
+    parser.add_argument(
+        "--output-root", type=Path, default=Path("logs/deepscores_tp/color_components")
+    )
     parser.add_argument("--palette-index", type=int, default=165)
     parser.add_argument("--min-area", type=int, default=50)
     parser.add_argument("--min-height", type=int, default=30)
@@ -104,7 +106,9 @@ def main():
 
         comps = [c for c in comps if c["area"] >= args.min_area]
         vertical = [
-            c for c in comps if c["h"] >= args.min_height and (c["h"] / max(1, c["w"])) >= args.vertical_ratio
+            c
+            for c in comps
+            if c["h"] >= args.min_height and (c["h"] / max(1, c["w"])) >= args.vertical_ratio
         ]
         non_vertical = [c for c in comps if c not in vertical]
 
@@ -115,8 +119,12 @@ def main():
         overlay_path = image_out / "vertical_overlay.png"
         Image.fromarray(overlay).save(overlay_path)
 
-        vert_crops = save_crops(seg_rgb, vertical, image_out / "vertical_crops", "vert", args.max_crops)
-        other_crops = save_crops(seg_rgb, non_vertical, image_out / "other_crops", "other", args.max_crops)
+        vert_crops = save_crops(
+            seg_rgb, vertical, image_out / "vertical_crops", "vert", args.max_crops
+        )
+        other_crops = save_crops(
+            seg_rgb, non_vertical, image_out / "other_crops", "other", args.max_crops
+        )
 
         summary.append(
             {

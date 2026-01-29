@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path as _Path
+
 REPO_ROOT = _Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -19,7 +20,6 @@ from typing import List
 
 import cv2
 from PIL import Image
-
 from src.archive.oemer import run_omerer
 
 
@@ -65,9 +65,19 @@ def run_smoke() -> Path:
                 stack.enter_context(_temp_env(key, value))
             stack.enter_context(_patch(run_omerer, "clear_data", lambda: None))
             stack.enter_context(_patch(run_omerer, "extract", lambda args: None))
-            stack.enter_context(_patch(run_omerer, "teaser", lambda: Image.new("RGB", (32, 32), "white")))
-            stack.enter_context(_patch(run_omerer.layers, "get_layer", lambda name: dummy_barlines if name == "barlines" else []))
-            stack.enter_context(_patch(run_omerer.oemer_symbol_extraction, "extract", lambda *a, **k: []))
+            stack.enter_context(
+                _patch(run_omerer, "teaser", lambda: Image.new("RGB", (32, 32), "white"))
+            )
+            stack.enter_context(
+                _patch(
+                    run_omerer.layers,
+                    "get_layer",
+                    lambda name: dummy_barlines if name == "barlines" else [],
+                )
+            )
+            stack.enter_context(
+                _patch(run_omerer.oemer_symbol_extraction, "extract", lambda *a, **k: [])
+            )
 
             run_omerer.main()
 

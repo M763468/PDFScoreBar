@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Analyze ink-ratio behavior around FN positions for probe-scan."""
+
 from __future__ import annotations
 
 import argparse
@@ -71,9 +72,7 @@ def select_peaks(
     max_per_band: int,
 ) -> list[int]:
     peaks = np.where(
-        (ratios >= min_ratio)
-        & (ratios >= np.roll(ratios, 1))
-        & (ratios >= np.roll(ratios, -1))
+        (ratios >= min_ratio) & (ratios >= np.roll(ratios, 1)) & (ratios >= np.roll(ratios, -1))
     )[0]
     if peaks.size == 0:
         return []
@@ -108,25 +107,29 @@ def main() -> None:
         PageSpec(
             name="page_001",
             image=REPO_ROOT / "data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png",
-            staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_3_staff.png",
+            staff_mask=REPO_ROOT
+            / "logs/homr_eval/20251229T_gt_rebuild_eval/page_001/page_001_debug_3_staff.png",
             fn_boxes=args.probe_eval_root / "per_page" / "page_001" / "fn_boxes.json",
         ),
         PageSpec(
             name="page_004",
             image=REPO_ROOT / "data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png",
-            staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_3_staff.png",
+            staff_mask=REPO_ROOT
+            / "logs/homr_eval/20251229T_gt_rebuild_eval/page_004/page_004_debug_3_staff.png",
             fn_boxes=args.probe_eval_root / "per_page" / "page_004" / "fn_boxes.json",
         ),
         PageSpec(
             name="page_10",
             image=REPO_ROOT / "data/training/images/page_10.png",
-            staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_3_staff.png",
+            staff_mask=REPO_ROOT
+            / "logs/homr_eval/20251229T_gt_rebuild_eval/page_10/page_10_debug_3_staff.png",
             fn_boxes=args.probe_eval_root / "per_page" / "page_10" / "fn_boxes.json",
         ),
         PageSpec(
             name="page_15",
             image=REPO_ROOT / "data/training/images/page_15.png",
-            staff_mask=REPO_ROOT / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_3_staff.png",
+            staff_mask=REPO_ROOT
+            / "logs/homr_eval/20251229T_gt_rebuild_eval/page_15/page_15_debug_3_staff.png",
             fn_boxes=args.probe_eval_root / "per_page" / "page_15" / "fn_boxes.json",
         ),
     ]
@@ -172,15 +175,25 @@ def main() -> None:
                 y1, y2 = band
             band_h = max(1, y2 - y1 + 1)
             col_sums = ink[y1 : y2 + 1, :].sum(axis=0)
-            stripe_sums = np.convolve(col_sums, np.ones(max(1, args.probe_width), dtype=np.int32), mode="same")
+            stripe_sums = np.convolve(
+                col_sums, np.ones(max(1, args.probe_width), dtype=np.int32), mode="same"
+            )
             ratios = stripe_sums / float(band_h * max(1, args.probe_width))
 
             fn_x = int(round((bx1 + bx2) / 2))
             fn_ratio = float(ratios[fn_x]) if 0 <= fn_x < ratios.size else 0.0
             local_left = max(0, fn_x - args.refine_window)
             local_right = min(ratios.size - 1, fn_x + args.refine_window)
-            local_max = float(ratios[local_left : local_right + 1].max()) if local_right >= local_left else 0.0
-            local_max_x = int(local_left + np.argmax(ratios[local_left : local_right + 1])) if local_right >= local_left else fn_x
+            local_max = (
+                float(ratios[local_left : local_right + 1].max())
+                if local_right >= local_left
+                else 0.0
+            )
+            local_max_x = (
+                int(local_left + np.argmax(ratios[local_left : local_right + 1]))
+                if local_right >= local_left
+                else fn_x
+            )
 
             peaks = select_peaks(
                 ratios,

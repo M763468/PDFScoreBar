@@ -3,6 +3,7 @@
 Generate review overlays per OVERLAY_SPEC.md for Phase 5b2.
 Uses existing union inputs and re-applies row + geom filters (no detector reruns).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -10,7 +11,7 @@ import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple
 
 import cv2
 import numpy as np
@@ -168,7 +169,9 @@ def geom_notehead_ratio_filter(
     return kept, rejected
 
 
-def draw_boxes(base: np.ndarray, boxes: Sequence[Box], color: Tuple[int, int, int], thickness: int) -> None:
+def draw_boxes(
+    base: np.ndarray, boxes: Sequence[Box], color: Tuple[int, int, int], thickness: int
+) -> None:
     for x1, y1, x2, y2 in boxes:
         cv2.rectangle(base, (x1, y1), (x2, y2), color, thickness)
 
@@ -209,7 +212,8 @@ def main() -> None:
             gt=REPO_ROOT / "data/evaluation/annotations/page_003/boxes_sorted.json",
             notehead_mask=REPO_ROOT
             / "logs/phase5b_homr_recall/homr_factor_1p0/page_3/page_3_debug_6_notehead.png",
-            homr_raw=REPO_ROOT / "logs/phase5b_homr_recall/homr_factor_1p0/page_3/page_3_detections.json",
+            homr_raw=REPO_ROOT
+            / "logs/phase5b_homr_recall/homr_factor_1p0/page_3/page_3_detections.json",
             omr_raw=REPO_ROOT
             / "logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5/page_3/predictions.json",
         ),
@@ -219,7 +223,8 @@ def main() -> None:
             gt=REPO_ROOT / "data/training/annotations/page_010/fn_only.json",
             notehead_mask=REPO_ROOT
             / "logs/phase5b_homr_recall/homr_factor_1p0/page_10/page_10_debug_6_notehead.png",
-            homr_raw=REPO_ROOT / "logs/phase5b_homr_recall/homr_factor_1p0/page_10/page_10_detections.json",
+            homr_raw=REPO_ROOT
+            / "logs/phase5b_homr_recall/homr_factor_1p0/page_10/page_10_detections.json",
             omr_raw=REPO_ROOT
             / "logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5/page_10/predictions.json",
         ),
@@ -229,7 +234,8 @@ def main() -> None:
             gt=REPO_ROOT / "data/training/annotations/page_015/fn_only.json",
             notehead_mask=REPO_ROOT
             / "logs/phase5b_homr_recall/homr_factor_1p0/page_15/page_15_debug_6_notehead.png",
-            homr_raw=REPO_ROOT / "logs/phase5b_homr_recall/homr_factor_1p0/page_15/page_15_detections.json",
+            homr_raw=REPO_ROOT
+            / "logs/phase5b_homr_recall/homr_factor_1p0/page_15/page_15_detections.json",
             omr_raw=REPO_ROOT
             / "logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5/page_15/predictions.json",
         ),
@@ -240,7 +246,8 @@ def main() -> None:
             / "data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/fn_only.json",
             notehead_mask=REPO_ROOT
             / "logs/phase5b_homr_recall/homr_factor_1p0/page_001/page_001_debug_6_notehead.png",
-            homr_raw=REPO_ROOT / "logs/phase5b_homr_recall/homr_factor_1p0/page_001/page_001_detections.json",
+            homr_raw=REPO_ROOT
+            / "logs/phase5b_homr_recall/homr_factor_1p0/page_001/page_001_detections.json",
             omr_raw=REPO_ROOT
             / "logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5/page_001/predictions.json",
         ),
@@ -251,7 +258,8 @@ def main() -> None:
             / "data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/fn_only.json",
             notehead_mask=REPO_ROOT
             / "logs/phase5b_homr_recall/homr_factor_1p0/page_004/page_004_debug_6_notehead.png",
-            homr_raw=REPO_ROOT / "logs/phase5b_homr_recall/homr_factor_1p0/page_004/page_004_detections.json",
+            homr_raw=REPO_ROOT
+            / "logs/phase5b_homr_recall/homr_factor_1p0/page_004/page_004_detections.json",
             omr_raw=REPO_ROOT
             / "logs/phase5b/b1_1/omrdln_sweep/20251221T123707/omr_dln/conf_0p5/page_004/predictions.json",
         ),
@@ -322,7 +330,9 @@ def main() -> None:
             draw_boxes(final_overlay, matched_fn_boxes, (255, 255, 0), 3)
             draw_boxes(final_overlay, fn_boxes, (255, 0, 255), 3)
             draw_boxes(final_overlay, fp_boxes, (0, 0, 255), 3)
-        cv2.imwrite(str(overlays_dir / f"{page.name}_final_matched_vs_unmatched.png"), final_overlay)
+        cv2.imwrite(
+            str(overlays_dir / f"{page.name}_final_matched_vs_unmatched.png"), final_overlay
+        )
 
         # E) Provenance + margin overlay
         band_px = max(40, int(0.05 * base_img.shape[1]))

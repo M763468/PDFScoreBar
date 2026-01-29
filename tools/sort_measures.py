@@ -1,7 +1,8 @@
 import json
 
+
 def group_and_sort_measures(input_file, output_file):
-    with open(input_file, 'r') as f:
+    with open(input_file, "r") as f:
         data = json.load(f)
 
     # グループ化のための閾値
@@ -35,11 +36,13 @@ def group_and_sort_measures(input_file, output_file):
             measure_number += 1
 
     # 結果を保存
-    with open(output_file, 'w') as f:
+    with open(output_file, "w") as f:
         json.dump(sorted_data, f, indent=2, ensure_ascii=False)
+
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="Sort barline measures by Y (staff) and X.")
     parser.add_argument("input_file", help="Path to the input JSON (raw annotations)")
     parser.add_argument("output_file", help="Path to save the sorted JSON")
@@ -47,6 +50,7 @@ def main():
 
     group_and_sort_measures(args.input_file, args.output_file)
     print(f"Sorted measures saved to {args.output_file}")
+
 
 if __name__ == "__main__":
     main()

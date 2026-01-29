@@ -2,6 +2,7 @@
 """
 Analyze directory-based image classification for Phase 5b2 review.
 """
+
 from __future__ import annotations
 
 import argparse

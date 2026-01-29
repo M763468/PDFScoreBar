@@ -8,14 +8,13 @@ import os
 
 # Base directory of the repo (one level up from tools/gui_helper/)
 # logic: tools/gui_helper/config.py -> ../../ -> repo_root
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 
 # Path to the JSON file containing the detected barlines (predictions).
 # We are using the 'detections.json' which has the 'pred_bbox' fields.
 # Updated to point to the latest stable run (Heuristic 1 Final).
 METRICS_PATH = os.path.join(
-    BASE_DIR,
-    "logs/homr_eval/20251206T_homr_heuristic_final/page_3/page_3_detections.json"
+    BASE_DIR, "logs/homr_eval/20251206T_homr_heuristic_final/page_3/page_3_detections.json"
 )
 
 # Path to the corresponding score image (page 3).
@@ -23,25 +22,23 @@ METRICS_PATH = os.path.join(
 # Note: The image name in the log dir might be different or same, checking logic:
 # usually it is copied there.
 IMAGE_PATH = os.path.join(
-    BASE_DIR,
-    "logs/homr_eval/20251206T_homr_heuristic_final/page_3/page_3.png"
+    BASE_DIR, "logs/homr_eval/20251206T_homr_heuristic_final/page_3/page_3.png"
 )
 
 # Scan debug JSON (from run_gt_rebuild_hybrid_eval.py --endbar-debug).
 SCAN_PATH = os.path.join(
     BASE_DIR,
-    "logs/gt_rebuild_hybrid_eval/20251231T154529_probe_ext_tb0p35_rowstats_hscan_padR0p50_lr0p60_ml5_debug_rowband_profile/per_page/page_001/endbar_debug.json"
+    "logs/gt_rebuild_hybrid_eval/20251231T154529_probe_ext_tb0p35_rowstats_hscan_padR0p50_lr0p60_ml5_debug_rowband_profile/per_page/page_001/endbar_debug.json",
 )
 
 # Optional image path for scan GUI. Defaults to IMAGE_PATH if not set.
 SCAN_IMAGE_PATH = os.path.join(
-    BASE_DIR,
-    "data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png"
+    BASE_DIR, "data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png"
 )
 
 # Directory to save the manual feedback (JSON).
 OUTPUT_DIR = os.path.join(
-    os.path.dirname(METRICS_PATH) # Save alongside the input file
+    os.path.dirname(METRICS_PATH)  # Save alongside the input file
 )
 
 # File to store the manually ignored barline IDs.

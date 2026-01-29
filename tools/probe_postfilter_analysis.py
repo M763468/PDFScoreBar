@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Analyze FN reappearance and remaining FP after post-filters."""
+
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -11,10 +13,9 @@ from typing import Iterable
 import cv2
 import numpy as np
 
-import sys
-
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from src.common.barline_evaluation import barline_iou
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 Box = tuple[int, int, int, int]
 
@@ -42,7 +43,9 @@ def match_box(target: Box, boxes: Iterable[Box], thr: float = 0.5) -> bool:
     return any(barline_iou(target, b) >= thr for b in boxes)
 
 
-def draw_boxes(img: np.ndarray, boxes: Iterable[Box], color: tuple[int, int, int], thickness: int) -> None:
+def draw_boxes(
+    img: np.ndarray, boxes: Iterable[Box], color: tuple[int, int, int], thickness: int
+) -> None:
     for x1, y1, x2, y2 in boxes:
         cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness)
 
@@ -150,13 +153,19 @@ def main() -> None:
 
         summary[page.name] = {
             "fn_count": len(fn_boxes),
-                "fn_reasons": {
-                    "row_filtered": sum(1 for r in fn_report if r["reason"] == "row_filtered"),
-                    "notehead_filtered": sum(1 for r in fn_report if r["reason"] == "notehead_filtered"),
-                    "barline_mask_filtered": sum(1 for r in fn_report if r["reason"] == "barline_mask_filtered"),
-                    "probe_missing": sum(1 for r in fn_report if r["reason"] == "probe_missing"),
-                    "kept_but_missed_match": sum(1 for r in fn_report if r["reason"] == "kept_but_missed_match"),
-                },
+            "fn_reasons": {
+                "row_filtered": sum(1 for r in fn_report if r["reason"] == "row_filtered"),
+                "notehead_filtered": sum(
+                    1 for r in fn_report if r["reason"] == "notehead_filtered"
+                ),
+                "barline_mask_filtered": sum(
+                    1 for r in fn_report if r["reason"] == "barline_mask_filtered"
+                ),
+                "probe_missing": sum(1 for r in fn_report if r["reason"] == "probe_missing"),
+                "kept_but_missed_match": sum(
+                    1 for r in fn_report if r["reason"] == "kept_but_missed_match"
+                ),
+            },
             "fp_summary": summarize_fp(fp_boxes, fp_class),
         }
         (out_root / f"{page.name}_fn_report.json").write_text(json.dumps(fn_report, indent=2))

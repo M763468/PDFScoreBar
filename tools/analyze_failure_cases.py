@@ -20,7 +20,6 @@ import cv2
 import numpy as np
 from rapidocr_onnxruntime import RapidOCR
 
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -50,7 +49,9 @@ def parse_targets(targets_path: Optional[Path], target_args: List[str]) -> List[
             work, page_str, measure_str = item.split(":")
             targets.append(Target(work, int(page_str), int(measure_str)))
         except ValueError as exc:
-            raise ValueError(f"Invalid --target format: {item} (expected work:page:measure)") from exc
+            raise ValueError(
+                f"Invalid --target format: {item} (expected work:page:measure)"
+            ) from exc
     return targets
 
 
@@ -405,7 +406,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Analyze and visualize known failure cases.")
     parser.add_argument("--targets", type=Path, help="JSON list: [{work,page,measure}, ...]")
     parser.add_argument("--target", action="append", default=[], help="Format: work:page:measure")
-    parser.add_argument("--all-pages", action="store_true", help="Process all pages found under numbering-root.")
+    parser.add_argument(
+        "--all-pages", action="store_true", help="Process all pages found under numbering-root."
+    )
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -442,13 +445,19 @@ def main() -> None:
         action="store_true",
         help="Add ROI index labels for easier reference.",
     )
-    parser.add_argument("--nearby", type=int, default=2, help="Also export neighbors within this range.")
+    parser.add_argument(
+        "--nearby", type=int, default=2, help="Also export neighbors within this range."
+    )
     args = parser.parse_args()
 
     if not args.targets and not args.target and not args.all_pages:
         parser.error("Provide --targets or --target.")
 
-    targets = parse_targets(args.targets, args.target) if not args.all_pages else scan_pages(args.numbering_root)
+    targets = (
+        parse_targets(args.targets, args.target)
+        if not args.all_pages
+        else scan_pages(args.numbering_root)
+    )
     ensure_dir(args.output_dir)
 
     ocr_engine = RapidOCR()
@@ -560,9 +569,13 @@ def main() -> None:
                 ocr_engine=ocr_engine,
             )
 
-            ocr_texts = [item["text"] for item in result["ocr_items"]] if result["ocr_items"] else []
+            ocr_texts = (
+                [item["text"] for item in result["ocr_items"]] if result["ocr_items"] else []
+            )
             ocr_text_label = " / ".join(ocr_texts) if ocr_texts else "-"
-            rest_label = str(result["extracted_number"]) if result["extracted_number"] is not None else "-"
+            rest_label = (
+                str(result["extracted_number"]) if result["extracted_number"] is not None else "-"
+            )
             roi_index += 1
             label_lines = []
             if args.number_roi:

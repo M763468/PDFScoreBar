@@ -3,17 +3,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-import xml.etree.ElementTree as ET
 
 import cv2
 import numpy as np
 
 from src.common.barline_evaluation import barline_iou, greedy_barline_match
-
 
 Box = Tuple[int, int, int, int]
 
@@ -107,7 +106,7 @@ def compute_core_mask(mask: np.ndarray, core_scale: float) -> np.ndarray:
     dist = cv2.distanceTransform(mask, cv2.DIST_L2, 5)
     dist_max = dist.max() if dist.size else 0.0
     core = dist >= (dist_max * core_scale) if dist_max > 0 else np.zeros_like(mask, dtype=bool)
-    return (core.astype(np.uint8) * 255)
+    return core.astype(np.uint8) * 255
 
 
 def remove_by_core(
@@ -180,8 +179,14 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-tag", default=None)
     parser.add_argument("--output-root", type=Path, default=Path("logs/musicxml_density_filter"))
-    parser.add_argument("--baseline-root", type=Path, default=Path("logs/gt_rebuild_hybrid_eval/repro_var88_from_logs_reuse_rows_probe_eps"))
-    parser.add_argument("--homr-root", type=Path, default=Path("logs/homr_eval/20251229T_gt_rebuild_eval"))
+    parser.add_argument(
+        "--baseline-root",
+        type=Path,
+        default=Path("logs/gt_rebuild_hybrid_eval/repro_var88_from_logs_reuse_rows_probe_eps"),
+    )
+    parser.add_argument(
+        "--homr-root", type=Path, default=Path("logs/homr_eval/20251229T_gt_rebuild_eval")
+    )
     parser.add_argument("--ratio", type=float, default=0.30)
     parser.add_argument("--min-notes", type=int, default=8)
     parser.add_argument("--notehead-density-max", type=float, default=0.02)
@@ -195,12 +200,16 @@ def main() -> None:
         "page_001": {
             "image": Path("data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png"),
             "xml": args.homr_root / "page_001" / "page_001.musicxml",
-            "gt": Path("data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/boxes_sorted_v20251229.json"),
+            "gt": Path(
+                "data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/boxes_sorted_v20251229.json"
+            ),
         },
         "page_004": {
             "image": Path("data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png"),
             "xml": args.homr_root / "page_004" / "page_004.musicxml",
-            "gt": Path("data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/boxes_sorted_v20251229.json"),
+            "gt": Path(
+                "data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/boxes_sorted_v20251229.json"
+            ),
         },
         "page_10": {
             "image": Path("data/training/images/page_10.png"),
@@ -235,10 +244,18 @@ def main() -> None:
             raise RuntimeError(f"Failed to read image: {info['image']}")
 
         # masks
-        clef = cv2.imread(str(args.homr_root / page / f"{page}_debug_7_clefs_keys.png"), cv2.IMREAD_GRAYSCALE)
-        staff = cv2.imread(str(args.homr_root / page / f"{page}_debug_15_staffs.png"), cv2.IMREAD_GRAYSCALE)
-        barline = cv2.imread(str(args.homr_root / page / f"{page}_debug_11_bar_lines.png"), cv2.IMREAD_GRAYSCALE)
-        notehead = cv2.imread(str(args.homr_root / page / f"{page}_debug_6_notehead.png"), cv2.IMREAD_GRAYSCALE)
+        clef = cv2.imread(
+            str(args.homr_root / page / f"{page}_debug_7_clefs_keys.png"), cv2.IMREAD_GRAYSCALE
+        )
+        staff = cv2.imread(
+            str(args.homr_root / page / f"{page}_debug_15_staffs.png"), cv2.IMREAD_GRAYSCALE
+        )
+        barline = cv2.imread(
+            str(args.homr_root / page / f"{page}_debug_11_bar_lines.png"), cv2.IMREAD_GRAYSCALE
+        )
+        notehead = cv2.imread(
+            str(args.homr_root / page / f"{page}_debug_6_notehead.png"), cv2.IMREAD_GRAYSCALE
+        )
         if clef is None or staff is None or barline is None or notehead is None:
             raise RuntimeError(f"Failed to read masks for {page}")
 
@@ -247,9 +264,13 @@ def main() -> None:
         if staff.shape[:2] != img.shape[:2]:
             staff = cv2.resize(staff, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
         if barline.shape[:2] != img.shape[:2]:
-            barline = cv2.resize(barline, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
+            barline = cv2.resize(
+                barline, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST
+            )
         if notehead.shape[:2] != img.shape[:2]:
-            notehead = cv2.resize(notehead, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
+            notehead = cv2.resize(
+                notehead, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST
+            )
 
         _, clef_bin = cv2.threshold(clef, 0, 255, cv2.THRESH_BINARY)
         _, staff_bin = cv2.threshold(staff, 0, 255, cv2.THRESH_BINARY)
@@ -418,7 +439,9 @@ def main() -> None:
             sy2 = min(img.shape[0] - 1, y2 + margin)
             crop = img[sy1 : sy2 + 1, sx1 : sx2 + 1].copy()
             cv2.rectangle(crop, (x1 - sx1, y1 - sy1), (x2 - sx1, y2 - sy1), (0, 0, 255), 2)
-            cv2.putText(crop, "NEW_FN", (5, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+            cv2.putText(
+                crop, "NEW_FN", (5, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA
+            )
             out_name = f"fn_{idx:02d}_NEW_FN_x{x1}_y{y1}_x{x2}_y{y2}.png"
             cv2.imwrite(str(out_dir / out_name), crop)
 

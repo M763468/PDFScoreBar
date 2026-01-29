@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import List, Tuple
 
 import cv2
 import numpy as np
-import xml.etree.ElementTree as ET
-
 
 Box = Tuple[int, int, int, int]
 

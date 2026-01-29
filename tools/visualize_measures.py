@@ -1,13 +1,16 @@
 import json
+
 import matplotlib
-matplotlib.use('TkAgg')  # または 'Qt5Agg' など
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
+
+matplotlib.use("TkAgg")  # または 'Qt5Agg' など
 import cv2
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+
 
 def visualize_measures(image_path, json_path):
     # JSONデータを読み込む
-    with open(json_path, 'r') as f:
+    with open(json_path, "r") as f:
         data = json.load(f)
 
     # 画像を読み込む
@@ -29,23 +32,25 @@ def visualize_measures(image_path, json_path):
             barline[2] - barline[0],  # 幅
             barline[3] - barline[1],  # 高さ
             linewidth=2,
-            edgecolor='red',
-            facecolor='none'
+            edgecolor="red",
+            facecolor="none",
         )
         ax.add_patch(rect)
 
         # 小節番号を描画
         ax.text(
-            barline[0], barline[1] - 10,  # テキストの位置
+            barline[0],
+            barline[1] - 10,  # テキストの位置
             str(measure_number),
-            color='blue',
+            color="blue",
             fontsize=10,
-            fontweight='bold'
+            fontweight="bold",
         )
 
     # 表示
-    plt.axis('off')
+    plt.axis("off")
     plt.show()
+
 
 if __name__ == "__main__":
     # 入力画像とJSONファイルのパス

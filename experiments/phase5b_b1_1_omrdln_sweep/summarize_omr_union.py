@@ -56,7 +56,9 @@ def compute_metrics(preds: Sequence[Box], gt: Sequence[Box]) -> Dict[str, int]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Summarize OMR-DLN sweeps + homr union metrics.")
-    parser.add_argument("--run-root", type=Path, required=True, help="Run root containing omr_dln outputs.")
+    parser.add_argument(
+        "--run-root", type=Path, required=True, help="Run root containing omr_dln outputs."
+    )
     parser.add_argument(
         "--homr-root",
         type=Path,
@@ -69,8 +71,12 @@ def main() -> None:
         required=True,
         help="Confidence values used for OMR-DLN sweep (e.g. 0.1 0.2 ...).",
     )
-    parser.add_argument("--output-json", type=Path, required=True, help="Where to write summary JSON.")
-    parser.add_argument("--output-md", type=Path, required=True, help="Where to write summary markdown table.")
+    parser.add_argument(
+        "--output-json", type=Path, required=True, help="Where to write summary JSON."
+    )
+    parser.add_argument(
+        "--output-md", type=Path, required=True, help="Where to write summary markdown table."
+    )
     args = parser.parse_args()
 
     pages = [

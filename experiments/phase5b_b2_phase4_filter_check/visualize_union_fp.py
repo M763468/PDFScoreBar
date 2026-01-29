@@ -13,14 +13,14 @@ import numpy as np
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(REPO_ROOT))
 
-from src.common.barline_evaluation import greedy_barline_match
 from experiments.fp_reduction.analyze_staff_consistency import (
+    _build_notehead_with_stems_mask,
+    _load_binary_mask,
     analyze_bbox_pixel_context,
     cluster_by_y_distance,
     estimate_staff_space,
-    _build_notehead_with_stems_mask,
-    _load_binary_mask,
 )
+from src.common.barline_evaluation import greedy_barline_match
 
 Box = Tuple[int, int, int, int]
 
@@ -68,7 +68,9 @@ def apply_phase4_filters(
     rows, noise_indices = cluster_by_y_distance(
         y_centers, max_distance=cluster_max_dist, min_cluster_size=min_row_count
     )
-    staff_space = staff_space_px if staff_space_px is not None else estimate_staff_space(rows, preds)
+    staff_space = (
+        staff_space_px if staff_space_px is not None else estimate_staff_space(rows, preds)
+    )
     if use_ratio_tolerance:
         tol_top = 0.35 * staff_space
         tol_bottom = 0.35 * staff_space
@@ -150,13 +152,18 @@ def apply_phase4_filters(
         metrics = analyze_bbox_pixel_context(img, pred_bbox)
         if metrics["bin_mean"] < min_bbox_ink_density:
             continue
-        if metrics["top_ink_density"] > max_end_ink_density or metrics["bottom_ink_density"] > max_end_ink_density:
+        if (
+            metrics["top_ink_density"] > max_end_ink_density
+            or metrics["bottom_ink_density"] > max_end_ink_density
+        ):
             continue
         final_preds.append(tuple(map(int, pred_bbox)))
     return final_preds
 
 
-def draw_boxes(base: np.ndarray, boxes: List[Box], color: Tuple[int, int, int], thickness: int) -> np.ndarray:
+def draw_boxes(
+    base: np.ndarray, boxes: List[Box], color: Tuple[int, int, int], thickness: int
+) -> np.ndarray:
     overlay = base.copy()
     for x1, y1, x2, y2 in boxes:
         cv2.rectangle(overlay, (x1, y1), (x2, y2), color, thickness)

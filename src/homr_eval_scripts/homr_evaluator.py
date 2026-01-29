@@ -48,6 +48,16 @@ if str(HOMR_REPO) in sys.path:
 sys.path.insert(0, str(HOMR_REPO))
 
 # pylint: disable=wrong-import-position
+from common.barline_evaluation import (
+    BarlineMatch,
+    BarlineMatchResult,
+    BarlineSoftMatch,
+    apply_left_margin_exclusion,
+    greedy_barline_match,
+)
+from common.preprocessing import apply_advanced_sr
+from common.thin_barline_finder import ThinBarlineConfig, detect_thin_vertical_runs
+from homr import constants  # type: ignore
 from homr.bar_line_detection import prepare_bar_line_image  # type: ignore
 from homr.bounding_boxes import create_rotated_bounding_boxes  # type: ignore
 from homr.brace_dot_detection import (
@@ -67,17 +77,6 @@ from homr.resize import calc_target_image_size  # type: ignore
 from homr.simple_logging import eprint  # type: ignore
 from homr.staff_detection import break_wide_fragments, detect_staff  # type: ignore
 from homr.title_detection import detect_title  # type: ignore
-
-from common.barline_evaluation import (
-    BarlineMatch,
-    BarlineMatchResult,
-    BarlineSoftMatch,
-    apply_left_margin_exclusion,
-    greedy_barline_match,
-)
-from common.preprocessing import apply_advanced_sr
-from common.thin_barline_finder import ThinBarlineConfig, detect_thin_vertical_runs
-from homr import constants  # type: ignore
 
 LEFT_MARGIN_FORCE_FP_GT_INDICES: Set[int] = set()
 LEFT_MARGIN_FORCE_FP_MAX_WIDTH = 2

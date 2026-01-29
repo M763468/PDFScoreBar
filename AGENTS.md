@@ -30,7 +30,7 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 ## 4. Quality Bar
 
 - **Testing**: All code must be accompanied by tests sufficient to prove it meets the `Acceptance Criteria`. The "How to test" section of the issue should be followed precisely.
-- **Linting**: Code must adhere to the project's linting standards.
+- **Linting**: Code must adhere to the project's linting standards. Always run `make format` to fix style issues and `make lint` to verify compliance before submitting changes.
 - **Logging**: Add clear and concise logging for errors and important events. Avoid noisy or verbose logging.
 - **PR Descriptions**: Pull request descriptions must be filled out completely, following the `.github/pull_request_template.md`. The `Related Issue` field is mandatory.
 
@@ -46,6 +46,14 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 - **Check Environments First**: Before executing any code, you **MUST** read `docs/ENVIRONMENTS.md`. This project uses a mix of Docker containers (`pdf_score_dev_gpu`, `homr_eval_gpu`, etc.) and host-based virtual environments (`.venv_pdf`, etc.). Identify the correct environment for your task.
 - **Docker Preference**: Prefer running tasks inside the appropriate Docker container whenever possible to ensure reproducibility.
 - **Host Execution**: Some tools (e.g., `gui_helper`) are designed to run on the host. Follow the specific instructions in `docs/ENVIRONMENTS.md`.
+
+### Standard Commands
+- **Makefile as Source of Truth**: The `Makefile` in the project root defines the standard commands for development tasks (linting, formatting, etc.).
+- **Usage**:
+    - `make help`: Check this first to see available commands and their descriptions.
+    - `make lint`: Run static analysis.
+    - `make format`: Auto-format code.
+- **Maintenance**: Developers and Agents should update the `Makefile` and this document when new standard workflows are introduced.
 
 ### Logs & Artifacts
 - **Output Directory**: All experiment logs, metrics, and generated artifacts must be saved under the `logs/` directory. Use structured subdirectories (e.g., `logs/<experiment_name>/<timestamp>/`) to avoid clutter.

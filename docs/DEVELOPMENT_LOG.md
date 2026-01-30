@@ -275,11 +275,11 @@ homr evaluator と oemer ベースラインの比較・改善ワークフロー�
         - `logs/homr_eval/<run_id>/<page>/` 配下への MusicXML・デバッグ画像・オーバーレイ（赤重ね）・検出座標 JSON。
         - `metrics.json` / `metrics.csv`（IoU 計測は GT が無い場合は未算出だが、検出本数や差分を記録）。
         - `run_config.json` に CLI パラメータ、Git コミット、Docker イメージタグを記録。
-    2. `tools/run_homr_tuning.py` を作成。`barline_min_height_factor` と `barline_max_width_factor` のグリッド探索を行い、各トライアルを `logs/homr_eval/<timestamp>_autotune/trials/trial-XXX/` に保存。Heuristic として「目視で正解 150 本」に近い検出本数をスコア化し、`trials_summary.json` と `logs/night_run/steps.ndjson` に記録。
+    2. `tools/run_homr_tuning.py` を作成。`barline_min_height_factor` と `barline_max_width_factor` のグリッド探索を行い、各トライアルを `logs/homr_eval/<timestamp>_autotune/trials/trial-XXX/` に保存。Heuristic として「目視で正解 150 本」に近い検出本数をスコア化し、`trials_summary.json` と `logs/analysis/night_run/steps.ndjson` に記録。
 - **実行結果:**
     - ベースライン (`min=1.0`, `max=1.0`) は `logs/homr_eval/20250926T183651Z_baseline/` に保存。GPU ライブラリ不足で CPU フォールバックしたものの、推論は完走し検出本数 105 を取得。
     - グリッド探索では `min=0.85`, `max=0.9` が検出本数 118 で最も 150 に近づいた（差分 32）。同条件の再実行でも同じ結果を確認。閾値を下げることで偽陰性が減り、過剰検出は大きく増えないことを確認。
-    - すべてのトライアルについて手順・メトリクスを `logs/night_run/steps.ndjson` に追記し、run ルート `logs/homr_eval/20250926T184903Z_autotune/` に集約。
+    - すべてのトライアルについて手順・メトリクスを `logs/analysis/night_run/steps.ndjson` に追記し、run ルート `logs/homr_eval/20250926T184903Z_autotune/` に集約。
 - **付随作業:**
     - Docker ビルドコンテキスト削減のため `.dockerignore` を新設（`logs/`, `data/evaluation/images/`, `homr/.venv/` などを除外）。ただしホスト権限の制約で `docker build` は未実施。必要に応じて権限付与後に再ビルドする。
 - **課題:**
@@ -346,7 +346,7 @@ homr evaluator と oemer ベースラインの比較・改善ワークフロー�
 ## Phase 21: GPU評価メモ集約と sklearn 警告調査（2025-10-07）
 
 - homr GPU スイープ (`logs/homr_eval/20251007T015010JST_pdfdpi_gpu/`) のメトリクスを整理し、各バリアントの入力パスと TP/FP/FN を `Variant Summary` として README に追記。`logs_user/experiments/20251006_pdf_render/README.md` へも GPU 版テーブルと観察メモを追加し、CPU/GPU の差分を横比較できるようにした。
-- oemer の `sklearn_models/rests.model` をコンテナ上で読み込み、実行時 `scikit-learn 1.7.2` と学習時 `SVC 1.2.0` の不整合で `InconsistentVersionWarning` が出ることを確認。`NEXT_SESSION_NOTES.md` にダウングレード (==1.2.0) とモデル再エクスポートの 2 案を明記し、`logs/night_run/blockers.md` にも記録。
+- oemer の `sklearn_models/rests.model` をコンテナ上で読み込み、実行時 `scikit-learn 1.7.2` と学習時 `SVC 1.2.0` の不整合で `InconsistentVersionWarning` が出ることを確認。`NEXT_SESSION_NOTES.md` にダウングレード (==1.2.0) とモデル再エクスポートの 2 案を明記し、`logs/analysis/night_run/blockers.md` にも記録。
 - **ステータス:** GPU 評価メモを共有し、scikit-learn バージョン不整合を課題としてログに登録済み。
 
 ## Phase 22: scikit-learn ダウングレード方針決定（2025-10-08）
@@ -359,7 +359,7 @@ homr evaluator と oemer ベースラインの比較・改善ワークフロー�
 - `Dockerfile` と `Dockerfile.homr` の依存ピンを `numpy==1.26.4`, `opencv-python-headless==4.10.0.84`, `scikit-learn==1.2.0` に揃え、再ビルドした `pdf_score_dev_gpu:20251008b_sklearn120` / `homr_eval:20251008c_sklearn120` イメージへ反映。Poetry 側でも `pyproject.toml` の制約を緩和して 1.26 系 numpy と 4.10 系 OpenCV を許容した。
 - `tools/smoke_test_run_omerer_env.py` を追加し、`OEMER_*` 環境変数が `run_omerer.main` に正しく流れることをダミー資材でスモークテストできるようにした。
 - GPU 再評価を実施: homr (`logs/homr_eval/20251008T195044JST_gpu_sklearn120/`) で TP=95 / FP=2 / FN=57 (F1=0.763)、oemer (`logs/oemer_eval/20251008T195311JST_gpu_sklearn120/`) で TP=120 / FP=2 / FN=32 (F1=0.876)。どちらも `transformer_memcpy` 警告が継続し、`ORT_DISABLE_MEMCPY=1` でのリトライでも改善なし。
-- 両パイプラインの検出品質オーバーレイ (`page_3/page_3_detection_quality.png`) を作成し、共通の FN ホットスポット (GT 18, 26, 31–36, 40, 46, 60, 63, 70, 74) を抽出。縦方向の細いリピート柱や stem 片が未検出であることを確認し、`logs/night_run/fn_hotspots_20251008.json` に一覧化した。
+- 両パイプラインの検出品質オーバーレイ (`page_3/page_3_detection_quality.png`) を作成し、共通の FN ホットスポット (GT 18, 26, 31–36, 40, 46, 60, 63, 70, 74) を抽出。縦方向の細いリピート柱や stem 片が未検出であることを確認し、`logs/analysis/night_run/fn_hotspots_20251008.json` に一覧化した。
 - homr の `--barline-min-height-factor 0.9` 試行 (`logs/homr_eval/20251008T200423JST_gpu_sklearn120_min0p9/`) は TP=98 / FP=8 / FN=54 (F1=0.760) と偽陽性が増えたため不採用。
 - **ステータス:** 依存ダウングレードを適用し GPU 評価を更新。`transformer_memcpy` 警告と細バー FN は継続課題。
 
@@ -385,9 +385,9 @@ homr evaluator と oemer ベースラインの比較・改善ワークフロー�
 
 
 ## Phase 26: Common FN audit と薄バー FP フィルタ（2025-10-14）
-- 共通 FN ホットスポット抽出: `logs/night_run/common_fn_20251014T005323JST/` に homr/oemer 両パイプラインの FN オーバーレイ (`homr_detection_quality.png`, `oemer_detection_quality.png`, 共通のみ `common_fn_overlay.png`) とメモ `common_fn_20251014T005323JST.md` を追加。共有 FN は `gt_index {21, 69, 97, 101, 103, 147}` で、幅 4 px・高さ 18–22 px のリピート柱プロファイルであることを再確認。
-- homr 薄バーラインヒューリスティク見直し: `src/common/thin_barline_finder.py` に標準偏差フィルタと左右暗度比判定を追加し、stem 起因 FP (pred #74/#115/#117) を除去。新ラン `logs/homr_eval/20251014T010752JST_fpfilter/` で TP=118 (+2), FP=4 (-3), FN=34 (-2), Precision=0.967, Recall=0.776, F1=0.861 を確認。差分サマリは `logs/night_run/fp_filter_20251014T010752JST/fp_filter_report.md`。
-- onnxruntime-gpu 1.24 サンドボックス: PyPI に 1.23.0 までしか公開されておらず導入不能。今後 wheels が出た際の手順 (分離ターゲットへインストール → encoder ONNX を CUDA EP で実行し `transformer_memcpy` / CUDA Graph を再評価) を `logs/night_run/ort_1_24_plan.md` に整理し、ブロッカーとして記録。
+- 共通 FN ホットスポット抽出: `logs/analysis/night_run/common_fn_20251014T005323JST/` に homr/oemer 両パイプラインの FN オーバーレイ (`homr_detection_quality.png`, `oemer_detection_quality.png`, 共通のみ `common_fn_overlay.png`) とメモ `common_fn_20251014T005323JST.md` を追加。共有 FN は `gt_index {21, 69, 97, 101, 103, 147}` で、幅 4 px・高さ 18–22 px のリピート柱プロファイルであることを再確認。
+- homr 薄バーラインヒューリスティク見直し: `src/common/thin_barline_finder.py` に標準偏差フィルタと左右暗度比判定を追加し、stem 起因 FP (pred #74/#115/#117) を除去。新ラン `logs/homr_eval/20251014T010752JST_fpfilter/` で TP=118 (+2), FP=4 (-3), FN=34 (-2), Precision=0.967, Recall=0.776, F1=0.861 を確認。差分サマリは `logs/analysis/night_run/fp_filter_20251014T010752JST/fp_filter_report.md`。
+- onnxruntime-gpu 1.24 サンドボックス: PyPI に 1.23.0 までしか公開されておらず導入不能。今後 wheels が出た際の手順 (分離ターゲットへインストール → encoder ONNX を CUDA EP で実行し `transformer_memcpy` / CUDA Graph を再評価) を `logs/analysis/night_run/ort_1_24_plan.md` に整理し、ブロッカーとして記録。
 - GT 補助ツール試作: 検出結果をクリック選択で採択できる `tools/barline_gt_helper.py` を追加。`poetry run python ../tools/barline_gt_helper.py --image <img> --detections <json> --output <dst> [--preload <gt>]` で起動し、選択した矩形を GT JSON 形式で保存できる。
 - **ステータス:** 共通 FN の再検出策と薄バー補正の検証を継続中。onnxruntime 1.24 の公開待ちと GT 補助ツールの運用確立が次のアクション。
 
@@ -397,7 +397,7 @@ homr evaluator と oemer ベースラインの比較・改善ワークフロー�
 - **変更内容**: `thin_barline_finder` のクラスタガードロジックを修正。縦に長いが断片化したクラスタが、既存の検出に近接している場合に除去されないよう調整。これにより、複数スタッフにまたがる有効な小節線が誤検出として扱われるのを防ぐ。
 - **評価**:
     - 影響調査のため、以前 FN が発生したスコアに対して標準評価パイプラインを再実行。
-    - 評価ログ: `logs/eval_2025_11_29_1764397202/`
+    - 評価ログ: `logs/archive/eval_2025_11_29_1764397202/`
 - **結果**:
     - **Previous FN Resolved**: 以前の FN は完全に解消され、False Negatives は 0 に (Recall = 1.000)。
     - **False Positive Impact**: False Positives が 59 から 62 に微増 (+3)。
@@ -415,7 +415,7 @@ homr evaluator と oemer ベースラインの比較・改善ワークフロー�
     2. **Cluster Guard Rescue の精緻化**: rescue 対象を H≥20 に制限し、ノイズの rescue を防止。
     3. **Stem Suppression Heuristic**: `single_side_override` かつ W=1 かつ H<20 の候補を除去 (stem の可能性が高い)。
 - **評価**:
-    - 評価ログ: `logs/20251130T185351JST/`
+    - 評価ログ: `logs/archive/20251130T185351JST/`
     - Docker コンテナ `homr_eval_gpu` 内で `homr_evaluator.py` を実行。
 - **結果**:
     - **FP 大幅削減**: FP が 62 から 35 に減少 (−27, 43.5% 改善)。

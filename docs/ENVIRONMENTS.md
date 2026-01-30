@@ -146,7 +146,7 @@ This section defines the standardized procedure for running barline detection ev
     - `logs/homr_eval/<your_run_id>/`
     - Example: `logs/homr_eval/20251201T_homr_heuristic1/metrics.json`
   - **Historical Path**: Older runs (e.g., Phase 28 baseline, `20251130T185351JST`) used a different output root (`--output-root logs`). Their outputs are located directly under `logs/` on the host:
-    - Example: `logs/20251130T185351JST/metrics.json`
+    - Example: `logs/archive/20251130T185351JST/metrics.json`
   - This difference is expected. The standardization on `/workspace/logs/homr_eval` aims to prevent future confusion. A temporary issue on 2025-12-01 where new logs were not immediately visible on the host was determined to be a transient environment/volume visibility problem, not a code bug.
 
 ### Model Experiments Environment (feature/barline_model_experiments)

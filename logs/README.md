@@ -40,3 +40,14 @@ Legacy logs or one-off runs that are no longer active but preserved for referenc
 ## Maintenance
 - **Do not commit** large log files to Git.
 - Use `.gitignore` to exclude specific log patterns, but keep the directory structure visible if possible (using `.gitkeep`).
+
+## Lost & Found
+- **`logs/hybrid_generalization/`**:
+  - Contains extensive evaluation results on the `evaluation2` dataset.
+  - The directory was missing as of Jan 2026, but traces were found in `docs/SESSION_LOG.md` (commit `e56e9fb`).
+  - **Reproduction Command**:
+    ```bash
+    # Runs the hybrid pipeline on all evaluation2 images
+    python3 tools/run_eval2_batch.py
+    ```
+  - Output will be generated at `logs/hybrid_generalization/`.

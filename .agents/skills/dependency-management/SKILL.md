@@ -17,7 +17,7 @@ Ensure consistency between `requirements.txt`, `pyproject.toml`, and actual impo
 1) Scan the codebase for all import statements.
 2) Compare imports against declared dependencies in `requirements.txt` or `pyproject.toml`.
 3) Identify missing dependencies (used but not listed) and unused dependencies (listed but not used).
-4) Update the dependency files accordingly.
+4) Update the dependency files accordingly (ONLY if the task/issue explicitly requires it, or after obtaining user confirmation).
 5) Verify installation using `uv sync` or `pip install`.
 
 ## Required commands/permissions

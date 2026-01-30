@@ -28,6 +28,7 @@ Ensure consistency between `requirements.txt`, `pyproject.toml`, and actual impo
 - `uv sync`
 - `pip freeze`
 - `grep -rE "^\s*(import|from) " src/`
+- `rg "^\s*(import|from) " src/` (Preferred for speed)
 
 ## Notes
 - Distinguish between production and development dependencies.

@@ -50,4 +50,4 @@ Legacy logs or one-off runs that are no longer active but preserved for referenc
     # Runs the hybrid pipeline on all evaluation2 images
     python3 tools/run_eval2_batch.py
     ```
-  - Output will be generated at `logs/hybrid_generalization/`.
+  - Output will be generated at `logs/hybrid_pipeline_bench/` (subdirectory starting with `eval2_`).

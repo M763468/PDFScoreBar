@@ -1,3 +1,4 @@
+<!-- Note: logs/hybrid_generalization mentioned in this log has been regenerated at logs/hybrid_pipeline_bench. Please adjust paths accordingly. -->
 # Session Log (Measure Numbering Track)
 
 **NOTE**: This log is now an archive. The authoritative, up-to-date record is

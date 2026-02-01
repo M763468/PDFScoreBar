@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-docker exec homr_eval_gpu bash -lc 'cd /workspace/external/homr && poetry run python /workspace/src/homr_eval_scripts/homr_evaluator.py --images /workspace/data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png /workspace/data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png /workspace/data/training/images/page_10.png /workspace/data/training/images/page_15.png --ground-truth page_001:/workspace/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/boxes_sorted_v20251229.json --ground-truth page_004:/workspace/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/boxes_sorted_v20251229.json --ground-truth page_10:/workspace/data/training/annotations/page_010/boxes_sorted_v20251229.json --ground-truth page_15:/workspace/data/training/annotations/page_015/boxes_sorted_v20251229.json --output-root /workspace/logs/homr_eval --force-run-id 20251229T_gt_rebuild_eval'

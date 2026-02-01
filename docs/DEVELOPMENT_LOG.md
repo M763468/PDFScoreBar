@@ -275,7 +275,7 @@ homr evaluator と oemer ベースラインの比較・改善ワークフロー�
         - `logs/homr_eval/<run_id>/<page>/` 配下への MusicXML・デバッグ画像・オーバーレイ（赤重ね）・検出座標 JSON。
         - `metrics.json` / `metrics.csv`（IoU 計測は GT が無い場合は未算出だが、検出本数や差分を記録）。
         - `run_config.json` に CLI パラメータ、Git コミット、Docker イメージタグを記録。
-    2. `tools/run_homr_tuning.py` を作成。`barline_min_height_factor` と `barline_max_width_factor` のグリッド探索を行い、各トライアルを `logs/homr_eval/<timestamp>_autotune/trials/trial-XXX/` に保存。Heuristic として「目視で正解 150 本」に近い検出本数をスコア化し、`trials_summary.json` と `logs/analysis/night_run/steps.ndjson` に記録。
+    2. `experiments/legacy/tools_archive/run_homr_tuning.py` を作成。`barline_min_height_factor` と `barline_max_width_factor` のグリッド探索を行い、各トライアルを `logs/homr_eval/<timestamp>_autotune/trials/trial-XXX/` に保存。Heuristic として「目視で正解 150 本」に近い検出本数をスコア化し、`trials_summary.json` と `logs/analysis/night_run/steps.ndjson` に記録。
 - **実行結果:**
     - ベースライン (`min=1.0`, `max=1.0`) は `logs/homr_eval/20250926T183651Z_baseline/` に保存。GPU ライブラリ不足で CPU フォールバックしたものの、推論は完走し検出本数 105 を取得。
     - グリッド探索では `min=0.85`, `max=0.9` が検出本数 118 で最も 150 に近づいた（差分 32）。同条件の再実行でも同じ結果を確認。閾値を下げることで偽陰性が減り、過剰検出は大きく増えないことを確認。
@@ -290,7 +290,7 @@ homr evaluator と oemer ベースラインの比較・改善ワークフロー�
     - ログ出力を大量に含んでいたコミット（`夜間実行の各種結果`）を切り離し、`bot/overnight` を再構成した上で `feature/homr-eval-20240614` に fast-forward マージ。コード変更のみを履歴に残すよう整理した。
     - `.gitignore` に `logs/` を追加済みだが、今回の事後処理で誤って追跡された成果物を削除できたことを確認。今後も成果物は `logs/` 配下に生成するが Git 管理はしない運用を徹底する。
     - 次フェーズでは、純粋な `poetry run homr --debug` 実行時の小節線本数と `homr_evaluator.py` の検出本数を突き合わせ、不一致がある場合は evaluator 側の前処理・閾値・スケーリングを修正する方針とした。
-    - Page 3 向け GT JSON を整備し、`tools/run_homr_tuning.py` のデフォルト指定を差し替えたうえで、評価指標（Precision/Recall/F1）を有効値として取得する計画を立てた。GT が整い次第、baseline と閾値スイープを再実施する。
+    - Page 3 向け GT JSON を整備し、`experiments/legacy/tools_archive/run_homr_tuning.py` のデフォルト指定を差し替えたうえで、評価指標（Precision/Recall/F1）を有効値として取得する計画を立てた。GT が整い次第、baseline と閾値スイープを再実施する。
     - Data ディレクトリを `training/`, `evaluation/`, `workbench/` の 3 系統に再編し、対応するスクリプトを新しいパスに更新。`data/README.md` を新設し、命名規約と移行表をまとめた。
 
 ## Phase 17: page_3 manual ground truth と評価ギャップの可視化（2024-06-14）
@@ -749,7 +749,7 @@ This model is therefore not a drop-in replacement for `homr`, but it demonstrate
     - A preprocessing step was added to `homr_evaluator.py`.
     - **`binarize=True` attempt**: The initial run with binarization (`run_vc_debug`) failed. Debugging revealed that while the binarized image itself looked reasonable (`01_binarized.png`), the subsequent closing operation corrupted the image data in a way that was incompatible with `homr`, leading to `RuntimeError: No staffs found`.
     - **`binarize=False` attempt**: An attempt without binarization (`run_vc_nobinarize`) also failed, this time with `RuntimeError: No noteheads found`.
-    - **Parameter Sweep**: A parameter sweep on `kernel_height` (`run_parameter_sweep`) was conducted to see if a weaker transformation would work. However, all tested parameters resulted in the same `No staffs found` error.
+    - **Parameter Sweep**: A parameter sweep on `kernel_height` (`experiments/legacy/scripts/run_parameter_sweep.sh`) was conducted to see if a weaker transformation would work. However, all tested parameters resulted in the same `No staffs found` error.
     - **Experiment 2 (OMR-DLN)**:
         - The `eval_omr_dln.py` script was modified to accept a `kernel_height` parameter and run with `binarize=True`.
         - A parameter sweep for `kernel_height` over `[15, 10, 5]` was executed.
@@ -1069,7 +1069,7 @@ endpoint_overlap_ratio =
   - **Environment + reproducibility fix**: restored GPU provider inside `homr_eval_gpu` (CUDAExecutionProvider available), reproduced Phase 4 baseline using canonical command, and verified evaluation targets.
 - **Evidence collected:**
   - **Historical targets confirmed (stable references)**:
-    - `tools/run_confirmed_union_eval.sh` and `experiments/phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh` use:
+    - `experiments/legacy/tools_archive/run_confirmed_union_eval.sh` and `experiments/phase5b_b1_1_omrdln_sweep/run_omr_dln_sweep.sh` use:
       - page_15 image `data/training/images/page_15.png` with `data/training/annotations/page_015/fn_only.json`.
       - page_004 image `data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png` with `data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/fn_only.json`.
     - `logs/homr_eval_baseline/baseline_verification/run_config.json` records `data/evaluation/images/page_3.png` as the canonical page_3 input.

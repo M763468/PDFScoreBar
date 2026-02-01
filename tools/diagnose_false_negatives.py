@@ -1,138 +1,30 @@
 import json
+import sys
 from pathlib import Path
-from typing import Optional, Tuple
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-Box = Tuple[int, int, int, int]
+# Add repo root to sys path
+REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.append(str(REPO_ROOT))
 
-# --- Inlined functions from src.common.barline_evaluation ---
-
-BARLINE_DEFAULT_MIN_WIDTH = 12
-BARLINE_X_MARGIN = 3
-BARLINE_Y_MARGIN = 3
-
-
-def _ensure_ordered(box: Box) -> Box:
-    x1, y1, x2, y2 = box
-    if x2 < x1:
-        x1, x2 = x2, x1
-    if y2 < y1:
-        y1, y2 = y2, y1
-    return x1, y1, x2, y2
-
-
-def expand_barline_box(
-    box: Box,
-    *,
-    min_width: int = BARLINE_DEFAULT_MIN_WIDTH,
-    x_margin: int = BARLINE_X_MARGIN,
-    y_margin: int = BARLINE_Y_MARGIN,
-    bounds: Optional[Tuple[int, int]] = None,
-) -> Box:
-    if min_width < 1:
-        raise ValueError("min_width must be >= 1")
-    x1, y1, x2, y2 = _ensure_ordered(box)
-    width = max(1, x2 - x1)
-    centre_x = (x1 + x2) / 2.0
-    half_width = max(width / 2.0, min_width / 2.0)
-
-    padded_x1 = int(round(centre_x - half_width)) - x_margin
-    padded_x2 = int(round(centre_x + half_width)) + x_margin
-    padded_y1 = y1 - y_margin
-    padded_y2 = y2 + y_margin
-
-    padded_x1 = max(0, padded_x1)
-    padded_y1 = max(0, padded_y1)
-
-    if bounds is not None:
-        max_x, max_y = bounds
-        if max_x <= 0 or max_y <= 0:
-            raise ValueError("bounds must be positive")
-        padded_x1 = min(padded_x1, max_x - 1)
-        padded_x2 = min(padded_x2, max_x - 1)
-        padded_y1 = min(padded_y1, max_y - 1)
-        padded_y2 = min(padded_y2, max_y - 1)
-
-    if padded_x2 <= padded_x1:
-        padded_x2 = padded_x1 + 1
-    if padded_y2 <= padded_y1:
-        padded_y2 = padded_y1 + 1
-
-    return padded_x1, padded_y1, padded_x2, padded_y2
-
-
-def barline_iou(
-    box_a: Box,
-    box_b: Box,
-    *,
-    min_width: int = BARLINE_DEFAULT_MIN_WIDTH,
-    x_margin: int = BARLINE_X_MARGIN,
-    y_margin: int = BARLINE_Y_MARGIN,
-    bounds: Optional[Tuple[int, int]] = None,
-) -> float:
-    ax1, ay1, ax2, ay2 = expand_barline_box(
-        box_a, min_width=min_width, x_margin=x_margin, y_margin=y_margin, bounds=bounds
-    )
-    bx1, by1, bx2, by2 = expand_barline_box(
-        box_b, min_width=min_width, x_margin=x_margin, y_margin=y_margin, bounds=bounds
-    )
-
-    inter_x1 = max(ax1, bx1)
-    inter_y1 = max(ay1, by1)
-    inter_x2 = min(ax2, bx2)
-    inter_y2 = min(ay2, by2)
-
-    inter_w = max(inter_x2 - inter_x1, 0)
-    inter_h = max(inter_y2 - inter_y1, 0)
-    inter_area = inter_w * inter_h
-
-    area_a = max(ax2 - ax1, 0) * max(ay2 - ay1, 0)
-    area_b = max(bx2 - bx1, 0) * max(by2 - by1, 0)
-
-    union_area = area_a + area_b - inter_area
-    if union_area <= 0:
-        return 0.0
-    return inter_area / union_area
-
-
-# --- End of inlined functions ---
-
-import subprocess
+from src.common.barline_evaluation import barline_iou
 
 
 def load_json_boxes(path):
-    try:
-        content = subprocess.check_output(f"cat {path}", shell=True)
-        data = json.loads(content)
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        print(f"ERROR: File not found at {path}")
-        return None
-
+    with open(path, "r") as f:
+        data = json.load(f)
     if not data:
         return []
 
     boxes = []
-    # Handle different JSON structures
-    if isinstance(data, dict) and "predictions" in data:
-        # homr format
-        boxes = [tuple(item["orig_bbox"]) for item in data["predictions"]]
-    elif data and isinstance(data[0], list):
-        # OMR-DLN format
-        boxes = [tuple(item) for item in data]
-    elif data and isinstance(data[0], dict) and "barline_location" in data[0]:
-        # GT format
+    if isinstance(data[0], dict) and "barline_location" in data[0]:
         boxes = [tuple(item["barline_location"]) for item in data]
     else:
         boxes = [tuple(item) for item in data]
-
     return boxes
 
 
 def find_matches_for_gt(gt_boxes, pred_boxes, iou_thresh=0.5):
     matches = {}
-    if not gt_boxes or not pred_boxes:
-        return matches
-
     for i, gt_box in enumerate(gt_boxes):
         best_iou = 0
         best_pred_idx = -1
@@ -155,23 +47,29 @@ def main():
     # --- Paths ---
     gt_path = REPO_ROOT / "data/evaluation/annotations/page_003/boxes_sorted.json"
 
-    baseline_final_path = REPO_ROOT / "logs/phase4_baseline_repro/filtered_barlines.json"
+    # Phase 4 baseline final output (This is the ideal output)
+    # The script that generated this is in the dev log. Let's assume the output is in a similar path structure.
+    # From the dev log: logs/phase4_notehead_geom/20251218_page3_hybrid_tol5_geom
+    # The output of analyze_staff_consistency is a directory. Let's check for filtered_barlines.json
+    baseline_final_path = (
+        REPO_ROOT
+        / "logs/phase4_notehead_geom/20251218_page3_hybrid_tol5_geom/filtered_barlines.json"
+    )
 
+    # Strategy 2 outputs
     s2_merged_path = REPO_ROOT / "logs/phase5b_promiscuous_union_eval/page_3_hybrid_preds.json"
     s2_final_path = (
         REPO_ROOT
         / "logs/phase5b_promiscuous_union_eval/page_3_filtered_output/filtered_barlines.json"
     )
+    # The row-filter only output is not saved by default. The script prints the metrics though.
+    # "After Row Filter: TP=150, FP=2, FN=2" -> this means the 2 FNs are already present after the row filter.
 
     # --- Load Data ---
     gt_boxes = load_json_boxes(gt_path)
     baseline_final_boxes = load_json_boxes(baseline_final_path)
     s2_merged_boxes = load_json_boxes(s2_merged_path)
     s2_final_boxes = load_json_boxes(s2_final_path)
-
-    if any(b is None for b in [gt_boxes, baseline_final_boxes, s2_merged_boxes, s2_final_boxes]):
-        print("Aborting due to missing files.")
-        return
 
     # --- Find matches ---
     baseline_matches = find_matches_for_gt(gt_boxes, baseline_final_boxes)
@@ -207,15 +105,15 @@ def main():
     # --- Print results table ---
     print("\n--- FN Root Cause Analysis ---")
     print(
-        f"{'GT Index':<10} | {'In Merge?':<10} | {'Merge IoU':<10} | {'GT Bbox':<30} | {'Merge Bbox'}"
+        f"{'GT Index':<10} | {'In Merge?':<10} | {'Merge IoU':<10} | {'GT Bbox':<25} | {'Merge Bbox'}"
     )
-    print("-" * 90)
+    print("-" * 80)
     for row in results:
         print(
-            f"{row['gt_index']:<10} | {row['in_s2_merge_output']:<10} | {row['s2_merge_iou']:<10} | {str(row['gt_box']):<30} | {row['s2_merge_box']}"
+            f"{row['gt_index']:<10} | {row['in_s2_merge_output']:<10} | {row['s2_merge_iou']:<10} | {str(row['gt_box']):<25} | {row['s2_merge_box']}"
         )
 
-    # --- Deeper dive for dropped boxes ---
+    # --- Deeper analysis for dropped boxes ---
     print("\n--- Deeper Dive on Dropped Barlines ---")
 
     raw_baseline_path = (

@@ -843,7 +843,7 @@ Addressed user feedback regarding the "End Bar" double-counting issue and prepar
 1.  **End Bar Logic Fix**:
     *   Identified that thin+thick double barlines were being counted as separate measures.
     *   Updated `MeasureNumberer.number_system` in `src/measure_numbering/numbering.py` to enforce `MIN_MEASURE_WIDTH = 25`.
-    *   Verified via `tools/debug_end_bar_removal.py` (visualization script created).
+    *   Verified via `experiments/legacy/tools_archive/debug_end_bar_removal.py` (visualization script created).
 2.  **Dataset Robustness**:
     *   Updated `tools/create_mmr_train_data.py` to include a 20px padding (margin) around measure crops to prevent text truncation ("見切れ").
 3.  **GT Config Expansion**:

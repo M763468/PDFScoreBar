@@ -62,3 +62,4 @@ datasets/
 logs/analysis/
 logs/archive/
 logs/system/
+/tmp/

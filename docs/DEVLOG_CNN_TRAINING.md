@@ -287,7 +287,7 @@ if vertical_closing > 0:
 
 **Kernel Size Selection**:
 
-Created `tools/test_morphological_closing.py` to test on Sibelius VC Page 4, FN at (2715, 3167):
+Created `experiments/legacy/tools_archive/test_morphological_closing.py` to test on Sibelius VC Page 4, FN at (2715, 3167):
 
 | Kernel Size | Ink Ratio Before | Ink Ratio After | Improvement |
 |------------:|-----------------:|----------------:|:------------|
@@ -581,7 +581,7 @@ python tools/re_evaluate_global.py \
 **Detection**:
 - `tools/run_eval_experiment.py` - Detection pipeline wrapper
 - `tools/run_gt_rebuild_hybrid_eval.py` - Core detection logic
-- `tools/test_morphological_closing.py` - Vertical closing validation
+- `experiments/legacy/tools_archive/test_morphological_closing.py` - Vertical closing validation
 
 **Ground Truth**:
 - `tools/cnn_classifier/create_provisional_gt.py` - Provisional GT creation

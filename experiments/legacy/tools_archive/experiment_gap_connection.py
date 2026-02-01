@@ -6,7 +6,7 @@ from pathlib import Path
 import cv2
 
 # Add project root to path
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).resolve().parents[3]))
 from src.measure_numbering.pipeline import StaffExtractor
 
 

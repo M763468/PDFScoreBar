@@ -5,9 +5,9 @@ import sys
 import cv2
 
 # Fix import path
-sys.path.append("src")
+sys.path.append(str(Path(__file__).resolve().parents[3]))
 
-from measure_numbering.types import Barline, BBox
+from src.measure_numbering.types import Barline, BBox
 
 
 def load_barlines(path):
@@ -101,5 +101,5 @@ if __name__ == "__main__":
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
 
-    sys.path.append("src")  # Ensure src is in path
+    pass  # Path added at top of file
     debug_end_bar_removal(args.image, args.barlines, args.output)

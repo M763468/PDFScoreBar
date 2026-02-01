@@ -548,7 +548,7 @@ Density-only heuristics were insufficient; added explicit rest-shape detection.
 
 ### Changes
 - End-bar fix: `MIN_MEASURE_WIDTH = 25` in `src/measure_numbering/numbering.py`.
-- Added debug visualization: `tools/debug_end_bar_removal.py`.
+- Added debug visualization: `experiments/legacy/tools_archive/debug_end_bar_removal.py`.
 - Added 20px padding to crops in `tools/create_mmr_train_data.py`.
 - Added `tools/batch_gen_numbering_for_all.py` to create numbering JSONs for all datasets.
 - Updated `tools/gt_relabel_gui/build_rest_gt_config.py` to generate `data/evaluation2/rest_gt_config_all.json`.
@@ -841,5 +841,5 @@ python tools/batch_verify_numbering.py --output-dir logs/experiments/batch_cnnv1
 - `tools/render_barline_boxes_overlay.py`: High-quality overlays of barline detections.
 
 ### Sweeps / Legacy
-- `run_omr_dln_sweep.sh`: OMR-DLN parameter sweep.
+- `experiments/legacy/scripts/run_omr_dln_sweep.sh`: OMR-DLN parameter sweep.
 - `tools/run_hybrid_pipeline.sh`: Legacy hybrid pipeline runner.

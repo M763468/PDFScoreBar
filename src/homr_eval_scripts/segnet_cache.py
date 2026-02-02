@@ -45,6 +45,7 @@ def _get_session(model_path: str, use_gpu: bool) -> ort.InferenceSession:
     with _SEGNET_CACHE_LOCK:
         if key in _SEGNET_SESSION_CACHE:
             return _SEGNET_SESSION_CACHE[key]
+        eprint(f"Segnet cache: creating session for {model_path} (gpu={use_gpu})")
         session = _create_session(model_path, use_gpu)
         _SEGNET_SESSION_CACHE[key] = session
         return session

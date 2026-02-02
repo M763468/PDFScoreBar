@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import datetime as dt
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -13,7 +12,11 @@ from src.common.barline_evaluation import (
     BARLINE_X_MARGIN,
     BARLINE_Y_MARGIN,
 )
-from src.pipeline.barlines import apply_barline_overrides, merge_measure_overrides, normalize_barlines
+from src.pipeline.barlines import (
+    apply_barline_overrides,
+    merge_measure_overrides,
+    normalize_barlines,
+)
 from src.pipeline.config import get_nested, load_yaml
 from src.pipeline.detection import (
     resolve_barlines_and_masks_config,
@@ -156,7 +159,9 @@ def run_pipeline(
     if barline_overrides_path:
         barline_override_payload = load_json(Path(barline_overrides_path))
 
-    barline_override_cfg = get_nested(config, "inputs", "barline_overrides_config", default={}) or {}
+    barline_override_cfg = (
+        get_nested(config, "inputs", "barline_overrides_config", default={}) or {}
+    )
     barline_iou_threshold = float(barline_override_cfg.get("iou_threshold", 0.5))
     barline_min_width = int(barline_override_cfg.get("min_width", BARLINE_DEFAULT_MIN_WIDTH))
     barline_x_margin = int(barline_override_cfg.get("x_margin", BARLINE_X_MARGIN))

@@ -145,6 +145,9 @@ def main():
             if not cand_path.exists():
                 cand_path = args.bands_from / f"{stem}.json"
             if not cand_path.exists():
+                # Try hybrid_results style: <bands_from>/hybrid_results/<stem>_hybrid.json
+                cand_path = args.bands_from / "hybrid_results" / f"{stem}_hybrid.json"
+            if not cand_path.exists():
                 # Fallback to older naming if any
                 cand_path = args.bands_from / f"{run_subdir}_scored.json"
             if not cand_path.exists():

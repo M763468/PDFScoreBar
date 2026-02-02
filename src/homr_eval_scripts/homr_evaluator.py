@@ -152,7 +152,7 @@ class AggregateMetrics:
     f1: float
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--images",
@@ -351,7 +351,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Enable post-processing to recover staff-end barlines",
     )
-    return parser.parse_args()
+    parser.add_argument(
+        "--enable-segnet-cache",
+        action="store_true",
+        help="Enable cached Segnet ONNXRuntime session reuse",
+    )
+    return parser.parse_args(argv)
 
 
 def load_ground_truth_mapping(args: argparse.Namespace) -> Dict[str, Path]:
@@ -2102,11 +2107,12 @@ def write_run_config(
     args: argparse.Namespace,
     git_meta: Dict[str, Optional[str]],
     images: Sequence[Path],
+    command_args: Sequence[str],
 ) -> Path:
     payload = {
         "run_id": run_id,
         "timestamp": timestamp_jst(),
-        "command": " ".join(shlex.quote(str(arg)) for arg in sys.argv),
+        "command": " ".join(shlex.quote(str(arg)) for arg in command_args),
         "docker_tag": args.docker_tag,
         "git": git_meta,
         "images": [str(path) for path in images],
@@ -2221,7 +2227,7 @@ def write_compare_md(
     return compare_path
 
 
-def write_run_sh(run_dir: Path) -> Path:
+def write_run_sh(run_dir: Path, command_args: Sequence[str]) -> Path:
     path = run_dir / "run.sh"
     with path.open("w", encoding="utf-8") as fh:
         fh.write("#!/usr/bin/env bash\n")
@@ -2229,15 +2235,19 @@ def write_run_sh(run_dir: Path) -> Path:
         fh.write('cd "$(dirname "${BASH_SOURCE[0]}")/../.."\n')
         fh.write(
             "python src/homr/homr_evaluator.py "
-            + " ".join(shlex.quote(arg) for arg in sys.argv[1:])
+            + " ".join(shlex.quote(arg) for arg in command_args[1:])
             + "\n"
         )
     os.chmod(path, 0o755)
     return path
 
 
-def main() -> None:
-    args = parse_args()
+def run_evaluation(argv: Optional[Sequence[str]] = None) -> Path:
+    args = parse_args(argv)
+    if argv is None:
+        command_args = list(sys.argv)
+    else:
+        command_args = ["homr_evaluator.py", *argv]
     images = sanitise_images(args.images)
     ground_truth_map = load_ground_truth_mapping(args)
 
@@ -2245,10 +2255,19 @@ def main() -> None:
     run_dir = args.output_root / run_id
     ensure_dir(run_dir)
 
-    write_run_sh(run_dir)
+    write_run_sh(run_dir, command_args)
 
     git_meta = git_info()
-    write_run_config(run_dir, run_id, args, git_meta, images)
+    write_run_config(run_dir, run_id, args, git_meta, images, command_args)
+
+    if args.enable_segnet_cache:
+        try:
+            from homr_eval_scripts.segnet_cache import enable_segnet_cache
+
+            if enable_segnet_cache():
+                eprint("Segnet cache enabled.")
+        except Exception as exc:
+            eprint(f"Failed to enable Segnet cache: {exc}")
 
     download_weights()
 
@@ -2741,6 +2760,11 @@ def main() -> None:
     write_metrics_csv(run_dir, per_image_metrics, aggregate)
     write_readme(run_dir, run_id, per_image_metrics, aggregate, args, ground_truth_summary)
     write_compare_md(run_dir, per_image_metrics, aggregate, args.baseline_metrics)
+    return run_dir
+
+
+def main() -> None:
+    run_evaluation()
 
 
 if __name__ == "__main__":

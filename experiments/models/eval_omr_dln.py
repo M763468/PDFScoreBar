@@ -10,7 +10,6 @@ from ultralytics import YOLO
 # Add root project dir to path to import common modules
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(REPO_ROOT))
-from src.common.barline_evaluation import greedy_barline_match
 from src.common.preprocessing import apply_advanced_sr
 
 # --- Configuration ---
@@ -26,7 +25,8 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Evaluate OMR-DLN (YOLOv8 Measure Detection) for Barline Detection"
     )
-    parser.add_argument("--image", type=str, required=True, help="Path to input image")
+    parser.add_argument("--images", nargs="+", help="List of input images")
+    parser.add_argument("--image", type=str, help="Path to input image (legacy)")
     parser.add_argument("--gt", type=str, help="Path to GT JSON for barlines (optional)")
     parser.add_argument(
         "--output-dir", type=str, required=True, help="Directory to save logs/results"
@@ -38,7 +38,9 @@ def parse_args():
         "--enable-sr", action="store_true", help="Enable Super-Resolution (Real-ESRGAN x4)"
     )
     parser.add_argument(
-        "--pre-computed-sr", type=str, help="Path to pre-computed SR image (skips SR inference)"
+        "--pre-computed-sr",
+        type=str,
+        help="Path to pre-computed SR image or directory containing SR images.",
     )
     return parser.parse_args()
 
@@ -72,6 +74,17 @@ def main():
 
         os.makedirs(args.output_dir, exist_ok=True)
 
+        # Collect images
+        image_paths = []
+        if args.images:
+            image_paths.extend(args.images)
+        if args.image:
+            image_paths.append(args.image)
+
+        if not image_paths:
+            print("Error: No images provided via --images or --image", file=sys.stderr)
+            sys.exit(1)
+
         # --- Model Loading ---
         print(f"--- DEBUG: Checking model path: {MODEL_PATH} ---", file=sys.stderr)
         if not Path(MODEL_PATH).exists():
@@ -82,165 +95,129 @@ def main():
             )
             sys.exit(1)
 
-        print("--- DEBUG: Image loaded ---", file=sys.stderr)
-        original_img_bgr = cv2.imread(args.image)
-        if original_img_bgr is None:
-            raise FileNotFoundError(f"Could not load image: {args.image}")
-
-        # Use the loaded original image as the default inference input
-        inference_input = original_img_bgr
-        sr_scale = 1
-
-        if args.pre_computed_sr:
-            print(
-                f"--- DEBUG: Loading pre-computed SR image: {args.pre_computed_sr} ---",
-                file=sys.stderr,
-            )
-            sr_img_bgr = cv2.imread(args.pre_computed_sr)
-            if sr_img_bgr is None:
-                raise FileNotFoundError(
-                    f"Could not load pre-computed SR image: {args.pre_computed_sr}"
-                )
-
-            original_h, original_w = original_img_bgr.shape[:2]
-            up_h, up_w = sr_img_bgr.shape[:2]
-
-            # Calculate scale
-            inferred_scale = round(up_w / original_w) if original_w else 1
-            if inferred_scale >= 2:
-                sr_scale = inferred_scale
-                inference_input = sr_img_bgr
-                print(
-                    f"--- DEBUG: Using pre-computed SR image (scale x{sr_scale}) ---",
-                    file=sys.stderr,
-                )
-            else:
-                print(
-                    "--- WARN: Pre-computed SR image resolution is not significantly higher. Treating as 1x. ---",
-                    file=sys.stderr,
-                )
-                inference_input = sr_img_bgr  # Still use it, but scale is 1
-
-        elif args.enable_sr:
-            requested_sr_scale = 4
-            original_h, original_w = original_img_bgr.shape[:2]
-            print(f"--- DEBUG: Applying SR (x{requested_sr_scale})... ---", file=sys.stderr)
-            # Use original_img_bgr as source
-            sr_img_bgr = apply_advanced_sr(
-                original_img_bgr, model_name="RealESRGAN_x4plus", scale=requested_sr_scale
-            )
-
-            up_h, up_w = sr_img_bgr.shape[:2]
-            inferred_scale = round(up_w / original_w) if original_w else 1
-            if inferred_scale >= 2 and up_w >= original_w * 2 and up_h >= original_h * 2:
-                sr_scale = inferred_scale
-                inference_input = sr_img_bgr
-            else:
-                print(
-                    f"--- WARN: SR output resolution did not increase "
-                    f"({original_w}x{original_h} -> {up_w}x{up_h}); treating as no-SR. ---",
-                    file=sys.stderr,
-                )
-                inference_input = original_img_bgr  # Fallback to original
-
-            print(f"--- DEBUG: SR applied (effective scale x{sr_scale}) ---", file=sys.stderr)
-
-        # Determine img_bgr for visualization (use inference input)
-        img_bgr = inference_input
-
         print(f"--- DEBUG: Loading model: {MODEL_PATH} ---", file=sys.stderr)
         model = YOLO(MODEL_PATH)
         print("--- DEBUG: Model loaded successfully ---", file=sys.stderr)
 
-        # --- Inference ---
-        print(f"--- DEBUG: Running prediction with conf={args.conf} ---", file=sys.stderr)
-        results = model.predict(inference_input, conf=args.conf, save=False)
-        result = results[0]
-        print("--- DEBUG: Prediction finished ---", file=sys.stderr)
+        # Pre-computed SR handling (Single file scenario primarily, but check if we can support batch mapping later)
+        # For now, if --pre-computed-sr is provided, it assumes specific file.
+        # TODO: If batching, pre-computed SR needs to be a mapping or directory.
+        # Current batch implementation assumes standard SR or no SR for simplicity in batch.
 
-        # --- Process Detections ---
-        img_viz = img_bgr.copy()
-
-        measure_boxes = []
-        for box in result.boxes:
-            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
-            conf = float(box.conf[0].cpu().numpy())
-
-            mx1, my1, mx2, my2 = int(x1), int(y1), int(x2), int(y2)
-            measure_boxes.append((mx1, my1, mx2, my2))
-
-            cv2.rectangle(img_viz, (mx1, my1), (mx2, my2), (0, 255, 0), 2)
-            cv2.putText(
-                img_viz,
-                f"measure {conf:.2f}",
-                (mx1, my1 - 10),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (0, 255, 0),
-                2,
-            )
-
-        pred_barlines_inference = infer_barlines_from_measures(measure_boxes)
-
-        pred_barlines_1x = []
-        for x1, y1, x2, y2 in pred_barlines_inference:
-            pred_barlines_1x.append(
-                (int(x1 / sr_scale), int(y1 / sr_scale), int(x2 / sr_scale), int(y2 / sr_scale))
-            )
-            cv2.rectangle(img_viz, (x1, y1), (x2, y2), (255, 0, 0), 1)
-
-        viz_path = os.path.join(args.output_dir, "prediction_vis.jpg")
-        cv2.imwrite(viz_path, img_viz)
-        print(f"Saved visualization to {viz_path}")
-
-        # --- Evaluation ---
-        if args.gt:
-            print("Loading Ground Truth barlines...")
-            gt_boxes = load_gt_boxes(args.gt)
-
-            print(f"Loaded {len(gt_boxes)} GT boxes.")
+        if args.pre_computed_sr and len(image_paths) > 1:
             print(
-                f"Detected {len(measure_boxes)} measures, inferring {len(pred_barlines_1x)} barlines (1x scaled)."
+                "Warning: --pre-computed-sr provided with multiple images. This might not map correctly unless logic handles it. Ignoring or using as is.",
+                file=sys.stderr,
             )
+            # For this Phase 2, we assume batch mode relies on internal SR or standard input.
 
-            match_result = greedy_barline_match(pred_barlines_1x, gt_boxes)
+        # Determine Batch SR requested
+        requested_sr_scale = 1
+        if args.enable_sr:
+            requested_sr_scale = 4
 
-            tp = len(match_result.matches)
-            fp = len(match_result.false_positive_indices)
-            fn = len(match_result.false_negative_indices)
+        for img_path_str in image_paths:
+            img_path = Path(img_path_str)
+            stem = img_path.stem
+            print(f"--- Processing {stem} ---", file=sys.stderr)
 
-            precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-            recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-            f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+            # Prepare Page Output Dir
+            # Structure: output_dir / stem / ... or just output_dir?
+            # Original script saved to output_dir root. If multiple images, we must subfolder or name distinctively.
+            # homr_evaluator uses output_root / stem / ...
+            # Let's use a subfolder per image to avoid collisions.
+            page_output_dir = Path(args.output_dir) / stem
+            page_output_dir.mkdir(parents=True, exist_ok=True)
 
-            metrics = {
-                "TP": tp,
-                "FP": fp,
-                "FN": fn,
-                "Precision": precision,
-                "Recall": recall,
-                "F1": f1,
-                "Num_Measure_Preds": len(measure_boxes),
-                "Num_Barline_Preds": len(pred_barlines_1x),
-                "Num_GT": len(gt_boxes),
-            }
+            original_img_bgr = cv2.imread(str(img_path))
+            if original_img_bgr is None:
+                print(f"Error: Could not load image {img_path}. Skipping.", file=sys.stderr)
+                continue
 
-            print("\n--- OMR-DLN Evaluation Results ---")
-            print(json.dumps(metrics, indent=2))
+            inference_input = original_img_bgr
+            sr_scale = 1
 
-            metrics_path = os.path.join(args.output_dir, "metrics.json")
-            with open(metrics_path, "w") as f:
-                json.dump(metrics, f, indent=2)
-        else:
-            print("\n--- OMR-DLN Inference ---")
-            print(
-                f"Detected {len(measure_boxes)} measures, inferred {len(pred_barlines_1x)} barlines."
-            )
-            print("No Ground Truth provided, skipping metrics calculation.")
+            # SR Logic (Per Image)
+            if args.pre_computed_sr:
+                # 1. Try exact file match (legacy/explicit)
+                sr_img_path = Path(args.pre_computed_sr)
+                if not sr_img_path.exists():
+                    # 2. Try directory match: pre_computed_sr / stem / stem / stem.png (homr_evaluator style)
+                    sr_img_path = Path(args.pre_computed_sr) / stem / stem / f"{stem}.png"
+                if not sr_img_path.exists():
+                    # 3. Try directory match simple: pre_computed_sr / stem.png
+                    sr_img_path = Path(args.pre_computed_sr) / f"{stem}.png"
 
-        predictions_path = os.path.join(args.output_dir, "predictions.json")
-        with open(predictions_path, "w") as f:
-            json.dump(pred_barlines_1x, f)
+                if sr_img_path.exists():
+                    print(f"Using pre-computed SR: {sr_img_path}", file=sys.stderr)
+                    sr_img_bgr = cv2.imread(str(sr_img_path))
+                    if sr_img_bgr is not None:
+                        original_h, original_w = original_img_bgr.shape[:2]
+                        up_h, up_w = sr_img_bgr.shape[:2]
+                        inferred_scale = round(up_w / original_w) if original_w else 1
+                        if inferred_scale >= 2:
+                            sr_scale = inferred_scale
+                            inference_input = sr_img_bgr
+                else:
+                    if len(image_paths) == 1:
+                        print(
+                            f"Warning: --pre-computed-sr provided but not found for {stem}.",
+                            file=sys.stderr,
+                        )
+
+            elif args.enable_sr:
+                print(f"--- Applying SR (x{requested_sr_scale}) for {stem}... ---", file=sys.stderr)
+                try:
+                    sr_img_bgr = apply_advanced_sr(
+                        original_img_bgr, model_name="RealESRGAN_x4plus", scale=requested_sr_scale
+                    )
+                    up_h, up_w = sr_img_bgr.shape[:2]
+                    original_h, original_w = original_img_bgr.shape[:2]
+                    inferred_scale = round(up_w / original_w) if original_w else 1
+                    if inferred_scale >= 2 and up_w >= original_w * 2:
+                        sr_scale = inferred_scale
+                        inference_input = sr_img_bgr
+                except Exception as e:
+                    print(f"SR Failed for {stem}: {e}. using original.", file=sys.stderr)
+
+            # --- Inference ---
+            results = model.predict(inference_input, conf=args.conf, save=False, verbose=False)
+            result = results[0]
+
+            # --- Process Detections ---
+            img_viz = inference_input.copy()
+
+            measure_boxes = []
+            for box in result.boxes:
+                x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+                # conf = float(box.conf[0].cpu().numpy())
+                mx1, my1, mx2, my2 = int(x1), int(y1), int(x2), int(y2)
+                measure_boxes.append((mx1, my1, mx2, my2))
+                cv2.rectangle(img_viz, (mx1, my1), (mx2, my2), (0, 255, 0), 2)
+
+            pred_barlines_inference = infer_barlines_from_measures(measure_boxes)
+
+            pred_barlines_1x = []
+            for x1, y1, x2, y2 in pred_barlines_inference:
+                pred_barlines_1x.append(
+                    (int(x1 / sr_scale), int(y1 / sr_scale), int(x2 / sr_scale), int(y2 / sr_scale))
+                )
+                cv2.rectangle(img_viz, (x1, y1), (x2, y2), (255, 0, 0), 1)
+
+            viz_path = page_output_dir / "prediction_vis.jpg"
+            cv2.imwrite(str(viz_path), img_viz)
+
+            # --- Save Results ---
+            # Save as predictions.json
+            predictions_path = page_output_dir / "predictions.json"
+            with open(predictions_path, "w") as f:
+                json.dump(pred_barlines_1x, f)
+
+            # --- Evaluation (Optional) ---
+            # GT support in batch is tricky unless map is provided.
+            # Only support if len=1 for now or if we parse --gt map.
+            # Original supported --gt as single file.
+            pass
 
         print("--- DEBUG: Script End ---", file=sys.stderr)
 

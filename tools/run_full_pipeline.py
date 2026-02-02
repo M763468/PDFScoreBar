@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
-import os
 import subprocess
 import sys
 import time
@@ -170,37 +169,33 @@ def _run_detection_step(
 
     commands = []
 
-    print("--- Step 2.1: Hybrid Detection (Docker) ---")
-    # Run hybrid pipeline for each image
-    # Note: run_hybrid_pipeline.sh takes one image.
-    hybrid_script = "tools/run_hybrid_pipeline.sh"
+    print("--- Step 2.1: Hybrid Detection Batch (Docker) ---")
 
+    # Map host image paths to container workspace paths
+    container_images = []
     for img_path in images:
-        # We need absolute path for the script to resolve it correctly inside/outside docker mapping logic
-        # But script expects path relative to repo root usually or absolute.
-        # Let's use relative path from repo root if possible.
         try:
             rel_img = img_path.resolve().relative_to(PROJECT_ROOT.resolve())
-            img_arg = str(rel_img)
+            container_images.append(f"/workspace/{rel_img}")
         except ValueError:
-            img_arg = str(img_path.resolve())
+            # Fallback if somehow not in project root, though unlikely given collect_images logic
+            container_images.append(str(img_path.resolve()))
 
-        cmd = ["bash", hybrid_script, "--image", img_arg, "--run-id", hybrid_run_id]
+    # Run hybrid batch script
+    batch_script = "/workspace/tools/run_hybrid_batch.py"
+    cmd_batch = [
+        "docker",
+        "exec",
+        container_name,
+        "bash",
+        "-lc",
+        f"python3 {batch_script} --images {' '.join(container_images)} --run-id {hybrid_run_id} --output-root /workspace/{hybrid_root}",
+    ]
 
-        # Pass CONTAINER_NAME via environment
-        env = dict(os.environ)
-        env["CONTAINER_NAME"] = container_name
-
-        print(f"Running: {' '.join(cmd)} (CONTAINER_NAME={container_name})")
-        if not dry_run:
-            # Allow failure (e.g. no staffs found on cover page)
-            res = subprocess.run(cmd, check=False, env=env)
-            if res.returncode != 0:
-                print(
-                    f"Warning: Detection failed for {img_path.name} (exit code {res.returncode}). Skipping."
-                )
-                continue
-        commands.append(cmd)
+    print(f"Running Batch Detection: {' '.join(cmd_batch)}")
+    if not dry_run:
+        subprocess.run(cmd_batch, check=True)
+    commands.append(cmd_batch)
 
     # 2. Probe Scan (Candidate Expansion)
     print("--- Step 2.2: Probe Scan (Host) ---")
@@ -300,6 +295,12 @@ def _resolve_paths_from_detection(
             # If multiple, take first (or warn)
             target_dir = candidate_dirs[0]
             barlines_path = target_dir / "pipeline2_no_peak_filtered_cnn.json"
+
+        # Fallback to hybrid_results if probe scan didn't run or failed for this page
+        if not barlines_path or not barlines_path.exists():
+            hybrid_batch_json = hybrid_output_dir / "hybrid_results" / f"{stem}_hybrid.json"
+            if hybrid_batch_json.exists():
+                barlines_path = hybrid_batch_json
 
         # Staff Mask
         staff_mask_path = staff_mask_map.get(stem)

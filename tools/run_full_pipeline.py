@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Phase 1 orchestrator (config-driven) with Full Detection Support."""
+"""
+DEPRECATED: This orchestrator is legacy. 
+Please use 'python -m src.pipeline.main' instead for integrated features and model persistence.
+"""
 
 from __future__ import annotations
 
@@ -60,8 +63,13 @@ def _build_pdf_command(config: Dict[str, Any], run_dir: Path) -> List[str]:
     output_dir = run_dir / "inputs" / "images"
     _ensure_dir(output_dir)
 
+    # Use current interpreter if running in a venv (like container), fallback to .venv_pdf on host
+    python_exe = sys.executable
+    if "venv" not in python_exe and (PROJECT_ROOT / ".venv_pdf/bin/python").exists():
+        python_exe = str(PROJECT_ROOT / ".venv_pdf/bin/python")
+
     cmd = [
-        str(PROJECT_ROOT / ".venv_pdf/bin/python"),
+        python_exe,
         "src/pdf_to_images.py",
         "--pdf",
         str(pdf_path),
@@ -152,107 +160,13 @@ def _run_detection_step(
     config: Dict[str, Any], images: List[Path], page_ids: List[str], run_id: str, *, dry_run: bool
 ) -> Dict[str, Any]:
     """
-    Orchestrates the detection pipeline:
-    1. Hybrid Detection (Docker) -> Staff Masks & Hybrid Candidates
-    2. Probe Scan (Host) -> Expanded Candidates
-    3. CNN Scoring (Host) -> Filtered Candidates
+    Orchestrates the detection pipeline.
+    If running inside a container or configured for in-process, it calls the internal detection logic.
     """
-    det_cfg = _get_nested(config, "detection", default={}) or {}
-    container_name = det_cfg.get("container_name", "sr_eval_gpu_exp")
-    hybrid_root = Path(det_cfg.get("hybrid_output_root", "logs/hybrid_generalization"))
+    from src.pipeline.detection import run_detection_step as run_detection_step_internal
 
-    # 1. Hybrid Detection
-    _check_and_start_container(container_name, dry_run)
-
-    hybrid_run_id = run_id  # Use same run_id for hybrid output
-    hybrid_output_dir = hybrid_root / hybrid_run_id
-
-    commands = []
-
-    print("--- Step 2.1: Hybrid Detection Batch (Docker) ---")
-
-    # Map host image paths to container workspace paths
-    container_images = []
-    for img_path in images:
-        try:
-            rel_img = img_path.resolve().relative_to(PROJECT_ROOT.resolve())
-            container_images.append(f"/workspace/{rel_img}")
-        except ValueError:
-            # Fallback if somehow not in project root, though unlikely given collect_images logic
-            container_images.append(str(img_path.resolve()))
-
-    # Run hybrid batch script
-    batch_script = "/workspace/tools/run_hybrid_batch.py"
-    cmd_batch = [
-        "docker",
-        "exec",
-        container_name,
-        "bash",
-        "-lc",
-        f"python3 {batch_script} --images {' '.join(container_images)} --run-id {hybrid_run_id} --output-root /workspace/{hybrid_root}",
-    ]
-
-    print(f"Running Batch Detection: {' '.join(cmd_batch)}")
-    if not dry_run:
-        subprocess.run(cmd_batch, check=True)
-    commands.append(cmd_batch)
-
-    # 2. Probe Scan (Candidate Expansion)
-    print("--- Step 2.2: Probe Scan (Host) ---")
-    # Output for probe scan
-    probe_output_root = Path(f"logs/full_pipeline_runs/{run_id}/intermediate/probe_scan")
-    _ensure_dir(probe_output_root)
-
-    # run_eval_experiment.py arguments
-    # It scans --image-root. We need to point it to the directory containing our images.
-    # Our images are in config['inputs']['pdf_to_images']['output_dir']
-    image_root = _get_nested(config, "inputs", "pdf_to_images", "output_dir")
-
-    cmd_probe = [
-        sys.executable,
-        "tools/run_eval_experiment.py",
-        "--image-root",
-        str(image_root),
-        "--output-root",
-        str(probe_output_root),
-        "--bands-from",
-        str(hybrid_output_dir),  # Use Hybrid output as existing boxes
-        "--staff-mask-dir",
-        str(hybrid_output_dir),  # Use Hybrid output for staff masks
-        "--ink-threshold",
-        str(det_cfg.get("ink_threshold", 230)),
-        "--min-ratio",
-        str(det_cfg.get("min_ratio", 0.70)),
-        "--min-height-ratio",
-        str(det_cfg.get("min_height_ratio", 0.012)),
-    ]
-    _run_command(cmd_probe, dry_run=dry_run)
-    commands.append(cmd_probe)
-
-    # 3. CNN Scoring
-    print("--- Step 2.3: CNN Scoring (Host) ---")
-    cnn_model = det_cfg.get("cnn_model_path")
-    if not cnn_model:
-        raise ValueError("detection.cnn_model_path is required.")
-
-    cmd_score = [
-        sys.executable,
-        "tools/cnn_classifier/score_candidates_batch.py",
-        "--logs",
-        str(probe_output_root),
-        "--model",
-        str(cnn_model),
-        "--threshold",
-        str(det_cfg.get("cnn_threshold", 0.1)),
-    ]
-    _run_command(cmd_score, dry_run=dry_run)
-    commands.append(cmd_score)
-
-    return {
-        "commands": commands,
-        "hybrid_output_dir": hybrid_output_dir,
-        "probe_output_dir": probe_output_root,
-    }
+    # Simply delegate to the internal implementation which now supports in-process homr
+    return run_detection_step_internal(config, images, page_ids, run_id, dry_run=dry_run)
 
 
 def _resolve_paths_from_detection(

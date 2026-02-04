@@ -45,8 +45,13 @@ def _build_pdf_command(config: Dict[str, Any], run_dir: Path) -> List[str]:
     output_dir = run_dir / "inputs" / "images"
     ensure_dir(output_dir)
 
+    # Use current interpreter if running in a venv (like container), fallback to .venv_pdf on host
+    python_exe = sys.executable
+    if "venv" not in python_exe and (PROJECT_ROOT / ".venv_pdf/bin/python").exists():
+        python_exe = str(PROJECT_ROOT / ".venv_pdf/bin/python")
+
     cmd = [
-        str(PROJECT_ROOT / ".venv_pdf/bin/python"),
+        python_exe,
         "src/pdf_to_images.py",
         "--pdf",
         str(pdf_path),
@@ -343,3 +348,29 @@ def run_pipeline(
     print(f"Wrote manifest to {run_dir / 'manifest.json'}")
 
     return run_dir
+
+
+def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Run the integrated detection and numbering pipeline.")
+    parser.add_argument("--config", type=Path, required=True, help="Path to the YAML configuration file.")
+    parser.add_argument("--run-id", type=str, help="Optional run identifier.")
+    parser.add_argument("--output-root", type=Path, help="Optional output root directory.")
+    parser.add_argument("--dry-run", action="store_true", help="Log commands without executing them.")
+    parser.add_argument("--validate-only", action="store_true", help="Stop after input resolution and filtering.")
+    parser.add_argument("--page-limit", type=int, help="Limit the number of pages to process.")
+
+    args = parser.parse_args()
+
+    run_pipeline(
+        args.config,
+        run_id=args.run_id,
+        output_root=args.output_root,
+        dry_run=args.dry_run,
+        validate_only=args.validate_only,
+    )
+
+
+if __name__ == "__main__":
+    main()

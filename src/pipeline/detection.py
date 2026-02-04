@@ -4,6 +4,12 @@ from __future__ import annotations
 
 import subprocess
 import sys
+
+# Pre-import torch to avoid symbol conflict with onnxruntime-gpu
+try:
+    import torch
+except ImportError:
+    pass
 from pathlib import Path
 from typing import Any, Dict, List
 

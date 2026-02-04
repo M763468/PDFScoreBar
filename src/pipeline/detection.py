@@ -2,12 +2,21 @@
 
 from __future__ import annotations
 
+import logging
 import subprocess
 import sys
+
+# Pre-import torch to avoid symbol conflict with onnxruntime-gpu
+try:
+    import torch
+except ImportError:
+    pass
 from pathlib import Path
 from typing import Any, Dict, List
 
 from src.homr_eval_scripts import homr_evaluator
+
+logger = logging.getLogger(__name__)
 from src.pipeline.config import get_nested
 from src.pipeline.io import ensure_dir
 
@@ -21,6 +30,11 @@ def _run_hybrid_detection_in_process(
     *,
     dry_run: bool,
 ) -> Dict[str, Any]:
+    # Ensure external/homr is in sys.path for training module imports
+    homr_path = str((PROJECT_ROOT / "external" / "homr").resolve())
+    if homr_path not in sys.path:
+        sys.path.insert(0, homr_path)
+
     hybrid_root = Path(det_cfg.get("hybrid_output_root", "logs/hybrid_generalization"))
     hybrid_output_dir = hybrid_root / run_id
     ensure_dir(hybrid_output_dir)
@@ -30,7 +44,7 @@ def _run_hybrid_detection_in_process(
 
     commands: List[List[str]] = []
 
-    print("--- Step 2.1: Hybrid Detection (In-Process homr baseline/SR) ---")
+    logger.info("--- Step 2.1: Hybrid Detection (In-Process homr baseline/SR) ---")
 
     baseline_args = [
         "--images",
@@ -59,7 +73,7 @@ def _run_hybrid_detection_in_process(
     if not dry_run:
         homr_evaluator.run_evaluation(sr_args)
 
-    print("--- Step 2.1b: OMR-DLN SR (Subprocess) ---")
+    logger.info("--- Step 2.1b: OMR-DLN SR (Subprocess) ---")
     sr_root = hybrid_output_dir / "sr" / "batch"
     omr_cmd = (
         [sys.executable, "experiments/models/eval_omr_dln.py", "--images"]
@@ -70,7 +84,7 @@ def _run_hybrid_detection_in_process(
     if not dry_run:
         subprocess.run(omr_cmd, check=True)
 
-    print("--- Step 2.1c: Hybrid Consensus Generation ---")
+    logger.info("--- Step 2.1c: Hybrid Consensus Generation ---")
     hybrid_results_dir = hybrid_output_dir / "hybrid_results"
     ensure_dir(hybrid_results_dir)
 
@@ -80,7 +94,7 @@ def _run_hybrid_detection_in_process(
         omr_json = hybrid_output_dir / "omr_sr" / stem / "predictions.json"
 
         if not baseline_json.exists() or not sr_json.exists() or not omr_json.exists():
-            print(f"Warning: Missing components for {stem}. Skipping consensus.")
+            logger.warning(f"Missing components for {stem}. Skipping consensus.")
             continue
 
         output_json = hybrid_results_dir / f"{stem}_hybrid.json"
@@ -120,7 +134,7 @@ def run_detection_step(
     commands = hybrid_result["commands"]
     hybrid_output_dir = hybrid_result["hybrid_output_dir"]
 
-    print("--- Step 2.2: Probe Scan (Host) ---")
+    logger.info("--- Step 2.2: Probe Scan (Host) ---")
     probe_output_root = Path(f"logs/full_pipeline_runs/{run_id}/intermediate/probe_scan")
     ensure_dir(probe_output_root)
 
@@ -161,7 +175,7 @@ def run_detection_step(
     subprocess.run(cmd_probe, check=not dry_run)
     commands.append(cmd_probe)
 
-    print("--- Step 2.3: CNN Scoring (Host) ---")
+    logger.info("--- Step 2.3: CNN Scoring (Host) ---")
     cnn_model = det_cfg.get("cnn_model_path")
     if not cnn_model:
         raise ValueError("detection.cnn_model_path is required.")
@@ -217,11 +231,11 @@ def resolve_paths_from_detection(
         staff_mask_path = staff_mask_map.get(stem)
 
         if not barlines_path or not barlines_path.exists():
-            print(f"Warning: Barlines not found for {page_id} (stem: {stem})")
+            logger.warning(f"Warning: Barlines not found for {page_id} (stem: {stem})")
             barlines_path = Path("MISSING_BARLINES.json")
 
         if not staff_mask_path or not staff_mask_path.exists():
-            print(f"Warning: Staff mask not found for {page_id} (stem: {stem})")
+            logger.warning(f"Warning: Staff mask not found for {page_id} (stem: {stem})")
             staff_mask_path = Path("MISSING_STAFF_MASK.png")
 
         resolved.append(

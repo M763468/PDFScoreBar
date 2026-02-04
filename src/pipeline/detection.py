@@ -21,6 +21,11 @@ def _run_hybrid_detection_in_process(
     *,
     dry_run: bool,
 ) -> Dict[str, Any]:
+    # Ensure external/homr is in sys.path for training module imports
+    homr_path = str((PROJECT_ROOT / "external" / "homr").resolve())
+    if homr_path not in sys.path:
+        sys.path.insert(0, homr_path)
+
     hybrid_root = Path(det_cfg.get("hybrid_output_root", "logs/hybrid_generalization"))
     hybrid_output_dir = hybrid_root / run_id
     ensure_dir(hybrid_output_dir)

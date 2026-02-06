@@ -13,7 +13,11 @@ from src.common.barline_evaluation import (
     BARLINE_X_MARGIN,
     BARLINE_Y_MARGIN,
 )
-from src.pipeline.barlines import apply_barline_overrides, merge_measure_overrides, normalize_barlines
+from src.pipeline.barlines import (
+    apply_barline_overrides,
+    merge_measure_overrides,
+    normalize_barlines,
+)
 from src.pipeline.config import get_nested, load_yaml
 from src.pipeline.detection import (
     resolve_barlines_and_masks_config,
@@ -42,8 +46,14 @@ def _build_pdf_command(config: Dict[str, Any], run_dir: Path) -> List[str]:
     output_dir = run_dir / "inputs" / "images"
     ensure_dir(output_dir)
 
+    # Prefer .venv_pdf for PDF conversion if available, fallback to current interpreter
+    if (PROJECT_ROOT / ".venv_pdf/bin/python").exists():
+        python_exe = str(PROJECT_ROOT / ".venv_pdf/bin/python")
+    else:
+        python_exe = sys.executable
+
     cmd = [
-        str(PROJECT_ROOT / ".venv_pdf/bin/python"),
+        python_exe,
         "src/pdf_to_images.py",
         "--pdf",
         str(pdf_path),
@@ -95,6 +105,7 @@ def run_pipeline(
     output_root: Optional[Path] = None,
     dry_run: bool = False,
     validate_only: bool = False,
+    page_limit: Optional[int] = None,
 ) -> Path:
     config = load_yaml(config_path)
     run_id_value = run_id or get_nested(config, "run", "run_id")
@@ -121,6 +132,8 @@ def run_pipeline(
         _run_command(pdf_cmd, dry_run=dry_run)
 
     images = collect_images(config, run_dir)
+    if page_limit is not None:
+        images = images[:page_limit]
     page_ids = resolve_page_ids(config, images)
 
     run_detection = get_nested(config, "steps", "detection", default=False)
@@ -156,7 +169,9 @@ def run_pipeline(
     if barline_overrides_path:
         barline_override_payload = load_json(Path(barline_overrides_path))
 
-    barline_override_cfg = get_nested(config, "inputs", "barline_overrides_config", default={}) or {}
+    barline_override_cfg = (
+        get_nested(config, "inputs", "barline_overrides_config", default={}) or {}
+    )
     barline_iou_threshold = float(barline_override_cfg.get("iou_threshold", 0.5))
     barline_min_width = int(barline_override_cfg.get("min_width", BARLINE_DEFAULT_MIN_WIDTH))
     barline_x_margin = int(barline_override_cfg.get("x_margin", BARLINE_X_MARGIN))
@@ -338,3 +353,30 @@ def run_pipeline(
     print(f"Wrote manifest to {run_dir / 'manifest.json'}")
 
     return run_dir
+
+
+def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Run the integrated detection and numbering pipeline.")
+    parser.add_argument("--config", type=Path, required=True, help="Path to the YAML configuration file.")
+    parser.add_argument("--run-id", type=str, help="Optional run identifier.")
+    parser.add_argument("--output-root", type=Path, help="Optional output root directory.")
+    parser.add_argument("--dry-run", action="store_true", help="Log commands without executing them.")
+    parser.add_argument("--validate-only", action="store_true", help="Stop after input resolution and filtering.")
+    parser.add_argument("--page-limit", type=int, help="Limit the number of pages to process.")
+
+    args = parser.parse_args()
+
+    run_pipeline(
+        args.config,
+        run_id=args.run_id,
+        output_root=args.output_root,
+        dry_run=args.dry_run,
+        validate_only=args.validate_only,
+        page_limit=args.page_limit,
+    )
+
+
+if __name__ == "__main__":
+    main()

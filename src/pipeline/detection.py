@@ -2,39 +2,119 @@
 
 from __future__ import annotations
 
+import logging
 import subprocess
 import sys
-import time
+
+# Pre-import torch to avoid symbol conflict with onnxruntime-gpu
+try:
+    import torch
+except ImportError:
+    pass
 from pathlib import Path
 from typing import Any, Dict, List
 
+from src.homr_eval_scripts import homr_evaluator
+
+logger = logging.getLogger(__name__)
 from src.pipeline.config import get_nested
 from src.pipeline.io import ensure_dir
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
-def check_and_start_container(container_name: str, dry_run: bool) -> None:
-    print(f"Checking container: {container_name}")
-    if dry_run:
-        return
-    res = subprocess.run(
-        ["docker", "inspect", "-f", "{{.State.Running}}", container_name],
-        capture_output=True,
-        text=True,
-    )
-    if res.returncode != 0:
-        print(f"Container {container_name} not found or error. Attempting start...")
-        subprocess.run(["docker", "start", container_name], check=True)
-        time.sleep(2)
-        return
+def _run_hybrid_detection_in_process(
+    det_cfg: Dict[str, Any],
+    images: List[Path],
+    run_id: str,
+    *,
+    dry_run: bool,
+) -> Dict[str, Any]:
+    # Ensure external/homr is in sys.path for training module imports
+    homr_path = str((PROJECT_ROOT / "external" / "homr").resolve())
+    if homr_path not in sys.path:
+        sys.path.insert(0, homr_path)
 
-    if res.stdout.strip() != "true":
-        print(f"Starting container {container_name}...")
-        subprocess.run(["docker", "start", container_name], check=True)
-        time.sleep(2)
-    else:
-        print(f"Container {container_name} is running.")
+    hybrid_root = Path(det_cfg.get("hybrid_output_root", "logs/hybrid_generalization"))
+    hybrid_output_dir = hybrid_root / run_id
+    ensure_dir(hybrid_output_dir)
+
+    image_paths = [str(path.resolve()) for path in images]
+    stems = [path.stem for path in images]
+
+    commands: List[List[str]] = []
+
+    logger.info("--- Step 2.1: Hybrid Detection (In-Process homr baseline/SR) ---")
+
+    baseline_args = [
+        "--images",
+        *image_paths,
+        "--output-root",
+        str(hybrid_output_dir / "baseline"),
+        "--force-run-id",
+        "batch",
+        "--enable-segnet-cache",
+    ]
+    commands.append(["homr_evaluator.run_evaluation", *baseline_args])
+    if not dry_run:
+        homr_evaluator.run_evaluation(baseline_args)
+
+    sr_args = [
+        "--images",
+        *image_paths,
+        "--output-root",
+        str(hybrid_output_dir / "sr"),
+        "--force-run-id",
+        "batch",
+        "--enable-sr",
+        "--enable-segnet-cache",
+    ]
+    commands.append(["homr_evaluator.run_evaluation", *sr_args])
+    if not dry_run:
+        homr_evaluator.run_evaluation(sr_args)
+
+    logger.info("--- Step 2.1b: OMR-DLN SR (Subprocess) ---")
+    sr_root = hybrid_output_dir / "sr" / "batch"
+    omr_cmd = (
+        [sys.executable, "experiments/models/eval_omr_dln.py", "--images"]
+        + image_paths
+        + ["--output-dir", str(hybrid_output_dir / "omr_sr"), "--pre-computed-sr", str(sr_root)]
+    )
+    commands.append(omr_cmd)
+    if not dry_run:
+        subprocess.run(omr_cmd, check=True)
+
+    logger.info("--- Step 2.1c: Hybrid Consensus Generation ---")
+    hybrid_results_dir = hybrid_output_dir / "hybrid_results"
+    ensure_dir(hybrid_results_dir)
+
+    for stem in stems:
+        baseline_json = hybrid_output_dir / "baseline" / "batch" / stem / f"{stem}_detections.json"
+        sr_json = hybrid_output_dir / "sr" / "batch" / stem / f"{stem}_detections.json"
+        omr_json = hybrid_output_dir / "omr_sr" / stem / "predictions.json"
+
+        if not baseline_json.exists() or not sr_json.exists() or not omr_json.exists():
+            logger.warning(f"Missing components for {stem}. Skipping consensus.")
+            continue
+
+        output_json = hybrid_results_dir / f"{stem}_hybrid.json"
+        consensus_cmd = [
+            sys.executable,
+            "tools/generate_hybrid_results.py",
+            "--baseline",
+            str(baseline_json),
+            "--sr",
+            str(sr_json),
+            "--omr",
+            str(omr_json),
+            "--output",
+            str(output_json),
+        ]
+        commands.append(consensus_cmd)
+        if not dry_run:
+            subprocess.run(consensus_cmd, check=True)
+
+    return {"commands": commands, "hybrid_output_dir": hybrid_output_dir}
 
 
 def run_detection_step(
@@ -47,43 +127,14 @@ def run_detection_step(
 ) -> Dict[str, Any]:
     """Run hybrid detection -> probe scan -> CNN scoring."""
     det_cfg = get_nested(config, "detection", default={}) or {}
-    container_name = det_cfg.get("container_name", "sr_eval_gpu_exp")
-    hybrid_root = Path(det_cfg.get("hybrid_output_root", "logs/hybrid_generalization"))
-
-    # TODO: Provide a native Python API instead of docker subprocess calls.
-    check_and_start_container(container_name, dry_run)
-
     hybrid_run_id = run_id
-    hybrid_output_dir = hybrid_root / hybrid_run_id
+    hybrid_result = _run_hybrid_detection_in_process(
+        det_cfg, images, hybrid_run_id, dry_run=dry_run
+    )
+    commands = hybrid_result["commands"]
+    hybrid_output_dir = hybrid_result["hybrid_output_dir"]
 
-    commands: List[List[str]] = []
-
-    print("--- Step 2.1: Hybrid Detection Batch (Docker) ---")
-
-    container_images = []
-    for img_path in images:
-        try:
-            rel_img = img_path.resolve().relative_to(PROJECT_ROOT.resolve())
-            container_images.append(f"/workspace/{rel_img}")
-        except ValueError:
-            container_images.append(str(img_path.resolve()))
-
-    batch_script = "/workspace/tools/run_hybrid_batch.py"
-    cmd_batch = [
-        "docker",
-        "exec",
-        container_name,
-        "bash",
-        "-lc",
-        f"python3 {batch_script} --images {' '.join(container_images)} --run-id {hybrid_run_id} --output-root /workspace/{hybrid_root}",
-    ]
-
-    print(f"Running Batch Detection: {' '.join(cmd_batch)}")
-    if not dry_run:
-        subprocess.run(cmd_batch, check=True)
-    commands.append(cmd_batch)
-
-    print("--- Step 2.2: Probe Scan (Host) ---")
+    logger.info("--- Step 2.2: Probe Scan (Host) ---")
     probe_output_root = Path(f"logs/full_pipeline_runs/{run_id}/intermediate/probe_scan")
     ensure_dir(probe_output_root)
 
@@ -124,7 +175,7 @@ def run_detection_step(
     subprocess.run(cmd_probe, check=not dry_run)
     commands.append(cmd_probe)
 
-    print("--- Step 2.3: CNN Scoring (Host) ---")
+    logger.info("--- Step 2.3: CNN Scoring (Host) ---")
     cnn_model = det_cfg.get("cnn_model_path")
     if not cnn_model:
         raise ValueError("detection.cnn_model_path is required.")
@@ -156,8 +207,11 @@ def resolve_paths_from_detection(
 
     staff_mask_map: Dict[str, Path] = {}
     if hybrid_output_dir.exists():
+        # Match either original stem or proxy-suffixed stem (from Proxy Inference)
+        # Examples: page_001_debug_3_staff.png or page_001_proxy_debug_3_staff.png
         for path in hybrid_output_dir.rglob("*_debug_3_staff.png"):
-            stem = path.name.replace("_debug_3_staff.png", "")
+            name = path.name
+            stem = name.replace("_proxy_debug_3_staff.png", "").replace("_debug_3_staff.png", "")
             staff_mask_map[stem] = path
 
     for page_id, img_path in zip(page_ids, images):
@@ -180,11 +234,11 @@ def resolve_paths_from_detection(
         staff_mask_path = staff_mask_map.get(stem)
 
         if not barlines_path or not barlines_path.exists():
-            print(f"Warning: Barlines not found for {page_id} (stem: {stem})")
+            logger.warning(f"Warning: Barlines not found for {page_id} (stem: {stem})")
             barlines_path = Path("MISSING_BARLINES.json")
 
         if not staff_mask_path or not staff_mask_path.exists():
-            print(f"Warning: Staff mask not found for {page_id} (stem: {stem})")
+            logger.warning(f"Warning: Staff mask not found for {page_id} (stem: {stem})")
             staff_mask_path = Path("MISSING_STAFF_MASK.png")
 
         resolved.append(

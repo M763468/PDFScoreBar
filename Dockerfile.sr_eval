@@ -44,8 +44,8 @@ RUN uv pip install -r external/realesrgan/requirements.txt ultralytics
 # This is a temporary patch as discussed.
 RUN sed -i 's/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/g' /opt/venv_sr/lib/python3.11/site-packages/basicsr/data/degradations.py
 
-# Install homr (and its runtime deps) into the same venv so SR and homr execution share one environment.
-RUN uv pip install ./external/homr
+# Install homr (and its runtime deps) and pymupdf into the same venv so SR and homr execution share one environment.
+RUN uv pip install ./external/homr pymupdf
 
 # Prefer GPU onnxruntime for performance parity with `homr_eval_gpu`.
 RUN /opt/venv_sr/bin/python -m pip uninstall -y onnxruntime && \

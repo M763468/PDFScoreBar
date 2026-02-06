@@ -30,9 +30,7 @@ def collect_images(config: Dict[str, Any], run_dir: Path) -> List[Path]:
             images = sorted(external_dir.glob(image_glob))
     if not images:
         # TODO: Support explicit image list inputs for dry-run validation.
-        raise FileNotFoundError(
-            f"No images found in {output_dir} matching {image_glob}"
-        )
+        raise FileNotFoundError(f"No images found in {output_dir} matching {image_glob}")
     return images
 
 

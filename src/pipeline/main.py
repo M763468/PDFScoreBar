@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -103,6 +104,7 @@ def run_pipeline(
     output_root: Optional[Path] = None,
     dry_run: bool = False,
     validate_only: bool = False,
+    page_limit: Optional[int] = None,
 ) -> Path:
     config = load_yaml(config_path)
     run_id_value = run_id or get_nested(config, "run", "run_id")
@@ -129,6 +131,8 @@ def run_pipeline(
         _run_command(pdf_cmd, dry_run=dry_run)
 
     images = collect_images(config, run_dir)
+    if page_limit is not None:
+        images = images[:page_limit]
     page_ids = resolve_page_ids(config, images)
 
     run_detection = get_nested(config, "steps", "detection", default=False)
@@ -369,6 +373,7 @@ def main() -> None:
         output_root=args.output_root,
         dry_run=args.dry_run,
         validate_only=args.validate_only,
+        page_limit=args.page_limit,
     )
 
 

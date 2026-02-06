@@ -63,10 +63,11 @@ def _build_pdf_command(config: Dict[str, Any], run_dir: Path) -> List[str]:
     output_dir = run_dir / "inputs" / "images"
     _ensure_dir(output_dir)
 
-    # Use current interpreter if running in a venv (like container), fallback to .venv_pdf on host
-    python_exe = sys.executable
-    if "venv" not in python_exe and (PROJECT_ROOT / ".venv_pdf/bin/python").exists():
+    # Prefer .venv_pdf for PDF conversion if available, fallback to current interpreter
+    if (PROJECT_ROOT / ".venv_pdf/bin/python").exists():
         python_exe = str(PROJECT_ROOT / ".venv_pdf/bin/python")
+    else:
+        python_exe = sys.executable
 
     cmd = [
         python_exe,

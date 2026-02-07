@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DEPRECATED: This orchestrator is legacy. 
+DEPRECATED: This orchestrator is legacy.
 Please use 'python -m src.pipeline.main' instead for integrated features and model persistence.
 """
 

@@ -25,8 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 def _detect_probe_scan(*args: Any, **kwargs: Any) -> List[Tuple[int, int, int, int]]:
-    # Lazy import to keep module import lightweight for tests and dry-run paths.
-    from tools.run_gt_rebuild_hybrid_eval import detect_probe_scan
+    from src.pipeline.probe_detector import detect_probe_scan
 
     return detect_probe_scan(*args, **kwargs)
 

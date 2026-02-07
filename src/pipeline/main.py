@@ -358,12 +358,20 @@ def run_pipeline(
 def main() -> None:
     import argparse
 
-    parser = argparse.ArgumentParser(description="Run the integrated detection and numbering pipeline.")
-    parser.add_argument("--config", type=Path, required=True, help="Path to the YAML configuration file.")
+    parser = argparse.ArgumentParser(
+        description="Run the integrated detection and numbering pipeline."
+    )
+    parser.add_argument(
+        "--config", type=Path, required=True, help="Path to the YAML configuration file."
+    )
     parser.add_argument("--run-id", type=str, help="Optional run identifier.")
     parser.add_argument("--output-root", type=Path, help="Optional output root directory.")
-    parser.add_argument("--dry-run", action="store_true", help="Log commands without executing them.")
-    parser.add_argument("--validate-only", action="store_true", help="Stop after input resolution and filtering.")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Log commands without executing them."
+    )
+    parser.add_argument(
+        "--validate-only", action="store_true", help="Stop after input resolution and filtering."
+    )
     parser.add_argument("--page-limit", type=int, help="Limit the number of pages to process.")
 
     args = parser.parse_args()

@@ -85,3 +85,7 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 
 4. **逸脱時の自己修正**:
    - もし確認や説明をスキップしてしまったことに気づいた場合、即座に中断し、謝罪した上で不足していた説明を行い、改めて指示を仰ぐこと。
+
+5. **GitHubコメント投稿時の安全な書式**:
+   - `gh pr comment` / `gh issue comment` で本文にバッククォート（`` ` ``）や `$` を含む場合、シェル展開を避けるため `--body-file` + シングルクォートheredoc（`<<'EOF'`）を使うこと。
+   - `--body "..."` へ直接埋め込む方法は原則禁止（コマンド置換や変数展開で本文が破損するため）。

@@ -8,17 +8,14 @@ from typing import Dict, List, Optional, Sequence, Tuple
 import cv2
 import numpy as np
 
-from src.pipeline.probe_detector_bands import (
+from .bands import (
     build_divisi_map,
-    build_row_stats,
-    cluster_by_y_distance,
     resolve_bands,
     scan_staff_band_from_ink,
-    staff_bands_from_mask,
 )
-from src.pipeline.probe_detector_debug import write_debug_output
-from src.pipeline.probe_detector_rescue import apply_rightmost_rescue
-from src.pipeline.probe_detector_types import (
+from .debug import write_debug_output
+from .rescue import apply_rightmost_rescue
+from .types import (
     BandSelectionConfig,
     Box,
     DivisiRescueConfig,
@@ -26,14 +23,6 @@ from src.pipeline.probe_detector_types import (
 )
 
 __all__ = [
-    "Box",
-    "BandSelectionConfig",
-    "DivisiRescueConfig",
-    "RightmostRescueConfig",
-    "cluster_by_y_distance",
-    "build_row_stats",
-    "staff_bands_from_mask",
-    "scan_staff_band_from_ink",
     "detect_probe_scan",
 ]
 

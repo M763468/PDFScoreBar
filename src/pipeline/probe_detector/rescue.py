@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Sequence, Tuple
 
 import numpy as np
 
-from src.pipeline.probe_detector_types import (
+from .types import (
     _RIGHTMOST_RESCUE_DEBUG_KEYS,
     Box,
     RightmostRescueConfig,

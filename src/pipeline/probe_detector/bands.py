@@ -6,7 +6,7 @@ from typing import Dict, List, Sequence, Tuple
 
 import numpy as np
 
-from src.pipeline.probe_detector_types import BandSelectionConfig, Box, DivisiRescueConfig
+from .types import BandSelectionConfig, Box, DivisiRescueConfig
 
 
 def cluster_by_y_distance(y_centers: np.ndarray, max_distance: float, min_cluster_size: int):

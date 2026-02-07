@@ -5,20 +5,22 @@ from __future__ import annotations
 import logging
 import subprocess
 import sys
+from importlib import import_module
 
 # Pre-import torch to avoid symbol conflict with onnxruntime-gpu
 try:
-    import torch
+    import_module("torch")
 except ImportError:
     pass
 from pathlib import Path
 from typing import Any, Dict, List
 
-from src.homr_eval_scripts import homr_evaluator
+from src.pipeline.cnn_scoring import run_cnn_scoring_batch
 
 logger = logging.getLogger(__name__)
 from src.pipeline.config import get_nested
 from src.pipeline.io import ensure_dir
+from src.pipeline.probe_scan import run_probe_scan_batch
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -30,6 +32,8 @@ def _run_hybrid_detection_in_process(
     *,
     dry_run: bool,
 ) -> Dict[str, Any]:
+    from src.homr_eval_scripts import homr_evaluator
+
     # Ensure external/homr is in sys.path for training module imports
     homr_path = str((PROJECT_ROOT / "external" / "homr").resolve())
     if homr_path not in sys.path:
@@ -141,8 +145,7 @@ def run_detection_step(
     image_root = get_nested(config, "inputs", "pdf_to_images", "output_dir")
 
     cmd_probe = [
-        sys.executable,
-        "tools/run_eval_experiment.py",
+        "inprocess:probe_scan",
         "--image-root",
         str(image_root),
         "--output-root",
@@ -172,7 +175,25 @@ def run_detection_step(
     if det_cfg.get("probe_skip_existing"):
         cmd_probe.append("--skip-existing")
 
-    subprocess.run(cmd_probe, check=not dry_run)
+    if not dry_run:
+        run_probe_scan_batch(
+            images=images,
+            output_root=probe_output_root,
+            bands_from=hybrid_output_dir,
+            staff_mask_dir=hybrid_output_dir,
+            ink_threshold=int(det_cfg.get("ink_threshold", 230)),
+            min_ratio=float(det_cfg.get("min_ratio", 0.70)),
+            min_height_ratio=float(det_cfg.get("min_height_ratio", 0.012)),
+            min_width_ratio=(
+                float(det_cfg.get("min_width_ratio"))
+                if det_cfg.get("min_width_ratio") is not None
+                else None
+            ),
+            score_name=(
+                str(det_cfg.get("probe_score_name")) if det_cfg.get("probe_score_name") else None
+            ),
+            skip_existing=bool(det_cfg.get("probe_skip_existing")),
+        )
     commands.append(cmd_probe)
 
     logger.info("--- Step 2.3: CNN Scoring (Host) ---")
@@ -181,8 +202,7 @@ def run_detection_step(
         raise ValueError("detection.cnn_model_path is required.")
 
     cmd_score = [
-        sys.executable,
-        "tools/cnn_classifier/score_candidates_batch.py",
+        "inprocess:cnn_scoring",
         "--logs",
         str(probe_output_root),
         "--model",
@@ -190,7 +210,13 @@ def run_detection_step(
         "--threshold",
         str(det_cfg.get("cnn_threshold", 0.1)),
     ]
-    subprocess.run(cmd_score, check=not dry_run)
+    if not dry_run:
+        run_cnn_scoring_batch(
+            probe_output_root=probe_output_root,
+            images=images,
+            model_path=Path(cnn_model),
+            threshold=float(det_cfg.get("cnn_threshold", 0.1)),
+        )
     commands.append(cmd_score)
 
     return {

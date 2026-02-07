@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import subprocess
 import sys
@@ -16,6 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from src.pipeline.cnn_scoring import run_cnn_scoring_batch
+from src.pipeline.hybrid_consensus import load_json_boxes, phase4_hybrid_consensus
 
 logger = logging.getLogger(__name__)
 from src.pipeline.config import get_nested
@@ -103,8 +105,7 @@ def _run_hybrid_detection_in_process(
 
         output_json = hybrid_results_dir / f"{stem}_hybrid.json"
         consensus_cmd = [
-            sys.executable,
-            "tools/generate_hybrid_results.py",
+            "inprocess:hybrid_consensus",
             "--baseline",
             str(baseline_json),
             "--sr",
@@ -116,7 +117,15 @@ def _run_hybrid_detection_in_process(
         ]
         commands.append(consensus_cmd)
         if not dry_run:
-            subprocess.run(consensus_cmd, check=True)
+            baseline_boxes = load_json_boxes(baseline_json)
+            sr_boxes = load_json_boxes(sr_json)
+            omr_boxes = load_json_boxes(omr_json)
+            hybrid_preds = phase4_hybrid_consensus(
+                baseline_boxes=baseline_boxes,
+                sr_boxes=sr_boxes,
+                omr_boxes=omr_boxes,
+            )
+            output_json.write_text(json.dumps(hybrid_preds, indent=2))
 
     return {"commands": commands, "hybrid_output_dir": hybrid_output_dir}
 

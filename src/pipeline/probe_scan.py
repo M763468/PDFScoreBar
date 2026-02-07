@@ -23,11 +23,10 @@ from src.pipeline.run_ids import build_probe_run_id, build_probe_run_id_from_par
 
 logger = logging.getLogger(__name__)
 
-
-def _detect_probe_scan(*args: Any, **kwargs: Any) -> List[Tuple[int, int, int, int]]:
+try:
     from src.pipeline.probe_detector import detect_probe_scan
-
-    return detect_probe_scan(*args, **kwargs)
+except ImportError:  # pragma: no cover - optional in minimal test env
+    detect_probe_scan = None  # type: ignore[assignment]
 
 
 def _load_bands_for_image(
@@ -92,6 +91,8 @@ def run_probe_scan_batch(
     """
     if cv2 is None or np is None:
         raise ImportError("run_probe_scan_batch requires opencv-python and numpy.")
+    if detect_probe_scan is None:
+        raise ImportError("run_probe_scan_batch requires src.pipeline.probe_detector dependencies.")
 
     ensure_dir(output_root)
     staff_mask_map = _build_staff_mask_map(staff_mask_dir)
@@ -157,7 +158,7 @@ def run_probe_scan_batch(
             stem=stem,
         )
 
-        candidates = _detect_probe_scan(
+        candidates = detect_probe_scan(
             base_img=img,
             staff_mask=staff_mask,
             existing_boxes=existing_boxes,

@@ -500,8 +500,8 @@ def detect_probe_scan(
                 )
             if band_source in ("horiz_scan", "row_stats") and scan_base_y2 > scan_base_y1:
                 full_strip = ink[scan_base_y1 : scan_base_y2 + 1, :]
-                row_ratio_full = full_strip.sum(axis=1) / float(full_strip.shape[1])
-                if row_ratio_full.size > 0:
+                if full_strip.size > 0 and full_strip.shape[1] > 0:
+                    row_ratio_full = full_strip.sum(axis=1) / float(full_strip.shape[1])
                     scan_row_ratio_mean = float(row_ratio_full.mean())
                     scan_row_ratio_max = float(row_ratio_full.max())
                     scan_row_ratio_lines = int((row_ratio_full >= band_scan_line_ratio).sum())
@@ -537,12 +537,13 @@ def detect_probe_scan(
                 )
                 if scan_x_peak_rescue:
 
-                    def compute_xpeak(band_y1: int, band_y2: int) -> Optional[float]:
+                    def compute_xpeak(band_y1: int, band_y2: int) -> tuple[Optional[float], int]:
+                        ignored_rows = 0
                         if band_y2 < band_y1:
-                            return None
+                            return None, ignored_rows
                         scan_strip = ink[band_y1 : band_y2 + 1, :]
                         if scan_strip.size == 0:
-                            return None
+                            return None, ignored_rows
                         if scan_x_peak_ignore_staff_peak and scan_peak_row is not None:
                             rel_peak = int(scan_peak_row - band_y1)
                             radius = max(0, int(scan_x_peak_ignore_radius))
@@ -551,8 +552,7 @@ def detect_probe_scan(
                             if y_start <= y_end:
                                 scan_strip = scan_strip.copy()
                                 scan_strip[y_start : y_end + 1, :] = 0
-                                nonlocal scan_x_peak_ignored_rows
-                                scan_x_peak_ignored_rows += y_end - y_start + 1
+                                ignored_rows += y_end - y_start + 1
                         scan_col_sums = scan_strip.sum(axis=0)
                         scan_stripe_sums = np.convolve(scan_col_sums, kernel, mode="same")
                         band_h = max(1, band_y2 - band_y1 + 1)
@@ -561,18 +561,19 @@ def detect_probe_scan(
                         left = max(0, int(local_idx - wsize))
                         right = min(len(scan_ratios_full) - 1, int(local_idx + wsize))
                         if right < left:
-                            return None
+                            return None, ignored_rows
                         neighbor_vals = [
                             scan_ratios_full[i] for i in range(left, right + 1) if i != local_idx
                         ]
                         if not neighbor_vals:
-                            return None
+                            return None, ignored_rows
                         neighbor_median = float(np.median(neighbor_vals))
                         if neighbor_median <= 0:
-                            return None
-                        return float(scan_ratios_full[local_idx]) / neighbor_median
+                            return None, ignored_rows
+                        return float(scan_ratios_full[local_idx]) / neighbor_median, ignored_rows
 
-                    scan_x_peak_ratio = compute_xpeak(scan_y1, scan_y2)
+                    scan_x_peak_ratio, ignored_rows = compute_xpeak(scan_y1, scan_y2)
+                    scan_x_peak_ignored_rows += ignored_rows
                     if scan_x_peak_ratio is not None:
                         scan_x_peak_neighbor_median = scan_x_peak_ratio
                     if scan_x_peak_segment_height > 0:
@@ -589,7 +590,7 @@ def detect_probe_scan(
                         segs = []
                         for seg_y in range(seg_source_y1, seg_source_y2 + 1, seg_h):
                             seg_y2 = min(seg_source_y2, seg_y + seg_h - 1)
-                            seg_ratio = compute_xpeak(seg_y, seg_y2)
+                            seg_ratio, _ = compute_xpeak(seg_y, seg_y2)
                             if seg_ratio is not None:
                                 segs.append(seg_ratio)
                         if segs:
@@ -877,60 +878,81 @@ def detect_probe_scan(
                 if ext_ratios is not None and extend_max_ratio < 1.0:
                     ext_ratio = float(ext_ratios[local_idx])
                     if ext_ratio >= extend_max_ratio:
-                        debug_records.append(
+                        rec = {
+                            "status": "extended_ratio",
+                            "col": local_idx,
+                            "ratio": float(ratios[local_idx]),
+                            "extended_ratio": ext_ratio,
+                            "top_ratio": float(ext_top_ratios[local_idx])
+                            if ext_top_ratios is not None
+                            else None,
+                            "bottom_ratio": float(ext_bottom_ratios[local_idx])
+                            if ext_bottom_ratios is not None
+                            else None,
+                            "seed_col": x,
+                            **record_base,
+                        }
+                        debug_records.append(rec)
+                        rejected_records.append(
                             {
-                                "status": "extended_ratio",
-                                "col": local_idx,
-                                "ratio": float(ratios[local_idx]),
-                                "extended_ratio": ext_ratio,
-                                "top_ratio": float(ext_top_ratios[local_idx])
-                                if ext_top_ratios is not None
-                                else None,
-                                "bottom_ratio": float(ext_bottom_ratios[local_idx])
-                                if ext_bottom_ratios is not None
-                                else None,
-                                "seed_col": x,
-                                **record_base,
+                                "band_idx": band_idx,
+                                "col": float(local_idx),
+                                "box": (x1, band_y1, x2, band_y2),
+                                "record": rec,
                             }
                         )
                         continue
                 if ext_top_ratios is not None and extend_top_max_ratio < 1.0:
                     top_ratio = float(ext_top_ratios[local_idx])
                     if top_ratio >= extend_top_max_ratio:
-                        debug_records.append(
+                        rec = {
+                            "status": "extended_top_ratio",
+                            "col": local_idx,
+                            "ratio": float(ratios[local_idx]),
+                            "extended_ratio": float(ext_ratios[local_idx])
+                            if ext_ratios is not None
+                            else None,
+                            "top_ratio": top_ratio,
+                            "bottom_ratio": float(ext_bottom_ratios[local_idx])
+                            if ext_bottom_ratios is not None
+                            else None,
+                            "seed_col": x,
+                            **record_base,
+                        }
+                        debug_records.append(rec)
+                        rejected_records.append(
                             {
-                                "status": "extended_top_ratio",
-                                "col": local_idx,
-                                "ratio": float(ratios[local_idx]),
-                                "extended_ratio": float(ext_ratios[local_idx])
-                                if ext_ratios is not None
-                                else None,
-                                "top_ratio": top_ratio,
-                                "bottom_ratio": float(ext_bottom_ratios[local_idx])
-                                if ext_bottom_ratios is not None
-                                else None,
-                                "seed_col": x,
-                                **record_base,
+                                "band_idx": band_idx,
+                                "col": float(local_idx),
+                                "box": (x1, band_y1, x2, band_y2),
+                                "record": rec,
                             }
                         )
                         continue
                 if ext_bottom_ratios is not None and extend_bottom_max_ratio < 1.0:
                     bottom_ratio = float(ext_bottom_ratios[local_idx])
                     if bottom_ratio >= extend_bottom_max_ratio:
-                        debug_records.append(
+                        rec = {
+                            "status": "extended_bottom_ratio",
+                            "col": local_idx,
+                            "ratio": float(ratios[local_idx]),
+                            "extended_ratio": float(ext_ratios[local_idx])
+                            if ext_ratios is not None
+                            else None,
+                            "top_ratio": float(ext_top_ratios[local_idx])
+                            if ext_top_ratios is not None
+                            else None,
+                            "bottom_ratio": bottom_ratio,
+                            "seed_col": x,
+                            **record_base,
+                        }
+                        debug_records.append(rec)
+                        rejected_records.append(
                             {
-                                "status": "extended_bottom_ratio",
-                                "col": local_idx,
-                                "ratio": float(ratios[local_idx]),
-                                "extended_ratio": float(ext_ratios[local_idx])
-                                if ext_ratios is not None
-                                else None,
-                                "top_ratio": float(ext_top_ratios[local_idx])
-                                if ext_top_ratios is not None
-                                else None,
-                                "bottom_ratio": bottom_ratio,
-                                "seed_col": x,
-                                **record_base,
+                                "band_idx": band_idx,
+                                "col": float(local_idx),
+                                "box": (x1, band_y1, x2, band_y2),
+                                "record": rec,
                             }
                         )
                         continue
@@ -993,30 +1015,6 @@ def detect_probe_scan(
             if not rightmost_values:
                 rightmost_values = [max_col]
             target = float(np.median(rightmost_values))
-            if not rejected_records:
-                for rec in debug_records:
-                    if rec.get("status") not in {
-                        "scan_ratio_low",
-                        "scan_ratio_rel_low",
-                        "extended_ratio_scan",
-                        "extended_top_ratio_scan",
-                        "extended_bottom_ratio_scan",
-                    }:
-                        continue
-                    col = rec.get("col")
-                    band = rec.get("band")
-                    if col is None or band is None:
-                        continue
-                    bx1 = max(0, int(round(col - width / 2)))
-                    bx2 = min(w - 1, int(round(col + width / 2)))
-                    rejected_records.append(
-                        {
-                            "band_idx": None,
-                            "col": float(col),
-                            "box": (bx1, int(band[0]), bx2, int(band[1])),
-                            "record": rec,
-                        }
-                    )
             band_updates: dict[int, float] = {}
             for rec in rejected_records:
                 band = rec["record"].get("staff_band")

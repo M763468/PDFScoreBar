@@ -25,6 +25,48 @@ from src.pipeline.io import ensure_dir
 from src.pipeline.probe_scan import run_probe_scan_batch
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_PROBE_SCAN_KWARG_KEYS = (
+    "probe_width",
+    "use_peak_relative_ratio",
+    "peak_ratio_min",
+    "extend_scale",
+    "extend_max_ratio",
+    "extend_top_max_ratio",
+    "extend_bottom_max_ratio",
+    "min_peak_distance",
+    "refine_window",
+    "max_per_band",
+    "band_height_mode",
+    "band_height_scale",
+    "band_height_min",
+    "x_merge_tol",
+    "scan_fallback_pred_band",
+    "scan_disable_non_scan_extend",
+    "scan_peak_band_height",
+    "scan_center_on_peak",
+    "scan_x_peak_rescue",
+    "scan_x_peak_window",
+    "scan_x_peak_ratio_min",
+    "scan_x_peak_max_overhang",
+    "scan_x_peak_rescue_mode",
+    "scan_x_peak_segment_height",
+    "scan_x_peak_segment_pass_ratio",
+    "scan_x_peak_segment_source",
+    "scan_x_peak_ignore_staff_peak",
+    "scan_x_peak_ignore_radius",
+    "scan_rightmost_rescue",
+    "scan_rightmost_tolerance",
+    "scan_rightmost_min_rows",
+    "scan_rightmost_min_ratio",
+    "scan_ratio_rel_rescue",
+    "scan_ratio_rel_rescue_min",
+    "scan_ratio_rel_rescue_xpeak_min",
+    "scan_ratio_rel_rescue_max_overhang",
+    "divisi_rescue",
+    "divisi_dist_ratio",
+    "divisi_align_tol",
+    "divisi_align_min_count",
+)
 
 
 def _run_hybrid_detection_in_process(
@@ -170,6 +212,11 @@ def run_detection_step(
         "--min-height-ratio",
         str(det_cfg.get("min_height_ratio", 0.012)),
     ]
+    detect_probe_kwargs = {
+        key: det_cfg[key]
+        for key in _PROBE_SCAN_KWARG_KEYS
+        if key in det_cfg and det_cfg.get(key) is not None
+    }
     if det_cfg.get("min_width_ratio") is not None:
         cmd_probe += ["--min-width-ratio", str(det_cfg.get("min_width_ratio"))]
     if det_cfg.get("probe_row_filter_mode"):
@@ -180,6 +227,8 @@ def run_detection_step(
         cmd_probe += ["--probe-endpoint-y-scale", str(det_cfg.get("probe_endpoint_y_scale"))]
     if det_cfg.get("probe_score_name"):
         cmd_probe += ["--score-name", str(det_cfg.get("probe_score_name"))]
+    for key, value in sorted(detect_probe_kwargs.items()):
+        cmd_probe += [f"--{key.replace('_', '-')}", str(value)]
 
     if det_cfg.get("probe_skip_existing"):
         cmd_probe.append("--skip-existing")
@@ -200,6 +249,22 @@ def run_detection_step(
             ),
             score_name=(
                 str(det_cfg.get("probe_score_name")) if det_cfg.get("probe_score_name") else None
+            ),
+            detect_probe_kwargs=detect_probe_kwargs,
+            probe_row_filter_mode=(
+                str(det_cfg.get("probe_row_filter_mode"))
+                if det_cfg.get("probe_row_filter_mode") is not None
+                else None
+            ),
+            probe_endpoint_x_scale=(
+                float(det_cfg.get("probe_endpoint_x_scale"))
+                if det_cfg.get("probe_endpoint_x_scale") is not None
+                else None
+            ),
+            probe_endpoint_y_scale=(
+                float(det_cfg.get("probe_endpoint_y_scale"))
+                if det_cfg.get("probe_endpoint_y_scale") is not None
+                else None
             ),
             skip_existing=bool(det_cfg.get("probe_skip_existing")),
         )
@@ -225,6 +290,9 @@ def run_detection_step(
             images=images,
             model_path=Path(cnn_model),
             threshold=float(det_cfg.get("cnn_threshold", 0.1)),
+            score_name=(
+                str(det_cfg.get("probe_score_name")) if det_cfg.get("probe_score_name") else None
+            ),
         )
     commands.append(cmd_score)
 

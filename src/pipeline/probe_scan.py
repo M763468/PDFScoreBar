@@ -17,7 +17,9 @@ try:
 except ImportError:  # pragma: no cover - optional in minimal test env
     np = None  # type: ignore[assignment]
 
+from src.pipeline.hybrid_consensus import load_json_boxes
 from src.pipeline.io import ensure_dir
+from src.pipeline.run_ids import build_probe_run_id, build_probe_run_id_from_parts
 
 logger = logging.getLogger(__name__)
 
@@ -27,26 +29,6 @@ def _detect_probe_scan(*args: Any, **kwargs: Any) -> List[Tuple[int, int, int, i
     from tools.run_gt_rebuild_hybrid_eval import detect_probe_scan
 
     return detect_probe_scan(*args, **kwargs)
-
-
-def _parse_boxes(payload: Any) -> List[Tuple[int, int, int, int]]:
-    if isinstance(payload, dict) and "predictions" in payload:
-        payload = payload["predictions"]
-
-    boxes: List[Tuple[int, int, int, int]] = []
-    if not isinstance(payload, list):
-        return boxes
-
-    for item in payload:
-        if isinstance(item, dict):
-            bbox = item.get("bbox", item.get("pred_bbox"))
-        elif isinstance(item, list):
-            bbox = item
-        else:
-            bbox = None
-        if isinstance(bbox, list) and len(bbox) == 4:
-            boxes.append(tuple(int(v) for v in bbox))
-    return boxes
 
 
 def _load_bands_for_image(
@@ -59,9 +41,9 @@ def _load_bands_for_image(
         return []
 
     if bands_from.is_file():
-        return _parse_boxes(json.loads(bands_from.read_text()))
+        return load_json_boxes(bands_from)
 
-    run_subdir = f"eval2_{current_score_name}_{stem}"
+    run_subdir = build_probe_run_id_from_parts(current_score_name, stem)
     candidates = [
         bands_from / run_subdir / "pipeline2_no_peak_scored.json",
         bands_from / f"{stem}.json",
@@ -70,7 +52,7 @@ def _load_bands_for_image(
     ]
     for path in candidates:
         if path.exists():
-            return _parse_boxes(json.loads(path.read_text()))
+            return load_json_boxes(path)
     return []
 
 
@@ -99,6 +81,10 @@ def run_probe_scan_batch(
     score_name: Optional[str] = None,
     band_min_row_count: int = 1,
     vertical_closing: int = 0,
+    detect_probe_kwargs: Optional[Dict[str, Any]] = None,
+    probe_row_filter_mode: Optional[str] = None,
+    probe_endpoint_x_scale: Optional[float] = None,
+    probe_endpoint_y_scale: Optional[float] = None,
     skip_existing: bool = False,
 ) -> int:
     """Generate probe candidates for all pages in-process.
@@ -111,11 +97,35 @@ def run_probe_scan_batch(
     ensure_dir(output_root)
     staff_mask_map = _build_staff_mask_map(staff_mask_dir)
 
+    if probe_row_filter_mode is not None:
+        logger.warning(
+            "probe_row_filter_mode=%s is currently not applied by run_probe_scan_batch.",
+            probe_row_filter_mode,
+        )
+    if probe_endpoint_x_scale is not None or probe_endpoint_y_scale is not None:
+        logger.warning(
+            "probe_endpoint_x_scale/probe_endpoint_y_scale are currently not applied by run_probe_scan_batch."
+        )
+
+    kwargs = {
+        "scan_x_peak_rescue": True,
+        "scan_rightmost_rescue": True,
+        "divisi_rescue": True,
+        "scan_x_peak_rescue_mode": "topbottom",
+        "probe_width": 4,
+        "scan_x_peak_ratio_min": 0.0,
+        "scan_rightmost_min_ratio": 0.0,
+        "max_per_band": 100,
+        "scan_center_on_peak": True,
+    }
+    if detect_probe_kwargs:
+        kwargs.update(detect_probe_kwargs)
+
     processed = 0
     for img_path in images:
         stem = img_path.stem
         current_score_name = score_name or img_path.parent.name
-        run_id = f"eval2_{current_score_name}_{stem}"
+        run_id = build_probe_run_id(img_path, score_name=current_score_name)
         run_dir = output_root / run_id
         ensure_dir(run_dir)
         out_path = run_dir / "pipeline2_no_peak_candidates.json"
@@ -154,18 +164,10 @@ def run_probe_scan_batch(
             existing_boxes=existing_boxes,
             band_source=band_source,
             band_min_row_count=band_min_row_count,
-            scan_x_peak_rescue=True,
-            scan_rightmost_rescue=True,
-            divisi_rescue=True,
-            scan_x_peak_rescue_mode="topbottom",
-            probe_width=4,
             ink_threshold=ink_threshold,
             min_ratio=min_ratio,
-            scan_x_peak_ratio_min=0.0,
-            scan_rightmost_min_ratio=0.0,
-            max_per_band=100,
-            scan_center_on_peak=True,
             vertical_closing=vertical_closing,
+            **kwargs,
         )
 
         img_h, img_w = img.shape[:2]

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any, Iterable, List, Sequence, Tuple
+from typing import Any, Iterable, List, Optional, Sequence, Tuple
 
 try:
     import cv2
@@ -32,6 +32,8 @@ try:
 except ImportError:  # pragma: no cover - optional in minimal test env
     models = None  # type: ignore[assignment]
     transforms = None  # type: ignore[assignment]
+
+from src.pipeline.run_ids import build_probe_run_id
 
 logger = logging.getLogger(__name__)
 
@@ -130,14 +132,18 @@ def _score_directory(
         logger.warning("Candidates path missing: %s", candidates_path)
         return False
 
-    candidates = json.loads(candidates_path.read_text())
+    try:
+        candidates = json.loads(candidates_path.read_text())
+    except json.JSONDecodeError:
+        logger.warning("Invalid JSON in candidates file: %s", candidates_path)
+        return False
     if not isinstance(candidates, list):
         logger.warning("Invalid candidates payload: %s", candidates_path)
         return False
 
     if not candidates:
-        (run_dir / "pipeline2_no_peak_scored.json").write_text("[]\n")
-        (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text("[]\n")
+        (run_dir / "pipeline2_no_peak_scored.json").write_text(json.dumps([], indent=2))
+        (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text(json.dumps([], indent=2))
         return True
 
     img = cv2.imread(str(image_path))
@@ -163,8 +169,8 @@ def _score_directory(
         valid_boxes.append(box)
 
     if not batch_tensors:
-        (run_dir / "pipeline2_no_peak_scored.json").write_text("[]\n")
-        (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text("[]\n")
+        (run_dir / "pipeline2_no_peak_scored.json").write_text(json.dumps([], indent=2))
+        (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text(json.dumps([], indent=2))
         return True
 
     score_chunks: List[np.ndarray] = []
@@ -198,6 +204,7 @@ def run_cnn_scoring_batch(
     images: Iterable[Path],
     model_path: Path,
     threshold: float,
+    score_name: Optional[str] = None,
     batch_size: int = 64,
 ) -> int:
     """Run CNN scoring for all probe output dirs with one model load."""
@@ -213,7 +220,7 @@ def run_cnn_scoring_batch(
 
     processed = 0
     for img_path in images:
-        run_id = f"eval2_{img_path.parent.name}_{img_path.stem}"
+        run_id = build_probe_run_id(img_path, score_name=score_name)
         run_dir = probe_output_root / run_id
         if _score_directory(
             run_dir=run_dir,

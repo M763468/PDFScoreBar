@@ -414,6 +414,94 @@ def _apply_rightmost_rescue(
         )
 
 
+def _draw_relative_band_rect(
+    crop: np.ndarray,
+    band: Any,
+    cy1: int,
+    cy2: int,
+    color: tuple[int, int, int],
+) -> None:
+    if not band:
+        return
+    y1, y2 = band
+    y1 = max(cy1, int(y1)) - cy1
+    y2 = min(cy2, int(y2)) - cy1
+    cv2.rectangle(crop, (0, y1), (crop.shape[1] - 1, y2), color, 1)
+
+
+def _draw_crop_band_overlays(crop: np.ndarray, rec: Dict[str, Any], cy1: int, cy2: int) -> None:
+    _draw_relative_band_rect(crop, rec.get("pred_band"), cy1, cy2, (0, 255, 0))
+    _draw_relative_band_rect(crop, rec.get("band"), cy1, cy2, (255, 0, 0))
+    _draw_relative_band_rect(crop, rec.get("ext_band"), cy1, cy2, (0, 0, 255))
+    _draw_relative_band_rect(crop, rec.get("scan_base_band"), cy1, cy2, (0, 255, 255))
+    _draw_relative_band_rect(crop, rec.get("scan_band"), cy1, cy2, (0, 165, 255))
+    _draw_relative_band_rect(crop, rec.get("scan_ext_band"), cy1, cy2, (128, 0, 255))
+
+
+def _draw_crop_labels(
+    crop: np.ndarray,
+    rec: Dict[str, Any],
+    *,
+    extend_top_max_ratio: float,
+    extend_bottom_max_ratio: float,
+) -> None:
+    ratio = rec.get("ratio")
+    top_ratio = rec.get("top_ratio")
+    bottom_ratio = rec.get("bottom_ratio")
+    ext_ratio = rec.get("extended_ratio")
+    scan_row_ratio_mean = rec.get("scan_row_ratio_mean")
+    scan_row_ratio_max = rec.get("scan_row_ratio_max")
+    scan_row_ratio_lines = rec.get("scan_row_ratio_lines")
+    scan_top_h = rec.get("scan_top_h")
+    scan_bottom_h = rec.get("scan_bottom_h")
+    label = (
+        f"{rec.get('status', '')} r={ratio:.2f} ext={ext_ratio:.2f}"
+        if ratio is not None and ext_ratio is not None
+        else rec.get("status", "")
+    )
+    cv2.putText(crop, label, (2, 14), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
+    if top_ratio is not None:
+        cv2.putText(
+            crop,
+            f"top={top_ratio:.2f} <{extend_top_max_ratio:.2f}",
+            (2, 28),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            (255, 255, 0),
+            1,
+        )
+    if bottom_ratio is not None:
+        cv2.putText(
+            crop,
+            f"bot={bottom_ratio:.2f} <{extend_bottom_max_ratio:.2f}",
+            (2, 42),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            (255, 0, 255),
+            1,
+        )
+    if scan_row_ratio_mean is not None and scan_row_ratio_max is not None:
+        cv2.putText(
+            crop,
+            f"row_mean={scan_row_ratio_mean:.2f} row_max={scan_row_ratio_max:.2f} lines={scan_row_ratio_lines}",
+            (2, 56),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            (0, 0, 0),
+            1,
+        )
+    if scan_top_h is not None or scan_bottom_h is not None:
+        cv2.putText(
+            crop,
+            f"top_h={scan_top_h} bot_h={scan_bottom_h}",
+            (2, 70),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            (0, 0, 0),
+            1,
+        )
+
+
 def _write_debug_output(
     *,
     base_img: np.ndarray,
@@ -470,97 +558,14 @@ def _write_debug_output(
         crop = base_img[cy1 : cy2 + 1, cx1 : cx2 + 1].copy()
         if crop.size == 0:
             continue
-        band = rec.get("band")
-        pred_band = rec.get("pred_band")
-        scan_band = rec.get("scan_band")
-        scan_ext_band = rec.get("scan_ext_band")
-        scan_base_band = rec.get("scan_base_band")
-        if pred_band:
-            py1, py2 = pred_band
-            py1 = max(cy1, int(py1)) - cy1
-            py2 = min(cy2, int(py2)) - cy1
-            cv2.rectangle(crop, (0, py1), (crop.shape[1] - 1, py2), (0, 255, 0), 1)
-        if band:
-            by1, by2 = band
-            by1 = max(cy1, int(by1)) - cy1
-            by2 = min(cy2, int(by2)) - cy1
-            cv2.rectangle(crop, (0, by1), (crop.shape[1] - 1, by2), (255, 0, 0), 1)
-        if ext_band:
-            ey1, ey2 = ext_band
-            ey1 = max(cy1, int(ey1)) - cy1
-            ey2 = min(cy2, int(ey2)) - cy1
-            cv2.rectangle(crop, (0, ey1), (crop.shape[1] - 1, ey2), (0, 0, 255), 1)
-        if scan_base_band:
-            sb1, sb2 = scan_base_band
-            sb1 = max(cy1, int(sb1)) - cy1
-            sb2 = min(cy2, int(sb2)) - cy1
-            cv2.rectangle(crop, (0, sb1), (crop.shape[1] - 1, sb2), (0, 255, 255), 1)
-        if scan_band:
-            sy1, sy2 = scan_band
-            sy1 = max(cy1, int(sy1)) - cy1
-            sy2 = min(cy2, int(sy2)) - cy1
-            cv2.rectangle(crop, (0, sy1), (crop.shape[1] - 1, sy2), (0, 165, 255), 1)
-        if scan_ext_band:
-            sey1, sey2 = scan_ext_band
-            sey1 = max(cy1, int(sey1)) - cy1
-            sey2 = min(cy2, int(sey2)) - cy1
-            cv2.rectangle(crop, (0, sey1), (crop.shape[1] - 1, sey2), (128, 0, 255), 1)
+        _draw_crop_band_overlays(crop, rec, cy1, cy2)
         cv2.line(crop, (int(col - cx1), 0), (int(col - cx1), crop.shape[0] - 1), (0, 0, 255), 1)
-        ratio = rec.get("ratio")
-        top_ratio = rec.get("top_ratio")
-        bottom_ratio = rec.get("bottom_ratio")
-        ext_ratio = rec.get("extended_ratio")
-        scan_row_ratio_mean = rec.get("scan_row_ratio_mean")
-        scan_row_ratio_max = rec.get("scan_row_ratio_max")
-        scan_row_ratio_lines = rec.get("scan_row_ratio_lines")
-        scan_top_h = rec.get("scan_top_h")
-        scan_bottom_h = rec.get("scan_bottom_h")
-        label = (
-            f"{rec.get('status', '')} r={ratio:.2f} ext={ext_ratio:.2f}"
-            if ratio is not None and ext_ratio is not None
-            else rec.get("status", "")
+        _draw_crop_labels(
+            crop,
+            rec,
+            extend_top_max_ratio=extend_top_max_ratio,
+            extend_bottom_max_ratio=extend_bottom_max_ratio,
         )
-        cv2.putText(crop, label, (2, 14), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
-        if top_ratio is not None:
-            cv2.putText(
-                crop,
-                f"top={top_ratio:.2f} <{extend_top_max_ratio:.2f}",
-                (2, 28),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.4,
-                (255, 255, 0),
-                1,
-            )
-        if bottom_ratio is not None:
-            cv2.putText(
-                crop,
-                f"bot={bottom_ratio:.2f} <{extend_bottom_max_ratio:.2f}",
-                (2, 42),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.4,
-                (255, 0, 255),
-                1,
-            )
-        if scan_row_ratio_mean is not None and scan_row_ratio_max is not None:
-            cv2.putText(
-                crop,
-                f"row_mean={scan_row_ratio_mean:.2f} row_max={scan_row_ratio_max:.2f} lines={scan_row_ratio_lines}",
-                (2, 56),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.4,
-                (0, 0, 0),
-                1,
-            )
-        if scan_top_h is not None or scan_bottom_h is not None:
-            cv2.putText(
-                crop,
-                f"top_h={scan_top_h} bot_h={scan_bottom_h}",
-                (2, 70),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.4,
-                (0, 0, 0),
-                1,
-            )
         name = f"{idx:04d}_{rec.get('status', 'status')}_col{col}.png"
         cv2.imwrite(str(crop_dir / name), crop)
 

@@ -1,3 +1,8 @@
+---
+name: dependency-management
+description: Ensure consistency between dependency declarations and actual imports in the codebase.
+---
+
 # dependency-management
 
 ## Purpose

@@ -1,3 +1,8 @@
+---
+name: issue-creation
+description: Draft a clear issue with Goal/Scope/Acceptance Criteria so AI can implement it.
+---
+
 # issue-creation
 
 ## Purpose

@@ -1,3 +1,8 @@
+---
+name: test-generation
+description: Generate and maintain pytest-based tests to validate behavior and quality.
+---
+
 # test-generation
 
 ## Purpose

@@ -12,6 +12,32 @@ import numpy as np
 
 Box = Tuple[int, int, int, int]
 
+_RIGHTMOST_RESCUE_DEBUG_KEYS = [
+    "band",
+    "staff_band",
+    "pred_band",
+    "ext_band",
+    "top_h",
+    "bottom_h",
+    "scan_band",
+    "scan_ext_band",
+    "scan_base_band",
+    "scan_row_ratio_mean",
+    "scan_row_ratio_max",
+    "scan_row_ratio_lines",
+    "scan_top_h",
+    "scan_bottom_h",
+    "scan_row_profile",
+    "scan_peak_ratio",
+    "scan_peak_row",
+    "scan_peak_ratio_local",
+    "scan_x_peak_ratio",
+    "scan_x_peak_neighbor_median",
+    "scan_x_peak_segment_min",
+    "scan_x_peak_segment_pass",
+    "scan_x_peak_ignored_rows",
+]
+
 
 @dataclass(frozen=True)
 class BandSelectionConfig:
@@ -26,6 +52,7 @@ class DivisiRescueConfig:
     dist_ratio: float
     align_tol: int
     align_min_count: int
+    min_ratio: float
     band_source: str
     band_height_mode: str
 
@@ -265,7 +292,7 @@ def _build_divisi_map(
         stripe_sums = np.convolve(col_sums, kernel, mode="same")
         ratios = stripe_sums / float(max(1, band_y2 - band_y1 + 1) * width)
 
-        divisi_min_ratio = 0.5
+        divisi_min_ratio = config.min_ratio
         if ratios.size < 3:
             continue
         peak_indices = np.where(
@@ -326,15 +353,15 @@ def _apply_rightmost_rescue(
         rightmost_values = [max_col]
     target = float(np.median(rightmost_values))
 
-    band_updates: dict[int, float] = {}
+    band_updates: dict[tuple[int, int], float] = {}
     for rec in rejected_records:
-        band = rec["record"].get("staff_band")
-        if not band:
+        band_as_list = rec["record"].get("staff_band")
+        if not band_as_list:
             continue
         col = float(rec["col"])
         if abs(col - target) > config.tolerance:
             continue
-        band_key = int(band[0] * 10000 + band[1])
+        band_key = (int(band_as_list[0]), int(band_as_list[1]))
         prev = band_updates.get(band_key)
         if prev is None or abs(col - target) < abs(prev - target):
             band_updates[band_key] = col
@@ -342,8 +369,7 @@ def _apply_rightmost_rescue(
     updated_values = []
     for band_idx, col in rightmost_by_band_map.items():
         band = bands[band_idx]
-        band_key = int(band[0] * 10000 + band[1])
-        updated_values.append(band_updates.get(band_key, col))
+        updated_values.append(band_updates.get((int(band[0]), int(band[1])), col))
     inliers = [x for x in updated_values if abs(x - target) <= config.tolerance]
     if len(inliers) < config.min_rows:
         return
@@ -383,34 +409,7 @@ def _apply_rightmost_rescue(
                 "rightmost_target": target,
                 "rightmost_delta": float(col - target),
                 "rightmost_band_updated": bool(band_updates),
-                **{
-                    k: rec["record"].get(k)
-                    for k in [
-                        "band",
-                        "staff_band",
-                        "pred_band",
-                        "ext_band",
-                        "top_h",
-                        "bottom_h",
-                        "scan_band",
-                        "scan_ext_band",
-                        "scan_base_band",
-                        "scan_row_ratio_mean",
-                        "scan_row_ratio_max",
-                        "scan_row_ratio_lines",
-                        "scan_top_h",
-                        "scan_bottom_h",
-                        "scan_row_profile",
-                        "scan_peak_ratio",
-                        "scan_peak_row",
-                        "scan_peak_ratio_local",
-                        "scan_x_peak_ratio",
-                        "scan_x_peak_neighbor_median",
-                        "scan_x_peak_segment_min",
-                        "scan_x_peak_segment_pass",
-                        "scan_x_peak_ignored_rows",
-                    ]
-                },
+                **{k: rec["record"].get(k) for k in _RIGHTMOST_RESCUE_DEBUG_KEYS},
             }
         )
 
@@ -626,6 +625,7 @@ def detect_probe_scan(
     divisi_dist_ratio: float = 1.2,
     divisi_align_tol: int = 4,
     divisi_align_min_count: int = 2,
+    divisi_min_ratio: float = 0.5,
     vertical_closing: int = 0,
     debug_path: Path | None = None,
 ) -> List[Box]:
@@ -659,6 +659,7 @@ def detect_probe_scan(
         dist_ratio=divisi_dist_ratio,
         align_tol=divisi_align_tol,
         align_min_count=divisi_align_min_count,
+        min_ratio=divisi_min_ratio,
         band_source=band_source,
         band_height_mode=band_height_mode,
     )

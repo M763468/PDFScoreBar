@@ -10,7 +10,7 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 - **Adhere to the Issue Scope**: Implement only what is explicitly defined in the `Goal`, `Scope`, and `Acceptance Criteria` of the assigned issue.
 - **Follow Established Patterns**: Use existing code patterns, conventions, and architectural styles.
 - **Write Necessary Tests**: Provide lightweight tests to validate your implementation, as specified in the issue.
-- **Use Standard Labels**: Apply labels as defined in `docs/LABELS.md`.
+- **Use Standard Labels**: Apply labels as defined in `docs/ai-workflow/LABELS.md`.
 - **Update Documentation**: If your changes affect user-facing behavior or system design, indicate that the README or other documentation needs to be updated.
 
 ### Don't
@@ -32,6 +32,7 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 - **Testing**: All code must be accompanied by tests sufficient to prove it meets the `Acceptance Criteria`. The "How to test" section of the issue should be followed precisely.
 - **Linting**: Code must adhere to the project's linting standards. Always run `make format` to fix style issues and `make lint` to verify compliance before submitting changes.
 - **Pre-Commit / Pre-PR Verification (Mandatory)**: Before creating a commit or opening a PR, you **MUST** run both (1) behavior verification (actual execution path relevant to the change, e.g. smoke run) and (2) tests/lint checks, then report the results. Do not commit or create a PR if these checks have not been completed.
+  - Regression workflow reference: `docs/REGRESSION_TEST_WORKFLOW.md`
 - **Logging**: Add clear and concise logging for errors and important events. Avoid noisy or verbose logging.
 - **PR Descriptions**: Pull request descriptions must be filled out completely, following the `.github/pull_request_template.md`. The `Related Issue` field is mandatory.
 

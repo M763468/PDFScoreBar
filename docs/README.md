@@ -85,6 +85,9 @@ Use the table below to quickly locate what you need.
 - **`docs/ENVIRONMENTS.md`**  
   Runtime containers, dependencies, and execution instructions.
 
+- **`docs/REGRESSION_TEST_WORKFLOW.md`**  
+  Pre-commit / pre-PR verification workflow (lint/tests + real-data smoke + parity checks).
+
 - **`docs/AGENTS.md`**  
   Rules and expectations for AI assistants (Gemini / Codex / CLI usage).
 

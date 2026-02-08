@@ -23,7 +23,8 @@ Generate, expand, and maintain test code and verification commands aligned with 
 2) Analyze the target source code to understand logic and edge cases.
 3) Decide placement:
    - `tests/` for actively maintained lightweight tests
-   - `tests_legacy/` only when heavy/special dependencies are unavoidable
+   - Do not add new tests to `tests_legacy/` (archive for historical tests only)
+   - If a heavy verification is required, add reproducible command/script under `tools/verification/`
 4) Implement tests using project conventions (`unittest` or `pytest` as already used in the target area).
 5) Run required checks from the workflow doc (`make format`, `make lint`, minimum test target).
 6) If needed, add/update reproducible real-data verification command under `tools/verification/`.

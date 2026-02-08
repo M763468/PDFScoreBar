@@ -24,8 +24,9 @@ python3 -m unittest tests.test_pipeline_detection -v
 
 ## Test Placement Policy
 - `tests/`: actively maintained tests for current code paths, expected to run in normal dev environments.
-- `tests_legacy/`: tests requiring heavy or special runtime conditions (GUI/network/OpenCV-specific/manual setup), temporarily excluded from default pre-PR set.
-- New tests should be added to `tests/` by default. If not feasible, place them in `tests_legacy/` with clear re-activation notes.
+- `tests_legacy/`: archive area for historical tests temporarily excluded from the default pre-PR set.
+- New tests must be added to `tests/` (or integration/verification scripts under `tools/verification/`), not to `tests_legacy/`.
+- `tests_legacy/` items may be reworked and moved back into `tests/` when related issues are addressed.
 
 ## When Adding Tests
 - Prefer deterministic unit tests first (`tests/`).

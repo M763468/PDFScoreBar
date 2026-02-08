@@ -91,6 +91,36 @@ class TestPipelineDetection(unittest.TestCase):
             self.assertIn("inprocess:probe_scan", result["commands"][1][0])
             self.assertIn("inprocess:cnn_scoring", result["commands"][2][0])
 
+    def test_probe_score_name_is_forwarded_to_probe_and_cnn(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            hybrid_output_dir = Path(tmpdir) / "hybrid"
+            hybrid_output_dir.mkdir(parents=True, exist_ok=True)
+
+            config = self._base_config()
+            config["detection"]["probe_score_name"] = "FixedScore"
+            images = [Path("data/evaluation/images/page_001.png")]
+            page_ids = ["page_001"]
+
+            with (
+                patch(
+                    "src.pipeline.detection._run_hybrid_detection_in_process",
+                    return_value={"commands": [["hybrid"]], "hybrid_output_dir": hybrid_output_dir},
+                ),
+                patch("src.pipeline.detection.ensure_dir"),
+                patch("src.pipeline.detection.run_probe_scan_batch") as mock_probe,
+                patch("src.pipeline.detection.run_cnn_scoring_batch") as mock_cnn,
+            ):
+                run_detection_step(
+                    config=config,
+                    images=images,
+                    page_ids=page_ids,
+                    run_id="run123",
+                    dry_run=False,
+                )
+
+            self.assertEqual(mock_probe.call_args.kwargs["score_name"], "FixedScore")
+            self.assertEqual(mock_cnn.call_args.kwargs["score_name"], "FixedScore")
+
 
 if __name__ == "__main__":
     unittest.main()

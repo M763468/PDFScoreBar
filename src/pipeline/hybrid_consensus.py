@@ -3,16 +3,22 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Iterable, List, Sequence, Tuple
 
 from src.common.barline_evaluation import barline_iou
 
 Box = Tuple[int, int, int, int]
+logger = logging.getLogger(__name__)
 
 
 def load_json_boxes(path: Path) -> List[Box]:
-    payload = json.loads(path.read_text())
+    try:
+        payload = json.loads(path.read_text())
+    except json.JSONDecodeError:
+        logger.warning("Invalid JSON: %s", path)
+        return []
     if isinstance(payload, list):
         if not payload:
             return []

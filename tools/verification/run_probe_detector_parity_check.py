@@ -148,14 +148,18 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    result = run_parity_check(
-        image_path=args.image,
-        staff_mask_path=args.staff_mask,
-        existing_boxes_path=args.existing_boxes,
-    )
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, indent=2))
-    print(json.dumps(result, indent=2))
+    try:
+        result = run_parity_check(
+            image_path=args.image,
+            staff_mask_path=args.staff_mask,
+            existing_boxes_path=args.existing_boxes,
+        )
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(result, indent=2))
+        print(json.dumps(result, indent=2))
+    except (FileNotFoundError, PermissionError, json.JSONDecodeError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

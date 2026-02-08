@@ -1,12 +1,12 @@
 ---
 name: test-generation
-description: Generate and maintain pytest-based tests to validate behavior and quality.
+description: Generate and maintain project-aligned tests (unit + real-data verification hooks).
 ---
 
 # test-generation
 
 ## Purpose
-Generate, expand, and maintain test code using pytest to ensure code quality and coverage.
+Generate, expand, and maintain test code and verification commands aligned with this repository's test policy.
 
 ## Input
 - Source code files to test
@@ -16,23 +16,31 @@ Generate, expand, and maintain test code using pytest to ensure code quality and
 ## Output (respond in Japanese)
 - New or updated test files (e.g., `test_*.py`)
 - Test execution results
-- Coverage report (if requested)
+- Real-data verification command/result (if behavior parity is relevant)
 
 ## Steps
-1) Analyze the target source code to understand its logic and edge cases.
-2) Determine the test strategy (unit tests, integration tests).
-3) Generate test cases using `pytest` conventions.
-4) Run tests using `pytest` to verify they pass and cover the target code.
-5) Refine tests if they fail or if coverage is insufficient.
+1) Read `docs/REGRESSION_TEST_WORKFLOW.md` and follow its policy first.
+2) Analyze the target source code to understand logic and edge cases.
+3) Decide placement:
+   - `tests/` for actively maintained lightweight tests
+   - `tests_legacy/` only when heavy/special dependencies are unavoidable
+4) Implement tests using project conventions (`unittest` or `pytest` as already used in the target area).
+5) Run required checks from the workflow doc (`make format`, `make lint`, minimum test target).
+6) If needed, add/update reproducible real-data verification command under `tools/verification/`.
+7) Report results and log locations.
 
 ## Required commands/permissions
-- pytest: to run tests
-- file operations: to write test files
+- `make format`
+- `make lint`
+- `python3 -m unittest ...` (or project-equivalent target)
+- file operations: to write test files/scripts/docs
 
 ## Example commands
-- `pytest tests/test_my_module.py`
-- `pytest --cov=src tests/`
+- `python3 -m unittest tests.test_pipeline_detection -v`
+- `python3 -m unittest discover -s tests -p 'test_*.py' -v`
+- `docker exec sr_eval_gpu bash -lc "cd /workspace && /opt/venv_sr/bin/python tools/verification/run_probe_detector_parity_check.py ..."`
 
 ## Notes
-- Ensure tests are independent and deterministic.
-- Mock external dependencies where appropriate.
+- Keep lightweight tests deterministic and runnable by default.
+- Document heavy verification paths explicitly (environment + command + output log path).
+- Do not leave test policy implicit; link back to `docs/REGRESSION_TEST_WORKFLOW.md`.

@@ -22,6 +22,19 @@ make lint
 python3 -m unittest tests.test_pipeline_detection -v
 ```
 
+## Test Placement Policy
+- `tests/`: actively maintained tests for current code paths, expected to run in normal dev environments.
+- `tests_legacy/`: tests requiring heavy or special runtime conditions (GUI/network/OpenCV-specific/manual setup), temporarily excluded from default pre-PR set.
+- New tests should be added to `tests/` by default. If not feasible, place them in `tests_legacy/` with clear re-activation notes.
+
+## When Adding Tests
+- Prefer deterministic unit tests first (`tests/`).
+- If the change touches real-data behavior, add/update one reproducible parity or smoke command under `tools/verification/`.
+- In PR comments, report both:
+  - lightweight test result (`tests/` target),
+  - real-data verification result (if applicable).
+- If legacy tests are moved out, record the reason and expected return condition in `tests_legacy/README.md`.
+
 ## Real-Data Smoke (Detection Path)
 Use the already organized smoke assets under `logs/issue23_smoke/`.
 

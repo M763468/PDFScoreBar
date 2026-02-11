@@ -1,11 +1,11 @@
-# issue36_gt_prep scripts
+# GT Preparation Scripts
 
-Purpose: scripts created for Issue #36 GT preparation workflow.
+Purpose: Standard scripts for Ground Truth (GT) preparation and candidate filtering.
 
 ## Why this directory exists
-- Keep issue-specific verification scripts grouped in one place.
-- Make it clear when/why each script was introduced.
-- Preserve reusability for future GT preparation and candidate filtering work.
+- Centralize verification and pre-processing scripts for GT creation.
+- Originally developed during Issue #36, these tools are now part of the standard workflow for rebuilding or expanding evaluation datasets.
+- Ensure resolution independence and consistent filtering rules across scores.
 
 ## Scripts
 - `generate_probe_candidates_from_inventory.py`
@@ -27,7 +27,7 @@ Purpose: scripts created for Issue #36 GT preparation workflow.
 
 ## Reproduction (sr_eval_gpu)
 ```bash
-docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/issue36_gt_prep/apply_candidate_filter_from_inventory.py \
+docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py \
   --inventory logs/issue36_prep/20260208_bench_inventory.json \
   --exclude logs/issue36_prep/excluded_pages_for_gt_prep.json \
   --candidates-root logs/issue36_prep/probe_candidates_from_bench \
@@ -59,7 +59,7 @@ for r in inv["records"]:
     out.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run([
         "/opt/venv_sr/bin/python",
-        "tools/verification/issue36_gt_prep/render_candidate_filter_overlay.py",
+        "tools/verification/gt_preparation/render_candidate_filter_overlay.py",
         "--image", str(image),
         "--all-candidates", str(all_c),
         "--keep-candidates", str(keep_c),

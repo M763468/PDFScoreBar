@@ -57,6 +57,16 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
     - `make format`: Auto-format code.
 - **Maintenance**: Developers and Agents should update the `Makefile` and this document when new standard workflows are introduced.
 
+### Design Principles (Barline Detection)
+- **Resolution Independence (Unit-based Scaling)**:
+    - **Rule**: NEVER use fixed pixel (px) thresholds for distance or geometry calculations in the barline detection/numbering layers.
+    - **Implementation**: Always use `unit_size` (staff line spacing) as the base unit for dynamic scaling.
+    - **Current Targets**: Deduplication Threshold (`1.2 * unit_size`), Implicit Start Assumption (`4.0 * unit_size`).
+    - **Documentation**: See `docs/GT_PREPARATION_POLICY.md` and `docs/BARLINE_MATCHER.md`.
+- **GT Labeling Consistency**:
+    - Use specific labels for complex barlines: `double_barline`, `end_barline`, `repeat`.
+    - Treat multi-line barlines as a **single logical event** with a single encompassing BBox.
+
 ### Logs & Artifacts
 - **Output Directory**: All experiment logs, metrics, and generated artifacts must be saved under the `logs/` directory. Use structured subdirectories (e.g., `logs/<experiment_name>/<timestamp>/`) to avoid clutter.
 - **Cleanup**: Do not leave temporary files in the project root.

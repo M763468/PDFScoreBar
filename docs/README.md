@@ -91,6 +91,12 @@ Use the table below to quickly locate what you need.
 - **`docs/AGENTS.md`**  
   Rules and expectations for AI assistants (Gemini / Codex / CLI usage).
 
+- **`docs/GT_PREPARATION_POLICY.md`**  
+  **Mandatory Policy** for creating barline Ground Truth. Defines labeling for double/final barlines and resolution-independent scaling rules.
+
+- **`docs/BARLINE_MATCHER.md`**  
+  Detailed specification of the barline matching and deduplication logic.
+
 ---
 
 ## Phase-Specific Documentation

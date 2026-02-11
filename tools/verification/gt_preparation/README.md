@@ -17,23 +17,47 @@ Purpose: Standard scripts for Ground Truth (GT) preparation and candidate filter
 - `render_candidate_filter_overlay.py`
   - Creates visual overlays: gray=all, green=keep, red=drop.
 
-## Canonical inputs/outputs for current run
+## Canonical inputs/outputs for current run (v5)
 - Inventory: `logs/issue36_prep/20260208_bench_inventory.json`
 - Exclusions: `logs/issue36_prep/excluded_pages_for_gt_prep.json`
-- Raw candidates root: `logs/issue36_prep/probe_candidates_from_bench`
-- Filtered candidates root: `logs/issue36_prep/probe_candidates_filtered_v4`
-- Overlay root: `logs/issue36_prep/filter_overlays_v4`
-- Summary: `logs/issue36_prep/20260208_filter_apply_summary_v4.json`
+- Raw candidates root: `logs/issue36_prep/probe_candidates_from_bench_v5`
+- Filtered candidates root: `logs/issue36_prep/probe_candidates_filtered_v5`
+- Suggestions root: `logs/issue36_prep/filter_suggestions_v5`
+- Generate summary: `logs/issue36_prep/20260211_probe_generation_summary_v5.json`
+- Filter summary: `logs/issue36_prep/20260211_filter_apply_summary_v5.json`
 
-## Reproduction (sr_eval_gpu)
+Legacy reference:
+- v4 filtered root: `logs/issue36_prep/probe_candidates_filtered_v4`
+- v4 summary: `logs/issue36_prep/20260208_filter_apply_summary_v4.json`
+
+## Reproduction (sr_eval_gpu, v5)
+Run in this order (`generate` -> `apply`):
 ```bash
+docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py \
+  --inventory /workspace/logs/issue36_prep/20260208_bench_inventory.json \
+  --exclude /workspace/logs/issue36_prep/excluded_pages_for_gt_prep.json \
+  --output-root /workspace/logs/issue36_prep/probe_candidates_from_bench_v5 \
+  --summary-out /workspace/logs/issue36_prep/20260211_probe_generation_summary_v5.json \
+  --ink-threshold 230 \
+  --min-ratio 0.60 \
+  --min-height-ratio 0.008 \
+  --min-width-ratio 0.0
+
 docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py \
-  --inventory logs/issue36_prep/20260208_bench_inventory.json \
-  --exclude logs/issue36_prep/excluded_pages_for_gt_prep.json \
-  --candidates-root logs/issue36_prep/probe_candidates_from_bench \
-  --output-root logs/issue36_prep/probe_candidates_filtered_v4 \
-  --suggestions-root logs/issue36_prep/filter_suggestions_v4 \
-  --summary-out logs/issue36_prep/20260208_filter_apply_summary_v4.json
+  --inventory /workspace/logs/issue36_prep/20260208_bench_inventory.json \
+  --exclude /workspace/logs/issue36_prep/excluded_pages_for_gt_prep.json \
+  --candidates-root /workspace/logs/issue36_prep/probe_candidates_from_bench_v5 \
+  --output-root /workspace/logs/issue36_prep/probe_candidates_filtered_v5 \
+  --suggestions-root /workspace/logs/issue36_prep/filter_suggestions_v5 \
+  --summary-out /workspace/logs/issue36_prep/20260211_filter_apply_summary_v5.json \
+  --left-margin-ratio 0.12 \
+  --clef-left-ratio 0.25 \
+  --min-height-median-ratio 0.6 \
+  --ink-threshold 180 \
+  --min-ink-ratio 0.18 \
+  --paper-threshold 200 \
+  --min-paper-overlap-ratio 0.6 \
+  --min-staff-overlap-ratio 0.01
 ```
 
 Overlay generation (all covered pages):

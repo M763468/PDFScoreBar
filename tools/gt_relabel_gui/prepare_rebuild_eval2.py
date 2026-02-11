@@ -8,6 +8,7 @@ def prepare_eval2_rebuild():
     img_root = repo_root / "data/evaluation2/images"
     ann_root = repo_root / "data/evaluation2/annotations"
     logs_root = repo_root / "logs/hybrid_pipeline_bench"
+    filtered_v5_root = repo_root / "logs/issue36_prep/probe_candidates_filtered_v5"
 
     # 1. Map pages to their latest hybrid predictions
     # Pattern: eval2_{score}_{page}_{timestamp}
@@ -52,17 +53,26 @@ def prepare_eval2_rebuild():
             dest_dir.mkdir(parents=True, exist_ok=True)
 
             editable_path = dest_dir / "boxes_provisional.json"
+            output_raw = dest_dir / "raw_boxes.json"
             output_sorted = dest_dir / "boxes_sorted.json"
 
-            # Copy hybrid predictions if available
-            if key in page_to_latest_log:
+            copied = False
+
+            # Prefer filtered v5 candidates from issue36 prep workflow.
+            filtered_v5 = (
+                filtered_v5_root / score_name / page_name / "pipeline2_no_peak_candidates.json"
+            )
+            if filtered_v5.exists():
+                shutil.copy2(filtered_v5, editable_path)
+                copied = True
+
+            # Fallback to latest hybrid predictions if v5 candidate is unavailable.
+            if not copied and key in page_to_latest_log:
                 src_log = page_to_latest_log[key][0]
                 src_json = src_log / "hybrid_predictions.json"
                 if src_json.exists():
                     shutil.copy2(src_json, editable_path)
-                else:
-                    # Try to find any other useful json?
-                    pass
+                    copied = True
 
             if not editable_path.exists():
                 # Create empty if not found
@@ -74,6 +84,7 @@ def prepare_eval2_rebuild():
                     "name": f"{score_name}/{page_name}",
                     "image": str(img_path.absolute()),
                     "editable": str(editable_path.absolute()),
+                    "output_raw": str(output_raw.absolute()),
                     "output_sorted": str(output_sorted.absolute()),
                     "y_threshold": 50,
                 }

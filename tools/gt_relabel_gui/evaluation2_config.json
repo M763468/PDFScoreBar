@@ -4,6 +4,7 @@
       "name": "Va_Prokofiev_Symphony1/page_001",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -11,6 +12,7 @@
       "name": "Va_Prokofiev_Symphony1/page_002",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va_Prokofiev_Symphony1/page_002.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_002/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_002/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_002/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -18,6 +20,7 @@
       "name": "Va_Prokofiev_Symphony1/page_003",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va_Prokofiev_Symphony1/page_003.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_003/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_003/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_003/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -25,6 +28,7 @@
       "name": "Va_Prokofiev_Symphony1/page_004",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_004/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -32,6 +36,7 @@
       "name": "Va_Prokofiev_Symphony1/page_005",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va_Prokofiev_Symphony1/page_005.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_005/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_005/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_005/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -39,6 +44,7 @@
       "name": "Va_Prokofiev_Symphony1/page_006",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va_Prokofiev_Symphony1/page_006.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_006/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_006/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_006/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -46,6 +52,7 @@
       "name": "Shostakovich-Sym5-Va/page_001",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_001.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_001/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_001/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_001/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -53,6 +60,7 @@
       "name": "Shostakovich-Sym5-Va/page_002",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_002.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_002/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_002/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_002/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -60,6 +68,7 @@
       "name": "Shostakovich-Sym5-Va/page_003",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_003.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_003/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_003/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_003/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -67,6 +76,7 @@
       "name": "Shostakovich-Sym5-Va/page_004",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_004.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_004/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_004/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_004/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -74,6 +84,7 @@
       "name": "Shostakovich-Sym5-Va/page_005",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_005.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_005/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_005/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_005/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -81,6 +92,7 @@
       "name": "Shostakovich-Sym5-Va/page_006",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_006.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_006/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_006/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_006/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -88,6 +100,7 @@
       "name": "Shostakovich-Sym5-Va/page_007",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_007.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_007/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_007/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_007/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -95,6 +108,7 @@
       "name": "Shostakovich-Sym5-Va/page_008",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_008.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_008/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_008/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_008/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -102,6 +116,7 @@
       "name": "Shostakovich-Sym5-Va/page_009",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_009.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_009/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_009/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_009/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -109,6 +124,7 @@
       "name": "Shostakovich-Sym5-Va/page_010",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_010.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_010/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_010/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_010/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -116,6 +132,7 @@
       "name": "Shostakovich-Sym5-Va/page_011",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_011.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_011/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_011/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_011/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -123,6 +140,7 @@
       "name": "Shostakovich-Sym5-Va/page_012",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_012.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_012/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_012/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_012/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -130,6 +148,7 @@
       "name": "Shostakovich-Sym5-Va/page_013",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_013/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_013/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_013/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -137,6 +156,7 @@
       "name": "Shostakovich-Sym5-Va/page_014",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_014.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_014/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_014/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_014/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -144,6 +164,7 @@
       "name": "Shostakovich-Sym5-Va/page_015",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_015.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_015/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_015/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_015/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -151,6 +172,7 @@
       "name": "Shostakovich-Sym5-Va/page_016",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_016.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_016/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_016/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_016/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -158,6 +180,7 @@
       "name": "Shostakovich-Sym5-Va/page_017",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_017.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_017/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_017/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_017/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -165,6 +188,7 @@
       "name": "Shostakovich-Sym5-Va/page_018",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_018.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_018/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_018/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_018/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -172,6 +196,7 @@
       "name": "Shostakovich-Sym5-Va/page_019",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_019.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_019/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_019/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_019/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -179,6 +204,7 @@
       "name": "Shostakovich-Sym5-Va/page_020",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_020.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_020/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_020/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_020/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -186,6 +212,7 @@
       "name": "Shostakovich-Sym5-Va/page_021",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_021.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_021/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_021/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_021/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -193,6 +220,7 @@
       "name": "Shostakovich-Sym5-Va/page_022",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_022.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_022/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_022/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_022/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -200,6 +228,7 @@
       "name": "Shostakovich-Sym5-Va/page_023",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_023.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_023/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_023/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_023/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -207,6 +236,7 @@
       "name": "Shostakovich-Sym5-Va/page_024",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_024.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_024/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_024/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_024/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -214,6 +244,7 @@
       "name": "Shostakovich-Sym5-Va/page_025",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Sym5-Va/page_025.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_025/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_025/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Sym5-Va/page_025/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -221,6 +252,7 @@
       "name": "Va__Prokofiev_Symphony5/page_001",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_001.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_001/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_001/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_001/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -228,6 +260,7 @@
       "name": "Va__Prokofiev_Symphony5/page_002",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_002.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_002/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_002/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_002/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -235,6 +268,7 @@
       "name": "Va__Prokofiev_Symphony5/page_003",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_003.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_003/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_003/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_003/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -242,6 +276,7 @@
       "name": "Va__Prokofiev_Symphony5/page_004",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_004.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_004/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_004/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_004/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -249,6 +284,7 @@
       "name": "Va__Prokofiev_Symphony5/page_005",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_005.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_005/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_005/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_005/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -256,6 +292,7 @@
       "name": "Va__Prokofiev_Symphony5/page_006",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_006.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_006/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_006/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_006/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -263,6 +300,7 @@
       "name": "Va__Prokofiev_Symphony5/page_007",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_007.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_007/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_007/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_007/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -270,6 +308,7 @@
       "name": "Va__Prokofiev_Symphony5/page_008",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_008.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_008/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_008/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_008/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -277,6 +316,7 @@
       "name": "Va__Prokofiev_Symphony5/page_009",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_009.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_009/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_009/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_009/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -284,6 +324,7 @@
       "name": "Va__Prokofiev_Symphony5/page_010",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_010.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_010/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_010/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_010/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -291,6 +332,7 @@
       "name": "Va__Prokofiev_Symphony5/page_011",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_011.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_011/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_011/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_011/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -298,6 +340,7 @@
       "name": "Va__Prokofiev_Symphony5/page_012",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_012.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_012/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_012/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_012/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -305,6 +348,7 @@
       "name": "Va__Prokofiev_Symphony5/page_013",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_013.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_013/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_013/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_013/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -312,6 +356,7 @@
       "name": "Va__Prokofiev_Symphony5/page_014",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_014.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_014/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_014/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_014/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -319,6 +364,7 @@
       "name": "Va__Prokofiev_Symphony5/page_015",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_015.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_015/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_015/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_015/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -326,6 +372,7 @@
       "name": "Va__Prokofiev_Symphony5/page_016",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_016.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_016/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_016/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_016/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -333,6 +380,7 @@
       "name": "Va__Prokofiev_Symphony5/page_017",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_017.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_017/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_017/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_017/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -340,6 +388,7 @@
       "name": "Va__Prokofiev_Symphony5/page_018",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_018.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_018/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_018/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_018/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -347,6 +396,7 @@
       "name": "Va__Prokofiev_Symphony5/page_019",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_019.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_019/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_019/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_019/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -354,6 +404,7 @@
       "name": "Va__Prokofiev_Symphony5/page_020",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_020.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_020/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_020/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_020/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -361,6 +412,7 @@
       "name": "Va__Prokofiev_Symphony5/page_021",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_021.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_021/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_021/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_021/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -368,6 +420,7 @@
       "name": "Va__Prokofiev_Symphony5/page_022",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_022.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_022/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_022/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_022/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -375,6 +428,7 @@
       "name": "Va__Prokofiev_Symphony5/page_023",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Va__Prokofiev_Symphony5/page_023.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_023/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_023/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Va__Prokofiev_Symphony5/page_023/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -382,6 +436,7 @@
       "name": "Sibelius-Violin_Concerto-Viola/page_001",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_001.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_001/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_001/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_001/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -389,6 +444,7 @@
       "name": "Sibelius-Violin_Concerto-Viola/page_002",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_002.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_002/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_002/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_002/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -396,6 +452,7 @@
       "name": "Sibelius-Violin_Concerto-Viola/page_003",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_003.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_003/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_003/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_003/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -403,6 +460,7 @@
       "name": "Sibelius-Violin_Concerto-Viola/page_004",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_004.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_004/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_004/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_004/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -410,6 +468,7 @@
       "name": "Sibelius-Violin_Concerto-Viola/page_005",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_005.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_005/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_005/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_005/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -417,6 +476,7 @@
       "name": "Sibelius-Violin_Concerto-Viola/page_006",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_006.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_006/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_006/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_006/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -424,6 +484,7 @@
       "name": "Sibelius-Violin_Concerto-Viola/page_007",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_007.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_007/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_007/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_007/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -431,6 +492,7 @@
       "name": "Sibelius-Violin_Concerto-Viola/page_008",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_008.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_008/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_008/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_008/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -438,6 +500,7 @@
       "name": "Sibelius-Violin_Concerto-Viola/page_009",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_009.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_009/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_009/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_009/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -445,6 +508,7 @@
       "name": "Sibelius-Violin_Concerto-Viola/page_010",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_010.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_010/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_010/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Sibelius-Violin_Concerto-Viola/page_010/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -452,6 +516,7 @@
       "name": "Shostakovich-Festival_Overture_Va/page_001",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_001.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_001/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_001/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_001/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -459,6 +524,7 @@
       "name": "Shostakovich-Festival_Overture_Va/page_002",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_002.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_002/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_002/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_002/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -466,6 +532,7 @@
       "name": "Shostakovich-Festival_Overture_Va/page_003",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_003.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_003/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_003/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_003/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -473,6 +540,7 @@
       "name": "Shostakovich-Festival_Overture_Va/page_004",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_004.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_004/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_004/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_004/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -480,6 +548,7 @@
       "name": "Shostakovich-Festival_Overture_Va/page_005",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_005.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_005/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_005/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_005/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -487,6 +556,7 @@
       "name": "Shostakovich-Festival_Overture_Va/page_006",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_006.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_006/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_006/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_006/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -494,6 +564,7 @@
       "name": "Shostakovich-Festival_Overture_Va/page_007",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_007.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_007/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_007/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_007/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -501,6 +572,7 @@
       "name": "Shostakovich-Festival_Overture_Va/page_008",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_008.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_008/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_008/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_008/boxes_sorted.json",
       "y_threshold": 50
     },
@@ -508,6 +580,7 @@
       "name": "Shostakovich-Festival_Overture_Va/page_009",
       "image": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images/Shostakovich-Festival_Overture_Va/page_009.png",
       "editable": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_009/boxes_provisional.json",
+      "output_raw": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_009/raw_boxes.json",
       "output_sorted": "/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations/Shostakovich-Festival_Overture_Va/page_009/boxes_sorted.json",
       "y_threshold": 50
     }

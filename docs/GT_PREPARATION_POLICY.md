@@ -14,9 +14,10 @@ The following labels should be used strictly according to their musical function
 - **`repeat`**: Barlines with dots indicating a repeat section.
 
 ### 1.2 Bounding Box (BBox) Strategy
-- **Unit of Labeling**: Each "Barline Event" (including double or final bars) should be treated as a **single logical entity**.
-- **Coverage**: The BBox must encompass **all constituent lines** and the space between them.
-  - *Reasoning*: This simplifies the mapping to "Measure" objects in the logical numbering layer and prevents double-counting measures.
+- **Unit of Labeling**: Each vertical line is treated as the minimum unit. Lines forming a double barline or final barline must be registered as **independent BBoxes**.
+- **Coverage**: Each BBox must accurately encompass a single vertical line.
+- **Labeling**: All BBoxes constituting a double barline must be labeled as `double_barline` (likewise for `end_barline`).
+  - *Reasoning*: This ensures consistency with CNN training (which detects single lines) and allows the logical layer to merge them using the label and distance (`unit_size`).
 
 ## 2. Machine Learning (CNN) Integration
 

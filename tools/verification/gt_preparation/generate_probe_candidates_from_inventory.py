@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import cv2
+import numpy as np
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
@@ -55,6 +56,11 @@ def _run_one(
     min_ratio: float,
     min_height_ratio: float,
     min_width_ratio: float,
+    probe_width: int,
+    max_per_band: int,
+    band_scan_line_ratio: float,
+    band_scan_min_lines: int,
+    band_source: str,
 ) -> dict[str, Any]:
     score = record["score"]
     page = record["page"]
@@ -66,13 +72,17 @@ def _run_one(
     if image is None:
         raise FileNotFoundError(f"Failed to load image: {image_path}")
 
-    staff_mask = cv2.imread(str(staff_mask_path), cv2.IMREAD_GRAYSCALE)
-    if staff_mask is None:
-        raise FileNotFoundError(f"Failed to load staff mask: {staff_mask_path}")
-    if staff_mask.shape[:2] != image.shape[:2]:
-        staff_mask = cv2.resize(
-            staff_mask, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_NEAREST
-        )
+    if band_source == "row_stats":
+        # row_stats only uses existing_boxes to build scan bands.
+        staff_mask = np.zeros(image.shape[:2], dtype=np.uint8)
+    else:
+        staff_mask = cv2.imread(str(staff_mask_path), cv2.IMREAD_GRAYSCALE)
+        if staff_mask is None:
+            raise FileNotFoundError(f"Failed to load staff mask: {staff_mask_path}")
+        if staff_mask.shape[:2] != image.shape[:2]:
+            staff_mask = cv2.resize(
+                staff_mask, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_NEAREST
+            )
 
     existing_boxes = _load_boxes(existing_path)
 
@@ -81,18 +91,20 @@ def _run_one(
         base_img=image,
         staff_mask=staff_mask,
         existing_boxes=existing_boxes,
-        band_source="staff_mask",
+        band_source=band_source,
         band_min_row_count=1,
+        band_scan_line_ratio=band_scan_line_ratio,
+        band_scan_min_lines=band_scan_min_lines,
         scan_x_peak_rescue=True,
         scan_rightmost_rescue=True,
         divisi_rescue=True,
         scan_x_peak_rescue_mode="topbottom",
-        probe_width=4,
+        probe_width=probe_width,
         ink_threshold=ink_threshold,
         min_ratio=min_ratio,
         scan_x_peak_ratio_min=0.0,
         scan_rightmost_min_ratio=0.0,
-        max_per_band=100,
+        max_per_band=max_per_band,
         scan_center_on_peak=True,
         vertical_closing=0,
     )
@@ -130,6 +142,7 @@ def _run_one(
         "image": str(image_path),
         "staff_mask": str(staff_mask_path),
         "existing_boxes_path": str(existing_path),
+        "band_source": band_source,
         "existing_count": len(existing_boxes),
         "generated_count": len(candidates),
         "final_count": len(final_list),
@@ -147,6 +160,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-ratio", type=float, default=0.7)
     parser.add_argument("--min-height-ratio", type=float, default=0.012)
     parser.add_argument("--min-width-ratio", type=float, default=0.0)
+    parser.add_argument("--probe-width", type=int, default=4)
+    parser.add_argument("--max-per-band", type=int, default=100)
+    parser.add_argument("--band-scan-line-ratio", type=float, default=0.6)
+    parser.add_argument("--band-scan-min-lines", type=int, default=5)
+    parser.add_argument(
+        "--band-source",
+        choices=["row_stats", "staff_mask"],
+        default="row_stats",
+        help="Band source passed to detect_probe_scan. Default is row_stats for GT candidate seeds.",
+    )
     return parser.parse_args()
 
 
@@ -179,6 +202,11 @@ def main() -> None:
                 min_ratio=args.min_ratio,
                 min_height_ratio=args.min_height_ratio,
                 min_width_ratio=args.min_width_ratio,
+                probe_width=args.probe_width,
+                max_per_band=args.max_per_band,
+                band_scan_line_ratio=args.band_scan_line_ratio,
+                band_scan_min_lines=args.band_scan_min_lines,
+                band_source=args.band_source,
             )
             results.append(result)
         except Exception as exc:  # noqa: BLE001
@@ -195,6 +223,11 @@ def main() -> None:
             "min_ratio": args.min_ratio,
             "min_height_ratio": args.min_height_ratio,
             "min_width_ratio": args.min_width_ratio,
+            "probe_width": args.probe_width,
+            "max_per_band": args.max_per_band,
+            "band_scan_line_ratio": args.band_scan_line_ratio,
+            "band_scan_min_lines": args.band_scan_min_lines,
+            "band_source": args.band_source,
         },
         "processed": len(results),
         "skipped": len(skipped),

@@ -8,7 +8,13 @@ def prepare_eval2_rebuild():
     img_root = repo_root / "data/evaluation2/images"
     ann_root = repo_root / "data/evaluation2/annotations"
     logs_root = repo_root / "logs/hybrid_pipeline_bench"
-    filtered_v5_root = repo_root / "logs/issue36_prep/probe_candidates_filtered_v5"
+    filtered_roots = [
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v9",
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v8",
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v7",
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v6",
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v5",
+    ]
 
     # 1. Map pages to their latest hybrid predictions
     # Pattern: eval2_{score}_{page}_{timestamp}
@@ -58,13 +64,13 @@ def prepare_eval2_rebuild():
 
             copied = False
 
-            # Prefer filtered v5 candidates from issue36 prep workflow.
-            filtered_v5 = (
-                filtered_v5_root / score_name / page_name / "pipeline2_no_peak_candidates.json"
-            )
-            if filtered_v5.exists():
-                shutil.copy2(filtered_v5, editable_path)
-                copied = True
+            # Prefer filtered candidates from issue36 prep workflow (v6 -> v5).
+            for root in filtered_roots:
+                filtered = root / score_name / page_name / "pipeline2_no_peak_candidates.json"
+                if filtered.exists():
+                    shutil.copy2(filtered, editable_path)
+                    copied = True
+                    break
 
             # Fallback to latest hybrid predictions if v5 candidate is unavailable.
             if not copied and key in page_to_latest_log:

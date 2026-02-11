@@ -9,6 +9,11 @@ def prepare_eval2_rebuild():
     ann_root = repo_root / "data/evaluation2/annotations"
     logs_root = repo_root / "logs/hybrid_pipeline_bench"
     filtered_roots = [
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v13",
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v12",
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v11",
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v10b",
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v10",
         repo_root / "logs/issue36_prep/probe_candidates_filtered_v9",
         repo_root / "logs/issue36_prep/probe_candidates_filtered_v8",
         repo_root / "logs/issue36_prep/probe_candidates_filtered_v7",

@@ -16,6 +16,40 @@ if str(PROJECT_ROOT) not in sys.path:
 from tools.verification.gt_preparation.suggest_candidate_drops import suggest_candidate_drops
 
 
+def _resolve_clef_mask_path(rec: dict[str, Any]) -> Path | None:
+    explicit = rec.get("clef_mask")
+    if explicit:
+        p = Path(explicit)
+        if p.exists():
+            return p
+
+    staff_mask_raw = rec.get("staff_mask")
+    if staff_mask_raw:
+        staff_mask = Path(staff_mask_raw)
+        candidates = [
+            Path(
+                str(staff_mask).replace("_proxy_debug_3_staff.png", "_proxy_debug_7_clefs_keys.png")
+            ),
+            Path(str(staff_mask).replace("_debug_3_staff.png", "_debug_7_clefs_keys.png")),
+        ]
+        for p in candidates:
+            if p.exists():
+                return p
+
+    run_dir_raw = rec.get("run_dir")
+    if run_dir_raw:
+        run_dir = Path(run_dir_raw)
+        found = sorted(run_dir.rglob("*_debug_7_clefs_keys.png"))
+        if found:
+            page = str(rec.get("page", ""))
+            for p in found:
+                if page and page in p.name:
+                    return p
+            return found[0]
+
+    return None
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--inventory", type=Path, required=True)
@@ -64,6 +98,7 @@ def main() -> None:
         image = Path(rec["image"])
         existing = Path(rec["hybrid_predictions"])
         staff_mask = Path(rec["staff_mask"]) if rec.get("staff_mask") else None
+        clef_mask = _resolve_clef_mask_path(rec)
         candidates = args.candidates_root / score / page / "pipeline2_no_peak_candidates.json"
 
         try:
@@ -72,7 +107,7 @@ def main() -> None:
                 candidates_path=candidates,
                 existing_path=existing,
                 staff_mask_path=staff_mask,
-                clef_mask_path=None,
+                clef_mask_path=clef_mask,
                 left_margin_ratio=args.left_margin_ratio,
                 clef_left_ratio=args.clef_left_ratio,
                 min_height_median_ratio=args.min_height_median_ratio,

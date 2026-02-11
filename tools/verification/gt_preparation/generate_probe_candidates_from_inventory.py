@@ -61,6 +61,7 @@ def _run_one(
     band_scan_line_ratio: float,
     band_scan_min_lines: int,
     band_source: str,
+    scan_x_peak_rescue: bool,
 ) -> dict[str, Any]:
     score = record["score"]
     page = record["page"]
@@ -95,7 +96,7 @@ def _run_one(
         band_min_row_count=1,
         band_scan_line_ratio=band_scan_line_ratio,
         band_scan_min_lines=band_scan_min_lines,
-        scan_x_peak_rescue=True,
+        scan_x_peak_rescue=scan_x_peak_rescue,
         scan_rightmost_rescue=True,
         divisi_rescue=True,
         scan_x_peak_rescue_mode="topbottom",
@@ -170,6 +171,12 @@ def parse_args() -> argparse.Namespace:
         default="row_stats",
         help="Band source passed to detect_probe_scan. Default is row_stats for GT candidate seeds.",
     )
+    parser.add_argument(
+        "--scan-x-peak-rescue",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Enable/disable x-peak rescue in probe detection.",
+    )
     return parser.parse_args()
 
 
@@ -207,6 +214,7 @@ def main() -> None:
                 band_scan_line_ratio=args.band_scan_line_ratio,
                 band_scan_min_lines=args.band_scan_min_lines,
                 band_source=args.band_source,
+                scan_x_peak_rescue=args.scan_x_peak_rescue,
             )
             results.append(result)
         except Exception as exc:  # noqa: BLE001
@@ -228,6 +236,7 @@ def main() -> None:
             "band_scan_line_ratio": args.band_scan_line_ratio,
             "band_scan_min_lines": args.band_scan_min_lines,
             "band_source": args.band_source,
+            "scan_x_peak_rescue": args.scan_x_peak_rescue,
         },
         "processed": len(results),
         "skipped": len(skipped),

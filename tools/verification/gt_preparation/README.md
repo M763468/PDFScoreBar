@@ -205,6 +205,49 @@ docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt
   --min-staff-overlap-ratio 0.01
 ```
 
+## Reproduction (sr_eval_gpu, v13: manual-friendly strict seed)
+This variant is the currently adopted seed for GT relabeling. It tightens probe generation
+and disables only `scan_x_peak_rescue` while keeping rightmost/divisi rescue enabled.
+The goal is to reduce broad false positives and continue with manual cleanup in GUI.
+```bash
+docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py \
+  --inventory /workspace/logs/issue36_prep/20260208_bench_inventory.json \
+  --exclude /workspace/logs/issue36_prep/excluded_pages_for_gt_prep.json \
+  --output-root /workspace/logs/issue36_prep/probe_candidates_from_bench_v13 \
+  --summary-out /workspace/logs/issue36_prep/20260211_probe_generation_summary_v13.json \
+  --band-source row_stats \
+  --no-scan-x-peak-rescue \
+  --ink-threshold 240 \
+  --min-ratio 0.65 \
+  --min-height-ratio 0.008 \
+  --min-width-ratio 0.0 \
+  --probe-width 4 \
+  --max-per-band 40 \
+  --band-scan-line-ratio 0.6 \
+  --band-scan-min-lines 5
+
+docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py \
+  --inventory /workspace/logs/issue36_prep/20260208_bench_inventory.json \
+  --exclude /workspace/logs/issue36_prep/excluded_pages_for_gt_prep.json \
+  --candidates-root /workspace/logs/issue36_prep/probe_candidates_from_bench_v13 \
+  --output-root /workspace/logs/issue36_prep/probe_candidates_filtered_v13 \
+  --suggestions-root /workspace/logs/issue36_prep/filter_suggestions_v13 \
+  --summary-out /workspace/logs/issue36_prep/20260211_filter_apply_summary_v13.json \
+  --left-margin-ratio 0.12 \
+  --clef-left-ratio 0.25 \
+  --min-height-median-ratio 0.6 \
+  --ink-threshold 180 \
+  --min-ink-ratio 0.18 \
+  --paper-threshold 200 \
+  --min-paper-overlap-ratio 0.6 \
+  --min-staff-overlap-ratio 0.02
+```
+
+Then rebuild GT relabel config and provisional seeds:
+```bash
+python3 tools/gt_relabel_gui/prepare_rebuild_eval2.py
+```
+
 Overlay generation (all covered pages):
 ```bash
 docker exec sr_eval_gpu bash -lc 'cd /workspace && /opt/venv_sr/bin/python - <<"PY"

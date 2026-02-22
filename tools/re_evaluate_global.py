@@ -12,7 +12,7 @@ from tqdm import tqdm
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(REPO_ROOT))
 
-from src.common.barline_evaluation import greedy_barline_match
+from src.common.barline_evaluation import barline_iou, greedy_barline_match
 
 
 def load_config_file(config_path: Path):
@@ -42,6 +42,39 @@ def find_gt_file(gt_root, subdir, page_name):
     return None
 
 
+def parse_scored_context(json_path: Path, scored_root: Path):
+    """Parse score/page context from scored JSON path.
+
+    Supported layouts:
+    - nested: <scored_root>/<score>/<page>/<*_scored.json>
+    - legacy flat filename/dir patterns containing *_<score>_page_XXX
+    """
+    try:
+        rel_parts = json_path.relative_to(scored_root).parts
+    except ValueError:
+        rel_parts = ()
+
+    if len(rel_parts) >= 3 and rel_parts[-1].endswith("_scored.json"):
+        score_name = rel_parts[-3]
+        page_name = rel_parts[-2]
+        if page_name.startswith("page_"):
+            return score_name, page_name
+
+    for candidate_name in (json_path.stem.replace("_scored", ""), json_path.parent.name):
+        parts = candidate_name.split("_")
+        if "page" not in parts:
+            continue
+        page_idx = parts.index("page")
+        score_start = 1 if parts and parts[0] == "eval2" else 0
+        if page_idx <= score_start:
+            continue
+        score_name = "_".join(parts[score_start:page_idx])
+        page_name = "_".join(parts[page_idx:])
+        if score_name and page_name.startswith("page_"):
+            return score_name, page_name
+    return None
+
+
 def main():
     pre_parser = argparse.ArgumentParser(add_help=False)
     pre_parser.add_argument(
@@ -56,6 +89,11 @@ def main():
     parser.add_argument("--gt-root")
     parser.add_argument("--output-csv")
     parser.add_argument("--threshold", type=float, default=0.5)
+    parser.add_argument(
+        "--scored-glob",
+        default="*_scored.json",
+        help="Glob pattern (recursive) to find scored JSON files under --scored-root.",
+    )
 
     if pre_args.config:
         config_values = load_config_file(pre_args.config)
@@ -71,49 +109,25 @@ def main():
             + ", ".join(f"--{name.replace('_', '-')}" for name in missing)
         )
 
-    scored_files = list(Path(args.scored_root).rglob("*_scored.json"))
+    scored_root = Path(args.scored_root)
+    scored_files = list(scored_root.rglob(args.scored_glob))
     stats = []
 
     print(f"Processing {len(scored_files)} scored files with greedy_barline_match...")
 
     for json_path in tqdm(scored_files):
-        run_id = json_path.stem.replace("_scored", "")
-        # ... (rest of loop logic is fine)
-        parts = run_id.split("_")
-
-        # Check if filename has 'page' info
-        has_page = "page" in parts
-
-        # If not, try parent directory name
-        if not has_page:
-            run_id = json_path.parent.name
-            parts = run_id.split("_")
-
-        print(f"DEBUG: Processing {json_path}")
-        print(f"DEBUG: run_id={run_id}, parts={parts}")
-
-        try:
-            page_idx = -1
-            for i, p in enumerate(parts):
-                if p == "page":
-                    page_idx = i
-                    break
-            if page_idx == -1:
-                print("DEBUG: 'page' keyword not found")
-                continue
-            subdir = "_".join(parts[1:page_idx])
-            page_name = "_".join(parts[page_idx:])
-            print(f"DEBUG: subdir={subdir}, page_name={page_name}")
-        except Exception as e:
-            print(f"DEBUG: Exception parsing: {e}")
+        parsed = parse_scored_context(json_path, scored_root)
+        if not parsed:
+            print(f"Skipping (unparseable scored path): {json_path}")
             continue
+        subdir, page_name = parsed
 
         with open(json_path, "r") as f:
             candidates = json.load(f)
 
         gt_path = find_gt_file(args.gt_root, subdir, page_name)
         if not gt_path:
-            print(f"DEBUG: GT not found for {subdir}/{page_name} in {args.gt_root}")
+            print(f"GT not found for {subdir}/{page_name} in {args.gt_root}")
             continue
 
         with open(gt_path, "r") as f:
@@ -147,10 +161,6 @@ def main():
             found_by_detector = False
             gt_box = gt_boxes[fn_idx]
             for cand in all_candidate_boxes:
-                # Use simple 0.5 IoU for detector hit check
-                # (Ideally use barline_iou with padding, but consistent with evaluate_accuracy_batch.py)
-                from src.common.barline_evaluation import barline_iou
-
                 if barline_iou(cand, gt_box) > 0.5:
                     found_by_detector = True
                     break

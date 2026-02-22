@@ -50,6 +50,12 @@ def get_model(model_path, model_name="resnet18"):
         raise ValueError(f"Unknown model: {model_name}")
 
     state_dict = torch.load(model_path, map_location=DEVICE)
+    # Handle checkpoints saved from torch.compile(model), which prefixes keys with "_orig_mod."
+    if any(k.startswith("_orig_mod.") for k in state_dict.keys()):
+        state_dict = {
+            (k[len("_orig_mod.") :] if k.startswith("_orig_mod.") else k): v
+            for k, v in state_dict.items()
+        }
     model.load_state_dict(state_dict)
     model.to(DEVICE)
     model.eval()
@@ -87,63 +93,78 @@ def center_crop(img, cx, cy, crop_w, crop_h):
     return crop
 
 
-def process_dir(log_dir, model, gpu_norm, threshold=0.5):
-    scored_json_path = log_dir / "pipeline2_no_peak_scored.json"
-    if scored_json_path.exists():
+def parse_eval2_context(log_dir: Path, log_root: Path):
+    """Parse score/page context from either nested or legacy flat log layouts.
+
+    Supported layouts:
+    - nested: <log_root>/<score>/<page>
+    - flat:   <log_root>/eval2_<score>_<page>
+    """
+    try:
+        rel_parts = log_dir.relative_to(log_root).parts
+    except ValueError:
+        rel_parts = ()
+
+    if len(rel_parts) == 2:
+        score_name, page_name = rel_parts
+        if page_name.startswith("page_"):
+            return score_name, page_name
+
+    parts = log_dir.name.split("_")
+    if "page" not in parts:
+        return None
+    page_idx = parts.index("page")
+    score_start = 1 if parts and parts[0] == "eval2" else 0
+    if page_idx <= score_start:
+        return None
+    score_name = "_".join(parts[score_start:page_idx])
+    page_name = "_".join(parts[page_idx:])
+    if not score_name or not page_name.startswith("page_"):
+        return None
+    return score_name, page_name
+
+
+def resolve_image_path(score_name: str, page_name: str, images_root: Path):
+    image_path = images_root / score_name / f"{page_name}.png"
+    return image_path if image_path.exists() else None
+
+
+def process_dir(
+    log_dir,
+    log_root,
+    images_root,
+    model,
+    gpu_norm,
+    threshold=0.5,
+    candidate_filename="pipeline2_no_peak_candidates.json",
+    scored_filename="pipeline2_no_peak_scored.json",
+    filtered_filename="pipeline2_no_peak_filtered_cnn.json",
+    overwrite=False,
+):
+    scored_json_path = log_dir / scored_filename
+    if scored_json_path.exists() and not overwrite:
         return True  # Already processed
 
-    candidates_path = log_dir / "pipeline2_no_peak_candidates.json"
+    candidates_path = log_dir / candidate_filename
     if not candidates_path.exists():
-        print(f"DEBUG: Candidates path missing: {candidates_path}")
+        print(f"Candidates file missing: {candidates_path}")
         return False
 
-    # Check if inputs needed are present
-    # We need the image! Image path is not in JSON directly usually.
-    # But usually log_dir is named eval2_Score_page_XXX.
-    # We can perform a robust search or rely on data/evaluation2/images structure
-
-    parts = log_dir.name.split("_")  # eval2, ScoreName, page, XXX
-    # Assuming standard format: eval2_{RunID} where RunID = Score_page_XXX
-    # This might be tricky if ScoreName has underscores.
-    # However, in run_eval2_batch.py, we know the image paths.
-
-    # Try to find the image in data/evaluation2/images
-    # Reconstruct relative path from parts?
-    # Better: Inspect run_eval2_batch logic or just search.
-    # Let's search recursively in data/evaluation2/images for the matching page name.
-
-    # Attempt to parse: The end is always page_XXX.
-    try:
-        page_idx = parts.index("page")
-        score_name = "_".join(parts[1:page_idx])
-        page_num = "_".join(parts[page_idx:])  # page_002
-    except ValueError:
-        # Fallback for weird names
-        print(f"Skipping {log_dir.name}: parsing failed components={parts}")
+    parsed = parse_eval2_context(log_dir, log_root)
+    if not parsed:
+        print(f"Skipping {log_dir}: could not parse score/page context")
         return False
-
-    image_path = Path(f"data/evaluation2/images/{score_name}/{page_num}.png")
-    if not image_path.exists():
-        print(f"DEBUG: Default path failed: {image_path}. Trying fallback search...")
-        found = list(Path("data/evaluation2/images").rglob(f"{page_num}.png"))
-        if found:
-            # Prefer path containing score_name
-            for fpath in found:
-                if score_name in str(fpath):
-                    image_path = fpath
-                    print(f"DEBUG: Resolved to {image_path} via rglob+score_name")
-                    break
-            else:
-                image_path = found[0]
-                print(f"DEBUG: Resolved to {image_path} via rglob (first match)")
-        else:
-            print(f"Error: Image not found for {log_dir.name} ({score_name}/{page_num})")
-            return False
+    score_name, page_num = parsed
+    image_path = resolve_image_path(score_name, page_num, images_root)
+    if image_path is None:
+        print(
+            f"Error: Image not found for {score_name}/{page_num} under {images_root} "
+            f"(from {log_dir})"
+        )
+        return False
 
     with open(candidates_path, "r") as f:
         candidates = json.load(f)
-
-    print(f"DEBUG: Processing {log_dir.name}: {len(candidates)} candidates")
 
     if not candidates:
         return True  # Processed (empty)
@@ -171,9 +192,9 @@ def process_dir(log_dir, model, gpu_norm, threshold=0.5):
 
     if not batch_tensors:
         # Save empty results to allow evaluation to proceed
-        with open(log_dir / "pipeline2_no_peak_scored.json", "w") as f:
+        with open(log_dir / scored_filename, "w") as f:
             json.dump([], f, indent=2)
-        with open(log_dir / "pipeline2_no_peak_filtered_cnn.json", "w") as f:
+        with open(log_dir / filtered_filename, "w") as f:
             json.dump([], f, indent=2)
         return True
 
@@ -203,10 +224,10 @@ def process_dir(log_dir, model, gpu_norm, threshold=0.5):
             filtered_boxes.append(box)
 
     # Save
-    with open(log_dir / "pipeline2_no_peak_scored.json", "w") as f:
+    with open(log_dir / scored_filename, "w") as f:
         json.dump(scored_results, f, indent=2)
 
-    with open(log_dir / "pipeline2_no_peak_filtered_cnn.json", "w") as f:
+    with open(log_dir / filtered_filename, "w") as f:
         json.dump(filtered_boxes, f, indent=2)
 
     return True
@@ -227,6 +248,15 @@ def main():
         "--model", default="experiments/cnn_classifier/checkpoints/best_model.pth"
     )  # Adjust path if needed
     parser.add_argument("--threshold", type=float, default=0.5)
+    parser.add_argument("--images-root", default="data/evaluation2/images")
+    parser.add_argument("--candidate-filename", default="pipeline2_no_peak_candidates.json")
+    parser.add_argument("--scored-filename", default="pipeline2_no_peak_scored.json")
+    parser.add_argument("--filtered-filename", default="pipeline2_no_peak_filtered_cnn.json")
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Recompute scored/filtered outputs even if files already exist.",
+    )
 
     if pre_args.config:
         config_values = load_config_file(pre_args.config)
@@ -255,13 +285,39 @@ def main():
     gpu_norm = GPUNormalize(MEAN, STD).to(DEVICE)
 
     log_root = Path(args.logs)
-    subdirs = sorted([d for d in log_root.iterdir() if d.is_dir()])
+    images_root = Path(args.images_root)
+    # Support both flat layout (<run_dir>/pipeline2_no_peak_candidates.json)
+    # and nested eval2 layout (<score>/<page>/pipeline2_no_peak_candidates.json).
+    candidate_dirs = []
+    for d in sorted([d for d in log_root.iterdir() if d.is_dir()]):
+        if (d / "pipeline2_no_peak_candidates.json").exists():
+            candidate_dirs.append(d)
+            continue
+        nested = sorted(
+            [
+                p
+                for p in d.iterdir()
+                if p.is_dir() and (p / "pipeline2_no_peak_candidates.json").exists()
+            ]
+        )
+        candidate_dirs.extend(nested)
 
-    print(f"Processing {len(subdirs)} directories...")
+    print(f"Processing {len(candidate_dirs)} directories...")
 
     count = 0
-    for d in tqdm(subdirs):
-        if process_dir(d, model, gpu_norm, args.threshold):
+    for d in tqdm(candidate_dirs):
+        if process_dir(
+            d,
+            log_root,
+            images_root,
+            model,
+            gpu_norm,
+            threshold=args.threshold,
+            candidate_filename=args.candidate_filename,
+            scored_filename=args.scored_filename,
+            filtered_filename=args.filtered_filename,
+            overwrite=args.overwrite,
+        ):
             count += 1
 
     print(f"Completed {count} pages.")

@@ -53,7 +53,7 @@ data/
 - `tools/gt_relabel_gui/evaluation2_config.json` を使うGT編集では、`output_raw` が存在する場合はそれを優先して再開する。
 - 初期候補（`boxes_provisional.json`）へ戻したい場合は GUI の `Reset To Initial` を使う。
 
-2026-02-22 時点の保存済みスナップショット（小節線GT）:
+保存済みスナップショット（小節線GT、2026-02-22 の作業完了時点）:
 - 対象作品数: 5
 - 保存ページ数: 68
 - 保存ファイル数: 136（`raw_boxes.json` と `boxes_sorted.json` のペア）

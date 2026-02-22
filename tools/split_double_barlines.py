@@ -100,9 +100,26 @@ def _extract_bbox(record):
     return None, False
 
 
-def _should_split(record, bbox, min_split_width):
+def _estimate_unit_size_from_bbox_height(bbox):
+    # Heuristic for GT barline boxes that typically span a single 5-line staff:
+    # staff-height ~= 4 * unit_size. This keeps the split gate scale-aware even
+    # when explicit unit_size metadata is unavailable in this offline utility.
+    x1, y1, x2, y2 = bbox
+    height = max(1, abs(y2 - y1))
+    return max(1.0, height / 4.0)
+
+
+def _resolve_min_split_width(bbox, min_split_width_px, min_split_width_unit_ratio):
+    if min_split_width_px is not None:
+        return max(1, int(min_split_width_px))
+    unit_size = _estimate_unit_size_from_bbox_height(bbox)
+    return max(2, int(round(unit_size * min_split_width_unit_ratio)))
+
+
+def _should_split(record, bbox, min_split_width_px, min_split_width_unit_ratio):
     x1, y1, x2, y2 = bbox
     width = abs(x2 - x1)
+    min_split_width = _resolve_min_split_width(bbox, min_split_width_px, min_split_width_unit_ratio)
     if width < min_split_width:
         return False
     if isinstance(record, dict):
@@ -112,7 +129,14 @@ def _should_split(record, bbox, min_split_width):
     return True
 
 
-def process_file(json_path, image_root, output_vis_dir, dry_run=True, min_split_width=12):
+def process_file(
+    json_path,
+    image_root,
+    output_vis_dir,
+    dry_run=True,
+    min_split_width=None,
+    min_split_width_unit_ratio=1.0,
+):
     data = load_json(json_path)
     image_path = get_image_path(json_path, image_root)
 
@@ -152,7 +176,7 @@ def process_file(json_path, image_root, output_vis_dir, dry_run=True, min_split_
             final_records.append(record)
             continue
 
-        if _should_split(record, bbox, min_split_width):
+        if _should_split(record, bbox, min_split_width, min_split_width_unit_ratio):
             x1, y1, x2, y2 = bbox
 
             # Extract crop
@@ -240,8 +264,20 @@ def main():
     parser.add_argument(
         "--min-split-width",
         type=int,
-        default=12,
-        help="Minimum bbox width in px to try splitting (default: 12)",
+        default=None,
+        help=(
+            "Minimum bbox width in px to try splitting. "
+            "If omitted, use a scale-aware threshold estimated from bbox height."
+        ),
+    )
+    parser.add_argument(
+        "--min-split-width-unit-ratio",
+        type=float,
+        default=1.0,
+        help=(
+            "Scale-aware split gate ratio against estimated unit_size "
+            "(used when --min-split-width is omitted). Default: 1.0"
+        ),
     )
     args = parser.parse_args()
 
@@ -267,6 +303,7 @@ def main():
             args.output_vis,
             dry_run=not args.apply,
             min_split_width=args.min_split_width,
+            min_split_width_unit_ratio=args.min_split_width_unit_ratio,
         )
         total_modified += count
 

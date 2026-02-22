@@ -5,6 +5,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+import yaml
 from tqdm import tqdm
 
 # Add repo root to sys path
@@ -12,6 +13,19 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(REPO_ROOT))
 
 from src.common.barline_evaluation import greedy_barline_match
+
+
+def load_config_file(config_path: Path):
+    with config_path.open("r") as f:
+        if config_path.suffix.lower() in {".yaml", ".yml"}:
+            data = yaml.safe_load(f)
+        else:
+            data = json.load(f)
+    if data is None:
+        return {}
+    if not isinstance(data, dict):
+        raise ValueError(f"Config must be a mapping/dict: {config_path}")
+    return data
 
 
 def find_gt_file(gt_root, subdir, page_name):
@@ -29,12 +43,33 @@ def find_gt_file(gt_root, subdir, page_name):
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--scored-root", required=True)
-    parser.add_argument("--gt-root", required=True)
-    parser.add_argument("--output-csv", required=True)
+    pre_parser = argparse.ArgumentParser(add_help=False)
+    pre_parser.add_argument(
+        "--config",
+        type=Path,
+        help="Path to YAML/JSON config file. CLI args override config values.",
+    )
+    pre_args, _ = pre_parser.parse_known_args()
+
+    parser = argparse.ArgumentParser(parents=[pre_parser])
+    parser.add_argument("--scored-root")
+    parser.add_argument("--gt-root")
+    parser.add_argument("--output-csv")
     parser.add_argument("--threshold", type=float, default=0.5)
+
+    if pre_args.config:
+        config_values = load_config_file(pre_args.config)
+        parser.set_defaults(
+            **{k.replace("-", "_"): v for k, v in config_values.items() if k not in {"config"}}
+        )
+
     args = parser.parse_args()
+    missing = [name for name in ("scored_root", "gt_root", "output_csv") if not getattr(args, name)]
+    if missing:
+        parser.error(
+            "Missing required arguments (provide via CLI or --config): "
+            + ", ".join(f"--{name.replace('_', '-')}" for name in missing)
+        )
 
     scored_files = list(Path(args.scored_root).rglob("*_scored.json"))
     stats = []

@@ -10,6 +10,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+import yaml
 from PIL import Image
 from tqdm import tqdm
 
@@ -45,6 +46,19 @@ DEFAULT_PAGES = [
         "preds": "data/training/annotations/page_015/expanded_candidates_nopeak.json",
     },
 ]
+
+
+def load_config_file(config_path: Path):
+    with config_path.open("r") as f:
+        if config_path.suffix.lower() in {".yaml", ".yml"}:
+            data = yaml.safe_load(f)
+        else:
+            data = json.load(f)
+    if data is None:
+        return {}
+    if not isinstance(data, dict):
+        raise ValueError(f"Config must be a mapping/dict: {config_path}")
+    return data
 
 
 def barline_iou(box1, box2):
@@ -388,6 +402,9 @@ def extract_eval2_tp_fp(
 
         run_dir = candidates_root / f"eval2_{score}_{page_name}"
         cand_path = run_dir / candidate_filename
+        if not cand_path.exists():
+            # Newer logs may store candidates as <root>/<score>/<page>/<file>.
+            cand_path = candidates_root / score / page_name / candidate_filename
         if not cand_path.exists():
             print(f"Warning: eval2 candidate file not found: {cand_path}")
             continue
@@ -938,8 +955,17 @@ def write_outputs(output_root, samples, assignments):
 
 
 def main():
+    pre_parser = argparse.ArgumentParser(add_help=False)
+    pre_parser.add_argument(
+        "--config",
+        type=Path,
+        help="Path to YAML/JSON config file. CLI args override config values.",
+    )
+    pre_args, _ = pre_parser.parse_known_args()
+
     parser = argparse.ArgumentParser(
-        description="Build CNN classifier dataset (local TP/FP + DeepScores negatives)."
+        description="Build CNN classifier dataset (local TP/FP + DeepScores negatives).",
+        parents=[pre_parser],
     )
     parser.add_argument(
         "--output-root",
@@ -1062,6 +1088,12 @@ def main():
         action="append",
         help="Group name to force into training split.",
     )
+
+    if pre_args.config:
+        config_values = load_config_file(pre_args.config)
+        parser.set_defaults(
+            **{k.replace("-", "_"): v for k, v in config_values.items() if k not in {"config"}}
+        )
 
     args = parser.parse_args()
     output_root = Path(args.output_root)

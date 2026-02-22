@@ -1,0 +1,10 @@
+# Issue #44 baseline scoring config
+# Usage:
+#   .venv_cnn_classifier/bin/python tools/cnn_classifier/score_candidates_batch.py --config configs/cnn_barline_runs/issue44_baseline_v1/score_candidates_batch.yaml
+#
+# Update `model` after training completes.
+
+logs: logs/issue36_prep/probe_candidates_filtered_v12
+model: logs/cnn_barline_classification/issue44_baseline_v1/cnn_classifier_best.pth
+threshold: 0.1
+

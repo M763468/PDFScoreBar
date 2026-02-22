@@ -1,6 +1,7 @@
 import argparse
 import os
 import random
+import sys
 import time
 from pathlib import Path
 
@@ -358,14 +359,22 @@ def get_args():
     )
 
     args = parser.parse_args()
+    cli_overrides = {
+        token[2:].replace("-", "_")
+        for token in sys.argv[1:]
+        if token.startswith("--") and len(token) > 2
+    }
 
     # Priority: CLI > Config > Defaults
     if args.config:
         with open(args.config, "r") as f:
             config_args = yaml.safe_load(f)
         for key, value in config_args.items():
-            # Only set if NOT provided via CLI (CLI args are None if not set now)
-            if getattr(args, key) is None:
+            if key in cli_overrides:
+                continue
+            # Existing logic handled None defaults; keep that and also allow config-backed bool flags.
+            current = getattr(args, key)
+            if current is None or (isinstance(current, bool) and current is False):
                 setattr(args, key, value)
 
     # Apply defaults for anything still None

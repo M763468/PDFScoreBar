@@ -1,0 +1,9 @@
+# Issue #44 baseline global evaluation config
+# Usage:
+#   python tools/re_evaluate_global.py --config configs/cnn_barline_runs/issue44_baseline_v1/evaluate_global.yaml
+
+scored_root: logs/issue36_prep/probe_candidates_filtered_v12
+gt_root: data/evaluation2/annotations
+output_csv: logs/cnn_barline_classification/issue44_baseline_v1/eval2_global_summary.csv
+threshold: 0.5
+

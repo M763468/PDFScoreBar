@@ -6,6 +6,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
+import yaml
 from PIL import Image
 from torchvision import models, transforms
 from tqdm import tqdm
@@ -15,6 +16,19 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 IMG_SIZE = (256, 128)  # H, W
 MEAN = [0.485, 0.456, 0.406]
 STD = [0.229, 0.224, 0.225]
+
+
+def load_config_file(config_path: Path):
+    with config_path.open("r") as f:
+        if config_path.suffix.lower() in {".yaml", ".yml"}:
+            data = yaml.safe_load(f)
+        else:
+            data = json.load(f)
+    if data is None:
+        return {}
+    if not isinstance(data, dict):
+        raise ValueError(f"Config must be a mapping/dict: {config_path}")
+    return data
 
 
 class GPUNormalize(torch.nn.Module):
@@ -199,12 +213,27 @@ def process_dir(log_dir, model, gpu_norm, threshold=0.5):
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    pre_parser = argparse.ArgumentParser(add_help=False)
+    pre_parser.add_argument(
+        "--config",
+        type=Path,
+        help="Path to YAML/JSON config file. CLI args override config values.",
+    )
+    pre_args, _ = pre_parser.parse_known_args()
+
+    parser = argparse.ArgumentParser(parents=[pre_parser])
     parser.add_argument("--logs", default="logs/hybrid_generalization")
     parser.add_argument(
         "--model", default="experiments/cnn_classifier/checkpoints/best_model.pth"
     )  # Adjust path if needed
     parser.add_argument("--threshold", type=float, default=0.5)
+
+    if pre_args.config:
+        config_values = load_config_file(pre_args.config)
+        parser.set_defaults(
+            **{k.replace("-", "_"): v for k, v in config_values.items() if k not in {"config"}}
+        )
+
     args = parser.parse_args()
 
     # Verify model path. Usually in experiments/cnn_classifier/checkpoints/

@@ -51,6 +51,48 @@ Policy for legacy scripts:
 - Do not use them for the current `evaluation2` GT rebuild unless you are intentionally reproducing the old workflow.
 - If in doubt, start from the Canonical workflow above.
 
+## staff_mask band normalization (Issue #39)
+Problem:
+- `band_source=staff_mask` could over-fragment `*_debug_3_staff.png` into many thin row segments
+  (line-mask-like behavior), causing page-dependent candidate instability.
+
+Implementation (src):
+- `src/pipeline/probe_detector/bands.py::staff_bands_from_mask`
+  - Keep original row-segment extraction as first pass.
+  - Detect line-like staff masks (many thin/medium segments).
+  - Merge nearby segments using a gap threshold derived from the median inter-segment gap,
+    producing staff-region bands instead of per-line fragments.
+- `band_source=row_stats` path is unchanged.
+
+Lightweight verification artifacts (2026-02-22):
+- Band overlay compare (legacy=red, new=green):
+  - `logs/issue39_staff_mask/band_overlay_compare_20260222/<score>/<page>/band_overlay_legacy_red_new_green.png`
+- Band count summary:
+  - `logs/issue39_staff_mask/band_overlay_compare_20260222/summary.json`
+- Probe subset compare (staff_mask before/after + row_stats regression check):
+  - `logs/issue39_staff_mask/20260222_staff_mask_probe_subset_compare.json`
+
+Representative band-count improvements (from `summary.json`):
+- `Va_Prokofiev_Symphony1/page_006`: `97 -> 13`
+- `Sibelius-Violin_Concerto-Viola/page_004`: `84 -> 11`
+- `Shostakovich-Sym5-Va/page_005`: `46 -> 8`
+- `Va_Prokofiev_Symphony1/page_001`: `77 -> 12`
+
+Verification notes:
+- `row_stats` regression spot-check (`Va_Prokofiev_Symphony1/page_006`) remained identical
+  in generated/final candidate counts.
+- Probe subset compare (`logs/issue39_staff_mask/20260222_staff_mask_probe_subset_compare.json`)
+  includes `suggest_candidate_drops` keep/drop counts:
+  - `Shostakovich-Sym5-Va/page_005` improved from
+    `generated/final/keep = 1730/30/30` to `195/225/178`
+    (legacy staff-band fragmentation was starving valid candidates after filtering).
+  - Other representative pages also improved after the final staff-like filtering + resized-mask tolerance fix
+    (e.g. `Va_Prokofiev_Symphony1/page_006`: `legacy_keep=120 -> new_keep=251`).
+- `tests/test_probe_bands.py` covers:
+  - line-like mask -> merged staff bands
+  - region-like mask -> no over-merge
+  - short non-staff horizontal fragments -> filtered out
+
 ## Canonical inputs/outputs for current run (v5)
 - Inventory: `logs/issue36_prep/20260208_bench_inventory.json`
 - Exclusions: `logs/issue36_prep/excluded_pages_for_gt_prep.json`

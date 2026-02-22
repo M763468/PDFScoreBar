@@ -107,9 +107,13 @@ def staff_bands_from_mask(
     # Region masks already form thick bands. We only apply the merge heuristic
     # when the mask looks like a stack of many thin/medium line segments
     # (typical for debug_3_staff outputs), not pre-merged staff regions.
-    # Resized debug staff masks can thicken line segments (e.g. ~15 px median)
-    # while still behaving as line-like masks.
-    line_like = len(segments) >= 5 and med_h <= 20.0 and med_gap <= 20.0
+    #
+    # Use a staff-step proxy from the mask itself (median row gap) instead of
+    # fixed pixel thresholds so the heuristic scales with resolution.
+    staff_step_proxy = max(1.0, med_gap)
+    line_like = (
+        len(segments) >= 5 and med_h <= (3.0 * staff_step_proxy) and med_gap <= (0.05 * float(h))
+    )
     if not line_like:
         return segments
 
@@ -155,7 +159,7 @@ def _append_if_staff_like(
     # Require multiple horizontally long lines to avoid treating random
     # non-staff horizontal fragments as staff bands.
     line_count = len(group)
-    long_line_thresh = max(40, int(round(image_w * 0.30)))
+    long_line_thresh = int(round(image_w * 0.30))
     long_line_count = sum(1 for seg in group if seg["w"] >= long_line_thresh)
     if line_count < 4 or long_line_count < 3:
         return

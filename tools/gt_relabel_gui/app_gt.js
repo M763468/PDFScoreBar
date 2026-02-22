@@ -21,6 +21,7 @@ const legend = document.getElementById("legend");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const saveBtn = document.getElementById("saveBtn");
+const resetSeedBtn = document.getElementById("resetSeedBtn");
 const modeSelectBtn = document.getElementById("modeSelectBtn");
 const modeDrawBtn = document.getElementById("modeDrawBtn");
 const deleteBtn = document.getElementById("deleteBtn");
@@ -71,6 +72,12 @@ let lastProbe = null;
 
 function fetchJSON(url) {
   return fetch(url).then((r) => r.json());
+}
+
+function pathExists(path) {
+  return fetch(`/file?path=${encodeURIComponent(path)}`)
+    .then((r) => r.ok)
+    .catch(() => false);
 }
 
 function setMode(nextMode) {
@@ -195,33 +202,7 @@ function loadPage() {
   };
   image.src = `/file?path=${encodeURIComponent(currentPage.image)}`;
 
-  const sources = (currentPage.editable_sources && currentPage.editable_sources.length)
-    ? currentPage.editable_sources
-    : [{ label: "base", path: currentPage.editable, color: EDITABLE_COLOR }];
-  editableSources = sources.map((src) => ({ ...src, visible: true }));
-  if (!editableSources.find((src) => src.label === "manual")) {
-    editableSources.push({ label: "manual", path: null, color: DRAW_COLOR, visible: true });
-  }
-  editableBoxes = [];
-  Promise.all(
-    editableSources
-      .filter((source) => source.path)
-      .map((source) =>
-        fetchJSON(`/api/boxes?path=${encodeURIComponent(source.path)}`).then((data) => {
-          const items = (data.boxes || []).map((b) => normalizeEditable(b));
-          items.forEach((item) => {
-            item.source = source.label;
-            item.color = source.color;
-          });
-          editableBoxes = editableBoxes.concat(items);
-        })
-      )
-  ).then(() => {
-    updateStats();
-    syncTypeSelect();
-    renderLayers();
-    draw();
-  });
+  reloadEditableBoxes(false);
 
   referenceLayers = [];
   const refs = currentPage.references || [];
@@ -239,6 +220,61 @@ function loadPage() {
   });
   renderLayers();
   renderPageList();
+}
+
+async function buildEditableSources(forceBase = false) {
+  if (!forceBase && currentPage.editable_sources && currentPage.editable_sources.length) {
+    return {
+      sources: currentPage.editable_sources,
+      modeLabel: "custom sources",
+    };
+  }
+
+  if (!forceBase && currentPage.output_raw) {
+    const resumeExists = await pathExists(currentPage.output_raw);
+    if (resumeExists) {
+      return {
+        sources: [{ label: "resume_raw", path: currentPage.output_raw, color: EDITABLE_COLOR }],
+        modeLabel: "resume from output_raw",
+      };
+    }
+  }
+
+  return {
+    sources: [{ label: "seed", path: currentPage.editable, color: EDITABLE_COLOR }],
+    modeLabel: "initial seed",
+  };
+}
+
+async function reloadEditableBoxes(forceBase = false) {
+  const built = await buildEditableSources(forceBase);
+  editableSources = built.sources.map((src) => ({ ...src, visible: true }));
+  if (!editableSources.find((src) => src.label === "manual")) {
+    editableSources.push({ label: "manual", path: null, color: DRAW_COLOR, visible: true });
+  }
+
+  editableBoxes = [];
+  await Promise.all(
+    editableSources
+      .filter((source) => source.path)
+      .map((source) =>
+        fetchJSON(`/api/boxes?path=${encodeURIComponent(source.path)}`).then((data) => {
+          const items = (data.boxes || []).map((b) => normalizeEditable(b));
+          items.forEach((item) => {
+            item.source = source.label;
+            item.color = source.color;
+          });
+          editableBoxes = editableBoxes.concat(items);
+        })
+      )
+  );
+
+  pageMeta.textContent = `${currentPage.name} (${built.modeLabel})`;
+  selectedIndices.clear();
+  updateStats();
+  syncTypeSelect();
+  renderLayers();
+  draw();
 }
 
 function extractBox(item) {
@@ -701,6 +737,14 @@ nextBtn.onclick = () => {
 };
 
 saveBtn.onclick = save;
+resetSeedBtn.onclick = () => {
+  if (dirty && !confirm("Discard unsaved changes and reload initial seed?")) {
+    return;
+  }
+  saveStatus.textContent = "";
+  setDirty(false);
+  reloadEditableBoxes(true);
+};
 modeSelectBtn.onclick = () => setMode("select");
 modeDrawBtn.onclick = () => setMode("draw");
 deleteBtn.onclick = deleteSelected;

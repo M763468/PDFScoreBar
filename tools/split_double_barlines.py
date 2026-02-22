@@ -90,7 +90,29 @@ def visualize_split(image, original_box, split_boxes, output_path, peaks=None, p
     cv2.imwrite(output_path, crop)
 
 
-def process_file(json_path, image_root, output_vis_dir, dry_run=True):
+def _extract_bbox(record):
+    if isinstance(record, list) and len(record) == 4:
+        return [int(v) for v in record], False
+    if isinstance(record, dict):
+        bbox = record.get("barline_location") or record.get("bbox") or record.get("pred_bbox")
+        if bbox and len(bbox) == 4:
+            return [int(v) for v in bbox], True
+    return None, False
+
+
+def _should_split(record, bbox, min_split_width):
+    x1, y1, x2, y2 = bbox
+    width = abs(x2 - x1)
+    if width < min_split_width:
+        return False
+    if isinstance(record, dict):
+        bar_type = record.get("barline_type", "barline")
+        if bar_type in {"double_barline", "end_barline", "repeat"}:
+            return True
+    return True
+
+
+def process_file(json_path, image_root, output_vis_dir, dry_run=True, min_split_width=12):
     data = load_json(json_path)
     image_path = get_image_path(json_path, image_root)
 
@@ -124,13 +146,14 @@ def process_file(json_path, image_root, output_vis_dir, dry_run=True):
 
     final_records = []
 
-    for record in records:
-        bar_type = record.get("barline_type", "barline")
-        bbox = record.get("barline_location") or record.get("bbox")
+    for idx, record in enumerate(records):
+        bbox, is_dict = _extract_bbox(record)
+        if not bbox:
+            final_records.append(record)
+            continue
 
-        if bar_type == "double_barline" and bbox:
-            x1, y1, x2, y2 = [int(v) for v in bbox]
-            x2 - x1
+        if _should_split(record, bbox, min_split_width):
+            x1, y1, x2, y2 = bbox
 
             # Extract crop
             crop = image[y1:y2, x1:x2]
@@ -158,17 +181,18 @@ def process_file(json_path, image_root, output_vis_dir, dry_run=True):
                     nx1 = max(0, nx1)
                     nx2 = min(image.shape[1], nx2)
 
-                    new_record = record.copy()
-                    new_record["barline_type"] = "barline"  # Change type to single
-                    new_record["barline_location"] = [nx1, y1, nx2, y2]
-                    # Also update bbox if present
-                    if "bbox" in new_record:
-                        new_record["bbox"] = [nx1, y1, nx2, y2]
-
-                    final_records.append(new_record)
+                    if is_dict:
+                        new_record = record.copy()
+                        # Keep original label for consistency with GT policy.
+                        new_record["barline_location"] = [nx1, y1, nx2, y2]
+                        if "bbox" in new_record:
+                            new_record["bbox"] = [nx1, y1, nx2, y2]
+                        final_records.append(new_record)
+                    else:
+                        final_records.append([nx1, y1, nx2, y2])
 
                 # Visualization
-                vis_name = f"{Path(json_path).parent.name}_{Path(json_path).name.replace('.json', '')}_idx{records.index(record)}.png"
+                vis_name = f"{Path(json_path).parent.name}_{Path(json_path).name.replace('.json', '')}_idx{idx}.png"
                 vis_path = os.path.join(output_vis_dir, vis_name)
 
                 # Prepare split boxes for vis
@@ -183,11 +207,7 @@ def process_file(json_path, image_root, output_vis_dir, dry_run=True):
                 visualize_split(image, [x1, y1, x2, y2], split_boxes, vis_path)
 
             else:
-                # Failed to find 2 peaks (could be 1 broad peak, or 3, or noise)
-                # Keep original
-                print(
-                    f"Skipping double_barline at {bbox} in {Path(json_path).name}: Found {len(peaks)} peaks"
-                )
+                # Failed to find exactly two peaks; keep original.
                 final_records.append(record)
         else:
             final_records.append(record)
@@ -212,15 +232,26 @@ def main():
     parser.add_argument(
         "--apply", action="store_true", help="Apply changes to JSON files (default: dry-run)"
     )
+    parser.add_argument(
+        "--file-pattern",
+        default="boxes_provisional.json",
+        help="Target JSON filename to process (default: boxes_provisional.json)",
+    )
+    parser.add_argument(
+        "--min-split-width",
+        type=int,
+        default=12,
+        help="Minimum bbox width in px to try splitting (default: 12)",
+    )
     args = parser.parse_args()
 
     os.makedirs(args.output_vis, exist_ok=True)
 
-    # Find all boxes_sorted*.json files
+    # Find target files
     json_files = []
     for root, dirs, files in os.walk(args.json_root):
         for file in files:
-            if file.startswith("boxes_sorted") and file.endswith(".json"):
+            if file == args.file_pattern:
                 json_files.append(os.path.join(root, file))
 
     total_modified = 0
@@ -229,13 +260,14 @@ def main():
         # Or just let process_file handle it.
         # process_file loads the json anyway.
 
-        # Only process if file actually contains "double_barline" string (optimization)
-        with open(json_file, "r") as f:
-            if "double_barline" not in f.read():
-                continue
-
         print(f"Processing {json_file}...")
-        count, _ = process_file(json_file, args.image_root, args.output_vis, dry_run=not args.apply)
+        count, _ = process_file(
+            json_file,
+            args.image_root,
+            args.output_vis,
+            dry_run=not args.apply,
+            min_split_width=args.min_split_width,
+        )
         total_modified += count
 
     print(f"Total double barlines split: {total_modified}")

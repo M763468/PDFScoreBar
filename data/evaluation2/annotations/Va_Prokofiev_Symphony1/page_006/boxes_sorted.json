@@ -1,0 +1,1666 @@
+[
+  {
+    "measure_number": 1,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      874,
+      1804,
+      882,
+      1904
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 2,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1229,
+      1804,
+      1236,
+      1904
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 3,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1539,
+      1804,
+      1548,
+      1904
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 4,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1660,
+      1804,
+      1668,
+      1904
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 5,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2072,
+      1801,
+      2079,
+      1902
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 6,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2331,
+      1801,
+      2340,
+      1904
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 7,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2445,
+      1801,
+      2452,
+      1902
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 8,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2801,
+      1801,
+      2808,
+      1896
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 9,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3075,
+      1799,
+      3084,
+      1902
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 10,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3190,
+      1799,
+      3198,
+      1900
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 11,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      882,
+      930,
+      887,
+      1031
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 12,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1214,
+      930,
+      1223,
+      1033
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 13,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1563,
+      932,
+      1570,
+      1033
+    ],
+    "barline_type": "double_barline"
+  },
+  {
+    "measure_number": 14,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1575,
+      932,
+      1584,
+      1033
+    ],
+    "barline_type": "double_barline"
+  },
+  {
+    "measure_number": 15,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1993,
+      930,
+      1998,
+      1031
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 16,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2276,
+      928,
+      2285,
+      1031
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 17,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2566,
+      928,
+      2573,
+      1029
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 18,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2858,
+      926,
+      2867,
+      1029
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 19,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3183,
+      917,
+      3192,
+      1029
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 20,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      885,
+      1510,
+      893,
+      1610
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 21,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1128,
+      1510,
+      1137,
+      1608
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 22,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1464,
+      1507,
+      1473,
+      1608
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 23,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1580,
+      1510,
+      1589,
+      1608
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 24,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1853,
+      1507,
+      1861,
+      1608
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 25,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2123,
+      1505,
+      2131,
+      1608
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 26,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2443,
+      1505,
+      2452,
+      1606
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 27,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2683,
+      1504,
+      2687,
+      1605
+    ],
+    "barline_type": "double_barline"
+  },
+  {
+    "measure_number": 28,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2695,
+      1504,
+      2699,
+      1605
+    ],
+    "barline_type": "double_barline"
+  },
+  {
+    "measure_number": 29,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3084,
+      1503,
+      3093,
+      1604
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 30,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3187,
+      1503,
+      3196,
+      1604
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 31,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      891,
+      1222,
+      900,
+      1323
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 32,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1207,
+      1222,
+      1214,
+      1323
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 33,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1530,
+      1224,
+      1537,
+      1325
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 34,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1835,
+      1220,
+      1844,
+      1323
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 35,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2140,
+      1220,
+      2149,
+      1321
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 36,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2439,
+      1220,
+      2445,
+      1321
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 37,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2740,
+      1218,
+      2748,
+      1319
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 38,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3051,
+      1218,
+      3060,
+      1319
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 39,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3185,
+      1213,
+      3194,
+      1316
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 40,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      898,
+      2093,
+      907,
+      2194
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 41,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1179,
+      2095,
+      1185,
+      2196
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 42,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1286,
+      2095,
+      1295,
+      2196
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 43,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1695,
+      2095,
+      1701,
+      2196
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 44,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1927,
+      2095,
+      1934,
+      2196
+    ],
+    "barline_type": "double_barline"
+  },
+  {
+    "measure_number": 45,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1938,
+      2098,
+      1947,
+      2196
+    ],
+    "barline_type": "double_barline"
+  },
+  {
+    "measure_number": 46,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2415,
+      2095,
+      2423,
+      2196
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 47,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2800,
+      2090,
+      2806,
+      2194
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 48,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3192,
+      2089,
+      3201,
+      2190
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 49,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      911,
+      3826,
+      920,
+      3927
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 50,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1021,
+      3826,
+      1027,
+      3927
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 51,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1346,
+      3826,
+      1354,
+      3930
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 52,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1644,
+      3829,
+      1653,
+      3930
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 53,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1943,
+      3829,
+      1951,
+      3930
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 54,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2044,
+      3831,
+      2052,
+      3932
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 55,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2338,
+      3829,
+      2344,
+      3930
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 56,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2799,
+      3826,
+      2805,
+      3921
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 57,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3203,
+      3826,
+      3211,
+      3927
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 58,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      929,
+      643,
+      933,
+      746
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 59,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1490,
+      647,
+      1499,
+      748
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 60,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1868,
+      645,
+      1875,
+      746
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 61,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2206,
+      641,
+      2215,
+      746
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 62,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2520,
+      643,
+      2529,
+      744
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 63,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2829,
+      643,
+      2833,
+      746
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 64,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3183,
+      643,
+      3192,
+      744
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 65,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      986,
+      3537,
+      994,
+      3640
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 66,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1501,
+      3536,
+      1505,
+      3639
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 67,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1989,
+      3539,
+      1993,
+      3640
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 68,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2330,
+      3536,
+      2334,
+      3639
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 69,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2472,
+      3535,
+      2480,
+      3640
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 70,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2759,
+      3536,
+      2763,
+      3639
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 71,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2902,
+      3537,
+      2909,
+      3638
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 72,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3196,
+      3530,
+      3207,
+      3636
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 73,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1016,
+      2672,
+      1025,
+      2776
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 74,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1424,
+      2670,
+      1428,
+      2773
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 75,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1853,
+      2670,
+      1857,
+      2773
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 76,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2285,
+      2672,
+      2294,
+      2776
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 77,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2722,
+      2668,
+      2731,
+      2771
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 78,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3198,
+      2670,
+      3207,
+      2773
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 79,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1030,
+      2378,
+      1038,
+      2479
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 80,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1455,
+      2378,
+      1464,
+      2479
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 81,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1877,
+      2378,
+      1886,
+      2479
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 82,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2322,
+      2378,
+      2329,
+      2477
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 83,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2755,
+      2376,
+      2764,
+      2477
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 84,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3196,
+      2376,
+      3205,
+      2477
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 85,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1048,
+      3248,
+      1052,
+      3351
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 86,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1473,
+      3248,
+      1477,
+      3351
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 87,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1908,
+      3252,
+      1916,
+      3353
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 88,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2338,
+      3249,
+      2347,
+      3353
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 89,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2770,
+      3247,
+      2779,
+      3350
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 90,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3101,
+      3248,
+      3105,
+      3351
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 91,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3196,
+      3247,
+      3205,
+      3348
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 92,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1100,
+      4103,
+      1111,
+      4206
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 93,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1591,
+      4110,
+      1600,
+      4208
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 94,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2024,
+      4103,
+      2028,
+      4208
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 95,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2444,
+      4103,
+      2448,
+      4208
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 96,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2899,
+      4103,
+      2903,
+      4208
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 97,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3187,
+      4103,
+      3191,
+      4208
+    ],
+    "barline_type": "end_barline"
+  },
+  {
+    "measure_number": 98,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3199,
+      4102,
+      3210,
+      4207
+    ],
+    "barline_type": "end_barline"
+  },
+  {
+    "measure_number": 99,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1120,
+      2958,
+      1126,
+      3059
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 100,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1572,
+      2955,
+      1580,
+      3059
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 101,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      1993,
+      2960,
+      2002,
+      3061
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 102,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2397,
+      2958,
+      2406,
+      3061
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 103,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      2779,
+      2958,
+      2783,
+      3059
+    ],
+    "barline_type": "barline"
+  },
+  {
+    "measure_number": 104,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      3194,
+      2953,
+      3203,
+      3054
+    ],
+    "barline_type": "barline"
+  }
+]

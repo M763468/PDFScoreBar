@@ -17,6 +17,40 @@ Purpose: Standard scripts for Ground Truth (GT) preparation and candidate filter
 - `render_candidate_filter_overlay.py`
   - Creates visual overlays: gray=all, green=keep, red=drop.
 
+## GT rebuild tooling inventory (Issue #38)
+This section clarifies the current `evaluation2` GT rebuild workflow and marks
+older scripts that remain in the repository for historical/manual use cases.
+
+### Canonical workflow (current)
+Use this flow for `evaluation2` GT rebuild / continuation:
+1. `tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py`
+2. `tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py`
+3. `tools/gt_relabel_gui/prepare_rebuild_eval2.py`
+4. `python3 tools/gt_relabel_gui/server.py --mode gt --config tools/gt_relabel_gui/evaluation2_config.json`
+
+Authoritative outputs are written to:
+- `data/evaluation2/annotations/<work>/page_xxx/raw_boxes.json`
+- `data/evaluation2/annotations/<work>/page_xxx/boxes_sorted.json`
+
+### Tool status matrix (evaluation2 GT rebuild)
+- `tools/gt_relabel_gui/prepare_rebuild_eval2.py`: `CURRENT`
+  - Builds `evaluation2_config.json` and per-page `boxes_provisional.json` from the latest adopted filtered seeds (currently v13-first fallback chain).
+- `tools/check_gt_config.py`: `AUXILIARY`
+  - Quick config/JSON existence check. Useful for diagnostics, but not part of the canonical rebuild path.
+- `tools/cnn_classifier/create_comprehensive_gt_config.py`: `LEGACY`
+  - Older `hybrid_generalization`-based config generation path.
+- `tools/cnn_classifier/create_gt_gui_config.py`: `LEGACY`
+  - Older `annotations_provisional`-based GUI config generator.
+- `tools/populate_missing_gt.py`: `LEGACY`
+  - Older helper for filling empty `editable` JSONs from `logs/hybrid_generalization`.
+- `tools/populate_provisional_gt.py`: `LEGACY`
+  - Older helper for overwriting provisional GT from CNN-filtered outputs.
+
+Policy for legacy scripts:
+- Keep for reproducibility / archaeology.
+- Do not use them for the current `evaluation2` GT rebuild unless you are intentionally reproducing the old workflow.
+- If in doubt, start from the Canonical workflow above.
+
 ## Canonical inputs/outputs for current run (v5)
 - Inventory: `logs/issue36_prep/20260208_bench_inventory.json`
 - Exclusions: `logs/issue36_prep/excluded_pages_for_gt_prep.json`

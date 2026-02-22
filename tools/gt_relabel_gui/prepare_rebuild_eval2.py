@@ -2,9 +2,12 @@ import json
 import shutil
 from pathlib import Path
 
+# Current entrypoint for evaluation2 GT rebuild config generation.
+# Canonical flow is documented in tools/verification/gt_preparation/README.md.
+
 
 def prepare_eval2_rebuild():
-    repo_root = Path("/home/masaki_muramatsu/ws_PDFScoreBar")
+    repo_root = Path(__file__).resolve().parents[2]
     img_root = repo_root / "data/evaluation2/images"
     ann_root = repo_root / "data/evaluation2/annotations"
     logs_root = repo_root / "logs/hybrid_pipeline_bench"
@@ -20,6 +23,13 @@ def prepare_eval2_rebuild():
         repo_root / "logs/issue36_prep/probe_candidates_filtered_v6",
         repo_root / "logs/issue36_prep/probe_candidates_filtered_v5",
     ]
+
+    missing_inputs = [p for p in (img_root, ann_root.parent, logs_root) if not p.exists()]
+    if missing_inputs:
+        missing_str = ", ".join(str(p) for p in missing_inputs)
+        raise FileNotFoundError(
+            f"Required directories not found under repo root {repo_root}: {missing_str}"
+        )
 
     # 1. Map pages to their latest hybrid predictions
     # Pattern: eval2_{score}_{page}_{timestamp}

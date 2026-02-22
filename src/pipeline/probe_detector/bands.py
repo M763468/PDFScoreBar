@@ -68,7 +68,9 @@ def staff_bands_from_mask(
     rows = np.where(mask.sum(axis=1) > 0)[0]
     if rows.size == 0:
         return []
-    bands: List[Tuple[int, int]] = []
+
+    # First pass: keep the original row-segment extraction behavior.
+    segments: List[Tuple[int, int]] = []
     start = int(rows[0])
     prev = int(rows[0])
     for y in rows[1:]:
@@ -76,12 +78,51 @@ def staff_bands_from_mask(
             prev = int(y)
             continue
         if prev - start + 1 >= min_height:
-            bands.append((start, prev))
+            segments.append((start, prev))
         start = int(y)
         prev = int(y)
     if prev - start + 1 >= min_height:
-        bands.append((start, prev))
-    return bands
+        segments.append((start, prev))
+
+    if len(segments) <= 1:
+        return segments
+
+    # Second pass: if the mask looks line-like (thin staff-line segments), merge
+    # adjacent segments into full staff-region bands. This prevents severe
+    # fragmentation when `staff_mask` is actually a line mask (e.g. debug_3_staff).
+    heights = np.array([y2 - y1 + 1 for y1, y2 in segments], dtype=np.float32)
+    gaps = np.array(
+        [segments[i + 1][0] - segments[i][1] - 1 for i in range(len(segments) - 1)],
+        dtype=np.float32,
+    )
+    positive_gaps = gaps[gaps > 0]
+    if positive_gaps.size == 0:
+        return segments
+
+    med_h = float(np.median(heights))
+    med_gap = float(np.median(positive_gaps))
+
+    # Region masks already form thick bands. We only apply the merge heuristic
+    # when the mask looks like a stack of many thin/medium line segments
+    # (typical for debug_3_staff outputs), not pre-merged staff regions.
+    line_like = len(segments) >= 10 and med_h <= 12.0 and med_gap <= 20.0
+    if not line_like:
+        return segments
+
+    merge_gap = max(gap_tolerance + 1, int(round(med_gap * 1.8)))
+    merged: List[Tuple[int, int]] = []
+    start, end = segments[0]
+    for next_start, next_end in segments[1:]:
+        gap = next_start - end - 1
+        if gap <= merge_gap:
+            end = next_end
+            continue
+        if end - start + 1 >= min_height:
+            merged.append((start, end))
+        start, end = next_start, next_end
+    if end - start + 1 >= min_height:
+        merged.append((start, end))
+    return merged
 
 
 def scan_staff_band_from_ink(

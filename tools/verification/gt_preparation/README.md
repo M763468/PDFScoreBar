@@ -248,6 +248,41 @@ Then rebuild GT relabel config and provisional seeds:
 python3 tools/gt_relabel_gui/prepare_rebuild_eval2.py
 ```
 
+## GT completion workflow (evaluation2, adopted v13 seed)
+After generating `v13` filtered candidates and running `prepare_rebuild_eval2.py`,
+the browser GUI is used to finish barline GT manually.
+
+Launch GUI (host):
+```bash
+python3 tools/gt_relabel_gui/server.py \
+  --mode gt \
+  --config tools/gt_relabel_gui/evaluation2_config.json \
+  --port 8010 \
+  --host 0.0.0.0
+```
+
+Open:
+- `http://127.0.0.1:8010`
+
+Authoritative saved outputs (per page):
+- `data/evaluation2/annotations/<work>/page_xxx/raw_boxes.json`
+- `data/evaluation2/annotations/<work>/page_xxx/boxes_sorted.json`
+
+Resume / reset behavior (implemented in `gt_relabel_gui`):
+- On page load, if `output_raw` exists, GUI loads it first (resume from previous session).
+- If `output_raw` does not exist, GUI loads `editable` (initial `boxes_provisional.json` seed).
+- `Reset To Initial` reloads `editable` and discards current in-memory edits (with confirmation if dirty).
+
+Operational note:
+- Do **not** run `python3 tools/gt_relabel_gui/prepare_rebuild_eval2.py` during an ongoing manual GT session unless you intentionally want to rebuild `boxes_provisional.json` seeds.
+- Rebuilding seeds does not delete `raw_boxes.json` / `boxes_sorted.json`, but it changes the initial reference (`editable`) used by `Reset To Initial`.
+
+Completed dataset snapshot (manual barline labeling finished):
+- Root: `data/evaluation2/annotations/`
+- Files created: `68` pages x (`raw_boxes.json`, `boxes_sorted.json`) = `136` files
+- Covered works: `5`
+- `boxes_sorted.json` total barlines: `3584`
+
 Overlay generation (all covered pages):
 ```bash
 docker exec sr_eval_gpu bash -lc 'cd /workspace && /opt/venv_sr/bin/python - <<"PY"

@@ -87,6 +87,8 @@ def staff_bands_from_mask(
     if len(segments) <= 1:
         return segments
 
+    h, w = mask.shape[:2]
+
     # Second pass: if the mask looks line-like (thin staff-line segments), merge
     # adjacent segments into full staff-region bands. This prevents severe
     # fragmentation when `staff_mask` is actually a line mask (e.g. debug_3_staff).
@@ -105,24 +107,63 @@ def staff_bands_from_mask(
     # Region masks already form thick bands. We only apply the merge heuristic
     # when the mask looks like a stack of many thin/medium line segments
     # (typical for debug_3_staff outputs), not pre-merged staff regions.
-    line_like = len(segments) >= 10 and med_h <= 12.0 and med_gap <= 20.0
+    # Resized debug staff masks can thicken line segments (e.g. ~15 px median)
+    # while still behaving as line-like masks.
+    line_like = len(segments) >= 5 and med_h <= 20.0 and med_gap <= 20.0
     if not line_like:
         return segments
 
     merge_gap = max(gap_tolerance + 1, int(round(med_gap * 1.8)))
+    # Segment metadata is used to drop non-staff horizontal fragments after merging.
+    seg_meta = []
+    for y1, y2 in segments:
+        band = mask[y1 : y2 + 1, :]
+        xs = np.where(band.sum(axis=0) > 0)[0]
+        if xs.size == 0:
+            x1 = x2 = 0
+            width = 0
+        else:
+            x1 = int(xs.min())
+            x2 = int(xs.max())
+            width = int(x2 - x1 + 1)
+        seg_meta.append({"y1": y1, "y2": y2, "x1": x1, "x2": x2, "w": width})
+
     merged: List[Tuple[int, int]] = []
-    start, end = segments[0]
-    for next_start, next_end in segments[1:]:
-        gap = next_start - end - 1
+    current_group = [seg_meta[0]]
+    for next_seg in seg_meta[1:]:
+        gap = next_seg["y1"] - current_group[-1]["y2"] - 1
         if gap <= merge_gap:
-            end = next_end
+            current_group.append(next_seg)
             continue
-        if end - start + 1 >= min_height:
-            merged.append((start, end))
-        start, end = next_start, next_end
-    if end - start + 1 >= min_height:
-        merged.append((start, end))
+
+        _append_if_staff_like(current_group, merged, min_height=min_height, image_w=w)
+        current_group = [next_seg]
+
+    _append_if_staff_like(current_group, merged, min_height=min_height, image_w=w)
     return merged
+
+
+def _append_if_staff_like(
+    group: List[dict[str, int]],
+    out: List[Tuple[int, int]],
+    *,
+    min_height: int,
+    image_w: int,
+) -> None:
+    if not group:
+        return
+    # Require multiple horizontally long lines to avoid treating random
+    # non-staff horizontal fragments as staff bands.
+    line_count = len(group)
+    long_line_thresh = max(40, int(round(image_w * 0.30)))
+    long_line_count = sum(1 for seg in group if seg["w"] >= long_line_thresh)
+    if line_count < 4 or long_line_count < 3:
+        return
+
+    y1 = int(group[0]["y1"])
+    y2 = int(group[-1]["y2"])
+    if y2 - y1 + 1 >= min_height:
+        out.append((y1, y2))
 
 
 def scan_staff_band_from_ink(

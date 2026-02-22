@@ -73,10 +73,10 @@ Lightweight verification artifacts (2026-02-22):
   - `logs/issue39_staff_mask/20260222_staff_mask_probe_subset_compare.json`
 
 Representative band-count improvements (from `summary.json`):
-- `Va_Prokofiev_Symphony1/page_006`: `97 -> 15`
-- `Sibelius-Violin_Concerto-Viola/page_004`: `84 -> 20`
-- `Shostakovich-Sym5-Va/page_005`: `46 -> 9`
-- `Va_Prokofiev_Symphony1/page_001`: `77 -> 16`
+- `Va_Prokofiev_Symphony1/page_006`: `97 -> 13`
+- `Sibelius-Violin_Concerto-Viola/page_004`: `84 -> 11`
+- `Shostakovich-Sym5-Va/page_005`: `46 -> 8`
+- `Va_Prokofiev_Symphony1/page_001`: `77 -> 12`
 
 Verification notes:
 - `row_stats` regression spot-check (`Va_Prokofiev_Symphony1/page_006`) remained identical
@@ -84,13 +84,14 @@ Verification notes:
 - Probe subset compare (`logs/issue39_staff_mask/20260222_staff_mask_probe_subset_compare.json`)
   includes `suggest_candidate_drops` keep/drop counts:
   - `Shostakovich-Sym5-Va/page_005` improved from
-    `generated/final/keep = 1730/30/30` to `218/225/185`
+    `generated/final/keep = 1730/30/30` to `195/225/178`
     (legacy staff-band fragmentation was starving valid candidates after filtering).
-  - Some pages remain numerically unchanged with the tested v13-like probe config
-    (expected if later probe thresholds/rescues dominate candidate count).
+  - Other representative pages also improved after the final staff-like filtering + resized-mask tolerance fix
+    (e.g. `Va_Prokofiev_Symphony1/page_006`: `legacy_keep=120 -> new_keep=251`).
 - `tests/test_probe_bands.py` covers:
   - line-like mask -> merged staff bands
   - region-like mask -> no over-merge
+  - short non-staff horizontal fragments -> filtered out
 
 ## Canonical inputs/outputs for current run (v5)
 - Inventory: `logs/issue36_prep/20260208_bench_inventory.json`

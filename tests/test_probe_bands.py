@@ -28,6 +28,21 @@ class TestStaffBandsFromMask(unittest.TestCase):
 
         self.assertEqual(bands, [(20, 64), (120, 169)])
 
+    def test_line_like_short_nonstaff_fragments_are_filtered_out(self):
+        mask = np.zeros((220, 120), dtype=np.uint8)
+
+        # One staff-like group (5 long lines).
+        for y in (20, 30, 40, 50, 60):
+            mask[y : y + 1, 10:110] = 1
+
+        # Non-staff short horizontal fragments (should not become a staff band).
+        for y in (140, 150):
+            mask[y : y + 1, 15:35] = 1
+
+        bands = staff_bands_from_mask(mask)
+
+        self.assertEqual(bands, [(20, 60)])
+
 
 if __name__ == "__main__":
     unittest.main()

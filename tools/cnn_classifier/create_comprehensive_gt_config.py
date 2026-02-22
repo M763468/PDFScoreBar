@@ -3,6 +3,12 @@ import json
 import os
 from pathlib import Path
 
+# LEGACY: Historical evaluation2 GUI config generator based on
+# `logs/hybrid_generalization` and mixed GT/candidate sources.
+# For the current evaluation2 GT rebuild workflow, use:
+#   tools/gt_relabel_gui/prepare_rebuild_eval2.py
+# and follow tools/verification/gt_preparation/README.md.
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -11,6 +17,10 @@ def main():
     parser.add_argument("--annotation-root", default="data/evaluation2/annotations")
     parser.add_argument("--candidate-root", default="logs/hybrid_generalization")
     args = parser.parse_args()
+    print(
+        "[LEGACY] create_comprehensive_gt_config.py is for an older workflow. "
+        "Use tools/gt_relabel_gui/prepare_rebuild_eval2.py for current evaluation2 GT rebuild."
+    )
 
     repo_root = Path(os.getcwd())
     image_root = repo_root / args.image_root

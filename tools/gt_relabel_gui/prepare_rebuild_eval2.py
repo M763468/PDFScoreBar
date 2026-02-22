@@ -2,6 +2,9 @@ import json
 import shutil
 from pathlib import Path
 
+# Current entrypoint for evaluation2 GT rebuild config generation.
+# Canonical flow is documented in tools/verification/gt_preparation/README.md.
+
 
 def prepare_eval2_rebuild():
     repo_root = Path("/home/masaki_muramatsu/ws_PDFScoreBar")

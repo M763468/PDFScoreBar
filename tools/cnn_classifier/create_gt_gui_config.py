@@ -2,6 +2,11 @@ import argparse
 import json
 from pathlib import Path
 
+# LEGACY: Historical GUI config generator for `annotations_provisional` workflows.
+# For the current evaluation2 GT rebuild workflow, use:
+#   tools/gt_relabel_gui/prepare_rebuild_eval2.py
+# and follow tools/verification/gt_preparation/README.md.
+
 
 def main():
     parser = argparse.ArgumentParser(description="Generate Config for GT Relabel GUI")
@@ -14,6 +19,10 @@ def main():
         help="Absolute path to repo root",
     )
     args = parser.parse_args()
+    print(
+        "[LEGACY] create_gt_gui_config.py targets an older provisional-GT workflow. "
+        "Use tools/gt_relabel_gui/prepare_rebuild_eval2.py for current evaluation2 GT rebuild."
+    )
 
     json_root = Path(args.json_root)
     image_root = Path(args.image_root)

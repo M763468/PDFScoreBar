@@ -2,8 +2,16 @@ import json
 import shutil
 from pathlib import Path
 
+# LEGACY: Historical helper for filling empty `editable` JSONs from
+# `logs/hybrid_generalization`. Not part of the current evaluation2 GT rebuild flow.
+# Current workflow: tools/gt_relabel_gui/prepare_rebuild_eval2.py + gt_relabel_gui.
+
 
 def main():
+    print(
+        "[LEGACY] populate_missing_gt.py uses the older hybrid_generalization workflow. "
+        "Use tools/gt_relabel_gui/prepare_rebuild_eval2.py for current evaluation2 GT rebuild."
+    )
     config_path = "tools/gt_relabel_gui/evaluation2_config.json"
     with open(config_path, "r") as f:
         config = json.load(f)

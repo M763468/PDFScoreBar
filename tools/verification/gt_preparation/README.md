@@ -26,7 +26,7 @@ Use this flow for `evaluation2` GT rebuild / continuation:
 1. `tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py`
 2. `tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py`
 3. `tools/gt_relabel_gui/prepare_rebuild_eval2.py`
-4. `tools/gt_relabel_gui/server.py --mode gt --config tools/gt_relabel_gui/evaluation2_config.json`
+4. `python3 tools/gt_relabel_gui/server.py --mode gt --config tools/gt_relabel_gui/evaluation2_config.json`
 
 Authoritative outputs are written to:
 - `data/evaluation2/annotations/<work>/page_xxx/raw_boxes.json`

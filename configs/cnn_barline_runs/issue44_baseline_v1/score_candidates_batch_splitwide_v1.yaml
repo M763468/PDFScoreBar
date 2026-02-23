@@ -1,0 +1,21 @@
+# Issue #46 experiment: split wide double/end-bar-like candidates before CNN scoring
+# Usage:
+#   .venv_cnn_classifier/bin/python tools/cnn_classifier/score_candidates_batch.py \
+#     --config configs/cnn_barline_runs/issue44_baseline_v1/score_candidates_batch_splitwide_v1.yaml \
+#     --logs logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 --overwrite
+
+logs: logs/issue36_prep/probe_candidates_filtered_v12
+images_root: data/evaluation2/images
+model: logs/cnn_barline_classification/issue44_baseline_v1/cnn_classifier_best.pth
+threshold: 0.1
+candidate_filename: pipeline2_no_peak_candidates.json
+scored_filename: pipeline2_no_peak_scored.json
+filtered_filename: pipeline2_no_peak_filtered_cnn.json
+overwrite: false
+
+# #46 preprocessing experiment (defaults are conservative; split only 2-peak wide candidates)
+split_wide_candidates: true
+split_min_width_unit_ratio: 1.0
+split_box_width_unit_ratio: 0.8
+split_peak_distance_unit_ratio: 0.4
+split_peak_prominence_ratio: 0.15

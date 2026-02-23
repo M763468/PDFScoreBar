@@ -93,6 +93,211 @@ def center_crop(img, cx, cy, crop_w, crop_h):
     return crop
 
 
+def _estimate_unit_size_from_bbox_height(box):
+    # Heuristic: single-staff barline bbox height is roughly ~4 * unit_size.
+    # Keeps split thresholds scale-aware without requiring explicit metadata.
+    x1, y1, x2, y2 = box
+    h = max(1.0, abs(y2 - y1))
+    return max(1.0, h / 4.0)
+
+
+def _extract_x_profile_peaks(
+    gray_crop, smooth_window=5, prominence_ratio=0.15, min_peak_distance=3
+):
+    if gray_crop.size == 0:
+        return []
+    if len(gray_crop.shape) == 3:
+        gray_crop = cv2.cvtColor(gray_crop, cv2.COLOR_BGR2GRAY)
+    # Ink is dark => invert then sum over Y to get X profile
+    profile = (255.0 - gray_crop.astype(np.float32)).sum(axis=0)
+    if profile.size < 3:
+        return []
+    if smooth_window > 1:
+        k = int(max(1, smooth_window))
+        if k % 2 == 0:
+            k += 1
+        kernel = np.ones(k, dtype=np.float32) / k
+        profile = np.convolve(profile, kernel, mode="same")
+    pmax = float(profile.max()) if profile.size else 0.0
+    if pmax <= 0:
+        return []
+    threshold = pmax * float(prominence_ratio)
+    # Local maxima
+    idxs = []
+    for i in range(1, len(profile) - 1):
+        if (
+            profile[i] >= threshold
+            and profile[i] >= profile[i - 1]
+            and profile[i] >= profile[i + 1]
+        ):
+            idxs.append(i)
+    if not idxs:
+        return []
+    # NMS on peaks by profile height
+    idxs = sorted(idxs, key=lambda i: float(profile[i]), reverse=True)
+    kept = []
+    min_dist = int(max(1, min_peak_distance))
+    for i in idxs:
+        if all(abs(i - j) >= min_dist for j in kept):
+            kept.append(i)
+    kept.sort()
+    return kept
+
+
+def _compute_bbox_ink_center_x(
+    img,
+    box,
+    *,
+    min_aspect_ratio=3.0,
+    apply_if_width_ge_unit_ratio=0.0,
+    apply_if_width_le_unit_ratio=1.0,
+    mask_ratio=0.85,
+    max_shift_unit_ratio=0.35,
+):
+    """Estimate a better crop X-center from the bbox-local ink profile.
+
+    Intended for narrow, tall vertical candidates where the barline can sit near a bbox edge.
+    Returns an absolute X center or None (no adjustment).
+    """
+    if img is None or len(box) != 4:
+        return None
+    x1, y1, x2, y2 = [int(v) for v in box]
+    img_h, img_w = img.shape[:2]
+    bx1 = max(0, min(img_w - 1, min(x1, x2)))
+    bx2 = max(0, min(img_w, max(x1, x2)))
+    by1 = max(0, min(img_h - 1, min(y1, y2)))
+    by2 = max(0, min(img_h, max(y1, y2)))
+    if bx2 <= bx1 or by2 <= by1:
+        return None
+
+    w = bx2 - bx1
+    h = by2 - by1
+    if w <= 0 or h <= 0:
+        return None
+    if h / max(1, w) < float(min_aspect_ratio):
+        return None
+
+    unit_size = _estimate_unit_size_from_bbox_height(box)
+    min_apply_w = max(1, int(round(unit_size * float(apply_if_width_ge_unit_ratio))))
+    max_apply_w = max(2, int(round(unit_size * float(apply_if_width_le_unit_ratio))))
+    if w < min_apply_w or w > max_apply_w:
+        return None
+
+    crop = img[by1:by2, bx1:bx2]
+    if crop.size == 0:
+        return None
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY) if len(crop.shape) == 3 else crop
+    profile = (255.0 - gray.astype(np.float32)).sum(axis=0)
+    if profile.size == 0:
+        return None
+    pmax = float(profile.max())
+    if pmax <= 0:
+        return None
+
+    active = np.where(profile >= pmax * float(mask_ratio))[0]
+    if active.size == 0:
+        return None
+
+    local_center = float(active.mean())
+    base_local_center = (w - 1) / 2.0
+    shift = local_center - base_local_center
+    max_shift = max(1.0, unit_size * float(max_shift_unit_ratio))
+    shift = float(np.clip(shift, -max_shift, max_shift))
+    if abs(shift) < 0.5:
+        return None
+    return int(round((x1 + x2) / 2.0 + shift))
+
+
+def maybe_split_wide_candidates(
+    img,
+    candidates,
+    *,
+    enabled=False,
+    recenter_single_peak=False,
+    emit_merged_two_peak_box=False,
+    merged_two_peak_pad_unit_ratio=0.4,
+    min_split_width_unit_ratio=1.0,
+    split_box_width_unit_ratio=0.8,
+    min_peak_distance_unit_ratio=0.4,
+    peak_prominence_ratio=0.15,
+):
+    if not enabled:
+        return [tuple(int(v) for v in c) for c in candidates], {
+            "split_applied": 0,
+            "split_examined": 0,
+        }
+
+    out = []
+    split_applied = 0
+    split_examined = 0
+    img_h, img_w = img.shape[:2]
+
+    for raw in candidates:
+        if len(raw) != 4:
+            continue
+        box = tuple(int(v) for v in raw)
+        x1, y1, x2, y2 = box
+        bx1, bx2 = sorted((max(0, x1), min(img_w - 1, x2)))
+        by1, by2 = sorted((max(0, y1), min(img_h - 1, y2)))
+        if bx2 <= bx1 or by2 <= by1:
+            out.append(box)
+            continue
+
+        unit_size = _estimate_unit_size_from_bbox_height(box)
+        min_split_width = max(2, int(round(unit_size * float(min_split_width_unit_ratio))))
+        width = abs(x2 - x1)
+        if width < min_split_width:
+            out.append(box)
+            continue
+
+        split_examined += 1
+        crop = img[by1:by2, bx1:bx2]
+        min_peak_distance = max(1, int(round(unit_size * float(min_peak_distance_unit_ratio))))
+        peaks = _extract_x_profile_peaks(
+            crop,
+            prominence_ratio=peak_prominence_ratio,
+            min_peak_distance=min_peak_distance,
+        )
+        # Split only clean 2-peak cases to avoid destabilizing single/repeat cases.
+        if len(peaks) != 2:
+            if recenter_single_peak and len(peaks) == 1:
+                px = peaks[0]
+                cx = bx1 + int(px)
+                new_w = max(2, int(round(unit_size * float(split_box_width_unit_ratio))))
+                nx1 = max(0, int(round(cx - new_w / 2)))
+                nx2 = min(img_w - 1, int(round(cx + new_w / 2)))
+                out.append((nx1, by1, nx2, by2))
+            else:
+                out.append(box)
+            continue
+
+        # len(peaks) == 2
+        new_w = max(2, int(round(unit_size * float(split_box_width_unit_ratio))))
+        split_boxes = []
+        for px in peaks:
+            cx = bx1 + int(px)
+            nx1 = max(0, int(round(cx - new_w / 2)))
+            nx2 = min(img_w - 1, int(round(cx + new_w / 2)))
+            split_boxes.append((nx1, by1, nx2, by2))
+
+        # Only accept if boxes are distinct and ordered.
+        if len(split_boxes) == 2 and split_boxes[0] != split_boxes[1]:
+            out.extend(split_boxes)
+            if emit_merged_two_peak_box:
+                pad = max(1, int(round(unit_size * float(merged_two_peak_pad_unit_ratio))))
+                peak_xs = [bx1 + int(px) for px in peaks]
+                mx1 = max(0, min(peak_xs) - pad)
+                mx2 = min(img_w - 1, max(peak_xs) + pad)
+                out.append((mx1, by1, mx2, by2))
+            split_applied += 1
+        else:
+            out.append(box)
+
+    # Deduplicate after split
+    out = sorted(set(out))
+    return out, {"split_applied": split_applied, "split_examined": split_examined}
+
+
 def parse_eval2_context(log_dir: Path, log_root: Path):
     """Parse score/page context from either nested or legacy flat log layouts.
 
@@ -140,6 +345,20 @@ def process_dir(
     scored_filename="pipeline2_no_peak_scored.json",
     filtered_filename="pipeline2_no_peak_filtered_cnn.json",
     overwrite=False,
+    split_wide_candidates=False,
+    split_min_width_unit_ratio=1.0,
+    split_box_width_unit_ratio=0.8,
+    split_peak_distance_unit_ratio=0.4,
+    split_peak_prominence_ratio=0.15,
+    recenter_wide_single_peak=False,
+    emit_merged_two_peak_box=False,
+    merged_two_peak_pad_unit_ratio=0.4,
+    crop_recenter_on_bbox_ink=False,
+    crop_recenter_min_aspect_ratio=3.0,
+    crop_recenter_apply_if_width_ge_unit_ratio=0.0,
+    crop_recenter_apply_if_width_le_unit_ratio=1.0,
+    crop_recenter_mask_ratio=0.85,
+    crop_recenter_max_shift_unit_ratio=0.35,
 ):
     scored_json_path = log_dir / scored_filename
     if scored_json_path.exists() and not overwrite:
@@ -174,6 +393,24 @@ def process_dir(
         print(f"Failed to load image: {image_path}")
         return False
 
+    candidates, split_stats = maybe_split_wide_candidates(
+        img,
+        candidates,
+        enabled=split_wide_candidates,
+        recenter_single_peak=recenter_wide_single_peak,
+        emit_merged_two_peak_box=emit_merged_two_peak_box,
+        merged_two_peak_pad_unit_ratio=merged_two_peak_pad_unit_ratio,
+        min_split_width_unit_ratio=split_min_width_unit_ratio,
+        split_box_width_unit_ratio=split_box_width_unit_ratio,
+        min_peak_distance_unit_ratio=split_peak_distance_unit_ratio,
+        peak_prominence_ratio=split_peak_prominence_ratio,
+    )
+    if split_wide_candidates and split_stats["split_applied"] > 0:
+        print(
+            f"Split wide candidates for {score_name}/{page_num}: "
+            f"{split_stats['split_applied']} / {split_stats['split_examined']}"
+        )
+
     # Prepare batch
     batch_tensors = []
 
@@ -182,6 +419,18 @@ def process_dir(
             continue
         x1, y1, x2, y2 = box
         cx, cy = int((x1 + x2) / 2), int((y1 + y2) / 2)
+        if crop_recenter_on_bbox_ink:
+            cx_adjusted = _compute_bbox_ink_center_x(
+                img,
+                box,
+                min_aspect_ratio=crop_recenter_min_aspect_ratio,
+                apply_if_width_ge_unit_ratio=crop_recenter_apply_if_width_ge_unit_ratio,
+                apply_if_width_le_unit_ratio=crop_recenter_apply_if_width_le_unit_ratio,
+                mask_ratio=crop_recenter_mask_ratio,
+                max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio,
+            )
+            if cx_adjusted is not None:
+                cx = cx_adjusted
         cw, ch = crop_size_from_bbox(box)
         crop = center_crop(img, cx, cy, cw, ch)
         crop_pil = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
@@ -257,6 +506,36 @@ def main():
         action="store_true",
         help="Recompute scored/filtered outputs even if files already exist.",
     )
+    parser.add_argument(
+        "--split-wide-candidates",
+        action="store_true",
+        help="Try splitting wide double/end-bar-like candidates into two thin boxes before scoring.",
+    )
+    parser.add_argument("--split-min-width-unit-ratio", type=float, default=1.0)
+    parser.add_argument("--split-box-width-unit-ratio", type=float, default=0.8)
+    parser.add_argument("--split-peak-distance-unit-ratio", type=float, default=0.4)
+    parser.add_argument("--split-peak-prominence-ratio", type=float, default=0.15)
+    parser.add_argument(
+        "--recenter-wide-single-peak",
+        action="store_true",
+        help="For wide candidates with a single strong ink peak, recenter and narrow bbox before scoring.",
+    )
+    parser.add_argument(
+        "--emit-merged-two-peak-box",
+        action="store_true",
+        help="When splitting a wide two-peak candidate, also emit a normalized merged bbox.",
+    )
+    parser.add_argument("--merged-two-peak-pad-unit-ratio", type=float, default=0.4)
+    parser.add_argument(
+        "--crop-recenter-on-bbox-ink",
+        action="store_true",
+        help="Recenter crop X using bbox-local ink profile for narrow/tall candidates.",
+    )
+    parser.add_argument("--crop-recenter-min-aspect-ratio", type=float, default=3.0)
+    parser.add_argument("--crop-recenter-apply-if-width-ge-unit-ratio", type=float, default=0.0)
+    parser.add_argument("--crop-recenter-apply-if-width-le-unit-ratio", type=float, default=1.0)
+    parser.add_argument("--crop-recenter-mask-ratio", type=float, default=0.85)
+    parser.add_argument("--crop-recenter-max-shift-unit-ratio", type=float, default=0.35)
 
     if pre_args.config:
         config_values = load_config_file(pre_args.config)
@@ -317,6 +596,20 @@ def main():
             scored_filename=args.scored_filename,
             filtered_filename=args.filtered_filename,
             overwrite=args.overwrite,
+            split_wide_candidates=args.split_wide_candidates,
+            split_min_width_unit_ratio=args.split_min_width_unit_ratio,
+            split_box_width_unit_ratio=args.split_box_width_unit_ratio,
+            split_peak_distance_unit_ratio=args.split_peak_distance_unit_ratio,
+            split_peak_prominence_ratio=args.split_peak_prominence_ratio,
+            recenter_wide_single_peak=args.recenter_wide_single_peak,
+            emit_merged_two_peak_box=args.emit_merged_two_peak_box,
+            merged_two_peak_pad_unit_ratio=args.merged_two_peak_pad_unit_ratio,
+            crop_recenter_on_bbox_ink=args.crop_recenter_on_bbox_ink,
+            crop_recenter_min_aspect_ratio=args.crop_recenter_min_aspect_ratio,
+            crop_recenter_apply_if_width_ge_unit_ratio=args.crop_recenter_apply_if_width_ge_unit_ratio,
+            crop_recenter_apply_if_width_le_unit_ratio=args.crop_recenter_apply_if_width_le_unit_ratio,
+            crop_recenter_mask_ratio=args.crop_recenter_mask_ratio,
+            crop_recenter_max_shift_unit_ratio=args.crop_recenter_max_shift_unit_ratio,
         ):
             count += 1
 

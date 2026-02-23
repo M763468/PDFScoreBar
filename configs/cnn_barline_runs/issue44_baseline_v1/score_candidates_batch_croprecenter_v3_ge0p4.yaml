@@ -1,0 +1,20 @@
+# E46-COMB-004/E46-COMB-005 candidate config (probe bboxnorm + crop recenter, ge=0.4)
+# Usage:
+#   .venv_cnn_classifier/bin/python tools/cnn_classifier/score_candidates_batch.py \
+#     --config configs/cnn_barline_runs/issue44_baseline_v1/score_candidates_batch_croprecenter_v3_ge0p4.yaml
+
+logs: logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12_same_source_bboxnorm_w0p8_h4p0_patch10_croprecenter_v3_ge0p4
+images_root: data/evaluation2/images
+model: logs/cnn_barline_classification/issue44_baseline_v1/cnn_classifier_best.pth
+threshold: 0.1
+candidate_filename: pipeline2_no_peak_candidates.json
+scored_filename: pipeline2_no_peak_scored.json
+filtered_filename: pipeline2_no_peak_filtered_cnn.json
+overwrite: false
+
+crop_recenter_on_bbox_ink: true
+crop_recenter_min_aspect_ratio: 3.0
+crop_recenter_apply_if_width_ge_unit_ratio: 0.4
+crop_recenter_apply_if_width_le_unit_ratio: 1.0
+crop_recenter_mask_ratio: 0.85
+crop_recenter_max_shift_unit_ratio: 0.35

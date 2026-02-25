@@ -113,4 +113,5 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 ### Multi-LLM Role Specialization
 - **Gemini CLI**: Architect, Multi-modal Reasoner, Web Researcher. Leads planning and reasoning.
 - **Codex**: Implementation Specialist, Repository Navigator, Verification Lead. Leads focused edits and sandbox validation.
-- **Consultation Mandate**: Gemini should proactively consult Codex (via \`codex exec --sandbox read-only\`) for second opinions on complex logic or architectural impacts.
+- **Consultation Mandate**: Gemini should proactively consult Codex (via \`codex exec --sandbox read-only\`) for second opinions on complex logic, type safety, or architectural impacts.
+- **Knowledge Synthesis Mandate**: Both agents must document newly discovered heuristics, anti-patterns, or visual failure modes in `docs/ai-workflow/LESSONS.md` to prevent regressions in future sessions.

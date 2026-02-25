@@ -132,6 +132,13 @@ cd /path/to/your-project
 - 「A-3以降を実装しない」など禁止事項を明記
 - 1 Issueずつ実行（並列にしない）
 
+### 補足: ローカル対話型エージェントの併用（Codex / gemini-cli）
+
+ローカルで `Codex` と `gemini-cli` を併用する場合は、PR前レビュー専用にせず、設計分岐・デバッグ停滞・中間レビューのタイミングで使うと効果が出やすいです。
+
+- 運用ルール・呼び出し定型・会話ログ: [CODEX_GEMINI_COLLAB.md](CODEX_GEMINI_COLLAB.md)
+- `Codex主担当` / `gemini-cli主担当` の両モードを試し、実運用ログをもとに最適化する
+
 ---
 
 ## 4. ブランチ運用（親ブランチとAI作業ブランチ）

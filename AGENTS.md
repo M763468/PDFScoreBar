@@ -63,6 +63,14 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 - **Strict Control**: Do not modify `requirements.txt`, `pyproject.toml`, or `Dockerfile` unless the task explicitly requires dependency updates.
 - **No Unauthorized Libraries**: Do not install new libraries without user approval.
 
+### Multi-LLM Collaboration (Codex + gemini-cli)
+- **Flexible Primary/Secondary Roles**: In interactive local work, either `Codex` or `gemini-cli` may be the primary driver depending on the task. The primary agent leads planning and decision flow; the secondary agent provides alternative designs, debugging hypotheses, or review feedback.
+- **Implementation Delegation is Allowed**: A valid pattern is `gemini-cli` as primary for exploration/reasoning and `Codex` for focused repository edits and verification. The reverse (Codex primary, gemini-cli second opinion) is also valid.
+- **Optimize While Working**: Do not limit multi-LLM usage to pre-PR review only. Use it during implementation when helpful, and refine the collaboration pattern based on actual outcomes (speed, bug detection, usefulness).
+- **Single Writer Rule**: To avoid conflicts, keep one active file editor at a time in the session. Explicitly choose a single writer before file edits.
+- **Evidence-First Adoption**: Suggestions from either agent are hypotheses until validated by local code inspection, tests, or runtime behavior.
+- **Prompt/Log Documentation**: Standard prompts and conversation log format for multi-LLM collaboration must be maintained under `docs/ai-workflow/` (see the dedicated collaboration doc) and updated as the workflow evolves.
+
 ## 7. Skills
 
 - 共通スキルは `skills/` に配置する

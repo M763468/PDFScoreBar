@@ -238,3 +238,14 @@ codex> gemini -i "この差分を中間レビューして"
 - Action taken: `AGENTS.md` に multi-LLM 方針を追加し、`docs/ai-workflow/CODEX_GEMINI_COLLAB.md` を新規作成。後続で `gemini主担当` モードにも拡張し、`WORKFLOW.md` に導線リンクを追加
 - Evidence: ドキュメント差分確認（`AGENTS.md`, `docs/ai-workflow/CODEX_GEMINI_COLLAB.md`, `docs/ai-workflow/WORKFLOW.md`）
 - Notes: 次回以降は実案件でのデバッグ相談ログを蓄積して、トリガー条件とテンプレートを削る/絞る
+
+## Enhanced Sub-agent Collaboration (2026-02-25 Optimization)
+
+### Reasoning Delegation
+Gemini should treat Codex as a "deep-repo auditor" by delegating reasoning tasks that require exhaustive file-system traversal.
+- **Audit Protocol**: Use \`codex exec --sandbox read-only\` to verify Gemini's logic against specific modules.
+
+### Vision-Guided Implementation
+1. Gemini analyzes detection failures in \`debug_outputs/\`.
+2. Gemini designs a fix and generates a \`codex exec\` implementation command.
+3. Codex implements the fix and runs verification tests.

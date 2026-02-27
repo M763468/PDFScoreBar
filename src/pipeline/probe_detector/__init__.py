@@ -139,7 +139,7 @@ def detect_probe_scan(
     )
 
     def has_existing(x_center: float, y1: int, y2: int) -> bool:
-        band_h = max(1.0, float(y2 - y1))
+        band_h = max(1.0, y2 - y1)
         for bx1, by1, bx2, by2 in existing_boxes:
             cy = (by1 + by2) / 2.0
             if cy < y1 or cy > y2:
@@ -147,13 +147,13 @@ def detect_probe_scan(
             cx = (bx1 + bx2) / 2.0
             if abs(cx - x_center) <= x_merge_tol:
                 if scan_existing_min_vertical_iou > 0:
-                    iy1 = max(float(y1), float(min(by1, by2)))
-                    iy2 = min(float(y2), float(max(by1, by2)))
+                    iy1 = max(y1, min(by1, by2))
+                    iy2 = min(y2, max(by1, by2))
                     inter = max(0.0, iy2 - iy1)
-                    box_h = max(1.0, float(abs(by2 - by1)))
+                    box_h = max(1.0, abs(by2 - by1))
                     union = max(1.0, band_h + box_h - inter)
                     v_iou = inter / union
-                    if v_iou < float(scan_existing_min_vertical_iou):
+                    if v_iou < scan_existing_min_vertical_iou:
                         continue
                 return True
         return False

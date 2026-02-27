@@ -1,12 +1,9 @@
 import logging
-import sys
 from pathlib import Path
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-sys.path.append(str(REPO_ROOT))
 
 from src.pipeline.io import ensure_dir
 from src.pipeline.probe_scan import run_probe_scan_batch
+from tools.cnn_classifier.score_candidates_batch import run_scoring_batch
 
 logging.basicConfig(level=logging.INFO)
 
@@ -71,33 +68,13 @@ def run_experiment():
     )
 
     print(f"Running CNN scoring for {len(image_paths)} pages...")
-    import subprocess
-    import sys
-
-    temp_cfg = {
-        "model_path": CNN_MODEL,
-        "threshold": 0.1,
-        "crop_recenter_on_bbox_ink": True,
-        "crop_recenter_apply_if_width_ge_unit_ratio": 0.4,
-    }
-    temp_cfg_path = OUTPUT_ROOT / "temp_scoring_cfg.yaml"
-    import yaml
-
-    with open(temp_cfg_path, "w") as f:
-        yaml.dump(temp_cfg, f)
-
-    cmd = [
-        sys.executable,
-        "tools/cnn_classifier/score_candidates_batch.py",
-        "--config",
-        str(temp_cfg_path),
-        "--logs",
-        str(OUTPUT_ROOT),
-        "--model",
-        str(CNN_MODEL),
-    ]
-    print(f"Executing: {' '.join(cmd)}")
-    subprocess.run(cmd, check=True)
+    run_scoring_batch(
+        logs=OUTPUT_ROOT,
+        model=CNN_MODEL,
+        threshold=0.1,
+        crop_recenter_on_bbox_ink=True,
+        crop_recenter_apply_if_width_ge_unit_ratio=0.4,
+    )
 
     print("Experiment complete.")
 

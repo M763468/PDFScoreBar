@@ -11,6 +11,13 @@ from PIL import Image
 from torchvision import models, transforms
 from tqdm import tqdm
 
+from src.pipeline.wide_split_utils import (
+    estimate_unit_size_from_box_height,
+)
+from src.pipeline.wide_split_utils import (
+    split_wide_candidates as split_wide_candidates_util,
+)
+
 # --- Config ---
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 IMG_SIZE = (256, 128)  # H, W
@@ -93,57 +100,6 @@ def center_crop(img, cx, cy, crop_w, crop_h):
     return crop
 
 
-def _estimate_unit_size_from_bbox_height(box):
-    # Heuristic: single-staff barline bbox height is roughly ~4 * unit_size.
-    # Keeps split thresholds scale-aware without requiring explicit metadata.
-    x1, y1, x2, y2 = box
-    h = max(1.0, abs(y2 - y1))
-    return max(1.0, h / 4.0)
-
-
-def _extract_x_profile_peaks(
-    gray_crop, smooth_window=5, prominence_ratio=0.15, min_peak_distance=3
-):
-    if gray_crop.size == 0:
-        return []
-    if len(gray_crop.shape) == 3:
-        gray_crop = cv2.cvtColor(gray_crop, cv2.COLOR_BGR2GRAY)
-    # Ink is dark => invert then sum over Y to get X profile
-    profile = (255.0 - gray_crop.astype(np.float32)).sum(axis=0)
-    if profile.size < 3:
-        return []
-    if smooth_window > 1:
-        k = int(max(1, smooth_window))
-        if k % 2 == 0:
-            k += 1
-        kernel = np.ones(k, dtype=np.float32) / k
-        profile = np.convolve(profile, kernel, mode="same")
-    pmax = float(profile.max()) if profile.size else 0.0
-    if pmax <= 0:
-        return []
-    threshold = pmax * float(prominence_ratio)
-    # Local maxima
-    idxs = []
-    for i in range(1, len(profile) - 1):
-        if (
-            profile[i] >= threshold
-            and profile[i] >= profile[i - 1]
-            and profile[i] >= profile[i + 1]
-        ):
-            idxs.append(i)
-    if not idxs:
-        return []
-    # NMS on peaks by profile height
-    idxs = sorted(idxs, key=lambda i: float(profile[i]), reverse=True)
-    kept = []
-    min_dist = int(max(1, min_peak_distance))
-    for i in idxs:
-        if all(abs(i - j) >= min_dist for j in kept):
-            kept.append(i)
-    kept.sort()
-    return kept
-
-
 def _compute_bbox_ink_center_x(
     img,
     box,
@@ -177,7 +133,7 @@ def _compute_bbox_ink_center_x(
     if h / max(1, w) < float(min_aspect_ratio):
         return None
 
-    unit_size = _estimate_unit_size_from_bbox_height(box)
+    unit_size = estimate_unit_size_from_box_height(box)
     min_apply_w = max(1, int(round(unit_size * float(apply_if_width_ge_unit_ratio))))
     max_apply_w = max(2, int(round(unit_size * float(apply_if_width_le_unit_ratio))))
     if w < min_apply_w or w > max_apply_w:
@@ -206,96 +162,6 @@ def _compute_bbox_ink_center_x(
     if abs(shift) < 0.5:
         return None
     return int(round((x1 + x2) / 2.0 + shift))
-
-
-def maybe_split_wide_candidates(
-    img,
-    candidates,
-    *,
-    enabled=False,
-    recenter_single_peak=False,
-    emit_merged_two_peak_box=False,
-    merged_two_peak_pad_unit_ratio=0.4,
-    min_split_width_unit_ratio=1.0,
-    split_box_width_unit_ratio=0.8,
-    min_peak_distance_unit_ratio=0.4,
-    peak_prominence_ratio=0.15,
-):
-    if not enabled:
-        return [tuple(int(v) for v in c) for c in candidates], {
-            "split_applied": 0,
-            "split_examined": 0,
-        }
-
-    out = []
-    split_applied = 0
-    split_examined = 0
-    img_h, img_w = img.shape[:2]
-
-    for raw in candidates:
-        if len(raw) != 4:
-            continue
-        box = tuple(int(v) for v in raw)
-        x1, y1, x2, y2 = box
-        bx1, bx2 = sorted((max(0, x1), min(img_w - 1, x2)))
-        by1, by2 = sorted((max(0, y1), min(img_h - 1, y2)))
-        if bx2 <= bx1 or by2 <= by1:
-            out.append(box)
-            continue
-
-        unit_size = _estimate_unit_size_from_bbox_height(box)
-        min_split_width = max(2, int(round(unit_size * float(min_split_width_unit_ratio))))
-        width = abs(x2 - x1)
-        if width < min_split_width:
-            out.append(box)
-            continue
-
-        split_examined += 1
-        crop = img[by1:by2, bx1:bx2]
-        min_peak_distance = max(1, int(round(unit_size * float(min_peak_distance_unit_ratio))))
-        peaks = _extract_x_profile_peaks(
-            crop,
-            prominence_ratio=peak_prominence_ratio,
-            min_peak_distance=min_peak_distance,
-        )
-        # Split only clean 2-peak cases to avoid destabilizing single/repeat cases.
-        if len(peaks) != 2:
-            if recenter_single_peak and len(peaks) == 1:
-                px = peaks[0]
-                cx = bx1 + int(px)
-                new_w = max(2, int(round(unit_size * float(split_box_width_unit_ratio))))
-                nx1 = max(0, int(round(cx - new_w / 2)))
-                nx2 = min(img_w - 1, int(round(cx + new_w / 2)))
-                out.append((nx1, by1, nx2, by2))
-            else:
-                out.append(box)
-            continue
-
-        # len(peaks) == 2
-        new_w = max(2, int(round(unit_size * float(split_box_width_unit_ratio))))
-        split_boxes = []
-        for px in peaks:
-            cx = bx1 + int(px)
-            nx1 = max(0, int(round(cx - new_w / 2)))
-            nx2 = min(img_w - 1, int(round(cx + new_w / 2)))
-            split_boxes.append((nx1, by1, nx2, by2))
-
-        # Only accept if boxes are distinct and ordered.
-        if len(split_boxes) == 2 and split_boxes[0] != split_boxes[1]:
-            out.extend(split_boxes)
-            if emit_merged_two_peak_box:
-                pad = max(1, int(round(unit_size * float(merged_two_peak_pad_unit_ratio))))
-                peak_xs = [bx1 + int(px) for px in peaks]
-                mx1 = max(0, min(peak_xs) - pad)
-                mx2 = min(img_w - 1, max(peak_xs) + pad)
-                out.append((mx1, by1, mx2, by2))
-            split_applied += 1
-        else:
-            out.append(box)
-
-    # Deduplicate after split
-    out = sorted(set(out))
-    return out, {"split_applied": split_applied, "split_examined": split_examined}
 
 
 def parse_eval2_context(log_dir: Path, log_root: Path):
@@ -398,18 +264,23 @@ def process_dir(
         print(f"Failed to load image: {image_path}")
         return False
 
-    candidates, split_stats = maybe_split_wide_candidates(
-        img,
-        candidates,
-        enabled=split_wide_candidates,
-        recenter_single_peak=recenter_wide_single_peak,
-        emit_merged_two_peak_box=emit_merged_two_peak_box,
-        merged_two_peak_pad_unit_ratio=merged_two_peak_pad_unit_ratio,
-        min_split_width_unit_ratio=split_min_width_unit_ratio,
-        split_box_width_unit_ratio=split_box_width_unit_ratio,
-        min_peak_distance_unit_ratio=split_peak_distance_unit_ratio,
-        peak_prominence_ratio=split_peak_prominence_ratio,
-    )
+    if split_wide_candidates:
+        candidates, split_stats = split_wide_candidates_util(
+            boxes=candidates,
+            img=img,
+            min_split_width_unit_ratio=split_min_width_unit_ratio,
+            split_box_width_unit_ratio=split_box_width_unit_ratio,
+            split_peak_distance_unit_ratio=split_peak_distance_unit_ratio,
+            peak_prominence_ratio=split_peak_prominence_ratio,
+            require_exactly_two_peaks=True,
+            recenter_single_peak=recenter_wide_single_peak,
+            emit_merged_two_peak_box=emit_merged_two_peak_box,
+            merged_two_peak_pad_unit_ratio=merged_two_peak_pad_unit_ratio,
+            keep_original_when_not_split=True,
+        )
+    else:
+        candidates = [tuple(int(v) for v in c) for c in candidates]
+        split_stats = {"split_applied": 0, "split_examined": 0}
     if split_wide_candidates and split_stats["split_applied"] > 0:
         print(
             f"Split wide candidates for {score_name}/{page_num}: "
@@ -487,15 +358,7 @@ def process_dir(
     return True
 
 
-def main():
-    pre_parser = argparse.ArgumentParser(add_help=False)
-    pre_parser.add_argument(
-        "--config",
-        type=Path,
-        help="Path to YAML/JSON config file. CLI args override config values.",
-    )
-    pre_args, _ = pre_parser.parse_known_args()
-
+def _build_parser(pre_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(parents=[pre_parser])
     parser.add_argument("--logs", default="logs/hybrid_generalization")
     parser.add_argument(
@@ -541,51 +404,72 @@ def main():
     parser.add_argument("--crop-recenter-apply-if-width-le-unit-ratio", type=float, default=1.0)
     parser.add_argument("--crop-recenter-mask-ratio", type=float, default=0.85)
     parser.add_argument("--crop-recenter-max-shift-unit-ratio", type=float, default=0.35)
+    return parser
 
-    if pre_args.config:
-        config_values = load_config_file(pre_args.config)
-        parser.set_defaults(
-            **{k.replace("-", "_"): v for k, v in config_values.items() if k not in {"config"}}
-        )
 
-    args = parser.parse_args()
-
-    # Verify model path. Usually in experiments/cnn_classifier/checkpoints/
-    # Or current best might be elsewhere. User used `cnn_classifier_best.pth` conceptually.
-    # Looking at `train.py` might reveal where it saves.
-    # Taking a guess at `experiments/cnn_classifier/checkpoints/best_model.pth` or similar.
-
-    if not os.path.exists(args.model):
+def _resolve_model_path(model_path: str | os.PathLike[str]) -> str | None:
+    model_path = str(model_path)
+    if not os.path.exists(model_path):
         # Fallback search
         candidates = list(Path("experiments/cnn_classifier").rglob("best_model.pth"))
         if candidates:
-            args.model = str(candidates[0])
-            print(f"Resolved model to {args.model}")
-        else:
-            print("Model not found!")
-            return
+            model_path = str(candidates[0])
+            print(f"Resolved model to {model_path}")
+            return model_path
+        print("Model not found!")
+        return None
+    return model_path
 
-    model = get_model(args.model)
-    gpu_norm = GPUNormalize(MEAN, STD).to(DEVICE)
 
-    log_root = Path(args.logs)
-    images_root = Path(args.images_root)
+def _find_candidate_dirs(log_root: Path, candidate_filename: str) -> list[Path]:
     # Support both flat layout (<run_dir>/pipeline2_no_peak_candidates.json)
     # and nested eval2 layout (<score>/<page>/pipeline2_no_peak_candidates.json).
     candidate_dirs = []
     for d in sorted([d for d in log_root.iterdir() if d.is_dir()]):
-        if (d / "pipeline2_no_peak_candidates.json").exists():
+        if (d / candidate_filename).exists():
             candidate_dirs.append(d)
             continue
         nested = sorted(
-            [
-                p
-                for p in d.iterdir()
-                if p.is_dir() and (p / "pipeline2_no_peak_candidates.json").exists()
-            ]
+            [p for p in d.iterdir() if p.is_dir() and (p / candidate_filename).exists()]
         )
         candidate_dirs.extend(nested)
+    return candidate_dirs
 
+
+def run_scoring_batch(
+    *,
+    logs: str | os.PathLike[str],
+    model: str | os.PathLike[str],
+    threshold: float = 0.5,
+    images_root: str | os.PathLike[str] = "data/evaluation2/images",
+    candidate_filename: str = "pipeline2_no_peak_candidates.json",
+    scored_filename: str = "pipeline2_no_peak_scored.json",
+    filtered_filename: str = "pipeline2_no_peak_filtered_cnn.json",
+    overwrite: bool = False,
+    split_wide_candidates: bool = False,
+    split_min_width_unit_ratio: float = 1.0,
+    split_box_width_unit_ratio: float = 0.8,
+    split_peak_distance_unit_ratio: float = 0.4,
+    split_peak_prominence_ratio: float = 0.15,
+    recenter_wide_single_peak: bool = False,
+    emit_merged_two_peak_box: bool = False,
+    merged_two_peak_pad_unit_ratio: float = 0.4,
+    crop_recenter_on_bbox_ink: bool = False,
+    crop_recenter_min_aspect_ratio: float = 3.0,
+    crop_recenter_apply_if_width_ge_unit_ratio: float = 0.0,
+    crop_recenter_apply_if_width_le_unit_ratio: float = 1.0,
+    crop_recenter_mask_ratio: float = 0.85,
+    crop_recenter_max_shift_unit_ratio: float = 0.35,
+) -> int:
+    model_path = _resolve_model_path(model)
+    if model_path is None:
+        return 0
+
+    loaded_model = get_model(model_path)
+    gpu_norm = GPUNormalize(MEAN, STD).to(DEVICE)
+    log_root = Path(logs)
+    images_root = Path(images_root)
+    candidate_dirs = _find_candidate_dirs(log_root, candidate_filename)
     print(f"Processing {len(candidate_dirs)} directories...")
 
     count = 0
@@ -594,31 +478,74 @@ def main():
             d,
             log_root,
             images_root,
-            model,
+            loaded_model,
             gpu_norm,
-            threshold=args.threshold,
-            candidate_filename=args.candidate_filename,
-            scored_filename=args.scored_filename,
-            filtered_filename=args.filtered_filename,
-            overwrite=args.overwrite,
-            split_wide_candidates=args.split_wide_candidates,
-            split_min_width_unit_ratio=args.split_min_width_unit_ratio,
-            split_box_width_unit_ratio=args.split_box_width_unit_ratio,
-            split_peak_distance_unit_ratio=args.split_peak_distance_unit_ratio,
-            split_peak_prominence_ratio=args.split_peak_prominence_ratio,
-            recenter_wide_single_peak=args.recenter_wide_single_peak,
-            emit_merged_two_peak_box=args.emit_merged_two_peak_box,
-            merged_two_peak_pad_unit_ratio=args.merged_two_peak_pad_unit_ratio,
-            crop_recenter_on_bbox_ink=args.crop_recenter_on_bbox_ink,
-            crop_recenter_min_aspect_ratio=args.crop_recenter_min_aspect_ratio,
-            crop_recenter_apply_if_width_ge_unit_ratio=args.crop_recenter_apply_if_width_ge_unit_ratio,
-            crop_recenter_apply_if_width_le_unit_ratio=args.crop_recenter_apply_if_width_le_unit_ratio,
-            crop_recenter_mask_ratio=args.crop_recenter_mask_ratio,
-            crop_recenter_max_shift_unit_ratio=args.crop_recenter_max_shift_unit_ratio,
+            threshold=threshold,
+            candidate_filename=candidate_filename,
+            scored_filename=scored_filename,
+            filtered_filename=filtered_filename,
+            overwrite=overwrite,
+            split_wide_candidates=split_wide_candidates,
+            split_min_width_unit_ratio=split_min_width_unit_ratio,
+            split_box_width_unit_ratio=split_box_width_unit_ratio,
+            split_peak_distance_unit_ratio=split_peak_distance_unit_ratio,
+            split_peak_prominence_ratio=split_peak_prominence_ratio,
+            recenter_wide_single_peak=recenter_wide_single_peak,
+            emit_merged_two_peak_box=emit_merged_two_peak_box,
+            merged_two_peak_pad_unit_ratio=merged_two_peak_pad_unit_ratio,
+            crop_recenter_on_bbox_ink=crop_recenter_on_bbox_ink,
+            crop_recenter_min_aspect_ratio=crop_recenter_min_aspect_ratio,
+            crop_recenter_apply_if_width_ge_unit_ratio=crop_recenter_apply_if_width_ge_unit_ratio,
+            crop_recenter_apply_if_width_le_unit_ratio=crop_recenter_apply_if_width_le_unit_ratio,
+            crop_recenter_mask_ratio=crop_recenter_mask_ratio,
+            crop_recenter_max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio,
         ):
             count += 1
 
     print(f"Completed {count} pages.")
+    return count
+
+
+def main():
+    pre_parser = argparse.ArgumentParser(add_help=False)
+    pre_parser.add_argument(
+        "--config",
+        type=Path,
+        help="Path to YAML/JSON config file. CLI args override config values.",
+    )
+    pre_args, _ = pre_parser.parse_known_args()
+    parser = _build_parser(pre_parser)
+    if pre_args.config:
+        config_values = load_config_file(pre_args.config)
+        parser.set_defaults(
+            **{k.replace("-", "_"): v for k, v in config_values.items() if k not in {"config"}}
+        )
+
+    args = parser.parse_args()
+    run_scoring_batch(
+        logs=args.logs,
+        model=args.model,
+        threshold=args.threshold,
+        images_root=args.images_root,
+        candidate_filename=args.candidate_filename,
+        scored_filename=args.scored_filename,
+        filtered_filename=args.filtered_filename,
+        overwrite=args.overwrite,
+        split_wide_candidates=args.split_wide_candidates,
+        split_min_width_unit_ratio=args.split_min_width_unit_ratio,
+        split_box_width_unit_ratio=args.split_box_width_unit_ratio,
+        split_peak_distance_unit_ratio=args.split_peak_distance_unit_ratio,
+        split_peak_prominence_ratio=args.split_peak_prominence_ratio,
+        recenter_wide_single_peak=args.recenter_wide_single_peak,
+        emit_merged_two_peak_box=args.emit_merged_two_peak_box,
+        merged_two_peak_pad_unit_ratio=args.merged_two_peak_pad_unit_ratio,
+        crop_recenter_on_bbox_ink=args.crop_recenter_on_bbox_ink,
+        crop_recenter_min_aspect_ratio=args.crop_recenter_min_aspect_ratio,
+        crop_recenter_apply_if_width_ge_unit_ratio=args.crop_recenter_apply_if_width_ge_unit_ratio,
+        crop_recenter_apply_if_width_le_unit_ratio=args.crop_recenter_apply_if_width_le_unit_ratio,
+        crop_recenter_mask_ratio=args.crop_recenter_mask_ratio,
+        crop_recenter_max_shift_unit_ratio=args.crop_recenter_max_shift_unit_ratio,
+    )
 
 
 if __name__ == "__main__":

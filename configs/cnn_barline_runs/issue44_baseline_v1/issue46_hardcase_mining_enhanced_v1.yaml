@@ -1,0 +1,18 @@
+scored_root:
+  - logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+  - logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12_croprecenter_v3_ge0p4
+  - logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12_same_source_bboxnorm_w0p8_h4p0_patch10_croprecenter_v3_ge0p4
+gt_root: data/evaluation2/annotations
+image_root: data/evaluation2/images
+output_root: logs/issue46_hardcase_mining/E46-HC-002_multi_root_th0p1_mth0p05
+threshold: 0.1
+mining_threshold: 0.05
+iou_threshold: 0.5
+max_fp_negatives: 1000
+export_crops: true
+crop_scale: 3.0
+crop_aspect_ratio: 0.5
+min_crop_h: 48
+max_crop_h: 256
+min_crop_w: 16
+max_crop_w: 128

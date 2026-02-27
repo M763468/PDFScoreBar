@@ -1,0 +1,16 @@
+# Issue #46 incremental dataset append (B-3)
+# Usage example (copy baseline + append hardcases):
+#   export CNN_DATASET_ROOT_V1=<path_to_your_dataset>/cnn_classifier_v1
+#   python tools/cnn_classifier/prepare_issue46_incremental_dataset.py \
+#     --config configs/cnn_barline_runs/issue44_baseline_v1/issue46_incremental_dataset_append.yaml \
+#     --copy-base
+
+baseline_dataset_root: ${CNN_DATASET_ROOT_V1}
+hardcase_root: logs/issue46_hardcase_mining/E46-HC-001_combo_ge0p4_th0p1
+output_dataset_root: datasets/cnn_classifier_v1_issue46_hc001_ge0p4_th0p1
+
+# Append to train split only for first dry-run cycle.
+copy_mode: link_trainval
+split: train
+append_fn_cnn: true
+append_fp_neg: true

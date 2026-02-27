@@ -1,0 +1,8 @@
+# Issue #46 Track A Split Experiment Evaluation (th=0.1)
+scored_root: logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12_track_a_split_v1
+gt_root: data/evaluation2/annotations
+output_csv: logs/cnn_barline_classification/issue44_baseline_v1/eval2_global_summary_track_a_split_v1_th0p1.csv
+threshold: 0.1
+scored_glob: "pipeline2_no_peak_scored.json"
+# Only evaluate the target pages to see the direct impact
+# (re_evaluate_global.py evaluates all pages in scored_root, which is what we want)

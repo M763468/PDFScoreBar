@@ -101,3 +101,15 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 5. **GitHubコメント投稿時の安全な書式**:
    - `gh pr comment` / `gh issue comment` で本文にバッククォート（`` ` ``）や `$` を含む場合、シェル展開を避けるため `--body-file` + シングルクォートheredoc（`<<'EOF'`）を使うこと。
    - `--body "..."` へ直接埋め込む方法は原則禁止（コマンド置換や変数展開で本文が破損するため）。
+
+6. **`gh` 実行時のネットワーク制限切り分け（Codex / sandbox）**:
+   - `gh issue comment` / `gh pr comment` / `gh api` 実行時に `error connecting to api.github.com` が出た場合、まず **認証エラーと断定しない**。Codex セッションの sandbox が `network_access=false` の場合、GitHub API に到達できず同様のエラーになる。
+   - `gh auth status` の結果だけで判断せず、必要に応じて `gh api user` や `gh issue view <number>` などの**読み取り系コマンド**で到達性と認証を切り分けること。
+   - GitHub への投稿/更新操作（コメント投稿、Issue/PR 更新など）は、sandbox 内で通信不可のときは **権限昇格（sandbox外）で実行**すること。
+   - エージェントは実行前に「ネットワーク制限回避のため権限昇格が必要」である旨を明示し、ユーザー承認を得ること。
+
+7. **GPU/CUDA 実行時の sandbox 切り分け（PyTorch）**:
+   - `nvidia-smi` は成功するのに `torch.cuda.is_available()==False` や `cudaGetDeviceCount` 系エラー（例: `Error 304: OS call failed or operation not supported on this OS`）が出る場合、まず **ドライバ/venv破損と断定しない**。Codex の sandbox 内実行では CUDA 初期化が失敗することがある。
+   - まず sandbox 内で `torch.__version__`, `torch.version.cuda`, `torch.cuda.is_available()`, `torch.cuda.device_count()` を確認し、OS 側は `nvidia-smi` で切り分けること。
+   - `nvidia-smi` 成功かつ PyTorch の CUDA build（例 `+cuXXX`）なのに sandbox 内だけ失敗する場合、**GPUを使う推論/学習コマンドは権限昇格（sandbox外）で実行**すること。
+   - 実行前に「sandbox 内では CUDA 初期化が失敗するため、GPU利用のため権限昇格が必要」である旨を明示し、ユーザー承認を得ること。

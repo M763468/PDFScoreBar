@@ -155,3 +155,11 @@ python tools/re_evaluate_global.py \
   - 実行日時
   - 実行環境（host / container, Python version）
 
+## Baseline Repro Check (2026-02-27)
+
+- `evaluate_global.yaml` / `evaluate_global_th0p1.yaml` の `scored_root` は、
+  `logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12` を参照する。
+  - 旧 `logs/issue36_prep/probe_candidates_filtered_v12` のままだと `0 scored files` になる。
+- 再実行結果（68 pages）:
+  - `threshold=0.5`: `TP=3542`, `FP=1`, `FN=42` (`FN_cnn=27`, `FN_det=15`)
+  - `threshold=0.1`: `TP=3561`, `FP=2`, `FN=23` (`FN_cnn=8`, `FN_det=15`)

@@ -4,7 +4,7 @@
 #
 # Update `model` after training completes.
 
-logs: logs/issue36_prep/probe_candidates_filtered_v12
+logs: logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
 images_root: data/evaluation2/images
 model: logs/cnn_barline_classification/issue44_baseline_v1/cnn_classifier_best.pth
 threshold: 0.1

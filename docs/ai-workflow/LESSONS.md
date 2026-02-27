@@ -10,6 +10,7 @@
 - **lesson_002**: Always prefer \`unit_size\` scaling over pixel-based thresholds for cross-resolution consistency.
 - **lesson_004**: When debugging OMR False Positives, always generate and inspect overlay images (`debug_outputs/`) before modifying geometric filter logic.
 - **lesson_007**: In FN_det analysis, separate "double/end-bar merging" from generic geometric mismatch; mixing them weakens root-cause reproducibility.
+- **lesson_008**: Rule-only GT matching changes (IoU/IoA/center) do not change candidate sets, so measure-number KPI may stay unchanged; evaluate detector-side variants separately for KPI inversion checks.
 
 ### Collaboration Successes
 - **lesson_005**: Using Gemini for "Macro-Reasoning/Vision" and Codex for "Micro-Implementation/Type-Safety" significantly reduces regression risks and implementation time.

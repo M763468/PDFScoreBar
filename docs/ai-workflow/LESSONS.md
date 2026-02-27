@@ -12,3 +12,4 @@
 
 ### Collaboration Successes
 - **lesson_005**: Using Gemini for "Macro-Reasoning/Vision" and Codex for "Micro-Implementation/Type-Safety" significantly reduces regression risks and implementation time.
+- **lesson_006**: For Codex-to-Gemini consultation, prefer `timeout <sec> gemini -p "<prompt>"`; if sandbox execution stalls, rerun with network-enabled escalation and concise prompts.

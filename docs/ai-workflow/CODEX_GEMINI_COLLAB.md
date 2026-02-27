@@ -73,7 +73,17 @@ PR前レビューに限定せず、次の場面で使う。
 ## コマンド実行例（確認済み）
 
 本環境では、Gemini側から `codex` コマンドを、Codex側から `gemini` コマンドを相互に呼び出すことができます。
-※現状、CodexからGeminiを呼び出す動作が不安定なため、**「Gemini側からCodexを呼び出す」** 流れをメインとします。
+過去には Codex から Gemini 呼び出しが不安定な時期がありましたが、2026-02-27 時点で以下の条件により安定実行を確認しました。
+
+### Codex -> Gemini 安定実行メモ（2026-02-27）
+
+- 推奨コマンド: `timeout 60s gemini -p "<prompt>"`
+- Codex sandbox で応答が返らない場合:
+  - 権限昇格（ネットワーク到達性を確保）で再実行する
+  - 可能なら `prefix_rule=["gemini","-p"]` を保存して再承認回数を減らす
+- 長文入力で詰まりやすい場合:
+  - 文書全量貼り付けを避け、要点要約を渡す
+  - 質問を分割して複数回呼び出す
 
 ### GeminiからCodexを呼び出す（推奨）
 
@@ -209,6 +219,29 @@ codex> gemini -i "この差分を中間レビューして"
 - Notes: <次回改善したい点（任意）>
 ```
 
+### セッション終了ルーチン（半自動）
+
+毎回のセッション終了時に、次の 3 点だけは必ず更新する。
+
+1. `Decision Log` 1件追記（このファイル末尾）
+2. `LESSONS.md` に再発防止観点を 1 件追記（なければ `N/A` を記録）
+3. 証拠（テスト結果 or 実行ログ）を 1 行で残す
+
+最小テンプレート:
+
+```md
+### YYYY-MM-DD HH:MM JST / <task>
+- Decision: <adopted | partially_adopted | rejected | pending>
+- Why: <採用/棄却理由を1-2行>
+- Evidence: <test command + pass/fail>
+```
+
+`LESSONS.md` 追記テンプレート:
+
+```md
+- **lesson_XXX**: <再発防止のルールを1行で>
+```
+
 ## 運用の見直し（継続改善）
 
 一定期間ごとに会話ログを見返し、以下を調整する。
@@ -238,6 +271,19 @@ codex> gemini -i "この差分を中間レビューして"
 - Action taken: `AGENTS.md` に multi-LLM 方針を追加し、`docs/ai-workflow/CODEX_GEMINI_COLLAB.md` を新規作成。後続で `gemini主担当` モードにも拡張し、`WORKFLOW.md` に導線リンクを追加
 - Evidence: ドキュメント差分確認（`AGENTS.md`, `docs/ai-workflow/CODEX_GEMINI_COLLAB.md`, `docs/ai-workflow/WORKFLOW.md`）
 - Notes: 次回以降は実案件でのデバッグ相談ログを蓄積して、トリガー条件とテンプレートを削る/絞る
+
+### 2026-02-27 14:34 JST / ai-workflow-ops-review
+
+- Mode: `codex_primary`
+- Writer: `codex`
+- Phase: `mid-review`
+- Trigger: `docs/ai-workflow` の運用上の不整合（ラベル、連携不安、ナレッジ更新）を精査する必要があった
+- Question (summary): 主要ドキュメントの運用リスクを重大度順に抽出し、改善方針を定義したい
+- Secondary answer (summary): Geminiは「状態不整合」「コンテキスト分断」「検証循環」を主要リスクとして提示。特にラベル不整合と連携不安定を優先修正対象にする提案
+- Decision: `adopted`
+- Action taken: `WORKFLOW.md` / `LABELS.md` / `CODEX_GEMINI_COLLAB.md` を更新し、`assign-to-jules` の位置づけ、`gh` 安全書式、Codex->Gemini安定実行条件、半自動ナレッジ蓄積ルーチンを追記
+- Evidence: `timeout 60s gemini -p "<prompt>"` で応答取得、加えて上記3ファイルの差分確認
+- Notes: 追加で自動化する場合は `Decision Log` と `LESSONS.md` 追記を行う小スクリプト化を検討
 
 ## Enhanced Sub-agent Collaboration (2026-02-25 Optimization)
 

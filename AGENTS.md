@@ -67,6 +67,11 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
     - Use specific labels for complex barlines: `double_barline`, `end_barline`, `repeat`.
     - Treat multi-line barlines as a **single logical event** with a single encompassing BBox.
 
+### Issue Template Conformance
+- **Template-First Issue Bodies**: When creating or updating GitHub Issues, always align the body with the corresponding file in `.github/ISSUE_TEMPLATE/`.
+- **Required Headers Must Exist**: For `Task` issues, do not omit `Base branch`, `Branch name`, `PR base`, `Goal`, and `Done` in the issue body.
+- **Project Extensions Are Additive**: Sections like `Background`, `Scope`, `Acceptance Criteria`, and `How to test` may be added, but only in addition to (not instead of) required template headers.
+
 ### Logs & Artifacts
 - **Output Directory**: All experiment logs, metrics, and generated artifacts must be saved under the `logs/` directory. Use structured subdirectories (e.g., `logs/<experiment_name>/<timestamp>/`) to avoid clutter.
 - **Cleanup**: Do not leave temporary files in the project root.

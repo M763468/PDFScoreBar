@@ -1,3 +1,8 @@
+---
+name: pr-review
+description: Review a PR to identify risks, bugs, and scope drift early.
+---
+
 # pr-review
 
 ## Purpose

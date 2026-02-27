@@ -1,3 +1,8 @@
+---
+name: issue-solver
+description: Resolve a GitHub issue by planning, implementing changes, and verifying results.
+---
+
 # issue-solver
 
 ## Purpose

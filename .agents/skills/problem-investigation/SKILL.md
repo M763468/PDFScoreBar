@@ -1,3 +1,8 @@
+---
+name: problem-investigation
+description: Clarify reproduction and root-cause hypotheses, then define impact and next steps.
+---
+
 # problem-investigation
 
 ## Purpose

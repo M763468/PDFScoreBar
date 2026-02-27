@@ -63,11 +63,29 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 - **Strict Control**: Do not modify `requirements.txt`, `pyproject.toml`, or `Dockerfile` unless the task explicitly requires dependency updates.
 - **No Unauthorized Libraries**: Do not install new libraries without user approval.
 
+### Multi-LLM Collaboration (Codex + gemini-cli)
+- **Flexible Primary/Secondary Roles**: In interactive local work, either `Codex` or `gemini-cli` may be the primary driver depending on the task. The primary agent leads planning and decision flow; the secondary agent provides alternative designs, debugging hypotheses, or review feedback.
+- **Implementation Delegation is Allowed**: A valid pattern is `gemini-cli` as primary for exploration/reasoning and `Codex` for focused repository edits and verification. The reverse (Codex primary, gemini-cli second opinion) is also valid.
+- **Optimize While Working**: Do not limit multi-LLM usage to pre-PR review only. Use it during implementation when helpful, and refine the collaboration pattern based on actual outcomes (speed, bug detection, usefulness).
+- **Single Writer Rule**: To avoid conflicts, keep one active file editor at a time in the session. Explicitly choose a single writer before file edits.
+- **Evidence-First Adoption**: Suggestions from either agent are hypotheses until validated by local code inspection, tests, or runtime behavior.
+- **Prompt/Log Documentation**: Standard prompts and conversation log format for multi-LLM collaboration must be maintained under `docs/ai-workflow/` (see the dedicated collaboration doc) and updated as the workflow evolves.
+- **Operational Entry Points (Must Read Order)**:
+  1. `docs/ai-workflow/WORKFLOW.md` (general workflow baseline)
+  2. `docs/ai-workflow/CODEX_GEMINI_COLLAB.md` (Codex/Gemini collaboration protocol)
+  3. `docs/ai-workflow/LESSONS.md` (known anti-patterns and heuristics)
+  4. This `AGENTS.md` (repository-specific overrides, highest priority inside repo)
+- **Codex -> Gemini Call Stability Rule**:
+  - For this repository, run Gemini consultations with network-enabled execution from the start (outside sandbox when required), not as a fallback after a known-failing step.
+  - Prefer longer timeouts (e.g., `timeout 180s gemini -p "<prompt>"`) to allow deeper reasoning.
+  - For long contexts, pass summarized inputs and split questions to reduce timeout risk.
+
 ## 7. Skills
 
 - 共通スキルは `skills/` に配置する
 - リポジトリ固有の最適化は `.agents/skills` に追加する
 - 各スキルは「目的 / 入力 / 出力 / 手順 / 必要なコマンド」を明記する
+- Gemini相談の標準化には `.agents/skills/gemini-consultation/SKILL.md` を利用し、相談時の入力整理・実行手順・記録方法を統一する
 
 ## 8. インタラクティブ・プロトコル（対話型セッション専用ルール）
 
@@ -85,3 +103,25 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 
 4. **逸脱時の自己修正**:
    - もし確認や説明をスキップしてしまったことに気づいた場合、即座に中断し、謝罪した上で不足していた説明を行い、改めて指示を仰ぐこと。
+
+5. **GitHubコメント投稿時の安全な書式**:
+   - `gh pr comment` / `gh issue comment` で本文にバッククォート（`` ` ``）や `$` を含む場合、シェル展開を避けるため `--body-file` + シングルクォートheredoc（`<<'EOF'`）を使うこと。
+   - `--body "..."` へ直接埋め込む方法は原則禁止（コマンド置換や変数展開で本文が破損するため）。
+
+6. **`gh` 実行時のネットワーク制限切り分け（Codex / sandbox）**:
+   - `gh issue comment` / `gh pr comment` / `gh api` 実行時に `error connecting to api.github.com` が出た場合、まず **認証エラーと断定しない**。Codex セッションの sandbox が `network_access=false` の場合、GitHub API に到達できず同様のエラーになる。
+   - `gh auth status` の結果だけで判断せず、必要に応じて `gh api user` や `gh issue view <number>` などの**読み取り系コマンド**で到達性と認証を切り分けること。
+   - GitHub への投稿/更新操作（コメント投稿、Issue/PR 更新など）は、sandbox 内で通信不可のときは **権限昇格（sandbox外）で実行**すること。
+   - エージェントは実行前に「ネットワーク制限回避のため権限昇格が必要」である旨を明示し、ユーザー承認を得ること。
+
+7. **GPU/CUDA 実行時の sandbox 切り分け（PyTorch）**:
+   - `nvidia-smi` は成功するのに `torch.cuda.is_available()==False` や `cudaGetDeviceCount` 系エラー（例: `Error 304: OS call failed or operation not supported on this OS`）が出る場合、まず **ドライバ/venv破損と断定しない**。Codex の sandbox 内実行では CUDA 初期化が失敗することがある。
+   - まず sandbox 内で `torch.__version__`, `torch.version.cuda`, `torch.cuda.is_available()`, `torch.cuda.device_count()` を確認し、OS 側は `nvidia-smi` で切り分けること。
+   - `nvidia-smi` 成功かつ PyTorch の CUDA build（例 `+cuXXX`）なのに sandbox 内だけ失敗する場合、**GPUを使う推論/学習コマンドは権限昇格（sandbox外）で実行**すること。
+   - 実行前に「sandbox 内では CUDA 初期化が失敗するため、GPU利用のため権限昇格が必要」である旨を明示し、ユーザー承認を得ること。
+
+### Multi-LLM Role Specialization
+- **Gemini CLI**: Architect, Multi-modal Reasoner, Web Researcher. Leads planning and reasoning.
+- **Codex**: Implementation Specialist, Repository Navigator, Verification Lead. Leads focused edits and sandbox validation.
+- **Consultation Mandate**: Gemini should proactively consult Codex (via \`codex exec --sandbox read-only\`) for second opinions on complex logic, type safety, or architectural impacts.
+- **Knowledge Synthesis Mandate**: Both agents must document newly discovered heuristics, anti-patterns, or visual failure modes in `docs/ai-workflow/LESSONS.md` to prevent regressions in future sessions.

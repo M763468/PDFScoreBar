@@ -1,3 +1,8 @@
+---
+name: pr-refinement
+description: Analyze PR feedback and implement targeted code fixes and improvements.
+---
+
 # pr-refinement
 
 ## Purpose

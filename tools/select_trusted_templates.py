@@ -120,7 +120,7 @@ def main() -> None:
         for p in pred_boxes:
             tps.append((0.0, p, p))
 
-    tps.sort(key=lambda t: (t[1][3] - t[1][1]), reverse=True)
+    tps.sort(key=lambda t: t[1][3] - t[1][1], reverse=True)
     tps = tps[: args.count]
 
     args.output_dir.mkdir(parents=True, exist_ok=True)

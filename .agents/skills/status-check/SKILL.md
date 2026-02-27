@@ -1,3 +1,8 @@
+---
+name: status-check
+description: Provide a clear and concise snapshot of work status and next actions.
+---
+
 # status-check
 
 ## Purpose

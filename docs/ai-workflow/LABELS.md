@@ -6,8 +6,9 @@ This document standardizes label usage for this repository. Consistent labels ar
 
 | Label | Description | Usage |
 | --- | --- | --- |
-| `ai:implement` | Task assigned to an AI agent for implementation. | Assign this to an issue when it is fully specified and ready for an AI to generate code. |
-| `ai:review` | Pull request or code artifact needs review by an AI agent. | Use this on a PR to trigger an automated code review or on an issue to request AI feedback on a design. |
+| `assign-to-jules` | Trigger label for Google Jules remote implementation. | Use only when you want Jules to start a remote GitHub-side implementation flow. |
+| `ai:implement` | Optional metadata label for AI-implementable tasks. | Informational label for triage/search; not required for local Codex/gemini-cli collaboration. |
+| `ai:review` | Optional metadata label for AI review requests. | Use on PR/Issue when you explicitly want AI review tracking. |
 
 ## Status Labels
 

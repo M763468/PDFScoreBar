@@ -1,3 +1,8 @@
+---
+name: change-summary
+description: Summarize changes clearly and state impact and follow-up needs.
+---
+
 # change-summary
 
 ## Purpose

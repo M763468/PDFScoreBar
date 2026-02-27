@@ -386,7 +386,12 @@ def process_dir(
         candidates = json.load(f)
 
     if not candidates:
-        return True  # Processed (empty)
+        # Persist empty outputs so downstream evaluation does not skip this page.
+        with open(log_dir / scored_filename, "w") as f:
+            json.dump([], f, indent=2)
+        with open(log_dir / filtered_filename, "w") as f:
+            json.dump([], f, indent=2)
+        return True
 
     img = cv2.imread(str(image_path))
     if img is None:

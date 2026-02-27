@@ -285,6 +285,19 @@ codex> gemini -i "この差分を中間レビューして"
 - Evidence: `eval2_global_summary_track_a_noexistingsuppr_v1_th0p1/0p5.csv` で `FN_det -3` を確認（同時に `FP` 増加）。
 - Notes: 原因切り分けは成立。次は抑止ロジックを全OFFではなく条件付きへ。
 
+### 2026-02-27 / Issue #48 評価ルール再設計（実装前・実装後相談）
+
+- Mode: `codex_primary`
+- Writer: `codex`
+- Phase: `design` + `mid-review`
+- Trigger: IoU単独評価からの拡張で、最小実装のルール集合と出力スキーマを確定する必要があった。
+- Question (summary): `re_evaluate_global` 互換入力で、どの評価ルール（IoA/中心距離/縦重なり）を比較すべきか。実装後にどのルールを暫定採用すべきか。
+- Secondary answer (summary): 実装前は4ルール比較（baseline/relaxed/coverage/center）とGT単位JSON/CSV追跡を推奨。実装後は `center_anchor` を暫定候補とし、`coverage_ioa` は不採用、KPI逆転未検出は指標感度不足の可能性を指摘。
+- Decision: `partially_adopted`
+- Action taken: `tools/evaluate_barline_rules.py` を追加し4ルール比較を実装。`docs/ISSUE48_RULE_EVAL_REPORT.md` に結果と分割案を反映。
+- Evidence: `timeout 180s gemini -p "<issue48 design prompt>"` / `timeout 180s gemini -p "<issue48 result review prompt>"` と、`logs/cnn_barline_classification/issue48_rule_eval/*` の出力。
+- Notes: 次は最終KPI側（局所番号ズレ）を指標化し、検出KPIとの逆転を再現可能にする。
+
 ### 2026-02-25 00:00 JST / multi-llm-workflow-docs (initial setup)
 
 - Mode: `codex_primary`

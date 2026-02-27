@@ -22,6 +22,7 @@
 ## Baseline (Current Reference)
 
 - Target set: `logs/cnn_barline_classification/issue44_baseline_v1/eval2_fn_det_candidates_th0p5.csv`
+- Failure type classification (15/15): `docs/ISSUE46_FN_DET_CLASSIFICATION.md`
 - Count: `15 GT` (`10 pages`)
 - Current eval baseline:
   - `threshold=0.1`: `TP=3561`, `FP=2`, `FN=23`
@@ -541,3 +542,182 @@
   - `logs/issue46_combo_sweeps/E46-COMB-005_independent_contrib_v1/eval2_global_summary_crop_only_ge0p4_th0p5.csv`
 - Issue comment:
   - (to be added)
+
+### Experiment ID: `E46-A02-SPLIT-CONSERVATIVE`
+
+- Date: 2026-02-27
+- Branch: `task/issue46-fn-det-preproc`
+- Scope: Track A split の過剰分割抑制（保守寄り閾値）
+- Hypothesis:
+  - `post_split_min_width_unit_ratio` と `post_split_peak_prominence_ratio` を強めると、target 9ページで FP を下げられる
+- Change:
+  - 実験スクリプト追加:
+    - `tools/experiments/issue46_track_a_split_test_v2.py`
+  - 評価config追加:
+    - `configs/cnn_barline_runs/issue44_baseline_v1/issue46_evaluate_track_a_split_v2_conservative_th0p1.yaml`
+    - `configs/cnn_barline_runs/issue44_baseline_v1/issue46_evaluate_track_a_split_v2_conservative_th0p5.yaml`
+  - split主要パラメータ（v2）:
+    - `post_split_min_width_unit_ratio: 1.5`（v1: 1.2）
+    - `post_split_peak_distance_unit_ratio: 0.6`（v1: 0.5）
+    - `post_split_peak_prominence_ratio: 0.25`（v1: 0.15）
+- Target data:
+  - issue46 Track A 対象 9ページ
+- Baseline for comparison:
+  - `track_a_split_v1`
+- Metrics:
+  - global `TP/FP/FN`, `FN_cnn`, `FN_det` at `th=0.1`, `0.5`
+- Result:
+  - `th=0.1`: `TP=536, FP=40, FN_total=10, FN_cnn=3, FN_det=7`
+  - `th=0.5`: `TP=534, FP=24, FN_total=12, FN_cnn=5, FN_det=7`
+  - v1 比差分: `0`（全指標で同一）
+- Interpretation:
+  - 保守寄り split 条件にしても、対象9ページでは `best_cand` の採択結果が変わらず、指標差分なし
+  - 次は `候補なし` 8件に直接効く探索（probe条件/バンド起点/mask連携）を優先すべき
+- Decision: `Reject`（この条件変更単独は効果なし）
+- Logs:
+  - `logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12_track_a_split_v2_conservative/`
+  - `logs/cnn_barline_classification/issue44_baseline_v1/eval2_global_summary_track_a_split_v2_conservative_th0p1.csv`
+  - `logs/cnn_barline_classification/issue44_baseline_v1/eval2_global_summary_track_a_split_v2_conservative_th0p5.csv`
+
+### Experiment ID: `E46-A03-BAND-ROWSTATS`
+
+- Date: 2026-02-27
+- Branch: `task/issue46-fn-det-preproc`
+- Scope: staff mask 依存を外し、band source を `row_stats` に切替
+- Hypothesis:
+  - `候補なし` は staff mask の band 欠落/分断起因の可能性があり、`row_stats` バンドで救済できる
+- Change:
+  - `run_probe_scan_batch(..., staff_mask_dir=None)` で `band_source=row_stats` に切替
+  - その他パラメータは `track_a_split_v1` と同一
+- Target data:
+  - issue46 Track A 対象 9ページ
+- Baseline for comparison:
+  - `track_a_split_v1`
+- Metrics:
+  - global `TP/FP/FN`, `FN_cnn`, `FN_det` at `th=0.1`, `0.5`
+- Result:
+  - `th=0.1`: `TP=536, FP=40, FN_total=10, FN_cnn=3, FN_det=7`
+  - `th=0.5`: `TP=534, FP=24, FN_total=12, FN_cnn=5, FN_det=7`
+  - v1 比差分: `0`（全指標同一）
+- Interpretation:
+  - `row_stats` 切替単独では改善なし。`候補なし` の主因は band source ではない可能性が高い
+- Decision: `Reject`
+- Logs:
+  - `logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12_track_a_band_rowstats_v1/`
+  - `logs/cnn_barline_classification/issue44_baseline_v1/eval2_global_summary_track_a_band_rowstats_v1_th0p1.csv`
+  - `logs/cnn_barline_classification/issue44_baseline_v1/eval2_global_summary_track_a_band_rowstats_v1_th0p5.csv`
+
+### Experiment ID: `E46-A04-NO-EXISTING-SUPPRESSION`
+
+- Date: 2026-02-27
+- Branch: `task/issue46-fn-det-preproc`
+- Scope: existing近傍抑止ロジックを無効化して missing rescue を検証
+- Hypothesis:
+  - `has_existing()` が誤候補近傍で新規候補を抑止し、`候補なし` を残している
+- Change:
+  - `src/pipeline/probe_detector/__init__.py`:
+    - 新規オプション `scan_disable_existing_suppression`（default OFF）
+    - ON時は `has_existing` 抑止を無効化
+  - pass-through:
+    - `src/pipeline/detection.py` に `scan_disable_existing_suppression` 追加
+- Target data:
+  - issue46 Track A 対象 9ページ
+- Baseline for comparison:
+  - `track_a_split_v1`
+- Metrics:
+  - global `TP/FP/FN`, `FN_cnn`, `FN_det` at `th=0.1`, `0.5`
+- Result:
+  - `th=0.1`: `TP +3`, `FP +12`, `FN_total -3`, `FN_det -3`
+    - absolute: `539/52/7` (`FN_cnn=3`, `FN_det=4`)
+  - `th=0.5`: `TP +5`, `FP +10`, `FN_total -5`, `FN_cnn -2`, `FN_det -3`
+    - absolute: `539/34/7` (`FN_cnn=3`, `FN_det=4`)
+- Interpretation:
+  - `FN_det` 改善に明確な寄与（-3）を確認し、仮説は支持
+  - ただし `FP` 増が大きく、そのまま採用は不可
+- Decision: `Hold`（原因特定として有効。運用採用にはFP抑制条件が必要）
+- Logs:
+  - `logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12_track_a_noexistingsuppr_v1/`
+  - `logs/cnn_barline_classification/issue44_baseline_v1/eval2_global_summary_track_a_noexistingsuppr_v1_th0p1.csv`
+  - `logs/cnn_barline_classification/issue44_baseline_v1/eval2_global_summary_track_a_noexistingsuppr_v1_th0p5.csv`
+
+### Experiment ID: `E46-A05-NO-EXISTING-SUPPRESSION-CONSERVATIVE-SPLIT`
+
+- Date: 2026-02-27
+- Branch: `task/issue46-fn-det-preproc`
+- Scope: `A04` に保守split条件を併用して FP 抑制可否を検証
+- Hypothesis:
+  - split を保守化すれば `A04` の `FN_det` 改善を維持しつつ FP を削減できる
+- Change:
+  - `A04` + split保守条件
+    - `post_split_min_width_unit_ratio: 1.5`
+    - `post_split_peak_distance_unit_ratio: 0.6`
+    - `post_split_peak_prominence_ratio: 0.25`
+- Target data:
+  - issue46 Track A 対象 9ページ
+- Baseline for comparison:
+  - `A04`（no existing suppression）
+- Metrics:
+  - global `TP/FP/FN`, `FN_cnn`, `FN_det` at `th=0.1`, `0.5`
+- Result:
+  - `A04` と同一（全指標差分 0）
+- Interpretation:
+  - FP増の主因は split 強度ではなく、existing抑止無効化そのもの
+- Decision: `Reject`
+- Logs:
+  - `logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12_track_a_noexistingsuppr_conservative_v1/`
+  - `logs/cnn_barline_classification/issue44_baseline_v1/eval2_global_summary_track_a_noexistingsuppr_conservative_v1_th0p1.csv`
+  - `logs/cnn_barline_classification/issue44_baseline_v1/eval2_global_summary_track_a_noexistingsuppr_conservative_v1_th0p5.csv`
+
+### Experiment ID: `E46-A06-EXISTING-VIOU-THRESH`
+
+- Date: 2026-02-27
+- Branch: `task/issue46-fn-det-preproc`
+- Scope: existing 抑止を条件付き（vertical IoU 閾値）に緩和
+- Hypothesis:
+  - `A04` の全OFFは過剰なので、縦重なりが弱い既存候補のみ抑止対象から外せば、`FN_det` 改善と `FP` 増を両立できる
+- Change:
+  - `src/pipeline/probe_detector/__init__.py`
+    - `scan_existing_min_vertical_iou`（default `0.0`）を追加
+  - `src/pipeline/detection.py`
+    - pass-through key に追加
+- Target data:
+  - issue46 Track A 対象 9ページ
+- Baseline for comparison:
+  - `track_a_split_v1`
+- Metrics:
+  - global `TP/FP/FN`, `FN_cnn`, `FN_det` at `th=0.1`, `0.5`
+- Result:
+  - `scan_existing_min_vertical_iou=0.5` は baseline と同一（差分0）
+- Interpretation:
+  - 条件付き緩和では `A04` の改善を再現できず、抑止OFF効果は急峻
+- Decision: `Reject`
+- Logs:
+  - `logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12_track_a_existing_viou0p5_v1/`
+  - `logs/cnn_barline_classification/issue44_baseline_v1/eval2_global_summary_track_a_existing_viou0p5_v1_th0p1.csv`
+  - `logs/cnn_barline_classification/issue44_baseline_v1/eval2_global_summary_track_a_existing_viou0p5_v1_th0p5.csv`
+
+### Experiment ID: `E46-A07-EXISTING-VIOU-SWEEP`
+
+- Date: 2026-02-27
+- Branch: `task/issue46-fn-det-preproc`
+- Scope: `scan_existing_min_vertical_iou` の中間値 sweep
+- Hypothesis:
+  - `0.1~0.4` に最適点がある可能性
+- Change:
+  - `scan_existing_min_vertical_iou` を `0.1, 0.2, 0.3, 0.4` で sweep
+- Target data:
+  - issue46 Track A 対象 9ページ
+- Baseline for comparison:
+  - `track_a_split_v1`
+- Metrics:
+  - global `TP/FP/FN`, `FN_cnn`, `FN_det` at `th=0.1`, `0.5`
+- Result:
+  - 全設定で baseline と同一（差分0）
+- Interpretation:
+  - 現実装では vertical IoU 閾値だけで有効な中間解は得られない
+- Decision: `Reject`
+- Logs:
+  - `logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12_track_a_existing_viou0p1_v1/`
+  - `logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12_track_a_existing_viou0p2_v1/`
+  - `logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12_track_a_existing_viou0p3_v1/`
+  - `logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12_track_a_existing_viou0p4_v1/`

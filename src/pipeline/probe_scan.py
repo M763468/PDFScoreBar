@@ -98,15 +98,24 @@ def _extract_candidate_postprocess_cfg(
         "post_apply_if_height_gt_unit_ratio",
         "post_vertical_min_height_unit_ratio",
         "post_vertical_min_aspect_ratio",
+        "post_split_wide_candidates",
+        "post_split_min_width_unit_ratio",
+        "post_split_box_width_unit_ratio",
+        "post_split_peak_distance_unit_ratio",
+        "post_split_peak_prominence_ratio",
     )
     enabled = _parse_bool_like(resolved.pop("post_emit_unit_normalized_box", False))
-    if not enabled or unit_size is None:
+    split_enabled = _parse_bool_like(resolved.pop("post_split_wide_candidates", False))
+
+    if not (enabled or split_enabled) or unit_size is None:
         for key in pseudo_keys[1:]:
             resolved.pop(key, None)
         return resolved, None
 
     cfg = {
         "unit_size": float(unit_size),
+        "post_emit_unit_normalized_box": enabled,
+        "split_wide_candidates": split_enabled,
         "norm_width_px": max(
             2, int(round(float(resolved.pop("post_norm_width_unit_ratio", 1.0)) * unit_size))
         ),
@@ -125,6 +134,14 @@ def _extract_candidate_postprocess_cfg(
             int(round(float(resolved.pop("post_vertical_min_height_unit_ratio", 2.5)) * unit_size)),
         ),
         "vertical_min_aspect_ratio": float(resolved.pop("post_vertical_min_aspect_ratio", 3.0)),
+        "split_min_width_unit_ratio": float(resolved.pop("post_split_min_width_unit_ratio", 1.5)),
+        "split_box_width_unit_ratio": float(resolved.pop("post_split_box_width_unit_ratio", 0.8)),
+        "split_peak_distance_unit_ratio": float(
+            resolved.pop("post_split_peak_distance_unit_ratio", 0.5)
+        ),
+        "split_peak_prominence_ratio": float(
+            resolved.pop("post_split_peak_prominence_ratio", 0.15)
+        ),
     }
     return resolved, cfg
 
@@ -199,6 +216,113 @@ def _augment_unit_normalized_boxes(
     return out
 
 
+def _extract_x_profile_peaks(
+    gray_crop: np.ndarray,
+    smooth_window: int = 5,
+    prominence_ratio: float = 0.15,
+    min_peak_distance: int = 3,
+) -> List[int]:
+    """Find peaks in horizontal ink profile."""
+    if np is None or cv2 is None:
+        return []
+    if gray_crop.size == 0:
+        return []
+    if len(gray_crop.shape) == 3:
+        gray_crop = cv2.cvtColor(gray_crop, cv2.COLOR_BGR2GRAY)
+    # Ink is dark => invert then sum over Y to get X profile
+    profile = (255.0 - gray_crop.astype(np.float32)).sum(axis=0)
+    if profile.size < 3:
+        return []
+    if smooth_window > 1:
+        k = int(max(1, smooth_window))
+        if k % 2 == 0:
+            k += 1
+        kernel = np.ones(k, dtype=np.float32) / k
+        profile = np.convolve(profile, kernel, mode="same")
+    pmax = float(profile.max()) if profile.size else 0.0
+    if pmax <= 0:
+        return []
+    threshold = pmax * float(prominence_ratio)
+    # Local maxima
+    idxs = []
+    for i in range(1, len(profile) - 1):
+        if (
+            profile[i] >= threshold
+            and profile[i] >= profile[i - 1]
+            and profile[i] >= profile[i + 1]
+        ):
+            idxs.append(i)
+    if not idxs:
+        return []
+    # NMS on peaks by profile height
+    idxs = sorted(idxs, key=lambda i: float(profile[i]), reverse=True)
+    kept: List[int] = []
+    min_dist = int(max(1, min_peak_distance))
+    for i in idxs:
+        if all(abs(i - j) >= min_dist for j in kept):
+            kept.append(i)
+    kept.sort()
+    return kept
+
+
+def _augment_wide_split_candidates(
+    boxes: Sequence[Tuple[int, int, int, int]],
+    img: np.ndarray,
+    cfg: Dict[str, Any] | None,
+) -> List[Tuple[int, int, int, int]]:
+    """Emit additional candidates by splitting wide bboxes (e.g. double bars)."""
+    if np is None or cv2 is None:
+        return []
+    if not cfg or not _parse_bool_like(cfg.get("split_wide_candidates", False)):
+        return []
+
+    out: List[Tuple[int, int, int, int]] = []
+    unit_size = float(cfg["unit_size"])
+    min_split_w = max(2, int(round(unit_size * float(cfg.get("split_min_width_unit_ratio", 1.5)))))
+    new_w = max(2, int(round(unit_size * float(cfg.get("split_box_width_unit_ratio", 0.8)))))
+    min_peak_dist = max(
+        1, int(round(unit_size * float(cfg.get("split_peak_distance_unit_ratio", 0.5))))
+    )
+    prominence = float(cfg.get("split_peak_prominence_ratio", 0.15))
+    img_h, img_w = img.shape[:2]
+
+    for b in boxes:
+        x1, y1, x2, y2 = b
+        w = abs(x2 - x1)
+        if w < min_split_w:
+            continue
+
+        bx1, bx2 = sorted((max(0, x1), min(img_w - 1, x2)))
+        by1, by2 = sorted((max(0, y1), min(img_h - 1, y2)))
+        if bx2 <= bx1 or by2 <= by1:
+            continue
+
+        crop = img[by1:by2, bx1:bx2]
+        peaks = _extract_x_profile_peaks(
+            crop,
+            prominence_ratio=prominence,
+            min_peak_distance=min_peak_dist,
+        )
+        if len(peaks) < 2:
+            continue
+
+        for px in peaks:
+            cx = bx1 + int(px)
+            nb = _clip_box(
+                (
+                    int(round(cx - new_w / 2.0)),
+                    by1,
+                    int(round(cx + new_w / 2.0)),
+                    by2,
+                ),
+                img_w,
+                img_h,
+            )
+            if nb is not None and nb != b:
+                out.append(nb)
+    return out
+
+
 def _load_bands_for_image(
     *,
     bands_from: Optional[Path],
@@ -213,6 +337,8 @@ def _load_bands_for_image(
 
     run_subdir = build_probe_run_id_from_parts(current_score_name, stem)
     candidates = [
+        bands_from / current_score_name / stem / "pipeline2_no_peak_candidates.json",
+        bands_from / current_score_name / stem / "pipeline2_no_peak_scored.json",
         bands_from / run_subdir / "pipeline2_no_peak_scored.json",
         bands_from / f"{stem}.json",
         bands_from / "hybrid_results" / f"{stem}_hybrid.json",
@@ -374,13 +500,22 @@ def run_probe_scan_batch(
             final_set.add(tuple(int(v) for v in c))
 
         if post_cfg:
-            for nb in _augment_unit_normalized_boxes(
-                list(final_set),
-                img_w=img_w,
-                img_h=img_h,
-                cfg=post_cfg,
-            ):
-                final_set.add(tuple(int(v) for v in nb))
+            if post_cfg.get("post_emit_unit_normalized_box"):
+                for nb in _augment_unit_normalized_boxes(
+                    list(final_set),
+                    img_w=img_w,
+                    img_h=img_h,
+                    cfg=post_cfg,
+                ):
+                    final_set.add(tuple(int(v) for v in nb))
+
+            if post_cfg.get("split_wide_candidates"):
+                for sb in _augment_wide_split_candidates(
+                    list(final_set),
+                    img=img,
+                    cfg=post_cfg,
+                ):
+                    final_set.add(tuple(int(v) for v in sb))
 
         final_list = sorted(final_set)
         out_path.write_text(json.dumps(final_list, indent=2))

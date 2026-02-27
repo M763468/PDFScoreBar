@@ -1,0 +1,31 @@
+# Issue #46 B-track dry-run retraining (small controlled run)
+# Usage:
+#   CNN_DATASET_ROOT=/home/masaki_muramatsu/ws_PDFScoreBar/datasets/cnn_classifier_v1_issue46_hc001_ge0p4_th0p1 \
+#   .venv_cnn_classifier/bin/python experiments/cnn_classifier/train.py \
+#     --config configs/cnn_barline_runs/issue44_baseline_v1/issue46_train_dryrun_hc001.yaml
+
+work_dir: logs/cnn_barline_classification/issue46_hc001_dryrun_ge0p4_th0p1
+model_name: resnet18
+
+# Small controlled run first (B-4)
+epochs: 1
+batch_size: 256
+learning_rate: 0.0001
+img_size: [256, 128]
+seed: 44
+
+amp: true
+compile: false
+compile_mode: reduce-overhead
+channels_last: true
+
+imbalance: sampler
+optimize_threshold: true
+weight_decay: 0.01
+num_workers: 8
+prefetch_factor: 2
+save_interval: 0
+
+sp_p: 0.3
+sp_density: 0.02
+freeze_backbone_epochs: 0

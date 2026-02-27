@@ -1,0 +1,6 @@
+# Issue #46 B-track dry-run global eval (th=0.5)
+scored_root: logs/cnn_barline_classification/issue46_hc001_dryrun_ge0p4_th0p1/scoring_input_eval2_v12_same_source_bboxnorm_w0p8_h4p0_patch10_croprecenter_v3_ge0p4_hc001_dryrun
+gt_root: data/evaluation2/annotations
+output_csv: logs/cnn_barline_classification/issue46_hc001_dryrun_ge0p4_th0p1/eval2_global_summary_hc001_dryrun_th0p5.csv
+threshold: 0.5
+scored_glob: "*_scored.json"

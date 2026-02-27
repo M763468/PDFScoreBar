@@ -188,11 +188,15 @@ def _rule_accept(rule_name: str, m: Dict[str, float], rule_cfg: Dict[str, float]
     raise ValueError(f"Unknown rule: {rule_name}")
 
 
-def _rule_rank(rule_name: str, m: Dict[str, float]) -> Tuple[float, float, float, float]:
+def _rule_rank(
+    rule_name: str,
+    m: Dict[str, float],
+    rule_cfg: Dict[str, float],
+) -> Tuple[float, float, float, float]:
     if rule_name == "baseline_iou":
         return (m["iou"], m["ioa"], m["vov"], -m["xdist"])
     if rule_name == "relaxed_geom":
-        return (max(m["iou"], 0.3), m["vov"], m["ioa"], -m["xdist"])
+        return (max(m["iou"], rule_cfg["iou_min"]), m["vov"], m["ioa"], -m["xdist"])
     if rule_name == "coverage_ioa":
         return (m["ioa"], m["vov"], m["iou"], -m["xdist"])
     if rule_name == "center_anchor":
@@ -231,7 +235,7 @@ def greedy_match_by_rule(
             m = _metrics(pred, gt)
             metrics_by_pair[(p_idx, g_idx)] = m
             if _rule_accept(rule_name, m, rule_cfg):
-                pairs.append((_rule_rank(rule_name, m), p_idx, g_idx))
+                pairs.append((_rule_rank(rule_name, m, rule_cfg), p_idx, g_idx))
 
     pairs.sort(reverse=True)
     used_pred = set()
@@ -334,9 +338,9 @@ def _measure_local_kpis(
     gt_measures: Sequence[Dict[str, object]],
     pred_measures: Sequence[Dict[str, object]],
     *,
-    x_iou_threshold: float = 0.85,
-    min_vertical_overlap: float = 0.5,
-    nlc_iou_threshold: float = 0.5,
+    x_iou_threshold: float,
+    min_vertical_overlap: float,
+    nlc_iou_threshold: float,
 ) -> Dict[str, Optional[float]]:
     # 1) 1D-X IoU based greedy matching
     pairs: List[Tuple[Tuple[float, float], int, int]] = []
@@ -439,6 +443,9 @@ def main():
     parser.add_argument("--rule-coverage-vov-min", type=float, default=0.7)
     parser.add_argument("--rule-center-vov-min", type=float, default=0.5)
     parser.add_argument("--rule-center-xdist-max", type=float, default=12.0)
+    parser.add_argument("--measure-match-x-iou-threshold", type=float, default=0.85)
+    parser.add_argument("--measure-match-min-vertical-overlap", type=float, default=0.5)
+    parser.add_argument("--measure-nlc-iou-threshold", type=float, default=0.5)
 
     if pre_args.config:
         cfg = load_config_file(pre_args.config)
@@ -567,7 +574,13 @@ def main():
                         measure_pred_proxy = len(pred_measures)
                         measure_gt_proxy = len(gt_measures)
                         measure_abs_delta = abs(measure_pred_proxy - measure_gt_proxy)
-                        local_measure_kpis = _measure_local_kpis(gt_measures, pred_measures)
+                        local_measure_kpis = _measure_local_kpis(
+                            gt_measures,
+                            pred_measures,
+                            x_iou_threshold=args.measure_match_x_iou_threshold,
+                            min_vertical_overlap=args.measure_match_min_vertical_overlap,
+                            nlc_iou_threshold=args.measure_nlc_iou_threshold,
+                        )
 
             page_results.append(
                 RuleResult(

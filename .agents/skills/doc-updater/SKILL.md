@@ -1,3 +1,8 @@
+---
+name: doc-updater
+description: Update documentation to reflect code changes and keep it accurate.
+---
+
 # doc-updater
 
 ## Purpose

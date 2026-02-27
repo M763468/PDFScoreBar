@@ -1,3 +1,8 @@
+---
+name: pr-explanation
+description: Explain PR intent and scope clearly to make review efficient.
+---
+
 # pr-explanation
 
 ## Purpose

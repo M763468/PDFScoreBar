@@ -49,11 +49,16 @@
 - 追加で #46 の9ページセットを比較:
   - `track_a_split_v1` vs `track_a_noexistingsuppr_v1`
   - 検出KPI: `FN_total -3`, `FN_det -3`, `FP +12`
-  - 番号付与proxy（本ツールの measure_abs_delta_sum）: `13 -> 12`（悪化は未再現）
+  - measure count差分（`measure_abs_delta_sum`）: `13 -> 12`（改善に見える）
+  - ただし局所KPIは悪化:
+    - `measure_match_recall`: `0.9212 -> 0.9192`
+    - `measure_match_precision`: `0.9306 -> 0.9267`
+    - `measure_boundary_mae_mean`: `1.0936 -> 1.1227`（悪化）
+    - `measure_nlc_rate_mean`: `0.6875 -> 0.6478`（悪化）
 
 結論:
-- 現在のproxyは差分感度が低く、最終KPIの逆転を常に検出できない。
-- #48では「局所的な番号ズレ/分割誤り」を直接数える指標を追加する必要がある。
+- measure count差分だけでは判定を誤る可能性がある。
+- #48で追加した局所KPI（measure区間マッチ、境界誤差、NLC）は、FN改善と番号付与品質のトレードオフ検知に有効。
 
 ## probe候補生成とGT判定の不整合（現時点）
 1. 複線（double/end bar）で、検出候補が2本を包括するbboxになりやすい。

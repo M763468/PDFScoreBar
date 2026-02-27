@@ -41,6 +41,13 @@ class RuleResult:
     measure_count_pred: Optional[int] = None
     measure_count_gt: Optional[int] = None
     measure_abs_delta: Optional[int] = None
+    measure_match_tp: Optional[int] = None
+    measure_match_fp: Optional[int] = None
+    measure_match_fn: Optional[int] = None
+    measure_match_recall: Optional[float] = None
+    measure_match_precision: Optional[float] = None
+    measure_boundary_mae: Optional[float] = None
+    measure_nlc_rate: Optional[float] = None
 
 
 def load_config_file(config_path: Path):
@@ -298,6 +305,110 @@ def _measure_count_for_boxes(
     return sum(len(system.measures) for system in page.systems)
 
 
+def _measure_iou_2d(a: Box, b: Box) -> float:
+    inter = _intersection_area(a, b)
+    union = _box_area(a) + _box_area(b) - inter
+    return inter / union if union > 0 else 0.0
+
+
+def _x_iou(a: Box, b: Box) -> float:
+    ax1, ax2 = a[0], a[2]
+    bx1, bx2 = b[0], b[2]
+    inter = max(0, min(ax2, bx2) - max(ax1, bx1))
+    union = max(ax2, bx2) - min(ax1, bx1)
+    if union <= 0:
+        return 0.0
+    return inter / union
+
+
+def _extract_measures(page) -> List[Dict[str, object]]:
+    measures: List[Dict[str, object]] = []
+    for s_idx, system in enumerate(page.systems):
+        for m in system.measures:
+            bbox = (m.bbox.x1, m.bbox.y1, m.bbox.x2, m.bbox.y2)
+            measures.append({"number": int(m.number), "bbox": bbox, "system": s_idx})
+    return measures
+
+
+def _measure_local_kpis(
+    gt_measures: Sequence[Dict[str, object]],
+    pred_measures: Sequence[Dict[str, object]],
+    *,
+    x_iou_threshold: float = 0.85,
+    min_vertical_overlap: float = 0.5,
+    nlc_iou_threshold: float = 0.5,
+) -> Dict[str, Optional[float]]:
+    # 1) 1D-X IoU based greedy matching
+    pairs: List[Tuple[Tuple[float, float], int, int]] = []
+    for p_idx, pm in enumerate(pred_measures):
+        pb = pm["bbox"]
+        for g_idx, gm in enumerate(gt_measures):
+            gb = gm["bbox"]
+            x_iou = _x_iou(pb, gb)
+            vov = barline_vertical_overlap(pb, gb)
+            if x_iou >= x_iou_threshold and vov >= min_vertical_overlap:
+                pairs.append(((x_iou, vov), p_idx, g_idx))
+    pairs.sort(reverse=True)
+
+    used_p = set()
+    used_g = set()
+    matched: List[Tuple[int, int]] = []
+    for _, p_idx, g_idx in pairs:
+        if p_idx in used_p or g_idx in used_g:
+            continue
+        used_p.add(p_idx)
+        used_g.add(g_idx)
+        matched.append((p_idx, g_idx))
+
+    tp = len(matched)
+    fp = len(pred_measures) - tp
+    fn = len(gt_measures) - tp
+    recall = tp / len(gt_measures) if gt_measures else 0.0
+    precision = tp / len(pred_measures) if pred_measures else 0.0
+
+    # 2) boundary X MAE on matched pairs
+    boundary_errs: List[float] = []
+    for p_idx, g_idx in matched:
+        pb = pred_measures[p_idx]["bbox"]
+        gb = gt_measures[g_idx]["bbox"]
+        boundary_errs.append(abs(pb[0] - gb[0]))
+        boundary_errs.append(abs(pb[2] - gb[2]))
+    boundary_mae = sum(boundary_errs) / len(boundary_errs) if boundary_errs else None
+
+    # 3) Number-location consistency (same measure number, 2D IoU)
+    pred_by_num: Dict[int, List[Box]] = defaultdict(list)
+    gt_by_num: Dict[int, List[Box]] = defaultdict(list)
+    for pm in pred_measures:
+        pred_by_num[int(pm["number"])].append(pm["bbox"])
+    for gm in gt_measures:
+        gt_by_num[int(gm["number"])].append(gm["bbox"])
+
+    nlc_total = 0
+    nlc_hit = 0
+    for num, gt_list in gt_by_num.items():
+        pred_list = pred_by_num.get(num, [])
+        for gb in gt_list:
+            nlc_total += 1
+            best_iou = 0.0
+            for pb in pred_list:
+                iou = _measure_iou_2d(pb, gb)
+                if iou > best_iou:
+                    best_iou = iou
+            if best_iou >= nlc_iou_threshold:
+                nlc_hit += 1
+    nlc_rate = nlc_hit / nlc_total if nlc_total > 0 else None
+
+    return {
+        "measure_match_tp": tp,
+        "measure_match_fp": fp,
+        "measure_match_fn": fn,
+        "measure_match_recall": recall,
+        "measure_match_precision": precision,
+        "measure_boundary_mae": boundary_mae,
+        "measure_nlc_rate": nlc_rate,
+    }
+
+
 def main():
     pre_parser = argparse.ArgumentParser(add_help=False)
     pre_parser.add_argument("--config", type=Path, help="YAML/JSON config path")
@@ -414,17 +525,49 @@ def main():
 
             measure_pred_proxy = None
             measure_abs_delta = None
+            local_measure_kpis: Dict[str, Optional[float]] = {
+                "measure_match_tp": None,
+                "measure_match_fp": None,
+                "measure_match_fn": None,
+                "measure_match_recall": None,
+                "measure_match_precision": None,
+                "measure_boundary_mae": None,
+                "measure_nlc_rate": None,
+            }
             if args.numbering_eval and pipeline is not None and staff_mask is not None:
                 image_path = images_root / score_name / f"{page_name}.png"
                 if image_path.exists():
-                    measure_pred_proxy = _measure_count_for_boxes(
-                        pipeline,
-                        accepted,
-                        staff_mask,
-                        image_path,
-                    )
-                    if measure_gt_proxy is not None and measure_pred_proxy is not None:
+                    img = cv2.imread(str(image_path))
+                    if img is not None:
+                        h, w = img.shape[:2]
+                        pred_page = pipeline.process_page(
+                            barline_boxes=[list(b) for b in accepted],
+                            staff_mask_path=staff_mask,
+                            image_size=(w, h),
+                            page_number=1,
+                            image=img,
+                        )
+                        gt_page = pipeline.process_page(
+                            barline_boxes=[list(b) for b in gt_boxes],
+                            staff_mask_path=staff_mask,
+                            image_size=(w, h),
+                            page_number=1,
+                            image=img,
+                        )
+                        pred_score = Score()
+                        pred_score.pages.append(pred_page)
+                        pipeline.numberer.number_score(pred_score, start_number=1)
+
+                        gt_score = Score()
+                        gt_score.pages.append(gt_page)
+                        pipeline.numberer.number_score(gt_score, start_number=1)
+
+                        pred_measures = _extract_measures(pred_page)
+                        gt_measures = _extract_measures(gt_page)
+                        measure_pred_proxy = len(pred_measures)
+                        measure_gt_proxy = len(gt_measures)
                         measure_abs_delta = abs(measure_pred_proxy - measure_gt_proxy)
+                        local_measure_kpis = _measure_local_kpis(gt_measures, pred_measures)
 
             page_results.append(
                 RuleResult(
@@ -441,6 +584,25 @@ def main():
                     measure_count_pred=measure_pred_proxy,
                     measure_count_gt=measure_gt_proxy,
                     measure_abs_delta=measure_abs_delta,
+                    measure_match_tp=(
+                        int(local_measure_kpis["measure_match_tp"])
+                        if local_measure_kpis["measure_match_tp"] is not None
+                        else None
+                    ),
+                    measure_match_fp=(
+                        int(local_measure_kpis["measure_match_fp"])
+                        if local_measure_kpis["measure_match_fp"] is not None
+                        else None
+                    ),
+                    measure_match_fn=(
+                        int(local_measure_kpis["measure_match_fn"])
+                        if local_measure_kpis["measure_match_fn"] is not None
+                        else None
+                    ),
+                    measure_match_recall=local_measure_kpis["measure_match_recall"],
+                    measure_match_precision=local_measure_kpis["measure_match_precision"],
+                    measure_boundary_mae=local_measure_kpis["measure_boundary_mae"],
+                    measure_nlc_rate=local_measure_kpis["measure_nlc_rate"],
                 )
             )
 
@@ -530,6 +692,13 @@ def main():
             "pages": 0,
             "measure_abs_delta_sum": 0,
             "measure_pages": 0,
+            "measure_match_tp": 0,
+            "measure_match_fp": 0,
+            "measure_match_fn": 0,
+            "measure_boundary_mae_sum": 0.0,
+            "measure_boundary_mae_pages": 0,
+            "measure_nlc_sum": 0.0,
+            "measure_nlc_pages": 0,
         }
     )
     for r in page_results:
@@ -544,6 +713,18 @@ def main():
         if r.measure_abs_delta is not None:
             a["measure_abs_delta_sum"] += r.measure_abs_delta
             a["measure_pages"] += 1
+        if r.measure_match_tp is not None:
+            a["measure_match_tp"] += r.measure_match_tp
+        if r.measure_match_fp is not None:
+            a["measure_match_fp"] += r.measure_match_fp
+        if r.measure_match_fn is not None:
+            a["measure_match_fn"] += r.measure_match_fn
+        if r.measure_boundary_mae is not None:
+            a["measure_boundary_mae_sum"] += r.measure_boundary_mae
+            a["measure_boundary_mae_pages"] += 1
+        if r.measure_nlc_rate is not None:
+            a["measure_nlc_sum"] += r.measure_nlc_rate
+            a["measure_nlc_pages"] += 1
 
     summary_rows: List[Dict[str, object]] = []
     for rule, a in sorted(agg.items()):
@@ -566,6 +747,24 @@ def main():
             "measure_pages": a["measure_pages"],
             "measure_abs_delta_mean": (
                 a["measure_abs_delta_sum"] / a["measure_pages"] if a["measure_pages"] else ""
+            ),
+            "measure_match_recall": (
+                a["measure_match_tp"] / (a["measure_match_tp"] + a["measure_match_fn"])
+                if (a["measure_match_tp"] + a["measure_match_fn"]) > 0
+                else ""
+            ),
+            "measure_match_precision": (
+                a["measure_match_tp"] / (a["measure_match_tp"] + a["measure_match_fp"])
+                if (a["measure_match_tp"] + a["measure_match_fp"]) > 0
+                else ""
+            ),
+            "measure_boundary_mae_mean": (
+                a["measure_boundary_mae_sum"] / a["measure_boundary_mae_pages"]
+                if a["measure_boundary_mae_pages"]
+                else ""
+            ),
+            "measure_nlc_rate_mean": (
+                a["measure_nlc_sum"] / a["measure_nlc_pages"] if a["measure_nlc_pages"] else ""
             ),
         }
         summary_rows.append(row)

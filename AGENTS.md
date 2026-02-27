@@ -70,12 +70,22 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 - **Single Writer Rule**: To avoid conflicts, keep one active file editor at a time in the session. Explicitly choose a single writer before file edits.
 - **Evidence-First Adoption**: Suggestions from either agent are hypotheses until validated by local code inspection, tests, or runtime behavior.
 - **Prompt/Log Documentation**: Standard prompts and conversation log format for multi-LLM collaboration must be maintained under `docs/ai-workflow/` (see the dedicated collaboration doc) and updated as the workflow evolves.
+- **Operational Entry Points (Must Read Order)**:
+  1. `docs/ai-workflow/WORKFLOW.md` (general workflow baseline)
+  2. `docs/ai-workflow/CODEX_GEMINI_COLLAB.md` (Codex/Gemini collaboration protocol)
+  3. `docs/ai-workflow/LESSONS.md` (known anti-patterns and heuristics)
+  4. This `AGENTS.md` (repository-specific overrides, highest priority inside repo)
+- **Codex -> Gemini Call Stability Rule**:
+  - For this repository, run Gemini consultations with network-enabled execution from the start (outside sandbox when required), not as a fallback after a known-failing step.
+  - Prefer longer timeouts (e.g., `timeout 180s gemini -p "<prompt>"`) to allow deeper reasoning.
+  - For long contexts, pass summarized inputs and split questions to reduce timeout risk.
 
 ## 7. Skills
 
 - 共通スキルは `skills/` に配置する
 - リポジトリ固有の最適化は `.agents/skills` に追加する
 - 各スキルは「目的 / 入力 / 出力 / 手順 / 必要なコマンド」を明記する
+- Gemini相談の標準化には `.agents/skills/gemini-consultation/SKILL.md` を利用し、相談時の入力整理・実行手順・記録方法を統一する
 
 ## 8. インタラクティブ・プロトコル（対話型セッション専用ルール）
 

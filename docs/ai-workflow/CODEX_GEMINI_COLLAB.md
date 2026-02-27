@@ -77,9 +77,9 @@ PR前レビューに限定せず、次の場面で使う。
 
 ### Codex -> Gemini 安定実行メモ（2026-02-27）
 
-- 推奨コマンド: `timeout 60s gemini -p "<prompt>"`
-- Codex sandbox で応答が返らない場合:
-  - 権限昇格（ネットワーク到達性を確保）で再実行する
+- 推奨コマンド: `timeout 180s gemini -p "<prompt>"`
+- 推奨実行方式:
+  - Gemini相談は最初からネットワーク有効な実行経路を選ぶ（既知の失敗手順を先に踏まない）
   - 可能なら `prefix_rule=["gemini","-p"]` を保存して再承認回数を減らす
 - 長文入力で詰まりやすい場合:
   - 文書全量貼り付けを避け、要点要約を渡す
@@ -282,7 +282,7 @@ codex> gemini -i "この差分を中間レビューして"
 - Secondary answer (summary): Geminiは「状態不整合」「コンテキスト分断」「検証循環」を主要リスクとして提示。特にラベル不整合と連携不安定を優先修正対象にする提案
 - Decision: `adopted`
 - Action taken: `WORKFLOW.md` / `LABELS.md` / `CODEX_GEMINI_COLLAB.md` を更新し、`assign-to-jules` の位置づけ、`gh` 安全書式、Codex->Gemini安定実行条件、半自動ナレッジ蓄積ルーチンを追記
-- Evidence: `timeout 60s gemini -p "<prompt>"` で応答取得、加えて上記3ファイルの差分確認
+- Evidence: `timeout 180s gemini -p "<prompt>"` 相当の実行方針で応答取得、加えて上記3ファイルの差分確認
 - Notes: 追加で自動化する場合は `Decision Log` と `LESSONS.md` 追記を行う小スクリプト化を検討
 
 ## Enhanced Sub-agent Collaboration (2026-02-25 Optimization)

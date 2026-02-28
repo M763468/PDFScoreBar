@@ -12,7 +12,13 @@ from tqdm import tqdm
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(REPO_ROOT))
 
-from src.common.barline_evaluation import barline_iou, greedy_barline_match
+from src.common.barline_evaluation import (
+    barline_iou,
+    barline_vertical_overlap,
+    center_distance_x,
+    greedy_barline_match,
+    is_barline_match,
+)
 
 
 def load_config_file(config_path: Path):
@@ -90,6 +96,14 @@ def main():
     parser.add_argument("--output-csv")
     parser.add_argument("--threshold", type=float, default=0.5)
     parser.add_argument(
+        "--eval-rule",
+        choices=["baseline_iou", "center_anchor"],
+        default="baseline_iou",
+        help="Rule name for greedy matching.",
+    )
+    parser.add_argument("--vov-threshold", type=float, default=0.5)
+    parser.add_argument("--xdist-threshold", type=float, default=12.0)
+    parser.add_argument(
         "--scored-glob",
         default="*_scored.json",
         help="Glob pattern (recursive) to find scored JSON files under --scored-root.",
@@ -146,7 +160,14 @@ def main():
         accepted_candidates = [tuple(c["bbox"]) for c in candidates if c["score"] > args.threshold]
 
         # USE GREEDY MATCH
-        match_result = greedy_barline_match(accepted_candidates, gt_boxes)
+        match_result = greedy_barline_match(
+            accepted_candidates,
+            gt_boxes,
+            rule_name=args.eval_rule,
+            iou_threshold=0.5,  # Standard IoU if using baseline_iou
+            vov_threshold=args.vov_threshold,
+            xdist_threshold=args.xdist_threshold,
+        )
 
         tp = len(match_result.matches)
         fp = len(match_result.false_positive_indices)
@@ -157,11 +178,20 @@ def main():
         all_candidate_boxes = [tuple(c["bbox"]) for c in candidates]
         fn_cnn = 0
         fn_det = 0
+
         for fn_idx in match_result.false_negative_indices:
             found_by_detector = False
             gt_box = gt_boxes[fn_idx]
             for cand in all_candidate_boxes:
-                if barline_iou(cand, gt_box) > 0.5:
+                # Use same rule for detector check
+                if is_barline_match(
+                    cand,
+                    gt_box,
+                    args.eval_rule,
+                    iou_threshold=0.5,
+                    vov_threshold=args.vov_threshold,
+                    xdist_threshold=args.xdist_threshold,
+                ):
                     found_by_detector = True
                     break
 

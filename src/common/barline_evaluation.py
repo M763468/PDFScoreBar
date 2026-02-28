@@ -17,6 +17,8 @@ BARLINE_REPEAT_X_TOLERANCE = 40
 BARLINE_VERTICAL_OVERLAP_THRESHOLD = 0.6
 BARLINE_REPEAT_OVERLAP_THRESHOLD = 0.8
 
+VOV_RANK_MULTIPLIER = 1000  # Used for legacy scalar ranking if needed
+
 
 def _ensure_ordered(box: Box) -> Box:
     x1, y1, x2, y2 = box
@@ -122,6 +124,11 @@ def _barline_centroid(box: Box) -> Tuple[float, float]:
     return (x1 + x2) / 2.0, (y1 + y2) / 2.0
 
 
+def center_distance_x(box_a: Box, box_b: Box) -> float:
+    """Return horizontal distance between centers of two boxes."""
+    return abs((box_a[0] + box_a[2]) / 2.0 - (box_b[0] + box_b[2]) / 2.0)
+
+
 def barline_vertical_overlap(box_a: Box, box_b: Box) -> float:
     """Return vertical overlap ratio between two boxes (range 0..1)."""
 
@@ -136,11 +143,52 @@ def barline_vertical_overlap(box_a: Box, box_b: Box) -> float:
     return overlap / max(height_a, height_b)
 
 
+def is_barline_match(
+    pred: Box,
+    gt: Box,
+    rule_name: str = "baseline_iou",
+    *,
+    iou_threshold: float = 0.5,
+    vov_threshold: float = 0.5,
+    xdist_threshold: float = 12.0,
+) -> bool:
+    """Check if a predicted box matches a ground truth box according to specified rule."""
+    if rule_name == "baseline_iou":
+        return barline_iou(pred, gt) >= iou_threshold
+    if rule_name == "center_anchor":
+        vov = barline_vertical_overlap(pred, gt)
+        xdist = center_distance_x(pred, gt)
+        return vov >= vov_threshold and xdist <= xdist_threshold
+    raise ValueError(f"Unknown rule_name: {rule_name}")
+
+
+def get_barline_match_rank(
+    pred: Box,
+    gt: Box,
+    rule_name: str = "baseline_iou",
+) -> Tuple[float, ...]:
+    """Return a comparable tuple representing the 'goodness' of a match.
+    Higher values are better.
+    """
+    iou = barline_iou(pred, gt)
+    vov = barline_vertical_overlap(pred, gt)
+    xdist = center_distance_x(pred, gt)
+
+    if rule_name == "baseline_iou":
+        return (iou, vov, -xdist)
+    if rule_name == "center_anchor":
+        # Primary: vertical overlap, Secondary: horizontal closeness
+        return (vov, -xdist, iou)
+    raise ValueError(f"Unknown rule_name: {rule_name}")
+
+
 @dataclass
 class BarlineMatch:
     pred_index: int
     gt_index: int
     iou: float
+    vov: float = 0.0
+    xdist: float = 0.0
 
 
 @dataclass
@@ -159,6 +207,7 @@ class BarlineMatchResult:
     false_positive_indices: List[int]
     false_negative_indices: List[int]
     soft_matches: List[BarlineSoftMatch]
+    rule_name: str = "baseline_iou"
 
 
 def expand_barline_boxes(
@@ -187,71 +236,83 @@ def greedy_barline_match(
     predictions: Iterable[Box],
     ground_truth: Iterable[Box],
     *,
+    rule_name: str = "baseline_iou",
     iou_threshold: float = 0.5,
+    vov_threshold: float = 0.5,
+    xdist_threshold: float = 12.0,
     duplicate_iou_threshold: float = BARLINE_DUPLICATE_IOU_THRESHOLD,
     duplicate_x_tolerance: float = BARLINE_DUPLICATE_X_TOLERANCE,
     repeat_x_tolerance: float = BARLINE_REPEAT_X_TOLERANCE,
     vertical_overlap_threshold: float = BARLINE_VERTICAL_OVERLAP_THRESHOLD,
     repeat_vertical_overlap: float = BARLINE_REPEAT_OVERLAP_THRESHOLD,
 ) -> BarlineMatchResult:
-    """Greedy IoU-based matching with duplicate/near-match handling."""
+    """Greedy matching based on specified rule (IoU or Center-Anchor)."""
 
     pred_boxes = list(predictions)
     gt_boxes = list(ground_truth)
 
     if not pred_boxes and not gt_boxes:
-        return BarlineMatchResult([], [], [], [])
+        return BarlineMatchResult([], [], [], [], rule_name=rule_name)
 
-    iou_matrix = {}
+    # Candidate pairs that satisfy the rule
+    candidates = []
+    # All pairs for soft match / debug info
     best_soft_info = {}
 
-    for pred_idx, pred in enumerate(pred_boxes):
-        strong_best = (0.0, None, float("inf"), 0.0)
-        fallback_best = (0.0, None, float("inf"), 0.0)
-        for gt_idx, gt in enumerate(gt_boxes):
-            score = barline_iou(pred, gt)
-            px, _ = _barline_centroid(pred)
-            gx, _ = _barline_centroid(gt)
-            x_distance = abs(px - gx)
-            overlap = barline_vertical_overlap(pred, gt)
-            fallback_score, fallback_gt, fallback_x, fallback_overlap = fallback_best
-            if score > fallback_score + 1e-9:
-                fallback_best = (score, gt_idx, x_distance, overlap)
-            elif abs(score - fallback_score) <= 1e-9:
-                if overlap > fallback_overlap + 1e-9:
-                    fallback_best = (score, gt_idx, x_distance, overlap)
-                elif abs(overlap - fallback_overlap) <= 1e-9 and x_distance < fallback_x - 1e-9:
-                    fallback_best = (score, gt_idx, x_distance, overlap)
+    for p_idx, pred in enumerate(pred_boxes):
+        strong_best = (None, None)  # (rank_tuple, gt_idx)
+        for g_idx, gt in enumerate(gt_boxes):
+            iou = barline_iou(pred, gt)
+            vov = barline_vertical_overlap(pred, gt)
+            xdist = center_distance_x(pred, gt)
 
-            strong_score, strong_gt, strong_x, strong_overlap = strong_best
-            if overlap >= vertical_overlap_threshold:
-                if strong_gt is None or score > strong_score + 1e-9:
-                    strong_best = (score, gt_idx, x_distance, overlap)
-                elif abs(score - strong_score) <= 1e-9:
-                    if x_distance < strong_x - 1e-9:
-                        strong_best = (score, gt_idx, x_distance, overlap)
-                    elif abs(x_distance - strong_x) <= 1e-9 and overlap > strong_overlap + 1e-9:
-                        strong_best = (score, gt_idx, x_distance, overlap)
+            # Check if this pair passes the specific evaluation rule
+            if is_barline_match(
+                pred,
+                gt,
+                rule_name,
+                iou_threshold=iou_threshold,
+                vov_threshold=vov_threshold,
+                xdist_threshold=xdist_threshold,
+            ):
+                rank = get_barline_match_rank(pred, gt, rule_name)
+                candidates.append((rank, p_idx, g_idx, iou, vov, xdist))
 
-            if score >= iou_threshold:
-                iou_matrix[(pred_idx, gt_idx)] = score
+            # Track the "most similar" GT for soft-match / duplicate handling.
+            # We must use IoU as the primary similarity metric to ensure stable duplicate suppression
+            # consistent with previous behavior.
+            similarity_rank = (iou, vov, -xdist)
+            if strong_best[1] is None or similarity_rank > strong_best[0]:
+                # Store enough info for soft-match check
+                strong_best = (similarity_rank, g_idx)
 
-        chosen = strong_best if strong_best[1] is not None else fallback_best
-        best_soft_info[pred_idx] = chosen
+        # After checking all GTs for this prediction, extract best info for soft-matching
+        if strong_best[1] is not None:
+            best_gt_idx = strong_best[1]
+            best_gt_box = gt_boxes[best_gt_idx]
+            best_soft_info[p_idx] = (
+                barline_iou(pred, best_gt_box),
+                best_gt_idx,
+                center_distance_x(pred, best_gt_box),
+                barline_vertical_overlap(pred, best_gt_box),
+            )
 
+    # Greedy selection
+    candidates.sort(key=lambda x: x[0], reverse=True)
     matches: List[BarlineMatch] = []
-    unmatched_preds = set(range(len(pred_boxes)))
-    unmatched_gts = set(range(len(gt_boxes)))
+    used_pred = set()
+    used_gt = set()
 
-    while iou_matrix:
-        (best_pred, best_gt), best_score = max(iou_matrix.items(), key=lambda item: item[1])
-        matches.append(BarlineMatch(best_pred, best_gt, best_score))
-        unmatched_preds.discard(best_pred)
-        unmatched_gts.discard(best_gt)
+    for _, p_idx, g_idx, iou, vov, xdist in candidates:
+        if p_idx in used_pred or g_idx in used_gt:
+            continue
+        matches.append(BarlineMatch(p_idx, g_idx, iou, vov, xdist))
+        used_pred.add(p_idx)
+        used_gt.add(g_idx)
 
-        to_remove = [key for key in iou_matrix if key[0] == best_pred or key[1] == best_gt]
-        for key in to_remove:
-            iou_matrix.pop(key, None)
+    # FP / FN
+    unmatched_preds = set(range(len(pred_boxes))) - used_pred
+    unmatched_gts = set(range(len(gt_boxes))) - used_gt
 
     false_positive_indices: List[int] = []
     soft_matches: List[BarlineSoftMatch] = []
@@ -296,7 +357,14 @@ def greedy_barline_match(
 
     false_negative_indices = sorted(unmatched_gts)
 
-    return BarlineMatchResult(matches, false_positive_indices, false_negative_indices, soft_matches)
+    return BarlineMatchResult(
+        matches,
+        false_positive_indices,
+        false_negative_indices,
+        soft_matches,
+        rule_name=rule_name,
+    )
+
 
 
 def apply_left_margin_exclusion(

@@ -54,7 +54,7 @@ def parse_scored_context(json_path: Path, scored_root: Path):
     except ValueError:
         rel_parts = ()
 
-    if len(rel_parts) >= 3 and rel_parts[-1].endswith("_scored.json"):
+    if len(rel_parts) >= 3 and rel_parts[-1].endswith(".json") and "_scored" in rel_parts[-1]:
         score_name = rel_parts[-3]
         page_name = rel_parts[-2]
         if page_name.startswith("page_"):

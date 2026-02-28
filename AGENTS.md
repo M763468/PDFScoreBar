@@ -75,10 +75,17 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 ### Logs & Artifacts
 - **Output Directory**: All experiment logs, metrics, and generated artifacts must be saved under the `logs/` directory. Use structured subdirectories (e.g., `logs/<experiment_name>/<timestamp>/`) to avoid clutter.
 - **Cleanup**: Do not leave temporary files in the project root.
+- **Dataset Staging Rule (Required)**: For CNN retraining/evaluation jobs, place working datasets under `datasets/` in this repository before any bulk file operation. Do not run iterative copy/split generation directly on `/mnt/*`.
+- **Preflight Check (Required)**: Before launching long training/eval, explicitly verify: `pwd` is repo root, input dataset root is under `datasets/`, and output path is under `logs/`.
 
 ### Dependencies
 - **Strict Control**: Do not modify `requirements.txt`, `pyproject.toml`, or `Dockerfile` unless the task explicitly requires dependency updates.
 - **No Unauthorized Libraries**: Do not install new libraries without user approval.
+
+### Dataset I/O Performance Rule (WSL)
+- **Avoid `/mnt/*` for bulk small-file operations**: On this repository, `/mnt/c` `/mnt/d` is mounted via `drvfs/9p`, and metadata-heavy operations (`copytree`, many `cp/stat`, split rebuilds) become extremely slow.
+- **Working copy first**: For dataset editing/augmentation/relabel tasks, first copy the working dataset under repository `datasets/` (ext4 side), then perform all file operations there.
+- **Use `/mnt/*` as source/archive only**: Treat `/mnt/*` dataset paths as read-mostly source or backup locations, not active scratch space for iterative retraining loops.
 
 ## 7. Skills
 
@@ -118,3 +125,9 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
    - まず sandbox 内で `torch.__version__`, `torch.version.cuda`, `torch.cuda.is_available()`, `torch.cuda.device_count()` を確認し、OS 側は `nvidia-smi` で切り分けること。
    - `nvidia-smi` 成功かつ PyTorch の CUDA build（例 `+cuXXX`）なのに sandbox 内だけ失敗する場合、**GPUを使う推論/学習コマンドは権限昇格（sandbox外）で実行**すること。
    - 実行前に「sandbox 内では CUDA 初期化が失敗するため、GPU利用のため権限昇格が必要」である旨を明示し、ユーザー承認を得ること。
+
+8. **長時間学習ジョブの sandbox 制約（multiprocessing/semlock）**:
+   - `experiments/cnn_classifier/train.py` のような DataLoader 複数worker学習は、sandbox 内だと `PermissionError: [Errno 13]`（`multiprocessing` の `SemLock`）で失敗することがある。
+   - この系統の学習ジョブは、最初から **権限昇格（sandbox外）** で実行すること。
+   - 失敗後のリトライではなく、初回実行時点で「sandbox制約回避のため権限昇格が必要」と明示して承認を得ること。
+   - 学習データ更新は先に `datasets/`（repo ext4側）で完了させ、学習ジョブはその作業用datasetを参照して実行すること。

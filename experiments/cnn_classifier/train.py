@@ -164,6 +164,16 @@ def get_model(model_name="mobilenet_v3_small", pretrained=True):
     return model
 
 
+def load_model_weights(model: nn.Module, weight_path: Path):
+    state_dict = torch.load(weight_path, map_location="cpu")
+    if any(k.startswith("_orig_mod.") for k in state_dict.keys()):
+        state_dict = {
+            (k[len("_orig_mod.") :] if k.startswith("_orig_mod.") else k): v
+            for k, v in state_dict.items()
+        }
+    model.load_state_dict(state_dict)
+
+
 # --- Metrics ---
 def calculate_metrics(outputs, labels, threshold=0.5):
     probs = torch.sigmoid(outputs)
@@ -357,6 +367,12 @@ def get_args():
         default=None,
         help=f"Dataloader prefetch factor (default: {DEFAULTS['prefetch_factor']}).",
     )
+    parser.add_argument(
+        "--init-weights",
+        type=str,
+        default=None,
+        help="Optional model checkpoint path used to initialize weights before training.",
+    )
 
     args = parser.parse_args()
     cli_overrides = {
@@ -518,6 +534,12 @@ def train(args):
 
     # Model
     model = get_model(args.model_name).to(DEVICE)
+    if args.init_weights:
+        init_path = Path(args.init_weights)
+        if not init_path.exists():
+            raise FileNotFoundError(f"--init-weights not found: {init_path}")
+        load_model_weights(model, init_path)
+        print(f"Loaded init weights: {init_path}")
     if args.channels_last:
         model = model.to(memory_format=torch.channels_last)
 

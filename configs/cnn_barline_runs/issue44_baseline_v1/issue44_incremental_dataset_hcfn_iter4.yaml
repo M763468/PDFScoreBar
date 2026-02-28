@@ -1,0 +1,8 @@
+baseline_dataset_root: datasets/cnn_classifier_v1_issue44_hcfn_iter1
+hard_positive_dir: logs/cnn_barline_classification/issue44_hcfn_iter1/mining_th0p1/hard_positives
+output_dataset_root: datasets/cnn_classifier_v1_issue44_hcfn_iter4
+
+split: train
+copy_mode: hardlink
+name_prefix: issue44_hcfn_iter4
+dedup: true

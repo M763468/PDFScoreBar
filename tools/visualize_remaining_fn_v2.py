@@ -75,10 +75,22 @@ for scored in sorted(scored_root.rglob('*_scored.json')):
     for fn_idx in match.false_negative_indices:
         gt = gts[fn_idx]
         best = None
+        found_by_detector = False
+        
         for cand_box in all_candidate_boxes:
             dist = get_dist(cand_box, gt)
             if dist < DISTANCE_THRESHOLD:
-                # Use common ranking logic
+                # Check if this candidate satisfies the evaluation rule
+                if is_barline_match(
+                    cand_box, 
+                    gt, 
+                    EVAL_RULE, 
+                    vov_threshold=VOV_THRESHOLD, 
+                    xdist_threshold=XDIST_THRESHOLD
+                ):
+                    found_by_detector = True
+
+                # Use common ranking logic to pick the best for visualization
                 rank = get_barline_match_rank(cand_box, gt, EVAL_RULE)
                 if best is None or rank > best['rank']:
                     # Extract individual metrics for visualization
@@ -101,18 +113,6 @@ for scored in sorted(scored_root.rglob('*_scored.json')):
                         'dist': dist,
                         'rank': rank
                     }
-        
-        # Check if the best found by detector (any score) would satisfy the rule
-        found_by_detector = False
-        if best:
-            if is_barline_match(
-                best['bbox'], 
-                gt, 
-                EVAL_RULE, 
-                vov_threshold=VOV_THRESHOLD, 
-                xdist_threshold=XDIST_THRESHOLD
-            ):
-                found_by_detector = True
         
         kind = 'fn_cnn' if found_by_detector else 'fn_det'
         

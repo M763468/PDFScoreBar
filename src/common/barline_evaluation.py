@@ -17,6 +17,8 @@ BARLINE_REPEAT_X_TOLERANCE = 40
 BARLINE_VERTICAL_OVERLAP_THRESHOLD = 0.6
 BARLINE_REPEAT_OVERLAP_THRESHOLD = 0.8
 
+VOV_RANK_MULTIPLIER = 1000  # Used for legacy scalar ranking if needed
+
 
 def _ensure_ordered(box: Box) -> Box:
     x1, y1, x2, y2 = box
@@ -258,13 +260,13 @@ def greedy_barline_match(
     best_soft_info = {}
 
     for p_idx, pred in enumerate(pred_boxes):
-        strong_best = (0.0, None, float("inf"), 0.0)  # score, gt_idx, xdist, vov
+        strong_best = (None, None)  # (rank_tuple, gt_idx)
         for g_idx, gt in enumerate(gt_boxes):
             iou = barline_iou(pred, gt)
             vov = barline_vertical_overlap(pred, gt)
             xdist = center_distance_x(pred, gt)
 
-            # Rule check
+            # Check if this pair passes the specific evaluation rule
             if is_barline_match(
                 pred,
                 gt,
@@ -276,11 +278,24 @@ def greedy_barline_match(
                 rank = get_barline_match_rank(pred, gt, rule_name)
                 candidates.append((rank, p_idx, g_idx, iou, vov, xdist))
 
-            # Track for soft match (legacy logic)
-            if strong_best[1] is None or iou > strong_best[0]:
-                strong_best = (iou, g_idx, xdist, vov)
+            # Track the "most similar" GT for soft-match / duplicate handling.
+            # We must use IoU as the primary similarity metric to ensure stable duplicate suppression
+            # consistent with previous behavior.
+            similarity_rank = (iou, vov, -xdist)
+            if strong_best[1] is None or similarity_rank > strong_best[0]:
+                # Store enough info for soft-match check
+                strong_best = (similarity_rank, g_idx)
 
-        best_soft_info[p_idx] = strong_best
+        # After checking all GTs for this prediction, extract best info for soft-matching
+        if strong_best[1] is not None:
+            best_gt_idx = strong_best[1]
+            best_gt_box = gt_boxes[best_gt_idx]
+            best_soft_info[p_idx] = (
+                barline_iou(pred, best_gt_box),
+                best_gt_idx,
+                center_distance_x(pred, best_gt_box),
+                barline_vertical_overlap(pred, best_gt_box),
+            )
 
     # Greedy selection
     candidates.sort(key=lambda x: x[0], reverse=True)

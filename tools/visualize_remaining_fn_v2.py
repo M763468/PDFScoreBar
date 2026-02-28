@@ -2,7 +2,14 @@ import json, math
 from pathlib import Path
 import cv2
 import numpy as np
-from src.common.barline_evaluation import greedy_barline_match, barline_iou, barline_vertical_overlap, center_distance_x
+from src.common.barline_evaluation import (
+    barline_iou,
+    barline_vertical_overlap,
+    center_distance_x,
+    get_barline_match_rank,
+    greedy_barline_match,
+    is_barline_match,
+)
 from tools.re_evaluate_global import find_gt_file
 
 # Paths
@@ -68,31 +75,43 @@ for scored in sorted(scored_root.rglob('*_scored.json')):
     for fn_idx in match.false_negative_indices:
         gt = gts[fn_idx]
         best = None
-        for cand in cands:
-            b = tuple(int(v) for v in cand['bbox'][:4])
-            s = float(cand.get('score', 0.0))
-            iou = float(barline_iou(b, gt))
-            vov = float(barline_vertical_overlap(b, gt))
-            xdist = float(center_distance_x(b, gt))
-            dist = get_dist(b, gt)
-            
+        for cand_box in all_candidate_boxes:
+            dist = get_dist(cand_box, gt)
             if dist < DISTANCE_THRESHOLD:
-                # Decide if this candidate is "the best" using the rule ranking logic
-                # For center_anchor, we want high vov then low xdist
-                if best is None:
-                    is_better = True
-                else:
-                    cur_rank = vov * 1000 - xdist
-                    best_rank = best['vov'] * 1000 - best['xdist']
-                    is_better = cur_rank > best_rank
-                
-                if is_better:
-                    best = {'bbox': b, 'score': s, 'iou': iou, 'vov': vov, 'xdist': xdist, 'dist': dist}
+                # Use common ranking logic
+                rank = get_barline_match_rank(cand_box, gt, EVAL_RULE)
+                if best is None or rank > best['rank']:
+                    # Extract individual metrics for visualization
+                    iou = barline_iou(cand_box, gt)
+                    vov = barline_vertical_overlap(cand_box, gt)
+                    xdist = center_distance_x(cand_box, gt)
+                    # Find original candidate score
+                    score = 0.0
+                    for c in cands:
+                        if tuple(c['bbox'][:4]) == cand_box:
+                            score = float(c.get('score', 0.0))
+                            break
+                    
+                    best = {
+                        'bbox': cand_box, 
+                        'score': score, 
+                        'iou': iou, 
+                        'vov': vov, 
+                        'xdist': xdist, 
+                        'dist': dist,
+                        'rank': rank
+                    }
         
         # Check if the best found by detector (any score) would satisfy the rule
         found_by_detector = False
         if best:
-            if best['vov'] >= VOV_THRESHOLD and best['xdist'] <= XDIST_THRESHOLD:
+            if is_barline_match(
+                best['bbox'], 
+                gt, 
+                EVAL_RULE, 
+                vov_threshold=VOV_THRESHOLD, 
+                xdist_threshold=XDIST_THRESHOLD
+            ):
                 found_by_detector = True
         
         kind = 'fn_cnn' if found_by_detector else 'fn_det'

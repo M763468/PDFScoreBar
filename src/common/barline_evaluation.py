@@ -141,6 +141,45 @@ def barline_vertical_overlap(box_a: Box, box_b: Box) -> float:
     return overlap / max(height_a, height_b)
 
 
+def is_barline_match(
+    pred: Box,
+    gt: Box,
+    rule_name: str = "baseline_iou",
+    *,
+    iou_threshold: float = 0.5,
+    vov_threshold: float = 0.5,
+    xdist_threshold: float = 12.0,
+) -> bool:
+    """Check if a predicted box matches a ground truth box according to specified rule."""
+    if rule_name == "baseline_iou":
+        return barline_iou(pred, gt) >= iou_threshold
+    if rule_name == "center_anchor":
+        vov = barline_vertical_overlap(pred, gt)
+        xdist = center_distance_x(pred, gt)
+        return vov >= vov_threshold and xdist <= xdist_threshold
+    raise ValueError(f"Unknown rule_name: {rule_name}")
+
+
+def get_barline_match_rank(
+    pred: Box,
+    gt: Box,
+    rule_name: str = "baseline_iou",
+) -> Tuple[float, ...]:
+    """Return a comparable tuple representing the 'goodness' of a match.
+    Higher values are better.
+    """
+    iou = barline_iou(pred, gt)
+    vov = barline_vertical_overlap(pred, gt)
+    xdist = center_distance_x(pred, gt)
+
+    if rule_name == "baseline_iou":
+        return (iou, vov, -xdist)
+    if rule_name == "center_anchor":
+        # Primary: vertical overlap, Secondary: horizontal closeness
+        return (vov, -xdist, iou)
+    raise ValueError(f"Unknown rule_name: {rule_name}")
+
+
 @dataclass
 class BarlineMatch:
     pred_index: int
@@ -226,19 +265,16 @@ def greedy_barline_match(
             xdist = center_distance_x(pred, gt)
 
             # Rule check
-            accepted = False
-            if rule_name == "baseline_iou":
-                accepted = iou >= iou_threshold
-                rank_score = iou
-            elif rule_name == "center_anchor":
-                accepted = vov >= vov_threshold and xdist <= xdist_threshold
-                # Ranking within rule: prefer high vov, then lower xdist
-                rank_score = vov * 1000 - xdist
-            else:
-                raise ValueError(f"Unknown rule_name: {rule_name}")
-
-            if accepted:
-                candidates.append((rank_score, p_idx, g_idx, iou, vov, xdist))
+            if is_barline_match(
+                pred,
+                gt,
+                rule_name,
+                iou_threshold=iou_threshold,
+                vov_threshold=vov_threshold,
+                xdist_threshold=xdist_threshold,
+            ):
+                rank = get_barline_match_rank(pred, gt, rule_name)
+                candidates.append((rank, p_idx, g_idx, iou, vov, xdist))
 
             # Track for soft match (legacy logic)
             if strong_best[1] is None or iou > strong_best[0]:

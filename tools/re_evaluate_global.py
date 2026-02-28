@@ -12,7 +12,13 @@ from tqdm import tqdm
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(REPO_ROOT))
 
-from src.common.barline_evaluation import barline_iou, greedy_barline_match
+from src.common.barline_evaluation import (
+    barline_iou,
+    barline_vertical_overlap,
+    center_distance_x,
+    greedy_barline_match,
+    is_barline_match,
+)
 
 
 def load_config_file(config_path: Path):
@@ -172,24 +178,20 @@ def main():
         all_candidate_boxes = [tuple(c["bbox"]) for c in candidates]
         fn_cnn = 0
         fn_det = 0
-        from src.common.barline_evaluation import barline_vertical_overlap, center_distance_x
 
         for fn_idx in match_result.false_negative_indices:
             found_by_detector = False
             gt_box = gt_boxes[fn_idx]
             for cand in all_candidate_boxes:
                 # Use same rule for detector check
-                accepted = False
-                if args.eval_rule == "baseline_iou":
-                    if barline_iou(cand, gt_box) > 0.5:
-                        accepted = True
-                elif args.eval_rule == "center_anchor":
-                    vov = barline_vertical_overlap(cand, gt_box)
-                    xdist = center_distance_x(cand, gt_box)
-                    if vov >= args.vov_threshold and xdist <= args.xdist_threshold:
-                        accepted = True
-
-                if accepted:
+                if is_barline_match(
+                    cand,
+                    gt_box,
+                    args.eval_rule,
+                    iou_threshold=0.5,
+                    vov_threshold=args.vov_threshold,
+                    xdist_threshold=args.xdist_threshold,
+                ):
                     found_by_detector = True
                     break
 

@@ -2,15 +2,23 @@ import json, math
 from pathlib import Path
 import cv2
 import numpy as np
-from src.common.barline_evaluation import greedy_barline_match, barline_iou
+from src.common.barline_evaluation import greedy_barline_match, barline_iou, barline_vertical_overlap, center_distance_x
 from tools.re_evaluate_global import find_gt_file
 
 # Paths
 scored_root = Path('logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12_same_source_bboxnorm_w0p8_h4p0_patch10_croprecenter_v2_ge0p5')
 images_root = Path('data/evaluation2/images')
 gt_root = Path('data/evaluation2/annotations')
-out_root = Path('logs/cnn_barline_classification/issue44_baseline_v1/fn_remaining_same_source_croprecenter_v2_ge0p5_th0p1_v2_fix')
+# output dir for center_anchor rule results
+out_root = Path('logs/cnn_barline_classification/issue44_baseline_v1/fn_remaining_center_anchor_th0p1')
 out_root.mkdir(parents=True, exist_ok=True)
+
+# Evaluation Parameters (Center-Anchor)
+EVAL_RULE = "center_anchor"
+THRESHOLD = 0.1
+VOV_THRESHOLD = 0.5
+XDIST_THRESHOLD = 12.0
+DISTANCE_THRESHOLD = 200 # for visualization pairing
 
 def load_gt(p):
     data = json.load(open(p))
@@ -28,8 +36,6 @@ def get_dist(b1, b2):
 
 summary = []
 idx = 1
-# Threshold for pairing distance (px)
-DISTANCE_THRESHOLD = 200
 
 for scored in sorted(scored_root.rglob('*_scored.json')):
     rel = scored.relative_to(scored_root)
@@ -42,8 +48,17 @@ for scored in sorted(scored_root.rglob('*_scored.json')):
     
     cands = json.load(open(scored))
     gts = load_gt(gt_path)
-    accepted = [tuple(int(v) for v in c['bbox'][:4]) for c in cands if float(c['score']) > 0.1]
-    match = greedy_barline_match(accepted, gts)
+    accepted = [tuple(int(v) for v in c['bbox'][:4]) for c in cands if float(c['score']) > THRESHOLD]
+    all_candidate_boxes = [tuple(int(v) for v in c['bbox'][:4]) for c in cands]
+
+    # USE THE SAME MATCHING LOGIC AS GLOBAL EVAL
+    match = greedy_barline_match(
+        accepted, 
+        gts, 
+        rule_name=EVAL_RULE, 
+        vov_threshold=VOV_THRESHOLD, 
+        xdist_threshold=XDIST_THRESHOLD
+    )
     
     if not match.false_negative_indices: continue
     
@@ -57,14 +72,31 @@ for scored in sorted(scored_root.rglob('*_scored.json')):
             b = tuple(int(v) for v in cand['bbox'][:4])
             s = float(cand.get('score', 0.0))
             iou = float(barline_iou(b, gt))
+            vov = float(barline_vertical_overlap(b, gt))
+            xdist = float(center_distance_x(b, gt))
             dist = get_dist(b, gt)
             
-            # Use distance threshold to avoid pairing with irrelevant candidates
             if dist < DISTANCE_THRESHOLD:
-                if best is None or iou > best['iou'] or (iou == best['iou'] and s > best['score']):
-                    best = {'bbox': b, 'score': s, 'iou': iou, 'dist': dist}
+                # Decide if this candidate is "the best" using the rule ranking logic
+                # For center_anchor, we want high vov then low xdist
+                if best is None:
+                    is_better = True
+                else:
+                    cur_rank = vov * 1000 - xdist
+                    best_rank = best['vov'] * 1000 - best['xdist']
+                    is_better = cur_rank > best_rank
+                
+                if is_better:
+                    best = {'bbox': b, 'score': s, 'iou': iou, 'vov': vov, 'xdist': xdist, 'dist': dist}
         
-        kind = 'fn_cnn' if best and best['iou'] >= 0.5 else 'fn_det'
+        # Check if the best found by detector (any score) would satisfy the rule
+        found_by_detector = False
+        if best:
+            if best['vov'] >= VOV_THRESHOLD and best['xdist'] <= XDIST_THRESHOLD:
+                found_by_detector = True
+        
+        kind = 'fn_cnn' if found_by_detector else 'fn_det'
+        
         canvas = img.copy()
         x1, y1, x2, y2 = gt
         cv2.rectangle(canvas, (x1, y1), (x2, y2), (0, 255, 0), 3)
@@ -76,7 +108,7 @@ for scored in sorted(scored_root.rglob('*_scored.json')):
             cv2.rectangle(canvas, (bx1, by1), (bx2, by2), color, 2)
             cv2.putText(
                 canvas,
-                f"cand s={best['score']:.3f} iou={best['iou']:.3f}",
+                f"cand s={best['score']:.3f} vov={best['vov']:.2f} xdist={best['xdist']:.1f}",
                 (max(0, bx1 - 20), min(canvas.shape[0] - 10, by1 + 25)),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.8,
@@ -85,7 +117,6 @@ for scored in sorted(scored_root.rglob('*_scored.json')):
                 cv2.LINE_AA,
             )
         else:
-            # Explicitly mark as No Candidate within range
             cv2.putText(canvas, "NO CANDIDATE NEARBY", (x1, y2 + 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2, cv2.LINE_AA)
 
         cv2.putText(canvas, f"{idx:02d} {kind} {score} {page}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (255, 0, 0), 2, cv2.LINE_AA)
@@ -99,7 +130,8 @@ for scored in sorted(scored_root.rglob('*_scored.json')):
             'score': score,
             'page': page,
             'gt': list(gt),
-            'best_iou': None if not best else round(best['iou'], 6),
+            'best_vov': None if not best else round(best['vov'], 6),
+            'best_xdist': None if not best else round(best['xdist'], 6),
             'best_score': None if not best else round(best['score'], 6),
             'best_cand': None if not best else list(best['bbox']),
             'best_dist': None if not best else round(best['dist'], 2),

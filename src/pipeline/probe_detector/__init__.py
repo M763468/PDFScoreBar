@@ -14,11 +14,12 @@ from .bands import (
     scan_staff_band_from_ink,
 )
 from .debug import write_debug_output
-from .rescue import apply_rightmost_rescue
+from .rescue import apply_gap_rescue, apply_rightmost_rescue
 from .types import (
     BandSelectionConfig,
     Box,
     DivisiRescueConfig,
+    GapRescueConfig,
     RightmostRescueConfig,
 )
 
@@ -81,6 +82,9 @@ def detect_probe_scan(
     scan_rightmost_tolerance: int = 6,
     scan_rightmost_min_rows: int = 3,
     scan_rightmost_min_ratio: float = 0.85,
+    scan_gap_rescue: bool = False,
+    scan_gap_threshold_ratio: float = 1.8,
+    scan_gap_rescue_min_ratio: float = 0.5,
     scan_ratio_rel_rescue: bool = False,
     scan_ratio_rel_rescue_min: float = 0.0,
     scan_ratio_rel_rescue_xpeak_min: float = 0.0,
@@ -262,8 +266,13 @@ def detect_probe_scan(
                 ext_bottom_ratios = bottom_stripe_sums / float(bottom_h * width)
         if ratios.size < 3:
             continue
+
+        effective_min = min_ratio
+        if scan_gap_rescue:
+            effective_min = min(effective_min, scan_gap_rescue_min_ratio)
+
         peaks = np.where(
-            (ratios >= min_ratio) & (ratios >= np.roll(ratios, 1)) & (ratios >= np.roll(ratios, -1))
+            (ratios >= effective_min) & (ratios >= np.roll(ratios, 1)) & (ratios >= np.roll(ratios, -1))
         )[0]
         if peaks.size == 0:
             debug_records.append({"band": [y1, y2], "status": "no_peaks", "band_idx": band_idx})
@@ -477,11 +486,15 @@ def detect_probe_scan(
                 peak_relative_ratio = scan_ratio / max(scan_peak_ratio_local, 1e-6)
             else:
                 peak_relative_ratio = None
-            if scan_ratio is not None and scan_ratio < min_ratio:
+
+            # Determine the primary ratio to check against min_ratio
+            check_ratio = scan_ratio if scan_ratio is not None else float(ratios[local_idx])
+
+            if check_ratio < min_ratio:
                 rec = {
                     "status": "scan_ratio_low",
                     "col": local_idx,
-                    "ratio": scan_ratio,
+                    "ratio": check_ratio,
                     "extended_ratio": scan_ext_ratio,
                     "top_ratio": scan_top_ratio,
                     "bottom_ratio": scan_bottom_ratio,
@@ -833,6 +846,22 @@ def detect_probe_scan(
         debug_records=debug_records,
     )
 
+    gap_cfg = GapRescueConfig(
+        enabled=scan_gap_rescue,
+        threshold_ratio=scan_gap_threshold_ratio,
+        min_ratio=scan_gap_rescue_min_ratio,
+    )
+    apply_gap_rescue(
+        config=gap_cfg,
+        accepted_by_band=accepted_by_band,
+        rejected_records=rejected_records,
+        bands=bands,
+        existing_boxes=existing_boxes,
+        has_existing=has_existing_for_suppression,
+        candidates=candidates,
+        debug_records=debug_records,
+    )
+
     if debug_path is not None:
         debug_params = {
             "method": "probe_scan",
@@ -878,6 +907,9 @@ def detect_probe_scan(
             "scan_rightmost_tolerance": scan_rightmost_tolerance,
             "scan_rightmost_min_rows": scan_rightmost_min_rows,
             "scan_rightmost_min_ratio": scan_rightmost_min_ratio,
+            "scan_gap_rescue": scan_gap_rescue,
+            "scan_gap_threshold_ratio": scan_gap_threshold_ratio,
+            "scan_gap_rescue_min_ratio": scan_gap_rescue_min_ratio,
             "scan_ratio_rel_rescue": scan_ratio_rel_rescue,
             "scan_ratio_rel_rescue_min": scan_ratio_rel_rescue_min,
             "scan_ratio_rel_rescue_xpeak_min": scan_ratio_rel_rescue_xpeak_min,

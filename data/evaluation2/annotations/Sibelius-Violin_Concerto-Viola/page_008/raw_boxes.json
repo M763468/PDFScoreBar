@@ -1054,5 +1054,21 @@
       792
     ],
     "barline_type": "barline"
+  },
+  {
+    "measure_number": 0,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      795,
+      2091,
+      803,
+      2202
+    ],
+    "barline_type": "barline"
   }
 ]

@@ -1,133 +1,129 @@
 import argparse
 import json
 import os
+import shutil
+import sys
 from pathlib import Path
 import cv2
 import numpy as np
+from tqdm import tqdm
 
-def barline_iou(box1, box2):
-    x1_1, y1_1, x2_1, y2_1 = box1
-    x1_2, y1_2, x2_2, y2_2 = box2
-    inter_x1 = max(x1_1, x1_2)
-    inter_y1 = max(y1_1, y1_2)
-    inter_x2 = min(x2_1, x2_2)
-    inter_y2 = min(y2_1, y2_2)
-    if inter_x2 < inter_x1 or inter_y2 < inter_y1:
-        return 0.0
-    inter_area = (inter_x2 - inter_x1 + 1) * (inter_y2 - inter_y1 + 1)
-    area1 = (x2_1 - x1_1 + 1) * (y2_1 - y1_1 + 1)
-    area2 = (x2_2 - x1_2 + 1) * (y2_2 - y1_2 + 1)
-    return inter_area / float(area1 + area2 - inter_area)
+# Add repo root to sys path
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.append(str(REPO_ROOT))
 
-def is_match_center_anchor(gt_box, pred_box, x_dist_thresh=12, vov_thresh=0.5):
-    gx1, gy1, gx2, gy2 = gt_box
-    px1, py1, px2, py2 = pred_box
-    
-    # 1. Horizontal distance (center to center)
-    g_cx = (gx1 + gx2) / 2.0
-    p_cx = (px1 + px2) / 2.0
-    if abs(g_cx - p_cx) > x_dist_thresh:
-        return False
-        
-    # 2. Vertical Overlap (VoV)
-    inter_y1 = max(gy1, py1)
-    inter_y2 = min(gy2, py2)
-    inter_h = max(0, inter_y2 - inter_y1)
-    
-    union_y1 = min(gy1, py1)
-    union_y2 = max(gy2, py2)
-    union_h = max(1, union_y2 - union_y1)
-    
-    vov = inter_h / float(union_h)
-    return vov >= vov_thresh
+from src.common.barline_evaluation import (
+    greedy_barline_match,
+)
+
+def parse_context(dir_name):
+    parts = dir_name.split("_")
+    if "page" not in parts: return None, None
+    p_idx = parts.index("page")
+    start = 1 if parts[0] == "eval2" else 0
+    score_name = "_".join(parts[start:p_idx])
+    page_name = "_".join(parts[p_idx:])
+    return score_name, page_name
+
+def find_files(gt_root, images_root, score_name, page_name):
+    gt_path = None
+    gt_candidates = []
+    for p in Path(gt_root).rglob(f"{page_name}/boxes_sorted*.json"):
+        if score_name.replace("_","-").lower() in p.parts[-3].replace("_","-").lower():
+            gt_candidates.append(p)
+    if gt_candidates:
+        gt_candidates.sort(key=lambda x: x.name, reverse=True)
+        gt_path = gt_candidates[0]
+
+    img_path = None
+    for p in Path(images_root).rglob(f"{page_name}.png"):
+        if score_name.replace("_","-").lower() in p.parts[-2].replace("_","-").lower():
+            img_path = p
+            break
+    return gt_path, img_path
 
 def main():
-    # ... (argparse remains same)
     parser = argparse.ArgumentParser()
     parser.add_argument("--scored-root", type=Path, required=True)
     parser.add_argument("--gt-root", type=Path, required=True)
     parser.add_argument("--images-root", type=Path, required=True)
-    parser.add_argument("--output-dir", type=Path, default=Path("debug_outputs/fn_visualizations"))
+    parser.add_argument("--output-dir", type=Path, default=Path("debug_outputs/failure_visualizations_v8"))
     parser.add_argument("--threshold", type=float, default=0.1)
     args = parser.parse_args()
 
-    # Clean up old visualizations
-    if args.output_dir.exists():
-        import shutil
-        shutil.rmtree(args.output_dir)
+    if args.output_dir.exists(): shutil.rmtree(args.output_dir)
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    # ... (loading remains same)
-    scored_files = list(args.scored_root.rglob("*_scored.json"))
-    for scored_path in scored_files:
-        # ... (parse context)
-        parts = scored_path.parent.name.split("_")
-        if "page" not in parts: continue
-        p_idx = parts.index("page")
-        score_name = "_".join(parts[1:p_idx])
-        page_name = "_".join(parts[p_idx:])
+    scored_files = list(args.scored_root.rglob("pipeline2_no_peak_scored.json"))
+    global_counter = 1
 
-        # Load GT
-        gt_dir = args.gt_root / score_name / page_name
-        gt_path = list(gt_dir.glob("boxes_sorted*.json"))
-        if not gt_path: continue
-        with gt_path[0].open("r") as f:
-            gt_data = json.load(f)
-        gt_boxes = [b["barline_location"] for b in gt_data if "barline_location" in b]
+    for scored_path in tqdm(scored_files):
+        score_name, page_name = parse_context(scored_path.parent.name)
+        if not score_name: continue
+        gt_path, img_path = find_files(args.gt_root, args.images_root, score_name, page_name)
+        if not gt_path or not img_path: continue
 
+        with gt_path.open("r") as f:
+            gt_boxes = [b["barline_location"] for b in json.load(f) if "barline_location" in b]
         with scored_path.open("r") as f:
-            preds = json.load(f)
-        
-        high_preds = [p for p in preds if p["score"] >= args.threshold]
-        
-        fn_boxes = []
-        for gt_box in gt_boxes:
-            matched = False
-            for p in high_preds:
-                if is_match_center_anchor(gt_box, p["bbox"]):
-                    matched = True
-                    break
-            if not matched:
-                fn_boxes.append(gt_box)
+            preds_all = json.load(f)
+            preds = [p for p in preds_all if p["score"] >= args.threshold]
 
-        if not fn_boxes:
+        # Call with rule_name="center_anchor"
+        res = greedy_barline_match(
+            [p["bbox"] for p in preds], gt_boxes, rule_name="center_anchor"
+        )
+
+        if not res.false_negative_indices and not res.false_positive_indices:
             continue
 
-        print(f"Page {score_name}/{page_name}: Found {len(fn_boxes)} FNs.")
-
-        # Load Image
-        img_path = args.images_root / score_name / f"{page_name}.png"
         img = cv2.imread(str(img_path))
         if img is None: continue
 
-        for i, fn_box in enumerate(fn_boxes):
-            x1, y1, x2, y2 = fn_box
-            cx, cy = (x1+x2)//2, (y1+y2)//2
-            
-            # Crop around FN
-            pad = 150
-            cy1 = max(0, cy - pad*2)
-            cy2 = min(img.shape[0], cy + pad*2)
-            cx1 = max(0, cx - pad)
-            cx2 = min(img.shape[1], cx + pad)
-            
-            crop = img[cy1:cy2, cx1:cx2].copy()
-            
-            # Draw GT (Red)
-            cv2.rectangle(crop, (x1-cx1, y1-cy1), (x2-cx1, y2-cy1), (0, 0, 255), 2)
-            cv2.putText(crop, "GT", (x1-cx1, y1-cy1-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
-
-            # Draw all nearby candidates (Blue/Cyan)
-            for p in preds:
+        # FNs
+        for gt_idx in res.false_negative_indices:
+            gt_box = gt_boxes[gt_idx]
+            best_score_any = 0.0
+            matched_any = False
+            for p in preds_all:
+                # Manual matching for FN_det vs FN_cnn classification
+                gx1, gy1, gx2, gy2 = gt_box
                 px1, py1, px2, py2 = p["bbox"]
-                if px2 < cx1 or px1 > cx2 or py2 < cy1 or py1 > cy2: continue
-                
-                color = (255, 0, 0) if p["score"] >= args.threshold else (255, 255, 0)
-                cv2.rectangle(crop, (px1-cx1, py1-cy1), (px2-cx1, py2-cy1), color, 1)
-                cv2.putText(crop, f"{p['score']:.3f}", (px1-cx1, py1-cy1+15), cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
+                if abs((gx1+gx2)/2.0 - (px1+px2)/2.0) <= 12:
+                    vov = max(0, min(gy2, py2) - max(gy1, py1)) / float(max(1, max(gy2, py2) - min(gy1, py1)))
+                    if vov >= 0.5:
+                        matched_any = True
+                        best_score_any = max(best_score_any, p["score"])
 
-            out_path = args.output_dir / f"{score_name}_{page_name}_fn_{i:02d}.png"
-            cv2.imwrite(str(out_path), crop)
+            error_type = "FN_cnn" if matched_any else "FN_det"
+            x1, y1, x2, y2 = gt_box
+            cx, cy = (x1+x2)//2, (y1+y2)//2
+            pad = 150
+            cx1, cy1 = max(0, cx-pad), max(0, cy-pad*2)
+            crop = img[max(0, cy-pad*2):min(img.shape[0], cy+pad*2), max(0, cx-pad):min(img.shape[1], cx+pad)].copy()
+
+            label = f"{global_counter:03d}_{error_type}_{score_name}_{page_name}"
+            cv2.rectangle(crop, (x1-cx1, y1-cy1), (x2-cx1, y2-cy1), (0, 0, 255), 3)
+            cv2.putText(crop, f"ERR: {error_type} (MaxScore: {best_score_any:.4f})", (10, 30), 0, 0.6, (0,0,255), 2)
+            cv2.imwrite(str(args.output_dir / f"{label}.png"), crop)
+            global_counter += 1
+
+        # FPs
+        for pr_idx in res.false_positive_indices:
+            p = preds[pr_idx]
+            x1, y1, x2, y2 = p["bbox"]
+            cx, cy = (x1+x2)//2, (y1+y2)//2
+            pad = 150
+            cx1, cy1 = max(0, cx-pad), max(0, cy-pad*2)
+            crop = img[max(0, cy-pad*2):min(img.shape[0], cy+pad*2), max(0, cx-pad):min(img.shape[1], cx+pad)].copy()
+
+            label = f"{global_counter:03d}_FP_{score_name}_{page_name}"
+            cv2.rectangle(crop, (x1-cx1, y1-cy1), (x2-cx1, y2-cy1), (0, 165, 255), 3)
+            cv2.putText(crop, f"ERR: FP (Score: {p['score']:.3f})", (10, 30), 0, 0.6, (0, 165, 255), 2)
+            cv2.imwrite(str(args.output_dir / f"{label}.png"), crop)
+            global_counter += 1
+
+    print(f"\nSuccess: Generated {global_counter - 1} images.")
 
 if __name__ == "__main__":
     main()

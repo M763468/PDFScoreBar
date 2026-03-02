@@ -1134,5 +1134,21 @@
       4551
     ],
     "barline_type": "barline"
+  },
+  {
+    "measure_number": 0,
+    "number_location": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "barline_location": [
+      551,
+      902,
+      556,
+      1014
+    ],
+    "barline_type": "barline"
   }
 ]

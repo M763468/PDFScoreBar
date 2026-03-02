@@ -36,11 +36,20 @@ def cluster_by_y_distance(y_centers: np.ndarray, max_distance: float, min_cluste
 
 def build_row_stats(
     preds: Sequence[Box],
-    cluster_max_dist: float,
-    min_row_count: int,
+    cluster_max_dist: float | None = None,
+    min_row_count: int = 3,
 ) -> List[Dict[str, float]]:
     if not preds:
         return []
+    
+    # Calculate median bbox height to use as physical reference
+    heights = [abs(box[3] - box[1]) for box in preds if abs(box[3] - box[1]) > 0]
+    median_h = float(np.median(heights)) if heights else 100.0
+    
+    # Default to 0.5 * median bbox height if not provided
+    if cluster_max_dist is None:
+        cluster_max_dist = median_h * 0.5
+
     y_centers = np.array([(box[1] + box[3]) / 2 for box in preds])
     rows, _ = cluster_by_y_distance(y_centers, cluster_max_dist, min_row_count)
     stats: List[Dict[str, float]] = []
@@ -161,7 +170,8 @@ def _append_if_staff_like(
     line_count = len(group)
     long_line_thresh = int(round(image_w * 0.30))
     long_line_count = sum(1 for seg in group if seg["w"] >= long_line_thresh)
-    if line_count < 4 or long_line_count < 3:
+    # Relaxed criteria: 3+ total segments and 2+ long segments to allow for divisi/fragments
+    if line_count < 3 or long_line_count < 2:
         return
 
     y1 = int(group[0]["y1"])

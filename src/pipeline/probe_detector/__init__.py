@@ -34,7 +34,7 @@ def detect_probe_scan(
     existing_boxes: Sequence[Box],
     *,
     band_source: str = "staff_mask",
-    band_cluster_max_dist: float = 25.0,
+    band_cluster_max_dist: float | None = None,
     band_min_row_count: int = 3,
     row_stats: Sequence[Dict[str, float]] | None = None,
     staff_space: float = 0.0,

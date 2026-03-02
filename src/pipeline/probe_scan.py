@@ -300,6 +300,10 @@ def run_probe_scan_batch(
     kwargs = {
         "scan_x_peak_rescue": True,
         "scan_rightmost_rescue": True,
+        "scan_gap_rescue": True,
+        "scan_gap_threshold_ratio": 1.8,
+        "scan_gap_rescue_min_ratio": 0.0,
+        "scan_gap_margin_ratio": 0.1,
         "divisi_rescue": True,
         "scan_x_peak_rescue_mode": "topbottom",
         "probe_width": 4,

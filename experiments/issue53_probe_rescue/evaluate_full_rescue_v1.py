@@ -42,7 +42,7 @@ def run_full_evaluation():
 
     # 3. CNN Scoring
     print("Step 2: Running CNN Scoring...")
-    model_path = Path("logs/cnn_barline_classification/issue44_iter5_rescue_iter1/cnn_classifier_best.pth")
+    model_path = Path("logs/cnn_barline_classification/issue44_iter6_hard_mining_v1/cnn_classifier_best.pth")
     run_scoring_batch(
         model=model_path,
         images_root=image_root,

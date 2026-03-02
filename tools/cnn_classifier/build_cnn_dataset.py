@@ -216,7 +216,11 @@ def extract_local_tp_fp(
                 data = json.load(f)
 
             if isinstance(data, list):
-                candidates = data
+                # Support both [x1,y1,x2,y2] and {"bbox": [x1,y1,x2,y2], ...}
+                if len(data) > 0 and isinstance(data[0], dict) and "bbox" in data[0]:
+                    candidates = [item["bbox"] for item in data]
+                else:
+                    candidates = data
             elif isinstance(data, dict) and "scores" in data:
                 candidates = [item["bbox"] for item in data["scores"]]
             else:
@@ -412,7 +416,11 @@ def extract_eval2_tp_fp(
         with cand_path.open("r") as f:
             data = json.load(f)
         if isinstance(data, list):
-            candidates = data
+            # Support both [x1,y1,x2,y2] and {"bbox": [x1,y1,x2,y2], ...}
+            if len(data) > 0 and isinstance(data[0], dict) and "bbox" in data[0]:
+                candidates = [item["bbox"] for item in data]
+            else:
+                candidates = data
         elif isinstance(data, dict) and "scores" in data:
             candidates = [item["bbox"] for item in data["scores"]]
         else:

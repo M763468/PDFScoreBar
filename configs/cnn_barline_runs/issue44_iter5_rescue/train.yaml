@@ -1,0 +1,28 @@
+# Issue #44 Iter 5 (Rescue + DeepScores) training config
+# Usage:
+#   CNN_DATASET_ROOT=datasets/cnn_classifier_v5_rescue_iter1 .venv_cnn_classifier/bin/python experiments/cnn_classifier/train.py --config configs/cnn_barline_runs/issue44_iter5_rescue/train.yaml
+
+work_dir: logs/cnn_barline_classification/issue44_iter5_rescue_iter1
+model_name: resnet18
+
+epochs: 20
+batch_size: 256
+learning_rate: 0.0001
+img_size: [256, 128]
+seed: 44
+
+amp: true
+compile: true
+compile_mode: reduce-overhead
+channels_last: true
+
+imbalance: sampler
+optimize_threshold: true
+weight_decay: 0.01
+num_workers: 8
+prefetch_factor: 2
+save_interval: 0
+
+sp_p: 0.3
+sp_density: 0.02
+freeze_backbone_epochs: 0

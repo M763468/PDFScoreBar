@@ -161,11 +161,17 @@ def apply_gap_rescue(
                 continue
 
             # Look for candidates in this specific gap from rejected_records
+            # Use dynamic margin to avoid boundary noise.
+            # Only rescue candidates that were rejected due to low ratio (not geometry issues).
+            margin = gap_w * config.margin_ratio
+            rescue_statuses = {"scan_ratio_low", "scan_ratio_rel_low"}
+
             gap_candidates = [
                 rec
                 for rec in rejected_records
                 if rec["band_idx"] == band_idx
-                and x_left + 15 < rec["col"] < x_right - 15
+                and x_left + margin < rec["col"] < x_right - margin
+                and rec["record"].get("status") in rescue_statuses
                 and rec["record"].get("ratio", 0) >= config.min_ratio
             ]
 

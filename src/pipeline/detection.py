@@ -77,6 +77,7 @@ _PROBE_SCAN_KWARG_KEYS = (
     "scan_gap_rescue",
     "scan_gap_threshold_ratio",
     "scan_gap_rescue_min_ratio",
+    "scan_gap_margin_ratio",
     "scan_ratio_rel_rescue",
     "scan_ratio_rel_rescue_min",
     "scan_ratio_rel_rescue_xpeak_min",

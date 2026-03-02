@@ -65,3 +65,4 @@ class GapRescueConfig:
     enabled: bool
     threshold_ratio: float
     min_ratio: float
+    margin_ratio: float = 0.1

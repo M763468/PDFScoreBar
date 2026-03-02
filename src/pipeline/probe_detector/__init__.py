@@ -85,6 +85,7 @@ def detect_probe_scan(
     scan_gap_rescue: bool = False,
     scan_gap_threshold_ratio: float = 1.8,
     scan_gap_rescue_min_ratio: float = 0.5,
+    scan_gap_margin_ratio: float = 0.1,
     scan_ratio_rel_rescue: bool = False,
     scan_ratio_rel_rescue_min: float = 0.0,
     scan_ratio_rel_rescue_xpeak_min: float = 0.0,
@@ -850,6 +851,7 @@ def detect_probe_scan(
         enabled=scan_gap_rescue,
         threshold_ratio=scan_gap_threshold_ratio,
         min_ratio=scan_gap_rescue_min_ratio,
+        margin_ratio=scan_gap_margin_ratio,
     )
     apply_gap_rescue(
         config=gap_cfg,
@@ -910,6 +912,7 @@ def detect_probe_scan(
             "scan_gap_rescue": scan_gap_rescue,
             "scan_gap_threshold_ratio": scan_gap_threshold_ratio,
             "scan_gap_rescue_min_ratio": scan_gap_rescue_min_ratio,
+            "scan_gap_margin_ratio": scan_gap_margin_ratio,
             "scan_ratio_rel_rescue": scan_ratio_rel_rescue,
             "scan_ratio_rel_rescue_min": scan_ratio_rel_rescue_min,
             "scan_ratio_rel_rescue_xpeak_min": scan_ratio_rel_rescue_xpeak_min,

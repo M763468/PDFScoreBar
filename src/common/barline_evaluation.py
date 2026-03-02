@@ -318,6 +318,9 @@ def greedy_barline_match(
     soft_matches: List[BarlineSoftMatch] = []
 
     for pred_idx in sorted(unmatched_preds):
+        if pred_idx not in best_soft_info:
+            false_positive_indices.append(pred_idx)
+            continue
         best_score, best_gt, x_distance, overlap = best_soft_info[pred_idx]
         if best_gt is None:
             false_positive_indices.append(pred_idx)

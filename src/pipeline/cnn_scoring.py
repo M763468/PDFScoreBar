@@ -206,20 +206,37 @@ def _score_directory(
             candidate_objects_for_filter.append(item)
 
     # --- Apply Geometric Filtering ---
-    if staff_mask_path and staff_mask_path.exists() and candidate_objects_for_filter:
-        mask = cv2.imread(str(staff_mask_path), cv2.IMREAD_GRAYSCALE)
-        if mask is not None:
-            staff_bands = staff_bands_from_mask(mask)
-            if staff_bands:
-                # Identify items to keep
-                kept_items = filter_by_staff_overlap(
-                    candidate_objects_for_filter, staff_bands, vov_threshold=staff_vov_threshold
+    if (staff_mask_path or bands_from) and candidate_objects_for_filter:
+        staff_bands = []
+        if staff_mask_path and staff_mask_path.exists():
+            mask = cv2.imread(str(staff_mask_path), cv2.IMREAD_GRAYSCALE)
+            if mask is not None:
+                staff_bands = staff_bands_from_mask(mask)
+        
+        if not staff_bands and bands_from:
+            from src.pipeline.probe_scan import _load_bands_for_image
+
+            existing_boxes = _load_bands_for_image(
+                bands_from=bands_from,
+                current_score_name=current_score_name or "",
+                stem=image_path.stem,
+            )
+            if existing_boxes:
+                staff_bands_stats = build_row_stats(
+                    existing_boxes, cluster_max_dist=None, min_row_count=1
                 )
-                kept_indices = {id(item) for item in kept_items}
-                # Suppress others in scored_results
-                for item in candidate_objects_for_filter:
-                    if id(item) not in kept_indices:
-                        item["score"] = 0.0
+                staff_bands = [(int(r["top"]), int(r["bottom"])) for r in staff_bands_stats]
+
+        if staff_bands:
+            # Identify items to keep
+            kept_items = filter_by_staff_overlap(
+                candidate_objects_for_filter, staff_bands, vov_threshold=staff_vov_threshold
+            )
+            kept_indices = {id(item) for item in kept_items}
+            # Suppress others in scored_results
+            for item in candidate_objects_for_filter:
+                if id(item) not in kept_indices:
+                    item["score"] = 0.0
 
     filtered_boxes = [item["bbox"] for item in candidate_objects_for_filter if item["score"] >= threshold]
 

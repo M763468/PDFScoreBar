@@ -362,22 +362,39 @@ def process_dir(
             candidate_objects_for_filter.append(item)
 
     # --- Apply Geometric Filtering ---
-    if staff_mask_map and scored_results:
-        if page_num in staff_mask_map:
+    if (staff_mask_map or bands_from) and scored_results:
+        staff_bands = []
+        if staff_mask_map and page_num in staff_mask_map:
             mask = cv2.imread(str(staff_mask_map[page_num]), cv2.IMREAD_GRAYSCALE)
             if mask is not None:
                 staff_bands = staff_bands_from_mask(mask)
-                if staff_bands:
-                    # Suppress candidates that fail the geometric filter
-                    to_geo_filter = [item for item in scored_results if item["score"] >= threshold]
-                    if to_geo_filter:
-                        kept_items = filter_by_staff_overlap(
-                            to_geo_filter, staff_bands, vov_threshold=staff_vov_threshold
-                        )
-                        kept_indices = {id(item) for item in kept_items}
-                        for item in to_geo_filter:
-                            if id(item) not in kept_indices:
-                                item["score"] = 0.0
+        
+        if not staff_bands and bands_from:
+            # Resolve row stats if mask was not used
+            from src.pipeline.probe_scan import _load_bands_for_image
+
+            existing_boxes = _load_bands_for_image(
+                bands_from=bands_from,
+                current_score_name=score_name,
+                stem=page_num,
+            )
+            if existing_boxes:
+                staff_bands_stats = build_row_stats(
+                    existing_boxes, cluster_max_dist=None, min_row_count=1
+                )
+                staff_bands = [(int(r["top"]), int(r["bottom"])) for r in staff_bands_stats]
+
+        if staff_bands:
+            # Suppress candidates that fail the geometric filter
+            to_geo_filter = [item for item in scored_results if item["score"] >= threshold]
+            if to_geo_filter:
+                kept_items = filter_by_staff_overlap(
+                    to_geo_filter, staff_bands, vov_threshold=staff_vov_threshold
+                )
+                kept_indices = {id(item) for item in kept_items}
+                for item in to_geo_filter:
+                    if id(item) not in kept_indices:
+                        item["score"] = 0.0
 
     filtered_boxes = [item["bbox"] for item in scored_results if item["score"] >= threshold]
 

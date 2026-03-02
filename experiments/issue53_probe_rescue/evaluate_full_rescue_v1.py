@@ -37,12 +37,12 @@ def run_full_evaluation():
         min_ratio=0.85,
         min_height_ratio=0.012,
         detect_probe_kwargs=detect_probe_kwargs,
-        skip_existing=False
+        skip_existing=True
     )
 
     # 3. CNN Scoring
     print("Step 2: Running CNN Scoring...")
-    model_path = Path("logs/cnn_barline_classification/issue44_baseline_v1/cnn_classifier_best.pth")
+    model_path = Path("logs/cnn_barline_classification/issue44_iter5_rescue_iter1/cnn_classifier_best.pth")
     run_scoring_batch(
         model=model_path,
         images_root=image_root,
@@ -50,7 +50,11 @@ def run_full_evaluation():
         threshold=0.1,
         # Preprocessing matching baseline (croprecenter_v2)
         crop_recenter_on_bbox_ink=True,
-        crop_recenter_max_shift_unit_ratio=0.5
+        crop_recenter_max_shift_unit_ratio=0.5,
+        # Enable staff-aware geometric filtering
+        bands_from=bands_from,
+        staff_vov_threshold=0.5,
+        overwrite=True
     )
 
     # 4. Global Evaluation (using center_anchor)

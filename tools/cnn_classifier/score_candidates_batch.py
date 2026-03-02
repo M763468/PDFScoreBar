@@ -11,6 +11,8 @@ from PIL import Image
 from torchvision import models, transforms
 from tqdm import tqdm
 
+from src.pipeline.filters import filter_by_staff_overlap
+from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask
 from src.pipeline.wide_split_utils import (
     estimate_unit_size_from_box_height,
 )
@@ -225,6 +227,9 @@ def process_dir(
     crop_recenter_apply_if_width_le_unit_ratio=1.0,
     crop_recenter_mask_ratio=0.85,
     crop_recenter_max_shift_unit_ratio=0.35,
+    staff_mask_map: dict[str, Path] | None = None,
+    bands_from: Path | None = None,
+    staff_vov_threshold: float = 0.5,
 ):
     scored_json_path = log_dir / scored_filename
     if scored_json_path.exists() and not overwrite:
@@ -263,6 +268,13 @@ def process_dir(
     if img is None:
         print(f"Failed to load image: {image_path}")
         return False
+
+    # --- Resolve Staff Bands ---
+    staff_bands = []
+    if staff_mask_map and page_num in staff_mask_map:
+        mask = cv2.imread(str(staff_mask_map[page_num]), cv2.IMREAD_GRAYSCALE)
+        if mask is not None:
+            staff_bands = staff_bands_from_mask(mask)
 
     if split_wide_candidates:
         candidates, split_stats = split_wide_candidates_util(
@@ -340,13 +352,34 @@ def process_dir(
     scores = np.concatenate(scores_list)
 
     scored_results = []
-    filtered_boxes = []
+    candidate_objects_for_filter = []
 
     for i, box in enumerate(candidates):
         score = float(scores[i])
-        scored_results.append({"bbox": box, "score": score})
+        item = {"bbox": box, "score": score}
+        scored_results.append(item)
         if score > threshold:
-            filtered_boxes.append(box)
+            candidate_objects_for_filter.append(item)
+
+    # --- Apply Geometric Filtering ---
+    if staff_mask_map and scored_results:
+        if page_num in staff_mask_map:
+            mask = cv2.imread(str(staff_mask_map[page_num]), cv2.IMREAD_GRAYSCALE)
+            if mask is not None:
+                staff_bands = staff_bands_from_mask(mask)
+                if staff_bands:
+                    # Suppress candidates that fail the geometric filter
+                    to_geo_filter = [item for item in scored_results if item["score"] >= threshold]
+                    if to_geo_filter:
+                        kept_items = filter_by_staff_overlap(
+                            to_geo_filter, staff_bands, vov_threshold=staff_vov_threshold
+                        )
+                        kept_indices = {id(item) for item in kept_items}
+                        for item in to_geo_filter:
+                            if id(item) not in kept_indices:
+                                item["score"] = 0.0
+
+    filtered_boxes = [item["bbox"] for item in scored_results if item["score"] >= threshold]
 
     # Save
     with open(log_dir / scored_filename, "w") as f:
@@ -404,6 +437,9 @@ def _build_parser(pre_parser: argparse.ArgumentParser) -> argparse.ArgumentParse
     parser.add_argument("--crop-recenter-apply-if-width-le-unit-ratio", type=float, default=1.0)
     parser.add_argument("--crop-recenter-mask-ratio", type=float, default=0.85)
     parser.add_argument("--crop-recenter-max-shift-unit-ratio", type=float, default=0.35)
+    parser.add_argument("--staff-mask-dir", default=None, help="Directory containing staff masks.")
+    parser.add_argument("--bands-from", default=None, help="Source for staff bands (json or dir).")
+    parser.add_argument("--staff-vov-threshold", type=float, default=0.5)
     return parser
 
 
@@ -460,6 +496,9 @@ def run_scoring_batch(
     crop_recenter_apply_if_width_le_unit_ratio: float = 1.0,
     crop_recenter_mask_ratio: float = 0.85,
     crop_recenter_max_shift_unit_ratio: float = 0.35,
+    staff_mask_dir: str | os.PathLike[str] | None = None,
+    bands_from: str | os.PathLike[str] | None = None,
+    staff_vov_threshold: float = 0.5,
 ) -> int:
     model_path = _resolve_model_path(model)
     if model_path is None:
@@ -471,6 +510,16 @@ def run_scoring_batch(
     images_root = Path(images_root)
     candidate_dirs = _find_candidate_dirs(log_root, candidate_filename)
     print(f"Processing {len(candidate_dirs)} directories...")
+
+    # For staff mask resolution
+    staff_mask_map = {}
+    if staff_mask_dir:
+        staff_mask_dir = Path(staff_mask_dir)
+        for path in staff_mask_dir.rglob("*_debug_3_staff.png"):
+            stem_key = path.name.replace("_proxy_debug_3_staff.png", "").replace(
+                "_debug_3_staff.png", ""
+            )
+            staff_mask_map[stem_key] = path
 
     count = 0
     for d in tqdm(candidate_dirs):
@@ -499,6 +548,9 @@ def run_scoring_batch(
             crop_recenter_apply_if_width_le_unit_ratio=crop_recenter_apply_if_width_le_unit_ratio,
             crop_recenter_mask_ratio=crop_recenter_mask_ratio,
             crop_recenter_max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio,
+            staff_mask_map=staff_mask_map,
+            bands_from=Path(bands_from) if bands_from else None,
+            staff_vov_threshold=staff_vov_threshold,
         ):
             count += 1
 

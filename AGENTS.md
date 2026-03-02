@@ -67,13 +67,25 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
     - Use specific labels for complex barlines: `double_barline`, `end_barline`, `repeat`.
     - Treat multi-line barlines as a **single logical event** with a single encompassing BBox.
 
+### Issue Template Conformance
+- **Template-First Issue Bodies**: When creating or updating GitHub Issues, always align the body with the corresponding file in `.github/ISSUE_TEMPLATE/`.
+- **Required Headers Must Exist**: For `Task` issues, do not omit `Base branch`, `Branch name`, `PR base`, `Goal`, and `Done` in the issue body.
+- **Project Extensions Are Additive**: Sections like `Background`, `Scope`, `Acceptance Criteria`, and `How to test` may be added, but only in addition to (not instead of) required template headers.
+
 ### Logs & Artifacts
 - **Output Directory**: All experiment logs, metrics, and generated artifacts must be saved under the `logs/` directory. Use structured subdirectories (e.g., `logs/<experiment_name>/<timestamp>/`) to avoid clutter.
 - **Cleanup**: Do not leave temporary files in the project root.
+- **Dataset Staging Rule (Required)**: For CNN retraining/evaluation jobs, place working datasets under `datasets/` in this repository before any bulk file operation. Do not run iterative copy/split generation directly on `/mnt/*`.
+- **Preflight Check (Required)**: Before launching long training/eval, explicitly verify: `pwd` is repo root, input dataset root is under `datasets/`, and output path is under `logs/`.
 
 ### Dependencies
 - **Strict Control**: Do not modify `requirements.txt`, `pyproject.toml`, or `Dockerfile` unless the task explicitly requires dependency updates.
 - **No Unauthorized Libraries**: Do not install new libraries without user approval.
+
+### Dataset I/O Performance Rule (WSL)
+- **Avoid `/mnt/*` for bulk small-file operations**: On this repository, `/mnt/c` `/mnt/d` is mounted via `drvfs/9p`, and metadata-heavy operations (`copytree`, many `cp/stat`, split rebuilds) become extremely slow.
+- **Working copy first**: For dataset editing/augmentation/relabel tasks, first copy the working dataset under repository `datasets/` (ext4 side), then perform all file operations there.
+- **Use `/mnt/*` as source/archive only**: Treat `/mnt/*` dataset paths as read-mostly source or backup locations, not active scratch space for iterative retraining loops.
 
 ## 7. Skills
 
@@ -101,3 +113,21 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 5. **GitHubコメント投稿時の安全な書式**:
    - `gh pr comment` / `gh issue comment` で本文にバッククォート（`` ` ``）や `$` を含む場合、シェル展開を避けるため `--body-file` + シングルクォートheredoc（`<<'EOF'`）を使うこと。
    - `--body "..."` へ直接埋め込む方法は原則禁止（コマンド置換や変数展開で本文が破損するため）。
+
+6. **`gh` 実行時のネットワーク制限切り分け（Codex / sandbox）**:
+   - `gh issue comment` / `gh pr comment` / `gh api` 実行時に `error connecting to api.github.com` が出た場合、まず **認証エラーと断定しない**。Codex セッションの sandbox が `network_access=false` の場合、GitHub API に到達できず同様のエラーになる。
+   - `gh auth status` の結果だけで判断せず、必要に応じて `gh api user` や `gh issue view <number>` などの**読み取り系コマンド**で到達性と認証を切り分けること。
+   - GitHub への投稿/更新操作（コメント投稿、Issue/PR 更新など）は、sandbox 内で通信不可のときは **権限昇格（sandbox外）で実行**すること。
+   - エージェントは実行前に「ネットワーク制限回避のため権限昇格が必要」である旨を明示し、ユーザー承認を得ること。
+
+7. **GPU/CUDA 実行時の sandbox 切り分け（PyTorch）**:
+   - `nvidia-smi` は成功するのに `torch.cuda.is_available()==False` や `cudaGetDeviceCount` 系エラー（例: `Error 304: OS call failed or operation not supported on this OS`）が出る場合、まず **ドライバ/venv破損と断定しない**。Codex の sandbox 内実行では CUDA 初期化が失敗することがある。
+   - まず sandbox 内で `torch.__version__`, `torch.version.cuda`, `torch.cuda.is_available()`, `torch.cuda.device_count()` を確認し、OS 側は `nvidia-smi` で切り分けること。
+   - `nvidia-smi` 成功かつ PyTorch の CUDA build（例 `+cuXXX`）なのに sandbox 内だけ失敗する場合、**GPUを使う推論/学習コマンドは権限昇格（sandbox外）で実行**すること。
+   - 実行前に「sandbox 内では CUDA 初期化が失敗するため、GPU利用のため権限昇格が必要」である旨を明示し、ユーザー承認を得ること。
+
+8. **長時間学習ジョブの sandbox 制約（multiprocessing/semlock）**:
+   - `experiments/cnn_classifier/train.py` のような DataLoader 複数worker学習は、sandbox 内だと `PermissionError: [Errno 13]`（`multiprocessing` の `SemLock`）で失敗することがある。
+   - この系統の学習ジョブは、最初から **権限昇格（sandbox外）** で実行すること。
+   - 失敗後のリトライではなく、初回実行時点で「sandbox制約回避のため権限昇格が必要」と明示して承認を得ること。
+   - 学習データ更新は先に `datasets/`（repo ext4側）で完了させ、学習ジョブはその作業用datasetを参照して実行すること。

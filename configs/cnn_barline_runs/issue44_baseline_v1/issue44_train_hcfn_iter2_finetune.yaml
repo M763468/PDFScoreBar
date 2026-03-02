@@ -1,0 +1,25 @@
+work_dir: logs/cnn_barline_classification/issue44_hcfn_iter2
+model_name: resnet18
+init_weights: logs/cnn_barline_classification/issue44_baseline_v1/cnn_classifier_best.pth
+
+epochs: 6
+batch_size: 256
+learning_rate: 0.00001
+img_size: [256, 128]
+seed: 44
+
+amp: true
+compile: true
+compile_mode: reduce-overhead
+channels_last: true
+
+imbalance: sampler
+optimize_threshold: true
+weight_decay: 0.01
+num_workers: 8
+prefetch_factor: 2
+save_interval: 0
+
+sp_p: 0.3
+sp_density: 0.02
+freeze_backbone_epochs: 4

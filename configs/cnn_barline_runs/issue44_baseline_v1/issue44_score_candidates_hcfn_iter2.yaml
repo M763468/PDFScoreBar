@@ -1,0 +1,8 @@
+logs: logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+images_root: data/evaluation2/images
+model: logs/cnn_barline_classification/issue44_hcfn_iter2/cnn_classifier_best.pth
+threshold: 0.1
+candidate_filename: pipeline2_no_peak_candidates.json
+scored_filename: pipeline2_no_peak_scored_hcfn_iter2.json
+filtered_filename: pipeline2_no_peak_filtered_cnn_hcfn_iter2.json
+overwrite: true

@@ -139,16 +139,24 @@ def main():
 
             # SR Logic (Per Image)
             if args.pre_computed_sr:
-                # 1. Try exact file match (legacy/explicit)
-                sr_img_path = Path(args.pre_computed_sr)
-                if not sr_img_path.exists():
-                    # 2. Try directory match: pre_computed_sr / stem / stem / stem.png (homr_evaluator style)
-                    sr_img_path = Path(args.pre_computed_sr) / stem / stem / f"{stem}.png"
-                if not sr_img_path.exists():
-                    # 3. Try directory match simple: pre_computed_sr / stem.png
-                    sr_img_path = Path(args.pre_computed_sr) / f"{stem}.png"
+                sr_base = Path(args.pre_computed_sr)
+                sr_img_path = None
+                
+                # 1. Try directory match patterns (higher priority for batch runs)
+                # homr_evaluator style: pre_computed_sr / stem / stem / stem.png
+                p1 = sr_base / stem / stem / f"{stem}.png"
+                # Simple style: pre_computed_sr / stem.png
+                p2 = sr_base / f"{stem}.png"
+                
+                if p1.exists():
+                    sr_img_path = p1
+                elif p2.exists():
+                    sr_img_path = p2
+                elif sr_base.is_file():
+                    # 3. Fallback to explicit file (legacy/explicit)
+                    sr_img_path = sr_base
 
-                if sr_img_path.exists():
+                if sr_img_path and sr_img_path.exists():
                     print(f"Using pre-computed SR: {sr_img_path}", file=sys.stderr)
                     sr_img_bgr = cv2.imread(str(sr_img_path))
                     if sr_img_bgr is not None:

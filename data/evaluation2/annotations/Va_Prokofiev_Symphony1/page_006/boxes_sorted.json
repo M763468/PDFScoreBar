@@ -1432,22 +1432,6 @@
       0
     ],
     "barline_location": [
-      3101,
-      3248,
-      3105,
-      3351
-    ],
-    "barline_type": "barline"
-  },
-  {
-    "measure_number": 91,
-    "number_location": [
-      0,
-      0,
-      0,
-      0
-    ],
-    "barline_location": [
       3196,
       3247,
       3205,
@@ -1456,7 +1440,7 @@
     "barline_type": "barline"
   },
   {
-    "measure_number": 92,
+    "measure_number": 91,
     "number_location": [
       0,
       0,
@@ -1472,7 +1456,7 @@
     "barline_type": "barline"
   },
   {
-    "measure_number": 93,
+    "measure_number": 92,
     "number_location": [
       0,
       0,
@@ -1488,7 +1472,7 @@
     "barline_type": "barline"
   },
   {
-    "measure_number": 94,
+    "measure_number": 93,
     "number_location": [
       0,
       0,
@@ -1504,7 +1488,7 @@
     "barline_type": "barline"
   },
   {
-    "measure_number": 95,
+    "measure_number": 94,
     "number_location": [
       0,
       0,
@@ -1520,7 +1504,7 @@
     "barline_type": "barline"
   },
   {
-    "measure_number": 96,
+    "measure_number": 95,
     "number_location": [
       0,
       0,
@@ -1536,7 +1520,7 @@
     "barline_type": "barline"
   },
   {
-    "measure_number": 97,
+    "measure_number": 96,
     "number_location": [
       0,
       0,
@@ -1552,7 +1536,7 @@
     "barline_type": "end_barline"
   },
   {
-    "measure_number": 98,
+    "measure_number": 97,
     "number_location": [
       0,
       0,
@@ -1568,7 +1552,7 @@
     "barline_type": "end_barline"
   },
   {
-    "measure_number": 99,
+    "measure_number": 98,
     "number_location": [
       0,
       0,
@@ -1584,7 +1568,7 @@
     "barline_type": "barline"
   },
   {
-    "measure_number": 100,
+    "measure_number": 99,
     "number_location": [
       0,
       0,
@@ -1600,7 +1584,7 @@
     "barline_type": "barline"
   },
   {
-    "measure_number": 101,
+    "measure_number": 100,
     "number_location": [
       0,
       0,
@@ -1616,7 +1600,7 @@
     "barline_type": "barline"
   },
   {
-    "measure_number": 102,
+    "measure_number": 101,
     "number_location": [
       0,
       0,
@@ -1632,7 +1616,7 @@
     "barline_type": "barline"
   },
   {
-    "measure_number": 103,
+    "measure_number": 102,
     "number_location": [
       0,
       0,
@@ -1648,7 +1632,7 @@
     "barline_type": "barline"
   },
   {
-    "measure_number": 104,
+    "measure_number": 103,
     "number_location": [
       0,
       0,

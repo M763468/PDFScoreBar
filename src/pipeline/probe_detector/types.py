@@ -58,3 +58,11 @@ class RightmostRescueConfig:
     tolerance: int
     min_rows: int
     min_ratio: float
+
+
+@dataclass(frozen=True)
+class GapRescueConfig:
+    enabled: bool
+    threshold_ratio: float
+    min_ratio: float
+    margin_ratio: float = 0.1

@@ -34,6 +34,8 @@ except ImportError:  # pragma: no cover - optional in minimal test env
     transforms = None  # type: ignore[assignment]
 
 from src.pipeline.run_ids import build_probe_run_id
+from src.pipeline.filters import filter_by_staff_overlap
+from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +128,10 @@ def _score_directory(
     threshold: float,
     device: torch.device,
     batch_size: int,
+    staff_mask_path: Optional[Path] = None,
+    bands_from: Optional[Path] = None,
+    current_score_name: Optional[str] = None,
+    staff_vov_threshold: float = 0.5,
 ) -> bool:
     candidates_path = run_dir / "pipeline2_no_peak_candidates.json"
     if not candidates_path.exists():
@@ -150,6 +156,13 @@ def _score_directory(
     if img is None:
         logger.warning("Failed to load image: %s", image_path)
         return False
+
+    # --- Resolve Staff Bands ---
+    staff_bands = []
+    if staff_mask_path and staff_mask_path.exists():
+        mask = cv2.imread(str(staff_mask_path), cv2.IMREAD_GRAYSCALE)
+        if mask is not None:
+            staff_bands = staff_bands_from_mask(mask)
 
     resize_filter = Image.Resampling.BILINEAR if hasattr(Image, "Resampling") else Image.BILINEAR
     to_tensor = transforms.ToTensor()
@@ -184,12 +197,48 @@ def _score_directory(
     scores = np.concatenate(score_chunks)
 
     scored_results = []
-    filtered_boxes = []
+    candidate_objects_for_filter = []
     for idx, box in enumerate(valid_boxes):
         score = float(scores[idx])
-        scored_results.append({"bbox": box, "score": score})
+        item = {"bbox": box, "score": score}
+        scored_results.append(item)
         if score > threshold:
-            filtered_boxes.append(box)
+            candidate_objects_for_filter.append(item)
+
+    # --- Apply Geometric Filtering ---
+    if (staff_mask_path or bands_from) and candidate_objects_for_filter:
+        staff_bands = []
+        if staff_mask_path and staff_mask_path.exists():
+            mask = cv2.imread(str(staff_mask_path), cv2.IMREAD_GRAYSCALE)
+            if mask is not None:
+                staff_bands = staff_bands_from_mask(mask)
+        
+        if not staff_bands and bands_from:
+            from src.pipeline.probe_scan import _load_bands_for_image
+
+            existing_boxes = _load_bands_for_image(
+                bands_from=bands_from,
+                current_score_name=current_score_name or "",
+                stem=image_path.stem,
+            )
+            if existing_boxes:
+                staff_bands_stats = build_row_stats(
+                    existing_boxes, cluster_max_dist=None, min_row_count=1
+                )
+                staff_bands = [(int(r["top"]), int(r["bottom"])) for r in staff_bands_stats]
+
+        if staff_bands:
+            # Identify items to keep
+            kept_items = filter_by_staff_overlap(
+                candidate_objects_for_filter, staff_bands, vov_threshold=staff_vov_threshold
+            )
+            kept_indices = {id(item) for item in kept_items}
+            # Suppress others in scored_results
+            for item in candidate_objects_for_filter:
+                if id(item) not in kept_indices:
+                    item["score"] = 0.0
+
+    filtered_boxes = [item["bbox"] for item in candidate_objects_for_filter if item["score"] >= threshold]
 
     (run_dir / "pipeline2_no_peak_scored.json").write_text(json.dumps(scored_results, indent=2))
     (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text(
@@ -206,6 +255,9 @@ def run_cnn_scoring_batch(
     threshold: float,
     score_name: Optional[str] = None,
     batch_size: int = 64,
+    staff_mask_dir: Optional[Path] = None,
+    bands_from: Optional[Path] = None,
+    staff_vov_threshold: float = 0.5,
 ) -> int:
     """Run CNN scoring for all probe output dirs with one model load."""
     if any(mod is None for mod in (cv2, np, torch, Image, models, transforms)):
@@ -217,6 +269,11 @@ def run_cnn_scoring_batch(
     resolved_model_path = _resolve_model_path(model_path)
     model = _load_model(resolved_model_path, device)
     gpu_norm = GPUNormalize(MEAN, STD).to(device)
+
+    # For staff mask resolution
+    from src.pipeline.probe_scan import _build_staff_mask_map
+
+    staff_mask_map = _build_staff_mask_map(staff_mask_dir)
 
     processed = 0
     for img_path in images:
@@ -230,6 +287,10 @@ def run_cnn_scoring_batch(
             threshold=threshold,
             device=device,
             batch_size=batch_size,
+            staff_mask_path=staff_mask_map.get(img_path.stem),
+            bands_from=bands_from,
+            current_score_name=score_name,
+            staff_vov_threshold=staff_vov_threshold,
         ):
             processed += 1
     return processed

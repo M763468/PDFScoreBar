@@ -1,0 +1,25 @@
+# Issue #44 FN_cnn hard-positive retraining (iter1)
+work_dir: logs/cnn_barline_classification/issue44_hcfn_iter1
+model_name: resnet18
+
+epochs: 12
+batch_size: 256
+learning_rate: 0.0001
+img_size: [256, 128]
+seed: 44
+
+amp: true
+compile: true
+compile_mode: reduce-overhead
+channels_last: true
+
+imbalance: sampler
+optimize_threshold: true
+weight_decay: 0.01
+num_workers: 8
+prefetch_factor: 2
+save_interval: 0
+
+sp_p: 0.3
+sp_density: 0.02
+freeze_backbone_epochs: 0

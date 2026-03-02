@@ -1,0 +1,24 @@
+scored_root: logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+gt_root: data/evaluation2/annotations
+output_dir: logs/cnn_barline_classification/issue48_rule_eval/eval2_th0p1
+threshold: 0.1
+scored_glob: "*_scored.json"
+
+fn_det_classification_csv: docs/ISSUE48_FN_DET15_CLASSIFICATION.csv
+
+numbering_eval: true
+images_root: data/evaluation2/images
+bench_root: logs/hybrid_pipeline_bench
+
+rule_baseline_iou_min: 0.5
+rule_relaxed_iou_min: 0.3
+rule_relaxed_vov_min: 0.7
+rule_relaxed_xdist_max: 5.0
+rule_coverage_ioa_min: 0.8
+rule_coverage_vov_min: 0.7
+rule_center_vov_min: 0.5
+rule_center_xdist_max: 12.0
+
+measure_match_x_iou_threshold: 0.85
+measure_match_min_vertical_overlap: 0.5
+measure_nlc_iou_threshold: 0.5

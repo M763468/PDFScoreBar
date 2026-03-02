@@ -1,0 +1,9 @@
+scored_root: logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+gt_root: data/evaluation2/annotations
+images_root: data/evaluation2/images
+output_root: logs/cnn_barline_classification/issue44_hcfn_iter2/mining_from_iter1_th0p1
+
+threshold: 0.1
+iou_threshold: 0.5
+scored_glob: "*_scored_hcfn_iter1.json"
+max_per_page: 0

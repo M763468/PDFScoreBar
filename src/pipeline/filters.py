@@ -50,6 +50,39 @@ def staff_detect_failed(
     return failed, {"nonzero_ratio": nonzero_ratio}
 
 
+def filter_by_staff_overlap(
+    candidates: Sequence[Any],
+    bands: Sequence[Tuple[int, int]],
+    vov_threshold: float = 0.5,
+) -> List[Any]:
+    """Return candidates that have at least vov_threshold vertical overlap with at least one band."""
+    if not bands:
+        return list(candidates)
+
+    out = []
+    for cand in candidates:
+        if isinstance(cand, dict) and "bbox" in cand:
+            box = cand["bbox"]
+        else:
+            box = cand
+
+        if len(box) != 4:
+            out.append(cand)
+            continue
+
+        y1, y2 = box[1], box[3]
+        h = max(1, y2 - y1)
+        max_vov = 0.0
+        for by1, by2 in bands:
+            overlap = min(y2, by2) - max(y1, by1)
+            vov = max(0, overlap) / float(h)
+            max_vov = max(max_vov, vov)
+
+        if max_vov >= vov_threshold:
+            out.append(cand)
+    return out
+
+
 def resolve_page_filters(
     config: Dict[str, Any],
     page_ids: Sequence[str],

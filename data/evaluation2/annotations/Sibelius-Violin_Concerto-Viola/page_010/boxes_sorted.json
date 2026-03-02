@@ -1,21 +1,5 @@
 [
   {
-    "measure_number": 1,
-    "number_location": [
-      0,
-      0,
-      0,
-      0
-    ],
-    "barline_location": [
-      669,
-      3729,
-      673,
-      3836
-    ],
-    "barline_type": "barline"
-  },
-  {
     "measure_number": 2,
     "number_location": [
       0,
@@ -108,22 +92,6 @@
       3726,
       3207,
       3835
-    ],
-    "barline_type": "barline"
-  },
-  {
-    "measure_number": 8,
-    "number_location": [
-      0,
-      0,
-      0,
-      0
-    ],
-    "barline_location": [
-      923,
-      3369,
-      927,
-      3478
     ],
     "barline_type": "barline"
   },

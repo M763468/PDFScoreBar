@@ -1,0 +1,27 @@
+# Issue #46 hard-case mining (FN_cnn positives + confusing FP negatives)
+# Usage:
+#   python tools/cnn_classifier/mine_issue46_hardcases.py \
+#     --config configs/cnn_barline_runs/issue44_baseline_v1/issue46_hardcase_mining_combo_ge0p4_th0p1.yaml
+
+scored_root: logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12_same_source_bboxnorm_w0p8_h4p0_patch10_croprecenter_v3_ge0p4
+gt_root: data/evaluation2/annotations
+image_root: data/evaluation2/images
+output_root: logs/issue46_hardcase_mining/E46-HC-001_combo_ge0p4_th0p1
+
+# Align with current practical setting noted in memo (#46 continuation).
+threshold: 0.1
+iou_threshold: 0.5
+scored_glob: "*_scored.json"
+
+# Keep all FN_cnn positives; cap FP negatives by highest CNN score.
+max_fp_negatives: 1000
+min_fp_score: 0.1
+
+# Export crops for immediate dataset curation/retraining prep.
+export_crops: true
+crop_scale: 3.0
+crop_aspect_ratio: 0.5
+min_crop_h: 48
+max_crop_h: 256
+min_crop_w: 16
+max_crop_w: 128

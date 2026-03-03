@@ -95,6 +95,7 @@ def _run_hybrid_detection_in_process(
     run_id: str,
     *,
     dry_run: bool,
+    skip_existing: bool = False,
 ) -> Dict[str, Any]:
     from src.homr_eval_scripts import homr_evaluator
 
@@ -114,43 +115,55 @@ def _run_hybrid_detection_in_process(
 
     logger.info("--- Step 2.1: Hybrid Detection (In-Process homr baseline/SR) ---")
 
-    baseline_args = [
-        "--images",
-        *image_paths,
-        "--output-root",
-        str(hybrid_output_dir / "baseline"),
-        "--force-run-id",
-        "batch",
-        "--enable-segnet-cache",
-    ]
-    commands.append(["homr_evaluator.run_evaluation", *baseline_args])
-    if not dry_run:
-        homr_evaluator.run_evaluation(baseline_args)
+    baseline_output = hybrid_output_dir / "baseline"
+    if skip_existing and baseline_output.exists() and list(baseline_output.glob("batch/*/*.json")):
+        logger.info("Skipping homr baseline: outputs already exist.")
+    else:
+        baseline_args = [
+            "--images",
+            *image_paths,
+            "--output-root",
+            str(baseline_output),
+            "--force-run-id",
+            "batch",
+            "--enable-segnet-cache",
+        ]
+        commands.append(["homr_evaluator.run_evaluation", *baseline_args])
+        if not dry_run:
+            homr_evaluator.run_evaluation(baseline_args)
 
-    sr_args = [
-        "--images",
-        *image_paths,
-        "--output-root",
-        str(hybrid_output_dir / "sr"),
-        "--force-run-id",
-        "batch",
-        "--enable-sr",
-        "--enable-segnet-cache",
-    ]
-    commands.append(["homr_evaluator.run_evaluation", *sr_args])
-    if not dry_run:
-        homr_evaluator.run_evaluation(sr_args)
+    sr_output = hybrid_output_dir / "sr"
+    if skip_existing and sr_output.exists() and list(sr_output.glob("batch/*/*.json")):
+        logger.info("Skipping homr SR: outputs already exist.")
+    else:
+        sr_args = [
+            "--images",
+            *image_paths,
+            "--output-root",
+            str(sr_output),
+            "--force-run-id",
+            "batch",
+            "--enable-sr",
+            "--enable-segnet-cache",
+        ]
+        commands.append(["homr_evaluator.run_evaluation", *sr_args])
+        if not dry_run:
+            homr_evaluator.run_evaluation(sr_args)
 
     logger.info("--- Step 2.1b: OMR-DLN SR (Subprocess) ---")
     sr_root = hybrid_output_dir / "sr" / "batch"
-    omr_cmd = (
-        [sys.executable, "experiments/models/eval_omr_dln.py", "--images"]
-        + image_paths
-        + ["--output-dir", str(hybrid_output_dir / "omr_sr"), "--pre-computed-sr", str(sr_root)]
-    )
-    commands.append(omr_cmd)
-    if not dry_run:
-        subprocess.run(omr_cmd, check=True)
+    omr_output = hybrid_output_dir / "omr_sr"
+    if skip_existing and omr_output.exists() and list(omr_output.glob("*/predictions.json")):
+        logger.info("Skipping OMR-DLN: outputs already exist.")
+    else:
+        omr_cmd = (
+            [sys.executable, "experiments/models/eval_omr_dln.py", "--images"]
+            + image_paths
+            + ["--output-dir", str(omr_output), "--pre-computed-sr", str(sr_root)]
+        )
+        commands.append(omr_cmd)
+        if not dry_run:
+            subprocess.run(omr_cmd, check=True)
 
     logger.info("--- Step 2.1c: Hybrid Consensus Generation ---")
     hybrid_results_dir = hybrid_output_dir / "hybrid_results"
@@ -204,8 +217,9 @@ def run_detection_step(
     """Run hybrid detection -> probe scan -> CNN scoring."""
     det_cfg = get_nested(config, "detection", default={}) or {}
     hybrid_run_id = run_id
+    skip_existing = bool(det_cfg.get("probe_skip_existing", False))
     hybrid_result = _run_hybrid_detection_in_process(
-        det_cfg, images, hybrid_run_id, dry_run=dry_run
+        det_cfg, images, hybrid_run_id, dry_run=dry_run, skip_existing=skip_existing
     )
     commands = hybrid_result["commands"]
     hybrid_output_dir = hybrid_result["hybrid_output_dir"]

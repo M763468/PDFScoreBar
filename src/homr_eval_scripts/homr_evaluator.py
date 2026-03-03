@@ -47,6 +47,18 @@ if str(HOMR_REPO) in sys.path:
     sys.path.remove(str(HOMR_REPO))
 sys.path.insert(0, str(HOMR_REPO))
 
+import logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger("homr_evaluator")
+
+import homr.simple_logging  # type: ignore
+
+def _silent_eprint(*args, **kwargs):
+    logger.debug(" ".join(map(str, args)))
+
+homr.simple_logging.eprint = _silent_eprint
+eprint = _silent_eprint
+
 # pylint: disable=wrong-import-position
 from common.barline_evaluation import (
     BarlineMatch,
@@ -74,7 +86,6 @@ from homr.main import (  # type: ignore
 from homr.music_xml_generator import XmlGeneratorArguments, generate_xml  # type: ignore
 from homr.note_detection import add_notes_to_staffs, combine_noteheads_with_stems  # type: ignore
 from homr.resize import calc_target_image_size  # type: ignore
-from homr.simple_logging import eprint  # type: ignore
 from homr.staff_detection import break_wide_fragments, detect_staff  # type: ignore
 from homr.title_detection import detect_title  # type: ignore
 

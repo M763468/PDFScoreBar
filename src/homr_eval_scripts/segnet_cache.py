@@ -8,7 +8,9 @@ from typing import Dict, Tuple
 
 import onnxruntime as ort
 
-from homr.simple_logging import eprint
+import logging
+
+logger = logging.getLogger(__name__)
 
 _SEGNET_CACHE_LOCK = threading.Lock()
 _SEGNET_SESSION_CACHE: Dict[Tuple[str, bool], ort.InferenceSession] = {}
@@ -19,10 +21,10 @@ def _create_session(model_path: str, use_gpu: bool) -> ort.InferenceSession:
         try:
             session = ort.InferenceSession(model_path, providers=["CUDAExecutionProvider"])
         except Exception as exc:
-            eprint(
+            logger.debug(
                 "Error while trying to load model using CUDA. You probably don't have a compatible gpu"
             )
-            eprint(exc)
+            logger.debug(exc)
             session = ort.InferenceSession(model_path)
     else:
         session = ort.InferenceSession(model_path)
@@ -32,7 +34,7 @@ def _create_session(model_path: str, use_gpu: bool) -> ort.InferenceSession:
         and ort.get_available_providers()
         and session.get_providers()
     ):
-        eprint(
+        logger.debug(
             "Segnet ORT providers (available/selected): "
             f"{ort.get_available_providers()} / {session.get_providers()}"
         )
@@ -45,7 +47,7 @@ def _get_session(model_path: str, use_gpu: bool) -> ort.InferenceSession:
     with _SEGNET_CACHE_LOCK:
         if key in _SEGNET_SESSION_CACHE:
             return _SEGNET_SESSION_CACHE[key]
-        eprint(f"Segnet cache: creating session for {model_path} (gpu={use_gpu})")
+        logger.debug(f"Segnet cache: creating session for {model_path} (gpu={use_gpu})")
         session = _create_session(model_path, use_gpu)
         _SEGNET_SESSION_CACHE[key] = session
         return session

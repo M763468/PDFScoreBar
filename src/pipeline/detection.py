@@ -113,10 +113,18 @@ def _run_hybrid_detection_in_process(
 
     commands: List[List[str]] = []
 
+    def _all_stems_exist(base_dir: Path, stems_to_check: List[str], glob_pattern: str) -> bool:
+        if not base_dir.exists():
+            return False
+        found_stems = set()
+        for p in base_dir.glob(glob_pattern):
+            found_stems.add(p.parent.name)  # parent is the stem directory
+        return all(s in found_stems for s in stems_to_check)
+
     logger.info("--- Step 2.1: Hybrid Detection (In-Process homr baseline/SR) ---")
 
     baseline_output = hybrid_output_dir / "baseline"
-    if skip_existing and baseline_output.exists() and list(baseline_output.glob("batch/*/*.json")):
+    if skip_existing and _all_stems_exist(baseline_output, stems, "batch/*/*.json"):
         logger.info("Skipping homr baseline: outputs already exist.")
     else:
         baseline_args = [
@@ -133,7 +141,7 @@ def _run_hybrid_detection_in_process(
             homr_evaluator.run_evaluation(baseline_args)
 
     sr_output = hybrid_output_dir / "sr"
-    if skip_existing and sr_output.exists() and list(sr_output.glob("batch/*/*.json")):
+    if skip_existing and _all_stems_exist(sr_output, stems, "batch/*/*.json"):
         logger.info("Skipping homr SR: outputs already exist.")
     else:
         sr_args = [
@@ -153,7 +161,16 @@ def _run_hybrid_detection_in_process(
     logger.info("--- Step 2.1b: OMR-DLN SR (Subprocess) ---")
     sr_root = hybrid_output_dir / "sr" / "batch"
     omr_output = hybrid_output_dir / "omr_sr"
-    if skip_existing and omr_output.exists() and list(omr_output.glob("*/predictions.json")):
+    
+    def _omr_all_stems_exist() -> bool:
+        if not omr_output.exists():
+            return False
+        found = set()
+        for p in omr_output.glob("*/predictions.json"):
+            found.add(p.parent.name)
+        return all(s in found for s in stems)
+
+    if skip_existing and _omr_all_stems_exist():
         logger.info("Skipping OMR-DLN: outputs already exist.")
     else:
         omr_cmd = (

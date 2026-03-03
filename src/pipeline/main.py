@@ -47,10 +47,12 @@ def _build_pdf_command(config: Dict[str, Any], run_dir: Path) -> List[str]:
     output_dir = run_dir / "inputs" / "images"
     ensure_dir(output_dir)
 
-    # Prefer environment variable, then .venv_pdf, then fallback to current interpreter
+    # Prefer environment variable, then current interpreter (if it has cv2/fitz installed) or .venv_pdf
     env_python = os.environ.get("PIPELINE_PYTHON")
     if env_python:
         python_exe = env_python
+    elif "venv_sr" in sys.executable:
+        python_exe = sys.executable
     elif (PROJECT_ROOT / ".venv_pdf/bin/python").exists():
         python_exe = str(PROJECT_ROOT / ".venv_pdf/bin/python")
     else:

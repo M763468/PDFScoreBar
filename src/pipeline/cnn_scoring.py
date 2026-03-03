@@ -76,6 +76,11 @@ def _load_model(model_path: Path, device: torch.device) -> torch.nn.Module:
     in_features = model.fc.in_features
     model.fc = torch.nn.Linear(in_features, 1)
     state_dict = torch.load(model_path, map_location=device)
+    
+    # Handle torch.compile prefix
+    if any(k.startswith("_orig_mod.") for k in state_dict.keys()):
+        state_dict = {k.replace("_orig_mod.", ""): v for k, v in state_dict.items()}
+        
     model.load_state_dict(state_dict)
     model.to(device)
     model.eval()

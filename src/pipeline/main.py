@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -46,8 +47,11 @@ def _build_pdf_command(config: Dict[str, Any], run_dir: Path) -> List[str]:
     output_dir = run_dir / "inputs" / "images"
     ensure_dir(output_dir)
 
-    # Prefer .venv_pdf for PDF conversion if available, fallback to current interpreter
-    if (PROJECT_ROOT / ".venv_pdf/bin/python").exists():
+    # Prefer environment variable, then .venv_pdf, then fallback to current interpreter
+    env_python = os.environ.get("PIPELINE_PYTHON")
+    if env_python:
+        python_exe = env_python
+    elif (PROJECT_ROOT / ".venv_pdf/bin/python").exists():
         python_exe = str(PROJECT_ROOT / ".venv_pdf/bin/python")
     else:
         python_exe = sys.executable
@@ -105,6 +109,7 @@ def run_pipeline(
     output_root: Optional[Path] = None,
     dry_run: bool = False,
     validate_only: bool = False,
+    skip_existing: bool = False,
     page_limit: Optional[int] = None,
 ) -> Path:
     config = load_yaml(config_path)
@@ -127,9 +132,12 @@ def run_pipeline(
     commands: List[List[str]] = []
 
     if get_nested(config, "steps", "pdf_to_images", default=False):
-        pdf_cmd = _build_pdf_command(config, run_dir)
-        commands.append(pdf_cmd)
-        _run_command(pdf_cmd, dry_run=dry_run)
+        if skip_existing and (run_dir / "inputs" / "images").exists() and list((run_dir / "inputs" / "images").glob("*.png")):
+            print("Skipping pdf_to_images: output directory exists and is not empty.")
+        else:
+            pdf_cmd = _build_pdf_command(config, run_dir)
+            commands.append(pdf_cmd)
+            _run_command(pdf_cmd, dry_run=dry_run)
 
     images = collect_images(config, run_dir)
     if page_limit is not None:
@@ -141,7 +149,13 @@ def run_pipeline(
     hybrid_output_dir = None
 
     if run_detection:
-        det_result = run_detection_step(config, images, page_ids, run_id_value, dry_run=dry_run)
+        if skip_existing:
+            if "detection" not in config: config["detection"] = {}
+            config["detection"]["probe_skip_existing"] = True
+
+        det_result = run_detection_step(
+            config, images, page_ids, run_id_value, run_dir, dry_run=dry_run
+        )
         commands.extend(det_result["commands"])
         probe_output_dir = det_result["probe_output_dir"]
         hybrid_output_dir = det_result["hybrid_output_dir"]
@@ -281,7 +295,10 @@ def run_pipeline(
         )
         commands.append(cmd_base)
         if step_numbering and not validate_only:
-            _run_command(cmd_base, dry_run=dry_run)
+            if skip_existing and numbering_base.exists():
+                print(f"Skipping numbering_base for {page_id}: file exists.")
+            else:
+                _run_command(cmd_base, dry_run=dry_run)
 
         mmr_overrides_payload = None
         if step_mmr and not validate_only:
@@ -295,9 +312,15 @@ def run_pipeline(
                 debug_image=(debug_root / f"{page_id}_mmr_debug.png") if debug_root else None,
             )
             commands.append(cmd_mmr)
-            _run_command(cmd_mmr, dry_run=dry_run)
+            if skip_existing and overrides_mmr.exists():
+                print(f"Skipping mmr_overrides for {page_id}: file exists.")
+            else:
+                _run_command(cmd_mmr, dry_run=dry_run)
+            
             if not dry_run:
-                mmr_overrides_payload = load_json(overrides_mmr)
+                # Still need to load the payload for subsequent steps even if skipped
+                if overrides_mmr.exists():
+                    mmr_overrides_payload = load_json(overrides_mmr)
 
         if (step_apply or step_overlay) and not validate_only:
             overrides_payload = merge_measure_overrides(
@@ -321,7 +344,10 @@ def run_pipeline(
                 force_single_system=force_single_system,
             )
             commands.append(cmd_final)
-            _run_command(cmd_final, dry_run=dry_run)
+            if skip_existing and final_json.exists() and (not overlay_path or overlay_path.exists()):
+                print(f"Skipping final_numbering for {page_id}: file exists.")
+            else:
+                _run_command(cmd_final, dry_run=dry_run)
 
     if len(numbering_base_paths) > 1 and not dry_run and not validate_only:
         combined_base = {
@@ -372,6 +398,9 @@ def main() -> None:
     parser.add_argument(
         "--validate-only", action="store_true", help="Stop after input resolution and filtering."
     )
+    parser.add_argument(
+        "--skip-existing", action="store_true", help="Skip steps if output files already exist."
+    )
     parser.add_argument("--page-limit", type=int, help="Limit the number of pages to process.")
 
     args = parser.parse_args()
@@ -382,6 +411,7 @@ def main() -> None:
         output_root=args.output_root,
         dry_run=args.dry_run,
         validate_only=args.validate_only,
+        skip_existing=args.skip_existing,
         page_limit=args.page_limit,
     )
 

@@ -14,8 +14,15 @@ def load_yaml(path: Path) -> Dict[str, Any]:
     data = yaml.safe_load(path.read_text())
     if not isinstance(data, dict):
         raise ValueError("Config root must be a mapping.")
-    # TODO: Replace with a schema-based config (pydantic/dataclasses) for validation.
     return data
+
+
+def write_yaml(path: Path, data: Dict[str, Any]) -> None:
+    try:
+        import yaml  # type: ignore
+    except ImportError as exc:
+        raise SystemExit("PyYAML is required. Install it in the current environment.") from exc
+    path.write_text(yaml.dump(data, sort_keys=False))
 
 
 def get_nested(config: Dict[str, Any], *keys: str, default: Any = None) -> Any:

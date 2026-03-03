@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -35,8 +36,9 @@ def build_add_measure_numbers_cmd(
     overlay_path: Optional[Path] = None,
     force_single_system: bool = False,
 ) -> list[str]:
+    python_exe = os.environ.get("PIPELINE_PYTHON", sys.executable)
     cmd = [
-        sys.executable,
+        python_exe,
         "tools/add_measure_numbers.py",
         "--barlines",
         str(barlines),
@@ -69,8 +71,9 @@ def build_generate_overrides_cmd(
     enable_rotation_tta: bool,
     debug_image: Optional[Path] = None,
 ) -> list[str]:
+    python_exe = os.environ.get("PIPELINE_PYTHON", sys.executable)
     cmd = [
-        sys.executable,
+        python_exe,
         "tools/generate_numbering_overrides.py",
         "--numbering-json",
         str(numbering_json),

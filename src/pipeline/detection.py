@@ -197,6 +197,7 @@ def run_detection_step(
     images: List[Path],
     page_ids: List[str],
     run_id: str,
+    run_dir: Path,
     *,
     dry_run: bool,
 ) -> Dict[str, Any]:
@@ -210,7 +211,7 @@ def run_detection_step(
     hybrid_output_dir = hybrid_result["hybrid_output_dir"]
 
     logger.info("--- Step 2.2: Probe Scan (Host) ---")
-    probe_output_root = Path(f"logs/full_pipeline_runs/{run_id}/intermediate/probe_scan")
+    probe_output_root = run_dir / "intermediate" / "probe_scan"
     ensure_dir(probe_output_root)
 
     image_root = get_nested(config, "inputs", "pdf_to_images", "output_dir")

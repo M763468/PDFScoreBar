@@ -7,14 +7,18 @@ from datetime import datetime
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Initialize a new Long-Horizon Task directory from templates.")
+    parser = argparse.ArgumentParser(
+        description="Initialize a new Long-Horizon Task directory from templates."
+    )
     parser.add_argument("task_id", help="The ID of the task (e.g., REFACTOR-001)")
     parser.add_argument("--issue", help="Associated GitHub Issue number", type=int)
     args = parser.parse_args()
 
     # Security: Validate task_id to prevent path traversal
     if not re.match(r"^[a-zA-Z0-9_-]+$", args.task_id):
-        print(f"Error: Invalid task_id '{args.task_id}'. Only alphanumeric, hyphens, and underscores are allowed.")
+        print(
+            f"Error: Invalid task_id '{args.task_id}'. Only alphanumeric, hyphens, and underscores are allowed."
+        )
         return
 
     task_dir = os.path.join("docs", "refactors", args.task_id)
@@ -34,7 +38,7 @@ def main():
         if os.path.exists(src):
             shutil.copy(src, dst)
             print(f"  - Created {template}")
-            
+
             # Customizing Log.md with current date
             if template == "Log.md":
                 with open(dst, "r") as f:
@@ -51,7 +55,7 @@ def main():
         prompt_path = os.path.join(task_dir, "Prompt.md")
         with open(prompt_path, "r") as f:
             lines = f.readlines()
-        
+
         with open(prompt_path, "w") as f:
             for line in lines:
                 if line.startswith("# Task:"):
@@ -64,6 +68,7 @@ def main():
     print("Next steps:")
     print(f"1. Define task specification in {task_dir}/Prompt.md")
     print(f"2. Generate milestone plan in {task_dir}/Plan.md")
+
 
 if __name__ == "__main__":
     main()

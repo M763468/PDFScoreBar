@@ -87,11 +87,45 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 - **Working copy first**: For dataset editing/augmentation/relabel tasks, first copy the working dataset under repository `datasets/` (ext4 side), then perform all file operations there.
 - **Use `/mnt/*` as source/archive only**: Treat `/mnt/*` dataset paths as read-mostly source or backup locations, not active scratch space for iterative retraining loops.
 
+### Multi-LLM Collaboration (Codex + gemini-cli)
+- **Flexible Primary/Secondary Roles**: In interactive local work, either `Codex` or `gemini-cli` may be the primary driver depending on the task. The primary agent leads planning and decision flow; the secondary agent provides alternative designs, debugging hypotheses, or review feedback.
+- **Implementation Delegation is Allowed**: A valid pattern is `gemini-cli` as primary for exploration/reasoning and `Codex` for focused repository edits and verification. The reverse (Codex primary, gemini-cli second opinion) is also valid.
+- **Optimize While Working**: Do not limit multi-LLM usage to pre-PR review only. Use it during implementation when helpful, and refine the collaboration pattern based on actual outcomes (speed, bug detection, usefulness).
+- **Single Writer Rule**: To avoid conflicts, keep one active file editor at a time in the session. Explicitly choose a single writer before file edits.
+- **Evidence-First Adoption**: Suggestions from either agent are hypotheses until validated by local code inspection, tests, or runtime behavior.
+- **Prompt/Log Documentation**: Standard prompts and conversation log format for multi-LLM collaboration must be maintained under `docs/ai-workflow/` (see the dedicated collaboration doc) and updated as the workflow evolves.
+- **Operational Entry Points (Must Read Order)**:
+  1. `docs/ai-workflow/WORKFLOW.md` (general workflow baseline)
+  2. `docs/ai-workflow/CODEX_GEMINI_COLLAB.md` (Codex/Gemini collaboration protocol)
+  3. `docs/ai-workflow/LESSONS.md` (known anti-patterns and heuristics)
+  4. This `AGENTS.md` (repository-specific overrides, highest priority inside repo)
+- **Codex -> Gemini Call Stability Rule**:
+  - For this repository, run Gemini consultations with network-enabled execution from the start (outside sandbox when required), not as a fallback after a known-failing step.
+  - Prefer longer timeouts (e.g., `timeout 180s gemini -p "<prompt>"`) to allow deeper reasoning.
+  - For long contexts, pass summarized inputs and split questions to reduce timeout risk.
+
 ## 7. Skills
 
 - 共通スキルは `skills/` に配置する
 - リポジトリ固有の最適化は `.agents/skills` に追加する
 - 各スキルは「目的 / 入力 / 出力 / 手順 / 必要なコマンド」を明記する
+- **利用可能なスキル一覧**:
+    - `issue-creation`: Issue の下書き作成
+    - `problem-investigation`: バグ調査・原因究明
+    - `issue-solver`: Issue の自律解決（実装・検証）
+    - `pr-explanation`: PR の説明文生成
+    - `pr-review`: PR の自動レビュー
+    - `pr-refinement`: レビュー指摘の修正適用
+    - `status-check`: 現在の作業状況の要約
+    - `change-summary`: 最終的な変更内容の要約
+    - `doc-updater`: ドキュメントの自動更新
+    - `dependency-management`: 依存関係の管理
+    - `test-generation`: テストコードの生成・更新
+    - `long-horizon-task`: 長期タスクの状態管理
+    - `gemini-consultation`: Gemini への標準化された相談。`.agents/skills/gemini-consultation/SKILL.md` を利用し、相談時の入力整理・実行手順・記録方法を統一します。
+    - `codex-delegation`: Codex への実装・検証タスクの委譲。`.agents/skills/codex-delegation/SKILL.md` を利用し、コンテキスト消費を抑えつつ精緻な実装と検証を行います。
+
+詳細は `docs/ai-workflow/WORKFLOW.md` を参照。
 
 ## 8. インタラクティブ・プロトコル（対話型セッション専用ルール）
 
@@ -143,3 +177,9 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
      - 照会前にユーザーに「Codexに意見を聞いてみます」と宣言する（詳細な承認を待たず、思考プロセスの一環として実行して良い）。
    - **結果の統合**:
      - 照会結果をそのまま採用せず、自分の案と比較した「統合案」をユーザーに提示し、なぜその結論に至ったかの論拠（Rational）を説明する。
+
+### Multi-LLM Role Specialization
+- **Gemini CLI**: Architect, Multi-modal Reasoner, Web Researcher. Leads planning and reasoning.
+- **Codex**: Implementation Specialist, Repository Navigator, Verification Lead. Leads focused edits and sandbox validation.
+- **Consultation Mandate**: Gemini should proactively consult Codex (via \`codex exec --sandbox read-only\`) for second opinions on complex logic, type safety, or architectural impacts.
+- **Knowledge Synthesis Mandate**: Both agents must document newly discovered heuristics, anti-patterns, or visual failure modes in `docs/ai-workflow/LESSONS.md` to prevent regressions in future sessions.

@@ -25,10 +25,11 @@ Review a PR to identify risks, bugs, and scope drift early.
 4) Suggest additional tests or checks.
 
 ## Required commands/permissions
-- gh: view PR details if needed (e.g., `gh pr view`, `gh pr diff`)
+- gh: view PR details and reviews (e.g., `gh pr view --json title,body,comments,reviews`, `gh pr diff`)
 - git: review diffs if needed
 
 ## Example commands
+- `gh pr view <number> --json title,body,comments,reviews`
 - `gh pr diff <number>`
 - `git diff main...HEAD`
 

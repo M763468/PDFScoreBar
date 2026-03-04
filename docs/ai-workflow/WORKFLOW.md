@@ -8,6 +8,15 @@
 
 ---
 
+## 適用レイヤー（一般論 / リポジトリ特化）
+
+- 本書（`docs/ai-workflow/WORKFLOW.md`）: 他リポジトリにも持ち運べる一般ワークフロー
+- リポジトリ特化ルール: 必ず [AGENTS.md](../../AGENTS.md) を優先
+
+このリポジトリでは、環境選択（`docs/ENVIRONMENTS.md` の事前確認）、sandbox制約、`gh`投稿時の安全書式などは `AGENTS.md` を正とします。
+
+---
+
 ## 全体像（基本原則）
 
 **1 Issue = 1 AI実装 = 1 Pull Request**
@@ -31,9 +40,27 @@
 
 このテンプレートでは、共通スキルは `skills/` に同梱されています。
 運用では `.agents/skills` に配置し、エージェントが読み込める構成にします。
-既存プロジェクトへ導入する場合は、テンプレートを適当な場所に `git clone` してから、
-必要なファイル群を移植する運用が分かりやすいです。
 導入先で `docs/ai-workflow/` のように場所を変える場合は、READMEやドキュメント内のリンクも合わせて調整してください。
+
+### ワークフローを支える AI スキル (`.agents/skills/`)
+
+各ステップで、以下の専用スキルを活用することで、品質の安定と作業の高速化が図れます。
+
+| ステップ | 推奨スキル | 役割 |
+| :--- | :--- | :--- |
+| **0. 初期化 / 調査** | `status-check` | 現在の作業状況と次のアクションを整理する |
+| **2. Issue設計** | `issue-creation` | ゴール・スコープ・受入条件を網羅した Issue を下書きする |
+| | `problem-investigation` | バグの再現手順や根本原因の仮説を整理する |
+| **3. 実装** | `issue-solver` | Issue を読み取り、ブランチ作成から実装・検証までを自律的に行う |
+| | `test-generation` | 実装に対するテストコードを自動生成・更新する |
+| | `long-horizon-task` | 大規模なリファクタリングなど、長期的なタスクの状態を管理する |
+| **4. PR作成 / レビュー** | `pr-explanation` | 差分を解析し、PR の目的や変更点を説明する |
+| | `pr-review` | リスクやバグ、スコープの逸脱を早期に検知する |
+| | `pr-refinement` | レビューコメントを分析し、修正を自動で適用する |
+| **その他** | `doc-updater` | コード変更に合わせてドキュメントを最新に保つ |
+| | `dependency-management` | 依存関係の整合性をチェック・更新する |
+| | `gemini-consultation` | Gemini への相談手順を標準化し、証跡を残す |
+| | `change-summary` | 作業完了時に変更内容と影響範囲を要約する |
 
 このスクリプトは以下を確認・初期化します。
 
@@ -118,19 +145,37 @@ cd /path/to/your-project
 
 ---
 
-## 3. AI（Jules等）にIssueを解かせる方法
+## 3. AIにIssueを解かせる方法
+
+ここでは 2 つの実行モードを分けて扱います。
+
+- モードA（ローカル対話型: Codex / gemini-cli）:
+  - 日常運用のデフォルト。ラベル付与は必須ではない。
+- モードB（リモート自動実装: Jules）:
+  - GitHub上で `assign-to-jules` を明示トリガーとして使う。
 
 ### 基本手順
 
 1. Issueを作成
 2. 依存IssueがすべてCloseされていることを確認
-3. `assign-to-jules` ラベルを付与
+3. モードBを使う場合のみ `assign-to-jules` ラベルを付与
+
+補足:
+- `ai:implement` / `ai:review` は運用メタデータとしては有用だが、実装開始トリガーとしては必須ではない。
+- 「どのステップでもAIと協業する」前提なら、ラベル運用は最小限でよい。
 
 ### 成功率を上げるコツ
 
 - Issue本文以外の説明を極力しない
 - 「A-3以降を実装しない」など禁止事項を明記
 - 1 Issueずつ実行（並列にしない）
+
+### 補足: ローカル対話型エージェントの併用（Codex / gemini-cli）
+
+ローカルで `Codex` と `gemini-cli` を併用する場合は、PR前レビュー専用にせず、設計分岐・デバッグ停滞・中間レビューのタイミングで使うと効果が出やすいです。
+
+- 運用ルール・呼び出し定型・会話ログ: [CODEX_GEMINI_COLLAB.md](CODEX_GEMINI_COLLAB.md)
+- `Codex主担当` / `gemini-cli主担当` の両モードを試し、実運用ログをもとに最適化する
 
 ---
 
@@ -159,7 +204,7 @@ AIエージェントは、Issueで指定されたベースブランチの指示�
 
 ---
 
-## 5. Julesが反応しないとき
+## 5. Jules（リモート自動実装）が反応しないとき
 
 - コメントは必ずしも再同期トリガーにならない
 
@@ -193,7 +238,10 @@ gh issue view 5
 ### コメント・操作
 
 ```bash
-gh pr comment 13 --body "Please fix X"
+cat <<'EOF' > /tmp/pr_comment_13.md
+Please fix X
+EOF
+gh pr comment 13 --body-file /tmp/pr_comment_13.md
 gh pr merge 13 --squash
 gh pr edit 13 --add-label assign-to-jules
 ```

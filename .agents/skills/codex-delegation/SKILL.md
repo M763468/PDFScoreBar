@@ -9,7 +9,12 @@ description: Standardize Gemini<->Codex delegation flow for deep-repo reasoning,
 Use `codex` as an implementation specialist and repository navigator to perform surgical file edits, run tests, and verify reasoning locally without consuming excessive context in the main Gemini session. Also, utilize Codex for critical reviews of architecture when deeply tied to the repository state.
 
 ## Input
-- Delegation objective (`implementation`, `test-generation`, `repo-audit`, `read-only-review`, `critical-review`)
+- Delegation objective:
+  - `implementation`: For writing code or making surgical file edits.
+  - `test-generation`: For creating or updating tests.
+  - `repo-audit`: For deep, non-destructive navigation and analysis of the codebase.
+  - `read-only-review`: For non-destructive code review of a specific file or component.
+  - `critical-review`: For finding flaws and risks in architectural plans or design documents.
 - Target files or components (including documentation if for review)
 - Clear instructions on what to implement, verify, or review
 - Sandbox constraints (`--sandbox read-only` or default)

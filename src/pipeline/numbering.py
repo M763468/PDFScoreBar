@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-import os
-import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 from src.pipeline.images import load_image_size
-
-
 from src.pipeline.python_env import get_pipeline_python
 
 

@@ -368,7 +368,7 @@ def process_dir(
             mask = cv2.imread(str(staff_mask_map[page_num]), cv2.IMREAD_GRAYSCALE)
             if mask is not None:
                 staff_bands = staff_bands_from_mask(mask)
-        
+
         if not staff_bands and bands_from:
             # Resolve row stats if mask was not used
             from src.pipeline.probe_scan import _load_bands_for_image

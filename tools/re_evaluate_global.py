@@ -13,9 +13,6 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(REPO_ROOT))
 
 from src.common.barline_evaluation import (
-    barline_iou,
-    barline_vertical_overlap,
-    center_distance_x,
     greedy_barline_match,
     is_barline_match,
 )

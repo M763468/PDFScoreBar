@@ -35,9 +35,9 @@ except ImportError:  # pragma: no cover - optional in minimal test env
     models = None  # type: ignore[assignment]
     transforms = None  # type: ignore[assignment]
 
-from src.pipeline.run_ids import build_probe_run_id
 from src.pipeline.filters import filter_by_staff_overlap
 from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask
+from src.pipeline.run_ids import build_probe_run_id
 
 logger = logging.getLogger(__name__)
 
@@ -78,11 +78,11 @@ def _load_model(model_path: Path, device: torch.device) -> torch.nn.Module:
     in_features = model.fc.in_features
     model.fc = torch.nn.Linear(in_features, 1)
     state_dict = torch.load(model_path, map_location=device)
-    
+
     # Handle torch.compile prefix
     if any(k.startswith("_orig_mod.") for k in state_dict.keys()):
         state_dict = {k.replace("_orig_mod.", ""): v for k, v in state_dict.items()}
-        
+
     model.load_state_dict(state_dict)
     model.to(device)
     model.eval()
@@ -219,7 +219,7 @@ def _score_directory(
             mask = cv2.imread(str(staff_mask_path), cv2.IMREAD_GRAYSCALE)
             if mask is not None:
                 staff_bands = staff_bands_from_mask(mask)
-        
+
         if not staff_bands and bands_from:
             from src.pipeline.probe_scan import _load_bands_for_image
 
@@ -245,7 +245,9 @@ def _score_directory(
                 if id(item) not in kept_indices:
                     item["score"] = 0.0
 
-    filtered_boxes = [item["bbox"] for item in candidate_objects_for_filter if item["score"] >= threshold]
+    filtered_boxes = [
+        item["bbox"] for item in candidate_objects_for_filter if item["score"] >= threshold
+    ]
 
     (run_dir / "pipeline2_no_peak_scored.json").write_text(json.dumps(scored_results, indent=2))
     (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text(

@@ -369,7 +369,6 @@ def greedy_barline_match(
     )
 
 
-
 def apply_left_margin_exclusion(
     match_result: BarlineMatchResult,
     predictions: Sequence[Box],

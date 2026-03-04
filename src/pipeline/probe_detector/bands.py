@@ -41,11 +41,11 @@ def build_row_stats(
 ) -> List[Dict[str, float]]:
     if not preds:
         return []
-    
+
     # Calculate median bbox height to use as physical reference
     heights = [abs(box[3] - box[1]) for box in preds if abs(box[3] - box[1]) > 0]
     median_h = float(np.median(heights)) if heights else 100.0
-    
+
     # Default to 0.5 * median bbox height if not provided
     if cluster_max_dist is None:
         cluster_max_dist = median_h * 0.5

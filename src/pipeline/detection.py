@@ -6,7 +6,6 @@ import json
 import logging
 import os
 import subprocess
-import sys
 from importlib import import_module
 
 from tqdm import tqdm
@@ -21,7 +20,6 @@ from typing import Any, Dict, List
 
 from src.pipeline.cnn_scoring import run_cnn_scoring_batch
 from src.pipeline.hybrid_consensus import load_json_boxes, phase4_hybrid_consensus
-
 from src.pipeline.python_env import get_pipeline_python
 
 logger = logging.getLogger(__name__)
@@ -110,7 +108,7 @@ def _run_hybrid_detection_in_process(
     # Use relative paths for subprocess compatibility with Docker volumes
     def _rel(path: Path) -> str:
         try:
-            return str(path.relative_to(PROJECT_ROOT))
+            return str(path.resolve().relative_to(PROJECT_ROOT))
         except ValueError:
             return str(path)
 
@@ -130,14 +128,22 @@ def _run_hybrid_detection_in_process(
     logger.info("--- Step 2.1: Hybrid Detection (Subprocess homr baseline/SR) ---")
 
     python_cmd = get_pipeline_python("homr")
+    if python_cmd and python_cmd[0] == "docker":
+        for img in images:
+            try:
+                img.resolve().relative_to(PROJECT_ROOT)
+            except ValueError:
+                logger.warning(f"External image path detected: {img}. Falling back to host Python instead of docker exec.")
+                import sys
+                python_cmd = [os.environ.get("PIPELINE_PYTHON", sys.executable)]
+                break
+
     # homr_evaluator requires PYTHONPATH to include src and external/homr
     # We pass it via environment variables in subprocess.run
     env = os.environ.copy()
-    env["PYTHONPATH"] = os.pathsep.join([
-        str(PROJECT_ROOT),
-        str(PROJECT_ROOT / "external" / "homr"),
-        env.get("PYTHONPATH", "")
-    ])
+    env["PYTHONPATH"] = os.pathsep.join(
+        [str(PROJECT_ROOT), str(PROJECT_ROOT / "external" / "homr"), env.get("PYTHONPATH", "")]
+    )
 
     baseline_output = hybrid_output_dir / "baseline"
     if skip_existing and _all_stems_exist(baseline_output, stems, "batch/*/*.json"):
@@ -181,7 +187,7 @@ def _run_hybrid_detection_in_process(
     logger.info("--- Step 2.1b: OMR-DLN SR (Subprocess) ---")
     sr_root = hybrid_output_dir / "sr" / "batch"
     omr_output = hybrid_output_dir / "omr_sr"
-    
+
     def _omr_all_stems_exist() -> bool:
         if not omr_output.exists():
             return False
@@ -194,8 +200,19 @@ def _run_hybrid_detection_in_process(
         logger.info("Skipping OMR-DLN: outputs already exist.")
     else:
         python_cmd_omr = get_pipeline_python("omr_dln")
+        if python_cmd_omr and python_cmd_omr[0] == "docker":
+            for img in images:
+                try:
+                    img.resolve().relative_to(PROJECT_ROOT)
+                except ValueError:
+                    logger.warning(f"External image path detected: {img}. Falling back to host Python instead of docker exec for OMR-DLN.")
+                    import sys
+                    python_cmd_omr = [os.environ.get("PIPELINE_PYTHON", sys.executable)]
+                    break
+
         omr_cmd = (
-            python_cmd_omr + ["experiments/models/eval_omr_dln.py", "--images"]
+            python_cmd_omr
+            + ["experiments/models/eval_omr_dln.py", "--images"]
             + image_paths
             + ["--output-dir", _rel(omr_output), "--pre-computed-sr", _rel(sr_root)]
         )

@@ -141,13 +141,13 @@ def main():
             if args.pre_computed_sr:
                 sr_base = Path(args.pre_computed_sr)
                 sr_img_path = None
-                
+
                 # 1. Try directory match patterns (higher priority for batch runs)
                 # homr_evaluator style: pre_computed_sr / stem / stem / stem.png
                 p1 = sr_base / stem / stem / f"{stem}.png"
                 # Simple style: pre_computed_sr / stem.png
                 p2 = sr_base / f"{stem}.png"
-                
+
                 if p1.exists():
                     sr_img_path = p1
                 elif p2.exists():

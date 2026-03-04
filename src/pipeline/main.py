@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-import os
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -37,7 +35,6 @@ from src.pipeline.numbering import (
     build_generate_overrides_cmd,
     empty_numbering_payload,
 )
-
 from src.pipeline.python_env import get_pipeline_python
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -130,7 +127,11 @@ def run_pipeline(
     commands: List[List[str]] = []
 
     if get_nested(config, "steps", "pdf_to_images", default=False):
-        if skip_existing and (run_dir / "inputs" / "images").exists() and list((run_dir / "inputs" / "images").glob("*.png")):
+        if (
+            skip_existing
+            and (run_dir / "inputs" / "images").exists()
+            and list((run_dir / "inputs" / "images").glob("*.png"))
+        ):
             logger.info("Skipping pdf_to_images: output directory exists and is not empty.")
         else:
             pdf_cmd = _build_pdf_command(config, run_dir)
@@ -148,7 +149,8 @@ def run_pipeline(
 
     if run_detection:
         if skip_existing:
-            if "detection" not in config: config["detection"] = {}
+            if "detection" not in config:
+                config["detection"] = {}
             config["detection"]["probe_skip_existing"] = True
 
         det_result = run_detection_step(
@@ -317,7 +319,7 @@ def run_pipeline(
                 logger.info(f"Skipping mmr_overrides for {page_id}: file exists.")
             else:
                 _run_command(cmd_mmr, dry_run=dry_run)
-            
+
             if not dry_run:
                 # Still need to load the payload for subsequent steps even if skipped
                 if overrides_mmr.exists():
@@ -345,7 +347,11 @@ def run_pipeline(
                 force_single_system=force_single_system,
             )
             commands.append(cmd_final)
-            if skip_existing and final_json.exists() and (not overlay_path or overlay_path.exists()):
+            if (
+                skip_existing
+                and final_json.exists()
+                and (not overlay_path or overlay_path.exists())
+            ):
                 logger.info(f"Skipping final_numbering for {page_id}: file exists.")
             else:
                 _run_command(cmd_final, dry_run=dry_run)

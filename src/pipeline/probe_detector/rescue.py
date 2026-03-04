@@ -136,7 +136,7 @@ def apply_gap_rescue(
     for _, xs in pool_by_band.items():
         if len(xs) < 2:
             continue
-        sorted_xs = sorted(set(xs)) # set to avoid 0-width gaps from overlaps
+        sorted_xs = sorted(set(xs))  # set to avoid 0-width gaps from overlaps
         gaps = [sorted_xs[i + 1] - sorted_xs[i] for i in range(len(sorted_xs) - 1)]
         all_gaps.extend(gaps)
 

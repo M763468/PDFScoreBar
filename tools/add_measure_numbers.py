@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import sys
 from pathlib import Path
 
@@ -12,12 +13,14 @@ sys.path.append(str(project_root))
 from src.measure_numbering.pipeline import MeasureNumberingPipeline
 from src.measure_numbering.types import Score
 
+logger = logging.getLogger(__name__)
+
 
 def render_overlay(score: Score, image_path: Path, output_path: Path):
     """Generates a visualization overlay for the processed score."""
     img = cv2.imread(str(image_path))
     if img is None:
-        print(f"Error: Could not read image for overlay: {image_path}")
+        logger.error(f"Error: Could not read image for overlay: {image_path}")
         return
 
     overlay = img.copy()
@@ -91,7 +94,7 @@ def render_overlay(score: Score, image_path: Path, output_path: Path):
                     )
 
     cv2.imwrite(str(output_path), overlay)
-    print(f"Overlay saved to: {output_path}")
+    logger.info(f"Overlay saved to: {output_path}")
 
 
 def score_to_dict(score: Score) -> dict:
@@ -139,6 +142,12 @@ def normalize_barlines(raw_data):
 
 
 def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
     parser = argparse.ArgumentParser(description="Add measure numbers to detected barlines.")
     parser.add_argument(
         "--barlines", type=Path, required=True, help="Path to detected barlines JSON"
@@ -182,9 +191,9 @@ def main():
             overrides = config_data.get("measure_overrides")
 
     # Get image size
-    img_ref = cv2.imread(str(args.image))
+    img_ref = cv2.imread(args.image)
     if img_ref is None:
-        print(f"Error: Could not read reference image: {args.image}")
+        logger.error(f"Error: Could not read reference image: {args.image}")
         sys.exit(1)
     h, w = img_ref.shape[:2]
 
@@ -220,7 +229,7 @@ def main():
         result_dict = score_to_dict(score)
         with open(args.output_json, "w") as f:
             json.dump(result_dict, f, indent=2)
-        print(f"Result JSON saved to: {args.output_json}")
+        logger.info(f"Result JSON saved to: {args.output_json}")
 
     # Save Overlay
     if args.output_overlay:

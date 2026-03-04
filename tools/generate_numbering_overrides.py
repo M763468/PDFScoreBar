@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import re
 import sys
 from pathlib import Path
@@ -12,6 +13,8 @@ from PIL import Image
 from rapidocr_onnxruntime import RapidOCR
 from torchvision import models, transforms
 
+logger = logging.getLogger(__name__)
+
 
 # --- Model Definition (Must match training) ---
 def load_model(model_path, device):
@@ -23,7 +26,7 @@ def load_model(model_path, device):
         state_dict = torch.load(model_path, map_location=device)
         model.load_state_dict(state_dict)
     except Exception as e:
-        print(f"Error loading model from {model_path}: {e}")
+        logger.error(f"Error loading model from {model_path}: {e}")
         # Identify if keys mismatch (e.g. 'module.' prefix)
         sys.exit(1)
 
@@ -450,6 +453,11 @@ def draw_debug_info(debug_img, x1, y1, x2, y2, status, text="", details=""):
 
 
 def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
     parser = argparse.ArgumentParser()
     # Required
     parser.add_argument("--numbering-json", type=Path, required=True)
@@ -485,7 +493,7 @@ def main():
     rescue_threshold = args.rescue_threshold
 
     if threshold > 1.0:
-        print(f"Warning: Legacy threshold {threshold} detected. Using default 0.5 for CNN.")
+        logger.warning(f"Legacy threshold {threshold} detected. Using default 0.5 for CNN.")
         threshold = 0.5
 
     # --- Model Loading ---
@@ -506,15 +514,15 @@ def main():
                 break
 
     if model_path is None or not model_path.exists():
-        print(
+        logger.error(
             f"Error: Model not found. Searched: {search_paths if args.model_path is None else [args.model_path]}"
         )
         sys.exit(1)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+    logger.info(f"Using device: {device}")
     model = load_model(model_path, device)
-    print("Model loaded.")
+    logger.info("Model loaded.")
 
     # Initialize OCR
     ocr_engine = RapidOCR()
@@ -525,7 +533,7 @@ def main():
 
     image = cv2.imread(str(args.image))
     if image is None:
-        print(f"Error reading image: {args.image}")
+        logger.error(f"Error reading image: {args.image}")
         sys.exit(1)
 
     h_img, w_img = image.shape[:2]
@@ -536,7 +544,7 @@ def main():
 
     overrides = []
 
-    print("Running CNN Inference...")
+    logger.info("Running CNN Inference...")
 
     for page in data["pages"]:
         page_num = page["page_number"]
@@ -675,12 +683,12 @@ def main():
                             # 100 is max. Centering penalty can drop it.
                             is_valid_detection = True
                             status_label = "rescue"
-                            print(
+                            logger.info(
                                 f"  [RESCUE] P{page_num} S{sys_idx} M{m_num}: Low Prob {prob:.2f} rescued by High OCR Score {final_score:.1f}"
                             )
 
                     if is_valid_detection:
-                        print(
+                        logger.info(
                             f"  [FOUND] P{page_num} S{sys_idx} M{m_num}: Prob={prob:.2f} -> OCR={found_number} (Score={final_score:.1f}, {final_debug})"
                         )
                         overrides.append(
@@ -705,7 +713,7 @@ def main():
                     else:
                         # Only log "CHECK" if high prob but no OCR, otherwise it's just noise
                         if prob > threshold:
-                            print(
+                            logger.info(
                                 f"  [CHECK] P{page_num} S{sys_idx} M{m_num}: Prob={prob:.2f} -> No Valid OCR Number"
                             )
                             draw_debug_info(

@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import datetime as dt
+import logging
 import os
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+from tqdm import tqdm
 
 from src.common.barline_evaluation import (
     BARLINE_DEFAULT_MIN_WIDTH,
@@ -36,6 +39,7 @@ from src.pipeline.numbering import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+logger = logging.getLogger(__name__)
 
 
 def _build_pdf_command(config: Dict[str, Any], run_dir: Path) -> List[str]:
@@ -89,7 +93,7 @@ def _build_pdf_command(config: Dict[str, Any], run_dir: Path) -> List[str]:
 
 
 def _run_command(cmd: List[str], *, dry_run: bool) -> None:
-    print(f"Running: {' '.join(cmd)}")
+    logger.debug(f"Running: {' '.join(cmd)}")
     if dry_run:
         return
     subprocess.run(cmd, check=True)
@@ -135,7 +139,7 @@ def run_pipeline(
 
     if get_nested(config, "steps", "pdf_to_images", default=False):
         if skip_existing and (run_dir / "inputs" / "images").exists() and list((run_dir / "inputs" / "images").glob("*.png")):
-            print("Skipping pdf_to_images: output directory exists and is not empty.")
+            logger.info("Skipping pdf_to_images: output directory exists and is not empty.")
         else:
             pdf_cmd = _build_pdf_command(config, run_dir)
             commands.append(pdf_cmd)
@@ -219,8 +223,11 @@ def run_pipeline(
     numbering_final_paths: List[Path] = []
     barline_override_stats: Dict[str, Dict[str, int]] = {}
 
-    for index, (page_id, image_path, resolved_item) in enumerate(
-        zip(page_ids, images, resolved), start=1
+    for index, (page_id, image_path, resolved_item) in tqdm(
+        enumerate(zip(page_ids, images, resolved), start=1),
+        total=len(page_ids),
+        desc="Processing pages",
+        unit="page",
     ):
         page_intermediate = intermediate_dir / page_id
         page_outputs = outputs_dir / page_id
@@ -298,7 +305,7 @@ def run_pipeline(
         commands.append(cmd_base)
         if step_numbering and not validate_only:
             if skip_existing and numbering_base.exists():
-                print(f"Skipping numbering_base for {page_id}: file exists.")
+                logger.info(f"Skipping numbering_base for {page_id}: file exists.")
             else:
                 _run_command(cmd_base, dry_run=dry_run)
 
@@ -315,7 +322,7 @@ def run_pipeline(
             )
             commands.append(cmd_mmr)
             if skip_existing and overrides_mmr.exists():
-                print(f"Skipping mmr_overrides for {page_id}: file exists.")
+                logger.info(f"Skipping mmr_overrides for {page_id}: file exists.")
             else:
                 _run_command(cmd_mmr, dry_run=dry_run)
             
@@ -347,7 +354,7 @@ def run_pipeline(
             )
             commands.append(cmd_final)
             if skip_existing and final_json.exists() and (not overlay_path or overlay_path.exists()):
-                print(f"Skipping final_numbering for {page_id}: file exists.")
+                logger.info(f"Skipping final_numbering for {page_id}: file exists.")
             else:
                 _run_command(cmd_final, dry_run=dry_run)
 
@@ -378,13 +385,19 @@ def run_pipeline(
         barline_override_stats=barline_override_stats,
     )
     write_manifest(run_dir / "manifest.json", manifest)
-    print(f"Wrote manifest to {run_dir / 'manifest.json'}")
+    logger.info(f"Wrote manifest to {run_dir / 'manifest.json'}")
 
     return run_dir
 
 
 def main() -> None:
     import argparse
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 
     parser = argparse.ArgumentParser(
         description="Run the integrated detection and numbering pipeline."

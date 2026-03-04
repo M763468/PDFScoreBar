@@ -7,6 +7,8 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
+from tqdm import tqdm
+
 try:
     import cv2
 except ImportError:  # pragma: no cover - optional in minimal test env
@@ -317,7 +319,7 @@ def run_probe_scan_batch(
         kwargs.update(detect_probe_kwargs)
 
     processed = 0
-    for img_path in images:
+    for img_path in tqdm(images, desc="Probe Scan", unit="page"):
         stem = img_path.stem
         current_score_name = score_name or img_path.parent.name
         run_id = build_probe_run_id(img_path, score_name=current_score_name)

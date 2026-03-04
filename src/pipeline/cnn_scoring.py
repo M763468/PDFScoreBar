@@ -7,6 +7,8 @@ import logging
 from pathlib import Path
 from typing import Any, Iterable, List, Optional, Sequence, Tuple
 
+from tqdm import tqdm
+
 try:
     import cv2
 except ImportError:  # pragma: no cover - optional in minimal test env
@@ -281,7 +283,7 @@ def run_cnn_scoring_batch(
     staff_mask_map = _build_staff_mask_map(staff_mask_dir)
 
     processed = 0
-    for img_path in images:
+    for img_path in tqdm(images, desc="CNN Scoring", unit="page"):
         run_id = build_probe_run_id(img_path, score_name=score_name)
         run_dir = probe_output_root / run_id
         if _score_directory(

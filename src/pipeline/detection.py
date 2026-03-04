@@ -8,6 +8,8 @@ import subprocess
 import sys
 from importlib import import_module
 
+from tqdm import tqdm
+
 # Pre-import torch to avoid symbol conflict with onnxruntime-gpu
 try:
     import_module("torch")
@@ -186,7 +188,7 @@ def _run_hybrid_detection_in_process(
     hybrid_results_dir = hybrid_output_dir / "hybrid_results"
     ensure_dir(hybrid_results_dir)
 
-    for stem in stems:
+    for stem in tqdm(stems, desc="Hybrid Consensus", unit="page"):
         baseline_json = hybrid_output_dir / "baseline" / "batch" / stem / f"{stem}_detections.json"
         sr_json = hybrid_output_dir / "sr" / "batch" / stem / f"{stem}_detections.json"
         omr_json = hybrid_output_dir / "omr_sr" / stem / "predictions.json"

@@ -38,6 +38,8 @@ from src.pipeline.numbering import (
     empty_numbering_payload,
 )
 
+from src.pipeline.python_env import get_pipeline_python
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 logger = logging.getLogger(__name__)
 
@@ -51,19 +53,9 @@ def _build_pdf_command(config: Dict[str, Any], run_dir: Path) -> List[str]:
     output_dir = run_dir / "inputs" / "images"
     ensure_dir(output_dir)
 
-    # Prefer environment variable, then current interpreter (if it has cv2/fitz installed) or .venv_pdf
-    env_python = os.environ.get("PIPELINE_PYTHON")
-    if env_python:
-        python_exe = env_python
-    elif "venv_sr" in sys.executable:
-        python_exe = sys.executable
-    elif (PROJECT_ROOT / ".venv_pdf/bin/python").exists():
-        python_exe = str(PROJECT_ROOT / ".venv_pdf/bin/python")
-    else:
-        python_exe = sys.executable
+    python_cmd = get_pipeline_python("pdf_to_images")
 
-    cmd = [
-        python_exe,
+    cmd = python_cmd + [
         "src/pdf_to_images.py",
         "--pdf",
         str(pdf_path),

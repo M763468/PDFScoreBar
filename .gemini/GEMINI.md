@@ -7,6 +7,7 @@
 - **Sub-agent Delegation**: Actively use \`codex exec\` via the \`codex-delegation\` skill for precision file edits, complex repository audits, and local test verification. Treat Codex as a specialized implementation and verification lead to minimize context overhead in the main Gemini session.
 - **Resolution Independence**: Strictly adhere to the \`unit_size\` (staff spacing) scaling rule for all geometric calculations.
 - **Tool Preference over Shell Tricks**: **ALWAYS** use dedicated tools (like `write_file`, `replace`, etc.) instead of shell redirections (`>`), heredocs (`<<EOF`), or `cat` inside `run_shell_command`. This prevents syntax errors and excessive security confirmation prompts for the user.
+- **PR Creation Standard**: When creating or editing a Pull Request via `gh pr create` or `gh pr edit`, you **MUST** first read `.github/pull_request_template.md` and strictly format your PR body according to its structure and headings.
 
 ## Verification & Quality Bar
 - **PR Review Retrieval Standard**: When checking PR feedback, use `gh pr view <number> --json title,body,comments,reviews` to fetch all context (including inline comments) in a single turn. Avoid multiple calls to `gh pr view --comments` and `gh api`.

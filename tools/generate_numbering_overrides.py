@@ -531,7 +531,7 @@ def main():
     with open(args.numbering_json, "r") as f:
         data = json.load(f)
 
-    image = cv2.imread(str(args.image))
+    image = cv2.imread(args.image)
     if image is None:
         logger.error(f"Error reading image: {args.image}")
         sys.exit(1)

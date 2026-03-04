@@ -420,15 +420,18 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    run_pipeline(
-        args.config,
-        run_id=args.run_id,
-        output_root=args.output_root,
-        dry_run=args.dry_run,
-        validate_only=args.validate_only,
-        skip_existing=args.skip_existing,
-        page_limit=args.page_limit,
-    )
+    from tqdm.contrib.logging import logging_redirect_tqdm
+
+    with logging_redirect_tqdm():
+        run_pipeline(
+            args.config,
+            run_id=args.run_id,
+            output_root=args.output_root,
+            dry_run=args.dry_run,
+            validate_only=args.validate_only,
+            skip_existing=args.skip_existing,
+            page_limit=args.page_limit,
+        )
 
 
 if __name__ == "__main__":

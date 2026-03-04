@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def render_overlay(score: Score, image_path: Path, output_path: Path):
     """Generates a visualization overlay for the processed score."""
-    img = cv2.imread(str(image_path))
+    img = cv2.imread(image_path)
     if img is None:
         logger.error(f"Error: Could not read image for overlay: {image_path}")
         return

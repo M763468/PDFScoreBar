@@ -98,9 +98,8 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
     - `dependency-management`: 依存関係の管理
     - `test-generation`: テストコードの生成・更新
     - `long-horizon-task`: 長期タスクの状態管理
-    - `gemini-consultation`: Gemini への標準化された相談
+    - `gemini-consultation`: Gemini への標準化された相談。`.agents/skills/gemini-consultation/SKILL.md` を利用し、相談時の入力整理・実行手順・記録方法を統一します。
 
-Gemini相談の標準化には `.agents/skills/gemini-consultation/SKILL.md` を利用し、相談時の入力整理・実行手順・記録方法を統一する。
 詳細は `docs/ai-workflow/WORKFLOW.md` を参照。
 
 ## 8. インタラクティブ・プロトコル（対話型セッション専用ルール）

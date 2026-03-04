@@ -27,19 +27,19 @@ Autonomously resolve a GitHub Issue by understanding the goal, planning, impleme
 6) Implement the plan, following the coding standards in `AGENTS.md`.
 7) Verify the changes:
     - Run project-specific tests.
-    - Run `make lint` and `make format` to ensure style compliance.
+    - Run `make format` and `make lint` to ensure style compliance.
 8) Update relevant documentation in `docs/` if necessary.
 9) Submit a PR (referencing the issue) or report completion.
 
 ## Required commands/permissions
 - gh: to view issue (`gh issue view`), create PR (`gh pr create`)
 - git: branch, commit, push
-- make: to run `make lint`, `make format`
+- make: to run `make format`, `make lint`
 
 ## Example commands
 - `gh issue view 42`
 - `git checkout -b feature/42-fix-bug`
-- `make lint && make format`
+- `make format && make lint`
 
 ## Notes
 - Always confirm the scope before making large changes.

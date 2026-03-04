@@ -38,8 +38,8 @@ The output should provide values for the template fields (e.g., `goal`, `scope`,
 
 ## Example commands
 To create an issue using a template:
-- `gh issue create --template <template_file_name> --title "[Type] <summary>" --body "<body>"`
-- Example for a Task: `gh issue create --template task.yml --title "[Task] Update documentation" --body "$(cat drafted_issue.md)"`
+- `gh issue create --template <template_file_name> --title "[Type] <summary>" --body-file <path_to_body_file>`
+- Example for a Task: `gh issue create --template task.yml --title "[Task] Update documentation" --body-file drafted_issue.md`
 
 ## Notes
 - Always include Out-of-scope items to prevent scope creep.

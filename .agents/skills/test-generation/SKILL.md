@@ -24,18 +24,18 @@ Generate, expand, and maintain test code using pytest to ensure code quality and
 3) Determine the test strategy (unit tests, integration tests) following existing patterns in the `tests/` directory.
 4) Generate test cases using `pytest` conventions.
 5) Run tests using `pytest` (or `make test` if available) to verify they pass and cover the target code.
-6) Verify test code style with `make lint` and `make format`.
+6) Verify test code style with `make format` and `make lint`.
 7) Refine tests if they fail or if coverage is insufficient.
 
 ## Required commands/permissions
 - pytest: to run tests
-- make: to run `make lint`, `make format`
+- make: to run `make format`, `make lint`
 - file operations: to write test files
 
 ## Example commands
 - `pytest tests/test_my_module.py`
 - `pytest --cov=src tests/`
-- `make lint && make format`
+- `make format && make lint`
 
 ## Notes
 - Ensure tests are independent and deterministic.

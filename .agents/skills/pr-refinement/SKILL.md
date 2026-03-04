@@ -27,19 +27,19 @@ Analyze PR comments and reviews to plan and implement necessary code fixes or im
 5) Implement the changes according to the repository standards in `AGENTS.md`.
 6) Verify the fixes:
     - Run project-specific tests.
-    - Run `make lint` and `make format` to ensure style compliance.
+    - Run `make format` and `make lint` to ensure style compliance.
 7) If behavior changes, update the corresponding documentation (refer to `docs/ai-workflow/WORKFLOW.md`).
 8) (Optional) Push changes or comment on the PR summarizing the fixes.
 
 ## Required commands/permissions
 - gh: to view PR comments (`gh pr view`)
 - git: to checkout branch, commit, and push changes
-- make: to run `make lint`, `make format`
+- make: to run `make format`, `make lint`
 
 ## Example commands
 - `gh pr view 123 --comments`
 - `gh pr checkout 123`
-- `make lint && make format`
+- `make format && make lint`
 
 ## Notes
 - Focus on addressing the reviewer's specific concerns.

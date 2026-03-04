@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
-import os
-import shutil
 import argparse
+import os
+import re
+import shutil
 from datetime import datetime
+
 
 def main():
     parser = argparse.ArgumentParser(description="Initialize a new Long-Horizon Task directory from templates.")
     parser.add_argument("task_id", help="The ID of the task (e.g., REFACTOR-001)")
     parser.add_argument("--issue", help="Associated GitHub Issue number", type=int)
     args = parser.parse_args()
+
+    # Security: Validate task_id to prevent path traversal
+    if not re.match(r"^[a-zA-Z0-9_-]+$", args.task_id):
+        print(f"Error: Invalid task_id '{args.task_id}'. Only alphanumeric, hyphens, and underscores are allowed.")
+        return
 
     task_dir = os.path.join("docs", "refactors", args.task_id)
     template_dir = os.path.join("docs", "ai-workflow", "templates", "task")

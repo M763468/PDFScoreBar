@@ -22,6 +22,7 @@ Manage complex, multi-step development tasks by externalizing task state into re
 ### 1. `init-task`
 Initialize a new task directory in `docs/refactors/<TASK-ID>/` using templates.
 - **Action**: Run `tools/ai-workflow-tools/init_long_horizon_task.py <TASK_ID> [--issue <ISSUE_NUMBER>]`.
+- **Constraint**: `<TASK_ID>` must only contain alphanumeric characters, hyphens, and underscores to ensure path security.
 
 ### 2. `check-status`
 Review the progress of an existing long-horizon task.
@@ -29,6 +30,7 @@ Review the progress of an existing long-horizon task.
     1. Read `docs/refactors/<TASK-ID>/Plan.md` to see completed/pending milestones.
     2. Read `docs/refactors/<TASK-ID>/Log.md` for the latest updates.
     3. Read `docs/refactors/<TASK-ID>/Benchmarks.md` for performance metrics.
+- **Constraint**: Always verify the `<TASK-ID>` matches the regex `^[a-zA-Z0-9_-]+$` before accessing directories.
 
 ### 3. `record-log`
 Help the user or agent record a new entry in the `Log.md` file.

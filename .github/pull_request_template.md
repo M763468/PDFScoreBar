@@ -1,3 +1,6 @@
+> [!TIP]
+> AIエージェントにこのPRの説明文作成やセルフレビューを依頼するには、`pr-explanation` や `pr-review` スキルを使用してください。
+
 ## Related Issue
 - Closes #
 

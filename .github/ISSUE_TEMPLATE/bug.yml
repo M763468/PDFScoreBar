@@ -12,7 +12,7 @@ body:
     attributes:
       value: |
         > [!TIP]
-        > AIエージェントにこのIssueの下書きを依頼するには、`issue-creation` スキルを使用してください。
+        > AIエージェントにこのIssueの下書きを依頼するには `issue-creation` を、調査・実装を依頼するには `problem-investigation` や `issue-solver` スキルを使用してください。
 
   - type: markdown
     attributes:

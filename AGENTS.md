@@ -85,7 +85,23 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 - 共通スキルは `skills/` に配置する
 - リポジトリ固有の最適化は `.agents/skills` に追加する
 - 各スキルは「目的 / 入力 / 出力 / 手順 / 必要なコマンド」を明記する
-- Gemini相談の標準化には `.agents/skills/gemini-consultation/SKILL.md` を利用し、相談時の入力整理・実行手順・記録方法を統一する
+- **利用可能なスキル一覧**:
+    - `issue-creation`: Issue の下書き作成
+    - `problem-investigation`: バグ調査・原因究明
+    - `issue-solver`: Issue の自律解決（実装・検証）
+    - `pr-explanation`: PR の説明文生成
+    - `pr-review`: PR の自動レビュー
+    - `pr-refinement`: レビュー指摘の修正適用
+    - `status-check`: 現在の作業状況の要約
+    - `change-summary`: 最終的な変更内容の要約
+    - `doc-updater`: ドキュメントの自動更新
+    - `dependency-management`: 依存関係の管理
+    - `test-generation`: テストコードの生成・更新
+    - `long-horizon-task`: 長期タスクの状態管理
+    - `gemini-consultation`: Gemini への標準化された相談
+
+Gemini相談の標準化には `.agents/skills/gemini-consultation/SKILL.md` を利用し、相談時の入力整理・実行手順・記録方法を統一する。
+詳細は `docs/ai-workflow/WORKFLOW.md` を参照。
 
 ## 8. インタラクティブ・プロトコル（対話型セッション専用ルール）
 

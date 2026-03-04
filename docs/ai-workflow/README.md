@@ -18,3 +18,7 @@ This directory contains guidelines and methodologies for AI-driven development i
 | :--- | :--- |
 | Simple bug fix, minor feature | [General Workflow](WORKFLOW.md) (Issue -> Branch -> PR) |
 | Large refactor, optimization, multi-step migration | [Long-Horizon Task Workflow](LONG_HORIZON_WORKFLOW.md) (File-based State) |
+
+---
+
+**TIP:** 開発効率を最大化するために、`.agents/skills/` にある専用の AI スキル（`issue-solver`, `pr-review` など）を積極的に活用してください。詳細は [General Workflow](WORKFLOW.md) のスキルセクションを参照してください。

@@ -11,6 +11,12 @@ body:
   - type: markdown
     attributes:
       value: |
+        > [!TIP]
+        > AIエージェントにこのIssueの下書きを依頼するには `issue-creation` を、調査・実装を依頼するには `problem-investigation` や `issue-solver` スキルを使用してください。
+
+  - type: markdown
+    attributes:
+      value: |
         ## 🐛 Bug Report
         再現手順・期待動作・実際の動作を具体的に書いてください。
 

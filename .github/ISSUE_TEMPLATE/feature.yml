@@ -9,6 +9,12 @@ body:
   - type: markdown
     attributes:
       value: |
+        > [!TIP]
+        > AIエージェントにこのIssueの下書きを依頼するには `issue-creation` を、実装を依頼するには `issue-solver` スキルを使用してください。
+
+  - type: markdown
+    attributes:
+      value: |
         ## ✨ Feature Issue
         目的・背景・入出力を明確に書くことで、AIエージェントが迷わず実装できます。
 

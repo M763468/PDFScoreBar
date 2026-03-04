@@ -9,6 +9,12 @@ body:
   - type: markdown
     attributes:
       value: |
+        > [!TIP]
+        > AIエージェントにこのIssueの下書きを依頼するには `issue-creation` を、実装を依頼するには `issue-solver` スキルを使用してください。
+
+  - type: markdown
+    attributes:
+      value: |
         ## ブランチ運用
         AIエージェントが作業するブランチを指定します。未定なら空欄でもOKで、あとからコメント等で指定できます。
 

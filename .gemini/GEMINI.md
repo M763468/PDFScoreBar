@@ -8,6 +8,7 @@
 - **Resolution Independence**: Strictly adhere to the \`unit_size\` (staff spacing) scaling rule for all geometric calculations.
 
 ## Verification & Quality Bar
+- **PR Review Retrieval Standard**: When checking PR feedback, use `gh pr view <number> --json title,body,comments,reviews` to fetch all context (including inline comments) in a single turn. Avoid multiple calls to `gh pr view --comments` and `gh api`.
 - **Pre-Delivery Check**: Before finalizing any code change or creating a Pull Request, you **MUST** run `make format` and `make lint` to ensure adherence to project-wide standards.
 - **Zero-Tolerance for Lint/Format Errors**: If `make format` or `make lint` fails, do not report completion. Fix all issues before providing the final report.
 - **Task Integrity (Long-Horizon)**: For any task using the `long-horizon-task` skill, ensure that `task_id` is always validated against the regex `^[a-zA-Z0-9_-]+$` to prevent security vulnerabilities.

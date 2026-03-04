@@ -19,7 +19,7 @@ Autonomously resolve a GitHub Issue by understanding the goal, planning, impleme
 - PR creation (optional)
 
 ## Steps
-1) Read the issue details using `gh issue view <number>`.
+1) Read the issue details using `gh issue view <number> --json title,body,labels,assignees,state,comments`.
 2) Create a new branch for the issue following the naming convention in `docs/ai-workflow/WORKFLOW.md`.
 3) **Identify the correct execution environment** by referring to `docs/ENVIRONMENTS.md` (Docker vs Host).
 4) Analyze the codebase to understand the context.
@@ -32,12 +32,12 @@ Autonomously resolve a GitHub Issue by understanding the goal, planning, impleme
 9) Submit a PR (referencing the issue) or report completion.
 
 ## Required commands/permissions
-- gh: to view issue (`gh issue view`), create PR (`gh pr create`)
+- gh: to view issue (`gh issue view --json`), create PR (`gh pr create`)
 - git: branch, commit, push
 - make: to run `make format`, `make lint`
 
 ## Example commands
-- `gh issue view 42`
+- `gh issue view 42 --json title,body,labels,assignees,state,comments`
 - `git checkout -b feature/42-fix-bug`
 - `make format && make lint`
 

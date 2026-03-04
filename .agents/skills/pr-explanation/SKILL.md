@@ -26,11 +26,11 @@ Explain the PR intent and scope to make review efficient.
 4) Include tests and caveats.
 
 ## Required commands/permissions
-- gh: view PR details if needed (e.g., `gh pr view`, `gh pr diff`)
+- gh: view PR details and reviews (e.g., `gh pr view --json title,body,comments,reviews`, `gh pr diff`)
 - git: review local diffs if needed
 
 ## Example commands
-- `gh pr view <number>`
+- `gh pr view <number> --json title,body,comments,reviews`
 - `gh pr diff <number>`
 
 ## Notes

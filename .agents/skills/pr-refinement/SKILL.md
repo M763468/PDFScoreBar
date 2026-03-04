@@ -20,7 +20,7 @@ Analyze PR comments and reviews to plan and implement necessary code fixes or im
 - Verification results
 
 ## Steps
-1) Fetch PR details and review comments using `gh pr view <number> --comments`.
+1) Fetch PR details and all review feedback (including inline comments) using `gh pr view <number> --json title,body,comments,reviews`.
 2) Analyze the feedback and identify specific code changes required.
 3) **Identify the correct execution environment** by referring to `docs/ENVIRONMENTS.md` (Docker vs Host).
 4) Plan the modifications (files to edit, logic to change).
@@ -32,12 +32,12 @@ Analyze PR comments and reviews to plan and implement necessary code fixes or im
 8) (Optional) Push changes or comment on the PR summarizing the fixes.
 
 ## Required commands/permissions
-- gh: to view PR comments (`gh pr view`)
+- gh: to view PR details and reviews (`gh pr view --json`)
 - git: to checkout branch, commit, and push changes
 - make: to run `make format`, `make lint`
 
 ## Example commands
-- `gh pr view 123 --comments`
+- `gh pr view 123 --json title,body,comments,reviews`
 - `gh pr checkout 123`
 - `make format && make lint`
 

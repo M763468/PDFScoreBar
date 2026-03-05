@@ -133,8 +133,11 @@ def _run_hybrid_detection_in_process(
             try:
                 img.resolve().relative_to(PROJECT_ROOT)
             except ValueError:
-                logger.warning(f"External image path detected: {img}. Falling back to host Python instead of docker exec.")
+                logger.warning(
+                    f"External image path detected: {img}. Falling back to host Python instead of docker exec."
+                )
                 import sys
+
                 python_cmd = [os.environ.get("PIPELINE_PYTHON", sys.executable)]
                 break
 
@@ -162,7 +165,9 @@ def _run_hybrid_detection_in_process(
         cmd = python_cmd + baseline_args
         commands.append(cmd)
         if not dry_run:
-            subprocess.run(cmd, env=env, check=True)
+            from src.pipeline.subprocess_utils import run_with_logging
+
+            run_with_logging(cmd, env=env, check=True)
 
     sr_output = hybrid_output_dir / "sr"
     if skip_existing and _all_stems_exist(sr_output, stems, "batch/*/*.json"):
@@ -182,7 +187,9 @@ def _run_hybrid_detection_in_process(
         cmd = python_cmd + sr_args
         commands.append(cmd)
         if not dry_run:
-            subprocess.run(cmd, env=env, check=True)
+            from src.pipeline.subprocess_utils import run_with_logging
+
+            run_with_logging(cmd, env=env, check=True)
 
     logger.info("--- Step 2.1b: OMR-DLN SR (Subprocess) ---")
     sr_root = hybrid_output_dir / "sr" / "batch"
@@ -205,8 +212,11 @@ def _run_hybrid_detection_in_process(
                 try:
                     img.resolve().relative_to(PROJECT_ROOT)
                 except ValueError:
-                    logger.warning(f"External image path detected: {img}. Falling back to host Python instead of docker exec for OMR-DLN.")
+                    logger.warning(
+                        f"External image path detected: {img}. Falling back to host Python instead of docker exec for OMR-DLN."
+                    )
                     import sys
+
                     python_cmd_omr = [os.environ.get("PIPELINE_PYTHON", sys.executable)]
                     break
 
@@ -218,7 +228,9 @@ def _run_hybrid_detection_in_process(
         )
         commands.append(omr_cmd)
         if not dry_run:
-            subprocess.run(omr_cmd, env=env, check=True)
+            from src.pipeline.subprocess_utils import run_with_logging
+
+            run_with_logging(omr_cmd, env=env, check=True)
 
     logger.info("--- Step 2.1c: Hybrid Consensus Generation ---")
     hybrid_results_dir = hybrid_output_dir / "hybrid_results"

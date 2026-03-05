@@ -9,18 +9,11 @@ description: Standardize Gemini<->Codex delegation flow for deep-repo reasoning,
 Use `codex` as an implementation specialist and repository navigator to perform surgical file edits, run tests, and verify reasoning locally without consuming excessive context in the main Gemini session. Also, utilize Codex for critical reviews of architecture when deeply tied to the repository state.
 
 ## Input
-- Delegation objective:
-  - `implementation`: For writing code or making surgical file edits.
-  - `test-generation`: For creating or updating tests.
-  - `repo-audit`: For deep, non-destructive navigation and analysis of the codebase.
-  - `read-only-review`: For non-destructive code review of a specific file or component.
-  - `critical-review`: For finding flaws and risks in architectural plans or design documents.
-- Target files or components (including documentation if for review)
-- Clear instructions on what to implement, verify, or review
+- Delegation objective: `implementation`, `test-generation`, `repo-audit`, `read-only-review`, `critical-review`
+- Target files or components
+- Clear instructions
 - Sandbox constraints (`--sandbox read-only` or default)
 
-## Output (respond in Japanese)
-- Prompt sent to Codex
 ## Output (respond in Japanese)
 - Prompt sent to Codex
 - Execution result summary (3-5 lines)
@@ -45,15 +38,11 @@ Use `codex` as an implementation specialist and repository navigator to perform 
 - `./run.sh "instruction" --sandbox read-only`: for read-only audits and reviews.
 
 ## Example commands
-- `./run.sh "src/pipeline/logic.py に、設計で決まった境界条件のチェックを追加し、テストを実行してください。"`
+- `./run.sh "src/pipeline/logic.py に境界条件のチェックを追加し、テストを実行してください。"`
 - `./run.sh "この設計案のリスクを既存の実装と照らし合わせて評価してください。" --sandbox read-only`
 
-- `codex exec "src/pipeline/logic.py に、設計で決まった境界条件のチェックを追加し、テストを実行してください。" > artifacts/codex-delegation_results.txt`
-
 ## Notes
-- Respect user directives regarding API usage limits. Always pause to consider if a task can be done by Gemini alone if Codex usage is constrained.
-- While Gemini usually provides the "why" and "what", Codex can act as a critical reviewer of Gemini's architectural plans when provided with design documentation.
-- Codex should handle the "how" (syntax, local repo conventions, type safety).
-- Treat Codex's verification as strong evidence for implementation success, but final validation remains with the user's manual local tests.
-- Use `codex-delegation` to keep the main Gemini context window clean when tasks involve many files or repetitive testing loops.
+- Respect user directives regarding API usage limits.
+- Codex handles the "how" (syntax, local repo conventions, type safety).
+- Use `codex-delegation` to keep the main Gemini context window clean.
 

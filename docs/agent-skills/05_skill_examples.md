@@ -1,32 +1,38 @@
-# Example Skill Proposals
+# Skill Design Examples
 
-These examples are generic and should be adapted to each repository.
+These examples follow the repository-specific patterns (run.sh + artifacts).
 
-## repo-tree
+## Generic Template (run.sh)
 
-run.sh
+```bash
+#!/bin/bash
+set -euo pipefail
+# 1. Prepare environment
+mkdir -p artifacts
+# 2. Execute command and redirect output
+# your_command > artifacts/your_skill_output.txt
+echo "Artifact generated: artifacts/your_skill_output.txt"
+```
 
-tree -L 3 \> artifacts/repo_tree.txt
+## repo-summary (Composite Skill)
 
-## dependency-snapshot
+Gather repository structure, dependency status, and recent logs.
 
-pip freeze \> artifacts/dependencies.txt
+- **run.sh**: `make repo-summary`
+- **Output**: `artifacts/repo_summary.txt`
 
-## run-tests
+## tool-wrapper (Specific Tool Wrapper)
 
-pytest -q \> artifacts/test_results.txt
+Wrap a complex script from `tools/` into a skill.
 
-## lint-fix
+- **run.sh**: `python3 tools/your_tool.py [args] > artifacts/tool_results.txt`
+- **Output**: `artifacts/tool_results.txt`
 
-eslint . --fix
+## model-eval (Evaluation Skill)
 
-## build-project
+Execute evaluation suite and summarize metrics.
 
-npm run build
+- **run.sh**: `./run_eval.sh > artifacts/eval_metrics.json`
+- **Output**: `artifacts/eval_metrics.json`
 
-## repo-summary (composed skill)
-
-tree -L 3 \> artifacts/tree.txt cloc . \> artifacts/loc.txt pip freeze
-\> artifacts/deps.txt
-
-These examples illustrate typical CLI wrappers used by coding agents.
+By using these patterns, agents ensure deterministic behavior and context efficiency.

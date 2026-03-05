@@ -8,7 +8,7 @@
 - **Vision-First Debugging**: When debugging geometric or visual issues, prioritize the analysis of visual evidence by leveraging multi-modal capabilities whenever relevant images are available (e.g., in `debug_outputs/` or `logs/` subdirectories). If such artifacts are present, use them to confirm hypotheses and identify root causes.
 - **Sub-agent Delegation**: Actively use \`codex exec\` via the \`codex-delegation\` skill for precision file edits, complex repository audits, and local test verification. Treat Codex as a specialized implementation and verification lead to minimize context overhead in the main Gemini session.
 - **Resolution Independence**: Strictly adhere to the \`unit_size\` (staff spacing) scaling rule for all geometric calculations.
-- **Tool Preference over Shell Tricks**: **ALWAYS** use dedicated tools (like `write_file`, `replace`, etc.) instead of shell redirections (`>`), heredocs (`<<EOF`), or `cat` inside `run_shell_command`. This prevents syntax errors and excessive security confirmation prompts for the user.
+- **Tool Preference over Shell Tricks**: **ALWAYS** use dedicated tools (like `write_file`, `replace`, etc.) instead of shell redirections (`>`), heredocs (`<<EOF`), or `cat` inside `run_shell_command`. This prevents syntax errors and excessive security confirmation prompts for the user. (Note: Using `>` or other standard shell features inside dedicated `.sh` scripts like those in `.agents/skills/` is perfectly fine and expected).
 - **PR Creation Standard**: When creating or editing a Pull Request via `gh pr create` or `gh pr edit`, you **MUST** first read `.github/pull_request_template.md` and strictly format your PR body according to its structure and headings.
 
 ## Verification & Quality Bar
@@ -22,6 +22,7 @@
 - **Heuristic Feedback**: Refer to `docs/ai-workflow/LESSONS.md` before finalizing design changes to avoid regression.
 
 ## Agent Workflow & Skill Evolution
+- **No Temporary Docs in `docs/`**: Do NOT create temporary or issue-specific planning documents (e.g., `docs/ISSUE59_PLAN.md`) directly in the `docs/` directory. All transient files MUST be placed in `temp/` or `artifacts/` to avoid confusion regarding their completion status. For multi-step tasks, strictly follow the `long-horizon-task` skill structure (`docs/refactors/<TASK_ID>/`).
 - **Artifacts First**: Standard outputs for repetitive or verbose commands MUST be redirected to `artifacts/` to prevent polluting the context window (e.g., `pytest > artifacts/test_results.txt`).
 - **Make-First Approach**: Always check `make help` for available targets. Use Make targets as the primary entry point for executing tasks.
 - **Self-Evolving Skills**: If you repeat the same shell command sequence 2-3 times, propose turning it into a new Make target or a new skill in `.agents/skills/`.

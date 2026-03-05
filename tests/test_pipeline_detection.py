@@ -42,14 +42,13 @@ class TestPipelineDetection(unittest.TestCase):
                     images=images,
                     page_ids=page_ids,
                     run_id="run123",
+                    run_dir=Path(tmpdir),
                     dry_run=False,
                 )
 
             self.assertIn("commands", result)
             self.assertEqual(result["hybrid_output_dir"], hybrid_output_dir)
-            self.assertTrue(
-                str(result["probe_output_dir"]).endswith("run123/intermediate/probe_scan")
-            )
+            self.assertTrue(str(result["probe_output_dir"]).endswith("intermediate/probe_scan"))
 
             mock_probe.assert_called_once()
             mock_cnn.assert_called_once()
@@ -82,6 +81,7 @@ class TestPipelineDetection(unittest.TestCase):
                     images=images,
                     page_ids=page_ids,
                     run_id="run123",
+                    run_dir=Path(tmpdir),
                     dry_run=True,
                 )
 
@@ -115,6 +115,7 @@ class TestPipelineDetection(unittest.TestCase):
                     images=images,
                     page_ids=page_ids,
                     run_id="run123",
+                    run_dir=Path(tmpdir),
                     dry_run=False,
                 )
 

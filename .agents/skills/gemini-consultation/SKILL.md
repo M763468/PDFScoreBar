@@ -16,32 +16,26 @@ Use `gemini-cli` as a structured second opinion during design/debug/mid-review, 
 ## Output (respond in Japanese)
 - Prompt sent to Gemini (short summary)
 - Gemini answer summary (3-5 lines)
-- Adoption decision (`adopted` / `partially_adopted` / `rejected`)
-- Evidence note (test/log/reference)
-- Knowledge update target (`CODEX_GEMINI_COLLAB.md` and/or `LESSONS.md`)
-- 出力結果は、必ず `artifacts/gemini-consultation_output.txt` 等のファイルパスを明記して保存すること。
+- Adoption decision
+- Evidence note
+- Knowledge update target
+- **Artifact**: `artifacts/gemini_consultation.txt`
 
 ## Steps
 1) Define one focused question and success criteria.
-2) Prepare compact context (avoid full-doc paste unless necessary).
-3) Run Gemini with network-enabled execution from the start and long timeout.
-4) While Gemini is reasoning, continue parallel local thinking (risk list, test plan draft).
-5) Summarize Gemini output and validate against local code/tests/logs.
-6) Record outcome in `docs/ai-workflow/CODEX_GEMINI_COLLAB.md` log.
-7) Add one reusable rule to `docs/ai-workflow/LESSONS.md` when applicable.
-8) 標準出力が長い場合は `artifacts/` 以下のファイルにリダイレクトし、それを読み込むこと。
+2) Prepare compact context.
+3) Run `./run.sh "prompt"` to consult Gemini and log output to artifacts.
+4) While Gemini is reasoning, continue parallel local thinking.
+5) Read `artifacts/gemini_consultation.txt` and validate results.
+6) Record outcome in `docs/ai-workflow/CODEX_GEMINI_COLLAB.md`.
+7) Add one reusable rule to `docs/ai-workflow/LESSONS.md`.
 
 ## Required commands/permissions
-- `gemini -p`: non-interactive consultation
-- `timeout`: prevent hanging sessions while allowing deep reasoning
-- network-enabled execution path (outside sandbox when required)
+- `./run.sh "prompt"`: script to consult Gemini and log to `artifacts/`
 
 ## Example commands
-- `timeout 180s gemini -p "設計案A/Bのトレードオフを、回帰リスク中心に比較して"`
-- `timeout 180s gemini -p "この不具合の原因仮説を優先度順に5つ、切り分け手順つきで挙げて"`
-- `timeout 180s gemini -p "設計案A/Bのトレードオフを、回帰リスク中心に比較して" > artifacts/gemini-consultation_results.txt`
+- `./run.sh "設計案A/Bのトレードオフを、回帰リスク中心に比較して"`
 
 ## Notes
-- Do not include known-failing first step (e.g., sandbox-first then fallback) as default procedure.
 - Treat Gemini output as hypothesis until local evidence confirms it.
 - Keep `Single Writer Rule` when applying code edits from consultation outcomes.

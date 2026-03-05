@@ -63,3 +63,8 @@ logs/analysis/
 logs/archive/
 logs/system/
 /tmp/
+
+# Temporary run and pipeline outputs
+temp/
+pipeline_output.log
+configs/tmp_*.yaml

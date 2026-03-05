@@ -19,4 +19,10 @@ test: ## Run test suite
 repo-summary: ## Generate comprehensive repository summary
 	./.agents/skills/repo-summary/run.sh
 
+issue-triage: ## Fetch and triage open GitHub issues
+	./.agents/skills/issue-triage/run.sh
+
+issue-post-mortem: ## Review completed work against original issue
+	./.agents/skills/issue-post-mortem/run.sh
+
 

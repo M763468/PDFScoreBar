@@ -25,4 +25,13 @@ issue-triage: ## Fetch and triage open GitHub issues
 issue-post-mortem: ## Review completed work against original issue
 	./.agents/skills/issue-post-mortem/run.sh
 
+visual-diff: ## Identify and collect recent visual evidence
+	./.agents/skills/visual-diff-viewer/run.sh
+
+api-explore: ## Extract API info from a Python file (usage: make api-explore FILE=path/to/file.py)
+	./.agents/skills/python-api-explorer/run.sh $(FILE)
+
+artifact-summary: ## Summarize all artifacts
+	./.agents/skills/artifact-clerk/run.sh
+
 

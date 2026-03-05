@@ -20,4 +20,28 @@ verify-issue18: ## Verify Issue #18 (model persistence) inside sr_eval container
 		bash -c "export PYTHONPATH=/workspace:/workspace/external/homr; \
 		/opt/venv_sr/bin/python -m src.pipeline.main --config configs/verify_issue18.yaml"
 
+repo-tree: ## Generate a repository directory overview
+	tree -L 3 -I "artifacts|logs|temp|datasets|.git|__pycache__|.venv*" > artifacts/repo_tree.txt
+
+test: ## Run test suite
+	pytest > artifacts/test_results.txt
+
+repo-summary: ## Generate comprehensive repository summary
+	./.agents/skills/repo-summary/run.sh
+
+issue-triage: ## Fetch and triage open GitHub issues
+	./.agents/skills/issue-triage/run.sh
+
+issue-post-mortem: ## Review completed work against original issue
+	./.agents/skills/issue-post-mortem/run.sh
+
+visual-diff: ## Identify and collect recent visual evidence
+	./.agents/skills/visual-diff-viewer/run.sh
+
+api-explore: ## Extract API info from a Python file (usage: make api-explore FILE=path/to/file.py)
+	./.agents/skills/python-api-explorer/run.sh "$(FILE)"
+
+artifact-summary: ## Summarize all artifacts
+	./.agents/skills/artifact-clerk/run.sh
+
 

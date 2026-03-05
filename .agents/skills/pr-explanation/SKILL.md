@@ -18,20 +18,22 @@ Explain the PR intent and scope to make review efficient.
 - Scope (In / Out)
 - Test results
 - Known trade-offs or concerns
+- **Artifacts**: `artifacts/pr_explanation_data.json`, `artifacts/pr_diff.patch`
 
 ## Steps
-1) Summarize goal and context.
-2) List key changes succinctly.
-3) State scope (In / Out).
-4) Include tests and caveats.
+1) Run `./run.sh <pr_number>` to fetch PR data and diff into artifacts.
+2) Read `artifacts/pr_explanation_data.json` and `artifacts/pr_diff.patch` to analyze the PR.
+3) Summarize goal and context.
+4) List key changes succinctly.
+5) State scope (In / Out).
+6) Include tests and caveats.
 
 ## Required commands/permissions
-- gh: view PR details and reviews (e.g., `gh pr view --json title,body,comments,reviews`, `gh pr diff`)
-- git: review local diffs if needed
+- `./run.sh`: script to fetch PR data into `artifacts/`
+- gh: view PR details and reviews
 
 ## Example commands
-- `gh pr view <number> --json title,body,comments,reviews`
-- `gh pr diff <number>`
+- `./run.sh 123`
 
 ## Notes
 - Optimize for fast reader comprehension.

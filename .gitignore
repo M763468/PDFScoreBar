@@ -68,3 +68,6 @@ logs/system/
 temp/
 pipeline_output.log
 configs/tmp_*.yaml
+
+# AI Agent artifacts
+artifacts/

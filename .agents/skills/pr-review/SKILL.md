@@ -17,21 +17,22 @@ Review a PR to identify risks, bugs, and scope drift early.
 - Findings ordered by severity
 - Assumptions or unknowns
 - Additional tests/verification needed
+- **Artifacts**: `artifacts/pr_review_data.json`, `artifacts/pr_diff.patch`
 
 ## Steps
-1) Check Acceptance Criteria and scope drift.
-2) List findings in severity order.
-3) Include impact and reproducibility.
-4) Suggest additional tests or checks.
+1) Run `./run.sh <pr_number>` to fetch PR details and diff into artifacts.
+2) Read `artifacts/pr_review_data.json` and `artifacts/pr_diff.patch` to analyze the PR.
+3) Check Acceptance Criteria and scope drift.
+4) List findings in severity order.
+5) Include impact and reproducibility.
+6) Suggest additional tests or checks.
 
 ## Required commands/permissions
-- gh: view PR details and reviews (e.g., `gh pr view --json title,body,comments,reviews`, `gh pr diff`)
-- git: review diffs if needed
+- `./run.sh`: script to fetch PR data into `artifacts/`
+- gh: CLI tool for PR management
 
 ## Example commands
-- `gh pr view <number> --json title,body,comments,reviews`
-- `gh pr diff <number>`
-- `git diff main...HEAD`
+- `./run.sh 123`
 
 ## Notes
 - Base findings on evidence; label speculation clearly.

@@ -18,30 +18,29 @@ Analyze PR comments and reviews to plan and implement necessary code fixes or im
 - Plan of action
 - Implemented fixes
 - Verification results
+- **Artifact**: `artifacts/pr_refinement_data.json`
 
 ## Steps
-1) Fetch PR details and all review feedback (including inline comments) using `gh pr view <number> --json title,body,comments,reviews`.
-2) Analyze the feedback and identify specific code changes required.
-3) **Identify the correct execution environment** by referring to `docs/ENVIRONMENTS.md` (Docker vs Host).
-4) Plan the modifications (files to edit, logic to change).
-5) Implement the changes according to the repository standards in `AGENTS.md`.
-6) Verify the fixes:
-    - Run project-specific tests.
-    - Run `make format` and `make lint` to ensure style compliance.
-7) If behavior changes, update the corresponding documentation (refer to `docs/ai-workflow/WORKFLOW.md`).
-8) (Optional) Push changes or comment on the PR summarizing the fixes.
+1) Run `./run.sh <pr_number>` to fetch PR comments and status into an artifact.
+2) Read `artifacts/pr_refinement_data.json` to analyze the review feedback.
+3) Identify specific code changes required.
+4) **Identify the correct execution environment** by referring to `docs/ENVIRONMENTS.md`.
+5) Plan and implement modifications according to `AGENTS.md`.
+6) Verify the fixes with `make test`, `make format`, and `make lint`.
+7) Update documentation if necessary.
 
 ## Required commands/permissions
-- gh: to view PR details and reviews (`gh pr view --json`)
-- git: to checkout branch, commit, and push changes
-- make: to run `make format`, `make lint`
+- `./run.sh`: script to fetch PR refinement data into `artifacts/`
+- gh: to view PR details and reviews
+- git: to checkout branch and commit changes
+- make: to run `make format`, `make lint`, `make test`
 
 ## Example commands
-- `gh pr view 123 --json title,body,comments,reviews`
+- `./run.sh 123`
 - `gh pr checkout 123`
-- `make format && make lint`
+- `make test`
 
 ## Notes
 - Focus on addressing the reviewer's specific concerns.
-- Always refer to `docs/ai-workflow/LESSONS.md` to avoid known anti-patterns during refinement.
-- If a comment is unclear, ask for clarification before changing code.
+- Always refer to `docs/ai-workflow/LESSONS.md` to avoid known anti-patterns.
+- If a comment is unclear, ask for clarification.

@@ -22,6 +22,7 @@
 - **Heuristic Feedback**: Refer to `docs/ai-workflow/LESSONS.md` before finalizing design changes to avoid regression.
 
 ## Agent Workflow & Skill Evolution
+- **No Temporary Docs in `docs/`**: Do NOT create temporary or issue-specific planning documents (e.g., `docs/ISSUE59_PLAN.md`) directly in the `docs/` directory. All transient files MUST be placed in `temp/` or `artifacts/` to avoid confusion regarding their completion status. For multi-step tasks, strictly follow the `long-horizon-task` skill structure (`docs/refactors/<TASK_ID>/`).
 - **Artifacts First**: Standard outputs for repetitive or verbose commands MUST be redirected to `artifacts/` to prevent polluting the context window (e.g., `pytest > artifacts/test_results.txt`).
 - **Make-First Approach**: Always check `make help` for available targets. Use Make targets as the primary entry point for executing tasks.
 - **Self-Evolving Skills**: If you repeat the same shell command sequence 2-3 times, propose turning it into a new Make target or a new skill in `.agents/skills/`.

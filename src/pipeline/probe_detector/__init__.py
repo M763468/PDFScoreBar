@@ -273,7 +273,9 @@ def detect_probe_scan(
             effective_min = min(effective_min, scan_gap_rescue_min_ratio)
 
         peaks = np.where(
-            (ratios >= effective_min) & (ratios >= np.roll(ratios, 1)) & (ratios >= np.roll(ratios, -1))
+            (ratios >= effective_min)
+            & (ratios >= np.roll(ratios, 1))
+            & (ratios >= np.roll(ratios, -1))
         )[0]
         if peaks.size == 0:
             debug_records.append({"band": [y1, y2], "status": "no_peaks", "band_idx": band_idx})

@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import os
-import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 from src.pipeline.images import load_image_size
+from src.pipeline.python_env import get_pipeline_python
 
 
 def empty_numbering_payload(page_number: int, image_path: Path) -> Dict[str, Any]:
@@ -36,9 +35,8 @@ def build_add_measure_numbers_cmd(
     overlay_path: Optional[Path] = None,
     force_single_system: bool = False,
 ) -> list[str]:
-    python_exe = os.environ.get("PIPELINE_PYTHON", sys.executable)
-    cmd = [
-        python_exe,
+    python_cmd = get_pipeline_python("numbering")
+    cmd = python_cmd + [
         "tools/add_measure_numbers.py",
         "--barlines",
         str(barlines),
@@ -71,9 +69,8 @@ def build_generate_overrides_cmd(
     enable_rotation_tta: bool,
     debug_image: Optional[Path] = None,
 ) -> list[str]:
-    python_exe = os.environ.get("PIPELINE_PYTHON", sys.executable)
-    cmd = [
-        python_exe,
+    python_cmd = get_pipeline_python("numbering")
+    cmd = python_cmd + [
         "tools/generate_numbering_overrides.py",
         "--numbering-json",
         str(numbering_json),

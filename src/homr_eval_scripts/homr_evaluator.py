@@ -48,13 +48,16 @@ if str(HOMR_REPO) in sys.path:
 sys.path.insert(0, str(HOMR_REPO))
 
 import logging
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("homr_evaluator")
 
 import homr.simple_logging  # type: ignore
 
+
 def _silent_eprint(*args, **kwargs):
     logger.debug(" ".join(map(str, args)))
+
 
 homr.simple_logging.eprint = _silent_eprint
 eprint = _silent_eprint
@@ -1846,15 +1849,32 @@ def run_homr_on_image(
     tuning: Dict[str, float],
 ) -> Tuple[List[BarlinePrediction], Optional[Path], Tuple[int, int], float, np.ndarray, np.ndarray]:
     start = time.perf_counter()
-    (
-        multi_staffs,
-        preprocessed_image,
-        debug,
-        title_future,
-        bar_line_boxes,
-        notehead_mask,
-        staff_mask,
-    ) = detect_staffs_with_barlines(str(image_path), config, tuning)
+    try:
+        (
+            multi_staffs,
+            preprocessed_image,
+            debug,
+            title_future,
+            bar_line_boxes,
+            notehead_mask,
+            staff_mask,
+        ) = detect_staffs_with_barlines(str(image_path), config, tuning)
+    except RuntimeError as e:
+        msg = str(e)
+        if "No staffs found" in msg or "No noteheads found" in msg:
+            logger.warning(
+                f"Detection failed for {image_path.name}: {msg}. Returning empty results."
+            )
+            img = cv2.imread(str(image_path))
+            if img is None:
+                # Fallback if image cannot be read
+                h, w = 0, 0
+            else:
+                h, w = img.shape[:2]
+            runtime_s = time.perf_counter() - start
+            empty_mask = np.zeros((h, w), dtype=np.uint8)
+            return [], None, (h, w), runtime_s, empty_mask, empty_mask
+        raise
 
     predictions: List[BarlinePrediction] = []
     for barline_box in bar_line_boxes:

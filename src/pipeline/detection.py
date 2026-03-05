@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import subprocess
-import sys
 from importlib import import_module
 
 from tqdm import tqdm
@@ -20,6 +20,7 @@ from typing import Any, Dict, List
 
 from src.pipeline.cnn_scoring import run_cnn_scoring_batch
 from src.pipeline.hybrid_consensus import load_json_boxes, phase4_hybrid_consensus
+from src.pipeline.python_env import get_pipeline_python
 
 logger = logging.getLogger(__name__)
 from src.pipeline.config import get_nested
@@ -99,18 +100,19 @@ def _run_hybrid_detection_in_process(
     dry_run: bool,
     skip_existing: bool = False,
 ) -> Dict[str, Any]:
-    from src.homr_eval_scripts import homr_evaluator
-
-    # Ensure external/homr is in sys.path for training module imports
-    homr_path = str((PROJECT_ROOT / "external" / "homr").resolve())
-    if homr_path not in sys.path:
-        sys.path.insert(0, homr_path)
-
+    # homr_evaluator will be called as a subprocess to ensure environment isolation
     hybrid_root = Path(det_cfg.get("hybrid_output_root", "logs/hybrid_generalization"))
     hybrid_output_dir = hybrid_root / run_id
     ensure_dir(hybrid_output_dir)
 
-    image_paths = [str(path.resolve()) for path in images]
+    # Use relative paths for subprocess compatibility with Docker volumes
+    def _rel(path: Path) -> str:
+        try:
+            return str(path.resolve().relative_to(PROJECT_ROOT))
+        except ValueError:
+            return str(path)
+
+    image_paths = [_rel(path) for path in images]
     stems = [path.stem for path in images]
 
     commands: List[List[str]] = []
@@ -123,47 +125,69 @@ def _run_hybrid_detection_in_process(
             found_stems.add(p.parent.name)  # parent is the stem directory
         return all(s in found_stems for s in stems_to_check)
 
-    logger.info("--- Step 2.1: Hybrid Detection (In-Process homr baseline/SR) ---")
+    logger.info("--- Step 2.1: Hybrid Detection (Subprocess homr baseline/SR) ---")
+
+    python_cmd = get_pipeline_python("homr")
+    if python_cmd and python_cmd[0] == "docker":
+        for img in images:
+            try:
+                img.resolve().relative_to(PROJECT_ROOT)
+            except ValueError:
+                logger.warning(f"External image path detected: {img}. Falling back to host Python instead of docker exec.")
+                import sys
+                python_cmd = [os.environ.get("PIPELINE_PYTHON", sys.executable)]
+                break
+
+    # homr_evaluator requires PYTHONPATH to include src and external/homr
+    # We pass it via environment variables in subprocess.run
+    env = os.environ.copy()
+    env["PYTHONPATH"] = os.pathsep.join(
+        [str(PROJECT_ROOT), str(PROJECT_ROOT / "external" / "homr"), env.get("PYTHONPATH", "")]
+    )
 
     baseline_output = hybrid_output_dir / "baseline"
     if skip_existing and _all_stems_exist(baseline_output, stems, "batch/*/*.json"):
         logger.info("Skipping homr baseline: outputs already exist.")
     else:
         baseline_args = [
+            "src/homr_eval_scripts/homr_evaluator.py",
             "--images",
             *image_paths,
             "--output-root",
-            str(baseline_output),
+            _rel(baseline_output),
             "--force-run-id",
             "batch",
             "--enable-segnet-cache",
         ]
-        commands.append(["homr_evaluator.run_evaluation", *baseline_args])
+        cmd = python_cmd + baseline_args
+        commands.append(cmd)
         if not dry_run:
-            homr_evaluator.run_evaluation(baseline_args)
+            subprocess.run(cmd, env=env, check=True)
 
     sr_output = hybrid_output_dir / "sr"
     if skip_existing and _all_stems_exist(sr_output, stems, "batch/*/*.json"):
         logger.info("Skipping homr SR: outputs already exist.")
     else:
         sr_args = [
+            "src/homr_eval_scripts/homr_evaluator.py",
             "--images",
             *image_paths,
             "--output-root",
-            str(sr_output),
+            _rel(sr_output),
             "--force-run-id",
             "batch",
             "--enable-sr",
             "--enable-segnet-cache",
         ]
-        commands.append(["homr_evaluator.run_evaluation", *sr_args])
+        cmd = python_cmd + sr_args
+        commands.append(cmd)
         if not dry_run:
-            homr_evaluator.run_evaluation(sr_args)
+            subprocess.run(cmd, env=env, check=True)
 
     logger.info("--- Step 2.1b: OMR-DLN SR (Subprocess) ---")
     sr_root = hybrid_output_dir / "sr" / "batch"
     omr_output = hybrid_output_dir / "omr_sr"
-    
+
     def _omr_all_stems_exist() -> bool:
         if not omr_output.exists():
             return False
@@ -175,14 +199,26 @@ def _run_hybrid_detection_in_process(
     if skip_existing and _omr_all_stems_exist():
         logger.info("Skipping OMR-DLN: outputs already exist.")
     else:
+        python_cmd_omr = get_pipeline_python("omr_dln")
+        if python_cmd_omr and python_cmd_omr[0] == "docker":
+            for img in images:
+                try:
+                    img.resolve().relative_to(PROJECT_ROOT)
+                except ValueError:
+                    logger.warning(f"External image path detected: {img}. Falling back to host Python instead of docker exec for OMR-DLN.")
+                    import sys
+                    python_cmd_omr = [os.environ.get("PIPELINE_PYTHON", sys.executable)]
+                    break
+
         omr_cmd = (
-            [sys.executable, "experiments/models/eval_omr_dln.py", "--images"]
+            python_cmd_omr
+            + ["experiments/models/eval_omr_dln.py", "--images"]
             + image_paths
-            + ["--output-dir", str(omr_output), "--pre-computed-sr", str(sr_root)]
+            + ["--output-dir", _rel(omr_output), "--pre-computed-sr", _rel(sr_root)]
         )
         commands.append(omr_cmd)
         if not dry_run:
-            subprocess.run(omr_cmd, check=True)
+            subprocess.run(omr_cmd, env=env, check=True)
 
     logger.info("--- Step 2.1c: Hybrid Consensus Generation ---")
     hybrid_results_dir = hybrid_output_dir / "hybrid_results"

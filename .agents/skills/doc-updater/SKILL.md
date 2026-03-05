@@ -17,19 +17,21 @@ Update documentation (README, API docs, inline comments) to reflect code changes
 - Updated markdown files
 - Updated docstrings
 - Verification that docs match the code
+- **Artifact**: `artifacts/documentation_status.txt`
 
 ## Steps
-1) Identify which parts of the code have changed (new features, changed parameters, etc.).
-2) Scan existing documentation for outdated information.
-3) Update `README.md`, `docs/`, and inline docstrings to match the new reality.
-4) Verify formatting and clarity of the documentation.
+1) Run `./run.sh` to gather the current documentation status (e.g., TODOs) into an artifact.
+2) Read `artifacts/documentation_status.txt` to identify missing or outdated documentation.
+3) Identify which parts of the code have changed.
+4) Update `README.md`, `docs/`, and inline docstrings.
+5) Verify formatting and clarity.
 
 ## Required commands/permissions
+- `./run.sh`: script to gather documentation status into `artifacts/`
 - file operations: to read and write documentation files
-- grep/search: to find relevant documentation sections
 
 ## Example commands
-- `grep -r "OldFunctionName" docs/`
+- `./run.sh`
 
 ## Notes
 - Keep documentation concise and up-to-date.

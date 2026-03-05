@@ -18,26 +18,25 @@ Clarify reproduction, hypothesize root causes, and define impact and next invest
 - Root-cause hypotheses (prioritized)
 - Impact/risk
 - Next investigation steps
+- **Artifact**: `artifacts/investigation_results.txt`
 
 ## Steps
-1) Consolidate facts (logs in `logs/`, repro steps, errors).
-2) **Identify the relevant execution environment** by referring to `docs/ENVIRONMENTS.md` (Docker vs Host) to ensure correct reproduction.
-3) Refer to `docs/ai-workflow/LESSONS.md` to see if the issue matches known failure patterns or anti-patterns.
-4) List multiple hypotheses and prioritize them based on codebase analysis and environment specifics.
-5) Describe impact and risk.
-6) Propose additional data collection or specific verification steps (e.g., checking GPU status if it's a model issue).
+1) Run `./run.sh` to collect status and recent logs into an artifact.
+2) Read `artifacts/investigation_results.txt` to analyze errors and logs.
+3) Consolidate facts (logs, repro steps, errors).
+4) **Identify the relevant execution environment** by referring to `docs/ENVIRONMENTS.md`.
+5) Refer to `docs/ai-workflow/LESSONS.md` to see if the issue matches known failure patterns.
+6) List multiple hypotheses and prioritize them.
+7) Describe impact and risk.
+8) Propose additional data collection or specific verification steps.
 
 ## Required commands/permissions
-- git: inspect history (e.g., `git log`, `git blame`)
+- `./run.sh`: script to collect logs and status into `artifacts/`
+- git: inspect history
 - gh: review issue/PR context if needed
-- shell: to check logs and run diagnostic commands
 
 ## Example commands
-- `rg \"error\" -n`
-- `git blame <path>`
-- `gh issue view <number>`
-- `nvidia-smi` (if GPU related)
-- `python3 -c \"import torch; print(torch.cuda.is_available())\"` (if CUDA related)
+- `./run.sh`
 
 ## Notes
 - Clearly label speculation and pair it with a verification method.

@@ -17,4 +17,10 @@
 
 ## Specialized Skills
 - **Multi-modal Review**: Analyze OMR overlay images to identify the root cause of False Positives/Negatives.
-- **Heuristic Feedback**: Refer to \`docs/ai-workflow/LESSONS.md\` before finalizing design changes to avoid regression.
+- **Heuristic Feedback**: Refer to `docs/ai-workflow/LESSONS.md` before finalizing design changes to avoid regression.
+
+## Agent Workflow & Skill Evolution
+- **Artifacts First**: Standard outputs for repetitive or verbose commands MUST be redirected to `artifacts/` to prevent polluting the context window (e.g., `pytest > artifacts/test_results.txt`).
+- **Make-First Approach**: Always check `make help` for available targets. Use Make targets as the primary entry point for executing tasks.
+- **Self-Evolving Skills**: If you repeat the same shell command sequence 2-3 times, propose turning it into a new Make target or a new skill in `.agents/skills/`.
+- **Skill Creation**: Use the `skill-creator` tool to standardize and document new skills as they emerge, rather than prematurely attempting to unify complex scripts.

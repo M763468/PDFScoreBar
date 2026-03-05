@@ -48,9 +48,7 @@ class TestPipelineDetection(unittest.TestCase):
 
             self.assertIn("commands", result)
             self.assertEqual(result["hybrid_output_dir"], hybrid_output_dir)
-            self.assertTrue(
-                str(result["probe_output_dir"]).endswith("intermediate/probe_scan")
-            )
+            self.assertTrue(str(result["probe_output_dir"]).endswith("intermediate/probe_scan"))
 
             mock_probe.assert_called_once()
             mock_cnn.assert_called_once()

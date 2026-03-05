@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import subprocess
 from importlib import import_module
 
 from tqdm import tqdm
@@ -21,6 +20,7 @@ from typing import Any, Dict, List
 from src.pipeline.cnn_scoring import run_cnn_scoring_batch
 from src.pipeline.hybrid_consensus import load_json_boxes, phase4_hybrid_consensus
 from src.pipeline.python_env import get_pipeline_python
+from src.pipeline.subprocess_utils import run_with_logging
 
 logger = logging.getLogger(__name__)
 from src.pipeline.config import get_nested
@@ -165,8 +165,6 @@ def _run_hybrid_detection_in_process(
         cmd = python_cmd + baseline_args
         commands.append(cmd)
         if not dry_run:
-            from src.pipeline.subprocess_utils import run_with_logging
-
             run_with_logging(cmd, env=env, check=True)
 
     sr_output = hybrid_output_dir / "sr"
@@ -187,8 +185,6 @@ def _run_hybrid_detection_in_process(
         cmd = python_cmd + sr_args
         commands.append(cmd)
         if not dry_run:
-            from src.pipeline.subprocess_utils import run_with_logging
-
             run_with_logging(cmd, env=env, check=True)
 
     logger.info("--- Step 2.1b: OMR-DLN SR (Subprocess) ---")
@@ -228,8 +224,6 @@ def _run_hybrid_detection_in_process(
         )
         commands.append(omr_cmd)
         if not dry_run:
-            from src.pipeline.subprocess_utils import run_with_logging
-
             run_with_logging(omr_cmd, env=env, check=True)
 
     logger.info("--- Step 2.1c: Hybrid Consensus Generation ---")

@@ -41,8 +41,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 logger = logging.getLogger(__name__)
 
 
-
-
 def _build_pdf_command(config: Dict[str, Any], run_dir: Path) -> List[str]:
     pdf_path = get_nested(config, "inputs", "pdf_path")
     pdf_opts = get_nested(config, "inputs", "pdf_to_images", default={}) or {}

@@ -2,12 +2,17 @@
 set -euo pipefail
 mkdir -p artifacts
 echo "Clerking artifacts..."
+shopt -s nullglob
 (
   echo "--- Artifact Evidence Sheet ---"
   echo "Generated at: $(date)"
   echo ""
   for file in artifacts/*; do
-    if [ -f "$file" ] && [[ "$file" != *".gitkeep" ]]; then
+    # Skip the summary file itself and common hidden files
+    if [[ "$file" == *"evidence_summary.txt" ]] || [[ "$file" == *".gitkeep" ]]; then
+      continue
+    fi
+    if [ -f "$file" ]; then
       echo "File: $file"
       echo "Last Modified: $(date -r "$file")"
       echo "Preview (First 5 lines):"

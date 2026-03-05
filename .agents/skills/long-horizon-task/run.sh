@@ -24,10 +24,10 @@ case "$COMMAND" in
     echo "Checking status for task: $TASK_ID..."
     (
       echo "--- Plan.md ---"
-      cat "docs/refactors/$TASK_ID/Plan.md" 2>/dev/null || echo "Plan.md not found"
+      cat "docs/long-horizon-tasks/$TASK_ID/Plan.md" 2>/dev/null || echo "Plan.md not found"
       echo ""
       echo "--- Latest Log Entries ---"
-      tail -n 20 "docs/refactors/$TASK_ID/Log.md" 2>/dev/null || echo "Log.md not found"
+      tail -n 20 "docs/long-horizon-tasks/$TASK_ID/Log.md" 2>/dev/null || echo "Log.md not found"
     ) > artifacts/task_status.txt
     echo "Artifact generated: artifacts/task_status.txt"
     ;;

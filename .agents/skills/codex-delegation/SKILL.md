@@ -25,6 +25,7 @@ Use `codex` as an implementation specialist and repository navigator to perform 
 - Evidence (test passed/failed, logs generated, or review feedback)
 - Follow-up action if failed (e.g., adjusting prompt, rethinking design)
 - Knowledge update target (`CODEX_GEMINI_COLLAB.md` and/or `LESSONS.md`)
+- 出力結果は、必ず `artifacts/codex-delegation_output.txt` 等のファイルパスを明記して保存すること。
 
 ## Steps
 1. **Check Usage Permission:** Verify if the user has explicitly restricted Codex usage (e.g., "今日はcodexを使わない" / "節約モード"). If restricted, **do not** use this skill unless explicitly overridden.
@@ -36,6 +37,7 @@ Use `codex` as an implementation specialist and repository navigator to perform 
 7. **Iterate:** If tests fail or the review exposes flaws, analyze the failure before modifying the broader plan.
 8. **Record Decisions:** Record significant decisions, trade-offs, or useful collaboration patterns in `docs/ai-workflow/CODEX_GEMINI_COLLAB.md`.
 9. **Extract Lessons:** Add one reusable rule or anti-pattern to `docs/ai-workflow/LESSONS.md` when applicable.
+1) 標準出力が長い場合は `artifacts/` 以下のファイルにリダイレクトし、それを読み込むこと。
 
 ## Required commands/permissions
 - `codex exec "..."`: For implementation, tests, and active repository changes.
@@ -46,6 +48,7 @@ Use `codex` as an implementation specialist and repository navigator to perform 
 - `codex exec "tests/ 以下の関連テストを実行し、エラー原因を調査して修正案を提示してください。"`
 - `codex exec --sandbox read-only "この設計案のリスクを既存の barline_matcher.py の実装と照らし合わせて評価してください。"`
 - `codex exec --sandbox read-only "docs/ai-workflow/ にある設計ドキュメントを読み、既存のアーキテクチャに対する批判的なレビューと懸念点を3つ挙げてください。"`
+- `codex exec "src/pipeline/logic.py に、設計で決まった境界条件のチェックを追加し、テストを実行してください。" > artifacts/codex-delegation_results.txt`
 
 ## Notes
 - Respect user directives regarding API usage limits. Always pause to consider if a task can be done by Gemini alone if Codex usage is constrained.

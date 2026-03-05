@@ -16,6 +16,7 @@ Manage complex, multi-step development tasks by externalizing task state into re
 - Task directory initialization
 - Status report (Plan progress, Log summary)
 - Log entry creation
+- 出力結果は、必ず `artifacts/long-horizon-task_output.txt` 等のファイルパスを明記して保存すること。
 
 ## Capabilities
 

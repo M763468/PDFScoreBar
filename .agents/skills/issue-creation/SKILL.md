@@ -21,6 +21,7 @@ Generate the content for one of the following templates located in `.github/ISSU
 - **Task**: For small chores, refactoring, or documentation.
 
 The output should provide values for the template fields (e.g., `goal`, `scope`, `acceptance`, `base_branch`, etc.).
+- 出力結果は、必ず `artifacts/issue-creation_output.txt` 等のファイルパスを明記して保存すること。
 
 ## Steps
 1) Identify the issue type (Bug, Feature, or Task).
@@ -31,6 +32,7 @@ The output should provide values for the template fields (e.g., `goal`, `scope`,
    - **Acceptance Criteria**: Verifiable checklist.
    - **Branch Operations**: Suggest `base_branch` and `branch_name` (e.g., `feature/xxx` or `fix/xxx`).
 4) Format the output so it can be easily used with `gh issue create`.
+5) 標準出力が長い場合は `artifacts/` 以下のファイルにリダイレクトし、それを読み込むこと。
 
 ## Required commands/permissions
 - gh: create issue (`gh issue create`)
@@ -40,6 +42,7 @@ The output should provide values for the template fields (e.g., `goal`, `scope`,
 To create an issue using a template:
 - `gh issue create --template <template_file_name> --title "[Type] <summary>" --body-file <path_to_body_file>`
 - Example for a Task: `gh issue create --template task.yml --title "[Task] Update documentation" --body-file drafted_issue.md`
+- `<command> > artifacts/issue-creation_results.txt`
 
 ## Notes
 - Always include Out-of-scope items to prevent scope creep.

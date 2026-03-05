@@ -19,6 +19,7 @@ Use `gemini-cli` as a structured second opinion during design/debug/mid-review, 
 - Adoption decision (`adopted` / `partially_adopted` / `rejected`)
 - Evidence note (test/log/reference)
 - Knowledge update target (`CODEX_GEMINI_COLLAB.md` and/or `LESSONS.md`)
+- 出力結果は、必ず `artifacts/gemini-consultation_output.txt` 等のファイルパスを明記して保存すること。
 
 ## Steps
 1) Define one focused question and success criteria.
@@ -28,6 +29,7 @@ Use `gemini-cli` as a structured second opinion during design/debug/mid-review, 
 5) Summarize Gemini output and validate against local code/tests/logs.
 6) Record outcome in `docs/ai-workflow/CODEX_GEMINI_COLLAB.md` log.
 7) Add one reusable rule to `docs/ai-workflow/LESSONS.md` when applicable.
+8) 標準出力が長い場合は `artifacts/` 以下のファイルにリダイレクトし、それを読み込むこと。
 
 ## Required commands/permissions
 - `gemini -p`: non-interactive consultation
@@ -37,6 +39,7 @@ Use `gemini-cli` as a structured second opinion during design/debug/mid-review, 
 ## Example commands
 - `timeout 180s gemini -p "設計案A/Bのトレードオフを、回帰リスク中心に比較して"`
 - `timeout 180s gemini -p "この不具合の原因仮説を優先度順に5つ、切り分け手順つきで挙げて"`
+- `timeout 180s gemini -p "設計案A/Bのトレードオフを、回帰リスク中心に比較して" > artifacts/gemini-consultation_results.txt`
 
 ## Notes
 - Do not include known-failing first step (e.g., sandbox-first then fallback) as default procedure.

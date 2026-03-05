@@ -16,20 +16,21 @@ Summarize changes clearly and state impact and follow-up needs.
 - Change summary (bulleted)
 - Impact scope
 - Follow-up actions (tests/docs) if any
+- **Artifact**: `artifacts/change_summary.txt`
 
 ## Steps
-1) Extract and group changes by intent.
-2) Separate user impact from technical impact.
-3) State next required actions.
+1) Run `./run.sh [base_branch]` to generate the change summary artifact.
+2) Read `artifacts/change_summary.txt` to understand the changes.
+3) Extract and group changes by intent.
+4) Separate user impact from technical impact.
+5) State next required actions.
 
 ## Required commands/permissions
-- git: inspect diffs/history (e.g., `git diff`, `git log`)
-- gh: review PR diff if needed
+- `./run.sh`: script to generate change summary in `artifacts/`
+- git: inspect diffs/history
 
 ## Example commands
-- `git diff main...HEAD`
-- `git log --oneline -5`
-- `gh pr diff <number>`
+- `./run.sh main`
 
 ## Notes
 - Prefer meaningful grouping over raw lists.

@@ -2,23 +2,18 @@
 set -euo pipefail
 mkdir -p artifacts
 echo "Fetching open issues for triage..."
-(
-  echo "--- Generated at: $(date) ---"
-  echo ""
-  echo "--- 1. Open Issues List (ID, Title, Labels) ---"
-  gh issue list --state open --limit 50 --json number,title,labels --template '{{range .}}{{.number}} | {{.title}} | {{range .labels}}{{.name}}, {{end}}{{"\n"}}{{end}}'
-  echo ""
-  echo "--- 2. Detailed View of Open Issues (extracting dependencies and priorities) ---"
-  gh issue list --state open --limit 50 --json number,title,body,labels | python3 -c '
+
+export TRIAGE_PYTHON_SCRIPT=$(cat <<'EOF'
 import sys, json, re
 
 def triage_issues():
     try:
         data = json.load(sys.stdin)
-    except EOFError:
+    except Exception as e:
+        print(f"Error loading JSON: {e}")
         return
 
-    print(f"{ "ID":<5} | { "Priority":<12} | { "Depends On":<12} | { "Title" }")
+    print(f"{'ID':<5} | {'Priority':<12} | {'Depends On':<12} | {'Title'}")
     print("-" * 60)
     
     for issue in data:
@@ -42,6 +37,16 @@ def triage_issues():
         print(f"{num:<5} | {priority:<12} | {deps_str:<12} | {title}")
 
 triage_issues()
-'
+EOF
+)
+
+(
+  echo "--- Generated at: $(date) ---"
+  echo ""
+  echo "--- 1. Open Issues List (ID, Title, Labels) ---"
+  gh issue list --state open --limit 50 --json number,title,labels --template '{{range .}}{{.number}} | {{.title}} | {{range .labels}}{{.name}}, {{end}}{{"\n"}}{{end}}'
+  echo ""
+  echo "--- 2. Detailed View of Open Issues (extracting dependencies and priorities) ---"
+  gh issue list --state open --limit 50 --json number,title,body,labels | python3 -c "$TRIAGE_PYTHON_SCRIPT"
 ) > artifacts/issue_triage.txt
 echo "Artifact generated: artifacts/issue_triage.txt"

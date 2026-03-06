@@ -2,6 +2,14 @@
 
 from __future__ import annotations
 
+import os
+
+# Optimization: Limit threads to avoid CPU contention and improve stability on WSL2.
+# This MUST be set before importing torch or onnxruntime.
+DEFAULT_NUM_THREADS = "4"
+os.environ.setdefault("OMP_NUM_THREADS", DEFAULT_NUM_THREADS)
+os.environ.setdefault("MKL_NUM_THREADS", DEFAULT_NUM_THREADS)
+
 import datetime as dt
 import logging
 import subprocess
@@ -86,7 +94,7 @@ def _run_command(cmd: List[str], *, dry_run: bool) -> None:
     logger.info(f"Executing: {cmd_str}")
     if dry_run:
         return
-    
+
     with subprocess.Popen(
         cmd,
         stdout=subprocess.PIPE,
@@ -410,11 +418,6 @@ def run_pipeline(
 
 def main() -> None:
     import argparse
-    import os
-
-    # Optimization: Limit threads to avoid CPU contention and improve stability on WSL2
-    os.environ.setdefault("OMP_NUM_THREADS", "4")
-    os.environ.setdefault("MKL_NUM_THREADS", "4")
 
     logging.basicConfig(
         level=logging.INFO,

@@ -5,6 +5,9 @@ from typing import Optional
 import cv2
 import numpy as np
 
+IMAGE_SIZE_THRESHOLD_FOR_TILING = 1000
+DEFAULT_TILE_SIZE = 400
+
 
 def apply_vertical_closing(
     image: np.ndarray,
@@ -171,7 +174,9 @@ def apply_advanced_sr(
             # Default auto logic
             # tile=0 processes the whole image at once and can be extremely slow / OOM on large pages.
             # Use a conservative tiling default for large inputs while keeping the original behaviour for small images.
-            tile_size = 0 if max(image.shape[:2]) <= 1000 else 400
+            tile_size = (
+                0 if max(image.shape[:2]) <= IMAGE_SIZE_THRESHOLD_FOR_TILING else DEFAULT_TILE_SIZE
+            )
         else:
             tile_size = tile
 

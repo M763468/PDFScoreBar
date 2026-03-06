@@ -11,23 +11,23 @@ Identify SR (Super Resolution) bottlenecks, optimize resource usage, and verify 
 ## Milestones
 
 ### Milestone 0: Initialization & Baseline Review [COMPLETE]
-- [x] Task directory and tracking files initialized. (Current)
-- [x] Review performance data from Issue #70 (Docs: `docs/long-horizon-tasks/ISSUE-070/`).
+- [x] Task directory and tracking files initialized.
+- [x] Review performance data from Issue #70.
 
-### Milestone 1: Investigation & Resource Profiling [IN PROGRESS]
-- [x] Profile VRAM and Swap during pipeline execution (Baseline check done).
+### Milestone 1: Investigation & Resource Profiling [COMPLETE]
+- [x] Profile VRAM and Swap during pipeline execution.
 - [x] Analyze data transfer overhead and model loading.
-- [x] Investigate Shared Memory as a potential optimization (Found 64MB constraint).
+- [x] Investigate Shared Memory as a potential optimization (Found 64MB constraint, created Issue #73).
 
-### Milestone 2: Accuracy & Performance Comparison [IN PROGRESS]
-- [x] Compare accuracy on Shostakovich subset (P: 71% -> 92%).
-- [ ] Run full pipeline evaluation *without* SR on more datasets.
-- [ ] Analyze processing time difference with persistent model optimization.
+### Milestone 2: Accuracy & Performance Comparison [COMPLETE]
+- [x] Compare accuracy on Shostakovich subset.
+- [x] Run full pipeline evaluation *without* SR on multi-score subset (7 pages).
+- [x] Analyze processing time difference and confirm Precision 100%.
 
-### Milestone 3: Decision & Optimization
-- [ ] Present findings and a strategy for SR (Keep/Optimize/Remove).
-- [x] Implement Persistent SR Model to reduce initialization overhead.
-- [ ] If further optimized, investigate increasing `--shm-size` for Shared Memory.
+### Milestone 3: Decision & Optimization [COMPLETE]
+- [x] Present findings and a strategy for SR: **Bypass SR by default with ink-based recentering.**
+- [x] Implement Persistent SR Model (as an alternative for when SR is enabled).
+- [x] Implement `enable_sr` and `crop_recenter_on_bbox_ink` in the main pipeline.
 
 ## Verification & Testing
 - Baseline comparison reports.

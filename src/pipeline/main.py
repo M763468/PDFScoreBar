@@ -82,10 +82,27 @@ def _build_pdf_command(config: Dict[str, Any], run_dir: Path) -> List[str]:
 
 
 def _run_command(cmd: List[str], *, dry_run: bool) -> None:
-    logger.debug(f"Running: {' '.join(cmd)}")
+    cmd_str = " ".join(cmd)
+    logger.info(f"Executing: {cmd_str}")
     if dry_run:
         return
-    subprocess.run(cmd, check=True)
+    
+    with subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    ) as p:
+        if p.stdout:
+            for line in p.stdout:
+                line = line.rstrip("\n")
+                logger.info(f"|> {line}")
+        p.wait()
+        if p.returncode != 0:
+            logger.error(f"Command failed with exit code {p.returncode}: {cmd_str}")
+            raise subprocess.CalledProcessError(p.returncode, cmd)
+    logger.info(f"Successfully executed: {cmd[0]} (exit code 0)")
 
 
 def _resolve_page_runs(config: Dict[str, Any], page_ids: List[str]) -> List[str]:
@@ -138,16 +155,19 @@ def run_pipeline(
             commands.append(pdf_cmd)
             _run_command(pdf_cmd, dry_run=dry_run)
 
+    logger.info("Collecting images...")
     images = collect_images(config, run_dir)
     if page_limit is not None:
         images = images[:page_limit]
     page_ids = resolve_page_ids(config, images)
+    logger.info(f"Collected {len(images)} images.")
 
     run_detection = get_nested(config, "steps", "detection", default=False)
     probe_output_dir = None
     hybrid_output_dir = None
 
     if run_detection:
+        logger.info("Starting detection step...")
         if skip_existing:
             if "detection" not in config:
                 config["detection"] = {}
@@ -390,6 +410,11 @@ def run_pipeline(
 
 def main() -> None:
     import argparse
+    import os
+
+    # Optimization: Limit threads to avoid CPU contention and improve stability on WSL2
+    os.environ.setdefault("OMP_NUM_THREADS", "4")
+    os.environ.setdefault("MKL_NUM_THREADS", "4")
 
     logging.basicConfig(
         level=logging.INFO,

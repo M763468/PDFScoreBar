@@ -56,7 +56,7 @@ import homr.simple_logging  # type: ignore
 
 
 def _silent_eprint(*args, **kwargs):
-    logger.debug(" ".join(map(str, args)))
+    logger.info(" ".join(map(str, args)))
 
 
 homr.simple_logging.eprint = _silent_eprint

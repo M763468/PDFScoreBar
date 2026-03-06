@@ -171,7 +171,7 @@ def apply_advanced_sr(
             # Default auto logic
             # tile=0 processes the whole image at once and can be extremely slow / OOM on large pages.
             # Use a conservative tiling default for large inputs while keeping the original behaviour for small images.
-            tile_size = 0 if max(image.shape[:2]) <= 1000 else 512
+            tile_size = 0 if max(image.shape[:2]) <= 1000 else 400
         else:
             tile_size = tile
 

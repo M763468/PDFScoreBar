@@ -145,11 +145,15 @@ def main():
                 # 1. Try directory match patterns (higher priority for batch runs)
                 # homr_evaluator style: pre_computed_sr / stem / stem / stem.png
                 p1 = sr_base / stem / stem / f"{stem}.png"
+                # homr_evaluator style alternative: pre_computed_sr / stem / f"{stem}.png"
+                p1b = sr_base / stem / f"{stem}.png"
                 # Simple style: pre_computed_sr / stem.png
                 p2 = sr_base / f"{stem}.png"
 
                 if p1.exists():
                     sr_img_path = p1
+                elif p1b.exists():
+                    sr_img_path = p1b
                 elif p2.exists():
                     sr_img_path = p2
                 elif sr_base.is_file():

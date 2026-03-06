@@ -1,12 +1,12 @@
 ---
 name: pr-refinement
-description: Analyze PR feedback and implement targeted code fixes and improvements.
+description: Analyze PR feedback, implement fixes, and MANDATORILY post a summary comment to GitHub. Use when a PR has review comments that need addressing and the user wants to close the feedback loop.
 ---
 
 # pr-refinement
 
 ## Purpose
-Analyze PR comments and reviews to plan and implement necessary code fixes or improvements.
+Analyze PR comments and reviews to plan and implement necessary code fixes or improvements, and ensure the reviewer is notified of the changes.
 
 ## Input
 - PR number or URL
@@ -18,6 +18,7 @@ Analyze PR comments and reviews to plan and implement necessary code fixes or im
 - Plan of action
 - Implemented fixes
 - Verification results
+- **Created PR Comment URL** (Mandatory)
 - **Artifact**: `artifacts/pr_refinement_data.json`
 
 ## Steps
@@ -28,7 +29,7 @@ Analyze PR comments and reviews to plan and implement necessary code fixes or im
 5) Plan and implement modifications according to `AGENTS.md`.
 6) Verify the fixes with `make test`, `make format`, and `make lint`.
 7) Update documentation if necessary.
-8) **Post a comment to the PR** summarizing the implemented fixes and requesting re-review.
+8) **MANDATORY: Post a comment to the PR** using `gh pr comment <pr_number> --body "..."`. The comment MUST summarize the implemented fixes and explicitly request a re-review. This is the final and most important step to close the task.
 
 ## Required commands/permissions
 - `./run.sh`: script to fetch PR refinement data into `artifacts/`
@@ -40,10 +41,10 @@ Analyze PR comments and reviews to plan and implement necessary code fixes or im
 - `./run.sh 123`
 - `gh pr checkout 123`
 - `make test`
-- `gh pr comment 123 --body "Summary of fixes..."`
+- `gh pr comment 123 --body "修正内容のサマリー..."`
 
 ## Notes
 - Focus on addressing the reviewer's specific concerns.
 - Always refer to `docs/ai-workflow/LESSONS.md` to avoid known anti-patterns.
 - If a comment is unclear, ask for clarification.
-- **Critical**: Do not forget to notify the reviewer by commenting on the PR after pushing the fixes.
+- **CRITICAL**: The task is NOT complete until the summary comment is posted on GitHub. Do not wait for the user to ask for the report; post it as the final action of the skill workflow.

@@ -29,6 +29,7 @@ detection:
   enable_sr: true
   sr_scale: 4
   crop_recenter_on_bbox_ink: true
+  crop_recenter_max_shift_unit_ratio: 0.5
   hybrid_output_root: logs/hybrid_generalization/sr_x4_test
   ink_threshold: 180
   min_ratio: 0.85

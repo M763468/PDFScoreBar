@@ -11,7 +11,9 @@ inputs:
     interpolation: area
     prefix: page
     format: png
-    overwrite: false
+    overwrite: true
+    alpha: false
+    image_glob: page_*.png
 
 steps:
   pdf_to_images: true
@@ -19,8 +21,8 @@ steps:
   filter_pages: true
   apply_barline_overrides: false
   numbering_base: true
-  mmr_overrides: false
-  apply_measure_overrides: false
+  mmr_overrides: true
+  apply_measure_overrides: true
   overlay: true
 
 detection:
@@ -28,7 +30,7 @@ detection:
   sr_scale: 4
   crop_recenter_on_bbox_ink: true
   hybrid_output_root: logs/hybrid_generalization/sr_x4_test
-  ink_threshold: 230
+  ink_threshold: 180
   min_ratio: 0.70
   min_height_ratio: 0.012
   cnn_model_path: logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
@@ -36,6 +38,11 @@ detection:
   divisi_rescue: true
   scan_gap_rescue: true
   scan_x_peak_rescue: true
+  post_split_wide_candidates: true
+  post_split_min_width_unit_ratio: 0.5
+  post_split_box_width_unit_ratio: 0.4
+  post_split_peak_distance_unit_ratio: 0.3
+  staff_mask_dir: !!null
 
 filters:
   blank_page: auto

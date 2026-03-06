@@ -28,7 +28,7 @@ detection:
   sr_scale: 2
   crop_recenter_on_bbox_ink: true
   hybrid_output_root: logs/hybrid_generalization/sr_x2_test
-  ink_threshold: 230
+  ink_threshold: 180
   min_ratio: 0.70
   min_height_ratio: 0.012
   cnn_model_path: logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
@@ -39,6 +39,8 @@ detection:
   post_split_wide_candidates: true
   post_split_min_width_unit_ratio: 0.5
   post_split_box_width_unit_ratio: 0.4
+  post_split_peak_distance_unit_ratio: 0.3
+  staff_mask_dir: !!null
 
 filters:
   blank_page: auto

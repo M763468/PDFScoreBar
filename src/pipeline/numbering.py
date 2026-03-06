@@ -86,3 +86,34 @@ def build_generate_overrides_cmd(
     if enable_rotation_tta:
         cmd.append("--enable-rotation-tta")
     return cmd
+
+
+def run_mmr_batch(
+    pages_data: list[dict],
+    image_paths: list[Path],
+    output_paths: list[Path],
+    model_path: Path,
+    device: torch.device,
+    enable_rotation_tta: bool = False,
+    threshold: float = 0.5,
+    rescue_threshold: float = 0.1,
+    debug_root: Optional[Path] = None,
+) -> list[dict]:
+    """Runs MMR detection in-process for a batch of pages."""
+    from src.measure_numbering.mmr import MMRProcessor
+    from src.pipeline.io import write_json
+
+    processor = MMRProcessor(
+        model_path=model_path,
+        device=device,
+        enable_rotation_tta=enable_rotation_tta,
+        threshold=threshold,
+        rescue_threshold=rescue_threshold,
+    )
+
+    results = processor.process_pages(pages_data, image_paths, debug_root=debug_root)
+
+    for result, output_path in zip(results, output_paths):
+        write_json(output_path, result)
+
+    return results

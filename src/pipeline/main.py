@@ -41,7 +41,6 @@ from src.pipeline.io import ensure_dir, load_json, write_json, write_manifest
 from src.pipeline.manifest import build_manifest
 from src.pipeline.numbering import (
     build_add_measure_numbers_cmd,
-    build_generate_overrides_cmd,
     empty_numbering_payload,
     run_mmr_batch,
 )
@@ -278,7 +277,10 @@ def run_pipeline(
             if not dry_run:
                 write_json(empty_base, empty_numbering_payload(index, image_path))
             barline_override_stats[page_id] = {
-                "removed": 0, "added": 0, "remove_requests": 0, "unmatched_remove": 0,
+                "removed": 0,
+                "added": 0,
+                "remove_requests": 0,
+                "unmatched_remove": 0,
             }
             continue
 
@@ -307,12 +309,18 @@ def run_pipeline(
                 if not dry_run and barlines_path.exists():
                     corrected_path.write_text(barlines_path.read_text())
                 barline_override_stats[page_id] = {
-                    "removed": 0, "added": 0, "remove_requests": 0, "unmatched_remove": 0,
+                    "removed": 0,
+                    "added": 0,
+                    "remove_requests": 0,
+                    "unmatched_remove": 0,
                 }
             barlines_path = corrected_path
         else:
             barline_override_stats[page_id] = {
-                "removed": 0, "added": 0, "remove_requests": 0, "unmatched_remove": 0,
+                "removed": 0,
+                "added": 0,
+                "remove_requests": 0,
+                "unmatched_remove": 0,
             }
         page_ctx[page_id]["barlines_path"] = barlines_path
 
@@ -320,7 +328,7 @@ def run_pipeline(
         numbering_base = page_intermediate / "numbering_base.json"
         numbering_base_paths.append(numbering_base)
         page_ctx[page_id]["numbering_base"] = numbering_base
-        
+
         cmd_base = build_add_measure_numbers_cmd(
             barlines=barlines_path,
             staff_mask=Path(resolved_item["staff_mask"]),
@@ -346,11 +354,11 @@ def run_pipeline(
         for page_id in page_ids:
             if page_id in excluded_page_ids:
                 continue
-            
+
             ctx = page_ctx[page_id]
             numbering_base = ctx["numbering_base"]
             overrides_mmr = ctx["intermediate_dir"] / "overrides_mmr.json"
-            
+
             if skip_existing and overrides_mmr.exists():
                 logger.info(f"Skipping MMR preparation for {page_id}: file exists.")
                 continue
@@ -366,7 +374,7 @@ def run_pipeline(
             logger.info(f"Running MMR batch for {len(mmr_input_pages)} pages...")
             if not model_path:
                 raise ValueError("mmr.model_path is required for MMR step.")
-            
+
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             run_mmr_batch(
                 pages_data=mmr_input_pages,
@@ -413,11 +421,11 @@ def run_pipeline(
             combined_path = page_intermediate / "overrides_combined.json"
             if not dry_run:
                 write_json(combined_path, overrides_payload)
-            
+
             final_json = page_outputs / "numbering_final.json"
             numbering_final_paths.append(final_json)
             overlay_path = page_outputs / "numbering_overlay.png" if step_overlay else None
-            
+
             cmd_final = build_add_measure_numbers_cmd(
                 barlines=ctx["barlines_path"],
                 staff_mask=Path(resolved_item["staff_mask"]),
@@ -430,7 +438,7 @@ def run_pipeline(
                 force_single_system=force_single_system,
             )
             commands.append(cmd_final)
-            
+
             if (
                 skip_existing
                 and final_json.exists()

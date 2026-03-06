@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+import torch
+
 from src.pipeline.images import load_image_size
 from src.pipeline.python_env import get_pipeline_python
 
@@ -57,34 +59,6 @@ def build_add_measure_numbers_cmd(
         cmd += ["--output-overlay", str(overlay_path)]
     if force_single_system:
         cmd.append("--force-single-system")
-    return cmd
-
-
-def build_generate_overrides_cmd(
-    *,
-    numbering_json: Path,
-    image: Path,
-    output_overrides: Path,
-    model_path: Optional[Path],
-    enable_rotation_tta: bool,
-    debug_image: Optional[Path] = None,
-) -> list[str]:
-    python_cmd = get_pipeline_python("numbering")
-    cmd = python_cmd + [
-        "tools/generate_numbering_overrides.py",
-        "--numbering-json",
-        str(numbering_json),
-        "--image",
-        str(image),
-        "--output-overrides",
-        str(output_overrides),
-    ]
-    if model_path:
-        cmd += ["--model-path", str(model_path)]
-    if debug_image:
-        cmd += ["--debug-image", str(debug_image)]
-    if enable_rotation_tta:
-        cmd.append("--enable-rotation-tta")
     return cmd
 
 

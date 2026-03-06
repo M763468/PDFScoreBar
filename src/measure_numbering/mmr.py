@@ -1,6 +1,6 @@
-import json
 import logging
 import re
+from collections import Counter
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -38,7 +38,7 @@ class MMRClassifier:
         model.fc = nn.Linear(model.fc.in_features, 1)
 
         try:
-            state_dict = torch.load(model_path, map_location=self.device)
+            state_dict = torch.load(model_path, map_location=self.device, weights_only=True)
             model.load_state_dict(state_dict)
         except Exception as e:
             logger.error(f"Error loading MMR model from {model_path}: {e}")
@@ -72,12 +72,35 @@ class MMROCREngine:
         self.ocr_engine = RapidOCR()
         self.enable_rotation_tta = enable_rotation_tta
         self.blacklist = [
-            "Viol", "Vc", "Cb", "Fl", "Ob", "Cl", "Fag", "Cor", "Tr", "Timp",
-            "Pizz", "Arco", "Div", "Legni", "Solo", "Tutti", "con", "senza",
-            "Allegro", "Adagio", "Andante", "Lento", "Presto", "Moderato",
+            "Viol",
+            "Vc",
+            "Cb",
+            "Fl",
+            "Ob",
+            "Cl",
+            "Fag",
+            "Cor",
+            "Tr",
+            "Timp",
+            "Pizz",
+            "Arco",
+            "Div",
+            "Legni",
+            "Solo",
+            "Tutti",
+            "con",
+            "senza",
+            "Allegro",
+            "Adagio",
+            "Andante",
+            "Lento",
+            "Presto",
+            "Moderato",
         ]
 
-    def mask_hbar_candidates(self, img: np.ndarray, staff_top_rel: float, staff_height: float) -> np.ndarray:
+    def mask_hbar_candidates(
+        self, img: np.ndarray, staff_top_rel: float, staff_height: float
+    ) -> np.ndarray:
         if img is None:
             return img
 
@@ -114,9 +137,13 @@ class MMROCREngine:
         (h, w) = image.shape[:2]
         center = (w // 2, h // 2)
         M = cv2.getRotationMatrix2D(center, angle, 1.0)
-        return cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+        return cv2.warpAffine(
+            image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
+        )
 
-    def preprocess_variant(self, img: np.ndarray, mode: str = "standard", angle: float = 0) -> Optional[np.ndarray]:
+    def preprocess_variant(
+        self, img: np.ndarray, mode: str = "standard", angle: float = 0
+    ) -> Optional[np.ndarray]:
         if img is None:
             return None
         if angle != 0:
@@ -168,7 +195,9 @@ class MMROCREngine:
 
             gap = n_x1 - c_x2
             digit_pat = r"^[\dIl|!i\]\[]$"
-            is_potential_split = bool(re.match(digit_pat, c_txt.strip()) and re.match(digit_pat, n_txt.strip()))
+            is_potential_split = bool(
+                re.match(digit_pat, c_txt.strip()) and re.match(digit_pat, n_txt.strip())
+            )
 
             gap_threshold = min_h * 0.3
             if is_potential_split:
@@ -194,7 +223,9 @@ class MMROCREngine:
         merged.append(current_box)
         return merged
 
-    def select_best_candidate(self, ocr_result: List, img_width: int, img_height: int) -> Tuple[Optional[int], float, str]:
+    def select_best_candidate(
+        self, ocr_result: List, img_width: int, img_height: int
+    ) -> Tuple[Optional[int], float, str]:
         if not ocr_result:
             return None, 0, ""
 
@@ -225,19 +256,31 @@ class MMROCREngine:
             for n_str in nums_found:
                 try:
                     val = int(n_str)
-                    if val < 2: continue
+                    if val < 2:
+                        continue
                     score = 100 - dist_x_norm * 200 - dist_y_norm * 100
-                    if 0.4 <= h_ratio <= 0.95: score += 20
-                    elif h_ratio < 0.3: score -= 30
+                    if 0.4 <= h_ratio <= 0.95:
+                        score += 20
+                    elif h_ratio < 0.3:
+                        score -= 30
                     if "=" in text:
                         parts = text.split("=")
-                        if len(parts) > 1 and n_str in parts[1]: score -= 80
-                    if val > 100: score -= 50
-                    if val > 20 and img_width < 100: score -= 200
+                        if len(parts) > 1 and n_str in parts[1]:
+                            score -= 80
+                    if val > 100:
+                        score -= 50
+                    if val > 20 and img_width < 100:
+                        score -= 200
 
-                    candidates.append({"val": val, "score": score, "debug": f"dx={dist_x_norm:.2f},dy={dist_y_norm:.2f},h={h_ratio:.2f}"})
-                except: pass
-
+                    candidates.append(
+                        {
+                            "val": val,
+                            "score": score,
+                            "debug": f"dx={dist_x_norm:.2f},dy={dist_y_norm:.2f},h={h_ratio:.2f}",
+                        }
+                    )
+                except ValueError:
+                    pass
         if not candidates:
             return None, 0, ""
         candidates.sort(key=lambda x: x["score"], reverse=True)
@@ -301,7 +344,7 @@ class MMRProcessor:
                             found_num, final_score, final_debug = self._detect_number(
                                 image, system, x1, y1, x2, y2, prob, w_img, h_img
                             )
-                            
+
                             is_valid = False
                             status_label = ""
                             if found_num:
@@ -311,26 +354,41 @@ class MMRProcessor:
                                     is_valid, status_label = True, "rescue"
 
                             if is_valid:
-                                logger.info(f"  [{status_label.upper()}] P{page_num} S{sys_idx} M{measure['number']}: Prob={prob:.2f} -> OCR={found_num}")
-                                overrides.append({
-                                    "page": page_num - 1,
-                                    "system": sys_idx,
-                                    "measure": m_idx,
-                                    "skip": found_num - 1,
-                                    "comment": f"CNN({prob:.2f})+OCR({final_score:.1f}): {found_num}",
-                                })
+                                logger.info(
+                                    f"  [{status_label.upper()}] P{page_num} S{sys_idx} M{measure['number']}: Prob={prob:.2f} -> OCR={found_num}"
+                                )
+                                overrides.append(
+                                    {
+                                        "page": page_num - 1,
+                                        "system": sys_idx,
+                                        "measure": m_idx,
+                                        "skip": found_num - 1,
+                                        "comment": f"CNN({prob:.2f})+OCR({final_score:.1f}): {found_num}",
+                                    }
+                                )
                                 if debug_img is not None:
-                                    self._draw_debug(debug_img, x1, y1, x2, y2, status_label, f"R{found_num}", f"P{prob:.2f}")
+                                    self._draw_debug(
+                                        debug_img,
+                                        x1,
+                                        y1,
+                                        x2,
+                                        y2,
+                                        status_label,
+                                        f"R{found_num}",
+                                        f"P{prob:.2f}",
+                                    )
                             elif prob > self.threshold:
                                 if debug_img is not None:
-                                    self._draw_debug(debug_img, x1, y1, x2, y2, "skip", "CNN-only", f"{prob:.2f}")
+                                    self._draw_debug(
+                                        debug_img, x1, y1, x2, y2, "skip", "CNN-only", f"{prob:.2f}"
+                                    )
 
             if debug_img is not None and debug_root:
                 debug_path = debug_root / f"page_{page_num:03d}_mmr_debug.png"
                 cv2.imwrite(str(debug_path), debug_img)
-            
+
             results.append({"measure_overrides": overrides})
-            
+
         return results
 
     def _detect_number(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
@@ -338,7 +396,9 @@ class MMRProcessor:
         if prob > self.threshold:
             variants = [("standard", 0), ("no_dilate", 0), ("heavy_dilate", 0)]
             if self.ocr.enable_rotation_tta:
-                variants.extend([("standard", -2), ("standard", 2), ("heavy_dilate", -2), ("heavy_dilate", 2)])
+                variants.extend(
+                    [("standard", -2), ("standard", 2), ("heavy_dilate", -2), ("heavy_dilate", 2)]
+                )
 
         found_number = None
         best_score = 0
@@ -352,23 +412,27 @@ class MMRProcessor:
                 ox1, ox2 = max(0, x1 - 30), min(w_img, x2 + 30)
                 oy1, oy2 = max(0, s_bbox[1] - margin_y), min(h_img, s_bbox[3] + 80)
                 stave_crop = image[oy1:oy2, ox1:ox2]
-                stave_crop = self.ocr.mask_hbar_candidates(stave_crop, margin_y, s_bbox[3] - s_bbox[1])
-                
+                stave_crop = self.ocr.mask_hbar_candidates(
+                    stave_crop, margin_y, s_bbox[3] - s_bbox[1]
+                )
+
                 proc_img = self.ocr.preprocess_variant(stave_crop, mode=mode, angle=angle)
-                if proc_img is None: continue
-                
+                if proc_img is None:
+                    continue
+
                 ocr_res, _ = self.ocr.ocr_engine(proc_img)
                 num, score, dbg = self.ocr.select_best_candidate(ocr_res, ox2 - ox1, oy2 - oy1)
                 stave_results.append((num, score, dbg))
 
             valid_results = [r for r in stave_results if r[0] is not None]
             if valid_results:
-                from collections import Counter
                 counts = Counter([r[0] for r in valid_results])
                 current_num = counts.most_common(1)[0][0]
-                
+
                 if not (current_num > 20 and (x2 - x1) < 100):
-                    best_entry = max([r for r in valid_results if r[0] == current_num], key=lambda x: x[1])
+                    best_entry = max(
+                        [r for r in valid_results if r[0] == current_num], key=lambda x: x[1]
+                    )
                     found_number, best_score, best_debug = current_num, best_entry[1], best_entry[2]
                     break
         return found_number, best_score, best_debug

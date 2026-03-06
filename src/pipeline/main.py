@@ -16,6 +16,7 @@ import subprocess
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import torch
 from tqdm import tqdm
 
 from src.common.barline_evaluation import (
@@ -40,8 +41,8 @@ from src.pipeline.io import ensure_dir, load_json, write_json, write_manifest
 from src.pipeline.manifest import build_manifest
 from src.pipeline.numbering import (
     build_add_measure_numbers_cmd,
-    build_generate_overrides_cmd,
     empty_numbering_payload,
+    run_mmr_batch,
 )
 from src.pipeline.python_env import get_pipeline_python
 
@@ -245,10 +246,14 @@ def run_pipeline(
     numbering_final_paths: List[Path] = []
     barline_override_stats: Dict[str, Dict[str, int]] = {}
 
+    # Context to carry over between phases
+    page_ctx: Dict[str, Dict[str, Any]] = {}
+
+    # Phase A: Base Numbering & Barline Correction
     for index, (page_id, image_path, resolved_item) in tqdm(
         enumerate(zip(page_ids, images, resolved), start=1),
         total=len(page_ids),
-        desc="Processing pages",
+        desc="Phase A: Base Numbering",
         unit="page",
     ):
         page_intermediate = intermediate_dir / page_id
@@ -256,17 +261,21 @@ def run_pipeline(
         ensure_dir(page_intermediate)
         ensure_dir(page_outputs)
 
+        # Store basic info in context
+        page_ctx[page_id] = {
+            "index": index,
+            "image_path": image_path,
+            "resolved": resolved_item,
+            "intermediate_dir": page_intermediate,
+            "outputs_dir": page_outputs,
+        }
+
         if page_id in excluded_page_ids:
             empty_base = page_intermediate / "numbering_base.json"
             numbering_base_paths.append(empty_base)
+            page_ctx[page_id]["numbering_base"] = empty_base
             if not dry_run:
                 write_json(empty_base, empty_numbering_payload(index, image_path))
-
-            if (step_apply or step_overlay) and not validate_only:
-                empty_final = page_outputs / "numbering_final.json"
-                numbering_final_paths.append(empty_final)
-                if not dry_run:
-                    write_json(empty_final, empty_numbering_payload(index, image_path))
             barline_override_stats[page_id] = {
                 "removed": 0,
                 "added": 0,
@@ -275,6 +284,7 @@ def run_pipeline(
             }
             continue
 
+        # 1. Barline Correction
         barlines_path = Path(resolved_item["barlines_json"])
         if apply_barlines:
             corrected_path = page_intermediate / "barlines_corrected.json"
@@ -312,9 +322,13 @@ def run_pipeline(
                 "remove_requests": 0,
                 "unmatched_remove": 0,
             }
+        page_ctx[page_id]["barlines_path"] = barlines_path
 
+        # 2. Base Numbering
         numbering_base = page_intermediate / "numbering_base.json"
         numbering_base_paths.append(numbering_base)
+        page_ctx[page_id]["numbering_base"] = numbering_base
+
         cmd_base = build_add_measure_numbers_cmd(
             barlines=barlines_path,
             staff_mask=Path(resolved_item["staff_mask"]),
@@ -331,27 +345,74 @@ def run_pipeline(
             else:
                 _run_command(cmd_base, dry_run=dry_run)
 
+    # Phase B: MMR Batch Detection (In-process)
+    if step_mmr and not validate_only:
+        mmr_input_pages = []
+        mmr_input_images = []
+        mmr_output_paths = []
+
+        for page_id in page_ids:
+            if page_id in excluded_page_ids:
+                continue
+
+            ctx = page_ctx[page_id]
+            numbering_base = ctx["numbering_base"]
+            overrides_mmr = ctx["intermediate_dir"] / "overrides_mmr.json"
+
+            if skip_existing and overrides_mmr.exists():
+                logger.info(f"Skipping MMR preparation for {page_id}: file exists.")
+                continue
+
+            if not dry_run and numbering_base.exists():
+                mmr_input_pages.append(load_json(numbering_base))
+                mmr_input_images.append(ctx["image_path"])
+                mmr_output_paths.append(overrides_mmr)
+            else:
+                logger.warning(f"MMR skipped for {page_id} because numbering_base.json is missing.")
+
+        if mmr_input_pages:
+            logger.info(f"Running MMR batch for {len(mmr_input_pages)} pages...")
+            if not model_path:
+                raise ValueError("mmr.model_path is required for MMR step.")
+
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            run_mmr_batch(
+                pages_data=mmr_input_pages,
+                image_paths=mmr_input_images,
+                output_paths=mmr_output_paths,
+                model_path=model_path,
+                device=device,
+                enable_rotation_tta=enable_rotation_tta,
+                debug_root=debug_root,
+            )
+            # Help VRAM management after heavy MMR processing
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
+        else:
+            logger.info("No pages to process for MMR batch.")
+
+    # Phase C: Final Numbering & Overlays
+    for page_id in tqdm(page_ids, desc="Phase C: Final Numbering", unit="page"):
+        ctx = page_ctx[page_id]
+        page_intermediate = ctx["intermediate_dir"]
+        page_outputs = ctx["outputs_dir"]
+        index = ctx["index"]
+        image_path = ctx["image_path"]
+        resolved_item = ctx["resolved"]
+
+        if page_id in excluded_page_ids:
+            if (step_apply or step_overlay) and not validate_only:
+                empty_final = page_outputs / "numbering_final.json"
+                numbering_final_paths.append(empty_final)
+                if not dry_run:
+                    write_json(empty_final, empty_numbering_payload(index, image_path))
+            continue
+
         mmr_overrides_payload = None
         if step_mmr and not validate_only:
             overrides_mmr = page_intermediate / "overrides_mmr.json"
-            cmd_mmr = build_generate_overrides_cmd(
-                numbering_json=numbering_base,
-                image=image_path,
-                output_overrides=overrides_mmr,
-                model_path=model_path,
-                enable_rotation_tta=enable_rotation_tta,
-                debug_image=(debug_root / f"{page_id}_mmr_debug.png") if debug_root else None,
-            )
-            commands.append(cmd_mmr)
-            if skip_existing and overrides_mmr.exists():
-                logger.info(f"Skipping mmr_overrides for {page_id}: file exists.")
-            else:
-                _run_command(cmd_mmr, dry_run=dry_run)
-
-            if not dry_run:
-                # Still need to load the payload for subsequent steps even if skipped
-                if overrides_mmr.exists():
-                    mmr_overrides_payload = load_json(overrides_mmr)
+            if not dry_run and overrides_mmr.exists():
+                mmr_overrides_payload = load_json(overrides_mmr)
 
         if (step_apply or step_overlay) and not validate_only:
             overrides_payload = merge_measure_overrides(
@@ -360,11 +421,13 @@ def run_pipeline(
             combined_path = page_intermediate / "overrides_combined.json"
             if not dry_run:
                 write_json(combined_path, overrides_payload)
+
             final_json = page_outputs / "numbering_final.json"
             numbering_final_paths.append(final_json)
             overlay_path = page_outputs / "numbering_overlay.png" if step_overlay else None
+
             cmd_final = build_add_measure_numbers_cmd(
-                barlines=barlines_path,
+                barlines=ctx["barlines_path"],
                 staff_mask=Path(resolved_item["staff_mask"]),
                 image=image_path,
                 output_json=final_json,
@@ -375,6 +438,7 @@ def run_pipeline(
                 force_single_system=force_single_system,
             )
             commands.append(cmd_final)
+
             if (
                 skip_existing
                 and final_json.exists()

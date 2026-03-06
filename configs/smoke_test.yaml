@@ -26,8 +26,8 @@ steps:
   filter_pages: true
   apply_barline_overrides: false
   numbering_base: true
-  mmr_overrides: false
-  apply_measure_overrides: false
+  mmr_overrides: true
+  apply_measure_overrides: true
   overlay: true
 
 detection:
@@ -38,6 +38,11 @@ detection:
   min_height_ratio: 0.012
   cnn_model_path: logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
   cnn_threshold: 0.1
+
+mmr:
+  model_path: tools/mmr_training/models/mmr_classifier_best.pth
+  enable_rotation_tta: true
+  threshold: 0.5
 
 filters:
   blank_page: auto

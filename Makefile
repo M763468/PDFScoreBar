@@ -10,15 +10,26 @@ format: ## Format code using ruff
 	uvx ruff format .
 	uvx ruff check --fix .
 
-run-smoke-sr: ## Run smoke test with SR inside sr_eval container (requires Docker)
-	docker run --rm --gpus all -v $$(pwd):/workspace -w /workspace sr_eval:latest \
-		bash -c "export PYTHONPATH=/workspace:/workspace/external/homr; \
-		/opt/venv_sr/bin/python -m src.pipeline.main --config configs/smoke_test.yaml"
+clean-artifacts: ## Remove all logs from the artifacts directory
+	rm -f artifacts/*.log artifacts/*.txt
 
-verify-issue18: ## Verify Issue #18 (model persistence) inside sr_eval container
-	docker run --rm --gpus all -v $$(pwd):/workspace -w /workspace sr_eval:latest \
-		bash -c "export PYTHONPATH=/workspace:/workspace/external/homr; \
-		/opt/venv_sr/bin/python -m src.pipeline.main --config configs/verify_issue18.yaml"
+run-smoke-sr: ## Run smoke test inside sr_eval_gpu container (requires running container)
+	@mkdir -p artifacts
+	@echo "Running smoke test..."
+	@docker exec -w /workspace -e PYTHONPATH=/workspace:/workspace/external/homr sr_eval_gpu \
+		/opt/venv_sr/bin/python src/pipeline/main.py --config "configs/smoke_test.yaml" > artifacts/smoke_test.log 2>&1 || \
+		(EXIT_CODE=$$?; echo "Smoke test failed with exit code $$EXIT_CODE. See artifacts/smoke_test.log"; exit $$EXIT_CODE)
+	@echo "Smoke test complete successfully. See artifacts/smoke_test.log"
+
+run-pipeline: ## Run the pipeline with a custom config (usage: make run-pipeline CONFIG=path/to/config.yaml)
+	@if [ -z "$(CONFIG)" ]; then echo "Error: CONFIG is required. Usage: make run-pipeline CONFIG=path/to/config.yaml"; exit 1; fi
+	@mkdir -p artifacts
+	@LOG_FILE="artifacts/$$(basename "$(CONFIG)" .yaml)_$$(date +%Y%m%d_%H%M%S).log"; \
+	echo "Running pipeline with $(CONFIG). Logging to $$LOG_FILE..."; \
+	docker exec -w /workspace -e PYTHONPATH=/workspace:/workspace/external/homr sr_eval_gpu \
+		/opt/venv_sr/bin/python src/pipeline/main.py --config "$(CONFIG)" --skip-existing > "$$LOG_FILE" 2>&1 || \
+		(EXIT_CODE=$$?; echo "Pipeline failed with exit code $$EXIT_CODE. See $$LOG_FILE"; exit $$EXIT_CODE); \
+	echo "Pipeline execution finished successfully. See $$LOG_FILE"
 
 repo-tree: ## Generate a repository directory overview
 	tree -L 3 -I "artifacts|logs|temp|datasets|.git|__pycache__|.venv*" > artifacts/repo_tree.txt

@@ -419,9 +419,9 @@ def run_detection_step(
             score_name=(
                 str(det_cfg.get("probe_score_name")) if det_cfg.get("probe_score_name") else None
             ),
-            crop_recenter_on_bbox_ink=bool(det_cfg.get(\"crop_recenter_on_bbox_ink\", False)),
+            crop_recenter_on_bbox_ink=bool(det_cfg.get("crop_recenter_on_bbox_ink", False)),
             crop_recenter_max_shift_unit_ratio=float(
-                det_cfg.get(\"crop_recenter_max_shift_unit_ratio\", 0.35)
+                det_cfg.get("crop_recenter_max_shift_unit_ratio", 0.35)
             ),
         )
     commands.append(cmd_score)

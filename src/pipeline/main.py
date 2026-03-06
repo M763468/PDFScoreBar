@@ -194,7 +194,7 @@ def run_pipeline(
 
     if run_detection and probe_output_dir and hybrid_output_dir:
         resolved = resolve_paths_from_detection(
-            probe_output_dir, hybrid_output_dir, page_ids, images
+            config, probe_output_dir, hybrid_output_dir, page_ids, images
         )
         page_runs = page_ids
     else:

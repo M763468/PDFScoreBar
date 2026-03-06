@@ -1,5 +1,6 @@
 import json
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -25,7 +26,8 @@ def run_command(cmd, log_file=None):
                     check=True,
                 )
                 vram_samples.append(int(res.stdout.strip()))
-            except Exception:
+            except Exception as e:
+                print(f"Warning: Failed to get VRAM usage: {e}", file=sys.stderr)
                 pass
             time.sleep(0.5)
 

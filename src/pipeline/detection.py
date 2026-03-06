@@ -310,6 +310,13 @@ def run_detection_step(
     ensure_dir(probe_output_root)
 
     image_root = get_nested(config, "inputs", "pdf_to_images", "output_dir")
+    staff_mask_dir_override = det_cfg.get("staff_mask_dir", "DEFAULT_SENTINEL")
+    if staff_mask_dir_override == "DEFAULT_SENTINEL":
+        resolved_staff_mask_dir = hybrid_output_dir
+    elif staff_mask_dir_override is None:
+        resolved_staff_mask_dir = None
+    else:
+        resolved_staff_mask_dir = Path(staff_mask_dir_override)
 
     cmd_probe = [
         "inprocess:probe_scan",
@@ -319,8 +326,11 @@ def run_detection_step(
         str(probe_output_root),
         "--bands-from",
         str(hybrid_output_dir),
-        "--staff-mask-dir",
-        str(hybrid_output_dir),
+    ]
+    if resolved_staff_mask_dir is not None:
+        cmd_probe += ["--staff-mask-dir", str(resolved_staff_mask_dir)]
+
+    cmd_probe += [
         "--ink-threshold",
         str(det_cfg.get("ink_threshold", 230)),
         "--min-ratio",
@@ -354,7 +364,7 @@ def run_detection_step(
             images=images,
             output_root=probe_output_root,
             bands_from=hybrid_output_dir,
-            staff_mask_dir=hybrid_output_dir,
+            staff_mask_dir=resolved_staff_mask_dir,
             ink_threshold=int(det_cfg.get("ink_threshold", 230)),
             min_ratio=float(det_cfg.get("min_ratio", 0.70)),
             min_height_ratio=float(det_cfg.get("min_height_ratio", 0.012)),
@@ -421,15 +431,28 @@ def run_detection_step(
 
 
 def resolve_paths_from_detection(
-    probe_output_dir: Path, hybrid_output_dir: Path, page_ids: List[str], images: List[Path]
+    config: Dict[str, Any],
+    probe_output_dir: Path,
+    hybrid_output_dir: Path,
+    page_ids: List[str],
+    images: List[Path],
 ) -> List[Dict[str, str]]:
     resolved: List[Dict[str, str]] = []
 
+    det_cfg = get_nested(config, "detection", default={}) or {}
+    staff_mask_dir_override = det_cfg.get("staff_mask_dir", "DEFAULT_SENTINEL")
+    if staff_mask_dir_override == "DEFAULT_SENTINEL":
+        resolved_staff_mask_dir = hybrid_output_dir
+    elif staff_mask_dir_override is None:
+        resolved_staff_mask_dir = None
+    else:
+        resolved_staff_mask_dir = Path(staff_mask_dir_override)
+
     staff_mask_map: Dict[str, Path] = {}
-    if hybrid_output_dir.exists():
+    if resolved_staff_mask_dir is not None and resolved_staff_mask_dir.exists():
         # Match either original stem or proxy-suffixed stem (from Proxy Inference)
         # Examples: page_001_debug_3_staff.png or page_001_proxy_debug_3_staff.png
-        for path in hybrid_output_dir.rglob("*_debug_3_staff.png"):
+        for path in resolved_staff_mask_dir.rglob("*_debug_3_staff.png"):
             name = path.name
             stem = name.replace("_proxy_debug_3_staff.png", "").replace("_debug_3_staff.png", "")
             staff_mask_map[stem] = path
@@ -457,9 +480,14 @@ def resolve_paths_from_detection(
             logger.warning(f"Warning: Barlines not found for {page_id} (stem: {stem})")
             barlines_path = Path("MISSING_BARLINES.json")
 
-        if not staff_mask_path or not staff_mask_path.exists():
+        if resolved_staff_mask_dir is not None and (
+            not staff_mask_path or not staff_mask_path.exists()
+        ):
             logger.warning(f"Warning: Staff mask not found for {page_id} (stem: {stem})")
             staff_mask_path = Path("MISSING_STAFF_MASK.png")
+        elif resolved_staff_mask_dir is None:
+            # Explicitly disabled
+            staff_mask_path = Path("DISABLED_STAFF_MASK.png")
 
         resolved.append(
             {

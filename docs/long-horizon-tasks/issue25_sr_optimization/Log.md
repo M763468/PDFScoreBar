@@ -38,7 +38,20 @@
 - [x] Propose final strategy based on accuracy vs cost.
 - [x] Document final results and visual analysis.
 
-### Notes
-- Already optimized tile size to 400 (PR #71).
-- VRAM (8GB) is still a major constraint.
-- Context efficiency is prioritized via `artifacts/` redirection.
+## 2026-03-06 (M3: SR x2 Verification & VRAM Optimization)
+
+### Summary
+- Investigated Recall gap between SR Bypass and Issue #44:
+    - Confirmed that SR(x4) allows separating merged double barlines at the initial detection stage.
+    - Identified that evaluation-time FN increases in Bypass mode are partly due to GT overlaps causing matching ambiguity when lines are merged in low-res.
+- Verified **Native SR x2 (RealESRGAN_x2plus)**:
+    - Achieved **Recall 97.65%** (same as x4) on Prokofiev p1, while being ~3x faster than x4.
+    - Proved that SR x2 provides the best balance between accuracy (line separation) and processing time.
+- Implemented **Batch VRAM Optimization**:
+    - Refactored `homr_evaluator.py` to use a two-phase loop: Phase 1 (upscale all images) -> Phase 2 (inference).
+    - Ensures SR model is fully unloaded from VRAM before starting memory-intensive ONNX/Tromr inference.
+- Created Issue #74 to track official integration of Real-ESRGAN x2 weights.
+
+### Next Actions
+- [ ] Open Pull Request for `investigate/sr-optimization`.
+- [ ] Confirm default pipeline configuration (recommend SR x2 or Bypass depending on quality requirements).

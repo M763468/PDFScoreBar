@@ -198,6 +198,7 @@ def _score_directory(
     current_score_name: Optional[str] = None,
     staff_vov_threshold: float = 0.5,
     crop_recenter_on_bbox_ink: bool = False,
+    crop_recenter_max_shift_unit_ratio: float = 0.35,
 ) -> bool:
     candidates_path = run_dir / "pipeline2_no_peak_candidates.json"
     if not candidates_path.exists():
@@ -242,7 +243,9 @@ def _score_directory(
         cx, cy = int((x1 + x2) / 2), int((y1 + y2) / 2)
 
         if crop_recenter_on_bbox_ink:
-            cx_adjusted = _compute_bbox_ink_center_x(img, box)
+            cx_adjusted = _compute_bbox_ink_center_x(
+                img, box, max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio
+            )
             if cx_adjusted is not None:
                 cx = cx_adjusted
 
@@ -333,6 +336,7 @@ def run_cnn_scoring_batch(
     bands_from: Optional[Path] = None,
     staff_vov_threshold: float = 0.5,
     crop_recenter_on_bbox_ink: bool = False,
+    crop_recenter_max_shift_unit_ratio: float = 0.35,
 ) -> int:
     """Run CNN scoring for all probe output dirs with one model load."""
     if any(mod is None for mod in (cv2, np, torch, Image, models, transforms)):
@@ -367,6 +371,7 @@ def run_cnn_scoring_batch(
             current_score_name=score_name,
             staff_vov_threshold=staff_vov_threshold,
             crop_recenter_on_bbox_ink=crop_recenter_on_bbox_ink,
+            crop_recenter_max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio,
         ):
             processed += 1
     return processed

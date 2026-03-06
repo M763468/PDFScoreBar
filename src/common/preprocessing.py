@@ -150,27 +150,29 @@ def apply_advanced_sr(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     if upsampler is None:
-        print(f"Initializing Real-ESRGAN using device: {device}")
-        # The RealESRGANer will handle model download and caching automatically
-        # when model_path is not specified. It looks for models in the 'weights' directory.
+        print(f"Initializing Real-ESRGAN ({model_name}) using device: {device}")
         if model_name == "RealESRGAN_x4plus":
             model = RRDBNet(
                 num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4
             )
             netscale = 4
-            # The local RealESRGANer implementation expects a file path.
+            model_path = os.path.join(realesrgan_path, "weights", f"{model_name}.pth")
+        elif model_name == "RealESRGAN_x2plus":
+            model = RRDBNet(
+                num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2
+            )
+            netscale = 2
             model_path = os.path.join(realesrgan_path, "weights", f"{model_name}.pth")
         else:
             print(
-                f"Model {model_name} not explicitly supported. A default will be used, but may not be optimal."
+                f"Model {model_name} not explicitly supported. A default (x4plus) will be used."
             )
             model = RRDBNet(
                 num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4
             )
             netscale = 4
-            model_path = os.path.join(
-                realesrgan_path, "weights", "RealESRGAN_x4plus.pth"
-            )  # Fallback
+            model_path = os.path.join(realesrgan_path, "weights", "RealESRGAN_x4plus.pth")
+
 
         try:
             # Determine tiling strategy

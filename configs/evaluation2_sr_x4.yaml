@@ -1,0 +1,49 @@
+run:
+  run_id: eval2_sr_x4_test_repro44
+  output_root: logs/full_pipeline_runs/sr_x4_test
+
+inputs:
+  pdf_path: data/evaluation2/pdfs/Va_Prokofiev_Symphony1.pdf
+  pdf_to_images:
+    output_dir: logs/preprocess/evaluation2/Va_Prokofiev_Symphony1
+    dpi: 360
+    pages: "1"
+    interpolation: area
+    prefix: page
+    format: png
+    overwrite: false
+
+steps:
+  pdf_to_images: true
+  detection: true
+  filter_pages: true
+  apply_barline_overrides: false
+  numbering_base: true
+  mmr_overrides: false
+  apply_measure_overrides: false
+  overlay: true
+
+detection:
+  enable_sr: true
+  sr_scale: 4
+  crop_recenter_on_bbox_ink: true
+  hybrid_output_root: logs/hybrid_generalization/sr_x4_test
+  ink_threshold: 230
+  min_ratio: 0.70
+  min_height_ratio: 0.012
+  cnn_model_path: logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
+  cnn_threshold: 0.1
+  divisi_rescue: true
+  scan_gap_rescue: true
+  scan_x_peak_rescue: true
+
+filters:
+  blank_page: auto
+  staff_detect: auto
+
+mmr:
+  model_path: tools/mmr_training/models/mmr_classifier_best.pth
+  enable_rotation_tta: false
+
+numbering:
+  force_single_system: false

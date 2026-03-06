@@ -176,6 +176,7 @@ def _run_hybrid_detection_in_process(
     elif skip_existing and _all_stems_exist(sr_output, stems, "batch/*/*.json"):
         logger.info("Skipping homr SR: outputs already exist.")
     else:
+        sr_scale = int(det_cfg.get("sr_scale", 4))
         sr_args = [
             "src/homr_eval_scripts/homr_evaluator.py",
             "--images",
@@ -185,6 +186,8 @@ def _run_hybrid_detection_in_process(
             "--force-run-id",
             "batch",
             "--enable-sr",
+            "--sr-scale",
+            str(sr_scale),
             "--enable-segnet-cache",
         ]
         cmd = python_cmd + sr_args

@@ -412,7 +412,8 @@ def run_probe_scan_batch(
                     final_set.add(tuple(int(v) for v in nb))
 
             if post_cfg.get("split_wide_candidates"):
-                split_boxes, _ = split_wide_candidates(
+                print(f"DEBUG: Attempting to split {len(final_set)} candidates...")
+                split_boxes, stats = split_wide_candidates(
                     boxes=list(final_set),
                     img=img,
                     min_split_width_unit_ratio=float(
@@ -430,6 +431,7 @@ def run_probe_scan_batch(
                     emit_merged_two_peak_box=False,
                     keep_original_when_not_split=False,
                 )
+                print(f"DEBUG: Split stats: {stats}")
                 for sb in split_boxes:
                     final_set.add(tuple(int(v) for v in sb))
 

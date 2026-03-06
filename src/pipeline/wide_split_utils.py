@@ -185,6 +185,7 @@ def split_wide_candidates(
                 out.append(box)
             continue
 
+        print(f"DEBUG: Splitting {box} into {split_boxes}")
         out.extend(split_boxes)
         if emit_merged_two_peak_box and len(peaks) == 2:
             pad = max(1, int(round(unit_size * float(merged_two_peak_pad_unit_ratio))))

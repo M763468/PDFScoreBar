@@ -71,7 +71,9 @@ def get_model(model_path, model_name="resnet18"):
     return model
 
 
-def crop_size_from_bbox(box, scale=3.0, aspect_ratio=0.5, min_h=48, max_h=1024, min_w=16, max_w=512):
+def crop_size_from_bbox(
+    box, scale=3.0, aspect_ratio=0.5, min_h=48, max_h=1024, min_w=16, max_w=512
+):
     x1, y1, x2, y2 = box
     bbox_h = max(1.0, abs(y2 - y1))
     crop_h = int(round(bbox_h * scale))
@@ -323,7 +325,7 @@ def process_dir(
                 cx = cx_adjusted
         cw, ch = crop_size_from_bbox(box)
         crop = center_crop(img, cx, cy, cw, ch)
-        
+
         if len(batch_tensors) == 0:
             print(f"DEBUG: First crop cx={cx}, cy={cy}, cw={cw}, ch={ch} for img {img.shape}")
             cv2.imwrite(f"artifacts/debug_crop_{cx}_{cy}.png", crop)
@@ -357,7 +359,9 @@ def process_dir(
             scores_list.append(chunk_scores)
 
     scores = np.concatenate(scores_list)
-    print(f"DEBUG: Score stats for {log_dir.name}: max={scores.max():.4f}, min={scores.min():.4f}, mean={scores.mean():.4f}, count={len(scores)}")
+    print(
+        f"DEBUG: Score stats for {log_dir.name}: max={scores.max():.4f}, min={scores.min():.4f}, mean={scores.mean():.4f}, count={len(scores)}"
+    )
 
     scored_results = []
     candidate_objects_for_filter = []

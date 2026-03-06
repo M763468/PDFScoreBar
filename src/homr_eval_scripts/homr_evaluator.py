@@ -2353,7 +2353,9 @@ def run_evaluation(argv: Optional[Sequence[str]] = None) -> Path:
                     original_h, original_w = original_img.shape[:2]
                     sr_img = cv2.imread(str(sr_source))
                     if sr_img is None:
-                        raise FileNotFoundError(f"Failed to load pre-computed SR image: {sr_source}")
+                        raise FileNotFoundError(
+                            f"Failed to load pre-computed SR image: {sr_source}"
+                        )
                     up_h, up_w = sr_img.shape[:2]
                     inferred_scale = round(up_w / original_w) if original_w else 1
                     if inferred_scale >= 2 and up_w >= original_w * 2 and up_h >= original_h * 2:
@@ -2386,6 +2388,7 @@ def run_evaluation(argv: Optional[Sequence[str]] = None) -> Path:
         persistent_upsampler = None
         try:
             import torch
+
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
                 torch.cuda.synchronize()

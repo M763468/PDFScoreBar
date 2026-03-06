@@ -36,7 +36,7 @@ detection:
   ink_threshold: 230
   min_ratio: 0.70
   min_height_ratio: 0.012
-  cnn_model_path: logs/cnn_retrain_v3_final/cnn_classifier_best.pth
+  cnn_model_path: logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
   cnn_threshold: 0.1
 
 filters:

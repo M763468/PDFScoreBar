@@ -55,12 +55,12 @@ logger = logging.getLogger("homr_evaluator")
 import homr.simple_logging  # type: ignore
 
 
-def _silent_eprint(*args, **kwargs):
-    logger.debug(" ".join(map(str, args)))
+def _redirect_eprint_to_logger(*args, **kwargs):
+    logger.info(" ".join(map(str, args)))
 
 
-homr.simple_logging.eprint = _silent_eprint
-eprint = _silent_eprint
+homr.simple_logging.eprint = _redirect_eprint_to_logger
+eprint = _redirect_eprint_to_logger
 
 # pylint: disable=wrong-import-position
 from common.barline_evaluation import (

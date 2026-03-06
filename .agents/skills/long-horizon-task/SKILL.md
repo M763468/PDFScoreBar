@@ -21,7 +21,7 @@ Manage complex, multi-step development tasks by externalizing task state into re
 ## Capabilities
 
 ### 1. `init-task`
-Initialize a new task directory in `docs/refactors/<TASK-ID>/` using templates.
+Initialize a new task directory in `docs/long-horizon-tasks/<TASK-ID>/` using templates.
 - **Action**: Run `./run.sh init <TASK_ID> [ISSUE_NUMBER]`.
 - **Artifact**: `artifacts/task_init.txt`
 
@@ -32,7 +32,7 @@ Review the progress of an existing long-horizon task.
 
 ### 3. `record-log`
 Help the user or agent record a new entry in the `Log.md` file.
-- **Action**: Append a timestamped entry to `docs/refactors/<TASK-ID>/Log.md`.
+- **Action**: Append a timestamped entry to `docs/long-horizon-tasks/<TASK-ID>/Log.md`.
 
 ## Required commands/permissions
 - `./run.sh`: script to initialize or check task status into `artifacts/`

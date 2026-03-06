@@ -1,18 +1,25 @@
 # Task Log: Issue #25 - SR Optimization & Verification
 
-## 2026-03-06 (M0: Initialization)
+## 2026-03-06 (M1: Investigation & Resource Profiling)
 
 ### Summary
-- Fetched requirements for Issue #25 using `gh issue view` (later updated to use `issue-viewer` skill).
-- Reviewed Issue #70 and PR #71 for existing SR optimizations.
-- Created branch `investigate/sr-optimization` from `feature/batch_orchestrator`.
-- Created task directory `docs/long-horizon-tasks/issue25_sr_optimization/`.
-- Initialized/Updated `Prompt.md`, `Plan.md`, and `Log.md` with operational requirements.
+- Verified SR impact on Shostakovich page_001:
+    - Baseline (No SR): P=0.7105, R=0.8438, F1=0.7714
+    - With SR: P=0.9286, R=0.8125, F1=0.8667
+    - Significant improvement in Precision (reduced False Positives).
+- Identified SR initialization bottleneck: `RealESRGANer` was being re-initialized for every image in `homr_evaluator.py`.
+- Implemented **Persistent SR Model**:
+    - Modified `src/common/preprocessing.py` to allow passing an optional `upsampler` instance.
+    - Updated `src/homr_eval_scripts/homr_evaluator.py` to reuse `upsampler` across images in a batch.
+    - Updated `experiments/models/eval_omr_dln.py` to support persistent upsampler.
+- Investigated Shared Memory:
+    - `sr_eval_gpu` container has only 64MB of `/dev/shm`, which is insufficient for large SR images (~500MB in RAM).
+    - Increasing `--shm-size` would be required for this optimization.
 
 ### Next Actions
-- [ ] Review Issue #70 performance data.
-- [ ] Measure VRAM consumption with current settings (redirect to `artifacts/`).
-- [ ] Compare SR vs. No-SR accuracy (redirect to `artifacts/`).
+- [ ] Complete profiling of VRAM and Duration for Prokofiev p1 (ongoing).
+- [ ] Evaluate if SR should be bypassed in certain conditions.
+- [ ] Propose final strategy based on accuracy vs cost.
 
 ### Notes
 - Already optimized tile size to 400 (PR #71).

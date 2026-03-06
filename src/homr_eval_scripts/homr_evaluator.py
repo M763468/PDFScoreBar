@@ -2326,6 +2326,8 @@ def run_evaluation(argv: Optional[Sequence[str]] = None) -> Path:
         "gen_sobel_no_staff": args.gen_sobel_no_staff,
     }
 
+    persistent_upsampler: Any = None
+
     for image_path in images:
         stem = image_path.stem
         image_run_dir = run_dir / stem
@@ -2370,7 +2372,13 @@ def run_evaluation(argv: Optional[Sequence[str]] = None) -> Path:
                     tile=args.sr_tile,
                     tile_pad=args.sr_tile_pad,
                     fp32=args.sr_fp32,
+                    upsampler=persistent_upsampler,
                 )
+
+                # Check if it returned (output, upsampler) or just output
+                if isinstance(upscaled, tuple):
+                    upscaled, persistent_upsampler = upscaled
+
                 up_h, up_w = upscaled.shape[:2]
                 inferred_scale = round(up_w / original_w) if original_w else 1
 
@@ -2385,17 +2393,8 @@ def run_evaluation(argv: Optional[Sequence[str]] = None) -> Path:
                     sr_scale = 1
 
                 cv2.imwrite(str(working_image), upscaled)
-                # Real-ESRGAN uses PyTorch and can leave large CUDA allocations.
-                # Clear the cache so subsequent ONNXRuntime inference doesn't stall.
-                try:
-                    import torch
-
-                    if torch.cuda.is_available():
-                        torch.cuda.empty_cache()
-                        torch.cuda.synchronize()
-                        eprint("Cleared CUDA cache after SR.")
-                except Exception:
-                    pass
+                # Note: We NO LONGER empty_cache here if we want to keep model in VRAM
+                # unless we are sure it doesn't collide with next steps.
 
         # Optimization: Create a downscaled proxy for Homr inference if image is huge (e.g. SR)
         inference_image_path = working_image

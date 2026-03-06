@@ -99,6 +99,8 @@ def main():
         model = YOLO(MODEL_PATH)
         print("--- DEBUG: Model loaded successfully ---", file=sys.stderr)
 
+        persistent_upsampler = None
+
         # Pre-computed SR handling (Single file scenario primarily, but check if we can support batch mapping later)
         # For now, if --pre-computed-sr is provided, it assumes specific file.
         # TODO: If batching, pre-computed SR needs to be a mapping or directory.
@@ -180,8 +182,11 @@ def main():
             elif args.enable_sr:
                 print(f"--- Applying SR (x{requested_sr_scale}) for {stem}... ---", file=sys.stderr)
                 try:
-                    sr_img_bgr = apply_advanced_sr(
-                        original_img_bgr, model_name="RealESRGAN_x4plus", scale=requested_sr_scale
+                    sr_img_bgr, persistent_upsampler = apply_advanced_sr(
+                        original_img_bgr,
+                        model_name="RealESRGAN_x4plus",
+                        scale=requested_sr_scale,
+                        upsampler=persistent_upsampler,
                     )
                     up_h, up_w = sr_img_bgr.shape[:2]
                     original_h, original_w = original_img_bgr.shape[:2]

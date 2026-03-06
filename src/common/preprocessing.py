@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Optional
+from typing import Any, Optional
 
 import cv2
 import numpy as np
@@ -111,7 +111,8 @@ def apply_advanced_sr(
     tile_pad: int = 10,
     pre_pad: int = 0,
     fp32: bool = False,
-) -> np.ndarray:
+    upsampler: Optional[Any] = None,
+) -> Any:
     """
     Applies advanced super-resolution using a locally cloned Real-ESRGAN repository.
 
@@ -123,9 +124,11 @@ def apply_advanced_sr(
         tile_pad: Padding for tiles.
         pre_pad: Pre-padding.
         fp32: If True, uses full precision (fp32). If False, tries to use fp16 on CUDA.
+        upsampler: Pre-initialized RealESRGANer instance.
 
     Returns:
-        Upscaled image.
+        Upscaled image (if upsampler was provided) OR Tuple[Upscaled image, upsampler].
+        For backward compatibility, it returns just the image if upsampler was provided.
     """
     # Add the cloned repo to the path to ensure local source is used
     realesrgan_path = os.path.abspath(os.path.join(__file__, "../../..", "external", "realesrgan"))
@@ -141,78 +144,70 @@ def apply_advanced_sr(
         print(
             "Please ensure you have cloned the repository to 'external/realesrgan' and installed its requirements."
         )
-        return image
+        return image, upsampler
 
     # Check device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Real-ESRGAN using device: {device}")
 
-    # The RealESRGANer will handle model download and caching automatically
-    # when model_path is not specified. It looks for models in the 'weights' directory.
-    if model_name == "RealESRGAN_x4plus":
-        model = RRDBNet(
-            num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4
-        )
-        netscale = 4
-        # The local RealESRGANer implementation expects a file path.
-        # We construct the path to where the model should be. It will be downloaded
-        # by the library if it doesn't exist.
-        model_path = os.path.join(realesrgan_path, "weights", f"{model_name}.pth")
-    else:
-        print(
-            f"Model {model_name} not explicitly supported. A default will be used, but may not be optimal."
-        )
-        model = RRDBNet(
-            num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4
-        )
-        netscale = 4
-        model_path = os.path.join(realesrgan_path, "weights", "RealESRGAN_x4plus.pth")  # Fallback
+    if upsampler is None:
+        print(f"Initializing Real-ESRGAN using device: {device}")
+        # The RealESRGANer will handle model download and caching automatically
+        # when model_path is not specified. It looks for models in the 'weights' directory.
+        if model_name == "RealESRGAN_x4plus":
+            model = RRDBNet(
+                num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4
+            )
+            netscale = 4
+            # The local RealESRGANer implementation expects a file path.
+            model_path = os.path.join(realesrgan_path, "weights", f"{model_name}.pth")
+        else:
+            print(
+                f"Model {model_name} not explicitly supported. A default will be used, but may not be optimal."
+            )
+            model = RRDBNet(
+                num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4
+            )
+            netscale = 4
+            model_path = os.path.join(
+                realesrgan_path, "weights", "RealESRGAN_x4plus.pth"
+            )  # Fallback
+
+        try:
+            # Determine tiling strategy
+            if tile is None or tile == -1:
+                tile_size = (
+                    0
+                    if max(image.shape[:2]) <= IMAGE_SIZE_THRESHOLD_FOR_TILING
+                    else DEFAULT_TILE_SIZE
+                )
+            else:
+                tile_size = tile
+
+            # Determine precision
+            use_half = False
+            if "cuda" in str(device) and not fp32:
+                use_half = True
+
+            upsampler = RealESRGANer(
+                scale=netscale,
+                model_path=model_path,
+                model=model,
+                tile=tile_size,
+                tile_pad=tile_pad,
+                pre_pad=pre_pad,
+                half=use_half,
+                device=device,
+            )
+        except Exception as e:
+            print(f"Real-ESRGAN initialization failed: {e}")
+            return image, upsampler
 
     try:
-        # Determine tiling strategy
-        if tile is None or tile == -1:
-            # Default auto logic
-            # tile=0 processes the whole image at once and can be extremely slow / OOM on large pages.
-            # Use a conservative tiling default for large inputs while keeping the original behaviour for small images.
-            tile_size = (
-                0 if max(image.shape[:2]) <= IMAGE_SIZE_THRESHOLD_FOR_TILING else DEFAULT_TILE_SIZE
-            )
-        else:
-            tile_size = tile
-
-        # Determine precision
-        # half=True means fp16. So if fp32 is requested, half should be False.
-        # Also ensure device is cuda for half.
-        use_half = False
-        if "cuda" in str(device) and not fp32:
-            use_half = True
-
-        upsampler = RealESRGANer(
-            scale=netscale,
-            model_path=model_path,  # Pass None to let it use its default model download logic
-            model=model,
-            tile=tile_size,
-            tile_pad=tile_pad,
-            pre_pad=pre_pad,
-            half=use_half,
-            device=device,
-        )
-
-        # The upsampler expects the model file in its `weights` dir. Let's trigger a download if needed.
-        # This is a bit of a hack, but it forces the download if the file isn't there.
-        if not os.path.exists(os.path.join(realesrgan_path, "weights", f"{model_name}.pth")):
-            print("Model not found locally, RealESRGANer will attempt to download it...")
-            # The constructor should handle this, but let's be explicit.
-            pass
-
         if image.ndim != 3 or image.shape[2] != 3:
             image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
-        print(
-            f"DEBUG: Calling enhance with tile={tile_size}, tile_pad={tile_pad}, pre_pad={pre_pad}, half={use_half}"
-        )
         output, _ = upsampler.enhance(image, outscale=scale)
-        return output
+        return output, upsampler
     except Exception as e:
         print(f"Real-ESRGAN inference failed: {e}")
-        return image
+        return image, upsampler

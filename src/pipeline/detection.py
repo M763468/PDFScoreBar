@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import shutil
 from importlib import import_module
 
 from tqdm import tqdm
@@ -127,6 +128,8 @@ def _run_hybrid_detection_in_process(
 
     logger.info("--- Step 2.1: Hybrid Detection (Subprocess homr baseline/SR) ---")
 
+    enable_sr = bool(det_cfg.get("enable_sr", True))
+
     python_cmd = get_pipeline_python("homr")
     if python_cmd and python_cmd[0] == "docker":
         for img in images:
@@ -168,7 +171,9 @@ def _run_hybrid_detection_in_process(
             run_with_logging(cmd, env=env, check=True)
 
     sr_output = hybrid_output_dir / "sr"
-    if skip_existing and _all_stems_exist(sr_output, stems, "batch/*/*.json"):
+    if not enable_sr:
+        logger.info("Skipping homr SR: enable_sr is false.")
+    elif skip_existing and _all_stems_exist(sr_output, stems, "batch/*/*.json"):
         logger.info("Skipping homr SR: outputs already exist.")
     else:
         sr_args = [
@@ -199,7 +204,9 @@ def _run_hybrid_detection_in_process(
             found.add(p.parent.name)
         return all(s in found for s in stems)
 
-    if skip_existing and _omr_all_stems_exist():
+    if not enable_sr:
+        logger.info("Skipping OMR-DLN: SR is disabled.")
+    elif skip_existing and _omr_all_stems_exist():
         logger.info("Skipping OMR-DLN: outputs already exist.")
     else:
         python_cmd_omr = get_pipeline_python("omr_dln")
@@ -235,11 +242,21 @@ def _run_hybrid_detection_in_process(
         sr_json = hybrid_output_dir / "sr" / "batch" / stem / f"{stem}_detections.json"
         omr_json = hybrid_output_dir / "omr_sr" / stem / "predictions.json"
 
+        output_json = hybrid_results_dir / f"{stem}_hybrid.json"
+
+        if not enable_sr:
+            # Bypass consensus: directly use baseline
+            if not baseline_json.exists():
+                logger.warning(f"Baseline missing for {stem}. Cannot bypass.")
+                continue
+            if not dry_run:
+                shutil.copy(baseline_json, output_json)
+            continue
+
         if not baseline_json.exists() or not sr_json.exists() or not omr_json.exists():
             logger.warning(f"Missing components for {stem}. Skipping consensus.")
             continue
 
-        output_json = hybrid_results_dir / f"{stem}_hybrid.json"
         consensus_cmd = [
             "inprocess:hybrid_consensus",
             "--baseline",
@@ -389,6 +406,7 @@ def run_detection_step(
             score_name=(
                 str(det_cfg.get("probe_score_name")) if det_cfg.get("probe_score_name") else None
             ),
+            crop_recenter_on_bbox_ink=bool(det_cfg.get("crop_recenter_on_bbox_ink", False)),
         )
     commands.append(cmd_score)
 

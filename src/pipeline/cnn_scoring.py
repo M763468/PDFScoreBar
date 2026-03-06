@@ -126,6 +126,64 @@ def _center_crop(img: np.ndarray, cx: int, cy: int, crop_w: int, crop_h: int) ->
     return crop
 
 
+def _compute_bbox_ink_center_x(
+    img: np.ndarray,
+    box: Sequence[float],
+    *,
+    min_aspect_ratio: float = 3.0,
+    mask_ratio: float = 0.85,
+    max_shift_unit_ratio: float = 0.35,
+) -> int | None:
+    """Estimate a better crop X-center from the bbox-local ink profile.
+
+    Intended for narrow, tall vertical candidates where the barline can sit near a bbox edge.
+    """
+    if img is None or len(box) != 4:
+        return None
+    x1, y1, x2, y2 = [int(v) for v in box]
+    img_h, img_w = img.shape[:2]
+    bx1 = max(0, min(img_w - 1, min(x1, x2)))
+    bx2 = max(0, min(img_w, max(x1, x2)))
+    by1 = max(0, min(img_h - 1, min(y1, y2)))
+    by2 = max(0, min(img_h, max(y1, y2)))
+    if bx2 <= bx1 or by2 <= by1:
+        return None
+
+    w = bx2 - bx1
+    h = by2 - by1
+    if w <= 0 or h <= 0:
+        return None
+    if h / max(1, w) < min_aspect_ratio:
+        return None
+
+    # Estimate unit_size (staff spacing) from box height
+    unit_size = max(1.0, h / 4.0)
+
+    crop = img[by1:by2, bx1:bx2]
+    if crop.size == 0:
+        return None
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY) if len(crop.shape) == 3 else crop
+    profile = (255.0 - gray.astype(np.float32)).sum(axis=0)
+    if profile.size == 0:
+        return None
+    pmax = float(profile.max())
+    if pmax <= 0:
+        return None
+
+    active = np.where(profile >= pmax * mask_ratio)[0]
+    if active.size == 0:
+        return None
+
+    local_center = float(active.mean())
+    base_local_center = (w - 1) / 2.0
+    shift = local_center - base_local_center
+    max_shift = max(1.0, unit_size * max_shift_unit_ratio)
+    shift = float(np.clip(shift, -max_shift, max_shift))
+    if abs(shift) < 0.5:
+        return None
+    return int(round((x1 + x2) / 2.0 + shift))
+
+
 def _score_directory(
     *,
     run_dir: Path,
@@ -139,6 +197,7 @@ def _score_directory(
     bands_from: Optional[Path] = None,
     current_score_name: Optional[str] = None,
     staff_vov_threshold: float = 0.5,
+    crop_recenter_on_bbox_ink: bool = False,
 ) -> bool:
     candidates_path = run_dir / "pipeline2_no_peak_candidates.json"
     if not candidates_path.exists():
@@ -181,6 +240,12 @@ def _score_directory(
             continue
         x1, y1, x2, y2 = box
         cx, cy = int((x1 + x2) / 2), int((y1 + y2) / 2)
+
+        if crop_recenter_on_bbox_ink:
+            cx_adjusted = _compute_bbox_ink_center_x(img, box)
+            if cx_adjusted is not None:
+                cx = cx_adjusted
+
         cw, ch = _crop_size_from_bbox(box)
         crop = _center_crop(img, cx, cy, cw, ch)
         crop_pil = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
@@ -267,6 +332,7 @@ def run_cnn_scoring_batch(
     staff_mask_dir: Optional[Path] = None,
     bands_from: Optional[Path] = None,
     staff_vov_threshold: float = 0.5,
+    crop_recenter_on_bbox_ink: bool = False,
 ) -> int:
     """Run CNN scoring for all probe output dirs with one model load."""
     if any(mod is None for mod in (cv2, np, torch, Image, models, transforms)):
@@ -300,6 +366,7 @@ def run_cnn_scoring_batch(
             bands_from=bands_from,
             current_score_name=score_name,
             staff_vov_threshold=staff_vov_threshold,
+            crop_recenter_on_bbox_ink=crop_recenter_on_bbox_ink,
         ):
             processed += 1
     return processed

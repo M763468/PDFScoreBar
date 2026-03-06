@@ -28,19 +28,22 @@ Analyze PR comments and reviews to plan and implement necessary code fixes or im
 5) Plan and implement modifications according to `AGENTS.md`.
 6) Verify the fixes with `make test`, `make format`, and `make lint`.
 7) Update documentation if necessary.
+8) **Post a comment to the PR** summarizing the implemented fixes and requesting re-review.
 
 ## Required commands/permissions
 - `./run.sh`: script to fetch PR refinement data into `artifacts/`
-- gh: to view PR details and reviews
-- git: to checkout branch and commit changes
+- gh: to view PR details, reviews, and post comments
+- git: to checkout branch and commit/push changes
 - make: to run `make format`, `make lint`, `make test`
 
 ## Example commands
 - `./run.sh 123`
 - `gh pr checkout 123`
 - `make test`
+- `gh pr comment 123 --body "Summary of fixes..."`
 
 ## Notes
 - Focus on addressing the reviewer's specific concerns.
 - Always refer to `docs/ai-workflow/LESSONS.md` to avoid known anti-patterns.
 - If a comment is unclear, ask for clarification.
+- **Critical**: Do not forget to notify the reviewer by commenting on the PR after pushing the fixes.

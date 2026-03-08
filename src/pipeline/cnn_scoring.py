@@ -199,6 +199,7 @@ def _score_directory(
     staff_vov_threshold: float = 0.5,
     crop_recenter_on_bbox_ink: bool = False,
     crop_recenter_max_shift_unit_ratio: float = 0.35,
+    input_image_scale: float = 1.0,
 ) -> bool:
     candidates_path = run_dir / "pipeline2_no_peak_candidates.json"
     if not candidates_path.exists():
@@ -223,6 +224,17 @@ def _score_directory(
     if img is None:
         logger.warning("Failed to load image: %s", image_path)
         return False
+
+    # --- Handle SR Downscaling for CNN ---
+    # If using an SR image, downscale it back to original resolution (e.g. 300DPI equivalent)
+    # using INTER_AREA to avoid aliasing and match training features.
+    if input_image_scale > 1.0:
+        h, w = img.shape[:2]
+        new_h = int(round(h / input_image_scale))
+        new_w = int(round(w / input_image_scale))
+        img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_AREA)
+        # Rescale candidates back to downscaled image coordinate space
+        candidates = [[v / input_image_scale for v in box] for box in candidates]
 
     # --- Resolve Staff Bands ---
     staff_bands = []
@@ -337,6 +349,7 @@ def run_cnn_scoring_batch(
     staff_vov_threshold: float = 0.5,
     crop_recenter_on_bbox_ink: bool = False,
     crop_recenter_max_shift_unit_ratio: float = 0.35,
+    input_image_scale: float = 1.0,
 ) -> int:
     """Run CNN scoring for all probe output dirs with one model load."""
     if any(mod is None for mod in (cv2, np, torch, Image, models, transforms)):
@@ -372,6 +385,7 @@ def run_cnn_scoring_batch(
             staff_vov_threshold=staff_vov_threshold,
             crop_recenter_on_bbox_ink=crop_recenter_on_bbox_ink,
             crop_recenter_max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio,
+            input_image_scale=input_image_scale,
         ):
             processed += 1
     return processed

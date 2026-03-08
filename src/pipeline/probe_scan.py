@@ -277,6 +277,7 @@ def run_probe_scan_batch(
     probe_endpoint_x_scale: Optional[float] = None,
     probe_endpoint_y_scale: Optional[float] = None,
     skip_existing: bool = False,
+    input_image_scale: float = 1.0,
 ) -> int:
     """Generate probe candidates for all pages in-process.
 
@@ -354,6 +355,12 @@ def run_probe_scan_batch(
             current_score_name=current_score_name,
             stem=stem,
         )
+
+        # Rescale existing boxes to match image resolution if using SR
+        if input_image_scale > 1.0:
+            existing_boxes = [
+                tuple(int(round(v * input_image_scale)) for v in b) for b in existing_boxes
+            ]
 
         page_kwargs = _resolve_scale_aware_probe_kwargs(kwargs, existing_boxes)
         page_kwargs, post_cfg = _extract_candidate_postprocess_cfg(page_kwargs, existing_boxes)

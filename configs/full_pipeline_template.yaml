@@ -41,6 +41,7 @@ steps:
 
 detection:
   enable_sr: false
+  sr_scale: 2 # Recommended scale for high-precision mode (achieves SR x4 accuracy with better speed)
   crop_recenter_on_bbox_ink: true
   crop_recenter_max_shift_unit_ratio: 0.5
   container_name: sr_eval_gpu_exp

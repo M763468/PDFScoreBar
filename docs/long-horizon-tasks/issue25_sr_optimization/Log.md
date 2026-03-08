@@ -79,3 +79,15 @@
 ### Next Actions
 - [ ] Investigate if SR x2 can provide a middle ground (Recall 100% with better speed).
 - [ ] Deep dive into specific 14 FN cases to see if they can be rescued without SR.
+
+## 2026-03-08 (M6: SR x2 Evaluation & Conclusion)
+
+### Summary
+- Completed full 68-page evaluation for SR x2 using Real-ESRGAN x2plus weights.
+- Discovered a significant Recall drop in SR x2 (94.5%) compared to both SR x4 (100.0%) and Bypass (99.6%).
+- Root cause identified as CNN scoring degradation (scores dropping below 0.1 threshold for valid barlines).
+- Finalized interim recommendation: Default to Bypass, use SR x4 for maximum precision.
+
+### Next Actions
+- [ ] Detailed investigation into SR x2 CNN scoring failure.
+- [ ] Visual analysis of x2 upscaled barlines vs x4 and Original.

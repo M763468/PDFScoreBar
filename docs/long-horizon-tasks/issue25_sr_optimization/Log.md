@@ -66,4 +66,16 @@
     - **Bypass (SR=False)**: P=1.0000, R=0.9647 (TP=82, FN=3)
 - **Conclusion**: Bypass SR only loses 1 candidate compared to SR x4/x2 even on the most difficult pages when the Golden Config is applied. This completely validates the strategy of bypassing SR to save VRAM and processing time (1~2s/page vs ~15s+/page for SR).
 - Updated `configs/full_pipeline_template.yaml` to default to `enable_sr: false` with the Golden Config parameters.
-- Task is now fully complete and ready for PR.
+- Task is now fully complete and ready for PR. (Pending additional investigation as of 2026-03-08)
+
+## 2026-03-08 (M5: Strict Comparison & Interim Report)
+
+### Summary
+- Performed strict comparison between SR x4 and Bypass by fixing candidates from the successful Issue 44 run.
+- Confirmed that Bypass SR causes a slight drop in Recall (99.6% vs 100.0%) due to CNN scoring degradation on faint lines.
+- Verified that the FN=1 result is fully reproducible using the current `configs/evaluation2_sr_x4.yaml`.
+- Documented interim results in `SR_BYPASS_REPORT.md`.
+
+### Next Actions
+- [ ] Investigate if SR x2 can provide a middle ground (Recall 100% with better speed).
+- [ ] Deep dive into specific 14 FN cases to see if they can be rescued without SR.

@@ -35,7 +35,7 @@ repo-tree: ## Generate a repository directory overview
 	tree -L 3 -I "artifacts|logs|temp|datasets|.git|__pycache__|.venv*" > artifacts/repo_tree.txt
 
 test: ## Run test suite
-	pytest > artifacts/test_results.txt
+	PYTHONPATH=. .venv_pdf/bin/pytest tests/ > artifacts/test_results.txt
 
 repo-summary: ## Generate comprehensive repository summary
 	./.agents/skills/repo-summary/run.sh

@@ -92,3 +92,12 @@
 ### Next Actions
 - [ ] Open Pull Request for `investigate/sr-optimization`.
 - [ ] Final check of `configs/full_pipeline_template.yaml` defaults.
+
+## 2026-03-09 (M8: Global Verification & Final Decision)
+
+### Summary
+- Performed full 68-page end-to-end evaluation for both Bypass and SR x2 modes.
+- Verified that SR x2 achieves 100.00% Recall (3581/3581 TP) with an average speed of 5.2s/page.
+- Confirmed that the "CNN Downscaling" fix works universally across all scores.
+- Decided on SR x2 as the default high-precision configuration for the project.
+- Task completed. Ready for PR.

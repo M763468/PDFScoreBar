@@ -266,7 +266,13 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--enable-sr",
         action="store_true",
-        help="Enable Super-Resolution (Real-ESRGAN x4) preprocessing",
+        help="Enable Super-Resolution (Real-ESRGAN) preprocessing",
+    )
+    parser.add_argument(
+        "--sr-scale",
+        type=int,
+        default=4,
+        help="SR scale factor (2 or 4)",
     )
     parser.add_argument(
         "--sr-tile",
@@ -2326,76 +2332,83 @@ def run_evaluation(argv: Optional[Sequence[str]] = None) -> Path:
         "gen_sobel_no_staff": args.gen_sobel_no_staff,
     }
 
-    for image_path in images:
+    persistent_upsampler: Any = None
+    working_images: List[Tuple[Path, Path, int]] = []  # (orig_path, working_path, sr_scale)
+
+    # Phase 1: Super-Resolution (All images)
+    if args.enable_sr or args.pre_computed_sr is not None:
+        eprint("Phase 1: Super-Resolution / Image Preparation...")
+        for image_path in images:
+            stem = image_path.stem
+            image_run_dir = run_dir / stem
+            working_image = prepare_working_image(image_path, image_run_dir)
+            sr_scale = 1
+
+            if args.pre_computed_sr is not None:
+                sr_source = args.pre_computed_sr
+                if not sr_source.exists():
+                    raise FileNotFoundError(f"Pre-computed SR image not found: {sr_source}")
+                original_img = cv2.imread(str(working_image))
+                if original_img is not None:
+                    original_h, original_w = original_img.shape[:2]
+                    sr_img = cv2.imread(str(sr_source))
+                    if sr_img is None:
+                        raise FileNotFoundError(
+                            f"Failed to load pre-computed SR image: {sr_source}"
+                        )
+                    up_h, up_w = sr_img.shape[:2]
+                    inferred_scale = round(up_w / original_w) if original_w else 1
+                    if inferred_scale >= 2 and up_w >= original_w * 2 and up_h >= original_h * 2:
+                        sr_scale = inferred_scale
+                    cv2.imwrite(str(working_image), sr_img)
+            elif args.enable_sr:
+                requested_sr_scale = args.sr_scale
+                model_name = "RealESRGAN_x4plus" if requested_sr_scale == 4 else "RealESRGAN_x2plus"
+                img_bgr = cv2.imread(str(working_image))
+                if img_bgr is not None:
+                    original_h, original_w = img_bgr.shape[:2]
+                    upscaled, persistent_upsampler = apply_advanced_sr(
+                        img_bgr,
+                        model_name=model_name,
+                        scale=requested_sr_scale,
+                        tile=args.sr_tile,
+                        tile_pad=args.sr_tile_pad,
+                        fp32=args.sr_fp32,
+                        upsampler=persistent_upsampler,
+                    )
+                    up_h, up_w = upscaled.shape[:2]
+                    inferred_scale = round(up_w / original_w) if original_w else 1
+                    if inferred_scale >= 2 and up_w >= original_w * 2 and up_h >= original_h * 2:
+                        sr_scale = inferred_scale
+                    cv2.imwrite(str(working_image), upscaled)
+
+            working_images.append((image_path, working_image, sr_scale))
+
+        # Cleanup SR VRAM
+        persistent_upsampler = None
+        try:
+            import torch
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+                eprint("Released SR model VRAM.")
+        except ImportError:
+            pass
+    else:
+        # No SR
+        for image_path in images:
+            stem = image_path.stem
+            image_run_dir = run_dir / stem
+            working_image = prepare_working_image(image_path, image_run_dir)
+            working_images.append((image_path, working_image, 1))
+
+    # Phase 2: Homr Inference & Evaluation
+    eprint("Phase 2: Homr Inference & Evaluation...")
+    for image_path, working_image, sr_scale in working_images:
         stem = image_path.stem
         image_run_dir = run_dir / stem
-        working_image = prepare_working_image(image_path, image_run_dir)
-
-        sr_scale = 1
-        if args.pre_computed_sr is not None:
-            sr_source = args.pre_computed_sr
-            if not sr_source.exists():
-                raise FileNotFoundError(f"Pre-computed SR image not found: {sr_source}")
-            original_img = cv2.imread(str(working_image))
-            if original_img is None:
-                eprint(f"Warning: Failed to load {working_image} for SR scale inference.")
-            else:
-                original_h, original_w = original_img.shape[:2]
-                sr_img = cv2.imread(str(sr_source))
-                if sr_img is None:
-                    raise FileNotFoundError(f"Failed to load pre-computed SR image: {sr_source}")
-                up_h, up_w = sr_img.shape[:2]
-                inferred_scale = round(up_w / original_w) if original_w else 1
-                if inferred_scale >= 2 and up_w >= original_w * 2 and up_h >= original_h * 2:
-                    sr_scale = inferred_scale
-                else:
-                    eprint(
-                        f"Warning: Pre-computed SR output resolution did not increase "
-                        f"({original_w}x{original_h} -> {up_w}x{up_h}); treating as no-SR."
-                    )
-                    sr_scale = 1
-                cv2.imwrite(str(working_image), sr_img)
-        elif args.enable_sr:
-            requested_sr_scale = 4
-            eprint(f"Applying Super-Resolution (x{requested_sr_scale}) to {stem}...")
-            img_bgr = cv2.imread(str(working_image))
-            if img_bgr is None:
-                eprint(f"Warning: Failed to load {working_image} for SR.")
-            else:
-                original_h, original_w = img_bgr.shape[:2]
-                upscaled = apply_advanced_sr(
-                    img_bgr,
-                    model_name="RealESRGAN_x4plus",
-                    scale=requested_sr_scale,
-                    tile=args.sr_tile,
-                    tile_pad=args.sr_tile_pad,
-                    fp32=args.sr_fp32,
-                )
-                up_h, up_w = upscaled.shape[:2]
-                inferred_scale = round(up_w / original_w) if original_w else 1
-
-                # Only treat SR as enabled if the output resolution actually increased.
-                if inferred_scale >= 2 and up_w >= original_w * 2 and up_h >= original_h * 2:
-                    sr_scale = inferred_scale
-                else:
-                    eprint(
-                        f"Warning: SR output resolution did not increase "
-                        f"({original_w}x{original_h} -> {up_w}x{up_h}); treating as no-SR."
-                    )
-                    sr_scale = 1
-
-                cv2.imwrite(str(working_image), upscaled)
-                # Real-ESRGAN uses PyTorch and can leave large CUDA allocations.
-                # Clear the cache so subsequent ONNXRuntime inference doesn't stall.
-                try:
-                    import torch
-
-                    if torch.cuda.is_available():
-                        torch.cuda.empty_cache()
-                        torch.cuda.synchronize()
-                        eprint("Cleared CUDA cache after SR.")
-                except Exception:
-                    pass
+        # working_image is already prepared
 
         # Optimization: Create a downscaled proxy for Homr inference if image is huge (e.g. SR)
         inference_image_path = working_image

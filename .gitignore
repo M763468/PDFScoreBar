@@ -22,6 +22,9 @@ venv/
 .venv*
 .env
 
+# Package manager locks
+uv.lock
+
 # Debug outputs
 debug_outputs/
 logs/

@@ -308,10 +308,14 @@ def run_detection_step(
     # When SR is enabled, we use the upscaled images to improve probe separation.
     enable_sr = bool(det_cfg.get("enable_sr", True))
     sr_scale = int(det_cfg.get("sr_scale", 4))
-    
+
     # Derive score name from original images (assuming they all belong to the same score in this run)
     original_score_name = images[0].parent.name if images else None
-    effective_score_name = str(det_cfg.get("probe_score_name")) if det_cfg.get("probe_score_name") else original_score_name
+    effective_score_name = (
+        str(det_cfg.get("probe_score_name"))
+        if det_cfg.get("probe_score_name")
+        else original_score_name
+    )
 
     if enable_sr:
         effective_images = []
@@ -322,7 +326,9 @@ def run_detection_step(
             if sr_img_path.exists():
                 effective_images.append(sr_img_path)
             else:
-                logger.warning("SR image not found for %s at %s, using original.", stem, sr_img_path)
+                logger.warning(
+                    "SR image not found for %s at %s, using original.", stem, sr_img_path
+                )
                 effective_images.append(img)
     else:
         effective_images = images
@@ -374,11 +380,11 @@ def run_detection_step(
         cmd_probe += ["--probe-endpoint-x-scale", str(det_cfg.get("probe_endpoint_x_scale"))]
     if det_cfg.get("probe_endpoint_y_scale") is not None:
         cmd_probe += ["--probe-endpoint-y-scale", str(det_cfg.get("probe_endpoint_y_scale"))]
-    
+
     # Use effective_score_name for CLI command
     if effective_score_name:
         cmd_probe += ["--score-name", str(effective_score_name)]
-        
+
     for key, value in sorted(detect_probe_kwargs.items()):
         cmd_probe += [f"--{key.replace('_', '-')}", str(value)]
 

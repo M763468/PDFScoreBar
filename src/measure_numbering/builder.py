@@ -169,8 +169,8 @@ class SystemBuilder:
         if not aligned_pairs:
             return False
 
-        y1_bot = s1.bbox.y2
-        y2_top = s2.bbox.y1
+        y1_bot = int(s1.bbox.y2)
+        y2_top = int(s2.bbox.y1)
         gap_h = y2_top - y1_bot
 
         if gap_h <= 0:
@@ -197,8 +197,8 @@ class SystemBuilder:
             # Union of b1 and b2 X-range, slightly accumulated?
             # Or just center +/- tolerance?
             # Let's use the bounding X of both barlines
-            x1 = min(b1.bbox.x1, b2.bbox.x1)
-            x2 = max(b1.bbox.x2, b2.bbox.x2)
+            x1 = int(min(b1.bbox.x1, b2.bbox.x1))
+            x2 = int(max(b1.bbox.x2, b2.bbox.x2))
 
             # Clamp
             x1 = max(0, x1 - 2)

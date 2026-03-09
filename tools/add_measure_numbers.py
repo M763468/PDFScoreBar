@@ -32,8 +32,8 @@ def render_overlay(score: Score, image_path: Path, output_path: Path):
             for staff in sys_obj.staves:
                 cv2.rectangle(
                     overlay_temp,
-                    (staff.bbox.x1, staff.bbox.y1),
-                    (staff.bbox.x2, staff.bbox.y2),
+                    (int(staff.bbox.x1), int(staff.bbox.y1)),
+                    (int(staff.bbox.x2), int(staff.bbox.y2)),
                     (255, 0, 0),
                     -1,
                 )  # Blue fill
@@ -70,15 +70,15 @@ def render_overlay(score: Score, image_path: Path, output_path: Path):
                 # Draw faint green boundaries
                 cv2.line(
                     overlay,
-                    (measure.bbox.x1, text_y),
-                    (measure.bbox.x1, text_y + 10),
+                    (int(measure.bbox.x1), int(text_y)),
+                    (int(measure.bbox.x1), int(text_y + 10)),
                     (0, 255, 0),
                     1,
                 )
                 cv2.line(
                     overlay,
-                    (measure.bbox.x2, text_y),
-                    (measure.bbox.x2, text_y + 10),
+                    (int(measure.bbox.x2), int(text_y)),
+                    (int(measure.bbox.x2), int(text_y + 10)),
                     (0, 255, 0),
                     1,
                 )
@@ -90,7 +90,7 @@ def render_overlay(score: Score, image_path: Path, output_path: Path):
                     if getattr(bar, "is_ghost", False):
                         color = (255, 0, 255)  # Magenta for ghost
                     cv2.rectangle(
-                        overlay, (bar.bbox.x1, bar.bbox.y1), (bar.bbox.x2, bar.bbox.y2), color, 2
+                        overlay, (int(bar.bbox.x1), int(bar.bbox.y1)), (int(bar.bbox.x2), int(bar.bbox.y2)), color, 2
                     )
 
     cv2.imwrite(str(output_path), overlay)

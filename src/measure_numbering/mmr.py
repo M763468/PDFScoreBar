@@ -335,8 +335,8 @@ class MMRProcessor:
                     for m_idx, measure in enumerate(system.get("measures", [])):
                         x1, y1, x2, y2 = measure["bbox"]
                         margin = 20
-                        cx1, cy1 = max(0, x1 - margin), max(0, y1 - margin)
-                        cx2, cy2 = min(w_img, x2 + margin), min(h_img, y2 + margin)
+                        cx1, cy1 = int(max(0, x1 - margin)), int(max(0, y1 - margin))
+                        cx2, cy2 = int(min(w_img, x2 + margin)), int(min(h_img, y2 + margin))
                         crop = image[cy1:cy2, cx1:cx2]
 
                         prob = self.classifier.predict(crop)
@@ -409,8 +409,8 @@ class MMRProcessor:
             for stave in system.get("staves", []):
                 s_bbox = stave["bbox"]
                 margin_y = 80
-                ox1, ox2 = max(0, x1 - 30), min(w_img, x2 + 30)
-                oy1, oy2 = max(0, s_bbox[1] - margin_y), min(h_img, s_bbox[3] + 80)
+                ox1, ox2 = int(max(0, x1 - 30)), int(min(w_img, x2 + 30))
+                oy1, oy2 = int(max(0, s_bbox[1] - margin_y)), int(min(h_img, s_bbox[3] + 80))
                 stave_crop = image[oy1:oy2, ox1:ox2]
                 stave_crop = self.ocr.mask_hbar_candidates(
                     stave_crop, margin_y, s_bbox[3] - s_bbox[1]

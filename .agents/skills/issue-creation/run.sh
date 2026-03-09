@@ -8,6 +8,6 @@ BODY_FILE=$3
 mkdir -p artifacts
 
 echo "Drafting/Creating GitHub Issue..."
-gh issue create --template "$TEMPLATE" --title "$TITLE" --body-file "$BODY_FILE" > artifacts/issue_creation_result.txt
+gh issue create --title "$TITLE" --body-file "$BODY_FILE" > artifacts/issue_creation_result.txt
 
 echo "Artifact generated: artifacts/issue_creation_result.txt"

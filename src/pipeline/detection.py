@@ -149,7 +149,9 @@ def _run_hybrid_detection_in_process(
     env = os.environ.copy()
     current_pythonpath = env.get("PYTHONPATH", "")
     env["PYTHONPATH"] = (
-        f"{PROJECT_ROOT}:{current_pythonpath}" if current_pythonpath else str(PROJECT_ROOT)
+        f"{PROJECT_ROOT}{os.pathsep}{current_pythonpath}"
+        if current_pythonpath
+        else str(PROJECT_ROOT)
     )
 
     baseline_output = hybrid_output_dir / "baseline"

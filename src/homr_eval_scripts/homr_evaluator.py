@@ -43,10 +43,6 @@ if str(SRC_ROOT) in sys.path:
     sys.path.remove(str(SRC_ROOT))
 sys.path.insert(0, str(SRC_ROOT))
 
-if str(HOMR_REPO) in sys.path:
-    sys.path.remove(str(HOMR_REPO))
-sys.path.insert(0, str(HOMR_REPO))
-
 import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -450,7 +446,9 @@ def sanitise_images(images: Iterable[str]) -> List[Path]:
 def autocrop_bounds(image: np.ndarray) -> Tuple[Tuple[int, int, int, int], bool]:
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     hist = cv2.calcHist([image], [0], None, [256], [0, 256])
-    dominant_color_gray_scale = int(max(enumerate(hist), key=lambda x: float(x[1]))[0])
+    dominant_color_gray_scale = int(
+        max(enumerate(hist), key=lambda x: float(x[1].item() if hasattr(x[1], "item") else x[1]))[0]
+    )
     threshold_value = max(dominant_color_gray_scale - 30, 0)
     thresh = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)[1]
 

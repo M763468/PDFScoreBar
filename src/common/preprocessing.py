@@ -1,5 +1,4 @@
 import os
-import sys
 from typing import Any, Optional
 
 import cv2
@@ -130,20 +129,14 @@ def apply_advanced_sr(
         Upscaled image (if upsampler was provided) OR Tuple[Upscaled image, upsampler].
         For backward compatibility, it returns just the image if upsampler was provided.
     """
-    # Add the cloned repo to the path to ensure local source is used
     realesrgan_path = os.path.abspath(os.path.join(__file__, "../../..", "external", "realesrgan"))
-    if realesrgan_path not in sys.path:
-        sys.path.insert(0, realesrgan_path)
-
     try:
         import torch
         from basicsr.archs.rrdbnet_arch import RRDBNet
         from realesrgan import RealESRGANer
     except ImportError as e:
-        print(f"Error importing Real-ESRGAN dependencies from local source: {e}")
-        print(
-            "Please ensure you have cloned the repository to 'external/realesrgan' and installed its requirements."
-        )
+        print(f"Error importing Real-ESRGAN dependencies: {e}")
+        print("Please ensure you have installed the realesrgan package.")
         return image, upsampler
 
     # Check device

@@ -90,7 +90,11 @@ def render_overlay(score: Score, image_path: Path, output_path: Path):
                     if getattr(bar, "is_ghost", False):
                         color = (255, 0, 255)  # Magenta for ghost
                     cv2.rectangle(
-                        overlay, (int(bar.bbox.x1), int(bar.bbox.y1)), (int(bar.bbox.x2), int(bar.bbox.y2)), color, 2
+                        overlay,
+                        (int(bar.bbox.x1), int(bar.bbox.y1)),
+                        (int(bar.bbox.x2), int(bar.bbox.y2)),
+                        color,
+                        2,
                     )
 
     cv2.imwrite(str(output_path), overlay)

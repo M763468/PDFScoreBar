@@ -16,7 +16,7 @@ clean-artifacts: ## Remove all logs from the artifacts directory
 run-smoke-sr: ## Run smoke test inside sr_eval_gpu container (requires running container)
 	@mkdir -p artifacts
 	@echo "Running smoke test..."
-	@docker exec -w /workspace -e PYTHONPATH=/workspace:/workspace/external/homr sr_eval_gpu \
+	@docker exec -w /workspace -e PYTHONPATH=/workspace sr_eval_gpu \
 		/opt/venv_sr/bin/python src/pipeline/main.py --config "configs/smoke_test.yaml" > artifacts/smoke_test.log 2>&1 || \
 		(EXIT_CODE=$$?; echo "Smoke test failed with exit code $$EXIT_CODE. See artifacts/smoke_test.log"; exit $$EXIT_CODE)
 	@echo "Smoke test complete successfully. See artifacts/smoke_test.log"
@@ -26,7 +26,7 @@ run-pipeline: ## Run the pipeline with a custom config (usage: make run-pipeline
 	@mkdir -p artifacts
 	@LOG_FILE="artifacts/$$(basename "$(CONFIG)" .yaml)_$$(date +%Y%m%d_%H%M%S).log"; \
 	echo "Running pipeline with $(CONFIG). Logging to $$LOG_FILE..."; \
-	docker exec -w /workspace -e PYTHONPATH=/workspace:/workspace/external/homr sr_eval_gpu \
+	docker exec -w /workspace -e PYTHONPATH=/workspace sr_eval_gpu \
 		/opt/venv_sr/bin/python src/pipeline/main.py --config "$(CONFIG)" --skip-existing > "$$LOG_FILE" 2>&1 || \
 		(EXIT_CODE=$$?; echo "Pipeline failed with exit code $$EXIT_CODE. See $$LOG_FILE"; exit $$EXIT_CODE); \
 	echo "Pipeline execution finished successfully. See $$LOG_FILE"

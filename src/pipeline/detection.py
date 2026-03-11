@@ -23,6 +23,20 @@ from src.pipeline.hybrid_consensus import load_json_boxes, phase4_hybrid_consens
 from src.pipeline.python_env import get_pipeline_python
 from src.pipeline.subprocess_utils import run_with_logging
 
+# Optional imports for in-process Homr execution
+try:
+    from src.common.preprocessing import apply_advanced_sr
+    from src.homr_eval_scripts.homr_evaluator import (
+        BarlinePrediction,
+        HomrPredictor,
+        ProcessingConfig,
+        XmlGeneratorArguments,
+    )
+
+    _HOMR_AVAILABLE = True
+except ImportError:
+    _HOMR_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 from src.pipeline.config import get_nested
 from src.pipeline.io import ensure_dir
@@ -155,7 +169,16 @@ def _run_hybrid_detection_in_process(
     )
 
     baseline_output = hybrid_output_dir / "baseline"
-    if skip_existing and _all_stems_exist(baseline_output, stems, "batch/*/*.json"):
+    if _HOMR_AVAILABLE:
+        _run_homr_in_process(
+            det_cfg,
+            images,
+            baseline_output,
+            enable_sr=False,
+            dry_run=dry_run,
+            skip_existing=skip_existing,
+        )
+    elif skip_existing and _all_stems_exist(baseline_output, stems, "batch/*/*.json"):
         logger.info("Skipping homr baseline: outputs already exist.")
     else:
         baseline_args = [
@@ -176,6 +199,16 @@ def _run_hybrid_detection_in_process(
     sr_output = hybrid_output_dir / "sr"
     if not enable_sr:
         logger.info("Skipping homr SR: enable_sr is false.")
+    elif _HOMR_AVAILABLE:
+        _run_homr_in_process(
+            det_cfg,
+            images,
+            sr_output,
+            enable_sr=True,
+            sr_scale=int(det_cfg.get("sr_scale", 4)),
+            dry_run=dry_run,
+            skip_existing=skip_existing,
+        )
     elif skip_existing and _all_stems_exist(sr_output, stems, "batch/*/*.json"):
         logger.info("Skipping homr SR: outputs already exist.")
     else:
@@ -579,3 +612,172 @@ def resolve_barlines_and_masks_config(
             }
         )
     return resolved
+
+
+def _log_vram_usage(message: str = ""):
+    """Logs current GPU memory usage if available."""
+    try:
+        import subprocess
+
+        res = subprocess.run(
+            [
+                "nvidia-smi",
+                "--query-gpu=memory.used,memory.total",
+                "--format=csv,noheader,nounits",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if res.returncode == 0:
+            used, total = res.stdout.strip().split(",")
+            logger.info(f"VRAM Usage ({message}): {used.strip()} / {total.strip()} MiB")
+    except Exception:
+        pass
+
+
+def _run_homr_in_process(
+    det_cfg: Dict[str, Any],
+    images: List[Path],
+    output_root: Path,
+    enable_sr: bool = False,
+    sr_scale: int = 4,
+    dry_run: bool = False,
+    skip_existing: bool = False,
+) -> None:
+    """Runs Homr inference (baseline or SR) in-process for persistence."""
+    if not _HOMR_AVAILABLE:
+        logger.warning("Homr not available for in-process execution. Falling back to subprocess.")
+        return
+
+    stems = [img.stem for img in images]
+    # Check if all stems exist if skip_existing is True
+    if skip_existing:
+        found_stems = set()
+        if output_root.exists():
+            for p in output_root.glob("batch/*/*_detections.json"):
+                found_stems.add(p.parent.name)
+        if all(s in found_stems for s in stems):
+            logger.info(f"Skipping in-process Homr for {output_root.name}: outputs already exist.")
+            return
+
+    if dry_run:
+        logger.info(f"Dry run: In-process Homr for {len(images)} images -> {output_root}")
+        return
+
+    # Configuration setup
+    from src.homr_eval_scripts.homr_evaluator import DEFAULT_TUNING, save_homr_results
+
+    config = ProcessingConfig(
+        bool(det_cfg.get("enable_debug", False)),  # enable_debug
+        bool(det_cfg.get("enable_cache", True)),  # enable_cache
+        bool(det_cfg.get("write_staff_positions", False)),  # write_staff_positions
+        False,  # read_staff_positions
+        -1,  # selected_staff
+    )
+    tuning = DEFAULT_TUNING.copy()
+    tuning.update(
+        {
+            "barline_min_height_factor": det_cfg.get("barline_min_height_factor", 0.5),
+            "barline_max_width_factor": det_cfg.get("barline_max_width_factor", 2.5),
+        }
+    )
+
+    predictor = HomrPredictor(config, tuning)
+    xml_args = XmlGeneratorArguments(False, None, None)
+
+    try:
+        import cv2
+
+        working_images = []
+        persistent_upsampler = None
+
+        # Phase 1: Preparation / SR
+        logger.info(f"--- Homr In-Process Phase 1 (SR={enable_sr}) ---")
+        _log_vram_usage("Before SR")
+        for img in tqdm(images, desc="SR/Preparation", unit="page"):
+            stem = img.stem
+            image_run_dir = output_root / "batch" / stem
+            ensure_dir(image_run_dir)
+
+            working_path = image_run_dir / img.name
+            shutil.copy2(img, working_path)
+
+            current_scale = 1
+            if enable_sr:
+                model_name = "RealESRGAN_x4plus" if sr_scale == 4 else "RealESRGAN_x2plus"
+                img_bgr = cv2.imread(str(working_path))
+                if img_bgr is not None:
+                    # Persistence for upsampler
+                    upscaled, persistent_upsampler = apply_advanced_sr(
+                        img_bgr,
+                        model_name=model_name,
+                        scale=sr_scale,
+                        tile=det_cfg.get("sr_tile", 0),
+                        tile_pad=det_cfg.get("sr_tile_pad", 10),
+                        fp32=det_cfg.get("sr_fp32", False),
+                        upsampler=persistent_upsampler,
+                    )
+                    cv2.imwrite(str(working_path), upscaled)
+                    current_scale = sr_scale
+
+            working_images.append((img, working_path, current_scale))
+
+        # Release SR VRAM
+        persistent_upsampler = None
+        import gc
+
+        import torch
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
+        gc.collect()
+        _log_vram_usage("After SR Cleanup")
+
+        # Phase 2: Homr Inference
+        logger.info("--- Homr In-Process Phase 2 (Inference) ---")
+        for original_path, working_path, scale in tqdm(
+            working_images, desc="Homr Inference", unit="page"
+        ):
+            stem = original_path.stem
+            image_run_dir = output_root / "batch" / stem
+
+            # Predict
+            (
+                predictions,
+                _,
+                _,
+                runtime_s,
+                notehead_mask,
+                staff_mask,
+                _,  # rejected_by_heuristic
+                _,  # added_end
+            ) = predictor.predict(
+                working_path, xml_args, sr_scale=scale, image_run_dir=image_run_dir
+            )
+
+            # Scale down predictions to 1x coords for detections.json
+            metrics_predictions = []
+            for pred in predictions:
+                # predictor.predict returns orig_bbox mapped to the working_path's resolution
+                # So we just need to scale down by SR scale to get 1x coords
+                orig_1x = tuple(int(round(c / scale)) for c in pred.orig_bbox)
+                metrics_predictions.append(
+                    BarlinePrediction(
+                        pred_bbox=pred.pred_bbox,  # internal homr bbox
+                        orig_bbox=orig_1x,  # original 1x coord
+                        system_index=pred.system_index,
+                        staff_index=pred.staff_index,
+                    )
+                )
+
+            # Save
+            save_homr_results(
+                original_path, image_run_dir, metrics_predictions, notehead_mask, staff_mask
+            )
+            _log_vram_usage(f"After Page {stem}")
+
+    finally:
+        predictor.cleanup()
+        _log_vram_usage("Final Cleanup")

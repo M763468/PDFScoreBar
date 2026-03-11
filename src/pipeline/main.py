@@ -16,6 +16,7 @@ import subprocess
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import cv2
 import torch
 from tqdm import tqdm
 
@@ -37,10 +38,9 @@ from src.pipeline.detection import (
 )
 from src.pipeline.filters import get_user_exclude_indices, resolve_page_filters
 from src.pipeline.images import collect_images, resolve_page_ids
-from src.pipeline.io import ensure_dir, load_json, write_json, write_manifest
+from src.pipeline.io import ensure_dir, load_json, score_to_dict, write_json, write_manifest
 from src.pipeline.manifest import build_manifest
 from src.pipeline.numbering import (
-    build_add_measure_numbers_cmd,
     empty_numbering_payload,
     run_mmr_batch,
 )
@@ -48,6 +48,11 @@ from src.pipeline.python_env import get_pipeline_python
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 logger = logging.getLogger(__name__)
+
+# Persistence: Cache HomrPredictor and other heavy models to avoid re-loading.
+_PIPELINE_PERSISTENCE: Dict[str, Any] = {}
+# MMR Persistence: Cache MMRClassifier and MMROCREngine to avoid re-loading models.
+_MMR_PERSISTENCE: Dict[str, Any] = {}
 
 
 def _build_pdf_command(config: Dict[str, Any], run_dir: Path) -> List[str]:
@@ -132,6 +137,7 @@ def run_pipeline(
     validate_only: bool = False,
     skip_existing: bool = False,
     page_limit: Optional[int] = None,
+    debug: bool = False,
 ) -> Path:
     config = load_yaml(config_path)
     run_id_value = run_id or get_nested(config, "run", "run_id")
@@ -250,6 +256,12 @@ def run_pipeline(
     page_ctx: Dict[str, Dict[str, Any]] = {}
 
     # Phase A: Base Numbering & Barline Correction
+    from src.measure_numbering.pipeline import MeasureNumberingPipeline
+
+    if "numbering_pipeline" not in _PIPELINE_PERSISTENCE:
+        _PIPELINE_PERSISTENCE["numbering_pipeline"] = MeasureNumberingPipeline()
+    numbering_pipeline = _PIPELINE_PERSISTENCE["numbering_pipeline"]
+
     for index, (page_id, image_path, resolved_item) in tqdm(
         enumerate(zip(page_ids, images, resolved), start=1),
         total=len(page_ids),
@@ -303,10 +315,14 @@ def run_pipeline(
                     y_margin=barline_y_margin,
                 )
                 barline_override_stats[page_id] = stats
-                if not dry_run:
+                if not dry_run and debug:
                     write_json(corrected_path, corrected)
+                # We use 'corrected' list directly if needed, but for now we follow the file-based logic
+                # to minimize logic change. If NOT debug, we just don't write it,
+                # but we still need the path for build_add_measure_numbers_cmd or our new in-process call.
+                # Actually, let's keep the path for now but we will use the data.
             else:
-                if not dry_run and barlines_path.exists():
+                if not dry_run and debug and barlines_path.exists():
                     corrected_path.write_text(barlines_path.read_text())
                 barline_override_stats[page_id] = {
                     "removed": 0,
@@ -314,6 +330,11 @@ def run_pipeline(
                     "remove_requests": 0,
                     "unmatched_remove": 0,
                 }
+            if (
+                debug or not corrected_path.exists()
+            ):  # If not debug, we might just use the original or corrected in-memory
+                # To keep it simple and consistent with Phase B/C, we will use the data if available.
+                pass
             barlines_path = corrected_path
         else:
             barline_override_stats[page_id] = {
@@ -324,26 +345,42 @@ def run_pipeline(
             }
         page_ctx[page_id]["barlines_path"] = barlines_path
 
-        # 2. Base Numbering
+        # 2. Base Numbering (In-Process)
         numbering_base = page_intermediate / "numbering_base.json"
         numbering_base_paths.append(numbering_base)
         page_ctx[page_id]["numbering_base"] = numbering_base
 
-        cmd_base = build_add_measure_numbers_cmd(
-            barlines=barlines_path,
-            staff_mask=Path(resolved_item["staff_mask"]),
-            image=image_path,
-            output_json=numbering_base,
-            page_number=index,
-            start_number=1,
-            force_single_system=force_single_system,
-        )
-        commands.append(cmd_base)
         if step_numbering and not validate_only:
             if skip_existing and numbering_base.exists():
                 logger.info(f"Skipping numbering_base for {page_id}: file exists.")
             else:
-                _run_command(cmd_base, dry_run=dry_run)
+                if not dry_run:
+                    # In-process execution
+                    raw_barlines = load_json(Path(resolved_item["barlines_json"]))
+                    barline_boxes = normalize_barlines(raw_barlines)
+                    # TODO: If apply_barlines was true, use 'corrected' instead of reloading.
+                    # For now, reload for simplicity or fix it:
+                    if apply_barlines and "corrected" in locals():
+                        barline_boxes = corrected
+
+                    img_ref = cv2.imread(str(image_path))
+                    h, w = img_ref.shape[:2]
+
+                    page_obj = numbering_pipeline.process_page(
+                        barline_boxes,
+                        Path(resolved_item["staff_mask"]),
+                        (w, h),
+                        page_number=index,
+                        assume_one_staff_per_system=force_single_system,
+                        image=img_ref,
+                    )
+                    from src.measure_numbering.types import Score
+
+                    temp_score = Score()
+                    temp_score.pages.append(page_obj)
+                    numbering_pipeline.numberer.number_score(temp_score, start_number=1)
+
+                    write_json(numbering_base, score_to_dict(temp_score))
 
     # Phase B: MMR Batch Detection (In-process)
     if step_mmr and not validate_only:
@@ -376,6 +413,19 @@ def run_pipeline(
                 raise ValueError("mmr.model_path is required for MMR step.")
 
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+            # Initialize/reuse persistent MMR components
+            from src.measure_numbering.mmr import MMRClassifier, MMROCREngine
+
+            if "classifier" not in _MMR_PERSISTENCE:
+                logger.info(f"Initializing persistent MMRClassifier with model: {model_path}")
+                _MMR_PERSISTENCE["classifier"] = MMRClassifier(model_path, device)
+            if "ocr_engine" not in _MMR_PERSISTENCE:
+                logger.info("Initializing persistent MMROCREngine (RapidOCR)")
+                _MMR_PERSISTENCE["ocr_engine"] = MMROCREngine(
+                    enable_rotation_tta=enable_rotation_tta
+                )
+
             run_mmr_batch(
                 pages_data=mmr_input_pages,
                 image_paths=mmr_input_images,
@@ -384,6 +434,8 @@ def run_pipeline(
                 device=device,
                 enable_rotation_tta=enable_rotation_tta,
                 debug_root=debug_root,
+                classifier=_MMR_PERSISTENCE["classifier"],
+                ocr_engine=_MMR_PERSISTENCE["ocr_engine"],
             )
             # Help VRAM management after heavy MMR processing
             if device.type == "cuda":
@@ -419,25 +471,12 @@ def run_pipeline(
                 mmr_overrides_payload, user_overrides_payload
             )
             combined_path = page_intermediate / "overrides_combined.json"
-            if not dry_run:
+            if not dry_run and debug:
                 write_json(combined_path, overrides_payload)
 
             final_json = page_outputs / "numbering_final.json"
             numbering_final_paths.append(final_json)
             overlay_path = page_outputs / "numbering_overlay.png" if step_overlay else None
-
-            cmd_final = build_add_measure_numbers_cmd(
-                barlines=ctx["barlines_path"],
-                staff_mask=Path(resolved_item["staff_mask"]),
-                image=image_path,
-                output_json=final_json,
-                page_number=index,
-                start_number=1,
-                config_path=combined_path,
-                overlay_path=overlay_path,
-                force_single_system=force_single_system,
-            )
-            commands.append(cmd_final)
 
             if (
                 skip_existing
@@ -446,7 +485,46 @@ def run_pipeline(
             ):
                 logger.info(f"Skipping final_numbering for {page_id}: file exists.")
             else:
-                _run_command(cmd_final, dry_run=dry_run)
+                if not dry_run:
+                    # In-process execution (reusing logic from Phase A)
+                    raw_barlines = load_json(Path(resolved_item["barlines_json"]))
+                    barline_boxes = normalize_barlines(raw_barlines)
+                    # Use corrected barlines if available from Phase A
+                    if apply_barlines:
+                        # We didn't store corrected in ctx, but we can resolve it again or assume it was set in ctx
+                        # Actually, we set ctx[page_id]["barlines_path"] to corrected_path
+                        # Let's reload it if it exists.
+                        if ctx["barlines_path"].exists():
+                            barline_boxes = normalize_barlines(load_json(ctx["barlines_path"]))
+
+                    img_ref = cv2.imread(str(image_path))
+                    h, w = img_ref.shape[:2]
+
+                    page_obj = numbering_pipeline.process_page(
+                        barline_boxes,
+                        Path(resolved_item["staff_mask"]),
+                        (w, h),
+                        page_number=index,
+                        assume_one_staff_per_system=force_single_system,
+                        image=img_ref,
+                    )
+                    from src.measure_numbering.types import Score
+
+                    temp_score = Score()
+                    temp_score.pages.append(page_obj)
+
+                    # Apply numbering with overrides
+                    ov = overrides_payload.get("measure_overrides")
+                    numbering_pipeline.numberer.number_score(
+                        temp_score, start_number=1, overrides=ov
+                    )
+
+                    write_json(final_json, score_to_dict(temp_score))
+
+                    if step_overlay and overlay_path:
+                        from tools.add_measure_numbers import render_overlay
+
+                        render_overlay(temp_score, image_path, overlay_path)
 
     if len(numbering_base_paths) > 1 and not dry_run and not validate_only:
         combined_base = {
@@ -507,6 +585,7 @@ def main() -> None:
         "--skip-existing", action="store_true", help="Skip steps if output files already exist."
     )
     parser.add_argument("--page-limit", type=int, help="Limit the number of pages to process.")
+    parser.add_argument("--debug", action="store_true", help="Output intermediate debug files.")
 
     args = parser.parse_args()
 
@@ -521,6 +600,7 @@ def main() -> None:
             validate_only=args.validate_only,
             skip_existing=args.skip_existing,
             page_limit=args.page_limit,
+            debug=args.debug,
         )
 
 

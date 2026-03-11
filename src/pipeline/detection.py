@@ -161,14 +161,16 @@ def _run_hybrid_detection_in_process(
                 python_cmd = [os.environ.get("PIPELINE_PYTHON", sys.executable)]
                 break
 
-    # homr_evaluator requires PYTHONPATH to include src
+    # homr_evaluator requires PYTHONPATH to include src and external/homr
     # We pass it via environment variables in subprocess.run
     env = os.environ.copy()
     current_pythonpath = env.get("PYTHONPATH", "")
+    homr_path = PROJECT_ROOT / "external" / "homr"
+    new_paths = [str(PROJECT_ROOT), str(homr_path)]
     env["PYTHONPATH"] = (
-        f"{PROJECT_ROOT}{os.pathsep}{current_pythonpath}"
+        f"{os.pathsep.join(new_paths)}{os.pathsep}{current_pythonpath}"
         if current_pythonpath
-        else str(PROJECT_ROOT)
+        else os.pathsep.join(new_paths)
     )
 
     baseline_output = hybrid_output_dir / "baseline"

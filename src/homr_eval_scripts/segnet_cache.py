@@ -64,6 +64,19 @@ class CachedSegnet:
         return self.model.run([self.output_name], {self.input_name: input_data})[0]
 
 
+def clear_segnet_cache() -> None:
+    """Clear the Segnet session cache and release VRAM/RAM."""
+    global _SEGNET_SESSION_CACHE
+    with _SEGNET_CACHE_LOCK:
+        for session in _SEGNET_SESSION_CACHE.values():
+            # session is onnxruntime.InferenceSession.
+            # While it doesn't have an explicit close() in all versions,
+            # deleting it helps release references.
+            del session
+        _SEGNET_SESSION_CACHE.clear()
+    logger.debug("Segnet cache cleared.")
+
+
 def enable_segnet_cache() -> bool:
     """Patch homr.segmentation.inference_segnet.Segnet with a cached variant."""
     import homr.segmentation.inference_segnet as target

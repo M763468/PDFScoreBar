@@ -4,6 +4,14 @@
 from __future__ import annotations
 
 import argparse
+import gc
+import tempfile
+
+try:
+    import torch
+except ImportError:
+    pass
+
 import collections
 import csv
 import json
@@ -1888,7 +1896,14 @@ class HomrPredictor:
         timeout_s: float = 0.0,
         image_run_dir: Optional[Path] = None,
     ) -> Tuple[
-        List[BarlinePrediction], Optional[Path], Tuple[int, int], float, np.ndarray, np.ndarray
+        List[BarlinePrediction],
+        Optional[Path],
+        Tuple[int, int],
+        float,
+        np.ndarray,
+        np.ndarray,
+        List[BarlinePrediction],
+        List[BarlinePrediction],
     ]:
         """Runs the core homr staff and symbol detection pipeline for a single image with proxying and post-processing."""
         stem = image_path.stem
@@ -1924,8 +1939,6 @@ class HomrPredictor:
                 inference_image_path = image_run_dir / f"{stem}_proxy.png"
                 cv2.imwrite(str(inference_image_path), proxy_img)
             else:
-                import tempfile
-
                 fd, proxy_path_str = tempfile.mkstemp(suffix=".png", prefix="homr_proxy_")
                 os.close(fd)
                 temp_proxy_path = Path(proxy_path_str)
@@ -2084,8 +2097,8 @@ class HomrPredictor:
                 h_config["max_height_px"],
                 h_config["max_width_px"],
                 staff_mask_resized,
-                h_config["staff_crossing_enabled"],
                 h_config["min_staff_crossings"],
+                h_config["staff_crossing_enabled"],
             )
 
         # 7. End Barline Recovery
@@ -2100,8 +2113,8 @@ class HomrPredictor:
         if temp_proxy_path and temp_proxy_path.exists():
             try:
                 os.remove(str(temp_proxy_path))
-            except Exception:
-                pass
+            except OSError as e:
+                logger.warning(f"Failed to remove temporary proxy file {temp_proxy_path}: {e}")
 
         return (
             mapped_predictions,
@@ -2117,10 +2130,6 @@ class HomrPredictor:
     def cleanup(self) -> None:
         """Release VRAM and other resources."""
         try:
-            import gc
-
-            import torch
-
             # Clear any persistent Segnet sessions
             try:
                 from homr_eval_scripts.segnet_cache import clear_segnet_cache
@@ -2135,8 +2144,8 @@ class HomrPredictor:
                 logger.info("HomrPredictor: Released VRAM.")
 
             gc.collect()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Exception during HomrPredictor cleanup: {e}")
 
 
 DEFAULT_TUNING = {
@@ -2741,8 +2750,6 @@ def run_evaluation(argv: Optional[Sequence[str]] = None) -> Path:
         # Cleanup SR VRAM
         persistent_upsampler = None
         try:
-            import torch
-
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
                 torch.cuda.synchronize()

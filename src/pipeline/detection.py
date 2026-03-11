@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
+import gc
 import json
 import logging
 import os
 import shutil
+import subprocess
 from importlib import import_module
 
+import cv2
+import torch
 from tqdm import tqdm
 
-# Pre-import torch to avoid symbol conflict with onnxruntime-gpu
 try:
     import_module("torch")
 except ImportError:
@@ -617,8 +620,6 @@ def resolve_barlines_and_masks_config(
 def _log_vram_usage(message: str = ""):
     """Logs current GPU memory usage if available."""
     try:
-        import subprocess
-
         res = subprocess.run(
             [
                 "nvidia-smi",
@@ -632,8 +633,8 @@ def _log_vram_usage(message: str = ""):
         if res.returncode == 0:
             used, total = res.stdout.strip().split(",")
             logger.info(f"VRAM Usage ({message}): {used.strip()} / {total.strip()} MiB")
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Could not get VRAM usage: {e}")
 
 
 def _run_homr_in_process(
@@ -678,8 +679,8 @@ def _run_homr_in_process(
     tuning = DEFAULT_TUNING.copy()
     tuning.update(
         {
-            "barline_min_height_factor": det_cfg.get("barline_min_height_factor", 0.5),
-            "barline_max_width_factor": det_cfg.get("barline_max_width_factor", 2.5),
+            "barline_min_height_factor": det_cfg.get("barline_min_height_factor", 1.0),
+            "barline_max_width_factor": det_cfg.get("barline_max_width_factor", 1.0),
         }
     )
 
@@ -687,8 +688,6 @@ def _run_homr_in_process(
     xml_args = XmlGeneratorArguments(False, None, None)
 
     try:
-        import cv2
-
         working_images = []
         persistent_upsampler = None
 
@@ -725,9 +724,6 @@ def _run_homr_in_process(
 
         # Release SR VRAM
         persistent_upsampler = None
-        import gc
-
-        import torch
 
         if torch.cuda.is_available():
             torch.cuda.empty_cache()

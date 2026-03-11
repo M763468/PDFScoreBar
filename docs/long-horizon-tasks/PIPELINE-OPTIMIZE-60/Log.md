@@ -20,11 +20,19 @@
     - コンテナ内の依存関係（`pymupdf`）の不足を解消。
     - `src/pipeline/python_env.py` および `src/pipeline/detection.py` の `PYTHONPATH` 解決を修正（`external/homr` を追加）。
 
-## 2026-03-12 Milestone M2: Verification
+## 2026-03-12 Milestone M2 & M3: Verification & Bug Fixes
 - `baseline_numbering.yaml` (4ページ) を用いた計測:
     - 改善前: 1分以上（プロセス起動オーバーヘッドあり、かつハングの可能性）
     - 改善後: **約9.5秒** (モデルキャッシュ有効時)
 - 精度検証:
     - 改修前後で `numbering_final.json` の内容が完全一致することを確認。
-- 回帰テスト:
-    - `smoke_test.yaml` (フルパイプライン) が正常に完走することを確認。
+- 回帰テストとバグ修正:
+    - `resolve_paths_from_detection` が `*_staff_mask.png` パターンを認識するように修正。
+    - `MMRClassifier` の ResNet18 ロード時の警告と、オフライン環境でのハング（ダウンロード試行）を抑制。
+
+## 2026-03-12 Milestone M4: Detailed Profiling & Resource Analysis
+- `evaluation2_e2e_subset.yaml` (3ページ) での詳細プロファイリング。
+- **PC負荷調査**:
+    - GPU Utilization が TrOmr 推論中に **92%** に達することを確認。これがシステム遅延の主な要因。
+    - VRAM 使用量は **2.6 GB** 程度であり、8GB 環境では余裕がある。
+- プロファイリング結果を `Benchmarks.md` に集約。

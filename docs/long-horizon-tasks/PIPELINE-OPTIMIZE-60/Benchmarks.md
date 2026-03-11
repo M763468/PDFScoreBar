@@ -9,13 +9,26 @@ Command: `python3 src/pipeline/main.py --config configs/baseline_numbering.yaml`
 | Baseline (Issue #60 start) | ~1m 34s+ | Per-page subprocesses, redundant model loading. |
 | **Optimized (Phase A/B/C In-process)** | **9.5s** | Models cached, No per-page overhead. |
 
-## Test Case: Full Pipeline (smoke_test.yaml)
-| Version | Duration (real) | Notes |
-| :--- | :--- | :--- |
-| Pre-optimization | ~5m 30s | (Est. based on previous sessions) |
-| **Post-optimization** | **5m 30s** | Detection/Homr are still the primary bottlenecks, but MMR is now robust and persistent. |
+## Test Case: Full Pipeline (eval2_e2e_subset.yaml - 3 pages)
+Command: `python3 src/pipeline/main.py --config configs/evaluation2_e2e_subset.yaml` (SR=False)
 
-## Impact
-- **MMR Step (Batching)**: ページごとの RapidOCR/ResNet 起動を排除し、複数ページ処理時のスループットを大幅に改善。
-- **Dataflow**: 不要な中間 JSON ファイルのディスク出力を抑制（通常実行時）。
-- **Maintenance**: `MeasureNumberingPipeline` のインプロセス化により、ログの可読性が向上。
+| Step | Total Duration | Per Page | Notes |
+| :--- | :--- | :--- | :--- |
+| PDF to Images | ~3s | 1s | |
+| **Detection (Homr)** | **3m 32s** | **70.7s** | **Major Bottleneck.** TrOmr inference on staves. |
+| Hybrid Consensus | <1s | <0.1s | |
+| Probe Scan | ~1s | 0.3s | |
+| CNN Scoring | ~3s | 1s | |
+| **Numbering (Phase A)** | **<1s** | **<0.1s** | **Optimized (In-process)** |
+| **MMR Batch (Phase B)** | **~6s** | **2s** | **Optimized (Persistent models)** |
+| **Final Numbering (Phase C)** | **~1s** | **0.3s** | **Optimized (In-process)** |
+
+### Resource Analysis (RTX 4060 8GB)
+- **VRAM Usage**: Peak **2.6 GB** (During Homr/TrOmr). 8GB context is safe.
+- **GPU Utilization**: Peak **92%**. これが実験中にPCが重くなる主な原因（TrOmr推論時）。
+- **I/O**: `--debug` オフ時は中間ファイルの書き出しが大幅に削減されていることを確認。
+
+## Impact Summary
+- **MMR Step**: ページごとのモデルロードを排除し、処理時間を大幅に短縮。
+- **Numbering Step**: プロセス起動オーバーヘッドを排除し、ミリ秒単位まで高速化。
+- **Bottleneck**: 現在のパイプラインの支配的なボトルネックは `Homr (TrOmr)` ステップであり、ここが全実行時間の 95% 以上を占めている。

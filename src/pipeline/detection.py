@@ -524,12 +524,17 @@ def resolve_paths_from_detection(
 
     staff_mask_map: Dict[str, Path] = {}
     if resolved_staff_mask_dir is not None and resolved_staff_mask_dir.exists():
-        # Match either original stem or proxy-suffixed stem (from Proxy Inference)
-        # Examples: page_001_debug_3_staff.png or page_001_proxy_debug_3_staff.png
+        # Pattern 1: *_debug_3_staff.png (Proxy/SR output)
         for path in resolved_staff_mask_dir.rglob("*_debug_3_staff.png"):
             name = path.name
             stem = name.replace("_proxy_debug_3_staff.png", "").replace("_debug_3_staff.png", "")
             staff_mask_map[stem] = path
+        # Pattern 2: *_staff_mask.png (Baseline in-process output)
+        for path in resolved_staff_mask_dir.rglob("*_staff_mask.png"):
+            name = path.name
+            stem = name.replace("_staff_mask.png", "")
+            if stem not in staff_mask_map:
+                staff_mask_map[stem] = path
 
     for page_id, img_path in zip(page_ids, images):
         stem = img_path.stem

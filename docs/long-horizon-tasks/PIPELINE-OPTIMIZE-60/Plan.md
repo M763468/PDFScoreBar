@@ -12,13 +12,13 @@
 - [x] `src/pipeline/main.py` に `--debug` フラグを導入し、不要な中間ファイルの出力を抑制。
 - [x] 各ステップ間での不要なディスクへの書き込みを削減。
 
-## M3 Validation & Hardening (In-progress)
+## M3 Validation & Hardening (Completed)
 - [x] `toy_symphony` の出力結果（JSON）がベースラインと一致することを検証。
 - [x] `smoke_test.yaml` での回帰テスト。
-- [ ] 他のデータセット（追加調査と統合）での精度検証。
+- [x] 他のデータセット（eval2_subset）での精度検証と不具合修正。
 
-## M4 Detailed Profiling & Resource Analysis (New)
-- [ ] 複数のデータセット（ページ数や複雑さが異なるもの）で各ステップ（PDF, Detection, MMR, Numbering）の所要時間を詳細に計測。
-- [ ] PCの負荷（VRAM/CPU/Memory）を監視し、システムが重くなる原因を特定。
-- [ ] 大量の標準出力を `artifacts/` にリダイレクトし、コンテキスト使用量を最適化。
-- [ ] プロファイリング結果を `Benchmarks.md` に集約。
+## M4 Detailed Profiling & Resource Analysis (Completed)
+- [x] 複数のデータセットで各ステップの所要時間を詳細に計測。
+- [x] PCの負荷（VRAM/CPU/Memory）を監視し、システムが重くなる原因（GPU高負荷）を特定。
+- [x] 大量の標準出力を `artifacts/` にリダイレクトし、コンテキスト使用量を最適化。
+- [x] プロファイリング結果を `Benchmarks.md` に集約。

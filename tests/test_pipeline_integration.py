@@ -2,9 +2,9 @@ import shutil
 import unittest
 from pathlib import Path
 
-from src.pipeline.config import load_yaml, write_yaml
-from src.pipeline.io import load_json
+from src.pipeline.core.config import load_yaml, write_yaml
 from src.pipeline.main import run_pipeline
+from src.pipeline.utils.io import load_json
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 

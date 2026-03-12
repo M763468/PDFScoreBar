@@ -7,8 +7,8 @@ from typing import Any, Dict, Optional
 
 import torch
 
-from src.pipeline.images import load_image_size
-from src.pipeline.python_env import get_pipeline_python
+from src.pipeline.core.python_env import get_pipeline_python
+from src.pipeline.utils.images import load_image_size
 
 
 def empty_numbering_payload(page_number: int, image_path: Path) -> Dict[str, Any]:
@@ -77,7 +77,7 @@ def run_mmr_batch(
 ) -> list[dict]:
     """Runs MMR detection in-process for a batch of pages."""
     from src.measure_numbering.mmr import MMRProcessor
-    from src.pipeline.io import write_json
+    from src.pipeline.utils.io import write_json
 
     processor = MMRProcessor(
         model_path=model_path,

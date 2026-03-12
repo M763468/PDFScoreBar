@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 from typing import Any, Dict, List
 
-from src.pipeline.config import get_nested
+from src.pipeline.core.config import get_nested
 
 logger = logging.getLogger(__name__)
 

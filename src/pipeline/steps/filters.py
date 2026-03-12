@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import cv2  # type: ignore
 
-from src.pipeline.config import get_nested
+from src.pipeline.core.config import get_nested
 
 
 def get_user_exclude_indices(config: Dict[str, Any]) -> set[int]:

@@ -87,7 +87,7 @@ def _run_one(
 
     existing_boxes = _load_boxes(existing_path)
 
-    # Keep defaults aligned with current src.pipeline.probe_scan.run_probe_scan_batch.
+    # Keep defaults aligned with current src.pipeline.steps.probe_scan.run_probe_scan_batch.
     candidates = detect_probe_scan(
         base_img=image,
         staff_mask=staff_mask,

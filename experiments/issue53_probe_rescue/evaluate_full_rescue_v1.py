@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.pipeline.probe_scan import run_probe_scan_batch
+from src.pipeline.steps.probe_scan import run_probe_scan_batch
 from tools.cnn_classifier.score_candidates_batch import run_scoring_batch
 
 

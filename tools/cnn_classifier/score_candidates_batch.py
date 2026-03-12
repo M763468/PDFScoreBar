@@ -11,12 +11,12 @@ from PIL import Image
 from torchvision import models, transforms
 from tqdm import tqdm
 
-from src.pipeline.filters import filter_by_staff_overlap
 from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask
-from src.pipeline.wide_split_utils import (
+from src.pipeline.steps.filters import filter_by_staff_overlap
+from src.pipeline.utils.wide_split_utils import (
     estimate_unit_size_from_box_height,
 )
-from src.pipeline.wide_split_utils import (
+from src.pipeline.utils.wide_split_utils import (
     split_wide_candidates as split_wide_candidates_util,
 )
 
@@ -383,7 +383,7 @@ def process_dir(
 
         if not staff_bands and bands_from:
             # Resolve row stats if mask was not used
-            from src.pipeline.probe_scan import _load_bands_for_image
+            from src.pipeline.steps.probe_scan import _load_bands_for_image
 
             existing_boxes = _load_bands_for_image(
                 bands_from=bands_from,

@@ -7,9 +7,8 @@ import logging
 from pathlib import Path
 from typing import Iterable, List, Sequence, Tuple
 
-from src.common.barline_evaluation import barline_iou
+from src.common import Box, barline_iou
 
-Box = Tuple[int, int, int, int]
 logger = logging.getLogger(__name__)
 
 
@@ -52,7 +51,7 @@ def _has_match(
     return any(barline_iou(query_box, ref) > iou_thresh for ref in references)
 
 
-def phase4_hybrid_consensus(
+def apply_hybrid_consensus_filter(
     *,
     baseline_boxes: Iterable[Sequence[int]],
     sr_boxes: Iterable[Sequence[int]],

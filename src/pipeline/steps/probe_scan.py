@@ -19,10 +19,10 @@ try:
 except ImportError:  # pragma: no cover - optional in minimal test env
     np = None  # type: ignore[assignment]
 
-from src.pipeline.hybrid_consensus import load_json_boxes
-from src.pipeline.io import ensure_dir
-from src.pipeline.run_ids import build_probe_run_id, build_probe_run_id_from_parts
-from src.pipeline.wide_split_utils import split_wide_candidates
+from src.pipeline.core.run_ids import build_probe_run_id, build_probe_run_id_from_parts
+from src.pipeline.steps.hybrid_consensus import load_json_boxes
+from src.pipeline.utils.io import ensure_dir
+from src.pipeline.utils.wide_split_utils import split_wide_candidates
 
 logger = logging.getLogger(__name__)
 

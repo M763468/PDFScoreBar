@@ -14,10 +14,10 @@ import cv2
 import torch
 from tqdm import tqdm
 
-from src.pipeline.hybrid_consensus import load_json_boxes, phase4_hybrid_consensus
-from src.pipeline.io import ensure_dir
-from src.pipeline.python_env import get_pipeline_python
-from src.pipeline.subprocess_utils import run_with_logging
+from src.pipeline.core.python_env import get_pipeline_python
+from src.pipeline.core.subprocess_utils import run_with_logging
+from src.pipeline.steps.hybrid_consensus import load_json_boxes, apply_hybrid_consensus_filter
+from src.pipeline.utils.io import ensure_dir
 
 from .utils import log_vram_usage
 
@@ -198,7 +198,7 @@ class HybridDetector:
                 baseline_boxes = load_json_boxes(baseline_json)
                 sr_boxes = load_json_boxes(sr_json)
                 omr_boxes = load_json_boxes(omr_json)
-                hybrid_preds = phase4_hybrid_consensus(
+                hybrid_preds = apply_hybrid_consensus_filter(
                     baseline_boxes=baseline_boxes,
                     sr_boxes=sr_boxes,
                     omr_boxes=omr_boxes,

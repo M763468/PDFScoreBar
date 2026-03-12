@@ -9,35 +9,15 @@ from typing import Any, Iterable, List, Optional, Sequence, Tuple
 
 from tqdm import tqdm
 
-try:
-    import cv2
-except ImportError:  # pragma: no cover - optional in minimal test env
-    cv2 = None  # type: ignore[assignment]
+import cv2
+import numpy as np
+import torch
+from PIL import Image
+from torchvision import models, transforms
 
-try:
-    import numpy as np
-except ImportError:  # pragma: no cover - optional in minimal test env
-    np = None  # type: ignore[assignment]
-
-try:
-    import torch
-except ImportError:  # pragma: no cover - optional in minimal test env
-    torch = None  # type: ignore[assignment]
-
-try:
-    from PIL import Image
-except ImportError:  # pragma: no cover - optional in minimal test env
-    Image = None  # type: ignore[assignment]
-
-try:
-    from torchvision import models, transforms
-except ImportError:  # pragma: no cover - optional in minimal test env
-    models = None  # type: ignore[assignment]
-    transforms = None  # type: ignore[assignment]
-
-from src.pipeline.filters import filter_by_staff_overlap
+from src.pipeline.core.run_ids import build_probe_run_id
 from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask
-from src.pipeline.run_ids import build_probe_run_id
+from src.pipeline.steps.filters import filter_by_staff_overlap
 
 logger = logging.getLogger(__name__)
 
@@ -46,22 +26,14 @@ MEAN = [0.485, 0.456, 0.406]
 STD = [0.229, 0.224, 0.225]
 
 
-if torch is not None:
+class GPUNormalize(torch.nn.Module):
+    def __init__(self, mean: Sequence[float], std: Sequence[float]) -> None:
+        super().__init__()
+        self.register_buffer("mean", torch.tensor(mean).view(1, 3, 1, 1))
+        self.register_buffer("std", torch.tensor(std).view(1, 3, 1, 1))
 
-    class GPUNormalize(torch.nn.Module):
-        def __init__(self, mean: Sequence[float], std: Sequence[float]) -> None:
-            super().__init__()
-            self.register_buffer("mean", torch.tensor(mean).view(1, 3, 1, 1))
-            self.register_buffer("std", torch.tensor(std).view(1, 3, 1, 1))
-
-        def forward(self, x: torch.Tensor) -> torch.Tensor:
-            return (x - self.mean) / self.std
-
-else:
-
-    class GPUNormalize:  # pragma: no cover - only used in missing dependency envs
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
-            raise ImportError("run_cnn_scoring_batch requires torch.")
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return (x - self.mean) / self.std
 
 
 def _resolve_model_path(model_path: Path) -> Path:
@@ -301,7 +273,7 @@ def _score_directory(
                 staff_bands = staff_bands_from_mask(mask)
 
         if not staff_bands and bands_from:
-            from src.pipeline.probe_scan import _load_bands_for_image
+            from src.pipeline.steps.probe_scan import _load_bands_for_image
 
             existing_boxes = _load_bands_for_image(
                 bands_from=bands_from,
@@ -352,18 +324,13 @@ def run_cnn_scoring_batch(
     input_image_scale: float = 1.0,
 ) -> int:
     """Run CNN scoring for all probe output dirs with one model load."""
-    if any(mod is None for mod in (cv2, np, torch, Image, models, transforms)):
-        raise ImportError(
-            "run_cnn_scoring_batch requires cv2, numpy, torch, torchvision and Pillow."
-        )
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     resolved_model_path = _resolve_model_path(model_path)
     model = _load_model(resolved_model_path, device)
     gpu_norm = GPUNormalize(MEAN, STD).to(device)
 
     # For staff mask resolution
-    from src.pipeline.probe_scan import _build_staff_mask_map
+    from src.pipeline.steps.probe_scan import _build_staff_mask_map
 
     staff_mask_map = _build_staff_mask_map(staff_mask_dir)
 

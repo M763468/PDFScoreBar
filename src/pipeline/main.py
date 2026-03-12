@@ -38,7 +38,7 @@ from src.pipeline.detection import (
 )
 from src.pipeline.filters import get_user_exclude_indices, resolve_page_filters
 from src.pipeline.images import collect_images, resolve_page_ids
-from src.pipeline.io import ensure_dir, load_json, score_to_dict, write_json, write_manifest
+from src.pipeline.io import ensure_dir, load_json, score_to_dict, write_json
 from src.pipeline.manifest import build_manifest
 from src.pipeline.numbering import (
     empty_numbering_payload,
@@ -52,7 +52,8 @@ logger = logging.getLogger(__name__)
 # Persistence: Cache HomrPredictor and other heavy models to avoid re-loading.
 _PIPELINE_PERSISTENCE: Dict[str, Any] = {}
 # MMR Persistence: Cache MMRClassifier and MMROCREngine to avoid re-loading models.
-_MMR_PERSISTENCE: Dict[str, Any] = {}
+# Structure: { ("classifier", model_path, device): MMRClassifier, ("ocr_engine", rotation_tta): MMROCREngine }
+_MMR_PERSISTENCE: Dict[Any, Any] = {}
 
 
 def _build_pdf_command(config: Dict[str, Any], run_dir: Path) -> List[str]:
@@ -154,20 +155,28 @@ def run_pipeline(
     log_file = run_dir / "pipeline.log"
     file_handler = logging.FileHandler(log_file, mode="w", encoding="utf-8")
     file_handler.setFormatter(
-        logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+        logging.Formatter(
+            "%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+        )
     )
     # File log gets EVERYTHING (DEBUG and up)
     file_handler.setLevel(logging.DEBUG)
-    
+
     root_logger = logging.getLogger()
-    # We must set the root logger to the lowest level we want to capture
+    old_root_level = root_logger.level
     root_logger.setLevel(logging.DEBUG)
     root_logger.addHandler(file_handler)
 
     # Ensure the existing console handler (from basicConfig) stays at INFO
+    # We store old levels to restore them in the finally block.
+    old_handler_levels = []
     for handler in root_logger.handlers:
-        # Check if it's a console handler (StreamHandler but NOT FileHandler)
-        if isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler):
+        if handler == file_handler:
+            continue
+        old_handler_levels.append((handler, handler.level))
+        if isinstance(handler, logging.StreamHandler) and not isinstance(
+            handler, logging.FileHandler
+        ):
             handler.setLevel(logging.INFO)
 
     try:
@@ -222,7 +231,9 @@ def run_pipeline(
             hybrid_output_dir = det_result["hybrid_output_dir"]
 
         excluded_indices = get_user_exclude_indices(config)
-        excluded_page_ids = {page_ids[idx - 1] for idx in excluded_indices if 1 <= idx <= len(page_ids)}
+        excluded_page_ids = {
+            page_ids[idx - 1] for idx in excluded_indices if 1 <= idx <= len(page_ids)
+        }
 
         if run_detection and probe_output_dir and hybrid_output_dir:
             resolved = resolve_paths_from_detection(
@@ -272,7 +283,9 @@ def run_pipeline(
 
         if not validate_only:
             if (step_mmr or step_apply or step_overlay) and not step_numbering:
-                raise ValueError("numbering_base must be enabled before MMR or final numbering steps.")
+                raise ValueError(
+                    "numbering_base must be enabled before MMR or final numbering steps."
+                )
 
         numbering_base_paths: List[Path] = []
         numbering_final_paths: List[Path] = []
@@ -347,10 +360,10 @@ def run_pipeline(
                 else:
                     if not dry_run and debug and barlines_path.exists():
                         corrected_path.write_text(barlines_path.read_text())
-                    
+
                     if barlines_path.exists():
                         page_ctx[page_id]["corrected_barlines"] = load_json(barlines_path)
-                    
+
                     barline_override_stats[page_id] = {
                         "removed": 0,
                         "added": 0,
@@ -427,7 +440,9 @@ def run_pipeline(
                     mmr_input_images.append(ctx["image_path"])
                     mmr_output_paths.append(overrides_mmr)
                 else:
-                    logger.warning(f"MMR skipped for {page_id} because numbering_base.json is missing.")
+                    logger.warning(
+                        f"MMR skipped for {page_id} because numbering_base.json is missing."
+                    )
 
             if mmr_input_pages:
                 logger.info(f"Running MMR batch for {len(mmr_input_pages)} pages...")
@@ -439,12 +454,19 @@ def run_pipeline(
                 # Initialize/reuse persistent MMR components
                 from src.measure_numbering.mmr import MMRClassifier, MMROCREngine
 
-                if "classifier" not in _MMR_PERSISTENCE:
-                    logger.info(f"Initializing persistent MMRClassifier with model: {model_path}")
-                    _MMR_PERSISTENCE["classifier"] = MMRClassifier(model_path, device)
-                if "ocr_engine" not in _MMR_PERSISTENCE:
-                    logger.info("Initializing persistent MMROCREngine (RapidOCR)")
-                    _MMR_PERSISTENCE["ocr_engine"] = MMROCREngine(
+                classifier_key = ("classifier", str(model_path), str(device))
+                if classifier_key not in _MMR_PERSISTENCE:
+                    logger.info(
+                        f"Initializing persistent MMRClassifier with model: {model_path} on {device}"
+                    )
+                    _MMR_PERSISTENCE[classifier_key] = MMRClassifier(model_path, device)
+
+                ocr_key = ("ocr_engine", enable_rotation_tta)
+                if ocr_key not in _MMR_PERSISTENCE:
+                    logger.info(
+                        f"Initializing persistent MMROCREngine (RapidOCR) with rotation_tta={enable_rotation_tta}"
+                    )
+                    _MMR_PERSISTENCE[ocr_key] = MMROCREngine(
                         enable_rotation_tta=enable_rotation_tta
                     )
 
@@ -456,8 +478,8 @@ def run_pipeline(
                     device=device,
                     enable_rotation_tta=enable_rotation_tta,
                     debug_root=debug_root,
-                    classifier=_MMR_PERSISTENCE["classifier"],
-                    ocr_engine=_MMR_PERSISTENCE["ocr_engine"],
+                    classifier=_MMR_PERSISTENCE[classifier_key],
+                    ocr_engine=_MMR_PERSISTENCE[ocr_key],
                 )
                 # Help VRAM management after heavy MMR processing
                 if device.type == "cuda":
@@ -513,7 +535,9 @@ def run_pipeline(
                         barline_boxes = normalize_barlines(raw_barlines)
                         # Use corrected barlines if available from Phase A
                         if apply_barlines:
-                            if ctx["barlines_path"].exists():
+                            if "corrected_barlines" in ctx:
+                                barline_boxes = ctx["corrected_barlines"]
+                            elif ctx["barlines_path"].exists():
                                 barline_boxes = normalize_barlines(load_json(ctx["barlines_path"]))
 
                         img_ref = cv2.imread(str(image_path))
@@ -547,12 +571,16 @@ def run_pipeline(
 
         if len(numbering_base_paths) > 1 and not dry_run and not validate_only:
             combined_base = {
-                "pages": [page for path in numbering_base_paths for page in load_json(path)["pages"]]
+                "pages": [
+                    page for path in numbering_base_paths for page in load_json(path)["pages"]
+                ]
             }
             write_json(intermediate_dir / "numbering_base.json", combined_base)
         if len(numbering_final_paths) > 1 and not dry_run and not validate_only:
             combined_final = {
-                "pages": [page for path in numbering_final_paths for page in load_json(path)["pages"]]
+                "pages": [
+                    page for path in numbering_final_paths for page in load_json(path)["pages"]
+                ]
             }
             write_json(outputs_dir / "numbering_final.json", combined_final)
 
@@ -578,6 +606,9 @@ def run_pipeline(
     finally:
         root_logger.removeHandler(file_handler)
         file_handler.close()
+        root_logger.setLevel(old_root_level)
+        for h, level in old_handler_levels:
+            h.setLevel(level)
 
 
 def main() -> None:

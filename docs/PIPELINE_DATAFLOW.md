@@ -93,7 +93,20 @@ flowchart TD
 | `intermediate/<page_id>/overrides_combined.json` | MMRの提案と、ユーザが手動で指定した `measure_overrides` を矛盾なく統合した最終的な修正指示。 |
 | `outputs/<page_id>/numbering_overlay.png` | `numbering_final.json` の内容を元画像に重ね書きした画像。目視確認用。 |
 
-## 3. コンポーネントの永続化 (キャッシュ) 戦略
+## 3. 実行形態の分類 (Subprocess vs In-Process)
+
+スループット向上のため、可能な限りインプロセス化を進めていますが、環境依存の強いコンポーネントはサブプロセスとして分離しています。
+
+| ステップ | 実行形態 | 理由 |
+| :--- | :--- | :--- |
+| `pdf_to_images` | **Subprocess** | `PyMuPDF` 等の外部ツール依存のため。 |
+| `detection (homr)` | **Subprocess (Docker)** | `sr_eval_gpu` コンテナ内の特定環境（CUDA/依存ライブラリ）を必要とするため。 |
+| `detection (Consensus)` | **In-Process** | JSONデータの論理演算のみであるため。 |
+| `Phase A (Numbering)` | **In-Process** | 頻繁な再ロードを避けるため、`MeasureNumberingPipeline` を永続化。 |
+| `Phase B (MMR)` | **In-Process** | ResNet/OCRモデルのVRAM占有を管理しつつ高速化するため、`MMRClassifier` 等を永続化。 |
+| `Phase C (Finalize)` | **In-Process** | ロジックの柔軟な適用と速度のため。 |
+
+## 4. コンポーネントの永続化 (キャッシュ) 戦略
 
 「それを見ればコードが分かる」ための補足として、`src/pipeline/main.py` では以下のグローバル変数を使用してモデルを保持しています。
 

@@ -1,107 +1,106 @@
 # Pipeline Dataflow & Architecture (Phase 2 Optimized)
 
-本文書では、Issue #60 および #24 に基づいて最適化されたパイプラインのデータフロー、コンポーネント構成、および中間出力の管理について説明します。
+本文書では、Issue #60 および #24 に基づいて最適化されたパイプラインの詳細な処理フロー、ファイル構成、およびコンポーネント間のデータ遷移について説明します。
 
-## 1. 全体フロー図
+## 1. 詳細処理フロー図
 
-最適化後のパイプラインは、プロセスの起動オーバーヘッドを最小化し、重いモデルをメモリ上に永続化（キャッシュ）する構成になっています。
+以下の図は、`src/pipeline/main.py` の実行ロジックを詳細に示したものです。
 
 ```mermaid
-sequenceDiagram
-    participant CLI as main.py (CLI)
-    participant Core as Pipeline Engine (src/pipeline/main.py)
-    participant Cache as Global Persistence (_MMR_PERSISTENCE, etc.)
-    participant PDF as PDF Step (Subprocess)
-    participant Homr as Homr Step (In-Process/Subprocess)
-    participant MMR as MMR Step (In-Process Batch)
-    participant Num as Numbering (In-Process)
-
-    CLI->>Core: run_pipeline(config, --debug)
+flowchart TD
+    Start([開始: main.py]) --> LoadConfig[Config読み込み & Run ID決定]
+    LoadConfig --> Step1[Step 1: PDF抽出<br/>pdf_to_images.py]
     
-    rect rgb(240, 240, 240)
-    Note over Core, PDF: Step 1: Pre-processing
-    Core->>PDF: Spawn pdf_to_images.py
-    PDF-->>Core: page_XXX.png (Disk)
+    subgraph Step2 [Step 2: 検出フェーズ]
+        direction TB
+        DetInit[run_detection_step] --> HomrBase[Homr Baseline 推論<br/>Persistent Model]
+        HomrBase --> HomrSR{SR有効?}
+        HomrSR -- Yes --> RealESRGAN[Real-ESRGAN / Homr SR]
+        HomrSR -- No --> Consensus[Hybrid Consensus生成]
+        RealESRGAN --> OMRLDN[OMR-DLN 推論]
+        OMRLDN --> Consensus
     end
+    Step1 --> Step2
 
-    rect rgb(220, 240, 220)
-    Note over Core, Homr: Step 2: Detection (Heavy Models)
-    Core->>Homr: HomrPredictor.predict (Persistent Model)
-    Homr-->>Core: barlines / staff_mask (In-Memory/Disk)
+    Consensus --> Filter[ページフィルタリング<br/>Blank / Staff 密度チェック]
+    
+    subgraph PhaseA [Phase A: 初期ナンバリング & 小節線補正]
+        direction TB
+        ALoop{全ページループ} --> ACorrect[小節線補正<br/>User Overrides適用]
+        ACorrect --> ADebug1{--debug?}
+        ADebug1 -- Yes --> AWrite1[barlines_corrected.json]
+        ADebug1 -- No --> ANum[インプロセス・ナンバリング<br/>Persistent Pipeline]
+        AWrite1 --> ANum
+        ANum --> AWrite2[numbering_base.json]
     end
+    Filter --> PhaseA
 
-    rect rgb(220, 220, 240)
-    Note over Core, Num: Phase A: Base Numbering
-    Core->>Cache: Get/Create MeasureNumberingPipeline
-    Core->>Num: In-Process execution
-    Num-->>Core: numbering_base.json (Disk)
+    subgraph PhaseB [Phase B: MMR バッチ処理]
+        direction TB
+        BInit[MMRモデル初期化/取得<br/>Persistent ResNet/OCR] --> BBatch[全ページ一括 MMR推論]
+        BBatch --> BWrite[overrides_mmr.json]
     end
+    PhaseA --> PhaseB
 
-    rect rgb(240, 220, 220)
-    Note over Core, MMR: Phase B: MMR Batch (Issue #24)
-    Core->>Cache: Get/Create MMRClassifier & MMROCREngine
-    Core->>MMR: process_pages (Batch In-Process)
-    MMR-->>Core: overrides_mmr.json (Disk)
+    subgraph PhaseC [Phase C: 最終ナンバリング & 可視化]
+        direction TB
+        CLoop{全ページループ} --> CMerge[MMR + User 修正案の統合]
+        CMerge --> CDebug1{--debug?}
+        CDebug1 -- Yes --> CWrite1[overrides_combined.json]
+        CDebug1 -- No --> CApply[統合修正案の適用<br/>In-Process]
+        CWrite1 --> CApply
+        CApply --> CWrite2[numbering_final.json]
+        CWrite2 --> CDebug2{--debug / step_overlay?}
+        CDebug2 -- Yes --> CWrite3[numbering_overlay.png]
+        CDebug2 -- No --> CEndLoop[ループ終了]
+        CWrite3 --> CEndLoop
     end
+    PhaseB --> PhaseC
 
-    rect rgb(220, 220, 240)
-    Note over Core, Num: Phase C: Final Numbering
-    Core->>Num: Apply Overrides (In-Process)
-    Num-->>Core: numbering_final.json (Disk)
-    Note right of Core: Conditional Overlay (Debug)
+    subgraph Finalize [最終集計]
+        FCombine[全ページの結果を1つのJSONに結合] --> FManifest[manifest.json 書き出し]
     end
+    PhaseC --> Finalize
+    Finalize --> End([終了])
 
-    Core-->>CLI: Final Result
+    %% スタイリング
+    classDef persistent fill:#e1f5fe,stroke:#01579b;
+    class HomrBase,ANum,BInit,CApply persistent;
 ```
 
-## 2. 主要な最適化ポイント
+## 2. 出力ファイルとその役割
 
-### モデルの永続化 (Model Caching)
-以下のコンポーネントは、複数ページ処理時に1度だけロードされ、メモリ上に保持されます。
-*   **HomrPredictor**: `src/pipeline/main.py` の `_PIPELINE_PERSISTENCE` に保持。
-*   **MMRClassifier (ResNet18)**: `_MMR_PERSISTENCE` に保持。
-*   **MMROCREngine (RapidOCR)**: `_MMR_PERSISTENCE` に保持。
-*   **MeasureNumberingPipeline**: `_PIPELINE_PERSISTENCE` に保持。
+すべての出力は `logs/full_pipeline_runs/<run_id>/` 配下に格納されます。
 
-### インプロセス実行
-従来、各ページごとに外部スクリプトとして起動していた以下の処理をライブラリとして直接呼び出す形式に変更しました。
-*   **小節番号付与 (`tools/add_measure_numbers.py`)**: `MeasureNumberingPipeline` を直接使用。
-*   **MMR検出 (`tools/generate_numbering_overrides.py`)**: `MMRProcessor` を直接使用。
-
-これにより、Python インタープリタの起動、ライブラリ（`torch`, `cv2`等）のインポート、モデルのロードに伴う秒単位のオーバーヘッドが解消されました。
-
-## 3. 出力ファイル構成とパス
-
-出力は `logs/full_pipeline_runs/<run_id>/` 配下に整理されます。
-
-### 基本出力 (常に生成)
-| パス | 内容 |
+### 2.1. 最終成果物 (常に生成)
+| ファイルパス | 役割・内容 |
 | :--- | :--- |
-| `manifest.json` | 実行構成、各ステップの入出力パス、実行ログのメタデータ。 |
-| `filters.json` | ページごとのフィルタリング結果（Blank/Staff検知等）。 |
-| `outputs/numbering_final.json` | 全ページの最終的な小節番号情報（結合済み）。 |
-| `outputs/<page_id>/numbering_final.json` | ページごとの最終的な小節番号情報。 |
+| `outputs/numbering_final.json` | **最重要成果物。** 全ページの最終的な小節番号、座標、所属譜表の情報が格納されています。 |
+| `outputs/<page_id>/numbering_final.json` | ページごとの最終結果（上記ファイルの分割版）。 |
+| `manifest.json` | この実行の「家計簿」。入力設定、実行されたコマンド、各ステップの成功/失敗、生成されたファイルパスの対応表が含まれます。 |
+| `filters.json` | 各ページが「白紙」や「楽譜なし」と判定された理由とメトリクス。 |
 
-### 中間出力・デバッグ出力 (`--debug` 有効時のみ生成)
-`--debug` フラグを付与しない場合、これらの中間ファイルの多くはディスクへの書き込みがスキップされ、I/O負荷が軽減されます。
+### 2.2. 中間・デバッグファイル (`--debug` 有効時のみ)
+これらは通常、開発やトラブルシューティング、精度の確認のために使用されます。
 
-| パス | 内容 |
+| ファイルパス | 役割・内容 |
 | :--- | :--- |
-| `inputs/images/page_XXX.png` | PDFから抽出された元画像。 |
-| `intermediate/<page_id>/barlines_corrected.json` | 手動または自動で補正された小節線位置。 |
-| `intermediate/<page_id>/numbering_base.json` | MMR補正前の初期小節番号。 |
-| `intermediate/<page_id>/overrides_mmr.json` | MMRステップで検出された番号修正案。 |
-| `intermediate/<page_id>/overrides_combined.json` | MMRとユーザ指定を統合した最終修正案。 |
-| `outputs/<page_id>/numbering_overlay.png` | 小節番号を可視化した確認用画像。 |
+| `inputs/images/page_XXX.png` | PDFからレンダリングされた高解像度画像（300dpi等）。 |
+| `intermediate/<page_id>/barlines_corrected.json` | ユーザの `barline_overrides` に基づいて追加・削除が行われた後の小節線データ。 |
+| `intermediate/<page_id>/numbering_base.json` | MMR（複数小節休符）の考慮を入れる前の、機械的な小節番号付与結果。 |
+| `intermediate/<page_id>/overrides_mmr.json` | MMR検出器が提案した「この小節は実はX小節分である」という修正指示。 |
+| `intermediate/<page_id>/overrides_combined.json` | MMRの提案と、ユーザが手動で指定した `measure_overrides` を矛盾なく統合した最終的な修正指示。 |
+| `outputs/<page_id>/numbering_overlay.png` | `numbering_final.json` の内容を元画像に重ね書きした画像。目視確認用。 |
 
-## 4. 実行コマンド
+## 3. コンポーネントの永続化 (キャッシュ) 戦略
 
-### 通常実行 (高速・省I/O)
-```bash
-python3 src/pipeline/main.py --config configs/your_config.yaml
-```
+「それを見ればコードが分かる」ための補足として、`src/pipeline/main.py` では以下のグローバル変数を使用してモデルを保持しています。
 
-### デバッグ実行 (中間ファイル・可視化あり)
-```bash
-python3 src/pipeline/main.py --config configs/your_config.yaml --debug
-```
+*   **`_PIPELINE_PERSISTENCE`**:
+    *   `HomrPredictor`: 楽譜の構造解析モデル。
+    *   `MeasureNumberingPipeline`: 番号計算ロジック。
+*   **`_MMR_PERSISTENCE`**:
+    *   `MMRClassifier`: 休符記号のCNN分類器（ResNet18）。
+    *   `MMROCREngine`: 休符内の数字認識エンジン（RapidOCR）。
+
+これらは `run_pipeline` をまたいでも（同じプロセスであれば）再利用されるため、大規模なバッチ処理や連続実行時のスループットが最適化されています。

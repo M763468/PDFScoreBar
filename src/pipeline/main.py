@@ -148,15 +148,30 @@ def run_pipeline(
         config, "run", "output_root", default="logs/full_pipeline_runs"
     )
     run_dir = Path(output_root_value) / run_id_value
+    ensure_dir(run_dir)
 
-    # TODO: Centralize log directory naming with logs/README.md categories.
-    inputs_dir = run_dir / "inputs"
-    intermediate_dir = run_dir / "intermediate"
-    outputs_dir = run_dir / "outputs"
-    for directory in (inputs_dir, intermediate_dir, outputs_dir):
-        ensure_dir(directory)
+    # Setup File Logging for this run
+    log_file = run_dir / "pipeline.log"
+    file_handler = logging.FileHandler(log_file, mode="w", encoding="utf-8")
+    file_handler.setFormatter(
+        logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+    )
+    root_logger = logging.getLogger()
+    root_logger.addHandler(file_handler)
 
-    commands: List[List[str]] = []
+    try:
+        # TODO: Centralize log directory naming with logs/README.md categories.
+        inputs_dir = run_dir / "inputs"
+        intermediate_dir = run_dir / "intermediate"
+        outputs_dir = run_dir / "outputs"
+        for directory in (inputs_dir, intermediate_dir, outputs_dir):
+            ensure_dir(directory)
+
+        logger.info(f"Starting pipeline run: {run_id_value}")
+        logger.info(f"Run directory: {run_dir}")
+        logger.info(f"Log file: {log_file}")
+
+        commands: List[List[str]] = []
 
     if get_nested(config, "steps", "pdf_to_images", default=False):
         if (
@@ -552,10 +567,14 @@ def run_pipeline(
         page_statuses=page_statuses,
         barline_override_stats=barline_override_stats,
     )
-    write_manifest(run_dir / "manifest.json", manifest)
-    logger.info(f"Wrote manifest to {run_dir / 'manifest.json'}")
+        write_json(run_dir / "manifest.json", manifest)
+        logger.info(f"Wrote manifest to {run_dir / 'manifest.json'}")
 
-    return run_dir
+        return run_dir
+    finally:
+        root_logger.removeHandler(file_handler)
+        file_handler.close()
+
 
 
 def main() -> None:

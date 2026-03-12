@@ -104,8 +104,8 @@ def apply_super_resolution(
 
 def apply_advanced_sr(
     image: np.ndarray,
-    model_name: str = "RealESRGAN_x4plus",
-    scale: int = 4,
+    model_name: str = "RealESRGAN_x2plus",
+    scale: int = 2,
     tile: Optional[int] = None,
     tile_pad: int = 10,
     pre_pad: int = 0,
@@ -157,12 +157,12 @@ def apply_advanced_sr(
             netscale = 2
             model_path = os.path.join(realesrgan_path, "weights", f"{model_name}.pth")
         else:
-            print(f"Model {model_name} not explicitly supported. A default (x4plus) will be used.")
+            print(f"Model {model_name} not explicitly supported. A default (x2plus) will be used.")
             model = RRDBNet(
-                num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4
+                num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2
             )
-            netscale = 4
-            model_path = os.path.join(realesrgan_path, "weights", "RealESRGAN_x4plus.pth")
+            netscale = 2
+            model_path = os.path.join(realesrgan_path, "weights", "RealESRGAN_x2plus.pth")
 
         try:
             # Determine tiling strategy

@@ -5,15 +5,14 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any, Iterable, List, Optional, Sequence, Tuple
-
-from tqdm import tqdm
+from typing import Iterable, List, Optional, Sequence, Tuple
 
 import cv2
 import numpy as np
 import torch
 from PIL import Image
 from torchvision import models, transforms
+from tqdm import tqdm
 
 from src.pipeline.core.run_ids import build_probe_run_id
 from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask

@@ -3,9 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Tuple
-
-from src.common import Box
 
 _RIGHTMOST_RESCUE_DEBUG_KEYS = [
     "band",

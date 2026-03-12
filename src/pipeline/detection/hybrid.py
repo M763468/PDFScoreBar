@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 from src.pipeline.core.python_env import get_pipeline_python
 from src.pipeline.core.subprocess_utils import run_with_logging
-from src.pipeline.steps.hybrid_consensus import load_json_boxes, apply_hybrid_consensus_filter
+from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
 from src.pipeline.utils.io import ensure_dir
 
 from .utils import log_vram_usage
@@ -127,12 +127,12 @@ class HybridDetector:
             logger.info("Skipping homr SR: enable_sr is false.")
         elif _HOMR_AVAILABLE:
             self._run_homr_in_process(
-                sr_output, enable_sr=True, sr_scale=int(self.det_cfg.get("sr_scale", 4))
+                sr_output, enable_sr=True, sr_scale=int(self.det_cfg.get("sr_scale", 2))
             )
         elif self.skip_existing and self._all_stems_exist(sr_output, stems, "batch/*/*.json"):
             logger.info("Skipping homr SR: outputs already exist.")
         else:
-            sr_scale = int(self.det_cfg.get("sr_scale", 4))
+            sr_scale = int(self.det_cfg.get("sr_scale", 2))
             cmd = python_cmd + [
                 "src/homr_eval_scripts/homr_evaluator.py",
                 "--images",
@@ -231,7 +231,7 @@ class HybridDetector:
         self,
         output_root: Path,
         enable_sr: bool = False,
-        sr_scale: int = 4,
+        sr_scale: int = 2,
     ) -> None:
         """Runs Homr inference (baseline or SR) in-process for persistence."""
         if not _HOMR_AVAILABLE:

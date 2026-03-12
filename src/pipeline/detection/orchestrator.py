@@ -39,7 +39,7 @@ class DetectorOrchestrator:
         self.det_cfg = get_nested(config, "detection", default={}) or {}
         self.skip_existing = bool(self.det_cfg.get("probe_skip_existing", False))
         self.enable_sr = bool(self.det_cfg.get("enable_sr", True))
-        self.sr_scale = int(self.det_cfg.get("sr_scale", 4))
+        self.sr_scale = int(self.det_cfg.get("sr_scale", 2))
         self.commands: List[List[str]] = []
         self.hybrid_output_dir: Path | None = None
         self.probe_output_dir: Path | None = None

@@ -343,9 +343,14 @@ def run_pipeline(
                     barline_override_stats[page_id] = stats
                     if not dry_run and debug:
                         write_json(corrected_path, corrected)
+                    page_ctx[page_id]["corrected_barlines"] = corrected
                 else:
                     if not dry_run and debug and barlines_path.exists():
                         corrected_path.write_text(barlines_path.read_text())
+                    
+                    if barlines_path.exists():
+                        page_ctx[page_id]["corrected_barlines"] = load_json(barlines_path)
+                    
                     barline_override_stats[page_id] = {
                         "removed": 0,
                         "added": 0,
@@ -373,12 +378,12 @@ def run_pipeline(
                 else:
                     if not dry_run:
                         # In-process execution
-                        raw_barlines = load_json(Path(resolved_item["barlines_json"]))
-                        barline_boxes = normalize_barlines(raw_barlines)
-                        # TODO: If apply_barlines was true, use 'corrected' instead of reloading.
-                        # For now, reload for simplicity or fix it:
-                        if apply_barlines and "corrected" in locals():
-                            barline_boxes = corrected
+                        # Use cached corrected barlines if available, otherwise fallback to raw.
+                        if "corrected_barlines" in page_ctx[page_id]:
+                            barline_boxes = page_ctx[page_id]["corrected_barlines"]
+                        else:
+                            raw_barlines = load_json(Path(resolved_item["barlines_json"]))
+                            barline_boxes = normalize_barlines(raw_barlines)
 
                         img_ref = cv2.imread(str(image_path))
                         h, w = img_ref.shape[:2]

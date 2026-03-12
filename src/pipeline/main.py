@@ -111,7 +111,7 @@ def _run_command(cmd: List[str], *, dry_run: bool) -> None:
         if p.stdout:
             for line in p.stdout:
                 line = line.rstrip("\n")
-                logger.info(f"|> {line}")
+                logger.debug(f"|> {line}")
         p.wait()
         if p.returncode != 0:
             logger.error(f"Command failed with exit code {p.returncode}: {cmd_str}")
@@ -156,8 +156,19 @@ def run_pipeline(
     file_handler.setFormatter(
         logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
     )
+    # File log gets EVERYTHING (DEBUG and up)
+    file_handler.setLevel(logging.DEBUG)
+    
     root_logger = logging.getLogger()
+    # We must set the root logger to the lowest level we want to capture
+    root_logger.setLevel(logging.DEBUG)
     root_logger.addHandler(file_handler)
+
+    # Ensure the existing console handler (from basicConfig) stays at INFO
+    for handler in root_logger.handlers:
+        # Check if it's a console handler (StreamHandler but NOT FileHandler)
+        if isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler):
+            handler.setLevel(logging.INFO)
 
     try:
         # TODO: Centralize log directory naming with logs/README.md categories.

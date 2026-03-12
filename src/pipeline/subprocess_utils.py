@@ -11,7 +11,7 @@ def run_with_logging(
     cmd: List[str],
     env: Optional[Dict[str, str]] = None,
     check: bool = True,
-    log_level: int = logging.INFO,
+    log_level: int = logging.DEBUG,
 ) -> None:
     """
     Run a command and capture its stdout/stderr line-by-line,

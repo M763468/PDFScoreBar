@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from src.pipeline.detection import run_detection_step
+from src.pipeline.detection.hybrid import HybridDetector
 
 
 class TestPipelineDetection(unittest.TestCase):
@@ -19,7 +20,7 @@ class TestPipelineDetection(unittest.TestCase):
             },
         }
 
-    def test_run_detection_step_uses_inprocess_probe_and_cnn(self):
+    def test_run_detection_step_uses_orchestrator(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             hybrid_output_dir = Path(tmpdir) / "hybrid"
             hybrid_output_dir.mkdir(parents=True, exist_ok=True)
@@ -29,13 +30,14 @@ class TestPipelineDetection(unittest.TestCase):
             page_ids = ["page_001"]
 
             with (
-                patch(
-                    "src.pipeline.detection._run_hybrid_detection_in_process",
+                patch.object(
+                    HybridDetector,
+                    "run",
                     return_value={"commands": [["hybrid"]], "hybrid_output_dir": hybrid_output_dir},
                 ),
-                patch("src.pipeline.detection.ensure_dir"),
-                patch("src.pipeline.detection.run_probe_scan_batch") as mock_probe,
-                patch("src.pipeline.detection.run_cnn_scoring_batch") as mock_cnn,
+                patch("src.pipeline.detection.orchestrator.ensure_dir"),
+                patch("src.pipeline.detection.orchestrator.run_probe_scan_batch") as mock_probe,
+                patch("src.pipeline.detection.orchestrator.run_cnn_scoring_batch") as mock_cnn,
             ):
                 result = run_detection_step(
                     config=config,
@@ -68,13 +70,14 @@ class TestPipelineDetection(unittest.TestCase):
             page_ids = ["page_001"]
 
             with (
-                patch(
-                    "src.pipeline.detection._run_hybrid_detection_in_process",
+                patch.object(
+                    HybridDetector,
+                    "run",
                     return_value={"commands": [["hybrid"]], "hybrid_output_dir": hybrid_output_dir},
                 ),
-                patch("src.pipeline.detection.ensure_dir"),
-                patch("src.pipeline.detection.run_probe_scan_batch") as mock_probe,
-                patch("src.pipeline.detection.run_cnn_scoring_batch") as mock_cnn,
+                patch("src.pipeline.detection.orchestrator.ensure_dir"),
+                patch("src.pipeline.detection.orchestrator.run_probe_scan_batch") as mock_probe,
+                patch("src.pipeline.detection.orchestrator.run_cnn_scoring_batch") as mock_cnn,
             ):
                 result = run_detection_step(
                     config=config,
@@ -102,13 +105,14 @@ class TestPipelineDetection(unittest.TestCase):
             page_ids = ["page_001"]
 
             with (
-                patch(
-                    "src.pipeline.detection._run_hybrid_detection_in_process",
+                patch.object(
+                    HybridDetector,
+                    "run",
                     return_value={"commands": [["hybrid"]], "hybrid_output_dir": hybrid_output_dir},
                 ),
-                patch("src.pipeline.detection.ensure_dir"),
-                patch("src.pipeline.detection.run_probe_scan_batch") as mock_probe,
-                patch("src.pipeline.detection.run_cnn_scoring_batch") as mock_cnn,
+                patch("src.pipeline.detection.orchestrator.ensure_dir"),
+                patch("src.pipeline.detection.orchestrator.run_probe_scan_batch") as mock_probe,
+                patch("src.pipeline.detection.orchestrator.run_cnn_scoring_batch") as mock_cnn,
             ):
                 run_detection_step(
                     config=config,

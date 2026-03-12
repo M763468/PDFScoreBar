@@ -110,221 +110,591 @@ _PROBE_SCAN_KWARG_KEYS = (
 )
 
 
-def _run_hybrid_detection_in_process(
-    det_cfg: Dict[str, Any],
-    images: List[Path],
-    run_id: str,
-    *,
-    dry_run: bool,
-    skip_existing: bool = False,
-) -> Dict[str, Any]:
-    # homr_evaluator will be called as a subprocess to ensure environment isolation
-    hybrid_root = Path(det_cfg.get("hybrid_output_root", "logs/hybrid_generalization"))
-    hybrid_output_dir = hybrid_root / run_id
-    ensure_dir(hybrid_output_dir)
+class DetectorOrchestrator:
+    """Orchestrates hybrid detection, probe scan, and CNN scoring."""
 
-    # Use relative paths for subprocess compatibility with Docker volumes
-    def _rel(path: Path) -> str:
-        try:
-            return str(path.resolve().relative_to(PROJECT_ROOT))
-        except ValueError:
-            return str(path)
+    def __init__(
+        self,
+        config: Dict[str, Any],
+        images: List[Path],
+        run_id: str,
+        run_dir: Path,
+        *,
+        dry_run: bool,
+    ):
+        self.config = config
+        self.images = images
+        self.run_id = run_id
+        self.run_dir = run_dir
+        self.dry_run = dry_run
+        self.det_cfg = get_nested(config, "detection", default={}) or {}
+        self.skip_existing = bool(self.det_cfg.get("probe_skip_existing", False))
+        self.enable_sr = bool(self.det_cfg.get("enable_sr", True))
+        self.sr_scale = int(self.det_cfg.get("sr_scale", 4))
+        self.commands: List[List[str]] = []
+        self.hybrid_output_dir: Path | None = None
+        self.probe_output_dir: Path | None = None
 
-    image_paths = [_rel(path) for path in images]
-    stems = [path.stem for path in images]
+    def run_detection(self) -> Dict[str, Any]:
+        """Executes the full detection pipeline."""
+        hybrid_result = self._run_hybrid_detection()
+        self.hybrid_output_dir = hybrid_result["hybrid_output_dir"]
+        self.commands.extend(hybrid_result["commands"])
 
-    commands: List[List[str]] = []
+        probe_result = self._run_probe_scan()
+        self.probe_output_dir = probe_result["probe_output_dir"]
+        self.commands.extend(probe_result["commands"])
 
-    def _all_stems_exist(base_dir: Path, stems_to_check: List[str], glob_pattern: str) -> bool:
-        if not base_dir.exists():
-            return False
-        found_stems = set()
-        for p in base_dir.glob(glob_pattern):
-            found_stems.add(p.parent.name)  # parent is the stem directory
-        return all(s in found_stems for s in stems_to_check)
+        cnn_result = self._run_cnn_scoring()
+        self.commands.extend(cnn_result["commands"])
 
-    logger.info("--- Step 2.1: Hybrid Detection (Subprocess homr baseline/SR) ---")
+        return {
+            "commands": self.commands,
+            "hybrid_output_dir": self.hybrid_output_dir,
+            "probe_output_dir": self.probe_output_dir,
+        }
 
-    enable_sr = bool(det_cfg.get("enable_sr", True))
+    def _run_hybrid_detection(self) -> Dict[str, Any]:
+        """Step 2.1: Hybrid Detection (Subprocess homr baseline/SR)"""
+        # homr_evaluator will be called as a subprocess to ensure environment isolation
+        hybrid_root = Path(self.det_cfg.get("hybrid_output_root", "logs/hybrid_generalization"))
+        hybrid_output_dir = hybrid_root / self.run_id
+        ensure_dir(hybrid_output_dir)
 
-    python_cmd = get_pipeline_python("homr")
-    if python_cmd and python_cmd[0] == "docker":
-        for img in images:
+        # Use relative paths for subprocess compatibility with Docker volumes
+        def _rel(path: Path) -> str:
             try:
-                img.resolve().relative_to(PROJECT_ROOT)
+                return str(path.resolve().relative_to(PROJECT_ROOT))
             except ValueError:
-                logger.warning(
-                    f"External image path detected: {img}. Falling back to host Python instead of docker exec."
-                )
-                import sys
+                return str(path)
 
-                python_cmd = [os.environ.get("PIPELINE_PYTHON", sys.executable)]
-                break
+        image_paths = [_rel(path) for path in self.images]
+        stems = [path.stem for path in self.images]
 
-    # homr_evaluator requires PYTHONPATH to include src and external/homr
-    # We pass it via environment variables in subprocess.run
-    env = os.environ.copy()
-    current_pythonpath = env.get("PYTHONPATH", "")
-    homr_path = PROJECT_ROOT / "external" / "homr"
-    new_paths = [str(PROJECT_ROOT), str(homr_path)]
-    env["PYTHONPATH"] = (
-        f"{os.pathsep.join(new_paths)}{os.pathsep}{current_pythonpath}"
-        if current_pythonpath
-        else os.pathsep.join(new_paths)
-    )
+        commands: List[List[str]] = []
 
-    baseline_output = hybrid_output_dir / "baseline"
-    if _HOMR_AVAILABLE:
-        _run_homr_in_process(
-            det_cfg,
-            images,
-            baseline_output,
-            enable_sr=False,
-            dry_run=dry_run,
-            skip_existing=skip_existing,
-        )
-    elif skip_existing and _all_stems_exist(baseline_output, stems, "batch/*/*.json"):
-        logger.info("Skipping homr baseline: outputs already exist.")
-    else:
-        baseline_args = [
-            "src/homr_eval_scripts/homr_evaluator.py",
-            "--images",
-            *image_paths,
-            "--output-root",
-            _rel(baseline_output),
-            "--force-run-id",
-            "batch",
-            "--enable-segnet-cache",
-        ]
-        cmd = python_cmd + baseline_args
-        commands.append(cmd)
-        if not dry_run:
-            run_with_logging(cmd, env=env, check=True)
+        def _all_stems_exist(base_dir: Path, stems_to_check: List[str], glob_pattern: str) -> bool:
+            if not base_dir.exists():
+                return False
+            found_stems = set()
+            for p in base_dir.glob(glob_pattern):
+                found_stems.add(p.parent.name)  # parent is the stem directory
+            return all(s in found_stems for s in stems_to_check)
 
-    sr_output = hybrid_output_dir / "sr"
-    if not enable_sr:
-        logger.info("Skipping homr SR: enable_sr is false.")
-    elif _HOMR_AVAILABLE:
-        _run_homr_in_process(
-            det_cfg,
-            images,
-            sr_output,
-            enable_sr=True,
-            sr_scale=int(det_cfg.get("sr_scale", 4)),
-            dry_run=dry_run,
-            skip_existing=skip_existing,
-        )
-    elif skip_existing and _all_stems_exist(sr_output, stems, "batch/*/*.json"):
-        logger.info("Skipping homr SR: outputs already exist.")
-    else:
-        sr_scale = int(det_cfg.get("sr_scale", 4))
-        sr_args = [
-            "src/homr_eval_scripts/homr_evaluator.py",
-            "--images",
-            *image_paths,
-            "--output-root",
-            _rel(sr_output),
-            "--force-run-id",
-            "batch",
-            "--enable-sr",
-            "--sr-scale",
-            str(sr_scale),
-            "--enable-segnet-cache",
-        ]
-        cmd = python_cmd + sr_args
-        commands.append(cmd)
-        if not dry_run:
-            run_with_logging(cmd, env=env, check=True)
+        logger.info("--- Step 2.1: Hybrid Detection (Subprocess homr baseline/SR) ---")
 
-    logger.info("--- Step 2.1b: OMR-DLN SR (Subprocess) ---")
-    sr_root = hybrid_output_dir / "sr" / "batch"
-    omr_output = hybrid_output_dir / "omr_sr"
+        enable_sr = bool(self.det_cfg.get("enable_sr", True))
 
-    def _omr_all_stems_exist() -> bool:
-        if not omr_output.exists():
-            return False
-        found = set()
-        for p in omr_output.glob("*/predictions.json"):
-            found.add(p.parent.name)
-        return all(s in found for s in stems)
-
-    if not enable_sr:
-        logger.info("Skipping OMR-DLN: SR is disabled.")
-    elif skip_existing and _omr_all_stems_exist():
-        logger.info("Skipping OMR-DLN: outputs already exist.")
-    else:
-        python_cmd_omr = get_pipeline_python("omr_dln")
-        if python_cmd_omr and python_cmd_omr[0] == "docker":
-            for img in images:
+        python_cmd = get_pipeline_python("homr")
+        if python_cmd and python_cmd[0] == "docker":
+            for img in self.images:
                 try:
                     img.resolve().relative_to(PROJECT_ROOT)
                 except ValueError:
                     logger.warning(
-                        f"External image path detected: {img}. Falling back to host Python instead of docker exec for OMR-DLN."
+                        f"External image path detected: {img}. Falling back to host Python instead of docker exec."
                     )
                     import sys
 
-                    python_cmd_omr = [os.environ.get("PIPELINE_PYTHON", sys.executable)]
+                    python_cmd = [os.environ.get("PIPELINE_PYTHON", sys.executable)]
                     break
 
-        omr_cmd = (
-            python_cmd_omr
-            + ["experiments/models/eval_omr_dln.py", "--images"]
-            + image_paths
-            + ["--output-dir", _rel(omr_output), "--pre-computed-sr", _rel(sr_root)]
+        # homr_evaluator requires PYTHONPATH to include src and external/homr
+        # We pass it via environment variables in subprocess.run
+        env = os.environ.copy()
+        current_pythonpath = env.get("PYTHONPATH", "")
+        homr_path = PROJECT_ROOT / "external" / "homr"
+        new_paths = [str(PROJECT_ROOT), str(homr_path)]
+        env["PYTHONPATH"] = (
+            f"{os.pathsep.join(new_paths)}{os.pathsep}{current_pythonpath}"
+            if current_pythonpath
+            else os.pathsep.join(new_paths)
         )
-        commands.append(omr_cmd)
-        if not dry_run:
-            run_with_logging(omr_cmd, env=env, check=True)
 
-    logger.info("--- Step 2.1c: Hybrid Consensus Generation ---")
-    hybrid_results_dir = hybrid_output_dir / "hybrid_results"
-    ensure_dir(hybrid_results_dir)
+        baseline_output = hybrid_output_dir / "baseline"
+        if _HOMR_AVAILABLE:
+            self._run_homr_in_process(
+                baseline_output,
+                enable_sr=False,
+                skip_existing=self.skip_existing,
+            )
+        elif self.skip_existing and _all_stems_exist(baseline_output, stems, "batch/*/*.json"):
+            logger.info("Skipping homr baseline: outputs already exist.")
+        else:
+            baseline_args = [
+                "src/homr_eval_scripts/homr_evaluator.py",
+                "--images",
+                *image_paths,
+                "--output-root",
+                _rel(baseline_output),
+                "--force-run-id",
+                "batch",
+                "--enable-segnet-cache",
+            ]
+            cmd = python_cmd + baseline_args
+            commands.append(cmd)
+            if not self.dry_run:
+                run_with_logging(cmd, env=env, check=True)
 
-    for stem in tqdm(stems, desc="Hybrid Consensus", unit="page"):
-        baseline_json = hybrid_output_dir / "baseline" / "batch" / stem / f"{stem}_detections.json"
-        sr_json = hybrid_output_dir / "sr" / "batch" / stem / f"{stem}_detections.json"
-        omr_json = hybrid_output_dir / "omr_sr" / stem / "predictions.json"
+        sr_output = hybrid_output_dir / "sr"
+        if not enable_sr:
+            logger.info("Skipping homr SR: enable_sr is false.")
+        elif _HOMR_AVAILABLE:
+            self._run_homr_in_process(
+                sr_output,
+                enable_sr=True,
+                sr_scale=int(self.det_cfg.get("sr_scale", 4)),
+                skip_existing=self.skip_existing,
+            )
+        elif self.skip_existing and _all_stems_exist(sr_output, stems, "batch/*/*.json"):
+            logger.info("Skipping homr SR: outputs already exist.")
+        else:
+            sr_scale = int(self.det_cfg.get("sr_scale", 4))
+            sr_args = [
+                "src/homr_eval_scripts/homr_evaluator.py",
+                "--images",
+                *image_paths,
+                "--output-root",
+                _rel(sr_output),
+                "--force-run-id",
+                "batch",
+                "--enable-sr",
+                "--sr-scale",
+                str(sr_scale),
+                "--enable-segnet-cache",
+            ]
+            cmd = python_cmd + sr_args
+            commands.append(cmd)
+            if not self.dry_run:
+                run_with_logging(cmd, env=env, check=True)
 
-        output_json = hybrid_results_dir / f"{stem}_hybrid.json"
+        logger.info("--- Step 2.1b: OMR-DLN SR (Subprocess) ---")
+        sr_root = hybrid_output_dir / "sr" / "batch"
+        omr_output = hybrid_output_dir / "omr_sr"
+
+        def _omr_all_stems_exist() -> bool:
+            if not omr_output.exists():
+                return False
+            found = set()
+            for p in omr_output.glob("*/predictions.json"):
+                found.add(p.parent.name)
+            return all(s in found for s in stems)
 
         if not enable_sr:
-            # Bypass consensus: directly use baseline
-            if not baseline_json.exists():
-                logger.warning(f"Baseline missing for {stem}. Cannot bypass.")
-                continue
-            if not dry_run:
-                shutil.copy(baseline_json, output_json)
-            continue
+            logger.info("Skipping OMR-DLN: SR is disabled.")
+        elif self.skip_existing and _omr_all_stems_exist():
+            logger.info("Skipping OMR-DLN: outputs already exist.")
+        else:
+            python_cmd_omr = get_pipeline_python("omr_dln")
+            if python_cmd_omr and python_cmd_omr[0] == "docker":
+                for img in self.images:
+                    try:
+                        img.resolve().relative_to(PROJECT_ROOT)
+                    except ValueError:
+                        logger.warning(
+                            f"External image path detected: {img}. Falling back to host Python instead of docker exec for OMR-DLN."
+                        )
+                        import sys
 
-        if not baseline_json.exists() or not sr_json.exists() or not omr_json.exists():
-            logger.warning(f"Missing components for {stem}. Skipping consensus.")
-            continue
+                        python_cmd_omr = [os.environ.get("PIPELINE_PYTHON", sys.executable)]
+                        break
 
-        consensus_cmd = [
-            "inprocess:hybrid_consensus",
-            "--baseline",
-            str(baseline_json),
-            "--sr",
-            str(sr_json),
-            "--omr",
-            str(omr_json),
-            "--output",
-            str(output_json),
-        ]
-        commands.append(consensus_cmd)
-        if not dry_run:
-            baseline_boxes = load_json_boxes(baseline_json)
-            sr_boxes = load_json_boxes(sr_json)
-            omr_boxes = load_json_boxes(omr_json)
-            hybrid_preds = phase4_hybrid_consensus(
-                baseline_boxes=baseline_boxes,
-                sr_boxes=sr_boxes,
-                omr_boxes=omr_boxes,
+            omr_cmd = (
+                python_cmd_omr
+                + ["experiments/models/eval_omr_dln.py", "--images"]
+                + image_paths
+                + ["--output-dir", _rel(omr_output), "--pre-computed-sr", _rel(sr_root)]
             )
-            output_json.write_text(json.dumps(hybrid_preds, indent=2))
+            commands.append(omr_cmd)
+            if not self.dry_run:
+                run_with_logging(omr_cmd, env=env, check=True)
 
-    return {"commands": commands, "hybrid_output_dir": hybrid_output_dir}
+        logger.info("--- Step 2.1c: Hybrid Consensus Generation ---")
+        hybrid_results_dir = hybrid_output_dir / "hybrid_results"
+        ensure_dir(hybrid_results_dir)
+
+        for stem in tqdm(stems, desc="Hybrid Consensus", unit="page"):
+            baseline_json = (
+                hybrid_output_dir / "baseline" / "batch" / stem / f"{stem}_detections.json"
+            )
+            sr_json = hybrid_output_dir / "sr" / "batch" / stem / f"{stem}_detections.json"
+            omr_json = hybrid_output_dir / "omr_sr" / stem / "predictions.json"
+
+            output_json = hybrid_results_dir / f"{stem}_hybrid.json"
+
+            if not enable_sr:
+                # Bypass consensus: directly use baseline
+                if not baseline_json.exists():
+                    logger.warning(f"Baseline missing for {stem}. Cannot bypass.")
+                    continue
+                if not self.dry_run:
+                    shutil.copy(baseline_json, output_json)
+                continue
+
+            if not baseline_json.exists() or not sr_json.exists() or not omr_json.exists():
+                logger.warning(f"Missing components for {stem}. Skipping consensus.")
+                continue
+
+            consensus_cmd = [
+                "inprocess:hybrid_consensus",
+                "--baseline",
+                str(baseline_json),
+                "--sr",
+                str(sr_json),
+                "--omr",
+                str(omr_json),
+                "--output",
+                str(output_json),
+            ]
+            commands.append(consensus_cmd)
+            if not self.dry_run:
+                baseline_boxes = load_json_boxes(baseline_json)
+                sr_boxes = load_json_boxes(sr_json)
+                omr_boxes = load_json_boxes(omr_json)
+                hybrid_preds = phase4_hybrid_consensus(
+                    baseline_boxes=baseline_boxes,
+                    sr_boxes=sr_boxes,
+                    omr_boxes=omr_boxes,
+                )
+                output_json.write_text(json.dumps(hybrid_preds, indent=2))
+
+        return {"commands": commands, "hybrid_output_dir": hybrid_output_dir}
+
+    def _run_homr_in_process(
+        self,
+        output_root: Path,
+        enable_sr: bool = False,
+        sr_scale: int = 4,
+        skip_existing: bool = False,
+    ) -> None:
+        """Runs Homr inference (baseline or SR) in-process for persistence."""
+        if not _HOMR_AVAILABLE:
+            logger.warning(
+                "Homr not available for in-process execution. Falling back to subprocess."
+            )
+            return
+
+        stems = [img.stem for img in self.images]
+        # Check if all stems exist if skip_existing is True
+        if skip_existing:
+            found_stems = set()
+            if output_root.exists():
+                for p in output_root.glob("batch/*/*_detections.json"):
+                    found_stems.add(p.parent.name)
+            if all(s in found_stems for s in stems):
+                logger.info(
+                    f"Skipping in-process Homr for {output_root.name}: outputs already exist."
+                )
+                return
+
+        if self.dry_run:
+            logger.info(f"Dry run: In-process Homr for {len(self.images)} images -> {output_root}")
+            return
+
+        # Configuration setup
+        from src.homr_eval_scripts.homr_evaluator import DEFAULT_TUNING, save_homr_results
+
+        config = ProcessingConfig(
+            bool(self.det_cfg.get("enable_debug", False)),  # enable_debug
+            bool(self.det_cfg.get("enable_cache", True)),  # enable_cache
+            bool(self.det_cfg.get("write_staff_positions", False)),  # write_staff_positions
+            False,  # read_staff_positions
+            -1,  # selected_staff
+        )
+        tuning = DEFAULT_TUNING.copy()
+        tuning.update(
+            {
+                "barline_min_height_factor": self.det_cfg.get("barline_min_height_factor", 1.0),
+                "barline_max_width_factor": self.det_cfg.get("barline_max_width_factor", 1.0),
+            }
+        )
+
+        predictor = HomrPredictor(config, tuning)
+        xml_args = XmlGeneratorArguments(False, None, None)
+
+        try:
+            working_images = []
+            persistent_upsampler = None
+
+            # Phase 1: Preparation / SR
+            logger.info(f"--- Homr In-Process Phase 1 (SR={enable_sr}) ---")
+            _log_vram_usage("Before SR")
+            for img in tqdm(self.images, desc="SR/Preparation", unit="page"):
+                stem = img.stem
+                image_run_dir = output_root / "batch" / stem
+                ensure_dir(image_run_dir)
+
+                working_path = image_run_dir / img.name
+                shutil.copy2(img, working_path)
+
+                current_scale = 1
+                if enable_sr:
+                    model_name = "RealESRGAN_x4plus" if sr_scale == 4 else "RealESRGAN_x2plus"
+                    img_bgr = cv2.imread(str(working_path))
+                    if img_bgr is not None:
+                        # Persistence for upsampler
+                        upscaled, persistent_upsampler = apply_advanced_sr(
+                            img_bgr,
+                            model_name=model_name,
+                            scale=sr_scale,
+                            tile=self.det_cfg.get("sr_tile", 0),
+                            tile_pad=self.det_cfg.get("sr_tile_pad", 10),
+                            fp32=self.det_cfg.get("sr_fp32", False),
+                            upsampler=persistent_upsampler,
+                        )
+                        cv2.imwrite(str(working_path), upscaled)
+                        current_scale = sr_scale
+
+                working_images.append((img, working_path, current_scale))
+
+            # Release SR VRAM
+            persistent_upsampler = None
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+            gc.collect()
+            _log_vram_usage("After SR Cleanup")
+
+            # Phase 2: Homr Inference
+            logger.info("--- Homr In-Process Phase 2 (Inference) ---")
+            for original_path, working_path, scale in tqdm(
+                working_images, desc="Homr Inference", unit="page"
+            ):
+                stem = original_path.stem
+                image_run_dir = output_root / "batch" / stem
+
+                # Predict
+                (
+                    predictions,
+                    _,
+                    _,
+                    runtime_s,
+                    notehead_mask,
+                    staff_mask,
+                    _,  # rejected_by_heuristic
+                    _,  # added_end
+                ) = predictor.predict(
+                    working_path, xml_args, sr_scale=scale, image_run_dir=image_run_dir
+                )
+
+                # Scale down predictions to 1x coords for detections.json
+                metrics_predictions = []
+                for pred in predictions:
+                    # predictor.predict returns orig_bbox mapped to the working_path's resolution
+                    # So we just need to scale down by SR scale to get 1x coords
+                    orig_1x = tuple(int(round(c / scale)) for c in pred.orig_bbox)
+                    metrics_predictions.append(
+                        BarlinePrediction(
+                            pred_bbox=pred.pred_bbox,  # internal homr bbox
+                            orig_bbox=orig_1x,  # original 1x coord
+                            system_index=pred.system_index,
+                            staff_index=pred.staff_index,
+                        )
+                    )
+
+                # Save
+                save_homr_results(
+                    original_path, image_run_dir, metrics_predictions, notehead_mask, staff_mask
+                )
+                _log_vram_usage(f"After Page {stem}")
+
+        finally:
+            predictor.cleanup()
+            _log_vram_usage("Final Cleanup")
+
+    def _run_probe_scan(self) -> Dict[str, Any]:
+        """Step 2.2: Probe Scan (Host)"""
+        logger.info("--- Step 2.2: Probe Scan (Host) ---")
+        probe_output_root = self.run_dir / "intermediate" / "probe_scan"
+        ensure_dir(probe_output_root)
+
+        effective_images, effective_sr_scale = self._get_effective_images_for_probe()
+        effective_score_name = self._get_effective_score_name()
+        resolved_staff_mask_dir = self._resolve_staff_mask_dir()
+
+        image_root = get_nested(self.config, "inputs", "pdf_to_images", "output_dir")
+
+        cmd_probe = self._build_probe_command(
+            image_root,
+            probe_output_root,
+            resolved_staff_mask_dir,
+            effective_score_name,
+        )
+
+        if not self.dry_run:
+            detect_probe_kwargs = self._get_probe_kwargs()
+            run_probe_scan_batch(
+                images=effective_images,
+                output_root=probe_output_root,
+                bands_from=self.hybrid_output_dir,
+                staff_mask_dir=resolved_staff_mask_dir,
+                ink_threshold=int(self.det_cfg.get("ink_threshold", 230)),
+                min_ratio=float(self.det_cfg.get("min_ratio", 0.70)),
+                min_height_ratio=float(self.det_cfg.get("min_height_ratio", 0.012)),
+                min_width_ratio=(
+                    float(self.det_cfg.get("min_width_ratio"))
+                    if self.det_cfg.get("min_width_ratio") is not None
+                    else None
+                ),
+                score_name=effective_score_name,
+                detect_probe_kwargs=detect_probe_kwargs,
+                probe_row_filter_mode=(
+                    str(self.det_cfg.get("probe_row_filter_mode"))
+                    if self.det_cfg.get("probe_row_filter_mode") is not None
+                    else None
+                ),
+                probe_endpoint_x_scale=(
+                    float(self.det_cfg.get("probe_endpoint_x_scale"))
+                    if self.det_cfg.get("probe_endpoint_x_scale") is not None
+                    else None
+                ),
+                probe_endpoint_y_scale=(
+                    float(self.det_cfg.get("probe_endpoint_y_scale"))
+                    if self.det_cfg.get("probe_endpoint_y_scale") is not None
+                    else None
+                ),
+                skip_existing=self.skip_existing,
+                input_image_scale=float(effective_sr_scale),
+            )
+
+        return {"commands": [cmd_probe], "probe_output_dir": probe_output_root}
+
+    def _run_cnn_scoring(self) -> Dict[str, Any]:
+        """Step 2.3: CNN Scoring (Host)"""
+        logger.info("--- Step 2.3: CNN Scoring (Host) ---")
+        cnn_model = self.det_cfg.get("cnn_model_path")
+        if not cnn_model:
+            raise ValueError("detection.cnn_model_path is required.")
+
+        cmd_score = [
+            "inprocess:cnn_scoring",
+            "--logs",
+            str(self.probe_output_dir),
+            "--model",
+            str(cnn_model),
+            "--threshold",
+            str(self.det_cfg.get("cnn_threshold", 0.1)),
+        ]
+
+        if not self.dry_run:
+            effective_images, effective_sr_scale = self._get_effective_images_for_probe()
+            effective_score_name = self._get_effective_score_name()
+            run_cnn_scoring_batch(
+                probe_output_root=self.probe_output_dir,
+                images=effective_images,
+                model_path=Path(cnn_model),
+                threshold=float(self.det_cfg.get("cnn_threshold", 0.1)),
+                score_name=effective_score_name,
+                crop_recenter_on_bbox_ink=bool(
+                    self.det_cfg.get("crop_recenter_on_bbox_ink", False)
+                ),
+                crop_recenter_max_shift_unit_ratio=float(
+                    self.det_cfg.get("crop_recenter_max_shift_unit_ratio", 0.35)
+                ),
+                input_image_scale=float(effective_sr_scale),
+            )
+        return {"commands": [cmd_score]}
+
+    def _get_effective_images_for_probe(self) -> tuple[List[Path], int]:
+        """Returns images and scale to use for probe scan (SR or original)."""
+        if self.enable_sr:
+            effective_images = []
+            for img in self.images:
+                stem = img.stem
+                sr_img_path = self.hybrid_output_dir / "sr" / "batch" / stem / f"{stem}.png"
+                if sr_img_path.exists():
+                    effective_images.append(sr_img_path)
+                else:
+                    logger.warning(
+                        "SR image not found for %s at %s, using original.", stem, sr_img_path
+                    )
+                    effective_images.append(img)
+            return effective_images, self.sr_scale
+        else:
+            return self.images, 1
+
+    def _get_effective_score_name(self) -> str | None:
+        """Derive score name from original images or config."""
+        original_score_name = self.images[0].parent.name if self.images else None
+        return (
+            str(self.det_cfg.get("probe_score_name"))
+            if self.det_cfg.get("probe_score_name")
+            else original_score_name
+        )
+
+    def _resolve_staff_mask_dir(self) -> Path | None:
+        """Resolves where to look for staff masks."""
+        staff_mask_dir_override = self.det_cfg.get("staff_mask_dir", "DEFAULT_SENTINEL")
+        if staff_mask_dir_override == "DEFAULT_SENTINEL":
+            return self.hybrid_output_dir
+        elif staff_mask_dir_override is None:
+            return None
+        else:
+            return Path(staff_mask_dir_override)
+
+    def _get_probe_kwargs(self) -> Dict[str, Any]:
+        """Extracts probe-specific keyword arguments from configuration."""
+        return {
+            key: self.det_cfg[key]
+            for key in _PROBE_SCAN_KWARG_KEYS
+            if key in self.det_cfg and self.det_cfg.get(key) is not None
+        }
+
+    def _build_probe_command(
+        self,
+        image_root: str,
+        probe_output_root: Path,
+        resolved_staff_mask_dir: Path | None,
+        effective_score_name: str | None,
+    ) -> List[str]:
+        """Builds the command list for probe scan (for logging/dry run)."""
+        cmd_probe = [
+            "inprocess:probe_scan",
+            "--image-root",
+            str(image_root),
+            "--output-root",
+            str(probe_output_root),
+            "--bands-from",
+            str(self.hybrid_output_dir),
+        ]
+        if resolved_staff_mask_dir is not None:
+            cmd_probe += ["--staff-mask-dir", str(resolved_staff_mask_dir)]
+
+        cmd_probe += [
+            "--ink-threshold",
+            str(self.det_cfg.get("ink_threshold", 230)),
+            "--min-ratio",
+            str(self.det_cfg.get("min_ratio", 0.70)),
+            "--min-height-ratio",
+            str(self.det_cfg.get("min_height_ratio", 0.012)),
+        ]
+        if self.det_cfg.get("min_width_ratio") is not None:
+            cmd_probe += ["--min-width-ratio", str(self.det_cfg.get("min_width_ratio"))]
+        if self.det_cfg.get("probe_row_filter_mode"):
+            cmd_probe += ["--probe-row-filter-mode", str(self.det_cfg.get("probe_row_filter_mode"))]
+        if self.det_cfg.get("probe_endpoint_x_scale") is not None:
+            cmd_probe += [
+                "--probe-endpoint-x-scale",
+                str(self.det_cfg.get("probe_endpoint_x_scale")),
+            ]
+        if self.det_cfg.get("probe_endpoint_y_scale") is not None:
+            cmd_probe += [
+                "--probe-endpoint-y-scale",
+                str(self.det_cfg.get("probe_endpoint_y_scale")),
+            ]
+
+        if effective_score_name:
+            cmd_probe += ["--score-name", str(effective_score_name)]
+
+        detect_probe_kwargs = self._get_probe_kwargs()
+        for key, value in sorted(detect_probe_kwargs.items()):
+            cmd_probe += [f"--{key.replace('_', '-')}", str(value)]
+
+        if self.skip_existing:
+            cmd_probe.append("--skip-existing")
+
+        return cmd_probe
 
 
 def run_detection_step(
@@ -336,172 +706,15 @@ def run_detection_step(
     *,
     dry_run: bool,
 ) -> Dict[str, Any]:
-    """Run hybrid detection -> probe scan -> CNN scoring."""
-    det_cfg = get_nested(config, "detection", default={}) or {}
-    hybrid_run_id = run_id
-    skip_existing = bool(det_cfg.get("probe_skip_existing", False))
-    hybrid_result = _run_hybrid_detection_in_process(
-        det_cfg, images, hybrid_run_id, dry_run=dry_run, skip_existing=skip_existing
+    """Run hybrid detection -> probe scan -> CNN scoring using DetectorOrchestrator."""
+    orchestrator = DetectorOrchestrator(
+        config=config,
+        images=images,
+        run_id=run_id,
+        run_dir=run_dir,
+        dry_run=dry_run,
     )
-    commands = hybrid_result["commands"]
-    hybrid_output_dir = hybrid_result["hybrid_output_dir"]
-
-    # When SR is enabled, we use the upscaled images to improve probe separation.
-    enable_sr = bool(det_cfg.get("enable_sr", True))
-    sr_scale = int(det_cfg.get("sr_scale", 4))
-
-    # Derive score name from original images (assuming they all belong to the same score in this run)
-    original_score_name = images[0].parent.name if images else None
-    effective_score_name = (
-        str(det_cfg.get("probe_score_name"))
-        if det_cfg.get("probe_score_name")
-        else original_score_name
-    )
-
-    if enable_sr:
-        effective_images = []
-        for img in images:
-            stem = img.stem
-            # SR images are generated by homr_evaluator in Step 2.1
-            sr_img_path = hybrid_output_dir / "sr" / "batch" / stem / f"{stem}.png"
-            if sr_img_path.exists():
-                effective_images.append(sr_img_path)
-            else:
-                logger.warning(
-                    "SR image not found for %s at %s, using original.", stem, sr_img_path
-                )
-                effective_images.append(img)
-    else:
-        effective_images = images
-        sr_scale = 1
-
-    logger.info("--- Step 2.2: Probe Scan (Host) ---")
-    probe_output_root = run_dir / "intermediate" / "probe_scan"
-    ensure_dir(probe_output_root)
-
-    image_root = get_nested(config, "inputs", "pdf_to_images", "output_dir")
-    staff_mask_dir_override = det_cfg.get("staff_mask_dir", "DEFAULT_SENTINEL")
-    if staff_mask_dir_override == "DEFAULT_SENTINEL":
-        resolved_staff_mask_dir = hybrid_output_dir
-    elif staff_mask_dir_override is None:
-        resolved_staff_mask_dir = None
-    else:
-        resolved_staff_mask_dir = Path(staff_mask_dir_override)
-
-    cmd_probe = [
-        "inprocess:probe_scan",
-        "--image-root",
-        str(image_root),
-        "--output-root",
-        str(probe_output_root),
-        "--bands-from",
-        str(hybrid_output_dir),
-    ]
-    if resolved_staff_mask_dir is not None:
-        cmd_probe += ["--staff-mask-dir", str(resolved_staff_mask_dir)]
-
-    cmd_probe += [
-        "--ink-threshold",
-        str(det_cfg.get("ink_threshold", 230)),
-        "--min-ratio",
-        str(det_cfg.get("min_ratio", 0.70)),
-        "--min-height-ratio",
-        str(det_cfg.get("min_height_ratio", 0.012)),
-    ]
-    detect_probe_kwargs = {
-        key: det_cfg[key]
-        for key in _PROBE_SCAN_KWARG_KEYS
-        if key in det_cfg and det_cfg.get(key) is not None
-    }
-    if det_cfg.get("min_width_ratio") is not None:
-        cmd_probe += ["--min-width-ratio", str(det_cfg.get("min_width_ratio"))]
-    if det_cfg.get("probe_row_filter_mode"):
-        cmd_probe += ["--probe-row-filter-mode", str(det_cfg.get("probe_row_filter_mode"))]
-    if det_cfg.get("probe_endpoint_x_scale") is not None:
-        cmd_probe += ["--probe-endpoint-x-scale", str(det_cfg.get("probe_endpoint_x_scale"))]
-    if det_cfg.get("probe_endpoint_y_scale") is not None:
-        cmd_probe += ["--probe-endpoint-y-scale", str(det_cfg.get("probe_endpoint_y_scale"))]
-
-    # Use effective_score_name for CLI command
-    if effective_score_name:
-        cmd_probe += ["--score-name", str(effective_score_name)]
-
-    for key, value in sorted(detect_probe_kwargs.items()):
-        cmd_probe += [f"--{key.replace('_', '-')}", str(value)]
-
-    if det_cfg.get("probe_skip_existing"):
-        cmd_probe.append("--skip-existing")
-
-    if not dry_run:
-        run_probe_scan_batch(
-            images=effective_images,
-            output_root=probe_output_root,
-            bands_from=hybrid_output_dir,
-            staff_mask_dir=resolved_staff_mask_dir,
-            ink_threshold=int(det_cfg.get("ink_threshold", 230)),
-            min_ratio=float(det_cfg.get("min_ratio", 0.70)),
-            min_height_ratio=float(det_cfg.get("min_height_ratio", 0.012)),
-            min_width_ratio=(
-                float(det_cfg.get("min_width_ratio"))
-                if det_cfg.get("min_width_ratio") is not None
-                else None
-            ),
-            score_name=effective_score_name,
-            detect_probe_kwargs=detect_probe_kwargs,
-            probe_row_filter_mode=(
-                str(det_cfg.get("probe_row_filter_mode"))
-                if det_cfg.get("probe_row_filter_mode") is not None
-                else None
-            ),
-            probe_endpoint_x_scale=(
-                float(det_cfg.get("probe_endpoint_x_scale"))
-                if det_cfg.get("probe_endpoint_x_scale") is not None
-                else None
-            ),
-            probe_endpoint_y_scale=(
-                float(det_cfg.get("probe_endpoint_y_scale"))
-                if det_cfg.get("probe_endpoint_y_scale") is not None
-                else None
-            ),
-            skip_existing=bool(det_cfg.get("probe_skip_existing")),
-            input_image_scale=float(sr_scale),
-        )
-    commands.append(cmd_probe)
-
-    logger.info("--- Step 2.3: CNN Scoring (Host) ---")
-    cnn_model = det_cfg.get("cnn_model_path")
-    if not cnn_model:
-        raise ValueError("detection.cnn_model_path is required.")
-
-    cmd_score = [
-        "inprocess:cnn_scoring",
-        "--logs",
-        str(probe_output_root),
-        "--model",
-        str(cnn_model),
-        "--threshold",
-        str(det_cfg.get("cnn_threshold", 0.1)),
-    ]
-    if not dry_run:
-        run_cnn_scoring_batch(
-            probe_output_root=probe_output_root,
-            images=effective_images,
-            model_path=Path(cnn_model),
-            threshold=float(det_cfg.get("cnn_threshold", 0.1)),
-            score_name=effective_score_name,
-            crop_recenter_on_bbox_ink=bool(det_cfg.get("crop_recenter_on_bbox_ink", False)),
-            crop_recenter_max_shift_unit_ratio=float(
-                det_cfg.get("crop_recenter_max_shift_unit_ratio", 0.35)
-            ),
-            input_image_scale=float(sr_scale),
-        )
-    commands.append(cmd_score)
-
-    return {
-        "commands": commands,
-        "hybrid_output_dir": hybrid_output_dir,
-        "probe_output_dir": probe_output_root,
-    }
+    return orchestrator.run_detection()
 
 
 def resolve_paths_from_detection(
@@ -642,145 +855,3 @@ def _log_vram_usage(message: str = ""):
             logger.info(f"VRAM Usage ({message}): {used.strip()} / {total.strip()} MiB")
     except Exception as e:
         logger.debug(f"Could not get VRAM usage: {e}")
-
-
-def _run_homr_in_process(
-    det_cfg: Dict[str, Any],
-    images: List[Path],
-    output_root: Path,
-    enable_sr: bool = False,
-    sr_scale: int = 4,
-    dry_run: bool = False,
-    skip_existing: bool = False,
-) -> None:
-    """Runs Homr inference (baseline or SR) in-process for persistence."""
-    if not _HOMR_AVAILABLE:
-        logger.warning("Homr not available for in-process execution. Falling back to subprocess.")
-        return
-
-    stems = [img.stem for img in images]
-    # Check if all stems exist if skip_existing is True
-    if skip_existing:
-        found_stems = set()
-        if output_root.exists():
-            for p in output_root.glob("batch/*/*_detections.json"):
-                found_stems.add(p.parent.name)
-        if all(s in found_stems for s in stems):
-            logger.info(f"Skipping in-process Homr for {output_root.name}: outputs already exist.")
-            return
-
-    if dry_run:
-        logger.info(f"Dry run: In-process Homr for {len(images)} images -> {output_root}")
-        return
-
-    # Configuration setup
-    from src.homr_eval_scripts.homr_evaluator import DEFAULT_TUNING, save_homr_results
-
-    config = ProcessingConfig(
-        bool(det_cfg.get("enable_debug", False)),  # enable_debug
-        bool(det_cfg.get("enable_cache", True)),  # enable_cache
-        bool(det_cfg.get("write_staff_positions", False)),  # write_staff_positions
-        False,  # read_staff_positions
-        -1,  # selected_staff
-    )
-    tuning = DEFAULT_TUNING.copy()
-    tuning.update(
-        {
-            "barline_min_height_factor": det_cfg.get("barline_min_height_factor", 1.0),
-            "barline_max_width_factor": det_cfg.get("barline_max_width_factor", 1.0),
-        }
-    )
-
-    predictor = HomrPredictor(config, tuning)
-    xml_args = XmlGeneratorArguments(False, None, None)
-
-    try:
-        working_images = []
-        persistent_upsampler = None
-
-        # Phase 1: Preparation / SR
-        logger.info(f"--- Homr In-Process Phase 1 (SR={enable_sr}) ---")
-        _log_vram_usage("Before SR")
-        for img in tqdm(images, desc="SR/Preparation", unit="page"):
-            stem = img.stem
-            image_run_dir = output_root / "batch" / stem
-            ensure_dir(image_run_dir)
-
-            working_path = image_run_dir / img.name
-            shutil.copy2(img, working_path)
-
-            current_scale = 1
-            if enable_sr:
-                model_name = "RealESRGAN_x4plus" if sr_scale == 4 else "RealESRGAN_x2plus"
-                img_bgr = cv2.imread(str(working_path))
-                if img_bgr is not None:
-                    # Persistence for upsampler
-                    upscaled, persistent_upsampler = apply_advanced_sr(
-                        img_bgr,
-                        model_name=model_name,
-                        scale=sr_scale,
-                        tile=det_cfg.get("sr_tile", 0),
-                        tile_pad=det_cfg.get("sr_tile_pad", 10),
-                        fp32=det_cfg.get("sr_fp32", False),
-                        upsampler=persistent_upsampler,
-                    )
-                    cv2.imwrite(str(working_path), upscaled)
-                    current_scale = sr_scale
-
-            working_images.append((img, working_path, current_scale))
-
-        # Release SR VRAM
-        persistent_upsampler = None
-
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-            torch.cuda.synchronize()
-        gc.collect()
-        _log_vram_usage("After SR Cleanup")
-
-        # Phase 2: Homr Inference
-        logger.info("--- Homr In-Process Phase 2 (Inference) ---")
-        for original_path, working_path, scale in tqdm(
-            working_images, desc="Homr Inference", unit="page"
-        ):
-            stem = original_path.stem
-            image_run_dir = output_root / "batch" / stem
-
-            # Predict
-            (
-                predictions,
-                _,
-                _,
-                runtime_s,
-                notehead_mask,
-                staff_mask,
-                _,  # rejected_by_heuristic
-                _,  # added_end
-            ) = predictor.predict(
-                working_path, xml_args, sr_scale=scale, image_run_dir=image_run_dir
-            )
-
-            # Scale down predictions to 1x coords for detections.json
-            metrics_predictions = []
-            for pred in predictions:
-                # predictor.predict returns orig_bbox mapped to the working_path's resolution
-                # So we just need to scale down by SR scale to get 1x coords
-                orig_1x = tuple(int(round(c / scale)) for c in pred.orig_bbox)
-                metrics_predictions.append(
-                    BarlinePrediction(
-                        pred_bbox=pred.pred_bbox,  # internal homr bbox
-                        orig_bbox=orig_1x,  # original 1x coord
-                        system_index=pred.system_index,
-                        staff_index=pred.staff_index,
-                    )
-                )
-
-            # Save
-            save_homr_results(
-                original_path, image_run_dir, metrics_predictions, notehead_mask, staff_mask
-            )
-            _log_vram_usage(f"After Page {stem}")
-
-    finally:
-        predictor.cleanup()
-        _log_vram_usage("Final Cleanup")

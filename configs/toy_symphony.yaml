@@ -1,6 +1,7 @@
 run:
-  run_id: toy_symphony_bass_retry
+  run_id: toy_symphony_baseline
   output_root: logs/full_pipeline_runs
+  page_limit: 4
 
 inputs:
   pdf_path: data/evaluation/pdfs/おもちゃの交響曲_bass.pdf

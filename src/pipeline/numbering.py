@@ -72,6 +72,8 @@ def run_mmr_batch(
     threshold: float = 0.5,
     rescue_threshold: float = 0.1,
     debug_root: Optional[Path] = None,
+    classifier: Optional[Any] = None,
+    ocr_engine: Optional[Any] = None,
 ) -> list[dict]:
     """Runs MMR detection in-process for a batch of pages."""
     from src.measure_numbering.mmr import MMRProcessor
@@ -83,6 +85,8 @@ def run_mmr_batch(
         enable_rotation_tta=enable_rotation_tta,
         threshold=threshold,
         rescue_threshold=rescue_threshold,
+        classifier=classifier,
+        ocr_engine=ocr_engine,
     )
 
     results = processor.process_pages(pages_data, image_paths, debug_root=debug_root)

@@ -28,13 +28,16 @@ MODEL_TRANSFORM = transforms.Compose(
 class MMRClassifier:
     """Handles CNN inference for Multi-Measure Rest (MMR) detection."""
 
-    def __init__(self, model_path: Path, device: torch.device):
+    def __init__(self, model_path: Path, device: torch.device, model: Optional[nn.Module] = None):
         self.device = device
-        self.model = self._load_model(model_path)
         self.transform = MODEL_TRANSFORM
+        if model is not None:
+            self.model = model
+        else:
+            self.model = self._load_model(model_path)
 
     def _load_model(self, model_path: Path) -> nn.Module:
-        model = models.resnet18(pretrained=False)
+        model = models.resnet18(weights=None)
         model.fc = nn.Linear(model.fc.in_features, 1)
 
         try:
@@ -68,8 +71,11 @@ class MMRClassifier:
 class MMROCREngine:
     """Handles RapidOCR and post-processing for MMR number detection."""
 
-    def __init__(self, enable_rotation_tta: bool = False):
-        self.ocr_engine = RapidOCR()
+    def __init__(self, enable_rotation_tta: bool = False, ocr_engine: Optional[RapidOCR] = None):
+        if ocr_engine is not None:
+            self.ocr_engine = ocr_engine
+        else:
+            self.ocr_engine = RapidOCR()
         self.enable_rotation_tta = enable_rotation_tta
         self.blacklist = [
             "Viol",
@@ -298,9 +304,19 @@ class MMRProcessor:
         enable_rotation_tta: bool = False,
         threshold: float = 0.5,
         rescue_threshold: float = 0.1,
+        classifier: Optional[MMRClassifier] = None,
+        ocr_engine: Optional[MMROCREngine] = None,
     ):
-        self.classifier = MMRClassifier(model_path, device)
-        self.ocr = MMROCREngine(enable_rotation_tta=enable_rotation_tta)
+        if classifier is not None:
+            self.classifier = classifier
+        else:
+            self.classifier = MMRClassifier(model_path, device)
+
+        if ocr_engine is not None:
+            self.ocr = ocr_engine
+        else:
+            self.ocr = MMROCREngine(enable_rotation_tta=enable_rotation_tta)
+
         self.threshold = threshold
         self.rescue_threshold = rescue_threshold
 

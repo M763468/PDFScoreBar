@@ -161,14 +161,16 @@ def _run_hybrid_detection_in_process(
                 python_cmd = [os.environ.get("PIPELINE_PYTHON", sys.executable)]
                 break
 
-    # homr_evaluator requires PYTHONPATH to include src
+    # homr_evaluator requires PYTHONPATH to include src and external/homr
     # We pass it via environment variables in subprocess.run
     env = os.environ.copy()
     current_pythonpath = env.get("PYTHONPATH", "")
+    homr_path = PROJECT_ROOT / "external" / "homr"
+    new_paths = [str(PROJECT_ROOT), str(homr_path)]
     env["PYTHONPATH"] = (
-        f"{PROJECT_ROOT}{os.pathsep}{current_pythonpath}"
+        f"{os.pathsep.join(new_paths)}{os.pathsep}{current_pythonpath}"
         if current_pythonpath
-        else str(PROJECT_ROOT)
+        else os.pathsep.join(new_paths)
     )
 
     baseline_output = hybrid_output_dir / "baseline"
@@ -522,12 +524,17 @@ def resolve_paths_from_detection(
 
     staff_mask_map: Dict[str, Path] = {}
     if resolved_staff_mask_dir is not None and resolved_staff_mask_dir.exists():
-        # Match either original stem or proxy-suffixed stem (from Proxy Inference)
-        # Examples: page_001_debug_3_staff.png or page_001_proxy_debug_3_staff.png
+        # Pattern 1: *_debug_3_staff.png (Proxy/SR output)
         for path in resolved_staff_mask_dir.rglob("*_debug_3_staff.png"):
             name = path.name
             stem = name.replace("_proxy_debug_3_staff.png", "").replace("_debug_3_staff.png", "")
             staff_mask_map[stem] = path
+        # Pattern 2: *_staff_mask.png (Baseline in-process output)
+        for path in resolved_staff_mask_dir.rglob("*_staff_mask.png"):
+            name = path.name
+            stem = name.replace("_staff_mask.png", "")
+            if stem not in staff_mask_map:
+                staff_mask_map[stem] = path
 
     for page_id, img_path in zip(page_ids, images):
         stem = img_path.stem

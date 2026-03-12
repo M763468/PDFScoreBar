@@ -91,6 +91,7 @@ def get_pipeline_python(step_name: Optional[str] = None) -> List[str]:
     # 2. Explicit override
     if env_python:
         return [env_python]
+
     # 3. If already in container but not a heavy step (or /opt/venv_sr missing)
     if is_in_container():
         return [sys.executable]

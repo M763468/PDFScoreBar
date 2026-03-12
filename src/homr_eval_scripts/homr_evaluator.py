@@ -1994,20 +1994,21 @@ class HomrPredictor:
         tb_config = ThinBarlineConfig()
         if sr_scale > 1:
             # Scale thin barline parameters
-            for attr in [
-                "min_height",
-                "max_height",
-                "max_width",
-                "y_merge_tolerance",
-                "y_center_tolerance",
-                "x_center_tolerance",
-                "adjacent_relaxed_span",
-                "vertical_gap_fill",
-                "left_margin_limit",
-                "cluster_x_tolerance",
-                "cluster_reject_span",
-            ]:
-                setattr(tb_config, attr, getattr(tb_config, attr) * sr_scale)
+            tb_config = ThinBarlineConfig(
+                min_height=tb_config.min_height * sr_scale,
+                max_height=tb_config.max_height * sr_scale,
+                max_width=tb_config.max_width * sr_scale,
+                y_merge_tolerance=tb_config.y_merge_tolerance * sr_scale,
+                y_center_tolerance=tb_config.y_center_tolerance * sr_scale,
+                x_center_tolerance=tb_config.x_center_tolerance * sr_scale,
+                adjacent_relaxed_span=tb_config.adjacent_relaxed_span * sr_scale,
+                vertical_gap_fill=tb_config.vertical_gap_fill * sr_scale,
+                left_margin_limit=tb_config.left_margin_limit * sr_scale,
+                cluster_x_tolerance=tb_config.cluster_x_tolerance * sr_scale,
+                cluster_reject_span=tb_config.cluster_reject_span * sr_scale,
+                pixel_threshold=tb_config.pixel_threshold,
+                dark_pixel_threshold=tb_config.dark_pixel_threshold,
+            )
 
         extra_barlines = detect_thin_vertical_runs(
             image_path,

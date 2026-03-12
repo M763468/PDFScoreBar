@@ -288,7 +288,7 @@ class HybridDetector:
                             img_bgr,
                             model_name=model_name,
                             scale=sr_scale,
-                            tile=self.det_cfg.get("sr_tile", 0),
+                            tile=self.det_cfg.get("sr_tile", -1),
                             tile_pad=self.det_cfg.get("sr_tile_pad", 10),
                             fp32=self.det_cfg.get("sr_fp32", False),
                             upsampler=persistent_upsampler,

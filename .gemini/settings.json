@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "serena": {
+      "command": "bash",
+      "args": [
+        "-c",
+        "uvx --from git+https://github.com/oraios/serena serena start-mcp-server --context claude-code --project-from-cwd 2>/dev/null"
+      ],
+      "trust": true
+    }
+  }
+}

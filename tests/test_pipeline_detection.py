@@ -3,7 +3,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from src.pipeline.detection import DetectorOrchestrator, run_detection_step
+from src.pipeline.detection import run_detection_step
+from src.pipeline.detection_hybrid import HybridDetector
 
 
 class TestPipelineDetection(unittest.TestCase):
@@ -30,8 +31,8 @@ class TestPipelineDetection(unittest.TestCase):
 
             with (
                 patch.object(
-                    DetectorOrchestrator,
-                    "_run_hybrid_detection",
+                    HybridDetector,
+                    "run",
                     return_value={"commands": [["hybrid"]], "hybrid_output_dir": hybrid_output_dir},
                 ),
                 patch("src.pipeline.detection.ensure_dir"),
@@ -70,8 +71,8 @@ class TestPipelineDetection(unittest.TestCase):
 
             with (
                 patch.object(
-                    DetectorOrchestrator,
-                    "_run_hybrid_detection",
+                    HybridDetector,
+                    "run",
                     return_value={"commands": [["hybrid"]], "hybrid_output_dir": hybrid_output_dir},
                 ),
                 patch("src.pipeline.detection.ensure_dir"),
@@ -105,8 +106,8 @@ class TestPipelineDetection(unittest.TestCase):
 
             with (
                 patch.object(
-                    DetectorOrchestrator,
-                    "_run_hybrid_detection",
+                    HybridDetector,
+                    "run",
                     return_value={"commands": [["hybrid"]], "hybrid_output_dir": hybrid_output_dir},
                 ),
                 patch("src.pipeline.detection.ensure_dir"),

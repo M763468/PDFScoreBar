@@ -2,112 +2,20 @@
 
 from __future__ import annotations
 
-import gc
-import json
 import logging
-import os
-import shutil
-import subprocess
-from importlib import import_module
-
-import cv2
-import torch
-from tqdm import tqdm
-
-try:
-    import_module("torch")
-except ImportError:
-    pass
 from pathlib import Path
 from typing import Any, Dict, List
 
 from src.pipeline.cnn_scoring import run_cnn_scoring_batch
-from src.pipeline.hybrid_consensus import load_json_boxes, phase4_hybrid_consensus
-from src.pipeline.python_env import get_pipeline_python
-from src.pipeline.subprocess_utils import run_with_logging
-
-# Optional imports for in-process Homr execution
-try:
-    from src.common.preprocessing import apply_advanced_sr
-    from src.homr_eval_scripts.homr_evaluator import (
-        BarlinePrediction,
-        HomrPredictor,
-        ProcessingConfig,
-        XmlGeneratorArguments,
-    )
-
-    _HOMR_AVAILABLE = True
-except ImportError:
-    _HOMR_AVAILABLE = False
-
-logger = logging.getLogger(__name__)
 from src.pipeline.config import get_nested
+from src.pipeline.detection_config import get_probe_kwargs
+from src.pipeline.detection_hybrid import HybridDetector
 from src.pipeline.io import ensure_dir
 from src.pipeline.probe_scan import run_probe_scan_batch
 
+logger = logging.getLogger(__name__)
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-_PROBE_SCAN_KWARG_KEYS = (
-    "probe_width",
-    "use_peak_relative_ratio",
-    "peak_ratio_min",
-    "extend_scale",
-    "extend_max_ratio",
-    "extend_top_max_ratio",
-    "extend_bottom_max_ratio",
-    "min_peak_distance",
-    "min_peak_distance_unit_ratio",
-    "refine_window",
-    "max_per_band",
-    "band_height_mode",
-    "band_height_scale",
-    "band_height_min",
-    "x_merge_tol",
-    "x_merge_tol_unit_ratio",
-    "post_emit_unit_normalized_box",
-    "post_norm_width_unit_ratio",
-    "post_norm_height_unit_ratio",
-    "post_apply_if_width_gt_unit_ratio",
-    "post_apply_if_height_gt_unit_ratio",
-    "post_vertical_min_height_unit_ratio",
-    "post_vertical_min_aspect_ratio",
-    "post_split_wide_candidates",
-    "post_split_min_width_unit_ratio",
-    "post_split_box_width_unit_ratio",
-    "post_split_peak_distance_unit_ratio",
-    "post_split_peak_prominence_ratio",
-    "scan_fallback_pred_band",
-    "scan_disable_non_scan_extend",
-    "scan_disable_existing_suppression",
-    "scan_existing_min_vertical_iou",
-    "scan_peak_band_height",
-    "scan_center_on_peak",
-    "scan_x_peak_rescue",
-    "scan_x_peak_window",
-    "scan_x_peak_ratio_min",
-    "scan_x_peak_max_overhang",
-    "scan_x_peak_rescue_mode",
-    "scan_x_peak_segment_height",
-    "scan_x_peak_segment_pass_ratio",
-    "scan_x_peak_segment_source",
-    "scan_x_peak_ignore_staff_peak",
-    "scan_x_peak_ignore_radius",
-    "scan_rightmost_rescue",
-    "scan_rightmost_tolerance",
-    "scan_rightmost_min_rows",
-    "scan_rightmost_min_ratio",
-    "scan_gap_rescue",
-    "scan_gap_threshold_ratio",
-    "scan_gap_rescue_min_ratio",
-    "scan_gap_margin_ratio",
-    "scan_ratio_rel_rescue",
-    "scan_ratio_rel_rescue_min",
-    "scan_ratio_rel_rescue_xpeak_min",
-    "scan_ratio_rel_rescue_max_overhang",
-    "divisi_rescue",
-    "divisi_dist_ratio",
-    "divisi_align_tol",
-    "divisi_align_min_count",
-)
 
 
 class DetectorOrchestrator:
@@ -155,353 +63,16 @@ class DetectorOrchestrator:
         }
 
     def _run_hybrid_detection(self) -> Dict[str, Any]:
-        """Step 2.1: Hybrid Detection (Subprocess homr baseline/SR)"""
-        # homr_evaluator will be called as a subprocess to ensure environment isolation
-        hybrid_root = Path(self.det_cfg.get("hybrid_output_root", "logs/hybrid_generalization"))
-        hybrid_output_dir = hybrid_root / self.run_id
-        ensure_dir(hybrid_output_dir)
-
-        # Use relative paths for subprocess compatibility with Docker volumes
-        def _rel(path: Path) -> str:
-            try:
-                return str(path.resolve().relative_to(PROJECT_ROOT))
-            except ValueError:
-                return str(path)
-
-        image_paths = [_rel(path) for path in self.images]
-        stems = [path.stem for path in self.images]
-
-        commands: List[List[str]] = []
-
-        def _all_stems_exist(base_dir: Path, stems_to_check: List[str], glob_pattern: str) -> bool:
-            if not base_dir.exists():
-                return False
-            found_stems = set()
-            for p in base_dir.glob(glob_pattern):
-                found_stems.add(p.parent.name)  # parent is the stem directory
-            return all(s in found_stems for s in stems_to_check)
-
-        logger.info("--- Step 2.1: Hybrid Detection (Subprocess homr baseline/SR) ---")
-
-        enable_sr = bool(self.det_cfg.get("enable_sr", True))
-
-        python_cmd = get_pipeline_python("homr")
-        if python_cmd and python_cmd[0] == "docker":
-            for img in self.images:
-                try:
-                    img.resolve().relative_to(PROJECT_ROOT)
-                except ValueError:
-                    logger.warning(
-                        f"External image path detected: {img}. Falling back to host Python instead of docker exec."
-                    )
-                    import sys
-
-                    python_cmd = [os.environ.get("PIPELINE_PYTHON", sys.executable)]
-                    break
-
-        # homr_evaluator requires PYTHONPATH to include src and external/homr
-        # We pass it via environment variables in subprocess.run
-        env = os.environ.copy()
-        current_pythonpath = env.get("PYTHONPATH", "")
-        homr_path = PROJECT_ROOT / "external" / "homr"
-        new_paths = [str(PROJECT_ROOT), str(homr_path)]
-        env["PYTHONPATH"] = (
-            f"{os.pathsep.join(new_paths)}{os.pathsep}{current_pythonpath}"
-            if current_pythonpath
-            else os.pathsep.join(new_paths)
+        """Step 2.1: Hybrid Detection (Subprocess or In-Process)"""
+        detector = HybridDetector(
+            det_cfg=self.det_cfg,
+            images=self.images,
+            run_id=self.run_id,
+            project_root=PROJECT_ROOT,
+            dry_run=self.dry_run,
+            skip_existing=self.skip_existing,
         )
-
-        baseline_output = hybrid_output_dir / "baseline"
-        if _HOMR_AVAILABLE:
-            self._run_homr_in_process(
-                baseline_output,
-                enable_sr=False,
-                skip_existing=self.skip_existing,
-            )
-        elif self.skip_existing and _all_stems_exist(baseline_output, stems, "batch/*/*.json"):
-            logger.info("Skipping homr baseline: outputs already exist.")
-        else:
-            baseline_args = [
-                "src/homr_eval_scripts/homr_evaluator.py",
-                "--images",
-                *image_paths,
-                "--output-root",
-                _rel(baseline_output),
-                "--force-run-id",
-                "batch",
-                "--enable-segnet-cache",
-            ]
-            cmd = python_cmd + baseline_args
-            commands.append(cmd)
-            if not self.dry_run:
-                run_with_logging(cmd, env=env, check=True)
-
-        sr_output = hybrid_output_dir / "sr"
-        if not enable_sr:
-            logger.info("Skipping homr SR: enable_sr is false.")
-        elif _HOMR_AVAILABLE:
-            self._run_homr_in_process(
-                sr_output,
-                enable_sr=True,
-                sr_scale=int(self.det_cfg.get("sr_scale", 4)),
-                skip_existing=self.skip_existing,
-            )
-        elif self.skip_existing and _all_stems_exist(sr_output, stems, "batch/*/*.json"):
-            logger.info("Skipping homr SR: outputs already exist.")
-        else:
-            sr_scale = int(self.det_cfg.get("sr_scale", 4))
-            sr_args = [
-                "src/homr_eval_scripts/homr_evaluator.py",
-                "--images",
-                *image_paths,
-                "--output-root",
-                _rel(sr_output),
-                "--force-run-id",
-                "batch",
-                "--enable-sr",
-                "--sr-scale",
-                str(sr_scale),
-                "--enable-segnet-cache",
-            ]
-            cmd = python_cmd + sr_args
-            commands.append(cmd)
-            if not self.dry_run:
-                run_with_logging(cmd, env=env, check=True)
-
-        logger.info("--- Step 2.1b: OMR-DLN SR (Subprocess) ---")
-        sr_root = hybrid_output_dir / "sr" / "batch"
-        omr_output = hybrid_output_dir / "omr_sr"
-
-        def _omr_all_stems_exist() -> bool:
-            if not omr_output.exists():
-                return False
-            found = set()
-            for p in omr_output.glob("*/predictions.json"):
-                found.add(p.parent.name)
-            return all(s in found for s in stems)
-
-        if not enable_sr:
-            logger.info("Skipping OMR-DLN: SR is disabled.")
-        elif self.skip_existing and _omr_all_stems_exist():
-            logger.info("Skipping OMR-DLN: outputs already exist.")
-        else:
-            python_cmd_omr = get_pipeline_python("omr_dln")
-            if python_cmd_omr and python_cmd_omr[0] == "docker":
-                for img in self.images:
-                    try:
-                        img.resolve().relative_to(PROJECT_ROOT)
-                    except ValueError:
-                        logger.warning(
-                            f"External image path detected: {img}. Falling back to host Python instead of docker exec for OMR-DLN."
-                        )
-                        import sys
-
-                        python_cmd_omr = [os.environ.get("PIPELINE_PYTHON", sys.executable)]
-                        break
-
-            omr_cmd = (
-                python_cmd_omr
-                + ["experiments/models/eval_omr_dln.py", "--images"]
-                + image_paths
-                + ["--output-dir", _rel(omr_output), "--pre-computed-sr", _rel(sr_root)]
-            )
-            commands.append(omr_cmd)
-            if not self.dry_run:
-                run_with_logging(omr_cmd, env=env, check=True)
-
-        logger.info("--- Step 2.1c: Hybrid Consensus Generation ---")
-        hybrid_results_dir = hybrid_output_dir / "hybrid_results"
-        ensure_dir(hybrid_results_dir)
-
-        for stem in tqdm(stems, desc="Hybrid Consensus", unit="page"):
-            baseline_json = (
-                hybrid_output_dir / "baseline" / "batch" / stem / f"{stem}_detections.json"
-            )
-            sr_json = hybrid_output_dir / "sr" / "batch" / stem / f"{stem}_detections.json"
-            omr_json = hybrid_output_dir / "omr_sr" / stem / "predictions.json"
-
-            output_json = hybrid_results_dir / f"{stem}_hybrid.json"
-
-            if not enable_sr:
-                # Bypass consensus: directly use baseline
-                if not baseline_json.exists():
-                    logger.warning(f"Baseline missing for {stem}. Cannot bypass.")
-                    continue
-                if not self.dry_run:
-                    shutil.copy(baseline_json, output_json)
-                continue
-
-            if not baseline_json.exists() or not sr_json.exists() or not omr_json.exists():
-                logger.warning(f"Missing components for {stem}. Skipping consensus.")
-                continue
-
-            consensus_cmd = [
-                "inprocess:hybrid_consensus",
-                "--baseline",
-                str(baseline_json),
-                "--sr",
-                str(sr_json),
-                "--omr",
-                str(omr_json),
-                "--output",
-                str(output_json),
-            ]
-            commands.append(consensus_cmd)
-            if not self.dry_run:
-                baseline_boxes = load_json_boxes(baseline_json)
-                sr_boxes = load_json_boxes(sr_json)
-                omr_boxes = load_json_boxes(omr_json)
-                hybrid_preds = phase4_hybrid_consensus(
-                    baseline_boxes=baseline_boxes,
-                    sr_boxes=sr_boxes,
-                    omr_boxes=omr_boxes,
-                )
-                output_json.write_text(json.dumps(hybrid_preds, indent=2))
-
-        return {"commands": commands, "hybrid_output_dir": hybrid_output_dir}
-
-    def _run_homr_in_process(
-        self,
-        output_root: Path,
-        enable_sr: bool = False,
-        sr_scale: int = 4,
-        skip_existing: bool = False,
-    ) -> None:
-        """Runs Homr inference (baseline or SR) in-process for persistence."""
-        if not _HOMR_AVAILABLE:
-            logger.warning(
-                "Homr not available for in-process execution. Falling back to subprocess."
-            )
-            return
-
-        stems = [img.stem for img in self.images]
-        # Check if all stems exist if skip_existing is True
-        if skip_existing:
-            found_stems = set()
-            if output_root.exists():
-                for p in output_root.glob("batch/*/*_detections.json"):
-                    found_stems.add(p.parent.name)
-            if all(s in found_stems for s in stems):
-                logger.info(
-                    f"Skipping in-process Homr for {output_root.name}: outputs already exist."
-                )
-                return
-
-        if self.dry_run:
-            logger.info(f"Dry run: In-process Homr for {len(self.images)} images -> {output_root}")
-            return
-
-        # Configuration setup
-        from src.homr_eval_scripts.homr_evaluator import DEFAULT_TUNING, save_homr_results
-
-        config = ProcessingConfig(
-            bool(self.det_cfg.get("enable_debug", False)),  # enable_debug
-            bool(self.det_cfg.get("enable_cache", True)),  # enable_cache
-            bool(self.det_cfg.get("write_staff_positions", False)),  # write_staff_positions
-            False,  # read_staff_positions
-            -1,  # selected_staff
-        )
-        tuning = DEFAULT_TUNING.copy()
-        tuning.update(
-            {
-                "barline_min_height_factor": self.det_cfg.get("barline_min_height_factor", 1.0),
-                "barline_max_width_factor": self.det_cfg.get("barline_max_width_factor", 1.0),
-            }
-        )
-
-        predictor = HomrPredictor(config, tuning)
-        xml_args = XmlGeneratorArguments(False, None, None)
-
-        try:
-            working_images = []
-            persistent_upsampler = None
-
-            # Phase 1: Preparation / SR
-            logger.info(f"--- Homr In-Process Phase 1 (SR={enable_sr}) ---")
-            _log_vram_usage("Before SR")
-            for img in tqdm(self.images, desc="SR/Preparation", unit="page"):
-                stem = img.stem
-                image_run_dir = output_root / "batch" / stem
-                ensure_dir(image_run_dir)
-
-                working_path = image_run_dir / img.name
-                shutil.copy2(img, working_path)
-
-                current_scale = 1
-                if enable_sr:
-                    model_name = "RealESRGAN_x4plus" if sr_scale == 4 else "RealESRGAN_x2plus"
-                    img_bgr = cv2.imread(str(working_path))
-                    if img_bgr is not None:
-                        # Persistence for upsampler
-                        upscaled, persistent_upsampler = apply_advanced_sr(
-                            img_bgr,
-                            model_name=model_name,
-                            scale=sr_scale,
-                            tile=self.det_cfg.get("sr_tile", 0),
-                            tile_pad=self.det_cfg.get("sr_tile_pad", 10),
-                            fp32=self.det_cfg.get("sr_fp32", False),
-                            upsampler=persistent_upsampler,
-                        )
-                        cv2.imwrite(str(working_path), upscaled)
-                        current_scale = sr_scale
-
-                working_images.append((img, working_path, current_scale))
-
-            # Release SR VRAM
-            persistent_upsampler = None
-
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-                torch.cuda.synchronize()
-            gc.collect()
-            _log_vram_usage("After SR Cleanup")
-
-            # Phase 2: Homr Inference
-            logger.info("--- Homr In-Process Phase 2 (Inference) ---")
-            for original_path, working_path, scale in tqdm(
-                working_images, desc="Homr Inference", unit="page"
-            ):
-                stem = original_path.stem
-                image_run_dir = output_root / "batch" / stem
-
-                # Predict
-                (
-                    predictions,
-                    _,
-                    _,
-                    runtime_s,
-                    notehead_mask,
-                    staff_mask,
-                    _,  # rejected_by_heuristic
-                    _,  # added_end
-                ) = predictor.predict(
-                    working_path, xml_args, sr_scale=scale, image_run_dir=image_run_dir
-                )
-
-                # Scale down predictions to 1x coords for detections.json
-                metrics_predictions = []
-                for pred in predictions:
-                    # predictor.predict returns orig_bbox mapped to the working_path's resolution
-                    # So we just need to scale down by SR scale to get 1x coords
-                    orig_1x = tuple(int(round(c / scale)) for c in pred.orig_bbox)
-                    metrics_predictions.append(
-                        BarlinePrediction(
-                            pred_bbox=pred.pred_bbox,  # internal homr bbox
-                            orig_bbox=orig_1x,  # original 1x coord
-                            system_index=pred.system_index,
-                            staff_index=pred.staff_index,
-                        )
-                    )
-
-                # Save
-                save_homr_results(
-                    original_path, image_run_dir, metrics_predictions, notehead_mask, staff_mask
-                )
-                _log_vram_usage(f"After Page {stem}")
-
-        finally:
-            predictor.cleanup()
-            _log_vram_usage("Final Cleanup")
+        return detector.run()
 
     def _run_probe_scan(self) -> Dict[str, Any]:
         """Step 2.2: Probe Scan (Host)"""
@@ -513,17 +84,8 @@ class DetectorOrchestrator:
         effective_score_name = self._get_effective_score_name()
         resolved_staff_mask_dir = self._resolve_staff_mask_dir()
 
-        image_root = get_nested(self.config, "inputs", "pdf_to_images", "output_dir")
-
-        cmd_probe = self._build_probe_command(
-            image_root,
-            probe_output_root,
-            resolved_staff_mask_dir,
-            effective_score_name,
-        )
-
         if not self.dry_run:
-            detect_probe_kwargs = self._get_probe_kwargs()
+            detect_probe_kwargs = get_probe_kwargs(self.det_cfg)
             run_probe_scan_batch(
                 images=effective_images,
                 output_root=probe_output_root,
@@ -558,6 +120,8 @@ class DetectorOrchestrator:
                 input_image_scale=float(effective_sr_scale),
             )
 
+        # Build command list for logging/return
+        cmd_probe = ["inprocess:probe_scan", "--output-root", str(probe_output_root)]
         return {"commands": [cmd_probe], "probe_output_dir": probe_output_root}
 
     def _run_cnn_scoring(self) -> Dict[str, Any]:
@@ -566,16 +130,6 @@ class DetectorOrchestrator:
         cnn_model = self.det_cfg.get("cnn_model_path")
         if not cnn_model:
             raise ValueError("detection.cnn_model_path is required.")
-
-        cmd_score = [
-            "inprocess:cnn_scoring",
-            "--logs",
-            str(self.probe_output_dir),
-            "--model",
-            str(cnn_model),
-            "--threshold",
-            str(self.det_cfg.get("cnn_threshold", 0.1)),
-        ]
 
         if not self.dry_run:
             effective_images, effective_sr_scale = self._get_effective_images_for_probe()
@@ -594,6 +148,7 @@ class DetectorOrchestrator:
                 ),
                 input_image_scale=float(effective_sr_scale),
             )
+        cmd_score = ["inprocess:cnn_scoring", "--model", str(cnn_model)]
         return {"commands": [cmd_score]}
 
     def _get_effective_images_for_probe(self) -> tuple[List[Path], int]:
@@ -601,100 +156,26 @@ class DetectorOrchestrator:
         if self.enable_sr:
             effective_images = []
             for img in self.images:
-                stem = img.stem
-                sr_img_path = self.hybrid_output_dir / "sr" / "batch" / stem / f"{stem}.png"
+                sr_img_path = self.hybrid_output_dir / "sr" / "batch" / img.stem / f"{img.stem}.png"
                 if sr_img_path.exists():
                     effective_images.append(sr_img_path)
                 else:
-                    logger.warning(
-                        "SR image not found for %s at %s, using original.", stem, sr_img_path
-                    )
+                    logger.warning("SR image not found for %s, using original.", img.stem)
                     effective_images.append(img)
             return effective_images, self.sr_scale
-        else:
-            return self.images, 1
+        return self.images, 1
 
     def _get_effective_score_name(self) -> str | None:
         """Derive score name from original images or config."""
         original_score_name = self.images[0].parent.name if self.images else None
-        return (
-            str(self.det_cfg.get("probe_score_name"))
-            if self.det_cfg.get("probe_score_name")
-            else original_score_name
-        )
+        return str(self.det_cfg.get("probe_score_name", original_score_name or ""))
 
     def _resolve_staff_mask_dir(self) -> Path | None:
         """Resolves where to look for staff masks."""
-        staff_mask_dir_override = self.det_cfg.get("staff_mask_dir", "DEFAULT_SENTINEL")
-        if staff_mask_dir_override == "DEFAULT_SENTINEL":
+        override = self.det_cfg.get("staff_mask_dir", "DEFAULT_SENTINEL")
+        if override == "DEFAULT_SENTINEL":
             return self.hybrid_output_dir
-        elif staff_mask_dir_override is None:
-            return None
-        else:
-            return Path(staff_mask_dir_override)
-
-    def _get_probe_kwargs(self) -> Dict[str, Any]:
-        """Extracts probe-specific keyword arguments from configuration."""
-        return {
-            key: self.det_cfg[key]
-            for key in _PROBE_SCAN_KWARG_KEYS
-            if key in self.det_cfg and self.det_cfg.get(key) is not None
-        }
-
-    def _build_probe_command(
-        self,
-        image_root: str,
-        probe_output_root: Path,
-        resolved_staff_mask_dir: Path | None,
-        effective_score_name: str | None,
-    ) -> List[str]:
-        """Builds the command list for probe scan (for logging/dry run)."""
-        cmd_probe = [
-            "inprocess:probe_scan",
-            "--image-root",
-            str(image_root),
-            "--output-root",
-            str(probe_output_root),
-            "--bands-from",
-            str(self.hybrid_output_dir),
-        ]
-        if resolved_staff_mask_dir is not None:
-            cmd_probe += ["--staff-mask-dir", str(resolved_staff_mask_dir)]
-
-        cmd_probe += [
-            "--ink-threshold",
-            str(self.det_cfg.get("ink_threshold", 230)),
-            "--min-ratio",
-            str(self.det_cfg.get("min_ratio", 0.70)),
-            "--min-height-ratio",
-            str(self.det_cfg.get("min_height_ratio", 0.012)),
-        ]
-        if self.det_cfg.get("min_width_ratio") is not None:
-            cmd_probe += ["--min-width-ratio", str(self.det_cfg.get("min_width_ratio"))]
-        if self.det_cfg.get("probe_row_filter_mode"):
-            cmd_probe += ["--probe-row-filter-mode", str(self.det_cfg.get("probe_row_filter_mode"))]
-        if self.det_cfg.get("probe_endpoint_x_scale") is not None:
-            cmd_probe += [
-                "--probe-endpoint-x-scale",
-                str(self.det_cfg.get("probe_endpoint_x_scale")),
-            ]
-        if self.det_cfg.get("probe_endpoint_y_scale") is not None:
-            cmd_probe += [
-                "--probe-endpoint-y-scale",
-                str(self.det_cfg.get("probe_endpoint_y_scale")),
-            ]
-
-        if effective_score_name:
-            cmd_probe += ["--score-name", str(effective_score_name)]
-
-        detect_probe_kwargs = self._get_probe_kwargs()
-        for key, value in sorted(detect_probe_kwargs.items()):
-            cmd_probe += [f"--{key.replace('_', '-')}", str(value)]
-
-        if self.skip_existing:
-            cmd_probe.append("--skip-existing")
-
-        return cmd_probe
+        return Path(override) if override is not None else None
 
 
 def run_detection_step(
@@ -715,143 +196,3 @@ def run_detection_step(
         dry_run=dry_run,
     )
     return orchestrator.run_detection()
-
-
-def resolve_paths_from_detection(
-    config: Dict[str, Any],
-    probe_output_dir: Path,
-    hybrid_output_dir: Path,
-    page_ids: List[str],
-    images: List[Path],
-) -> List[Dict[str, str]]:
-    resolved: List[Dict[str, str]] = []
-
-    det_cfg = get_nested(config, "detection", default={}) or {}
-    staff_mask_dir_override = det_cfg.get("staff_mask_dir", "DEFAULT_SENTINEL")
-    if staff_mask_dir_override == "DEFAULT_SENTINEL":
-        resolved_staff_mask_dir = hybrid_output_dir
-    elif staff_mask_dir_override is None:
-        resolved_staff_mask_dir = None
-    else:
-        resolved_staff_mask_dir = Path(staff_mask_dir_override)
-
-    staff_mask_map: Dict[str, Path] = {}
-    if resolved_staff_mask_dir is not None and resolved_staff_mask_dir.exists():
-        # Pattern 1: *_debug_3_staff.png (Proxy/SR output)
-        for path in resolved_staff_mask_dir.rglob("*_debug_3_staff.png"):
-            name = path.name
-            stem = name.replace("_proxy_debug_3_staff.png", "").replace("_debug_3_staff.png", "")
-            staff_mask_map[stem] = path
-        # Pattern 2: *_staff_mask.png (Baseline in-process output)
-        for path in resolved_staff_mask_dir.rglob("*_staff_mask.png"):
-            name = path.name
-            stem = name.replace("_staff_mask.png", "")
-            if stem not in staff_mask_map:
-                staff_mask_map[stem] = path
-
-    for page_id, img_path in zip(page_ids, images):
-        stem = img_path.stem
-
-        candidate_dirs = list(probe_output_dir.glob(f"*_{stem}"))
-        if not candidate_dirs:
-            candidate_dirs = list(probe_output_dir.glob(f"*{stem}*"))
-
-        barlines_path = None
-        if candidate_dirs:
-            target_dir = candidate_dirs[0]
-            barlines_path = target_dir / "pipeline2_no_peak_filtered_cnn.json"
-
-        if not barlines_path or not barlines_path.exists():
-            hybrid_batch_json = hybrid_output_dir / "hybrid_results" / f"{stem}_hybrid.json"
-            if hybrid_batch_json.exists():
-                barlines_path = hybrid_batch_json
-
-        staff_mask_path = staff_mask_map.get(stem)
-
-        if not barlines_path or not barlines_path.exists():
-            logger.warning(f"Warning: Barlines not found for {page_id} (stem: {stem})")
-            barlines_path = Path("MISSING_BARLINES.json")
-
-        if resolved_staff_mask_dir is not None and (
-            not staff_mask_path or not staff_mask_path.exists()
-        ):
-            logger.warning(f"Warning: Staff mask not found for {page_id} (stem: {stem})")
-            staff_mask_path = Path("MISSING_STAFF_MASK.png")
-        elif resolved_staff_mask_dir is None:
-            # Explicitly disabled
-            staff_mask_path = Path("DISABLED_STAFF_MASK.png")
-
-        resolved.append(
-            {
-                "page_id": page_id,
-                "page_run": stem,
-                "barlines_json": str(barlines_path),
-                "staff_mask": str(staff_mask_path),
-            }
-        )
-
-    return resolved
-
-
-def resolve_barlines_and_masks_config(
-    config: Dict[str, Any],
-    page_ids: List[str],
-    page_runs: List[str],
-    *,
-    excluded_page_ids: set[str] | None = None,
-) -> List[Dict[str, str]]:
-    barlines_root = get_nested(config, "inputs", "barlines_root")
-    barlines_pattern = get_nested(config, "inputs", "barlines_pattern")
-    staff_mask_pattern = get_nested(config, "inputs", "staff_mask_pattern")
-    if not barlines_root or not barlines_pattern or not staff_mask_pattern:
-        raise ValueError("inputs.barlines_root/pattern and inputs.staff_mask_pattern are required.")
-
-    resolved = []
-    for page_id, page_run in zip(page_ids, page_runs):
-        if excluded_page_ids and page_id in excluded_page_ids:
-            resolved.append(
-                {
-                    "page_id": page_id,
-                    "page_run": page_run,
-                    "barlines_json": "MISSING_BARLINES.json",
-                    "staff_mask": "MISSING_STAFF_MASK.png",
-                }
-            )
-            continue
-
-        barlines_path = Path(barlines_root) / barlines_pattern.format(
-            page_run=page_run, page_id=page_id
-        )
-        staff_mask_path = Path(barlines_root) / staff_mask_pattern.format(
-            page_run=page_run, page_id=page_id
-        )
-
-        resolved.append(
-            {
-                "page_id": page_id,
-                "page_run": page_run,
-                "barlines_json": str(barlines_path),
-                "staff_mask": str(staff_mask_path),
-            }
-        )
-    return resolved
-
-
-def _log_vram_usage(message: str = ""):
-    """Logs current GPU memory usage if available."""
-    try:
-        res = subprocess.run(
-            [
-                "nvidia-smi",
-                "--query-gpu=memory.used,memory.total",
-                "--format=csv,noheader,nounits",
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if res.returncode == 0:
-            used, total = res.stdout.strip().split(",")
-            logger.info(f"VRAM Usage ({message}): {used.strip()} / {total.strip()} MiB")
-    except Exception as e:
-        logger.debug(f"Could not get VRAM usage: {e}")

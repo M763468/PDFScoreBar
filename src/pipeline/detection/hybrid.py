@@ -60,6 +60,25 @@ class HybridDetector:
         self.dry_run = dry_run
         self.skip_existing = skip_existing
 
+    def _get_python_cmd(self, name: str) -> List[str]:
+        """Returns the appropriate python command, falling back to host if images are external."""
+        python_cmd = get_pipeline_python(name)
+        if not (python_cmd and python_cmd[0] == "docker"):
+            return python_cmd
+
+        for img in self.images:
+            try:
+                img.resolve().relative_to(self.project_root)
+            except ValueError:
+                logger.warning(
+                    f"External image path detected: {img}. Falling back to host Python for {name}."
+                )
+                import sys
+
+                return [os.environ.get("PIPELINE_PYTHON", sys.executable)]
+
+        return python_cmd
+
     def run(self) -> Dict[str, Any]:
         """Step 2.1: Hybrid Detection (Subprocess or In-Process)"""
         hybrid_root = Path(self.det_cfg.get("hybrid_output_root", "logs/hybrid_generalization"))
@@ -72,7 +91,7 @@ class HybridDetector:
 
         logger.info("--- Step 2.1: Hybrid Detection (Subprocess homr baseline/SR) ---")
         enable_sr = bool(self.det_cfg.get("enable_sr", True))
-        python_cmd = get_pipeline_python("homr")
+        python_cmd = self._get_python_cmd("homr")
 
         # Environment setup for Homr subprocess
         env = os.environ.copy()
@@ -141,7 +160,7 @@ class HybridDetector:
         elif self.skip_existing and self._omr_all_stems_exist(omr_output, stems):
             logger.info("Skipping OMR-DLN: outputs already exist.")
         else:
-            python_cmd_omr = get_pipeline_python("omr_dln")
+            python_cmd_omr = self._get_python_cmd("omr_dln")
             omr_cmd = (
                 python_cmd_omr
                 + ["experiments/models/eval_omr_dln.py", "--images"]

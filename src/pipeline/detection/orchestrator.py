@@ -122,7 +122,20 @@ class DetectorOrchestrator:
             )
 
         # Build command list for logging/return
-        cmd_probe = ["inprocess:probe_scan", "--output-root", str(probe_output_root)]
+        cmd_probe = [
+            "inprocess:probe_scan",
+            "--output-root",
+            str(probe_output_root),
+            "--bands-from",
+            str(self.hybrid_output_dir),
+            "--ink-threshold",
+            str(self.det_cfg.get("ink_threshold", 230)),
+            "--min-ratio",
+            str(self.det_cfg.get("min_ratio", 0.70)),
+        ]
+        if self.skip_existing:
+            cmd_probe.append("--skip-existing")
+
         return {"commands": [cmd_probe], "probe_output_dir": probe_output_root}
 
     def _run_cnn_scoring(self) -> Dict[str, Any]:
@@ -149,7 +162,15 @@ class DetectorOrchestrator:
                 ),
                 input_image_scale=float(effective_sr_scale),
             )
-        cmd_score = ["inprocess:cnn_scoring", "--model", str(cnn_model)]
+        cmd_score = [
+            "inprocess:cnn_scoring",
+            "--model",
+            str(cnn_model),
+            "--logs",
+            str(self.probe_output_dir),
+            "--threshold",
+            str(self.det_cfg.get("cnn_threshold", 0.1)),
+        ]
         return {"commands": [cmd_score]}
 
     def _get_effective_images_for_probe(self) -> tuple[List[Path], int]:

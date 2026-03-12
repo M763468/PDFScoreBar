@@ -8,14 +8,15 @@ from typing import Any, Dict, List
 
 from src.pipeline.cnn_scoring import run_cnn_scoring_batch
 from src.pipeline.config import get_nested
-from src.pipeline.detection_config import get_probe_kwargs
-from src.pipeline.detection_hybrid import HybridDetector
 from src.pipeline.io import ensure_dir
 from src.pipeline.probe_scan import run_probe_scan_batch
 
+from .config import get_probe_kwargs
+from .hybrid import HybridDetector
+
 logger = logging.getLogger(__name__)
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 class DetectorOrchestrator:

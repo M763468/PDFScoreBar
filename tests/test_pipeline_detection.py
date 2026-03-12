@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from src.pipeline.detection import run_detection_step
-from src.pipeline.detection_hybrid import HybridDetector
+from src.pipeline.detection.hybrid import HybridDetector
 
 
 class TestPipelineDetection(unittest.TestCase):
@@ -35,9 +35,9 @@ class TestPipelineDetection(unittest.TestCase):
                     "run",
                     return_value={"commands": [["hybrid"]], "hybrid_output_dir": hybrid_output_dir},
                 ),
-                patch("src.pipeline.detection.ensure_dir"),
-                patch("src.pipeline.detection.run_probe_scan_batch") as mock_probe,
-                patch("src.pipeline.detection.run_cnn_scoring_batch") as mock_cnn,
+                patch("src.pipeline.detection.orchestrator.ensure_dir"),
+                patch("src.pipeline.detection.orchestrator.run_probe_scan_batch") as mock_probe,
+                patch("src.pipeline.detection.orchestrator.run_cnn_scoring_batch") as mock_cnn,
             ):
                 result = run_detection_step(
                     config=config,
@@ -75,9 +75,9 @@ class TestPipelineDetection(unittest.TestCase):
                     "run",
                     return_value={"commands": [["hybrid"]], "hybrid_output_dir": hybrid_output_dir},
                 ),
-                patch("src.pipeline.detection.ensure_dir"),
-                patch("src.pipeline.detection.run_probe_scan_batch") as mock_probe,
-                patch("src.pipeline.detection.run_cnn_scoring_batch") as mock_cnn,
+                patch("src.pipeline.detection.orchestrator.ensure_dir"),
+                patch("src.pipeline.detection.orchestrator.run_probe_scan_batch") as mock_probe,
+                patch("src.pipeline.detection.orchestrator.run_cnn_scoring_batch") as mock_cnn,
             ):
                 result = run_detection_step(
                     config=config,
@@ -110,9 +110,9 @@ class TestPipelineDetection(unittest.TestCase):
                     "run",
                     return_value={"commands": [["hybrid"]], "hybrid_output_dir": hybrid_output_dir},
                 ),
-                patch("src.pipeline.detection.ensure_dir"),
-                patch("src.pipeline.detection.run_probe_scan_batch") as mock_probe,
-                patch("src.pipeline.detection.run_cnn_scoring_batch") as mock_cnn,
+                patch("src.pipeline.detection.orchestrator.ensure_dir"),
+                patch("src.pipeline.detection.orchestrator.run_probe_scan_batch") as mock_probe,
+                patch("src.pipeline.detection.orchestrator.run_cnn_scoring_batch") as mock_cnn,
             ):
                 run_detection_step(
                     config=config,

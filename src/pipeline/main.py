@@ -32,11 +32,9 @@ from src.pipeline.barlines import (
 )
 from src.pipeline.config import get_nested, load_yaml
 from src.pipeline.detection import (
-    run_detection_step,
-)
-from src.pipeline.detection_utils import (
     resolve_barlines_and_masks_config,
     resolve_paths_from_detection,
+    run_detection_step,
 )
 from src.pipeline.filters import get_user_exclude_indices, resolve_page_filters
 from src.pipeline.images import collect_images, resolve_page_ids

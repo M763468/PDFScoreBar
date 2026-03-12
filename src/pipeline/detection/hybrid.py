@@ -14,11 +14,12 @@ import cv2
 import torch
 from tqdm import tqdm
 
-from src.pipeline.detection_utils import log_vram_usage
 from src.pipeline.hybrid_consensus import load_json_boxes, phase4_hybrid_consensus
 from src.pipeline.io import ensure_dir
 from src.pipeline.python_env import get_pipeline_python
 from src.pipeline.subprocess_utils import run_with_logging
+
+from .utils import log_vram_usage
 
 # Optional imports for in-process Homr execution
 try:

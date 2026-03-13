@@ -11,12 +11,7 @@ import yaml
 # --- Configuration ---
 MANIFEST_PATH = Path("docs/MANIFEST.md")
 # Scan these directories for untracked (orphan) files
-CORE_DIRS = [
-    "configs",
-    "src/pipeline",
-    "src/measure_numbering",
-    "tools"
-]
+CORE_DIRS = ["configs", "src/pipeline", "src/measure_numbering", "tools"]
 
 
 def get_git_timestamp(path: Path) -> int:
@@ -37,15 +32,13 @@ def extract_paths_from_manifest(manifest_path: Path) -> list[str]:
     # A simpler regex to find any non-whitespace string in backticks, then filter.
     # This is more robust than a complex regex trying to validate paths.
     matches = re.findall(r"`([^`\s]+)`", content)
-    paths = set()
-    for p in matches:
-        if "(Container)" in p:
-            continue
-        # Basic cleaning: remove trailing punctuation if any
-        p = p.strip(".,;:()")
-        # Heuristic to filter out non-path-like strings (e.g. single words without extension)
-        if "/" in p or "." in p:
-            paths.add(p)
+
+    # Filter out container placeholders and clean paths.
+    path_candidates = (p.strip(".,;:()") for p in matches if "(Container)" not in p)
+
+    # Heuristic to filter out non-path-like strings (e.g. single words without extension).
+    paths = {p for p in path_candidates if "/" in p or "." in p}
+
     return sorted(list(paths))
 
 
@@ -56,11 +49,11 @@ def check_consistency(stale_days: int):
     paths = extract_paths_from_manifest(MANIFEST_PATH)
     if not paths:
         print(f"[WARN] No paths extracted from {MANIFEST_PATH} or file missing.")
-    
+
     for p_str in paths:
         p = Path(p_str)
         is_ignored = any(part in ["datasets", "logs", "external", "models"] for part in p.parts)
-        
+
         if p.exists():
             print(f"[OK]       {p_str}")
         else:
@@ -102,35 +95,39 @@ def check_consistency(stale_days: int):
     print("\n--- 4. Orphan Asset Check (Untracked Mainline Candidates) ---")
     norm_tracked = {str(Path(p)) for p in paths}
     found_any_orphan = False
-    
+
     for core_dir in CORE_DIRS:
         d = Path(core_dir)
         if not d.exists():
             continue
-        
+
         # Collect all files recursively
         for f in d.rglob("*"):
             if f.is_dir() or "__pycache__" in str(f) or f.name == "__init__.py":
                 continue
-            
+
             f_str = str(f)
             if f_str not in norm_tracked:
                 ts = get_git_timestamp(f)
                 dt = datetime.fromtimestamp(ts).date() if ts else "No history"
                 print(f"[UNTRACKED] {f_str:40} (Last updated: {dt})")
                 found_any_orphan = True
-    
+
     if not found_any_orphan:
         print("[OK] All assets in core directories are tracked in MANIFEST.md.")
     else:
-        print("\nNote: [UNTRACKED] files are either legacy, experimental, or missing in MANIFEST.md.")
+        print(
+            "\nNote: [UNTRACKED] files are either legacy, experimental, or missing in MANIFEST.md."
+        )
 
     return all_ok
 
 
 def main():
     parser = argparse.ArgumentParser(description="Check repository consistency.")
-    parser.add_argument("--stale-days", type=int, default=30, help="Days until a document is considered stale.")
+    parser.add_argument(
+        "--stale-days", type=int, default=30, help="Days until a document is considered stale."
+    )
     args = parser.parse_args()
 
     success = check_consistency(args.stale_days)

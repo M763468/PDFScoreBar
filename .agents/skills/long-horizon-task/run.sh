@@ -1,5 +1,8 @@
 #!/bin/bash
 set -euo pipefail
+
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
+
 COMMAND=${1:-check}
 TASK_ID=${2:-}
 mkdir -p artifacts
@@ -14,9 +17,9 @@ case "$COMMAND" in
     ISSUE_NUMBER=${3:-}
     echo "Initializing long-horizon task: $TASK_ID..."
     if [ -n "$ISSUE_NUMBER" ]; then
-      python3 ../../../tools/ai-workflow-tools/init_long_horizon_task.py "$TASK_ID" --issue "$ISSUE_NUMBER" > artifacts/task_init.txt
+      python3 "$PROJECT_ROOT/tools/ai-workflow-tools/init_long_horizon_task.py" "$TASK_ID" --issue "$ISSUE_NUMBER" > artifacts/task_init.txt
     else
-      python3 ../../../tools/ai-workflow-tools/init_long_horizon_task.py "$TASK_ID" > artifacts/task_init.txt
+      python3 "$PROJECT_ROOT/tools/ai-workflow-tools/init_long_horizon_task.py" "$TASK_ID" > artifacts/task_init.txt
     fi
     echo "Artifact generated: artifacts/task_init.txt"
     ;;
@@ -24,13 +27,13 @@ case "$COMMAND" in
     echo "Checking status for task: $TASK_ID..."
     (
       echo "--- Prompt.md ---"
-      cat "../../../docs/long-horizon-tasks/$TASK_ID/Prompt.md" 2>/dev/null || echo "Prompt.md not found"
+      cat "$PROJECT_ROOT/docs/long-horizon-tasks/$TASK_ID/Prompt.md" 2>/dev/null || echo "Prompt.md not found"
       echo ""
       echo "--- Plan.md ---"
-      cat "../../../docs/long-horizon-tasks/$TASK_ID/Plan.md" 2>/dev/null || echo "Plan.md not found"
+      cat "$PROJECT_ROOT/docs/long-horizon-tasks/$TASK_ID/Plan.md" 2>/dev/null || echo "Plan.md not found"
       echo ""
       echo "--- Latest Log Entries ---"
-      tail -n 20 "../../../docs/long-horizon-tasks/$TASK_ID/Log.md" 2>/dev/null || echo "Log.md not found"
+      tail -n 20 "$PROJECT_ROOT/docs/long-horizon-tasks/$TASK_ID/Log.md" 2>/dev/null || echo "Log.md not found"
     ) > artifacts/task_status.txt
     echo "Artifact generated: artifacts/task_status.txt"
     ;;

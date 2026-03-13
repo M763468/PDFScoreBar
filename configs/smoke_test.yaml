@@ -1,5 +1,5 @@
 run:
-  run_id: smoke_test_detection_20260120
+  run_id: smoke_test_detection
   output_root: logs/full_pipeline_runs
 
 inputs:

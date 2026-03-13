@@ -1,5 +1,5 @@
 run:
-  run_id: eval2_e2e_verification_20260313
+  run_id: eval2_e2e_verification
   output_root: logs/full_pipeline_runs/verification
 
 inputs:

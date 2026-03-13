@@ -88,6 +88,13 @@ Use the table below to quickly locate what you need.
 - **`docs/REGRESSION_TEST_WORKFLOW.md`**  
   Pre-commit / pre-PR verification workflow (lint/tests + real-data smoke + parity checks).
 
+- **`tools/check_repo_consistency.py` (`make check-consistency`)**  
+  **Purpose**: Repository health and drift check (Guideline).  
+  - Identifies missing mainline assets (from `docs/MANIFEST.md`)
+  - Alerts on stale documents (threshold: 30 days)
+  - Identifies "Orphan" files in core directories to prevent repository bloat
+  - *Note*: Intended for maintenance guidance; experimental orphans are permitted but should be periodically reviewed.
+
 - **`docs/AGENTS.md`**  
   Rules and expectations for AI assistants (Gemini / Codex / CLI usage).
 

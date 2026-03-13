@@ -63,3 +63,14 @@
 | **Python 実行環境** | `(Container) /opt/venv_sr/bin/python` | コンテナ内 uv 環境 |
 | **サブコンテナ** | `Dockerfile.homr` | Homr 評価用 |
 | **超解像モデル** | `(Container) /opt/models/` | Real-ESRGAN モデル内蔵 |
+
+---
+
+## 5. Repository Maintenance
+
+リポジトリの整合性と品質を維持するためのツールです。
+
+| ツール | パス | 役割 |
+| :--- | :--- | :--- |
+| **整合性チェック** | `tools/check_repo_consistency.py` | 資産の存在、ドキュメントの鮮度、Orphanファイルの確認（ガイドライン） |
+| **構成図生成** | `make repo-tree` | ディレクトリ構造の可視化 |

@@ -31,7 +31,7 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 
 - **Testing**: All code must be accompanied by tests sufficient to prove it meets the `Acceptance Criteria`. The "How to test" section of the issue should be followed precisely.
 - **Linting**: Code must adhere to the project's linting standards. Always run `make format` to fix style issues and `make lint` to verify compliance before submitting changes.
-- **Pre-Commit / Pre-PR Verification (Mandatory)**: Before creating a commit or opening a PR, you **MUST** run both (1) behavior verification (actual execution path relevant to the change, e.g. smoke run) and (2) tests/lint checks, then report the results. Do not commit or create a PR if these checks have not been completed.
+- **Pre-Commit / Pre-PR Verification (Mandatory)**: Before creating a commit or opening a PR, you **MUST** run (1) behavior verification (actual execution path relevant to the change, e.g. smoke run), (2) tests/lint checks, and (3) `make check-consistency` (as a health check to identify major drift or missing mainline assets), then report the results. While a 100% clean report for experimental scripts is not strictly required, any **[CRITICAL]** failures or unintended mainline orphans should be addressed.
   - Regression workflow reference: `docs/REGRESSION_TEST_WORKFLOW.md`
 - **Logging**: Add clear and concise logging for errors and important events. Avoid noisy or verbose logging.
 - **PR Descriptions**: Pull request descriptions must be filled out completely, following the `.github/pull_request_template.md`. The `Related Issue` field is mandatory.
@@ -55,6 +55,7 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
     - `make help`: Check this first to see available commands and their descriptions.
     - `make lint`: Run static analysis.
     - `make format`: Auto-format code.
+    - `make check-consistency`: Check repository consistency (Asset existence, doc freshness, orphan files).
 - **Maintenance**: Developers and Agents should update the `Makefile` and this document when new standard workflows are introduced.
 
 ### Design Principles (Barline Detection)

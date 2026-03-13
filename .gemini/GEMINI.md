@@ -38,16 +38,26 @@
 
 # GEMINI.md - Project Specific Context
 
-## Current Status (2026-03-02)
-- **Issue #44 (CNN Classifier Baseline)**: Completed.
-- **Issue #13 (Full Pipeline Phase 2)**: In progress / Next target.
-    - Goal: Batch optimization, Model persistence, VRAM management (RTX 4060 8GB).
-- **Previous Fixes**: Sibelius and Shostakovich recall issues have been resolved.
+## Current Status (2026-03-14)
+- **Issue #13 (Full Pipeline & Batch Optimization)**: Completed.
+    - `src/pipeline/main.py` is the primary entry point.
+    - Batch MMR processing and model persistence are verified.
+    - Resource efficient execution (RTX 4060 8GB) is the baseline.
+- **Issue #95 (Repo Mapping)**: Completed.
+    - Repository structure and asset registry defined in `docs/MANIFEST.md`.
+
+## Repository Navigation (Mandatory)
+1. **Always check `git log -n 10`** at the start of a session. Static docs (like `NEXT_SESSION_NOTES.md`) may be stale.
+2. **Prioritize `docs/MANIFEST.md`** for official model paths and configurations.
+3. **Follow the Repository Map** in `README.md` to find the correct entry points.
+4. **Update on Discovery**: If you find discrepancies between documentation and reality (wrong paths, outdated specs) during your task, **you MUST update the documentation immediately.**
 
 ## Strategic Priorities
-1. **Collaborative Reasoning (AGENTS.md Section 8.9)**:
+1. **Mainline First**: Always use `src/pipeline/main.py` and `configs/evaluation2_e2e_verification_full.yaml` for end-to-end tasks.
+2. **VRAM Efficiency**: Maintain the 8GB limit for batch processing. Load heavy models (Homr, MMR) once using the orchestrator's persistence mechanism.
+3. **Collaborative Reasoning**:
    - Use `Codex` as a "Deep Auditor" for VRAM optimization and architectural changes.
-   - Actively seek second opinions on high-complexity logic.
+   - Actively seek second opinions on high-complexity logic (see `AGENTS.md` Section 9).
 
 ## Project Memories
 - MMR classifier (best_textnoise) achieves 98.7% Precision and 87.5% Recall on the evaluation dataset.

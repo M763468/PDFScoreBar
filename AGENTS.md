@@ -178,6 +178,15 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
    - **結果の統合**:
      - 照会結果をそのまま採用せず、自分の案と比較した「統合案」をユーザーに提示し、なぜその結論に至ったかの論拠（Rational）を説明する。
 
+10. **現状把握のプロトコル (Onboarding Protocol for Agents)**:
+
+エージェントは、静的なドキュメントが最新のコードベースと乖離している可能性（Stale docs）を常に考慮し、以下の手順で現状を把握してください。
+
+1. **Check Freshness with Git**: 発見したドキュメント（特に `docs/` 内）が 1 ヶ月以上更新されていない場合、その内容を鵜呑みにせず、必ず `git log -n 1 -- <path>` で最終更新日時を確認してください。
+2. **Prioritize Git History**: 最新の作業状況と「真実」は `git log -n 10` および現在の branch 状況から判断してください。
+3. **Consult Asset Registry**: モデルパスや推奨設定ファイルについては、`README.md` や個別のドキュメントの記述よりも、`docs/MANIFEST.md` の情報を優先してください。
+4. **Update on Discovery**: **調査や実験の過程でドキュメントの記述と実態の乖離（パスの間違い、古い仕様など）を発見した場合は、直ちにそのドキュメントを最新の情報に更新してください。** 後のセッションで他のエージェントや人間が同じ罠に嵌まるのを防ぐことは、エージェントの重要な義務です。
+
 ### Multi-LLM Role Specialization
 - **Gemini CLI**: Architect, Multi-modal Reasoner, Web Researcher. Leads planning and reasoning.
 - **Codex**: Implementation Specialist, Repository Navigator, Verification Lead. Leads focused edits and sandbox validation.

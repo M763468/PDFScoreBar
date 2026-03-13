@@ -2,9 +2,26 @@
 
 This project aims to develop a Python-based tool that automatically adds measure numbers to sheet music provided in PDF format.
 
-> **Status notice (2026-01-16):** The measure-numbering pipeline and MMR OCR/CNN work have been integrated in this repo. The authoritative history is in `docs/DEVLOG_MEASURE_NUMBERING.md`. CNN training history is in `docs/DEVLOG_CNN_TRAINING.md`. Historical logs (pre-2026-01-03) are preserved in `docs/DEVELOPMENT_LOG.md`. Start from `docs/README.md` for the up-to-date documentation map.
+> **Status notice (2026-03-14):** Issue #13 (バッチ最適化と VRAM 管理) が完了し、`src/pipeline/main.py` を核とする統合パイプラインがメインラインとなりました。最新の資産構成は `docs/MANIFEST.md` を、今後の展望は `docs/future/roadmap.md` を参照してください。
 
+---
 
+## Repository Map
+
+リポジトリの最新資産やドキュメントへアクセスするためのガイドです。
+
+1. **Entry Points (実行と理解)**
+   - `src/pipeline/main.py`: パイプライン実行のメインエントリ。
+   - `README.md` / `AGENTS.md`: プロジェクト概要とエージェント向け Constitution。
+2. **Asset Registry (資産の所在)**
+   - `docs/MANIFEST.md`: 公式モデル、データセット、設定ファイルの所在（gitignore 資産を含む）。
+3. **Historical Context (状況把握)**
+   - `git log`: 最新の変更履歴。**常に静的ドキュメントより優先してください。**
+   - `docs/future/roadmap.md`: Issue #13 以降のロードマップ。
+   - `docs/README.md`: ドキュメント全体のインデックス。
+
+> [!NOTE]
+> `datasets/` や `logs/` は gitignore されており、作業用 worktree では実体が欠落している場合があります。詳細な所在は `docs/MANIFEST.md` を参照してください。
 
 ---
 ## Ultimate Goal (Very Long Term)

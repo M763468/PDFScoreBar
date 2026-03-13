@@ -42,6 +42,9 @@ class MMRClassifier:
 
         try:
             state_dict = torch.load(model_path, map_location=self.device, weights_only=True)
+            # Handle torch.compile prefix (e.g. from Issue #44 models)
+            if any(k.startswith("_orig_mod.") for k in state_dict.keys()):
+                state_dict = {k.replace("_orig_mod.", ""): v for k, v in state_dict.items()}
             model.load_state_dict(state_dict)
         except Exception as e:
             logger.error(f"Error loading MMR model from {model_path}: {e}")

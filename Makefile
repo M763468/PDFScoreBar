@@ -34,6 +34,12 @@ run-pipeline: ## Run the pipeline with a custom config (usage: make run-pipeline
 repo-tree: ## Generate a repository directory overview
 	tree -L 3 -I "artifacts|logs|temp|datasets|.git|__pycache__|.venv*" > artifacts/repo_tree.txt
 
+check-consistency: ## Check repository consistency (Manifest and Freshness)
+	@mkdir -p artifacts
+	@python3 tools/check_repo_consistency.py --stale-days 30 > artifacts/consistency_check.log 2>&1 || \
+		(EXIT_CODE=$$?; cat artifacts/consistency_check.log; exit $$EXIT_CODE)
+	@cat artifacts/consistency_check.log
+
 test: ## Run test suite
 	PYTHONPATH=. .venv_pdf/bin/pytest tests/ > artifacts/test_results.txt
 

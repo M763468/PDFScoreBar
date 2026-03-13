@@ -1,0 +1,9 @@
+# Issue #44 baseline global evaluation config (threshold=0.1)
+# Usage:
+#   python tools/re_evaluate_global.py --config configs/cnn_barline_runs/issue44_baseline_v1/evaluate_global_th0p1.yaml
+
+scored_root: logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+gt_root: data/evaluation2/annotations
+output_csv: logs/cnn_barline_classification/issue44_baseline_v1/eval2_global_summary_th0p1.csv
+threshold: 0.1
+scored_glob: "*_scored.json"

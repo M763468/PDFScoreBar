@@ -1,0 +1,53 @@
+run:
+  run_id: smoke_test_detection
+  output_root: logs/full_pipeline_runs
+
+inputs:
+  pdf_path: data/evaluation2/pdfs/Va_Prokofiev_Symphony1.pdf
+  pdf_to_images:
+    output_dir: data/workbench/smoke_test_prokofiev1
+    dpi: 300
+    pages: "1"
+    interpolation: area
+    prefix: page
+    format: png
+    overwrite: true
+    alpha: false
+    image_glob: page_*.png
+  # Legacy inputs (required but ignored when detection is enabled)
+  barlines_root: logs/hybrid_generalization
+  barlines_pattern: "{page_run}/pipeline2_no_peak_filtered_cnn.json"
+  staff_mask_pattern: "{page_run}/baseline/{page_id}/{page_id}/{page_id}_debug_3_staff.png"
+  page_runs: []
+
+steps:
+  pdf_to_images: true
+  detection: true
+  filter_pages: true
+  apply_barline_overrides: false
+  numbering_base: true
+  mmr_overrides: true
+  apply_measure_overrides: true
+  overlay: true
+
+detection:
+  sr_scale: 2
+  container_name: sr_eval_gpu_exp
+  hybrid_output_root: logs/hybrid_generalization
+  ink_threshold: 230
+  min_ratio: 0.70
+  min_height_ratio: 0.012
+  cnn_model_path: logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
+  cnn_threshold: 0.1
+
+mmr:
+  model_path: tools/mmr_training/models/mmr_classifier_best.pth
+  enable_rotation_tta: true
+  threshold: 0.5
+
+filters:
+  blank_page: auto
+  staff_detect: auto
+
+numbering:
+  force_single_system: false

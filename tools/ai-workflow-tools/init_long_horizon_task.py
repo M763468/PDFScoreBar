@@ -21,7 +21,7 @@ def main():
         )
         return
 
-    task_dir = os.path.join("docs", "refactors", args.task_id)
+    task_dir = os.path.join("docs", "long-horizon-tasks", args.task_id)
     template_dir = os.path.join("docs", "ai-workflow", "templates", "task")
 
     if os.path.exists(task_dir):

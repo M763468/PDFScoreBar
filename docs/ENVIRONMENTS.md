@@ -64,8 +64,14 @@ This document describes how to use the provided tools (now located in `tools/`) 
 - Build image: `docker build -t sr_eval -f Dockerfile.sr_eval .`
 - Container creation: `docker run --gpus all -d --name sr_eval_gpu -v "$(pwd):/workspace" -w /workspace sr_eval tail -f /dev/null`.
 - Usage: attach with `docker exec -it sr_eval_gpu bash`. All `uv` managed dependencies are in `/opt/venv_sr`.
-    - To run scripts: `docker exec sr_eval_gpu bash -c "/opt/venv_sr/bin/python <script_path>"`
-    - For example: `docker exec sr_eval_gpu bash -c "/opt/venv_sr/bin/python experiments/models/eval_omr_dln.py --enable-sr ..."`
+    - **Note on Integrated Pipeline (Issue #18+)**: To achieve model persistence (avoiding repeated model loading), the integrated pipeline (`src/pipeline/main.py`) must be executed **inside** this container.
+    - To run the pipeline:
+      ```bash
+      docker exec -it sr_eval_gpu bash
+      # Inside container:
+      /opt/venv_sr/bin/python src/pipeline/main.py --config configs/full_pipeline_template.yaml --pdf <path>
+      ```
+    - Individual scripts can still be run via `docker exec`, but in-process model caching will only work within a persistent session.
 
 ## Data Directory Layout
 - `data/README.md`: データ管理方針と命名規約のまとめ。更新時は必ずここにも反映する。

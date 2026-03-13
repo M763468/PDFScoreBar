@@ -1,0 +1,5 @@
+scored_root: logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+gt_root: data/evaluation2/annotations
+output_csv: logs/cnn_barline_classification/issue44_hcfn_iter1/eval2_global_summary_hcfn_iter1_th0p5.csv
+threshold: 0.5
+scored_glob: "*_scored_hcfn_iter1.json"

@@ -260,6 +260,45 @@ codex> gemini -i "この差分を中間レビューして"
 
 ## 会話ログ
 
+### 2026-02-27 / Issue #46 FN_det分類見直し
+
+- Mode: `codex_primary`
+- Writer: `codex`
+- Phase: `mid-review`
+- Trigger: 人手レビューで「近接線ズレ」内に複線表現差が混在している疑義が出たため、分類定義の妥当性を再確認。
+- Question (summary): No.01/02/03/10 を複線由来として再分類する方針は妥当か。再現性が上がる分類軸は何か。
+- Secondary answer (summary): 修正方針は妥当。`候補なし/複線統合/幾何ミスマッチ/別線マッチ` の4分類に分割すると対策先が明確になる。
+- Decision: `partially_adopted`
+- Action taken: `docs/ISSUE46_FN_DET_CLASSIFICATION.md` を4分類へ更新（01/02/03/10 の再分類を反映）。
+- Evidence: `timeout 180s gemini -p "<classification question>"` の回答と既存オーバーレイ (`fn_det_overlays_th0p5`) の整合確認。
+- Notes: 「近接線ズレ」は今後、幾何要因と複線統合要因を混ぜない。
+
+### 2026-02-27 / Issue #46 no_candidate残件の仮説検証
+
+- Mode: `codex_primary`
+- Writer: `codex`
+- Phase: `debug`
+- Trigger: no_candidate 8件の改善が停滞し、次の実験優先度を絞る必要があった。
+- Question (summary): `has_existing` による既存候補近傍抑止が miss を作っている仮説は妥当か。
+- Secondary answer (summary): 仮説は合理的。抑止無効化でFN改善有無をまず測り、改善時は距離統計でしきい値最適化へ進むべき。
+- Decision: `adopted`
+- Action taken: `scan_disable_existing_suppression` を実装し、target9ページでA/B実験を実施。
+- Evidence: `eval2_global_summary_track_a_noexistingsuppr_v1_th0p1/0p5.csv` で `FN_det -3` を確認（同時に `FP` 増加）。
+- Notes: 原因切り分けは成立。次は抑止ロジックを全OFFではなく条件付きへ。
+
+### 2026-02-27 / Issue #48 評価ルール再設計（実装前・実装後相談）
+
+- Mode: `codex_primary`
+- Writer: `codex`
+- Phase: `design` + `mid-review`
+- Trigger: IoU単独評価からの拡張で、最小実装のルール集合と出力スキーマを確定する必要があった。
+- Question (summary): `re_evaluate_global` 互換入力で、どの評価ルール（IoA/中心距離/縦重なり）を比較すべきか。実装後にどのルールを暫定採用すべきか。
+- Secondary answer (summary): 実装前は4ルール比較（baseline/relaxed/coverage/center）とGT単位JSON/CSV追跡を推奨。実装後は `center_anchor` を暫定候補とし、`coverage_ioa` は不採用、KPI逆転未検出は指標感度不足の可能性を指摘。
+- Decision: `partially_adopted`
+- Action taken: `tools/evaluate_barline_rules.py` を追加し4ルール比較を実装。`docs/ISSUE48_RULE_EVAL_REPORT.md` に結果と分割案を反映。
+- Evidence: `timeout 180s gemini -p "<issue48 design prompt>"` / `timeout 180s gemini -p "<issue48 result review prompt>"` と、`logs/cnn_barline_classification/issue48_rule_eval/*` の出力。
+- Notes: 次は最終KPI側（局所番号ズレ）を指標化し、検出KPIとの逆転を再現可能にする。
+
 ### 2026-02-25 00:00 JST / multi-llm-workflow-docs (initial setup)
 
 - Mode: `codex_primary`

@@ -1,0 +1,62 @@
+run:
+  run_id: eval2_prokofiev1_subset
+  output_root: logs/full_pipeline_runs/eval2_subset_test
+
+inputs:
+  pdf_path: data/evaluation2/pdfs/Va_Prokofiev_Symphony1.pdf
+  pdf_to_images:
+    output_dir: logs/preprocess/evaluation2/Va_Prokofiev_Symphony1
+    dpi: 300
+    pages: "1,2,3"
+    target_width: null
+    target_height: null
+    interpolation: area
+    prefix: page
+    format: png
+    overwrite: true
+    alpha: false
+    image_glob: page_*.png
+  # These are resolved automatically by detection step if enabled
+  barlines_root: null
+  barlines_pattern: null
+  staff_mask_pattern: null
+  page_runs: null
+  barline_overrides: null
+  measure_overrides: null
+
+steps:
+  pdf_to_images: true
+  detection: true
+  filter_pages: true
+  apply_barline_overrides: false
+  numbering_base: true
+  mmr_overrides: true
+  apply_measure_overrides: true
+  overlay: true
+
+detection:
+  container_name: sr_eval_gpu_exp
+  hybrid_output_root: logs/hybrid_generalization/eval2_subset_test
+  enable_sr: false
+  ink_threshold: 230
+  min_ratio: 0.70
+  min_height_ratio: 0.012
+  cnn_model_path: logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
+  cnn_threshold: 0.1
+  # Probe Rescue flags are enabled by default in probe_scan.py but can be overridden here
+  divisi_rescue: true
+  scan_gap_rescue: true
+  scan_x_peak_rescue: true
+
+filters:
+  blank_page: auto
+  staff_detect: auto
+  user_exclude: []
+
+mmr:
+  model_path: tools/mmr_training/models/mmr_classifier_best.pth
+  ocr_lang: eng
+  enable_rotation_tta: false
+
+numbering:
+  force_single_system: false

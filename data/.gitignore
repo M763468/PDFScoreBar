@@ -8,3 +8,8 @@
 !training/**
 !evaluation/**
 !workbench/**
+
+# Issue #16: allow evaluation2 GT rebuild artifacts to be version-controlled.
+!evaluation2/
+!evaluation2/annotations/
+!evaluation2/annotations/**

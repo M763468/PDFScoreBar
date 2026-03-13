@@ -1,8 +1,16 @@
 import json
 import os
 
+# Auxiliary diagnostic script for checking the currently configured GT GUI inputs.
+# This is not the canonical evaluation2 rebuild entrypoint; use
+# `tools/gt_relabel_gui/prepare_rebuild_eval2.py` for config generation.
+
 
 def main():
+    print(
+        "[AUX] check_gt_config.py validates the current GUI config/editable files. "
+        "For rebuilding evaluation2 config, use tools/gt_relabel_gui/prepare_rebuild_eval2.py."
+    )
     config_path = "tools/gt_relabel_gui/evaluation2_config.json"
     if not os.path.exists(config_path):
         print(f"Config not found: {config_path}")

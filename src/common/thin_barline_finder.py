@@ -9,7 +9,7 @@ from typing import Dict, Iterable, List, Sequence, Tuple
 import cv2
 import numpy as np
 
-Box = Tuple[int, int, int, int]
+from src.common import Box
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,17 @@
+# Issue #46 experiment: split wide 2-peak candidates + recenter wide 1-peak candidates
+
+logs: logs/issue36_prep/probe_candidates_filtered_v12
+images_root: data/evaluation2/images
+model: logs/cnn_barline_classification/issue44_baseline_v1/cnn_classifier_best.pth
+threshold: 0.1
+candidate_filename: pipeline2_no_peak_candidates.json
+scored_filename: pipeline2_no_peak_scored.json
+filtered_filename: pipeline2_no_peak_filtered_cnn.json
+overwrite: false
+
+split_wide_candidates: true
+recenter_wide_single_peak: true
+split_min_width_unit_ratio: 1.0
+split_box_width_unit_ratio: 0.8
+split_peak_distance_unit_ratio: 0.4
+split_peak_prominence_ratio: 0.15

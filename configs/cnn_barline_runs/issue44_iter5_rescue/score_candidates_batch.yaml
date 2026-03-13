@@ -1,0 +1,12 @@
+# Issue #44 Iter 5 (Rescue + DeepScores) scoring config
+# Usage:
+#   .venv_cnn_classifier/bin/python tools/cnn_classifier/score_candidates_batch.py --config configs/cnn_barline_runs/issue44_iter5_rescue/score_candidates_batch.yaml
+
+logs: logs/issue53_full_eval_rescue_v1
+images_root: data/evaluation2/images
+model: logs/cnn_barline_classification/issue44_iter5_rescue_iter1/cnn_classifier_best.pth
+threshold: 0.1
+candidate_filename: pipeline2_no_peak_candidates.json
+scored_filename: pipeline2_no_peak_scored.json
+filtered_filename: pipeline2_no_peak_filtered_cnn.json
+overwrite: true

@@ -1,0 +1,30 @@
+# Issue #44 Iter 6 (Hard Mining) training config
+# Fine-tune from Iter 5 best model
+# Usage:
+#   CNN_DATASET_ROOT=datasets/cnn_classifier_v6_base .venv_cnn_classifier/bin/python experiments/cnn_classifier/train.py --config configs/cnn_barline_runs/issue44_iter6_hard_mining/train.yaml
+
+work_dir: logs/cnn_barline_classification/issue44_iter6_hard_mining_v1
+model_name: resnet18
+init_weights: logs/cnn_barline_classification/issue44_iter5_rescue_iter1/cnn_classifier_best.pth
+
+epochs: 5 # Short fine-tuning
+batch_size: 256
+learning_rate: 0.00005 # Reduced LR for fine-tuning
+img_size: [256, 128]
+seed: 44
+
+amp: true
+compile: true
+compile_mode: reduce-overhead
+channels_last: true
+
+imbalance: sampler
+optimize_threshold: true
+weight_decay: 0.01
+num_workers: 8
+prefetch_factor: 2
+save_interval: 0
+
+sp_p: 0.3
+sp_density: 0.02
+freeze_backbone_epochs: 0

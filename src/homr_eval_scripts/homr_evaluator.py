@@ -4,6 +4,14 @@
 from __future__ import annotations
 
 import argparse
+import gc
+import tempfile
+
+try:
+    import torch
+except ImportError:
+    pass
+
 import collections
 import csv
 import json
@@ -43,9 +51,20 @@ if str(SRC_ROOT) in sys.path:
     sys.path.remove(str(SRC_ROOT))
 sys.path.insert(0, str(SRC_ROOT))
 
-if str(HOMR_REPO) in sys.path:
-    sys.path.remove(str(HOMR_REPO))
-sys.path.insert(0, str(HOMR_REPO))
+import logging
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger("homr_evaluator")
+
+import homr.simple_logging  # type: ignore
+
+
+def _redirect_eprint_to_logger(*args, **kwargs):
+    logger.info(" ".join(map(str, args)))
+
+
+homr.simple_logging.eprint = _redirect_eprint_to_logger
+eprint = _redirect_eprint_to_logger
 
 # pylint: disable=wrong-import-position
 from common.barline_evaluation import (
@@ -74,7 +93,6 @@ from homr.main import (  # type: ignore
 from homr.music_xml_generator import XmlGeneratorArguments, generate_xml  # type: ignore
 from homr.note_detection import add_notes_to_staffs, combine_noteheads_with_stems  # type: ignore
 from homr.resize import calc_target_image_size  # type: ignore
-from homr.simple_logging import eprint  # type: ignore
 from homr.staff_detection import break_wide_fragments, detect_staff  # type: ignore
 from homr.title_detection import detect_title  # type: ignore
 
@@ -152,7 +170,7 @@ class AggregateMetrics:
     f1: float
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--images",
@@ -252,7 +270,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--enable-sr",
         action="store_true",
-        help="Enable Super-Resolution (Real-ESRGAN x4) preprocessing",
+        help="Enable Super-Resolution (Real-ESRGAN) preprocessing",
+    )
+    parser.add_argument(
+        "--sr-scale",
+        type=int,
+        default=4,
+        help="SR scale factor (2 or 4)",
     )
     parser.add_argument(
         "--sr-tile",
@@ -351,7 +375,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Enable post-processing to recover staff-end barlines",
     )
-    return parser.parse_args()
+    parser.add_argument(
+        "--enable-segnet-cache",
+        action="store_true",
+        help="Enable cached Segnet ONNXRuntime session reuse",
+    )
+    return parser.parse_args(argv)
 
 
 def load_ground_truth_mapping(args: argparse.Namespace) -> Dict[str, Path]:
@@ -425,7 +454,9 @@ def sanitise_images(images: Iterable[str]) -> List[Path]:
 def autocrop_bounds(image: np.ndarray) -> Tuple[Tuple[int, int, int, int], bool]:
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     hist = cv2.calcHist([image], [0], None, [256], [0, 256])
-    dominant_color_gray_scale = int(max(enumerate(hist), key=lambda x: float(x[1]))[0])
+    dominant_color_gray_scale = int(
+        max(enumerate(hist), key=lambda x: float(x[1].item() if hasattr(x[1], "item") else x[1]))[0]
+    )
     threshold_value = max(dominant_color_gray_scale - 30, 0)
     thresh = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)[1]
 
@@ -1822,6 +1853,364 @@ def save_debug_mask_overlay(
     cv2.imwrite(str(output_path), original)
 
 
+class HomrPredictor:
+    """Persistent Homr Predictor for batch processing."""
+
+    def __init__(
+        self,
+        config: ProcessingConfig,
+        tuning: Dict[str, float],
+        enable_cache: bool = True,
+    ) -> None:
+        self.config = config
+        self.tuning = tuning
+        self.enable_cache = enable_cache
+
+        # Ensure Segnet cache is enabled for persistence
+        if self.enable_cache:
+            try:
+                from homr_eval_scripts.segnet_cache import enable_segnet_cache
+
+                if enable_segnet_cache():
+                    logger.info("HomrPredictor: Segnet cache enabled.")
+            except ImportError:
+                # Local import fallback if running in-process from elsewhere
+                try:
+                    from .segnet_cache import enable_segnet_cache
+
+                    if enable_segnet_cache():
+                        logger.info("HomrPredictor: Segnet cache enabled (local).")
+                except Exception as exc:
+                    logger.warning(f"HomrPredictor: Failed to enable Segnet cache: {exc}")
+            except Exception as exc:
+                logger.warning(f"HomrPredictor: Failed to enable Segnet cache: {exc}")
+
+        # Ensure weights are available
+        download_weights()
+
+    def predict(
+        self,
+        image_path: Path,
+        xml_args: XmlGeneratorArguments,
+        sr_scale: int = 1,
+        timeout_s: float = 0.0,
+        image_run_dir: Optional[Path] = None,
+    ) -> Tuple[
+        List[BarlinePrediction],
+        Optional[Path],
+        Tuple[int, int],
+        float,
+        np.ndarray,
+        np.ndarray,
+        List[BarlinePrediction],
+        List[BarlinePrediction],
+    ]:
+        """Runs the core homr staff and symbol detection pipeline for a single image with proxying and post-processing."""
+        stem = image_path.stem
+
+        # 1. Proxy logic
+        inference_image_path = image_path
+        proxy_scale_x = 1.0
+        proxy_scale_y = 1.0
+
+        img_check = cv2.imread(str(image_path))
+        if img_check is None:
+            raise FileNotFoundError(f"Image not found: {image_path}")
+
+        sr_h, sr_w = img_check.shape[:2]
+        pixels = sr_h * sr_w
+        target_pixels = 3.5 * 1000 * 1000  # Target ~3.5MP for Homr Inference
+
+        temp_proxy_path: Optional[Path] = None
+        if pixels > target_pixels * 1.5:
+            proxy_scale = (pixels / target_pixels) ** 0.5
+            proxy_w = int(sr_w / proxy_scale)
+            proxy_h = int(sr_h / proxy_scale)
+
+            proxy_scale_x = sr_w / proxy_w
+            proxy_scale_y = sr_h / proxy_h
+
+            logger.info(
+                f"HomrPredictor: Creating Proxy: {sr_w}x{sr_h} -> {proxy_w}x{proxy_h} (Scale: {proxy_scale:.2f})"
+            )
+            proxy_img = cv2.resize(img_check, (proxy_w, proxy_h))
+
+            if image_run_dir:
+                inference_image_path = image_run_dir / f"{stem}_proxy.png"
+                cv2.imwrite(str(inference_image_path), proxy_img)
+            else:
+                fd, proxy_path_str = tempfile.mkstemp(suffix=".png", prefix="homr_proxy_")
+                os.close(fd)
+                temp_proxy_path = Path(proxy_path_str)
+                inference_image_path = temp_proxy_path
+                cv2.imwrite(str(inference_image_path), proxy_img)
+
+        # 2. Run core inference
+        predictions, xml_path, seg_shape, runtime_s, notehead_mask, staff_mask = run_homr_on_image(
+            inference_image_path, self.config, xml_args, timeout_s, self.tuning
+        )
+
+        # 3. Map predictions back to the input image coordinates
+        transform = compute_transform_info(inference_image_path, seg_shape)
+        mapped_predictions: List[BarlinePrediction] = []
+        for pred in predictions:
+            # Map Seg -> Inference image (Proxy or Original)
+            orig_bbox_proxy = map_pred_to_orig(pred.pred_bbox, transform)
+
+            # Map Inference image -> Input image
+            x1, y1, x2, y2 = orig_bbox_proxy
+            if proxy_scale_x != 1.0 or proxy_scale_y != 1.0:
+                x1 = int(round(x1 * proxy_scale_x))
+                y1 = int(round(y1 * proxy_scale_y))
+                x2 = int(round(x2 * proxy_scale_x))
+                y2 = int(round(y2 * proxy_scale_y))
+
+            mapped_predictions.append(
+                BarlinePrediction(
+                    pred_bbox=pred.pred_bbox,
+                    orig_bbox=(x1, y1, x2, y2),
+                    system_index=pred.system_index,
+                    staff_index=pred.staff_index,
+                )
+            )
+
+        # 4. Resize masks to input image size
+        # FIX: content is 0/1. Scale to 0/255 for correct bitwise operations and resize interpolation
+        notehead_mask_255 = (notehead_mask * 255).astype(np.uint8)
+        staff_mask_255 = (staff_mask * 255).astype(np.uint8)
+
+        notehead_mask_resized = cv2.resize(
+            notehead_mask_255,
+            dsize=(sr_w, sr_h),
+            interpolation=cv2.INTER_NEAREST,
+        )
+        staff_mask_resized = cv2.resize(
+            staff_mask_255,
+            dsize=(sr_w, sr_h),
+            interpolation=cv2.INTER_NEAREST,
+        )
+
+        # 5. Thin Barline Detection
+        tb_config = ThinBarlineConfig()
+        if sr_scale > 1:
+            # Scale thin barline parameters
+            tb_config = ThinBarlineConfig(
+                min_height=tb_config.min_height * sr_scale,
+                max_height=tb_config.max_height * sr_scale,
+                max_width=tb_config.max_width * sr_scale,
+                y_merge_tolerance=tb_config.y_merge_tolerance * sr_scale,
+                y_center_tolerance=tb_config.y_center_tolerance * sr_scale,
+                x_center_tolerance=tb_config.x_center_tolerance * sr_scale,
+                adjacent_relaxed_span=tb_config.adjacent_relaxed_span * sr_scale,
+                vertical_gap_fill=tb_config.vertical_gap_fill * sr_scale,
+                left_margin_limit=tb_config.left_margin_limit * sr_scale,
+                cluster_x_tolerance=tb_config.cluster_x_tolerance * sr_scale,
+                cluster_reject_span=tb_config.cluster_reject_span * sr_scale,
+                pixel_threshold=tb_config.pixel_threshold,
+                dark_pixel_threshold=tb_config.dark_pixel_threshold,
+            )
+
+        extra_barlines = detect_thin_vertical_runs(
+            image_path,
+            [p.orig_bbox for p in mapped_predictions],
+            config=tb_config,
+        )
+
+        def _centre(box: Tuple[int, int, int, int]) -> Tuple[float, float]:
+            x1, y1, x2, y2 = box
+            return (x1 + x2) / 2.0, (y1 + y2) / 2.0
+
+        def _vertical_overlap_fraction(
+            box_a: Tuple[int, int, int, int], box_b: Tuple[int, int, int, int]
+        ) -> float:
+            top = max(box_a[1], box_b[1])
+            bottom = min(box_a[3], box_b[3])
+            if bottom <= top:
+                return 0.0
+            overlap = bottom - top
+            height_a = max(box_a[3] - box_a[1], 1)
+            height_b = max(box_b[3] - box_b[1], 1)
+            return overlap / float(max(height_a, height_b))
+
+        for box in extra_barlines:
+            cx_extra, cy_extra = _centre(box)
+            box_height = max(box[3] - box[1], 1)
+            replaced = False
+            for idx, pred in enumerate(mapped_predictions):
+                existing_box = pred.orig_bbox
+                cx_existing, cy_existing = _centre(existing_box)
+                if abs(cx_existing - cx_extra) > 2:
+                    continue
+
+                existing_height = max(existing_box[3] - existing_box[1], 1)
+                centre_gap = abs(cy_existing - cy_extra)
+                vertical_overlap = _vertical_overlap_fraction(existing_box, box)
+
+                if vertical_overlap >= 0.6:
+                    if box_height > existing_height:
+                        mapped_predictions[idx] = BarlinePrediction(
+                            pred_bbox=box,
+                            orig_bbox=box,
+                            system_index=-2,
+                            staff_index=-1,
+                        )
+                    replaced = True
+                    break
+
+                max_height = max(box_height, existing_height)
+                if centre_gap <= max_height:
+                    if box_height >= existing_height:
+                        mapped_predictions[idx] = BarlinePrediction(
+                            pred_bbox=box,
+                            orig_bbox=box,
+                            system_index=-2,
+                            staff_index=-1,
+                        )
+                    replaced = True
+                    break
+
+            if not replaced:
+                mapped_predictions.append(
+                    BarlinePrediction(
+                        pred_bbox=box,
+                        orig_bbox=box,
+                        system_index=-2,
+                        staff_index=-1,
+                    )
+                )
+
+        # 6. Heuristic Rejection
+        rejected_by_heuristic: List[BarlinePrediction] = []
+        if self.tuning.get("stem_context_heuristics_enabled", True):
+            h_config = STEM_CONTEXT_HEURISTICS.copy()
+            if sr_scale > 1:
+                h_config["notehead_proximity_threshold_px"] *= sr_scale
+                h_config["min_overlap_px"] *= sr_scale * sr_scale
+                h_config["max_height_px"] *= sr_scale
+                h_config["max_width_px"] *= sr_scale
+                h_config["cluster_gap_threshold_px"] *= sr_scale
+
+            mapped_predictions, rejected_by_heuristic = filter_detections_by_notehead_proximity(
+                mapped_predictions,
+                notehead_mask_resized,
+                h_config["notehead_proximity_threshold_px"],
+                h_config["min_overlap_px"],
+                h_config["max_height_px"],
+                h_config["max_width_px"],
+                staff_mask_resized,
+                h_config["min_staff_crossings"],
+                h_config["staff_crossing_enabled"],
+            )
+
+        # 7. End Barline Recovery
+        added_end: List[BarlinePrediction] = []
+        if self.tuning.get("enable_end_barline_recovery", False):
+            # recover_end_barlines needs image_path
+            added_end = recover_end_barlines(image_path, mapped_predictions, staff_mask_resized)
+            if added_end:
+                mapped_predictions.extend(added_end)
+
+        # Cleanup
+        if temp_proxy_path and temp_proxy_path.exists():
+            try:
+                os.remove(str(temp_proxy_path))
+            except OSError as e:
+                logger.warning(f"Failed to remove temporary proxy file {temp_proxy_path}: {e}")
+
+        return (
+            mapped_predictions,
+            xml_path,
+            seg_shape,
+            runtime_s,
+            notehead_mask_resized,
+            staff_mask_resized,
+            rejected_by_heuristic,
+            added_end,
+        )
+
+    def cleanup(self) -> None:
+        """Release VRAM and other resources."""
+        try:
+            # Clear any persistent Segnet sessions
+            try:
+                from homr_eval_scripts.segnet_cache import clear_segnet_cache
+
+                clear_segnet_cache()
+            except Exception:
+                pass
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+                logger.info("HomrPredictor: Released VRAM.")
+
+            gc.collect()
+        except Exception as e:
+            logger.warning(f"Exception during HomrPredictor cleanup: {e}")
+
+
+DEFAULT_TUNING = {
+    "barline_min_height_factor": 1.0,
+    "barline_max_width_factor": 1.0,
+    "barline_staff_overlap_min": 0.0,
+    "barline_edge_margin_x": 0,
+    "barline_edge_margin_y": 0,
+    "gen_vertical_run": False,
+    "gen_vertical_run_weak": False,
+    "gen_barline_cc_relaxed": False,
+    "gen_barline_cc_dilated": False,
+    "gen_sobel_vertical": False,
+    "gen_sobel_vertical_weak": False,
+    "gen_column_sum_staff": False,
+    "gen_column_sum_weak": False,
+    "gen_column_sum_no_staff": False,
+    "gen_hough_vertical": False,
+    "gen_hough_vertical_weak": False,
+    "gen_vertical_run_no_staff": False,
+    "gen_barline_cc_tiny": False,
+    "gen_sobel_no_staff": False,
+    "enable_end_barline_recovery": False,
+    "stem_context_heuristics_enabled": True,
+}
+
+
+def save_homr_results(
+    image_path: Path,
+    image_run_dir: Path,
+    predictions: List[BarlinePrediction],
+    notehead_mask: np.ndarray,
+    staff_mask: np.ndarray,
+) -> Path:
+    """Saves Homr detection results (JSON and masks) to the specified directory."""
+    ensure_dir(image_run_dir)
+    stem = image_path.stem
+
+    # Save masks
+    cv2.imwrite(str(image_run_dir / f"{stem}_notehead_mask.png"), notehead_mask)
+    cv2.imwrite(str(image_run_dir / f"{stem}_staff_mask.png"), staff_mask)
+
+    # Save detections.json
+    detections_path = image_run_dir / f"{stem}_detections.json"
+    with detections_path.open("w", encoding="utf-8") as fh:
+        json.dump(
+            {
+                "image": str(image_path),
+                "predictions": [
+                    {
+                        "pred_bbox": pred.pred_bbox,
+                        "orig_bbox": pred.orig_bbox,
+                        "system_index": pred.system_index,
+                        "staff_index": pred.staff_index,
+                    }
+                    for pred in predictions
+                ],
+            },
+            fh,
+            indent=2,
+        )
+    return detections_path
+
+
 def run_homr_on_image(
     image_path: Path,
     config: ProcessingConfig,
@@ -1830,15 +2219,32 @@ def run_homr_on_image(
     tuning: Dict[str, float],
 ) -> Tuple[List[BarlinePrediction], Optional[Path], Tuple[int, int], float, np.ndarray, np.ndarray]:
     start = time.perf_counter()
-    (
-        multi_staffs,
-        preprocessed_image,
-        debug,
-        title_future,
-        bar_line_boxes,
-        notehead_mask,
-        staff_mask,
-    ) = detect_staffs_with_barlines(str(image_path), config, tuning)
+    try:
+        (
+            multi_staffs,
+            preprocessed_image,
+            debug,
+            title_future,
+            bar_line_boxes,
+            notehead_mask,
+            staff_mask,
+        ) = detect_staffs_with_barlines(str(image_path), config, tuning)
+    except RuntimeError as e:
+        msg = str(e)
+        if "No staffs found" in msg or "No noteheads found" in msg:
+            logger.warning(
+                f"Detection failed for {image_path.name}: {msg}. Returning empty results."
+            )
+            img = cv2.imread(str(image_path))
+            if img is None:
+                # Fallback if image cannot be read
+                h, w = 0, 0
+            else:
+                h, w = img.shape[:2]
+            runtime_s = time.perf_counter() - start
+            empty_mask = np.zeros((h, w), dtype=np.uint8)
+            return [], None, (h, w), runtime_s, empty_mask, empty_mask
+        raise
 
     predictions: List[BarlinePrediction] = []
     for barline_box in bar_line_boxes:
@@ -2102,11 +2508,12 @@ def write_run_config(
     args: argparse.Namespace,
     git_meta: Dict[str, Optional[str]],
     images: Sequence[Path],
+    command_args: Sequence[str],
 ) -> Path:
     payload = {
         "run_id": run_id,
         "timestamp": timestamp_jst(),
-        "command": " ".join(shlex.quote(str(arg)) for arg in sys.argv),
+        "command": " ".join(shlex.quote(str(arg)) for arg in command_args),
         "docker_tag": args.docker_tag,
         "git": git_meta,
         "images": [str(path) for path in images],
@@ -2221,7 +2628,7 @@ def write_compare_md(
     return compare_path
 
 
-def write_run_sh(run_dir: Path) -> Path:
+def write_run_sh(run_dir: Path, command_args: Sequence[str]) -> Path:
     path = run_dir / "run.sh"
     with path.open("w", encoding="utf-8") as fh:
         fh.write("#!/usr/bin/env bash\n")
@@ -2229,15 +2636,19 @@ def write_run_sh(run_dir: Path) -> Path:
         fh.write('cd "$(dirname "${BASH_SOURCE[0]}")/../.."\n')
         fh.write(
             "python src/homr/homr_evaluator.py "
-            + " ".join(shlex.quote(arg) for arg in sys.argv[1:])
+            + " ".join(shlex.quote(arg) for arg in command_args[1:])
             + "\n"
         )
     os.chmod(path, 0o755)
     return path
 
 
-def main() -> None:
-    args = parse_args()
+def run_evaluation(argv: Optional[Sequence[str]] = None) -> Path:
+    args = parse_args(argv)
+    if argv is None:
+        command_args = list(sys.argv)
+    else:
+        command_args = ["homr_evaluator.py", *argv]
     images = sanitise_images(args.images)
     ground_truth_map = load_ground_truth_mapping(args)
 
@@ -2245,10 +2656,19 @@ def main() -> None:
     run_dir = args.output_root / run_id
     ensure_dir(run_dir)
 
-    write_run_sh(run_dir)
+    write_run_sh(run_dir, command_args)
 
     git_meta = git_info()
-    write_run_config(run_dir, run_id, args, git_meta, images)
+    write_run_config(run_dir, run_id, args, git_meta, images, command_args)
+
+    if args.enable_segnet_cache:
+        try:
+            from homr_eval_scripts.segnet_cache import enable_segnet_cache
+
+            if enable_segnet_cache():
+                eprint("Segnet cache enabled.")
+        except Exception as exc:
+            eprint(f"Failed to enable Segnet cache: {exc}")
 
     download_weights()
 
@@ -2276,76 +2696,81 @@ def main() -> None:
         "gen_sobel_no_staff": args.gen_sobel_no_staff,
     }
 
-    for image_path in images:
+    persistent_upsampler: Any = None
+    working_images: List[Tuple[Path, Path, int]] = []  # (orig_path, working_path, sr_scale)
+
+    # Phase 1: Super-Resolution (All images)
+    if args.enable_sr or args.pre_computed_sr is not None:
+        eprint("Phase 1: Super-Resolution / Image Preparation...")
+        for image_path in images:
+            stem = image_path.stem
+            image_run_dir = run_dir / stem
+            working_image = prepare_working_image(image_path, image_run_dir)
+            sr_scale = 1
+
+            if args.pre_computed_sr is not None:
+                sr_source = args.pre_computed_sr
+                if not sr_source.exists():
+                    raise FileNotFoundError(f"Pre-computed SR image not found: {sr_source}")
+                original_img = cv2.imread(str(working_image))
+                if original_img is not None:
+                    original_h, original_w = original_img.shape[:2]
+                    sr_img = cv2.imread(str(sr_source))
+                    if sr_img is None:
+                        raise FileNotFoundError(
+                            f"Failed to load pre-computed SR image: {sr_source}"
+                        )
+                    up_h, up_w = sr_img.shape[:2]
+                    inferred_scale = round(up_w / original_w) if original_w else 1
+                    if inferred_scale >= 2 and up_w >= original_w * 2 and up_h >= original_h * 2:
+                        sr_scale = inferred_scale
+                    cv2.imwrite(str(working_image), sr_img)
+            elif args.enable_sr:
+                requested_sr_scale = args.sr_scale
+                model_name = "RealESRGAN_x4plus" if requested_sr_scale == 4 else "RealESRGAN_x2plus"
+                img_bgr = cv2.imread(str(working_image))
+                if img_bgr is not None:
+                    original_h, original_w = img_bgr.shape[:2]
+                    upscaled, persistent_upsampler = apply_advanced_sr(
+                        img_bgr,
+                        model_name=model_name,
+                        scale=requested_sr_scale,
+                        tile=args.sr_tile,
+                        tile_pad=args.sr_tile_pad,
+                        fp32=args.sr_fp32,
+                        upsampler=persistent_upsampler,
+                    )
+                    up_h, up_w = upscaled.shape[:2]
+                    inferred_scale = round(up_w / original_w) if original_w else 1
+                    if inferred_scale >= 2 and up_w >= original_w * 2 and up_h >= original_h * 2:
+                        sr_scale = inferred_scale
+                    cv2.imwrite(str(working_image), upscaled)
+
+            working_images.append((image_path, working_image, sr_scale))
+
+        # Cleanup SR VRAM
+        persistent_upsampler = None
+        try:
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+                eprint("Released SR model VRAM.")
+        except ImportError:
+            pass
+    else:
+        # No SR
+        for image_path in images:
+            stem = image_path.stem
+            image_run_dir = run_dir / stem
+            working_image = prepare_working_image(image_path, image_run_dir)
+            working_images.append((image_path, working_image, 1))
+
+    # Phase 2: Homr Inference & Evaluation
+    eprint("Phase 2: Homr Inference & Evaluation...")
+    for image_path, working_image, sr_scale in working_images:
         stem = image_path.stem
         image_run_dir = run_dir / stem
-        working_image = prepare_working_image(image_path, image_run_dir)
-
-        sr_scale = 1
-        if args.pre_computed_sr is not None:
-            sr_source = args.pre_computed_sr
-            if not sr_source.exists():
-                raise FileNotFoundError(f"Pre-computed SR image not found: {sr_source}")
-            original_img = cv2.imread(str(working_image))
-            if original_img is None:
-                eprint(f"Warning: Failed to load {working_image} for SR scale inference.")
-            else:
-                original_h, original_w = original_img.shape[:2]
-                sr_img = cv2.imread(str(sr_source))
-                if sr_img is None:
-                    raise FileNotFoundError(f"Failed to load pre-computed SR image: {sr_source}")
-                up_h, up_w = sr_img.shape[:2]
-                inferred_scale = round(up_w / original_w) if original_w else 1
-                if inferred_scale >= 2 and up_w >= original_w * 2 and up_h >= original_h * 2:
-                    sr_scale = inferred_scale
-                else:
-                    eprint(
-                        f"Warning: Pre-computed SR output resolution did not increase "
-                        f"({original_w}x{original_h} -> {up_w}x{up_h}); treating as no-SR."
-                    )
-                    sr_scale = 1
-                cv2.imwrite(str(working_image), sr_img)
-        elif args.enable_sr:
-            requested_sr_scale = 4
-            eprint(f"Applying Super-Resolution (x{requested_sr_scale}) to {stem}...")
-            img_bgr = cv2.imread(str(working_image))
-            if img_bgr is None:
-                eprint(f"Warning: Failed to load {working_image} for SR.")
-            else:
-                original_h, original_w = img_bgr.shape[:2]
-                upscaled = apply_advanced_sr(
-                    img_bgr,
-                    model_name="RealESRGAN_x4plus",
-                    scale=requested_sr_scale,
-                    tile=args.sr_tile,
-                    tile_pad=args.sr_tile_pad,
-                    fp32=args.sr_fp32,
-                )
-                up_h, up_w = upscaled.shape[:2]
-                inferred_scale = round(up_w / original_w) if original_w else 1
-
-                # Only treat SR as enabled if the output resolution actually increased.
-                if inferred_scale >= 2 and up_w >= original_w * 2 and up_h >= original_h * 2:
-                    sr_scale = inferred_scale
-                else:
-                    eprint(
-                        f"Warning: SR output resolution did not increase "
-                        f"({original_w}x{original_h} -> {up_w}x{up_h}); treating as no-SR."
-                    )
-                    sr_scale = 1
-
-                cv2.imwrite(str(working_image), upscaled)
-                # Real-ESRGAN uses PyTorch and can leave large CUDA allocations.
-                # Clear the cache so subsequent ONNXRuntime inference doesn't stall.
-                try:
-                    import torch
-
-                    if torch.cuda.is_available():
-                        torch.cuda.empty_cache()
-                        torch.cuda.synchronize()
-                        eprint("Cleared CUDA cache after SR.")
-                except Exception:
-                    pass
+        # working_image is already prepared
 
         # Optimization: Create a downscaled proxy for Homr inference if image is huge (e.g. SR)
         inference_image_path = working_image
@@ -2741,6 +3166,11 @@ def main() -> None:
     write_metrics_csv(run_dir, per_image_metrics, aggregate)
     write_readme(run_dir, run_id, per_image_metrics, aggregate, args, ground_truth_summary)
     write_compare_md(run_dir, per_image_metrics, aggregate, args.baseline_metrics)
+    return run_dir
+
+
+def main() -> None:
+    run_evaluation()
 
 
 if __name__ == "__main__":

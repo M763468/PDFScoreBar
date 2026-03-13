@@ -25,12 +25,18 @@ These records feed the soft-match classification described below.
 After greedy pairing, unmatched predictions are revisited:
 - **Duplicate (`reason="duplicate"`)** when
   - IoU with fallback best ≥ `BARLINE_DUPLICATE_IOU_THRESHOLD` (0.3) and
-  - X-distance ≤ `BARLINE_DUPLICATE_X_TOLERANCE` (12 px).
+  - X-distance ≤ `BARLINE_DUPLICATE_X_TOLERANCE` (currently 12 px, migrating to `1.2 * unit_size`).
 - **Repeat-like (`reason="repeat_like"`)** when
   - Vertical overlap ≥ `BARLINE_REPEAT_OVERLAP_THRESHOLD` (0.8),
   - X-distance between duplicate tolerance and `BARLINE_REPEAT_X_TOLERANCE` (40 px).
 
 Predictions that do not satisfy either rule are treated as hard false positives.
+
+### Dynamic Normalisation (Resolution Independence)
+While legacy thresholds are defined in pixels (px), new implementations (Issue #36 onward) adopt **unit_size (staff line spacing)** as the base unit for distance thresholds:
+- **Deduplication Threshold**: `1.2 * unit_size`
+- **Implicit Start Assumption**: `4.0 * unit_size`
+This ensures the logical layer behaves consistently across different score resolutions (e.g., 300dpi vs 600dpi).
 
 ## Left-margin Exclusion Rule
 `apply_left_margin_exclusion` runs after matching to reclassify select detections as false positives. The homr evaluator currently keeps the guard disabled (`LEFT_MARGIN_FORCE_FP_GT_INDICES = set()`), so no matches are demoted by default. When re-enabled, any GT index listed in the set and matched to a predicted width ≤ `LEFT_MARGIN_FORCE_FP_MAX_WIDTH` (2 px) will be forced back to an FP to suppress intentionally ignored left-gutter pillars.

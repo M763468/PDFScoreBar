@@ -1,0 +1,69 @@
+run:
+  run_id: toy_symphony_baseline
+  output_root: logs/full_pipeline_runs
+  page_limit: 4
+
+inputs:
+  pdf_path: data/evaluation/pdfs/おもちゃの交響曲_bass.pdf
+  pdf_to_images:
+    output_dir: null # Ignored, forced to run_dir
+    dpi: 300
+    pages: null
+    target_width: null
+    target_height: null
+    interpolation: area
+    prefix: page
+    format: png
+    overwrite: true
+    alpha: false
+    image_glob: page_*.png
+  barlines_root: logs/hybrid_generalization
+  barlines_pattern: "{page_run}/pipeline2_no_peak_filtered_cnn.json"
+  staff_mask_pattern: "{page_run}/baseline/{page_id}/{page_id}/{page_id}_debug_3_staff.png"
+  barline_overrides: null
+  barline_overrides_config:
+    iou_threshold: 0.5
+    min_width: 12
+    x_margin: 3
+    y_margin: 3
+  measure_overrides: null
+
+steps:
+  pdf_to_images: true
+  detection: true
+  filter_pages: true
+  apply_barline_overrides: true
+  numbering_base: true
+  mmr_overrides: true
+  apply_measure_overrides: true
+  overlay: true
+
+detection:
+  container_name: sr_eval_gpu_exp
+  hybrid_output_root: logs/hybrid_generalization
+  ink_threshold: 230
+  min_ratio: 0.70
+  min_height_ratio: 0.012
+  cnn_model_path: logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
+  cnn_threshold: 0.1
+
+filters:
+  blank_page: auto
+  blank_page_config:
+    pixel_threshold: 245
+    max_ink_ratio: 0.003
+    max_stddev: 12.0
+  staff_detect: auto
+  staff_detect_config:
+    min_nonzero_ratio: 0.001
+  user_exclude: []
+
+mmr:
+  model_path: tools/mmr_training/models/mmr_classifier_best.pth
+  ocr_lang: eng
+  enable_rotation_tta: false
+  debug_root: null
+
+numbering:
+  config_path: null
+  force_single_system: false

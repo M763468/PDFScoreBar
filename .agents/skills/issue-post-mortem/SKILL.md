@@ -1,35 +1,39 @@
 ---
 name: issue-post-mortem
-description: Review the completed work against the original issue to identify leftovers or new sub-tasks, and comment on the issue.
+description: Review completed work against an issue and MANDATORILY post a post-mortem summary to the issue. Use after a task is finished to identify leftovers or new sub-tasks.
 ---
 
 # issue-post-mortem
 
 ## Purpose
-After completing a task, use this skill to evaluate the changes against the original issue's Acceptance Criteria. This helps identify remaining tasks, unhandled edge cases, or new issues that should be extracted into separate tickets, and records the final status on GitHub.
+Review completed work against the original issue to identify any discrepancies, leftovers, or new tasks, and ensure these are documented on the issue.
+
+## Input
+- Issue number
+- Current codebase state (completed changes)
 
 ## Output (respond in Japanese)
-- Completion status (Done / Partial / New Issue needed)
-- Summary of what was achieved vs what remains
-- Proposal for new issues to be created
-- **Artifact**: `artifacts/issue_post_mortem.txt`
-- **GitHub Comment**: A summary comment posted to the issue.
+- Comparison of AC vs Implementation
+- Identified leftovers or next steps
+- Created Comment URL (Mandatory)
+- **Artifact**: `artifacts/issue_post_mortem_summary.md`
 
 ## Steps
-1) Run `./run.sh <issue_number> [base_branch]` to generate the review data.
-2) Read `artifacts/issue_post_mortem.txt` to compare original goals with implemented diffs.
-3) Check for any "TODO" comments left in the new code.
-4) Draft a summary comment (e.g., `artifacts/issue_post_mortem_comment.md`) that covers:
-    - Achieved goals (vs AC)
-    - Any deferred tasks or newly discovered issues
-    - Next steps (Closing the issue or creating a follow-up)
-5) Post the comment to the issue using `gh issue comment <issue_number> --body-file artifacts/issue_post_mortem_comment.md`.
-6) If complete, propose closing the issue or creating a PR.
+1) Run `./run.sh <issue_number>` to fetch issue and context.
+2) Analyze the implementation against the original Goal and Acceptance Criteria.
+3) Identify any missed requirements or technical debt introduced.
+4) Draft a post-mortem summary in Japanese.
+5) **MANDATORY: Post the post-mortem summary to the Issue** using `gh issue comment <issue_number> --body-file artifacts/issue_post_mortem_summary.md`.
+6) Report the URL of the created comment.
 
 ## Required commands/permissions
-- `./run.sh`: script to gather post-mortem data into `artifacts/`
-- gh: to fetch issue details and post comments
+- `./run.sh`: script to fetch issue data
+- gh: CLI tool for issue commenting
 
 ## Example commands
-- `./run.sh 42 main`
-- `gh issue comment 42 --body-file artifacts/issue_post_mortem_comment.md`
+- `./run.sh 42`
+- `gh issue comment 42 --body-file artifacts/issue_post_mortem_summary.md`
+
+## Notes
+- Be objective and thorough in the review.
+- **CRITICAL**: Documenting the outcome on GitHub is essential for team visibility.

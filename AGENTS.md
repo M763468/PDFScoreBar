@@ -10,7 +10,7 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 - **Adhere to the Issue Scope**: Implement only what is explicitly defined in the `Goal`, `Scope`, and `Acceptance Criteria` of the assigned issue.
 - **Follow Established Patterns**: Use existing code patterns, conventions, and architectural styles.
 - **Write Necessary Tests**: Provide lightweight tests to validate your implementation, as specified in the issue.
-- **Use Standard Labels**: Apply labels as defined in `docs/LABELS.md`.
+- **Use Standard Labels**: Apply labels as defined in `docs/ai-workflow/LABELS.md`.
 - **Update Documentation**: If your changes affect user-facing behavior or system design, indicate that the README or other documentation needs to be updated.
 
 ### Don't
@@ -31,6 +31,8 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 
 - **Testing**: All code must be accompanied by tests sufficient to prove it meets the `Acceptance Criteria`. The "How to test" section of the issue should be followed precisely.
 - **Linting**: Code must adhere to the project's linting standards. Always run `make format` to fix style issues and `make lint` to verify compliance before submitting changes.
+- **Pre-Commit / Pre-PR Verification (Mandatory)**: Before creating a commit or opening a PR, you **MUST** run both (1) behavior verification (actual execution path relevant to the change, e.g. smoke run) and (2) tests/lint checks, then report the results. Do not commit or create a PR if these checks have not been completed.
+  - Regression workflow reference: `docs/REGRESSION_TEST_WORKFLOW.md`
 - **Logging**: Add clear and concise logging for errors and important events. Avoid noisy or verbose logging.
 - **PR Descriptions**: Pull request descriptions must be filled out completely, following the `.github/pull_request_template.md`. The `Related Issue` field is mandatory.
 
@@ -55,13 +57,35 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
     - `make format`: Auto-format code.
 - **Maintenance**: Developers and Agents should update the `Makefile` and this document when new standard workflows are introduced.
 
+### Design Principles (Barline Detection)
+- **Resolution Independence (Unit-based Scaling)**:
+    - **Rule**: NEVER use fixed pixel (px) thresholds for distance or geometry calculations in the barline detection/numbering layers.
+    - **Implementation**: Always use `unit_size` (staff line spacing) as the base unit for dynamic scaling.
+    - **Current Targets**: Deduplication Threshold (`1.2 * unit_size`), Implicit Start Assumption (`4.0 * unit_size`).
+    - **Documentation**: See `docs/GT_PREPARATION_POLICY.md` and `docs/BARLINE_MATCHER.md`.
+- **GT Labeling Consistency**:
+    - Use specific labels for complex barlines: `double_barline`, `end_barline`, `repeat`.
+    - Treat multi-line barlines as a **single logical event** with a single encompassing BBox.
+
+### Issue Template Conformance
+- **Template-First Issue Bodies**: When creating or updating GitHub Issues, always align the body with the corresponding file in `.github/ISSUE_TEMPLATE/`.
+- **Required Headers Must Exist**: For `Task` issues, do not omit `Base branch`, `Branch name`, `PR base`, `Goal`, and `Done` in the issue body.
+- **Project Extensions Are Additive**: Sections like `Background`, `Scope`, `Acceptance Criteria`, and `How to test` may be added, but only in addition to (not instead of) required template headers.
+
 ### Logs & Artifacts
 - **Output Directory**: All experiment logs, metrics, and generated artifacts must be saved under the `logs/` directory. Use structured subdirectories (e.g., `logs/<experiment_name>/<timestamp>/`) to avoid clutter.
 - **Cleanup**: Do not leave temporary files in the project root.
+- **Dataset Staging Rule (Required)**: For CNN retraining/evaluation jobs, place working datasets under `datasets/` in this repository before any bulk file operation. Do not run iterative copy/split generation directly on `/mnt/*`.
+- **Preflight Check (Required)**: Before launching long training/eval, explicitly verify: `pwd` is repo root, input dataset root is under `datasets/`, and output path is under `logs/`.
 
 ### Dependencies
 - **Strict Control**: Do not modify `requirements.txt`, `pyproject.toml`, or `Dockerfile` unless the task explicitly requires dependency updates.
 - **No Unauthorized Libraries**: Do not install new libraries without user approval.
+
+### Dataset I/O Performance Rule (WSL)
+- **Avoid `/mnt/*` for bulk small-file operations**: On this repository, `/mnt/c` `/mnt/d` is mounted via `drvfs/9p`, and metadata-heavy operations (`copytree`, many `cp/stat`, split rebuilds) become extremely slow.
+- **Working copy first**: For dataset editing/augmentation/relabel tasks, first copy the working dataset under repository `datasets/` (ext4 side), then perform all file operations there.
+- **Use `/mnt/*` as source/archive only**: Treat `/mnt/*` dataset paths as read-mostly source or backup locations, not active scratch space for iterative retraining loops.
 
 ### Multi-LLM Collaboration (Codex + gemini-cli)
 - **Flexible Primary/Secondary Roles**: In interactive local work, either `Codex` or `gemini-cli` may be the primary driver depending on the task. The primary agent leads planning and decision flow; the secondary agent provides alternative designs, debugging hypotheses, or review feedback.
@@ -135,6 +159,24 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
    - まず sandbox 内で `torch.__version__`, `torch.version.cuda`, `torch.cuda.is_available()`, `torch.cuda.device_count()` を確認し、OS 側は `nvidia-smi` で切り分けること。
    - `nvidia-smi` 成功かつ PyTorch の CUDA build（例 `+cuXXX`）なのに sandbox 内だけ失敗する場合、**GPUを使う推論/学習コマンドは権限昇格（sandbox外）で実行**すること。
    - 実行前に「sandbox 内では CUDA 初期化が失敗するため、GPU利用のため権限昇格が必要」である旨を明示し、ユーザー承認を得ること。
+
+8. **長時間学習ジョブの sandbox 制約（multiprocessing/semlock）**:
+   - `experiments/cnn_classifier/train.py` のような DataLoader 複数worker学習は、sandbox 内だと `PermissionError: [Errno 13]`（`multiprocessing` の `SemLock`）で失敗することがある。
+   - この系統の学習ジョブは、最初から **権限昇格（sandbox外）** で実行すること。
+   - 失敗後のリトライではなく、初回実行時点で「sandbox制約回避のため権限昇格が必要」と明示して承認を得ること。
+   - 学習データ更新は先に `datasets/`（repo ext4側）で完了させ、学習ジョブはその作業用datasetを参照して実行すること。
+
+9. **自律的ピアレビュー（セカンドオピニオンの取得）**:
+   - **トリガー条件**: 以下の「高難易度」状況を検知した場合、エージェントは自律的に別エージェント（Codex等）に意見を照会することを検討する。
+     - 性能のトレードオフ（Precision向上によりRecallが低下するなど）が発生し、最適解が見えない場合。
+     - `barline_matcher.py` や `measure_numbering` 等、システムのコアロジックに破壊的変更を加える場合。
+     - 2回以上の試行でバグが修正できない、または原因の仮説が3つ以上並立する場合。
+     - アーキテクチャの大きな分岐（A案・B案）において、客観的なリスク評価が必要な場合。
+   - **照会手順**:
+     - `codex exec --sandbox read-only` を使用し、現在の設計案に対する批判的レビューや代替案を求める。
+     - 照会前にユーザーに「Codexに意見を聞いてみます」と宣言する（詳細な承認を待たず、思考プロセスの一環として実行して良い）。
+   - **結果の統合**:
+     - 照会結果をそのまま採用せず、自分の案と比較した「統合案」をユーザーに提示し、なぜその結論に至ったかの論拠（Rational）を説明する。
 
 ### Multi-LLM Role Specialization
 - **Gemini CLI**: Architect, Multi-modal Reasoner, Web Researcher. Leads planning and reasoning.

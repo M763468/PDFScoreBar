@@ -1,0 +1,33 @@
+# Issue #44 baseline dataset build (evaluation2 GT retrain)
+# Usage:
+#   python tools/cnn_classifier/build_cnn_dataset.py --config configs/cnn_barline_runs/issue44_baseline_v1/dataset_build.yaml
+
+output_root: /mnt/d/datasets/cnn_classifier_v1
+deepscores_root: /mnt/d/datasets/DeepScoresV2/ds2_dense
+
+# evaluation2 GT / image / candidate set (68 pages verified locally)
+eval2_annotations_root: data/evaluation2/annotations
+eval2_images_root: data/evaluation2/images
+eval2_candidates_root: logs/issue36_prep/probe_candidates_filtered_v12
+eval2_candidate_file: pipeline2_no_peak_candidates.json
+
+# Candidate-to-crop conversion
+crop_width: 128
+crop_height: 256
+crop_scale: 3.0
+min_crop_height: 48
+max_crop_height: 256
+iou_threshold: 0.5
+
+# Dataset size / split reproducibility
+seed: 44
+train_ratio: 0.8
+val_ratio: 0.1
+test_ratio: 0.1
+
+# Keep these pages in train split for stability across reruns (optional)
+# Remove or adjust if issue scope decides a different split policy.
+force_train:
+  - local
+  - eval2
+

@@ -1,0 +1,124 @@
+import json
+import shutil
+from pathlib import Path
+
+# Current entrypoint for evaluation2 GT rebuild config generation.
+# Canonical flow is documented in tools/verification/gt_preparation/README.md.
+
+
+def prepare_eval2_rebuild():
+    repo_root = Path(__file__).resolve().parents[2]
+    img_root = repo_root / "data/evaluation2/images"
+    ann_root = repo_root / "data/evaluation2/annotations"
+    logs_root = repo_root / "logs/hybrid_pipeline_bench"
+    filtered_roots = [
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v13",
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v12",
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v11",
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v10b",
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v10",
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v9",
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v8",
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v7",
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v6",
+        repo_root / "logs/issue36_prep/probe_candidates_filtered_v5",
+    ]
+
+    missing_inputs = [p for p in (img_root, ann_root.parent, logs_root) if not p.exists()]
+    if missing_inputs:
+        missing_str = ", ".join(str(p) for p in missing_inputs)
+        raise FileNotFoundError(
+            f"Required directories not found under repo root {repo_root}: {missing_str}"
+        )
+
+    # 1. Map pages to their latest hybrid predictions
+    # Pattern: eval2_{score}_{page}_{timestamp}
+    page_to_latest_log = {}
+
+    for log_dir in logs_root.glob("eval2_*"):
+        if not log_dir.is_dir():
+            continue
+
+        # Split by '_' and try to extract score and page
+        # Example: eval2_Shostakovich-Festival_Overture_Va_page_001_20260131_025459
+        parts = log_dir.name.split("_")
+        # Find index of "page"
+        try:
+            page_idx = parts.index("page")
+            score = "_".join(parts[1:page_idx])
+            page = "_".join(parts[page_idx : page_idx + 2])
+            key = (score, page)
+
+            timestamp = "_".join(parts[page_idx + 2 :])
+
+            if key not in page_to_latest_log or timestamp > page_to_latest_log[key][1]:
+                page_to_latest_log[key] = (log_dir, timestamp)
+        except ValueError:
+            continue
+
+    print(f"Found {len(page_to_latest_log)} unique pages in logs.")
+
+    config_pages = []
+
+    # 2. Iterate over image directories
+    for score_dir in img_root.iterdir():
+        if not score_dir.is_dir():
+            continue
+
+        score_name = score_dir.name
+        for img_path in sorted(score_dir.glob("*.png")):
+            page_name = img_path.stem
+            key = (score_name, page_name)
+
+            dest_dir = ann_root / score_name / page_name
+            dest_dir.mkdir(parents=True, exist_ok=True)
+
+            editable_path = dest_dir / "boxes_provisional.json"
+            output_raw = dest_dir / "raw_boxes.json"
+            output_sorted = dest_dir / "boxes_sorted.json"
+
+            copied = False
+
+            # Prefer filtered candidates from issue36 prep workflow (v6 -> v5).
+            for root in filtered_roots:
+                filtered = root / score_name / page_name / "pipeline2_no_peak_candidates.json"
+                if filtered.exists():
+                    shutil.copy2(filtered, editable_path)
+                    copied = True
+                    break
+
+            # Fallback to latest hybrid predictions if v5 candidate is unavailable.
+            if not copied and key in page_to_latest_log:
+                src_log = page_to_latest_log[key][0]
+                src_json = src_log / "hybrid_predictions.json"
+                if src_json.exists():
+                    shutil.copy2(src_json, editable_path)
+                    copied = True
+
+            if not editable_path.exists():
+                # Create empty if not found
+                with open(editable_path, "w") as f:
+                    json.dump([], f)
+
+            config_pages.append(
+                {
+                    "name": f"{score_name}/{page_name}",
+                    "image": str(img_path.absolute()),
+                    "editable": str(editable_path.absolute()),
+                    "output_raw": str(output_raw.absolute()),
+                    "output_sorted": str(output_sorted.absolute()),
+                    "y_threshold": 50,
+                }
+            )
+
+    # 3. Write new config
+    new_config = {"pages": config_pages}
+    config_out = repo_root / "tools/gt_relabel_gui/evaluation2_config.json"
+    with open(config_out, "w") as f:
+        json.dump(new_config, f, indent=2)
+
+    print(f"Prepared {len(config_pages)} pages. Config written to {config_out}")
+
+
+if __name__ == "__main__":
+    prepare_eval2_rebuild()

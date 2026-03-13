@@ -1,0 +1,29 @@
+# Issue #44 baseline training config
+# Usage:
+#   .venv_cnn_classifier/bin/python experiments/cnn_classifier/train.py --config configs/cnn_barline_runs/issue44_baseline_v1/train.yaml
+
+work_dir: logs/cnn_barline_classification/issue44_baseline_v1
+model_name: resnet18
+
+epochs: 20
+batch_size: 256
+learning_rate: 0.0001
+img_size: [256, 128]
+seed: 44
+
+amp: true
+compile: true
+compile_mode: reduce-overhead
+channels_last: true
+
+imbalance: sampler
+optimize_threshold: true
+weight_decay: 0.01
+num_workers: 8
+prefetch_factor: 2
+save_interval: 0
+
+sp_p: 0.3
+sp_density: 0.02
+freeze_backbone_epochs: 0
+

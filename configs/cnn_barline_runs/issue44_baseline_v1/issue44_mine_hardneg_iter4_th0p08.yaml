@@ -1,0 +1,10 @@
+scored_root: logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+gt_root: data/evaluation2/annotations
+images_root: data/evaluation2/images
+output_root: logs/cnn_barline_classification/issue44_hcfn_iter4/mining_hardneg_from_baseline
+
+scored_glob: "*_scored.json"
+min_score: 0.08
+max_score: 0.20
+max_iou: 0.10
+max_per_page: 3

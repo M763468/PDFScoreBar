@@ -22,6 +22,9 @@ venv/
 .venv*
 .env
 
+# Package manager locks
+uv.lock
+
 # Debug outputs
 debug_outputs/
 logs/
@@ -63,6 +66,11 @@ logs/analysis/
 logs/archive/
 logs/system/
 /tmp/
+
+# Temporary run and pipeline outputs
+temp/
+pipeline_output.log
+configs/tmp_*.yaml
 
 # AI Agent artifacts
 artifacts/

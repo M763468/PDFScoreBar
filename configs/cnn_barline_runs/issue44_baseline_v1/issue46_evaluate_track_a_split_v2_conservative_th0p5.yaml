@@ -1,0 +1,6 @@
+# Issue #46 Track A Split v2 (conservative) Evaluation (th=0.5)
+scored_root: logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12_track_a_split_v2_conservative
+gt_root: data/evaluation2/annotations
+output_csv: logs/cnn_barline_classification/issue44_baseline_v1/eval2_global_summary_track_a_split_v2_conservative_th0p5.csv
+threshold: 0.5
+scored_glob: "pipeline2_no_peak_scored.json"

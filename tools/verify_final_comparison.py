@@ -54,27 +54,30 @@ def main():
         probe_output_root.mkdir(parents=True)
 
         target_tasks = []
+        tasks_by_score = {}
         for s_name, stem in available_pages:
             orig_img = image_root / s_name / f"{stem}.png"
             upscaled_img = upscale_root / s_name / stem / stem / f"{stem}.png"
             img_to_use = orig_img if scale == 1.0 else upscaled_img
             if img_to_use.exists():
                 target_tasks.append((img_to_use, s_name, stem))
+                tasks_by_score.setdefault(s_name, []).append(img_to_use)
 
         start_time = time.time()
 
-        # PROCESS ONE BY ONE TO BE ABSOLUTELY SURE ABOUT RUN_ID
-        for img_p, s_name, stem in tqdm(target_tasks, desc=f"Processing {name}"):
+        for s_name, images_in_score in tqdm(
+            tasks_by_score.items(), desc=f"Processing {name} (Scores)"
+        ):
             # 1. Probe Scan
             run_probe_scan_batch(
-                images=[img_p],
+                images=images_in_score,
                 output_root=probe_output_root,
                 bands_from=original_bands_root,
                 staff_mask_dir=None,
                 ink_threshold=180,
                 min_ratio=0.85,
                 min_height_ratio=0.012,
-                score_name=s_name,  # FORCE score_name
+                score_name=s_name,
                 input_image_scale=scale,
                 detect_probe_kwargs={
                     "scan_center_on_peak": True,
@@ -88,10 +91,10 @@ def main():
             # 2. CNN Scoring
             run_cnn_scoring_batch(
                 probe_output_root=probe_output_root,
-                images=[img_p],
+                images=images_in_score,
                 model_path=cnn_model_path,
                 threshold=0.1,
-                score_name=s_name,  # FORCE score_name
+                score_name=s_name,
                 crop_recenter_on_bbox_ink=True,
                 crop_recenter_max_shift_unit_ratio=0.5,
                 input_image_scale=scale,

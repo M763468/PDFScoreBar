@@ -60,7 +60,7 @@ def main():
             upscaled_img = upscale_root / s_name / stem / stem / f"{stem}.png"
             img_to_use = orig_img if scale == 1.0 else upscaled_img
             if img_to_use.exists():
-                target_tasks.append((img_to_use, s_name, stem))
+                target_tasks.append((img_to_use, s_name))
                 tasks_by_score.setdefault(s_name, []).append(img_to_use)
 
         start_time = time.time()
@@ -105,9 +105,10 @@ def main():
         # 3. Evaluation
         total_tp, total_gt = 0, 0
         total_fn = 0
-        for _, s_name, stem in target_tasks:
+        for img_p, s_name in target_tasks:
+            stem = img_p.stem
             # build_probe_run_id with score_name=s_name is reliable
-            run_id = build_probe_run_id(_, score_name=s_name)
+            run_id = build_probe_run_id(img_p, score_name=s_name)
             scored_path = probe_output_root / run_id / "pipeline2_no_peak_filtered_cnn.json"
             gt_path = gt_root / s_name / stem / "boxes_sorted.json"
 

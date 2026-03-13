@@ -34,17 +34,18 @@ def extract_paths_from_manifest(manifest_path: Path) -> list[str]:
     if not manifest_path.exists():
         return []
     content = manifest_path.read_text()
-    # Simple regex to find paths like src/xxx or configs/xxx.yaml
-    matches = re.findall(r"`([^` ]+/[^` ]+|[^` ]+\.[a-z0-9]+)`|`([^` ]+\.py)`|`([^` ]+\.yaml)`", content)
+    # A simpler regex to find any non-whitespace string in backticks, then filter.
+    # This is more robust than a complex regex trying to validate paths.
+    matches = re.findall(r"`([^`\s]+)`", content)
     paths = set()
-    for match in matches:
-        for p in match:
-            if p:
-                if "(Container)" in p:
-                    continue
-                # Basic cleaning: remove trailing punctuation if any
-                p = p.strip(".,;:()")
-                paths.add(p)
+    for p in matches:
+        if "(Container)" in p:
+            continue
+        # Basic cleaning: remove trailing punctuation if any
+        p = p.strip(".,;:()")
+        # Heuristic to filter out non-path-like strings (e.g. single words without extension)
+        if "/" in p or "." in p:
+            paths.add(p)
     return sorted(list(paths))
 
 

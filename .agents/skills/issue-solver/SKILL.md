@@ -25,8 +25,10 @@ Autonomously resolve a GitHub Issue by implementing and verifying changes, and e
 3) Create a new branch and implement changes.
 4) Verify the changes with `make test`, `make format`, and `make lint`.
 5) **MANDATORY: Report completion on the Issue** or create a PR.
-    - If completing the task directly: `gh issue comment <issue_number> --body "修正内容と検証結果のサマリー..."`
+    - If completing the task directly: Use `gh issue comment <issue_number> --body-file <temp_file>` or `tools/utils/safe_gh_post.sh issue <issue_number> "..."`.
+    - **Note**: To prevent shell expansion issues (e.g., backticks in the comment body), it is **STRONGLY RECOMMENDED** to use a temporary file with `--body-file` or the `tools/utils/safe_gh_post.sh` utility.
     - If creating a PR: Ensure the PR references the issue (e.g., `Closes #42`).
+
 6) Report the final URL to the user.
 
 ## Required commands/permissions

@@ -22,8 +22,9 @@ Analyze a PR diff and ensure its purpose and impact are clearly documented on Gi
 2) Analyze the diff and project context to understand the "What" and "Why".
 3) Draft a concise explanation in Japanese, following the standard format (Goal, Changes, Impact).
 4) **MANDATORY: Update the PR on GitHub** or post a summary comment.
-    - Prefer updating the PR description: `gh pr edit <pr_number> --body "..."`
-    - Or post a comment if the description should remain intact: `gh pr comment <pr_number> --body "..."`
+    - Prefer updating the PR description: `gh pr edit <pr_number> --body-file <temp_file>` or `tools/utils/safe_gh_post.sh pr <pr_number> "..."` (if the utility supports edit).
+    - **Note**: To prevent shell expansion issues (e.g., backticks in the description or comment), it is **STRONGLY RECOMMENDED** to use a temporary file with `--body-file` or the `tools/utils/safe_gh_post.sh` utility.
+    - Or post a comment if the description should remain intact: `gh pr comment <pr_number> --body-file <temp_file>`.
 5) Report the completion status and URL.
 
 ## Required commands/permissions

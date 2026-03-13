@@ -29,7 +29,9 @@ Analyze PR comments and reviews to plan and implement necessary code fixes or im
 5) Plan and implement modifications according to `AGENTS.md`.
 6) Verify the fixes with `make test`, `make format`, and `make lint`.
 7) Update documentation if necessary.
-8) **MANDATORY: Post a comment to the PR** using `gh pr comment <pr_number> --body "..."`. The comment MUST summarize the implemented fixes and explicitly request a re-review. This is the final and most important step to close the task.
+8) **MANDATORY: Post a comment to the PR** using `gh pr comment <pr_number> --body "..."`. 
+   **Note**: To prevent shell expansion issues (e.g., backticks in the comment body), it is **STRONGLY RECOMMENDED** to use `--body-file` or the `tools/utils/safe_gh_comment.sh` utility for comments containing code or special characters.
+   The comment MUST summarize the implemented fixes and explicitly request a re-review. This is the final and most important step to close the task.
 
 ## Required commands/permissions
 - `./run.sh`: script to fetch PR refinement data into `artifacts/`

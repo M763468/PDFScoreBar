@@ -10,6 +10,7 @@
 - **Resolution Independence**: Strictly adhere to the \`unit_size\` (staff spacing) scaling rule for all geometric calculations.
 - **Tool Preference over Shell Tricks**: **ALWAYS** use dedicated tools (like `write_file`, `replace`, etc.) instead of shell redirections (`>`), heredocs (`<<EOF`), or `cat` inside `run_shell_command`. This prevents syntax errors and excessive security confirmation prompts for the user. (Note: Using `>` or other standard shell features inside dedicated `.sh` scripts like those in `.agents/skills/` is perfectly fine and expected).
 - **PR Creation Standard**: When creating or editing a Pull Request via `gh pr create` or `gh pr edit`, you **MUST** first read `.github/pull_request_template.md` and strictly format your PR body according to its structure and headings.
+- **Safe Command Input**: When posting PR/Issue comments, issue descriptions, or any text containing code snippets (backticks) via `gh`, you **MUST** use `--body-file` with a temporary file to avoid shell expansion errors and data corruption.
 
 ## Verification & Quality Bar
 - **PR Review Retrieval Standard**: When checking PR feedback, use `gh pr view <number> --json title,body,comments,reviews` to fetch all context (including inline comments) in a single turn. Avoid multiple calls to `gh pr view --comments` and `gh api`.

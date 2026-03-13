@@ -141,7 +141,7 @@ class PipelineOrchestrator:
         probe_output_dir = None
         hybrid_output_dir = None
 
-        if run_detection:
+        if run_detection and not self.validate_only:
             logger.info("Starting detection step...")
             if self.skip_existing:
                 if "detection" not in self.config:

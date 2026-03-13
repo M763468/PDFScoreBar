@@ -1,5 +1,5 @@
 run:
-  run_id: eval2_e2e_verification_full_fix_20260313
+  run_id: eval2_e2e_verification_full
   output_root: logs/full_pipeline_runs/verification
 
 inputs:
@@ -35,7 +35,7 @@ detection:
   scan_x_peak_rescue: true
 
 mmr:
-  model_path: logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
+  model_path: tools/mmr_training/models/mmr_classifier_best.pth
   enable_rotation_tta: false
 
 numbering:

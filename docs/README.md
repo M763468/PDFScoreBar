@@ -21,65 +21,54 @@ confusion and duplication.
 | Time Scale | Document | Purpose |
 |----------|----------|---------|
 | **Very Long Term** | `README.md` (repo root) | Ultimate project vision and scope |
-| **Long Term** | `docs/README.md` (this file) | Project map and documentation index |
-| **Mid Term** | `docs/NEXT_SESSION_NOTES.md` | Current confirmed state and allowed work areas |
-| **Short Term** | `docs/SESSION_LOG.md` | Per-session working notes (messy is OK) |
+| **Mid/Long Term** | `docs/DOCUMENT_INVENTORY.md` | **[NEW]** Document classification (Current vs Analysis vs Legacy) |
+| **Short/Mid Term** | `docs/MANIFEST.md` | Asset registry (Models, Datasets, Configs) |
 | **Historical Facts** | `docs/DEVELOPMENT_LOG.md` | Append-only authoritative record |
 
 ---
 
-## Current Project Status (2025-12-30)
+## Current Project Status (2026-03-14)
 
-**Update (2025-12-30)**: GT rebuild + recheck is complete. The current focus is **detector-side FN analysis** for the remaining 10 true detector-miss cases.
-See `docs/NEXT_SESSION_NOTES.md` for the confirmed baseline, logs, and next actions.
+**Update (2026-03-14)**: Issue #13 (Full Pipeline Optimization) is complete. 
+The current focus is **Evaluation Speedup** and **In-Process Refactoring**.
+See `docs/notes/ROADMAP_20260313.md` for the active roadmap.
 
-**Recent confirmed state (high-level)**:
-- GT cleanup completed for 35 detector-miss candidates; 10 remain after recheck.
-- Baseline `var88` keeps FN=0 on the rebuilt evaluation set.
-- Next work targets FP-source cleanup without reintroducing FN.
+**Recent confirmed state**:
+- `src/pipeline/main.py` is the primary entry point.
+- MMR classifier and model persistence are verified for batch processing.
+- Repository documentation has been re-organized into a classification inventory.
 
 ---
 
 ## Where to Find Results and Artifacts
 
 This project produces a large number of intermediate and final artifacts.
-Use the table below to quickly locate what you need.
+Use `docs/DOCUMENT_INVENTORY.md` to find the correct documentation for each phase.
 
 | What you want to see | Location |
 |---------------------|----------|
-| Latest confirmed results | `docs/NEXT_SESSION_NOTES.md` |
-| Historical decisions and outcomes | `docs/DEVELOPMENT_LOG.md` |
-| Phase 3 final report (historical, likely stale) | `docs/fp_reduction/FINAL_SUMMARY.md` |
-| Detailed Phase 1–2 history (historical, likely stale) | `docs/fp_reduction/development_log.md` |
-| Phase-by-phase walkthrough (historical, likely stale) | `docs/fp_reduction/walkthrough.md` |
-| Latest qualitative overlays | `logs/phase3_staff_consistency/` |
-| Hybrid filter summary | `logs/phase3_staff_consistency/**/hybrid_filter_summary.md` |
+| Latest asset registry | `docs/MANIFEST.md` |
+| Active Roadmap | `docs/notes/ROADMAP_20260313.md` |
+| Latest E2E Results | `docs/ISSUE13_E2E_VERIFICATION_REPORT.md` |
+| Historical decisions | `docs/DEVELOPMENT_LOG.md` |
 
 ---
 
 ## Documentation Modules
 
-### Core Documentation
+### Core Documentation (Current)
 
-- **`docs/NEXT_SESSION_NOTES.md`**  
-  **Purpose**: Mid-term, human-readable summary of the current confirmed state.  
-  This file answers:
-  - What phase are we in?
-  - What is already confirmed and stable?
-  - What problem areas are we allowed to work on next?
+- **`docs/DOCUMENT_INVENTORY.md`**  
+  **Purpose**: Categorized list of all documents in `docs/` (Current/Analysis/Legacy).  
+  Always check this if you are unsure which document is up-to-date.
 
-- **`docs/SESSION_LOG.md`**  
-  **Purpose**: Short-term working log for each session.  
-  - Free-form
-  - Chronological
-  - May contain mistakes, speculation, or dead ends  
-  Nothing here is considered final.
+- **`docs/MANIFEST.md`**  
+  **Purpose**: Single source of truth for model paths, datasets, and configurations.
 
 - **`docs/DEVELOPMENT_LOG.md`**  
   **Purpose**: Authoritative historical record.  
   - Append-only
   - Records confirmed facts, decisions, and outcomes
-  - Always links to concrete artifacts (logs, scripts, configs)
   - Never rewritten
 
 - **`docs/ENVIRONMENTS.md`**  
@@ -88,18 +77,11 @@ Use the table below to quickly locate what you need.
 - **`docs/REGRESSION_TEST_WORKFLOW.md`**  
   Pre-commit / pre-PR verification workflow (lint/tests + real-data smoke + parity checks).
 
-- **`tools/check_repo_consistency.py` (`make check-consistency`)**  
-  **Purpose**: Repository health and drift check (Guideline).  
-  - Identifies missing mainline assets (from `docs/MANIFEST.md`)
-  - Alerts on stale documents (threshold: 30 days)
-  - Identifies "Orphan" files in core directories to prevent repository bloat
-  - *Note*: Intended for maintenance guidance; experimental orphans are permitted but should be periodically reviewed.
-
-- **`docs/AGENTS.md`**  
+- **`docs/AGENTS.md` (root)**  
   Rules and expectations for AI assistants (Gemini / Codex / CLI usage).
 
 - **`docs/GT_PREPARATION_POLICY.md`**  
-  **Mandatory Policy** for creating barline Ground Truth. Defines labeling for double/final barlines and resolution-independent scaling rules.
+  **Mandatory Policy** for creating barline Ground Truth.
 
 - **`docs/BARLINE_MATCHER.md`**  
   Detailed specification of the barline matching and deduplication logic.

@@ -14,11 +14,11 @@ This project aims to develop a Python-based tool that automatically adds measure
    - `src/pipeline/main.py`: パイプライン実行のメインエントリ。
    - `README.md` / `AGENTS.md`: プロジェクト概要とエージェント向け Constitution。
 2. **Asset Registry (資産の所在)**
-   - `docs/MANIFEST.md`: 公式モデル、データセット、設定ファイルの所在（gitignore 資産を含む）。
+   - `docs/MANIFEST.md`: 公式モデル、データセット、設定ファイルの所在。
 3. **Historical Context (状況把握)**
-   - `git log`: 最新の変更履歴。**常に静的ドキュメントより優先してください。**
-   - `docs/future/roadmap.md`: Issue #13 以降のロードマップ。
-   - `docs/README.md`: ドキュメント全体のインデックス。
+   - `docs/DOCUMENT_INVENTORY.md`: **[必読]** 全ドキュメントの分類（現行・分析・レガシー）。
+   - `docs/notes/ROADMAP_20260313.md`: 最新のロードマップ。
+   - `docs/DEVELOPMENT_LOG.md`: 公式な歴史的記録。
 
 > [!NOTE]
 > `datasets/` や `logs/` は gitignore されており、作業用 worktree では実体が欠落している場合があります。詳細な所在は `docs/MANIFEST.md` を参照してください。

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from src.common import Box
+from src.common import Box as Box
 
 _RIGHTMOST_RESCUE_DEBUG_KEYS = [
     "band",

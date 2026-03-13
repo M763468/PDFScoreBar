@@ -113,19 +113,20 @@ class PipelineOrchestrator:
         return cmd
 
     def _run_command(self, cmd: List[str]) -> None:
-        cmd_str = " ".join(cmd)
-        logger.info(f"Executing: {cmd_str}")
-        if not self.dry_run:
-            import subprocess
+        if self.dry_run:
+            logger.info(f"Executing (dry-run): {' '.join(cmd)}")
+            return
 
-            subprocess.run(cmd, check=True)
+        from src.pipeline.core.subprocess_utils import run_with_logging
+
+        run_with_logging(cmd)
 
     def _resolve_page_runs(self, page_ids: List[str]) -> List[str]:
         """Resolves which runs to use for each page (legacy manual resolution)."""
         input_runs = get_nested(self.config, "inputs", "runs", default={})
         page_runs = []
         for page_id in page_ids:
-            page_runs.append(input_runs.get(page_id, page_ids[0]))
+            page_runs.append(input_runs.get(page_id, page_id))
         return page_runs
 
     def run(self, page_limit: Optional[int] = None) -> Path:

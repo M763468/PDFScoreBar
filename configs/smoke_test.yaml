@@ -31,6 +31,7 @@ steps:
   overlay: true
 
 detection:
+  sr_scale: 2
   container_name: sr_eval_gpu_exp
   hybrid_output_root: logs/hybrid_generalization
   ink_threshold: 230

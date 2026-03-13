@@ -6,10 +6,10 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List
 
-from src.pipeline.cnn_scoring import run_cnn_scoring_batch
-from src.pipeline.config import get_nested
-from src.pipeline.io import ensure_dir
-from src.pipeline.probe_scan import run_probe_scan_batch
+from src.pipeline.core.config import get_nested
+from src.pipeline.steps.cnn_scoring import run_cnn_scoring_batch
+from src.pipeline.steps.probe_scan import run_probe_scan_batch
+from src.pipeline.utils.io import ensure_dir
 
 from .config import get_probe_kwargs
 from .hybrid import HybridDetector
@@ -39,7 +39,7 @@ class DetectorOrchestrator:
         self.det_cfg = get_nested(config, "detection", default={}) or {}
         self.skip_existing = bool(self.det_cfg.get("probe_skip_existing", False))
         self.enable_sr = bool(self.det_cfg.get("enable_sr", True))
-        self.sr_scale = int(self.det_cfg.get("sr_scale", 4))
+        self.sr_scale = int(self.det_cfg.get("sr_scale", 2))
         self.commands: List[List[str]] = []
         self.hybrid_output_dir: Path | None = None
         self.probe_output_dir: Path | None = None

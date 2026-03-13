@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Tuple
 
 import cv2  # type: ignore
 
-from src.pipeline.config import get_nested
+from src.pipeline.core.config import get_nested
 
 
 def collect_images(config: Dict[str, Any], run_dir: Path) -> List[Path]:

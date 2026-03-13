@@ -1,11 +1,11 @@
 import logging
 
-from src.pipeline.subprocess_utils import run_with_logging
+from src.pipeline.core.subprocess_utils import run_with_logging
 
 
 def test_run_with_logging_captures_output(caplog):
-    # Set up caplog to capture INFO level and above
-    caplog.set_level(logging.INFO)
+    # Set up caplog to capture DEBUG level and above because run_with_logging defaults to DEBUG
+    caplog.set_level(logging.DEBUG)
 
     # Run a simple bash command that prints to stdout and stderr
     cmd = ["bash", "-c", "echo 'stdout line 1'; sleep 0.1; echo 'stderr line 2' >&2; exit 0"]

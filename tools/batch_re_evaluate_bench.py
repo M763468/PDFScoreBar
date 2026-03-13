@@ -7,8 +7,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from src.pipeline.cnn_scoring import run_cnn_scoring_batch
-from src.pipeline.probe_scan import run_probe_scan_batch
+from src.pipeline.steps.cnn_scoring import run_cnn_scoring_batch
+from src.pipeline.steps.probe_scan import run_probe_scan_batch
 
 
 def find_bench_dirs():

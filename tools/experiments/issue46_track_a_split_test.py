@@ -1,8 +1,8 @@
 import logging
 from pathlib import Path
 
-from src.pipeline.io import ensure_dir
-from src.pipeline.probe_scan import run_probe_scan_batch
+from src.pipeline.steps.probe_scan import run_probe_scan_batch
+from src.pipeline.utils.io import ensure_dir
 from tools.cnn_classifier.score_candidates_batch import run_scoring_batch
 
 logging.basicConfig(level=logging.INFO)

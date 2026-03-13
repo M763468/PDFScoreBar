@@ -2,19 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Sequence, Tuple
+from typing import Any, Sequence
 
-try:
-    import cv2
-except ImportError:  # pragma: no cover - optional in minimal test env
-    cv2 = None  # type: ignore[assignment]
+import cv2
+import numpy as np
 
-try:
-    import numpy as np
-except ImportError:  # pragma: no cover - optional in minimal test env
-    np = None  # type: ignore[assignment]
-
-Box = Tuple[int, int, int, int]
+from src.common import Box
 
 
 def estimate_unit_size_from_box_height(box: Sequence[int | float]) -> float:

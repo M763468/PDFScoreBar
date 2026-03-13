@@ -14,10 +14,10 @@ import cv2
 import torch
 from tqdm import tqdm
 
-from src.pipeline.hybrid_consensus import load_json_boxes, phase4_hybrid_consensus
-from src.pipeline.io import ensure_dir
-from src.pipeline.python_env import get_pipeline_python
-from src.pipeline.subprocess_utils import run_with_logging
+from src.pipeline.core.python_env import get_pipeline_python
+from src.pipeline.core.subprocess_utils import run_with_logging
+from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
+from src.pipeline.utils.io import ensure_dir
 
 from .utils import log_vram_usage
 
@@ -127,12 +127,12 @@ class HybridDetector:
             logger.info("Skipping homr SR: enable_sr is false.")
         elif _HOMR_AVAILABLE:
             self._run_homr_in_process(
-                sr_output, enable_sr=True, sr_scale=int(self.det_cfg.get("sr_scale", 4))
+                sr_output, enable_sr=True, sr_scale=int(self.det_cfg.get("sr_scale", 2))
             )
         elif self.skip_existing and self._all_stems_exist(sr_output, stems, "batch/*/*.json"):
             logger.info("Skipping homr SR: outputs already exist.")
         else:
-            sr_scale = int(self.det_cfg.get("sr_scale", 4))
+            sr_scale = int(self.det_cfg.get("sr_scale", 2))
             cmd = python_cmd + [
                 "src/homr_eval_scripts/homr_evaluator.py",
                 "--images",
@@ -198,7 +198,7 @@ class HybridDetector:
                 baseline_boxes = load_json_boxes(baseline_json)
                 sr_boxes = load_json_boxes(sr_json)
                 omr_boxes = load_json_boxes(omr_json)
-                hybrid_preds = phase4_hybrid_consensus(
+                hybrid_preds = apply_hybrid_consensus_filter(
                     baseline_boxes=baseline_boxes,
                     sr_boxes=sr_boxes,
                     omr_boxes=omr_boxes,
@@ -231,7 +231,7 @@ class HybridDetector:
         self,
         output_root: Path,
         enable_sr: bool = False,
-        sr_scale: int = 4,
+        sr_scale: int = 2,
     ) -> None:
         """Runs Homr inference (baseline or SR) in-process for persistence."""
         if not _HOMR_AVAILABLE:
@@ -288,7 +288,7 @@ class HybridDetector:
                             img_bgr,
                             model_name=model_name,
                             scale=sr_scale,
-                            tile=self.det_cfg.get("sr_tile", 0),
+                            tile=self.det_cfg.get("sr_tile", -1),
                             tile_pad=self.det_cfg.get("sr_tile_pad", 10),
                             fp32=self.det_cfg.get("sr_fp32", False),
                             upsampler=persistent_upsampler,

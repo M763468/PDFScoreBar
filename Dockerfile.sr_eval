@@ -48,8 +48,9 @@ RUN sed -i 's/from torchvision.transforms.functional_tensor import rgb_to_graysc
 RUN uv pip install -e ./external/homr pymupdf
 
 # Prefer GPU onnxruntime for performance parity with `homr_eval_gpu`.
-RUN /opt/venv_sr/bin/python -m pip uninstall -y onnxruntime && \
-    /opt/venv_sr/bin/python -m pip install --no-deps onnxruntime-gpu==1.22.0
+# Use 1.24.3 to satisfy homr's ^1.22.1 requirement and avoid re-installation of CPU version.
+RUN uv pip uninstall onnxruntime onnxruntime-gpu && \
+    uv pip install onnxruntime-gpu==1.24.3
 
 # Ensure realesrgan model weights exist in the image.
 # (They may already be present via COPY from the repo; download only if missing.)

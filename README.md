@@ -63,33 +63,24 @@ The project is organized as follows:
 ./
 ├── Dockerfile
 ├── README.md
+├── AGENTS.md              # Assistant rules and constitution
 ├── docs/
-│   ├── README.md            # Documentation index and update policy
-│   ├── NEXT_SESSION_NOTES.md  # Session handover notes
-│   ├── DEVELOPMENT_LOG.md     # History and key decisions
-│   ├── ENVIRONMENTS.md        # Environment setup and usage
-│   └── AGENTS.md              # Assistant runbook
-├── data/
-│   ├── README.md         # Data management policy and directory map
-│   ├── training/
-│   │   ├── pdfs/         # Source PDFs for annotated training material
-│   │   ├── images/       # Page images converted from the training PDFs
-│   │   └── annotations/  # Ground truth JSON grouped per page (page_xxx/)
-│   ├── evaluation/
-│   │   ├── pdfs/         # PDFs under evaluation
-│   │   ├── images/       # Converted evaluation images (e.g., page_3.png)
-│   │   └── annotations/  # Evaluation GT (to be added as page_xxx/)
-│   ├── evaluation2/      # Newer evaluation set (current GT rebuild lives here)
-│   └── workbench/        # Temporary captures and legacy drafts
-├── output/
-│   └── ...
+│   ├── DOCUMENT_INVENTORY.md # [Mandatory] Doc classification list
+│   ├── MANIFEST.md           # Asset registry (Models/Data)
+│   ├── TOOLS_INVENTORY.md    # Scripts and tools registry
+│   ├── EXPERIMENTS_INVENTORY.md # Experiment history registry
+│   ├── README.md             # Documentation index
+│   ├── DEVELOPMENT_LOG.md    # History and key decisions
+│   └── ENVIRONMENTS.md       # Environment setup and usage
 ├── src/
-│   ├── gemini/
-│   │   └── incontext_barline_detector.py # Legacy Gemini prototype.
-│   ├── pdf_to_images.py      # Script to convert PDFs to PNGs.
-│   ├── add_measure_numbers.py  # (Legacy) Simple script to draw numbers.
-│   └── archive/            # Deprecated scripts.
-└── ...
+│   ├── pipeline/             # Main pipeline entry and logic
+│   ├── measure_numbering/    # Numbering logic
+│   ├── ml_detector/          # ML-based detection modules
+│   └── pdf_to_images.py      # PDF extraction script
+├── tools/                    # Utility scripts
+├── experiments/              # Experimental analysis
+├── configs/                  # Pipeline configurations
+└── data/                     # Datasets
 ```
 
 ## Detect Barline project
@@ -181,7 +172,7 @@ Ensure you have `uv` installed.
     ```
 
 3.  **Run Detection & Evaluation:**
-    -   The active workflow pairs the `homr` evaluator with the `oemer` baseline; follow the run commands and parameter notes in `docs/ENVIRONMENTS.md` and `docs/NEXT_SESSION_NOTES.md`.
+    -   The active workflow pairs the `homr` evaluator with the `oemer` baseline; follow the run commands and parameter notes in `docs/ENVIRONMENTS.md`.
     -   Store metrics and overlays under `logs/` using the timestamped layout described in those docs so results stay comparable across runs.
 
 **Historical prototype:** The Gemini + OpenCV experiment (`src/gemini/incontext_barline_detector.py`) remains for reference but is no longer maintained as the primary detection flow.

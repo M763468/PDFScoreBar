@@ -83,6 +83,12 @@ Use `docs/DOCUMENT_INVENTORY.md` to find the correct documentation for each phas
 - **`docs/GT_PREPARATION_POLICY.md`**  
   **Mandatory Policy** for creating barline Ground Truth.
 
+- **`docs/TOOLS_INVENTORY.md`**  
+  **Purpose**: Comprehensive inventory of scripts and tools in `tools/` and `external/`.
+
+- **`docs/EXPERIMENTS_INVENTORY.md`**  
+  **Purpose**: Inventory and classification of historical scripts in the `experiments/` directory.
+
 - **`docs/BARLINE_MATCHER.md`**  
   Detailed specification of the barline matching and deduplication logic.
 

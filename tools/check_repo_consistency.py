@@ -153,7 +153,9 @@ def check_consistency(stale_days: int):
     else:
         for f_str in sorted(missing_from_inventory):
             print(f"[MISSING]  {f_str:40} (Not in {INVENTORY_PATH.name})")
-        print(f"\nNote: Please add descriptions for these scripts to {INVENTORY_PATH} to maintain visibility.")
+        print(
+            f"\nNote: Please add descriptions for these scripts to {INVENTORY_PATH} to maintain visibility."
+        )
 
     return all_ok
 

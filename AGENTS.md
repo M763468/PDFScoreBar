@@ -64,7 +64,7 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
     - **Rule**: NEVER use fixed pixel (px) thresholds for distance or geometry calculations in the barline detection/numbering layers.
     - **Implementation**: Always use `unit_size` (staff line spacing) as the base unit for dynamic scaling.
     - **Current Targets**: Deduplication Threshold (`1.2 * unit_size`), Implicit Start Assumption (`4.0 * unit_size`).
-    - **Documentation**: See `docs/GT_PREPARATION_POLICY.md` and `docs/BARLINE_MATCHER.md`.
+    - **Documentation**: See `docs/GT_PREPARATION_POLICY.md` and `docs/archive/BARLINE_MATCHER.md`.
 - **GT Labeling Consistency**:
     - Use specific labels for complex barlines: `double_barline`, `end_barline`, `repeat`.
     - Treat multi-line barlines as a **single logical event** with a single encompassing BBox.

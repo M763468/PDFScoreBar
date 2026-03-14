@@ -46,17 +46,16 @@ See `docs/notes/ROADMAP_20260313.md` for the active roadmap.
 - **`docs/MANIFEST.md`**  
   Single source of truth for model paths, datasets, and configurations.
 
-- **`docs/E2E_VERIFICATION_REPORT.md`**  
+- **`docs/E2E_VERIFICATION_REPORT.md`**
   Latest end-to-end pipeline verification results.
 
-- **`docs/ENVIRONMENTS.md`**  
-  Runtime containers, dependencies, and execution instructions.
+- **`docs/inventory/`**
+  **Core Inventories**: Comprehensive registries for Tools, Experiments, and Output/Logs.
 
+- **`docs/ENVIRONMENTS.md`**
+  Runtime containers, dependencies, and execution instructions.
 - **`docs/LOG_MANAGEMENT.md`**  
   Guidelines for log structure, artifacts, and worktree usage.
-
-- **`docs/BARLINE_MATCHER.md`**  
-  Detailed specification of the barline matching and deduplication logic.
 
 ---
 
@@ -87,10 +86,11 @@ Specialized inventories are located in `docs/inventory/`:
 Historical projects and obsolete documentation are stored in `docs/archive/`.
 Refer to these only for historical context or to understand the derivation of current heuristics.
 
-- **`docs/archive/fp_reduction/`**  
+- **`docs/archive/fp_reduction/`**
   Records of the initial False Positive reduction effort (Dec 2025).
-- **`docs/archive/DEVLOG_CNN_TRAINING.md`**  
-  Provenance and development history of the CNN classifier.
+- **`docs/archive/BARLINE_MATCHER.md`**
+  Technical specification of the matching and deduplication logic (Historical).
+- **`docs/archive/DEVLOG_CNN_TRAINING.md`**  Provenance and development history of the CNN classifier.
 - **`docs/archive/model_experiments/`**  
   Early evaluations of various ML backends (YOLO, etc.).
 

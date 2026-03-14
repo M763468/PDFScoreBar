@@ -10,7 +10,9 @@ import yaml
 
 # --- Configuration ---
 MANIFEST_PATH = Path("docs/MANIFEST.md")
-INVENTORY_PATH = Path("docs/TOOLS_INVENTORY.md")
+EXPERIMENTS_INVENTORY_PATH = Path("docs/EXPERIMENTS_INVENTORY.md")
+TOOLS_INVENTORY_PATH = Path("docs/TOOLS_INVENTORY.md")
+
 # Scan these directories for untracked (orphan) files
 CORE_DIRS = ["configs", "src/pipeline", "src/measure_numbering", "tools"]
 
@@ -41,6 +43,20 @@ def extract_paths_from_manifest(manifest_path: Path) -> list[str]:
     paths = {p for p in path_candidates if "/" in p or "." in p}
 
     return sorted(list(paths))
+
+
+def extract_dirs_from_inventory(inventory_path: Path) -> list[str]:
+    """Extracts experiment directory names from EXPERIMENTS_INVENTORY.md."""
+    if not inventory_path.exists():
+        return []
+    content = inventory_path.read_text()
+    # Find `name` in backticks
+    matches = re.findall(r"`([^`\s]+)`", content)
+    # Filter for directory names (not ending with extension)
+    dirs = {m for m in matches if "." not in m and "/" not in m}
+    # Also handle paths like models/omr_dln
+    complex_dirs = {m for m in matches if "/" in m and "." not in m}
+    return sorted(list(dirs.union(complex_dirs)))
 
 
 def extract_paths_from_inventory(inventory_path: Path) -> list[str]:
@@ -105,7 +121,56 @@ def check_consistency(stale_days: int):
             print(f"[INVALID]  {cfg}: {e}")
             all_ok = False
 
-    print("\n--- 4. Orphan Asset Check (Untracked Mainline Candidates) ---")
+    print(f"\n--- 4. Experiments Inventory Check (from {EXPERIMENTS_INVENTORY_PATH}) ---")
+    inventory_dirs = extract_dirs_from_inventory(EXPERIMENTS_INVENTORY_PATH)
+    exp_dir = Path("experiments")
+    actual_dirs = []
+    if exp_dir.exists():
+        for path in exp_dir.rglob("*"):
+            if path.is_dir() and path != exp_dir:
+                actual_dirs.append(str(path.relative_to(exp_dir)))
+
+        for d in sorted(actual_dirs):
+            if d in [
+                "legacy",
+                "legacy/archive",
+                "legacy/scripts",
+                "legacy/tmp_archive",
+                "legacy/tools_archive",
+                "legacy/investigation_20260102",
+            ]:
+                # Ignore legacy nested dirs if needed, but let's check top-level legacy
+                continue
+            if d not in inventory_dirs:
+                print(f"[UNTRACKED] {d:40} (Not listed in {EXPERIMENTS_INVENTORY_PATH.name})")
+            else:
+                print(f"[TRACKED]   {d}")
+
+    print(f"\n--- 5. Tools Inventory Coverage Check (from {TOOLS_INVENTORY_PATH}) ---")
+    inventory_paths = extract_paths_from_inventory(TOOLS_INVENTORY_PATH)
+    inventory_set = {str(Path(p)) for p in inventory_paths}
+    missing_from_inventory = []
+
+    # Check only root of tools/ for now as it's the most crowded
+    tools_dir = Path("tools")
+    if tools_dir.exists():
+        for f in list(tools_dir.glob("*.py")) + list(tools_dir.glob("*.sh")):
+            if f.name == "__init__.py":
+                continue
+            f_str = str(f)
+            if f_str not in inventory_set:
+                missing_from_inventory.append(f_str)
+
+    if not missing_from_inventory:
+        print(f"[OK] All scripts in tools/ root are documented in {TOOLS_INVENTORY_PATH.name}.")
+    else:
+        for f_str in sorted(missing_from_inventory):
+            print(f"[MISSING]  {f_str:40} (Not in {TOOLS_INVENTORY_PATH.name})")
+        print(
+            f"\nNote: Please add descriptions for these scripts to {TOOLS_INVENTORY_PATH} to maintain visibility."
+        )
+
+    print("\n--- 6. Orphan Asset Check (Untracked Mainline Candidates) ---")
     norm_tracked = {str(Path(p)) for p in paths}
     found_any_orphan = False
 
@@ -131,30 +196,6 @@ def check_consistency(stale_days: int):
     else:
         print(
             "\nNote: [UNTRACKED] files are either legacy, experimental, or missing in MANIFEST.md."
-        )
-
-    print(f"\n--- 5. Tools Inventory Coverage Check (from {INVENTORY_PATH}) ---")
-    inventory_paths = extract_paths_from_inventory(INVENTORY_PATH)
-    inventory_set = {str(Path(p)) for p in inventory_paths}
-    missing_from_inventory = []
-
-    # Check only root of tools/ for now as it's the most crowded
-    tools_dir = Path("tools")
-    if tools_dir.exists():
-        for f in list(tools_dir.glob("*.py")) + list(tools_dir.glob("*.sh")):
-            if f.name == "__init__.py":
-                continue
-            f_str = str(f)
-            if f_str not in inventory_set:
-                missing_from_inventory.append(f_str)
-
-    if not missing_from_inventory:
-        print(f"[OK] All scripts in tools/ root are documented in {INVENTORY_PATH.name}.")
-    else:
-        for f_str in sorted(missing_from_inventory):
-            print(f"[MISSING]  {f_str:40} (Not in {INVENTORY_PATH.name})")
-        print(
-            f"\nNote: Please add descriptions for these scripts to {INVENTORY_PATH} to maintain visibility."
         )
 
     return all_ok

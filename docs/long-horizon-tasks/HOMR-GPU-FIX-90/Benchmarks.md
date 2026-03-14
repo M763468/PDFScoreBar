@@ -2,12 +2,10 @@
 
 | Milestone | Metric A (Accuracy) | Metric B (Latency) | Notes |
 | :--- | :--- | :--- | :--- |
-| **M0 Baseline** | 92% | 120ms | Recorded on `main` branch (SHA: ...) |
-| **M1** | | | |
-| **M2** | | | |
-| **Final** | | | |
+| **M0 Baseline (CPU Fallback)** | - | ~9s / page | Recorded on `main` branch (SHA: dc35656ece5c9245188e9fdc089d2a84472cb1de) |
+| **Final (GPU Fixed)** | - | ~1.6s / page | Verified on this PR's branch |
 
 ## Verification Command
 ```bash
-./tools/run_eval_experiment.py --config configs/eval.yaml
+docker exec -e PYTHONPATH=/workspace:/workspace/external/homr sr_eval_gpu /opt/venv_sr/bin/python -u src/pipeline/main.py --config configs/issue90_repro_test.yaml
 ```

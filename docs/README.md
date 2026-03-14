@@ -104,6 +104,9 @@ Use the table below to quickly locate what you need.
 - **`docs/BARLINE_MATCHER.md`**  
   Detailed specification of the barline matching and deduplication logic.
 
+- **`docs/TOOLS_INVENTORY.md`**  
+  **Purpose**: Comprehensive inventory of scripts and tools in `tools/` and `external/`.
+
 ---
 
 ## Phase-Specific Documentation

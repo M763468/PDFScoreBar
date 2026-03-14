@@ -124,14 +124,11 @@ def check_consistency(stale_days: int):
     print(f"\n--- 4. Experiments Inventory Check (from {EXPERIMENTS_INVENTORY_PATH}) ---")
     inventory_dirs = extract_dirs_from_inventory(EXPERIMENTS_INVENTORY_PATH)
     exp_dir = Path("experiments")
+    actual_dirs = []
     if exp_dir.exists():
-        actual_dirs = [d.name for d in exp_dir.iterdir() if d.is_dir()]
-        # Also handle sub-subdirs like models/omr_dln
-        for d in actual_dirs:
-            p = exp_dir / d
-            for sub in p.iterdir():
-                if sub.is_dir():
-                    actual_dirs.append(f"{d}/{sub.name}")
+        for path in exp_dir.rglob("*"):
+            if path.is_dir() and path != exp_dir:
+                actual_dirs.append(str(path.relative_to(exp_dir)))
 
         for d in sorted(actual_dirs):
             if d in [

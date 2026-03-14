@@ -103,7 +103,6 @@ Use the table below to quickly locate what you need.
 
 - **`docs/EXPERIMENTS_INVENTORY.md`**  
   **Purpose**: Inventory and classification of historical scripts in the `experiments/` directory.
- Defines labeling for double/final barlines and resolution-independent scaling rules.
 
 - **`docs/BARLINE_MATCHER.md`**  
   Detailed specification of the barline matching and deduplication logic.

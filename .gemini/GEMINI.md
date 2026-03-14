@@ -13,6 +13,8 @@
 - **Safe Command Input**: When posting PR/Issue comments, issue descriptions, or any text containing code snippets (backticks) via `gh`, you **MUST** use `--body-file` with a temporary file to avoid shell expansion errors and data corruption.
 
 ## Verification & Quality Bar
+- **Log Management Compliance**: All execution outputs and debug assets MUST be stored under `logs/` following the category and naming conventions in `docs/LOG_MANAGEMENT.md`.
+- **Worktree Policy**: When working in a parallel `git worktree`, strictly adhere to the Shared/Isolated data policies defined in `docs/LOG_MANAGEMENT.md`. Never delete shared assets (`datasets/`, models) from an isolated worktree.
 - **PR Review Retrieval Standard**: When checking PR feedback, use `gh pr view <number> --json title,body,comments,reviews` to fetch all context (including inline comments) in a single turn. Avoid multiple calls to `gh pr view --comments` and `gh api`.
 - **Pre-Delivery Check**: Before finalizing any code change or creating a Pull Request, you **MUST** run `make format` and `make lint` to ensure adherence to project-wide standards.
 - **Zero-Tolerance for Lint/Format Errors**: If `make format` or `make lint` fails, do not report completion. Fix all issues before providing the final report.

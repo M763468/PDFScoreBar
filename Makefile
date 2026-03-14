@@ -13,6 +13,28 @@ format: ## Format code using ruff
 clean-artifacts: ## Remove all logs from the artifacts directory
 	rm -f artifacts/*.log artifacts/*.txt
 
+clean-logs: ## Remove old logs (older than 30d) from logs/ category subdirs, excluding protected ones
+	@echo "Cleaning up old logs..."
+	@find logs/runs logs/eval logs/experiments -maxdepth 1 -type d -mtime +30 \
+		! -name ".*" \
+		! -name "*_keep_*" \
+		! -name "*_final_*" \
+		! -exec test -e "{}/.keep" \; \
+		-print -exec rm -rf {} +
+
+promote-log: ## Promote a log from worktree to permanent logs (usage: make promote-log SRC=path/to/log DEST=category)
+	@if [ -z "$(SRC)" ] || [ -z "$(DEST)" ]; then \
+		echo "Error: SRC and DEST are required. Usage: make promote-log SRC=logs/runs/my_run DEST=eval"; \
+		exit 1; \
+	fi
+	@if [ ! -d "logs/$(DEST)" ]; then \
+		echo "Error: Category logs/$(DEST) does not exist."; \
+		exit 1; \
+	fi
+	@mkdir -p logs/$(DEST)
+	@mv $(SRC) logs/$(DEST)/
+	@echo "Promoted $(SRC) to logs/$(DEST)/"
+
 run-smoke-sr: ## Run smoke test inside sr_eval_gpu container (requires running container)
 	@mkdir -p artifacts
 	@echo "Running smoke test..."
@@ -39,6 +61,10 @@ check-consistency: ## Check repository consistency (Manifest and Freshness)
 	@python3 tools/check_repo_consistency.py --stale-days 30 > artifacts/consistency_check.log 2>&1 || \
 		(EXIT_CODE=$$?; cat artifacts/consistency_check.log; exit $$EXIT_CODE)
 	@cat artifacts/consistency_check.log
+
+setup-worktree: ## Setup a new worktree and container (usage: make setup-worktree BRANCH=branch_name)
+	@if [ -z "$(BRANCH)" ]; then echo "Error: BRANCH is required."; exit 1; fi
+	@./.agents/skills/worktree-manager/run.sh add $(BRANCH)
 
 test: ## Run test suite
 	PYTHONPATH=. .venv_pdf/bin/pytest tests/ > artifacts/test_results.txt

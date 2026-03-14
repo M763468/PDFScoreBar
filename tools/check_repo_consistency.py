@@ -50,31 +50,43 @@ def parse_document_inventory(inventory_path: Path) -> dict[str, dict]:
 
     # Simple state machine to parse markdown categories and tables
     lines = content.splitlines()
+    updated_col_idx = -1
+
     for line in lines:
         # Detect Category from Headers
         cat_match = re.search(r"## \d+\. \[(.*?)\]", line)
         if cat_match:
             current_category = cat_match.group(1)
+            updated_col_idx = -1  # Reset column index for new category table
             continue
 
-        # Parse Table Row: | File | Summary | Created | Updated | ... |
-        # We look for lines starting with | and containing backticks for paths
-        if "|" in line and "`" in line:
+        # Detect Table Header to find '最終更新' column
+        if "|" in line and "最終更新" in line:
+            header_parts = [p.strip() for p in line.split("|")]
+            for idx, part in enumerate(header_parts):
+                if "最終更新" in part:
+                    updated_col_idx = idx
+            continue
+
+        # Parse Table Row
+        if "|" in line and "`" in line and not line.strip().startswith("|-"):
             parts = [p.strip() for p in line.split("|")]
             if len(parts) < 3:
                 continue
 
             # Extract path from backticks
-            path_match = re.search(r"`([^`]+)`", parts[1])
+            path_match = re.search(r"`([^`]+)`", line)
             if not path_match:
                 continue
 
             path_str = path_match.group(1)
+            # Handle root files (strip labels outside backticks)
+            # path_str is already just the backticked content.
 
-            # Extract Updated date (assuming it's in a specific column or based on count)
+            # Extract Updated date from specific column
             updated_date = "Unknown"
-            for part in parts:
-                date_match = re.search(r"(\d{4}-\d{2}-\d{2})", part)
+            if updated_col_idx != -1 and updated_col_idx < len(parts):
+                date_match = re.search(r"(\d{4}-\d{2}-\d{2})", parts[updated_col_idx])
                 if date_match:
                     updated_date = date_match.group(1)
 
@@ -142,7 +154,6 @@ def check_consistency(stale_days: int):
         status_tag = f"[{category}]"
 
         if not info and doc.parent == Path("docs") and doc.name != "DOCUMENT_INVENTORY.md":
-            # Check if it's in a subdirectory like ai-workflow/ which might be documented as a dir
             is_sub_covered = False
             for inv_path in inventory:
                 if inv_path.endswith("/") and doc_str.startswith(inv_path):
@@ -150,7 +161,6 @@ def check_consistency(stale_days: int):
                     break
             if not is_sub_covered:
                 print(f"[ORPHAN]   {doc_str:40} (Not listed in DOCUMENT_INVENTORY.md)")
-                # all_ok = False # Legacy files might not be in inventory yet
 
         if info and info["stated_updated"] != "Unknown" and git_date_str != "Unknown":
             if info["stated_updated"] < git_date_str:

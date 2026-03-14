@@ -10,6 +10,7 @@ import yaml
 
 # --- Configuration ---
 MANIFEST_PATH = Path("docs/MANIFEST.md")
+INVENTORY_PATH = Path("docs/EXPERIMENTS_INVENTORY.md")
 # Scan these directories for untracked (orphan) files
 CORE_DIRS = ["configs", "src/pipeline", "src/measure_numbering", "tools"]
 
@@ -40,6 +41,20 @@ def extract_paths_from_manifest(manifest_path: Path) -> list[str]:
     paths = {p for p in path_candidates if "/" in p or "." in p}
 
     return sorted(list(paths))
+
+
+def extract_dirs_from_inventory(inventory_path: Path) -> list[str]:
+    """Extracts experiment directory names from EXPERIMENTS_INVENTORY.md."""
+    if not inventory_path.exists():
+        return []
+    content = inventory_path.read_text()
+    # Find `name` in backticks
+    matches = re.findall(r"`([^`\s]+)`", content)
+    # Filter for directory names (not ending with extension)
+    dirs = {m for m in matches if "." not in m and "/" not in m}
+    # Also handle paths like models/omr_dln
+    complex_dirs = {m for m in matches if "/" in m and "." not in m}
+    return sorted(list(dirs.union(complex_dirs)))
 
 
 def check_consistency(stale_days: int):
@@ -92,7 +107,28 @@ def check_consistency(stale_days: int):
             print(f"[INVALID]  {cfg}: {e}")
             all_ok = False
 
-    print("\n--- 4. Orphan Asset Check (Untracked Mainline Candidates) ---")
+    print(f"\n--- 4. Experiments Inventory Check (from {INVENTORY_PATH}) ---")
+    inventory_dirs = extract_dirs_from_inventory(INVENTORY_PATH)
+    exp_dir = Path("experiments")
+    if exp_dir.exists():
+        actual_dirs = [d.name for d in exp_dir.iterdir() if d.is_dir()]
+        # Also handle sub-subdirs like models/omr_dln
+        for d in actual_dirs:
+            p = exp_dir / d
+            for sub in p.iterdir():
+                if sub.is_dir():
+                    actual_dirs.append(f"{d}/{sub.name}")
+
+        for d in sorted(actual_dirs):
+            if d in ["legacy", "legacy/archive", "legacy/scripts", "legacy/tmp_archive", "legacy/tools_archive", "legacy/investigation_20260102"]:
+                # Ignore legacy nested dirs if needed, but let's check top-level legacy
+                continue
+            if d not in inventory_dirs:
+                print(f"[UNTRACKED] {d:40} (Not listed in {INVENTORY_PATH.name})")
+            else:
+                print(f"[TRACKED]   {d}")
+
+    print("\n--- 5. Orphan Asset Check (Untracked Mainline Candidates) ---")
     norm_tracked = {str(Path(p)) for p in paths}
     found_any_orphan = False
 

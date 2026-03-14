@@ -25,7 +25,9 @@
 | `issue53_probe_rescue` | 2026-03-02 | 2026-03-12 | **Closed** | Issue #53 (Gap Rescue) の効果検証 | `evaluate_full_rescue_v1.py` | Issue #53 は 2026-03-02 にクローズ済み。 |
 | `cnn_classifier` | 2026-01-03 | 2026-02-28 | **Archived** | 小節線分類 CNN の学習・評価 | `train.py` | 現在の `logs/cnn_barline_classification/` モデルの学習に使用された正本。 |
 | `models` | 2025-12-07 | 2026-03-06 | **Archived** | 外部モデル (OMR-DLN, Grounding DINO等) の性能評価 | `eval_omr_dln.py` | 2026-03のメインラインリファクタリング時に一部修正。 |
+| `models/yolo_world` | 2025-12-07 | 2026-01-29 | **Stale** | YOLO-World を用いた小節線検出の評価 | `eval_yolo_world.py` | |
 | `phase5b_notehead_geom` | 2025-12-21 | 2026-01-30 | **Stale** | 符頭幾何分析フィルタの評価 | `run_union_notehead_geom_eval.py` | |
+| `phase5b_notehead_geom/review_tool` | 2025-12-21 | 2026-01-29 | **Stale** | 幾何分析結果の確認用 GUI | `app.js`, `server.py` | Node.js ベースの簡易ビューア。 |
 | `phase5b_b1_1_omrdln_sweep` | 2025-12-21 | 2026-01-29 | **Stale** | OMR-DLN 閾値探索 | `run_omr_dln_sweep.sh` | |
 | `phase5b_b2_phase4_filter_check` | 2025-12-21 | 2026-01-29 | **Stale** | 既存フィルタの適用確認 | `build_union_inputs.py` | |
 | `fp_reduction` | 2025-12-07 | 2026-01-30 | **Stale** | 誤検出削減のための定量的分析 | `analyze_fps.py` | |
@@ -45,6 +47,8 @@
 ### `experiments/legacy/`
 2025年12月の構成変更以前の古いコード群。
 - `archive`: 古い OpenCV ベースの検出コード。
+- `legacy/archive/opencv`: OpenCV ベースの検出プロトタイプ。
+- `legacy/archive/barline_detection_prompts`: LLM への指示出し用プロンプト履歴。
 - `investigation_20260102`: 2026年年始の不具合調査。
 - `tools_archive`: 古い実行シェルスクリプト。
 

@@ -33,6 +33,7 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 - **Linting**: Code must adhere to the project's linting standards. Always run `make format` to fix style issues and `make lint` to verify compliance before submitting changes.
 - **Pre-Commit / Pre-PR Verification (Mandatory)**: Before creating a commit or opening a PR, you **MUST** run (1) behavior verification (actual execution path relevant to the change, e.g. smoke run), (2) tests/lint checks, and (3) `make check-consistency` (as a health check to identify major drift or missing mainline assets), then report the results. While a 100% clean report for experimental scripts is not strictly required, any **[CRITICAL]** failures or unintended mainline orphans should be addressed.
   - Regression workflow reference: `docs/REGRESSION_TEST_WORKFLOW.md`
+- **Maintenance of Tools Inventory**: When adding, renaming, or significantly modifying tools in the `tools/` root directory, you **MUST** update `docs/TOOLS_INVENTORY.md` to reflect the change, documenting the purpose, status (Active/Legacy), and context.
 - **Logging**: Add clear and concise logging for errors and important events. Avoid noisy or verbose logging.
 - **PR Descriptions**: Pull request descriptions must be filled out completely, following the `.github/pull_request_template.md`. The `Related Issue` field is mandatory.
 

@@ -10,6 +10,7 @@ import yaml
 
 # --- Configuration ---
 MANIFEST_PATH = Path("docs/MANIFEST.md")
+INVENTORY_PATH = Path("docs/TOOLS_INVENTORY.md")
 # Scan these directories for untracked (orphan) files
 CORE_DIRS = ["configs", "src/pipeline", "src/measure_numbering", "tools"]
 
@@ -40,6 +41,16 @@ def extract_paths_from_manifest(manifest_path: Path) -> list[str]:
     paths = {p for p in path_candidates if "/" in p or "." in p}
 
     return sorted(list(paths))
+
+
+def extract_paths_from_inventory(inventory_path: Path) -> list[str]:
+    """Extracts backticked file-like strings from TOOLS_INVENTORY.md."""
+    if not inventory_path.exists():
+        return []
+    content = inventory_path.read_text()
+    # Find all `path/to/file.py` in the inventory
+    matches = re.findall(r"`([^`\s]+\.(?:py|sh|js|html|md))`", content)
+    return sorted(list(set(matches)))
 
 
 def check_consistency(stale_days: int):
@@ -119,6 +130,28 @@ def check_consistency(stale_days: int):
         print(
             "\nNote: [UNTRACKED] files are either legacy, experimental, or missing in MANIFEST.md."
         )
+
+    print(f"\n--- 5. Tools Inventory Coverage Check (from {INVENTORY_PATH}) ---")
+    inventory_paths = extract_paths_from_inventory(INVENTORY_PATH)
+    inventory_set = {str(Path(p)) for p in inventory_paths}
+    missing_from_inventory = []
+
+    # Check only root of tools/ for now as it's the most crowded
+    tools_dir = Path("tools")
+    if tools_dir.exists():
+        for f in tools_dir.glob("*.py"):
+            if f.name == "__init__.py":
+                continue
+            f_str = str(f)
+            if f_str not in inventory_set:
+                missing_from_inventory.append(f_str)
+
+    if not missing_from_inventory:
+        print(f"[OK] All scripts in tools/ root are documented in {INVENTORY_PATH.name}.")
+    else:
+        for f_str in sorted(missing_from_inventory):
+            print(f"[MISSING]  {f_str:40} (Not in {INVENTORY_PATH.name})")
+        print(f"\nNote: Please add descriptions for these scripts to {INVENTORY_PATH} to maintain visibility.")
 
     return all_ok
 

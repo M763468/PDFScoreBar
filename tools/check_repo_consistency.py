@@ -10,6 +10,7 @@ import yaml
 
 # --- Configuration ---
 MANIFEST_PATH = Path("docs/MANIFEST.md")
+INVENTORY_PATH = Path("docs/DOCUMENT_INVENTORY.md")
 # Scan these directories for untracked (orphan) files
 CORE_DIRS = ["configs", "src/pipeline", "src/measure_numbering", "tools"]
 
@@ -29,17 +30,58 @@ def extract_paths_from_manifest(manifest_path: Path) -> list[str]:
     if not manifest_path.exists():
         return []
     content = manifest_path.read_text()
-    # A simpler regex to find any non-whitespace string in backticks, then filter.
-    # This is more robust than a complex regex trying to validate paths.
     matches = re.findall(r"`([^`\s]+)`", content)
-
-    # Filter out container placeholders and clean paths.
     path_candidates = (p.strip(".,;:()") for p in matches if "(Container)" not in p)
-
-    # Heuristic to filter out non-path-like strings (e.g. single words without extension).
     paths = {p for p in path_candidates if "/" in p or "." in p}
-
     return sorted(list(paths))
+
+
+def parse_document_inventory(inventory_path: Path) -> dict[str, dict]:
+    """Parses DOCUMENT_INVENTORY.md tables for file metadata."""
+    if not inventory_path.exists():
+        return {}
+
+    inventory = {}
+    current_category = "Unknown"
+    content = inventory_path.read_text()
+
+    # Simple state machine to parse markdown categories and tables
+    lines = content.splitlines()
+    for line in lines:
+        # Detect Category from Headers
+        cat_match = re.search(r"## \d+\. \[(.*?)\]", line)
+        if cat_match:
+            current_category = cat_match.group(1)
+            continue
+
+        # Parse Table Row: | File | Summary | Created | Updated | ... |
+        # We look for lines starting with | and containing backticks for paths
+        if "|" in line and "`" in line:
+            parts = [p.strip() for p in line.split("|")]
+            if len(parts) < 3:
+                continue
+
+            # Extract path from backticks
+            path_match = re.search(r"`([^`]+)`", parts[1])
+            if not path_match:
+                continue
+
+            path_str = path_match.group(1)
+
+            # Extract Updated date (assuming it's in a specific column or based on count)
+            # The current inventory has: | File | Summary | Created | Updated | ... |
+            # parts[0] is empty (before first |), parts[1] is File, parts[2] is Summary...
+            # But the order might vary. Let's look for YYYY-MM-DD.
+            updated_date = "Unknown"
+            for part in parts:
+                date_match = re.search(r"(\d{4}-\d{2}-\d{2})", part)
+                if date_match:
+                    # If multiple dates, the last one is usually 'Updated'
+                    updated_date = date_match.group(1)
+
+            inventory[path_str] = {"category": current_category, "stated_updated": updated_date}
+
+    return inventory
 
 
 def check_consistency(stale_days: int):
@@ -63,20 +105,75 @@ def check_consistency(stale_days: int):
                 print(f"[CRITICAL] {p_str} (Missing and NOT ignored!)")
                 all_ok = False
 
-    print(f"\n--- 2. Document Freshness Check (Threshold: {stale_days} days) ---")
-    docs = sorted(list(Path("docs").glob("*.md")) + [Path("README.md"), Path("AGENTS.md")])
+    print(f"\n--- 2. Document Inventory & Freshness Check (Threshold: {stale_days} days) ---")
+    inventory = parse_document_inventory(INVENTORY_PATH)
+
+    # Collect all existing .md files in docs/ and key root files
+    actual_docs = sorted(list(Path("docs").rglob("*.md")) + [Path("README.md"), Path("AGENTS.md")])
     now = datetime.now()
-    for doc in docs:
+
+    inventory_covered_paths = set()
+
+    for doc in actual_docs:
+        doc_str = str(doc)
+        # Handle the case where inventory uses 'root' names for root files
+        inv_key = doc.name if doc.parent == Path(".") else doc_str
+
+        info = inventory.get(inv_key) or inventory.get(doc_str)
+        category = info["category"] if info else "Unclassified"
+
         ts = get_git_timestamp(doc)
-        if ts == 0:
-            print(f"[UNKNOWN]  {doc} (No git history)")
-            continue
-        dt = datetime.fromtimestamp(ts)
-        diff = now - dt
-        if diff.days > stale_days:
-            print(f"[STALE]    {doc} (Last updated {diff.days} days ago: {dt.date()})")
+        dt = datetime.fromtimestamp(ts) if ts > 0 else None
+        git_date_str = str(dt.date()) if dt else "Unknown"
+
+        status_tag = f"[{category}]"
+
+        # 1. Check for Orphan Docs (not in inventory)
+        if not info and doc.parent == Path("docs") and doc.name != "DOCUMENT_INVENTORY.md":
+            print(f"[ORPHAN]   {doc_str:40} (Not listed in DOCUMENT_INVENTORY.md)")
+            all_ok = False
+
+        # 2. Date Sync Check (Desync between Git and Inventory text)
+        if info and info["stated_updated"] != "Unknown" and git_date_str != "Unknown":
+            if info["stated_updated"] < git_date_str:
+                status_tag += " [DESYNC]"
+
+        # 3. Freshness Logic based on Category
+        if dt:
+            diff = now - dt
+            is_stale = diff.days > stale_days
+
+            if category == "Legacy":
+                print(
+                    f"[LEGACY]   {doc_str:40} (Last updated {diff.days} days ago: {git_date_str})"
+                )
+            elif is_stale:
+                if category == "Current":
+                    print(
+                        f"[STALE!!]  {doc_str:40} {status_tag} (CRITICAL: Current doc is {diff.days} days old!)"
+                    )
+                    # all_ok = False # Don't fail yet, but highlight
+                else:
+                    print(f"[STALE]    {doc_str:40} {status_tag} ({diff.days} days ago)")
+            else:
+                print(f"[FRESH]    {doc_str:40} {status_tag} ({git_date_str})")
         else:
-            print(f"[FRESH]    {doc} (Last updated {diff.days} days ago: {dt.date()})")
+            print(f"[UNKNOWN]  {doc_str:40} {status_tag} (No git history)")
+
+        if info:
+            inventory_covered_paths.add(inv_key)
+            inventory_covered_paths.add(doc_str)
+
+    # 4. Broken Link Check (Listed in inventory but file missing)
+    for inv_path in inventory:
+        if not Path(inv_path).exists() and not (Path("docs") / inv_path).exists():
+            # Special case for directories (like docs/ai-workflow/)
+            if inv_path.endswith("/") and (
+                Path(inv_path).is_dir() or (Path("docs") / inv_path).is_dir()
+            ):
+                continue
+            print(f"[BROKEN]   {inv_path:40} (Listed in inventory but NOT found on disk)")
+            all_ok = False
 
     print("\n--- 3. Configuration Integrity Check ---")
     key_configs = [Path("configs/evaluation2_e2e_verification_full.yaml")]
@@ -101,7 +198,6 @@ def check_consistency(stale_days: int):
         if not d.exists():
             continue
 
-        # Collect all files recursively
         for f in d.rglob("*"):
             if f.is_dir() or "__pycache__" in str(f) or f.name == "__init__.py":
                 continue

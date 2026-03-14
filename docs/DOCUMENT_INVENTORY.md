@@ -20,7 +20,6 @@
 | `docs/REGRESSION_TEST_WORKFLOW.md` | 検証ワークフロー（lint/test/smoke）。 | 2026-02-08 | 2026-02-08 | **注意。** 手順が古い可能性があるため注意。 |
 | `docs/PIPELINE_DATAFLOW.md` | 統合パイプラインのアーキテクチャ。 | 2026-03-12 | 2026-03-12 | **参照。** パイプライン構造の理解。 |
 | `docs/SCRIPT_MANAGEMENT.md` | スクリプト配置・運用ルール。 | 2026-02-01 | 2026-03-02 | **遵守。** 新規ツール追加時のルール。 |
-| `docs/ai-workflow/` | エージェント向け標準ワークフロー。 | 2026-03-04 | 2026-03-12 | **参照。** 各スキルの詳細。 |
 
 ---
 
@@ -52,3 +51,21 @@
 | `docs/GOALS.md` | 初期のプロジェクト目標。 | 2025-12-16 | 2025-12-16 | **レガシー。** root README に最新版あり。 |
 | `docs/CNN_RETRAINING_GUIDE.md` | 過去の学習手順書。 | 2026-01-12 | 2026-01-12 | **参照注意。** 最新環境と差分あり。 |
 | `docs/best_configuration_summary.md` | 2026年1月時点の最適設定。 | 2026-01-15 | 2026-01-15 | **参照注意。** MANIFEST.md の方が新しい。 |
+| `docs/DEVLOG_CNN_TRAINING.md` | CNN学習時の開発ログ。 | 2025-11-20 | 2026-02-01 | **アーカイブ。** |
+| `docs/DEVLOG_MEASURE_NUMBERING.md` | 小節番号付与の開発ログ。 | 2025-12-10 | 2026-02-01 | **アーカイブ。** |
+| `docs/HANDOVER_TO_TRAINING_AGENT.md` | 学習エージェントへの引継ぎ資料。 | 2026-01-03 | 2026-01-03 | **アーカイブ。** |
+| `docs/ISSUE13_ACTION_PLAN.md` | Issue #13 実行計画。 | 2026-03-04 | 2026-03-04 | **アーカイブ。** |
+| `docs/ISSUE19_FILTER_DESIGN_SUMMARY.md` | フィルタ設計概要。 | 2026-03-04 | 2026-03-04 | **アーカイブ。** |
+| `docs/ISSUE44_BASELINE_STATUS_20260227.md` | Baselineステータス。 | 2026-02-28 | 2026-02-28 | **アーカイブ。** |
+| `docs/ISSUE44_ITER5_INTERMEDIATE_REPORT.md` | Iter 5 中間報告。 | 2026-03-02 | 2026-03-02 | **アーカイブ。** |
+| `docs/ISSUE44_ITER6_FINAL_REPORT.md` | Iter 6 最終報告。 | 2026-03-02 | 2026-03-02 | **アーカイブ。** |
+| `docs/ISSUE44_REMAINING_FN_STATUS_20260228.md` | 残存FNステータス。 | 2026-02-28 | 2026-02-28 | **アーカイブ。** |
+| `docs/ISSUE44_STAFF_BAND_CLUSTERING_FIX.md` | クラスタリング修正。 | 2026-03-02 | 2026-03-02 | **アーカイブ。** |
+| `docs/ISSUE46_FN_DET_CLASSIFICATION.md` | FN検出分類。 | 2026-02-27 | 2026-02-27 | **アーカイブ。** |
+| `docs/ISSUE46_FN_DET_EXPERIMENT_LOG.md` | 実験ログ。 | 2026-02-27 | 2026-02-27 | **アーカイブ。** |
+| `docs/ISSUE48_RULE_EVAL_REPORT.md` | ルール評価報告。 | 2026-02-28 | 2026-02-28 | **アーカイブ。** |
+| `docs/ISSUE51_FN18_DETAILED_DIAGNOSTIC.md` | FN18詳細診断。 | 2026-03-01 | 2026-03-01 | **アーカイブ。** |
+| `docs/ai-workflow/` | ワークフローディレクトリ。 | 2026-03-04 | 2026-03-12 | **参照。** |
+| `docs/agent-skills/` | スキルディレクトリ。 | 2026-03-05 | 2026-03-05 | **参照。** |
+| `docs/long-horizon-tasks/` | 長期タスクディレクトリ。 | 2026-03-06 | 2026-03-12 | **アーカイブ。** |
+| `docs/refactors/` | リファクタディレクトリ。 | 2026-03-05 | 2026-03-05 | **アーカイブ。** |

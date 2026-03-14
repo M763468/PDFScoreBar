@@ -75,4 +75,5 @@
 | **整合性チェック** | `tools/check_repo_consistency.py` | 資産の存在、ドキュメントの鮮度、Orphanファイルの確認（ガイドライン） |
 | **構成図生成** | `make repo-tree` | ディレクトリ構造の可視化 |
 | **ツール・インベントリ** | `docs/TOOLS_INVENTORY.md` | `tools/` および `external/` 内のスクリプトの用途・履歴の台帳 |
-| **出力ディレクトリ調査** | `docs/refactors/reorg-05-output-inventory.md` | `artifacts/`, `logs/` 等の用途と Worktree での共有方針 |
+| **出力ディレクトリ調査** | `docs/refactors/reorg-05-output-inventory-granular.md` | `artifacts/`, `logs/` 等の用途と Worktree での共有方針 |
+| **ログ管理ガイドライン** | `docs/reorg-log-management.md` | `logs/` 配下の構造化ルールとクリーンアップ運用方針 |

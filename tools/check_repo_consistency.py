@@ -48,9 +48,11 @@ def extract_paths_from_inventory(inventory_path: Path) -> list[str]:
     if not inventory_path.exists():
         return []
     content = inventory_path.read_text()
-    # Find all `path/to/file.py` in the inventory
-    matches = re.findall(r"`([^`\s]+\.(?:py|sh|js|html|md))`", content)
-    return sorted(list(set(matches)))
+    # A more general regex to find any non-whitespace string in backticks.
+    matches = re.findall(r"`([^`\s]+)`", content)
+    # Filter out non-path-like strings and clean up paths.
+    paths = {p.strip("/") for p in matches if "/" in p}
+    return sorted(list(paths))
 
 
 def check_consistency(stale_days: int):
@@ -139,7 +141,7 @@ def check_consistency(stale_days: int):
     # Check only root of tools/ for now as it's the most crowded
     tools_dir = Path("tools")
     if tools_dir.exists():
-        for f in tools_dir.glob("*.py"):
+        for f in list(tools_dir.glob("*.py")) + list(tools_dir.glob("*.sh")):
             if f.name == "__init__.py":
                 continue
             f_str = str(f)

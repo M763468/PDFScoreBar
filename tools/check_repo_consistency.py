@@ -11,8 +11,8 @@ import yaml
 # --- Configuration ---
 MANIFEST_PATH = Path("docs/MANIFEST.md")
 INVENTORY_PATH = Path("docs/DOCUMENT_INVENTORY.md")
-EXPERIMENTS_INVENTORY_PATH = Path("docs/EXPERIMENTS_INVENTORY.md")
-TOOLS_INVENTORY_PATH = Path("docs/TOOLS_INVENTORY.md")
+EXPERIMENTS_INVENTORY_PATH = Path("docs/inventory/EXPERIMENTS.md")
+TOOLS_INVENTORY_PATH = Path("docs/inventory/TOOLS.md")
 
 # Scan these directories for untracked (orphan) files
 CORE_DIRS = ["configs", "src/pipeline", "src/measure_numbering", "tools"]

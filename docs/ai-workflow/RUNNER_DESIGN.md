@@ -3,7 +3,7 @@
 To support multiple coding agents (Codex, Gemini CLI, Claude, etc.), we keep the workflow state tool-agnostic. The repository itself stores the task state in Markdown files.
 
 ## Principles
-- **State in Markdown**: All task progress, plans, and logs live in `docs/refactors/<TASK-ID>/`.
+- **State in Markdown**: All task progress, plans, and logs live in `docs/long-horizon-tasks/<TASK-ID>/`.
 - **Agent-Agnostic**: Any agent can read these documents and understand the context and current progress.
 - **Human-Reviewable**: Humans can easily track progress via Git diffs.
 
@@ -17,12 +17,12 @@ To support multiple coding agents (Codex, Gemini CLI, Claude, etc.), we keep the
 
 ### Gemini CLI (Architect Mode)
 ```bash
-gemini-cli "Review docs/refactors/BAR-001/Prompt.md and generate a milestone plan in Plan.md."
+gemini-cli "Review docs/long-horizon-tasks/BAR-001/Prompt.md and generate a milestone plan in Plan.md."
 ```
 
 ### Codex CLI (Implementation Mode)
 ```bash
-codex exec --sandbox read-write "Implement Milestone M1 from docs/refactors/BAR-001/Plan.md, following the rules in Implement.md."
+codex exec --sandbox read-write "Implement Milestone M1 from docs/long-horizon-tasks/BAR-001/Plan.md, following the rules in Implement.md."
 ```
 
 ## Future Extension: Multi-Agent Orchestration

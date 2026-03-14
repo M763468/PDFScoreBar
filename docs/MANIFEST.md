@@ -17,7 +17,7 @@
 | **メインエントリポイント** | `src/pipeline/main.py` |
 | **推奨設定ファイル** | `configs/evaluation2_e2e_verification_full.yaml` | フル機能の最終検証用 |
 | **スモークテスト設定** | `configs/smoke_test.yaml` | 疎通確認用 |
-| **検証報告書 (最新)** | `docs/ISSUE13_E2E_VERIFICATION_REPORT.md` (2026-03-13) | |
+| **検証報告書 (最新)** | `docs/E2E_VERIFICATION_REPORT.md` (2026-03-13) | |
 
 ---
 
@@ -74,6 +74,7 @@
 | :--- | :--- | :--- |
 | **整合性チェック** | `tools/check_repo_consistency.py` | 資産の存在、ドキュメントの鮮度、Orphanファイルの確認（ガイドライン） |
 | **構成図生成** | `make repo-tree` | ディレクトリ構造の可視化 |
-| **ツール・インベントリ** | `docs/TOOLS_INVENTORY.md` | `tools/` および `external/` 内のスクリプトの用途・履歴の台帳 |
-| **出力ディレクトリ調査** | `docs/refactors/reorg-05-output-inventory.md` | `artifacts/`, `logs/` 等の用途と Worktree での共有方針 |
+| **ツール・インベントリ** | `docs/inventory/TOOLS.md` | `tools/` および `external/` 内のスクリプトの用途・履歴の台帳 |
+| **実験インベントリ** | `docs/inventory/EXPERIMENTS.md` | `experiments/` 内の実験スクリプトの一覧 |
+| **出力ディレクトリ調査** | `docs/inventory/OUTPUT_LOGS.md` | `artifacts/`, `logs/` 等の用途と Worktree での共有方針 |
 | **ログ管理ガイドライン** | `docs/LOG_MANAGEMENT.md` | `logs/` 配下の構造化ルールとクリーンアップ運用方針 |

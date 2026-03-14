@@ -29,7 +29,7 @@
 **Path Warning (Dec 2025)**: The repository has been restructured. Older log entries may reference paths like `src/archive`, `tools/fp_reduction`, or root `homr/`. These are now located in `experiments/`, `experiments/fp_reduction/`, and `external/` respectively.
 
 This document records the complete development history, key decisions, and learnings throughout the entire project lifespan.
-For a focused summary of the recent "FP Reduction Project" (Dec 2025), see also [docs/fp_reduction/FINAL_SUMMARY.md](fp_reduction/FINAL_SUMMARY.md).
+For a focused summary of the recent "FP Reduction Project" (Dec 2025), see also [docs/archive/fp_reduction/FINAL_SUMMARY.md](archive/fp_reduction/FINAL_SUMMARY.md).
 
 
 ## How to Use This Log
@@ -632,8 +632,8 @@ After exhausting heuristic approaches in Phase 25, the remaining 30 False Positi
 - Established evaluation-only scope (no training, no dataset creation)
 
 #### Documentation
-- Updated `docs/model_experiments/barline_detection_future_plan.md` with revised objectives
-- Created `docs/model_experiments/model_survey_plan.md` with prioritized model list
+- Updated `archive/model_experiments/barline_detection_future_plan.md` with revised objectives
+- Created `archive/model_experiments/model_survey_plan.md` with prioritized model list
 - Defined standardized evaluation protocol
 
 #### Phase 5: YOLO-World Zero-Shot Evaluation (2025-12-07)
@@ -695,7 +695,7 @@ Zero-shot open-vocabulary models trained on natural images cannot directly trans
 - Evaluation script: `experiments/models/eval_yolo_world.py`
 - Report: `experiments/models/yolo_world/README.md`
 - Logs: `logs/model_experiments/yolo_world/run_001/`
-- Documentation: `docs/model_experiments/`
+- Documentation: `archive/model_experiments/`
 
 ## Phase 33: OMR-DLN (YOLOv8) Measure-Based Evaluation (Dec 2025)
 
@@ -1025,7 +1025,7 @@ endpoint_overlap_ratio =
 
 ## Phase 5a: FN-only GT Tooling & Environment Notes (2025-12-20)
 
-*Details regarding tool refactoring and environment setup have been moved to `docs/SESSION_LOG.md` to maintain log hygiene.*
+*Details regarding tool refactoring and environment setup have been moved to `archive/SESSION_LOG.md` to maintain log hygiene.*
 
 ### 4. Status
 - Tools are refactored and ready.
@@ -1216,7 +1216,7 @@ endpoint_overlap_ratio =
 
 ### Supporting 2025-12 Diagnostics and Evaluations (Reference)
 
-- **Dec 26–27 Page 3 guard sweeps:** Multiple generator variants (vertical run, CC, Sobel, column-sum, Hough, homr) were tested; FP-heavy and not adopted. Logs are under `logs/homr_eval/20251226T_batch1_*` .. `logs/homr_eval/20251227T_batch7_homr_page3_guard` (full list in `docs/SESSION_LOG.md`).
+- **Dec 26–27 Page 3 guard sweeps:** Multiple generator variants (vertical run, CC, Sobel, column-sum, Hough, homr) were tested; FP-heavy and not adopted. Logs are under `logs/homr_eval/20251226T_batch1_*` .. `logs/homr_eval/20251227T_batch7_homr_page3_guard` (full list in `archive/SESSION_LOG.md`).
 - **Dec 27 batch2 runs:** page_004/10/15 batch outputs recorded for later checks; no new method adopted. Logs: `logs/homr_eval/20251227T_batch2_gen4_page_004/`, `...page_10/`, `...page_15/`.
 - **Dec 28 probe scan validation:** FN probe overlays + refine comparisons (raw/adaptive/staff-suppressed). Logs: `logs/validation/20251228T_probe_scan/`, `logs/validation/20251228T_probe_refine/`.
 - **Dec 28 crop/merge reproducibility:** homr_eval re-runs with corrected GT and overlays; confirmed staff-crop behavior. Logs: `logs/homr_eval/20251228T_phase1_page3_repro/`, `...page004_repro/`, `...page10_repro/`, `...page15_repro/`, and `logs/validation/phase1_cropmerge/20251228T_phase1/`.

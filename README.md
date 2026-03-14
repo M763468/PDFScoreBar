@@ -2,7 +2,7 @@
 
 This project aims to develop a Python-based tool that automatically adds measure numbers to sheet music provided in PDF format.
 
-> **Status notice (2026-03-14):** Issue #13 (バッチ最適化と VRAM 管理) が完了し、`src/pipeline/main.py` を核とする統合パイプラインがメインラインとなりました。最新の資産構成は `docs/MANIFEST.md` を、今後の展望は `docs/future/roadmap.md` を参照してください。
+> **Status notice (2026-03-15):** Issue #111 (ドキュメント整理) が完了しました。最新の資産構成は `docs/MANIFEST.md` を、最新のロードマップは `docs/notes/ROADMAP_20260313.md` を参照してください。
 
 ---
 
@@ -18,6 +18,7 @@ This project aims to develop a Python-based tool that automatically adds measure
    - `docs/LOG_MANAGEMENT.md`: ログ・成果物の管理ルールと worktree ポリシー。
 3. **Historical Context (状況把握)**
    - `docs/DOCUMENT_INVENTORY.md`: **[必読]** 全ドキュメントの分類（現行・分析・レガシー）。
+   - `docs/inventory/`: 分類別の詳細インベントリ（ツール、実験、ログ）。
    - `docs/notes/ROADMAP_20260313.md`: 最新のロードマップ。
    - `docs/DEVELOPMENT_LOG.md`: 公式な歴史的記録。
 
@@ -68,8 +69,8 @@ The project is organized as follows:
 ├── docs/
 │   ├── DOCUMENT_INVENTORY.md # [Mandatory] Doc classification list
 │   ├── MANIFEST.md           # Asset registry (Models/Data)
-│   ├── TOOLS_INVENTORY.md    # Scripts and tools registry
-│   ├── EXPERIMENTS_INVENTORY.md # Experiment history registry
+│   ├── inventory/            # Specialized inventories (Tools/Exps/Logs)
+│   ├── archive/              # Historical records and projects
 │   ├── README.md             # Documentation index
 │   ├── DEVELOPMENT_LOG.md    # History and key decisions
 │   └── ENVIRONMENTS.md       # Environment setup and usage
@@ -95,13 +96,13 @@ An extensive heuristic optimization project reduced False Positives (FPs) in bar
 
 - **Outcome**: Achieved FP reductions while preserving FN=0 on the legacy page_3 setup
 - **Conclusion**: Visual heuristics are largely exhausted; remaining FPs are hard to separate from fragmented TPs
-- **Details (historical, likely stale)**: `docs/fp_reduction/FINAL_SUMMARY.md` (note: this subtree is ~3 weeks behind current work)
+- **Details (historical)**: `docs/archive/fp_reduction/` (note: this subtree is ~3 weeks behind current work)
 
 ---
 
 ## Current Focus (Post-Phase 6)
 
-The latest confirmed state (GT rebuild + recheck) and next actions are tracked in `docs/NEXT_SESSION_NOTES.md`. In brief:
+The latest confirmed state (GT rebuild + recheck) and next actions are tracked in `docs/notes/ROADMAP_20260313.md`. In brief:
 
 - **GT cleanup complete** for all 35 detector-miss items; **10 true detector-miss cases remain** after recheck.
 - **Baseline**: `var88` (clefs_keys left filter + `probe_notehead_dilate=13` + `notehead_dilate=7`) maintains **FN=0** in the current evaluation set.

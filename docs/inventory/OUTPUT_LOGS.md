@@ -1,4 +1,4 @@
-# Output & Data Directory Inventory (#99)
+# 出力ディレクトリ・ログ台帳 (OUTPUT_LOGS.md)
 
 このドキュメントは、Issue #99 に基づき、リポジトリ内の主要なデータ・出力ディレクトリ（artifacts, logs, datasets, debug_outputs）の利用状況と履歴を整理したものです。
 

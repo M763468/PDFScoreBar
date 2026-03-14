@@ -1,4 +1,4 @@
-# Experiments Inventory (台帳)
+# 実験スクリプト台帳 (EXPERIMENTS.md)
 
 このドキュメントは、`experiments/` ディレクトリ内に存在する過去の実験コード、調査スクリプトの目的、経緯、最新の更新状況、および現在の mainline との関係を整理した台帳です。
 

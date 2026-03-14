@@ -170,10 +170,14 @@ def check_consistency(stale_days: int):
             diff = now - dt
             is_stale = diff.days > stale_days
             if category == "Legacy":
-                print(f"[LEGACY]   {doc_str:40} (Last updated {diff.days} days ago: {git_date_str})")
+                print(
+                    f"[LEGACY]   {doc_str:40} (Last updated {diff.days} days ago: {git_date_str})"
+                )
             elif is_stale:
                 if category == "Current":
-                    print(f"[STALE!!]  {doc_str:40} {status_tag} (CRITICAL: Current doc is {diff.days} days old!)")
+                    print(
+                        f"[STALE!!]  {doc_str:40} {status_tag} (CRITICAL: Current doc is {diff.days} days old!)"
+                    )
                 else:
                     print(f"[STALE]    {doc_str:40} {status_tag} ({diff.days} days ago)")
             else:
@@ -183,10 +187,12 @@ def check_consistency(stale_days: int):
 
     for inv_path in inventory:
         if not Path(inv_path).exists() and not (Path("docs") / inv_path).exists():
-             if inv_path.endswith("/") and (Path(inv_path).is_dir() or (Path("docs") / inv_path).is_dir()):
-                 continue
-             print(f"[BROKEN]   {inv_path:40} (Listed in inventory but NOT found on disk)")
-             all_ok = False
+            if inv_path.endswith("/") and (
+                Path(inv_path).is_dir() or (Path("docs") / inv_path).is_dir()
+            ):
+                continue
+            print(f"[BROKEN]   {inv_path:40} (Listed in inventory but NOT found on disk)")
+            all_ok = False
 
     print("\n--- 3. Configuration Integrity Check ---")
     key_configs = [Path("configs/evaluation2_e2e_verification_full.yaml")]

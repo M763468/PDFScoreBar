@@ -15,6 +15,7 @@ This project aims to develop a Python-based tool that automatically adds measure
    - `README.md` / `AGENTS.md`: プロジェクト概要とエージェント向け Constitution。
 2. **Asset Registry (資産の所在)**
    - `docs/MANIFEST.md`: 公式モデル、データセット、設定ファイルの所在。
+   - `docs/LOG_MANAGEMENT.md`: ログ・成果物の管理ルールと worktree ポリシー。
 3. **Historical Context (状況把握)**
    - `docs/DOCUMENT_INVENTORY.md`: **[必読]** 全ドキュメントの分類（現行・分析・レガシー）。
    - `docs/notes/ROADMAP_20260313.md`: 最新のロードマップ。

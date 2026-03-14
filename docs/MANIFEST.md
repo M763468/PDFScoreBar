@@ -74,3 +74,4 @@
 | :--- | :--- | :--- |
 | **整合性チェック** | `tools/check_repo_consistency.py` | 資産の存在、ドキュメントの鮮度、Orphanファイルの確認（ガイドライン） |
 | **構成図生成** | `make repo-tree` | ディレクトリ構造の可視化 |
+| **ツール・インベントリ** | `docs/TOOLS_INVENTORY.md` | `tools/` および `external/` 内のスクリプトの用途・履歴の台帳 |

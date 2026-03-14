@@ -10,7 +10,9 @@ import yaml
 
 # --- Configuration ---
 MANIFEST_PATH = Path("docs/MANIFEST.md")
-INVENTORY_PATH = Path("docs/EXPERIMENTS_INVENTORY.md")
+EXPERIMENTS_INVENTORY_PATH = Path("docs/EXPERIMENTS_INVENTORY.md")
+TOOLS_INVENTORY_PATH = Path("docs/TOOLS_INVENTORY.md")
+
 # Scan these directories for untracked (orphan) files
 CORE_DIRS = ["configs", "src/pipeline", "src/measure_numbering", "tools"]
 
@@ -55,6 +57,18 @@ def extract_dirs_from_inventory(inventory_path: Path) -> list[str]:
     # Also handle paths like models/omr_dln
     complex_dirs = {m for m in matches if "/" in m and "." not in m}
     return sorted(list(dirs.union(complex_dirs)))
+
+
+def extract_paths_from_inventory(inventory_path: Path) -> list[str]:
+    """Extracts backticked file-like strings from TOOLS_INVENTORY.md."""
+    if not inventory_path.exists():
+        return []
+    content = inventory_path.read_text()
+    # A more general regex to find any non-whitespace string in backticks.
+    matches = re.findall(r"`([^`\s]+)`", content)
+    # Filter out non-path-like strings and clean up paths.
+    paths = {p.strip("/") for p in matches if "/" in p}
+    return sorted(list(paths))
 
 
 def check_consistency(stale_days: int):
@@ -107,8 +121,8 @@ def check_consistency(stale_days: int):
             print(f"[INVALID]  {cfg}: {e}")
             all_ok = False
 
-    print(f"\n--- 4. Experiments Inventory Check (from {INVENTORY_PATH}) ---")
-    inventory_dirs = extract_dirs_from_inventory(INVENTORY_PATH)
+    print(f"\n--- 4. Experiments Inventory Check (from {EXPERIMENTS_INVENTORY_PATH}) ---")
+    inventory_dirs = extract_dirs_from_inventory(EXPERIMENTS_INVENTORY_PATH)
     exp_dir = Path("experiments")
     if exp_dir.exists():
         actual_dirs = [d.name for d in exp_dir.iterdir() if d.is_dir()]
@@ -120,15 +134,46 @@ def check_consistency(stale_days: int):
                     actual_dirs.append(f"{d}/{sub.name}")
 
         for d in sorted(actual_dirs):
-            if d in ["legacy", "legacy/archive", "legacy/scripts", "legacy/tmp_archive", "legacy/tools_archive", "legacy/investigation_20260102"]:
+            if d in [
+                "legacy",
+                "legacy/archive",
+                "legacy/scripts",
+                "legacy/tmp_archive",
+                "legacy/tools_archive",
+                "legacy/investigation_20260102",
+            ]:
                 # Ignore legacy nested dirs if needed, but let's check top-level legacy
                 continue
             if d not in inventory_dirs:
-                print(f"[UNTRACKED] {d:40} (Not listed in {INVENTORY_PATH.name})")
+                print(f"[UNTRACKED] {d:40} (Not listed in {EXPERIMENTS_INVENTORY_PATH.name})")
             else:
                 print(f"[TRACKED]   {d}")
 
-    print("\n--- 5. Orphan Asset Check (Untracked Mainline Candidates) ---")
+    print(f"\n--- 5. Tools Inventory Coverage Check (from {TOOLS_INVENTORY_PATH}) ---")
+    inventory_paths = extract_paths_from_inventory(TOOLS_INVENTORY_PATH)
+    inventory_set = {str(Path(p)) for p in inventory_paths}
+    missing_from_inventory = []
+
+    # Check only root of tools/ for now as it's the most crowded
+    tools_dir = Path("tools")
+    if tools_dir.exists():
+        for f in list(tools_dir.glob("*.py")) + list(tools_dir.glob("*.sh")):
+            if f.name == "__init__.py":
+                continue
+            f_str = str(f)
+            if f_str not in inventory_set:
+                missing_from_inventory.append(f_str)
+
+    if not missing_from_inventory:
+        print(f"[OK] All scripts in tools/ root are documented in {TOOLS_INVENTORY_PATH.name}.")
+    else:
+        for f_str in sorted(missing_from_inventory):
+            print(f"[MISSING]  {f_str:40} (Not in {TOOLS_INVENTORY_PATH.name})")
+        print(
+            f"\nNote: Please add descriptions for these scripts to {TOOLS_INVENTORY_PATH} to maintain visibility."
+        )
+
+    print("\n--- 6. Orphan Asset Check (Untracked Mainline Candidates) ---")
     norm_tracked = {str(Path(p)) for p in paths}
     found_any_orphan = False
 

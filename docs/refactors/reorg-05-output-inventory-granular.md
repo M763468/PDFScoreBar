@@ -26,6 +26,8 @@
 | `issue36_prep/` | 2026-02 | JSON, PNG | **Legacy**: 特定Issueの準備用データ。 |
 | `archive/` | 2025-08 ~ 2025-11 | PNG, JSON | **Archived**: 昨年の初期実験結果。 |
 | `issue23_smoke/` / `issue34_smoke/` | 2026-02 | JSON, PNG | **Reserved**: 回帰テスト用の資産。 |
+| `issue31_smoke/` | 2026-02 | JSON | **Legacy**: 一時的なスモークテスト結果。 |
+| `analysis/` | 2025-09 ~ 2025-11 | JSON, MD, PNG | **Legacy**: 初期のFN/FP分析結果。 |
 
 ---
 

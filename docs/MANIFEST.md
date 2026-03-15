@@ -17,7 +17,7 @@
 | **メインエントリポイント** | `src/pipeline/main.py` |
 | **推奨設定ファイル** | `configs/evaluation2_e2e_verification_full.yaml` | フル機能の最終検証用 |
 | **スモークテスト設定** | `configs/smoke_test.yaml` | 疎通確認用 |
-| **検証報告書 (最新)** | `docs/E2E_VERIFICATION_REPORT.md` (2026-03-13) | |
+| **Ground Truth Policy** | `docs/GT_PREPARATION_POLICY.md` | ラベリング基準 |
 
 ---
 
@@ -38,7 +38,10 @@
 | :--- | :--- | :--- |
 | **Orchestrator** | `src/pipeline/orchestrator.py` | パイプライン全体の制御 |
 | **Detection Logic** | `src/pipeline/detection/hybrid.py` | ハイブリッド検出の統合 |
+| **Orchestrator Core** | `src/pipeline/detection/orchestrator.py` | 検出オーケストレータのコア |
 | **Measure Numbering** | `src/measure_numbering/pipeline.py` | 小節番号の付与ロジック |
+| **Numbering Core** | `src/measure_numbering/numbering.py` | 番号付与ロジックの本体 |
+| **System Builder** | `src/measure_numbering/builder.py` | 楽譜構造の構築 |
 | **MMR Engine** | `src/measure_numbering/mmr.py` | MMR 検出と OCR の統合 |
 
 ---

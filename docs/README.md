@@ -46,9 +46,6 @@ See `docs/notes/ROADMAP_20260313.md` for the active roadmap.
 - **`docs/MANIFEST.md`**  
   Single source of truth for model paths, datasets, and configurations.
 
-- **`docs/E2E_VERIFICATION_REPORT.md`**
-  Latest end-to-end pipeline verification results.
-
 - **`docs/inventory/`**
   **Core Inventories**: Comprehensive registries for Tools, Experiments, and Output/Logs.
 
@@ -90,7 +87,10 @@ Refer to these only for historical context or to understand the derivation of cu
   Records of the initial False Positive reduction effort (Dec 2025).
 - **`docs/archive/BARLINE_MATCHER.md`**
   Technical specification of the matching and deduplication logic (Historical).
-- **`docs/archive/DEVLOG_CNN_TRAINING.md`**  Provenance and development history of the CNN classifier.
+- **`docs/archive/CNN_RESCUE_FINAL_REPORT.md`**
+  Detailed report on the CNN model rescue project (Issue #44).
+- **`docs/archive/DEVLOG_CNN_TRAINING.md`**
+  Provenance and development history of the CNN classifier.
 - **`docs/archive/model_experiments/`**  
   Early evaluations of various ML backends (YOLO, etc.).
 

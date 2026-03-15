@@ -15,7 +15,7 @@ EXPERIMENTS_INVENTORY_PATH = Path("docs/inventory/EXPERIMENTS.md")
 TOOLS_INVENTORY_PATH = Path("docs/inventory/TOOLS.md")
 
 # Scan these directories for untracked (orphan) files
-CORE_DIRS = ["configs", "src/pipeline", "src/measure_numbering", "tools"]
+CORE_DIRS = ["src/pipeline", "src/measure_numbering", "tools"]
 
 
 def get_git_timestamp(path: Path) -> int:
@@ -33,7 +33,7 @@ def extract_paths_from_manifest(manifest_path: Path) -> list[str]:
     if not manifest_path.exists():
         return []
     content = manifest_path.read_text()
-    matches = re.findall(r"`([^`\s]+)`", content)
+    matches = re.findall(r"`([^`]+)`", content)
     path_candidates = (p.strip(".,;:()") for p in matches if "(Container)" not in p)
     paths = {p for p in path_candidates if "/" in p or "." in p}
     return sorted(list(paths))
@@ -96,22 +96,22 @@ def parse_document_inventory(inventory_path: Path) -> dict[str, dict]:
 
 
 def extract_dirs_from_inventory(inventory_path: Path) -> list[str]:
-    """Extracts experiment directory names from EXPERIMENTS_INVENTORY.md."""
+    """Extracts experiment directory names from inventory."""
     if not inventory_path.exists():
         return []
     content = inventory_path.read_text()
-    matches = re.findall(r"`([^`\s]+)`", content)
+    matches = re.findall(r"`([^`]+)`", content)
     dirs = {m for m in matches if "." not in m and "/" not in m}
     complex_dirs = {m for m in matches if "/" in m and "." not in m}
     return sorted(list(dirs.union(complex_dirs)))
 
 
 def extract_paths_from_inventory(inventory_path: Path) -> list[str]:
-    """Extracts backticked file-like strings from TOOLS_INVENTORY.md."""
+    """Extracts backticked file-like strings from inventory."""
     if not inventory_path.exists():
         return []
     content = inventory_path.read_text()
-    matches = re.findall(r"`([^`\s]+)`", content)
+    matches = re.findall(r"`([^`]+)`", content)
     paths = {p.strip("/") for p in matches if "/" in p}
     return sorted(list(paths))
 
@@ -166,7 +166,7 @@ def check_consistency(stale_days: int):
             if info["stated_updated"] < git_date_str:
                 status_tag += " [DESYNC]"
 
-        if dt:
+        if dt and ts > 0:
             diff = now - dt
             is_stale = diff.days > stale_days
             if category == "Legacy":
@@ -176,14 +176,14 @@ def check_consistency(stale_days: int):
             elif is_stale:
                 if category == "Current":
                     print(
-                        f"[STALE!!]  {doc_str:40} {status_tag} (CRITICAL: Current doc is {diff.days} days old!)"
+                        f"[STALE!!]  {doc_str:40} {status_tag} (WARNING: Current doc is {diff.days} days old!)"
                     )
                 else:
                     print(f"[STALE]    {doc_str:40} {status_tag} ({diff.days} days ago)")
             else:
                 print(f"[FRESH]    {doc_str:40} {status_tag} ({git_date_str})")
         else:
-            print(f"[UNKNOWN]  {doc_str:40} {status_tag} (No git history)")
+            print(f"[UNKNOWN]  {doc_str:40} {status_tag} (No git history or newly moved)")
 
     for inv_path in inventory:
         if not Path(inv_path).exists() and not (Path("docs") / inv_path).exists():
@@ -260,6 +260,10 @@ def check_consistency(stale_days: int):
                 found_any_orphan = True
     if not found_any_orphan:
         print("[OK] All assets in core directories are tracked in MANIFEST.md.")
+    else:
+        print(
+            "[INFO] Orphan assets found. Consider adding them to MANIFEST.md if they are core assets."
+        )
 
     return all_ok
 

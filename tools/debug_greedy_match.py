@@ -7,7 +7,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from homr_eval_scripts.homr_evaluator import load_ground_truth_boxes
+from homr_eval_scripts.core.metrics import load_ground_truth_boxes
 from src.common.barline_evaluation import (
     barline_vertical_overlap,
     center_distance_x,

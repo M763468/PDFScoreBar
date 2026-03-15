@@ -23,15 +23,13 @@ from .utils import log_vram_usage
 
 # Optional imports for in-process Homr execution
 try:
+    from homr.main import ProcessingConfig
+    from homr.music_xml_generator import XmlGeneratorArguments
     from src.common.preprocessing import apply_advanced_sr
-    from src.homr_eval_scripts.homr_evaluator import (
-        DEFAULT_TUNING,
-        BarlinePrediction,
-        HomrPredictor,
-        ProcessingConfig,
-        XmlGeneratorArguments,
-        save_homr_results,
-    )
+    from src.homr_eval_scripts.core.metrics import BarlinePrediction
+    from src.homr_eval_scripts.core.predictor import HomrPredictor
+    from src.homr_eval_scripts.core.reporting import save_homr_results
+    from src.homr_eval_scripts.core.utils import DEFAULT_TUNING
 
     _HOMR_AVAILABLE = True
 except ImportError:

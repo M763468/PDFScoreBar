@@ -1,5 +1,8 @@
 # GT Preparation Policy for Barline Detection
 
+> [!NOTE]
+> **Status (Mar 2026)**: These labeling guidelines remain active and are the standard for any new Ground Truth preparation.
+
 This document defines the policies for creating Ground Truth (GT) data for barline detection, specifically focusing on complex cases like double barlines and final barlines.
 
 ## 1. Classification & Labeling Policy

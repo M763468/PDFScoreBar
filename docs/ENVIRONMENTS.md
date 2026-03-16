@@ -1,6 +1,9 @@
 # Environment & Tooling Guide
 
 > [!NOTE]
+> **Status (Mar 2026)**: The environments listed here (`sr_eval_gpu`, `cnn_classifier`, etc.) remain active and essential for the current mainline pipeline.
+
+> [!NOTE]
 > **Path Changes (Dec 2025)**: The repository has been restructured.
 > - Tools previously in `src/tools/` are now in `tools/`.
 > - `homr` and `oemer` repositories are now in `external/`.

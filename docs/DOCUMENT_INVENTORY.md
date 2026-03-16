@@ -38,7 +38,6 @@ Issue #111 に基づき、古い資料を `docs/archive/` へ整理し、イン�
 | `docs/DEVELOPMENT_LOG.md` | 歴史的事実の記録。 | 2025-09-27 | 2026-02-01 | **参照。** authoritative な決定事項の記録。 |
 | `docs/notes/REFACTOR_PLAN_20260312.md` | 環境統合・Subprocess排除の計画。 | 2026-03-12 | 2026-03-12 | **参照。** 進行中のリファクタ設計。 |
 | `docs/performance_comparison.md` | 各モデルの性能比較メトリクス. | 2025-12-11 | 2026-03-11 | **参照。** モデル選定の判断材料。 |
-| `docs/notes/technical_debt.md` | 認識されている技術的負債。 | 2026-03-12 | 2026-03-12 | **参照。** 優先改善点の把握。 |
 
 ---
 

@@ -1,5 +1,8 @@
 # Regression Test Workflow
 
+> [!NOTE]
+> **Status (Mar 2026)**: This workflow remains active. The `make test` target is the preferred way to run unit tests.
+
 ## Purpose
 - Standardize pre-commit / pre-PR verification so behavior regressions are caught consistently.
 - Keep real-data smoke and parity checks reproducible across sessions.
@@ -19,7 +22,7 @@ make lint
 ```
 3. Unit tests (minimum)
 ```bash
-python3 -m unittest tests.test_pipeline_detection -v
+make test
 ```
 
 ## Test Placement Policy

@@ -33,7 +33,7 @@ Gemini as "Architect/Reasoning Lead," Codex as "Precision Implementation/Verific
 
 ### 3.4. Long-Horizon Task Execution (Multi-Step Refactors)
 For complex tasks that require more than 3 implementation steps or multi-day progress, agents **must** use the [Long-Horizon Task Workflow](LONG_HORIZON_WORKFLOW.md).
-- **Mandate**: Create a `docs/refactors/<TASK-ID>/` directory with standardized Markdown state files (`Prompt.md`, `Plan.md`, `Log.md`).
+- **Mandate**: Create a `docs/long-horizon-tasks/<TASK-ID>/` directory with standardized Markdown state files (`Prompt.md`, `Plan.md`, `Log.md`).
 - **Benefit**: Ensures that any agent (Gemini or Codex) can resume the task with full context from the repository-stored state.
 
 ## 4. Best Practices for Prompts

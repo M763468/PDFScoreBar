@@ -6,7 +6,7 @@ Long-horizon tasks (large refactoring, pipeline optimization, dependency upgrade
 Unlike simple tasks that can be solved with a single prompt, long-horizon tasks use **Externalized Task State** stored within the repository. This makes the workflow reproducible, tool-agnostic, and resumable by any agent (or human).
 
 ## Core Idea: Externalized Task State
-Instead of storing progress only in the conversation history, the task state is written to specific Markdown files in `docs/refactors/<TASK-ID>/`.
+Instead of storing progress only in the conversation history, the task state is written to specific Markdown files in `docs/long-horizon-tasks/<TASK-ID>/`.
 
 ### Required Documents
 - **`Prompt.md`**: The task specification and "Source of Truth".

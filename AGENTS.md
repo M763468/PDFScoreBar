@@ -31,7 +31,12 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 
 - **Testing**: All code must be accompanied by tests sufficient to prove it meets the `Acceptance Criteria`. The "How to test" section of the issue should be followed precisely.
 - **Linting**: Code must adhere to the project's linting standards. Always run `make format` to fix style issues and `make lint` to verify compliance before submitting changes.
-- **Pre-Commit / Pre-PR Verification (Mandatory)**: Before creating a commit or opening a PR, you **MUST** run (1) behavior verification (actual execution path relevant to the change, e.g. smoke run), (2) tests/lint checks, and (3) `make check-consistency` (as a health check to identify major drift or missing mainline assets), then report the results. While a 100% clean report for experimental scripts is not strictly required, any **[CRITICAL]** failures or unintended mainline orphans should be addressed.
+- **Pre-Commit / Pre-PR Verification (Mandatory)**: Before creating a commit or opening a PR, you **MUST** run (1) behavior verification (actual execution path relevant to the change, e.g. smoke run), (2) tests/lint checks, and (3) `make check-consistency` (as a health check to identify major drift or missing mainline assets), then report the results. 
+  - **Handling Consistency Errors (`make check-consistency`)**:
+    - `[BROKEN]`: A file is listed in an inventory but doesn't exist on disk. **Causes CI failure (`exit code 2`)**. Action: Remove it from the inventory or restore the file. *Note: Empty directories must have a `.gitkeep` to be tracked by Git.*
+    - `[CRITICAL]`: A core asset defined in `MANIFEST.md` is missing. **Causes CI failure**. Action: Restore the asset or update the manifest if intentionally deleted.
+    - `[UNTRACKED] / [MISSING]`: Informational. A file exists but isn't in the relevant inventory. Action: Add to inventory if it's a core asset, otherwise ignore.
+    - `[STALE!!]`: Informational warning. A core document hasn't been updated in 30+ days. Action: If its contents are still valid, refresh its timestamp by adding a note (e.g., `> [!NOTE] Status (Mar 2026): This remains active...`).
   - Regression workflow reference: `docs/REGRESSION_TEST_WORKFLOW.md`
 - **Maintenance of Tools Inventory**: When adding, renaming, or significantly modifying tools in the `tools/` root directory, you **MUST** update `docs/TOOLS_INVENTORY.md` to reflect the change, documenting the purpose, status (Active/Legacy), and context.
 - **Logging**: Add clear and concise logging for errors and important events. Avoid noisy or verbose logging.
@@ -64,7 +69,7 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
     - **Rule**: NEVER use fixed pixel (px) thresholds for distance or geometry calculations in the barline detection/numbering layers.
     - **Implementation**: Always use `unit_size` (staff line spacing) as the base unit for dynamic scaling.
     - **Current Targets**: Deduplication Threshold (`1.2 * unit_size`), Implicit Start Assumption (`4.0 * unit_size`).
-    - **Documentation**: See `docs/GT_PREPARATION_POLICY.md` and `docs/BARLINE_MATCHER.md`.
+    - **Documentation**: See `docs/GT_PREPARATION_POLICY.md` and `docs/archive/BARLINE_MATCHER.md`.
 - **GT Labeling Consistency**:
     - Use specific labels for complex barlines: `double_barline`, `end_barline`, `repeat`.
     - Treat multi-line barlines as a **single logical event** with a single encompassing BBox.
@@ -124,6 +129,7 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
     - `dependency-management`: 依存関係の管理
     - `test-generation`: テストコードの生成・更新
     - `long-horizon-task`: 長期タスクの状態管理
+    - `doc-consistency-manager`: リポジトリの整合性チェックと解決（Orphan, Broken, Stale の管理）
     - `gemini-consultation`: Gemini への標準化された相談。`.agents/skills/gemini-consultation/SKILL.md` を利用し、相談時の入力整理・実行手順・記録方法を統一します。
     - `codex-delegation`: Codex への実装・検証タスクの委譲。`.agents/skills/codex-delegation/SKILL.md` を利用し、コンテキスト消費を抑えつつ精緻な実装と検証を行います。
 

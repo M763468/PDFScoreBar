@@ -1,4 +1,4 @@
-# ツール・スクリプト・インベントリ (台帳)
+# ツール・スクリプト台帳 (TOOLS.md)
 
 このドキュメントは、`tools/` および `external/` ディレクトリ（ならびに `src/` 配下の主要なランナー）にあるスクリプトとユーティリティの包括的なリストです。それぞれの用途、作成時の文脈、および実質的な最終更新日を管理します。
 
@@ -85,6 +85,11 @@
 | スクリプト | 用途 | ステータス | 実質的最終更新 | コンテキスト |
 | :--- | :--- | :--- | :--- | :--- |
 | `tools/check_repo_consistency.py` | リポジトリ整合性チェック。 | **Active** | 2026-03-14 | 新規作成 (Issue #95)。 |
+| `tools/utils/safe_gh_post.sh` | 安全な GitHub 投稿スクリプト。 | **Active** | 2026-03-13 | |
+| `tools/add_measure_numbers.py` | 小節番号の書き込みユーティリティ。 | **Active** | 2026-03-10 | |
+| `tools/analyze_divisi_logic.py` | divisi 判定ロジックの分析。 | **Active** | 2026-01-30 | |
+| `tools/analyze_fn_prokofiev.py` | Prokofiev における FN 分析。 | **Active** | 2026-03-06 | |
+| `tools/vram_monitor.sh` | VRAM 使用量監視。 | **Active** | 2026-03-03 | |
 | `src/pdf_to_images.py` | PDF レンダリング。 | **Active** | 2026-02-06 | `pymupdf` への依存追加とロジック修正。 |
 
 ---

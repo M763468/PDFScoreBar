@@ -13,44 +13,26 @@
 This repository contains multiple layers of documentation, each serving
 a different time scale and purpose.
 
-Understanding which document to read (or update) is essential to avoid
-confusion and duplication.
-
 ### Documentation by Time Scale
 
 | Time Scale | Document | Purpose |
 |----------|----------|---------|
 | **Very Long Term** | `README.md` (repo root) | Ultimate project vision and scope |
-| **Mid/Long Term** | `docs/DOCUMENT_INVENTORY.md` | **[NEW]** Document classification (Current vs Analysis vs Legacy) |
+| **Mid/Long Term** | `docs/DOCUMENT_INVENTORY.md` | Document classification (Current vs Analysis vs Legacy) |
 | **Short/Mid Term** | `docs/MANIFEST.md` | Asset registry (Models, Datasets, Configs) |
 | **Historical Facts** | `docs/DEVELOPMENT_LOG.md` | Append-only authoritative record |
 
 ---
 
-## Current Project Status (2026-03-14)
+## Current Project Status (2026-03-15)
 
-**Update (2026-03-14)**: Issue #13 (Full Pipeline Optimization) is complete. 
-The current focus is **Evaluation Speedup** and **In-Process Refactoring**.
+**Current focus**: **Evaluation Speedup** and **Batch Optimization**.
 See `docs/notes/ROADMAP_20260313.md` for the active roadmap.
 
-**Recent confirmed state**:
+**Key Documents**:
 - `src/pipeline/main.py` is the primary entry point.
-- MMR classifier and model persistence are verified for batch processing.
-- Repository documentation has been re-organized into a classification inventory.
-
----
-
-## Where to Find Results and Artifacts
-
-This project produces a large number of intermediate and final artifacts.
-Use `docs/DOCUMENT_INVENTORY.md` to find the correct documentation for each phase.
-
-| What you want to see | Location |
-|---------------------|----------|
-| Latest asset registry | `docs/MANIFEST.md` |
-| Active Roadmap | `docs/notes/ROADMAP_20260313.md` |
-| Latest E2E Results | `docs/ISSUE13_E2E_VERIFICATION_REPORT.md` |
-| Historical decisions | `docs/DEVELOPMENT_LOG.md` |
+- `docs/E2E_VERIFICATION_REPORT.md` contains the latest performance metrics.
+- `docs/DOCUMENT_INVENTORY.md` tracks all documentation status.
 
 ---
 
@@ -59,72 +41,62 @@ Use `docs/DOCUMENT_INVENTORY.md` to find the correct documentation for each phas
 ### Core Documentation (Current)
 
 - **`docs/DOCUMENT_INVENTORY.md`**  
-  **Purpose**: Categorized list of all documents in `docs/` (Current/Analysis/Legacy).  
-  Always check this if you are unsure which document is up-to-date.
+  Categorized list of all documents in `docs/`. Always check this first.
 
 - **`docs/MANIFEST.md`**  
-  **Purpose**: Single source of truth for model paths, datasets, and configurations.
+  Single source of truth for model paths, datasets, and configurations.
 
-- **`docs/DEVELOPMENT_LOG.md`**  
-  **Purpose**: Authoritative historical record.  
-  - Append-only
-  - Records confirmed facts, decisions, and outcomes
-  - Never rewritten
+- **`docs/inventory/`**
+  **Core Inventories**: Comprehensive registries for Tools, Experiments, and Output/Logs.
 
-- **`docs/ENVIRONMENTS.md`**  
+- **`docs/ENVIRONMENTS.md`**
   Runtime containers, dependencies, and execution instructions.
-
-- **`docs/REGRESSION_TEST_WORKFLOW.md`**  
-  Pre-commit / pre-PR verification workflow (lint/tests + real-data smoke + parity checks).
-
-- **`docs/AGENTS.md` (root)**  
-  Rules and expectations for AI assistants (Gemini / Codex / CLI usage).
-
-- **`docs/GT_PREPARATION_POLICY.md`**  
-  **Mandatory Policy** for creating barline Ground Truth.
-
-- **`docs/TOOLS_INVENTORY.md`**  
-  **Purpose**: Comprehensive inventory of scripts and tools in `tools/` and `external/`.
-
-- **`docs/EXPERIMENTS_INVENTORY.md`**  
-  **Purpose**: Inventory and classification of historical scripts in the `experiments/` directory.
-
-- **`docs/BARLINE_MATCHER.md`**  
-  Detailed specification of the barline matching and deduplication logic.
+- **`docs/LOG_MANAGEMENT.md`**  
+  Guidelines for log structure, artifacts, and worktree usage.
 
 ---
 
-## Phase-Specific Documentation
+### Inventories (Centralized)
 
-### FP Reduction (Phase 1–3, Historical)
+Specialized inventories are located in `docs/inventory/`:
 
-- **Final Summary**  
-  `docs/fp_reduction/FINAL_SUMMARY.md`  
-  Executive summary of the FP reduction effort. Note: this subtree is ~3 weeks behind current work.
+- **`docs/inventory/TOOLS.md`**  
+  Comprehensive registry of scripts and tools in `tools/`.
+- **`docs/inventory/EXPERIMENTS.md`**  
+  Inventory and classification of scripts in `experiments/`.
+- **`docs/inventory/OUTPUT_LOGS.md`**  
+  Detailed audit and purpose of each `logs/` and `artifacts/` subdirectory.
 
-- **Development Log (Phase 1–2)**  
-  `docs/fp_reduction/development_log.md`  
-  Detailed early-phase experimentation history.
+---
 
-- **Walkthrough**  
-  `docs/fp_reduction/walkthrough.md`  
-  Phase-by-phase explanation of methodology and results.
+### AI Workflow & Skills
+
+- **`docs/ai-workflow/`**  
+  Guidelines and templates for AI agent collaboration and long-horizon tasks.
+- **`docs/agent-skills/`**  
+  Definitions and documentation for specialized agent skills.
+
+---
+
+## Archive and Historical Data
+
+Historical projects and obsolete documentation are stored in `docs/archive/`.
+Refer to these only for historical context or to understand the derivation of current heuristics.
+
+- **`docs/archive/fp_reduction/`**
+  Records of the initial False Positive reduction effort (Dec 2025).
+- **`docs/archive/BARLINE_MATCHER.md`**
+  Technical specification of the matching and deduplication logic (Historical).
+- **`docs/archive/CNN_RESCUE_FINAL_REPORT.md`**
+  Detailed report on the CNN model rescue project (Issue #44).
+- **`docs/archive/DEVLOG_CNN_TRAINING.md`**
+  Provenance and development history of the CNN classifier.
+- **`docs/archive/model_experiments/`**  
+  Early evaluations of various ML backends (YOLO, etc.).
 
 ---
 
 ## Logs and Experimental Outputs
 
-Experimental outputs are stored under `logs/` using timestamped directories.
-
-General rules:
-- Each run produces its own directory
-- Scripts and configurations used for the run should be traceable from the log
-- Qualitative overlays (images) live next to quantitative summaries
-
-Examples:
-- `logs/phase3_staff_consistency/20251215_hybrid_ratio_sweep_page3/`
-- `logs/phase3_staff_consistency/20251216_page10_hybrid_filter_FIXED/`
-
----
-
-## Repository Structure (Summary)
+Experimental outputs are stored under `logs/` as defined in `docs/LOG_MANAGEMENT.md`.
+Qualitative overlays (images) and quantitative summaries are stored together per run.

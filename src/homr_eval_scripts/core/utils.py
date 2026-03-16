@@ -58,7 +58,7 @@ DEFAULT_TUNING = {
 }
 
 
-def _redirect_eprint_to_logger(*args, **kwargs):
+def _redirect_eprint_to_logger(*args, **kwargs) -> None:
     logger.info(" ".join(map(str, args)))
 
 

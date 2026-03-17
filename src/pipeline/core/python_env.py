@@ -98,8 +98,8 @@ def get_pipeline_python(step_name: Optional[str] = None) -> List[str]:
     Order of preference:
     1. PIPELINE_PYTHON environment variable (explicit override).
     2. For heavy steps (detection/homr/omr_dln/sr):
-       a. If in container: /opt/venv_sr/bin/python.
-       b. If on host and sr_eval_gpu is running: 'docker exec sr_eval_gpu /opt/venv_sr/bin/python'.
+       a. If in container: /opt/venv_pipeline/bin/python.
+       b. If on host and a supported container is running: 'docker exec <container> <venv_python>'.
     3. For pdf_to_images: Fallback to .venv_pdf/bin/python.
     4. Fallback to current sys.executable.
     """
@@ -116,11 +116,6 @@ def get_pipeline_python(step_name: Optional[str] = None) -> List[str]:
             prefix = get_docker_exec_prefix()
             if prefix:
                 logger.info(f"Using {prefix} for step '{step_name}'")
-                # Need to determine which venv exists in the container, but for now we assume the prefix sets up the env properly,
-                # or we just try venv_pipeline then venv_sr. Since we can't easily check inside the container from here,
-                # we'll just try to use venv_pipeline if it's the unified standard, but fallback is tricky.
-                # Actually, let's keep it simple: if the container is sr_eval_gpu, it might have venv_sr.
-                # If we migrate, we'll update get_docker_exec_prefix to look for the new container.
                 if "sr_eval_gpu" in prefix:
                     return prefix + ["/opt/venv_sr/bin/python"]
                 else:

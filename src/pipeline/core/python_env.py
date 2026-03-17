@@ -17,17 +17,44 @@ def is_in_container() -> bool:
     """Checks if the current process is running inside a Docker container."""
     # Common markers for being inside one of our project containers
     return Path("/.dockerenv").exists() or (
-        Path("/workspace").exists() and Path("/opt/venv_sr").exists()
+        Path("/workspace").exists() and (Path("/opt/venv_pipeline").exists() or Path("/opt/venv_sr").exists())
     )
 
 
 def get_docker_exec_prefix() -> List[str]:
-    """Returns the docker exec prefix if sr_eval_gpu is running and we are on host."""
+    """Returns the docker exec prefix if a supported container is running and we are on host."""
     if is_in_container():
         return []
 
     try:
-        # Check if sr_eval_gpu is running
+        # Check for unified container first
+        result = subprocess.run(
+            [
+                "docker",
+                "ps",
+                "--filter",
+                "name=pdfscore_pipeline_gpu",
+                "--filter",
+                "status=running",
+                "--format",
+                "{{.Names}}",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode == 0 and "pdfscore_pipeline_gpu" in result.stdout:
+            return [
+                "docker",
+                "exec",
+                "-w",
+                "/workspace",
+                "-e",
+                "PYTHONPATH=/workspace:/workspace/external/homr",
+                "pdfscore_pipeline_gpu",
+            ]
+
+        # Fallback to sr_eval_gpu
         result = subprocess.run(
             [
                 "docker",
@@ -80,20 +107,32 @@ def get_pipeline_python(step_name: Optional[str] = None) -> List[str]:
     # 1. Check for heavy steps first
     if step_name in ("detection", "homr", "omr_dln", "sr"):
         if is_in_container():
-            if Path("/opt/venv_sr/bin/python").exists():
+            if Path("/opt/venv_pipeline/bin/python").exists():
+                return ["/opt/venv_pipeline/bin/python"]
+            elif Path("/opt/venv_sr/bin/python").exists():
                 return ["/opt/venv_sr/bin/python"]
         else:
             prefix = get_docker_exec_prefix()
             if prefix:
                 logger.info(f"Using {prefix} for step '{step_name}'")
-                return prefix + ["/opt/venv_sr/bin/python"]
+                # Need to determine which venv exists in the container, but for now we assume the prefix sets up the env properly,
+                # or we just try venv_pipeline then venv_sr. Since we can't easily check inside the container from here,
+                # we'll just try to use venv_pipeline if it's the unified standard, but fallback is tricky.
+                # Actually, let's keep it simple: if the container is sr_eval_gpu, it might have venv_sr.
+                # If we migrate, we'll update get_docker_exec_prefix to look for the new container.
+                if "sr_eval_gpu" in prefix:
+                    return prefix + ["/opt/venv_sr/bin/python"]
+                else:
+                    return prefix + ["/opt/venv_pipeline/bin/python"]
 
     # 2. Explicit override
     if env_python:
         return [env_python]
 
-    # 3. If already in container but not a heavy step (or /opt/venv_sr missing)
+    # 3. If already in container but not a heavy step (or heavy step venv missing)
     if is_in_container():
+        if Path("/opt/venv_pipeline/bin/python").exists():
+            return ["/opt/venv_pipeline/bin/python"]
         return [sys.executable]
 
     # 4. Default host fallback for specific steps

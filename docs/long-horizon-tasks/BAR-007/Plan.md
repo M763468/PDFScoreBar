@@ -8,16 +8,16 @@
 - [ ] Record audit findings in `Log.md`.
 
 ## Phase 2: Unified Dockerfile Implementation
-- [ ] Select `nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04` as the base image.
-- [ ] Integrate dependencies from `Dockerfile.sr_eval` (the most consolidated version).
-- [ ] Incorporate missing dependencies from `Dockerfile.homr` (Poetry-based) and base `Dockerfile` (Pip-based).
-- [ ] Archive `Dockerfile.groundingdino` as it is not part of the main pipeline (`src/pipeline`).
-- [ ] Implement the new unified `Dockerfile.unified`.
+- [x] Select `nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04` as the base image.
+- [x] Integrate dependencies from `Dockerfile.sr_eval` (the most consolidated version).
+- [x] Incorporate missing dependencies from `Dockerfile.homr` (Poetry-based) and base `Dockerfile` (Pip-based).
+- [x] Archive `Dockerfile.groundingdino` as it is not part of the main pipeline (`src/pipeline`).
+- [x] Implement the new unified `Dockerfile.unified`.
 
 ## Phase 3: Unified Requirements Management
-- [ ] Consolidate requirements into a single `requirements.txt` or `pyproject.toml` managed via `uv`.
-- [ ] Ensure the container's virtual environment (e.g., `/opt/venv_sr` from `sr_eval_gpu`) is mapped correctly to a unified structure.
-- [ ] Handle potential dependency conflicts.
+- [x] Consolidate requirements into a single `requirements.txt` or `pyproject.toml` managed via `uv`.
+- [x] Ensure the container's virtual environment (e.g., `/opt/venv_sr` from `sr_eval_gpu`) is mapped correctly to a unified structure.
+- [x] Handle potential dependency conflicts.
 
 ## Phase 4: Verification & Integration
 - [ ] Build the new `Dockerfile.unified`.

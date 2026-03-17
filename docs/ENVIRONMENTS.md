@@ -18,7 +18,15 @@
   - MMR (Measure Number Recognition)
   - Measure numbering integration
 
-### Usage
+### Usage (Makefile - Recommended)
+The project provides a `Makefile` to simplify common operations:
+
+- **Build the image**: `make docker-build` (handles cleanup and logging to `artifacts/docker_build.log`)
+- **Run smoke test**: `make run-smoke`
+- **Run custom pipeline**: `make run-pipeline CONFIG=configs/my_config.yaml`
+- **Cleanup space**: `make docker-clean` (removes container and image)
+
+### Manual Usage (Host)
 Start the container:
 ```bash
 docker run --gpus all -d --name pdfscore_pipeline_gpu -v "$(pwd):/workspace" -w /workspace pdfscore_pipeline_gpu tail -f /dev/null

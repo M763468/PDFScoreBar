@@ -48,6 +48,10 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 - **Check Environments First**: Before executing any code, you **MUST** read `docs/ENVIRONMENTS.md`. This project uses a mix of Docker containers (`pdf_score_dev_gpu`, `homr_eval_gpu`, etc.) and host-based virtual environments (`.venv_pdf`, etc.). Identify the correct environment for your task.
 - **Docker Preference**: Prefer running tasks inside the appropriate Docker container whenever possible to ensure reproducibility.
 - **Host Execution**: Some tools (e.g., `gui_helper`) are designed to run on the host. Follow the specific instructions in `docs/ENVIRONMENTS.md`.
+- **Environment and Build Operations**:
+    - **Log Management**: When executing long-running or verbose operations like `docker build` or complex tests, **always redirect output to an artifact** (e.g., `> artifacts/build.log 2>&1`) and use targeted reads (`tail` or `cat` combined with line limits) to monitor progress. Do not dump full logs to the terminal, as it pollutes the context window.
+    - **Clean Checkout Resilience**: When writing Dockerfiles, do not rely on untracked local directories (e.g., `external/`) via `COPY` instructions. Instead, install these dependencies directly from source (e.g., `git+https://`) during the build step to ensure the image builds cleanly on fresh environments.
+    - **Volume Mount Shadowing**: Be aware that `docker run -v $(pwd):/workspace` will overwrite the container's `/workspace`. If the Docker build downloads model weights or artifacts, place them in a safe system directory (e.g., `/opt/weights/`) and reference them there to avoid them being masked by the host volume.
 
 ### Standard Commands
 - **Makefile as Source of Truth**: The `Makefile` in the project root defines the standard commands for development tasks (linting, formatting, etc.).

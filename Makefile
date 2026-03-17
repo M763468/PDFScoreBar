@@ -51,7 +51,7 @@ promote-log: ## Promote a log from worktree to permanent logs (usage: make promo
 run-smoke: ## Run smoke test inside pdfscore_pipeline_gpu container
 	@mkdir -p artifacts
 	@echo "Running smoke test..."
-	@docker run --rm --gpus all -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace:/workspace/external/homr pdfscore_pipeline_gpu \
+	@docker run --rm --gpus all -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_gpu \
 		/opt/venv_pipeline/bin/python src/pipeline/main.py --config "configs/smoke_test.yaml" > artifacts/smoke_test.log 2>&1 || \
 		(EXIT_CODE=$$?; echo "Smoke test failed with exit code $$EXIT_CODE. See artifacts/smoke_test.log"; exit $$EXIT_CODE)
 	@echo "Smoke test complete successfully. See artifacts/smoke_test.log"
@@ -63,7 +63,7 @@ run-pipeline: ## Run the pipeline with a custom config (usage: make run-pipeline
 	@mkdir -p artifacts
 	@LOG_FILE="artifacts/$$(basename "$(CONFIG)" .yaml)_$$(date +%Y%m%d_%H%M%S).log"; \
 	echo "Running pipeline with $(CONFIG). Logging to $$LOG_FILE..."; \
-	docker run --rm --gpus all -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace:/workspace/external/homr pdfscore_pipeline_gpu \
+	docker run --rm --gpus all -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_gpu \
 		/opt/venv_pipeline/bin/python src/pipeline/main.py --config "$(CONFIG)" --skip-existing > "$$LOG_FILE" 2>&1 || \
 		(EXIT_CODE=$$?; echo "Pipeline failed with exit code $$EXIT_CODE. See $$LOG_FILE"; exit $$EXIT_CODE); \
 	echo "Pipeline execution finished successfully. See $$LOG_FILE"

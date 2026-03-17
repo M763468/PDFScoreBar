@@ -1,5 +1,5 @@
 # --- Build Stage ---
-FROM nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04 as builder
+FROM nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04 AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
@@ -10,40 +10,43 @@ RUN apt-get update && apt-get install -y \
     wget git curl build-essential \
     && rm -rf /var/lib/apt/lists/*
 
+# Use python3.11 as default in builder stage as well
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
+    update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1
+
 # Install uv
 RUN pip install uv
 
 WORKDIR /workspace
 
 # Copy only dependency-defining files first for better caching
-COPY pyproject.toml ./
-COPY external/homr/pyproject.toml ./external/homr/
-COPY external/realesrgan/setup.py ./external/realesrgan/
-COPY external/realesrgan/VERSION ./external/realesrgan/
+COPY pyproject.toml README.md ./
 
 # Create unified virtual environment and install dependencies
-RUN uv venv /opt/venv_pipeline
+RUN uv venv --python 3.11 /opt/venv_pipeline
 ENV PATH="/opt/venv_pipeline/bin:$PATH"
+
+# Bypass poetry-dynamic-versioning for homr
+ENV POETRY_DYNAMIC_VERSIONING_BYPASS=0.1.0
 
 # Upgrade essential build tools in venv
 RUN uv pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Install project dependencies (editable)
-# Note: we copy the rest of external later for full functionality, 
-# but we need the directory structure for editable installs.
-COPY external/realesrgan/realesrgan ./external/realesrgan/realesrgan
-COPY external/homr/homr ./external/homr/homr
+# Install external packages from git to avoid missing-path errors on clean checkouts
+RUN uv pip install git+https://github.com/xinntao/Real-ESRGAN.git
+RUN uv pip install git+https://github.com/liebharc/homr.git
 
+# Install project dependencies
 RUN uv pip install -e .
-RUN uv pip install -e ./external/realesrgan
-RUN uv pip install -e ./external/homr
 
 # Apply basicsr patch for torchvision compatibility
 RUN sed -i 's/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/g' /opt/venv_pipeline/lib/python3.11/site-packages/basicsr/data/degradations.py
 
-# Download model weights during build
-RUN mkdir -p external/realesrgan/weights && \
-    wget https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth -O external/realesrgan/weights/RealESRGAN_x4plus.pth
+# Download model weights during build to a safe location (not masked by volume mount)
+# We place them in /opt/weights so they are always available. We will symlink them later if needed.
+RUN mkdir -p /opt/weights && \
+    wget https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth -O /opt/weights/RealESRGAN_x4plus.pth && \
+    wget https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth -O /opt/weights/RealESRGAN_x2plus.pth
 
 # --- Final Stage ---
 FROM nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04

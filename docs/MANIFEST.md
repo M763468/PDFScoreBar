@@ -62,10 +62,10 @@
 
 | 項目 | 名称 / パス | 備考 |
 | :--- | :--- | :--- |
-| **開発コンテナ** | `sr_eval_gpu` | Dockerfile 参照 |
-| **Python 実行環境** | `(Container) /opt/venv_sr/bin/python` | コンテナ内 uv 環境 |
-| **サブコンテナ** | `Dockerfile.homr` | Homr 評価用 |
-| **超解像モデル** | `(Container) /opt/models/` | Real-ESRGAN モデル内蔵 |
+| **開発コンテナ** | `pdfscore_pipeline_gpu` | Dockerfile 参照 |
+| **Python 実行環境** | `(Container) /opt/venv_pipeline/bin/python` | コンテナ内 uv 統合環境 |
+| **超解像モデル** | `(Container) /opt/venv_pipeline/lib/python3.11/site-packages/realesrgan/weights/` | Real-ESRGAN モデル内蔵 |
+
 
 ---
 

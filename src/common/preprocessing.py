@@ -164,6 +164,12 @@ def apply_advanced_sr(
             netscale = 2
             model_path = os.path.join(realesrgan_path, "weights", "RealESRGAN_x2plus.pth")
 
+        # Fallback to container-provided weights if local ones don't exist
+        if not os.path.exists(model_path):
+            fallback_path = os.path.join("/opt/weights", os.path.basename(model_path))
+            if os.path.exists(fallback_path):
+                model_path = fallback_path
+
         try:
             # Determine tiling strategy
             if tile is None or tile == -1:

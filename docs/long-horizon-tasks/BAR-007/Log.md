@@ -18,3 +18,9 @@
   - Use `uv` for all dependency management inside the unified container.
   - Archive `Dockerfile.groundingdino` and its associated environments, as they are not needed for the mainline pipeline.
   - Consolidate all host (`.venv_*`) and container (`/opt/venv_sr`) virtual environments into a single definition managed by `uv`.
+
+## 2026-03-17 Phase 2 & 3: Unified Dockerfile & Requirements
+- [x] Updated `pyproject.toml` with the consolidated requirements (including those from `/opt/venv_sr`, base `Dockerfile`, and `Dockerfile.homr`).
+- [x] Created `Dockerfile.unified` that standardizes on `/opt/venv_pipeline` managed by `uv`.
+- [x] Updated `src/pipeline/core/python_env.py` to support the new unified container (`pdfscore_pipeline_gpu`) and `/opt/venv_pipeline` while maintaining fallback compatibility.
+- [x] Marked GroundingDINO for archiving as it's not part of the main pipeline.

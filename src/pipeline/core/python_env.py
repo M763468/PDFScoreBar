@@ -51,7 +51,7 @@ def get_docker_exec_prefix() -> List[str]:
                 "-w",
                 "/workspace",
                 "-e",
-                "PYTHONPATH=/workspace:/workspace/external/homr",
+                "PYTHONPATH=/workspace",
                 "pdfscore_pipeline_gpu",
             ]
 
@@ -79,7 +79,7 @@ def get_docker_exec_prefix() -> List[str]:
                 "-w",
                 "/workspace",
                 "-e",
-                "PYTHONPATH=/workspace:/workspace/external/homr",
+                "PYTHONPATH=/workspace",
                 "sr_eval_gpu",
             ]
     except FileNotFoundError:

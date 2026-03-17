@@ -20,7 +20,7 @@ RUN pip install uv
 WORKDIR /workspace
 
 # Copy only dependency-defining files first for better caching
-COPY pyproject.toml README.md ./
+COPY pyproject.toml ./
 
 # Create unified virtual environment and install dependencies
 RUN uv venv --python 3.11 /opt/venv_pipeline
@@ -33,8 +33,9 @@ ENV POETRY_DYNAMIC_VERSIONING_BYPASS=0.1.0
 RUN uv pip install --no-cache-dir --upgrade pip setuptools wheel
 
 # Install external packages from git to avoid missing-path errors on clean checkouts
-RUN uv pip install git+https://github.com/xinntao/Real-ESRGAN.git
-RUN uv pip install git+https://github.com/liebharc/homr.git
+# Pinned to specific commits for reproducible builds
+RUN uv pip install git+https://github.com/xinntao/Real-ESRGAN.git@a4abfb2979a7bbff3f69f58f58ae324608821e27
+RUN uv pip install git+https://github.com/liebharc/homr.git@b377620a3a55bd7ff657481cec5b688dfbc9cee9
 
 # Install project dependencies
 RUN uv pip install -e .

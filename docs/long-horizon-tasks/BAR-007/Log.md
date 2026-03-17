@@ -24,3 +24,17 @@
 - [x] Created `Dockerfile.unified` that standardizes on `/opt/venv_pipeline` managed by `uv`.
 - [x] Updated `src/pipeline/core/python_env.py` to support the new unified container (`pdfscore_pipeline_gpu`) and `/opt/venv_pipeline` while maintaining fallback compatibility.
 - [x] Marked GroundingDINO for archiving as it's not part of the main pipeline.
+
+## 2026-03-17 Phase 4: Verification & Integration
+- [x] Built the new `pdfscore_pipeline_gpu:latest` image from `Dockerfile.unified`.
+- [x] Verified GPU support inside the container (Torch CUDA: True, ORT device: GPU).
+- [x] Successfully ran the end-to-end pipeline (`src/pipeline/main.py`) inside the new container using `configs/evaluation2_e2e_verification_full.yaml`.
+- [x] Confirmed all modules (Homr, SR, MMR, OMR-DLN) function correctly in the unified environment.
+
+## 2026-03-17 Phase 5: Cleanup & Documentation
+- [x] Updated `docs/ENVIRONMENTS.md` to reflect the new unified structure and mark older ones as legacy.
+- [x] Moved obsolete Dockerfiles (`Dockerfile`, `Dockerfile.homr`, `Dockerfile.sr_eval`, `Dockerfile.groundingdino`) to `docs/archive/dockerfiles/`.
+- [x] Renamed `Dockerfile.unified` to `Dockerfile`.
+- [x] Verified that all changes are consistent with the `BAR-007` plan.
+
+**Task BAR-007 Completed.**

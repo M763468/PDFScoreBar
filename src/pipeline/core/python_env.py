@@ -17,7 +17,8 @@ def is_in_container() -> bool:
     """Checks if the current process is running inside a Docker container."""
     # Common markers for being inside one of our project containers
     return Path("/.dockerenv").exists() or (
-        Path("/workspace").exists() and (Path("/opt/venv_pipeline").exists() or Path("/opt/venv_sr").exists())
+        Path("/workspace").exists()
+        and (Path("/opt/venv_pipeline").exists() or Path("/opt/venv_sr").exists())
     )
 
 

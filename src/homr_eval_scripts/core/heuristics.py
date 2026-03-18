@@ -277,7 +277,7 @@ def detect_staffs_with_barlines(
         and the staff prediction mask.
     """
     predictions, debug = load_and_preprocess_predictions(
-        image_path, config.enable_debug, config.enable_cache
+        image_path, config.enable_debug, config.enable_cache, config.use_gpu_inference
     )
     symbols = predict_symbols(debug, predictions)
 

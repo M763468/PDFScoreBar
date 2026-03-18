@@ -14,7 +14,7 @@ except ImportError:
     from backports.zoneinfo import ZoneInfo
 
 
-from common.barline_evaluation import (
+from src.common.barline_evaluation import (
     BarlineMatch,
     BarlineMatchResult,
     BarlineSoftMatch,

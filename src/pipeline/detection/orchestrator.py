@@ -64,7 +64,7 @@ class DetectorOrchestrator:
         }
 
     def _run_hybrid_detection(self) -> Dict[str, Any]:
-        """Step 2.1: Hybrid Detection (Subprocess or In-Process)"""
+        """Step 2.1: Hybrid Detection (In-Process homr, Subprocess omr-dln)"""
         detector = HybridDetector(
             det_cfg=self.det_cfg,
             images=self.images,

@@ -93,20 +93,19 @@ def get_pipeline_python(step_name: Optional[str] = None) -> List[str]:
     """Returns the appropriate Python interpreter command (possibly with docker exec).
 
     Args:
-        step_name: Optional step name (e.g., 'detection', 'homr', 'omr_dln', 'sr', 'pdf_to_images', 'numbering')
+        step_name: Optional step name (e.g., 'omr_dln')
 
     Order of preference:
     1. PIPELINE_PYTHON environment variable (explicit override).
-    2. For heavy steps (detection/homr/omr_dln/sr):
+    2. For heavy steps (omr_dln):
        a. If in container: /opt/venv_pipeline/bin/python.
        b. If on host and a supported container is running: 'docker exec <container> <venv_python>'.
-    3. For pdf_to_images: Fallback to .venv_pdf/bin/python.
-    4. Fallback to current sys.executable.
+    3. Fallback to current sys.executable.
     """
     env_python = os.environ.get("PIPELINE_PYTHON")
 
     # 1. Check for heavy steps first
-    if step_name in ("detection", "homr", "omr_dln", "sr"):
+    if step_name == "omr_dln":
         if is_in_container():
             if Path("/opt/venv_pipeline/bin/python").exists():
                 return ["/opt/venv_pipeline/bin/python"]
@@ -131,11 +130,5 @@ def get_pipeline_python(step_name: Optional[str] = None) -> List[str]:
             return ["/opt/venv_pipeline/bin/python"]
         return [sys.executable]
 
-    # 4. Default host fallback for specific steps
-    if step_name == "pdf_to_images":
-        venv_pdf_python = PROJECT_ROOT / ".venv_pdf/bin/python"
-        if venv_pdf_python.exists():
-            return [str(venv_pdf_python)]
-
-    # 5. General fallback
+    # 4. General fallback
     return [sys.executable]

@@ -4,9 +4,11 @@
 # Ignore log directories
 logs/
 logs_user/
+artifacts/
 
 # Ignore data directory
 data/
+datasets/
 
 # Python artifacts
 __pycache__/

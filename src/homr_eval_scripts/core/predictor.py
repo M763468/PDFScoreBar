@@ -8,7 +8,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -23,9 +23,9 @@ try:
 except ImportError:
     pass
 
-from common.thin_barline_finder import ThinBarlineConfig, detect_thin_vertical_runs
-from homr.main import ProcessingConfig, download_weights, parse_staffs
+from homr.main import ProcessingConfig, download_weights
 from homr.music_xml_generator import XmlGeneratorArguments, generate_xml
+from src.common.thin_barline_finder import ThinBarlineConfig, detect_thin_vertical_runs
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if __name__ != "__main__":
@@ -85,7 +85,13 @@ class HomrPredictor:
                 logger.warning(f"HomrPredictor: Failed to enable Segnet cache: {exc}")
 
         # Ensure weights are available
-        download_weights()
+        download_weights(self.config.use_gpu_inference)
+
+        # Initialize transformer config for parse_staffs
+        from homr.main import Config
+
+        self.transformer_config = Config()
+        self.transformer_config.use_gpu_inference = self.config.use_gpu_inference
 
     def predict(
         self,
@@ -146,7 +152,12 @@ class HomrPredictor:
 
         # 2. Run core inference
         predictions, xml_path, seg_shape, runtime_s, notehead_mask, staff_mask = run_homr_on_image(
-            inference_image_path, self.config, xml_args, timeout_s, self.tuning
+            inference_image_path,
+            self.config,
+            xml_args,
+            timeout_s,
+            self.tuning,
+            self.transformer_config,
         )
 
         # 3. Map predictions back to the input image coordinates
@@ -354,6 +365,7 @@ def run_homr_on_image(
     xml_args: XmlGeneratorArguments,
     timeout_s: float,
     tuning: Dict[str, float],
+    transformer_config: Any,
 ) -> Tuple[List[BarlinePrediction], Optional[Path], Tuple[int, int], float, np.ndarray, np.ndarray]:
     start = time.perf_counter()
     try:
@@ -400,7 +412,11 @@ def run_homr_on_image(
     seg_shape = (debug.original_image.shape[0], debug.original_image.shape[1])
 
     try:
-        result_staffs = parse_staffs(debug, multi_staffs, preprocessed_image, selected_staff=-1)
+        from homr.main import parse_staffs
+
+        result_staffs = parse_staffs(
+            debug, multi_staffs, preprocessed_image, transformer_config, selected_staff=-1
+        )
         try:
             title = title_future.result(timeout_s)
         except Exception:  # pylint: disable=broad-except

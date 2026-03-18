@@ -15,6 +15,7 @@ from src.common.barline_evaluation import (
     BARLINE_X_MARGIN,
     BARLINE_Y_MARGIN,
 )
+from src.pdf_to_images import normalise_pages, render_pdf
 from src.pipeline.core.config import get_nested
 from src.pipeline.core.manifest import build_manifest
 from src.pipeline.detection import (
@@ -71,7 +72,8 @@ class PipelineOrchestrator:
         self._persistence = _PIPELINE_PERSISTENCE
         self._mmr_persistence = _MMR_PERSISTENCE
 
-    def _build_pdf_command(self) -> List[str]:
+    def _run_pdf_to_images(self) -> None:
+        """Step 1: Convert PDF to images in-process."""
         pdf_path = get_nested(self.config, "inputs", "pdf_path")
         pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
         if not pdf_path:
@@ -80,46 +82,30 @@ class PipelineOrchestrator:
         output_dir = self.run_dir / "inputs" / "images"
         ensure_dir(output_dir)
 
-        from src.pipeline.core.python_env import get_pipeline_python
-
-        python_cmd = get_pipeline_python("pdf_to_images")
-
-        cmd = python_cmd + [
-            "src/pdf_to_images.py",
-            "--pdf",
-            str(pdf_path),
-            "--output-dir",
-            str(output_dir),
-        ]
-        if pdf_opts.get("dpi") is not None:
-            cmd += ["--dpi", str(pdf_opts["dpi"])]
-        if pdf_opts.get("pages"):
-            cmd += ["--pages", str(pdf_opts["pages"])]
-        if pdf_opts.get("target_width") is not None:
-            cmd += ["--target-width", str(pdf_opts["target_width"])]
-        if pdf_opts.get("target_height") is not None:
-            cmd += ["--target-height", str(pdf_opts["target_height"])]
-        if pdf_opts.get("interpolation"):
-            cmd += ["--interpolation", str(pdf_opts["interpolation"])]
-        if pdf_opts.get("prefix"):
-            cmd += ["--prefix", str(pdf_opts["prefix"])]
-        if pdf_opts.get("format"):
-            cmd += ["--format", str(pdf_opts["format"])]
-
-        cmd.append("--overwrite")
-
-        if pdf_opts.get("alpha"):
-            cmd.append("--alpha")
-        return cmd
-
-    def _run_command(self, cmd: List[str]) -> None:
         if self.dry_run:
-            logger.info(f"Executing (dry-run): {' '.join(cmd)}")
+            logger.info(f"Executing (dry-run): render_pdf {pdf_path} -> {output_dir}")
             return
 
-        from src.pipeline.core.subprocess_utils import run_with_logging
+        import fitz
 
-        run_with_logging(cmd)
+        pdf_path = Path(pdf_path)
+        with fitz.open(pdf_path) as doc:
+            pages = normalise_pages(pdf_opts.get("pages"), doc.page_count)
+
+        logger.info(f"Rendering PDF: {pdf_path} (pages: {pages}) -> {output_dir}")
+        render_pdf(
+            pdf_path,
+            output_dir,
+            dpi=float(pdf_opts.get("dpi", 300.0)),
+            pages=pages,
+            prefix=str(pdf_opts.get("prefix", "page")),
+            fmt=str(pdf_opts.get("format", "png")),
+            keep_alpha=bool(pdf_opts.get("alpha", False)),
+            target_width=pdf_opts.get("target_width"),
+            target_height=pdf_opts.get("target_height"),
+            interpolation=str(pdf_opts.get("interpolation", "area")),
+            overwrite=True,
+        )
 
     def _resolve_page_runs(self, page_ids: List[str]) -> List[str]:
         """Resolves which runs to use for each page (legacy manual resolution)."""
@@ -141,9 +127,8 @@ class PipelineOrchestrator:
             ):
                 logger.info("Skipping pdf_to_images: output directory exists and is not empty.")
             else:
-                pdf_cmd = self._build_pdf_command()
-                commands.append(pdf_cmd)
-                self._run_command(pdf_cmd)
+                self._run_pdf_to_images()
+                commands.append(["inprocess:pdf_to_images"])
 
         logger.info("Collecting images...")
         images = collect_images(self.config, self.run_dir)

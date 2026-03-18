@@ -7,7 +7,6 @@ from typing import Any, Dict, Optional
 
 import torch
 
-from src.pipeline.core.python_env import get_pipeline_python
 from src.pipeline.utils.images import load_image_size
 
 
@@ -23,43 +22,6 @@ def empty_numbering_payload(page_number: int, image_path: Path) -> Dict[str, Any
             }
         ]
     }
-
-
-def build_add_measure_numbers_cmd(
-    *,
-    barlines: Path,
-    staff_mask: Path,
-    image: Path,
-    output_json: Path,
-    page_number: int,
-    start_number: int,
-    config_path: Optional[Path] = None,
-    overlay_path: Optional[Path] = None,
-    force_single_system: bool = False,
-) -> list[str]:
-    python_cmd = get_pipeline_python("numbering")
-    cmd = python_cmd + [
-        "tools/add_measure_numbers.py",
-        "--barlines",
-        str(barlines),
-        "--staff-mask",
-        str(staff_mask),
-        "--image",
-        str(image),
-        "--output-json",
-        str(output_json),
-        "--page-number",
-        str(page_number),
-        "--start-number",
-        str(start_number),
-    ]
-    if config_path:
-        cmd += ["--config", str(config_path)]
-    if overlay_path:
-        cmd += ["--output-overlay", str(overlay_path)]
-    if force_single_system:
-        cmd.append("--force-single-system")
-    return cmd
 
 
 def run_mmr_batch(

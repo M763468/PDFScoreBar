@@ -5,7 +5,6 @@ from __future__ import annotations
 import gc
 import json
 import logging
-import os
 import shutil
 from pathlib import Path
 from typing import Any, Dict, List
@@ -17,15 +16,14 @@ from tqdm import tqdm
 from homr.main import ProcessingConfig
 from homr.music_xml_generator import XmlGeneratorArguments
 from src.common.preprocessing import apply_advanced_sr
-from src.homr_eval_scripts.core.metrics import BarlinePrediction
 from src.homr_eval_scripts.core.predictor import HomrPredictor
 from src.homr_eval_scripts.core.reporting import save_homr_results
 from src.homr_eval_scripts.core.utils import DEFAULT_TUNING
-from src.pipeline.core.python_env import get_pipeline_python
-from src.pipeline.core.subprocess_utils import run_with_logging
 from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
+from src.pipeline.utils.images import load_image
 from src.pipeline.utils.io import ensure_dir
 
+from .omr_dln import run_omr_dln_batch
 from .utils import log_vram_usage
 
 logger = logging.getLogger(__name__)
@@ -43,6 +41,7 @@ class HybridDetector:
         *,
         dry_run: bool,
         skip_existing: bool = False,
+        in_memory_images: Dict[str, Any] | None = None,
     ):
         self.det_cfg = det_cfg
         self.images = images
@@ -50,33 +49,14 @@ class HybridDetector:
         self.project_root = project_root
         self.dry_run = dry_run
         self.skip_existing = skip_existing
-
-    def _get_python_cmd(self, name: str) -> List[str]:
-        """Returns the appropriate python command, falling back to host if images are external."""
-        python_cmd = get_pipeline_python(name)
-        if not (python_cmd and python_cmd[0] == "docker"):
-            return python_cmd
-
-        for img in self.images:
-            try:
-                img.resolve().relative_to(self.project_root)
-            except ValueError:
-                logger.warning(
-                    f"External image path detected: {img}. Falling back to host Python for {name}."
-                )
-                import sys
-
-                return [os.environ.get("PIPELINE_PYTHON", sys.executable)]
-
-        return python_cmd
+        self.in_memory_images = in_memory_images
 
     def run(self) -> Dict[str, Any]:
-        """Step 2.1: Hybrid Detection (Subprocess or In-Process)"""
+        """Step 2.1: Hybrid Detection (In-Process homr, In-Process omr-dln)"""
         hybrid_root = Path(self.det_cfg.get("hybrid_output_root", "logs/hybrid_generalization"))
         hybrid_output_dir = hybrid_root / self.run_id
         ensure_dir(hybrid_output_dir)
 
-        image_paths = [self._rel(path) for path in self.images]
         stems = [path.stem for path in self.images]
         commands: List[List[str]] = []
 
@@ -97,7 +77,7 @@ class HybridDetector:
             )
 
         # 3. OMR-DLN SR
-        logger.info("--- Step 2.1b: OMR-DLN SR (Subprocess) ---")
+        logger.info("--- Step 2.1b: OMR-DLN SR (In-Process) ---")
         sr_root = hybrid_output_dir / "sr" / "batch"
         omr_output = hybrid_output_dir / "omr_sr"
 
@@ -106,20 +86,14 @@ class HybridDetector:
         elif self.skip_existing and self._omr_all_stems_exist(omr_output, stems):
             logger.info("Skipping OMR-DLN: outputs already exist.")
         else:
-            python_cmd_omr = self._get_python_cmd("omr_dln")
-            omr_cmd = (
-                python_cmd_omr
-                + ["experiments/models/eval_omr_dln.py", "--images"]
-                + image_paths
-                + ["--output-dir", self._rel(omr_output), "--pre-computed-sr", self._rel(sr_root)]
-            )
-            commands.append(omr_cmd)
             if not self.dry_run:
-                env = os.environ.copy()
-                env["PYTHONPATH"] = os.pathsep.join(
-                    [str(self.project_root), env.get("PYTHONPATH", "")]
-                ).strip(os.pathsep)
-                run_with_logging(omr_cmd, env=env, check=True)
+                run_omr_dln_batch(
+                    images=self.images,
+                    output_dir=omr_output,
+                    pre_computed_sr_dir=sr_root,
+                    conf=self.det_cfg.get("omr_conf", 0.25),
+                    in_memory_images=self.in_memory_images,
+                )
 
         # 4. Consensus
         logger.info("--- Step 2.1c: Hybrid Consensus Generation ---")
@@ -127,80 +101,52 @@ class HybridDetector:
         ensure_dir(hybrid_results_dir)
 
         for stem in tqdm(stems, desc="Hybrid Consensus", unit="page"):
-            baseline_json = (
-                hybrid_output_dir / "baseline" / "batch" / stem / f"{stem}_detections.json"
-            )
+            baseline_json = hybrid_output_dir / "baseline" / "batch" / stem / f"{stem}_detections.json"
             sr_json = hybrid_output_dir / "sr" / "batch" / stem / f"{stem}_detections.json"
             omr_json = hybrid_output_dir / "omr_sr" / stem / "predictions.json"
-            output_json = hybrid_results_dir / f"{stem}_hybrid.json"
+            out_json = hybrid_results_dir / f"{stem}_hybrid.json"
 
-            if not enable_sr:
-                if baseline_json.exists():
-                    if not self.dry_run:
-                        shutil.copy(baseline_json, output_json)
-                continue
-
-            if not baseline_json.exists() or not sr_json.exists() or not omr_json.exists():
-                logger.warning(f"Missing components for {stem}. Skipping consensus.")
+            if self.skip_existing and out_json.exists():
                 continue
 
             if not self.dry_run:
                 baseline_boxes = load_json_boxes(baseline_json)
                 sr_boxes = load_json_boxes(sr_json)
                 omr_boxes = load_json_boxes(omr_json)
-                hybrid_preds = apply_hybrid_consensus_filter(
+
+                hybrid_boxes = apply_hybrid_consensus_filter(
                     baseline_boxes=baseline_boxes,
                     sr_boxes=sr_boxes,
                     omr_boxes=omr_boxes,
+                    iou_thresh=float(self.det_cfg.get("hybrid_iou_threshold", 0.5)),
                 )
-                output_json.write_text(json.dumps(hybrid_preds, indent=2))
+                with open(out_json, "w") as f:
+                    json.dump(hybrid_boxes, f)
 
-        return {"commands": commands, "hybrid_output_dir": hybrid_output_dir}
-
-    def _rel(self, path: Path) -> str:
-        try:
-            return str(path.resolve().relative_to(self.project_root))
-        except ValueError:
-            return str(path)
-
-    def _all_stems_exist(
-        self, base_dir: Path, stems_to_check: List[str], glob_pattern: str
-    ) -> bool:
-        if not base_dir.exists():
-            return False
-        found_stems = {p.parent.name for p in base_dir.glob(glob_pattern)}
-        return all(s in found_stems for s in stems_to_check)
+        return {
+            "commands": [["inprocess:homr_hybrid"], ["inprocess:omr_dln"]],
+            "hybrid_output_dir": hybrid_output_dir,
+        }
 
     def _omr_all_stems_exist(self, omr_output: Path, stems: List[str]) -> bool:
-        if not omr_output.exists():
-            return False
-        found = {p.parent.name for p in omr_output.glob("*/predictions.json")}
-        return all(s in found for s in stems)
+        for stem in stems:
+            if not (omr_output / stem / "predictions.json").exists():
+                return False
+        return True
 
-    def _run_homr_in_process(
-        self,
-        output_root: Path,
-        *,
-        enable_sr: bool,
-        sr_scale: int = 2,
-    ) -> None:
-        """Runs Homr inference (baseline or SR) in-process for persistence."""
-        stems = [p.stem for p in self.images]
-        if self.skip_existing and self._all_stems_exist(output_root, stems, "batch/*/*.json"):
-            logger.info(f"Skipping in-process Homr for {output_root.name}: outputs exist.")
+    def _run_homr_in_process(self, output_root: Path, enable_sr: bool, sr_scale: int = 2) -> None:
+        """Run homr detection in-process."""
+        if self.skip_existing and (output_root / "batch").exists():
+            logger.info(f"Skipping in-process Homr for {'sr' if enable_sr else 'baseline'}: outputs exist.")
             return
 
-        if self.dry_run:
-            logger.info(f"Dry run: In-process Homr for {len(self.images)} images -> {output_root}")
-            return
-
+        logger.info(f"--- Homr In-Process Phase 1 (SR={enable_sr}) ---")
         config = ProcessingConfig(
-            bool(self.det_cfg.get("enable_debug", False)),
-            bool(self.det_cfg.get("enable_cache", True)),
-            bool(self.det_cfg.get("write_staff_positions", False)),
-            False,
-            -1,
-            torch.cuda.is_available(),
+            False, # enable_debug
+            True,  # enable_cache
+            False, # write_staff_positions
+            False, # read_staff_positions
+            -1,    # selected_staff
         )
         tuning = DEFAULT_TUNING.copy()
         tuning.update(
@@ -210,25 +156,33 @@ class HybridDetector:
             }
         )
 
-        predictor = HomrPredictor(config, tuning)
+        predictor = HomrPredictor(
+            config, 
+            tuning, 
+            use_gpu_inference=torch.cuda.is_available()
+        )
         xml_args = XmlGeneratorArguments(False, None, None)
 
         try:
-            working_images = []
             persistent_upsampler = None
 
-            logger.info(f"--- Homr In-Process Phase 1 (SR={enable_sr}) ---")
             log_vram_usage("Before SR")
             for img in tqdm(self.images, desc="SR/Preparation", unit="page"):
                 image_run_dir = output_root / "batch" / img.stem
                 ensure_dir(image_run_dir)
                 working_path = image_run_dir / img.name
-                shutil.copy2(img, working_path)
+                
+                if img.exists():
+                    shutil.copy2(img, working_path)
+                else:
+                    # Support in-memory images: if src doesn't exist on disk, use memory cache
+                    img_data = load_image(img, in_memory_images=self.in_memory_images)
+                    cv2.imwrite(str(working_path), img_data)
 
                 scale = 1
                 if enable_sr:
                     model_name = "RealESRGAN_x4plus" if sr_scale == 4 else "RealESRGAN_x2plus"
-                    img_bgr = cv2.imread(str(working_path))
+                    img_bgr = load_image(working_path, in_memory_images=self.in_memory_images)
                     if img_bgr is not None:
                         upscaled, persistent_upsampler = apply_advanced_sr(
                             img_bgr,
@@ -239,40 +193,66 @@ class HybridDetector:
                             fp32=self.det_cfg.get("sr_fp32", False),
                             upsampler=persistent_upsampler,
                         )
-                        cv2.imwrite(str(working_path), upscaled)
+                        sr_img_path = image_run_dir / f"{img.stem}.png"
+                        cv2.imwrite(str(sr_img_path), upscaled)
                         scale = sr_scale
-                working_images.append((img, working_path, scale))
-
-            persistent_upsampler = None
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-                torch.cuda.synchronize()
-            gc.collect()
-            log_vram_usage("After SR Cleanup")
+                        # Memory cleanup for large SR images
+                        del upscaled
+                        gc.collect()
+                        if torch.cuda.is_available():
+                            torch.cuda.empty_cache()
 
             logger.info("--- Homr In-Process Phase 2 (Inference) ---")
-            for original_path, working_path, scale in tqdm(
-                working_images, desc="Homr Inference", unit="page"
-            ):
-                image_run_dir = output_root / "batch" / original_path.stem
-                predictions, _, _, _, notehead_mask, staff_mask, _, _ = predictor.predict(
-                    working_path, xml_args, sr_scale=scale, image_run_dir=image_run_dir
-                )
+            for img in tqdm(self.images, desc="Homr Inference", unit="page"):
+                stem = img.stem
+                image_run_dir = output_root / "batch" / stem
+                working_path = image_run_dir / img.name
+                sr_img_path = image_run_dir / f"{stem}.png"
+                
+                inference_path = sr_img_path if enable_sr and sr_img_path.exists() else working_path
+                scale = sr_scale if enable_sr and sr_img_path.exists() else 1
 
-                metrics_predictions = [
-                    BarlinePrediction(
-                        pred_bbox=p.pred_bbox,
-                        orig_bbox=tuple(int(round(c / scale)) for c in p.orig_bbox),
-                        system_index=p.system_index,
-                        staff_index=p.staff_index,
+                if not self.dry_run:
+                    # predict returns: (all_preds, xml_path, (h, w), latency, notehead_mask, staff_mask, staff_preds, barline_preds)
+                    res = predictor.predict(
+                        Path(inference_path),
+                        xml_args,
+                        sr_scale=scale
                     )
-                    for p in predictions
-                ]
-                save_homr_results(
-                    original_path, image_run_dir, metrics_predictions, notehead_mask, staff_mask
-                )
-                log_vram_usage(f"After Page {original_path.stem}")
+                    metrics_predictions = res[0]
+                    notehead_mask = res[4]
+                    staff_mask = res[5]
+
+                    save_homr_results(
+                        Path(inference_path),
+                        image_run_dir,
+                        metrics_predictions,
+                        notehead_mask,
+                        staff_mask
+                    )
+                    # Coordinates are in inference space, need to scale back to 1x if SR was used
+                    if scale > 1:
+                        self._rescale_detections(image_run_dir / f"{stem}_detections.json", scale)
+                
+                log_vram_usage(f"After Page {stem}")
 
         finally:
             predictor.cleanup()
             log_vram_usage("Final Cleanup")
+
+    def _rescale_detections(self, path: Path, scale: float) -> None:
+        if not path.exists():
+            return
+        with open(path, "r") as f:
+            data = json.load(f)
+        
+        if isinstance(data, dict) and "predictions" in data:
+            for pred in data["predictions"]:
+                # Do NOT rescale pred_bbox as it is in inference coordinate space
+                if "orig_bbox" in pred:
+                    pred["orig_bbox"] = [int(round(v / scale)) for v in pred["orig_bbox"]]
+        elif isinstance(data, list):
+            data = [[int(round(v / scale)) for v in box] for box in data]
+            
+        with open(path, "w") as f:
+            json.dump(data, f)

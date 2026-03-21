@@ -60,10 +60,12 @@ class HomrPredictor:
         config: ProcessingConfig,
         tuning: Dict[str, float],
         enable_cache: bool = True,
+        use_gpu_inference: bool = False,
     ) -> None:
         self.config = config
         self.tuning = tuning
         self.enable_cache = enable_cache
+        self.use_gpu_inference = use_gpu_inference
 
         # Ensure Segnet cache is enabled for persistence
         if self.enable_cache:
@@ -85,13 +87,14 @@ class HomrPredictor:
                 logger.warning(f"HomrPredictor: Failed to enable Segnet cache: {exc}")
 
         # Ensure weights are available
-        download_weights(self.config.use_gpu_inference)
+        download_weights()
+        
+        # Note: use_gpu_inference is handled internally by SegNet/Transformer
+        # when running in-process via ONNX runtime settings.
 
         # Initialize transformer config for parse_staffs
-        from homr.main import Config
-
-        self.transformer_config = Config()
-        self.transformer_config.use_gpu_inference = self.config.use_gpu_inference
+        from homr.transformer.configs import default_config
+        default_config.use_gpu_inference = self.use_gpu_inference
 
     def predict(
         self,
@@ -157,7 +160,6 @@ class HomrPredictor:
             xml_args,
             timeout_s,
             self.tuning,
-            self.transformer_config,
         )
 
         # 3. Map predictions back to the input image coordinates
@@ -365,7 +367,6 @@ def run_homr_on_image(
     xml_args: XmlGeneratorArguments,
     timeout_s: float,
     tuning: Dict[str, float],
-    transformer_config: Any,
 ) -> Tuple[List[BarlinePrediction], Optional[Path], Tuple[int, int], float, np.ndarray, np.ndarray]:
     start = time.perf_counter()
     try:
@@ -415,7 +416,7 @@ def run_homr_on_image(
         from homr.main import parse_staffs
 
         result_staffs = parse_staffs(
-            debug, multi_staffs, preprocessed_image, transformer_config, selected_staff=-1
+            debug, multi_staffs, preprocessed_image, selected_staff=-1
         )
         try:
             title = title_future.result(timeout_s)

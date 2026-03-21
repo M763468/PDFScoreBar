@@ -21,6 +21,7 @@ except ImportError:  # pragma: no cover - optional in minimal test env
 
 from src.pipeline.core.run_ids import build_probe_run_id, build_probe_run_id_from_parts
 from src.pipeline.steps.hybrid_consensus import load_json_boxes
+from src.pipeline.utils.images import load_image
 from src.pipeline.utils.io import ensure_dir
 from src.pipeline.utils.wide_split_utils import split_wide_candidates
 
@@ -250,11 +251,16 @@ def _build_staff_mask_map(staff_mask_dir: Optional[Path]) -> Dict[str, Path]:
     staff_mask_map: Dict[str, Path] = {}
     if not staff_mask_dir or not staff_mask_dir.exists():
         return staff_mask_map
-    for path in staff_mask_dir.rglob("*_debug_3_staff.png"):
-        stem_key = path.name.replace("_proxy_debug_3_staff.png", "").replace(
-            "_debug_3_staff.png", ""
-        )
-        staff_mask_map[stem_key] = path
+    
+    # Support both legacy Homr tool debug patterns and the new in-process filename pattern
+    patterns = ["*_debug_3_staff.png", "*_staff_mask.png"]
+    for pattern in patterns:
+        for path in staff_mask_dir.rglob(pattern):
+            stem_key = path.name.replace("_proxy_debug_3_staff.png", "").replace(
+                "_debug_3_staff.png", ""
+            ).replace("_staff_mask.png", "")
+            if stem_key not in staff_mask_map:
+                staff_mask_map[stem_key] = path
     return staff_mask_map
 
 
@@ -278,6 +284,7 @@ def run_probe_scan_batch(
     probe_endpoint_y_scale: Optional[float] = None,
     skip_existing: bool = False,
     input_image_scale: float = 1.0,
+    in_memory_images: Dict[str, Any] | None = None,
 ) -> int:
     """Generate probe candidates for all pages in-process.
 
@@ -332,7 +339,7 @@ def run_probe_scan_batch(
             processed += 1
             continue
 
-        img = cv2.imread(str(img_path))
+        img = load_image(img_path, in_memory_images=in_memory_images)
         if img is None:
             logger.warning("Failed to load image: %s", img_path)
             continue

@@ -1,13 +1,13 @@
 run:
-  run_id: eval2_sr_x2_test_split
-  output_root: logs/full_pipeline_runs/sr_x2_test
+  run_id: shostakovich_repro_100
+  output_root: logs/full_pipeline_runs/shostakovich_repro_100
 
 inputs:
-  pdf_path: data/evaluation2/pdfs/Va_Prokofiev_Symphony1.pdf
+  pdf_path: data/evaluation2/pdfs/Shostakovich-Festival_Overture_Va.pdf
   pdf_to_images:
-    output_dir: logs/preprocess/evaluation2/Va_Prokofiev_Symphony1
+    output_dir: logs/preprocess/evaluation2/Shostakovich-Festival_Overture_Va_360dpi
     dpi: 360
-    pages: "1"
+    pages: "1,2,3,4,5,6,7,8,9"
     interpolation: area
     prefix: page
     format: png
@@ -28,7 +28,7 @@ detection:
   sr_scale: 2
   crop_recenter_on_bbox_ink: true
   crop_recenter_max_shift_unit_ratio: 0.5
-  hybrid_output_root: logs/hybrid_generalization/sr_x2_test
+  hybrid_output_root: logs/hybrid_generalization/shostakovich_repro_100
   ink_threshold: 180
   min_ratio: 0.85
   min_height_ratio: 0.012

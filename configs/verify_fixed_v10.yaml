@@ -1,0 +1,25 @@
+# Verification of SR-Aware Param Scaling Fix (v10)
+run_id: "verify_fixed_v10"
+output_root: "logs/full_pipeline_runs/verify_fixed_v10"
+
+inputs:
+  pdf_to_images:
+    output_dir: "data/evaluation2/images/Shostakovich-Festival_Overture_Va"
+    image_glob: "*.png"
+
+steps:
+  detection: true
+  numbering: true
+
+detection:
+  hybrid_output_root: "logs/hybrid_generalization/verify_fixed_v10"
+  enable_sr: true
+  sr_scale: 2
+  stem_context_heuristics_enabled: false
+  ink_threshold: 235
+  min_ratio: 0.70
+  cnn_model_path: "logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth"
+
+numbering:
+  enabled: true
+  output_root: "logs/numbering/verify_fixed_v10"

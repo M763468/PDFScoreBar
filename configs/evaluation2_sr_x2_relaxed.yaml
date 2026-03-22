@@ -3,11 +3,11 @@ run:
   output_root: logs/full_pipeline_runs/sr_x2_test
 
 inputs:
-  pdf_path: data/evaluation2/pdfs/Va_Prokofiev_Symphony1.pdf
+  pdf_path: data/evaluation2/pdfs/Shostakovich-Festival_Overture_Va.pdf
   pdf_to_images:
     output_dir: logs/preprocess/evaluation2/Va_Prokofiev_Symphony1
     dpi: 360
-    pages: "1"
+    pages: !!null
     interpolation: area
     prefix: page
     format: png
@@ -29,8 +29,8 @@ detection:
   crop_recenter_on_bbox_ink: true
   crop_recenter_max_shift_unit_ratio: 0.5
   hybrid_output_root: logs/hybrid_generalization/sr_x2_test
-  ink_threshold: 180
-  min_ratio: 0.85
+  ink_threshold: 230
+  min_ratio: 0.70
   min_height_ratio: 0.012
   cnn_model_path: logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
   cnn_threshold: 0.1
@@ -43,8 +43,6 @@ detection:
   post_split_min_width_unit_ratio: 0.5
   post_split_box_width_unit_ratio: 0.4
   post_split_peak_distance_unit_ratio: 0.3
-  stem_context_heuristics_enabled: false
-  enable_end_barline_recovery: false
 
 filters:
   blank_page: auto

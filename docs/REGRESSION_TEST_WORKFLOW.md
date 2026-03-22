@@ -40,7 +40,14 @@ make test
 - If legacy tests are moved out, record the reason and expected return condition in `tests_legacy/README.md`.
 
 ## Real-Data Smoke (Detection Path)
-Use the already organized smoke assets under `logs/issue23_smoke/`.
+Use the already organized smoke assets under `logs/issue23_smoke/` and the newly verified Shostakovich baseline documentation for high-DPI scaling checks.
+
+### 1. High-DPI Detection Recall (Critical Fix for Barlines)
+If modifying `predictor.py` or tuning geometric/CNN constraints in the detection pipeline, **you must verify that full-page barlines are not rejected at high resolutions**.
+- Follow the instructions in `docs/REPRODUCE_100_RECALL.md` to run the baseline evaluation.
+- Ensure the total output explicitly matches or exceeds the **351 GT count** for the Shostakovich test set.
+
+### 2. Issue 23 General Smoke Test
 
 1. Run integrated pipeline (inside `sr_eval_gpu`)
 ```bash

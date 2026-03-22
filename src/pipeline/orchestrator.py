@@ -93,19 +93,32 @@ class PipelineOrchestrator:
             pages = normalise_pages(pdf_opts.get("pages"), doc.page_count)
 
         logger.info(f"Rendering PDF: {pdf_path} (pages: {pages}) -> {output_dir}")
-        render_pdf(
+        from src.pdf_to_images import render_pdf_to_memory
+        from src.pipeline.utils.images import get_image_cache
+        
+        rendered = render_pdf_to_memory(
             pdf_path,
-            output_dir,
             dpi=float(pdf_opts.get("dpi", 300.0)),
             pages=pages,
-            prefix=str(pdf_opts.get("prefix", "page")),
-            fmt=str(pdf_opts.get("format", "png")),
             keep_alpha=bool(pdf_opts.get("alpha", False)),
             target_width=pdf_opts.get("target_width"),
             target_height=pdf_opts.get("target_height"),
             interpolation=str(pdf_opts.get("interpolation", "area")),
-            overwrite=True,
         )
+        
+        cache = get_image_cache()
+        prefix = str(pdf_opts.get("prefix", "page"))
+        fmt = str(pdf_opts.get("format", "png"))
+        
+        for page_index, image in rendered:
+            stem = f"{prefix}_{page_index + 1:03d}"
+            cache[stem] = image
+            
+            # Optionally write to disk for debug/persistence
+            if self.debug or pdf_opts.get("output_dir"):
+                from src.pdf_to_images import save_image
+                destination = output_dir / f"{stem}.{fmt}"
+                save_image(destination, image, fmt=fmt)
 
     def _resolve_page_runs(self, page_ids: List[str]) -> List[str]:
         """Resolves which runs to use for each page (legacy manual resolution)."""
@@ -131,7 +144,9 @@ class PipelineOrchestrator:
                 commands.append(["inprocess:pdf_to_images"])
 
         logger.info("Collecting images...")
-        images = collect_images(self.config, self.run_dir)
+        from src.pipeline.utils.images import get_image_cache
+        mem_images = get_image_cache()
+        images = collect_images(self.config, self.run_dir, in_memory_images=mem_images)
         if page_limit is not None:
             images = images[:page_limit]
         page_ids = resolve_page_ids(self.config, images)
@@ -149,7 +164,7 @@ class PipelineOrchestrator:
                 self.config["detection"]["probe_skip_existing"] = True
 
             det_result = run_detection_step(
-                self.config, images, page_ids, self.run_id, self.run_dir, dry_run=self.dry_run
+                self.config, images, page_ids, self.run_id, self.run_dir, dry_run=self.dry_run, in_memory_images=mem_images
             )
             commands.extend(det_result["commands"])
             probe_output_dir = det_result["probe_output_dir"]
@@ -485,6 +500,11 @@ class PipelineOrchestrator:
 
         numbering_final_paths: List[Path] = []
         numbering_pipeline = self._persistence.get("numbering_pipeline")
+        if numbering_pipeline is None:
+            from src.measure_numbering.pipeline import MeasureNumberingPipeline
+
+            numbering_pipeline = MeasureNumberingPipeline()
+            self._persistence["numbering_pipeline"] = numbering_pipeline
 
         for page_id in tqdm(page_ids, desc="Phase C: Final Numbering", unit="page"):
             ctx = page_ctx[page_id]

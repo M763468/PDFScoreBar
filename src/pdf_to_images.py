@@ -138,9 +138,11 @@ def resize_image(
         return image
     height, width = image.shape[:2]
     if target_width is None:
+        assert target_height is not None
         scale = target_height / height
         target_width = max(1, int(round(width * scale)))
     if target_height is None:
+        assert target_width is not None
         scale = target_width / width
         target_height = max(1, int(round(height * scale)))
     interp_flag = INTERPOLATION_MAP[interpolation]
@@ -151,6 +153,36 @@ def save_image(path: Path, image: np.ndarray, *, fmt: str) -> None:
     success = cv2.imwrite(str(path), image)
     if not success:
         raise PdfConversionError(f"Failed to write image: {path}")
+
+
+def render_pdf_to_memory(
+    pdf_path: Path,
+    *,
+    dpi: float,
+    pages: Sequence[int],
+    keep_alpha: bool = False,
+    target_width: Optional[int] = None,
+    target_height: Optional[int] = None,
+    interpolation: str = "area",
+) -> List[tuple[int, np.ndarray]]:
+    if not pdf_path.exists():
+        raise FileNotFoundError(f"PDF not found: {pdf_path}")
+
+    rendered: List[tuple[int, np.ndarray]] = []
+    with fitz.open(pdf_path) as document:
+        for page_index in pages:
+            page = document.load_page(page_index)
+            matrix = fitz.Matrix(dpi / 72.0, dpi / 72.0)
+            pix = page.get_pixmap(matrix=matrix, alpha=keep_alpha)
+            image = pixmap_to_array(pix, keep_alpha=keep_alpha)
+            image = resize_image(
+                image,
+                target_width=target_width,
+                target_height=target_height,
+                interpolation=interpolation,
+            )
+            rendered.append((page_index, image))
+    return rendered
 
 
 def render_pdf(
@@ -167,29 +199,26 @@ def render_pdf(
     interpolation: str,
     overwrite: bool,
 ) -> List[Path]:
-    if not pdf_path.exists():
-        raise FileNotFoundError(f"PDF not found: {pdf_path}")
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    rendered_images = render_pdf_to_memory(
+        pdf_path,
+        dpi=dpi,
+        pages=pages,
+        keep_alpha=keep_alpha,
+        target_width=target_width,
+        target_height=target_height,
+        interpolation=interpolation,
+    )
+
     written: List[Path] = []
-    with fitz.open(pdf_path) as document:
-        for page_index in pages:
-            page = document.load_page(page_index)
-            matrix = fitz.Matrix(dpi / 72.0, dpi / 72.0)
-            pix = page.get_pixmap(matrix=matrix, alpha=keep_alpha)
-            image = pixmap_to_array(pix, keep_alpha=keep_alpha)
-            image = resize_image(
-                image,
-                target_width=target_width,
-                target_height=target_height,
-                interpolation=interpolation,
-            )
-            name = f"{prefix}_{page_index + 1:03d}.{fmt}"
-            destination = output_dir / name
-            if destination.exists() and not overwrite:
-                raise PdfConversionError(f"Refusing to overwrite existing file: {destination}")
-            save_image(destination, image, fmt=fmt)
-            written.append(destination)
+    for page_index, image in rendered_images:
+        name = f"{prefix}_{page_index + 1:03d}.{fmt}"
+        destination = output_dir / name
+        if destination.exists() and not overwrite:
+            raise PdfConversionError(f"Refusing to overwrite existing file: {destination}")
+        save_image(destination, image, fmt=fmt)
+        written.append(destination)
     return written
 
 

@@ -87,7 +87,7 @@ class HomrPredictor:
                 logger.warning(f"HomrPredictor: Failed to enable Segnet cache: {exc}")
 
         # Ensure weights are available
-        download_weights()
+        download_weights(self.use_gpu_inference)
         
         # Note: use_gpu_inference is handled internally by SegNet/Transformer
         # when running in-process via ONNX runtime settings.
@@ -160,6 +160,7 @@ class HomrPredictor:
             xml_args,
             timeout_s,
             self.tuning,
+            self.use_gpu_inference,
         )
 
         # 3. Map predictions back to the input image coordinates
@@ -206,10 +207,16 @@ class HomrPredictor:
         tb_config = ThinBarlineConfig()
         if sr_scale > 1:
             # Scale thin barline parameters
+            # Note: max_height needs to be large enough to cover multi-staff barlines in SR space.
+            # In 600dpi, full-staff is ~140px. In 1200dpi (SRx2), it is ~280px.
+            # We set a generous limit (800 * sr_scale) to avoid rejections.
             tb_config = ThinBarlineConfig(
-                min_height=tb_config.min_height * sr_scale,
-                max_height=tb_config.max_height * sr_scale,
-                max_width=tb_config.max_width * sr_scale,
+                min_height=int(sr_scale * 8),
+                max_height=int(sr_scale * 800),
+                max_width=int(sr_scale * 30),  # Scale width too
+                pixel_threshold=235,
+                max_intensity_std=120.0,
+                max_intensity_std_relaxed=150.0,
                 y_merge_tolerance=tb_config.y_merge_tolerance * sr_scale,
                 y_center_tolerance=tb_config.y_center_tolerance * sr_scale,
                 x_center_tolerance=tb_config.x_center_tolerance * sr_scale,
@@ -218,8 +225,17 @@ class HomrPredictor:
                 left_margin_limit=tb_config.left_margin_limit * sr_scale,
                 cluster_x_tolerance=tb_config.cluster_x_tolerance * sr_scale,
                 cluster_reject_span=tb_config.cluster_reject_span * sr_scale,
-                pixel_threshold=tb_config.pixel_threshold,
                 dark_pixel_threshold=tb_config.dark_pixel_threshold,
+            )
+        else:
+            # 600dpi (Standard) optimizations
+            tb_config = ThinBarlineConfig(
+                min_height=18,
+                max_height=800, # Allow multi-staff
+                max_width=30,
+                pixel_threshold=235,
+                max_intensity_std=120.0,
+                max_intensity_std_relaxed=150.0,
             )
 
         extra_barlines = detect_thin_vertical_runs(
@@ -367,6 +383,7 @@ def run_homr_on_image(
     xml_args: XmlGeneratorArguments,
     timeout_s: float,
     tuning: Dict[str, float],
+    use_gpu_inference: bool,
 ) -> Tuple[List[BarlinePrediction], Optional[Path], Tuple[int, int], float, np.ndarray, np.ndarray]:
     start = time.perf_counter()
     try:
@@ -378,7 +395,7 @@ def run_homr_on_image(
             bar_line_boxes,
             notehead_mask,
             staff_mask,
-        ) = detect_staffs_with_barlines(str(image_path), config, tuning)
+        ) = detect_staffs_with_barlines(str(image_path), config, tuning, use_gpu_inference)
     except RuntimeError as e:
         msg = str(e)
         if "No staffs found" in msg or "No noteheads found" in msg:
@@ -415,9 +432,18 @@ def run_homr_on_image(
     try:
         from homr.main import parse_staffs
 
-        result_staffs = parse_staffs(
-            debug, multi_staffs, preprocessed_image, selected_staff=-1
-        )
+        try:
+            from homr.transformer.configs import default_config
+
+            default_config.use_gpu_inference = use_gpu_inference
+            result_staffs = parse_staffs(
+                debug, multi_staffs, preprocessed_image, default_config, selected_staff=-1
+            )
+        except (TypeError, ImportError):
+            # Fallback for legacy version that doesn't take config or where config is missing
+            result_staffs = parse_staffs(
+                debug, multi_staffs, preprocessed_image, selected_staff=-1
+            )
         try:
             title = title_future.result(timeout_s)
         except Exception:  # pylint: disable=broad-except

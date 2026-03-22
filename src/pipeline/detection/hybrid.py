@@ -23,7 +23,11 @@ from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, l
 from src.pipeline.utils.images import load_image
 from src.pipeline.utils.io import ensure_dir
 
-from .omr_dln import run_omr_dln_batch
+try:
+    from .omr_dln import run_omr_dln_batch
+    OMR_DLN_AVAILABLE = True
+except ImportError:
+    OMR_DLN_AVAILABLE = False
 from .utils import log_vram_usage
 
 logger = logging.getLogger(__name__)
@@ -147,6 +151,7 @@ class HybridDetector:
             False, # write_staff_positions
             False, # read_staff_positions
             -1,    # selected_staff
+            torch.cuda.is_available()  # use_gpu_inference
         )
         tuning = DEFAULT_TUNING.copy()
         tuning.update(

@@ -17,6 +17,7 @@ from tqdm import tqdm
 from src.pipeline.core.run_ids import build_probe_run_id
 from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask
 from src.pipeline.steps.filters import filter_by_staff_overlap
+from src.pipeline.utils.images import load_image
 
 logger = logging.getLogger(__name__)
 
@@ -171,6 +172,7 @@ def _score_directory(
     crop_recenter_on_bbox_ink: bool = False,
     crop_recenter_max_shift_unit_ratio: float = 0.35,
     input_image_scale: float = 1.0,
+    in_memory_images: Dict[str, Any] | None = None,
 ) -> bool:
     candidates_path = run_dir / "pipeline2_no_peak_candidates.json"
     if not candidates_path.exists():
@@ -191,7 +193,7 @@ def _score_directory(
         (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text(json.dumps([], indent=2))
         return True
 
-    img = cv2.imread(str(image_path))
+    img = load_image(image_path, in_memory_images=in_memory_images)
     if img is None:
         logger.warning("Failed to load image: %s", image_path)
         return False
@@ -321,6 +323,7 @@ def run_cnn_scoring_batch(
     crop_recenter_on_bbox_ink: bool = False,
     crop_recenter_max_shift_unit_ratio: float = 0.35,
     input_image_scale: float = 1.0,
+    in_memory_images: Dict[str, Any] | None = None,
 ) -> int:
     """Run CNN scoring for all probe output dirs with one model load."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -352,6 +355,7 @@ def run_cnn_scoring_batch(
             crop_recenter_on_bbox_ink=crop_recenter_on_bbox_ink,
             crop_recenter_max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio,
             input_image_scale=input_image_scale,
+            in_memory_images=in_memory_images,
         ):
             processed += 1
     return processed

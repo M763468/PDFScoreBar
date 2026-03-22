@@ -714,9 +714,15 @@ def detect_staffs_with_barlines(
         title future, detected bar line boxes, the notehead prediction mask,
         and the staff prediction mask.
     """
-    predictions, debug = load_and_preprocess_predictions(
-        image_path, config.enable_debug, config.enable_cache
-    )
+    use_gpu_inference = torch.cuda.is_available()
+    try:
+        predictions, debug = load_and_preprocess_predictions(
+            image_path, config.enable_debug, config.enable_cache, use_gpu_inference
+        )
+    except TypeError:
+        predictions, debug = load_and_preprocess_predictions(
+            image_path, config.enable_debug, config.enable_cache
+        )
     symbols = predict_symbols(debug, predictions)
 
     extra_bar_lines: List[Any] = []
@@ -2263,7 +2269,16 @@ def run_homr_on_image(
     seg_shape = (debug.original_image.shape[0], debug.original_image.shape[1])
 
     try:
-        result_staffs = parse_staffs(debug, multi_staffs, preprocessed_image, selected_staff=-1)
+        use_gpu_inference = torch.cuda.is_available()
+        try:
+            from homr.transformer.configs import default_config
+
+            default_config.use_gpu_inference = use_gpu_inference
+            result_staffs = parse_staffs(
+                debug, multi_staffs, preprocessed_image, default_config, selected_staff=-1
+            )
+        except (TypeError, ImportError):
+            result_staffs = parse_staffs(debug, multi_staffs, preprocessed_image, selected_staff=-1)
         try:
             title = title_future.result(timeout_s)
         except Exception:  # pylint: disable=broad-except
@@ -2805,13 +2820,24 @@ def run_evaluation(argv: Optional[Sequence[str]] = None) -> Path:
                 cv2.imwrite(str(proxy_path), proxy_img)
                 inference_image_path = proxy_path
 
-        config = ProcessingConfig(
-            True,
-            args.cache,
-            args.write_staff_positions,
-            False,
-            -1,
-        )
+        use_gpu_inference = torch.cuda.is_available()
+        if hasattr(ProcessingConfig, "use_gpu_inference"):
+            config = ProcessingConfig(
+                True,
+                args.cache,
+                args.write_staff_positions,
+                False,
+                -1,
+                use_gpu_inference,
+            )
+        else:
+            config = ProcessingConfig(
+                True,
+                args.cache,
+                args.write_staff_positions,
+                False,
+                -1,
+            )
         xml_args = XmlGeneratorArguments(False, None, None)
 
         predictions, xml_path, seg_shape, runtime_s, notehead_mask, staff_mask = run_homr_on_image(

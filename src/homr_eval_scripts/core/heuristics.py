@@ -267,6 +267,7 @@ def detect_staffs_with_barlines(
     image_path: str,
     config: ProcessingConfig,
     tuning: Dict[str, float],
+    use_gpu_inference: bool,
 ) -> Tuple[List[Any], np.ndarray, Any, Future[str], List[Any], np.ndarray, np.ndarray]:
     """
     Runs the core homr staff and symbol detection pipeline.
@@ -277,7 +278,7 @@ def detect_staffs_with_barlines(
         and the staff prediction mask.
     """
     predictions, debug = load_and_preprocess_predictions(
-        image_path, config.enable_debug, config.enable_cache, config.use_gpu_inference
+        image_path, config.enable_debug, config.enable_cache, use_gpu_inference
     )
     symbols = predict_symbols(debug, predictions)
 

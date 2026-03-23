@@ -31,15 +31,12 @@ Our debug script `tmp/debug_fns.py` identified that the 7 FNs are all:
 3. **GT Difference**: The current `boxes_sorted.json` might have more rigorous/different targets than the set used during the 300 DPI reports.
 4. **Matching Criteria**: Older reports might have used `center_anchor` with a wider tolerance (e.g. 12-15px at 300 DPI, which is physically smaller than at 600 DPI).
 
-## Next Steps
-- [x] Create a new Issue focusing on #25 reproduction: [#117](https://github.com/M763468/PDFScoreBar/issues/117)
-- [ ] Investigate the 7 specific FNs on Festival Overture (Pages 1, 3, 5, 8, 9).
-- [ ] Cross-check the CNN score distribution for these 7 missing targets.
 
-## Useful Resources
-- **Verification Scripts**: 
-    - [verify_v10_accuracy.py](file:///home/masaki_muramatsu/ws_PDFScoreBar/verify_v10_accuracy.py) (Python)
-    - [eval_final_metrics_smart.sh](file:///home/masaki_muramatsu/ws_PDFScoreBar/eval_final_metrics_smart.sh) (Bash - avoids WSL hangs)
+## #93の枠内で#25を再現しようとしていた時のResouce
+- **Verification Scripts** (located in [tools/repro_accuracy/](file:///home/masaki_muramatsu/ws_PDFScoreBar/tools/repro_accuracy/)): 
+    - [verify_v10_accuracy.py](file:///home/masaki_muramatsu/ws_PDFScoreBar/tools/repro_accuracy/verify_v10_accuracy.py) (Full TP/FP/FN Accuracy)
+    - [eval_final_metrics_smart.sh](file:///home/masaki_muramatsu/ws_PDFScoreBar/tools/repro_accuracy/eval_final_metrics_smart.sh) (Candidate count summary)
+    - [run_eval2_bulletproof.sh](file:///home/masaki_muramatsu/ws_PDFScoreBar/tools/repro_accuracy/run_eval2_bulletproof.sh) (Batch pipeline runner)
 - **Debug Artifacts**: `logs/hybrid_generalization/verify_fixed_v10/`
 
 
@@ -58,3 +55,9 @@ Our debug script `tmp/debug_fns.py` identified that the 7 FNs are all:
   - 本来なら作業用ブランチを作るが、各マージコミットの状態で同じ条件で調査するためには直接のコミットにチェックアウトして実験するのが望ましい
   - configファイルはどのコミットに対応したものかわかる形でstashしながら持っていく？or各実験を行うコミットをコピーする専用の実験用ブランチを作る？
   - いずれにせよ、現在の作業ブランチを汚染しない形で一時的な実験を続ける必要がある。
+- 作業としては以下で進めてほしい
+  1. dpiが以前と明らかに違うので、上記の「固定値」を画像サイズ比で計算するように変更して実験
+  2. それでだめなら一度#25のコミットにチェックアウトして、そこで動作確認
+  3. 移行、大きなマージコミットで動作確認を続け、どこでおかしくなったかを特定
+  4. 最新のコミットに戻り、「おかしくなった点」を直す。
+  5. 再度動作確認。

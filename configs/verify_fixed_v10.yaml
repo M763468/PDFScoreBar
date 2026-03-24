@@ -15,10 +15,11 @@ detection:
   hybrid_output_root: "logs/hybrid_generalization/verify_fixed_v10"
   enable_sr: true
   sr_scale: 2
-  stem_context_heuristics_enabled: false
-  ink_threshold: 235
-  min_ratio: 0.70
+  stem_context_heuristics_enabled: true
+  ink_threshold: 180
+  min_ratio: 0.85
   cnn_model_path: "logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth"
+  enable_end_barline_recovery: true
 
 numbering:
   enabled: true

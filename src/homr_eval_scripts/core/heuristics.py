@@ -649,6 +649,7 @@ def recover_end_barlines(
     image_path: Path,
     detections: Sequence[BarlinePrediction],
     staff_mask: Optional[np.ndarray] = None,
+    sr_scale: float = 1.0,
 ) -> List[BarlinePrediction]:
     if len(detections) < 3:
         return []
@@ -670,9 +671,9 @@ def recover_end_barlines(
         centers_x = [(pred.orig_bbox[0] + pred.orig_bbox[2]) / 2.0 for pred in detections]
         max_center_x = max(centers_x)
 
-        x_bin_width = 8
+        x_bin_width = int(8 * sr_scale)
         min_bin_count = 2
-        max_x_gap_px = 40
+        max_x_gap_px = int(40 * sr_scale)
         bins: Dict[int, int] = {}
         for cx in centers_x:
             key = int(round(cx / x_bin_width))
@@ -732,7 +733,7 @@ def recover_end_barlines(
         if x_ref < gray.shape[1] * 0.7:
             continue
 
-        if any(abs(((box[0] + box[2]) / 2.0) - x_ref) <= x_tolerance_px for box in cluster_boxes):
+        if any(abs(((box[0] + box[2]) / 2.0) - x_ref) <= (x_tolerance_px) for box in cluster_boxes):
             continue
 
         candidate = _scan_vertical_line(
@@ -743,9 +744,9 @@ def recover_end_barlines(
             search_half_width=search_half_width,
             dark_threshold=120,
             min_dark_ratio=0.5,
-            right_band_px=4,
+            right_band_px=int(4 * sr_scale),
             right_dark_ratio_max=0.25,
-            line_width=2,
+            line_width=int(2 * sr_scale),
         )
         if not candidate:
             continue

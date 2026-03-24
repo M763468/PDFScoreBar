@@ -267,7 +267,7 @@ class HomrPredictor:
             for idx, pred in enumerate(mapped_predictions):
                 existing_box = pred.orig_bbox
                 cx_existing, cy_existing = _centre(existing_box)
-                if abs(cx_existing - cx_extra) > 2:
+                if abs(cx_existing - cx_extra) > 2 * sr_scale:
                     continue
 
                 existing_height = max(existing_box[3] - existing_box[1], 1)
@@ -334,7 +334,7 @@ class HomrPredictor:
         added_end: List[BarlinePrediction] = []
         if self.tuning.get("enable_end_barline_recovery", False):
             # recover_end_barlines needs image_path
-            added_end = recover_end_barlines(image_path, mapped_predictions, staff_mask_resized)
+            added_end = recover_end_barlines(image_path, mapped_predictions, staff_mask_resized, sr_scale)
             if added_end:
                 mapped_predictions.extend(added_end)
 

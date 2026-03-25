@@ -59,7 +59,7 @@ def main():
             preds = [tuple(b) for b in load_json(json_file)]
             gts = get_gt_boxes(load_json(gt_file))
             
-            res = greedy_barline_match(preds, gts, rule_name="center_anchor", vov_threshold=0.5, xdist_threshold=15.0)
+            res = greedy_barline_match(preds, gts, rule_name="center_anchor", vov_threshold=0.5, xdist_threshold=30.0)
             tp += len(res.matches)
             fp += len(res.false_positive_indices)
             fn += len(res.false_negative_indices)

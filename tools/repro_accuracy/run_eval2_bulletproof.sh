@@ -14,8 +14,8 @@ for ds in "${DATASETS[@]}"; do
     CONFIG="configs/verify_v10_${ds}.yaml"
     # Ensure config exists or generate it
     if [ ! -f "$CONFIG" ]; then
-        cp configs/verify_fixed_v10_Shostakovich-Festival_Overture_Va.yaml "$CONFIG"
+        cp configs/verify_fixed_v10.yaml "$CONFIG"
         sed -i "s/Shostakovich-Festival_Overture_Va/$ds/g" "$CONFIG"
     fi
-    ./run_pipeline.sh "$CONFIG"
+    make run-pipeline CONFIG="$CONFIG"
 done

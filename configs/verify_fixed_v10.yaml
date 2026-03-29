@@ -3,23 +3,42 @@ run_id: "verify_fixed_v10"
 output_root: "logs/full_pipeline_runs/verify_fixed_v10"
 
 inputs:
+  pdf_path: "data/evaluation2/pdfs/Shostakovich-Festival_Overture_Va.pdf"
   pdf_to_images:
     output_dir: "data/evaluation2/images/Shostakovich-Festival_Overture_Va"
-    image_glob: "*.png"
+    dpi: 360
+    interpolation: "area"
+    prefix: "page"
+    format: "png"
+    overwrite: true
+    alpha: false
 
 steps:
+  pdf_to_images: true
   detection: true
-  numbering: true
+  numbering_base: true
 
 detection:
   hybrid_output_root: "logs/hybrid_generalization/verify_fixed_v10"
   enable_sr: true
   sr_scale: 2
-  stem_context_heuristics_enabled: true
-  ink_threshold: 180
-  min_ratio: 0.85
-  cnn_model_path: "logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth"
+  stem_context_heuristics_enabled: false
   enable_end_barline_recovery: true
+  ink_threshold: 180
+  min_ratio: 0.50
+  cnn_model_path: "logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth"
+  cnn_threshold: 0.4
+  max_per_band: 200
+  post_split_wide_candidates: true
+  crop_recenter_on_bbox_ink: true
+  crop_recenter_max_shift_unit_ratio: 0.5
+  divisi_rescue: true
+  scan_gap_rescue: true
+  scan_x_peak_rescue: true
+  scan_x_peak_ratio_min: 1.2
+  scan_rightmost_rescue: true
+  band_source: "row_stats"
+  band_row_pad_ratio: 0.1
 
 numbering:
   enabled: true

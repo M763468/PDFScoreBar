@@ -172,6 +172,7 @@ def _score_directory(
     crop_recenter_on_bbox_ink: bool = False,
     crop_recenter_max_shift_unit_ratio: float = 0.35,
     input_image_scale: float = 1.0,
+    candidate_rescale_factor: float = 1.0,
     in_memory_images: Dict[str, Any] | None = None,
 ) -> bool:
     candidates_path = run_dir / "pipeline2_no_peak_candidates.json"
@@ -198,16 +199,18 @@ def _score_directory(
         logger.warning("Failed to load image: %s", image_path)
         return False
 
-    # --- Handle SR Downscaling for CNN ---
-    # If using an SR image, downscale it back to original resolution (e.g. 300DPI equivalent)
-    # using INTER_AREA to avoid aliasing and match training features.
+    # --- Handle Image Downscaling ---
+    # If the provided image is at an SR scale, downscale it to 1x for CNN
     if input_image_scale > 1.0:
         h, w = img.shape[:2]
         new_h = int(round(h / input_image_scale))
         new_w = int(round(w / input_image_scale))
         img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_AREA)
-        # Rescale candidates back to downscaled image coordinate space
-        candidates = [[v / input_image_scale for v in box] for box in candidates]
+
+    # --- Handle Candidate Rescaling ---
+    # Always rescale candidates to match the 1x image space used for inference
+    if candidate_rescale_factor != 1.0:
+        candidates = [[v * candidate_rescale_factor for v in box] for box in candidates]
 
     # --- Resolve Staff Bands ---
     staff_bands = []
@@ -323,6 +326,7 @@ def run_cnn_scoring_batch(
     crop_recenter_on_bbox_ink: bool = False,
     crop_recenter_max_shift_unit_ratio: float = 0.35,
     input_image_scale: float = 1.0,
+    candidate_rescale_factor: Optional[float] = None,
     in_memory_images: Dict[str, Any] | None = None,
 ) -> int:
     """Run CNN scoring for all probe output dirs with one model load."""
@@ -335,6 +339,12 @@ def run_cnn_scoring_batch(
     from src.pipeline.steps.probe_scan import _build_staff_mask_map
 
     staff_mask_map = _build_staff_mask_map(staff_mask_dir)
+
+    # Default candidate rescale factor to 1/input_image_scale if not provided
+    # (Matches legacy behavior when images and candidates are in the same SR space)
+    effective_cand_scale = (
+        candidate_rescale_factor if candidate_rescale_factor is not None else (1.0 / input_image_scale)
+    )
 
     processed = 0
     for img_path in tqdm(images, desc="CNN Scoring", unit="page"):
@@ -355,6 +365,7 @@ def run_cnn_scoring_batch(
             crop_recenter_on_bbox_ink=crop_recenter_on_bbox_ink,
             crop_recenter_max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio,
             input_image_scale=input_image_scale,
+            candidate_rescale_factor=effective_cand_scale,
             in_memory_images=in_memory_images,
         ):
             processed += 1

@@ -181,15 +181,16 @@ class DetectorOrchestrator:
                 probe_output_root=self.probe_output_dir,
                 images=self.images,  # Force CNN to run on original 1x images
                 model_path=Path(cnn_model),
-                threshold=float(self.det_cfg.get("cnn_threshold", 0.1)),
+                threshold=float(self.det_cfg.get("cnn_threshold", 0.4)),
                 score_name=effective_score_name,
                 crop_recenter_on_bbox_ink=bool(
-                    self.det_cfg.get("crop_recenter_on_bbox_ink", False)
+                    self.det_cfg.get("crop_recenter_on_bbox_ink", True)
                 ),
                 crop_recenter_max_shift_unit_ratio=float(
-                    self.det_cfg.get("crop_recenter_max_shift_unit_ratio", 0.35)
+                    self.det_cfg.get("crop_recenter_max_shift_unit_ratio", 0.5)
                 ),
-                input_image_scale=float(effective_sr_scale),
+                input_image_scale=1.0,  # Images provided are original 1x
+                candidate_rescale_factor=1.0 / effective_sr_scale,  # Scale candidates down to 1x
                 in_memory_images=self.in_memory_images,
                 bands_from=self.hybrid_output_dir,
                 staff_vov_threshold=float(self.det_cfg.get("staff_vov_threshold", 0.5)),

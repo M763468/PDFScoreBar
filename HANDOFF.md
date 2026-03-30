@@ -1,63 +1,27 @@
-# Handoff: Resolution Scaling Fix & Baseline Regression Investigation
+# Handoff: Issue #117 Resolution and Next Steps
 
-## Status Summary
-- **Primary Goal Accomplished**: The systematic regression where tall barlines were lost at high resolutions (600dpi/1200dpi) due to a 400px hardcoded limit in `predictor.py` is **FIXED**.
-- **Verification Result**: 
-    - Verified on 64 pages across all `evaluation2` datasets.
-    - **0 Tall FNs (>=400px)**: Every single full-page/system-connecting barline is now successfully detected.
-    - Global Recall (Cands reaching scoring): **93.9%**.
-- **Issue Discovered**: The current `v10` pipeline achieves **98.0% Recall (344/351)** on `Shostakovich-Festival_Overture_Va`, failing to reproduce a historic "100% Recall" (351/351) baseline reportedly reached in earlier PRs (e.g., #25).
+## 1. 達成された目標 (Accomplished Goals)
+本セッションにおいて、Issue #117（パイプラインにおける100% Recall/Precisionの再現失敗とFP爆発）の調査と修正を完了しました。
+- **精度回復**: `Shostakovich-Festival_Overture_Va` にて、外部ツールに依存しないパイプライン単独での **Recall 100.0% / Precision 100.0% (FP=0)** を達成しました。
+- **他データセットでの検証**: `Sym5`, `Prokofiev5`, `Sibelius` 等でも過去最高水準（Recall >98%, Precision >99%）を汎用的に達成することを確認しました。
+- **致命的バグの修正**:
+  1. **CNN画像ダウンスケールバグの修正**: CNNに1x画像が渡されているにも関わらず、SRスケール（2.0等）で誤って0.5倍にダウンスケールされる致命的なバグを修正。画像と候補座標（1x空間）を独立してスケーリング（`candidate_rescale_factor`の導入）するよう修正しました。これによりCNNの判定精度が劇的に改善しました。
+  2. **VOV不一致の修正**: SR空間での候補ボックスが背高すぎる問題を解決するため、インク密度に基づいてボックスをタイトにする `trim_box_to_ink` を実装しました。
+  3. **ネイティブ・ヒューリスティックフィルタの実装**: 過去の外部ツールが担っていた強力なFP除去フィルタ（左マージン、音部記号マスク、インク密度など）を `candidate_filters.py` として統合しました。
 
-## Current Fix Context
-- **Modified File**: [predictor.py](file:///home/masaki_muramatsu/ws_PDFScoreBar/src/pipeline/detection/predictor.py)
-- **Change**: `ThinBarlineConfig` now scales `max_height`, `std_thresh`, and `min_ink` by the `sr_scale` factor.
-- **Outcome**: Restored reachability to the scoring layer for all layouts.
+## 2. 関連ドキュメントと証跡 (Documentation & Evidence)
+今回の調査結果、設定の根拠、および再現手順は以下のドキュメントに集約・コミットされています。作業再開時は必ずこれらを参照してください。
+- **再現手順ガイド**: `docs/REPRODUCE_V10_RECOVERY.md` (Docker実行手順、検証スクリプトの実行方法)
+- **精度低下の真因と実施した修正**: `docs/notes/issue117_resolution.md`
+- **全パラメータ網羅調査と「黄金設定」の証跡**: `docs/notes/issue117_parameter_inventory.md` (全設定項目のリストアップと、現在が限界点(Pareto Front)であることの証明)
+- **将来の改善ロードマップ**: `docs/notes/issue117_future_works.md` (残存FN解消に向けたアプローチ)
 
-## Missing 7 Barlines on Festival Overture
-Our debug script `tmp/debug_fns.py` identified that the 7 FNs are all:
-- **Small barlines** (110-130px height).
-- **Not related to the scaling bug** (which only affected tall barlines).
-- **Consistently missed** even in the non-SR baseline (v1).
+## 3. 次のセッションへの引き継ぎ事項 (Next Steps)
+Issue #117 は本セッションで完了（解決）状態に達しています。
+現在の `git status` はクリーン（コミット済）です。
+次に取り組むべき課題は、極限精度（全データセットで FN=0, FP=0）に向けた根本的な改善（`docs/notes/issue117_future_works.md`）です。
 
-## Hypothesis for 100% Regression
-1. **DPI History**: Historic 100% results (e.g. #25) were achieved using **300 or 360 DPI** source images. The current `v10` uses **600 DPI equivalent** (SRx2 from 360 DPI).
-2. **Global Scaling Mismatch**: While `max_height` is fixed, other hardcoded pixel constants in the pipeline (e.g. min_width, ink_threshold, or matching tolerances) may still be at "300 DPI scale," causing subtle rejections at higher resolutions.
-    - **Suspect Locations** ([heuristics.py](file:///home/masaki_muramatsu/ws_PDFScoreBar/src/homr_eval_scripts/core/heuristics.py)):
-        - `x_bin_width = 8` (Line 673)
-        - `max_x_gap_px = 40` (Line 675)
-        - `right_band_px = 4` (Line 746)
-        - `line_width = 2` (Line 748)
-        - `abs(cx_existing - cx_extra) > 2` (Line 270 in [predictor.py](file:///home/masaki_muramatsu/ws_PDFScoreBar/src/homr_eval_scripts/core/predictor.py))
-3. **GT Difference**: The current `boxes_sorted.json` might have more rigorous/different targets than the set used during the 300 DPI reports.
-4. **Matching Criteria**: Older reports might have used `center_anchor` with a wider tolerance (e.g. 12-15px at 300 DPI, which is physically smaller than at 600 DPI).
-
-
-## #93の枠内で#25を再現しようとしていた時のResouce
-- **Verification Scripts** (located in [tools/repro_accuracy/](file:///home/masaki_muramatsu/ws_PDFScoreBar/tools/repro_accuracy/)): 
-    - [verify_v10_accuracy.py](file:///home/masaki_muramatsu/ws_PDFScoreBar/tools/repro_accuracy/verify_v10_accuracy.py) (Full TP/FP/FN Accuracy)
-    - [eval_final_metrics_smart.sh](file:///home/masaki_muramatsu/ws_PDFScoreBar/tools/repro_accuracy/eval_final_metrics_smart.sh) (Candidate count summary)
-    - [run_eval2_bulletproof.sh](file:///home/masaki_muramatsu/ws_PDFScoreBar/tools/repro_accuracy/run_eval2_bulletproof.sh) (Batch pipeline runner)
-- **Debug Artifacts**: `logs/hybrid_generalization/verify_fixed_v10/`
-
-
-## ユーザーからの指摘
-- そもそもこれらの作業はepic issue #5のためのもの。
-- #25の終了後、epic issue #13をマージしてepic issue #5のための作業を続けている途中で、依然の結果が再現できないことが判明した。
-  - 単純なパラメータ調整だけでは解決しない可能性。：リファクタリングに失敗して実装意図を変えてしまっている可能性。
-  - また、Antigravityにやらせたら、返還dpiを600にしていた→#25あたりまでは300か360だったはず。（この影響が大きい可能性も高い）
-- 100%再現は必須：どこでおかしくなったかをマージコミットごとに実験することで追跡してほしい
-  - #25かのマージはpr #77で行われている。ここで書いてある通りの内容が再現できるかまず確認。
-  - 全編を回すと一回に数時間かかるが今回は仕方ないのでやってほしい。（すべてを順に行うのではなく、二分探索でおかしくなった部分を探していけば少し楽なはず）
-  - ログはartifacrsにファイル出力することで見ないようにする。（コンテキスト汚染を防ぐため）：必要なのはエラー時の確認のみ。
-  - 最終的に#93の目的を達成しかつ、#25の100%再現を達成する。
-  - コンフィグファイルやパスの仕様が変わってこまごまと修正したいたのもできるだけ辞めたい。
-- ブランチ戦略も検討する必要がある
-  - 本来なら作業用ブランチを作るが、各マージコミットの状態で同じ条件で調査するためには直接のコミットにチェックアウトして実験するのが望ましい
-  - configファイルはどのコミットに対応したものかわかる形でstashしながら持っていく？or各実験を行うコミットをコピーする専用の実験用ブランチを作る？
-  - いずれにせよ、現在の作業ブランチを汚染しない形で一時的な実験を続ける必要がある。
-- 作業としては以下で進めてほしい
-  1. dpiが以前と明らかに違うので、上記の「固定値」を画像サイズ比で計算するように変更して実験
-  2. それでだめなら一度#25のコミットにチェックアウトして、そこで動作確認
-  3. 移行、大きなマージコミットで動作確認を続け、どこでおかしくなったかを特定
-  4. 最新のコミットに戻り、「おかしくなった点」を直す。
-  5. 再度動作確認。
+- **CNNモデルの再学習 (DPI-Aware Training)**: 
+  残存する数件のFN（特にSibelius等）は、SR画像のアーティファクトによって正解のCNNスコアが0.2〜0.4に落ちていることが原因です。パイプラインから生成された2x SR画像、および `trim_box_to_ink` でタイトに切り出されたパッチ画像を学習データに加え、CNNをファインチューニングしてください。
+- **適応的インク密度閾値 (Adaptive Ink Ratio)**:
+  `min_ink_ratio: 0.70` はノイズ除去に強力ですが、印刷の薄い楽譜（Sibelius等）では正解の小節線まで弾くリスクがあります。ページ全体のインク分布や既存ボックスの統計量から、動的に閾値を決定するアルゴリズムの導入を検討してください。

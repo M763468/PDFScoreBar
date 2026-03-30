@@ -1,27 +1,35 @@
-# Handoff: Issue #117 Resolution and Next Steps
+# Handoff: Issue #117 Resolution Status & Pending Verification
 
-## 1. 達成された目標 (Accomplished Goals)
-本セッションにおいて、Issue #117（パイプラインにおける100% Recall/Precisionの再現失敗とFP爆発）の調査と修正を完了しました。
-- **精度回復**: `Shostakovich-Festival_Overture_Va` にて、外部ツールに依存しないパイプライン単独での **Recall 100.0% / Precision 100.0% (FP=0)** を達成しました。
-- **他データセットでの検証**: `Sym5`, `Prokofiev5`, `Sibelius` 等でも過去最高水準（Recall >98%, Precision >99%）を汎用的に達成することを確認しました。
-- **致命的バグの修正**:
-  1. **CNN画像ダウンスケールバグの修正**: CNNに1x画像が渡されているにも関わらず、SRスケール（2.0等）で誤って0.5倍にダウンスケールされる致命的なバグを修正。画像と候補座標（1x空間）を独立してスケーリング（`candidate_rescale_factor`の導入）するよう修正しました。これによりCNNの判定精度が劇的に改善しました。
-  2. **VOV不一致の修正**: SR空間での候補ボックスが背高すぎる問題を解決するため、インク密度に基づいてボックスをタイトにする `trim_box_to_ink` を実装しました。
-  3. **ネイティブ・ヒューリスティックフィルタの実装**: 過去の外部ツールが担っていた強力なFP除去フィルタ（左マージン、音部記号マスク、インク密度など）を `candidate_filters.py` として統合しました。
+## 1. 現状のステータス (Status Summary)
+- **達成された部分**: `Shostakovich-Festival_Overture_Va` にて、パイプライン単独での **Recall 100.0% / Precision 100.0% (FP=0)** を確認しました。
+- **未達成の部分**: 他のデータセット（Sibelius, Symphony 5等）では依然として数件の FN（未検出）が残存しており、**全データセットでの 100% 再現という #117 の最終目標はまだ完全には完了していません。**
 
-## 2. 関連ドキュメントと証跡 (Documentation & Evidence)
-今回の調査結果、設定の根拠、および再現手順は以下のドキュメントに集約・コミットされています。作業再開時は必ずこれらを参照してください。
-- **再現手順ガイド**: `docs/REPRODUCE_V10_RECOVERY.md` (Docker実行手順、検証スクリプトの実行方法)
-- **精度低下の真因と実施した修正**: `docs/notes/issue117_resolution.md`
-- **全パラメータ網羅調査と「黄金設定」の証跡**: `docs/notes/issue117_parameter_inventory.md` (全設定項目のリストアップと、現在が限界点(Pareto Front)であることの証明)
-- **将来の改善ロードマップ**: `docs/notes/issue117_future_works.md` (残存FN解消に向けたアプローチ)
+## 2. 実施済みの実装と修正 (Implemented Changes)
+コード上に以下の修正をコミット済みですが、**「バグ修正後の最終的な動作確認（End-to-End評価）」はまだ行われていません。**
+
+1. **[未検証] CNN画像ダウンスケールバグの修正**: 
+   - **問題**: `cnn_scoring.py` で、1x画像が渡されているのに SRスケール（2.0等）で誤って0.5倍に縮小されてしまう致命的バグがありました。これにより画像と候補座標に完全なズレが生じていました。
+   - **対策**: `candidate_rescale_factor` を導入し、画像のスケーリングと座標のスケーリングを完全に分離しました。（これにより他データセットの FN も解消されることが期待されますが、**未確認**です）。
+2. **VOV不一致の修正**: インク密度に基づいてボックスをタイトにする `trim_box_to_ink` を実装。
+3. **ネイティブ・フィルタの実装**: 外部ツールが担っていたFP除去フィルタ（`candidate_filters.py`）を統合。
+4. **全パラメータの網羅と固定**: パイプライン上のすべてのパラメータをリストアップし、検証済みの設定をデフォルトとして固定（詳細は `docs/notes/issue117_parameter_inventory.md` 参照）。
 
 ## 3. 次のセッションへの引き継ぎ事項 (Next Steps)
-Issue #117 は本セッションで完了（解決）状態に達しています。
-現在の `git status` はクリーン（コミット済）です。
-次に取り組むべき課題は、極限精度（全データセットで FN=0, FP=0）に向けた根本的な改善（`docs/notes/issue117_future_works.md`）です。
+次のセッションでは、**新しい機能追加やパラメータ調整を行う前に、必ず以下の検証を行ってください。**
 
-- **CNNモデルの再学習 (DPI-Aware Training)**: 
-  残存する数件のFN（特にSibelius等）は、SR画像のアーティファクトによって正解のCNNスコアが0.2〜0.4に落ちていることが原因です。パイプラインから生成された2x SR画像、および `trim_box_to_ink` でタイトに切り出されたパッチ画像を学習データに加え、CNNをファインチューニングしてください。
-- **適応的インク密度閾値 (Adaptive Ink Ratio)**:
-  `min_ink_ratio: 0.70` はノイズ除去に強力ですが、印刷の薄い楽譜（Sibelius等）では正解の小節線まで弾くリスクがあります。ページ全体のインク分布や既存ボックスの統計量から、動的に閾値を決定するアルゴリズムの導入を検討してください。
+1. **バグ修正版の動作確認 (CRITICAL)**:
+   - コミット済みの「CNN画像ダウンスケールバグ修正」が含まれた状態で、全データセットの評価を再実行してください。
+   - 実行コマンド:
+     ```bash
+     docker run --rm --gpus all -v $(pwd):/workspace -w /workspace -e PYTHONPATH=/workspace \
+       pdfscore_pipeline_gpu /opt/venv_pipeline/bin/python src/pipeline/main.py \
+       --config configs/verify_fixed_v10.yaml
+     ```
+   - 評価スクリプト（全データセット対象）:
+     ```bash
+     source .venv_pdf/bin/activate
+     python tools/repro_accuracy/verify_pipeline_accuracy.py --run-dir [生成された最新ディレクトリ]
+     ```
+2. **結果の分析と #117 の完了判定**:
+   - 上記の修正によって Sibelius 等の FN が解消され、全データセットで 100% 精度が確認できれば、Issue #117 は完了です。
+   - もしそれでも FN が残る場合は、さらなる調査が必要です（ただし安易なパラメータ調整ではなく、抽出されたログやパッチ画像を直接確認して原因を特定してください）。

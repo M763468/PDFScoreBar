@@ -20,7 +20,11 @@ except ImportError:  # pragma: no cover - optional in minimal test env
     np = None  # type: ignore[assignment]
 
 from src.pipeline.core.run_ids import build_probe_run_id, build_probe_run_id_from_parts
-from src.pipeline.steps.candidate_filters import filter_probe_candidates, trim_box_to_ink
+from src.pipeline.steps.candidate_filters import (
+    filter_probe_candidates,
+    split_box_vertically,
+    trim_box_to_ink,
+)
 from src.pipeline.steps.hybrid_consensus import load_json_boxes
 from src.pipeline.utils.images import load_image
 from src.pipeline.utils.io import ensure_dir
@@ -238,6 +242,7 @@ def _load_bands_for_image(
         bands_from / current_score_name / stem / "pipeline2_no_peak_candidates.json",
         bands_from / current_score_name / stem / "pipeline2_no_peak_scored.json",
         bands_from / run_subdir / "pipeline2_no_peak_scored.json",
+        bands_from / "omr_sr" / stem / "predictions.json",  # NEW
         bands_from / f"{stem}.json",
         bands_from / "hybrid_results" / f"{stem}_hybrid.json",
         bands_from / f"{run_subdir}_scored.json",
@@ -309,6 +314,7 @@ def run_probe_scan_batch(
     in_memory_images: Dict[str, Any] | None = None,
     enable_heuristic_filters: bool = False,
     candidate_filter_kwargs: Optional[Dict[str, Any]] = None,
+    disable_seed_splitting: bool = False,
 ) -> int:
     """Generate probe candidates for all pages in-process.
 
@@ -406,6 +412,18 @@ def run_probe_scan_batch(
                 tuple(int(round(v * input_image_scale)) for v in b) for b in existing_boxes
             ]
 
+        # Split long seed boxes vertically to avoid Tall Band Dilution
+        if not disable_seed_splitting:
+            split_seeds = []
+            for b in existing_boxes:
+                # Only split if box is significantly taller than a single staff segment (e.g. > 200px at 2x)
+                h_b = abs(b[3] - b[1])
+                if h_b > 150 * input_image_scale:
+                    split_seeds.extend(split_box_vertically(img, b, ink_threshold=ink_threshold))
+                else:
+                    split_seeds.append(b)
+            existing_boxes = split_seeds
+
         page_kwargs = _resolve_scale_aware_probe_kwargs(kwargs, existing_boxes)
         page_kwargs, post_cfg = _extract_candidate_postprocess_cfg(page_kwargs, existing_boxes)
         if page_kwargs is not kwargs and (
@@ -432,6 +450,7 @@ def run_probe_scan_batch(
             vertical_closing=vertical_closing,
             **page_kwargs,
         )
+        logger.info(f"--- [DEBUG_FN] {stem}: detect_probe_scan found {len(candidates)} candidates")
 
         img_h, img_w = img.shape[:2]
         min_height_px = int(img_h * min_height_ratio)
@@ -443,6 +462,8 @@ def run_probe_scan_batch(
             w = abs(c[2] - c[0])
             if h >= min_height_px and w >= min_width_px:
                 filtered_candidates.append(tuple(int(v) for v in c))
+        
+        logger.info(f"--- [DEBUG_FN] {stem}: After height/width filter ({min_height_px}px): {len(filtered_candidates)} candidates")
 
         if enable_heuristic_filters:
             filter_kwargs = candidate_filter_kwargs or {}
@@ -457,11 +478,6 @@ def run_probe_scan_batch(
             )
             if dropped:
                 logger.debug(f"Heuristic filter dropped {len(dropped)} candidates for {stem}")
-
-        # Final tightening of boxes to actual ink extent to improve VOV for evaluation
-        filtered_candidates = [
-            trim_box_to_ink(img, b, ink_threshold=ink_threshold) for b in filtered_candidates
-        ]
 
         final_set = set()
         for sb in existing_boxes:

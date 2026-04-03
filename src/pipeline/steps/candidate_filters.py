@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
+import logging
+
+logger = logging.getLogger(__name__)
 
 try:
     import cv2
@@ -98,6 +101,51 @@ def trim_box_to_ink(
     return (x1, new_y1, x2, new_y2)
 
 
+def split_box_vertically(
+    image: np.ndarray,
+    box: Tuple[int, int, int, int],
+    ink_threshold: int = 180,
+    min_gap: int = 50,
+    min_segment_h: int = 30,
+) -> List[Tuple[int, int, int, int]]:
+    """Split a box vertically into segments where ink is present, separated by gaps."""
+    import numpy as np
+    import cv2
+    h_img, w_img = image.shape[:2]
+    x1, y1, x2, y2 = box
+    y_lo, y_hi = max(0, min(y1, y2)), min(h_img, max(y1, y2))
+    x_lo, x_hi = max(0, min(x1, x2)), min(w_img, max(x1, x2))
+    if y_hi <= y_lo or x_hi <= x_lo:
+        return [box]
+    crop = image[y_lo:y_hi, x_lo:x_hi]
+    if len(crop.shape) == 3:
+        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = crop
+    row_ink = (gray < ink_threshold).sum(axis=1)
+    active = (row_ink > 0).astype(np.uint8)
+    n_labels, labels, stats, _ = cv2.connectedComponentsWithStats(active.reshape(-1, 1), 4)
+    segments = []
+    for i in range(1, n_labels):
+        y_start = int(stats[i, cv2.CC_STAT_TOP])
+        h_seg = int(stats[i, cv2.CC_STAT_HEIGHT])
+        if h_seg >= min_segment_h:
+            segments.append((y_lo + y_start, y_lo + y_start + h_seg))
+    if not segments:
+        return [box]
+    merged = []
+    curr_y1, curr_y2 = segments[0]
+    for i in range(1, len(segments)):
+        next_y1, next_y2 = segments[i]
+        if next_y1 - curr_y2 < min_gap:
+            curr_y2 = next_y2
+        else:
+            merged.append((curr_y1, curr_y2))
+            curr_y1, curr_y2 = next_y1, next_y2
+    merged.append((curr_y1, curr_y2))
+    return [(x1, s_y1, x2, s_y2) for s_y1, s_y2 in merged]
+
+
 def filter_probe_candidates(
     candidates: List[Tuple[int, int, int, int]],
     image: np.ndarray,
@@ -189,6 +237,10 @@ def filter_probe_candidates(
                 "bbox": b,
                 "reasons": reasons
             })
+            if len(reasons) > 0:
+                # Log drops that are NOT the obvious left margin ones, to keep noise down
+                if "left_margin_zone" not in reasons:
+                    logger.info(f"--- [DEBUG_DROP] Candidate {b} dropped. Reasons: {reasons}")
         else:
             keep.append(b)
 

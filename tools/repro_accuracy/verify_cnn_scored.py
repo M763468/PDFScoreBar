@@ -2,12 +2,14 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.append('/home/masaki_muramatsu/ws_PDFScoreBar')
+sys.path.append("/home/masaki_muramatsu/ws_PDFScoreBar")
 from src.common.barline_evaluation import greedy_barline_match
 
+
 def load_json(p):
-    with open(p, 'r') as f:
+    with open(p, "r") as f:
         return json.load(f)
+
 
 def get_gt_boxes(gt_data):
     boxes = []
@@ -21,32 +23,39 @@ def get_gt_boxes(gt_data):
                 boxes.append(tuple(item["box"]))
     return boxes
 
+
 def main():
     scored_dir = Path("logs/full_pipeline_runs/20260324_161955/intermediate/probe_scan")
     gt_base = Path("data/evaluation2/annotations/Shostakovich-Festival_Overture_Va")
-    
+
     tp, fp, fn = 0, 0, 0
     for scored_file in sorted(scored_dir.rglob("pipeline2_no_peak_scored.json")):
         # The parent dir is like eval2_page_001_page_001
-        page_name = scored_file.parent.name.split("_")[-2] + "_" + scored_file.parent.name.split("_")[-1]
+        page_name = (
+            scored_file.parent.name.split("_")[-2] + "_" + scored_file.parent.name.split("_")[-1]
+        )
         gt_file = gt_base / page_name / "boxes_sorted.json"
-        if not gt_file.exists(): continue
-            
+        if not gt_file.exists():
+            continue
+
         data = load_json(scored_file)
         # Filter by CNN threshold 0.1
         preds = [tuple(c["bbox"]) for c in data if c["score"] > 0.1]
         gts = get_gt_boxes(load_json(gt_file))
-        
+
         # Original rule center_anchor, 12.0px threshold
-        res = greedy_barline_match(preds, gts, rule_name="center_anchor", vov_threshold=0.5, xdist_threshold=12.0)
+        res = greedy_barline_match(
+            preds, gts, rule_name="center_anchor", vov_threshold=0.5, xdist_threshold=12.0
+        )
         tp += len(res.matches)
         fp += len(res.false_positive_indices)
         fn += len(res.false_negative_indices)
-        
+
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0
     print(f"Shostakovich (CNN Scored only, Thresh 0.1) TP: {tp}, FP: {fp}, FN: {fn}")
     print(f"Recall: {recall:.1%}, Precision: {precision:.1%}")
+
 
 if __name__ == "__main__":
     main()

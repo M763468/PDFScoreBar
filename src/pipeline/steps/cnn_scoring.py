@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import cv2
 import numpy as np
@@ -14,11 +14,12 @@ from PIL import Image
 from torchvision import models, transforms
 from tqdm import tqdm
 
+from src.common.barline_evaluation import barline_iou, barline_vertical_overlap
 from src.pipeline.core.run_ids import build_probe_run_id
 from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask
 from src.pipeline.steps.filters import filter_by_staff_overlap
+from src.pipeline.steps.probe_scan import _build_staff_mask_map, _load_bands_for_image
 from src.pipeline.utils.images import load_image
-from src.common.barline_evaluation import barline_iou
 
 logger = logging.getLogger(__name__)
 
@@ -190,17 +191,16 @@ def apply_nms(
             if not suppressed:
                 i_x = (item["bbox"][0] + item["bbox"][2]) / 2.0
                 dist = abs(b_x - i_x)
-                
-                from src.common.barline_evaluation import barline_vertical_overlap
+
                 vov = barline_vertical_overlap(best["bbox"], item["bbox"])
-                
-                if dist < x_dist_threshold and vov > 0.5:
+
+                if dist < x_dist_threshold and vov >= 0.5:
                     suppressed = True
-            
+
             if suppressed:
                 item["score"] = 0.0
                 continue
-                
+
             remaining.append(item)
         sorted_items = remaining
 
@@ -328,8 +328,6 @@ def _score_directory(
                 staff_bands = staff_bands_from_mask(mask)
 
         if not staff_bands and bands_from:
-            from src.pipeline.steps.probe_scan import _load_bands_for_image
-
             existing_boxes = _load_bands_for_image(
                 bands_from=bands_from,
                 current_score_name=current_score_name or "",
@@ -385,15 +383,14 @@ def run_cnn_scoring_batch(
     model = _load_model(resolved_model_path, device)
     gpu_norm = GPUNormalize(MEAN, STD).to(device)
 
-    # For staff mask resolution
-    from src.pipeline.steps.probe_scan import _build_staff_mask_map
-
     staff_mask_map = _build_staff_mask_map(staff_mask_dir)
 
     # Default candidate rescale factor to 1/input_image_scale if not provided
     # (Matches legacy behavior when images and candidates are in the same SR space)
     effective_cand_scale = (
-        candidate_rescale_factor if candidate_rescale_factor is not None else (1.0 / input_image_scale)
+        candidate_rescale_factor
+        if candidate_rescale_factor is not None
+        else (1.0 / input_image_scale)
     )
 
     processed = 0

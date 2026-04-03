@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Tuple
 import logging
+from typing import Any, Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -109,8 +109,6 @@ def split_box_vertically(
     min_segment_h: int = 30,
 ) -> List[Tuple[int, int, int, int]]:
     """Split a box vertically into segments where ink is present, separated by gaps."""
-    import numpy as np
-    import cv2
     h_img, w_img = image.shape[:2]
     x1, y1, x2, y2 = box
     y_lo, y_hi = max(0, min(y1, y2)), min(h_img, max(y1, y2))
@@ -162,7 +160,7 @@ def filter_probe_candidates(
     min_paper_overlap_ratio: float = 0.6,
     min_staff_overlap_ratio: float = 0.01,
     max_width_ratio: float | None = None,
-    ) -> Tuple[List[Tuple[int, int, int, int]], List[Dict[str, Any]]]:
+) -> Tuple[List[Tuple[int, int, int, int]], List[Dict[str, Any]]]:
     """
     Apply heuristic filters to remove false positive candidates.
     Returns:
@@ -233,14 +231,11 @@ def filter_probe_candidates(
                 reasons.append("low_ink_ratio")
 
         if reasons:
-            dropped.append({
-                "bbox": b,
-                "reasons": reasons
-            })
+            dropped.append({"bbox": b, "reasons": reasons})
             if len(reasons) > 0:
                 # Log drops that are NOT the obvious left margin ones, to keep noise down
                 if "left_margin_zone" not in reasons:
-                    logger.info(f"--- [DEBUG_DROP] Candidate {b} dropped. Reasons: {reasons}")
+                    logger.debug(f"--- [DEBUG_DROP] Candidate {b} dropped. Reasons: {reasons}")
         else:
             keep.append(b)
 

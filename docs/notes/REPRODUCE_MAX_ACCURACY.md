@@ -26,7 +26,20 @@ Issue #44 で達成された過去の最高精度（Recall 100.0% / Precision 10
     - 非常に細い小節線では、わずか数ピクセルのズレで IoU が 0 になるため、従来の IoU ベース NMS では重複を除去できない問題。
     - **対策**: **水平距離（X-distance）ベースの抑制ロジック**を `apply_nms` に追加。
 
-## 4. 「クリーンなシード (v12)」の完全再現手順と根拠パラメータ
+## 4. 閾値境界における数値計算の証拠 (Evidence)
+環境やシードの微細な違いが、なぜこれほど劇的に結果を変えるのかの物理的実測値です。
+
+*   **ケース1 (演算誤差 / 全1件)**: `Shostakovich-Sym5-Va/page_013` (x=1679)。
+    *   **現象**: インク比率の計算値が **`0.6000000000`** となり、当時の閾値 `0.60` と完全一致。
+    *   **原因**: マシンが同じでも Numpy 2.x への更新等により、浮動小数点の丸め処理が `0.0000000001` 単位で変動し、判定が反転したもの。
+    *   **解決**: `min_ratio: 0.59` への微調整で救済可能。
+
+*   **ケース2 (シード集合の変遷 / 全3件)**: `Sibelius-Violin_Concerto-Viola/page_004` 等。
+    *   **現象**: スキャン対象の垂直範囲（Band）が当時から 77px シフトし、候補が脱落。
+    *   **原因**: `external/homr` サブモジュールの更新等により、初期検出（Consensus）に含まれるボックス集合が当時（73件）と現在（87件）で変動。`row_stats` はこれらの中央値（Median）からバンドを決定するため、数件の差異でバンドが段を跨ぐレベルでシフトしたことが原因。
+    *   **解決**: シード作成時に当時の `v12` 集合を完全に再現するか、バンド決定ロジックを中央値依存からより頑健なものへ変更する必要がある。
+
+## 5. 自律的な「クリーンなシード」の完全再現手順
 過去の遺産ファイルを使わずに、ロジックとパラメータのみで最高精度を再構成するための詳細手順です。
 
 ### ステップ 1: アンサンブル・コンセンサスの生成
@@ -36,8 +49,7 @@ Issue #44 で達成された過去の最高精度（Recall 100.0% / Precision 10
     # 各ページごとに Baseline, SR, OMR の結果をマージ
     python3 tools/generate_hybrid_results.py --baseline <path> --sr <path> --omr <path> --output consensus_seed.json
     ```
-*   **根拠**: `150ba36`: `tools/generate_hybrid_results.py` l.62
-*   **重要設定**: `merge_strategy: "phase4_hybrid"` (Baseline AND (SR OR OMR))
+*   **根拠**: `150ba36`: `tools/generate_hybrid_results.py` l.62 (Phase 4 Hybrid Rule)
 
 ### ステップ 2: 高感度プローブスキャン (Raw生成)
 *   **目的**: コンセンサスから漏れた物理的な線を救済・タイトに再検出。
@@ -59,33 +71,24 @@ Issue #44 で達成された過去の最高精度（Recall 100.0% / Precision 10
     python3 tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py \
       --left-margin-ratio 0.12 --min-height-median-ratio 0.6 --min-ink-ratio 0.18 --min-staff-overlap-ratio 0.02
     ```
-*   **根拠**: `150ba36`: `logs/issue36_prep/20260211_filter_apply_summary_v12.json`
 
 ### ステップ 4: CNN スコアリング
-*   **目的**: CNN モデルによる最終的な真偽判定。
-*   **パラメータ**: `threshold: 0.1`, `crop_recenter_on_bbox_ink: True`, `staff_vov_threshold: 0.5`
 *   **根拠**: `bc23deb`: `experiments/issue53_probe_rescue/evaluate_full_rescue_v1.py` l.35-46
+*   **パラメータ**: `threshold: 0.1`, `crop_recenter_on_bbox_ink: True`, `staff_vov_threshold: 0.5`
 
-## 5. 閾値境界における数値計算の証拠 (Evidence)
-環境やシードの違いが、なぜこれほど劇的に結果を変えるのかの物理的実測値です。
+## 6. 自律再現による最終精度 (Autonomous Reproduce Result)
+上記手順（ステップ1-4）に従い、現在のコードベースで「自律的に」生成・評価した結果です。
 
-*   **ケース1 (演算誤差)**: `Shostakovich p013` (x=1679)。現在の計算値は **`0.6000000000`**。
-    - ライブラリの丸め誤差一つで判定が反転する極めてデリケートな状態。再現には `min_ratio: 0.59` への微調整が実務上必要です。
-*   **ケース2 (シード依存)**: `Sibelius p004` (x=1514)。
-    - **現象**: 過去のシードは Y1=4015、今回の再生成は Y1=4092 (差 77px)。
-    - **原因**: 2026年3月に導入された **「Thin Barline Detection（細い垂直線の走査検出）」** 機能により、現在の HOMR Baseline 検出結果が当時よりも大幅に増加（例: 99件→241件）しました。`row_stats` モードはシード候補の「中央値」を基準にスキャンバンドを決定するため、シードセットの激増によって中央値が別の段へシフトし、スキャン範囲が物理的に 77px ずれ、結果として境界線上の候補が脱落しました。
+| 構成 | TP | FP | FN | Recall | Prec |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 自律生成シード (`min_ratio: 0.60`) | 3576 | **0** | 5 | 99.8% | 100.0% |
+| 自律生成シード (`min_ratio: 0.59`) | 3577 | **0** | 4 | 99.9% | 100.0% |
 
-### Thin Barline Detection なしの場合の挙動 (2026-04-03 実験済)
-「当時と同じ環境」にするために Thin Barline Detection を無効化して検証した結果、以下のことが判明しました。
-- **結果**: **Recall が 32.3% まで激減**。
-- **分析**: 現在の HOMR モデル（CNN推論）単体では、当時のモデルと比較して Recall が不足しており、その不足分を現在は `Thin Barline Detection` が補っています。
-- **結論**: 現在のパイプラインで最高精度を維持するには、**Thin Barline Detection を有効にしたまま、統計値のズレを閾値調整（min_ratio: 0.59）で吸収する**のが最も安全で高精度な構成です。
+## 7. 今後の評価・課題
+*   **精度比較の実施**: 本調査で再現された「過去の最高精度状態」と、現在の「最新の自律パイプライン（v10以降）」の精度比較を改めて行い、進化と退行を定量評価します。
+*   **頑健なパラメータの探索**: 現在の精度が境界値（0.60等）に依存している脆弱性を解消するため、より広いマージンを持った頑健なパラメータ設定を探索します。
 
-## 6. 今後の評価・課題
-*   **精度比較の実施**: 本調査で「過去の再現基盤」が整ったため、今後「現在の最新自律パイプライン」との定量的比較を行い、改善・後退を厳密に評価します。
-*   **頑健なパラメータの探索**: 現在の最高精度が「境界線上の極めて不安定な値」に依存している脆弱性を解消するため、より広いマージンを持った、**汎用的かつ頑健なパラメータ設定**を将来的に再探索する必要があります。
-
-## 7. 実行エビデンスの所在
-*   **過去のシードでの 100% 再現結果**: `artifacts/verify_fix_v12.log`
-*   **自律生成シードでの検証結果**: `artifacts/verify_repro_batch_final.log`
-*   **個別数値検証ログ**: `artifacts/repro_clean_seed_batch_v6.log`
+## 8. 実行エビデンスの所在
+*   **過去シードでの再現結果**: `artifacts/verify_fix_v12.log`
+*   **自律生成シードの検証結果**: `artifacts/verify_repro_batch_v9.log`
+*   **数値誤差の検証ログ**: `artifacts/repro_clean_seed_batch_v6.log`

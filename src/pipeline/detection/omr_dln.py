@@ -14,7 +14,10 @@ logger = logging.getLogger(__name__)
 
 # Cache model globally
 _MODEL = None
-_MODEL_PATH = Path(__file__).resolve().parents[3] / "external/omr_dln/models/public_models/YOLOv8m_Measures.pt"
+_MODEL_PATH = (
+    Path(__file__).resolve().parents[3]
+    / "external/omr_dln/models/public_models/YOLOv8m_Measures.pt"
+)
 BARLINE_WIDTH = 4
 
 
@@ -22,13 +25,17 @@ def _get_model() -> YOLO:
     global _MODEL
     if _MODEL is None:
         if not _MODEL_PATH.exists():
-            raise FileNotFoundError(f"OMR-DLN model not found at {_MODEL_PATH}. Please download it.")
+            raise FileNotFoundError(
+                f"OMR-DLN model not found at {_MODEL_PATH}. Please download it."
+            )
         logger.info(f"Loading OMR-DLN model from {_MODEL_PATH}")
         _MODEL = YOLO(str(_MODEL_PATH))
     return _MODEL
 
 
-def infer_barlines_from_measures(measure_boxes: List[Tuple[int, int, int, int]]) -> List[Tuple[int, int, int, int]]:
+def infer_barlines_from_measures(
+    measure_boxes: List[Tuple[int, int, int, int]],
+) -> List[Tuple[int, int, int, int]]:
     """
     Converts measure bounding boxes into barline bounding boxes.
     A measure (x1, y1, x2, y2) implies a left barline and a right barline,
@@ -75,12 +82,12 @@ def run_omr_dln_batch(
             p1 = pre_computed_sr_dir / stem / img_path.name
             p2 = pre_computed_sr_dir / stem / f"{stem}.png"
             p3 = pre_computed_sr_dir / f"{stem}.png"
-            
+
             for p in [p1, p2, p3]:
                 if p.exists():
                     sr_img_path = p
                     break
-            
+
             if sr_img_path:
                 logger.debug(f"Using pre-computed SR: {sr_img_path}")
                 sr_img_bgr = cv2.imread(str(sr_img_path))

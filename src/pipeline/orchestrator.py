@@ -15,7 +15,7 @@ from src.common.barline_evaluation import (
     BARLINE_X_MARGIN,
     BARLINE_Y_MARGIN,
 )
-from src.pdf_to_images import normalise_pages, render_pdf
+from src.pdf_to_images import normalise_pages
 from src.pipeline.core.config import get_nested
 from src.pipeline.core.manifest import build_manifest
 from src.pipeline.detection import (
@@ -95,7 +95,7 @@ class PipelineOrchestrator:
         logger.info(f"Rendering PDF: {pdf_path} (pages: {pages}) -> {output_dir}")
         from src.pdf_to_images import render_pdf_to_memory
         from src.pipeline.utils.images import get_image_cache
-        
+
         rendered = render_pdf_to_memory(
             pdf_path,
             dpi=float(pdf_opts.get("dpi", 300.0)),
@@ -105,18 +105,19 @@ class PipelineOrchestrator:
             target_height=pdf_opts.get("target_height"),
             interpolation=str(pdf_opts.get("interpolation", "area")),
         )
-        
+
         cache = get_image_cache()
         prefix = str(pdf_opts.get("prefix", "page"))
         fmt = str(pdf_opts.get("format", "png"))
-        
+
         for page_index, image in rendered:
             stem = f"{prefix}_{page_index + 1:03d}"
             cache[stem] = image
-            
+
             # Optionally write to disk for debug/persistence
             if self.debug or pdf_opts.get("output_dir"):
                 from src.pdf_to_images import save_image
+
                 destination = output_dir / f"{stem}.{fmt}"
                 save_image(destination, image, fmt=fmt)
 
@@ -145,6 +146,7 @@ class PipelineOrchestrator:
 
         logger.info("Collecting images...")
         from src.pipeline.utils.images import get_image_cache
+
         mem_images = get_image_cache()
         images = collect_images(self.config, self.run_dir, in_memory_images=mem_images)
         if page_limit is not None:
@@ -164,7 +166,13 @@ class PipelineOrchestrator:
                 self.config["detection"]["probe_skip_existing"] = True
 
             det_result = run_detection_step(
-                self.config, images, page_ids, self.run_id, self.run_dir, dry_run=self.dry_run, in_memory_images=mem_images
+                self.config,
+                images,
+                page_ids,
+                self.run_id,
+                self.run_dir,
+                dry_run=self.dry_run,
+                in_memory_images=mem_images,
             )
             commands.extend(det_result["commands"])
             probe_output_dir = det_result["probe_output_dir"]

@@ -23,7 +23,6 @@ from src.pipeline.core.run_ids import build_probe_run_id, build_probe_run_id_fro
 from src.pipeline.steps.candidate_filters import (
     filter_probe_candidates,
     split_box_vertically,
-    trim_box_to_ink,
 )
 from src.pipeline.steps.hybrid_consensus import load_json_boxes
 from src.pipeline.utils.images import load_image
@@ -253,41 +252,43 @@ def _load_bands_for_image(
     return []
 
 
-def _build_staff_mask_map(staff_mask_dir: Optional[Path]) -> Dict[str, Path]:
-    staff_mask_map: Dict[str, Path] = {}
-    if not staff_mask_dir or not staff_mask_dir.exists():
-        return staff_mask_map
-    
-    # Support both legacy Homr tool debug patterns and the new in-process filename pattern
-    patterns = ["*_debug_3_staff.png", "*_staff_mask.png"]
+def _build_mask_map(
+    mask_dir: Optional[Path], patterns: List[str], replacements: List[str]
+) -> Dict[str, Path]:
+    """Common helper to build stem -> path mapping for masks."""
+    mask_map: Dict[str, Path] = {}
+    if not mask_dir or not mask_dir.exists():
+        return mask_map
+
     for pattern in patterns:
-        for path in staff_mask_dir.rglob(pattern):
-            stem_key = path.name.replace("_proxy_debug_3_staff.png", "").replace(
-                "_debug_3_staff.png", ""
-            ).replace("_staff_mask.png", "")
-            if stem_key not in staff_mask_map:
-                staff_mask_map[stem_key] = path
-    return staff_mask_map
+        for path in mask_dir.rglob(pattern):
+            stem_key = path.name
+            for r in replacements:
+                stem_key = stem_key.replace(r, "")
+            if stem_key not in mask_map:
+                mask_map[stem_key] = path
+    return mask_map
+
+
+def _build_staff_mask_map(staff_mask_dir: Optional[Path]) -> Dict[str, Path]:
+    return _build_mask_map(
+        staff_mask_dir,
+        ["*_debug_3_staff.png", "*_staff_mask.png"],
+        ["_proxy_debug_3_staff.png", "_debug_3_staff.png", "_staff_mask.png"],
+    )
 
 
 def _build_clef_mask_map(clef_mask_dir: Optional[Path]) -> Dict[str, Path]:
-    clef_mask_map: Dict[str, Path] = {}
-    if not clef_mask_dir or not clef_mask_dir.exists():
-        return clef_mask_map
-
-    # Support both legacy Homr tool debug patterns and the new in-process filename pattern
-    patterns = ["*_debug_2_clefs.png", "*_clef_mask.png", "*_clefs_keys_mask.png"]
-    for pattern in patterns:
-        for path in clef_mask_dir.rglob(pattern):
-            stem_key = (
-                path.name.replace("_proxy_debug_2_clefs.png", "")
-                .replace("_debug_2_clefs.png", "")
-                .replace("_clef_mask.png", "")
-                .replace("_clefs_keys_mask.png", "")
-            )
-            if stem_key not in clef_mask_map:
-                clef_mask_map[stem_key] = path
-    return clef_mask_map
+    return _build_mask_map(
+        clef_mask_dir,
+        ["*_debug_2_clefs.png", "*_clef_mask.png", "*_clefs_keys_mask.png"],
+        [
+            "_proxy_debug_2_clefs.png",
+            "_debug_2_clefs.png",
+            "_clef_mask.png",
+            "_clefs_keys_mask.png",
+        ],
+    )
 
 
 def run_probe_scan_batch(
@@ -378,7 +379,7 @@ def run_probe_scan_batch(
         staff_mask = np.zeros(img.shape[:2], dtype=np.uint8)
         clef_mask = np.zeros(img.shape[:2], dtype=np.uint8)
         band_source = "row_stats"
-        
+
         mask_path = staff_mask_map.get(stem)
         if mask_path:
             loaded_mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
@@ -414,17 +415,24 @@ def run_probe_scan_batch(
 
         # Split long seed boxes vertically to avoid Tall Band Dilution
         if not disable_seed_splitting:
+            # Threshold for splitting: use unit-based logic for resolution independence.
+            # A full staff is approx 4 units. We split if box > 12.0 units (3 staves / ~150px at 1x).
+            u_splitting = _estimate_unit_size_from_existing_boxes(existing_boxes) or (
+                40.0 * input_image_scale
+            )
+            split_threshold = 12.0 * u_splitting
+
             split_seeds = []
             for b in existing_boxes:
-                # Only split if box is significantly taller than a single staff segment (e.g. > 200px at 2x)
                 h_b = abs(b[3] - b[1])
-                if h_b > 150 * input_image_scale:
+                if h_b > split_threshold:
                     split_seeds.extend(split_box_vertically(img, b, ink_threshold=ink_threshold))
                 else:
                     split_seeds.append(b)
             existing_boxes = split_seeds
 
         page_kwargs = _resolve_scale_aware_probe_kwargs(kwargs, existing_boxes)
+
         page_kwargs, post_cfg = _extract_candidate_postprocess_cfg(page_kwargs, existing_boxes)
         if page_kwargs is not kwargs and (
             "min_peak_distance" in page_kwargs or "x_merge_tol" in page_kwargs
@@ -462,12 +470,15 @@ def run_probe_scan_batch(
             w = abs(c[2] - c[0])
             if h >= min_height_px and w >= min_width_px:
                 filtered_candidates.append(tuple(int(v) for v in c))
-        
-        logger.info(f"--- [DEBUG_FN] {stem}: After height/width filter ({min_height_px}px): {len(filtered_candidates)} candidates")
+
+        logger.info(
+            f"--- [DEBUG_FN] {stem}: After height/width filter ({min_height_px}px): {len(filtered_candidates)} candidates"
+        )
 
         if enable_heuristic_filters:
             filter_kwargs = candidate_filter_kwargs or {}
-            real_staff_mask = staff_mask if band_source == "staff_mask" else None
+            # Filter staff overlap only if we are using staff-based scanning
+            real_staff_mask = staff_mask if effective_band_source == "staff_mask" else None
             filtered_candidates, dropped = filter_probe_candidates(
                 candidates=filtered_candidates,
                 image=img,

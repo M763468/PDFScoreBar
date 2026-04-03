@@ -25,6 +25,7 @@ from src.pipeline.utils.io import ensure_dir
 
 try:
     from .omr_dln import run_omr_dln_batch
+
     OMR_DLN_AVAILABLE = True
 except ImportError:
     OMR_DLN_AVAILABLE = False
@@ -105,7 +106,9 @@ class HybridDetector:
         ensure_dir(hybrid_results_dir)
 
         for stem in tqdm(stems, desc="Hybrid Consensus", unit="page"):
-            baseline_json = hybrid_output_dir / "baseline" / "batch" / stem / f"{stem}_detections.json"
+            baseline_json = (
+                hybrid_output_dir / "baseline" / "batch" / stem / f"{stem}_detections.json"
+            )
             sr_json = hybrid_output_dir / "sr" / "batch" / stem / f"{stem}_detections.json"
             omr_json = hybrid_output_dir / "omr_sr" / stem / "predictions.json"
             out_json = hybrid_results_dir / f"{stem}_hybrid.json"
@@ -141,17 +144,19 @@ class HybridDetector:
     def _run_homr_in_process(self, output_root: Path, enable_sr: bool, sr_scale: int = 2) -> None:
         """Run homr detection in-process."""
         if self.skip_existing and (output_root / "batch").exists():
-            logger.info(f"Skipping in-process Homr for {'sr' if enable_sr else 'baseline'}: outputs exist.")
+            logger.info(
+                f"Skipping in-process Homr for {'sr' if enable_sr else 'baseline'}: outputs exist."
+            )
             return
 
         logger.info(f"--- Homr In-Process Phase 1 (SR={enable_sr}) ---")
         config = ProcessingConfig(
-            False, # enable_debug
+            False,  # enable_debug
             True,  # enable_cache
-            False, # write_staff_positions
-            False, # read_staff_positions
-            -1,    # selected_staff
-            torch.cuda.is_available()  # use_gpu_inference
+            False,  # write_staff_positions
+            False,  # read_staff_positions
+            -1,  # selected_staff
+            torch.cuda.is_available(),  # use_gpu_inference
         )
         tuning = DEFAULT_TUNING.copy()
         tuning.update(
@@ -161,11 +166,7 @@ class HybridDetector:
             }
         )
 
-        predictor = HomrPredictor(
-            config, 
-            tuning, 
-            use_gpu_inference=torch.cuda.is_available()
-        )
+        predictor = HomrPredictor(config, tuning, use_gpu_inference=torch.cuda.is_available())
         xml_args = XmlGeneratorArguments(False, None, None)
 
         try:
@@ -176,7 +177,7 @@ class HybridDetector:
                 image_run_dir = output_root / "batch" / img.stem
                 ensure_dir(image_run_dir)
                 working_path = image_run_dir / img.name
-                
+
                 if img.exists():
                     shutil.copy2(img, working_path)
                 else:
@@ -213,17 +214,13 @@ class HybridDetector:
                 image_run_dir = output_root / "batch" / stem
                 working_path = image_run_dir / img.name
                 sr_img_path = image_run_dir / f"{stem}.png"
-                
+
                 inference_path = sr_img_path if enable_sr and sr_img_path.exists() else working_path
                 scale = sr_scale if enable_sr and sr_img_path.exists() else 1
 
                 if not self.dry_run:
                     # predict returns: (all_preds, xml_path, (h, w), latency, notehead_mask, staff_mask, staff_preds, barline_preds)
-                    res = predictor.predict(
-                        Path(inference_path),
-                        xml_args,
-                        sr_scale=scale
-                    )
+                    res = predictor.predict(Path(inference_path), xml_args, sr_scale=scale)
                     metrics_predictions = res[0]
                     notehead_mask = res[4]
                     staff_mask = res[5]
@@ -233,12 +230,12 @@ class HybridDetector:
                         image_run_dir,
                         metrics_predictions,
                         notehead_mask,
-                        staff_mask
+                        staff_mask,
                     )
                     # Coordinates are in inference space, need to scale back to 1x if SR was used
                     if scale > 1:
                         self._rescale_detections(image_run_dir / f"{stem}_detections.json", scale)
-                
+
                 log_vram_usage(f"After Page {stem}")
 
         finally:
@@ -250,7 +247,7 @@ class HybridDetector:
             return
         with open(path, "r") as f:
             data = json.load(f)
-        
+
         if isinstance(data, dict) and "predictions" in data:
             for pred in data["predictions"]:
                 # Do NOT rescale pred_bbox as it is in inference coordinate space
@@ -258,6 +255,6 @@ class HybridDetector:
                     pred["orig_bbox"] = [int(round(v / scale)) for v in pred["orig_bbox"]]
         elif isinstance(data, list):
             data = [[int(round(v / scale)) for v in box] for box in data]
-            
+
         with open(path, "w") as f:
             json.dump(data, f)

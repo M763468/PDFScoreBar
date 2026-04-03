@@ -150,7 +150,7 @@ class DetectorOrchestrator:
                 in_memory_images=self.in_memory_images,
                 enable_heuristic_filters=self.det_cfg.get("enable_heuristic_filters", True),
                 candidate_filter_kwargs=filter_kwargs,
-            )        # Build command list for logging/return
+            )  # Build command list for logging/return
         cmd_probe = [
             "inprocess:probe_scan",
             "--output-root",
@@ -183,9 +183,7 @@ class DetectorOrchestrator:
                 model_path=Path(cnn_model),
                 threshold=float(self.det_cfg.get("cnn_threshold", 0.4)),
                 score_name=effective_score_name,
-                crop_recenter_on_bbox_ink=bool(
-                    self.det_cfg.get("crop_recenter_on_bbox_ink", True)
-                ),
+                crop_recenter_on_bbox_ink=bool(self.det_cfg.get("crop_recenter_on_bbox_ink", True)),
                 crop_recenter_max_shift_unit_ratio=float(
                     self.det_cfg.get("crop_recenter_max_shift_unit_ratio", 0.5)
                 ),
@@ -212,11 +210,15 @@ class DetectorOrchestrator:
             effective_images = []
             for img in self.images:
                 sr_img_path = self.hybrid_output_dir / "sr" / "batch" / img.stem / f"{img.stem}.png"
-                if self.in_memory_images and img.stem in self.in_memory_images and sr_img_path.exists():
-                     # Actually SR images are NOT in in_memory_images yet because they are produced by HybridDetector.
-                     # We should probably cache them there too if we want full in-memory.
-                     pass
-                
+                if (
+                    self.in_memory_images
+                    and img.stem in self.in_memory_images
+                    and sr_img_path.exists()
+                ):
+                    # Actually SR images are NOT in in_memory_images yet because they are produced by HybridDetector.
+                    # We should probably cache them there too if we want full in-memory.
+                    pass
+
                 if sr_img_path.exists():
                     effective_images.append(sr_img_path)
                 else:
@@ -234,9 +236,9 @@ class DetectorOrchestrator:
             return self.images[0].parent.name
         return "unknown"
 
-    def _resolve_staff_mask_dir(self) -> Path | None:
-        """Resolves where to look for staff masks."""
-        override = self.det_cfg.get("staff_mask_dir", "DEFAULT_SENTINEL")
+    def _resolve_mask_dir(self, mask_type: str) -> Path | None:
+        """Resolves where to look for a given mask type."""
+        override = self.det_cfg.get(f"{mask_type}_mask_dir", "DEFAULT_SENTINEL")
         if override == "DEFAULT_SENTINEL":
             # If SR is enabled for probe, look in SR dir first
             if self.enable_sr:
@@ -246,17 +248,13 @@ class DetectorOrchestrator:
             return self.hybrid_output_dir
         return Path(override) if override is not None else None
 
+    def _resolve_staff_mask_dir(self) -> Path | None:
+        """Resolves where to look for staff masks."""
+        return self._resolve_mask_dir("staff")
+
     def _resolve_clef_mask_dir(self) -> Path | None:
         """Resolves where to look for clef masks."""
-        override = self.det_cfg.get("clef_mask_dir", "DEFAULT_SENTINEL")
-        if override == "DEFAULT_SENTINEL":
-            # If SR is enabled for probe, look in SR dir first
-            if self.enable_sr:
-                sr_dir = self.hybrid_output_dir / "sr"
-                if sr_dir.exists():
-                    return sr_dir
-            return self.hybrid_output_dir
-        return Path(override) if override is not None else None
+        return self._resolve_mask_dir("clef")
 
 
 def run_detection_step(

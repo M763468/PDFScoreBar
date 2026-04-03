@@ -2,12 +2,16 @@
 
 import logging
 from pathlib import Path
+
 from src.pipeline.main import run_pipeline
 
 logging.basicConfig(level=logging.INFO)
 
 PDFS = [
-    ("data/evaluation2/pdfs/Shostakovich-Festival_Overture_Va.pdf", "Shostakovich-Festival_Overture_Va"),
+    (
+        "data/evaluation2/pdfs/Shostakovich-Festival_Overture_Va.pdf",
+        "Shostakovich-Festival_Overture_Va",
+    ),
     ("data/evaluation2/pdfs/Shostakovich-Sym5-Va.pdf", "Shostakovich-Sym5-Va"),
     ("data/evaluation2/pdfs/Sibelius-Violin_Concerto-Viola.pdf", "Sibelius-Violin_Concerto-Viola"),
     ("data/evaluation2/pdfs/Va_Prokofiev_Symphony1.pdf", "Va_Prokofiev_Symphony1"),
@@ -15,7 +19,9 @@ PDFS = [
 ]
 
 import argparse
+
 import yaml
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -27,29 +33,30 @@ def main():
     args = parser.parse_args()
 
     output_root = Path(args.output_root)
-    
+
     for pdf_full_path, score_name in PDFS:
         if args.pdf and score_name != args.pdf:
             continue
-            
+
         print(f"=== Processing {score_name} ===")
         with open(args.config, "r") as f:
             cfg = yaml.safe_load(f)
-        
+
         cfg["inputs"]["pdf_path"] = pdf_full_path
-        cfg["inputs"]["pdf_to_images"]["pages"] = None # All pages
-        
+        cfg["inputs"]["pdf_to_images"]["pages"] = None  # All pages
+
         temp_config = Path(f"temp_v10/config_{score_name}.yaml")
         temp_config.parent.mkdir(parents=True, exist_ok=True)
         with open(temp_config, "w") as f:
             yaml.dump(cfg, f)
-        
+
         run_pipeline(
             temp_config,
             run_id=f"{args.run_id}/{score_name}",
             output_root=output_root,
-            skip_existing=not args.overwrite
+            skip_existing=not args.overwrite,
         )
+
 
 if __name__ == "__main__":
     main()

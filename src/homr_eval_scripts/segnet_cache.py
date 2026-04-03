@@ -61,6 +61,7 @@ class CachedSegnet:
         # Container: Segnet(use_gpu_inference: bool)
 
         from homr.segmentation.inference_segnet import segnet_path_onnx
+
         try:
             from homr.segmentation.config import segnet_path_onnx_fp16
         except ImportError:

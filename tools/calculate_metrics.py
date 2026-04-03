@@ -2,6 +2,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+
 from tqdm import tqdm
 
 # Add repo root to sys path
@@ -10,21 +11,54 @@ sys.path.append(str(REPO_ROOT))
 
 from src.common.barline_evaluation import greedy_barline_match
 
+
 def find_scored_file(scored_root, subdir, page_name):
     candidates = [
-        Path(scored_root) / "eval2_v9_final" / subdir / "intermediate" / "probe_scan" / f"eval2_{page_name}_{page_name}" / "pipeline2_no_peak_scored.json",
-        Path(scored_root) / "eval2_v9_final" / subdir / "intermediate" / "probe_scan" / f"eval2_{subdir}_{page_name}" / "pipeline2_no_peak_scored.json",
-        Path(scored_root) / "eval2_v9_final" / subdir / "outputs" / page_name / "pipeline2_no_peak_scored.json",
+        Path(scored_root)
+        / "eval2_v9_final"
+        / subdir
+        / "intermediate"
+        / "probe_scan"
+        / f"eval2_{page_name}_{page_name}"
+        / "pipeline2_no_peak_scored.json",
+        Path(scored_root)
+        / "eval2_v9_final"
+        / subdir
+        / "intermediate"
+        / "probe_scan"
+        / f"eval2_{subdir}_{page_name}"
+        / "pipeline2_no_peak_scored.json",
+        Path(scored_root)
+        / "eval2_v9_final"
+        / subdir
+        / "outputs"
+        / page_name
+        / "pipeline2_no_peak_scored.json",
         Path(scored_root) / subdir / page_name / "pipeline2_no_peak_scored.json",
         Path(scored_root) / f"eval2_{subdir}_{page_name}" / "pipeline2_no_peak_scored.json",
-        Path(scored_root) / subdir / "intermediate" / "probe_scan" / f"eval2_{subdir}_{page_name}" / "pipeline2_no_peak_scored.json",
-        Path(scored_root) / subdir / "intermediate" / "probe_scan" / f"eval2_{page_name}_{page_name}" / "pipeline2_no_peak_scored.json",
-        Path(scored_root) / "intermediate" / "probe_scan" / f"eval2_{page_name}_{page_name}" / "pipeline2_no_peak_scored.json",
+        Path(scored_root)
+        / subdir
+        / "intermediate"
+        / "probe_scan"
+        / f"eval2_{subdir}_{page_name}"
+        / "pipeline2_no_peak_scored.json",
+        Path(scored_root)
+        / subdir
+        / "intermediate"
+        / "probe_scan"
+        / f"eval2_{page_name}_{page_name}"
+        / "pipeline2_no_peak_scored.json",
+        Path(scored_root)
+        / "intermediate"
+        / "probe_scan"
+        / f"eval2_{page_name}_{page_name}"
+        / "pipeline2_no_peak_scored.json",
     ]
     for c in candidates:
         if c.exists():
             return c
     return None
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -49,7 +83,7 @@ def main():
 
     for subdir in tqdm(subdirs, desc="Scores"):
         page_dirs = sorted([d for d in (gt_parent / subdir).iterdir() if d.is_dir()])
-        
+
         score_tp = 0
         score_fp = 0
         score_fn = 0
@@ -61,27 +95,31 @@ def main():
             gt_candidates = sorted(list(page_dir.glob("boxes_sorted*.json")), reverse=True)
             if not gt_candidates:
                 continue
-            
+
             scored_path = find_scored_file(args.scored_root, subdir, page_name)
             if not scored_path:
-                continue # Skip pages that were not processed yet
-            
+                continue  # Skip pages that were not processed yet
+
             gt_file = gt_candidates[0]
             with open(gt_file, "r") as f:
                 gt_data = json.load(f)
-                gt_boxes = [tuple(b["barline_location"]) for b in gt_data if "barline_location" in b]
+                gt_boxes = [
+                    tuple(b["barline_location"]) for b in gt_data if "barline_location" in b
+                ]
 
             with open(scored_path, "r") as f:
                 candidates = json.load(f)
 
-            accepted_candidates = [tuple(c["bbox"]) for c in candidates if c["score"] >= args.threshold]
+            accepted_candidates = [
+                tuple(c["bbox"]) for c in candidates if c["score"] >= args.threshold
+            ]
 
             res = greedy_barline_match(accepted_candidates, gt_boxes, rule_name=args.eval_rule)
-            
+
             tp = len(res.matches)
             fp = len(res.false_positive_indices)
             fn = len(res.false_negative_indices)
-            
+
             score_tp += tp
             score_fp += fp
             score_fn += fn
@@ -96,7 +134,7 @@ def main():
             print(f"  Pages: {score_pages}")
             print(f"  TP: {score_tp}, FP: {score_fp}, FN: {score_fn}, GT: {score_gt}")
             print(f"  Precision: {precision:.4f}, Recall: {recall:.4f}, F1: {f1:.4f}")
-            
+
             total_tp += score_tp
             total_fp += score_fp
             total_fn += score_fn
@@ -105,11 +143,15 @@ def main():
     if total_tp + total_fp + total_fn > 0:
         total_precision = total_tp / (total_tp + total_fp) if (total_tp + total_fp) > 0 else 0
         total_recall = total_tp / (total_tp + total_fn) if (total_tp + total_fn) > 0 else 0
-        total_f1 = 2 * total_precision * total_recall / (total_precision + total_recall) if (total_precision + total_recall) > 0 else 0
-        
-        print("\n" + "="*30)
+        total_f1 = (
+            2 * total_precision * total_recall / (total_precision + total_recall)
+            if (total_precision + total_recall) > 0
+            else 0
+        )
+
+        print("\n" + "=" * 30)
         print("AGGREGATE METRICS")
-        print("="*30)
+        print("=" * 30)
         print(f"Total TP: {total_tp}")
         print(f"Total FP: {total_fp}")
         print(f"Total FN: {total_fn}")
@@ -117,6 +159,7 @@ def main():
         print(f"Overall Precision: {total_precision:.4f}")
         print(f"Overall Recall: {total_recall:.4f}")
         print(f"Overall F1: {total_f1:.4f}")
+
 
 if __name__ == "__main__":
     main()

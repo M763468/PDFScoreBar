@@ -8,7 +8,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -88,12 +88,13 @@ class HomrPredictor:
 
         # Ensure weights are available
         download_weights(self.use_gpu_inference)
-        
+
         # Note: use_gpu_inference is handled internally by SegNet/Transformer
         # when running in-process via ONNX runtime settings.
 
         # Initialize transformer config for parse_staffs
         from homr.transformer.configs import default_config
+
         default_config.use_gpu_inference = self.use_gpu_inference
 
     def predict(
@@ -231,7 +232,7 @@ class HomrPredictor:
             # 600dpi (Standard) optimizations
             tb_config = ThinBarlineConfig(
                 min_height=18,
-                max_height=800, # Allow multi-staff
+                max_height=800,  # Allow multi-staff
                 max_width=30,
                 pixel_threshold=235,
                 max_intensity_std=120.0,
@@ -334,7 +335,9 @@ class HomrPredictor:
         added_end: List[BarlinePrediction] = []
         if self.tuning.get("enable_end_barline_recovery", False):
             # recover_end_barlines needs image_path
-            added_end = recover_end_barlines(image_path, mapped_predictions, staff_mask_resized, sr_scale)
+            added_end = recover_end_barlines(
+                image_path, mapped_predictions, staff_mask_resized, sr_scale
+            )
             if added_end:
                 mapped_predictions.extend(added_end)
 
@@ -441,9 +444,7 @@ def run_homr_on_image(
             )
         except (TypeError, ImportError):
             # Fallback for legacy version that doesn't take config or where config is missing
-            result_staffs = parse_staffs(
-                debug, multi_staffs, preprocessed_image, selected_staff=-1
-            )
+            result_staffs = parse_staffs(debug, multi_staffs, preprocessed_image, selected_staff=-1)
         try:
             title = title_future.result(timeout_s)
         except Exception:  # pylint: disable=broad-except

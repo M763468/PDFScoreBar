@@ -2113,7 +2113,9 @@ class HomrPredictor:
         added_end: List[BarlinePrediction] = []
         if self.tuning.get("enable_end_barline_recovery", False):
             # recover_end_barlines needs image_path
-            added_end = recover_end_barlines(image_path, mapped_predictions, staff_mask_resized, sr_scale)
+            added_end = recover_end_barlines(
+                image_path, mapped_predictions, staff_mask_resized, sr_scale
+            )
             if added_end:
                 mapped_predictions.extend(added_end)
 

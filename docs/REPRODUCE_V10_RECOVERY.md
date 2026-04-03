@@ -31,7 +31,7 @@ docker run --rm --gpus all -v $(pwd):/workspace -w /workspace -e PYTHONPATH=/wor
 
 ```bash
 source .venv_pdf/bin/activate
-python tools/repro_accuracy/verify_pipeline_accuracy.py --run-dir logs/full_pipeline_runs/20260329_114731
+python tools/repro_accuracy/verify_pipeline_accuracy.py --run-dir logs/full_pipeline_runs/<YOUR_RUN_DIR>
 ```
 
 ## 5. 現在の達成精度 (Run 15基準)

@@ -2,12 +2,15 @@
 
 ## 1. 成果概要 (Achievement)
 Issue #44 で達成された過去の最高精度（Recall 100% / Precision 100%）を現在のパイプラインで再現する手法を確立し、論理的な証明を完了しました。
+（※本セッションの詳細な調査レポートとエビデンスは、[docs/notes/REPRODUCE_MAX_ACCURACY.md](docs/notes/REPRODUCE_MAX_ACCURACY.md) に集約されています。次セッションの開始前に必ずご一読ください）
 
 *   **実証結果**: 現在のコードベースに当時のシードを注入し、**Prokofiev 5 で TP: 1046 / FP: 0 / FN: 0** を復元。
 *   **自律再現**: 現在の検出器から「クリーンなシード」を再生成する手順を確立。全 68 ページで **Recall 99.9% / Precision 100.0%** を達成。
 *   **バグ修正**: 再現を阻んでいた 3 つの「サイレント・バグ」を特定し、`src/` 内で修正済み。
 
 ## 2. 修正済みのバグ (Bug Fixes applied to `src/`)
+これらのバグ修正はすでに現在のブランチ (`fix/pipeline_architecture`) にコミット済みです（Commit: `c12c600`）。次のセッションではこれらの修正が適用された状態からパイプライン統合を開始できます。
+
 1.  **Tall Band Dilution**: `split_box_vertically` を導入。多段ボックスによる密度希釈を解消。
 2.  **Scaling Bug**: 座標変換を 1x 空間に統一。CNN パッチ抽出と幾何学フィルタの不一致を解消。
 3.  **Threshold Bug**: `cnn_scoring.py` の判定を `>` から `>=` に修正。

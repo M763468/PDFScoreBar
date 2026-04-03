@@ -224,6 +224,11 @@ class DetectorOrchestrator:
         """Resolves where to look for staff masks."""
         override = self.det_cfg.get("staff_mask_dir", "DEFAULT_SENTINEL")
         if override == "DEFAULT_SENTINEL":
+            # If SR is enabled for probe, look in SR dir first
+            if self.enable_sr:
+                sr_dir = self.hybrid_output_dir / "sr"
+                if sr_dir.exists():
+                    return sr_dir
             return self.hybrid_output_dir
         return Path(override) if override is not None else None
 
@@ -231,6 +236,11 @@ class DetectorOrchestrator:
         """Resolves where to look for clef masks."""
         override = self.det_cfg.get("clef_mask_dir", "DEFAULT_SENTINEL")
         if override == "DEFAULT_SENTINEL":
+            # If SR is enabled for probe, look in SR dir first
+            if self.enable_sr:
+                sr_dir = self.hybrid_output_dir / "sr"
+                if sr_dir.exists():
+                    return sr_dir
             return self.hybrid_output_dir
         return Path(override) if override is not None else None
 

@@ -15,11 +15,12 @@ from src.pipeline.steps.probe_scan import run_probe_scan_batch
 
 logging.basicConfig(level=logging.INFO)
 
-# Constants for easy configuration
+# --- Configuration Section ---
+# Specific execution results used as baseline/SR/OMR sources
 INVENTORY_PATH = Path("logs/issue36_prep/20260208_bench_inventory.json")
 RUN_ROOT = Path("logs/hybrid_generalization/verify_fixed_v10")
 
-# Mapping from score name to the specific timestamp subdirectory in verify_fixed_v10
+# Mapping from score name to the specific timestamp subdirectory in RUN_ROOT
 SCORE_TO_RUN = {
     "Shostakovich-Festival_Overture_Va": "20260324_121505",
     "Shostakovich-Sym5-Va": "20260330_034727",
@@ -28,7 +29,10 @@ SCORE_TO_RUN = {
     "Va__Prokofiev_Symphony5": "20260330_095914",
 }
 
-OUTPUT_ROOT_TOP = Path("logs/repro_clean_seed_v12_batch")
+# Output directories
+OUTPUT_ROOT_TOP = Path("logs/repro_v12_recovery")
+FINAL_CANDIDATE_DIR_NAME = "probe_candidates_filtered_v12"
+# --- End of Configuration ---
 
 def main():
     if not INVENTORY_PATH.exists():
@@ -200,7 +204,7 @@ def main():
         )
 
         # Save final seed in the tree used by verify_repro_batch.py
-        final_dir = output_root_top / "probe_candidates_filtered_v12" / score_name / page_stem
+        final_dir = output_root_top / FINAL_CANDIDATE_DIR_NAME / score_name / page_stem
         final_dir.mkdir(parents=True, exist_ok=True)
         final_path = final_dir / "pipeline2_no_peak_candidates.json"
         with open(final_path, "w") as f:

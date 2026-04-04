@@ -30,9 +30,9 @@ def get_gt_boxes(gt_data):
 
 def main():
     # Final seeds we just generated
-    bands_from = Path("logs/repro_clean_seed_v12_batch/probe_candidates_filtered_v12")
+    bands_from = Path("logs/repro_v12_recovery/probe_candidates_filtered_v12")
     image_root = Path("data/evaluation2/images")
-    output_root = Path("logs/verify_repro_batch_final/probe_scan")
+    output_root = Path("logs/repro_v12_recovery/verify_final/probe_scan")
 
     if not bands_from.exists():
         print(f"Error: {bands_from} not found. Run the seed generation script first.")

@@ -84,7 +84,7 @@ class DetectorOrchestrator:
         probe_output_root = self.run_dir / "intermediate" / "probe_scan"
         ensure_dir(probe_output_root)
 
-        effective_images, effective_sr_scale = self._get_effective_images_for_probe()
+        effective_images, page_scales = self.get_effective_images_for_probe_v2()
         effective_score_name = self._get_effective_score_name()
         resolved_staff_mask_dir = self._resolve_staff_mask_dir()
         resolved_clef_mask_dir = self._resolve_clef_mask_dir()
@@ -98,10 +98,10 @@ class DetectorOrchestrator:
                 "clef_left_ratio": 0.30,
                 "min_height_median_ratio": 0.85,
                 "ink_threshold": 180,
-                "min_ink_ratio": 0.70,
+                "min_ink_ratio": 0.50,
                 "paper_threshold": 200,
                 "min_paper_overlap_ratio": 0.6,
-                "min_staff_overlap_ratio": 0.15,
+                "min_staff_overlap_ratio": 0.50,
                 "max_width_ratio": 0.05,
             }
             filter_kwargs = dict(default_filter_kwargs)
@@ -146,11 +146,12 @@ class DetectorOrchestrator:
                     else None
                 ),
                 skip_existing=self.skip_existing,
-                input_image_scale=effective_sr_scale,
+                input_image_scale=page_scales,
                 in_memory_images=self.in_memory_images,
                 enable_heuristic_filters=self.det_cfg.get("enable_heuristic_filters", True),
                 candidate_filter_kwargs=filter_kwargs,
-            )  # Build command list for logging/return
+            )
+        # Build command list for logging/return
         cmd_probe = [
             "inprocess:probe_scan",
             "--output-root",
@@ -175,8 +176,13 @@ class DetectorOrchestrator:
             raise ValueError("detection.cnn_model_path is required.")
 
         if not self.dry_run:
-            effective_images, effective_sr_scale = self._get_effective_images_for_probe()
+            effective_images, page_scales = self.get_effective_images_for_probe_v2()
             effective_score_name = self._get_effective_score_name()
+
+            # Calculate rescale factors for candidates:
+            # If candidates were found on SR image (scale > 1), we need to divide by that scale to reach 1x evaluation space.
+            rescale_factors = {stem: 1.0 / scale for stem, scale in page_scales.items()}
+
             run_cnn_scoring_batch(
                 probe_output_root=self.probe_output_dir,
                 images=self.images,  # Force CNN to run on original 1x images
@@ -188,7 +194,7 @@ class DetectorOrchestrator:
                     self.det_cfg.get("crop_recenter_max_shift_unit_ratio", 0.5)
                 ),
                 input_image_scale=1.0,  # Images provided are original 1x
-                candidate_rescale_factor=1.0 / effective_sr_scale,  # Scale candidates down to 1x
+                candidate_rescale_factor=rescale_factors,
                 in_memory_images=self.in_memory_images,
                 bands_from=self.hybrid_output_dir,
                 staff_vov_threshold=float(self.det_cfg.get("staff_vov_threshold", 0.5)),
@@ -204,28 +210,23 @@ class DetectorOrchestrator:
         ]
         return {"commands": [cmd_score]}
 
-    def _get_effective_images_for_probe(self) -> tuple[List[Path], int]:
-        """Returns images and scale to use for probe scan (SR or original)."""
-        if self.enable_sr:
-            effective_images = []
-            for img in self.images:
+    def get_effective_images_for_probe_v2(self) -> tuple[List[Path], Dict[str, float]]:
+        """Returns images and per-page scale to use for probe scan."""
+        effective_images = []
+        page_scales = {}
+        for img in self.images:
+            if self.enable_sr:
                 sr_img_path = self.hybrid_output_dir / "sr" / "batch" / img.stem / f"{img.stem}.png"
-                if (
-                    self.in_memory_images
-                    and img.stem in self.in_memory_images
-                    and sr_img_path.exists()
-                ):
-                    # Actually SR images are NOT in in_memory_images yet because they are produced by HybridDetector.
-                    # We should probably cache them there too if we want full in-memory.
-                    pass
-
                 if sr_img_path.exists():
                     effective_images.append(sr_img_path)
+                    page_scales[img.stem] = float(self.sr_scale)
+                    continue
                 else:
                     logger.warning("SR image not found for %s, using original.", img.stem)
-                    effective_images.append(img)
-            return effective_images, self.sr_scale
-        return self.images, 1
+
+            effective_images.append(img)
+            page_scales[img.stem] = 1.0
+        return effective_images, page_scales
 
     def _get_effective_score_name(self) -> str:
         """Derive score name from config, or fallback to original images parent name."""

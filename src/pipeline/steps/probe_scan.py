@@ -252,29 +252,46 @@ def _load_bands_for_image(
     return []
 
 
-def _build_mask_map(
-    mask_dir: Optional[Path], patterns: List[str], replacements: List[str]
-) -> Dict[str, Path]:
-    """Common helper to build stem -> path mapping for masks."""
+def _build_mask_map(mask_dir: Optional[Path], patterns: List[str]) -> Dict[str, Path]:
+    """Build stem -> path mapping for all files matching patterns."""
     mask_map: Dict[str, Path] = {}
     if not mask_dir or not mask_dir.exists():
         return mask_map
 
     for pattern in patterns:
         for path in mask_dir.rglob(pattern):
-            stem_key = path.name
-            for r in replacements:
-                stem_key = stem_key.replace(r, "")
-            if stem_key not in mask_map:
-                mask_map[stem_key] = path
+            # We use the full filename stem as key
+            mask_map[path.stem] = path
     return mask_map
+
+
+def _lookup_mask(
+    mask_map: Dict[str, Path], stem: str, score_name: Optional[str] = None
+) -> Optional[Path]:
+    """Robustly find a mask path by stem and optional score name."""
+    if not mask_map:
+        return None
+    # 1. Direct stem match (most common)
+    if stem in mask_map:
+        return mask_map[stem]
+    # 2. Try variations if score_name is known
+    if score_name:
+        for prefix in [f"{score_name}_", f"eval2_{score_name}_"]:
+            key = prefix + stem
+            if key in mask_map:
+                return mask_map[key]
+    # 3. Fallback: try all keys that contain our stem
+    # (Use this as last resort if score_name doesn't match perfectly)
+    for k, p in mask_map.items():
+        if stem in k:
+            return p
+    return None
 
 
 def _build_staff_mask_map(staff_mask_dir: Optional[Path]) -> Dict[str, Path]:
     return _build_mask_map(
         staff_mask_dir,
         ["*_debug_3_staff.png", "*_staff_mask.png"],
-        ["_proxy_debug_3_staff.png", "_debug_3_staff.png", "_staff_mask.png"],
     )
 
 
@@ -282,12 +299,6 @@ def _build_clef_mask_map(clef_mask_dir: Optional[Path]) -> Dict[str, Path]:
     return _build_mask_map(
         clef_mask_dir,
         ["*_debug_2_clefs.png", "*_clef_mask.png", "*_clefs_keys_mask.png"],
-        [
-            "_proxy_debug_2_clefs.png",
-            "_debug_2_clefs.png",
-            "_clef_mask.png",
-            "_clefs_keys_mask.png",
-        ],
     )
 
 
@@ -311,7 +322,7 @@ def run_probe_scan_batch(
     probe_endpoint_x_scale: Optional[float] = None,
     probe_endpoint_y_scale: Optional[float] = None,
     skip_existing: bool = False,
-    input_image_scale: float = 1.0,
+    input_image_scale: float | Dict[str, float] = 1.0,
     in_memory_images: Dict[str, Any] | None = None,
     enable_heuristic_filters: bool = False,
     candidate_filter_kwargs: Optional[Dict[str, Any]] = None,
@@ -361,6 +372,13 @@ def run_probe_scan_batch(
     processed = 0
     for img_path in tqdm(images, desc="Probe Scan", unit="page"):
         stem = img_path.stem
+        # Get effective scale for this page
+        eff_scale = (
+            input_image_scale.get(stem, 1.0)
+            if isinstance(input_image_scale, dict)
+            else float(input_image_scale)
+        )
+
         current_score_name = score_name or img_path.parent.name
         run_id = build_probe_run_id(img_path, score_name=current_score_name)
         run_dir = output_root / run_id
@@ -408,9 +426,9 @@ def run_probe_scan_batch(
         )
 
         # Rescale existing boxes to match image resolution if using SR
-        if input_image_scale > 1.0:
+        if eff_scale > 1.0:
             existing_boxes = [
-                tuple(int(round(v * input_image_scale)) for v in b) for b in existing_boxes
+                tuple(int(round(v * eff_scale)) for v in b) for b in existing_boxes
             ]
 
         # Split long seed boxes vertically to avoid Tall Band Dilution
@@ -418,15 +436,19 @@ def run_probe_scan_batch(
             # Threshold for splitting: use unit-based logic for resolution independence.
             # A full staff is approx 4 units. We split if box > 12.0 units (3 staves / ~150px at 1x).
             u_splitting = _estimate_unit_size_from_existing_boxes(existing_boxes) or (
-                40.0 * input_image_scale
+                44.0 * eff_scale
             )
-            split_threshold = 12.0 * u_splitting
+            split_threshold = 10.7 * u_splitting
 
             split_seeds = []
             for b in existing_boxes:
                 h_b = abs(b[3] - b[1])
                 if h_b > split_threshold:
-                    split_seeds.extend(split_box_vertically(img, b, ink_threshold=ink_threshold))
+                    split_seeds.extend(
+                        split_box_vertically(
+                            img, b, ink_threshold=ink_threshold, unit_size=u_splitting
+                        )
+                    )
                 else:
                     split_seeds.append(b)
             existing_boxes = split_seeds
@@ -492,11 +514,7 @@ def run_probe_scan_batch(
 
         final_set = set()
         for sb in existing_boxes:
-            # sb is already scaled to SR space if needed
-            h = abs(sb[3] - sb[1])
-            w = abs(sb[2] - sb[0])
-            if h >= min_height_px and w >= min_width_px:
-                final_set.add(tuple(int(v) for v in sb))
+            final_set.add(tuple(int(v) for v in sb))
         for c in filtered_candidates:
             final_set.add(tuple(int(v) for v in c))
 

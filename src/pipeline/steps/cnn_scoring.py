@@ -18,7 +18,11 @@ from src.common.barline_evaluation import barline_iou, barline_vertical_overlap
 from src.pipeline.core.run_ids import build_probe_run_id
 from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask
 from src.pipeline.steps.filters import filter_by_staff_overlap
-from src.pipeline.steps.probe_scan import _build_staff_mask_map, _load_bands_for_image
+from src.pipeline.steps.probe_scan import (
+    _build_staff_mask_map,
+    _load_bands_for_image,
+    _lookup_mask,
+)
 from src.pipeline.utils.images import load_image
 
 logger = logging.getLogger(__name__)
@@ -374,7 +378,7 @@ def run_cnn_scoring_batch(
     crop_recenter_on_bbox_ink: bool = False,
     crop_recenter_max_shift_unit_ratio: float = 0.35,
     input_image_scale: float = 1.0,
-    candidate_rescale_factor: Optional[float] = None,
+    candidate_rescale_factor: Optional[float | Dict[str, float]] = None,
     in_memory_images: Dict[str, Any] | None = None,
 ) -> int:
     """Run CNN scoring for all probe output dirs with one model load."""
@@ -385,18 +389,19 @@ def run_cnn_scoring_batch(
 
     staff_mask_map = _build_staff_mask_map(staff_mask_dir)
 
-    # Default candidate rescale factor to 1/input_image_scale if not provided
-    # (Matches legacy behavior when images and candidates are in the same SR space)
-    effective_cand_scale = (
-        candidate_rescale_factor
-        if candidate_rescale_factor is not None
-        else (1.0 / input_image_scale)
-    )
-
     processed = 0
     for img_path in tqdm(images, desc="CNN Scoring", unit="page"):
         run_id = build_probe_run_id(img_path, score_name=score_name)
         run_dir = probe_output_root / run_id
+
+        # Determine effective rescale factor for this page
+        if isinstance(candidate_rescale_factor, dict):
+            eff_scale = candidate_rescale_factor.get(img_path.stem, 1.0 / input_image_scale)
+        elif candidate_rescale_factor is not None:
+            eff_scale = candidate_rescale_factor
+        else:
+            eff_scale = 1.0 / input_image_scale
+
         if _score_directory(
             run_dir=run_dir,
             image_path=img_path,
@@ -405,14 +410,14 @@ def run_cnn_scoring_batch(
             threshold=threshold,
             device=device,
             batch_size=batch_size,
-            staff_mask_path=staff_mask_map.get(img_path.stem),
+            staff_mask_path=_lookup_mask(staff_mask_map, img_path.stem, score_name),
             bands_from=bands_from,
             current_score_name=score_name,
             staff_vov_threshold=staff_vov_threshold,
             crop_recenter_on_bbox_ink=crop_recenter_on_bbox_ink,
             crop_recenter_max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio,
             input_image_scale=input_image_scale,
-            candidate_rescale_factor=effective_cand_scale,
+            candidate_rescale_factor=eff_scale,
             in_memory_images=in_memory_images,
         ):
             processed += 1

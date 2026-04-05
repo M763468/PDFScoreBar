@@ -77,37 +77,37 @@ def split_box_vertically(
     if len(crop.shape) == 3:
         crop = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
 
-    # Median pooling width-wise to handle noise
-    row_ink = (crop < ink_threshold).any(axis=1)
-    
     # Large gaps should split the box
-    # We use 0.25 units as a resolution-independent proxy for ~10px at 600dpi (unit~40)
-    gap_threshold = max(2, int(round(0.25 * unit_size)))
+    # We use unit-based ratios to match the golden 50px/30px at 1x (unit~25)
+    min_gap = max(2, int(round(2.0 * unit_size)))
+    min_segment_h = max(2, int(round(1.2 * unit_size)))
+
+    row_ink = (crop < ink_threshold).sum(axis=1)
+    active = (row_ink > 0).astype(np.uint8)
+    n_labels, labels, stats, _ = cv2.connectedComponentsWithStats(active.reshape(-1, 1), 4)
     
     segments = []
-    curr_start = None
-    curr_gap = 0
-    
-    for i, has_ink in enumerate(row_ink):
-        if has_ink:
-            if curr_start is None:
-                curr_start = i
-            curr_gap = 0
-        else:
-            if curr_start is not None:
-                curr_gap += 1
-                if curr_gap >= gap_threshold:
-                    segments.append((curr_start, i - curr_gap + 1))
-                    curr_start = None
-                    curr_gap = 0
-    
-    if curr_start is not None:
-        segments.append((curr_start, len(row_ink)))
-        
+    for i in range(1, n_labels):
+        y_start = int(stats[i, cv2.CC_STAT_TOP])
+        h_seg = int(stats[i, cv2.CC_STAT_HEIGHT])
+        if h_seg >= min_segment_h:
+            segments.append((y_lo + y_start, y_lo + y_start + h_seg))
+            
     if not segments:
         return [box]
         
-    return [(int(x1), int(y_lo + s[0]), int(x2), int(y_lo + s[1])) for s in segments]
+    merged = []
+    curr_y1, curr_y2 = segments[0]
+    for i in range(1, len(segments)):
+        next_y1, next_y2 = segments[i]
+        if next_y1 - curr_y2 < min_gap:
+            curr_y2 = next_y2
+        else:
+            merged.append((curr_y1, curr_y2))
+            curr_y1, curr_y2 = next_y1, next_y2
+    merged.append((curr_y1, curr_y2))
+    
+    return [(int(x1), int(s_y1), int(x2), int(s_y2)) for s_y1, s_y2 in merged]
 
 
 def filter_probe_candidates(
@@ -118,13 +118,13 @@ def filter_probe_candidates(
     clef_mask: Optional[np.ndarray] = None,
     # Golden baseline defaults from v12/v14 benchmarks
     ink_threshold: int = 180,
-    min_ink_ratio: float = 0.50,
+    min_ink_ratio: float = 0.18,
     paper_threshold: int = 200,
     min_paper_overlap_ratio: float = 0.6,
-    min_staff_overlap_ratio: float = 0.50,
-    left_margin_ratio: float = 0.25,
-    clef_left_ratio: float = 0.30,
-    min_height_median_ratio: float = 0.85,
+    min_staff_overlap_ratio: float = 0.01,
+    left_margin_ratio: float = 0.12,
+    clef_left_ratio: float = 0.25,
+    min_height_median_ratio: float = 0.60,
     max_width_ratio: float = 0.05,
     unit_size: float = 40.0,
 ) -> Tuple[List[Tuple[int, int, int, int]], List[str]]:

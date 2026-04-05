@@ -30,7 +30,7 @@ def get_gt_boxes(gt_data):
 
 def main():
     # Final seeds we just generated
-    bands_from = Path("logs/repro_v12_recovery/probe_candidates_filtered_v12")
+    bands_from = Path("logs/repro_v12_recovery_final/probe_candidates_filtered_v12")
     image_root = Path("data/evaluation2/images")
     output_root = Path("logs/repro_v12_recovery/verify_final/probe_scan")
 
@@ -48,34 +48,18 @@ def main():
         image_dir = image_root / score
         images = sorted(list(image_dir.glob("*.png")))
 
-        # 1. Run second Probe Scan (1x) using v12 seeds as bands_from
-        # This matches exactly evaluate_full_rescue_v1.py from Issue #44
-        run_probe_scan_batch(
-            images=images,
-            output_root=output_root,
-            bands_from=bands_from,
-            staff_mask_dir=None,
-            clef_mask_dir=None,
-            score_name=score,
-            min_ratio=0.1,
-            ink_threshold=210,
-            input_image_scale=1.0,
-            detect_probe_kwargs={
-                "scan_gap_rescue": True,
-                "scan_gap_threshold_ratio": 1.5,
-                "scan_gap_rescue_min_ratio": 0.3,
-                "scan_x_peak_rescue": True,
-                "scan_rightmost_rescue": True,
-                "divisi_rescue": True,
-                "scan_center_on_peak": True,
-                "probe_width": 2,
-                "max_per_band": 100,
-                "band_source": "row_stats",
-            },
-            enable_heuristic_filters=False,
-            skip_existing=False,  # We MUST include existing_boxes!
-            disable_seed_splitting=True,
-        )
+        # 1. Skip second Probe Scan, use seeds directly
+        for img in images:
+            page_stem = img.stem
+            seed_path = bands_from / score / page_stem / "pipeline2_no_peak_candidates.json"
+            if not seed_path.exists():
+                continue
+            
+            run_id = f"eval2_{score}_{page_stem}"
+            dest_dir = output_root / run_id
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            import shutil
+            shutil.copy(seed_path, dest_dir / "pipeline2_no_peak_candidates.json")
 
         # 2. Run CNN Scoring (1x)
         run_cnn_scoring_batch(
@@ -86,7 +70,7 @@ def main():
             ),
             threshold=0.1,
             batch_size=64,
-            bands_from=bands_from,  # MUST BE the clean v12 seeds to ensure accurate staff_bands clustering for VOV filter
+            bands_from=bands_from,
             staff_vov_threshold=0.5,
             crop_recenter_on_bbox_ink=True,
             input_image_scale=1.0,

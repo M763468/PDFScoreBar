@@ -33,6 +33,12 @@ def load_json_boxes(path: Path) -> List[Box]:
                 for row in payload
                 if isinstance(row, dict) and isinstance(row.get("barline_location"), list)
             ]
+        if isinstance(payload[0], dict) and "bbox" in payload[0]:
+            return [
+                tuple(int(v) for v in row["bbox"][:4])
+                for row in payload
+                if isinstance(row, dict) and isinstance(row.get("bbox"), list) and len(row["bbox"]) >= 4
+            ]
         return []
     if isinstance(payload, dict) and "predictions" in payload:
         boxes: List[Box] = []

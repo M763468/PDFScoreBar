@@ -419,16 +419,34 @@ def run_probe_scan_batch(
                     )
                 clef_mask = loaded_clef
 
+        # --- Step 1: Robust Coordinate-Based Scaling ---
+        # If seeds (bands_from) are from a different resolution (e.g., 300 DPI vs 600 DPI),
+        # but the caller passed input_image_scale=1.0 or wrong scale, we infer it from image width.
         existing_boxes = _load_bands_for_image(
             bands_from=bands_from,
             current_score_name=current_score_name,
             stem=stem,
         )
-
-        # Rescale existing boxes to match image resolution if using SR
-        if eff_scale > 1.0:
+        
+        # We need an image-specific inferred scale if using SR/Mismatched sources
+        img_h, img_w = img.shape[:2]
+        inferred_scaling = 1.0
+        if existing_boxes:
+            max_seed_x = max(b[0] for b in existing_boxes) if existing_boxes else 0
+            # If max_seed_x is approx half of img_w, seeds are likely 300DPI and image is 600DPI
+            if max_seed_x > 0 and img_w > 0:
+                ratio = img_w / (max_seed_x * 1.0)
+                # Check for approx 2.0x (300DPI -> 600DPI) or 0.5x (600DPI -> 300DPI)
+                if 1.8 < ratio < 2.2:
+                    inferred_scaling = 2.0
+                elif 0.4 < ratio < 0.6:
+                    inferred_scaling = 0.5
+        
+        # Combine with explicit scale (eff_scale represents mapping candidates TO image)
+        total_scaling = eff_scale * inferred_scaling
+        if total_scaling != 1.0:
             existing_boxes = [
-                tuple(int(round(v * eff_scale)) for v in b) for b in existing_boxes
+                tuple(int(round(v * total_scaling)) for v in b) for b in existing_boxes
             ]
 
         # Split long seed boxes vertically to avoid Tall Band Dilution
@@ -438,7 +456,7 @@ def run_probe_scan_batch(
             u_splitting = _estimate_unit_size_from_existing_boxes(existing_boxes) or (
                 44.0 * eff_scale
             )
-            split_threshold = 10.7 * u_splitting
+            split_threshold = 12.0 * u_splitting
 
             split_seeds = []
             for b in existing_boxes:

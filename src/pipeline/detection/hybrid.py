@@ -12,30 +12,21 @@ from typing import Any, Dict, List
 
 import cv2
 import torch
+from src.homr_eval_scripts.core.metrics import BarlinePrediction
+from src.homr_eval_scripts.core.predictor import HomrPredictor
+from src.homr_eval_scripts.core.reporting import save_homr_results
+from src.homr_eval_scripts.core.utils import DEFAULT_TUNING
 from tqdm import tqdm
 
+from homr.main import ProcessingConfig
+from homr.music_xml_generator import XmlGeneratorArguments
+from src.common.preprocessing import apply_advanced_sr
 from src.pipeline.core.python_env import get_pipeline_python
 from src.pipeline.core.subprocess_utils import run_with_logging
 from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
 from src.pipeline.utils.io import ensure_dir
 
 from .utils import log_vram_usage
-
-# Optional imports for in-process Homr execution
-try:
-    from src.common.preprocessing import apply_advanced_sr
-    from src.homr_eval_scripts.homr_evaluator import (
-        DEFAULT_TUNING,
-        BarlinePrediction,
-        HomrPredictor,
-        ProcessingConfig,
-        XmlGeneratorArguments,
-        save_homr_results,
-    )
-
-    _HOMR_AVAILABLE = True
-except ImportError:
-    _HOMR_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -89,66 +80,21 @@ class HybridDetector:
         stems = [path.stem for path in self.images]
         commands: List[List[str]] = []
 
-        logger.info("--- Step 2.1: Hybrid Detection (Subprocess homr baseline/SR) ---")
+        logger.info("--- Step 2.1: Hybrid Detection (In-Process homr baseline/SR) ---")
         enable_sr = bool(self.det_cfg.get("enable_sr", True))
-        python_cmd = self._get_python_cmd("homr")
-
-        # Environment setup for Homr subprocess
-        env = os.environ.copy()
-        homr_path = self.project_root / "external" / "homr"
-        env["PYTHONPATH"] = os.pathsep.join(
-            [str(self.project_root), str(homr_path), env.get("PYTHONPATH", "")]
-        ).strip(os.pathsep)
 
         # 1. Homr Baseline
         baseline_output = hybrid_output_dir / "baseline"
-        if _HOMR_AVAILABLE:
-            self._run_homr_in_process(baseline_output, enable_sr=False)
-        elif self.skip_existing and self._all_stems_exist(baseline_output, stems, "batch/*/*.json"):
-            logger.info("Skipping homr baseline: outputs already exist.")
-        else:
-            cmd = python_cmd + [
-                "src/homr_eval_scripts/homr_evaluator.py",
-                "--images",
-                *image_paths,
-                "--output-root",
-                self._rel(baseline_output),
-                "--force-run-id",
-                "batch",
-                "--enable-segnet-cache",
-            ]
-            commands.append(cmd)
-            if not self.dry_run:
-                run_with_logging(cmd, env=env, check=True)
+        self._run_homr_in_process(baseline_output, enable_sr=False)
 
         # 2. Homr SR
         sr_output = hybrid_output_dir / "sr"
         if not enable_sr:
             logger.info("Skipping homr SR: enable_sr is false.")
-        elif _HOMR_AVAILABLE:
+        else:
             self._run_homr_in_process(
                 sr_output, enable_sr=True, sr_scale=int(self.det_cfg.get("sr_scale", 2))
             )
-        elif self.skip_existing and self._all_stems_exist(sr_output, stems, "batch/*/*.json"):
-            logger.info("Skipping homr SR: outputs already exist.")
-        else:
-            sr_scale = int(self.det_cfg.get("sr_scale", 2))
-            cmd = python_cmd + [
-                "src/homr_eval_scripts/homr_evaluator.py",
-                "--images",
-                *image_paths,
-                "--output-root",
-                self._rel(sr_output),
-                "--force-run-id",
-                "batch",
-                "--enable-sr",
-                "--sr-scale",
-                str(sr_scale),
-                "--enable-segnet-cache",
-            ]
-            commands.append(cmd)
-            if not self.dry_run:
-                run_with_logging(cmd, env=env, check=True)
 
         # 3. OMR-DLN SR
         logger.info("--- Step 2.1b: OMR-DLN SR (Subprocess) ---")
@@ -169,6 +115,10 @@ class HybridDetector:
             )
             commands.append(omr_cmd)
             if not self.dry_run:
+                env = os.environ.copy()
+                env["PYTHONPATH"] = os.pathsep.join(
+                    [str(self.project_root), env.get("PYTHONPATH", "")]
+                ).strip(os.pathsep)
                 run_with_logging(omr_cmd, env=env, check=True)
 
         # 4. Consensus
@@ -230,18 +180,13 @@ class HybridDetector:
     def _run_homr_in_process(
         self,
         output_root: Path,
-        enable_sr: bool = False,
+        *,
+        enable_sr: bool,
         sr_scale: int = 2,
     ) -> None:
         """Runs Homr inference (baseline or SR) in-process for persistence."""
-        if not _HOMR_AVAILABLE:
-            logger.warning("Homr not available for in-process execution.")
-            return
-
-        stems = [img.stem for img in self.images]
-        if self.skip_existing and self._all_stems_exist(
-            output_root, stems, "batch/*/*_detections.json"
-        ):
+        stems = [p.stem for p in self.images]
+        if self.skip_existing and self._all_stems_exist(output_root, stems, "batch/*/*.json"):
             logger.info(f"Skipping in-process Homr for {output_root.name}: outputs exist.")
             return
 
@@ -255,6 +200,7 @@ class HybridDetector:
             bool(self.det_cfg.get("write_staff_positions", False)),
             False,
             -1,
+            torch.cuda.is_available(),
         )
         tuning = DEFAULT_TUNING.copy()
         tuning.update(

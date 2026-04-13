@@ -1,0 +1,384 @@
+diff --git a/src/pipeline/core/python_env.py b/src/pipeline/core/python_env.py
+index eb65d68..3dc86aa 100644
+--- a/src/pipeline/core/python_env.py
++++ b/src/pipeline/core/python_env.py
+@@ -17,17 +17,45 @@ def is_in_container() -> bool:
+     """Checks if the current process is running inside a Docker container."""
+     # Common markers for being inside one of our project containers
+     return Path("/.dockerenv").exists() or (
+-        Path("/workspace").exists() and Path("/opt/venv_sr").exists()
++        Path("/workspace").exists()
++        and (Path("/opt/venv_pipeline").exists() or Path("/opt/venv_sr").exists())
+     )
+ 
+ 
+ def get_docker_exec_prefix() -> List[str]:
+-    """Returns the docker exec prefix if sr_eval_gpu is running and we are on host."""
++    """Returns the docker exec prefix if a supported container is running and we are on host."""
+     if is_in_container():
+         return []
+ 
+     try:
+-        # Check if sr_eval_gpu is running
++        # Check for unified container first
++        result = subprocess.run(
++            [
++                "docker",
++                "ps",
++                "--filter",
++                "name=pdfscore_pipeline_gpu",
++                "--filter",
++                "status=running",
++                "--format",
++                "{{.Names}}",
++            ],
++            capture_output=True,
++            text=True,
++            check=False,
++        )
++        if result.returncode == 0 and "pdfscore_pipeline_gpu" in result.stdout:
++            return [
++                "docker",
++                "exec",
++                "-w",
++                "/workspace",
++                "-e",
++                "PYTHONPATH=/workspace",
++                "pdfscore_pipeline_gpu",
++            ]
++
++        # Fallback to sr_eval_gpu
+         result = subprocess.run(
+             [
+                 "docker",
+@@ -51,7 +79,7 @@ def get_docker_exec_prefix() -> List[str]:
+                 "-w",
+                 "/workspace",
+                 "-e",
+-                "PYTHONPATH=/workspace:/workspace/external/homr",
++                "PYTHONPATH=/workspace",
+                 "sr_eval_gpu",
+             ]
+     except FileNotFoundError:
+@@ -70,8 +98,8 @@ def get_pipeline_python(step_name: Optional[str] = None) -> List[str]:
+     Order of preference:
+     1. PIPELINE_PYTHON environment variable (explicit override).
+     2. For heavy steps (detection/homr/omr_dln/sr):
+-       a. If in container: /opt/venv_sr/bin/python.
+-       b. If on host and sr_eval_gpu is running: 'docker exec sr_eval_gpu /opt/venv_sr/bin/python'.
++       a. If in container: /opt/venv_pipeline/bin/python.
++       b. If on host and a supported container is running: 'docker exec <container> <venv_python>'.
+     3. For pdf_to_images: Fallback to .venv_pdf/bin/python.
+     4. Fallback to current sys.executable.
+     """
+@@ -80,20 +108,27 @@ def get_pipeline_python(step_name: Optional[str] = None) -> List[str]:
+     # 1. Check for heavy steps first
+     if step_name in ("detection", "homr", "omr_dln", "sr"):
+         if is_in_container():
+-            if Path("/opt/venv_sr/bin/python").exists():
++            if Path("/opt/venv_pipeline/bin/python").exists():
++                return ["/opt/venv_pipeline/bin/python"]
++            elif Path("/opt/venv_sr/bin/python").exists():
+                 return ["/opt/venv_sr/bin/python"]
+         else:
+             prefix = get_docker_exec_prefix()
+             if prefix:
+                 logger.info(f"Using {prefix} for step '{step_name}'")
+-                return prefix + ["/opt/venv_sr/bin/python"]
++                if "sr_eval_gpu" in prefix:
++                    return prefix + ["/opt/venv_sr/bin/python"]
++                else:
++                    return prefix + ["/opt/venv_pipeline/bin/python"]
+ 
+     # 2. Explicit override
+     if env_python:
+         return [env_python]
+ 
+-    # 3. If already in container but not a heavy step (or /opt/venv_sr missing)
++    # 3. If already in container but not a heavy step (or heavy step venv missing)
+     if is_in_container():
++        if Path("/opt/venv_pipeline/bin/python").exists():
++            return ["/opt/venv_pipeline/bin/python"]
+         return [sys.executable]
+ 
+     # 4. Default host fallback for specific steps
+diff --git a/src/pipeline/detection/hybrid.py b/src/pipeline/detection/hybrid.py
+index d336cad..1348758 100644
+--- a/src/pipeline/detection/hybrid.py
++++ b/src/pipeline/detection/hybrid.py
+@@ -14,6 +14,13 @@ import cv2
+ import torch
+ from tqdm import tqdm
+ 
++from homr.main import ProcessingConfig
++from homr.music_xml_generator import XmlGeneratorArguments
++from src.common.preprocessing import apply_advanced_sr
++from src.homr_eval_scripts.core.metrics import BarlinePrediction
++from src.homr_eval_scripts.core.predictor import HomrPredictor
++from src.homr_eval_scripts.core.reporting import save_homr_results
++from src.homr_eval_scripts.core.utils import DEFAULT_TUNING
+ from src.pipeline.core.python_env import get_pipeline_python
+ from src.pipeline.core.subprocess_utils import run_with_logging
+ from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
+@@ -21,22 +28,6 @@ from src.pipeline.utils.io import ensure_dir
+ 
+ from .utils import log_vram_usage
+ 
+-# Optional imports for in-process Homr execution
+-try:
+-    from src.common.preprocessing import apply_advanced_sr
+-    from src.homr_eval_scripts.homr_evaluator import (
+-        DEFAULT_TUNING,
+-        BarlinePrediction,
+-        HomrPredictor,
+-        ProcessingConfig,
+-        XmlGeneratorArguments,
+-        save_homr_results,
+-    )
+-
+-    _HOMR_AVAILABLE = True
+-except ImportError:
+-    _HOMR_AVAILABLE = False
+-
+ logger = logging.getLogger(__name__)
+ 
+ 
+@@ -89,66 +80,21 @@ class HybridDetector:
+         stems = [path.stem for path in self.images]
+         commands: List[List[str]] = []
+ 
+-        logger.info("--- Step 2.1: Hybrid Detection (Subprocess homr baseline/SR) ---")
++        logger.info("--- Step 2.1: Hybrid Detection (In-Process homr baseline/SR) ---")
+         enable_sr = bool(self.det_cfg.get("enable_sr", True))
+-        python_cmd = self._get_python_cmd("homr")
+-
+-        # Environment setup for Homr subprocess
+-        env = os.environ.copy()
+-        homr_path = self.project_root / "external" / "homr"
+-        env["PYTHONPATH"] = os.pathsep.join(
+-            [str(self.project_root), str(homr_path), env.get("PYTHONPATH", "")]
+-        ).strip(os.pathsep)
+ 
+         # 1. Homr Baseline
+         baseline_output = hybrid_output_dir / "baseline"
+-        if _HOMR_AVAILABLE:
+-            self._run_homr_in_process(baseline_output, enable_sr=False)
+-        elif self.skip_existing and self._all_stems_exist(baseline_output, stems, "batch/*/*.json"):
+-            logger.info("Skipping homr baseline: outputs already exist.")
+-        else:
+-            cmd = python_cmd + [
+-                "src/homr_eval_scripts/homr_evaluator.py",
+-                "--images",
+-                *image_paths,
+-                "--output-root",
+-                self._rel(baseline_output),
+-                "--force-run-id",
+-                "batch",
+-                "--enable-segnet-cache",
+-            ]
+-            commands.append(cmd)
+-            if not self.dry_run:
+-                run_with_logging(cmd, env=env, check=True)
++        self._run_homr_in_process(baseline_output, enable_sr=False)
+ 
+         # 2. Homr SR
+         sr_output = hybrid_output_dir / "sr"
+         if not enable_sr:
+             logger.info("Skipping homr SR: enable_sr is false.")
+-        elif _HOMR_AVAILABLE:
++        else:
+             self._run_homr_in_process(
+                 sr_output, enable_sr=True, sr_scale=int(self.det_cfg.get("sr_scale", 2))
+             )
+-        elif self.skip_existing and self._all_stems_exist(sr_output, stems, "batch/*/*.json"):
+-            logger.info("Skipping homr SR: outputs already exist.")
+-        else:
+-            sr_scale = int(self.det_cfg.get("sr_scale", 2))
+-            cmd = python_cmd + [
+-                "src/homr_eval_scripts/homr_evaluator.py",
+-                "--images",
+-                *image_paths,
+-                "--output-root",
+-                self._rel(sr_output),
+-                "--force-run-id",
+-                "batch",
+-                "--enable-sr",
+-                "--sr-scale",
+-                str(sr_scale),
+-                "--enable-segnet-cache",
+-            ]
+-            commands.append(cmd)
+-            if not self.dry_run:
+-                run_with_logging(cmd, env=env, check=True)
+ 
+         # 3. OMR-DLN SR
+         logger.info("--- Step 2.1b: OMR-DLN SR (Subprocess) ---")
+@@ -169,6 +115,10 @@ class HybridDetector:
+             )
+             commands.append(omr_cmd)
+             if not self.dry_run:
++                env = os.environ.copy()
++                env["PYTHONPATH"] = os.pathsep.join(
++                    [str(self.project_root), env.get("PYTHONPATH", "")]
++                ).strip(os.pathsep)
+                 run_with_logging(omr_cmd, env=env, check=True)
+ 
+         # 4. Consensus
+@@ -230,18 +180,13 @@ class HybridDetector:
+     def _run_homr_in_process(
+         self,
+         output_root: Path,
+-        enable_sr: bool = False,
++        *,
++        enable_sr: bool,
+         sr_scale: int = 2,
+     ) -> None:
+         """Runs Homr inference (baseline or SR) in-process for persistence."""
+-        if not _HOMR_AVAILABLE:
+-            logger.warning("Homr not available for in-process execution.")
+-            return
+-
+-        stems = [img.stem for img in self.images]
+-        if self.skip_existing and self._all_stems_exist(
+-            output_root, stems, "batch/*/*_detections.json"
+-        ):
++        stems = [p.stem for p in self.images]
++        if self.skip_existing and self._all_stems_exist(output_root, stems, "batch/*/*.json"):
+             logger.info(f"Skipping in-process Homr for {output_root.name}: outputs exist.")
+             return
+ 
+@@ -255,6 +200,7 @@ class HybridDetector:
+             bool(self.det_cfg.get("write_staff_positions", False)),
+             False,
+             -1,
++            torch.cuda.is_available(),
+         )
+         tuning = DEFAULT_TUNING.copy()
+         tuning.update(
+diff --git a/src/pipeline/detection/orchestrator.py b/src/pipeline/detection/orchestrator.py
+index deefab6..cac3368 100644
+--- a/src/pipeline/detection/orchestrator.py
++++ b/src/pipeline/detection/orchestrator.py
+@@ -188,9 +188,8 @@ class DetectorOrchestrator:
+         return self.images, 1
+ 
+     def _get_effective_score_name(self) -> str | None:
+-        """Derive score name from original images or config."""
+-        original_score_name = self.images[0].parent.name if self.images else None
+-        return str(self.det_cfg.get("probe_score_name", original_score_name or ""))
++        """Derive score name from config, or None to let it be per-image."""
++        return self.det_cfg.get("probe_score_name")
+ 
+     def _resolve_staff_mask_dir(self) -> Path | None:
+         """Resolves where to look for staff masks."""
+diff --git a/src/pipeline/orchestrator.py b/src/pipeline/orchestrator.py
+index c917ae2..566a8d3 100644
+--- a/src/pipeline/orchestrator.py
++++ b/src/pipeline/orchestrator.py
+@@ -15,6 +15,7 @@ from src.common.barline_evaluation import (
+     BARLINE_X_MARGIN,
+     BARLINE_Y_MARGIN,
+ )
++from src.pdf_to_images import normalise_pages, render_pdf
+ from src.pipeline.core.config import get_nested
+ from src.pipeline.core.manifest import build_manifest
+ from src.pipeline.detection import (
+@@ -71,7 +72,8 @@ class PipelineOrchestrator:
+         self._persistence = _PIPELINE_PERSISTENCE
+         self._mmr_persistence = _MMR_PERSISTENCE
+ 
+-    def _build_pdf_command(self) -> List[str]:
++    def _run_pdf_to_images(self) -> None:
++        """Step 1: Convert PDF to images in-process."""
+         pdf_path = get_nested(self.config, "inputs", "pdf_path")
+         pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
+         if not pdf_path:
+@@ -80,46 +82,30 @@ class PipelineOrchestrator:
+         output_dir = self.run_dir / "inputs" / "images"
+         ensure_dir(output_dir)
+ 
+-        from src.pipeline.core.python_env import get_pipeline_python
+-
+-        python_cmd = get_pipeline_python("pdf_to_images")
+-
+-        cmd = python_cmd + [
+-            "src/pdf_to_images.py",
+-            "--pdf",
+-            str(pdf_path),
+-            "--output-dir",
+-            str(output_dir),
+-        ]
+-        if pdf_opts.get("dpi") is not None:
+-            cmd += ["--dpi", str(pdf_opts["dpi"])]
+-        if pdf_opts.get("pages"):
+-            cmd += ["--pages", str(pdf_opts["pages"])]
+-        if pdf_opts.get("target_width") is not None:
+-            cmd += ["--target-width", str(pdf_opts["target_width"])]
+-        if pdf_opts.get("target_height") is not None:
+-            cmd += ["--target-height", str(pdf_opts["target_height"])]
+-        if pdf_opts.get("interpolation"):
+-            cmd += ["--interpolation", str(pdf_opts["interpolation"])]
+-        if pdf_opts.get("prefix"):
+-            cmd += ["--prefix", str(pdf_opts["prefix"])]
+-        if pdf_opts.get("format"):
+-            cmd += ["--format", str(pdf_opts["format"])]
+-
+-        cmd.append("--overwrite")
+-
+-        if pdf_opts.get("alpha"):
+-            cmd.append("--alpha")
+-        return cmd
+-
+-    def _run_command(self, cmd: List[str]) -> None:
+         if self.dry_run:
+-            logger.info(f"Executing (dry-run): {' '.join(cmd)}")
++            logger.info(f"Executing (dry-run): render_pdf {pdf_path} -> {output_dir}")
+             return
+ 
+-        from src.pipeline.core.subprocess_utils import run_with_logging
+-
+-        run_with_logging(cmd)
++        import fitz
++
++        pdf_path = Path(pdf_path)
++        with fitz.open(pdf_path) as doc:
++            pages = normalise_pages(pdf_opts.get("pages"), doc.page_count)
++
++        logger.info(f"Rendering PDF: {pdf_path} (pages: {pages}) -> {output_dir}")
++        render_pdf(
++            pdf_path,
++            output_dir,
++            dpi=float(pdf_opts.get("dpi", 300.0)),
++            pages=pages,
++            prefix=str(pdf_opts.get("prefix", "page")),
++            fmt=str(pdf_opts.get("format", "png")),
++            keep_alpha=bool(pdf_opts.get("alpha", False)),
++            target_width=pdf_opts.get("target_width"),
++            target_height=pdf_opts.get("target_height"),
++            interpolation=str(pdf_opts.get("interpolation", "area")),
++            overwrite=True,
++        )
+ 
+     def _resolve_page_runs(self, page_ids: List[str]) -> List[str]:
+         """Resolves which runs to use for each page (legacy manual resolution)."""
+@@ -141,9 +127,8 @@ class PipelineOrchestrator:
+             ):
+                 logger.info("Skipping pdf_to_images: output directory exists and is not empty.")
+             else:
+-                pdf_cmd = self._build_pdf_command()
+-                commands.append(pdf_cmd)
+-                self._run_command(pdf_cmd)
++                self._run_pdf_to_images()
++                commands.append(["inprocess:pdf_to_images"])
+ 
+         logger.info("Collecting images...")
+         images = collect_images(self.config, self.run_dir)
+@@ -156,7 +141,7 @@ class PipelineOrchestrator:
+         probe_output_dir = None
+         hybrid_output_dir = None
+ 
+-        if run_detection:
++        if run_detection and not self.validate_only:
+             logger.info("Starting detection step...")
+             if self.skip_existing:
+                 if "detection" not in self.config:

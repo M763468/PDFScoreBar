@@ -55,12 +55,37 @@ def _get_session(model_path: str, use_gpu: bool) -> ort.InferenceSession:
 class CachedSegnet:
     """Drop-in replacement for homr.segmentation.inference_segnet.Segnet."""
 
-    def __init__(self, model_path: str, use_gpu: bool) -> None:
+    def __init__(self, model_path_or_use_gpu: str | bool, use_gpu: bool | None = None) -> None:
+        # Compatibility with different homr versions:
+        # Legacy:    Segnet(model_path: str, use_gpu: bool)
+        # Container: Segnet(use_gpu_inference: bool)
+
+        from homr.segmentation.inference_segnet import segnet_path_onnx
+
+        try:
+            from homr.segmentation.config import segnet_path_onnx_fp16
+        except ImportError:
+            segnet_path_onnx_fp16 = segnet_path_onnx
+
+        if use_gpu is None:
+            # Container signature: CachedSegnet(use_gpu_inference: bool)
+            use_gpu = bool(model_path_or_use_gpu)
+            model_path = segnet_path_onnx_fp16 if use_gpu else segnet_path_onnx
+        else:
+            # Legacy signature: CachedSegnet(model_path: str, use_gpu: bool)
+            model_path = str(model_path_or_use_gpu)
+            use_gpu = bool(use_gpu)
+
         self.model = _get_session(model_path, use_gpu)
         self.input_name = self.model.get_inputs()[0].name
         self.output_name = self.model.get_outputs()[0].name
 
     def run(self, input_data):
+        # Handle fp16 conversion if needed
+        if self.model.get_inputs()[0].type == "tensor(float16)":
+            import numpy as np
+
+            input_data = input_data.astype(np.float16)
         return self.model.run([self.output_name], {self.input_name: input_data})[0]
 
 

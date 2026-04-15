@@ -74,7 +74,6 @@ def main():
             staff_vov_threshold=0.5,
             crop_recenter_on_bbox_ink=True,
             input_image_scale=1.0,
-            candidate_rescale_factor=1.0,
         )
 
         # 3. Evaluate

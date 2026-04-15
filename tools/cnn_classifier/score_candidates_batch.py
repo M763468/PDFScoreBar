@@ -72,7 +72,7 @@ def get_model(model_path, model_name="resnet18"):
 
 
 def crop_size_from_bbox(
-    box, scale=3.0, aspect_ratio=0.5, min_h=48, max_h=1024, min_w=16, max_w=512
+    box, scale=3.0, aspect_ratio=0.5, min_h=48, max_h=256, min_w=16, max_w=128
 ):
     x1, y1, x2, y2 = box
     bbox_h = max(1.0, abs(y2 - y1))

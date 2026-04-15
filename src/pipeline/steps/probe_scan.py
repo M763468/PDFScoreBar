@@ -407,11 +407,17 @@ def run_probe_scan_batch(
 
         # Split long seed boxes vertically to avoid Tall Band Dilution
         if not disable_seed_splitting:
+            # Threshold for splitting: use unit-based logic for resolution independence.
+            # A full staff is approx 4 units. We split if box > 12.0 units (3 staves / ~150px at 1x).
+            u_splitting = _estimate_unit_size_from_existing_boxes(existing_boxes) or (
+                40.0 * input_image_scale
+            )
+            split_threshold = 12.0 * u_splitting
+
             split_seeds = []
             for b in existing_boxes:
-                # Only split if box is significantly taller than a single staff segment (e.g. > 200px at 2x)
                 h_b = abs(b[3] - b[1])
-                if h_b > 150 * input_image_scale:
+                if h_b > split_threshold:
                     split_seeds.extend(split_box_vertically(img, b, ink_threshold=ink_threshold))
                 else:
                     split_seeds.append(b)

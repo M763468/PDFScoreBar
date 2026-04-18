@@ -7,9 +7,11 @@ sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 from src.common.barline_evaluation import greedy_barline_match
 
+
 def load_json(p):
     with open(p, "r") as f:
         return json.load(f)
+
 
 def get_gt_boxes(gt_data):
     boxes = []
@@ -22,6 +24,7 @@ def get_gt_boxes(gt_data):
             elif "box" in item:
                 boxes.append(tuple(item["box"]))
     return boxes
+
 
 def main():
     golden_root = Path("data/evaluation2/golden_baseline_eval2_bc23deb")
@@ -52,7 +55,7 @@ def main():
             parent_dir_name = scored_file.parent.name
             page_name = "page_" + parent_dir_name.split("_page_")[1]
             gt_file = gt_root / page_name / "boxes_sorted.json"
-            
+
             if not gt_file.exists():
                 continue
 
@@ -78,6 +81,7 @@ def main():
     print(
         f"{'GLOBAL TOTAL':<35} | {global_tp + global_fn:<5} | {global_tp:<5} | {global_fp:<5} | {global_fn:<5} | {global_recall:.1%}"
     )
+
 
 if __name__ == "__main__":
     main()

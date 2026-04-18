@@ -82,6 +82,18 @@ def main():
         f"{'GLOBAL TOTAL':<35} | {global_tp + global_fn:<5} | {global_tp:<5} | {global_fp:<5} | {global_fn:<5} | {global_recall:.1%}"
     )
 
+    expected_tp = 3580
+    expected_fp = 0
+    expected_fn = 1
+
+    if global_tp != expected_tp or global_fp != expected_fp or global_fn != expected_fn:
+        print(
+            f"\nERROR: Baseline regression detected! Expected TP={expected_tp}, FP={expected_fp}, FN={expected_fn}"
+        )
+        sys.exit(1)
+    else:
+        print("\nSUCCESS: Golden baseline verified. No regressions.")
+
 
 if __name__ == "__main__":
     main()

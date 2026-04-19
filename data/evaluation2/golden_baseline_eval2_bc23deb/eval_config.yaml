@@ -1,0 +1,8 @@
+eval_rule: center_anchor
+gt_root: data/evaluation2/annotations
+output_csv: logs/issue53_full_eval_rescue_v1/global_summary.csv
+scored_glob: '*_scored.json'
+scored_root: logs/issue53_full_eval_rescue_v1
+threshold: 0.1
+vov_threshold: 0.5
+xdist_threshold: 12.0

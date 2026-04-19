@@ -95,7 +95,7 @@ class HomrPredictor:
         # Initialize transformer config for parse_staffs
         from homr.transformer.configs import default_config
 
-        default_config.use_gpu_inference = self.use_gpu_inference
+        _ = default_config  # Ensure it is importable
 
     def predict(
         self,

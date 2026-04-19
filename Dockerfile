@@ -40,8 +40,8 @@ RUN uv pip install git+https://github.com/liebharc/homr.git@b377620a3a55bd7ff657
 # Install project dependencies
 RUN uv pip install -e .
 
-# Apply basicsr patch for torchvision compatibility
-RUN sed -i 's/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/g' /opt/venv_pipeline/lib/python3.11/site-packages/basicsr/data/degradations.py
+# Apply basicsr patch for torchvision compatibility dynamically to avoid hardcoded python version paths
+RUN /opt/venv_pipeline/bin/python -c "import basicsr, os; p = os.path.join(os.path.dirname(basicsr.__file__), 'data/degradations.py'); os.system(f\"sed -i 's/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/g' {p}\")"
 
 # Download model weights during build to a safe location (not masked by volume mount)
 # We place them in /opt/weights so they are always available. We will symlink them later if needed.

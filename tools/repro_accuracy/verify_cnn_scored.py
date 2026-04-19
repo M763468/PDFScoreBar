@@ -2,7 +2,7 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.append("/home/masaki_muramatsu/ws_PDFScoreBar")
+sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 from src.common.barline_evaluation import greedy_barline_match
 
 

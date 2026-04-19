@@ -2274,11 +2274,14 @@ def run_homr_on_image(
     try:
         use_gpu_inference = torch.cuda.is_available()
         try:
+            import copy
+
             from homr.transformer.configs import default_config
 
-            default_config.use_gpu_inference = use_gpu_inference
+            infer_config = copy.copy(default_config)
+            infer_config.use_gpu_inference = use_gpu_inference
             result_staffs = parse_staffs(
-                debug, multi_staffs, preprocessed_image, default_config, selected_staff=-1
+                debug, multi_staffs, preprocessed_image, infer_config, selected_staff=-1
             )
         except (TypeError, ImportError):
             result_staffs = parse_staffs(debug, multi_staffs, preprocessed_image, selected_staff=-1)

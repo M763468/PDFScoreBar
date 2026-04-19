@@ -3,7 +3,8 @@ import sys
 from pathlib import Path
 
 # Add repo root to sys path to import match logic
-sys.path.append("/home/masaki_muramatsu/ws_PDFScoreBar")
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.append(str(REPO_ROOT))
 
 from src.common.barline_evaluation import greedy_barline_match
 
@@ -28,10 +29,8 @@ def get_gt_boxes(gt_data):
 
 def main():
     # Use localized /tmp data or full repo roots
-    hybrid_root = Path(
-        "/home/masaki_muramatsu/ws_PDFScoreBar/logs/hybrid_generalization/verify_fixed_v10"
-    )
-    gt_base = Path("/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations")
+    hybrid_root = REPO_ROOT / "logs/hybrid_generalization/verify_fixed_v10"
+    gt_base = REPO_ROOT / "data/evaluation2/annotations"
 
     datasets = [
         "Shostakovich-Festival_Overture_Va",

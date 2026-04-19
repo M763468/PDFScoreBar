@@ -1,3 +1,7 @@
+import pytest
+
+pytest.importorskip("homr")
+
 import shutil
 import unittest
 from pathlib import Path

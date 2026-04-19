@@ -39,10 +39,9 @@ RUN /opt/venv_sr/bin/python -m ensurepip --upgrade && \
 # Note: uv will resolve compatible versions.
 RUN uv pip install -e ./external/realesrgan ultralytics
 
-# Apply basicsr patch for torchvision compatibility
-# The path inside the venv depends on the Python version. For Python 3.11, it's lib/python3.11/site-packages
+# Apply basicsr patch for torchvision compatibility dynamically to avoid hardcoded python version paths
 # This is a temporary patch as discussed.
-RUN sed -i 's/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/g' /opt/venv_sr/lib/python3.11/site-packages/basicsr/data/degradations.py
+RUN /opt/venv_sr/bin/python -c "import basicsr, os; p = os.path.join(os.path.dirname(basicsr.__file__), 'data/degradations.py'); os.system(f\"sed -i 's/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/g' {p}\")"
 
 # Install homr (and its runtime deps) and pymupdf into the same venv so SR and homr execution share one environment.
 RUN uv pip install -e ./external/homr pymupdf

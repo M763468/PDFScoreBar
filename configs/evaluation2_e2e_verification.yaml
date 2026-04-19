@@ -1,0 +1,41 @@
+run:
+  run_id: eval2_e2e_verification
+  output_root: logs/full_pipeline_runs/verification
+
+inputs:
+  pdf_path: data/evaluation2/pdfs/Va_Prokofiev_Symphony1.pdf
+  pdf_to_images:
+    output_dir: logs/preprocess/evaluation2/e2e_verification
+    dpi: 360
+    pages: "1,2,3"
+
+steps:
+  pdf_to_images: true # We will provide images directly to avoid PDF dependency for all
+  detection: true
+  filter_pages: true
+  apply_barline_overrides: false
+  numbering_base: true
+  mmr_overrides: false
+  apply_measure_overrides: false
+  overlay: true
+
+detection:
+  enable_sr: false
+  crop_recenter_on_bbox_ink: true
+  container_name: sr_eval_gpu_exp
+  hybrid_output_root: logs/hybrid_generalization/bypass_sr_batch
+  ink_threshold: 230
+  min_ratio: 0.70
+  min_height_ratio: 0.012
+  cnn_model_path: logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
+  cnn_threshold: 0.1
+  divisi_rescue: true
+  scan_gap_rescue: true
+  scan_x_peak_rescue: true
+
+filters:
+  blank_page: auto
+  staff_detect: auto
+
+numbering:
+  force_single_system: false

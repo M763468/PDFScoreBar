@@ -12,15 +12,15 @@ from typing import Any, Dict, List
 
 import cv2
 import torch
-from src.homr_eval_scripts.core.metrics import BarlinePrediction
-from src.homr_eval_scripts.core.predictor import HomrPredictor
-from src.homr_eval_scripts.core.reporting import save_homr_results
-from src.homr_eval_scripts.core.utils import DEFAULT_TUNING
 from tqdm import tqdm
 
 from homr.main import ProcessingConfig
 from homr.music_xml_generator import XmlGeneratorArguments
 from src.common.preprocessing import apply_advanced_sr
+from src.homr_eval_scripts.core.metrics import BarlinePrediction
+from src.homr_eval_scripts.core.predictor import HomrPredictor
+from src.homr_eval_scripts.core.reporting import save_homr_results
+from src.homr_eval_scripts.core.utils import DEFAULT_TUNING
 from src.pipeline.core.python_env import get_pipeline_python
 from src.pipeline.core.subprocess_utils import run_with_logging
 from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
@@ -210,7 +210,7 @@ class HybridDetector:
             }
         )
 
-        predictor = HomrPredictor(config, tuning)
+        predictor = HomrPredictor(config, tuning, use_gpu_inference=torch.cuda.is_available())
         xml_args = XmlGeneratorArguments(False, None, None)
 
         try:

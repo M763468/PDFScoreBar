@@ -1,3 +1,4 @@
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -27,7 +28,16 @@ def get_gt_boxes(gt_data):
 
 
 def main():
-    golden_root = Path("data/evaluation2/golden_baseline_eval2_bc23deb")
+    parser = argparse.ArgumentParser(description="Verify baseline metrics.")
+    parser.add_argument(
+        "--results-dir",
+        type=str,
+        default="data/evaluation2/golden_baseline_eval2_bc23deb",
+        help="Path to the directory containing scored JSON files to verify.",
+    )
+    args = parser.parse_args()
+
+    golden_root = Path(args.results_dir)
     gt_base = Path("data/evaluation2/annotations")
 
     datasets = [

@@ -19,7 +19,6 @@ from src.pipeline.core.run_ids import build_probe_run_id
 from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask
 from src.pipeline.steps.filters import filter_by_staff_overlap
 from src.pipeline.steps.probe_scan import _build_staff_mask_map, _load_bands_for_image
-from src.pipeline.utils.images import load_image
 
 logger = logging.getLogger(__name__)
 
@@ -202,6 +201,8 @@ def apply_nms(
         sorted_items = remaining
 
     return kept
+
+
 def _score_directory(
     *,
     run_dir: Path,
@@ -376,13 +377,6 @@ def run_cnn_scoring_batch(
 
     staff_mask_map = _build_staff_mask_map(staff_mask_dir)
 
-    # Default candidate rescale factor to 1/input_image_scale if not provided
-    # (Matches legacy behavior when images and candidates are in the same SR space)
-    effective_cand_scale = (
-        candidate_rescale_factor
-        if candidate_rescale_factor is not None
-        else (1.0 / input_image_scale)
-    )
     processed = 0
     for img_path in tqdm(images, desc="CNN Scoring", unit="page"):
         run_id = build_probe_run_id(img_path, score_name=score_name)

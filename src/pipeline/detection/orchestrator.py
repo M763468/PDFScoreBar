@@ -216,14 +216,9 @@ class DetectorOrchestrator:
             return effective_images, self.sr_scale
         return self.images, 1
 
-    def _get_effective_score_name(self) -> str:
-        """Derive score name from config, or fallback to original images parent name."""
-        name = self.det_cfg.get("probe_score_name")
-        if name:
-            return name
-        if self.images:
-            return self.images[0].parent.name
-        return "unknown"
+    def _get_effective_score_name(self) -> str | None:
+        """Derive score name from config, or None to let it be per-image."""
+        return self.det_cfg.get("probe_score_name")
 
     def _resolve_staff_mask_dir(self) -> Path | None:
         """Resolves where to look for staff masks."""

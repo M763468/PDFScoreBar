@@ -147,7 +147,7 @@ class DetectorOrchestrator:
                 enable_heuristic_filters=self.det_cfg.get("enable_heuristic_filters", True),
                 candidate_filter_kwargs=filter_kwargs,
             )
-        
+
         # Build command list for logging/return
         cmd_probe = [
             "inprocess:probe_scan",

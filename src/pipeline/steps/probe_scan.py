@@ -365,7 +365,7 @@ def run_probe_scan_batch(
         staff_mask = np.zeros(img.shape[:2], dtype=np.uint8)
         clef_mask = np.zeros(img.shape[:2], dtype=np.uint8)
         band_source = "row_stats"
-        
+
         mask_path = staff_mask_map.get(stem)
         if mask_path:
             loaded_mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)

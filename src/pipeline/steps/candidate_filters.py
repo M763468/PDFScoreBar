@@ -142,6 +142,8 @@ def split_box_vertically(
             curr_y1, curr_y2 = next_y1, next_y2
     merged.append((curr_y1, curr_y2))
     return [(x1, s_y1, x2, s_y2) for s_y1, s_y2 in merged]
+
+
 def filter_probe_candidates(
     candidates: List[Tuple[int, int, int, int]],
     image: np.ndarray,

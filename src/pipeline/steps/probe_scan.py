@@ -439,7 +439,7 @@ def run_probe_scan_batch(
 
         if enable_heuristic_filters:
             filter_kwargs = candidate_filter_kwargs or {}
-            real_staff_mask = staff_mask if band_source == "staff_mask" else None
+            real_staff_mask = staff_mask if effective_band_source == "staff_mask" else None
             filtered_candidates, dropped = filter_probe_candidates(
                 candidates=filtered_candidates,
                 image=img,

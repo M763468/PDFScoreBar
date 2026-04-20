@@ -177,7 +177,7 @@ class DetectorOrchestrator:
             effective_score_name = self._get_effective_score_name()
             run_cnn_scoring_batch(
                 probe_output_root=self.probe_output_dir,
-                images=self.images,  # Force CNN to run on original 1x images
+                images=effective_images,
                 model_path=Path(cnn_model),
                 threshold=float(self.det_cfg.get("cnn_threshold", 0.1)),
                 score_name=effective_score_name,

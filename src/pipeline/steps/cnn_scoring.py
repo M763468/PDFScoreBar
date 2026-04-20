@@ -342,6 +342,8 @@ def _score_directory(
                 if id(item) not in kept_indices:
                     item["score"] = 0.0
 
+    apply_nms(candidate_objects_for_filter)
+
     filtered_boxes = [
         item["bbox"] for item in candidate_objects_for_filter if item["score"] >= threshold
     ]

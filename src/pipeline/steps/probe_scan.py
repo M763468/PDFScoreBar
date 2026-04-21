@@ -241,9 +241,9 @@ def _load_bands_for_image(
         bands_from / current_score_name / stem / "pipeline2_no_peak_candidates.json",
         bands_from / current_score_name / stem / "pipeline2_no_peak_scored.json",
         bands_from / run_subdir / "pipeline2_no_peak_scored.json",
-        bands_from / "omr_sr" / stem / "predictions.json",  # NEW
-        bands_from / f"{stem}.json",
         bands_from / "hybrid_results" / f"{stem}_hybrid.json",
+        bands_from / "omr_sr" / stem / "predictions.json",
+        bands_from / f"{stem}.json",
         bands_from / f"{run_subdir}_scored.json",
     ]
     for path in candidates:
@@ -260,7 +260,8 @@ def _build_staff_mask_map(staff_mask_dir: Optional[Path]) -> Dict[str, Path]:
         stem_key = path.name.replace("_proxy_debug_3_staff.png", "").replace(
             "_debug_3_staff.png", ""
         )
-        staff_mask_map[stem_key] = path
+        if stem_key not in staff_mask_map or "sr" in path.parts:
+            staff_mask_map[stem_key] = path
     return staff_mask_map
 
 
@@ -279,7 +280,7 @@ def _build_clef_mask_map(clef_mask_dir: Optional[Path]) -> Dict[str, Path]:
                 .replace("_clef_mask.png", "")
                 .replace("_clefs_keys_mask.png", "")
             )
-            if stem_key not in clef_mask_map:
+            if stem_key not in clef_mask_map or "sr" in path.parts:
                 clef_mask_map[stem_key] = path
     return clef_mask_map
 
@@ -449,7 +450,7 @@ def run_probe_scan_batch(
             vertical_closing=vertical_closing,
             **page_kwargs,
         )
-        logger.info(f"--- [DEBUG_FN] {stem}: detect_probe_scan found {len(candidates)} candidates")
+        logger.debug(f"--- [DEBUG_FN] {stem}: detect_probe_scan found {len(candidates)} candidates")
 
         img_h, img_w = img.shape[:2]
         min_height_px = int(img_h * min_height_ratio)
@@ -462,7 +463,7 @@ def run_probe_scan_batch(
             if h >= min_height_px and w >= min_width_px:
                 filtered_candidates.append(tuple(int(v) for v in c))
         
-        logger.info(f"--- [DEBUG_FN] {stem}: After height/width filter ({min_height_px}px): {len(filtered_candidates)} candidates")
+        logger.debug(f"--- [DEBUG_FN] {stem}: After height/width filter ({min_height_px}px): {len(filtered_candidates)} candidates")
 
         if enable_heuristic_filters:
             filter_kwargs = candidate_filter_kwargs or {}

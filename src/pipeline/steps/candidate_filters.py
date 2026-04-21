@@ -88,8 +88,13 @@ def trim_box_to_ink(
         return box
 
     crop = image[y_lo:y_hi, x_lo:x_hi]
+    if len(crop.shape) == 3:
+        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = crop
+
     # Vertical projection: count ink pixels in each row
-    row_ink = (crop < ink_threshold).sum(axis=1)
+    row_ink = (gray < ink_threshold).sum(axis=1)
     row_ratio = row_ink / float(max(1, x_hi - x_lo))
 
     active_rows = np.where(row_ratio >= min_ink_ratio)[0]

@@ -158,11 +158,11 @@ def _compute_bbox_ink_center_x(
 
 
 def apply_nms(
-    scored_results: List[Dict[str, Any]], iou_threshold: float = 0.5, x_dist_threshold: float = 10.0
+    scored_results: List[Dict[str, Any]], iou_threshold: float = 0.5, x_dist_unit_ratio: float = 1.0
 ) -> List[Dict[str, Any]]:
     """Apply greedy suppression to scored results.
 
-    Uses a combination of IoU and horizontal distance to handle thin vertical lines.
+    Uses a combination of IoU and horizontal distance (scale-aware) to handle thin vertical lines.
     """
     if not scored_results:
         return []
@@ -176,6 +176,12 @@ def apply_nms(
         kept.append(best)
         remaining = []
         b_x = (best["bbox"][0] + best["bbox"][2]) / 2.0
+
+        # derive scale from the 'best' box height
+        b_h = max(1.0, float(abs(best["bbox"][3] - best["bbox"][1])))
+        unit_size = max(1.0, b_h / 4.0)
+        x_dist_threshold = unit_size * x_dist_unit_ratio
+
         for item in sorted_items:
             suppressed = False
             # 1. IoU check

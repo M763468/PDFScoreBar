@@ -412,17 +412,30 @@ def run_probe_scan_batch(
             # A full staff is approx 4 units. We split if box > TALL_BAND_SPLIT_RATIO units.
             DEFAULT_UNIT_SIZE = 40.0
             TALL_BAND_SPLIT_RATIO = 12.0
-            
+
             u_splitting = _estimate_unit_size_from_existing_boxes(existing_boxes) or (
                 DEFAULT_UNIT_SIZE * input_image_scale
             )
             split_threshold = TALL_BAND_SPLIT_RATIO * u_splitting
 
+            # Derive thresholds based on unit size.
+            # At 1x (approx unit size 40), min_gap was 50 (1.25x) and min_segment_h was 30 (0.75x).
+            min_gap_px = int(1.25 * u_splitting)
+            min_segment_h_px = int(0.75 * u_splitting)
+
             split_seeds = []
             for b in existing_boxes:
                 h_b = abs(b[3] - b[1])
                 if h_b > split_threshold:
-                    split_seeds.extend(split_box_vertically(img, b, ink_threshold=ink_threshold))
+                    split_seeds.extend(
+                        split_box_vertically(
+                            img,
+                            b,
+                            ink_threshold=ink_threshold,
+                            min_gap=min_gap_px,
+                            min_segment_h=min_segment_h_px,
+                        )
+                    )
                 else:
                     split_seeds.append(b)
             existing_boxes = split_seeds

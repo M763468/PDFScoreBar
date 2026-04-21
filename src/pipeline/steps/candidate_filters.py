@@ -8,8 +8,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-logger = logging.getLogger(__name__)
-
 try:
     import cv2
 except ImportError:  # pragma: no cover

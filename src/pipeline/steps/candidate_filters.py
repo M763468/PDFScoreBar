@@ -222,6 +222,10 @@ def filter_probe_candidates(
         if not center_in_page:
             reasons.append("outside_page_region")
 
+        page_overlap = _box_mask_overlap_ratio(page_mask, (x1, y1, x2, y2))
+        if page_overlap < min_paper_overlap_ratio:
+            reasons.append("low_paper_overlap")
+
         if staff_mask is not None:
             staff_overlap = _box_mask_overlap_ratio(staff_mask, (x1, y1, x2, y2))
             if staff_overlap < min_staff_overlap_ratio:

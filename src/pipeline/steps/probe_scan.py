@@ -452,9 +452,15 @@ def run_probe_scan_batch(
                 logger.debug(f"Heuristic filter dropped {len(dropped)} candidates for {stem}")
 
         # Final tightening of boxes to actual ink extent to improve VOV for evaluation
-        filtered_candidates = [
+        trimmed = [
             trim_box_to_ink(img, b, ink_threshold=ink_threshold) for b in filtered_candidates
         ]
+        filtered_candidates = []
+        for c in trimmed:
+            h = abs(c[3] - c[1])
+            w = abs(c[2] - c[0])
+            if h >= min_height_px and w >= min_width_px:
+                filtered_candidates.append(c)
 
         final_set = set()
         for sb in existing_boxes:

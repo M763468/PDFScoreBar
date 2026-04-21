@@ -20,6 +20,7 @@ except ImportError:  # pragma: no cover - optional in minimal test env
     np = None  # type: ignore[assignment]
 
 from src.pipeline.core.run_ids import build_probe_run_id, build_probe_run_id_from_parts
+from src.pipeline.steps.candidate_filters import filter_probe_candidates, trim_box_to_ink
 from src.pipeline.steps.hybrid_consensus import load_json_boxes
 from src.pipeline.utils.io import ensure_dir
 from src.pipeline.utils.wide_split_utils import split_wide_candidates
@@ -258,26 +259,49 @@ def _build_staff_mask_map(staff_mask_dir: Optional[Path]) -> Dict[str, Path]:
     return staff_mask_map
 
 
+def _build_clef_mask_map(clef_mask_dir: Optional[Path]) -> Dict[str, Path]:
+    clef_mask_map: Dict[str, Path] = {}
+    if not clef_mask_dir or not clef_mask_dir.exists():
+        return clef_mask_map
+
+    # Support both legacy Homr tool debug patterns and the new in-process filename pattern
+    patterns = ["*_debug_2_clefs.png", "*_clef_mask.png", "*_clefs_keys_mask.png"]
+    for pattern in patterns:
+        for path in clef_mask_dir.rglob(pattern):
+            stem_key = (
+                path.name.replace("_proxy_debug_2_clefs.png", "")
+                .replace("_debug_2_clefs.png", "")
+                .replace("_clef_mask.png", "")
+                .replace("_clefs_keys_mask.png", "")
+            )
+            if stem_key not in clef_mask_map:
+                clef_mask_map[stem_key] = path
+    return clef_mask_map
+
+
 def run_probe_scan_batch(
     *,
     images: Iterable[Path],
     output_root: Path,
     bands_from: Optional[Path],
     staff_mask_dir: Optional[Path],
+    clef_mask_dir: Optional[Path] = None,
     ink_threshold: int,
-    min_ratio: float,
-    min_height_ratio: float,
-    min_width_ratio: Optional[float] = None,
+    min_ratio: float = 0.50,
+    min_height_ratio: float = 0.012,
+    min_width_ratio: Optional[float] = 0.0001,
     score_name: Optional[str] = None,
     band_cluster_max_dist: Optional[float] = None,
     band_min_row_count: int = 1,
-    vertical_closing: int = 0,
+    vertical_closing: int = 4,
     detect_probe_kwargs: Optional[Dict[str, Any]] = None,
     probe_row_filter_mode: Optional[str] = None,
     probe_endpoint_x_scale: Optional[float] = None,
     probe_endpoint_y_scale: Optional[float] = None,
     skip_existing: bool = False,
     input_image_scale: float = 1.0,
+    enable_heuristic_filters: bool = False,
+    candidate_filter_kwargs: Optional[Dict[str, Any]] = None,
 ) -> int:
     """Generate probe candidates for all pages in-process.
 
@@ -290,6 +314,7 @@ def run_probe_scan_batch(
 
     ensure_dir(output_root)
     staff_mask_map = _build_staff_mask_map(staff_mask_dir)
+    clef_mask_map = _build_clef_mask_map(clef_mask_dir)
 
     if probe_row_filter_mode is not None:
         logger.warning(
@@ -338,7 +363,9 @@ def run_probe_scan_batch(
             continue
 
         staff_mask = np.zeros(img.shape[:2], dtype=np.uint8)
+        clef_mask = np.zeros(img.shape[:2], dtype=np.uint8)
         band_source = "row_stats"
+
         mask_path = staff_mask_map.get(stem)
         if mask_path:
             loaded_mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
@@ -349,6 +376,16 @@ def run_probe_scan_batch(
                     )
                 staff_mask = loaded_mask
                 band_source = "staff_mask"
+
+        clef_path = clef_mask_map.get(stem)
+        if clef_path:
+            loaded_clef = cv2.imread(str(clef_path), cv2.IMREAD_GRAYSCALE)
+            if loaded_clef is not None:
+                if loaded_clef.shape[:2] != img.shape[:2]:
+                    loaded_clef = cv2.resize(
+                        loaded_clef, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST
+                    )
+                clef_mask = loaded_clef
 
         existing_boxes = _load_bands_for_image(
             bands_from=bands_from,
@@ -375,11 +412,12 @@ def run_probe_scan_batch(
                 page_kwargs.get("x_merge_tol"),
             )
 
+        effective_band_source = page_kwargs.pop("band_source", band_source)
         candidates = detect_probe_scan(
             base_img=img,
             staff_mask=staff_mask,
             existing_boxes=existing_boxes,
-            band_source=band_source,
+            band_source=effective_band_source,
             band_cluster_max_dist=band_cluster_max_dist,
             band_min_row_count=band_min_row_count,
             ink_threshold=ink_threshold,
@@ -399,12 +437,38 @@ def run_probe_scan_batch(
             if h >= min_height_px and w >= min_width_px:
                 filtered_candidates.append(tuple(int(v) for v in c))
 
-        final_set = set()
-        for b in existing_boxes:
-            h = abs(b[3] - b[1])
-            w = abs(b[2] - b[0])
+        if enable_heuristic_filters:
+            filter_kwargs = candidate_filter_kwargs or {}
+            real_staff_mask = staff_mask if effective_band_source == "staff_mask" else None
+            filtered_candidates, dropped = filter_probe_candidates(
+                candidates=filtered_candidates,
+                image=img,
+                existing_boxes=existing_boxes,
+                staff_mask=real_staff_mask,
+                clef_mask=clef_mask,
+                **filter_kwargs,
+            )
+            if dropped:
+                logger.debug(f"Heuristic filter dropped {len(dropped)} candidates for {stem}")
+
+        # Final tightening of boxes to actual ink extent to improve VOV for evaluation
+        trimmed = [
+            trim_box_to_ink(img, b, ink_threshold=ink_threshold) for b in filtered_candidates
+        ]
+        filtered_candidates = []
+        for c in trimmed:
+            h = abs(c[3] - c[1])
+            w = abs(c[2] - c[0])
             if h >= min_height_px and w >= min_width_px:
-                final_set.add(tuple(int(v) for v in b))
+                filtered_candidates.append(c)
+
+        final_set = set()
+        for sb in existing_boxes:
+            # sb is already scaled to SR space if needed
+            h = abs(sb[3] - sb[1])
+            w = abs(sb[2] - sb[0])
+            if h >= min_height_px and w >= min_width_px:
+                final_set.add(tuple(int(v) for v in sb))
         for c in filtered_candidates:
             final_set.add(tuple(int(v) for v in c))
 

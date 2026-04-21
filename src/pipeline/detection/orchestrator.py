@@ -84,23 +84,48 @@ class DetectorOrchestrator:
         effective_images, effective_sr_scale = self._get_effective_images_for_probe()
         effective_score_name = self._get_effective_score_name()
         resolved_staff_mask_dir = self._resolve_staff_mask_dir()
+        resolved_clef_mask_dir = self._resolve_clef_mask_dir()
 
         if not self.dry_run:
             detect_probe_kwargs = get_probe_kwargs(self.det_cfg)
+
+            # Use verified Golden settings as default if not overridden
+            default_filter_kwargs = {
+                "left_margin_ratio": 0.25,
+                "clef_left_ratio": 0.30,
+                "min_height_median_ratio": 0.85,
+                "ink_threshold": 180,
+                "min_ink_ratio": 0.70,
+                "paper_threshold": 200,
+                "min_paper_overlap_ratio": 0.6,
+                "min_staff_overlap_ratio": 0.15,
+                "max_width_ratio": 0.05,
+            }
+            filter_kwargs = dict(default_filter_kwargs)
+            filter_kwargs.update(self.det_cfg.get("candidate_filter_kwargs", {}))
+
             run_probe_scan_batch(
                 images=effective_images,
                 output_root=probe_output_root,
                 bands_from=self.hybrid_output_dir,
                 staff_mask_dir=resolved_staff_mask_dir,
-                ink_threshold=int(self.det_cfg.get("ink_threshold", 230)),
-                min_ratio=float(self.det_cfg.get("min_ratio", 0.70)),
+                clef_mask_dir=resolved_clef_mask_dir,
+                ink_threshold=int(self.det_cfg.get("ink_threshold", 180)),
+                min_ratio=float(self.det_cfg.get("min_ratio", 0.50)),
                 min_height_ratio=float(self.det_cfg.get("min_height_ratio", 0.012)),
                 min_width_ratio=(
                     float(self.det_cfg.get("min_width_ratio"))
                     if self.det_cfg.get("min_width_ratio") is not None
-                    else None
+                    else 0.0001
                 ),
                 score_name=effective_score_name,
+                band_cluster_max_dist=(
+                    float(self.det_cfg.get("band_cluster_max_dist"))
+                    if self.det_cfg.get("band_cluster_max_dist") is not None
+                    else None
+                ),
+                band_min_row_count=int(self.det_cfg.get("band_min_row_count", 1)),
+                vertical_closing=int(self.det_cfg.get("vertical_closing", 4)),
                 detect_probe_kwargs=detect_probe_kwargs,
                 probe_row_filter_mode=(
                     str(self.det_cfg.get("probe_row_filter_mode"))
@@ -119,6 +144,8 @@ class DetectorOrchestrator:
                 ),
                 skip_existing=self.skip_existing,
                 input_image_scale=float(effective_sr_scale),
+                enable_heuristic_filters=self.det_cfg.get("enable_heuristic_filters", True),
+                candidate_filter_kwargs=filter_kwargs,
             )
 
         # Build command list for logging/return
@@ -161,6 +188,8 @@ class DetectorOrchestrator:
                     self.det_cfg.get("crop_recenter_max_shift_unit_ratio", 0.35)
                 ),
                 input_image_scale=float(effective_sr_scale),
+                bands_from=self.hybrid_output_dir,
+                staff_vov_threshold=float(self.det_cfg.get("staff_vov_threshold", 0.5)),
             )
         cmd_score = [
             "inprocess:cnn_scoring",
@@ -194,6 +223,13 @@ class DetectorOrchestrator:
     def _resolve_staff_mask_dir(self) -> Path | None:
         """Resolves where to look for staff masks."""
         override = self.det_cfg.get("staff_mask_dir", "DEFAULT_SENTINEL")
+        if override == "DEFAULT_SENTINEL":
+            return self.hybrid_output_dir
+        return Path(override) if override is not None else None
+
+    def _resolve_clef_mask_dir(self) -> Path | None:
+        """Resolves where to look for clef masks."""
+        override = self.det_cfg.get("clef_mask_dir", "DEFAULT_SENTINEL")
         if override == "DEFAULT_SENTINEL":
             return self.hybrid_output_dir
         return Path(override) if override is not None else None

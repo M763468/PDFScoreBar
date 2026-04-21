@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Iterable, List, Optional, Sequence, Tuple
 
 import cv2
 import numpy as np
@@ -14,11 +14,9 @@ from PIL import Image
 from torchvision import models, transforms
 from tqdm import tqdm
 
-from src.common.barline_evaluation import barline_iou, barline_vertical_overlap
 from src.pipeline.core.run_ids import build_probe_run_id
 from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask
 from src.pipeline.steps.filters import filter_by_staff_overlap
-from src.pipeline.steps.probe_scan import _build_staff_mask_map, _load_bands_for_image
 
 logger = logging.getLogger(__name__)
 
@@ -157,58 +155,6 @@ def _compute_bbox_ink_center_x(
     return int(round((x1 + x2) / 2.0 + shift))
 
 
-def apply_nms(
-    scored_results: List[Dict[str, Any]], iou_threshold: float = 0.5, x_dist_unit_ratio: float = 1.0
-) -> List[Dict[str, Any]]:
-    """Apply greedy suppression to scored results.
-
-    Uses a combination of IoU and horizontal distance (scale-aware) to handle thin vertical lines.
-    """
-    if not scored_results:
-        return []
-
-    # Sort by score descending
-    sorted_items = sorted(scored_results, key=lambda x: x["score"], reverse=True)
-    kept: List[Dict[str, Any]] = []
-
-    while sorted_items:
-        best = sorted_items.pop(0)
-        kept.append(best)
-        remaining = []
-        b_x = (best["bbox"][0] + best["bbox"][2]) / 2.0
-
-        # derive scale from the 'best' box height
-        b_h = max(1.0, float(abs(best["bbox"][3] - best["bbox"][1])))
-        unit_size = max(1.0, b_h / 4.0)
-        x_dist_threshold = unit_size * x_dist_unit_ratio
-
-        for item in sorted_items:
-            suppressed = False
-            # 1. IoU check
-            iou = barline_iou(best["bbox"], item["bbox"])
-            if iou >= iou_threshold:
-                suppressed = True
-
-            # 2. X-distance check (if vertical overlap is high)
-            if not suppressed:
-                i_x = (item["bbox"][0] + item["bbox"][2]) / 2.0
-                dist = abs(b_x - i_x)
-
-                vov = barline_vertical_overlap(best["bbox"], item["bbox"])
-
-                if dist < x_dist_threshold and vov >= 0.5:
-                    suppressed = True
-
-            if suppressed:
-                item["score"] = 0.0
-                continue
-
-            remaining.append(item)
-        sorted_items = remaining
-
-    return kept
-
-
 def _score_directory(
     *,
     run_dir: Path,
@@ -326,6 +272,8 @@ def _score_directory(
                 staff_bands = staff_bands_from_mask(mask)
 
         if not staff_bands and bands_from:
+            from src.pipeline.steps.probe_scan import _load_bands_for_image
+
             existing_boxes = _load_bands_for_image(
                 bands_from=bands_from,
                 current_score_name=current_score_name or "",
@@ -347,8 +295,6 @@ def _score_directory(
             for item in candidate_objects_for_filter:
                 if id(item) not in kept_indices:
                     item["score"] = 0.0
-
-    apply_nms(candidate_objects_for_filter)
 
     filtered_boxes = [
         item["bbox"] for item in candidate_objects_for_filter if item["score"] >= threshold
@@ -375,13 +321,15 @@ def run_cnn_scoring_batch(
     crop_recenter_on_bbox_ink: bool = False,
     crop_recenter_max_shift_unit_ratio: float = 0.35,
     input_image_scale: float = 1.0,
-    candidate_rescale_factor: Optional[float] = None,
 ) -> int:
     """Run CNN scoring for all probe output dirs with one model load."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     resolved_model_path = _resolve_model_path(model_path)
     model = _load_model(resolved_model_path, device)
     gpu_norm = GPUNormalize(MEAN, STD).to(device)
+
+    # For staff mask resolution
+    from src.pipeline.steps.probe_scan import _build_staff_mask_map
 
     staff_mask_map = _build_staff_mask_map(staff_mask_dir)
 

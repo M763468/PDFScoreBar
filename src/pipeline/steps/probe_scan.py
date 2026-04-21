@@ -409,11 +409,14 @@ def run_probe_scan_batch(
         # Split long seed boxes vertically to avoid Tall Band Dilution
         if not disable_seed_splitting:
             # Threshold for splitting: use unit-based logic for resolution independence.
-            # A full staff is approx 4 units. We split if box > 12.0 units (3 staves / ~150px at 1x).
+            # A full staff is approx 4 units. We split if box > TALL_BAND_SPLIT_RATIO units.
+            DEFAULT_UNIT_SIZE = 40.0
+            TALL_BAND_SPLIT_RATIO = 12.0
+            
             u_splitting = _estimate_unit_size_from_existing_boxes(existing_boxes) or (
-                40.0 * input_image_scale
+                DEFAULT_UNIT_SIZE * input_image_scale
             )
-            split_threshold = 12.0 * u_splitting
+            split_threshold = TALL_BAND_SPLIT_RATIO * u_splitting
 
             split_seeds = []
             for b in existing_boxes:
@@ -462,8 +465,10 @@ def run_probe_scan_batch(
             w = abs(c[2] - c[0])
             if h >= min_height_px and w >= min_width_px:
                 filtered_candidates.append(tuple(int(v) for v in c))
-        
-        logger.debug(f"--- [DEBUG_FN] {stem}: After height/width filter ({min_height_px}px): {len(filtered_candidates)} candidates")
+
+        logger.debug(
+            f"--- [DEBUG_FN] {stem}: After height/width filter ({min_height_px}px): {len(filtered_candidates)} candidates"
+        )
 
         if enable_heuristic_filters:
             filter_kwargs = candidate_filter_kwargs or {}

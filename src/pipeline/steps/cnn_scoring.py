@@ -19,7 +19,6 @@ from src.pipeline.core.run_ids import build_probe_run_id
 from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask
 from src.pipeline.steps.filters import filter_by_staff_overlap
 from src.pipeline.steps.probe_scan import _build_staff_mask_map, _load_bands_for_image
-from src.pipeline.utils.images import load_image
 
 logger = logging.getLogger(__name__)
 

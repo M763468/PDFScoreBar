@@ -261,9 +261,11 @@ def _build_staff_mask_map(staff_mask_dir: Optional[Path]) -> Dict[str, Path]:
     patterns = ["*_debug_3_staff.png", "*_staff_mask.png"]
     for pattern in patterns:
         for path in staff_mask_dir.rglob(pattern):
-            stem_key = path.name.replace("_proxy_debug_3_staff.png", "").replace(
-                "_debug_3_staff.png", ""
-            ).replace("_staff_mask.png", "")
+            stem_key = (
+                path.name.replace("_proxy_debug_3_staff.png", "")
+                .replace("_debug_3_staff.png", "")
+                .replace("_staff_mask.png", "")
+            )
             if stem_key not in staff_mask_map or "sr" in path.parts:
                 staff_mask_map[stem_key] = path
     return staff_mask_map

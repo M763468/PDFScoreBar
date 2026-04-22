@@ -34,6 +34,7 @@ def run_pipeline(
 ) -> Path:
     """Entry point for running the full pipeline."""
     from src.pipeline.utils.images import clear_image_cache
+
     clear_image_cache()
 
     config = load_yaml(config_path)

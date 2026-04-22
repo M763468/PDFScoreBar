@@ -10,7 +10,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.pipeline.steps.candidate_filters import filter_probe_candidates
-
 from src.pipeline.steps.hybrid_consensus import load_json_boxes
 from src.pipeline.steps.probe_scan import run_probe_scan_batch
 

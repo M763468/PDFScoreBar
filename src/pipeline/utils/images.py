@@ -66,12 +66,14 @@ def resolve_page_ids(config: Dict[str, Any], images: List[Path]) -> List[str]:
     # If stems look like page_001, page_002, we use them
     if all(s.startswith("page_") for s in stems):
         return stems
-    
+
     prefix = get_nested(config, "inputs", "pdf_to_images", "prefix", default="page")
     return [f"{prefix}_{index:03d}" for index in range(1, len(images) + 1)]
 
 
-def load_image(image_path: Path, in_memory_images: Dict[str, np.ndarray] | None = None) -> np.ndarray:
+def load_image(
+    image_path: Path, in_memory_images: Dict[str, np.ndarray] | None = None
+) -> np.ndarray:
     """Loads an image, checking the in-memory cache first.
     If the file exists on disk, we prefer it to avoid stem collisions (e.g. SR images).
     """
@@ -83,12 +85,12 @@ def load_image(image_path: Path, in_memory_images: Dict[str, np.ndarray] | None 
     stem = image_path.stem
     if in_memory_images and stem in in_memory_images:
         return in_memory_images[stem]
-    
+
     # Fallback to global cache
     if stem in _IMAGE_CACHE:
         return _IMAGE_CACHE[stem]
 
-    # This part is technically redundant if we check exists() above, 
+    # This part is technically redundant if we check exists() above,
     # but kept for error handling.
     image = cv2.imread(str(image_path))
     if image is None:
@@ -96,11 +98,12 @@ def load_image(image_path: Path, in_memory_images: Dict[str, np.ndarray] | None 
     return image
 
 
-def load_image_size(image_path: Path, in_memory_images: Dict[str, np.ndarray] | None = None) -> Tuple[int, int]:
+def load_image_size(
+    image_path: Path, in_memory_images: Dict[str, np.ndarray] | None = None
+) -> Tuple[int, int]:
     try:
         image = load_image(image_path, in_memory_images)
         height, width = image.shape[:2]
         return width, height
     except FileNotFoundError:
         return 0, 0
-

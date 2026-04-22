@@ -371,8 +371,9 @@ def run_probe_scan_batch(
             processed += 1
             continue
 
-        img = load_image(img_path, in_memory_images=in_memory_images)
-        if img is None:
+        try:
+            img = load_image(img_path, in_memory_images=in_memory_images)
+        except FileNotFoundError:
             logger.warning("Failed to load image: %s", img_path)
             continue
 

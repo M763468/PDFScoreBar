@@ -6,7 +6,6 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
-import cv2
 import torch
 from tqdm import tqdm
 
@@ -385,7 +384,9 @@ class PipelineOrchestrator:
                             raw_barlines = load_json(Path(resolved_item["barlines_json"]))
                             barline_boxes = normalize_barlines(raw_barlines)
 
-                        img_ref = cv2.imread(str(image_path))
+                        from src.pipeline.utils.images import load_image
+
+                        img_ref = load_image(image_path)
                         h, w = img_ref.shape[:2]
 
                         page_obj = numbering_pipeline.process_page(
@@ -563,7 +564,9 @@ class PipelineOrchestrator:
                             elif ctx["barlines_path"].exists():
                                 barline_boxes = normalize_barlines(load_json(ctx["barlines_path"]))
 
-                        img_ref = cv2.imread(str(image_path))
+                        from src.pipeline.utils.images import load_image
+
+                        img_ref = load_image(image_path)
                         h, w = img_ref.shape[:2]
 
                         page_obj = numbering_pipeline.process_page(

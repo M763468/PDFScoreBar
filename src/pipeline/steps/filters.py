@@ -26,8 +26,13 @@ def is_blank_page(
     max_ink_ratio = float(blank_cfg.get("max_ink_ratio", 0.003))
     max_stddev = float(blank_cfg.get("max_stddev", 12.0))
 
-    image = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
-    if image is None:
+    from src.pipeline.utils.images import load_image
+
+    try:
+        image = load_image(image_path)
+        if len(image.shape) == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    except FileNotFoundError:
         return None, {}
     ink_ratio = float((image < pixel_threshold).mean())
     stddev = float(image.std())

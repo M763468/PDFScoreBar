@@ -192,6 +192,7 @@ class DetectorOrchestrator:
                 input_image_scale=float(effective_sr_scale),
                 bands_from=self.hybrid_output_dir,
                 staff_vov_threshold=float(self.det_cfg.get("staff_vov_threshold", 0.5)),
+                in_memory_images=self.in_memory_images,
             )
         cmd_score = [
             "inprocess:cnn_scoring",

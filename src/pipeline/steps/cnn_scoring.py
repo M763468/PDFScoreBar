@@ -104,6 +104,7 @@ def _compute_bbox_ink_center_x(
     box: Sequence[float],
     *,
     min_aspect_ratio: float = 3.0,
+    apply_if_width_le_unit_ratio: float = 1.0,
     mask_ratio: float = 0.85,
     max_shift_unit_ratio: float = 0.35,
 ) -> int | None:
@@ -131,6 +132,8 @@ def _compute_bbox_ink_center_x(
 
     # Estimate unit_size (staff spacing) from box height
     unit_size = max(1.0, h / 4.0)
+    if w > unit_size * apply_if_width_le_unit_ratio:
+        return None
 
     crop = img[by1:by2, bx1:bx2]
     if crop.size == 0:
@@ -176,12 +179,10 @@ def apply_nms(
         kept.append(best)
         remaining = []
         b_x = (best["bbox"][0] + best["bbox"][2]) / 2.0
-
         # derive scale from the 'best' box height
         b_h = max(1.0, float(abs(best["bbox"][3] - best["bbox"][1])))
         unit_size = max(1.0, b_h / 4.0)
         x_dist_threshold = unit_size * x_dist_unit_ratio
-
         for item in sorted_items:
             suppressed = False
             # 1. IoU check
@@ -193,7 +194,6 @@ def apply_nms(
             if not suppressed:
                 i_x = (item["bbox"][0] + item["bbox"][2]) / 2.0
                 dist = abs(b_x - i_x)
-
                 vov = barline_vertical_overlap(best["bbox"], item["bbox"])
 
                 if dist < x_dist_threshold and vov >= 0.5:
@@ -202,7 +202,6 @@ def apply_nms(
             if suppressed:
                 item["score"] = 0.0
                 continue
-
             remaining.append(item)
         sorted_items = remaining
 
@@ -314,7 +313,7 @@ def _score_directory(
         score = float(scores[idx])
         item = {"bbox": box, "score": score}
         scored_results.append(item)
-        if score > threshold:
+        if score >= threshold:
             candidate_objects_for_filter.append(item)
 
     # --- Apply Geometric Filtering ---
@@ -338,12 +337,11 @@ def _score_directory(
                 staff_bands = [(int(r["top"]), int(r["bottom"])) for r in staff_bands_stats]
 
         if staff_bands:
-            # Identify items to keep
+            # Suppress items that fail staff VOV
             kept_items = filter_by_staff_overlap(
                 candidate_objects_for_filter, staff_bands, vov_threshold=staff_vov_threshold
             )
             kept_indices = {id(item) for item in kept_items}
-            # Suppress others in scored_results
             for item in candidate_objects_for_filter:
                 if id(item) not in kept_indices:
                     item["score"] = 0.0

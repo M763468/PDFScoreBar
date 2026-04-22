@@ -20,7 +20,11 @@ except ImportError:  # pragma: no cover - optional in minimal test env
     np = None  # type: ignore[assignment]
 
 from src.pipeline.core.run_ids import build_probe_run_id, build_probe_run_id_from_parts
-from src.pipeline.steps.candidate_filters import filter_probe_candidates, trim_box_to_ink
+from src.pipeline.steps.candidate_filters import (
+    filter_probe_candidates,
+    split_box_vertically,
+    trim_box_to_ink,
+)
 from src.pipeline.steps.hybrid_consensus import load_json_boxes
 from src.pipeline.utils.io import ensure_dir
 from src.pipeline.utils.wide_split_utils import split_wide_candidates
@@ -237,8 +241,9 @@ def _load_bands_for_image(
         bands_from / current_score_name / stem / "pipeline2_no_peak_candidates.json",
         bands_from / current_score_name / stem / "pipeline2_no_peak_scored.json",
         bands_from / run_subdir / "pipeline2_no_peak_scored.json",
-        bands_from / f"{stem}.json",
         bands_from / "hybrid_results" / f"{stem}_hybrid.json",
+        bands_from / "omr_sr" / stem / "predictions.json",
+        bands_from / f"{stem}.json",
         bands_from / f"{run_subdir}_scored.json",
     ]
     for path in candidates:
@@ -255,7 +260,8 @@ def _build_staff_mask_map(staff_mask_dir: Optional[Path]) -> Dict[str, Path]:
         stem_key = path.name.replace("_proxy_debug_3_staff.png", "").replace(
             "_debug_3_staff.png", ""
         )
-        staff_mask_map[stem_key] = path
+        if stem_key not in staff_mask_map or "sr" in path.parts:
+            staff_mask_map[stem_key] = path
     return staff_mask_map
 
 
@@ -274,7 +280,7 @@ def _build_clef_mask_map(clef_mask_dir: Optional[Path]) -> Dict[str, Path]:
                 .replace("_clef_mask.png", "")
                 .replace("_clefs_keys_mask.png", "")
             )
-            if stem_key not in clef_mask_map:
+            if stem_key not in clef_mask_map or "sr" in path.parts:
                 clef_mask_map[stem_key] = path
     return clef_mask_map
 
@@ -302,6 +308,7 @@ def run_probe_scan_batch(
     input_image_scale: float = 1.0,
     enable_heuristic_filters: bool = False,
     candidate_filter_kwargs: Optional[Dict[str, Any]] = None,
+    disable_seed_splitting: bool = False,
 ) -> int:
     """Generate probe candidates for all pages in-process.
 
@@ -399,6 +406,40 @@ def run_probe_scan_batch(
                 tuple(int(round(v * input_image_scale)) for v in b) for b in existing_boxes
             ]
 
+        # Split long seed boxes vertically to avoid Tall Band Dilution
+        if not disable_seed_splitting:
+            # Threshold for splitting: use unit-based logic for resolution independence.
+            # A full staff is approx 4 units. We split if box > TALL_BAND_SPLIT_RATIO units.
+            DEFAULT_UNIT_SIZE = 40.0
+            TALL_BAND_SPLIT_RATIO = 12.0
+
+            u_splitting = _estimate_unit_size_from_existing_boxes(existing_boxes) or (
+                DEFAULT_UNIT_SIZE * input_image_scale
+            )
+            split_threshold = TALL_BAND_SPLIT_RATIO * u_splitting
+
+            # Derive thresholds based on unit size.
+            # At 1x (approx unit size 40), min_gap was 50 (1.25x) and min_segment_h was 30 (0.75x).
+            min_gap_px = int(1.25 * u_splitting)
+            min_segment_h_px = int(0.75 * u_splitting)
+
+            split_seeds = []
+            for b in existing_boxes:
+                h_b = abs(b[3] - b[1])
+                if h_b > split_threshold:
+                    split_seeds.extend(
+                        split_box_vertically(
+                            img,
+                            b,
+                            ink_threshold=ink_threshold,
+                            min_gap=min_gap_px,
+                            min_segment_h=min_segment_h_px,
+                        )
+                    )
+                else:
+                    split_seeds.append(b)
+            existing_boxes = split_seeds
+
         page_kwargs = _resolve_scale_aware_probe_kwargs(kwargs, existing_boxes)
         page_kwargs, post_cfg = _extract_candidate_postprocess_cfg(page_kwargs, existing_boxes)
         if page_kwargs is not kwargs and (
@@ -425,6 +466,7 @@ def run_probe_scan_batch(
             vertical_closing=vertical_closing,
             **page_kwargs,
         )
+        logger.debug(f"--- [DEBUG_FN] {stem}: detect_probe_scan found {len(candidates)} candidates")
 
         img_h, img_w = img.shape[:2]
         min_height_px = int(img_h * min_height_ratio)
@@ -436,6 +478,10 @@ def run_probe_scan_batch(
             w = abs(c[2] - c[0])
             if h >= min_height_px and w >= min_width_px:
                 filtered_candidates.append(tuple(int(v) for v in c))
+
+        logger.debug(
+            f"--- [DEBUG_FN] {stem}: After height/width filter ({min_height_px}px): {len(filtered_candidates)} candidates"
+        )
 
         if enable_heuristic_filters:
             filter_kwargs = candidate_filter_kwargs or {}
@@ -461,7 +507,6 @@ def run_probe_scan_batch(
             w = abs(c[2] - c[0])
             if h >= min_height_px and w >= min_width_px:
                 filtered_candidates.append(c)
-
         final_set = set()
         for sb in existing_boxes:
             # sb is already scaled to SR space if needed

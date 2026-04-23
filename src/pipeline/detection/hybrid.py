@@ -227,7 +227,7 @@ class HybridDetector:
                 working_path = image_run_dir / img.name
 
                 try:
-                    img_bgr = load_image(img)
+                    img_bgr = load_image(img, self.in_memory_images)
                 except FileNotFoundError as e:
                     logger.warning(f"Failed to prepare {img}: {e}")
                     continue

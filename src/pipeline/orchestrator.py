@@ -109,12 +109,20 @@ class PipelineOrchestrator:
         prefix = str(pdf_opts.get("prefix", "page"))
         fmt = str(pdf_opts.get("format", "png"))
 
+        # Default behavior: write to disk unless output_dir is explicitly null (None)
+        persist_to_disk = (
+            self.debug or ("output_dir" not in pdf_opts) or (pdf_opts.get("output_dir") is not None)
+        )
+
         for page_index, image in rendered:
             stem = f"{prefix}_{page_index + 1:03d}"
-            cache[stem] = image
+
+            # Cache only if we are NOT persisting to disk (to save memory)
+            if not persist_to_disk:
+                cache[stem] = image
 
             # Optionally write to disk for debug/persistence
-            if self.debug or pdf_opts.get("output_dir"):
+            if persist_to_disk:
                 from src.pdf_to_images import save_image
 
                 destination = output_dir / f"{stem}.{fmt}"
@@ -147,7 +155,17 @@ class PipelineOrchestrator:
         from src.pipeline.utils.images import get_image_cache
 
         mem_images = get_image_cache()
-        images = collect_images(self.config, self.run_dir, in_memory_images=mem_images)
+
+        # Determine if we skipped disk write during pdf_to_images
+        pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
+        persist_to_disk = (
+            self.debug or ("output_dir" not in pdf_opts) or (pdf_opts.get("output_dir") is not None)
+        )
+
+        # Only pass in_memory_images to collect_images if we actually used the cache (i.e. did not persist)
+        images = collect_images(
+            self.config, self.run_dir, in_memory_images=mem_images if not persist_to_disk else None
+        )
         if page_limit is not None:
             images = images[:page_limit]
         page_ids = resolve_page_ids(self.config, images)
@@ -171,7 +189,7 @@ class PipelineOrchestrator:
                 self.run_id,
                 self.run_dir,
                 dry_run=self.dry_run,
-                in_memory_images=mem_images,
+                in_memory_images=mem_images if not persist_to_disk else None,
             )
             commands.extend(det_result["commands"])
             probe_output_dir = det_result["probe_output_dir"]

@@ -74,6 +74,7 @@ class DetectorOrchestrator:
             project_root=PROJECT_ROOT,
             dry_run=self.dry_run,
             skip_existing=self.skip_existing,
+            in_memory_images=self.in_memory_images,
         )
         return detector.run()
 

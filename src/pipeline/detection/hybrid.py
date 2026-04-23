@@ -43,6 +43,7 @@ class HybridDetector:
         *,
         dry_run: bool,
         skip_existing: bool = False,
+        in_memory_images: Dict[str, Any] | None = None,
     ):
         self.det_cfg = det_cfg
         self.images = images
@@ -50,6 +51,7 @@ class HybridDetector:
         self.project_root = project_root
         self.dry_run = dry_run
         self.skip_existing = skip_existing
+        self.in_memory_images = in_memory_images
 
     def _get_python_cmd(self, name: str) -> List[str]:
         """Returns the appropriate python command, falling back to host if images are external."""

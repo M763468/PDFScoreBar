@@ -43,6 +43,7 @@ class HybridDetector:
         *,
         dry_run: bool,
         skip_existing: bool = False,
+        in_memory_images: Dict[str, Any] | None = None,
     ):
         self.det_cfg = det_cfg
         self.images = images
@@ -50,6 +51,7 @@ class HybridDetector:
         self.project_root = project_root
         self.dry_run = dry_run
         self.skip_existing = skip_existing
+        self.in_memory_images = in_memory_images
 
     def _get_python_cmd(self, name: str) -> List[str]:
         """Returns the appropriate python command, falling back to host if images are external."""
@@ -217,30 +219,37 @@ class HybridDetector:
             working_images = []
             persistent_upsampler = None
 
+            from src.pipeline.utils.images import load_image
+
             logger.info(f"--- Homr In-Process Phase 1 (SR={enable_sr}) ---")
             log_vram_usage("Before SR")
             for img in tqdm(self.images, desc="SR/Preparation", unit="page"):
                 image_run_dir = output_root / "batch" / img.stem
                 ensure_dir(image_run_dir)
                 working_path = image_run_dir / img.name
-                shutil.copy2(img, working_path)
+
+                try:
+                    img_bgr = load_image(img, self.in_memory_images)
+                except FileNotFoundError as e:
+                    logger.warning(f"Failed to prepare {img}: {e}")
+                    continue
 
                 scale = 1
                 if enable_sr:
                     model_name = "RealESRGAN_x4plus" if sr_scale == 4 else "RealESRGAN_x2plus"
-                    img_bgr = cv2.imread(str(working_path))
-                    if img_bgr is not None:
-                        upscaled, persistent_upsampler = apply_advanced_sr(
-                            img_bgr,
-                            model_name=model_name,
-                            scale=sr_scale,
-                            tile=self.det_cfg.get("sr_tile", -1),
-                            tile_pad=self.det_cfg.get("sr_tile_pad", 10),
-                            fp32=self.det_cfg.get("sr_fp32", False),
-                            upsampler=persistent_upsampler,
-                        )
-                        cv2.imwrite(str(working_path), upscaled)
-                        scale = sr_scale
+                    upscaled, persistent_upsampler = apply_advanced_sr(
+                        img_bgr,
+                        model_name=model_name,
+                        scale=sr_scale,
+                        tile=self.det_cfg.get("sr_tile", -1),
+                        tile_pad=self.det_cfg.get("sr_tile_pad", 10),
+                        fp32=self.det_cfg.get("sr_fp32", False),
+                        upsampler=persistent_upsampler,
+                    )
+                    cv2.imwrite(str(working_path), upscaled)
+                    scale = sr_scale
+                else:
+                    cv2.imwrite(str(working_path), img_bgr)
                 working_images.append((img, working_path, scale))
 
             persistent_upsampler = None

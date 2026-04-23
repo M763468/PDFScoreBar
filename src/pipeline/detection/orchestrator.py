@@ -30,12 +30,14 @@ class DetectorOrchestrator:
         run_dir: Path,
         *,
         dry_run: bool,
+        in_memory_images: Dict[str, Any] | None = None,
     ):
         self.config = config
         self.images = images
         self.run_id = run_id
         self.run_dir = run_dir
         self.dry_run = dry_run
+        self.in_memory_images = in_memory_images
         self.det_cfg = get_nested(config, "detection", default={}) or {}
         self.skip_existing = bool(self.det_cfg.get("probe_skip_existing", False))
         self.enable_sr = bool(self.det_cfg.get("enable_sr", True))
@@ -72,6 +74,7 @@ class DetectorOrchestrator:
             project_root=PROJECT_ROOT,
             dry_run=self.dry_run,
             skip_existing=self.skip_existing,
+            in_memory_images=self.in_memory_images,
         )
         return detector.run()
 
@@ -190,6 +193,7 @@ class DetectorOrchestrator:
                 input_image_scale=float(effective_sr_scale),
                 bands_from=self.hybrid_output_dir,
                 staff_vov_threshold=float(self.det_cfg.get("staff_vov_threshold", 0.5)),
+                in_memory_images=self.in_memory_images,
             )
         cmd_score = [
             "inprocess:cnn_scoring",
@@ -243,6 +247,7 @@ def run_detection_step(
     run_dir: Path,
     *,
     dry_run: bool,
+    in_memory_images: Dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
     """Run hybrid detection -> probe scan -> CNN scoring using DetectorOrchestrator."""
     orchestrator = DetectorOrchestrator(
@@ -251,5 +256,6 @@ def run_detection_step(
         run_id=run_id,
         run_dir=run_dir,
         dry_run=dry_run,
+        in_memory_images=in_memory_images,
     )
     return orchestrator.run_detection()

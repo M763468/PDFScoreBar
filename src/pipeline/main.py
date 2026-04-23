@@ -33,6 +33,10 @@ def run_pipeline(
     debug: bool = False,
 ) -> Path:
     """Entry point for running the full pipeline."""
+    from src.pipeline.utils.images import clear_image_cache
+
+    clear_image_cache()
+
     config = load_yaml(config_path)
     run_id_value = run_id or get_nested(config, "run", "run_id")
     if not run_id_value:

@@ -19,6 +19,7 @@ from src.pipeline.core.run_ids import build_probe_run_id
 from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask
 from src.pipeline.steps.filters import filter_by_staff_overlap
 from src.pipeline.steps.probe_scan import _build_staff_mask_map, _load_bands_for_image
+from src.pipeline.utils.wide_split_utils import estimate_unit_size_from_box_height
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +105,7 @@ def _compute_bbox_ink_center_x(
     box: Sequence[float],
     *,
     min_aspect_ratio: float = 3.0,
+    apply_if_width_ge_unit_ratio: float = 0.0,
     apply_if_width_le_unit_ratio: float = 1.0,
     mask_ratio: float = 0.85,
     max_shift_unit_ratio: float = 0.35,
@@ -127,12 +129,13 @@ def _compute_bbox_ink_center_x(
     h = by2 - by1
     if w <= 0 or h <= 0:
         return None
-    if h / max(1, w) < min_aspect_ratio:
+    if h / max(1, w) < float(min_aspect_ratio):
         return None
 
-    # Estimate unit_size (staff spacing) from box height
-    unit_size = max(1.0, h / 4.0)
-    if w > unit_size * apply_if_width_le_unit_ratio:
+    unit_size = estimate_unit_size_from_box_height(box)
+    min_apply_w = max(1, int(round(unit_size * float(apply_if_width_ge_unit_ratio))))
+    max_apply_w = max(2, int(round(unit_size * float(apply_if_width_le_unit_ratio))))
+    if w < min_apply_w or w > max_apply_w:
         return None
 
     crop = img[by1:by2, bx1:bx2]
@@ -146,14 +149,14 @@ def _compute_bbox_ink_center_x(
     if pmax <= 0:
         return None
 
-    active = np.where(profile >= pmax * mask_ratio)[0]
+    active = np.where(profile >= pmax * float(mask_ratio))[0]
     if active.size == 0:
         return None
 
     local_center = float(active.mean())
     base_local_center = (w - 1) / 2.0
     shift = local_center - base_local_center
-    max_shift = max(1.0, unit_size * max_shift_unit_ratio)
+    max_shift = max(1.0, unit_size * float(max_shift_unit_ratio))
     shift = float(np.clip(shift, -max_shift, max_shift))
     if abs(shift) < 0.5:
         return None
@@ -222,6 +225,10 @@ def _score_directory(
     current_score_name: Optional[str] = None,
     staff_vov_threshold: float = 0.5,
     crop_recenter_on_bbox_ink: bool = False,
+    crop_recenter_min_aspect_ratio: float = 3.0,
+    crop_recenter_apply_if_width_ge_unit_ratio: float = 0.0,
+    crop_recenter_apply_if_width_le_unit_ratio: float = 1.0,
+    crop_recenter_mask_ratio: float = 0.85,
     crop_recenter_max_shift_unit_ratio: float = 0.35,
     input_image_scale: float = 1.0,
     in_memory_images: Dict[str, Any] | None = None,
@@ -284,7 +291,13 @@ def _score_directory(
 
         if crop_recenter_on_bbox_ink:
             cx_adjusted = _compute_bbox_ink_center_x(
-                img, box, max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio
+                img,
+                box,
+                min_aspect_ratio=crop_recenter_min_aspect_ratio,
+                apply_if_width_ge_unit_ratio=crop_recenter_apply_if_width_ge_unit_ratio,
+                apply_if_width_le_unit_ratio=crop_recenter_apply_if_width_le_unit_ratio,
+                mask_ratio=crop_recenter_mask_ratio,
+                max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio,
             )
             if cx_adjusted is not None:
                 cx = cx_adjusted
@@ -375,6 +388,10 @@ def run_cnn_scoring_batch(
     bands_from: Optional[Path] = None,
     staff_vov_threshold: float = 0.5,
     crop_recenter_on_bbox_ink: bool = False,
+    crop_recenter_min_aspect_ratio: float = 3.0,
+    crop_recenter_apply_if_width_ge_unit_ratio: float = 0.0,
+    crop_recenter_apply_if_width_le_unit_ratio: float = 1.0,
+    crop_recenter_mask_ratio: float = 0.85,
     crop_recenter_max_shift_unit_ratio: float = 0.35,
     input_image_scale: float = 1.0,
     candidate_rescale_factor: Optional[float] = None,
@@ -405,6 +422,10 @@ def run_cnn_scoring_batch(
             current_score_name=score_name,
             staff_vov_threshold=staff_vov_threshold,
             crop_recenter_on_bbox_ink=crop_recenter_on_bbox_ink,
+            crop_recenter_min_aspect_ratio=crop_recenter_min_aspect_ratio,
+            crop_recenter_apply_if_width_ge_unit_ratio=crop_recenter_apply_if_width_ge_unit_ratio,
+            crop_recenter_apply_if_width_le_unit_ratio=crop_recenter_apply_if_width_le_unit_ratio,
+            crop_recenter_mask_ratio=crop_recenter_mask_ratio,
             crop_recenter_max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio,
             input_image_scale=input_image_scale,
             in_memory_images=in_memory_images,

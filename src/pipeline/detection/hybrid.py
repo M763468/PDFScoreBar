@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import cv2
+import numpy as np
 import torch
 from tqdm import tqdm
 
@@ -163,7 +164,7 @@ class HybridDetector:
                 baseline_boxes = load_json_boxes(baseline_json)
                 sr_boxes = load_json_boxes(sr_json)
                 omr_boxes = load_json_boxes(omr_json) if self.use_omr else []
-                
+
                 # Determine mode and iou_thresh
                 # If seed_generation section exists, we are in Pass 1
                 seed_gen = self.det_cfg.get("seed_generation")
@@ -171,7 +172,7 @@ class HybridDetector:
                     mode = seed_gen.get("hybrid_consensus_mode", "intersection")
                 else:
                     mode = self.det_cfg.get("hybrid_consensus_mode", "intersection")
-                
+
                 iou_thresh = 0.8 if mode == "union" else 0.5
 
                 hybrid_preds = apply_hybrid_consensus_filter(

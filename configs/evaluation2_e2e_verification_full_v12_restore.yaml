@@ -24,7 +24,11 @@ detection:
   sr_scale: 2
   use_omr: true
   crop_recenter_on_bbox_ink: true
-  crop_recenter_max_shift_unit_ratio: 0.5
+  crop_recenter_min_aspect_ratio: 3.0
+  crop_recenter_apply_if_width_ge_unit_ratio: 0.4
+  crop_recenter_apply_if_width_le_unit_ratio: 1.0
+  crop_recenter_mask_ratio: 0.85
+  crop_recenter_max_shift_unit_ratio: 0.35
   container_name: my_pdf_pipeline
   hybrid_output_root: logs/hybrid_generalization/verification_full_v12_restore
   seed_generation:

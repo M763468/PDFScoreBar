@@ -1,7 +1,7 @@
 # Session Handoff (Epic #120 Rebuild Roadmap)
 
 ## 1. 全体目標
-Epic #120 の最終目標は、すべてのステップを統合した E2E パイプラインにおいて、過去の最高精度である **`TP=3580, FN=1, FP=0` を完全に復元すること**です。
+Epic #120 の最終目標は、すべてのステップを統合した E2E パイプラインにおいて、過去の最高精度である **`TP=3580, FN=1, FP=0` を完全に復元すること**です。(ISSUE#044関連でその記述あり。過去数回の調査結果も参照。)
 
 ## 2. 現在の状況（直近の調査結果）
 過去の v12 ベースライン（`scoring_input_eval2_v12`）と同じ中間シードを生成すべく、様々な仕様差異（DPI、OMR-DLN結合、幾何学フィルタの実装漏れ等）をパイプライン（`src/pipeline`）に反映し、最新のコミット（`fix/probe_seeds` ブランチ）に適用しました。
@@ -28,7 +28,16 @@ CNN 自体は既にテスト済みのコンポーネントであり、内部ロ�
 3. 方針が固まったら、ユーザーに提示して合意形成を行ってください。
 
 ### 前提知識・読むべきコード
-* **パイプライン実行設定**: 現在は `configs/evaluation2_e2e_verification_full_v12_restore.yaml` を使用して `PYTHONPATH=.:external/homr .venv_pdf/bin/python src/pipeline/main.py --config configs/evaluation2_e2e_verification_full_v12_restore.yaml` で実行可能です（DPI 360, OMR-DLN 有効化、過剰フィルタ無効化済み）。
+* **パイプライン実行環境とコマンド**:
+  OMR-DLN を含む完全なパイプラインは `pdfscore_pipeline_gpu` コンテナ内で実行する必要があります。以下の手順で実行可能です（DPI 360, OMR-DLN 有効化、過剰フィルタ無効化済みの設定を使用）。
+
+  ```bash
+  # 1. コンテナが起動していない場合は起動する
+  docker run --gpus all -d --name pdfscore_pipeline_gpu -v "$(pwd):/workspace" -w /workspace pdfscore_pipeline_gpu tail -f /dev/null
+
+  # 2. コンテナ内でパイプラインを実行する
+  docker exec -e PYTHONPATH=/workspace:/workspace/external/homr pdfscore_pipeline_gpu /opt/venv_pipeline/bin/python src/pipeline/main.py --config configs/evaluation2_e2e_verification_full_v12_restore.yaml
+  ```
 * **シード生成ロジック**: `src/pipeline/steps/probe_scan.py`
 * **CNNスコアリング**: `src/pipeline/steps/cnn_scoring.py`
 * **評価スクリプト**: `tools/re_evaluate_global.py` および評価ロジック `tools/evaluate_e2e_predictions.py`

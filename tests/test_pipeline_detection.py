@@ -30,6 +30,16 @@ class TestPipelineDetection(unittest.TestCase):
             hybrid_output_dir.mkdir(parents=True, exist_ok=True)
 
             config = self._base_config()
+            config["detection"].update(
+                {
+                    "crop_recenter_on_bbox_ink": True,
+                    "crop_recenter_min_aspect_ratio": 4.0,
+                    "crop_recenter_apply_if_width_ge_unit_ratio": 0.4,
+                    "crop_recenter_apply_if_width_le_unit_ratio": 0.9,
+                    "crop_recenter_mask_ratio": 0.8,
+                    "crop_recenter_max_shift_unit_ratio": 0.25,
+                }
+            )
             images = [Path("data/evaluation/images/page_001.png")]
             page_ids = ["page_001"]
 
@@ -58,6 +68,16 @@ class TestPipelineDetection(unittest.TestCase):
 
             mock_probe.assert_called_once()
             mock_cnn.assert_called_once()
+            self.assertTrue(mock_cnn.call_args.kwargs["crop_recenter_on_bbox_ink"])
+            self.assertEqual(mock_cnn.call_args.kwargs["crop_recenter_min_aspect_ratio"], 4.0)
+            self.assertEqual(
+                mock_cnn.call_args.kwargs["crop_recenter_apply_if_width_ge_unit_ratio"], 0.4
+            )
+            self.assertEqual(
+                mock_cnn.call_args.kwargs["crop_recenter_apply_if_width_le_unit_ratio"], 0.9
+            )
+            self.assertEqual(mock_cnn.call_args.kwargs["crop_recenter_mask_ratio"], 0.8)
+            self.assertEqual(mock_cnn.call_args.kwargs["crop_recenter_max_shift_unit_ratio"], 0.25)
 
             commands = result["commands"]
             self.assertEqual(commands[0], ["hybrid"])

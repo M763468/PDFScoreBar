@@ -53,7 +53,9 @@ class DetectorOrchestrator:
         if seed_gen_cfg:
             # We must run a specific hybrid consensus (Union Baseline+SR, and OMR if enabled)
             # to match v12 clean seed generation sources.
-            hybrid_result = self._run_hybrid_detection(use_omr=bool(self.det_cfg.get("use_omr", False)))
+            hybrid_result = self._run_hybrid_detection(
+                use_omr=bool(self.det_cfg.get("use_omr", False))
+            )
             self.hybrid_output_dir = hybrid_result["hybrid_output_dir"]
         else:
             # Standard single-pass behavior
@@ -105,14 +107,14 @@ class DetectorOrchestrator:
         if not self.dry_run:
             detect_probe_kwargs = get_probe_kwargs(self.det_cfg)
             seed_gen_cfg = self.det_cfg.get("seed_generation")
-            
+
             if seed_gen_cfg:
                 logger.info("--- Step 2.2a: Probe Scan Seed Generation (Pass 1) ---")
                 probe_seeds_root = self.run_dir / "intermediate" / "probe_seeds"
                 ensure_dir(probe_seeds_root)
-                
+
                 seed_filter_kwargs = seed_gen_cfg.get("candidate_filter_kwargs", {})
-                
+
                 # Use 1x original images for seed generation (Pass 1) to match v12
                 # Bypass existing heuristic filters to apply them identically to v12 manually
                 run_probe_scan_batch(
@@ -151,66 +153,86 @@ class DetectorOrchestrator:
                     disable_seed_splitting=False,
                     in_memory_images=self.in_memory_images,
                 )
-                
+
                 # Now apply the filters manually to exactly mimic v12
-                from src.pipeline.steps.candidate_filters import filter_probe_candidates
                 import json
+
                 import cv2
                 import numpy as np
-                from src.pipeline.utils.images import load_image
+
                 from src.pipeline.core.run_ids import build_probe_run_id
+                from src.pipeline.steps.candidate_filters import filter_probe_candidates
+                from src.pipeline.utils.images import load_image
 
                 for img_path in self.images:
                     current_score_name = effective_score_name or img_path.parent.name
                     run_id = build_probe_run_id(img_path, score_name=current_score_name)
                     raw_path = probe_seeds_root / run_id / "pipeline2_no_peak_candidates.json"
-                    
+
                     if not raw_path.exists():
                         continue
-                    
+
                     raw_candidates = []
                     try:
                         raw_candidates = json.loads(raw_path.read_text())
-                        (raw_path.parent / "pipeline2_no_peak_candidates_unfiltered.json").write_text(json.dumps(raw_candidates, indent=2))
-                    except:
+                        (
+                            raw_path.parent / "pipeline2_no_peak_candidates_unfiltered.json"
+                        ).write_text(json.dumps(raw_candidates, indent=2))
+                    except (json.JSONDecodeError, OSError, TypeError):
                         continue
-                        
+
                     img = load_image(img_path, in_memory_images=self.in_memory_images)
-                    
+
                     staff_mask = np.zeros(img.shape[:2], dtype=np.uint8)
                     mask_path = None
                     injected_dir = seed_gen_cfg.get("staff_mask_injection_dir")
-                    
+
                     if injected_dir:
-                        # V12 used line mask debug_3_staff.png. E2E uses regional mask. 
+                        # V12 used line mask debug_3_staff.png. E2E uses regional mask.
                         # We must fallback to exact v12 mask to recreate baseline accuracy.
                         injected_path = Path(injected_dir)
                         # We want the exact run for this score and page.
                         # e.g. eval2_{score_name}_{page}_YYYYMMDD_HHMMSS
                         # But actually rglob is easier if we just match stem + debug_3_staff.png
-                        search_results = list(injected_path.rglob(f"*{current_score_name}*/**/baseline/**/*{img_path.stem}*debug_3_staff.png"))
+                        search_results = list(
+                            injected_path.rglob(
+                                f"*{current_score_name}*/**/baseline/**/*{img_path.stem}*debug_3_staff.png"
+                            )
+                        )
                         if search_results:
                             mask_path = search_results[0]
-                    
+
                     if not mask_path and resolved_staff_mask_dir:
-                        mask_path = resolved_staff_mask_dir / "baseline" / "batch" / img_path.stem / f"{img_path.stem}_staff_mask.png"
+                        mask_path = (
+                            resolved_staff_mask_dir
+                            / "baseline"
+                            / "batch"
+                            / img_path.stem
+                            / f"{img_path.stem}_staff_mask.png"
+                        )
 
                     if mask_path and mask_path.exists():
                         loaded_mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
                         if loaded_mask is not None:
-                            staff_mask = cv2.resize(loaded_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
+                            staff_mask = cv2.resize(
+                                loaded_mask,
+                                (img.shape[1], img.shape[0]),
+                                interpolation=cv2.INTER_NEAREST,
+                            )
 
                     kept, _ = filter_probe_candidates(
                         candidates=[tuple(int(v) for v in b) for b in raw_candidates],
                         image=img,
                         existing_boxes=[],
                         staff_mask=staff_mask,
-                        **seed_filter_kwargs
+                        **seed_filter_kwargs,
                     )
-                    
+
                     filtered_path = raw_path.parent / "pipeline2_no_peak_candidates_filtered.json"
                     filtered_path.write_text(json.dumps(kept, indent=2))
-                    raw_path.write_text(json.dumps(kept, indent=2)) # we keep this so pass 2 uses the filtered ones!
+                    raw_path.write_text(
+                        json.dumps(kept, indent=2)
+                    )  # we keep this so pass 2 uses the filtered ones!
 
                 self.bands_from_dir = probe_seeds_root
             else:
@@ -283,7 +305,9 @@ class DetectorOrchestrator:
             "--output-root",
             str(probe_output_root),
             "--bands-from",
-            str(self.bands_from_dir if not self.dry_run and seed_gen_cfg else self.hybrid_output_dir),
+            str(
+                self.bands_from_dir if not self.dry_run and seed_gen_cfg else self.hybrid_output_dir
+            ),
             "--ink-threshold",
             str(self.det_cfg.get("ink_threshold", 230)),
             "--min-ratio",
@@ -313,6 +337,16 @@ class DetectorOrchestrator:
                 crop_recenter_on_bbox_ink=bool(
                     self.det_cfg.get("crop_recenter_on_bbox_ink", False)
                 ),
+                crop_recenter_min_aspect_ratio=float(
+                    self.det_cfg.get("crop_recenter_min_aspect_ratio", 3.0)
+                ),
+                crop_recenter_apply_if_width_ge_unit_ratio=float(
+                    self.det_cfg.get("crop_recenter_apply_if_width_ge_unit_ratio", 0.0)
+                ),
+                crop_recenter_apply_if_width_le_unit_ratio=float(
+                    self.det_cfg.get("crop_recenter_apply_if_width_le_unit_ratio", 1.0)
+                ),
+                crop_recenter_mask_ratio=float(self.det_cfg.get("crop_recenter_mask_ratio", 0.85)),
                 crop_recenter_max_shift_unit_ratio=float(
                     self.det_cfg.get("crop_recenter_max_shift_unit_ratio", 0.35)
                 ),

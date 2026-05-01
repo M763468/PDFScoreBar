@@ -261,8 +261,8 @@ def _score_directory(
         new_h = int(round(h / input_image_scale))
         new_w = int(round(w / input_image_scale))
         img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_AREA)
-        # Rescale candidates back to downscaled image coordinate space
-        candidates = [[v / input_image_scale for v in box] for box in candidates]
+        # Candidates are already saved in 1x coordinate space by run_probe_scan_batch.
+        # No need to divide them again.
 
     # --- Resolve Staff Bands ---
     staff_bands = []

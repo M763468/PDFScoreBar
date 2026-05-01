@@ -40,10 +40,10 @@ class HybridDetector:
         images: List[Path],
         run_id: str,
         project_root: Path,
-        *,
-        dry_run: bool,
+        dry_run: bool = False,
         skip_existing: bool = False,
-        in_memory_images: Dict[str, Any] | None = None,
+        in_memory_images: Dict[str, np.ndarray] | None = None,
+        use_omr: bool = True,
     ):
         self.det_cfg = det_cfg
         self.images = images
@@ -52,6 +52,13 @@ class HybridDetector:
         self.dry_run = dry_run
         self.skip_existing = skip_existing
         self.in_memory_images = in_memory_images
+        self.use_omr = use_omr
+
+        self.hybrid_output_root = Path(
+            det_cfg.get("hybrid_output_root", "logs/hybrid_generalization")
+        )
+        self.sr_scale = int(det_cfg.get("sr_scale", 2))
+        self.enable_sr = bool(det_cfg.get("enable_sr", True))
 
     def _get_python_cmd(self, name: str) -> List[str]:
         """Returns the appropriate python command, falling back to host if images are external."""
@@ -105,6 +112,8 @@ class HybridDetector:
 
         if not enable_sr:
             logger.info("Skipping OMR-DLN: SR is disabled.")
+        elif not self.use_omr:
+            logger.info("Skipping OMR-DLN: use_omr is false.")
         elif self.skip_existing and self._omr_all_stems_exist(omr_output, stems):
             logger.info("Skipping OMR-DLN: outputs already exist.")
         else:
@@ -142,18 +151,35 @@ class HybridDetector:
                         shutil.copy(baseline_json, output_json)
                 continue
 
-            if not baseline_json.exists() or not sr_json.exists() or not omr_json.exists():
-                logger.warning(f"Missing components for {stem}. Skipping consensus.")
+            # If use_omr is False, we only need baseline and SR
+            if not baseline_json.exists() or not sr_json.exists():
+                logger.warning(f"Missing baseline/SR components for {stem}. Skipping consensus.")
+                continue
+            if self.use_omr and not omr_json.exists():
+                logger.warning(f"Missing OMR component for {stem}. Skipping consensus.")
                 continue
 
             if not self.dry_run:
                 baseline_boxes = load_json_boxes(baseline_json)
                 sr_boxes = load_json_boxes(sr_json)
-                omr_boxes = load_json_boxes(omr_json)
+                omr_boxes = load_json_boxes(omr_json) if self.use_omr else []
+                
+                # Determine mode and iou_thresh
+                # If seed_generation section exists, we are in Pass 1
+                seed_gen = self.det_cfg.get("seed_generation")
+                if seed_gen:
+                    mode = seed_gen.get("hybrid_consensus_mode", "intersection")
+                else:
+                    mode = self.det_cfg.get("hybrid_consensus_mode", "intersection")
+                
+                iou_thresh = 0.8 if mode == "union" else 0.5
+
                 hybrid_preds = apply_hybrid_consensus_filter(
                     baseline_boxes=baseline_boxes,
                     sr_boxes=sr_boxes,
                     omr_boxes=omr_boxes,
+                    mode=mode,
+                    iou_thresh=iou_thresh,
                 )
                 output_json.write_text(json.dumps(hybrid_preds, indent=2))
 
@@ -202,7 +228,6 @@ class HybridDetector:
             bool(self.det_cfg.get("write_staff_positions", False)),
             False,
             -1,
-            torch.cuda.is_available(),
         )
         tuning = DEFAULT_TUNING.copy()
         tuning.update(

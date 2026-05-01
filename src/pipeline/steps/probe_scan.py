@@ -241,6 +241,7 @@ def _load_bands_for_image(
     candidates = [
         bands_from / current_score_name / stem / "pipeline2_no_peak_candidates.json",
         bands_from / current_score_name / stem / "pipeline2_no_peak_scored.json",
+        bands_from / run_subdir / "pipeline2_no_peak_candidates.json",
         bands_from / run_subdir / "pipeline2_no_peak_scored.json",
         bands_from / "hybrid_results" / f"{stem}_hybrid.json",
         bands_from / "omr_sr" / stem / "predictions.json",
@@ -558,6 +559,13 @@ def run_probe_scan_batch(
                 print(f"DEBUG: Split stats: {stats}")
                 for sb in split_boxes:
                     final_set.add(tuple(int(v) for v in sb))
+
+        if input_image_scale > 1.0:
+            final_scaled = set()
+            for box in final_set:
+                scaled_box = tuple(int(round(v / input_image_scale)) for v in box)
+                final_scaled.add(scaled_box)
+            final_set = final_scaled
 
         final_list = sorted(final_set)
         out_path.write_text(json.dumps(final_list, indent=2))

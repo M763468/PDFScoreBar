@@ -25,8 +25,17 @@ detection:
   crop_recenter_on_bbox_ink: true
   container_name: sr_eval_gpu_exp
   hybrid_output_root: logs/hybrid_generalization/verification_full
-  ink_threshold: 230
-  min_ratio: 0.70
+  seed_generation:
+    ink_threshold: 240
+    min_ratio: 0.10
+    min_height_ratio: 0.0
+    candidate_filter_kwargs:
+      min_ink_ratio: 0.18
+      min_staff_overlap_ratio: 0.02
+      min_height_median_ratio: 0.4
+      ink_threshold: 180
+  ink_threshold: 180
+  min_ratio: 0.85
   min_height_ratio: 0.012
   cnn_model_path: logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
   cnn_threshold: 0.1

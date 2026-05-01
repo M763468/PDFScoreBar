@@ -57,10 +57,23 @@ def apply_hybrid_consensus_filter(
     sr_boxes: Iterable[Sequence[int]],
     omr_boxes: Iterable[Sequence[int]],
     iou_thresh: float = 0.5,
+    mode: str = "intersection",
 ) -> List[List[int]]:
-    """Keep baseline boxes that are supported by SR or OMR predictions."""
+    """Keep baseline boxes that are supported by SR or OMR predictions if mode == intersection.
+    If mode == union, merge all boxes and deduplicate using iou_thresh.
+    """
     sr_list = list(sr_boxes)
     omr_list = list(omr_boxes)
+
+    if mode == "union":
+        all_boxes = list(baseline_boxes) + sr_list + omr_list
+        sorted_boxes = sorted(all_boxes, key=lambda x: x[0])
+        final_seeds: List[List[int]] = []
+        for b in sorted_boxes:
+            if not any(barline_iou(b, fb) > iou_thresh for fb in final_seeds):
+                final_seeds.append([int(v) for v in b])
+        return final_seeds
+
     hybrid: List[List[int]] = []
     for box in baseline_boxes:
         if _has_match(box, sr_list, iou_thresh=iou_thresh) or _has_match(

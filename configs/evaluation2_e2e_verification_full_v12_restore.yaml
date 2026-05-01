@@ -1,0 +1,81 @@
+run:
+  run_id: eval2_e2e_verification_full_v12_restore_v9
+  output_root: logs/full_pipeline_runs/verification
+
+inputs:
+  pdf_path: data/evaluation2/pdfs/Va_Prokofiev_Symphony1.pdf
+  pdf_to_images:
+    output_dir: logs/preprocess/evaluation2/e2e_verification_full_v12_restore_v9
+    dpi: 360
+    pages: "1,2,3"
+
+steps:
+  pdf_to_images: true
+  detection: true
+  filter_pages: true
+  apply_barline_overrides: false
+  numbering_base: true
+  mmr_overrides: true
+  apply_measure_overrides: true
+  overlay: true
+
+detection:
+  enable_sr: true
+  sr_scale: 2
+  use_omr: true
+  crop_recenter_on_bbox_ink: true
+  crop_recenter_max_shift_unit_ratio: 0.5
+  container_name: my_pdf_pipeline
+  hybrid_output_root: logs/hybrid_generalization/verification_full_v12_restore
+  seed_generation:
+    hybrid_consensus_mode: union
+    iou_thresh: 0.8
+    ink_threshold: 240
+    min_ratio: 0.10
+    min_height_ratio: 0.0
+    detect_probe_kwargs:
+      scan_gap_rescue: true
+      scan_gap_threshold_ratio: 1.8
+      scan_gap_rescue_min_ratio: 0.0
+      scan_gap_margin_ratio: 0.1
+      scan_x_peak_rescue: true
+      scan_rightmost_rescue: true
+      divisi_rescue: true
+      scan_x_peak_rescue_mode: "topbottom"
+      probe_width: 4
+      scan_x_peak_ratio_min: 0.0
+      scan_rightmost_min_ratio: 0.0
+      max_per_band: 100
+      scan_center_on_peak: true
+      band_scan_line_ratio: 0.6
+      band_scan_min_lines: 5
+      band_source: "row_stats"
+    candidate_filter_kwargs:
+      min_ink_ratio: 0.18
+      min_staff_overlap_ratio: 0.02
+      min_height_median_ratio: 0.4
+      ink_threshold: 180
+      min_paper_overlap_ratio: 0.0
+    staff_mask_injection_dir: logs/hybrid_pipeline_bench
+  ink_threshold: 180
+  min_ratio: 0.85
+  min_height_ratio: 0.012
+  enable_heuristic_filters: false
+  cnn_model_path: logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
+  cnn_threshold: 0.1
+  scan_gap_rescue: true
+  scan_gap_threshold_ratio: 1.5
+  scan_gap_rescue_min_ratio: 0.3
+  scan_x_peak_rescue: true
+  scan_rightmost_rescue: true
+  divisi_rescue: true
+  scan_center_on_peak: true
+  max_per_band: 100
+  staff_vov_threshold: 0.5
+
+mmr:
+  model_path: tools/mmr_training/models/mmr_classifier_best.pth
+  enable_rotation_tta: false
+
+numbering:
+  force_single_system: false

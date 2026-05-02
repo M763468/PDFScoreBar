@@ -350,6 +350,9 @@ class DetectorOrchestrator:
                 crop_recenter_max_shift_unit_ratio=float(
                     self.det_cfg.get("crop_recenter_max_shift_unit_ratio", 0.35)
                 ),
+                nms_iou_threshold=float(self.det_cfg.get("cnn_nms_iou_threshold", 0.5)),
+                nms_x_dist_unit_ratio=float(self.det_cfg.get("cnn_nms_x_dist_unit_ratio", 1.0)),
+                min_height_unit_ratio=float(self.det_cfg.get("cnn_min_height_unit_ratio", 0.0)),
                 input_image_scale=float(effective_sr_scale),
                 bands_from=getattr(self, "bands_from_dir", self.hybrid_output_dir),
                 staff_vov_threshold=float(self.det_cfg.get("staff_vov_threshold", 0.5)),
@@ -363,6 +366,10 @@ class DetectorOrchestrator:
             str(self.probe_output_dir),
             "--threshold",
             str(self.det_cfg.get("cnn_threshold", 0.1)),
+            "--nms-x-dist-unit-ratio",
+            str(self.det_cfg.get("cnn_nms_x_dist_unit_ratio", 1.0)),
+            "--min-height-unit-ratio",
+            str(self.det_cfg.get("cnn_min_height_unit_ratio", 0.0)),
         ]
         return {"commands": [cmd_score]}
 

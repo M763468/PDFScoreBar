@@ -38,6 +38,9 @@ class TestPipelineDetection(unittest.TestCase):
                     "crop_recenter_apply_if_width_le_unit_ratio": 0.9,
                     "crop_recenter_mask_ratio": 0.8,
                     "crop_recenter_max_shift_unit_ratio": 0.25,
+                    "cnn_nms_iou_threshold": 0.4,
+                    "cnn_nms_x_dist_unit_ratio": 0.2,
+                    "cnn_min_height_unit_ratio": 2.5,
                 }
             )
             images = [Path("data/evaluation/images/page_001.png")]
@@ -78,6 +81,9 @@ class TestPipelineDetection(unittest.TestCase):
             )
             self.assertEqual(mock_cnn.call_args.kwargs["crop_recenter_mask_ratio"], 0.8)
             self.assertEqual(mock_cnn.call_args.kwargs["crop_recenter_max_shift_unit_ratio"], 0.25)
+            self.assertEqual(mock_cnn.call_args.kwargs["nms_iou_threshold"], 0.4)
+            self.assertEqual(mock_cnn.call_args.kwargs["nms_x_dist_unit_ratio"], 0.2)
+            self.assertEqual(mock_cnn.call_args.kwargs["min_height_unit_ratio"], 2.5)
 
             commands = result["commands"]
             self.assertEqual(commands[0], ["hybrid"])

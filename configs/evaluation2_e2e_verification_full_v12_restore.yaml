@@ -29,6 +29,7 @@ detection:
   crop_recenter_apply_if_width_le_unit_ratio: 1.0
   crop_recenter_mask_ratio: 0.85
   crop_recenter_max_shift_unit_ratio: 0.35
+  cnn_nms_x_dist_unit_ratio: 0.0
   container_name: my_pdf_pipeline
   hybrid_output_root: logs/hybrid_generalization/verification_full_v12_restore
   seed_generation:
@@ -66,7 +67,7 @@ detection:
   min_height_ratio: 0.012
   enable_heuristic_filters: false
   cnn_model_path: logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
-  cnn_threshold: 0.1
+  cnn_threshold: 0.5
   scan_gap_rescue: true
   scan_gap_threshold_ratio: 1.5
   scan_gap_rescue_min_ratio: 0.3
@@ -75,7 +76,8 @@ detection:
   divisi_rescue: true
   scan_center_on_peak: true
   max_per_band: 100
-  staff_vov_threshold: 0.5
+  cnn_min_height_unit_ratio: 2.8
+  staff_vov_threshold: 0.0
 
 mmr:
   model_path: tools/mmr_training/models/mmr_classifier_best.pth

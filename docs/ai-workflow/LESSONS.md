@@ -11,6 +11,9 @@
 - **lesson_004**: When debugging OMR False Positives, always generate and inspect overlay images (`debug_outputs/`) before modifying geometric filter logic.
 - **lesson_007**: In FN_det analysis, separate "double/end-bar merging" from generic geometric mismatch; mixing them weakens root-cause reproducibility.
 - **lesson_008**: Rule-only GT matching changes (IoU/IoA/center) do not change candidate sets, so measure-number KPI may stay unchanged; evaluate detector-side variants separately for KPI inversion checks.
+- **lesson_016**: Detector-level FN/FP can overstate measure-count impact. Before changing detector heuristics for double/end-bar one-side FN or close duplicate FP, classify residuals by whether a neighboring matched prediction still preserves the logical measure boundary and run the downstream measure-count KPI.
+- **lesson_017**: A stricter detector score threshold can improve downstream measure-count KPI even if detector FN rises slightly. For barline recovery work, compare `measure_delta` / `measure_abs_delta_sum` alongside `TP/FP/FN/FN_cnn/FN_det` before adopting or rejecting threshold and post-processing changes.
+- **lesson_018**: In evaluation2 E2E recovery, short high-score candidates around 2.5-2.8 staff units can create internal false barlines that over-count measures. A unit-scaled minimum height sweep can improve downstream count KPI more reliably than max-height or x-distance NMS sweeps.
 
 ### Pipeline & Infrastructure
 - **lesson_009**: Don't assume the current environment (e.g., `.venv_pdf`) has all ML dependencies. Always check `docs/ENVIRONMENTS.md` and use the specified container (e.g., `sr_eval_gpu`) for integrated runs.

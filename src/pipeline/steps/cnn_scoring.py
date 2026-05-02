@@ -211,6 +211,52 @@ def apply_nms(
     return kept
 
 
+def _estimate_unit_size_from_scored_results(
+    scored_results: Sequence[Dict[str, Any]],
+    *,
+    high_confidence_score: float = 0.5,
+) -> float | None:
+    """Estimate page-local unit size from scored barline-like candidate heights."""
+    heights = [
+        abs(float(item["bbox"][3]) - float(item["bbox"][1]))
+        for item in scored_results
+        if float(item.get("score", 0.0)) >= high_confidence_score
+        and len(item.get("bbox", [])) == 4
+        and abs(float(item["bbox"][3]) - float(item["bbox"][1])) > 0
+    ]
+    if not heights:
+        heights = [
+            abs(float(item["bbox"][3]) - float(item["bbox"][1]))
+            for item in scored_results
+            if len(item.get("bbox", [])) == 4
+            and abs(float(item["bbox"][3]) - float(item["bbox"][1])) > 0
+        ]
+    if not heights:
+        return None
+    return max(1.0, float(np.median(heights)) / 4.0)
+
+
+def _suppress_short_candidates_by_unit_height(
+    scored_results: Sequence[Dict[str, Any]],
+    *,
+    min_height_unit_ratio: float,
+) -> None:
+    """Set score=0 for candidates shorter than a page-local unit-scaled threshold."""
+    if min_height_unit_ratio <= 0:
+        return
+    unit_size = _estimate_unit_size_from_scored_results(scored_results)
+    if unit_size is None:
+        return
+    min_height = unit_size * float(min_height_unit_ratio)
+    for item in scored_results:
+        box = item.get("bbox")
+        if not box or len(box) != 4:
+            continue
+        height = abs(float(box[3]) - float(box[1]))
+        if height < min_height:
+            item["score"] = 0.0
+
+
 def _score_directory(
     *,
     run_dir: Path,
@@ -230,6 +276,9 @@ def _score_directory(
     crop_recenter_apply_if_width_le_unit_ratio: float = 1.0,
     crop_recenter_mask_ratio: float = 0.85,
     crop_recenter_max_shift_unit_ratio: float = 0.35,
+    nms_iou_threshold: float = 0.5,
+    nms_x_dist_unit_ratio: float = 1.0,
+    min_height_unit_ratio: float = 0.0,
     input_image_scale: float = 1.0,
     in_memory_images: Dict[str, Any] | None = None,
 ) -> bool:
@@ -363,7 +412,15 @@ def _score_directory(
                 if id(item) not in kept_indices:
                     item["score"] = 0.0
 
-    apply_nms(candidate_objects_for_filter)
+    apply_nms(
+        candidate_objects_for_filter,
+        iou_threshold=nms_iou_threshold,
+        x_dist_unit_ratio=nms_x_dist_unit_ratio,
+    )
+    _suppress_short_candidates_by_unit_height(
+        candidate_objects_for_filter,
+        min_height_unit_ratio=min_height_unit_ratio,
+    )
 
     filtered_boxes = [
         item["bbox"] for item in candidate_objects_for_filter if item["score"] >= threshold
@@ -393,6 +450,9 @@ def run_cnn_scoring_batch(
     crop_recenter_apply_if_width_le_unit_ratio: float = 1.0,
     crop_recenter_mask_ratio: float = 0.85,
     crop_recenter_max_shift_unit_ratio: float = 0.35,
+    nms_iou_threshold: float = 0.5,
+    nms_x_dist_unit_ratio: float = 1.0,
+    min_height_unit_ratio: float = 0.0,
     input_image_scale: float = 1.0,
     candidate_rescale_factor: Optional[float] = None,
     in_memory_images: Dict[str, Any] | None = None,
@@ -427,6 +487,9 @@ def run_cnn_scoring_batch(
             crop_recenter_apply_if_width_le_unit_ratio=crop_recenter_apply_if_width_le_unit_ratio,
             crop_recenter_mask_ratio=crop_recenter_mask_ratio,
             crop_recenter_max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio,
+            nms_iou_threshold=nms_iou_threshold,
+            nms_x_dist_unit_ratio=nms_x_dist_unit_ratio,
+            min_height_unit_ratio=min_height_unit_ratio,
             input_image_scale=input_image_scale,
             in_memory_images=in_memory_images,
         ):

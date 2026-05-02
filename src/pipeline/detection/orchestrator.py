@@ -353,6 +353,12 @@ class DetectorOrchestrator:
                 nms_iou_threshold=float(self.det_cfg.get("cnn_nms_iou_threshold", 0.5)),
                 nms_x_dist_unit_ratio=float(self.det_cfg.get("cnn_nms_x_dist_unit_ratio", 1.0)),
                 min_height_unit_ratio=float(self.det_cfg.get("cnn_min_height_unit_ratio", 0.0)),
+                short_low_confidence_min_height_unit_ratio=float(
+                    self.det_cfg.get("cnn_short_low_confidence_min_height_unit_ratio", 0.0)
+                ),
+                short_low_confidence_max_score=float(
+                    self.det_cfg.get("cnn_short_low_confidence_max_score", 0.0)
+                ),
                 input_image_scale=float(effective_sr_scale),
                 bands_from=getattr(self, "bands_from_dir", self.hybrid_output_dir),
                 staff_vov_threshold=float(self.det_cfg.get("staff_vov_threshold", 0.5)),
@@ -370,6 +376,10 @@ class DetectorOrchestrator:
             str(self.det_cfg.get("cnn_nms_x_dist_unit_ratio", 1.0)),
             "--min-height-unit-ratio",
             str(self.det_cfg.get("cnn_min_height_unit_ratio", 0.0)),
+            "--short-low-confidence-min-height-unit-ratio",
+            str(self.det_cfg.get("cnn_short_low_confidence_min_height_unit_ratio", 0.0)),
+            "--short-low-confidence-max-score",
+            str(self.det_cfg.get("cnn_short_low_confidence_max_score", 0.0)),
         ]
         return {"commands": [cmd_score]}
 

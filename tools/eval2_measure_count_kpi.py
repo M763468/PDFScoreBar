@@ -230,6 +230,10 @@ def apply_center_nms(
     return kept
 
 
+def parse_optional_ratio_token(text: str | None) -> float | None:
+    return parse_ratio_token(text) if text else None
+
+
 def variant_boxes(
     variant: str, filtered_records: list[Any], scored_records: list[Any]
 ) -> list[Box]:
@@ -239,13 +243,16 @@ def variant_boxes(
         r"score_ge_(?P<threshold>\d+p?\d*)"
         r"(?:_minh_(?P<minh>\d+p?\d*))?"
         r"(?:_maxh_(?P<maxh>\d+p?\d*))?"
+        r"(?:_softshort_(?P<softshort>\d+p?\d*)_scorelt_(?P<softscore>\d+p?\d*))?"
         r"(?:_xnms_(?P<xnms>\d+p?\d*))?",
         variant,
     )
     if match:
         threshold = parse_ratio_token(match.group("threshold"))
-        min_height_ratio = parse_ratio_token(match.group("minh")) if match.group("minh") else None
-        max_height_ratio = parse_ratio_token(match.group("maxh")) if match.group("maxh") else None
+        min_height_ratio = parse_optional_ratio_token(match.group("minh"))
+        max_height_ratio = parse_optional_ratio_token(match.group("maxh"))
+        soft_short_height_ratio = parse_optional_ratio_token(match.group("softshort"))
+        soft_short_max_score = parse_optional_ratio_token(match.group("softscore"))
         x_nms_ratio = parse_ratio_token(match.group("xnms")) if match.group("xnms") else 0.0
         unit_size = estimate_unit_size_from_records(scored_records, threshold)
         records: list[dict[str, Any]] = []
@@ -259,6 +266,13 @@ def variant_boxes(
             if min_height_ratio is not None and height_ratio < min_height_ratio:
                 continue
             if max_height_ratio is not None and height_ratio > max_height_ratio:
+                continue
+            if (
+                soft_short_height_ratio is not None
+                and soft_short_max_score is not None
+                and score < soft_short_max_score
+                and height_ratio < soft_short_height_ratio
+            ):
                 continue
             records.append(item)
         return boxes_from_records(apply_center_nms(records, x_nms_ratio))

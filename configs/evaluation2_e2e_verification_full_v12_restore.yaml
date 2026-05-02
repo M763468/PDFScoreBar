@@ -77,6 +77,8 @@ detection:
   scan_center_on_peak: true
   max_per_band: 100
   cnn_min_height_unit_ratio: 2.8
+  cnn_short_low_confidence_min_height_unit_ratio: 2.9
+  cnn_short_low_confidence_max_score: 0.9
   staff_vov_threshold: 0.0
 
 mmr:

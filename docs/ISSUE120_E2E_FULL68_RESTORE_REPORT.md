@@ -239,6 +239,7 @@ Global result:
 | filtered | 68 | 3386 | 3384 | +2 | 10 | 5 | 0.9956 | 0.9962 |
 | score >= 0.5 | 68 | 3384 | 3384 | 0 | 8 | 4 | 0.9967 | 0.9967 |
 | score >= 0.5, min height >= 2.8 unit | 68 | 3381 | 3384 | -3 | 5 | 3 | 0.9982 | 0.9973 |
+| score >= 0.5, min height >= 2.8 unit, soft-short low-confidence | 68 | 3380 | 3384 | -4 | 4 | 2 | 0.9988 | 0.9976 |
 
 Interpretation:
 
@@ -249,12 +250,28 @@ Interpretation:
   (`abs_delta_sum 10 -> 8`) while keeping the same 68-page input set.
 - Adding a unit-scaled minimum candidate height of 2.8 improves the count KPI further
   (`abs_delta_sum 8 -> 5`) by suppressing short high-score internal false positives.
+- Adding the soft-short low-confidence post-filter improves the count KPI again
+  (`abs_delta_sum 5 -> 4`, delta pages `3 -> 2`). It keeps the 2.8-unit hard floor but
+  additionally suppresses candidates below 2.9 units only when `score < 0.9`.
 - Remaining count-affecting pages at the current best setting are:
   `Sibelius-Violin_Concerto-Viola/page_006` (-3),
-  `Shostakovich-Sym5-Va/page_018` (+1),
   and `Va_Prokofiev_Symphony1/page_005` (-1).
 - `Shostakovich-Festival_Overture_Va` is perfect at the measure-count level
   (`349/349`, no delta pages), despite detector-level residuals.
+
+Residual local structures at the soft-short setting:
+
+- `Shostakovich-Sym5-Va/page_018` is fixed. The removed over-count FP was a partial
+  internal barline `[2386, 3790, 2390, 3862]` with `score=0.7053` and height ratio
+  about `2.88u`. A global `2.9u` minimum height also removes it, but creates new FN on
+  `Va__Prokofiev_Symphony5`; the score guard avoids those high-confidence true bars.
+- `Sibelius-Violin_Concerto-Viola/page_006` remains `-3`. The count-affecting misses are
+  two candidate-stage misses around x=`969` and x=`2143`, plus one very low CNN score
+  candidate around x=`2471` (`score=0.00063`). This is not recoverable by a small
+  post-CNN score/height filter.
+- `Va_Prokofiev_Symphony1/page_005` remains `-1`. The local double-bar candidate around
+  x=`2370` has `score=0.00019`; adding it fixes the page locally, but broad low-score
+  gap rescue over-counts globally.
 
 ## Small Verification Sweeps
 
@@ -274,6 +291,10 @@ Post-processing sweeps were run on the final 68-page JSON outputs only.
 | staff coverage filter 0.45 | n/a | n/a | n/a | rejected; count abs delta worsens 5 -> 26 |
 | x-align gap rescue | n/a | n/a | n/a | rejected; best tested count abs delta worsens 5 -> 6 |
 | low-score gap rescue | n/a | n/a | n/a | rejected; best tested count abs delta worsens 5 -> 24 |
+| min height 2.9/3.0/3.1 after unit numbering | n/a | n/a | n/a | rejected; fixes Shostakovich page_018 but worsens global abs delta to 6/7/8 |
+| score threshold 0.6/0.7/0.75 after unit numbering | n/a | n/a | n/a | rejected; creates Shostakovich page_008 under-count or does not improve abs delta |
+| numbering partial internal bar suppression | n/a | n/a | n/a | rejected; changed GT measure extraction as well as predictions |
+| soft-short low-confidence 2.9u score<0.9 | n/a | n/a | n/a | adopted; count abs delta improves 5 -> 4 |
 
 Conclusion: no simple global threshold, height cap, or NMS restoration is safe enough to
 apply as the next production change. Left-shift recovery proves the failure mode but is too
@@ -295,28 +316,58 @@ Additional rejected sweeps after adopting unit numbering thresholds:
   This locally fixes `Va_Prokofiev_Symphony1/page_005` by rescuing one low-score double-bar
   candidate, but globally it adds too many false internal barlines. The best tested variant
   worsened `abs_delta_sum` from 5 to 24.
+- Higher hard min-height after unit numbering:
+  `logs/issue120_e2e_recovery/eval2_full_report_final_68pages/measure_count_kpi_sweeps/minh_after_unit_v1/measure_count_summary.csv`.
+  `2.9u` fixes the `Shostakovich-Sym5-Va/page_018` over-count, but removes
+  high-confidence true short bars in `Va__Prokofiev_Symphony5`; global `abs_delta_sum`
+  worsens from 5 to 6.
+- Higher score threshold after unit numbering:
+  `logs/issue120_e2e_recovery/eval2_full_report_final_68pages/measure_count_kpi_sweeps/score_threshold_after_unit_v1/measure_count_summary.csv`.
+  Thresholds `0.6` and `0.7` do not remove the `score=0.705` FP; `0.75` removes it but
+  creates `Shostakovich-Sym5-Va/page_008` under-count, so global `abs_delta_sum` does not
+  improve.
+- Numbering partial internal bar suppression:
+  `logs/issue120_e2e_recovery/eval2_full_report_final_68pages/measure_count_kpi_sweeps/numbering_partial_bar_v1/measure_count_summary.csv`.
+  This fixed the `Shostakovich-Sym5-Va/page_018` prediction count, but it also changed GT
+  measure extraction (`gt_measure_count 3384 -> 3374`), so it is not a valid prediction-side
+  correction.
+
+Adopted local-structure correction:
+
+- Soft-short low-confidence post-filter:
+  `logs/issue120_e2e_recovery/eval2_full_report_final_68pages/measure_count_kpi_sweeps/softshort_lowconf_v1/measure_count_summary.csv`.
+  Reproduction command:
+
+  ```bash
+  PYTHONPATH=.:external/homr .venv_pdf/bin/python tools/eval2_measure_count_kpi.py \
+    --manifest logs/issue120_e2e_recovery/eval2_full_configs/manifest.json \
+    --run-root logs/full_pipeline_runs/evaluation2_full_v12_restore \
+    --gt-root data/evaluation2/annotations \
+    --images-root data/evaluation2/images \
+    --output-dir logs/issue120_e2e_recovery/eval2_full_report_final_68pages/measure_count_kpi_sweeps/softshort_lowconf_v1 \
+    --variants score_ge_0p5_minh_2p8 score_ge_0p5_minh_2p8_softshort_2p9_scorelt_0p9
+  ```
+
+  The adopted variant improves global measure-count KPI from `3381/3384`, net `-3`,
+  `abs_delta_sum=5`, `delta_pages=3` to `3380/3384`, net `-4`, `abs_delta_sum=4`,
+  `delta_pages=2`.
 
 ## Proposed Next Steps
 
-1. Treat `score >= 0.5` plus `cnn_min_height_unit_ratio=2.8` and unit-scaled numbering
-   thresholds as the next candidate downstream operating point. It improves the
-   measure-count KPI globally (`-3` net, `abs_delta_sum=5`) and reduces detector FP
-   (`125 -> 68`) with only one extra detector FN relative to `score >= 0.5`.
+1. Treat `score >= 0.5`, `cnn_min_height_unit_ratio=2.8`,
+   `cnn_short_low_confidence_min_height_unit_ratio=2.9`,
+   `cnn_short_low_confidence_max_score=0.9`, and unit-scaled numbering thresholds as the
+   current downstream operating point. It improves the measure-count KPI globally to
+   `abs_delta_sum=4` and leaves only two count-delta pages.
 
-2. FP-first filtering on the remaining over-count pages:
-   Focus on `Shostakovich/page_018`. Height max filtering and x-distance NMS did not change
-   the downstream count KPI. Staff coverage, page x-alignment, and low-score gap rescue were
-   also rejected by full-68 KPI, so the next filter needs to inspect the exact system
-   assignment/visual pattern rather than broad geometry or page-global alignment.
-
-3. Targeted FN recovery only for under-count pages:
+2. Targeted FN recovery only for under-count pages:
    `Sibelius/page_006` and `Va_Prokofiev_Symphony1/page_005` remain under-counted.
    `Sibelius/page_006` includes true candidate-stage misses in the last system, so CNN
    threshold tuning cannot recover it. Avoid broad double/end-bar one-side recovery because
    12/20 detector FN are likely neutral and the broad left-shift sweep added more than 2700
    synthetic candidates.
 
-4. Separate detector metric from measure-count metric:
+3. Separate detector metric from measure-count metric:
    Continue reporting `TP/FP/FN/FN_cnn/FN_det`, but gate future decisions on the downstream
    measure-count error as well. Detector-level one-side FN can be misleading when a matched
    neighboring line still preserves the logical measure boundary.

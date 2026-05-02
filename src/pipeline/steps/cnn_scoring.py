@@ -257,6 +257,30 @@ def _suppress_short_candidates_by_unit_height(
             item["score"] = 0.0
 
 
+def _suppress_short_low_confidence_candidates_by_unit_height(
+    scored_results: Sequence[Dict[str, Any]],
+    *,
+    min_height_unit_ratio: float,
+    max_score: float,
+) -> None:
+    """Suppress borderline-short candidates only when CNN confidence is not high."""
+    if min_height_unit_ratio <= 0 or max_score <= 0:
+        return
+    unit_size = _estimate_unit_size_from_scored_results(scored_results)
+    if unit_size is None:
+        return
+    min_height = unit_size * float(min_height_unit_ratio)
+    for item in scored_results:
+        box = item.get("bbox")
+        if not box or len(box) != 4:
+            continue
+        if float(item.get("score", 0.0)) >= max_score:
+            continue
+        height = abs(float(box[3]) - float(box[1]))
+        if height < min_height:
+            item["score"] = 0.0
+
+
 def _score_directory(
     *,
     run_dir: Path,
@@ -279,6 +303,8 @@ def _score_directory(
     nms_iou_threshold: float = 0.5,
     nms_x_dist_unit_ratio: float = 1.0,
     min_height_unit_ratio: float = 0.0,
+    short_low_confidence_min_height_unit_ratio: float = 0.0,
+    short_low_confidence_max_score: float = 0.0,
     input_image_scale: float = 1.0,
     in_memory_images: Dict[str, Any] | None = None,
 ) -> bool:
@@ -421,6 +447,11 @@ def _score_directory(
         candidate_objects_for_filter,
         min_height_unit_ratio=min_height_unit_ratio,
     )
+    _suppress_short_low_confidence_candidates_by_unit_height(
+        candidate_objects_for_filter,
+        min_height_unit_ratio=short_low_confidence_min_height_unit_ratio,
+        max_score=short_low_confidence_max_score,
+    )
 
     filtered_boxes = [
         item["bbox"] for item in candidate_objects_for_filter if item["score"] >= threshold
@@ -453,6 +484,8 @@ def run_cnn_scoring_batch(
     nms_iou_threshold: float = 0.5,
     nms_x_dist_unit_ratio: float = 1.0,
     min_height_unit_ratio: float = 0.0,
+    short_low_confidence_min_height_unit_ratio: float = 0.0,
+    short_low_confidence_max_score: float = 0.0,
     input_image_scale: float = 1.0,
     candidate_rescale_factor: Optional[float] = None,
     in_memory_images: Dict[str, Any] | None = None,
@@ -490,6 +523,8 @@ def run_cnn_scoring_batch(
             nms_iou_threshold=nms_iou_threshold,
             nms_x_dist_unit_ratio=nms_x_dist_unit_ratio,
             min_height_unit_ratio=min_height_unit_ratio,
+            short_low_confidence_min_height_unit_ratio=(short_low_confidence_min_height_unit_ratio),
+            short_low_confidence_max_score=short_low_confidence_max_score,
             input_image_scale=input_image_scale,
             in_memory_images=in_memory_images,
         ):

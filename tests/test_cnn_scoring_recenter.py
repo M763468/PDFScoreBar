@@ -3,6 +3,7 @@ import numpy as np
 from src.pipeline.steps.cnn_scoring import (
     _compute_bbox_ink_center_x,
     _suppress_short_candidates_by_unit_height,
+    _suppress_short_low_confidence_candidates_by_unit_height,
     apply_nms,
 )
 
@@ -66,3 +67,25 @@ def test_suppress_short_candidates_by_unit_height_uses_page_scale():
     assert scored[0]["score"] == 0.99
     assert scored[1]["score"] == 0.95
     assert scored[2]["score"] == 0.0
+
+
+def test_suppress_short_low_confidence_keeps_high_confidence_borderline_candidates():
+    scored = [
+        {"bbox": [10, 0, 14, 100], "score": 0.99},
+        {"bbox": [20, 0, 24, 100], "score": 0.98},
+        {"bbox": [30, 0, 34, 100], "score": 0.97},
+        {"bbox": [40, 0, 44, 72], "score": 0.7},
+        {"bbox": [50, 0, 54, 72], "score": 0.99},
+    ]
+
+    _suppress_short_low_confidence_candidates_by_unit_height(
+        scored,
+        min_height_unit_ratio=2.9,
+        max_score=0.9,
+    )
+
+    assert scored[0]["score"] == 0.99
+    assert scored[1]["score"] == 0.98
+    assert scored[2]["score"] == 0.97
+    assert scored[3]["score"] == 0.0
+    assert scored[4]["score"] == 0.99

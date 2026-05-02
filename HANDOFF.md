@@ -84,6 +84,7 @@ PYTHONPATH=.:external/homr .venv_pdf/bin/python tools/create_eval2_full_restore_
 * unit-scaled numbering threshold 採用後の `score>=0.5 + min_height>=2.8 unit`: 68 pages, pred measures 3381, GT measures 3384, net delta -3, abs delta sum 5, delta pages 3, measure precision 0.9982, recall 0.9973。
 * `Shostakovich-Festival_Overture_Va` は検出残差があるが小節数では 349/349 で差分なし。
 * 現在の最良候補で残る count-delta 優先確認ページは `Sibelius-Violin_Concerto-Viola/page_006` (-3), `Shostakovich-Sym5-Va/page_018` (+1), `Va_Prokofiev_Symphony1/page_005` (-1)。
+* 追加 sweep で `staffcov_v1`, `xalign_rescue_v1`, `low_score_gap_rescue_v1` を試したが、いずれも full 68-page の `measure_abs_delta_sum` を悪化させたため不採用。
 
 レビュー入口:
 
@@ -97,5 +98,5 @@ PYTHONPATH=.:external/homr .venv_pdf/bin/python tools/create_eval2_full_restore_
 
 1. `score>=0.5 + cnn_min_height_unit_ratio=2.8 + unit-scaled numbering thresholds` を次の下流動作候補として扱い、3件の count-delta ページを overlay で確認する。
 2. FP は `Shostakovich/page_018` の over-count を優先する。max-height 抑制と x-distance NMS は小節数 KPI に効かなかった。
-3. FN は `Sibelius/page_006` と `Va_Prokofiev_Symphony1/page_005` の under-count に限定して検証する。`Sibelius/page_006` は candidate-stage miss を含むため CNN threshold では戻らない。複線・終端片側FNは 12/20 が count-neutral なので、広域 left-shift 回復は採用しない。
+3. FN は `Sibelius/page_006` と `Va_Prokofiev_Symphony1/page_005` の under-count に限定して検証する。`Sibelius/page_006` は candidate-stage miss を含むため CNN threshold では戻らない。`Va/page_005` は低スコア double-bar rescue で局所的には戻るが、global では over-count が増えたため未採用。複線・終端片側FNは 12/20 が count-neutral なので、広域 left-shift 回復は採用しない。
 4. 今後の採否は検出 `TP/FP/FN/FN_cnn/FN_det` と小節数 `measure_delta/abs_delta` の両方で判断する。

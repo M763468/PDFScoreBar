@@ -271,10 +271,30 @@ Post-processing sweeps were run on the final 68-page JSON outputs only.
 | x-distance NMS 0.3 unit | 3555 | 121 | 26 | FN starts rising |
 | numbering min measure width 45 px equivalent | n/a | n/a | n/a | count abs delta improves 6 -> 5 |
 | numbering unit thresholds 1.2u/4.0u/1.8u | n/a | n/a | n/a | adopted; count abs delta improves 6 -> 5 |
+| staff coverage filter 0.45 | n/a | n/a | n/a | rejected; count abs delta worsens 5 -> 26 |
+| x-align gap rescue | n/a | n/a | n/a | rejected; best tested count abs delta worsens 5 -> 6 |
+| low-score gap rescue | n/a | n/a | n/a | rejected; best tested count abs delta worsens 5 -> 24 |
 
 Conclusion: no simple global threshold, height cap, or NMS restoration is safe enough to
 apply as the next production change. Left-shift recovery proves the failure mode but is too
 broad without stronger targeting.
+
+Additional rejected sweeps after adopting unit numbering thresholds:
+
+- Staff coverage filter:
+  `logs/issue120_e2e_recovery/eval2_full_report_final_68pages/measure_count_kpi_sweeps/staffcov_v1/summary.csv`.
+  Filtering by candidate coverage over staff height suppresses true barlines too often.
+  The loosest tested threshold (`0.45`) worsened `abs_delta_sum` from 5 to 26.
+- Page x-alignment rescue:
+  `logs/issue120_e2e_recovery/eval2_full_report_final_68pages/measure_count_kpi_sweeps/xalign_rescue_v1/summary.csv`.
+  Adding inferred barlines in large gaps from page-wide x clusters increased over-count.
+  The strictest tested variant added only one candidate but still worsened `abs_delta_sum`
+  from 5 to 6.
+- Low-score gap rescue:
+  `logs/issue120_e2e_recovery/eval2_full_report_final_68pages/measure_count_kpi_sweeps/low_score_gap_rescue_v1/summary.csv`.
+  This locally fixes `Va_Prokofiev_Symphony1/page_005` by rescuing one low-score double-bar
+  candidate, but globally it adds too many false internal barlines. The best tested variant
+  worsened `abs_delta_sum` from 5 to 24.
 
 ## Proposed Next Steps
 
@@ -285,8 +305,9 @@ broad without stronger targeting.
 
 2. FP-first filtering on the remaining over-count pages:
    Focus on `Shostakovich/page_018`. Height max filtering and x-distance NMS did not change
-   the downstream count KPI, so the next filter needs to inspect the exact system
-   assignment/visual pattern rather than broad geometry.
+   the downstream count KPI. Staff coverage, page x-alignment, and low-score gap rescue were
+   also rejected by full-68 KPI, so the next filter needs to inspect the exact system
+   assignment/visual pattern rather than broad geometry or page-global alignment.
 
 3. Targeted FN recovery only for under-count pages:
    `Sibelius/page_006` and `Va_Prokofiev_Symphony1/page_005` remain under-counted.

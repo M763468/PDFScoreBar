@@ -57,6 +57,21 @@ class TestMeasureNumberer(unittest.TestCase):
         self.assertEqual(sys_b.measures[0].number, 3)  # Starts after Sys A (1,2)
         self.assertEqual(sys_c.measures[0].number, 6)  # Starts after Sys B (3,4,5)
 
+    def test_min_measure_width_scales_with_staff_unit(self):
+        bars = [
+            Barline(bbox=BBox(100, 0, 104, 100)),
+            Barline(bbox=BBox(145, 0, 149, 100)),
+            Barline(bbox=BBox(200, 0, 204, 100)),
+        ]
+        staff = Staff(bbox=BBox(0, 0, 1000, 100), barlines=bars)
+        system = System(staves=[staff])
+
+        self.numberer.number_system(system, start_number=1)
+
+        self.assertEqual(len(system.measures), 1)
+        self.assertEqual(system.measures[0].start_bar, bars[1])
+        self.assertEqual(system.measures[0].end_bar, bars[2])
+
 
 if __name__ == "__main__":
     unittest.main()

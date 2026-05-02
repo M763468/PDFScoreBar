@@ -79,11 +79,11 @@ PYTHONPATH=.:external/homr .venv_pdf/bin/python tools/create_eval2_full_restore_
 
 下流小節数カウント KPI:
 
-* `filtered`: 68 pages, pred measures 3394, GT measures 3384, net delta +10, abs delta sum 18, delta pages 9, measure precision 0.9932, recall 0.9962。
-* `score>=0.5`: 68 pages, pred measures 3388, GT measures 3384, net delta +4, abs delta sum 12, delta pages 6, measure precision 0.9956, recall 0.9967。
-* `score>=0.5 + min_height>=2.8 unit`: 68 pages, pred measures 3382, GT measures 3384, net delta -2, abs delta sum 6, delta pages 4, measure precision 0.9979, recall 0.9973。
+* unit-scaled numbering threshold 採用後の `filtered`: 68 pages, pred measures 3386, GT measures 3384, net delta +2, abs delta sum 10, delta pages 5, measure precision 0.9956, recall 0.9962。
+* unit-scaled numbering threshold 採用後の `score>=0.5`: 68 pages, pred measures 3384, GT measures 3384, net delta 0, abs delta sum 8, delta pages 4, measure precision 0.9967, recall 0.9967。
+* unit-scaled numbering threshold 採用後の `score>=0.5 + min_height>=2.8 unit`: 68 pages, pred measures 3381, GT measures 3384, net delta -3, abs delta sum 5, delta pages 3, measure precision 0.9982, recall 0.9973。
 * `Shostakovich-Festival_Overture_Va` は検出残差があるが小節数では 349/349 で差分なし。
-* 現在の最良候補で残る count-delta 優先確認ページは `Sibelius-Violin_Concerto-Viola/page_006` (-3), `Shostakovich-Sym5-Va/page_018` (+1), `Va_Prokofiev_Symphony1/page_005` (-1), `Va__Prokofiev_Symphony5/page_019` (+1)。
+* 現在の最良候補で残る count-delta 優先確認ページは `Sibelius-Violin_Concerto-Viola/page_006` (-3), `Shostakovich-Sym5-Va/page_018` (+1), `Va_Prokofiev_Symphony1/page_005` (-1)。
 
 レビュー入口:
 
@@ -95,7 +95,7 @@ PYTHONPATH=.:external/homr .venv_pdf/bin/python tools/create_eval2_full_restore_
 
 次の優先方針:
 
-1. `score>=0.5 + cnn_min_height_unit_ratio=2.8` を次の下流動作候補として扱い、4件の count-delta ページを overlay で確認する。
-2. FP は `Shostakovich/page_018` と `Va__Prokofiev_Symphony5/page_019` の over-count を優先する。max-height 抑制と x-distance NMS は小節数 KPI に効かなかった。
+1. `score>=0.5 + cnn_min_height_unit_ratio=2.8 + unit-scaled numbering thresholds` を次の下流動作候補として扱い、3件の count-delta ページを overlay で確認する。
+2. FP は `Shostakovich/page_018` の over-count を優先する。max-height 抑制と x-distance NMS は小節数 KPI に効かなかった。
 3. FN は `Sibelius/page_006` と `Va_Prokofiev_Symphony1/page_005` の under-count に限定して検証する。`Sibelius/page_006` は candidate-stage miss を含むため CNN threshold では戻らない。複線・終端片側FNは 12/20 が count-neutral なので、広域 left-shift 回復は採用しない。
 4. 今後の採否は検出 `TP/FP/FN/FN_cnn/FN_det` と小節数 `measure_delta/abs_delta` の両方で判断する。

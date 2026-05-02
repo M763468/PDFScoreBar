@@ -8,10 +8,11 @@ class MeasureNumberer:
     Assigns measure numbers to systems of music.
     """
 
-    # Constants for logic thresholds
-    DEDUPLICATION_THRESHOLD = 15  # px: merge barlines closer than this
-    IMPLICIT_START_THRESHOLD = 50  # px: if first barline is > this from edge, assume hidden measure
-    MIN_MEASURE_WIDTH = 25  # px: reject intervals narrower than this (e.g. double barlines)
+    # Unit-scaled thresholds. Unit size is estimated as staff height / 4.
+    DEDUPLICATION_THRESHOLD_UNIT_RATIO = 1.2
+    IMPLICIT_START_THRESHOLD_UNIT_RATIO = 4.0
+    MIN_MEASURE_WIDTH_UNIT_RATIO = 1.8
+    DEFAULT_UNIT_SIZE = 25.0
 
     def number_score(
         self, score: Score, start_number: int = 1, overrides: Optional[List[Dict[str, Any]]] = None
@@ -58,8 +59,13 @@ class MeasureNumberer:
         for staff in system.staves:
             all_barlines.update(staff.barlines)
 
+        unit_size = self._estimate_unit_size(system)
+        dedup_threshold = unit_size * self.DEDUPLICATION_THRESHOLD_UNIT_RATIO
+        implicit_start_threshold = unit_size * self.IMPLICIT_START_THRESHOLD_UNIT_RATIO
+        min_measure_width = unit_size * self.MIN_MEASURE_WIDTH_UNIT_RATIO
+
         raw_sorted = sorted(list(all_barlines), key=lambda b: b.bbox.x1)
-        sorted_barlines = self._deduplicate_barlines(raw_sorted)
+        sorted_barlines = self._deduplicate_barlines(raw_sorted, dedup_threshold)
 
         # 2. System and Staff geometry
         sys_x1 = min(s.bbox.x1 for s in system.staves)
@@ -70,7 +76,7 @@ class MeasureNumberer:
         # 3. Detect and insert Implicit Start if necessary
         if sorted_barlines:
             first_bar = sorted_barlines[0]
-            if first_bar.bbox.x1 - sys_x1 > self.IMPLICIT_START_THRESHOLD:
+            if first_bar.bbox.x1 - sys_x1 > implicit_start_threshold:
                 ghost_start = Barline(bbox=BBox(sys_x1, sys_y1, sys_x1 + 1, sys_y2), is_ghost=True)
                 sorted_barlines.insert(0, ghost_start)
 
@@ -89,7 +95,7 @@ class MeasureNumberer:
                 m_x2 = right_bar.bbox.x1
 
                 # Check for insufficient width (e.g. double barline gap)
-                if (m_x2 - m_x1) < self.MIN_MEASURE_WIDTH:
+                if (m_x2 - m_x1) < min_measure_width:
                     continue
 
                 # Check for overrides
@@ -121,7 +127,16 @@ class MeasureNumberer:
 
         return current_number
 
-    def _deduplicate_barlines(self, barlines: List[Barline]) -> List[Barline]:
+    def _estimate_unit_size(self, system: System) -> float:
+        heights = [staff.bbox.height for staff in system.staves if staff.bbox.height > 0]
+        if not heights:
+            return self.DEFAULT_UNIT_SIZE
+        heights = sorted(heights)
+        mid = len(heights) // 2
+        median = heights[mid] if len(heights) % 2 else (heights[mid - 1] + heights[mid]) / 2.0
+        return max(1.0, median / 4.0)
+
+    def _deduplicate_barlines(self, barlines: List[Barline], threshold: float) -> List[Barline]:
         """
         Merges barlines that are too close to each other.
         """
@@ -134,7 +149,7 @@ class MeasureNumberer:
             for next_bar in barlines[1:]:
                 # Distance check (center to center or x1 to x1)
                 dist = abs(next_bar.bbox.x1 - current.bbox.x1)
-                if dist < self.DEDUPLICATION_THRESHOLD:
+                if dist < threshold:
                     # Merge: keep the one that is wider or just the first?
                     # Usually detector produces multiple thin candidates.
                     continue

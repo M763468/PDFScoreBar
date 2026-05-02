@@ -236,22 +236,23 @@ Global result:
 
 | variant | pages | pred measures | gt measures | delta | abs delta sum | pages with delta | measure precision | measure recall |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| filtered | 68 | 3394 | 3384 | +10 | 18 | 9 | 0.9932 | 0.9962 |
-| score >= 0.5 | 68 | 3388 | 3384 | +4 | 12 | 6 | 0.9956 | 0.9967 |
-| score >= 0.5, min height >= 2.8 unit | 68 | 3382 | 3384 | -2 | 6 | 4 | 0.9979 | 0.9973 |
+| filtered | 68 | 3386 | 3384 | +2 | 10 | 5 | 0.9956 | 0.9962 |
+| score >= 0.5 | 68 | 3384 | 3384 | 0 | 8 | 4 | 0.9967 | 0.9967 |
+| score >= 0.5, min height >= 2.8 unit | 68 | 3381 | 3384 | -3 | 5 | 3 | 0.9982 | 0.9973 |
 
 Interpretation:
 
 - The downstream KPI confirms that many detector-level FN/FP are count-neutral or deduped.
+- Unit-scaled numbering thresholds improve all variants by rejecting narrow pseudo-measures
+  consistently across page resolutions.
 - `score >= 0.5` improves measure-count precision and reduces total count error
-  (`abs_delta_sum 18 -> 12`) while keeping the same 68-page input set.
+  (`abs_delta_sum 10 -> 8`) while keeping the same 68-page input set.
 - Adding a unit-scaled minimum candidate height of 2.8 improves the count KPI further
-  (`abs_delta_sum 12 -> 6`) by suppressing short high-score internal false positives.
+  (`abs_delta_sum 8 -> 5`) by suppressing short high-score internal false positives.
 - Remaining count-affecting pages at the current best setting are:
   `Sibelius-Violin_Concerto-Viola/page_006` (-3),
   `Shostakovich-Sym5-Va/page_018` (+1),
-  `Va_Prokofiev_Symphony1/page_005` (-1), and
-  `Va__Prokofiev_Symphony5/page_019` (+1).
+  and `Va_Prokofiev_Symphony1/page_005` (-1).
 - `Shostakovich-Festival_Overture_Va` is perfect at the measure-count level
   (`349/349`, no delta pages), despite detector-level residuals.
 
@@ -268,6 +269,8 @@ Post-processing sweeps were run on the final 68-page JSON outputs only.
 | max height 7.5 unit + left shift | 3568 | 66 | 13 | better metrics, but adds 2759 synthetic candidates |
 | x-distance NMS 0.15 unit | 3561 | 123 | 20 | too small to matter |
 | x-distance NMS 0.3 unit | 3555 | 121 | 26 | FN starts rising |
+| numbering min measure width 45 px equivalent | n/a | n/a | n/a | count abs delta improves 6 -> 5 |
+| numbering unit thresholds 1.2u/4.0u/1.8u | n/a | n/a | n/a | adopted; count abs delta improves 6 -> 5 |
 
 Conclusion: no simple global threshold, height cap, or NMS restoration is safe enough to
 apply as the next production change. Left-shift recovery proves the failure mode but is too
@@ -275,15 +278,15 @@ broad without stronger targeting.
 
 ## Proposed Next Steps
 
-1. Treat `score >= 0.5` plus `cnn_min_height_unit_ratio=2.8` as the next candidate downstream
-   operating point. It improves the measure-count KPI globally (`-2` net,
-   `abs_delta_sum=6`) and reduces detector FP (`125 -> 68`) with only one extra detector FN
-   relative to `score >= 0.5`.
+1. Treat `score >= 0.5` plus `cnn_min_height_unit_ratio=2.8` and unit-scaled numbering
+   thresholds as the next candidate downstream operating point. It improves the
+   measure-count KPI globally (`-3` net, `abs_delta_sum=5`) and reduces detector FP
+   (`125 -> 68`) with only one extra detector FN relative to `score >= 0.5`.
 
 2. FP-first filtering on the remaining over-count pages:
-   Focus on `Shostakovich/page_018` and `Va__Prokofiev_Symphony5/page_019`. Height max
-   filtering and x-distance NMS did not change the downstream count KPI, so the next filter
-   needs to inspect the exact system assignment/visual pattern rather than broad geometry.
+   Focus on `Shostakovich/page_018`. Height max filtering and x-distance NMS did not change
+   the downstream count KPI, so the next filter needs to inspect the exact system
+   assignment/visual pattern rather than broad geometry.
 
 3. Targeted FN recovery only for under-count pages:
    `Sibelius/page_006` and `Va_Prokofiev_Symphony1/page_005` remain under-counted.

@@ -65,6 +65,97 @@ Use these artifacts for manual classification:
 The manual review CSV has one row per residual and includes `visual_path` and `overlay_path`
 so classification can be done directly from the existing crop/overlay images.
 
+## Recommended Manual Review Workflow
+
+Do not fill all columns for all 145 rows in the first pass. The first goal is to reduce the
+search space enough for the next engineering investigation.
+
+### Pass 0: Review only count-delta pages first
+
+Start from the two remaining count-delta pages:
+
+- `Sibelius-Violin_Concerto-Viola/page_006`
+- `Va_Prokofiev_Symphony1/page_005`
+
+For these rows, fill only:
+
+- `manual_class`
+- `manual_count_impact`
+- `review_status`
+- optional `reviewer_note`
+
+This pass should answer whether the remaining measure-count error is mainly:
+
+- candidate-stage missing,
+- CNN low-score rejection,
+- evaluation granularity,
+- or GT/staff-region mismatch.
+
+### Pass 1: Bulk-label visually obvious neutral classes
+
+Next, scan crops by directory and bulk-label obvious repeated patterns. This avoids typing
+the same classification more than 100 times.
+
+Suggested bulk labels:
+
+| pattern | minimum fields to fill |
+| --- | --- |
+| double/end-bar one-side FN where nearby prediction preserves the boundary | `manual_class=fn_double_or_end_one_side`, `manual_count_impact=count_neutral`, `recommended_action=ignore_for_count` |
+| close duplicate FP near GT | `manual_class=fp_near_gt_duplicate`, `manual_count_impact=count_neutral` or `unclear`, `recommended_action=fix_eval_rule` or `ignore_for_count` |
+| visibly outside-staff FP | `manual_class=fp_out_of_staff`, `manual_count_impact=unclear`, `recommended_action=needs_trace` |
+| divisi/two-staff spanning FP | `manual_class=fp_divisi_spanning`, `manual_count_impact=count_affecting`, `recommended_action=needs_trace` |
+| GT/FN visibly outside staff | `manual_class=fn_out_of_staff_gt`, `manual_count_impact=unclear`, `recommended_action=review_gt` |
+
+For this pass, leave `root_cause_guess` blank unless it is obvious. It is better to classify
+visual structure quickly than to guess implementation details too early.
+
+### Pass 2: Triage only count-affecting and unclear rows
+
+After Pass 1, filter the CSV to:
+
+- `manual_count_impact=count_affecting`
+- `manual_count_impact=unclear`
+- `review_status=needs_second_look`
+
+Only then fill the remaining fields:
+
+- `staff_region_judgement`
+- `line_reality`
+- `root_cause_guess`
+- `recommended_action`
+
+This makes the detailed work proportional to likely impact, not total residual count.
+
+### Suggested spreadsheet workflow
+
+Use a spreadsheet editor rather than plain text CSV editing:
+
+1. Open `residual_manual_review_template.csv`.
+2. Freeze the first row.
+3. Filter by `score`, `page`, and `residual_type`.
+4. Open `visual_path` or `overlay_path` from the row.
+5. Fill only the minimum fields for the current pass.
+6. Save as CSV with the same columns.
+
+If link-clicking is inconvenient, use the file browser to scan these folders directly and
+then fill rows by `score/page/index`:
+
+- `visuals/fp_crops/<score>/`
+- `visuals/fn_crops/<score>/`
+- `visuals/overlays/<score>/`
+
+### Minimum useful classification
+
+A row is useful for planning once these fields are set:
+
+| residual type | minimum useful fields |
+| --- | --- |
+| FP | `manual_class`, `manual_count_impact`, `recommended_action`, `review_status` |
+| FN | `manual_class`, `manual_count_impact`, `recommended_action`, `review_status` |
+| uncertain | `manual_class=unclear`, `manual_count_impact=unclear`, `review_status=needs_second_look`, short `reviewer_note` |
+
+The other columns are optional until we decide which category to investigate next.
+
 ## Manual Classification Format
 
 Fill these columns in the manual review CSV:
@@ -215,14 +306,15 @@ Expected output:
 
 ## Proposed Investigation Order
 
-1. Manually classify all 145 residual rows in
-   `manual_review/residual_manual_review_template.csv`.
-2. Summarize counts by `manual_class`, `manual_count_impact`, and `recommended_action`.
-3. Start with categories that are both frequent and `count_affecting`.
-4. For `fp_out_of_staff`, trace the staff-filter implementation before changing thresholds.
-5. For `fp_divisi_spanning`, trace candidate origin through homr/hybrid/seed/probe/CNN.
-6. For `fn_right_edge_missing`, separate candidate-stage misses from CNN/post-filter losses.
-7. Treat `fn_double_or_end_one_side` and `fp_real_double_or_end_side` as evaluation/count
+1. Pass 0: classify only the two remaining count-delta pages.
+2. Pass 1: bulk-label obvious neutral or repeated visual categories.
+3. Pass 2: fill detailed fields only for count-affecting, unclear, or second-look rows.
+4. Summarize counts by `manual_class`, `manual_count_impact`, and `recommended_action`.
+5. Start with categories that are both frequent and `count_affecting`.
+6. For `fp_out_of_staff`, trace the staff-filter implementation before changing thresholds.
+7. For `fp_divisi_spanning`, trace candidate origin through homr/hybrid/seed/probe/CNN.
+8. For `fn_right_edge_missing`, separate candidate-stage misses from CNN/post-filter losses.
+9. Treat `fn_double_or_end_one_side` and `fp_real_double_or_end_side` as evaluation/count
    semantics first, not detector fixes.
 
 ## Regenerating The Manual Review CSV

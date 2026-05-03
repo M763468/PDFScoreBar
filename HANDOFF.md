@@ -96,9 +96,13 @@ PYTHONPATH=.:external/homr .venv_pdf/bin/python tools/create_eval2_full_restore_
 * `logs/issue120_e2e_recovery/eval2_full_report_final_68pages/visuals/fp_crops/`
 * `logs/issue120_e2e_recovery/eval2_full_report_final_68pages/visuals/fn_crops/`
 * `logs/issue120_e2e_recovery/eval2_full_report_final_68pages/visuals/overlays/`
+* `docs/ISSUE120_RESIDUAL_REVIEW_PLAN.md`
+* `logs/issue120_e2e_recovery/eval2_full_report_final_68pages/manual_review/residual_manual_review_template.csv`
 
 次の優先方針:
 
 1. `score>=0.5 + cnn_min_height_unit_ratio=2.8 + cnn_short_low_confidence_min_height_unit_ratio=2.9 + cnn_short_low_confidence_max_score=0.9 + unit-scaled numbering thresholds` を現在の下流動作候補として扱う。
-2. FN は `Sibelius/page_006` と `Va_Prokofiev_Symphony1/page_005` の under-count に限定して検証する。`Sibelius/page_006` は candidate-stage miss を含むため CNN threshold では戻らない。`Va/page_005` は低スコア double-bar rescue で局所的には戻るが、global では over-count が増えたため未採用。複線・終端片側FNは 12/20 が count-neutral なので、広域 left-shift 回復は採用しない。
-3. 今後の採否は検出 `TP/FP/FN/FN_cnn/FN_det` と小節数 `measure_delta/abs_delta` の両方で判断する。
+2. 次の実装前に、`manual_review/residual_manual_review_template.csv` を使って FP/FN を可視分類する。特に `fp_out_of_staff`, `fp_real_double_or_end_side`, `fp_divisi_spanning`, `fn_out_of_staff_gt`, `fn_double_or_end_one_side`, `fn_right_edge_missing` を分ける。
+3. 分類後、頻度が高く小節数に効くカテゴリから調査する。最優先は staff-region filter の現実装確認、divisi 貫通 FP の混入経路追跡、右端 missing の rescue 経路確認。
+4. FN は `Sibelius/page_006` と `Va_Prokofiev_Symphony1/page_005` の under-count に限定して検証する。`Sibelius/page_006` は candidate-stage miss を含むため CNN threshold では戻らない。`Va/page_005` は低スコア double-bar rescue で局所的には戻るが、global では over-count が増えたため未採用。複線・終端片側FNは 12/20 が count-neutral なので、広域 left-shift 回復は採用しない。
+5. 今後の採否は検出 `TP/FP/FN/FN_cnn/FN_det` と小節数 `measure_delta/abs_delta` の両方で判断する。

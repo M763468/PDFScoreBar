@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import cv2  # type: ignore
+import numpy as np
 
 from src.pipeline.core.config import get_nested
 
@@ -85,6 +86,103 @@ def filter_by_staff_overlap(
 
         if max_vov >= vov_threshold:
             out.append(cand)
+    return out
+
+
+def get_local_staff_bands(
+    mask: np.ndarray,
+    x_center: int,
+    scan_width_ratio: float = 0.2,
+    gap_tolerance: int = 40,
+    min_height: int = 20,
+    line_ratio_thresh: float = 0.05,
+) -> List[Tuple[int, int]]:
+    """
+    Get staff bands by looking only at a vertical strip around x_center.
+    """
+    h, w = mask.shape[:2]
+    scan_width = int(w * scan_width_ratio)
+    x1 = max(0, int(x_center - scan_width // 2))
+    x2 = min(w - 1, int(x_center + scan_width // 2))
+    if x2 <= x1:
+        return []
+
+    strip = mask[:, x1 : x2 + 1]
+    # Calculate row-wise ink ratio
+    row_ratio = strip.sum(axis=1) / float(strip.shape[1])
+    if strip.max() > 1:
+        row_ratio = row_ratio / 255.0
+
+    active_rows = np.where(row_ratio >= line_ratio_thresh)[0]
+    if active_rows.size == 0:
+        return []
+
+    # Group adjacent active rows
+    groups = []
+    start = int(active_rows[0])
+    prev = int(active_rows[0])
+    for r in active_rows[1:]:
+        if int(r) - prev <= gap_tolerance:
+            prev = int(r)
+            continue
+        groups.append((start, prev))
+        start = int(r)
+        prev = int(r)
+    groups.append((start, prev))
+
+    bands = []
+    for g_start, g_end in groups:
+        if (g_end - g_start + 1) >= min_height:
+            bands.append((g_start, g_end))
+
+    return bands
+
+
+def filter_by_local_staff_overlap(
+    candidates: Sequence[Any],
+    mask: np.ndarray,
+    vov_threshold: float = 0.5,
+    scan_width_ratio: float = 0.2,
+    gap_tolerance: int = 40,
+    min_height: int = 20,
+    line_ratio_thresh: float = 0.05,
+) -> List[Any]:
+    """Return candidates that have at least vov_threshold vertical overlap with a locally-extracted staff band."""
+    if mask is None:
+        return list(candidates)
+
+    out = []
+    for cand in candidates:
+        if isinstance(cand, dict) and "bbox" in cand:
+            box = cand["bbox"]
+        else:
+            box = cand
+
+        if len(box) != 4:
+            out.append(cand)
+            continue
+
+        x1, y1, x2, y2 = box
+        cx = (x1 + x2) / 2.0
+        local_bands = get_local_staff_bands(
+            mask,
+            x_center=int(cx),
+            scan_width_ratio=scan_width_ratio,
+            gap_tolerance=gap_tolerance,
+            min_height=min_height,
+            line_ratio_thresh=line_ratio_thresh,
+        )
+
+        h_box = max(1, y2 - y1)
+        max_vov = 0.0
+        for by1, by2 in local_bands:
+            overlap = min(y2, by2) - max(y1, by1)
+            vov = max(0, overlap) / float(h_box)
+            max_vov = max(max_vov, vov)
+
+        if max_vov >= vov_threshold:
+            out.append(cand)
+            
     return out
 
 

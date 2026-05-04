@@ -17,7 +17,7 @@ from tqdm import tqdm
 from src.common.barline_evaluation import barline_iou, barline_vertical_overlap
 from src.pipeline.core.run_ids import build_probe_run_id
 from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask
-from src.pipeline.steps.filters import filter_by_staff_overlap
+from src.pipeline.steps.filters import filter_by_local_staff_overlap
 from src.pipeline.steps.probe_scan import _build_staff_mask_map, _load_bands_for_image
 from src.pipeline.utils.wide_split_utils import estimate_unit_size_from_box_height
 
@@ -294,6 +294,10 @@ def _score_directory(
     bands_from: Optional[Path] = None,
     current_score_name: Optional[str] = None,
     staff_vov_threshold: float = 0.5,
+    staff_scan_width_ratio: float = 0.2,
+    staff_gap_tolerance: int = 40,
+    staff_min_height: int = 20,
+    staff_line_ratio_thresh: float = 0.05,
     crop_recenter_on_bbox_ink: bool = False,
     crop_recenter_min_aspect_ratio: float = 3.0,
     crop_recenter_apply_if_width_ge_unit_ratio: float = 0.0,
@@ -409,29 +413,18 @@ def _score_directory(
             candidate_objects_for_filter.append(item)
 
     # --- Apply Geometric Filtering ---
-    if (staff_mask_path or bands_from) and candidate_objects_for_filter:
-        staff_bands = []
-        if staff_mask_path and staff_mask_path.exists():
-            mask = cv2.imread(str(staff_mask_path), cv2.IMREAD_GRAYSCALE)
-            if mask is not None:
-                staff_bands = staff_bands_from_mask(mask)
-
-        if not staff_bands and bands_from:
-            existing_boxes = _load_bands_for_image(
-                bands_from=bands_from,
-                current_score_name=current_score_name or "",
-                stem=image_path.stem,
-            )
-            if existing_boxes:
-                staff_bands_stats = build_row_stats(
-                    existing_boxes, cluster_max_dist=None, min_row_count=1
-                )
-                staff_bands = [(int(r["top"]), int(r["bottom"])) for r in staff_bands_stats]
-
-        if staff_bands:
-            # Suppress items that fail staff VOV
-            kept_items = filter_by_staff_overlap(
-                candidate_objects_for_filter, staff_bands, vov_threshold=staff_vov_threshold
+    if staff_mask_path and staff_mask_path.exists() and candidate_objects_for_filter:
+        mask = cv2.imread(str(staff_mask_path), cv2.IMREAD_GRAYSCALE)
+        if mask is not None:
+            # Suppress items that fail local staff VOV
+            kept_items = filter_by_local_staff_overlap(
+                candidate_objects_for_filter,
+                mask,
+                vov_threshold=staff_vov_threshold,
+                scan_width_ratio=staff_scan_width_ratio,
+                gap_tolerance=staff_gap_tolerance,
+                min_height=staff_min_height,
+                line_ratio_thresh=staff_line_ratio_thresh,
             )
             kept_indices = {id(item) for item in kept_items}
             for item in candidate_objects_for_filter:
@@ -475,6 +468,10 @@ def run_cnn_scoring_batch(
     staff_mask_dir: Optional[Path] = None,
     bands_from: Optional[Path] = None,
     staff_vov_threshold: float = 0.5,
+    staff_scan_width_ratio: float = 0.2,
+    staff_gap_tolerance: int = 40,
+    staff_min_height: int = 20,
+    staff_line_ratio_thresh: float = 0.05,
     crop_recenter_on_bbox_ink: bool = False,
     crop_recenter_min_aspect_ratio: float = 3.0,
     crop_recenter_apply_if_width_ge_unit_ratio: float = 0.0,
@@ -514,6 +511,10 @@ def run_cnn_scoring_batch(
             bands_from=bands_from,
             current_score_name=score_name,
             staff_vov_threshold=staff_vov_threshold,
+            staff_scan_width_ratio=staff_scan_width_ratio,
+            staff_gap_tolerance=staff_gap_tolerance,
+            staff_min_height=staff_min_height,
+            staff_line_ratio_thresh=staff_line_ratio_thresh,
             crop_recenter_on_bbox_ink=crop_recenter_on_bbox_ink,
             crop_recenter_min_aspect_ratio=crop_recenter_min_aspect_ratio,
             crop_recenter_apply_if_width_ge_unit_ratio=crop_recenter_apply_if_width_ge_unit_ratio,

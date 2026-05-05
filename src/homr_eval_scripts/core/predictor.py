@@ -86,8 +86,12 @@ class HomrPredictor:
             except Exception as exc:
                 logger.warning(f"HomrPredictor: Failed to enable Segnet cache: {exc}")
 
-        # Ensure weights are available
-        download_weights()
+        import inspect
+        sig = inspect.signature(download_weights)
+        if "use_gpu_inference" in sig.parameters:
+            download_weights(self.use_gpu_inference)
+        else:
+            download_weights()
 
         # Note: use_gpu_inference is handled internally by SegNet/Transformer
         # when running in-process via ONNX runtime settings.

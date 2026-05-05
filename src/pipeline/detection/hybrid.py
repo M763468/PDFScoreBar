@@ -223,13 +223,26 @@ class HybridDetector:
             logger.info(f"Dry run: In-process Homr for {len(self.images)} images -> {output_root}")
             return
 
-        config = ProcessingConfig(
-            bool(self.det_cfg.get("enable_debug", False)),
-            bool(self.det_cfg.get("enable_cache", True)),
-            bool(self.det_cfg.get("write_staff_positions", False)),
-            False,
-            -1,
-        )
+        import inspect
+        sig = inspect.signature(ProcessingConfig.__init__)
+        use_gpu = torch.cuda.is_available()
+        if "use_gpu_inference" in sig.parameters:
+            config = ProcessingConfig(
+                bool(self.det_cfg.get("enable_debug", False)),
+                bool(self.det_cfg.get("enable_cache", True)),
+                bool(self.det_cfg.get("write_staff_positions", False)),
+                False,
+                -1,
+                use_gpu,
+            )
+        else:
+            config = ProcessingConfig(
+                bool(self.det_cfg.get("enable_debug", False)),
+                bool(self.det_cfg.get("enable_cache", True)),
+                bool(self.det_cfg.get("write_staff_positions", False)),
+                False,
+                -1,
+            )
         tuning = DEFAULT_TUNING.copy()
         tuning.update(
             {

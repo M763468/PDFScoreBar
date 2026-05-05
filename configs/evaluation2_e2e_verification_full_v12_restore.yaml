@@ -20,6 +20,7 @@ steps:
   overlay: true
 
 detection:
+  probe_skip_existing: true
   enable_sr: true
   sr_scale: 2
   use_omr: true
@@ -79,7 +80,7 @@ detection:
   cnn_min_height_unit_ratio: 2.8
   cnn_short_low_confidence_min_height_unit_ratio: 2.9
   cnn_short_low_confidence_max_score: 0.9
-  staff_vov_threshold: 0.0
+  staff_vov_threshold: 0.5
 
 mmr:
   model_path: tools/mmr_training/models/mmr_classifier_best.pth

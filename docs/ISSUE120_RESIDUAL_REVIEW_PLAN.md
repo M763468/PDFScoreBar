@@ -40,6 +40,30 @@ The soft-short filter fixed the previous `Shostakovich-Sym5-Va/page_018` over-co
 removing a short internal FP (`height_ratio ~= 2.88u`, `score=0.7053`) without removing
 high-confidence short true bars elsewhere.
 
+### Terminology: `abs delta sum` vs residual row count
+
+These two numbers refer to different things:
+
+| metric | what it counts | where to inspect |
+| --- | --- | --- |
+| `abs delta sum` | the sum of `abs(pred_measure_count - gt_measure_count)` across pages | `measure_count_review.md` and `measure_count_summary.csv` |
+| residual row count | one detector residual per row, including FP/FN that may not change the final count | `measure_impact_residuals.csv` and `residual_manual_review_template.csv` |
+
+So `abs delta sum=4` means the whole 68-page set is off by 4 measures in total, while the
+residual CSV still has 145 rows because many FP/FN do not change the final measure count.
+
+Typical count-neutral rows:
+
+- one-side double/end-bar FN where the neighboring line preserves the logical boundary,
+- close duplicate FP that numbering deduplicates,
+- FN covered by a nearby matched prediction.
+
+Typical count-affecting rows:
+
+- remote or system-spanning FP that can create an extra measure,
+- right-edge FN when the last system boundary is lost,
+- candidate-stage miss or low-score miss on a page that is already under-counted.
+
 Remaining count-delta pages:
 
 | score | page | delta | known structure |

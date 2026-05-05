@@ -241,6 +241,13 @@ Global result:
 | score >= 0.5, min height >= 2.8 unit | 68 | 3381 | 3384 | -3 | 5 | 3 | 0.9982 | 0.9973 |
 | score >= 0.5, min height >= 2.8 unit, soft-short low-confidence | 68 | 3380 | 3384 | -4 | 4 | 2 | 0.9988 | 0.9976 |
 
+Note:
+
+- `abs delta sum` is a measure-count metric: the sum of page-level absolute differences
+  between predicted and GT measure counts.
+- The residual CSV is a detector residual list. It can contain far more rows than
+  `abs delta sum` because many residuals are count-neutral.
+
 Interpretation:
 
 - The downstream KPI confirms that many detector-level FN/FP are count-neutral or deduped.

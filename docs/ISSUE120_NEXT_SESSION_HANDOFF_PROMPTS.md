@@ -182,7 +182,7 @@ Expected output:
 Copy-paste prompt for the next session:
 
 ```text
-Issue 120 の次セッションです。目的は `fp_divisi_spanning` / system-spanning FP がどこで混入したかを追跡することです。実装変更はまだ行わず、代表例の origin trace と次の小実験計画を作ってください。
+Issue 120 の次セッションです。目的は `fp_divisi_spanning` / system-spanning FP がどこで混入したかを追跡することです。実装変更はまだ行わず、代表例の origin trace と次の小実験計画を作ってください。ただし、Propmpt1はすでに一定の成果を上げています。（成果は`docs/ISSUE120_STAFF_REGION_HISTORY_AND_FAILURE_ANALYSIS_JA.md`に記録済み）
 
 必ず最初に以下を読んでください:
 - AGENTS.md

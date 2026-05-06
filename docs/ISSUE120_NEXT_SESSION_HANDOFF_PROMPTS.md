@@ -297,8 +297,10 @@ Expected output:
 
 1. Run Prompt 1 first. Staff-region filter status affects interpretation of both
    `fp_out_of_staff` and some `fp_divisi_spanning` rows.
+   *(Completed: `docs/ISSUE120_STAFF_REGION_HISTORY_AND_FAILURE_ANALYSIS_JA.md`)*
 2. Run Prompt 2 second. Divisi/system-spanning FP is the largest provisional class and may
    point to one rescue path.
+   *(Completed: `docs/ISSUE120_PROMPT2_DIVISI_FILTER_EXPERIMENT_JA.md` and `docs/ISSUE120_PROMPT2_REMAINING_ERRORS_REVIEW_JA.md`. The filter successfully eliminated 111 FPs (including all 58 tall FPs) but introduced 8 new isolated_missing FNs that MUST be addressed in Prompt 3).*
 3. Run Prompt 3 third. FN work should happen after FP origin tracing because previous broad
    FN rescues caused over-count.
 

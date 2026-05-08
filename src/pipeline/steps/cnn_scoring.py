@@ -415,7 +415,11 @@ def _score_directory(
     # --- Apply Geometric Filtering ---
     if staff_mask_path and staff_mask_path.exists() and candidate_objects_for_filter:
         mask = cv2.imread(str(staff_mask_path), cv2.IMREAD_GRAYSCALE)
-        if mask is not None:
+        from src.pipeline.utils.images import load_image
+        img_for_shape = load_image(image_path, in_memory_images=in_memory_images)
+        if mask is not None and img_for_shape is not None:
+            if mask.shape[:2] != img_for_shape.shape[:2]:
+                mask = cv2.resize(mask, (img_for_shape.shape[1], img_for_shape.shape[0]), interpolation=cv2.INTER_NEAREST)
             # Suppress items that fail local staff VOV
             kept_items = filter_by_local_staff_overlap(
                 candidate_objects_for_filter,

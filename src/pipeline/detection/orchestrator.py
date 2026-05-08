@@ -360,6 +360,7 @@ class DetectorOrchestrator:
                     self.det_cfg.get("cnn_short_low_confidence_max_score", 0.0)
                 ),
                 input_image_scale=float(effective_sr_scale),
+                staff_mask_dir=self._resolve_staff_mask_dir(),
                 bands_from=getattr(self, "bands_from_dir", self.hybrid_output_dir),
                 staff_vov_threshold=float(self.det_cfg.get("staff_vov_threshold", 0.5)),
                 in_memory_images=self.in_memory_images,

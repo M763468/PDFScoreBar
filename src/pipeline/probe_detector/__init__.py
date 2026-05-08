@@ -847,6 +847,21 @@ def detect_probe_scan(
         has_existing=has_existing_for_suppression,
         candidates=candidates,
         debug_records=debug_records,
+        base_img=base_img,
+        probe_width=probe_width,
+    )
+
+    from .rescue import apply_active_x_alignment_rescue
+    apply_active_x_alignment_rescue(
+        accepted_by_band=accepted_by_band,
+        bands=bands,
+        existing_boxes=existing_boxes,
+        candidates=candidates,
+        debug_records=debug_records,
+        base_img=base_img,
+        probe_width=width,
+        tolerance=15,
+        global_height=global_height,
     )
 
     gap_cfg = GapRescueConfig(

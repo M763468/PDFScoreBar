@@ -1,5 +1,12 @@
 .PHONY: help lint format
 
+ISSUE120_RESULTS_DIR ?= data/evaluation2/golden_baseline_eval2_bc23deb
+ISSUE120_GT_ROOT ?= data/evaluation2/annotations
+ISSUE120_OUTPUT_DIR ?= logs/issue120_e2e_recovery/latest_full_report
+ISSUE120_SCORE_THRESHOLD ?= 0.1
+ISSUE120_XDIST_THRESHOLD ?= 12.0
+ISSUE120_MEASURE_SUMMARY ?=
+
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
@@ -67,6 +74,21 @@ run-pipeline: ## Run the pipeline with a custom config (usage: make run-pipeline
 		/opt/venv_pipeline/bin/python src/pipeline/main.py --config "$(CONFIG)" --skip-existing > "$$LOG_FILE" 2>&1 || \
 		(EXIT_CODE=$$?; echo "Pipeline failed with exit code $$EXIT_CODE. See $$LOG_FILE"; exit $$EXIT_CODE); \
 	echo "Pipeline execution finished successfully. See $$LOG_FILE"
+
+eval-issue120-full: ## Evaluate Issue #120 canonical full-68 detector intermediates without running the pipeline
+	@mkdir -p "$(ISSUE120_OUTPUT_DIR)"
+	@MEASURE_ARG=""; \
+	if [ -n "$(ISSUE120_MEASURE_SUMMARY)" ]; then \
+		MEASURE_ARG="--measure-summary-json $(ISSUE120_MEASURE_SUMMARY)"; \
+	fi; \
+	PYTHONPATH=. python3 tools/issue120/eval_full68_from_intermediates.py \
+		--results-dir "$(ISSUE120_RESULTS_DIR)" \
+		--gt-root "$(ISSUE120_GT_ROOT)" \
+		--output-dir "$(ISSUE120_OUTPUT_DIR)" \
+		--score-threshold "$(ISSUE120_SCORE_THRESHOLD)" \
+		--xdist-threshold "$(ISSUE120_XDIST_THRESHOLD)" \
+		$$MEASURE_ARG
+
 repo-tree: ## Generate a repository directory overview
 	tree -L 3 -I "artifacts|logs|temp|datasets|.git|__pycache__|.venv*" > artifacts/repo_tree.txt
 

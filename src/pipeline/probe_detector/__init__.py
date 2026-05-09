@@ -78,6 +78,9 @@ def detect_probe_scan(
     scan_x_peak_segment_source: str = "scan_band",
     scan_x_peak_ignore_staff_peak: bool = False,
     scan_x_peak_ignore_radius: int = 1,
+    scan_x_peak_low_ratio_rescue: bool = False,
+    scan_x_peak_low_ratio_min: float = 0.3,
+    scan_x_peak_low_ratio_min_run_ratio: float = 0.0,
     scan_rightmost_rescue: bool = False,
     scan_rightmost_tolerance: int = 6,
     scan_rightmost_min_rows: int = 3,
@@ -271,6 +274,8 @@ def detect_probe_scan(
         effective_min = min_ratio
         if scan_gap_rescue:
             effective_min = min(effective_min, scan_gap_rescue_min_ratio)
+        if scan_x_peak_low_ratio_rescue:
+            effective_min = min(effective_min, scan_x_peak_low_ratio_min)
 
         peaks = np.where(
             (ratios >= effective_min)
@@ -314,6 +319,7 @@ def detect_probe_scan(
             scan_x_peak_segment_pass = None
             scan_peak_ratio_local = None
             scan_x_peak_ignored_rows = 0
+            scan_x_peak_low_ratio_run_ratio = None
             rescue_reason = None
             if band_source == "horiz_scan":
                 scan_band = scan_staff_band_from_ink(
@@ -356,49 +362,66 @@ def detect_probe_scan(
             scan_bottom_ratio = None
             scan_ext_y1 = None
             scan_ext_y2 = None
+
+            def compute_xpeak(band_y1: int, band_y2: int) -> tuple[Optional[float], int]:
+                ignored_rows = 0
+                if band_y2 < band_y1:
+                    return None, ignored_rows
+                scan_strip = ink[band_y1 : band_y2 + 1, :]
+                if scan_strip.size == 0:
+                    return None, ignored_rows
+                if scan_x_peak_ignore_staff_peak and scan_peak_row is not None:
+                    rel_peak = int(scan_peak_row - band_y1)
+                    radius = max(0, int(scan_x_peak_ignore_radius))
+                    y_start = max(0, rel_peak - radius)
+                    y_end = min(scan_strip.shape[0] - 1, rel_peak + radius)
+                    if y_start <= y_end:
+                        scan_strip = scan_strip.copy()
+                        scan_strip[y_start : y_end + 1, :] = 0
+                        ignored_rows += y_end - y_start + 1
+                scan_col_sums = scan_strip.sum(axis=0)
+                scan_stripe_sums = np.convolve(scan_col_sums, kernel, mode="same")
+                band_h = max(1, band_y2 - band_y1 + 1)
+                scan_ratios_full = scan_stripe_sums / float(band_h * width)
+                wsize = max(1, int(scan_x_peak_window))
+                left = max(0, int(local_idx - wsize))
+                right = min(len(scan_ratios_full) - 1, int(local_idx + wsize))
+                if right < left:
+                    return None, ignored_rows
+                neighbor_vals = [
+                    scan_ratios_full[i] for i in range(left, right + 1) if i != local_idx
+                ]
+                if not neighbor_vals:
+                    return None, ignored_rows
+                neighbor_median = float(np.median(neighbor_vals))
+                if neighbor_median <= 0:
+                    return None, ignored_rows
+                return float(scan_ratios_full[local_idx]) / neighbor_median, ignored_rows
+
+            def compute_vertical_run_ratio(band_y1: int, band_y2: int) -> Optional[float]:
+                if band_y2 < band_y1:
+                    return None
+                stripe = ink[band_y1 : band_y2 + 1, x1 : x2 + 1]
+                if stripe.size == 0:
+                    return None
+                rows_with_ink = np.any(stripe > 0, axis=1)
+                max_run = 0
+                current_run = 0
+                for has_ink in rows_with_ink:
+                    if has_ink:
+                        current_run += 1
+                        max_run = max(max_run, current_run)
+                    else:
+                        current_run = 0
+                return float(max_run) / float(max(1, band_y2 - band_y1 + 1))
+
             if band_source == "horiz_scan":
                 sx1 = max(0, int(round(local_idx - width / 2)))
                 sx2 = min(w - 1, int(round(local_idx + width / 2)))
                 scan_ratio = float(ink[scan_y1 : scan_y2 + 1, sx1 : sx2 + 1].sum()) / float(
                     scan_h * max(1, sx2 - sx1 + 1)
                 )
-                if scan_x_peak_rescue:
-
-                    def compute_xpeak(band_y1: int, band_y2: int) -> tuple[Optional[float], int]:
-                        ignored_rows = 0
-                        if band_y2 < band_y1:
-                            return None, ignored_rows
-                        scan_strip = ink[band_y1 : band_y2 + 1, :]
-                        if scan_strip.size == 0:
-                            return None, ignored_rows
-                        if scan_x_peak_ignore_staff_peak and scan_peak_row is not None:
-                            rel_peak = int(scan_peak_row - band_y1)
-                            radius = max(0, int(scan_x_peak_ignore_radius))
-                            y_start = max(0, rel_peak - radius)
-                            y_end = min(scan_strip.shape[0] - 1, rel_peak + radius)
-                            if y_start <= y_end:
-                                scan_strip = scan_strip.copy()
-                                scan_strip[y_start : y_end + 1, :] = 0
-                                ignored_rows += y_end - y_start + 1
-                        scan_col_sums = scan_strip.sum(axis=0)
-                        scan_stripe_sums = np.convolve(scan_col_sums, kernel, mode="same")
-                        band_h = max(1, band_y2 - band_y1 + 1)
-                        scan_ratios_full = scan_stripe_sums / float(band_h * width)
-                        wsize = max(1, int(scan_x_peak_window))
-                        left = max(0, int(local_idx - wsize))
-                        right = min(len(scan_ratios_full) - 1, int(local_idx + wsize))
-                        if right < left:
-                            return None, ignored_rows
-                        neighbor_vals = [
-                            scan_ratios_full[i] for i in range(left, right + 1) if i != local_idx
-                        ]
-                        if not neighbor_vals:
-                            return None, ignored_rows
-                        neighbor_median = float(np.median(neighbor_vals))
-                        if neighbor_median <= 0:
-                            return None, ignored_rows
-                        return float(scan_ratios_full[local_idx]) / neighbor_median, ignored_rows
-
+                if scan_x_peak_rescue or scan_x_peak_low_ratio_rescue:
                     scan_x_peak_ratio, ignored_rows = compute_xpeak(scan_y1, scan_y2)
                     scan_x_peak_ignored_rows += ignored_rows
                     if scan_x_peak_ratio is not None:
@@ -454,6 +477,24 @@ def detect_probe_scan(
                         scan_bottom_ratio = float(
                             ink[scan_y2 + 1 : scan_ext_y2 + 1, sx1 : sx2 + 1].sum()
                         ) / float(bottom_h_scan * max(1, sx2 - sx1 + 1))
+            elif scan_x_peak_low_ratio_rescue:
+                scan_x_peak_ratio, ignored_rows = compute_xpeak(scan_y1, scan_y2)
+                scan_x_peak_ignored_rows += ignored_rows
+                if scan_x_peak_ratio is not None:
+                    scan_x_peak_neighbor_median = scan_x_peak_ratio
+                scan_x_peak_low_ratio_run_ratio = compute_vertical_run_ratio(scan_y1, scan_y2)
+                if scan_x_peak_segment_height > 0:
+                    seg_h = max(1, int(scan_x_peak_segment_height))
+                    segs = []
+                    for seg_y in range(scan_y1, scan_y2 + 1, seg_h):
+                        seg_y2 = min(scan_y2, seg_y + seg_h - 1)
+                        seg_ratio, _ = compute_xpeak(seg_y, seg_y2)
+                        if seg_ratio is not None:
+                            segs.append(seg_ratio)
+                    if segs:
+                        scan_x_peak_segment_min = float(min(segs))
+                        pass_count = sum(1 for v in segs if v >= scan_x_peak_ratio_min)
+                        scan_x_peak_segment_pass = pass_count / float(len(segs))
             record_base = {
                 "band": [band_y1, band_y2],
                 "staff_band": [y1, y2],
@@ -484,6 +525,7 @@ def detect_probe_scan(
                 "scan_x_peak_segment_min": scan_x_peak_segment_min,
                 "scan_x_peak_segment_pass": scan_x_peak_segment_pass,
                 "scan_x_peak_ignored_rows": scan_x_peak_ignored_rows,
+                "scan_x_peak_low_ratio_run_ratio": scan_x_peak_low_ratio_run_ratio,
             }
             if use_peak_relative_ratio and scan_peak_ratio_local:
                 peak_relative_ratio = scan_ratio / max(scan_peak_ratio_local, 1e-6)
@@ -494,6 +536,39 @@ def detect_probe_scan(
             check_ratio = scan_ratio if scan_ratio is not None else float(ratios[local_idx])
 
             if check_ratio < min_ratio:
+                xpeak_low_ratio_ok = (
+                    scan_x_peak_low_ratio_rescue
+                    and check_ratio >= scan_x_peak_low_ratio_min
+                    and scan_x_peak_ratio is not None
+                    and scan_x_peak_ratio >= scan_x_peak_ratio_min
+                    and (
+                        scan_x_peak_low_ratio_run_ratio is None
+                        or scan_x_peak_low_ratio_run_ratio >= scan_x_peak_low_ratio_min_run_ratio
+                    )
+                    and (scan_top_ratio is None or scan_top_ratio <= scan_x_peak_max_overhang)
+                    and (scan_bottom_ratio is None or scan_bottom_ratio <= scan_x_peak_max_overhang)
+                )
+                if (
+                    xpeak_low_ratio_ok
+                    and scan_x_peak_segment_height > 0
+                    and scan_x_peak_segment_pass is not None
+                ):
+                    xpeak_low_ratio_ok = scan_x_peak_segment_pass >= scan_x_peak_segment_pass_ratio
+                if xpeak_low_ratio_ok:
+                    rec = {
+                        "status": "scan_ratio_low_xpeak_rescued",
+                        "col": local_idx,
+                        "ratio": check_ratio,
+                        "extended_ratio": scan_ext_ratio,
+                        "top_ratio": scan_top_ratio,
+                        "bottom_ratio": scan_bottom_ratio,
+                        "peak_relative_ratio": peak_relative_ratio,
+                        "seed_col": x,
+                        **record_base,
+                    }
+                    debug_records.append(rec)
+                    candidates.append((x1, band_y1, x2, band_y2))
+                    continue
                 rec = {
                     "status": "scan_ratio_low",
                     "col": local_idx,
@@ -852,6 +927,7 @@ def detect_probe_scan(
     )
 
     from .rescue import apply_active_x_alignment_rescue
+
     apply_active_x_alignment_rescue(
         accepted_by_band=accepted_by_band,
         bands=bands,
@@ -920,6 +996,9 @@ def detect_probe_scan(
             "scan_x_peak_segment_source": scan_x_peak_segment_source,
             "scan_x_peak_ignore_staff_peak": scan_x_peak_ignore_staff_peak,
             "scan_x_peak_ignore_radius": scan_x_peak_ignore_radius,
+            "scan_x_peak_low_ratio_rescue": scan_x_peak_low_ratio_rescue,
+            "scan_x_peak_low_ratio_min": scan_x_peak_low_ratio_min,
+            "scan_x_peak_low_ratio_min_run_ratio": scan_x_peak_low_ratio_min_run_ratio,
             "scan_disable_existing_suppression": scan_disable_existing_suppression,
             "scan_existing_min_vertical_iou": scan_existing_min_vertical_iou,
             "scan_rightmost_rescue": scan_rightmost_rescue,

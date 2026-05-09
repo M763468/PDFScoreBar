@@ -75,3 +75,210 @@ Phase 1の初期検出漏れをなくすため、以下の2つのアプローチ
    - CNNフィルタリング後の結果を評価ツール（`tools/eval2_full_summary_generator.py` 等）で集計します。
    - 目標は、現在の **FN 254件 を大幅に削減**しつつ、**FPが0件（またはそれに近い水準）を維持**することです。
    - `tools/eval2_measure_count_kpi.py` を用いて、最終的な小節数カウントKPIが改善されていること（不足していた91小節が回復していること）を確認します。
+
+---
+
+## 4. 2026-05-09 実験結果: Low-ratio X-peak Rescue
+
+### 実装内容
+
+アプローチB-2を opt-in 実装として追加しました。
+
+- 対象: `src/pipeline/probe_detector/__init__.py`
+- 新規パラメータ:
+  - `scan_x_peak_low_ratio_rescue`
+  - `scan_x_peak_low_ratio_min`
+  - `scan_x_peak_low_ratio_min_run_ratio`
+- config 伝播: `src/pipeline/detection/config.py`
+- 再現用スクリプト: `tools/debug_probe_scan_miss.py`
+
+既存挙動を壊さないため、デフォルトでは無効です。`configs/evaluation2_e2e_verification_full_v12_restore.yaml` でも、実験結果を受けて `scan_x_peak_low_ratio_rescue: false` に戻しています。
+
+### 局所検証
+
+対象例:
+
+- Score: `Shostakovich-Festival_Overture_Va`
+- Page: `page_008`
+- GT: `[1045, 3669, 1049, 3786]`
+- 出力: `logs/issue120_probe_scan_xpeak_low_ratio/page_008_gt0_xp315_lr070_run050/summary.json`
+
+実行コマンド:
+
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/debug_probe_scan_miss.py \
+  --xpeak-min 3.15 \
+  --low-ratio-min 0.70 \
+  --min-run-ratio 0.50 \
+  --output-dir logs/issue120_probe_scan_xpeak_low_ratio/page_008_gt0_xp315_lr070_run050
+```
+
+結果:
+
+| 条件 | candidates | target_gt_hit | 主な status |
+| :--- | ---: | :---: | :--- |
+| baseline | 68 | false | `accepted=44`, `x_alignment_active_injected=24` |
+| xpeak low-ratio rescue | 83 | true | `scan_ratio_low_xpeak_rescued=24` |
+
+比率スナップショット:
+
+- `band_height=172`
+- `gt_height=117`
+- `ratio_at_gt=0.7311`
+- `xpeak_at_gt=3.5674`
+
+局所的には、トールバンド希釈で `min_ratio=0.85` に届かない候補を rescue できることを確認しました。
+
+### 対象スコア9ページの実パイプライン検証
+
+全68ページの前に、対象FNを含む `Shostakovich-Festival_Overture_Va` 9ページで実パイプラインを実行しました。
+
+config生成:
+
+```bash
+PYTHONPATH=.:external/homr .venv_pdf/bin/python tools/create_eval2_full_restore_configs.py \
+  --output-dir logs/issue120_probe_scan_xpeak_low_ratio/eval2_full_configs_v3
+```
+
+実行時は生成configの `run.output_root` を `logs/full_pipeline_runs/issue120_probe_scan_xpeak_low_ratio_v3` に変更し、以下を実行しました。
+
+```bash
+make run-pipeline \
+  CONFIG=logs/issue120_probe_scan_xpeak_low_ratio/eval2_full_configs_v3/Shostakovich-Festival_Overture_Va.yaml
+```
+
+注: detection/CNNまでは完了しましたが、後段の numbering aggregation で `numbering_base.json` が存在しないため pipeline は exit code 1 になりました。このため、今回の判定は生成済み detection/CNN 出力に対して `tools/eval2_full_detection_report.py` を実行して行いました。
+
+レポート生成:
+
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/eval2_full_detection_report.py \
+  --manifest logs/issue120_probe_scan_xpeak_low_ratio/eval2_full_configs_v3/manifest_shostakovich_festival.json \
+  --run-root logs/full_pipeline_runs/issue120_probe_scan_xpeak_low_ratio_v3 \
+  --gt-root data/evaluation2/annotations \
+  --images-root data/evaluation2/images \
+  --output-dir logs/issue120_probe_scan_xpeak_low_ratio/report_shostakovich_festival_v3 \
+  --max-crops-per-type 50
+```
+
+比較結果:
+
+| run | pages | layer | TP | FP | FN | precision | recall |
+| :--- | ---: | :--- | ---: | ---: | ---: | ---: | ---: |
+| baseline root (`logs/full_pipeline_runs/evaluation2_full_v12_restore`) | 9 | filtered_cnn_json | 350 | 1 | 1 | 0.9972 | 0.9972 |
+| xpeak low-ratio rescue v3 | 9 | filtered_cnn_json | 350 | 18 | 1 | 0.9511 | 0.9972 |
+
+結果として、対象ページの候補段階ではFNを回収できたものの、対象スコア9ページのCNN後評価ではFN改善がなく、FPが `1 -> 18` に増加しました。
+
+### 結論
+
+`scan_x_peak_low_ratio_rescue` は、トールバンド希釈の代表例を候補段階で救済できる一方、現在の条件では対象スコア全体でFPを増やすため、メインパイプライン設定には採用しません。
+
+今後この方向を続ける場合は、単純なX方向ピーク比ではなく、以下の追加制約を先に設計・検証してください。
+
+- 低ratio rescue候補をCNNに渡す前の局所 staff membership / notehead overlap フィルタ
+- 小節カウントに影響する孤立FNだけを狙うページ・段コンテキスト
+- rescue候補を active alignment / gap rescue のアンカーにしない制約の維持
+- full 68ページでの `FP/FN` と `measure_count_kpi` の同時評価
+
+---
+
+## 5. 2026-05-09 追加: Targeted Residual Replay Harness
+
+### 目的
+
+full pipeline は時間がかかるため、次の detector / filter 制約を試す前に、既存の中間生成物だけで最終残差を再分類するハーネスを追加しました。
+
+- 追加スクリプト: `tools/issue120_targeted_residual_replay.py`
+- 入力:
+  - `tools/eval2_full_detection_report.py` が生成した `residuals.csv`
+  - 既存 run root 配下の `intermediate/probe_scan/*`
+  - 必要に応じて full-run manifest
+  - GT: `data/evaluation2/annotations`
+- 出力:
+  - `residual_replay.csv`
+  - `summary_by_stage.csv`
+  - `summary_by_stage.json`
+
+このハーネスは pipeline を再実行せず、以下の3段階 JSON を読みます。
+
+- `pipeline2_no_peak_candidates.json`
+- `pipeline2_no_peak_scored.json`
+- `pipeline2_no_peak_filtered_cnn.json`
+
+FN については単純な最近傍一致だけでなく、評価器と同じ `greedy_barline_match` による one-to-one matching も確認します。これにより、「候補は最終filteredに残っているが、別GTとの greedy 競合で FN になった」ケースを `survived_filtered_unmatched_greedy` として分離できます。
+
+### 再現コマンド
+
+baseline root の Shostakovich Festival 9ページ:
+
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/issue120_targeted_residual_replay.py \
+  --residuals logs/issue120_probe_scan_xpeak_low_ratio/report_shostakovich_festival_baseline_root/residuals.csv \
+  --run-root logs/full_pipeline_runs/evaluation2_full_v12_restore \
+  --manifest logs/issue120_probe_scan_xpeak_low_ratio/eval2_full_configs/manifest_shostakovich_festival.json \
+  --output-dir logs/issue120_targeted_residual_replay/shostakovich_festival_baseline \
+  --residual-type all \
+  --residual-layer filtered_cnn_json
+```
+
+xpeak low-ratio rescue v3 の Shostakovich Festival 9ページ:
+
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/issue120_targeted_residual_replay.py \
+  --residuals logs/issue120_probe_scan_xpeak_low_ratio/report_shostakovich_festival_v3/residuals.csv \
+  --run-root logs/full_pipeline_runs/issue120_probe_scan_xpeak_low_ratio_v3 \
+  --manifest logs/issue120_probe_scan_xpeak_low_ratio/eval2_full_configs_v3/manifest_shostakovich_festival.json \
+  --output-dir logs/issue120_targeted_residual_replay/shostakovich_festival_v3 \
+  --residual-type all \
+  --residual-layer filtered_cnn_json
+```
+
+過去の `issue120_final_v1` residual trace から先頭20件をサンプル分類:
+
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/issue120_targeted_residual_replay.py \
+  --residuals logs/issue120_final_residuals/residual_trace.csv \
+  --run-root logs/full_pipeline_runs/issue120_final_v1 \
+  --output-dir logs/issue120_targeted_residual_replay/issue120_final_v1_sample \
+  --residual-type FN \
+  --max-rows 20
+```
+
+### 今回のハーネス実行結果
+
+`logs/issue120_targeted_residual_replay/shostakovich_festival_baseline/summary_by_stage.csv`:
+
+| type | score | trace_stage | count |
+| :--- | :--- | :--- | ---: |
+| FN_cnn | Shostakovich-Festival_Overture_Va | survived_filtered_unmatched_greedy | 1 |
+| FP | Shostakovich-Festival_Overture_Va | survived_filtered | 1 |
+
+`logs/issue120_targeted_residual_replay/shostakovich_festival_v3/summary_by_stage.csv`:
+
+| type | score | trace_stage | count |
+| :--- | :--- | :--- | ---: |
+| FN_cnn | Shostakovich-Festival_Overture_Va | survived_filtered_unmatched_greedy | 1 |
+| FP | Shostakovich-Festival_Overture_Va | survived_filtered | 18 |
+
+`logs/issue120_targeted_residual_replay/issue120_final_v1_sample/summary_by_stage.csv`:
+
+| type | score | trace_stage | count |
+| :--- | :--- | :--- | ---: |
+| FN | Shostakovich-Festival_Overture_Va | candidate_absent | 6 |
+| FN | Shostakovich-Festival_Overture_Va | cnn_low_score_or_post_filter | 1 |
+| FN | Shostakovich-Festival_Overture_Va | survived_filtered | 1 |
+| FN | Shostakovich-Sym5-Va | candidate_absent | 6 |
+| FN | Shostakovich-Sym5-Va | cnn_low_score_or_post_filter | 1 |
+| FN | Shostakovich-Sym5-Va | survived_filtered | 2 |
+| FN | Shostakovich-Sym5-Va | survived_filtered_unmatched_greedy | 3 |
+
+### 方針への反映
+
+今回の結果から、次の実装候補は「候補生成だけを広げる rescue」よりも、残差タイプごとに制約を分けて検証する方が安全です。
+
+1. `candidate_absent`: probe scan の局所 rescue 対象。ただし v3 のように FP が増えやすいため、staff membership / notehead overlap / alignment anchor 禁止を同時に評価する。
+2. `cnn_low_score_or_post_filter`: detector ではなく CNN threshold または post-filter の対象。候補生成を広げる前に、スコア分布と高さ・staff単位条件を確認する。
+3. `survived_filtered_unmatched_greedy`: 候補生成やCNNではなく、近接 duplicate / GT matching / logical measure boundary の問題。detector rescue では改善しない可能性が高いため、measure-count KPI への影響を優先して確認する。
+
+次の実験では、まずこのハーネスで対象 residual の `trace_stage` を確認し、`candidate_absent` だけに限定して局所制約を試してください。その後に対象スコア単位の `tools/eval2_full_detection_report.py`、最後に68ページ full pipeline と `tools/eval2_measure_count_kpi.py` で採否を判断します。

@@ -32,7 +32,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.common.barline_evaluation import (  # noqa: E402
-    center_distance_x,
     greedy_barline_match,
     is_barline_match,
 )
@@ -221,7 +220,7 @@ def boxes_from_scored(payload: Any, *, score_threshold: float) -> list[tuple[int
             if float(item.get("score", 0.0)) >= score_threshold and "bbox" in item:
                 boxes.append(normalize_box(item["bbox"]))
         elif isinstance(item, list):
-            # Filtered-CNN JSONs are sometimes plain box lists.  Treat them as already filtered.
+            # Filtered-CNN JSONs are sometimes plain box lists. Treat them as already filtered.
             boxes.append(normalize_box(item))
     return boxes
 
@@ -278,6 +277,12 @@ def safe_div(num: int, den: int) -> float | None:
     if den == 0:
         return None
     return num / den
+
+
+def format_metric(value: float | None) -> str:
+    if value is None:
+        return "n/a"
+    return f"{value:.6f}"
 
 
 def read_measure_summary(path: Path | None) -> dict[str, Any]:
@@ -460,11 +465,12 @@ def write_outputs(
         encoding="utf-8",
     )
     with (output_dir / "detector_page_metrics.csv").open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=list(asdict(page_metrics[0]).keys()) if page_metrics else [])
-        if page_metrics:
-            writer.writeheader()
-            for row in page_metrics:
-                writer.writerow(asdict(row))
+        if not page_metrics:
+            return
+        writer = csv.DictWriter(f, fieldnames=list(asdict(page_metrics[0]).keys()))
+        writer.writeheader()
+        for row in page_metrics:
+            writer.writerow(asdict(row))
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -514,8 +520,8 @@ def main() -> None:
         "Detector: "
         f"GT={summary.gt} Pred={summary.pred} TP={summary.tp} FP={summary.fp} FN={summary.fn} "
         f"FN_det={summary.fn_det} FN_cnn={summary.fn_cnn} "
-        f"Precision={summary.precision:.6f if summary.precision is not None else 'n/a'} "
-        f"Recall={summary.recall:.6f if summary.recall is not None else 'n/a'}"
+        f"Precision={format_metric(summary.precision)} "
+        f"Recall={format_metric(summary.recall)}"
     )
     print(f"Wrote: {contract.output_dir}")
 

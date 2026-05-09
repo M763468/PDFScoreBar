@@ -20,6 +20,8 @@ ISSUE120_GT_ROOT=data/evaluation2/annotations
 ISSUE120_OUTPUT_DIR=logs/issue120_e2e_recovery/latest_full_report
 ISSUE120_SCORE_THRESHOLD=0.1
 ISSUE120_XDIST_THRESHOLD=12.0
+ISSUE120_MEASURE_SUMMARY=
+ISSUE120_PROVENANCE_JSON=
 ```
 
 Equivalent direct command:
@@ -31,6 +33,10 @@ PYTHONPATH=. python3 tools/issue120/eval_full68_from_intermediates.py \
   --output-dir logs/issue120_e2e_recovery/latest_full_report \
   --score-threshold 0.1 \
   --xdist-threshold 12.0
+
+PYTHONPATH=. python3 tools/issue120/attach_eval_provenance.py \
+  --output-dir logs/issue120_e2e_recovery/latest_full_report \
+  --results-dir data/evaluation2/golden_baseline_eval2_bc23deb
 ```
 
 ## Evaluated page set
@@ -41,7 +47,7 @@ Use `--allow-partial` only for debugging. Partial results are not canonical.
 
 ## Input contract
 
-The evaluator consumes existing intermediate files.
+The evaluator consumes existing detector intermediate files.
 
 Required per page:
 
@@ -54,6 +60,8 @@ Optional per page:
 ```text
 pipeline2_no_peak_candidates.json
 ```
+
+These files correspond to a detector-stage boundary after candidate generation and CNN scoring. They are not raw OMR, HOMR, OMR-DLN, SR, or hybrid-consensus outputs.
 
 When candidates are available, the evaluator also reports approximate `FN_det` / `FN_cnn` split:
 
@@ -82,6 +90,7 @@ missing_pages.json             # only when required inputs are missing
 detector_metrics.json
 detector_page_metrics.csv
 evaluation_contract.json
+intermediate_provenance.json
 ```
 
 `evaluation_contract.json` is the canonical machine-readable summary for this entrypoint.
@@ -112,6 +121,45 @@ score_threshold=0.1
 
 These defaults intentionally match the previous `verify_golden_baseline.py` contract rather than later ad-hoc restore scripts.
 
+## Provenance contract
+
+The default provenance block records that this is a post-CNN-scoring detector-intermediate evaluation.
+
+Expected upstream stages before this intermediate include:
+
+1. initial OMR/HOMR pass;
+2. optional SR image generation;
+3. OMR/HOMR pass on the SR image;
+4. optional OMR-DLN or other detector outputs used by the run;
+5. hybrid consensus / seed preparation;
+6. probe scan candidate generation;
+7. CNN scoring of candidates.
+
+The evaluator does not prove that those upstream stages were regenerated from the current code. It proves only that the saved post-CNN-scoring intermediates evaluate to the reported detector metrics under the canonical 68-page manifest and matching rule.
+
+To attach a verified local provenance record:
+
+```bash
+make eval-issue120-full \
+  ISSUE120_RESULTS_DIR=logs/path/to/intermediates \
+  ISSUE120_PROVENANCE_JSON=logs/path/to/provenance.json
+```
+
+Recommended provenance JSON fields:
+
+```json
+{
+  "schema_version": "issue120.intermediate_provenance.v1",
+  "status": "verified_local_run",
+  "results_dir": "logs/path/to/intermediates",
+  "evaluated_stage": "post_cnn_scoring_detector_intermediate",
+  "generation_commit": "<commit sha>",
+  "generation_command": "<command or script used to create intermediates>",
+  "source_artifact": "<artifact path or external reference>",
+  "notes": []
+}
+```
+
 ## Measure-count metrics
 
 This PR does not implement full downstream numbering evaluation. If a downstream measure-count run has already produced a summary JSON, attach it with:
@@ -128,13 +176,27 @@ Until a canonical measure-count evaluator exists, detector metrics and measure-c
 
 Full pipeline execution for 68 pages may take tens of minutes or hours and can produce large logs. It is intentionally not part of `make eval-issue120-full`.
 
+The slow stages are expected to be the initial OMR/HOMR processing, SR processing, and the second OMR/HOMR pass over SR output. Hybrid consensus, probe scan, and CNN scoring are comparatively cheaper and can be rerun more often once the slow upstream outputs are available.
+
 Recommended local workflow:
 
-1. Run or recover the intermediate generation workflow locally.
-2. Place or point `ISSUE120_RESULTS_DIR` at the resulting intermediate tree.
-3. Run `make eval-issue120-full ISSUE120_RESULTS_DIR=<path>`.
-4. Commit only source/tool/doc changes, not the generated output tree.
+1. Run or recover the slow upstream OMR/SR/HOMR outputs locally.
+2. Generate or recover the post-CNN-scoring intermediate tree.
+3. Point `ISSUE120_RESULTS_DIR` at that tree.
+4. Run `make eval-issue120-full ISSUE120_RESULTS_DIR=<path>`.
+5. Commit only source/tool/doc changes, not the generated output tree.
 
 ## Historical-best verification
 
-`TP=3580 / FP=0 / FN=1` remains a historical target until reproduced by this command or by a later documented canonical command. A document claim alone is not sufficient.
+The local run below reproduces the detector-intermediate historical target from saved intermediates:
+
+```text
+Pages: 68/68
+Detector: GT=3581 Pred=3597 TP=3580 FP=0 FN=1 FN_det=0 FN_cnn=1 Precision=1.000000 Recall=0.999721
+```
+
+This should be described precisely as:
+
+> The saved post-CNN-scoring detector intermediates under `data/evaluation2/golden_baseline_eval2_bc23deb` reproduce `TP=3580 / FP=0 / FN=1` under the canonical 68-page evaluator.
+
+It should not be described as full pipeline reproduction unless the upstream OMR/SR/HOMR/hybrid/probe/CNN generation path is also regenerated or otherwise proven.

@@ -333,7 +333,6 @@ def evaluate(args: argparse.Namespace) -> EvaluationContract:
             )
             continue
 
-        assert scored_path is not None
         gts = boxes_from_gt(load_json(gt_path))
         preds = boxes_from_scored(load_json(scored_path), score_threshold=args.score_threshold)
 
@@ -464,9 +463,9 @@ def write_outputs(
         json.dumps(asdict(contract), indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
+    if not page_metrics:
+        return
     with (output_dir / "detector_page_metrics.csv").open("w", newline="", encoding="utf-8") as f:
-        if not page_metrics:
-            return
         writer = csv.DictWriter(f, fieldnames=list(asdict(page_metrics[0]).keys()))
         writer.writeheader()
         for row in page_metrics:

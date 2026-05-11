@@ -39,6 +39,36 @@ This is not full-pipeline reproduction.
 - Role: original clean rebuild base for Issue #120.
 - Meaning: useful as a historical source branch base, but not itself the current verified best.
 
+### PR #57: Issue #44 final baseline
+
+- PR: #57 `feat(cnn): finalize baseline retraining and improve staff clustering logic (#44)`
+- Head branch: `task/cnn-barline-classifier-retrain-eval2-gt`
+- Head commit: `b58b988979573e651c5a2f57270ebc1c830135b4`
+- Merge commit: `87fb6d0a47294d7879500285a62e519373498b65`
+- Claimed result: `evaluate_full_rescue_v1.py` produced final detector result with `FP=0`, `FN=1`.
+- Important recovered file:
+  - `experiments/issue53_probe_rescue/evaluate_full_rescue_v1.py`
+
+Recovered script behavior:
+
+```text
+bands_from = logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+output_root = logs/issue53_full_eval_rescue_v1
+model_path = logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
+```
+
+It runs:
+
+1. `run_probe_scan_batch` over all `data/evaluation2/images/page_*.png` with gap/x-peak/rightmost/divisi rescue.
+2. `tools.cnn_classifier.score_candidates_batch.run_scoring_batch` with threshold `0.1`, crop recentering, and staff-aware filtering.
+3. `tools/re_evaluate_global.py` using `center_anchor`, `vov_threshold=0.5`, `xdist_threshold=12.0`.
+
+Interpretation:
+
+- This is the likely historical source for `logs/issue53_full_eval_rescue_v1`.
+- The checked-in `data/evaluation2/golden_baseline_eval2_bc23deb/eval_config.yaml` points to `logs/issue53_full_eval_rescue_v1` and uses the same canonical evaluation thresholds.
+- This script is experimental and references pre-refactor module paths (`src.pipeline.probe_scan`, `tools.cnn_classifier.score_candidates_batch`). It is evidence, not a drop-in current pipeline command.
+
 ### PR #127: Golden Baseline introduction
 
 - PR: #127 `test: Phase 1.1 - 前提バグ修正とGolden Baseline検証の追加 (Epic #120)`
@@ -68,14 +98,14 @@ This is not full-pipeline reproduction.
 - PR #130 was later superseded by #131.
 - PR #131 merge commit: `25548b29bb5d706b7c0bcb9f4d5881e892cc1a9b`.
 - Claimed result: `evaluate_full_rescue_v1.py` with native inference and cache disabled maintained `TP=3580, FP=0, FN=1`.
-- Current finding: `evaluate_full_rescue_v1.py` is not present at `rebuild/issue120` under `tools/repro_accuracy/`. This claim needs source recovery from past commit/log/artifact before it can be treated as reproducible.
+- Current finding: the script name appears to refer back to the experimental Issue #53/Issue #44 script under `experiments/issue53_probe_rescue/`, not to a current `tools/repro_accuracy/` script. The exact command/run artifact used for #131 still needs local confirmation.
 
 ### PR #132: refactor step
 
 - PR: #132 `Refactor: Step 5 (Phase 2) - Pipeline and Utility Refactoring`
 - Merge commit: `fa0bb34c2d103f796228039740ae0412df47298b`
 - Claimed result: `evaluate_full_rescue_v1.py` with native inference maintained `TP=3580, FP=0, FN=1`.
-- Current finding: same as #131. The script and exact generated output tree must be recovered or reconstructed.
+- Current finding: same as #131. The historical script has been located under PR #57, but the exact #132 execution path remains to be reproduced or confirmed from local logs.
 
 ### PR #139: canonical intermediate evaluator
 
@@ -140,6 +170,29 @@ Status:
 
 - Superseded as canonical evaluator by `make eval-issue120-full`, but still useful as historical evidence.
 
+### `experiments/issue53_probe_rescue/evaluate_full_rescue_v1.py`
+
+Recovered from PR #57 head commit `b58b988979573e651c5a2f57270ebc1c830135b4`.
+
+Role:
+
+- Historical experiment script that likely generated `logs/issue53_full_eval_rescue_v1`.
+- Starts from `logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12` as `bands_from`.
+- Runs probe scan with rescue options.
+- Runs CNN scoring with `issue44_iter7_final_rescue_v1/cnn_classifier_best.pth`.
+- Evaluates with `xdist_threshold=12.0`.
+
+Limitations:
+
+- Uses old module paths and pre-#120 APIs.
+- Assumes local log/model artifacts.
+- Does not run the current full pipeline.
+
+Status:
+
+- Important historical source evidence.
+- Should not be restored as-is into current workflow; instead, its stages should be represented by Stage B/C/D commands.
+
 ### `tools/repro_accuracy/reproduce_clean_seed_v12.py`
 
 Role:
@@ -183,15 +236,47 @@ Important discrepancy:
 
 Status:
 
-- Useful to test candidate -> CNN scoring regeneration, but it must be adjusted or paired with `make eval-issue120-full` to report canonical metrics.
+- Superseded for canonical Stage B verification by `tools/issue120/score_candidates_then_eval_full68.py`.
+- Candidate for removal or archival after Stage B is validated, because overlapping scripts are a source of confusion.
 
-### `evaluate_full_rescue_v1.py`
+### `tools/issue120/score_candidates_then_eval_full68.py`
 
-Status:
+Role:
 
-- PR #130, #131, and #132 refer to it as the native inference script used to maintain `TP=3580, FP=0, FN=1`.
-- It is not currently present in `tools/repro_accuracy/` on `rebuild/issue120`.
-- The exact script must be recovered from a historical branch/commit or artifact before those PR claims can be upgraded from historical claim to reproducible evidence.
+- New Stage B wrapper for #136.
+- Copies canonical candidate files into a fresh scoring output tree.
+- Runs current `src.pipeline.steps.cnn_scoring.run_cnn_scoring_batch`.
+- Evaluates newly scored outputs using the #134 canonical full-68 evaluator.
+- Writes provenance that marks the result as `stage_b_candidate_to_cnn_scoring`.
+
+Default command:
+
+```bash
+make verify-issue120-stage-b ISSUE120_CLEAN_OUTPUT=1
+```
+
+Optional command with historical staff-band source:
+
+```bash
+make verify-issue120-stage-b \
+  ISSUE120_CLEAN_OUTPUT=1 \
+  ISSUE120_BANDS_FROM=logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+```
+
+Expected local prerequisites:
+
+```text
+data/evaluation2/golden_baseline_eval2_bc23deb/**/pipeline2_no_peak_candidates.json
+data/evaluation2/images/**/page_*.png
+data/evaluation2/annotations/**/boxes_sorted.json
+logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
+```
+
+Interpretation:
+
+- If this reproduces `TP=3580 / FP=0 / FN=1`, then the saved candidates plus current CNN scoring path are compatible with the golden detector target.
+- If this fails, the mismatch is in model availability/content, CNN scoring implementation, crop recentering/staff filtering, candidate layout, or evaluation defaults.
+- It still does not prove seed/candidate regeneration.
 
 ## Current conclusion
 
@@ -253,22 +338,34 @@ Goal:
 - Run only CNN scoring.
 - Evaluate output with #134 canonical evaluator.
 
-Required change:
+Command:
 
-- Either add a small wrapper around `run_cnn_scoring_batch`, or adapt `verify_repro_batch_final.py` so the final evaluation is performed by `make eval-issue120-full` with `xdist_threshold=12.0`.
+```bash
+make verify-issue120-stage-b ISSUE120_CLEAN_OUTPUT=1
+```
+
+If local staff-band artifacts are available, also run:
+
+```bash
+make verify-issue120-stage-b \
+  ISSUE120_CLEAN_OUTPUT=1 \
+  ISSUE120_BANDS_FROM=logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+```
 
 Acceptance:
 
 - Same canonical 68-page page set.
 - Same metric contract as #134.
-- If this fails, the problem is in CNN scoring, candidate layout, model path, or thresholding.
+- If this fails, the problem is in CNN scoring, candidate layout, model path, staff-band source, or thresholding.
+
+Status: wrapper added; local execution still required.
 
 ### Stage C: hybrid/probe seed regeneration -> CNN scoring -> canonical evaluation
 
 Goal:
 
 - Run `reproduce_clean_seed_v12.py` or a cleaned successor.
-- Then run Stage B.
+- Then run Stage B with `ISSUE120_CANDIDATES_DIR` pointing at regenerated candidates.
 
 Known dependencies:
 
@@ -308,11 +405,12 @@ Acceptance:
 
 ## Recommended immediate #136 next steps
 
-1. Recover or locate `evaluate_full_rescue_v1.py` from historical commits/artifacts.
-2. Decide whether `verify_repro_batch_final.py` should be replaced by a canonical Stage B wrapper.
-3. Check whether the model path `logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth` is available locally and how it should be referenced.
-4. Run Stage B locally using checked-in Golden Baseline candidates.
-5. Record whether candidate -> CNN scoring can reproduce the #134 result under `xdist_threshold=12.0`.
+1. Run Stage B locally without `ISSUE120_BANDS_FROM`.
+2. Run Stage B locally with historical `ISSUE120_BANDS_FROM` if that artifact exists.
+3. Compare both outputs against the Stage A result.
+4. If Stage B passes, archive or delete `verify_repro_batch_final.py` in a later cleanup PR to reduce script overlap.
+5. If Stage B fails, inspect `logs/issue120_e2e_recovery/stage_b_candidate_scoring_eval/detector_page_metrics.csv` and compare with Stage A page metrics.
+6. Then proceed to Stage C using `reproduce_clean_seed_v12.py` or a cleaned successor.
 
 ## Decision status
 

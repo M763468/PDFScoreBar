@@ -91,6 +91,7 @@ def build_provenance(args: argparse.Namespace, processed_pages: int) -> dict[str
         "status": "stage_b_candidate_to_cnn_scoring",
         "evaluated_stage": "post_cnn_scoring_detector_intermediate",
         "scorer": args.scorer,
+        "pipeline_nms_enabled": args.pipeline_nms_enabled,
         "candidate_source_dir": str(args.candidates_dir),
         "scoring_output_dir": str(args.scoring_output_dir),
         "model_path": str(args.model_path),
@@ -107,6 +108,7 @@ def build_provenance(args: argparse.Namespace, processed_pages: int) -> dict[str
             "It does not regenerate candidates from HOMR/OMR/SR/hybrid/probe sources.",
             "scorer=pipeline uses src.pipeline.steps.cnn_scoring.run_cnn_scoring_batch.",
             "scorer=legacy uses tools.cnn_classifier.score_candidates_batch.run_scoring_batch, matching the historical Issue #53 script family more closely.",
+            "pipeline_nms_enabled only applies to scorer=pipeline.",
         ],
     }
 
@@ -156,6 +158,7 @@ def run_selected_scorer(args: argparse.Namespace, images: list[Path]) -> int:
             crop_recenter_on_bbox_ink=args.crop_recenter_on_bbox_ink,
             crop_recenter_max_shift_unit_ratio=args.crop_recenter_max_shift_unit_ratio,
             input_image_scale=args.input_image_scale,
+            apply_nms_enabled=args.pipeline_nms_enabled,
         )
 
     return run_legacy_scoring_batch(
@@ -213,6 +216,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--staff-vov-threshold", type=float, default=0.5)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--scorer", choices=["pipeline", "legacy"], default="pipeline")
+    parser.add_argument("--pipeline-nms-enabled", action="store_true", default=True)
+    parser.add_argument("--disable-pipeline-nms", dest="pipeline_nms_enabled", action="store_false")
     parser.add_argument("--crop-recenter-on-bbox-ink", action="store_true", default=True)
     parser.add_argument("--no-crop-recenter-on-bbox-ink", dest="crop_recenter_on_bbox_ink", action="store_false")
     parser.add_argument("--crop-recenter-max-shift-unit-ratio", type=float, default=0.35)

@@ -2,8 +2,8 @@
 """Stage-B verifier for Issue #120: candidates -> CNN scoring -> full68 eval.
 
 This tool copies canonical 68-page candidate intermediates into a fresh scoring
-work directory, runs the current in-process CNN scoring implementation, then
-invokes the #134 evaluator on the scored outputs.
+work directory, runs a selected CNN scoring implementation, then invokes the #134
+evaluator on the scored outputs.
 
 It intentionally starts from `pipeline2_no_peak_candidates.json`; it does not
 regenerate candidates from HOMR/OMR/SR/hybrid/probe sources.
@@ -25,6 +25,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.pipeline.core.run_ids import build_probe_run_id_from_parts  # noqa: E402
 from src.pipeline.steps.cnn_scoring import run_cnn_scoring_batch  # noqa: E402
+from tools.cnn_classifier.score_candidates_batch import run_scoring_batch as run_legacy_scoring_batch  # noqa: E402
 from tools.issue120.eval_full68_from_intermediates import (  # noqa: E402
     PageRecord,
     find_page_file,
@@ -89,6 +90,7 @@ def build_provenance(args: argparse.Namespace, processed_pages: int) -> dict[str
         "schema_version": "issue120.intermediate_provenance.v1",
         "status": "stage_b_candidate_to_cnn_scoring",
         "evaluated_stage": "post_cnn_scoring_detector_intermediate",
+        "scorer": args.scorer,
         "candidate_source_dir": str(args.candidates_dir),
         "scoring_output_dir": str(args.scoring_output_dir),
         "model_path": str(args.model_path),
@@ -103,6 +105,8 @@ def build_provenance(args: argparse.Namespace, processed_pages: int) -> dict[str
         "notes": [
             "Stage B starts from existing candidates and reruns CNN scoring only.",
             "It does not regenerate candidates from HOMR/OMR/SR/hybrid/probe sources.",
+            "scorer=pipeline uses src.pipeline.steps.cnn_scoring.run_cnn_scoring_batch.",
+            "scorer=legacy uses tools.cnn_classifier.score_candidates_batch.run_scoring_batch, matching the historical Issue #53 script family more closely.",
         ],
     }
 
@@ -135,6 +139,36 @@ def run_eval(args: argparse.Namespace, provenance_path: Path) -> None:
             str(provenance_path),
         ],
         check=True,
+    )
+
+
+def run_selected_scorer(args: argparse.Namespace, images: list[Path]) -> int:
+    if args.scorer == "pipeline":
+        return run_cnn_scoring_batch(
+            probe_output_root=args.scoring_output_dir,
+            images=images,
+            model_path=args.model_path,
+            threshold=args.score_threshold,
+            batch_size=args.batch_size,
+            staff_mask_dir=args.staff_mask_dir,
+            bands_from=args.bands_from,
+            staff_vov_threshold=args.staff_vov_threshold,
+            crop_recenter_on_bbox_ink=args.crop_recenter_on_bbox_ink,
+            crop_recenter_max_shift_unit_ratio=args.crop_recenter_max_shift_unit_ratio,
+            input_image_scale=args.input_image_scale,
+        )
+
+    return run_legacy_scoring_batch(
+        logs=args.scoring_output_dir,
+        model=args.model_path,
+        threshold=args.score_threshold,
+        images_root=args.image_root,
+        overwrite=True,
+        crop_recenter_on_bbox_ink=args.crop_recenter_on_bbox_ink,
+        crop_recenter_max_shift_unit_ratio=args.crop_recenter_max_shift_unit_ratio,
+        bands_from=args.bands_from,
+        staff_mask_dir=args.staff_mask_dir,
+        staff_vov_threshold=args.staff_vov_threshold,
     )
 
 
@@ -178,6 +212,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--xdist-threshold", type=float, default=12.0)
     parser.add_argument("--staff-vov-threshold", type=float, default=0.5)
     parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument("--scorer", choices=["pipeline", "legacy"], default="pipeline")
     parser.add_argument("--crop-recenter-on-bbox-ink", action="store_true", default=True)
     parser.add_argument("--no-crop-recenter-on-bbox-ink", dest="crop_recenter_on_bbox_ink", action="store_false")
     parser.add_argument("--crop-recenter-max-shift-unit-ratio", type=float, default=0.35)
@@ -220,19 +255,7 @@ def main() -> None:
             manifest=manifest,
             candidates_file=args.candidates_file,
         )
-        processed_pages = run_cnn_scoring_batch(
-            probe_output_root=args.scoring_output_dir,
-            images=images,
-            model_path=args.model_path,
-            threshold=args.score_threshold,
-            batch_size=args.batch_size,
-            staff_mask_dir=args.staff_mask_dir,
-            bands_from=args.bands_from,
-            staff_vov_threshold=args.staff_vov_threshold,
-            crop_recenter_on_bbox_ink=args.crop_recenter_on_bbox_ink,
-            crop_recenter_max_shift_unit_ratio=args.crop_recenter_max_shift_unit_ratio,
-            input_image_scale=args.input_image_scale,
-        )
+        processed_pages = run_selected_scorer(args, images)
     else:
         processed_pages = 0
 

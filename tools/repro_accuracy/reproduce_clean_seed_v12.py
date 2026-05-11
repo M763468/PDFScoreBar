@@ -1,3 +1,4 @@
+import argparse
 import json
 import logging
 import sys
@@ -16,8 +17,8 @@ from src.pipeline.steps.probe_scan import run_probe_scan_batch
 logging.basicConfig(level=logging.INFO)
 
 # Constants for easy configuration
-INVENTORY_PATH = Path("logs/issue36_prep/20260208_bench_inventory.json")
-RUN_ROOT = Path("logs/hybrid_generalization/verify_fixed_v10")
+DEFAULT_INVENTORY_PATH = Path("logs/issue36_prep/20260208_bench_inventory.json")
+DEFAULT_RUN_ROOT = Path("logs/hybrid_generalization/verify_fixed_v10")
 
 # Mapping from score name to the specific timestamp subdirectory in verify_fixed_v10
 SCORE_TO_RUN = {
@@ -28,20 +29,32 @@ SCORE_TO_RUN = {
     "Va__Prokofiev_Symphony5": "20260330_095914",
 }
 
-OUTPUT_ROOT_TOP = Path("logs/repro_v12_recovery_final")
+DEFAULT_OUTPUT_ROOT_TOP = Path("logs/repro_v12_recovery_final")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--inventory-path", type=Path, default=DEFAULT_INVENTORY_PATH)
+    parser.add_argument("--run-root", type=Path, default=DEFAULT_RUN_ROOT)
+    parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT_TOP)
+    return parser
 
 
 def main():
-    if not INVENTORY_PATH.exists():
-        print(f"Error: {INVENTORY_PATH} not found.")
+    args = build_parser().parse_args()
+    inventory_path = args.inventory_path
+    run_root = args.run_root
+    output_root_top = args.output_root
+
+    if not inventory_path.exists():
+        print(f"Error: {inventory_path} not found.")
         return
 
-    inv_data = json.loads(INVENTORY_PATH.read_text())
+    inv_data = json.loads(inventory_path.read_text())
     records = inv_data.get("records", [])
 
     print(f"Found {len(records)} pages in inventory.")
 
-    output_root_top = OUTPUT_ROOT_TOP
     output_root_top.mkdir(parents=True, exist_ok=True)
 
     processed_count = 0
@@ -55,7 +68,7 @@ def main():
             print(f"Warning: No run mapping for {score_name}. Skipping.")
             continue
 
-        hybrid_sub_root = RUN_ROOT / SCORE_TO_RUN[score_name]
+        hybrid_sub_root = run_root / SCORE_TO_RUN[score_name]
 
         # Use robust path lookup
         baseline_json = (

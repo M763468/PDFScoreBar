@@ -7,6 +7,16 @@ ISSUE120_SCORE_THRESHOLD ?= 0.1
 ISSUE120_XDIST_THRESHOLD ?= 12.0
 ISSUE120_MEASURE_SUMMARY ?=
 ISSUE120_PROVENANCE_JSON ?=
+ISSUE120_CANDIDATES_DIR ?= data/evaluation2/golden_baseline_eval2_bc23deb
+ISSUE120_IMAGE_ROOT ?= data/evaluation2/images
+ISSUE120_MODEL_PATH ?= logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
+ISSUE120_BANDS_FROM ?=
+ISSUE120_STAGE_B_SCORING_DIR ?= logs/issue120_e2e_recovery/stage_b_candidate_scoring
+ISSUE120_STAGE_B_EVAL_DIR ?= logs/issue120_e2e_recovery/stage_b_candidate_scoring_eval
+ISSUE120_STAGE_B_SCORER ?= pipeline
+ISSUE120_CLEAN_OUTPUT ?= 0
+ISSUE120_DOCKER_IMAGE ?= pdfscore_pipeline_gpu
+ISSUE120_DOCKER_PYTHON ?= /opt/venv_pipeline/bin/python
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -97,6 +107,41 @@ eval-issue120-full: ## Evaluate Issue #120 canonical full-68 detector intermedia
 		--output-dir "$(ISSUE120_OUTPUT_DIR)" \
 		--results-dir "$(ISSUE120_RESULTS_DIR)" \
 		$$PROVENANCE_ARG
+
+verify-issue120-stage-b: ## Re-score Issue #120 candidates in Docker, then evaluate with the canonical full-68 evaluator
+	@CLEAN_ARG=""; \
+	BANDS_ARG=""; \
+	if [ "$(ISSUE120_CLEAN_OUTPUT)" = "1" ]; then CLEAN_ARG="--clean-output"; fi; \
+	if [ -n "$(ISSUE120_BANDS_FROM)" ]; then BANDS_ARG="--bands-from $(ISSUE120_BANDS_FROM)"; fi; \
+	docker run --rm --gpus all -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace $(ISSUE120_DOCKER_IMAGE) \
+		$(ISSUE120_DOCKER_PYTHON) tools/issue120/score_candidates_then_eval_full68.py \
+		--scorer "$(ISSUE120_STAGE_B_SCORER)" \
+		--candidates-dir "$(ISSUE120_CANDIDATES_DIR)" \
+		--image-root "$(ISSUE120_IMAGE_ROOT)" \
+		--gt-root "$(ISSUE120_GT_ROOT)" \
+		--model-path "$(ISSUE120_MODEL_PATH)" \
+		--scoring-output-dir "$(ISSUE120_STAGE_B_SCORING_DIR)" \
+		--eval-output-dir "$(ISSUE120_STAGE_B_EVAL_DIR)" \
+		--score-threshold "$(ISSUE120_SCORE_THRESHOLD)" \
+		--xdist-threshold "$(ISSUE120_XDIST_THRESHOLD)" \
+		$$BANDS_ARG $$CLEAN_ARG
+
+verify-issue120-stage-b-native: ## Re-score Issue #120 candidates using the current host Python environment
+	@CLEAN_ARG=""; \
+	BANDS_ARG=""; \
+	if [ "$(ISSUE120_CLEAN_OUTPUT)" = "1" ]; then CLEAN_ARG="--clean-output"; fi; \
+	if [ -n "$(ISSUE120_BANDS_FROM)" ]; then BANDS_ARG="--bands-from $(ISSUE120_BANDS_FROM)"; fi; \
+	PYTHONPATH=. python3 tools/issue120/score_candidates_then_eval_full68.py \
+		--scorer "$(ISSUE120_STAGE_B_SCORER)" \
+		--candidates-dir "$(ISSUE120_CANDIDATES_DIR)" \
+		--image-root "$(ISSUE120_IMAGE_ROOT)" \
+		--gt-root "$(ISSUE120_GT_ROOT)" \
+		--model-path "$(ISSUE120_MODEL_PATH)" \
+		--scoring-output-dir "$(ISSUE120_STAGE_B_SCORING_DIR)" \
+		--eval-output-dir "$(ISSUE120_STAGE_B_EVAL_DIR)" \
+		--score-threshold "$(ISSUE120_SCORE_THRESHOLD)" \
+		--xdist-threshold "$(ISSUE120_XDIST_THRESHOLD)" \
+		$$BANDS_ARG $$CLEAN_ARG
 
 repo-tree: ## Generate a repository directory overview
 	tree -L 3 -I "artifacts|logs|temp|datasets|.git|__pycache__|.venv*" > artifacts/repo_tree.txt

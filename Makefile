@@ -13,6 +13,7 @@ ISSUE120_MODEL_PATH ?= logs/cnn_barline_classification/issue44_iter7_final_rescu
 ISSUE120_BANDS_FROM ?=
 ISSUE120_STAGE_B_SCORING_DIR ?= logs/issue120_e2e_recovery/stage_b_candidate_scoring
 ISSUE120_STAGE_B_EVAL_DIR ?= logs/issue120_e2e_recovery/stage_b_candidate_scoring_eval
+ISSUE120_STAGE_B_SCORER ?= pipeline
 ISSUE120_CLEAN_OUTPUT ?= 0
 ISSUE120_DOCKER_IMAGE ?= pdfscore_pipeline_gpu
 ISSUE120_DOCKER_PYTHON ?= /opt/venv_pipeline/bin/python
@@ -114,6 +115,7 @@ verify-issue120-stage-b: ## Re-score Issue #120 candidates in Docker, then evalu
 	if [ -n "$(ISSUE120_BANDS_FROM)" ]; then BANDS_ARG="--bands-from $(ISSUE120_BANDS_FROM)"; fi; \
 	docker run --rm --gpus all -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace $(ISSUE120_DOCKER_IMAGE) \
 		$(ISSUE120_DOCKER_PYTHON) tools/issue120/score_candidates_then_eval_full68.py \
+		--scorer "$(ISSUE120_STAGE_B_SCORER)" \
 		--candidates-dir "$(ISSUE120_CANDIDATES_DIR)" \
 		--image-root "$(ISSUE120_IMAGE_ROOT)" \
 		--gt-root "$(ISSUE120_GT_ROOT)" \
@@ -130,6 +132,7 @@ verify-issue120-stage-b-native: ## Re-score Issue #120 candidates using the curr
 	if [ "$(ISSUE120_CLEAN_OUTPUT)" = "1" ]; then CLEAN_ARG="--clean-output"; fi; \
 	if [ -n "$(ISSUE120_BANDS_FROM)" ]; then BANDS_ARG="--bands-from $(ISSUE120_BANDS_FROM)"; fi; \
 	PYTHONPATH=. python3 tools/issue120/score_candidates_then_eval_full68.py \
+		--scorer "$(ISSUE120_STAGE_B_SCORER)" \
 		--candidates-dir "$(ISSUE120_CANDIDATES_DIR)" \
 		--image-root "$(ISSUE120_IMAGE_ROOT)" \
 		--gt-root "$(ISSUE120_GT_ROOT)" \

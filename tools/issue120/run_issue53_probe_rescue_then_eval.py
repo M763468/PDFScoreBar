@@ -23,7 +23,6 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from tools.issue120.compare_candidate_coverage import main as _unused_compare_main  # noqa: F401,E402
 from tools.issue120.eval_full68_from_intermediates import iter_manifest  # noqa: E402
 from src.pipeline.steps.probe_scan import run_probe_scan_batch  # noqa: E402
 

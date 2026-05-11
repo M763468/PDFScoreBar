@@ -175,6 +175,8 @@ class DetectorOrchestrator:
         if not cnn_model:
             raise ValueError("detection.cnn_model_path is required.")
 
+        cnn_apply_nms = bool(self.det_cfg.get("cnn_apply_nms", True))
+
         if not self.dry_run:
             effective_images, effective_sr_scale = self._get_effective_images_for_probe()
             effective_score_name = self._get_effective_score_name()
@@ -193,6 +195,7 @@ class DetectorOrchestrator:
                 input_image_scale=float(effective_sr_scale),
                 bands_from=self.hybrid_output_dir,
                 staff_vov_threshold=float(self.det_cfg.get("staff_vov_threshold", 0.5)),
+                apply_nms_enabled=cnn_apply_nms,
                 in_memory_images=self.in_memory_images,
             )
         cmd_score = [
@@ -203,6 +206,8 @@ class DetectorOrchestrator:
             str(self.probe_output_dir),
             "--threshold",
             str(self.det_cfg.get("cnn_threshold", 0.1)),
+            "--apply-nms",
+            str(cnn_apply_nms),
         ]
         return {"commands": [cmd_score]}
 

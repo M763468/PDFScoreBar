@@ -59,20 +59,24 @@ def write_json(path: Path, payload: Any) -> None:
 def validate_inputs(args: argparse.Namespace) -> list[str]:
     missing: list[str] = []
     required_paths = [
-        args.inventory_path,
-        args.run_root,
         args.model_path,
         args.image_root,
         args.gt_root,
     ]
+    if args.skip_regeneration:
+        required_paths.append(args.regenerated_candidates_dir)
+    else:
+        required_paths.extend([args.inventory_path, args.run_root])
+
     for path in required_paths:
         if not path.exists():
             missing.append(str(path))
 
-    for score_name, run_id in SCORE_TO_RUN.items():
-        run_dir = args.run_root / run_id
-        if not run_dir.exists():
-            missing.append(f"{run_dir}  # {score_name}")
+    if not args.skip_regeneration and args.run_root.exists():
+        for score_name, run_id in SCORE_TO_RUN.items():
+            run_dir = args.run_root / run_id
+            if not run_dir.exists():
+                missing.append(f"{run_dir}  # {score_name}")
 
     return missing
 
@@ -80,6 +84,21 @@ def validate_inputs(args: argparse.Namespace) -> list[str]:
 def run_command(cmd: list[str]) -> None:
     print("+ " + " ".join(str(part) for part in cmd), flush=True)
     subprocess.run(cmd, check=True)
+
+
+def run_regeneration(args: argparse.Namespace) -> None:
+    run_command(
+        [
+            sys.executable,
+            "tools/repro_accuracy/reproduce_clean_seed_v12.py",
+            "--inventory-path",
+            str(args.inventory_path),
+            "--run-root",
+            str(args.run_root),
+            "--output-root",
+            str(args.regen_output_dir),
+        ]
+    )
 
 
 def validate_candidate_coverage(args: argparse.Namespace) -> dict[str, Any]:
@@ -128,9 +147,9 @@ def validate_candidate_coverage(args: argparse.Namespace) -> dict[str, Any]:
 
 def assert_candidate_coverage(args: argparse.Namespace, report: dict[str, Any]) -> None:
     missing_count = len(report["missing_pages"])
-    present_pages = int(report["present_pages"])
-    total_candidates = int(report["total_candidates"])
-    expected_pages = int(report["expected_pages"])
+    present_pages = report["present_pages"]
+    total_candidates = report["total_candidates"]
+    expected_pages = report["expected_pages"]
 
     if missing_count:
         raise SystemExit(
@@ -246,6 +265,7 @@ def main() -> None:
         "model_path": str(args.model_path),
         "score_to_run": SCORE_TO_RUN,
         "missing": missing,
+        "skip_regeneration": args.skip_regeneration,
         "scorer": args.scorer,
         "pipeline_nms": args.pipeline_nms,
     }
@@ -265,7 +285,7 @@ def main() -> None:
     if not args.skip_regeneration:
         if args.regen_output_dir.exists() and not args.no_clean_regen_output:
             shutil.rmtree(args.regen_output_dir)
-        run_command([sys.executable, "tools/repro_accuracy/reproduce_clean_seed_v12.py"])
+        run_regeneration(args)
 
     if not args.regenerated_candidates_dir.exists():
         raise SystemExit(f"Regenerated candidates not found: {args.regenerated_candidates_dir}")

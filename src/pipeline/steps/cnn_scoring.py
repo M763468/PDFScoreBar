@@ -224,6 +224,7 @@ def _score_directory(
     crop_recenter_on_bbox_ink: bool = False,
     crop_recenter_max_shift_unit_ratio: float = 0.35,
     input_image_scale: float = 1.0,
+    apply_nms_enabled: bool = True,
     in_memory_images: Dict[str, Any] | None = None,
 ) -> bool:
     candidates_path = run_dir / "pipeline2_no_peak_candidates.json"
@@ -350,7 +351,8 @@ def _score_directory(
                 if id(item) not in kept_indices:
                     item["score"] = 0.0
 
-    apply_nms(candidate_objects_for_filter)
+    if apply_nms_enabled:
+        apply_nms(candidate_objects_for_filter)
 
     filtered_boxes = [
         item["bbox"] for item in candidate_objects_for_filter if item["score"] >= threshold
@@ -378,6 +380,7 @@ def run_cnn_scoring_batch(
     crop_recenter_max_shift_unit_ratio: float = 0.35,
     input_image_scale: float = 1.0,
     candidate_rescale_factor: Optional[float] = None,
+    apply_nms_enabled: bool = True,
     in_memory_images: Dict[str, Any] | None = None,
 ) -> int:
     """Run CNN scoring for all probe output dirs with one model load."""
@@ -407,6 +410,7 @@ def run_cnn_scoring_batch(
             crop_recenter_on_bbox_ink=crop_recenter_on_bbox_ink,
             crop_recenter_max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio,
             input_image_scale=input_image_scale,
+            apply_nms_enabled=apply_nms_enabled,
             in_memory_images=in_memory_images,
         ):
             processed += 1

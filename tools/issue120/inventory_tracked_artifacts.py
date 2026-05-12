@@ -41,6 +41,11 @@ CANONICAL_INTERMEDIATE_FILENAMES = {
     "pipeline2_no_peak_scored.json",
 }
 
+GENERATED_PATH_KEEPERS = {
+    "artifacts/.gitkeep",
+    "logs/README.md",
+}
+
 
 def git_ls_files(repo_root: Path) -> list[str]:
     try:
@@ -65,6 +70,13 @@ def classify_path(path: str) -> ClassifiedPath:
     p = Path(path)
     name = p.name
     suffix = p.suffix.lower()
+
+    if path in GENERATED_PATH_KEEPERS:
+        return ClassifiedPath(
+            path,
+            "generated_path_keeper",
+            "Tracked placeholder/documentation file that keeps or explains an otherwise ignored generated-output path.",
+        )
 
     if path.startswith("data/evaluation2/golden_baseline_eval2_bc23deb/"):
         if name in CANONICAL_INTERMEDIATE_FILENAMES:

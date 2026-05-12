@@ -1,0 +1,176 @@
+# Issue 120 Stage D Upstream Regeneration
+
+## Purpose
+
+Stage D verifies whether the slow upstream artifacts used by the Issue #120 detector reconstruction can be regenerated from the current repository and local evaluation2 inputs.
+
+The Stage C detector-level target is already known:
+
+```text
+#57 / Issue53 probe rescue candidate generation
+  -> current pipeline CNN scoring
+  -> cnn_apply_nms=false
+  -> #134 canonical full-68 evaluator
+  -> TP=3580 FP=0 FN=1
+```
+
+The unresolved Stage D question is whether this historical `bands_from` input can be regenerated or replaced by an equivalent current upstream artifact:
+
+```text
+logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+```
+
+## Scope boundary
+
+Stage D is an audit/regeneration issue. It should not change detector or scoring logic unless a small change is needed to expose reproducible commands or provenance.
+
+Detector metrics and downstream measure-count metrics must remain separate.
+
+## Current upstream path in the current pipeline
+
+The current full detection stack is:
+
+```text
+HybridDetector
+  -> baseline HOMR output
+  -> SR image generation
+  -> SR-side HOMR output
+  -> OMR-DLN on SR images
+  -> hybrid consensus
+  -> probe scan using hybrid output as bands_from
+  -> CNN scoring
+```
+
+Relevant source files:
+
+```text
+src/pipeline/detection/hybrid.py
+src/pipeline/detection/orchestrator.py
+src/pipeline/steps/probe_scan.py
+src/pipeline/steps/cnn_scoring.py
+```
+
+Important implementation detail:
+
+- Hybrid outputs are mostly keyed by page stem such as `page_001`.
+- The canonical Issue #120 68-page set contains repeated page stems across different scores.
+- Therefore Stage D regeneration should run score-by-score and then compose a score-aware `bands_from` directory.
+
+## Added helper
+
+Stage D adds:
+
+```text
+tools/issue120/run_stage_d_upstream_regen.py
+```
+
+This helper:
+
+1. runs the current `HybridDetector` score-by-score;
+2. writes generated upstream artifacts under ignored `logs/` paths;
+3. composes a score-aware `bands_from` candidate directory;
+4. writes a provenance file describing the regenerated upstream artifact.
+
+Default output root:
+
+```text
+logs/issue120_e2e_recovery/stage_d_upstream_regen
+```
+
+Composed `bands_from` directory:
+
+```text
+logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate
+```
+
+Provenance file:
+
+```text
+logs/issue120_e2e_recovery/stage_d_upstream_regen/stage_d_upstream_regen_provenance.json
+```
+
+## Local run commands
+
+Run a dry-run first:
+
+```bash
+PYTHONPATH=. python3 tools/issue120/run_stage_d_upstream_regen.py --dry-run
+```
+
+Run the full Stage D upstream regeneration in Docker/GPU:
+
+```bash
+docker run --rm --gpus all \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_gpu \
+  /opt/venv_pipeline/bin/python tools/issue120/run_stage_d_upstream_regen.py \
+    --clean-output
+```
+
+If the full run is too expensive, run one score first:
+
+```bash
+docker run --rm --gpus all \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_gpu \
+  /opt/venv_pipeline/bin/python tools/issue120/run_stage_d_upstream_regen.py \
+    --clean-output \
+    --scores Shostakovich-Festival_Overture_Va
+```
+
+## Stage C verifier against regenerated upstream artifacts
+
+After Stage D upstream regeneration completes, run Stage C using the regenerated `bands_from` directory:
+
+```bash
+docker run --rm --gpus all \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_gpu \
+  /opt/venv_pipeline/bin/python tools/issue120/run_issue53_probe_rescue_then_eval.py \
+    --bands-from logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate \
+    --output-root logs/issue120_e2e_recovery/stage_d_from_current_upstream_candidates \
+    --scoring-output-dir logs/issue120_e2e_recovery/stage_d_from_current_upstream_scoring \
+    --eval-output-dir logs/issue120_e2e_recovery/stage_d_from_current_upstream_eval
+```
+
+Expected detector target if Stage D passes:
+
+```text
+TP=3580 FP=0 FN=1
+```
+
+## Reporting checklist
+
+Record the following in the PR or issue comment:
+
+```text
+Stage D upstream regeneration command
+Stage D provenance path
+Composed pages / missing pages
+Stage C verifier command
+Candidate coverage summary
+Detector: GT / Pred / TP / FP / FN / FN_det / FN_cnn
+cnn_apply_nms setting
+Any missing upstream component or failed page
+```
+
+If the detector target is not preserved, Stage D can still close as an audit if it documents the failure boundary and opens follow-up issues.
+
+## Outputs and Git policy
+
+Do not commit generated outputs from Stage D.
+
+Keep generated artifacts under ignored `logs/` paths, especially:
+
+```text
+logs/issue120_e2e_recovery/stage_d_upstream_regen/
+logs/issue120_e2e_recovery/stage_d_from_current_upstream_candidates/
+logs/issue120_e2e_recovery/stage_d_from_current_upstream_scoring/
+logs/issue120_e2e_recovery/stage_d_from_current_upstream_eval/
+```

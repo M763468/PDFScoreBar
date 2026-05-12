@@ -17,6 +17,12 @@ ISSUE120_STAGE_B_SCORER ?= pipeline
 ISSUE120_CLEAN_OUTPUT ?= 0
 ISSUE120_DOCKER_IMAGE ?= pdfscore_pipeline_gpu
 ISSUE120_DOCKER_PYTHON ?= /opt/venv_pipeline/bin/python
+ISSUE120_STAGE_D_OUTPUT_ROOT ?= logs/issue120_e2e_recovery/stage_d_upstream_regen
+ISSUE120_STAGE_D_SCORES ?=
+ISSUE120_STAGE_D_BANDS_FROM ?= $(ISSUE120_STAGE_D_OUTPUT_ROOT)/bands_from_candidate
+ISSUE120_STAGE_D_CANDIDATES_DIR ?= logs/issue120_e2e_recovery/stage_d_from_current_upstream_candidates
+ISSUE120_STAGE_D_SCORING_DIR ?= logs/issue120_e2e_recovery/stage_d_from_current_upstream_scoring
+ISSUE120_STAGE_D_EVAL_DIR ?= logs/issue120_e2e_recovery/stage_d_from_current_upstream_eval
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -142,6 +148,25 @@ verify-issue120-stage-b-native: ## Re-score Issue #120 candidates using the curr
 		--score-threshold "$(ISSUE120_SCORE_THRESHOLD)" \
 		--xdist-threshold "$(ISSUE120_XDIST_THRESHOLD)" \
 		$$BANDS_ARG $$CLEAN_ARG
+
+regen-issue120-stage-d-upstream: ## Regenerate Issue #120 Stage-D upstream artifacts in Docker/GPU
+	@CLEAN_ARG=""; \
+	SCORES_ARG=""; \
+	if [ "$(ISSUE120_CLEAN_OUTPUT)" = "1" ]; then CLEAN_ARG="--clean-output"; fi; \
+	if [ -n "$(ISSUE120_STAGE_D_SCORES)" ]; then SCORES_ARG="--scores $(ISSUE120_STAGE_D_SCORES)"; fi; \
+	docker run --rm --gpus all -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace $(ISSUE120_DOCKER_IMAGE) \
+		$(ISSUE120_DOCKER_PYTHON) tools/issue120/run_stage_d_upstream_regen.py \
+		--image-root "$(ISSUE120_IMAGE_ROOT)" \
+		--output-root "$(ISSUE120_STAGE_D_OUTPUT_ROOT)" \
+		$$CLEAN_ARG $$SCORES_ARG
+
+verify-issue120-stage-d: ## Run Stage-C verifier against regenerated Stage-D upstream artifacts
+	docker run --rm --gpus all -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace $(ISSUE120_DOCKER_IMAGE) \
+		$(ISSUE120_DOCKER_PYTHON) tools/issue120/run_issue53_probe_rescue_then_eval.py \
+		--bands-from "$(ISSUE120_STAGE_D_BANDS_FROM)" \
+		--output-root "$(ISSUE120_STAGE_D_CANDIDATES_DIR)" \
+		--scoring-output-dir "$(ISSUE120_STAGE_D_SCORING_DIR)" \
+		--eval-output-dir "$(ISSUE120_STAGE_D_EVAL_DIR)"
 
 repo-tree: ## Generate a repository directory overview
 	tree -L 3 -I "artifacts|logs|temp|datasets|.git|__pycache__|.venv*" > artifacts/repo_tree.txt

@@ -72,5 +72,22 @@ temp/
 pipeline_output.log
 configs/tmp_*.yaml
 
+# Issue #120 generated evaluation outputs
+logs/issue120_e2e_recovery/
+logs/issue53_full_eval_rescue_v1/
+logs/repro_v12_recovery_final/
+logs/cnn_barline_classification/
+logs/hybrid_generalization/
+logs/issue36_prep/
+configs/tmp_issue120_*.yaml
+configs/issue120_generated_*.yaml
+data/evaluation2/**/global_summary.csv
+data/evaluation2/**/detector_metrics.json
+data/evaluation2/**/detector_page_metrics.csv
+data/evaluation2/**/evaluation_contract.json
+data/evaluation2/**/intermediate_provenance.json
+data/evaluation2/**/manifest.json
+data/evaluation2/**/missing_pages.json
+
 # AI Agent artifacts
 artifacts/

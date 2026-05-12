@@ -2,74 +2,109 @@
 
 ## Purpose
 
-Issue #120 is being restarted as an audit-first recovery effort. The immediate goal is not to add more accuracy logic, but to make the repository operable again: define the trusted branch model, freeze experimental branches, establish one canonical evaluation entrypoint, clean generated artifacts from Git, and only then resume accuracy work under reproducible gates.
+Issue #120 is being handled as an audit-first recovery effort. The goal is to keep the repository operable while rebuilding the evidence chain for the historical detector result.
 
-## Current Problem
+The restart work separates:
 
-Issue #120 originally targeted a clean rebuild from `90a278c` and restoration of the detector-level golden result `TP=3580 / FP=0 / FN=1`. The implementation history then diverged into multiple branches, generated artifacts, handoff documents, temporary reports, and partial evaluations.
+- branch and document governance;
+- canonical detector evaluation;
+- historical-best audit;
+- generated-artifact cleanup;
+- slow upstream regeneration;
+- downstream/full-pipeline validation;
+- targeted accuracy repair.
 
-The main failure mode is now operational rather than purely algorithmic:
-
-- multiple documents claim incompatible metrics;
-- partial 3-page, 57-page, and full 68-page results are mixed;
-- generated JSON/CSV/PNG outputs are tracked alongside source code;
-- `fix/probe_seeds` contains later experimental work that is useful as evidence but not safe as a direct merge source;
-- `rebuild/issue120` has merged PRs #127-#132 and is the current Issue #120 integration branch, but its claims still need canonical reproduction.
-
-## Branch Model
+## Current branch model
 
 ### Active audit/integration target
 
-- Branch: `rebuild/issue120`
-- Role: current Issue #120 integration branch built by PRs #127-#132.
-- Policy: use as the base for restart/audit/cleanup work. Do not merge it to `main` until the restart issues are complete.
+```text
+rebuild/issue120
+```
 
-### Restart-plan branch
-
-- Branch: `audit/issue120-restart-plan`
-- Base: `rebuild/issue120`
-- PR base: `rebuild/issue120`
-- Scope: documentation and issue/branch audit only.
+Use this branch as the base for Issue #120 restart, audit, cleanup, and repair work. Do not merge it to `main` until the restart issues are complete.
 
 ### Frozen experimental branch
 
-- Branch: `fix/probe_seeds`
-- Role: experimental/handoff branch containing later investigations, reports, and candidate fixes.
-- Policy: do not merge wholesale. Cherry-pick or manually port only after evidence is reproduced through the canonical evaluation command.
+```text
+fix/probe_seeds
+```
+
+Treat this branch as evidence. Do not merge it wholesale. Port only narrow changes after they pass the canonical full-68 gates.
 
 ### Default branch
 
-- Branch: `main`
-- Role: current public default branch.
-- Policy: not the immediate target for restart work. Any eventual merge to `main` must happen only after `rebuild/issue120` is audited, cleaned, and validated.
+```text
+main
+```
 
-## Issue Plan
+Do not use `main` as the immediate base for restart work. Any eventual merge to `main` must happen only after `rebuild/issue120` is audited, cleaned, and validated.
 
-### #133: Canonical status document and branch/issue audit
+## Current completed foundation
 
-Base: `rebuild/issue120`  
-Branch: `audit/issue120-restart-plan`  
-PR base: `rebuild/issue120`
+### #133: restart plan
 
-Purpose:
+Status: completed.
 
-- Add this restart plan.
-- Audit #120, #121-#124, and PRs #127-#132.
-- Decide how to handle still-open #124.
-- Classify existing documents as canonical, historical, or suspect.
+Result:
 
-### #134: Canonical full-68 evaluation entrypoint and metrics contract
+- `rebuild/issue120` is the audit/integration target.
+- `fix/probe_seeds` is frozen as an evidence branch.
+- Issue #120 remains the parent Epic.
+- Restart work is split into staged issues.
 
-Base: `rebuild/issue120`  
-Branch: `task/issue120-canonical-eval`  
-PR base: `rebuild/issue120`
+### #134: canonical full-68 detector-intermediate evaluator
 
-Purpose:
+Status: completed.
 
-- Add or fix one command, preferably `make eval-issue120-full`.
-- Ensure it always uses the full 68-page manifest.
-- Emit both detector metrics and downstream measure-count metrics.
-- Prevent partial 3-page or 57-page results from being presented as canonical full results.
+Canonical command:
+
+```bash
+make eval-issue120-full
+```
+
+Scope:
+
+- evaluates saved detector intermediates;
+- validates the canonical 68-page manifest;
+- emits normalized detector metrics under ignored `logs/` output paths;
+- does not run the full pipeline.
+
+Verified saved-intermediate detector result:
+
+```text
+TP=3580 / FP=0 / FN=1
+```
+
+### #136 / PR #143: historical best audit and clean detector target
+
+Status: completed.
+
+PR:
+
+```text
+#143 docs/tools: audit Issue 120 historical best and reconstruction path
+merge commit: 0c0eaafcb9dda3c3d48be2db6cea41c603187f0a
+```
+
+Current clean detector-level reconstruction target:
+
+```text
+#57 / Issue53 probe rescue candidate generation
+  -> current pipeline CNN scoring
+  -> cnn_apply_nms=false
+  -> #134 canonical full-68 evaluator
+  -> TP=3580 FP=0 FN=1
+```
+
+Boundary:
+
+- This is detector-level reconstruction.
+- It is not full slow-upstream pipeline reproduction.
+- Downstream measure-count metrics remain separate.
+- Stage D still needs to verify the historical upstream `bands_from` dependency.
+
+## Open issue plan
 
 ### #135: Generated artifact cleanup and retention policy
 
@@ -79,23 +114,55 @@ PR base: `rebuild/issue120`
 
 Purpose:
 
-- Inventory generated outputs tracked by Issue #120 work.
-- Remove or relocate generated JSON/CSV/PNG/log artifacts from Git unless they are explicitly justified fixtures.
-- Preserve reproducibility through scripts, manifests, and ignored output paths.
+- inventory tracked generated outputs;
+- remove generated summaries and temporary outputs from Git when they are not required inputs;
+- define what remains as source, evaluation input, retained fixture, generated artifact, or external/local artifact;
+- preserve canonical detector reconstruction until Stage D/E produce a replacement artifact strategy.
 
-### #136: Historical best accuracy verification and clean transplant target
+### #140: Stage D upstream artifact regeneration
 
 Base: `rebuild/issue120`  
-Branch: `audit/issue120-best-accuracy`  
+Branch: `audit/issue120-stage-d-upstream-regen`  
 PR base: `rebuild/issue120`
 
 Purpose:
 
-- Determine whether `TP=3580 / FP=0 / FN=1` is reproducible from current source, inputs, and commands.
-- Tie every claimed best result to a commit/ref, config, command, input set, and output artifact.
-- Decide the clean target for future transplant/repair work.
+Verify whether the slow upstream artifacts can regenerate a `bands_from`-like artifact that feeds the Stage C Issue53 probe-rescue path.
 
-### #137: Accuracy repair after audit
+Primary unresolved dependency:
+
+```text
+logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+```
+
+### #142: CNN scoring NMS repair/tuning
+
+Base: `rebuild/issue120`  
+Branch: `fix/issue120-cnn-nms-policy`  
+PR base: `rebuild/issue120`
+
+Purpose:
+
+Decide whether the current NMS should be kept, tuned, made conditional, or disabled only for explicit Issue #120 reconstruction modes.
+
+Current policy:
+
+```text
+general pipeline default: cnn_apply_nms=true
+Issue120 reconstruction: cnn_apply_nms=false, explicitly recorded
+```
+
+### #141: Stage E full 68-page pipeline validation
+
+Base: `rebuild/issue120`  
+Branch: `audit/issue120-stage-e-full-pipeline`  
+PR base: `rebuild/issue120`
+
+Purpose:
+
+Run or document full 68-page pipeline validation after Stage D clarifies upstream artifact regeneration.
+
+### #137: Targeted accuracy repair
 
 Base: `rebuild/issue120`  
 Branch: `fix/issue120-accuracy-after-audit`  
@@ -103,104 +170,109 @@ PR base: `rebuild/issue120`
 
 Purpose:
 
-- Resume actual accuracy work only after #134-#136 are done.
-- Reassess staff VOV filtering, active X-alignment rescue, double-bar fixes, and related logic under canonical full-68 gates.
+Resume targeted accuracy work only after the canonical detector target, artifact policy, and NMS policy are clear.
 
-## Existing Issue Alignment
+## Artifact retention policy
 
-### #120
-
-Keep open as the parent Epic. Its current body should be treated as historical intent, not the current operational plan. Link this restart plan and issues #133-#137 from a comment or body update.
-
-### #121, #122, #123
-
-These are already closed as completed. Keep them closed. They are historical phase issues corresponding to merged PRs #127-#132.
-
-### #124
-
-Currently open. Do not complete as-is. It assumes final documentation and branch merge are the next step, but the current state requires audit and cleanup first.
-
-Recommended handling:
-
-- After #133 is merged, either update #124 to depend on #134-#136, or close #124 as superseded by #133-#137 and open a later finalization issue once the restart work is complete.
-
-### #117, #44, #46, #48
-
-Treat as evidence sources for historical accuracy claims and evaluation philosophy. Do not use their document claims as truth unless reproduced by #134/#136.
-
-## Document Classification Policy
-
-Use three classes.
-
-### Canonical
-
-Documents that describe the current source of truth.
-
-Initial canonical document:
-
-- `docs/ISSUE120_RESTART_PLAN.md`
-
-Future canonical documents may include:
-
-- `docs/ISSUE120_EVALUATION_CONTRACT.md`
-- `docs/ISSUE120_CURRENT_STATUS.md`
-
-### Historical
-
-Documents that record useful past investigation but are not current truth.
-
-Examples:
-
-- old handoff reports;
-- phase reports from #121-#123;
-- Issue #44/#46/#48 analysis logs;
-- `fix/probe_seeds` reports after they are referenced from the canonical audit.
-
-### Suspect
-
-Documents with unsupported or conflicting claims.
-
-Examples:
-
-- reports claiming full results without a reproducible command;
-- partial 3-page or 57-page results presented near full-68 claims;
-- documents whose config values do not match the actual checked-in config.
-
-Suspect documents should not necessarily be deleted immediately. First mark or move them under an archive path, then remove only after their useful facts are captured elsewhere.
-
-## Artifact Retention Policy
-
-### Keep in Git
-
-- Source code under `src/`, `tools/`, and tests.
-- Small config templates under `configs/`.
-- Reproducibility scripts.
-- Documentation that describes canonical or historical processes.
-- Tiny fixtures needed by tests, if explicitly documented.
-
-### Do not keep in Git
-
-- Full run logs.
-- Generated JSON/CSV outputs from full evaluations.
-- Crop images, overlay images, contact sheets.
-- Temporary score-specific generated configs.
-- Manual review CSVs unless they are small, stable, and explicitly treated as source annotations.
-
-### Store outside Git or regenerate
-
-- Full-68 evaluation outputs.
-- Visual review artifacts.
-- Large golden baseline output trees.
-
-Preferred path for generated outputs:
+The detailed #135 policy is now maintained in:
 
 ```text
-logs/issue120_e2e_recovery/latest_full_report/
+docs/ISSUE120_ARTIFACT_RETENTION.md
 ```
 
-This path must remain ignored.
+Use these classes.
 
-## Evaluation Policy
+### Source
+
+Keep in Git.
+
+Examples:
+
+- `src/**`
+- `tools/**`
+- `tests/**`
+- `docs/**`
+- stable config templates under `configs/**`
+
+### Source evaluation input
+
+Keep in Git while the repository depends on local evaluation2 inputs.
+
+Examples:
+
+- `data/evaluation2/images/**/page_*.png`
+- `data/evaluation2/annotations/**/boxes_sorted.json`
+
+### Retained Issue #120 detector-intermediate fixture
+
+Temporarily keep in Git until Stage D/E provide a regenerated or external artifact replacement:
+
+```text
+data/evaluation2/golden_baseline_eval2_bc23deb/
+```
+
+Retained per-page evidence:
+
+```text
+pipeline2_no_peak_candidates.json
+pipeline2_no_peak_filtered_cnn.json
+pipeline2_no_peak_scored.json
+```
+
+Retained metadata:
+
+```text
+eval_config.yaml
+```
+
+This fixture is not full-pipeline evidence. It supports the Stage A/B detector-level audit only.
+
+### Generated artifact
+
+Do not keep in Git.
+
+Examples:
+
+- `logs/**`
+- `artifacts/**`
+- `output/**`
+- `debug_outputs/**`
+- temporary generated configs;
+- generated evaluation summaries such as `global_summary.csv`, `detector_metrics.json`, `detector_page_metrics.csv`, `evaluation_contract.json`, `intermediate_provenance.json`, `manifest.json`, and `missing_pages.json`;
+- crops, overlays, contact sheets, and manual visual-review PNGs outside canonical input data.
+
+Generated outputs should be written under ignored `logs/` paths.
+
+### Historical external/local artifact
+
+Do not commit. Record provenance and local paths.
+
+Known examples:
+
+```text
+logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
+logs/issue53_full_eval_rescue_v1
+logs/repro_v12_recovery_final
+logs/hybrid_generalization/verify_fixed_v10
+logs/issue36_prep/20260208_bench_inventory.json
+```
+
+## Artifact inventory command
+
+Run:
+
+```bash
+PYTHONPATH=. python3 tools/issue120/inventory_tracked_artifacts.py --format markdown
+```
+
+Machine-readable output:
+
+```bash
+PYTHONPATH=. python3 tools/issue120/inventory_tracked_artifacts.py --format json
+```
+
+## Evaluation policy
 
 A result is canonical only if all of the following are recorded:
 
@@ -212,8 +284,9 @@ A result is canonical only if all of the following are recorded:
 - GT root;
 - output path;
 - detector metrics;
-- downstream measure-count metrics;
-- whether the run was full 68 pages or partial.
+- downstream measure-count metrics, when available;
+- whether the run was full 68 pages or partial;
+- `cnn_apply_nms` when CNN scoring is involved.
 
 Detector metrics and measure-count metrics must be reported separately.
 
@@ -238,9 +311,9 @@ Required downstream measure-count metrics:
 - measure precision
 - measure recall
 
-## Accuracy Work Guardrails
+## Accuracy work guardrails
 
-Do not resume accuracy changes until #134 and #136 establish a reproducible baseline and target.
+Do not resume broad accuracy changes until artifact policy and NMS policy are clear.
 
 When accuracy work resumes:
 
@@ -252,20 +325,24 @@ When accuracy work resumes:
 - do not accept a change that improves a local page subset but worsens the chosen canonical gate;
 - explicitly separate detector-level improvement from measure-count improvement.
 
-## Immediate Order of Operations
+## Recommended order from here
 
-1. Merge #133 after reviewing this restart plan.
-2. Resolve #124 status: update as blocked by restart work, or close as superseded.
-3. Implement #134 to fix the canonical full-68 evaluation command.
-4. Implement #135 to clean generated artifacts from Git.
-5. Implement #136 to verify the historical best and define the clean target.
-6. Only then implement #137 for accuracy repairs.
+```text
+1. Finish #135 cleanup/retention policy.
+2. Work #140 to verify or bound slow upstream artifact regeneration.
+3. Work #142 to decide NMS behavior before broad accuracy repair.
+4. Work #141 full 68-page pipeline validation after #140 boundary is known.
+5. Work #137 targeted accuracy repair using canonical gates.
+```
 
-## Current Decision
+## Current decision
 
-Until #134 and #136 are complete, no metric claim from prior documents should be treated as authoritative. The working assumption is:
+Until changed by a later audited issue:
 
-- `rebuild/issue120` is the integration branch to audit.
-- `fix/probe_seeds` is a frozen evidence branch.
-- `TP=3580 / FP=0 / FN=1` is a historical target, not yet the active canonical truth for future merges.
-- generated artifacts should be removed from Git unless explicitly retained as small fixtures.
+```text
+detector target: TP=3580 / FP=0 / FN=1
+Issue120 reconstruction CNN setting: cnn_apply_nms=false
+general pipeline CNN setting: cnn_apply_nms=true
+```
+
+This detector target is not a downstream measure-count target and is not yet full-pipeline reproduction.

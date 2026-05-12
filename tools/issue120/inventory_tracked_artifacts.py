@@ -174,6 +174,10 @@ def summarize(items: Iterable[ClassifiedPath], *, example_limit: int) -> dict[st
     return summary
 
 
+def markdown_table_cell(value: str) -> str:
+    return value.replace("|", "\\|").replace("\n", " ")
+
+
 def render_markdown(summary: dict[str, dict[str, object]]) -> str:
     lines = [
         "# Issue 120 tracked artifact inventory",
@@ -182,8 +186,8 @@ def render_markdown(summary: dict[str, dict[str, object]]) -> str:
         "| --- | ---: | --- | --- |",
     ]
     for classification, payload in summary.items():
-        examples = "<br>".join(str(path) for path in payload["examples"])
-        reason = str(payload["primary_reason"]).replace("|", "\\|")
+        examples = "<br>".join(markdown_table_cell(path) for path in payload["examples"])
+        reason = markdown_table_cell(payload["primary_reason"])
         lines.append(f"| `{classification}` | {payload['count']} | {reason} | {examples} |")
     lines.append("")
     lines.append("Generated artifacts should be removed from Git or moved under ignored `logs/` paths.")

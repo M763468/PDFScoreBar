@@ -32,10 +32,14 @@ from src.pipeline.detection.hybrid import HybridDetector  # noqa: E402
 from tools.issue120.eval_full68_from_intermediates import SCORES  # noqa: E402
 
 
+SOURCE_NAMES = ("hybrid", "baseline", "sr", "omr_sr")
+
+
 @dataclass(frozen=True)
 class PageComposition:
     score: str
     page: str
+    source_name: str | None
     source_path: str | None
     output_dir: str
     status: str
@@ -60,6 +64,8 @@ def load_json_boxes(path: Path) -> list[Any] | None:
         return None
     with path.open("r", encoding="utf-8") as f:
         payload = json.load(f)
+    if isinstance(payload, dict) and isinstance(payload.get("predictions"), list):
+        return payload["predictions"]
     if not isinstance(payload, list):
         return None
     return payload
@@ -119,6 +125,15 @@ def run_hybrid_for_score(
             status="dry_run",
         )
 
+    if args.compose_only:
+        return ScoreRun(
+            score=score,
+            run_id=run_id,
+            hybrid_output_dir=str(hybrid_output_dir),
+            image_count=len(images),
+            status="compose_only",
+        )
+
     detector = HybridDetector(
         det_cfg=build_det_cfg(args, hybrid_output_root),
         images=images,
@@ -137,28 +152,42 @@ def run_hybrid_for_score(
     )
 
 
+def source_path_for(run_dir: Path, source_name: str, page: str) -> Path:
+    source_paths = {
+        "hybrid": run_dir / "hybrid_results" / f"{page}_hybrid.json",
+        "baseline": run_dir / "baseline" / "batch" / page / f"{page}_detections.json",
+        "sr": run_dir / "sr" / "batch" / page / f"{page}_detections.json",
+        "omr_sr": run_dir / "omr_sr" / page / "predictions.json",
+    }
+    return source_paths[source_name]
+
+
+def ordered_sources(compose_source: str) -> list[str]:
+    if compose_source == "first_available":
+        return ["hybrid", "baseline", "sr", "omr_sr"]
+    return [compose_source]
+
+
 def compose_bands_for_score(
     *,
     score: str,
     run_id: str,
     hybrid_output_root: Path,
     bands_output_dir: Path,
+    compose_source: str,
 ) -> list[PageComposition]:
     run_dir = hybrid_output_root / run_id
     rows: list[PageComposition] = []
     for page in SCORES[score]:
-        source_candidates = [
-            run_dir / "hybrid_results" / f"{page}_hybrid.json",
-            run_dir / "baseline" / "batch" / page / f"{page}_detections.json",
-            run_dir / "sr" / "batch" / page / f"{page}_detections.json",
-            run_dir / "omr_sr" / page / "predictions.json",
-        ]
         payload: list[Any] | None = None
         source_path: Path | None = None
-        for candidate in source_candidates:
+        source_name: str | None = None
+        for candidate_source_name in ordered_sources(compose_source):
+            candidate = source_path_for(run_dir, candidate_source_name, page)
             payload = load_json_boxes(candidate)
             if payload is not None:
                 source_path = candidate
+                source_name = candidate_source_name
                 break
 
         output_dir = bands_output_dir / score / page
@@ -167,6 +196,7 @@ def compose_bands_for_score(
                 PageComposition(
                     score=score,
                     page=page,
+                    source_name=None,
                     source_path=None,
                     output_dir=str(output_dir),
                     status="missing_source",
@@ -184,6 +214,7 @@ def compose_bands_for_score(
             PageComposition(
                 score=score,
                 page=page,
+                source_name=source_name,
                 source_path=str(source_path),
                 output_dir=str(output_dir),
                 status="composed",
@@ -204,6 +235,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
     hybrid_output_root = args.output_root / "hybrid_runs"
     bands_output_dir = args.output_root / "bands_from_candidate"
+    if args.compose_source != "hybrid":
+        bands_output_dir = args.output_root / f"bands_from_candidate_{args.compose_source}"
     hybrid_output_root.mkdir(parents=True, exist_ok=True)
     bands_output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -224,17 +257,23 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                     run_id=score_run.run_id,
                     hybrid_output_root=hybrid_output_root,
                     bands_output_dir=bands_output_dir,
+                    compose_source=args.compose_source,
                 )
             )
 
     composed_pages = sum(1 for row in compositions if row.status == "composed")
     missing_pages = sum(1 for row in compositions if row.status != "composed")
+    by_source: dict[str, int] = {}
+    for row in compositions:
+        if row.source_name:
+            by_source[row.source_name] = by_source.get(row.source_name, 0) + 1
     payload = {
         "schema_version": "issue120.stage_d_upstream_regen.v1",
         "mode": "stage_d_upstream_hybrid_regeneration",
         "output_root": str(args.output_root),
         "hybrid_output_root": str(hybrid_output_root),
         "bands_output_dir": str(bands_output_dir),
+        "compose_source": args.compose_source,
         "scores": scores,
         "score_runs": [asdict(item) for item in score_runs],
         "compositions": [asdict(item) for item in compositions],
@@ -244,9 +283,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "missing_pages": missing_pages,
             "disable_sr": args.disable_sr,
             "sr_scale": args.sr_scale,
+            "by_source": by_source,
         },
     }
-    write_json(args.output_root / "stage_d_upstream_regen_provenance.json", payload)
+    provenance_name = "stage_d_upstream_regen_provenance.json"
+    if args.compose_source != "hybrid":
+        provenance_name = f"stage_d_upstream_regen_provenance_{args.compose_source}.json"
+    write_json(args.output_root / provenance_name, payload)
     return payload
 
 
@@ -260,6 +303,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--run-id-prefix", default="issue120_stage_d_upstream_regen")
     parser.add_argument("--scores", nargs="*", help="Optional subset of score names to process.")
+    parser.add_argument("--compose-source", choices=["first_available", *SOURCE_NAMES], default="hybrid")
+    parser.add_argument(
+        "--compose-only",
+        action="store_true",
+        help="Do not rerun HOMR/SR/OMR; only rebuild bands_from_candidate from existing upstream outputs.",
+    )
     parser.add_argument("--sr-scale", type=int, default=2)
     parser.add_argument("--sr-tile", type=int, default=-1)
     parser.add_argument("--sr-tile-pad", type=int, default=10)
@@ -282,11 +331,13 @@ def main() -> None:
     summary = payload["summary"]
     print("Issue #120 Stage-D upstream regeneration")
     print(f"Scores: {', '.join(payload['scores'])}")
+    print(f"Compose source: {payload['compose_source']}")
     print(f"Expected pages: {summary['expected_pages']}")
     print(f"Composed pages: {summary['composed_pages']}")
     print(f"Missing pages: {summary['missing_pages']}")
+    print(f"By source: {summary.get('by_source', {})}")
     print(f"Bands output: {payload['bands_output_dir']}")
-    print(f"Wrote: {args.output_root / 'stage_d_upstream_regen_provenance.json'}")
+    print(f"Wrote: {args.output_root}")
 
 
 if __name__ == "__main__":

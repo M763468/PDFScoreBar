@@ -59,16 +59,47 @@ def slugify(value: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", value)
 
 
-def load_json_boxes(path: Path) -> list[Any] | None:
+def normalize_box(item: Any) -> list[int] | None:
+    box = item
+    if isinstance(item, dict):
+        if isinstance(item.get("barline_location"), list):
+            box = item["barline_location"]
+        elif isinstance(item.get("orig_bbox"), list):
+            box = item["orig_bbox"]
+        elif isinstance(item.get("bbox"), list):
+            box = item["bbox"]
+        else:
+            return None
+    if not isinstance(box, list) or len(box) < 4:
+        return None
+    try:
+        return [int(round(float(v))) for v in box[:4]]
+    except (TypeError, ValueError):
+        return None
+
+
+def boxes_from_payload(payload: Any) -> list[list[int]]:
+    if isinstance(payload, dict) and isinstance(payload.get("predictions"), list):
+        source = payload["predictions"]
+    elif isinstance(payload, list):
+        source = payload
+    else:
+        return []
+
+    boxes: list[list[int]] = []
+    for item in source:
+        box = normalize_box(item)
+        if box is not None:
+            boxes.append(box)
+    return boxes
+
+
+def load_json_boxes(path: Path) -> list[list[int]] | None:
     if not path.exists():
         return None
     with path.open("r", encoding="utf-8") as f:
         payload = json.load(f)
-    if isinstance(payload, dict) and isinstance(payload.get("predictions"), list):
-        return payload["predictions"]
-    if not isinstance(payload, list):
-        return None
-    return payload
+    return boxes_from_payload(payload)
 
 
 def write_json(path: Path, payload: Any) -> None:
@@ -117,22 +148,10 @@ def run_hybrid_for_score(
     images = score_images(args.image_root, score)
 
     if args.dry_run:
-        return ScoreRun(
-            score=score,
-            run_id=run_id,
-            hybrid_output_dir=str(hybrid_output_dir),
-            image_count=len(images),
-            status="dry_run",
-        )
+        return ScoreRun(score, run_id, str(hybrid_output_dir), len(images), "dry_run")
 
     if args.compose_only:
-        return ScoreRun(
-            score=score,
-            run_id=run_id,
-            hybrid_output_dir=str(hybrid_output_dir),
-            image_count=len(images),
-            status="compose_only",
-        )
+        return ScoreRun(score, run_id, str(hybrid_output_dir), len(images), "compose_only")
 
     detector = HybridDetector(
         det_cfg=build_det_cfg(args, hybrid_output_root),
@@ -143,13 +162,7 @@ def run_hybrid_for_score(
         skip_existing=args.skip_existing,
     )
     detector.run()
-    return ScoreRun(
-        score=score,
-        run_id=run_id,
-        hybrid_output_dir=str(hybrid_output_dir),
-        image_count=len(images),
-        status="completed",
-    )
+    return ScoreRun(score, run_id, str(hybrid_output_dir), len(images), "completed")
 
 
 def source_path_for(run_dir: Path, source_name: str, page: str) -> Path:
@@ -179,7 +192,7 @@ def compose_bands_for_score(
     run_dir = hybrid_output_root / run_id
     rows: list[PageComposition] = []
     for page in SCORES[score]:
-        payload: list[Any] | None = None
+        payload: list[list[int]] | None = None
         source_path: Path | None = None
         source_name: str | None = None
         for candidate_source_name in ordered_sources(compose_source):
@@ -192,33 +205,20 @@ def compose_bands_for_score(
 
         output_dir = bands_output_dir / score / page
         if payload is None or source_path is None:
-            rows.append(
-                PageComposition(
-                    score=score,
-                    page=page,
-                    source_name=None,
-                    source_path=None,
-                    output_dir=str(output_dir),
-                    status="missing_source",
-                    box_count=None,
-                )
-            )
+            rows.append(PageComposition(score, page, None, None, str(output_dir), "missing_source", None))
             continue
 
-        # The Stage-C loader accepts either candidates or scored filenames and
-        # only needs boxes for staff-band reconstruction.  Write both aliases so
-        # the composed directory is robust to loader preference order.
         write_json(output_dir / "pipeline2_no_peak_candidates.json", payload)
         write_json(output_dir / "pipeline2_no_peak_scored.json", payload)
         rows.append(
             PageComposition(
-                score=score,
-                page=page,
-                source_name=source_name,
-                source_path=str(source_path),
-                output_dir=str(output_dir),
-                status="composed",
-                box_count=len(payload),
+                score,
+                page,
+                source_name,
+                str(source_path),
+                str(output_dir),
+                "composed",
+                len(payload),
             )
         )
     return rows

@@ -146,7 +146,7 @@ So the Stage D drift is unlikely to be caused by those Stage C probe settings al
 
 ## Current Stage D result against regenerated current upstream
 
-A local run using the current upstream regeneration wrapper produced:
+A local run using the current upstream regeneration wrapper and default `hybrid` composition produced:
 
 ```text
 Pages: 68/68
@@ -207,7 +207,101 @@ Interpretation:
 
 - The current Stage-D composed tree is not simply a noisy version of `scoring_input_eval2_v12`; it is a substantially different source/granularity.
 - The current `hybrid_results` source is likely too sparse for use as the Stage-C `bands_from` replacement.
-- The next test should compose `bands_from_candidate` from individual upstream sources (`baseline`, `sr`, `omr_sr`) without rerunning HOMR/SR/OMR.
+
+## Compose-source diagnostics
+
+Current upstream outputs were recomposed source-by-source without rerunning HOMR/SR/OMR:
+
+```text
+baseline: composed=68 missing=0 by_source={'baseline': 68}
+sr:       composed=68 missing=0 by_source={'sr': 68}
+omr_sr:   composed=68 missing=0 by_source={'omr_sr': 68}
+```
+
+Largest count-loss examples vs historical `scoring_input_eval2_v12`:
+
+```text
+baseline:
+  Shostakovich-Sym5-Va page_020: 618 -> 66 ratio=0.107
+  Sibelius-Violin_Concerto-Viola page_006: 675 -> 89 ratio=0.132
+  Shostakovich-Sym5-Va page_019: 381 -> 60 ratio=0.157
+
+sr:
+  Shostakovich-Sym5-Va page_020: 618 -> 31 ratio=0.050
+  Sibelius-Violin_Concerto-Viola page_006: 675 -> 53 ratio=0.079
+  Shostakovich-Sym5-Va page_019: 381 -> 35 ratio=0.092
+
+omr_sr:
+  Shostakovich-Festival_Overture_Va page_002: 139 -> 0 ratio=0.000
+  Shostakovich-Festival_Overture_Va page_005: 236 -> 2 ratio=0.008
+  Shostakovich-Festival_Overture_Va page_009: 171 -> 4 ratio=0.023
+```
+
+Interpretation:
+
+- `baseline` is the only source-specific candidate worth evaluating directly.
+- `sr` remains too sparse.
+- `omr_sr` has empty/nearly empty pages and is not a viable direct replacement.
+
+## Baseline-source Stage C verifier
+
+The first baseline-source verifier run produced zero candidates because the composed files used source schemas that the Stage-C `bands_from` loader did not consume.
+
+This was fixed by normalizing composed boxes to plain `[x1, y1, x2, y2]` lists before writing `pipeline2_no_peak_candidates.json` and `pipeline2_no_peak_scored.json`.
+
+After normalization, baseline-source Stage C produced usable candidates:
+
+```text
+Candidate coverage comparison
+Pages: 68
+Baseline candidates: 29443
+Compared candidates: 21415
+Ratio: 0.7273375675033115
+Empty compared pages: 0
+```
+
+Detector result:
+
+```text
+GT=3581 Pred=3907 TP=3543 FP=288 FN=38 FN_det=19 FN_cnn=19 Precision=0.924824 Recall=0.989388
+```
+
+Comparison to hybrid-source:
+
+```text
+hybrid-source current upstream:
+  Pred=3769 TP=3527 FP=183 FN=54 FN_det=37 FN_cnn=17 Precision=0.950674 Recall=0.984920
+
+baseline-source current upstream:
+  Pred=3907 TP=3543 FP=288 FN=38 FN_det=19 FN_cnn=19 Precision=0.924824 Recall=0.989388
+```
+
+Interpretation:
+
+- Baseline source improves recall and reduces detector-side misses relative to hybrid-source composition.
+- Baseline source substantially increases false positives.
+- It still does not reproduce the target `TP=3580 FP=0 FN=1`.
+- The boundary is now upstream semantic/geometry mismatch plus scoring/filtering drift, not an unreadable source tree.
+
+Worst detector-side FN pages in the baseline-source run:
+
+```text
+Va__Prokofiev_Symphony5 page_021: FP=9 FN=5 FN_det=5 ratio=0.932
+Va__Prokofiev_Symphony5 page_022: FP=9 FN=3 FN_det=3 ratio=0.829
+Sibelius-Violin_Concerto-Viola page_004: FP=3 FN=3 FN_det=1 FN_cnn=2 ratio=0.820
+Va_Prokofiev_Symphony1 page_004: FP=1 FN=3 FN_det=1 FN_cnn=2 ratio=0.618
+Shostakovich-Sym5-Va page_013: FP=8 FN=2 FN_det=1 FN_cnn=1 ratio=0.724
+```
+
+Worst FP pages remain concentrated in `Va__Prokofiev_Symphony5`:
+
+```text
+Va__Prokofiev_Symphony5 page_009: FP=14 FN=1
+Va__Prokofiev_Symphony5 page_018: FP=11 FN=0
+Va__Prokofiev_Symphony5 page_005: FP=10 FN=1
+Va__Prokofiev_Symphony5 page_008: FP=10 FN=0
+Va__Prokofiev_Symphony5 page_011: FP=10 FN=0
+```
 
 ## Important current tooling caveat
 
@@ -216,52 +310,6 @@ Interpretation:
 That deleted `candidate_coverage_comparison.json` from the shared eval output directory before Stage D drift summarization could read it.
 
 This was fixed by running candidate coverage comparison after evaluation unless `--coverage-only` is used.
-
-After this fix, rerun:
-
-```bash
-make verify-issue120-stage-d
-make summarize-issue120-stage-d
-```
-
-No HOMR/SR/OMR upstream regeneration rerun is needed for this diagnostic rerun if `stage_d_upstream_regen/bands_from_candidate` already exists.
-
-## Compose-source diagnostic
-
-`tools/issue120/run_stage_d_upstream_regen.py` supports recomposing `bands_from_candidate` from existing upstream outputs without rerunning HOMR/SR/OMR:
-
-```bash
-PYTHONPATH=. python3 tools/issue120/run_stage_d_upstream_regen.py \
-  --compose-only \
-  --compose-source baseline
-
-PYTHONPATH=. python3 tools/issue120/run_stage_d_upstream_regen.py \
-  --compose-only \
-  --compose-source sr
-
-PYTHONPATH=. python3 tools/issue120/run_stage_d_upstream_regen.py \
-  --compose-only \
-  --compose-source omr_sr
-```
-
-This writes separate directories:
-
-```text
-logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_baseline
-logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_sr
-logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_omr_sr
-```
-
-Compare each against the historical local artifact if available:
-
-```bash
-PYTHONPATH=. python3 tools/issue120/compare_box_tree_stats.py \
-  --left logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 \
-  --right logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_baseline \
-  --output-dir logs/issue120_e2e_recovery/stage_d_box_tree_stats_historical_vs_baseline
-```
-
-Repeat for `bands_from_candidate_sr` and `bands_from_candidate_omr_sr`.
 
 ## Remaining unknown
 
@@ -274,18 +322,18 @@ Open questions:
 3. Did it include score-specific postprocessing for `Va__Prokofiev_Symphony5`?
 4. Did it contain plain candidates, scored outputs, filtered CNN outputs, or row-stat-friendly boxes with geometry different from current hybrid consensus?
 
-## Next investigation steps
+## Current Stage D conclusion
 
-1. Recompose current upstream outputs by source without rerunning HOMR/SR/OMR:
+Current upstream components can regenerate a structurally complete 68-page artifact, but none of the tested compositions reproduce the historical detector target.
 
-```bash
-PYTHONPATH=. python3 tools/issue120/run_stage_d_upstream_regen.py --compose-only --compose-source baseline
-PYTHONPATH=. python3 tools/issue120/run_stage_d_upstream_regen.py --compose-only --compose-source sr
-PYTHONPATH=. python3 tools/issue120/run_stage_d_upstream_regen.py --compose-only --compose-source omr_sr
+```text
+Target: TP=3580 FP=0 FN=1
+Best current Stage D composition tested: baseline source
+Observed: TP=3543 FP=288 FN=38
 ```
 
-2. Compare each source-composed tree against `scoring_input_eval2_v12`.
+This is sufficient to document the Stage D failure boundary:
 
-3. Pick the closest source by count and geometry, then run Stage C verifier against that source-specific `bands_from_candidate_*` directory.
-
-4. If none is close, Stage D should document that the historical artifact cannot be regenerated from current upstream components without additional source-recovery or algorithm repair.
+- historical `scoring_input_eval2_v12` remains a non-reproduced local artifact;
+- current `hybrid`, `baseline`, `sr`, and `omr_sr` source compositions are not equivalent replacements;
+- further progress requires either historical source recovery or a separate upstream/geometry repair issue.

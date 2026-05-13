@@ -204,11 +204,15 @@ def main() -> None:
         processed = run_probe_regeneration(args)
         print(f"Issue53-style probe regeneration processed pages: {processed}")
 
-    run_candidate_comparison(args)
     if args.coverage_only:
+        run_candidate_comparison(args)
         return
 
+    # `run_stage_b_eval` uses --clean-output and recreates eval_output_dir.
+    # Write candidate coverage after evaluation so the diagnostic artifact is
+    # not deleted before downstream Stage-D drift summaries read it.
     run_stage_b_eval(args)
+    run_candidate_comparison(args)
     print(f"Issue53-style Stage-C evaluation complete: {args.eval_output_dir}")
 
 

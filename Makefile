@@ -23,6 +23,7 @@ ISSUE120_STAGE_D_BANDS_FROM ?= $(ISSUE120_STAGE_D_OUTPUT_ROOT)/bands_from_candid
 ISSUE120_STAGE_D_CANDIDATES_DIR ?= logs/issue120_e2e_recovery/stage_d_from_current_upstream_candidates
 ISSUE120_STAGE_D_SCORING_DIR ?= logs/issue120_e2e_recovery/stage_d_from_current_upstream_scoring
 ISSUE120_STAGE_D_EVAL_DIR ?= logs/issue120_e2e_recovery/stage_d_from_current_upstream_eval
+ISSUE120_STAGE_D_DRIFT_SUMMARY ?= $(ISSUE120_STAGE_D_EVAL_DIR)/stage_d_drift_summary.md
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -167,6 +168,12 @@ verify-issue120-stage-d: ## Run Stage-C verifier against regenerated Stage-D ups
 		--output-root "$(ISSUE120_STAGE_D_CANDIDATES_DIR)" \
 		--scoring-output-dir "$(ISSUE120_STAGE_D_SCORING_DIR)" \
 		--eval-output-dir "$(ISSUE120_STAGE_D_EVAL_DIR)"
+
+summarize-issue120-stage-d: ## Summarize local Stage-D detector drift from ignored logs
+	PYTHONPATH=. python3 tools/issue120/summarize_stage_d_drift.py \
+		--eval-dir "$(ISSUE120_STAGE_D_EVAL_DIR)" \
+		--upstream-dir "$(ISSUE120_STAGE_D_OUTPUT_ROOT)" \
+		--output-md "$(ISSUE120_STAGE_D_DRIFT_SUMMARY)"
 
 repo-tree: ## Generate a repository directory overview
 	tree -L 3 -I "artifacts|logs|temp|datasets|.git|__pycache__|.venv*" > artifacts/repo_tree.txt

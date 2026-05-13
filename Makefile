@@ -24,6 +24,9 @@ ISSUE120_STAGE_D_CANDIDATES_DIR ?= logs/issue120_e2e_recovery/stage_d_from_curre
 ISSUE120_STAGE_D_SCORING_DIR ?= logs/issue120_e2e_recovery/stage_d_from_current_upstream_scoring
 ISSUE120_STAGE_D_EVAL_DIR ?= logs/issue120_e2e_recovery/stage_d_from_current_upstream_eval
 ISSUE120_STAGE_D_DRIFT_SUMMARY ?= $(ISSUE120_STAGE_D_EVAL_DIR)/stage_d_drift_summary.md
+ISSUE120_STAGE_D_BOX_STATS_DIR ?= logs/issue120_e2e_recovery/stage_d_box_tree_stats
+ISSUE120_STAGE_D_BOX_STATS_LEFT ?= data/evaluation2/golden_baseline_eval2_bc23deb
+ISSUE120_STAGE_D_BOX_STATS_RIGHT ?= $(ISSUE120_STAGE_D_BANDS_FROM)
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -174,6 +177,12 @@ summarize-issue120-stage-d: ## Summarize local Stage-D detector drift from ignor
 		--eval-dir "$(ISSUE120_STAGE_D_EVAL_DIR)" \
 		--upstream-dir "$(ISSUE120_STAGE_D_OUTPUT_ROOT)" \
 		--output-md "$(ISSUE120_STAGE_D_DRIFT_SUMMARY)"
+
+compare-issue120-stage-d-boxes: ## Compare Golden Baseline fixture vs regenerated Stage-D bands box statistics
+	PYTHONPATH=. python3 tools/issue120/compare_box_tree_stats.py \
+		--left "$(ISSUE120_STAGE_D_BOX_STATS_LEFT)" \
+		--right "$(ISSUE120_STAGE_D_BOX_STATS_RIGHT)" \
+		--output-dir "$(ISSUE120_STAGE_D_BOX_STATS_DIR)"
 
 repo-tree: ## Generate a repository directory overview
 	tree -L 3 -I "artifacts|logs|temp|datasets|.git|__pycache__|.venv*" > artifacts/repo_tree.txt

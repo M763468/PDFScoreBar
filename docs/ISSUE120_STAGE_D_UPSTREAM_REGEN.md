@@ -56,20 +56,23 @@ Important implementation detail:
 - The canonical Issue #120 68-page set contains repeated page stems across different scores.
 - Therefore Stage D regeneration should run score-by-score and then compose a score-aware `bands_from` directory.
 
-## Added helper
+## Added helpers
 
 Stage D adds:
 
 ```text
 tools/issue120/run_stage_d_upstream_regen.py
+tools/issue120/summarize_stage_d_drift.py
 ```
 
-This helper:
+`run_stage_d_upstream_regen.py`:
 
 1. runs the current `HybridDetector` score-by-score;
 2. writes generated upstream artifacts under ignored `logs/` paths;
 3. composes a score-aware `bands_from` candidate directory;
 4. writes a provenance file describing the regenerated upstream artifact.
+
+`summarize_stage_d_drift.py` reads generated local logs after a Stage D run and prints a page-level drift summary. It does not rerun HOMR/SR/OMR, probe scan, CNN scoring, or evaluation.
 
 Default output root:
 
@@ -109,6 +112,12 @@ docker run --rm --gpus all \
     --clean-output
 ```
 
+Equivalent Make target:
+
+```bash
+make regen-issue120-stage-d-upstream ISSUE120_CLEAN_OUTPUT=1
+```
+
 If the full run is too expensive, run one score first:
 
 ```bash
@@ -120,6 +129,14 @@ docker run --rm --gpus all \
   /opt/venv_pipeline/bin/python tools/issue120/run_stage_d_upstream_regen.py \
     --clean-output \
     --scores Shostakovich-Festival_Overture_Va
+```
+
+Equivalent Make target:
+
+```bash
+make regen-issue120-stage-d-upstream \
+  ISSUE120_CLEAN_OUTPUT=1 \
+  ISSUE120_STAGE_D_SCORES=Shostakovich-Festival_Overture_Va
 ```
 
 ## Stage C verifier against regenerated upstream artifacts
@@ -139,11 +156,59 @@ docker run --rm --gpus all \
     --eval-output-dir logs/issue120_e2e_recovery/stage_d_from_current_upstream_eval
 ```
 
+Equivalent Make target:
+
+```bash
+make verify-issue120-stage-d
+```
+
 Expected detector target if Stage D passes:
 
 ```text
 TP=3580 FP=0 FN=1
 ```
+
+## Current local result
+
+A local Stage D run using regenerated current upstream artifacts did **not** preserve the detector target:
+
+```text
+Pages: 68/68
+Detector: GT=3581 Pred=3769 TP=3527 FP=183 FN=54 FN_det=37 FN_cnn=17 Precision=0.950674 Recall=0.984920
+```
+
+Interpretation:
+
+- Stage D currently fails against the selected detector target.
+- `FN_det=37` indicates candidate-generation or upstream-band coverage loss before CNN scoring.
+- `FN_cnn=17` indicates additional scoring/filtering loss after candidate generation.
+- `FP=183` indicates candidate geometry/coverage drift or over-generation, not only missing detections.
+
+This confirms that the current regenerated upstream path is not equivalent to the historical `bands_from` artifact.
+
+## Drift summary command
+
+After a failed Stage D run, summarize page-level drift with:
+
+```bash
+make summarize-issue120-stage-d
+```
+
+Direct command:
+
+```bash
+PYTHONPATH=. python3 tools/issue120/summarize_stage_d_drift.py \
+  --eval-dir logs/issue120_e2e_recovery/stage_d_from_current_upstream_eval \
+  --upstream-dir logs/issue120_e2e_recovery/stage_d_upstream_regen
+```
+
+The summary is written under ignored logs by default:
+
+```text
+logs/issue120_e2e_recovery/stage_d_from_current_upstream_eval/stage_d_drift_summary.md
+```
+
+Use this output to identify whether the largest deltas cluster in upstream composition, candidate coverage, detector-side misses, CNN-side misses, or false positives.
 
 ## Reporting checklist
 
@@ -157,6 +222,7 @@ Stage C verifier command
 Candidate coverage summary
 Detector: GT / Pred / TP / FP / FN / FN_det / FN_cnn
 cnn_apply_nms setting
+Worst pages by FN_det / FP / candidate coverage
 Any missing upstream component or failed page
 ```
 

@@ -180,6 +180,35 @@ Interpretation:
 - `FP=183` indicates geometry/coverage drift or over-generation.
 - The concentration in Prokofiev Symphony 5 suggests a score-specific upstream artifact mismatch, not a uniform scorer-only regression.
 
+## Box-tree statistics from local comparison
+
+Two local comparisons were run:
+
+```text
+Golden Baseline fixture -> current Stage-D bands_from_candidate
+historical scoring_input_eval2_v12 -> current Stage-D bands_from_candidate
+```
+
+Both comparisons show that the current composed `bands_from_candidate` is much sparser than the historical/local artifacts.
+
+Examples from `scoring_input_eval2_v12` vs current Stage-D:
+
+```text
+Shostakovich-Sym5-Va page_020: 618 -> 30 ratio=0.049
+Sibelius-Violin_Concerto-Viola page_006: 675 -> 44 ratio=0.065
+Shostakovich-Sym5-Va page_018: 459 -> 35 ratio=0.076
+Shostakovich-Sym5-Va page_019: 381 -> 30 ratio=0.079
+Va__Prokofiev_Symphony5 page_003: 461 -> 65 ratio=0.141
+```
+
+The largest width shifts also show a repeated `+5 px` pattern for Shostakovich Festival and Sibelius pages, while several Prokofiev 5 pages show `-3 px` width deltas and height shifts of about 3-5 px.
+
+Interpretation:
+
+- The current Stage-D composed tree is not simply a noisy version of `scoring_input_eval2_v12`; it is a substantially different source/granularity.
+- The current `hybrid_results` source is likely too sparse for use as the Stage-C `bands_from` replacement.
+- The next test should compose `bands_from_candidate` from individual upstream sources (`baseline`, `sr`, `omr_sr`) without rerunning HOMR/SR/OMR.
+
 ## Important current tooling caveat
 
 `run_issue53_probe_rescue_then_eval.py` originally wrote candidate-coverage comparison output before invoking `score_candidates_then_eval_full68.py` with `--clean-output`.
@@ -197,6 +226,43 @@ make summarize-issue120-stage-d
 
 No HOMR/SR/OMR upstream regeneration rerun is needed for this diagnostic rerun if `stage_d_upstream_regen/bands_from_candidate` already exists.
 
+## Compose-source diagnostic
+
+`tools/issue120/run_stage_d_upstream_regen.py` supports recomposing `bands_from_candidate` from existing upstream outputs without rerunning HOMR/SR/OMR:
+
+```bash
+PYTHONPATH=. python3 tools/issue120/run_stage_d_upstream_regen.py \
+  --compose-only \
+  --compose-source baseline
+
+PYTHONPATH=. python3 tools/issue120/run_stage_d_upstream_regen.py \
+  --compose-only \
+  --compose-source sr
+
+PYTHONPATH=. python3 tools/issue120/run_stage_d_upstream_regen.py \
+  --compose-only \
+  --compose-source omr_sr
+```
+
+This writes separate directories:
+
+```text
+logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_baseline
+logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_sr
+logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_omr_sr
+```
+
+Compare each against the historical local artifact if available:
+
+```bash
+PYTHONPATH=. python3 tools/issue120/compare_box_tree_stats.py \
+  --left logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 \
+  --right logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_baseline \
+  --output-dir logs/issue120_e2e_recovery/stage_d_box_tree_stats_historical_vs_baseline
+```
+
+Repeat for `bands_from_candidate_sr` and `bands_from_candidate_omr_sr`.
+
 ## Remaining unknown
 
 Git history confirms how `scoring_input_eval2_v12` was consumed by the successful historical rescue path, but not how it was generated.
@@ -210,28 +276,16 @@ Open questions:
 
 ## Next investigation steps
 
-1. Rerun only the Stage D verifier and summarizer after the coverage-preservation fix:
+1. Recompose current upstream outputs by source without rerunning HOMR/SR/OMR:
 
 ```bash
-make verify-issue120-stage-d
-make summarize-issue120-stage-d
+PYTHONPATH=. python3 tools/issue120/run_stage_d_upstream_regen.py --compose-only --compose-source baseline
+PYTHONPATH=. python3 tools/issue120/run_stage_d_upstream_regen.py --compose-only --compose-source sr
+PYTHONPATH=. python3 tools/issue120/run_stage_d_upstream_regen.py --compose-only --compose-source omr_sr
 ```
 
-2. Compare historical vs regenerated `bands_from` for failing pages if the historical local artifact exists:
+2. Compare each source-composed tree against `scoring_input_eval2_v12`.
 
-```text
-logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12/Va__Prokofiev_Symphony5/page_005
-logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate/Va__Prokofiev_Symphony5/page_005
-```
+3. Pick the closest source by count and geometry, then run Stage C verifier against that source-specific `bands_from_candidate_*` directory.
 
-3. For `Va__Prokofiev_Symphony5`, compare source components inside current Stage D output:
-
-```text
-baseline/batch/<page>/<page>_detections.json
-sr/batch/<page>/<page>_detections.json
-omr_sr/<page>/predictions.json
-hybrid_results/<page>_hybrid.json
-bands_from_candidate/<score>/<page>/pipeline2_no_peak_candidates.json
-```
-
-4. If historical `scoring_input_eval2_v12` is available locally, add a page-level box statistics diff tool rather than committing any generated artifacts.
+4. If none is close, Stage D should document that the historical artifact cannot be regenerated from current upstream components without additional source-recovery or algorithm repair.

@@ -28,7 +28,6 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.pipeline.detection.hybrid import HybridDetector  # noqa: E402
 from tools.issue120.eval_full68_from_intermediates import SCORES  # noqa: E402
 
 
@@ -145,13 +144,19 @@ def run_hybrid_for_score(
 ) -> ScoreRun:
     run_id = f"{args.run_id_prefix}_{slugify(score)}"
     hybrid_output_dir = hybrid_output_root / run_id
-    images = score_images(args.image_root, score)
+    expected_image_count = len(SCORES[score])
 
     if args.dry_run:
-        return ScoreRun(score, run_id, str(hybrid_output_dir), len(images), "dry_run")
+        return ScoreRun(score, run_id, str(hybrid_output_dir), expected_image_count, "dry_run")
 
     if args.compose_only:
-        return ScoreRun(score, run_id, str(hybrid_output_dir), len(images), "compose_only")
+        return ScoreRun(score, run_id, str(hybrid_output_dir), expected_image_count, "compose_only")
+
+    images = score_images(args.image_root, score)
+
+    # Import lazily so dry-run and compose-only remain lightweight and do not
+    # require full GPU/HOMR/OpenCV dependencies in the host Python environment.
+    from src.pipeline.detection.hybrid import HybridDetector  # noqa: PLC0415
 
     detector = HybridDetector(
         det_cfg=build_det_cfg(args, hybrid_output_root),
@@ -225,6 +230,12 @@ def compose_bands_for_score(
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
+    if args.compose_only and args.clean_output:
+        raise SystemExit(
+            "--compose-only cannot be combined with --clean-output because clean-output "
+            "would delete the existing hybrid_runs artifacts needed for composition."
+        )
+
     scores = args.scores or sorted(SCORES.keys())
     unknown_scores = sorted(set(scores) - set(SCORES.keys()))
     if unknown_scores:

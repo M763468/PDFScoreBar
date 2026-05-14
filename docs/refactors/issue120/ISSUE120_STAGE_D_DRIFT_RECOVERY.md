@@ -22,6 +22,46 @@ This issue does not change detector, scoring, NMS, HOMR, SR, OMR, or full-pipeli
 
 Detector-level metrics and downstream measure-count metrics must remain separate.
 
+## Historical code finding
+
+PR #57 / Issue #53 used `scoring_input_eval2_v12` as the `bands_from` input for probe-rescue candidate generation, then used the same root as CNN scoring input in Issue #44 scoring configs.
+
+Historical PR #57 experiment path:
+
+```text
+experiments/issue53_probe_rescue/evaluate_full_rescue_v1.py
+```
+
+Key historical flow:
+
+```text
+bands_from = logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+  -> run_probe_scan_batch(..., bands_from=bands_from, max_per_band=100, gap rescue enabled)
+  -> logs/issue53_full_eval_rescue_v1
+  -> CNN scoring
+  -> global evaluation
+```
+
+The Issue #44 scoring config also identifies the same path as a CNN scoring input root:
+
+```yaml
+logs: logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+candidate_filename: pipeline2_no_peak_candidates.json
+scored_filename: pipeline2_no_peak_scored.json
+filtered_filename: pipeline2_no_peak_filtered_cnn.json
+```
+
+Current Stage D compose does something narrower:
+
+```text
+current HOMR/SR/OMR/hybrid output file
+  -> extract normalized boxes only
+  -> write the same list to pipeline2_no_peak_candidates.json
+  -> write the same list to pipeline2_no_peak_scored.json
+```
+
+This is probably not the same artifact family as historical `scoring_input_eval2_v12` if that historical root contains dense probe/CNN candidate inputs. The current regenerated roots look like sparse upstream detector bars, not dense probe-rescue candidate seeds.
+
 ## Working hypothesis
 
 The Stage D gap may come from one or more of these boundaries:
@@ -30,7 +70,8 @@ The Stage D gap may come from one or more of these boundaries:
 2. regenerated upstream HOMR/SR/OMR geometry drift;
 3. source-composition differences among `baseline`, `sr`, `omr_sr`, `hybrid`, or `first_available`;
 4. schema normalization differences when composing a score-aware `bands_from` tree;
-5. probe-rescue assumptions that were valid for the historical artifact but not for regenerated upstream outputs.
+5. probe-rescue assumptions that were valid for the historical artifact but not for regenerated upstream outputs;
+6. file-family mismatch: historical `scoring_input_eval2_v12` may be a dense candidate/probe-scoring input root, while current Stage D regenerated roots are sparse detector-output roots.
 
 The first step is to determine whether the local historical artifact is present and has the same page/file layout shape as regenerated Stage D artifacts.
 
@@ -179,13 +220,14 @@ Shostakovich-Sym5-Va/page_007:           367 -> 40 (ratio 0.109)
 - Baseline and OMR-SR generally retain more candidates than hybrid/SR/first-available on some worst pages, but still remain far below historical counts.
 - The drift is therefore inside regenerated upstream content or composition/schema normalization, not artifact layout completeness.
 - Large center shifts suggest coordinate frame, page/score source mapping, geometry normalization, or schema normalization drift rather than a pure CNN/NMS issue.
+- Historical code and configs indicate `scoring_input_eval2_v12` is a probe/CNN candidate input root, while current Stage D regenerated roots are built by copying sparse upstream detector outputs into candidate filenames.
 
 Next diagnostic priority:
 
-1. inspect `run_stage_d_upstream_regen.py` composition and schema normalization code;
+1. inspect payload schema and item keys for historical vs regenerated roots;
 2. confirm whether historical `scoring_input_eval2_v12` contains pre-filtered dense proposals while current regenerated trees contain post-filtered sparse bars;
-3. compare per-page file keys / payload schema between historical and regenerated roots, not only box counts;
-4. identify whether the count collapse occurs before composition, during composition, or because the wrong upstream file family is being selected;
+3. identify whether the count collapse occurs before composition, during composition, or because the wrong upstream file family is being selected;
+4. inspect `run_stage_d_upstream_regen.py` composition/schema normalization and the upstream HOMR/SR/OMR coordinate frame;
 5. only after that, route a targeted repair issue if the boundary points to coordinate conversion, source selection, or upstream generation.
 
 ## Lightweight local inspector
@@ -215,6 +257,38 @@ logs/issue120_e2e_recovery/stage_d_artifact_layout/stage_d_artifact_layout.md
 ```
 
 These are generated diagnostics and must not be committed.
+
+## Payload schema inspector
+
+Use the payload-schema inspector to determine whether roots are the same artifact family:
+
+```bash
+PYTHONPATH=. python3 tools/issue120/inspect_stage_d_payload_schema.py \
+  --root historical=logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 \
+  --root baseline=logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_baseline \
+  --root hybrid=logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate \
+  --root omr_sr=logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_omr_sr \
+  --output-dir logs/issue120_e2e_recovery/stage_d_payload_schema
+```
+
+Report:
+
+```text
+resolved / missing per root
+median item count per root
+top-level payload type and keys
+item keys
+box field counts
+score-key count
+median width / height
+```
+
+Interpretation:
+
+- list payloads with no `score` keys are candidate/box-like, not CNN-scored evidence;
+- dict items containing `bbox` and `score` are scored candidate evidence;
+- different item keys or box fields suggest file-family/schema mismatch before geometry analysis;
+- similar schema with very different counts suggests generation-density drift.
 
 ## Recommended local workflow
 
@@ -423,6 +497,11 @@ Geometry summary:
   largest count loss:
   largest median-height deltas:
   largest median-width deltas:
+Schema summary:
+  top-level type / keys:
+  item keys:
+  score-key count:
+  box field counts:
 Detector summary:
   GT / Pred / TP / FP / FN / FN_det / FN_cnn:
   cnn_apply_nms:

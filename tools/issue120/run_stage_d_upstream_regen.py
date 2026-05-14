@@ -301,6 +301,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     if args.compose_source != "hybrid":
         provenance_name = f"stage_d_upstream_regen_provenance_{args.compose_source}.json"
     write_json(args.output_root / provenance_name, payload)
+
+    if not args.dry_run and composed_pages == 0:
+        raise SystemExit(
+            "Stage-D composition produced zero usable pages. "
+            f"Check --output-root, --compose-source, and existing hybrid_runs under {hybrid_output_root}."
+        )
     return payload
 
 

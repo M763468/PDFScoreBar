@@ -59,6 +59,75 @@ tools/verification/issue36_gt_prep/render_candidate_filter_overlay.py
 
 The documented canonical run in that commit points to `probe_candidates_filtered_v4`, not v12. This means v12 was likely produced by later local iterations or later untracked/local-log runs, and local file metadata matters.
 
+The local mtime-window git log contains these relevant later anchors:
+
+```text
+edf7bf6 GT seeds: switch probe generation default to row_stats (v9)
+d54382e GT seeds: adopt v13 workflow and document manual-finish policy
+ce9595f gt_relabel_gui: resume from output_raw and add reset-to-initial
+```
+
+## Local provenance findings
+
+### Candidate-root mtimes
+
+Local file mtimes show that both roots were materialized over the same narrow window:
+
+```text
+logs/issue36_prep/probe_candidates_filtered_v12
+  files=68
+  min_mtime=2026-02-12T01:43:38
+  max_mtime=2026-02-12T01:44:03
+
+logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+  files=68
+  min_mtime=2026-02-12T01:43:38
+  max_mtime=2026-02-12T01:44:03
+```
+
+This makes a direct copy/sync from the Issue #36 v12 filtered root into the Issue #44 scoring input root more likely than independent generation.
+
+### Metadata mtimes
+
+The v12 metadata aligns with the candidate-root mtime window:
+
+```text
+2026-02-12 01:43:30 logs/issue36_prep/20260211_probe_generation_summary_v12.json
+2026-02-12 01:43:38..01:44:03 logs/issue36_prep/filter_suggestions_v12/**
+2026-02-12 01:44:03 logs/issue36_prep/20260211_filter_apply_summary_v12.json
+2026-02-12 01:44:32 logs/issue36_prep/20260211_v10b_v11_v12_comparison.md
+```
+
+This confirms that v12 was part of an iterative local Issue #36 seed-preparation sequence, not the initial 2026-02-08 v4 run.
+
+### Current checkout grep
+
+The current checkout still contains references to the v12 root in Issue #44 CNN configs and docs:
+
+```text
+configs/cnn_barline_runs/issue44_baseline_v1/dataset_build.yaml
+configs/cnn_barline_runs/issue44_baseline_v1/score_candidates_batch_splitwide_v1.yaml
+configs/cnn_barline_runs/issue44_baseline_v1/score_candidates_batch_splitwide_recenter_v1.yaml
+configs/cnn_barline_runs/issue44_baseline_v1/score_candidates_batch_splitwide_recenter_merge_v1.yaml
+tools/cnn_classifier/README_issue44_retrain_eval2.md
+```
+
+This supports the interpretation that the v12 Issue #36 filtered root was later consumed by the Issue #44 CNN scoring/training workflow.
+
+## Updated interpretation
+
+The exact Stage-D historical root is now best described as:
+
+```text
+Issue #36 iterative local GT-seed workflow
+  -> probe_candidates_filtered_v12
+  -> copied/synced into issue44_baseline_v1/scoring_input_eval2_v12
+  -> consumed by Issue #44 CNN scoring/training configs
+  -> later used as Issue #53/#57 probe-rescue bands_from
+```
+
+The current `tools/repro_accuracy/reproduce_clean_seed_v12.py` is not yet proven to be the original producer. It may be a later reconstruction helper that encodes some v12 assumptions, but the local mtime evidence points to the Issue #36 GT-preparation scripts and local summary/suggestion files as the primary provenance source.
+
 ## Local provenance commands
 
 Run these locally and keep outputs under ignored `logs/` paths.
@@ -142,19 +211,53 @@ git rev-list --all | while read sha; do
 done | tee logs/issue120_e2e_recovery/stage_d_provenance/git_all_refs_v12_grep.txt
 ```
 
+## Next required local inspection
+
+Because v12 summary and suggestion files are present at the exact generation time, inspect their contents before proposing code changes.
+
+```bash
+python3 - <<'PY' | tee logs/issue120_e2e_recovery/stage_d_provenance/v12_summary_rules.txt
+import json
+from pathlib import Path
+
+paths = [
+    Path('logs/issue36_prep/20260211_probe_generation_summary_v12.json'),
+    Path('logs/issue36_prep/20260211_filter_apply_summary_v12.json'),
+]
+for path in paths:
+    print(f'## {path}')
+    obj = json.loads(path.read_text())
+    for key in ('config', 'rules', 'processed', 'skipped', 'errors', 'reason_counts', 'output_root', 'candidates_root', 'suggestions_root'):
+        if key in obj:
+            print(key, json.dumps(obj[key], indent=2, sort_keys=True, ensure_ascii=False))
+    print()
+PY
+```
+
+Also inspect the comparison note:
+
+```bash
+sed -n '1,220p' logs/issue36_prep/20260211_v10b_v11_v12_comparison.md \
+  | tee logs/issue120_e2e_recovery/stage_d_provenance/v10b_v11_v12_comparison_head.txt
+```
+
 ## Interpretation
 
-### If v12 mtimes cluster near 2026-02-11
+### If v12 summaries identify the exact rules
 
-Focus on the Issue #36 GT-prep scripts from the 2026-02-08 / 2026-02-11 window. Compare historical `apply_candidate_filter_from_inventory.py` and `suggest_candidate_drops.py` behavior to current `filter_probe_candidates` behavior.
+Use those rules as provenance facts. Do not infer rules from ablation.
 
-### If v12 mtimes are later than 2026-02-11
+### If v12 comparison identifies why v12 was selected
 
-Search for later local-only iterations and metadata. The repository may contain the generic producer but not the exact v12 invocation.
+Record that as the Stage-D historical target rationale.
 
-### If metadata summaries include v12 rules
+### If the summary rules match current code but output does not
 
-Prefer those historical rules over ablation-derived guesses.
+The drift is likely in implementation behavior, image/staff-mask inputs, or candidate-generation source, not just CLI parameters.
+
+### If the summary rules differ from current code
+
+The current reproduction helper is not the historical producer profile. Stage-D recovery should route to a historical-profile runner rather than tune `filter_probe_candidates` ad hoc.
 
 ### If no exact producer is recoverable
 

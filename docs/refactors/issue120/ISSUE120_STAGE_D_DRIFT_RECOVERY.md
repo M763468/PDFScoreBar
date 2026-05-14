@@ -51,6 +51,14 @@ scored_filename: pipeline2_no_peak_scored.json
 filtered_filename: pipeline2_no_peak_filtered_cnn.json
 ```
 
+Issue #44 workflow docs identify an older candidate family:
+
+```text
+logs/issue36_prep/probe_candidates_filtered_v12
+```
+
+The documented Issue #44 candidate JSON source was the Issue #36 probe-candidate family, while later scoring/evaluation configs were fixed to use `scoring_input_eval2_v12` as the scored/evaluated root.
+
 Current Stage D compose does something narrower:
 
 ```text
@@ -60,7 +68,7 @@ current HOMR/SR/OMR/hybrid output file
   -> write the same list to pipeline2_no_peak_scored.json
 ```
 
-This is probably not the same artifact family as historical `scoring_input_eval2_v12` if that historical root contains dense probe/CNN candidate inputs. The current regenerated roots look like sparse upstream detector bars, not dense probe-rescue candidate seeds.
+The schema inspection shows this is not a scored-vs-unscored schema mismatch, because historical and regenerated candidate files are all unscored list-like candidate payloads. The mismatch is candidate density and candidate-generation family: historical is a much denser candidate root than any current Stage D detector-output composition.
 
 ## Working hypothesis
 
@@ -71,7 +79,7 @@ The Stage D gap may come from one or more of these boundaries:
 3. source-composition differences among `baseline`, `sr`, `omr_sr`, `hybrid`, or `first_available`;
 4. schema normalization differences when composing a score-aware `bands_from` tree;
 5. probe-rescue assumptions that were valid for the historical artifact but not for regenerated upstream outputs;
-6. file-family mismatch: historical `scoring_input_eval2_v12` may be a dense candidate/probe-scoring input root, while current Stage D regenerated roots are sparse detector-output roots.
+6. candidate-generation family mismatch: historical `scoring_input_eval2_v12` appears to be a dense Issue #36/#44 probe/CNN candidate root, while current Stage D regenerated roots are sparse detector-output roots.
 
 The first step is to determine whether the local historical artifact is present and has the same page/file layout shape as regenerated Stage D artifacts.
 
@@ -90,6 +98,35 @@ regenerated_missing=0
 ```
 
 This means the immediate failure mode is not a missing local historical artifact and not a missing regenerated page tree.
+
+### Payload schema inspection
+
+All inspected roots resolve 68/68 pages. The payload schema is broadly candidate/list-like rather than scored dict-like:
+
+```text
+label            median item count   median width   median height   score keys
+historical       315.0               4.0            107.0           0
+baseline         123.0               1.0             97.75          0
+hybrid            54.0               7.0            105.5           0
+omr_sr            88.0               2.0            105.0           0
+sr                63.0               7.0            105.0           0
+first_available   54.0               7.0            105.5           0
+```
+
+Schema interpretation:
+
+- historical payloads are list payloads with list boxes;
+- baseline/hybrid/omr_sr/first_available also resolve as list-box payloads;
+- sr resolves as list payloads with `orig_bbox`, `pred_bbox`, `staff_index`, and `system_index` item keys;
+- none of the inspected roots have `score` keys in candidate files;
+- therefore the primary difference is not scored-vs-unscored schema;
+- the primary observed difference is candidate density and, secondarily, box width/source-family differences.
+
+Detailed schema findings are recorded in:
+
+```text
+docs/refactors/issue120/ISSUE120_STAGE_D_SCHEMA_FINDINGS.md
+```
 
 ### Baseline-source comparison
 
@@ -220,15 +257,15 @@ Shostakovich-Sym5-Va/page_007:           367 -> 40 (ratio 0.109)
 - Baseline and OMR-SR generally retain more candidates than hybrid/SR/first-available on some worst pages, but still remain far below historical counts.
 - The drift is therefore inside regenerated upstream content or composition/schema normalization, not artifact layout completeness.
 - Large center shifts suggest coordinate frame, page/score source mapping, geometry normalization, or schema normalization drift rather than a pure CNN/NMS issue.
-- Historical code and configs indicate `scoring_input_eval2_v12` is a probe/CNN candidate input root, while current Stage D regenerated roots are built by copying sparse upstream detector outputs into candidate filenames.
+- Historical code and configs indicate `scoring_input_eval2_v12` is a dense unscored probe/CNN candidate root, while current Stage D regenerated roots are built by copying sparse upstream detector outputs into candidate filenames.
 
 Next diagnostic priority:
 
-1. inspect payload schema and item keys for historical vs regenerated roots;
-2. confirm whether historical `scoring_input_eval2_v12` contains pre-filtered dense proposals while current regenerated trees contain post-filtered sparse bars;
-3. identify whether the count collapse occurs before composition, during composition, or because the wrong upstream file family is being selected;
-4. inspect `run_stage_d_upstream_regen.py` composition/schema normalization and the upstream HOMR/SR/OMR coordinate frame;
-5. only after that, route a targeted repair issue if the boundary points to coordinate conversion, source selection, or upstream generation.
+1. check whether local `logs/issue36_prep/probe_candidates_filtered_v12` exists;
+2. if it exists, compare it against `scoring_input_eval2_v12` using the schema and box-tree tools;
+3. identify whether `scoring_input_eval2_v12` originated by copying/renaming/filtering the Issue #36 probe candidate root;
+4. if Issue #36 candidate root matches historical density, recover its producer instead of treating current HOMR/SR/OMR detector outputs as sufficient;
+5. only after that, route a targeted repair issue if the boundary points to coordinate conversion, source selection, upstream generation, or probe candidate filtering.
 
 ## Lightweight local inspector
 
@@ -289,6 +326,29 @@ Interpretation:
 - dict items containing `bbox` and `score` are scored candidate evidence;
 - different item keys or box fields suggest file-family/schema mismatch before geometry analysis;
 - similar schema with very different counts suggests generation-density drift.
+
+## Issue #36 candidate root check
+
+If the old Issue #36 candidate root exists locally, compare it against historical:
+
+```bash
+PYTHONPATH=. python3 tools/issue120/inspect_stage_d_payload_schema.py \
+  --root historical=logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 \
+  --root issue36_probe=logs/issue36_prep/probe_candidates_filtered_v12 \
+  --root baseline=logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_baseline \
+  --output-dir logs/issue120_e2e_recovery/stage_d_payload_schema_issue36
+```
+
+Then compare geometry:
+
+```bash
+PYTHONPATH=. python3 tools/issue120/compare_box_tree_stats.py \
+  --left logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 \
+  --right logs/issue36_prep/probe_candidates_filtered_v12 \
+  --output-dir logs/issue120_e2e_recovery/stage_d_box_tree_stats_historical_vs_issue36_probe
+```
+
+If this old root is close to historical, #147 should shift from upstream-detector composition to recovering the Issue #36 probe candidate producer.
 
 ## Recommended local workflow
 

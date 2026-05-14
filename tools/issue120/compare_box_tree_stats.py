@@ -225,7 +225,7 @@ def count_loss_rank(row: PageComparison) -> tuple[int, float, int]:
     if row.left_count is None or row.right_count is None:
         return (0, 0.0, 0)
     if row.left_count > 0 and row.right_count == 0:
-        return (1, 0.0, row.left_count)
+        return (1, 0.0, -row.left_count)
     if row.count_ratio is None:
         return (2, 1.0, 0)
     return (2, row.count_ratio, -abs(row.count_delta or 0))

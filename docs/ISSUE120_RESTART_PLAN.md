@@ -42,7 +42,7 @@ Do not use `main` as the immediate base for restart work. Any eventual merge to 
 
 ## Current completed foundation
 
-### #133: restart plan
+### #133 / PR #138: restart plan
 
 Status: completed.
 
@@ -53,7 +53,7 @@ Result:
 - Issue #120 remains the parent Epic.
 - Restart work is split into staged issues.
 
-### #134: canonical full-68 detector-intermediate evaluator
+### #134 / PR #139: canonical full-68 detector-intermediate evaluator
 
 Status: completed.
 
@@ -104,36 +104,81 @@ Boundary:
 - Downstream measure-count metrics remain separate.
 - Stage D still needs to verify the historical upstream `bands_from` dependency.
 
+### #135 / PR #144: generated artifact cleanup and retention policy
+
+Status: completed.
+
+PR:
+
+```text
+#144 chore/docs: define Issue 120 artifact retention policy
+merge commit: f18dc801345e56a6ac90c95228b9448f2a34a440
+```
+
+Policy document:
+
+```text
+docs/ISSUE120_ARTIFACT_RETENTION.md
+```
+
+Current decision:
+
+- source/docs/tools/config templates stay in Git;
+- source evaluation inputs stay in Git while the repository depends on them;
+- `data/evaluation2/golden_baseline_eval2_bc23deb/` is retained temporarily as detector-intermediate evidence;
+- generated summaries and local run outputs belong under ignored paths such as `logs/`.
+
+### #140 / PR #145: Stage D upstream regeneration diagnostic foundation
+
+Status: open issue; diagnostic foundation merged.
+
+PR:
+
+```text
+#145 tools/docs: add Issue 120 Stage D upstream regeneration runner
+merge commit: a685bef1bda26e66937bd276df560ce655f67f5f
+```
+
+Stage D document:
+
+```text
+docs/refactors/issue120/ISSUE120_STAGE_D_UPSTREAM_REGEN.md
+```
+
+Current Stage D conclusion:
+
+```text
+Target: TP=3580 FP=0 FN=1
+Best current Stage D composition tested: baseline source
+Observed: TP=3543 FP=288 FN=38
+```
+
+Boundary:
+
+- Current upstream components can regenerate structurally complete 68-page artifacts.
+- Tested current compositions do not reproduce the historical detector target.
+- The historical `logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12` artifact remains non-reproduced.
+- #140 should be closed only after the issue thread records this boundary and any follow-up issue is opened or explicitly deferred.
+
 ## Open issue plan
 
-### #135: Generated artifact cleanup and retention policy
+### #140: Stage D closeout
 
 Base: `rebuild/issue120`  
-Branch: `chore/issue120-artifact-cleanup`  
+Branch: `audit/issue120-stage-d-upstream-regen` or a doc-only successor branch  
 PR base: `rebuild/issue120`
 
 Purpose:
 
-- inventory tracked generated outputs;
-- remove generated summaries and temporary outputs from Git when they are not required inputs;
-- define what remains as source, evaluation input, retained fixture, generated artifact, or external/local artifact;
-- preserve canonical detector reconstruction until Stage D/E produce a replacement artifact strategy.
-
-### #140: Stage D upstream artifact regeneration
-
-Base: `rebuild/issue120`  
-Branch: `audit/issue120-stage-d-upstream-regen`  
-PR base: `rebuild/issue120`
-
-Purpose:
-
-Verify whether the slow upstream artifacts can regenerate a `bands_from`-like artifact that feeds the Stage C Issue53 probe-rescue path.
+Close out the Stage D audit by recording the current-upstream failure boundary in the issue thread.
 
 Primary unresolved dependency:
 
 ```text
 logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
 ```
+
+The issue can close as a documented audit if it clearly states that current upstream regeneration is structurally complete but does not preserve the selected detector target.
 
 ### #142: CNN scoring NMS repair/tuning
 
@@ -162,6 +207,11 @@ Purpose:
 
 Run or document full 68-page pipeline validation after Stage D clarifies upstream artifact regeneration.
 
+Current dependency:
+
+- Stage D has a current-upstream failure boundary.
+- Stage E must not claim full detector-target reproduction from current upstream artifacts unless new evidence changes that boundary.
+
 ### #137: Targeted accuracy repair
 
 Base: `rebuild/issue120`  
@@ -170,11 +220,11 @@ PR base: `rebuild/issue120`
 
 Purpose:
 
-Resume targeted accuracy work only after the canonical detector target, artifact policy, and NMS policy are clear.
+Resume targeted accuracy work only after the canonical detector target, artifact policy, Stage D boundary, and NMS policy are clear.
 
 ## Artifact retention policy
 
-The detailed #135 policy is now maintained in:
+The detailed #135 policy is maintained in:
 
 ```text
 docs/ISSUE120_ARTIFACT_RETENTION.md
@@ -313,7 +363,7 @@ Required downstream measure-count metrics:
 
 ## Accuracy work guardrails
 
-Do not resume broad accuracy changes until artifact policy and NMS policy are clear.
+Do not resume broad accuracy changes until Stage D closeout and NMS policy are clear.
 
 When accuracy work resumes:
 
@@ -328,10 +378,10 @@ When accuracy work resumes:
 ## Recommended order from here
 
 ```text
-1. Finish #135 cleanup/retention policy.
-2. Work #140 to verify or bound slow upstream artifact regeneration.
+1. Close out #140 by recording the Stage D boundary in the issue thread.
+2. Open or defer a follow-up for historical `scoring_input_eval2_v12` provenance recovery / upstream geometry repair.
 3. Work #142 to decide NMS behavior before broad accuracy repair.
-4. Work #141 full 68-page pipeline validation after #140 boundary is known.
+4. Work #141 as full 68-page validation, explicitly separating detector metrics from downstream measure-count metrics.
 5. Work #137 targeted accuracy repair using canonical gates.
 ```
 

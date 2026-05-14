@@ -68,19 +68,56 @@ Sibelius-Violin_Concerto-Viola/page_006: median cy delta = -690.0
 Shostakovich-Festival_Overture_Va/page_007: median cy delta = 1427.0
 ```
 
+### Additional source-specific findings
+
+Hybrid-source comparison, using:
+
+```text
+right = logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate
+```
+
+shows even stronger under-generation than the baseline-source comparison on many pages:
+
+```text
+Shostakovich-Sym5-Va/page_020:           618 -> 30 (ratio 0.049)
+Sibelius-Violin_Concerto-Viola/page_006: 675 -> 44 (ratio 0.065)
+Shostakovich-Sym5-Va/page_018:           459 -> 35 (ratio 0.076)
+Shostakovich-Sym5-Va/page_019:           381 -> 30 (ratio 0.079)
+Shostakovich-Sym5-Va/page_007:           367 -> 40 (ratio 0.109)
+```
+
+The hybrid median-height deltas are small on the worst count-loss rows, but median-center shifts remain large, for example:
+
+```text
+Shostakovich-Sym5-Va/page_020: median cx delta = 393.2, median cy delta = -182.8
+Sibelius-Violin_Concerto-Viola/page_006: median cx delta = 534.5, median cy delta = 607.5
+Shostakovich-Festival_Overture_Va/page_007: median cy delta = 1624.5
+```
+
+A `first_available` comparison against:
+
+```text
+right = logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_first_available
+```
+
+resolved no right-side page files in the provided box-tree comparison; all sampled right counts were `None`. Treat that as a missing or not-yet-composed `first_available` tree under the expected path, not as a valid geometry comparison.
+
 Current interpretation:
 
 - Historical `scoring_input_eval2_v12` is available locally and resolves 68/68 pages.
 - Regenerated baseline-source Stage D artifacts also resolve 68/68 pages.
-- The drift is therefore inside the content of the regenerated bands/candidates, not directory layout completeness.
-- The baseline-source regenerated artifact is under-generating relative to historical on many pages.
-- Large center/height shifts suggest source-selection, geometry normalization, coordinate scaling, or schema normalization drift rather than a pure CNN/NMS issue.
+- Hybrid-source artifacts are complete enough to compare, but under-generate even more strongly than baseline on key pages.
+- The `first_available` source tree must be composed or path-verified before it can be compared.
+- The drift is therefore inside the content of regenerated bands/candidates, not directory layout completeness for historical/baseline/hybrid.
+- Baseline and hybrid regenerated artifacts are both under-generating relative to historical on many pages.
+- Large center shifts suggest source-selection, geometry normalization, coordinate scaling, or schema normalization drift rather than a pure CNN/NMS issue.
 
 Next diagnostic priority:
 
-1. compare all regenerated composition sources (`baseline`, `sr`, `omr_sr`, `hybrid`, `first_available`) against the historical root using the same layout and box-tree tools;
-2. determine whether any source has historical-like candidate counts and geometry;
-3. if no source matches, inspect `run_stage_d_upstream_regen.py` composition/schema normalization and the upstream HOMR/SR/OMR coordinate frame.
+1. generate or verify the missing `bands_from_candidate_first_available` tree before interpreting first-available results;
+2. compare `sr` and `omr_sr` against the historical root using the same layout and box-tree tools;
+3. determine whether any source has historical-like candidate counts and geometry;
+4. if no source matches, inspect `run_stage_d_upstream_regen.py` composition/schema normalization and the upstream HOMR/SR/OMR coordinate frame.
 
 ## Lightweight local inspector
 
@@ -168,7 +205,7 @@ pages with missing left or right files
 Repeat the layout and geometry comparisons for alternate composition sources:
 
 ```bash
-for source in hybrid baseline sr omr_sr first_available; do
+for source in baseline sr omr_sr; do
   PYTHONPATH=. python3 tools/issue120/inspect_stage_d_artifact_layout.py \
     --historical logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 \
     --regenerated logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_${source} \
@@ -181,13 +218,40 @@ for source in hybrid baseline sr omr_sr first_available; do
 done
 ```
 
-For `hybrid`, the default composed directory may be `bands_from_candidate` rather than `bands_from_candidate_hybrid`. If the loop reports missing regenerated pages for `hybrid`, rerun that source with:
+For `hybrid`, the default composed directory is normally `bands_from_candidate` rather than `bands_from_candidate_hybrid`:
 
 ```bash
 PYTHONPATH=. python3 tools/issue120/inspect_stage_d_artifact_layout.py \
   --historical logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 \
   --regenerated logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate \
   --output-dir logs/issue120_e2e_recovery/stage_d_artifact_layout_hybrid
+
+PYTHONPATH=. python3 tools/issue120/compare_box_tree_stats.py \
+  --left logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 \
+  --right logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate \
+  --output-dir logs/issue120_e2e_recovery/stage_d_box_tree_stats_historical_vs_hybrid
+```
+
+For `first_available`, create or recompose the source-specific tree before comparison. Do not interpret all-`None` right counts as geometry drift:
+
+```bash
+docker run --rm --gpus all \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_gpu \
+  /opt/venv_pipeline/bin/python tools/issue120/run_stage_d_upstream_regen.py \
+    --compose-only \
+    --compose-source first_available
+```
+
+Then inspect:
+
+```bash
+PYTHONPATH=. python3 tools/issue120/inspect_stage_d_artifact_layout.py \
+  --historical logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 \
+  --regenerated logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_first_available \
+  --output-dir logs/issue120_e2e_recovery/stage_d_artifact_layout_first_available
 ```
 
 Repeat the Stage D verifier and summary for alternate composition sources:

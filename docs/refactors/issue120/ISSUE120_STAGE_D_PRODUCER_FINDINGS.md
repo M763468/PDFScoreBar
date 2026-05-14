@@ -9,6 +9,7 @@ Read with:
 ```text
 docs/refactors/issue120/ISSUE120_STAGE_D_DRIFT_RECOVERY.md
 docs/refactors/issue120/ISSUE120_STAGE_D_SCHEMA_FINDINGS.md
+docs/refactors/issue120/ISSUE120_STAGE_D_PROVENANCE_CHECKLIST.md
 ```
 
 ## Confirmed identity
@@ -35,6 +36,42 @@ mismatch=0
 
 This means `scoring_input_eval2_v12` can be treated as a copy or direct equivalent of `probe_candidates_filtered_v12` for Stage-D candidate-root recovery.
 
+## Historical v12 raw and filtered roots
+
+Local provenance summaries identify the actual historical v12 producer family:
+
+```text
+raw root:      logs/issue36_prep/probe_candidates_from_bench_v12
+filtered root: logs/issue36_prep/probe_candidates_filtered_v12
+```
+
+Historical v12 totals:
+
+```text
+historical_raw      files=68 total=27758
+historical_filtered files=68 total=22565
+```
+
+The Issue #44 scoring-input copy is byte-identical to `historical_filtered` for the canonical candidate files.
+
+## Current Stage-C helper mismatch
+
+The current Stage-C recovery helper does not reproduce the historical raw family. Its outputs are:
+
+```text
+current_repro_raw      files=136 total=97927
+current_repro_filtered files=68  total=180
+```
+
+The `current_repro_raw` count includes both the nested raw files and the generated filtered files because it was counted with a broad `rglob`. Interpreted with the earlier Stage-C summary, this is:
+
+```text
+current raw      = 97747
+current filtered =   180
+```
+
+Therefore the current helper is not a historical v12 producer. Its `low_paper_overlap` collapse is downstream evidence that it feeds a different raw candidate family into the v12 filter rules.
+
 ## Repository/local grep findings
 
 The grep result identifies these relevant current repository references:
@@ -51,137 +88,70 @@ tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py
 tools/gt_relabel_gui/prepare_rebuild_eval2.py
 ```
 
-The most directly relevant producer script is:
+The current evidence distinguishes two related but different producer paths:
 
-```text
-tools/repro_accuracy/reproduce_clean_seed_v12.py
-```
-
-It regenerates:
-
-```text
-logs/repro_v12_recovery_final/probe_candidates_filtered_v12
-```
-
-using:
-
-```text
-inventory: logs/issue36_prep/20260208_bench_inventory.json
-run root:  logs/hybrid_generalization/verify_fixed_v10
-```
-
-and a fixed mapping from score name to historical hybrid-generalization run IDs:
-
-```text
-Shostakovich-Festival_Overture_Va -> 20260324_121505
-Shostakovich-Sym5-Va              -> 20260330_034727
-Sibelius-Violin_Concerto-Viola    -> 20260330_042631
-Va_Prokofiev_Symphony1            -> 20260330_044952
-Va__Prokofiev_Symphony5           -> 20260330_095914
-```
-
-The #120 wrapper:
-
-```text
-tools/issue120/run_stage_c_seed_regen_then_eval.py
-```
-
-already codifies this dependency as Stage C:
-
-```text
-inventory: logs/issue36_prep/20260208_bench_inventory.json
-run root:  logs/hybrid_generalization/verify_fixed_v10
-output:    logs/repro_v12_recovery_final/probe_candidates_filtered_v12
-```
-
-## Issue #36 producer family
-
-The Issue #36 / GT-preparation documentation identifies the general producer chain:
-
-```text
-generate_probe_candidates_from_inventory.py
-  -> probe_candidates_from_bench_vN
-apply_candidate_filter_from_inventory.py
-  -> probe_candidates_filtered_vN
-```
-
-The local metadata inventory includes many historical summary and filter outputs, including:
-
-```text
-logs/issue36_prep/20260208_bench_inventory.json
-logs/issue36_prep/excluded_pages_for_gt_prep.json
-logs/issue36_prep/20260211_probe_generation_summary_v12.json
-logs/issue36_prep/20260211_filter_apply_summary_v12.json
-logs/issue36_prep/filter_suggestions_v12/**
-```
-
-This is enough to distinguish two related but different producer paths:
-
-1. Generic Issue #36 GT-prep producer:
+1. Historical Issue #36 GT-prep path:
 
    ```text
    generate_probe_candidates_from_inventory.py
-     -> apply_candidate_filter_from_inventory.py
-     -> probe_candidates_filtered_vN
+     -> probe_candidates_from_bench_v12
+   apply_candidate_filter_from_inventory.py
+     -> probe_candidates_filtered_v12
    ```
 
-2. Historical v12 recovery producer now used by Stage C:
+2. Later Stage-C recovery helper:
 
    ```text
    reproduce_clean_seed_v12.py
      -> hybrid_generalization/verify_fixed_v10 score-run mapping
-     -> probe scan with broad recall settings
-     -> filter_probe_candidates strict rules
-     -> probe_candidates_filtered_v12
+     -> current raw candidates
+     -> current final filtered root
    ```
 
-For Issue #120 Stage-D recovery, the second path is currently more relevant because it is already wrapped by `run_stage_c_seed_regen_then_eval.py` and targets the exact v12 candidate root.
+For Issue #120 Stage-D recovery, path 1 is now the primary reconstruction target.
 
-## Coverage-only regeneration finding
+## Historical v12 configuration
 
-The Stage-C producer inputs validate successfully:
+The v12 probe-generation summary records:
 
-```text
-Stage-C input validation passed.
+```json
+{
+  "band_scan_line_ratio": 0.6,
+  "band_scan_min_lines": 5,
+  "band_source": "row_stats",
+  "ink_threshold": 240,
+  "max_per_band": 80,
+  "min_height_ratio": 0.006,
+  "min_ratio": 0.6,
+  "min_width_ratio": 0.0,
+  "probe_width": 4
+}
 ```
 
-However, rerunning the current Stage-C producer for #147 does not reproduce the dense historical candidate root. It completes all 68 pages but generates only 180 final candidates:
+The v12 filter summary records:
 
-```text
-BATCH SEED GENERATION COMPLETE. Processed: 68, Missing: 0
-Stage-C candidate coverage: pages=68/68 total_candidates=180 missing=0 empty=40
-Stage C candidate coverage failed: only 180 total candidates; minimum is 3000
+```json
+{
+  "clef_left_ratio": 0.25,
+  "ink_threshold": 180,
+  "left_margin_ratio": 0.12,
+  "min_height_median_ratio": 0.6,
+  "min_ink_ratio": 0.18,
+  "min_paper_overlap_ratio": 0.6,
+  "min_staff_overlap_ratio": 0.02,
+  "paper_threshold": 200
+}
 ```
 
-This means:
-
-- required paths are present;
-- the producer script can run;
-- the current producer code/configuration is not reproducing `probe_candidates_filtered_v12`;
-- the failure is now producer drift, not missing artifact provenance.
-
-The next diagnostic must determine whether the collapse to 180 candidates occurs during:
-
-1. historical hybrid-source consensus seed loading/scaling;
-2. raw probe scan generation;
-3. `filter_probe_candidates` final filtering;
-4. staff mask / image path mismatch;
-5. current probe-scan implementation drift.
-
-A diagnostic summarizer was added:
+Historical v12 filter reason counts were:
 
 ```text
-tools/issue120/summarize_stage_c_seed_regen_outputs.py
+clef_mask_overlap=4665
+left_margin_zone=3520
+no_staff_overlap=781
 ```
 
-It compares, page by page:
-
-```text
-historical_count
-consensus_seed_count
-raw_probe_count
-final_filtered_count
-```
+They do not include `low_paper_overlap`, unlike the current Stage-C helper replay.
 
 ## Current Stage-D implication
 
@@ -193,120 +163,131 @@ The better Stage-D framing is:
 historical detector target root
   = logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
   = byte-identical to logs/issue36_prep/probe_candidates_filtered_v12
-
-therefore Stage-D reconstruction should recover or validate the producer of:
-  logs/issue36_prep/probe_candidates_filtered_v12
-
-not only compose current sparse detector outputs into candidate filenames.
+  = generated by Issue #36 GT-prep v12 raw/filter workflow
 ```
 
-## Recommended next local checks
+## Recommended next local check: exact Issue #36 v12 reproduction
 
-### 1. Validate Stage C producer inputs
+Run the historical producer family, not the Stage-C helper.
+
+### 1. Generate v12 raw candidates from inventory
+
+Use Docker because OpenCV/image dependencies may not be installed globally:
 
 ```bash
-PYTHONPATH=. python3 tools/issue120/run_stage_c_seed_regen_then_eval.py --validate-only
+docker run --rm --gpus all \
+  --user "$(id -u):$(id -g)" \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_gpu \
+  /opt/venv_pipeline/bin/python tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py \
+    --inventory logs/issue36_prep/20260208_bench_inventory.json \
+    --exclude logs/issue36_prep/excluded_pages_for_gt_prep.json \
+    --output-root logs/issue120_e2e_recovery/stage_d_issue36_v12_repro/probe_candidates_from_bench_v12 \
+    --summary-out logs/issue120_e2e_recovery/stage_d_issue36_v12_repro/20260211_probe_generation_summary_v12_repro.json \
+    --band-source row_stats \
+    --ink-threshold 240 \
+    --min-ratio 0.6 \
+    --min-height-ratio 0.006 \
+    --min-width-ratio 0.0 \
+    --probe-width 4 \
+    --max-per-band 80 \
+    --band-scan-line-ratio 0.6 \
+    --band-scan-min-lines 5
 ```
 
-If this fails, report the missing paths from:
-
-```text
-logs/issue120_e2e_recovery/stage_c_seed_regen_eval/stage_c_input_validation.json
-```
-
-### 2. Regenerate v12 candidates and compare with historical
-
-This can be heavier because it runs probe candidate regeneration across 68 pages:
+### 2. Apply historical v12 filtering rules
 
 ```bash
-PYTHONPATH=. python3 tools/issue120/run_stage_c_seed_regen_then_eval.py \
-  --coverage-only \
-  --regen-output-dir logs/issue120_e2e_recovery/stage_d_issue36_repro \
-  --regenerated-candidates-dir logs/issue120_e2e_recovery/stage_d_issue36_repro/probe_candidates_filtered_v12 \
-  --stage-c-eval-dir logs/issue120_e2e_recovery/stage_d_issue36_repro_eval
+docker run --rm --gpus all \
+  --user "$(id -u):$(id -g)" \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_gpu \
+  /opt/venv_pipeline/bin/python tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py \
+    --inventory logs/issue36_prep/20260208_bench_inventory.json \
+    --exclude logs/issue36_prep/excluded_pages_for_gt_prep.json \
+    --candidates-root logs/issue120_e2e_recovery/stage_d_issue36_v12_repro/probe_candidates_from_bench_v12 \
+    --output-root logs/issue120_e2e_recovery/stage_d_issue36_v12_repro/probe_candidates_filtered_v12 \
+    --suggestions-root logs/issue120_e2e_recovery/stage_d_issue36_v12_repro/filter_suggestions_v12 \
+    --summary-out logs/issue120_e2e_recovery/stage_d_issue36_v12_repro/20260211_filter_apply_summary_v12_repro.json \
+    --left-margin-ratio 0.12 \
+    --clef-left-ratio 0.25 \
+    --min-height-median-ratio 0.6 \
+    --ink-threshold 180 \
+    --min-ink-ratio 0.18 \
+    --paper-threshold 200 \
+    --min-paper-overlap-ratio 0.6 \
+    --min-staff-overlap-ratio 0.02
 ```
 
-### 3. Summarize where regenerated candidates collapse
-
-After the coverage-only run, summarize intermediate counts:
-
-```bash
-PYTHONPATH=. python3 tools/issue120/summarize_stage_c_seed_regen_outputs.py \
-  --historical-root logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 \
-  --regen-root logs/issue120_e2e_recovery/stage_d_issue36_repro \
-  --output-dir logs/issue120_e2e_recovery/stage_d_issue36_repro_diagnostics
-```
-
-Report:
-
-```text
-historical_total
-consensus_seed_total
-raw_probe_total
-final_filtered_total
-missing_consensus
-missing_raw
-missing_final
-empty_final
-largest final-filtered losses
-largest raw-probe losses
-```
-
-### 4. If byte identity is needed, compare generated output to historical
+### 3. Compare totals and byte identity
 
 ```bash
 python3 - <<'PY'
 import hashlib
+import json
 from pathlib import Path
 
-left = Path('logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12')
-right = Path('logs/issue120_e2e_recovery/stage_d_issue36_repro/probe_candidates_filtered_v12')
-filename = 'pipeline2_no_peak_candidates.json'
+roots = {
+    'historical_raw': Path('logs/issue36_prep/probe_candidates_from_bench_v12'),
+    'repro_raw': Path('logs/issue120_e2e_recovery/stage_d_issue36_v12_repro/probe_candidates_from_bench_v12'),
+    'historical_filtered': Path('logs/issue36_prep/probe_candidates_filtered_v12'),
+    'repro_filtered': Path('logs/issue120_e2e_recovery/stage_d_issue36_v12_repro/probe_candidates_filtered_v12'),
+}
 
-left_files = sorted(left.rglob(filename))
-missing = []
-mismatch = []
-for lf in left_files:
-    rel = lf.relative_to(left)
-    rf = right / rel
-    if not rf.exists():
-        missing.append(str(rel))
-        continue
-    lh = hashlib.sha256(lf.read_bytes()).hexdigest()
-    rh = hashlib.sha256(rf.read_bytes()).hexdigest()
-    if lh != rh:
-        mismatch.append(str(rel))
+def count_file(path):
+    data = json.loads(path.read_text())
+    if isinstance(data, list):
+        return len(data)
+    if isinstance(data, dict):
+        for key in ('candidates', 'items', 'bars', 'barlines', 'predictions'):
+            if isinstance(data.get(key), list):
+                return len(data[key])
+    return 0
 
-print(f'left_files={len(left_files)}')
-print(f'missing={len(missing)}')
-print(f'mismatch={len(mismatch)}')
-if missing:
-    print('missing sample:', missing[:10])
-if mismatch:
-    print('mismatch sample:', mismatch[:10])
+for label, root in roots.items():
+    files = sorted(root.rglob('pipeline2_no_peak_candidates.json'))
+    total = sum(count_file(path) for path in files)
+    print(label, 'files=', len(files), 'total=', total)
+
+for left_label, right_label in [('historical_raw', 'repro_raw'), ('historical_filtered', 'repro_filtered')]:
+    left = roots[left_label]
+    right = roots[right_label]
+    missing = []
+    mismatch = []
+    left_files = sorted(left.rglob('pipeline2_no_peak_candidates.json'))
+    for lf in left_files:
+        rel = lf.relative_to(left)
+        rf = right / rel
+        if not rf.exists():
+            missing.append(str(rel))
+            continue
+        if hashlib.sha256(lf.read_bytes()).hexdigest() != hashlib.sha256(rf.read_bytes()).hexdigest():
+            mismatch.append(str(rel))
+    print(left_label, 'vs', right_label, 'left_files=', len(left_files), 'missing=', len(missing), 'mismatch=', len(mismatch))
+    if mismatch:
+        print('mismatch sample:', mismatch[:10])
 PY
-```
-
-### 5. If byte identity fails, compare statistics
-
-```bash
-PYTHONPATH=. python3 tools/issue120/inspect_stage_d_payload_schema.py \
-  --root historical=logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 \
-  --root regenerated=logs/issue120_e2e_recovery/stage_d_issue36_repro/probe_candidates_filtered_v12 \
-  --output-dir logs/issue120_e2e_recovery/stage_d_payload_schema_issue36_repro
-
-PYTHONPATH=. python3 tools/issue120/compare_box_tree_stats.py \
-  --left logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 \
-  --right logs/issue120_e2e_recovery/stage_d_issue36_repro/probe_candidates_filtered_v12 \
-  --output-dir logs/issue120_e2e_recovery/stage_d_box_tree_stats_historical_vs_issue36_repro
 ```
 
 ## Routing decision
 
-If `summarize_stage_c_seed_regen_outputs.py` shows `raw_probe_total` is already far below historical, #147 should focus on current probe-scan / seed-loading drift.
+If exact Issue #36 v12 reproduction gives:
 
-If `raw_probe_total` is close to historical but `final_filtered_total` is low, #147 should focus on `filter_probe_candidates` or image/staff-mask input drift.
+```text
+repro_raw total=27758
+repro_filtered total=22565
+missing=0
+mismatch=0
+```
 
-If `consensus_seed_total` is already low, #147 should focus on the `hybrid_generalization/verify_fixed_v10` source boxes and dynamic scaling step.
+then Stage-D dense candidate-root reconstruction is solved.
 
-If required `hybrid_generalization/verify_fixed_v10` inputs are missing, #147 should document that the candidate root is recoverable from local historical artifacts but not fully reproducible from repository-tracked inputs.
+If totals match but byte identity fails, inspect ordering/serialization first, then page-level geometry.
+
+If raw total differs, investigate `generate_probe_candidates_from_inventory.py`, `detect_probe_scan`, and inventory/image differences.
+
+If raw matches but filtered differs, investigate `apply_candidate_filter_from_inventory.py` and `suggest_candidate_drops` behavior drift.

@@ -60,9 +60,9 @@ def candidate_coverage_rows(path: Path) -> list[dict[str, Any]]:
 
 def provenance_path(upstream_dir: Path, compose_source: str) -> Path:
     if compose_source == "auto":
-        source_paths = sorted(upstream_dir.glob("stage_d_upstream_regen_provenance_*.json"))
-        if source_paths:
-            return max(source_paths, key=lambda p: p.stat().st_mtime)
+        candidates = list(upstream_dir.glob("stage_d_upstream_regen_provenance*.json"))
+        if candidates:
+            return max(candidates, key=lambda p: p.stat().st_mtime)
         return upstream_dir / "stage_d_upstream_regen_provenance.json"
     if compose_source == "hybrid":
         return upstream_dir / "stage_d_upstream_regen_provenance.json"
@@ -214,7 +214,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--compose-source",
         choices=["auto", "hybrid", "baseline", "sr", "omr_sr", "first_available"],
         default="hybrid",
-        help="Select the Stage-D provenance file to report. Use auto for the newest source-specific provenance file.",
+        help="Select the Stage-D provenance file to report. Use auto for the newest provenance file.",
     )
     parser.add_argument("--limit", type=int, default=15)
     parser.add_argument(

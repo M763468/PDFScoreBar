@@ -19,15 +19,16 @@ ISSUE120_DOCKER_IMAGE ?= pdfscore_pipeline_gpu
 ISSUE120_DOCKER_PYTHON ?= /opt/venv_pipeline/bin/python
 ISSUE120_STAGE_D_OUTPUT_ROOT ?= logs/issue120_e2e_recovery/stage_d_upstream_regen
 ISSUE120_STAGE_D_SCORES ?=
-ISSUE120_STAGE_D_BANDS_FROM ?= $(ISSUE120_STAGE_D_OUTPUT_ROOT)/bands_from_candidate
-ISSUE120_STAGE_D_CANDIDATES_DIR ?= logs/issue120_e2e_recovery/stage_d_from_current_upstream_candidates
-ISSUE120_STAGE_D_SCORING_DIR ?= logs/issue120_e2e_recovery/stage_d_from_current_upstream_scoring
-ISSUE120_STAGE_D_EVAL_DIR ?= logs/issue120_e2e_recovery/stage_d_from_current_upstream_eval
+ISSUE120_STAGE_D_COMPOSE_SOURCE ?= hybrid
+ISSUE120_STAGE_D_SOURCE_SUFFIX = $(if $(filter hybrid,$(ISSUE120_STAGE_D_COMPOSE_SOURCE)),,$(if $(filter first_available,$(ISSUE120_STAGE_D_COMPOSE_SOURCE)),_first_available,_$(ISSUE120_STAGE_D_COMPOSE_SOURCE)))
+ISSUE120_STAGE_D_BANDS_FROM ?= $(ISSUE120_STAGE_D_OUTPUT_ROOT)/bands_from_candidate$(ISSUE120_STAGE_D_SOURCE_SUFFIX)
+ISSUE120_STAGE_D_CANDIDATES_DIR ?= logs/issue120_e2e_recovery/stage_d_from_$(ISSUE120_STAGE_D_COMPOSE_SOURCE)_upstream_candidates
+ISSUE120_STAGE_D_SCORING_DIR ?= logs/issue120_e2e_recovery/stage_d_from_$(ISSUE120_STAGE_D_COMPOSE_SOURCE)_upstream_scoring
+ISSUE120_STAGE_D_EVAL_DIR ?= logs/issue120_e2e_recovery/stage_d_from_$(ISSUE120_STAGE_D_COMPOSE_SOURCE)_upstream_eval
 ISSUE120_STAGE_D_DRIFT_SUMMARY ?= $(ISSUE120_STAGE_D_EVAL_DIR)/stage_d_drift_summary.md
 ISSUE120_STAGE_D_BOX_STATS_DIR ?= logs/issue120_e2e_recovery/stage_d_box_tree_stats
 ISSUE120_STAGE_D_BOX_STATS_LEFT ?= data/evaluation2/golden_baseline_eval2_bc23deb
 ISSUE120_STAGE_D_BOX_STATS_RIGHT ?= $(ISSUE120_STAGE_D_BANDS_FROM)
-ISSUE120_STAGE_D_COMPOSE_SOURCE ?= hybrid
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

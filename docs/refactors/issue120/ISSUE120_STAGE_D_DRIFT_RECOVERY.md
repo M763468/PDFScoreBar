@@ -34,6 +34,54 @@ The Stage D gap may come from one or more of these boundaries:
 
 The first step is to determine whether the local historical artifact is present and has the same page/file layout shape as regenerated Stage D artifacts.
 
+## Initial local finding
+
+The first #147 layout and box-tree inspection found that both roots are structurally present for the canonical 68-page manifest:
+
+```text
+manifest_pages=68
+historical_resolved=68
+historical_missing=0
+regenerated_resolved=68
+regenerated_missing=0
+```
+
+This means the immediate failure mode is not a missing local historical artifact and not a missing regenerated page tree.
+
+However, regenerated baseline-source artifacts contain far fewer box-like items than the historical artifact on many pages. Largest observed losses include:
+
+```text
+Sibelius-Violin_Concerto-Viola/page_006: 675 -> 89  (ratio 0.132)
+Shostakovich-Sym5-Va/page_020:           618 -> 66  (ratio 0.107)
+Va_Prokofiev_Symphony1/page_001:         565 -> 133 (ratio 0.235)
+Sibelius-Violin_Concerto-Viola/page_007: 592 -> 168 (ratio 0.284)
+Va_Prokofiev_Symphony1/page_003:         612 -> 202 (ratio 0.330)
+```
+
+Geometry statistics also show large median-height and median-center shifts on multiple pages. Examples:
+
+```text
+Va__Prokofiev_Symphony5/page_022: median h delta = -40.0
+Va__Prokofiev_Symphony5/page_023: median h delta = -40.0
+Shostakovich-Sym5-Va/page_020:    median h delta = -28.5, median cy delta = -598.2
+Sibelius-Violin_Concerto-Viola/page_006: median cy delta = -690.0
+Shostakovich-Festival_Overture_Va/page_007: median cy delta = 1427.0
+```
+
+Current interpretation:
+
+- Historical `scoring_input_eval2_v12` is available locally and resolves 68/68 pages.
+- Regenerated baseline-source Stage D artifacts also resolve 68/68 pages.
+- The drift is therefore inside the content of the regenerated bands/candidates, not directory layout completeness.
+- The baseline-source regenerated artifact is under-generating relative to historical on many pages.
+- Large center/height shifts suggest source-selection, geometry normalization, coordinate scaling, or schema normalization drift rather than a pure CNN/NMS issue.
+
+Next diagnostic priority:
+
+1. compare all regenerated composition sources (`baseline`, `sr`, `omr_sr`, `hybrid`, `first_available`) against the historical root using the same layout and box-tree tools;
+2. determine whether any source has historical-like candidate counts and geometry;
+3. if no source matches, inspect `run_stage_d_upstream_regen.py` composition/schema normalization and the upstream HOMR/SR/OMR coordinate frame.
+
 ## Lightweight local inspector
 
 Use:
@@ -116,6 +164,31 @@ pages with missing left or right files
 ```
 
 ### 4. Compare source-specific regenerated compositions
+
+Repeat the layout and geometry comparisons for alternate composition sources:
+
+```bash
+for source in hybrid baseline sr omr_sr first_available; do
+  PYTHONPATH=. python3 tools/issue120/inspect_stage_d_artifact_layout.py \
+    --historical logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 \
+    --regenerated logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_${source} \
+    --output-dir logs/issue120_e2e_recovery/stage_d_artifact_layout_${source}
+
+  PYTHONPATH=. python3 tools/issue120/compare_box_tree_stats.py \
+    --left logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 \
+    --right logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_${source} \
+    --output-dir logs/issue120_e2e_recovery/stage_d_box_tree_stats_historical_vs_${source}
+done
+```
+
+For `hybrid`, the default composed directory may be `bands_from_candidate` rather than `bands_from_candidate_hybrid`. If the loop reports missing regenerated pages for `hybrid`, rerun that source with:
+
+```bash
+PYTHONPATH=. python3 tools/issue120/inspect_stage_d_artifact_layout.py \
+  --historical logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 \
+  --regenerated logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate \
+  --output-dir logs/issue120_e2e_recovery/stage_d_artifact_layout_hybrid
+```
 
 Repeat the Stage D verifier and summary for alternate composition sources:
 

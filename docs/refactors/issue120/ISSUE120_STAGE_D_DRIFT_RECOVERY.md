@@ -128,6 +128,37 @@ Detailed schema findings are recorded in:
 docs/refactors/issue120/ISSUE120_STAGE_D_SCHEMA_FINDINGS.md
 ```
 
+### Issue #36 candidate-source equivalence
+
+The local Issue #36 candidate root:
+
+```text
+logs/issue36_prep/probe_candidates_filtered_v12
+```
+
+matches the historical `scoring_input_eval2_v12` root at the inspected schema/statistics level:
+
+```text
+label          resolved  missing  median item count  median width  median height  score keys
+historical     68        0        315.0              4.0           107.0          0
+issue36_probe  68        0        315.0              4.0           107.0          0
+baseline       68        0        123.0              1.0            97.75         0
+```
+
+The box-tree comparison between historical and Issue #36 probe candidates is exact at the inspected statistic level:
+
+```text
+pages=68
+nonzero_count_delta=0
+all_count_ratio=1.0
+max_abs_median_h_delta=0.0
+max_abs_median_w_delta=0.0
+max_abs_median_cx_delta=0.0
+max_abs_median_cy_delta=0.0
+```
+
+This strongly shifts #147 away from treating current HOMR/SR/OMR detector-output composition as the Stage D reconstruction path. The next reconstruction target is the Issue #36 dense probe-candidate producer that created `probe_candidates_filtered_v12`.
+
 ### Baseline-source comparison
 
 Regenerated baseline-source artifacts contain far fewer box-like items than the historical artifact on many pages. Largest observed losses include:
@@ -253,19 +284,21 @@ Shostakovich-Sym5-Va/page_007:           367 -> 40 (ratio 0.109)
 - Every tested regenerated source tree can resolve 68/68 pages after composition or direct comparison.
 - `first_available` chooses `hybrid` for all 68 pages in the current run, so it is not an independent source-quality improvement.
 - All tested regenerated sources under-generate heavily relative to historical on high-drift pages.
-- No tested source has historical-like candidate volume.
+- No tested current Stage D detector-output source has historical-like candidate volume.
 - Baseline and OMR-SR generally retain more candidates than hybrid/SR/first-available on some worst pages, but still remain far below historical counts.
-- The drift is therefore inside regenerated upstream content or composition/schema normalization, not artifact layout completeness.
-- Large center shifts suggest coordinate frame, page/score source mapping, geometry normalization, or schema normalization drift rather than a pure CNN/NMS issue.
-- Historical code and configs indicate `scoring_input_eval2_v12` is a dense unscored probe/CNN candidate root, while current Stage D regenerated roots are built by copying sparse upstream detector outputs into candidate filenames.
+- Large center shifts in current regenerated sources suggest coordinate frame, page/score source mapping, geometry normalization, or schema normalization drift relative to the historical dense root.
+- Historical code and configs indicate `scoring_input_eval2_v12` is a dense unscored probe/CNN candidate root.
+- Local evidence shows `logs/issue36_prep/probe_candidates_filtered_v12` is equivalent to `scoring_input_eval2_v12` at the inspected schema/statistics level.
+- The Stage D recovery path should now focus on recovering or documenting the producer of `logs/issue36_prep/probe_candidates_filtered_v12`, not only on composing sparse current HOMR/SR/OMR outputs.
 
 Next diagnostic priority:
 
-1. check whether local `logs/issue36_prep/probe_candidates_filtered_v12` exists;
-2. if it exists, compare it against `scoring_input_eval2_v12` using the schema and box-tree tools;
-3. identify whether `scoring_input_eval2_v12` originated by copying/renaming/filtering the Issue #36 probe candidate root;
-4. if Issue #36 candidate root matches historical density, recover its producer instead of treating current HOMR/SR/OMR detector outputs as sufficient;
-5. only after that, route a targeted repair issue if the boundary points to coordinate conversion, source selection, upstream generation, or probe candidate filtering.
+1. verify byte-level identity between `scoring_input_eval2_v12` and `probe_candidates_filtered_v12`;
+2. search repository/local logs for the producer of `logs/issue36_prep/probe_candidates_filtered_v12`;
+3. inspect any Issue #36 prep configs, run scripts, or inventories;
+4. determine whether the producer can be rerun on the current 68-page evaluation2 set;
+5. if reproducible, wire that producer into a Stage D dense-candidate regeneration runner;
+6. if not reproducible, record the provenance boundary and route a focused recovery issue for the Issue #36 candidate producer.
 
 ## Lightweight local inspector
 
@@ -352,7 +385,62 @@ If this old root is close to historical, #147 should shift from upstream-detecto
 
 ## Recommended local workflow
 
-### 1. Ensure Stage D regenerated artifacts exist
+### 1. Verify Issue #36 candidate root equivalence
+
+First verify byte-level identity between the historical root and Issue #36 candidate root:
+
+```bash
+python3 - <<'PY'
+import hashlib
+from pathlib import Path
+
+left = Path('logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12')
+right = Path('logs/issue36_prep/probe_candidates_filtered_v12')
+filename = 'pipeline2_no_peak_candidates.json'
+
+left_files = sorted(left.rglob(filename))
+missing = []
+mismatch = []
+for lf in left_files:
+    rel = lf.relative_to(left)
+    rf = right / rel
+    if not rf.exists():
+        missing.append(str(rel))
+        continue
+    lh = hashlib.sha256(lf.read_bytes()).hexdigest()
+    rh = hashlib.sha256(rf.read_bytes()).hexdigest()
+    if lh != rh:
+        mismatch.append(str(rel))
+
+print(f'left_files={len(left_files)}')
+print(f'missing={len(missing)}')
+print(f'mismatch={len(mismatch)}')
+if missing:
+    print('missing sample:', missing[:10])
+if mismatch:
+    print('mismatch sample:', mismatch[:10])
+PY
+```
+
+### 2. Search for the Issue #36 candidate producer
+
+```bash
+grep -R "probe_candidates_filtered_v12\|issue36_prep" -n \
+  docs tools configs experiments src .github \
+  2>/dev/null | tee logs/issue120_e2e_recovery/issue36_candidate_producer_grep.txt
+```
+
+If `logs/issue36_prep` contains run configs or inventories, inspect:
+
+```bash
+find logs/issue36_prep -maxdepth 3 -type f \
+  \( -name '*config*' -o -name '*.yaml' -o -name '*.json' -o -name '*.txt' -o -name '*.md' \) \
+  | sort | tee logs/issue120_e2e_recovery/issue36_prep_metadata_files.txt
+```
+
+Generated grep/list outputs must remain under ignored `logs/` paths.
+
+### 3. Ensure Stage D regenerated artifacts exist
 
 Run the Stage D upstream generation and baseline-source verification if they are not already present:
 
@@ -362,7 +450,7 @@ make verify-issue120-stage-d ISSUE120_STAGE_D_COMPOSE_SOURCE=baseline
 make summarize-issue120-stage-d ISSUE120_STAGE_D_COMPOSE_SOURCE=baseline
 ```
 
-### 2. Inspect historical-vs-regenerated artifact layout
+### 4. Inspect historical-vs-regenerated artifact layout
 
 ```bash
 PYTHONPATH=. python3 tools/issue120/inspect_stage_d_artifact_layout.py \
@@ -383,7 +471,7 @@ largest item-count deltas
 largest box-like count deltas
 ```
 
-### 3. Compare geometry statistics
+### 5. Compare geometry statistics
 
 If both roots resolve page files, run:
 
@@ -418,7 +506,7 @@ PYTHONPATH=. python3 tools/issue120/compare_box_tree_stats.py \
   --output-dir logs/issue120_e2e_recovery/stage_d_box_tree_stats_historical_vs_sr_retry
 ```
 
-### 4. Compare source-specific regenerated compositions
+### 6. Compare source-specific regenerated compositions
 
 Repeat the layout and geometry comparisons for alternate composition sources:
 

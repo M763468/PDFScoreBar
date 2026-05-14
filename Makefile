@@ -27,6 +27,7 @@ ISSUE120_STAGE_D_DRIFT_SUMMARY ?= $(ISSUE120_STAGE_D_EVAL_DIR)/stage_d_drift_sum
 ISSUE120_STAGE_D_BOX_STATS_DIR ?= logs/issue120_e2e_recovery/stage_d_box_tree_stats
 ISSUE120_STAGE_D_BOX_STATS_LEFT ?= data/evaluation2/golden_baseline_eval2_bc23deb
 ISSUE120_STAGE_D_BOX_STATS_RIGHT ?= $(ISSUE120_STAGE_D_BANDS_FROM)
+ISSUE120_STAGE_D_COMPOSE_SOURCE ?= hybrid
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -154,28 +155,43 @@ verify-issue120-stage-b-native: ## Re-score Issue #120 candidates using the curr
 		$$BANDS_ARG $$CLEAN_ARG
 
 regen-issue120-stage-d-upstream: ## Regenerate Issue #120 Stage-D upstream artifacts in Docker/GPU
-	@CLEAN_ARG=""; \
+	@mkdir -p artifacts
+	@LOG_FILE="artifacts/issue120_stage_d_regen_$$(date +%Y%m%d_%H%M%S).log"; \
+	CLEAN_ARG=""; \
 	SCORES_ARG=""; \
 	if [ "$(ISSUE120_CLEAN_OUTPUT)" = "1" ]; then CLEAN_ARG="--clean-output"; fi; \
 	if [ -n "$(ISSUE120_STAGE_D_SCORES)" ]; then SCORES_ARG="--scores $(ISSUE120_STAGE_D_SCORES)"; fi; \
+	echo "Running Issue #120 Stage-D upstream regeneration. Logging to $$LOG_FILE..."; \
 	docker run --rm --gpus all -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace $(ISSUE120_DOCKER_IMAGE) \
 		$(ISSUE120_DOCKER_PYTHON) tools/issue120/run_stage_d_upstream_regen.py \
 		--image-root "$(ISSUE120_IMAGE_ROOT)" \
 		--output-root "$(ISSUE120_STAGE_D_OUTPUT_ROOT)" \
-		$$CLEAN_ARG $$SCORES_ARG
+		--compose-source "$(ISSUE120_STAGE_D_COMPOSE_SOURCE)" \
+		$$CLEAN_ARG $$SCORES_ARG > "$$LOG_FILE" 2>&1 || \
+		(EXIT_CODE=$$?; echo "Stage-D upstream regeneration failed with exit code $$EXIT_CODE. See $$LOG_FILE"; exit $$EXIT_CODE); \
+	echo "Stage-D upstream regeneration complete. See $$LOG_FILE"
 
 verify-issue120-stage-d: ## Run Stage-C verifier against regenerated Stage-D upstream artifacts
+	@mkdir -p artifacts
+	@LOG_FILE="artifacts/issue120_stage_d_verify_$$(date +%Y%m%d_%H%M%S).log"; \
+	echo "Running Issue #120 Stage-D verifier. Logging to $$LOG_FILE..."; \
 	docker run --rm --gpus all -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace $(ISSUE120_DOCKER_IMAGE) \
 		$(ISSUE120_DOCKER_PYTHON) tools/issue120/run_issue53_probe_rescue_then_eval.py \
+		--image-root "$(ISSUE120_IMAGE_ROOT)" \
+		--gt-root "$(ISSUE120_GT_ROOT)" \
+		--model-path "$(ISSUE120_MODEL_PATH)" \
 		--bands-from "$(ISSUE120_STAGE_D_BANDS_FROM)" \
 		--output-root "$(ISSUE120_STAGE_D_CANDIDATES_DIR)" \
 		--scoring-output-dir "$(ISSUE120_STAGE_D_SCORING_DIR)" \
-		--eval-output-dir "$(ISSUE120_STAGE_D_EVAL_DIR)"
+		--eval-output-dir "$(ISSUE120_STAGE_D_EVAL_DIR)" > "$$LOG_FILE" 2>&1 || \
+		(EXIT_CODE=$$?; echo "Stage-D verifier failed with exit code $$EXIT_CODE. See $$LOG_FILE"; exit $$EXIT_CODE); \
+	echo "Stage-D verifier complete. See $$LOG_FILE"
 
 summarize-issue120-stage-d: ## Summarize local Stage-D detector drift from ignored logs
 	PYTHONPATH=. python3 tools/issue120/summarize_stage_d_drift.py \
 		--eval-dir "$(ISSUE120_STAGE_D_EVAL_DIR)" \
 		--upstream-dir "$(ISSUE120_STAGE_D_OUTPUT_ROOT)" \
+		--compose-source "$(ISSUE120_STAGE_D_COMPOSE_SOURCE)" \
 		--output-md "$(ISSUE120_STAGE_D_DRIFT_SUMMARY)"
 
 compare-issue120-stage-d-boxes: ## Compare Golden Baseline fixture vs regenerated Stage-D bands box statistics

@@ -34,7 +34,9 @@ The Stage D gap may come from one or more of these boundaries:
 
 The first step is to determine whether the local historical artifact is present and has the same page/file layout shape as regenerated Stage D artifacts.
 
-## Initial local finding
+## Local findings
+
+### Layout availability
 
 The first #147 layout and box-tree inspection found that both roots are structurally present for the canonical 68-page manifest:
 
@@ -48,7 +50,9 @@ regenerated_missing=0
 
 This means the immediate failure mode is not a missing local historical artifact and not a missing regenerated page tree.
 
-However, regenerated baseline-source artifacts contain far fewer box-like items than the historical artifact on many pages. Largest observed losses include:
+### Baseline-source comparison
+
+Regenerated baseline-source artifacts contain far fewer box-like items than the historical artifact on many pages. Largest observed losses include:
 
 ```text
 Sibelius-Violin_Concerto-Viola/page_006: 675 -> 89  (ratio 0.132)
@@ -68,7 +72,7 @@ Sibelius-Violin_Concerto-Viola/page_006: median cy delta = -690.0
 Shostakovich-Festival_Overture_Va/page_007: median cy delta = 1427.0
 ```
 
-### Additional source-specific findings
+### Hybrid-source comparison
 
 Hybrid-source comparison, using:
 
@@ -94,30 +98,95 @@ Sibelius-Violin_Concerto-Viola/page_006: median cx delta = 534.5, median cy delt
 Shostakovich-Festival_Overture_Va/page_007: median cy delta = 1624.5
 ```
 
-A `first_available` comparison against:
+### SR-source comparison
+
+SR-source layout inspection resolves 68/68 pages:
 
 ```text
-right = logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_first_available
+manifest_pages=68
+historical_resolved=68
+historical_missing=0
+regenerated_resolved=68
+regenerated_missing=0
 ```
 
-resolved no right-side page files in the provided box-tree comparison; all sampled right counts were `None`. Treat that as a missing or not-yet-composed `first_available` tree under the expected path, not as a valid geometry comparison.
+But SR-source also strongly under-generates relative to the historical artifact:
 
-Current interpretation:
+```text
+Sibelius-Violin_Concerto-Viola/page_006: 675 -> 53  (delta -622)
+Shostakovich-Sym5-Va/page_020:           618 -> 31  (delta -587)
+Sibelius-Violin_Concerto-Viola/page_007: 592 -> 80  (delta -512)
+Va_Prokofiev_Symphony1/page_003:         612 -> 125 (delta -487)
+Va_Prokofiev_Symphony1/page_006:         627 -> 143 (delta -484)
+```
+
+The geometry-stat comparison failed locally with `PermissionError` while writing into the output directory, likely because that directory had been created by a prior `sudo` run. This is an output-permission issue, not evidence about artifact geometry.
+
+### OMR-SR-source comparison
+
+OMR-SR-source layout inspection also resolves 68/68 pages:
+
+```text
+manifest_pages=68
+historical_resolved=68
+historical_missing=0
+regenerated_resolved=68
+regenerated_missing=0
+```
+
+OMR-SR under-generates less severely than SR on some rows, but still does not approach historical counts:
+
+```text
+Shostakovich-Sym5-Va/page_020:           618 -> 58  (delta -560)
+Sibelius-Violin_Concerto-Viola/page_006: 675 -> 148 (delta -527)
+Va_Prokofiev_Symphony1/page_004:         659 -> 186 (delta -473)
+Va_Prokofiev_Symphony1/page_003:         612 -> 154 (delta -458)
+Sibelius-Violin_Concerto-Viola/page_007: 592 -> 140 (delta -452)
+```
+
+The geometry-stat comparison hit the same local `PermissionError` on the output directory.
+
+### First-available comparison
+
+After composing `first_available`, Stage D reported:
+
+```text
+Compose source: first_available
+Expected pages: 68
+Composed pages: 68
+Missing pages: 0
+By source: {'hybrid': 68}
+Bands output: logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_first_available
+```
+
+This means `first_available` selected the hybrid source for all 68 pages in this run. Its comparison result therefore matches the hybrid pattern: complete layout, but strong under-generation versus historical:
+
+```text
+Shostakovich-Sym5-Va/page_020:           618 -> 30 (ratio 0.049)
+Sibelius-Violin_Concerto-Viola/page_006: 675 -> 44 (ratio 0.065)
+Shostakovich-Sym5-Va/page_018:           459 -> 35 (ratio 0.076)
+Shostakovich-Sym5-Va/page_019:           381 -> 30 (ratio 0.079)
+Shostakovich-Sym5-Va/page_007:           367 -> 40 (ratio 0.109)
+```
+
+## Current interpretation
 
 - Historical `scoring_input_eval2_v12` is available locally and resolves 68/68 pages.
-- Regenerated baseline-source Stage D artifacts also resolve 68/68 pages.
-- Hybrid-source artifacts are complete enough to compare, but under-generate even more strongly than baseline on key pages.
-- The `first_available` source tree must be composed or path-verified before it can be compared.
-- The drift is therefore inside the content of regenerated bands/candidates, not directory layout completeness for historical/baseline/hybrid.
-- Baseline and hybrid regenerated artifacts are both under-generating relative to historical on many pages.
-- Large center shifts suggest source-selection, geometry normalization, coordinate scaling, or schema normalization drift rather than a pure CNN/NMS issue.
+- Every tested regenerated source tree can resolve 68/68 pages after composition or direct comparison.
+- `first_available` chooses `hybrid` for all 68 pages in the current run, so it is not an independent source-quality improvement.
+- All tested regenerated sources under-generate heavily relative to historical on high-drift pages.
+- No tested source has historical-like candidate volume.
+- Baseline and OMR-SR generally retain more candidates than hybrid/SR/first-available on some worst pages, but still remain far below historical counts.
+- The drift is therefore inside regenerated upstream content or composition/schema normalization, not artifact layout completeness.
+- Large center shifts suggest coordinate frame, page/score source mapping, geometry normalization, or schema normalization drift rather than a pure CNN/NMS issue.
 
 Next diagnostic priority:
 
-1. generate or verify the missing `bands_from_candidate_first_available` tree before interpreting first-available results;
-2. compare `sr` and `omr_sr` against the historical root using the same layout and box-tree tools;
-3. determine whether any source has historical-like candidate counts and geometry;
-4. if no source matches, inspect `run_stage_d_upstream_regen.py` composition/schema normalization and the upstream HOMR/SR/OMR coordinate frame.
+1. inspect `run_stage_d_upstream_regen.py` composition and schema normalization code;
+2. confirm whether historical `scoring_input_eval2_v12` contains pre-filtered dense proposals while current regenerated trees contain post-filtered sparse bars;
+3. compare per-page file keys / payload schema between historical and regenerated roots, not only box counts;
+4. identify whether the count collapse occurs before composition, during composition, or because the wrong upstream file family is being selected;
+5. only after that, route a targeted repair issue if the boundary points to coordinate conversion, source selection, or upstream generation.
 
 ## Lightweight local inspector
 
@@ -200,6 +269,21 @@ largest median-width deltas
 pages with missing left or right files
 ```
 
+If this fails with `PermissionError`, the output directory was likely created by a previous `sudo` command. Fix ownership or choose a new output directory, for example:
+
+```bash
+sudo chown -R "$USER:$USER" logs/issue120_e2e_recovery/stage_d_box_tree_stats_historical_vs_sr
+```
+
+or:
+
+```bash
+PYTHONPATH=. python3 tools/issue120/compare_box_tree_stats.py \
+  --left logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 \
+  --right logs/issue120_e2e_recovery/stage_d_upstream_regen/bands_from_candidate_sr \
+  --output-dir logs/issue120_e2e_recovery/stage_d_box_tree_stats_historical_vs_sr_retry
+```
+
 ### 4. Compare source-specific regenerated compositions
 
 Repeat the layout and geometry comparisons for alternate composition sources:
@@ -232,7 +316,7 @@ PYTHONPATH=. python3 tools/issue120/compare_box_tree_stats.py \
   --output-dir logs/issue120_e2e_recovery/stage_d_box_tree_stats_historical_vs_hybrid
 ```
 
-For `first_available`, create or recompose the source-specific tree before comparison. Do not interpret all-`None` right counts as geometry drift:
+For `first_available`, create or recompose the source-specific tree before comparison. In the observed run it selected `hybrid` for all 68 pages:
 
 ```bash
 docker run --rm --gpus all \

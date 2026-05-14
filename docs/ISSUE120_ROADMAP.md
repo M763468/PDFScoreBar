@@ -2,7 +2,15 @@
 
 ## Purpose
 
-This roadmap reflects the Issue #120 restart after #133, #134, and the #136 audit merged through PR #143.
+This roadmap reflects the Issue #120 restart after these merged recovery PRs:
+
+```text
+#138: restart plan
+#139: canonical full-68 intermediate evaluator
+#143: historical best and reconstruction-path audit
+#144: generated artifact cleanup / retention policy
+#145: Stage D upstream-regeneration diagnostic runner and current boundary
+```
 
 The current strategy is to keep these layers separate:
 
@@ -18,7 +26,7 @@ Detector-level metrics and downstream measure-count metrics must not be mixed.
 
 ## Current completed foundation
 
-### #133: restart plan
+### #133 / PR #138: restart plan
 
 Status: completed.
 
@@ -29,7 +37,7 @@ Result:
 - Issue #120 remains the parent Epic.
 - Work is split into staged audit/cleanup/repair issues.
 
-### #134: canonical full-68 intermediate evaluator
+### #134 / PR #139: canonical full-68 intermediate evaluator
 
 Status: completed.
 
@@ -111,28 +119,26 @@ Remaining limitation:
 logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
 ```
 
-This historical `bands_from` artifact is still an upstream dependency. Full slow-upstream regeneration is not proven.
+This historical `bands_from` artifact remains the unreproduced upstream dependency for Stage D.
 
-## Current / next issues
+### #135 / PR #144: generated artifact cleanup and retention policy
 
-### #135: generated artifact cleanup and retention policy
+Status: completed.
 
-Status: in progress.
-
-Branch policy:
+PR:
 
 ```text
-base: rebuild/issue120
-branch: chore/issue120-artifact-cleanup
-PR base: rebuild/issue120
+#144 chore/docs: define Issue 120 artifact retention policy
+merge commit: f18dc801345e56a6ac90c95228b9448f2a34a440
 ```
 
-Purpose:
+Policy document:
 
-- Clean tracked generated outputs where doing so does not break the current canonical detector fixture.
-- Define what stays in Git, what stays local under ignored `logs/`, and what remains a temporary retained fixture.
+```text
+docs/ISSUE120_ARTIFACT_RETENTION.md
+```
 
-Current #135 policy:
+Current #135 decision:
 
 - Keep source/docs/tools/config templates in Git.
 - Keep canonical evaluation input data in Git while the repository depends on it.
@@ -140,16 +146,29 @@ Current #135 policy:
 - Remove generated summaries from that fixture when they are not required evaluator inputs.
 - Ignore regenerated outputs under `logs/`.
 
-### #140: Stage D upstream artifact regeneration
+Retained fixture boundary:
 
-Status: open.
+- It is detector-intermediate evidence.
+- It is not full-pipeline reproduction evidence.
+- It should not be removed until Stage D/E define a replacement artifact path.
 
-Branch policy:
+## Current / next issues
+
+### #140 / PR #145: Stage D upstream artifact regeneration
+
+Status: open issue; diagnostic foundation merged.
+
+PR:
 
 ```text
-base: rebuild/issue120
-branch: audit/issue120-stage-d-upstream-regen
-PR base: rebuild/issue120
+#145 tools/docs: add Issue 120 Stage D upstream regeneration runner
+merge commit: a685bef1bda26e66937bd276df560ce655f67f5f
+```
+
+Stage D document:
+
+```text
+docs/refactors/issue120/ISSUE120_STAGE_D_UPSTREAM_REGEN.md
 ```
 
 Purpose:
@@ -163,16 +182,43 @@ HOMR / OMR / SR / SR-side HOMR / OMR-DLN or equivalent
   -> canonical evaluator
 ```
 
-Primary input currently requiring provenance:
+Primary input still requiring historical provenance or replacement:
 
 ```text
 logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
 ```
 
-Acceptance:
+Current local Stage-D boundary recorded by PR #145:
 
-- regenerated upstream artifacts can feed Stage C and preserve the detector target; or
-- failure boundary is documented with follow-up issues.
+```text
+Target: TP=3580 FP=0 FN=1
+Best current Stage D composition tested: baseline source
+Observed: TP=3543 FP=288 FN=38
+```
+
+Interpretation:
+
+- Current upstream components can regenerate structurally complete 68-page artifacts.
+- Tested current compositions do not reproduce the historical detector target.
+- The historical `scoring_input_eval2_v12` artifact remains non-reproduced.
+- #140 should be closed only after the issue thread records this boundary and any follow-up issue is opened or explicitly deferred.
+
+Useful local commands:
+
+```bash
+make regen-issue120-stage-d-upstream ISSUE120_CLEAN_OUTPUT=1
+make verify-issue120-stage-d
+make summarize-issue120-stage-d
+make compare-issue120-stage-d-boxes
+```
+
+Optional source-specific diagnostics:
+
+```bash
+make verify-issue120-stage-d ISSUE120_STAGE_D_COMPOSE_SOURCE=baseline
+make verify-issue120-stage-d ISSUE120_STAGE_D_COMPOSE_SOURCE=sr
+make verify-issue120-stage-d ISSUE120_STAGE_D_COMPOSE_SOURCE=omr_sr
+```
 
 ### #142: CNN scoring NMS repair/tuning
 
@@ -218,6 +264,11 @@ Purpose:
 
 Run or document the full 68-page pipeline result after Stage D clarifies upstream artifact regeneration.
 
+Current dependency:
+
+- Stage D now has a current-upstream failure boundary.
+- Stage E can proceed as a validation/audit only if it records this boundary and does not claim detector-target reproduction from current upstream artifacts.
+
 Acceptance:
 
 - complete 68-page output;
@@ -243,18 +294,18 @@ Resume targeted accuracy work only after audit and canonical evaluation gates ar
 
 Dependencies:
 
-- #134 and #136 completed.
-- #135 should establish artifact policy before larger changes.
+- #134, #135, and #136 are completed.
+- #140 has a current-upstream boundary but needs issue closeout or follow-up split.
 - #142 should decide NMS policy before broad accuracy repair.
 - #140/#141 should not be mixed with algorithm changes.
 
 ## Recommended order from here
 
 ```text
-1. Finish #135 cleanup/retention policy.
-2. Work #140 to verify or bound slow upstream artifact regeneration.
+1. Close out #140 by recording the Stage D boundary in the issue thread.
+2. Open or defer a follow-up for historical `scoring_input_eval2_v12` provenance recovery / upstream geometry repair.
 3. Work #142 to decide NMS behavior before broad accuracy repair.
-4. Work #141 full 68-page pipeline validation after #140 boundary is known.
+4. Work #141 as full 68-page validation, explicitly separating detector metrics from downstream measure-count metrics.
 5. Work #137 targeted accuracy repair using the canonical gates.
 ```
 

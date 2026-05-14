@@ -58,6 +58,17 @@ def candidate_coverage_rows(path: Path) -> list[dict[str, Any]]:
     return rows if isinstance(rows, list) else []
 
 
+def provenance_path(upstream_dir: Path, compose_source: str) -> Path:
+    if compose_source == "auto":
+        source_paths = sorted(upstream_dir.glob("stage_d_upstream_regen_provenance_*.json"))
+        if source_paths:
+            return max(source_paths, key=lambda p: p.stat().st_mtime)
+        return upstream_dir / "stage_d_upstream_regen_provenance.json"
+    if compose_source == "hybrid":
+        return upstream_dir / "stage_d_upstream_regen_provenance.json"
+    return upstream_dir / f"stage_d_upstream_regen_provenance_{compose_source}.json"
+
+
 def key(row: dict[str, Any]) -> tuple[str, str]:
     return str(row.get("score", "")), str(row.get("page", ""))
 
@@ -89,10 +100,12 @@ def render_markdown(
     *,
     eval_dir: Path,
     upstream_dir: Path,
+    provenance_file: Path,
     detector_summary: dict[str, Any] | None,
     page_rows: list[dict[str, Any]],
     coverage_rows: list[dict[str, Any]],
     upstream_summary: dict[str, Any] | None,
+    compose_source: str,
     limit: int,
 ) -> str:
     coverage_by_key = {key(row): row for row in coverage_rows}
@@ -130,6 +143,8 @@ def render_markdown(
         "",
         f"Evaluation dir: `{eval_dir}`",
         f"Upstream dir: `{upstream_dir}`",
+        f"Compose source: `{compose_source}`",
+        f"Provenance file: `{provenance_file}`",
         "",
         "## Detector summary",
         "",
@@ -147,6 +162,7 @@ def render_markdown(
                 f"missing_pages={upstream_summary.get('missing_pages')}",
                 f"disable_sr={upstream_summary.get('disable_sr')}",
                 f"sr_scale={upstream_summary.get('sr_scale')}",
+                f"by_source={upstream_summary.get('by_source')}",
                 "```",
             ]
         )
@@ -194,6 +210,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--eval-dir", type=Path, default=DEFAULT_EVAL_DIR)
     parser.add_argument("--upstream-dir", type=Path, default=DEFAULT_UPSTREAM_DIR)
+    parser.add_argument(
+        "--compose-source",
+        choices=["auto", "hybrid", "baseline", "sr", "omr_sr", "first_available"],
+        default="hybrid",
+        help="Select the Stage-D provenance file to report. Use auto for the newest source-specific provenance file.",
+    )
     parser.add_argument("--limit", type=int, default=15)
     parser.add_argument(
         "--output-md",
@@ -213,7 +235,8 @@ def main() -> None:
 
     page_rows = load_page_metrics(args.eval_dir / "detector_page_metrics.csv")
     coverage_rows = candidate_coverage_rows(args.eval_dir / "candidate_coverage_comparison.json")
-    upstream_payload = load_json(args.upstream_dir / "stage_d_upstream_regen_provenance.json")
+    upstream_provenance_path = provenance_path(args.upstream_dir, args.compose_source)
+    upstream_payload = load_json(upstream_provenance_path)
     upstream_summary = None
     if isinstance(upstream_payload, dict):
         upstream_summary = upstream_payload.get("summary")
@@ -221,10 +244,12 @@ def main() -> None:
     summary = render_markdown(
         eval_dir=args.eval_dir,
         upstream_dir=args.upstream_dir,
+        provenance_file=upstream_provenance_path,
         detector_summary=detector_summary,
         page_rows=page_rows,
         coverage_rows=coverage_rows,
         upstream_summary=upstream_summary,
+        compose_source=args.compose_source,
         limit=args.limit,
     )
     args.output_md.parent.mkdir(parents=True, exist_ok=True)

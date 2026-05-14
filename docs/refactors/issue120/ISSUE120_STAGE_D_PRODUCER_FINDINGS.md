@@ -137,6 +137,52 @@ This is enough to distinguish two related but different producer paths:
 
 For Issue #120 Stage-D recovery, the second path is currently more relevant because it is already wrapped by `run_stage_c_seed_regen_then_eval.py` and targets the exact v12 candidate root.
 
+## Coverage-only regeneration finding
+
+The Stage-C producer inputs validate successfully:
+
+```text
+Stage-C input validation passed.
+```
+
+However, rerunning the current Stage-C producer for #147 does not reproduce the dense historical candidate root. It completes all 68 pages but generates only 180 final candidates:
+
+```text
+BATCH SEED GENERATION COMPLETE. Processed: 68, Missing: 0
+Stage-C candidate coverage: pages=68/68 total_candidates=180 missing=0 empty=40
+Stage C candidate coverage failed: only 180 total candidates; minimum is 3000
+```
+
+This means:
+
+- required paths are present;
+- the producer script can run;
+- the current producer code/configuration is not reproducing `probe_candidates_filtered_v12`;
+- the failure is now producer drift, not missing artifact provenance.
+
+The next diagnostic must determine whether the collapse to 180 candidates occurs during:
+
+1. historical hybrid-source consensus seed loading/scaling;
+2. raw probe scan generation;
+3. `filter_probe_candidates` final filtering;
+4. staff mask / image path mismatch;
+5. current probe-scan implementation drift.
+
+A diagnostic summarizer was added:
+
+```text
+tools/issue120/summarize_stage_c_seed_regen_outputs.py
+```
+
+It compares, page by page:
+
+```text
+historical_count
+consensus_seed_count
+raw_probe_count
+final_filtered_count
+```
+
 ## Current Stage-D implication
 
 The current Stage-D upstream regeneration runner composes sparse detector-output roots from current HOMR/SR/OMR/hybrid outputs. That path is not sufficient to reproduce the historical dense candidate root.
@@ -180,7 +226,33 @@ PYTHONPATH=. python3 tools/issue120/run_stage_c_seed_regen_then_eval.py \
   --stage-c-eval-dir logs/issue120_e2e_recovery/stage_d_issue36_repro_eval
 ```
 
-Then compare byte identity against historical:
+### 3. Summarize where regenerated candidates collapse
+
+After the coverage-only run, summarize intermediate counts:
+
+```bash
+PYTHONPATH=. python3 tools/issue120/summarize_stage_c_seed_regen_outputs.py \
+  --historical-root logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12 \
+  --regen-root logs/issue120_e2e_recovery/stage_d_issue36_repro \
+  --output-dir logs/issue120_e2e_recovery/stage_d_issue36_repro_diagnostics
+```
+
+Report:
+
+```text
+historical_total
+consensus_seed_total
+raw_probe_total
+final_filtered_total
+missing_consensus
+missing_raw
+missing_final
+empty_final
+largest final-filtered losses
+largest raw-probe losses
+```
+
+### 4. If byte identity is needed, compare generated output to historical
 
 ```bash
 python3 - <<'PY'
@@ -215,7 +287,7 @@ if mismatch:
 PY
 ```
 
-### 3. If byte identity fails, compare statistics
+### 5. If byte identity fails, compare statistics
 
 ```bash
 PYTHONPATH=. python3 tools/issue120/inspect_stage_d_payload_schema.py \
@@ -231,12 +303,10 @@ PYTHONPATH=. python3 tools/issue120/compare_box_tree_stats.py \
 
 ## Routing decision
 
-If `run_stage_c_seed_regen_then_eval.py --coverage-only` regenerates a byte-identical v12 root, then #147 can close with a corrected Stage-D conclusion:
+If `summarize_stage_c_seed_regen_outputs.py` shows `raw_probe_total` is already far below historical, #147 should focus on current probe-scan / seed-loading drift.
 
-```text
-Stage-D dense candidate-root reconstruction path is Issue #36/#Stage-C v12 seed regeneration, not sparse current HOMR/SR/OMR composition.
-```
+If `raw_probe_total` is close to historical but `final_filtered_total` is low, #147 should focus on `filter_probe_candidates` or image/staff-mask input drift.
 
-If regeneration is close but not byte-identical, #147 should continue as a producer drift investigation.
+If `consensus_seed_total` is already low, #147 should focus on the `hybrid_generalization/verify_fixed_v10` source boxes and dynamic scaling step.
 
 If required `hybrid_generalization/verify_fixed_v10` inputs are missing, #147 should document that the candidate root is recoverable from local historical artifacts but not fully reproducible from repository-tracked inputs.

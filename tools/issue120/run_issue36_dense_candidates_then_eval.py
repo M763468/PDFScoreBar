@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-"""Regenerate Issue #36 v12 dense candidates and evaluate Issue #120 detector metrics.
+"""Diagnostic direct-score wrapper for Issue #36 dense candidates.
 
-This #149 wrapper is intentionally narrow:
+This is retained as a compatibility/diagnostic wrapper for #149/#151.  The
+accepted production-style detector route is
+``python -m src.pipeline.detector_routes.dense_probe_candidate_route`` and uses
+the Issue36 filtered root as Issue53 ``bands_from`` before scoring.
+
+This direct-score wrapper is intentionally narrow:
 
     inventory -> dense raw candidates -> clef-mask-aware filter
       -> candidate-root comparison gates -> current CNN scoring
@@ -29,9 +34,7 @@ from tools.issue120.eval_full68_from_intermediates import iter_manifest  # noqa:
 DEFAULT_MODEL = Path(
     "logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth"
 )
-DEFAULT_OUTPUT_ROOT = Path(
-    "logs/issue120_e2e_recovery/stage_d_issue36_dense_candidate_validation"
-)
+DEFAULT_OUTPUT_ROOT = Path("logs/issue120_e2e_recovery/stage_d_issue36_dense_candidate_validation")
 DEFAULT_HISTORICAL_RAW = Path("logs/issue36_prep/probe_candidates_from_bench_v12")
 DEFAULT_HISTORICAL_FILTERED = Path("logs/issue36_prep/probe_candidates_filtered_v12")
 DEFAULT_HISTORICAL_SCORING_INPUT = Path(
@@ -91,8 +94,7 @@ def require_under_logs(path: Path, *, label: str) -> None:
         path.resolve().relative_to(logs_root)
     except ValueError as exc:
         raise SystemExit(
-            f"Error: {label} must be under logs/ per repository log-management policy. "
-            f"Got: {path}"
+            f"Error: {label} must be under logs/ per repository log-management policy. Got: {path}"
         ) from exc
 
 
@@ -442,7 +444,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--gt-root", type=Path, default=Path("data/evaluation2/annotations"))
     parser.add_argument("--model-path", type=Path, default=DEFAULT_MODEL)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
-    parser.add_argument("--historical-raw-candidates-root", type=Path, default=DEFAULT_HISTORICAL_RAW)
+    parser.add_argument(
+        "--historical-raw-candidates-root", type=Path, default=DEFAULT_HISTORICAL_RAW
+    )
     parser.add_argument(
         "--historical-filtered-candidates-root",
         type=Path,

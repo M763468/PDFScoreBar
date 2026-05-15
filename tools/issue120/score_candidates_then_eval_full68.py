@@ -25,13 +25,14 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.pipeline.core.run_ids import build_probe_run_id_from_parts  # noqa: E402
 from src.pipeline.steps.cnn_scoring import run_cnn_scoring_batch  # noqa: E402
-from tools.cnn_classifier.score_candidates_batch import run_scoring_batch as run_legacy_scoring_batch  # noqa: E402
+from tools.cnn_classifier.score_candidates_batch import (
+    run_scoring_batch as run_legacy_scoring_batch,
+)  # noqa: E402
 from tools.issue120.eval_full68_from_intermediates import (  # noqa: E402
     PageRecord,
     find_page_file,
     iter_manifest,
 )
-
 
 DEFAULT_MODEL = Path(
     "logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth"
@@ -75,7 +76,9 @@ def copy_candidates(
         dest_dir.mkdir(parents=True, exist_ok=True)
         dest = dest_dir / "pipeline2_no_peak_candidates.json"
         shutil.copy2(src, dest)
-        copied.append({"score": record.score, "page": record.page, "src": str(src), "dest": str(dest)})
+        copied.append(
+            {"score": record.score, "page": record.page, "src": str(src), "dest": str(dest)}
+        )
     if missing:
         write_json(scoring_root / "missing_candidate_pages.json", missing)
         raise SystemExit(
@@ -219,7 +222,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--pipeline-nms-enabled", action="store_true", default=True)
     parser.add_argument("--disable-pipeline-nms", dest="pipeline_nms_enabled", action="store_false")
     parser.add_argument("--crop-recenter-on-bbox-ink", action="store_true", default=True)
-    parser.add_argument("--no-crop-recenter-on-bbox-ink", dest="crop_recenter_on_bbox_ink", action="store_false")
+    parser.add_argument(
+        "--no-crop-recenter-on-bbox-ink", dest="crop_recenter_on_bbox_ink", action="store_false"
+    )
     parser.add_argument("--crop-recenter-max-shift-unit-ratio", type=float, default=0.35)
     parser.add_argument("--input-image-scale", type=float, default=1.0)
     parser.add_argument(

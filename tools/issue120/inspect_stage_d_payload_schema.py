@@ -32,8 +32,11 @@ from typing import Any, Iterable
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from tools.issue120.eval_full68_from_intermediates import PageRecord, find_page_file, iter_manifest  # noqa: E402
-
+from tools.issue120.eval_full68_from_intermediates import (  # noqa: E402
+    PageRecord,
+    find_page_file,
+    iter_manifest,
+)
 
 DEFAULT_FILENAMES = (
     "pipeline2_no_peak_candidates.json",
@@ -343,7 +346,10 @@ def main() -> None:
     try:
         markdown = write_reports(rows, args)
     except PermissionError as exc:
-        print(f"Permission denied while writing reports under {args.output_dir}: {exc}", file=sys.stderr)
+        print(
+            f"Permission denied while writing reports under {args.output_dir}: {exc}",
+            file=sys.stderr,
+        )
         print(
             "Fix ownership or choose a different --output-dir, for example: "
             f"sudo chown -R $(id -u):$(id -g) {args.output_dir}",

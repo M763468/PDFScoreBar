@@ -492,7 +492,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--scored-file", default="pipeline2_no_peak_scored.json")
     parser.add_argument("--candidates-file", default="pipeline2_no_peak_candidates.json")
     parser.add_argument("--score-threshold", type=float, default=0.1)
-    parser.add_argument("--rule-name", default="center_anchor", choices=["center_anchor", "baseline_iou"])
+    parser.add_argument(
+        "--rule-name", default="center_anchor", choices=["center_anchor", "baseline_iou"]
+    )
     parser.add_argument("--vov-threshold", type=float, default=0.5)
     parser.add_argument("--xdist-threshold", type=float, default=12.0)
     parser.add_argument(

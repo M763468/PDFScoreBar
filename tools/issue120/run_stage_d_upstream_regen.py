@@ -30,7 +30,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from tools.issue120.eval_full68_from_intermediates import SCORES  # noqa: E402
 
-
 SOURCE_NAMES = ("hybrid", "baseline", "sr", "omr_sr")
 
 
@@ -210,7 +209,9 @@ def compose_bands_for_score(
 
         output_dir = bands_output_dir / score / page
         if payload is None or source_path is None:
-            rows.append(PageComposition(score, page, None, None, str(output_dir), "missing_source", None))
+            rows.append(
+                PageComposition(score, page, None, None, str(output_dir), "missing_source", None)
+            )
             continue
 
         write_json(output_dir / "pipeline2_no_peak_candidates.json", payload)
@@ -320,7 +321,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--run-id-prefix", default="issue120_stage_d_upstream_regen")
     parser.add_argument("--scores", nargs="*", help="Optional subset of score names to process.")
-    parser.add_argument("--compose-source", choices=["first_available", *SOURCE_NAMES], default="hybrid")
+    parser.add_argument(
+        "--compose-source", choices=["first_available", *SOURCE_NAMES], default="hybrid"
+    )
     parser.add_argument(
         "--compose-only",
         action="store_true",

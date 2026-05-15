@@ -28,8 +28,11 @@ from typing import Any, Iterable
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from tools.issue120.eval_full68_from_intermediates import PageRecord, find_page_file, iter_manifest  # noqa: E402
-
+from tools.issue120.eval_full68_from_intermediates import (  # noqa: E402
+    PageRecord,
+    find_page_file,
+    iter_manifest,
+)
 
 DEFAULT_HISTORICAL_ROOT = Path(
     "logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12"
@@ -132,7 +135,9 @@ def payload_items(payload: Any) -> list[Any]:
 
 def shape(path: Path | None, filename: str | None) -> FileShape:
     if path is None or not path.exists():
-        return FileShape(False, str(path) if path else None, filename, "MISSING", None, None, None, None)
+        return FileShape(
+            False, str(path) if path else None, filename, "MISSING", None, None, None, None
+        )
     payload = load_json(path)
     if isinstance(payload, dict) and payload.get("__error__"):
         return FileShape(
@@ -186,7 +191,11 @@ def resolve_pair(
             return ResolvedPair(filename, historical_path, regenerated_path, True)
     historical_path = first_historical[1] if first_historical else None
     regenerated_path = first_regenerated[1] if first_regenerated else None
-    filename = first_historical[0] if first_historical else (first_regenerated[0] if first_regenerated else None)
+    filename = (
+        first_historical[0]
+        if first_historical
+        else (first_regenerated[0] if first_regenerated else None)
+    )
     return ResolvedPair(filename, historical_path, regenerated_path, False)
 
 
@@ -202,7 +211,9 @@ def inspect_layout(args: argparse.Namespace) -> list[PageLayoutRow]:
         pair = resolve_pair(args.historical, args.regenerated, record, args.filenames)
         historical_shape = shape(pair.historical_path, pair.filename)
         regenerated_shape = shape(pair.regenerated_path, pair.filename)
-        comparable = pair.comparable_artifact and historical_shape.exists and regenerated_shape.exists
+        comparable = (
+            pair.comparable_artifact and historical_shape.exists and regenerated_shape.exists
+        )
         rows.append(
             PageLayoutRow(
                 score=record.score,
@@ -219,7 +230,9 @@ def inspect_layout(args: argparse.Namespace) -> list[PageLayoutRow]:
                 regenerated_item_count=regenerated_shape.item_count,
                 historical_box_like_count=historical_shape.box_like_count,
                 regenerated_box_like_count=regenerated_shape.box_like_count,
-                count_delta=safe_delta(historical_shape.item_count, regenerated_shape.item_count, comparable),
+                count_delta=safe_delta(
+                    historical_shape.item_count, regenerated_shape.item_count, comparable
+                ),
                 box_like_delta=safe_delta(
                     historical_shape.box_like_count,
                     regenerated_shape.box_like_count,
@@ -310,12 +323,16 @@ def render_markdown(rows: list[PageLayoutRow], args: argparse.Namespace) -> str:
     if missing_historical:
         lines.extend(["## Missing or unreadable historical pages", ""])
         for row in missing_historical[: args.limit]:
-            lines.append(f"- `{row.score}/{row.page}` status=`{row.historical_status}` path=`{row.historical_path}`")
+            lines.append(
+                f"- `{row.score}/{row.page}` status=`{row.historical_status}` path=`{row.historical_path}`"
+            )
         lines.append("")
     if missing_regenerated:
         lines.extend(["## Missing or unreadable regenerated pages", ""])
         for row in missing_regenerated[: args.limit]:
-            lines.append(f"- `{row.score}/{row.page}` status=`{row.regenerated_status}` path=`{row.regenerated_path}`")
+            lines.append(
+                f"- `{row.score}/{row.page}` status=`{row.regenerated_status}` path=`{row.regenerated_path}`"
+            )
         lines.append("")
 
     lines.extend(
@@ -356,7 +373,10 @@ def main() -> None:
     try:
         markdown = write_reports(rows, args)
     except PermissionError as exc:
-        print(f"Permission denied while writing reports under {args.output_dir}: {exc}", file=sys.stderr)
+        print(
+            f"Permission denied while writing reports under {args.output_dir}: {exc}",
+            file=sys.stderr,
+        )
         print(
             "Fix ownership or choose a different --output-dir, for example: "
             f"sudo chown -R $(id -u):$(id -g) {args.output_dir}",

@@ -154,10 +154,14 @@ def classify_path(path: str) -> ClassifiedPath:
     if path.startswith("configs/"):
         return ClassifiedPath(path, "source_config", "Tracked config/template.")
 
-    return ClassifiedPath(path, "source_or_unclassified", "No Issue #120 generated-artifact pattern matched.")
+    return ClassifiedPath(
+        path, "source_or_unclassified", "No Issue #120 generated-artifact pattern matched."
+    )
 
 
-def summarize(items: Iterable[ClassifiedPath], *, example_limit: int) -> dict[str, dict[str, object]]:
+def summarize(
+    items: Iterable[ClassifiedPath], *, example_limit: int
+) -> dict[str, dict[str, object]]:
     grouped: dict[str, list[ClassifiedPath]] = defaultdict(list)
     for item in items:
         grouped[item.classification].append(item)
@@ -190,8 +194,12 @@ def render_markdown(summary: dict[str, dict[str, object]]) -> str:
         reason = markdown_table_cell(payload["primary_reason"])
         lines.append(f"| `{classification}` | {payload['count']} | {reason} | {examples} |")
     lines.append("")
-    lines.append("Generated artifacts should be removed from Git or moved under ignored `logs/` paths.")
-    lines.append("Retained Issue #120 fixtures require an explicit rationale in `docs/ISSUE120_ARTIFACT_RETENTION.md`.")
+    lines.append(
+        "Generated artifacts should be removed from Git or moved under ignored `logs/` paths."
+    )
+    lines.append(
+        "Retained Issue #120 fixtures require an explicit rationale in `docs/ISSUE120_ARTIFACT_RETENTION.md`."
+    )
     return "\n".join(lines)
 
 

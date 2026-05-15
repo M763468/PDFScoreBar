@@ -31,7 +31,6 @@ from src.pipeline.steps.candidate_filters import filter_probe_candidates  # noqa
 from src.pipeline.steps.hybrid_consensus import load_json_boxes  # noqa: E402
 from tools.issue120.eval_full68_from_intermediates import iter_manifest  # noqa: E402
 
-
 DEFAULT_REGEN_ROOT = Path("logs/issue120_e2e_recovery/stage_d_issue36_repro")
 DEFAULT_OUTPUT_DIR = Path("logs/issue120_e2e_recovery/stage_d_issue36_filter_drop_reasons")
 DEFAULT_INVENTORY = Path("logs/issue36_prep/20260208_bench_inventory.json")
@@ -104,7 +103,9 @@ def replay_page(
         )
 
     if staff_mask is not None and staff_mask.shape[:2] != img.shape[:2]:
-        staff_mask = cv2.resize(staff_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
+        staff_mask = cv2.resize(
+            staff_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST
+        )
 
     kept, dropped = filter_probe_candidates(
         candidates=raw_candidates,
@@ -269,7 +270,9 @@ def main() -> None:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     write_csv(rows, args.output_dir / "stage_c_filter_drop_reasons.csv")
     markdown = render_markdown(rows, args)
-    (args.output_dir / "stage_c_filter_drop_reasons.md").write_text(markdown + "\n", encoding="utf-8")
+    (args.output_dir / "stage_c_filter_drop_reasons.md").write_text(
+        markdown + "\n", encoding="utf-8"
+    )
     print(markdown)
     print(f"Wrote: {args.output_dir}")
 

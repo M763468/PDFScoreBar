@@ -30,7 +30,6 @@ from src.pipeline.steps.candidate_filters import filter_probe_candidates  # noqa
 from src.pipeline.steps.hybrid_consensus import load_json_boxes  # noqa: E402
 from tools.issue120.eval_full68_from_intermediates import iter_manifest  # noqa: E402
 
-
 DEFAULT_REGEN_ROOT = Path("logs/issue120_e2e_recovery/stage_d_issue36_repro")
 DEFAULT_OUTPUT_DIR = Path("logs/issue120_e2e_recovery/stage_d_issue36_filter_ablation")
 DEFAULT_INVENTORY = Path("logs/issue36_prep/20260208_bench_inventory.json")
@@ -128,7 +127,9 @@ def load_image_and_mask(rec: dict[str, Any]) -> tuple[Any, Any, Path, Path]:
         raise RuntimeError(f"Could not load image: {image_path}")
     staff_mask = cv2.imread(str(staff_mask_path), cv2.IMREAD_GRAYSCALE)
     if staff_mask is not None and staff_mask.shape[:2] != img.shape[:2]:
-        staff_mask = cv2.resize(staff_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
+        staff_mask = cv2.resize(
+            staff_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST
+        )
     return img, staff_mask, image_path, staff_mask_path
 
 
@@ -169,10 +170,7 @@ def run(args: argparse.Namespace) -> tuple[list[ProfileSummaryRow], list[PageAbl
         )
         raw_by_page[key] = load_json_boxes(raw_path) if raw_path.exists() else []
         historical_path = (
-            args.historical_root
-            / record.score
-            / record.page
-            / "pipeline2_no_peak_candidates.json"
+            args.historical_root / record.score / record.page / "pipeline2_no_peak_candidates.json"
         )
         historical_count_by_page[key] = load_count(historical_path)
         rec = inventory.get(key)
@@ -230,7 +228,9 @@ def run(args: argparse.Namespace) -> tuple[list[ProfileSummaryRow], list[PageAbl
                 empty_pages=empty_pages,
                 historical_total=historical_total,
                 kept_minus_historical=kept_total - historical_total,
-                kept_to_historical_ratio=(kept_total / historical_total) if historical_total else None,
+                kept_to_historical_ratio=(kept_total / historical_total)
+                if historical_total
+                else None,
                 overrides=json.dumps(PROFILES[profile], sort_keys=True),
             )
         )
@@ -238,7 +238,9 @@ def run(args: argparse.Namespace) -> tuple[list[ProfileSummaryRow], list[PageAbl
 
 
 def render_markdown(
-    summary_rows: list[ProfileSummaryRow], page_rows: list[PageAblationRow], args: argparse.Namespace
+    summary_rows: list[ProfileSummaryRow],
+    page_rows: list[PageAblationRow],
+    args: argparse.Namespace,
 ) -> str:
     lines = [
         "# Issue 120 Stage-C filter ablation summary",
@@ -253,7 +255,9 @@ def render_markdown(
         "| --- | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for row in summary_rows:
-        ratio = "" if row.kept_to_historical_ratio is None else f"{row.kept_to_historical_ratio:.3f}"
+        ratio = (
+            "" if row.kept_to_historical_ratio is None else f"{row.kept_to_historical_ratio:.3f}"
+        )
         lines.append(
             f"| {row.profile} | {row.raw_total} | {row.kept_total} | {row.historical_total} | "
             f"{ratio} | {row.empty_pages} | `{row.overrides}` |"

@@ -28,7 +28,6 @@ from typing import Any
 
 from tools.issue120.eval_full68_from_intermediates import find_page_file, iter_manifest
 
-
 DEFAULT_INVENTORY = Path("logs/issue36_prep/20260208_bench_inventory.json")
 DEFAULT_RUN_ROOT = Path("logs/hybrid_generalization/verify_fixed_v10")
 DEFAULT_REGEN_OUTPUT = Path("logs/repro_v12_recovery_final")

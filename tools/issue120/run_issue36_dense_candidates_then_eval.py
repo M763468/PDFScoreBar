@@ -4,7 +4,8 @@
 This #149 wrapper is intentionally narrow:
 
     inventory -> dense raw candidates -> clef-mask-aware filter
-      -> current CNN scoring -> #134 full-68 detector evaluator
+      -> candidate-root comparison gates -> current CNN scoring
+      -> #134 full-68 detector evaluator
 
 It does not change general pipeline defaults and does not run the full slow
 HOMR/SR/OMR pipeline.
@@ -29,11 +30,17 @@ DEFAULT_MODEL = Path(
 DEFAULT_OUTPUT_ROOT = Path(
     "logs/issue120_e2e_recovery/stage_d_issue36_dense_candidate_validation"
 )
+DEFAULT_HISTORICAL_RAW = Path("logs/issue36_prep/probe_candidates_from_bench_v12")
+DEFAULT_HISTORICAL_FILTERED = Path("logs/issue36_prep/probe_candidates_filtered_v12")
+DEFAULT_HISTORICAL_SCORING_INPUT = Path(
+    "logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12"
+)
 
 TARGET_DETECTOR = {"tp": 3580, "fp": 0, "fn": 1}
 
 GENERATION_PARAMS: dict[str, str] = {
     "band_source": "row_stats",
+    "band_cluster_max_dist": "25.0",
     "ink_threshold": "240",
     "min_ratio": "0.6",
     "min_height_ratio": "0.006",
@@ -76,8 +83,8 @@ def add_param_args(cmd: list[str], params: dict[str, str]) -> None:
         cmd.extend([f"--{name.replace('_', '-')}", value])
 
 
-def candidate_root_summary(root: Path) -> dict[str, int | str]:
-    files = sorted(root.rglob("pipeline2_no_peak_candidates.json"))
+def candidate_root_summary(root: Path) -> dict[str, int | str | bool]:
+    files = sorted(root.rglob("pipeline2_no_peak_candidates.json")) if root.exists() else []
     total = 0
     unreadable = 0
     for path in files:
@@ -90,6 +97,7 @@ def candidate_root_summary(root: Path) -> dict[str, int | str]:
             total += len(payload)
     return {
         "root": str(root),
+        "exists": root.exists(),
         "files": len(files),
         "total_candidates": total,
         "unreadable": unreadable,
@@ -110,6 +118,54 @@ def detector_summary(eval_output_dir: Path) -> dict[str, Any] | None:
             if isinstance(summary, dict):
                 return summary
     return None
+
+
+def comparison_summary(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    payload = load_json(path)
+    if isinstance(payload, dict) and isinstance(payload.get("summary"), dict):
+        return payload["summary"]
+    return None
+
+
+def compare_candidate_roots(
+    *,
+    left: Path,
+    right: Path,
+    output_dir: Path,
+    label: str,
+) -> dict[str, Any] | None:
+    if not left.exists():
+        print(f"Skipping {label} comparison: historical root not found: {left}", flush=True)
+        return None
+    run_command(
+        [
+            sys.executable,
+            "tools/issue120/compare_filter_candidate_deltas.py",
+            "--historical-dir",
+            str(left),
+            "--repro-dir",
+            str(right),
+            "--output-dir",
+            str(output_dir),
+        ]
+    )
+    return comparison_summary(output_dir / "filter_candidate_delta_summary.json")
+
+
+def assert_candidate_match(summary: dict[str, Any] | None, *, label: str) -> None:
+    if summary is None:
+        raise SystemExit(f"{label} comparison summary is missing")
+    checks = {
+        "missing_historical_pages": summary.get("missing_historical_pages"),
+        "missing_repro_pages": summary.get("missing_repro_pages"),
+        "mismatch_pages": summary.get("mismatch_pages"),
+        "total_extra_in_repro": summary.get("total_extra_in_repro"),
+        "total_missing_from_repro": summary.get("total_missing_from_repro"),
+    }
+    if any(value != 0 for value in checks.values()):
+        raise SystemExit(f"{label} candidate-root mismatch: {checks}")
 
 
 def validate_complete_contract(eval_output_dir: Path) -> None:
@@ -134,101 +190,6 @@ def validate_detector_target(eval_output_dir: Path) -> None:
     observed = {"tp": summary.get("tp"), "fp": summary.get("fp"), "fn": summary.get("fn")}
     if observed != TARGET_DETECTOR:
         raise SystemExit(f"Detector target mismatch: observed={observed} target={TARGET_DETECTOR}")
-
-
-def build_route_provenance(args: argparse.Namespace) -> dict[str, Any]:
-    generation_summary = (
-        load_json(args.generation_summary) if args.generation_summary.exists() else None
-    )
-    filter_summary = load_json(args.filter_summary) if args.filter_summary.exists() else None
-    score_stage_provenance = (
-        load_json(args.eval_output_dir / "stage_b_provenance.json")
-        if (args.eval_output_dir / "stage_b_provenance.json").exists()
-        else None
-    )
-    eval_summary = detector_summary(args.eval_output_dir)
-
-    clef_mask_resolution = None
-    reason_counts = None
-    if isinstance(filter_summary, dict):
-        clef_mask_resolution = filter_summary.get("clef_mask_resolution")
-        reason_counts = filter_summary.get("reason_counts")
-
-    return {
-        "schema_version": "issue120.issue36_dense_candidate_validation.v1",
-        "status": "issue36_dense_candidate_current_validation_route",
-        "issue": 149,
-        "parent_issue": 120,
-        "evaluated_stage": "post_cnn_scoring_detector_intermediate",
-        "route": [
-            "Issue #36 v12 bench inventory",
-            "tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py",
-            "tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py "
-            "with clef-mask-aware filtering",
-            "tools/issue120/score_candidates_then_eval_full68.py",
-            "tools/issue120/eval_full68_from_intermediates.py (#134 full-68 evaluator)",
-        ],
-        "inputs": {
-            "inventory": str(args.inventory),
-            "exclude": str(args.exclude),
-            "image_root": str(args.image_root),
-            "gt_root": str(args.gt_root),
-            "model_path": str(args.model_path),
-        },
-        "outputs": {
-            "output_root": str(args.output_root),
-            "raw_candidates_root": str(args.raw_candidates_root),
-            "filtered_candidates_root": str(args.filtered_candidates_root),
-            "filter_suggestions_root": str(args.suggestions_root),
-            "scoring_output_dir": str(args.scoring_output_dir),
-            "eval_output_dir": str(args.eval_output_dir),
-            "generation_summary": str(args.generation_summary),
-            "filter_summary": str(args.filter_summary),
-        },
-        "candidate_root_summary": {
-            "raw": candidate_root_summary(args.raw_candidates_root),
-            "filtered": candidate_root_summary(args.filtered_candidates_root),
-        },
-        "generation_params": GENERATION_PARAMS,
-        "filter_params": FILTER_PARAMS,
-        "clef_mask_filtering": {
-            "enabled": True,
-            "resolution": clef_mask_resolution,
-            "reason_counts": reason_counts,
-            "summary_path": str(args.filter_summary),
-        },
-        "cnn_scoring": {
-            "scorer": args.scorer,
-            "cnn_apply_nms": args.pipeline_nms,
-            "model_path": str(args.model_path),
-            "score_threshold": args.score_threshold,
-            "xdist_threshold": args.xdist_threshold,
-            "stage_b_provenance": score_stage_provenance,
-        },
-        "detector_target": TARGET_DETECTOR,
-        "detector_summary": eval_summary,
-        "measure_count_summary": {
-            "status": "not_run_in_issue149",
-            "note": (
-                "Detector metrics are evaluated here. "
-                "Downstream measure-count validation remains separate."
-            ),
-        },
-        "scope_guards": {
-            "general_pipeline_defaults_changed": False,
-            "nms_policy_owner": "#142",
-            "full_slow_pipeline_owner": "#141",
-            "generated_outputs_under_ignored_logs": str(args.output_root).startswith("logs/"),
-        },
-        "notes": [
-            "This route integrates the recovered Issue #36 v12 dense candidate producer "
-            "into current Issue #120 validation.",
-            "It does not run the full slow HOMR/SR/OMR pipeline.",
-            "It keeps detector metrics separate from downstream measure-count metrics.",
-        ],
-        "generation_summary": generation_summary,
-        "filter_summary": filter_summary,
-    }
 
 
 def run_generation(args: argparse.Namespace) -> None:
@@ -269,6 +230,28 @@ def run_filter(args: argparse.Namespace) -> None:
     run_command(cmd)
 
 
+def run_intermediate_comparisons(args: argparse.Namespace) -> dict[str, Any]:
+    raw = compare_candidate_roots(
+        left=args.historical_raw_candidates_root,
+        right=args.raw_candidates_root,
+        output_dir=args.raw_compare_output_dir,
+        label="raw",
+    )
+    filtered = compare_candidate_roots(
+        left=args.historical_filtered_candidates_root,
+        right=args.filtered_candidates_root,
+        output_dir=args.filtered_compare_output_dir,
+        label="filtered",
+    )
+    scoring_input = compare_candidate_roots(
+        left=args.historical_scoring_input_root,
+        right=args.filtered_candidates_root,
+        output_dir=args.scoring_input_compare_output_dir,
+        label="historical scoring input",
+    )
+    return {"raw": raw, "filtered": filtered, "historical_scoring_input": scoring_input}
+
+
 def run_scoring_and_eval(args: argparse.Namespace) -> None:
     cmd = [
         sys.executable,
@@ -298,8 +281,120 @@ def run_scoring_and_eval(args: argparse.Namespace) -> None:
     run_command(cmd)
 
 
-def attach_route_provenance(args: argparse.Namespace) -> None:
-    provenance = build_route_provenance(args)
+def build_route_provenance(
+    args: argparse.Namespace,
+    comparisons: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    generation_summary = (
+        load_json(args.generation_summary) if args.generation_summary.exists() else None
+    )
+    filter_summary = load_json(args.filter_summary) if args.filter_summary.exists() else None
+    score_stage_provenance = (
+        load_json(args.eval_output_dir / "stage_b_provenance.json")
+        if (args.eval_output_dir / "stage_b_provenance.json").exists()
+        else None
+    )
+    eval_summary = detector_summary(args.eval_output_dir)
+
+    clef_mask_resolution = None
+    reason_counts = None
+    if isinstance(filter_summary, dict):
+        clef_mask_resolution = filter_summary.get("clef_mask_resolution")
+        reason_counts = filter_summary.get("reason_counts")
+
+    return {
+        "schema_version": "issue120.issue36_dense_candidate_validation.v2",
+        "status": "issue36_dense_candidate_current_validation_route",
+        "issue": 149,
+        "parent_issue": 120,
+        "evaluated_stage": "post_cnn_scoring_detector_intermediate",
+        "route": [
+            "Issue #36 v12 bench inventory",
+            "tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py",
+            "candidate-root comparisons against recovered historical roots",
+            "tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py "
+            "with clef-mask-aware filtering",
+            "tools/issue120/score_candidates_then_eval_full68.py",
+            "tools/issue120/eval_full68_from_intermediates.py (#134 full-68 evaluator)",
+        ],
+        "inputs": {
+            "inventory": str(args.inventory),
+            "exclude": str(args.exclude),
+            "image_root": str(args.image_root),
+            "gt_root": str(args.gt_root),
+            "model_path": str(args.model_path),
+            "historical_raw_candidates_root": str(args.historical_raw_candidates_root),
+            "historical_filtered_candidates_root": str(args.historical_filtered_candidates_root),
+            "historical_scoring_input_root": str(args.historical_scoring_input_root),
+        },
+        "outputs": {
+            "output_root": str(args.output_root),
+            "raw_candidates_root": str(args.raw_candidates_root),
+            "filtered_candidates_root": str(args.filtered_candidates_root),
+            "filter_suggestions_root": str(args.suggestions_root),
+            "scoring_output_dir": str(args.scoring_output_dir),
+            "eval_output_dir": str(args.eval_output_dir),
+            "generation_summary": str(args.generation_summary),
+            "filter_summary": str(args.filter_summary),
+            "raw_compare_output_dir": str(args.raw_compare_output_dir),
+            "filtered_compare_output_dir": str(args.filtered_compare_output_dir),
+            "scoring_input_compare_output_dir": str(args.scoring_input_compare_output_dir),
+        },
+        "candidate_root_summary": {
+            "raw": candidate_root_summary(args.raw_candidates_root),
+            "filtered": candidate_root_summary(args.filtered_candidates_root),
+            "historical_raw": candidate_root_summary(args.historical_raw_candidates_root),
+            "historical_filtered": candidate_root_summary(args.historical_filtered_candidates_root),
+            "historical_scoring_input": candidate_root_summary(args.historical_scoring_input_root),
+        },
+        "candidate_root_comparisons": comparisons or {},
+        "generation_params": GENERATION_PARAMS,
+        "filter_params": FILTER_PARAMS,
+        "clef_mask_filtering": {
+            "enabled": True,
+            "resolution": clef_mask_resolution,
+            "reason_counts": reason_counts,
+            "summary_path": str(args.filter_summary),
+        },
+        "cnn_scoring": {
+            "scorer": args.scorer,
+            "cnn_apply_nms": args.pipeline_nms,
+            "model_path": str(args.model_path),
+            "score_threshold": args.score_threshold,
+            "xdist_threshold": args.xdist_threshold,
+            "stage_b_provenance": score_stage_provenance,
+        },
+        "detector_target": TARGET_DETECTOR,
+        "detector_summary": eval_summary,
+        "measure_count_summary": {
+            "status": "not_run_in_issue149",
+            "note": (
+                "Detector metrics are evaluated here. "
+                "Downstream measure-count validation remains separate."
+            ),
+        },
+        "scope_guards": {
+            "general_pipeline_defaults_changed": False,
+            "nms_policy_owner": "#142",
+            "full_slow_pipeline_owner": "#141",
+            "generated_outputs_under_ignored_logs": str(args.output_root).startswith("logs/"),
+        },
+        "notes": [
+            "Issue #36 v12 reproduction pins band_cluster_max_dist=25.0 because the "
+            "current detector default changed from the historical edf7bf6 behavior.",
+            "This route does not run the full slow HOMR/SR/OMR pipeline.",
+            "It keeps detector metrics separate from downstream measure-count metrics.",
+        ],
+        "generation_summary": generation_summary,
+        "filter_summary": filter_summary,
+    }
+
+
+def attach_route_provenance(
+    args: argparse.Namespace,
+    comparisons: dict[str, Any] | None = None,
+) -> None:
+    provenance = build_route_provenance(args, comparisons)
     write_json(args.route_provenance, provenance)
     run_command(
         [
@@ -331,54 +426,28 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--gt-root", type=Path, default=Path("data/evaluation2/annotations"))
     parser.add_argument("--model-path", type=Path, default=DEFAULT_MODEL)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
+    parser.add_argument("--historical-raw-candidates-root", type=Path, default=DEFAULT_HISTORICAL_RAW)
     parser.add_argument(
-        "--raw-candidates-root",
+        "--historical-filtered-candidates-root",
         type=Path,
-        default=None,
-        help="Defaults to <output-root>/probe_candidates_from_bench_v12.",
+        default=DEFAULT_HISTORICAL_FILTERED,
     )
     parser.add_argument(
-        "--filtered-candidates-root",
+        "--historical-scoring-input-root",
         type=Path,
-        default=None,
-        help="Defaults to <output-root>/probe_candidates_filtered_v12.",
+        default=DEFAULT_HISTORICAL_SCORING_INPUT,
     )
-    parser.add_argument(
-        "--suggestions-root",
-        type=Path,
-        default=None,
-        help="Defaults to <output-root>/filter_suggestions_v12.",
-    )
-    parser.add_argument(
-        "--generation-summary",
-        type=Path,
-        default=None,
-        help="Defaults to <output-root>/probe_generation_summary_v12_current.json.",
-    )
-    parser.add_argument(
-        "--filter-summary",
-        type=Path,
-        default=None,
-        help="Defaults to <output-root>/filter_apply_summary_v12_current.json.",
-    )
-    parser.add_argument(
-        "--scoring-output-dir",
-        type=Path,
-        default=None,
-        help="Defaults to <output-root>/scoring.",
-    )
-    parser.add_argument(
-        "--eval-output-dir",
-        type=Path,
-        default=None,
-        help="Defaults to <output-root>/eval.",
-    )
-    parser.add_argument(
-        "--route-provenance",
-        type=Path,
-        default=None,
-        help="Defaults to <output-root>/issue36_dense_candidate_route_provenance.json.",
-    )
+    parser.add_argument("--raw-candidates-root", type=Path, default=None)
+    parser.add_argument("--filtered-candidates-root", type=Path, default=None)
+    parser.add_argument("--suggestions-root", type=Path, default=None)
+    parser.add_argument("--generation-summary", type=Path, default=None)
+    parser.add_argument("--filter-summary", type=Path, default=None)
+    parser.add_argument("--scoring-output-dir", type=Path, default=None)
+    parser.add_argument("--eval-output-dir", type=Path, default=None)
+    parser.add_argument("--route-provenance", type=Path, default=None)
+    parser.add_argument("--raw-compare-output-dir", type=Path, default=None)
+    parser.add_argument("--filtered-compare-output-dir", type=Path, default=None)
+    parser.add_argument("--scoring-input-compare-output-dir", type=Path, default=None)
     parser.add_argument("--scorer", choices=["pipeline", "legacy"], default="pipeline")
     parser.add_argument(
         "--pipeline-nms",
@@ -394,7 +463,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-clean-output", action="store_true")
     parser.add_argument("--skip-generation", action="store_true")
     parser.add_argument("--skip-filter", action="store_true")
+    parser.add_argument("--skip-candidate-comparison", action="store_true")
     parser.add_argument("--skip-scoring", action="store_true")
+    parser.add_argument(
+        "--require-candidate-match",
+        action="store_true",
+        help="Fail unless raw and filtered candidate roots match recovered historical roots.",
+    )
     parser.add_argument(
         "--require-detector-target",
         action="store_true",
@@ -422,6 +497,13 @@ def resolve_default_paths(args: argparse.Namespace) -> None:
     args.route_provenance = (
         args.route_provenance or args.output_root / "issue36_dense_candidate_route_provenance.json"
     )
+    args.raw_compare_output_dir = args.raw_compare_output_dir or args.output_root / "raw_delta"
+    args.filtered_compare_output_dir = (
+        args.filtered_compare_output_dir or args.output_root / "filtered_delta"
+    )
+    args.scoring_input_compare_output_dir = (
+        args.scoring_input_compare_output_dir or args.output_root / "scoring_input_delta"
+    )
 
 
 def validate_inputs(args: argparse.Namespace) -> None:
@@ -444,6 +526,10 @@ def main() -> None:
         if not args.skip_filter:
             shutil.rmtree(args.filtered_candidates_root, ignore_errors=True)
             shutil.rmtree(args.suggestions_root, ignore_errors=True)
+        if not args.skip_candidate_comparison:
+            shutil.rmtree(args.raw_compare_output_dir, ignore_errors=True)
+            shutil.rmtree(args.filtered_compare_output_dir, ignore_errors=True)
+            shutil.rmtree(args.scoring_input_compare_output_dir, ignore_errors=True)
         if not args.skip_scoring:
             shutil.rmtree(args.scoring_output_dir, ignore_errors=True)
             shutil.rmtree(args.eval_output_dir, ignore_errors=True)
@@ -454,10 +540,22 @@ def main() -> None:
         run_generation(args)
     if not args.skip_filter:
         run_filter(args)
+
+    comparisons: dict[str, Any] | None = None
+    if not args.skip_candidate_comparison:
+        comparisons = run_intermediate_comparisons(args)
+        if args.require_candidate_match:
+            assert_candidate_match(comparisons.get("raw"), label="raw")
+            assert_candidate_match(comparisons.get("filtered"), label="filtered")
+            assert_candidate_match(
+                comparisons.get("historical_scoring_input"),
+                label="historical scoring input",
+            )
+
     if not args.skip_scoring:
         run_scoring_and_eval(args)
         validate_complete_contract(args.eval_output_dir)
-        attach_route_provenance(args)
+        attach_route_provenance(args, comparisons)
         if args.require_detector_target:
             validate_detector_target(args.eval_output_dir)
         summary = detector_summary(args.eval_output_dir)
@@ -469,7 +567,7 @@ def main() -> None:
                 f"Pred={summary.get('pred')} GT={summary.get('gt')}"
             )
     else:
-        write_json(args.route_provenance, build_route_provenance(args))
+        write_json(args.route_provenance, build_route_provenance(args, comparisons))
         print(f"Issue #36 dense candidate generation/filter complete: {args.output_root}")
 
 

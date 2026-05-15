@@ -8,6 +8,7 @@ from src.pipeline.detector_routes.dense_probe_candidate import (
     build_score_eval_command,
     cleanup_targets,
     config_from_yaml,
+    make_logged_command_runner,
     require_under_logs,
     resolve_paths,
 )
@@ -29,6 +30,14 @@ def test_dense_probe_candidate_no_clean_suppresses_cleanup_targets():
     paths = resolve_paths(config)
 
     assert cleanup_targets(config, paths) == []
+
+
+def test_dense_probe_candidate_skip_issue53_preserves_candidates():
+    config = DenseProbeCandidateConfig(skip_issue53_regeneration=True)
+    paths = resolve_paths(config)
+
+    assert paths.issue53_candidates_root not in cleanup_targets(config, paths)
+    assert paths.scoring_output_dir in cleanup_targets(config, paths)
 
 
 def test_dense_probe_candidate_outputs_must_live_under_logs():
@@ -57,6 +66,36 @@ def test_dense_probe_candidate_yaml_config_round_trip():
     assert config.output_root == Path("logs/issue120_e2e_recovery/dense_probe_candidate_route")
     assert config.cnn_apply_nms is False
     assert config.require_candidate_match is True
+
+
+def test_dense_probe_candidate_yaml_null_path_uses_default(tmp_path):
+    config_path = tmp_path / "route.yaml"
+    config_path.write_text(
+        "dense_probe_candidate_route:\n  inventory: null\n",
+        encoding="utf-8",
+    )
+
+    config = config_from_yaml(config_path)
+
+    assert config.inventory == DenseProbeCandidateConfig.inventory
+
+
+def test_dense_probe_candidate_yaml_rejects_non_mapping(tmp_path):
+    config_path = tmp_path / "route.yaml"
+    config_path.write_text("- not\n- a\n- mapping\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="must be a mapping"):
+        config_from_yaml(config_path)
+
+
+def test_dense_probe_candidate_logged_runner_redirects_output(tmp_path):
+    runner = make_logged_command_runner(tmp_path)
+
+    runner(["python3", "-c", "print('hello from child')"])
+
+    logs = list(tmp_path.glob("*.log"))
+    assert len(logs) == 1
+    assert "hello from child" in logs[0].read_text(encoding="utf-8")
 
 
 def test_dense_probe_candidate_formal_cli_is_config_first():

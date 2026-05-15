@@ -125,9 +125,30 @@ def write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
+def _command_log_name(cmd: list[str], index: int) -> str:
+    script = next((Path(part).stem for part in cmd if part.endswith(".py")), "command")
+    safe = "".join(ch if ch.isalnum() or ch in {"_", "-"} else "_" for ch in script)
+    return f"{index:02d}_{safe}.log"
+
+
 def run_command(cmd: list[str]) -> None:
     print("+ " + " ".join(str(part) for part in cmd), flush=True)
     subprocess.run(cmd, check=True)
+
+
+def make_logged_command_runner(log_dir: Path) -> CommandRunner:
+    log_dir.mkdir(parents=True, exist_ok=True)
+    counter = 0
+
+    def _run(cmd: list[str]) -> None:
+        nonlocal counter
+        counter += 1
+        log_path = log_dir / _command_log_name(cmd, counter)
+        print("+ " + " ".join(str(part) for part in cmd) + f" > {log_path}", flush=True)
+        with log_path.open("w", encoding="utf-8") as log_file:
+            subprocess.run(cmd, check=True, stdout=log_file, stderr=subprocess.STDOUT)
+
+    return _run
 
 
 def add_param_args(cmd: list[str], params: dict[str, str]) -> None:
@@ -194,7 +215,7 @@ def validate_inputs(config: DenseProbeCandidateConfig, paths: DenseProbeCandidat
     ]
     missing = [str(path) for path in required if not path.exists()]
     if missing:
-        raise SystemExit("Missing required inputs:\n" + "\n".join(missing))
+        raise FileNotFoundError("Missing required inputs:\n" + "\n".join(missing))
     validate_output_paths(config, paths)
 
 
@@ -205,11 +226,9 @@ def cleanup_targets(
     if config.no_clean_output:
         return []
 
-    targets = [
-        paths.issue53_candidates_root,
-        paths.scoring_output_dir,
-        paths.eval_output_dir,
-    ]
+    targets = [paths.scoring_output_dir, paths.eval_output_dir]
+    if not config.skip_issue53_regeneration:
+        targets.append(paths.issue53_candidates_root)
     if not config.skip_issue36_regeneration:
         targets.extend(
             [
@@ -273,14 +292,14 @@ def detector_summary(eval_output_dir: Path) -> dict[str, Any] | None:
 def validate_complete_contract(eval_output_dir: Path) -> None:
     contract_path = eval_output_dir / "evaluation_contract.json"
     if not contract_path.exists():
-        raise SystemExit(f"evaluation_contract.json not found: {contract_path}")
+        raise FileNotFoundError(f"evaluation_contract.json not found: {contract_path}")
     contract = load_json(contract_path)
     expected = contract.get("expected_pages")
     evaluated = contract.get("evaluated_pages")
     missing = contract.get("missing_pages", [])
     expected_count = len(iter_manifest())
     if expected != expected_count or evaluated != expected_count or missing:
-        raise SystemExit(
+        raise RuntimeError(
             "Incomplete Issue #120 full-68 evaluation contract: "
             f"expected_pages={expected} evaluated_pages={evaluated} "
             f"expected_count={expected_count} missing_pages={len(missing)}"
@@ -290,10 +309,12 @@ def validate_complete_contract(eval_output_dir: Path) -> None:
 def validate_detector_target(eval_output_dir: Path) -> None:
     summary = detector_summary(eval_output_dir)
     if summary is None:
-        raise SystemExit(f"Detector metrics not found under {eval_output_dir}")
+        raise FileNotFoundError(f"Detector metrics not found under {eval_output_dir}")
     observed = {"tp": summary.get("tp"), "fp": summary.get("fp"), "fn": summary.get("fn")}
     if observed != TARGET_DETECTOR:
-        raise SystemExit(f"Detector target mismatch: observed={observed} target={TARGET_DETECTOR}")
+        raise RuntimeError(
+            f"Detector target mismatch: observed={observed} target={TARGET_DETECTOR}"
+        )
 
 
 def comparison_summary(path: Path) -> dict[str, Any] | None:
@@ -307,7 +328,7 @@ def comparison_summary(path: Path) -> dict[str, Any] | None:
 
 def assert_candidate_match(summary: dict[str, Any] | None, *, label: str) -> None:
     if summary is None:
-        raise SystemExit(f"{label} comparison summary is missing")
+        raise RuntimeError(f"{label} comparison summary is missing")
     checks = {
         "missing_historical_pages": summary.get("missing_historical_pages"),
         "missing_repro_pages": summary.get("missing_repro_pages"),
@@ -316,7 +337,7 @@ def assert_candidate_match(summary: dict[str, Any] | None, *, label: str) -> Non
         "total_missing_from_repro": summary.get("total_missing_from_repro"),
     }
     if any(value != 0 for value in checks.values()):
-        raise SystemExit(f"{label} candidate-root mismatch: {checks}")
+        raise RuntimeError(f"{label} candidate-root mismatch: {checks}")
 
 
 def build_generation_command(
@@ -503,7 +524,7 @@ def canonical_images(image_root: Path) -> list[Path]:
         else:
             missing.append(str(path))
     if missing:
-        raise SystemExit("Missing canonical images:\n" + "\n".join(missing))
+        raise FileNotFoundError("Missing canonical images:\n" + "\n".join(missing))
     return images
 
 
@@ -695,22 +716,27 @@ def run_dense_probe_candidate_route(
     validate_inputs(config, paths)
     clean_outputs(config, paths)
     config.output_root.mkdir(parents=True, exist_ok=True)
+    effective_runner = (
+        make_logged_command_runner(config.output_root / "command_logs")
+        if command_runner is run_command
+        else command_runner
+    )
 
     comparisons: dict[str, Any] | None = None
     if not config.skip_issue36_regeneration:
         comparisons = run_issue36_generation_filter_compare(
             config,
             paths,
-            command_runner=command_runner,
+            command_runner=effective_runner,
         )
 
     if not config.skip_issue53_regeneration:
         processed = run_issue53_probe_rescue(config, paths)
         print(f"Issue53-style probe regeneration processed pages: {processed}")
 
-    run_scoring_eval_and_coverage(config, paths, command_runner=command_runner)
+    run_scoring_eval_and_coverage(config, paths, command_runner=effective_runner)
     validate_complete_contract(paths.eval_output_dir)
-    attach_route_provenance(config, paths, comparisons=comparisons, command_runner=command_runner)
+    attach_route_provenance(config, paths, comparisons=comparisons, command_runner=effective_runner)
 
     if config.require_detector_target:
         validate_detector_target(paths.eval_output_dir)
@@ -720,11 +746,15 @@ def run_dense_probe_candidate_route(
 
 def _path_from_config(config: dict[str, Any], *keys: str, default: Path) -> Path:
     value = get_nested(config, *keys, default=str(default))
+    if value is None:
+        return default
     return Path(value)
 
 
 def config_from_yaml(path: Path) -> DenseProbeCandidateConfig:
-    data = load_yaml(path)
+    data = load_yaml(path) or {}
+    if not isinstance(data, dict):
+        raise ValueError(f"Config at {path} must be a mapping, got {type(data)}")
     route = data.get("dense_probe_candidate_route", data.get("reconstruction", data))
     if not isinstance(route, dict):
         raise ValueError("Dense probe-candidate route config must be a mapping.")

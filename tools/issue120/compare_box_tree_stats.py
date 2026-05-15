@@ -288,6 +288,16 @@ def write_csv(rows: list[PageComparison], path: Path) -> None:
             writer.writerow(asdict(row))
 
 
+def permission_error_message(exc: PermissionError, output_dir: Path) -> str:
+    return (
+        f"Permission denied while writing Stage-D box-tree outputs under: {output_dir}\n"
+        "This usually happens when the output directory was previously created by sudo/root.\n"
+        "Use a new --output-dir or fix ownership before rerunning, for example:\n\n"
+        f"  sudo chown -R $USER:$USER {output_dir}\n\n"
+        f"Original error: {exc}"
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--left", type=Path, required=True)
@@ -314,10 +324,13 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     args = build_parser().parse_args()
     rows = compare(args)
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    write_csv(rows, args.output_dir / "box_tree_stats_comparison.csv")
     markdown = render_markdown(rows, args)
-    (args.output_dir / "box_tree_stats_comparison.md").write_text(markdown + "\n", encoding="utf-8")
+    try:
+        args.output_dir.mkdir(parents=True, exist_ok=True)
+        write_csv(rows, args.output_dir / "box_tree_stats_comparison.csv")
+        (args.output_dir / "box_tree_stats_comparison.md").write_text(markdown + "\n", encoding="utf-8")
+    except PermissionError as exc:
+        raise SystemExit(permission_error_message(exc, args.output_dir)) from exc
     print(markdown)
     print(f"Wrote: {args.output_dir}")
 

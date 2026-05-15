@@ -26,6 +26,11 @@ Productionization: promote recovered validation routes into regular pipeline mod
 
 Detector-level metrics and downstream measure-count metrics must not be mixed.
 
+Metric note:
+
+- In these Issue #120 evaluator summaries, `Pred` is the evaluator-reported prediction/intermediate count for the scored detector output. It is recorded as provenance/context and is not used as the detector false-positive count.
+- `TP`, `FP`, and `FN` are the canonical detector matching metrics. The detector target is therefore stated explicitly as `TP=3580 / FP=0 / FN=1`.
+
 ## Current completed foundation
 
 ### #133 / PR #138: restart plan
@@ -154,6 +159,48 @@ Retained fixture boundary:
 - It is not full-pipeline reproduction evidence.
 - It should not be removed until Stage D/E define a replacement artifact path.
 
+### #140 / PR #145: Stage D upstream artifact regeneration
+
+Status: completed; diagnostic foundation merged and boundary recorded.
+
+PR:
+
+```text
+#145 tools/docs: add Issue 120 Stage D upstream regeneration runner
+merge commit: a685bef1bda26e66937bd276df560ce655f67f5f
+```
+
+Stage D document:
+
+```text
+docs/refactors/issue120/ISSUE120_STAGE_D_UPSTREAM_REGEN.md
+```
+
+Purpose:
+
+Verify whether the slow upstream artifacts used by Stage C can be regenerated:
+
+```text
+HOMR / OMR / SR / SR-side HOMR / OMR-DLN or equivalent
+  -> bands_from-like artifact
+  -> Issue53 probe rescue Stage C
+  -> canonical evaluator
+```
+
+Current local Stage-D boundary recorded by PR #145:
+
+```text
+Target: TP=3580 FP=0 FN=1
+Best current Stage D composition tested: baseline source
+Observed: TP=3543 FP=288 FN=38
+```
+
+Interpretation:
+
+- Current upstream components can regenerate structurally complete 68-page artifacts.
+- Tested current compositions do not reproduce the historical detector target.
+- The recovered Issue36 dense route from #149 now provides a reproducible validation route for the historical dense/bands-like root, but it is not yet a regular production pipeline module.
+
 ### #149 / PR #150: recovered Issue36 dense candidate validation route
 
 Status: completed.
@@ -201,48 +248,6 @@ Boundary:
 - Productionization and module-level refactoring are split to #151.
 
 ## Current / next issues
-
-### #140 / PR #145: Stage D upstream artifact regeneration
-
-Status: completed; diagnostic foundation merged and boundary recorded.
-
-PR:
-
-```text
-#145 tools/docs: add Issue 120 Stage D upstream regeneration runner
-merge commit: a685bef1bda26e66937bd276df560ce655f67f5f
-```
-
-Stage D document:
-
-```text
-docs/refactors/issue120/ISSUE120_STAGE_D_UPSTREAM_REGEN.md
-```
-
-Purpose:
-
-Verify whether the slow upstream artifacts used by Stage C can be regenerated:
-
-```text
-HOMR / OMR / SR / SR-side HOMR / OMR-DLN or equivalent
-  -> bands_from-like artifact
-  -> Issue53 probe rescue Stage C
-  -> canonical evaluator
-```
-
-Current local Stage-D boundary recorded by PR #145:
-
-```text
-Target: TP=3580 FP=0 FN=1
-Best current Stage D composition tested: baseline source
-Observed: TP=3543 FP=288 FN=38
-```
-
-Interpretation:
-
-- Current upstream components can regenerate structurally complete 68-page artifacts.
-- Tested current compositions do not reproduce the historical detector target.
-- The recovered Issue36 dense route from #149 now provides a reproducible validation route for the historical dense/bands-like root, but it is not yet a regular production pipeline module.
 
 ### #151: production pipeline route / module refactoring
 

@@ -27,6 +27,8 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from tools.issue120.eval_full68_from_intermediates import iter_manifest  # noqa: E402
+
 DEFAULT_MODEL = Path(
     "logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth"
 )
@@ -56,6 +58,17 @@ def run_command(cmd: list[str]) -> None:
     subprocess.run(cmd, check=True)
 
 
+def require_under_logs(path: Path, *, label: str) -> None:
+    logs_root = PROJECT_ROOT.resolve() / "logs"
+    try:
+        path.resolve().relative_to(logs_root)
+    except ValueError as exc:
+        raise SystemExit(
+            f"Error: {label} must be under logs/ per repository log-management policy. "
+            f"Got: {path}"
+        ) from exc
+
+
 def candidate_root_summary(root: Path) -> dict[str, int | str | bool]:
     files = sorted(root.rglob("pipeline2_no_peak_candidates.json")) if root.exists() else []
     total = 0
@@ -63,7 +76,7 @@ def candidate_root_summary(root: Path) -> dict[str, int | str | bool]:
     for path in files:
         try:
             payload = load_json(path)
-        except Exception:  # noqa: BLE001
+        except (json.JSONDecodeError, OSError):
             unreadable += 1
             continue
         if isinstance(payload, list):
@@ -105,10 +118,12 @@ def validate_complete_contract(eval_output_dir: Path) -> None:
     expected = contract.get("expected_pages")
     evaluated = contract.get("evaluated_pages")
     missing = contract.get("missing_pages", [])
-    if expected != 68 or evaluated != 68 or missing:
+    expected_count = len(iter_manifest())
+    if expected != expected_count or evaluated != expected_count or missing:
         raise SystemExit(
             "Incomplete Issue #120 full-68 evaluation contract: "
-            f"expected_pages={expected} evaluated_pages={evaluated} missing_pages={len(missing)}"
+            f"expected_pages={expected} evaluated_pages={evaluated} "
+            f"expected_count={expected_count} missing_pages={len(missing)}"
         )
 
 
@@ -143,6 +158,10 @@ def run_issue36_generation_filter_compare(args: argparse.Namespace) -> None:
         str(args.model_path),
         "--output-root",
         str(args.output_root),
+        "--raw-candidates-root",
+        str(args.raw_candidates_root),
+        "--filtered-candidates-root",
+        str(args.filtered_candidates_root),
         "--skip-scoring",
         "--require-candidate-match",
     ]
@@ -180,6 +199,8 @@ def run_issue53_probe_rescue(args: argparse.Namespace) -> None:
     ]
     if args.scorer == "pipeline" and args.pipeline_nms:
         cmd.append("--pipeline-nms")
+    if args.no_clean_output:
+        cmd.append("--no-clean-output")
     run_command(cmd)
 
 
@@ -272,7 +293,7 @@ def build_route_provenance(args: argparse.Namespace) -> dict[str, Any]:
             "general_pipeline_defaults_changed": False,
             "nms_policy_owner": "#142",
             "full_slow_pipeline_owner": "#141",
-            "generated_outputs_under_ignored_logs": str(args.output_root).startswith("logs/"),
+            "generated_outputs_under_ignored_logs": True,
             "direct_scoring_of_issue36_filtered_root_is_acceptance_route": False,
         },
         "notes": [
@@ -376,11 +397,28 @@ def resolve_default_paths(args: argparse.Namespace) -> None:
     args.filter_summary = args.output_root / "filter_apply_summary_v12_current.json"
 
 
+def validate_output_paths(args: argparse.Namespace) -> None:
+    output_paths = {
+        "output-root": args.output_root,
+        "raw-candidates-root": args.raw_candidates_root,
+        "filtered-candidates-root": args.filtered_candidates_root,
+        "issue53-candidates-root": args.issue53_candidates_root,
+        "scoring-output-dir": args.scoring_output_dir,
+        "eval-output-dir": args.eval_output_dir,
+        "route-provenance": args.route_provenance,
+        "issue36-route-provenance": args.issue36_route_provenance,
+        "filter-summary": args.filter_summary,
+    }
+    for label, path in output_paths.items():
+        require_under_logs(path, label=label)
+
+
 def validate_inputs(args: argparse.Namespace) -> None:
     required = [args.inventory, args.exclude, args.image_root, args.gt_root, args.model_path]
     missing = [str(path) for path in required if not path.exists()]
     if missing:
         raise SystemExit("Missing required inputs:\n" + "\n".join(missing))
+    validate_output_paths(args)
 
 
 def main() -> None:

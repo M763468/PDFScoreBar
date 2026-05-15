@@ -88,7 +88,12 @@ def candidate_root_summary(root: Path) -> dict[str, int | str]:
             continue
         if isinstance(payload, list):
             total += len(payload)
-    return {"root": str(root), "files": len(files), "total_candidates": total, "unreadable": unreadable}
+    return {
+        "root": str(root),
+        "files": len(files),
+        "total_candidates": total,
+        "unreadable": unreadable,
+    }
 
 
 def detector_summary(eval_output_dir: Path) -> dict[str, Any] | None:
@@ -132,7 +137,9 @@ def validate_detector_target(eval_output_dir: Path) -> None:
 
 
 def build_route_provenance(args: argparse.Namespace) -> dict[str, Any]:
-    generation_summary = load_json(args.generation_summary) if args.generation_summary.exists() else None
+    generation_summary = (
+        load_json(args.generation_summary) if args.generation_summary.exists() else None
+    )
     filter_summary = load_json(args.filter_summary) if args.filter_summary.exists() else None
     score_stage_provenance = (
         load_json(args.eval_output_dir / "stage_b_provenance.json")
@@ -156,7 +163,8 @@ def build_route_provenance(args: argparse.Namespace) -> dict[str, Any]:
         "route": [
             "Issue #36 v12 bench inventory",
             "tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py",
-            "tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py with clef-mask-aware filtering",
+            "tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py "
+            "with clef-mask-aware filtering",
             "tools/issue120/score_candidates_then_eval_full68.py",
             "tools/issue120/eval_full68_from_intermediates.py (#134 full-68 evaluator)",
         ],
@@ -201,7 +209,10 @@ def build_route_provenance(args: argparse.Namespace) -> dict[str, Any]:
         "detector_summary": eval_summary,
         "measure_count_summary": {
             "status": "not_run_in_issue149",
-            "note": "Detector metrics are evaluated here. Downstream measure-count validation remains separate.",
+            "note": (
+                "Detector metrics are evaluated here. "
+                "Downstream measure-count validation remains separate."
+            ),
         },
         "scope_guards": {
             "general_pipeline_defaults_changed": False,
@@ -210,7 +221,8 @@ def build_route_provenance(args: argparse.Namespace) -> dict[str, Any]:
             "generated_outputs_under_ignored_logs": str(args.output_root).startswith("logs/"),
         },
         "notes": [
-            "This route integrates the recovered Issue #36 v12 dense candidate producer into current Issue #120 validation.",
+            "This route integrates the recovered Issue #36 v12 dense candidate producer "
+            "into current Issue #120 validation.",
             "It does not run the full slow HOMR/SR/OMR pipeline.",
             "It keeps detector metrics separate from downstream measure-count metrics.",
         ],
@@ -372,7 +384,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--pipeline-nms",
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="Explicit CNN NMS setting for scorer=pipeline. Issue #120 reconstruction uses --no-pipeline-nms.",
+        help=(
+            "Explicit CNN NMS setting for scorer=pipeline. "
+            "Issue #120 reconstruction uses --no-pipeline-nms."
+        ),
     )
     parser.add_argument("--score-threshold", type=float, default=0.1)
     parser.add_argument("--xdist-threshold", type=float, default=12.0)
@@ -389,7 +404,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def resolve_default_paths(args: argparse.Namespace) -> None:
-    args.raw_candidates_root = args.raw_candidates_root or args.output_root / "probe_candidates_from_bench_v12"
+    args.raw_candidates_root = (
+        args.raw_candidates_root or args.output_root / "probe_candidates_from_bench_v12"
+    )
     args.filtered_candidates_root = (
         args.filtered_candidates_root or args.output_root / "probe_candidates_filtered_v12"
     )
@@ -397,7 +414,9 @@ def resolve_default_paths(args: argparse.Namespace) -> None:
     args.generation_summary = (
         args.generation_summary or args.output_root / "probe_generation_summary_v12_current.json"
     )
-    args.filter_summary = args.filter_summary or args.output_root / "filter_apply_summary_v12_current.json"
+    args.filter_summary = (
+        args.filter_summary or args.output_root / "filter_apply_summary_v12_current.json"
+    )
     args.scoring_output_dir = args.scoring_output_dir or args.output_root / "scoring"
     args.eval_output_dir = args.eval_output_dir or args.output_root / "eval"
     args.route_provenance = (

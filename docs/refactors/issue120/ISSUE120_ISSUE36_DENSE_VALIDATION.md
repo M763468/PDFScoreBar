@@ -4,7 +4,7 @@
 
 Issue #149 integrates the recovered Issue #36 v12 dense candidate producer into the current Issue #120 validation workflow.
 
-The route is intentionally narrower than full Stage E pipeline validation:
+The accepted route is intentionally narrower than full Stage E pipeline validation:
 
 ```text
 Issue #36 v12 bench inventory
@@ -12,7 +12,9 @@ Issue #36 v12 bench inventory
   -> compare raw candidates with recovered historical root
   -> apply clef-mask-aware filter
   -> compare filtered candidates with recovered historical roots
-  -> current CNN scoring
+  -> use regenerated filtered root as Issue53 `bands_from`
+  -> regenerate Issue53 probe-rescue candidates
+  -> current CNN scoring with explicit NMS setting
   -> #134 full-68 detector evaluator
 ```
 
@@ -28,6 +30,24 @@ TP=3580 / FP=0 / FN=1
 
 Detector metrics and downstream measure-count metrics must remain separate.
 
+## Important route distinction
+
+The recovered Issue #36 filtered root is byte-identical to the historical dense `bands_from` / scoring-input root:
+
+```text
+logs/issue36_prep/probe_candidates_filtered_v12
+= logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+```
+
+It is not the final Issue #120 candidate root to score directly. Direct scoring is a useful diagnostic and has shown detector-side misses:
+
+```text
+Issue36 filtered root -> current CNN scoring -> evaluator
+observed: TP=3566 FP=0 FN=15 FN_det=12 FN_cnn=3
+```
+
+Therefore the #149 acceptance route uses the recovered filtered root as `bands_from` for the current Issue53 probe-rescue verifier, matching the clean reconstruction path established by #136/#143.
+
 ## Reproduction-sensitive generation setting
 
 The current `detect_probe_scan` default for `band_cluster_max_dist` no longer matches the historical `edf7bf6` Issue #36 v12 implementation. The Issue #36 route therefore pins:
@@ -38,19 +58,26 @@ band_cluster_max_dist=25.0
 
 This is route-local. It must not be interpreted as a general pipeline default change.
 
-## Main wrapper
+## Main wrappers
+
+Acceptance route:
+
+```text
+tools/issue120/run_issue36_dense_bands_then_issue53_eval.py
+```
+
+Diagnostic direct-score route:
 
 ```text
 tools/issue120/run_issue36_dense_candidates_then_eval.py
 ```
 
-The wrapper records route provenance under ignored `logs/` output, including:
+The acceptance wrapper records route provenance under ignored `logs/` output, including:
 
-- raw and filtered candidate root summaries;
+- raw and filtered Issue36 candidate root summaries;
 - raw / filtered / historical scoring-input candidate-root comparison summaries;
-- generation parameters;
-- filter parameters;
 - clef-mask filtering status and clef-mask resolution;
+- Issue53 probe-rescue provenance and candidate coverage summary;
 - CNN scorer and explicit `cnn_apply_nms` setting;
 - detector target and observed detector summary;
 - scope guards for #141 and #142.
@@ -67,12 +94,6 @@ The #149 target is kept in a small include file to avoid enlarging the root Make
 
 ```bash
 make -f Makefile -f tools/issue120/Makefile.issue36_dense.mk verify-issue120-issue36-dense
-```
-
-By default, the Make target requires historical candidate-root equality before scoring:
-
-```text
-ISSUE120_ISSUE36_DENSE_REQUIRE_CANDIDATES=1
 ```
 
 To make the run fail unless the detector target is exactly met:
@@ -99,7 +120,6 @@ ISSUE120_ISSUE36_DENSE_EXCLUDE
 ISSUE120_ISSUE36_DENSE_HISTORICAL_RAW
 ISSUE120_ISSUE36_DENSE_HISTORICAL_FILTERED
 ISSUE120_ISSUE36_DENSE_HISTORICAL_SCORING_INPUT
-ISSUE120_ISSUE36_DENSE_REQUIRE_CANDIDATES
 ISSUE120_ISSUE36_DENSE_REQUIRE_TARGET
 ```
 
@@ -111,7 +131,7 @@ docker run --rm --gpus all \
   -w /workspace \
   -e PYTHONPATH=/workspace \
   pdfscore_pipeline_gpu \
-  /opt/venv_pipeline/bin/python tools/issue120/run_issue36_dense_candidates_then_eval.py \
+  /opt/venv_pipeline/bin/python tools/issue120/run_issue36_dense_bands_then_issue53_eval.py \
     --inventory logs/issue36_prep/20260208_bench_inventory.json \
     --exclude logs/issue36_prep/excluded_pages_for_gt_prep.json \
     --historical-raw-candidates-root logs/issue36_prep/probe_candidates_from_bench_v12 \
@@ -122,7 +142,6 @@ docker run --rm --gpus all \
     --model-path logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth \
     --output-root logs/issue120_e2e_recovery/stage_d_issue36_dense_candidate_validation \
     --no-pipeline-nms \
-    --require-candidate-match \
     --require-detector-target
 ```
 
@@ -138,9 +157,11 @@ logs/issue120_e2e_recovery/stage_d_issue36_dense_candidate_validation/
   scoring_input_delta/
   probe_generation_summary_v12_current.json
   filter_apply_summary_v12_current.json
+  issue53_probe_rescue_candidates/
   scoring/
   eval/
   issue36_dense_candidate_route_provenance.json
+  issue36_dense_bands_issue53_route_provenance.json
 ```
 
 All of these outputs are generated artifacts and must not be committed.
@@ -172,11 +193,12 @@ python3 - <<'PY'
 import json
 from pathlib import Path
 root = Path('logs/issue120_e2e_recovery/stage_d_issue36_dense_candidate_validation')
-prov = json.loads((root / 'issue36_dense_candidate_route_provenance.json').read_text())
+prov = json.loads((root / 'issue36_dense_bands_issue53_route_provenance.json').read_text())
 print(prov['candidate_root_summary'])
-print(prov['candidate_root_comparisons'])
+print(prov['issue36_provenance']['candidate_root_comparisons'])
 print(prov['clef_mask_filtering']['resolution'])
 print(prov['clef_mask_filtering']['reason_counts'])
+print(prov['issue53_probe_rescue']['candidate_coverage_summary'])
 print(prov['cnn_scoring'])
 print(prov['detector_summary'])
 PY
@@ -199,6 +221,22 @@ Expected detector target:
 
 ```text
 TP=3580 / FP=0 / FN=1
+```
+
+## Diagnostic direct-score target
+
+To reproduce the known direct-score boundary:
+
+```bash
+make -f Makefile -f tools/issue120/Makefile.issue36_dense.mk \
+  verify-issue120-issue36-dense-direct-score
+```
+
+Expected diagnostic interpretation:
+
+```text
+candidate roots: exact match
+Issue36 filtered root direct scoring: not the acceptance route
 ```
 
 ## Scope boundaries

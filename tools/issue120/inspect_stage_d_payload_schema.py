@@ -52,6 +52,7 @@ class SchemaRow:
     page: str
     path: str | None
     exists: bool
+    status: str
     top_type: str | None
     top_keys: str | None
     item_count: int | None
@@ -66,11 +67,16 @@ class SchemaRow:
     max_y: float | None
 
 
-def load_json(path: Path | None) -> Any | None:
+def load_json(path: Path | None) -> tuple[Any | None, str]:
     if path is None or not path.exists():
-        return None
-    with path.open("r", encoding="utf-8") as f:
-        return json.load(f)
+        return None, "MISSING"
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            return json.load(f), "OK"
+    except json.JSONDecodeError:
+        return None, "JSON_DECODE_ERROR"
+    except OSError:
+        return None, "READ_ERROR"
 
 
 def resolve(root: Path, record: PageRecord, filenames: Iterable[str]) -> Path | None:
@@ -126,29 +132,34 @@ def summarize_keys(keys: Iterable[str], *, limit: int) -> str:
     return ",".join(values)
 
 
+def missing_row(label: str, record: PageRecord, path: Path | None, status: str) -> SchemaRow:
+    return SchemaRow(
+        label=label,
+        score=record.score,
+        page=record.page,
+        path=str(path) if path else None,
+        exists=False,
+        status=status,
+        top_type=None,
+        top_keys=None,
+        item_count=None,
+        item_type_counts=None,
+        item_keys=None,
+        box_field_counts=None,
+        scored_item_count=None,
+        score_key_count=None,
+        median_w=None,
+        median_h=None,
+        min_y=None,
+        max_y=None,
+    )
+
+
 def inspect_one(label: str, root: Path, record: PageRecord, filenames: Iterable[str]) -> SchemaRow:
     path = resolve(root, record, filenames)
-    payload = load_json(path)
+    payload, status = load_json(path)
     if payload is None:
-        return SchemaRow(
-            label=label,
-            score=record.score,
-            page=record.page,
-            path=str(path) if path else None,
-            exists=False,
-            top_type=None,
-            top_keys=None,
-            item_count=None,
-            item_type_counts=None,
-            item_keys=None,
-            box_field_counts=None,
-            scored_item_count=None,
-            score_key_count=None,
-            median_w=None,
-            median_h=None,
-            min_y=None,
-            max_y=None,
-        )
+        return missing_row(label, record, path, status)
 
     items = payload_items(payload)
     type_counts = Counter(type(item).__name__ for item in items)
@@ -181,6 +192,7 @@ def inspect_one(label: str, root: Path, record: PageRecord, filenames: Iterable[
         page=record.page,
         path=str(path) if path else None,
         exists=True,
+        status="OK",
         top_type=type(payload).__name__,
         top_keys=top_keys,
         item_count=len(items),
@@ -198,6 +210,8 @@ def inspect_one(label: str, root: Path, record: PageRecord, filenames: Iterable[
 
 def write_csv(rows: list[SchemaRow], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    if not rows:
+        return
     with path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=list(asdict(rows[0]).keys()))
         writer.writeheader()
@@ -221,8 +235,8 @@ def render_markdown(rows: list[SchemaRow], args: argparse.Namespace) -> str:
             "",
             "## Summary by root",
             "",
-            "| label | resolved | missing | median item count | median width | median height | scored items | box fields | item keys |",
-            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |",
+            "| label | resolved | missing/unreadable | median item count | median width | median height | scored items | box fields | item keys | statuses |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |",
         ]
     )
 
@@ -237,6 +251,7 @@ def render_markdown(rows: list[SchemaRow], args: argparse.Namespace) -> str:
         scored = sum(row.score_key_count or 0 for row in resolved)
         box_fields = Counter(row.box_field_counts or "" for row in resolved)
         item_keys = Counter(row.item_keys or "" for row in resolved)
+        statuses = Counter(row.status for row in label_rows)
         lines.append(
             "| "
             f"{label} | {len(resolved)} | {len(label_rows) - len(resolved)} | "
@@ -244,7 +259,8 @@ def render_markdown(rows: list[SchemaRow], args: argparse.Namespace) -> str:
             f"{statistics.median(widths) if widths else ''} | "
             f"{statistics.median(heights) if heights else ''} | "
             f"{scored} | {box_fields.most_common(1)[0][0] if box_fields else ''} | "
-            f"{item_keys.most_common(1)[0][0] if item_keys else ''} |"
+            f"{item_keys.most_common(1)[0][0] if item_keys else ''} | "
+            f"{dict(sorted(statuses.items()))} |"
         )
 
     lines.extend(
@@ -252,15 +268,15 @@ def render_markdown(rows: list[SchemaRow], args: argparse.Namespace) -> str:
             "",
             "## Sampled pages",
             "",
-            "| label | score | page | count | top type | top keys | item keys | box fields | score keys | median w | median h |",
-            "| --- | --- | --- | ---: | --- | --- | --- | --- | ---: | ---: | ---: |",
+            "| label | score | page | status | count | top type | top keys | item keys | box fields | score keys | median w | median h |",
+            "| --- | --- | --- | --- | ---: | --- | --- | --- | --- | ---: | ---: | ---: |",
         ]
     )
     sample_rows = rows[: args.limit * len(args.root)]
     for row in sample_rows:
         lines.append(
             "| "
-            f"{row.label} | {row.score} | {row.page} | {row.item_count} | "
+            f"{row.label} | {row.score} | {row.page} | {row.status} | {row.item_count} | "
             f"{row.top_type} | {row.top_keys or ''} | {row.item_keys or ''} | "
             f"{row.box_field_counts or ''} | {row.score_key_count} | "
             f"{'' if row.median_w is None else f'{row.median_w:.1f}'} | "
@@ -274,6 +290,7 @@ def render_markdown(rows: list[SchemaRow], args: argparse.Namespace) -> str:
             "",
             "- A root with list payloads and no `score` keys is candidate/box-like, not CNN-scored evidence.",
             "- A root with dict items containing `bbox` and `score` is scored candidate evidence.",
+            "- Missing, unreadable, or malformed page JSONs are reported as unresolved for that root, not as zero-item pages.",
             "- Large item-count differences with similar schema suggest generation density drift.",
             "- Different item keys or box fields suggest a file-family/schema mismatch before geometry analysis.",
         ]
@@ -309,16 +326,30 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def write_reports(rows: list[SchemaRow], args: argparse.Namespace) -> str:
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    write_csv(rows, args.output_dir / "stage_d_payload_schema.csv")
+    markdown = render_markdown(rows, args)
+    (args.output_dir / "stage_d_payload_schema.md").write_text(markdown + "\n", encoding="utf-8")
+    return markdown
+
+
 def main() -> None:
     args = build_parser().parse_args()
     rows: list[SchemaRow] = []
     for record in iter_manifest():
         for label, root in args.root:
             rows.append(inspect_one(label, root, record, args.filenames))
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    write_csv(rows, args.output_dir / "stage_d_payload_schema.csv")
-    markdown = render_markdown(rows, args)
-    (args.output_dir / "stage_d_payload_schema.md").write_text(markdown + "\n", encoding="utf-8")
+    try:
+        markdown = write_reports(rows, args)
+    except PermissionError as exc:
+        print(f"Permission denied while writing reports under {args.output_dir}: {exc}", file=sys.stderr)
+        print(
+            "Fix ownership or choose a different --output-dir, for example: "
+            f"sudo chown -R $(id -u):$(id -g) {args.output_dir}",
+            file=sys.stderr,
+        )
+        raise SystemExit(2) from exc
     print(markdown)
     print(f"Wrote: {args.output_dir}")
 

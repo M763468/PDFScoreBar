@@ -152,6 +152,147 @@ The recovered Stage-D candidate-root path is:
   -> byte-identical to issue44_baseline_v1/scoring_input_eval2_v12 candidate files
 ```
 
+## Final local reproduction commands
+
+These commands reproduce the recovered Stage-D dense candidate root from the historical implementation and current mounted `data/` + `logs/` inputs. Generated outputs stay under ignored `logs/issue120_e2e_recovery/` paths.
+
+### 1. Create the historical worktree
+
+```bash
+MAIN_REPO="$PWD"
+WORKTREE=/tmp/pdfscorebar_issue120_edf7bf6
+
+git worktree prune
+git worktree remove --force "$WORKTREE" 2>/dev/null || true
+rm -rf "$WORKTREE"
+git worktree add --force --detach "$WORKTREE" edf7bf610c3355c34e660192e81f35b03fe91714
+
+git -C "$WORKTREE" rev-parse HEAD
+```
+
+Expected commit:
+
+```text
+edf7bf610c3355c34e660192e81f35b03fe91714
+```
+
+### 2. Regenerate raw candidates
+
+```bash
+MAIN_REPO="$PWD"
+WORKTREE=/tmp/pdfscorebar_issue120_edf7bf6
+OUT="$MAIN_REPO/logs/issue120_e2e_recovery/stage_d_issue36_v12_repro_edf7bf6_final"
+
+rm -rf "$OUT"
+mkdir -p "$OUT"
+
+docker run --rm --gpus all \
+  --user "$(id -u):$(id -g)" \
+  -v "$WORKTREE":/workspace \
+  -v "$MAIN_REPO/data":/workspace/data:ro \
+  -v "$MAIN_REPO/logs":/workspace/logs \
+  -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_gpu \
+  /opt/venv_pipeline/bin/python tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py \
+  --inventory logs/issue36_prep/20260208_bench_inventory.json \
+  --exclude logs/issue36_prep/excluded_pages_for_gt_prep.json \
+  --output-root logs/issue120_e2e_recovery/stage_d_issue36_v12_repro_edf7bf6_final/probe_candidates_from_bench_v12 \
+  --summary-out logs/issue120_e2e_recovery/stage_d_issue36_v12_repro_edf7bf6_final/20260211_probe_generation_summary_v12_repro.json \
+  --band-source row_stats \
+  --ink-threshold 240 \
+  --min-ratio 0.6 \
+  --min-height-ratio 0.006 \
+  --min-width-ratio 0.0 \
+  --probe-width 4 \
+  --max-per-band 80 \
+  --band-scan-line-ratio 0.6 \
+  --band-scan-min-lines 5
+```
+
+Expected raw comparison:
+
+```text
+historical_raw: files=68 total=27758
+repro_raw:      files=68 total=27758
+missing=0 mismatch=0
+```
+
+### 3. Apply the clef-mask-aware filter
+
+Run this from the current #148 branch, not from the historical worktree, because this PR records clef-mask resolution in the filter summary.
+
+```bash
+MAIN_REPO="$PWD"
+OUT="$MAIN_REPO/logs/issue120_e2e_recovery/stage_d_issue36_v12_repro_edf7bf6_final"
+
+docker run --rm --gpus all \
+  --user "$(id -u):$(id -g)" \
+  -v "$MAIN_REPO":/workspace \
+  -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_gpu \
+  /opt/venv_pipeline/bin/python tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py \
+  --inventory logs/issue36_prep/20260208_bench_inventory.json \
+  --exclude logs/issue36_prep/excluded_pages_for_gt_prep.json \
+  --candidates-root logs/issue120_e2e_recovery/stage_d_issue36_v12_repro_edf7bf6_final/probe_candidates_from_bench_v12 \
+  --output-root logs/issue120_e2e_recovery/stage_d_issue36_v12_repro_edf7bf6_final/probe_candidates_filtered_v12 \
+  --suggestions-root logs/issue120_e2e_recovery/stage_d_issue36_v12_repro_edf7bf6_final/filter_suggestions_v12 \
+  --summary-out logs/issue120_e2e_recovery/stage_d_issue36_v12_repro_edf7bf6_final/20260211_filter_apply_summary_v12_repro.json \
+  --left-margin-ratio 0.12 \
+  --clef-left-ratio 0.25 \
+  --min-height-median-ratio 0.6 \
+  --ink-threshold 180 \
+  --min-ink-ratio 0.18 \
+  --paper-threshold 200 \
+  --min-paper-overlap-ratio 0.6 \
+  --min-staff-overlap-ratio 0.02
+```
+
+Expected filter summary properties:
+
+```text
+processed=68
+errors=0
+clef_mask_resolution.resolved_pages=68
+clef_mask_resolution.missing_pages=0
+reason_counts.left_margin_zone=3520
+reason_counts.clef_mask_overlap=4665
+reason_counts.no_staff_overlap=781
+```
+
+### 4. Compare filtered output against the historical root
+
+```bash
+MAIN_REPO="$PWD"
+OUT="$MAIN_REPO/logs/issue120_e2e_recovery/stage_d_issue36_v12_repro_edf7bf6_final"
+
+docker run --rm --gpus all \
+  --user "$(id -u):$(id -g)" \
+  -v "$MAIN_REPO":/workspace \
+  -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_gpu \
+  /opt/venv_pipeline/bin/python tools/issue120/compare_filter_candidate_deltas.py \
+    --historical-dir logs/issue36_prep/probe_candidates_filtered_v12 \
+    --repro-dir logs/issue120_e2e_recovery/stage_d_issue36_v12_repro_edf7bf6_final/probe_candidates_filtered_v12 \
+    --repro-suggestions-root logs/issue120_e2e_recovery/stage_d_issue36_v12_repro_edf7bf6_final/filter_suggestions_v12 \
+    --output-dir logs/issue120_e2e_recovery/stage_d_issue36_v12_repro_edf7bf6_final/filter_delta_inspection
+```
+
+Expected result:
+
+```text
+Filter candidate delta comparison
+Pages: 68
+Historical total: 22565
+Repro total: 22565
+Total delta: 0
+Mismatch pages: 0
+Extra in repro: 0
+Missing from repro: 0
+```
+
 ## Provenance requirement
 
 Any rerun of `apply_candidate_filter_from_inventory.py` intended to reproduce historical v12 must record clef-mask resolution.

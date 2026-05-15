@@ -273,7 +273,6 @@ def run_scoring_and_eval(args: argparse.Namespace) -> None:
         "tools/issue120/score_candidates_then_eval_full68.py",
         "--scorer",
         args.scorer,
-        "--clean-output",
         "--candidates-dir",
         str(args.filtered_candidates_root),
         "--image-root",
@@ -291,6 +290,8 @@ def run_scoring_and_eval(args: argparse.Namespace) -> None:
         "--xdist-threshold",
         str(args.xdist_threshold),
     ]
+    if not args.no_clean_output:
+        cmd.append("--clean-output")
     if args.scorer == "pipeline" and not args.pipeline_nms:
         cmd.append("--disable-pipeline-nms")
     run_command(cmd)

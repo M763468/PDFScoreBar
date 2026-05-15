@@ -24,6 +24,8 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from tools.issue120.eval_full68_from_intermediates import iter_manifest  # noqa: E402
+
 DEFAULT_MODEL = Path(
     "logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth"
 )
@@ -83,6 +85,17 @@ def add_param_args(cmd: list[str], params: dict[str, str]) -> None:
         cmd.extend([f"--{name.replace('_', '-')}", value])
 
 
+def require_under_logs(path: Path, *, label: str) -> None:
+    logs_root = PROJECT_ROOT.resolve() / "logs"
+    try:
+        path.resolve().relative_to(logs_root)
+    except ValueError as exc:
+        raise SystemExit(
+            f"Error: {label} must be under logs/ per repository log-management policy. "
+            f"Got: {path}"
+        ) from exc
+
+
 def candidate_root_summary(root: Path) -> dict[str, int | str | bool]:
     files = sorted(root.rglob("pipeline2_no_peak_candidates.json")) if root.exists() else []
     total = 0
@@ -90,7 +103,7 @@ def candidate_root_summary(root: Path) -> dict[str, int | str | bool]:
     for path in files:
         try:
             payload = load_json(path)
-        except Exception:  # noqa: BLE001
+        except (json.JSONDecodeError, OSError):
             unreadable += 1
             continue
         if isinstance(payload, list):
@@ -176,10 +189,12 @@ def validate_complete_contract(eval_output_dir: Path) -> None:
     expected = contract.get("expected_pages")
     evaluated = contract.get("evaluated_pages")
     missing = contract.get("missing_pages", [])
-    if expected != 68 or evaluated != 68 or missing:
+    expected_count = len(iter_manifest())
+    if expected != expected_count or evaluated != expected_count or missing:
         raise SystemExit(
             "Incomplete Issue #120 full-68 evaluation contract: "
-            f"expected_pages={expected} evaluated_pages={evaluated} missing_pages={len(missing)}"
+            f"expected_pages={expected} evaluated_pages={evaluated} "
+            f"expected_count={expected_count} missing_pages={len(missing)}"
         )
 
 
@@ -377,7 +392,7 @@ def build_route_provenance(
             "general_pipeline_defaults_changed": False,
             "nms_policy_owner": "#142",
             "full_slow_pipeline_owner": "#141",
-            "generated_outputs_under_ignored_logs": str(args.output_root).startswith("logs/"),
+            "generated_outputs_under_ignored_logs": True,
         },
         "notes": [
             "Issue #36 v12 reproduction pins band_cluster_max_dist=25.0 because the "
@@ -506,6 +521,25 @@ def resolve_default_paths(args: argparse.Namespace) -> None:
     )
 
 
+def validate_output_paths(args: argparse.Namespace) -> None:
+    output_paths = {
+        "output-root": args.output_root,
+        "raw-candidates-root": args.raw_candidates_root,
+        "filtered-candidates-root": args.filtered_candidates_root,
+        "suggestions-root": args.suggestions_root,
+        "generation-summary": args.generation_summary,
+        "filter-summary": args.filter_summary,
+        "scoring-output-dir": args.scoring_output_dir,
+        "eval-output-dir": args.eval_output_dir,
+        "route-provenance": args.route_provenance,
+        "raw-compare-output-dir": args.raw_compare_output_dir,
+        "filtered-compare-output-dir": args.filtered_compare_output_dir,
+        "scoring-input-compare-output-dir": args.scoring_input_compare_output_dir,
+    }
+    for label, path in output_paths.items():
+        require_under_logs(path, label=label)
+
+
 def validate_inputs(args: argparse.Namespace) -> None:
     required = [args.inventory, args.exclude]
     if not args.skip_scoring:
@@ -513,6 +547,7 @@ def validate_inputs(args: argparse.Namespace) -> None:
     missing = [str(path) for path in required if not path.exists()]
     if missing:
         raise SystemExit("Missing required inputs:\n" + "\n".join(missing))
+    validate_output_paths(args)
 
 
 def main() -> None:

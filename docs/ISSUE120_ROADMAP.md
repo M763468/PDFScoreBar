@@ -10,6 +10,7 @@ This roadmap reflects the Issue #120 restart after these merged recovery PRs:
 #143: historical best and reconstruction-path audit
 #144: generated artifact cleanup / retention policy
 #145: Stage D upstream-regeneration diagnostic runner and current boundary
+#150: recovered Issue36 dense candidate validation route
 ```
 
 The current strategy is to keep these layers separate:
@@ -20,9 +21,15 @@ Stage B: saved candidates -> scoring -> canonical evaluation
 Stage C: regenerated candidates -> scoring -> canonical evaluation
 Stage D: regenerated slow upstream HOMR/OMR/SR artifacts -> Stage C
 Stage E: full 68-page pipeline validation
+Productionization: promote recovered validation routes into regular pipeline modules/configs
 ```
 
 Detector-level metrics and downstream measure-count metrics must not be mixed.
+
+Metric note:
+
+- In these Issue #120 evaluator summaries, `Pred` is the evaluator-reported prediction/intermediate count for the scored detector output. It is recorded as provenance/context and is not used as the detector false-positive count.
+- `TP`, `FP`, and `FN` are the canonical detector matching metrics. The detector target is therefore stated explicitly as `TP=3580 / FP=0 / FN=1`.
 
 ## Current completed foundation
 
@@ -119,7 +126,7 @@ Remaining limitation:
 logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
 ```
 
-This historical `bands_from` artifact remains the unreproduced upstream dependency for Stage D.
+This historical `bands_from` artifact remains the upstream dependency for Stage C, but #149 / PR #150 recovered a reproducible Issue36 dense producer route that can regenerate an equivalent root.
 
 ### #135 / PR #144: generated artifact cleanup and retention policy
 
@@ -152,11 +159,9 @@ Retained fixture boundary:
 - It is not full-pipeline reproduction evidence.
 - It should not be removed until Stage D/E define a replacement artifact path.
 
-## Current / next issues
-
 ### #140 / PR #145: Stage D upstream artifact regeneration
 
-Status: open issue; diagnostic foundation merged.
+Status: completed; diagnostic foundation merged and boundary recorded.
 
 PR:
 
@@ -182,12 +187,6 @@ HOMR / OMR / SR / SR-side HOMR / OMR-DLN or equivalent
   -> canonical evaluator
 ```
 
-Primary input still requiring historical provenance or replacement:
-
-```text
-logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
-```
-
 Current local Stage-D boundary recorded by PR #145:
 
 ```text
@@ -200,24 +199,91 @@ Interpretation:
 
 - Current upstream components can regenerate structurally complete 68-page artifacts.
 - Tested current compositions do not reproduce the historical detector target.
-- The historical `scoring_input_eval2_v12` artifact remains non-reproduced.
-- #140 should be closed only after the issue thread records this boundary and any follow-up issue is opened or explicitly deferred.
+- The recovered Issue36 dense route from #149 now provides a reproducible validation route for the historical dense/bands-like root, but it is not yet a regular production pipeline module.
 
-Useful local commands:
+### #149 / PR #150: recovered Issue36 dense candidate validation route
 
-```bash
-make regen-issue120-stage-d-upstream ISSUE120_CLEAN_OUTPUT=1
-make verify-issue120-stage-d
-make summarize-issue120-stage-d
-make compare-issue120-stage-d-boxes
+Status: completed.
+
+PR:
+
+```text
+#150 Issue120: integrate Issue36 dense candidate validation route
+merge commit: 4824826d13fc87e93dce15b1fdcd4c9ed51dd448
 ```
 
-Optional source-specific diagnostics:
+Result:
+
+```text
+Issue36 inventory
+  -> dense raw candidates
+  -> clef-mask-aware filtered root
+  -> historical raw/filtered/scoring-input candidate-root equality checks
+  -> Issue53 probe-rescue using regenerated filtered root as bands_from
+  -> current pipeline CNN scoring
+  -> cnn_apply_nms=false
+  -> #134 canonical full-68 evaluator
+  -> TP=3580 FP=0 FN=1
+```
+
+Validation command:
 
 ```bash
-make verify-issue120-stage-d ISSUE120_STAGE_D_COMPOSE_SOURCE=baseline
-make verify-issue120-stage-d ISSUE120_STAGE_D_COMPOSE_SOURCE=sr
-make verify-issue120-stage-d ISSUE120_STAGE_D_COMPOSE_SOURCE=omr_sr
+make -f Makefile -f tools/issue120/Makefile.issue36_dense.mk \
+  verify-issue120-issue36-dense \
+  ISSUE120_ISSUE36_DENSE_REQUIRE_TARGET=1
+```
+
+Confirmed detector result:
+
+```text
+Pages: 68/68
+Detector: GT=3581 Pred=3600 TP=3580 FP=0 FN=1 FN_det=0 FN_cnn=1
+```
+
+Boundary:
+
+- #149 is a reproducible validation route, not yet a production pipeline module.
+- Direct scoring of the Issue36 filtered root is diagnostic only; the accepted route uses that root as Issue53 `bands_from`.
+- Productionization and module-level refactoring are split to #151.
+
+## Current / next issues
+
+### #151: production pipeline route / module refactoring
+
+Status: open.
+
+Branch policy:
+
+```text
+base: rebuild/issue120
+branch: refactor/issue120-production-reconstruction-route
+PR base: rebuild/issue120
+```
+
+Purpose:
+
+Promote the recovered Issue36 dense reconstruction route from issue-specific validation tooling into regular, maintainable pipeline modules/configuration.
+
+This is intentionally separate from:
+
+- #149, which closed the reproducible validation-route integration;
+- #141, which remains a full 68-page validation/audit issue;
+- #142, which remains NMS policy only.
+
+Scope:
+
+- factor reusable dense generation / clef-mask filtering / Issue53 probe-rescue orchestration out of `tools/issue120/` where appropriate;
+- add a production-style entrypoint or config route;
+- preserve provenance for candidate generation, clef-mask resolution, `cnn_apply_nms`, detector metrics, and downstream metrics;
+- support practical incremental/debug workflows without silently deleting generated artifacts;
+- keep all generated outputs under ignored `logs/` paths.
+
+Acceptance:
+
+```text
+production-style recovered dense route
+  -> TP=3580 FP=0 FN=1 with cnn_apply_nms=false explicitly recorded
 ```
 
 ### #142: CNN scoring NMS repair/tuning
@@ -262,12 +328,14 @@ PR base: rebuild/issue120
 
 Purpose:
 
-Run or document the full 68-page pipeline result after Stage D clarifies upstream artifact regeneration.
+Run or document the full 68-page pipeline result after Stage D/#149 clarified upstream/recovered-route boundaries.
 
 Current dependency:
 
-- Stage D now has a current-upstream failure boundary.
-- Stage E can proceed as a validation/audit only if it records this boundary and does not claim detector-target reproduction from current upstream artifacts.
+- Stage D has a current-upstream failure boundary.
+- #149 has a reproducible recovered dense validation route that preserves the detector target.
+- #151 owns promotion of that route into regular pipeline modules/configuration.
+- Stage E can proceed as an audit if it records which route is being validated and does not conflate full slow upstream regeneration with recovered dense-route validation.
 
 Acceptance:
 
@@ -294,19 +362,18 @@ Resume targeted accuracy work only after audit and canonical evaluation gates ar
 
 Dependencies:
 
-- #134, #135, and #136 are completed.
-- #140 has a current-upstream boundary but needs issue closeout or follow-up split.
+- #134, #135, #136, #140, and #149 are completed.
+- #151 should productionize the recovered dense route before it is treated as a regular pipeline path.
 - #142 should decide NMS policy before broad accuracy repair.
-- #140/#141 should not be mixed with algorithm changes.
+- #141/#151 should not be mixed with broad algorithm changes.
 
 ## Recommended order from here
 
 ```text
-1. Close out #140 by recording the Stage D boundary in the issue thread.
-2. Open or defer a follow-up for historical `scoring_input_eval2_v12` provenance recovery / upstream geometry repair.
-3. Work #142 to decide NMS behavior before broad accuracy repair.
-4. Work #141 as full 68-page validation, explicitly separating detector metrics from downstream measure-count metrics.
-5. Work #137 targeted accuracy repair using the canonical gates.
+1. Work #151 to promote the recovered dense validation route into production pipeline modules/configuration.
+2. Work #142 to decide NMS behavior before broad accuracy repair.
+3. Work #141 as full 68-page validation/audit, explicitly separating detector metrics from downstream measure-count metrics and recording whether #151 is complete or pending.
+4. Work #137 targeted accuracy repair using the canonical gates.
 ```
 
 ## Current canonical detector target
@@ -339,4 +406,12 @@ docker run --rm --gpus all \
   -e PYTHONPATH=/workspace \
   pdfscore_pipeline_gpu \
   /opt/venv_pipeline/bin/python tools/issue120/run_issue53_probe_rescue_then_eval.py
+```
+
+Recovered Issue36 dense-route verifier:
+
+```bash
+make -f Makefile -f tools/issue120/Makefile.issue36_dense.mk \
+  verify-issue120-issue36-dense \
+  ISSUE120_ISSUE36_DENSE_REQUIRE_TARGET=1
 ```

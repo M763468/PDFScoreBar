@@ -2,6 +2,8 @@
 
 from typing import Any, Dict
 
+DEFAULT_CNN_APPLY_NMS = False
+
 PROBE_SCAN_KWARG_KEYS = (
     "probe_width",
     "use_peak_relative_ratio",
@@ -76,3 +78,8 @@ def get_probe_kwargs(det_cfg: Dict[str, Any]) -> Dict[str, Any]:
         for key in PROBE_SCAN_KWARG_KEYS
         if key in det_cfg and det_cfg.get(key) is not None
     }
+
+
+def get_cnn_apply_nms(det_cfg: Dict[str, Any]) -> bool:
+    """Return explicit CNN NMS setting, defaulting to False (opt-in)."""
+    return bool(det_cfg.get("cnn_apply_nms", DEFAULT_CNN_APPLY_NMS))

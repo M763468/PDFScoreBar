@@ -97,7 +97,7 @@ Interpretation:
 
 - The saved candidates, model artifact, images, GT, and current CNN inference path are sufficient to reproduce the detector target.
 - The Stage B regression is caused by current pipeline CNN scoring NMS.
-- This does not justify silently changing the global default. General pipeline behavior remains `cnn_apply_nms=true`.
+- #142 later changed the general CNN scoring default to `cnn_apply_nms=false`; NMS is retained as an explicit opt-in setting.
 - Issue #120 reconstruction must explicitly record `cnn_apply_nms=false`.
 
 Primary Stage B command:

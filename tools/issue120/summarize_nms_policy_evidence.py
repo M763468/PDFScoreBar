@@ -72,7 +72,8 @@ def _measure_count_summary(eval_dir: Path) -> dict[str, Any]:
 
 
 def load_case(label: str, eval_dir: Path) -> NmsEvidenceCase:
-    detector = load_json(eval_dir / "detector_metrics.json")
+    detector_path = eval_dir / "detector_metrics.json"
+    detector = load_json(detector_path) if detector_path.exists() else {}
     measure = _measure_count_summary(eval_dir)
     return NmsEvidenceCase(
         label=label,

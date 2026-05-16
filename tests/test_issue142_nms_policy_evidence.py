@@ -1,4 +1,10 @@
 import json
+import sys
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from tools.issue120.summarize_nms_policy_evidence import (
     load_case,
@@ -67,3 +73,21 @@ def test_write_outputs_preserve_missing_measure_count_status(tmp_path):
     assert payload["decision"] == "default off"
     assert payload["cases"][0]["measure_count_status"] == "not_provided"
     assert "not_provided" in output_md.read_text(encoding="utf-8")
+
+
+def test_load_case_tolerates_missing_detector_metrics(tmp_path):
+    eval_dir = tmp_path / "eval"
+    eval_dir.mkdir()
+    (eval_dir / "evaluation_contract.json").write_text(
+        json.dumps({"measure_count_summary": {"status": "not_provided"}}),
+        encoding="utf-8",
+    )
+
+    case = load_case("incomplete", eval_dir)
+
+    assert case.tp is None
+    assert case.fp is None
+    assert case.fn is None
+    assert case.pred is None
+    assert case.gt is None
+    assert case.measure_count_status == "not_provided"

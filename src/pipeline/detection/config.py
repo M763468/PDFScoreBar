@@ -81,5 +81,5 @@ def get_probe_kwargs(det_cfg: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def get_cnn_apply_nms(det_cfg: Dict[str, Any]) -> bool:
-    """Return explicit CNN NMS setting, defaulting to opt-out."""
+    """Return explicit CNN NMS setting, defaulting to False (opt-in)."""
     return bool(det_cfg.get("cnn_apply_nms", DEFAULT_CNN_APPLY_NMS))

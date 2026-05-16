@@ -37,11 +37,23 @@ def infer_numbering_output(manifest: dict[str, Any], manifest_path: Path) -> Pat
     return manifest_path.parent / "outputs" / "numbering_final.json"
 
 
+def read_missing_pages(eval_dir: Path, detector: dict[str, Any]) -> list[dict[str, Any]]:
+    expected = detector.get("expected_page_count")
+    evaluated = detector.get("page_count")
+    if expected is not None and evaluated == expected:
+        return []
+    missing_path = eval_dir / "missing_pages.json"
+    if missing_path.exists():
+        payload = load_json(missing_path)
+        if isinstance(payload, list):
+            return payload
+    return []
+
+
 def build_contract(args: argparse.Namespace) -> dict[str, Any]:
     manifest = load_json(args.manifest)
     detector = load_json(args.eval_dir / "detector_metrics.json")
-    missing_path = args.eval_dir / "missing_pages.json"
-    missing_pages = load_json(missing_path) if missing_path.exists() else []
+    missing_pages = read_missing_pages(args.eval_dir, detector)
     numbering_output = args.numbering_output or infer_numbering_output(manifest, args.manifest)
     target_met = (
         detector.get("tp") == TARGET["tp"]

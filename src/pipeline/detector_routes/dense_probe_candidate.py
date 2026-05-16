@@ -205,7 +205,17 @@ def validate_output_paths(
         require_under_logs(path, label=label)
 
 
+def validate_workflow_config(config: DenseProbeCandidateConfig) -> None:
+    if config.skip_issue53_regeneration and not config.skip_issue36_regeneration:
+        raise ValueError(
+            "skip_issue53_regeneration requires skip_issue36_regeneration. "
+            "Reusing Issue53 candidates while regenerating Issue36 bands would mix stale "
+            "candidate inputs with newly generated bands."
+        )
+
+
 def validate_inputs(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths) -> None:
+    validate_workflow_config(config)
     required = [
         config.inventory,
         config.exclude,

@@ -11,6 +11,7 @@ from src.pipeline.detector_routes.dense_probe_candidate import (
     make_logged_command_runner,
     require_under_logs,
     resolve_paths,
+    validate_workflow_config,
 )
 from src.pipeline.detector_routes.dense_probe_candidate_route import build_parser
 
@@ -38,6 +39,16 @@ def test_dense_probe_candidate_skip_issue53_preserves_candidates():
 
     assert paths.issue53_candidates_root not in cleanup_targets(config, paths)
     assert paths.scoring_output_dir in cleanup_targets(config, paths)
+
+
+def test_dense_probe_candidate_skip_issue53_requires_skipping_issue36():
+    config = DenseProbeCandidateConfig(
+        skip_issue36_regeneration=False,
+        skip_issue53_regeneration=True,
+    )
+
+    with pytest.raises(ValueError, match="skip_issue53_regeneration requires"):
+        validate_workflow_config(config)
 
 
 def test_dense_probe_candidate_outputs_must_live_under_logs():

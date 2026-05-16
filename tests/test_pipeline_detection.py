@@ -63,6 +63,40 @@ class TestPipelineDetection(unittest.TestCase):
             self.assertEqual(commands[0], ["hybrid"])
             self.assertIn("inprocess:probe_scan", commands[1][0])
             self.assertIn("inprocess:cnn_scoring", commands[2][0])
+            self.assertEqual(mock_cnn.call_args.kwargs["apply_nms_enabled"], False)
+            self.assertEqual(commands[2][-1], "False")
+
+    def test_run_detection_step_allows_explicit_cnn_nms_opt_in(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            hybrid_output_dir = Path(tmpdir) / "hybrid"
+            hybrid_output_dir.mkdir(parents=True, exist_ok=True)
+
+            config = self._base_config()
+            config["detection"]["cnn_apply_nms"] = True
+            images = [Path("data/evaluation/images/page_001.png")]
+            page_ids = ["page_001"]
+
+            with (
+                patch.object(
+                    HybridDetector,
+                    "run",
+                    return_value={"commands": [["hybrid"]], "hybrid_output_dir": hybrid_output_dir},
+                ),
+                patch("src.pipeline.detection.orchestrator.ensure_dir"),
+                patch("src.pipeline.detection.orchestrator.run_probe_scan_batch"),
+                patch("src.pipeline.detection.orchestrator.run_cnn_scoring_batch") as mock_cnn,
+            ):
+                result = run_detection_step(
+                    config=config,
+                    images=images,
+                    page_ids=page_ids,
+                    run_id="run123",
+                    run_dir=Path(tmpdir),
+                    dry_run=False,
+                )
+
+            self.assertEqual(mock_cnn.call_args.kwargs["apply_nms_enabled"], True)
+            self.assertEqual(result["commands"][2][-1], "True")
 
     def test_run_detection_step_skips_probe_and_cnn_on_dry_run(self):
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -329,14 +329,15 @@ Decide whether NMS should be kept, tuned, made conditional, or disabled in speci
 Current policy:
 
 ```text
-default general pipeline: cnn_apply_nms=true
+default general pipeline: cnn_apply_nms=false
+NMS experiments: cnn_apply_nms=true only as explicit opt-in
 Issue120 reconstruction: cnn_apply_nms=false, explicitly recorded
 ```
 
 Acceptance:
 
-- no silent global NMS weakening;
-- any default change requires detector and measure-count evidence.
+- no silent NMS behavior changes;
+- any future default-on change requires detector and measure-count evidence.
 
 ### #141: Stage E full 68-page pipeline validation
 

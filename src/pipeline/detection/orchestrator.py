@@ -11,7 +11,7 @@ from src.pipeline.steps.cnn_scoring import run_cnn_scoring_batch
 from src.pipeline.steps.probe_scan import run_probe_scan_batch
 from src.pipeline.utils.io import ensure_dir
 
-from .config import get_probe_kwargs
+from .config import get_cnn_apply_nms, get_probe_kwargs
 from .hybrid import HybridDetector
 
 logger = logging.getLogger(__name__)
@@ -175,7 +175,7 @@ class DetectorOrchestrator:
         if not cnn_model:
             raise ValueError("detection.cnn_model_path is required.")
 
-        cnn_apply_nms = bool(self.det_cfg.get("cnn_apply_nms", True))
+        cnn_apply_nms = get_cnn_apply_nms(self.det_cfg)
 
         if not self.dry_run:
             effective_images, effective_sr_scale = self._get_effective_images_for_probe()

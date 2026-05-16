@@ -193,7 +193,8 @@ Decide whether the current NMS should be kept, tuned, made conditional, or disab
 Current policy:
 
 ```text
-general pipeline default: cnn_apply_nms=true
+general pipeline default: cnn_apply_nms=false
+NMS experiments: cnn_apply_nms=true only as explicit opt-in
 Issue120 reconstruction: cnn_apply_nms=false, explicitly recorded
 ```
 
@@ -392,7 +393,8 @@ Until changed by a later audited issue:
 ```text
 detector target: TP=3580 / FP=0 / FN=1
 Issue120 reconstruction CNN setting: cnn_apply_nms=false
-general pipeline CNN setting: cnn_apply_nms=true
+general pipeline CNN setting: cnn_apply_nms=false
+NMS experiment setting: cnn_apply_nms=true only as explicit opt-in
 ```
 
 This detector target is not a downstream measure-count target and is not yet full-pipeline reproduction.

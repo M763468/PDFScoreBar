@@ -13,7 +13,10 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from tools.issue120.eval_full68_from_intermediates import find_page_file, iter_manifest  # noqa: E402
+from tools.issue120.eval_full68_from_intermediates import (  # noqa: E402
+    find_page_file,
+    iter_manifest,
+)
 
 
 def load_count(path: Path | None) -> int | None:

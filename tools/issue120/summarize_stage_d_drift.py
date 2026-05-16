@@ -17,7 +17,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 DEFAULT_EVAL_DIR = Path("logs/issue120_e2e_recovery/stage_d_from_current_upstream_eval")
 DEFAULT_UPSTREAM_DIR = Path("logs/issue120_e2e_recovery/stage_d_upstream_regen")
 
@@ -135,7 +134,9 @@ def render_markdown(
     top_fp = sort_rows(joined, ("fp", "fn", "fn_det"))[:limit]
     low_coverage = sorted(
         joined,
-        key=lambda row: row.get("candidate_ratio") if row.get("candidate_ratio") is not None else -1,
+        key=lambda row: (
+            row.get("candidate_ratio") if row.get("candidate_ratio") is not None else -1
+        ),
     )[:limit]
 
     lines = [

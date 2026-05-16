@@ -34,7 +34,11 @@ from typing import Any, Iterable
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from tools.issue120.eval_full68_from_intermediates import PageRecord, find_page_file, iter_manifest  # noqa: E402
+from tools.issue120.eval_full68_from_intermediates import (  # noqa: E402
+    PageRecord,
+    find_page_file,
+    iter_manifest,
+)
 
 
 @dataclass(frozen=True)
@@ -190,7 +194,9 @@ def compare(args: argparse.Namespace) -> list[PageComparison]:
                 right_path=str(right_path) if right_path else None,
                 left_count=left_count,
                 right_count=right_count,
-                count_delta=None if left_count is None or right_count is None else right_count - left_count,
+                count_delta=None
+                if left_count is None or right_count is None
+                else right_count - left_count,
                 count_ratio=safe_ratio(right_count, left_count),
                 left_median_h=left_stats.median_h if left_stats else None,
                 right_median_h=right_stats.median_h if right_stats else None,
@@ -328,7 +334,9 @@ def main() -> None:
     try:
         args.output_dir.mkdir(parents=True, exist_ok=True)
         write_csv(rows, args.output_dir / "box_tree_stats_comparison.csv")
-        (args.output_dir / "box_tree_stats_comparison.md").write_text(markdown + "\n", encoding="utf-8")
+        (args.output_dir / "box_tree_stats_comparison.md").write_text(
+            markdown + "\n", encoding="utf-8"
+        )
     except PermissionError as exc:
         raise SystemExit(permission_error_message(exc, args.output_dir)) from exc
     print(markdown)

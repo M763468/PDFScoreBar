@@ -58,7 +58,48 @@ band_cluster_max_dist=25.0
 
 This is route-local. It must not be interpreted as a general pipeline default change.
 
-## Main wrappers
+## Production route after #151
+
+Issue #151 promotes the accepted #149 route into a regular detector-level
+pipeline capability:
+
+```text
+src.pipeline.detector_routes.dense_probe_candidate_route
+```
+
+Production-style command:
+
+```bash
+python -m src.pipeline.detector_routes.dense_probe_candidate_route \
+  --config configs/detector_routes/issue120_dense_probe_candidate_route.yaml \
+  --require-detector-target
+```
+
+This is a detector-level partial route. It includes dense candidate/bands
+generation, clef-mask-aware filtering, probe-rescue candidate generation, CNN
+scoring, and canonical detector evaluation. It does not run slow HOMR/SR/OMR
+upstream generation, full PDF pipeline orchestration, downstream measure
+numbering, or measure-count evaluation.
+
+The config records the route-specific scoring policy:
+
+```yaml
+scoring:
+  cnn_apply_nms: false
+```
+
+The output root is still under ignored `logs/`, and the route provenance is
+written to:
+
+```text
+logs/issue120_e2e_recovery/dense_probe_candidate_route/dense_probe_candidate_route_provenance.json
+```
+
+The legacy #149 acceptance wrapper now delegates to this module. The direct
+Issue36 scoring wrapper remains diagnostic only because direct scoring of the
+filtered root is not the acceptance route.
+
+## Compatibility wrappers
 
 Acceptance route:
 
@@ -72,7 +113,7 @@ Diagnostic direct-score route:
 tools/issue120/run_issue36_dense_candidates_then_eval.py
 ```
 
-The acceptance wrapper records route provenance under ignored `logs/` output, including:
+The production module records route provenance under ignored `logs/` output, including:
 
 - raw and filtered Issue36 candidate root summaries;
 - raw / filtered / historical scoring-input candidate-root comparison summaries;
@@ -160,8 +201,7 @@ logs/issue120_e2e_recovery/stage_d_issue36_dense_candidate_validation/
   issue53_probe_rescue_candidates/
   scoring/
   eval/
-  issue36_dense_candidate_route_provenance.json
-  issue36_dense_bands_issue53_route_provenance.json
+  dense_probe_candidate_route_provenance.json
 ```
 
 All of these outputs are generated artifacts and must not be committed.

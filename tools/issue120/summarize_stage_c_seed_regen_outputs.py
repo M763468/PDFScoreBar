@@ -20,7 +20,6 @@ from typing import Any
 
 from tools.issue120.eval_full68_from_intermediates import find_page_file, iter_manifest
 
-
 DEFAULT_HISTORICAL_ROOT = Path(
     "logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12"
 )
@@ -86,9 +85,7 @@ def build_rows(args: argparse.Namespace) -> list[PageSeedRegenRow]:
         page_dir = args.regen_root / record.score / record.page
         consensus_path = page_dir / f"{record.page}.json"
         raw_probe_path = (
-            page_dir
-            / f"eval2_{record.score}_{record.page}"
-            / "pipeline2_no_peak_candidates.json"
+            page_dir / f"eval2_{record.score}_{record.page}" / "pipeline2_no_peak_candidates.json"
         )
         final_filtered_path = find_page_file(
             final_root,
@@ -140,15 +137,15 @@ def render_markdown(rows: list[PageSeedRegenRow], args: argparse.Namespace) -> s
 
     by_final_loss = sorted(
         rows,
-        key=lambda row: row.final_to_historical_ratio
-        if row.final_to_historical_ratio is not None
-        else -1.0,
+        key=lambda row: (
+            row.final_to_historical_ratio if row.final_to_historical_ratio is not None else -1.0
+        ),
     )[: args.limit]
     by_raw_loss = sorted(
         rows,
-        key=lambda row: row.raw_minus_historical
-        if row.raw_minus_historical is not None
-        else -10**9,
+        key=lambda row: (
+            row.raw_minus_historical if row.raw_minus_historical is not None else -(10**9)
+        ),
     )[: args.limit]
 
     lines = [
@@ -177,7 +174,9 @@ def render_markdown(rows: list[PageSeedRegenRow], args: argparse.Namespace) -> s
         "| --- | --- | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in by_final_loss:
-        ratio = "" if row.final_to_historical_ratio is None else f"{row.final_to_historical_ratio:.3f}"
+        ratio = (
+            "" if row.final_to_historical_ratio is None else f"{row.final_to_historical_ratio:.3f}"
+        )
         lines.append(
             f"| {row.score} | {row.page} | {row.historical_count} | "
             f"{row.consensus_seed_count} | {row.raw_probe_count} | "

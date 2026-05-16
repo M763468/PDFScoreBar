@@ -23,11 +23,12 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from tools.issue120.eval_full68_from_intermediates import iter_manifest  # noqa: E402
 from src.pipeline.steps.probe_scan import run_probe_scan_batch  # noqa: E402
+from tools.issue120.eval_full68_from_intermediates import iter_manifest  # noqa: E402
 
-
-DEFAULT_BANDS_FROM = Path("logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12")
+DEFAULT_BANDS_FROM = Path(
+    "logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12"
+)
 DEFAULT_MODEL = Path(
     "logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth"
 )
@@ -138,7 +139,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--gt-root", type=Path, default=Path("data/evaluation2/annotations"))
     parser.add_argument("--bands-from", type=Path, default=DEFAULT_BANDS_FROM)
     parser.add_argument("--model-path", type=Path, default=DEFAULT_MODEL)
-    parser.add_argument("--baseline-dir", type=Path, default=Path("data/evaluation2/golden_baseline_eval2_bc23deb"))
+    parser.add_argument(
+        "--baseline-dir", type=Path, default=Path("data/evaluation2/golden_baseline_eval2_bc23deb")
+    )
     parser.add_argument(
         "--output-root",
         type=Path,

@@ -251,7 +251,7 @@ Boundary:
 
 ### #151: production pipeline route / module refactoring
 
-Status: open.
+Status: in progress.
 
 Branch policy:
 
@@ -264,6 +264,30 @@ PR base: rebuild/issue120
 Purpose:
 
 Promote the recovered Issue36 dense reconstruction route from issue-specific validation tooling into regular, maintainable pipeline modules/configuration.
+
+Current #151 implementation route:
+
+```bash
+python -m src.pipeline.detector_routes.dense_probe_candidate_route \
+  --config configs/detector_routes/issue120_dense_probe_candidate_route.yaml \
+  --require-detector-target
+```
+
+The route writes generated artifacts under:
+
+```text
+logs/issue120_e2e_recovery/dense_probe_candidate_route/
+```
+
+Scope note:
+
+- This is a detector-level partial route: dense candidate/bands generation, clef-mask-aware filtering, probe rescue, CNN scoring, and canonical detector evaluation.
+- It does not run slow HOMR/SR/OMR upstream generation, full PDF pipeline orchestration, downstream measure numbering, or measure-count evaluation.
+
+Compatibility note:
+
+- `tools/issue120/run_issue36_dense_bands_then_issue53_eval.py` delegates to the production module.
+- `tools/issue120/run_issue36_dense_candidates_then_eval.py` remains a diagnostic direct-score wrapper only.
 
 This is intentionally separate from:
 
@@ -282,7 +306,7 @@ Scope:
 Acceptance:
 
 ```text
-production-style recovered dense route
+dense probe-candidate detector route
   -> TP=3580 FP=0 FN=1 with cnn_apply_nms=false explicitly recorded
 ```
 

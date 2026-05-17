@@ -283,6 +283,11 @@ def main():
         sys.exit(1)
 
     stage_e_root = args.output_root / "stage_e_full_pipeline"
+    if stage_e_root.exists():
+        logger.info("Removing stale Stage E run directory: %s", stage_e_root)
+        shutil.rmtree(stage_e_root)
+    stage_e_root.mkdir(parents=True, exist_ok=True)
+
     filtered_root = regenerate_dense_candidates(
         inventory=args.inventory,
         exclude=args.exclude,
@@ -300,8 +305,7 @@ def main():
     logger.info(f"Copying {len(image_paths)} images to {stage_e_images_dir}...")
     for img_path in image_paths:
         dest_path = stage_e_images_dir / f"{img_path.parent.name}_{img_path.name}"
-        if not dest_path.exists():
-            shutil.copy2(img_path, dest_path)
+        shutil.copy2(img_path, dest_path)
 
     config = load_yaml(args.config)
     if "inputs" not in config:

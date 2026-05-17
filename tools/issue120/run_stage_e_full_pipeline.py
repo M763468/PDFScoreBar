@@ -160,54 +160,38 @@ def patch_dense_bands_loader() -> None:
     cnn_scoring._load_bands_for_image = patched_loader
 
 
-def patch_detector_orchestrator() -> None:
-    """Use fresh dense seeds for probe/CNN while preserving HOMR/SR mask roots."""
-    from src.pipeline.detection.orchestrator import DetectorOrchestrator
+def patch_detector_bands_source(dense_filtered_root: Path) -> None:
+    """Use fresh dense seeds as bands_from without replacing hybrid_output_dir.
 
-    if getattr(DetectorOrchestrator, "_stage_e_dense_patch", False):
+    hybrid_output_dir must remain the HOMR/SR/OMR run root so SR images and masks
+    resolve correctly. Only the probe/CNN `bands_from` argument is redirected to
+    the fresh dense reconstruction root.
+    """
+    import src.pipeline.detection.orchestrator as detection_orchestrator
+
+    if getattr(detection_orchestrator, "_stage_e_dense_bands_patch", False):
         return
 
-    original_run_probe = DetectorOrchestrator._run_probe_scan
-    original_run_cnn = DetectorOrchestrator._run_cnn_scoring
+    original_probe_batch = detection_orchestrator.run_probe_scan_batch
+    original_cnn_batch = detection_orchestrator.run_cnn_scoring_batch
+    dense_root = Path(dense_filtered_root)
 
-    def with_dense_seed_root(self, fn):
-        override = self.det_cfg.get("probe_bands_from")
-        if not override:
-            return fn(self)
+    def run_probe_scan_batch_with_dense_bands(**kwargs):
+        kwargs["bands_from"] = dense_root
+        return original_probe_batch(**kwargs)
 
-        previous_hybrid = self.hybrid_output_dir
-        previous_staff = self.det_cfg.get("staff_mask_dir", "DEFAULT_SENTINEL")
-        previous_clef = self.det_cfg.get("clef_mask_dir", "DEFAULT_SENTINEL")
-        self.hybrid_output_dir = Path(override)
-        self.det_cfg["staff_mask_dir"] = str(previous_hybrid)
-        self.det_cfg["clef_mask_dir"] = str(previous_hybrid)
-        try:
-            return fn(self)
-        finally:
-            self.hybrid_output_dir = previous_hybrid
-            if previous_staff == "DEFAULT_SENTINEL":
-                self.det_cfg.pop("staff_mask_dir", None)
-            else:
-                self.det_cfg["staff_mask_dir"] = previous_staff
-            if previous_clef == "DEFAULT_SENTINEL":
-                self.det_cfg.pop("clef_mask_dir", None)
-            else:
-                self.det_cfg["clef_mask_dir"] = previous_clef
+    def run_cnn_scoring_batch_with_dense_bands(**kwargs):
+        kwargs["bands_from"] = dense_root
+        return original_cnn_batch(**kwargs)
 
-    def run_probe(self):
-        return with_dense_seed_root(self, original_run_probe)
-
-    def run_cnn(self):
-        return with_dense_seed_root(self, original_run_cnn)
-
-    DetectorOrchestrator._run_probe_scan = run_probe
-    DetectorOrchestrator._run_cnn_scoring = run_cnn
-    DetectorOrchestrator._stage_e_dense_patch = True
+    detection_orchestrator.run_probe_scan_batch = run_probe_scan_batch_with_dense_bands
+    detection_orchestrator.run_cnn_scoring_batch = run_cnn_scoring_batch_with_dense_bands
+    detection_orchestrator._stage_e_dense_bands_patch = True
 
 
-def apply_stage_e_dense_patch() -> None:
+def apply_stage_e_dense_patch(dense_filtered_root: Path) -> None:
     patch_dense_bands_loader()
-    patch_detector_orchestrator()
+    patch_detector_bands_source(dense_filtered_root)
     logger.info("Applied Issue #141 Stage E dense reconstruction patch.")
 
 
@@ -271,9 +255,9 @@ def main():
     config["inputs"]["pdf_to_images"]["output_dir"] = str(stage_e_images_dir)
     config["inputs"]["pdf_to_images"]["image_glob"] = "*.png"
     config["run"]["run_id"] = "stage_e_full_pipeline"
-    config["detection"]["probe_bands_from"] = str(dense_filtered_root)
+    config["detection"]["stage_e_dense_reconstruction_root"] = str(dense_filtered_root)
 
-    apply_stage_e_dense_patch()
+    apply_stage_e_dense_patch(dense_filtered_root)
 
     temp_config_path = stage_e_root / "stage_e_config.yaml"
     import yaml

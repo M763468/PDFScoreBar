@@ -106,6 +106,42 @@ def regenerate_dense_candidates(*, inventory: Path, exclude: Path, stage_e_root:
     return filtered_root
 
 
+def regenerate_issue53_candidates(*, image_paths: list[Path], filtered_root: Path, stage_e_root: Path) -> Path:
+    """Regenerate the Issue53-style probe rescue root used by the dense route."""
+    from src.pipeline.steps.probe_scan import run_probe_scan_batch
+
+    issue53_root = stage_e_root / "dense_candidate_reconstruction" / "issue53_probe_rescue_candidates"
+    shutil.rmtree(issue53_root, ignore_errors=True)
+    issue53_root.mkdir(parents=True, exist_ok=True)
+
+    detect_probe_kwargs = {
+        "scan_gap_rescue": True,
+        "scan_gap_threshold_ratio": 1.5,
+        "scan_gap_rescue_min_ratio": 0.3,
+        "scan_x_peak_rescue": True,
+        "scan_rightmost_rescue": True,
+        "divisi_rescue": True,
+        "scan_center_on_peak": True,
+        "max_per_band": 100,
+    }
+    processed = run_probe_scan_batch(
+        images=image_paths,
+        output_root=issue53_root,
+        bands_from=filtered_root,
+        staff_mask_dir=None,
+        clef_mask_dir=None,
+        ink_threshold=180,
+        min_ratio=0.85,
+        min_height_ratio=0.012,
+        min_width_ratio=0.0001,
+        detect_probe_kwargs=detect_probe_kwargs,
+        enable_heuristic_filters=False,
+    )
+    if processed != 68:
+        raise RuntimeError(f"Issue53 candidate reconstruction processed {processed}/68 pages")
+    return issue53_root
+
+
 def _load_json_boxes(path: Path):
     payload = json.loads(path.read_text())
     boxes = []
@@ -160,39 +196,57 @@ def patch_dense_bands_loader() -> None:
     cnn_scoring._load_bands_for_image = patched_loader
 
 
-def patch_detector_bands_source(dense_filtered_root: Path) -> None:
-    """Use fresh dense seeds as bands_from without replacing hybrid_output_dir.
-
-    hybrid_output_dir must remain the HOMR/SR/OMR run root so SR images and masks
-    resolve correctly. Only the probe/CNN `bands_from` argument is redirected to
-    the fresh dense reconstruction root.
-    """
+def patch_detector_for_stage_e(*, issue53_root: Path, filtered_root: Path) -> None:
+    """Connect reconstructed Issue53 candidates to the full pipeline detector step."""
     import src.pipeline.detection.orchestrator as detection_orchestrator
+    from src.pipeline.core.run_ids import build_probe_run_id
+    from src.pipeline.utils.io import ensure_dir
+    from src.pipeline.detection.orchestrator import DetectorOrchestrator
 
-    if getattr(detection_orchestrator, "_stage_e_dense_bands_patch", False):
+    if getattr(detection_orchestrator, "_stage_e_issue53_patch", False):
         return
 
-    original_probe_batch = detection_orchestrator.run_probe_scan_batch
     original_cnn_batch = detection_orchestrator.run_cnn_scoring_batch
-    dense_root = Path(dense_filtered_root)
+    original_get_images = DetectorOrchestrator._get_effective_images_for_probe
 
-    def run_probe_scan_batch_with_dense_bands(**kwargs):
-        kwargs["bands_from"] = dense_root
-        return original_probe_batch(**kwargs)
+    def get_effective_images_for_probe(self):
+        if bool(self.det_cfg.get("probe_use_original_images", False)):
+            return self.images, 1
+        return original_get_images(self)
+
+    def copy_issue53_candidates(**kwargs):
+        images = list(kwargs["images"])
+        output_root = Path(kwargs["output_root"])
+        score_name = kwargs.get("score_name")
+        processed = 0
+        for img_path in images:
+            split = _split_score_page_from_stem(img_path.stem)
+            if split is None:
+                raise RuntimeError(f"Cannot map Stage E image stem to score/page: {img_path.stem}")
+            score, page = split
+            src = issue53_root / f"eval2_{score}_{page}" / "pipeline2_no_peak_candidates.json"
+            if not src.exists():
+                raise FileNotFoundError(f"Missing reconstructed Issue53 candidates: {src}")
+            dest_dir = output_root / build_probe_run_id(img_path, score_name=score_name)
+            ensure_dir(dest_dir)
+            shutil.copy2(src, dest_dir / "pipeline2_no_peak_candidates.json")
+            processed += 1
+        return processed
 
     def run_cnn_scoring_batch_with_dense_bands(**kwargs):
-        kwargs["bands_from"] = dense_root
+        kwargs["bands_from"] = filtered_root
         return original_cnn_batch(**kwargs)
 
-    detection_orchestrator.run_probe_scan_batch = run_probe_scan_batch_with_dense_bands
+    DetectorOrchestrator._get_effective_images_for_probe = get_effective_images_for_probe
+    detection_orchestrator.run_probe_scan_batch = copy_issue53_candidates
     detection_orchestrator.run_cnn_scoring_batch = run_cnn_scoring_batch_with_dense_bands
-    detection_orchestrator._stage_e_dense_bands_patch = True
+    detection_orchestrator._stage_e_issue53_patch = True
 
 
-def apply_stage_e_dense_patch(dense_filtered_root: Path) -> None:
+def apply_stage_e_dense_patch(*, issue53_root: Path, filtered_root: Path) -> None:
     patch_dense_bands_loader()
-    patch_detector_bands_source(dense_filtered_root)
-    logger.info("Applied Issue #141 Stage E dense reconstruction patch.")
+    patch_detector_for_stage_e(issue53_root=issue53_root, filtered_root=filtered_root)
+    logger.info("Applied Issue #141 Stage E Issue53 candidate reconstruction patch.")
 
 
 def main():
@@ -229,9 +283,14 @@ def main():
         sys.exit(1)
 
     stage_e_root = args.output_root / "stage_e_full_pipeline"
-    dense_filtered_root = regenerate_dense_candidates(
+    filtered_root = regenerate_dense_candidates(
         inventory=args.inventory,
         exclude=args.exclude,
+        stage_e_root=stage_e_root,
+    )
+    issue53_root = regenerate_issue53_candidates(
+        image_paths=image_paths,
+        filtered_root=filtered_root,
         stage_e_root=stage_e_root,
     )
 
@@ -255,9 +314,11 @@ def main():
     config["inputs"]["pdf_to_images"]["output_dir"] = str(stage_e_images_dir)
     config["inputs"]["pdf_to_images"]["image_glob"] = "*.png"
     config["run"]["run_id"] = "stage_e_full_pipeline"
-    config["detection"]["stage_e_dense_reconstruction_root"] = str(dense_filtered_root)
+    config["detection"]["stage_e_dense_reconstruction_root"] = str(filtered_root)
+    config["detection"]["stage_e_issue53_candidates_root"] = str(issue53_root)
+    config["detection"]["probe_use_original_images"] = True
 
-    apply_stage_e_dense_patch(dense_filtered_root)
+    apply_stage_e_dense_patch(issue53_root=issue53_root, filtered_root=filtered_root)
 
     temp_config_path = stage_e_root / "stage_e_config.yaml"
     import yaml

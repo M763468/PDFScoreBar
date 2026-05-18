@@ -1,13 +1,9 @@
 """Stage E dense/Issue53 full-pipeline route support.
 
-This module contains the Stage E-specific bridge needed to run the real
-full pipeline with freshly reconstructed dense and Issue53-style candidates.
-It deliberately preserves the Issue #141 checkpoint behavior while moving the
-runner-local glue out of ``tools/issue120/run_stage_e_full_pipeline.py``.
-
-The bridge is still Stage E-specific.  Follow-up #156 work should replace the
-remaining monkey-patch connection with explicit detector configuration/API
-support in the production orchestrator.
+This module contains the Stage E-specific reconstruction needed to run the
+real full pipeline with freshly rebuilt dense and Issue53-style candidates.
+It deliberately preserves the Issue #141 checkpoint behavior while keeping the
+runtime detector connection in the regular ``DetectorOrchestrator`` config/API.
 """
 
 from __future__ import annotations
@@ -215,115 +211,3 @@ def reconstruct_stage_e_dense_route(
         filtered_root=filtered_root,
         issue53_root=issue53_root,
     )
-
-
-
-def _load_json_boxes(path: Path):
-    payload = json.loads(path.read_text())
-    boxes = []
-    if not isinstance(payload, list):
-        return boxes
-    for item in payload:
-        if isinstance(item, dict) and "bbox" in item:
-            item = item["bbox"]
-        if isinstance(item, list) and len(item) >= 4:
-            boxes.append(tuple(int(round(float(v))) for v in item[:4]))
-    return boxes
-
-
-
-def _split_score_page_from_stem(stem: str):
-    marker = "_page_"
-    idx = stem.rfind(marker)
-    if idx < 0:
-        return None
-    score = stem[:idx]
-    page = f"page_{stem[idx + len(marker):]}"
-    return score, page
-
-
-
-def patch_dense_bands_loader() -> None:
-    """Resolve fresh Stage E dense roots for composite stems like Score_page_001."""
-    from src.pipeline.steps import cnn_scoring, probe_scan
-
-    original_loader = probe_scan._load_bands_for_image
-    if getattr(original_loader, "_stage_e_dense_loader", False):
-        return
-
-    def patched_loader(*, bands_from, current_score_name, stem):
-        if bands_from:
-            root = Path(bands_from)
-            split = _split_score_page_from_stem(stem)
-            if split is not None:
-                score, page = split
-                for candidate in [
-                    root / score / page / "pipeline2_no_peak_candidates.json",
-                    root / score / page / "pipeline2_no_peak_scored.json",
-                ]:
-                    if candidate.exists():
-                        return _load_json_boxes(candidate)
-        return original_loader(
-            bands_from=bands_from,
-            current_score_name=current_score_name,
-            stem=stem,
-        )
-
-    patched_loader._stage_e_dense_loader = True
-    probe_scan._load_bands_for_image = patched_loader
-    cnn_scoring._load_bands_for_image = patched_loader
-
-
-
-def patch_detector_for_stage_e(*, issue53_root: Path, filtered_root: Path) -> None:
-    """Connect reconstructed Issue53 candidates to the full pipeline detector step."""
-    import src.pipeline.detection.orchestrator as detection_orchestrator
-    from src.pipeline.core.run_ids import build_probe_run_id
-    from src.pipeline.detection.orchestrator import DetectorOrchestrator
-    from src.pipeline.utils.io import ensure_dir
-
-    if getattr(detection_orchestrator, "_stage_e_issue53_patch", False):
-        return
-
-    original_cnn_batch = detection_orchestrator.run_cnn_scoring_batch
-    original_get_images = DetectorOrchestrator._get_effective_images_for_probe
-
-    def get_effective_images_for_probe(self):
-        if bool(self.det_cfg.get("probe_use_original_images", False)):
-            return self.images, 1
-        return original_get_images(self)
-
-    def copy_issue53_candidates(**kwargs):
-        images = list(kwargs["images"])
-        output_root = Path(kwargs["output_root"])
-        score_name = kwargs.get("score_name")
-        processed = 0
-        for img_path in images:
-            split = _split_score_page_from_stem(img_path.stem)
-            if split is None:
-                raise RuntimeError(f"Cannot map Stage E image stem to score/page: {img_path.stem}")
-            score, page = split
-            src = issue53_root / f"eval2_{score}_{page}" / "pipeline2_no_peak_candidates.json"
-            if not src.exists():
-                raise FileNotFoundError(f"Missing reconstructed Issue53 candidates: {src}")
-            dest_dir = output_root / build_probe_run_id(img_path, score_name=score_name)
-            ensure_dir(dest_dir)
-            shutil.copy2(src, dest_dir / "pipeline2_no_peak_candidates.json")
-            processed += 1
-        return processed
-
-    def run_cnn_scoring_batch_with_dense_bands(**kwargs):
-        kwargs["bands_from"] = filtered_root
-        return original_cnn_batch(**kwargs)
-
-    DetectorOrchestrator._get_effective_images_for_probe = get_effective_images_for_probe
-    detection_orchestrator.run_probe_scan_batch = copy_issue53_candidates
-    detection_orchestrator.run_cnn_scoring_batch = run_cnn_scoring_batch_with_dense_bands
-    detection_orchestrator._stage_e_issue53_patch = True
-
-
-
-def apply_stage_e_dense_patch(*, issue53_root: Path, filtered_root: Path) -> None:
-    patch_dense_bands_loader()
-    patch_detector_for_stage_e(issue53_root=issue53_root, filtered_root=filtered_root)
-    logger.info("Applied Issue #141 Stage E Issue53 candidate reconstruction patch.")

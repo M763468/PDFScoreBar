@@ -235,4 +235,5 @@ api-explore: ## Extract API info from a Python file (usage: make api-explore FIL
 artifact-summary: ## Summarize all artifacts
 	./.agents/skills/artifact-clerk/run.sh
 
+-include tools/issue120/Makefile.stage_e.mk
 

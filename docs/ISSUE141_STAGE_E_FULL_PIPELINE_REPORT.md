@@ -2,36 +2,64 @@
 
 ## Purpose
 
-This document records the result and failure boundary of the full 68-page Stage E pipeline run against the Issue #120 detector target.
+This document records the final full 68-page Stage E pipeline validation result against the Issue #120 detector target.
 
-Stage E validates the real full pipeline path. It is intentionally distinct from the #151 dense probe-candidate route, which is a detector-level partial route and does not run the slow HOMR/SR/OMR upstream pipeline or downstream measure numbering.
+Stage E validates the real full pipeline path. It is intentionally distinct from the #151 dense probe-candidate route, which is a detector-level partial route and does not run the full HOMR/SR/OMR-inclusive pipeline or downstream measure numbering.
 
 ## Execution Configuration
 
-- **Run ID**: `issue120_stage_e_full_pipeline`
+- **Run ID**: `stage_e_full_pipeline`
 - **Output location**: `logs/issue120_e2e_recovery/stage_e_full_pipeline/`
-- **Components run**: HOMR generation, SR enhancement, `probe_scan` detection, CNN scoring, and downstream measure numbering.
+- **Components run**: dense candidate reconstruction, Issue53-style probe rescue candidate reconstruction, HOMR/SR/OMR-inclusive full pipeline execution, CNN scoring, and downstream measure numbering.
 - **NMS policy**: `cnn_apply_nms: false` per Issue #142.
 
 ## Detector Metrics vs Target
 
-The detector metrics are produced from the full-pipeline `manifest.json` using `tools/issue120/eval_stage_e_from_manifest.py`.
+The detector metrics are produced from the full-pipeline `manifest.json` using `tools/issue120/eval_stage_e_from_manifest.py` and recorded in `evaluation_contract.json`.
 
 - **Target**: `TP=3580 / FP=0 / FN=1`
-- **Observed Stage E run**: `TP=3359 / FP=145 / FN=222`
+- **Observed Stage E run**: `TP=3580 / FP=0 / FN=1`
+- **Target met**: yes
 
-## Failure Boundary
+Additional detector summary:
 
-The current full pipeline does not reproduce the historical dense-route detector target.
+```text
+Pages=68/68
+GT=3581
+Pred=3600
+TP=3580
+FP=0
+FN=1
+FN_det=0
+FN_cnn=1
+Precision=1.000000
+Recall=0.999721
+cnn_apply_nms=false
+```
 
-The observed delta is a route-boundary issue, not an NMS-policy issue:
+## Repair Summary
 
-1. **False negatives**: the observed `FN=222` are detector-level misses (`fn_det=222`, `fn_cnn=0`). The missed barlines were not present in the generated candidate set before CNN scoring.
-2. **False positives**: with CNN NMS disabled, the current full-pipeline candidate generator emits duplicate or spurious candidates that survive CNN thresholding. The #151 dense route uses different dense generation and clef-mask-aware filtering and remains detector-level only.
+The initial Stage E full-pipeline route did not reproduce the recovered detector target:
+
+```text
+Initial Stage E: TP=3359 FP=145 FN=222 FN_det=222 FN_cnn=0
+```
+
+The failure was not caused by CNN NMS policy. It was caused by the full pipeline not using the same reconstructed candidate route as the recovered dense detector path.
+
+The repair connects Stage E to the recovered route without consuming historical candidate logs as runtime input:
+
+1. Regenerate dense probe candidates inside the current Stage E run.
+2. Apply clef/staff-aware candidate filtering inside the current Stage E run.
+3. Regenerate Issue53-style probe rescue candidates from that filtered root inside the current Stage E run.
+4. Feed the freshly regenerated Issue53 candidate root into the full pipeline detector/CNN scoring path.
+5. Evaluate detector metrics from the full-pipeline manifest.
+
+This keeps #151 as detector-level evidence while making #141 validate a real full-pipeline Stage E run.
 
 ## Downstream Measure-Count Metrics
 
-Detector metrics and downstream measure-count metrics must remain separate.
+Detector metrics and downstream measure-count metrics remain separate.
 
 The full pipeline writes downstream numbering output under:
 
@@ -43,8 +71,8 @@ A canonical downstream measure-count comparator is not attached in this audit. T
 
 ## Conclusion
 
-- Stage E is an audit of the current full HOMR/SR/OMR-inclusive pipeline route.
-- The current full pipeline does not meet the canonical detector target.
-- The failure boundary is candidate generation/filtering route mismatch versus the recovered dense detector route.
-- #151 is completed, but its route remains detector-level partial and should not be reported as a full-pipeline result.
-- Accuracy repair or true full-pipeline integration of the dense route should be handled in a follow-up issue, not inside #141.
+- Stage E now completes all 68 canonical evaluation pages.
+- The full HOMR/SR/OMR-inclusive Stage E pipeline now meets the Issue #120 canonical detector target: `TP=3580 / FP=0 / FN=1`.
+- Detector metrics and downstream measure-count status are recorded separately in the machine-readable evaluation contract.
+- #151 remains a detector-level partial route and should not be reported as a full-pipeline result by itself.
+- Remaining productionization/refactor work should focus on replacing Stage E runner glue with a cleaner pipeline module/API while preserving the recovered route and evaluation contract semantics.

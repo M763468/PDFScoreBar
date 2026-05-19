@@ -19,7 +19,11 @@ try:
 except ImportError:  # pragma: no cover - optional in minimal test env
     np = None  # type: ignore[assignment]
 
-from src.pipeline.core.run_ids import build_probe_run_id, build_probe_run_id_from_parts
+from src.pipeline.core.run_ids import (
+    build_probe_run_id,
+    build_probe_run_id_from_parts,
+    split_score_page_from_composite_stem,
+)
 from src.pipeline.steps.candidate_filters import (
     filter_probe_candidates,
     split_box_vertically,
@@ -225,16 +229,6 @@ def _augment_unit_normalized_boxes(
     return out
 
 
-def _split_score_page_from_stem(stem: str) -> tuple[str, str] | None:
-    marker = "_page_"
-    idx = stem.rfind(marker)
-    if idx < 0:
-        return None
-    score = stem[:idx]
-    page = f"page_{stem[idx + len(marker):]}"
-    return score, page
-
-
 def _load_bands_for_image(
     *,
     bands_from: Optional[Path],
@@ -257,7 +251,7 @@ def _load_bands_for_image(
         bands_from / f"{stem}.json",
         bands_from / f"{run_subdir}_scored.json",
     ]
-    split = _split_score_page_from_stem(stem)
+    split = split_score_page_from_composite_stem(stem)
     if split is not None:
         score, page = split
         candidates.extend(

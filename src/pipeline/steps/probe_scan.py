@@ -225,6 +225,16 @@ def _augment_unit_normalized_boxes(
     return out
 
 
+def _split_score_page_from_stem(stem: str) -> tuple[str, str] | None:
+    marker = "_page_"
+    idx = stem.rfind(marker)
+    if idx < 0:
+        return None
+    score = stem[:idx]
+    page = f"page_{stem[idx + len(marker):]}"
+    return score, page
+
+
 def _load_bands_for_image(
     *,
     bands_from: Optional[Path],
@@ -247,6 +257,17 @@ def _load_bands_for_image(
         bands_from / f"{stem}.json",
         bands_from / f"{run_subdir}_scored.json",
     ]
+    split = _split_score_page_from_stem(stem)
+    if split is not None:
+        score, page = split
+        candidates.extend(
+            [
+                bands_from / score / page / "pipeline2_no_peak_candidates.json",
+                bands_from / score / page / "pipeline2_no_peak_scored.json",
+                bands_from / f"eval2_{score}_{page}" / "pipeline2_no_peak_candidates.json",
+                bands_from / f"eval2_{score}_{page}" / "pipeline2_no_peak_scored.json",
+            ]
+        )
     for path in candidates:
         if path.exists():
             return load_json_boxes(path)

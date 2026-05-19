@@ -16,7 +16,11 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from src.pipeline.steps.probe_scan import run_probe_scan_batch
+
 logger = logging.getLogger(__name__)
+
+STAGE_E_EXPECTED_PAGES = 68
 
 GENERATION_PARAMS = {
     "band_source": "row_stats",
@@ -71,7 +75,7 @@ def load_stage_e_image_paths(
     *,
     inventory: Path,
     exclude: Path,
-    expected_pages: int = 68,
+    expected_pages: int = STAGE_E_EXPECTED_PAGES,
 ) -> list[Path]:
     """Load the canonical Stage E image list from the current run inventory."""
     inv = json.loads(inventory.read_text())
@@ -142,7 +146,7 @@ def regenerate_dense_candidates(*, inventory: Path, exclude: Path, stage_e_root:
     _run_command(filter_cmd, log_path=log_dir / "02_apply_candidate_filter.log")
 
     summary = json.loads(filter_summary.read_text())
-    if summary.get("processed") != 68 or summary.get("errors") != 0:
+    if summary.get("processed") != STAGE_E_EXPECTED_PAGES or summary.get("errors") != 0:
         raise RuntimeError(
             "Dense candidate reconstruction did not complete cleanly: "
             f"processed={summary.get('processed')} errors={summary.get('errors')}"
@@ -153,8 +157,6 @@ def regenerate_dense_candidates(*, inventory: Path, exclude: Path, stage_e_root:
 
 def regenerate_issue53_candidates(*, image_paths: list[Path], filtered_root: Path, stage_e_root: Path) -> Path:
     """Regenerate the Issue53-style probe rescue root used by the dense route."""
-    from src.pipeline.steps.probe_scan import run_probe_scan_batch
-
     issue53_root = stage_e_root / "dense_candidate_reconstruction" / "issue53_probe_rescue_candidates"
     shutil.rmtree(issue53_root, ignore_errors=True)
     issue53_root.mkdir(parents=True, exist_ok=True)
@@ -182,8 +184,9 @@ def regenerate_issue53_candidates(*, image_paths: list[Path], filtered_root: Pat
         detect_probe_kwargs=detect_probe_kwargs,
         enable_heuristic_filters=False,
     )
-    if processed != 68:
-        raise RuntimeError(f"Issue53 candidate reconstruction processed {processed}/68 pages")
+    expected_pages = len(image_paths)
+    if processed != expected_pages:
+        raise RuntimeError(f"Issue53 candidate reconstruction processed {processed}/{expected_pages} pages")
     return issue53_root
 
 

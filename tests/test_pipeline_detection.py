@@ -164,6 +164,55 @@ class TestPipelineDetection(unittest.TestCase):
             self.assertEqual(mock_probe.call_args.kwargs["score_name"], "FixedScore")
             self.assertEqual(mock_cnn.call_args.kwargs["score_name"], "FixedScore")
 
+    def test_precomputed_probe_candidates_are_copied_and_scored_with_cnn_bands(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            hybrid_output_dir = tmp / "hybrid"
+            hybrid_output_dir.mkdir(parents=True, exist_ok=True)
+            precomputed_root = tmp / "precomputed"
+            precomputed_dir = precomputed_root / "eval2_Score_page_001"
+            precomputed_dir.mkdir(parents=True, exist_ok=True)
+            (precomputed_dir / "pipeline2_no_peak_candidates.json").write_text("[]")
+            cnn_bands_from = tmp / "filtered_bands"
+            cnn_bands_from.mkdir(parents=True, exist_ok=True)
+
+            config = self._base_config()
+            config["detection"].update(
+                {
+                    "precomputed_probe_candidates_root": str(precomputed_root),
+                    "cnn_bands_from": str(cnn_bands_from),
+                    "probe_use_original_images": True,
+                }
+            )
+            images = [Path("data/evaluation/images/Score_page_001.png")]
+            page_ids = ["Score_page_001"]
+
+            with (
+                patch.object(
+                    HybridDetector,
+                    "run",
+                    return_value={"commands": [["hybrid"]], "hybrid_output_dir": hybrid_output_dir},
+                ),
+                patch("src.pipeline.detection.orchestrator.run_probe_scan_batch") as mock_probe,
+                patch("src.pipeline.detection.orchestrator.run_cnn_scoring_batch") as mock_cnn,
+            ):
+                result = run_detection_step(
+                    config=config,
+                    images=images,
+                    page_ids=page_ids,
+                    run_id="run123",
+                    run_dir=tmp,
+                    dry_run=False,
+                )
+
+            copied = tmp / "intermediate" / "probe_scan" / "eval2_images_Score_page_001" / "pipeline2_no_peak_candidates.json"
+            self.assertTrue(copied.exists())
+            mock_probe.assert_not_called()
+            mock_cnn.assert_called_once()
+            self.assertEqual(mock_cnn.call_args.kwargs["bands_from"], cnn_bands_from)
+            self.assertIn("--precomputed-candidates-root", result["commands"][1])
+            self.assertIn("--bands-from", result["commands"][2])
+
 
 if __name__ == "__main__":
     unittest.main()

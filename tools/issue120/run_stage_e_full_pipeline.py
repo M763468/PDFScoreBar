@@ -5,10 +5,7 @@ import sys
 from pathlib import Path
 
 from src.pipeline.core.config import load_yaml
-from src.pipeline.detector_routes.stage_e_dense_full_pipeline import (
-    apply_stage_e_dense_patch,
-    reconstruct_stage_e_dense_route,
-)
+from src.pipeline.detector_routes.stage_e_dense_full_pipeline import reconstruct_stage_e_dense_route
 from src.pipeline.main import run_pipeline
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -61,14 +58,9 @@ def main():
     config["inputs"]["pdf_to_images"]["output_dir"] = str(stage_e_images_dir)
     config["inputs"]["pdf_to_images"]["image_glob"] = "*.png"
     config["run"]["run_id"] = "stage_e_full_pipeline"
-    config["detection"]["stage_e_dense_reconstruction_root"] = str(route_artifacts.filtered_root)
-    config["detection"]["stage_e_issue53_candidates_root"] = str(route_artifacts.issue53_root)
+    config["detection"]["precomputed_probe_candidates_root"] = str(route_artifacts.issue53_root)
+    config["detection"]["cnn_bands_from"] = str(route_artifacts.filtered_root)
     config["detection"]["probe_use_original_images"] = True
-
-    apply_stage_e_dense_patch(
-        issue53_root=route_artifacts.issue53_root,
-        filtered_root=route_artifacts.filtered_root,
-    )
 
     temp_config_path = stage_e_root / "stage_e_config.yaml"
     import yaml

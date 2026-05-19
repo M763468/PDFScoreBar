@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from src.pipeline.core.config import get_nested
-from src.pipeline.core.run_ids import build_probe_run_id
+from src.pipeline.core.run_ids import build_probe_run_id, split_score_page_from_composite_stem
 from src.pipeline.steps.cnn_scoring import run_cnn_scoring_batch
 from src.pipeline.steps.probe_scan import run_probe_scan_batch
 from src.pipeline.utils.io import ensure_dir
@@ -22,17 +22,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _split_score_page_from_stem(stem: str) -> tuple[str, str] | None:
-    """Split composite Stage E stems like ``Score_page_001``.
-
-    Regular pipeline stems such as ``page_001`` return ``None``.
-    """
-    marker = "_page_"
-    idx = stem.rfind(marker)
-    if idx < 0:
-        return None
-    score = stem[:idx]
-    page = f"page_{stem[idx + len(marker):]}"
-    return score, page
+    """Compatibility wrapper for composite Stage E image stems."""
+    return split_score_page_from_composite_stem(stem)
 
 
 def _candidate_json_candidates(

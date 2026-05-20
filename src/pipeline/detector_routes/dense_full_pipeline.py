@@ -2,8 +2,8 @@
 
 This module reconstructs detector-route inputs from current-run inventory data,
 then exposes them through the production ``DetectorOrchestrator`` config/API.
-The default constants preserve the Stage E / Issue #141 checkpoint behavior;
-those historical references are provenance, not public API names.
+Historical checkpoint names are kept in the dedicated Stage E shim module, not
+in this production-oriented route module.
 """
 
 from __future__ import annotations
@@ -55,16 +55,6 @@ class DenseRouteArtifacts:
     filtered_root: Path
     probe_rescue_root: Path
 
-    @property
-    def issue53_root(self) -> Path:
-        """Legacy name for the historical Issue53-style probe-rescue root."""
-        return self.probe_rescue_root
-
-
-# Compatibility alias for the historical Stage E checkpoint module/API.
-StageEDenseRouteArtifacts = DenseRouteArtifacts
-STAGE_E_EXPECTED_PAGES = DENSE_ROUTE_EXPECTED_PAGES
-
 
 def _add_params(cmd: list[str], params: dict[str, str]) -> None:
     for key, value in params.items():
@@ -103,27 +93,14 @@ def load_route_image_paths(
     return image_paths
 
 
-# Compatibility alias for the historical Stage E runner/API.
-load_stage_e_image_paths = load_route_image_paths
-
-
-def _resolve_route_root(*, route_root: Path | None, stage_e_root: Path | None) -> Path:
-    resolved = route_root if route_root is not None else stage_e_root
-    if resolved is None:
-        raise TypeError("route_root is required")
-    return resolved
-
-
 def regenerate_dense_candidates(
     *,
     inventory: Path,
     exclude: Path,
-    route_root: Path | None = None,
-    stage_e_root: Path | None = None,
+    route_root: Path,
 ) -> Path:
     """Regenerate the dense candidate/filter root inside this route run."""
-    resolved_route_root = _resolve_route_root(route_root=route_root, stage_e_root=stage_e_root)
-    dense_root = resolved_route_root / "dense_candidate_reconstruction"
+    dense_root = route_root / "dense_candidate_reconstruction"
     raw_root = dense_root / "probe_candidates_from_inventory"
     filtered_root = dense_root / "probe_candidates_filtered"
     suggestions_root = dense_root / "filter_suggestions"
@@ -182,19 +159,11 @@ def regenerate_probe_rescue_candidates(
     *,
     image_paths: list[Path],
     filtered_root: Path,
-    route_root: Path | None = None,
-    stage_e_root: Path | None = None,
+    route_root: Path,
 ) -> Path:
-    """Regenerate probe-rescue candidates for the dense detector route.
-
-    This preserves the historical Issue53-style rescue behavior while exposing
-    the runtime output as a semantic precomputed-probe-candidates root.
-    """
-    resolved_route_root = _resolve_route_root(route_root=route_root, stage_e_root=stage_e_root)
-    probe_rescue_root = resolved_route_root / "dense_candidate_reconstruction" / "probe_rescue_candidates"
-    legacy_issue53_root = resolved_route_root / "dense_candidate_reconstruction" / "issue53_probe_rescue_candidates"
+    """Regenerate probe-rescue candidates for the dense detector route."""
+    probe_rescue_root = route_root / "dense_candidate_reconstruction" / "probe_rescue_candidates"
     shutil.rmtree(probe_rescue_root, ignore_errors=True)
-    shutil.rmtree(legacy_issue53_root, ignore_errors=True)
     probe_rescue_root.mkdir(parents=True, exist_ok=True)
 
     detect_probe_kwargs = {
@@ -226,15 +195,6 @@ def regenerate_probe_rescue_candidates(
     return probe_rescue_root
 
 
-def regenerate_issue53_candidates(*, image_paths: list[Path], filtered_root: Path, stage_e_root: Path) -> Path:
-    """Compatibility wrapper for the historical Issue53-style rescue name."""
-    return regenerate_probe_rescue_candidates(
-        image_paths=image_paths,
-        filtered_root=filtered_root,
-        stage_e_root=stage_e_root,
-    )
-
-
 def reconstruct_dense_full_pipeline_route(
     *,
     inventory: Path,
@@ -257,18 +217,4 @@ def reconstruct_dense_full_pipeline_route(
         image_paths=image_paths,
         filtered_root=filtered_root,
         probe_rescue_root=probe_rescue_root,
-    )
-
-
-def reconstruct_stage_e_dense_route(
-    *,
-    inventory: Path,
-    exclude: Path,
-    stage_e_root: Path,
-) -> DenseRouteArtifacts:
-    """Compatibility wrapper for the historical Stage E route name."""
-    return reconstruct_dense_full_pipeline_route(
-        inventory=inventory,
-        exclude=exclude,
-        route_root=stage_e_root,
     )

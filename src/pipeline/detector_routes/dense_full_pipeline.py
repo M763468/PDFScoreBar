@@ -2,8 +2,8 @@
 
 This module reconstructs detector-route inputs from current-run inventory data,
 then exposes them through the production ``DetectorOrchestrator`` config/API.
-Historical checkpoint names are kept in the dedicated Stage E shim module, not
-in this production-oriented route module.
+Historical checkpoint aliases are kept in the dedicated compatibility shim,
+not in this production-oriented route module.
 """
 
 from __future__ import annotations

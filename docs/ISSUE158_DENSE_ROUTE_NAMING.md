@@ -39,7 +39,7 @@ New production-oriented detector-route code should use these names:
 
 These names describe runtime semantics rather than the Stage E checkpoint or the Issue53 provenance.
 
-## Historical names retained only for compatibility or provenance
+## Historical names retained only for checkpoint provenance
 
 The following names remain intentionally:
 
@@ -53,13 +53,13 @@ The following names remain intentionally:
 
 These identify the checkpoint and reproduce the exact #141/#156 Stage E validation contract. They are not the public detector-route API.
 
-The old module `src.pipeline.detector_routes.stage_e_dense_full_pipeline` remains as a compatibility shim for existing references. New code should import from `src.pipeline.detector_routes.dense_full_pipeline`.
+The old module `src.pipeline.detector_routes.stage_e_dense_full_pipeline` remains as a narrow checkpoint shim for existing Stage E imports. New code should import from `src.pipeline.detector_routes.dense_full_pipeline`.
 
 ## Config migration notes
 
 Use these production keys in new configs:
 
-| Legacy key | Production key |
+| Old key | Production key |
 | --- | --- |
 | `detection.stage_e_issue53_candidates_root` | `detection.precomputed_probe_candidates_root` |
 | `detection.stage_e_dense_reconstruction_root` | `detection.cnn_bands_from` |
@@ -67,7 +67,9 @@ Use these production keys in new configs:
 | `skip_issue53_regeneration` | `skip_probe_rescue_regeneration` |
 | `skip_existing_issue53` | `skip_existing_probe_rescue` |
 
-The legacy keys remain supported as compatibility fallback keys for historical configs. They should not be used in new route configs.
+Dense probe-candidate route configs no longer accept the old Issue53 workflow keys. Existing tracked configs and runners have been migrated together so stale names fail fast instead of silently keeping a second API surface.
+
+`DetectorOrchestrator` still reads the old Stage E detection keys only as a narrow fallback for historical checkpoint configs. New configs should use `detection.precomputed_probe_candidates_root` and `detection.cnn_bands_from`.
 
 ## What should not be renamed in this issue
 

@@ -13,7 +13,7 @@ TP=3580
 FP=0
 FN=1
 FN_det=0
-FN_cNN=1
+FN_cnn=1
 cnn_apply_nms=false
 target_met.detector=true
 ```

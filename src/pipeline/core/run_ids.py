@@ -20,7 +20,7 @@ def split_score_page_from_composite_stem(stem: str) -> tuple[str, str] | None:
     """Split composite stems like ``Score_page_001`` into score and page.
 
     Regular page stems such as ``page_001`` return ``None``. This keeps the
-    default pipeline path unchanged while supporting Stage E copied image names.
+    default pipeline path unchanged while supporting composite benchmark image names.
     """
     marker = "_page_"
     idx = stem.rfind(marker)

@@ -95,7 +95,6 @@ class DenseProbeCandidateConfig:
     require_candidate_match: bool = True
     require_detector_target: bool = False
     disable_seed_splitting: bool = False
-    # Legacy constructor/config aliases retained for historical Issue53 route users.
     issue53_candidates_root: Path | None = None
     skip_issue53_regeneration: bool = False
     skip_existing_issue53: bool = False
@@ -214,9 +213,7 @@ def resolve_paths(config: DenseProbeCandidateConfig) -> DenseProbeCandidatePaths
     )
 
 
-def validate_output_paths(
-    config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths
-) -> None:
+def validate_output_paths(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths) -> None:
     output_paths = {
         "output_root": config.output_root,
         **{field: getattr(paths, field) for field in paths.__dataclass_fields__},
@@ -249,10 +246,7 @@ def validate_inputs(config: DenseProbeCandidateConfig, paths: DenseProbeCandidat
     validate_output_paths(config, paths)
 
 
-def cleanup_targets(
-    config: DenseProbeCandidateConfig,
-    paths: DenseProbeCandidatePaths,
-) -> list[Path]:
+def cleanup_targets(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths) -> list[Path]:
     if config.no_clean_output:
         return []
 
@@ -370,9 +364,7 @@ def assert_candidate_match(summary: dict[str, Any] | None, *, label: str) -> Non
         raise RuntimeError(f"{label} candidate-root mismatch: {checks}")
 
 
-def build_generation_command(
-    config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths
-) -> list[str]:
+def build_generation_command(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths) -> list[str]:
     cmd = [
         sys.executable,
         "tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py",
@@ -389,9 +381,7 @@ def build_generation_command(
     return cmd
 
 
-def build_filter_command(
-    config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths
-) -> list[str]:
+def build_filter_command(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths) -> list[str]:
     cmd = [
         sys.executable,
         "tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py",
@@ -425,9 +415,7 @@ def build_compare_command(*, left: Path, right: Path, output_dir: Path) -> list[
     ]
 
 
-def build_coverage_command(
-    config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths
-) -> list[str]:
+def build_coverage_command(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths) -> list[str]:
     return [
         sys.executable,
         "tools/issue120/compare_candidate_coverage.py",
@@ -440,9 +428,7 @@ def build_coverage_command(
     ]
 
 
-def build_score_eval_command(
-    config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths
-) -> list[str]:
+def build_score_eval_command(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths) -> list[str]:
     cmd = [
         sys.executable,
         "tools/issue120/score_candidates_then_eval_full68.py",
@@ -589,10 +575,7 @@ def run_probe_rescue_candidate_generation(
     )
 
 
-def run_issue53_probe_rescue(
-    config: DenseProbeCandidateConfig,
-    paths: DenseProbeCandidatePaths,
-) -> int:
+def run_issue53_probe_rescue(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths) -> int:
     """Legacy alias for Issue53-style probe-rescue generation."""
     return run_probe_rescue_candidate_generation(config, paths)
 
@@ -788,19 +771,14 @@ def run_dense_probe_candidate_route(
     return detector_summary(paths.eval_output_dir)
 
 
-def _path_from_config(config: dict[str, Any], *keys: str, default: Path) -> Path:
-    value = get_nested(config, *keys, default=str(default))
+def _path_from_config(config: dict[str, Any], *keys: str, default: Path | None) -> Path | None:
+    value = get_nested(config, *keys, default=default)
     if value is None:
         return default
     return Path(value)
 
 
-def _workflow_bool(
-    workflow: dict[str, Any],
-    key: str,
-    legacy_key: str,
-    default: bool,
-) -> bool:
+def _workflow_bool(workflow: dict[str, Any], key: str, legacy_key: str, default: bool) -> bool:
     if key in workflow:
         return bool(workflow[key])
     if legacy_key in workflow:
@@ -823,24 +801,24 @@ def config_from_yaml(path: Path) -> DenseProbeCandidateConfig:
     if not isinstance(workflow, dict):
         raise ValueError("dense_probe_candidate_route.workflow must be a mapping.")
 
+    probe_rescue_root = _path_from_config(
+        route,
+        "probe_rescue_candidates_root",
+        default=_path_from_config(
+            route,
+            "issue53_candidates_root",
+            default=DenseProbeCandidateConfig.probe_rescue_candidates_root,
+        ),
+    )
+
     return DenseProbeCandidateConfig(
-        inventory=_path_from_config(
-            route, "inventory", default=DenseProbeCandidateConfig.inventory
-        ),
+        inventory=_path_from_config(route, "inventory", default=DenseProbeCandidateConfig.inventory),
         exclude=_path_from_config(route, "exclude", default=DenseProbeCandidateConfig.exclude),
-        image_root=_path_from_config(
-            route, "image_root", default=DenseProbeCandidateConfig.image_root
-        ),
+        image_root=_path_from_config(route, "image_root", default=DenseProbeCandidateConfig.image_root),
         gt_root=_path_from_config(route, "gt_root", default=DenseProbeCandidateConfig.gt_root),
-        model_path=_path_from_config(
-            route, "model_path", default=DenseProbeCandidateConfig.model_path
-        ),
-        baseline_dir=_path_from_config(
-            route, "baseline_dir", default=DenseProbeCandidateConfig.baseline_dir
-        ),
-        output_root=_path_from_config(
-            route, "output_root", default=DenseProbeCandidateConfig.output_root
-        ),
+        model_path=_path_from_config(route, "model_path", default=DenseProbeCandidateConfig.model_path),
+        baseline_dir=_path_from_config(route, "baseline_dir", default=DenseProbeCandidateConfig.baseline_dir),
+        output_root=_path_from_config(route, "output_root", default=DenseProbeCandidateConfig.output_root),
         historical_raw_candidates_root=_path_from_config(
             route,
             "historical_raw_candidates_root",
@@ -856,31 +834,14 @@ def config_from_yaml(path: Path) -> DenseProbeCandidateConfig:
             "historical_scoring_input_root",
             default=DenseProbeCandidateConfig.historical_scoring_input_root,
         ),
-        probe_rescue_candidates_root=_path_from_config(
-            route,
-            "probe_rescue_candidates_root",
-            default=(
-                Path(route["issue53_candidates_root"])
-                if "issue53_candidates_root" in route and route["issue53_candidates_root"] is not None
-                else DenseProbeCandidateConfig.probe_rescue_candidates_root
-            ),
-        ),
+        probe_rescue_candidates_root=probe_rescue_root,
         scorer=str(scoring.get("scorer", DenseProbeCandidateConfig.scorer)),
         cnn_apply_nms=bool(scoring.get("cnn_apply_nms", DenseProbeCandidateConfig.cnn_apply_nms)),
-        score_threshold=float(
-            scoring.get("score_threshold", DenseProbeCandidateConfig.score_threshold)
-        ),
-        xdist_threshold=float(
-            scoring.get("xdist_threshold", DenseProbeCandidateConfig.xdist_threshold)
-        ),
-        no_clean_output=bool(
-            workflow.get("no_clean_output", DenseProbeCandidateConfig.no_clean_output)
-        ),
+        score_threshold=float(scoring.get("score_threshold", DenseProbeCandidateConfig.score_threshold)),
+        xdist_threshold=float(scoring.get("xdist_threshold", DenseProbeCandidateConfig.xdist_threshold)),
+        no_clean_output=bool(workflow.get("no_clean_output", DenseProbeCandidateConfig.no_clean_output)),
         skip_issue36_regeneration=bool(
-            workflow.get(
-                "skip_issue36_regeneration",
-                DenseProbeCandidateConfig.skip_issue36_regeneration,
-            )
+            workflow.get("skip_issue36_regeneration", DenseProbeCandidateConfig.skip_issue36_regeneration)
         ),
         skip_probe_rescue_regeneration=_workflow_bool(
             workflow,
@@ -895,14 +856,10 @@ def config_from_yaml(path: Path) -> DenseProbeCandidateConfig:
             DenseProbeCandidateConfig.skip_existing_probe_rescue,
         ),
         require_candidate_match=bool(
-            workflow.get(
-                "require_candidate_match", DenseProbeCandidateConfig.require_candidate_match
-            )
+            workflow.get("require_candidate_match", DenseProbeCandidateConfig.require_candidate_match)
         ),
         require_detector_target=bool(
-            workflow.get(
-                "require_detector_target", DenseProbeCandidateConfig.require_detector_target
-            )
+            workflow.get("require_detector_target", DenseProbeCandidateConfig.require_detector_target)
         ),
         disable_seed_splitting=bool(
             workflow.get("disable_seed_splitting", DenseProbeCandidateConfig.disable_seed_splitting)

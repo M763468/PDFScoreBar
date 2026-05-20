@@ -297,17 +297,11 @@ class DetectorOrchestrator:
     def _resolve_precomputed_probe_candidates_root(self) -> Path | None:
         """Resolve optional probe candidate root supplied by a detector route."""
         value = self.det_cfg.get("precomputed_probe_candidates_root")
-        if value is None:
-            # Legacy compatibility key retained for historical Stage E configs.
-            value = self.det_cfg.get("stage_e_issue53_candidates_root")
         return Path(value) if value else None
 
     def _resolve_cnn_bands_from(self) -> Path | None:
         """Resolve optional bands root used by CNN staff-overlap filtering."""
         value = self.det_cfg.get("cnn_bands_from")
-        if value is None:
-            # Legacy compatibility key retained for historical Stage E configs.
-            value = self.det_cfg.get("stage_e_dense_reconstruction_root")
         return Path(value) if value else self.hybrid_output_dir
 
     def _copy_precomputed_probe_candidates(

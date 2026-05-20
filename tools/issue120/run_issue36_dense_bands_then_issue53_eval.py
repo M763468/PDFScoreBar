@@ -31,7 +31,7 @@ def main() -> None:
     config = config_from_args(args)
     summary = run_dense_probe_candidate_route(config)
     paths = resolve_paths(config)
-    print(f"Issue36 dense bands -> Issue53 validation complete: {paths.eval_output_dir}")
+    print(f"Issue36 dense bands -> probe-rescue validation complete: {paths.eval_output_dir}")
     if summary:
         print(
             "Detector: "

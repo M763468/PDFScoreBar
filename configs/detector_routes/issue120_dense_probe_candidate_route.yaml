@@ -22,8 +22,8 @@ dense_probe_candidate_route:
   workflow:
     no_clean_output: false
     skip_issue36_regeneration: false
-    skip_issue53_regeneration: false
-    skip_existing_issue53: false
+    skip_probe_rescue_regeneration: false
+    skip_existing_probe_rescue: false
     require_candidate_match: true
     require_detector_target: false
     disable_seed_splitting: false

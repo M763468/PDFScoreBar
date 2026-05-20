@@ -25,13 +25,17 @@ New production-oriented detector-route code should use these names:
 - Module: `src.pipeline.detector_routes.dense_full_pipeline`
 - Route builder: `reconstruct_dense_full_pipeline_route`
 - Artifact type: `DenseRouteArtifacts`
-- Artifact field for route-supplied probe candidates: `probe_rescue_root`
+- Artifact field for route-supplied candidates: `probe_rescue_root`
 - Image inventory loader: `load_route_image_paths`
-- Probe rescue regeneration: `regenerate_probe_rescue_candidates`
+- Candidate regeneration: `regenerate_probe_rescue_candidates`
 - Detector config keys:
   - `detection.precomputed_probe_candidates_root`
   - `detection.cnn_bands_from`
   - `detection.probe_use_original_images`
+- Dense route workflow keys:
+  - `probe_rescue_candidates_root`
+  - `skip_probe_rescue_regeneration`
+  - `skip_existing_probe_rescue`
 
 These names describe runtime semantics rather than the Stage E checkpoint or the Issue53 provenance.
 
@@ -59,8 +63,11 @@ Use these production keys in new configs:
 | --- | --- |
 | `detection.stage_e_issue53_candidates_root` | `detection.precomputed_probe_candidates_root` |
 | `detection.stage_e_dense_reconstruction_root` | `detection.cnn_bands_from` |
+| `issue53_candidates_root` | `probe_rescue_candidates_root` |
+| `skip_issue53_regeneration` | `skip_probe_rescue_regeneration` |
+| `skip_existing_issue53` | `skip_existing_probe_rescue` |
 
-The legacy keys remain supported in `DetectorOrchestrator` as read-only fallback keys for historical Stage E configs. They should not be used in new route configs.
+The legacy keys remain supported as compatibility fallback keys for historical configs. They should not be used in new route configs.
 
 ## What should not be renamed in this issue
 

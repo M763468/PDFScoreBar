@@ -19,7 +19,11 @@ try:
 except ImportError:  # pragma: no cover - optional in minimal test env
     np = None  # type: ignore[assignment]
 
-from src.pipeline.core.run_ids import build_probe_run_id, build_probe_run_id_from_parts
+from src.pipeline.core.run_ids import (
+    build_probe_run_id,
+    build_probe_run_id_from_parts,
+    split_score_page_from_composite_stem,
+)
 from src.pipeline.steps.candidate_filters import (
     filter_probe_candidates,
     split_box_vertically,
@@ -247,6 +251,17 @@ def _load_bands_for_image(
         bands_from / f"{stem}.json",
         bands_from / f"{run_subdir}_scored.json",
     ]
+    split = split_score_page_from_composite_stem(stem)
+    if split is not None:
+        score, page = split
+        candidates.extend(
+            [
+                bands_from / score / page / "pipeline2_no_peak_candidates.json",
+                bands_from / score / page / "pipeline2_no_peak_scored.json",
+                bands_from / f"eval2_{score}_{page}" / "pipeline2_no_peak_candidates.json",
+                bands_from / f"eval2_{score}_{page}" / "pipeline2_no_peak_scored.json",
+            ]
+        )
     for path in candidates:
         if path.exists():
             return load_json_boxes(path)

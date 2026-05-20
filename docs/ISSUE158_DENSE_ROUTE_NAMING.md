@@ -69,7 +69,7 @@ Use these production keys in new configs:
 
 Dense probe-candidate route configs no longer accept the old Issue53 workflow keys. Existing tracked configs and runners have been migrated together so stale names fail fast instead of silently keeping a second API surface.
 
-`DetectorOrchestrator` still reads the old Stage E detection keys only as a narrow fallback for historical checkpoint configs. New configs should use `detection.precomputed_probe_candidates_root` and `detection.cnn_bands_from`.
+`DetectorOrchestrator` no longer reads the old Stage E detection keys. New and checkpoint configs must use `detection.precomputed_probe_candidates_root` and `detection.cnn_bands_from`.
 
 ## What should not be renamed in this issue
 

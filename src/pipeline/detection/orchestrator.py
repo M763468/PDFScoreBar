@@ -22,7 +22,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _split_score_page_from_stem(stem: str) -> tuple[str, str] | None:
-    """Compatibility wrapper for composite Stage E image stems."""
+    """Compatibility wrapper for composite benchmark image stems."""
     return split_score_page_from_composite_stem(stem)
 
 
@@ -298,7 +298,7 @@ class DetectorOrchestrator:
         """Resolve optional probe candidate root supplied by a detector route."""
         value = self.det_cfg.get("precomputed_probe_candidates_root")
         if value is None:
-            # Backward-compatible temporary key used by the first #141 checkpoint.
+            # Legacy compatibility key retained for historical Stage E configs.
             value = self.det_cfg.get("stage_e_issue53_candidates_root")
         return Path(value) if value else None
 
@@ -306,7 +306,7 @@ class DetectorOrchestrator:
         """Resolve optional bands root used by CNN staff-overlap filtering."""
         value = self.det_cfg.get("cnn_bands_from")
         if value is None:
-            # Backward-compatible temporary key used by the first #141 checkpoint.
+            # Legacy compatibility key retained for historical Stage E configs.
             value = self.det_cfg.get("stage_e_dense_reconstruction_root")
         return Path(value) if value else self.hybrid_output_dir
 

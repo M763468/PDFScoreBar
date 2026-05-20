@@ -55,6 +55,11 @@ class DenseRouteArtifacts:
     filtered_root: Path
     probe_rescue_root: Path
 
+    @property
+    def issue53_root(self) -> Path:
+        """Legacy name for the historical Issue53-style probe-rescue root."""
+        return self.probe_rescue_root
+
 
 # Compatibility alias for the historical Stage E checkpoint module/API.
 StageEDenseRouteArtifacts = DenseRouteArtifacts
@@ -102,9 +107,23 @@ def load_route_image_paths(
 load_stage_e_image_paths = load_route_image_paths
 
 
-def regenerate_dense_candidates(*, inventory: Path, exclude: Path, route_root: Path) -> Path:
+def _resolve_route_root(*, route_root: Path | None, stage_e_root: Path | None) -> Path:
+    resolved = route_root if route_root is not None else stage_e_root
+    if resolved is None:
+        raise TypeError("route_root is required")
+    return resolved
+
+
+def regenerate_dense_candidates(
+    *,
+    inventory: Path,
+    exclude: Path,
+    route_root: Path | None = None,
+    stage_e_root: Path | None = None,
+) -> Path:
     """Regenerate the dense candidate/filter root inside this route run."""
-    dense_root = route_root / "dense_candidate_reconstruction"
+    resolved_route_root = _resolve_route_root(route_root=route_root, stage_e_root=stage_e_root)
+    dense_root = resolved_route_root / "dense_candidate_reconstruction"
     raw_root = dense_root / "probe_candidates_from_inventory"
     filtered_root = dense_root / "probe_candidates_filtered"
     suggestions_root = dense_root / "filter_suggestions"
@@ -159,14 +178,21 @@ def regenerate_dense_candidates(*, inventory: Path, exclude: Path, route_root: P
     return filtered_root
 
 
-def regenerate_probe_rescue_candidates(*, image_paths: list[Path], filtered_root: Path, route_root: Path) -> Path:
+def regenerate_probe_rescue_candidates(
+    *,
+    image_paths: list[Path],
+    filtered_root: Path,
+    route_root: Path | None = None,
+    stage_e_root: Path | None = None,
+) -> Path:
     """Regenerate probe-rescue candidates for the dense detector route.
 
     This preserves the historical Issue53-style rescue behavior while exposing
     the runtime output as a semantic precomputed-probe-candidates root.
     """
-    probe_rescue_root = route_root / "dense_candidate_reconstruction" / "probe_rescue_candidates"
-    legacy_issue53_root = route_root / "dense_candidate_reconstruction" / "issue53_probe_rescue_candidates"
+    resolved_route_root = _resolve_route_root(route_root=route_root, stage_e_root=stage_e_root)
+    probe_rescue_root = resolved_route_root / "dense_candidate_reconstruction" / "probe_rescue_candidates"
+    legacy_issue53_root = resolved_route_root / "dense_candidate_reconstruction" / "issue53_probe_rescue_candidates"
     shutil.rmtree(probe_rescue_root, ignore_errors=True)
     shutil.rmtree(legacy_issue53_root, ignore_errors=True)
     probe_rescue_root.mkdir(parents=True, exist_ok=True)
@@ -205,7 +231,7 @@ def regenerate_issue53_candidates(*, image_paths: list[Path], filtered_root: Pat
     return regenerate_probe_rescue_candidates(
         image_paths=image_paths,
         filtered_root=filtered_root,
-        route_root=stage_e_root,
+        stage_e_root=stage_e_root,
     )
 
 

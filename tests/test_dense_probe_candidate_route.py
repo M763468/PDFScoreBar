@@ -33,22 +33,31 @@ def test_dense_probe_candidate_no_clean_suppresses_cleanup_targets():
     assert cleanup_targets(config, paths) == []
 
 
-def test_dense_probe_candidate_skip_issue53_preserves_candidates():
-    config = DenseProbeCandidateConfig(skip_issue53_regeneration=True)
+def test_dense_probe_candidate_skip_probe_rescue_preserves_candidates():
+    config = DenseProbeCandidateConfig(skip_probe_rescue_regeneration=True)
     paths = resolve_paths(config)
 
-    assert paths.issue53_candidates_root not in cleanup_targets(config, paths)
+    assert paths.probe_rescue_candidates_root not in cleanup_targets(config, paths)
     assert paths.scoring_output_dir in cleanup_targets(config, paths)
 
 
-def test_dense_probe_candidate_skip_issue53_requires_skipping_issue36():
+def test_dense_probe_candidate_skip_probe_rescue_requires_skipping_issue36():
     config = DenseProbeCandidateConfig(
         skip_issue36_regeneration=False,
-        skip_issue53_regeneration=True,
+        skip_probe_rescue_regeneration=True,
     )
 
-    with pytest.raises(ValueError, match="skip_issue53_regeneration requires"):
+    with pytest.raises(ValueError, match="skip_probe_rescue_regeneration"):
         validate_workflow_config(config)
+
+
+def test_dense_probe_candidate_legacy_issue53_flags_still_work():
+    config = DenseProbeCandidateConfig(skip_issue53_regeneration=True)
+    paths = resolve_paths(config)
+
+    assert config.effective_skip_probe_rescue_regeneration is True
+    assert paths.issue53_candidates_root == paths.probe_rescue_candidates_root
+    assert paths.probe_rescue_candidates_root not in cleanup_targets(config, paths)
 
 
 def test_dense_probe_candidate_outputs_must_live_under_logs():
@@ -67,6 +76,8 @@ def test_dense_probe_candidate_provenance_separates_measure_count_metrics():
     assert provenance["measure_count_summary"]["status"] == "not_run_in_dense_probe_candidate_route"
     assert provenance["scope_guards"]["nms_policy_owner"] == "#142"
     assert provenance["scope_guards"]["full_slow_pipeline_owner"] == "#141"
+    assert "probe_rescue" in provenance
+    assert "probe_rescue_candidates_root" in provenance["outputs"]
 
 
 def test_dense_probe_candidate_yaml_config_round_trip():
@@ -77,6 +88,24 @@ def test_dense_probe_candidate_yaml_config_round_trip():
     assert config.output_root == Path("logs/issue120_e2e_recovery/dense_probe_candidate_route")
     assert config.cnn_apply_nms is False
     assert config.require_candidate_match is True
+    assert config.skip_probe_rescue_regeneration is False
+    assert config.skip_existing_probe_rescue is False
+
+
+def test_dense_probe_candidate_yaml_accepts_legacy_issue53_workflow_keys(tmp_path):
+    config_path = tmp_path / "route.yaml"
+    config_path.write_text(
+        "dense_probe_candidate_route:\n"
+        "  workflow:\n"
+        "    skip_issue53_regeneration: true\n"
+        "    skip_existing_issue53: true\n",
+        encoding="utf-8",
+    )
+
+    config = config_from_yaml(config_path)
+
+    assert config.skip_probe_rescue_regeneration is True
+    assert config.skip_existing_probe_rescue is True
 
 
 def test_dense_probe_candidate_yaml_null_path_uses_default(tmp_path):
@@ -114,5 +143,7 @@ def test_dense_probe_candidate_formal_cli_is_config_first():
 
     assert "--config" in help_text
     assert "--require-detector-target" in help_text
+    assert "--skip-probe-rescue-regeneration" in help_text
+    assert "--skip-issue53-regeneration" not in help_text
     assert "--inventory" not in help_text
     assert "--model-path" not in help_text

@@ -94,7 +94,7 @@ def candidate_root_summary(root: Path) -> dict[str, int | str | bool]:
     for path in files:
         try:
             payload = load_json(path)
-        except Exception:
+        except (json.JSONDecodeError, OSError):
             unreadable += 1
             continue
         if isinstance(payload, list):

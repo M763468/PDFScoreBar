@@ -1,7 +1,7 @@
 """Dense probe-candidate route implementation for Issue #120.
 
 This module contains the reusable orchestration used by the detector-level
-dense probe-candidate route.  It intentionally does not change the general
+dense probe-candidate route. It intentionally does not change the general
 detection pipeline defaults; route configs must explicitly set ``cnn_apply_nms``.
 """
 
@@ -57,7 +57,6 @@ FILTER_PARAMS: dict[str, str] = {
     "min_staff_overlap_ratio": "0.02",
 }
 
-
 CommandRunner = Callable[[list[str]], None]
 
 
@@ -81,7 +80,7 @@ class DenseProbeCandidateConfig:
     raw_compare_output_dir: Path | None = None
     filtered_compare_output_dir: Path | None = None
     scoring_input_compare_output_dir: Path | None = None
-    issue53_candidates_root: Path | None = None
+    probe_rescue_candidates_root: Path | None = None
     scoring_output_dir: Path | None = None
     eval_output_dir: Path | None = None
     route_provenance: Path | None = None
@@ -91,11 +90,27 @@ class DenseProbeCandidateConfig:
     xdist_threshold: float = 12.0
     no_clean_output: bool = False
     skip_issue36_regeneration: bool = False
-    skip_issue53_regeneration: bool = False
-    skip_existing_issue53: bool = False
+    skip_probe_rescue_regeneration: bool = False
+    skip_existing_probe_rescue: bool = False
     require_candidate_match: bool = True
     require_detector_target: bool = False
     disable_seed_splitting: bool = False
+    # Legacy constructor/config aliases retained for historical Issue53 route users.
+    issue53_candidates_root: Path | None = None
+    skip_issue53_regeneration: bool = False
+    skip_existing_issue53: bool = False
+
+    @property
+    def effective_probe_rescue_candidates_root(self) -> Path | None:
+        return self.probe_rescue_candidates_root or self.issue53_candidates_root
+
+    @property
+    def effective_skip_probe_rescue_regeneration(self) -> bool:
+        return self.skip_probe_rescue_regeneration or self.skip_issue53_regeneration
+
+    @property
+    def effective_skip_existing_probe_rescue(self) -> bool:
+        return self.skip_existing_probe_rescue or self.skip_existing_issue53
 
 
 @dataclass(frozen=True)
@@ -108,11 +123,16 @@ class DenseProbeCandidatePaths:
     raw_compare_output_dir: Path
     filtered_compare_output_dir: Path
     scoring_input_compare_output_dir: Path
-    issue53_candidates_root: Path
+    probe_rescue_candidates_root: Path
     scoring_output_dir: Path
     eval_output_dir: Path
     issue36_route_provenance: Path
     route_provenance: Path
+
+    @property
+    def issue53_candidates_root(self) -> Path:
+        """Legacy alias for the probe-rescue candidate root."""
+        return self.probe_rescue_candidates_root
 
 
 def load_json(path: Path) -> Any:
@@ -183,8 +203,8 @@ def resolve_paths(config: DenseProbeCandidateConfig) -> DenseProbeCandidatePaths
         scoring_input_compare_output_dir=(
             config.scoring_input_compare_output_dir or root / "scoring_input_delta"
         ),
-        issue53_candidates_root=(
-            config.issue53_candidates_root or root / "issue53_probe_rescue_candidates"
+        probe_rescue_candidates_root=(
+            config.effective_probe_rescue_candidates_root or root / "probe_rescue_candidates"
         ),
         scoring_output_dir=config.scoring_output_dir or root / "scoring",
         eval_output_dir=config.eval_output_dir or root / "eval",
@@ -206,11 +226,11 @@ def validate_output_paths(
 
 
 def validate_workflow_config(config: DenseProbeCandidateConfig) -> None:
-    if config.skip_issue53_regeneration and not config.skip_issue36_regeneration:
+    if config.effective_skip_probe_rescue_regeneration and not config.skip_issue36_regeneration:
         raise ValueError(
-            "skip_issue53_regeneration requires skip_issue36_regeneration. "
-            "Reusing Issue53 candidates while regenerating Issue36 bands would mix stale "
-            "candidate inputs with newly generated bands."
+            "skip_probe_rescue_regeneration (legacy skip_issue53_regeneration) requires "
+            "skip_issue36_regeneration. Reusing probe-rescue candidates while regenerating "
+            "Issue36 bands would mix stale candidate inputs with newly generated bands."
         )
 
 
@@ -237,8 +257,8 @@ def cleanup_targets(
         return []
 
     targets = [paths.scoring_output_dir, paths.eval_output_dir]
-    if not config.skip_issue53_regeneration:
-        targets.append(paths.issue53_candidates_root)
+    if not config.effective_skip_probe_rescue_regeneration:
+        targets.append(paths.probe_rescue_candidates_root)
     if not config.skip_issue36_regeneration:
         targets.extend(
             [
@@ -414,7 +434,7 @@ def build_coverage_command(
         "--baseline-dir",
         str(config.baseline_dir),
         "--candidate-dir",
-        str(paths.issue53_candidates_root),
+        str(paths.probe_rescue_candidates_root),
         "--output-dir",
         str(paths.eval_output_dir),
     ]
@@ -429,7 +449,7 @@ def build_score_eval_command(
         "--scorer",
         config.scorer,
         "--candidates-dir",
-        str(paths.issue53_candidates_root),
+        str(paths.probe_rescue_candidates_root),
         "--image-root",
         str(config.image_root),
         "--gt-root",
@@ -538,7 +558,7 @@ def canonical_images(image_root: Path) -> list[Path]:
     return images
 
 
-def run_issue53_probe_rescue(
+def run_probe_rescue_candidate_generation(
     config: DenseProbeCandidateConfig,
     paths: DenseProbeCandidatePaths,
 ) -> int:
@@ -554,7 +574,7 @@ def run_issue53_probe_rescue(
     }
     return run_probe_scan_batch(
         images=canonical_images(config.image_root),
-        output_root=paths.issue53_candidates_root,
+        output_root=paths.probe_rescue_candidates_root,
         bands_from=paths.filtered_candidates_root,
         staff_mask_dir=None,
         clef_mask_dir=None,
@@ -563,10 +583,18 @@ def run_issue53_probe_rescue(
         min_height_ratio=0.012,
         min_width_ratio=0.0001,
         detect_probe_kwargs=detect_probe_kwargs,
-        skip_existing=config.skip_existing_issue53,
+        skip_existing=config.effective_skip_existing_probe_rescue,
         enable_heuristic_filters=False,
         disable_seed_splitting=config.disable_seed_splitting,
     )
+
+
+def run_issue53_probe_rescue(
+    config: DenseProbeCandidateConfig,
+    paths: DenseProbeCandidatePaths,
+) -> int:
+    """Legacy alias for Issue53-style probe-rescue generation."""
+    return run_probe_rescue_candidate_generation(config, paths)
 
 
 def run_scoring_eval_and_coverage(
@@ -625,8 +653,8 @@ def build_route_provenance(
             "generate dense raw candidates with band_cluster_max_dist=25.0",
             "apply clef-mask-aware filtering",
             "verify raw/filtered/scoring-input candidate roots when references are supplied",
-            "use regenerated filtered root as Issue53 probe-rescue bands_from",
-            "score regenerated Issue53 probe-rescue candidates with current CNN scoring",
+            "use regenerated filtered root as probe-rescue bands_from",
+            "score regenerated probe-rescue candidates with current CNN scoring",
             "#134 full-68 detector evaluator",
         ],
         "inputs": {
@@ -645,7 +673,7 @@ def build_route_provenance(
             "raw_candidates_root": str(paths.raw_candidates_root),
             "filtered_candidates_root": str(paths.filtered_candidates_root),
             "filter_suggestions_root": str(paths.suggestions_root),
-            "issue53_candidates_root": str(paths.issue53_candidates_root),
+            "probe_rescue_candidates_root": str(paths.probe_rescue_candidates_root),
             "scoring_output_dir": str(paths.scoring_output_dir),
             "eval_output_dir": str(paths.eval_output_dir),
             "route_provenance": str(paths.route_provenance),
@@ -653,7 +681,9 @@ def build_route_provenance(
         "candidate_root_summary": {
             "issue36_raw": candidate_root_summary(paths.raw_candidates_root),
             "issue36_filtered_bands_from": candidate_root_summary(paths.filtered_candidates_root),
-            "issue53_regenerated_candidates": candidate_root_summary(paths.issue53_candidates_root),
+            "probe_rescue_regenerated_candidates": candidate_root_summary(
+                paths.probe_rescue_candidates_root
+            ),
             "scoring_input": candidate_root_summary(paths.scoring_output_dir),
         },
         "candidate_root_comparisons": comparisons or {},
@@ -666,9 +696,13 @@ def build_route_provenance(
             "reason_counts": reason_counts,
             "summary_path": str(paths.filter_summary),
         },
-        "issue53_probe_rescue": {
+        "probe_rescue": {
             "bands_from": str(paths.filtered_candidates_root),
             "candidate_coverage_summary": coverage_summary,
+        },
+        "legacy_aliases": {
+            "issue53_candidates_root": str(paths.probe_rescue_candidates_root),
+            "issue53_probe_rescue": "probe_rescue",
         },
         "cnn_scoring": {
             "scorer": config.scorer,
@@ -697,8 +731,8 @@ def build_route_provenance(
         "incremental_debug": {
             "no_clean_output": config.no_clean_output,
             "skip_issue36_regeneration": config.skip_issue36_regeneration,
-            "skip_issue53_regeneration": config.skip_issue53_regeneration,
-            "skip_existing_issue53": config.skip_existing_issue53,
+            "skip_probe_rescue_regeneration": config.effective_skip_probe_rescue_regeneration,
+            "skip_existing_probe_rescue": config.effective_skip_existing_probe_rescue,
         },
         "generation_summary": generation_summary,
         "filter_summary": filter_summary,
@@ -740,9 +774,9 @@ def run_dense_probe_candidate_route(
             command_runner=effective_runner,
         )
 
-    if not config.skip_issue53_regeneration:
-        processed = run_issue53_probe_rescue(config, paths)
-        print(f"Issue53-style probe regeneration processed pages: {processed}")
+    if not config.effective_skip_probe_rescue_regeneration:
+        processed = run_probe_rescue_candidate_generation(config, paths)
+        print(f"Probe-rescue regeneration processed pages: {processed}")
 
     run_scoring_eval_and_coverage(config, paths, command_runner=effective_runner)
     validate_complete_contract(paths.eval_output_dir)
@@ -759,6 +793,19 @@ def _path_from_config(config: dict[str, Any], *keys: str, default: Path) -> Path
     if value is None:
         return default
     return Path(value)
+
+
+def _workflow_bool(
+    workflow: dict[str, Any],
+    key: str,
+    legacy_key: str,
+    default: bool,
+) -> bool:
+    if key in workflow:
+        return bool(workflow[key])
+    if legacy_key in workflow:
+        return bool(workflow[legacy_key])
+    return default
 
 
 def config_from_yaml(path: Path) -> DenseProbeCandidateConfig:
@@ -809,6 +856,15 @@ def config_from_yaml(path: Path) -> DenseProbeCandidateConfig:
             "historical_scoring_input_root",
             default=DenseProbeCandidateConfig.historical_scoring_input_root,
         ),
+        probe_rescue_candidates_root=_path_from_config(
+            route,
+            "probe_rescue_candidates_root",
+            default=(
+                Path(route["issue53_candidates_root"])
+                if "issue53_candidates_root" in route and route["issue53_candidates_root"] is not None
+                else DenseProbeCandidateConfig.probe_rescue_candidates_root
+            ),
+        ),
         scorer=str(scoring.get("scorer", DenseProbeCandidateConfig.scorer)),
         cnn_apply_nms=bool(scoring.get("cnn_apply_nms", DenseProbeCandidateConfig.cnn_apply_nms)),
         score_threshold=float(
@@ -826,14 +882,17 @@ def config_from_yaml(path: Path) -> DenseProbeCandidateConfig:
                 DenseProbeCandidateConfig.skip_issue36_regeneration,
             )
         ),
-        skip_issue53_regeneration=bool(
-            workflow.get(
-                "skip_issue53_regeneration",
-                DenseProbeCandidateConfig.skip_issue53_regeneration,
-            )
+        skip_probe_rescue_regeneration=_workflow_bool(
+            workflow,
+            "skip_probe_rescue_regeneration",
+            "skip_issue53_regeneration",
+            DenseProbeCandidateConfig.skip_probe_rescue_regeneration,
         ),
-        skip_existing_issue53=bool(
-            workflow.get("skip_existing_issue53", DenseProbeCandidateConfig.skip_existing_issue53)
+        skip_existing_probe_rescue=_workflow_bool(
+            workflow,
+            "skip_existing_probe_rescue",
+            "skip_existing_issue53",
+            DenseProbeCandidateConfig.skip_existing_probe_rescue,
         ),
         require_candidate_match=bool(
             workflow.get(
@@ -874,6 +933,7 @@ def config_from_args(args: argparse.Namespace) -> DenseProbeCandidateConfig:
         "raw_compare_output_dir": args.raw_compare_output_dir,
         "filtered_compare_output_dir": args.filtered_compare_output_dir,
         "scoring_input_compare_output_dir": args.scoring_input_compare_output_dir,
+        "probe_rescue_candidates_root": args.probe_rescue_candidates_root,
         "issue53_candidates_root": args.issue53_candidates_root,
         "scoring_output_dir": args.scoring_output_dir,
         "eval_output_dir": args.eval_output_dir,
@@ -892,10 +952,10 @@ def config_from_args(args: argparse.Namespace) -> DenseProbeCandidateConfig:
         values["no_clean_output"] = True
     if args.skip_issue36_regeneration:
         values["skip_issue36_regeneration"] = True
-    if args.skip_issue53_regeneration:
-        values["skip_issue53_regeneration"] = True
-    if args.skip_existing_issue53:
-        values["skip_existing_issue53"] = True
+    if args.skip_probe_rescue_regeneration or args.skip_issue53_regeneration:
+        values["skip_probe_rescue_regeneration"] = True
+    if args.skip_existing_probe_rescue or args.skip_existing_issue53:
+        values["skip_existing_probe_rescue"] = True
     if args.require_candidate_match:
         values["require_candidate_match"] = True
     if args.no_require_candidate_match:
@@ -929,7 +989,8 @@ def build_arg_parser(description: str | None = None) -> argparse.ArgumentParser:
     parser.add_argument("--raw-compare-output-dir", type=Path, default=None)
     parser.add_argument("--filtered-compare-output-dir", type=Path, default=None)
     parser.add_argument("--scoring-input-compare-output-dir", type=Path, default=None)
-    parser.add_argument("--issue53-candidates-root", type=Path, default=None)
+    parser.add_argument("--probe-rescue-candidates-root", type=Path, default=None)
+    parser.add_argument("--issue53-candidates-root", type=Path, default=None, help=argparse.SUPPRESS)
     parser.add_argument("--scoring-output-dir", type=Path, default=None)
     parser.add_argument("--eval-output-dir", type=Path, default=None)
     parser.add_argument("--route-provenance", type=Path, default=None)
@@ -944,8 +1005,10 @@ def build_arg_parser(description: str | None = None) -> argparse.ArgumentParser:
     parser.add_argument("--xdist-threshold", type=float, default=None)
     parser.add_argument("--no-clean-output", action="store_true")
     parser.add_argument("--skip-issue36-regeneration", action="store_true")
-    parser.add_argument("--skip-issue53-regeneration", action="store_true")
-    parser.add_argument("--skip-existing-issue53", action="store_true")
+    parser.add_argument("--skip-probe-rescue-regeneration", action="store_true")
+    parser.add_argument("--skip-issue53-regeneration", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--skip-existing-probe-rescue", action="store_true")
+    parser.add_argument("--skip-existing-issue53", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--require-candidate-match", action="store_true")
     parser.add_argument("--no-require-candidate-match", action="store_true")
     parser.add_argument("--require-detector-target", action="store_true")

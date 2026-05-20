@@ -24,9 +24,9 @@ detection:
   container_name: sr_eval_gpu_exp
   hybrid_output_root: logs/issue120_e2e_recovery/stage_e_hybrid_output
 
-  # Stage E repair: use the recovered dense-route probe thresholds in the
-  # real full-pipeline route. The previous defaults were too sparse and
-  # produced FN_det=222 before CNN scoring.
+  # Full-pipeline checkpoint repair: use the recovered dense-route probe
+  # thresholds in the real full-pipeline route. The previous defaults were
+  # too sparse and produced FN_det=222 before CNN scoring.
   band_source: row_stats
   band_cluster_max_dist: 25.0
   ink_threshold: 240

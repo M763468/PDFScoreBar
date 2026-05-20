@@ -4,6 +4,7 @@ New code should import from ``src.pipeline.detector_routes.dense_full_pipeline``
 This module remains to preserve the #141/#156 Stage E checkpoint import surface.
 """
 
+from dataclasses import dataclass
 from pathlib import Path
 
 from src.pipeline.detector_routes.dense_full_pipeline import (  # noqa: F401
@@ -18,8 +19,29 @@ from src.pipeline.detector_routes.dense_full_pipeline import (  # noqa: F401
 )
 
 STAGE_E_EXPECTED_PAGES = DENSE_ROUTE_EXPECTED_PAGES
-StageEDenseRouteArtifacts = DenseRouteArtifacts
 load_stage_e_image_paths = load_route_image_paths
+
+
+@dataclass(frozen=True)
+class StageEDenseRouteArtifacts:
+    """Historical Stage E artifact view with legacy field access."""
+
+    image_paths: list[Path]
+    filtered_root: Path
+    probe_rescue_root: Path
+
+    @property
+    def issue53_root(self) -> Path:
+        """Legacy name for Stage E Issue53-style probe-rescue candidates."""
+        return self.probe_rescue_root
+
+    @classmethod
+    def from_dense(cls, artifacts: DenseRouteArtifacts) -> "StageEDenseRouteArtifacts":
+        return cls(
+            image_paths=artifacts.image_paths,
+            filtered_root=artifacts.filtered_root,
+            probe_rescue_root=artifacts.probe_rescue_root,
+        )
 
 
 def regenerate_issue53_candidates(*, image_paths: list[Path], filtered_root: Path, stage_e_root: Path) -> Path:
@@ -36,10 +58,12 @@ def reconstruct_stage_e_dense_route(
     inventory: Path,
     exclude: Path,
     stage_e_root: Path,
-) -> DenseRouteArtifacts:
+) -> StageEDenseRouteArtifacts:
     """Compatibility wrapper for the historical Stage E route name."""
-    return reconstruct_dense_full_pipeline_route(
-        inventory=inventory,
-        exclude=exclude,
-        route_root=stage_e_root,
+    return StageEDenseRouteArtifacts.from_dense(
+        reconstruct_dense_full_pipeline_route(
+            inventory=inventory,
+            exclude=exclude,
+            route_root=stage_e_root,
+        )
     )

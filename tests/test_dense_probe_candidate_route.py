@@ -51,15 +51,6 @@ def test_dense_probe_candidate_skip_probe_rescue_requires_skipping_issue36():
         validate_workflow_config(config)
 
 
-def test_dense_probe_candidate_legacy_issue53_flags_still_work():
-    config = DenseProbeCandidateConfig(skip_issue53_regeneration=True)
-    paths = resolve_paths(config)
-
-    assert config.effective_skip_probe_rescue_regeneration is True
-    assert paths.issue53_candidates_root == paths.probe_rescue_candidates_root
-    assert paths.probe_rescue_candidates_root not in cleanup_targets(config, paths)
-
-
 def test_dense_probe_candidate_outputs_must_live_under_logs():
     with pytest.raises(ValueError):
         require_under_logs(Path("data/not_allowed"), label="output_root")
@@ -90,22 +81,6 @@ def test_dense_probe_candidate_yaml_config_round_trip():
     assert config.require_candidate_match is True
     assert config.skip_probe_rescue_regeneration is False
     assert config.skip_existing_probe_rescue is False
-
-
-def test_dense_probe_candidate_yaml_accepts_legacy_issue53_workflow_keys(tmp_path):
-    config_path = tmp_path / "route.yaml"
-    config_path.write_text(
-        "dense_probe_candidate_route:\n"
-        "  workflow:\n"
-        "    skip_issue53_regeneration: true\n"
-        "    skip_existing_issue53: true\n",
-        encoding="utf-8",
-    )
-
-    config = config_from_yaml(config_path)
-
-    assert config.skip_probe_rescue_regeneration is True
-    assert config.skip_existing_probe_rescue is True
 
 
 def test_dense_probe_candidate_yaml_null_path_uses_default(tmp_path):

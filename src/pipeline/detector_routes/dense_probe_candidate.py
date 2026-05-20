@@ -95,21 +95,6 @@ class DenseProbeCandidateConfig:
     require_candidate_match: bool = True
     require_detector_target: bool = False
     disable_seed_splitting: bool = False
-    issue53_candidates_root: Path | None = None
-    skip_issue53_regeneration: bool = False
-    skip_existing_issue53: bool = False
-
-    @property
-    def effective_probe_rescue_candidates_root(self) -> Path | None:
-        return self.probe_rescue_candidates_root or self.issue53_candidates_root
-
-    @property
-    def effective_skip_probe_rescue_regeneration(self) -> bool:
-        return self.skip_probe_rescue_regeneration or self.skip_issue53_regeneration
-
-    @property
-    def effective_skip_existing_probe_rescue(self) -> bool:
-        return self.skip_existing_probe_rescue or self.skip_existing_issue53
 
 
 @dataclass(frozen=True)
@@ -127,11 +112,6 @@ class DenseProbeCandidatePaths:
     eval_output_dir: Path
     issue36_route_provenance: Path
     route_provenance: Path
-
-    @property
-    def issue53_candidates_root(self) -> Path:
-        """Legacy alias for the probe-rescue candidate root."""
-        return self.probe_rescue_candidates_root
 
 
 def load_json(path: Path) -> Any:
@@ -203,7 +183,7 @@ def resolve_paths(config: DenseProbeCandidateConfig) -> DenseProbeCandidatePaths
             config.scoring_input_compare_output_dir or root / "scoring_input_delta"
         ),
         probe_rescue_candidates_root=(
-            config.effective_probe_rescue_candidates_root or root / "probe_rescue_candidates"
+            config.probe_rescue_candidates_root or root / "probe_rescue_candidates"
         ),
         scoring_output_dir=config.scoring_output_dir or root / "scoring",
         eval_output_dir=config.eval_output_dir or root / "eval",
@@ -223,11 +203,11 @@ def validate_output_paths(config: DenseProbeCandidateConfig, paths: DenseProbeCa
 
 
 def validate_workflow_config(config: DenseProbeCandidateConfig) -> None:
-    if config.effective_skip_probe_rescue_regeneration and not config.skip_issue36_regeneration:
+    if config.skip_probe_rescue_regeneration and not config.skip_issue36_regeneration:
         raise ValueError(
-            "skip_probe_rescue_regeneration (legacy skip_issue53_regeneration) requires "
-            "skip_issue36_regeneration. Reusing probe-rescue candidates while regenerating "
-            "Issue36 bands would mix stale candidate inputs with newly generated bands."
+            "skip_probe_rescue_regeneration requires skip_issue36_regeneration. "
+            "Reusing probe-rescue candidates while regenerating Issue36 bands would mix "
+            "stale candidate inputs with newly generated bands."
         )
 
 
@@ -251,7 +231,7 @@ def cleanup_targets(config: DenseProbeCandidateConfig, paths: DenseProbeCandidat
         return []
 
     targets = [paths.scoring_output_dir, paths.eval_output_dir]
-    if not config.effective_skip_probe_rescue_regeneration:
+    if not config.skip_probe_rescue_regeneration:
         targets.append(paths.probe_rescue_candidates_root)
     if not config.skip_issue36_regeneration:
         targets.extend(
@@ -569,15 +549,10 @@ def run_probe_rescue_candidate_generation(
         min_height_ratio=0.012,
         min_width_ratio=0.0001,
         detect_probe_kwargs=detect_probe_kwargs,
-        skip_existing=config.effective_skip_existing_probe_rescue,
+        skip_existing=config.skip_existing_probe_rescue,
         enable_heuristic_filters=False,
         disable_seed_splitting=config.disable_seed_splitting,
     )
-
-
-def run_issue53_probe_rescue(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths) -> int:
-    """Legacy alias for Issue53-style probe-rescue generation."""
-    return run_probe_rescue_candidate_generation(config, paths)
 
 
 def run_scoring_eval_and_coverage(
@@ -683,10 +658,6 @@ def build_route_provenance(
             "bands_from": str(paths.filtered_candidates_root),
             "candidate_coverage_summary": coverage_summary,
         },
-        "legacy_aliases": {
-            "issue53_candidates_root": str(paths.probe_rescue_candidates_root),
-            "issue53_probe_rescue": "probe_rescue",
-        },
         "cnn_scoring": {
             "scorer": config.scorer,
             "cnn_apply_nms": config.cnn_apply_nms,
@@ -714,8 +685,8 @@ def build_route_provenance(
         "incremental_debug": {
             "no_clean_output": config.no_clean_output,
             "skip_issue36_regeneration": config.skip_issue36_regeneration,
-            "skip_probe_rescue_regeneration": config.effective_skip_probe_rescue_regeneration,
-            "skip_existing_probe_rescue": config.effective_skip_existing_probe_rescue,
+            "skip_probe_rescue_regeneration": config.skip_probe_rescue_regeneration,
+            "skip_existing_probe_rescue": config.skip_existing_probe_rescue,
         },
         "generation_summary": generation_summary,
         "filter_summary": filter_summary,
@@ -757,7 +728,7 @@ def run_dense_probe_candidate_route(
             command_runner=effective_runner,
         )
 
-    if not config.effective_skip_probe_rescue_regeneration:
+    if not config.skip_probe_rescue_regeneration:
         processed = run_probe_rescue_candidate_generation(config, paths)
         print(f"Probe-rescue regeneration processed pages: {processed}")
 
@@ -778,14 +749,6 @@ def _path_from_config(config: dict[str, Any], *keys: str, default: Path | None) 
     return Path(value)
 
 
-def _workflow_bool(workflow: dict[str, Any], key: str, legacy_key: str, default: bool) -> bool:
-    if key in workflow:
-        return bool(workflow[key])
-    if legacy_key in workflow:
-        return bool(workflow[legacy_key])
-    return default
-
-
 def config_from_yaml(path: Path) -> DenseProbeCandidateConfig:
     data = load_yaml(path) or {}
     if not isinstance(data, dict):
@@ -800,16 +763,6 @@ def config_from_yaml(path: Path) -> DenseProbeCandidateConfig:
     workflow = route.get("workflow", {}) or {}
     if not isinstance(workflow, dict):
         raise ValueError("dense_probe_candidate_route.workflow must be a mapping.")
-
-    probe_rescue_root = _path_from_config(
-        route,
-        "probe_rescue_candidates_root",
-        default=_path_from_config(
-            route,
-            "issue53_candidates_root",
-            default=DenseProbeCandidateConfig.probe_rescue_candidates_root,
-        ),
-    )
 
     return DenseProbeCandidateConfig(
         inventory=_path_from_config(route, "inventory", default=DenseProbeCandidateConfig.inventory),
@@ -834,7 +787,11 @@ def config_from_yaml(path: Path) -> DenseProbeCandidateConfig:
             "historical_scoring_input_root",
             default=DenseProbeCandidateConfig.historical_scoring_input_root,
         ),
-        probe_rescue_candidates_root=probe_rescue_root,
+        probe_rescue_candidates_root=_path_from_config(
+            route,
+            "probe_rescue_candidates_root",
+            default=DenseProbeCandidateConfig.probe_rescue_candidates_root,
+        ),
         scorer=str(scoring.get("scorer", DenseProbeCandidateConfig.scorer)),
         cnn_apply_nms=bool(scoring.get("cnn_apply_nms", DenseProbeCandidateConfig.cnn_apply_nms)),
         score_threshold=float(scoring.get("score_threshold", DenseProbeCandidateConfig.score_threshold)),
@@ -843,17 +800,14 @@ def config_from_yaml(path: Path) -> DenseProbeCandidateConfig:
         skip_issue36_regeneration=bool(
             workflow.get("skip_issue36_regeneration", DenseProbeCandidateConfig.skip_issue36_regeneration)
         ),
-        skip_probe_rescue_regeneration=_workflow_bool(
-            workflow,
-            "skip_probe_rescue_regeneration",
-            "skip_issue53_regeneration",
-            DenseProbeCandidateConfig.skip_probe_rescue_regeneration,
+        skip_probe_rescue_regeneration=bool(
+            workflow.get(
+                "skip_probe_rescue_regeneration",
+                DenseProbeCandidateConfig.skip_probe_rescue_regeneration,
+            )
         ),
-        skip_existing_probe_rescue=_workflow_bool(
-            workflow,
-            "skip_existing_probe_rescue",
-            "skip_existing_issue53",
-            DenseProbeCandidateConfig.skip_existing_probe_rescue,
+        skip_existing_probe_rescue=bool(
+            workflow.get("skip_existing_probe_rescue", DenseProbeCandidateConfig.skip_existing_probe_rescue)
         ),
         require_candidate_match=bool(
             workflow.get("require_candidate_match", DenseProbeCandidateConfig.require_candidate_match)
@@ -891,7 +845,6 @@ def config_from_args(args: argparse.Namespace) -> DenseProbeCandidateConfig:
         "filtered_compare_output_dir": args.filtered_compare_output_dir,
         "scoring_input_compare_output_dir": args.scoring_input_compare_output_dir,
         "probe_rescue_candidates_root": args.probe_rescue_candidates_root,
-        "issue53_candidates_root": args.issue53_candidates_root,
         "scoring_output_dir": args.scoring_output_dir,
         "eval_output_dir": args.eval_output_dir,
         "route_provenance": args.route_provenance,
@@ -909,9 +862,9 @@ def config_from_args(args: argparse.Namespace) -> DenseProbeCandidateConfig:
         values["no_clean_output"] = True
     if args.skip_issue36_regeneration:
         values["skip_issue36_regeneration"] = True
-    if args.skip_probe_rescue_regeneration or args.skip_issue53_regeneration:
+    if args.skip_probe_rescue_regeneration:
         values["skip_probe_rescue_regeneration"] = True
-    if args.skip_existing_probe_rescue or args.skip_existing_issue53:
+    if args.skip_existing_probe_rescue:
         values["skip_existing_probe_rescue"] = True
     if args.require_candidate_match:
         values["require_candidate_match"] = True
@@ -947,7 +900,6 @@ def build_arg_parser(description: str | None = None) -> argparse.ArgumentParser:
     parser.add_argument("--filtered-compare-output-dir", type=Path, default=None)
     parser.add_argument("--scoring-input-compare-output-dir", type=Path, default=None)
     parser.add_argument("--probe-rescue-candidates-root", type=Path, default=None)
-    parser.add_argument("--issue53-candidates-root", type=Path, default=None, help=argparse.SUPPRESS)
     parser.add_argument("--scoring-output-dir", type=Path, default=None)
     parser.add_argument("--eval-output-dir", type=Path, default=None)
     parser.add_argument("--route-provenance", type=Path, default=None)
@@ -963,9 +915,7 @@ def build_arg_parser(description: str | None = None) -> argparse.ArgumentParser:
     parser.add_argument("--no-clean-output", action="store_true")
     parser.add_argument("--skip-issue36-regeneration", action="store_true")
     parser.add_argument("--skip-probe-rescue-regeneration", action="store_true")
-    parser.add_argument("--skip-issue53-regeneration", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--skip-existing-probe-rescue", action="store_true")
-    parser.add_argument("--skip-existing-issue53", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--require-candidate-match", action="store_true")
     parser.add_argument("--no-require-candidate-match", action="store_true")
     parser.add_argument("--require-detector-target", action="store_true")

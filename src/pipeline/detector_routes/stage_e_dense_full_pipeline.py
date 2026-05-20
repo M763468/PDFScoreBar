@@ -14,7 +14,7 @@ from src.pipeline.detector_routes.dense_full_pipeline import (  # noqa: F401
     DenseRouteArtifacts,
     load_route_image_paths,
     reconstruct_dense_full_pipeline_route,
-    regenerate_dense_candidates,
+    regenerate_dense_candidates as _regenerate_dense_candidates,
     regenerate_probe_rescue_candidates,
 )
 
@@ -42,6 +42,15 @@ class StageEDenseRouteArtifacts:
             filtered_root=artifacts.filtered_root,
             probe_rescue_root=artifacts.probe_rescue_root,
         )
+
+
+def regenerate_dense_candidates(*, inventory: Path, exclude: Path, stage_e_root: Path) -> Path:
+    """Compatibility wrapper for the historical Stage E route-root keyword."""
+    return _regenerate_dense_candidates(
+        inventory=inventory,
+        exclude=exclude,
+        route_root=stage_e_root,
+    )
 
 
 def regenerate_issue53_candidates(*, image_paths: list[Path], filtered_root: Path, stage_e_root: Path) -> Path:

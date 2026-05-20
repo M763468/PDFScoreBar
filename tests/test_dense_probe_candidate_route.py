@@ -83,6 +83,19 @@ def test_dense_probe_candidate_yaml_config_round_trip():
     assert config.skip_existing_probe_rescue is False
 
 
+def test_dense_probe_candidate_yaml_rejects_legacy_issue53_keys(tmp_path):
+    config_path = tmp_path / "route.yaml"
+    config_path.write_text(
+        "dense_probe_candidate_route:\n"
+        "  workflow:\n"
+        "    skip_issue53_regeneration: true\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="skip_issue53_regeneration"):
+        config_from_yaml(config_path)
+
+
 def test_dense_probe_candidate_yaml_null_path_uses_default(tmp_path):
     config_path = tmp_path / "route.yaml"
     config_path.write_text(

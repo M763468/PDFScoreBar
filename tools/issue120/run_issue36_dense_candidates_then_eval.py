@@ -87,6 +87,16 @@ def add_param_args(cmd: list[str], params: dict[str, str]) -> None:
         cmd.extend([f"--{key.replace('_', '-')}", value])
 
 
+def require_under_logs(path: Path, *, label: str) -> None:
+    logs_root = PROJECT_ROOT.resolve() / "logs"
+    try:
+        path.resolve().relative_to(logs_root)
+    except ValueError as exc:
+        raise ValueError(
+            f"{label} must be under logs/ before cleanup. Got: {path}"
+        ) from exc
+
+
 def candidate_root_summary(root: Path) -> dict[str, int | str | bool]:
     files = sorted(root.rglob("pipeline2_no_peak_candidates.json")) if root.exists() else []
     total_candidates = 0
@@ -270,13 +280,19 @@ def main() -> None:
     parser.add_argument("--score-threshold", type=float, default=0.1)
     parser.add_argument("--xdist-threshold", type=float, default=12.0)
     parser.add_argument("--scorer", choices=["pipeline", "legacy"], default="pipeline")
-    parser.add_argument("--no-pipeline-nms", dest="pipeline_nms", action="store_false", default=True)
+    parser.add_argument(
+        "--pipeline-nms",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Enable CNN NMS for this diagnostic path. The historical default is disabled.",
+    )
     parser.add_argument("--require-candidate-match", action="store_true")
     parser.add_argument("--require-detector-target", action="store_true")
     parser.add_argument("--no-clean-output", dest="clean_output", action="store_false", default=True)
     args = parser.parse_args()
 
     root = args.output_root
+    require_under_logs(root, label="output_root")
     args.raw_candidates_root = root / "probe_candidates_from_bench_v12"
     args.filtered_candidates_root = root / "probe_candidates_filtered_v12"
     args.suggestions_root = root / "filter_suggestions_v12"
@@ -290,7 +306,7 @@ def main() -> None:
     args.provenance_path = root / "issue36_dense_candidates_direct_score_provenance.json"
 
     if args.clean_output:
-        shutil.rmtree(args.output_root, ignore_errors=True)
+        shutil.rmtree(root, ignore_errors=True)
     root.mkdir(parents=True, exist_ok=True)
 
     run(build_generation_command(args))

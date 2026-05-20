@@ -98,6 +98,7 @@ def regenerate_dense_candidates(
     inventory: Path,
     exclude: Path,
     route_root: Path,
+    expected_pages: int = DENSE_ROUTE_EXPECTED_PAGES,
 ) -> Path:
     """Regenerate the dense candidate/filter root inside this route run."""
     dense_root = route_root / "dense_candidate_reconstruction"
@@ -147,10 +148,11 @@ def regenerate_dense_candidates(
     _run_command(filter_cmd, log_path=log_dir / "02_apply_candidate_filter.log")
 
     summary = json.loads(filter_summary.read_text())
-    if summary.get("processed") != DENSE_ROUTE_EXPECTED_PAGES or summary.get("errors") != 0:
+    if summary.get("processed") != expected_pages or summary.get("errors") != 0:
         raise RuntimeError(
             "Dense candidate reconstruction did not complete cleanly: "
-            f"processed={summary.get('processed')} errors={summary.get('errors')}"
+            f"processed={summary.get('processed')} expected={expected_pages} "
+            f"errors={summary.get('errors')}"
         )
     return filtered_root
 
@@ -200,13 +202,19 @@ def reconstruct_dense_full_pipeline_route(
     inventory: Path,
     exclude: Path,
     route_root: Path,
+    expected_pages: int = DENSE_ROUTE_EXPECTED_PAGES,
 ) -> DenseRouteArtifacts:
     """Rebuild all dense full-pipeline detector inputs from current-run sources."""
-    image_paths = load_route_image_paths(inventory=inventory, exclude=exclude)
+    image_paths = load_route_image_paths(
+        inventory=inventory,
+        exclude=exclude,
+        expected_pages=expected_pages,
+    )
     filtered_root = regenerate_dense_candidates(
         inventory=inventory,
         exclude=exclude,
         route_root=route_root,
+        expected_pages=len(image_paths),
     )
     probe_rescue_root = regenerate_probe_rescue_candidates(
         image_paths=image_paths,

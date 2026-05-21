@@ -209,8 +209,6 @@ def build_score_command(args: argparse.Namespace) -> list[str]:
         str(args.score_threshold),
         "--xdist-threshold",
         str(args.xdist_threshold),
-        "--bands-from",
-        str(args.filtered_candidates_root),
     ]
     if args.clean_output:
         cmd.append("--clean-output")

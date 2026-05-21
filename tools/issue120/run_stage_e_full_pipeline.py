@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from src.pipeline.core.config import load_yaml
-from src.pipeline.detector_routes.stage_e_dense_full_pipeline import reconstruct_stage_e_dense_route
+from src.pipeline.detector_routes.dense_full_pipeline import reconstruct_dense_full_pipeline_route
 from src.pipeline.main import run_pipeline
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -27,24 +27,24 @@ def main():
         logger.error(f"Exclude file not found: {args.exclude}")
         sys.exit(1)
 
-    stage_e_root = args.output_root / "stage_e_full_pipeline"
-    if stage_e_root.exists():
-        logger.info("Removing stale Stage E run directory: %s", stage_e_root)
-        shutil.rmtree(stage_e_root)
-    stage_e_root.mkdir(parents=True, exist_ok=True)
+    route_root = args.output_root / "stage_e_full_pipeline"
+    if route_root.exists():
+        logger.info("Removing stale Stage E run directory: %s", route_root)
+        shutil.rmtree(route_root)
+    route_root.mkdir(parents=True, exist_ok=True)
 
-    route_artifacts = reconstruct_stage_e_dense_route(
+    route_artifacts = reconstruct_dense_full_pipeline_route(
         inventory=args.inventory,
         exclude=args.exclude,
-        stage_e_root=stage_e_root,
+        route_root=route_root,
     )
 
-    stage_e_images_dir = stage_e_root / "images"
-    stage_e_images_dir.mkdir(parents=True, exist_ok=True)
+    route_images_dir = route_root / "images"
+    route_images_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info(f"Copying {len(route_artifacts.image_paths)} images to {stage_e_images_dir}...")
+    logger.info(f"Copying {len(route_artifacts.image_paths)} images to {route_images_dir}...")
     for img_path in route_artifacts.image_paths:
-        dest_path = stage_e_images_dir / f"{img_path.parent.name}_{img_path.name}"
+        dest_path = route_images_dir / f"{img_path.parent.name}_{img_path.name}"
         shutil.copy2(img_path, dest_path)
 
     config = load_yaml(args.config)
@@ -55,14 +55,14 @@ def main():
     if "detection" not in config:
         config["detection"] = {}
 
-    config["inputs"]["pdf_to_images"]["output_dir"] = str(stage_e_images_dir)
+    config["inputs"]["pdf_to_images"]["output_dir"] = str(route_images_dir)
     config["inputs"]["pdf_to_images"]["image_glob"] = "*.png"
     config["run"]["run_id"] = "stage_e_full_pipeline"
-    config["detection"]["precomputed_probe_candidates_root"] = str(route_artifacts.issue53_root)
+    config["detection"]["precomputed_probe_candidates_root"] = str(route_artifacts.probe_rescue_root)
     config["detection"]["cnn_bands_from"] = str(route_artifacts.filtered_root)
     config["detection"]["probe_use_original_images"] = True
 
-    temp_config_path = stage_e_root / "stage_e_config.yaml"
+    temp_config_path = route_root / "stage_e_config.yaml"
     import yaml
 
     with open(temp_config_path, "w") as f:

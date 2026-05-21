@@ -11,12 +11,12 @@ ISSUE120_ISSUE36_DENSE_HISTORICAL_SCORING_INPUT ?= logs/cnn_barline_classificati
 ISSUE120_ISSUE36_DENSE_REQUIRE_CANDIDATES ?= 1
 ISSUE120_ISSUE36_DENSE_REQUIRE_TARGET ?= 0
 
-verify-issue120-issue36-dense: ## Acceptance route: regenerate Issue36 dense bands, run Issue53 probe-rescue, score, and evaluate detector metrics
+verify-issue120-issue36-dense: ## Acceptance route: regenerate Issue36 dense bands, run probe-rescue, score, and evaluate detector metrics
 	@mkdir -p artifacts
 	@LOG_FILE="artifacts/issue120_issue36_dense_verify_$$(date +%Y%m%d_%H%M%S).log"; \
 	TARGET_ARG=""; \
 	if [ "$(ISSUE120_ISSUE36_DENSE_REQUIRE_TARGET)" = "1" ]; then TARGET_ARG="--require-detector-target"; fi; \
-	echo "Running Issue #120/#149 Issue36 dense bands -> Issue53 validation. Logging to $$LOG_FILE..."; \
+	echo "Running Issue #120/#149 Issue36 dense bands -> probe-rescue validation. Logging to $$LOG_FILE..."; \
 	docker run --rm --gpus all -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace $(ISSUE120_DOCKER_IMAGE) \
 		$(ISSUE120_DOCKER_PYTHON) tools/issue120/run_issue36_dense_bands_then_issue53_eval.py \
 		--inventory "$(ISSUE120_ISSUE36_DENSE_INVENTORY)" \
@@ -32,8 +32,8 @@ verify-issue120-issue36-dense: ## Acceptance route: regenerate Issue36 dense ban
 		--xdist-threshold "$(ISSUE120_XDIST_THRESHOLD)" \
 		--no-pipeline-nms \
 		$$TARGET_ARG > "$$LOG_FILE" 2>&1 || \
-		(EXIT_CODE=$$?; echo "Issue36 dense bands -> Issue53 validation failed with exit code $$EXIT_CODE. See $$LOG_FILE"; exit $$EXIT_CODE); \
-	echo "Issue36 dense bands -> Issue53 validation complete. See $$LOG_FILE"
+		(EXIT_CODE=$$?; echo "Issue36 dense bands -> probe-rescue validation failed with exit code $$EXIT_CODE. See $$LOG_FILE"; exit $$EXIT_CODE); \
+	echo "Issue36 dense bands -> probe-rescue validation complete. See $$LOG_FILE"
 
 verify-issue120-issue36-dense-direct-score: ## Diagnostic only: score Issue36 filtered root directly and compare the expected failure boundary
 	@mkdir -p artifacts

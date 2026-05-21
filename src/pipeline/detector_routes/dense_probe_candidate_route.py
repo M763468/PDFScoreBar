@@ -46,12 +46,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Reuse existing dense raw/filtered roots from the configured output root.",
     )
     parser.add_argument(
-        "--skip-issue53-regeneration",
+        "--skip-probe-rescue-regeneration",
         action="store_true",
         help="Reuse existing probe-rescue candidates from the configured output root.",
     )
     parser.add_argument(
-        "--skip-existing-issue53",
+        "--skip-existing-probe-rescue",
         action="store_true",
         help="Skip per-page probe-rescue candidate files that already exist.",
     )
@@ -68,10 +68,10 @@ def apply_cli_overrides(
         values["no_clean_output"] = True
     if args.skip_issue36_regeneration:
         values["skip_issue36_regeneration"] = True
-    if args.skip_issue53_regeneration:
-        values["skip_issue53_regeneration"] = True
-    if args.skip_existing_issue53:
-        values["skip_existing_issue53"] = True
+    if args.skip_probe_rescue_regeneration:
+        values["skip_probe_rescue_regeneration"] = True
+    if args.skip_existing_probe_rescue:
+        values["skip_existing_probe_rescue"] = True
     return DenseProbeCandidateConfig(**values)
 
 

@@ -4,8 +4,8 @@
 The regular Stage E evaluator writes page-level counts only. This diagnostic
 script reloads the same manifest/GT/prediction artifacts and emits per-FN box
 information, including where each GT is or is not represented across raw dense
-candidates, filtered dense candidates, regenerated Issue53 candidates, pipeline
-candidate input, and final CNN predictions.
+candidates, filtered dense candidates, regenerated probe-rescue candidates,
+pipeline candidate input, and final CNN predictions.
 """
 
 from __future__ import annotations
@@ -113,12 +113,23 @@ def nearest_box(
     }
 
 
+def first_existing(*paths: Path) -> Path:
+    for path in paths:
+        if path.exists():
+            return path
+    return paths[0]
+
+
 def stage_paths(args: argparse.Namespace, score: str, page: str) -> dict[str, Path]:
     recon = args.reconstruction_root
+    probe_rescue = first_existing(
+        recon / "probe_rescue_candidates" / f"eval2_{score}_{page}" / "pipeline2_no_peak_candidates.json",
+        recon / "issue53_probe_rescue_candidates" / f"eval2_{score}_{page}" / "pipeline2_no_peak_candidates.json",
+    )
     return {
         "dense_raw": recon / "probe_candidates_from_inventory" / score / page / "pipeline2_no_peak_candidates.json",
         "dense_filtered": recon / "probe_candidates_filtered" / score / page / "pipeline2_no_peak_candidates.json",
-        "issue53": recon / "issue53_probe_rescue_candidates" / f"eval2_{score}_{page}" / "pipeline2_no_peak_candidates.json",
+        "probe_rescue": probe_rescue,
     }
 
 
@@ -152,7 +163,7 @@ def diagnose(args: argparse.Namespace) -> dict[str, Any]:
             dense_filtered = safe_boxes(
                 extra_paths["dense_filtered"], "candidate", args.score_threshold
             )
-            issue53 = safe_boxes(extra_paths["issue53"], "candidate", args.score_threshold)
+            probe_rescue = safe_boxes(extra_paths["probe_rescue"], "candidate", args.score_threshold)
 
             result = greedy_barline_match(
                 preds,
@@ -172,7 +183,7 @@ def diagnose(args: argparse.Namespace) -> dict[str, Any]:
                 source_boxes = {
                     "dense_raw": dense_raw,
                     "dense_filtered": dense_filtered,
-                    "issue53": issue53,
+                    "probe_rescue": probe_rescue,
                     "pipeline_candidates": pipeline_candidates,
                     "final_predictions": preds,
                 }
@@ -215,7 +226,7 @@ def diagnose(args: argparse.Namespace) -> dict[str, Any]:
                     "candidate_counts": {
                         "dense_raw": len(dense_raw),
                         "dense_filtered": len(dense_filtered),
-                        "issue53": len(issue53),
+                        "probe_rescue": len(probe_rescue),
                         "pipeline_candidates": len(pipeline_candidates),
                         "final_predictions": len(preds),
                     },

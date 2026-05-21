@@ -241,7 +241,8 @@ def regenerate_dense_candidates(
     route_root: Path,
     expected_pages: int = DENSE_ROUTE_EXPECTED_PAGES,
     verbose_logs: bool = False,
-) -> tuple[Path, dict[str, Any]]:
+    phase_summaries: list[dict[str, Any]] | None = None,
+) -> Path:
     """Regenerate the dense candidate/filter root inside this route run."""
     dense_root = route_root / "dense_candidate_reconstruction"
     raw_root = dense_root / "probe_candidates_from_inventory"
@@ -303,18 +304,21 @@ def regenerate_dense_candidates(
             f"processed={summary.get('processed')} expected={expected_pages} "
             f"errors={summary.get('errors')}"
         )
-    phase = _phase_summary(
-        "dense_candidate_reconstruction",
-        phase_started,
-        output_root=str(dense_root),
-        raw_root=str(raw_root),
-        filtered_root=str(filtered_root),
-        suggestions_root=str(suggestions_root),
-        generation_summary=str(generation_summary),
-        filter_summary=str(filter_summary),
-        command_logs=[command.to_json() for command in command_summaries],
-    )
-    return filtered_root, phase
+    if phase_summaries is not None:
+        phase_summaries.append(
+            _phase_summary(
+                "dense_candidate_reconstruction",
+                phase_started,
+                output_root=str(dense_root),
+                raw_root=str(raw_root),
+                filtered_root=str(filtered_root),
+                suggestions_root=str(suggestions_root),
+                generation_summary=str(generation_summary),
+                filter_summary=str(filter_summary),
+                command_logs=[command.to_json() for command in command_summaries],
+            )
+        )
+    return filtered_root
 
 
 def regenerate_probe_rescue_candidates(
@@ -322,7 +326,8 @@ def regenerate_probe_rescue_candidates(
     image_paths: list[Path],
     filtered_root: Path,
     route_root: Path,
-) -> tuple[Path, dict[str, Any]]:
+    phase_summaries: list[dict[str, Any]] | None = None,
+) -> Path:
     """Regenerate probe-rescue candidates for the dense detector route."""
     phase_started = time.perf_counter()
     probe_rescue_root = route_root / "dense_candidate_reconstruction" / "probe_rescue_candidates"
@@ -355,14 +360,17 @@ def regenerate_probe_rescue_candidates(
     expected_pages = len(image_paths)
     if processed != expected_pages:
         raise RuntimeError(f"Probe-rescue candidate reconstruction processed {processed}/{expected_pages} pages")
-    phase = _phase_summary(
-        "probe_rescue_candidate_reconstruction",
-        phase_started,
-        output_root=str(probe_rescue_root),
-        processed_pages=processed,
-        expected_pages=expected_pages,
-    )
-    return probe_rescue_root, phase
+    if phase_summaries is not None:
+        phase_summaries.append(
+            _phase_summary(
+                "probe_rescue_candidate_reconstruction",
+                phase_started,
+                output_root=str(probe_rescue_root),
+                processed_pages=processed,
+                expected_pages=expected_pages,
+            )
+        )
+    return probe_rescue_root
 
 
 def reconstruct_dense_full_pipeline_route(
@@ -393,21 +401,20 @@ def reconstruct_dense_full_pipeline_route(
         )
     )
 
-    filtered_root, dense_phase = regenerate_dense_candidates(
+    filtered_root = regenerate_dense_candidates(
         inventory=inventory,
         exclude=exclude,
         route_root=route_root,
         expected_pages=len(image_paths),
         verbose_logs=verbose_logs,
+        phase_summaries=phases,
     )
-    phases.append(dense_phase)
-
-    probe_rescue_root, probe_phase = regenerate_probe_rescue_candidates(
+    probe_rescue_root = regenerate_probe_rescue_candidates(
         image_paths=image_paths,
         filtered_root=filtered_root,
         route_root=route_root,
+        phase_summaries=phases,
     )
-    phases.append(probe_phase)
 
     execution_summary = {
         "schema_version": "pipeline.detector_routes.dense_full_pipeline.execution_summary.v1",

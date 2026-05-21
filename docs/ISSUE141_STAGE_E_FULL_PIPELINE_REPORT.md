@@ -10,8 +10,19 @@ Stage E validates the real full pipeline path. It is intentionally distinct from
 
 - **Run ID**: `stage_e_full_pipeline`
 - **Output location**: `logs/issue120_e2e_recovery/stage_e_full_pipeline/`
-- **Components run**: dense candidate reconstruction, Issue53-style probe rescue candidate reconstruction, HOMR/SR/OMR-inclusive full pipeline execution, CNN scoring, and downstream measure numbering.
+- **Components run**: dense candidate reconstruction, probe-rescue candidate reconstruction, HOMR/SR/OMR-inclusive full pipeline execution, CNN scoring, and downstream measure numbering.
 - **NMS policy**: `cnn_apply_nms: false` per Issue #142.
+
+## Runtime and Log Surface
+
+Issue #159 adds metric-neutral runtime/log observability to the Stage E runner:
+
+- `dense_route_execution_summary.json` records dense-route phase durations, command log paths, log sizes, and generated artifact roots.
+- `stage_e_runtime_summary.json` records the dense-route summary plus image-copy and full-pipeline durations.
+- Dense reconstruction subprocess logs are compact by default. The compact log keeps bounded head/tail output and records omitted middle-line counts.
+- Diagnostic full logs can be enabled with `--dense-route-verbose-logs` on `tools/issue120/run_stage_e_full_pipeline.py`.
+
+These summaries are generated under `logs/` and should not be committed.
 
 ## Detector Metrics vs Target
 
@@ -51,8 +62,8 @@ The repair connects Stage E to the recovered route without consuming historical 
 
 1. Regenerate dense probe candidates inside the current Stage E run.
 2. Apply clef/staff-aware candidate filtering inside the current Stage E run.
-3. Regenerate Issue53-style probe rescue candidates from that filtered root inside the current Stage E run.
-4. Feed the freshly regenerated Issue53 candidate root into the full pipeline detector/CNN scoring path.
+3. Regenerate probe-rescue candidates from that filtered root inside the current Stage E run.
+4. Feed the freshly regenerated probe-rescue candidate root into the full pipeline detector/CNN scoring path.
 5. Evaluate detector metrics from the full-pipeline manifest.
 
 This keeps #151 as detector-level evidence while making #141 validate a real full-pipeline Stage E run.

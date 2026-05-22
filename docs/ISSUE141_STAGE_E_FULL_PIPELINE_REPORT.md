@@ -13,14 +13,24 @@ Stage E validates the real full pipeline path. It is intentionally distinct from
 - **Components run**: dense candidate reconstruction, probe-rescue candidate reconstruction, HOMR/SR/OMR-inclusive full pipeline execution, CNN scoring, and downstream measure numbering.
 - **NMS policy**: `cnn_apply_nms: false` per Issue #142.
 
-## Runtime and Log Surface
+## Runtime, Resource, and Log Surface
 
 Issue #159 adds metric-neutral runtime/log observability to the Stage E runner:
 
 - `dense_route_execution_summary.json` records dense-route phase durations, command log paths, log sizes, and generated artifact roots.
 - `stage_e_runtime_summary.json` records the dense-route summary plus image-copy and full-pipeline durations.
+- `stage_e_resource_samples.jsonl` records best-effort CPU/RSS/GPU resource samples during full-pipeline execution.
+- `stage_e_resource_samples.summary.json` records resource peaks derived from those samples.
+- `pipeline_stdout_stderr.log` captures stdout/stderr emitted during full-pipeline execution, including noisy external-tool output such as HOMR and Real-ESRGAN messages.
 - Dense reconstruction subprocess logs are compact by default. The compact log keeps bounded head/tail output and records omitted middle-line counts.
 - Diagnostic full logs can be enabled with `--dense-route-verbose-logs` on `tools/issue120/run_stage_e_full_pipeline.py`, but the command must be run through the same managed pipeline environment used by the Stage E make target. It is not expected to work from a global Python interpreter without the repository's PDF/image-processing dependencies.
+
+Resource sampling is best-effort:
+
+- Process memory uses Python `resource` and, when installed, `psutil` process-tree RSS.
+- GPU memory/utilization uses `nvidia-smi` when available.
+- Sampling can be disabled with `--no-resource-sampling`.
+- The sampling interval can be adjusted with `--resource-sample-interval-sec`.
 
 These summaries are generated under `logs/` and should not be committed.
 

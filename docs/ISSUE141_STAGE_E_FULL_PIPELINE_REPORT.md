@@ -20,7 +20,7 @@ Issue #159 adds metric-neutral runtime/log observability to the Stage E runner:
 - `dense_route_execution_summary.json` records dense-route phase durations, command log paths, log sizes, and generated artifact roots.
 - `stage_e_runtime_summary.json` records the dense-route summary plus image-copy and full-pipeline durations.
 - Dense reconstruction subprocess logs are compact by default. The compact log keeps bounded head/tail output and records omitted middle-line counts.
-- Diagnostic full logs can be enabled with `--dense-route-verbose-logs` on `tools/issue120/run_stage_e_full_pipeline.py`.
+- Diagnostic full logs can be enabled with `--dense-route-verbose-logs` on `tools/issue120/run_stage_e_full_pipeline.py`, but the command must be run through the same managed pipeline environment used by the Stage E make target. It is not expected to work from a global Python interpreter without the repository's PDF/image-processing dependencies.
 
 These summaries are generated under `logs/` and should not be committed.
 

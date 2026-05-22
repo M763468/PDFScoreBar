@@ -25,6 +25,10 @@ def _linux_maxrss_bytes(maxrss: int) -> int:
     return maxrss * 1024
 
 
+def _cpu_seconds(usage: resource.struct_rusage) -> float:
+    return float(usage.ru_utime) + float(usage.ru_stime)
+
+
 def _read_gpu_sample() -> list[dict[str, Any]]:
     """Return a best-effort nvidia-smi sample. Empty when NVIDIA tooling is unavailable."""
     if shutil.which("nvidia-smi") is None:
@@ -62,6 +66,55 @@ def _read_gpu_sample() -> list[dict[str, Any]]:
     return samples
 
 
+def _summarize_console_log(path: Path) -> dict[str, Any]:
+    """Summarize captured stdout/stderr without loading the whole file into memory."""
+    summary: dict[str, Any] = {
+        "path": str(path),
+        "exists": path.exists(),
+        "size_bytes": path.stat().st_size if path.exists() else 0,
+        "line_count": 0,
+        "logger_counts": {},
+        "marker_counts": {},
+    }
+    if not path.exists():
+        return summary
+
+    logger_counts: dict[str, int] = {}
+    marker_counts = {
+        "homr": 0,
+        "real_esrgan": 0,
+        "measure_numbering": 0,
+        "progress_bar": 0,
+        "warning_or_error": 0,
+    }
+    with path.open("r", encoding="utf-8", errors="replace") as f:
+        for line in f:
+            summary["line_count"] += 1
+            lower = line.lower()
+            if "homr" in lower:
+                marker_counts["homr"] += 1
+            if "real-esrgan" in lower or "realesrgan" in lower or "real_esrgan" in lower:
+                marker_counts["real_esrgan"] += 1
+            if "measure_numbering" in lower:
+                marker_counts["measure_numbering"] += 1
+            if "|" in line and "%" in line:
+                marker_counts["progress_bar"] += 1
+            if "warning" in lower or "error" in lower or "traceback" in lower:
+                marker_counts["warning_or_error"] += 1
+
+            parts = line.split()
+            if len(parts) >= 4 and parts[2].startswith("[") and parts[2].endswith("]"):
+                logger_name = parts[3].rstrip(":")
+                logger_counts[logger_name] = logger_counts.get(logger_name, 0) + 1
+
+    summary["logger_counts"] = dict(sorted(logger_counts.items(), key=lambda item: item[1], reverse=True)[:20])
+    summary["marker_counts"] = marker_counts
+    summary_path = path.with_suffix(".summary.json")
+    summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+    summary["summary_path"] = str(summary_path)
+    return summary
+
+
 class ResourceSampler:
     """Best-effort process/GPU resource sampler for long Stage E runs."""
 
@@ -77,10 +130,14 @@ class ResourceSampler:
         self._peak_psutil_children_rss_bytes = 0
         self._peak_gpu_memory_mb_by_uuid: dict[str, int] = {}
         self._peak_gpu_utilization_pct_by_uuid: dict[str, int] = {}
+        self._peak_process_tree_cpu_percent = 0.0
+        self._peak_rusage_cpu_percent = 0.0
         self._psutil_available: bool | None = None
         self._nvidia_smi_seen = False
         self._started_at: float | None = None
         self._finished_at: float | None = None
+        self._previous_sample_time: float | None = None
+        self._previous_rusage_cpu_sec: float | None = None
 
     def start(self) -> None:
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -99,7 +156,7 @@ class ResourceSampler:
         summary["summary_path"] = str(summary_path)
         return summary
 
-    def _sample_process_tree(self) -> dict[str, Any]:
+    def _sample_rusage(self, sample_time: float) -> dict[str, Any]:
         self_rusage = resource.getrusage(resource.RUSAGE_SELF)
         children_rusage = resource.getrusage(resource.RUSAGE_CHILDREN)
         self_maxrss_bytes = _linux_maxrss_bytes(self_rusage.ru_maxrss)
@@ -107,11 +164,27 @@ class ResourceSampler:
         self._peak_self_maxrss_bytes = max(self._peak_self_maxrss_bytes, self_maxrss_bytes)
         self._peak_children_maxrss_bytes = max(self._peak_children_maxrss_bytes, children_maxrss_bytes)
 
-        sample: dict[str, Any] = {
+        total_cpu_sec = _cpu_seconds(self_rusage) + _cpu_seconds(children_rusage)
+        rusage_cpu_percent = None
+        if self._previous_sample_time is not None and self._previous_rusage_cpu_sec is not None:
+            elapsed = max(sample_time - self._previous_sample_time, 1e-9)
+            cpu_delta = max(total_cpu_sec - self._previous_rusage_cpu_sec, 0.0)
+            rusage_cpu_percent = (cpu_delta / elapsed) * 100.0
+            self._peak_rusage_cpu_percent = max(self._peak_rusage_cpu_percent, rusage_cpu_percent)
+        self._previous_sample_time = sample_time
+        self._previous_rusage_cpu_sec = total_cpu_sec
+
+        return {
             "self_maxrss_bytes": self_maxrss_bytes,
             "children_maxrss_bytes": children_maxrss_bytes,
-            "psutil_available": False,
+            "self_cpu_sec": _cpu_seconds(self_rusage),
+            "children_cpu_sec": _cpu_seconds(children_rusage),
+            "total_rusage_cpu_sec": total_cpu_sec,
+            "rusage_cpu_percent_since_previous_sample": rusage_cpu_percent,
         }
+
+    def _sample_process_tree(self, sample_time: float) -> dict[str, Any]:
+        sample: dict[str, Any] = {**self._sample_rusage(sample_time), "psutil_available": False}
 
         try:
             import psutil  # type: ignore[import-not-found]
@@ -129,28 +202,35 @@ class ResourceSampler:
 
         rss_bytes = 0
         children_rss_bytes = 0
-        cpu_percent = 0.0
         process_count = 0
+        process_cpu_times_sec = 0.0
         for idx, child in enumerate(processes):
             try:
                 memory = child.memory_info()
+                cpu_times = child.cpu_times()
                 rss_bytes += int(memory.rss)
                 if idx > 0:
                     children_rss_bytes += int(memory.rss)
-                cpu_percent += float(child.cpu_percent(interval=None))
+                process_cpu_times_sec += float(cpu_times.user) + float(cpu_times.system)
                 process_count += 1
             except psutil.Error:
                 continue
 
         self._peak_psutil_rss_bytes = max(self._peak_psutil_rss_bytes, rss_bytes)
         self._peak_psutil_children_rss_bytes = max(self._peak_psutil_children_rss_bytes, children_rss_bytes)
+        process_tree_cpu_percent = sample.get("rusage_cpu_percent_since_previous_sample")
+        if isinstance(process_tree_cpu_percent, (int, float)):
+            self._peak_process_tree_cpu_percent = max(
+                self._peak_process_tree_cpu_percent, float(process_tree_cpu_percent)
+            )
         sample.update(
             {
                 "psutil_available": True,
                 "process_tree_rss_bytes": rss_bytes,
                 "children_rss_bytes": children_rss_bytes,
                 "process_count": process_count,
-                "process_tree_cpu_percent": cpu_percent,
+                "process_tree_cpu_times_sec": process_cpu_times_sec,
+                "process_tree_cpu_percent_since_previous_sample": process_tree_cpu_percent,
             }
         )
         return sample
@@ -172,9 +252,10 @@ class ResourceSampler:
     def _run(self) -> None:
         with self.output_path.open("w", encoding="utf-8") as f:
             while not self._stop.is_set():
+                sample_time = time.perf_counter()
                 sample = {
-                    "timestamp_monotonic_sec": time.perf_counter(),
-                    "process": self._sample_process_tree(),
+                    "timestamp_monotonic_sec": sample_time,
+                    "process": self._sample_process_tree(sample_time),
                     "gpu": _read_gpu_sample(),
                 }
                 self._record_gpu_peaks(sample["gpu"])
@@ -189,7 +270,7 @@ class ResourceSampler:
             end = self._finished_at if self._finished_at is not None else time.perf_counter()
             duration_sec = end - self._started_at
         return {
-            "schema_version": "tools.issue120.stage_e_resource_summary.v1",
+            "schema_version": "tools.issue120.stage_e_resource_summary.v2",
             "samples_path": str(self.output_path),
             "sample_count": self._sample_count,
             "sample_interval_sec": self.interval_sec,
@@ -200,6 +281,8 @@ class ResourceSampler:
             "peak_children_maxrss_bytes": self._peak_children_maxrss_bytes,
             "peak_process_tree_rss_bytes": self._peak_psutil_rss_bytes,
             "peak_process_tree_children_rss_bytes": self._peak_psutil_children_rss_bytes,
+            "peak_rusage_cpu_percent": self._peak_rusage_cpu_percent,
+            "peak_process_tree_cpu_percent": self._peak_process_tree_cpu_percent,
             "peak_gpu_memory_mb_by_uuid": self._peak_gpu_memory_mb_by_uuid,
             "peak_gpu_utilization_pct_by_uuid": self._peak_gpu_utilization_pct_by_uuid,
         }
@@ -336,7 +419,7 @@ def main():
             resource_summary = resource_sampler.stop()
     pipeline_duration_sec = time.perf_counter() - pipeline_started_at
 
-    pipeline_console_log_size = pipeline_console_log.stat().st_size if pipeline_console_log.exists() else 0
+    pipeline_console_log_summary = _summarize_console_log(pipeline_console_log)
     run_summary_path = route_root / "stage_e_runtime_summary.json"
     run_summary = {
         "schema_version": "tools.issue120.stage_e_full_pipeline.runtime_summary.v1",
@@ -353,7 +436,8 @@ def main():
             "run_id": "stage_e_full_pipeline",
             "output_root": str(args.output_root),
             "stdout_stderr_log": str(pipeline_console_log),
-            "stdout_stderr_log_size_bytes": pipeline_console_log_size,
+            "stdout_stderr_log_size_bytes": pipeline_console_log_summary["size_bytes"],
+            "stdout_stderr_log_summary": pipeline_console_log_summary,
         },
         "resource_monitor": resource_summary,
     }

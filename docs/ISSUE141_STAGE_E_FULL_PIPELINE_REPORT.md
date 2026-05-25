@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This document records the final full 68-page Stage E pipeline validation result against the Issue #120 detector target.
+This document records the full 68-page Stage E pipeline validation result against the Issue #120 detector target.
 
-Stage E validates the real full pipeline path. It is intentionally distinct from the #151 dense probe-candidate route, which is a detector-level partial route and does not run the full HOMR/SR/OMR-inclusive pipeline or downstream measure numbering.
+Stage E validates the real full pipeline path. It is distinct from the #151 dense probe-candidate route, which is a detector-level partial route and does not run the full HOMR/SR/OMR-inclusive pipeline or downstream measure numbering.
 
 ## Execution Configuration
 
@@ -15,29 +15,32 @@ Stage E validates the real full pipeline path. It is intentionally distinct from
 
 ## Runtime, Resource, and Log Surface
 
-Issue #159 adds metric-neutral runtime/log observability to the Stage E runner:
+Issue #159 adds metric-neutral observability around the Stage E runner and dense route:
 
 - `dense_route_execution_summary.json` records dense-route phase durations, command log paths, log sizes, and generated artifact roots.
 - `stage_e_runtime_summary.json` records the dense-route summary plus image-copy and full-pipeline durations.
-- `pipeline_phase_summary.json` records full-pipeline phase and detector subphase durations when `run.write_phase_summary: true` is enabled. This is enabled for the Stage E config, not for ordinary pipeline runs by default.
-- `stage_e_resource_samples.jsonl` records best-effort CPU/RSS/GPU resource samples during full-pipeline execution.
-- `stage_e_resource_samples.summary.json` records peak and continuous CPU/RSS/GPU resource summaries derived from those samples.
-- `pipeline_stdout_stderr.log` captures stdout/stderr emitted during full-pipeline execution, including noisy external-tool output such as HOMR and Real-ESRGAN messages.
+- `stage_e_resource_samples.jsonl` records best-effort CPU/RSS/GPU samples during full-pipeline execution.
+- `stage_e_resource_samples.summary.json` records best-effort peak CPU/RSS/GPU summaries derived from those samples.
+- `pipeline_stdout_stderr.log` captures stdout/stderr emitted during full-pipeline execution.
+- `pipeline_stdout_stderr.summary.json` records compact counts and markers from the captured console log.
+- If a pipeline phase summary is produced by the run, `stage_e_runtime_summary.json` attaches its path and payload for convenience. Issue #159 does not make full-pipeline phase timing a default pipeline artifact.
 - Dense reconstruction subprocess logs are compact by default. The compact log keeps bounded head/tail output and records omitted middle-line counts.
-- Diagnostic full logs can be enabled with `--dense-route-verbose-logs` on `tools/issue120/run_stage_e_full_pipeline.py`, but the command must be run through the same managed pipeline environment used by the Stage E make target. It is not expected to work from a global Python interpreter without the repository's PDF/image-processing dependencies.
+- Diagnostic full logs can be enabled with `--dense-route-verbose-logs`, but the runner should be invoked through the Stage E make target / managed pipeline environment.
 
 Resource sampling is best-effort:
 
 - Process memory uses Python `resource` and, when installed, `psutil` process-tree RSS.
+- Live process-tree CPU percentage uses `psutil` process-tree CPU-time deltas when available.
+- Child-process `resource` CPU deltas are kept only as a diagnostic signal, not as live subprocess CPU.
 - GPU memory/utilization uses `nvidia-smi` when available.
 - Sampling can be disabled with `--no-resource-sampling`.
-- The sampling interval can be adjusted with `--resource-sample-interval-sec`.
+- The sampling interval can be adjusted with `--resource-sample-interval-sec`; non-positive intervals are rejected while sampling is enabled.
 
 These summaries are generated under `logs/` and should not be committed.
 
-Issue #159 uses these artifacts to identify safe parallelization opportunities. The measurements showed that Stage E runtime is dominated by HOMR/SR detection, especially `homr_sr` and `homr_baseline`. Actual HOMR/SR parallelization experiments are intentionally deferred to follow-up issue #163 so this validated checkpoint does not introduce new resource scheduling behavior.
+Issue #159 uses these artifacts to identify safe parallelization opportunities. The measurements showed that Stage E runtime is dominated by HOMR/SR detection, but actual HOMR/SR parallelization experiments are intentionally deferred to follow-up issue #163/#166 so this validated checkpoint does not introduce new resource scheduling behavior.
 
-Pipeline logging taxonomy and default noisy-log policy are also deferred to follow-up issue #162. Issue #159 captures and summarizes stdout/stderr but does not redesign default logger semantics.
+Pipeline logging taxonomy and default noisy-log policy are deferred to follow-up issue #162/#164. Issue #159 captures and summarizes stdout/stderr but does not redesign default logger semantics.
 
 ## Detector Metrics vs Target
 

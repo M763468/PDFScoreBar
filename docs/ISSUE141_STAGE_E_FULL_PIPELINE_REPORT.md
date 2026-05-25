@@ -19,8 +19,9 @@ Issue #159 adds metric-neutral runtime/log observability to the Stage E runner:
 
 - `dense_route_execution_summary.json` records dense-route phase durations, command log paths, log sizes, and generated artifact roots.
 - `stage_e_runtime_summary.json` records the dense-route summary plus image-copy and full-pipeline durations.
+- `pipeline_phase_summary.json` records full-pipeline phase and detector subphase durations when `run.write_phase_summary: true` is enabled. This is enabled for the Stage E config, not for ordinary pipeline runs by default.
 - `stage_e_resource_samples.jsonl` records best-effort CPU/RSS/GPU resource samples during full-pipeline execution.
-- `stage_e_resource_samples.summary.json` records resource peaks derived from those samples.
+- `stage_e_resource_samples.summary.json` records peak and continuous CPU/RSS/GPU resource summaries derived from those samples.
 - `pipeline_stdout_stderr.log` captures stdout/stderr emitted during full-pipeline execution, including noisy external-tool output such as HOMR and Real-ESRGAN messages.
 - Dense reconstruction subprocess logs are compact by default. The compact log keeps bounded head/tail output and records omitted middle-line counts.
 - Diagnostic full logs can be enabled with `--dense-route-verbose-logs` on `tools/issue120/run_stage_e_full_pipeline.py`, but the command must be run through the same managed pipeline environment used by the Stage E make target. It is not expected to work from a global Python interpreter without the repository's PDF/image-processing dependencies.
@@ -33,6 +34,10 @@ Resource sampling is best-effort:
 - The sampling interval can be adjusted with `--resource-sample-interval-sec`.
 
 These summaries are generated under `logs/` and should not be committed.
+
+Issue #159 uses these artifacts to identify safe parallelization opportunities. The measurements showed that Stage E runtime is dominated by HOMR/SR detection, especially `homr_sr` and `homr_baseline`. Actual HOMR/SR parallelization experiments are intentionally deferred to follow-up issue #163 so this validated checkpoint does not introduce new resource scheduling behavior.
+
+Pipeline logging taxonomy and default noisy-log policy are also deferred to follow-up issue #162. Issue #159 captures and summarizes stdout/stderr but does not redesign default logger semantics.
 
 ## Detector Metrics vs Target
 

@@ -125,6 +125,8 @@ class ResourceSampler:
     """Best-effort process/GPU resource sampler for long Stage E runs."""
 
     def __init__(self, *, output_path: Path, interval_sec: float) -> None:
+        if interval_sec <= 0:
+            raise ValueError("Resource sample interval must be positive.")
         self.output_path = output_path
         self.interval_sec = interval_sec
         self._stop = threading.Event()
@@ -144,6 +146,8 @@ class ResourceSampler:
         self._finished_at: float | None = None
         self._previous_sample_time: float | None = None
         self._previous_rusage_cpu_sec: float | None = None
+        self._previous_process_tree_sample_time: float | None = None
+        self._previous_process_tree_cpu_sec: float | None = None
 
     def start(self) -> None:
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -209,7 +213,7 @@ class ResourceSampler:
         rss_bytes = 0
         children_rss_bytes = 0
         process_count = 0
-        process_cpu_times_sec = 0.0
+        process_tree_cpu_times_sec = 0.0
         for idx, child in enumerate(processes):
             try:
                 memory = child.memory_info()
@@ -217,25 +221,34 @@ class ResourceSampler:
                 rss_bytes += int(memory.rss)
                 if idx > 0:
                     children_rss_bytes += int(memory.rss)
-                process_cpu_times_sec += float(cpu_times.user) + float(cpu_times.system)
+                process_tree_cpu_times_sec += float(cpu_times.user) + float(cpu_times.system)
                 process_count += 1
             except psutil.Error:
                 continue
 
+        process_tree_cpu_percent = None
+        if (
+            self._previous_process_tree_sample_time is not None
+            and self._previous_process_tree_cpu_sec is not None
+        ):
+            elapsed = max(sample_time - self._previous_process_tree_sample_time, 1e-9)
+            cpu_delta = max(process_tree_cpu_times_sec - self._previous_process_tree_cpu_sec, 0.0)
+            process_tree_cpu_percent = (cpu_delta / elapsed) * 100.0
+            self._peak_process_tree_cpu_percent = max(
+                self._peak_process_tree_cpu_percent, process_tree_cpu_percent
+            )
+        self._previous_process_tree_sample_time = sample_time
+        self._previous_process_tree_cpu_sec = process_tree_cpu_times_sec
+
         self._peak_psutil_rss_bytes = max(self._peak_psutil_rss_bytes, rss_bytes)
         self._peak_psutil_children_rss_bytes = max(self._peak_psutil_children_rss_bytes, children_rss_bytes)
-        process_tree_cpu_percent = sample.get("rusage_cpu_percent_since_previous_sample")
-        if isinstance(process_tree_cpu_percent, (int, float)):
-            self._peak_process_tree_cpu_percent = max(
-                self._peak_process_tree_cpu_percent, float(process_tree_cpu_percent)
-            )
         sample.update(
             {
                 "psutil_available": True,
                 "process_tree_rss_bytes": rss_bytes,
                 "children_rss_bytes": children_rss_bytes,
                 "process_count": process_count,
-                "process_tree_cpu_times_sec": process_cpu_times_sec,
+                "process_tree_cpu_times_sec": process_tree_cpu_times_sec,
                 "process_tree_cpu_percent_since_previous_sample": process_tree_cpu_percent,
             }
         )
@@ -276,7 +289,7 @@ class ResourceSampler:
             end = self._finished_at if self._finished_at is not None else time.perf_counter()
             duration_sec = end - self._started_at
         return {
-            "schema_version": "tools.issue120.stage_e_resource_summary.v2",
+            "schema_version": "tools.issue120.stage_e_resource_summary.v3",
             "samples_path": str(self.output_path),
             "sample_count": self._sample_count,
             "sample_interval_sec": self.interval_sec,
@@ -352,6 +365,8 @@ def main():
     if not args.exclude.exists():
         logger.error(f"Exclude file not found: {args.exclude}")
         sys.exit(1)
+    if not args.no_resource_sampling and args.resource_sample_interval_sec <= 0:
+        parser.error("--resource-sample-interval-sec must be positive when resource sampling is enabled.")
 
     route_root = args.output_root / "stage_e_full_pipeline"
     if route_root.exists():

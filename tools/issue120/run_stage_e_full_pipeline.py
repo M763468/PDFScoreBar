@@ -29,6 +29,12 @@ def _cpu_seconds(usage: resource.struct_rusage) -> float:
     return float(usage.ru_utime) + float(usage.ru_stime)
 
 
+def _load_optional_json(path: Path) -> Any | None:
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def _read_gpu_sample() -> list[dict[str, Any]]:
     """Return a best-effort nvidia-smi sample. Empty when NVIDIA tooling is unavailable."""
     if shutil.which("nvidia-smi") is None:
@@ -419,6 +425,8 @@ def main():
             resource_summary = resource_sampler.stop()
     pipeline_duration_sec = time.perf_counter() - pipeline_started_at
 
+    pipeline_phase_summary_path = route_root / "pipeline_phase_summary.json"
+    pipeline_phase_summary = _load_optional_json(pipeline_phase_summary_path)
     pipeline_console_log_summary = _summarize_console_log(pipeline_console_log)
     run_summary_path = route_root / "stage_e_runtime_summary.json"
     run_summary = {
@@ -435,6 +443,8 @@ def main():
             "config_path": str(temp_config_path),
             "run_id": "stage_e_full_pipeline",
             "output_root": str(args.output_root),
+            "phase_summary_path": str(pipeline_phase_summary_path),
+            "phase_summary": pipeline_phase_summary,
             "stdout_stderr_log": str(pipeline_console_log),
             "stdout_stderr_log_size_bytes": pipeline_console_log_summary["size_bytes"],
             "stdout_stderr_log_summary": pipeline_console_log_summary,

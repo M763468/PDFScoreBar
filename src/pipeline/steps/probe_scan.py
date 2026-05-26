@@ -30,7 +30,6 @@ from src.pipeline.steps.candidate_filters import (
     trim_box_to_ink,
 )
 from src.pipeline.steps.hybrid_consensus import load_json_boxes
-from src.pipeline.utils.images import load_image
 from src.pipeline.utils.io import ensure_dir
 from src.pipeline.utils.wide_split_utils import split_wide_candidates
 
@@ -341,6 +340,8 @@ def run_probe_scan_batch(
     if detect_probe_scan is None:
         raise ImportError("run_probe_scan_batch requires src.pipeline.probe_detector dependencies.")
 
+    from src.pipeline.utils.images import load_image
+
     ensure_dir(output_root)
     staff_mask_map = _build_staff_mask_map(staff_mask_dir)
     clef_mask_map = _build_clef_mask_map(clef_mask_dir)
@@ -423,29 +424,20 @@ def run_probe_scan_batch(
             stem=stem,
         )
 
-        # Rescale existing boxes to match image resolution if using SR
         if input_image_scale > 1.0:
             existing_boxes = [
                 tuple(int(round(v * input_image_scale)) for v in b) for b in existing_boxes
             ]
 
-        # Split long seed boxes vertically to avoid Tall Band Dilution
         if not disable_seed_splitting:
-            # Threshold for splitting: use unit-based logic for resolution independence.
-            # A full staff is approx 4 units. We split if box > TALL_BAND_SPLIT_RATIO units.
             DEFAULT_UNIT_SIZE = 40.0
             TALL_BAND_SPLIT_RATIO = 12.0
-
             u_splitting = _estimate_unit_size_from_existing_boxes(existing_boxes) or (
                 DEFAULT_UNIT_SIZE * input_image_scale
             )
             split_threshold = TALL_BAND_SPLIT_RATIO * u_splitting
-
-            # Derive thresholds based on unit size.
-            # At 1x (approx unit size 40), min_gap was 50 (1.25x) and min_segment_h was 30 (0.75x).
             min_gap_px = int(1.25 * u_splitting)
             min_segment_h_px = int(0.75 * u_splitting)
-
             split_seeds = []
             for b in existing_boxes:
                 h_b = abs(b[3] - b[1])
@@ -520,7 +512,6 @@ def run_probe_scan_batch(
             if dropped:
                 logger.debug(f"Heuristic filter dropped {len(dropped)} candidates for {stem}")
 
-        # Final tightening of boxes to actual ink extent to improve VOV for evaluation
         trimmed = [
             trim_box_to_ink(img, b, ink_threshold=ink_threshold) for b in filtered_candidates
         ]
@@ -532,7 +523,6 @@ def run_probe_scan_batch(
                 filtered_candidates.append(c)
         final_set = set()
         for sb in existing_boxes:
-            # sb is already scaled to SR space if needed
             h = abs(sb[3] - sb[1])
             w = abs(sb[2] - sb[0])
             if h >= min_height_px and w >= min_width_px:

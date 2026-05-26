@@ -5,14 +5,12 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 
 # Install build-time dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y software-properties-common && \
+    add-apt-repository -y ppa:deadsnakes/ppa && \
+    apt-get update && apt-get install -y \
     python3.11 python3.11-venv python3.11-dev python3-pip \
     wget git curl build-essential \
     && rm -rf /var/lib/apt/lists/*
-
-# Use python3.11 as default in builder stage as well
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
-    update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1
 
 # Install uv
 RUN pip install uv
@@ -41,7 +39,7 @@ RUN uv pip install git+https://github.com/liebharc/homr.git@b377620a3a55bd7ff657
 RUN uv pip install -e .
 
 # Apply basicsr patch for torchvision compatibility dynamically to avoid hardcoded python version paths
-RUN /opt/venv_pipeline/bin/python -c "import basicsr, os; p = os.path.join(os.path.dirname(basicsr.__file__), 'data/degradations.py'); os.system(f\"sed -i 's/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/g' {p}\")"
+RUN /opt/venv_pipeline/bin/python -c "import basicsr; from pathlib import Path; p = Path(basicsr.__file__).parent / 'data' / 'degradations.py'; s = p.read_text(); p.write_text(s.replace('from torchvision.transforms.functional_tensor import rgb_to_grayscale', 'from torchvision.transforms.functional import rgb_to_grayscale'))"
 
 # Download model weights during build to a safe location (not masked by volume mount)
 # We place them in /opt/weights so they are always available. We will symlink them later if needed.
@@ -57,15 +55,13 @@ ENV PYTHONUNBUFFERED=1
 ENV PATH="/opt/venv_pipeline/bin:$PATH"
 
 # Install only runtime system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y software-properties-common && \
+    add-apt-repository -y ppa:deadsnakes/ppa && \
+    apt-get update && apt-get install -y \
     python3.11 libgl1 libgl1-mesa-glx libglib2.0-0 \
     libgtk-3-0 libxrender1 libxext6 libsm6 \
     tzdata sudo \
     && rm -rf /var/lib/apt/lists/*
-
-# Use python3.11 as default
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
-    update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1
 
 WORKDIR /workspace
 

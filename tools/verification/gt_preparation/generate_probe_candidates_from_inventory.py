@@ -61,6 +61,7 @@ def _run_one(
     band_scan_line_ratio: float,
     band_scan_min_lines: int,
     band_source: str,
+    band_cluster_max_dist: float | None,
     scan_x_peak_rescue: bool,
 ) -> dict[str, Any]:
     score = record["score"]
@@ -88,11 +89,15 @@ def _run_one(
     existing_boxes = _load_boxes(existing_path)
 
     # Keep defaults aligned with current src.pipeline.steps.probe_scan.run_probe_scan_batch.
+    # Issue #36 v12 reproduction can pass --band-cluster-max-dist 25.0 to pin the
+    # historical edf7bf6 row_stats clustering behavior after the current detector
+    # default changed to a median-height-derived value.
     candidates = detect_probe_scan(
         base_img=image,
         staff_mask=staff_mask,
         existing_boxes=existing_boxes,
         band_source=band_source,
+        band_cluster_max_dist=band_cluster_max_dist,
         band_min_row_count=1,
         band_scan_line_ratio=band_scan_line_ratio,
         band_scan_min_lines=band_scan_min_lines,
@@ -144,6 +149,7 @@ def _run_one(
         "staff_mask": str(staff_mask_path),
         "existing_boxes_path": str(existing_path),
         "band_source": band_source,
+        "band_cluster_max_dist": band_cluster_max_dist,
         "existing_count": len(existing_boxes),
         "generated_count": len(candidates),
         "final_count": len(final_list),
@@ -170,6 +176,15 @@ def parse_args() -> argparse.Namespace:
         choices=["row_stats", "staff_mask"],
         default="row_stats",
         help="Band source passed to detect_probe_scan. Default is row_stats for GT candidate seeds.",
+    )
+    parser.add_argument(
+        "--band-cluster-max-dist",
+        type=float,
+        default=None,
+        help=(
+            "Optional row_stats clustering distance passed to detect_probe_scan. "
+            "Use 25.0 for Issue #36 v12 historical reproduction."
+        ),
     )
     parser.add_argument(
         "--scan-x-peak-rescue",
@@ -214,6 +229,7 @@ def main() -> None:
                 band_scan_line_ratio=args.band_scan_line_ratio,
                 band_scan_min_lines=args.band_scan_min_lines,
                 band_source=args.band_source,
+                band_cluster_max_dist=args.band_cluster_max_dist,
                 scan_x_peak_rescue=args.scan_x_peak_rescue,
             )
             results.append(result)
@@ -236,6 +252,7 @@ def main() -> None:
             "band_scan_line_ratio": args.band_scan_line_ratio,
             "band_scan_min_lines": args.band_scan_min_lines,
             "band_source": args.band_source,
+            "band_cluster_max_dist": args.band_cluster_max_dist,
             "scan_x_peak_rescue": args.scan_x_peak_rescue,
         },
         "processed": len(results),

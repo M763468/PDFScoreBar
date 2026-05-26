@@ -6,7 +6,6 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
-import cv2
 import torch
 from tqdm import tqdm
 
@@ -15,6 +14,7 @@ from src.common.barline_evaluation import (
     BARLINE_X_MARGIN,
     BARLINE_Y_MARGIN,
 )
+from src.pdf_to_images import normalise_pages
 from src.pipeline.core.config import get_nested
 from src.pipeline.core.manifest import build_manifest
 from src.pipeline.detection import (
@@ -71,7 +71,8 @@ class PipelineOrchestrator:
         self._persistence = _PIPELINE_PERSISTENCE
         self._mmr_persistence = _MMR_PERSISTENCE
 
-    def _build_pdf_command(self) -> List[str]:
+    def _run_pdf_to_images(self) -> None:
+        """Step 1: Convert PDF to images in-process."""
         pdf_path = get_nested(self.config, "inputs", "pdf_path")
         pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
         if not pdf_path:
@@ -80,46 +81,52 @@ class PipelineOrchestrator:
         output_dir = self.run_dir / "inputs" / "images"
         ensure_dir(output_dir)
 
-        from src.pipeline.core.python_env import get_pipeline_python
-
-        python_cmd = get_pipeline_python("pdf_to_images")
-
-        cmd = python_cmd + [
-            "src/pdf_to_images.py",
-            "--pdf",
-            str(pdf_path),
-            "--output-dir",
-            str(output_dir),
-        ]
-        if pdf_opts.get("dpi") is not None:
-            cmd += ["--dpi", str(pdf_opts["dpi"])]
-        if pdf_opts.get("pages"):
-            cmd += ["--pages", str(pdf_opts["pages"])]
-        if pdf_opts.get("target_width") is not None:
-            cmd += ["--target-width", str(pdf_opts["target_width"])]
-        if pdf_opts.get("target_height") is not None:
-            cmd += ["--target-height", str(pdf_opts["target_height"])]
-        if pdf_opts.get("interpolation"):
-            cmd += ["--interpolation", str(pdf_opts["interpolation"])]
-        if pdf_opts.get("prefix"):
-            cmd += ["--prefix", str(pdf_opts["prefix"])]
-        if pdf_opts.get("format"):
-            cmd += ["--format", str(pdf_opts["format"])]
-
-        cmd.append("--overwrite")
-
-        if pdf_opts.get("alpha"):
-            cmd.append("--alpha")
-        return cmd
-
-    def _run_command(self, cmd: List[str]) -> None:
         if self.dry_run:
-            logger.info(f"Executing (dry-run): {' '.join(cmd)}")
+            logger.info(f"Executing (dry-run): render_pdf {pdf_path} -> {output_dir}")
             return
 
-        from src.pipeline.core.subprocess_utils import run_with_logging
+        import fitz
 
-        run_with_logging(cmd)
+        pdf_path = Path(pdf_path)
+        with fitz.open(pdf_path) as doc:
+            pages = normalise_pages(pdf_opts.get("pages"), doc.page_count)
+
+        logger.info(f"Rendering PDF: {pdf_path} (pages: {pages}) -> {output_dir}")
+        from src.pdf_to_images import render_pdf_to_memory
+        from src.pipeline.utils.images import get_image_cache
+
+        rendered = render_pdf_to_memory(
+            pdf_path,
+            dpi=float(pdf_opts.get("dpi", 300.0)),
+            pages=pages,
+            keep_alpha=bool(pdf_opts.get("alpha", False)),
+            target_width=pdf_opts.get("target_width"),
+            target_height=pdf_opts.get("target_height"),
+            interpolation=str(pdf_opts.get("interpolation", "area")),
+        )
+
+        cache = get_image_cache()
+        prefix = str(pdf_opts.get("prefix", "page"))
+        fmt = str(pdf_opts.get("format", "png"))
+
+        # Default behavior: write to disk unless output_dir is explicitly null (None)
+        persist_to_disk = (
+            self.debug or ("output_dir" not in pdf_opts) or (pdf_opts.get("output_dir") is not None)
+        )
+
+        for page_index, image in rendered:
+            stem = f"{prefix}_{page_index + 1:03d}"
+
+            # Cache only if we are NOT persisting to disk (to save memory)
+            if not persist_to_disk:
+                cache[stem] = image
+
+            # Optionally write to disk for debug/persistence
+            if persist_to_disk:
+                from src.pdf_to_images import save_image
+
+                destination = output_dir / f"{stem}.{fmt}"
+                save_image(destination, image, fmt=fmt)
 
     def _resolve_page_runs(self, page_ids: List[str]) -> List[str]:
         """Resolves which runs to use for each page (legacy manual resolution)."""
@@ -141,12 +148,24 @@ class PipelineOrchestrator:
             ):
                 logger.info("Skipping pdf_to_images: output directory exists and is not empty.")
             else:
-                pdf_cmd = self._build_pdf_command()
-                commands.append(pdf_cmd)
-                self._run_command(pdf_cmd)
+                self._run_pdf_to_images()
+                commands.append(["inprocess:pdf_to_images"])
 
         logger.info("Collecting images...")
-        images = collect_images(self.config, self.run_dir)
+        from src.pipeline.utils.images import get_image_cache
+
+        mem_images = get_image_cache()
+
+        # Determine if we skipped disk write during pdf_to_images
+        pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
+        persist_to_disk = (
+            self.debug or ("output_dir" not in pdf_opts) or (pdf_opts.get("output_dir") is not None)
+        )
+
+        # Only pass in_memory_images to collect_images if we actually used the cache (i.e. did not persist)
+        images = collect_images(
+            self.config, self.run_dir, in_memory_images=mem_images if not persist_to_disk else None
+        )
         if page_limit is not None:
             images = images[:page_limit]
         page_ids = resolve_page_ids(self.config, images)
@@ -156,7 +175,7 @@ class PipelineOrchestrator:
         probe_output_dir = None
         hybrid_output_dir = None
 
-        if run_detection:
+        if run_detection and not self.validate_only:
             logger.info("Starting detection step...")
             if self.skip_existing:
                 if "detection" not in self.config:
@@ -164,7 +183,13 @@ class PipelineOrchestrator:
                 self.config["detection"]["probe_skip_existing"] = True
 
             det_result = run_detection_step(
-                self.config, images, page_ids, self.run_id, self.run_dir, dry_run=self.dry_run
+                self.config,
+                images,
+                page_ids,
+                self.run_id,
+                self.run_dir,
+                dry_run=self.dry_run,
+                in_memory_images=mem_images if not persist_to_disk else None,
             )
             commands.extend(det_result["commands"])
             probe_output_dir = det_result["probe_output_dir"]
@@ -377,7 +402,9 @@ class PipelineOrchestrator:
                             raw_barlines = load_json(Path(resolved_item["barlines_json"]))
                             barline_boxes = normalize_barlines(raw_barlines)
 
-                        img_ref = cv2.imread(str(image_path))
+                        from src.pipeline.utils.images import load_image
+
+                        img_ref = load_image(image_path)
                         h, w = img_ref.shape[:2]
 
                         page_obj = numbering_pipeline.process_page(
@@ -500,6 +527,11 @@ class PipelineOrchestrator:
 
         numbering_final_paths: List[Path] = []
         numbering_pipeline = self._persistence.get("numbering_pipeline")
+        if numbering_pipeline is None:
+            from src.measure_numbering.pipeline import MeasureNumberingPipeline
+
+            numbering_pipeline = MeasureNumberingPipeline()
+            self._persistence["numbering_pipeline"] = numbering_pipeline
 
         for page_id in tqdm(page_ids, desc="Phase C: Final Numbering", unit="page"):
             ctx = page_ctx[page_id]
@@ -550,7 +582,9 @@ class PipelineOrchestrator:
                             elif ctx["barlines_path"].exists():
                                 barline_boxes = normalize_barlines(load_json(ctx["barlines_path"]))
 
-                        img_ref = cv2.imread(str(image_path))
+                        from src.pipeline.utils.images import load_image
+
+                        img_ref = load_image(image_path)
                         h, w = img_ref.shape[:2]
 
                         page_obj = numbering_pipeline.process_page(

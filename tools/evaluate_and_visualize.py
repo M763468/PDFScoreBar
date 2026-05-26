@@ -22,6 +22,20 @@ def find_scored_file(scored_root, subdir, page_name):
     candidates = [
         Path(scored_root) / subdir / page_name / "pipeline2_no_peak_scored.json",
         Path(scored_root) / f"eval2_{subdir}_{page_name}" / "pipeline2_no_peak_scored.json",
+        # New pattern for nested pipeline runs
+        Path(scored_root)
+        / subdir
+        / "intermediate"
+        / "probe_scan"
+        / f"eval2_{subdir}_{page_name}"
+        / "pipeline2_no_peak_scored.json",
+        # Pattern observed in full inprocess run where stem was used as score name
+        Path(scored_root)
+        / subdir
+        / "intermediate"
+        / "probe_scan"
+        / f"eval2_{page_name}_{page_name}"
+        / "pipeline2_no_peak_scored.json",
     ]
     for c in candidates:
         if c.exists():

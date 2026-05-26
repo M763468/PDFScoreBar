@@ -84,6 +84,8 @@ def main() -> None:
     processed = 0
     skipped = 0
     errors = 0
+    clef_mask_resolved = 0
+    clef_mask_missing = 0
     reason_counts: dict[str, int] = {}
     per_page: list[dict[str, Any]] = []
 
@@ -99,6 +101,10 @@ def main() -> None:
         existing = Path(rec["hybrid_predictions"])
         staff_mask = Path(rec["staff_mask"]) if rec.get("staff_mask") else None
         clef_mask = _resolve_clef_mask_path(rec)
+        if clef_mask is None:
+            clef_mask_missing += 1
+        else:
+            clef_mask_resolved += 1
         candidates = args.candidates_root / score / page / "pipeline2_no_peak_candidates.json"
 
         try:
@@ -140,12 +146,22 @@ def main() -> None:
                     "candidates": sugg["counts"]["candidates"],
                     "keep": sugg["counts"]["keep"],
                     "drop_suggested": sugg["counts"]["drop_suggested"],
+                    "clef_mask_path": str(clef_mask) if clef_mask else None,
+                    "clef_mask_resolved": clef_mask is not None,
                     "filtered_candidates_path": str(out_dir / "pipeline2_no_peak_candidates.json"),
                 }
             )
             processed += 1
         except Exception as exc:  # noqa: BLE001
-            per_page.append({"score": score, "page": page, "error": str(exc)})
+            per_page.append(
+                {
+                    "score": score,
+                    "page": page,
+                    "clef_mask_path": str(clef_mask) if clef_mask else None,
+                    "clef_mask_resolved": clef_mask is not None,
+                    "error": str(exc),
+                }
+            )
             errors += 1
 
     summary = {
@@ -163,6 +179,10 @@ def main() -> None:
             "paper_threshold": args.paper_threshold,
             "min_paper_overlap_ratio": args.min_paper_overlap_ratio,
             "min_staff_overlap_ratio": args.min_staff_overlap_ratio,
+        },
+        "clef_mask_resolution": {
+            "resolved_pages": clef_mask_resolved,
+            "missing_pages": clef_mask_missing,
         },
         "processed": processed,
         "skipped": skipped,

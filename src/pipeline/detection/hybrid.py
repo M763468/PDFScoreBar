@@ -21,17 +21,14 @@ from src.pipeline.utils.io import ensure_dir
 
 from .utils import log_vram_usage
 
-# Optional imports for in-process Homr execution
 try:
+    from homr.main import ProcessingConfig
+    from homr.music_xml_generator import XmlGeneratorArguments
     from src.common.preprocessing import apply_advanced_sr
-    from src.homr_eval_scripts.homr_evaluator import (
-        DEFAULT_TUNING,
-        BarlinePrediction,
-        HomrPredictor,
-        ProcessingConfig,
-        XmlGeneratorArguments,
-        save_homr_results,
-    )
+    from src.homr_eval_scripts.core.metrics import BarlinePrediction
+    from src.homr_eval_scripts.core.predictor import HomrPredictor
+    from src.homr_eval_scripts.core.reporting import save_homr_results
+    from src.homr_eval_scripts.core.utils import DEFAULT_TUNING
 
     _HOMR_AVAILABLE = True
 except ImportError:
@@ -52,6 +49,7 @@ class HybridDetector:
         *,
         dry_run: bool,
         skip_existing: bool = False,
+        in_memory_images: Dict[str, Any] | None = None,
     ):
         self.det_cfg = det_cfg
         self.images = images
@@ -59,6 +57,7 @@ class HybridDetector:
         self.project_root = project_root
         self.dry_run = dry_run
         self.skip_existing = skip_existing
+        self.in_memory_images = in_memory_images
 
     def _get_python_cmd(self, name: str) -> List[str]:
         """Returns the appropriate python command, falling back to host if images are external."""
@@ -89,11 +88,9 @@ class HybridDetector:
         stems = [path.stem for path in self.images]
         commands: List[List[str]] = []
 
-        logger.info("--- Step 2.1: Hybrid Detection (Subprocess homr baseline/SR) ---")
+        logger.info("--- Step 2.1: Hybrid Detection (In-Process homr baseline/SR) ---")
         enable_sr = bool(self.det_cfg.get("enable_sr", True))
         python_cmd = self._get_python_cmd("homr")
-
-        # Environment setup for Homr subprocess
         env = os.environ.copy()
         homr_path = self.project_root / "external" / "homr"
         env["PYTHONPATH"] = os.pathsep.join(
@@ -230,18 +227,17 @@ class HybridDetector:
     def _run_homr_in_process(
         self,
         output_root: Path,
-        enable_sr: bool = False,
+        *,
+        enable_sr: bool,
         sr_scale: int = 2,
     ) -> None:
         """Runs Homr inference (baseline or SR) in-process for persistence."""
         if not _HOMR_AVAILABLE:
-            logger.warning("Homr not available for in-process execution.")
+            logger.warning("Homr is not available for in-process execution.")
             return
 
-        stems = [img.stem for img in self.images]
-        if self.skip_existing and self._all_stems_exist(
-            output_root, stems, "batch/*/*_detections.json"
-        ):
+        stems = [p.stem for p in self.images]
+        if self.skip_existing and self._all_stems_exist(output_root, stems, "batch/*/*.json"):
             logger.info(f"Skipping in-process Homr for {output_root.name}: outputs exist.")
             return
 
@@ -255,6 +251,7 @@ class HybridDetector:
             bool(self.det_cfg.get("write_staff_positions", False)),
             False,
             -1,
+            torch.cuda.is_available(),
         )
         tuning = DEFAULT_TUNING.copy()
         tuning.update(
@@ -264,12 +261,14 @@ class HybridDetector:
             }
         )
 
-        predictor = HomrPredictor(config, tuning)
+        predictor = HomrPredictor(config, tuning, use_gpu_inference=torch.cuda.is_available())
         xml_args = XmlGeneratorArguments(False, None, None)
 
         try:
             working_images = []
             persistent_upsampler = None
+
+            from src.pipeline.utils.images import load_image
 
             logger.info(f"--- Homr In-Process Phase 1 (SR={enable_sr}) ---")
             log_vram_usage("Before SR")
@@ -277,24 +276,29 @@ class HybridDetector:
                 image_run_dir = output_root / "batch" / img.stem
                 ensure_dir(image_run_dir)
                 working_path = image_run_dir / img.name
-                shutil.copy2(img, working_path)
+
+                try:
+                    img_bgr = load_image(img, self.in_memory_images)
+                except FileNotFoundError as e:
+                    logger.warning(f"Failed to prepare {img}: {e}")
+                    continue
 
                 scale = 1
                 if enable_sr:
                     model_name = "RealESRGAN_x4plus" if sr_scale == 4 else "RealESRGAN_x2plus"
-                    img_bgr = cv2.imread(str(working_path))
-                    if img_bgr is not None:
-                        upscaled, persistent_upsampler = apply_advanced_sr(
-                            img_bgr,
-                            model_name=model_name,
-                            scale=sr_scale,
-                            tile=self.det_cfg.get("sr_tile", -1),
-                            tile_pad=self.det_cfg.get("sr_tile_pad", 10),
-                            fp32=self.det_cfg.get("sr_fp32", False),
-                            upsampler=persistent_upsampler,
-                        )
-                        cv2.imwrite(str(working_path), upscaled)
-                        scale = sr_scale
+                    upscaled, persistent_upsampler = apply_advanced_sr(
+                        img_bgr,
+                        model_name=model_name,
+                        scale=sr_scale,
+                        tile=self.det_cfg.get("sr_tile", -1),
+                        tile_pad=self.det_cfg.get("sr_tile_pad", 10),
+                        fp32=self.det_cfg.get("sr_fp32", False),
+                        upsampler=persistent_upsampler,
+                    )
+                    cv2.imwrite(str(working_path), upscaled)
+                    scale = sr_scale
+                else:
+                    cv2.imwrite(str(working_path), img_bgr)
                 working_images.append((img, working_path, scale))
 
             persistent_upsampler = None

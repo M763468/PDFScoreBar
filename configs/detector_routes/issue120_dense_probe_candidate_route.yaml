@@ -1,0 +1,29 @@
+dense_probe_candidate_route:
+  # Detector-level partial route only:
+  # dense candidate/bands generation -> filtering -> probe rescue -> CNN scoring -> detector eval.
+  # This does not run slow HOMR/SR/OMR upstream generation or downstream measure numbering.
+  inventory: logs/issue36_prep/20260208_bench_inventory.json
+  exclude: logs/issue36_prep/excluded_pages_for_gt_prep.json
+  image_root: data/evaluation2/images
+  gt_root: data/evaluation2/annotations
+  model_path: logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
+  baseline_dir: data/evaluation2/golden_baseline_eval2_bc23deb
+  output_root: logs/issue120_e2e_recovery/dense_probe_candidate_route
+  historical_raw_candidates_root: logs/issue36_prep/probe_candidates_from_bench_v12
+  historical_filtered_candidates_root: logs/issue36_prep/probe_candidates_filtered_v12
+  historical_scoring_input_root: logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12
+
+  scoring:
+    scorer: pipeline
+    cnn_apply_nms: false
+    score_threshold: 0.1
+    xdist_threshold: 12.0
+
+  workflow:
+    no_clean_output: false
+    skip_issue36_regeneration: false
+    skip_probe_rescue_regeneration: false
+    skip_existing_probe_rescue: false
+    require_candidate_match: true
+    require_detector_target: false
+    disable_seed_splitting: false

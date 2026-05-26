@@ -45,12 +45,16 @@ clean-artifacts: ## Remove all logs from the artifacts directory
 
 clean-logs: ## Remove old logs (older than 30d) from logs/ category subdirs, excluding protected ones
 	@echo "Cleaning up old logs..."
-	@find logs/runs logs/eval logs/experiments -maxdepth 1 -type d -mtime +30 \
-		! -name ".*" \
-		! -name "*_keep_*" \
-		! -name "*_final_*" \
-		! -exec test -e "{}/.keep" \; \
-		-print -exec rm -rf {} +
+	@for dir in logs/runs logs/eval logs/experiments; do \
+		if [ -d "$$dir" ]; then \
+			find "$$dir" -maxdepth 1 -type d -mtime +30 \
+				! -name ".*" \
+				! -name "*_keep_*" \
+				! -name "*_final_*" \
+				! -exec test -e "{}/.keep" \; \
+				-print -exec rm -rf {} +; \
+		fi; \
+	done
 
 docker-clean: ## Remove the pipeline container and image (cleanup for space saving)
 	@echo "Cleaning up Docker container and image..."
@@ -70,11 +74,14 @@ promote-log: ## Promote a log from worktree to permanent logs (usage: make promo
 		echo "Error: SRC and DEST are required. Usage: make promote-log SRC=logs/runs/my_run DEST=eval"; \
 		exit 1; \
 	fi
+	@if [ ! -e "$(SRC)" ]; then \
+		echo "Error: Source path '$(SRC)' does not exist."; \
+		exit 1; \
+	fi
 	@if [ ! -d "logs/$(DEST)" ]; then \
 		echo "Error: Category logs/$(DEST) does not exist."; \
 		exit 1; \
 	fi
-	@mkdir -p logs/$(DEST)
 	@mv $(SRC) logs/$(DEST)/
 	@echo "Promoted $(SRC) to logs/$(DEST)/"
 

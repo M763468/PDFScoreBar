@@ -1,62 +1,40 @@
 # Branch Policy
 
-This document records the repository branch policy decided in Issue #168 after the Issue #120 canonical rebuild was merged through PR #167.
+This document defines the repository-wide branch policy. It is a standing rule for new work and release promotion; issue-specific decisions should be recorded in the relevant issue or PR by applying this policy, not by changing the general rule.
 
 ## Branch roles
 
 - `develop` is the active integration branch.
 - `main` is the stable/release branch.
-- Normal feature, fix, refactor, and performance work must branch from `develop` and open PRs against `develop`, unless the issue explicitly states otherwise.
-- `develop -> main` must be done through a dedicated promotion PR, not through incidental feature PRs.
+- Normal feature, fix, refactor, documentation, and performance work must branch from `develop` and open PRs against `develop`, unless the issue explicitly states that the work is a release, hotfix, or promotion task.
+- `develop -> main` must be done through a dedicated promotion PR. Do not promote changes to `main` through incidental feature PRs.
 
 ## Default issue and PR base
 
-For new work:
+For normal work, use:
 
 - Base branch: `develop`
 - PR base: `develop`
 
-Older open issues may still contain stale text such as `Base branch: main` or `PR base: main`. Treat those fields as stale unless the issue is explicitly about release/promotion work.
+If an older issue says `Base branch: main` or `PR base: main`, treat that text as stale unless the issue is explicitly about release, hotfix, or promotion work.
 
-When starting an older issue, restate the effective branch policy in the working session or issue comment:
+When starting older work, restate the effective branch decision in the working session or issue comment. Edit the issue body only when the stale branch text is likely to cause execution mistakes.
 
-- Base branch: `develop`
-- PR base: `develop`
+## Release, hotfix, and promotion exceptions
 
-Only edit the old issue body when the issue is actively picked up and the stale branch text is likely to cause confusion.
+Use `main` directly only when the issue explicitly requires release-branch work, hotfix work, or promotion management.
 
-## Promotion from `develop` to `main`
+For a `develop -> main` promotion PR, include at minimum:
 
-A promotion PR from `develop` to `main` is required for release/stable promotion.
+- the normal compile, lint, test, or smoke checks relevant to the included changes
+- the current canonical regression contract for the promoted scope
+- a clear statement of which metrics are promotion gates and which metrics are reported as informational only
+- links or references to the issues and PRs whose accepted changes are being promoted
 
-The promotion PR must include, at minimum:
+Do not embed one issue's acceptance numbers as a permanent repository-wide rule. If a specific issue defines a canonical contract, apply that contract in the promotion PR for the relevant promotion cycle and cite the issue or PR where the contract was accepted.
 
-- normal compile/test checks relevant to the included changes
-- confirmation of the Issue #120 canonical detector contract:
-  - `expected_pages=68`
-  - `evaluated_pages=68`
-  - `missing_pages=[]`
-  - `TP=3580`
-  - `FP=0`
-  - `FN=1`
-  - `FN_det=0`
-  - `FN_cnn=1`
-  - `cnn_apply_nms=false`
-  - `target_met.detector=true`
-- an explicit note that downstream measure-count metrics are not part of the Issue #120 detector acceptance gate unless a separate canonical comparator is introduced.
+## Documentation precedence
 
-## Issue #163 timing
+`AGENTS.md` is the operational entry point for AI agents. Agents must read this document through the `AGENTS.md` reference before starting issue work or opening PRs.
 
-Issue #163 should proceed from `develop` before the first `develop -> main` promotion.
-
-Issue #163 is a HOMR/SR route parallelization runtime experiment and must remain opt-in unless safety is proven. Its output may be one of:
-
-- no production behavior change
-- an opt-in mode only
-- a later default change only after detector contract and resource safety are confirmed
-
-Whether #163 is included in the first `main` promotion must be decided after #163 acceptance results are available.
-
-## Rationale
-
-Issue #120 has been completed and integrated into `develop`. The accepted post-merge detector contract is the current canonical detector baseline. `main` may not represent that latest validated state until a dedicated promotion PR is performed.
+If an issue body, older comment, or ad-hoc instruction conflicts with this document, use this document as the default policy and call out the conflict before modifying files or opening a PR.

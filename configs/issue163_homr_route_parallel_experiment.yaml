@@ -1,0 +1,9 @@
+# Issue #163 opt-in experiment overlay.
+# Use only with tools/issue120/run_stage_e_full_pipeline.py --config-override.
+# Do not promote this into the canonical Stage E config without a follow-up adoption issue.
+
+detection:
+  homr_route_parallel_experiment:
+    enabled: true
+    mode: baseline_sr_subprocess_overlap
+    max_workers: 2

@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import concurrent.futures
 import gc
 import json
 import logging
 import os
 import shutil
+import time
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -97,55 +99,59 @@ class HybridDetector:
             [str(self.project_root), str(homr_path), env.get("PYTHONPATH", "")]
         ).strip(os.pathsep)
 
-        # 1. Homr Baseline
+        experiment_cfg = self._homr_route_parallel_experiment_config()
         baseline_output = hybrid_output_dir / "baseline"
-        if _HOMR_AVAILABLE:
-            self._run_homr_in_process(baseline_output, enable_sr=False)
-        elif self.skip_existing and self._all_stems_exist(baseline_output, stems, "batch/*/*.json"):
-            logger.info("Skipping homr baseline: outputs already exist.")
-        else:
-            cmd = python_cmd + [
-                "src/homr_eval_scripts/homr_evaluator.py",
-                "--images",
-                *image_paths,
-                "--output-root",
-                self._rel(baseline_output),
-                "--force-run-id",
-                "batch",
-                "--enable-segnet-cache",
-            ]
-            commands.append(cmd)
-            if not self.dry_run:
-                run_with_logging(cmd, env=env, check=True)
-
-        # 2. Homr SR
         sr_output = hybrid_output_dir / "sr"
-        if not enable_sr:
-            logger.info("Skipping homr SR: enable_sr is false.")
-        elif _HOMR_AVAILABLE:
-            self._run_homr_in_process(
-                sr_output, enable_sr=True, sr_scale=int(self.det_cfg.get("sr_scale", 2))
+        if experiment_cfg["enabled"]:
+            experiment_result = self._run_homr_subprocess_overlap_experiment(
+                experiment_cfg=experiment_cfg,
+                hybrid_output_dir=hybrid_output_dir,
+                baseline_output=baseline_output,
+                sr_output=sr_output,
+                image_paths=image_paths,
+                stems=stems,
+                enable_sr=enable_sr,
+                python_cmd=python_cmd,
+                env=env,
             )
-        elif self.skip_existing and self._all_stems_exist(sr_output, stems, "batch/*/*.json"):
-            logger.info("Skipping homr SR: outputs already exist.")
+            commands.extend(experiment_result["commands"])
         else:
-            sr_scale = int(self.det_cfg.get("sr_scale", 2))
-            cmd = python_cmd + [
-                "src/homr_eval_scripts/homr_evaluator.py",
-                "--images",
-                *image_paths,
-                "--output-root",
-                self._rel(sr_output),
-                "--force-run-id",
-                "batch",
-                "--enable-sr",
-                "--sr-scale",
-                str(sr_scale),
-                "--enable-segnet-cache",
-            ]
-            commands.append(cmd)
-            if not self.dry_run:
-                run_with_logging(cmd, env=env, check=True)
+            # 1. Homr Baseline
+            if _HOMR_AVAILABLE:
+                self._run_homr_in_process(baseline_output, enable_sr=False)
+            elif self.skip_existing and self._all_stems_exist(
+                baseline_output, stems, "batch/*/*.json"
+            ):
+                logger.info("Skipping homr baseline: outputs already exist.")
+            else:
+                cmd = self._build_homr_baseline_cmd(
+                    python_cmd=python_cmd,
+                    image_paths=image_paths,
+                    output_root=baseline_output,
+                )
+                commands.append(cmd)
+                if not self.dry_run:
+                    run_with_logging(cmd, env=env, check=True)
+
+            # 2. Homr SR
+            if not enable_sr:
+                logger.info("Skipping homr SR: enable_sr is false.")
+            elif _HOMR_AVAILABLE:
+                self._run_homr_in_process(
+                    sr_output, enable_sr=True, sr_scale=int(self.det_cfg.get("sr_scale", 2))
+                )
+            elif self.skip_existing and self._all_stems_exist(sr_output, stems, "batch/*/*.json"):
+                logger.info("Skipping homr SR: outputs already exist.")
+            else:
+                cmd = self._build_homr_sr_cmd(
+                    python_cmd=python_cmd,
+                    image_paths=image_paths,
+                    output_root=sr_output,
+                    sr_scale=int(self.det_cfg.get("sr_scale", 2)),
+                )
+                commands.append(cmd)
+                if not self.dry_run:
+                    run_with_logging(cmd, env=env, check=True)
 
         # 3. OMR-DLN SR
         logger.info("--- Step 2.1b: OMR-DLN SR (Subprocess) ---")
@@ -223,6 +229,175 @@ class HybridDetector:
             return False
         found = {p.parent.name for p in omr_output.glob("*/predictions.json")}
         return all(s in found for s in stems)
+
+    def _build_homr_baseline_cmd(
+        self,
+        *,
+        python_cmd: List[str],
+        image_paths: List[str],
+        output_root: Path,
+    ) -> List[str]:
+        return python_cmd + [
+            "src/homr_eval_scripts/homr_evaluator.py",
+            "--images",
+            *image_paths,
+            "--output-root",
+            self._rel(output_root),
+            "--force-run-id",
+            "batch",
+            "--enable-segnet-cache",
+        ]
+
+    def _build_homr_sr_cmd(
+        self,
+        *,
+        python_cmd: List[str],
+        image_paths: List[str],
+        output_root: Path,
+        sr_scale: int,
+    ) -> List[str]:
+        return python_cmd + [
+            "src/homr_eval_scripts/homr_evaluator.py",
+            "--images",
+            *image_paths,
+            "--output-root",
+            self._rel(output_root),
+            "--force-run-id",
+            "batch",
+            "--enable-sr",
+            "--sr-scale",
+            str(sr_scale),
+            "--enable-segnet-cache",
+        ]
+
+    def _homr_route_parallel_experiment_config(self) -> Dict[str, Any]:
+        raw = self.det_cfg.get("homr_route_parallel_experiment", {}) or {}
+        if not isinstance(raw, dict):
+            raise TypeError("detection.homr_route_parallel_experiment must be a mapping.")
+        enabled = bool(raw.get("enabled", False))
+        mode = str(raw.get("mode", "baseline_sr_subprocess_overlap"))
+        max_workers = int(raw.get("max_workers", 2))
+        return {"enabled": enabled, "mode": mode, "max_workers": max_workers}
+
+    def _write_homr_route_experiment_summary(
+        self, hybrid_output_dir: Path, summary: Dict[str, Any]
+    ) -> Path:
+        summary_path = hybrid_output_dir / "homr_route_parallel_experiment_summary.json"
+        summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+        return summary_path
+
+    def _run_homr_subprocess_overlap_experiment(
+        self,
+        *,
+        experiment_cfg: Dict[str, Any],
+        hybrid_output_dir: Path,
+        baseline_output: Path,
+        sr_output: Path,
+        image_paths: List[str],
+        stems: List[str],
+        enable_sr: bool,
+        python_cmd: List[str],
+        env: Dict[str, str],
+    ) -> Dict[str, Any]:
+        """Run the opt-in Issue #163 subprocess overlap experiment for HOMR routes."""
+        mode = str(experiment_cfg["mode"])
+        if mode != "baseline_sr_subprocess_overlap":
+            raise ValueError(
+                "Unsupported homr_route_parallel_experiment.mode "
+                f"`{mode}`. Supported: baseline_sr_subprocess_overlap."
+            )
+        max_workers = int(experiment_cfg["max_workers"])
+        if max_workers != 2:
+            raise ValueError(
+                "baseline_sr_subprocess_overlap requires max_workers=2 to keep the "
+                "experiment bounded."
+            )
+        if not enable_sr:
+            raise ValueError("baseline_sr_subprocess_overlap requires detection.enable_sr=true.")
+
+        logger.warning(
+            "Running opt-in Issue #163 HOMR route experiment: %s. "
+            "Default sequential behavior is unchanged unless this config is enabled.",
+            mode,
+        )
+
+        summary: Dict[str, Any] = {
+            "schema_version": "pipeline.detection.homr_route_parallel_experiment.v1",
+            "enabled": True,
+            "mode": mode,
+            "max_workers": max_workers,
+            "used_subprocess_route": True,
+            "homr_available_in_process": _HOMR_AVAILABLE,
+            "status": "started",
+            "route_results": [],
+        }
+        started_at = time.perf_counter()
+        commands: List[List[str]] = []
+        route_commands: Dict[str, List[str]] = {}
+
+        if self.skip_existing and self._all_stems_exist(baseline_output, stems, "batch/*/*.json"):
+            logger.info("Skipping homr baseline: outputs already exist.")
+            summary["route_results"].append({"route": "homr_baseline", "status": "skipped_existing"})
+        else:
+            cmd = self._build_homr_baseline_cmd(
+                python_cmd=python_cmd,
+                image_paths=image_paths,
+                output_root=baseline_output,
+            )
+            commands.append(cmd)
+            route_commands["homr_baseline"] = cmd
+
+        if self.skip_existing and self._all_stems_exist(sr_output, stems, "batch/*/*.json"):
+            logger.info("Skipping homr SR: outputs already exist.")
+            summary["route_results"].append({"route": "homr_sr", "status": "skipped_existing"})
+        else:
+            cmd = self._build_homr_sr_cmd(
+                python_cmd=python_cmd,
+                image_paths=image_paths,
+                output_root=sr_output,
+                sr_scale=int(self.det_cfg.get("sr_scale", 2)),
+            )
+            commands.append(cmd)
+            route_commands["homr_sr"] = cmd
+
+        if self.dry_run:
+            summary["status"] = "dry_run"
+            summary["duration_sec"] = time.perf_counter() - started_at
+            summary["summary_path"] = str(
+                self._write_homr_route_experiment_summary(hybrid_output_dir, summary)
+            )
+            return {"commands": commands, "summary": summary}
+
+        def run_route(route_name: str, cmd: List[str]) -> Dict[str, Any]:
+            route_started_at = time.perf_counter()
+            run_with_logging(cmd, env=env, check=True)
+            return {
+                "route": route_name,
+                "status": "completed",
+                "duration_sec": time.perf_counter() - route_started_at,
+                "command": cmd,
+            }
+
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                future_to_route = {
+                    executor.submit(run_route, route_name, cmd): route_name
+                    for route_name, cmd in route_commands.items()
+                }
+                for future in concurrent.futures.as_completed(future_to_route):
+                    summary["route_results"].append(future.result())
+            summary["status"] = "completed"
+        except Exception as exc:
+            summary["status"] = "failed"
+            summary["error"] = repr(exc)
+            raise
+        finally:
+            summary["duration_sec"] = time.perf_counter() - started_at
+            summary["summary_path"] = str(
+                self._write_homr_route_experiment_summary(hybrid_output_dir, summary)
+            )
+
+        return {"commands": commands, "summary": summary}
 
     def _run_homr_in_process(
         self,

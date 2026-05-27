@@ -35,6 +35,16 @@ def _load_optional_json(path: Path) -> Any | None:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _merge_mapping(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    """Recursively merge mapping values for local experiment config overlays."""
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(base.get(key), dict):
+            _merge_mapping(base[key], value)
+        else:
+            base[key] = value
+    return base
+
+
 def _read_gpu_sample() -> list[dict[str, Any]]:
     """Return a best-effort nvidia-smi sample. Empty when NVIDIA tooling is unavailable."""
     if shutil.which("nvidia-smi") is None:
@@ -79,75 +89,63 @@ def _summarize_console_log(path: Path) -> dict[str, Any]:
         "exists": path.exists(),
         "size_bytes": path.stat().st_size if path.exists() else 0,
         "line_count": 0,
-        "logger_counts": {},
-        "marker_counts": {},
+        "homr_marker_count": 0,
+        "real_esrgan_marker_count": 0,
+        "measure_numbering_marker_count": 0,
+        "progress_bar_marker_count": 0,
+        "warning_or_error_marker_count": 0,
     }
     if not path.exists():
         return summary
 
-    logger_counts: dict[str, int] = {}
-    marker_counts = {
-        "homr": 0,
-        "real_esrgan": 0,
-        "measure_numbering": 0,
-        "progress_bar": 0,
-        "warning_or_error": 0,
-    }
-    with path.open("r", encoding="utf-8", errors="replace") as f:
-        for line in f:
+    with path.open("r", encoding="utf-8", errors="replace") as handle:
+        for line in handle:
             summary["line_count"] += 1
-            lower = line.lower()
-            if "homr" in lower:
-                marker_counts["homr"] += 1
-            if "real-esrgan" in lower or "realesrgan" in lower or "real_esrgan" in lower:
-                marker_counts["real_esrgan"] += 1
-            if "measure_numbering" in lower:
-                marker_counts["measure_numbering"] += 1
-            if "|" in line and "%" in line:
-                marker_counts["progress_bar"] += 1
-            if "warning" in lower or "error" in lower or "traceback" in lower:
-                marker_counts["warning_or_error"] += 1
-
-            parts = line.split()
-            if len(parts) >= 4 and parts[2].startswith("[") and parts[2].endswith("]"):
-                logger_name = parts[3].rstrip(":")
-                logger_counts[logger_name] = logger_counts.get(logger_name, 0) + 1
-
-    summary["logger_counts"] = dict(sorted(logger_counts.items(), key=lambda item: item[1], reverse=True)[:20])
-    summary["marker_counts"] = marker_counts
-    summary_path = path.with_suffix(".summary.json")
-    summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
-    summary["summary_path"] = str(summary_path)
+            lowered = line.lower()
+            if "homr" in lowered:
+                summary["homr_marker_count"] += 1
+            if "real-esrgan" in lowered or "realesrgan" in lowered:
+                summary["real_esrgan_marker_count"] += 1
+            if "measure numbering" in lowered or "numbering" in lowered:
+                summary["measure_numbering_marker_count"] += 1
+            if "it/s" in lowered or "%|" in lowered:
+                summary["progress_bar_marker_count"] += 1
+            if "warning" in lowered or "error" in lowered or "traceback" in lowered:
+                summary["warning_or_error_marker_count"] += 1
     return summary
 
 
 class ResourceSampler:
-    """Best-effort process/GPU resource sampler for long Stage E runs."""
+    """Best-effort sampler for CPU/RSS/GPU usage during subprocess-heavy Stage E runs."""
 
-    def __init__(self, *, output_path: Path, interval_sec: float) -> None:
-        if interval_sec <= 0:
-            raise ValueError("Resource sample interval must be positive.")
+    def __init__(self, *, output_path: Path, interval_sec: float):
         self.output_path = output_path
+        self.summary_path = output_path.with_suffix(".summary.json")
         self.interval_sec = interval_sec
-        self._stop = threading.Event()
+        self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
         self._sample_count = 0
+        self._started_at: float | None = None
+        self._baseline_self_usage = resource.getrusage(resource.RUSAGE_SELF)
+        self._baseline_children_usage = resource.getrusage(resource.RUSAGE_CHILDREN)
         self._peak_self_maxrss_bytes = 0
         self._peak_children_maxrss_bytes = 0
-        self._peak_psutil_rss_bytes = 0
-        self._peak_psutil_children_rss_bytes = 0
+        self._peak_psutil_rss_bytes: int | None = None
+        self._peak_psutil_children_rss_bytes: int | None = None
+        self._peak_rusage_cpu_percent = 0.0
+        self._peak_process_tree_cpu_percent: float | None = None
         self._peak_gpu_memory_mb_by_uuid: dict[str, int] = {}
         self._peak_gpu_utilization_pct_by_uuid: dict[str, int] = {}
-        self._peak_process_tree_cpu_percent = 0.0
-        self._peak_rusage_cpu_percent = 0.0
-        self._psutil_available: bool | None = None
-        self._nvidia_smi_seen = False
-        self._started_at: float | None = None
-        self._finished_at: float | None = None
-        self._previous_sample_time: float | None = None
-        self._previous_rusage_cpu_sec: float | None = None
-        self._previous_process_tree_sample_time: float | None = None
-        self._previous_process_tree_cpu_sec: float | None = None
+        self._psutil_available = False
+        self._process = None
+        try:
+            import psutil  # type: ignore
+
+            self._process = psutil.Process(os.getpid())
+            self._psutil_available = True
+        except Exception:
+            self._process = None
+            self._psutil_available = False
 
     def start(self) -> None:
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -156,146 +154,157 @@ class ResourceSampler:
         self._thread.start()
 
     def stop(self) -> dict[str, Any]:
-        self._stop.set()
+        self._stop_event.set()
         if self._thread is not None:
-            self._thread.join(timeout=max(self.interval_sec * 2, 1.0))
-        self._finished_at = time.perf_counter()
-        summary = self.summary()
-        summary_path = self.output_path.with_suffix(".summary.json")
-        summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
-        summary["summary_path"] = str(summary_path)
+            self._thread.join(timeout=max(5.0, self.interval_sec * 2.0))
+        summary = self._build_summary()
+        self.summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
         return summary
 
-    def _sample_rusage(self, sample_time: float) -> dict[str, Any]:
-        self_rusage = resource.getrusage(resource.RUSAGE_SELF)
-        children_rusage = resource.getrusage(resource.RUSAGE_CHILDREN)
-        self_maxrss_bytes = _linux_maxrss_bytes(self_rusage.ru_maxrss)
-        children_maxrss_bytes = _linux_maxrss_bytes(children_rusage.ru_maxrss)
-        self._peak_self_maxrss_bytes = max(self._peak_self_maxrss_bytes, self_maxrss_bytes)
-        self._peak_children_maxrss_bytes = max(self._peak_children_maxrss_bytes, children_maxrss_bytes)
-
-        total_cpu_sec = _cpu_seconds(self_rusage) + _cpu_seconds(children_rusage)
-        rusage_cpu_percent = None
-        if self._previous_sample_time is not None and self._previous_rusage_cpu_sec is not None:
-            elapsed = max(sample_time - self._previous_sample_time, 1e-9)
-            cpu_delta = max(total_cpu_sec - self._previous_rusage_cpu_sec, 0.0)
-            rusage_cpu_percent = (cpu_delta / elapsed) * 100.0
-            self._peak_rusage_cpu_percent = max(self._peak_rusage_cpu_percent, rusage_cpu_percent)
-        self._previous_sample_time = sample_time
-        self._previous_rusage_cpu_sec = total_cpu_sec
-
-        return {
-            "self_maxrss_bytes": self_maxrss_bytes,
-            "children_maxrss_bytes": children_maxrss_bytes,
-            "self_cpu_sec": _cpu_seconds(self_rusage),
-            "children_cpu_sec": _cpu_seconds(children_rusage),
-            "total_rusage_cpu_sec": total_cpu_sec,
-            "rusage_cpu_percent_since_previous_sample": rusage_cpu_percent,
-        }
-
-    def _sample_process_tree(self, sample_time: float) -> dict[str, Any]:
-        sample: dict[str, Any] = {**self._sample_rusage(sample_time), "psutil_available": False}
-
-        try:
-            import psutil  # type: ignore[import-not-found]
-        except Exception:
-            self._psutil_available = False
-            return sample
-
-        self._psutil_available = True
-        proc = psutil.Process(os.getpid())
-        processes = [proc]
-        try:
-            processes.extend(proc.children(recursive=True))
-        except psutil.Error:
-            pass
-
-        rss_bytes = 0
-        children_rss_bytes = 0
-        process_count = 0
-        process_tree_cpu_times_sec = 0.0
-        for idx, child in enumerate(processes):
-            try:
-                memory = child.memory_info()
-                cpu_times = child.cpu_times()
-                rss_bytes += int(memory.rss)
-                if idx > 0:
-                    children_rss_bytes += int(memory.rss)
-                process_tree_cpu_times_sec += float(cpu_times.user) + float(cpu_times.system)
-                process_count += 1
-            except psutil.Error:
-                continue
-
-        process_tree_cpu_percent = None
-        if (
-            self._previous_process_tree_sample_time is not None
-            and self._previous_process_tree_cpu_sec is not None
-        ):
-            elapsed = max(sample_time - self._previous_process_tree_sample_time, 1e-9)
-            cpu_delta = max(process_tree_cpu_times_sec - self._previous_process_tree_cpu_sec, 0.0)
-            process_tree_cpu_percent = (cpu_delta / elapsed) * 100.0
-            self._peak_process_tree_cpu_percent = max(
-                self._peak_process_tree_cpu_percent, process_tree_cpu_percent
-            )
-        self._previous_process_tree_sample_time = sample_time
-        self._previous_process_tree_cpu_sec = process_tree_cpu_times_sec
-
-        self._peak_psutil_rss_bytes = max(self._peak_psutil_rss_bytes, rss_bytes)
-        self._peak_psutil_children_rss_bytes = max(self._peak_psutil_children_rss_bytes, children_rss_bytes)
-        sample.update(
-            {
-                "psutil_available": True,
-                "process_tree_rss_bytes": rss_bytes,
-                "children_rss_bytes": children_rss_bytes,
-                "process_count": process_count,
-                "process_tree_cpu_times_sec": process_tree_cpu_times_sec,
-                "process_tree_cpu_percent_since_previous_sample": process_tree_cpu_percent,
-            }
+    def _run(self) -> None:
+        last_cpu_seconds = _cpu_seconds(self._baseline_self_usage) + _cpu_seconds(
+            self._baseline_children_usage
         )
-        return sample
+        last_time = self._started_at or time.perf_counter()
+        last_process_tree_cpu_seconds: float | None = None
+        if self._process is not None:
+            last_process_tree_cpu_seconds = self._process_tree_cpu_seconds()
+        with self.output_path.open("w", encoding="utf-8") as handle:
+            while not self._stop_event.is_set():
+                now = time.perf_counter()
+                sample = self._sample(now, last_time, last_cpu_seconds, last_process_tree_cpu_seconds)
+                last_time = now
+                last_cpu_seconds = sample.pop("_rusage_total_cpu_seconds")
+                last_process_tree_cpu_seconds = sample.pop("_process_tree_cpu_seconds", None)
+                handle.write(json.dumps(sample, ensure_ascii=False) + "\n")
+                handle.flush()
+                self._sample_count += 1
+                self._stop_event.wait(self.interval_sec)
 
-    def _record_gpu_peaks(self, gpu_samples: list[dict[str, Any]]) -> None:
-        if gpu_samples:
-            self._nvidia_smi_seen = True
-        for sample in gpu_samples:
-            uuid = str(sample.get("uuid"))
-            memory = int(sample.get("memory_used_mb", 0))
-            utilization = int(sample.get("utilization_gpu_pct", 0))
+    def _sample(
+        self,
+        now: float,
+        last_time: float,
+        last_cpu_seconds: float,
+        last_process_tree_cpu_seconds: float | None,
+    ) -> dict[str, Any]:
+        elapsed = now - (self._started_at or now)
+        interval = max(now - last_time, 1e-9)
+        self_usage = resource.getrusage(resource.RUSAGE_SELF)
+        children_usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+        self_maxrss_bytes = _linux_maxrss_bytes(self_usage.ru_maxrss)
+        children_maxrss_bytes = _linux_maxrss_bytes(children_usage.ru_maxrss)
+        self._peak_self_maxrss_bytes = max(self._peak_self_maxrss_bytes, self_maxrss_bytes)
+        self._peak_children_maxrss_bytes = max(
+            self._peak_children_maxrss_bytes, children_maxrss_bytes
+        )
+        total_cpu_seconds = _cpu_seconds(self_usage) + _cpu_seconds(children_usage)
+        rusage_cpu_percent = ((total_cpu_seconds - last_cpu_seconds) / interval) * 100.0
+        self._peak_rusage_cpu_percent = max(self._peak_rusage_cpu_percent, rusage_cpu_percent)
+
+        psutil_sample: dict[str, Any] | None = None
+        process_tree_cpu_seconds: float | None = None
+        if self._process is not None:
+            psutil_sample, process_tree_cpu_seconds = self._sample_process_tree(
+                interval, last_process_tree_cpu_seconds
+            )
+
+        gpu_samples = _read_gpu_sample()
+        for gpu_sample in gpu_samples:
+            uuid = str(gpu_sample["uuid"])
             self._peak_gpu_memory_mb_by_uuid[uuid] = max(
-                self._peak_gpu_memory_mb_by_uuid.get(uuid, 0), memory
+                self._peak_gpu_memory_mb_by_uuid.get(uuid, 0), int(gpu_sample["memory_used_mb"])
             )
             self._peak_gpu_utilization_pct_by_uuid[uuid] = max(
-                self._peak_gpu_utilization_pct_by_uuid.get(uuid, 0), utilization
+                self._peak_gpu_utilization_pct_by_uuid.get(uuid, 0),
+                int(gpu_sample["utilization_gpu_pct"]),
             )
 
-    def _run(self) -> None:
-        with self.output_path.open("w", encoding="utf-8") as f:
-            while not self._stop.is_set():
-                sample_time = time.perf_counter()
-                sample = {
-                    "timestamp_monotonic_sec": sample_time,
-                    "process": self._sample_process_tree(sample_time),
-                    "gpu": _read_gpu_sample(),
-                }
-                self._record_gpu_peaks(sample["gpu"])
-                f.write(json.dumps(sample, ensure_ascii=False) + "\n")
-                f.flush()
-                self._sample_count += 1
-                self._stop.wait(self.interval_sec)
+        sample = {
+            "elapsed_sec": elapsed,
+            "interval_sec": interval,
+            "self_maxrss_bytes": self_maxrss_bytes,
+            "children_maxrss_bytes": children_maxrss_bytes,
+            "rusage_cpu_percent": rusage_cpu_percent,
+            "psutil": psutil_sample,
+            "gpu": gpu_samples,
+            "_rusage_total_cpu_seconds": total_cpu_seconds,
+        }
+        if process_tree_cpu_seconds is not None:
+            sample["_process_tree_cpu_seconds"] = process_tree_cpu_seconds
+        return sample
 
-    def summary(self) -> dict[str, Any]:
-        duration_sec = None
-        if self._started_at is not None:
-            end = self._finished_at if self._finished_at is not None else time.perf_counter()
-            duration_sec = end - self._started_at
+    def _process_tree_cpu_seconds(self) -> float | None:
+        if self._process is None:
+            return None
+        try:
+            processes = [self._process] + self._process.children(recursive=True)
+            total = 0.0
+            for proc in processes:
+                try:
+                    cpu_times = proc.cpu_times()
+                except Exception:
+                    continue
+                total += float(cpu_times.user) + float(cpu_times.system)
+            return total
+        except Exception:
+            return None
+
+    def _sample_process_tree(
+        self, interval: float, last_cpu_seconds: float | None
+    ) -> tuple[dict[str, Any] | None, float | None]:
+        if self._process is None:
+            return None, None
+        try:
+            processes = [self._process] + self._process.children(recursive=True)
+            rss_bytes = 0
+            children_rss_bytes = 0
+            child_count = 0
+            current_cpu_seconds = 0.0
+            for index, proc in enumerate(processes):
+                try:
+                    memory_info = proc.memory_info()
+                    cpu_times = proc.cpu_times()
+                except Exception:
+                    continue
+                rss_bytes += int(memory_info.rss)
+                current_cpu_seconds += float(cpu_times.user) + float(cpu_times.system)
+                if index > 0:
+                    child_count += 1
+                    children_rss_bytes += int(memory_info.rss)
+            cpu_percent = None
+            if last_cpu_seconds is not None:
+                cpu_percent = ((current_cpu_seconds - last_cpu_seconds) / interval) * 100.0
+            self._peak_psutil_rss_bytes = max(self._peak_psutil_rss_bytes or 0, rss_bytes)
+            self._peak_psutil_children_rss_bytes = max(
+                self._peak_psutil_children_rss_bytes or 0, children_rss_bytes
+            )
+            if cpu_percent is not None:
+                self._peak_process_tree_cpu_percent = max(
+                    self._peak_process_tree_cpu_percent or 0.0, cpu_percent
+                )
+            return (
+                {
+                    "process_tree_rss_bytes": rss_bytes,
+                    "process_tree_children_rss_bytes": children_rss_bytes,
+                    "process_tree_child_count": child_count,
+                    "process_tree_cpu_percent": cpu_percent,
+                },
+                current_cpu_seconds,
+            )
+        except Exception:
+            return None, last_cpu_seconds
+
+    def _build_summary(self) -> dict[str, Any]:
         return {
-            "schema_version": "tools.issue120.stage_e_resource_summary.v3",
+            "schema_version": "tools.issue120.stage_e_full_pipeline.resource_summary.v3",
             "samples_path": str(self.output_path),
+            "summary_path": str(self.summary_path),
             "sample_count": self._sample_count,
-            "sample_interval_sec": self.interval_sec,
-            "duration_sec": duration_sec,
+            "interval_sec": self.interval_sec,
+            "duration_sec": (time.perf_counter() - self._started_at) if self._started_at else None,
             "psutil_available": self._psutil_available,
-            "nvidia_smi_seen": self._nvidia_smi_seen,
+            "nvidia_smi_available": shutil.which("nvidia-smi") is not None,
             "peak_self_maxrss_bytes": self._peak_self_maxrss_bytes,
             "peak_children_maxrss_bytes": self._peak_children_maxrss_bytes,
             "peak_process_tree_rss_bytes": self._peak_psutil_rss_bytes,
@@ -335,6 +344,12 @@ def main():
     parser.add_argument("--inventory", type=Path, default="logs/issue36_prep/20260208_bench_inventory.json")
     parser.add_argument("--exclude", type=Path, default="logs/issue36_prep/excluded_pages_for_gt_prep.json")
     parser.add_argument("--output-root", type=Path, default="logs/issue120_e2e_recovery")
+    parser.add_argument(
+        "--config-override",
+        type=Path,
+        default=None,
+        help="Optional YAML overlay merged into the Stage E config for local experiments.",
+    )
     parser.add_argument(
         "--dense-route-verbose-logs",
         action="store_true",
@@ -393,6 +408,14 @@ def main():
     image_copy_duration_sec = time.perf_counter() - image_copy_started_at
 
     config = load_yaml(args.config)
+    if args.config_override is not None:
+        if not args.config_override.exists():
+            logger.error("Config override not found: %s", args.config_override)
+            sys.exit(1)
+        override_config = load_yaml(args.config_override)
+        if not isinstance(override_config, dict):
+            parser.error("--config-override must point to a YAML mapping.")
+        _merge_mapping(config, override_config)
     if "inputs" not in config:
         config["inputs"] = {}
     if "pdf_to_images" not in config["inputs"]:
@@ -443,6 +466,10 @@ def main():
     pipeline_phase_summary_path = route_root / "pipeline_phase_summary.json"
     pipeline_phase_summary = _load_optional_json(pipeline_phase_summary_path)
     pipeline_console_log_summary = _summarize_console_log(pipeline_console_log)
+    homr_route_experiment_summary_path = (
+        route_root / "stage_e_hybrid_output" / "stage_e_full_pipeline" / "homr_route_parallel_experiment_summary.json"
+    )
+    homr_route_experiment_summary = _load_optional_json(homr_route_experiment_summary_path)
     run_summary_path = route_root / "stage_e_runtime_summary.json"
     run_summary = {
         "schema_version": "tools.issue120.stage_e_full_pipeline.runtime_summary.v1",
@@ -456,6 +483,7 @@ def main():
         "pipeline": {
             "duration_sec": pipeline_duration_sec,
             "config_path": str(temp_config_path),
+            "config_override_path": str(args.config_override) if args.config_override else None,
             "run_id": "stage_e_full_pipeline",
             "output_root": str(args.output_root),
             "phase_summary_path": str(pipeline_phase_summary_path),
@@ -463,6 +491,8 @@ def main():
             "stdout_stderr_log": str(pipeline_console_log),
             "stdout_stderr_log_size_bytes": pipeline_console_log_summary["size_bytes"],
             "stdout_stderr_log_summary": pipeline_console_log_summary,
+            "homr_route_parallel_experiment_summary_path": str(homr_route_experiment_summary_path),
+            "homr_route_parallel_experiment_summary": homr_route_experiment_summary,
         },
         "resource_monitor": resource_summary,
     }

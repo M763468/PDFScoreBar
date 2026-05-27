@@ -57,6 +57,12 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
     - `make format`: Auto-format code.
 - **Maintenance**: Developers and Agents should update the `Makefile` and this document when new standard workflows are introduced.
 
+### Branch Policy
+- **Read Branch Policy Before Issue Work**: Before starting issue work or opening a PR, read `docs/BRANCH_POLICY.md`.
+- **Default Base**: For normal feature, fix, refactor, documentation, and performance work, use `develop` as both the base branch and PR base unless the issue explicitly states that the work is release, hotfix, or promotion work.
+- **Stable Branch**: Treat `main` as the stable/release branch. Changes move from `develop` to `main` only through a dedicated promotion PR.
+- **Stale Issue Text**: Older issues may still say `Base branch: main` or `PR base: main`. Treat those fields as stale unless the issue is explicitly release, hotfix, or promotion-related; restate the effective branch decision when picking up such an issue.
+
 ### Design Principles (Barline Detection)
 - **Resolution Independence (Unit-based Scaling)**:
     - **Rule**: NEVER use fixed pixel (px) thresholds for distance or geometry calculations in the barline detection/numbering layers.
@@ -96,9 +102,10 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 - **Prompt/Log Documentation**: Standard prompts and conversation log format for multi-LLM collaboration must be maintained under `docs/ai-workflow/` (see the dedicated collaboration doc) and updated as the workflow evolves.
 - **Operational Entry Points (Must Read Order)**:
   1. `docs/ai-workflow/WORKFLOW.md` (general workflow baseline)
-  2. `docs/ai-workflow/CODEX_GEMINI_COLLAB.md` (Codex/Gemini collaboration protocol)
-  3. `docs/ai-workflow/LESSONS.md` (known anti-patterns and heuristics)
-  4. This `AGENTS.md` (repository-specific overrides, highest priority inside repo)
+  2. `docs/BRANCH_POLICY.md` (branch roles, default base/PR base, and promotion rules)
+  3. `docs/ai-workflow/CODEX_GEMINI_COLLAB.md` (Codex/Gemini collaboration protocol)
+  4. `docs/ai-workflow/LESSONS.md` (known anti-patterns and heuristics)
+  5. This `AGENTS.md` (repository-specific overrides, highest priority inside repo)
 - **Codex -> Gemini Call Stability Rule**:
   - For this repository, run Gemini consultations with network-enabled execution from the start (outside sandbox when required), not as a fallback after a known-failing step.
   - Prefer longer timeouts (e.g., `timeout 180s gemini -p "<prompt>"`) to allow deeper reasoning.
@@ -181,5 +188,5 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 ### Multi-LLM Role Specialization
 - **Gemini CLI**: Architect, Multi-modal Reasoner, Web Researcher. Leads planning and reasoning.
 - **Codex**: Implementation Specialist, Repository Navigator, Verification Lead. Leads focused edits and sandbox validation.
-- **Consultation Mandate**: Gemini should proactively consult Codex (via \`codex exec --sandbox read-only\`) for second opinions on complex logic, type safety, or architectural impacts.
+- **Consultation Mandate**: Gemini should proactively consult Codex (via `codex exec --sandbox read-only`) for second opinions on complex logic, type safety, or architectural impacts.
 - **Knowledge Synthesis Mandate**: Both agents must document newly discovered heuristics, anti-patterns, or visual failure modes in `docs/ai-workflow/LESSONS.md` to prevent regressions in future sessions.

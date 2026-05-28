@@ -4,15 +4,20 @@ ISSUE120_STAGE_E_MANIFEST ?= $(ISSUE120_STAGE_E_OUTPUT)/stage_e_full_pipeline/ma
 ISSUE120_STAGE_E_EVAL_DIR ?= $(ISSUE120_STAGE_E_OUTPUT)/stage_e_full_pipeline/eval_detector
 ISSUE120_STAGE_E_EXTRA_ARGS ?=
 ISSUE163_HOMR_ROUTE_CONFIG_OVERRIDE ?= configs/issue163_homr_route_parallel_experiment.yaml
+ISSUE163_HOMR_PHASE_CONFIG_OVERRIDE ?= configs/issue163_homr_inprocess_sr_prep_overlap_experiment.yaml
 ISSUE163_STAGE_E_EXTRA_ARGS ?= --config-override $(ISSUE163_HOMR_ROUTE_CONFIG_OVERRIDE) --resource-sample-interval-sec 1.0
+ISSUE163_STAGE_E_PHASE_EXTRA_ARGS ?= --config-override $(ISSUE163_HOMR_PHASE_CONFIG_OVERRIDE) --resource-sample-interval-sec 1.0
 
 run-issue120-stage-e-full: ## Run the full 68-page pipeline inside sr_eval_gpu container
 	@echo "Running Full Stage E Pipeline inside sr_eval_gpu..."
 	@docker run --rm --gpus all -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_gpu \
 		/bin/sh -lc '/opt/venv_pipeline/bin/python tools/issue120/run_stage_e_full_pipeline.py --config $(ISSUE120_STAGE_E_CONFIG) --output-root $(ISSUE120_STAGE_E_OUTPUT) $(ISSUE120_STAGE_E_EXTRA_ARGS); status=$$?; chmod -R a+rwX $(ISSUE120_STAGE_E_OUTPUT)/stage_e_full_pipeline 2>/dev/null || true; exit $$status'
 
-run-issue163-stage-e-homr-overlap: ## Run the Issue #163 opt-in HOMR baseline/SR overlap Stage E experiment
+run-issue163-stage-e-homr-overlap: ## Run the Issue #163 opt-in HOMR baseline/SR subprocess overlap Stage E experiment
 	@$(MAKE) run-issue120-stage-e-full ISSUE120_STAGE_E_EXTRA_ARGS="$(ISSUE163_STAGE_E_EXTRA_ARGS)"
+
+run-issue163-stage-e-homr-phase-overlap: ## Run the Issue #163 opt-in HOMR in-process SR-prep/baseline overlap experiment
+	@$(MAKE) run-issue120-stage-e-full ISSUE120_STAGE_E_EXTRA_ARGS="$(ISSUE163_STAGE_E_PHASE_EXTRA_ARGS)"
 
 eval-issue120-stage-e-full: ## Evaluate Stage E detector metrics from manifest
 	@echo "Evaluating Stage E Detector Metrics from manifest..."

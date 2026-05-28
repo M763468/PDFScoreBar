@@ -1,0 +1,13 @@
+# Issue #163 opt-in granular experiment overlay.
+# Use only with tools/issue120/run_stage_e_full_pipeline.py --config-override.
+# Do not promote this into the canonical Stage E config without a follow-up adoption issue.
+
+# This mode keeps HOMR execution in-process and overlaps only SR image preparation
+# with the baseline HOMR route. SR HOMR inference still runs after SR preparation
+# and after baseline completion, preserving the explicit SR VRAM cleanup boundary.
+
+detection:
+  homr_route_parallel_experiment:
+    enabled: true
+    mode: inprocess_sr_prep_baseline_overlap
+    max_workers: 2

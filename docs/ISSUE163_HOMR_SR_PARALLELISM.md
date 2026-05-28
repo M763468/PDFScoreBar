@@ -14,7 +14,9 @@ The default Stage E path remains unchanged:
 
 The experiment is opt-in only. It must not be enabled in canonical configs unless a later adoption issue proves that it is safe and effective.
 
-## Opt-in config
+## Opt-in configs
+
+Route-level subprocess overlap:
 
 ```yaml
 detection:
@@ -24,9 +26,21 @@ detection:
     max_workers: 2
 ```
 
+Granular in-process phase overlap:
+
+```yaml
+detection:
+  homr_route_parallel_experiment:
+    enabled: true
+    mode: inprocess_sr_prep_baseline_overlap
+    max_workers: 2
+```
+
 When disabled or omitted, `HybridDetector` uses the existing in-process sequential route.
 
-The initial experiment intentionally uses subprocess HOMR route execution even when in-process HOMR is importable. This isolates each route in its own process and avoids sharing one in-process HOMR predictor or Real-ESRGAN upsampler across threads. The trade-off is higher process/GPU memory pressure, so this mode is experimental and bounded to `max_workers=2`.
+The initial route-level experiment intentionally uses subprocess HOMR route execution even when in-process HOMR is importable. This isolates each route in its own process and avoids sharing one in-process HOMR predictor or Real-ESRGAN upsampler across threads. The trade-off is higher process/GPU memory pressure, so this mode is experimental and bounded to `max_workers=2`.
+
+The granular experiment keeps HOMR execution in-process and overlaps only SR image preparation with the baseline HOMR route. SR HOMR inference still waits until SR preparation and baseline finish, preserving the explicit SR VRAM cleanup boundary before inference.
 
 ## Flow comparison
 
@@ -51,7 +65,7 @@ sequenceDiagram
     P->>C: merge baseline + SR + OMR-DLN
 ```
 
-Opt-in subprocess-overlap experiment:
+Route-level subprocess-overlap experiment:
 
 ```mermaid
 sequenceDiagram
@@ -76,18 +90,56 @@ sequenceDiagram
     P->>C: merge baseline + SR + OMR-DLN
 ```
 
-Expected speedup model before the experiment:
+Granular in-process phase-overlap experiment:
+
+```mermaid
+sequenceDiagram
+    participant P as Pipeline / HybridDetector
+    participant T as ThreadPoolExecutor max_workers=2
+    participant B as in-process HOMR baseline full route
+    participant R as in-process SR preparation only
+    participant S as in-process HOMR SR inference
+    participant O as OMR-DLN subprocess
+    participant C as Consensus
+
+    P->>T: submit baseline full route and SR preparation
+    par baseline full route
+        T->>B: prepare originals + HOMR inference
+        B-->>T: baseline/batch detections
+    and SR preparation only
+        T->>R: RealESRGAN SR + write sr/batch images
+        R->>R: release SR VRAM barrier
+        R-->>T: prepared SR working images
+    end
+    T-->>P: wait for baseline and SR preparation
+    P->>S: HOMR inference on prepared SR images
+    S-->>P: sr/batch detections
+    P->>O: consume sr/batch as precomputed SR
+    O-->>P: omr_sr predictions
+    P->>C: merge baseline + SR + OMR-DLN
+```
+
+Expected speedup model for route-level overlap:
 
 ```text
 sequential HOMR wall time ~= baseline + SR
 parallel HOMR wall time ~= max(baseline, SR)
 ```
 
-This would only help if the per-route durations stayed roughly unchanged while overlapped.
+This only helps if the per-route durations stay roughly unchanged while overlapped.
 
-## Experiment result
+Expected speedup model for granular phase overlap:
 
-The opt-in run preserved the canonical detector contract:
+```text
+sequential HOMR wall time ~= baseline_full + sr_preparation + sr_inference
+granular HOMR wall time ~= max(baseline_full, sr_preparation) + sr_inference
+```
+
+This is a narrower experiment. It can only save up to the smaller of baseline_full and sr_preparation, but it avoids the route-level subprocess model/cache/GPU-memory duplication.
+
+## Route-level subprocess experiment result
+
+The first opt-in run preserved the canonical detector contract:
 
 ```text
 expected_pages=68
@@ -120,24 +172,26 @@ The #159 reference evidence was roughly:
 - full pipeline: about 7554.2 sec
 - peak GPU memory: 4776 MB
 
-The experiment therefore kept accuracy but did not reduce runtime.
+The route-level subprocess experiment therefore kept accuracy but did not reduce runtime.
 
-## Rejection analysis
+## Rejection analysis for route-level subprocess overlap
 
 The observed regression is consistent with the following explanation:
 
-1. **The critical path remained the SR route.**  In the parallel run, total overlap duration was essentially the HOMR SR subprocess duration. The baseline route finished earlier, but it did not matter because consensus and OMR-DLN cannot proceed until SR output exists.
-2. **The subprocess route discarded the current in-process persistence advantage.**  The default path keeps HOMR execution in-process and uses persistent objects inside each route. The experiment starts separate `homr_evaluator.py` processes, which reintroduces process startup, independent model initialization, and separate CUDA/process memory pressure.
-3. **Both subprocesses contended for the same GPU.**  Baseline HOMR inference and SR/HOMR processing ran at the same time on one GPU. The run reached 100% peak utilization and higher GPU memory. This can increase queuing and reduce effective throughput even though work is nominally parallel.
-4. **Memory pressure increased.**  Peak GPU memory rose from the #159 reference level to 6780 MB. With two independent processes, model weights, CUDA context, buffers, and SR/HOMR intermediates are duplicated rather than reused.
-5. **SR route slowdown dominated any baseline overlap benefit.**  The reference `homr_sr` evidence was about 5303 sec, while the experiment recorded 9368 sec for the SR subprocess. Even if baseline became fully hidden behind SR, the SR route itself became too slow.
-6. **The experiment overlapped routes, not the useful subphases.**  The likely useful target is narrower: maintain in-process persistence and overlap only CPU/I/O-light or GPU-idle portions where the resource profile shows slack. Full-route subprocess overlap is too coarse.
+1. **The critical path remained the SR route.** In the parallel run, total overlap duration was essentially the HOMR SR subprocess duration. The baseline route finished earlier, but it did not matter because consensus and OMR-DLN cannot proceed until SR output exists.
+2. **The subprocess route discarded the current in-process persistence advantage.** The default path keeps HOMR execution in-process and uses persistent objects inside each route. The experiment starts separate `homr_evaluator.py` processes, which reintroduces process startup, independent model initialization, and separate CUDA/process memory pressure.
+3. **Both subprocesses contended for the same GPU.** Baseline HOMR inference and SR/HOMR processing ran at the same time on one GPU. The run reached 100% peak utilization and higher GPU memory. This can increase queuing and reduce effective throughput even though work is nominally parallel.
+4. **Memory pressure increased.** Peak GPU memory rose from the #159 reference level to 6780 MB. With two independent processes, model weights, CUDA context, buffers, and SR/HOMR intermediates are duplicated rather than reused.
+5. **SR route slowdown dominated any baseline overlap benefit.** The reference `homr_sr` evidence was about 5303 sec, while the experiment recorded 9368 sec for the SR subprocess. Even if baseline became fully hidden behind SR, the SR route itself became too slow.
+6. **The experiment overlapped routes, not the useful subphases.** The likely useful target is narrower: maintain in-process persistence and overlap only CPU/I/O-light or GPU-idle portions where the resource profile shows slack. Full-route subprocess overlap is too coarse.
 
-## Decision
+## Decision so far
 
 Do not adopt `baseline_sr_subprocess_overlap` as a default or recommended mode.
 
-The experiment should remain evidence that naive route-level subprocess parallelism is unsafe/ineffective for the current Stage E runtime profile. No formal adoption issue should be created from this result.
+The route-level subprocess experiment should remain evidence that naive route-level subprocess parallelism is unsafe/ineffective for the current Stage E runtime profile. No formal adoption issue should be created from that result.
+
+The `inprocess_sr_prep_baseline_overlap` mode is a second, narrower opt-in experiment. It is still not accepted until a full Stage E run proves that detector contract, runtime, and resource usage are all acceptable.
 
 ## Required validation
 
@@ -149,6 +203,18 @@ make run-issue120-stage-e-full \
 
 make eval-issue120-stage-e-full
 
+PYTHONPATH=. python3 tools/issue120/attach_stage_e_eval_contract.py \
+  --manifest logs/issue120_e2e_recovery/stage_e_full_pipeline/manifest.json \
+  --eval-dir logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_detector \
+  --score-threshold 0.1 \
+  --xdist-threshold 12.0
+```
+
+To run the granular phase-overlap experiment:
+
+```bash
+make run-issue163-stage-e-homr-phase-overlap
+make eval-issue120-stage-e-full
 PYTHONPATH=. python3 tools/issue120/attach_stage_e_eval_contract.py \
   --manifest logs/issue120_e2e_recovery/stage_e_full_pipeline/manifest.json \
   --eval-dir logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_detector \

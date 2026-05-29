@@ -1,0 +1,12 @@
+# Issue #163 HOMR-only phase-split sequential experiment overlay.
+# Use only with tools/issue163/run_homr_phase_mode_experiment.py --config-override.
+# This is not a canonical Stage E config.
+
+# The dedicated Issue #163 HOMR-only runner executes this as:
+#   baseline full route -> SR preparation only -> SR HOMR inference
+# without overlapping baseline and SR preparation. This isolates phase-split
+# lifecycle effects from overlap effects.
+
+detection:
+  enable_sr: true
+  sr_scale: 2

@@ -289,43 +289,107 @@ The key comparisons are:
 | B vs C | whether overlap itself reduces runtime after phase split is held constant |
 | A vs C | whether the final candidate has adoption value |
 
-### Required temporary/local support
+### Dedicated HOMR-only runner
 
-The current PR already has A and C. To run B cleanly, add a temporary opt-in mode or local patch equivalent to:
+A/B/C are intentionally run with a dedicated HOMR-only runner instead of the full Stage E pipeline:
 
-```yaml
-detection:
-  homr_route_parallel_experiment:
-    enabled: true
-    mode: inprocess_sr_prep_baseline_sequential
-    max_workers: 1
+```text
+tools/issue163/run_homr_phase_mode_experiment.py
 ```
 
-Expected B flow:
+This runner reuses the same `HybridDetector` helper methods used by the granular overlap implementation, but it stops after HOMR baseline/SR output generation. OMR-DLN, consensus, probe scan, and CNN scoring are outside this isolation experiment.
 
-```mermaid
-sequenceDiagram
-    participant P as Pipeline / HybridDetector
-    participant B as in-process HOMR baseline full route
-    participant R as in-process SR preparation only
-    participant S as in-process HOMR SR inference
+Available modes:
 
-    P->>B: prepare originals + HOMR inference
-    B-->>P: baseline/batch detections
-    P->>R: RealESRGAN SR + write sr/batch images
-    R->>R: release SR VRAM barrier
-    R-->>P: prepared SR working images
-    P->>S: HOMR inference on prepared SR images
-    S-->>P: sr/batch detections
-```
+| Runner mode | Condition |
+| --- | --- |
+| `default_sequential` | A |
+| `phase_split_sequential` | B |
+| `phase_split_overlap` | C |
 
-This B condition must reuse the same helper functions as C for SR preparation and SR inference. Otherwise A/B/C will not isolate the intended variable.
+B uses the same SR preparation and SR inference helpers as C, but executes them sequentially. This is the required control condition for separating phase-split lifecycle effects from overlap effects.
 
 ### Suggested page subset
 
-Use 8 to 12 pages for the first pass. The subset should include several representative pages across pieces rather than only adjacent pages. The exact subset can be selected locally from the existing Stage E inventory. Keep the same subset for A/B/C.
+Use 8 to 12 pages for the first pass. The subset should include several representative pages across pieces rather than only adjacent pages. Keep the same subset for A/B/C.
+
+Create the subset file locally, for example:
+
+```bash
+mkdir -p logs/issue163_homr_phase_abcs
+cat > logs/issue163_homr_phase_abcs/image_subset.txt <<'EOF'
+data/evaluation2/images/Vn__Bach1/page_001.png
+data/evaluation2/images/Vn__Bach1/page_002.png
+data/evaluation2/images/Va__Prokofiev_Symphony5/page_009.png
+data/evaluation2/images/Va__Prokofiev_Symphony5/page_010.png
+# add 4-8 more representative pages here
+EOF
+```
 
 If the small run is noisy or contradictory, repeat with 16 to 20 pages. Do not use the small-run result to change canonical defaults; use it only to explain the memory/runtime mechanism.
+
+### HOMR-only A/B/C commands
+
+Run all three conditions:
+
+```bash
+make run-issue163-homr-phase-abcs
+```
+
+Or run them individually:
+
+```bash
+make run-issue163-homr-phase-default
+make run-issue163-homr-phase-split-sequential
+make run-issue163-homr-phase-split-overlap
+```
+
+The Make targets use:
+
+```text
+ISSUE163_HOMR_PHASE_ABCS_IMAGE_LIST ?= logs/issue163_homr_phase_abcs/image_subset.txt
+ISSUE163_HOMR_PHASE_ABCS_OUTPUT ?= logs/issue163_homr_phase_abcs
+```
+
+Override them if needed:
+
+```bash
+make run-issue163-homr-phase-abcs \
+  ISSUE163_HOMR_PHASE_ABCS_IMAGE_LIST=logs/issue163_homr_phase_abcs/my_subset.txt \
+  ISSUE163_HOMR_PHASE_ABCS_OUTPUT=logs/issue163_homr_phase_abcs_run2
+```
+
+Direct runner invocation is also supported:
+
+```bash
+docker run --rm --gpus all -v "$PWD":/workspace -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_gpu \
+  /bin/sh -lc '/opt/venv_pipeline/bin/python tools/issue163/run_homr_phase_mode_experiment.py \
+    --mode phase_split_sequential \
+    --config configs/issue120_stage_e_full_pipeline.yaml \
+    --config-override configs/issue163_homr_phase_split_sequential_experiment.yaml \
+    --image-list logs/issue163_homr_phase_abcs/image_subset.txt \
+    --output-root logs/issue163_homr_phase_abcs \
+    --run-id B_phase_split_sequential \
+    --resource-sample-interval-sec 1.0'
+```
+
+### Output artifacts
+
+Each condition writes under:
+
+```text
+logs/issue163_homr_phase_abcs/<run-id>/
+```
+
+Expected files:
+
+- `runtime_summary.json`
+- `homr_phase_mode_summary.json`
+- `resource_samples.jsonl`
+- `resource_samples.summary.json`
+- HOMR route outputs under `baseline/` and `sr/`
+
+Generated files under `logs/` are evidence artifacts and must not be committed.
 
 ### Metrics to collect for each condition
 
@@ -333,8 +397,7 @@ Collect these artifacts for A, B, and C:
 
 - runtime summary
 - resource summary
-- HOMR experiment summary for B/C
-- stdout/stderr summary or compact log
+- HOMR phase-mode summary
 - page subset definition
 - git commit SHA and config overlay path
 
@@ -343,7 +406,6 @@ Minimum comparison table:
 | Metric | A default | B phase-split sequential | C phase-split overlap |
 | --- | --- | --- | --- |
 | total runtime | | | |
-| pipeline runtime | | | |
 | HOMR section duration | | | |
 | baseline duration | | | |
 | SR preparation duration | n/a | | |
@@ -351,7 +413,7 @@ Minimum comparison table:
 | peak GPU memory | | | |
 | peak process-tree RSS | | | |
 | peak process-tree CPU | | | |
-| detector contract on subset / output completeness | | | |
+| output completeness | | | |
 
 ### Decision rules for the local experiment
 
@@ -389,7 +451,7 @@ PYTHONPATH=. python3 tools/issue120/attach_stage_e_eval_contract.py \
   --xdist-threshold 12.0
 ```
 
-Granular phase-overlap experiment:
+Granular full Stage E phase-overlap experiment:
 
 ```bash
 make run-issue163-stage-e-homr-phase-overlap

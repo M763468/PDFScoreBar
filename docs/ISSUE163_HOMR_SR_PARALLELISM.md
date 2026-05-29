@@ -185,17 +185,75 @@ The observed regression is consistent with the following explanation:
 5. **SR route slowdown dominated any baseline overlap benefit.** The reference `homr_sr` evidence was about 5303 sec, while the experiment recorded 9368 sec for the SR subprocess. Even if baseline became fully hidden behind SR, the SR route itself became too slow.
 6. **The experiment overlapped routes, not the useful subphases.** The likely useful target is narrower: maintain in-process persistence and overlap only CPU/I/O-light or GPU-idle portions where the resource profile shows slack. Full-route subprocess overlap is too coarse.
 
-## Decision so far
+## Granular in-process phase-overlap experiment result
 
-Do not adopt `baseline_sr_subprocess_overlap` as a default or recommended mode.
+The second opt-in run also preserved the canonical detector contract:
 
-The route-level subprocess experiment should remain evidence that naive route-level subprocess parallelism is unsafe/ineffective for the current Stage E runtime profile. No formal adoption issue should be created from that result.
+```text
+expected_pages=68
+evaluated_pages=68
+missing_pages=[]
+GT=3581
+Pred=3600
+TP=3580
+FP=0
+FN=1
+FN_det=0
+FN_cnn=1
+cnn_apply_nms=false
+target_met.detector=true
+```
 
-The `inprocess_sr_prep_baseline_overlap` mode is a second, narrower opt-in experiment. It is still not accepted until a full Stage E run proves that detector contract, runtime, and resource usage are all acceptable.
+Runtime/resource evidence:
 
-## Required validation
+- total runtime: 7736.00 sec
+- pipeline runtime: 7673.71 sec
+- HOMR granular experiment duration: 7309.15 sec
+- HOMR baseline full route: 2198.31 sec
+- HOMR SR preparation: 2747.39 sec
+- HOMR SR inference: 4561.69 sec
+- peak GPU memory: 4332 MB
+- peak process-tree RSS: 5814255616 bytes
 
-Before considering any future experiment successful, run the canonical Stage E validation and compare both runtime and resources against the sequential baseline:
+This result is much better than the route-level subprocess experiment:
+
+- total runtime improved from 9764.83 sec to 7736.00 sec
+- HOMR experiment section improved from 9368.13 sec to 7309.15 sec
+- peak GPU memory improved from 6780 MB to 4332 MB
+
+However, it is still slower than the #159 reference evidence:
+
+- total runtime: 7736.00 sec vs about 7611.6 sec reference
+- pipeline runtime: 7673.71 sec vs about 7554.2 sec reference
+
+The narrower overlap therefore removed the subprocess regression, but it still did not produce a net runtime improvement over the accepted sequential reference.
+
+## Rejection analysis for granular phase overlap
+
+The measured phase timing matches the expected granular model:
+
+```text
+max(2198.31, 2747.39) + 4561.69 = about 7309.08 sec
+```
+
+The overlap itself worked mechanically. The remaining problem is that SR preparation and baseline both slowed relative to the earlier sequential evidence, and the saved overlap was not enough to overcome that overhead. Running SR preparation concurrently with baseline in the same process still creates Python-thread/CUDA/memory contention, although much less than the subprocess route-level experiment.
+
+The granular mode has a positive resource profile compared with both prior references, especially peak GPU memory, but #163 is a runtime-reduction issue. Lower memory pressure alone is not enough to promote this mode.
+
+## Final decision
+
+Do not adopt either experimental mode as a default or recommended Stage E mode.
+
+- `baseline_sr_subprocess_overlap`: rejected because it substantially regressed runtime and GPU memory.
+- `inprocess_sr_prep_baseline_overlap`: rejected because it preserved the contract and improved resources, but did not improve runtime relative to the accepted sequential reference.
+
+Default sequential behavior remains the recommendation for #163.
+
+No formal adoption issue should be created from these results. The PR should remain as the experiment record unless a reviewer wants the unused experiment code removed before merging documentation-only evidence.
+
+## Required validation command reference
+
+Canonical Stage E validation:
 
 ```bash
 make run-issue120-stage-e-full \
@@ -210,7 +268,7 @@ PYTHONPATH=. python3 tools/issue120/attach_stage_e_eval_contract.py \
   --xdist-threshold 12.0
 ```
 
-To run the granular phase-overlap experiment:
+Granular phase-overlap experiment:
 
 ```bash
 make run-issue163-stage-e-homr-phase-overlap
@@ -226,12 +284,11 @@ Generated files under `logs/` are evidence artifacts and must not be committed.
 
 ## Follow-up candidates outside this experiment
 
-The dependency review found additional runtime-reduction candidates that should remain separate from the initial route-level subprocess scheduling experiment:
+The dependency review found additional runtime-reduction candidates that should remain separate from the route/phase overlap scheduling experiments:
 
 - SR image/cache reuse across repeated Stage E attempts.
 - Avoiding unnecessary repeated image copy/preparation work in the Stage E runner.
 - Reducing redundant HOMR preparation work while preserving output layout and provenance.
-- In-process SR preparation / HOMR inference overlap that preserves model persistence and explicit VRAM cleanup boundaries.
 - Page chunking only if it can preserve cache behavior and stay below resource limits.
 - Moving Stage E runner glue into a clearer pipeline module/API once the contract remains stable.
 

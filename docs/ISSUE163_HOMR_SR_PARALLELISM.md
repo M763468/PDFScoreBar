@@ -240,16 +240,137 @@ The overlap itself worked mechanically. The remaining problem is that SR prepara
 
 The granular mode has a positive resource profile compared with both prior references, especially peak GPU memory, but #163 is a runtime-reduction issue. Lower memory pressure alone is not enough to promote this mode.
 
+## Deeper trade-off analysis
+
+The expected high-level trade-off for parallel execution was:
+
+```text
+memory: sequential < parallel
+runtime: sequential > parallel
+```
+
+The experiments did not produce one uniform version of this trade-off:
+
+| Mode | Expected memory | Observed memory | Expected runtime | Observed runtime |
+| --- | --- | --- | --- | --- |
+| route-level subprocess overlap | higher | higher | lower | much higher |
+| granular in-process phase overlap | higher or equal | lower | lower | slightly higher |
+
+This means the two experiments measured different phenomena.
+
+For route-level subprocess overlap, the expected memory increase did happen, but it came with runtime regression. That is consistent with full-route duplication: each subprocess owns its own Python process, HOMR model state, CUDA context, intermediate buffers, and cache behavior. The experiment increased concurrent work, but also increased the cost of doing each unit of work. The SR route became the critical path and slowed enough to erase any benefit from hiding baseline execution.
+
+For granular in-process phase overlap, the peak memory decrease should not be interpreted as evidence that parallel work inherently reduced memory. The implementation changed the route lifecycle: SR preparation and SR HOMR inference were split into separate phases, with an explicit cleanup/synchronization boundary between them. The observed lower peak memory may therefore come from **phase splitting and earlier release of SR preparation state**, not from overlap itself.
+
+The current evidence cannot distinguish these two explanations:
+
+1. **Overlap effect:** running baseline while preparing SR changes scheduling enough to lower peak memory and/or runtime.
+2. **Phase-split effect:** separating SR preparation from SR HOMR inference changes object lifetime and cleanup timing, lowering peak memory independently of overlap.
+
+Because #163 currently compares only default sequential against phase-split overlap, it cannot attribute the lower memory usage to overlap. A third condition is needed.
+
+## Local experiment plan to isolate phase-split vs overlap effects
+
+Run a small A/B/C comparison on the same fixed page subset, in the same order, on the same machine, with the same resource sampler interval.
+
+The three conditions are:
+
+| Condition | Meaning | Purpose |
+| --- | --- | --- |
+| A. default sequential | existing HOMR baseline, then existing HOMR SR route | baseline runtime and memory |
+| B. phase-split sequential | baseline full route, then SR preparation only, then SR HOMR inference | isolates phase-split memory/runtime effect |
+| C. phase-split overlap | baseline full route overlapped with SR preparation, then SR HOMR inference | measures the incremental overlap effect |
+
+The key comparisons are:
+
+| Comparison | Interpretation |
+| --- | --- |
+| A vs B | whether lower memory is caused by phase split rather than overlap |
+| B vs C | whether overlap itself reduces runtime after phase split is held constant |
+| A vs C | whether the final candidate has adoption value |
+
+### Required temporary/local support
+
+The current PR already has A and C. To run B cleanly, add a temporary opt-in mode or local patch equivalent to:
+
+```yaml
+detection:
+  homr_route_parallel_experiment:
+    enabled: true
+    mode: inprocess_sr_prep_baseline_sequential
+    max_workers: 1
+```
+
+Expected B flow:
+
+```mermaid
+sequenceDiagram
+    participant P as Pipeline / HybridDetector
+    participant B as in-process HOMR baseline full route
+    participant R as in-process SR preparation only
+    participant S as in-process HOMR SR inference
+
+    P->>B: prepare originals + HOMR inference
+    B-->>P: baseline/batch detections
+    P->>R: RealESRGAN SR + write sr/batch images
+    R->>R: release SR VRAM barrier
+    R-->>P: prepared SR working images
+    P->>S: HOMR inference on prepared SR images
+    S-->>P: sr/batch detections
+```
+
+This B condition must reuse the same helper functions as C for SR preparation and SR inference. Otherwise A/B/C will not isolate the intended variable.
+
+### Suggested page subset
+
+Use 8 to 12 pages for the first pass. The subset should include several representative pages across pieces rather than only adjacent pages. The exact subset can be selected locally from the existing Stage E inventory. Keep the same subset for A/B/C.
+
+If the small run is noisy or contradictory, repeat with 16 to 20 pages. Do not use the small-run result to change canonical defaults; use it only to explain the memory/runtime mechanism.
+
+### Metrics to collect for each condition
+
+Collect these artifacts for A, B, and C:
+
+- runtime summary
+- resource summary
+- HOMR experiment summary for B/C
+- stdout/stderr summary or compact log
+- page subset definition
+- git commit SHA and config overlay path
+
+Minimum comparison table:
+
+| Metric | A default | B phase-split sequential | C phase-split overlap |
+| --- | --- | --- | --- |
+| total runtime | | | |
+| pipeline runtime | | | |
+| HOMR section duration | | | |
+| baseline duration | | | |
+| SR preparation duration | n/a | | |
+| SR inference duration | n/a | | |
+| peak GPU memory | | | |
+| peak process-tree RSS | | | |
+| peak process-tree CPU | | | |
+| detector contract on subset / output completeness | | | |
+
+### Decision rules for the local experiment
+
+- If B has similar memory to C and both are lower than A, the memory improvement is primarily a phase-split/lifetime effect, not an overlap effect.
+- If C is materially faster than B while preserving memory and outputs, overlap helps after phase split, but full 68-page validation would still be required before adoption.
+- If C is not faster than B, overlap should be rejected even as a future direction; phase lifecycle cleanup may still be worth a separate issue.
+- If B is faster than A and C adds no benefit, consider a follow-up issue for phase-split sequential lifecycle cleanup rather than parallelism.
+- If none beat A, close #163 with no adoption and move runtime work to cache/reuse/duplicate-prep reduction.
+
 ## Final decision
 
-Do not adopt either experimental mode as a default or recommended Stage E mode.
+Do not adopt either currently tested experimental mode as a default or recommended Stage E mode.
 
 - `baseline_sr_subprocess_overlap`: rejected because it substantially regressed runtime and GPU memory.
 - `inprocess_sr_prep_baseline_overlap`: rejected because it preserved the contract and improved resources, but did not improve runtime relative to the accepted sequential reference.
 
-Default sequential behavior remains the recommendation for #163.
+Default sequential behavior remains the recommendation for #163 unless the A/B/C local experiment finds a new, clearly supported mechanism.
 
-No formal adoption issue should be created from these results. The PR should remain as the experiment record unless a reviewer wants the unused experiment code removed before merging documentation-only evidence.
+No formal adoption issue should be created from the current full-run results alone. If the A/B/C experiment identifies a real improvement, create a follow-up adoption issue rather than promoting the #163 experiment directly.
 
 ## Required validation command reference
 
@@ -289,6 +410,7 @@ The dependency review found additional runtime-reduction candidates that should 
 - SR image/cache reuse across repeated Stage E attempts.
 - Avoiding unnecessary repeated image copy/preparation work in the Stage E runner.
 - Reducing redundant HOMR preparation work while preserving output layout and provenance.
+- Phase-split sequential lifecycle cleanup if the A/B/C experiment shows that phase split, not overlap, improves memory or runtime.
 - Page chunking only if it can preserve cache behavior and stay below resource limits.
 - Moving Stage E runner glue into a clearer pipeline module/API once the contract remains stable.
 

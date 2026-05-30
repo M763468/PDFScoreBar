@@ -92,9 +92,7 @@ def require_under_logs(path: Path, *, label: str) -> None:
     try:
         path.resolve().relative_to(logs_root)
     except ValueError as exc:
-        raise ValueError(
-            f"{label} must be under logs/ before cleanup. Got: {path}"
-        ) from exc
+        raise ValueError(f"{label} must be under logs/ before cleanup. Got: {path}") from exc
 
 
 def candidate_root_summary(root: Path) -> dict[str, int | str | bool]:
@@ -261,20 +259,32 @@ def validate_detector_target(eval_dir: Path) -> None:
         raise FileNotFoundError(f"Detector metrics not found under {eval_dir}")
     observed = {"tp": summary.get("tp"), "fp": summary.get("fp"), "fn": summary.get("fn")}
     if observed != TARGET_DETECTOR:
-        raise RuntimeError(f"Detector target mismatch: observed={observed} target={TARGET_DETECTOR}")
+        raise RuntimeError(
+            f"Detector target mismatch: observed={observed} target={TARGET_DETECTOR}"
+        )
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--inventory", type=Path, default=Path("logs/issue36_prep/20260208_bench_inventory.json"))
-    parser.add_argument("--exclude", type=Path, default=Path("logs/issue36_prep/excluded_pages_for_gt_prep.json"))
+    parser.add_argument(
+        "--inventory", type=Path, default=Path("logs/issue36_prep/20260208_bench_inventory.json")
+    )
+    parser.add_argument(
+        "--exclude", type=Path, default=Path("logs/issue36_prep/excluded_pages_for_gt_prep.json")
+    )
     parser.add_argument("--image-root", type=Path, default=Path("data/evaluation2/images"))
     parser.add_argument("--gt-root", type=Path, default=Path("data/evaluation2/annotations"))
     parser.add_argument("--model-path", type=Path, default=DEFAULT_MODEL)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
-    parser.add_argument("--historical-raw-candidates-root", type=Path, default=DEFAULT_HISTORICAL_RAW)
-    parser.add_argument("--historical-filtered-candidates-root", type=Path, default=DEFAULT_HISTORICAL_FILTERED)
-    parser.add_argument("--historical-scoring-input-root", type=Path, default=DEFAULT_HISTORICAL_SCORING_INPUT)
+    parser.add_argument(
+        "--historical-raw-candidates-root", type=Path, default=DEFAULT_HISTORICAL_RAW
+    )
+    parser.add_argument(
+        "--historical-filtered-candidates-root", type=Path, default=DEFAULT_HISTORICAL_FILTERED
+    )
+    parser.add_argument(
+        "--historical-scoring-input-root", type=Path, default=DEFAULT_HISTORICAL_SCORING_INPUT
+    )
     parser.add_argument("--score-threshold", type=float, default=0.1)
     parser.add_argument("--xdist-threshold", type=float, default=12.0)
     parser.add_argument("--scorer", choices=["pipeline", "legacy"], default="pipeline")
@@ -286,7 +296,9 @@ def main() -> None:
     )
     parser.add_argument("--require-candidate-match", action="store_true")
     parser.add_argument("--require-detector-target", action="store_true")
-    parser.add_argument("--no-clean-output", dest="clean_output", action="store_false", default=True)
+    parser.add_argument(
+        "--no-clean-output", dest="clean_output", action="store_false", default=True
+    )
     args = parser.parse_args()
 
     root = args.output_root
@@ -312,7 +324,12 @@ def main() -> None:
 
     comparisons = {}
     compare_specs = [
-        ("raw", args.historical_raw_candidates_root, args.raw_candidates_root, args.raw_compare_output_dir),
+        (
+            "raw",
+            args.historical_raw_candidates_root,
+            args.raw_candidates_root,
+            args.raw_compare_output_dir,
+        ),
         (
             "filtered",
             args.historical_filtered_candidates_root,

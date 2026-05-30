@@ -22,11 +22,15 @@ from tools.issue120.eval_full68_from_intermediates import iter_manifest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
-DEFAULT_MODEL = Path("logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth")
+DEFAULT_MODEL = Path(
+    "logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth"
+)
 DEFAULT_OUTPUT_ROOT = Path("logs/issue120_e2e_recovery/dense_probe_candidate_route")
 DEFAULT_HISTORICAL_RAW = Path("logs/issue36_prep/probe_candidates_from_bench_v12")
 DEFAULT_HISTORICAL_FILTERED = Path("logs/issue36_prep/probe_candidates_filtered_v12")
-DEFAULT_HISTORICAL_SCORING_INPUT = Path("logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12")
+DEFAULT_HISTORICAL_SCORING_INPUT = Path(
+    "logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12"
+)
 TARGET_DETECTOR = {"tp": 3580, "fp": 0, "fn": 1}
 REMOVED_CONFIG_KEYS = {"issue53_candidates_root": "probe_rescue_candidates_root"}
 REMOVED_WORKFLOW_KEYS = {
@@ -161,7 +165,9 @@ def require_under_logs(path: Path, *, label: str) -> None:
     try:
         path.resolve().relative_to(logs_root)
     except ValueError as exc:
-        raise ValueError(f"{label} must be under logs/ per repository log-management policy. Got: {path}") from exc
+        raise ValueError(
+            f"{label} must be under logs/ per repository log-management policy. Got: {path}"
+        ) from exc
 
 
 def _reject_removed_keys(config: dict[str, Any], removed: dict[str, str], *, section: str) -> None:
@@ -177,23 +183,33 @@ def resolve_paths(config: DenseProbeCandidateConfig) -> DenseProbeCandidatePaths
     root = config.output_root
     return DenseProbeCandidatePaths(
         raw_candidates_root=config.raw_candidates_root or root / "probe_candidates_from_bench_v12",
-        filtered_candidates_root=config.filtered_candidates_root or root / "probe_candidates_filtered_v12",
+        filtered_candidates_root=config.filtered_candidates_root
+        or root / "probe_candidates_filtered_v12",
         suggestions_root=config.suggestions_root or root / "filter_suggestions_v12",
-        generation_summary=config.generation_summary or root / "probe_generation_summary_v12_current.json",
+        generation_summary=config.generation_summary
+        or root / "probe_generation_summary_v12_current.json",
         filter_summary=config.filter_summary or root / "filter_apply_summary_v12_current.json",
         raw_compare_output_dir=config.raw_compare_output_dir or root / "raw_delta",
         filtered_compare_output_dir=config.filtered_compare_output_dir or root / "filtered_delta",
-        scoring_input_compare_output_dir=config.scoring_input_compare_output_dir or root / "scoring_input_delta",
-        probe_rescue_candidates_root=config.probe_rescue_candidates_root or root / "probe_rescue_candidates",
+        scoring_input_compare_output_dir=config.scoring_input_compare_output_dir
+        or root / "scoring_input_delta",
+        probe_rescue_candidates_root=config.probe_rescue_candidates_root
+        or root / "probe_rescue_candidates",
         scoring_output_dir=config.scoring_output_dir or root / "scoring",
         eval_output_dir=config.eval_output_dir or root / "eval",
         issue36_route_provenance=root / "issue36_dense_candidate_route_provenance.json",
-        route_provenance=config.route_provenance or root / "dense_probe_candidate_route_provenance.json",
+        route_provenance=config.route_provenance
+        or root / "dense_probe_candidate_route_provenance.json",
     )
 
 
-def validate_output_paths(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths) -> None:
-    output_paths = {"output_root": config.output_root, **{field: getattr(paths, field) for field in paths.__dataclass_fields__}}
+def validate_output_paths(
+    config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths
+) -> None:
+    output_paths = {
+        "output_root": config.output_root,
+        **{field: getattr(paths, field) for field in paths.__dataclass_fields__},
+    }
     for label, path in output_paths.items():
         require_under_logs(path, label=label)
 
@@ -209,28 +225,38 @@ def validate_workflow_config(config: DenseProbeCandidateConfig) -> None:
 
 def validate_inputs(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths) -> None:
     validate_workflow_config(config)
-    required = [config.inventory, config.exclude, config.image_root, config.gt_root, config.model_path]
+    required = [
+        config.inventory,
+        config.exclude,
+        config.image_root,
+        config.gt_root,
+        config.model_path,
+    ]
     missing = [str(path) for path in required if not path.exists()]
     if missing:
         raise FileNotFoundError("Missing required inputs:\n" + "\n".join(missing))
     validate_output_paths(config, paths)
 
 
-def cleanup_targets(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths) -> list[Path]:
+def cleanup_targets(
+    config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths
+) -> list[Path]:
     if config.no_clean_output:
         return []
     targets = [paths.scoring_output_dir, paths.eval_output_dir]
     if not config.skip_probe_rescue_regeneration:
         targets.append(paths.probe_rescue_candidates_root)
     if not config.skip_issue36_regeneration:
-        targets.extend([
-            paths.raw_candidates_root,
-            paths.filtered_candidates_root,
-            paths.suggestions_root,
-            paths.raw_compare_output_dir,
-            paths.filtered_compare_output_dir,
-            paths.scoring_input_compare_output_dir,
-        ])
+        targets.extend(
+            [
+                paths.raw_candidates_root,
+                paths.filtered_candidates_root,
+                paths.suggestions_root,
+                paths.raw_compare_output_dir,
+                paths.filtered_compare_output_dir,
+                paths.scoring_input_compare_output_dir,
+            ]
+        )
     return targets
 
 
@@ -251,7 +277,13 @@ def candidate_root_summary(root: Path) -> dict[str, int | str | bool]:
             continue
         if isinstance(payload, list):
             total += len(payload)
-    return {"root": str(root), "exists": root.exists(), "files": len(files), "total_candidates": total, "unreadable": unreadable}
+    return {
+        "root": str(root),
+        "exists": root.exists(),
+        "files": len(files),
+        "total_candidates": total,
+        "unreadable": unreadable,
+    }
 
 
 def load_optional_json(path: Path) -> Any | None:
@@ -296,7 +328,9 @@ def validate_detector_target(eval_output_dir: Path) -> None:
         raise FileNotFoundError(f"Detector metrics not found under {eval_output_dir}")
     observed = {"tp": summary.get("tp"), "fp": summary.get("fp"), "fn": summary.get("fn")}
     if observed != TARGET_DETECTOR:
-        raise RuntimeError(f"Detector target mismatch: observed={observed} target={TARGET_DETECTOR}")
+        raise RuntimeError(
+            f"Detector target mismatch: observed={observed} target={TARGET_DETECTOR}"
+        )
 
 
 def comparison_summary(path: Path) -> dict[str, Any] | None:
@@ -322,40 +356,102 @@ def assert_candidate_match(summary: dict[str, Any] | None, *, label: str) -> Non
         raise RuntimeError(f"{label} candidate-root mismatch: {checks}")
 
 
-def build_generation_command(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths) -> list[str]:
-    cmd = [sys.executable, "tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py", "--inventory", str(config.inventory), "--exclude", str(config.exclude), "--output-root", str(paths.raw_candidates_root), "--summary-out", str(paths.generation_summary)]
+def build_generation_command(
+    config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths
+) -> list[str]:
+    cmd = [
+        sys.executable,
+        "tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py",
+        "--inventory",
+        str(config.inventory),
+        "--exclude",
+        str(config.exclude),
+        "--output-root",
+        str(paths.raw_candidates_root),
+        "--summary-out",
+        str(paths.generation_summary),
+    ]
     add_param_args(cmd, GENERATION_PARAMS)
     return cmd
 
 
-def build_filter_command(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths) -> list[str]:
-    cmd = [sys.executable, "tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py", "--inventory", str(config.inventory), "--exclude", str(config.exclude), "--candidates-root", str(paths.raw_candidates_root), "--output-root", str(paths.filtered_candidates_root), "--suggestions-root", str(paths.suggestions_root), "--summary-out", str(paths.filter_summary)]
+def build_filter_command(
+    config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths
+) -> list[str]:
+    cmd = [
+        sys.executable,
+        "tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py",
+        "--inventory",
+        str(config.inventory),
+        "--exclude",
+        str(config.exclude),
+        "--candidates-root",
+        str(paths.raw_candidates_root),
+        "--output-root",
+        str(paths.filtered_candidates_root),
+        "--suggestions-root",
+        str(paths.suggestions_root),
+        "--summary-out",
+        str(paths.filter_summary),
+    ]
     add_param_args(cmd, FILTER_PARAMS)
     return cmd
 
 
 def build_compare_command(*, left: Path, right: Path, output_dir: Path) -> list[str]:
-    return [sys.executable, "tools/issue120/compare_filter_candidate_deltas.py", "--historical-dir", str(left), "--repro-dir", str(right), "--output-dir", str(output_dir)]
+    return [
+        sys.executable,
+        "tools/issue120/compare_filter_candidate_deltas.py",
+        "--historical-dir",
+        str(left),
+        "--repro-dir",
+        str(right),
+        "--output-dir",
+        str(output_dir),
+    ]
 
 
-def build_coverage_command(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths) -> list[str]:
-    return [sys.executable, "tools/issue120/compare_candidate_coverage.py", "--baseline-dir", str(config.baseline_dir), "--candidate-dir", str(paths.probe_rescue_candidates_root), "--output-dir", str(paths.eval_output_dir)]
+def build_coverage_command(
+    config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths
+) -> list[str]:
+    return [
+        sys.executable,
+        "tools/issue120/compare_candidate_coverage.py",
+        "--baseline-dir",
+        str(config.baseline_dir),
+        "--candidate-dir",
+        str(paths.probe_rescue_candidates_root),
+        "--output-dir",
+        str(paths.eval_output_dir),
+    ]
 
 
-def build_score_eval_command(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths) -> list[str]:
+def build_score_eval_command(
+    config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths
+) -> list[str]:
     cmd = [
         sys.executable,
         "tools/issue120/score_candidates_then_eval_full68.py",
-        "--scorer", config.scorer,
-        "--candidates-dir", str(paths.probe_rescue_candidates_root),
-        "--image-root", str(config.image_root),
-        "--gt-root", str(config.gt_root),
-        "--model-path", str(config.model_path),
-        "--scoring-output-dir", str(paths.scoring_output_dir),
-        "--eval-output-dir", str(paths.eval_output_dir),
-        "--score-threshold", str(config.score_threshold),
-        "--xdist-threshold", str(config.xdist_threshold),
-        "--bands-from", str(paths.filtered_candidates_root),
+        "--scorer",
+        config.scorer,
+        "--candidates-dir",
+        str(paths.probe_rescue_candidates_root),
+        "--image-root",
+        str(config.image_root),
+        "--gt-root",
+        str(config.gt_root),
+        "--model-path",
+        str(config.model_path),
+        "--scoring-output-dir",
+        str(paths.scoring_output_dir),
+        "--eval-output-dir",
+        str(paths.eval_output_dir),
+        "--score-threshold",
+        str(config.score_threshold),
+        "--xdist-threshold",
+        str(config.xdist_threshold),
+        "--bands-from",
+        str(paths.filtered_candidates_root),
     ]
     if not config.no_clean_output:
         cmd.append("--clean-output")
@@ -365,10 +461,26 @@ def build_score_eval_command(config: DenseProbeCandidateConfig, paths: DenseProb
 
 
 def build_attach_provenance_command(paths: DenseProbeCandidatePaths) -> list[str]:
-    return [sys.executable, "tools/issue120/attach_eval_provenance.py", "--output-dir", str(paths.eval_output_dir), "--results-dir", str(paths.scoring_output_dir), "--provenance-json", str(paths.route_provenance)]
+    return [
+        sys.executable,
+        "tools/issue120/attach_eval_provenance.py",
+        "--output-dir",
+        str(paths.eval_output_dir),
+        "--results-dir",
+        str(paths.scoring_output_dir),
+        "--provenance-json",
+        str(paths.route_provenance),
+    ]
 
 
-def run_candidate_comparison(*, left: Path, right: Path, output_dir: Path, label: str, command_runner: CommandRunner = run_command) -> dict[str, Any] | None:
+def run_candidate_comparison(
+    *,
+    left: Path,
+    right: Path,
+    output_dir: Path,
+    label: str,
+    command_runner: CommandRunner = run_command,
+) -> dict[str, Any] | None:
     if not left.exists():
         print(f"Skipping {label} comparison: historical root not found: {left}", flush=True)
         return None
@@ -376,18 +488,43 @@ def run_candidate_comparison(*, left: Path, right: Path, output_dir: Path, label
     return comparison_summary(output_dir / "filter_candidate_delta_summary.json")
 
 
-def run_issue36_generation_filter_compare(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths, *, command_runner: CommandRunner = run_command) -> dict[str, Any]:
+def run_issue36_generation_filter_compare(
+    config: DenseProbeCandidateConfig,
+    paths: DenseProbeCandidatePaths,
+    *,
+    command_runner: CommandRunner = run_command,
+) -> dict[str, Any]:
     command_runner(build_generation_command(config, paths))
     command_runner(build_filter_command(config, paths))
     comparisons = {
-        "raw": run_candidate_comparison(left=config.historical_raw_candidates_root, right=paths.raw_candidates_root, output_dir=paths.raw_compare_output_dir, label="raw", command_runner=command_runner),
-        "filtered": run_candidate_comparison(left=config.historical_filtered_candidates_root, right=paths.filtered_candidates_root, output_dir=paths.filtered_compare_output_dir, label="filtered", command_runner=command_runner),
-        "historical_scoring_input": run_candidate_comparison(left=config.historical_scoring_input_root, right=paths.filtered_candidates_root, output_dir=paths.scoring_input_compare_output_dir, label="historical scoring input", command_runner=command_runner),
+        "raw": run_candidate_comparison(
+            left=config.historical_raw_candidates_root,
+            right=paths.raw_candidates_root,
+            output_dir=paths.raw_compare_output_dir,
+            label="raw",
+            command_runner=command_runner,
+        ),
+        "filtered": run_candidate_comparison(
+            left=config.historical_filtered_candidates_root,
+            right=paths.filtered_candidates_root,
+            output_dir=paths.filtered_compare_output_dir,
+            label="filtered",
+            command_runner=command_runner,
+        ),
+        "historical_scoring_input": run_candidate_comparison(
+            left=config.historical_scoring_input_root,
+            right=paths.filtered_candidates_root,
+            output_dir=paths.scoring_input_compare_output_dir,
+            label="historical scoring input",
+            command_runner=command_runner,
+        ),
     }
     if config.require_candidate_match:
         assert_candidate_match(comparisons.get("raw"), label="raw")
         assert_candidate_match(comparisons.get("filtered"), label="filtered")
-        assert_candidate_match(comparisons.get("historical_scoring_input"), label="historical scoring input")
+        assert_candidate_match(
+            comparisons.get("historical_scoring_input"), label="historical scoring input"
+        )
     return comparisons
 
 
@@ -405,8 +542,19 @@ def canonical_images(image_root: Path) -> list[Path]:
     return images
 
 
-def run_probe_rescue_candidate_generation(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths) -> int:
-    detect_probe_kwargs = {"scan_gap_rescue": True, "scan_gap_threshold_ratio": 1.5, "scan_gap_rescue_min_ratio": 0.3, "scan_x_peak_rescue": True, "scan_rightmost_rescue": True, "divisi_rescue": True, "scan_center_on_peak": True, "max_per_band": 100}
+def run_probe_rescue_candidate_generation(
+    config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths
+) -> int:
+    detect_probe_kwargs = {
+        "scan_gap_rescue": True,
+        "scan_gap_threshold_ratio": 1.5,
+        "scan_gap_rescue_min_ratio": 0.3,
+        "scan_x_peak_rescue": True,
+        "scan_rightmost_rescue": True,
+        "divisi_rescue": True,
+        "scan_center_on_peak": True,
+        "max_per_band": 100,
+    }
     return run_probe_scan_batch(
         images=canonical_images(config.image_root),
         output_root=paths.probe_rescue_candidates_root,
@@ -424,15 +572,29 @@ def run_probe_rescue_candidate_generation(config: DenseProbeCandidateConfig, pat
     )
 
 
-def run_scoring_eval_and_coverage(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths, *, command_runner: CommandRunner = run_command) -> None:
+def run_scoring_eval_and_coverage(
+    config: DenseProbeCandidateConfig,
+    paths: DenseProbeCandidatePaths,
+    *,
+    command_runner: CommandRunner = run_command,
+) -> None:
     command_runner(build_score_eval_command(config, paths))
     command_runner(build_coverage_command(config, paths))
 
 
-def build_route_provenance(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths, *, comparisons: dict[str, Any] | None) -> dict[str, Any]:
+def build_route_provenance(
+    config: DenseProbeCandidateConfig,
+    paths: DenseProbeCandidatePaths,
+    *,
+    comparisons: dict[str, Any] | None,
+) -> dict[str, Any]:
     filter_summary = load_optional_json(paths.filter_summary)
-    clef_mask_resolution = filter_summary.get("clef_mask_resolution") if isinstance(filter_summary, dict) else None
-    reason_counts = filter_summary.get("reason_counts") if isinstance(filter_summary, dict) else None
+    clef_mask_resolution = (
+        filter_summary.get("clef_mask_resolution") if isinstance(filter_summary, dict) else None
+    )
+    reason_counts = (
+        filter_summary.get("reason_counts") if isinstance(filter_summary, dict) else None
+    )
     return {
         "schema_version": "pipeline.detector_routes.dense_probe_candidate.v1",
         "status": "detector_level_dense_probe_candidate_route",
@@ -443,44 +605,137 @@ def build_route_provenance(config: DenseProbeCandidateConfig, paths: DenseProbeC
         "evaluated_stage": "post_cnn_scoring_detector_intermediate",
         "pipeline_scope": {
             "level": "detector_level_partial_route",
-            "includes": ["dense candidate/bands generation", "clef-mask-aware filtering", "probe-rescue candidate generation", "CNN scoring", "canonical detector evaluation"],
-            "excludes": ["slow HOMR/SR/OMR upstream generation", "full end-to-end PDF pipeline execution", "downstream measure numbering and measure-count evaluation"],
+            "includes": [
+                "dense candidate/bands generation",
+                "clef-mask-aware filtering",
+                "probe-rescue candidate generation",
+                "CNN scoring",
+                "canonical detector evaluation",
+            ],
+            "excludes": [
+                "slow HOMR/SR/OMR upstream generation",
+                "full end-to-end PDF pipeline execution",
+                "downstream measure numbering and measure-count evaluation",
+            ],
         },
-        "route": ["Issue #36 v12 bench inventory", "generate dense raw candidates with band_cluster_max_dist=25.0", "apply clef-mask-aware filtering", "verify raw/filtered/scoring-input candidate roots when references are supplied", "use regenerated filtered root as probe-rescue bands_from", "score regenerated probe-rescue candidates with current CNN scoring", "#134 full-68 detector evaluator"],
-        "inputs": {"inventory": str(config.inventory), "exclude": str(config.exclude), "image_root": str(config.image_root), "gt_root": str(config.gt_root), "model_path": str(config.model_path), "baseline_dir": str(config.baseline_dir), "historical_raw_candidates_root": str(config.historical_raw_candidates_root), "historical_filtered_candidates_root": str(config.historical_filtered_candidates_root), "historical_scoring_input_root": str(config.historical_scoring_input_root)},
-        "outputs": {"output_root": str(config.output_root), "raw_candidates_root": str(paths.raw_candidates_root), "filtered_candidates_root": str(paths.filtered_candidates_root), "filter_suggestions_root": str(paths.suggestions_root), "probe_rescue_candidates_root": str(paths.probe_rescue_candidates_root), "scoring_output_dir": str(paths.scoring_output_dir), "eval_output_dir": str(paths.eval_output_dir), "route_provenance": str(paths.route_provenance)},
-        "candidate_root_summary": {"issue36_raw": candidate_root_summary(paths.raw_candidates_root), "issue36_filtered_bands_from": candidate_root_summary(paths.filtered_candidates_root), "probe_rescue_regenerated_candidates": candidate_root_summary(paths.probe_rescue_candidates_root), "scoring_input": candidate_root_summary(paths.scoring_output_dir)},
+        "route": [
+            "Issue #36 v12 bench inventory",
+            "generate dense raw candidates with band_cluster_max_dist=25.0",
+            "apply clef-mask-aware filtering",
+            "verify raw/filtered/scoring-input candidate roots when references are supplied",
+            "use regenerated filtered root as probe-rescue bands_from",
+            "score regenerated probe-rescue candidates with current CNN scoring",
+            "#134 full-68 detector evaluator",
+        ],
+        "inputs": {
+            "inventory": str(config.inventory),
+            "exclude": str(config.exclude),
+            "image_root": str(config.image_root),
+            "gt_root": str(config.gt_root),
+            "model_path": str(config.model_path),
+            "baseline_dir": str(config.baseline_dir),
+            "historical_raw_candidates_root": str(config.historical_raw_candidates_root),
+            "historical_filtered_candidates_root": str(config.historical_filtered_candidates_root),
+            "historical_scoring_input_root": str(config.historical_scoring_input_root),
+        },
+        "outputs": {
+            "output_root": str(config.output_root),
+            "raw_candidates_root": str(paths.raw_candidates_root),
+            "filtered_candidates_root": str(paths.filtered_candidates_root),
+            "filter_suggestions_root": str(paths.suggestions_root),
+            "probe_rescue_candidates_root": str(paths.probe_rescue_candidates_root),
+            "scoring_output_dir": str(paths.scoring_output_dir),
+            "eval_output_dir": str(paths.eval_output_dir),
+            "route_provenance": str(paths.route_provenance),
+        },
+        "candidate_root_summary": {
+            "issue36_raw": candidate_root_summary(paths.raw_candidates_root),
+            "issue36_filtered_bands_from": candidate_root_summary(paths.filtered_candidates_root),
+            "probe_rescue_regenerated_candidates": candidate_root_summary(
+                paths.probe_rescue_candidates_root
+            ),
+            "scoring_input": candidate_root_summary(paths.scoring_output_dir),
+        },
         "candidate_root_comparisons": comparisons or {},
         "issue36_provenance": load_optional_json(paths.issue36_route_provenance),
         "generation_params": GENERATION_PARAMS,
         "filter_params": FILTER_PARAMS,
-        "clef_mask_filtering": {"enabled": True, "resolution": clef_mask_resolution, "reason_counts": reason_counts, "summary_path": str(paths.filter_summary)},
-        "probe_rescue": {"bands_from": str(paths.filtered_candidates_root), "candidate_coverage_summary": load_optional_json(paths.eval_output_dir / "candidate_coverage_summary.json")},
-        "cnn_scoring": {"scorer": config.scorer, "cnn_apply_nms": config.cnn_apply_nms, "model_path": str(config.model_path), "score_threshold": config.score_threshold, "xdist_threshold": config.xdist_threshold, "stage_b_provenance": load_optional_json(paths.eval_output_dir / "stage_b_provenance.json")},
+        "clef_mask_filtering": {
+            "enabled": True,
+            "resolution": clef_mask_resolution,
+            "reason_counts": reason_counts,
+            "summary_path": str(paths.filter_summary),
+        },
+        "probe_rescue": {
+            "bands_from": str(paths.filtered_candidates_root),
+            "candidate_coverage_summary": load_optional_json(
+                paths.eval_output_dir / "candidate_coverage_summary.json"
+            ),
+        },
+        "cnn_scoring": {
+            "scorer": config.scorer,
+            "cnn_apply_nms": config.cnn_apply_nms,
+            "model_path": str(config.model_path),
+            "score_threshold": config.score_threshold,
+            "xdist_threshold": config.xdist_threshold,
+            "stage_b_provenance": load_optional_json(
+                paths.eval_output_dir / "stage_b_provenance.json"
+            ),
+        },
         "detector_target": TARGET_DETECTOR,
         "detector_summary": detector_summary(paths.eval_output_dir),
-        "measure_count_summary": {"status": "not_run_in_dense_probe_candidate_route", "note": "Detector metrics are evaluated here. Downstream measure-count validation remains a separate artifact/provenance stream."},
-        "scope_guards": {"general_pipeline_defaults_changed": False, "nms_policy_owner": "#142", "full_slow_pipeline_owner": "#141", "generated_outputs_under_ignored_logs": True, "direct_scoring_of_issue36_filtered_root_is_acceptance_route": False},
-        "incremental_debug": {"no_clean_output": config.no_clean_output, "skip_issue36_regeneration": config.skip_issue36_regeneration, "skip_probe_rescue_regeneration": config.skip_probe_rescue_regeneration, "skip_existing_probe_rescue": config.skip_existing_probe_rescue},
+        "measure_count_summary": {
+            "status": "not_run_in_dense_probe_candidate_route",
+            "note": "Detector metrics are evaluated here. Downstream measure-count validation remains a separate artifact/provenance stream.",
+        },
+        "scope_guards": {
+            "general_pipeline_defaults_changed": False,
+            "nms_policy_owner": "#142",
+            "full_slow_pipeline_owner": "#141",
+            "generated_outputs_under_ignored_logs": True,
+            "direct_scoring_of_issue36_filtered_root_is_acceptance_route": False,
+        },
+        "incremental_debug": {
+            "no_clean_output": config.no_clean_output,
+            "skip_issue36_regeneration": config.skip_issue36_regeneration,
+            "skip_probe_rescue_regeneration": config.skip_probe_rescue_regeneration,
+            "skip_existing_probe_rescue": config.skip_existing_probe_rescue,
+        },
         "generation_summary": load_optional_json(paths.generation_summary),
         "filter_summary": filter_summary,
     }
 
 
-def attach_route_provenance(config: DenseProbeCandidateConfig, paths: DenseProbeCandidatePaths, *, comparisons: dict[str, Any] | None, command_runner: CommandRunner = run_command) -> None:
-    write_json(paths.route_provenance, build_route_provenance(config, paths, comparisons=comparisons))
+def attach_route_provenance(
+    config: DenseProbeCandidateConfig,
+    paths: DenseProbeCandidatePaths,
+    *,
+    comparisons: dict[str, Any] | None,
+    command_runner: CommandRunner = run_command,
+) -> None:
+    write_json(
+        paths.route_provenance, build_route_provenance(config, paths, comparisons=comparisons)
+    )
     command_runner(build_attach_provenance_command(paths))
 
 
-def run_dense_probe_candidate_route(config: DenseProbeCandidateConfig, *, command_runner: CommandRunner = run_command) -> dict[str, Any] | None:
+def run_dense_probe_candidate_route(
+    config: DenseProbeCandidateConfig, *, command_runner: CommandRunner = run_command
+) -> dict[str, Any] | None:
     paths = resolve_paths(config)
     validate_inputs(config, paths)
     clean_outputs(config, paths)
     config.output_root.mkdir(parents=True, exist_ok=True)
-    effective_runner = make_logged_command_runner(config.output_root / "command_logs") if command_runner is run_command else command_runner
+    effective_runner = (
+        make_logged_command_runner(config.output_root / "command_logs")
+        if command_runner is run_command
+        else command_runner
+    )
     comparisons = None
     if not config.skip_issue36_regeneration:
-        comparisons = run_issue36_generation_filter_compare(config, paths, command_runner=effective_runner)
+        comparisons = run_issue36_generation_filter_compare(
+            config, paths, command_runner=effective_runner
+        )
     if not config.skip_probe_rescue_regeneration:
         processed = run_probe_rescue_candidate_generation(config, paths)
         print(f"Probe-rescue regeneration processed pages: {processed}")
@@ -513,43 +768,134 @@ def config_from_yaml(path: Path) -> DenseProbeCandidateConfig:
     workflow = route.get("workflow", {}) or {}
     if not isinstance(workflow, dict):
         raise ValueError("dense_probe_candidate_route.workflow must be a mapping.")
-    _reject_removed_keys(workflow, REMOVED_WORKFLOW_KEYS, section="dense_probe_candidate_route.workflow")
+    _reject_removed_keys(
+        workflow, REMOVED_WORKFLOW_KEYS, section="dense_probe_candidate_route.workflow"
+    )
     return DenseProbeCandidateConfig(
-        inventory=_path_from_config(route, "inventory", default=DenseProbeCandidateConfig.inventory),
+        inventory=_path_from_config(
+            route, "inventory", default=DenseProbeCandidateConfig.inventory
+        ),
         exclude=_path_from_config(route, "exclude", default=DenseProbeCandidateConfig.exclude),
-        image_root=_path_from_config(route, "image_root", default=DenseProbeCandidateConfig.image_root),
+        image_root=_path_from_config(
+            route, "image_root", default=DenseProbeCandidateConfig.image_root
+        ),
         gt_root=_path_from_config(route, "gt_root", default=DenseProbeCandidateConfig.gt_root),
-        model_path=_path_from_config(route, "model_path", default=DenseProbeCandidateConfig.model_path),
-        baseline_dir=_path_from_config(route, "baseline_dir", default=DenseProbeCandidateConfig.baseline_dir),
-        output_root=_path_from_config(route, "output_root", default=DenseProbeCandidateConfig.output_root),
-        historical_raw_candidates_root=_path_from_config(route, "historical_raw_candidates_root", default=DenseProbeCandidateConfig.historical_raw_candidates_root),
-        historical_filtered_candidates_root=_path_from_config(route, "historical_filtered_candidates_root", default=DenseProbeCandidateConfig.historical_filtered_candidates_root),
-        historical_scoring_input_root=_path_from_config(route, "historical_scoring_input_root", default=DenseProbeCandidateConfig.historical_scoring_input_root),
-        probe_rescue_candidates_root=_path_from_config(route, "probe_rescue_candidates_root", default=DenseProbeCandidateConfig.probe_rescue_candidates_root),
+        model_path=_path_from_config(
+            route, "model_path", default=DenseProbeCandidateConfig.model_path
+        ),
+        baseline_dir=_path_from_config(
+            route, "baseline_dir", default=DenseProbeCandidateConfig.baseline_dir
+        ),
+        output_root=_path_from_config(
+            route, "output_root", default=DenseProbeCandidateConfig.output_root
+        ),
+        historical_raw_candidates_root=_path_from_config(
+            route,
+            "historical_raw_candidates_root",
+            default=DenseProbeCandidateConfig.historical_raw_candidates_root,
+        ),
+        historical_filtered_candidates_root=_path_from_config(
+            route,
+            "historical_filtered_candidates_root",
+            default=DenseProbeCandidateConfig.historical_filtered_candidates_root,
+        ),
+        historical_scoring_input_root=_path_from_config(
+            route,
+            "historical_scoring_input_root",
+            default=DenseProbeCandidateConfig.historical_scoring_input_root,
+        ),
+        probe_rescue_candidates_root=_path_from_config(
+            route,
+            "probe_rescue_candidates_root",
+            default=DenseProbeCandidateConfig.probe_rescue_candidates_root,
+        ),
         scorer=str(scoring.get("scorer", DenseProbeCandidateConfig.scorer)),
         cnn_apply_nms=bool(scoring.get("cnn_apply_nms", DenseProbeCandidateConfig.cnn_apply_nms)),
-        score_threshold=float(scoring.get("score_threshold", DenseProbeCandidateConfig.score_threshold)),
-        xdist_threshold=float(scoring.get("xdist_threshold", DenseProbeCandidateConfig.xdist_threshold)),
-        no_clean_output=bool(workflow.get("no_clean_output", DenseProbeCandidateConfig.no_clean_output)),
-        skip_issue36_regeneration=bool(workflow.get("skip_issue36_regeneration", DenseProbeCandidateConfig.skip_issue36_regeneration)),
-        skip_probe_rescue_regeneration=bool(workflow.get("skip_probe_rescue_regeneration", DenseProbeCandidateConfig.skip_probe_rescue_regeneration)),
-        skip_existing_probe_rescue=bool(workflow.get("skip_existing_probe_rescue", DenseProbeCandidateConfig.skip_existing_probe_rescue)),
-        require_candidate_match=bool(workflow.get("require_candidate_match", DenseProbeCandidateConfig.require_candidate_match)),
-        require_detector_target=bool(workflow.get("require_detector_target", DenseProbeCandidateConfig.require_detector_target)),
-        disable_seed_splitting=bool(workflow.get("disable_seed_splitting", DenseProbeCandidateConfig.disable_seed_splitting)),
+        score_threshold=float(
+            scoring.get("score_threshold", DenseProbeCandidateConfig.score_threshold)
+        ),
+        xdist_threshold=float(
+            scoring.get("xdist_threshold", DenseProbeCandidateConfig.xdist_threshold)
+        ),
+        no_clean_output=bool(
+            workflow.get("no_clean_output", DenseProbeCandidateConfig.no_clean_output)
+        ),
+        skip_issue36_regeneration=bool(
+            workflow.get(
+                "skip_issue36_regeneration", DenseProbeCandidateConfig.skip_issue36_regeneration
+            )
+        ),
+        skip_probe_rescue_regeneration=bool(
+            workflow.get(
+                "skip_probe_rescue_regeneration",
+                DenseProbeCandidateConfig.skip_probe_rescue_regeneration,
+            )
+        ),
+        skip_existing_probe_rescue=bool(
+            workflow.get(
+                "skip_existing_probe_rescue", DenseProbeCandidateConfig.skip_existing_probe_rescue
+            )
+        ),
+        require_candidate_match=bool(
+            workflow.get(
+                "require_candidate_match", DenseProbeCandidateConfig.require_candidate_match
+            )
+        ),
+        require_detector_target=bool(
+            workflow.get(
+                "require_detector_target", DenseProbeCandidateConfig.require_detector_target
+            )
+        ),
+        disable_seed_splitting=bool(
+            workflow.get("disable_seed_splitting", DenseProbeCandidateConfig.disable_seed_splitting)
+        ),
     )
 
 
 def config_from_args(args: argparse.Namespace) -> DenseProbeCandidateConfig:
     config = config_from_yaml(args.config) if args.config else DenseProbeCandidateConfig()
     values = config.__dict__.copy()
-    overrides = {"inventory": args.inventory, "exclude": args.exclude, "image_root": args.image_root, "gt_root": args.gt_root, "model_path": args.model_path, "baseline_dir": args.baseline_dir, "output_root": args.output_root, "historical_raw_candidates_root": args.historical_raw_candidates_root, "historical_filtered_candidates_root": args.historical_filtered_candidates_root, "historical_scoring_input_root": args.historical_scoring_input_root, "raw_candidates_root": args.raw_candidates_root, "filtered_candidates_root": args.filtered_candidates_root, "suggestions_root": args.suggestions_root, "generation_summary": args.generation_summary, "filter_summary": args.filter_summary, "raw_compare_output_dir": args.raw_compare_output_dir, "filtered_compare_output_dir": args.filtered_compare_output_dir, "scoring_input_compare_output_dir": args.scoring_input_compare_output_dir, "probe_rescue_candidates_root": args.probe_rescue_candidates_root, "scoring_output_dir": args.scoring_output_dir, "eval_output_dir": args.eval_output_dir, "route_provenance": args.route_provenance, "scorer": args.scorer, "score_threshold": args.score_threshold, "xdist_threshold": args.xdist_threshold}
+    overrides = {
+        "inventory": args.inventory,
+        "exclude": args.exclude,
+        "image_root": args.image_root,
+        "gt_root": args.gt_root,
+        "model_path": args.model_path,
+        "baseline_dir": args.baseline_dir,
+        "output_root": args.output_root,
+        "historical_raw_candidates_root": args.historical_raw_candidates_root,
+        "historical_filtered_candidates_root": args.historical_filtered_candidates_root,
+        "historical_scoring_input_root": args.historical_scoring_input_root,
+        "raw_candidates_root": args.raw_candidates_root,
+        "filtered_candidates_root": args.filtered_candidates_root,
+        "suggestions_root": args.suggestions_root,
+        "generation_summary": args.generation_summary,
+        "filter_summary": args.filter_summary,
+        "raw_compare_output_dir": args.raw_compare_output_dir,
+        "filtered_compare_output_dir": args.filtered_compare_output_dir,
+        "scoring_input_compare_output_dir": args.scoring_input_compare_output_dir,
+        "probe_rescue_candidates_root": args.probe_rescue_candidates_root,
+        "scoring_output_dir": args.scoring_output_dir,
+        "eval_output_dir": args.eval_output_dir,
+        "route_provenance": args.route_provenance,
+        "scorer": args.scorer,
+        "score_threshold": args.score_threshold,
+        "xdist_threshold": args.xdist_threshold,
+    }
     for key, value in overrides.items():
         if value is not None:
             values[key] = value
     if args.pipeline_nms is not None:
         values["cnn_apply_nms"] = args.pipeline_nms
-    for flag in ["no_clean_output", "skip_issue36_regeneration", "skip_probe_rescue_regeneration", "skip_existing_probe_rescue", "require_candidate_match", "require_detector_target", "disable_seed_splitting"]:
+    for flag in [
+        "no_clean_output",
+        "skip_issue36_regeneration",
+        "skip_probe_rescue_regeneration",
+        "skip_existing_probe_rescue",
+        "require_candidate_match",
+        "require_detector_target",
+        "disable_seed_splitting",
+    ]:
         if getattr(args, flag):
             values[flag] = True
     if args.no_require_candidate_match:
@@ -583,7 +929,12 @@ def build_arg_parser(description: str | None = None) -> argparse.ArgumentParser:
     parser.add_argument("--eval-output-dir", type=Path, default=None)
     parser.add_argument("--route-provenance", type=Path, default=None)
     parser.add_argument("--scorer", choices=["pipeline", "legacy"], default=None)
-    parser.add_argument("--pipeline-nms", action=argparse.BooleanOptionalAction, default=None, help="Explicit CNN NMS setting. Issue #120 dense route uses --no-pipeline-nms.")
+    parser.add_argument(
+        "--pipeline-nms",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Explicit CNN NMS setting. Issue #120 dense route uses --no-pipeline-nms.",
+    )
     parser.add_argument("--score-threshold", type=float, default=None)
     parser.add_argument("--xdist-threshold", type=float, default=None)
     parser.add_argument("--no-clean-output", action="store_true")
@@ -604,7 +955,9 @@ def main(argv: list[str] | None = None) -> None:
     paths = resolve_paths(config)
     print(f"Dense probe-candidate route complete: {paths.eval_output_dir}")
     if summary:
-        print(f"Detector: TP={summary.get('tp')} FP={summary.get('fp')} FN={summary.get('fn')} Pred={summary.get('pred')} GT={summary.get('gt')}")
+        print(
+            f"Detector: TP={summary.get('tp')} FP={summary.get('fp')} FN={summary.get('fn')} Pred={summary.get('pred')} GT={summary.get('gt')}"
+        )
 
 
 if __name__ == "__main__":

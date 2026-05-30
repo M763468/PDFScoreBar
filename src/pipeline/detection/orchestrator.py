@@ -38,7 +38,9 @@ def _candidate_json_candidates(
 ) -> list[Path]:
     """Return supported locations for a precomputed probe candidate JSON."""
     candidates = [
-        root / build_probe_run_id(image_path, score_name=score_name) / "pipeline2_no_peak_candidates.json",
+        root
+        / build_probe_run_id(image_path, score_name=score_name)
+        / "pipeline2_no_peak_candidates.json",
         root / image_path.parent.name / image_path.stem / "pipeline2_no_peak_candidates.json",
     ]
     split = _split_score_page_from_stem(image_path.stem)
@@ -168,15 +170,35 @@ class DetectorOrchestrator:
                     ink_threshold=int(self.det_cfg.get("ink_threshold", 180)),
                     min_ratio=float(self.det_cfg.get("min_ratio", 0.50)),
                     min_height_ratio=float(self.det_cfg.get("min_height_ratio", 0.012)),
-                    min_width_ratio=(float(self.det_cfg.get("min_width_ratio")) if self.det_cfg.get("min_width_ratio") is not None else 0.0001),
+                    min_width_ratio=(
+                        float(self.det_cfg.get("min_width_ratio"))
+                        if self.det_cfg.get("min_width_ratio") is not None
+                        else 0.0001
+                    ),
                     score_name=effective_score_name,
-                    band_cluster_max_dist=(float(self.det_cfg.get("band_cluster_max_dist")) if self.det_cfg.get("band_cluster_max_dist") is not None else None),
+                    band_cluster_max_dist=(
+                        float(self.det_cfg.get("band_cluster_max_dist"))
+                        if self.det_cfg.get("band_cluster_max_dist") is not None
+                        else None
+                    ),
                     band_min_row_count=int(self.det_cfg.get("band_min_row_count", 1)),
                     vertical_closing=int(self.det_cfg.get("vertical_closing", 4)),
                     detect_probe_kwargs=detect_probe_kwargs,
-                    probe_row_filter_mode=(str(self.det_cfg.get("probe_row_filter_mode")) if self.det_cfg.get("probe_row_filter_mode") is not None else None),
-                    probe_endpoint_x_scale=(float(self.det_cfg.get("probe_endpoint_x_scale")) if self.det_cfg.get("probe_endpoint_x_scale") is not None else None),
-                    probe_endpoint_y_scale=(float(self.det_cfg.get("probe_endpoint_y_scale")) if self.det_cfg.get("probe_endpoint_y_scale") is not None else None),
+                    probe_row_filter_mode=(
+                        str(self.det_cfg.get("probe_row_filter_mode"))
+                        if self.det_cfg.get("probe_row_filter_mode") is not None
+                        else None
+                    ),
+                    probe_endpoint_x_scale=(
+                        float(self.det_cfg.get("probe_endpoint_x_scale"))
+                        if self.det_cfg.get("probe_endpoint_x_scale") is not None
+                        else None
+                    ),
+                    probe_endpoint_y_scale=(
+                        float(self.det_cfg.get("probe_endpoint_y_scale"))
+                        if self.det_cfg.get("probe_endpoint_y_scale") is not None
+                        else None
+                    ),
                     skip_existing=self.skip_existing,
                     input_image_scale=float(effective_sr_scale),
                     enable_heuristic_filters=self.det_cfg.get("enable_heuristic_filters", True),
@@ -184,10 +206,14 @@ class DetectorOrchestrator:
                 )
         cmd_probe = [
             "inprocess:probe_scan",
-            "--output-root", str(probe_output_root),
-            "--bands-from", str(self.hybrid_output_dir),
-            "--ink-threshold", str(self.det_cfg.get("ink_threshold", 230)),
-            "--min-ratio", str(self.det_cfg.get("min_ratio", 0.70)),
+            "--output-root",
+            str(probe_output_root),
+            "--bands-from",
+            str(self.hybrid_output_dir),
+            "--ink-threshold",
+            str(self.det_cfg.get("ink_threshold", 230)),
+            "--min-ratio",
+            str(self.det_cfg.get("min_ratio", 0.70)),
         ]
         if precomputed_candidates_root is not None:
             cmd_probe.extend(["--precomputed-candidates-root", str(precomputed_candidates_root)])
@@ -212,8 +238,12 @@ class DetectorOrchestrator:
                 model_path=Path(cnn_model),
                 threshold=float(self.det_cfg.get("cnn_threshold", 0.1)),
                 score_name=effective_score_name,
-                crop_recenter_on_bbox_ink=bool(self.det_cfg.get("crop_recenter_on_bbox_ink", False)),
-                crop_recenter_max_shift_unit_ratio=float(self.det_cfg.get("crop_recenter_max_shift_unit_ratio", 0.35)),
+                crop_recenter_on_bbox_ink=bool(
+                    self.det_cfg.get("crop_recenter_on_bbox_ink", False)
+                ),
+                crop_recenter_max_shift_unit_ratio=float(
+                    self.det_cfg.get("crop_recenter_max_shift_unit_ratio", 0.35)
+                ),
                 input_image_scale=float(effective_sr_scale),
                 bands_from=cnn_bands_from,
                 staff_vov_threshold=float(self.det_cfg.get("staff_vov_threshold", 0.5)),
@@ -222,10 +252,14 @@ class DetectorOrchestrator:
             )
         cmd_score = [
             "inprocess:cnn_scoring",
-            "--model", str(cnn_model),
-            "--logs", str(self.probe_output_dir),
-            "--threshold", str(self.det_cfg.get("cnn_threshold", 0.1)),
-            "--apply-nms", str(cnn_apply_nms),
+            "--model",
+            str(cnn_model),
+            "--logs",
+            str(self.probe_output_dir),
+            "--threshold",
+            str(self.det_cfg.get("cnn_threshold", 0.1)),
+            "--apply-nms",
+            str(cnn_apply_nms),
         ]
         if cnn_bands_from is not None and cnn_bands_from != self.hybrid_output_dir:
             cmd_score.extend(["--bands-from", str(cnn_bands_from)])
@@ -270,11 +304,22 @@ class DetectorOrchestrator:
         value = self.det_cfg.get("cnn_bands_from")
         return Path(value) if value else self.hybrid_output_dir
 
-    def _copy_precomputed_probe_candidates(self, *, root: Path, images: List[Path], output_root: Path, score_name: str | None) -> int:
+    def _copy_precomputed_probe_candidates(
+        self, *, root: Path, images: List[Path], output_root: Path, score_name: str | None
+    ) -> int:
         processed = 0
         missing: list[str] = []
         for img_path in images:
-            src = next((path for path in _candidate_json_candidates(root=root, image_path=img_path, score_name=score_name) if path.exists()), None)
+            src = next(
+                (
+                    path
+                    for path in _candidate_json_candidates(
+                        root=root, image_path=img_path, score_name=score_name
+                    )
+                    if path.exists()
+                ),
+                None,
+            )
             if src is None:
                 missing.append(str(img_path))
                 continue
@@ -283,7 +328,9 @@ class DetectorOrchestrator:
             shutil.copy2(src, dest_dir / "pipeline2_no_peak_candidates.json")
             processed += 1
         if missing:
-            raise FileNotFoundError("Missing precomputed probe candidates for images:\n" + "\n".join(missing))
+            raise FileNotFoundError(
+                "Missing precomputed probe candidates for images:\n" + "\n".join(missing)
+            )
         return processed
 
 

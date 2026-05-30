@@ -128,7 +128,9 @@ def _write_compact_log(
 
     with log_path.open("w", encoding="utf-8") as log_file:
         log_file.write("# Compact command log\n")
-        log_file.write("# Full verbose logs are disabled by default for Issue #159 log-volume control.\n")
+        log_file.write(
+            "# Full verbose logs are disabled by default for Issue #159 log-volume control.\n"
+        )
         log_file.write("# Command: " + " ".join(str(part) for part in cmd) + "\n")
         log_file.write(f"# Return code: {returncode}\n")
         log_file.write(f"# Duration seconds: {duration_sec:.3f}\n")
@@ -156,7 +158,9 @@ def _write_compact_log(
     )
 
 
-def _run_command(cmd: list[str], *, log_path: Path, verbose_logs: bool = False) -> CommandLogSummary:
+def _run_command(
+    cmd: list[str], *, log_path: Path, verbose_logs: bool = False
+) -> CommandLogSummary:
     log_path.parent.mkdir(parents=True, exist_ok=True)
     effective_log_path = log_path if verbose_logs else _compact_log_path(log_path)
     logger.info("+ %s > %s", " ".join(cmd), effective_log_path)
@@ -273,7 +277,11 @@ def regenerate_dense_candidates(
     ]
     _add_params(gen_cmd, GENERATION_PARAMS)
     command_summaries.append(
-        _run_command(gen_cmd, log_path=log_dir / "01_generate_probe_candidates.log", verbose_logs=verbose_logs)
+        _run_command(
+            gen_cmd,
+            log_path=log_dir / "01_generate_probe_candidates.log",
+            verbose_logs=verbose_logs,
+        )
     )
 
     filter_cmd = [
@@ -294,7 +302,11 @@ def regenerate_dense_candidates(
     ]
     _add_params(filter_cmd, FILTER_PARAMS)
     command_summaries.append(
-        _run_command(filter_cmd, log_path=log_dir / "02_apply_candidate_filter.log", verbose_logs=verbose_logs)
+        _run_command(
+            filter_cmd,
+            log_path=log_dir / "02_apply_candidate_filter.log",
+            verbose_logs=verbose_logs,
+        )
     )
 
     summary = json.loads(filter_summary.read_text())
@@ -359,7 +371,9 @@ def regenerate_probe_rescue_candidates(
     )
     expected_pages = len(image_paths)
     if processed != expected_pages:
-        raise RuntimeError(f"Probe-rescue candidate reconstruction processed {processed}/{expected_pages} pages")
+        raise RuntimeError(
+            f"Probe-rescue candidate reconstruction processed {processed}/{expected_pages} pages"
+        )
     if phase_summaries is not None:
         phase_summaries.append(
             _phase_summary(

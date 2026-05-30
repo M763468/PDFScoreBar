@@ -14,8 +14,10 @@ from src.pipeline.detector_routes.dense_full_pipeline import (  # noqa: F401
     DenseRouteArtifacts,
     load_route_image_paths,
     reconstruct_dense_full_pipeline_route,
-    regenerate_dense_candidates as _regenerate_dense_candidates,
     regenerate_probe_rescue_candidates,
+)
+from src.pipeline.detector_routes.dense_full_pipeline import (
+    regenerate_dense_candidates as _regenerate_dense_candidates,
 )
 
 STAGE_E_EXPECTED_PAGES = DENSE_ROUTE_EXPECTED_PAGES
@@ -53,7 +55,9 @@ def regenerate_dense_candidates(*, inventory: Path, exclude: Path, stage_e_root:
     )
 
 
-def regenerate_issue53_candidates(*, image_paths: list[Path], filtered_root: Path, stage_e_root: Path) -> Path:
+def regenerate_issue53_candidates(
+    *, image_paths: list[Path], filtered_root: Path, stage_e_root: Path
+) -> Path:
     """Compatibility wrapper for the historical Issue53-style rescue name."""
     return regenerate_probe_rescue_candidates(
         image_paths=image_paths,

@@ -113,12 +113,70 @@ def _summarize_console_log(path: Path) -> dict[str, Any]:
                 logger_name = parts[3].rstrip(":")
                 logger_counts[logger_name] = logger_counts.get(logger_name, 0) + 1
 
-    summary["logger_counts"] = dict(sorted(logger_counts.items(), key=lambda item: item[1], reverse=True)[:20])
+    summary["logger_counts"] = dict(
+        sorted(logger_counts.items(), key=lambda item: item[1], reverse=True)[:20]
+    )
     summary["marker_counts"] = marker_counts
     summary_path = path.with_suffix(".summary.json")
     summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
     summary["summary_path"] = str(summary_path)
     return summary
+
+
+def _is_warning_or_error_line(line: str) -> bool:
+    lower = line.lower()
+    return any(
+        marker in lower
+        for marker in (
+            "warning",
+            "error",
+            "traceback",
+            "exception",
+            "failed",
+            "failure",
+        )
+    )
+
+
+def _is_progress_line(line: str) -> bool:
+    lower = line.lower()
+    stripped = line.strip()
+    if "|" in line and "%" in line:
+        return True
+    if stripped.startswith("Downloaded ") and "%" in stripped:
+        return True
+    if "downloaded" in lower and " of " in lower and "%" in lower:
+        return True
+    return False
+
+
+def _filter_default_console_log(*, raw_path: Path, filtered_path: Path) -> dict[str, Any]:
+    """Write a bounded default console log while preserving raw stdout/stderr separately."""
+    stats = {
+        "schema_version": "tools.issue120.stage_e_console_filter.v1",
+        "raw_path": str(raw_path),
+        "filtered_path": str(filtered_path),
+        "raw_line_count": 0,
+        "kept_line_count": 0,
+        "dropped_line_count": 0,
+        "dropped_progress_line_count": 0,
+        "dropped_external_raw_line_count": 0,
+    }
+    filtered_path.parent.mkdir(parents=True, exist_ok=True)
+    with raw_path.open("r", encoding="utf-8", errors="replace") as src:
+        with filtered_path.open("w", encoding="utf-8") as dst:
+            for line in src:
+                stats["raw_line_count"] += 1
+                if _is_warning_or_error_line(line):
+                    dst.write(line)
+                    stats["kept_line_count"] += 1
+                    continue
+                stats["dropped_line_count"] += 1
+                if _is_progress_line(line):
+                    stats["dropped_progress_line_count"] += 1
+                else:
+                    stats["dropped_external_raw_line_count"] += 1
+    return stats
 
 
 class ResourceSampler:
@@ -152,7 +210,9 @@ class ResourceSampler:
     def start(self) -> None:
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
         self._started_at = time.perf_counter()
-        self._thread = threading.Thread(target=self._run, name="stage-e-resource-sampler", daemon=True)
+        self._thread = threading.Thread(
+            target=self._run, name="stage-e-resource-sampler", daemon=True
+        )
         self._thread.start()
 
     def stop(self) -> dict[str, Any]:
@@ -172,7 +232,9 @@ class ResourceSampler:
         self_maxrss_bytes = _linux_maxrss_bytes(self_rusage.ru_maxrss)
         children_maxrss_bytes = _linux_maxrss_bytes(children_rusage.ru_maxrss)
         self._peak_self_maxrss_bytes = max(self._peak_self_maxrss_bytes, self_maxrss_bytes)
-        self._peak_children_maxrss_bytes = max(self._peak_children_maxrss_bytes, children_maxrss_bytes)
+        self._peak_children_maxrss_bytes = max(
+            self._peak_children_maxrss_bytes, children_maxrss_bytes
+        )
 
         total_cpu_sec = _cpu_seconds(self_rusage) + _cpu_seconds(children_rusage)
         rusage_cpu_percent = None
@@ -241,7 +303,9 @@ class ResourceSampler:
         self._previous_process_tree_cpu_sec = process_tree_cpu_times_sec
 
         self._peak_psutil_rss_bytes = max(self._peak_psutil_rss_bytes, rss_bytes)
-        self._peak_psutil_children_rss_bytes = max(self._peak_psutil_children_rss_bytes, children_rss_bytes)
+        self._peak_psutil_children_rss_bytes = max(
+            self._peak_psutil_children_rss_bytes, children_rss_bytes
+        )
         sample.update(
             {
                 "psutil_available": True,
@@ -329,11 +393,37 @@ def _redirect_stdout_stderr_to_file(path: Path):
             os.close(original_stderr_fd)
 
 
+@contextlib.contextmanager
+def _temporary_env(overrides: dict[str, str]):
+    """Temporarily set environment variables and restore their previous values."""
+    previous = {key: os.environ.get(key) for key in overrides}
+    try:
+        for key, value in overrides.items():
+            os.environ[key] = value
+        yield
+    finally:
+        for key, value in previous.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+
+def _env_flag_enabled(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run Stage E full 68-page pipeline.")
-    parser.add_argument("--config", type=Path, default="configs/issue120_stage_e_full_pipeline.yaml")
-    parser.add_argument("--inventory", type=Path, default="logs/issue36_prep/20260208_bench_inventory.json")
-    parser.add_argument("--exclude", type=Path, default="logs/issue36_prep/excluded_pages_for_gt_prep.json")
+    parser.add_argument(
+        "--config", type=Path, default="configs/issue120_stage_e_full_pipeline.yaml"
+    )
+    parser.add_argument(
+        "--inventory", type=Path, default="logs/issue36_prep/20260208_bench_inventory.json"
+    )
+    parser.add_argument(
+        "--exclude", type=Path, default="logs/issue36_prep/excluded_pages_for_gt_prep.json"
+    )
     parser.add_argument("--output-root", type=Path, default="logs/issue120_e2e_recovery")
     parser.add_argument(
         "--dense-route-verbose-logs",
@@ -357,6 +447,14 @@ def main():
         default=None,
         help="File for stdout/stderr emitted by full pipeline execution. Defaults under the Stage E run directory.",
     )
+    parser.add_argument(
+        "--pipeline-diagnostic-logs",
+        action="store_true",
+        help=(
+            "Keep verbose pipeline INFO/progress output in the captured stdout/stderr log. "
+            "By default Stage E captures warning/error output and leaves detailed logs in pipeline.log."
+        ),
+    )
     args = parser.parse_args()
 
     if not args.inventory.exists():
@@ -366,7 +464,9 @@ def main():
         logger.error(f"Exclude file not found: {args.exclude}")
         sys.exit(1)
     if not args.no_resource_sampling and args.resource_sample_interval_sec <= 0:
-        parser.error("--resource-sample-interval-sec must be positive when resource sampling is enabled.")
+        parser.error(
+            "--resource-sample-interval-sec must be positive when resource sampling is enabled."
+        )
 
     route_root = args.output_root / "stage_e_full_pipeline"
     if route_root.exists():
@@ -403,7 +503,9 @@ def main():
     config["inputs"]["pdf_to_images"]["output_dir"] = str(route_images_dir)
     config["inputs"]["pdf_to_images"]["image_glob"] = "*.png"
     config["run"]["run_id"] = "stage_e_full_pipeline"
-    config["detection"]["precomputed_probe_candidates_root"] = str(route_artifacts.probe_rescue_root)
+    config["detection"]["precomputed_probe_candidates_root"] = str(
+        route_artifacts.probe_rescue_root
+    )
     config["detection"]["cnn_bands_from"] = str(route_artifacts.filtered_root)
     config["detection"]["probe_use_original_images"] = True
 
@@ -414,6 +516,18 @@ def main():
         yaml.dump(config, f, sort_keys=False)
 
     pipeline_console_log = args.pipeline_console_log or route_root / "pipeline_stdout_stderr.log"
+    pipeline_diagnostic_logs = args.pipeline_diagnostic_logs or _env_flag_enabled(
+        "PDFSCORE_STAGE_E_DIAGNOSTIC_LOGS"
+    )
+    pipeline_capture_log = (
+        pipeline_console_log
+        if pipeline_diagnostic_logs
+        else pipeline_console_log.with_name(
+            f"{pipeline_console_log.stem}.raw{pipeline_console_log.suffix}"
+        )
+    )
+    pipeline_console_level = logging.INFO if pipeline_diagnostic_logs else logging.WARNING
+    progress_env_overrides = {} if pipeline_diagnostic_logs else {"TQDM_DISABLE": "1"}
     resource_sampler = None
     resource_summary: dict[str, Any] | None = None
     if not args.no_resource_sampling:
@@ -423,18 +537,26 @@ def main():
         )
 
     logger.info(f"Starting pipeline using config: {temp_config_path}")
-    logger.info("Pipeline stdout/stderr will be captured to %s", pipeline_console_log)
+    logger.info("Pipeline stdout/stderr will be captured to %s", pipeline_capture_log)
+    logger.info(
+        "Pipeline logging mode: %s (console_level=%s, progress_bars=%s)",
+        "diagnostic" if pipeline_diagnostic_logs else "default_quiet",
+        logging.getLevelName(pipeline_console_level),
+        "enabled" if pipeline_diagnostic_logs else "disabled",
+    )
 
     pipeline_started_at = time.perf_counter()
     try:
         if resource_sampler is not None:
             resource_sampler.start()
-        with _redirect_stdout_stderr_to_file(pipeline_console_log):
-            run_pipeline(
-                config_path=temp_config_path,
-                run_id="stage_e_full_pipeline",
-                output_root=args.output_root,
-            )
+        with _redirect_stdout_stderr_to_file(pipeline_capture_log):
+            with _temporary_env(progress_env_overrides):
+                run_pipeline(
+                    config_path=temp_config_path,
+                    run_id="stage_e_full_pipeline",
+                    output_root=args.output_root,
+                    console_log_level=pipeline_console_level,
+                )
     finally:
         if resource_sampler is not None:
             resource_summary = resource_sampler.stop()
@@ -442,6 +564,12 @@ def main():
 
     pipeline_phase_summary_path = route_root / "pipeline_phase_summary.json"
     pipeline_phase_summary = _load_optional_json(pipeline_phase_summary_path)
+    console_filter_summary = None
+    if not pipeline_diagnostic_logs:
+        console_filter_summary = _filter_default_console_log(
+            raw_path=pipeline_capture_log,
+            filtered_path=pipeline_console_log,
+        )
     pipeline_console_log_summary = _summarize_console_log(pipeline_console_log)
     run_summary_path = route_root / "stage_e_runtime_summary.json"
     run_summary = {
@@ -461,12 +589,40 @@ def main():
             "phase_summary_path": str(pipeline_phase_summary_path),
             "phase_summary": pipeline_phase_summary,
             "stdout_stderr_log": str(pipeline_console_log),
+            "stdout_stderr_raw_log": str(pipeline_capture_log)
+            if pipeline_capture_log != pipeline_console_log
+            else None,
+            "stdout_stderr_raw_log_size_bytes": pipeline_capture_log.stat().st_size
+            if pipeline_capture_log.exists()
+            else 0,
             "stdout_stderr_log_size_bytes": pipeline_console_log_summary["size_bytes"],
             "stdout_stderr_log_summary": pipeline_console_log_summary,
+            "stdout_stderr_filter_summary": console_filter_summary,
+            "logging_policy": {
+                "schema_version": "tools.issue120.stage_e_pipeline_logging_policy.v1",
+                "mode": "diagnostic" if pipeline_diagnostic_logs else "default_quiet",
+                "console_log_level": logging.getLevelName(pipeline_console_level),
+                "progress_bars_disabled": not pipeline_diagnostic_logs,
+                "detail_artifact": str(route_root / "pipeline.log"),
+                "raw_stdout_stderr_artifact": str(pipeline_capture_log)
+                if pipeline_capture_log != pipeline_console_log
+                else None,
+                "diagnostic_enable": (
+                    "--pipeline-diagnostic-logs or PDFSCORE_STAGE_E_DIAGNOSTIC_LOGS=1"
+                ),
+            },
         },
         "resource_monitor": resource_summary,
     }
-    run_summary_path.write_text(json.dumps(run_summary, indent=2, ensure_ascii=False), encoding="utf-8")
+    run_summary_path.write_text(
+        json.dumps(run_summary, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    logger.info(
+        "Captured pipeline stdout/stderr summary: lines=%s size_bytes=%s markers=%s",
+        pipeline_console_log_summary["line_count"],
+        pipeline_console_log_summary["size_bytes"],
+        pipeline_console_log_summary["marker_counts"],
+    )
     logger.info("Stage E runtime summary written to %s", run_summary_path)
     logger.info("Stage E full pipeline run completed.")
 

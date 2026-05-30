@@ -179,6 +179,79 @@ def _filter_default_console_log(*, raw_path: Path, filtered_path: Path) -> dict[
     return stats
 
 
+class CapturedProgressMirror:
+    """Mirror selected captured fd-level lines to the original console while retaining raw logs."""
+
+    def __init__(self, *, capture_path: Path, mirror_progress: bool = True) -> None:
+        self.capture_path = capture_path
+        self.mirror_progress = mirror_progress
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._console_stderr_fd: int | None = None
+        self._position = 0
+        self._mirrored_progress_line_count = 0
+        self._mirrored_warning_or_error_line_count = 0
+
+    def start(self) -> None:
+        self._console_stderr_fd = os.dup(2)
+        self._thread = threading.Thread(
+            target=self._run,
+            name="stage-e-captured-progress-mirror",
+            daemon=True,
+        )
+        self._thread.start()
+
+    def stop(self) -> dict[str, Any]:
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=2.0)
+        self._drain_once()
+        if self._console_stderr_fd is not None:
+            os.write(self._console_stderr_fd, b"\n")
+            os.close(self._console_stderr_fd)
+            self._console_stderr_fd = None
+        return self.summary()
+
+    def summary(self) -> dict[str, Any]:
+        return {
+            "schema_version": "tools.issue120.stage_e_console_progress_mirror.v1",
+            "capture_path": str(self.capture_path),
+            "mirror_progress": self.mirror_progress,
+            "mirrored_progress_line_count": self._mirrored_progress_line_count,
+            "mirrored_warning_or_error_line_count": self._mirrored_warning_or_error_line_count,
+        }
+
+    def _run(self) -> None:
+        while not self._stop.wait(0.5):
+            self._drain_once()
+
+    def _drain_once(self) -> None:
+        if self._console_stderr_fd is None or not self.capture_path.exists():
+            return
+        with self.capture_path.open("r", encoding="utf-8", errors="replace") as f:
+            f.seek(self._position)
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+                self._position = f.tell()
+                self._mirror_line(line)
+
+    def _mirror_line(self, line: str) -> None:
+        if self._console_stderr_fd is None:
+            return
+        if _is_warning_or_error_line(line):
+            os.write(self._console_stderr_fd, ("\n" + line).encode("utf-8", errors="replace"))
+            self._mirrored_warning_or_error_line_count += 1
+            return
+        if self.mirror_progress and _is_progress_line(line):
+            os.write(
+                self._console_stderr_fd,
+                ("\r" + line.rstrip()).encode("utf-8", errors="replace"),
+            )
+            self._mirrored_progress_line_count += 1
+
+
 class ResourceSampler:
     """Best-effort process/GPU resource sampler for long Stage E runs."""
 
@@ -527,9 +600,11 @@ def main():
         )
     )
     pipeline_console_level = logging.INFO if pipeline_diagnostic_logs else logging.WARNING
-    progress_env_overrides = {} if pipeline_diagnostic_logs else {"TQDM_DISABLE": "1"}
+    progress_env_overrides: dict[str, str] = {}
     resource_sampler = None
     resource_summary: dict[str, Any] | None = None
+    progress_mirror = None
+    progress_mirror_summary = None
     if not args.no_resource_sampling:
         resource_sampler = ResourceSampler(
             output_path=route_root / "stage_e_resource_samples.jsonl",
@@ -542,13 +617,16 @@ def main():
         "Pipeline logging mode: %s (console_level=%s, progress_bars=%s)",
         "diagnostic" if pipeline_diagnostic_logs else "default_quiet",
         logging.getLevelName(pipeline_console_level),
-        "enabled" if pipeline_diagnostic_logs else "disabled",
+        "captured" if pipeline_diagnostic_logs else "mirrored_to_console_and_filtered_from_log",
     )
 
     pipeline_started_at = time.perf_counter()
     try:
         if resource_sampler is not None:
             resource_sampler.start()
+        if not pipeline_diagnostic_logs:
+            progress_mirror = CapturedProgressMirror(capture_path=pipeline_capture_log)
+            progress_mirror.start()
         with _redirect_stdout_stderr_to_file(pipeline_capture_log):
             with _temporary_env(progress_env_overrides):
                 run_pipeline(
@@ -558,6 +636,8 @@ def main():
                     console_log_level=pipeline_console_level,
                 )
     finally:
+        if progress_mirror is not None:
+            progress_mirror_summary = progress_mirror.stop()
         if resource_sampler is not None:
             resource_summary = resource_sampler.stop()
     pipeline_duration_sec = time.perf_counter() - pipeline_started_at
@@ -598,11 +678,12 @@ def main():
             "stdout_stderr_log_size_bytes": pipeline_console_log_summary["size_bytes"],
             "stdout_stderr_log_summary": pipeline_console_log_summary,
             "stdout_stderr_filter_summary": console_filter_summary,
+            "stdout_stderr_progress_mirror_summary": progress_mirror_summary,
             "logging_policy": {
                 "schema_version": "tools.issue120.stage_e_pipeline_logging_policy.v1",
                 "mode": "diagnostic" if pipeline_diagnostic_logs else "default_quiet",
                 "console_log_level": logging.getLevelName(pipeline_console_level),
-                "progress_bars_disabled": not pipeline_diagnostic_logs,
+                "progress_bars_console_mirrored": not pipeline_diagnostic_logs,
                 "detail_artifact": str(route_root / "pipeline.log"),
                 "raw_stdout_stderr_artifact": str(pipeline_capture_log)
                 if pipeline_capture_log != pipeline_console_log

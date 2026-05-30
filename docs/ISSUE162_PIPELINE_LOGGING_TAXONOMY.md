@@ -9,8 +9,8 @@ diagnostic evidence under `logs/` when explicitly requested.
 | Category | Default console output | Artifact capture | Diagnostic enablement | Current examples |
 | --- | --- | --- | --- | --- |
 | Acceptance-critical summary | Yes | Yes | Always on | Stage E detector eval output, `evaluation_contract.json`, `stage_e_runtime_summary.json`, `pipeline_stdout_stderr.summary.json` |
-| Operational progress | Yes, bounded summaries only | Yes | Full step chatter via `--pipeline-diagnostic-logs` or `PDFSCORE_STAGE_E_DIAGNOSTIC_LOGS=1` | Stage E start/end lines, image copy count, runtime/resource summary paths, pipeline phase summary |
-| Diagnostic per-item detail | No | Yes | `pipeline.log`; include in captured stdout/stderr with `--pipeline-diagnostic-logs` or `PDFSCORE_STAGE_E_DIAGNOSTIC_LOGS=1` | per-page tqdm loops, probe scale-aware parameter lines, MMR per-hit `[FOUND]` / `[RESCUE]` messages |
+| Operational progress | Yes, bounded summaries plus live tqdm-style progress | Yes | Full step chatter via `--pipeline-diagnostic-logs` or `PDFSCORE_STAGE_E_DIAGNOSTIC_LOGS=1` | Stage E start/end lines, image copy count, runtime/resource summary paths, pipeline phase summary, live `tqdm` progress |
+| Diagnostic per-item detail | No | Yes | `pipeline.log`; include in captured stdout/stderr with `--pipeline-diagnostic-logs` or `PDFSCORE_STAGE_E_DIAGNOSTIC_LOGS=1` | probe scale-aware parameter lines, MMR per-hit `[FOUND]` / `[RESCUE]` messages |
 | External-tool raw output | No by default, except warnings/errors | Yes, in raw stdout/stderr artifacts | `pipeline_stdout_stderr.raw.log`; captured stdout/stderr can be made verbose with `--pipeline-diagnostic-logs` or `PDFSCORE_STAGE_E_DIAGNOSTIC_LOGS=1` | HOMR eprint/info output, Real-ESRGAN initialization/inference lines, OMR-DLN subprocess output |
 | Warning/error | Yes | Yes | Always on | missing component warnings, failed image reads, Real-ESRGAN import/init/inference failures, subprocess failures |
 
@@ -20,7 +20,7 @@ diagnostic evidence under `logs/` when explicitly requested.
 diagnostic verbosity is requested.
 
 - Pipeline stream handler level: `WARNING`
-- Progress bars: disabled through `TQDM_DISABLE=1`
+- Progress bars: mirrored to the live console from the raw captured stream
 - Captured stream artifact: `logs/issue120_e2e_recovery/stage_e_full_pipeline/pipeline_stdout_stderr.log`
 - Raw captured stream artifact: `logs/issue120_e2e_recovery/stage_e_full_pipeline/pipeline_stdout_stderr.raw.log`
 - Captured stream summary: `pipeline_stdout_stderr.summary.json`
@@ -29,7 +29,9 @@ diagnostic verbosity is requested.
 The Stage E runner still records the stdout/stderr artifact and summary under
 `logs/`. In default mode, the raw file preserves fd-level external output while
 the default `pipeline_stdout_stderr.log` is filtered to warnings/errors and any
-unexpected direct stream output rather than routine per-page progress.
+unexpected direct stream output rather than routine per-page progress. During
+the run, progress-like `tqdm` lines are mirrored from the raw capture back to
+the console so a long Stage E run still shows liveness and phase progress.
 
 ## Existing Log Source Evaluation
 
@@ -47,7 +49,7 @@ The following policy is now applied:
 | `pipeline.log` file handler | DEBUG+ Python logging from pipeline modules | Diagnostic per-item detail | Always written as a diagnostic artifact; not treated as default console output | Same |
 | HOMR fd-level output / `eprint` | Model download progress, per-page inference chatter, HOMR messages | External-tool raw output | Captured first to `pipeline_stdout_stderr.raw.log`, then filtered out of default log unless warning/error-like | Preserved directly in `pipeline_stdout_stderr.log` |
 | Real-ESRGAN prints | Initialization/inference status and failures | External-tool raw output / warning/error | Routine messages moved to logger INFO; failures remain logger ERROR | INFO/errors available through `pipeline.log` and diagnostic captured stream |
-| `tqdm` progress bars | Per-page progress lines such as `SR/Preparation: 10%...` | Operational progress / diagnostic per-item detail | `TQDM_DISABLE=1` is set and any remaining progress-like fd output is filtered | Preserved directly in diagnostic captured stream |
+| `tqdm` progress bars | Per-page progress lines such as `SR/Preparation: 10%...` | Operational progress | Mirrored live to the console, preserved in raw stdout/stderr, filtered out of default final log | Preserved directly in diagnostic captured stream |
 | `src.measure_numbering.mmr` per-hit logs | `[FOUND]` / `[RESCUE]` per-measure evidence | Diagnostic per-item detail | Hidden from default captured stream by `WARNING` stream level; retained in `pipeline.log` | Visible in diagnostic captured stream |
 | Warning/error lines | RapidOCR empty detections, missing files, subprocess failures, tracebacks | Warning/error | Kept in default `pipeline_stdout_stderr.log` and counted in summary | Same |
 
@@ -78,7 +80,7 @@ Default Stage E runs write the following log-related artifacts under
 | `pipeline_stdout_stderr.raw.log` | Plain text | Raw stdout/stderr evidence | Unfiltered external tool output, progress bars, and direct fd output |
 | `pipeline_stdout_stderr.summary.json` | JSON object | Machine-readable summary of `pipeline_stdout_stderr.log` | Line count, byte size, logger counts, marker counts |
 | `pipeline.log` | Plain text logging format | Diagnostic Python logger evidence | DEBUG+ pipeline logging, including routine INFO/detail |
-| `stage_e_runtime_summary.json` | JSON object | Runtime, resource, and log policy summary | Pipeline duration, log artifact paths, filter summary, resource summary |
+| `stage_e_runtime_summary.json` | JSON object | Runtime, resource, and log policy summary | Pipeline duration, log artifact paths, filter summary, progress mirror summary, resource summary |
 | `stage_e_resource_samples.jsonl` | JSON Lines | Periodic resource samples | Process/RSS/rusage/GPU samples |
 | `stage_e_resource_samples.summary.json` | JSON object | Resource sample aggregate | Peak memory/CPU/GPU values |
 | `eval_detector/evaluation_contract.json` | JSON object | Acceptance-critical detector contract | Expected/evaluated page counts, TP/FP/FN, FN attribution, `target_met` |
@@ -144,11 +146,18 @@ The `pipeline` object records the log policy and filtering result:
       "dropped_progress_line_count": 809,
       "dropped_external_raw_line_count": 15349
     },
+    "stdout_stderr_progress_mirror_summary": {
+      "schema_version": "tools.issue120.stage_e_console_progress_mirror.v1",
+      "capture_path": "logs/issue120_e2e_recovery/stage_e_full_pipeline/pipeline_stdout_stderr.raw.log",
+      "mirror_progress": true,
+      "mirrored_progress_line_count": 809,
+      "mirrored_warning_or_error_line_count": 6
+    },
     "logging_policy": {
       "schema_version": "tools.issue120.stage_e_pipeline_logging_policy.v1",
       "mode": "default_quiet",
       "console_log_level": "WARNING",
-      "progress_bars_disabled": true,
+      "progress_bars_console_mirrored": true,
       "detail_artifact": "logs/issue120_e2e_recovery/stage_e_full_pipeline/pipeline.log",
       "raw_stdout_stderr_artifact": "logs/issue120_e2e_recovery/stage_e_full_pipeline/pipeline_stdout_stderr.raw.log",
       "diagnostic_enable": "--pipeline-diagnostic-logs or PDFSCORE_STAGE_E_DIAGNOSTIC_LOGS=1"

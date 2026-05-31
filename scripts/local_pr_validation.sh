@@ -5,8 +5,9 @@ usage() {
   cat <<'USAGE'
 Usage: scripts/local_pr_validation.sh [--pr NUMBER] [--with-gpu] [--with-full-eval] [--pull] [--post-comment]
 
-Runs lightweight local PR validation and writes a reproducible summary.
-GPU smoke is opt-in because it depends on local WSL/GPU/Docker availability.
+Runs local PR validation and writes a reproducible summary.
+The script also inspects changed paths and reports validation that may be required
+by docs/dev/VALIDATION_POLICY.md.
 
 Environment:
   FULL_EVAL_CMD       Default: make run-pipeline CONFIG=configs/evaluation2_e2e_verification_full.yaml
@@ -64,6 +65,10 @@ summary_file="${log_dir}/summary.md"
 test_log="${log_dir}/test_fast.log"
 gpu_log="${log_dir}/gpu_smoke_launcher.log"
 full_eval_log="${log_dir}/full_eval_launcher.log"
+changed_files_file="${log_dir}/changed_files.txt"
+change_categories_file="${log_dir}/change_categories.txt"
+required_validation_file="${log_dir}/required_validation.txt"
+validation_warnings_file="${log_dir}/validation_warnings.txt"
 
 overall_status=0
 test_status="not-run"
@@ -84,6 +89,102 @@ run_and_capture() {
   echo "${label}_exit_code=${status}" | tee -a "$outfile"
   return "$status"
 }
+
+add_unique_line() {
+  local file="$1"
+  local line="$2"
+  grep -Fxq "$line" "$file" 2>/dev/null || echo "$line" >>"$file"
+}
+
+collect_changed_files() {
+  if git rev-parse --verify origin/main >/dev/null 2>&1; then
+    git diff --name-only origin/main...HEAD >"$changed_files_file" || true
+  else
+    git diff --name-only HEAD~1...HEAD >"$changed_files_file" || true
+  fi
+
+  if [[ ! -s "$changed_files_file" ]]; then
+    git status --short | awk '{print $2}' >"$changed_files_file" || true
+  fi
+}
+
+classify_changes() {
+  : >"$change_categories_file"
+  : >"$required_validation_file"
+  : >"$validation_warnings_file"
+
+  if [[ ! -s "$changed_files_file" ]]; then
+    add_unique_line "$change_categories_file" "no changed files detected"
+    add_unique_line "$required_validation_file" "manual inspection"
+    return
+  fi
+
+  while IFS= read -r path; do
+    [[ -z "$path" ]] && continue
+
+    case "$path" in
+      *.md|docs/*)
+        add_unique_line "$change_categories_file" "docs"
+        add_unique_line "$required_validation_file" "git diff --check and local doc review"
+        ;;
+    esac
+
+    case "$path" in
+      Makefile|scripts/*.sh)
+        add_unique_line "$change_categories_file" "shell-or-makefile"
+        add_unique_line "$required_validation_file" "bash -n for touched scripts, make help, relevant help/dry-run"
+        ;;
+    esac
+
+    case "$path" in
+      *.py|tests/*.py|tools/*.py|tools/**/*.py)
+        add_unique_line "$change_categories_file" "python"
+        add_unique_line "$required_validation_file" "targeted pytest or import/compile check plus make test-fast when applicable"
+        ;;
+    esac
+
+    case "$path" in
+      src/pipeline/*|src/pipeline/**/*|tools/issue120/*|tools/issue120/**/*)
+        add_unique_line "$change_categories_file" "pipeline-sensitive"
+        add_unique_line "$required_validation_file" "make test-fast plus verify-pipeline-smoke or verify-gpu-smoke"
+        ;;
+    esac
+
+    case "$path" in
+      configs/*|configs/**/*|experiments/*|experiments/**/*)
+        add_unique_line "$change_categories_file" "evaluation-sensitive"
+        add_unique_line "$required_validation_file" "evaluation-sensitive review plus full evaluation or explicit human skip/defer decision"
+        ;;
+    esac
+
+    case "$path" in
+      Dockerfile|requirements.txt|pyproject.toml|uv.lock)
+        add_unique_line "$change_categories_file" "environment-sensitive"
+        add_unique_line "$required_validation_file" "environment/build validation plus GPU smoke when runtime stack is affected"
+        ;;
+    esac
+  done <"$changed_files_file"
+
+  if git diff --unified=0 origin/main...HEAD 2>/dev/null | grep -Eiq 'threshold|seed|dataset|metric|evaluation|baseline|canonical|filter|detector|orchestrator|route'; then
+    add_unique_line "$change_categories_file" "keyword-sensitive"
+    add_unique_line "$required_validation_file" "explain sensitive diff terms and run or explicitly skip stronger validation"
+  fi
+
+  if grep -Eq 'pipeline-sensitive|evaluation-sensitive|environment-sensitive|keyword-sensitive' "$change_categories_file"; then
+    if [[ "$with_gpu" -ne 1 ]]; then
+      add_unique_line "$validation_warnings_file" "GPU or pipeline-sensitive changes detected, but --with-gpu was not set."
+    fi
+  fi
+
+  if grep -Eq 'evaluation-sensitive|keyword-sensitive' "$change_categories_file"; then
+    if [[ "$with_full_eval" -ne 1 ]]; then
+      add_unique_line "$validation_warnings_file" "Evaluation-sensitive changes detected, but --with-full-eval was not set. Record human skip/defer decision if this is intentional."
+    fi
+  fi
+}
+
+collect_changed_files
+classify_changes
 
 {
   echo "timestamp_utc=${timestamp}"
@@ -142,6 +243,22 @@ cat >"$summary_file" <<EOF_SUMMARY
 - Log path: \`${log_dir}\`
 - Overall exit code: ${overall_status}
 
+### Detected change categories
+
+$(sed 's/^/- /' "$change_categories_file")
+
+### Required or recommended validation
+
+$(sed 's/^/- /' "$required_validation_file")
+
+### Validation warnings
+
+$(if [[ -s "$validation_warnings_file" ]]; then sed 's/^/- WARNING: /' "$validation_warnings_file"; else echo "- None"; fi)
+
+### Changed files
+
+$(if [[ -s "$changed_files_file" ]]; then sed 's/^/- /' "$changed_files_file"; else echo "- No changed files detected"; fi)
+
 ### Commands
 
 - \`make test-fast\`
@@ -150,7 +267,7 @@ $(if [[ "$with_full_eval" -eq 1 ]]; then echo "- \`scripts/gpu_smoke.sh --timeou
 
 ### Notes
 
-$(if [[ "$with_full_eval" -eq 1 ]]; then echo "- Full evaluation was explicitly requested for this run."; else echo "- Full evaluation was not run by this script. It remains opt-in."; fi)
+$(if [[ "$with_full_eval" -eq 1 ]]; then echo "- Full evaluation was explicitly requested for this run."; else echo "- Full evaluation was not run by this script. It remains governed by docs/dev/VALIDATION_POLICY.md."; fi)
 - If GitHub posting is requested, this script uses \`gh pr comment --body-file\`.
 EOF_SUMMARY
 

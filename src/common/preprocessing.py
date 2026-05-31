@@ -1,11 +1,60 @@
+import contextlib
+import logging
 import os
+import sys
 from typing import Any, Optional
 
 import cv2
 import numpy as np
 
+logger = logging.getLogger(__name__)
+
 IMAGE_SIZE_THRESHOLD_FOR_TILING = 1000
 DEFAULT_TILE_SIZE = 400
+
+
+def _env_flag_enabled(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+class _RealESRGANTileLogFilter:
+    """Drop Real-ESRGAN per-tile progress prints while forwarding other stdout."""
+
+    def __init__(self, stream: Any) -> None:
+        self.stream = stream
+        self._pending = ""
+
+    def write(self, text: str) -> int:
+        self._pending += text
+        while "\n" in self._pending:
+            line, self._pending = self._pending.split("\n", 1)
+            self._write_line(line + "\n")
+        return len(text)
+
+    def flush(self) -> None:
+        if self._pending:
+            self._write_line(self._pending)
+            self._pending = ""
+        self.stream.flush()
+
+    def _write_line(self, line: str) -> None:
+        stripped = line.strip()
+        if stripped.startswith("Tile ") and "/" in stripped:
+            return
+        self.stream.write(line)
+
+
+@contextlib.contextmanager
+def _suppress_realesrgan_tile_logs():
+    if _env_flag_enabled("PDFSCORE_SR_TILE_LOGS"):
+        yield
+        return
+    stream = _RealESRGANTileLogFilter(sys.stdout)
+    with contextlib.redirect_stdout(stream):
+        try:
+            yield
+        finally:
+            stream.flush()
 
 
 def apply_vertical_closing(
@@ -92,12 +141,12 @@ def apply_super_resolution(
     sr.setModel(model_name, scale)
 
     if image.ndim != 3 or image.shape[2] != 3:
-        print("Input image is not 3-channel, converting to BGR for super-resolution.")
+        logger.info("Input image is not 3-channel, converting to BGR for super-resolution.")
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
-    print(f"Upscaling image by factor of {scale} using {model_name}...")
+    logger.info("Upscaling image by factor of %s using %s...", scale, model_name)
     result = sr.upsample(image)
-    print("Upscaling complete.")
+    logger.info("Upscaling complete.")
 
     return result
 
@@ -135,15 +184,15 @@ def apply_advanced_sr(
         from basicsr.archs.rrdbnet_arch import RRDBNet
         from realesrgan import RealESRGANer
     except ImportError as e:
-        print(f"Error importing Real-ESRGAN dependencies: {e}")
-        print("Please ensure you have installed the realesrgan package.")
+        logger.error("Error importing Real-ESRGAN dependencies: %s", e)
+        logger.error("Please ensure you have installed the realesrgan package.")
         return image, upsampler
 
     # Check device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     if upsampler is None:
-        print(f"Initializing Real-ESRGAN ({model_name}) using device: {device}")
+        logger.info("Initializing Real-ESRGAN (%s) using device: %s", model_name, device)
         if model_name == "RealESRGAN_x4plus":
             model = RRDBNet(
                 num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4
@@ -157,7 +206,10 @@ def apply_advanced_sr(
             netscale = 2
             model_path = os.path.join(realesrgan_path, "weights", f"{model_name}.pth")
         else:
-            print(f"Model {model_name} not explicitly supported. A default (x2plus) will be used.")
+            logger.warning(
+                "Model %s not explicitly supported. A default (x2plus) will be used.",
+                model_name,
+            )
             model = RRDBNet(
                 num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2
             )
@@ -191,15 +243,16 @@ def apply_advanced_sr(
                 device=device,
             )
         except Exception as e:
-            print(f"Real-ESRGAN initialization failed: {e}")
+            logger.error("Real-ESRGAN initialization failed: %s", e)
             return image, upsampler
 
     try:
         if image.ndim != 3 or image.shape[2] != 3:
             image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
-        output, _ = upsampler.enhance(image, outscale=scale)
+        with _suppress_realesrgan_tile_logs():
+            output, _ = upsampler.enhance(image, outscale=scale)
         return output, upsampler
     except Exception as e:
-        print(f"Real-ESRGAN inference failed: {e}")
+        logger.error("Real-ESRGAN inference failed: %s", e)
         return image, upsampler

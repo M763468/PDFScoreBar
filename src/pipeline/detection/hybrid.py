@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import contextlib
 import gc
 import json
 import logging
 import os
 import shutil
+import sys
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -35,6 +37,96 @@ except ImportError:
     _HOMR_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
+
+
+def _env_flag_enabled(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+class _HomrInternalLogFilter:
+    """Drop repetitive HOMR internals while forwarding warnings/errors and useful output."""
+
+    _SUPPRESSED_PREFIXES = (
+        "Dewarping staff",
+        "Running TrOmr inference on staff image",
+        "Creating bounds for",
+        "Downloaded ",
+        "Found a cache",
+        "Loading from cache",
+        "Removing tuplets from measure",
+        "Saving cache",
+        "_check_choices_intelligently:",
+    )
+    _SUPPRESSED_CONTAINS = (
+        "[RapidOCR]",
+        "[W:onnxruntime",
+        " clefs",
+        " possible other clefs",
+        " staff anchors",
+        " staffs",
+        " bar lines",
+        " staff line fragments",
+        " noteheads",
+        "Average note head height:",
+        "Fallback mode. May be extremely slow.",
+        " notes during segmentation",
+        "Inference Time Tromr:",
+        "Segnet Inference time:",
+    )
+    _IMPORTANT_MARKERS = (
+        "warning",
+        "error",
+        "traceback",
+        "exception",
+        "failed",
+        "failure",
+    )
+
+    def __init__(self, stream: Any) -> None:
+        self.stream = stream
+        self._pending = ""
+
+    def write(self, text: str) -> int:
+        self._pending += text
+        while "\n" in self._pending:
+            line, self._pending = self._pending.split("\n", 1)
+            self._write_line(line + "\n")
+        return len(text)
+
+    def flush(self) -> None:
+        if self._pending:
+            self._write_line(self._pending)
+            self._pending = ""
+        self.stream.flush()
+
+    def _write_line(self, line: str) -> None:
+        if self._should_suppress(line):
+            return
+        self.stream.write(line)
+
+    def _should_suppress(self, line: str) -> bool:
+        stripped = line.strip()
+        lower = stripped.lower()
+        if any(marker in lower for marker in self._IMPORTANT_MARKERS):
+            return False
+        if stripped.startswith(self._SUPPRESSED_PREFIXES):
+            return True
+        return any(marker in stripped for marker in self._SUPPRESSED_CONTAINS)
+
+
+@contextlib.contextmanager
+def _suppress_homr_low_value_internal_logs():
+    if _env_flag_enabled("PDFSCORE_HOMR_VERBOSE_INTERNAL_LOGS"):
+        yield
+        return
+    stdout_filter = _HomrInternalLogFilter(sys.stdout)
+    stderr_filter = _HomrInternalLogFilter(sys.stderr)
+    with contextlib.redirect_stdout(stdout_filter), contextlib.redirect_stderr(stderr_filter):
+        try:
+            yield
+        finally:
+            stdout_filter.flush()
+            stderr_filter.flush()
 
 
 class HybridDetector:
@@ -261,7 +353,8 @@ class HybridDetector:
             }
         )
 
-        predictor = HomrPredictor(config, tuning, use_gpu_inference=torch.cuda.is_available())
+        with _suppress_homr_low_value_internal_logs():
+            predictor = HomrPredictor(config, tuning, use_gpu_inference=torch.cuda.is_available())
         xml_args = XmlGeneratorArguments(False, None, None)
 
         try:
@@ -313,9 +406,10 @@ class HybridDetector:
                 working_images, desc="Homr Inference", unit="page"
             ):
                 image_run_dir = output_root / "batch" / original_path.stem
-                predictions, _, _, _, notehead_mask, staff_mask, _, _ = predictor.predict(
-                    working_path, xml_args, sr_scale=scale, image_run_dir=image_run_dir
-                )
+                with _suppress_homr_low_value_internal_logs():
+                    predictions, _, _, _, notehead_mask, staff_mask, _, _ = predictor.predict(
+                        working_path, xml_args, sr_scale=scale, image_run_dir=image_run_dir
+                    )
 
                 metrics_predictions = [
                     BarlinePrediction(

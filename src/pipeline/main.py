@@ -31,6 +31,7 @@ def run_pipeline(
     skip_existing: bool = False,
     page_limit: Optional[int] = None,
     debug: bool = False,
+    console_log_level: int = logging.INFO,
 ) -> Path:
     """Entry point for running the full pipeline."""
     from src.pipeline.utils.images import clear_image_cache
@@ -64,7 +65,8 @@ def run_pipeline(
     root_logger.setLevel(logging.DEBUG)
     root_logger.addHandler(file_handler)
 
-    # Ensure the existing console handler (from basicConfig) stays at INFO
+    # Keep the file log diagnostic, while allowing callers such as Stage E to
+    # make non-interactive captured stdout/stderr quieter by default.
     old_handler_levels = []
     for handler in root_logger.handlers:
         if handler == file_handler:
@@ -73,7 +75,7 @@ def run_pipeline(
         if isinstance(handler, logging.StreamHandler) and not isinstance(
             handler, logging.FileHandler
         ):
-            handler.setLevel(logging.INFO)
+            handler.setLevel(console_log_level)
 
     try:
         logger.info(f"Starting pipeline run: {run_id_value}")

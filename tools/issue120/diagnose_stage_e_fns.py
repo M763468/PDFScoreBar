@@ -123,12 +123,26 @@ def first_existing(*paths: Path) -> Path:
 def stage_paths(args: argparse.Namespace, score: str, page: str) -> dict[str, Path]:
     recon = args.reconstruction_root
     probe_rescue = first_existing(
-        recon / "probe_rescue_candidates" / f"eval2_{score}_{page}" / "pipeline2_no_peak_candidates.json",
-        recon / "issue53_probe_rescue_candidates" / f"eval2_{score}_{page}" / "pipeline2_no_peak_candidates.json",
+        recon
+        / "probe_rescue_candidates"
+        / f"eval2_{score}_{page}"
+        / "pipeline2_no_peak_candidates.json",
+        recon
+        / "issue53_probe_rescue_candidates"
+        / f"eval2_{score}_{page}"
+        / "pipeline2_no_peak_candidates.json",
     )
     return {
-        "dense_raw": recon / "probe_candidates_from_inventory" / score / page / "pipeline2_no_peak_candidates.json",
-        "dense_filtered": recon / "probe_candidates_filtered" / score / page / "pipeline2_no_peak_candidates.json",
+        "dense_raw": recon
+        / "probe_candidates_from_inventory"
+        / score
+        / page
+        / "pipeline2_no_peak_candidates.json",
+        "dense_filtered": recon
+        / "probe_candidates_filtered"
+        / score
+        / page
+        / "pipeline2_no_peak_candidates.json",
         "probe_rescue": probe_rescue,
     }
 
@@ -163,7 +177,9 @@ def diagnose(args: argparse.Namespace) -> dict[str, Any]:
             dense_filtered = safe_boxes(
                 extra_paths["dense_filtered"], "candidate", args.score_threshold
             )
-            probe_rescue = safe_boxes(extra_paths["probe_rescue"], "candidate", args.score_threshold)
+            probe_rescue = safe_boxes(
+                extra_paths["probe_rescue"], "candidate", args.score_threshold
+            )
 
             result = greedy_barline_match(
                 preds,

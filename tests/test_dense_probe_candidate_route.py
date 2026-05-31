@@ -86,9 +86,7 @@ def test_dense_probe_candidate_yaml_config_round_trip():
 def test_dense_probe_candidate_yaml_rejects_legacy_issue53_keys(tmp_path):
     config_path = tmp_path / "route.yaml"
     config_path.write_text(
-        "dense_probe_candidate_route:\n"
-        "  workflow:\n"
-        "    skip_issue53_regeneration: true\n",
+        "dense_probe_candidate_route:\n  workflow:\n    skip_issue53_regeneration: true\n",
         encoding="utf-8",
     )
 

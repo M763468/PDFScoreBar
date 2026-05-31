@@ -205,7 +205,13 @@ class TestPipelineDetection(unittest.TestCase):
                     dry_run=False,
                 )
 
-            copied = tmp / "intermediate" / "probe_scan" / "eval2_images_Score_page_001" / "pipeline2_no_peak_candidates.json"
+            copied = (
+                tmp
+                / "intermediate"
+                / "probe_scan"
+                / "eval2_images_Score_page_001"
+                / "pipeline2_no_peak_candidates.json"
+            )
             self.assertTrue(copied.exists())
             mock_probe.assert_not_called()
             mock_cnn.assert_called_once()

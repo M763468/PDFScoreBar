@@ -27,5 +27,5 @@ def split_score_page_from_composite_stem(stem: str) -> tuple[str, str] | None:
     if idx < 0:
         return None
     score = stem[:idx]
-    page = f"page_{stem[idx + len(marker):]}"
+    page = f"page_{stem[idx + len(marker) :]}"
     return score, page

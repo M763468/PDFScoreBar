@@ -1,4 +1,9 @@
-.PHONY: help lint format
+.PHONY: help lint format test-fast verify-pipeline-smoke verify-gpu-smoke verify-full-eval local-pr-validation setup-local-worktree-links
+
+PYTHON ?= python3
+FULL_EVAL_CONFIG ?= configs/evaluation2_e2e_verification_full.yaml
+FULL_EVAL_TIMEOUT ?= 8h
+FAST_TESTS ?= tests/test_numbering_overrides.py tests/test_pipeline_detection.py tests/test_probe_bands.py tests/test_subprocess_utils.py
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -57,6 +62,38 @@ run-smoke: ## Run smoke test inside pdfscore_pipeline_gpu container
 	@echo "Smoke test complete successfully. See artifacts/smoke_test.log"
 
 run-smoke-sr: run-smoke ## Alias for run-smoke (deprecated)
+
+test-fast: ## Run maintained lightweight tests without GPU or real-data requirements
+	@mkdir -p artifacts
+	@PYTHON_BIN="$(PYTHON)"; \
+	if [ -x .venv_pdf/bin/python ]; then \
+		PYTHON_BIN=.venv_pdf/bin/python; \
+	elif [ -x ../ws_PDFScoreBar/.venv_pdf/bin/python ]; then \
+		PYTHON_BIN=../ws_PDFScoreBar/.venv_pdf/bin/python; \
+	fi; \
+	echo "Running fast tests with $$PYTHON_BIN..."; \
+	PYTHONPATH=. "$$PYTHON_BIN" -m pytest $(FAST_TESTS) > artifacts/test_fast.log 2>&1 || \
+		(EXIT_CODE=$$?; echo "Fast tests failed with exit code $$EXIT_CODE. See artifacts/test_fast.log"; exit $$EXIT_CODE)
+	@echo "Fast tests passed. See artifacts/test_fast.log"
+
+verify-pipeline-smoke: run-smoke ## Run the configured pipeline smoke check
+
+verify-gpu-smoke: ## Run GPU smoke wrapper with metadata and timeout logging
+	@scripts/gpu_smoke.sh
+
+verify-full-eval: ## Run opt-in full evaluation entrypoint (long-running)
+	@scripts/gpu_smoke.sh --timeout "$(FULL_EVAL_TIMEOUT)" --command "make run-pipeline CONFIG=$(FULL_EVAL_CONFIG)"
+
+local-pr-validation: ## Run local PR validation (usage: make local-pr-validation PR=123 WITH_GPU=1 POST_COMMENT=1)
+	@scripts/local_pr_validation.sh $(if $(PR),--pr $(PR),) $(if $(WITH_GPU),--with-gpu,) $(if $(POST_COMMENT),--post-comment,)
+
+setup-local-worktree-links: ## Link local-only data into this worktree (usage: make setup-local-worktree-links LOCAL_DATA_ROOT=/path/to/assets)
+	@if [ -z "$(LOCAL_DATA_ROOT)" ]; then \
+		echo "Error: LOCAL_DATA_ROOT is required."; \
+		echo "Usage: make setup-local-worktree-links LOCAL_DATA_ROOT=/path/to/assets"; \
+		exit 1; \
+	fi
+	@scripts/setup_local_worktree_links.sh --source "$(LOCAL_DATA_ROOT)"
 
 run-pipeline: ## Run the pipeline with a custom config (usage: make run-pipeline CONFIG=path/to/config.yaml)
 	@if [ -z "$(CONFIG)" ]; then echo "Error: CONFIG is required. Usage: make run-pipeline CONFIG=path/to/config.yaml"; exit 1; fi

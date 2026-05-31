@@ -49,6 +49,8 @@ if [[ ! -d "$source_root" ]]; then
   exit 2
 fi
 
+source_root="$(cd "$source_root" && pwd -P)"
+
 echo "source_root=$source_root"
 echo "items=$items"
 

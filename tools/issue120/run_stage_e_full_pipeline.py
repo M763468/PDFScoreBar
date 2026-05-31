@@ -187,6 +187,8 @@ def _is_low_value_external_line(
     preserve_homr_internal: bool = False,
     preserve_sr_tile_logs: bool = False,
 ) -> bool:
+    if _is_warning_or_error_line(line):
+        return False
     stripped = line.strip()
     lower = stripped.lower()
     if not stripped:

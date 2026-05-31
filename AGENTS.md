@@ -11,13 +11,14 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 - **Follow Established Patterns**: Use existing code patterns, conventions, and architectural styles.
 - **Write Necessary Tests**: Provide lightweight tests to validate your implementation, as specified in the issue.
 - **Use Standard Labels**: Apply labels as defined in `docs/ai-workflow/LABELS.md`.
+- **Follow the Validation Policy**: Use `docs/dev/VALIDATION_POLICY.md` to choose required checks by change type and report skipped/deferred validation explicitly.
 - **Update Documentation**: If your changes affect user-facing behavior or system design, indicate that the README or other documentation needs to be updated.
 
 ### Don't
 - **Do Not Add Unauthorized Dependencies**: Do not add, remove, or update any dependencies unless explicitly instructed to do so in the issue.
 - **Do Not Implement Outside Scope**: Do not introduce any functionality or fixes that are not part of the assigned issue. If you identify a potential improvement, suggest it in a comment.
 - **Do Not Change Build Configurations**: Do not modify build scripts, CI/CD pipelines, or any other repository configuration files without explicit permission.
-- **Do Not Commit Directly**: All changes must be submitted through a pull request linked to the corresponding issue. *Exception: Direct commits are allowed only when explicitly instructed by the user in a local interactive session (e.g., using CLI agents).*
+- **Do Not Commit or Merge Directly**: All changes must be submitted through a pull request linked to the corresponding issue. Do not merge to `main` or `develop` automatically. *Exception: direct commits are allowed only when explicitly instructed by the user in a local interactive session (e.g., using CLI agents).*
 - **Do Not Modify During Investigation**: If the instruction is only for investigation, analysis, or root cause identification, **Do Not** modify any files. Always present findings first and wait for approval before proceeding to implementation.
 
 ## 3. Change Policy
@@ -31,6 +32,8 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 
 - **Testing**: All code must be accompanied by tests sufficient to prove it meets the `Acceptance Criteria`. The "How to test" section of the issue should be followed precisely.
 - **Linting**: Code must adhere to the project's linting standards. Always run `make format` to fix style issues and `make lint` to verify compliance before submitting changes.
+- **Validation Policy**: Follow `docs/dev/VALIDATION_POLICY.md`. Full evaluation is not mandatory for every PR, but evaluation-sensitive changes require full evaluation artifacts or an explicit human skip/defer decision.
+- **Blocked Validation**: If GPU, Docker, dataset, model, or sandbox constraints prevent a required check, report the skipped command and exact reason. Do not present a blocked check as success.
 - **Pre-Commit / Pre-PR Verification (Mandatory)**: Before creating a commit or opening a PR, you **MUST** run both (1) behavior verification (actual execution path relevant to the change, e.g. smoke run) and (2) tests/lint checks, then report the results. Do not commit or create a PR if these checks have not been completed.
   - Regression workflow reference: `docs/REGRESSION_TEST_WORKFLOW.md`
 - **Logging**: Add clear and concise logging for errors and important events. Avoid noisy or verbose logging.
@@ -46,7 +49,7 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 
 ### Environment & Execution
 - **Check Environments First**: Before executing any code, you **MUST** read `docs/ENVIRONMENTS.md`. This project uses a mix of Docker containers (`pdf_score_dev_gpu`, `homr_eval_gpu`, etc.) and host-based virtual environments (`.venv_pdf`, etc.). Identify the correct environment for your task.
-- **Docker Preference**: Prefer running tasks inside the appropriate Docker container whenever possible to ensure reproducibility.
+- **Docker Preference**: Prefer running tasks inside the appropriate Docker container whenever possible to ensure reproducibility. For local PR validation helpers, see `docs/dev/codex_local_automation.md`.
 - **Host Execution**: Some tools (e.g., `gui_helper`) are designed to run on the host. Follow the specific instructions in `docs/ENVIRONMENTS.md`.
 
 ### Standard Commands
@@ -55,6 +58,9 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
     - `make help`: Check this first to see available commands and their descriptions.
     - `make lint`: Run static analysis.
     - `make format`: Auto-format code.
+    - `make test-fast`: Run maintained lightweight tests without GPU or real-data requirements when applicable.
+    - `make local-pr-validation PR=<number>`: Summarize changed files, validation categories, commands, logs, skipped validation, and remaining risks.
+    - `make local-pr-validation PR=<number> WITH_FULL_EVAL=1 POST_COMMENT=1`: Start the authorized full-evaluation path and post the summary when appropriate.
 - **Maintenance**: Developers and Agents should update the `Makefile` and this document when new standard workflows are introduced.
 
 ### Branch Policy
@@ -89,9 +95,15 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 - **No Unauthorized Libraries**: Do not install new libraries without user approval.
 
 ### Dataset I/O Performance Rule (WSL)
+- **Destructive Operations Require Approval**: Any destructive git, filesystem, dataset, model, cache, or log operation requires explicit user approval.
 - **Avoid `/mnt/*` for bulk small-file operations**: On this repository, `/mnt/c` `/mnt/d` is mounted via `drvfs/9p`, and metadata-heavy operations (`copytree`, many `cp/stat`, split rebuilds) become extremely slow.
 - **Working copy first**: For dataset editing/augmentation/relabel tasks, first copy the working dataset under repository `datasets/` (ext4 side), then perform all file operations there.
 - **Use `/mnt/*` as source/archive only**: Treat `/mnt/*` dataset paths as read-mostly source or backup locations, not active scratch space for iterative retraining loops.
+
+### Evaluation-Sensitive Changes
+- Treat filter logic, thresholds, seeds, dataset selection, metric calculation, evaluation configs, baseline/canonical artifacts, detector routing, Docker/GPU/model loading, and generated evaluation outputs as evaluation-sensitive.
+- Keep evaluation-sensitive diffs minimal and report affected files, command, commit hash, environment, input config/data, log path, and remaining risks.
+- Automation must make required validation, skipped validation, and scope-sensitive changes more visible. It must not weaken validation or prevent normal manual development.
 
 ### Multi-LLM Collaboration (Codex + gemini-cli)
 - **Flexible Primary/Secondary Roles**: In interactive local work, either `Codex` or `gemini-cli` may be the primary driver depending on the task. The primary agent leads planning and decision flow; the secondary agent provides alternative designs, debugging hypotheses, or review feedback.

@@ -118,7 +118,7 @@ verify-gpu-smoke: ## Run GPU smoke wrapper with metadata and timeout logging
 	@scripts/gpu_smoke.sh
 
 verify-full-eval: ## Run opt-in full evaluation entrypoint (long-running)
-	@scripts/gpu_smoke.sh --timeout "$(FULL_EVAL_TIMEOUT)" --command "make run-pipeline CONFIG=$(FULL_EVAL_CONFIG)"
+	@scripts/gpu_smoke.sh --timeout "$(FULL_EVAL_TIMEOUT)" --command "make run-pipeline CONFIG=$(FULL_EVAL_CONFIG) LOG_FILE=/dev/stdout"
 
 local-pr-validation: ## Run local PR validation (usage: make local-pr-validation PR=123 WITH_GPU=1 WITH_FULL_EVAL=1 POST_COMMENT=1)
 	@scripts/local_pr_validation.sh $(if $(PR),--pr $(PR),) $(if $(WITH_GPU),--with-gpu,) $(if $(WITH_FULL_EVAL),--with-full-eval,) $(if $(POST_COMMENT),--post-comment,)
@@ -134,7 +134,7 @@ setup-local-worktree-links: ## Link local-only data into this worktree (usage: m
 run-pipeline: ## Run the pipeline with a custom config (usage: make run-pipeline CONFIG=path/to/config.yaml)
 	@if [ -z "$(CONFIG)" ]; then echo "Error: CONFIG is required. Usage: make run-pipeline CONFIG=path/to/config.yaml"; exit 1; fi
 	@mkdir -p artifacts
-	@LOG_FILE="artifacts/$$(basename "$(CONFIG)" .yaml)_$$(date +%Y%m%d_%H%M%S).log"; \
+	@LOG_FILE="$${LOG_FILE:-artifacts/$$(basename "$(CONFIG)" .yaml)_$$(date +%Y%m%d_%H%M%S).log}"; \
 	echo "Running pipeline with $(CONFIG). Logging to $$LOG_FILE..."; \
 	docker run --rm --gpus all $(DOCKER_EXTRA_ARGS) -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_gpu \
 		/opt/venv_pipeline/bin/python src/pipeline/main.py --config "$(CONFIG)" --skip-existing > "$$LOG_FILE" 2>&1 || \

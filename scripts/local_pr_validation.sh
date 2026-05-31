@@ -3,19 +3,20 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/local_pr_validation.sh [--pr NUMBER] [--with-gpu] [--with-full-eval] [--pull] [--post-comment]
+Usage: scripts/local_pr_validation.sh [--pr NUMBER] [--base REF] [--with-gpu] [--with-full-eval] [--pull] [--post-comment]
 
 Runs local PR validation and writes a reproducible summary.
 The script also inspects changed paths and reports validation that may be required
 by docs/dev/VALIDATION_POLICY.md.
 
 Environment:
-  FULL_EVAL_CMD       Default: make run-pipeline CONFIG=configs/evaluation2_e2e_verification_full.yaml
+  FULL_EVAL_CMD       Default: make run-pipeline CONFIG=configs/evaluation2_e2e_verification_full.yaml LOG_FILE=/dev/stdout
   FULL_EVAL_TIMEOUT   Default: 8h
 USAGE
 }
 
 pr_number=""
+base_ref_override=""
 with_gpu=0
 pull_first=0
 post_comment=0
@@ -25,6 +26,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --pr)
       pr_number="${2:?missing PR number}"
+      shift 2
+      ;;
+    --base)
+      base_ref_override="${2:?missing base ref}"
       shift 2
       ;;
     --with-gpu)
@@ -59,8 +64,6 @@ timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 log_dir="logs/system/local_pr_validation_${timestamp}"
 mkdir -p "$log_dir"
 
-branch="$(git branch --show-current 2>/dev/null || echo unknown)"
-commit="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
 summary_file="${log_dir}/summary.md"
 test_log="${log_dir}/test_fast.log"
 gpu_log="${log_dir}/gpu_smoke_launcher.log"
@@ -96,7 +99,35 @@ add_unique_line() {
   grep -Fxq "$line" "$file" 2>/dev/null || echo "$line" >>"$file"
 }
 
+resolve_base_candidate() {
+  local candidate="$1"
+  [[ -z "$candidate" ]] && return 1
+
+  if git rev-parse --verify "origin/${candidate}" >/dev/null 2>&1; then
+    echo "origin/${candidate}"
+  elif git rev-parse --verify "$candidate" >/dev/null 2>&1; then
+    echo "$candidate"
+  else
+    return 1
+  fi
+}
+
 determine_base_ref() {
+  local pr_base=""
+
+  if [[ -n "$base_ref_override" ]]; then
+    resolve_base_candidate "$base_ref_override" || echo "$base_ref_override"
+    return
+  fi
+
+  if [[ -n "$pr_number" ]] && command -v gh >/dev/null 2>&1; then
+    pr_base="$(gh pr view "$pr_number" --json baseRefName -q .baseRefName 2>/dev/null || true)"
+    if [[ -n "$pr_base" ]]; then
+      resolve_base_candidate "$pr_base" || echo "$pr_base"
+      return
+    fi
+  fi
+
   if git rev-parse --verify origin/develop >/dev/null 2>&1; then
     echo "origin/develop"
   elif git rev-parse --verify develop >/dev/null 2>&1; then
@@ -112,20 +143,16 @@ determine_base_ref() {
   fi
 }
 
-base_ref="$(determine_base_ref)"
-diff_args=()
-if [[ -n "$base_ref" ]]; then
-  diff_args=("${base_ref}...HEAD")
-fi
-
 collect_changed_files() {
-  if [[ "${#diff_args[@]}" -gt 0 ]]; then
-    git diff --name-only "${diff_args[@]}" >"$changed_files_file" || true
-  else
-    : >"$changed_files_file"
+  : >"$changed_files_file"
+
+  if [[ -n "$base_ref" ]]; then
+    git diff --name-only --diff-filter=d "$base_ref...HEAD" >>"$changed_files_file" || true
   fi
 
-  git status --short | awk '{print $2}' >>"$changed_files_file" || true
+  git diff --name-only --diff-filter=d HEAD >>"$changed_files_file" || true
+  git diff --name-only --diff-filter=d --cached >>"$changed_files_file" || true
+  git ls-files --others --exclude-standard >>"$changed_files_file" || true
   sort -u "$changed_files_file" -o "$changed_files_file"
 }
 
@@ -186,7 +213,7 @@ classify_changes() {
     esac
   done <"$changed_files_file"
 
-  if [[ "${#diff_args[@]}" -gt 0 ]] && git diff --unified=0 "${diff_args[@]}" 2>/dev/null | grep -Eiq 'threshold|seed|dataset|metric|evaluation|baseline|canonical|filter|detector|orchestrator|route'; then
+  if [[ -n "$base_ref" ]] && git diff --unified=0 "$base_ref" 2>/dev/null | grep -Eiq 'threshold|seed|dataset|metric|evaluation|baseline|canonical|filter|detector|orchestrator|route'; then
     add_unique_line "$change_categories_file" "keyword-sensitive"
     add_unique_line "$required_validation_file" "explain sensitive diff terms and run or explicitly skip stronger validation"
   fi
@@ -204,6 +231,14 @@ classify_changes() {
   fi
 }
 
+if [[ "$pull_first" -eq 1 ]]; then
+  run_and_capture "git_pull_ff_only" "${log_dir}/git_pull.log" git pull --ff-only || overall_status=$?
+fi
+
+branch="$(git branch --show-current 2>/dev/null || echo unknown)"
+commit="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
+base_ref="$(determine_base_ref)"
+
 collect_changed_files
 classify_changes
 
@@ -217,10 +252,6 @@ classify_changes
   echo "git_status:"
   git status --short || true
 } >"${log_dir}/metadata.txt"
-
-if [[ "$pull_first" -eq 1 ]]; then
-  run_and_capture "git_pull_ff_only" "${log_dir}/git_pull.log" git pull --ff-only || overall_status=$?
-fi
 
 if run_and_capture "make_test_fast" "$test_log" make test-fast; then
   test_status="passed"
@@ -241,7 +272,7 @@ else
 fi
 
 if [[ "$with_full_eval" -eq 1 ]]; then
-  full_eval_cmd="${FULL_EVAL_CMD:-make run-pipeline CONFIG=configs/evaluation2_e2e_verification_full.yaml}"
+  full_eval_cmd="${FULL_EVAL_CMD:-make run-pipeline CONFIG=configs/evaluation2_e2e_verification_full.yaml LOG_FILE=/dev/stdout}"
   full_eval_timeout="${FULL_EVAL_TIMEOUT:-8h}"
   if run_and_capture "full_eval" "$full_eval_log" scripts/gpu_smoke.sh --timeout "$full_eval_timeout" --command "$full_eval_cmd"; then
     full_eval_status="passed"
@@ -285,7 +316,7 @@ $(if [[ -s "$changed_files_file" ]]; then sed 's/^/- /' "$changed_files_file"; e
 
 - \`make test-fast\`
 $(if [[ "$with_gpu" -eq 1 ]]; then echo "- \`scripts/gpu_smoke.sh\`"; else echo "- GPU smoke not requested"; fi)
-$(if [[ "$with_full_eval" -eq 1 ]]; then echo "- \`scripts/gpu_smoke.sh --timeout \"${FULL_EVAL_TIMEOUT:-8h}\" --command \"${FULL_EVAL_CMD:-make run-pipeline CONFIG=configs/evaluation2_e2e_verification_full.yaml}\"\`"; else echo "- Full evaluation not requested"; fi)
+$(if [[ "$with_full_eval" -eq 1 ]]; then echo "- \`scripts/gpu_smoke.sh --timeout \"${FULL_EVAL_TIMEOUT:-8h}\" --command \"${FULL_EVAL_CMD:-make run-pipeline CONFIG=configs/evaluation2_e2e_verification_full.yaml LOG_FILE=/dev/stdout}\"\`"; else echo "- Full evaluation not requested"; fi)
 
 ### Notes
 

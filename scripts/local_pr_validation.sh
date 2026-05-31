@@ -191,6 +191,13 @@ classify_changes() {
     esac
 
     case "$path" in
+      Makefile)
+        add_unique_line "$change_categories_file" "keyword-sensitive"
+        add_unique_line "$required_validation_file" "explain Makefile-sensitive changes and run or explicitly skip stronger validation"
+        ;;
+    esac
+
+    case "$path" in
       *.py|tests/*.py|tools/*.py|tools/**/*.py)
         add_unique_line "$change_categories_file" "python"
         add_unique_line "$required_validation_file" "targeted pytest or import/compile check plus make test-fast when applicable"

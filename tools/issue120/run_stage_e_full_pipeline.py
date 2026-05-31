@@ -150,6 +150,37 @@ def _is_real_esrgan_tile_line(stripped: str) -> bool:
     return stripped.startswith("Tile ") and "/" in stripped
 
 
+def _low_value_marker_keys(line: str) -> list[str]:
+    stripped = line.strip()
+    markers: list[str] = []
+    marker_checks = (
+        ("realesrgan_tile", _is_real_esrgan_tile_line(stripped)),
+        ("homr_download_progress", stripped.startswith("Downloaded ")),
+        ("homr_dewarping_staff", stripped.startswith("Dewarping staff")),
+        (
+            "homr_tromr_inference",
+            stripped.startswith("Running TrOmr inference on staff image"),
+        ),
+        ("homr_creating_bounds", stripped.startswith("Creating bounds for")),
+        ("homr_cache_notice", stripped.startswith(("Found a cache", "Loading from cache"))),
+        ("homr_tuple_cleanup", stripped.startswith("Removing tuplets from measure")),
+        ("homr_choice_check", stripped.startswith("_check_choices_intelligently:")),
+        ("rapidocr_info", "[RapidOCR]" in stripped),
+        ("onnxruntime_warning", "[W:onnxruntime" in stripped),
+        ("onnxruntime_fallback", "Fallback mode. May be extremely slow." in stripped),
+        ("homr_staff_fragment_count", " staff line fragments" in stripped),
+        ("homr_notehead_count", " noteheads" in stripped),
+        ("homr_note_segmentation_count", " notes during segmentation" in stripped),
+        ("homr_notehead_height", "Average note head height:" in stripped),
+        ("homr_tromr_timing", "Inference Time Tromr:" in stripped),
+        ("homr_segnet_timing", "Segnet Inference time:" in stripped),
+    )
+    for key, matched in marker_checks:
+        if matched:
+            markers.append(key)
+    return markers
+
+
 def _is_low_value_external_line(
     line: str,
     *,
@@ -224,26 +255,47 @@ def _suppress_low_value_external_raw_log(
         "output_line_count": 0,
         "suppressed_line_count": 0,
         "sanitized_progress_line_count": 0,
+        "low_value_marker_counts": {},
+        "suppressed_marker_counts": {},
     }
     if not path.exists():
         return stats
+    low_value_marker_counts: dict[str, int] = {}
+    suppressed_marker_counts: dict[str, int] = {}
     temp_path = path.with_name(f"{path.stem}.filtered{path.suffix}")
     with path.open("r", encoding="utf-8", errors="replace") as src:
         with temp_path.open("w", encoding="utf-8") as dst:
             for line in src:
                 stats["input_line_count"] += 1
+                marker_keys = _low_value_marker_keys(line)
+                for marker_key in marker_keys:
+                    low_value_marker_counts[marker_key] = (
+                        low_value_marker_counts.get(marker_key, 0) + 1
+                    )
                 sanitized = _strip_low_value_suffix_from_progress_line(line)
+                marker_removed_by_sanitization = sanitized != line and bool(marker_keys)
                 if sanitized != line:
                     stats["sanitized_progress_line_count"] += 1
+                    for marker_key in marker_keys:
+                        suppressed_marker_counts[marker_key] = (
+                            suppressed_marker_counts.get(marker_key, 0) + 1
+                        )
                 if _is_low_value_external_line(
                     sanitized,
                     preserve_homr_internal=preserve_homr_internal,
                     preserve_sr_tile_logs=preserve_sr_tile_logs,
                 ):
                     stats["suppressed_line_count"] += 1
+                    if not marker_removed_by_sanitization:
+                        for marker_key in marker_keys:
+                            suppressed_marker_counts[marker_key] = (
+                                suppressed_marker_counts.get(marker_key, 0) + 1
+                            )
                     continue
                 dst.write(sanitized)
                 stats["output_line_count"] += 1
+    stats["low_value_marker_counts"] = dict(sorted(low_value_marker_counts.items()))
+    stats["suppressed_marker_counts"] = dict(sorted(suppressed_marker_counts.items()))
     temp_path.replace(path)
     return stats
 

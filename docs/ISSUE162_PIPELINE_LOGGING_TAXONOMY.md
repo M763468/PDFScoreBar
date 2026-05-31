@@ -25,6 +25,9 @@ diagnostic verbosity is requested.
 - Raw captured stream artifact: `logs/issue120_e2e_recovery/stage_e_full_pipeline/pipeline_stdout_stderr.raw.log`
 - Captured stream summary: `pipeline_stdout_stderr.summary.json`
 - Detailed diagnostic file log: `pipeline.log`
+- `make run-issue120-stage-e-full` forwards `PDFSCORE_STAGE_E_DIAGNOSTIC_LOGS`,
+  `PDFSCORE_HOMR_VERBOSE_INTERNAL_LOGS`, and `PDFSCORE_SR_TILE_LOGS` into the
+  Docker container.
 
 The Stage E runner still records the stdout/stderr artifact and summary under
 `logs/`. In default mode, the raw file preserves fd-level external output while
@@ -85,6 +88,9 @@ largest offenders were:
 
 The HOMR internal suppressor keeps warning/error-like lines. Use
 `PDFSCORE_HOMR_VERBOSE_INTERNAL_LOGS=1` only when diagnosing HOMR internals.
+Even when these lines are removed from the default raw artifact, the runner
+records marker counts such as `onnxruntime_fallback`, `homr_dewarping_staff`,
+and `realesrgan_tile` in `stage_e_runtime_summary.json`.
 
 ## Final Stage E Log Artifacts
 
@@ -169,7 +175,21 @@ uses the same 1-page smoke run as above:
       "input_line_count": 64,
       "output_line_count": 36,
       "suppressed_line_count": 28,
-      "sanitized_progress_line_count": 1
+      "sanitized_progress_line_count": 1,
+      "low_value_marker_counts": {
+        "homr_download_progress": 303,
+        "homr_tromr_timing": 19,
+        "onnxruntime_fallback": 18,
+        "onnxruntime_warning": 20,
+        "rapidocr_info": 9
+      },
+      "suppressed_marker_counts": {
+        "homr_download_progress": 303,
+        "homr_tromr_timing": 19,
+        "onnxruntime_fallback": 18,
+        "onnxruntime_warning": 20,
+        "rapidocr_info": 9
+      }
     },
     "stdout_stderr_filter_summary": {
       "schema_version": "tools.issue120.stage_e_console_filter.v1",
@@ -237,6 +257,10 @@ focused HOMR investigation:
 ```bash
 PDFSCORE_HOMR_VERBOSE_INTERNAL_LOGS=1 make run-issue120-stage-e-full
 ```
+
+These environment variables are forwarded by
+`tools/issue120/Makefile.stage_e.mk` to the container used by
+`make run-issue120-stage-e-full`.
 
 Use either form to restore verbose captured output for diagnosis:
 

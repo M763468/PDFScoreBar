@@ -116,14 +116,20 @@ determine_base_ref() {
   local pr_base=""
 
   if [[ -n "$base_ref_override" ]]; then
-    resolve_base_candidate "$base_ref_override" || echo "$base_ref_override"
+    if ! resolve_base_candidate "$base_ref_override"; then
+      echo "Unable to resolve --base ref: ${base_ref_override}" >&2
+      exit 2
+    fi
     return
   fi
 
   if [[ -n "$pr_number" ]] && command -v gh >/dev/null 2>&1; then
     pr_base="$(gh pr view "$pr_number" --json baseRefName -q .baseRefName 2>/dev/null || true)"
     if [[ -n "$pr_base" ]]; then
-      resolve_base_candidate "$pr_base" || echo "$pr_base"
+      if ! resolve_base_candidate "$pr_base"; then
+        echo "Unable to resolve PR base ref: ${pr_base}" >&2
+        exit 2
+      fi
       return
     fi
   fi
@@ -147,7 +153,7 @@ collect_changed_files() {
   : >"$changed_files_file"
 
   if [[ -n "$base_ref" ]]; then
-    git diff --name-only --diff-filter=d "$base_ref...HEAD" >>"$changed_files_file" || true
+    git diff --name-only --diff-filter=d "$base_ref...HEAD" >>"$changed_files_file"
   fi
 
   git diff --name-only --diff-filter=d HEAD >>"$changed_files_file" || true

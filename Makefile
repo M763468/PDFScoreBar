@@ -68,8 +68,6 @@ test-fast: ## Run maintained lightweight tests without GPU or real-data requirem
 	@PYTHON_BIN="$(PYTHON)"; \
 	if [ -x .venv_pdf/bin/python ]; then \
 		PYTHON_BIN=.venv_pdf/bin/python; \
-	elif [ -x ../ws_PDFScoreBar/.venv_pdf/bin/python ]; then \
-		PYTHON_BIN=../ws_PDFScoreBar/.venv_pdf/bin/python; \
 	fi; \
 	echo "Running fast tests with $$PYTHON_BIN..."; \
 	PYTHONPATH=. "$$PYTHON_BIN" -m pytest $(FAST_TESTS) > artifacts/test_fast.log 2>&1 || \
@@ -137,5 +135,3 @@ api-explore: ## Extract API info from a Python file (usage: make api-explore FIL
 
 artifact-summary: ## Summarize all artifacts
 	./.agents/skills/artifact-clerk/run.sh
-
-

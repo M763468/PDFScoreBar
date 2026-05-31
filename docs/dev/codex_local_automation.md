@@ -2,6 +2,8 @@
 
 Issue #173 adds optional local automation entrypoints for Codex app, Codex CLI, WSL, and GitHub CLI work. These helpers are intended to make local validation repeatable without replacing normal manual development.
 
+Validation strength is governed by `docs/dev/VALIDATION_POLICY.md`. The scripts are helpers for applying that policy; they are not a reason to weaken required checks or ignore scope boundaries.
+
 ## Roles
 
 - Codex app: local implementation, file edits, lightweight command execution, PR and issue context.
@@ -9,7 +11,7 @@ Issue #173 adds optional local automation entrypoints for Codex app, Codex CLI, 
 - Codex CLI: optional focused review or fix loop through `codex exec`.
 - GitHub CLI: PR comments, review context collection, and authenticated GitHub operations.
 - GitHub/web ChatGPT/Codex Cloud: static review and small GitHub edits. Treat those results as non-final for GPU and pipeline behavior.
-- Human: final full evaluation decision, result interpretation, and merge to `main`.
+- Human: final result interpretation and merge to `main`.
 
 ## Baseline Workflow
 
@@ -42,7 +44,7 @@ Issue #173 adds optional local automation entrypoints for Codex app, Codex CLI, 
    make verify-gpu-smoke
    ```
 
-7. If full evaluation should start early, use the explicit long-running entrypoint:
+7. For evaluation-sensitive changes, run full evaluation when authorized by the user, issue, or PR context:
 
    ```bash
    make verify-full-eval
@@ -51,7 +53,7 @@ Issue #173 adds optional local automation entrypoints for Codex app, Codex CLI, 
 8. For PR validation and optional posting:
 
    ```bash
-   scripts/local_pr_validation.sh --pr 123 --with-gpu --post-comment
+   scripts/local_pr_validation.sh --pr 123 --with-gpu --with-full-eval --post-comment
    ```
 
 ## Local Actions for Codex App
@@ -71,10 +73,10 @@ Codex app sandbox approvals are session-level behavior. The repository cannot gr
 
 ## Validation Levels
 
-- Fast tests: `make test-fast`. Intended for ordinary code and docs-adjacent changes; it runs no-real-data unit tests and intentionally excludes the real-data integration test. In a worktree, it uses local `.venv_pdf` when present and falls back to the sibling manager clone's `.venv_pdf` if available.
+- Fast tests: `make test-fast`. Intended for ordinary code and docs-adjacent changes; it runs no-real-data unit tests and intentionally excludes the real-data integration test. In a worktree, it uses local `.venv_pdf` when present; otherwise it uses `PYTHON`.
 - Pipeline smoke: `make verify-pipeline-smoke`. Wraps the existing `make run-smoke`.
 - GPU smoke: `make verify-gpu-smoke`. Records branch, commit, Python version, GPU info, command, exit code, and log path under `logs/system/`.
-- Full evaluation: opt-in long run through `make verify-full-eval` or `scripts/local_pr_validation.sh --with-full-eval`. Start it early when the change clearly needs long evaluation, but do not make it a default PR requirement.
+- Full evaluation: long run through `make verify-full-eval` or `scripts/local_pr_validation.sh --with-full-eval`. It is not a default PR requirement, but evaluation-sensitive changes need either results or an explicit human skip/defer decision under `docs/dev/VALIDATION_POLICY.md`.
 
 ## GitHub CLI Requirements
 
@@ -103,7 +105,7 @@ Web-based edits are acceptable for small docs or code changes, but they do not h
 
 1. Pull the branch into a dedicated local worktree.
 2. Inspect the diff locally.
-3. Run `make test-fast` or stronger validation as appropriate.
+3. Run `make test-fast` or stronger validation as required by `docs/dev/VALIDATION_POLICY.md`.
 4. Post local validation results to the PR.
 
 ## Safety Boundaries

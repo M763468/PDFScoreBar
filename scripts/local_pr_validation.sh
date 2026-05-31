@@ -330,25 +330,24 @@ fi
 render_summary
 
 if [[ "$post_comment" -eq 1 ]]; then
-  post_status="pending"
-  render_summary
-
   if [[ -z "$pr_number" ]]; then
     post_status="skipped: --pr was not provided"
+    render_summary
   elif ! command -v gh >/dev/null 2>&1; then
     post_status="skipped: gh not found"
+    render_summary
   elif ! gh auth status >/dev/null 2>&1; then
     post_status="skipped: gh is not authenticated or cannot reach GitHub"
+    render_summary
   else
-    if gh pr comment "$pr_number" --body-file "$summary_file"; then
-      post_status="posted"
-    else
+    post_status="posted"
+    render_summary
+    if ! gh pr comment "$pr_number" --body-file "$summary_file"; then
       post_status="failed"
       overall_status=1
+      render_summary
     fi
   fi
-
-  render_summary
 fi
 
 cat "$summary_file"

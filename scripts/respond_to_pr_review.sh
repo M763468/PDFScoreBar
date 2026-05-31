@@ -61,7 +61,7 @@ gh pr view "$pr_number" \
   >"$pr_context_file"
 
 repo_full_name="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
-gh api "repos/${repo_full_name}/pulls/${pr_number}/comments" \
+gh api --paginate --slurp "repos/${repo_full_name}/pulls/${pr_number}/comments?per_page=100" \
   >"$review_comments_file"
 
 python3 - "$pr_context_file" "$review_comments_file" "$context_file" <<'PY'
@@ -75,7 +75,20 @@ with pr_context_path.open(encoding="utf-8") as fh:
     pr_context = json.load(fh)
 
 with review_comments_path.open(encoding="utf-8") as fh:
-    inline_review_comments = json.load(fh)
+    raw_inline_review_comments = json.load(fh)
+
+if (
+    isinstance(raw_inline_review_comments, list)
+    and raw_inline_review_comments
+    and all(isinstance(page, list) for page in raw_inline_review_comments)
+):
+    inline_review_comments = [
+        comment
+        for page in raw_inline_review_comments
+        for comment in page
+    ]
+else:
+    inline_review_comments = raw_inline_review_comments
 
 pr_context["inline_review_comments"] = inline_review_comments
 

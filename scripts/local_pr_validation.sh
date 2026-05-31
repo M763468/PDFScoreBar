@@ -96,16 +96,33 @@ add_unique_line() {
   grep -Fxq "$line" "$file" 2>/dev/null || echo "$line" >>"$file"
 }
 
-collect_changed_files() {
+determine_base_ref() {
   if git rev-parse --verify origin/main >/dev/null 2>&1; then
-    git diff --name-only origin/main...HEAD >"$changed_files_file" || true
+    echo "origin/main"
+  elif git rev-parse --verify main >/dev/null 2>&1; then
+    echo "main"
+  elif git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+    echo "HEAD~1"
   else
-    git diff --name-only HEAD~1...HEAD >"$changed_files_file" || true
+    echo ""
+  fi
+}
+
+base_ref="$(determine_base_ref)"
+diff_args=()
+if [[ -n "$base_ref" ]]; then
+  diff_args=("${base_ref}...HEAD")
+fi
+
+collect_changed_files() {
+  if [[ "${#diff_args[@]}" -gt 0 ]]; then
+    git diff --name-only "${diff_args[@]}" >"$changed_files_file" || true
+  else
+    : >"$changed_files_file"
   fi
 
-  if [[ ! -s "$changed_files_file" ]]; then
-    git status --short | awk '{print $2}' >"$changed_files_file" || true
-  fi
+  git status --short | awk '{print $2}' >>"$changed_files_file" || true
+  sort -u "$changed_files_file" -o "$changed_files_file"
 }
 
 classify_changes() {
@@ -165,7 +182,7 @@ classify_changes() {
     esac
   done <"$changed_files_file"
 
-  if git diff --unified=0 origin/main...HEAD 2>/dev/null | grep -Eiq 'threshold|seed|dataset|metric|evaluation|baseline|canonical|filter|detector|orchestrator|route'; then
+  if [[ "${#diff_args[@]}" -gt 0 ]] && git diff --unified=0 "${diff_args[@]}" 2>/dev/null | grep -Eiq 'threshold|seed|dataset|metric|evaluation|baseline|canonical|filter|detector|orchestrator|route'; then
     add_unique_line "$change_categories_file" "keyword-sensitive"
     add_unique_line "$required_validation_file" "explain sensitive diff terms and run or explicitly skip stronger validation"
   fi
@@ -242,6 +259,7 @@ cat >"$summary_file" <<EOF_SUMMARY
 - Full evaluation: ${full_eval_status}
 - Log path: \`${log_dir}\`
 - Overall exit code: ${overall_status}
+- Diff base: \`${base_ref:-none}\`
 
 ### Detected change categories
 

@@ -43,6 +43,19 @@ PDFSCORE_LINK_ITEMS="datasets logs/models external/homr external/omr_dln cache" 
 
 The script skips missing sources and existing destinations. It does not overwrite, move, or delete files.
 
+## Docker Mounts
+
+Symlinks that point outside the worktree are useful on the WSL host, but Docker only sees paths mounted into the container. If a pipeline command runs inside Docker and follows a symlink to `/home/...` or another host-only path, the target may be missing inside `/workspace`.
+
+For Docker-based validation, pass an explicit bind mount instead of relying on the symlink alone:
+
+```bash
+DOCKER_EXTRA_ARGS="-v /home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/pdfs:/workspace/data/evaluation2/pdfs:ro" \
+  make run-pipeline CONFIG=configs/evaluation2_e2e_verification_full.yaml
+```
+
+Keep machine-specific paths in local commands or PR comments, not in committed configs.
+
 ## Notes
 
 - Avoid linking the whole `data/` directory unless you know it will not hide tracked placeholders and metadata.

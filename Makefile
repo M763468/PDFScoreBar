@@ -4,6 +4,7 @@ PYTHON ?= python3
 FULL_EVAL_CONFIG ?= configs/evaluation2_e2e_verification_full.yaml
 FULL_EVAL_TIMEOUT ?= 8h
 FAST_TESTS ?= tests/test_numbering_overrides.py tests/test_pipeline_detection.py tests/test_probe_bands.py tests/test_subprocess_utils.py
+DOCKER_EXTRA_ARGS ?=
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -56,7 +57,7 @@ promote-log: ## Promote a log from worktree to permanent logs (usage: make promo
 run-smoke: ## Run smoke test inside pdfscore_pipeline_gpu container
 	@mkdir -p artifacts
 	@echo "Running smoke test..."
-	@docker run --rm --gpus all -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_gpu \
+	@docker run --rm --gpus all $(DOCKER_EXTRA_ARGS) -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_gpu \
 		/opt/venv_pipeline/bin/python src/pipeline/main.py --config "configs/smoke_test.yaml" > artifacts/smoke_test.log 2>&1 || \
 		(EXIT_CODE=$$?; echo "Smoke test failed with exit code $$EXIT_CODE. See artifacts/smoke_test.log"; exit $$EXIT_CODE)
 	@echo "Smoke test complete successfully. See artifacts/smoke_test.log"
@@ -82,8 +83,8 @@ verify-gpu-smoke: ## Run GPU smoke wrapper with metadata and timeout logging
 verify-full-eval: ## Run opt-in full evaluation entrypoint (long-running)
 	@scripts/gpu_smoke.sh --timeout "$(FULL_EVAL_TIMEOUT)" --command "make run-pipeline CONFIG=$(FULL_EVAL_CONFIG)"
 
-local-pr-validation: ## Run local PR validation (usage: make local-pr-validation PR=123 WITH_GPU=1 POST_COMMENT=1)
-	@scripts/local_pr_validation.sh $(if $(PR),--pr $(PR),) $(if $(WITH_GPU),--with-gpu,) $(if $(POST_COMMENT),--post-comment,)
+local-pr-validation: ## Run local PR validation (usage: make local-pr-validation PR=123 WITH_GPU=1 WITH_FULL_EVAL=1 POST_COMMENT=1)
+	@scripts/local_pr_validation.sh $(if $(PR),--pr $(PR),) $(if $(WITH_GPU),--with-gpu,) $(if $(WITH_FULL_EVAL),--with-full-eval,) $(if $(POST_COMMENT),--post-comment,)
 
 setup-local-worktree-links: ## Link local-only data into this worktree (usage: make setup-local-worktree-links LOCAL_DATA_ROOT=/path/to/assets)
 	@if [ -z "$(LOCAL_DATA_ROOT)" ]; then \
@@ -98,9 +99,9 @@ run-pipeline: ## Run the pipeline with a custom config (usage: make run-pipeline
 	@mkdir -p artifacts
 	@LOG_FILE="artifacts/$$(basename "$(CONFIG)" .yaml)_$$(date +%Y%m%d_%H%M%S).log"; \
 	echo "Running pipeline with $(CONFIG). Logging to $$LOG_FILE..."; \
-	docker run --rm --gpus all -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_gpu \
+	docker run --rm --gpus all $(DOCKER_EXTRA_ARGS) -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_gpu \
 		/opt/venv_pipeline/bin/python src/pipeline/main.py --config "$(CONFIG)" --skip-existing > "$$LOG_FILE" 2>&1 || \
-		(EXIT_CODE=$$?; echo "Pipeline failed with exit code $$EXIT_CODE. See $$LOG_FILE"; exit $$EXIT_CODE); \
+		{ EXIT_CODE=$$?; echo "Pipeline failed with exit code $$EXIT_CODE. See $$LOG_FILE"; exit $$EXIT_CODE; }; \
 	echo "Pipeline execution finished successfully. See $$LOG_FILE"
 repo-tree: ## Generate a repository directory overview
 	tree -L 3 -I "artifacts|logs|temp|datasets|.git|__pycache__|.venv*" > artifacts/repo_tree.txt

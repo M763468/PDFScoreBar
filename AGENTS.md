@@ -1,206 +1,73 @@
-# AGENTS.md - Rules for AI Agents
+# AGENTS.md
 
-## 1. Purpose
+Repository-specific guidance for Codex, ChatGPT, Gemini, and human-assisted local work.
 
-This document provides a set of rules and guidelines for AI agents (such as Jules, Gemini, or Codex) contributing to this repository. The goal is to ensure all contributions are safe, consistent, and aligned with the project's standards. This file serves as the "constitution" for AI agents.
+## Operating Principles
 
-## 2. Do's and Don'ts
+- Keep changes inside the assigned issue scope. If investigation discovers extra work, report it separately.
+- Prefer existing code, Makefile targets, scripts, configs, and documentation before adding new structure.
+- Use a topic branch and open a pull request linked to the issue. Do not merge to `main` automatically.
+- Do not perform destructive git, filesystem, dataset, model, or log operations without explicit user approval.
+- Dependency, CI, Docker, build configuration, release policy, and branch policy changes must be explicitly in scope.
+- Do not add, remove, or upgrade dependencies unless the issue explicitly asks for it.
 
-### Do
-- **Adhere to the Issue Scope**: Implement only what is explicitly defined in the `Goal`, `Scope`, and `Acceptance Criteria` of the assigned issue.
-- **Follow Established Patterns**: Use existing code patterns, conventions, and architectural styles.
-- **Write Necessary Tests**: Provide lightweight tests to validate your implementation, as specified in the issue.
-- **Use Standard Labels**: Apply labels as defined in `docs/ai-workflow/LABELS.md`.
-- **Update Documentation**: If your changes affect user-facing behavior or system design, indicate that the README or other documentation needs to be updated.
+## Runtime Authority
 
-### Don't
-- **Do Not Add Unauthorized Dependencies**: Do not add, remove, or update any dependencies unless explicitly instructed to do so in the issue.
-- **Do Not Implement Outside Scope**: Do not introduce any functionality or fixes that are not part of the assigned issue. If you identify a potential improvement, suggest it in a comment.
-- **Do Not Change Build Configurations**: Do not modify build scripts, CI/CD pipelines, or any other repository configuration files without explicit permission.
-- **Do Not Commit Directly**: All changes must be submitted through a pull request linked to the corresponding issue. *Exception: Direct commits are allowed only when explicitly instructed by the user in a local interactive session (e.g., using CLI agents).*
-- **Do Not Modify During Investigation**: If the instruction is only for investigation, analysis, or root cause identification, **Do Not** modify any files. Always present findings first and wait for approval before proceeding to implementation.
+- The authoritative runtime is the user's local WSL/Linux environment with the project GPU setup.
+- Cloud containers, web-based GitHub edits, and static reviews are useful for inspection and lightweight checks, but they are not final validation for GPU, Docker, dataset, or full pipeline behavior.
+- Read `docs/ENVIRONMENTS.md`, `docs/MANIFEST.md`, `docs/LOG_MANAGEMENT.md`, and `docs/dev/VALIDATION_POLICY.md` before running environment-sensitive commands.
+- The current primary pipeline environment is the unified Docker image/container `pdfscore_pipeline_gpu` with Python at `/opt/venv_pipeline/bin/python`.
 
-## 3. Change Policy
+## Validation Expectations
 
-- **Propose Before Execute**: For any non-trivial changes or when the fix approach is not explicitly defined, agents must provide a brief summary of the proposed modification and wait for confirmation before execution.
-- **Destructive Changes**: Any change that is destructive (e.g., removing a file, altering a public API) must be explicitly approved in the issue description or chat context.
-- **Large-Scale Refactoring**: Do not perform large-scale refactoring unless it is the primary goal of the assigned task. Small, localized refactoring for clarity is acceptable.
-- **Data Schema Changes**: Any modifications to data schemas or database structures require explicit sign-off from the project maintainers.
+- Follow `docs/dev/VALIDATION_POLICY.md`; it is the validation contract for both manual and automated local work.
+- Match validation weight to the change. Docs-only, comments-only, and small type or formatting updates do not require GPU smoke or full evaluation.
+- Use lightweight checks first, such as `make test-fast`, targeted pytest commands, `bash -n` for shell scripts, or static review of docs.
+- Use `make verify-pipeline-smoke` or `make verify-gpu-smoke` when a change can affect pipeline execution, Docker/GPU behavior, model loading, dataset access, or evaluation flow.
+- Full evaluation is not mandatory for every PR, but evaluation-sensitive changes require full evaluation artifacts or an explicit human skip/defer decision.
+- Local full evaluation may be started automatically when user, issue, or PR context has already authorized it.
+- If GPU, Docker, dataset, model, or sandbox constraints prevent validation, report the skipped command and exact reason rather than treating it as a successful check.
 
-## 4. Quality Bar
+## Scope and Sensitive Changes
 
-- **Testing**: All code must be accompanied by tests sufficient to prove it meets the `Acceptance Criteria`. The "How to test" section of the issue should be followed precisely.
-- **Linting**: Code must adhere to the project's linting standards. Always run `make format` to fix style issues and `make lint` to verify compliance before submitting changes.
-- **Pre-Commit / Pre-PR Verification (Mandatory)**: Before creating a commit or opening a PR, you **MUST** run (1) behavior verification (actual execution path relevant to the change, e.g. smoke run), (2) tests/lint checks, and (3) `make check-consistency` (as a health check to identify major drift or missing mainline assets), then report the results. 
-  - **Handling Consistency Errors (`make check-consistency`)**:
-    - `[BROKEN]`: A file is listed in an inventory but doesn't exist on disk. **Causes CI failure (`exit code 2`)**. Action: Remove it from the inventory or restore the file. *Note: Empty directories must have a `.gitkeep` to be tracked by Git.*
-    - `[CRITICAL]`: A core asset defined in `MANIFEST.md` is missing. **Causes CI failure**. Action: Restore the asset or update the manifest if intentionally deleted.
-    - `[UNTRACKED] / [MISSING]`: Informational. A file exists but isn't in the relevant inventory. Action: Add to inventory if it's a core asset, otherwise ignore.
-    - `[STALE!!]`: Informational warning. A core document hasn't been updated in 30+ days. Action: If its contents are still valid, refresh its timestamp by adding a note (e.g., `> [!NOTE] Status (Mar 2026): This remains active...`).
-  - Regression workflow reference: `docs/REGRESSION_TEST_WORKFLOW.md`
-- **Maintenance of Tools Inventory**: When adding, renaming, or significantly modifying tools in the `tools/` root directory, you **MUST** update `docs/TOOLS_INVENTORY.md` to reflect the change, documenting the purpose, status (Active/Legacy), and context.
-- **Logging**: Add clear and concise logging for errors and important events. Avoid noisy or verbose logging.
-- **PR Descriptions**: Pull request descriptions must be filled out completely, following the `.github/pull_request_template.md`. The `Related Issue` field is mandatory.
+- Do not implement outside the assigned issue's goal, scope, or acceptance criteria. Suggest unrelated improvements in an issue or comment instead.
+- If the instruction is only investigation or root-cause analysis, present findings before making code changes.
+- Evaluation-sensitive areas include filter logic, thresholds, seeds, dataset selection, metric calculation, evaluation configs, baseline/canonical artifacts, detector routing, and generated evaluation outputs.
+- If those areas must change, keep the diff minimal and report the reason, affected files, reproduction command, target commit, and log path.
+- When updating experimental values or accuracy/performance claims, include the command, commit hash, environment, input config/data, and log path needed to reproduce the result.
+- Keep large datasets, caches, generated logs, and model artifacts out of git. Use symlinks or environment variables for local-only data.
 
-## 5. Security
+## Testing and Quality Gates
 
-- **No Secrets in Code**: Never hardcode secrets, API keys, or any other sensitive credentials in the source code. Use environment variables or a designated secrets management system.
-- **Data Transmission**: Do not transmit any user data or sensitive information to external services unless it is a documented and approved part of the functionality.
-- **Input Validation**: Always sanitize and validate user-provided input to prevent common vulnerabilities (e.g., XSS, SQL injection).
+- Add or update tests when behavior changes. For docs-only or workflow-only changes, document why code tests are not applicable.
+- Run the minimum validation required by `docs/dev/VALIDATION_POLICY.md` before opening or updating a PR.
+- For shell scripts and Makefile changes, run `bash -n` on touched scripts, `make help`, and the relevant script `--help` or metadata-only command.
+- For Python behavior changes, run targeted tests and `make test-fast` when applicable.
+- For pipeline, detector, Docker/GPU, model-loading, evaluation config, metric, threshold, seed, dataset-selection, baseline, or canonical-artifact changes, report whether GPU smoke and full evaluation were run, skipped, or deferred and why.
 
-## 6. Project-Specific Overrides
+## Worktree and Local Data
 
-### Environment & Execution
-- **Check Environments First**: Before executing any code, you **MUST** read `docs/ENVIRONMENTS.md`. This project uses a mix of Docker containers (`pdf_score_dev_gpu`, `homr_eval_gpu`, etc.) and host-based virtual environments (`.venv_pdf`, etc.). Identify the correct environment for your task.
-- **Docker Preference**: Prefer running tasks inside the appropriate Docker container whenever possible to ensure reproducibility.
-- **Host Execution**: Some tools (e.g., `gui_helper`) are designed to run on the host. Follow the specific instructions in `docs/ENVIRONMENTS.md`.
-- **Environment and Build Operations**:
-    - **Log Management**: When executing long-running or verbose operations like `docker build` or complex tests, **always redirect output to an artifact** (e.g., `> artifacts/build.log 2>&1`) and use targeted reads (`tail` or `cat` combined with line limits) to monitor progress. Do not dump full logs to the terminal, as it pollutes the context window.
-    - **Clean Checkout Resilience**: When writing Dockerfiles, do not rely on untracked local directories (e.g., `external/`) via `COPY` instructions. Instead, install these dependencies directly from source (e.g., `git+https://`) during the build step to ensure the image builds cleanly on fresh environments.
-    - **Volume Mount Shadowing**: Be aware that `docker run -v $(pwd):/workspace` will overwrite the container's `/workspace`. If the Docker build downloads model weights or artifacts, place them in a safe system directory (e.g., `/opt/weights/`) and reference them there to avoid them being masked by the host volume.
+- Use a dedicated git worktree for issue work when the main clone may contain unrelated work.
+- Do not edit another issue's active working tree. Use the original clone only as a worktree manager when requested.
+- For local-only assets, prefer `scripts/setup_local_worktree_links.sh` and document the source paths through environment variables instead of committing machine-specific paths.
+- Keep worktree run outputs isolated under ignored log/artifact paths unless a tracked doc update is intentionally part of the PR.
 
-### Standard Commands
-- **Makefile as Source of Truth**: The `Makefile` in the project root defines the standard commands for development tasks (linting, formatting, etc.).
-- **Usage**:
-    - `make help`: Check this first to see available commands and their descriptions.
-    - `make lint`: Run static analysis.
-    - `make format`: Auto-format code.
-    - `make check-consistency`: Check repository consistency (Asset existence, doc freshness, orphan files).
-- **Maintenance**: Developers and Agents should update the `Makefile` and this document when new standard workflows are introduced.
+## Automation Boundaries
 
-### Design Principles (Barline Detection)
-- **Resolution Independence (Unit-based Scaling)**:
-    - **Rule**: NEVER use fixed pixel (px) thresholds for distance or geometry calculations in the barline detection/numbering layers.
-    - **Implementation**: Always use `unit_size` (staff line spacing) as the base unit for dynamic scaling.
-    - **Current Targets**: Deduplication Threshold (`1.2 * unit_size`), Implicit Start Assumption (`4.0 * unit_size`).
-    - **Documentation**: See `docs/GT_PREPARATION_POLICY.md` and `docs/archive/BARLINE_MATCHER.md`.
-- **GT Labeling Consistency**:
-    - Use specific labels for complex barlines: `double_barline`, `end_barline`, `repeat`.
-    - Treat multi-line barlines as a **single logical event** with a single encompassing BBox.
+- Automation scripts are optional helpers. Normal manual development with `python`, `pytest`, `make`, Docker, and `gh` must continue to work without them.
+- Automation must not weaken validation. It should make required validation, skipped validation, scope-sensitive changes, and remaining risks more visible.
+- Local automation may run lightweight checks and, when authorized, GPU smoke or evaluation commands. It must not merge to `main`.
+- `gh auth login` is required before scripts can post PR comments. If `gh` is missing, unauthenticated, or network-restricted, scripts should skip posting with a clear reason.
+- Codex app sandbox approvals are controlled by the app session. Repository scripts can document required commands, but they cannot grant automatic sandbox-outside execution by themselves.
 
-### Issue Template Conformance
-- **Template-First Issue Bodies**: When creating or updating GitHub Issues, always align the body with the corresponding file in `.github/ISSUE_TEMPLATE/`.
-- **Required Headers Must Exist**: For `Task` issues, do not omit `Base branch`, `Branch name`, `PR base`, `Goal`, and `Done` in the issue body.
-- **Project Extensions Are Additive**: Sections like `Background`, `Scope`, `Acceptance Criteria`, and `How to test` may be added, but only in addition to (not instead of) required template headers.
+## Completion Reports
 
-### Logs & Artifacts
-- **Output Directory**: All experiment logs, metrics, and generated artifacts must be saved under the `logs/` directory. Use structured subdirectories (e.g., `logs/<category>/<task_id>_<timestamp>/`) as defined in `docs/LOG_MANAGEMENT.md`.
-- **Cleanup**: Do not leave temporary files in the project root. Use `make clean-artifacts` or follow the `clean-logs` rules in the management guide.
-- **Dataset Staging Rule (Required)**: For CNN retraining/evaluation jobs, place working datasets under `datasets/` in this repository before any bulk file operation. Do not run iterative copy/split generation directly on `/mnt/*`.
-- **Preflight Check (Required)**: Before launching long training/eval, explicitly verify: `pwd` is repo root, input dataset root is under `datasets/`, and output path is under `logs/`.
+For non-trivial work, final reports and PR bodies should include:
 
-### Dependencies
-- **Strict Control**: Do not modify `requirements.txt`, `pyproject.toml`, or `Dockerfile` unless the task explicitly requires dependency updates.
-- **No Unauthorized Libraries**: Do not install new libraries without user approval.
-
-### Dataset I/O Performance Rule (WSL)
-- **Avoid `/mnt/*` for bulk small-file operations**: On this repository, `/mnt/c` `/mnt/d` is mounted via `drvfs/9p`, and metadata-heavy operations (`copytree`, many `cp/stat`, split rebuilds) become extremely slow.
-- **Working copy first**: For dataset editing/augmentation/relabel tasks, first copy the working dataset under repository `datasets/` (ext4 side), then perform all file operations there.
-- **Use `/mnt/*` as source/archive only**: Treat `/mnt/*` dataset paths as read-mostly source or backup locations, not active scratch space for iterative retraining loops.
-
-### Multi-LLM Collaboration (Codex + gemini-cli)
-- **Flexible Primary/Secondary Roles**: In interactive local work, either `Codex` or `gemini-cli` may be the primary driver depending on the task. The primary agent leads planning and decision flow; the secondary agent provides alternative designs, debugging hypotheses, or review feedback.
-- **Implementation Delegation is Allowed**: A valid pattern is `gemini-cli` as primary for exploration/reasoning and `Codex` for focused repository edits and verification. The reverse (Codex primary, gemini-cli second opinion) is also valid.
-- **Optimize While Working**: Do not limit multi-LLM usage to pre-PR review only. Use it during implementation when helpful, and refine the collaboration pattern based on actual outcomes (speed, bug detection, usefulness).
-- **Single Writer Rule**: To avoid conflicts, keep one active file editor at a time in the session. Explicitly choose a single writer before file edits.
-- **Evidence-First Adoption**: Suggestions from either agent are hypotheses until validated by local code inspection, tests, or runtime behavior.
-- **Prompt/Log Documentation**: Standard prompts and conversation log format for multi-LLM collaboration must be maintained under `docs/ai-workflow/` (see the dedicated collaboration doc) and updated as the workflow evolves.
-- **Operational Entry Points (Must Read Order)**:
-  1. `docs/ai-workflow/WORKFLOW.md` (general workflow baseline)
-  2. `docs/ai-workflow/CODEX_GEMINI_COLLAB.md` (Codex/Gemini collaboration protocol)
-  3. `docs/ai-workflow/LESSONS.md` (known anti-patterns and heuristics)
-  4. This `AGENTS.md` (repository-specific overrides, highest priority inside repo)
-- **Codex -> Gemini Call Stability Rule**:
-  - For this repository, run Gemini consultations with network-enabled execution from the start (outside sandbox when required), not as a fallback after a known-failing step.
-  - Prefer longer timeouts (e.g., `timeout 180s gemini -p "<prompt>"`) to allow deeper reasoning.
-  - For long contexts, pass summarized inputs and split questions to reduce timeout risk.
-
-## 7. Skills
-
-- 共通スキルは `skills/` に配置する
-- リポジトリ固有の最適化は `.agents/skills` に追加する
-- 各スキルは「目的 / 入力 / 出力 / 手順 / 必要なコマンド」を明記する
-- **利用可能なスキル一覧**:
-    - `issue-creation`: Issue の下書き作成
-    - `problem-investigation`: バグ調査・原因究明
-    - `issue-solver`: Issue の自律解決（実装・検証）
-    - `pr-explanation`: PR の説明文生成
-    - `pr-review`: PR の自動レビュー
-    - `pr-refinement`: レビュー指摘の修正適用
-    - `status-check`: 現在の作業状況の要約
-    - `change-summary`: 最終的な変更内容の要約
-    - `doc-updater`: ドキュメントの自動更新
-    - `dependency-management`: 依存関係の管理
-    - `test-generation`: テストコードの生成・更新
-    - `long-horizon-task`: 長期タスクの状態管理
-    - `doc-consistency-manager`: リポジトリの整合性チェックと解決（Orphan, Broken, Stale の管理）
-    - `gemini-consultation`: Gemini への標準化された相談。`.agents/skills/gemini-consultation/SKILL.md` を利用し、相談時の入力整理・実行手順・記録方法を統一します。
-    - `codex-delegation`: Codex への実装・検証タスクの委譲。`.agents/skills/codex-delegation/SKILL.md` を利用し、コンテキスト消費を抑えつつ精緻な実装と検証を行います。
-
-詳細は `docs/ai-workflow/WORKFLOW.md` を参照。
-
-## 8. インタラクティブ・プロトコル（対話型セッション専用ルール）
-
-ユーザーとの直接対話において、AIエージェントは透明性と制御性を確保するため、以下の手順を「絶対」として遵守しなければならない。
-
-1. **確認の徹底 (Confirmation Loop)**:
-   - Git操作（merge/rebase等）、GitHub Issue作成、ファイルの新規作成・削除など、状態を変更する操作の前には、必ず実行計画を提示し、ユーザーの承諾を得ること。
-   - 「〜しますか？」という問いかけに対し、ユーザーが「OK」や「進めて」と回答した後にのみ実行する。
-
-2. **選択肢の提示 (Option Rule)**:
-   - 手法が複数存在する場合（例：rebaseかmergeか）、それぞれのメリット・デメリットを簡潔に示し、ユーザーに判断を仰ぐこと。独断で手法を選択してはならない。
-
-3. **実行直前のナレーション (Pre-Call Narration)**:
-   - 全てのツール呼び出し（コマンド実行等）の直前には、その意図を説明する1文を必ず添えること。ツールを「無言」で実行してはならない。
-
-4. **逸脱時の自己修正**:
-   - もし確認や説明をスキップしてしまったことに気づいた場合、即座に中断し、謝罪した上で不足していた説明を行い、改めて指示を仰ぐこと。
-
-5. **GitHubコメント投稿時の安全な書式**:
-   - `gh pr comment` / `gh issue comment` で本文にバッククォート（`` ` ``）や `$` を含む場合、シェル展開を避けるため `--body-file` + シングルクォートheredoc（`<<'EOF'`）を使うこと。
-   - `--body "..."` へ直接埋め込む方法は原則禁止（コマンド置換や変数展開で本文が破損するため）。
-
-6. **`gh` 実行時のネットワーク制限切り分け（Codex / sandbox）**:
-   - `gh issue comment` / `gh pr comment` / `gh api` 実行時に `error connecting to api.github.com` が出た場合、まず **認証エラーと断定しない**。Codex セッションの sandbox が `network_access=false` の場合、GitHub API に到達できず同様のエラーになる。
-   - `gh auth status` の結果だけで判断せず、必要に応じて `gh api user` や `gh issue view <number>` などの**読み取り系コマンド**で到達性と認証を切り分けること。
-   - GitHub への投稿/更新操作（コメント投稿、Issue/PR 更新など）は、sandbox 内で通信不可のときは **権限昇格（sandbox外）で実行**すること。
-   - エージェントは実行前に「ネットワーク制限回避のため権限昇格が必要」である旨を明示し、ユーザー承認を得ること。
-
-7. **GPU/CUDA 実行時の sandbox 切り分け（PyTorch）**:
-   - `nvidia-smi` は成功するのに `torch.cuda.is_available()==False` や `cudaGetDeviceCount` 系エラー（例: `Error 304: OS call failed or operation not supported on this OS`）が出る場合、まず **ドライバ/venv破損と断定しない**。Codex の sandbox 内実行では CUDA 初期化が失敗することがある。
-   - まず sandbox 内で `torch.__version__`, `torch.version.cuda`, `torch.cuda.is_available()`, `torch.cuda.device_count()` を確認し、OS 側は `nvidia-smi` で切り分けること。
-   - `nvidia-smi` 成功かつ PyTorch の CUDA build（例 `+cuXXX`）なのに sandbox 内だけ失敗する場合、**GPUを使う推論/学習コマンドは権限昇格（sandbox外）で実行**すること。
-   - 実行前に「sandbox 内では CUDA 初期化が失敗するため、GPU利用のため権限昇格が必要」である旨を明示し、ユーザー承認を得ること。
-
-8. **長時間学習ジョブの sandbox 制約（multiprocessing/semlock）**:
-   - `experiments/cnn_classifier/train.py` のような DataLoader 複数worker学習は、sandbox 内だと `PermissionError: [Errno 13]`（`multiprocessing` の `SemLock`）で失敗することがある。
-   - この系統の学習ジョブは、最初から **権限昇格（sandbox外）** で実行すること。
-   - 失敗後のリトライではなく、初回実行時点で「sandbox制約回避のため権限昇格が必要」と明示して承認を得ること。
-   - 学習データ更新は先に `datasets/`（repo ext4側）で完了させ、学習ジョブはその作業用datasetを参照して実行すること。
-
-9. **自律的ピアレビュー（セカンドオピニオンの取得）**:
-   - **トリガー条件**: 以下の「高難易度」状況を検知した場合、エージェントは自律的に別エージェント（Codex等）に意見を照会することを検討する。
-     - 性能のトレードオフ（Precision向上によりRecallが低下するなど）が発生し、最適解が見えない場合。
-     - `barline_matcher.py` や `measure_numbering` 等、システムのコアロジックに破壊的変更を加える場合。
-     - 2回以上の試行でバグが修正できない、または原因の仮説が3つ以上並立する場合。
-     - アーキテクチャの大きな分岐（A案・B案）において、客観的なリスク評価が必要な場合。
-   - **照会手順**:
-     - `codex exec --sandbox read-only` を使用し、現在の設計案に対する批判的レビューや代替案を求める。
-     - 照会前にユーザーに「Codexに意見を聞いてみます」と宣言する（詳細な承認を待たず、思考プロセスの一環として実行して良い）。
-   - **結果の統合**:
-     - 照会結果をそのまま採用せず、自分の案と比較した「統合案」をユーザーに提示し、なぜその結論に至ったかの論拠（Rational）を説明する。
-
-10. **現状把握のプロトコル (Onboarding Protocol for Agents)**:
-
-エージェントは、静的なドキュメントが最新のコードベースと乖離している可能性（Stale docs）を常に考慮し、以下の手順で現状を把握してください。
-
-1. **Check Freshness with Git**: 発見したドキュメント（特に `docs/` 内）が 1 ヶ月以上更新されていない場合、その内容を鵜呑みにせず、必ず `git log -n 1 -- <path>` で最終更新日時を確認してください。
-2. **Prioritize Git History**: 最新の作業状況と「真実」は `git log -n 10` および現在の branch 状況から判断してください。
-3. **Consult Asset Registry**: モデルパスや推奨設定ファイルについては、`README.md` や個別のドキュメントの記述よりも、`docs/MANIFEST.md` の情報を優先してください。
-4. **Update on Discovery**: **調査や実験の過程でドキュメントの記述と実態の乖離（パスの間違い、古い仕様など）を発見した場合は、直ちにそのドキュメントを最新の情報に更新してください。** 後のセッションで他のエージェントや人間が同じ罠に嵌まるのを防ぐことは、エージェントの重要な義務です。
-
-### Multi-LLM Role Specialization
-- **Gemini CLI**: Architect, Multi-modal Reasoner, Web Researcher. Leads planning and reasoning.
-- **Codex**: Implementation Specialist, Repository Navigator, Verification Lead. Leads focused edits and sandbox validation.
-- **Consultation Mandate**: Gemini should proactively consult Codex (via \`codex exec --sandbox read-only\`) for second opinions on complex logic, type safety, or architectural impacts.
-- **Knowledge Synthesis Mandate**: Both agents must document newly discovered heuristics, anti-patterns, or visual failure modes in `docs/ai-workflow/LESSONS.md` to prevent regressions in future sessions.
+- Issue or PR link.
+- Summary of changed files and intent.
+- Commands run, pass/fail status, and log paths.
+- Validation skipped, failed, or deferred and the exact reason.
+- Detected validation categories from `docs/dev/VALIDATION_POLICY.md`.
+- Any changes to filters, thresholds, seeds, dataset selection, metrics, evaluation configs, baseline/canonical artifacts, or evaluation behavior.
+- Remaining risks and any human decisions still required.

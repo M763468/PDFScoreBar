@@ -74,18 +74,6 @@ def _read_gpu_sample() -> list[dict[str, Any]]:
 
 def _summarize_console_log(path: Path) -> dict[str, Any]:
     """Summarize captured stdout/stderr without loading the whole file into memory."""
-    summary: dict[str, Any] = {
-        "path": str(path),
-        "exists": path.exists(),
-        "size_bytes": path.stat().st_size if path.exists() else 0,
-        "line_count": 0,
-        "logger_counts": {},
-        "marker_counts": {},
-    }
-    if not path.exists():
-        return summary
-
-    logger_counts: dict[str, int] = {}
     marker_counts = {
         "homr": 0,
         "real_esrgan": 0,
@@ -93,6 +81,21 @@ def _summarize_console_log(path: Path) -> dict[str, Any]:
         "progress_bar": 0,
         "warning_or_error": 0,
     }
+    summary: dict[str, Any] = {
+        "path": str(path),
+        "exists": path.exists(),
+        "size_bytes": path.stat().st_size if path.exists() else 0,
+        "line_count": 0,
+        "logger_counts": {},
+        "marker_counts": marker_counts.copy(),
+    }
+    summary_path = path.with_suffix(".summary.json")
+    if not path.exists():
+        summary["summary_path"] = str(summary_path)
+        summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+        return summary
+
+    logger_counts: dict[str, int] = {}
     with path.open("r", encoding="utf-8", errors="replace") as f:
         for line in f:
             summary["line_count"] += 1
@@ -117,7 +120,6 @@ def _summarize_console_log(path: Path) -> dict[str, Any]:
         sorted(logger_counts.items(), key=lambda item: item[1], reverse=True)[:20]
     )
     summary["marker_counts"] = marker_counts
-    summary_path = path.with_suffix(".summary.json")
     summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
     summary["summary_path"] = str(summary_path)
     return summary
@@ -139,15 +141,111 @@ def _is_warning_or_error_line(line: str) -> bool:
 
 
 def _is_progress_line(line: str) -> bool:
-    lower = line.lower()
-    stripped = line.strip()
     if "|" in line and "%" in line:
         return True
-    if stripped.startswith("Downloaded ") and "%" in stripped:
-        return True
-    if "downloaded" in lower and " of " in lower and "%" in lower:
-        return True
     return False
+
+
+def _is_real_esrgan_tile_line(stripped: str) -> bool:
+    return stripped.startswith("Tile ") and "/" in stripped
+
+
+def _is_low_value_external_line(
+    line: str,
+    *,
+    preserve_homr_internal: bool = False,
+    preserve_sr_tile_logs: bool = False,
+) -> bool:
+    stripped = line.strip()
+    lower = stripped.lower()
+    if not stripped:
+        return False
+    if _is_real_esrgan_tile_line(stripped):
+        return not preserve_sr_tile_logs
+    if preserve_homr_internal:
+        return False
+    low_value_prefixes = (
+        "Downloaded ",
+        "Dewarping staff",
+        "Running TrOmr inference on staff image",
+        "Creating bounds for",
+        "Found a cache",
+        "Loading from cache",
+        "Saving cache",
+        "Removing tuplets from measure",
+        "_check_choices_intelligently:",
+    )
+    low_value_markers = (
+        "[RapidOCR]",
+        "[W:onnxruntime",
+        "Fallback mode. May be extremely slow.",
+        " staff line fragments",
+        " noteheads",
+        " notes during segmentation",
+        "Average note head height:",
+        "Inference Time Tromr:",
+        "Segnet Inference time:",
+    )
+    return stripped.startswith(low_value_prefixes) or any(
+        marker.lower() in lower for marker in low_value_markers
+    )
+
+
+def _strip_low_value_suffix_from_progress_line(line: str) -> str:
+    if not _is_progress_line(line):
+        return line
+    for marker in (
+        "\x1b[",
+        "Found ",
+        "Inference Time Tromr:",
+        "Removing tuplets from measure",
+        "_check_choices_intelligently:",
+    ):
+        if marker in line:
+            prefix = line.split(marker, 1)[0].rstrip()
+            if prefix:
+                return prefix + "\n"
+    return line
+
+
+def _suppress_low_value_external_raw_log(
+    path: Path,
+    *,
+    preserve_homr_internal: bool = False,
+    preserve_sr_tile_logs: bool = False,
+) -> dict[str, Any]:
+    """Rewrite raw stdout/stderr with known low-value external chatter removed."""
+    stats = {
+        "schema_version": "tools.issue120.stage_e_low_value_raw_suppression.v1",
+        "path": str(path),
+        "preserve_homr_internal": preserve_homr_internal,
+        "preserve_sr_tile_logs": preserve_sr_tile_logs,
+        "input_line_count": 0,
+        "output_line_count": 0,
+        "suppressed_line_count": 0,
+        "sanitized_progress_line_count": 0,
+    }
+    if not path.exists():
+        return stats
+    temp_path = path.with_name(f"{path.stem}.filtered{path.suffix}")
+    with path.open("r", encoding="utf-8", errors="replace") as src:
+        with temp_path.open("w", encoding="utf-8") as dst:
+            for line in src:
+                stats["input_line_count"] += 1
+                sanitized = _strip_low_value_suffix_from_progress_line(line)
+                if sanitized != line:
+                    stats["sanitized_progress_line_count"] += 1
+                if _is_low_value_external_line(
+                    sanitized,
+                    preserve_homr_internal=preserve_homr_internal,
+                    preserve_sr_tile_logs=preserve_sr_tile_logs,
+                ):
+                    stats["suppressed_line_count"] += 1
+                    continue
+                dst.write(sanitized)
+                stats["output_line_count"] += 1
+    temp_path.replace(path)
+    return stats
 
 
 def _filter_default_console_log(*, raw_path: Path, filtered_path: Path) -> dict[str, Any]:
@@ -161,10 +259,12 @@ def _filter_default_console_log(*, raw_path: Path, filtered_path: Path) -> dict[
         "dropped_line_count": 0,
         "dropped_progress_line_count": 0,
         "dropped_external_raw_line_count": 0,
+        "filtered_log_written": False,
     }
     filtered_path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = filtered_path.with_name(f"{filtered_path.stem}.tmp{filtered_path.suffix}")
     with raw_path.open("r", encoding="utf-8", errors="replace") as src:
-        with filtered_path.open("w", encoding="utf-8") as dst:
+        with temp_path.open("w", encoding="utf-8") as dst:
             for line in src:
                 stats["raw_line_count"] += 1
                 if _is_warning_or_error_line(line):
@@ -176,6 +276,12 @@ def _filter_default_console_log(*, raw_path: Path, filtered_path: Path) -> dict[
                     stats["dropped_progress_line_count"] += 1
                 else:
                     stats["dropped_external_raw_line_count"] += 1
+    if stats["kept_line_count"] > 0:
+        temp_path.replace(filtered_path)
+        stats["filtered_log_written"] = True
+    else:
+        temp_path.unlink(missing_ok=True)
+        filtered_path.unlink(missing_ok=True)
     return stats
 
 
@@ -504,6 +610,12 @@ def main():
         help="Write full subprocess logs for dense-route reconstruction. Defaults to compact bounded logs.",
     )
     parser.add_argument(
+        "--expected-pages",
+        type=int,
+        default=68,
+        help="Expected dense-route page count. Keep 68 for canonical Stage E; use a smaller value only for smoke checks.",
+    )
+    parser.add_argument(
         "--resource-sample-interval-sec",
         type=float,
         default=5.0,
@@ -552,6 +664,7 @@ def main():
         inventory=args.inventory,
         exclude=args.exclude,
         route_root=route_root,
+        expected_pages=args.expected_pages,
         verbose_logs=args.dense_route_verbose_logs,
     )
 
@@ -644,8 +757,14 @@ def main():
 
     pipeline_phase_summary_path = route_root / "pipeline_phase_summary.json"
     pipeline_phase_summary = _load_optional_json(pipeline_phase_summary_path)
+    low_value_raw_suppression_summary = None
     console_filter_summary = None
     if not pipeline_diagnostic_logs:
+        low_value_raw_suppression_summary = _suppress_low_value_external_raw_log(
+            pipeline_capture_log,
+            preserve_homr_internal=_env_flag_enabled("PDFSCORE_HOMR_VERBOSE_INTERNAL_LOGS"),
+            preserve_sr_tile_logs=_env_flag_enabled("PDFSCORE_SR_TILE_LOGS"),
+        )
         console_filter_summary = _filter_default_console_log(
             raw_path=pipeline_capture_log,
             filtered_path=pipeline_console_log,
@@ -677,6 +796,7 @@ def main():
             else 0,
             "stdout_stderr_log_size_bytes": pipeline_console_log_summary["size_bytes"],
             "stdout_stderr_log_summary": pipeline_console_log_summary,
+            "stdout_stderr_low_value_raw_suppression_summary": (low_value_raw_suppression_summary),
             "stdout_stderr_filter_summary": console_filter_summary,
             "stdout_stderr_progress_mirror_summary": progress_mirror_summary,
             "logging_policy": {

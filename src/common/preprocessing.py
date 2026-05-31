@@ -1,5 +1,7 @@
+import contextlib
 import logging
 import os
+import sys
 from typing import Any, Optional
 
 import cv2
@@ -9,6 +11,50 @@ logger = logging.getLogger(__name__)
 
 IMAGE_SIZE_THRESHOLD_FOR_TILING = 1000
 DEFAULT_TILE_SIZE = 400
+
+
+def _env_flag_enabled(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+class _RealESRGANTileLogFilter:
+    """Drop Real-ESRGAN per-tile progress prints while forwarding other stdout."""
+
+    def __init__(self, stream: Any) -> None:
+        self.stream = stream
+        self._pending = ""
+
+    def write(self, text: str) -> int:
+        self._pending += text
+        while "\n" in self._pending:
+            line, self._pending = self._pending.split("\n", 1)
+            self._write_line(line + "\n")
+        return len(text)
+
+    def flush(self) -> None:
+        if self._pending:
+            self._write_line(self._pending)
+            self._pending = ""
+        self.stream.flush()
+
+    def _write_line(self, line: str) -> None:
+        stripped = line.strip()
+        if stripped.startswith("Tile ") and "/" in stripped:
+            return
+        self.stream.write(line)
+
+
+@contextlib.contextmanager
+def _suppress_realesrgan_tile_logs():
+    if _env_flag_enabled("PDFSCORE_SR_TILE_LOGS"):
+        yield
+        return
+    stream = _RealESRGANTileLogFilter(sys.stdout)
+    with contextlib.redirect_stdout(stream):
+        try:
+            yield
+        finally:
+            stream.flush()
 
 
 def apply_vertical_closing(
@@ -204,7 +250,8 @@ def apply_advanced_sr(
         if image.ndim != 3 or image.shape[2] != 3:
             image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
-        output, _ = upsampler.enhance(image, outscale=scale)
+        with _suppress_realesrgan_tile_logs():
+            output, _ = upsampler.enhance(image, outscale=scale)
         return output, upsampler
     except Exception as e:
         logger.error("Real-ESRGAN inference failed: %s", e)

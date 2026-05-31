@@ -4,9 +4,28 @@ Issue: #160
 
 ## Purpose
 
-This audit records remaining `stage`, `issue`, and `phase` naming outside the production detector-route API. Its purpose is to help future readers distinguish durable runtime/config/API surface from historical provenance, compatibility shims, and subsystem-internal workflow wording.
+This audit records the boundary between the canonical full-pipeline runtime surface and historical Stage/Issue/Phase names retained only for validation, reproduction, or provenance.
 
-This PR is documentation-only. It does not change detector behavior, detector thresholds, CNN scoring, NMS policy, evaluation targets, or pipeline output semantics.
+The goal is not to document historical names in place and accept them everywhere. The goal is to keep the main pipeline understandable without knowing the Issue #120/#141 Stage E recovery history, while still preserving a replay path for historical checkpoints.
+
+## Current boundary
+
+Canonical runtime surface:
+
+- `src/pipeline/main.py`
+- `src/pipeline/orchestrator.py`
+- `src/pipeline/detection/*`
+- `src/pipeline/detector_routes/dense_full_pipeline.py`
+- `configs/dense_full_pipeline.yaml`
+
+Historical / validation / reproduction surface:
+
+- `tools/issue120/*`
+- `configs/issue120_stage_e_full_pipeline.yaml`
+- `docs/ISSUE*_*.md`
+- compatibility shims retained for historical checkpoint replay
+
+A reader should be able to understand normal full-pipeline execution from `src/pipeline/main.py` and canonical config files without knowing the Stage E recovery sequence.
 
 ## Scope
 
@@ -30,9 +49,18 @@ Excluded areas:
 The canonical local refresh command is:
 
 ```bash
-git grep -n -E 'stage_e|Stage E|issue53|Issue53|Issue #53|phase|Phase|stage [A-Z]|Stage [A-Z]' \
+git grep -i -n -E 'stage_?e|stage [a-z]|issue ?#? ?53|issue53|phase' \
   -- src tools configs tests docs experiments ':!logs' ':!*.json'
 ```
+
+## Changes made for #160
+
+This issue moves the repository closer to that boundary with small, low-risk changes:
+
+1. `src/pipeline/main.py` keeps generic pipeline-entrypoint wording. The production entrypoint comment no longer refers to a Stage E-specific caller.
+2. `configs/dense_full_pipeline.yaml` provides a canonical dense full-pipeline config for `src.pipeline.main`.
+3. `configs/issue120_stage_e_full_pipeline.yaml` remains as the historical Issue #120/#141 Stage E reproduction config.
+4. This audit now treats historical naming as something to isolate from the canonical surface, not merely annotate.
 
 ## Existing detector-route boundary from #158
 
@@ -47,20 +75,38 @@ Issue #158 already separated the production dense detector-route API from Stage 
 - `detection.cnn_bands_from`
 - `detection.probe_use_original_images`
 
-Historical Stage E names remain only for checkpoint compatibility and provenance. This audit extends that boundary to the broader repository instead of reopening detector behavior.
+Historical Stage E names should remain only for checkpoint compatibility and provenance.
 
 ## Classification summary
 
 | Category | Summary | Action in this PR |
 | --- | --- | --- |
-| historical provenance | Issue-specific checkpoint names, old diagnostic stages, training/evaluation source paths, and historical docs/experiments | Keep and document as intentional |
-| user-facing wording | CLI/log/report text that says `Stage`, `Phase`, or old Issue names but is not a production config/API key | Do not rename in this PR; consider follow-up only when wording is actively confusing |
-| production API/config surface | Current detector-route module/config keys and orchestrator-facing names | No behavior change here; #158 already moved the dense route production surface to semantic names |
-| obsolete wrapper/tool | Legacy wrappers and old diagnostics that exist mainly for reproduction or historical comparison | Do not delete here; mark archive/deprecation candidates for a separate cleanup issue |
+| canonical runtime surface | Full pipeline entrypoint, orchestrator, detection package, current dense-route config | Keep Stage/Issue-specific names out |
+| historical reproduction surface | Issue #120/#141 checkpoint commands/config/docs and old diagnostic stages | Keep, but isolate under tools/docs/historical config |
+| compatibility shim | Old import or artifact views retained only for checkpoint replay | Keep narrow; do not use in new production code |
+| generic workflow wording | Non-historical `phase` wording used as local workflow/progress terminology | Allowed only when it does not encode historical Stage/Issue meaning |
+| obsolete wrapper/tool | Legacy diagnostics that exist mainly for reproduction or comparison | Track for separate archive/deprecation work |
 
-## Detailed inventory
+## Detailed inventory and decisions
 
-### 1. Stage E full-pipeline checkpoint surface
+### 1. Canonical full-pipeline entrypoint
+
+Representative files:
+
+- `src/pipeline/main.py`
+- `src/pipeline/orchestrator.py`
+- `src/pipeline/detection/*`
+- `configs/dense_full_pipeline.yaml`
+
+Classification: canonical runtime surface.
+
+Decision:
+
+- Use semantic pipeline and detector terminology.
+- Do not mention `Stage E`, `Issue120`, or `Issue53` in normal entrypoint comments, CLI help, or canonical config names.
+- Historical names may still appear in artifact paths supplied by a user config, but they should not define the current API.
+
+### 2. Stage E full-pipeline checkpoint surface
 
 Representative names:
 
@@ -72,17 +118,15 @@ Representative names:
 - `issue141.stage_e_full_pipeline.v1`
 - `logs/issue120_e2e_recovery/stage_e_full_pipeline/`
 
-Classification: historical provenance.
+Classification: historical reproduction surface.
 
-Rationale:
+Decision:
 
-- These names identify the #141/#156 canonical Stage E full-pipeline checkpoint and its reproducibility contract.
-- The names are part of the checkpoint command/schema/log path vocabulary, not the new production detector-route API.
-- Renaming them would require an explicit compatibility and migration plan.
+- Keep these names only as Issue #120/#141 reproduction and validation vocabulary.
+- Do not treat `tools/issue120/run_stage_e_full_pipeline.py` as the canonical full-pipeline implementation.
+- The tool may prepare historical inputs, collect runtime summaries, attach evaluation contracts, and call `src.pipeline.main.run_pipeline`; it should not define the canonical naming policy.
 
-Decision: keep as-is. New code should not introduce additional Stage E names unless it is explicitly checkpoint compatibility or provenance documentation.
-
-### 2. `stage_e_dense_full_pipeline` compatibility shim
+### 3. `stage_e_dense_full_pipeline` compatibility shim
 
 Representative names:
 
@@ -93,17 +137,15 @@ Representative names:
 - `reconstruct_stage_e_dense_route`
 - compatibility wrappers around historical `issue53_root` / `regenerate_issue53_candidates`
 
-Classification: historical provenance / compatibility shim.
+Classification: compatibility shim.
 
-Rationale:
+Decision:
 
-- This module preserves old import and artifact access paths for the Stage E checkpoint.
-- The production implementation lives in `src.pipeline.detector_routes.dense_full_pipeline`.
-- The shim is intentionally narrow and should not be used by new production code.
+- Keep as a narrow checkpoint replay surface.
+- New production code should import `src.pipeline.detector_routes.dense_full_pipeline` directly.
+- Future deletion requires a compatibility plan and confirmation that no maintained historical replay command imports it.
 
-Decision: keep as-is. A future removal requires a compatibility plan and confirmation that no tracked checkpoint command still imports it.
-
-### 3. Dense full-pipeline execution `phase` wording
+### 4. Dense full-pipeline execution `phase` wording
 
 Representative names:
 
@@ -112,17 +154,14 @@ Representative names:
 - execution summary field `phases`
 - phase names such as `load_route_image_paths`, `dense_candidate_reconstruction`, and `probe_rescue_candidate_reconstruction`
 
-Classification: user-facing wording / internal workflow label.
+Classification: generic workflow wording.
 
-Rationale:
+Decision:
 
-- These names describe runtime substeps in the dense full-pipeline reconstruction summary.
-- They are not historical `Stage A/B/C/D/E` names and do not encode old Issue numbers.
-- Because execution summaries may be consumed by scripts or review notes, renaming is a schema-affecting change and should not be done inside this audit PR.
+- Keep for now because these names describe runtime substeps and do not encode `Stage A/B/C/D/E` or an old Issue number.
+- If the execution summary schema becomes durable public API, decide separately whether `phases` should migrate to `steps` under a versioned schema migration.
 
-Decision: keep. If the execution summary schema becomes durable public API, create a follow-up issue to decide whether `phases` should remain generic step terminology or migrate to `steps`.
-
-### 4. Historical Issue53 training/evaluation provenance
+### 5. Historical Issue53 training/evaluation provenance
 
 Representative names:
 
@@ -132,15 +171,13 @@ Representative names:
 
 Classification: historical provenance.
 
-Rationale:
+Decision:
 
-- These names point at the origin of old model/data artifacts.
-- Renaming them would make historical model lineage less clear and could break reproducibility notes.
-- They should not be treated as current detector-route API.
+- Keep where the name identifies historical model/data lineage.
+- Do not use `issue53_*` as a new production config/API key.
+- Active production config keys must use semantic names; removed detector-route keys should fail rather than silently alias.
 
-Decision: keep. If any active production config still accepts `issue53_*` as a key, track it as a separate compatibility/removal issue; do not silently alias it.
-
-### 5. Legacy Issue #120 Stage B/C/D diagnostics and Makefile targets
+### 6. Legacy Issue #120 Stage B/C/D diagnostics and Makefile targets
 
 Representative names:
 
@@ -154,17 +191,15 @@ Representative names:
 - `compare-issue120-stage-d-boxes`
 - tools under `tools/issue120/` that mention Stage B/C/D diagnostics
 
-Classification: historical provenance, with some obsolete wrapper/tool candidates.
+Classification: historical reproduction surface / obsolete wrapper candidates.
 
-Rationale:
+Decision:
 
-- These names preserve the Issue #120 recovery sequence and remain useful for reproducing or comparing diagnostic checkpoints.
-- The Makefile targets are explicit Issue #120 maintenance commands, not general production API.
-- Some wrappers may be candidates for archive or deprecation after Stage E checkpoint compatibility is no longer needed.
+- Keep historical reports and commands needed for reproducibility.
+- Do not use these targets as examples for new production naming.
+- Create a separate archive/deprecation issue before deleting wrappers that may still be useful for checkpoint replay.
 
-Decision: keep historical reports and commands needed for reproduction. For wrappers that are no longer used by any maintained command, create a separate archive/deprecation issue rather than deleting them in this audit PR.
-
-### 6. HOMR evaluator `phase` wording
+### 7. HOMR evaluator `phase` wording
 
 Representative names:
 
@@ -172,33 +207,27 @@ Representative names:
 - HOMR integration comments that describe recognizer phases or timing segments
 - Stage E reports that mention HOMR/SR/OMR-inclusive full-pipeline execution
 
-Classification: user-facing wording / subsystem-internal workflow label.
+Classification: generic workflow wording or historical documentation, depending on location.
 
-Rationale:
+Decision:
 
-- These phase labels belong to the HOMR/evaluator workflow and do not define detector-route API.
-- They are useful as progress or timing markers.
-- They should not be mixed with detector accuracy stages.
+- Keep subsystem-internal phase labels when they are plain progress/timing terminology.
+- Do not mix those labels with detector recovery Stage names.
 
-Decision: keep unless a future logging cleanup standardizes progress wording across all external recognizer integrations.
-
-### 7. Downstream numbering pipeline Phase A/B/C labels
+### 8. Downstream numbering pipeline Phase A/B/C labels
 
 Representative names:
 
 - Downstream measure-numbering reports or logs that use `Phase A`, `Phase B`, or `Phase C`.
 
-Classification: user-facing wording.
+Classification: generic workflow wording.
 
-Rationale:
+Decision:
 
-- These labels describe downstream numbering/measure-count workflow, not detector candidate generation or detector-route API.
-- Renaming can affect review notes, log parsing, or local debugging habits.
-- Detector metrics must not be mixed with downstream measure-count metrics.
+- Keep in this PR because it is downstream workflow wording, not detector candidate-generation history.
+- Consider a future wording cleanup if the downstream user-facing UX is revised.
 
-Decision: keep in this PR. A future wording cleanup may rename them to `numbering step` labels if the downstream UX is revised.
-
-### 8. Historical experiments and refactor notes
+### 9. Historical experiments and refactor notes
 
 Representative names:
 
@@ -207,49 +236,41 @@ Representative names:
 
 Classification: historical provenance.
 
-Rationale:
+Decision:
 
-- These files are historical records, not current runtime/config surface.
-- Renaming would obscure the context of old experiments and could make old commands harder to map back to their original issue.
+- Keep as historical records.
+- Archive only under a broader experiment-retention policy.
 
-Decision: keep. Archive only when the project adopts a broader experiment-retention policy.
+## Current guidance for future changes
+
+- Run normal full-pipeline work through `src.pipeline.main` and canonical configs.
+- Add new general-purpose configs under semantic names, not Issue/Stage names.
+- Keep Stage E names only under Issue #120/#141 reproduction, historical docs, or explicit compatibility shims.
+- Keep Issue53 names only for historical model/data lineage or compatibility views.
+- Treat generic `phase` wording as acceptable only when it means a local workflow segment rather than a historical recovery stage.
+- Do not rename checkpoint commands, log directories, or contract schemas without a migration layer.
 
 ## Follow-up candidates
 
-These are intentionally not changed in this PR:
+These are intentionally not completed in this PR:
 
-1. Decide whether dense route execution summary `phases` should remain the generic schema term or be renamed to `steps` under a versioned schema migration.
+1. Decide whether dense route execution summary `phases` should remain the generic schema term or migrate to `steps` under a versioned schema migration.
 2. Review old Issue #120 diagnostic wrappers after Stage E checkpoint compatibility is no longer needed, and archive/delete only with an explicit reproduction impact check.
 3. Review downstream numbering `Phase A/B/C` wording if the downstream command/report UX is revised.
 4. Periodically rerun the grep inventory before large detector-route refactors and confirm no new production config/API keys use `stage_e`, `issue53`, or historical Issue names.
 
-## Current guidance for future changes
-
-- Do not introduce `stage_e` or `issue53` in new production detector-route code.
-- Use `dense_full_pipeline`, `probe_rescue`, and semantic detector config keys for current runtime behavior.
-- Keep Stage E names only when referring to the canonical checkpoint, historical logs, compatibility shims, or documentation of provenance.
-- Keep Issue53 names only when referring to historical model/data lineage or compatibility views.
-- Treat generic `phase` wording as acceptable for internal workflow/log segments unless it becomes a durable public schema or conflicts with detector-route naming.
-- Do not rename checkpoint commands, log directories, or contract schemas without a migration layer.
-
 ## Verification notes
-
-Documentation-only change.
 
 Checks appropriate for this PR:
 
 ```bash
 git diff --check
-git grep -n -E 'stage_e|Stage E|issue53|Issue53|Issue #53|phase|Phase|stage [A-Z]|Stage [A-Z]' \
+git grep -i -n -E 'stage_?e|stage [a-z]|issue ?#? ?53|issue53|phase' \
   -- src tools configs tests docs experiments ':!logs' ':!*.json'
 ```
 
-Skipped checks:
-
-- Python tests: not required because no Python behavior changed.
-- GPU smoke: not required because no GPU, Docker, model loading, or runtime output behavior changed.
-- Full evaluation: not required because detector thresholds, CNN scoring, NMS, evaluation target, and output semantics are unchanged.
+Local checkout-based checks were not run in this environment because `git clone` could not resolve `github.com`. GPU smoke and full evaluation were not run because this change is a naming-boundary/configuration cleanup and does not intentionally change detector thresholds, CNN scoring, NMS policy, or output semantics.
 
 ## Result
 
-The remaining historical Stage/Issue/Phase names are documented as provenance, compatibility, internal workflow wording, or future cleanup candidates. No production detector-route behavior is changed by this audit.
+The canonical full-pipeline entrypoint remains `src.pipeline.main`, with a semantic dense full-pipeline config available for normal use. Historical Stage/Issue names are retained for reproduction and provenance, but they are explicitly isolated from the canonical runtime surface.

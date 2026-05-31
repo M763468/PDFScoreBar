@@ -351,6 +351,7 @@ class CapturedProgressMirror:
         self._position = 0
         self._mirrored_progress_line_count = 0
         self._mirrored_warning_or_error_line_count = 0
+        self._lock = threading.Lock()
 
     def start(self) -> None:
         self._console_stderr_fd = os.dup(2)
@@ -386,16 +387,17 @@ class CapturedProgressMirror:
             self._drain_once()
 
     def _drain_once(self) -> None:
-        if self._console_stderr_fd is None or not self.capture_path.exists():
-            return
-        with self.capture_path.open("r", encoding="utf-8", errors="replace") as f:
-            f.seek(self._position)
-            while True:
-                line = f.readline()
-                if not line:
-                    break
-                self._position = f.tell()
-                self._mirror_line(line)
+        with self._lock:
+            if self._console_stderr_fd is None or not self.capture_path.exists():
+                return
+            with self.capture_path.open("r", encoding="utf-8", errors="replace") as f:
+                f.seek(self._position)
+                while True:
+                    line = f.readline()
+                    if not line:
+                        break
+                    self._position = f.tell()
+                    self._mirror_line(line)
 
     def _mirror_line(self, line: str) -> None:
         if self._console_stderr_fd is None:

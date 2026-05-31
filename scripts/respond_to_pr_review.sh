@@ -48,21 +48,15 @@ fi
 mkdir -p artifacts
 context_file="artifacts/pr_${pr_number}_review_context.json"
 plan_file="artifacts/pr_${pr_number}_review_response_plan.md"
-inline_comments_file="artifacts/pr_${pr_number}_review_inline_comments.json"
 
 gh pr view "$pr_number" \
   --json title,body,state,headRefName,baseRefName,comments,reviews \
   >"$context_file"
 
-if ! gh api "repos/{owner}/{repo}/pulls/${pr_number}/comments" >"$inline_comments_file"; then
-  echo "[]" >"$inline_comments_file"
-  echo "Could not fetch inline review comments; wrote empty list to $inline_comments_file" >&2
-fi
-
 cat >"$plan_file" <<EOF_PLAN
 # PR #${pr_number} review response entrypoint
 
-Collected context: \`${context_file}\` and \`${inline_comments_file}\`
+Collected context: \`${context_file}\`
 
 Suggested manual loop:
 
@@ -76,12 +70,11 @@ EOF_PLAN
 
 if [[ "$run_codex" -eq 1 ]]; then
   if ! command -v codex >/dev/null 2>&1; then
-    echo "codex CLI not found; wrote $plan_file only" >&2
-    exit 0
+    echo "codex CLI not found; skipping codex execution" >&2
+  else
+    codex exec --sandbox read-only "Review ${context_file} and list only actionable PR review items. Do not edit files." >>"$plan_file" 2>&1
   fi
-  codex exec --sandbox read-only "Review ${context_file} and list only actionable PR review items. Do not edit files." >>"$plan_file" 2>&1
 fi
 
 echo "Wrote $context_file"
-echo "Wrote $inline_comments_file"
 echo "Wrote $plan_file"

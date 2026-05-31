@@ -85,7 +85,7 @@ fi
 
 echo "Running GPU smoke command..." | tee -a "$log_file"
 set +e
-timeout "$timeout_duration" bash -lc "$smoke_cmd" >>"$log_file" 2>&1
+timeout "$timeout_duration" bash -c "$smoke_cmd" >>"$log_file" 2>&1
 status=$?
 set -e
 

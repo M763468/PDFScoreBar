@@ -231,6 +231,49 @@ classify_changes() {
   fi
 }
 
+render_summary() {
+  cat >"$summary_file" <<EOF_SUMMARY
+## Local PR validation
+
+- Branch: \`${branch}\`
+- Commit: \`${commit}\`
+- Test fast: ${test_status}
+- GPU smoke: ${gpu_status}
+- Full evaluation: ${full_eval_status}
+- GitHub post: ${post_status}
+- Log path: \`${log_dir}\`
+- Overall exit code: ${overall_status}
+- Diff base: \`${base_ref:-none}\`
+
+### Detected change categories
+
+$(sed 's/^/- /' "$change_categories_file")
+
+### Required or recommended validation
+
+$(sed 's/^/- /' "$required_validation_file")
+
+### Validation warnings
+
+$(if [[ -s "$validation_warnings_file" ]]; then sed 's/^/- WARNING: /' "$validation_warnings_file"; else echo "- None"; fi)
+
+### Changed files
+
+$(if [[ -s "$changed_files_file" ]]; then sed 's/^/- /' "$changed_files_file"; else echo "- No changed files detected"; fi)
+
+### Commands
+
+- \`make test-fast\`
+$(if [[ "$with_gpu" -eq 1 ]]; then echo "- \`scripts/gpu_smoke.sh\`"; else echo "- GPU smoke not requested"; fi)
+$(if [[ "$with_full_eval" -eq 1 ]]; then echo "- \`scripts/gpu_smoke.sh --timeout \"${FULL_EVAL_TIMEOUT:-8h}\" --command \"${FULL_EVAL_CMD:-make run-pipeline CONFIG=configs/evaluation2_e2e_verification_full.yaml LOG_FILE=/dev/stdout}\"\`"; else echo "- Full evaluation not requested"; fi)
+
+### Notes
+
+$(if [[ "$with_full_eval" -eq 1 ]]; then echo "- Full evaluation was explicitly requested for this run."; else echo "- Full evaluation was not run by this script. It remains governed by docs/dev/VALIDATION_POLICY.md."; fi)
+- If GitHub posting is requested, this script uses \`gh pr comment --body-file\`.
+EOF_SUMMARY
+}
+
 if [[ "$pull_first" -eq 1 ]]; then
   run_and_capture "git_pull_ff_only" "${log_dir}/git_pull.log" git pull --ff-only || overall_status=$?
 fi
@@ -284,47 +327,12 @@ else
   full_eval_status="skipped: --with-full-eval was not set"
 fi
 
-cat >"$summary_file" <<EOF_SUMMARY
-## Local PR validation
-
-- Branch: \`${branch}\`
-- Commit: \`${commit}\`
-- Test fast: ${test_status}
-- GPU smoke: ${gpu_status}
-- Full evaluation: ${full_eval_status}
-- Log path: \`${log_dir}\`
-- Overall exit code: ${overall_status}
-- Diff base: \`${base_ref:-none}\`
-
-### Detected change categories
-
-$(sed 's/^/- /' "$change_categories_file")
-
-### Required or recommended validation
-
-$(sed 's/^/- /' "$required_validation_file")
-
-### Validation warnings
-
-$(if [[ -s "$validation_warnings_file" ]]; then sed 's/^/- WARNING: /' "$validation_warnings_file"; else echo "- None"; fi)
-
-### Changed files
-
-$(if [[ -s "$changed_files_file" ]]; then sed 's/^/- /' "$changed_files_file"; else echo "- No changed files detected"; fi)
-
-### Commands
-
-- \`make test-fast\`
-$(if [[ "$with_gpu" -eq 1 ]]; then echo "- \`scripts/gpu_smoke.sh\`"; else echo "- GPU smoke not requested"; fi)
-$(if [[ "$with_full_eval" -eq 1 ]]; then echo "- \`scripts/gpu_smoke.sh --timeout \"${FULL_EVAL_TIMEOUT:-8h}\" --command \"${FULL_EVAL_CMD:-make run-pipeline CONFIG=configs/evaluation2_e2e_verification_full.yaml LOG_FILE=/dev/stdout}\"\`"; else echo "- Full evaluation not requested"; fi)
-
-### Notes
-
-$(if [[ "$with_full_eval" -eq 1 ]]; then echo "- Full evaluation was explicitly requested for this run."; else echo "- Full evaluation was not run by this script. It remains governed by docs/dev/VALIDATION_POLICY.md."; fi)
-- If GitHub posting is requested, this script uses \`gh pr comment --body-file\`.
-EOF_SUMMARY
+render_summary
 
 if [[ "$post_comment" -eq 1 ]]; then
+  post_status="pending"
+  render_summary
+
   if [[ -z "$pr_number" ]]; then
     post_status="skipped: --pr was not provided"
   elif ! command -v gh >/dev/null 2>&1; then
@@ -339,12 +347,9 @@ if [[ "$post_comment" -eq 1 ]]; then
       overall_status=1
     fi
   fi
-fi
 
-{
-  echo
-  echo "- GitHub post: ${post_status}"
-} >>"$summary_file"
+  render_summary
+fi
 
 cat "$summary_file"
 exit "$overall_status"

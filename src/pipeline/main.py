@@ -65,8 +65,8 @@ def run_pipeline(
     root_logger.setLevel(logging.DEBUG)
     root_logger.addHandler(file_handler)
 
-    # Keep the file log diagnostic, while allowing callers such as Stage E to
-    # make non-interactive captured stdout/stderr quieter by default.
+    # Keep the file log diagnostic while allowing evaluation or automation
+    # wrappers to make captured stdout/stderr quieter by default.
     old_handler_levels = []
     for handler in root_logger.handlers:
         if handler == file_handler:

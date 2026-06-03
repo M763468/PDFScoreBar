@@ -40,8 +40,8 @@ RUN /opt/venv_pipeline/bin/python docker/patch_homr_onnx_provider.py
 # Install project dependencies
 RUN uv pip install -e .
 
-# Apply basicsr patch for torchvision compatibility dynamically to avoid hardcoded python version paths
-RUN /opt/venv_pipeline/bin/python -c "import basicsr; from pathlib import Path; p = Path(basicsr.__file__).parent / 'data' / 'degradations.py'; s = p.read_text(); p.write_text(s.replace('from torchvision.transforms.functional_tensor import rgb_to_grayscale', 'from torchvision.transforms.functional import rgb_to_grayscale'))"
+# Apply basicsr patch for torchvision compatibility without importing basicsr/cv2 in the builder stage.
+RUN /opt/venv_pipeline/bin/python -c "from pathlib import Path; import sysconfig; p = Path(sysconfig.get_paths()['purelib']) / 'basicsr' / 'data' / 'degradations.py'; s = p.read_text(); p.write_text(s.replace('from torchvision.transforms.functional_tensor import rgb_to_grayscale', 'from torchvision.transforms.functional import rgb_to_grayscale'))"
 
 # Download model weights during build to a safe location (not masked by volume mount)
 # We place them in /opt/weights so they are always available. We will symlink them later if needed.

@@ -7,8 +7,8 @@ from pathlib import Path
 import cv2
 
 # Add repo root to sys path
-REPO_ROOT = Path(__file__).resolve().parents[1]
-sys.path.append(str(REPO_ROOT))
+REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT))
 
 from src.common.barline_evaluation import greedy_barline_match
 

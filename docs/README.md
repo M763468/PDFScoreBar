@@ -101,6 +101,20 @@ Use the table below to quickly locate what you need.
 
 ## Phase-Specific Documentation
 
+### CNN Classifier / Detector Evaluation
+
+- **Issue #45 CNN Script Inventory**  
+  `docs/ISSUE45_CNN_SCRIPT_INVENTORY.md`  
+  Current script ownership, cleanup decisions, and placement rules for CNN-related `tools/` and `experiments/` scripts.
+
+- **CNN Retraining Guide**  
+  `docs/CNN_RETRAINING_GUIDE.md`  
+  Historical FP-based active-learning retraining procedure. Not part of the production pipeline runtime.
+
+- **CNN Training Development Log**  
+  `docs/DEVLOG_CNN_TRAINING.md`  
+  Historical CNN training and evaluation log. It may mention scripts that were later moved or deleted; use the inventory document for current paths.
+
 ### FP Reduction (Phase 1–3, Historical)
 
 - **Final Summary**  

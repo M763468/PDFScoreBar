@@ -2,7 +2,7 @@
 """Run Stage E detector contract evaluation from a full-pipeline output root.
 
 The Stage E runner writes full-pipeline scored files and reconstructed candidate
-files in separate production-oriented artifact trees.  This wrapper materializes
+files in separate production-oriented artifact trees. This wrapper materializes
 an evaluator-compatible ``eval_inputs`` tree from those artifacts, then delegates
 metric calculation and contract writing to ``eval_full68_from_intermediates.py``.
 """
@@ -14,6 +14,7 @@ import json
 import os
 import shutil
 import sys
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -90,7 +91,11 @@ def _scored_paths(root: Path, record: full68_eval.PageRecord, filename: str) -> 
         / "probe_scan"
         / f"eval2_images_{record.score}_{record.page}"
         / filename,
-        root / "intermediate" / "probe_scan" / f"eval2_{record.score}_{record.page}" / filename,
+        root
+        / "intermediate"
+        / "probe_scan"
+        / f"eval2_{record.score}_{record.page}"
+        / filename,
     ]
 
 
@@ -145,7 +150,8 @@ def _prepare_eval_inputs(args: argparse.Namespace) -> tuple[Path, list[dict[str,
 
         if candidates_src is None:
             message = (
-                f"missing candidates file for {record.score}/{record.page}: {args.candidates_file}"
+                f"missing candidates file for {record.score}/{record.page}: "
+                f"{args.candidates_file}"
             )
             if args.allow_missing_candidates:
                 records.append(
@@ -198,7 +204,9 @@ def _prepare_eval_inputs(args: argparse.Namespace) -> tuple[Path, list[dict[str,
 
     if missing:
         missing_path = eval_inputs_dir / "missing_stage_e_artifacts.json"
-        missing_path.write_text(json.dumps(missing, indent=2, ensure_ascii=False), encoding="utf-8")
+        missing_path.write_text(
+            json.dumps(missing, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
         raise MissingStageEArtifactError(
             f"Missing {len(missing)} Stage E artifact(s). See {missing_path}"
         )
@@ -235,7 +243,7 @@ def _metric_matches(actual: int | float | None, expected: int | float) -> bool:
 def _canonical_mismatches(
     summary: full68_eval.DetectorSummary,
 ) -> dict[str, dict[str, int | float | None]]:
-    payload = full68_eval.asdict(summary)
+    payload = asdict(summary)
     mismatches: dict[str, dict[str, int | float | None]] = {}
     for key, expected in EXPECTED_DETECTOR_METRICS.items():
         actual = payload.get(key)
@@ -260,8 +268,8 @@ def _print_summary(
     print(f"Pages: {summary.page_count}/{summary.expected_page_count}")
     print(
         "Detector: "
-        f"GT={summary.gt} Pred={summary.pred} TP={summary.tp} FP={summary.fp} FN={summary.fn} "
-        f"FN_det={summary.fn_det} FN_cnn={summary.fn_cnn} "
+        f"GT={summary.gt} Pred={summary.pred} TP={summary.tp} FP={summary.fp} "
+        f"FN={summary.fn} FN_det={summary.fn_det} FN_cnn={summary.fn_cnn} "
         f"Precision={full68_eval.format_metric(summary.precision)} "
         f"Recall={full68_eval.format_metric(summary.recall)}"
     )

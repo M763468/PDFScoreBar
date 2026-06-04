@@ -18,8 +18,10 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(SCRIPT_DIR))
 
 import eval_full68_from_intermediates as full68_eval  # noqa: E402
 
@@ -54,6 +56,15 @@ def _default_eval_inputs_dir(run_root: Path, args: argparse.Namespace) -> Path:
 
 def _default_eval_output_dir(run_root: Path, args: argparse.Namespace) -> Path:
     return args.eval_output_dir or run_root / "eval_detector"
+
+
+def _selected_records(args: argparse.Namespace) -> list[full68_eval.PageRecord]:
+    records = full68_eval.iter_manifest()
+    if args.page_limit is None:
+        return records
+    if args.page_limit <= 0:
+        raise ValueError("--page-limit must be positive when provided")
+    return records[: args.page_limit]
 
 
 def _candidate_paths(root: Path, record: full68_eval.PageRecord, filename: str) -> list[Path]:
@@ -130,9 +141,10 @@ def _prepare_eval_inputs(args: argparse.Namespace) -> tuple[Path, list[dict[str,
         shutil.rmtree(eval_inputs_dir)
     eval_inputs_dir.mkdir(parents=True, exist_ok=True)
 
+    selected_records = _selected_records(args)
     records: list[dict[str, Any]] = []
     missing: list[str] = []
-    for record in full68_eval.iter_manifest():
+    for record in selected_records:
         scored_src = _first_existing(_scored_paths(run_root, record, args.scored_file))
         candidates_src = _first_existing(_candidate_paths(run_root, record, args.candidates_file))
         page_dir = eval_inputs_dir / f"eval2_{record.score}_{record.page}"
@@ -193,6 +205,8 @@ def _prepare_eval_inputs(args: argparse.Namespace) -> tuple[Path, list[dict[str,
                 "link_mode": args.link_mode,
                 "scored_file": args.scored_file,
                 "candidates_file": args.candidates_file,
+                "selected_page_count": len(selected_records),
+                "canonical_page_count": len(full68_eval.iter_manifest()),
                 "page_count": len(records),
                 "records": records,
             },
@@ -307,6 +321,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Contract output directory. Defaults to <run-root>/eval_detector.",
     )
+    parser.add_argument(
+        "--page-limit",
+        type=int,
+        default=None,
+        help="Evaluate only the first N canonical pages. Use with --allow-partial for smoke tests.",
+    )
     parser.add_argument("--gt-root", type=Path, default=Path("data/evaluation2/annotations"))
     parser.add_argument("--scored-file", default="pipeline2_no_peak_scored.json")
     parser.add_argument("--candidates-file", default="pipeline2_no_peak_candidates.json")
@@ -348,6 +368,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
+    if args.page_limit is not None and not args.allow_partial:
+        raise SystemExit("--page-limit is intended for smoke tests and requires --allow-partial")
     run_root = _stage_e_run_root(args)
     eval_inputs_dir, _records = _prepare_eval_inputs(args)
     eval_output_dir = _default_eval_output_dir(run_root, args)

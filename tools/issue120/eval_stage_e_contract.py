@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""Run Stage E detector contract evaluation from a full-pipeline output root.
-
-The Stage E runner writes full-pipeline scored files and reconstructed candidate
-files in separate production-oriented artifact trees. This wrapper materializes
-an evaluator-compatible ``eval_inputs`` tree from those artifacts, then delegates
-metric calculation and contract writing to ``eval_full68_from_intermediates.py``.
-"""
+"""Run Stage E detector contract evaluation from a full-pipeline output root."""
 
 from __future__ import annotations
 
@@ -45,9 +39,7 @@ class MissingStageEArtifactError(RuntimeError):
 
 
 def _stage_e_run_root(args: argparse.Namespace) -> Path:
-    if args.run_root is not None:
-        return args.run_root
-    return args.output_root / "stage_e_full_pipeline"
+    return args.run_root or args.output_root / "stage_e_full_pipeline"
 
 
 def _default_eval_inputs_dir(run_root: Path, args: argparse.Namespace) -> Path:
@@ -68,53 +60,27 @@ def _selected_records(args: argparse.Namespace) -> list[full68_eval.PageRecord]:
 
 
 def _candidate_paths(root: Path, record: full68_eval.PageRecord, filename: str) -> list[Path]:
+    score = record.score
+    page = record.page
     return [
-        root
-        / "intermediate"
-        / "probe_scan"
-        / f"eval2_images_{record.score}_{record.page}"
-        / filename,
-        root
-        / "dense_candidate_reconstruction"
-        / "probe_candidates_from_inventory"
-        / record.score
-        / record.page
-        / filename,
-        root
-        / "dense_candidate_reconstruction"
-        / "probe_candidates_filtered"
-        / record.score
-        / record.page
-        / filename,
-        root
-        / "dense_candidate_reconstruction"
-        / "probe_rescue_candidates"
-        / record.score
-        / record.page
-        / filename,
+        root / "intermediate" / "probe_scan" / f"eval2_images_{score}_{page}" / filename,
+        root / "dense_candidate_reconstruction" / "probe_candidates_from_inventory" / score / page / filename,
+        root / "dense_candidate_reconstruction" / "probe_candidates_filtered" / score / page / filename,
+        root / "dense_candidate_reconstruction" / "probe_rescue_candidates" / score / page / filename,
     ]
 
 
 def _scored_paths(root: Path, record: full68_eval.PageRecord, filename: str) -> list[Path]:
+    score = record.score
+    page = record.page
     return [
-        root
-        / "intermediate"
-        / "probe_scan"
-        / f"eval2_images_{record.score}_{record.page}"
-        / filename,
-        root
-        / "intermediate"
-        / "probe_scan"
-        / f"eval2_{record.score}_{record.page}"
-        / filename,
+        root / "intermediate" / "probe_scan" / f"eval2_images_{score}_{page}" / filename,
+        root / "intermediate" / "probe_scan" / f"eval2_{score}_{page}" / filename,
     ]
 
 
 def _first_existing(paths: list[Path]) -> Path | None:
-    for path in paths:
-        if path.exists():
-            return path
-    return None
+    return next((path for path in paths if path.exists()), None)
 
 
 def _materialize_file(src: Path, dst: Path, *, mode: str) -> None:
@@ -124,7 +90,7 @@ def _materialize_file(src: Path, dst: Path, *, mode: str) -> None:
     if mode == "copy":
         shutil.copy2(src, dst)
     elif mode == "symlink":
-        dst.symlink_to(src.resolve())
+        dst.symlink_to(os.path.relpath(src, dst.parent))
     elif mode == "hardlink":
         os.link(src, dst)
     else:
@@ -150,21 +116,11 @@ def _prepare_eval_inputs(args: argparse.Namespace) -> tuple[Path, list[dict[str,
         page_dir = eval_inputs_dir / f"eval2_{record.score}_{record.page}"
 
         if scored_src is None:
-            missing.append(
-                f"missing scored file for {record.score}/{record.page}: {args.scored_file}"
-            )
+            missing.append(f"missing scored file for {record.score}/{record.page}: {args.scored_file}")
         else:
-            _materialize_file(
-                scored_src,
-                page_dir / args.scored_file,
-                mode=args.link_mode,
-            )
+            _materialize_file(scored_src, page_dir / args.scored_file, mode=args.link_mode)
 
         if candidates_src is None:
-            message = (
-                f"missing candidates file for {record.score}/{record.page}: "
-                f"{args.candidates_file}"
-            )
             if args.allow_missing_candidates:
                 records.append(
                     {
@@ -177,13 +133,9 @@ def _prepare_eval_inputs(args: argparse.Namespace) -> tuple[Path, list[dict[str,
                     }
                 )
                 continue
-            missing.append(message)
+            missing.append(f"missing candidates file for {record.score}/{record.page}: {args.candidates_file}")
         else:
-            _materialize_file(
-                candidates_src,
-                page_dir / args.candidates_file,
-                mode=args.link_mode,
-            )
+            _materialize_file(candidates_src, page_dir / args.candidates_file, mode=args.link_mode)
 
         records.append(
             {
@@ -218,19 +170,12 @@ def _prepare_eval_inputs(args: argparse.Namespace) -> tuple[Path, list[dict[str,
 
     if missing:
         missing_path = eval_inputs_dir / "missing_stage_e_artifacts.json"
-        missing_path.write_text(
-            json.dumps(missing, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
-        raise MissingStageEArtifactError(
-            f"Missing {len(missing)} Stage E artifact(s). See {missing_path}"
-        )
-
+        missing_path.write_text(json.dumps(missing, indent=2, ensure_ascii=False), encoding="utf-8")
+        raise MissingStageEArtifactError(f"Missing {len(missing)} Stage E artifact(s). See {missing_path}")
     return eval_inputs_dir, records
 
 
-def _build_eval_args(
-    args: argparse.Namespace, eval_inputs_dir: Path, eval_output_dir: Path
-) -> argparse.Namespace:
+def _build_eval_args(args: argparse.Namespace, eval_inputs_dir: Path, eval_output_dir: Path) -> argparse.Namespace:
     return argparse.Namespace(
         results_dir=str(eval_inputs_dir),
         gt_root=str(args.gt_root),
@@ -249,14 +194,12 @@ def _build_eval_args(
 def _metric_matches(actual: int | float | None, expected: int | float) -> bool:
     if actual is None:
         return False
-    if isinstance(expected, float):
-        return abs(float(actual) - expected) <= 1e-12
-    return int(actual) == expected
+    if isinstance(expected, float) or isinstance(actual, float):
+        return abs(float(actual) - float(expected)) <= 1e-12
+    return actual == expected
 
 
-def _canonical_mismatches(
-    summary: full68_eval.DetectorSummary,
-) -> dict[str, dict[str, int | float | None]]:
+def _canonical_mismatches(summary: full68_eval.DetectorSummary) -> dict[str, dict[str, int | float | None]]:
     payload = asdict(summary)
     mismatches: dict[str, dict[str, int | float | None]] = {}
     for key, expected in EXPECTED_DETECTOR_METRICS.items():
@@ -297,72 +240,23 @@ def _print_summary(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--output-root",
-        type=Path,
-        default=Path("logs/issue120_e2e_recovery"),
-        help="Output root passed to run_stage_e_full_pipeline.py.",
-    )
-    parser.add_argument(
-        "--run-root",
-        type=Path,
-        default=None,
-        help="Explicit Stage E run root. Defaults to <output-root>/stage_e_full_pipeline.",
-    )
-    parser.add_argument(
-        "--eval-inputs-dir",
-        type=Path,
-        default=None,
-        help="Evaluator-compatible input directory. Defaults under the Stage E run root.",
-    )
-    parser.add_argument(
-        "--eval-output-dir",
-        type=Path,
-        default=None,
-        help="Contract output directory. Defaults to <run-root>/eval_detector.",
-    )
-    parser.add_argument(
-        "--page-limit",
-        type=int,
-        default=None,
-        help="Evaluate only the first N canonical pages. Use with --allow-partial for smoke tests.",
-    )
+    parser.add_argument("--output-root", type=Path, default=Path("logs/issue120_e2e_recovery"))
+    parser.add_argument("--run-root", type=Path, default=None)
+    parser.add_argument("--eval-inputs-dir", type=Path, default=None)
+    parser.add_argument("--eval-output-dir", type=Path, default=None)
+    parser.add_argument("--page-limit", type=int, default=None)
     parser.add_argument("--gt-root", type=Path, default=Path("data/evaluation2/annotations"))
     parser.add_argument("--scored-file", default="pipeline2_no_peak_scored.json")
     parser.add_argument("--candidates-file", default="pipeline2_no_peak_candidates.json")
     parser.add_argument("--score-threshold", type=float, default=0.1)
-    parser.add_argument(
-        "--rule-name", default="center_anchor", choices=["center_anchor", "baseline_iou"]
-    )
+    parser.add_argument("--rule-name", default="center_anchor", choices=["center_anchor", "baseline_iou"])
     parser.add_argument("--vov-threshold", type=float, default=0.5)
     parser.add_argument("--xdist-threshold", type=float, default=12.0)
-    parser.add_argument(
-        "--link-mode",
-        choices=["copy", "symlink", "hardlink"],
-        default="copy",
-        help="How to materialize evaluator inputs. Copy is the portable default.",
-    )
-    parser.add_argument(
-        "--allow-partial",
-        action="store_true",
-        help="Pass through to eval_full68_from_intermediates.py for incomplete page sets.",
-    )
-    parser.add_argument(
-        "--allow-missing-candidates",
-        action="store_true",
-        help="Permit contract evaluation without candidate files; fn_det/fn_cnn may be null.",
-    )
-    parser.add_argument(
-        "--allow-target-mismatch",
-        action="store_true",
-        help="Write outputs and exit 0 even when canonical detector metrics differ.",
-    )
-    parser.add_argument(
-        "--measure-summary-json",
-        type=Path,
-        default=None,
-        help="Optional downstream measure-count summary JSON to attach to the contract.",
-    )
+    parser.add_argument("--link-mode", choices=["copy", "symlink", "hardlink"], default="copy")
+    parser.add_argument("--allow-partial", action="store_true")
+    parser.add_argument("--allow-missing-candidates", action="store_true")
+    parser.add_argument("--allow-target-mismatch", action="store_true")
+    parser.add_argument("--measure-summary-json", type=Path, default=None)
     return parser
 
 

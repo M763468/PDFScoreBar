@@ -6,6 +6,7 @@ ISSUE120_STAGE_E_EVAL_DIR ?= $(ISSUE120_STAGE_E_RUN_ROOT)/eval_detector
 ISSUE120_STAGE_E_GT_ROOT ?= data/evaluation2/annotations
 ISSUE120_STAGE_E_SCORE_THRESHOLD ?= 0.1
 ISSUE120_STAGE_E_XDIST_THRESHOLD ?= 12.0
+ISSUE120_STAGE_E_SMOKE_PAGES ?= 2
 ISSUE120_STAGE_E_EXTRA_ARGS ?=
 ISSUE120_STAGE_E_EVAL_EXTRA_ARGS ?=
 
@@ -29,3 +30,10 @@ eval-issue120-stage-e-full: ## Build Stage E eval inputs and write detector cont
 		--score-threshold $(ISSUE120_STAGE_E_SCORE_THRESHOLD) \
 		--xdist-threshold $(ISSUE120_STAGE_E_XDIST_THRESHOLD) \
 		$(ISSUE120_STAGE_E_EVAL_EXTRA_ARGS)
+
+eval-issue120-stage-e-smoke: ## Smoke-check Stage E contract wiring on the first N pages
+	@echo "Smoke-checking Stage E Detector Contract wiring from full-pipeline artifacts..."
+	@$(MAKE) eval-issue120-stage-e-full \
+		ISSUE120_STAGE_E_EVAL_INPUTS_DIR=$(ISSUE120_STAGE_E_RUN_ROOT)/eval_inputs_smoke \
+		ISSUE120_STAGE_E_EVAL_DIR=$(ISSUE120_STAGE_E_RUN_ROOT)/eval_detector_smoke \
+		ISSUE120_STAGE_E_EVAL_EXTRA_ARGS="--page-limit $(ISSUE120_STAGE_E_SMOKE_PAGES) --allow-partial --allow-target-mismatch $(ISSUE120_STAGE_E_EVAL_EXTRA_ARGS)"

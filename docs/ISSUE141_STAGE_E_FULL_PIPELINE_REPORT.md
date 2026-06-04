@@ -44,13 +44,26 @@ Pipeline logging taxonomy and default noisy-log policy are deferred to follow-up
 
 ## One-command Stage E Contract Evaluation
 
-After the full Stage E run completes, run contract evaluation with:
+After the full Stage E run completes, first run the small smoke check:
+
+```bash
+make eval-issue120-stage-e-smoke
+```
+
+This smoke target evaluates only the first `ISSUE120_STAGE_E_SMOKE_PAGES` canonical pages, defaulting to `2`. It is intended to verify Stage E artifact discovery, `eval_inputs` materialization, and contract output writing before spending time on the full 68-page contract evaluation. Because it is partial by design, the target passes `--allow-partial --allow-target-mismatch` and writes to smoke-specific directories:
+
+```text
+logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_inputs_smoke/
+logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_detector_smoke/
+```
+
+When the smoke check succeeds, run full contract evaluation with:
 
 ```bash
 make eval-issue120-stage-e-full
 ```
 
-The make target calls `tools/issue120/eval_stage_e_contract.py`, using `ISSUE120_STAGE_E_OUTPUT` as the input `--output-root`. By default this is:
+The full make target calls `tools/issue120/eval_stage_e_contract.py`, using `ISSUE120_STAGE_E_OUTPUT` as the input `--output-root`. By default this is:
 
 ```text
 logs/issue120_e2e_recovery
@@ -68,7 +81,7 @@ It then writes detector contract outputs to:
 logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_detector/
 ```
 
-Expected contract outputs:
+Expected full contract outputs:
 
 ```text
 logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_detector/evaluation_contract.json

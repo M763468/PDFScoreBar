@@ -42,9 +42,59 @@ Issue #159 uses these artifacts to identify safe parallelization opportunities. 
 
 Pipeline logging taxonomy and default noisy-log policy are deferred to follow-up issue #162/#164. Issue #159 captures and summarizes stdout/stderr but does not redesign default logger semantics.
 
+## One-command Stage E Contract Evaluation
+
+After the full Stage E run completes, run contract evaluation with:
+
+```bash
+make eval-issue120-stage-e-full
+```
+
+The make target calls `tools/issue120/eval_stage_e_contract.py`, using `ISSUE120_STAGE_E_OUTPUT` as the input `--output-root`. By default this is:
+
+```text
+logs/issue120_e2e_recovery
+```
+
+The evaluator does not require manual path discovery or one-off copy scripts. It materializes an evaluator-compatible input tree from the current full-pipeline artifact layout:
+
+```text
+logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_inputs/
+```
+
+It then writes detector contract outputs to:
+
+```text
+logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_detector/
+```
+
+Expected contract outputs:
+
+```text
+logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_detector/evaluation_contract.json
+logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_detector/detector_metrics.json
+logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_detector/detector_page_metrics.csv
+logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_detector/manifest.json
+```
+
+The wrapper checks the canonical Stage E detector target by default and exits non-zero if the target is not met. For diagnostic runs that intentionally inspect a mismatch, pass extra arguments through:
+
+```bash
+make eval-issue120-stage-e-full ISSUE120_STAGE_E_EVAL_EXTRA_ARGS=--allow-target-mismatch
+```
+
+The full run artifacts and resource summaries remain under:
+
+```text
+logs/issue120_e2e_recovery/stage_e_full_pipeline/
+logs/issue120_e2e_recovery/stage_e_full_pipeline/stage_e_runtime_summary.json
+logs/issue120_e2e_recovery/stage_e_full_pipeline/dense_route_execution_summary.json
+logs/issue120_e2e_recovery/stage_e_full_pipeline/stage_e_resource_samples.summary.json
+```
+
 ## Detector Metrics vs Target
 
-The detector metrics are produced from the full-pipeline `manifest.json` using `tools/issue120/eval_stage_e_from_manifest.py` and recorded in `evaluation_contract.json`.
+The detector metrics are produced from full-pipeline Stage E artifacts using `tools/issue120/eval_stage_e_contract.py` and recorded in `evaluation_contract.json`.
 
 - **Target**: `TP=3580 / FP=0 / FN=1`
 - **Observed Stage E run**: `TP=3580 / FP=0 / FN=1`
@@ -82,7 +132,7 @@ The repair connects Stage E to the recovered route without consuming historical 
 2. Apply clef/staff-aware candidate filtering inside the current Stage E run.
 3. Regenerate probe-rescue candidates from that filtered root inside the current Stage E run.
 4. Feed the freshly regenerated probe-rescue candidate root into the full pipeline detector/CNN scoring path.
-5. Evaluate detector metrics from the full-pipeline manifest.
+5. Evaluate detector metrics from the full-pipeline Stage E artifacts.
 
 This keeps #151 as detector-level evidence while making #141 validate a real full-pipeline Stage E run.
 

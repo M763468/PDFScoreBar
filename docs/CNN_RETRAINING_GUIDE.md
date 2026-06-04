@@ -1,5 +1,8 @@
 # CNN Retraining Guide - Phase 1: FP-Based Active Learning
 
+> [!NOTE]
+> This guide records a historical FP-based active-learning attempt. The FP extraction helper now lives under `experiments/cnn_classifier/active_learning/` because it is not part of the production pipeline.
+
 ## Dataset Preparation (COMPLETED)
 
 ### Extracted FP Samples
@@ -113,7 +116,7 @@ If precision is still below target (80%):
 ### Phase 2: Extract More FPs
 ```bash
 # Extract FPs with scores 0.3-0.5 (medium confidence)
-python tools/cnn_classifier/extract_fps_by_score_range.py \
+python experiments/cnn_classifier/active_learning/extract_fps_by_score_range.py \
     --scored-root logs/global_final_opt \
     --image-root data/evaluation2/images \
     --gt-root data/evaluation2/annotations \

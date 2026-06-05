@@ -38,3 +38,19 @@ def test_resolve_model_path_accepts_existing_file(tmp_path):
     model_path.write_bytes(b"placeholder")
 
     assert _resolve_model_path(model_path) == model_path
+
+
+def test_resolve_model_path_accepts_existing_file_string(tmp_path):
+    model_path = tmp_path / "model.pth"
+    model_path.write_bytes(b"placeholder")
+
+    assert _resolve_model_path(str(model_path)) == model_path
+
+
+def test_resolve_model_path_rejects_none():
+    with pytest.raises(ValueError) as exc_info:
+        _resolve_model_path(None)
+
+    message = str(exc_info.value)
+    assert "CNN model path is not configured" in message
+    assert "detection.cnn_model_path" in message

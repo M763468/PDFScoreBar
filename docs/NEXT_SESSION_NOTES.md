@@ -1,11 +1,20 @@
-# Next Session Notes: Full Pipeline Workflow & Optimization
+# Historical Next Session Notes: Full Pipeline Workflow & Optimization
 
-**Last Updated**: 2026-01-24
-**Current Phase**: Full pipeline integration & Batch processing optimization
+> [!WARNING]
+> This file is a historical working note from the pre-#120 rebuild period.
+> Do not treat it as the current project state, branch policy, or acceptance
+> contract without revalidating it against the current issue and PR context.
+>
+> Current branch policy is maintained in `docs/BRANCH_POLICY.md`.
+> Current agent rules are maintained in `AGENTS.md`.
+> Current validation expectations are maintained in `docs/dev/VALIDATION_POLICY.md`.
+
+**Last historical update**: 2026-01-24  
+**Historical phase**: Full pipeline integration & batch processing optimization
 
 ---
 
-## 1. Current Status (2026-01-24)
+## 1. Historical Status (2026-01-24)
 
 ### Pipeline Optimization (from feature/pipeline_optimization)
 - **Proxy Inference Strategy**: Implemented and verified (Phase 2).
@@ -23,7 +32,7 @@
 
 ---
 
-## 2. Tasks & Strategy (Combined)
+## 2. Historical Tasks & Strategy
 
 ### Phase 5B: Batch Processing Architecture (Implementation Target)
 **Goal**: Consolidate the "Python Loop" optimization into the "End-to-End Orchestrator".
@@ -39,9 +48,8 @@
 
 ---
 
-## 3. Reference: Pipeline Configuration
+## 3. Reference: Historical Pipeline Configuration Draft
 
-### Config Structure (Draft)
 ```yaml
 run:
   run_id: "2026-01-24_demo"
@@ -59,12 +67,12 @@ steps:
   overlay: false
 ```
 
-### Optimization Reference
+### Historical Optimization Reference
 *   **SR Tiling**: Default to `tile=512`. Use `tile=0` only for small images if needed (auto-handled).
 *   **Precision**: Always use `fp16` on CUDA.
 
 ---
 
-## 4. Immediate Pitfalls
+## 4. Historical Pitfalls
 - Do **not** reuse `logs/hybrid_generalization` outputs for the target full-pipeline run; let the pipeline generate fresh artifacts to ensure consistency.
 - Toy Symphony PDF has cover/blank pages; expect blank filtering and page mapping issues.

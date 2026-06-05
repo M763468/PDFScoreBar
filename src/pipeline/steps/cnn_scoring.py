@@ -37,13 +37,26 @@ class GPUNormalize(torch.nn.Module):
         return (x - self.mean) / self.std
 
 
-def _resolve_model_path(model_path: Path) -> Path:
-    if model_path.exists():
-        return model_path
-    candidates = list(Path("experiments/cnn_classifier").rglob("best_model.pth"))
-    if candidates:
-        return candidates[0]
-    raise FileNotFoundError(f"Model not found: {model_path}")
+def _resolve_model_path(model_path: Path | str | None) -> Path:
+    if model_path is None:
+        raise ValueError(
+            "CNN model path is not configured (None). "
+            "Configure detection.cnn_model_path to an existing model file."
+        )
+    resolved_path = Path(model_path)
+    if resolved_path.is_file():
+        return resolved_path
+    if resolved_path.exists():
+        raise FileNotFoundError(
+            "CNN model path is not a file. "
+            "Configure detection.cnn_model_path to an existing model file. "
+            f"Configured path: {resolved_path}"
+        )
+    raise FileNotFoundError(
+        "CNN model file not found. "
+        "Configure detection.cnn_model_path to an existing model file. "
+        f"Configured path: {resolved_path}"
+    )
 
 
 def _load_model(model_path: Path, device: torch.device) -> torch.nn.Module:
@@ -369,7 +382,7 @@ def run_cnn_scoring_batch(
     *,
     probe_output_root: Path,
     images: Iterable[Path],
-    model_path: Path,
+    model_path: Path | str | None,
     threshold: float,
     score_name: Optional[str] = None,
     batch_size: int = 64,

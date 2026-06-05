@@ -1,59 +1,60 @@
 # Project Documentation Index
 
 > [!NOTE]
-> This document is the entry point for understanding the current state,
-> history, and structure of the project.
->
-> If you are new to this repository, start here.
+> This document is the entry point for understanding the current repository
+> documentation map. It intentionally avoids session-specific instructions;
+> use linked policy and issue documents for current operational decisions.
 
 ---
 
-## How to Read This Repository (Important)
+## How to Read This Repository
 
-This repository contains multiple layers of documentation, each serving
-a different time scale and purpose.
-
-Understanding which document to read (or update) is essential to avoid
-confusion and duplication.
+This repository contains multiple layers of documentation, each serving a
+specific time scale and purpose. Before starting work, identify whether you
+need a standing policy, a current issue decision, or historical context.
 
 ### Documentation by Time Scale
 
 | Time Scale | Document | Purpose |
 |----------|----------|---------|
-| **Very Long Term** | `README.md` (repo root) | Ultimate project vision and scope |
-| **Long Term** | `docs/README.md` (this file) | Project map and documentation index |
-| **Mid Term** | `docs/NEXT_SESSION_NOTES.md` | Current confirmed state and allowed work areas |
-| **Short Term** | `docs/SESSION_LOG.md` | Per-session working notes (messy is OK) |
-| **Historical Facts** | `docs/DEVELOPMENT_LOG.md` | Append-only authoritative record |
+| **Standing policy** | `AGENTS.md`, `docs/BRANCH_POLICY.md`, `docs/dev/VALIDATION_POLICY.md` | Repository-wide operating rules for agents, branches, and validation |
+| **Long term** | `README.md` (repo root) | Ultimate project vision and scope |
+| **Project map** | `docs/README.md` (this file) | Documentation index and navigation guide |
+| **Issue-specific current state** | Active GitHub issues / PRs | Source of truth for current scope, base branch, and acceptance for that work |
+| **Historical facts** | `docs/DEVELOPMENT_LOG.md`, issue-specific reports under `docs/` | Confirmed past decisions, experiments, and results |
+| **Historical / transient notes** | `docs/NEXT_SESSION_NOTES.md`, `docs/SESSION_LOG.md` | Older working notes; do not treat as current policy without revalidation |
 
 ---
 
-## Current Project Status (2025-12-30)
+## Current Operational Status (2026-06-06)
 
-**Update (2025-12-30)**: GT rebuild + recheck is complete. The current focus is **detector-side FN analysis** for the remaining 10 true detector-miss cases.
-See `docs/NEXT_SESSION_NOTES.md` for the confirmed baseline, logs, and next actions.
+- `develop` is the active integration branch.
+- `main` is the stable/release branch.
+- Normal feature, fix, refactor, documentation, and performance work should branch from `develop` and open PRs against `develop`.
+- `develop -> main` promotion must be handled by a dedicated promotion PR with explicit validation results and promotion gates.
+- Older issue bodies may still say `Base branch: main` or `PR base: main`; treat that text as stale unless the issue is explicitly about release, hotfix, or promotion work.
 
-**Recent confirmed state (high-level)**:
-- GT cleanup completed for 35 detector-miss candidates; 10 remain after recheck.
-- Baseline `var88` keeps FN=0 on the rebuilt evaluation set.
-- Next work targets FP-source cleanup without reintroducing FN.
+See `docs/BRANCH_POLICY.md` for the standing branch policy.
 
 ---
 
-## Where to Find Results and Artifacts
+## Where to Find Current Decisions and Artifacts
 
 This project produces a large number of intermediate and final artifacts.
-Use the table below to quickly locate what you need.
+Use the table below to locate the relevant source without mistaking historical
+notes for current instructions.
 
 | What you want to see | Location |
 |---------------------|----------|
-| Latest confirmed results | `docs/NEXT_SESSION_NOTES.md` |
-| Historical decisions and outcomes | `docs/DEVELOPMENT_LOG.md` |
-| Phase 3 final report (historical, likely stale) | `docs/fp_reduction/FINAL_SUMMARY.md` |
-| Detailed Phase 1–2 history (historical, likely stale) | `docs/fp_reduction/development_log.md` |
-| Phase-by-phase walkthrough (historical, likely stale) | `docs/fp_reduction/walkthrough.md` |
-| Latest qualitative overlays | `logs/phase3_staff_consistency/` |
-| Hybrid filter summary | `logs/phase3_staff_consistency/**/hybrid_filter_summary.md` |
+| Branch roles and default PR base | `docs/BRANCH_POLICY.md` |
+| Agent operating rules | `AGENTS.md` |
+| Validation expectations by change type | `docs/dev/VALIDATION_POLICY.md` |
+| Issue #120 artifact retention rules | `docs/ISSUE120_ARTIFACT_RETENTION.md` |
+| Issue #120 evaluation contract | `docs/ISSUE120_EVALUATION_CONTRACT.md` |
+| Stage E full-pipeline report | `docs/ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md` |
+| CNN script ownership and cleanup decisions | `docs/ISSUE45_CNN_SCRIPT_INVENTORY.md` |
+| Historical FP reduction report | `docs/fp_reduction/FINAL_SUMMARY.md` |
+| Historical working notes | `docs/NEXT_SESSION_NOTES.md`, `docs/SESSION_LOG.md` |
 
 ---
 
@@ -61,67 +62,83 @@ Use the table below to quickly locate what you need.
 
 ### Core Documentation
 
-- **`docs/NEXT_SESSION_NOTES.md`**  
-  **Purpose**: Mid-term, human-readable summary of the current confirmed state.  
-  This file answers:
-  - What phase are we in?
-  - What is already confirmed and stable?
-  - What problem areas are we allowed to work on next?
+- **`AGENTS.md`**  
+  Repository-specific rules for AI agents and interactive work.
 
-- **`docs/SESSION_LOG.md`**  
-  **Purpose**: Short-term working log for each session.  
-  - Free-form
-  - Chronological
-  - May contain mistakes, speculation, or dead ends  
-  Nothing here is considered final.
+- **`docs/BRANCH_POLICY.md`**  
+  Standing branch policy. Defines `develop` as the active integration branch,
+  `main` as the stable/release branch, and the dedicated promotion-PR rule.
 
-- **`docs/DEVELOPMENT_LOG.md`**  
-  **Purpose**: Authoritative historical record.  
-  - Append-only
-  - Records confirmed facts, decisions, and outcomes
-  - Always links to concrete artifacts (logs, scripts, configs)
-  - Never rewritten
+- **`docs/dev/VALIDATION_POLICY.md`**  
+  Validation selection policy by change type. Use this when deciding which
+  checks are required, skipped, or deferred.
 
 - **`docs/ENVIRONMENTS.md`**  
   Runtime containers, dependencies, and execution instructions.
 
 - **`docs/REGRESSION_TEST_WORKFLOW.md`**  
-  Pre-commit / pre-PR verification workflow (lint/tests + real-data smoke + parity checks).
+  Pre-commit / pre-PR verification workflow.
 
-- **`docs/AGENTS.md`**  
-  Rules and expectations for AI assistants (Gemini / Codex / CLI usage).
+- **`docs/DEVELOPMENT_LOG.md`**  
+  Authoritative historical record. Append-only unless explicitly scoped
+  otherwise.
 
 - **`docs/GT_PREPARATION_POLICY.md`**  
-  **Mandatory Policy** for creating barline Ground Truth. Defines labeling for double/final barlines and resolution-independent scaling rules.
+  Mandatory policy for creating barline ground truth. Defines labeling for
+  double/final barlines and resolution-independent scaling rules.
 
 - **`docs/BARLINE_MATCHER.md`**  
   Detailed specification of the barline matching and deduplication logic.
 
----
+### Issue #120 / Stage E / Detector Contract Documentation
 
-## Phase-Specific Documentation
+- **Issue #120 Artifact Retention Policy**  
+  `docs/ISSUE120_ARTIFACT_RETENTION.md`  
+  Defines which Issue #120 artifacts are retained in Git and which generated
+  outputs must remain under ignored `logs/` paths.
+
+- **Issue #120 Evaluation Contract**  
+  `docs/ISSUE120_EVALUATION_CONTRACT.md`  
+  Canonical detector-level evaluation contract for the Issue #120 rebuild.
+
+- **Issue #120 Roadmap and Historical Findings**  
+  `docs/ISSUE120_ROADMAP.md`  
+  `docs/ISSUE120_HISTORICAL_BEST_AUDIT.md`  
+  `docs/refactors/issue120/`
+
+- **Stage E Full Pipeline Report**  
+  `docs/ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md`  
+  Historical full-pipeline validation and runtime/resource reporting context.
+
+- **Dense Route Naming / Logging / Parallelism Notes**  
+  `docs/ISSUE158_DENSE_ROUTE_NAMING.md`  
+  `docs/ISSUE162_PIPELINE_LOGGING_TAXONOMY.md`  
+  `docs/ISSUE163_HOMR_SR_PARALLELISM_CONCLUSION.md`
 
 ### CNN Classifier / Detector Evaluation
 
 - **Issue #45 CNN Script Inventory**  
   `docs/ISSUE45_CNN_SCRIPT_INVENTORY.md`  
-  Current script ownership, cleanup decisions, and placement rules for CNN-related `tools/` and `experiments/` scripts.
+  Current script ownership, cleanup decisions, and placement rules for
+  CNN-related `tools/` and `experiments/` scripts.
 
 - **CNN Retraining Guide**  
   `docs/CNN_RETRAINING_GUIDE.md`  
-  Historical FP-based active-learning retraining procedure. Not part of the production pipeline runtime.
+  Historical FP-based active-learning retraining procedure. Not part of the
+  production pipeline runtime.
 
 - **CNN Training Development Log**  
   `docs/DEVLOG_CNN_TRAINING.md`  
-  Historical CNN training and evaluation log. It may mention scripts that were later moved or deleted; use the inventory document for current paths.
+  Historical CNN training and evaluation log. It may mention scripts that were
+  later moved or deleted; use the inventory document for current paths.
 
-### FP Reduction (Phase 1–3, Historical)
+### FP Reduction (Phase 1-3, Historical)
 
 - **Final Summary**  
   `docs/fp_reduction/FINAL_SUMMARY.md`  
-  Executive summary of the FP reduction effort. Note: this subtree is ~3 weeks behind current work.
+  Executive summary of the FP reduction effort. Historical context only.
 
-- **Development Log (Phase 1–2)**  
+- **Development Log (Phase 1-2)**  
   `docs/fp_reduction/development_log.md`  
   Detailed early-phase experimentation history.
 
@@ -133,17 +150,18 @@ Use the table below to quickly locate what you need.
 
 ## Logs and Experimental Outputs
 
-Experimental outputs are stored under `logs/` using timestamped directories.
+Experimental outputs are stored under ignored `logs/` paths using structured
+subdirectories. Do not commit generated run outputs unless an issue-specific
+retention policy explicitly allows a narrow fixture.
 
 General rules:
-- Each run produces its own directory
-- Scripts and configurations used for the run should be traceable from the log
-- Qualitative overlays (images) live next to quantitative summaries
 
-Examples:
-- `logs/phase3_staff_consistency/20251215_hybrid_ratio_sweep_page3/`
-- `logs/phase3_staff_consistency/20251216_page10_hybrid_filter_FIXED/`
+- Each run should produce its own directory under `logs/`.
+- Scripts and configurations used for the run should be traceable from the log.
+- Qualitative overlays and quantitative summaries should live next to each other.
+- Generated summaries such as `evaluation_contract.json`, `manifest.json`,
+  `detector_metrics.json`, and visual-review PNGs should remain out of Git
+  unless a retention policy explicitly says otherwise.
 
----
-
-## Repository Structure (Summary)
+For Issue #120 artifacts, use `docs/ISSUE120_ARTIFACT_RETENTION.md` before
+removing or adding files under `data/evaluation2/`.

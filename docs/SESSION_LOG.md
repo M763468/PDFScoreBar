@@ -1,8 +1,8 @@
-# Historical Session Log Reference
+# Historical Working Notes Reference
 
 This file is intentionally kept as a lightweight reference stub.
 
-The former session log body was removed during Issue #190 repository cleanup because it was a transient working note and should not be treated as current policy or current project state.
+Issue #190 removed transient working-note bodies from the active documentation set. These notes are not current project guidance.
 
 Use these retained sources instead:
 
@@ -13,4 +13,9 @@ Use these retained sources instead:
 - Historical development record: `docs/DEVELOPMENT_LOG.md`
 - Issue-specific reports under `docs/`
 
-Historical content remains recoverable from Git history. The last pre-cleanup version on `develop` was blob `1b272dcf48646fee6fd9ca0ef380d25b84740f76`.
+Historical content remains recoverable from Git history:
+
+| Former path | Last `develop` blob |
+| --- | --- |
+| `docs/NEXT_SESSION_NOTES.md` | `8153273e7f91f5e75528af6bb31053fcd8f6a5ed` |
+| `docs/SESSION_LOG.md` | `1b272dcf48646fee6fd9ca0ef380d25b84740f76` |

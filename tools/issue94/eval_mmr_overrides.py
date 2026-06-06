@@ -37,10 +37,10 @@ def _write_json(path: Path, payload: Dict[str, Any]) -> None:
 
 def _normalise_overrides(payload: Any) -> List[Dict[str, Any]]:
     if isinstance(payload, dict):
-        if "measure_overrides" in payload:
-            return list(payload.get("measure_overrides") or [])
-        if "overrides" in payload:
-            return list(payload.get("overrides") or [])
+        for key in ("measure_overrides", "overrides"):
+            value = payload.get(key)
+            if isinstance(value, list):
+                return value
     if isinstance(payload, list):
         return payload
     return []

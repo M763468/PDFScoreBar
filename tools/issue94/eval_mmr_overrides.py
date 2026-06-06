@@ -51,7 +51,10 @@ def _override_key(override: Dict[str, Any]) -> OverrideKey:
 
 
 def _override_skip(override: Dict[str, Any]) -> int:
-    return int(override.get("skip", 0))
+    try:
+        return int(override.get("skip") or 0)
+    except (ValueError, TypeError):
+        return 0
 
 
 def _index_overrides(overrides: Iterable[Dict[str, Any]]) -> Dict[OverrideKey, Dict[str, Any]]:
@@ -59,8 +62,8 @@ def _index_overrides(overrides: Iterable[Dict[str, Any]]) -> Dict[OverrideKey, D
     for override in overrides:
         try:
             indexed[_override_key(override)] = override
-        except KeyError:
-            logger.warning("Skipping malformed override without page/system/measure: %s", override)
+        except (KeyError, ValueError, TypeError):
+            logger.warning("Skipping malformed override: %s", override)
     return indexed
 
 

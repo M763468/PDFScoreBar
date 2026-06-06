@@ -62,6 +62,27 @@ def build_add_measure_numbers_cmd(
     return cmd
 
 
+def _is_default_mmr_ocr_engine(ocr_engine: Optional[Any]) -> bool:
+    if ocr_engine is None:
+        return False
+    from src.measure_numbering.mmr import MMROCREngine
+
+    return type(ocr_engine) is MMROCREngine
+
+
+def _should_replace_mmr_ocr_engine(
+    ocr_engine: Optional[Any], rapidocr_provider: str = "auto"
+) -> bool:
+    if ocr_engine is None:
+        return True
+    if not _is_default_mmr_ocr_engine(ocr_engine):
+        return False
+    from src.measure_numbering.rapidocr_provider import normalize_rapidocr_provider
+
+    provider_mode = normalize_rapidocr_provider(rapidocr_provider)
+    return getattr(ocr_engine, "_rapidocr_provider_mode", None) != provider_mode
+
+
 def run_mmr_batch(
     pages_data: list[dict],
     image_paths: list[Path],
@@ -74,10 +95,28 @@ def run_mmr_batch(
     debug_root: Optional[Path] = None,
     classifier: Optional[Any] = None,
     ocr_engine: Optional[Any] = None,
+    rapidocr_provider: str = "auto",
 ) -> list[dict]:
     """Runs MMR detection in-process for a batch of pages."""
-    from src.measure_numbering.mmr import MMRProcessor
+    from src.measure_numbering.mmr import MMROCREngine, MMRProcessor
+    from src.measure_numbering.rapidocr_provider import (
+        create_mmr_rapidocr,
+        normalize_rapidocr_provider,
+    )
     from src.pipeline.utils.io import write_json
+
+    provider_mode = normalize_rapidocr_provider(rapidocr_provider)
+    if _should_replace_mmr_ocr_engine(ocr_engine, provider_mode):
+        provider_ocr_engine = create_mmr_rapidocr(provider_mode)
+        if _is_default_mmr_ocr_engine(ocr_engine):
+            ocr_engine.ocr_engine = provider_ocr_engine
+            ocr_engine.enable_rotation_tta = enable_rotation_tta
+        else:
+            ocr_engine = MMROCREngine(
+                enable_rotation_tta=enable_rotation_tta,
+                ocr_engine=provider_ocr_engine,
+            )
+        setattr(ocr_engine, "_rapidocr_provider_mode", provider_mode)
 
     processor = MMRProcessor(
         model_path=model_path,

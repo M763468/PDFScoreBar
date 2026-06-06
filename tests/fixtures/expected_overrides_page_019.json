@@ -1,0 +1,34 @@
+{
+  "overrides": [
+    {
+      "page": 18,
+      "system": 0,
+      "measure": 3,
+      "skip": 5
+    },
+    {
+      "page": 18,
+      "system": 2,
+      "measure": 2,
+      "skip": 3
+    },
+    {
+      "page": 18,
+      "system": 4,
+      "measure": 2,
+      "skip": 7
+    },
+    {
+      "page": 18,
+      "system": 7,
+      "measure": 1,
+      "skip": 5
+    },
+    {
+      "page": 18,
+      "system": 8,
+      "measure": 2,
+      "skip": 1
+    }
+  ]
+}

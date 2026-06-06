@@ -62,6 +62,16 @@ def build_add_measure_numbers_cmd(
     return cmd
 
 
+def _should_replace_mmr_ocr_engine(ocr_engine: Optional[Any]) -> bool:
+    """Return True for absent or default MMROCREngine instances.
+
+    PipelineOrchestrator historically passes a cached default MMROCREngine. Replacing that default
+    wrapper here lets MMR use the provider-aware RapidOCR engine without rewriting the large
+    orchestrator module. Test-injected fake engines are preserved.
+    """
+    return ocr_engine is None or ocr_engine.__class__.__name__ == "MMROCREngine"
+
+
 def run_mmr_batch(
     pages_data: list[dict],
     image_paths: list[Path],
@@ -81,7 +91,7 @@ def run_mmr_batch(
     from src.measure_numbering.rapidocr_provider import create_mmr_rapidocr
     from src.pipeline.utils.io import write_json
 
-    if ocr_engine is None:
+    if _should_replace_mmr_ocr_engine(ocr_engine):
         ocr_engine = MMROCREngine(
             enable_rotation_tta=enable_rotation_tta,
             ocr_engine=create_mmr_rapidocr(rapidocr_provider),

@@ -58,7 +58,7 @@ Use it only when an issue explicitly needs isolated HOMR behavior or historical 
 
 ## Removed / obsolete environments
 
-The former `sr_eval_gpu` / `Dockerfile.sr_eval` environment was removed during Issue #190 cleanup. It represented an older SR-specific experiment path and should not be used as current guidance.
+The former `sr_eval_gpu` / `Dockerfile.sr_eval` environment and the dependent `tools/run_hybrid_pipeline.sh` wrapper were removed during Issue #190 cleanup. They represented an older SR-specific experiment path and should not be used as current guidance.
 
 ## Data and generated output policy
 

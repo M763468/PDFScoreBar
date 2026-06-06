@@ -146,3 +146,20 @@ Suggested scope:
 
 - Add a deliberately small fixture that does not depend on full pipeline execution.
 - Cover `skip = N - 1` application and at least one OCR/classifier mocked path.
+
+## Local run investigation: 2026-06-06
+
+- 選択した run: `logs/issue120_e2e_recovery/stage_e_full_pipeline` (69ページ, mtime: 2026-06-05 01:05:51)
+- 評価ページ: 全68ページ
+- ローカルログ保存先: `logs/issue94_mmr_current_state/`
+- サマリ:
+  - 68ページ全体のデータセット評価を `tools/issue94/eval_all_mmr.py` を使用して GPU 上で実行。
+  - 総小節数 3,325 のうち、49ページにわたり 176 件の MMR overrides が検出された。
+  - 今回の実行では expected overrides (グラウンドトゥルース) は使用していない。
+- 再現ステータス:
+  - MMR プロセッサはバッチモードで問題なく動作し、複数の MMR 候補を正常にリストアップできた。
+  - OCR の誤認識 (`ocr_wrong`) や認識漏れ (`ocr_missing`)、また CNN 確信度が境界線付近（ページ9のsystem 2 measure 1では確信度 0.51）で却下される `cnn_rejected` のリスクは依然として高い。
+- Follow-up 推奨アクション:
+  - 検出された 176 件のケースを分類・評価するため、期待値データ (ground-truth) を含む小さな回帰テスト用の fixture を構築する。
+  - 誤検出や検出漏れを修正できるよう、手動 MMR override ワークフローを実装する。
+

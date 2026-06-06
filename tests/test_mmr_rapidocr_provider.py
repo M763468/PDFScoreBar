@@ -1,10 +1,14 @@
+import sys
+import types
+
 import pytest
 
-pytest.importorskip("cv2")
-pytest.importorskip("numpy")
-pytest.importorskip("rapidocr_onnxruntime")
-pytest.importorskip("torch")
-pytest.importorskip("torchvision")
+
+def _install_import_stubs() -> None:
+    sys.modules.setdefault("rapidocr_onnxruntime", types.SimpleNamespace(RapidOCR=object))
+
+
+_install_import_stubs()
 
 from src.measure_numbering import rapidocr_provider
 

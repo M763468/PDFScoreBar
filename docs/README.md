@@ -22,7 +22,6 @@ need a standing policy, a current issue decision, or historical context.
 | **Project map** | `docs/README.md` (this file) | Documentation index and navigation guide |
 | **Issue-specific current state** | Active GitHub issues / PRs | Source of truth for current scope, base branch, and acceptance for that work |
 | **Historical facts** | `docs/DEVELOPMENT_LOG.md`, issue-specific reports under `docs/` | Confirmed past decisions, experiments, and results |
-| **Historical / transient notes** | `docs/NEXT_SESSION_NOTES.md`, `docs/SESSION_LOG.md` | Older working notes; do not treat as current policy without revalidation |
 
 ---
 
@@ -54,7 +53,6 @@ notes for current instructions.
 | Stage E full-pipeline report | `docs/ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md` |
 | CNN script ownership and cleanup decisions | `docs/ISSUE45_CNN_SCRIPT_INVENTORY.md` |
 | Historical FP reduction report | `docs/fp_reduction/FINAL_SUMMARY.md` |
-| Historical working notes | `docs/NEXT_SESSION_NOTES.md`, `docs/SESSION_LOG.md` |
 
 ---
 

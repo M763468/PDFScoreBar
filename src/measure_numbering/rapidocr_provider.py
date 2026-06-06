@@ -18,6 +18,8 @@ RAPIDOCR_PROVIDER_MODES = {
     RAPIDOCR_PROVIDER_CUDA,
 }
 
+_BASIC_PROVIDER_INSPECTION_TYPES = (str, int, float, bytes, list, dict, set, tuple)
+
 
 def normalize_rapidocr_provider(provider: str) -> str:
     provider_mode = str(provider or RAPIDOCR_PROVIDER_AUTO).strip().lower()
@@ -39,9 +41,16 @@ def onnxruntime_has_cuda_provider() -> bool:
         return False
 
 
-def _get_providers_from_obj(obj: Any) -> Optional[List[str]]:
-    if obj is None:
+def _get_providers_from_obj(obj: Any, visited: Optional[set[int]] = None) -> Optional[List[str]]:
+    if obj is None or isinstance(obj, _BASIC_PROVIDER_INSPECTION_TYPES):
         return None
+    if visited is None:
+        visited = set()
+    obj_id = id(obj)
+    if obj_id in visited:
+        return None
+    visited.add(obj_id)
+
     get_providers = getattr(obj, "get_providers", None)
     if callable(get_providers):
         try:
@@ -53,7 +62,7 @@ def _get_providers_from_obj(obj: Any) -> Optional[List[str]]:
         nested = getattr(obj, attr_name, None)
         if nested is obj:
             continue
-        providers = _get_providers_from_obj(nested)
+        providers = _get_providers_from_obj(nested, visited)
         if providers is not None:
             return providers
     return None

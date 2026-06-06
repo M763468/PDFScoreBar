@@ -17,7 +17,6 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import torch
 
-from src.measure_numbering.mmr import MMRProcessor
 from src.measure_numbering.rapidocr_provider import normalize_rapidocr_provider
 from src.pipeline.steps.numbering import run_mmr_batch
 
@@ -36,11 +35,12 @@ def _write_json(path: Path, payload: Dict[str, Any]) -> None:
         json.dump(payload, f, indent=2, ensure_ascii=False)
 
 
-def _normalise_overrides(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
-    if "measure_overrides" in payload:
-        return list(payload.get("measure_overrides") or [])
-    if "overrides" in payload:
-        return list(payload.get("overrides") or [])
+def _normalise_overrides(payload: Any) -> List[Dict[str, Any]]:
+    if isinstance(payload, dict):
+        if "measure_overrides" in payload:
+            return list(payload.get("measure_overrides") or [])
+        if "overrides" in payload:
+            return list(payload.get("overrides") or [])
     if isinstance(payload, list):
         return payload
     return []

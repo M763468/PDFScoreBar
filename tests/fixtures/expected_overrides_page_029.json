@@ -1,0 +1,46 @@
+{
+  "overrides": [
+    {
+      "page": 28,
+      "system": 0,
+      "measure": 0,
+      "skip": 2
+    },
+    {
+      "page": 28,
+      "system": 1,
+      "measure": 2,
+      "skip": 6
+    },
+    {
+      "page": 28,
+      "system": 1,
+      "measure": 3,
+      "skip": 2
+    },
+    {
+      "page": 28,
+      "system": 7,
+      "measure": 3,
+      "skip": 9
+    },
+    {
+      "page": 28,
+      "system": 9,
+      "measure": 0,
+      "skip": 5
+    },
+    {
+      "page": 28,
+      "system": 9,
+      "measure": 1,
+      "skip": 3
+    },
+    {
+      "page": 28,
+      "system": 9,
+      "measure": 2,
+      "skip": 4
+    }
+  ]
+}

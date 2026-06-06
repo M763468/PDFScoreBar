@@ -26,13 +26,21 @@ Generated logs and run outputs should stay under ignored `logs/` paths unless a 
 
 ## Validation entry points
 
-Common validation commands are exposed through the `Makefile`:
+Common lightweight validation commands are exposed through the `Makefile`:
 
 ```bash
 make test-fast
 make lint
+```
+
+Issue #120 / Stage E contract smoke validation is not a self-contained run from a clean checkout. It expects existing full-pipeline artifacts under `logs/issue120_e2e_recovery/stage_e_full_pipeline`. Generate those artifacts first, or reuse an existing local artifact directory, before running the smoke evaluator:
+
+```bash
+make run-issue120-stage-e-full
 make eval-issue120-stage-e-smoke
 ```
+
+When the artifact directory already exists, `make eval-issue120-stage-e-smoke` can be run by itself to re-check the contract wiring.
 
 Select validation according to `docs/dev/VALIDATION_POLICY.md` and the scope of the current change.
 

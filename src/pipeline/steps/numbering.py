@@ -74,10 +74,18 @@ def run_mmr_batch(
     debug_root: Optional[Path] = None,
     classifier: Optional[Any] = None,
     ocr_engine: Optional[Any] = None,
+    rapidocr_provider: str = "auto",
 ) -> list[dict]:
     """Runs MMR detection in-process for a batch of pages."""
-    from src.measure_numbering.mmr import MMRProcessor
+    from src.measure_numbering.mmr import MMROCREngine, MMRProcessor
+    from src.measure_numbering.rapidocr_provider import create_mmr_rapidocr
     from src.pipeline.utils.io import write_json
+
+    if ocr_engine is None:
+        ocr_engine = MMROCREngine(
+            enable_rotation_tta=enable_rotation_tta,
+            ocr_engine=create_mmr_rapidocr(rapidocr_provider),
+        )
 
     processor = MMRProcessor(
         model_path=model_path,

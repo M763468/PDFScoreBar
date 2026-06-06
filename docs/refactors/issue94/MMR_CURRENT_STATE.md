@@ -182,5 +182,66 @@ Suggested scope:
      - 箇所: `Va__Prokofiev_Symphony5_page_015` (R37〜R38)
      - 現象: 本来は一つの小節である領域が、途中で二つの小節（R37とR38）に分割されてしまっている。
 
+## Error visualization and initial inspection: 2026-06-06
+
+### Inputs
+- 定量評価ログ: `logs/issue94_mmr_current_state/eval/aggregated_eval_summary.json`
+- 小節線・レイアウト情報: `logs/issue120_e2e_recovery/stage_e_full_pipeline/intermediate/<page_id>/numbering_base.json`
+- 手動アノテーション正解: `tests/fixtures/expected_overrides_page_*.json`
+
+### Error case summary
+エラー集計 JSON（`logs/issue94_mmr_current_state/error_inspection/error_cases_summary.json`）および可視化オーバーレイ画像（`logs/issue94_mmr_current_state/error_visualization/` 配下の png 画像、計 17 枚のローカルアーティファクト）を出力し、エラーの初期分類を行いました。
+
+全体で確認されたエラー 20 件の内訳と傾向は以下の通りです。
+- **検出漏れ (FN / missed)**: 7 件
+  - `page_001` (R7, R4), `page_002` (R3), `page_004` (R3), `page_009` (R3), `page_023` (R7), `page_042` (R3)
+- **数値誤認識 (Mismatch / skip_mismatch)**: 10 件
+  - `page_002` (期待 2 -> 検出 7), `page_004` (期待 15 -> 検出 5)
+  - `page_012` (期待 3 -> 検出 20), `page_018` (期待 9 -> 検出 6), `page_021` (期待 4 -> 検出 79), `page_025` (期待 5 -> 検出 97)
+  - `page_049` (期待 3 -> 検出 39), `page_049` (期待 5 -> 検出 10), `page_055` (期待 2 -> 検出 42), `page_064` (期待 6 -> 検出 5)
+- **誤検出 (FP / unexpected)**: 3 件
+  - `page_033` (検出 11), `page_035` (検出 2), `page_037` (検出 6)
+
+### MMR-layer findings
+- **OCR 誤認・無関係な数字の拾い上げ (ocr_wrong / ocr_wrong_target)**:
+  mismatch（10件）の中で、特に `page_021` (期待4 -> 検出79) や `page_025` (期待5 -> 検出97)、`page_055` (期待2 -> 検出42) など、期待値に対して検出された休み小節数が極端に大きいものが目立ちます。
+  これらは、五線内の強弱記号（ff, ppなど）や練習番号、ページ番号、その他のテキスト領域を MMR OCR Heuristic が誤って MMR 領域として切り出し、あるいは中のテキストを強引に解釈した結果である可能性が非常に高いです。
+- **CNN 棄却または OCR 漏れ (cnn_rejected / ocr_missing)**:
+  missed（7件）については、MMR 領域（小節休みの H-bar）自体を MMRClassifier が閾値未満として棄却したか、OCR 自体が数字を一切見つけられなかったことが主因です。
+- **FP と GT Fixture の不完全性 (expected_fixture_or_alignment_issue)**:
+  unexpected（3件）については、手動アノテーションの段階で実際に存在する複数小節休みを見落としてしまった（アノテーション漏れ）か、あるいは純粋に MMR がない領域（休符など）から MMR と数字を誤検出したケース（`unexpected_detection`）があります。
+
+### Upstream measure-construction findings
+- MMR 評価において、小節線検出とそれに基づく小節番号（measure numbering）がずれると、expected fixture (GT) と detected MMR の小節インデックスが狂うため、正しいマッチングができずに mismatch または FN になる現象（`numbering_base_alignment_issue`）が確認されました。
+- 特に `numbering_base.json` で小節番号自体がずれている場合、アノテーションデータ作成時と実際の検出時でインデックスが物理的に一致しないため、上流のエラーがそのまま MMR の評価エラーとして現れます。
+
+### Known upstream cases to hand off to #194
+既知の上流問題 3 件について、`numbering_base.json` と画像を照合して原因を特定し、#194 へ引き継げる形で詳細を整理しました。
+
+1. **`Va_Prokofiev_Symphony1_page_004` (R72〜R86)**:
+   - **確認したアーティファクト**: `logs/issue120_e2e_recovery/stage_e_full_pipeline/intermediate/page_045/numbering_base.json` (L801〜935)
+   - **現象**: 2 つの五線（staves: L785, L793）が 1 つのシステム（段）として誤認識・結合されています。このシステム内の小節の bbox は ymin(3526) から ymax(3952) に及び、上下 2 つの段を縦に貫く形で小節領域が構築されています。
+   - **影響**: 上下で別々の段であるはずの領域が 1 段にマージされたため、小節線と小節アライメントが完全に崩壊し、正しい MMR 認識や小節番号インクリメントが不可能となっています。
+   - **再現**: #194 でのレイアウト（システム/段）検出と divisi 判定の修正対象となる最小再現ケースです。
+
+2. **`Va__Prokofiev_Symphony5_page_007` (R1)**:
+   - **確認したアーティファクト**: `logs/issue120_e2e_recovery/stage_e_full_pipeline/intermediate/page_053/numbering_base.json` (L32〜41)
+   - **現象**: 最初の小節 `number: 1` の bbox が `[486, 872, 665, 1039]` (幅 179px) と極端に狭く検出されています。これは五線の左端（余白や音部記号の領域）を誤って小節領域として切り出している状態です。
+   - **影響**: 本来の第 1 小節が R2 として認識されるため、ページ全体の小節番号が 1 つずつ後ろにずれてアライメントエラーになります。
+   - **再現**: non-measure region (五線左側の記号領域) の小節線フィルタリング、または小節認識の開始位置決定ロジックのバグとして、#194 で扱うべき対象です。
+
+3. **`Va__Prokofiev_Symphony5_page_015` (R37〜R38)**:
+   - **確認したアーティファクト**: `logs/issue120_e2e_recovery/stage_e_full_pipeline/intermediate/page_060/numbering_base.json` (L481〜499)
+   - **現象**: 本来 1 つの小節であるべき領域が、R37 `[216, 3955, 580, 4135]` と R38 `[584, 3955, 1028, 4135]` の 2 つに過剰分割（over split）されています。
+   - **影響**: 小節数のカウントが 1 つ増え、以降の小節番号がずれます。
+   - **再現**: 小節線誤検出、または微小な縦線の小節線マージ（deduplication）漏れに起因するものであり、#194 での小節境界判定ロジックの修正対象です。
+
+### Follow-up handoff
+- **#194: 上流レイアウト・小節境界判定バグ調査**:
+  - `page_045` (divisi / system merge), `page_053` (non-measure region), `page_060` (measure over split) を最小再現ケースとして引き継ぎ、段グループ化および小節境界構築の修正を進める。
+- **#195: MMR 層の分類精度・手動補正ワークフロー**:
+  - MMR 誤認識（特に mismatch での極端な数値の誤読や強弱記号の誤認）に対する、RapidOCR 画像前処理（二値化、ノイズ除去、数字アライメント）の改善および CNNConf 閾値の適正化の検討。
+  - 自動検出が失敗した際の救済措置として、手動アノテーションファイル（expected overrides）をマージ・優先適用するワークフローの標準化を進める。
+
 ---
 *本調査結果をもって、Issue #94 に対する現状把握および定量的な精度評価導線の整理はすべて完了しました。*

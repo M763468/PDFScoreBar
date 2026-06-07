@@ -78,7 +78,12 @@ class MeasureNumberer:
                 sorted_barlines.insert(0, ghost_start)
 
         interval_widths = self._measure_interval_widths(sorted_barlines)
-        median_interval_width = self._median(interval_widths)
+        median_widths = (
+            interval_widths[1:]
+            if sorted_barlines and sorted_barlines[0].is_ghost
+            else interval_widths
+        )
+        median_interval_width = self._median(median_widths)
 
         # 4. Iterate intervals to create Measures
         current_number = start_number
@@ -108,9 +113,12 @@ class MeasureNumberer:
                 ):
                     continue
 
-                # Check for overrides
+                # Check for overrides. Override keys are visible measure indices,
+                # not raw barline-interval indices, so skipped intervals must not
+                # offset later overrides.
                 attr = None
-                ov = overrides.get(i)
+                visible_measure_idx = len(system.measures)
+                ov = overrides.get(visible_measure_idx)
                 if ov:
                     attr = MeasureAttribute(
                         skip=ov.get("skip", 0),

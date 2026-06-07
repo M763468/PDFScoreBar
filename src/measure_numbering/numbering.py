@@ -104,7 +104,13 @@ class MeasureNumberer:
                 if measure_width < self.MIN_MEASURE_WIDTH:
                     continue
 
-                if self._is_narrow_ghost_start_interval(
+                # Override keys are visible measure indices, not raw barline-interval
+                # indices. An explicit override also means the first interval is a
+                # deliberate measure and must not be filtered by the ghost-start guard.
+                visible_measure_idx = len(system.measures)
+                ov = overrides.get(visible_measure_idx)
+
+                if ov is None and self._is_narrow_ghost_start_interval(
                     i=i,
                     left_bar=left_bar,
                     measure_width=measure_width,
@@ -113,12 +119,7 @@ class MeasureNumberer:
                 ):
                     continue
 
-                # Check for overrides. Override keys are visible measure indices,
-                # not raw barline-interval indices, so skipped intervals must not
-                # offset later overrides.
                 attr = None
-                visible_measure_idx = len(system.measures)
-                ov = overrides.get(visible_measure_idx)
                 if ov:
                     attr = MeasureAttribute(
                         skip=ov.get("skip", 0),

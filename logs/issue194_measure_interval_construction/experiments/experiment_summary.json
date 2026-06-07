@@ -1,0 +1,32 @@
+{
+  "experiment_a": {
+    "title": "page_053 first interval guard",
+    "target": "page_053 / Va__Prokofiev_Symphony5_page_007",
+    "adopted": true,
+    "recommended_formula": "first_measure_width < 0.5 * median_measure_width",
+    "simulation": {
+      "page_053_sys1": {
+        "width": 179.0,
+        "median": 415.0,
+        "staff_height": 167.0,
+        "ratio_to_median": 0.43,
+        "action": "REJECT"
+      },
+      "side_effects": "None detected. All true measure 1 regions in page_021, 022, 045, and 060 were correctly KEPT. Minimum non-target ratio was 0.65."
+    }
+  },
+  "experiment_b": {
+    "title": "page_060 false-positive barline / over-split",
+    "target": "page_060 / Va__Prokofiev_Symphony5_page_015",
+    "adopted": false,
+    "reason": "The false-positive stem has identical geometric height (110px) and vertical overlap (0.61) as the true barlines, and scored extremely high (0.996) in CNN. Simple width ratio constraints would falsely merge genuine short measures in other pages, posing high regression risk.",
+    "recommended_action": "Defer to manual correction (expected overrides) for #194, and file a follow-up issue for YOLO/CNN detector tuning."
+  },
+  "experiment_c": {
+    "title": "system grouping feature dump",
+    "target": "page_021, page_022, page_045",
+    "adopted": false,
+    "reason": "Vertical gap ratios for divisi (1.53 - 1.70) and separate systems (0.56 - 0.84) are in a trade-off zone. Widening the gap ratio threshold to group divisi would cause false merges on separate systems on other pages. A redesign is needed to identify divisi brackets/braces outside aligned barlines.",
+    "recommended_action": "Defer to manual correction for #194, and file a follow-up issue for layout analysis (system grouping) redesign."
+  }
+}

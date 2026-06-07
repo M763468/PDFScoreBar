@@ -43,9 +43,9 @@ skip_deepscores: False
 
 # FORCE problematic pages into train split for Iter 6
 force_train:
-  - eval2
-  - deepscores
-  - Sibelius-Violin_Concerto-Viola/page_004
-  - Shostakovich-Sym5-Va/page_003
-  - Va_Prokofiev_Symphony1/page_005
-  - Shostakovich-Festival_Overture_Va/page_004
+  - Sibelius-Violin_Concerto-Viola_page_004
+  - Shostakovich-Sym5-Va_page_003
+  - Va_Prokofiev_Symphony1_page_005
+  - Shostakovich-Festival_Overture_Va_page_004
+  - Va__Prokofiev_Symphony5_page_015
+  - Sibelius-Violin_Concerto-Viola_page_006

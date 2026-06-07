@@ -65,12 +65,31 @@ class TestIssue194FirstIntervalGuard(unittest.TestCase):
         next_number = self.numberer.number_system(
             system,
             start_number=1,
-            overrides={0: {"skip": 2}},
+            overrides={1: {"skip": 2}},
         )
 
         self.assertEqual(next_number, 6)
-        self.assertEqual([m.number for m in system.measures], [1, 4, 5])
-        self.assertEqual(system.measures[0].attribute.skip, 2)
+        self.assertEqual([m.number for m in system.measures], [1, 2, 5])
+        self.assertIsNone(system.measures[0].attribute)
+        self.assertEqual(system.measures[1].attribute.skip, 2)
+
+    def test_explicit_first_override_preserves_short_ghost_interval(self):
+        system = self.create_system(
+            staff_bbox=BBox(0, 100, 1600, 267),
+            barline_xs=[180, 600, 1000, 1400],
+        )
+
+        next_number = self.numberer.number_system(
+            system,
+            start_number=1,
+            overrides={0: {"set_number": 0}},
+        )
+
+        self.assertEqual(next_number, 4)
+        self.assertEqual([m.number for m in system.measures], [0, 1, 2, 3])
+        self.assertTrue(system.measures[0].start_bar.is_ghost)
+        self.assertEqual(system.measures[0].bbox.x1, 1)
+        self.assertEqual(system.measures[0].bbox.x2, 180)
 
     def test_median_uses_real_following_intervals_for_ghost_start(self):
         system = self.create_system(

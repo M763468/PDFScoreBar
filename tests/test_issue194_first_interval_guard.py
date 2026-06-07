@@ -73,7 +73,7 @@ class TestIssue194FirstIntervalGuard(unittest.TestCase):
         self.assertIsNone(system.measures[0].attribute)
         self.assertEqual(system.measures[1].attribute.skip, 2)
 
-    def test_explicit_first_override_preserves_short_ghost_interval(self):
+    def test_force_measure_override_preserves_short_ghost_interval(self):
         system = self.create_system(
             staff_bbox=BBox(0, 100, 1600, 267),
             barline_xs=[180, 600, 1000, 1400],
@@ -82,7 +82,7 @@ class TestIssue194FirstIntervalGuard(unittest.TestCase):
         next_number = self.numberer.number_system(
             system,
             start_number=1,
-            overrides={0: {"set_number": 0}},
+            overrides={0: {"set_number": 0, "force_measure": True}},
         )
 
         self.assertEqual(next_number, 4)

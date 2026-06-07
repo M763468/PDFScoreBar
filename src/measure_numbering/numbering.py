@@ -12,6 +12,8 @@ class MeasureNumberer:
     DEDUPLICATION_THRESHOLD = 15  # px: merge barlines closer than this
     IMPLICIT_START_THRESHOLD = 50  # px: if first barline is > this from edge, assume hidden measure
     MIN_MEASURE_WIDTH = 25  # px: reject intervals narrower than this (e.g. double barlines)
+    FIRST_GHOST_MEASURE_MAX_MEDIAN_RATIO = 0.5
+    FIRST_GHOST_MEASURE_MAX_STAFF_HEIGHT_RATIO = 1.2
 
     def number_score(
         self, score: Score, start_number: int = 1, overrides: Optional[List[Dict[str, Any]]] = None
@@ -66,6 +68,7 @@ class MeasureNumberer:
         max(s.bbox.x2 for s in system.staves)
         sys_y1 = min(s.bbox.y1 for s in system.staves)
         sys_y2 = max(s.bbox.y2 for s in system.staves)
+        avg_staff_height = sum(s.bbox.height for s in system.staves) / len(system.staves)
 
         # 3. Detect and insert Implicit Start if necessary
         if sorted_barlines:
@@ -73,6 +76,14 @@ class MeasureNumberer:
             if first_bar.bbox.x1 - sys_x1 > self.IMPLICIT_START_THRESHOLD:
                 ghost_start = Barline(bbox=BBox(sys_x1, sys_y1, sys_x1 + 1, sys_y2), is_ghost=True)
                 sorted_barlines.insert(0, ghost_start)
+
+        interval_widths = self._measure_interval_widths(sorted_barlines)
+        median_widths = (
+            interval_widths[1:]
+            if sorted_barlines and sorted_barlines[0].is_ghost
+            else interval_widths
+        )
+        median_interval_width = self._median(median_widths)
 
         # 4. Iterate intervals to create Measures
         current_number = start_number
@@ -87,14 +98,27 @@ class MeasureNumberer:
 
                 m_x1 = left_bar.bbox.x2
                 m_x2 = right_bar.bbox.x1
+                measure_width = m_x2 - m_x1
 
                 # Check for insufficient width (e.g. double barline gap)
-                if (m_x2 - m_x1) < self.MIN_MEASURE_WIDTH:
+                if measure_width < self.MIN_MEASURE_WIDTH:
                     continue
 
-                # Check for overrides
+                visible_measure_idx = len(system.measures)
+                interval_override = overrides.get(i)
+                force_measure = bool(interval_override and interval_override.get("force_measure"))
+                ov = interval_override if force_measure else overrides.get(visible_measure_idx)
+
+                if not force_measure and self._is_narrow_ghost_start_interval(
+                    i=i,
+                    left_bar=left_bar,
+                    measure_width=measure_width,
+                    median_interval_width=median_interval_width,
+                    avg_staff_height=avg_staff_height,
+                ):
+                    continue
+
                 attr = None
-                ov = overrides.get(i)
                 if ov:
                     attr = MeasureAttribute(
                         skip=ov.get("skip", 0),
@@ -120,6 +144,40 @@ class MeasureNumberer:
                 current_number += increment
 
         return current_number
+
+    def _is_narrow_ghost_start_interval(
+        self,
+        *,
+        i: int,
+        left_bar: Barline,
+        measure_width: float,
+        median_interval_width: Optional[float],
+        avg_staff_height: float,
+    ) -> bool:
+        """Return true for a short non-measure region after an implicit system start."""
+        if i != 0 or not left_bar.is_ghost or median_interval_width is None:
+            return False
+        return (
+            measure_width < median_interval_width * self.FIRST_GHOST_MEASURE_MAX_MEDIAN_RATIO
+            and measure_width < avg_staff_height * self.FIRST_GHOST_MEASURE_MAX_STAFF_HEIGHT_RATIO
+        )
+
+    def _measure_interval_widths(self, barlines: List[Barline]) -> List[float]:
+        widths = []
+        for left_bar, right_bar in zip(barlines, barlines[1:]):
+            width = right_bar.bbox.x1 - left_bar.bbox.x2
+            if width >= self.MIN_MEASURE_WIDTH:
+                widths.append(width)
+        return widths
+
+    def _median(self, values: List[float]) -> Optional[float]:
+        if not values:
+            return None
+        sorted_values = sorted(values)
+        midpoint = len(sorted_values) // 2
+        if len(sorted_values) % 2:
+            return sorted_values[midpoint]
+        return (sorted_values[midpoint - 1] + sorted_values[midpoint]) / 2
 
     def _deduplicate_barlines(self, barlines: List[Barline]) -> List[Barline]:
         """

@@ -1,15 +1,11 @@
-# Issue #44 Iter 6 (Hard Mining) base dataset build
-# Usage:
-#   python tools/cnn_classifier/build_cnn_dataset.py --config configs/cnn_barline_runs/issue44_iter6_hard_mining/dataset_build.yaml
-
-output_root: datasets/cnn_classifier_v6_base
+output_root: datasets/cnn_classifier_v8_base_issue202
 deepscores_root: /mnt/d/datasets/DeepScoresV2/ds2_dense
 
 # evaluation2 GT / image / candidate set
 eval2_annotations_root: data/evaluation2/annotations
 eval2_images_root: data/evaluation2/images
-eval2_candidates_root: logs/issue53_full_eval_rescue_v1
-eval2_candidate_file: pipeline2_no_peak_scored.json
+eval2_candidates_root: data/evaluation2/golden_baseline_eval2_bc23deb
+eval2_candidate_file: pipeline2_no_peak_candidates.json
 
 # DeepScores extraction settings
 max_per_image: 5
@@ -41,11 +37,13 @@ skip_local: True
 skip_eval2: False
 skip_deepscores: False
 
-# FORCE problematic pages into train split for Iter 6
+# FORCE problematic pages into train split
 force_train:
-  - eval2
-  - deepscores
-  - Sibelius-Violin_Concerto-Viola/page_004
-  - Shostakovich-Sym5-Va/page_003
-  - Va_Prokofiev_Symphony1/page_005
-  - Shostakovich-Festival_Overture_Va/page_004
+  - Sibelius-Violin_Concerto-Viola_page_004
+  - Shostakovich-Sym5-Va_page_003
+  - Va_Prokofiev_Symphony1_page_005
+  - Shostakovich-Festival_Overture_Va_page_004
+  - Va__Prokofiev_Symphony5_page_015
+  - Va__Prokofiev_Symphony5_page_002
+  - Va__Prokofiev_Symphony5_page_004
+  - Sibelius-Violin_Concerto-Viola_page_006

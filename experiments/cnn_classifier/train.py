@@ -246,6 +246,7 @@ def get_args():
         "num_workers": 8,
         "prefetch_factor": 2,
         "save_interval": 0,
+        "sample_weights_csv": None,
     }
 
     parser = argparse.ArgumentParser(description="Train a CNN for barline classification.")
@@ -253,6 +254,10 @@ def get_args():
     parser.add_argument("--work-dir", type=str, help="Working directory for logs and models.")
     parser.add_argument("--tp-dir", type=str, help="Directory of true positive crops.")
     parser.add_argument("--fp-dir", type=str, help="Directory of false positive crops.")
+    parser.add_argument(
+        "--sample-weights-csv", type=str, default=None, help="Path to sidecar CSV mapping filename to weight multiplier."
+    )
+    parser.add_argument("--dry-run", action="store_true", help="Exit after loading dataset and sampler without training")
     parser.add_argument(
         "--epochs",
         type=int,
@@ -505,6 +510,40 @@ def train(args):
         samples_weight = torch.tensor(
             [weight_pos if lbl == 1 else weight_neg for lbl in labels], dtype=torch.float
         )
+        
+        # Apply L1.5 Sample Weights if CSV is provided
+        if args.sample_weights_csv and Path(args.sample_weights_csv).exists():
+            import csv
+            weight_dict = {}
+            with open(args.sample_weights_csv, "r") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    fname = row["filename"]
+                    if fname in weight_dict:
+                        raise ValueError(f"Duplicate filename in weights CSV: {fname}")
+                    weight_dict[fname] = float(row["weight"])
+                    
+            if isinstance(train_dataset, Subset):
+                base_ds = train_dataset.dataset
+                paths = [base_ds.all_paths[i].name for i in train_dataset.indices]
+            else:
+                paths = [p.name for p in train_dataset.all_paths]
+                
+            multipliers = []
+            matched_count = 0
+            for p in paths:
+                if p in weight_dict:
+                    multipliers.append(weight_dict[p])
+                    matched_count += 1
+                else:
+                    multipliers.append(1.0)
+                    
+            if matched_count != len(weight_dict):
+                raise ValueError(f"Found {matched_count} matches in dataset but expected {len(weight_dict)} from CSV")
+                
+            samples_weight = samples_weight * torch.tensor(multipliers, dtype=torch.float)
+            print(f"Applied {matched_count} sample-specific weights from CSV.")
+            
         sampler = WeightedRandomSampler(samples_weight, len(samples_weight))
         print("Using WeightedRandomSampler")
     elif args.imbalance == "pos_weight" and n_neg > 0 and n_pos > 0:
@@ -577,6 +616,10 @@ def train(args):
     scaler = torch.amp.GradScaler("cuda", enabled=args.amp)
 
     best_val_metric = 0.0
+
+    if args.dry_run:
+        print("Dry run completed. Exiting without training.")
+        return
 
     # Training Loop
     for epoch in range(args.epochs):

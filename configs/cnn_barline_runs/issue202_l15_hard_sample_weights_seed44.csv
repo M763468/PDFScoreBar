@@ -1,0 +1,5 @@
+filename,weight,target_id,reason
+eval2_Va__Prokofiev_Symphony5_page_015_026368.png,25.0,N1,Failed L1 (0.76)
+eval2_Va__Prokofiev_Symphony5_page_002_022438.png,25.0,N2,Prevent regression
+eval2_Va__Prokofiev_Symphony5_page_002_022440.png,25.0,N3,Prevent regression
+eval2_Va__Prokofiev_Symphony5_page_004_023085.png,25.0,N4,Prevent regression

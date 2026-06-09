@@ -419,7 +419,10 @@ def train(args):
     work_dir.mkdir(parents=True, exist_ok=True)
 
     # TensorBoard
-    if args.log_dir:
+    if args.dry_run:
+        writer = None
+        print("Dry run: TensorBoard logging disabled.")
+    elif args.log_dir:
         writer = SummaryWriter(log_dir=args.log_dir)
     else:
         # Default to work_dir/runs
@@ -512,10 +515,14 @@ def train(args):
         )
         
         # Apply L1.5 Sample Weights if CSV is provided
-        if args.sample_weights_csv and Path(args.sample_weights_csv).exists():
+        if args.sample_weights_csv:
+            csv_path = Path(args.sample_weights_csv)
+            if not csv_path.exists():
+                raise FileNotFoundError(f"--sample-weights-csv provided but not found: {csv_path}")
+                
             import csv
             weight_dict = {}
-            with open(args.sample_weights_csv, "r") as f:
+            with open(csv_path, "r") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
                     fname = row["filename"]
@@ -531,15 +538,28 @@ def train(args):
                 
             multipliers = []
             matched_count = 0
+            unmatched_keys = set(weight_dict.keys())
+            dataset_duplicate_count = 0
+            
             for p in paths:
                 if p in weight_dict:
+                    if p not in unmatched_keys:
+                        dataset_duplicate_count += 1
+                    else:
+                        unmatched_keys.remove(p)
                     multipliers.append(weight_dict[p])
                     matched_count += 1
                 else:
                     multipliers.append(1.0)
                     
-            if matched_count != len(weight_dict):
-                raise ValueError(f"Found {matched_count} matches in dataset but expected {len(weight_dict)} from CSV")
+            print(f"hard sample matched count: {len(weight_dict) - len(unmatched_keys)}")
+            print(f"hard sample unmatched count: {len(unmatched_keys)}")
+            print(f"dataset duplicate matched count: {dataset_duplicate_count}")
+            
+            if dataset_duplicate_count > 0:
+                raise ValueError(f"Found {dataset_duplicate_count} duplicate dataset matches for hard samples.")
+            if len(unmatched_keys) > 0:
+                raise ValueError(f"Found {len(unmatched_keys)} unmatched hard samples from CSV: {unmatched_keys}")
                 
             samples_weight = samples_weight * torch.tensor(multipliers, dtype=torch.float)
             print(f"Applied {matched_count} sample-specific weights from CSV.")
@@ -582,6 +602,10 @@ def train(args):
     if args.channels_last:
         model = model.to(memory_format=torch.channels_last)
 
+    if args.dry_run:
+        print("Dry run completed. Exiting without training.")
+        return
+
     if args.compile:
         print(f"Compiling model with mode={args.compile_mode}...")
         model = torch.compile(model, mode=args.compile_mode)
@@ -616,10 +640,6 @@ def train(args):
     scaler = torch.amp.GradScaler("cuda", enabled=args.amp)
 
     best_val_metric = 0.0
-
-    if args.dry_run:
-        print("Dry run completed. Exiting without training.")
-        return
 
     # Training Loop
     for epoch in range(args.epochs):

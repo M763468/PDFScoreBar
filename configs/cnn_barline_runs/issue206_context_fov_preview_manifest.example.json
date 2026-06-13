@@ -1,0 +1,11 @@
+[
+  {
+    "case_id": "issue205_target_flat_sign_fp_page004",
+    "case_type": "target_flat_sign_fp",
+    "page": "Va_Prokofiev_Symphony1/page_004",
+    "raw_image_path": "data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png",
+    "bbox": [2613, 4110, 2617, 4208],
+    "source_kind": "historical_representative",
+    "notes": "Issue #206 context-FOV preview example. This is not the recovered exact L1.5 0.6585 scored artifact."
+  }
+]

@@ -232,24 +232,33 @@ class MMROCREngine:
         merged.append(current_box)
         return merged
 
+    def _has_blacklisted_text(self, text: str) -> bool:
+        return any(b.lower() in text.lower() for b in self.blacklist)
+
+    def _candidate_items(self, ocr_result: List) -> List[Tuple[List, str]]:
+        """Return raw and merged OCR items so merges do not erase valid single digits."""
+        raw_items = [(item, "raw") for item in ocr_result]
+        merged_items = [(item, "merged") for item in self.merge_ocr_results(list(ocr_result))]
+        return raw_items + merged_items
+
     def select_best_candidate(
         self, ocr_result: List, img_width: int, img_height: int
     ) -> Tuple[Optional[int], float, str]:
         if not ocr_result:
             return None, 0, ""
 
-        ocr_result = self.merge_ocr_results(ocr_result)
         candidates = []
         center_x = img_width / 2.0
 
-        for item in ocr_result:
+        for item, source in self._candidate_items(ocr_result):
             box_points, text, _ = item
-            if any(b.lower() in text.lower() for b in self.blacklist):
-                continue
-
             clean_text = re.sub(r"^[EP](\d)", r"\1", text)
             clean_text = re.sub(r"[.,;]", "", clean_text)
             nums_found = re.findall(r"\d+", clean_text)
+
+            blacklisted = self._has_blacklisted_text(text)
+            if blacklisted and not nums_found:
+                continue
             if not nums_found:
                 continue
 
@@ -280,12 +289,25 @@ class MMROCREngine:
                         score -= 50
                     if val > 20 and img_width < 100:
                         score -= 200
+                    if source == "merged" and val > 20:
+                        score -= 40
+
+                    debug_flags = [
+                        f"dx={dist_x_norm:.2f}",
+                        f"dy={dist_y_norm:.2f}",
+                        f"h={h_ratio:.2f}",
+                        source,
+                    ]
+                    if blacklisted:
+                        debug_flags.append("blacklist_digit")
+                    if source == "merged" and val > 20:
+                        debug_flags.append("merged_high_count_penalty")
 
                     candidates.append(
                         {
                             "val": val,
                             "score": score,
-                            "debug": f"dx={dist_x_norm:.2f},dy={dist_y_norm:.2f},h={h_ratio:.2f}",
+                            "debug": ",".join(debug_flags),
                         }
                     )
                 except ValueError:

@@ -1,11 +1,12 @@
 import json
 import logging
 from pathlib import Path
-import torch
 
+import torch
 from src.measure_numbering.rapidocr_provider import normalize_rapidocr_provider
 from src.pipeline.steps.numbering import run_mmr_batch
-from tools.issue94.eval_mmr_overrides import _load_json, _write_json, _build_summary
+
+from tools.issue94.eval_mmr_overrides import _build_summary, _load_json, _write_json
 
 logging.basicConfig(
     level=logging.INFO,
@@ -64,7 +65,7 @@ def main():
         rapidocr_provider=normalize_rapidocr_provider(rapidocr_provider),
     )
     logger.info("run_mmr_batch completed. Generating summaries...")
-    
+
     total_base_measures = 0
     total_detected = 0
     total_expected = 0
@@ -72,18 +73,18 @@ def main():
     total_missed = 0
     total_skip_mismatch = 0
     total_unexpected = 0
-    
+
     page_summaries = []
-    
+
     # 各ページの要約を生成
     for p, nb_payload, out_path in zip(pages, pages_data, output_paths):
         page_id = p["page_id"]
         detected_payload = _load_json(out_path)
-        
+
         # Load expected overrides if exists
         expected_path = Path("tests/fixtures") / f"expected_overrides_{page_id}.json"
         expected_payload = _load_json(expected_path) if expected_path.exists() else None
-        
+
         summary = _build_summary(
             numbering_json=Path(p["numbering_base"]),
             image=Path(p["image"]),
@@ -96,7 +97,7 @@ def main():
             detected_payload=detected_payload,
             expected_payload=expected_payload,
         )
-        
+
         # Aggregate counts
         cnt = summary["counts"]
         total_base_measures += cnt["base_measures"]
@@ -106,25 +107,27 @@ def main():
         total_missed += cnt["missed"]
         total_skip_mismatch += cnt["skip_mismatch"]
         total_unexpected += cnt["unexpected"]
-        
-        page_summaries.append({
-            "page_id": page_id,
-            "image": Path(p["image"]).name,
-            "expected": cnt["expected_overrides"],
-            "detected": cnt["detected_overrides"],
-            "matched": cnt["matched"],
-            "missed": cnt["missed"],
-            "mismatch": cnt["skip_mismatch"],
-            "unexpected": cnt["unexpected"]
-        })
-        
+
+        page_summaries.append(
+            {
+                "page_id": page_id,
+                "image": Path(p["image"]).name,
+                "expected": cnt["expected_overrides"],
+                "detected": cnt["detected_overrides"],
+                "matched": cnt["matched"],
+                "missed": cnt["missed"],
+                "mismatch": cnt["skip_mismatch"],
+                "unexpected": cnt["unexpected"],
+            }
+        )
+
         summary_path = output_root / page_id / "mmr_eval_summary.json"
         _write_json(summary_path, summary)
-        
+
     # Print quantitative summary metrics
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print(" MMR EVALUATION METRICS SUMMARY (REST GT)")
-    print("="*50)
+    print("=" * 50)
     print(f"Total Pages:         {len(pages)}")
     print(f"Total Base Measures: {total_base_measures}")
     print(f"Total Expected:      {total_expected} (Positive MMRs in GT)")
@@ -133,20 +136,20 @@ def main():
     print(f"Missed (FN):         {total_missed}")
     print(f"Skip Mismatch:       {total_skip_mismatch}")
     print(f"Unexpected (FP):     {total_unexpected}")
-    
+
     # Calculate Precision / Recall
     # Precision = TP / (TP + FP) = Matched / Detected
     # Recall = TP / Expected = Matched / Expected
     precision = total_matched / total_detected if total_detected > 0 else 0
     recall = total_matched / total_expected if total_expected > 0 else 0
     f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-    
-    print("-"*50)
+
+    print("-" * 50)
     print(f"Precision:           {precision:.4f}")
     print(f"Recall:              {recall:.4f}")
     print(f"F1-Score:            {f1:.4f}")
-    print("="*50)
-    
+    print("=" * 50)
+
     # Write aggregated summary to logs
     aggregated_report = {
         "summary": {
@@ -160,12 +163,13 @@ def main():
             "unexpected_fp": total_unexpected,
             "precision": precision,
             "recall": recall,
-            "f1_score": f1
+            "f1_score": f1,
         },
-        "pages": page_summaries
+        "pages": page_summaries,
     }
     _write_json(output_root / "aggregated_eval_summary.json", aggregated_report)
     logger.info("All evaluations completed. Aggregated summary saved.")
-    
+
+
 if __name__ == "__main__":
     main()

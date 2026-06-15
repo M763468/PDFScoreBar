@@ -238,8 +238,14 @@ class MMROCREngine:
     def _candidate_items(self, ocr_result: List) -> List[Tuple[List, str]]:
         """Return raw and merged OCR items so merges do not erase valid single digits."""
         raw_items = [(item, "raw") for item in ocr_result]
-        merged_items = [(item, "merged") for item in self.merge_ocr_results(list(ocr_result))]
+        merged_results = self.merge_ocr_results(list(ocr_result))
+        merged_items = [(item, "merged") for item in merged_results if item not in ocr_result]
         return raw_items + merged_items
+
+    def _extract_numeric_candidates(self, text: str, blacklisted: bool) -> List[str]:
+        if blacklisted:
+            return re.findall(r"(?<![A-Za-z])\d+(?![A-Za-z])", text)
+        return re.findall(r"\d+", text)
 
     def select_best_candidate(
         self, ocr_result: List, img_width: int, img_height: int
@@ -254,11 +260,8 @@ class MMROCREngine:
             box_points, text, _ = item
             clean_text = re.sub(r"^[EP](\d)", r"\1", text)
             clean_text = re.sub(r"[.,;]", "", clean_text)
-            nums_found = re.findall(r"\d+", clean_text)
-
             blacklisted = self._has_blacklisted_text(text)
-            if blacklisted and not nums_found:
-                continue
+            nums_found = self._extract_numeric_candidates(clean_text, blacklisted)
             if not nums_found:
                 continue
 
@@ -289,8 +292,6 @@ class MMROCREngine:
                         score -= 50
                     if val > 20 and img_width < 100:
                         score -= 200
-                    if source == "merged" and val > 20:
-                        score -= 40
 
                     debug_flags = [
                         f"dx={dist_x_norm:.2f}",
@@ -300,8 +301,6 @@ class MMROCREngine:
                     ]
                     if blacklisted:
                         debug_flags.append("blacklist_digit")
-                    if source == "merged" and val > 20:
-                        debug_flags.append("merged_high_count_penalty")
 
                     candidates.append(
                         {

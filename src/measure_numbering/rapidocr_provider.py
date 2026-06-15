@@ -115,7 +115,9 @@ def create_mmr_rapidocr(provider: str = RAPIDOCR_PROVIDER_AUTO) -> RapidOCR:
 
     should_use_cuda = provider_mode == RAPIDOCR_PROVIDER_CUDA or onnxruntime_has_cuda_provider()
     if not should_use_cuda:
-        logger.info("Initializing MMR RapidOCR with CPU/default provider mode; CUDA provider is unavailable.")
+        logger.info(
+            "Initializing MMR RapidOCR with CPU/default provider mode; CUDA provider is unavailable."
+        )
         return RapidOCR()
 
     logger.info("Initializing MMR RapidOCR with CUDA provider preference (mode=%s).", provider_mode)

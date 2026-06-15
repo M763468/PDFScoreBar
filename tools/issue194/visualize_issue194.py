@@ -41,7 +41,9 @@ def draw_boxes(image, boxes, color, thickness=3, label_func=None):
         cv2.rectangle(img_copy, (x1, y1), (x2, y2), color, thickness)
         if label_func:
             label = label_func(i, box)
-            cv2.putText(img_copy, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2, cv2.LINE_AA)
+            cv2.putText(
+                img_copy, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2, cv2.LINE_AA
+            )
     return img_copy
 
 
@@ -100,7 +102,9 @@ def main():
             if x1_min != float("inf"):
                 system_boxes.append([int(x1_min), int(y1_min), int(x2_max), int(y2_max)])
 
-        img_system = draw_boxes(img, system_boxes, (0, 255, 255), thickness=4, label_func=lambda idx, box: f"Sys {idx}")
+        img_system = draw_boxes(
+            img, system_boxes, (0, 255, 255), thickness=4, label_func=lambda idx, box: f"Sys {idx}"
+        )
         cv2.imwrite(str(OUTPUT_DIR / f"system_bbox_{page_id}.png"), img_system)
 
         measure_boxes = []

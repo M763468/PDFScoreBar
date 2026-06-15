@@ -79,7 +79,11 @@ def main() -> None:
 
         if match:
             page_token = match.group(1).lstrip("_")
-            work_name = img_name.replace(f"_{page_token}.png", "").replace(f"{page_token}.png", "").rstrip("_")
+            work_name = (
+                img_name.replace(f"_{page_token}.png", "")
+                .replace(f"{page_token}.png", "")
+                .rstrip("_")
+            )
         else:
             page_token = page_id
             work_name = "unknown"
@@ -146,7 +150,9 @@ def main() -> None:
                 best_shift = s
 
         if best_shift != 0:
-            print(f"  [INFO] Detected index shift of {best_shift:+} for {page_id} ({work_name}/{page_token})")
+            print(
+                f"  [INFO] Detected index shift of {best_shift:+} for {page_id} ({work_name}/{page_token})"
+            )
 
         # Map to expected overrides format
         expected_overrides = []
@@ -160,14 +166,18 @@ def main() -> None:
             target_idx = g_idx + best_shift
             if 0 <= target_idx < len(global_map):
                 s_idx, m_idx = global_map[target_idx]
-                expected_overrides.append({
-                    "page": page_num_idx,
-                    "system": s_idx,
-                    "measure": m_idx,
-                    "skip": rest_count - 1
-                })
+                expected_overrides.append(
+                    {
+                        "page": page_num_idx,
+                        "system": s_idx,
+                        "measure": m_idx,
+                        "skip": rest_count - 1,
+                    }
+                )
             else:
-                print(f"  [Warn] Out-of-bounds target index {target_idx} for GT index {g_idx} (shift {best_shift}) on {page_id}")
+                print(
+                    f"  [Warn] Out-of-bounds target index {target_idx} for GT index {g_idx} (shift {best_shift}) on {page_id}"
+                )
 
         if expected_overrides:
             out_path = args.output_dir / f"expected_overrides_{page_id}.json"
@@ -175,7 +185,9 @@ def main() -> None:
                 json.dump({"overrides": expected_overrides}, out_f, indent=2)
             processed_count += 1
 
-    print(f"\nSuccessfully generated {processed_count} expected override JSON files under {args.output_dir}")
+    print(
+        f"\nSuccessfully generated {processed_count} expected override JSON files under {args.output_dir}"
+    )
 
 
 if __name__ == "__main__":

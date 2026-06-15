@@ -47,7 +47,9 @@ def analyze_system_first_measure(page_id, data):
                 "avg_staff_height": avg_staff_height,
                 "staff_left": staff_left,
                 "ratio_to_median": first_width / median_width if median_width > 0 else 0,
-                "ratio_to_staff_height": first_width / avg_staff_height if avg_staff_height > 0 else 0,
+                "ratio_to_staff_height": first_width / avg_staff_height
+                if avg_staff_height > 0
+                else 0,
                 "dist_to_first_bar": dist_to_first_bar,
             }
         )

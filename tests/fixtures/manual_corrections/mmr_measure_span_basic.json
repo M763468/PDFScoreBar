@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "correction_type": "mmr_measure_span",
+  "items": [
+    {
+      "op": "suppress",
+      "page": 32,
+      "system": 0,
+      "measure": 0,
+      "reason": "synthetic unexpected MMR detection"
+    },
+    {
+      "op": "set_measure_span",
+      "page": 41,
+      "system": 8,
+      "measure": 0,
+      "measure_span": 3,
+      "reason": "synthetic explicit MMR measure span"
+    }
+  ]
+}

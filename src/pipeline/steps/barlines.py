@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from src.common.barline_evaluation import (
     BARLINE_DEFAULT_MIN_WIDTH,
@@ -10,6 +10,14 @@ from src.common.barline_evaluation import (
     BARLINE_Y_MARGIN,
     barline_iou,
 )
+from src.pipeline.steps.manual_corrections import merge_barline_overrides, merge_measure_overrides
+
+__all__ = [
+    "apply_barline_overrides",
+    "merge_barline_overrides",
+    "merge_measure_overrides",
+    "normalize_barlines",
+]
 
 
 def normalize_barlines(raw_data: Any) -> List[List[int]]:
@@ -84,16 +92,3 @@ def apply_barline_overrides(
         "unmatched_remove": unmatched_remove,
     }
     return kept, stats
-
-
-def merge_measure_overrides(
-    *overrides_payloads: Optional[Dict[str, Any]],
-) -> Dict[str, Any]:
-    merged: Dict[str, Any] = {"overrides": []}
-    for payload in overrides_payloads:
-        if not payload:
-            continue
-        overrides = payload.get("overrides", [])
-        if isinstance(overrides, list):
-            merged["overrides"].extend(overrides)
-    return merged

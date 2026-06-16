@@ -16,8 +16,14 @@ FIXTURE_DIR = Path(__file__).parent / "fixtures" / "manual_corrections"
 
 
 def test_normalise_measure_overrides_accepts_legacy_and_current_keys():
-    legacy = {"overrides": [{"page": "1", "system": "2", "measure": "3", "skip": "4"}]}
-    current = {"measure_overrides": [{"page": "5", "system": "6", "measure": "7", "skip": "8"}]}
+    legacy = {
+        "overrides": [{"page": "1", "system": "2", "measure": "3", "skip": "4"}]
+    }
+    current = {
+        "measure_overrides": [
+            {"page": "5", "system": "6", "measure": "7", "skip": "8"}
+        ]
+    }
 
     assert normalise_measure_overrides(legacy) == [
         {"page": 1, "system": 2, "measure": 3, "skip": 4}
@@ -28,7 +34,11 @@ def test_normalise_measure_overrides_accepts_legacy_and_current_keys():
 
 
 def test_normalise_measure_overrides_keeps_none_without_crashing():
-    payload = {"overrides": [{"page": None, "system": "2", "measure": "3", "skip": None}]}
+    payload = {
+        "overrides": [
+            {"page": None, "system": "2", "measure": "3", "skip": None}
+        ]
+    }
 
     assert normalise_measure_overrides(payload) == [
         {"page": None, "system": 2, "measure": 3, "skip": None}
@@ -206,8 +216,8 @@ def test_measure_construction_force_measure_is_separate_from_future_grouping_ops
             "source": "manual:measure_construction",
         }
     ]
-    assert merge_measure_overrides(payload)["measure_overrides"] == measure_construction_overrides(
-        payload
+    assert merge_measure_overrides(payload)["measure_overrides"] == (
+        measure_construction_overrides(payload)
     )
 
 

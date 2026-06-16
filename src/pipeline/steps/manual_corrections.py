@@ -80,7 +80,9 @@ def normalise_barline_overrides(payload: Optional[Payload]) -> List[BarlineOverr
     records = payload.get("barline_overrides")
     if not isinstance(records, list):
         return []
-    return [_normalise_barline_override(item) for item in records if isinstance(item, dict)]
+    return [
+        _normalise_barline_override(item) for item in records if isinstance(item, dict)
+    ]
 
 
 def _manual_comment(item: Dict[str, Any], default: str) -> str:
@@ -144,7 +146,9 @@ def apply_mmr_measure_span_corrections(
     return result
 
 
-def measure_construction_overrides(correction_payload: Payload) -> List[MeasureOverride]:
+def measure_construction_overrides(
+    correction_payload: Payload,
+) -> List[MeasureOverride]:
     """Translate supported measure-construction manual corrections.
 
     The current narrow implementation supports only interval-level
@@ -165,7 +169,9 @@ def measure_construction_overrides(correction_payload: Payload) -> List[MeasureO
             "system": int(item["system"]),
             "measure": int(item["interval"]),
             "force_measure": True,
-            "comment": _manual_comment(item, "manual measure-construction force_measure"),
+            "comment": _manual_comment(
+                item, "manual measure-construction force_measure"
+            ),
             "source": item.get("source", "manual:measure_construction"),
         }
         if "skip" in item:
@@ -176,7 +182,9 @@ def measure_construction_overrides(correction_payload: Payload) -> List[MeasureO
     return overrides
 
 
-def barline_construction_overrides(correction_payload: Payload) -> List[BarlineOverride]:
+def barline_construction_overrides(
+    correction_payload: Payload,
+) -> List[BarlineOverride]:
     """Translate supported barline-construction manual corrections.
 
     Supported item operations:

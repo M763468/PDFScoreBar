@@ -1,2 +1,4 @@
 #!/usr/bin/env python3
-print("placeholder")
+"""Manual GUI config builder."""
+
+print("manual GUI config builder is not implemented yet")

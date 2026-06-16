@@ -468,15 +468,14 @@ class MMRProcessor:
                 current_num = counts.most_common(1)[0][0]
 
                 if not (current_num > 20 and (x2 - x1) < 100):
-                    best_entry = max(
+                    _, best_score, best_dbg = max(
                         [r for r in valid_results if r[0] == current_num], key=lambda x: x[1]
                     )
-                    variant_debug = best_entry[2]
-                    if variant_debug:
-                        variant_debug = f"{variant_debug},variant={mode}:{angle}"
+                    if best_dbg:
+                        variant_debug = f"{best_dbg},variant={mode}:{angle}"
                     else:
                         variant_debug = f"variant={mode}:{angle}"
-                    variant_results.append((current_num, best_entry[1], variant_debug))
+                    variant_results.append((current_num, best_score, variant_debug))
 
         if not variant_results:
             return None, 0, ""

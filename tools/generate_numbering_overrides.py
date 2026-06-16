@@ -5,7 +5,12 @@ import shutil
 import sys
 from pathlib import Path
 
+import cv2
 import torch
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from src.measure_numbering.mmr import MMRProcessor
 
@@ -87,6 +92,11 @@ def main():
 
     with open(args.numbering_json, "r") as f:
         data = json.load(f)
+
+    image = cv2.imread(str(args.image))
+    if image is None:
+        logger.error(f"Error reading image: {args.image}")
+        sys.exit(1)
 
     debug_root = None
     if args.debug_image:

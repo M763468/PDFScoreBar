@@ -5,14 +5,14 @@
     <title>Manual Correction Editor</title>
     <style>
       body { margin: 0; font-family: Arial, sans-serif; display: flex; height: 100vh; }
-      #sidebar { width: 390px; border-right: 1px solid #ccc; padding: 12px; overflow-y: auto; }
+      #sidebar { width: 430px; border-right: 1px solid #ccc; padding: 12px; overflow-y: auto; }
       #main { flex: 1; display: flex; flex-direction: column; }
       #toolbar { padding: 8px; border-bottom: 1px solid #ccc; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
       #canvas { flex: 1; background: #111; cursor: default; }
       .btn { padding: 6px 10px; border: 1px solid #999; background: #f5f5f5; cursor: pointer; }
       .btn.active { background: #cde8ff; border-color: #2b78c5; }
       .btn:disabled { color: #aaa; cursor: not-allowed; }
-      .list-item { padding: 5px; border-bottom: 1px solid #eee; cursor: pointer; }
+      .list-item { padding: 5px; border-bottom: 1px solid #eee; cursor: pointer; font-family: monospace; font-size: 12px; }
       .list-item.active { background: #eef6ff; }
       .small { font-size: 12px; color: #555; }
       .row { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
@@ -21,8 +21,8 @@
       .dot { width: 10px; height: 10px; display: inline-block; border: 1px solid #333; }
       #pageList, #itemList { max-height: 24vh; overflow-y: auto; border: 1px solid #eee; }
       input[type="number"] { width: 80px; }
-      input[type="text"] { width: 340px; }
-      select { max-width: 230px; }
+      input[type="text"] { width: 360px; }
+      select { max-width: 260px; }
       code { font-size: 11px; }
     </style>
   </head>
@@ -67,22 +67,26 @@
       <div class="row">
         <button id="selectModeBtn" class="btn active">Select</button>
         <button id="drawModeBtn" class="btn">Draw bbox</button>
-        <button id="addItemBtn" class="btn">Add item</button>
-        <button id="deleteItemBtn" class="btn">Delete item</button>
+        <button id="addItemBtn" class="btn">Stage correction</button>
+        <button id="deleteItemBtn" class="btn">Remove staged</button>
       </div>
       <div class="small" id="selectionMeta">No selection</div>
 
       <hr />
-      <div><strong>Items for current page/type</strong></div>
+      <div><strong>Base / effective result for current page/type</strong></div>
+      <div class="small">
+        MMR rows show <code>base</code> from the configured MMR artifact and <code>effective</code> after manual corrections.
+      </div>
       <div id="itemList"></div>
 
       <hr />
       <div><strong>Legend</strong></div>
       <div class="legend">
-        <span><span class="dot" style="background:#3aa3ff;"></span>Measure</span>
-        <span><span class="dot" style="background:#46c46b;"></span>Barline</span>
+        <span><span class="dot" style="background:#3aa3ff;"></span>Normal measure</span>
+        <span><span class="dot" style="background:#46c46b;"></span>Base MMR/barline</span>
+        <span><span class="dot" style="background:#b35cff;"></span>Manual override</span>
+        <span><span class="dot" style="background:#ff3b30;"></span>Suppressed/draft</span>
         <span><span class="dot" style="background:#ff8a00;"></span>Selected</span>
-        <span><span class="dot" style="background:#ff3b30;"></span>Draft bbox</span>
       </div>
 
       <hr />
@@ -93,14 +97,14 @@
       <div class="small">
         Zoom: mouse wheel<br />
         Pan: space+drag or middle mouse<br />
-        Draw bbox: choose Draw bbox, then drag on canvas<br />
+        Save writes correction JSON only. Re-run evaluation separately.<br />
         Output: <code>data/evaluation2/manual_corrections/</code>
       </div>
     </div>
     <div id="main">
       <div id="toolbar">
         <span class="small">
-          Exports the #201 durable JSON schema. Future grouping operations are intentionally not editable here.
+          Uses base artifact + manual correction + effective view. Future grouping operations are intentionally not editable here.
         </span>
       </div>
       <canvas id="canvas"></canvas>

@@ -28,11 +28,17 @@ Build a one-page config:
 
 ```bash
 PYTHONPATH=. python3 tools/gt_relabel_gui/manual_config_builder.py \
-  --image data/evaluation2/images/<work>/page_015.png \
-  --numbering logs/.../numbering_base.json \
-  --name <work>_page_015 \
-  --page 15 \
-  --output data/evaluation2/manual_correction_config.json
+  data/evaluation2/images/<work>/page_015.png \
+  logs/.../numbering_base.json \
+  <work>_page_015 \
+  15 \
+  data/evaluation2/manual_correction_config.json
+```
+
+The positional arguments are:
+
+```text
+IMAGE NUMBERING NAME PAGE OUTPUT
 ```
 
 For `remove_barline`, add a `barlines` field to the generated config page if a detected-barline artifact is available:

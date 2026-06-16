@@ -51,6 +51,16 @@ For `remove_barline`, add a `barlines` field to the generated config page if a d
 }
 ```
 
+By default, `server.py --mode manual` uses these output paths:
+
+```text
+data/evaluation2/manual_corrections/mmr_measure_spans.json
+data/evaluation2/manual_corrections/barline_construction_overrides.json
+data/evaluation2/manual_corrections/measure_construction_overrides.json
+```
+
+A config may override those paths with a top-level `manual_outputs` object.
+
 ## Run
 
 ```bash

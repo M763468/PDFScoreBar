@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import pytest
+
 from src.pipeline.steps.manual_corrections import (
     apply_mmr_measure_span_corrections,
     barline_construction_overrides,

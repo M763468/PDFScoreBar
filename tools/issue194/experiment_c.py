@@ -124,8 +124,12 @@ def analyze_page(page_id, info):
         print(f"  Staff 1 bbox: {s1_bbox}")
         print(f"  Staff 2 bbox: {s2_bbox}")
         print(f"  Vertical Gap: {gap} px (Ratio to Avg Staff Height: {ratio:.2f})")
-        print(f"  Aligned Barlines Count: {len(aligned_xs)} (positions: {[int(x) for x in aligned_xs]})")
-        print(f"  Ink Connection Check: {'CONNECTED' if connected else 'DISCONNECTED'} ({valid_conn_count} valid connections)")
+        print(
+            f"  Aligned Barlines Count: {len(aligned_xs)} (positions: {[int(x) for x in aligned_xs]})"
+        )
+        print(
+            f"  Ink Connection Check: {'CONNECTED' if connected else 'DISCONNECTED'} ({valid_conn_count} valid connections)"
+        )
         print(
             f"  Left Edge Diff: {abs(s1_bbox[0] - s2_bbox[0])} px, "
             f"Width Diff: {abs((s1_bbox[2] - s1_bbox[0]) - (s2_bbox[2] - s2_bbox[0]))} px"

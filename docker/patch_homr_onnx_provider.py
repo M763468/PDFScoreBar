@@ -6,37 +6,36 @@ ONNX Runtime CUDA Conv fallback warnings when `cudnn_conv_algo_search` is
 warning while keeping the change limited to HOMR ONNX provider options.
 """
 
-from pathlib import Path
 import sysconfig
-
+from pathlib import Path
 
 HOMR_ROOT = Path(sysconfig.get_paths()["purelib"]) / "homr"
 ENCODER_PATH = HOMR_ROOT / "transformer" / "encoder_inference.py"
 DECODER_PATH = HOMR_ROOT / "transformer" / "decoder_inference.py"
 
 
-ENCODER_OLD = '''providers=[
+ENCODER_OLD = """providers=[
                         (
                             "CUDAExecutionProvider",
                             {
                                 "cudnn_conv_algo_search": "DEFAULT",
                             },
                         )
-                    ],'''
+                    ],"""
 
-ENCODER_NEW = '''providers=[
+ENCODER_NEW = """providers=[
                         (
                             "CUDAExecutionProvider",
                             {
                                 "cudnn_conv_algo_search": "HEURISTIC",
                             },
                         )
-                    ],'''
+                    ],"""
 
 DECODER_OLD = 'config.filepaths.decoder_path_fp16, providers=["CUDAExecutionProvider"]'
 
 DECODER_NEW = (
-    'config.filepaths.decoder_path_fp16, '
+    "config.filepaths.decoder_path_fp16, "
     'providers=[("CUDAExecutionProvider", {"cudnn_conv_algo_search": "HEURISTIC"})]'
 )
 

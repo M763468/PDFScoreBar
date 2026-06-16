@@ -44,7 +44,9 @@ def test_run_mmr_batch_updates_default_engine_in_place(monkeypatch, tmp_path):
             return [{"pages": []}]
 
     writes = []
-    monkeypatch.setattr(numbering, "write_json", lambda path, result: writes.append((path, result)), raising=False)
+    monkeypatch.setattr(
+        numbering, "write_json", lambda path, result: writes.append((path, result)), raising=False
+    )
     monkeypatch.setattr(
         "src.measure_numbering.rapidocr_provider.create_mmr_rapidocr",
         lambda provider: provider_ocr,

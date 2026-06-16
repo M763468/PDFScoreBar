@@ -65,11 +65,7 @@ def normalise_measure_overrides(payload: Optional[Payload]) -> List[MeasureOverr
     for key in ("measure_overrides", "overrides"):
         records = payload.get(key)
         if isinstance(records, list):
-            return [
-                _normalise_measure_override(item)
-                for item in records
-                if isinstance(item, dict)
-            ]
+            return [_normalise_measure_override(item) for item in records if isinstance(item, dict)]
     return []
 
 
@@ -80,9 +76,7 @@ def normalise_barline_overrides(payload: Optional[Payload]) -> List[BarlineOverr
     records = payload.get("barline_overrides")
     if not isinstance(records, list):
         return []
-    return [
-        _normalise_barline_override(item) for item in records if isinstance(item, dict)
-    ]
+    return [_normalise_barline_override(item) for item in records if isinstance(item, dict)]
 
 
 def _manual_comment(item: Dict[str, Any], default: str) -> str:
@@ -169,9 +163,7 @@ def measure_construction_overrides(
             "system": int(item["system"]),
             "measure": int(item["interval"]),
             "force_measure": True,
-            "comment": _manual_comment(
-                item, "manual measure-construction force_measure"
-            ),
+            "comment": _manual_comment(item, "manual measure-construction force_measure"),
             "source": item.get("source", "manual:measure_construction"),
         }
         if "skip" in item:

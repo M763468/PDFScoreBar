@@ -262,9 +262,7 @@ def main():
 
                         # Draw background box for text legibility
                         if hasattr(cat_draw, "textbbox"):
-                            left, top, right, bottom = cat_draw.textbbox(
-                                (0, 0), label, font=font
-                            )
+                            left, top, right, bottom = cat_draw.textbbox((0, 0), label, font=font)
                             text_w, text_h = right - left, bottom - top
                         else:
                             text_w, text_h = 600, 50

@@ -17,9 +17,7 @@ FIXTURE_DIR = Path(__file__).parent / "fixtures" / "manual_corrections"
 
 def test_normalise_measure_overrides_accepts_legacy_and_current_keys():
     legacy = {"overrides": [{"page": "1", "system": "2", "measure": "3", "skip": "4"}]}
-    current = {
-        "measure_overrides": [{"page": "5", "system": "6", "measure": "7", "skip": "8"}]
-    }
+    current = {"measure_overrides": [{"page": "5", "system": "6", "measure": "7", "skip": "8"}]}
 
     assert normalise_measure_overrides(legacy) == [
         {"page": 1, "system": 2, "measure": 3, "skip": 4}
@@ -48,9 +46,7 @@ def test_mmr_measure_span_corrections_suppress_and_set_span():
             },
         ]
     }
-    manual_payload = json.loads(
-        (FIXTURE_DIR / "mmr_measure_span_basic.json").read_text()
-    )
+    manual_payload = json.loads((FIXTURE_DIR / "mmr_measure_span_basic.json").read_text())
 
     merged = merge_measure_overrides(auto_payload, manual_payload)
 
@@ -154,9 +150,9 @@ def test_measure_construction_force_measure_is_separate_from_future_grouping_ops
             "source": "manual:measure_construction",
         }
     ]
-    assert merge_measure_overrides(payload)[
-        "measure_overrides"
-    ] == measure_construction_overrides(payload)
+    assert merge_measure_overrides(payload)["measure_overrides"] == measure_construction_overrides(
+        payload
+    )
 
 
 def test_barline_construction_add_and_remove_are_not_measure_overrides():

@@ -24,29 +24,41 @@ Payload = Dict[str, Any]
 OverrideKey = Tuple[Optional[int], Optional[int], Optional[int]]
 
 
+def _to_int_or_none(value: Any) -> Optional[int]:
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _measure_key(item: Dict[str, Any]) -> OverrideKey:
-    return (item.get("page"), item.get("system"), item.get("measure"))
+    return (
+        _to_int_or_none(item.get("page")),
+        _to_int_or_none(item.get("system")),
+        _to_int_or_none(item.get("measure")),
+    )
 
 
 def _normalise_measure_override(item: Dict[str, Any]) -> MeasureOverride:
     override = deepcopy(item)
-    if "page" in override:
-        override["page"] = int(override["page"])
-    if "system" in override:
-        override["system"] = int(override["system"])
-    if "measure" in override:
-        override["measure"] = int(override["measure"])
-    if "skip" in override:
-        override["skip"] = int(override["skip"])
-    if "set_number" in override and override["set_number"] is not None:
-        override["set_number"] = int(override["set_number"])
+    for key in ("page", "system", "measure", "skip", "set_number"):
+        if key in override and override[key] is not None:
+            try:
+                override[key] = int(override[key])
+            except (TypeError, ValueError):
+                pass
     return override
 
 
 def _normalise_barline_override(item: Dict[str, Any]) -> BarlineOverride:
     override = deepcopy(item)
-    if "page" in override:
-        override["page"] = int(override["page"])
+    if "page" in override and override["page"] is not None:
+        try:
+            override["page"] = int(override["page"])
+        except (TypeError, ValueError):
+            pass
     if "bbox" in override and isinstance(override["bbox"], list):
         override["bbox"] = [int(value) for value in override["bbox"]]
     return override
@@ -133,7 +145,10 @@ def apply_mmr_measure_span_corrections(
         op = item.get("op")
         if op not in {"suppress", "set_measure_span"}:
             continue
-        key = (int(item["page"]), int(item["system"]), int(item["measure"]))
+        try:
+            key = (int(item["page"]), int(item["system"]), int(item["measure"]))
+        except (KeyError, ValueError, TypeError) as exc:
+            raise ValueError(f"Invalid page/system/measure in correction item: {item}") from exc
         result = [override for override in result if _measure_key(override) != key]
         if op == "set_measure_span":
             result.append(_set_measure_span_override(item))
@@ -158,15 +173,21 @@ def measure_construction_overrides(
     for item in items:
         if not isinstance(item, dict) or item.get("op") != "force_measure":
             continue
+        try:
+            page = int(item["page"])
+            system = int(item["system"])
+            measure = int(item["interval"])
+        except (KeyError, ValueError, TypeError) as exc:
+            raise ValueError(f"Invalid page/system/interval in force_measure item: {item}") from exc
         override: MeasureOverride = {
-            "page": int(item["page"]),
-            "system": int(item["system"]),
-            "measure": int(item["interval"]),
+            "page": page,
+            "system": system,
+            "measure": measure,
             "force_measure": True,
             "comment": _manual_comment(item, "manual measure-construction force_measure"),
             "source": item.get("source", "manual:measure_construction"),
         }
-        if "skip" in item:
+        if "skip" in item and item["skip"] is not None:
             override["skip"] = int(item["skip"])
         if "set_number" in item and item["set_number"] is not None:
             override["set_number"] = int(item["set_number"])
@@ -213,19 +234,28 @@ def merge_measure_overrides(*payloads: Optional[Payload]) -> Payload:
     The returned payload includes both `measure_overrides` and `overrides` for
     compatibility with current final-numbering code and older debug helpers.
     """
-    merged: List[MeasureOverride] = []
+    auto_or_legacy: List[MeasureOverride] = []
+    mmr_measure_span_payloads: List[Payload] = []
+    measure_construction_payloads: List[Payload] = []
+
     for payload in payloads:
         if not payload:
             continue
         correction_type = payload.get("correction_type")
         if correction_type == "mmr_measure_span":
-            merged = apply_mmr_measure_span_corrections(merged, payload)
+            mmr_measure_span_payloads.append(payload)
         elif correction_type == "measure_construction":
-            merged.extend(measure_construction_overrides(payload))
+            measure_construction_payloads.append(payload)
         elif correction_type == "barline_construction":
             continue
         else:
-            merged.extend(normalise_measure_overrides(payload))
+            auto_or_legacy.extend(normalise_measure_overrides(payload))
+
+    merged: List[MeasureOverride] = auto_or_legacy
+    for payload in measure_construction_payloads:
+        merged.extend(measure_construction_overrides(payload))
+    for payload in mmr_measure_span_payloads:
+        merged = apply_mmr_measure_span_corrections(merged, payload)
 
     return {"measure_overrides": merged, "overrides": deepcopy(merged)}
 

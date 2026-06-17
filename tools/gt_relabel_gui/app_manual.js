@@ -3,6 +3,7 @@ let currentIndex = 0;
 let currentPage = null;
 
 let measures = [];
+let baseMmrOverrides = [];
 let barlines = [];
 let correctionsByType = {
   mmr_measure_span: [],
@@ -52,6 +53,9 @@ let drawStart = null;
 let spaceDown = false;
 
 const COLOR_MEASURE = "#3aa3ff";
+const COLOR_BASE_MMR = "#46c46b";
+const COLOR_MANUAL = "#b35cff";
+const COLOR_SUPPRESSED = "#ff3b30";
 const COLOR_BARLINE = "#46c46b";
 const COLOR_SELECTED = "#ff8a00";
 const COLOR_DRAFT = "#ff3b30";
@@ -71,9 +75,7 @@ const OPS = {
 
 function fetchJSON(url) {
   return fetch(url).then((response) => {
-    if (!response.ok) {
-      throw new Error(`${response.status} ${response.statusText}`);
-    }
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
     return response.json();
   });
 }
@@ -93,12 +95,18 @@ function pageValue() {
   return currentIndex;
 }
 
+function measureKey(page, system, measure) {
+  return `${page}:${system}:${measure}`;
+}
+
+function selectedMeasureKey() {
+  if (!selectedMeasure) return null;
+  return measureKey(pageValue(), selectedMeasure.system, selectedMeasure.measure);
+}
+
 function setDirty(correctionType, isDirty) {
-  if (isDirty) {
-    dirtyTypes.add(correctionType);
-  } else {
-    dirtyTypes.delete(correctionType);
-  }
+  if (isDirty) dirtyTypes.add(correctionType);
+  else dirtyTypes.delete(correctionType);
   dirtyStatus.textContent = dirtyTypes.size
     ? `Unsaved: ${Array.from(dirtyTypes).join(", ")}`
     : "";
@@ -112,6 +120,7 @@ function updateOps() {
     option.textContent = label;
     opSelect.appendChild(option);
   });
+  selectedItemIndex = null;
   updateControlState();
 }
 
@@ -121,9 +130,7 @@ function updateControlState() {
   measureSpanRow.style.display =
     type === "mmr_measure_span" && op === "set_measure_span" ? "flex" : "none";
   drawModeBtn.disabled = !(type === "barline_construction");
-  if (drawModeBtn.disabled && mode === "draw") {
-    setMode("select");
-  }
+  if (drawModeBtn.disabled && mode === "draw") setMode("select");
   renderItems();
   updateSelectionMeta();
   draw();
@@ -152,17 +159,11 @@ function resetView() {
 }
 
 function imgToCanvas(pt) {
-  return {
-    x: pt.x * viewScale + viewOffset.x,
-    y: pt.y * viewScale + viewOffset.y,
-  };
+  return { x: pt.x * viewScale + viewOffset.x, y: pt.y * viewScale + viewOffset.y };
 }
 
 function canvasToImg(pt) {
-  return {
-    x: (pt.x - viewOffset.x) / viewScale,
-    y: (pt.y - viewOffset.y) / viewScale,
-  };
+  return { x: (pt.x - viewOffset.x) / viewScale, y: (pt.y - viewOffset.y) / viewScale };
 }
 
 function normalizeBox(box) {
@@ -206,13 +207,22 @@ function drawLabel(box, text, color) {
 function draw() {
   if (!image.complete) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const drawWidth = image.width * viewScale;
-  const drawHeight = image.height * viewScale;
-  ctx.drawImage(image, viewOffset.x, viewOffset.y, drawWidth, drawHeight);
+  ctx.drawImage(image, viewOffset.x, viewOffset.y, image.width * viewScale, image.height * viewScale);
 
+  const baseMap = baseMmrMap();
+  const manualMap = manualMmrMap();
   measures.forEach((measure) => {
-    drawBox(measure.bbox, COLOR_MEASURE, 1.5);
-    drawLabel(measure.bbox, `S${measure.system} M${measure.measure}`, COLOR_MEASURE);
+    const effective = effectiveMmrState(measure, baseMap, manualMap);
+    let color = COLOR_MEASURE;
+    let label = `S${measure.system} M${measure.measure}`;
+    if (effective.baseSpan > 1) color = COLOR_BASE_MMR;
+    if (effective.manualOp === "set_measure_span") color = COLOR_MANUAL;
+    if (effective.manualOp === "suppress") color = COLOR_SUPPRESSED;
+    if (effective.baseSpan > 1 || effective.effectiveSpan > 1 || effective.manualOp) {
+      label += ` b${effective.baseSpan}->e${effective.effectiveSpan}`;
+    }
+    drawBox(measure.bbox, color, effective.manualOp ? 2.5 : 1.5, Boolean(effective.manualOp));
+    drawLabel(measure.bbox, label, color);
   });
 
   barlines.forEach((barline, index) => {
@@ -220,12 +230,8 @@ function draw() {
     drawLabel(barline.bbox, `B${index + 1}`, COLOR_BARLINE);
   });
 
-  if (selectedMeasure) {
-    drawBox(selectedMeasure.bbox, COLOR_SELECTED, 3, true);
-  }
-  if (selectedBarline) {
-    drawBox(selectedBarline.bbox, COLOR_SELECTED, 3, true);
-  }
+  if (selectedMeasure) drawBox(selectedMeasure.bbox, COLOR_SELECTED, 3, true);
+  if (selectedBarline) drawBox(selectedBarline.bbox, COLOR_SELECTED, 3, true);
   if (draftBBox) {
     drawBox(draftBBox, COLOR_DRAFT, 2);
     drawLabel(draftBBox, "draft", COLOR_DRAFT);
@@ -248,35 +254,69 @@ function pointInImageBox(imgPt, box) {
 
 function pickMeasure(imgPt) {
   for (let i = measures.length - 1; i >= 0; i--) {
-    if (pointInImageBox(imgPt, measures[i].bbox)) {
-      return measures[i];
-    }
+    if (pointInImageBox(imgPt, measures[i].bbox)) return measures[i];
   }
   return null;
 }
 
 function pickBarline(imgPt) {
   for (let i = barlines.length - 1; i >= 0; i--) {
-    if (pointInImageBox(imgPt, barlines[i].bbox)) {
-      return barlines[i];
-    }
+    if (pointInImageBox(imgPt, barlines[i].bbox)) return barlines[i];
   }
   return null;
+}
+
+function baseMmrMap() {
+  const page = pageValue();
+  const result = new Map();
+  baseMmrOverrides.forEach((item) => {
+    if (String(item.page) !== String(page)) return;
+    result.set(measureKey(item.page, item.system, item.measure), item);
+  });
+  return result;
+}
+
+function manualMmrMap() {
+  const result = new Map();
+  itemsForCurrentPage("mmr_measure_span").forEach((item) => {
+    result.set(measureKey(item.page, item.system, item.measure), item);
+  });
+  return result;
+}
+
+function effectiveMmrState(measure, baseMap = null, manualMap = null) {
+  const page = pageValue();
+  const key = measureKey(page, measure.system, measure.measure);
+  const base = (baseMap || baseMmrMap()).get(key);
+  const manual = (manualMap || manualMmrMap()).get(key);
+  const baseSkip = base && base.skip !== undefined ? parseInt(base.skip, 10) : 0;
+  const baseSpan = Number.isFinite(baseSkip) ? baseSkip + 1 : 1;
+  let effectiveSpan = baseSpan;
+  let manualOp = null;
+  if (manual) {
+    manualOp = manual.op;
+    if (manual.op === "suppress") effectiveSpan = 1;
+    if (manual.op === "set_measure_span") effectiveSpan = parseInt(manual.measure_span, 10);
+  }
+  return {
+    base,
+    manual,
+    baseSpan,
+    effectiveSpan: Number.isFinite(effectiveSpan) ? effectiveSpan : 1,
+    manualOp,
+  };
 }
 
 function updateSelectionMeta() {
   const parts = [];
   if (selectedMeasure) {
+    const state = effectiveMmrState(selectedMeasure);
     parts.push(
-      `measure: page=${pageValue()} system=${selectedMeasure.system} measure=${selectedMeasure.measure}`
+      `measure: page=${pageValue()} system=${selectedMeasure.system} measure=${selectedMeasure.measure} base=${state.baseSpan} effective=${state.effectiveSpan}`
     );
   }
-  if (selectedBarline) {
-    parts.push(`barline bbox=[${selectedBarline.bbox.join(", ")}]`);
-  }
-  if (draftBBox) {
-    parts.push(`draft bbox=[${draftBBox.join(", ")}]`);
-  }
+  if (selectedBarline) parts.push(`barline bbox=[${selectedBarline.bbox.join(", ")}]`);
+  if (draftBBox) parts.push(`draft bbox=[${draftBBox.join(", ")}]`);
   selectionMeta.textContent = parts.length ? parts.join(" | ") : "No selection";
 }
 
@@ -306,10 +346,31 @@ function replaceItemsForCurrentPage(correctionType, pageItems) {
   correctionsByType[correctionType] = kept.concat(pageItems);
 }
 
-function renderItems() {
+function renderMmrRows() {
+  const selectedKey = selectedMeasureKey();
+  const baseMap = baseMmrMap();
+  const manualMap = manualMmrMap();
+  measures.forEach((measure) => {
+    const state = effectiveMmrState(measure, baseMap, manualMap);
+    const div = document.createElement("div");
+    const key = measureKey(pageValue(), measure.system, measure.measure);
+    div.className = "list-item" + (key === selectedKey ? " active" : "");
+    const status = state.manualOp || (state.baseSpan > 1 ? "base" : "normal");
+    div.textContent = `S${measure.system} M${measure.measure} | base=${state.baseSpan} effective=${state.effectiveSpan} | ${status}`;
+    div.onclick = () => selectMeasure(measure);
+    itemList.appendChild(div);
+  });
+  if (!measures.length) {
+    const div = document.createElement("div");
+    div.className = "small";
+    div.textContent = "No measure boxes loaded from the numbering artifact.";
+    itemList.appendChild(div);
+  }
+}
+
+function renderManualItems() {
   const type = currentType();
   const items = itemsForCurrentPage(type);
-  itemList.innerHTML = "";
   items.forEach((item, index) => {
     const div = document.createElement("div");
     div.className = "list-item" + (index === selectedItemIndex ? " active" : "");
@@ -323,13 +384,24 @@ function renderItems() {
   if (!items.length) {
     const div = document.createElement("div");
     div.className = "small";
-    div.textContent = "No items for this page/type.";
+    div.textContent = "No manual correction items for this page/type.";
     itemList.appendChild(div);
   }
 }
 
+function renderItems() {
+  itemList.innerHTML = "";
+  if (currentType() === "mmr_measure_span") renderMmrRows();
+  else renderManualItems();
+}
+
 function currentReason() {
   return reasonInput.value.trim() || "manual correction";
+}
+
+function removeManualMmrForSelected(pageItems) {
+  const key = selectedMeasureKey();
+  return pageItems.filter((item) => measureKey(item.page, item.system, item.measure) !== key);
 }
 
 function addCorrectionItem() {
@@ -358,6 +430,13 @@ function addCorrectionItem() {
       }
       item.measure_span = span;
     }
+    replaceItemsForCurrentPage(type, removeManualMmrForSelected(itemsForCurrentPage(type)).concat([item]));
+    setDirty(type, true);
+    renderItems();
+    updateSelectionMeta();
+    draw();
+    saveStatus.textContent = `Staged ${item.op}. Save writes corrections only; re-run evaluation separately.`;
+    return;
   }
 
   if (type === "barline_construction") {
@@ -366,12 +445,7 @@ function addCorrectionItem() {
       saveStatus.textContent = "Select a barline or draw a bbox first.";
       return;
     }
-    item = {
-      op,
-      page,
-      bbox: bbox.map((value) => Math.round(value)),
-      reason: currentReason(),
-    };
+    item = { op, page, bbox: bbox.map((value) => Math.round(value)), reason: currentReason() };
   }
 
   if (type === "measure_construction") {
@@ -395,15 +469,22 @@ function addCorrectionItem() {
   setDirty(type, true);
   selectedItemIndex = pageItems.length - 1;
   renderItems();
-  saveStatus.textContent = `Added ${item.op}.`;
+  saveStatus.textContent = `Added ${item.op}. Save writes corrections only; re-run evaluation separately.`;
 }
 
 function deleteSelectedItem() {
   const type = currentType();
-  const pageItems = itemsForCurrentPage(type);
-  if (selectedItemIndex === null || !pageItems[selectedItemIndex]) {
+  if (type === "mmr_measure_span" && selectedMeasure) {
+    replaceItemsForCurrentPage(type, removeManualMmrForSelected(itemsForCurrentPage(type)));
+    setDirty(type, true);
+    renderItems();
+    updateSelectionMeta();
+    draw();
+    saveStatus.textContent = "Removed manual MMR correction for selected measure.";
     return;
   }
+  const pageItems = itemsForCurrentPage(type);
+  if (selectedItemIndex === null || !pageItems[selectedItemIndex]) return;
   pageItems.splice(selectedItemIndex, 1);
   selectedItemIndex = null;
   replaceItemsForCurrentPage(type, pageItems);
@@ -434,16 +515,51 @@ function loadNumbering(path) {
     const systems = pageData.systems || [];
     systems.forEach((system, systemIndex) => {
       (system.measures || []).forEach((measure, measureIndex) => {
-        if (!measure.bbox) return;
+        const bbox = measure.bbox || measure.measure_bbox || measure.bounds;
+        if (!Array.isArray(bbox) || bbox.length !== 4) return;
         measures.push({
-          bbox: measure.bbox.map((value) => Math.round(value)),
+          bbox: bbox.map((value) => Math.round(value)),
           number: measure.number,
           system: system.index ?? system.system ?? systemIndex,
-          measure: measure.index ?? measure.measure ?? measureIndex,
+          measure: measure.index ?? measure.measure ?? measure.measure_number ?? measureIndex,
         });
       });
     });
   });
+}
+
+function normalizeMmrRecords(data) {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data.measure_overrides)) return data.measure_overrides;
+  if (Array.isArray(data.overrides)) return data.overrides;
+  if (Array.isArray(data.items)) return data.items;
+  return [];
+}
+
+function mmrPathFromPage(page) {
+  return page.mmr || page.mmr_results || page.measure_overrides || page.overrides || null;
+}
+
+function loadMmr(path) {
+  baseMmrOverrides = [];
+  if (!path) return Promise.resolve();
+  return fetchJSON(`/api/template?path=${encodeURIComponent(path)}`)
+    .then((data) => {
+      baseMmrOverrides = normalizeMmrRecords(data)
+        .filter((item) => item && item.system !== undefined && item.measure !== undefined)
+        .map((item) => ({
+          ...item,
+          page: item.page !== undefined ? item.page : pageValue(),
+          system: parseInt(item.system, 10),
+          measure: parseInt(item.measure, 10),
+          skip: item.skip !== undefined ? parseInt(item.skip, 10) : 0,
+        }));
+    })
+    .catch((error) => {
+      baseMmrOverrides = [];
+      saveStatus.textContent = `MMR base load failed: ${error.message}`;
+    });
 }
 
 function barlinePathFromPage(page) {
@@ -465,6 +581,17 @@ function loadBarlines(path) {
     });
 }
 
+function selectMeasure(measure) {
+  selectedMeasure = measure;
+  selectedBarline = null;
+  selectedItemIndex = null;
+  const state = effectiveMmrState(measure);
+  measureSpanInput.value = String(state.effectiveSpan || state.baseSpan || 1);
+  updateSelectionMeta();
+  renderItems();
+  draw();
+}
+
 function loadPage() {
   currentPage = pages[currentIndex];
   selectedMeasure = null;
@@ -472,7 +599,7 @@ function loadPage() {
   selectedItemIndex = null;
   draftBBox = null;
   saveStatus.textContent = "";
-  pageMeta.textContent = `${currentPage.name || currentIndex} | page=${pageValue()}`;
+  pageMeta.textContent = `${currentPage.name || currentIndex} | page=${pageValue()} | Save only writes correction JSON`;
 
   image.onload = () => {
     resetView();
@@ -482,6 +609,7 @@ function loadPage() {
 
   Promise.all([
     loadNumbering(currentPage.numbering),
+    loadMmr(mmrPathFromPage(currentPage)),
     loadBarlines(barlinePathFromPage(currentPage)),
     loadCorrections(),
   ]).then(() => {
@@ -506,43 +634,50 @@ function saveCurrentType() {
     body: JSON.stringify(payload),
   })
     .then((response) => {
-      if (!response.ok) {
-        throw new Error(`${response.status} ${response.statusText}`);
-      }
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
       return response.json();
     })
     .then((data) => {
       setDirty(type, false);
-      saveStatus.textContent = `Saved ${type}: ${data.output}`;
+      saveStatus.textContent = `Saved ${type}: ${data.output}. Re-run evaluation separately.`;
     })
     .catch((error) => {
       saveStatus.textContent = `Save failed: ${error.message}`;
+      throw error;
     });
 }
 
 function switchPage(nextIndex) {
   if (nextIndex === currentIndex) return;
+  const activeType = currentType();
   const savePromises = Array.from(dirtyTypes).map((type) => {
     typeSelect.value = type;
     updateOps();
     return saveCurrentType();
   });
-  Promise.all(savePromises).then(() => {
-    currentIndex = nextIndex;
-    loadPage();
-  });
+  Promise.all(savePromises)
+    .then(() => {
+      typeSelect.value = activeType;
+      updateOps();
+      currentIndex = nextIndex;
+      loadPage();
+    })
+    .catch((error) => {
+      console.error("Page switch aborted due to save failure:", error);
+      typeSelect.value = activeType;
+      updateOps();
+    });
 }
 
 selectModeBtn.onclick = () => setMode("select");
 drawModeBtn.onclick = () => setMode("draw");
 addItemBtn.onclick = addCorrectionItem;
 deleteItemBtn.onclick = deleteSelectedItem;
-saveBtn.onclick = saveCurrentType;
-
-typeSelect.onchange = () => {
-  selectedItemIndex = null;
-  updateOps();
+saveBtn.onclick = () => {
+  saveCurrentType().catch(() => {});
 };
+
+typeSelect.onchange = updateOps;
 opSelect.onchange = updateControlState;
 
 prevBtn.onclick = () => switchPage(Math.max(0, currentIndex - 1));
@@ -566,10 +701,15 @@ canvas.addEventListener("mousedown", (event) => {
   }
 
   const imgPt = canvasToImg(pt);
-  selectedMeasure = pickMeasure(imgPt);
-  selectedBarline = pickBarline(imgPt);
-  updateSelectionMeta();
-  draw();
+  const measure = pickMeasure(imgPt);
+  if (measure) selectMeasure(measure);
+  else {
+    selectedMeasure = null;
+    selectedBarline = pickBarline(imgPt);
+    updateSelectionMeta();
+    renderItems();
+    draw();
+  }
 });
 
 canvas.addEventListener("mousemove", (event) => {
@@ -577,10 +717,7 @@ canvas.addEventListener("mousemove", (event) => {
   const pt = { x: event.clientX - rect.left, y: event.clientY - rect.top };
 
   if (isPanning) {
-    viewOffset = {
-      x: panOrigin.x + (pt.x - panStart.x),
-      y: panOrigin.y + (pt.y - panStart.y),
-    };
+    viewOffset = { x: panOrigin.x + (pt.x - panStart.x), y: panOrigin.y + (pt.y - panStart.y) };
     draw();
     return;
   }
@@ -626,9 +763,7 @@ canvas.addEventListener(
 
 window.addEventListener("keydown", (event) => {
   const tag = event.target && event.target.tagName ? event.target.tagName.toLowerCase() : "";
-  if (tag === "input" || tag === "select" || tag === "textarea") {
-    return;
-  }
+  if (tag === "input" || tag === "select" || tag === "textarea") return;
   if (event.key === " ") spaceDown = true;
   if (event.key === "ArrowLeft") prevBtn.click();
   if (event.key === "ArrowRight") nextBtn.click();

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
+import lzma
 from pathlib import Path
-from typing import Any
+from typing import Any, BinaryIO
 
 import cv2
 import numpy as np
@@ -21,6 +22,7 @@ BASE_DEBUG = Path(
     "logs/full_pipeline_runs/dense_full_pipeline/hybrid_output/dense_full_pipeline/baseline/batch"
 )
 OUT = Path("logs/issue197_system_grouping/proxy_artifact_channel_summary.json")
+XZ_MAGIC = b"\xfd7zXZ\x00"
 
 
 def scalar(value: Any) -> Any:
@@ -68,17 +70,21 @@ def image_summary(path: Path) -> dict[str, Any]:
     return summary
 
 
-def read_npy_header(path: Path) -> dict[str, Any]:
+def is_xz_file(path: Path) -> bool:
     with path.open("rb") as f:
-        version = npy_format.read_magic(f)
-        if version == (1, 0):
-            shape, fortran_order, dtype = npy_format.read_array_header_1_0(f)
-        elif version == (2, 0):
-            shape, fortran_order, dtype = npy_format.read_array_header_2_0(f)
-        elif version == (3, 0):
-            shape, fortran_order, dtype = npy_format.read_array_header_2_0(f)
-        else:
-            raise ValueError(f"Unsupported npy version: {version}")
+        return f.read(len(XZ_MAGIC)) == XZ_MAGIC
+
+
+def read_npy_header_from_stream(f: BinaryIO) -> dict[str, Any]:
+    version = npy_format.read_magic(f)
+    if version == (1, 0):
+        shape, fortran_order, dtype = npy_format.read_array_header_1_0(f)
+    elif version == (2, 0):
+        shape, fortran_order, dtype = npy_format.read_array_header_2_0(f)
+    elif version == (3, 0):
+        shape, fortran_order, dtype = npy_format.read_array_header_2_0(f)
+    else:
+        raise ValueError(f"Unsupported npy version: {version}")
 
     return {
         "version": list(version),
@@ -87,6 +93,25 @@ def read_npy_header(path: Path) -> dict[str, Any]:
         "dtype": str(dtype),
         "has_object": bool(dtype.hasobject),
     }
+
+
+def read_npy_header(path: Path) -> dict[str, Any]:
+    compressed_xz = is_xz_file(path)
+    if compressed_xz:
+        with lzma.open(path, "rb") as f:
+            header = read_npy_header_from_stream(f)
+    else:
+        with path.open("rb") as f:
+            header = read_npy_header_from_stream(f)
+    header["compressed_xz"] = compressed_xz
+    return header
+
+
+def load_numeric_npy(path: Path, compressed_xz: bool) -> np.ndarray:
+    if compressed_xz:
+        with lzma.open(path, "rb") as f:
+            return np.load(f, allow_pickle=False)
+    return np.load(path, allow_pickle=False)
 
 
 def npy_summary(path: Path) -> dict[str, Any]:
@@ -106,7 +131,7 @@ def npy_summary(path: Path) -> dict[str, Any]:
         return summary
 
     try:
-        arr = np.load(path, allow_pickle=False)
+        arr = load_numeric_npy(path, compressed_xz=bool(header.get("compressed_xz")))
     except Exception as exc:
         summary["load_error"] = f"{type(exc).__name__}: {exc}"
         return summary

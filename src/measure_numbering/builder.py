@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -8,13 +8,26 @@ from .types import Barline, Staff, System
 class SystemBuilder:
     """
     Groups staves into systems.
-    Currently exclusively relies on:
-    1. Explicit `system_index` metdata.
-    2. Fallback: Treating the entire page as a single system (safe default for single-system parts).
+
+    Strategy order:
+    1. Explicit `system_index` metadata.
+    2. Geometric grouping with optional left/system-start connector evidence.
     """
 
+    DIVISI_DIST_RATIO = 1.5
+    CONNECTOR_RESCUE_DIST_RATIO = 1.56
+    ALIGN_TOL = 10
+    MIN_ALIGN_COUNT = 2
+    CONNECTOR_RESCUE_MIN_ALIGN_COUNT = 3
+    FALSE_MERGE_MAX_ALIGN_COUNT = 2
+    CONNECTOR_DENSITY_THRESHOLD = 0.05
+
     def build_systems(
-        self, staves: List[Staff], barlines: List[Barline], image: Optional[np.ndarray] = None
+        self,
+        staves: List[Staff],
+        barlines: List[Barline],
+        image: Optional[np.ndarray] = None,
+        connector_evidence: Optional[Dict[Any, Any]] = None,
     ) -> List[System]:
         """
         Main entry point.
@@ -36,7 +49,7 @@ class SystemBuilder:
 
         # Strategy 2: Geometric Grouping (Divisi / Score Inference)
         # Groups staves that are close vertically and share aligned barlines.
-        return self._group_by_geometry(sorted_staves, image)
+        return self._group_by_geometry(sorted_staves, image, connector_evidence)
 
     def _group_by_index(self, staves: List[Staff]) -> List[System]:
         groups: Dict[int, List[Staff]] = {}
@@ -62,15 +75,25 @@ class SystemBuilder:
         systems.sort(key=lambda sys: sys.staves[0].bbox.y1)
         return systems
 
-    def _group_by_geometry(self, staves: List[Staff], image: Optional[np.ndarray]) -> List[System]:
+    def _group_by_geometry(
+        self,
+        staves: List[Staff],
+        image: Optional[np.ndarray],
+        connector_evidence: Optional[Dict[Any, Any]] = None,
+    ) -> List[System]:
         """
-        Groups staves based on vertical proximity and barline alignment.
-        Logic adapted from 'divisi rescue' (commit 6de614e):
-        - Staves are candidates for grouping if vertical distance < threshold.
-        - Candidates are grouped if >= 2 barlines align vertically.
+        Groups staves based on vertical proximity, barline alignment, and
+        optional left/system-start connector evidence.
+
+        Connector evidence is intentionally passed as structured data rather
+        than read from debug artifacts. This lets the pipeline generate durable
+        intermediate evidence while keeping SystemBuilder independent from
+        historic log paths.
         """
         if not staves:
             return []
+
+        connector_by_pair = self._normalize_connector_evidence(connector_evidence)
 
         # 1. Initialize Union-Find structure
         # parent[i] = parent index
@@ -87,11 +110,6 @@ class SystemBuilder:
             if root_i != root_j:
                 parent[root_j] = root_i
 
-        # Parameters (from validation tuning)
-        DIVISI_DIST_RATIO = 1.5  # Relaxed from 1.2 for safety
-        ALIGN_TOL = 10  # Pixels
-        MIN_ALIGN_COUNT = 2
-
         # 2. Iterate adjacent pairs
         global_heights = [s.bbox.height for s in staves]
         avg_height = sum(global_heights) / len(global_heights) if global_heights else 100.0
@@ -107,39 +125,56 @@ class SystemBuilder:
             s2 = staves[i + 1]
 
             # Proximity Check
-            # Distance from bottom of s1 to top of s2?
-            # Or center-to-center? The original logic used bottom-to-top gap or just center distance?
-            # Original: dist = curr_y1 - prev_y2.
+            # Distance from bottom of s1 to top of s2.
             gap = s2.bbox.y1 - s1.bbox.y2
+            within_distance = gap <= avg_height * self.DIVISI_DIST_RATIO
+            within_connector_rescue_distance = gap <= avg_height * self.CONNECTOR_RESCUE_DIST_RATIO
 
-            # Since staves are sorted by y1, y1(s2) >= y1(s1).
-            # But s1 might overlap s2? Usually not. Assuming sorted vertical bands.
-            if gap > avg_height * DIVISI_DIST_RATIO:
-                continue  # Too far apart
+            # Find aligned barlines before applying the distance decision so
+            # near-threshold pairs with explicit connector evidence can be rescued.
+            aligned_pairs = self._find_aligned_pairs(s1, s2)
+            left_connector_present = self._has_left_connector_evidence(
+                connector_by_pair.get((i, i + 1))
+            )
 
-            # Find aligned barlines first
-            aligned_pairs: List[Tuple[Barline, Barline]] = []
-            for b1 in s1.barlines:
-                c1 = (b1.bbox.x1 + b1.bbox.x2) / 2
-                for b2 in s2.barlines:
-                    c2 = (b2.bbox.x1 + b2.bbox.x2) / 2
-                    if abs(c1 - c2) <= ALIGN_TOL:
-                        aligned_pairs.append((b1, b2))
+            if not within_distance and not (
+                left_connector_present and within_connector_rescue_distance
+            ):
+                continue  # Too far apart and no trusted connector rescue.
 
             if image is not None:
-                # Prioritize Physical Connectivity Check at ALIGNED positions
-                # This avoids false positives from random noise in the gap
-                if self._check_aligned_connection(s1, s2, aligned_pairs, image):
-                    union(i, i + 1)
-                    continue
+                # Prioritize physical connectivity check at aligned positions.
+                aligned_connection = self._check_aligned_connection(s1, s2, aligned_pairs, image)
+                if aligned_connection:
+                    # Low aligned-barline count without left connector evidence is
+                    # characteristic of the #197 false-merge case: a local aligned
+                    # connection exists, but it is not a system-start/divisi connector.
+                    if (
+                        not left_connector_present
+                        and len(aligned_pairs) <= self.FALSE_MERGE_MAX_ALIGN_COUNT
+                    ):
+                        continue
+
+                    if within_distance or (
+                        left_connector_present
+                        and within_connector_rescue_distance
+                        and len(aligned_pairs) >= self.CONNECTOR_RESCUE_MIN_ALIGN_COUNT
+                    ):
+                        union(i, i + 1)
+                        continue
 
             # Alignment Check (Fallback if no image or no connections found?)
             # If image IS provided but connectivity check failed, we should trust the failure
             # (assuming good image quality) to avoid merging separate systems.
             # So we only fallback if image is None.
-
             if image is None:
-                if len(aligned_pairs) >= MIN_ALIGN_COUNT:
+                if within_distance and len(aligned_pairs) >= self.MIN_ALIGN_COUNT:
+                    union(i, i + 1)
+                elif (
+                    left_connector_present
+                    and within_connector_rescue_distance
+                    and len(aligned_pairs) >= self.CONNECTOR_RESCUE_MIN_ALIGN_COUNT
+                ):
                     union(i, i + 1)
 
         # 3. Build Systems from groups
@@ -158,6 +193,88 @@ class SystemBuilder:
             systems.append(System(staves=groups[root]))
 
         return systems
+
+    def _find_aligned_pairs(self, s1: Staff, s2: Staff) -> List[Tuple[Barline, Barline]]:
+        aligned_pairs: List[Tuple[Barline, Barline]] = []
+        for b1 in s1.barlines:
+            c1 = (b1.bbox.x1 + b1.bbox.x2) / 2
+            for b2 in s2.barlines:
+                c2 = (b2.bbox.x1 + b2.bbox.x2) / 2
+                if abs(c1 - c2) <= self.ALIGN_TOL:
+                    aligned_pairs.append((b1, b2))
+        return aligned_pairs
+
+    def _normalize_connector_evidence(
+        self, connector_evidence: Optional[Dict[Any, Any]]
+    ) -> Dict[Tuple[int, int], Any]:
+        if not connector_evidence:
+            return {}
+
+        if isinstance(connector_evidence, dict) and "staff_pairs" in connector_evidence:
+            result: Dict[Tuple[int, int], Any] = {}
+            staff_pairs = connector_evidence.get("staff_pairs", [])
+            if not isinstance(staff_pairs, list):
+                return result
+            for item in staff_pairs:
+                if not isinstance(item, dict):
+                    continue
+                pair = self._parse_staff_pair(item.get("staff_pair"))
+                if pair is not None:
+                    result[pair] = item
+            return result
+
+        if isinstance(connector_evidence, dict):
+            result = {}
+            for key, value in connector_evidence.items():
+                pair = self._parse_staff_pair(key)
+                if pair is not None:
+                    result[pair] = value
+            return result
+
+        return {}
+
+    def _parse_staff_pair(self, value: Any) -> Optional[Tuple[int, int]]:
+        if isinstance(value, tuple) and len(value) == 2:
+            return int(value[0]), int(value[1])
+        if isinstance(value, list) and len(value) == 2:
+            return int(value[0]), int(value[1])
+        if isinstance(value, str):
+            normalized = value.strip().strip("[]()")
+            separator = "," if "," in normalized else "-" if "-" in normalized else None
+            if separator is None:
+                return None
+            parts = [p.strip() for p in normalized.split(separator)]
+            if len(parts) != 2:
+                return None
+            return int(parts[0]), int(parts[1])
+        return None
+
+    def _has_left_connector_evidence(self, evidence: Any) -> bool:
+        if evidence is None:
+            return False
+        if isinstance(evidence, bool):
+            return evidence
+        if isinstance(evidence, (int, float)):
+            return evidence > 0
+        if not isinstance(evidence, dict):
+            return False
+
+        if "left_connector_present" in evidence:
+            return bool(evidence["left_connector_present"])
+        if "brace_or_bracket_present" in evidence:
+            return bool(evidence["brace_or_bracket_present"])
+
+        density_keys = (
+            "symbols_vertical_open_density",
+            "brace_dot_vertical_open_density",
+            "symbols_density",
+            "brace_dot_density",
+        )
+        for key in density_keys:
+            value = evidence.get(key)
+            if isinstance(value, (int, float)) and value >= self.CONNECTOR_DENSITY_THRESHOLD:
+                return True
+        return False
 
     def _check_aligned_connection(
         self, s1: Staff, s2: Staff, aligned_pairs: List[Tuple[Barline, Barline]], image: np.ndarray

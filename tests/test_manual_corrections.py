@@ -16,13 +16,9 @@ FIXTURE_DIR = Path(__file__).parent / "fixtures" / "manual_corrections"
 
 
 def test_normalise_measure_overrides_accepts_legacy_and_current_keys():
-    legacy = {
-        "overrides": [{"page": "1", "system": "2", "measure": "3", "skip": "4"}]
-    }
+    legacy = {"overrides": [{"page": "1", "system": "2", "measure": "3", "skip": "4"}]}
     current = {
-        "measure_overrides": [
-            {"page": "5", "system": "6", "measure": "7", "skip": "8"}
-        ]
+        "measure_overrides": [{"page": "5", "system": "6", "measure": "7", "skip": "8"}]
     }
 
     assert normalise_measure_overrides(legacy) == [
@@ -35,9 +31,7 @@ def test_normalise_measure_overrides_accepts_legacy_and_current_keys():
 
 def test_normalise_measure_overrides_keeps_none_without_crashing():
     payload = {
-        "overrides": [
-            {"page": None, "system": "2", "measure": "3", "skip": None}
-        ]
+        "overrides": [{"page": None, "system": "2", "measure": "3", "skip": None}]
     }
 
     assert normalise_measure_overrides(payload) == [
@@ -64,7 +58,9 @@ def test_mmr_measure_span_corrections_suppress_and_set_span():
             },
         ]
     }
-    manual_payload = json.loads((FIXTURE_DIR / "mmr_measure_span_basic.json").read_text())
+    manual_payload = json.loads(
+        (FIXTURE_DIR / "mmr_measure_span_basic.json").read_text()
+    )
 
     merged = merge_measure_overrides(auto_payload, manual_payload)
 
@@ -95,7 +91,9 @@ def test_merge_measure_overrides_applies_manual_last_regardless_of_payload_order
             {"page": 40, "system": 2, "measure": 1, "skip": 2},
         ]
     }
-    manual_payload = json.loads((FIXTURE_DIR / "mmr_measure_span_basic.json").read_text())
+    manual_payload = json.loads(
+        (FIXTURE_DIR / "mmr_measure_span_basic.json").read_text()
+    )
 
     auto_first = merge_measure_overrides(auto_payload, manual_payload)
     manual_first = merge_measure_overrides(manual_payload, auto_payload)

@@ -209,8 +209,10 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(image, viewOffset.x, viewOffset.y, image.width * viewScale, image.height * viewScale);
 
+  const baseMap = baseMmrMap();
+  const manualMap = manualMmrMap();
   measures.forEach((measure) => {
-    const effective = effectiveMmrState(measure);
+    const effective = effectiveMmrState(measure, baseMap, manualMap);
     let color = COLOR_MEASURE;
     let label = `S${measure.system} M${measure.measure}`;
     if (effective.baseSpan > 1) color = COLOR_BASE_MMR;
@@ -282,11 +284,11 @@ function manualMmrMap() {
   return result;
 }
 
-function effectiveMmrState(measure) {
+function effectiveMmrState(measure, baseMap = null, manualMap = null) {
   const page = pageValue();
   const key = measureKey(page, measure.system, measure.measure);
-  const base = baseMmrMap().get(key);
-  const manual = manualMmrMap().get(key);
+  const base = (baseMap || baseMmrMap()).get(key);
+  const manual = (manualMap || manualMmrMap()).get(key);
   const baseSkip = base && base.skip !== undefined ? parseInt(base.skip, 10) : 0;
   const baseSpan = Number.isFinite(baseSkip) ? baseSkip + 1 : 1;
   let effectiveSpan = baseSpan;
@@ -346,8 +348,10 @@ function replaceItemsForCurrentPage(correctionType, pageItems) {
 
 function renderMmrRows() {
   const selectedKey = selectedMeasureKey();
+  const baseMap = baseMmrMap();
+  const manualMap = manualMmrMap();
   measures.forEach((measure) => {
-    const state = effectiveMmrState(measure);
+    const state = effectiveMmrState(measure, baseMap, manualMap);
     const div = document.createElement("div");
     const key = measureKey(pageValue(), measure.system, measure.measure);
     div.className = "list-item" + (key === selectedKey ? " active" : "");
@@ -525,6 +529,7 @@ function loadNumbering(path) {
 }
 
 function normalizeMmrRecords(data) {
+  if (!data) return [];
   if (Array.isArray(data)) return data;
   if (Array.isArray(data.measure_overrides)) return data.measure_overrides;
   if (Array.isArray(data.overrides)) return data.overrides;
@@ -638,6 +643,7 @@ function saveCurrentType() {
     })
     .catch((error) => {
       saveStatus.textContent = `Save failed: ${error.message}`;
+      throw error;
     });
 }
 
@@ -649,19 +655,27 @@ function switchPage(nextIndex) {
     updateOps();
     return saveCurrentType();
   });
-  Promise.all(savePromises).then(() => {
-    typeSelect.value = activeType;
-    updateOps();
-    currentIndex = nextIndex;
-    loadPage();
-  });
+  Promise.all(savePromises)
+    .then(() => {
+      typeSelect.value = activeType;
+      updateOps();
+      currentIndex = nextIndex;
+      loadPage();
+    })
+    .catch((error) => {
+      console.error("Page switch aborted due to save failure:", error);
+      typeSelect.value = activeType;
+      updateOps();
+    });
 }
 
 selectModeBtn.onclick = () => setMode("select");
 drawModeBtn.onclick = () => setMode("draw");
 addItemBtn.onclick = addCorrectionItem;
 deleteItemBtn.onclick = deleteSelectedItem;
-saveBtn.onclick = saveCurrentType;
+saveBtn.onclick = () => {
+  saveCurrentType().catch(() => {});
+};
 
 typeSelect.onchange = updateOps;
 opSelect.onchange = updateControlState;

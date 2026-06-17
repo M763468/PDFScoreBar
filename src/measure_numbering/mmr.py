@@ -440,9 +440,7 @@ class MMRProcessor:
                     [("standard", -2), ("standard", 2), ("heavy_dilate", -2), ("heavy_dilate", 2)]
                 )
 
-        found_number = None
-        best_score = 0
-        best_debug = ""
+        variant_results = []
 
         for mode, angle in variants:
             stave_results = []
@@ -470,11 +468,19 @@ class MMRProcessor:
                 current_num = counts.most_common(1)[0][0]
 
                 if not (current_num > 20 and (x2 - x1) < 100):
-                    best_entry = max(
+                    _, best_score, best_dbg = max(
                         [r for r in valid_results if r[0] == current_num], key=lambda x: x[1]
                     )
-                    found_number, best_score, best_debug = current_num, best_entry[1], best_entry[2]
-                    break
+                    if best_dbg:
+                        variant_debug = f"{best_dbg},variant={mode}:{angle}"
+                    else:
+                        variant_debug = f"variant={mode}:{angle}"
+                    variant_results.append((current_num, best_score, variant_debug))
+
+        if not variant_results:
+            return None, 0, ""
+
+        found_number, best_score, best_debug = max(variant_results, key=lambda x: x[1])
         return found_number, best_score, best_debug
 
     def _draw_debug(self, img, x1, y1, x2, y2, status, text, details):

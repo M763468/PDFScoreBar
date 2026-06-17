@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "correction_type": "barline_construction",
+  "items": [
+    {
+      "op": "add_barline",
+      "page": 12,
+      "bbox": [100, 200, 104, 500],
+      "reason": "synthetic missing detected barline"
+    },
+    {
+      "op": "remove_barline",
+      "page": 12,
+      "bbox": [300, 200, 304, 500],
+      "reason": "synthetic extra detected barline"
+    }
+  ]
+}

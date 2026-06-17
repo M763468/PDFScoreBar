@@ -16,6 +16,12 @@ from urllib.parse import parse_qs, urlparse
 REPO_ROOT = Path(__file__).resolve().parents[2]
 Box = tuple[int, int, int, int]
 
+MANUAL_CORRECTION_OUTPUTS = {
+    "mmr_measure_span": "data/evaluation2/manual_corrections/mmr_measure_spans.json",
+    "barline_construction": "data/evaluation2/manual_corrections/barline_construction_overrides.json",
+    "measure_construction": "data/evaluation2/manual_corrections/measure_construction_overrides.json",
+}
+
 
 @dataclass
 class Item:
@@ -176,6 +182,30 @@ def parse_payload_boxes(payload: list) -> list[dict]:
     return boxes
 
 
+def _manual_output_for(server, correction_type: str) -> str | None:
+    outputs = getattr(server, "manual_outputs", MANUAL_CORRECTION_OUTPUTS)
+    value = outputs.get(correction_type)
+    return str(value) if value else None
+
+
+def _manual_payload(correction_type: str, items: list[dict]) -> dict:
+    return {
+        "schema_version": 1,
+        "correction_type": correction_type,
+        "items": items,
+    }
+
+
+def _load_manual_items(path: Path, correction_type: str) -> list[dict]:
+    if not path.exists():
+        return []
+    data = json.loads(path.read_text())
+    if data.get("correction_type") != correction_type:
+        raise ValueError(f"Expected correction_type={correction_type} in {path}")
+    items = data.get("items", [])
+    return items if isinstance(items, list) else []
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
@@ -184,6 +214,8 @@ class Handler(BaseHTTPRequestHandler):
                 ui = "index.html"
             elif self.server.mode == "rest":
                 ui = "index_rest.html"
+            elif self.server.mode == "manual":
+                ui = "index_manual.html"
             else:
                 ui = "index_gt.html"
             self._serve_file(self.server.ui_root / ui)
@@ -197,13 +229,37 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/app_rest.js":
             self._serve_file(self.server.ui_root / "app_rest.js")
             return
+        if parsed.path == "/app_manual.js":
+            self._serve_file(self.server.ui_root / "app_manual.js")
+            return
         if parsed.path == "/api/items":
             items = scan_items(self.server.root)
             payload = [item_payload(item, self.server.root) for item in items]
             self._serve_json({"items": payload})
             return
-        if parsed.path == "/api/pages" and self.server.mode in {"gt", "rest"}:
-            self._serve_json({"pages": self.server.gt_config})
+        if parsed.path == "/api/pages" and self.server.mode in {"gt", "rest", "manual"}:
+            payload = {"pages": self.server.gt_config}
+            if self.server.mode == "manual":
+                payload["manual_outputs"] = self.server.manual_outputs
+            self._serve_json(payload)
+            return
+        if parsed.path == "/api/manual_corrections" and self.server.mode == "manual":
+            qs = parse_qs(parsed.query)
+            correction_type = qs.get("type", [None])[0]
+            if not correction_type:
+                self.send_error(400, "Missing correction type")
+                return
+            output_rel = _manual_output_for(self.server, correction_type)
+            if not output_rel:
+                self.send_error(400, "Unknown correction type")
+                return
+            try:
+                output_path = safe_path(self.server.root, output_rel)
+                items = _load_manual_items(output_path, correction_type)
+            except ValueError as exc:
+                self.send_error(400, str(exc))
+                return
+            self._serve_json(_manual_payload(correction_type, items))
             return
         if parsed.path == "/api/boxes":
             qs = parse_qs(parsed.query)
@@ -313,6 +369,45 @@ class Handler(BaseHTTPRequestHandler):
             output_path.write_text(json.dumps({"page": page, "overrides": overrides}, indent=2))
             self._serve_json({"output": str(output_path), "count": len(overrides)})
             return
+        if self.server.mode == "manual":
+            page = payload.get("page")
+            correction_type = payload.get("correction_type")
+            items = payload.get("items", [])
+            if page is None:
+                self.send_error(400, "Missing page")
+                return
+            if not isinstance(items, list):
+                self.send_error(400, "Manual correction items must be a list")
+                return
+            if not isinstance(correction_type, str):
+                self.send_error(400, "Missing correction_type")
+                return
+            output_rel = _manual_output_for(self.server, correction_type)
+            if not output_rel:
+                self.send_error(400, "Unknown correction_type")
+                return
+
+            output_path = safe_path(self.server.root, output_rel)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                existing_items = _load_manual_items(output_path, correction_type)
+            except ValueError as exc:
+                self.send_error(400, str(exc))
+                return
+
+            kept_items = [item for item in existing_items if str(item.get("page")) != str(page)]
+            merged_items = kept_items + items
+            output_payload = _manual_payload(correction_type, merged_items)
+            output_path.write_text(json.dumps(output_payload, indent=2, ensure_ascii=False) + "\n")
+            self._serve_json(
+                {
+                    "output": str(output_path),
+                    "correction_type": correction_type,
+                    "count": len(merged_items),
+                    "page_count": len(items),
+                }
+            )
+            return
 
         rel = payload.get("path")
         if not rel:
@@ -364,8 +459,8 @@ class Handler(BaseHTTPRequestHandler):
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path)
-    parser.add_argument("--mode", choices=["relabel", "gt", "rest"], default="relabel")
-    parser.add_argument("--config", type=Path, help="GT editor config JSON (gt mode)")
+    parser.add_argument("--mode", choices=["relabel", "gt", "rest", "manual"], default="relabel")
+    parser.add_argument("--config", type=Path, help="GUI config JSON for gt/rest/manual modes")
     parser.add_argument("--port", type=int, default=8010)
     parser.add_argument("--host", default="0.0.0.0")
     args = parser.parse_args()
@@ -373,12 +468,16 @@ def main() -> None:
     server = HTTPServer((args.host, args.port), Handler)
     server.ui_root = Path(__file__).resolve().parent
     server.mode = args.mode
-    if args.mode in {"gt", "rest"}:
+    if args.mode in {"gt", "rest", "manual"}:
         if not args.config:
-            raise SystemExit("--config is required in gt/rest mode")
+            raise SystemExit("--config is required in gt/rest/manual mode")
         server.root = (args.root or REPO_ROOT).resolve()
         config_data = json.loads(args.config.read_text())
         server.gt_config = config_data.get("pages", config_data)
+        server.manual_outputs = {
+            **MANUAL_CORRECTION_OUTPUTS,
+            **config_data.get("manual_outputs", {}),
+        }
     else:
         if not args.root:
             raise SystemExit("--root is required in relabel mode")
@@ -388,6 +487,8 @@ def main() -> None:
         mode_label = "GT editor"
     elif args.mode == "rest":
         mode_label = "Multi-rest GT editor"
+    elif args.mode == "manual":
+        mode_label = "Manual correction editor"
     else:
         mode_label = "GT relabel"
     print(f"{mode_label} GUI running: http://{args.host}:{args.port}")

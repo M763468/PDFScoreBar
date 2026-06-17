@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -85,6 +85,7 @@ class MeasureNumberingPipeline:
         page_number: int = 1,
         assume_one_staff_per_system: bool = False,
         image: Optional[np.ndarray] = None,
+        connector_evidence: Optional[Dict[Any, Any]] = None,
     ) -> Page:
         """
         Processes a single page and returns a populated Page object.
@@ -101,8 +102,14 @@ class MeasureNumberingPipeline:
                 staff.system_index = i
 
         # 4. Group staves into systems and assign barlines
-        # Image is passed for connectivity check in geometric grouping
-        systems = self.builder.build_systems(staves, barlines, image=image)
+        # Image is passed for connectivity check in geometric grouping.
+        # Connector evidence is generated upstream from durable proxy/symbol intermediates.
+        systems = self.builder.build_systems(
+            staves,
+            barlines,
+            image=image,
+            connector_evidence=connector_evidence,
+        )
 
         page = Page(
             systems=systems, page_number=page_number, width=image_size[0], height=image_size[1]
@@ -119,6 +126,7 @@ class MeasureNumberingPipeline:
         - 'image_size': (W, H)
         - 'page_number': int
         - 'image': Optional[np.ndarray] (Source image for connectivity checks)
+        - 'connector_evidence': Optional structured system connector evidence
         """
         score = Score()
         for data in page_data_list:
@@ -128,6 +136,7 @@ class MeasureNumberingPipeline:
                 data["image_size"],
                 data.get("page_number", 1),
                 image=data.get("image"),
+                connector_evidence=data.get("connector_evidence"),
             )
             score.pages.append(page)
 

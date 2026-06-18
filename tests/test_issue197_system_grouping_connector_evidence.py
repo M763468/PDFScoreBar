@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from src.measure_numbering.builder import SystemBuilder
+from src.measure_numbering.connector_aware_builder import ConnectorAwareSystemBuilder as SystemBuilder
 from src.measure_numbering.types import Barline, BBox, Staff
 
 

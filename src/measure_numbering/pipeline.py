@@ -1,11 +1,12 @@
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 import cv2
 import numpy as np
 
 from .builder import SystemBuilder
+from .connector_evidence import SystemConnectorEvidenceExtractor
 from .numbering import MeasureNumberer
 from .types import Barline, BBox, Page, Score, Staff
 
@@ -74,6 +75,7 @@ class MeasureNumberingPipeline:
 
     def __init__(self):
         self.extractor = StaffExtractor()
+        self.connector_extractor = SystemConnectorEvidenceExtractor()
         self.builder = SystemBuilder()
         self.numberer = MeasureNumberer()
 
@@ -86,12 +88,26 @@ class MeasureNumberingPipeline:
         assume_one_staff_per_system: bool = False,
         image: Optional[np.ndarray] = None,
         connector_evidence: Optional[Dict[Any, Any]] = None,
+        connector_masks: Optional[Mapping[str, np.ndarray]] = None,
+        connector_mask_paths: Optional[Mapping[str, Path | str]] = None,
+        connector_evidence_output_path: Optional[Path] = None,
     ) -> Page:
         """
         Processes a single page and returns a populated Page object.
         """
         # 1. Extract Staves from mask
         staves = self.extractor.extract(staff_mask_path, image_size)
+
+        if connector_evidence is None and (connector_masks or connector_mask_paths):
+            connector_evidence = self.connector_extractor.extract_from_mask_maps(
+                staves,
+                image_size,
+                connector_masks=connector_masks,
+                connector_mask_paths=connector_mask_paths,
+            )
+
+        if connector_evidence is not None and connector_evidence_output_path is not None:
+            self.connector_extractor.write_json(connector_evidence, connector_evidence_output_path)
 
         # 2. Create Barline objects
         barlines = [Barline(bbox=BBox(*box)) for box in barline_boxes]
@@ -103,7 +119,7 @@ class MeasureNumberingPipeline:
 
         # 4. Group staves into systems and assign barlines
         # Image is passed for connectivity check in geometric grouping.
-        # Connector evidence is generated upstream from durable proxy/symbol intermediates.
+        # Connector evidence is generated from durable proxy/symbol intermediates when provided.
         systems = self.builder.build_systems(
             staves,
             barlines,
@@ -127,6 +143,9 @@ class MeasureNumberingPipeline:
         - 'page_number': int
         - 'image': Optional[np.ndarray] (Source image for connectivity checks)
         - 'connector_evidence': Optional structured system connector evidence
+        - 'connector_masks': Optional in-memory proxy symbol/brace masks
+        - 'connector_mask_paths': Optional paths to proxy symbol/brace masks
+        - 'connector_evidence_output_path': Optional JSON output path
         """
         score = Score()
         for data in page_data_list:
@@ -137,6 +156,9 @@ class MeasureNumberingPipeline:
                 data.get("page_number", 1),
                 image=data.get("image"),
                 connector_evidence=data.get("connector_evidence"),
+                connector_masks=data.get("connector_masks"),
+                connector_mask_paths=data.get("connector_mask_paths"),
+                connector_evidence_output_path=data.get("connector_evidence_output_path"),
             )
             score.pages.append(page)
 

@@ -133,9 +133,9 @@ class SystemBuilder:
             # Find aligned barlines before applying the distance decision so
             # near-threshold pairs with explicit connector evidence can be rescued.
             aligned_pairs = self._find_aligned_pairs(s1, s2)
-            left_connector_present = self._has_left_connector_evidence(
-                connector_by_pair.get((i, i + 1))
-            )
+            pair_evidence = connector_by_pair.get((i, i + 1))
+            has_explicit_connector_evidence = pair_evidence is not None
+            left_connector_present = self._has_left_connector_evidence(pair_evidence)
 
             if not within_distance and not (
                 left_connector_present and within_connector_rescue_distance
@@ -146,11 +146,12 @@ class SystemBuilder:
                 # Prioritize physical connectivity check at aligned positions.
                 aligned_connection = self._check_aligned_connection(s1, s2, aligned_pairs, image)
                 if aligned_connection:
-                    # Low aligned-barline count without left connector evidence is
-                    # characteristic of the #197 false-merge case: a local aligned
-                    # connection exists, but it is not a system-start/divisi connector.
+                    # Only apply the false-merge guard when connector evidence was
+                    # explicitly generated for this pair. Missing evidence means
+                    # "unknown", not "absent".
                     if (
-                        not left_connector_present
+                        has_explicit_connector_evidence
+                        and not left_connector_present
                         and len(aligned_pairs) <= self.FALSE_MERGE_MAX_ALIGN_COUNT
                     ):
                         continue

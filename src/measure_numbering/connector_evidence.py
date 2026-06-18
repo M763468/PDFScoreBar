@@ -98,8 +98,12 @@ class SystemConnectorEvidenceExtractor:
     ) -> dict[str, Any]:
         masks = connector_masks or {}
         mask_paths = connector_mask_paths or {}
-        symbol_mask = masks.get("symbols") or masks.get("symbol")
-        brace_dot_mask = masks.get("brace_dot") or masks.get("brace")
+        symbol_mask = masks.get("symbols")
+        if symbol_mask is None:
+            symbol_mask = masks.get("symbol")
+        brace_dot_mask = masks.get("brace_dot")
+        if brace_dot_mask is None:
+            brace_dot_mask = masks.get("brace")
 
         if symbol_mask is None:
             symbol_mask = self._load_mask_from_map(mask_paths, "symbols", "symbol")

@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple
 import cv2
 import numpy as np
 
-from .builder import SystemBuilder
+from .connector_aware_builder import ConnectorAwareSystemBuilder
 from .connector_evidence import SystemConnectorEvidenceExtractor
 from .numbering import MeasureNumberer
 from .types import Barline, BBox, Page, Score, Staff
@@ -66,7 +66,7 @@ class MeasureNumberingPipeline:
     def __init__(self):
         self.extractor = StaffExtractor()
         self.connector_extractor = SystemConnectorEvidenceExtractor()
-        self.builder = SystemBuilder()
+        self.builder = ConnectorAwareSystemBuilder()
         self.numberer = MeasureNumberer()
 
     def process_page(

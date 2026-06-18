@@ -62,7 +62,30 @@ class TestIssue197SystemGroupingConnectorEvidence(unittest.TestCase):
 
         self.assertEqual(len(systems), 2)
 
-    def test_low_alignment_connection_without_left_connector_is_guarded(self):
+    def test_low_alignment_connection_with_explicit_no_connector_is_guarded(self):
+        builder = SystemBuilder()
+        s1, s2 = self.make_staff_pair(gap=90)
+        xs = [100, 300]
+        barlines = self.make_barlines(s1, s2, xs)
+        image = self.make_connection_image(s1, s2, xs)
+
+        systems = builder.build_systems(
+            [s1, s2],
+            barlines,
+            image=image,
+            connector_evidence={
+                "staff_pairs": [
+                    {
+                        "staff_pair": [0, 1],
+                        "left_connector_present": False,
+                    }
+                ]
+            },
+        )
+
+        self.assertEqual(len(systems), 2)
+
+    def test_low_alignment_connection_without_connector_evidence_keeps_legacy_merge(self):
         builder = SystemBuilder()
         s1, s2 = self.make_staff_pair(gap=90)
         xs = [100, 300]
@@ -71,7 +94,8 @@ class TestIssue197SystemGroupingConnectorEvidence(unittest.TestCase):
 
         systems = builder.build_systems([s1, s2], barlines, image=image)
 
-        self.assertEqual(len(systems), 2)
+        self.assertEqual(len(systems), 1)
+        self.assertEqual(len(systems[0].staves), 2)
 
     def test_connector_density_schema_is_accepted(self):
         builder = SystemBuilder()

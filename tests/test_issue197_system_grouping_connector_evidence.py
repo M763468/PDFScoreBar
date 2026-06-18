@@ -85,6 +85,29 @@ class TestIssue197SystemGroupingConnectorEvidence(unittest.TestCase):
 
         self.assertEqual(len(systems), 2)
 
+    def test_high_alignment_connection_with_explicit_no_connector_is_guarded(self):
+        builder = SystemBuilder()
+        s1, s2 = self.make_staff_pair(gap=90)
+        xs = [60, 120, 180, 240, 300]
+        barlines = self.make_barlines(s1, s2, xs)
+        image = self.make_connection_image(s1, s2, xs)
+
+        systems = builder.build_systems(
+            [s1, s2],
+            barlines,
+            image=image,
+            connector_evidence={
+                "staff_pairs": [
+                    {
+                        "staff_pair": [0, 1],
+                        "left_connector_present": False,
+                    }
+                ]
+            },
+        )
+
+        self.assertEqual(len(systems), 2)
+
     def test_low_alignment_connection_without_connector_evidence_keeps_legacy_merge(self):
         builder = SystemBuilder()
         s1, s2 = self.make_staff_pair(gap=90)

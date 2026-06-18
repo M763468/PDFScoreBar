@@ -22,7 +22,7 @@ class TestIssue197SystemConnectorEvidenceExtractor(unittest.TestCase):
 
     def test_extracts_left_connector_from_symbol_mask(self):
         symbol_mask = np.zeros((400, 400), dtype=np.uint8)
-        symbol_mask[100:190, 95:105] = 255
+        symbol_mask[100:190, 90:110] = 255
 
         evidence = self.extractor.extract(
             self.staves,
@@ -38,7 +38,7 @@ class TestIssue197SystemConnectorEvidenceExtractor(unittest.TestCase):
 
     def test_extracts_left_connector_from_brace_dot_mask(self):
         brace_dot_mask = np.zeros((400, 400), dtype=np.uint8)
-        brace_dot_mask[100:190, 95:105] = 255
+        brace_dot_mask[100:190, 90:110] = 255
 
         evidence = self.extractor.extract(
             self.staves,
@@ -54,7 +54,7 @@ class TestIssue197SystemConnectorEvidenceExtractor(unittest.TestCase):
 
     def test_extract_from_paths_and_write_json(self):
         symbol_mask = np.zeros((400, 400), dtype=np.uint8)
-        symbol_mask[100:190, 95:105] = 255
+        symbol_mask[100:190, 90:110] = 255
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp = Path(tmpdir)

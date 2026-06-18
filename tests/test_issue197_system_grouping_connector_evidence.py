@@ -5,6 +5,7 @@ import numpy as np
 from src.measure_numbering.connector_aware_builder import (
     ConnectorAwareSystemBuilder as SystemBuilder,
 )
+from src.measure_numbering.pipeline import MeasureNumberingPipeline
 from src.measure_numbering.types import Barline, BBox, Staff
 
 
@@ -28,6 +29,10 @@ class TestIssue197SystemGroupingConnectorEvidence(unittest.TestCase):
         for x in xs:
             image[int(s1.bbox.y2) : int(s2.bbox.y1), x : x + 2] = 0
         return image
+
+    def test_pipeline_uses_connector_aware_builder_by_default(self):
+        pipeline = MeasureNumberingPipeline()
+        self.assertIsInstance(pipeline.builder, SystemBuilder)
 
     def test_connector_evidence_rescues_near_threshold_false_split(self):
         builder = SystemBuilder()

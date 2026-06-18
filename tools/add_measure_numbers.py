@@ -179,18 +179,33 @@ def main():
         action="store_true",
         help="Treat each staff as a separate system (disable divisi logic)",
     )
+    parser.add_argument(
+        "--symbol-mask",
+        type=Path,
+        help="Optional proxy symbols mask, e.g. *_proxy_debug_4_symbols.png",
+    )
+    parser.add_argument(
+        "--brace-dot-mask",
+        type=Path,
+        help="Optional brace/dot mask, e.g. *_proxy_debug_16_brace_dot.png",
+    )
+    parser.add_argument(
+        "--connector-evidence-json",
+        type=Path,
+        help="Optional path to write generated system connector evidence JSON",
+    )
 
     args = parser.parse_args()
 
     # Load barlines
-    with open(args.barlines, "r") as f:
+    with open(args.barlines) as f:
         raw_barlines = json.load(f)
     barline_boxes = normalize_barlines(raw_barlines)
 
     # Load config overrides
     overrides = None
     if args.config:
-        with open(args.config, "r") as f:
+        with open(args.config) as f:
             config_data = json.load(f)
             overrides = config_data.get("measure_overrides")
 
@@ -204,6 +219,12 @@ def main():
     # Initialize Pipeline
     pipeline = MeasureNumberingPipeline()
 
+    connector_mask_paths = {}
+    if args.symbol_mask is not None:
+        connector_mask_paths["symbols"] = args.symbol_mask
+    if args.brace_dot_mask is not None:
+        connector_mask_paths["brace_dot"] = args.brace_dot_mask
+
     # Process
     page_data = {
         "barlines": barline_boxes,
@@ -211,10 +232,12 @@ def main():
         "image_size": (w, h),
         "page_number": args.page_number,
         "image": img_ref,
+        "connector_mask_paths": connector_mask_paths or None,
+        "connector_evidence_output_path": args.connector_evidence_json,
     }
 
     # Run pipeline
-    score = score = Score()
+    score = Score()
     page = pipeline.process_page(
         page_data["barlines"],
         Path(page_data["staff_mask"]),
@@ -222,6 +245,8 @@ def main():
         page_data.get("page_number", 1),
         assume_one_staff_per_system=args.force_single_system,
         image=page_data.get("image"),
+        connector_mask_paths=page_data.get("connector_mask_paths"),
+        connector_evidence_output_path=page_data.get("connector_evidence_output_path"),
     )
     score.pages.append(page)
 

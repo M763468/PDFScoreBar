@@ -178,12 +178,8 @@ class SystemConnectorEvidenceExtractor:
     def _to_binary(self, mask: np.ndarray) -> np.ndarray:
         if mask.ndim == 3:
             mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
-        if mask.dtype == bool:
+        if mask.dtype == bool or mask.size == 0:
             return mask.astype(np.uint8)
-        if mask.size == 0:
-            return mask.astype(np.uint8)
-        if mask.max() <= 1:
-            return (mask > 0).astype(np.uint8)
         return (mask > 0).astype(np.uint8)
 
     def _roi_for_pair(
@@ -213,7 +209,9 @@ class SystemConnectorEvidenceExtractor:
     def _vertical_open_pixels(self, roi: np.ndarray) -> int:
         if roi.size == 0:
             return 0
-        kernel_height = max(3, int(roi.shape[0] * self.VERTICAL_OPEN_HEIGHT_RATIO))
+        kernel_height = min(
+            roi.shape[0], max(3, int(roi.shape[0] * self.VERTICAL_OPEN_HEIGHT_RATIO))
+        )
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, kernel_height))
         opened = cv2.morphologyEx((roi * 255).astype(np.uint8), cv2.MORPH_OPEN, kernel)
         return int(cv2.countNonZero(opened))

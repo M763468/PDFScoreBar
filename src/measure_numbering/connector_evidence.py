@@ -224,7 +224,7 @@ class SystemConnectorEvidenceExtractor:
         kernel_height = min(
             roi.shape[0], max(3, int(roi.shape[0] * self.VERTICAL_OPEN_HEIGHT_RATIO))
         )
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, kernel_height))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, kernel_height))
         opened = cv2.morphologyEx((roi * 255).astype(np.uint8), cv2.MORPH_OPEN, kernel)
         return int(cv2.countNonZero(opened))
 

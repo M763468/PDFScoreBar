@@ -14,8 +14,8 @@ class SystemConnectorEvidenceExtractor:
     """Builds staff-pair connector evidence from proxy symbol/brace masks."""
 
     CONNECTOR_DENSITY_THRESHOLD = 0.05
-    LEFT_MARGIN = 100
-    RIGHT_MARGIN = 120
+    LEFT_MARGIN_STAFF_HEIGHT_RATIO = 0.65
+    RIGHT_MARGIN_STAFF_HEIGHT_RATIO = 0.80
     VERTICAL_OPEN_HEIGHT_RATIO = 0.65
 
     def extract(
@@ -26,6 +26,8 @@ class SystemConnectorEvidenceExtractor:
         symbol_mask: Optional[np.ndarray] = None,
         brace_dot_mask: Optional[np.ndarray] = None,
         source: str = "proxy_symbol_layers",
+        include_absent_pairs: bool = True,
+        connector_density_threshold: Optional[float] = None,
     ) -> dict[str, Any]:
         """Return structured left/system-start connector evidence.
 
@@ -33,12 +35,19 @@ class SystemConnectorEvidenceExtractor:
         staff and barline boxes. Masks may be rendered at another resolution; ROIs are
         scaled to each mask independently.
         """
+        threshold = (
+            self.CONNECTOR_DENSITY_THRESHOLD
+            if connector_density_threshold is None
+            else connector_density_threshold
+        )
         sorted_staves = sorted(staves, key=lambda staff: staff.bbox.y1)
         evidence = {
             "evidence_version": 1,
             "generated": True,
             "source": source,
             "image_size": [int(image_size[0]), int(image_size[1])],
+            "include_absent_pairs": bool(include_absent_pairs),
+            "connector_density_threshold": float(threshold),
             "staff_pairs": [],
         }
 
@@ -49,10 +58,10 @@ class SystemConnectorEvidenceExtractor:
             brace_stats = self._mask_roi_stats(brace_dot_mask, s1, s2, image_size)
             symbols_vertical = symbol_stats.get("vertical_open_density", 0.0)
             brace_vertical = brace_stats.get("vertical_open_density", 0.0)
-            left_connector_present = (
-                symbols_vertical >= self.CONNECTOR_DENSITY_THRESHOLD
-                or brace_vertical >= self.CONNECTOR_DENSITY_THRESHOLD
-            )
+            left_connector_present = symbols_vertical >= threshold or brace_vertical >= threshold
+
+            if not include_absent_pairs and not left_connector_present:
+                continue
 
             evidence["staff_pairs"].append(
                 {
@@ -194,9 +203,12 @@ class SystemConnectorEvidenceExtractor:
         scale_x = mask_w / image_w
         scale_y = mask_h / image_h
         left = min(s1.bbox.x1, s2.bbox.x1)
+        unit_size = max(1.0, (s1.bbox.height + s2.bbox.height) / 2.0)
+        left_margin = unit_size * self.LEFT_MARGIN_STAFF_HEIGHT_RATIO
+        right_margin = unit_size * self.RIGHT_MARGIN_STAFF_HEIGHT_RATIO
 
-        x1 = self._clip(int(round((left - self.LEFT_MARGIN) * scale_x)), 0, mask_w)
-        x2 = self._clip(int(round((left + self.RIGHT_MARGIN) * scale_x)), 0, mask_w)
+        x1 = self._clip(int(round((left - left_margin) * scale_x)), 0, mask_w)
+        x2 = self._clip(int(round((left + right_margin) * scale_x)), 0, mask_w)
         y1 = self._clip(int(round(s1.bbox.y2 * scale_y)), 0, mask_h)
         y2 = self._clip(int(round(s2.bbox.y1 * scale_y)), 0, mask_h)
 

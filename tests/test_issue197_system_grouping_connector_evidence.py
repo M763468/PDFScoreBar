@@ -34,6 +34,28 @@ class TestIssue197SystemGroupingConnectorEvidence(unittest.TestCase):
         pipeline = MeasureNumberingPipeline()
         self.assertIsInstance(pipeline.builder, SystemBuilder)
 
+    def test_pipeline_page_image_fallback_can_generate_connector_evidence(self):
+        pipeline = MeasureNumberingPipeline()
+        s1, s2 = self.make_staff_pair(gap=90)
+        image = self.make_connection_image(s1, s2, [100])
+
+        evidence = pipeline.connector_extractor.extract(
+            [s1, s2],
+            (500, image.shape[0]),
+            symbol_mask=pipeline._image_to_connector_mask(image),
+            source="page_image_ink",
+        )
+
+        self.assertEqual(evidence["source"], "page_image_ink")
+        self.assertTrue(evidence["staff_pairs"][0]["left_connector_present"])
+
+    def test_malformed_connector_pair_metadata_is_ignored(self):
+        builder = SystemBuilder()
+
+        self.assertIsNone(builder._parse_staff_pair(["a", "b"]))
+        self.assertIsNone(builder._parse_staff_pair("[a-b]"))
+        self.assertIsNone(builder._parse_staff_pair(object()))
+
     def test_connector_evidence_rescues_near_threshold_false_split(self):
         builder = SystemBuilder()
         s1, s2 = self.make_staff_pair(gap=153)

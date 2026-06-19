@@ -52,6 +52,23 @@ class TestIssue197SystemConnectorEvidenceExtractor(unittest.TestCase):
             0.05,
         )
 
+    def test_vertical_open_kernel_is_capped_for_small_gap_roi(self):
+        staves = [
+            Staff(bbox=BBox(100, 50, 350, 100)),
+            Staff(bbox=BBox(100, 102, 350, 152)),
+        ]
+        symbol_mask = np.zeros((400, 400), dtype=np.uint8)
+        symbol_mask[100:102, 90:110] = 255
+
+        evidence = self.extractor.extract(
+            staves,
+            self.image_size,
+            symbol_mask=symbol_mask,
+        )
+
+        self.assertTrue(evidence["staff_pairs"][0]["left_connector_present"])
+        self.assertGreater(evidence["staff_pairs"][0]["symbols_vertical_open_density"], 0.0)
+
     def test_extract_from_paths_and_write_json(self):
         symbol_mask = np.zeros((400, 400), dtype=np.uint8)
         symbol_mask[100:190, 90:110] = 255

@@ -58,14 +58,17 @@ class ConnectorAwareSystemBuilder(BaseSystemBuilder):
 
             if image is not None:
                 aligned_connection = self._check_aligned_connection(s1, s2, aligned_pairs, image)
-                if aligned_connection:
-                    if within_distance or (
-                        left_connector_present
-                        and within_connector_rescue_distance
-                        and len(aligned_pairs) >= self.CONNECTOR_RESCUE_MIN_ALIGN_COUNT
-                    ):
-                        union(i, i + 1)
-                        continue
+                if aligned_connection and within_distance:
+                    union(i, i + 1)
+                    continue
+
+                if (
+                    left_connector_present
+                    and within_connector_rescue_distance
+                    and len(aligned_pairs) >= self.CONNECTOR_RESCUE_MIN_ALIGN_COUNT
+                ):
+                    union(i, i + 1)
+                    continue
 
             if image is None:
                 if within_distance and len(aligned_pairs) >= self.MIN_ALIGN_COUNT:

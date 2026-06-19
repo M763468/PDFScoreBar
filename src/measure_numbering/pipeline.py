@@ -98,6 +98,8 @@ class MeasureNumberingPipeline:
                     image_size,
                     symbol_mask=self._image_to_connector_mask(image),
                     source="page_image_ink",
+                    include_absent_pairs=False,
+                    connector_density_threshold=0.01,
                 )
 
         if connector_evidence is not None and connector_evidence_output_path is not None:

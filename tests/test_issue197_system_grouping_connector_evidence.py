@@ -44,10 +44,28 @@ class TestIssue197SystemGroupingConnectorEvidence(unittest.TestCase):
             (500, image.shape[0]),
             symbol_mask=pipeline._image_to_connector_mask(image),
             source="page_image_ink",
+            include_absent_pairs=False,
+            connector_density_threshold=0.01,
         )
 
         self.assertEqual(evidence["source"], "page_image_ink")
         self.assertTrue(evidence["staff_pairs"][0]["left_connector_present"])
+
+    def test_positive_only_fallback_omits_absent_pairs(self):
+        pipeline = MeasureNumberingPipeline()
+        s1, s2 = self.make_staff_pair(gap=90)
+        image = np.full((int(s2.bbox.y2 + 20), 500), 255, dtype=np.uint8)
+
+        evidence = pipeline.connector_extractor.extract(
+            [s1, s2],
+            (500, image.shape[0]),
+            symbol_mask=pipeline._image_to_connector_mask(image),
+            source="page_image_ink",
+            include_absent_pairs=False,
+            connector_density_threshold=0.01,
+        )
+
+        self.assertEqual(evidence["staff_pairs"], [])
 
     def test_malformed_connector_pair_metadata_is_ignored(self):
         builder = SystemBuilder()

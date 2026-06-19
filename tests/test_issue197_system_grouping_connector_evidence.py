@@ -98,6 +98,30 @@ class TestIssue197SystemGroupingConnectorEvidence(unittest.TestCase):
         self.assertEqual(len(systems), 1)
         self.assertEqual(len(systems[0].staves), 2)
 
+    def test_connector_evidence_rescues_with_image_without_internal_bridge(self):
+        builder = SystemBuilder()
+        s1, s2 = self.make_staff_pair(gap=153)
+        xs = [100, 200, 300]
+        barlines = self.make_barlines(s1, s2, xs)
+        image = np.full((int(s2.bbox.y2 + 20), 500), 255, dtype=np.uint8)
+
+        systems = builder.build_systems(
+            [s1, s2],
+            barlines,
+            image=image,
+            connector_evidence={
+                "staff_pairs": [
+                    {
+                        "staff_pair": [0, 1],
+                        "left_connector_present": True,
+                    }
+                ]
+            },
+        )
+
+        self.assertEqual(len(systems), 1)
+        self.assertEqual(len(systems[0].staves), 2)
+
     def test_near_threshold_pair_is_not_rescued_without_connector_evidence(self):
         builder = SystemBuilder()
         s1, s2 = self.make_staff_pair(gap=153)

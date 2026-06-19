@@ -52,6 +52,25 @@ class TestIssue197SystemConnectorEvidenceExtractor(unittest.TestCase):
             0.05,
         )
 
+    def test_connector_roi_width_scales_with_staff_height(self):
+        small_staves = [
+            Staff(bbox=BBox(100, 50, 350, 100)),
+            Staff(bbox=BBox(100, 190, 350, 240)),
+        ]
+        large_staves = [
+            Staff(bbox=BBox(100, 50, 350, 150)),
+            Staff(bbox=BBox(100, 240, 350, 340)),
+        ]
+
+        small_x1, _, small_x2, _ = self.extractor._roi_for_pair(
+            small_staves[0], small_staves[1], self.image_size, self.image_size
+        )
+        large_x1, _, large_x2, _ = self.extractor._roi_for_pair(
+            large_staves[0], large_staves[1], self.image_size, self.image_size
+        )
+
+        self.assertGreater(large_x2 - large_x1, small_x2 - small_x1)
+
     def test_vertical_open_kernel_is_capped_for_small_gap_roi(self):
         staves = [
             Staff(bbox=BBox(100, 50, 350, 100)),

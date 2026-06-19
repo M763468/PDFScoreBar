@@ -36,6 +36,25 @@ class TestIssue197SystemConnectorEvidenceExtractor(unittest.TestCase):
         self.assertGreaterEqual(pairs[0]["symbols_vertical_open_density"], 0.05)
         self.assertFalse(pairs[1]["left_connector_present"])
 
+    def test_thin_vertical_connector_survives_opening(self):
+        symbol_mask = np.zeros((400, 400), dtype=np.uint8)
+        symbol_mask[100:190, 90:92] = 255
+
+        evidence = self.extractor.extract(
+            self.staves,
+            self.image_size,
+            symbol_mask=symbol_mask,
+            include_absent_pairs=False,
+            connector_density_threshold=0.005,
+        )
+
+        self.assertEqual(len(evidence["staff_pairs"]), 1)
+        self.assertTrue(evidence["staff_pairs"][0]["left_connector_present"])
+        self.assertGreater(
+            evidence["staff_pairs"][0]["symbols_vertical_open_density"],
+            0.0,
+        )
+
     def test_extracts_left_connector_from_brace_dot_mask(self):
         brace_dot_mask = np.zeros((400, 400), dtype=np.uint8)
         brace_dot_mask[100:190, 90:110] = 255

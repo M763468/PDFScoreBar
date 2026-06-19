@@ -27,7 +27,7 @@ class TestIssue197SystemGroupingConnectorEvidence(unittest.TestCase):
         height = int(s2.bbox.y2 + 20)
         image = np.full((height, width), 255, dtype=np.uint8)
         for x in xs:
-            image[int(s1.bbox.y2) : int(s2.bbox.y1), x : x + 2] = 0
+            image[int(s1.bbox.y2) : int(s2.bbox.y1), x : x + 4] = 0
         return image
 
     def test_pipeline_uses_connector_aware_builder_by_default(self):
@@ -37,7 +37,7 @@ class TestIssue197SystemGroupingConnectorEvidence(unittest.TestCase):
     def test_pipeline_page_image_fallback_can_generate_connector_evidence(self):
         pipeline = MeasureNumberingPipeline()
         s1, s2 = self.make_staff_pair(gap=90)
-        image = self.make_connection_image(s1, s2, [100])
+        image = self.make_connection_image(s1, s2, [40])
 
         evidence = pipeline.connector_extractor.extract(
             [s1, s2],

@@ -1,0 +1,67 @@
+from __future__ import annotations
+
+import json
+from contextlib import redirect_stdout
+from io import StringIO
+from pathlib import Path
+
+from tools.issue94 import eval_all_mmr
+
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / "logs" / "issue213_page033_recheck.txt"
+AGG = ROOT / "logs" / "issue94_mmr_current_state" / "eval" / "aggregated_eval_summary.json"
+PAGE = ROOT / "logs" / "issue94_mmr_current_state" / "eval" / "page_033" / "mmr_eval_summary.json"
+
+
+def j(value):
+    return json.dumps(value, indent=2, ensure_ascii=False)
+
+
+def main():
+    lines = []
+    lines.append("# Issue #213 page_033 MMR FP recheck")
+    lines.append("")
+    lines.append("## run MMR-only eval")
+    buf = StringIO()
+    with redirect_stdout(buf):
+        eval_all_mmr.main()
+    lines.append(buf.getvalue())
+
+    lines.append("")
+    lines.append("## aggregate summary and residual pages")
+    agg = json.loads(AGG.read_text(encoding="utf-8"))
+    lines.append("### aggregate summary")
+    lines.append(j(agg["summary"]))
+    lines.append("")
+    lines.append("### residual pages")
+    any_residual = False
+    for row in agg["pages"]:
+        if row.get("missed") or row.get("mismatch") or row.get("unexpected"):
+            any_residual = True
+            lines.append(json.dumps(row, ensure_ascii=False))
+    if not any_residual:
+        lines.append("<none>")
+
+    lines.append("")
+    lines.append("## page_033 exact summary")
+    page = json.loads(PAGE.read_text(encoding="utf-8"))
+    for key in ["inputs", "parameters", "counts", "missed", "skip_mismatch", "unexpected"]:
+        lines.append("")
+        lines.append("### page_033 " + key)
+        lines.append(j(page.get(key)))
+
+    lines.append("")
+    lines.append("### page_033 detected_overrides")
+    for override in page.get("detected_overrides", []):
+        lines.append(json.dumps(override, ensure_ascii=False))
+    if not page.get("detected_overrides"):
+        lines.append("<none>")
+
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text("\n".join(lines), encoding="utf-8")
+    print(OUT.read_text(encoding="utf-8"))
+    print("\nWrote: " + str(OUT))
+
+
+if __name__ == "__main__":
+    main()

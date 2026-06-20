@@ -1,0 +1,196 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from pprint import pformat
+
+import cv2
+import torch
+
+from src.measure_numbering.mmr import MMROCREngine, MMRClassifier
+from src.measure_numbering.rapidocr_provider import collect_rapidocr_providers, create_mmr_rapidocr
+
+ROOT = Path(__file__).resolve().parents[1]
+OUT_DIR = ROOT / "logs" / "issue213_page033_trace"
+REPORT = OUT_DIR / "issue213_page033_trace_report.txt"
+TRACE_JSON = OUT_DIR / "issue213_page033_trace.json"
+NUMBERING_JSON = ROOT / "logs" / "issue120_e2e_recovery" / "stage_e_full_pipeline" / "intermediate" / "page_033" / "numbering_base.json"
+IMAGE_PATH = ROOT / "logs" / "issue120_e2e_recovery" / "stage_e_full_pipeline" / "images" / "Sibelius-Violin_Concerto-Viola_page_002.png"
+MODEL_PATH = ROOT / "tools" / "mmr_training" / "models" / "mmr_classifier_best.pth"
+TARGET_PAGE_ZERO = 32
+TARGET_SYSTEM = 0
+TARGET_MEASURE = 0
+THRESHOLD = 0.5
+RESCUE_THRESHOLD = 0.1
+
+
+def to_jsonable(value):
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, dict):
+        return {str(k): to_jsonable(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [to_jsonable(v) for v in value]
+    try:
+        import numpy as np
+
+        if isinstance(value, np.generic):
+            return value.item()
+        if isinstance(value, np.ndarray):
+            return value.tolist()
+    except Exception:
+        pass
+    return repr(value)
+
+
+def save_image(path: Path, image):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    cv2.imwrite(str(path), image)
+    return str(path.relative_to(ROOT))
+
+
+def main():
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    numbering = json.loads(NUMBERING_JSON.read_text(encoding="utf-8"))
+    image = cv2.imread(str(IMAGE_PATH))
+    if image is None:
+        raise RuntimeError(f"Unable to read image: {IMAGE_PATH}")
+    h_img, w_img = image.shape[:2]
+
+    page_entry = numbering["pages"][0]
+    page_number = page_entry.get("page_number")
+    system = page_entry["systems"][TARGET_SYSTEM]
+    measure = system["measures"][TARGET_MEASURE]
+    x1, y1, x2, y2 = measure["bbox"]
+
+    margin = 20
+    cx1, cy1 = int(max(0, x1 - margin)), int(max(0, y1 - margin))
+    cx2, cy2 = int(min(w_img, x2 + margin)), int(min(h_img, y2 + margin))
+    measure_crop = image[cy1:cy2, cx1:cx2]
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    classifier = MMRClassifier(MODEL_PATH, device)
+    rapidocr = create_mmr_rapidocr("cuda")
+    ocr = MMROCREngine(enable_rotation_tta=False, ocr_engine=rapidocr)
+
+    prob = classifier.predict(measure_crop)
+    variants = [("standard", 0)]
+    if prob > THRESHOLD:
+        variants = [("standard", 0), ("no_dilate", 0), ("heavy_dilate", 0)]
+
+    overlay = image.copy()
+    cv2.rectangle(overlay, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 3)
+    cv2.putText(overlay, "target [32,0,0]", (int(x1), max(0, int(y1) - 12)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+
+    artifacts = {
+        "overlay": save_image(OUT_DIR / "page033_target_overlay.png", overlay),
+        "measure_crop": save_image(OUT_DIR / "page033_system0_measure0_crop.png", measure_crop),
+    }
+
+    trace = {
+        "target": {
+            "page_id": "page_033",
+            "source_image": str(IMAGE_PATH.relative_to(ROOT)),
+            "target_key": [TARGET_PAGE_ZERO, TARGET_SYSTEM, TARGET_MEASURE],
+            "page_number_in_numbering_base": page_number,
+            "measure_number_in_numbering_base": measure.get("number"),
+            "bbox": [x1, y1, x2, y2],
+        },
+        "runtime": {
+            "device": str(device),
+            "torch_cuda_available": torch.cuda.is_available(),
+            "rapidocr_providers": collect_rapidocr_providers(rapidocr),
+            "threshold": THRESHOLD,
+            "rescue_threshold": RESCUE_THRESHOLD,
+        },
+        "cnn": {
+            "probability": prob,
+            "accepted_by_threshold": prob > THRESHOLD,
+            "accepted_by_rescue_threshold": prob > RESCUE_THRESHOLD,
+        },
+        "variants": [],
+        "artifacts": artifacts,
+    }
+
+    for mode, angle in variants:
+        variant_record = {"mode": mode, "angle": angle, "staves": []}
+        for stave_idx, stave in enumerate(system.get("staves", [])):
+            s_bbox = stave["bbox"]
+            margin_y = 80
+            ox1, ox2 = int(max(0, x1 - 30)), int(min(w_img, x2 + 30))
+            oy1, oy2 = int(max(0, s_bbox[1] - margin_y)), int(min(h_img, s_bbox[3] + 80))
+            stave_crop = image[oy1:oy2, ox1:ox2]
+            masked = ocr.mask_hbar_candidates(stave_crop, margin_y, s_bbox[3] - s_bbox[1])
+            proc_img = ocr.preprocess_variant(masked, mode=mode, angle=angle)
+            raw_ocr, _ = ocr.ocr_engine(proc_img)
+            selected_num, selected_score, selected_debug = ocr.select_best_candidate(raw_ocr, ox2 - ox1, oy2 - oy1)
+
+            base = f"variant_{mode}_{angle}_stave{stave_idx}"
+            stave_artifacts = {
+                "stave_crop": save_image(OUT_DIR / f"{base}_crop.png", stave_crop),
+                "masked_crop": save_image(OUT_DIR / f"{base}_masked.png", masked),
+                "processed": save_image(OUT_DIR / f"{base}_processed.png", proc_img),
+            }
+            variant_record["staves"].append(
+                {
+                    "stave_idx": stave_idx,
+                    "stave_bbox": s_bbox,
+                    "ocr_window": [ox1, oy1, ox2, oy2],
+                    "raw_ocr_repr": pformat(raw_ocr, width=120),
+                    "raw_ocr_jsonable": to_jsonable(raw_ocr),
+                    "selected_num": selected_num,
+                    "selected_score": selected_score,
+                    "selected_debug": selected_debug,
+                    "artifacts": stave_artifacts,
+                }
+            )
+        trace["variants"].append(variant_record)
+
+    TRACE_JSON.write_text(json.dumps(to_jsonable(trace), indent=2, ensure_ascii=False), encoding="utf-8")
+
+    lines = []
+    lines.append("# Issue #213 page_033 [32,0,0] trace report")
+    lines.append("")
+    lines.append("## target")
+    lines.append(json.dumps(to_jsonable(trace["target"]), indent=2, ensure_ascii=False))
+    lines.append("")
+    lines.append("## runtime")
+    lines.append(json.dumps(to_jsonable(trace["runtime"]), indent=2, ensure_ascii=False))
+    lines.append("")
+    lines.append("## CNN")
+    lines.append(json.dumps(to_jsonable(trace["cnn"]), indent=2, ensure_ascii=False))
+    lines.append("")
+    lines.append("## OCR variant/stave summary")
+    for variant in trace["variants"]:
+        lines.append(f"### variant={variant['mode']}:{variant['angle']}")
+        for stave in variant["staves"]:
+            lines.append(
+                json.dumps(
+                    {
+                        "stave_idx": stave["stave_idx"],
+                        "ocr_window": stave["ocr_window"],
+                        "selected_num": stave["selected_num"],
+                        "selected_score": stave["selected_score"],
+                        "selected_debug": stave["selected_debug"],
+                        "raw_ocr_repr": stave["raw_ocr_repr"],
+                        "artifacts": stave["artifacts"],
+                    },
+                    ensure_ascii=False,
+                )
+            )
+        lines.append("")
+    lines.append("## generated artifacts")
+    lines.append(json.dumps(to_jsonable(trace["artifacts"]), indent=2, ensure_ascii=False))
+    lines.append("")
+    lines.append(f"Full trace JSON: {TRACE_JSON.relative_to(ROOT)}")
+
+    REPORT.write_text("\n".join(lines), encoding="utf-8")
+    print(REPORT.read_text(encoding="utf-8"))
+    print("\nWrote: " + str(REPORT))
+
+
+if __name__ == "__main__":
+    main()

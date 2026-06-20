@@ -1,11 +1,12 @@
 import logging
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 import cv2
 import numpy as np
 
-from .builder import SystemBuilder
+from .connector_aware_builder import ConnectorAwareSystemBuilder
+from .connector_evidence import SystemConnectorEvidenceExtractor
 from .numbering import MeasureNumberer
 from .types import Barline, BBox, Page, Score, Staff
 
@@ -29,20 +30,15 @@ class StaffExtractor:
         scale_x = target_w / w_mask
         scale_y = target_h / h_mask
 
-        # Binarize
         _, bin_mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
 
-        # Merge staff lines and horizontal fragments
-        # Vertical kernel to merge 5 lines into one band
         v_kernel = np.ones((20, 1), np.uint8)
-        # Horizontal kernel to bridge small gaps between staff fragments
         h_kernel = np.ones((1, 50), np.uint8)
 
         processed = cv2.dilate(bin_mask, v_kernel, iterations=1)
         processed = cv2.morphologyEx(processed, cv2.MORPH_CLOSE, h_kernel)
 
         num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(processed, connectivity=8)
-
         num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(processed, connectivity=8)
 
         staves = []
@@ -53,7 +49,6 @@ class StaffExtractor:
             h = stats[i, cv2.CC_STAT_HEIGHT]
 
             if h >= self.min_height and w > target_w * self.min_width_ratio:
-                # Scale coordinates to match original image/barline space
                 bbox = BBox(
                     int(x * scale_x),
                     int(y * scale_y),
@@ -62,19 +57,16 @@ class StaffExtractor:
                 )
                 staves.append(Staff(bbox=bbox))
 
-        # Sort by vertical position
         return sorted(staves, key=lambda s: s.bbox.y1)
 
 
 class MeasureNumberingPipeline:
-    """
-    Integrated pipeline to assign measure numbers to a score
-    using detected barlines and staff masks.
-    """
+    """Integrated pipeline to assign measure numbers to a score."""
 
     def __init__(self):
         self.extractor = StaffExtractor()
-        self.builder = SystemBuilder()
+        self.connector_extractor = SystemConnectorEvidenceExtractor()
+        self.builder = ConnectorAwareSystemBuilder()
         self.numberer = MeasureNumberer()
 
     def process_page(
@@ -85,24 +77,46 @@ class MeasureNumberingPipeline:
         page_number: int = 1,
         assume_one_staff_per_system: bool = False,
         image: Optional[np.ndarray] = None,
+        connector_evidence: Optional[Dict[Any, Any]] = None,
+        connector_masks: Optional[Mapping[str, np.ndarray]] = None,
+        connector_mask_paths: Optional[Mapping[str, Path | str]] = None,
+        connector_evidence_output_path: Optional[Path] = None,
     ) -> Page:
-        """
-        Processes a single page and returns a populated Page object.
-        """
-        # 1. Extract Staves from mask
         staves = self.extractor.extract(staff_mask_path, image_size)
 
-        # 2. Create Barline objects
+        if connector_evidence is None:
+            if connector_masks or connector_mask_paths:
+                connector_evidence = self.connector_extractor.extract_from_mask_maps(
+                    staves,
+                    image_size,
+                    connector_masks=connector_masks,
+                    connector_mask_paths=connector_mask_paths,
+                )
+            elif image is not None:
+                connector_evidence = self.connector_extractor.extract(
+                    staves,
+                    image_size,
+                    symbol_mask=self._image_to_connector_mask(image),
+                    source="page_image_ink",
+                    include_absent_pairs=False,
+                    connector_density_threshold=0.01,
+                )
+
+        if connector_evidence is not None and connector_evidence_output_path is not None:
+            self.connector_extractor.write_json(connector_evidence, connector_evidence_output_path)
+
         barlines = [Barline(bbox=BBox(*box)) for box in barline_boxes]
 
-        # 3. Infer Systems
         if assume_one_staff_per_system:
             for i, staff in enumerate(staves):
                 staff.system_index = i
 
-        # 4. Group staves into systems and assign barlines
-        # Image is passed for connectivity check in geometric grouping
-        systems = self.builder.build_systems(staves, barlines, image=image)
+        systems = self.builder.build_systems(
+            staves,
+            barlines,
+            image=image,
+            connector_evidence=connector_evidence,
+        )
 
         page = Page(
             systems=systems, page_number=page_number, width=image_size[0], height=image_size[1]
@@ -111,15 +125,6 @@ class MeasureNumberingPipeline:
         return page
 
     def run_sequential(self, page_data_list: List[dict], start_number: int = 1) -> Score:
-        """
-        Processes multiple pages sequentially, maintaining measure count.
-        page_data_list elements should contain:
-        - 'barlines': List of [x1, y1, x2, y2]
-        - 'staff_mask': Path
-        - 'image_size': (W, H)
-        - 'page_number': int
-        - 'image': Optional[np.ndarray] (Source image for connectivity checks)
-        """
         score = Score()
         for data in page_data_list:
             page = self.process_page(
@@ -128,10 +133,23 @@ class MeasureNumberingPipeline:
                 data["image_size"],
                 data.get("page_number", 1),
                 image=data.get("image"),
+                connector_evidence=data.get("connector_evidence"),
+                connector_masks=data.get("connector_masks"),
+                connector_mask_paths=data.get("connector_mask_paths"),
+                connector_evidence_output_path=data.get("connector_evidence_output_path"),
             )
             score.pages.append(page)
 
-        # Assign numbers across the entire score
         self.numberer.number_score(score, start_number=start_number)
 
         return score
+
+    def _image_to_connector_mask(self, image: np.ndarray) -> np.ndarray:
+        if image.ndim == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = image
+        if gray.size == 0:
+            return gray.astype(np.uint8)
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        return binary

@@ -1,0 +1,133 @@
+import json
+import tempfile
+import unittest
+from pathlib import Path
+
+import cv2
+import numpy as np
+
+from src.measure_numbering.connector_evidence import SystemConnectorEvidenceExtractor
+from src.measure_numbering.types import BBox, Staff
+
+
+class TestIssue197SystemConnectorEvidenceExtractor(unittest.TestCase):
+    def setUp(self):
+        self.extractor = SystemConnectorEvidenceExtractor()
+        self.image_size = (400, 400)
+        self.staves = [
+            Staff(bbox=BBox(100, 50, 350, 100)),
+            Staff(bbox=BBox(100, 190, 350, 240)),
+            Staff(bbox=BBox(100, 320, 350, 370)),
+        ]
+
+    def test_extracts_left_connector_from_symbol_mask(self):
+        symbol_mask = np.zeros((400, 400), dtype=np.uint8)
+        symbol_mask[100:190, 90:110] = 255
+
+        evidence = self.extractor.extract(
+            self.staves,
+            self.image_size,
+            symbol_mask=symbol_mask,
+        )
+
+        pairs = evidence["staff_pairs"]
+        self.assertTrue(evidence["generated"])
+        self.assertTrue(pairs[0]["left_connector_present"])
+        self.assertGreaterEqual(pairs[0]["symbols_vertical_open_density"], 0.05)
+        self.assertFalse(pairs[1]["left_connector_present"])
+
+    def test_thin_vertical_connector_survives_opening(self):
+        symbol_mask = np.zeros((400, 400), dtype=np.uint8)
+        symbol_mask[100:190, 90:92] = 255
+
+        evidence = self.extractor.extract(
+            self.staves,
+            self.image_size,
+            symbol_mask=symbol_mask,
+            include_absent_pairs=False,
+            connector_density_threshold=0.005,
+        )
+
+        self.assertEqual(len(evidence["staff_pairs"]), 1)
+        self.assertTrue(evidence["staff_pairs"][0]["left_connector_present"])
+        self.assertGreater(
+            evidence["staff_pairs"][0]["symbols_vertical_open_density"],
+            0.0,
+        )
+
+    def test_extracts_left_connector_from_brace_dot_mask(self):
+        brace_dot_mask = np.zeros((400, 400), dtype=np.uint8)
+        brace_dot_mask[100:190, 90:110] = 255
+
+        evidence = self.extractor.extract(
+            self.staves,
+            self.image_size,
+            brace_dot_mask=brace_dot_mask,
+        )
+
+        self.assertTrue(evidence["staff_pairs"][0]["left_connector_present"])
+        self.assertGreaterEqual(
+            evidence["staff_pairs"][0]["brace_dot_vertical_open_density"],
+            0.05,
+        )
+
+    def test_connector_roi_width_scales_with_staff_height(self):
+        small_staves = [
+            Staff(bbox=BBox(100, 50, 350, 100)),
+            Staff(bbox=BBox(100, 190, 350, 240)),
+        ]
+        large_staves = [
+            Staff(bbox=BBox(100, 50, 350, 150)),
+            Staff(bbox=BBox(100, 240, 350, 340)),
+        ]
+
+        small_x1, _, small_x2, _ = self.extractor._roi_for_pair(
+            small_staves[0], small_staves[1], self.image_size, self.image_size
+        )
+        large_x1, _, large_x2, _ = self.extractor._roi_for_pair(
+            large_staves[0], large_staves[1], self.image_size, self.image_size
+        )
+
+        self.assertGreater(large_x2 - large_x1, small_x2 - small_x1)
+
+    def test_vertical_open_kernel_is_capped_for_small_gap_roi(self):
+        staves = [
+            Staff(bbox=BBox(100, 50, 350, 100)),
+            Staff(bbox=BBox(100, 102, 350, 152)),
+        ]
+        symbol_mask = np.zeros((400, 400), dtype=np.uint8)
+        symbol_mask[100:102, 90:110] = 255
+
+        evidence = self.extractor.extract(
+            staves,
+            self.image_size,
+            symbol_mask=symbol_mask,
+        )
+
+        self.assertTrue(evidence["staff_pairs"][0]["left_connector_present"])
+        self.assertGreater(evidence["staff_pairs"][0]["symbols_vertical_open_density"], 0.0)
+
+    def test_extract_from_paths_and_write_json(self):
+        symbol_mask = np.zeros((400, 400), dtype=np.uint8)
+        symbol_mask[100:190, 90:110] = 255
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            symbol_path = tmp / "symbols.png"
+            output_path = tmp / "system_connector_evidence.json"
+            cv2.imwrite(str(symbol_path), symbol_mask)
+
+            evidence = self.extractor.extract_from_paths(
+                self.staves,
+                self.image_size,
+                symbol_mask_path=symbol_path,
+            )
+            self.extractor.write_json(evidence, output_path)
+
+            loaded = json.loads(output_path.read_text())
+            self.assertTrue(loaded["generated"])
+            self.assertTrue(loaded["staff_pairs"][0]["left_connector_present"])
+
+
+if __name__ == "__main__":
+    unittest.main()

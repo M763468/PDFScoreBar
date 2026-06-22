@@ -535,9 +535,7 @@ class MMRProcessor:
                     continue
 
                 ocr_res, _ = self.ocr.ocr_engine(proc_img)
-                one_bar_evidence_count += self._count_high_confidence_one_bar_evidence(
-                    ocr_res
-                )
+                one_bar_evidence_count += self._count_high_confidence_one_bar_evidence(ocr_res)
                 num, score, dbg = self.ocr.select_best_candidate(ocr_res, ox2 - ox1, oy2 - oy1)
                 stave_results.append((num, score, dbg))
 

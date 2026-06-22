@@ -50,6 +50,12 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 ### Environment & Execution
 - **Check Environments First**: Before executing any code, you **MUST** read `docs/ENVIRONMENTS.md`. This project uses a mix of Docker containers (`pdf_score_dev_gpu`, `homr_eval_gpu`, etc.) and host-based virtual environments (`.venv_pdf`, etc.). Identify the correct environment for your task.
 - **Docker Preference**: Prefer running tasks inside the appropriate Docker container whenever possible to ensure reproducibility. For local PR validation helpers, see `docs/dev/codex_local_automation.md`.
+- **Persistent Pipeline Container**: For repeated full-pipeline / Issue #94 / Issue #120 / MMR evaluation work using `pdfscore_pipeline_gpu`, prefer a named long-lived container instead of repeated `docker run --rm` invocations. Create it once, then use `docker exec` for tests and evals:
+    - Create when absent: `docker run -dit --gpus all --name pdfscore_pipeline_gpu_dev -v "$PWD":/workspace -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_gpu bash`
+    - Start when stopped: `docker start pdfscore_pipeline_gpu_dev`
+    - Execute commands: `docker exec -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_gpu_dev /opt/venv_pipeline/bin/python <script-or-module>`
+    - Remove only with explicit user approval: `docker rm -f pdfscore_pipeline_gpu_dev`.
+- **Pipeline Runtime Image Is Not a Pytest Environment**: Do not assume `pytest` is installed in `pdfscore_pipeline_gpu` or `/opt/venv_pipeline`. For issue-specific lightweight checks inside this runtime, prefer Python standard-library `unittest` or self-check scripts. If `pytest` is required, use the correct dev/test environment or get explicit approval before installing packages in a container.
 - **Host Execution**: Some tools (e.g., `gui_helper`) are designed to run on the host. Follow the specific instructions in `docs/ENVIRONMENTS.md`.
 
 ### Standard Commands

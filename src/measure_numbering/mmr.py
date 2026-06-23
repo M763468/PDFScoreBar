@@ -247,6 +247,74 @@ class MMROCREngine:
             return re.findall(r"(?<![A-Za-z])\d+(?![A-Za-z])", text)
         return re.findall(r"\d+", text)
 
+    def collect_one_bar_evidence(self, ocr_result: List) -> List[Dict]:
+        """Return OCR evidence for printed one-bar rest markers.
+
+        MMR overrides represent multi-measure rests only. A strong printed
+        "1" should not become skip=0; it is used as veto evidence instead.
+
+        Raw "1" OCR boxes that are part of a merged multi-digit candidate
+        are excluded so true 10-19 MMR counts do not become veto evidence.
+        """
+        if not ocr_result:
+            return []
+
+        def _bounds(item: List) -> Tuple[float, float, float, float]:
+            points = item[0]
+            xs = [p[0] for p in points]
+            ys = [p[1] for p in points]
+            return min(xs), min(ys), max(xs), max(ys)
+
+        def _contains(
+            outer: Tuple[float, float, float, float],
+            inner: Tuple[float, float, float, float],
+        ) -> bool:
+            ox1, oy1, ox2, oy2 = outer
+            ix1, iy1, ix2, iy2 = inner
+            return ox1 <= ix1 and oy1 <= iy1 and ix2 <= ox2 and iy2 <= oy2
+
+        def _has_multidigit_candidate(item: List) -> bool:
+            _box_points, text, _confidence = item
+            clean_text = re.sub(r"^[EP](\d)", r"\1", text)
+            clean_text = re.sub(r"[.,;]", "", clean_text)
+            blacklisted = self._has_blacklisted_text(text)
+            for n_str in self._extract_numeric_candidates(clean_text, blacklisted):
+                try:
+                    if int(n_str) >= 2:
+                        return True
+                except (TypeError, ValueError):
+                    pass
+            return False
+
+        candidate_items = self._candidate_items(ocr_result)
+        merged_multidigit_bounds = [
+            _bounds(item)
+            for item, source in candidate_items
+            if source == "merged" and _has_multidigit_candidate(item)
+        ]
+
+        evidence = []
+        for item, source in candidate_items:
+            _box_points, text, confidence = item
+            if source == "raw" and any(
+                _contains(bounds, _bounds(item)) for bounds in merged_multidigit_bounds
+            ):
+                continue
+
+            clean_text = re.sub(r"^[EP](\d)", r"\1", text)
+            clean_text = re.sub(r"[.,;]", "", clean_text)
+            blacklisted = self._has_blacklisted_text(text)
+            nums_found = self._extract_numeric_candidates(clean_text, blacklisted)
+            for n_str in nums_found:
+                try:
+                    val = int(n_str)
+                    conf = float(confidence)
+                except (TypeError, ValueError):
+                    continue
+                if val == 1:
+                    evidence.append({"text": text, "confidence": conf, "source": source})
+        return evidence
+
     def select_best_candidate(
         self, ocr_result: List, img_width: int, img_height: int
     ) -> Tuple[Optional[int], float, str]:
@@ -321,6 +389,11 @@ class MMROCREngine:
 class MMRProcessor:
     """Integrated processor for batch MMR detection."""
 
+    ONE_BAR_VETO_PROB_MAX = 0.60
+    ONE_BAR_VETO_SCORE_MAX = 0.0
+    ONE_BAR_VETO_MIN_EVIDENCE = 2
+    ONE_BAR_VETO_MIN_CONFIDENCE = 0.80
+
     def __init__(
         self,
         model_path: Path,
@@ -343,6 +416,35 @@ class MMRProcessor:
 
         self.threshold = threshold
         self.rescue_threshold = rescue_threshold
+
+    def _count_high_confidence_one_bar_evidence(self, ocr_result: List) -> int:
+        collector = getattr(self.ocr, "collect_one_bar_evidence", None)
+        if collector is None:
+            return 0
+
+        count = 0
+        for evidence in collector(ocr_result):
+            try:
+                confidence = float(evidence["confidence"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if confidence >= self.ONE_BAR_VETO_MIN_CONFIDENCE:
+                count += 1
+        return count
+
+    def _should_veto_one_bar_rest(
+        self,
+        found_num: Optional[int],
+        prob: float,
+        final_score: float,
+        one_bar_evidence_count: int,
+    ) -> bool:
+        return bool(
+            found_num
+            and self.threshold < prob < self.ONE_BAR_VETO_PROB_MAX
+            and final_score < self.ONE_BAR_VETO_SCORE_MAX
+            and one_bar_evidence_count >= self.ONE_BAR_VETO_MIN_EVIDENCE
+        )
 
     def process_pages(
         self,
@@ -381,14 +483,25 @@ class MMRProcessor:
 
                         prob = self.classifier.predict(crop)
                         if prob > self.rescue_threshold:
-                            found_num, final_score, final_debug = self._detect_number(
-                                image, system, x1, y1, x2, y2, prob, w_img, h_img
+                            found_num, final_score, final_debug, one_bar_evidence_count = (
+                                self._detect_number_with_evidence(
+                                    image, system, x1, y1, x2, y2, prob, w_img, h_img
+                                )
                             )
 
                             is_valid = False
                             status_label = ""
+                            one_bar_vetoed = False
                             if found_num:
-                                if prob > self.threshold:
+                                one_bar_vetoed = self._should_veto_one_bar_rest(
+                                    found_num,
+                                    prob,
+                                    final_score,
+                                    one_bar_evidence_count,
+                                )
+                                if one_bar_vetoed:
+                                    status_label = "one_bar_veto"
+                                elif prob > self.threshold:
                                     is_valid, status_label = True, "found"
                                 elif final_score > 60:
                                     is_valid, status_label = True, "rescue"
@@ -417,6 +530,18 @@ class MMRProcessor:
                                         f"R{found_num}",
                                         f"P{prob:.2f}",
                                     )
+                            elif one_bar_vetoed:
+                                logger.info(
+                                    "  [VETO] P%s S%s M%s: Prob=%.2f -> OCR=%s "
+                                    "(score=%.1f, one_bar_evidence=%s)",
+                                    page_num,
+                                    sys_idx,
+                                    measure["number"],
+                                    prob,
+                                    found_num,
+                                    final_score,
+                                    one_bar_evidence_count,
+                                )
                             elif prob > self.threshold:
                                 if debug_img is not None:
                                     self._draw_debug(
@@ -432,6 +557,12 @@ class MMRProcessor:
         return results
 
     def _detect_number(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
+        found_number, best_score, best_debug, _one_bar_evidence_count = (
+            self._detect_number_with_evidence(image, system, x1, y1, x2, y2, prob, w_img, h_img)
+        )
+        return found_number, best_score, best_debug
+
+    def _detect_number_with_evidence(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
         variants = [("standard", 0)]
         if prob > self.threshold:
             variants = [("standard", 0), ("no_dilate", 0), ("heavy_dilate", 0)]
@@ -441,6 +572,7 @@ class MMRProcessor:
                 )
 
         variant_results = []
+        one_bar_evidences = {}
 
         for mode, angle in variants:
             stave_results = []
@@ -459,6 +591,10 @@ class MMRProcessor:
                     continue
 
                 ocr_res, _ = self.ocr.ocr_engine(proc_img)
+                variant_key = (mode, angle)
+                one_bar_evidences[variant_key] = one_bar_evidences.get(
+                    variant_key, 0
+                ) + self._count_high_confidence_one_bar_evidence(ocr_res)
                 num, score, dbg = self.ocr.select_best_candidate(ocr_res, ox2 - ox1, oy2 - oy1)
                 stave_results.append((num, score, dbg))
 
@@ -477,11 +613,12 @@ class MMRProcessor:
                         variant_debug = f"variant={mode}:{angle}"
                     variant_results.append((current_num, best_score, variant_debug))
 
+        one_bar_evidence_count = max(one_bar_evidences.values(), default=0)
         if not variant_results:
-            return None, 0, ""
+            return None, 0, "", one_bar_evidence_count
 
         found_number, best_score, best_debug = max(variant_results, key=lambda x: x[1])
-        return found_number, best_score, best_debug
+        return found_number, best_score, best_debug, one_bar_evidence_count
 
     def _draw_debug(self, img, x1, y1, x2, y2, status, text, details):
         colors = {"found": (0, 255, 0), "rescue": (0, 165, 255), "skip": (0, 255, 255)}
@@ -489,3 +626,30 @@ class MMRProcessor:
         cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
         label = f"{text} ({details})" if details else text
         cv2.putText(img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+
+
+def run_mmr_batch(
+    pages_data: List[Dict],
+    image_paths: List[Path],
+    model_path: Path,
+    device: torch.device,
+    debug_root: Optional[Path] = None,
+    rapidocr_instance: Optional[RapidOCR] = None,
+    threshold: float = 0.5,
+    rescue_threshold: float = 0.1,
+    enable_rotation_tta: bool = False,
+) -> List[Dict[str, List[Dict]]]:
+    ocr_engine = None
+    if rapidocr_instance is not None:
+        ocr_engine = MMROCREngine(
+            enable_rotation_tta=enable_rotation_tta, ocr_engine=rapidocr_instance
+        )
+    processor = MMRProcessor(
+        model_path,
+        device,
+        ocr_engine=ocr_engine,
+        threshold=threshold,
+        rescue_threshold=rescue_threshold,
+        enable_rotation_tta=enable_rotation_tta,
+    )
+    return processor.process_pages(pages_data, image_paths, debug_root)

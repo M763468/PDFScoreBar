@@ -484,7 +484,7 @@ class MMRProcessor:
                         prob = self.classifier.predict(crop)
                         if prob > self.rescue_threshold:
                             found_num, final_score, final_debug, one_bar_evidence_count = (
-                                self._detect_number(
+                                self._detect_number_with_evidence(
                                     image, system, x1, y1, x2, y2, prob, w_img, h_img
                                 )
                             )
@@ -557,6 +557,12 @@ class MMRProcessor:
         return results
 
     def _detect_number(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
+        found_number, best_score, best_debug, _one_bar_evidence_count = (
+            self._detect_number_with_evidence(image, system, x1, y1, x2, y2, prob, w_img, h_img)
+        )
+        return found_number, best_score, best_debug
+
+    def _detect_number_with_evidence(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
         variants = [("standard", 0)]
         if prob > self.threshold:
             variants = [("standard", 0), ("no_dilate", 0), ("heavy_dilate", 0)]

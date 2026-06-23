@@ -75,6 +75,31 @@ class OneEvidencePerVariantOCR:
         return 11, -1.0, f"variant={self.variant}"
 
 
+def test_detect_number_preserves_three_value_contract():
+    processor = MMRProcessor(
+        model_path=Path("unused"),
+        device=torch.device("cpu"),
+        classifier=object(),
+        ocr_engine=OneEvidencePerVariantOCR(),
+    )
+    image = np.zeros((200, 200, 3), dtype=np.uint8)
+    system = {"staves": [{"bbox": [0, 50, 200, 100]}]}
+
+    result = processor._detect_number(
+        image=image,
+        system=system,
+        x1=20,
+        y1=40,
+        x2=120,
+        y2=110,
+        prob=0.99,
+        w_img=200,
+        h_img=200,
+    )
+
+    assert result == (11, -1.0, "variant=('standard', 0),variant=standard:0")
+
+
 def test_detect_number_uses_max_one_bar_evidence_across_variants_not_sum():
     processor = MMRProcessor(
         model_path=Path("unused"),
@@ -85,7 +110,7 @@ def test_detect_number_uses_max_one_bar_evidence_across_variants_not_sum():
     image = np.zeros((200, 200, 3), dtype=np.uint8)
     system = {"staves": [{"bbox": [0, 50, 200, 100]}]}
 
-    found_num, final_score, _debug, one_bar_evidence_count = processor._detect_number(
+    found_num, final_score, _debug, one_bar_evidence_count = processor._detect_number_with_evidence(
         image=image,
         system=system,
         x1=20,

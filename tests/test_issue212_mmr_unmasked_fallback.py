@@ -258,3 +258,49 @@ def test_fallback_paths_skip_empty_crops_before_preprocessing():
     assert score == 0
     assert debug == ""
     assert one_bar_evidence_count == 0
+
+
+def test_current_unmasked_fallback_runs_in_rescue_band():
+    processor = _processor(MaskedEmptyUnmaskedNumberOCR())
+    image = np.zeros((220, 220, 3), dtype=np.uint8)
+    system = {"staves": [{"bbox": [0, 40, 200, 140]}]}
+
+    found_num, score, debug, one_bar_evidence_count = processor._detect_number_with_evidence(
+        image=image,
+        system=system,
+        x1=20,
+        y1=50,
+        x2=140,
+        y2=130,
+        prob=0.20,
+        w_img=220,
+        h_img=220,
+    )
+
+    assert found_num == 3
+    assert score > 0
+    assert "unmasked_fallback_standard" in debug
+    assert one_bar_evidence_count == 0
+
+
+def test_left_wide_unmasked_fallback_stays_above_main_threshold():
+    processor = _processor(CurrentEmptyLeftWideNumberOCR())
+    image = np.zeros((260, 420, 3), dtype=np.uint8)
+    system = {"staves": [{"bbox": [0, 50, 400, 160]}]}
+
+    found_num, score, debug, one_bar_evidence_count = processor._detect_number_with_evidence(
+        image=image,
+        system=system,
+        x1=180,
+        y1=70,
+        x2=300,
+        y2=150,
+        prob=0.20,
+        w_img=420,
+        h_img=260,
+    )
+
+    assert found_num is None
+    assert score == 0
+    assert debug == ""
+    assert one_bar_evidence_count == 0

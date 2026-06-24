@@ -619,25 +619,29 @@ class MMRProcessor:
                         variant_debug = f"variant={mode}:{angle}"
                     variant_results.append((current_num, best_score, variant_debug))
 
-        if not variant_results and prob > self.threshold:
+        if not variant_results:
             fallback_configs = [
                 {
                     "name": "unmasked_fallback_standard",
                     "margin_y": 80,
                     "dx1": -30,
                     "dx2": 30,
+                    "min_prob": self.rescue_threshold,
                 },
                 {
                     "name": "left_wide_unmasked_fallback_standard",
                     "margin_y": 120,
                     "dx1": -180,
                     "dx2": 60,
+                    "min_prob": self.threshold,
                 },
             ]
 
             for cfg in fallback_configs:
                 if variant_results:
                     break
+                if prob <= cfg["min_prob"]:
+                    continue
 
                 fallback_results = []
                 name = cfg["name"]

@@ -583,9 +583,14 @@ class MMRProcessor:
                 ox1, ox2 = int(max(0, x1 - 30)), int(min(w_img, x2 + 30))
                 oy1, oy2 = int(max(0, s_bbox[1] - margin_y)), int(min(h_img, s_bbox[3] + 80))
                 stave_crop = image[oy1:oy2, ox1:ox2]
+                if stave_crop is None or stave_crop.size == 0:
+                    continue
+
                 stave_crop = self.ocr.mask_hbar_candidates(
                     stave_crop, margin_y, s_bbox[3] - s_bbox[1]
                 )
+                if stave_crop is None or stave_crop.size == 0:
+                    continue
 
                 proc_img = self.ocr.preprocess_variant(stave_crop, mode=mode, angle=angle)
                 if proc_img is None:
@@ -615,80 +620,68 @@ class MMRProcessor:
                     variant_results.append((current_num, best_score, variant_debug))
 
         if not variant_results and prob > self.threshold:
-            fallback_results = []
-            for stave in system.get("staves", []):
-                s_bbox = stave["bbox"]
-                margin_y = 80
-                ox1, ox2 = int(max(0, x1 - 30)), int(min(w_img, x2 + 30))
-                oy1, oy2 = int(max(0, s_bbox[1] - margin_y)), int(min(h_img, s_bbox[3] + 80))
-                stave_crop = image[oy1:oy2, ox1:ox2]
+            fallback_configs = [
+                {
+                    "name": "unmasked_fallback_standard",
+                    "margin_y": 80,
+                    "dx1": -30,
+                    "dx2": 30,
+                },
+                {
+                    "name": "left_wide_unmasked_fallback_standard",
+                    "margin_y": 120,
+                    "dx1": -180,
+                    "dx2": 60,
+                },
+            ]
 
-                proc_img = self.ocr.preprocess_variant(stave_crop, mode="standard", angle=0)
-                if proc_img is None:
-                    continue
+            for cfg in fallback_configs:
+                if variant_results:
+                    break
 
-                ocr_res, _ = self.ocr.ocr_engine(proc_img)
-                variant_key = ("unmasked_fallback_standard", 0)
-                one_bar_evidences[variant_key] = one_bar_evidences.get(
-                    variant_key, 0
-                ) + self._count_high_confidence_one_bar_evidence(ocr_res)
+                fallback_results = []
+                name = cfg["name"]
+                margin_y = cfg["margin_y"]
+                dx1 = cfg["dx1"]
+                dx2 = cfg["dx2"]
 
-                num, score, dbg = self.ocr.select_best_candidate(ocr_res, ox2 - ox1, oy2 - oy1)
-                if num is not None and score > self.UNMASKED_FALLBACK_MIN_SCORE:
-                    fallback_results.append((num, score, dbg))
+                for stave in system.get("staves", []):
+                    s_bbox = stave["bbox"]
+                    ox1 = int(max(0, x1 + dx1))
+                    ox2 = int(min(w_img, x2 + dx2))
+                    oy1 = int(max(0, s_bbox[1] - margin_y))
+                    oy2 = int(min(h_img, s_bbox[3] + margin_y))
+                    stave_crop = image[oy1:oy2, ox1:ox2]
+                    if stave_crop is None or stave_crop.size == 0:
+                        continue
 
-            if fallback_results:
-                counts = Counter([r[0] for r in fallback_results])
-                current_num = counts.most_common(1)[0][0]
-                if not (current_num > 20 and (x2 - x1) < 100):
-                    _, best_score, best_dbg = max(
-                        [r for r in fallback_results if r[0] == current_num],
-                        key=lambda x: x[1],
-                    )
-                    if best_dbg:
-                        variant_debug = f"{best_dbg},variant=unmasked_fallback_standard:0"
-                    else:
-                        variant_debug = "variant=unmasked_fallback_standard:0"
-                    variant_results.append((current_num, best_score, variant_debug))
+                    proc_img = self.ocr.preprocess_variant(stave_crop, mode="standard", angle=0)
+                    if proc_img is None:
+                        continue
 
-        if not variant_results and prob > self.threshold:
-            fallback_results = []
-            for stave in system.get("staves", []):
-                s_bbox = stave["bbox"]
-                margin_y = 120
-                ox1 = int(max(0, x1 - 180))
-                ox2 = int(min(w_img, x2 + 60))
-                oy1 = int(max(0, s_bbox[1] - margin_y))
-                oy2 = int(min(h_img, s_bbox[3] + margin_y))
-                stave_crop = image[oy1:oy2, ox1:ox2]
+                    ocr_res, _ = self.ocr.ocr_engine(proc_img)
+                    variant_key = (name, 0)
+                    one_bar_evidences[variant_key] = one_bar_evidences.get(
+                        variant_key, 0
+                    ) + self._count_high_confidence_one_bar_evidence(ocr_res)
 
-                proc_img = self.ocr.preprocess_variant(stave_crop, mode="standard", angle=0)
-                if proc_img is None:
-                    continue
+                    num, score, dbg = self.ocr.select_best_candidate(ocr_res, ox2 - ox1, oy2 - oy1)
+                    if num is not None and score > self.UNMASKED_FALLBACK_MIN_SCORE:
+                        fallback_results.append((num, score, dbg))
 
-                ocr_res, _ = self.ocr.ocr_engine(proc_img)
-                variant_key = ("left_wide_unmasked_fallback_standard", 0)
-                one_bar_evidences[variant_key] = one_bar_evidences.get(
-                    variant_key, 0
-                ) + self._count_high_confidence_one_bar_evidence(ocr_res)
-
-                num, score, dbg = self.ocr.select_best_candidate(ocr_res, ox2 - ox1, oy2 - oy1)
-                if num is not None and score > self.UNMASKED_FALLBACK_MIN_SCORE:
-                    fallback_results.append((num, score, dbg))
-
-            if fallback_results:
-                counts = Counter([r[0] for r in fallback_results])
-                current_num = counts.most_common(1)[0][0]
-                if not (current_num > 20 and (x2 - x1) < 100):
-                    _, best_score, best_dbg = max(
-                        [r for r in fallback_results if r[0] == current_num],
-                        key=lambda x: x[1],
-                    )
-                    if best_dbg:
-                        variant_debug = f"{best_dbg},variant=left_wide_unmasked_fallback_standard:0"
-                    else:
-                        variant_debug = "variant=left_wide_unmasked_fallback_standard:0"
-                    variant_results.append((current_num, best_score, variant_debug))
+                if fallback_results:
+                    counts = Counter([r[0] for r in fallback_results])
+                    current_num = counts.most_common(1)[0][0]
+                    if not (current_num > 20 and (x2 - x1) < 100):
+                        _, best_score, best_dbg = max(
+                            [r for r in fallback_results if r[0] == current_num],
+                            key=lambda x: x[1],
+                        )
+                        if best_dbg:
+                            variant_debug = f"{best_dbg},variant={name}:0"
+                        else:
+                            variant_debug = f"variant={name}:0"
+                        variant_results.append((current_num, best_score, variant_debug))
 
         one_bar_evidence_count = max(one_bar_evidences.values(), default=0)
         if not variant_results:

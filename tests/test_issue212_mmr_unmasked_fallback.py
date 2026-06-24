@@ -222,3 +222,39 @@ def test_left_wide_unmasked_fallback_rejects_negative_score_candidate():
     assert found_num is None
     assert score == 0
     assert debug == ""
+
+
+class RaisesOnEmptyCropOCR(MaskedEmptyUnmaskedNumberOCR):
+    def mask_hbar_candidates(self, img, staff_top_rel, staff_height):
+        return img
+
+    def preprocess_variant(self, img, mode="standard", angle=0):
+        if img is None or img.size == 0:
+            raise AssertionError("empty crop should be skipped before preprocessing")
+        return img
+
+    def ocr_engine(self, proc_img):
+        return [], None
+
+
+def test_fallback_paths_skip_empty_crops_before_preprocessing():
+    processor = _processor(RaisesOnEmptyCropOCR())
+    image = np.zeros((220, 220, 3), dtype=np.uint8)
+    system = {"staves": [{"bbox": [0, 40, 200, 140]}]}
+
+    found_num, score, debug, one_bar_evidence_count = processor._detect_number_with_evidence(
+        image=image,
+        system=system,
+        x1=500,
+        y1=50,
+        x2=540,
+        y2=130,
+        prob=0.99,
+        w_img=220,
+        h_img=220,
+    )
+
+    assert found_num is None
+    assert score == 0
+    assert debug == ""
+    assert one_bar_evidence_count == 0

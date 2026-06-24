@@ -651,6 +651,45 @@ class MMRProcessor:
                         variant_debug = "variant=unmasked_fallback_standard:0"
                     variant_results.append((current_num, best_score, variant_debug))
 
+        if not variant_results and prob > self.threshold:
+            fallback_results = []
+            for stave in system.get("staves", []):
+                s_bbox = stave["bbox"]
+                margin_y = 120
+                ox1 = int(max(0, x1 - 180))
+                ox2 = int(min(w_img, x2 + 60))
+                oy1 = int(max(0, s_bbox[1] - margin_y))
+                oy2 = int(min(h_img, s_bbox[3] + margin_y))
+                stave_crop = image[oy1:oy2, ox1:ox2]
+
+                proc_img = self.ocr.preprocess_variant(stave_crop, mode="standard", angle=0)
+                if proc_img is None:
+                    continue
+
+                ocr_res, _ = self.ocr.ocr_engine(proc_img)
+                variant_key = ("left_wide_unmasked_fallback_standard", 0)
+                one_bar_evidences[variant_key] = one_bar_evidences.get(
+                    variant_key, 0
+                ) + self._count_high_confidence_one_bar_evidence(ocr_res)
+
+                num, score, dbg = self.ocr.select_best_candidate(ocr_res, ox2 - ox1, oy2 - oy1)
+                if num is not None and score > self.UNMASKED_FALLBACK_MIN_SCORE:
+                    fallback_results.append((num, score, dbg))
+
+            if fallback_results:
+                counts = Counter([r[0] for r in fallback_results])
+                current_num = counts.most_common(1)[0][0]
+                if not (current_num > 20 and (x2 - x1) < 100):
+                    _, best_score, best_dbg = max(
+                        [r for r in fallback_results if r[0] == current_num],
+                        key=lambda x: x[1],
+                    )
+                    if best_dbg:
+                        variant_debug = f"{best_dbg},variant=left_wide_unmasked_fallback_standard:0"
+                    else:
+                        variant_debug = "variant=left_wide_unmasked_fallback_standard:0"
+                    variant_results.append((current_num, best_score, variant_debug))
+
         one_bar_evidence_count = max(one_bar_evidences.values(), default=0)
         if not variant_results:
             return None, 0, "", one_bar_evidence_count

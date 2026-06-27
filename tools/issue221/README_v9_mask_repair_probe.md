@@ -1,6 +1,12 @@
-# Temporary #221 v9 mask-and-repair probe
+# Temporary #221 v9/v9b mask-and-repair probe
 
-This file and `tools/issue221/v9_mask_repair_probe.py` are temporary experiment scaffolding for Issue #221.
+This file and the following scripts are temporary experiment scaffolding for Issue #221:
+
+```text
+工具/issue221/v9_mask_repair_probe.py
+工具/issue221/v9b_rapidocr_eval_mask_repair.py
+```
+
 They are intended to be removed by a cleanup commit after the diagnostic is complete.
 
 ## Purpose
@@ -19,6 +25,8 @@ white-mask selected interfering elements
 then dilate remaining black foreground to repair gaps introduced by the mask
 ```
 
+v9 only generates transformed images and proxy metrics. v9b evaluates those transformed images with RapidOCR, which is the production-relevant OCR baseline for this repository.
+
 This is not a production patch. It is a bounded diagnostic to decide whether a follow-up issue about staff-line-aware / symbol-aware digit isolation is justified.
 
 ## Run
@@ -30,13 +38,9 @@ cd /home/masaki_muramatsu/ws_PDFScoreBar
 git fetch origin --prune
 git checkout investigate/issue221-component-ocr-residuals
 git pull --ff-only origin investigate/issue221-component-ocr-residuals
-
-PYTHONPATH=. python3 tools/issue221/v9_mask_repair_probe.py \
-  --input-root logs/issue221_component_ocr \
-  --output-dir logs/issue221_component_ocr/v9_mask_repair_probe
 ```
 
-If optional Tesseract OCR should be disabled:
+Step 1: generate mask-and-repair images. Use `--skip-ocr` here so v9 remains a pure image-generation step.
 
 ```bash
 PYTHONPATH=. python3 tools/issue221/v9_mask_repair_probe.py \
@@ -45,9 +49,26 @@ PYTHONPATH=. python3 tools/issue221/v9_mask_repair_probe.py \
   --skip-ocr
 ```
 
+Step 2: evaluate the v9 transformed images with RapidOCR.
+
+```bash
+PYTHONPATH=. python3 tools/issue221/v9b_rapidocr_eval_mask_repair.py \
+  --v9-dir logs/issue221_component_ocr/v9_mask_repair_probe \
+  --output-dir logs/issue221_component_ocr/v9b_rapidocr_mask_repair_eval
+```
+
+Optional debug cap:
+
+```bash
+PYTHONPATH=. python3 tools/issue221/v9b_rapidocr_eval_mask_repair.py \
+  --v9-dir logs/issue221_component_ocr/v9_mask_repair_probe \
+  --output-dir logs/issue221_component_ocr/v9b_rapidocr_mask_repair_eval_debug \
+  --max-rows 60
+```
+
 ## Output
 
-The script writes:
+v9 writes:
 
 ```text
 logs/issue221_component_ocr/v9_mask_repair_probe/summary.json
@@ -59,10 +80,20 @@ logs/issue221_component_ocr/v9_mask_repair_probe/review_pack/
 logs/issue221_component_ocr/issue221_mask_repair_probe_v9_pack.zip
 ```
 
-Share only this zip after running:
+v9b writes:
+
+```text
+logs/issue221_component_ocr/v9b_rapidocr_mask_repair_eval/summary.json
+logs/issue221_component_ocr/v9b_rapidocr_mask_repair_eval/decision.md
+logs/issue221_component_ocr/v9b_rapidocr_mask_repair_eval/ocr_rows.csv
+logs/issue221_component_ocr/issue221_mask_repair_rapidocr_v9b_pack.zip
+```
+
+Share both zips if possible, but the v9b zip is the primary result for judging OCR impact:
 
 ```text
 logs/issue221_component_ocr/issue221_mask_repair_probe_v9_pack.zip
+logs/issue221_component_ocr/issue221_mask_repair_rapidocr_v9b_pack.zip
 ```
 
 ## What to inspect
@@ -81,13 +112,15 @@ mask_horizontal_vertical_edge_dilate1
 mask_horizontal_vertical_edge_dilate2
 ```
 
-Interpretation should focus on element separation, not only OCR exact hits:
+Interpretation should focus on RapidOCR first:
 
 - Does horizontal masking improve page_004 without destroying the digit 3?
-- Does edge-component masking reduce page_001 boxed-number leakage?
+- Does edge-component masking reduce page_001 boxed-number leakage, or does it erase too much?
 - Does vertical masking help page_009, or does it erase part of the digit?
 - Does dilation repair holes, or does it reconnect the digit with neighboring symbols?
-- Does any variant produce residual exact hits while avoiding wrong residual outputs and global risky outputs?
+- Does any variant produce RapidOCR residual exact hits while avoiding residual wrong outputs and global risky outputs?
+
+A candidate-like result in v9b is still not a production candidate. It only means the preprocessing deserves a follow-up issue for production wiring and full 68-page MMR evaluation.
 
 ## Constraints
 

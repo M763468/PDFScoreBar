@@ -5,8 +5,7 @@ from __future__ import annotations
 
 def _serialize_staves(staves):
     return [
-        {"bbox": [staff.bbox.x1, staff.bbox.y1, staff.bbox.x2, staff.bbox.y2]}
-        for staff in staves
+        {"bbox": [staff.bbox.x1, staff.bbox.y1, staff.bbox.x2, staff.bbox.y2]} for staff in staves
     ]
 
 
@@ -31,18 +30,13 @@ def score_to_dict(score) -> dict:
         for system in page.systems:
             staves = _serialize_staves(system.staves)
             if not system.measures:
-                page_data["empty_systems"].append(
-                    {"staves": staves, "reason": "no_measures"}
-                )
+                page_data["empty_systems"].append({"staves": staves, "reason": "no_measures"})
                 continue
 
             page_data["systems"].append(
                 {
                     "staves": staves,
-                    "measures": [
-                        _serialize_measure(measure)
-                        for measure in system.measures
-                    ],
+                    "measures": [_serialize_measure(measure) for measure in system.measures],
                 }
             )
         data["pages"].append(page_data)

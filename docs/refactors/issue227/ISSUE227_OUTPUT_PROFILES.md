@@ -314,8 +314,8 @@ The contract package is intended to support separate follow-up PRs rather than f
 
 | #227 acceptance | Contract package outcome |
 | --- | --- |
-| final / review / debug profile の目的が定義されている | Profile purpose sections and cumulative profile table. |
-| 各 profile の出力ファイル一覧と directory contract がある | Root, `final`, `review`, and `debug` directory/file contracts plus `OUTPUT_PROFILE_CONTRACT_SPEC.yaml`. |
-| final output に含めるものと含めないものが明確になっている | `final` file contract and explicit exclusions. |
-| review / debug output が再現性や問題調査に必要な範囲で定義されている | `review`, `debug`, `CURRENT_OUTPUT_MAPPING.md`, and handoff examples. |
-| 後続の実装 issue に渡せる仕様になっている | Structured spec, examples, and `IMPLEMENTATION_HANDOFF.md`. |
+| The purposes of final / review / debug profiles are defined | Profile purpose sections and cumulative profile table. |
+| The output file list and directory contract for each profile are provided | Root, `final`, `review`, and `debug` directory/file contracts plus `OUTPUT_PROFILE_CONTRACT_SPEC.yaml`. |
+| What to include and exclude in the final output is clarified | `final` file contract and explicit exclusions. |
+| Review / debug outputs are defined to the extent necessary for reproducibility and troubleshooting | `review`, `debug`, `CURRENT_OUTPUT_MAPPING.md`, and handoff examples. |
+| The specification is ready to be handed off to follow-up implementation issues | Structured spec, examples, and `IMPLEMENTATION_HANDOFF.md`. |

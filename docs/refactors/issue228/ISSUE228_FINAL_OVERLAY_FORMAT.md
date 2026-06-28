@@ -157,7 +157,7 @@ The preferred layout is:
 
 The exact padding and font metrics are implementation details, but they should be scale-aware rather than fixed to one DPI.
 
-The illustrative mock created during #228 intentionally demonstrates the row-level labeling concept, not exact pixel spacing. In that mock, the labels sit farther away from the music rows than is likely desirable for final implementation. A renderer should tune the horizontal offset against actual page geometry so labels remain visually associated with their target row while still avoiding collisions.
+A renderer should tune the label position and size against actual page geometry. The implementation must balance visual association with the target row, available left margin, label readability, and collision avoidance with clefs, dynamics, tempo text, divisi text, rehearsal marks, braces, brackets, and other printed symbols.
 
 ### Style
 
@@ -285,25 +285,9 @@ A later implementation should add a distinct final renderer rather than reusing 
 | System grouping / connector evidence | `review/` subset or `debug/` full trace | Not drawn in final. |
 | Warnings and placement fallback notes | `review/warnings.json` and/or debug metadata | Not drawn in final. |
 
-## Mock examples
+## Text examples
 
 These examples are intentionally textual. #228 does not require storing generated image artifacts in Git.
-
-### Note on generated mock spacing and implementation tuning
-
-The generated mock image created from a representative score page is illustrative, not normative, with respect to exact spacing, offset, or font scale.
-
-In that mock, the left-side row-start labels are placed farther from the music rows than is likely desirable for final implementation. The accepted design intent is that labels should remain visually associated with the target row while avoiding overlap with notation.
-
-A follow-up renderer should tune placement against actual rendered geometry, including:
-
-- horizontal distance from the grouped row start;
-- label size and readability;
-- available left margin width;
-- collision avoidance against clefs, dynamics, tempo text, divisi text, rehearsal marks, braces, brackets, and other printed symbols;
-- fallback placement behavior when the preferred gutter position is too tight.
-
-The mock should be read as a semantic example of row-start numbering, not as the exact final spacing specification.
 
 ### Example 1: ordinary two-row page
 
@@ -407,7 +391,7 @@ Recommended implementation inputs:
 - optional style/config defaults for label size and padding;
 - optional review/debug sink for placement fallback decisions.
 
-The renderer should treat mock/example visuals as conceptual only and must perform final placement tuning against real page geometry. In particular, row-start labels should usually be placed closer to the target row than in the illustrative mock, provided that readability and collision avoidance are preserved.
+The renderer must perform final placement tuning against real page geometry, including label size, row distance, left margin, collision avoidance, and fallback behavior.
 
 Recommended internal label model:
 
@@ -468,7 +452,7 @@ Full visual review may additionally use representative score pages, but those ge
 
 | #228 acceptance | Design outcome |
 | --- | --- |
-| final overlay の表示仕様が文書化されている | Decision summary, displayed-number meaning, granularity, placement, style, and mock examples. |
+| final overlay の表示仕様が文書化されている | Decision summary, displayed-number meaning, granularity, placement, style, and text examples. |
 | 現行 overlay のうち final に残すもの、review/debug に移すものが明確になっている | Current overlay split and final/review/debug boundary tables. |
 | 各段左端に付ける番号の意味と算出元が説明されている | Final applied numbering, numbering row, row-start number, and update rules. |
 | MMR / manual correction が反映された場合の扱いが定義されている | MMR / skip / measure span handling and manual correction handling sections. |

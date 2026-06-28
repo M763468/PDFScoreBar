@@ -112,8 +112,8 @@ notes for current instructions.
   Defines the final score-numbered PDF visual contract: one row-start measure
   number at the left edge of each final grouped numbering row, derived from
   final applied numbering, with MMR/manual corrections reflected semantically,
-  review/debug overlay details excluded from the final PDF, and generated mock
-  spacing treated as conceptual rather than normative.
+  review/debug overlay details excluded from the final PDF, and label position
+  and size tuned against real page geometry.
 
 ### Issue #120 / Stage E / Detector Contract Documentation
 

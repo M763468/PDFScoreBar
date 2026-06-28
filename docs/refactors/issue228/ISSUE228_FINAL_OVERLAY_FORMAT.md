@@ -285,7 +285,7 @@ A later implementation should add a distinct final renderer rather than reusing 
 | System grouping / connector evidence | `review/` subset or `debug/` full trace | Not drawn in final. |
 | Warnings and placement fallback notes | `review/warnings.json` and/or debug metadata | Not drawn in final. |
 
-## Text examples
+## Schematic examples
 
 These examples are intentionally textual. #228 does not require storing generated image artifacts in Git.
 
@@ -452,7 +452,7 @@ Full visual review may additionally use representative score pages, but those ge
 
 | #228 acceptance | Design outcome |
 | --- | --- |
-| final overlay の表示仕様が文書化されている | Decision summary, displayed-number meaning, granularity, placement, style, and text examples. |
+| final overlay の表示仕様が文書化されている | Decision summary, displayed-number meaning, granularity, placement, style, and schematic examples. |
 | 現行 overlay のうち final に残すもの、review/debug に移すものが明確になっている | Current overlay split and final/review/debug boundary tables. |
 | 各段左端に付ける番号の意味と算出元が説明されている | Final applied numbering, numbering row, row-start number, and update rules. |
 | MMR / manual correction が反映された場合の扱いが定義されている | MMR / skip / measure span handling and manual correction handling sections. |

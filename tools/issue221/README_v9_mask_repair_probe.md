@@ -1,10 +1,11 @@
-# Temporary #221 v9/v9b mask-and-repair probe
+# Temporary #221 v9/v9b/v10 mask-and-repair probes
 
 This file and the following scripts are temporary experiment scaffolding for Issue #221:
 
 ```text
 tools/issue221/v9_mask_repair_probe.py
 tools/issue221/v9b_rapidocr_eval_mask_repair.py
+tools/issue221/v10_windowed_rapidocr_eval.py
 ```
 
 They are intended to be removed by a cleanup commit after the diagnostic is complete.
@@ -30,6 +31,12 @@ v9 only generates transformed images and proxy metrics. v9b evaluates those tran
 - `rapidocr_onnxruntime.RapidOCR`
 - `src.measure_numbering.mmr.MMROCREngine.select_best_candidate()`
 
+v10 then tests whether restricting the horizontal OCR window can suppress edge/neighbor contamination after v9 preprocessing:
+
+- center-window restriction,
+- right-edge trimming,
+- left/right edge trimming.
+
 This is not a production patch. It is a bounded diagnostic to decide whether a follow-up issue about staff-line-aware / symbol-aware digit isolation is justified.
 
 ## Run
@@ -48,7 +55,7 @@ git pull --ff-only origin investigate/issue221-component-ocr-residuals
 docker start pdfscore_pipeline_pytest_dev >/dev/null
 ```
 
-Run v9 and v9b together:
+Run v9, v9b, and v10 together:
 
 ```bash
 docker exec -w /workspace \
@@ -76,13 +83,18 @@ $PY tools/issue221/v9b_rapidocr_eval_mask_repair.py \
   --v9-dir logs/issue221_component_ocr/v9_mask_repair_probe \
   --output-dir logs/issue221_component_ocr/v9b_rapidocr_mask_repair_eval
 
+$PY tools/issue221/v10_windowed_rapidocr_eval.py \
+  --v9-dir logs/issue221_component_ocr/v9_mask_repair_probe \
+  --output-dir logs/issue221_component_ocr/v10_windowed_rapidocr_eval
+
 ls -lh \
   logs/issue221_component_ocr/issue221_mask_repair_probe_v9_pack.zip \
-  logs/issue221_component_ocr/issue221_mask_repair_rapidocr_v9b_pack.zip
+  logs/issue221_component_ocr/issue221_mask_repair_rapidocr_v9b_pack.zip \
+  logs/issue221_component_ocr/issue221_windowed_rapidocr_v10_pack.zip
 '
 ```
 
-Optional debug cap:
+Optional v10 debug cap:
 
 ```bash
 docker exec -w /workspace \
@@ -92,9 +104,9 @@ docker exec -w /workspace \
 set -euo pipefail
 PY=/opt/venv_pipeline/bin/python
 
-$PY tools/issue221/v9b_rapidocr_eval_mask_repair.py \
+$PY tools/issue221/v10_windowed_rapidocr_eval.py \
   --v9-dir logs/issue221_component_ocr/v9_mask_repair_probe \
-  --output-dir logs/issue221_component_ocr/v9b_rapidocr_mask_repair_eval_debug \
+  --output-dir logs/issue221_component_ocr/v10_windowed_rapidocr_eval_debug \
   --max-rows 60
 '
 ```
@@ -122,16 +134,29 @@ logs/issue221_component_ocr/v9b_rapidocr_mask_repair_eval/ocr_rows.csv
 logs/issue221_component_ocr/issue221_mask_repair_rapidocr_v9b_pack.zip
 ```
 
-Share both zips if possible, but the v9b zip is the primary result for judging OCR impact:
+v10 writes:
+
+```text
+logs/issue221_component_ocr/v10_windowed_rapidocr_eval/summary.json
+logs/issue221_component_ocr/v10_windowed_rapidocr_eval/decision.md
+logs/issue221_component_ocr/v10_windowed_rapidocr_eval/ocr_rows.csv
+logs/issue221_component_ocr/v10_windowed_rapidocr_eval/parsed_rows.csv
+logs/issue221_component_ocr/v10_windowed_rapidocr_eval/candidate_rows.csv
+logs/issue221_component_ocr/v10_windowed_rapidocr_eval/review_windows/
+logs/issue221_component_ocr/issue221_windowed_rapidocr_v10_pack.zip
+```
+
+Share all three zips if possible, but the v10 zip is the primary result for judging the window-restriction hypothesis:
 
 ```text
 logs/issue221_component_ocr/issue221_mask_repair_probe_v9_pack.zip
 logs/issue221_component_ocr/issue221_mask_repair_rapidocr_v9b_pack.zip
+logs/issue221_component_ocr/issue221_windowed_rapidocr_v10_pack.zip
 ```
 
 ## What to inspect
 
-The diagnostic compares these element-level mask variants:
+v9 compares these element-level mask variants:
 
 ```text
 baseline_binary
@@ -152,16 +177,31 @@ direct
 production_standard
 ```
 
+v10 evaluates a selected subset of variants across these horizontal windows:
+
+```text
+full
+center50
+center60
+center70
+center80
+trim_right10
+trim_right15
+trim_right20
+trim_lr10
+trim_lr15
+```
+
 Interpretation should focus on RapidOCR first:
 
 - Does horizontal masking improve page_004 without destroying the digit 3?
-- Does edge-component masking reduce page_001 boxed-number leakage, or does it erase too much?
-- Does vertical masking help page_009, or does it erase part of the digit?
-- Does dilation repair holes, or does it reconnect the digit with neighboring symbols?
-- Does any variant produce RapidOCR residual exact hits while avoiding residual wrong outputs and global risky outputs?
-- If OCR remains empty, inspect `raw_repr_head`, `ocr_result_repr_head`, `raw_text_count`, and `extraction_suspect` before treating the run as a negative result.
+- Does right-edge trimming or center-window restriction reduce page_001 boxed-number leakage?
+- Does right-edge trimming or center-window restriction reduce page_009 `31`-like readings?
+- Does windowing merely remove wrong readings, or does it also remove the expected digit?
+- Does any variant/window/mode scope produce exact residual hits while avoiding residual wrong outputs and global risky outputs?
+- If OCR remains empty, inspect `raw_repr_head`, `ocr_result_repr_head`, and `raw_text_count` before treating the run as a negative result.
 
-A candidate-like result in v9b is still not a production candidate. It only means the preprocessing deserves a follow-up issue for production wiring and full 68-page MMR evaluation.
+A candidate-like result in v10 is still not a production candidate. It only means the geometry condition deserves a follow-up issue for production wiring and full 68-page MMR evaluation.
 
 ## Constraints
 

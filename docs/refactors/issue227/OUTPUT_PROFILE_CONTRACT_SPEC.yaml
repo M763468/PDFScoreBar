@@ -1,0 +1,179 @@
+# Structured contract summary for Issue #227.
+# This file is intentionally documentation/specification, not production config.
+
+schema: pdfscorebar.output_profile_contract.v1
+parent_epic: 225
+issue: 227
+depends_on:
+  - 226
+non_goals:
+  - implement_pdfscorebar_run_cli
+  - add_console_script_packaging
+  - implement_profile_materializer
+  - implement_final_overlay_renderer
+  - integrate_manual_correction_gui
+  - clean_or_delete_historical_artifacts
+  - change_detector_ocr_mmr_accuracy_behavior
+
+command_context:
+  formal_entrypoint_from_issue_226: pdfscorebar run INPUT.pdf --output-dir OUTPUT_DIR
+  output_dir_semantics:
+    public_output_dir_is_exact_argument: true
+    implicit_timestamp_subdirectory_for_final_or_review: false
+    run_id_moves_final_or_review_output: false
+    debug_uses_timestamped_run_directory: true
+  output_name:
+    default: sanitized_input_pdf_stem
+    final_pdf_pattern: <output-name>_score_numbered.pdf
+    explicit_name_override_allowed_in_followup_cli_or_config: true
+  profile_selector:
+    option: --profile
+    default: final
+    allowed_values:
+      - final
+      - review
+      - debug
+  debug_flag_rule:
+    may_promote_effective_profile_to_debug: true
+    must_not_write_debug_artifacts_into_final: true
+    debug_artifacts_go_under: debug/<debug-run-id>/
+    debug_run_id_should_include:
+      - timestamp
+      - explicit_run_id_when_provided
+
+root:
+  rule: keep small; final profile creates only final/ by default
+  allowed_directories:
+    - final/
+    - review/
+    - debug/
+  forbidden_at_root:
+    - run_summary.json
+    - resolved_config.yaml
+    - warnings.json
+    - pipeline.log
+    - manifest.json
+    - filters.json
+    - intermediate/
+    - outputs/
+    - page images
+    - issue-specific evaluation contracts
+    - generated experiment zip files
+
+profiles:
+  final:
+    cumulative_rank: 0
+    purpose: final PDF deliverable only
+    directories_created:
+      - final/
+    required_files:
+      final/<output-name>_score_numbered.pdf:
+        required_after_issue: 228
+        description: final score-numbered PDF; the only final-profile deliverable
+    forbidden:
+      - page PNG images
+      - warnings.json
+      - run_summary.json
+      - resolved_config.yaml
+      - score_numbering.json
+      - raw detector JSON
+      - review overlays
+      - staff/notehead/clef/candidate masks
+      - MMR crops/OCR traces/classifier scores/TTA diagnostics
+      - pipeline.log
+      - stdout/stderr captures
+      - resource logs
+      - issue-specific evaluation artifacts
+      - internal intermediate/ or outputs/ trees
+
+  review:
+    cumulative_rank: 1
+    includes_profiles:
+      - final
+    purpose: human inspection and correction handoff
+    directories_created:
+      - final/
+      - review/
+    required_files:
+      review/run_summary.json:
+        description: review-facing run summary and artifact pointers
+      review/resolved_config.yaml:
+        description: resolved execution config for reproducibility
+      review/score_numbering.json:
+        description: stable machine-readable final numbering; review/tooling output, not final deliverable
+      review/manual_correction_input.json:
+        description: primary handoff for Issue #229
+      review/pages/<page_id>/source.png:
+        description: rendered source page in review coordinate space
+      review/pages/<page_id>/review_overlay.png:
+        description: inspection overlay; current numbering_overlay.png maps here
+      review/pages/<page_id>/numbering_final.json:
+        description: page-level final numbering for review/GUI
+    optional_or_recommended_files:
+      review/warnings.json:
+        description: user-actionable warnings; omit when empty
+      review/pages/<page_id>/final_page.png:
+        description: optional page-level final visual artifact for review while PDF assembly is unavailable
+      review/pages/<page_id>/barlines_review.json:
+        description: review-level barline geometry after accepted overrides
+      review/pages/<page_id>/mmr_overrides.json:
+        description: normalized MMR skip/span evidence when MMR is enabled
+      review/pages/<page_id>/correction_template.json:
+        description: per-page correction scaffold
+    reserved_files:
+      review/corrections/measure_overrides.json:
+        overwrite_policy: must_not_overwrite_existing_without_explicit_overwrite
+        description: default manual correction save target
+    forbidden_by_default:
+      - full hybrid detector tree
+      - CNN crops
+      - OCR crop images
+      - resource sampling logs
+      - large stdout/stderr captures
+
+  debug:
+    cumulative_rank: 2
+    includes_profiles:
+      - final
+      - review
+    purpose: developer troubleshooting and reproduction
+    debug_run_id:
+      pattern: <timestamp>[_<explicit-run-id>]
+      examples:
+        - 20260629_010203_issue227_probe
+        - 20260629_010203
+    directories_created:
+      - final/
+      - review/
+      - debug/<debug-run-id>/
+    required_when_available:
+      debug/<debug-run-id>/pipeline.log: diagnostic pipeline log
+      debug/<debug-run-id>/manifest.json: internal manifest and raw paths
+      debug/<debug-run-id>/filters.json: page filtering state and skip reasons
+    recommended_files:
+      debug/<debug-run-id>/environment.json: runtime/package/GPU summary
+      debug/<debug-run-id>/artifact_index.json: mapping of public paths to internal/external artifacts
+    optional_files:
+      debug/<debug-run-id>/stdout_stderr.log: captured external tool output
+      debug/<debug-run-id>/resource_samples.jsonl: resource samples
+      debug/<debug-run-id>/resource_summary.json: resource summary
+      debug/<debug-run-id>/inputs/images/: retained rendered inputs
+      debug/<debug-run-id>/intermediate/<page_id>/: page-level intermediates for reproduction
+      debug/<debug-run-id>/detection/: detector internals when retained
+      debug/<debug-run-id>/mmr/<page_id>/: MMR OCR/classifier/debug evidence when retained
+      debug/<debug-run-id>/legacy_current_layout/: transitional copy/reference of current internal layout
+
+handoffs:
+  issue_228_final_overlay:
+    owns:
+      - final/<output-name>_score_numbered.pdf
+    current_numbering_overlay_png_rule: treat_as_review_overlay_until_issue_228_accepts_or_replaces_it
+    transitional_page_images_rule: place_under_review_or_debug_not_final
+  issue_229_manual_correction:
+    primary_input: review/manual_correction_input.json
+    default_output: review/corrections/measure_overrides.json
+    overwrite_policy: do_not_overwrite_user_edits_without_explicit_overwrite
+  future_cli_implementation:
+    must_use_this_contract_for_public_output_layout: true
+    must_not_expose_legacy_logs_layout_as_user_contract: true
+    debug_run_id_must_be_recorded: true

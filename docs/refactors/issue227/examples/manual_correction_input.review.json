@@ -1,0 +1,43 @@
+{
+  "schema": "pdfscorebar.manual_correction_input.v1",
+  "input_pdf": "score.pdf",
+  "output_name": "score",
+  "final_pdf": "final/score_score_numbered.pdf",
+  "score_numbering": "review/score_numbering.json",
+  "correction_output": "review/corrections/measure_overrides.json",
+  "coordinate_space": {
+    "type": "rendered_page_image",
+    "origin": "top_left",
+    "units": "pixels"
+  },
+  "pages": [
+    {
+      "page_id": "page_001",
+      "page_number": 1,
+      "source_image": "review/pages/page_001/source.png",
+      "review_overlay": "review/pages/page_001/review_overlay.png",
+      "final_page": "review/pages/page_001/final_page.png",
+      "numbering_final": "review/pages/page_001/numbering_final.json",
+      "barlines_review": "review/pages/page_001/barlines_review.json",
+      "mmr_overrides": "review/pages/page_001/mmr_overrides.json",
+      "correction_template": "review/pages/page_001/correction_template.json"
+    },
+    {
+      "page_id": "page_002",
+      "page_number": 2,
+      "source_image": "review/pages/page_002/source.png",
+      "review_overlay": "review/pages/page_002/review_overlay.png",
+      "final_page": "review/pages/page_002/final_page.png",
+      "numbering_final": "review/pages/page_002/numbering_final.json",
+      "barlines_review": "review/pages/page_002/barlines_review.json",
+      "mmr_overrides": null,
+      "correction_template": "review/pages/page_002/correction_template.json"
+    }
+  ],
+  "save_policy": {
+    "default": "keep_existing_user_edits",
+    "explicit_user_action_required_for": [
+      "review/corrections/measure_overrides.json"
+    ]
+  }
+}

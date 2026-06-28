@@ -157,6 +157,8 @@ The preferred layout is:
 
 The exact padding and font metrics are implementation details, but they should be scale-aware rather than fixed to one DPI.
 
+The illustrative mock created during #228 intentionally demonstrates the row-level labeling concept, not exact pixel spacing. In that mock, the labels sit farther away from the music rows than is likely desirable for final implementation. A renderer should tune the horizontal offset against actual page geometry so labels remain visually associated with their target row while still avoiding collisions.
+
 ### Style
 
 Default final label style:
@@ -287,6 +289,22 @@ A later implementation should add a distinct final renderer rather than reusing 
 
 These examples are intentionally textual. #228 does not require storing generated image artifacts in Git.
 
+### Note on generated mock spacing and implementation tuning
+
+The generated mock image created from a representative score page is illustrative, not normative, with respect to exact spacing, offset, or font scale.
+
+In that mock, the left-side row-start labels are placed farther from the music rows than is likely desirable for final implementation. The accepted design intent is that labels should remain visually associated with the target row while avoiding overlap with notation.
+
+A follow-up renderer should tune placement against actual rendered geometry, including:
+
+- horizontal distance from the grouped row start;
+- label size and readability;
+- available left margin width;
+- collision avoidance against clefs, dynamics, tempo text, divisi text, rehearsal marks, braces, brackets, and other printed symbols;
+- fallback placement behavior when the preferred gutter position is too tight.
+
+The mock should be read as a semantic example of row-start numbering, not as the exact final spacing specification.
+
 ### Example 1: ordinary two-row page
 
 Final applied numbering:
@@ -388,6 +406,8 @@ Recommended implementation inputs:
 - page dimensions and coordinate transform metadata;
 - optional style/config defaults for label size and padding;
 - optional review/debug sink for placement fallback decisions.
+
+The renderer should treat mock/example visuals as conceptual only and must perform final placement tuning against real page geometry. In particular, row-start labels should usually be placed closer to the target row than in the illustrative mock, provided that readability and collision avoidance are preserved.
 
 Recommended internal label model:
 

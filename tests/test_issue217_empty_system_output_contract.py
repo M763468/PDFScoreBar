@@ -1,7 +1,7 @@
 import unittest
 
+from src.measure_numbering.serialization import score_to_dict
 from src.measure_numbering.types import BBox, Barline, Measure, Page, Score, Staff, System
-from tools.add_measure_numbers import score_to_dict
 
 
 class TestIssue217EmptySystemOutputContract(unittest.TestCase):
@@ -62,7 +62,11 @@ class TestIssue217EmptySystemOutputContract(unittest.TestCase):
                     page_number=1,
                     width=1000,
                     height=2000,
-                    systems=[self.make_empty_system(), self.make_numbered_system(), self.make_empty_system()],
+                    systems=[
+                        self.make_empty_system(),
+                        self.make_numbered_system(),
+                        self.make_empty_system(),
+                    ],
                 )
             ]
         )

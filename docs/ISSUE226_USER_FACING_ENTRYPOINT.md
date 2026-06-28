@@ -9,6 +9,14 @@
 
 This document records the design outcome for #226. It intentionally does not implement the CLI. The goal is to define a clean user-facing surface, classify existing entrypoints, and prevent future implementation work from duplicating pipeline logic across Makefile targets, Python scripts, and package commands.
 
+## Document lifecycle
+
+This file is an issue-scoped design handoff, not the permanent home for the user-facing pipeline documentation.
+
+After the user-facing CLI is implemented and accepted, the stable parts of this design must be moved into formal documentation such as the root `README.md`, `docs/ENVIRONMENTS.md`, a future user guide, and/or the relevant operational docs. At that point, this issue-specific document and its `docs/README.md` index entry should be removed.
+
+Permanent repository behavior must not depend on a document whose only discoverable name is tied to a completed issue number.
+
 ## Decision
 
 Adopt a new, thin user-facing CLI command as the formal public entrypoint:
@@ -231,6 +239,8 @@ Suggested first implementation scope:
 8. Document the user command without changing Stage E or evaluation docs into user-facing docs.
 
 Implementation should not add new dependencies unless explicitly approved.
+
+After that implementation is accepted, promote the stable user-facing behavior into permanent documentation and remove this issue-scoped design document. The implementation PR or its immediate follow-up should update `docs/README.md` accordingly so this file no longer appears as the only indexed source for the formal command.
 
 ## Acceptance mapping
 

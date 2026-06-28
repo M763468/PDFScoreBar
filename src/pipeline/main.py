@@ -56,7 +56,8 @@ def run_pipeline(
     file_handler = logging.FileHandler(log_file, mode="w", encoding="utf-8")
     file_handler.setFormatter(
         logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+            "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
     )
     # File log gets EVERYTHING (DEBUG and up)
@@ -106,7 +107,11 @@ def run_pipeline(
                 debug=debug,
                 resolved_config=config,
             )
-            logger.info(f"Materialized {output_profile} output profile at {public_output_dir}")
+            logger.info(
+                "Materialized %s output profile at %s",
+                output_profile,
+                public_output_dir,
+            )
         return result_dir
 
     finally:
@@ -131,18 +136,27 @@ def main() -> None:
         description="Run the integrated detection and numbering pipeline."
     )
     parser.add_argument(
-        "--config", type=Path, required=True, help="Path to the YAML configuration file."
+        "--config",
+        type=Path,
+        required=True,
+        help="Path to the YAML configuration file.",
     )
     parser.add_argument("--run-id", type=str, help="Optional run identifier.")
     parser.add_argument("--output-root", type=Path, help="Optional output root directory.")
     parser.add_argument(
-        "--dry-run", action="store_true", help="Log commands without executing them."
+        "--dry-run",
+        action="store_true",
+        help="Log commands without executing them.",
     )
     parser.add_argument(
-        "--validate-only", action="store_true", help="Stop after input resolution and filtering."
+        "--validate-only",
+        action="store_true",
+        help="Stop after input resolution and filtering.",
     )
     parser.add_argument(
-        "--skip-existing", action="store_true", help="Skip steps if output files already exist."
+        "--skip-existing",
+        action="store_true",
+        help="Skip steps if output files already exist.",
     )
     parser.add_argument("--page-limit", type=int, help="Limit the number of pages to process.")
     parser.add_argument("--debug", action="store_true", help="Output intermediate debug files.")

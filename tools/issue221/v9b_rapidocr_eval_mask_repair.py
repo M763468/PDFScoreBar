@@ -2,17 +2,20 @@
 """Temporary #221 v9b RapidOCR evaluation for v9 mask-repair outputs.
 
 Run v9 first to generate variant images, then run this script to evaluate the
-same images with RapidOCR, the production-relevant OCR backend.
+same images with the production-relevant RapidOCR path:
+
+- import `RapidOCR` from `rapidocr_onnxruntime`, matching src.measure_numbering.mmr
+- use `MMROCREngine.select_best_candidate()` for numeric candidate selection
+- record raw OCR result diagnostics so all-empty runs can be distinguished from
+  result-parsing bugs.
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
-import importlib
 import json
 import os
-import re
 import sys
 import time
 import traceback
@@ -21,15 +24,17 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-try:
-    import numpy as np
-except Exception:  # pragma: no cover
-    np = None  # type: ignore[assignment]
+import cv2
 
 try:
-    from PIL import Image
-except Exception as exc:  # pragma: no cover
-    raise SystemExit(f"Pillow is required: {exc}") from exc
+    from rapidocr_onnxruntime import RapidOCR
+except Exception as exc:  # pragma: no cover - local diagnostic guard
+    RapidOCR = None  # type: ignore[assignment]
+    RAPIDOCR_IMPORT_ERROR = f"{type(exc).__name__}: {exc}"
+else:
+    RAPIDOCR_IMPORT_ERROR = None
+
+from src.measure_numbering.mmr import MMROCREngine
 
 TARGETS = {
     "page_001": {"key": [0, 2, 2], "expected_num": 4},
@@ -37,6 +42,7 @@ TARGETS = {
     "page_009": {"key": [8, 0, 0], "expected_num": 3},
 }
 RISKY_DIGITS = {2, 3, 4}
+OCR_INPUT_MODES = ("direct", "production_standard")
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
@@ -52,18 +58,6 @@ def write_csv(path: Path, rows: list[dict[str, Any]], fieldnames: list[str]) -> 
         writer.writerows(rows)
 
 
-def parse_num(text: str | None) -> int | None:
-    if not text:
-        return None
-    digits = "".join(ch for ch in str(text) if ch.isdigit())
-    if not digits:
-        return None
-    try:
-        return int(digits)
-    except ValueError:
-        return None
-
-
 def norm_expected(value: str | None) -> int | None:
     if not value or value == "None":
         return None
@@ -73,150 +67,197 @@ def norm_expected(value: str | None) -> int | None:
         return None
 
 
-def flatten(obj: Any) -> list[Any]:
-    if obj is None:
-        return []
-    if isinstance(obj, (str, int, float)):
-        return [obj]
-    if isinstance(obj, dict):
-        out: list[Any] = []
-        for key in ("text", "rec_text", "label", "content", "contents"):
-            if key in obj:
-                out.append(obj[key])
-        for key in ("result", "results", "res", "data"):
-            if key in obj:
-                out.extend(flatten(obj[key]))
-        return out
-    if isinstance(obj, (tuple, list)):
-        if len(obj) >= 2 and isinstance(obj[1], str):
-            return [obj]
-        out = []
-        for item in obj:
-            out.extend(flatten(item))
-        return out
-    return []
-
-
-def extract_text_score(raw: Any) -> tuple[str | None, float | None]:
-    candidates: list[tuple[str, float | None]] = []
-    for item in flatten(raw):
-        if isinstance(item, str):
-            text = item.strip()
-            if text:
-                candidates.append((text, None))
-        elif isinstance(item, dict):
-            text = None
-            for key in ("text", "rec_text", "label", "content", "contents"):
-                if key in item and item[key] is not None:
-                    text = str(item[key]).strip()
-                    break
-            score = None
-            for key in ("score", "confidence", "conf", "rec_score"):
-                if key in item:
-                    try:
-                        score = float(item[key])
-                    except Exception:
-                        score = None
-                    break
-            if text:
-                candidates.append((text, score))
-        elif isinstance(item, (tuple, list)) and len(item) >= 2 and isinstance(item[1], str):
-            score = None
-            if len(item) >= 3:
-                try:
-                    score = float(item[2])
-                except Exception:
-                    score = None
-            candidates.append((item[1].strip(), score))
-    if not candidates:
-        return None, None
-    candidates.sort(key=lambda x: (not any(ch.isdigit() for ch in x[0]), -(x[1] or -1.0), len(x[0])))
-    return candidates[0]
-
-
-def make_rapidocr_engine() -> tuple[Any | None, dict[str, Any]]:
-    attempts: list[str] = []
-    for module_name in ("rapidocr", "rapidocr_onnxruntime", "rapidocr_openvino"):
-        try:
-            module = importlib.import_module(module_name)
-        except Exception as exc:
-            attempts.append(f"{module_name}: import failed: {type(exc).__name__}: {exc}")
-            continue
-        cls = getattr(module, "RapidOCR", None)
-        if cls is None:
-            attempts.append(f"{module_name}: RapidOCR class not found")
-            continue
-        try:
-            return cls(), {"available": True, "module": module_name, "class": "RapidOCR"}
-        except Exception as exc:
-            attempts.append(f"{module_name}: init failed: {type(exc).__name__}: {exc}")
-    return None, {"available": False, "attempts": attempts}
-
-
-def run_rapidocr(engine: Any, path: Path) -> tuple[str | None, float | None, str | None]:
+def raw_len(value: Any) -> int | None:
     try:
-        raw = engine(str(path))
-        text, score = extract_text_score(raw)
-        return text, score, None
-    except Exception as exc1:
-        if np is None:
-            return None, None, f"path call failed and numpy unavailable: {type(exc1).__name__}: {exc1}"
+        return len(value)  # type: ignore[arg-type]
+    except Exception:
+        return None
+
+
+def short_repr(value: Any, limit: int = 700) -> str:
+    text = repr(value)
+    text = text.replace("\n", " ")
+    return text[:limit]
+
+
+def unwrap_rapidocr_result(raw: Any) -> tuple[Any, float | None]:
+    """Return `(ocr_result, elapsed)` from common RapidOCR return shapes."""
+    if isinstance(raw, tuple) and len(raw) == 2:
+        elapsed = raw[1]
         try:
-            arr = np.asarray(Image.open(path).convert("RGB"))
-            raw = engine(arr)
-            text, score = extract_text_score(raw)
-            return text, score, None
-        except Exception as exc2:
-            return None, None, f"path failed {type(exc1).__name__}: {exc1}; array failed {type(exc2).__name__}: {exc2}"
+            elapsed_float = float(elapsed) if elapsed is not None else None
+        except Exception:
+            elapsed_float = None
+        return raw[0], elapsed_float
+    return raw, None
 
 
-def eval_rows(v9_rows: list[dict[str, str]], engine: Any | None) -> list[dict[str, Any]]:
+def collect_texts(ocr_result: Any) -> list[str]:
+    texts: list[str] = []
+    if not ocr_result:
+        return texts
+    if isinstance(ocr_result, dict):
+        for key in ("text", "rec_text", "label", "content", "contents"):
+            value = ocr_result.get(key)
+            if value:
+                texts.append(str(value))
+        for key in ("result", "results", "res", "data"):
+            if key in ocr_result:
+                texts.extend(collect_texts(ocr_result[key]))
+        return texts
+    if isinstance(ocr_result, (list, tuple)):
+        if len(ocr_result) >= 2 and isinstance(ocr_result[1], str):
+            text = ocr_result[1].strip()
+            return [text] if text else []
+        for item in ocr_result:
+            texts.extend(collect_texts(item))
+    return texts
+
+
+def make_engine() -> tuple[RapidOCR | None, MMROCREngine | None, dict[str, Any]]:
+    if RapidOCR is None:
+        return None, None, {
+            "available": False,
+            "module": "rapidocr_onnxruntime",
+            "import_error": RAPIDOCR_IMPORT_ERROR,
+        }
+    try:
+        rapid = RapidOCR()
+        mmr_ocr = MMROCREngine(ocr_engine=rapid)
+        return rapid, mmr_ocr, {
+            "available": True,
+            "module": "rapidocr_onnxruntime",
+            "class": "RapidOCR",
+            "selection": "src.measure_numbering.mmr.MMROCREngine.select_best_candidate",
+        }
+    except Exception as exc:
+        return None, None, {
+            "available": False,
+            "module": "rapidocr_onnxruntime",
+            "init_error": f"{type(exc).__name__}: {exc}",
+            "traceback": traceback.format_exc(limit=5),
+        }
+
+
+def prepare_input_image(mmr_ocr: MMROCREngine, image: Any, mode: str) -> tuple[Any | None, str | None]:
+    if mode == "direct":
+        return image, None
+    if mode == "production_standard":
+        try:
+            return mmr_ocr.preprocess_variant(image, mode="standard", angle=0), None
+        except Exception as exc:
+            return None, f"preprocess_failed:{type(exc).__name__}: {exc}"
+    return None, f"unknown_ocr_input_mode:{mode}"
+
+
+def run_one(
+    mmr_ocr: MMROCREngine | None,
+    image_path: Path,
+    input_mode: str,
+) -> dict[str, Any]:
+    if mmr_ocr is None:
+        return {"error": "rapidocr_engine_unavailable"}
+    image = cv2.imread(str(image_path))
+    if image is None:
+        return {"error": f"cv2_imread_failed:{image_path}"}
+
+    ocr_input, prep_error = prepare_input_image(mmr_ocr, image, input_mode)
+    if prep_error:
+        return {"error": prep_error}
+    if ocr_input is None:
+        return {"error": "empty_ocr_input"}
+
+    h, w = ocr_input.shape[:2]
+    try:
+        raw = mmr_ocr.ocr_engine(ocr_input)
+        ocr_result, elapsed = unwrap_rapidocr_result(raw)
+        texts = collect_texts(ocr_result)
+        selected_num, selected_score, selected_debug = mmr_ocr.select_best_candidate(
+            ocr_result, w, h
+        )
+        one_bar_evidence = mmr_ocr.collect_one_bar_evidence(ocr_result)
+        return {
+            "ocr_input_width": w,
+            "ocr_input_height": h,
+            "raw_type": type(raw).__name__,
+            "raw_len": raw_len(raw),
+            "raw_repr_head": short_repr(raw),
+            "ocr_result_type": type(ocr_result).__name__,
+            "ocr_result_len": raw_len(ocr_result),
+            "ocr_result_repr_head": short_repr(ocr_result),
+            "ocr_elapsed": elapsed,
+            "raw_texts": " | ".join(texts),
+            "raw_text_count": len(texts),
+            "parsed_num": selected_num,
+            "selected_score": selected_score,
+            "selected_debug": selected_debug,
+            "one_bar_evidence_count": len(one_bar_evidence),
+            "error": None,
+        }
+    except Exception as exc:
+        return {
+            "ocr_input_width": w,
+            "ocr_input_height": h,
+            "error": f"ocr_failed:{type(exc).__name__}: {exc}",
+            "traceback_head": traceback.format_exc(limit=5),
+        }
+
+
+def eval_rows(v9_rows: list[dict[str, str]], mmr_ocr: MMROCREngine | None) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for row in v9_rows:
         path = Path(row.get("variant_path") or "")
-        text = None
-        score = None
-        error = None
-        if engine is None:
-            error = "rapidocr_unavailable"
-        elif not path.exists():
-            error = f"missing_variant_path:{path}"
-        else:
-            text, score, error = run_rapidocr(engine, path)
-        parsed = parse_num(text)
         group = row.get("group") or ""
         page_key = row.get("page_key") or None
         expected = norm_expected(row.get("expected_num"))
-        is_exact = None
-        is_wrong = None
-        if group == "residual" and expected is not None and parsed is not None:
-            is_exact = parsed == expected
-            is_wrong = parsed != expected
-        is_risky_global = group == "global" and parsed in RISKY_DIGITS
-        out.append(
-            {
-                "sample_id": row.get("sample_id"),
-                "group": group,
-                "page_key": page_key,
-                "expected_num": expected,
-                "variant": row.get("variant"),
-                "variant_path": row.get("variant_path"),
-                "source_path": row.get("source_path"),
-                "ocr_text": text,
-                "ocr_score": score,
-                "parsed_num": parsed,
-                "is_exact": is_exact,
-                "is_wrong": is_wrong,
-                "is_risky_global": is_risky_global,
-                "error": error,
-            }
-        )
+        for input_mode in OCR_INPUT_MODES:
+            result = run_one(mmr_ocr, path, input_mode)
+            parsed = result.get("parsed_num")
+            is_exact = None
+            is_wrong = None
+            if group == "residual" and expected is not None and parsed is not None:
+                is_exact = parsed == expected
+                is_wrong = parsed != expected
+            is_risky_global = group == "global" and parsed in RISKY_DIGITS
+            out.append(
+                {
+                    "sample_id": row.get("sample_id"),
+                    "group": group,
+                    "page_key": page_key,
+                    "expected_num": expected,
+                    "variant": row.get("variant"),
+                    "ocr_input_mode": input_mode,
+                    "variant_path": row.get("variant_path"),
+                    "source_path": row.get("source_path"),
+                    "ocr_input_width": result.get("ocr_input_width"),
+                    "ocr_input_height": result.get("ocr_input_height"),
+                    "raw_type": result.get("raw_type"),
+                    "raw_len": result.get("raw_len"),
+                    "raw_repr_head": result.get("raw_repr_head"),
+                    "ocr_result_type": result.get("ocr_result_type"),
+                    "ocr_result_len": result.get("ocr_result_len"),
+                    "ocr_result_repr_head": result.get("ocr_result_repr_head"),
+                    "ocr_elapsed": result.get("ocr_elapsed"),
+                    "raw_texts": result.get("raw_texts"),
+                    "raw_text_count": result.get("raw_text_count"),
+                    "parsed_num": parsed,
+                    "selected_score": result.get("selected_score"),
+                    "selected_debug": result.get("selected_debug"),
+                    "one_bar_evidence_count": result.get("one_bar_evidence_count"),
+                    "is_exact": is_exact,
+                    "is_wrong": is_wrong,
+                    "is_risky_global": is_risky_global,
+                    "error": result.get("error"),
+                    "traceback_head": result.get("traceback_head"),
+                }
+            )
     return out
 
 
-def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    residual = [r for r in rows if r["group"] == "residual"]
-    global_rows = [r for r in rows if r["group"] == "global"]
+def summarize_mode(rows: list[dict[str, Any]], input_mode: str) -> dict[str, Any]:
+    mode_rows = [r for r in rows if r["ocr_input_mode"] == input_mode]
+    residual = [r for r in mode_rows if r["group"] == "residual"]
+    global_rows = [r for r in mode_rows if r["group"] == "global"]
     by_target = []
     for page_key, target in TARGETS.items():
         subset = [r for r in residual if r["page_key"] == page_key]
@@ -226,6 +267,7 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 "key": target["key"],
                 "expected_num": target["expected_num"],
                 "rows": len(subset),
+                "raw_text_rows": sum(1 for r in subset if r.get("raw_text_count") or 0),
                 "exact_rows": sum(1 for r in subset if r["is_exact"] is True),
                 "wrong_rows": sum(1 for r in subset if r["is_wrong"] is True),
                 "parsed_counts": dict(Counter(str(r["parsed_num"]) for r in subset if r["parsed_num"] is not None)),
@@ -234,7 +276,7 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
             }
         )
     variants = []
-    for variant in sorted({str(r["variant"]) for r in rows}):
+    for variant in sorted({str(r["variant"]) for r in mode_rows}):
         res_v = [r for r in residual if r["variant"] == variant]
         glob_v = [r for r in global_rows if r["variant"] == variant]
         recovered = sorted({r["page_key"] for r in res_v if r["is_exact"] is True})
@@ -248,14 +290,16 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 "residual_exact_rows": sum(1 for r in res_v if r["is_exact"] is True),
                 "residual_wrong_rows": wrong,
                 "global_risky_rows": risky,
-                "global_parsed_counts": dict(Counter(str(r["parsed_num"]) for r in glob_v if r["parsed_num"] is not None)),
+                "raw_text_rows": sum(1 for r in res_v + glob_v if r.get("raw_text_count") or 0),
                 "candidate_like": bool(recovered and wrong == 0 and risky == 0),
             }
         )
     return {
-        "rows": len(rows),
-        "error_rows": sum(1 for r in rows if r["error"]),
-        "parsed_rows": sum(1 for r in rows if r["parsed_num"] is not None),
+        "ocr_input_mode": input_mode,
+        "rows": len(mode_rows),
+        "error_rows": sum(1 for r in mode_rows if r["error"]),
+        "raw_text_rows": sum(1 for r in mode_rows if r.get("raw_text_count") or 0),
+        "parsed_rows": sum(1 for r in mode_rows if r["parsed_num"] is not None),
         "residual_rows": len(residual),
         "global_rows": len(global_rows),
         "residual_exact_rows": sum(1 for r in residual if r["is_exact"] is True),
@@ -268,12 +312,25 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    mode_summaries = [summarize_mode(rows, mode) for mode in OCR_INPUT_MODES]
+    return {
+        "rows": len(rows),
+        "error_rows": sum(1 for r in rows if r["error"]),
+        "raw_text_rows": sum(1 for r in rows if r.get("raw_text_count") or 0),
+        "parsed_rows": sum(1 for r in rows if r["parsed_num"] is not None),
+        "mode_summaries": mode_summaries,
+        "extraction_suspect": all((m["raw_text_rows"] == 0 and m["parsed_rows"] == 0 and m["error_rows"] == 0) for m in mode_summaries),
+    }
+
+
 def write_decision(path: Path, summary: dict[str, Any]) -> None:
     rapid = summary["rapidocr_summary"]
     lines = [
         "# Issue #221 v9b RapidOCR mask-repair evaluation",
         "",
-        "RapidOCR is the primary backend for this diagnostic because it is the production-relevant OCR path.",
+        "RapidOCR is fixed to `rapidocr_onnxruntime.RapidOCR`, matching `src.measure_numbering.mmr`.",
+        "Numeric selection uses `MMROCREngine.select_best_candidate()` rather than an ad-hoc text flattener.",
         "",
         "## RapidOCR status",
         f"`{summary['rapidocr_status']}`",
@@ -281,25 +338,41 @@ def write_decision(path: Path, summary: dict[str, Any]) -> None:
         "## Aggregate",
         f"- rows: `{rapid['rows']}`",
         f"- error_rows: `{rapid['error_rows']}`",
-        f"- residual_exact_rows: `{rapid['residual_exact_rows']}`",
-        f"- residual_wrong_rows: `{rapid['residual_wrong_rows']}`",
-        f"- global_risky_rows: `{rapid['global_risky_rows']}`",
-        f"- candidate_like_variants: `{rapid['candidate_like_variants']}`",
+        f"- raw_text_rows: `{rapid['raw_text_rows']}`",
+        f"- parsed_rows: `{rapid['parsed_rows']}`",
+        f"- extraction_suspect: `{rapid['extraction_suspect']}`",
         "",
-        "## Targets",
     ]
-    for target in rapid["by_target"]:
-        lines.append(
-            f"- `{target['page_key']}` expected={target['expected_num']} "
-            f"exact={target['exact_rows']} wrong={target['wrong_rows']} parsed={target['parsed_counts']}"
+    for mode_summary in rapid["mode_summaries"]:
+        lines.extend(
+            [
+                f"## Mode: {mode_summary['ocr_input_mode']}",
+                f"- rows: `{mode_summary['rows']}`",
+                f"- error_rows: `{mode_summary['error_rows']}`",
+                f"- raw_text_rows: `{mode_summary['raw_text_rows']}`",
+                f"- parsed_rows: `{mode_summary['parsed_rows']}`",
+                f"- residual_exact_rows: `{mode_summary['residual_exact_rows']}`",
+                f"- residual_wrong_rows: `{mode_summary['residual_wrong_rows']}`",
+                f"- global_risky_rows: `{mode_summary['global_risky_rows']}`",
+                f"- candidate_like_variants: `{mode_summary['candidate_like_variants']}`",
+                "",
+                "Targets:",
+            ]
         )
-    lines.extend(["", "## Decision"])
-    if rapid["error_rows"] == rapid["rows"]:
-        lines.append("RapidOCR did not run successfully. Re-run in the environment where the production OCR backend is installed.")
-    elif rapid["candidate_like_variants"]:
-        lines.append("At least one mask-repair variant is candidate-like under the proxy rule. Inspect `ocr_rows.csv` and review images before deciding whether to create a production follow-up issue.")
+        for target in mode_summary["by_target"]:
+            lines.append(
+                f"- `{target['page_key']}` expected={target['expected_num']} "
+                f"raw_text_rows={target['raw_text_rows']} exact={target['exact_rows']} "
+                f"wrong={target['wrong_rows']} parsed={target['parsed_counts']}"
+            )
+        lines.append("")
+    lines.append("## Decision")
+    if rapid["extraction_suspect"]:
+        lines.append("No raw OCR text or selected numeric candidate was produced in any row despite no errors. Treat this as inconclusive and inspect `raw_repr_head` / `ocr_result_repr_head` in `ocr_rows.csv` before making a #221 decision.")
+    elif any(m["candidate_like_variants"] for m in rapid["mode_summaries"]):
+        lines.append("At least one mask-repair variant is candidate-like under the proxy rule. Inspect rows and review images before considering a production follow-up issue.")
     else:
-        lines.append("No RapidOCR candidate-like variant was found under the proxy rule. The current mask-repair variants are not sufficient as a production fallback.")
+        lines.append("No candidate-like variant was found in this proxy run. This is a meaningful negative result only if raw OCR diagnostics confirm extraction is working.")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -330,12 +403,15 @@ def main() -> int:
     if args.max_rows:
         v9_rows = v9_rows[: args.max_rows]
 
-    engine, status = make_rapidocr_engine()
-    rows = eval_rows(v9_rows, engine)
+    _rapid, mmr_ocr, status = make_engine()
+    rows = eval_rows(v9_rows, mmr_ocr)
     fields = [
-        "sample_id", "group", "page_key", "expected_num", "variant", "variant_path",
-        "source_path", "ocr_text", "ocr_score", "parsed_num", "is_exact", "is_wrong",
-        "is_risky_global", "error",
+        "sample_id", "group", "page_key", "expected_num", "variant", "ocr_input_mode",
+        "variant_path", "source_path", "ocr_input_width", "ocr_input_height",
+        "raw_type", "raw_len", "raw_repr_head", "ocr_result_type", "ocr_result_len",
+        "ocr_result_repr_head", "ocr_elapsed", "raw_texts", "raw_text_count",
+        "parsed_num", "selected_score", "selected_debug", "one_bar_evidence_count",
+        "is_exact", "is_wrong", "is_risky_global", "error", "traceback_head",
     ]
     write_csv(output_dir / "ocr_rows.csv", rows, fields)
     summary = {
@@ -347,7 +423,7 @@ def main() -> int:
         "v9_rows": len(v9_rows),
         "rapidocr_status": status,
         "rapidocr_summary": summarize(rows),
-        "candidate_rule": "candidate_like requires recovered_count>=1, residual_wrong_rows=0, global_risky_rows=0 in this proxy sample",
+        "candidate_rule": "candidate_like requires recovered_count>=1, residual_wrong_rows=0, global_risky_rows=0 in the same ocr_input_mode proxy sample",
         "elapsed_sec": round(time.time() - started, 3),
         "cwd": os.getcwd(),
         "python": sys.version,

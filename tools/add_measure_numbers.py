@@ -97,12 +97,20 @@ def score_to_dict(score: Score) -> dict:
             "width": p.width,
             "height": p.height,
             "systems": [],
+            "empty_systems": [],
         }
         for s in p.systems:
+            staves = [
+                {"bbox": [st.bbox.x1, st.bbox.y1, st.bbox.x2, st.bbox.y2]} for st in s.staves
+            ]
+            if not s.measures:
+                page_data["empty_systems"].append(
+                    {"staves": staves, "reason": "no_measures"}
+                )
+                continue
+
             sys_data = {
-                "staves": [
-                    {"bbox": [st.bbox.x1, st.bbox.y1, st.bbox.x2, st.bbox.y2]} for st in s.staves
-                ],
+                "staves": staves,
                 "measures": [],
             }
             for m in s.measures:

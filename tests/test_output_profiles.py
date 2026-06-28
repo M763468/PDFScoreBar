@@ -36,8 +36,14 @@ def _make_internal_run(tmp_path: Path) -> Path:
             ],
         },
     )
-    _write_json(run_dir / "filters.json", {"pages": [{"page_id": "page_001", "status": "ok"}]})
-    _write_json(run_dir / "outputs" / "numbering_final.json", {"pages": [{"page_number": 1}]})
+    _write_json(
+        run_dir / "filters.json",
+        {"pages": [{"page_id": "page_001", "status": "ok"}]},
+    )
+    _write_json(
+        run_dir / "outputs" / "numbering_final.json",
+        {"pages": [{"page_number": 1}]},
+    )
     _write_json(
         run_dir / "outputs" / "page_001" / "numbering_final.json",
         {"pages": [{"page_number": 1, "systems": []}]},
@@ -124,7 +130,9 @@ def test_debug_profile_materializes_debug_artifacts(tmp_path: Path):
     assert (out_dir / "debug" / "filters.json").exists()
     assert (out_dir / "debug" / "inputs" / "images" / "page_001.png").exists()
     assert (out_dir / "debug" / "intermediate" / "page_001" / "overrides_mmr.json").exists()
-    assert (out_dir / "debug" / "legacy_current_layout" / "outputs" / "numbering_final.json").exists()
+    assert (
+        out_dir / "debug" / "legacy_current_layout" / "outputs" / "numbering_final.json"
+    ).exists()
     assert (out_dir / "debug" / "artifact_index.json").exists()
 
 

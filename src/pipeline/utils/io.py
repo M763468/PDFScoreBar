@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict
 
-from src.measure_numbering.serialization import score_to_dict
+from src.measure_numbering.serialization import score_to_dict as score_to_dict
 
 
 def ensure_dir(path: Path) -> None:

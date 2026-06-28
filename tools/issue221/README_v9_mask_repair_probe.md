@@ -1,4 +1,4 @@
-# Temporary #221 v9/v9b/v10 mask-and-repair probes
+# Temporary #221 v9/v9b/v10/v10b mask-and-repair probes
 
 This file and the following scripts are temporary experiment scaffolding for Issue #221:
 
@@ -6,6 +6,7 @@ This file and the following scripts are temporary experiment scaffolding for Iss
 tools/issue221/v9_mask_repair_probe.py
 tools/issue221/v9b_rapidocr_eval_mask_repair.py
 tools/issue221/v10_windowed_rapidocr_eval.py
+tools/issue221/v10b_rescore_windowed_results.py
 ```
 
 They are intended to be removed by a cleanup commit after the diagnostic is complete.
@@ -37,6 +38,8 @@ v10 then tests whether restricting the horizontal OCR window can suppress edge/n
 - right-edge trimming,
 - left/right edge trimming.
 
+v10b does not run OCR. It re-scores the existing v10 `ocr_rows.csv` and separates the original v10 proxy-risk metric from additional production-review indicators.
+
 This is not a production patch. It is a bounded diagnostic to decide whether a follow-up issue about staff-line-aware / symbol-aware digit isolation is justified.
 
 ## Run
@@ -55,7 +58,27 @@ git pull --ff-only origin investigate/issue221-component-ocr-residuals
 docker start pdfscore_pipeline_pytest_dev >/dev/null
 ```
 
-Run v9, v9b, and v10 together:
+Run v10b only against an existing completed v10 output:
+
+```bash
+docker exec -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_pytest_dev \
+  bash -lc '
+set -euo pipefail
+PY=/opt/venv_pipeline/bin/python
+
+$PY tools/issue221/v10b_rescore_windowed_results.py \
+  --v10-dir logs/issue221_component_ocr/v10_windowed_rapidocr_eval \
+  --output-dir logs/issue221_component_ocr/v10b_windowed_result_rescore
+
+ls -lh \
+  logs/issue221_component_ocr/issue221_windowed_rapidocr_v10_pack.zip \
+  logs/issue221_component_ocr/issue221_windowed_rescore_v10b_pack.zip
+'
+```
+
+Run v9, v9b, v10, and v10b together from scratch:
 
 ```bash
 docker exec -w /workspace \
@@ -87,10 +110,15 @@ $PY tools/issue221/v10_windowed_rapidocr_eval.py \
   --v9-dir logs/issue221_component_ocr/v9_mask_repair_probe \
   --output-dir logs/issue221_component_ocr/v10_windowed_rapidocr_eval
 
+$PY tools/issue221/v10b_rescore_windowed_results.py \
+  --v10-dir logs/issue221_component_ocr/v10_windowed_rapidocr_eval \
+  --output-dir logs/issue221_component_ocr/v10b_windowed_result_rescore
+
 ls -lh \
   logs/issue221_component_ocr/issue221_mask_repair_probe_v9_pack.zip \
   logs/issue221_component_ocr/issue221_mask_repair_rapidocr_v9b_pack.zip \
-  logs/issue221_component_ocr/issue221_windowed_rapidocr_v10_pack.zip
+  logs/issue221_component_ocr/issue221_windowed_rapidocr_v10_pack.zip \
+  logs/issue221_component_ocr/issue221_windowed_rescore_v10b_pack.zip
 '
 ```
 
@@ -108,6 +136,10 @@ $PY tools/issue221/v10_windowed_rapidocr_eval.py \
   --v9-dir logs/issue221_component_ocr/v9_mask_repair_probe \
   --output-dir logs/issue221_component_ocr/v10_windowed_rapidocr_eval_debug \
   --max-rows 60
+
+$PY tools/issue221/v10b_rescore_windowed_results.py \
+  --v10-dir logs/issue221_component_ocr/v10_windowed_rapidocr_eval_debug \
+  --output-dir logs/issue221_component_ocr/v10b_windowed_result_rescore_debug
 '
 ```
 
@@ -146,12 +178,24 @@ logs/issue221_component_ocr/v10_windowed_rapidocr_eval/review_windows/
 logs/issue221_component_ocr/issue221_windowed_rapidocr_v10_pack.zip
 ```
 
-Share all three zips if possible, but the v10 zip is the primary result for judging the window-restriction hypothesis:
+v10b writes:
+
+```text
+logs/issue221_component_ocr/v10b_windowed_result_rescore/summary.json
+logs/issue221_component_ocr/v10b_windowed_result_rescore/decision.md
+logs/issue221_component_ocr/v10b_windowed_result_rescore/scope_summary.csv
+logs/issue221_component_ocr/v10b_windowed_result_rescore/candidate_like_v10_scopes.csv
+logs/issue221_component_ocr/v10b_windowed_result_rescore/candidate_like_strict_scopes.csv
+logs/issue221_component_ocr/issue221_windowed_rescore_v10b_pack.zip
+```
+
+Share these zips if possible:
 
 ```text
 logs/issue221_component_ocr/issue221_mask_repair_probe_v9_pack.zip
 logs/issue221_component_ocr/issue221_mask_repair_rapidocr_v9b_pack.zip
 logs/issue221_component_ocr/issue221_windowed_rapidocr_v10_pack.zip
+logs/issue221_component_ocr/issue221_windowed_rescore_v10b_pack.zip
 ```
 
 ## What to inspect
@@ -192,16 +236,26 @@ trim_lr10
 trim_lr15
 ```
 
+v10b separates these metrics:
+
+```text
+global_v10_risky_rows      # original v10 proxy: parsed number in {2, 3, 4}
+global_parsed_rows         # any selected number in global rows
+global_parsed_ge2_rows     # selected number >= 2 in global rows
+candidate_like_v10         # exact residual recovery + no residual wrong + no global_v10_risky
+candidate_like_strict      # exact residual recovery + no residual wrong + no global parsed >= 2
+```
+
 Interpretation should focus on RapidOCR first:
 
 - Does horizontal masking improve page_004 without destroying the digit 3?
 - Does right-edge trimming or center-window restriction reduce page_001 boxed-number leakage?
 - Does right-edge trimming or center-window restriction reduce page_009 `31`-like readings?
 - Does windowing merely remove wrong readings, or does it also remove the expected digit?
-- Does any variant/window/mode scope produce exact residual hits while avoiding residual wrong outputs and global risky outputs?
-- If OCR remains empty, inspect `raw_repr_head`, `ocr_result_repr_head`, and `raw_text_count` before treating the run as a negative result.
+- Does any variant/window/mode scope produce exact residual hits while avoiding residual wrong outputs and global numeric outputs?
+- If `candidate_like_v10` exists but `candidate_like_strict` is empty, treat the scope as diagnostic evidence only.
 
-A candidate-like result in v10 is still not a production candidate. It only means the geometry condition deserves a follow-up issue for production wiring and full 68-page MMR evaluation.
+A candidate-like result in v10/v10b is still not a production candidate. It only means the geometry condition deserves a follow-up issue for production wiring and full 68-page MMR evaluation.
 
 ## Constraints
 

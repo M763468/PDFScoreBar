@@ -549,13 +549,23 @@ def _copy_file(
         return False
     if destination.exists() and not overwrite_existing:
         artifact_index.append(
-            MaterializedArtifact(profile=profile, path=str(destination), source=str(source), status="exists")
+            MaterializedArtifact(
+                profile=profile,
+                path=str(destination),
+                source=str(source),
+                status="exists",
+            )
         )
         return False
     ensure_dir(destination.parent)
     shutil.copy2(source, destination)
     artifact_index.append(
-        MaterializedArtifact(profile=profile, path=str(destination), source=str(source), status="copied")
+        MaterializedArtifact(
+            profile=profile,
+            path=str(destination),
+            source=str(source),
+            status="copied",
+        )
     )
     return True
 
@@ -572,7 +582,12 @@ def _copy_tree(
         return False
     if destination.exists() and not overwrite_existing:
         artifact_index.append(
-            MaterializedArtifact(profile=profile, path=str(destination), source=str(source), status="exists")
+            MaterializedArtifact(
+                profile=profile,
+                path=str(destination),
+                source=str(source),
+                status="exists",
+            )
         )
         return False
     if destination.exists():
@@ -580,7 +595,12 @@ def _copy_tree(
     ensure_dir(destination.parent)
     shutil.copytree(source, destination)
     artifact_index.append(
-        MaterializedArtifact(profile=profile, path=str(destination), source=str(source), status="copied")
+        MaterializedArtifact(
+            profile=profile,
+            path=str(destination),
+            source=str(source),
+            status="copied",
+        )
     )
     return True
 

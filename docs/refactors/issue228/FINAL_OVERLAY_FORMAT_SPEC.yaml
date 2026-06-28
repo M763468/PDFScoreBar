@@ -75,6 +75,18 @@ placement:
     - existing_printed_text
   final_warning_text_allowed: false
 
+mock_guidance:
+  generated_mock_is_normative_for_semantics_only: true
+  exact_spacing_offset_or_font_scale_is_normative: false
+  observed_sample_issue: labels_are_farther_from_music_rows_than_likely_desirable
+  implementation_should_tune:
+    - horizontal_distance_from_grouped_row_start
+    - label_size_and_readability
+    - available_left_margin_width
+    - collisions_with_clefs_dynamics_tempo_text_divisi_rehearsal_marks_braces_brackets_and_other_symbols
+    - fallback_placement_when_preferred_gutter_is_too_tight
+  target_association: labels_should_remain_visually_associated_with_their_target_row
+
 style:
   text: neutral_printable_text
   default_prefix: none
@@ -186,6 +198,8 @@ implementation_handoff:
     optional_review: review/pages/<page_id>/final_page.png
     optional_review_or_debug_metadata: placement_fallback_notes
   tests_should_use_fixtures_without_full_detector_stack: true
+  mock_visuals_are_conceptual_only: true
+  renderer_must_tune_placement_against_real_page_geometry: true
 
 acceptance_mapping:
   final_overlay_display_spec_documented: true

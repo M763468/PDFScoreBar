@@ -8,7 +8,7 @@
 - Depends on: #226 for the formal user-facing entrypoint and profile names
 - Scope of this document: output profile and directory contract design for `pdfscorebar run INPUT.pdf --output-dir OUTPUT_DIR`.
 
-This document records the design outcome for #227. It intentionally does not implement the CLI, final overlay renderer, or manual correction GUI integration. The goal is to define a stable output contract that follow-up implementation issues can target without continuing to expose experiment and debug artifacts as normal user-facing output.
+This document records the design outcome for #227. It intentionally does not implement the final overlay renderer or manual correction GUI integration. The goal is to define a stable output contract that follow-up implementation issues can target without continuing to expose experiment and debug artifacts as normal user-facing output.
 
 ## Document lifecycle
 
@@ -17,6 +17,23 @@ This file is an issue-scoped design handoff, not the permanent home for user doc
 After the user-facing CLI and profile materialization are implemented and accepted, the stable parts of this contract should move into formal documentation such as the root `README.md`, `docs/ENVIRONMENTS.md`, a future user guide, or other standing operational docs. At that point, this issue-specific file and its `docs/README.md` index entry should be removed.
 
 Permanent repository behavior must not depend on a document whose only discoverable name is tied to a completed issue number.
+
+## Implementation status in this PR
+
+This PR includes an initial implementation of the profile materialization layer:
+
+- `src/pipeline/output_profiles.py` defines the `final`, `review`, and `debug` profile materializer.
+- `src/pipeline/main.py` exposes optional config-first flags:
+
+```bash
+python -m src.pipeline.main --config CONFIG.yaml \
+  --output-profile final|review|debug \
+  [--profile-output-dir OUTPUT_DIR]
+```
+
+This is not the final #226 user-facing `pdfscorebar run` CLI. It is a reusable implementation layer that the future user-facing CLI can call after running the existing config-driven pipeline.
+
+The implementation deliberately does not implement #228 final overlay rendering or #229 GUI launch behavior. It only maps artifacts that the current pipeline already produces.
 
 ## Decision summary
 

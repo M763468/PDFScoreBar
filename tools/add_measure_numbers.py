@@ -10,6 +10,7 @@ project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
 from src.measure_numbering.pipeline import MeasureNumberingPipeline
+from src.measure_numbering.serialization import score_to_dict
 from src.measure_numbering.types import Score
 
 logger = logging.getLogger(__name__)
@@ -87,33 +88,6 @@ def render_overlay(score: Score, image_path: Path, output_path: Path):
 
     cv2.imwrite(str(output_path), overlay)
     logger.info(f"Overlay saved to: {output_path}")
-
-
-def score_to_dict(score: Score) -> dict:
-    data = {"pages": []}
-    for p in score.pages:
-        page_data = {
-            "page_number": p.page_number,
-            "width": p.width,
-            "height": p.height,
-            "systems": [],
-        }
-        for s in p.systems:
-            sys_data = {
-                "staves": [
-                    {"bbox": [st.bbox.x1, st.bbox.y1, st.bbox.x2, st.bbox.y2]} for st in s.staves
-                ],
-                "measures": [],
-            }
-            for m in s.measures:
-                m_data = {
-                    "number": m.number,
-                    "bbox": [m.bbox.x1, m.bbox.y1, m.bbox.x2, m.bbox.y2],
-                }
-                sys_data["measures"].append(m_data)
-            page_data["systems"].append(sys_data)
-        data["pages"].append(page_data)
-    return data
 
 
 def normalize_barlines(raw_data):

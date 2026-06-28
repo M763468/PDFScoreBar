@@ -50,6 +50,7 @@ notes for current instructions.
 | Validation expectations by change type | [`docs/dev/VALIDATION_POLICY.md`](dev/VALIDATION_POLICY.md) |
 | User-facing pipeline entrypoint design | [`docs/refactors/issue226/ISSUE226_USER_FACING_ENTRYPOINT.md`](refactors/issue226/ISSUE226_USER_FACING_ENTRYPOINT.md) |
 | User-facing output profile contract package | [`docs/refactors/issue227/ISSUE227_OUTPUT_PROFILES.md`](refactors/issue227/ISSUE227_OUTPUT_PROFILES.md) |
+| Final score-number overlay format | [`docs/refactors/issue228/ISSUE228_FINAL_OVERLAY_FORMAT.md`](refactors/issue228/ISSUE228_FINAL_OVERLAY_FORMAT.md) |
 | Issue #120 artifact retention rules | [`docs/ISSUE120_ARTIFACT_RETENTION.md`](ISSUE120_ARTIFACT_RETENTION.md) |
 | Issue #120 evaluation contract | [`docs/ISSUE120_EVALUATION_CONTRACT.md`](ISSUE120_EVALUATION_CONTRACT.md) |
 | Stage E full-pipeline report | [`docs/ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md`](ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md) |
@@ -105,6 +106,14 @@ notes for current instructions.
   final PDF naming, timestamped debug run directories, a structured contract
   spec, current-output mapping, implementation handoff checklist, and JSON
   examples for review summary and manual-correction handoff files.
+
+- **Issue #228 Final Score-Number Overlay Format**  
+  [`docs/refactors/issue228/ISSUE228_FINAL_OVERLAY_FORMAT.md`](refactors/issue228/ISSUE228_FINAL_OVERLAY_FORMAT.md)  
+  Defines the final score-numbered PDF visual contract: one row-start measure
+  number at the left edge of each final grouped numbering row, derived from
+  final applied numbering, with MMR/manual corrections reflected semantically,
+  review/debug overlay details excluded from the final PDF, and label position
+  and size tuned against real page geometry.
 
 ### Issue #120 / Stage E / Detector Contract Documentation
 

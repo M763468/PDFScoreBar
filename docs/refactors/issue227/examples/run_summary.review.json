@@ -1,0 +1,33 @@
+{
+  "schema": "pdfscorebar.run_summary.v1",
+  "input_pdf": "score.pdf",
+  "output_dir": "out/score_a",
+  "output_name": "score",
+  "profile": {
+    "selected": "review",
+    "effective": "review",
+    "debug_requested": false,
+    "debug_run_id": null
+  },
+  "pages": [
+    "page_001",
+    "page_002"
+  ],
+  "page_count": 2,
+  "warnings_count": 1,
+  "artifacts": {
+    "final_score_numbered_pdf": "final/score_score_numbered.pdf",
+    "review_score_numbering": "review/score_numbering.json",
+    "warnings": "review/warnings.json",
+    "manual_correction_input": "review/manual_correction_input.json"
+  },
+  "final_pdf": {
+    "status": "ready",
+    "path": "final/score_score_numbered.pdf"
+  },
+  "corrections": {
+    "applied": false,
+    "source": null,
+    "default_output": "review/corrections/measure_overrides.json"
+  }
+}

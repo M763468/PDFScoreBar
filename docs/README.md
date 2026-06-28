@@ -101,9 +101,10 @@ notes for current instructions.
 - **Issue #227 User-facing Output Profile Contract Package**  
   [`docs/refactors/issue227/ISSUE227_OUTPUT_PROFILES.md`](refactors/issue227/ISSUE227_OUTPUT_PROFILES.md)  
   Defines the `final`, `review`, and `debug` output profile directory contract
-  for the user-facing pipeline, plus a structured contract spec, current-output
-  mapping, implementation handoff checklist, and JSON examples for root summary
-  and manual-correction handoff files.
+  for the user-facing pipeline, including final-PDF-only output, score-specific
+  final PDF naming, timestamped debug run directories, a structured contract
+  spec, current-output mapping, implementation handoff checklist, and JSON
+  examples for review summary and manual-correction handoff files.
 
 ### Issue #120 / Stage E / Detector Contract Documentation
 

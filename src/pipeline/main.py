@@ -32,8 +32,6 @@ def run_pipeline(
     page_limit: Optional[int] = None,
     debug: bool = False,
     console_log_level: int = logging.INFO,
-    output_profile: Optional[str] = None,
-    profile_output_dir: Optional[Path] = None,
 ) -> Path:
     """Entry point for running the full pipeline."""
     from src.pipeline.utils.images import clear_image_cache
@@ -56,8 +54,7 @@ def run_pipeline(
     file_handler = logging.FileHandler(log_file, mode="w", encoding="utf-8")
     file_handler.setFormatter(
         logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
+            "%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
         )
     )
     # File log gets EVERYTHING (DEBUG and up)
@@ -95,24 +92,7 @@ def run_pipeline(
             debug=debug,
         )
 
-        result_dir = orchestrator.run(page_limit=page_limit)
-        if output_profile:
-            from src.pipeline.output_profiles import materialize_output_profile
-
-            public_output_dir = profile_output_dir or result_dir
-            materialize_output_profile(
-                result_dir,
-                public_output_dir,
-                profile=output_profile,
-                debug=debug,
-                resolved_config=config,
-            )
-            logger.info(
-                "Materialized %s output profile at %s",
-                output_profile,
-                public_output_dir,
-            )
-        return result_dir
+        return orchestrator.run(page_limit=page_limit)
 
     finally:
         root_logger.removeHandler(file_handler)
@@ -136,44 +116,23 @@ def main() -> None:
         description="Run the integrated detection and numbering pipeline."
     )
     parser.add_argument(
-        "--config",
-        type=Path,
-        required=True,
-        help="Path to the YAML configuration file.",
+        "--config", type=Path, required=True, help="Path to the YAML configuration file."
     )
     parser.add_argument("--run-id", type=str, help="Optional run identifier.")
     parser.add_argument("--output-root", type=Path, help="Optional output root directory.")
     parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Log commands without executing them.",
+        "--dry-run", action="store_true", help="Log commands without executing them."
     )
     parser.add_argument(
-        "--validate-only",
-        action="store_true",
-        help="Stop after input resolution and filtering.",
+        "--validate-only", action="store_true", help="Stop after input resolution and filtering."
     )
     parser.add_argument(
-        "--skip-existing",
-        action="store_true",
-        help="Skip steps if output files already exist.",
+        "--skip-existing", action="store_true", help="Skip steps if output files already exist."
     )
     parser.add_argument("--page-limit", type=int, help="Limit the number of pages to process.")
     parser.add_argument("--debug", action="store_true", help="Output intermediate debug files.")
-    parser.add_argument(
-        "--output-profile",
-        choices=("final", "review", "debug"),
-        help="Materialize a #227 public output profile after the pipeline run.",
-    )
-    parser.add_argument(
-        "--profile-output-dir",
-        type=Path,
-        help="Public output directory for --output-profile. Defaults to the run directory.",
-    )
 
     args = parser.parse_args()
-    if args.profile_output_dir and not args.output_profile:
-        parser.error("--profile-output-dir requires --output-profile.")
 
     from tqdm.contrib.logging import logging_redirect_tqdm
 
@@ -187,8 +146,6 @@ def main() -> None:
             skip_existing=args.skip_existing,
             page_limit=args.page_limit,
             debug=args.debug,
-            output_profile=args.output_profile,
-            profile_output_dir=args.profile_output_dir,
         )
 
 

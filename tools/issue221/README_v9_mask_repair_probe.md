@@ -3,8 +3,8 @@
 This file and the following scripts are temporary experiment scaffolding for Issue #221:
 
 ```text
-工具/issue221/v9_mask_repair_probe.py
-工具/issue221/v9b_rapidocr_eval_mask_repair.py
+tools/issue221/v9_mask_repair_probe.py
+tools/issue221/v9b_rapidocr_eval_mask_repair.py
 ```
 
 They are intended to be removed by a cleanup commit after the diagnostic is complete.
@@ -25,45 +25,78 @@ white-mask selected interfering elements
 then dilate remaining black foreground to repair gaps introduced by the mask
 ```
 
-v9 only generates transformed images and proxy metrics. v9b evaluates those transformed images with RapidOCR, which is the production-relevant OCR baseline for this repository.
+v9 only generates transformed images and proxy metrics. v9b evaluates those transformed images with the production-relevant RapidOCR path:
+
+- `rapidocr_onnxruntime.RapidOCR`
+- `src.measure_numbering.mmr.MMROCREngine.select_best_candidate()`
 
 This is not a production patch. It is a bounded diagnostic to decide whether a follow-up issue about staff-line-aware / symbol-aware digit isolation is justified.
 
 ## Run
 
-From the working tree that contains the previous ignored #221 logs:
+Run inside the maintained pipeline container. The host `python3` environment is not sufficient because RapidOCR is installed in the pipeline virtual environment.
+
+From the host working tree that contains the previous ignored #221 logs:
 
 ```bash
 cd /home/masaki_muramatsu/ws_PDFScoreBar
+
 git fetch origin --prune
 git checkout investigate/issue221-component-ocr-residuals
 git pull --ff-only origin investigate/issue221-component-ocr-residuals
+
+docker start pdfscore_pipeline_pytest_dev >/dev/null
 ```
 
-Step 1: generate mask-and-repair images. Use `--skip-ocr` here so v9 remains a pure image-generation step.
+Run v9 and v9b together:
 
 ```bash
-PYTHONPATH=. python3 tools/issue221/v9_mask_repair_probe.py \
+docker exec -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_pytest_dev \
+  bash -lc '
+set -euo pipefail
+PY=/opt/venv_pipeline/bin/python
+
+$PY - <<'"'"'PYCHK'"'"'
+import sys
+print("python:", sys.executable)
+from rapidocr_onnxruntime import RapidOCR
+from src.measure_numbering.mmr import MMROCREngine
+engine = MMROCREngine(ocr_engine=RapidOCR())
+print("rapidocr_onnxruntime + MMROCREngine: ok")
+PYCHK
+
+$PY tools/issue221/v9_mask_repair_probe.py \
   --input-root logs/issue221_component_ocr \
   --output-dir logs/issue221_component_ocr/v9_mask_repair_probe \
   --skip-ocr
-```
 
-Step 2: evaluate the v9 transformed images with RapidOCR.
-
-```bash
-PYTHONPATH=. python3 tools/issue221/v9b_rapidocr_eval_mask_repair.py \
+$PY tools/issue221/v9b_rapidocr_eval_mask_repair.py \
   --v9-dir logs/issue221_component_ocr/v9_mask_repair_probe \
   --output-dir logs/issue221_component_ocr/v9b_rapidocr_mask_repair_eval
+
+ls -lh \
+  logs/issue221_component_ocr/issue221_mask_repair_probe_v9_pack.zip \
+  logs/issue221_component_ocr/issue221_mask_repair_rapidocr_v9b_pack.zip
+'
 ```
 
 Optional debug cap:
 
 ```bash
-PYTHONPATH=. python3 tools/issue221/v9b_rapidocr_eval_mask_repair.py \
+docker exec -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_pytest_dev \
+  bash -lc '
+set -euo pipefail
+PY=/opt/venv_pipeline/bin/python
+
+$PY tools/issue221/v9b_rapidocr_eval_mask_repair.py \
   --v9-dir logs/issue221_component_ocr/v9_mask_repair_probe \
   --output-dir logs/issue221_component_ocr/v9b_rapidocr_mask_repair_eval_debug \
   --max-rows 60
+'
 ```
 
 ## Output
@@ -112,6 +145,13 @@ mask_horizontal_vertical_edge_dilate1
 mask_horizontal_vertical_edge_dilate2
 ```
 
+v9b evaluates each variant in two input modes:
+
+```text
+direct
+production_standard
+```
+
 Interpretation should focus on RapidOCR first:
 
 - Does horizontal masking improve page_004 without destroying the digit 3?
@@ -119,6 +159,7 @@ Interpretation should focus on RapidOCR first:
 - Does vertical masking help page_009, or does it erase part of the digit?
 - Does dilation repair holes, or does it reconnect the digit with neighboring symbols?
 - Does any variant produce RapidOCR residual exact hits while avoiding residual wrong outputs and global risky outputs?
+- If OCR remains empty, inspect `raw_repr_head`, `ocr_result_repr_head`, `raw_text_count`, and `extraction_suspect` before treating the run as a negative result.
 
 A candidate-like result in v9b is still not a production candidate. It only means the preprocessing deserves a follow-up issue for production wiring and full 68-page MMR evaluation.
 

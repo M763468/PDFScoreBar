@@ -1,0 +1,165 @@
+# Structured contract summary for Issue #227.
+# This file is intentionally documentation/specification, not production config.
+
+schema: pdfscorebar.output_profile_contract.v1
+parent_epic: 225
+issue: 227
+depends_on:
+  - 226
+non_goals:
+  - implement_pdfscorebar_run_cli
+  - add_console_script_packaging
+  - implement_profile_materializer
+  - implement_final_overlay_renderer
+  - integrate_manual_correction_gui
+  - clean_or_delete_historical_artifacts
+  - change_detector_ocr_mmr_accuracy_behavior
+
+command_context:
+  formal_entrypoint_from_issue_226: pdfscorebar run INPUT.pdf --output-dir OUTPUT_DIR
+  output_dir_semantics:
+    public_output_dir_is_exact_argument: true
+    implicit_timestamp_subdirectory: false
+    run_id_moves_public_output_dir: false
+  profile_selector:
+    option: --profile
+    default: final
+    allowed_values:
+      - final
+      - review
+      - debug
+  debug_flag_rule:
+    may_promote_effective_profile_to_debug: true
+    must_not_write_debug_artifacts_into_final: true
+    record_effective_profile_in_run_summary: true
+
+root:
+  required_files:
+    run_summary.json:
+      profiles: [final, review, debug]
+      purpose: stable user-facing summary and artifact pointers
+    resolved_config.yaml:
+      profiles: [final, review, debug]
+      purpose: reproducibility record after profile defaults, config override, and CLI args
+  optional_files:
+    artifact_index.json:
+      profiles: [review, debug]
+      purpose: index of non-final artifacts when referenced or relocated
+    README.md:
+      profiles: [final, review, debug]
+      purpose: optional short human-readable pointer
+  forbidden_at_root:
+    - pipeline.log
+    - manifest.json
+    - filters.json
+    - intermediate/
+    - outputs/
+    - issue-specific evaluation contracts
+    - generated experiment zip files
+
+profiles:
+  final:
+    cumulative_rank: 0
+    purpose: user-facing deliverables only
+    directories_created:
+      - final/
+    required_or_transitional_files:
+      final/score_numbering.json:
+        required: true
+        description: stable machine-readable final numbering
+      final/score_numbered.pdf:
+        required_after_issue: 228
+        description: preferred final PDF with measure-number overlay
+      final/pages/<page_id>.png:
+        transitional_until_issue: 228
+        description: transitional final page overlay image until PDF assembly exists
+    optional_files:
+      final/warnings.json:
+        description: user-actionable warnings only; omit when empty
+    forbidden:
+      - raw detector JSON
+      - review overlays
+      - staff/notehead/clef/candidate masks
+      - MMR crops/OCR traces/classifier scores/TTA diagnostics
+      - pipeline.log
+      - stdout/stderr captures
+      - resource logs
+      - issue-specific evaluation artifacts
+      - internal intermediate/ or outputs/ trees
+
+  review:
+    cumulative_rank: 1
+    includes_profiles:
+      - final
+    purpose: human inspection and correction handoff
+    directories_created:
+      - final/
+      - review/
+    required_files:
+      review/manual_correction_input.json:
+        description: primary handoff for Issue #229
+      review/pages/<page_id>/source.png:
+        description: rendered source page in review coordinate space
+      review/pages/<page_id>/review_overlay.png:
+        description: inspection overlay; current numbering_overlay.png maps here
+      review/pages/<page_id>/numbering_final.json:
+        description: page-level final numbering for review/GUI
+    reserved_files:
+      review/corrections/measure_overrides.json:
+        overwrite_policy: must_not_overwrite_existing_without_explicit_overwrite
+        description: default manual correction save target
+    recommended_files:
+      review/pages/<page_id>/barlines_review.json:
+        description: review-level barline geometry after accepted overrides
+      review/pages/<page_id>/mmr_overrides.json:
+        description: normalized MMR skip/span evidence when MMR is enabled
+    optional_files:
+      review/pages/<page_id>/correction_template.json:
+        description: per-page correction scaffold
+    forbidden_by_default:
+      - full hybrid detector tree
+      - CNN crops
+      - OCR crop images
+      - resource sampling logs
+      - large stdout/stderr captures
+
+  debug:
+    cumulative_rank: 2
+    includes_profiles:
+      - final
+      - review
+    purpose: developer troubleshooting and reproduction
+    directories_created:
+      - final/
+      - review/
+      - debug/
+    required_when_available:
+      debug/pipeline.log: diagnostic pipeline log
+      debug/manifest.json: internal manifest and raw paths
+      debug/filters.json: page filtering state and skip reasons
+    recommended_files:
+      debug/environment.json: runtime/package/GPU summary
+      debug/artifact_index.json: mapping of public paths to internal/external artifacts
+    optional_files:
+      debug/stdout_stderr.log: captured external tool output
+      debug/resource_samples.jsonl: resource samples
+      debug/resource_summary.json: resource summary
+      debug/inputs/images/: retained rendered inputs
+      debug/intermediate/<page_id>/: page-level intermediates for reproduction
+      debug/detection/: detector internals when retained
+      debug/mmr/<page_id>/: MMR OCR/classifier/debug evidence when retained
+      debug/legacy_current_layout/: transitional copy/reference of current internal layout
+
+handoffs:
+  issue_228_final_overlay:
+    owns:
+      - final/score_numbered.pdf
+      - final/pages/<page_id>.png visual format
+    current_numbering_overlay_png_rule: treat_as_review_overlay_until_issue_228_accepts_or_replaces_it
+  issue_229_manual_correction:
+    primary_input: review/manual_correction_input.json
+    default_output: review/corrections/measure_overrides.json
+    overwrite_policy: do_not_overwrite_user_edits_without_explicit_overwrite
+  future_cli_implementation:
+    must_use_this_contract_for_public_output_layout: true
+    must_not_expose_legacy_logs_layout_as_user_contract: true

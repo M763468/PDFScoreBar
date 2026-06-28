@@ -1,0 +1,195 @@
+# Structured contract summary for Issue #228.
+# This file is intentionally documentation/specification, not production config.
+
+schema: pdfscorebar.final_overlay_format.v1
+parent_epic: 225
+issue: 228
+depends_on:
+  - 226
+  - 227
+
+owns:
+  final_artifact: final/<output-name>_score_numbered.pdf
+  visual_contract: row_start_measure_number_labels
+
+document_lifecycle:
+  issue_scoped_design_handoff: true
+  permanent_user_doc: false
+  promote_stable_content_after_implementation: true
+  remove_issue_scoped_doc_after_promotion: true
+
+non_goals:
+  - implement_final_pdf_renderer
+  - implement_pdf_assembly
+  - implement_pdfscorebar_run_cli
+  - implement_output_profile_materializer
+  - integrate_manual_correction_gui
+  - change_detector_ocr_mmr_accuracy_behavior
+  - change_system_grouping_algorithm
+  - change_issue_227_output_directory_contract
+  - clean_or_delete_historical_artifacts
+
+final_overlay:
+  purpose: normal_user_deliverable
+  output_path: final/<output-name>_score_numbered.pdf
+  source_semantics: final_applied_numbering
+  final_applied_numbering_includes:
+    - detected_or_corrected_barlines
+    - final_system_grouping
+    - base_sequential_numbering
+    - accepted_mmr_skip_span_overrides
+    - accepted_manual_measure_overrides
+  display_granularity: one_label_per_numbering_row
+  displayed_value:
+    meaning: first_final_applied_measure_number_in_the_numbering_row
+    read_as: this_row_starts_at_measure_N
+    format_default: plain_arabic_integer
+    range_label: false
+    per_measure_labels: false
+    page_header_label: false
+  skip_empty_rows: true
+
+numbering_row:
+  definition: final_grouped_horizontal_music_row_sharing_one_logical_measure_progression
+  current_model_equivalent: page.systems[]_after_system_grouping
+  derive_from_raw_staff_boxes_only: false
+  duplicate_labels_for_shared_progression: false
+
+placement:
+  primary_anchor:
+    horizontal: left_gutter_of_grouped_row
+    text_alignment: right_edge_slightly_left_of_row_music_x1
+    vertical: aligned_to_top_staff_vertical_extent
+    scale_aware_padding_required: true
+  fallback_order:
+    - above_left_outside_staff_lines
+    - inside_left_with_unobtrusive_readability_halo
+    - best_available_minimal_label_and_record_warning_in_review_or_debug
+  collision_avoidance_targets:
+    - staff_lines
+    - clefs
+    - notes
+    - barlines
+    - brackets
+    - braces
+    - existing_printed_text
+  final_warning_text_allowed: false
+
+style:
+  text: neutral_printable_text
+  default_prefix: none
+  background_or_halo:
+    allowed: true
+    constraint: readability_only_unobtrusive
+  forbidden_visuals:
+    - staff_region_shading
+    - barline_boxes
+    - measure_range_ticks
+    - per_measure_center_numbers
+    - detector_candidate_colors
+    - ocr_trace
+    - confidence_scores
+    - warning_badges
+    - correction_ui_handles
+
+mmr_handling:
+  affects_final_only_through_final_applied_numbering: true
+  display_span_length_in_final: false
+  display_ocr_or_classifier_evidence_in_final: false
+  accepted_span_rule: subsequent_row_start_numbers_reflect_skip_increment
+  rejected_or_disabled_mmr_rule: no_effect_unless_reflected_in_final_applied_numbering
+  manual_correction_precedence: resolved_before_rendering
+  review_locations:
+    normalized_overrides: review/pages/<page_id>/mmr_overrides.json
+  debug_locations:
+    evidence: debug/<debug-run-id>/mmr/<page_id>/
+
+manual_correction_handling:
+  apply_before_final_rendering: true
+  final_displays_corrected_result_only: true
+  display_correction_provenance_in_final: false
+  review_default_input_or_output: review/corrections/measure_overrides.json
+  before_after_comparison_profile: review_or_debug
+
+divisi_and_grouping:
+  one_label_per_grouped_system_row: true
+  grand_staff_one_label: true
+  divisi_shared_progression_one_label: true
+  separate_independent_rows_each_get_label: true
+  render_grouping_evidence_in_final: false
+  renderer_may_override_grouping: false
+
+current_overlay_mapping:
+  current_tool: tools/add_measure_numbers.py::render_overlay
+  current_pipeline_artifact: run_dir/outputs/<page_id>/numbering_overlay.png
+  classification: review_overlay
+  public_profile_target: review/pages/<page_id>/review_overlay.png
+  reason:
+    - draws_per_measure_numbers
+    - draws_staff_shading
+    - draws_barline_rectangles
+    - draws_measure_start_end_ticks
+    - uses_review_debug_coloring
+
+profile_boundary:
+  final:
+    allowed:
+      - final_score_numbered_pdf_with_row_start_labels_only
+    forbidden:
+      - page_png_images
+      - warnings
+      - summaries
+      - configs
+      - json
+      - review_overlays
+      - raw_detector_artifacts
+      - mmr_evidence
+      - debug_logs
+  review:
+    allowed:
+      - score_numbering_json
+      - page_numbering_final_json
+      - current_per_measure_review_overlay
+      - source_page_images
+      - manual_correction_handoff
+      - normalized_mmr_overrides
+      - optional_final_page_preview
+  debug:
+    allowed:
+      - raw_detector_traces
+      - system_grouping_evidence
+      - mmr_crops_ocr_classifier_traces
+      - combined_override_debug_json
+      - logs_and_resource_artifacts
+
+recommended_label_model:
+  final_overlay_rows:
+    fields:
+      page_id: string
+      page_number: integer_1_based
+      row_id: stable_string_or_row_index
+      row_bbox: [x1, y1, x2, y2]
+      top_staff_bbox: [x1, y1, x2, y2]
+      row_start_measure_number: integer
+      source_measure_index: integer_0_based
+      placement: primary_left_gutter | above_left_fallback | inside_left_fallback
+
+implementation_handoff:
+  renderer_should_consume:
+    - source_pdf_or_high_fidelity_page_render_with_coordinate_metadata
+    - final_applied_numbering_payload
+    - final_grouped_row_geometry
+    - page_dimensions_and_coordinate_transform_metadata
+    - scale_aware_style_defaults
+  renderer_outputs:
+    final: final/<output-name>_score_numbered.pdf
+    optional_review: review/pages/<page_id>/final_page.png
+    optional_review_or_debug_metadata: placement_fallback_notes
+  tests_should_use_fixtures_without_full_detector_stack: true
+
+acceptance_mapping:
+  final_overlay_display_spec_documented: true
+  final_review_debug_split_documented: true
+  row_left_number_meaning_and_source_documented: true
+  mmr_and_manual_correction_handling_documented: true
+  implementation_handoff_ready: true

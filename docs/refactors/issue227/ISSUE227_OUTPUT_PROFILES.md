@@ -299,6 +299,17 @@ The GUI should save corrections to `review/corrections/measure_overrides.json` b
 
 These boundaries keep #227 parallel to #226: it defines the public contract and implementation handoff, while code changes remain for follow-up PRs.
 
+## Follow-up implementation split
+
+The contract package is intended to support separate follow-up PRs rather than fold unrelated work into #227.
+
+| Follow-up | Owns | Must reference |
+| --- | --- | --- |
+| Profile materializer | Convert current internal run layout into `final` / `review` / `debug`. | `OUTPUT_PROFILE_CONTRACT_SPEC.yaml`, `CURRENT_OUTPUT_MAPPING.md`, and `IMPLEMENTATION_HANDOFF.md`. |
+| User-facing CLI implementation | Connect #226 `pdfscorebar run` to the materializer and config resolution. | #226 CLI design plus this output contract. |
+| #228 final overlay | Define and write final visual artifacts under `final/`. | `final` profile contract and `run_summary.json` overlay fields. |
+| #229 manual correction workflow | Consume review handoff and write correction output. | `review/manual_correction_input.json` example and overwrite policy. |
+
 ## Acceptance mapping
 
 | #227 acceptance | Contract package outcome |

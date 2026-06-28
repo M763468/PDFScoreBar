@@ -111,8 +111,9 @@ notes for current instructions.
   [`docs/refactors/issue228/ISSUE228_FINAL_OVERLAY_FORMAT.md`](refactors/issue228/ISSUE228_FINAL_OVERLAY_FORMAT.md)  
   Defines the final score-numbered PDF visual contract: one row-start measure
   number at the left edge of each final grouped numbering row, derived from
-  final applied numbering, with MMR/manual corrections reflected semantically
-  and review/debug overlay details excluded from the final PDF.
+  final applied numbering, with MMR/manual corrections reflected semantically,
+  review/debug overlay details excluded from the final PDF, and generated mock
+  spacing treated as conceptual rather than normative.
 
 ### Issue #120 / Stage E / Detector Contract Documentation
 

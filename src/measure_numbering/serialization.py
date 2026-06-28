@@ -39,7 +39,10 @@ def score_to_dict(score) -> dict:
             page_data["systems"].append(
                 {
                     "staves": staves,
-                    "measures": [_serialize_measure(measure) for measure in system.measures],
+                    "measures": [
+                        _serialize_measure(measure)
+                        for measure in system.measures
+                    ],
                 }
             )
         data["pages"].append(page_data)

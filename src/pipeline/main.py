@@ -32,6 +32,8 @@ def run_pipeline(
     page_limit: Optional[int] = None,
     debug: bool = False,
     console_log_level: int = logging.INFO,
+    output_profile: Optional[str] = None,
+    profile_output_dir: Optional[Path] = None,
 ) -> Path:
     """Entry point for running the full pipeline."""
     from src.pipeline.utils.images import clear_image_cache
@@ -92,7 +94,20 @@ def run_pipeline(
             debug=debug,
         )
 
-        return orchestrator.run(page_limit=page_limit)
+        result_dir = orchestrator.run(page_limit=page_limit)
+        if output_profile:
+            from src.pipeline.output_profiles import materialize_output_profile
+
+            public_output_dir = profile_output_dir or result_dir
+            materialize_output_profile(
+                result_dir,
+                public_output_dir,
+                profile=output_profile,
+                debug=debug,
+                resolved_config=config,
+            )
+            logger.info(f"Materialized {output_profile} output profile at {public_output_dir}")
+        return result_dir
 
     finally:
         root_logger.removeHandler(file_handler)
@@ -131,8 +146,20 @@ def main() -> None:
     )
     parser.add_argument("--page-limit", type=int, help="Limit the number of pages to process.")
     parser.add_argument("--debug", action="store_true", help="Output intermediate debug files.")
+    parser.add_argument(
+        "--output-profile",
+        choices=("final", "review", "debug"),
+        help="Materialize a #227 public output profile after the pipeline run.",
+    )
+    parser.add_argument(
+        "--profile-output-dir",
+        type=Path,
+        help="Public output directory for --output-profile. Defaults to the run directory.",
+    )
 
     args = parser.parse_args()
+    if args.profile_output_dir and not args.output_profile:
+        parser.error("--profile-output-dir requires --output-profile.")
 
     from tqdm.contrib.logging import logging_redirect_tqdm
 
@@ -146,6 +173,8 @@ def main() -> None:
             skip_existing=args.skip_existing,
             page_limit=args.page_limit,
             debug=args.debug,
+            output_profile=args.output_profile,
+            profile_output_dir=args.profile_output_dir,
         )
 
 

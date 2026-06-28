@@ -48,6 +48,7 @@ notes for current instructions.
 | Branch roles and default PR base | [`docs/BRANCH_POLICY.md`](BRANCH_POLICY.md) |
 | Agent operating rules | [`AGENTS.md`](../AGENTS.md) |
 | Validation expectations by change type | [`docs/dev/VALIDATION_POLICY.md`](dev/VALIDATION_POLICY.md) |
+| User-facing pipeline entrypoint design | [`docs/ISSUE226_USER_FACING_ENTRYPOINT.md`](ISSUE226_USER_FACING_ENTRYPOINT.md) |
 | Issue #120 artifact retention rules | [`docs/ISSUE120_ARTIFACT_RETENTION.md`](ISSUE120_ARTIFACT_RETENTION.md) |
 | Issue #120 evaluation contract | [`docs/ISSUE120_EVALUATION_CONTRACT.md`](ISSUE120_EVALUATION_CONTRACT.md) |
 | Stage E full-pipeline report | [`docs/ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md`](ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md) |
@@ -87,6 +88,14 @@ notes for current instructions.
 
 - **[`docs/BARLINE_MATCHER.md`](BARLINE_MATCHER.md)**  
   Detailed specification of the barline matching and deduplication logic.
+
+### Issue #225 / User-facing Usability Cleanup
+
+- **Issue #226 User-facing Pipeline Entrypoint Design**  
+  [`docs/ISSUE226_USER_FACING_ENTRYPOINT.md`](ISSUE226_USER_FACING_ENTRYPOINT.md)  
+  Defines the formal `pdfscorebar run INPUT.pdf --output-dir OUTPUT_DIR`
+  user-facing entrypoint, its relationship to existing config-first and
+  Makefile-driven routes, and the implementation handoff for the CLI wrapper.
 
 ### Issue #120 / Stage E / Detector Contract Documentation
 

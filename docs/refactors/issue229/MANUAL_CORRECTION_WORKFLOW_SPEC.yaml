@@ -1,0 +1,190 @@
+schema: pdfscorebar.issue229.manual_correction_workflow_spec.v1
+issue: 229
+parent: 225
+base_branch: develop
+status: design_handoff
+
+purpose: >-
+  Define the workflow boundary from #227 review-profile pipeline output to the
+  manual correction GUI and back to corrected final applied numbering.
+
+primary_handoff:
+  path: review/manual_correction_input.json
+  schema: pdfscorebar.manual_correction_input.v1
+  must_be_package_scoped: true
+  prohibits:
+    - page_number_only_artifact_matching
+    - arbitrary_logs_path_discovery
+    - mixed_score_artifacts
+    - mixed_run_artifacts
+    - mixed_coordinate_spaces
+
+required_top_level_fields:
+  - input_pdf
+  - output_dir
+  - output_name
+  - final_pdf
+  - score_numbering
+  - coordinate_space
+  - correction_outputs
+  - save_policy
+  - pages
+
+required_page_fields:
+  - page_id
+  - page_number
+  - source_image
+  - source_image_size
+  - numbering_final
+  - coordinate_space
+
+recommended_page_fields:
+  - review_overlay
+  - barlines_review
+  - mmr_overrides
+  - correction_template
+
+coordinate_space:
+  type: rendered_page_image
+  origin: top_left
+  units: pixels
+  required_metadata:
+    - rendered_dpi_or_scale_when_available
+    - per_page_image_width
+    - per_page_image_height
+  rule: >-
+    All geometry consumed by the GUI for a page must be in the same coordinate
+    space as that page's source_image.
+
+current_pipeline_sources:
+  run_layout:
+    source_images: run_dir/inputs/images/
+    base_numbering: run_dir/intermediate/<page_id>/numbering_base.json
+    mmr_overrides: run_dir/intermediate/<page_id>/overrides_mmr.json
+    combined_overrides_debug: run_dir/intermediate/<page_id>/overrides_combined.json
+    page_final_numbering: run_dir/outputs/<page_id>/numbering_final.json
+    combined_final_numbering: run_dir/outputs/numbering_final.json
+    review_overlay: run_dir/outputs/<page_id>/numbering_overlay.png
+    filters: run_dir/filters.json
+    manifest: run_dir/manifest.json
+    pipeline_log: run_dir/pipeline.log
+  notes:
+    - run_pipeline currently exposes output_root/run_id internally.
+    - numbering_overlay.png is review output, not the #228 final PDF.
+    - manifest.json and filters.json should be summarized for review/debug, not exposed as normal user workflow requirements.
+
+review_profile_targets:
+  source_images: review/pages/<page_id>/source.png
+  review_overlay: review/pages/<page_id>/review_overlay.png
+  page_final_numbering: review/pages/<page_id>/numbering_final.json
+  combined_final_numbering: review/score_numbering.json
+  mmr_overrides: review/pages/<page_id>/mmr_overrides.json
+  barlines_review: review/pages/<page_id>/barlines_review.json
+  run_summary: review/run_summary.json
+  resolved_config: review/resolved_config.yaml
+  warnings: review/warnings.json
+  manual_handoff: review/manual_correction_input.json
+
+correction_outputs:
+  directory: review/corrections/
+  staging_files:
+    mmr_measure_span: review/corrections/mmr_measure_spans.json
+    measure_construction: review/corrections/measure_construction_overrides.json
+    barline_construction: review/corrections/barline_construction_overrides.json
+  canonical_pipeline_inputs:
+    measure_overrides: review/corrections/measure_overrides.json
+    barline_overrides: review/corrections/barline_overrides.json
+  optional_metadata:
+    correction_summary: review/corrections/correction_summary.json
+  overwrite_policy:
+    default: keep_existing_user_edits
+    overwrite_requires_explicit_user_action: true
+
+manual_gui_adapter:
+  transitional: true
+  input: review/manual_correction_input.json
+  output: current_gt_relabel_gui_manual_config
+  current_gui_fields:
+    image: source_image
+    numbering: numbering_final
+    mmr: mmr_overrides
+    barlines: barlines_review
+  responsibilities:
+    - validate_package_scope
+    - validate_coordinate_metadata_presence
+    - map_page_artifacts_to_current_gui_config
+    - map_manual_outputs_to_review_corrections
+    - refuse_unrelated_logs_substitution
+
+corrected_final_workflow:
+  correction_application_order:
+    - barline_overrides_before_base_measure_construction
+    - measure_overrides_before_final_applied_numbering
+    - final_overlay_after_corrected_final_applied_numbering
+  final_output:
+    path: final/<output-name>_score_numbered.pdf
+    source_semantics:
+      - review/score_numbering.json
+      - review/pages/<page_id>/numbering_final.json
+    must_not_include:
+      - correction_provenance
+      - before_after_numbers
+      - override_comments
+      - mmr_evidence
+      - detector_geometry
+      - barline_boxes
+      - gui_handles
+      - warnings
+  review_updates:
+    - correction_input_paths
+    - correction_timestamp
+    - corrected_output_status
+
+user_flow:
+  - run_review_profile
+  - inspect_run_summary_or_review_overlays
+  - launch_gui_from_manual_correction_input
+  - inspect_source_overlay_numbering_mmr_and_barlines
+  - stage_and_save_corrections
+  - canonicalize_correction_inputs
+  - regenerate_corrected_final_applied_numbering
+  - render_final_score_numbered_pdf
+
+issue215_resmoke_minimum_conditions:
+  - same_review_package_source_numbering_mmr_barlines
+  - coordinate_space_metadata_available
+  - gui_output_paths_under_review_corrections
+  - mmr_base_effective_rows_load_for_at_least_one_page
+  - mmr_correction_can_be_staged_and_saved
+  - barline_correction_can_be_staged_and_saved
+  - saved_json_can_be_handed_to_helper_or_pipeline
+
+follow_up_split:
+  profile_materializer:
+    owns:
+      - review/manual_correction_input.json
+      - review_page_artifact_copy_or_reference
+      - coordinate_metadata
+  gui_adapter:
+    owns:
+      - current_gui_config_generation_from_handoff
+      - package_scope_validation
+  correction_canonicalizer:
+    owns:
+      - staging_to_measure_overrides
+      - staging_to_barline_overrides
+  corrected_rerun_command:
+    owns:
+      - applying_saved_corrections
+      - regenerating_corrected_final_outputs
+  issue215_resmoke:
+    owns:
+      - real_artifact_stage_save_confirmation
+
+non_goals:
+  - replace_issue215_smoke_test
+  - gui_large_redesign
+  - detector_ocr_mmr_accuracy_changes
+  - final_overlay_renderer_implementation
+  - arbitrary_logs_path_normal_workflow
+  - repository_split_or_main_promotion

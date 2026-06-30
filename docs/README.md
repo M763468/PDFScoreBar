@@ -51,6 +51,7 @@ notes for current instructions.
 | User-facing pipeline entrypoint design | [`docs/refactors/issue226/ISSUE226_USER_FACING_ENTRYPOINT.md`](refactors/issue226/ISSUE226_USER_FACING_ENTRYPOINT.md) |
 | User-facing output profile contract package | [`docs/refactors/issue227/ISSUE227_OUTPUT_PROFILES.md`](refactors/issue227/ISSUE227_OUTPUT_PROFILES.md) |
 | Final score-number overlay format | [`docs/refactors/issue228/ISSUE228_FINAL_OVERLAY_FORMAT.md`](refactors/issue228/ISSUE228_FINAL_OVERLAY_FORMAT.md) |
+| Manual correction GUI pipeline workflow | [`docs/refactors/issue229/ISSUE229_MANUAL_CORRECTION_WORKFLOW.md`](refactors/issue229/ISSUE229_MANUAL_CORRECTION_WORKFLOW.md) |
 | Issue #120 artifact retention rules | [`docs/ISSUE120_ARTIFACT_RETENTION.md`](ISSUE120_ARTIFACT_RETENTION.md) |
 | Issue #120 evaluation contract | [`docs/ISSUE120_EVALUATION_CONTRACT.md`](ISSUE120_EVALUATION_CONTRACT.md) |
 | Stage E full-pipeline report | [`docs/ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md`](ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md) |
@@ -114,6 +115,13 @@ notes for current instructions.
   final applied numbering, with MMR/manual corrections reflected semantically,
   review/debug overlay details excluded from the final PDF, and label position
   and size tuned against real page geometry.
+
+- **Issue #229 Manual Correction GUI Pipeline Workflow**  
+  [`docs/refactors/issue229/ISSUE229_MANUAL_CORRECTION_WORKFLOW.md`](refactors/issue229/ISSUE229_MANUAL_CORRECTION_WORKFLOW.md)  
+  Defines the review-package-to-GUI handoff boundary, same-coordinate-space
+  artifact requirements, correction output paths, corrected-final regeneration
+  semantics, user operation flow, and the minimum conditions for returning to
+  the #215 real-artifact GUI smoke test.
 
 ### Issue #120 / Stage E / Detector Contract Documentation
 

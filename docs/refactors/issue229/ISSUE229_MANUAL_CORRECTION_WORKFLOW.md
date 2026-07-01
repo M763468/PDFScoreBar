@@ -70,6 +70,7 @@ Important current behavior:
 - `run_pipeline()` still exposes `output_root/run_id` as its internal execution layout.
 - Rendered source images are written under `run_dir/inputs/images/` when image persistence is enabled.
 - Page-level base numbering is written under `run_dir/intermediate/<page_id>/numbering_base.json`.
+- Review-level barline geometry should be materialized from `run_dir/intermediate/<page_id>/barlines_corrected.json` when available, or from explicitly resolved raw barline geometry retained by the pipeline.
 - MMR evidence is written under `run_dir/intermediate/<page_id>/overrides_mmr.json`.
 - Page-level final numbering is written under `run_dir/outputs/<page_id>/numbering_final.json`.
 - Combined final numbering is written under `run_dir/outputs/numbering_final.json` when multiple pages are present.
@@ -171,6 +172,7 @@ OUTPUT_DIR/
 
 - `review/manual_correction_input.json` is the primary pipeline-to-GUI handoff.
 - `review/corrections/` is the default user-editable correction area.
+- `review/corrections/measure_overrides.json` remains the #227-compatible `correction_output` target.
 - `review/pages/<page_id>/source.png` is the source image used by GUI coordinates.
 - `review/pages/<page_id>/numbering_final.json` is the GUI measure/numbering source.
 - `review/pages/<page_id>/barlines_review.json` is the GUI barline geometry source when available.
@@ -195,7 +197,7 @@ Required materialization gaps:
 | `review/pages/<page_id>/source.png` | `inputs/images/<page_id>.png` or original input image path | Needs stable package-local copy/reference and image metadata. |
 | `review/pages/<page_id>/review_overlay.png` | `outputs/<page_id>/numbering_overlay.png` | Needs rename/copy; current overlay is review-only. |
 | `review/pages/<page_id>/numbering_final.json` | `outputs/<page_id>/numbering_final.json` | Needs package-local copy/reference. |
-| `review/pages/<page_id>/barlines_review.json` | `intermediate/<page_id>/barlines_corrected.json` or resolved raw barlines | Needs normalized review-level barline geometry; may be unavailable unless retained. |
+| `review/pages/<page_id>/barlines_review.json` | `intermediate/<page_id>/barlines_corrected.json` or explicitly resolved raw barlines | Needs normalized review-level barline geometry; must not be guessed from unrelated logs roots. |
 | `review/pages/<page_id>/mmr_overrides.json` | `intermediate/<page_id>/overrides_mmr.json` | Needs package-local copy/reference. |
 | coordinate-space metadata | implicit in image size / render config | Needs explicit metadata. |
 | correction output target | legacy defaults or ad hoc paths | Needs package-local `review/corrections/` paths and overwrite policy. |
@@ -224,12 +226,13 @@ Required top-level fields:
     "dpi": 300,
     "image_size_source": "per_page"
   },
+  "correction_output": "review/corrections/measure_overrides.json",
   "correction_outputs": {
     "measure_overrides": "review/corrections/measure_overrides.json",
     "barline_overrides": "review/corrections/barline_overrides.json",
-    "mmr_measure_span_staging": "review/corrections/mmr_measure_spans.json",
-    "measure_construction_staging": "review/corrections/measure_construction_overrides.json",
-    "barline_construction_staging": "review/corrections/barline_construction_overrides.json"
+    "mmr_measure_span": "review/corrections/mmr_measure_spans.json",
+    "measure_construction": "review/corrections/measure_construction_overrides.json",
+    "barline_construction": "review/corrections/barline_construction_overrides.json"
   },
   "save_policy": {
     "default": "keep_existing_user_edits",
@@ -238,6 +241,8 @@ Required top-level fields:
   "pages": []
 }
 ```
+
+`correction_output` preserves the #227 singular field for the canonical measure-correction file. `correction_outputs` is the #229 extension that carries barline-correction and GUI staging targets. A transitional adapter should accept #227-style handoffs that only contain `correction_output`, but #229 review packages should emit both fields so implementation code can start without guessing output paths.
 
 Required per-page fields:
 
@@ -259,7 +264,7 @@ Required per-page fields:
 }
 ```
 
-The per-page `source_image`, `numbering_final`, `mmr_overrides`, and `barlines_review` entries must all refer to artifacts from the same review package and same rendered image coordinate space.
+The per-page `source_image`, `review_overlay`, `numbering_final`, `mmr_overrides`, and `barlines_review` entries must all refer to artifacts from the same review package and same rendered image coordinate space. For the #215 smoke path, `review_overlay`, `mmr_overrides`, and `barlines_review` are required, not merely recommended, because that smoke must verify both MMR and barline correction paths.
 
 ### Prohibited normal workflow
 
@@ -281,9 +286,11 @@ Adapter responsibility:
 1. Read `OUTPUT_DIR/review/manual_correction_input.json`.
 2. Validate every referenced page artifact is under the same `OUTPUT_DIR` or explicitly recorded as external.
 3. Validate coordinate metadata is present and image sizes match expected page geometry when the data is available.
-4. Produce the current GUI config shape with `image`, `numbering`, `mmr`, and `barlines` fields mapped from the review package.
-5. Override GUI manual outputs to package-local correction paths under `review/corrections/`.
-6. Refuse or warn on missing recommended artifacts rather than silently substituting unrelated `logs/` paths.
+4. Validate that the correction-smoke path has same-package `source_image`, `numbering_final`, `mmr_overrides`, `barlines_review`, and `review_overlay` entries.
+5. Produce the current GUI config shape with `image`, `numbering`, `mmr`, and `barlines` fields mapped from the review package.
+6. Override GUI manual outputs to package-local correction paths under `review/corrections/` using current GUI keys: `mmr_measure_span`, `measure_construction`, and `barline_construction`.
+7. Accept the #227 singular `correction_output` as the canonical measure override target, prefer #229 `correction_outputs` when present, and generate package-local staging defaults only when that can be done without overwriting user edits.
+8. Refuse or warn on missing required smoke artifacts rather than silently substituting unrelated `logs/` paths.
 
 The adapter is transitional. The long-term GUI may read `manual_correction_input.json` directly.
 
@@ -317,7 +324,7 @@ Roles:
 | `barline_overrides.json` | Canonical barline correction input consumed before base numbering when barline correction is applied. |
 | `correction_summary.json` | Optional review metadata: saved files, corrected pages, timestamps, warnings, and whether canonical files are up to date. |
 
-The #227-reserved `review/corrections/measure_overrides.json` remains the default canonical measure correction path. Barline corrections require a separate canonical `barline_overrides.json` because they are applied earlier than measure numbering and are not measure overrides.
+The #227-reserved `review/corrections/measure_overrides.json` remains the default canonical measure correction path and is exposed as the singular `correction_output` field. Barline corrections require a separate canonical `barline_overrides.json` because they are applied earlier than measure numbering and are not measure overrides.
 
 ## Corrected final output regeneration
 
@@ -402,7 +409,7 @@ The final PDF shows only row-start labels from corrected final applied numbering
 
 Minimum conditions:
 
-1. One review package contains matching `source.png`, `numbering_final.json`, `mmr_overrides.json`, and `barlines_review.json` for the same score, run, page, and rendered image coordinate space.
+1. One review package contains matching `source.png`, `review_overlay.png`, `numbering_final.json`, `mmr_overrides.json`, and `barlines_review.json` for the same score, run, page, and rendered image coordinate space.
 2. `review/manual_correction_input.json` or a deterministic adapter config references only those same-package artifacts.
 3. The GUI output paths are redirected to `review/corrections/`, not the legacy `data/evaluation2/manual_corrections/` defaults.
 4. Coordinate-space metadata is present and can be checked by the adapter or smoke script.
@@ -420,8 +427,8 @@ This design should be implemented in small follow-up issues/PRs.
 
 | Follow-up | Scope | Notes |
 | --- | --- | --- |
-| Profile materializer for correction handoff | Create `review/manual_correction_input.json`, copy/reference page artifacts, write coordinate metadata, preserve correction files. | May be combined with the broader #227 materializer only if the PR remains small. |
-| Manual GUI handoff adapter | Convert `review/manual_correction_input.json` to current GUI config or teach GUI to read it directly. | Must reject arbitrary logs path matching as the normal route. |
+| Profile materializer for correction handoff | Create `review/manual_correction_input.json`, copy/reference page artifacts, write coordinate metadata, preserve correction files. | Must emit #227-compatible `correction_output`, #229 `correction_outputs`, and `barlines_review.json` from retained corrected/raw barline geometry. |
+| Manual GUI handoff adapter | Convert `review/manual_correction_input.json` to current GUI config or teach GUI to read it directly. | Must reject arbitrary logs path matching as the normal route and map current GUI output keys without `_staging` suffix. |
 | Correction canonicalizer | Convert GUI staging files into `measure_overrides.json` and `barline_overrides.json`. | Should use existing #201 helper semantics and unit tests. |
 | Corrected rerun / apply-corrections command | Apply saved corrections and regenerate corrected final applied numbering and final PDF. | Must keep final PDF clean per #228. |
 | #215 re-smoke | Run the real-artifact GUI smoke using same-package artifacts. | Confirms stage/save and rerun handoff; does not replace #229 design. |
@@ -444,7 +451,7 @@ This design should be implemented in small follow-up issues/PRs.
 | --- | --- |
 | #215 result is considered | The first attempt is classified as blocked by mismatched artifacts, so #229 defines same-package handoff conditions and leaves #215 open for re-smoke. |
 | Required GUI artifacts are defined | `manual_correction_input.json` top-level and per-page requirements define source image, numbering, MMR, barlines, overlays, coordinate metadata, and correction targets. |
-| Correction output path is defined | `review/corrections/` layout separates GUI staging files from canonical `measure_overrides.json` and `barline_overrides.json`. |
+| Correction output path is defined | `review/corrections/` layout separates GUI staging files from canonical `measure_overrides.json` and `barline_overrides.json`, while preserving #227 `correction_output`. |
 | Corrected final output path is defined | Saved corrections are applied before final applied numbering and #228 final PDF rendering. |
 | User workflow is documented | The operation flow covers review run, page inspection, GUI launch, save, canonicalization, and corrected final output. |
 | Follow-up implementation can be split | Materializer, adapter, canonicalizer, corrected rerun, and #215 re-smoke are listed separately. |

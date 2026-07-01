@@ -12,6 +12,10 @@ primary_handoff:
   path: review/manual_correction_input.json
   schema: pdfscorebar.manual_correction_input.v1
   must_be_package_scoped: true
+  preserves_issue227_field:
+    correction_output: review/corrections/measure_overrides.json
+  extends_issue227_with:
+    correction_outputs: review/corrections/ structured output map for #229 GUI staging and canonical inputs
   prohibits:
     - page_number_only_artifact_matching
     - arbitrary_logs_path_discovery
@@ -20,12 +24,14 @@ primary_handoff:
     - mixed_coordinate_spaces
 
 required_top_level_fields:
+  - schema
   - input_pdf
   - output_dir
   - output_name
   - final_pdf
   - score_numbering
   - coordinate_space
+  - correction_output
   - correction_outputs
   - save_policy
   - pages
@@ -35,13 +41,13 @@ required_page_fields:
   - page_number
   - source_image
   - source_image_size
+  - review_overlay
   - numbering_final
+  - barlines_review
+  - mmr_overrides
   - coordinate_space
 
 recommended_page_fields:
-  - review_overlay
-  - barlines_review
-  - mmr_overrides
   - correction_template
 
 coordinate_space:
@@ -60,6 +66,8 @@ current_pipeline_sources:
   run_layout:
     source_images: run_dir/inputs/images/
     base_numbering: run_dir/intermediate/<page_id>/numbering_base.json
+    barlines_corrected: run_dir/intermediate/<page_id>/barlines_corrected.json
+    barlines_review_fallback: resolved raw barlines retained by the pipeline when corrected barlines are unavailable
     mmr_overrides: run_dir/intermediate/<page_id>/overrides_mmr.json
     combined_overrides_debug: run_dir/intermediate/<page_id>/overrides_combined.json
     page_final_numbering: run_dir/outputs/<page_id>/numbering_final.json
@@ -71,6 +79,7 @@ current_pipeline_sources:
   notes:
     - run_pipeline currently exposes output_root/run_id internally.
     - numbering_overlay.png is review output, not the #228 final PDF.
+    - barlines_review must be materialized from barlines_corrected when available, or from explicitly resolved raw barline geometry; it must not be guessed from unrelated logs roots.
     - manifest.json and filters.json should be summarized for review/debug, not exposed as normal user workflow requirements.
 
 review_profile_targets:
@@ -87,6 +96,8 @@ review_profile_targets:
 
 correction_outputs:
   directory: review/corrections/
+  issue227_compatible_field:
+    correction_output: review/corrections/measure_overrides.json
   staging_files:
     mmr_measure_span: review/corrections/mmr_measure_spans.json
     measure_construction: review/corrections/measure_construction_overrides.json
@@ -104,14 +115,23 @@ manual_gui_adapter:
   transitional: true
   input: review/manual_correction_input.json
   output: current_gt_relabel_gui_manual_config
+  compatibility:
+    - accept_issue227_correction_output_as_measure_overrides_target
+    - prefer_correction_outputs_when_present
+    - generate_package_local_defaults_for_staging_paths_when_safe
   current_gui_fields:
     image: source_image
     numbering: numbering_final
     mmr: mmr_overrides
     barlines: barlines_review
+  current_manual_output_keys:
+    mmr_measure_span: correction_outputs.staging_files.mmr_measure_span
+    measure_construction: correction_outputs.staging_files.measure_construction
+    barline_construction: correction_outputs.staging_files.barline_construction
   responsibilities:
     - validate_package_scope
     - validate_coordinate_metadata_presence
+    - validate_required_smoke_artifacts_presence
     - map_page_artifacts_to_current_gui_config
     - map_manual_outputs_to_review_corrections
     - refuse_unrelated_logs_substitution
@@ -165,10 +185,14 @@ follow_up_split:
       - review/manual_correction_input.json
       - review_page_artifact_copy_or_reference
       - coordinate_metadata
+      - issue227_compatible_correction_output
+      - issue229_correction_outputs
+      - barlines_review_materialization
   gui_adapter:
     owns:
       - current_gui_config_generation_from_handoff
       - package_scope_validation
+      - correction_output_compatibility
   correction_canonicalizer:
     owns:
       - staging_to_measure_overrides

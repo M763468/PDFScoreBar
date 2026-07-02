@@ -58,8 +58,6 @@ required_page_fields:
   - source_image
   - review_overlay
   - numbering_final
-  - barlines_review
-  - mmr_overrides
   - coordinate_space
 
 conditional_page_fields:
@@ -67,12 +65,17 @@ conditional_page_fields:
     condition: >-
       Required for #229 review/correction packages and for #215 real-artifact
       smoke retries. Base #227 v1 handoffs may rely on top-level coordinate
-      metadata or image probing when safe.
+      metadata or image probing when safe, and may omit optional review evidence
+      when a layer is disabled or not relevant to the selected correction mode.
     required:
       - source_image_size
+      - barlines_review
+      - mmr_overrides
 
 recommended_page_fields:
   - correction_template
+  - barlines_review
+  - mmr_overrides
 
 coordinate_space:
   type: rendered_page_image
@@ -145,7 +148,10 @@ manual_gui_adapter:
     - generate_package_local_defaults_for_staging_paths_when_safe
     - derive_output_dir_from_handoff_path_for_issue227_v1_when_absent
     - tolerate_missing_page_source_image_size_for_issue227_v1_when_coordinate_metadata_is_sufficient
+    - tolerate_missing_optional_mmr_or_barline_review_evidence_when_not_required_by_correction_mode
   current_gui_fields:
+    name: page_id
+    page: page_number
     image: source_image
     numbering: numbering_final
     mmr: mmr_overrides
@@ -156,6 +162,7 @@ manual_gui_adapter:
     barline_construction: correction_outputs.barline_construction
   responsibilities:
     - validate_package_scope
+    - validate_page_identity_mapping
     - validate_coordinate_metadata_presence
     - validate_required_smoke_artifacts_presence
     - map_page_artifacts_to_current_gui_config

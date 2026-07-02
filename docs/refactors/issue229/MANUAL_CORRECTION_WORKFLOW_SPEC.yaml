@@ -26,7 +26,6 @@ primary_handoff:
 required_top_level_fields:
   - schema
   - input_pdf
-  - output_dir
   - output_name
   - final_pdf
   - score_numbering
@@ -35,21 +34,42 @@ required_top_level_fields:
   - save_policy
   - pages
 
+optional_or_derivable_top_level_fields:
+  output_dir: >-
+    Optional for base v1 compatibility. For #227-style handoffs, consumers may
+    derive the package root from the manual_correction_input.json path.
+
 conditional_top_level_fields:
   issue229_review_correction_package:
+    condition: >-
+      Required when the handoff is produced for the #229 review/correction GUI
+      workflow, including the #215 real-artifact smoke path.
     required:
+      - output_dir
       - correction_outputs
+    compatibility_note: >-
+      #227-only v1 handoffs may contain only correction_output and remain valid
+      for legacy/manual-correction consumers. #229 packages extend the same v1
+      payload with correction_outputs instead of invalidating #227 examples.
 
 required_page_fields:
   - page_id
   - page_number
   - source_image
-  - source_image_size
   - review_overlay
   - numbering_final
   - barlines_review
   - mmr_overrides
   - coordinate_space
+
+conditional_page_fields:
+  issue229_review_correction_package:
+    condition: >-
+      Required for #229 review/correction packages and for #215 real-artifact
+      smoke retries. Base #227 v1 handoffs may rely on top-level coordinate
+      metadata or image probing when safe.
+    required:
+      - source_image_size
 
 recommended_page_fields:
   - correction_template
@@ -123,6 +143,8 @@ manual_gui_adapter:
     - accept_issue227_correction_output_as_measure_overrides_target
     - prefer_correction_outputs_when_present
     - generate_package_local_defaults_for_staging_paths_when_safe
+    - derive_output_dir_from_handoff_path_for_issue227_v1_when_absent
+    - tolerate_missing_page_source_image_size_for_issue227_v1_when_coordinate_metadata_is_sufficient
   current_gui_fields:
     image: source_image
     numbering: numbering_final

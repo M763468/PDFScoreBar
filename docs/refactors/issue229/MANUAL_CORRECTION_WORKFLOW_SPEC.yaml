@@ -149,9 +149,13 @@ manual_gui_adapter:
     - derive_output_dir_from_handoff_path_for_issue227_v1_when_absent
     - tolerate_missing_page_source_image_size_for_issue227_v1_when_coordinate_metadata_is_sufficient
     - tolerate_missing_optional_mmr_or_barline_review_evidence_when_not_required_by_correction_mode
+  derived_adapter_fields:
+    override_page_index_zero_based: page_number_minus_1
+    source_page_number_one_based: page_number
   current_gui_fields:
     name: page_id
-    page: page_number
+    page: override_page_index_zero_based
+    source_page_number: source_page_number_one_based
     image: source_image
     numbering: numbering_final
     mmr: mmr_overrides
@@ -163,6 +167,7 @@ manual_gui_adapter:
   responsibilities:
     - validate_package_scope
     - validate_page_identity_mapping
+    - validate_current_gui_zero_based_page_mapping
     - validate_coordinate_metadata_presence
     - validate_required_smoke_artifacts_presence
     - map_page_artifacts_to_current_gui_config

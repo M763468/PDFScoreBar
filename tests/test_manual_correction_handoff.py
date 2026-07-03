@@ -156,7 +156,7 @@ def test_canonicalize_manual_correction_outputs_writes_pipeline_payloads(tmp_pat
                     "op": "force_measure",
                     "page": 2,
                     "system": 1,
-                    "interval": 5,
+                    "interval": 4,
                     "reason": "manual measure construction",
                 }
             ],
@@ -206,7 +206,7 @@ def test_canonicalize_manual_correction_outputs_writes_pipeline_payloads(tmp_pat
         {
             "page": 2,
             "system": 1,
-            "measure": 5,
+            "measure": 4,
             "force_measure": True,
             "comment": "manual measure construction",
             "source": "manual:measure_construction",

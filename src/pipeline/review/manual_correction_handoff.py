@@ -46,7 +46,9 @@ def load_manual_correction_handoff(path: str | Path) -> Dict[str, Any]:
     with handoff_path.open(encoding="utf-8") as fh:
         payload = json.load(fh)
     if not isinstance(payload, dict):
-        raise ManualCorrectionHandoffError("manual correction handoff must be a JSON object")
+        raise ManualCorrectionHandoffError(
+            "manual correction handoff must be a JSON object"
+        )
     return payload
 
 
@@ -58,7 +60,9 @@ def _as_page_number(value: Any, *, page_id: str) -> int:
     try:
         page_number = int(value)
     except (TypeError, ValueError) as exc:
-        raise ManualCorrectionHandoffError(f"{page_id}: page_number must be an integer") from exc
+        raise ManualCorrectionHandoffError(
+            f"{page_id}: page_number must be an integer"
+        ) from exc
     if page_number < 1:
         raise ManualCorrectionHandoffError(f"{page_id}: page_number must be >= 1")
     return page_number
@@ -127,7 +131,9 @@ def _validate_existing_path(
     return resolved
 
 
-def _relative_for_gui(path: Optional[Path], *, package_root: Optional[Path]) -> Optional[str]:
+def _relative_for_gui(
+    path: Optional[Path], *, package_root: Optional[Path]
+) -> Optional[str]:
     if path is None:
         return None
     if package_root is not None:
@@ -148,7 +154,9 @@ def _manual_output_paths(
         output_paths: Dict[str, str] = {}
         for key in GUI_OUTPUT_KEYS:
             if key not in configured:
-                raise ManualCorrectionHandoffError(f"correction_outputs.{key} is required")
+                raise ManualCorrectionHandoffError(
+                    f"correction_outputs.{key} is required"
+                )
             resolved = _resolve_package_path(
                 configured[key],
                 package_root=package_root,
@@ -190,12 +198,16 @@ def validate_manual_correction_handoff(
     """
 
     if not isinstance(payload, dict):
-        raise ManualCorrectionHandoffError("manual correction handoff must be a JSON object")
+        raise ManualCorrectionHandoffError(
+            "manual correction handoff must be a JSON object"
+        )
     for field in _REQUIRED_TOP_LEVEL_FIELDS:
         if field not in payload:
             raise ManualCorrectionHandoffError(f"{field} is required")
     if mode not in {"base_v1", "issue229_smoke_strict"}:
-        raise ManualCorrectionHandoffError(f"unsupported handoff validation mode: {mode}")
+        raise ManualCorrectionHandoffError(
+            f"unsupported handoff validation mode: {mode}"
+        )
 
     pages = payload.get("pages")
     if not isinstance(pages, list) or not pages:
@@ -244,7 +256,9 @@ def validate_manual_correction_handoff(
                 require_exists=require_existing_artifacts,
             )
             if resolved is not None:
-                normalized_page[field] = _relative_for_gui(resolved, package_root=package_root)
+                normalized_page[field] = _relative_for_gui(
+                    resolved, package_root=package_root
+                )
 
         normalized_page["manual_outputs"] = _manual_output_paths(
             page, package_root=package_root
@@ -357,10 +371,14 @@ def canonicalize_manual_correction_outputs(
     measure_output = root / "measure_overrides.json"
     barline_output = root / "barline_overrides.json"
 
-    existing_outputs = [path for path in (measure_output, barline_output) if path.exists()]
+    existing_outputs = [
+        path for path in (measure_output, barline_output) if path.exists()
+    ]
     if existing_outputs and not overwrite:
         paths = ", ".join(str(path) for path in existing_outputs)
-        raise FileExistsError(f"Refusing to overwrite existing correction file(s): {paths}")
+        raise FileExistsError(
+            f"Refusing to overwrite existing correction file(s): {paths}"
+        )
 
     mmr_measure_span = _read_json_object_if_exists(
         root / STAGING_TO_CANONICAL_FILENAMES["mmr_measure_span"]

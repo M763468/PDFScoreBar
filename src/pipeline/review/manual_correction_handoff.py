@@ -117,7 +117,12 @@ def _validate_existing_path(
         field=field,
         required=required,
     )
-    if resolved is not None and package_root is not None and require_exists and not resolved.exists():
+    if (
+        resolved is not None
+        and package_root is not None
+        and require_exists
+        and not resolved.exists()
+    ):
         raise ManualCorrectionHandoffError(f"{field} does not exist: {raw_path}")
     return resolved
 
@@ -133,7 +138,9 @@ def _relative_for_gui(path: Optional[Path], *, package_root: Optional[Path]) -> 
     return path.as_posix()
 
 
-def _manual_output_paths(page: Dict[str, Any], *, package_root: Optional[Path]) -> Dict[str, str]:
+def _manual_output_paths(
+    page: Dict[str, Any], *, package_root: Optional[Path]
+) -> Dict[str, str]:
     configured = page.get("correction_outputs")
     if configured is not None:
         if not isinstance(configured, dict):
@@ -239,7 +246,9 @@ def validate_manual_correction_handoff(
             if resolved is not None:
                 normalized_page[field] = _relative_for_gui(resolved, package_root=package_root)
 
-        normalized_page["manual_outputs"] = _manual_output_paths(page, package_root=package_root)
+        normalized_page["manual_outputs"] = _manual_output_paths(
+            page, package_root=package_root
+        )
         normalized_pages.append(normalized_page)
 
     normalized["pages"] = normalized_pages
@@ -306,7 +315,9 @@ def write_manual_gui_config(
         require_existing_artifacts=require_existing_artifacts,
     )
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(config, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    output.write_text(
+        json.dumps(config, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     return config
 
 
@@ -324,7 +335,9 @@ def _write_json_object(path: Path, payload: Dict[str, Any], *, overwrite: bool) 
     if path.exists() and not overwrite:
         raise FileExistsError(f"Refusing to overwrite existing correction file: {path}")
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
 
 
 def canonicalize_manual_correction_outputs(

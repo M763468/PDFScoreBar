@@ -29,6 +29,16 @@ def _load_json_object(path: Path, *, description: str) -> dict[str, Any]:
     return payload
 
 
+def _load_json(path: Path) -> Any:
+    with path.open(encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def _write_json(path: Path, payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
 def _require_inside(path: Path, *, root: Path, description: str) -> Path:
     resolved = path.resolve()
     try:
@@ -112,6 +122,10 @@ def _select_pages(
         page_id = page.get("page_id")
         if not isinstance(page_id, str) or not page_id:
             raise ManualCorrectionMaterializerError(f"manifest pages[{index}].page_id is required")
+        if not re.fullmatch(r"[A-Za-z0-9_-]+", page_id):
+            raise ManualCorrectionMaterializerError(
+                f"manifest pages[{index}].page_id contains invalid characters: {page_id}"
+            )
         by_id[page_id] = page
 
     if requested_pages is None:
@@ -167,6 +181,22 @@ def _resolve_barlines_review_source(
         f"{', '.join(_BARLINES_MANIFEST_FIELDS)}; searched current-run page artifact: "
         f"{page_local}; follow-up PR should connect a stable page-local barlines_review.json "
         f"or manifest-resolved detector geometry artifact."
+    )
+
+
+def _extract_review_barline_records(payload: Any, *, source: Path) -> list[Any]:
+    if isinstance(payload, list):
+        return payload
+    if isinstance(payload, dict):
+        if isinstance(payload.get("predictions"), list):
+            return payload["predictions"]
+        if isinstance(payload.get("boxes"), list):
+            return payload["boxes"]
+        raise ManualCorrectionMaterializerError(
+            f"barlines review source has no predictions or boxes list: {source}"
+        )
+    raise ManualCorrectionMaterializerError(
+        f"barlines review source must be a JSON list or object: {source}"
     )
 
 
@@ -250,7 +280,10 @@ def materialize_manual_correction_review_package(
         _copy_run_artifact(numbering_final, page_dir / "numbering_final.json")
         _copy_run_artifact(review_overlay, page_dir / "review_overlay.png")
         _copy_run_artifact(mmr_overrides, page_dir / "mmr_overrides.json")
-        _copy_run_artifact(barlines_source, page_dir / "barlines_review.json")
+        _write_json(
+            page_dir / "barlines_review.json",
+            _extract_review_barline_records(_load_json(barlines_source), source=barlines_source),
+        )
 
         handoff_pages.append(
             {

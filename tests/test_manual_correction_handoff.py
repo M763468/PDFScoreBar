@@ -245,6 +245,13 @@ def test_canonicalize_refuses_to_overwrite_existing_outputs(tmp_path):
         canonicalize_manual_correction_outputs(corrections)
 
 
+def test_canonicalize_requires_existing_corrections_directory(tmp_path):
+    missing = tmp_path / "missing_corrections"
+
+    with pytest.raises(FileNotFoundError, match="Corrections directory"):
+        canonicalize_manual_correction_outputs(missing)
+
+
 def test_canonicalize_allows_explicit_overwrite(tmp_path):
     corrections = tmp_path / "review" / "corrections"
     _write_json(corrections / "mmr_measure_spans.json", {"correction_type": "mmr_measure_span"})

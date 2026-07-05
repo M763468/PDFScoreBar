@@ -13,7 +13,7 @@ from src.pipeline.review.manual_correction_materializer import (
 )
 
 
-def _write_json(path: Path, payload: dict | None = None) -> None:
+def _write_json(path: Path, payload: object | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload or {}, indent=2) + "\n", encoding="utf-8")
 
@@ -23,14 +23,20 @@ def _write_text(path: Path, text: str = "placeholder") -> None:
     path.write_text(text, encoding="utf-8")
 
 
-def _fake_run_root(tmp_path: Path, *, barlines_outside: Path | None = None) -> Path:
+def _fake_run_root(
+    tmp_path: Path,
+    *,
+    barlines_outside: Path | None = None,
+    barlines_payload: object | None = None,
+    page_id: str = "page_001",
+) -> Path:
     run_root = tmp_path / "source_run"
-    _write_text(run_root / "inputs" / "images" / "page_001.png")
-    _write_json(run_root / "outputs" / "page_001" / "numbering_final.json")
-    _write_text(run_root / "outputs" / "page_001" / "numbering_overlay.png")
-    _write_json(run_root / "intermediate" / "page_001" / "overrides_mmr.json")
-    detector_output = run_root / "intermediate" / "probe_scan" / "page_001" / "filtered.json"
-    _write_json(detector_output, {"boxes": [{"bbox": [1, 2, 3, 4]}]})
+    _write_text(run_root / "inputs" / "images" / f"{page_id}.png")
+    _write_json(run_root / "outputs" / page_id / "numbering_final.json")
+    _write_text(run_root / "outputs" / page_id / "numbering_overlay.png")
+    _write_json(run_root / "intermediate" / page_id / "overrides_mmr.json")
+    detector_output = run_root / "intermediate" / "probe_scan" / page_id / "filtered.json"
+    _write_json(detector_output, barlines_payload or {"boxes": [{"bbox": [1, 2, 3, 4]}]})
 
     barlines_json = barlines_outside if barlines_outside is not None else detector_output
     _write_json(
@@ -39,8 +45,8 @@ def _fake_run_root(tmp_path: Path, *, barlines_outside: Path | None = None) -> P
             "run_id": "source_run",
             "pages": [
                 {
-                    "page_id": "page_001",
-                    "image_path": str(run_root / "inputs" / "images" / "page_001.png"),
+                    "page_id": page_id,
+                    "image_path": str(run_root / "inputs" / "images" / f"{page_id}.png"),
                     "barlines_json": str(barlines_json),
                     "status": {"page_index": 1},
                 }
@@ -70,7 +76,7 @@ def test_materializes_review_package_from_manifest_resolved_barlines(tmp_path):
     copied_barlines = json.loads(
         (review_root / "pages" / "page_001" / "barlines_review.json").read_text()
     )
-    assert copied_barlines == {"boxes": [{"bbox": [1, 2, 3, 4]}]}
+    assert copied_barlines == [{"bbox": [1, 2, 3, 4]}]
     assert (review_root / "corrections").is_dir()
 
     handoff_on_disk = json.loads((review_root / "manual_correction_input.json").read_text())
@@ -126,6 +132,61 @@ def test_materializer_errors_when_manifest_has_no_barlines_source(tmp_path):
     assert str((run_root / "manifest.json").resolve()) in message
     assert "barlines_json" in message
     assert "barlines_review.json" in message
+
+
+def test_materializer_normalizes_predictions_barlines_source(tmp_path):
+    run_root = _fake_run_root(
+        tmp_path,
+        barlines_payload={"predictions": [{"bbox": [1, 2, 3, 4]}]},
+    )
+    review_root = tmp_path / "review"
+
+    materialize_manual_correction_review_package(run_root=run_root, review_root=review_root)
+
+    copied_barlines = json.loads(
+        (review_root / "pages" / "page_001" / "barlines_review.json").read_text()
+    )
+    assert copied_barlines == [{"bbox": [1, 2, 3, 4]}]
+
+
+def test_materializer_preserves_top_level_list_barlines_source(tmp_path):
+    run_root = _fake_run_root(tmp_path, barlines_payload=[{"bbox": [1, 2, 3, 4]}])
+    review_root = tmp_path / "review"
+
+    materialize_manual_correction_review_package(run_root=run_root, review_root=review_root)
+
+    copied_barlines = json.loads(
+        (review_root / "pages" / "page_001" / "barlines_review.json").read_text()
+    )
+    assert copied_barlines == [{"bbox": [1, 2, 3, 4]}]
+
+
+def test_materializer_errors_when_barlines_source_has_no_records(tmp_path):
+    run_root = _fake_run_root(tmp_path, barlines_payload={"metadata": {}})
+
+    with pytest.raises(ManualCorrectionMaterializerError, match="no predictions or boxes list"):
+        materialize_manual_correction_review_package(
+            run_root=run_root,
+            review_root=tmp_path / "review",
+        )
+
+
+def test_materializer_rejects_invalid_page_id(tmp_path):
+    run_root = _fake_run_root(tmp_path)
+    manifest_path = run_root / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["pages"][0]["page_id"] = "../page_001"
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    with pytest.raises(ManualCorrectionMaterializerError) as exc_info:
+        materialize_manual_correction_review_package(
+            run_root=run_root,
+            review_root=tmp_path / "review",
+        )
+
+    message = str(exc_info.value)
+    assert "page_id" in message
+    assert "invalid characters" in message
 
 
 def test_materializer_rejects_run_root_external_barlines_artifact(tmp_path):

@@ -344,6 +344,10 @@ def canonicalize_manual_correction_outputs(
     """
 
     root = Path(corrections_dir)
+    if not root.is_dir():
+        raise FileNotFoundError(
+            f"Corrections directory does not exist or is not a directory: {root}"
+        )
     measure_output = root / "measure_overrides.json"
     barline_output = root / "barline_overrides.json"
 

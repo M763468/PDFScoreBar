@@ -3,6 +3,8 @@ import sys
 import types
 from pathlib import Path
 
+import pytest
+
 sys.modules.setdefault("fitz", types.SimpleNamespace())
 
 from src.pipeline.core.config import load_yaml
@@ -28,6 +30,7 @@ def _fake_pipeline_config(
     source_pipeline_command: str | None = None,
     page_ids: tuple[str, ...] = ("page_001",),
     user_exclude: list[int] | None = None,
+    review_artifact_steps_enabled: bool = True,
 ) -> dict:
     image_dir = run_dir / "inputs" / "images"
     detector_dir = run_dir / "detector"
@@ -54,6 +57,10 @@ def _fake_pipeline_config(
     if user_exclude is not None:
         filters["user_exclude"] = user_exclude
 
+    numbering_base = review_artifact_steps_enabled
+    mmr_overrides = review_artifact_steps_enabled
+    overlay = review_artifact_steps_enabled
+
     return {
         "inputs": {
             "pdf_to_images": {
@@ -67,10 +74,10 @@ def _fake_pipeline_config(
         "steps": {
             "pdf_to_images": False,
             "detection": False,
-            "numbering_base": False,
-            "mmr_overrides": False,
+            "numbering_base": numbering_base,
+            "mmr_overrides": mmr_overrides,
             "apply_measure_overrides": False,
-            "overlay": False,
+            "overlay": overlay,
         },
         "filters": filters,
         "outputs": {
@@ -212,7 +219,11 @@ def test_pipeline_connection_uses_absolute_review_root(monkeypatch, tmp_path):
 
 def test_pipeline_connection_does_not_materialize_when_disabled(monkeypatch, tmp_path):
     run_dir = tmp_path / "source_run"
-    config = _fake_pipeline_config(run_dir, review_enabled=False)
+    config = _fake_pipeline_config(
+        run_dir,
+        review_enabled=False,
+        review_artifact_steps_enabled=False,
+    )
     _patch_lightweight_pipeline_phases(monkeypatch)
 
     orchestrator = PipelineOrchestrator(config=config, run_id="source_run", run_dir=run_dir)
@@ -224,7 +235,11 @@ def test_pipeline_connection_does_not_materialize_when_disabled(monkeypatch, tmp
 
 def test_pipeline_connection_does_not_materialize_when_review_flag_missing(monkeypatch, tmp_path):
     run_dir = tmp_path / "source_run"
-    config = _fake_pipeline_config(run_dir, review_enabled=None)
+    config = _fake_pipeline_config(
+        run_dir,
+        review_enabled=None,
+        review_artifact_steps_enabled=False,
+    )
     _patch_lightweight_pipeline_phases(monkeypatch)
 
     orchestrator = PipelineOrchestrator(config=config, run_id="source_run", run_dir=run_dir)
@@ -261,6 +276,19 @@ def test_pipeline_connection_treats_null_overwrite_as_default_true(monkeypatch, 
     assert call_args["overwrite"] is True
 
 
+def test_pipeline_connection_rejects_missing_review_artifact_steps(tmp_path):
+    run_dir = tmp_path / "source_run"
+    config = _fake_pipeline_config(run_dir, review_enabled=True)
+    config["steps"]["overlay"] = False
+    config["steps"]["mmr_overrides"] = True
+    config["steps"]["numbering_base"] = True
+
+    orchestrator = PipelineOrchestrator(config=config, run_id="source_run", run_dir=run_dir)
+
+    with pytest.raises(ValueError, match="manual_correction_package requires"):
+        orchestrator.run()
+
+
 def test_pipeline_connection_skips_user_excluded_pages_in_review_package(monkeypatch, tmp_path):
     run_dir = tmp_path / "source_run"
     config = _fake_pipeline_config(
@@ -295,6 +323,47 @@ def test_pipeline_connection_skips_user_excluded_pages_in_review_package(monkeyp
     assert [page["page_id"] for page in handoff["pages"]] == ["page_001"]
     assert (review_root / "pages" / "page_001").is_dir()
     assert not (review_root / "pages" / "page_002").exists()
+
+
+def test_pipeline_manifest_uses_corrected_barlines_for_review_package(tmp_path):
+    run_dir = tmp_path / "source_run"
+    corrected = run_dir / "intermediate" / "page_001" / "barlines_corrected.json"
+    _write_json(corrected, [{"bbox": [10, 20, 30, 40]}])
+
+    config = _fake_pipeline_config(run_dir, review_enabled=True)
+    orchestrator = PipelineOrchestrator(config=config, run_id="source_run", run_dir=run_dir)
+
+    raw = run_dir / "detector" / "page_001_barlines.json"
+    resolved = [{"barlines_json": str(raw)}]
+    page_ctx = {"page_001": {"barlines_path": corrected}}
+
+    manifest_resolved = orchestrator._resolved_for_manifest(
+        page_ids=["page_001"],
+        resolved=resolved,
+        page_ctx=page_ctx,
+    )
+
+    assert manifest_resolved[0]["barlines_json"] == str(corrected)
+
+
+def test_pipeline_manifest_keeps_raw_barlines_when_corrected_missing(tmp_path):
+    run_dir = tmp_path / "source_run"
+    missing_corrected = run_dir / "intermediate" / "page_001" / "barlines_corrected.json"
+
+    config = _fake_pipeline_config(run_dir, review_enabled=True)
+    orchestrator = PipelineOrchestrator(config=config, run_id="source_run", run_dir=run_dir)
+
+    raw = run_dir / "detector" / "page_001_barlines.json"
+    resolved = [{"barlines_json": str(raw)}]
+    page_ctx = {"page_001": {"barlines_path": missing_corrected}}
+
+    manifest_resolved = orchestrator._resolved_for_manifest(
+        page_ids=["page_001"],
+        resolved=resolved,
+        page_ctx=page_ctx,
+    )
+
+    assert manifest_resolved[0]["barlines_json"] == str(raw)
 
 
 def test_review_package_example_config_is_parseable():

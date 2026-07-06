@@ -150,6 +150,7 @@ class PipelineOrchestrator:
 
     def run(self, page_limit: Optional[int] = None) -> Path:
         """Executes the full pipeline."""
+        self._validate_review_package_prerequisites()
         commands: List[List[str]] = []
 
         if get_nested(self.config, "steps", "pdf_to_images", default=False):
@@ -268,6 +269,11 @@ class PipelineOrchestrator:
         if not self.dry_run:
             write_json(self.run_dir / "filters.json", {"pages": page_statuses})
 
+            manifest_resolved = self._resolved_for_manifest(
+                page_ids=page_ids,
+                resolved=resolved,
+                page_ctx=page_ctx,
+            )
             manifest = build_manifest(
                 self.config,
                 run_id=self.run_id,
@@ -275,7 +281,7 @@ class PipelineOrchestrator:
                 images=images,
                 page_ids=page_ids,
                 page_runs=page_runs,
-                resolved=resolved,
+                resolved=manifest_resolved,
                 commands=commands,
                 page_statuses=page_statuses,
                 barline_override_stats=barline_override_stats,
@@ -351,6 +357,40 @@ class PipelineOrchestrator:
             overwrite=review_cfg.get("overwrite") is not False,
             source_pipeline_command=source_pipeline_command,
         )
+
+    def _validate_review_package_prerequisites(self) -> None:
+        review_config = self._review_package_config()
+        if not review_config.enabled:
+            return
+
+        required_steps = {
+            "numbering_base": get_nested(self.config, "steps", "numbering_base", default=False),
+            "mmr_overrides": get_nested(self.config, "steps", "mmr_overrides", default=False),
+            "overlay": get_nested(self.config, "steps", "overlay", default=False),
+        }
+        missing = [name for name, enabled in required_steps.items() if not enabled]
+        if missing:
+            raise ValueError(
+                "outputs.review.manual_correction_package requires these steps to be enabled: "
+                + ", ".join(missing)
+            )
+
+    def _resolved_for_manifest(
+        self,
+        *,
+        page_ids: List[str],
+        resolved: List[Dict[str, Any]],
+        page_ctx: Dict[str, Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        manifest_resolved = []
+        review_enabled = self._review_package_config().enabled
+        for page_id, item in zip(page_ids, resolved):
+            manifest_item = dict(item)
+            corrected_path = page_ctx.get(page_id, {}).get("barlines_path")
+            if review_enabled and corrected_path and Path(corrected_path).exists():
+                manifest_item["barlines_json"] = str(corrected_path)
+            manifest_resolved.append(manifest_item)
+        return manifest_resolved
 
     def run_base_numbering_and_barline_correction(
         self,
@@ -441,7 +481,7 @@ class PipelineOrchestrator:
                         y_margin=barline_y_margin,
                     )
                     barline_override_stats[page_id] = stats
-                    if not self.dry_run and self.debug:
+                    if not self.dry_run and (self.debug or self._review_package_config().enabled):
                         write_json(corrected_path, corrected)
                     page_ctx[page_id]["corrected_barlines"] = corrected
                 else:

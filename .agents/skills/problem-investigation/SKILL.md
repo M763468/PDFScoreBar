@@ -21,7 +21,9 @@ Clarify reproduction, hypothesize root causes, and define impact and next invest
 - **Artifact**: `artifacts/investigation_results.txt`
 
 ## Steps
-1) Run `./run.sh` to collect status and recent logs into an artifact.
+
+Run commands from the repository root.
+1) Run `bash .agents/skills/problem-investigation/run.sh` to collect status and recent logs into an artifact.
 2) Read `artifacts/investigation_results.txt` to analyze errors and logs.
 3) Consolidate facts (logs, repro steps, errors).
 4) **Identify the relevant execution environment** by referring to `docs/ENVIRONMENTS.md`.
@@ -31,12 +33,12 @@ Clarify reproduction, hypothesize root causes, and define impact and next invest
 8) Propose additional data collection or specific verification steps.
 
 ## Required commands/permissions
-- `./run.sh`: script to collect logs and status into `artifacts/`
+- `bash .agents/skills/problem-investigation/run.sh`: script to collect logs and status into `artifacts/`
 - git: inspect history
 - gh: review issue/PR context if needed
 
 ## Example commands
-- `./run.sh`
+- `bash .agents/skills/problem-investigation/run.sh`
 
 ## Notes
 - Clearly label speculation and pair it with a verification method.

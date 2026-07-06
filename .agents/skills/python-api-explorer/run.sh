@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-# Usage: ./run.sh path/to/python_file.py
+# Usage: bash .agents/skills/python-api-explorer/run.sh path/to/python_file.py
 FILE_PATH=$1
 mkdir -p artifacts
 

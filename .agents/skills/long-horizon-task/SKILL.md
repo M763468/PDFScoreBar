@@ -22,12 +22,12 @@ Manage complex, multi-step development tasks by externalizing task state into re
 
 ### 1. `init-task`
 Initialize a new task directory in `docs/long-horizon-tasks/<TASK-ID>/` using templates.
-- **Action**: Run `./run.sh init <TASK_ID> [ISSUE_NUMBER]`.
+- **Action**: Run `bash .agents/skills/long-horizon-task/run.sh init <TASK_ID> [ISSUE_NUMBER]`.
 - **Artifact**: `artifacts/task_init.txt`
 
 ### 2. `check-status`
 Review the progress of an existing long-horizon task.
-- **Action**: Run `./run.sh check <TASK_ID>`.
+- **Action**: Run `bash .agents/skills/long-horizon-task/run.sh check <TASK_ID>`.
 - **Artifact**: `artifacts/task_status.txt`
 
 ### 3. `record-log`
@@ -35,12 +35,12 @@ Help the user or agent record a new entry in the `Log.md` file.
 - **Action**: Append a timestamped entry to `docs/long-horizon-tasks/<TASK-ID>/Log.md`.
 
 ## Required commands/permissions
-- `./run.sh`: script to initialize or check task status into `artifacts/`
+- `bash .agents/skills/long-horizon-task/run.sh`: script to initialize or check task status into `artifacts/`
 - python3: for the initialization tool
 
 ## Example commands
-- `./run.sh init BAR-001 42`
-- `./run.sh check BAR-001`
+- `bash .agents/skills/long-horizon-task/run.sh init BAR-001 42`
+- `bash .agents/skills/long-horizon-task/run.sh check BAR-001`
 
 
 ## Execution Loop for Agents

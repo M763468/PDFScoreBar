@@ -5,7 +5,8 @@
 - Record baseline in `Benchmarks.md`.
 
 Verify:
-`make test`
+`make test-fast`
+Issue-specific pytest / smoke / validation-policy commands
 `pytest tests/test_perf.py`
 
 ## M1 [Name]

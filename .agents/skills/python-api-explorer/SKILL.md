@@ -13,13 +13,15 @@ Quickly understand the interface of a Python module or class. This is more token
 - **Artifact**: `artifacts/api_index.txt`
 
 ## Steps
-1) Run `./run.sh path/to/python_file.py` to extract API info.
+
+Run commands from the repository root.
+1) Run `bash .agents/skills/python-api-explorer/run.sh path/to/python_file.py` to extract API info.
 2) Read `artifacts/api_index.txt` to understand available functions and methods.
 3) Use this information to decide how to call or modify the module.
 
 ## Required commands/permissions
-- `./run.sh`: script using Python AST to extract API info into `artifacts/`
+- `bash .agents/skills/python-api-explorer/run.sh`: script using Python AST to extract API info into `artifacts/`
 - python3: for the extractor script
 
 ## Example commands
-- `./run.sh src/common/utils.py`
+- `bash .agents/skills/python-api-explorer/run.sh src/common/utils.py`

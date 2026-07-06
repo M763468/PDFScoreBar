@@ -19,7 +19,9 @@ Review a PR to identify risks, bugs, and scope drift, and ensure the findings ar
 - **Artifacts**: `artifacts/pr_review_data.json`, `artifacts/pr_diff.patch`
 
 ## Steps
-1) Run `./run.sh <pr_number>` to fetch PR details and diff into artifacts.
+
+Run commands from the repository root.
+1) Run `bash .agents/skills/pr-review/run.sh <pr_number>` to fetch PR details and diff into artifacts.
 2) Read `artifacts/pr_review_data.json` and `artifacts/pr_diff.patch` to analyze the PR.
 3) Check Acceptance Criteria and scope drift.
 4) Formulate findings in Japanese, ordering by severity.
@@ -27,11 +29,11 @@ Review a PR to identify risks, bugs, and scope drift, and ensure the findings ar
 6) Report the URL of the created comment.
 
 ## Required commands/permissions
-- `./run.sh`: script to fetch PR data into `artifacts/`
+- `bash .agents/skills/pr-review/run.sh`: script to fetch PR data into `artifacts/`
 - gh: CLI tool for PR management and commenting
 
 ## Example commands
-- `./run.sh 123`
+- `bash .agents/skills/pr-review/run.sh 123`
 - `gh pr review 123 --comment --body "Review findings..."`
 
 ## Notes

@@ -15,14 +15,16 @@ In OMR projects, visual verification is key. This skill scans directories like `
 - **Visual Evidence Folder**: `artifacts/visual_evidence/`
 
 ## Steps
-1) Run `./run.sh [search_dir] [file_pattern]` to identify and collect recent images.
+
+Run commands from the repository root.
+1) Run `bash .agents/skills/visual-diff-viewer/run.sh [search_dir] [file_pattern]` to identify and collect recent images.
 2) Read `artifacts/visual_manifest.txt` to see the sorted list of images.
 3) Use the multi-modal agent to inspect the images in `artifacts/visual_evidence/` to confirm bug fixes or evaluate performance.
 
 ## Required commands/permissions
-- `./run.sh`: script to find and copy images into `artifacts/`
+- `bash .agents/skills/visual-diff-viewer/run.sh`: script to find and copy images into `artifacts/`
 - find: to locate image files
 
 ## Example commands
-- `./run.sh` (defaults to debug_outputs/)
-- `./run.sh logs/analysis/ "*.jpg"`
+- `bash .agents/skills/visual-diff-viewer/run.sh` (defaults to debug_outputs/)
+- `bash .agents/skills/visual-diff-viewer/run.sh logs/analysis/ "*.jpg"`

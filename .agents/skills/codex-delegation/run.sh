@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 # This script wraps codex exec to ensure artifact-based result logging.
-# Usage: ./run.sh "instruction" [--sandbox read-only]
+# Usage: bash .agents/skills/codex-delegation/run.sh "instruction" [--sandbox read-only]
 INSTRUCTION=$1
 shift
 mkdir -p artifacts

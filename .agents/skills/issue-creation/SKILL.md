@@ -35,6 +35,8 @@ Generate the content for one of the following templates located in `.github/ISSU
   - How to test (if needed)
 
 ## Steps
+
+Run commands from the repository root.
 1) Identify the issue type (Bug, Feature, or Task) and summarize the goal in 1-2 lines.
 2) Refer to the corresponding template in `.github/ISSUE_TEMPLATE/` (e.g. `task.yml`) and mirror required headers in the issue body.
 3) Draft the content:
@@ -43,13 +45,13 @@ Generate the content for one of the following templates located in `.github/ISSU
    - **Acceptance Criteria**: Verifiable checklist. Fill `Done` with verifiable checklist items (machine-checkable when possible).
    - **Branch Operations**: Suggest `base_branch` and `branch_name` (e.g., `feature/xxx` or `fix/xxx`).
 4) Add How to test if necessary.
-5) Run `./run.sh <template_file> "<title>" <body_file>` to create the issue via CLI and log the result.
+5) Run `bash .agents/skills/issue-creation/run.sh <template_file> "<title>" <body_file>` to create the issue via CLI and log the result.
 
 ## Required commands/permissions
-- `./run.sh`: script to create GitHub issue and log to `artifacts/`
+- `bash .agents/skills/issue-creation/run.sh`: script to create GitHub issue and log to `artifacts/`
 
 ## Example commands
-- `./run.sh task.yml "[Task] Update documentation" drafted_issue.md`
+- `bash .agents/skills/issue-creation/run.sh task.yml "[Task] Update documentation" drafted_issue.md`
 
 ## Notes
 - Always include Out-of-scope items to prevent scope creep.

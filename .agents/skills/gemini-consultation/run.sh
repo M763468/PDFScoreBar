@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 # This script wraps gemini -p to ensure artifact-based result logging.
-# Usage: ./run.sh "prompt"
+# Usage: bash .agents/skills/gemini-consultation/run.sh "prompt"
 PROMPT=$1
 mkdir -p artifacts
 

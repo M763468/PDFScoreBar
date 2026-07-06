@@ -20,7 +20,9 @@ Ensure consistency between `requirements.txt`, `pyproject.toml`, and actual impo
 - **Artifact**: `artifacts/dependency_status.txt`
 
 ## Steps
-1) Run `./run.sh` to gather the current dependency status into an artifact.
+
+Run commands from the repository root.
+1) Run `bash .agents/skills/dependency-management/run.sh` to gather the current dependency status into an artifact.
 2) Read `artifacts/dependency_status.txt` to analyze the environment.
 3) Scan the codebase for all import statements.
 4) Compare imports against declared dependencies.
@@ -29,12 +31,12 @@ Ensure consistency between `requirements.txt`, `pyproject.toml`, and actual impo
 7) Verify installation using `uv sync` or `pip install`.
 
 ## Required commands/permissions
-- `./run.sh`: script to gather dependency status into `artifacts/`
+- `bash .agents/skills/dependency-management/run.sh`: script to gather dependency status into `artifacts/`
 - uv / pip: to manage packages
 - grep/search: to find imports
 
 ## Example commands
-- `./run.sh`
+- `bash .agents/skills/dependency-management/run.sh`
 - `uv sync`
 
 ## Notes

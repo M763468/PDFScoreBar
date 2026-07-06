@@ -1,0 +1,10 @@
+# Example fragment for enabling config-first manual correction review packages.
+# Merge this under a normal pipeline config that already defines run, inputs,
+# steps, detection, filters, mmr, and numbering.
+outputs:
+  review:
+    manual_correction_package: true
+    # Optional. Relative paths are resolved from the internal run_dir.
+    root: review
+    # Optional trace metadata copied into review/manual_correction_input.json.
+    source_pipeline_command: null

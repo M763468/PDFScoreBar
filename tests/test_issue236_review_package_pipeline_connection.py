@@ -5,6 +5,7 @@ from pathlib import Path
 
 sys.modules.setdefault("fitz", types.SimpleNamespace())
 
+from src.pipeline.core.config import load_yaml
 from src.pipeline.orchestrator import PipelineOrchestrator
 from src.pipeline.review.manual_correction_handoff import validate_manual_correction_handoff
 
@@ -22,8 +23,9 @@ def _write_text(path: Path, text: str = "placeholder") -> None:
 def _fake_pipeline_config(
     run_dir: Path,
     *,
-    review_enabled: bool,
-    review_root: Path | None = None,
+    review_enabled: bool | None,
+    review_root: Path | str | None = None,
+    source_pipeline_command: str | None = None,
 ) -> dict:
     image_dir = run_dir / "inputs" / "images"
     detector_dir = run_dir / "detector"
@@ -31,9 +33,13 @@ def _fake_pipeline_config(
     _write_json(detector_dir / "page_001_barlines.json", {"boxes": [{"bbox": [1, 2, 3, 4]}]})
     _write_text(detector_dir / "page_001_staff.png")
 
-    review_cfg: dict[str, object] = {"manual_correction_package": review_enabled}
+    review_cfg: dict[str, object] = {}
+    if review_enabled is not None:
+        review_cfg["manual_correction_package"] = review_enabled
     if review_root is not None:
         review_cfg["root"] = str(review_root)
+    if source_pipeline_command is not None:
+        review_cfg["source_pipeline_command"] = source_pipeline_command
 
     return {
         "inputs": {
@@ -128,6 +134,7 @@ def test_pipeline_connection_materializes_enabled_review_package(monkeypatch, tm
     review_root = run_dir / "review"
     assert call_args["run_root"] == run_dir
     assert call_args["review_root"] == review_root
+    assert call_args["source_pipeline_command"] is None
 
     handoff_path = review_root / "manual_correction_input.json"
     handoff = json.loads(handoff_path.read_text())
@@ -151,7 +158,27 @@ def test_pipeline_connection_materializes_enabled_review_package(monkeypatch, tm
     assert validated["pages"][0]["page_id"] == "page_001"
 
 
-def test_pipeline_connection_uses_configured_review_root(monkeypatch, tmp_path):
+def test_pipeline_connection_resolves_relative_review_root_from_run_dir(monkeypatch, tmp_path):
+    run_dir = tmp_path / "source_run"
+    config = _fake_pipeline_config(
+        run_dir,
+        review_enabled=True,
+        review_root=Path("manual_review"),
+        source_pipeline_command="make run-pipeline CONFIG=smoke.yaml",
+    )
+    _patch_lightweight_pipeline_phases(monkeypatch)
+
+    orchestrator = PipelineOrchestrator(config=config, run_id="source_run", run_dir=run_dir)
+    orchestrator.run()
+
+    handoff_path = run_dir / "manual_review" / "manual_correction_input.json"
+    assert handoff_path.exists()
+    handoff = json.loads(handoff_path.read_text())
+    assert handoff["source_pipeline_command"] == "make run-pipeline CONFIG=smoke.yaml"
+    assert not (run_dir / "review" / "manual_correction_input.json").exists()
+
+
+def test_pipeline_connection_uses_absolute_review_root(monkeypatch, tmp_path):
     run_dir = tmp_path / "source_run"
     public_review_root = tmp_path / "public_output" / "review"
     config = _fake_pipeline_config(
@@ -178,3 +205,22 @@ def test_pipeline_connection_does_not_materialize_when_disabled(monkeypatch, tmp
 
     assert (run_dir / "manifest.json").exists()
     assert not (run_dir / "review").exists()
+
+
+def test_pipeline_connection_does_not_materialize_when_review_flag_missing(monkeypatch, tmp_path):
+    run_dir = tmp_path / "source_run"
+    config = _fake_pipeline_config(run_dir, review_enabled=None)
+    _patch_lightweight_pipeline_phases(monkeypatch)
+
+    orchestrator = PipelineOrchestrator(config=config, run_id="source_run", run_dir=run_dir)
+    orchestrator.run()
+
+    assert (run_dir / "manifest.json").exists()
+    assert not (run_dir / "review").exists()
+
+
+def test_review_package_example_config_is_parseable():
+    config = load_yaml(Path("configs/review_manual_correction_package_example.yaml"))
+
+    assert config["outputs"]["review"]["manual_correction_package"] is True
+    assert config["outputs"]["review"]["root"] == "review"

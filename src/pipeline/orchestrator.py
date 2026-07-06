@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
@@ -44,6 +45,14 @@ logger = logging.getLogger(__name__)
 _PIPELINE_PERSISTENCE: Dict[str, Any] = {}
 # MMR Persistence: Cache MMRClassifier and MMROCREngine to avoid re-loading models.
 _MMR_PERSISTENCE: Dict[Any, Any] = {}
+
+
+@dataclass(frozen=True)
+class _ReviewPackageConfig:
+    enabled: bool
+    review_root: Path
+    overwrite: bool
+    source_pipeline_command: str | None
 
 
 class PipelineOrchestrator:
@@ -279,8 +288,8 @@ class PipelineOrchestrator:
 
     def _materialize_review_package_if_requested(self) -> Path | None:
         """Materialize the manual-correction review package when enabled."""
-        review_cfg = get_nested(self.config, "outputs", "review", default={}) or {}
-        if not review_cfg.get("manual_correction_package", False):
+        review_config = self._review_package_config()
+        if not review_config.enabled:
             return None
 
         if self.dry_run or self.validate_only:
@@ -290,24 +299,46 @@ class PipelineOrchestrator:
             )
             return None
 
+        materialize_manual_correction_review_package(
+            run_root=self.run_dir,
+            review_root=review_config.review_root,
+            source_pipeline_command=review_config.source_pipeline_command,
+            overwrite=review_config.overwrite,
+        )
+        logger.info(f"Wrote manual correction review package to {review_config.review_root}")
+        return review_config.review_root
+
+    def _review_package_config(self) -> _ReviewPackageConfig:
+        """Resolve the config-first review package output contract.
+
+        This is intentionally scoped to the low-level ``run_pipeline()`` layout.
+        The #226/#227 public ``OUTPUT_DIR/{final,review,debug}`` materializer is
+        a separate follow-up surface.
+        """
+        review_cfg = get_nested(self.config, "outputs", "review", default={}) or {}
+        if not isinstance(review_cfg, dict):
+            raise ValueError("outputs.review must be a mapping when provided.")
+
+        enabled = bool(review_cfg.get("manual_correction_package", False))
         review_root_raw = review_cfg.get("root")
         if review_root_raw:
-            review_root = Path(review_root_raw)
+            review_root = Path(str(review_root_raw))
             if not review_root.is_absolute():
                 review_root = self.run_dir / review_root
         else:
             review_root = self.run_dir / "review"
 
-        source_pipeline_command = review_cfg.get("source_pipeline_command")
-        overwrite = bool(review_cfg.get("overwrite", True))
-        materialize_manual_correction_review_package(
-            run_root=self.run_dir,
-            review_root=review_root,
-            source_pipeline_command=source_pipeline_command,
-            overwrite=overwrite,
+        source_pipeline_command_raw = review_cfg.get("source_pipeline_command")
+        source_pipeline_command = (
+            str(source_pipeline_command_raw) if source_pipeline_command_raw else None
         )
-        logger.info(f"Wrote manual correction review package to {review_root}")
-        return review_root
+
+        return _ReviewPackageConfig(
+            enabled=enabled,
+            review_root=review_root,
+            overwrite=bool(review_cfg.get("overwrite", True)),
+            source_pipeline_command=source_pipeline_command,
+        )
 
     def run_base_numbering_and_barline_correction(
         self,

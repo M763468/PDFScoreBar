@@ -22,6 +22,9 @@ from src.pipeline.detection import (
     resolve_paths_from_detection,
     run_detection_step,
 )
+from src.pipeline.review.manual_correction_materializer import (
+    materialize_manual_correction_review_package,
+)
 from src.pipeline.steps.barlines import (
     apply_barline_overrides,
     merge_measure_overrides,
@@ -270,8 +273,41 @@ class PipelineOrchestrator:
             )
             write_json(self.run_dir / "manifest.json", manifest)
             logger.info(f"Wrote manifest to {self.run_dir / 'manifest.json'}")
+            self._materialize_review_package_if_requested()
 
         return self.run_dir
+
+    def _materialize_review_package_if_requested(self) -> Path | None:
+        """Materialize the manual-correction review package when enabled."""
+        review_cfg = get_nested(self.config, "outputs", "review", default={}) or {}
+        if not review_cfg.get("manual_correction_package", False):
+            return None
+
+        if self.dry_run or self.validate_only:
+            logger.info(
+                "Skipping manual correction review package materialization for dry-run "
+                "or validate-only execution."
+            )
+            return None
+
+        review_root_raw = review_cfg.get("root")
+        if review_root_raw:
+            review_root = Path(review_root_raw)
+            if not review_root.is_absolute():
+                review_root = self.run_dir / review_root
+        else:
+            review_root = self.run_dir / "review"
+
+        source_pipeline_command = review_cfg.get("source_pipeline_command")
+        overwrite = bool(review_cfg.get("overwrite", True))
+        materialize_manual_correction_review_package(
+            run_root=self.run_dir,
+            review_root=review_root,
+            source_pipeline_command=source_pipeline_command,
+            overwrite=overwrite,
+        )
+        logger.info(f"Wrote manual correction review package to {review_root}")
+        return review_root
 
     def run_base_numbering_and_barline_correction(
         self,

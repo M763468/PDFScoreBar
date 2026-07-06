@@ -494,9 +494,12 @@ function deleteSelectedItem() {
 
 function loadCorrections() {
   const types = Object.keys(correctionsByType);
+  const page = pageValue();
   return Promise.all(
     types.map((type) =>
-      fetchJSON(`/api/manual_corrections?type=${encodeURIComponent(type)}`)
+      fetchJSON(
+        `/api/manual_corrections?type=${encodeURIComponent(type)}&page=${encodeURIComponent(page)}`
+      )
         .then((data) => {
           correctionsByType[type] = Array.isArray(data.items) ? data.items : [];
         })

@@ -16,12 +16,6 @@ from urllib.parse import parse_qs, urlparse
 REPO_ROOT = Path(__file__).resolve().parents[2]
 Box = tuple[int, int, int, int]
 
-MANUAL_CORRECTION_OUTPUTS = {
-    "mmr_measure_span": "data/evaluation2/manual_corrections/mmr_measure_spans.json",
-    "barline_construction": "data/evaluation2/manual_corrections/barline_construction_overrides.json",
-    "measure_construction": "data/evaluation2/manual_corrections/measure_construction_overrides.json",
-}
-
 
 @dataclass
 class Item:
@@ -182,8 +176,23 @@ def parse_payload_boxes(payload: list) -> list[dict]:
     return boxes
 
 
-def _manual_output_for(server, correction_type: str) -> str | None:
-    outputs = getattr(server, "manual_outputs", MANUAL_CORRECTION_OUTPUTS)
+def _page_config_for(server, page) -> dict | None:
+    for config in getattr(server, "gt_config", []):
+        if not isinstance(config, dict):
+            continue
+        for key in ("page", "page_index", "name"):
+            if key in config and str(config.get(key)) == str(page):
+                return config
+    return None
+
+
+def _manual_output_for(server, correction_type: str, page) -> str | None:
+    config = _page_config_for(server, page)
+    if not config:
+        return None
+    outputs = config.get("manual_outputs")
+    if not isinstance(outputs, dict):
+        return None
     value = outputs.get(correction_type)
     return str(value) if value else None
 
@@ -239,19 +248,21 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/api/pages" and self.server.mode in {"gt", "rest", "manual"}:
             payload = {"pages": self.server.gt_config}
-            if self.server.mode == "manual":
-                payload["manual_outputs"] = self.server.manual_outputs
             self._serve_json(payload)
             return
         if parsed.path == "/api/manual_corrections" and self.server.mode == "manual":
             qs = parse_qs(parsed.query)
             correction_type = qs.get("type", [None])[0]
+            page = qs.get("page", [None])[0]
             if not correction_type:
                 self.send_error(400, "Missing correction type")
                 return
-            output_rel = _manual_output_for(self.server, correction_type)
+            if page is None:
+                self.send_error(400, "Missing page")
+                return
+            output_rel = _manual_output_for(self.server, correction_type, page)
             if not output_rel:
-                self.send_error(400, "Unknown correction type")
+                self.send_error(400, "Unknown page or correction type")
                 return
             try:
                 output_path = safe_path(self.server.root, output_rel)
@@ -382,9 +393,9 @@ class Handler(BaseHTTPRequestHandler):
             if not isinstance(correction_type, str):
                 self.send_error(400, "Missing correction_type")
                 return
-            output_rel = _manual_output_for(self.server, correction_type)
+            output_rel = _manual_output_for(self.server, correction_type, page)
             if not output_rel:
-                self.send_error(400, "Unknown correction_type")
+                self.send_error(400, "Unknown page or correction_type")
                 return
 
             output_path = safe_path(self.server.root, output_rel)
@@ -474,10 +485,6 @@ def main() -> None:
         server.root = (args.root or REPO_ROOT).resolve()
         config_data = json.loads(args.config.read_text())
         server.gt_config = config_data.get("pages", config_data)
-        server.manual_outputs = {
-            **MANUAL_CORRECTION_OUTPUTS,
-            **config_data.get("manual_outputs", {}),
-        }
     else:
         if not args.root:
             raise SystemExit("--root is required in relabel mode")

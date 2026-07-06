@@ -26,12 +26,18 @@ def _fake_pipeline_config(
     review_enabled: bool | None,
     review_root: Path | str | None = None,
     source_pipeline_command: str | None = None,
+    page_ids: tuple[str, ...] = ("page_001",),
+    user_exclude: list[int] | None = None,
 ) -> dict:
     image_dir = run_dir / "inputs" / "images"
     detector_dir = run_dir / "detector"
-    _write_text(image_dir / "page_001.png")
-    _write_json(detector_dir / "page_001_barlines.json", {"boxes": [{"bbox": [1, 2, 3, 4]}]})
-    _write_text(detector_dir / "page_001_staff.png")
+    for page_id in page_ids:
+        _write_text(image_dir / f"{page_id}.png")
+        _write_json(
+            detector_dir / f"{page_id}_barlines.json",
+            {"boxes": [{"bbox": [1, 2, 3, 4]}]},
+        )
+        _write_text(detector_dir / f"{page_id}_staff.png")
 
     review_cfg: dict[str, object] = {}
     if review_enabled is not None:
@@ -40,6 +46,13 @@ def _fake_pipeline_config(
         review_cfg["root"] = str(review_root)
     if source_pipeline_command is not None:
         review_cfg["source_pipeline_command"] = source_pipeline_command
+
+    filters: dict[str, object] = {
+        "blank_page": False,
+        "staff_detect": False,
+    }
+    if user_exclude is not None:
+        filters["user_exclude"] = user_exclude
 
     return {
         "inputs": {
@@ -59,10 +72,7 @@ def _fake_pipeline_config(
             "apply_measure_overrides": False,
             "overlay": False,
         },
-        "filters": {
-            "blank_page": False,
-            "staff_detect": False,
-        },
+        "filters": filters,
         "outputs": {
             "review": review_cfg,
         },
@@ -87,11 +97,15 @@ def _patch_lightweight_pipeline_phases(monkeypatch) -> None:
 
     def fake_mmr(self, page_ids, excluded_page_ids, page_ctx):
         for page_id in page_ids:
+            if page_id in excluded_page_ids:
+                continue
             _write_json(self.run_dir / "intermediate" / page_id / "overrides_mmr.json")
 
     def fake_final(self, page_ids, excluded_page_ids, page_ctx, user_overrides_payload):
         paths = []
         for page_id in page_ids:
+            if page_id in excluded_page_ids:
+                continue
             final_path = self.run_dir / "outputs" / page_id / "numbering_final.json"
             _write_json(final_path)
             _write_text(self.run_dir / "outputs" / page_id / "numbering_overlay.png")
@@ -134,6 +148,7 @@ def test_pipeline_connection_materializes_enabled_review_package(monkeypatch, tm
     review_root = run_dir / "review"
     assert call_args["run_root"] == run_dir
     assert call_args["review_root"] == review_root
+    assert call_args["pages"] == ["page_001"]
     assert call_args["source_pipeline_command"] is None
 
     handoff_path = review_root / "manual_correction_input.json"
@@ -217,6 +232,69 @@ def test_pipeline_connection_does_not_materialize_when_review_flag_missing(monke
 
     assert (run_dir / "manifest.json").exists()
     assert not (run_dir / "review").exists()
+
+
+def test_pipeline_connection_treats_null_overwrite_as_default_true(monkeypatch, tmp_path):
+    run_dir = tmp_path / "source_run"
+    config = _fake_pipeline_config(run_dir, review_enabled=True)
+    config["outputs"]["review"]["overwrite"] = None
+    _patch_lightweight_pipeline_phases(monkeypatch)
+
+    import src.pipeline.orchestrator as orchestrator_module
+
+    real_materializer = orchestrator_module.materialize_manual_correction_review_package
+    call_args = {}
+
+    def spy_materializer(**kwargs):
+        call_args.update(kwargs)
+        return real_materializer(**kwargs)
+
+    monkeypatch.setattr(
+        orchestrator_module,
+        "materialize_manual_correction_review_package",
+        spy_materializer,
+    )
+
+    orchestrator = PipelineOrchestrator(config=config, run_id="source_run", run_dir=run_dir)
+    orchestrator.run()
+
+    assert call_args["overwrite"] is True
+
+
+def test_pipeline_connection_skips_user_excluded_pages_in_review_package(monkeypatch, tmp_path):
+    run_dir = tmp_path / "source_run"
+    config = _fake_pipeline_config(
+        run_dir,
+        review_enabled=True,
+        page_ids=("page_001", "page_002"),
+        user_exclude=[2],
+    )
+    _patch_lightweight_pipeline_phases(monkeypatch)
+
+    import src.pipeline.orchestrator as orchestrator_module
+
+    real_materializer = orchestrator_module.materialize_manual_correction_review_package
+    call_args = {}
+
+    def spy_materializer(**kwargs):
+        call_args.update(kwargs)
+        return real_materializer(**kwargs)
+
+    monkeypatch.setattr(
+        orchestrator_module,
+        "materialize_manual_correction_review_package",
+        spy_materializer,
+    )
+
+    orchestrator = PipelineOrchestrator(config=config, run_id="source_run", run_dir=run_dir)
+    orchestrator.run()
+
+    review_root = run_dir / "review"
+    assert call_args["pages"] == ["page_001"]
+    handoff = json.loads((review_root / "manual_correction_input.json").read_text())
+    assert [page["page_id"] for page in handoff["pages"]] == ["page_001"]
+    assert (review_root / "pages" / "page_001").is_dir()
+    assert not (review_root / "pages" / "page_002").exists()
 
 
 def test_review_package_example_config_is_parseable():

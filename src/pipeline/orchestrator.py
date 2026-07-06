@@ -282,11 +282,15 @@ class PipelineOrchestrator:
             )
             write_json(self.run_dir / "manifest.json", manifest)
             logger.info(f"Wrote manifest to {self.run_dir / 'manifest.json'}")
-            self._materialize_review_package_if_requested()
+            self._materialize_review_package_if_requested(page_ids, excluded_page_ids)
 
         return self.run_dir
 
-    def _materialize_review_package_if_requested(self) -> Path | None:
+    def _materialize_review_package_if_requested(
+        self,
+        page_ids: List[str],
+        excluded_page_ids: Set[str],
+    ) -> Path | None:
         """Materialize the manual-correction review package when enabled."""
         review_config = self._review_package_config()
         if not review_config.enabled:
@@ -299,9 +303,17 @@ class PipelineOrchestrator:
             )
             return None
 
+        review_page_ids = [page_id for page_id in page_ids if page_id not in excluded_page_ids]
+        if not review_page_ids:
+            logger.info(
+                "Skipping manual correction review package materialization: no non-excluded pages."
+            )
+            return None
+
         materialize_manual_correction_review_package(
             run_root=self.run_dir,
             review_root=review_config.review_root,
+            pages=review_page_ids,
             source_pipeline_command=review_config.source_pipeline_command,
             overwrite=review_config.overwrite,
         )
@@ -336,7 +348,7 @@ class PipelineOrchestrator:
         return _ReviewPackageConfig(
             enabled=enabled,
             review_root=review_root,
-            overwrite=bool(review_cfg.get("overwrite", True)),
+            overwrite=review_cfg.get("overwrite") is not False,
             source_pipeline_command=source_pipeline_command,
         )
 

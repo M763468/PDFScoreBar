@@ -19,7 +19,9 @@ Review completed work against the original issue to identify any discrepancies, 
 - **Artifact**: `artifacts/issue_post_mortem_summary.md`
 
 ## Steps
-1) Run `./run.sh <issue_number>` to fetch issue and context.
+
+Run commands from the repository root.
+1) Run `bash .agents/skills/issue-post-mortem/run.sh <issue_number>` to fetch issue and context.
 2) Analyze the implementation against the original Goal and Acceptance Criteria.
 3) Identify any missed requirements or technical debt introduced.
 4) Draft a post-mortem summary in Japanese.
@@ -27,11 +29,11 @@ Review completed work against the original issue to identify any discrepancies, 
 6) Report the URL of the created comment.
 
 ## Required commands/permissions
-- `./run.sh`: script to fetch issue data
+- `bash .agents/skills/issue-post-mortem/run.sh`: script to fetch issue data
 - gh: CLI tool for issue commenting
 
 ## Example commands
-- `./run.sh 42`
+- `bash .agents/skills/issue-post-mortem/run.sh 42`
 - `gh issue comment 42 --body-file artifacts/issue_post_mortem_summary.md`
 
 ## Notes

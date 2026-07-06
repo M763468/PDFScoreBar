@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 # This script wraps gh issue creation to ensure artifact-based result logging.
-# Usage: ./run.sh template_file title body_file
+# Usage: bash .agents/skills/issue-creation/run.sh template_file title body_file
 TEMPLATE=$1
 TITLE=$2
 BODY_FILE=$3

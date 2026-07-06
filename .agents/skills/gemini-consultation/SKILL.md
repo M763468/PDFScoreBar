@@ -22,19 +22,21 @@ Use `gemini-cli` as a structured second opinion during design/debug/mid-review, 
 - **Artifact**: `artifacts/gemini_consultation.txt`
 
 ## Steps
+
+Run commands from the repository root.
 1) Define one focused question and success criteria.
 2) Prepare compact context.
-3) Run `./run.sh "prompt"` to consult Gemini and log output to artifacts.
+3) Run `bash .agents/skills/gemini-consultation/run.sh "prompt"` to consult Gemini and log output to artifacts.
 4) While Gemini is reasoning, continue parallel local thinking.
 5) Read `artifacts/gemini_consultation.txt` and validate results.
 6) Record outcome in `docs/ai-workflow/CODEX_GEMINI_COLLAB.md`.
 7) Add one reusable rule to `docs/ai-workflow/LESSONS.md`.
 
 ## Required commands/permissions
-- `./run.sh "prompt"`: script to consult Gemini and log to `artifacts/`
+- `bash .agents/skills/gemini-consultation/run.sh "prompt"`: script to consult Gemini and log to `artifacts/`
 
 ## Example commands
-- `./run.sh "設計案A/Bのトレードオフを、回帰リスク中心に比較して"`
+- `bash .agents/skills/gemini-consultation/run.sh "設計案A/Bのトレードオフを、回帰リスク中心に比較して"`
 
 ## Notes
 - Treat Gemini output as hypothesis until local evidence confirms it.

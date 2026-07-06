@@ -14,14 +14,16 @@ Quickly gather the current state of the repository, including structure, depende
 - **Artifact**: `artifacts/repo_summary.txt`
 
 ## Steps
-1) Run `./run.sh` (or `make repo-summary`) to generate the summary artifact.
+
+Run commands from the repository root.
+1) Run `bash .agents/skills/repo-summary/run.sh` (or `make repo-summary`) to generate the summary artifact.
 2) Read `artifacts/repo_summary.txt` to understand the current state.
 3) Use the information to plan next steps or identify blockers.
 
 ## Required commands/permissions
-- `./run.sh`: script to gather repo status into `artifacts/`
+- `bash .agents/skills/repo-summary/run.sh`: script to gather repo status into `artifacts/`
 - make: to run `make repo-summary`
 
 ## Example commands
-- `./run.sh`
+- `bash .agents/skills/repo-summary/run.sh`
 - `make repo-summary`

@@ -94,6 +94,7 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 
 ### Logs & Artifacts
 - **Output Directory**: All experiment logs, metrics, and generated artifacts must be saved under the `logs/` directory. Use structured subdirectories (e.g., `logs/<experiment_name>/<timestamp>/`) to avoid clutter.
+- **Skill Artifacts**: Skill-local lightweight summaries may be written under `artifacts/`; pipeline, evaluation, experiment, and generated model/data outputs must be written under `logs/`.
 - **Cleanup**: Do not leave temporary files in the project root.
 - **Dataset Staging Rule (Required)**: For CNN retraining/evaluation jobs, place working datasets under `datasets/` in this repository before any bulk file operation. Do not run iterative copy/split generation directly on `/mnt/*`.
 - **Preflight Check (Required)**: Before launching long training/eval, explicitly verify: `pwd` is repo root, input dataset root is under `datasets/`, and output path is under `logs/`.

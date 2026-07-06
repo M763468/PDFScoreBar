@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-# Usage: ./run.sh [search_dir] [file_pattern]
+# Usage: bash .agents/skills/visual-diff-viewer/run.sh [search_dir] [file_pattern]
 SEARCH_DIR=${1:-debug_outputs/}
 PATTERN=${2:-*.png}
 mkdir -p artifacts/visual_evidence

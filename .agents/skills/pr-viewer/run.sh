@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [ -z "${1:-}" ]; then
-  echo "Usage: ./run.sh <pr_number>"
+  echo "Usage: bash .agents/skills/pr-viewer/run.sh <pr_number>"
   exit 1
 fi
 

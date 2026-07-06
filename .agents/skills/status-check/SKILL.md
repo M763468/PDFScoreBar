@@ -19,17 +19,19 @@ Provide a clear, concise snapshot of work status and the next actions.
 - **Artifact**: `artifacts/status_check.txt`
 
 ## Steps
-1) Run `./run.sh` to gather the repository status into an artifact.
+
+Run commands from the repository root.
+1) Run `bash .agents/skills/status-check/run.sh` to gather the repository status into an artifact.
 2) Read `artifacts/status_check.txt` to identify the current branch and last commit.
 3) Summarize recent changes and remaining tasks.
 4) State the next action and any missing information.
 
 ## Required commands/permissions
-- `./run.sh`: script to gather status into `artifacts/`
+- `bash .agents/skills/status-check/run.sh`: script to gather status into `artifacts/`
 - git: check status/history
 
 ## Example commands
-- `./run.sh`
+- `bash .agents/skills/status-check/run.sh`
 
 ## Notes
 - Separate facts from assumptions.

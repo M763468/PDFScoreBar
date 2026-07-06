@@ -18,7 +18,9 @@ Analyze a PR diff and ensure its purpose and impact are clearly documented on Gi
 - **Artifacts**: `artifacts/pr_explanation_data.json`, `artifacts/pr_diff.patch`
 
 ## Steps
-1) Run `./run.sh <pr_number>` to fetch PR details and diff.
+
+Run commands from the repository root.
+1) Run `bash .agents/skills/pr-explanation/run.sh <pr_number>` to fetch PR details and diff.
 2) Analyze the diff and project context to understand the "What" and "Why".
 3) Draft a concise explanation in Japanese, following the standard format (Goal, Changes, Impact).
 4) **MANDATORY: Update the PR on GitHub** or post a summary comment.
@@ -27,11 +29,11 @@ Analyze a PR diff and ensure its purpose and impact are clearly documented on Gi
 5) Report the completion status and URL.
 
 ## Required commands/permissions
-- `./run.sh`: script to fetch PR data
+- `bash .agents/skills/pr-explanation/run.sh`: script to fetch PR data
 - gh: CLI tool for PR editing and commenting
 
 ## Example commands
-- `./run.sh 123`
+- `bash .agents/skills/pr-explanation/run.sh 123`
 - `gh pr edit 123 --body "Refactored logic..."`
 
 ## Notes

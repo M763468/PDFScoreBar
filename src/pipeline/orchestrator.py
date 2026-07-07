@@ -121,10 +121,7 @@ class PipelineOrchestrator:
         prefix = str(pdf_opts.get("prefix", "page"))
         fmt = str(pdf_opts.get("format", "png"))
 
-        # Default behavior: write to disk unless output_dir is explicitly null (None)
-        persist_to_disk = (
-            self.debug or ("output_dir" not in pdf_opts) or (pdf_opts.get("output_dir") is not None)
-        )
+        persist_to_disk = self._should_persist_pdf_images(pdf_opts)
 
         for page_index, image in rendered:
             stem = f"{prefix}_{page_index + 1:03d}"
@@ -147,6 +144,15 @@ class PipelineOrchestrator:
         for page_id in page_ids:
             page_runs.append(input_runs.get(page_id, page_id))
         return page_runs
+
+    def _should_persist_pdf_images(self, pdf_opts: Dict[str, Any]) -> bool:
+        """Return whether rendered PDF pages must be written to run_dir images."""
+        return (
+            self.debug
+            or self._review_package_config().enabled
+            or ("output_dir" not in pdf_opts)
+            or (pdf_opts.get("output_dir") is not None)
+        )
 
     def run(self, page_limit: Optional[int] = None) -> Path:
         """Executes the full pipeline."""
@@ -171,9 +177,7 @@ class PipelineOrchestrator:
 
         # Determine if we skipped disk write during pdf_to_images
         pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
-        persist_to_disk = (
-            self.debug or ("output_dir" not in pdf_opts) or (pdf_opts.get("output_dir") is not None)
-        )
+        persist_to_disk = self._should_persist_pdf_images(pdf_opts)
 
         # Only pass in_memory_images to collect_images if we actually used the cache (i.e. did not persist)
         images = collect_images(

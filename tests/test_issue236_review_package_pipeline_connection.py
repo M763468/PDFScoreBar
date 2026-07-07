@@ -289,6 +289,30 @@ def test_pipeline_connection_rejects_missing_review_artifact_steps(tmp_path):
         orchestrator.run()
 
 
+def test_pipeline_review_package_forces_pdf_image_persistence(tmp_path):
+    run_dir = tmp_path / "source_run"
+    config = _fake_pipeline_config(run_dir, review_enabled=True)
+    config["inputs"]["pdf_to_images"]["output_dir"] = None
+
+    orchestrator = PipelineOrchestrator(config=config, run_id="source_run", run_dir=run_dir)
+
+    assert orchestrator._should_persist_pdf_images(config["inputs"]["pdf_to_images"]) is True
+
+
+def test_pipeline_without_review_package_allows_in_memory_pdf_images(tmp_path):
+    run_dir = tmp_path / "source_run"
+    config = _fake_pipeline_config(
+        run_dir,
+        review_enabled=False,
+        review_artifact_steps_enabled=False,
+    )
+    config["inputs"]["pdf_to_images"]["output_dir"] = None
+
+    orchestrator = PipelineOrchestrator(config=config, run_id="source_run", run_dir=run_dir)
+
+    assert orchestrator._should_persist_pdf_images(config["inputs"]["pdf_to_images"]) is False
+
+
 def test_pipeline_connection_skips_user_excluded_pages_in_review_package(monkeypatch, tmp_path):
     run_dir = tmp_path / "source_run"
     config = _fake_pipeline_config(

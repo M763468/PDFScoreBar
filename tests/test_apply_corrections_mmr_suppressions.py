@@ -99,12 +99,21 @@ def test_apply_corrections_preserves_mmr_suppressions_in_corrected_rerun(
     measure_payload = json.loads(
         (corrections_dir / "measure_overrides.json").read_text(encoding="utf-8")
     )
-    assert measure_payload["measure_overrides"] == []
+    assert measure_payload["measure_overrides"] == [
+        {
+            "page": 1,
+            "system": 1,
+            "measure": 1,
+            "skip": 0,
+            "comment": "manual MMR suppression",
+            "source": "manual:mmr_measure_span_suppress",
+        }
+    ]
 
     rerun_config = json.loads(
         (new_run_dir / "corrected_pipeline_config.json").read_text(encoding="utf-8")
     )
-    assert rerun_config["steps"]["mmr_overrides"] is False
+    assert rerun_config["steps"]["mmr_overrides"] is True
     assert rerun_config["steps"]["apply_measure_overrides"] is True
 
 

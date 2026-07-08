@@ -80,7 +80,9 @@ def _bbox_values(raw_bbox: Any, *, description: str) -> tuple[float, float, floa
     return x1, y1, x2, y2
 
 
-def _union_bbox(bboxes: list[tuple[float, float, float, float]]) -> tuple[float, float, float, float]:
+def _union_bbox(
+    bboxes: list[tuple[float, float, float, float]],
+) -> tuple[float, float, float, float]:
     if not bboxes:
         raise CorrectedFinalOutputError("Cannot compute row bbox from an empty bbox list")
     return (
@@ -97,7 +99,9 @@ def _first_page_payload(numbering_payload: dict[str, Any], numbering_path: Path)
         raise CorrectedFinalOutputError(f"numbering_final has no pages: {numbering_path}")
     page_payload = pages[0]
     if not isinstance(page_payload, dict):
-        raise CorrectedFinalOutputError(f"numbering_final page payload must be an object: {numbering_path}")
+        raise CorrectedFinalOutputError(
+            f"numbering_final page payload must be an object: {numbering_path}"
+        )
     return page_payload
 
 
@@ -151,7 +155,9 @@ def _row_label_records(
             continue
 
         staff_bboxes = [
-            _bbox_values(staff.get("bbox"), description=f"{page_id}.systems[{row_index}].staves[].bbox")
+            _bbox_values(
+                staff.get("bbox"), description=f"{page_id}.systems[{row_index}].staves[].bbox"
+            )
             for staff in staves
             if isinstance(staff, dict) and staff.get("bbox") is not None
         ]
@@ -224,7 +230,9 @@ def _render_final_page_image(
 ) -> tuple[Image.Image, list[dict[str, Any]]]:
     numbering_payload = _load_json_object(numbering_path, description=f"{page_id}.numbering_final")
     page_payload = _first_page_payload(numbering_payload, numbering_path)
-    records = _row_label_records(page_id=page_id, page_number=page_number, page_payload=page_payload)
+    records = _row_label_records(
+        page_id=page_id, page_number=page_number, page_payload=page_payload
+    )
     with Image.open(source_image_path) as image:
         rendered = _draw_row_start_labels(image, records)
     return rendered, records
@@ -278,7 +286,9 @@ def materialize_corrected_final_outputs(
             try:
                 page_number = int(page_number_raw)
             except (TypeError, ValueError) as exc:
-                raise CorrectedFinalOutputError(f"{page_id}: page_number must be an integer") from exc
+                raise CorrectedFinalOutputError(
+                    f"{page_id}: page_number must be an integer"
+                ) from exc
 
             source_image = _resolve_package_path(
                 package_root,

@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from src.pipeline.steps.manual_corrections import (
     merge_barline_overrides,
@@ -334,6 +334,7 @@ def canonicalize_manual_correction_outputs(
     corrections_dir: str | Path,
     *,
     overwrite: bool = False,
+    staging_paths: Optional[Dict[str, List[str | Path]]] = None,
 ) -> Dict[str, Path]:
     """Convert GUI staging correction files into pipeline canonical override files.
 
@@ -344,10 +345,12 @@ def canonicalize_manual_correction_outputs(
     """
 
     root = Path(corrections_dir)
-    if not root.is_dir():
-        raise FileNotFoundError(
-            f"Corrections directory does not exist or is not a directory: {root}"
-        )
+    # We allow the corrections_dir to be missing if we are using staging_paths and none of them are in corrections_dir.
+    # But wait, we still write to `root / "measure_overrides.json"`. So we should ensure root exists.
+    if not root.exists():
+        root.mkdir(parents=True, exist_ok=True)
+    elif not root.is_dir():
+        raise FileNotFoundError(f"Corrections directory is not a directory: {root}")
     measure_output = root / "measure_overrides.json"
     barline_output = root / "barline_overrides.json"
 
@@ -356,18 +359,35 @@ def canonicalize_manual_correction_outputs(
         paths = ", ".join(str(path) for path in existing_outputs)
         raise FileExistsError(f"Refusing to overwrite existing correction file(s): {paths}")
 
-    mmr_measure_span = _read_json_object_if_exists(
-        root / STAGING_TO_CANONICAL_FILENAMES["mmr_measure_span"]
-    )
-    measure_construction = _read_json_object_if_exists(
-        root / STAGING_TO_CANONICAL_FILENAMES["measure_construction"]
-    )
-    barline_construction = _read_json_object_if_exists(
-        root / STAGING_TO_CANONICAL_FILENAMES["barline_construction"]
-    )
+    if staging_paths is None:
+        mmr_measure_span = [
+            _read_json_object_if_exists(root / STAGING_TO_CANONICAL_FILENAMES["mmr_measure_span"])
+        ]
+        measure_construction = [
+            _read_json_object_if_exists(
+                root / STAGING_TO_CANONICAL_FILENAMES["measure_construction"]
+            )
+        ]
+        barline_construction = [
+            _read_json_object_if_exists(
+                root / STAGING_TO_CANONICAL_FILENAMES["barline_construction"]
+            )
+        ]
+    else:
+        mmr_measure_span = [
+            _read_json_object_if_exists(Path(p)) for p in staging_paths.get("mmr_measure_span", [])
+        ]
+        measure_construction = [
+            _read_json_object_if_exists(Path(p))
+            for p in staging_paths.get("measure_construction", [])
+        ]
+        barline_construction = [
+            _read_json_object_if_exists(Path(p))
+            for p in staging_paths.get("barline_construction", [])
+        ]
 
-    measure_payload = merge_measure_overrides(measure_construction, mmr_measure_span)
-    barline_payload = merge_barline_overrides(barline_construction)
+    measure_payload = merge_measure_overrides(*measure_construction, *mmr_measure_span)
+    barline_payload = merge_barline_overrides(*barline_construction)
 
     _write_json_object(measure_output, measure_payload, overwrite=overwrite)
     _write_json_object(barline_output, barline_payload, overwrite=overwrite)

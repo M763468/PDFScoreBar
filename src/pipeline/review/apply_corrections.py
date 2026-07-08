@@ -4,7 +4,7 @@ import json
 import logging
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from src.pipeline.core.config import load_yaml
 from src.pipeline.main import run_pipeline
@@ -16,6 +16,22 @@ from src.pipeline.review.manual_correction_handoff import (
 from src.pipeline.utils.io import ensure_dir
 
 logger = logging.getLogger(__name__)
+
+
+def _resolve_source_manifest_path(payload: dict[str, Any], package_root: Path) -> Path:
+    source_manifest = payload.get("source_manifest")
+    source_artifact_root = payload.get("source_artifact_root")
+
+    if source_manifest:
+        manifest_path = Path(str(source_manifest))
+        if not manifest_path.is_absolute():
+            if source_artifact_root:
+                manifest_path = Path(str(source_artifact_root)) / manifest_path
+            else:
+                manifest_path = package_root / manifest_path
+        return manifest_path.resolve()
+
+    return (package_root.parent / "manifest.json").resolve()
 
 
 def apply_corrections_and_rerun(
@@ -32,15 +48,32 @@ def apply_corrections_and_rerun(
 
     # 1. Load & validate handoff
     raw_payload = load_manual_correction_handoff(handoff_path)
-    validate_manual_correction_handoff(raw_payload, handoff_path=handoff_path, mode="base_v1")
+    normalized = validate_manual_correction_handoff(
+        raw_payload, handoff_path=handoff_path, mode="base_v1"
+    )
+
+    # Collect custom staging paths from normalized handoff
+    staging_paths: Dict[str, List[str | Path]] = {
+        "mmr_measure_span": [],
+        "measure_construction": [],
+        "barline_construction": [],
+    }
+    for page in normalized.get("pages", []):
+        manual_outputs = page.get("manual_outputs", {})
+        for key in staging_paths:
+            if key in manual_outputs and manual_outputs[key]:
+                staging_paths[key].append(package_root / manual_outputs[key])
 
     # 2. Check corrections dir
     corrections_dir = package_root / "corrections"
-    if not corrections_dir.is_dir():
-        raise FileNotFoundError(f"Corrections directory not found: {corrections_dir}")
+    # We don't raise an error here if it doesn't exist, as canonicalize will create it if needed.
 
     # 3. Canonicalize outputs
-    canonical_paths = canonicalize_manual_correction_outputs(corrections_dir, overwrite=overwrite)
+    canonical_paths = canonicalize_manual_correction_outputs(
+        corrections_dir,
+        overwrite=overwrite,
+        staging_paths=staging_paths,
+    )
 
     # 4. Find/Load source config
     source_config: Dict[str, Any] = {}
@@ -50,35 +83,47 @@ def apply_corrections_and_rerun(
             source_config = load_yaml(source_config_path)
         else:
             source_config = json.loads(source_config_path.read_text(encoding="utf-8"))
+        if not isinstance(source_config, dict):
+            raise ValueError("Source configuration must be a dictionary/mapping.")
     else:
-        # Try to find manifest.json in the parent of package root
-        manifest_path = package_root.parent / "manifest.json"
+        manifest_path = _resolve_source_manifest_path(normalized, package_root)
         if not manifest_path.exists():
-            raise FileNotFoundError(
-                "Source config path not provided and manifest.json not found in parent directory."
-            )
+            raise FileNotFoundError(f"Source manifest not found: {manifest_path}")
+
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if not isinstance(manifest, dict):
+            raise ValueError("manifest.json must be a JSON object.")
         if "config" not in manifest:
             raise ValueError("manifest.json does not contain a 'config' key.")
         source_config = manifest["config"]
+        if not isinstance(source_config, dict):
+            raise ValueError("Source configuration must be a dictionary/mapping.")
+
+        # We can also use this to set default output_root
+        if not output_root:
+            output_root = manifest_path.parent.parent
 
     # 5. Create rerun config
     rerun_config = deepcopy(source_config)
 
-    if "inputs" not in rerun_config:
+    if not isinstance(rerun_config.get("inputs"), dict):
         rerun_config["inputs"] = {}
 
     rerun_config["inputs"]["measure_overrides"] = str(canonical_paths["measure_overrides"])
     rerun_config["inputs"]["barline_overrides"] = str(canonical_paths["barline_overrides"])
 
-    if "steps" not in rerun_config:
+    if not isinstance(rerun_config.get("steps"), dict):
         rerun_config["steps"] = {}
     rerun_config["steps"]["apply_measure_overrides"] = True
     rerun_config["steps"]["apply_barline_overrides"] = True
 
+    if not isinstance(rerun_config.get("outputs"), dict):
+        rerun_config["outputs"] = {}
+    if not isinstance(rerun_config["outputs"].get("review"), dict):
+        rerun_config["outputs"]["review"] = {}
+
     # Avoid infinite recursion of review package generation
-    if "outputs" in rerun_config and "review" in rerun_config["outputs"]:
-        rerun_config["outputs"]["review"]["manual_correction_package"] = False
+    rerun_config["outputs"]["review"]["manual_correction_package"] = False
 
     # 6. Setup new run dir
     run_id_value = run_id or f"corrected_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}"

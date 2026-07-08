@@ -43,9 +43,7 @@ def test_apply_corrections_preserves_mmr_suppressions_in_corrected_rerun(
             }
         ]
     }
-    (page_dir / "mmr_overrides.json").write_text(
-        json.dumps(source_mmr_override), encoding="utf-8"
-    )
+    (page_dir / "mmr_overrides.json").write_text(json.dumps(source_mmr_override), encoding="utf-8")
 
     (corrections_dir / "mmr_measure_spans.json").write_text(
         json.dumps(

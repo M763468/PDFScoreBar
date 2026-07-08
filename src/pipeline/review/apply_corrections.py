@@ -79,6 +79,32 @@ def _input_override_path(
     return None
 
 
+def _read_existing_override_inputs(
+    *,
+    source_config: Dict[str, Any],
+    config_base_dir: Path | None,
+) -> Dict[str, Any]:
+    """Read existing override payloads before canonical files may be overwritten."""
+
+    existing_measure_path = _input_override_path(
+        source_config, "measure_overrides", base_dir=config_base_dir
+    )
+    existing_barline_path = _input_override_path(
+        source_config, "barline_overrides", base_dir=config_base_dir
+    )
+
+    return {
+        "existing_measure_path": existing_measure_path,
+        "existing_measure_payload": (
+            _read_json_object_if_exists(existing_measure_path) if existing_measure_path else None
+        ),
+        "existing_barline_path": existing_barline_path,
+        "existing_barline_payload": (
+            _read_json_object_if_exists(existing_barline_path) if existing_barline_path else None
+        ),
+    }
+
+
 def _mmr_suppression_override_payload(
     staging_paths: Dict[str, List[str | Path]],
 ) -> Optional[Dict[str, Any]]:
@@ -127,36 +153,25 @@ def _mmr_suppression_override_payload(
 def _merge_existing_override_inputs(
     *,
     canonical_paths: Dict[str, Path],
-    source_config: Dict[str, Any],
-    config_base_dir: Path | None,
+    existing_override_inputs: Dict[str, Any],
     staging_paths: Dict[str, List[str | Path]],
 ) -> Dict[str, Any]:
-    existing_measure_path = _input_override_path(
-        source_config, "measure_overrides", base_dir=config_base_dir
-    )
-    existing_barline_path = _input_override_path(
-        source_config, "barline_overrides", base_dir=config_base_dir
-    )
+    existing_measure_path = existing_override_inputs.get("existing_measure_path")
+    existing_barline_path = existing_override_inputs.get("existing_barline_path")
+    existing_measure_payload = existing_override_inputs.get("existing_measure_payload")
+    existing_barline_payload = existing_override_inputs.get("existing_barline_payload")
 
     current_measure_payload = _read_json_object_if_exists(canonical_paths["measure_overrides"])
     current_barline_payload = _read_json_object_if_exists(canonical_paths["barline_overrides"])
     suppression_payload = _mmr_suppression_override_payload(staging_paths)
 
     measure_payloads: List[Optional[Dict[str, Any]]] = []
-    if (
-        existing_measure_path
-        and existing_measure_path != canonical_paths["measure_overrides"].resolve()
-    ):
-        measure_payloads.append(_read_json_object_if_exists(existing_measure_path))
+    measure_payloads.append(existing_measure_payload)
     measure_payloads.append(current_measure_payload)
     measure_payloads.append(suppression_payload)
 
     barline_payloads: List[Optional[Dict[str, Any]]] = []
-    if (
-        existing_barline_path
-        and existing_barline_path != canonical_paths["barline_overrides"].resolve()
-    ):
-        barline_payloads.append(_read_json_object_if_exists(existing_barline_path))
+    barline_payloads.append(existing_barline_payload)
     barline_payloads.append(current_barline_payload)
 
     measure_payload = merge_measure_overrides(*measure_payloads)
@@ -206,18 +221,8 @@ def apply_corrections_and_rerun(
             if key in manual_outputs and manual_outputs[key]:
                 staging_paths[key].append(package_root / manual_outputs[key])
 
-    # 2. Check corrections dir
-    corrections_dir = package_root / "corrections"
-    # We don't raise an error here if it doesn't exist, as canonicalize will create it if needed.
-
-    # 3. Canonicalize outputs
-    canonical_paths = canonicalize_manual_correction_outputs(
-        corrections_dir,
-        overwrite=overwrite,
-        staging_paths=staging_paths,
-    )
-
-    # 4. Find/Load source config
+    # 2. Find/Load source config before canonicalization so same-path existing
+    # override inputs can be read before overwrite=True replaces them.
     source_config: Dict[str, Any] = {}
     config_base_dir: Path | None = None
     if config_path:
@@ -248,14 +253,26 @@ def apply_corrections_and_rerun(
         if not output_root:
             output_root = manifest_path.parent.parent
 
-    carried_forward = _merge_existing_override_inputs(
-        canonical_paths=canonical_paths,
+    existing_override_inputs = _read_existing_override_inputs(
         source_config=source_config,
         config_base_dir=config_base_dir,
+    )
+
+    # 3. Canonicalize outputs
+    corrections_dir = package_root / "corrections"
+    canonical_paths = canonicalize_manual_correction_outputs(
+        corrections_dir,
+        overwrite=overwrite,
         staging_paths=staging_paths,
     )
 
-    # 5. Create rerun config
+    carried_forward = _merge_existing_override_inputs(
+        canonical_paths=canonical_paths,
+        existing_override_inputs=existing_override_inputs,
+        staging_paths=staging_paths,
+    )
+
+    # 4. Create rerun config
     rerun_config = deepcopy(source_config)
 
     if not isinstance(rerun_config.get("inputs"), dict):
@@ -277,7 +294,7 @@ def apply_corrections_and_rerun(
     # Avoid infinite recursion of review package generation
     rerun_config["outputs"]["review"]["manual_correction_package"] = False
 
-    # 6. Setup new run dir
+    # 5. Setup new run dir
     run_id_value = run_id or f"corrected_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
     if output_root:
@@ -321,7 +338,7 @@ def apply_corrections_and_rerun(
         logger.info(f"Dry run. Would execute pipeline with config: {new_config_path}")
         return new_run_dir
 
-    # 7. Execute
+    # 6. Execute
     logger.info(f"Executing corrected pipeline rerun: {run_id_value}")
     run_pipeline(
         config_path=new_config_path,

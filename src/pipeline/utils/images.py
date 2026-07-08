@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -24,6 +25,41 @@ def get_image_cache() -> Dict[str, np.ndarray]:
 def clear_image_cache() -> None:
     _IMAGE_CACHE.clear()
 
+
+
+
+def _review_package_enabled(config: Dict[str, Any]) -> bool:
+    review_cfg = get_nested(config, "outputs", "review", default={}) or {}
+    return isinstance(review_cfg, dict) and bool(
+        review_cfg.get("manual_correction_package", False)
+    )
+
+
+def _path_is_inside(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def _stage_external_review_images(images: List[Path], run_dir: Path) -> List[Path]:
+    staged_dir = run_dir / "inputs" / "images"
+    staged_dir.mkdir(parents=True, exist_ok=True)
+    staged_images: List[Path] = []
+
+    for image in images:
+        src = Path(image)
+        if _path_is_inside(src, run_dir):
+            staged_images.append(src)
+            continue
+
+        dest = staged_dir / src.name
+        if src.resolve() != dest.resolve():
+            shutil.copy2(src, dest)
+        staged_images.append(dest)
+
+    return staged_images
 
 def collect_images(
     config: Dict[str, Any],
@@ -57,6 +93,10 @@ def collect_images(
             images = sorted(external_dir.glob(image_glob))
     if not images:
         raise FileNotFoundError(f"No images found in {output_dir} matching {image_glob}")
+
+    if _review_package_enabled(config):
+        images = _stage_external_review_images(images, run_dir)
+
     return images
 
 

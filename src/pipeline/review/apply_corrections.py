@@ -57,6 +57,19 @@ def _read_json_object_if_exists(path: Path) -> Optional[Dict[str, Any]]:
     return payload
 
 
+def _has_mmr_suppressions(staging_paths: Dict[str, List[str | Path]]) -> bool:
+    for path in _unique_existing_paths(staging_paths.get("mmr_measure_span", [])):
+        payload = _read_json_object_if_exists(path)
+        if not payload:
+            continue
+        items = payload.get("items", [])
+        if not isinstance(items, list):
+            continue
+        if any(isinstance(item, dict) and item.get("op") == "suppress" for item in items):
+            return True
+    return False
+
+
 def _rewrite_measure_overrides_with_source_mmr_base(
     *,
     output_path: Path,
@@ -139,7 +152,10 @@ def apply_corrections_and_rerun(
         overwrite=overwrite,
         staging_paths=staging_paths,
     )
-    if source_mmr_override_paths:
+    freeze_mmr_for_suppressions = bool(source_mmr_override_paths) and _has_mmr_suppressions(
+        staging_paths
+    )
+    if freeze_mmr_for_suppressions:
         _rewrite_measure_overrides_with_source_mmr_base(
             output_path=canonical_paths["measure_overrides"],
             source_mmr_override_paths=source_mmr_override_paths,
@@ -187,7 +203,7 @@ def apply_corrections_and_rerun(
         rerun_config["steps"] = {}
     rerun_config["steps"]["apply_measure_overrides"] = True
     rerun_config["steps"]["apply_barline_overrides"] = True
-    if source_mmr_override_paths:
+    if freeze_mmr_for_suppressions:
         rerun_config["steps"]["mmr_overrides"] = False
 
     if not isinstance(rerun_config.get("outputs"), dict):
@@ -222,6 +238,7 @@ def apply_corrections_and_rerun(
         "source_mmr_overrides": [
             str(path) for path in _unique_existing_paths(source_mmr_override_paths)
         ],
+        "freeze_mmr_for_suppressions": freeze_mmr_for_suppressions,
         "rerun_mmr_overrides_enabled": bool(rerun_config["steps"].get("mmr_overrides", False)),
         "run_id": run_id_value,
         "output_dir": str(new_run_dir),

@@ -143,13 +143,19 @@ def _merge_existing_override_inputs(
     suppression_payload = _mmr_suppression_override_payload(staging_paths)
 
     measure_payloads: List[Optional[Dict[str, Any]]] = []
-    if existing_measure_path and existing_measure_path != canonical_paths["measure_overrides"].resolve():
+    if (
+        existing_measure_path
+        and existing_measure_path != canonical_paths["measure_overrides"].resolve()
+    ):
         measure_payloads.append(_read_json_object_if_exists(existing_measure_path))
     measure_payloads.append(current_measure_payload)
     measure_payloads.append(suppression_payload)
 
     barline_payloads: List[Optional[Dict[str, Any]]] = []
-    if existing_barline_path and existing_barline_path != canonical_paths["barline_overrides"].resolve():
+    if (
+        existing_barline_path
+        and existing_barline_path != canonical_paths["barline_overrides"].resolve()
+    ):
         barline_payloads.append(_read_json_object_if_exists(existing_barline_path))
     barline_payloads.append(current_barline_payload)
 

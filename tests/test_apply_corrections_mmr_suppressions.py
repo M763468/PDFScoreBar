@@ -9,7 +9,9 @@ sys.modules.setdefault("fitz", types.SimpleNamespace())
 from src.pipeline.review.apply_corrections import apply_corrections_and_rerun
 
 
-def test_apply_corrections_preserves_mmr_suppressions_in_corrected_rerun(tmp_path: Path):
+def test_apply_corrections_preserves_mmr_suppressions_in_corrected_rerun(
+    tmp_path: Path,
+):
     run_dir = tmp_path / "original_run"
     review_dir = run_dir / "review"
     corrections_dir = review_dir / "corrections"

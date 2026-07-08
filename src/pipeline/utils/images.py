@@ -26,13 +26,9 @@ def clear_image_cache() -> None:
     _IMAGE_CACHE.clear()
 
 
-
-
 def _review_package_enabled(config: Dict[str, Any]) -> bool:
     review_cfg = get_nested(config, "outputs", "review", default={}) or {}
-    return isinstance(review_cfg, dict) and bool(
-        review_cfg.get("manual_correction_package", False)
-    )
+    return isinstance(review_cfg, dict) and bool(review_cfg.get("manual_correction_package", False))
 
 
 def _path_is_inside(path: Path, root: Path) -> bool:
@@ -60,6 +56,7 @@ def _stage_external_review_images(images: List[Path], run_dir: Path) -> List[Pat
         staged_images.append(dest)
 
     return staged_images
+
 
 def collect_images(
     config: Dict[str, Any],

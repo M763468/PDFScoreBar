@@ -245,11 +245,14 @@ def test_canonicalize_refuses_to_overwrite_existing_outputs(tmp_path):
         canonicalize_manual_correction_outputs(corrections)
 
 
-def test_canonicalize_requires_existing_corrections_directory(tmp_path):
+def test_canonicalize_creates_missing_corrections_directory(tmp_path):
     missing = tmp_path / "missing_corrections"
 
-    with pytest.raises(FileNotFoundError, match="Corrections directory"):
-        canonicalize_manual_correction_outputs(missing)
+    outputs = canonicalize_manual_correction_outputs(missing)
+
+    assert missing.is_dir()
+    assert outputs["measure_overrides"].exists()
+    assert outputs["barline_overrides"].exists()
 
 
 def test_canonicalize_allows_explicit_overwrite(tmp_path):

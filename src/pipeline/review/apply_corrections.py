@@ -13,7 +13,7 @@ from src.pipeline.review.manual_correction_handoff import (
     load_manual_correction_handoff,
     validate_manual_correction_handoff,
 )
-from src.pipeline.steps.manual_corrections import merge_measure_overrides
+from src.pipeline.steps.manual_corrections import merge_barline_overrides, merge_measure_overrides
 from src.pipeline.utils.io import ensure_dir
 
 logger = logging.getLogger(__name__)
@@ -57,7 +57,40 @@ def _read_json_object_if_exists(path: Path) -> Optional[Dict[str, Any]]:
     return payload
 
 
-def _has_mmr_suppressions(staging_paths: Dict[str, List[str | Path]]) -> bool:
+def _input_override_path(
+    source_config: Dict[str, Any],
+    key: str,
+    *,
+    base_dir: Path | None,
+) -> Optional[Path]:
+    inputs = source_config.get("inputs")
+    if not isinstance(inputs, dict):
+        return None
+    raw_path = inputs.get(key)
+    if not raw_path:
+        return None
+    path = Path(str(raw_path))
+    candidates = [path]
+    if not path.is_absolute() and base_dir is not None:
+        candidates.append(base_dir / path)
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate.resolve()
+    return None
+
+
+def _mmr_suppression_override_payload(
+    staging_paths: Dict[str, List[str | Path]],
+) -> Optional[Dict[str, Any]]:
+    """Encode MMR suppress operations as neutral user overrides.
+
+    The final numbering phase merges freshly generated MMR overrides first and
+    user overrides second. A same-key user override with ``skip=0`` therefore
+    cancels the automatic MMR skip without disabling MMR for unrelated pages.
+    """
+
+    overrides: List[Dict[str, Any]] = []
+    seen: set[tuple[int, int, int]] = set()
     for path in _unique_existing_paths(staging_paths.get("mmr_measure_span", [])):
         payload = _read_json_object_if_exists(path)
         if not payload:
@@ -65,47 +98,76 @@ def _has_mmr_suppressions(staging_paths: Dict[str, List[str | Path]]) -> bool:
         items = payload.get("items", [])
         if not isinstance(items, list):
             continue
-        if any(isinstance(item, dict) and item.get("op") == "suppress" for item in items):
-            return True
-    return False
+        for item in items:
+            if not isinstance(item, dict) or item.get("op") != "suppress":
+                continue
+            try:
+                key = (int(item["page"]), int(item["system"]), int(item["measure"]))
+            except (KeyError, TypeError, ValueError) as exc:
+                raise ValueError(f"Invalid MMR suppress correction item: {item}") from exc
+            if key in seen:
+                continue
+            seen.add(key)
+            page, system, measure = key
+            overrides.append(
+                {
+                    "page": page,
+                    "system": system,
+                    "measure": measure,
+                    "skip": 0,
+                    "comment": "manual MMR suppression",
+                    "source": "manual:mmr_measure_span_suppress",
+                }
+            )
+    if not overrides:
+        return None
+    return {"measure_overrides": overrides, "overrides": deepcopy(overrides)}
 
 
-def _rewrite_measure_overrides_with_source_mmr_base(
+def _merge_existing_override_inputs(
     *,
-    output_path: Path,
-    source_mmr_override_paths: List[str | Path],
+    canonical_paths: Dict[str, Path],
+    source_config: Dict[str, Any],
+    config_base_dir: Path | None,
     staging_paths: Dict[str, List[str | Path]],
-) -> None:
-    """Preserve source MMR overrides so manual suppressions can remove them.
-
-    GUI ``mmr_measure_span`` corrections are delta operations. In particular,
-    ``op: suppress`` removes an existing MMR override rather than emitting a
-    tombstone. Corrected reruns must therefore canonicalize against the source
-    run's MMR override payloads and then disable fresh MMR generation for the
-    rerun, otherwise the suppressed automatic override can reappear.
-    """
-
-    source_mmr_payloads = [
-        _read_json_object_if_exists(path)
-        for path in _unique_existing_paths(source_mmr_override_paths)
-    ]
-    measure_construction_payloads = [
-        _read_json_object_if_exists(path)
-        for path in _unique_existing_paths(staging_paths.get("measure_construction", []))
-    ]
-    mmr_measure_span_payloads = [
-        _read_json_object_if_exists(path)
-        for path in _unique_existing_paths(staging_paths.get("mmr_measure_span", []))
-    ]
-
-    measure_payload = merge_measure_overrides(
-        *source_mmr_payloads,
-        *measure_construction_payloads,
-        *mmr_measure_span_payloads,
+) -> Dict[str, Any]:
+    existing_measure_path = _input_override_path(
+        source_config, "measure_overrides", base_dir=config_base_dir
     )
-    output_path.write_text(
+    existing_barline_path = _input_override_path(
+        source_config, "barline_overrides", base_dir=config_base_dir
+    )
+
+    current_measure_payload = _read_json_object_if_exists(canonical_paths["measure_overrides"])
+    current_barline_payload = _read_json_object_if_exists(canonical_paths["barline_overrides"])
+    suppression_payload = _mmr_suppression_override_payload(staging_paths)
+
+    measure_payloads: List[Optional[Dict[str, Any]]] = []
+    if existing_measure_path and existing_measure_path != canonical_paths["measure_overrides"].resolve():
+        measure_payloads.append(_read_json_object_if_exists(existing_measure_path))
+    measure_payloads.append(current_measure_payload)
+    measure_payloads.append(suppression_payload)
+
+    barline_payloads: List[Optional[Dict[str, Any]]] = []
+    if existing_barline_path and existing_barline_path != canonical_paths["barline_overrides"].resolve():
+        barline_payloads.append(_read_json_object_if_exists(existing_barline_path))
+    barline_payloads.append(current_barline_payload)
+
+    measure_payload = merge_measure_overrides(*measure_payloads)
+    barline_payload = merge_barline_overrides(*barline_payloads)
+
+    canonical_paths["measure_overrides"].write_text(
         json.dumps(measure_payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
+    canonical_paths["barline_overrides"].write_text(
+        json.dumps(barline_payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+
+    return {
+        "existing_measure_overrides": str(existing_measure_path) if existing_measure_path else None,
+        "existing_barline_overrides": str(existing_barline_path) if existing_barline_path else None,
+        "mmr_suppressions_encoded": bool(suppression_payload),
+    }
 
 
 def apply_corrections_and_rerun(
@@ -132,15 +194,11 @@ def apply_corrections_and_rerun(
         "measure_construction": [],
         "barline_construction": [],
     }
-    source_mmr_override_paths: List[str | Path] = []
     for page in normalized.get("pages", []):
         manual_outputs = page.get("manual_outputs", {})
         for key in staging_paths:
             if key in manual_outputs and manual_outputs[key]:
                 staging_paths[key].append(package_root / manual_outputs[key])
-        mmr_overrides = page.get("mmr_overrides")
-        if mmr_overrides:
-            source_mmr_override_paths.append(package_root / mmr_overrides)
 
     # 2. Check corrections dir
     corrections_dir = package_root / "corrections"
@@ -152,20 +210,13 @@ def apply_corrections_and_rerun(
         overwrite=overwrite,
         staging_paths=staging_paths,
     )
-    freeze_mmr_for_suppressions = bool(source_mmr_override_paths) and _has_mmr_suppressions(
-        staging_paths
-    )
-    if freeze_mmr_for_suppressions:
-        _rewrite_measure_overrides_with_source_mmr_base(
-            output_path=canonical_paths["measure_overrides"],
-            source_mmr_override_paths=source_mmr_override_paths,
-            staging_paths=staging_paths,
-        )
 
     # 4. Find/Load source config
     source_config: Dict[str, Any] = {}
+    config_base_dir: Path | None = None
     if config_path:
-        source_config_path = Path(config_path)
+        source_config_path = Path(config_path).resolve()
+        config_base_dir = source_config_path.parent
         if source_config_path.suffix in (".yaml", ".yml"):
             source_config = load_yaml(source_config_path)
         else:
@@ -176,6 +227,7 @@ def apply_corrections_and_rerun(
         manifest_path = _resolve_source_manifest_path(normalized, package_root)
         if not manifest_path.exists():
             raise FileNotFoundError(f"Source manifest not found: {manifest_path}")
+        config_base_dir = manifest_path.parent
 
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         if not isinstance(manifest, dict):
@@ -190,6 +242,13 @@ def apply_corrections_and_rerun(
         if not output_root:
             output_root = manifest_path.parent.parent
 
+    carried_forward = _merge_existing_override_inputs(
+        canonical_paths=canonical_paths,
+        source_config=source_config,
+        config_base_dir=config_base_dir,
+        staging_paths=staging_paths,
+    )
+
     # 5. Create rerun config
     rerun_config = deepcopy(source_config)
 
@@ -203,8 +262,6 @@ def apply_corrections_and_rerun(
         rerun_config["steps"] = {}
     rerun_config["steps"]["apply_measure_overrides"] = True
     rerun_config["steps"]["apply_barline_overrides"] = True
-    if freeze_mmr_for_suppressions:
-        rerun_config["steps"]["mmr_overrides"] = False
 
     if not isinstance(rerun_config.get("outputs"), dict):
         rerun_config["outputs"] = {}
@@ -235,10 +292,7 @@ def apply_corrections_and_rerun(
         "source_handoff": str(handoff_path),
         "measure_overrides": str(canonical_paths["measure_overrides"]),
         "barline_overrides": str(canonical_paths["barline_overrides"]),
-        "source_mmr_overrides": [
-            str(path) for path in _unique_existing_paths(source_mmr_override_paths)
-        ],
-        "freeze_mmr_for_suppressions": freeze_mmr_for_suppressions,
+        **carried_forward,
         "rerun_mmr_overrides_enabled": bool(rerun_config["steps"].get("mmr_overrides", False)),
         "run_id": run_id_value,
         "output_dir": str(new_run_dir),

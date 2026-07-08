@@ -306,3 +306,140 @@ def test_rerun_config_sections_null(tmp_path):
     assert rerun_config["steps"]["apply_measure_overrides"] is True
     assert rerun_config["steps"]["apply_barline_overrides"] is True
     assert rerun_config["outputs"]["review"]["manual_correction_package"] is False
+
+
+def test_shared_correction_outputs_not_duplicated_per_page(tmp_path):
+    run_dir = tmp_path / "original_run"
+    review_dir = run_dir / "review"
+    review_dir.mkdir(parents=True)
+
+    (run_dir / "manifest.json").write_text(json.dumps({"config": {}}), encoding="utf-8")
+
+    corrections_dir = review_dir / "corrections"
+    corrections_dir.mkdir()
+
+    (corrections_dir / "measure_construction_overrides.json").write_text(
+        json.dumps(
+            {
+                "correction_type": "measure_construction",
+                "items": [{"op": "force_measure", "page": 1, "system": 1, "interval": 1}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    (corrections_dir / "barline_construction_overrides.json").write_text(
+        json.dumps(
+            {
+                "correction_type": "barline_construction",
+                "items": [{"op": "add_barline", "page": 1, "bbox": [1, 2, 3, 4]}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    handoff_path = review_dir / "manual_correction_input.json"
+    # Create 2 pages sharing the default 'corrections' dir
+    handoff = {
+        "schema_version": 1,
+        "pages": [
+            {
+                "page_id": f"p{i}",
+                "page_number": i,
+                "source_image": "a",
+                "numbering_final": "b",
+                "correction_output": "corrections",
+            }
+            for i in (1, 2)
+        ],
+    }
+    handoff_path.write_text(json.dumps(handoff), encoding="utf-8")
+
+    with patch("src.pipeline.review.apply_corrections.run_pipeline"):
+        apply_corrections_and_rerun(handoff_path, dry_run=True, overwrite=True)
+
+    measure_payload = json.loads(
+        (corrections_dir / "measure_overrides.json").read_text(encoding="utf-8")
+    )
+    barline_payload = json.loads(
+        (corrections_dir / "barline_overrides.json").read_text(encoding="utf-8")
+    )
+
+    # Should only be 1 item each (no duplication for 2 pages)
+    assert len(measure_payload["measure_overrides"]) == 1
+    assert len(barline_payload["barline_overrides"]) == 1
+
+
+def test_custom_per_page_correction_outputs_merged_correctly(tmp_path):
+    run_dir = tmp_path / "original_run"
+    review_dir = run_dir / "review"
+    review_dir.mkdir(parents=True)
+
+    (run_dir / "manifest.json").write_text(json.dumps({"config": {}}), encoding="utf-8")
+
+    # page 1
+    custom1 = review_dir / "custom1"
+    custom1.mkdir()
+    (custom1 / "measure.json").write_text(
+        json.dumps(
+            {
+                "correction_type": "measure_construction",
+                "items": [{"op": "force_measure", "page": 1, "system": 1, "interval": 1}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    # page 2
+    custom2 = review_dir / "custom2"
+    custom2.mkdir()
+    (custom2 / "measure.json").write_text(
+        json.dumps(
+            {
+                "correction_type": "measure_construction",
+                "items": [{"op": "force_measure", "page": 2, "system": 1, "interval": 1}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    handoff_path = review_dir / "manual_correction_input.json"
+    handoff = {
+        "schema_version": 1,
+        "pages": [
+            {
+                "page_id": "p1",
+                "page_number": 1,
+                "source_image": "a",
+                "numbering_final": "b",
+                "correction_outputs": {
+                    "mmr_measure_span": "custom1/mmr.json",
+                    "measure_construction": "custom1/measure.json",
+                    "barline_construction": "custom1/barline.json",
+                },
+            },
+            {
+                "page_id": "p2",
+                "page_number": 2,
+                "source_image": "a",
+                "numbering_final": "b",
+                "correction_outputs": {
+                    "mmr_measure_span": "custom2/mmr.json",
+                    "measure_construction": "custom2/measure.json",
+                    "barline_construction": "custom2/barline.json",
+                },
+            },
+        ],
+    }
+    handoff_path.write_text(json.dumps(handoff), encoding="utf-8")
+
+    with patch("src.pipeline.review.apply_corrections.run_pipeline"):
+        apply_corrections_and_rerun(handoff_path, dry_run=True, overwrite=True)
+
+    corrections_dir = review_dir / "corrections"
+    measure_payload = json.loads(
+        (corrections_dir / "measure_overrides.json").read_text(encoding="utf-8")
+    )
+
+    # Should contain items from BOTH pages
+    assert len(measure_payload["measure_overrides"]) == 2

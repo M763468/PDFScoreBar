@@ -1,0 +1,33 @@
+**Related Issue**: Refs #236 (This PR does not close #236. It only implements the rerun / canonical override apply path)
+
+## Goal
+Implement `apply_corrections` helper to load a manual correction package, validate it, securely canonicalize the staging overrides into `measure_overrides.json` and `barline_overrides.json`, and regenerate a safely modified pipeline configuration to trigger a rerun.
+
+## Scope
+- Adds `src/pipeline/review/apply_corrections.py` containing `apply_corrections_and_rerun()` Python API and minimal CLI.
+- Extends canonicalizer in `src/pipeline/review/manual_correction_handoff.py` to support `staging_paths` mapping for per-page correction outputs and automatic directory creation.
+- Strictly type-checks manifest/config types and protects against `null` sections for robust failure handling.
+- Resolves manifest paths properly when using external review packages using `source_artifact_root` & `source_manifest`.
+- Preserves output structure by disabling `manual_correction_package` in the rerun config to avoid infinite loop review outputs.
+- Adds comprehensive unit tests (`tests/test_apply_corrections.py`).
+
+## Implementation Details
+- Exposes `apply_corrections_and_rerun(handoff_path, config_path, run_id, dry_run, overwrite, output_root)`.
+- Updates `canonicalize_manual_correction_outputs` to respect per-page custom `staging_paths` from `normalized["pages"]` rather than relying only on default names.
+
+## Verification
+- [x] Tested with `make lint` (passed cleanly).
+- [x] Run local unit tests targeting the new changes.
+```bash
+PYTHONPATH=. python3 -m pytest \
+  tests/test_apply_corrections.py \
+  tests/test_manual_correction_handoff.py \
+  tests/test_manual_corrections.py \
+  tests/test_issue236_review_package_pipeline_connection.py
+```
+- Total 40 tests passed successfully.
+
+## Validation / Regression Exemptions
+- **Production Models/Logic Unchanged:** The production detector and MMR algorithm remain completely unmodified. 
+- **Adapter Level Modification:** The scope of changes is limited exclusively to the review correction adapter (`manual_correction_handoff.py`) and rerun config generation (`apply_corrections.py`).
+- **Override Path Stable:** The barline/MMR override application path only invokes existing pipeline steps without altering the step implementations themselves. Therefore, a full 68-page regression is explicitly exempt for this PR.

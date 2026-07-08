@@ -330,6 +330,19 @@ def _write_json_object(path: Path, payload: Dict[str, Any], *, overwrite: bool) 
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+def _unique_existing_paths(paths: List[str | Path]) -> List[Path]:
+    unique: List[Path] = []
+    seen: set[Path] = set()
+    for raw_path in paths:
+        path = Path(raw_path)
+        resolved = path.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        unique.append(path)
+    return unique
+
+
 def canonicalize_manual_correction_outputs(
     corrections_dir: str | Path,
     *,
@@ -375,15 +388,16 @@ def canonicalize_manual_correction_outputs(
         ]
     else:
         mmr_measure_span = [
-            _read_json_object_if_exists(Path(p)) for p in staging_paths.get("mmr_measure_span", [])
+            _read_json_object_if_exists(Path(p))
+            for p in _unique_existing_paths(staging_paths.get("mmr_measure_span", []))
         ]
         measure_construction = [
             _read_json_object_if_exists(Path(p))
-            for p in staging_paths.get("measure_construction", [])
+            for p in _unique_existing_paths(staging_paths.get("measure_construction", []))
         ]
         barline_construction = [
             _read_json_object_if_exists(Path(p))
-            for p in staging_paths.get("barline_construction", [])
+            for p in _unique_existing_paths(staging_paths.get("barline_construction", []))
         ]
 
     measure_payload = merge_measure_overrides(*measure_construction, *mmr_measure_span)

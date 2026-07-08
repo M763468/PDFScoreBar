@@ -73,7 +73,8 @@ def _rewrite_measure_overrides_with_source_mmr_base(
     """
 
     source_mmr_payloads = [
-        _read_json_object_if_exists(path) for path in _unique_existing_paths(source_mmr_override_paths)
+        _read_json_object_if_exists(path)
+        for path in _unique_existing_paths(source_mmr_override_paths)
     ]
     measure_construction_payloads = [
         _read_json_object_if_exists(path)
@@ -218,7 +219,9 @@ def apply_corrections_and_rerun(
         "source_handoff": str(handoff_path),
         "measure_overrides": str(canonical_paths["measure_overrides"]),
         "barline_overrides": str(canonical_paths["barline_overrides"]),
-        "source_mmr_overrides": [str(path) for path in _unique_existing_paths(source_mmr_override_paths)],
+        "source_mmr_overrides": [
+            str(path) for path in _unique_existing_paths(source_mmr_override_paths)
+        ],
         "rerun_mmr_overrides_enabled": bool(rerun_config["steps"].get("mmr_overrides", False)),
         "run_id": run_id_value,
         "output_dir": str(new_run_dir),

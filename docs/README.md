@@ -52,6 +52,7 @@ notes for current instructions.
 | User-facing output profile contract package | [`docs/refactors/issue227/ISSUE227_OUTPUT_PROFILES.md`](refactors/issue227/ISSUE227_OUTPUT_PROFILES.md) |
 | Final score-number overlay format | [`docs/refactors/issue228/ISSUE228_FINAL_OVERLAY_FORMAT.md`](refactors/issue228/ISSUE228_FINAL_OVERLAY_FORMAT.md) |
 | Manual correction GUI pipeline workflow | [`docs/refactors/issue229/ISSUE229_MANUAL_CORRECTION_WORKFLOW.md`](refactors/issue229/ISSUE229_MANUAL_CORRECTION_WORKFLOW.md) |
+| Config-first manual correction review package output | [`docs/manual_correction_review_package.md`](manual_correction_review_package.md) |
 | Issue #120 artifact retention rules | [`docs/ISSUE120_ARTIFACT_RETENTION.md`](ISSUE120_ARTIFACT_RETENTION.md) |
 | Issue #120 evaluation contract | [`docs/ISSUE120_EVALUATION_CONTRACT.md`](ISSUE120_EVALUATION_CONTRACT.md) |
 | Stage E full-pipeline report | [`docs/ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md`](ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md) |
@@ -122,6 +123,13 @@ notes for current instructions.
   artifact requirements, correction output paths, corrected-final regeneration
   semantics, user operation flow, and the minimum conditions for returning to
   the #215 real-artifact GUI smoke test.
+
+- **Config-first Manual Correction Review Package Output**  
+  [`docs/manual_correction_review_package.md`](manual_correction_review_package.md)  
+  Documents the current `run_pipeline()` connection for emitting
+  `review/manual_correction_input.json` from the internal run directory. This
+  is a narrow production connection and not the full #227 public
+  `final/review/debug` output profile materializer.
 
 ### Issue #120 / Stage E / Detector Contract Documentation
 

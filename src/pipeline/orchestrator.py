@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
@@ -21,6 +22,9 @@ from src.pipeline.detection import (
     resolve_barlines_and_masks_config,
     resolve_paths_from_detection,
     run_detection_step,
+)
+from src.pipeline.review.manual_correction_materializer import (
+    materialize_manual_correction_review_package,
 )
 from src.pipeline.steps.barlines import (
     apply_barline_overrides,
@@ -41,6 +45,14 @@ logger = logging.getLogger(__name__)
 _PIPELINE_PERSISTENCE: Dict[str, Any] = {}
 # MMR Persistence: Cache MMRClassifier and MMROCREngine to avoid re-loading models.
 _MMR_PERSISTENCE: Dict[Any, Any] = {}
+
+
+@dataclass(frozen=True)
+class _ReviewPackageConfig:
+    enabled: bool
+    review_root: Path
+    overwrite: bool
+    source_pipeline_command: str | None
 
 
 class PipelineOrchestrator:
@@ -109,10 +121,7 @@ class PipelineOrchestrator:
         prefix = str(pdf_opts.get("prefix", "page"))
         fmt = str(pdf_opts.get("format", "png"))
 
-        # Default behavior: write to disk unless output_dir is explicitly null (None)
-        persist_to_disk = (
-            self.debug or ("output_dir" not in pdf_opts) or (pdf_opts.get("output_dir") is not None)
-        )
+        persist_to_disk = self._should_persist_pdf_images(pdf_opts)
 
         for page_index, image in rendered:
             stem = f"{prefix}_{page_index + 1:03d}"
@@ -136,8 +145,18 @@ class PipelineOrchestrator:
             page_runs.append(input_runs.get(page_id, page_id))
         return page_runs
 
+    def _should_persist_pdf_images(self, pdf_opts: Dict[str, Any]) -> bool:
+        """Return whether rendered PDF pages must be written to run_dir images."""
+        return (
+            self.debug
+            or self._review_package_config().enabled
+            or ("output_dir" not in pdf_opts)
+            or (pdf_opts.get("output_dir") is not None)
+        )
+
     def run(self, page_limit: Optional[int] = None) -> Path:
         """Executes the full pipeline."""
+        self._validate_review_package_prerequisites()
         commands: List[List[str]] = []
 
         if get_nested(self.config, "steps", "pdf_to_images", default=False):
@@ -158,9 +177,7 @@ class PipelineOrchestrator:
 
         # Determine if we skipped disk write during pdf_to_images
         pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
-        persist_to_disk = (
-            self.debug or ("output_dir" not in pdf_opts) or (pdf_opts.get("output_dir") is not None)
-        )
+        persist_to_disk = self._should_persist_pdf_images(pdf_opts)
 
         # Only pass in_memory_images to collect_images if we actually used the cache (i.e. did not persist)
         images = collect_images(
@@ -256,6 +273,11 @@ class PipelineOrchestrator:
         if not self.dry_run:
             write_json(self.run_dir / "filters.json", {"pages": page_statuses})
 
+            manifest_resolved = self._resolved_for_manifest(
+                page_ids=page_ids,
+                resolved=resolved,
+                page_ctx=page_ctx,
+            )
             manifest = build_manifest(
                 self.config,
                 run_id=self.run_id,
@@ -263,15 +285,116 @@ class PipelineOrchestrator:
                 images=images,
                 page_ids=page_ids,
                 page_runs=page_runs,
-                resolved=resolved,
+                resolved=manifest_resolved,
                 commands=commands,
                 page_statuses=page_statuses,
                 barline_override_stats=barline_override_stats,
             )
             write_json(self.run_dir / "manifest.json", manifest)
             logger.info(f"Wrote manifest to {self.run_dir / 'manifest.json'}")
+            self._materialize_review_package_if_requested(page_ids, excluded_page_ids)
 
         return self.run_dir
+
+    def _materialize_review_package_if_requested(
+        self,
+        page_ids: List[str],
+        excluded_page_ids: Set[str],
+    ) -> Path | None:
+        """Materialize the manual-correction review package when enabled."""
+        review_config = self._review_package_config()
+        if not review_config.enabled:
+            return None
+
+        if self.dry_run or self.validate_only:
+            logger.info(
+                "Skipping manual correction review package materialization for dry-run "
+                "or validate-only execution."
+            )
+            return None
+
+        review_page_ids = [page_id for page_id in page_ids if page_id not in excluded_page_ids]
+        if not review_page_ids:
+            logger.info(
+                "Skipping manual correction review package materialization: no non-excluded pages."
+            )
+            return None
+
+        materialize_manual_correction_review_package(
+            run_root=self.run_dir,
+            review_root=review_config.review_root,
+            pages=review_page_ids,
+            source_pipeline_command=review_config.source_pipeline_command,
+            overwrite=review_config.overwrite,
+        )
+        logger.info(f"Wrote manual correction review package to {review_config.review_root}")
+        return review_config.review_root
+
+    def _review_package_config(self) -> _ReviewPackageConfig:
+        """Resolve the config-first review package output contract.
+
+        This is intentionally scoped to the low-level ``run_pipeline()`` layout.
+        The #226/#227 public ``OUTPUT_DIR/{final,review,debug}`` materializer is
+        a separate follow-up surface.
+        """
+        review_cfg = get_nested(self.config, "outputs", "review", default={}) or {}
+        if not isinstance(review_cfg, dict):
+            raise ValueError("outputs.review must be a mapping when provided.")
+
+        enabled = bool(review_cfg.get("manual_correction_package", False))
+        review_root_raw = review_cfg.get("root")
+        if review_root_raw:
+            review_root = Path(str(review_root_raw))
+            if not review_root.is_absolute():
+                review_root = self.run_dir / review_root
+        else:
+            review_root = self.run_dir / "review"
+
+        source_pipeline_command_raw = review_cfg.get("source_pipeline_command")
+        source_pipeline_command = (
+            str(source_pipeline_command_raw) if source_pipeline_command_raw else None
+        )
+
+        return _ReviewPackageConfig(
+            enabled=enabled,
+            review_root=review_root,
+            overwrite=review_cfg.get("overwrite") is not False,
+            source_pipeline_command=source_pipeline_command,
+        )
+
+    def _validate_review_package_prerequisites(self) -> None:
+        review_config = self._review_package_config()
+        if not review_config.enabled:
+            return
+
+        required_steps = {
+            "numbering_base": get_nested(self.config, "steps", "numbering_base", default=False),
+            "mmr_overrides": get_nested(self.config, "steps", "mmr_overrides", default=False),
+            "overlay": get_nested(self.config, "steps", "overlay", default=False),
+        }
+        missing = [name for name, enabled in required_steps.items() if not enabled]
+        if missing:
+            raise ValueError(
+                "outputs.review.manual_correction_package requires these steps to be enabled: "
+                + ", ".join(missing)
+            )
+
+    def _resolved_for_manifest(
+        self,
+        *,
+        page_ids: List[str],
+        resolved: List[Dict[str, Any]],
+        page_ctx: Dict[str, Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        manifest_resolved = []
+        review_enabled = self._review_package_config().enabled
+        for page_id, item in zip(page_ids, resolved):
+            manifest_item = dict(item)
+            corrected_path = page_ctx.get(page_id, {}).get("barlines_path")
+            if review_enabled and corrected_path and Path(corrected_path).exists():
+                manifest_item["barlines_json"] = str(corrected_path)
+            manifest_resolved.append(manifest_item)
+        return manifest_resolved
 
     def run_base_numbering_and_barline_correction(
         self,
@@ -362,7 +485,7 @@ class PipelineOrchestrator:
                         y_margin=barline_y_margin,
                     )
                     barline_override_stats[page_id] = stats
-                    if not self.dry_run and self.debug:
+                    if not self.dry_run and (self.debug or self._review_package_config().enabled):
                         write_json(corrected_path, corrected)
                     page_ctx[page_id]["corrected_barlines"] = corrected
                 else:

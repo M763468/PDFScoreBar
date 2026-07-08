@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from src.pipeline.core.config import load_yaml
 from src.pipeline.main import run_pipeline
+from src.pipeline.review.final_output import materialize_corrected_final_outputs
 from src.pipeline.review.manual_correction_handoff import (
     canonicalize_manual_correction_outputs,
     load_manual_correction_handoff,
@@ -191,6 +192,19 @@ def _merge_existing_override_inputs(
     }
 
 
+def _write_apply_summary(summary: dict[str, Any], new_run_dir: Path, corrections_dir: Path) -> None:
+    summary_path = new_run_dir / "review" / "correction_summary.json"
+    ensure_dir(summary_path.parent)
+    summary_path.write_text(
+        json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+
+    back_summary_path = corrections_dir / "apply_summary.json"
+    back_summary_path.write_text(
+        json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+
+
 def apply_corrections_and_rerun(
     handoff_path: str | Path,
     config_path: Optional[str | Path] = None,
@@ -198,6 +212,8 @@ def apply_corrections_and_rerun(
     run_id: Optional[str] = None,
     overwrite: bool = False,
     dry_run: bool = False,
+    generate_final_pdf: bool = False,
+    output_name: Optional[str] = None,
 ) -> Path:
     """Apply manual corrections and trigger a corrected pipeline rerun."""
     handoff_path = Path(handoff_path).resolve()
@@ -319,20 +335,12 @@ def apply_corrections_and_rerun(
         "rerun_mmr_overrides_enabled": bool(rerun_config["steps"].get("mmr_overrides", False)),
         "run_id": run_id_value,
         "output_dir": str(new_run_dir),
+        "generate_final_pdf": generate_final_pdf,
+        "final_pdf": None,
+        "corrected_final_summary": None,
     }
 
-    # Write summary in the new run dir
-    summary_path = new_run_dir / "review" / "correction_summary.json"
-    ensure_dir(summary_path.parent)
-    summary_path.write_text(
-        json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
-
-    # Also write a summary back in the corrections dir
-    back_summary_path = corrections_dir / "apply_summary.json"
-    back_summary_path.write_text(
-        json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
+    _write_apply_summary(summary, new_run_dir, corrections_dir)
 
     if dry_run:
         logger.info(f"Dry run. Would execute pipeline with config: {new_config_path}")
@@ -347,6 +355,18 @@ def apply_corrections_and_rerun(
         dry_run=dry_run,
     )
 
+    if generate_final_pdf:
+        final_summary = materialize_corrected_final_outputs(
+            handoff_path=handoff_path,
+            corrected_run_dir=new_run_dir,
+            final_root=new_run_dir / "final",
+            review_root=new_run_dir / "review",
+            output_name=output_name,
+        )
+        summary["final_pdf"] = final_summary.get("final_pdf")
+        summary["corrected_final_summary"] = final_summary.get("summary_path")
+        _write_apply_summary(summary, new_run_dir, corrections_dir)
+
     return new_run_dir
 
 
@@ -360,6 +380,16 @@ def main() -> None:
         "--overwrite", action="store_true", help="Overwrite existing canonical override files."
     )
     parser.add_argument("--dry-run", action="store_true", help="Dry run.")
+    parser.add_argument(
+        "--generate-final-pdf",
+        action="store_true",
+        help="After the corrected rerun, generate final/<output-name>_score_numbered.pdf.",
+    )
+    parser.add_argument(
+        "--output-name",
+        type=str,
+        help="Optional output name used for final/<output-name>_score_numbered.pdf.",
+    )
 
     args = parser.parse_args()
 
@@ -372,6 +402,8 @@ def main() -> None:
         run_id=args.run_id,
         overwrite=args.overwrite,
         dry_run=args.dry_run,
+        generate_final_pdf=args.generate_final_pdf,
+        output_name=args.output_name,
     )
 
 

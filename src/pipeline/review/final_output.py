@@ -9,7 +9,6 @@ from typing import Any
 
 from PIL import Image, ImageDraw, ImageFont
 
-
 _LABEL_FONT_CANDIDATES = (
     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
     "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",

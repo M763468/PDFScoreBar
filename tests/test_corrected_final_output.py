@@ -125,6 +125,44 @@ def test_materialize_corrected_final_outputs_uses_explicit_output_name(tmp_path)
     assert (corrected_run / "final" / "custom_score_name_score_numbered.pdf").exists()
 
 
+def test_materialize_corrected_final_outputs_uses_page_uniform_label_size(tmp_path):
+    handoff_path, corrected_run = _setup_final_output_fixture(tmp_path)
+    _write_json(
+        corrected_run / "outputs" / "page_001" / "numbering_final.json",
+        {
+            "pages": [
+                {
+                    "page_number": 1,
+                    "width": 300,
+                    "height": 260,
+                    "systems": [
+                        {
+                            "staves": [{"bbox": [80, 60, 260, 100]}],
+                            "measures": [{"number": 42, "bbox": [90, 60, 160, 100]}],
+                        },
+                        {
+                            "staves": [{"bbox": [80, 140, 260, 230]}],
+                            "measures": [{"number": 47, "bbox": [90, 140, 160, 230]}],
+                        },
+                    ],
+                    "empty_systems": [],
+                }
+            ]
+        },
+    )
+
+    materialize_corrected_final_outputs(
+        handoff_path=handoff_path,
+        corrected_run_dir=corrected_run,
+    )
+
+    review_summary_path = corrected_run / "review" / "corrected_final_summary.json"
+    review_summary = json.loads(review_summary_path.read_text(encoding="utf-8"))
+    row_labels = review_summary["pages"][0]["row_labels"]
+    assert [label["row_start_measure_number"] for label in row_labels] == [42, 47]
+    assert len({label["label_font_size"] for label in row_labels}) == 1
+
+
 def test_materialize_corrected_final_outputs_rejects_absolute_package_paths(tmp_path):
     handoff_path, corrected_run = _setup_final_output_fixture(tmp_path)
     payload = json.loads(handoff_path.read_text(encoding="utf-8"))

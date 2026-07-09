@@ -51,8 +51,7 @@ def _derive_output_name(explicit_output_name: str | None, handoff_payload: dict[
     for key in ("output_name", "input_pdf", "source_pdf"):
         raw_name = handoff_payload.get(key)
         if isinstance(raw_name, str) and raw_name.strip():
-            text = raw_name.strip()
-            candidate = Path(text).stem if any(sep in text for sep in ("/", "\\")) else text
+            candidate = Path(raw_name.strip()).name
             if candidate.lower().endswith(".pdf"):
                 candidate = candidate[:-4]
             return _sanitize_output_name(candidate)

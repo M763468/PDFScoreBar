@@ -201,10 +201,25 @@ def _row_label_records(
     return records
 
 
-def _label_font_size(top_staff_bbox: list[float]) -> int:
-    staff_height = max(1.0, float(top_staff_bbox[3]) - float(top_staff_bbox[1]))
+def _font_size_for_staff_height(staff_height: float) -> int:
     size = round(staff_height * _LABEL_FONT_STAFF_HEIGHT_RATIO)
     return max(_LABEL_FONT_MIN_SIZE, min(_LABEL_FONT_MAX_SIZE, int(size)))
+
+
+def _page_label_font_size(records: list[dict[str, Any]]) -> int:
+    staff_heights = sorted(
+        max(1.0, float(record["top_staff_bbox"][3]) - float(record["top_staff_bbox"][1]))
+        for record in records
+    )
+    if not staff_heights:
+        return _LABEL_FONT_MIN_SIZE
+
+    mid = len(staff_heights) // 2
+    if len(staff_heights) % 2 == 0:
+        median_staff_height = (staff_heights[mid - 1] + staff_heights[mid]) / 2.0
+    else:
+        median_staff_height = staff_heights[mid]
+    return _font_size_for_staff_height(median_staff_height)
 
 
 def _load_label_font(size: int) -> ImageFont.ImageFont:
@@ -229,13 +244,13 @@ def _draw_row_start_labels(image: Image.Image, records: list[dict[str, Any]]) ->
     output = image.convert("RGB").copy()
     draw = ImageDraw.Draw(output)
     width, _height = output.size
+    font_size = _page_label_font_size(records)
+    font = _load_label_font(font_size)
 
     for record in records:
         text = str(record["row_start_measure_number"])
         top_staff = record["top_staff_bbox"]
         row_bbox = record["row_bbox"]
-        font_size = _label_font_size(top_staff)
-        font = _load_label_font(font_size)
         text_w, text_h = _text_size(draw, text, font)
         label_gap = max(6, font_size // 6, int((row_bbox[3] - row_bbox[1]) * 0.035))
         x = int(max(2, min(width - text_w - 2, row_bbox[0] - label_gap - text_w)))

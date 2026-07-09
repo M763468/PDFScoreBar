@@ -10,6 +10,18 @@ from typing import Any
 from PIL import Image, ImageDraw, ImageFont
 
 
+_LABEL_FONT_CANDIDATES = (
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
+    "DejaVuSans-Bold.ttf",
+    "Arial Bold.ttf",
+    "Arial.ttf",
+)
+_LABEL_FONT_STAFF_HEIGHT_RATIO = 0.28
+_LABEL_FONT_MIN_SIZE = 18
+_LABEL_FONT_MAX_SIZE = 96
+
+
 class CorrectedFinalOutputError(ValueError):
     """Raised when corrected final output materialization fails."""
 
@@ -189,34 +201,62 @@ def _row_label_records(
     return records
 
 
-def _text_size(draw: ImageDraw.ImageDraw, text: str) -> tuple[int, int]:
-    bbox = draw.textbbox((0, 0), text)
+def _label_font_size(top_staff_bbox: list[float]) -> int:
+    staff_height = max(1.0, float(top_staff_bbox[3]) - float(top_staff_bbox[1]))
+    size = round(staff_height * _LABEL_FONT_STAFF_HEIGHT_RATIO)
+    return max(_LABEL_FONT_MIN_SIZE, min(_LABEL_FONT_MAX_SIZE, int(size)))
+
+
+def _load_label_font(size: int) -> ImageFont.ImageFont:
+    for candidate in _LABEL_FONT_CANDIDATES:
+        try:
+            return ImageFont.truetype(candidate, size=size)
+        except OSError:
+            continue
+    return ImageFont.load_default()
+
+
+def _text_size(
+    draw: ImageDraw.ImageDraw,
+    text: str,
+    font: ImageFont.ImageFont,
+) -> tuple[int, int]:
+    bbox = draw.textbbox((0, 0), text, font=font)
     return bbox[2] - bbox[0], bbox[3] - bbox[1]
 
 
 def _draw_row_start_labels(image: Image.Image, records: list[dict[str, Any]]) -> Image.Image:
     output = image.convert("RGB").copy()
     draw = ImageDraw.Draw(output)
-    font = ImageFont.load_default()
     width, _height = output.size
 
     for record in records:
         text = str(record["row_start_measure_number"])
         top_staff = record["top_staff_bbox"]
         row_bbox = record["row_bbox"]
-        text_w, text_h = _text_size(draw, text)
-        padding = max(4, int((row_bbox[3] - row_bbox[1]) * 0.04))
-        x = int(max(2, min(width - text_w - 2, row_bbox[0] - padding - text_w)))
-        y = int(max(2, top_staff[1] - text_h - padding))
+        font_size = _label_font_size(top_staff)
+        font = _load_label_font(font_size)
+        text_w, text_h = _text_size(draw, text, font)
+        label_gap = max(6, font_size // 6, int((row_bbox[3] - row_bbox[1]) * 0.035))
+        x = int(max(2, min(width - text_w - 2, row_bbox[0] - label_gap - text_w)))
+        y = int(max(2, top_staff[1] - text_h - label_gap))
         if y <= 2:
-            y = int(max(2, top_staff[1] + padding))
+            y = int(max(2, top_staff[1] + label_gap))
             record["placement"] = "inside_left_fallback"
         else:
             record["placement"] = "primary_left_gutter"
 
-        halo_bbox = (x - 2, y - 1, x + text_w + 2, y + text_h + 2)
+        halo_padding = max(3, font_size // 10)
+        halo_bbox = (
+            x - halo_padding,
+            y - halo_padding,
+            x + text_w + halo_padding,
+            y + text_h + halo_padding,
+        )
         draw.rectangle(halo_bbox, fill="white")
         draw.text((x, y), text, fill="black", font=font)
+        record["label_font_size"] = font_size
+        record["label_bbox"] = [x, y, x + text_w, y + text_h]
 
     return output
 
@@ -298,7 +338,8 @@ def materialize_corrected_final_outputs(
             corrected_numbering = corrected_run_dir / "outputs" / page_id / "numbering_final.json"
             if not corrected_numbering.exists():
                 raise CorrectedFinalOutputError(
-                    f"{page_id}: corrected numbering_final.json does not exist: {corrected_numbering}"
+                    f"{page_id}: corrected numbering_final.json does not exist: "
+                    f"{corrected_numbering}"
                 )
 
             rendered, row_records = _render_final_page_image(
@@ -344,7 +385,6 @@ def materialize_corrected_final_outputs(
         "warnings": warnings,
     }
     summary_path = review_root_path / "corrected_final_summary.json"
-    _write_json(summary_path, summary)
     summary["summary_path"] = str(summary_path)
     _write_json(summary_path, summary)
     return summary

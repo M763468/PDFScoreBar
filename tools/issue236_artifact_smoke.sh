@@ -182,6 +182,14 @@ output_name = summary.get("output_name")
 warnings = summary.get("warnings")
 pages = summary.get("pages", [])
 row_label_counts = [len(page.get("row_labels", [])) for page in pages]
+label_font_sizes = [
+    label.get("label_font_size")
+    for page in pages
+    for label in page.get("row_labels", [])
+]
+unique_label_font_sizes = sorted(
+    {font_size for font_size in label_font_sizes if font_size is not None}
+)
 
 print("summary_path:", summary_path)
 print("final_pdf:", final_pdf)
@@ -190,6 +198,8 @@ print("warnings:", warnings)
 print("pages:", len(pages))
 print("row_label_counts:", row_label_counts)
 print("total_row_labels:", sum(row_label_counts))
+print("label_font_sizes:", label_font_sizes)
+print("unique_label_font_sizes:", unique_label_font_sizes)
 
 for page in pages[:3]:
     print({

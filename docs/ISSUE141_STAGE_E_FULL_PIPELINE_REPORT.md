@@ -1,5 +1,16 @@
 # Issue 141: Stage E Full Pipeline Validation Report
 
+> [!WARNING]
+> This is a historical validation report, not the current production runtime
+> specification. The Stage E runner and
+> `configs/issue120_stage_e_full_pipeline.yaml` are retained for audit and
+> historical reproduction only. Do not copy that config into a user-facing or
+> corrected-rerun pipeline. The current production accuracy contract is
+> [`docs/dev/DETECTOR_BASELINE_MATRIX.md`](dev/DETECTOR_BASELINE_MATRIX.md):
+> the default `production_dense_v1` route, 360 dpi PDF raster input, current CNN,
+> and current MMR. Issue #244 completed the productionization work described as
+> remaining at the end of this report.
+
 ## Purpose
 
 This document records the full 68-page Stage E pipeline validation result against the Issue #120 detector target.
@@ -163,8 +174,8 @@ A canonical downstream measure-count comparator is not attached in this audit. T
 
 ## Conclusion
 
-- Stage E now completes all 68 canonical evaluation pages.
-- The full HOMR/SR/OMR-inclusive Stage E pipeline now meets the Issue #120 canonical detector target: `TP=3580 / FP=0 / FN=1`.
-- Detector metrics and downstream measure-count status are recorded separately in the machine-readable evaluation contract.
-- #151 remains a detector-level partial route and should not be reported as a full-pipeline result by itself.
-- Remaining productionization/refactor work should focus on replacing Stage E runner glue with a cleaner pipeline module/API while preserving the recovered route and evaluation contract semantics.
+- Stage E completed all 68 canonical evaluation pages.
+- The historical HOMR/SR/OMR-inclusive Stage E run met the Issue #120 detector target: `TP=3580 / FP=0 / FN=1`.
+- Detector metrics and downstream measure-count status were recorded separately in the machine-readable evaluation contract.
+- #151 remained detector-level partial evidence at the time of this report.
+- Production runtime selection is now owned by `production_dense_v1`; use the baseline matrix rather than this historical report when configuring new runs.

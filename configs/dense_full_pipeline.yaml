@@ -18,6 +18,9 @@ steps:
   overlay: false
 
 detection:
+  # The production code defaults to this route even when the key is omitted.
+  # Keep it explicit here because this file is the tracked dense-profile example.
+  route: dense
   enable_sr: true
   sr_scale: 2
   crop_recenter_on_bbox_ink: true

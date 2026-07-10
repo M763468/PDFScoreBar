@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from src.pipeline.core.config import load_yaml
 from src.pipeline.detector_routes.input_profile import (
     DENSE_PDF_RASTER_DPI,
     normalize_dense_input_profile,
@@ -36,6 +37,13 @@ def test_dense_pdf_input_overrides_stale_300_dpi_and_preserves_provenance() -> N
     }
 
 
+def test_tracked_dense_config_declares_required_production_defaults() -> None:
+    config = load_yaml(Path("configs/dense_full_pipeline.yaml"))
+
+    assert config["detection"]["route"] == "dense"
+    assert config["inputs"]["pdf_to_images"]["dpi"] == DENSE_PDF_RASTER_DPI
+
+
 def test_explicit_ordinary_route_keeps_configured_pdf_dpi() -> None:
     config: dict[str, Any] = {
         "steps": {"pdf_to_images": True, "detection": True},
@@ -49,7 +57,9 @@ def test_explicit_ordinary_route_keeps_configured_pdf_dpi() -> None:
     assert pop_dense_input_profile_metadata(config["detection"]) is None
 
 
-def test_run_pipeline_normalizes_dense_dpi_before_orchestrator(monkeypatch, tmp_path: Path) -> None:
+def test_run_pipeline_normalizes_dense_dpi_before_orchestrator(
+    monkeypatch, tmp_path: Path
+) -> None:
     config_path = tmp_path / "config.json"
     config_path.write_text(
         json.dumps(

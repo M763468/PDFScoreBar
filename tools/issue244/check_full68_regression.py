@@ -16,9 +16,7 @@ CURRENT_RUN = Path("logs/issue244_full_regression/runs/production_default_full68
 CURRENT_EVAL = Path("logs/issue244_full_regression/detector_eval")
 HISTORICAL_RUN = Path("logs/issue120_e2e_recovery/stage_e_full_pipeline")
 HISTORICAL_EVAL = HISTORICAL_RUN / "eval_detector"
-MMR_SUMMARY = Path(
-    "logs/issue244_full_regression/mmr_eval/aggregated_eval_summary.json"
-)
+MMR_SUMMARY = Path("logs/issue244_full_regression/mmr_eval/aggregated_eval_summary.json")
 MMR_LOG = Path("logs/issue244_full_regression/mmr_eval.log")
 REPORT = Path("logs/issue244_full_regression/full68_regression_report.json")
 
@@ -124,12 +122,8 @@ def main() -> int:
     current_detector = detector_summary(CURRENT_EVAL)
     historical_detector = detector_summary(HISTORICAL_EVAL)
 
-    current_page_metrics = normalized_page_metrics(
-        CURRENT_EVAL / "detector_page_metrics.csv"
-    )
-    historical_page_metrics = normalized_page_metrics(
-        HISTORICAL_EVAL / "detector_page_metrics.csv"
-    )
+    current_page_metrics = normalized_page_metrics(CURRENT_EVAL / "detector_page_metrics.csv")
+    historical_page_metrics = normalized_page_metrics(HISTORICAL_EVAL / "detector_page_metrics.csv")
 
     current_numbering = numbering_signature(CURRENT_RUN)
     historical_numbering = numbering_signature(HISTORICAL_RUN)
@@ -145,16 +139,12 @@ def main() -> int:
 
     checks = {
         "current_detector_matches_canonical_target": all(
-            current_detector.get(key) == value
-            for key, value in EXPECTED_DETECTOR.items()
+            current_detector.get(key) == value for key, value in EXPECTED_DETECTOR.items()
         ),
         "historical_detector_matches_canonical_target": all(
-            historical_detector.get(key) == value
-            for key, value in EXPECTED_DETECTOR.items()
+            historical_detector.get(key) == value for key, value in EXPECTED_DETECTOR.items()
         ),
-        "detector_page_metrics_match_historical": (
-            current_page_metrics == historical_page_metrics
-        ),
+        "detector_page_metrics_match_historical": (current_page_metrics == historical_page_metrics),
         "physical_measure_counts_match_historical": not numbering_mismatches,
         "mmr_matches_post_issue221_baseline": all(
             mmr_summary.get(key) == value for key, value in EXPECTED_MMR.items()

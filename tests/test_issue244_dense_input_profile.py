@@ -57,9 +57,7 @@ def test_explicit_ordinary_route_keeps_configured_pdf_dpi() -> None:
     assert pop_dense_input_profile_metadata(config["detection"]) is None
 
 
-def test_run_pipeline_normalizes_dense_dpi_before_orchestrator(
-    monkeypatch, tmp_path: Path
-) -> None:
+def test_run_pipeline_normalizes_dense_dpi_before_orchestrator(monkeypatch, tmp_path: Path) -> None:
     config_path = tmp_path / "config.json"
     config_path.write_text(
         json.dumps(

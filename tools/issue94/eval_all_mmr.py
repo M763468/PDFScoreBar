@@ -159,11 +159,7 @@ def main() -> None:
 
     precision = total_matched / total_detected if total_detected > 0 else 0
     recall = total_matched / total_expected if total_expected > 0 else 0
-    f1 = (
-        2 * (precision * recall) / (precision + recall)
-        if (precision + recall) > 0
-        else 0
-    )
+    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
     print("-" * 50)
     print(f"Precision:           {precision:.4f}")

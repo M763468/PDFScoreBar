@@ -1,11 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(git rev-parse --show-toplevel)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+CONTAINER_NAME="${PDFSCORE_PIPELINE_CONTAINER:-pdfscore_pipeline_pytest_dev}"
+CONTAINER_WORKDIR="${PDFSCORE_PIPELINE_WORKDIR:-/workspace}"
 
+cd "$REPO_ROOT"
+
+printf '%s\n' '## Host lint'
 make lint
 
-PYTHONPATH=. python3 -m pytest \
+printf '%s\n' '## Container validation'
+docker start "$CONTAINER_NAME" >/dev/null
+
+docker exec \
+  -w "$CONTAINER_WORKDIR" \
+  -e PYTHONPATH="$CONTAINER_WORKDIR" \
+  "$CONTAINER_NAME" \
+  bash -lc '
+set -euo pipefail
+
+python3 -m pytest \
   tests/test_issue244_default_dense_detector_route.py \
   tests/test_apply_corrections.py \
   tests/test_apply_corrections_mmr_suppressions.py \
@@ -14,3 +30,4 @@ PYTHONPATH=. python3 -m pytest \
   tests/test_apply_corrections_final_output.py
 
 python3 tools/issue244/run_default_dense_page001_smoke.py --force
+'

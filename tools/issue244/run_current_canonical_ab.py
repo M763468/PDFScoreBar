@@ -20,9 +20,7 @@ SOURCE_CONFIG = Path(
     "logs/issue236_pipeline_connected_review_smoke/"
     "corrected_20260709_125046/corrected_pipeline_config.json"
 )
-BASELINE_RUN = Path(
-    "logs/issue236_pipeline_connected_review_smoke/corrected_20260709_125046"
-)
+BASELINE_RUN = Path("logs/issue236_pipeline_connected_review_smoke/corrected_20260709_125046")
 WORK_ROOT = Path("logs/issue244_local_probe/current_canonical_ab")
 RUN_ID = "current_canonical_page001"
 PAGE_ID = "page_001"
@@ -78,8 +76,7 @@ def row_starts(items: list[dict[str, Any]]) -> list[int | None]:
 
 def measure_counts(items: list[dict[str, Any]]) -> list[int]:
     return [
-        len(value) if isinstance(value := system.get("measures"), list) else 0
-        for system in items
+        len(value) if isinstance(value := system.get("measures"), list) else 0 for system in items
     ]
 
 
@@ -89,9 +86,7 @@ def summarize(run_dir: Path, page_id: str) -> dict[str, Any]:
     mmr_path = run_dir / "intermediate" / page_id / "overrides_mmr.json"
     missing = [path for path in (base_path, final_path) if not path.exists()]
     if missing:
-        raise FileNotFoundError(
-            "Missing numbering artifact(s): " + ", ".join(map(str, missing))
-        )
+        raise FileNotFoundError("Missing numbering artifact(s): " + ", ".join(map(str, missing)))
     base_systems = systems(base_path)
     final_systems = systems(final_path)
     mmr = load_json(mmr_path) if mmr_path.exists() else {}
@@ -104,9 +99,7 @@ def summarize(run_dir: Path, page_id: str) -> dict[str, Any]:
     }
 
 
-def delta(
-    minuend: list[int | None], subtrahend: list[int | None]
-) -> list[int | None]:
+def delta(minuend: list[int | None], subtrahend: list[int | None]) -> list[int | None]:
     result: list[int | None] = []
     for left, right in zip(minuend, subtrahend, strict=False):
         result.append(None if left is None or right is None else left - right)
@@ -305,12 +298,8 @@ def main() -> int:
             "final_row_start_delta_candidate_minus_baseline": delta(
                 candidate["final_row_starts"], baseline["final_row_starts"]
             ),
-            "expected_minus_baseline_final": delta(
-                expected, baseline["final_row_starts"]
-            ),
-            "expected_minus_candidate_final": delta(
-                expected, candidate["final_row_starts"]
-            ),
+            "expected_minus_baseline_final": delta(expected, baseline["final_row_starts"]),
+            "expected_minus_candidate_final": delta(expected, candidate["final_row_starts"]),
             "candidate_matches_expected": candidate["final_row_starts"] == expected,
         },
     }

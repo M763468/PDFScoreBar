@@ -76,9 +76,7 @@ def test_historical_precomputed_config_is_not_reinterpreted_as_dense() -> None:
     route, selection = resolve_detector_route(config["detection"])
     assert route == "precomputed"
     assert selection == "legacy_precomputed_config"
-    assert config["detection"]["precomputed_probe_candidates_root"].endswith(
-        "/candidates"
-    )
+    assert config["detection"]["precomputed_probe_candidates_root"].endswith("/candidates")
 
 
 def test_production_entrypoint_reconstructs_dense_route_by_default(
@@ -141,9 +139,7 @@ def test_production_entrypoint_reconstructs_dense_route_by_default(
     assert result["resolved_route"] == detection["resolved_route"]
 
 
-def test_explicit_ordinary_route_skips_dense_reconstruction(
-    monkeypatch, tmp_path: Path
-) -> None:
+def test_explicit_ordinary_route_skips_dense_reconstruction(monkeypatch, tmp_path: Path) -> None:
     image = tmp_path / "page_001.png"
     image.write_bytes(b"not-read-by-test")
     config = {
@@ -166,9 +162,7 @@ def test_explicit_ordinary_route_skips_dense_reconstruction(
     def fail_reconstruction(**kwargs):
         raise AssertionError("ordinary route must not reconstruct dense candidates")
 
-    monkeypatch.setattr(
-        default_route, "reconstruct_current_run_dense_route", fail_reconstruction
-    )
+    monkeypatch.setattr(default_route, "reconstruct_current_run_dense_route", fail_reconstruction)
     monkeypatch.setattr(
         DetectorOrchestrator,
         "_run_probe_scan",

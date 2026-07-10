@@ -14,9 +14,7 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
-SMOKE_RUN = Path(
-    "logs/issue236_pipeline_connected_review_smoke/corrected_20260709_125046"
-)
+SMOKE_RUN = Path("logs/issue236_pipeline_connected_review_smoke/corrected_20260709_125046")
 STAGE_E_RUN = Path("logs/issue120_e2e_recovery/stage_e_full_pipeline")
 WORK_ROOT = Path("logs/issue244_local_probe/stage_e_page001_compare")
 TARGET_SCORE_TOKEN = "Va_Prokofiev_Symphony1_page_001"
@@ -51,16 +49,13 @@ def locate_stage_page_id(manifest_path: Path) -> str:
     payload = load_json(manifest_path)
     for item in manifest_pages(payload):
         haystack = " ".join(
-            str(item.get(key, ""))
-            for key in ("page_id", "image", "barlines_json", "source_image")
+            str(item.get(key, "")) for key in ("page_id", "image", "barlines_json", "source_image")
         )
         if TARGET_SCORE_TOKEN in haystack:
             page_id = item.get("page_id")
             if isinstance(page_id, str) and page_id:
                 return page_id
-    raise RuntimeError(
-        f"Could not map {TARGET_SCORE_TOKEN!r} in Stage E manifest: {manifest_path}"
-    )
+    raise RuntimeError(f"Could not map {TARGET_SCORE_TOKEN!r} in Stage E manifest: {manifest_path}")
 
 
 def resolve_page_artifact(
@@ -75,16 +70,13 @@ def resolve_page_artifact(
 
     names = {candidate.name for candidate in relative_candidates}
     matches = [
-        path
-        for path in run_dir.rglob("*.json")
-        if path.name in names and page_id in path.parts
+        path for path in run_dir.rglob("*.json") if path.name in names and page_id in path.parts
     ]
     if len(matches) == 1:
         return matches[0]
     if matches:
         raise RuntimeError(
-            f"Ambiguous artifact for page {page_id}: "
-            + ", ".join(str(path) for path in matches)
+            f"Ambiguous artifact for page {page_id}: " + ", ".join(str(path) for path in matches)
         )
     raise FileNotFoundError(
         f"No artifact found for page {page_id}; tried: "
@@ -162,9 +154,7 @@ def numbering_summary(run_dir: Path, page_id: str) -> dict[str, Any]:
         "base_row_starts": row_starts(base_systems),
         "final_row_starts": row_starts(final_systems),
         "mmr_overrides": (
-            mmr_payload.get("measure_overrides", [])
-            if isinstance(mmr_payload, dict)
-            else []
+            mmr_payload.get("measure_overrides", []) if isinstance(mmr_payload, dict) else []
         ),
     }
 

@@ -149,8 +149,7 @@ def apply_dense_profile(det_cfg: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
     det_cfg.setdefault(
         "cnn_model_path",
-        "logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/"
-        "cnn_classifier_best.pth",
+        "logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth",
     )
     return overwritten
 

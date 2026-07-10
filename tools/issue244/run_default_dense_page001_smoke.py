@@ -57,9 +57,7 @@ def row_starts(items: list[dict[str, Any]]) -> list[int | None]:
 
 def measure_counts(items: list[dict[str, Any]]) -> list[int]:
     return [
-        len(system.get("measures", []))
-        if isinstance(system.get("measures"), list)
-        else 0
+        len(system.get("measures", [])) if isinstance(system.get("measures"), list) else 0
         for system in items
     ]
 
@@ -71,9 +69,7 @@ def mmr_signatures(path: Path) -> list[list[int]]:
     for item in overrides:
         if not isinstance(item, dict):
             continue
-        signatures.append(
-            [int(item["system"]), int(item["measure"]), int(item["skip"])]
-        )
+        signatures.append([int(item["system"]), int(item["measure"]), int(item["skip"])])
     return sorted(signatures)
 
 
@@ -151,9 +147,7 @@ def main() -> int:
 
     pdf_options = config.setdefault("inputs", {}).setdefault("pdf_to_images", {})
     pdf_options["pages"] = "1"
-    config.setdefault("outputs", {}).setdefault("review", {})[
-        "manual_correction_package"
-    ] = False
+    config.setdefault("outputs", {}).setdefault("review", {})["manual_correction_package"] = False
 
     run_id = "default_dense_page001"
     output_root = work_root / "runs"
@@ -179,9 +173,7 @@ def main() -> int:
     observed_starts = row_starts(systems(final_path))
     observed_mmr = mmr_signatures(mmr_path)
     manifest = load_json(run_dir / "manifest.json")
-    resolved_route = manifest.get("config", {}).get("detection", {}).get(
-        "resolved_route"
-    )
+    resolved_route = manifest.get("config", {}).get("detection", {}).get("resolved_route")
 
     report_payload = {
         "schema": "issue244.default_dense_page001_smoke.v1",

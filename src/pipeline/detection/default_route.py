@@ -100,15 +100,11 @@ def run_detection_step(
                 images=images,
                 hybrid_output_dir=orchestrator.hybrid_output_dir,
                 route_root=run_dir / "intermediate" / "dense_detector_route",
-                verbose_logs=bool(
-                    orchestrator.det_cfg.get("dense_route_verbose_logs", False)
-                ),
+                verbose_logs=bool(orchestrator.det_cfg.get("dense_route_verbose_logs", False)),
             )
             orchestrator.det_cfg.update(
                 {
-                    "precomputed_probe_candidates_root": str(
-                        artifacts.probe_rescue_root
-                    ),
+                    "precomputed_probe_candidates_root": str(artifacts.probe_rescue_root),
                     "cnn_bands_from": str(artifacts.filtered_root),
                     "probe_use_original_images": True,
                 }
@@ -131,8 +127,7 @@ def run_detection_step(
     elif route == "precomputed":
         if not orchestrator.det_cfg.get("precomputed_probe_candidates_root"):
             raise ValueError(
-                "detection.route=precomputed requires "
-                "detection.precomputed_probe_candidates_root"
+                "detection.route=precomputed requires detection.precomputed_probe_candidates_root"
             )
         orchestrator.det_cfg["resolved_route"] = {
             "name": "precomputed",
@@ -152,10 +147,7 @@ def run_detection_step(
             "name": "ordinary",
             "profile": "legacy_ordinary",
             "selection": selection,
-            "warning": (
-                "Explicit low-accuracy opt-out from the production dense "
-                "detector route."
-            ),
+            "warning": ("Explicit low-accuracy opt-out from the production dense detector route."),
         }
 
     probe_result = orchestrator._run_probe_scan()

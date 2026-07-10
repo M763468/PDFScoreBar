@@ -25,9 +25,7 @@ from src.pipeline.main import run_pipeline
 
 INVENTORY = Path("logs/issue36_prep/20260208_bench_inventory.json")
 DENSE_CONFIG = Path("configs/dense_full_pipeline.yaml")
-SMOKE_RUN = Path(
-    "logs/issue236_pipeline_connected_review_smoke/corrected_20260709_125046"
-)
+SMOKE_RUN = Path("logs/issue236_pipeline_connected_review_smoke/corrected_20260709_125046")
 WORK_ROOT = Path("logs/issue244_local_probe/dense_page001_replay")
 TARGET_SCORE = "Va_Prokofiev_Symphony1"
 TARGET_PAGE = "page_001"
@@ -64,8 +62,7 @@ def target_record(inventory: dict[str, Any]) -> dict[str, Any]:
     ]
     if len(matches) != 1:
         raise RuntimeError(
-            f"Expected one inventory record for {TARGET_SCORE}/{TARGET_PAGE}, "
-            f"got {len(matches)}"
+            f"Expected one inventory record for {TARGET_SCORE}/{TARGET_PAGE}, got {len(matches)}"
         )
     return matches[0]
 
@@ -124,26 +121,20 @@ def starts(items: list[dict[str, Any]]) -> list[int | None]:
 
 def counts(items: list[dict[str, Any]]) -> list[int]:
     return [
-        len(system.get("measures", []))
-        if isinstance(system.get("measures"), list)
-        else 0
+        len(system.get("measures", [])) if isinstance(system.get("measures"), list) else 0
         for system in items
     ]
 
 
 def mmr_signatures(path: Path) -> list[tuple[int, int, int]]:
     payload = load_json(path)
-    overrides = (
-        payload.get("measure_overrides", []) if isinstance(payload, dict) else []
-    )
+    overrides = payload.get("measure_overrides", []) if isinstance(payload, dict) else []
     result = []
     for item in overrides:
         if not isinstance(item, dict):
             continue
         try:
-            result.append(
-                (int(item["system"]), int(item["measure"]), int(item["skip"]))
-            )
+            result.append((int(item["system"]), int(item["measure"]), int(item["skip"])))
         except (KeyError, TypeError, ValueError):
             continue
     return sorted(result)
@@ -169,15 +160,10 @@ def summarize(run_dir: Path, page_id: str) -> dict[str, Any]:
 
 
 def delta(left: list[int | None], right: list[int | None]) -> list[int | None]:
-    return [
-        None if a is None or b is None else a - b
-        for a, b in zip(left, right, strict=False)
-    ]
+    return [None if a is None or b is None else a - b for a, b in zip(left, right, strict=False)]
 
 
-def barline_record(
-    manifest: Path, page_id: str, repo_root: Path
-) -> dict[str, Any] | None:
+def barline_record(manifest: Path, page_id: str, repo_root: Path) -> dict[str, Any] | None:
     pages = load_json(manifest).get("pages", [])
     if isinstance(pages, dict):
         pages = list(pages.values())
@@ -240,17 +226,14 @@ def main() -> int:
         record = target_record(inventory)
         target_inventory = work_root / "target_inventory.json"
         target_inventory.write_text(
-            json.dumps({**inventory, "records": [record]}, indent=2, ensure_ascii=False)
-            + "\n",
+            json.dumps({**inventory, "records": [record]}, indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8",
         )
         empty_exclude = work_root / "empty_exclude.json"
         empty_exclude.write_text('{"excluded_pages": []}\n', encoding="utf-8")
 
         route_root = work_root / "dense_route"
-        logger.info(
-            "Reconstructing dense candidates for %s/%s", TARGET_SCORE, TARGET_PAGE
-        )
+        logger.info("Reconstructing dense candidates for %s/%s", TARGET_SCORE, TARGET_PAGE)
         route = reconstruct_dense_full_pipeline_route(
             inventory=target_inventory,
             exclude=empty_exclude,
@@ -258,9 +241,7 @@ def main() -> int:
             expected_pages=1,
         )
         if len(route.image_paths) != 1:
-            raise RuntimeError(
-                f"Expected one route image, got {len(route.image_paths)}"
-            )
+            raise RuntimeError(f"Expected one route image, got {len(route.image_paths)}")
 
         source_image = resolve_image(route.image_paths[0], repo_root)
         images_dir = route_root / "images"
@@ -287,9 +268,9 @@ def main() -> int:
                 "hybrid_output_root": str(route_root / "hybrid_output"),
             }
         )
-        config.setdefault("outputs", {}).setdefault("review", {})[
-            "manual_correction_package"
-        ] = False
+        config.setdefault("outputs", {}).setdefault("review", {})["manual_correction_package"] = (
+            False
+        )
         config_path = work_root / "dense_page001_current.yaml"
         config_path.write_text(
             yaml.safe_dump(config, sort_keys=False, allow_unicode=True),
@@ -334,18 +315,14 @@ def main() -> int:
             "comparison": {
                 "base_counts_match": replay["base_counts"] == EXPECTED_COUNTS,
                 "final_starts_match": replay["final_starts"] == EXPECTED_STARTS,
-                "expected_minus_replay_final": delta(
-                    EXPECTED_STARTS, replay["final_starts"]
-                ),
+                "expected_minus_replay_final": delta(EXPECTED_STARTS, replay["final_starts"]),
                 "replay_minus_smoke_base_counts": delta(
                     replay["base_counts"], smoke["base_counts"]
                 ),
                 "missing_expected_mmr": [
                     list(item) for item in sorted(expected_mmr - observed_mmr)
                 ],
-                "unexpected_mmr": [
-                    list(item) for item in sorted(observed_mmr - expected_mmr)
-                ],
+                "unexpected_mmr": [list(item) for item in sorted(observed_mmr - expected_mmr)],
             },
         }
 

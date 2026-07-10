@@ -17,9 +17,7 @@ from typing import Any
 
 import yaml
 
-SMOKE_RUN = Path(
-    "logs/issue236_pipeline_connected_review_smoke/corrected_20260709_125046"
-)
+SMOKE_RUN = Path("logs/issue236_pipeline_connected_review_smoke/corrected_20260709_125046")
 STAGE_E_ROOT = Path("logs/issue120_e2e_recovery/stage_e_full_pipeline")
 WORK_ROOT = Path("logs/issue244_local_probe/detector_route_audit")
 CONFIGS = {
@@ -197,21 +195,13 @@ def find_artifacts(repo: Path, relative_root: Path) -> list[dict[str, Any]]:
     for path in sorted(root.rglob("*.json")):
         name = path.name.lower()
         lower = str(path).lower()
-        relevant = (
-            "barline" in name
-            or name
-            in {
-                "pipeline2_no_peak_candidates.json",
-                "pipeline2_no_peak_filtered.json",
-                "pipeline2_no_peak_filtered_cnn.json",
-                "pipeline2_no_peak_scored.json",
-            }
-        )
-        if relevant and (
-            "page_001" in lower
-            or "symphony1" in lower
-            or relative_root == SMOKE_RUN
-        ):
+        relevant = "barline" in name or name in {
+            "pipeline2_no_peak_candidates.json",
+            "pipeline2_no_peak_filtered.json",
+            "pipeline2_no_peak_filtered_cnn.json",
+            "pipeline2_no_peak_scored.json",
+        }
+        if relevant and ("page_001" in lower or "symphony1" in lower or relative_root == SMOKE_RUN):
             records.append(
                 {
                     "path": str(path.relative_to(repo)),
@@ -222,9 +212,7 @@ def find_artifacts(repo: Path, relative_root: Path) -> list[dict[str, Any]]:
     return records
 
 
-def signature_diff(
-    left: dict[str, Any], right: dict[str, Any]
-) -> dict[str, dict[str, Any]]:
+def signature_diff(left: dict[str, Any], right: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {
         key: {"smoke": left.get(key), "reference": right.get(key)}
         for key in ROUTE_KEYS
@@ -247,10 +235,7 @@ def write_markdown(report: dict[str, Any], path: Path) -> None:
         "",
     ]
     for key, values in diff.items():
-        lines.append(
-            f"- `{key}`: smoke=`{values['smoke']}` / "
-            f"dense=`{values['reference']}`"
-        )
+        lines.append(f"- `{key}`: smoke=`{values['smoke']}` / dense=`{values['reference']}`")
     lines.extend(
         [
             "",
@@ -283,9 +268,7 @@ def main() -> int:
     work.mkdir(parents=True, exist_ok=True)
 
     configs = {name: config_summary(repo, path) for name, path in CONFIGS.items()}
-    manifests = {
-        name: manifest_summary(repo, path) for name, path in MANIFESTS.items()
-    }
+    manifests = {name: manifest_summary(repo, path) for name, path in MANIFESTS.items()}
     smoke_signature = configs["smoke"].get("route_signature", {})
     dense_signature = configs["dense"].get("route_signature", {})
     stage_signature = configs["stage_e_generated"].get("route_signature", {})
@@ -298,17 +281,13 @@ def main() -> int:
         "comparisons": {
             "smoke_vs_dense": signature_diff(smoke_signature, dense_signature),
             "smoke_vs_generated_stage_e": (
-                signature_diff(smoke_signature, stage_signature)
-                if stage_signature
-                else None
+                signature_diff(smoke_signature, stage_signature) if stage_signature else None
             ),
         },
         "artifacts": {
             "smoke": find_artifacts(repo, SMOKE_RUN),
             "stage_e": find_artifacts(repo, STAGE_E_ROOT),
-            "golden": find_artifacts(
-                repo, Path("data/evaluation2/golden_baseline_eval2_bc23deb")
-            ),
+            "golden": find_artifacts(repo, Path("data/evaluation2/golden_baseline_eval2_bc23deb")),
         },
         "implementation": implementation_summary(repo),
         "interpretation": {

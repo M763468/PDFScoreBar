@@ -34,11 +34,15 @@ def run_pipeline(
     console_log_level: int = logging.INFO,
 ) -> Path:
     """Entry point for running the full pipeline."""
+    from src.pipeline.detector_routes.production_dense import (
+        normalize_runtime_detection_config,
+    )
     from src.pipeline.utils.images import clear_image_cache
 
     clear_image_cache()
 
     config = load_yaml(config_path)
+    normalize_runtime_detection_config(config)
     run_id_value = run_id or get_nested(config, "run", "run_id")
     if not run_id_value:
         run_id_value = dt.datetime.now().strftime("%Y%m%d_%H%M%S")

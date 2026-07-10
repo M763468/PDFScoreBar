@@ -4,6 +4,11 @@ run:
 
 inputs:
   pdf_to_images:
+    # Required production dense input contract for PDF-backed runs.
+    # This tracked example currently consumes pre-rendered evaluation images, but
+    # keeping the value explicit prevents copied configs from falling back to
+    # the lower-accuracy 300 dpi path when PDF rendering is enabled.
+    dpi: 360
     output_dir: data/evaluation2/images
     image_glob: page_*.png
 

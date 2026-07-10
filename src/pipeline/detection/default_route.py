@@ -19,6 +19,32 @@ from src.pipeline.detector_routes.production_dense import (
 )
 
 
+def _ensure_file_backed_images(
+    images: list[Path],
+    in_memory_images: dict[str, Any] | None,
+) -> None:
+    """Persist virtual PDF-rendered images before dense subprocess steps."""
+    missing = [image for image in images if not image.exists()]
+    if not missing:
+        return
+    if not in_memory_images:
+        raise FileNotFoundError(
+            "Dense detector route requires file-backed images; missing: "
+            + ", ".join(str(path) for path in missing)
+        )
+
+    from src.pdf_to_images import save_image
+
+    for image_path in missing:
+        image = in_memory_images.get(image_path.stem)
+        if image is None:
+            raise FileNotFoundError(
+                f"Dense detector image is absent from disk and cache: {image_path}"
+            )
+        image_path.parent.mkdir(parents=True, exist_ok=True)
+        save_image(image_path, image, fmt=image_path.suffix.lstrip(".") or "png")
+
+
 def run_detection_step(
     config: dict[str, Any],
     images: list[Path],
@@ -32,6 +58,13 @@ def run_detection_step(
     """Run the production detector with dense route as the default."""
     # Import lazily to preserve the package's optional dependency behavior.
     from src.pipeline.detection.orchestrator import DetectorOrchestrator
+
+    detection = config.get("detection")
+    if detection is None:
+        detection = {}
+        config["detection"] = detection
+    if not isinstance(detection, dict):
+        raise ValueError("detection must be a mapping when provided")
 
     orchestrator = DetectorOrchestrator(
         config=config,
@@ -48,6 +81,8 @@ def run_detection_step(
     overwritten: dict[str, dict[str, Any]] = {}
     if route == "dense":
         overwritten = apply_dense_profile(orchestrator.det_cfg)
+        if not dry_run:
+            _ensure_file_backed_images(images, in_memory_images)
 
     hybrid_result = orchestrator._run_hybrid_detection()
     orchestrator.hybrid_output_dir = hybrid_result["hybrid_output_dir"]
@@ -60,11 +95,15 @@ def run_detection_step(
                 images=images,
                 hybrid_output_dir=orchestrator.hybrid_output_dir,
                 route_root=run_dir / "intermediate" / "dense_detector_route",
-                verbose_logs=bool(orchestrator.det_cfg.get("dense_route_verbose_logs", False)),
+                verbose_logs=bool(
+                    orchestrator.det_cfg.get("dense_route_verbose_logs", False)
+                ),
             )
             orchestrator.det_cfg.update(
                 {
-                    "precomputed_probe_candidates_root": str(artifacts.probe_rescue_root),
+                    "precomputed_probe_candidates_root": str(
+                        artifacts.probe_rescue_root
+                    ),
                     "cnn_bands_from": str(artifacts.filtered_root),
                     "probe_use_original_images": True,
                 }
@@ -109,7 +148,8 @@ def run_detection_step(
             "profile": "legacy_ordinary",
             "selection": selection,
             "warning": (
-                "Explicit low-accuracy opt-out from the production dense detector route."
+                "Explicit low-accuracy opt-out from the production dense "
+                "detector route."
             ),
         }
 

@@ -12,9 +12,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-CURRENT_RUN = Path(
-    "logs/issue244_full_regression/runs/production_default_full68"
-)
+CURRENT_RUN = Path("logs/issue244_full_regression/runs/production_default_full68")
 CURRENT_EVAL = Path("logs/issue244_full_regression/detector_eval")
 HISTORICAL_RUN = Path("logs/issue120_e2e_recovery/stage_e_full_pipeline")
 HISTORICAL_EVAL = HISTORICAL_RUN / "eval_detector"
@@ -82,10 +80,7 @@ def normalized_page_metrics(path: Path) -> list[dict[str, str]]:
         raise FileNotFoundError(path)
     with path.open("r", encoding="utf-8", newline="") as stream:
         rows = list(csv.DictReader(stream))
-    return [
-        {field: row.get(field, "") for field in PAGE_METRIC_FIELDS}
-        for row in rows
-    ]
+    return [{field: row.get(field, "") for field in PAGE_METRIC_FIELDS} for row in rows]
 
 
 def numbering_signature(run_root: Path) -> dict[str, list[int]]:

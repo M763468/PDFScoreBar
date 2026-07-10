@@ -19,7 +19,7 @@ from src.pipeline.detector_routes.dense_full_pipeline import load_route_image_pa
 from src.pipeline.main import run_pipeline
 
 INVENTORY = Path("logs/issue36_prep/20260208_bench_inventory.json")
-EXCLUDE = Path("tools/issue120/issue36_dense_exclude.json")
+EXCLUDE = Path("logs/issue36_prep/excluded_pages_for_gt_prep.json")
 SOURCE_CONFIG = Path("configs/dense_full_pipeline.yaml")
 WORK_ROOT = Path("logs/issue244_full_regression")
 RUN_ID = "production_default_full68"

@@ -1,5 +1,15 @@
 # Issue 120 Evaluation Contract
 
+> [!IMPORTANT]
+> This contract remains canonical only for evaluating saved post-CNN detector
+> intermediates on the historical 68-page Issue #120 set. It is not the current
+> production runtime profile and must not be used to choose detector settings,
+> PDF raster DPI, or candidate-generation routes. The production accuracy
+> contract is defined in [`docs/dev/DETECTOR_BASELINE_MATRIX.md`](dev/DETECTOR_BASELINE_MATRIX.md):
+> `production_dense_v1`, the default dense route, 360 dpi PDF raster input, the
+> current CNN, and the current MMR. The historical metrics in this document are
+> retained as regression targets.
+
 ## Purpose
 
 This document defines the canonical Issue #120 evaluation entrypoint introduced for #134.

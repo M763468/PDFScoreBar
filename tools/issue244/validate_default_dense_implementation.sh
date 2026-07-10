@@ -23,6 +23,7 @@ set -euo pipefail
 
 python3 -m pytest \
   tests/test_issue244_default_dense_detector_route.py \
+  tests/test_issue244_dense_input_profile.py \
   tests/test_apply_corrections.py \
   tests/test_apply_corrections_mmr_suppressions.py \
   tests/test_apply_corrections_existing_overrides.py \

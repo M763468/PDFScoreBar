@@ -4,6 +4,13 @@ This document distinguishes the production detector path from historical and
 evaluation-only configurations. It is the standing reference for selecting a
 barline detector route.
 
+> [!IMPORTANT]
+> The production accuracy contract is indivisible: the `dense` route, 360 dpi
+> PDF raster input, `production_dense_v1` detector parameters, current CNN, and
+> current MMR must be used together. Do not copy only selected values into a new
+> config or lower the raster resolution without running the required regression
+> gates. The ordinary route and 300 dpi input reproduced the Issue #244 failure.
+
 ## Current production default
 
 The production default is the `dense` detector route with profile
@@ -25,7 +32,9 @@ inputs:
 This value is applied before PDF rendering, even when an older source config
 contains `dpi: 300`. The validated page-001 detector/MMR result uses the
 360 dpi raster size. Pre-rendered external images are not resampled; their
-source resolution is recorded as unmanaged input provenance.
+source resolution is recorded as unmanaged input provenance. Such images must
+already satisfy the intended 360 dpi-equivalent input contract before they are
+used as production evidence.
 
 The ordinary hybrid/probe path is available only through an explicit opt-out:
 
@@ -43,7 +52,7 @@ default.
 | Surface | Role | Production default? | Notes |
 |---|---|---:|---|
 | `production_dense_v1` | Current production detector profile | Yes | Reconstructs current-run dense and rescue candidates before CNN scoring; PDF input is rendered at 360 dpi |
-| `configs/dense_full_pipeline.yaml` | Tracked full-pipeline example for the dense profile | Reference | Explicitly declares `route: dense` for readability; code defaults to the same route |
+| `configs/dense_full_pipeline.yaml` | Tracked full-pipeline example for the dense profile | Reference | Explicitly declares `route: dense` and `dpi: 360`; code defaults to the same contract |
 | `configs/evaluation2_e2e_verification_full.yaml` | Evaluation2 verification input | No | Evaluation baseline/config input; not sufficient by itself to reproduce the dense candidate route |
 | `configs/issue120_stage_e_full_pipeline.yaml` | Historical Stage E reproduction | No | Historical artifact/reproduction config; do not use as the current production default |
 | `detection.route: precomputed` | External/reproduction candidate injection | No | Requires explicit precomputed candidate artifacts |

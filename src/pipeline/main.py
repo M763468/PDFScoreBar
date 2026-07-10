@@ -39,6 +39,19 @@ def run_pipeline(
     clear_image_cache()
 
     config = load_yaml(config_path)
+    if get_nested(config, "steps", "detection", default=False):
+        # Normalize the production route before PDF rendering.  Dense-route
+        # correctness depends on both candidate reconstruction and the input
+        # raster resolution, so doing this inside the later detection step is
+        # too late for PDF-backed runs.
+        from src.pipeline.detector_routes.input_profile import normalize_dense_input_profile
+        from src.pipeline.detector_routes.production_dense import (
+            normalize_runtime_detection_config,
+        )
+
+        normalize_runtime_detection_config(config)
+        normalize_dense_input_profile(config)
+
     run_id_value = run_id or get_nested(config, "run", "run_id")
     if not run_id_value:
         run_id_value = dt.datetime.now().strftime("%Y%m%d_%H%M%S")

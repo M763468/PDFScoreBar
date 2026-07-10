@@ -16,6 +16,10 @@ class TestPipelineDetection(unittest.TestCase):
         return {
             "inputs": {"pdf_to_images": {"output_dir": "data/evaluation/images"}},
             "detection": {
+                # These tests exercise the legacy ordinary detector plumbing.
+                # Production-default dense behavior is covered by the dedicated
+                # Issue #244 route tests.
+                "route": "ordinary",
                 "cnn_model_path": "experiments/cnn_classifier/checkpoints/best_model.pth",
                 "ink_threshold": 230,
                 "min_ratio": 0.7,
@@ -179,6 +183,7 @@ class TestPipelineDetection(unittest.TestCase):
             config = self._base_config()
             config["detection"].update(
                 {
+                    "route": "precomputed",
                     "precomputed_probe_candidates_root": str(precomputed_root),
                     "cnn_bands_from": str(cnn_bands_from),
                     "probe_use_original_images": True,

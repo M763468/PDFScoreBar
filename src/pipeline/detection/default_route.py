@@ -10,6 +10,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from src.pipeline.detector_routes.input_profile import (
+    normalize_dense_input_profile,
+    pop_dense_input_profile_metadata,
+)
 from src.pipeline.detector_routes.production_dense import (
     DENSE_ROUTE_PROFILE,
     apply_dense_profile,
@@ -70,6 +74,9 @@ def run_detection_step(
     # A corrected rerun may copy resolved paths from the source manifest.
     # Keep the logical route/profile, but never reuse those run-local artifacts.
     normalize_runtime_detection_config(config)
+    # run_pipeline() applies this before PDF rendering. Keep the call here as
+    # well because focused callers may invoke run_detection_step() directly.
+    normalize_dense_input_profile(config)
 
     orchestrator = DetectorOrchestrator(
         config=config,
@@ -82,6 +89,7 @@ def run_detection_step(
 
     route, selection = resolve_detector_route(orchestrator.det_cfg)
     orchestrator.det_cfg["route"] = route
+    input_profile = pop_dense_input_profile_metadata(orchestrator.det_cfg)
 
     overwritten: dict[str, dict[str, Any]] = {}
     if route == "dense":
@@ -109,12 +117,15 @@ def run_detection_step(
                     "probe_use_original_images": True,
                 }
             )
-        orchestrator.det_cfg["resolved_route"] = build_resolved_route_metadata(
+        resolved_route = build_resolved_route_metadata(
             selection=selection,
             artifacts=artifacts,
             overwritten_parameters=overwritten,
             dry_run=dry_run,
         )
+        if input_profile is not None:
+            resolved_route["input_profile"] = input_profile
+        orchestrator.det_cfg["resolved_route"] = resolved_route
         orchestrator.commands.append(
             [
                 "inprocess:dense_detector_route",

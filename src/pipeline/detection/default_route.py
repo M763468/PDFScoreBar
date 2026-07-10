@@ -14,6 +14,7 @@ from src.pipeline.detector_routes.production_dense import (
     DENSE_ROUTE_PROFILE,
     apply_dense_profile,
     build_resolved_route_metadata,
+    normalize_runtime_detection_config,
     reconstruct_current_run_dense_route,
     resolve_detector_route,
 )
@@ -65,6 +66,10 @@ def run_detection_step(
         config["detection"] = detection
     if not isinstance(detection, dict):
         raise ValueError("detection must be a mapping when provided")
+
+    # A corrected rerun may copy resolved paths from the source manifest.
+    # Keep the logical route/profile, but never reuse those run-local artifacts.
+    normalize_runtime_detection_config(config)
 
     orchestrator = DetectorOrchestrator(
         config=config,

@@ -41,7 +41,9 @@ def build_mmr_page_inputs(run_dir: Path, output_path: Path) -> None:
     manifest = load_json(run_dir / "manifest.json")
     pages = manifest.get("pages", [])
     if not isinstance(pages, list) or len(pages) != EXPECTED_PAGES:
-        raise RuntimeError(f"Expected {EXPECTED_PAGES} manifest pages, got {len(pages)}")
+        raise RuntimeError(
+            f"Expected {EXPECTED_PAGES} manifest pages, got {len(pages)}"
+        )
 
     records = []
     for item in pages:
@@ -140,13 +142,17 @@ def main() -> int:
         output_root=runs_root,
     )
     manifest = load_json(run_dir / "manifest.json")
-    resolved_route = manifest.get("config", {}).get("detection", {}).get("resolved_route")
+    resolved_route = (
+        manifest.get("config", {}).get("detection", {}).get("resolved_route")
+    )
     if not isinstance(resolved_route, dict):
         raise RuntimeError("Manifest does not contain resolved detector route metadata")
     if resolved_route.get("profile") != "production_dense_v1":
         raise RuntimeError(f"Unexpected detector profile: {resolved_route}")
     if resolved_route.get("selection") != "default":
-        raise RuntimeError(f"Detector route was not selected by default: {resolved_route}")
+        raise RuntimeError(
+            f"Detector route was not selected by default: {resolved_route}"
+        )
 
     page_inputs = work_root / "mmr_page_inputs.json"
     build_mmr_page_inputs(run_dir, page_inputs)

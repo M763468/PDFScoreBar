@@ -48,6 +48,7 @@ notes for current instructions.
 | Branch roles and default PR base | [`docs/BRANCH_POLICY.md`](BRANCH_POLICY.md) |
 | Agent operating rules | [`AGENTS.md`](../AGENTS.md) |
 | Validation expectations by change type | [`docs/dev/VALIDATION_POLICY.md`](dev/VALIDATION_POLICY.md) |
+| Required production detector defaults | [`docs/dev/DETECTOR_BASELINE_MATRIX.md`](dev/DETECTOR_BASELINE_MATRIX.md) |
 | User-facing pipeline entrypoint design | [`docs/refactors/issue226/ISSUE226_USER_FACING_ENTRYPOINT.md`](refactors/issue226/ISSUE226_USER_FACING_ENTRYPOINT.md) |
 | User-facing output profile contract package | [`docs/refactors/issue227/ISSUE227_OUTPUT_PROFILES.md`](refactors/issue227/ISSUE227_OUTPUT_PROFILES.md) |
 | Final score-number overlay format | [`docs/refactors/issue228/ISSUE228_FINAL_OVERLAY_FORMAT.md`](refactors/issue228/ISSUE228_FINAL_OVERLAY_FORMAT.md) |
@@ -75,6 +76,11 @@ notes for current instructions.
 - **[`docs/dev/VALIDATION_POLICY.md`](dev/VALIDATION_POLICY.md)**  
   Validation selection policy by change type. Use this when deciding which
   checks are required, skipped, or deferred.
+
+- **[`docs/dev/DETECTOR_BASELINE_MATRIX.md`](dev/DETECTOR_BASELINE_MATRIX.md)**  
+  Standing production detector contract. Defines the required dense route,
+  360 dpi PDF raster input, current detector/MMR profile, historical config
+  boundaries, manifest provenance, and regression gates.
 
 - **[`docs/ENVIRONMENTS.md`](ENVIRONMENTS.md)**  
   Runtime containers, dependencies, and execution instructions.

@@ -1,3 +1,13 @@
+# HISTORICAL REPRODUCTION CONFIG ONLY.
+#
+# This file is consumed by the Issue #120 Stage E audit runner and is retained
+# for historical regression/provenance. It is not a production default or a
+# template for user-facing/corrected runs. New production runs must use the
+# production_dense_v1 contract documented in docs/dev/DETECTOR_BASELINE_MATRIX.md.
+# In particular, do not copy only these detector fields and omit the 360 dpi PDF
+# input contract. The Stage E runner supplies pre-rendered evaluation images and
+# injects reconstructed candidate artifacts before entering the pipeline.
+
 run:
   run_id: issue120_stage_e_full_pipeline
   output_root: logs/issue120_e2e_recovery
@@ -24,9 +34,8 @@ detection:
   container_name: sr_eval_gpu_exp
   hybrid_output_root: logs/issue120_e2e_recovery/stage_e_hybrid_output
 
-  # Full-pipeline checkpoint repair: use the recovered dense-route probe
-  # thresholds in the real full-pipeline route. The previous defaults were
-  # too sparse and produced FN_det=222 before CNN scoring.
+  # Historical full-pipeline checkpoint repair. The Stage E runner reconstructs
+  # and injects the recovered dense-route candidates before running this config.
   band_source: row_stats
   band_cluster_max_dist: 25.0
   ink_threshold: 240

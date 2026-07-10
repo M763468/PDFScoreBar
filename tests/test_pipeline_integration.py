@@ -3,7 +3,9 @@ import pytest
 pytest.importorskip("homr")
 fitz = pytest.importorskip("fitz")
 if not hasattr(fitz, "open"):
-    pytest.skip("Pipeline integration requires the real PyMuPDF fitz module", allow_module_level=True)
+    pytest.skip(
+        "Pipeline integration requires the real PyMuPDF fitz module", allow_module_level=True
+    )
 
 import shutil
 import unittest

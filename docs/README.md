@@ -56,6 +56,7 @@ notes for current instructions.
 | Issue #120 artifact retention rules | [`docs/ISSUE120_ARTIFACT_RETENTION.md`](ISSUE120_ARTIFACT_RETENTION.md) |
 | Issue #120 evaluation contract | [`docs/ISSUE120_EVALUATION_CONTRACT.md`](ISSUE120_EVALUATION_CONTRACT.md) |
 | Stage E full-pipeline report | [`docs/ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md`](ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md) |
+| Issue #244 row-start numbering investigation | [`docs/ISSUE244_ROW_START_NUMBERING_INVESTIGATION.md`](ISSUE244_ROW_START_NUMBERING_INVESTIGATION.md) |
 | CNN script ownership and cleanup decisions | [`docs/ISSUE45_CNN_SCRIPT_INVENTORY.md`](ISSUE45_CNN_SCRIPT_INVENTORY.md) |
 | Historical FP reduction report | [`docs/fp_reduction/FINAL_SUMMARY.md`](fp_reduction/FINAL_SUMMARY.md) |
 
@@ -150,6 +151,12 @@ notes for current instructions.
 - **Stage E Full Pipeline Report**  
   [`docs/ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md`](ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md)  
   Historical full-pipeline validation and runtime/resource reporting context.
+
+- **Issue #244 Row-Start Numbering Investigation**  
+  [`docs/ISSUE244_ROW_START_NUMBERING_INVESTIGATION.md`](ISSUE244_ROW_START_NUMBERING_INVESTIGATION.md)  
+  Records why the corrected-final numbering error originates in fresh upstream
+  detector drift, why the temporary dense default was rejected, and why #245
+  owns restoration of a historical-artifact-independent production route.
 
 - **Dense Route Naming / Logging / Parallelism Notes**  
   [`docs/ISSUE158_DENSE_ROUTE_NAMING.md`](ISSUE158_DENSE_ROUTE_NAMING.md)  

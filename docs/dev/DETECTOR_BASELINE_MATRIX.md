@@ -1,154 +1,109 @@
 # Detector Baseline Matrix
 
-This document distinguishes the production detector path from historical and
-evaluation-only configurations. It is the standing reference for selecting a
-barline detector route.
+This document separates verified historical detector evidence from proposed
+production runtime routes. It must not describe a route as production-ready
+until the full regression gates have passed.
 
-> [!IMPORTANT]
-> The production accuracy contract is indivisible: the `dense` route, 360 dpi
-> PDF raster input, `production_dense_v1` detector parameters, current CNN, and
-> current MMR must be used together. Do not copy only selected values into a new
-> config or lower the raster resolution without running the required regression
-> gates. The ordinary route and 300 dpi input reproduced the Issue #244 failure.
+> [!CAUTION]
+> The Issue #244 `production_dense_v1` implementation is **not an accepted
+> production default**. A one-page replay passed, but the current-run full-68
+> regression failed materially. Do not merge, deploy, or copy this route as a
+> user-facing default until the upstream hybrid-artifact discrepancy is resolved
+> and the complete regression is rerun.
 
-## Current production default
+## Current status
 
-The production default is the `dense` detector route with profile
-`production_dense_v1`.
+Issue #244 established three separate facts:
 
-A config does **not** need to specify `detection.route` to receive this route.
-The pipeline defaults to `dense`, reconstructs dense candidates from the
-current run's images and hybrid artifacts, adds the probe-rescue candidates,
-and then runs the current CNN and MMR stages.
+1. The ordinary smoke route produced incorrect row-start numbering on
+   `Va_Prokofiev_Symphony1/page_001`.
+2. Replaying that page from the canonical Issue #120 inventory, with the dense
+   reconstruction route and the retained 3600 x 4680 evaluation image, exactly
+   reproduced the expected physical measures, MMR overrides, and row starts.
+3. Reconstructing dense candidates from **newly generated current-run hybrid
+   artifacts** did not reproduce the historical 68-page detector or MMR
+   baselines.
 
-For PDF-backed runs, the profile also owns the page rasterization resolution:
+The third result invalidates the assumption that dense numeric parameters and
+360 dpi alone define the historical high-accuracy route.
 
-```yaml
-inputs:
-  pdf_to_images:
-    dpi: 360
-```
+## Full-68 rejection evidence
 
-This value is applied before PDF rendering, even when an older source config
-contains `dpi: 300`. The validated page-001 detector/MMR result uses the
-360 dpi raster size. Pre-rendered external images are not resampled; their
-source resolution is recorded as unmanaged input provenance. Such images must
-already satisfy the intended 360 dpi-equivalent input contract before they are
-used as production evidence.
+The proposed default route was evaluated on the canonical 68-page set against
+the retained Stage E artifact re-evaluated with current GT.
 
-The ordinary hybrid/probe path is available only through an explicit opt-out:
+| Metric | Current-GT historical baseline | Proposed current-run dense route |
+|---|---:|---:|
+| TP | 3579 | 3533 |
+| FP | 1 | 73 |
+| FN | 1 | 47 |
+| Precision | 0.999721 | 0.979756 |
+| Recall | 0.999721 | 0.986872 |
+| Candidate count | 29772 | 28919 |
 
-```yaml
-detection:
-  route: ordinary
-```
+The MMR regression also failed:
 
-This opt-out is lower accuracy and is intended only for controlled diagnosis or
-compatibility work. It must not be used as a user-facing or corrected-rerun
-default.
+| Metric | Expected post-#221 baseline | Proposed current-run dense route |
+|---|---:|---:|
+| Base measures | 3325 | 3310 |
+| Matched TP | 173 | 96 |
+| Missed FN | 3 | 78 |
+| Skip mismatch | 6 | 8 |
+| Unexpected FP | 0 | 68 |
 
-## Route and config roles
+The page-033 one-bar veto remained present, but that isolated success does not
+make the route acceptable.
 
-| Surface | Role | Production default? | Notes |
+## Verified and unverified route roles
+
+| Surface | Status | Production default? | Notes |
 |---|---|---:|---|
-| `production_dense_v1` | Current production detector profile | Yes | Reconstructs current-run dense and rescue candidates before CNN scoring; PDF input is rendered at 360 dpi |
-| `configs/dense_full_pipeline.yaml` | Tracked full-pipeline example for the dense profile | Reference | Explicitly declares `route: dense` and `dpi: 360`; code defaults to the same contract |
-| `configs/evaluation2_e2e_verification_full.yaml` | Evaluation2 verification input | No | Evaluation baseline/config input; not sufficient by itself to reproduce the dense candidate route |
-| `configs/issue120_stage_e_full_pipeline.yaml` | Historical Stage E reproduction | No | Historical artifact/reproduction config; do not use as the current production default |
-| `detection.route: precomputed` | External/reproduction candidate injection | No | Requires explicit precomputed candidate artifacts |
-| `detection.route: ordinary` | Legacy ordinary hybrid/probe route | No | Explicit low-accuracy opt-out only |
+| Retained Stage E artifact | Verified historical evidence | No | Reproduces the historical detector route when re-evaluated under the applicable GT contract |
+| Canonical-inventory dense replay | Verified detector/page replay | No | Depends on inventory-recorded upstream hybrid predictions and masks |
+| Current-run `production_dense_v1` reconstruction | Rejected by full-68 regression | No | Fresh hybrid predictions/masks diverge before dense candidate and CNN stages |
+| `configs/dense_full_pipeline.yaml` | Investigation/reference config | No | Parameter reference only; not proof of full runtime reproduction |
+| `configs/evaluation2_e2e_verification_full.yaml` | Evaluation smoke input | No | Must not silently imply an accepted production route |
+| `detection.route: precomputed` | Historical/reproduction injection | No | Requires explicit external artifacts |
+| Ordinary route | Existing runtime baseline | Not a high-accuracy target | Known to fail the Issue #244 page-001 numbering case |
 
-## Dense profile ownership
+## Missing production contract
 
-Selecting `dense` applies the validated profile-owned values, including:
+A valid high-accuracy default must reproduce the complete upstream-to-downstream
+contract, including at least:
 
-- PDF rasterization at 360 dpi for PDF-backed runs;
-- SR enabled at scale 2;
-- bbox-ink crop recentering;
-- row-stat dense candidate generation;
-- dense candidate filtering;
-- probe-gap, x-peak, rightmost, divisi, and center-on-peak rescue;
-- CNN NMS disabled;
-- original-image probe/CNN coordinate space;
-- current dense candidate and band artifacts injected into the normal pipeline.
+- PDF/image resolution and image bytes;
+- hybrid prediction generation;
+- staff and clef/key mask generation;
+- dense candidate generation and filtering;
+- probe-rescue candidate generation;
+- CNN model, threshold, crop behavior, and NMS policy;
+- system/measure construction;
+- MMR model and OCR behavior.
 
-Environment-specific paths remain configurable. In particular, a caller may
-provide a valid `cnn_model_path` and `hybrid_output_root`. The canonical CNN
-model path is used when `cnn_model_path` is omitted.
+The retained audit already warned that regeneration of slow upstream
+HOMR/OMR/SR-derived artifacts had not been proven. Issue #244 must resolve that
+boundary instead of treating retained inventory artifacts as equivalent to
+fresh production output.
 
 ## Corrected reruns
 
-A corrected rerun inherits the logical detector route/profile, not generated
-candidate paths from the source run.
+Corrected reruns must eventually inherit the same verified high-accuracy
+runtime contract as initial runs. They must not reuse stale run-local generated
+paths. However, this propagation must not be enabled as the default until the
+full route itself passes regression.
 
-The source manifest records resolved candidate roots for provenance. Before a
-new run starts, stale `precomputed_probe_candidates_root`, `cnn_bands_from`,
-`probe_use_original_images`, and `resolved_route` values are removed for the
-dense route. Fresh artifacts are then reconstructed under the corrected run.
-For PDF-backed reruns, the 360 dpi input profile is also reapplied before the
-new page images are rendered.
+## Required regression before approval
 
-This prevents a corrected rerun from silently reusing artifacts owned by an
-older run while preserving the same high-accuracy profile.
-
-## Manifest provenance
-
-For each production detection run, `manifest.json` records:
-
-- selected route;
-- profile name;
-- whether selection came from the default or an explicit config;
-- effective PDF input profile, including configured and effective DPI;
-- effective detector profile, generation, and filter parameters;
-- configured values overridden by the profile;
-- generated filtered-band and probe-rescue roots;
-- dense-route execution summary;
-- an `inprocess:dense_detector_route` command record.
-
-This information is required when comparing detector results across runs.
-
-## Issue #244 evidence
-
-Issue #244 reproduced incorrect row-start numbering in the ordinary smoke
-route. On `Va_Prokofiev_Symphony1/page_001`, the ordinary route missed five
-physical measures and one relevant MMR target.
-
-Replaying the same page with the current code, dense route, and the retained
-3600 x 4680 evaluation image produced:
-
-```text
-base measure counts:
-[5, 5, 5, 7, 7, 8, 5, 7, 10, 8, 5, 6]
-
-MMR signatures:
-[7,3,5], [7,6,3], [8,0,2], [8,2,2], [8,4,4]
-
-final row starts:
-[1, 6, 11, 16, 23, 30, 38, 43, 58, 76, 84, 89]
-```
-
-A first production-default smoke still inherited `dpi: 300` from the older
-source config and rendered a 3000 x 3900 page. Physical measure counts remained
-correct, but MMR missed `[8,0,2]`, leaving every later row start two measures
-low. Rendering the PDF at 360 dpi reproduces the validated evaluation image
-size and restores that target. Therefore the production default consists of
-both the dense candidate route and the 360 dpi PDF input profile.
-
-The final row starts exactly matched the human-verified sequence only when both
-parts of the profile were present. The failure was not introduced by the final
-materializer and does not require a score-specific correction.
-
-## Required regression before merge
-
-Changes to the production dense profile require:
+Approval requires all of the following on the same implementation:
 
 - focused route/default, input-profile, and corrected-rerun tests;
-- the Issue #244 one-page replay from PDF input;
-- full-68 detector/barline evaluation;
+- the Issue #244 page-001 PDF replay;
+- full-68 detector evaluation against the current-GT historical baseline;
+- page-level detector metric comparison;
 - Issue #206 guard cases;
 - downstream physical measure-count comparison;
 - Issue #221 MMR baseline;
 - page-033 one-bar veto;
 - manual-correction and corrected-final focused tests.
 
-Do not replace these gates with the historical Stage E artifact alone.
+A one-page success or a historical retained artifact alone is insufficient.

@@ -339,7 +339,7 @@ def run_in_process(repo_root: Path, images: list[Path], output_root: Path, run_i
         det_cfg={
             "hybrid_output_root": str(output_root),
             "enable_sr": False,
-            "enable_cache": False,
+            "enable_cache": True,
             "write_staff_positions": True,
             "enable_debug": False,
         },
@@ -351,6 +351,16 @@ def run_in_process(repo_root: Path, images: list[Path], output_root: Path, run_i
     )
     baseline_root = output_root / run_id / "baseline"
     detector._run_homr_in_process(baseline_root, enable_sr=False)
+    missing = [
+        image
+        for image in images
+        if not (baseline_root / "batch" / image.stem / f"{image.stem}_detections.json").is_file()
+    ]
+    if missing:
+        raise RuntimeError(
+            "In-process HOMR produced no detection artifact for: "
+            + ", ".join(image.name for image in missing)
+        )
     return 0
 
 

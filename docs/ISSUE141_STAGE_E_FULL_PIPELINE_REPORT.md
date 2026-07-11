@@ -1,130 +1,43 @@
 # Issue 141: Stage E Full Pipeline Validation Report
 
 > [!WARNING]
-> This is a historical validation report, not the current production runtime
-> specification. The Stage E runner and
-> `configs/issue120_stage_e_full_pipeline.yaml` are retained for audit and
-> historical reproduction only. Do not copy that config into a user-facing or
-> corrected-rerun pipeline. The current production accuracy contract is
-> [`docs/dev/DETECTOR_BASELINE_MATRIX.md`](dev/DETECTOR_BASELINE_MATRIX.md):
-> the default `production_dense_v1` route, 360 dpi PDF raster input, current CNN,
-> and current MMR. Issue #244 completed the productionization work described as
-> remaining at the end of this report.
+> This is a historical validation report, not a production runtime
+> specification. The Stage E result depends on dense candidates regenerated from
+> an inventory that already records upstream hybrid predictions and staff/clef
+> masks. It therefore does **not** prove that fresh current-run HOMR/OMR/SR and
+> hybrid artifacts reproduce the same detector route.
+>
+> Issue #244 attempted that fresh current-run reconstruction. Its one-page replay
+> passed, but the full-68 detector and MMR regression failed. See
+> [`docs/dev/DETECTOR_BASELINE_MATRIX.md`](dev/DETECTOR_BASELINE_MATRIX.md) for
+> the current status.
 
-## Purpose
+## Historical purpose
 
-This document records the full 68-page Stage E pipeline validation result against the Issue #120 detector target.
+Issue #141 validated that the retained/reconstructed Stage E route could be
+connected through the full pipeline and evaluated on the canonical 68-page set.
+It is retained for audit, provenance, and comparison.
 
-Stage E validates the real full pipeline path. It is distinct from the #151 dense probe-candidate route, which is a detector-level partial route and does not run the full HOMR/SR/OMR-inclusive pipeline or downstream measure numbering.
+## Historical execution configuration
 
-## Execution Configuration
+- Run ID: `stage_e_full_pipeline`
+- Output: `logs/issue120_e2e_recovery/stage_e_full_pipeline/`
+- Components: dense candidate reconstruction, probe-rescue reconstruction,
+  pipeline detector/CNN scoring, and downstream numbering
+- NMS policy: `cnn_apply_nms: false`
 
-- **Run ID**: `stage_e_full_pipeline`
-- **Output location**: `logs/issue120_e2e_recovery/stage_e_full_pipeline/`
-- **Components run**: dense candidate reconstruction, probe-rescue candidate reconstruction, HOMR/SR/OMR-inclusive full pipeline execution, CNN scoring, and downstream measure numbering.
-- **NMS policy**: `cnn_apply_nms: false` per Issue #142.
+The runner first calls `reconstruct_dense_full_pipeline_route()` with the
+canonical inventory. That inventory supplies image paths plus upstream hybrid
+predictions and staff/clef masks. The regenerated probe-rescue candidates are
+then injected into the pipeline as precomputed detector inputs.
 
-## Runtime, Resource, and Log Surface
+This distinction matters: the candidates are regenerated, but their upstream
+bands/masks are not independently regenerated from a fresh arbitrary production
+PDF run.
 
-Issue #159 adds metric-neutral observability around the Stage E runner and dense route:
+## Historical detector result
 
-- `dense_route_execution_summary.json` records dense-route phase durations, command log paths, log sizes, and generated artifact roots.
-- `stage_e_runtime_summary.json` records the dense-route summary plus image-copy and full-pipeline durations.
-- `stage_e_resource_samples.jsonl` records best-effort CPU/RSS/GPU samples during full-pipeline execution.
-- `stage_e_resource_samples.summary.json` records best-effort peak CPU/RSS/GPU summaries derived from those samples.
-- `pipeline_stdout_stderr.log` captures stdout/stderr emitted during full-pipeline execution.
-- `pipeline_stdout_stderr.summary.json` records compact counts and markers from the captured console log.
-- If a pipeline phase summary is produced by the run, `stage_e_runtime_summary.json` attaches its path and payload for convenience. Issue #159 does not make full-pipeline phase timing a default pipeline artifact.
-- Dense reconstruction subprocess logs are compact by default. The compact log keeps bounded head/tail output and records omitted middle-line counts.
-- Diagnostic full logs can be enabled with `--dense-route-verbose-logs`, but the runner should be invoked through the Stage E make target / managed pipeline environment.
-
-Resource sampling is best-effort:
-
-- Process memory uses Python `resource` and, when installed, `psutil` process-tree RSS.
-- Live process-tree CPU percentage uses `psutil` process-tree CPU-time deltas when available.
-- Child-process `resource` CPU deltas are kept only as a diagnostic signal, not as live subprocess CPU.
-- GPU memory/utilization uses `nvidia-smi` when available.
-- Sampling can be disabled with `--no-resource-sampling`.
-- The sampling interval can be adjusted with `--resource-sample-interval-sec`; non-positive intervals are rejected while sampling is enabled.
-
-These summaries are generated under `logs/` and should not be committed.
-
-Issue #159 uses these artifacts to identify safe parallelization opportunities. The measurements showed that Stage E runtime is dominated by HOMR/SR detection, but actual HOMR/SR parallelization experiments are intentionally deferred to follow-up issue #163/#166 so this validated checkpoint does not introduce new resource scheduling behavior.
-
-Pipeline logging taxonomy and default noisy-log policy are deferred to follow-up issue #162/#164. Issue #159 captures and summarizes stdout/stderr but does not redesign default logger semantics.
-
-## One-command Stage E Contract Evaluation
-
-After the full Stage E run completes, first run the small smoke check:
-
-```bash
-make eval-issue120-stage-e-smoke
-```
-
-This smoke target evaluates only the first `ISSUE120_STAGE_E_SMOKE_PAGES` canonical pages, defaulting to `2`. It is intended to verify Stage E artifact discovery, `eval_inputs` materialization, and contract output writing before spending time on the full 68-page contract evaluation. Because it is partial by design, the target passes `--allow-partial --allow-target-mismatch` and writes to smoke-specific directories:
-
-```text
-logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_inputs_smoke/
-logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_detector_smoke/
-```
-
-When the smoke check succeeds, run full contract evaluation with:
-
-```bash
-make eval-issue120-stage-e-full
-```
-
-The full make target calls `tools/issue120/eval_stage_e_contract.py`, using `ISSUE120_STAGE_E_OUTPUT` as the input `--output-root`. By default this is:
-
-```text
-logs/issue120_e2e_recovery
-```
-
-The evaluator does not require manual path discovery or one-off copy scripts. It materializes an evaluator-compatible input tree from the current full-pipeline artifact layout:
-
-```text
-logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_inputs/
-```
-
-It then writes detector contract outputs to:
-
-```text
-logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_detector/
-```
-
-Expected full contract outputs:
-
-```text
-logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_detector/evaluation_contract.json
-logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_detector/detector_metrics.json
-logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_detector/detector_page_metrics.csv
-logs/issue120_e2e_recovery/stage_e_full_pipeline/eval_detector/manifest.json
-```
-
-The wrapper checks the canonical Stage E detector target by default and exits non-zero if the target is not met. For diagnostic runs that intentionally inspect a mismatch, pass extra arguments through:
-
-```bash
-make eval-issue120-stage-e-full ISSUE120_STAGE_E_EVAL_EXTRA_ARGS=--allow-target-mismatch
-```
-
-The full run artifacts and resource summaries remain under:
-
-```text
-logs/issue120_e2e_recovery/stage_e_full_pipeline/
-logs/issue120_e2e_recovery/stage_e_full_pipeline/stage_e_runtime_summary.json
-logs/issue120_e2e_recovery/stage_e_full_pipeline/dense_route_execution_summary.json
-logs/issue120_e2e_recovery/stage_e_full_pipeline/stage_e_resource_samples.summary.json
-```
-
-## Detector Metrics vs Target
-
-The detector metrics are produced from full-pipeline Stage E artifacts using `tools/issue120/eval_stage_e_contract.py` and recorded in `evaluation_contract.json`.
-
-- **Target**: `TP=3580 / FP=0 / FN=1`
-- **Observed Stage E run**: `TP=3580 / FP=0 / FN=1`
-- **Target met**: yes
-
-Additional detector summary:
+The original Stage E evaluation reported:
 
 ```text
 Pages=68/68
@@ -137,45 +50,74 @@ FN_det=0
 FN_cnn=1
 Precision=1.000000
 Recall=0.999721
-cnn_apply_nms=false
 ```
 
-## Repair Summary
-
-The initial Stage E full-pipeline route did not reproduce the recovered detector target:
+After PR #203 corrected the page_060 GT, re-evaluating the same retained artifact
+against current GT produces:
 
 ```text
-Initial Stage E: TP=3359 FP=145 FN=222 FN_det=222 FN_cnn=0
+GT=3580
+Pred=3600
+TP=3579
+FP=1
+FN=1
 ```
 
-The failure was not caused by CNN NMS policy. It was caused by the full pipeline not using the same reconstructed candidate route as the recovered dense detector path.
+The one FP is the known page_060 residual tracked by Issue #202. It is not an
+Issue #244 regression.
 
-The repair connects Stage E to the recovered route without consuming historical candidate logs as runtime input:
+## Historical repair summary
 
-1. Regenerate dense probe candidates inside the current Stage E run.
-2. Apply clef/staff-aware candidate filtering inside the current Stage E run.
-3. Regenerate probe-rescue candidates from that filtered root inside the current Stage E run.
-4. Feed the freshly regenerated probe-rescue candidate root into the full pipeline detector/CNN scoring path.
-5. Evaluate detector metrics from the full-pipeline Stage E artifacts.
-
-This keeps #151 as detector-level evidence while making #141 validate a real full-pipeline Stage E run.
-
-## Downstream Measure-Count Metrics
-
-Detector metrics and downstream measure-count metrics remain separate.
-
-The full pipeline writes downstream numbering output under:
+The initial Stage E route did not reproduce the detector target:
 
 ```text
-logs/issue120_e2e_recovery/stage_e_full_pipeline/outputs/numbering_final.json
+TP=3359 FP=145 FN=222
 ```
 
-A canonical downstream measure-count comparator is not attached in this audit. The Stage E evaluation contract records measure-count status as `not_provided` rather than deriving detector conclusions from downstream numbering output.
+The historical repair:
 
-## Conclusion
+1. regenerated dense candidates from the canonical inventory;
+2. applied staff/clef-aware filtering using inventory-recorded masks;
+3. regenerated probe-rescue candidates;
+4. injected those candidates into the pipeline;
+5. disabled CNN NMS;
+6. evaluated the resulting detector intermediates.
 
-- Stage E completed all 68 canonical evaluation pages.
-- The historical HOMR/SR/OMR-inclusive Stage E run met the Issue #120 detector target: `TP=3580 / FP=0 / FN=1`.
-- Detector metrics and downstream measure-count status were recorded separately in the machine-readable evaluation contract.
-- #151 remained detector-level partial evidence at the time of this report.
-- Production runtime selection is now owned by `production_dense_v1`; use the baseline matrix rather than this historical report when configuring new runs.
+This proved the retained inventory-based route. It did not prove fresh upstream
+artifact regeneration.
+
+## Evaluation commands
+
+Smoke evaluation:
+
+```bash
+make eval-issue120-stage-e-smoke
+```
+
+Full evaluation:
+
+```bash
+make eval-issue120-stage-e-full
+```
+
+For current-GT diagnostic evaluation where the historical fixed target is
+expected to differ:
+
+```bash
+make eval-issue120-stage-e-full \
+  ISSUE120_STAGE_E_EVAL_EXTRA_ARGS=--allow-target-mismatch
+```
+
+## Retention and use
+
+Keep the Stage E runner, config, and retained artifact because they provide:
+
+- detector provenance;
+- a current-GT historical comparison baseline;
+- a source for layer-by-layer artifact comparison;
+- evidence that dense candidate/CNN stages can reach the historical target when
+  supplied with the recorded upstream artifacts.
+
+Do not copy the Stage E config into user-facing or corrected-rerun execution.
+Production approval requires a fresh-run full-68 regression, including detector,
+physical measure-count, MMR, and guard-case checks.

@@ -113,9 +113,7 @@ def normalize_box(value: Any) -> tuple[int, int, int, int] | None:
         return None
 
 
-def boxes_from_payload(
-    payload: Any, *, scored: bool = False
-) -> list[tuple[int, int, int, int]]:
+def boxes_from_payload(payload: Any, *, scored: bool = False) -> list[tuple[int, int, int, int]]:
     if not isinstance(payload, list):
         return []
     boxes: list[tuple[int, int, int, int]] = []
@@ -123,9 +121,7 @@ def boxes_from_payload(
         if isinstance(item, dict):
             if scored and float(item.get("score", 0.0)) < SCORE_THRESHOLD:
                 continue
-            box = normalize_box(
-                item.get("bbox") or item.get("box") or item.get("barline_location")
-            )
+            box = normalize_box(item.get("bbox") or item.get("box") or item.get("barline_location"))
         else:
             box = normalize_box(item)
         if box is not None:
@@ -151,10 +147,7 @@ def tolerant_match_count(
         for current_index, current_box in enumerate(current):
             current_x = (current_box[0] + current_box[2]) / 2.0
             x_distance = abs(historical_x - current_x)
-            if (
-                x_distance <= 12.0
-                and vertical_overlap_ratio(historical_box, current_box) >= 0.5
-            ):
+            if x_distance <= 12.0 and vertical_overlap_ratio(historical_box, current_box) >= 0.5:
                 candidates.append((x_distance, historical_index, current_index))
     matched_historical: set[int] = set()
     matched_current: set[int] = set()
@@ -180,9 +173,7 @@ def compare_json_files(historical: Path, current: Path) -> dict[str, Any]:
     }
 
 
-def compare_box_files(
-    historical: Path, current: Path, *, scored: bool = False
-) -> dict[str, Any]:
+def compare_box_files(historical: Path, current: Path, *, scored: bool = False) -> dict[str, Any]:
     result = compare_json_files(historical, current)
     if not historical.exists() or not current.exists():
         result.update(
@@ -322,9 +313,7 @@ def main() -> int:
             if layer in {"filtered_candidates", "probe_rescue_candidates"}:
                 comparison = compare_box_files(historical_path, current_path)
             elif layer == "scored_output":
-                comparison = compare_box_files(
-                    historical_path, current_path, scored=True
-                )
+                comparison = compare_box_files(historical_path, current_path, scored=True)
             else:
                 comparison = compare_json_files(historical_path, current_path)
             layers[layer] = comparison

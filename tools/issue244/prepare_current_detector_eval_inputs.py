@@ -47,14 +47,10 @@ def main() -> int:
     manifest = load_json(manifest_path)
     pages = manifest.get("pages", [])
     if not isinstance(pages, list) or len(pages) != EXPECTED_PAGES:
-        raise RuntimeError(
-            f"Expected {EXPECTED_PAGES} manifest pages, got {len(pages)}"
-        )
+        raise RuntimeError(f"Expected {EXPECTED_PAGES} manifest pages, got {len(pages)}")
 
     detection = manifest.get("config", {}).get("detection", {})
-    score_name = (
-        detection.get("probe_score_name") if isinstance(detection, dict) else None
-    )
+    score_name = detection.get("probe_score_name") if isinstance(detection, dict) else None
 
     if args.output_dir.exists():
         shutil.rmtree(args.output_dir)
@@ -72,9 +68,7 @@ def main() -> int:
         score, canonical_page = canonical_parts(image_path)
         key = (score, canonical_page)
         if key in seen:
-            raise ValueError(
-                f"Duplicate canonical page mapping: {score}/{canonical_page}"
-            )
+            raise ValueError(f"Duplicate canonical page mapping: {score}/{canonical_page}")
         seen.add(key)
 
         probe_run_id = build_probe_run_id(image_path, score_name=score_name)

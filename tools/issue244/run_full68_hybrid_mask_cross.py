@@ -20,12 +20,12 @@ from src.pipeline.detector_routes.dense_full_pipeline import (
     reconstruct_dense_full_pipeline_route,
 )
 from tools.issue244.compare_full68_route_artifacts import (
+    CANDIDATES_FILE,
     CANONICAL_EXCLUDE,
     CANONICAL_INVENTORY,
     CURRENT_INVENTORY,
     CURRENT_ROUTE,
     HISTORICAL_ROOT,
-    CANDIDATES_FILE,
     canonical_records,
     compare_box_files,
     current_records_by_canonical_key,
@@ -34,8 +34,10 @@ from tools.issue244.compare_full68_route_artifacts import (
 )
 
 DEFAULT_OUTPUT_ROOT = Path("logs/issue244_full_regression/hybrid_mask_cross")
-DEFAULT_REPORT = Path(
-    "logs/issue244_full_regression/full68_hybrid_mask_cross_report.json"
+DEFAULT_REPORT = Path("logs/issue244_full_regression/full68_hybrid_mask_cross_report.json")
+CROSS_VARIANT_LABELS = (
+    "C_historical_pred_current_mask",
+    "D_current_pred_historical_mask",
 )
 
 
@@ -63,9 +65,7 @@ def _cross_record(
         "score": canonical["score"],
         "page": canonical["page"],
         "image": str(resolve_path(str(canonical["image"]))),
-        "hybrid_predictions": str(
-            resolve_path(str(prediction_record["hybrid_predictions"]))
-        ),
+        "hybrid_predictions": str(resolve_path(str(prediction_record["hybrid_predictions"]))),
         "staff_mask": str(staff_mask),
         "run_dir": str(staff_mask.parent),
     }
@@ -128,9 +128,7 @@ def _compare_variant_to_historical(
     current_by_key: dict[tuple[str, str], dict[str, Any]],
     output_root: Path,
 ) -> dict[str, Any]:
-    historical_root = _variant_candidate_root(
-        "A_historical", output_root, layer
-    )
+    historical_root = _variant_candidate_root("A_historical", output_root, layer)
     variant_root = _variant_candidate_root(label, output_root, layer)
     aggregate = {
         "historical": 0,
@@ -174,25 +172,19 @@ def _compare_variant_to_historical(
             aggregate["exact_equal_pages"] += 1
         pages[f"{key[0]}/{key[1]}"] = comparison
 
-    aggregate["symmetric_difference"] = (
-        aggregate["historical_only"] + aggregate["variant_only"]
-    )
+    aggregate["symmetric_difference"] = aggregate["historical_only"] + aggregate["variant_only"]
     return {"aggregate": aggregate, "pages": pages}
 
 
 def _diagnose(comparisons: dict[str, Any]) -> dict[str, Any]:
     diagnosis: dict[str, Any] = {}
+    labels = ("B_current", *CROSS_VARIANT_LABELS)
     for layer in ("probe_candidates_filtered", "probe_rescue_candidates"):
         scores = {
-            label: int(
-                comparisons[label][layer]["aggregate"]["symmetric_difference"]
-            )
-            for label in ("B_current", "C_historical_pred_current_mask", "D_current_pred_historical_mask")
+            label: int(comparisons[label][layer]["aggregate"]["symmetric_difference"])
+            for label in labels
         }
-        best_cross = min(
-            ("C_historical_pred_current_mask", "D_current_pred_historical_mask"),
-            key=lambda label: scores[label],
-        )
+        best_cross = min(CROSS_VARIANT_LABELS, key=lambda label: scores[label])
         diagnosis[layer] = {
             "symmetric_difference_from_historical": scores,
             "closer_cross_variant": best_cross,
@@ -247,11 +239,7 @@ def main() -> int:
         execution[label] = artifacts.execution_summary
 
     comparisons: dict[str, Any] = {}
-    for label in (
-        "B_current",
-        "C_historical_pred_current_mask",
-        "D_current_pred_historical_mask",
-    ):
+    for label in ("B_current", *CROSS_VARIANT_LABELS):
         comparisons[label] = {}
         for layer in (
             "probe_candidates_filtered",
@@ -278,12 +266,8 @@ def main() -> int:
         "variants": {
             "A_historical": "historical predictions + historical staff masks",
             "B_current": "current predictions + current staff masks",
-            "C_historical_pred_current_mask": (
-                "historical predictions + current staff masks"
-            ),
-            "D_current_pred_historical_mask": (
-                "current predictions + historical staff masks"
-            ),
+            "C_historical_pred_current_mask": ("historical predictions + current staff masks"),
+            "D_current_pred_historical_mask": ("current predictions + historical staff masks"),
         },
         "execution": execution,
         "comparisons_to_A_historical": comparisons,

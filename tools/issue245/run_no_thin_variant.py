@@ -47,8 +47,11 @@ def run_no_thin_child(
     from src.homr_eval_scripts.core import predictor as predictor_module
     from src.pipeline.detection.hybrid import HybridDetector
 
+    def no_thin_barlines(*_args: Any, **_kwargs: Any) -> list[Any]:
+        return []
+
     original_detector = predictor_module.detect_thin_vertical_runs
-    predictor_module.detect_thin_vertical_runs = lambda *_args, **_kwargs: []
+    predictor_module.detect_thin_vertical_runs = no_thin_barlines
     try:
         detector = HybridDetector(
             det_cfg={
@@ -107,16 +110,21 @@ def build_page_report(
         "evaluator": evaluator_path,
         "in_process_no_thin": no_thin_path,
     }
+    serialized_paths = {name: str(path) for name, path in paths.items()}
     missing = [str(path) for path in paths.values() if not path.is_file()]
     if missing:
-        return {"status": "missing_detection_artifact", "paths": paths, "missing": missing}
+        return {
+            "status": "missing_detection_artifact",
+            "paths": serialized_paths,
+            "missing": missing,
+        }
 
     production = load_prediction_records(production_path)
     evaluator = load_prediction_records(evaluator_path)
     no_thin = load_prediction_records(no_thin_path)
     return {
         "status": "compared",
-        "paths": {name: str(path) for name, path in paths.items()},
+        "paths": serialized_paths,
         "comparisons": {
             "production_vs_evaluator": compare_record_sets(
                 "production_in_process", production, "evaluator", evaluator

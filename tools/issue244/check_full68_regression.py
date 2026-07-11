@@ -191,9 +191,8 @@ def main() -> int:
             CURRENT_GT_HISTORICAL_BASELINE,
         ),
         "current_detector_summary_matches_historical": not detector_differences,
-        "detector_page_metrics_match_historical": (
-            current_page_metrics == historical_page_metrics
-        ),
+        "detector_page_metrics_match_historical": current_page_metrics
+        == historical_page_metrics,
         "physical_measure_counts_match_historical": not numbering_mismatches,
         "mmr_matches_post_issue221_baseline": matches_expected(
             mmr_summary,

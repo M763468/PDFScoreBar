@@ -31,7 +31,7 @@ if ort_version != "1.22.0":
     raise SystemExit(f"unexpected onnxruntime-gpu version: {ort_version}")
 print(f"python={sys.version.split()[0]}")
 print(f"homr_file={homr.__file__}")
-print(f"homr_version={metadata.version(\"homr\")}")
+print("homr_version=" + metadata.version("homr"))
 print(f"onnxruntime_gpu_version={ort_version}")
 '\''
     '
@@ -122,7 +122,7 @@ implicitly. Review:
   $OUTPUT_HOST/image_candidates/
 
 Then rerun with an exact image ID or tag, for example:
-  ISSUE245_HISTORICAL_IMAGE=sha256:<id> \\
+  ISSUE245_HISTORICAL_IMAGE=sha256:<id> \
     bash tools/issue245/run_historical_runtime_probe.sh
 EOF
         exit 3

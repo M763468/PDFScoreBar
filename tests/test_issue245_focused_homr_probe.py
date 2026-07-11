@@ -98,6 +98,29 @@ def test_install_homr_api_compat_passes_gpu_choice_and_exposes_field() -> None:
 
     assert calls == [True]
     assert hasattr(ProcessingConfig, "use_gpu_inference")
+    assert evaluator._issue245_download_weights_mode == "gpu_argument_injected"
+
+
+def test_install_homr_api_compat_preserves_historical_zero_argument_api() -> None:
+    calls: list[str] = []
+
+    class ProcessingConfig:
+        __annotations__: dict[str, object] = {}
+
+    def download_weights() -> None:
+        calls.append("called")
+
+    evaluator = SimpleNamespace(
+        torch=SimpleNamespace(cuda=SimpleNamespace(is_available=lambda: True)),
+        download_weights=download_weights,
+        ProcessingConfig=ProcessingConfig,
+    )
+
+    assert install_homr_api_compat(evaluator) is True
+    evaluator.download_weights()
+
+    assert calls == ["called"]
+    assert evaluator._issue245_download_weights_mode == "native_zero_argument"
 
 
 def test_install_homr_api_compat_handles_missing_torch() -> None:

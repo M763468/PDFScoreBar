@@ -45,7 +45,7 @@ docker run --rm --gpus all \
   tools/issue245/run_page001_homr_probe.py --force
 ```
 
-The legacy evaluator requires the temporary API compatibility shim because current HOMR requires GPU-awareness in `download_weights` and `ProcessingConfig`. The shim changes only the investigation subprocess.
+The legacy evaluator requires the temporary API compatibility shim because current HOMR requires GPU-awareness in `download_weights` and `ProcessingConfig`. The shim changes only the investigation subprocess and now supports both the historical zero-argument API and the current GPU-aware API.
 
 ## Thin-barline isolation result
 
@@ -126,19 +126,74 @@ Default retained historical root:
 logs/hybrid_pipeline_bench/eval2_Va_Prokofiev_Symphony1_page_001_20260131_103421
 ```
 
-Expected report:
+## Historical runtime boundary
+
+The retained artifact naming and the tracked 2026-01-31 runner resolve the historical baseline route as:
+
+```text
+tools/run_eval2_batch.py
+  -> tools/run_hybrid_pipeline.sh
+  -> docker exec sr_eval_gpu
+  -> /opt/venv_sr/bin/python src/homr_eval_scripts/homr_evaluator.py
+```
+
+The corresponding `Dockerfile.sr_eval` installed HOMR from the ignored local clone:
+
+```text
+uv pip install ./external/homr
+```
+
+and then installed:
+
+```text
+onnxruntime-gpu==1.22.0
+```
+
+This differs from the current `pdfscore_pipeline_gpu` image, which installs pinned HOMR commit `b377620a3a55bd7ff657481cec5b688dfbc9cee9` and `onnxruntime-gpu==1.24.3` into `/opt/venv_pipeline`.
+
+`external/homr/` was ignored by Git. Rebuilding `Dockerfile.sr_eval` from the current checkout is therefore not a historical reproduction. The next experiment must preserve the existing `sr_eval_gpu` writable layer and venv.
+
+`run_historical_runtime_probe.sh` performs that isolation:
+
+1. inspect the existing `sr_eval_gpu` container and source image;
+2. commit its current writable layer to a temporary snapshot image;
+3. mount the Issue #245 worktree as `/workspace` so evaluator source remains current;
+4. execute with the snapshot's `/opt/venv_sr/bin/python` and installed HOMR/runtime;
+5. compare the fresh result with the retained historical baseline;
+6. record package, API signature, provider, module hash, model-file hash, container, and image provenance;
+7. delete the temporary snapshot image unless `ISSUE245_KEEP_HISTORICAL_SNAPSHOT=1`.
+
+Run from the Issue #245 worktree:
+
+```bash
+bash tools/issue245/run_historical_runtime_probe.sh
+```
+
+Do not rebuild when `sr_eval_gpu` is missing. The script exits before mutation because a fresh build would use a different ignored `external/homr` checkout.
+
+Expected outputs:
 
 ```text
 logs/issue245_focused_homr_probe/
   canonical_va_prokofiev_symphony1_page001/
-    canonical_historical_probe_report.json
+    historical_runtime_probe/
+      source_container_inspect.json
+      source_image_inspect.json
+      snapshot_image_inspect.json
+      host_snapshot_context.txt
+      run/
+        historical_runtime_probe_report.json
+        historical_runtime_provenance.json
+        historical_runtime_model_artifacts.json
+        historical_runtime_evaluator.log
 ```
 
 ## Decision gate
 
 - Treat evaluator/default thin as the historical thin policy for subsequent experiments.
-- Do not change production yet; first explain the core HOMR difference of 2 historical-only and 16 current-only predictions.
-- Inspect retained run metadata and historical/current HOMR checkout, model, provider, package, and preprocessing provenance.
+- If the historical-runtime result removes the 2-missing/16-extra core difference, the runtime/HOMR package is the primary boundary; then identify its exact source hashes and construct a pinned fresh image.
+- If the difference remains, compare evaluator/preprocessing code at the historical runner ref while keeping the captured runtime fixed.
+- Do not change production yet; first explain the core HOMR difference.
 - Repeat the resulting one-variable route on a small representative page set before full-68.
 - Do not change the production default until detector, physical-measure, MMR, page-033 veto, and corrected-final page-001 gates pass.
 - Do not revive `production_dense_v1` or use retained historical artifacts as production inputs.

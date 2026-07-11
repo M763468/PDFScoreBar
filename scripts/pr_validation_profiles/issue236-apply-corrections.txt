@@ -1,0 +1,9 @@
+# Focused pytest set for PR #240 / Issue #236 apply-corrections workflow.
+# Keep one pytest argument per line so future PR slices can be updated by editing
+# or adding a profile file without changing the runner script.
+tests/test_apply_corrections.py
+tests/test_apply_corrections_mmr_suppressions.py
+tests/test_apply_corrections_existing_overrides.py
+tests/test_manual_correction_handoff.py
+tests/test_manual_corrections.py
+tests/test_issue236_review_package_pipeline_connection.py

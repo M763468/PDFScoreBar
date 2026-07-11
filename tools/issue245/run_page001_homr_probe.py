@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -19,6 +20,11 @@ DEFAULT_OUTPUT_ROOT = Path("logs/issue245_focused_homr_probe/page001")
 
 def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def write_json(path: Path, payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def resolve_handoff_image(handoff: Path, page_id: str) -> Path:
@@ -50,8 +56,16 @@ def main() -> int:
     parser.add_argument("--handoff", type=Path, default=DEFAULT_HANDOFF)
     parser.add_argument("--page-id", default="page_001")
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
+    parser.add_argument("--host-commit", default=os.environ.get("ISSUE245_HOST_COMMIT"))
+    parser.add_argument("--host-branch", default=os.environ.get("ISSUE245_HOST_BRANCH"))
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
+
+    if not args.host_commit:
+        raise ValueError(
+            "Host commit is required. Pass --host-commit or ISSUE245_HOST_COMMIT; "
+            "do not run git inside the pipeline container."
+        )
 
     repo_root = Path.cwd().resolve()
     handoff = (repo_root / args.handoff).resolve()
@@ -71,10 +85,28 @@ def main() -> int:
     if args.force:
         command.append("--force")
 
+    print(f"Host commit: {args.host_commit}")
+    print(f"Host branch: {args.host_branch}")
     print(f"Handoff: {handoff}")
     print(f"Page: {args.page_id}")
     print(f"Source image: {image}")
-    return subprocess.run(command, cwd=repo_root, check=False).returncode
+    returncode = subprocess.run(command, cwd=repo_root, check=False).returncode
+
+    output_root = (repo_root / args.output_root).resolve()
+    write_json(
+        output_root / "host_run_context.json",
+        {
+            "schema_version": "issue245.host_run_context.v1",
+            "host_commit": args.host_commit,
+            "host_branch": args.host_branch,
+            "handoff": str(handoff),
+            "page_id": args.page_id,
+            "source_image": str(image),
+            "probe_command": command,
+            "probe_returncode": returncode,
+        },
+    )
+    return returncode
 
 
 if __name__ == "__main__":

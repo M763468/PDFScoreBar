@@ -13,8 +13,9 @@ Static history inspection and focused page-001 experiments established the follo
 - On the corrected-rerun page-001 image, production in-process emitted 177 predictions and the evaluator emitted 108. They shared 97 tolerant matches, with 80 production-only and 11 evaluator-only predictions.
 - Disabling only `detect_thin_vertical_runs` reduced in-process output to 79 predictions. All 79 matched evaluator output, and the evaluator's remaining 29 predictions were all thin-barline additions.
 - Production vs no-thin had 79 matches and 98 production-only predictions. All 98 were tagged `system_index=-2`.
-- Core HOMR output is therefore aligned between the two entrypoints. The observed baseline route divergence is isolated to thin-barline augmentation and its configuration.
-- The corrected-rerun `source.png` and canonical full-68 image are not byte-identical. Historical baseline comparison must use the canonical image so input drift is not mixed into route drift.
+- On the canonical historical page-001 image, evaluator/default thin is the only tested thin policy that reproduces the historical thin layer: all 21 historical thin candidates match all 21 current evaluator thin candidates.
+- The remaining canonical difference is entirely in core HOMR output: historical core 66 vs current core 80, with 64 matches, 2 historical-only, and 16 current-only.
+- The next boundary is HOMR checkout/model/runtime/preprocessing provenance, not further thin-barline tuning.
 
 This is not evidence for a production-default change. The focused experiments intentionally stop before dense reconstruction, CNN scoring, physical-measure construction, MMR, and numbering.
 
@@ -109,6 +110,16 @@ docker run --rm --gpus all \
   tools/issue245/run_canonical_historical_probe.py --force
 ```
 
+Canonical result:
+
+| Route | Historical | Current | Matches | Historical only | Current only |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| production in-process | 87 | 133 | 73 | 14 | 60 |
+| evaluator default-thin | 87 | 101 | 85 | 2 | 16 |
+| in-process no-thin | 87 | 80 | 64 | 23 | 16 |
+
+Historical and evaluator/default-thin each contain 21 thin candidates, and all 21 match. The evaluator/default-thin route is therefore selected for subsequent focused work. Its remaining 2 missing and 16 extra records are all non-thin core HOMR predictions.
+
 Default retained historical root:
 
 ```text
@@ -125,7 +136,9 @@ logs/issue245_focused_homr_probe/
 
 ## Decision gate
 
-- Select the thin-barline configuration that is closest to the retained historical baseline on the canonical image.
-- Repeat the selected one-variable route on a small representative page set before full-68.
+- Treat evaluator/default thin as the historical thin policy for subsequent experiments.
+- Do not change production yet; first explain the core HOMR difference of 2 historical-only and 16 current-only predictions.
+- Inspect retained run metadata and historical/current HOMR checkout, model, provider, package, and preprocessing provenance.
+- Repeat the resulting one-variable route on a small representative page set before full-68.
 - Do not change the production default until detector, physical-measure, MMR, page-033 veto, and corrected-final page-001 gates pass.
 - Do not revive `production_dense_v1` or use retained historical artifacts as production inputs.

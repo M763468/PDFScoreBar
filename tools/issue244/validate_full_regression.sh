@@ -66,8 +66,9 @@ for path in (summary_path, manifest_path, page_inputs_path):
         raise SystemExit(f"Required completed-run artifact is missing: {path}")
 summary = json.loads(summary_path.read_text(encoding="utf-8"))
 route = summary.get("resolved_route", {})
-if summary.get("page_count") != 68:
-    raise SystemExit(f"Expected 68 completed pages, got {summary.get('page_count')}")
+page_count = summary.get("page_count")
+if page_count != 68:
+    raise SystemExit(f"Expected 68 completed pages, got {page_count}")
 if route.get("profile") != "production_dense_v1" or route.get("selection") != "default":
     raise SystemExit(f"Unexpected completed route metadata: {route}")
 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))

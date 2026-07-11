@@ -15,6 +15,7 @@ import importlib.metadata
 import inspect
 import json
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -30,10 +31,15 @@ from tools.issue245.run_canonical_historical_probe import (
     resolve_inside_repo,
 )
 from tools.issue245.run_focused_homr_probe import (
-    collect_provenance,
+    IMPORT_CHECKS,
+    PROVENANCE_ENV_KEYS,
     detection_path,
+    image_summary,
+    import_provenance,
     mask_path,
     mask_summary,
+    package_versions,
+    runtime_provider_summary,
     sha256_file,
     write_json,
 )
@@ -152,6 +158,48 @@ def homr_api_record() -> dict[str, Any]:
     return result
 
 
+def runtime_provenance_without_git(repo_root: Path, images: list[Path]) -> dict[str, Any]:
+    """Collect runtime provenance without invoking git inside the container."""
+    imports = {name: import_provenance(name) for name in IMPORT_CHECKS}
+    hybrid = imports.get("src.pipeline.detection.hybrid", {})
+    hybrid_runtime: dict[str, Any] = {}
+    if hybrid.get("ok"):
+        try:
+            module = importlib.import_module("src.pipeline.detection.hybrid")
+            hybrid_runtime = {
+                "_HOMR_AVAILABLE": getattr(module, "_HOMR_AVAILABLE", None),
+                "selected_baseline_route": (
+                    "in_process"
+                    if getattr(module, "_HOMR_AVAILABLE", False)
+                    else "evaluator_fallback"
+                ),
+            }
+        except Exception as exc:  # noqa: BLE001 - provenance must capture failures
+            hybrid_runtime = {"error_type": type(exc).__name__, "error": str(exc)}
+
+    return {
+        "schema_version": "issue245.historical_homr_runtime_provenance.v1",
+        "git": {
+            "available": False,
+            "reason": "disabled in container; host metadata is supplied via environment",
+        },
+        "runtime": {
+            "python_executable": sys.executable,
+            "python_version": sys.version,
+            "platform": platform.platform(),
+            "machine": platform.machine(),
+            "cwd": str(Path.cwd()),
+            "repo_root": str(repo_root),
+        },
+        "environment": {key: os.environ.get(key) for key in PROVENANCE_ENV_KEYS},
+        "packages": package_versions(),
+        "providers": runtime_provider_summary(),
+        "imports": imports,
+        "hybrid_runtime": hybrid_runtime,
+        "images": [image_summary(path) for path in images],
+    }
+
+
 def candidate_model_roots() -> list[Path]:
     values = [
         Path(sys.prefix),
@@ -257,7 +305,7 @@ def main() -> int:
         shutil.rmtree(output_root)
     output_root.mkdir(parents=True)
 
-    provenance = collect_provenance(repo_root, [image])
+    provenance = runtime_provenance_without_git(repo_root, [image])
     provenance["issue245_historical_runtime"] = {
         "container_name": os.environ.get("ISSUE245_SOURCE_CONTAINER"),
         "source_image_id": os.environ.get("ISSUE245_SOURCE_IMAGE_ID"),
@@ -379,7 +427,9 @@ def main() -> int:
             f"generated_only={comparison['right_only_summary']['count']}"
         )
     print(f"Report: {report_path.relative_to(repo_root)}")
-    return int(run["returncode"])
+    if run["returncode"] != 0:
+        return int(run["returncode"])
+    return 0 if report["status"] == "compared" else 1
 
 
 if __name__ == "__main__":

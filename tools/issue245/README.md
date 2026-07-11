@@ -60,12 +60,15 @@ The retry uses `tools/issue245/run_homr_evaluator_compat.py` in a separate proce
 
 `HomrPredictor` adds `detect_thin_vertical_runs` candidates after core HOMR inference and tags newly inserted/replaced candidates with `system_index=-2`. The evaluator and in-process A/B differs substantially, so the next one-variable experiment disables only this augmentation in an isolated child process.
 
-The existing production and evaluator artifacts are preserved. Run:
+The existing production and evaluator artifacts are preserved. From the Issue #245 worktree, mount the worktree as `/workspace` and the main clone's ignored `logs/` directory at `/workspace/logs`:
 
 ```bash
-docker exec -w /workspace \
+docker run --rm --gpus all \
+  -v "$PWD":/workspace \
+  -v /home/masaki_muramatsu/ws_PDFScoreBar/logs:/workspace/logs \
+  -w /workspace \
   -e PYTHONPATH=/workspace \
-  pdfscore_pipeline_pytest_dev \
+  pdfscore_pipeline_gpu \
   /opt/venv_pipeline/bin/python \
   tools/issue245/run_no_thin_variant.py --force
 ```

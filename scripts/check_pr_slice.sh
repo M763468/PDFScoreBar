@@ -49,7 +49,11 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --python)
-      python_bin="${2:?missing python path}"
+      if [[ $# -lt 2 ]]; then
+        echo "Error: --python requires an argument." >&2
+        exit 2
+      fi
+      python_bin="$2"
       shift 2
       ;;
     --list-profiles)
@@ -77,8 +81,8 @@ if [[ "$list_profiles" -eq 1 ]]; then
     echo "No profile directory found: ${profile_dir}" >&2
     exit 1
   fi
-  find "$profile_dir" -maxdepth 1 -type f -name '*.txt' -printf '%f\n' \
-    | sed 's/\.txt$//' \
+  find "$profile_dir" -maxdepth 1 -type f -name '*.txt' \
+    | sed -e 's|.*/||' -e 's/\.txt$//' \
     | sort
   exit 0
 fi
@@ -94,8 +98,9 @@ if [[ ! -f "$profile_file" ]]; then
   echo "Expected profile file: ${profile_file}" >&2
   echo "Available profiles:" >&2
   if [[ -d "$profile_dir" ]]; then
-    find "$profile_dir" -maxdepth 1 -type f -name '*.txt' -printf '  %f\n' \
-      | sed 's/\.txt$//'
+    find "$profile_dir" -maxdepth 1 -type f -name '*.txt' \
+      | sed -e 's|.*/|  |' -e 's/\.txt$//' \
+      | sort >&2
   else
     echo "  <none>" >&2
   fi

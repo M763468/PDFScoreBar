@@ -16,7 +16,9 @@ CURRENT_RUN = Path("logs/issue244_full_regression/runs/production_default_full68
 CURRENT_EVAL = Path("logs/issue244_full_regression/detector_eval")
 HISTORICAL_RUN = Path("logs/issue120_e2e_recovery/stage_e_full_pipeline")
 HISTORICAL_EVAL = HISTORICAL_RUN / "eval_detector"
-MMR_SUMMARY = Path("logs/issue244_full_regression/mmr_eval/aggregated_eval_summary.json")
+MMR_SUMMARY = Path(
+    "logs/issue244_full_regression/mmr_eval/aggregated_eval_summary.json"
+)
 MMR_LOG = Path("logs/issue244_full_regression/mmr_eval.log")
 REPORT = Path("logs/issue244_full_regression/full68_regression_report.json")
 
@@ -160,7 +162,9 @@ def main() -> int:
     historical_detector = detector_summary(HISTORICAL_EVAL)
     detector_differences = summary_differences(current_detector, historical_detector)
 
-    current_page_metrics = normalized_page_metrics(CURRENT_EVAL / "detector_page_metrics.csv")
+    current_page_metrics = normalized_page_metrics(
+        CURRENT_EVAL / "detector_page_metrics.csv"
+    )
     historical_page_metrics = normalized_page_metrics(
         HISTORICAL_EVAL / "detector_page_metrics.csv"
     )

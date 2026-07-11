@@ -138,7 +138,7 @@ This result is consistent with the earlier Issue #120 boundary:
 
 - #147 established that fresh upstream regeneration did not preserve the historical detector target.
 - #149 recovered a reproducible dense candidate validation route from an inventory and retained source artifacts.
-- #141 validated a full-pipeline checkpoint, but this did not prove that arbitrary fresh inputs regenerate the same upstream artifacts without retained historical inputs.
+- #141 validated a full-pipeline checkpoint (see [Stage E Full Pipeline Report](ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md)), but this did not prove that arbitrary fresh inputs regenerate the same upstream artifacts without retained historical inputs.
 
 The Issue #244 investigation exposed the same unresolved boundary through the current corrected-final user workflow.
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 from tools.issue245.run_focused_homr_probe import (
     detection_path,
@@ -9,6 +10,7 @@ from tools.issue245.run_focused_homr_probe import (
     tolerant_match_count,
     vertical_overlap_ratio,
 )
+from tools.issue245.run_homr_evaluator_compat import install_download_weights_compat
 from tools.issue245.run_page001_homr_probe import resolve_handoff_image
 
 
@@ -70,3 +72,30 @@ def test_resolve_handoff_image_uses_path_relative_to_handoff(tmp_path: Path) -> 
     )
 
     assert resolve_handoff_image(handoff, "page_001") == image.resolve()
+
+
+def test_install_download_weights_compat_passes_gpu_choice() -> None:
+    calls: list[bool] = []
+    evaluator = SimpleNamespace(
+        torch=SimpleNamespace(
+            cuda=SimpleNamespace(is_available=lambda: True),
+        ),
+        download_weights=lambda use_gpu_inference: calls.append(use_gpu_inference),
+    )
+
+    assert install_download_weights_compat(evaluator) is True
+    evaluator.download_weights()
+
+    assert calls == [True]
+
+
+def test_install_download_weights_compat_handles_missing_torch() -> None:
+    calls: list[bool] = []
+    evaluator = SimpleNamespace(
+        download_weights=lambda use_gpu_inference: calls.append(use_gpu_inference),
+    )
+
+    assert install_download_weights_compat(evaluator) is False
+    evaluator.download_weights()
+
+    assert calls == [False]

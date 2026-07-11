@@ -1,13 +1,20 @@
+# ISSUE #244 INVESTIGATION / HISTORICAL COMPARISON CONFIG.
+#
+# This file records dense-route parameters used by the Issue #120/Stage E
+# reconstruction work. It is not an accepted production default. The fresh
+# current-run full-68 regression failed in Issue #244 because current hybrid
+# predictions and masks did not reproduce the retained inventory artifacts.
+# Do not copy this file into user-facing or corrected-rerun execution without
+# rerunning the complete regression gates in docs/dev/DETECTOR_BASELINE_MATRIX.md.
+
 run:
   run_id: dense_full_pipeline
   output_root: logs/full_pipeline_runs
 
 inputs:
   pdf_to_images:
-    # Required production dense input contract for PDF-backed runs.
-    # This tracked example currently consumes pre-rendered evaluation images, but
-    # keeping the value explicit prevents copied configs from falling back to
-    # the lower-accuracy 300 dpi path when PDF rendering is enabled.
+    # 360 dpi is required by the successful page-001 replay, but resolution alone
+    # is not sufficient to reproduce the historical full-68 route.
     dpi: 360
     output_dir: data/evaluation2/images
     image_glob: page_*.png
@@ -23,8 +30,8 @@ steps:
   overlay: false
 
 detection:
-  # The production code defaults to this route even when the key is omitted.
-  # Keep it explicit here because this file is the tracked dense-profile example.
+  # Explicit experimental dense route. This is not evidence that the route is a
+  # valid repository-wide default.
   route: dense
   enable_sr: true
   sr_scale: 2
@@ -32,8 +39,9 @@ detection:
   container_name: sr_eval_gpu_exp
   hybrid_output_root: logs/full_pipeline_runs/dense_full_pipeline/hybrid_output
 
-  # Dense full-pipeline detector settings recovered during the Issue #120 repair.
-  # The historical reproduction config remains in configs/issue120_stage_e_full_pipeline.yaml.
+  # Dense detector settings recovered during the Issue #120 repair. Historical
+  # Stage E additionally depended on inventory-recorded hybrid predictions and
+  # staff/clef masks.
   band_source: row_stats
   band_cluster_max_dist: 25.0
   ink_threshold: 240

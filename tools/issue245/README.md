@@ -95,10 +95,13 @@ The canonical full-68 `Va_Prokofiev_Symphony1/page_001.png` has SHA-256:
 
 The historical artifact is read-only comparison evidence. It is not copied into or consumed by a production detector route.
 
+The Issue #245 worktree does not carry the ignored canonical evaluation data, so mount the main clone's `data/evaluation2` tree read-only together with `logs/`:
+
 ```bash
 docker run --rm --gpus all \
   -v "$PWD":/workspace \
   -v /home/masaki_muramatsu/ws_PDFScoreBar/logs:/workspace/logs \
+  -v /home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2:/workspace/data/evaluation2:ro \
   -w /workspace \
   -e PYTHONPATH=/workspace \
   pdfscore_pipeline_gpu \

@@ -110,16 +110,25 @@ if ! docker exec \
   exit 1
 fi
 
+printf '%s\n' '## Normalize current production detector artifacts for evaluation'
+if ! docker exec \
+  -w "$CONTAINER_WORKDIR" \
+  -e PYTHONPATH="$CONTAINER_WORKDIR" \
+  "$CONTAINER_NAME" \
+  python3 tools/issue244/prepare_current_detector_eval_inputs.py \
+    --run-root logs/issue244_full_regression/runs/production_default_full68 \
+    --output-dir logs/issue244_full_regression/detector_eval_inputs; then
+  exit 1
+fi
+
 printf '%s\n' '## Evaluate current full-68 detector artifact against current GT'
 if ! docker exec \
   -w "$CONTAINER_WORKDIR" \
   -e PYTHONPATH="$CONTAINER_WORKDIR" \
   "$CONTAINER_NAME" \
-  python3 tools/issue120/eval_stage_e_contract.py \
-    --run-root logs/issue244_full_regression/runs/production_default_full68 \
-    --eval-inputs-dir logs/issue244_full_regression/detector_eval_inputs \
-    --eval-output-dir logs/issue244_full_regression/detector_eval \
-    --allow-target-mismatch; then
+  python3 tools/issue120/eval_full68_from_intermediates.py \
+    --results-dir logs/issue244_full_regression/detector_eval_inputs \
+    --output-dir logs/issue244_full_regression/detector_eval; then
   exit 1
 fi
 

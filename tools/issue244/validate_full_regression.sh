@@ -5,8 +5,11 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
 CONTAINER_NAME="${PDFSCORE_PIPELINE_CONTAINER:-pdfscore_pipeline_pytest_dev}"
 CONTAINER_WORKDIR="${PDFSCORE_PIPELINE_WORKDIR:-/workspace}"
+REUSE_FULL68="${PDFSCORE_REUSE_FULL68:-0}"
+REGRESSION_ROOT="logs/issue244_full_regression"
 
 cd "$REPO_ROOT"
+mkdir -p "$REGRESSION_ROOT"
 
 lint_status=0
 pytest_status=0
@@ -39,17 +42,53 @@ if ((pytest_status != 0)); then
   exit "$pytest_status"
 fi
 
-printf '%s\n' '## Production-default full-68 pipeline'
-if ! docker exec \
-  -w "$CONTAINER_WORKDIR" \
-  -e PYTHONPATH="$CONTAINER_WORKDIR" \
-  "$CONTAINER_NAME" \
-  bash -lc '
+if [[ "$REUSE_FULL68" == "1" ]]; then
+  printf '%s\n' '## Validate and reuse completed production-default full-68 pipeline'
+  if ! docker exec \
+    -w "$CONTAINER_WORKDIR" \
+    -e PYTHONPATH="$CONTAINER_WORKDIR" \
+    "$CONTAINER_NAME" \
+    python3 -c '
+import json
+from pathlib import Path
+
+root = Path("logs/issue244_full_regression")
+summary_path = root / "run_summary.json"
+manifest_path = root / "runs" / "production_default_full68" / "manifest.json"
+page_inputs_path = root / "mmr_page_inputs.json"
+for path in (summary_path, manifest_path, page_inputs_path):
+    if not path.exists():
+        raise SystemExit(f"Required completed-run artifact is missing: {path}")
+summary = json.loads(summary_path.read_text(encoding="utf-8"))
+route = summary.get("resolved_route", {})
+if summary.get("page_count") != 68:
+    raise SystemExit(f"Expected 68 completed pages, got {summary.get('"'"'page_count'"'"')}")
+if route.get("profile") != "production_dense_v1" or route.get("selection") != "default":
+    raise SystemExit(f"Unexpected completed route metadata: {route}")
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+if len(manifest.get("pages", [])) != 68:
+    raise SystemExit("Completed manifest does not contain 68 pages")
+print("Reusing completed full-68 run:", summary.get("run_dir"))
+print("Route profile:", route.get("profile"))
+print("Route selection:", route.get("selection"))
+'
+  then
+    exit 1
+  fi
+else
+  printf '%s\n' '## Production-default full-68 pipeline'
+  if ! docker exec \
+    -w "$CONTAINER_WORKDIR" \
+    -e PYTHONPATH="$CONTAINER_WORKDIR" \
+    "$CONTAINER_NAME" \
+    bash -lc '
 set -euo pipefail
+mkdir -p logs/issue244_full_regression
 python3 tools/issue244/run_production_default_full68.py --force \
   2>&1 | tee logs/issue244_full_regression/full68_pipeline.log
 '; then
-  exit 1
+    exit 1
+  fi
 fi
 
 printf '%s\n' '## Re-evaluate retained historical Stage E artifact'
@@ -83,6 +122,7 @@ if ! docker exec \
   "$CONTAINER_NAME" \
   bash -lc '
 set -euo pipefail
+mkdir -p logs/issue244_full_regression
 python3 tools/issue94/eval_all_mmr.py \
   --page-inputs logs/issue244_full_regression/mmr_page_inputs.json \
   --output-root logs/issue244_full_regression/mmr_eval \

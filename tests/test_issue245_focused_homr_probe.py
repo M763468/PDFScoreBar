@@ -4,6 +4,10 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
+from tools.issue245.homr_route_analysis import (
+    compare_record_sets,
+    load_prediction_records,
+)
 from tools.issue245.run_focused_homr_probe import (
     detection_path,
     normalize_box,
@@ -111,3 +115,47 @@ def test_install_homr_api_compat_handles_missing_torch() -> None:
     evaluator.download_weights()
 
     assert calls == [False]
+
+
+def test_load_prediction_records_preserves_generation_tags(tmp_path: Path) -> None:
+    path = tmp_path / "detections.json"
+    path.write_text(
+        json.dumps(
+            {
+                "predictions": [
+                    {
+                        "orig_bbox": [10, 20, 12, 100],
+                        "system_index": -2,
+                        "staff_index": -1,
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert load_prediction_records(path) == [
+        {
+            "index": 0,
+            "box": (10, 20, 12, 100),
+            "system_index": -2,
+            "staff_index": -1,
+        }
+    ]
+
+
+def test_compare_record_sets_classifies_unmatched_thin_barlines() -> None:
+    production = [
+        {"index": 0, "box": (10, 0, 12, 100), "system_index": 0, "staff_index": 0},
+        {"index": 1, "box": (40, 0, 42, 100), "system_index": -2, "staff_index": -1},
+    ]
+    evaluator = [
+        {"index": 0, "box": (11, 0, 13, 100), "system_index": 0, "staff_index": 0}
+    ]
+
+    comparison = compare_record_sets("production", production, "evaluator", evaluator)
+
+    assert comparison["matched_count"] == 1
+    assert comparison["left_only_summary"]["count"] == 1
+    assert comparison["left_only_summary"]["thin_barline_tagged_count"] == 1
+    assert comparison["left_only_thin_barline_fraction"] == 1.0

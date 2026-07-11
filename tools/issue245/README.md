@@ -15,10 +15,18 @@ This is not evidence for a production-default change. It intentionally does not 
 
 ## Initial page-001 experiment
 
-Run inside the managed pipeline Python environment from the repository root:
+Resolve the host git metadata before entering the managed pipeline container. Do not run `git` inside the container.
 
 ```bash
-PYTHONPATH=. /opt/venv_pipeline/bin/python \
+ISSUE245_HOST_COMMIT="$(git rev-parse HEAD)"
+ISSUE245_HOST_BRANCH="$(git branch --show-current)"
+
+docker exec -w /workspace \
+  -e PYTHONPATH=/workspace \
+  -e ISSUE245_HOST_COMMIT="$ISSUE245_HOST_COMMIT" \
+  -e ISSUE245_HOST_BRANCH="$ISSUE245_HOST_BRANCH" \
+  pdfscore_pipeline_pytest_dev \
+  /opt/venv_pipeline/bin/python \
   tools/issue245/run_page001_homr_probe.py --force
 ```
 
@@ -28,21 +36,14 @@ The wrapper resolves `page_001` from:
 logs/issue236_pipeline_connected_review_smoke/source_run/review/manual_correction_input.json
 ```
 
-To use a different handoff or page:
-
-```bash
-PYTHONPATH=. /opt/venv_pipeline/bin/python \
-  tools/issue245/run_page001_homr_probe.py \
-  --handoff logs/<run>/review/manual_correction_input.json \
-  --page-id page_001 \
-  --output-root logs/issue245_focused_homr_probe/<run-name>
-```
+To use a different handoff or page, pass `--handoff`, `--page-id`, and `--output-root` to the wrapper.
 
 ## Outputs
 
 Generated outputs remain under ignored `logs/` paths:
 
 ```text
+host_run_context.json
 runtime_provenance.json
 focused_homr_probe_report.json
 in_process.log
@@ -51,9 +52,9 @@ in_process/<run-id>/baseline/...
 evaluator/<run-id>/...
 ```
 
-The report records:
+The reports record:
 
-- exact git branch and commit;
+- host git branch and commit without running git inside the container;
 - Python, platform, package, import-file, and module-hash provenance;
 - ONNX Runtime providers and CUDA visibility;
 - `_HOMR_AVAILABLE` and the baseline route selected by `HybridDetector`;

@@ -38,6 +38,22 @@ logs/issue236_pipeline_connected_review_smoke/source_run/review/manual_correctio
 
 To use a different handoff or page, pass `--handoff`, `--page-id`, and `--output-root` to the wrapper.
 
+## Retry after the legacy evaluator API failure
+
+Current HOMR requires `download_weights(use_gpu_inference)`, but the legacy evaluator still calls `download_weights()` with no argument. This does not explain the production regression when `_HOMR_AVAILABLE=true`; it only blocks the probe's fallback-side comparison.
+
+After updating this branch, reuse the successful in-process output and rerun only the evaluator side:
+
+```bash
+docker exec -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_pytest_dev \
+  /opt/venv_pipeline/bin/python \
+  tools/issue245/retry_focused_evaluator.py --force
+```
+
+The retry uses `tools/issue245/run_homr_evaluator_compat.py` in a separate process. The shim adapts only the evaluator invocation and does not change the production `HybridDetector` route.
+
 ## Outputs
 
 Generated outputs remain under ignored `logs/` paths:

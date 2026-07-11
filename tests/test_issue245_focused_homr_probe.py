@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from tools.issue245.run_focused_homr_probe import (
@@ -8,6 +9,7 @@ from tools.issue245.run_focused_homr_probe import (
     tolerant_match_count,
     vertical_overlap_ratio,
 )
+from tools.issue245.run_page001_homr_probe import resolve_handoff_image
 
 
 def test_normalize_box_rounds_numeric_coordinates() -> None:
@@ -45,3 +47,26 @@ def test_detection_path_matches_each_route_layout() -> None:
     assert detection_path(root, "run", image, in_process=False) == (
         root / "run/page_001/page_001_detections.json"
     )
+
+
+def test_resolve_handoff_image_uses_path_relative_to_handoff(tmp_path: Path) -> None:
+    review_root = tmp_path / "review"
+    image = review_root / "pages/page_001/source.png"
+    image.parent.mkdir(parents=True)
+    image.write_bytes(b"png")
+    handoff = review_root / "manual_correction_input.json"
+    handoff.write_text(
+        json.dumps(
+            {
+                "pages": [
+                    {
+                        "page_id": "page_001",
+                        "source_image": "pages/page_001/source.png",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert resolve_handoff_image(handoff, "page_001") == image.resolve()

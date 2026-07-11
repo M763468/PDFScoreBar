@@ -20,7 +20,8 @@ MMR_SUMMARY = Path("logs/issue244_full_regression/mmr_eval/aggregated_eval_summa
 MMR_LOG = Path("logs/issue244_full_regression/mmr_eval.log")
 REPORT = Path("logs/issue244_full_regression/full68_regression_report.json")
 
-EXPECTED_DETECTOR = {
+# Historical Stage E result before PR #203 removed one false GT barline.
+HISTORICAL_PRE_GT_CORRECTION_TARGET = {
     "page_count": 68,
     "expected_page_count": 68,
     "gt": 3581,
@@ -33,6 +34,22 @@ EXPECTED_DETECTOR = {
     "precision": 1.0,
     "recall": 0.9997207483943032,
 }
+
+# The same retained Stage E detector artifact evaluated against current GT.
+# The single page_060 FP is a known residual tracked by Issue #202; Issue #244
+# must not hide it or misclassify the intentional GT correction as route drift.
+CURRENT_GT_HISTORICAL_BASELINE = {
+    "page_count": 68,
+    "expected_page_count": 68,
+    "gt": 3580,
+    "pred": 3600,
+    "tp": 3579,
+    "fp": 1,
+    "fn": 1,
+    "fn_det": 0,
+    "fn_cnn": 1,
+}
+
 EXPECTED_MMR = {
     "total_pages": 68,
     "total_base_measures": 3325,
@@ -118,12 +135,35 @@ def mismatched_pages(
     return mismatches
 
 
+def matches_expected(actual: dict[str, Any], expected: dict[str, Any]) -> bool:
+    return all(actual.get(key) == value for key, value in expected.items())
+
+
+def summary_differences(
+    current: dict[str, Any],
+    historical: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
+    differences: dict[str, dict[str, Any]] = {}
+    for key in sorted(set(current) | set(historical)):
+        current_value = current.get(key)
+        historical_value = historical.get(key)
+        if current_value != historical_value:
+            differences[key] = {
+                "current": current_value,
+                "historical": historical_value,
+            }
+    return differences
+
+
 def main() -> int:
     current_detector = detector_summary(CURRENT_EVAL)
     historical_detector = detector_summary(HISTORICAL_EVAL)
+    detector_differences = summary_differences(current_detector, historical_detector)
 
     current_page_metrics = normalized_page_metrics(CURRENT_EVAL / "detector_page_metrics.csv")
-    historical_page_metrics = normalized_page_metrics(HISTORICAL_EVAL / "detector_page_metrics.csv")
+    historical_page_metrics = normalized_page_metrics(
+        HISTORICAL_EVAL / "detector_page_metrics.csv"
+    )
 
     current_numbering = numbering_signature(CURRENT_RUN)
     historical_numbering = numbering_signature(HISTORICAL_RUN)
@@ -138,22 +178,45 @@ def main() -> int:
     mmr_log_text = MMR_LOG.read_text(encoding="utf-8", errors="replace")
 
     checks = {
-        "current_detector_matches_canonical_target": all(
-            current_detector.get(key) == value for key, value in EXPECTED_DETECTOR.items()
+        "historical_detector_matches_current_gt_baseline": matches_expected(
+            historical_detector,
+            CURRENT_GT_HISTORICAL_BASELINE,
         ),
-        "historical_detector_matches_canonical_target": all(
-            historical_detector.get(key) == value for key, value in EXPECTED_DETECTOR.items()
+        "current_detector_matches_current_gt_baseline": matches_expected(
+            current_detector,
+            CURRENT_GT_HISTORICAL_BASELINE,
         ),
-        "detector_page_metrics_match_historical": (current_page_metrics == historical_page_metrics),
+        "current_detector_summary_matches_historical": not detector_differences,
+        "detector_page_metrics_match_historical": (
+            current_page_metrics == historical_page_metrics
+        ),
         "physical_measure_counts_match_historical": not numbering_mismatches,
-        "mmr_matches_post_issue221_baseline": all(
-            mmr_summary.get(key) == value for key, value in EXPECTED_MMR.items()
+        "mmr_matches_post_issue221_baseline": matches_expected(
+            mmr_summary,
+            EXPECTED_MMR,
         ),
         "page033_one_bar_veto_present": veto_marker in mmr_log_text,
     }
 
     report = {
-        "schema": "issue244.full68_regression.v1",
+        "schema": "issue244.full68_regression.v2",
+        "baseline_interpretation": {
+            "historical_pre_gt_correction_target": (
+                "Issue #120 / Stage E result before PR #203 corrected page_060 GT"
+            ),
+            "current_gt_historical_baseline": (
+                "The retained Stage E artifact re-evaluated against current GT"
+            ),
+            "known_current_gt_residual": {
+                "issue": 202,
+                "page_id": "page_060",
+                "classification": "false_positive",
+                "note": (
+                    "The FP is expected for the retained/current detector model after the "
+                    "intentional GT correction and is not introduced by Issue #244."
+                ),
+            },
+        },
         "paths": {
             "current_run": str(CURRENT_RUN),
             "current_eval": str(CURRENT_EVAL),
@@ -162,14 +225,17 @@ def main() -> int:
             "mmr_summary": str(MMR_SUMMARY),
             "mmr_log": str(MMR_LOG),
         },
-        "expected_detector": EXPECTED_DETECTOR,
+        "historical_pre_gt_correction_target": HISTORICAL_PRE_GT_CORRECTION_TARGET,
+        "current_gt_historical_baseline": CURRENT_GT_HISTORICAL_BASELINE,
         "current_detector": current_detector,
-        "historical_detector": historical_detector,
+        "historical_detector_re_evaluated_with_current_gt": historical_detector,
+        "detector_summary_differences": detector_differences,
         "expected_mmr": EXPECTED_MMR,
         "current_mmr": mmr_summary,
         "numbering_mismatches": numbering_mismatches,
         "checks": checks,
     }
+    REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text(
         json.dumps(report, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
@@ -178,6 +244,7 @@ def main() -> int:
     print("Full-68 regression checks")
     for name, passed in checks.items():
         print(f"  {name}: {passed}")
+    print(f"Detector summary differences: {sorted(detector_differences)}")
     print(f"Numbering mismatch pages: {sorted(numbering_mismatches)}")
     print(f"Report: {REPORT}")
 

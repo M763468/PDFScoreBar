@@ -1,0 +1,64 @@
+{
+  "schema_version": "issue245.homr_revision_candidates.v1",
+  "purpose": "Focused source/model A/B around the upstream HOMR SegNet architecture change immediately before the retained 2026-01-31 artifact run.",
+  "artifact": {
+    "generated_at_jst": "2026-01-31T10:34:21+09:00",
+    "canonical_image": "data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png",
+    "canonical_sha256": "48e073dd8184495b9751ad62e85a872bc93cce751ba0a8c988300f7c5ae444a6",
+    "historical_detection": "logs/hybrid_pipeline_bench/eval2_Va_Prokofiev_Symphony1_page_001_20260131_103421/baseline/page_001/page_001/page_001_detections.json",
+    "historical_count": 87
+  },
+  "runtime_isolation": {
+    "base_image": "pdfscore_pipeline_gpu",
+    "onnxruntime_gpu": "1.22.0",
+    "dependency_policy": "Replace only the installed HOMR package and ONNX Runtime in the current managed image; install HOMR with --no-deps so other package versions remain fixed.",
+    "production_default_changed": false
+  },
+  "candidates": [
+    {
+      "name": "pre_unet_main",
+      "default_stage": true,
+      "homr_commit": "f1c2688efe7efb0aace96b06364022baf5c65e64",
+      "source_role": "PR 58 base/main immediately before merge",
+      "segnet_architecture": "UnetPlusPlus",
+      "segnet_model": "segnet_155-1240eedca553155b3c75fc9c7f643465383430a0",
+      "reason": "Anchor immediately before the Jan 30 Unet replacement."
+    },
+    {
+      "name": "post_unet_main",
+      "default_stage": true,
+      "homr_commit": "2c6c65b00c836feb167d08c2553acec36ef68401",
+      "source_role": "PR 58 merge commit on main",
+      "segnet_architecture": "Unet",
+      "segnet_model": "segnet_308-3296ccd40960f90ca6ab9c035cca945675d30a0f",
+      "reason": "Latest known main revision before the Jan 31 retained artifact timestamp."
+    },
+    {
+      "name": "unet_feature_head",
+      "default_stage": false,
+      "homr_commit": "85fba35d8a34902484016c12aa5e1bd612a690f2",
+      "source_role": "PR 58 feature branch head",
+      "segnet_architecture": "Unet",
+      "segnet_model": "segnet_308-3296ccd40960f90ca6ab9c035cca945675d30a0f",
+      "reason": "Use only if merge and feature-head behavior must be separated."
+    },
+    {
+      "name": "unet_intermediate_303",
+      "default_stage": false,
+      "homr_commit": "bfd7ac0b99bb2c2ff098ca52f3423bdef241ee24",
+      "source_role": "PR 58 feature history",
+      "segnet_architecture": "Unet",
+      "segnet_model": "segnet_303-71bee8fac626ac28e8d17ddc33138421edc8e714",
+      "reason": "Use only if the two anchor revisions bracket the historical result."
+    },
+    {
+      "name": "unet_intermediate_301",
+      "default_stage": false,
+      "homr_commit": "71bee8fac626ac28e8d17ddc33138421edc8e714",
+      "source_role": "PR 58 feature history",
+      "segnet_architecture": "Unet",
+      "segnet_model": "segnet_301-f1c2688efe7efb0aace96b06364022baf5c65e64",
+      "reason": "Use only if model-revision bisection is required."
+    }
+  ]
+}

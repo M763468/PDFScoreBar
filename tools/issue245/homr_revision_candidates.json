@@ -22,6 +22,7 @@
       "source_role": "PR 58 base/main immediately before merge",
       "segnet_architecture": "UnetPlusPlus",
       "segnet_model": "segnet_155-1240eedca553155b3c75fc9c7f643465383430a0",
+      "model_asset_available": true,
       "reason": "Anchor immediately before the Jan 30 Unet replacement."
     },
     {
@@ -31,6 +32,7 @@
       "source_role": "PR 58 merge commit on main",
       "segnet_architecture": "Unet",
       "segnet_model": "segnet_308-3296ccd40960f90ca6ab9c035cca945675d30a0f",
+      "model_asset_available": true,
       "reason": "Latest known main revision before the Jan 31 retained artifact timestamp."
     },
     {
@@ -40,7 +42,8 @@
       "source_role": "PR 58 feature branch head",
       "segnet_architecture": "Unet",
       "segnet_model": "segnet_308-3296ccd40960f90ca6ab9c035cca945675d30a0f",
-      "reason": "Use only if merge and feature-head behavior must be separated."
+      "model_asset_available": true,
+      "reason": "Feature head and merge result were compared separately."
     },
     {
       "name": "unet_intermediate_303",
@@ -49,7 +52,9 @@
       "source_role": "PR 58 feature history",
       "segnet_architecture": "Unet",
       "segnet_model": "segnet_303-71bee8fac626ac28e8d17ddc33138421edc8e714",
-      "reason": "Use only if the two anchor revisions bracket the historical result."
+      "model_asset_available": false,
+      "blocked_reason": "The source revision references this SegNet model, but the upstream onnx_checkpoints release does not provide its zip asset.",
+      "reason": "Source-only intermediate; exact inference cannot be reconstructed from currently published assets."
     },
     {
       "name": "unet_intermediate_301",
@@ -58,7 +63,9 @@
       "source_role": "PR 58 feature history",
       "segnet_architecture": "Unet",
       "segnet_model": "segnet_301-f1c2688efe7efb0aace96b06364022baf5c65e64",
-      "reason": "Use only if model-revision bisection is required."
+      "model_asset_available": false,
+      "blocked_reason": "The source revision references this SegNet model, but the upstream onnx_checkpoints release does not provide its zip asset.",
+      "reason": "Source-only intermediate; exact inference cannot be reconstructed from currently published assets."
     }
   ]
 }

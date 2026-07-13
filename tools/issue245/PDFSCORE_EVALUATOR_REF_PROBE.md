@@ -36,15 +36,17 @@ git fetch origin
 git reset --hard \
   origin/investigate/issue245-fresh-upstream-detector-route
 
-python3 tools/issue245/run_pdfscore_evaluator_ref_probe.py --force
+bash tools/issue245/run_pdfscore_evaluator_ref_probe.sh --force
 ```
 
-The runner uses `git archive` to extract the historical `src/` tree under ignored `logs/`. It does not modify the worktree or create another Git worktree.
+The shell wrapper normalizes bind-mounted output ownership through Docker before and after the probe. Run it without `sudo`; this prevents repeated runs from failing on root-owned Docker artifacts.
+
+The Python runner uses `git archive` to extract the historical `src/` tree under ignored `logs/`. It does not modify the worktree or create another Git worktree.
 
 Force a clean candidate-image build when necessary:
 
 ```bash
-python3 tools/issue245/run_pdfscore_evaluator_ref_probe.py \
+bash tools/issue245/run_pdfscore_evaluator_ref_probe.sh \
   --force \
   --rebuild
 ```
@@ -52,7 +54,7 @@ python3 tools/issue245/run_pdfscore_evaluator_ref_probe.py \
 Keep the temporary candidate image only for diagnostics:
 
 ```bash
-python3 tools/issue245/run_pdfscore_evaluator_ref_probe.py \
+bash tools/issue245/run_pdfscore_evaluator_ref_probe.sh \
   --force \
   --keep-image
 ```

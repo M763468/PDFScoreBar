@@ -30,23 +30,17 @@ Update the Issue #245 worktree, then run the two default anchors:
 ```bash
 cd /home/masaki_muramatsu/ws_PDFScoreBar_issue245
 
-.venv_cnn_classifier/bin/python \
-  tools/issue245/run_homr_revision_matrix.py \
-  --force
+python3 tools/issue245/run_homr_revision_matrix.py --force
 ```
 
-When the venv is activated, `python` may be used instead:
-
-```bash
-python tools/issue245/run_homr_revision_matrix.py --force
-```
+An activated virtual environment is not required; the host runner itself uses only the Python standard library. Inference runs inside the candidate Docker images.
 
 The command builds two temporary images, runs the canonical page through evaluator/default-thin, records provenance and model hashes, compares each result with the historical 87 records, and removes the temporary images.
 
 Keep images for inspection only when necessary:
 
 ```bash
-python tools/issue245/run_homr_revision_matrix.py \
+python3 tools/issue245/run_homr_revision_matrix.py \
   --force \
   --keep-images
 ```
@@ -54,7 +48,7 @@ python tools/issue245/run_homr_revision_matrix.py \
 Run a named candidate:
 
 ```bash
-python tools/issue245/run_homr_revision_matrix.py \
+python3 tools/issue245/run_homr_revision_matrix.py \
   --candidate pre_unet_main \
   --force
 ```
@@ -62,7 +56,7 @@ python tools/issue245/run_homr_revision_matrix.py \
 Run every candidate, including intermediate feature revisions, only after the anchor result justifies it:
 
 ```bash
-python tools/issue245/run_homr_revision_matrix.py \
+python3 tools/issue245/run_homr_revision_matrix.py \
   --all \
   --force
 ```

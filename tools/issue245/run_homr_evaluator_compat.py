@@ -109,6 +109,54 @@ def _install_parse_staffs_compat(
     return "transformer_config_injected_when_missing"
 
 
+def _install_segnet_cache_compat() -> str:
+    """Adapt the historical two-argument cache wrapper to current HOMR."""
+    try:
+        cache_module = importlib.import_module("homr_eval_scripts.segnet_cache")
+    except ImportError:
+        return "not_available"
+
+    cached_segnet = getattr(cache_module, "CachedSegnet", None)
+    get_session = getattr(cache_module, "_get_session", None)
+    if cached_segnet is None or get_session is None:
+        return "unsupported_module"
+    if _required_positional_count(cached_segnet) <= 1:
+        return "native_one_or_two_argument_constructor"
+
+    class CachedSegnetCompat:
+        """Accept both legacy ``(model_path, gpu)`` and current ``(gpu)`` calls."""
+
+        def __init__(
+            self, model_path_or_use_gpu: str | bool, use_gpu: bool | None = None
+        ) -> None:
+            if use_gpu is None:
+                config_module = importlib.import_module("homr.segmentation.config")
+                gpu_enabled = bool(model_path_or_use_gpu)
+                fp32_path = config_module.segnet_path_onnx
+                fp16_path = getattr(
+                    config_module, "segnet_path_onnx_fp16", fp32_path
+                )
+                model_path = fp16_path if gpu_enabled else fp32_path
+            else:
+                model_path = str(model_path_or_use_gpu)
+                gpu_enabled = bool(use_gpu)
+
+            self.model = get_session(model_path, gpu_enabled)
+            self.input_name = self.model.get_inputs()[0].name
+            self.output_name = self.model.get_outputs()[0].name
+
+        def run(self, input_data: Any) -> Any:
+            if self.model.get_inputs()[0].type == "tensor(float16)":
+                numpy_module = importlib.import_module("numpy")
+                input_data = input_data.astype(numpy_module.float16)
+            return self.model.run(
+                [self.output_name], {self.input_name: input_data}
+            )[0]
+
+    cache_module.CachedSegnet = CachedSegnetCompat
+    return "one_or_two_argument_constructor_injected"
+
+
 def install_homr_api_compat(evaluator: Any) -> bool:
     """Adapt evaluator calls to either historical or current HOMR APIs."""
     use_gpu_inference = _gpu_available(evaluator)
@@ -139,6 +187,7 @@ def install_homr_api_compat(evaluator: Any) -> bool:
     evaluator._issue245_parse_staffs_mode = _install_parse_staffs_compat(
         evaluator, use_gpu_inference=use_gpu_inference
     )
+    evaluator._issue245_segnet_cache_mode = _install_segnet_cache_compat()
     evaluator._issue245_download_weights_mode = download_mode
     return use_gpu_inference
 
@@ -156,7 +205,9 @@ def main() -> int:
         "load_predictions_mode="
         f"{homr_evaluator._issue245_load_predictions_mode} "
         "parse_staffs_mode="
-        f"{homr_evaluator._issue245_parse_staffs_mode}"
+        f"{homr_evaluator._issue245_parse_staffs_mode} "
+        "segnet_cache_mode="
+        f"{homr_evaluator._issue245_segnet_cache_mode}"
     )
     homr_evaluator.run_evaluation(sys.argv[1:])
     return 0

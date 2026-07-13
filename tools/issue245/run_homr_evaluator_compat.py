@@ -57,6 +57,58 @@ def _install_processing_config_compat(
     return "gpu_argument_injected_when_missing"
 
 
+def _install_load_predictions_compat(
+    evaluator: Any, *, use_gpu_inference: bool
+) -> str:
+    """Adapt the HOMR preprocessing call that gained a GPU argument."""
+    original = getattr(evaluator, "load_and_preprocess_predictions", None)
+    if original is None:
+        return "not_exported"
+
+    signature = inspect.signature(original)
+    if "use_gpu_inference" not in signature.parameters:
+        return "native_without_gpu_argument"
+
+    def load_predictions_compat(*args: Any, **kwargs: Any) -> Any:
+        bound = signature.bind_partial(*args, **kwargs)
+        if "use_gpu_inference" not in bound.arguments:
+            kwargs["use_gpu_inference"] = use_gpu_inference
+        return original(*args, **kwargs)
+
+    evaluator.load_and_preprocess_predictions = load_predictions_compat
+    return "gpu_argument_injected_when_missing"
+
+
+def _install_parse_staffs_compat(
+    evaluator: Any, *, use_gpu_inference: bool
+) -> str:
+    """Adapt the HOMR staff parser that gained a transformer Config argument."""
+    original = getattr(evaluator, "parse_staffs", None)
+    if original is None:
+        return "not_exported"
+
+    signature = inspect.signature(original)
+    if "config" not in signature.parameters:
+        return "native_without_config_argument"
+
+    transformer_config: Any | None = None
+
+    def parse_staffs_compat(*args: Any, **kwargs: Any) -> Any:
+        nonlocal transformer_config
+        bound = signature.bind_partial(*args, **kwargs)
+        if "config" not in bound.arguments:
+            if transformer_config is None:
+                configs_module = importlib.import_module("homr.transformer.configs")
+                transformer_config = configs_module.Config()
+                if hasattr(transformer_config, "use_gpu_inference"):
+                    transformer_config.use_gpu_inference = use_gpu_inference
+            kwargs["config"] = transformer_config
+        return original(*args, **kwargs)
+
+    evaluator.parse_staffs = parse_staffs_compat
+    return "transformer_config_injected_when_missing"
+
+
 def install_homr_api_compat(evaluator: Any) -> bool:
     """Adapt evaluator calls to either historical or current HOMR APIs."""
     use_gpu_inference = _gpu_available(evaluator)
@@ -78,12 +130,16 @@ def install_homr_api_compat(evaluator: Any) -> bool:
             f"{inspect.signature(original_download_weights)}"
         )
 
-    processing_config_mode = _install_processing_config_compat(
+    evaluator._issue245_processing_config_mode = _install_processing_config_compat(
         evaluator, use_gpu_inference=use_gpu_inference
     )
-
+    evaluator._issue245_load_predictions_mode = _install_load_predictions_compat(
+        evaluator, use_gpu_inference=use_gpu_inference
+    )
+    evaluator._issue245_parse_staffs_mode = _install_parse_staffs_compat(
+        evaluator, use_gpu_inference=use_gpu_inference
+    )
     evaluator._issue245_download_weights_mode = download_mode
-    evaluator._issue245_processing_config_mode = processing_config_mode
     return use_gpu_inference
 
 
@@ -96,7 +152,11 @@ def main() -> int:
         f"use_gpu_inference={use_gpu_inference} "
         f"download_weights_mode={homr_evaluator._issue245_download_weights_mode} "
         "processing_config_mode="
-        f"{homr_evaluator._issue245_processing_config_mode}"
+        f"{homr_evaluator._issue245_processing_config_mode} "
+        "load_predictions_mode="
+        f"{homr_evaluator._issue245_load_predictions_mode} "
+        "parse_staffs_mode="
+        f"{homr_evaluator._issue245_parse_staffs_mode}"
     )
     homr_evaluator.run_evaluation(sys.argv[1:])
     return 0

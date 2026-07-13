@@ -8,6 +8,7 @@ standalone evaluator invocation.
 
 from __future__ import annotations
 
+import importlib
 import inspect
 import sys
 from typing import Any
@@ -24,12 +25,41 @@ def _required_positional_count(callable_obj: Any) -> int:
     )
 
 
+def _gpu_available(evaluator: Any) -> bool:
+    """Resolve CUDA availability even when a historical evaluator omits torch."""
+    torch_module = getattr(evaluator, "torch", None)
+    if torch_module is None:
+        try:
+            torch_module = importlib.import_module("torch")
+        except ImportError:
+            return False
+
+    cuda_module = getattr(torch_module, "cuda", None)
+    return bool(cuda_module is not None and cuda_module.is_available())
+
+
+def _install_processing_config_compat(
+    evaluator: Any, *, use_gpu_inference: bool
+) -> str:
+    """Inject a newly required HOMR config field into older evaluator calls."""
+    original_processing_config = evaluator.ProcessingConfig
+    signature = inspect.signature(original_processing_config)
+    if "use_gpu_inference" not in signature.parameters:
+        return "native_without_gpu_argument"
+
+    def processing_config_compat(*args: Any, **kwargs: Any) -> Any:
+        bound = signature.bind_partial(*args, **kwargs)
+        if "use_gpu_inference" not in bound.arguments:
+            kwargs["use_gpu_inference"] = use_gpu_inference
+        return original_processing_config(*args, **kwargs)
+
+    evaluator.ProcessingConfig = processing_config_compat
+    return "gpu_argument_injected_when_missing"
+
+
 def install_homr_api_compat(evaluator: Any) -> bool:
     """Adapt evaluator calls to either historical or current HOMR APIs."""
-    torch_module = getattr(evaluator, "torch", None)
-    use_gpu_inference = bool(
-        torch_module is not None and torch_module.cuda.is_available()
-    )
+    use_gpu_inference = _gpu_available(evaluator)
 
     original_download_weights = evaluator.download_weights
     required_arguments = _required_positional_count(original_download_weights)
@@ -48,17 +78,12 @@ def install_homr_api_compat(evaluator: Any) -> bool:
             f"{inspect.signature(original_download_weights)}"
         )
 
-    processing_config = evaluator.ProcessingConfig
-    annotations = getattr(processing_config, "__annotations__", {})
-    if "use_gpu_inference" in annotations and not hasattr(
-        processing_config, "use_gpu_inference"
-    ):
-        # The evaluator uses hasattr() on the dataclass type. Required dataclass
-        # fields without defaults exist only in __annotations__, so expose a
-        # class marker that selects the six-argument construction path.
-        setattr(processing_config, "use_gpu_inference", None)
+    processing_config_mode = _install_processing_config_compat(
+        evaluator, use_gpu_inference=use_gpu_inference
+    )
 
     evaluator._issue245_download_weights_mode = download_mode
+    evaluator._issue245_processing_config_mode = processing_config_mode
     return use_gpu_inference
 
 
@@ -69,7 +94,9 @@ def main() -> int:
     print(
         "Issue #245 evaluator compatibility shim: "
         f"use_gpu_inference={use_gpu_inference} "
-        f"download_weights_mode={homr_evaluator._issue245_download_weights_mode}"
+        f"download_weights_mode={homr_evaluator._issue245_download_weights_mode} "
+        "processing_config_mode="
+        f"{homr_evaluator._issue245_processing_config_mode}"
     )
     homr_evaluator.run_evaluation(sys.argv[1:])
     return 0

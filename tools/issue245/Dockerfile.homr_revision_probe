@@ -1,0 +1,56 @@
+ARG BASE_IMAGE=pdfscore_pipeline_gpu
+FROM ${BASE_IMAGE}
+
+ARG HOMR_REPOSITORY=https://github.com/liebharc/homr.git
+ARG HOMR_COMMIT
+
+USER root
+
+RUN test -n "${HOMR_COMMIT}"
+RUN if ! command -v git >/dev/null 2>&1; then \
+      apt-get update && \
+      apt-get install -y --no-install-recommends git ca-certificates && \
+      rm -rf /var/lib/apt/lists/*; \
+    fi
+
+RUN rm -rf /opt/issue245_homr && \
+    git clone --filter=blob:none "${HOMR_REPOSITORY}" /opt/issue245_homr && \
+    git -C /opt/issue245_homr checkout --detach "${HOMR_COMMIT}" && \
+    git -C /opt/issue245_homr rev-parse HEAD > /opt/issue245_homr_commit.txt
+
+# Keep the current managed image's non-HOMR dependencies fixed. This stage isolates
+# HOMR source/model plus the historical ORT version before attempting a complete
+# historical-runtime reconstruction.
+RUN /opt/venv_pipeline/bin/python -m pip uninstall -y \
+      homr onnxruntime onnxruntime-gpu || true && \
+    /opt/venv_pipeline/bin/python -m pip install --no-cache-dir --no-deps \
+      /opt/issue245_homr && \
+    /opt/venv_pipeline/bin/python -m pip install --no-cache-dir --no-deps \
+      onnxruntime-gpu==1.22.0
+
+# Download the model set selected by this exact HOMR revision. The historical
+# revisions used a one-argument API, while some adjacent revisions used zero.
+RUN /opt/venv_pipeline/bin/python - <<'PY'
+import inspect
+
+from homr.main import download_weights
+
+required = sum(
+    1
+    for parameter in inspect.signature(download_weights).parameters.values()
+    if parameter.kind
+    in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+    and parameter.default is inspect.Parameter.empty
+)
+if required == 1:
+    download_weights(True)
+elif required == 0:
+    download_weights()
+else:
+    raise RuntimeError(
+        f"Unsupported HOMR download_weights signature: {inspect.signature(download_weights)}"
+    )
+PY
+
+LABEL org.opencontainers.image.source="https://github.com/liebharc/homr"
+LABEL issue245.homr.commit="${HOMR_COMMIT}"

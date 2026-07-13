@@ -113,11 +113,10 @@ def discover_touching_commits(
     output = git_output(
         repo,
         "log",
-        "--first-parent",
-        "--reverse",
         f"--after={after_time}",
         f"--before={artifact_time}",
         f"--format=%H{FIELD_SEPARATOR}%cI{FIELD_SEPARATOR}%s",
+        "HEAD",
         "--",
         *SOURCE_FILES,
     )
@@ -192,15 +191,12 @@ def main() -> int:
     boundary_sha = git_output(
         repo,
         "rev-list",
-        "--first-parent",
         "-1",
         f"--before={args.artifact_time}",
         "HEAD",
     )
     if not boundary_sha:
-        raise RuntimeError(
-            f"No first-parent commit found at or before {args.artifact_time}"
-        )
+        raise RuntimeError(f"No commit found at or before {args.artifact_time}")
     boundary = commit_metadata(repo, boundary_sha)
 
     touching_commits = discover_touching_commits(
@@ -238,7 +234,8 @@ def main() -> int:
         "distinct_snapshot_count": len(distinct),
         "candidates": distinct,
         "limitations": [
-            "Only commits reachable from the current branch first-parent history are inspected.",
+            "Only commits reachable from the current branch history are inspected.",
+            "Deleted and unmerged branch tips may require local reflog inspection.",
             "Uncommitted working-tree changes used by the historical run cannot be recovered from Git history.",
             "This report identifies tracked source snapshots only; it does not identify the untracked external/homr checkout.",
         ],

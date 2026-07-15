@@ -6,13 +6,13 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import re
 import subprocess
 from collections import defaultdict
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 DEFAULT_MAIN_REPO = Path("/home/masaki_muramatsu/ws_PDFScoreBar")
 DEFAULT_OUTPUT_REL = Path(
@@ -69,7 +69,11 @@ def within_window(value: str, *, after: str, before: str) -> bool:
 
 
 def extract_reference_lines(content: str, *, limit: int = 80) -> list[str]:
-    lines = [line.strip() for line in content.splitlines() if REFERENCE_PATTERN.search(line)]
+    lines = [
+        line.strip()
+        for line in content.splitlines()
+        if REFERENCE_PATTERN.search(line)
+    ]
     return lines[:limit]
 
 
@@ -180,10 +184,14 @@ def collect_repository(
         }
     )
 
+    ref_format = (
+        "%(refname)\t%(objectname)\t"
+        "%(committerdate:iso-strict)\t%(subject)"
+    )
     _, refs_output, _ = git_output(
         root,
         "for-each-ref",
-        "--format=%(refname)\t%(objectname)\t%(committerdate:iso-strict)\t%(subject)",
+        f"--format={ref_format}",
     )
     refs = parse_refs(refs_output)
     report["refs"] = refs
@@ -248,7 +256,9 @@ def collect_repository(
             }
         )
 
-    candidates.sort(key=lambda item: (item["committed_at"], item["commit"]), reverse=True)
+    candidates.sort(
+        key=lambda item: (item["committed_at"], item["commit"]), reverse=True
+    )
     report["historical_window"] = {"after": after, "before": before}
     report["historical_candidates"] = candidates[: max(max_candidates, 0)]
     report["historical_candidate_count_before_limit"] = len(candidates)
@@ -314,7 +324,10 @@ def collect_model_artifacts(
             else:
                 record["sha256_skipped"] = "file exceeds max-size limit"
             records.append(record)
-    records.sort(key=lambda item: (item.get("modified_at", ""), item["path"]), reverse=True)
+    records.sort(
+        key=lambda item: (item.get("modified_at", ""), item["path"]),
+        reverse=True,
+    )
     return records
 
 
@@ -343,12 +356,13 @@ def main() -> int:
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
 
-    issue_root_code = run_command(
+    issue_root_result = run_command(
         ["git", "rev-parse", "--show-toplevel"], cwd=Path.cwd()
     )
-    if issue_root_code.returncode != 0:
-        raise RuntimeError(issue_root_code.stderr.strip() or "not inside a Git worktree")
-    issue_root = Path(issue_root_code.stdout.strip()).resolve()
+    if issue_root_result.returncode != 0:
+        message = issue_root_result.stderr.strip() or "not inside a Git worktree"
+        raise RuntimeError(message)
+    issue_root = Path(issue_root_result.stdout.strip()).resolve()
     main_repo = args.main_repo_root.expanduser().resolve()
 
     repository_roots = deduplicate_paths(
@@ -408,14 +422,22 @@ def main() -> int:
         "limitations": [
             "Only the listed HOMR repository and cache roots are inspected.",
             "Shell history and unrelated personal files are not inspected.",
-            "Expired reflog entries, pruned Git objects, deleted Docker layers, and removed model files cannot be recovered by this inventory.",
-            "A discovered commit or model file is provenance evidence only; it is not selected as a production input.",
+            (
+                "Expired reflog entries, pruned Git objects, deleted Docker layers, "
+                "and removed model files cannot be recovered by this inventory."
+            ),
+            (
+                "A discovered commit or model file is provenance evidence only; "
+                "it is not selected as a production input."
+            ),
         ],
     }
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 
-    git_repositories = sum(1 for item in repositories if item["is_git_repository"])
+    git_repositories = sum(
+        1 for item in repositories if item["is_git_repository"]
+    )
     candidate_count = sum(
         len(item.get("historical_candidates", [])) for item in repositories
     )

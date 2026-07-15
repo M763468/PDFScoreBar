@@ -192,10 +192,59 @@ def install_homr_api_compat(evaluator: Any) -> bool:
     return use_gpu_inference
 
 
+def _prepare_evaluator_argv(evaluator: Any, argv: list[str]) -> tuple[list[str], str]:
+    """Remove only probe options unavailable in an older evaluator CLI."""
+    prepared = list(argv)
+    cache_mode = getattr(evaluator, "_issue245_segnet_cache_mode", None)
+    if cache_mode != "not_available":
+        return prepared, "unchanged"
+
+    removed = False
+    while "--enable-segnet-cache" in prepared:
+        prepared.remove("--enable-segnet-cache")
+        removed = True
+    return (
+        prepared,
+        "removed_unavailable_segnet_cache_flag" if removed else "unchanged",
+    )
+
+
+def _entrypoint_mode(evaluator: Any) -> str:
+    if callable(getattr(evaluator, "run_evaluation", None)):
+        return "run_evaluation_argv"
+    if callable(getattr(evaluator, "main", None)):
+        return "main_sys_argv"
+    raise AttributeError("Evaluator exports neither run_evaluation() nor main()")
+
+
+def _run_evaluator_entrypoint(
+    evaluator: Any, argv: list[str], *, entrypoint_mode: str
+) -> None:
+    if entrypoint_mode == "run_evaluation_argv":
+        evaluator.run_evaluation(argv)
+        return
+
+    if entrypoint_mode != "main_sys_argv":
+        raise ValueError(f"Unsupported evaluator entrypoint mode: {entrypoint_mode}")
+
+    original_argv = sys.argv
+    sys.argv = [original_argv[0], *argv]
+    try:
+        result = evaluator.main()
+    finally:
+        sys.argv = original_argv
+    if isinstance(result, int) and result != 0:
+        raise SystemExit(result)
+
+
 def main() -> int:
     from src.homr_eval_scripts import homr_evaluator
 
     use_gpu_inference = install_homr_api_compat(homr_evaluator)
+    evaluator_argv, argv_mode = _prepare_evaluator_argv(
+        homr_evaluator, sys.argv[1:]
+    )
+    entrypoint_mode = _entrypoint_mode(homr_evaluator)
     print(
         "Issue #245 evaluator compatibility shim: "
         f"use_gpu_inference={use_gpu_inference} "
@@ -207,9 +256,15 @@ def main() -> int:
         "parse_staffs_mode="
         f"{homr_evaluator._issue245_parse_staffs_mode} "
         "segnet_cache_mode="
-        f"{homr_evaluator._issue245_segnet_cache_mode}"
+        f"{homr_evaluator._issue245_segnet_cache_mode} "
+        f"argv_mode={argv_mode} "
+        f"entrypoint_mode={entrypoint_mode}"
     )
-    homr_evaluator.run_evaluation(sys.argv[1:])
+    _run_evaluator_entrypoint(
+        homr_evaluator,
+        evaluator_argv,
+        entrypoint_mode=entrypoint_mode,
+    )
     return 0
 
 

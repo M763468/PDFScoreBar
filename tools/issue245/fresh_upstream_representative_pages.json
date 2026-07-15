@@ -4,7 +4,7 @@
     {
       "page_id": "page_001",
       "image": "data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png",
-      "historical_detection_glob": "logs/hybrid_pipeline_bench/eval2_Va_Prokofiev_Symphony1_page_001_*/baseline/**/page_*_detections.json",
+      "historical_detection_glob": "logs/hybrid_pipeline_bench/eval2_Va_Prokofiev_Symphony1_page_001_20260131_103421/baseline/**/page_*_detections.json",
       "reasons": [
         "corrected-final row-start smoke",
         "page used to establish the exact fresh upstream HOMR contract"
@@ -13,7 +13,7 @@
     {
       "page_id": "page_033",
       "image": "data/evaluation2/images/Sibelius-Violin_Concerto-Viola/page_002.png",
-      "historical_detection_glob": "logs/hybrid_pipeline_bench/eval2_Sibelius-Violin_Concerto-Viola_page_002_*/baseline/**/page_*_detections.json",
+      "historical_detection_glob": "logs/hybrid_pipeline_bench/eval2_Sibelius-Violin_Concerto-Viola_page_002_20260131_103421/baseline/**/page_*_detections.json",
       "reasons": [
         "post-Issue-213 one-bar MMR veto guard",
         "different score and layout from page_001"
@@ -22,7 +22,7 @@
     {
       "page_id": "page_060",
       "image": "data/evaluation2/images/Va__Prokofiev_Symphony5/page_015.png",
-      "historical_detection_glob": "logs/hybrid_pipeline_bench/eval2_Va__Prokofiev_Symphony5_page_015_*/baseline/**/page_*_detections.json",
+      "historical_detection_glob": "logs/hybrid_pipeline_bench/eval2_Va__Prokofiev_Symphony5_page_015_20260131_103421/baseline/**/page_*_detections.json",
       "reasons": [
         "known current-GT residual false positive from Issue 202",
         "different score and high-page-index detector guard"

@@ -23,9 +23,9 @@ The next controlled variable is therefore the PDFScoreBar evaluator/preprocessin
 It varies only the PDFScoreBar `src/` tree:
 
 1. current Issue #245 worktree source;
-2. historical candidate ref `edf7bf610c3355c34e660192e81f35b03fe91714`.
+2. a historical candidate ref selected with `--historical-ref`.
 
-`edf7bf6` is a historical source candidate, not yet proven to be the exact 2026-01-31 artifact source ref.
+The initial candidate `edf7bf610c3355c34e660192e81f35b03fe91714` produced a detection JSON identical to current source. The artifact-boundary candidate is `bd6ae56f8be6c87088143cfbf0ba09dee94fe0d7`.
 
 ## Run
 
@@ -36,12 +36,22 @@ git fetch origin
 git reset --hard \
   origin/investigate/issue245-fresh-upstream-detector-route
 
-bash tools/issue245/run_pdfscore_evaluator_ref_probe.sh --force
+bash tools/issue245/run_pdfscore_evaluator_ref_probe.sh \
+  --force \
+  --keep-image \
+  --historical-ref bd6ae56f8be6c87088143cfbf0ba09dee94fe0d7
 ```
 
 The shell wrapper normalizes bind-mounted output ownership through Docker before and after the probe. Run it without `sudo`; this prevents repeated runs from failing on root-owned Docker artifacts.
 
 The Python runner uses `git archive` to extract the historical `src/` tree under ignored `logs/`. It does not modify the worktree or create another Git worktree.
+
+The compatibility launcher supports both evaluator CLI generations:
+
+- newer source exports `run_evaluation(argv)`;
+- pre-refactor source exports `main()` and reads `sys.argv`.
+
+When a historical source predates `homr_eval_scripts.segnet_cache`, the launcher removes only the unsupported `--enable-segnet-cache` probe flag. SegNet caching is a runtime optimization and does not change detector inputs, model weights, or detection semantics.
 
 Force a clean candidate-image build when necessary:
 
@@ -74,6 +84,8 @@ logs/issue245_pdfscore_evaluator_ref_probe/
     evaluator/...
 ```
 
+The historical output directory retains its original fixed name for compatibility. Confirm the actual requested and resolved ref in `historical_source` inside the report.
+
 The report records source hashes for:
 
 - `src/homr_eval_scripts/homr_evaluator.py`
@@ -86,5 +98,5 @@ It compares both fresh outputs with the retained historical 87-record result and
 ## Decision gate
 
 - If the historical source removes or materially reduces `2 missing / 16 extra`, inspect the changed evaluator/preprocessing functions and narrow to one file or function.
-- If current and historical source produce the same result, PDFScoreBar evaluator source at `edf7bf6` is not the missing variable. Move to the remaining runtime dependencies and the exact pre-2026-01-31 source-ref search.
+- If the artifact-boundary source produces the same result, tracked PDFScoreBar evaluator source is not the missing variable. Move to untracked `external/homr`, exact model/runtime provenance, deleted branch tips, and uncommitted state.
 - Do not run full-68 or change a production default from this one-page probe.

@@ -37,7 +37,8 @@ def test_model_file_filter_limits_shared_cache_scan() -> None:
     assert model_file_relevant(Path("segnet_303.onnx"), broad_repo_scan=False)
     assert model_file_relevant(Path("other_model.onnx"), broad_repo_scan=True)
     assert not model_file_relevant(Path("other_model.onnx"), broad_repo_scan=False)
-    assert not model_file_relevant(Path("segnet_notes.txt"), broad_repo_scan=False)
+    assert model_file_relevant(Path("segnet_notes.txt"), broad_repo_scan=False)
+    assert not model_file_relevant(Path("unrelated_notes.txt"), broad_repo_scan=False)
 
 
 def test_deduplicate_paths_preserves_first_occurrence(tmp_path: Path) -> None:

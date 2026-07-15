@@ -30,14 +30,50 @@ DEFAULT_MANIFEST = Path("tools/issue245/fresh_upstream_representative_pages.json
 OUTPUT_REL = Path("logs/issue245_fresh_upstream_representative_probe")
 
 
-def resolve_single_glob(root: Path, pattern: str) -> Path:
-    matches = sorted(path for path in root.glob(pattern) if path.is_file())
-    if len(matches) != 1:
-        raise RuntimeError(
-            f"Expected one file for glob {pattern!r}, found {len(matches)}: "
-            + ", ".join(str(path) for path in matches[:10])
+def normalize_artifact_key(value: str) -> str:
+    """Normalize score/page names across underscore, hyphen, and repeated-separator variants."""
+    return "".join(character.lower() for character in value if character.isalnum())
+
+
+def image_artifact_key(image_rel: Path) -> str:
+    return normalize_artifact_key(f"{image_rel.parent.name}_{image_rel.stem}")
+
+
+def resolve_historical_detection(
+    root: Path, image_rel: Path, historical_run_date: str
+) -> tuple[Path, Path]:
+    """Resolve one retained batch artifact by normalized image key and batch date."""
+    benchmark_root = root / "logs/hybrid_pipeline_bench"
+    target_key = image_artifact_key(image_rel)
+    matching_runs: list[Path] = []
+    for run_dir in sorted(benchmark_root.glob(f"*_{historical_run_date}_*")):
+        if not run_dir.is_dir():
+            continue
+        if target_key in normalize_artifact_key(run_dir.name):
+            matching_runs.append(run_dir)
+
+    resolved: list[tuple[Path, Path]] = []
+    for run_dir in matching_runs:
+        baseline_root = run_dir / "baseline"
+        detections = sorted(
+            path
+            for path in baseline_root.rglob("page_*_detections.json")
+            if path.is_file()
         )
-    return matches[0]
+        for detection in detections:
+            resolved.append((run_dir, detection))
+
+    if len(resolved) != 1:
+        details = ", ".join(
+            f"{run_dir.name}:{detection.relative_to(run_dir)}"
+            for run_dir, detection in resolved[:10]
+        )
+        raise RuntimeError(
+            "Expected one retained historical detection for "
+            f"image={image_rel} date={historical_run_date}, found {len(resolved)}: "
+            f"{details}"
+        )
+    return resolved[0]
 
 
 def find_single_detection(root: Path) -> Path:
@@ -88,6 +124,7 @@ def main() -> int:
     main_repo = args.main_repo_root.expanduser().resolve()
     manifest_path = (worktree / args.manifest).resolve()
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    historical_run_date = str(manifest["historical_run_date"])
 
     output_root = main_repo / OUTPUT_REL
     if output_root.exists():
@@ -98,7 +135,7 @@ def main() -> int:
 
     report_path = output_root / "fresh_upstream_representative_probe_report.json"
     report: dict[str, Any] = {
-        "schema_version": "issue245.fresh_upstream_representative_probe.v1",
+        "schema_version": "issue245.fresh_upstream_representative_probe.v2",
         "status": "running",
         "production_default_changed": False,
         "historical_artifact_used_as_production_input": False,
@@ -115,6 +152,7 @@ def main() -> int:
             },
         },
         "manifest": str(manifest_path),
+        "historical_run_date": historical_run_date,
         "pages": [],
     }
     write_report(report_path, report)
@@ -153,13 +191,15 @@ def main() -> int:
             image_host = main_repo / image_rel
             if not image_host.is_file():
                 raise FileNotFoundError(f"Representative input is missing: {image_host}")
-            historical = resolve_single_glob(
-                main_repo, str(item["historical_detection_glob"])
+            historical_run, historical = resolve_historical_detection(
+                main_repo, image_rel, historical_run_date
             )
 
             page_root = output_root / "pages" / page_id
             evaluator_host = page_root / "evaluator"
-            evaluator_container = Path("/workspace") / OUTPUT_REL / "pages" / page_id / "evaluator"
+            evaluator_container = (
+                Path("/workspace") / OUTPUT_REL / "pages" / page_id / "evaluator"
+            )
             run_id = f"issue245_fresh_upstream_representative_{page_id}"
             run_logged(
                 [
@@ -195,7 +235,9 @@ def main() -> int:
                     "input": {
                         "path": str(image_host),
                         "sha256": sha256_file(image_host),
+                        "artifact_key": image_artifact_key(image_rel),
                     },
+                    "historical_run": str(historical_run),
                     "historical_detection": str(historical),
                     "candidate_detection": str(candidate),
                     "candidate_detection_sha256": sha256_file(candidate),

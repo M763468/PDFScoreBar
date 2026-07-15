@@ -5,6 +5,10 @@ import pytest
 from tools.issue245 import run_fresh_upstream_full68_probe as probe
 
 
+def test_issue120_page_set_has_68_pages() -> None:
+    assert sum(len(pages) for pages in probe.SCORES.values()) == 68
+
+
 def test_discover_canonical_images_uses_issue120_page_set(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -29,6 +29,8 @@ trap cleanup EXIT
 normalize_output_ownership
 
 cd "${REPO_ROOT}"
-PYTHONPATH="${REPO_ROOT}${PYTHONPATH:+:${PYTHONPATH}}" \
-ISSUE245_MAIN_REPO_ROOT="${MAIN_REPO_ROOT}" \
-  "${HOST_PYTHON}" -m tools.issue245.run_fresh_upstream_full68_probe "$@"
+export PYTHONPATH="${REPO_ROOT}${PYTHONPATH:+:${PYTHONPATH}}"
+export ISSUE245_MAIN_REPO_ROOT="${MAIN_REPO_ROOT}"
+
+"${HOST_PYTHON}" -m tools.issue245.validate_fresh_upstream_full68_inputs "$@"
+"${HOST_PYTHON}" -m tools.issue245.run_fresh_upstream_full68_probe "$@"

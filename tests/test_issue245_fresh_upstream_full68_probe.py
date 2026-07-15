@@ -5,23 +5,35 @@ import pytest
 from tools.issue245 import run_fresh_upstream_full68_probe as probe
 
 
-def test_discover_canonical_images_filters_generated_derivatives(tmp_path: Path) -> None:
+def test_discover_canonical_images_uses_issue120_page_set(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     image_root = tmp_path / "images"
     score = image_root / "score_a"
     score.mkdir(parents=True)
-    expected = [score / "page_001.png", score / "page_002.jpg"]
-    for path in expected:
+    selected = [score / "page_001.png", score / "page_003.png"]
+    excluded = score / "page_002.png"
+    for path in [*selected, excluded]:
         path.write_bytes(b"image")
-    for name in (
-        "page_001_teaser.png",
-        "page_001_debug.png",
-        "page_001_staff.png",
-        "page_001_tesseract.png",
-        "page_001_proxy.png",
-    ):
-        (score / name).write_bytes(b"generated")
 
-    assert probe.discover_canonical_images(image_root) == expected
+    monkeypatch.setattr(
+        probe,
+        "SCORES",
+        {"score_a": ["page_001", "page_003"]},
+    )
+
+    assert probe.discover_canonical_images(image_root) == selected
+
+
+def test_discover_canonical_images_rejects_missing_manifest_page(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    image_root = tmp_path / "images"
+    image_root.mkdir(parents=True)
+    monkeypatch.setattr(probe, "SCORES", {"score_a": ["page_001"]})
+
+    with pytest.raises(RuntimeError, match="image set is incomplete"):
+        probe.discover_canonical_images(image_root)
 
 
 def test_build_inventory_rejects_duplicate_normalized_keys(

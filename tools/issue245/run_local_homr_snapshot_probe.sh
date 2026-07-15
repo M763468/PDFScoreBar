@@ -32,4 +32,4 @@ cd "${REPO_ROOT}"
 PYTHONPATH="${REPO_ROOT}${PYTHONPATH:+:${PYTHONPATH}}" \
 ISSUE245_MAIN_REPO_ROOT="${MAIN_REPO_ROOT}" \
 ISSUE245_REVISION_BASE_IMAGE="${BASE_IMAGE}" \
-  "${HOST_PYTHON}" tools/issue245/run_local_homr_snapshot_probe.py "$@"
+  "${HOST_PYTHON}" -m tools.issue245.run_local_homr_snapshot_probe_entrypoint "$@"

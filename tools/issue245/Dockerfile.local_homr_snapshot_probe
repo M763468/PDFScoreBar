@@ -1,0 +1,24 @@
+ARG BASE_IMAGE=pdfscore_pipeline_gpu
+FROM ${BASE_IMAGE}
+
+ARG HOMR_SOURCE_COMMIT
+
+USER root
+
+COPY . /opt/issue245_homr
+
+RUN test -n "${HOMR_SOURCE_COMMIT}" && \
+    test -f /opt/issue245_homr/homr/segmentation/segnet_155-1240eedca553155b3c75fc9c7f643465383430a0.onnx && \
+    printf '%s\n' "${HOMR_SOURCE_COMMIT}" > /opt/issue245_homr_commit.txt
+
+# Keep the managed base image's non-HOMR dependencies fixed while replacing only
+# the HOMR source/model snapshot and restoring the historical ORT GPU version.
+RUN /opt/venv_pipeline/bin/python -m pip uninstall -y \
+      onnxruntime onnxruntime-gpu || true && \
+    /opt/venv_pipeline/bin/python -m pip install --no-cache-dir --no-deps \
+      onnxruntime-gpu==1.22.0
+
+ENV PYTHONPATH="/opt/issue245_homr"
+
+LABEL issue245.homr.source_commit="${HOMR_SOURCE_COMMIT}"
+LABEL issue245.homr.snapshot_kind="local-clean-archive-with-retained-models"

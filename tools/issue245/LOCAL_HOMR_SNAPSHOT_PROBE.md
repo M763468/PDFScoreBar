@@ -8,7 +8,7 @@ Local read-only inventory recovered:
 
 - repository HEAD `864e2882f7a41afcf8f16654728a473ae56826d6`;
 - SegNet 155 fp32 and the matching transformer encoder/decoder models;
-- ONNX Runtime 1.22.0 in the local venv;
+- NumPy 2.2.6, OpenCV 4.12.0, and ONNX Runtime 1.22.0 in the local venv;
 - three dirty files.
 
 The dirty files are not copied into this candidate:
@@ -23,6 +23,8 @@ The probe therefore reconstructs the strongest artifact-time candidate as:
 clean HOMR commit 864e288
 + retained SegNet 155 fp32 model
 + retained transformer encoder/decoder models
++ NumPy 2.2.6
++ OpenCV 4.12.0.88
 + onnxruntime-gpu 1.22.0
 + PDFScoreBar source bd6ae56
 ```
@@ -70,5 +72,5 @@ The retained historical detection JSON is comparison evidence only. It is not co
 ## Decision gate
 
 - If the recovered candidate reproduces or materially approaches the retained 87 records, narrow the remaining difference between source, model, and dependency layers before testing representative pages.
-- If it reproduces the prior SegNet 155 result (`82` matches, `5` historical-only, `12` candidate-only), the older September HOMR source does not explain the artifact by itself; move to the exact historical dependency/container layer.
+- If it reproduces the prior SegNet 155 result (`82` matches, `5` historical-only, `12` candidate-only), the older September HOMR source does not explain the artifact by itself; move to the remaining exact historical container/dependency differences.
 - Do not run full-68 or change a production default from this page-001 experiment.

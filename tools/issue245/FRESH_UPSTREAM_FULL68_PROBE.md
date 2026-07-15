@@ -30,7 +30,8 @@ git reset --hard \
   origin/investigate/issue245-fresh-upstream-detector-route
 
 python3 -m py_compile \
-  tools/issue245/run_fresh_upstream_full68_probe.py
+  tools/issue245/run_fresh_upstream_full68_probe.py \
+  tools/issue245/validate_fresh_upstream_full68_inputs.py
 
 PYTHONPATH=. python3 -m pytest \
   tests/test_issue245_fresh_upstream_full68_probe.py \
@@ -41,7 +42,17 @@ bash tools/issue245/run_fresh_upstream_full68_probe.sh \
   --preflight-only
 ```
 
-Preflight must establish:
+The wrapper first validates the canonical and retained-baseline inventory independently. It must print:
+
+```text
+status=validated
+canonical_pages=68
+historical_pages=68
+historical_detection_count=4381
+historical_run_date=20260131
+```
+
+The generated preflight report must also establish:
 
 ```text
 expected_pages=68
@@ -105,6 +116,9 @@ status=completed
 pages_completed=68
 pages_failed=0
 pages_different=0
+historical_count=4381
+candidate_count=4381
+matched_count=4381
 historical_only_count=0
 candidate_only_count=0
 all_semantic_equal=true

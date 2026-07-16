@@ -16,15 +16,15 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+from src.pipeline.steps.hybrid_consensus import (
+    apply_hybrid_consensus_filter,
+    load_json_boxes,
+)
 from tools.issue120.eval_full68_from_intermediates import SCORES
 from tools.issue245.run_pdfscore_evaluator_ref_probe import (
     compare_records,
     load_records,
     sha256_file,
-)
-from src.pipeline.steps.hybrid_consensus import (
-    apply_hybrid_consensus_filter,
-    load_json_boxes,
 )
 
 DEFAULT_MAIN_REPO = Path("/home/masaki_muramatsu/ws_PDFScoreBar")

@@ -16,35 +16,62 @@ if str(PROJECT_ROOT) not in sys.path:
 from tools.verification.gt_preparation.suggest_candidate_drops import suggest_candidate_drops
 
 
+def _same_existing_file(left: Path, right: Path) -> bool:
+    """Return whether two existing paths identify the same file."""
+    if not left.exists() or not right.exists():
+        return False
+    try:
+        return left.samefile(right)
+    except OSError:
+        return left.resolve() == right.resolve()
+
+
 def _resolve_clef_mask_path(rec: dict[str, Any]) -> Path | None:
+    staff_mask_raw = rec.get("staff_mask")
+    staff_mask = Path(staff_mask_raw) if staff_mask_raw else None
+
     explicit = rec.get("clef_mask")
     if explicit:
-        p = Path(explicit)
-        if p.exists():
-            return p
+        path = Path(explicit)
+        if path.exists() and not (
+            staff_mask is not None and _same_existing_file(path, staff_mask)
+        ):
+            return path
 
-    staff_mask_raw = rec.get("staff_mask")
-    if staff_mask_raw:
-        staff_mask = Path(staff_mask_raw)
+    if staff_mask is not None:
         candidates = [
             Path(
-                str(staff_mask).replace("_proxy_debug_3_staff.png", "_proxy_debug_7_clefs_keys.png")
+                str(staff_mask).replace(
+                    "_proxy_debug_3_staff.png", "_proxy_debug_7_clefs_keys.png"
+                )
             ),
             Path(str(staff_mask).replace("_debug_3_staff.png", "_debug_7_clefs_keys.png")),
+            Path(str(staff_mask).replace("_proxy_debug_3_staff.png", "_proxy_debug_2_clefs.png")),
+            Path(str(staff_mask).replace("_debug_3_staff.png", "_debug_2_clefs.png")),
+            Path(str(staff_mask).replace("_staff_mask.png", "_clef_mask.png")),
+            Path(str(staff_mask).replace("_staff_mask.png", "_clefs_keys_mask.png")),
         ]
-        for p in candidates:
-            if p.exists():
-                return p
+        for path in candidates:
+            if path.exists() and not _same_existing_file(path, staff_mask):
+                return path
 
     run_dir_raw = rec.get("run_dir")
     if run_dir_raw:
         run_dir = Path(run_dir_raw)
-        found = sorted(run_dir.rglob("*_debug_7_clefs_keys.png"))
+        patterns = (
+            "*_debug_7_clefs_keys.png",
+            "*_debug_2_clefs.png",
+            "*_clef_mask.png",
+            "*_clefs_keys_mask.png",
+        )
+        found = sorted({path for pattern in patterns for path in run_dir.rglob(pattern)})
+        if staff_mask is not None:
+            found = [path for path in found if not _same_existing_file(path, staff_mask)]
         if found:
             page = str(rec.get("page", ""))
-            for p in found:
-                if page and page in p.name:
-                    return p
+            for path in found:
+                if page and page in path.name:
+                    return path
             return found[0]
 
     return None
@@ -135,8 +162,8 @@ def main() -> None:
             sdir.mkdir(parents=True, exist_ok=True)
             (sdir / f"{page}_suggestion.json").write_text(json.dumps(sugg, indent=2))
 
-            for d in sugg["drop_suggested"]:
-                for reason in d.get("reasons", []):
+            for dropped in sugg["drop_suggested"]:
+                for reason in dropped.get("reasons", []):
                     reason_counts[reason] = reason_counts.get(reason, 0) + 1
 
             per_page.append(
@@ -148,7 +175,9 @@ def main() -> None:
                     "drop_suggested": sugg["counts"]["drop_suggested"],
                     "clef_mask_path": str(clef_mask) if clef_mask else None,
                     "clef_mask_resolved": clef_mask is not None,
-                    "filtered_candidates_path": str(out_dir / "pipeline2_no_peak_candidates.json"),
+                    "filtered_candidates_path": str(
+                        out_dir / "pipeline2_no_peak_candidates.json"
+                    ),
                 }
             )
             processed += 1

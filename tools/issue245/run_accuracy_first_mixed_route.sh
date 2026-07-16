@@ -4,7 +4,7 @@ set -euo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 MAIN_REPO_ROOT="${ISSUE245_MAIN_REPO_ROOT:-/home/masaki_muramatsu/ws_PDFScoreBar}"
 OUTPUT_ROOT="${MAIN_REPO_ROOT}/logs/issue245_accuracy_first_mixed_route"
-CURRENT_INVENTORY="${OUTPUT_ROOT}/current_source_inventory.json"
+CURRENT_INVENTORY="${MAIN_REPO_ROOT}/logs/issue245_current_source_inventory.json"
 BASE_IMAGE="${ISSUE245_REVISION_BASE_IMAGE:-pdfscore_pipeline_gpu}"
 HOST_UID="$(id -u)"
 HOST_GID="$(id -g)"

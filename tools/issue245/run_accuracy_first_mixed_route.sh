@@ -40,3 +40,7 @@ ISSUE245_MAIN_REPO_ROOT="${MAIN_REPO_ROOT}" \
   "${HOST_PYTHON}" -m tools.issue245.prepare_accuracy_first_mixed_route \
   --current-inventory "${CURRENT_INVENTORY}" \
   "$@"
+
+PYTHONPATH="${REPO_ROOT}${PYTHONPATH:+:${PYTHONPATH}}" \
+ISSUE245_MAIN_REPO_ROOT="${MAIN_REPO_ROOT}" \
+  "${HOST_PYTHON}" -m tools.issue245.validate_accuracy_first_mixed_route

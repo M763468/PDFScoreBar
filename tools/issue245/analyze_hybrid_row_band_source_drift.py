@@ -36,9 +36,7 @@ DEFAULT_MAIN_REPO = Path("/home/masaki_muramatsu/ws_PDFScoreBar")
 DEFAULT_MIXED_REPORT = Path(
     "logs/issue245_accuracy_first_mixed_route/accuracy_first_mixed_route_report.json"
 )
-DEFAULT_OUTPUT = Path(
-    "logs/issue245_accuracy_first_stage_e/hybrid_row_band_source_drift.json"
-)
+DEFAULT_OUTPUT = Path("logs/issue245_accuracy_first_stage_e/hybrid_row_band_source_drift.json")
 
 
 def _load_json(path: Path) -> Any:
@@ -76,9 +74,7 @@ def _find_page(report: dict[str, Any], score: str, page: str) -> dict[str, Any]:
         and str(item.get("page")) == page
     ]
     if len(matches) != 1:
-        raise ValueError(
-            f"Expected one mixed-route page for {score}/{page}, got {len(matches)}"
-        )
+        raise ValueError(f"Expected one mixed-route page for {score}/{page}, got {len(matches)}")
     return matches[0]
 
 
@@ -87,23 +83,15 @@ def _semantic_diff(left: Iterable[Box], right: Iterable[Box]) -> dict[str, Any]:
     right_counter = Counter(right)
     return {
         "semantic_equal": left_counter == right_counter,
-        "left_only": [
-            list(box) for box in sorted((left_counter - right_counter).elements())
-        ],
-        "right_only": [
-            list(box) for box in sorted((right_counter - left_counter).elements())
-        ],
+        "left_only": [list(box) for box in sorted((left_counter - right_counter).elements())],
+        "right_only": [list(box) for box in sorted((right_counter - left_counter).elements())],
     }
 
 
-def _row_clusters(
-    boxes: Sequence[Box], cluster_max_dist: float = 25.0
-) -> list[dict[str, Any]]:
+def _row_clusters(boxes: Sequence[Box], cluster_max_dist: float = 25.0) -> list[dict[str, Any]]:
     if not boxes:
         return []
-    ordered = sorted(
-        enumerate(boxes), key=lambda item: ((item[1][1] + item[1][3]) / 2.0, item[1])
-    )
+    ordered = sorted(enumerate(boxes), key=lambda item: ((item[1][1] + item[1][3]) / 2.0, item[1]))
     groups: list[list[tuple[int, Box]]] = [[ordered[0]]]
     for item in ordered[1:]:
         previous_center = (groups[-1][-1][1][1] + groups[-1][-1][1][3]) / 2.0
@@ -132,9 +120,7 @@ def _row_clusters(
     return result
 
 
-def _relevant_rows(
-    rows: Iterable[dict[str, Any]], reference: Box
-) -> list[dict[str, Any]]:
+def _relevant_rows(rows: Iterable[dict[str, Any]], reference: Box) -> list[dict[str, Any]]:
     center = (reference[1] + reference[3]) / 2.0
     containing = [row for row in rows if row["top"] <= center <= row["bottom"]]
     if containing:
@@ -213,16 +199,10 @@ def _variant_summary(boxes: Sequence[Box], reference: Box) -> dict[str, Any]:
 
 
 def _classify(variants: dict[str, dict[str, Any]]) -> str:
-    historical = bool(
-        variants["historical_sr_historical_omr"]["reference_band_present"]
-    )
+    historical = bool(variants["historical_sr_historical_omr"]["reference_band_present"])
     current = bool(variants["current_sr_current_omr"]["reference_band_present"])
-    historical_sr = bool(
-        variants["historical_sr_current_omr"]["reference_band_present"]
-    )
-    historical_omr = bool(
-        variants["current_sr_historical_omr"]["reference_band_present"]
-    )
+    historical_sr = bool(variants["historical_sr_current_omr"]["reference_band_present"])
+    historical_omr = bool(variants["current_sr_historical_omr"]["reference_band_present"])
     if not historical or current:
         return "unresolved"
     if historical_sr and not historical_omr:
@@ -247,9 +227,7 @@ def build_report(
     historical_inventory_raw = mixed_report.get("historical_inventory", {}).get("path")
     if not historical_inventory_raw:
         raise ValueError("Mixed route report is missing historical inventory path")
-    historical_inventory_path = resolve_repo_path(
-        main_repo_root, historical_inventory_raw
-    )
+    historical_inventory_path = resolve_repo_path(main_repo_root, historical_inventory_raw)
     historical_inventory = load_inventory(historical_inventory_path)
     historical_by_key = inventory_by_key(historical_inventory)
 
@@ -262,17 +240,11 @@ def build_report(
         historical_record = historical_by_key[(score, page)]
         historical_paths = layer_paths(main_repo_root, historical_record)
 
-        fresh_baseline_path = resolve_repo_path(
-            main_repo_root, page_report["fresh_baseline"]
-        )
+        fresh_baseline_path = resolve_repo_path(main_repo_root, page_report["fresh_baseline"])
         current_sr_path = resolve_repo_path(main_repo_root, page_report["current_sr"])
         current_omr_path = resolve_repo_path(main_repo_root, page_report["current_omr"])
-        historical_hybrid_path = resolve_repo_path(
-            main_repo_root, page_report["historical_hybrid"]
-        )
-        mixed_hybrid_path = resolve_repo_path(
-            main_repo_root, page_report["mixed_hybrid"]
-        )
+        historical_hybrid_path = resolve_repo_path(main_repo_root, page_report["historical_hybrid"])
+        mixed_hybrid_path = resolve_repo_path(main_repo_root, page_report["mixed_hybrid"])
 
         historical_baseline = load_json_boxes(historical_paths["baseline"])
         fresh_baseline = load_json_boxes(fresh_baseline_path)
@@ -313,10 +285,7 @@ def build_report(
                 )
             ),
         }
-        variants = {
-            name: _variant_summary(boxes, reference)
-            for name, boxes in generated.items()
-        }
+        variants = {name: _variant_summary(boxes, reference) for name, boxes in generated.items()}
 
         historical_reproduction = _semantic_diff(
             generated["historical_sr_historical_omr"], saved_historical_hybrid
@@ -392,9 +361,7 @@ def main() -> int:
         targets=args.target,
     )
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(
-        json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
+    output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
     for target in report["targets"]:
         print(

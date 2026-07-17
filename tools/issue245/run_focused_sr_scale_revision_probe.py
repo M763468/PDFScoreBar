@@ -46,9 +46,7 @@ DEFAULT_MAIN_REPO = Path("/home/masaki_muramatsu/ws_PDFScoreBar")
 DEFAULT_DRIFT_REPORT = Path(
     "logs/issue245_accuracy_first_stage_e/hybrid_row_band_source_drift.json"
 )
-OUTPUT_REL = Path(
-    "logs/issue245_accuracy_first_stage_e/focused_sr_scale_revision_probe"
-)
+OUTPUT_REL = Path("logs/issue245_accuracy_first_stage_e/focused_sr_scale_revision_probe")
 ROW_CLUSTER_MAX_DIST = 25.0
 
 
@@ -96,10 +94,7 @@ def _reference_band_present(boxes: Sequence[Box], reference: Box) -> bool:
         cluster_max_dist=ROW_CLUSTER_MAX_DIST,
         min_row_count=1,
     )
-    return any(
-        (int(row["top"]), int(row["bottom"])) == expected
-        for row in rows
-    )
+    return any((int(row["top"]), int(row["bottom"])) == expected for row in rows)
 
 
 def _variant_consensus_summary(
@@ -257,9 +252,7 @@ def _run_variant(
     }
 
 
-def _resolve_variant_detection(
-    variant: dict[str, Any], score: str, page: str
-) -> Path:
+def _resolve_variant_detection(variant: dict[str, Any], score: str, page: str) -> Path:
     raw = variant["detections"][f"{score}/{page}"]["path"]
     path = Path(raw)
     if not path.is_file():
@@ -295,9 +288,7 @@ def main() -> int:
     if len(pages) != 2:
         raise RuntimeError(f"Expected two focused pages, found {len(pages)}")
 
-    historical_inventory_path = resolve_repo_path(
-        main_repo, drift_report["historical_inventory"]
-    )
+    historical_inventory_path = resolve_repo_path(main_repo, drift_report["historical_inventory"])
     historical_inventory = load_inventory(historical_inventory_path)
     historical_by_key = inventory_by_key(historical_inventory)
 
@@ -375,9 +366,7 @@ def main() -> int:
 
             variant_summaries: dict[str, Any] = {}
             for name, variant in report["variants"].items():
-                detection_path = _resolve_variant_detection(
-                    variant, score, page_name
-                )
+                detection_path = _resolve_variant_detection(variant, score, page_name)
                 summary = _variant_consensus_summary(
                     baseline_path=baseline_path,
                     omr_path=current_omr_path,
@@ -411,9 +400,7 @@ def main() -> int:
                         "classification": _classify_target(
                             current_x2_present=presence["current_source_x2"],
                             current_x4_present=presence["current_source_x4"],
-                            historical_source_x4_present=presence[
-                                "historical_source_x4"
-                            ],
+                            historical_source_x4_present=presence["historical_source_x4"],
                         ),
                     }
                 )

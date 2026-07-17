@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter
 from tools.issue245.analyze_hybrid_row_band_source_drift import (
     _classify,
     _row_clusters,
@@ -18,6 +19,18 @@ def _write_json(path: Path, payload: object) -> Path:
 
 def _detections(boxes: list[list[int]]) -> dict[str, object]:
     return {"predictions": [{"orig_bbox": box} for box in boxes]}
+
+
+def _consensus(
+    baseline: list[list[int]],
+    sr: list[list[int]],
+    omr: list[list[int]],
+) -> list[list[int]]:
+    return apply_hybrid_consensus_filter(
+        baseline_boxes=baseline,
+        sr_boxes=sr,
+        omr_boxes=omr,
+    )
 
 
 def _fixture(
@@ -50,7 +63,7 @@ def _fixture(
     )
     historical_hybrid_path = _write_json(
         historical_run / "hybrid_results" / f"{page}_hybrid.json",
-        [box for box in baseline if box in historical_sr or box in historical_omr],
+        _consensus(baseline, historical_sr, historical_omr),
     )
     historical_inventory = _write_json(
         root / "historical_inventory.json",
@@ -68,8 +81,10 @@ def _fixture(
     fresh_baseline = _write_json(root / "fresh_baseline.json", _detections(baseline))
     current_sr_path = _write_json(root / "current_sr.json", _detections(current_sr))
     current_omr_path = _write_json(root / "current_omr.json", current_omr)
-    current_selected = [box for box in baseline if box in current_sr or box in current_omr]
-    mixed_hybrid = _write_json(root / "mixed_hybrid.json", current_selected)
+    mixed_hybrid = _write_json(
+        root / "mixed_hybrid.json",
+        _consensus(baseline, current_sr, current_omr),
+    )
 
     mixed_report = _write_json(
         root / "mixed_report.json",

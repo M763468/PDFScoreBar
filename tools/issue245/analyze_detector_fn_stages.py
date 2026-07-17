@@ -15,6 +15,7 @@ from typing import Any, Iterable, Sequence
 from src.common.barline_evaluation import (
     barline_vertical_overlap,
     center_distance_x,
+    get_barline_match_rank,
     is_barline_match,
 )
 from tools.issue120.eval_full68_from_intermediates import PageRecord, find_page_file
@@ -105,10 +106,38 @@ def _resolve_page_file(root: Path, score: str, page: str, filename: str) -> Path
 
 
 def _candidate_path(root: Path, score: str, page: str) -> Path:
-    path = root / score / page / CANDIDATE_FILENAME
-    if not path.exists():
-        raise FileNotFoundError(path)
-    return path
+    direct_paths = (
+        root / score / page / CANDIDATE_FILENAME,
+        root / f"eval2_{score}_{page}" / CANDIDATE_FILENAME,
+        root / score / f"eval2_{score}_{page}" / CANDIDATE_FILENAME,
+    )
+    direct_matches = [path for path in direct_paths if path.is_file()]
+    if len(direct_matches) == 1:
+        return direct_matches[0]
+    if len(direct_matches) > 1:
+        raise RuntimeError(
+            f"Ambiguous direct {CANDIDATE_FILENAME} for {score}/{page} below {root}: "
+            + ", ".join(str(path) for path in direct_matches)
+        )
+
+    recursive_matches = sorted(
+        {
+            path
+            for path in root.rglob(CANDIDATE_FILENAME)
+            if path.is_file() and score in str(path) and page in str(path)
+        }
+    )
+    if len(recursive_matches) == 1:
+        return recursive_matches[0]
+    if len(recursive_matches) > 1:
+        raise RuntimeError(
+            f"Ambiguous {CANDIDATE_FILENAME} for {score}/{page} below {root}: "
+            + ", ".join(str(path) for path in recursive_matches)
+        )
+    raise FileNotFoundError(
+        f"Missing {CANDIDATE_FILENAME} for {score}/{page} below {root}. "
+        "Tried direct paths: " + ", ".join(str(path) for path in direct_paths)
+    )
 
 
 def _candidate_metrics(candidate: Box, target: Box) -> dict[str, Any]:
@@ -145,6 +174,147 @@ def _stage_summary(boxes: Iterable[Box], target: Box, nearby_limit: int) -> dict
         "present": bool(matching),
         "matching_candidates": matching,
         "nearby_candidates": nearby,
+    }
+
+
+def _candidate_height(box: Box) -> int:
+    return abs(box[3] - box[1])
+
+
+def _bbox_l1_distance(box_a: Box, box_b: Box) -> int:
+    return sum(abs(box_a[index] - box_b[index]) for index in range(4))
+
+
+def _historical_reference(boxes: Iterable[Box], target: Box) -> dict[str, Any] | None:
+    matching = [
+        candidate
+        for candidate in boxes
+        if is_barline_match(
+            candidate,
+            target,
+            rule_name="center_anchor",
+            vov_threshold=0.5,
+            xdist_threshold=12.0,
+        )
+    ]
+    if not matching:
+        return None
+
+    def rank_key(candidate: Box) -> tuple[float, ...]:
+        rank = get_barline_match_rank(candidate, target, rule_name="center_anchor")
+        return tuple(-float(value) for value in rank) + tuple(float(value) for value in candidate)
+
+    reference = min(matching, key=rank_key)
+    return {
+        "bbox": list(reference),
+        "height": _candidate_height(reference),
+        "match_rank": list(get_barline_match_rank(reference, target, rule_name="center_anchor")),
+        "matching_candidate_count": len(matching),
+        "selection_reason": (
+            "Selected the highest existing center_anchor match rank "
+            "(vertical overlap, x closeness, IoU); bbox lexicographic order breaks ties."
+        ),
+    }
+
+
+def _geometry_comparison(boxes: Iterable[Box], reference: Box) -> dict[str, Any]:
+    box_list = list(boxes)
+    reference_height = _candidate_height(reference)
+    exact_present = reference in box_list
+    if not box_list:
+        return {
+            "exact_present": exact_present,
+            "closest_bbox": None,
+            "bbox_delta": None,
+            "xdist": None,
+            "vertical_overlap": None,
+            "reference_height": reference_height,
+            "closest_height": None,
+            "height_ratio": None,
+            "top_delta": None,
+            "bottom_delta": None,
+        }
+
+    closest = min(
+        box_list,
+        key=lambda candidate: (
+            center_distance_x(candidate, reference),
+            -barline_vertical_overlap(candidate, reference),
+            _bbox_l1_distance(candidate, reference),
+            candidate,
+        ),
+    )
+    closest_height = _candidate_height(closest)
+    return {
+        "exact_present": exact_present,
+        "closest_bbox": list(closest),
+        "bbox_delta": [closest[index] - reference[index] for index in range(4)],
+        "xdist": center_distance_x(closest, reference),
+        "vertical_overlap": barline_vertical_overlap(closest, reference),
+        "reference_height": reference_height,
+        "closest_height": closest_height,
+        "height_ratio": closest_height / reference_height if reference_height else None,
+        "top_delta": closest[1] - reference[1],
+        "bottom_delta": closest[3] - reference[3],
+    }
+
+
+def _historical_geometry_trace(
+    comparisons: dict[str, dict[str, Any]],
+    stage_boxes: dict[str, list[Box]],
+    reference: Box,
+    target: Box,
+) -> dict[str, Any]:
+    exact_stages = [name for name in STAGE_ORDER if comparisons[name]["exact_present"]]
+    states = [("historical_reference", True)] + [
+        (name, bool(comparisons[name]["exact_present"])) for name in STAGE_ORDER
+    ]
+    first_loss = next(
+        (
+            {"from": states[index - 1][0], "to": name, "change": "lost"}
+            for index, (name, present) in enumerate(states)
+            if index > 0 and not present and states[index - 1][1]
+        ),
+        None,
+    )
+    shorter_matching_by_stage = {
+        name: sorted(
+            (
+                candidate
+                for candidate in stage_boxes[name]
+                if _candidate_height(candidate) < _candidate_height(reference)
+                and is_barline_match(
+                    candidate,
+                    target,
+                    rule_name="center_anchor",
+                    vov_threshold=0.5,
+                    xdist_threshold=12.0,
+                )
+            ),
+            key=lambda candidate: (
+                center_distance_x(candidate, reference),
+                -barline_vertical_overlap(candidate, reference),
+                _bbox_l1_distance(candidate, reference),
+                candidate,
+            ),
+        )
+        for name in STAGE_ORDER
+    }
+    first_shorter_matching_stage = next(
+        (name for name in STAGE_ORDER if shorter_matching_by_stage[name]),
+        None,
+    )
+    first_shorter_matching_bbox = (
+        list(shorter_matching_by_stage[first_shorter_matching_stage][0])
+        if first_shorter_matching_stage is not None
+        else None
+    )
+    return {
+        "last_exact_stage": exact_stages[-1] if exact_stages else None,
+        "first_exact_loss_transition": first_loss,
+        "first_shorter_matching_stage": first_shorter_matching_stage,
+        "first_shorter_matching_bbox": first_shorter_matching_bbox,
+        "closest_geometry_by_stage": comparisons,
     }
 
 
@@ -270,8 +440,7 @@ def build_report(
     target_reports = []
     for target in targets:
         summaries = {
-            name: _stage_summary(stage_boxes[name], target, nearby_limit)
-            for name in stage_paths
+            name: _stage_summary(stage_boxes[name], target, nearby_limit) for name in stage_paths
         }
         filter_items: list[dict[str, Any]] = []
         if isinstance(suggestion, dict):
@@ -279,6 +448,18 @@ def build_report(
             filter_items.extend(_find_filter_items(suggestion, target, "drop_suggested"))
 
         historical_matches = summaries["historical_candidates"]["matching_candidates"]
+        historical_reference = _historical_reference(stage_boxes["historical_candidates"], target)
+        if historical_reference is None:
+            geometry_trace = None
+        else:
+            reference_box = _normalize_box(historical_reference["bbox"])
+            comparisons = {
+                name: _geometry_comparison(stage_boxes[name], reference_box) for name in STAGE_ORDER
+            }
+            historical_reference["stage_comparisons"] = comparisons
+            geometry_trace = _historical_geometry_trace(
+                comparisons, stage_boxes, reference_box, target
+            )
         historical_mask_assessments = [
             {
                 "bbox": item["bbox"],
@@ -293,6 +474,8 @@ def build_report(
                 "gt_bbox": list(target),
                 "stages": summaries,
                 "trace": _trace_transitions(summaries),
+                "historical_reference": historical_reference,
+                "historical_geometry_trace": geometry_trace,
                 "filter_decisions": filter_items,
                 "staff_mask": {
                     "path": str(staff_mask_path) if staff_mask_path else None,
@@ -303,7 +486,7 @@ def build_report(
         )
 
     return {
-        "schema_version": "issue245.detector_fn_stage_trace.v1",
+        "schema_version": "issue245.detector_fn_stage_trace.v2",
         "scope": {"score": score, "page": page},
         "inputs": {
             "inventory": str(inventory_path),

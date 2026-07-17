@@ -33,17 +33,13 @@ def _resolve_clef_mask_path(rec: dict[str, Any]) -> Path | None:
     explicit = rec.get("clef_mask")
     if explicit:
         path = Path(explicit)
-        if path.exists() and not (
-            staff_mask is not None and _same_existing_file(path, staff_mask)
-        ):
+        if path.exists() and not (staff_mask is not None and _same_existing_file(path, staff_mask)):
             return path
 
     if staff_mask is not None:
         candidates = [
             Path(
-                str(staff_mask).replace(
-                    "_proxy_debug_3_staff.png", "_proxy_debug_7_clefs_keys.png"
-                )
+                str(staff_mask).replace("_proxy_debug_3_staff.png", "_proxy_debug_7_clefs_keys.png")
             ),
             Path(str(staff_mask).replace("_debug_3_staff.png", "_debug_7_clefs_keys.png")),
             Path(str(staff_mask).replace("_proxy_debug_3_staff.png", "_proxy_debug_2_clefs.png")),
@@ -175,9 +171,7 @@ def main() -> None:
                     "drop_suggested": sugg["counts"]["drop_suggested"],
                     "clef_mask_path": str(clef_mask) if clef_mask else None,
                     "clef_mask_resolved": clef_mask is not None,
-                    "filtered_candidates_path": str(
-                        out_dir / "pipeline2_no_peak_candidates.json"
-                    ),
+                    "filtered_candidates_path": str(out_dir / "pipeline2_no_peak_candidates.json"),
                 }
             )
             processed += 1

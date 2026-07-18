@@ -35,9 +35,7 @@ DEFAULT_MAIN_REPO = Path("/home/masaki_muramatsu/ws_PDFScoreBar")
 DEFAULT_DRIFT_REPORT = Path(
     "logs/issue245_accuracy_first_stage_e/hybrid_row_band_source_drift.json"
 )
-DEFAULT_OUTPUT = Path(
-    "logs/issue245_accuracy_first_stage_e/probe_postprocess_stage_trace"
-)
+DEFAULT_OUTPUT = Path("logs/issue245_accuracy_first_stage_e/probe_postprocess_stage_trace")
 TRACE_VARIANT: dict[str, Any] = {
     "band_source": "row_stats",
     "band_row_pad_ratio": 0.25,
@@ -113,9 +111,7 @@ def _trace_target(
 ) -> dict[str, Any]:
     raw_match = _best_match(reference, captured["raw_detect"])
     raw_bbox = (
-        _normalize_box(raw_match["best_bbox"])
-        if raw_match["best_bbox"] is not None
-        else None
+        _normalize_box(raw_match["best_bbox"]) if raw_match["best_bbox"] is not None else None
     )
     if raw_bbox is None:
         result = {
@@ -143,9 +139,7 @@ def _trace_target(
         "present_after_initial_size_filter": _contains_exact(
             captured["initial_size_keep"], raw_bbox
         ),
-        "present_after_heuristic_filter": _contains_exact(
-            captured["heuristic_keep"], raw_bbox
-        ),
+        "present_after_heuristic_filter": _contains_exact(captured["heuristic_keep"], raw_bbox),
         "heuristic_drop_reasons": _drop_reasons(captured["heuristic_dropped"], raw_bbox),
         "trimmed_bbox": list(trimmed) if trimmed is not None else None,
         "trimmed_match": _best_match(reference, [trimmed] if trimmed is not None else []),
@@ -310,9 +304,7 @@ def build_report(*, main_repo: Path, drift_report_path: Path, output_root: Path)
                 "min_width_px": captured["min_width_px"],
                 "heuristic_drop_reason_counts": {
                     reason: sum(
-                        1
-                        for item in captured["heuristic_dropped"]
-                        if reason in item["reasons"]
+                        1 for item in captured["heuristic_dropped"] if reason in item["reasons"]
                     )
                     for reason in sorted(
                         {

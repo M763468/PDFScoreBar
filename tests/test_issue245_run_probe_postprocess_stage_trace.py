@@ -39,7 +39,7 @@ def test_classify_heuristic_drop_precedes_trim() -> None:
 def test_trace_target_records_trim_geometry_collapse() -> None:
     reference = (100, 200, 104, 300)
     raw = (100, 175, 104, 300)
-    trimmed = (100, 225, 104, 300)
+    trimmed = (100, 301, 104, 350)
     captured = {
         "raw_detect": [raw],
         "initial_size_keep": [raw],

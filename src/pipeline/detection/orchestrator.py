@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import shutil
 from pathlib import Path
@@ -15,6 +16,7 @@ from src.pipeline.utils.io import ensure_dir
 
 from .config import get_cnn_apply_nms, get_probe_kwargs
 from .hybrid import HybridDetector
+from .input_contract import build_detector_input_contract
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +84,8 @@ class DetectorOrchestrator:
         self.in_memory_images = in_memory_images
         self.det_cfg = get_nested(config, "detection", default={}) or {}
         _reject_removed_detector_route_keys(self.det_cfg)
+        self.input_contract = build_detector_input_contract(self.det_cfg)
+        self.input_contract_path = self.run_dir / "intermediate" / "detector_input_contract.json"
         self.skip_existing = bool(self.det_cfg.get("probe_skip_existing", False))
         self.enable_sr = bool(self.det_cfg.get("enable_sr", True))
         self.sr_scale = int(self.det_cfg.get("sr_scale", 2))
@@ -89,8 +93,27 @@ class DetectorOrchestrator:
         self.hybrid_output_dir: Path | None = None
         self.probe_output_dir: Path | None = None
 
+    def _record_input_contract(self) -> Path | None:
+        """Persist which detector source is authoritative before executing stages."""
+        logger.info(
+            "Detector input contract: mode=%s fresh_upstream_authoritative=%s overrides=%s",
+            self.input_contract["mode"],
+            self.input_contract["fresh_upstream_authoritative"],
+            self.input_contract["override_keys"],
+        )
+        if self.dry_run:
+            return None
+        ensure_dir(self.input_contract_path.parent)
+        self.input_contract_path.write_text(
+            json.dumps(self.input_contract, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        return self.input_contract_path
+
     def run_detection(self) -> Dict[str, Any]:
         """Executes the full detection pipeline."""
+        input_contract_path = self._record_input_contract()
+
         hybrid_result = self._run_hybrid_detection()
         self.hybrid_output_dir = hybrid_result["hybrid_output_dir"]
         self.commands.extend(hybrid_result["commands"])
@@ -106,6 +129,8 @@ class DetectorOrchestrator:
             "commands": self.commands,
             "hybrid_output_dir": self.hybrid_output_dir,
             "probe_output_dir": self.probe_output_dir,
+            "detector_input_contract": self.input_contract,
+            "detector_input_contract_path": input_contract_path,
         }
 
     def _run_hybrid_detection(self) -> Dict[str, Any]:

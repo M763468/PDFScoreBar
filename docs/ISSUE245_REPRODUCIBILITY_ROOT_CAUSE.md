@@ -2,220 +2,172 @@
 
 ## Status
 
-This document records why accepted detector accuracy has repeatedly failed to
-reproduce from newly supplied PDFs even though earlier Issue #120 work reported a
-successful 68-page Stage E contract.
+Issue #245 established that two different detector input contracts had repeatedly
+been discussed under similar names. This made a retained checkpoint regression look
+like proof that newly supplied PDFs could reproduce the same detector accuracy.
 
-The central finding is that two different contracts were repeatedly discussed
-under similar names:
-
-1. **Checkpoint reconstruction**: rebuild probe candidates from an inventory that
-   references retained `hybrid_predictions`, then inject those candidates into the
-   detector/CNN route.
-2. **Fresh upstream regeneration**: start from canonical PDF images and make the
-   current HOMR/SR/OMR hybrid output authoritative for probe generation and CNN
-   band geometry.
-
-Only the first contract had reached the historical detector metrics. It does not
-establish that the second contract is reproducible.
-
-## Evidence from the Issue history
-
-### #147: the fresh Stage D boundary was already unresolved
-
-Issue #147 started because regenerated upstream artifacts did not preserve the
-historical Stage D target. A historical worktree could reproduce raw probe
-candidate generation byte-for-byte, but filtered output initially diverged. The
-remaining filter difference was traced to historical execution details such as
-clef-mask resolution.
-
-This was an artifact-provenance recovery result. It was not evidence that current
-HOMR/SR/OMR outputs matched the historical detector sources.
-
-### #149: the accepted detector target came from an inventory route
-
-Issue #149 recovered this chain:
+The large investigation history is preserved at:
 
 ```text
-20260208 bench inventory
-  -> generate_probe_candidates_from_inventory.py
-  -> clef-mask-aware candidate filtering
-  -> probe-rescue reconstruction
+archive/issue245-investigation-20260719
+```
+
+The durable changes extracted from that branch are limited to an explicit detector
+input contract, a per-run manifest, focused tests, and this record.
+
+## The two contracts
+
+### Checkpoint reconstruction
+
+The accepted Issue #120 detector metrics were recovered through a route equivalent
+to:
+
+```text
+benchmark inventory
+  -> retained hybrid_predictions
+  -> dense candidate reconstruction
+  -> candidate filtering and probe rescue
   -> CNN scoring
-  -> TP=3580 / FP=0 / FN=1
 ```
 
-The candidate generator reads these paths directly from each inventory record:
+The generated candidate files were new, but their authoritative existing boxes came
+from retained `hybrid_predictions` referenced by the inventory.
+
+The Stage E wrapper then configured:
 
 ```text
-record["image"]
-record["staff_mask"]
-record["hybrid_predictions"]
+detection.precomputed_probe_candidates_root
+detection.cnn_bands_from
 ```
 
-The `hybrid_predictions` value is the authoritative existing-box input to probe
-candidate generation. Therefore the route reproduces a retained detector
-checkpoint; it does not regenerate those hybrid predictions from a new PDF.
+This route remains useful for historical checkpoint regression, CNN comparison, and
+downstream isolation. It does not demonstrate that current HOMR/SR/OMR output from
+a newly supplied PDF reproduces the checkpoint.
 
-### #151: productionization preserved a partial route
+### Fresh upstream regeneration
 
-Issue #151 explicitly described the formal dense route as a detector-level
-partial route. It did not run the slow HOMR/SR/OMR upstream pipeline or prove
-fresh source equivalence.
+A fresh detector run starts from the input images and makes the current
+HOMR/SR/OMR hybrid output authoritative for both:
 
-### #141/#156/#158: terminology obscured the remaining boundary
+- probe candidate generation;
+- CNN band geometry.
 
-The first real HOMR/SR/OMR-inclusive Stage E run failed substantially:
-
-```text
-TP=3359 FP=145 FN=222
-FN_det=222 FN_cnn=0
-```
-
-The later Stage E repair reached the accepted metrics by reconstructing candidates
-from the inventory route and assigning:
-
-```text
-detection.precomputed_probe_candidates_root = reconstructed probe root
-detection.cnn_bands_from = reconstructed filtered root
-```
-
-The orchestrator still ran hybrid detection, but the current hybrid output was no
-longer authoritative for probe candidates or CNN band geometry. As a result,
-phrases such as "full pipeline", "freshly reconstructed", and
-"production-oriented route" were technically true only for execution/wiring,
-not for detector input provenance.
-
-Issue #158 generalized the route names but did not remove these candidate-source
-overrides. This made the checkpoint route easier to mistake for the fresh user
-route.
-
-### #244: the unresolved boundary reappeared in the user workflow
-
-Issue #244 compared retained and current source layers and found the first
-semantic divergence at baseline HOMR on all 68 pages. Historical candidate
-replay reproduced expected numbering, while current fresh HOMR/SR/OMR did not.
-
-This was not a new regression. It exposed the same fresh/checkpoint distinction
-that had remained unresolved after #147 and #141.
-
-### #245: a focused rescue was promoted too early
-
-The aligned-expansion rescue restored two focused CNN targets. It was then enabled
-in canonical configs before a source-general safety gate passed.
-
-On fresh `Va_Prokofiev_Symphony1/page_004`, it selected 131 rescues for 155
-existing boxes, produced two focused false positives, and still did not restore
-the remaining detector target. This demonstrates why focused-page success cannot
-serve as a production promotion gate.
-
-The rescue implementation remains available for controlled experiments, but the
-canonical configs keep it disabled until a fresh full-68 and downstream gate
-passes.
-
-## Why the same failure kept recurring
-
-### 1. Metrics did not identify the authoritative detector source
-
-The machine-readable evaluation contract recorded page counts, TP/FP/FN, and CNN
-settings, but did not state whether probe candidates came from current hybrid
-outputs or a precomputed root. Two runs with fundamentally different source
-contracts could therefore be compared as if they were equivalent.
-
-### 2. Candidate-source overrides were silent
-
-`precomputed_probe_candidates_root` bypasses probe generation from current hybrid
-outputs. `cnn_bands_from` can separately replace current hybrid band geometry for
-CNN scoring. The orchestrator still executes hybrid detection, so logs alone can
-make the run appear fresh.
-
-### 3. "Generated during this run" was confused with "generated from fresh sources"
-
-The dense candidate files were newly written under the current run directory, but
-their authoritative existing boxes came from inventory-referenced retained hybrid
-predictions. New output timestamps do not establish fresh input provenance.
-
-### 4. Durable records kept conclusions, not complete executable identity
-
-Large artifacts and detailed manifests correctly remained under ignored `logs/`,
-but later sessions often retained only metric summaries. Missing or weakly bound
-items included input artifact hashes, model hashes, environment identity, source
-mode, and the exact relationship between inventory records and generated roots.
-
-### 5. Validation was split across issues without one clean-room owner
-
-Different issues owned provenance recovery, detector-level reconstruction,
-production naming, full-pipeline execution, and accuracy repair. Each issue could
-satisfy its local acceptance criteria while the clean-checkout/new-PDF contract
-remained unproven.
-
-### 6. Tests primarily validated wiring
-
-Mocked orchestrator tests and helper tests were valuable, but did not verify that
-current HOMR/SR/OMR outputs were authoritative. The real GPU full-68 gate was
-manual and expensive, so config promotion could occur before that gate.
-
-### 7. External runtime inputs were not fully bootstrapped
-
-The OMR-DLN measure model and some SR/CNN weights live outside Git. Missing model
-weights, worktree-local paths, container mounts, and provider/runtime differences
-made reruns environment-dependent even before accuracy was evaluated.
-
-## Enforced contracts
-
-### Fresh upstream contract
-
-A run is fresh only when both conditions hold:
+For this contract, both candidate-source overrides must be unset:
 
 ```text
 precomputed_probe_candidates_root is unset
 cnn_bands_from is unset
 ```
 
-In this mode, the current hybrid output is authoritative for both probe generation
-and CNN band geometry.
+## Why the distinction was repeatedly lost
 
-`src/pipeline/detection/input_contract.py` classifies this mode as:
+### Similar route names
+
+Terms such as “full pipeline”, “freshly reconstructed”, and “production-oriented”
+described execution or wiring, but did not identify which artifact was authoritative
+for detector candidates.
+
+### Silent candidate-source overrides
+
+The orchestrator can run HOMR/SR/OMR and then bypass the resulting hybrid geometry by
+copying precomputed probe candidates. `cnn_bands_from` can separately replace the
+current hybrid bands used during CNN scoring. Console logs alone therefore cannot
+prove that a run is fresh.
+
+### New output was confused with fresh input
+
+Writing candidate JSON into a new run directory does not prove fresh provenance when
+the seed geometry comes from a retained inventory record.
+
+### Metrics omitted source identity
+
+TP/FP/FN, page counts, thresholds, and NMS settings were recorded, but the
+machine-readable result did not identify the authoritative candidate source. Runs
+with different input contracts could therefore be compared under the same baseline
+name.
+
+### Focused success was promoted too early
+
+The Issue #245 aligned-expansion experiment restored focused Shostakovich and
+Sibelius targets. On fresh `Va_Prokofiev_Symphony1/page_004`, however, it selected
+131 rescues for 155 existing boxes, introduced two false positives, and still did
+not restore the remaining detector target.
+
+That experiment is retained only on the archive branch. It is not included in the
+clean remediation branch and must not be enabled in a canonical config without a
+fresh full-68 and downstream regression.
+
+## Historical boundary
+
+The earlier Issue #244 investigation had already shown that:
+
+- the first semantic divergence between retained and current source layers occurred
+  at baseline HOMR;
+- retained candidate replay reproduced the expected numbering;
+- current fresh HOMR/SR/OMR did not preserve the accepted detector contract.
+
+Issue #245 did not discover a new regression. It exposed that the unresolved fresh
+boundary had been masked by the checkpoint reconstruction route.
+
+## Enforced machine contract
+
+`src/pipeline/detection/input_contract.py` classifies every detector configuration as
+one of:
 
 ```text
 fresh_upstream
-```
-
-The Issue #245 fresh full-68 runner rejects candidate-source overrides before it
-creates an output directory.
-
-### Checkpoint/precomputed contract
-
-A run with either candidate-source override is classified as:
-
-```text
 precomputed_candidate_route
 ```
 
-Such runs remain useful for historical regression, CNN comparison, or downstream
-isolation. They must not be cited as evidence that newly supplied PDFs reproduce
-the historical detector contract.
+A run is classified as `precomputed_candidate_route` when either
+`precomputed_probe_candidates_root` or `cnn_bands_from` is configured.
+
+`DetectorOrchestrator` writes the classification before detector execution to:
+
+```text
+<run_dir>/intermediate/detector_input_contract.json
+```
+
+The manifest records:
+
+- mode;
+- whether fresh upstream is authoritative;
+- whether current hybrid output is authoritative for probe generation;
+- whether current hybrid output is authoritative for CNN bands;
+- configured override paths and keys.
+
+A result must not be described as a fresh detector validation unless the manifest
+reports:
+
+```text
+mode = fresh_upstream
+fresh_upstream_authoritative = true
+override_keys = []
+```
 
 ## Promotion rules
 
 1. Experimental detector changes remain default OFF.
-2. Focused pages may establish mechanism, not production safety.
-3. A canonical config change requires a fresh upstream full-68 result.
-4. Detector, physical-measure, MMR, guard-case, and corrected-final gates remain
-   separate and must all be reported.
-5. Every claimed result must state the detector input mode and candidate-source
-   override keys.
-6. A new output directory is required for each fresh validation run.
-7. Checkpoint metrics and fresh metrics must not share an unlabeled baseline name.
+2. Focused pages establish a mechanism, not production safety.
+3. A canonical detector config change requires a fresh upstream full-68 result.
+4. Detector, physical-measure, MMR, guard-case, and corrected-final results remain
+   separate gates.
+5. Every claimed metric must state the detector input mode and override keys.
+6. Checkpoint metrics and fresh metrics must not share an unlabeled baseline name.
+7. Each fresh validation uses a new output root and records external model/runtime
+   provenance.
 
-## Current technical direction
+## Scope after branch cleanup
 
-The broad aligned-expansion rescue is not the next default fix. The remaining
-Prokofiev target is absent before CNN and is not recovered by the rescue. The next
-investigation should trace that single target through fresh baseline HOMR, SR-side
-HOMR, OMR-DLN, hybrid consensus, row-band construction, existing suppression,
-and probe generation while keeping the canonical rescue disabled.
+The clean remediation branch intentionally excludes:
 
-The objective is to identify the first layer where the target or its containing
-row disappears. Only a source-general repair at that boundary should proceed to
-focused and full-68 gates.
+- aligned-expansion production changes;
+- same-file staff/clef experiments;
+- OMR/SR bootstrap work;
+- the large `tools/issue245` investigation suite;
+- fresh Prokofiev accuracy repair.
+
+Those artifacts remain available on the archive branch. The remaining Prokofiev
+miss should be handled by a new narrow issue that identifies the first fresh layer
+where the target geometry or its containing row disappears before proposing a
+source-general repair.

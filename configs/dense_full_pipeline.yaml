@@ -34,6 +34,13 @@ detection:
   min_width_ratio: 0.0
   probe_width: 4
   max_per_band: 80
+  aligned_expansion_rescue_enabled: true
+  aligned_expansion_pad_ratio: 0.25
+  aligned_expansion_x_tolerance: 4.0
+  aligned_expansion_min_existing_coverage: 0.80
+  aligned_expansion_min_height_ratio: 1.25
+  aligned_expansion_max_height_ratio: 2.00
+  aligned_expansion_preserve_raw: false
   enable_heuristic_filters: true
   candidate_filter_kwargs:
     left_margin_ratio: 0.12

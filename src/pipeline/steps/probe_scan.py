@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -306,7 +307,16 @@ def _build_staff_mask_map(staff_mask_dir: Optional[Path]) -> Dict[str, Path]:
     return staff_mask_map
 
 
-def _build_clef_mask_map(clef_mask_dir: Optional[Path]) -> Dict[str, Path]:
+def _same_mask_file(left: Path, right: Path) -> bool:
+    try:
+        return os.path.samefile(left, right)
+    except OSError:
+        return left.resolve() == right.resolve()
+
+
+def _build_clef_mask_map(
+    clef_mask_dir: Optional[Path], staff_mask_map: Optional[Dict[str, Path]] = None
+) -> Dict[str, Path]:
     clef_mask_map: Dict[str, Path] = {}
     if not clef_mask_dir or not clef_mask_dir.exists():
         return clef_mask_map
@@ -321,6 +331,12 @@ def _build_clef_mask_map(clef_mask_dir: Optional[Path]) -> Dict[str, Path]:
                 .replace("_clef_mask.png", "")
                 .replace("_clefs_keys_mask.png", "")
             )
+            staff_path = (staff_mask_map or {}).get(stem_key)
+            if staff_path is not None and _same_mask_file(path, staff_path):
+                logger.warning(
+                    "Rejecting staff mask reused as clef mask for %s: %s", stem_key, path
+                )
+                continue
             if stem_key not in clef_mask_map or "sr" in path.parts:
                 clef_mask_map[stem_key] = path
     return clef_mask_map
@@ -365,7 +381,7 @@ def run_probe_scan_batch(
 
     ensure_dir(output_root)
     staff_mask_map = _build_staff_mask_map(staff_mask_dir)
-    clef_mask_map = _build_clef_mask_map(clef_mask_dir)
+    clef_mask_map = _build_clef_mask_map(clef_mask_dir, staff_mask_map)
 
     if probe_row_filter_mode is not None:
         logger.warning(

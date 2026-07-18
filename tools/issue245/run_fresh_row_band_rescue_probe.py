@@ -29,9 +29,7 @@ DEFAULT_MAIN_REPO = Path("/home/masaki_muramatsu/ws_PDFScoreBar")
 DEFAULT_DRIFT_REPORT = Path(
     "logs/issue245_accuracy_first_stage_e/hybrid_row_band_source_drift.json"
 )
-DEFAULT_OUTPUT = Path(
-    "logs/issue245_accuracy_first_stage_e/fresh_row_band_rescue_probe"
-)
+DEFAULT_OUTPUT = Path("logs/issue245_accuracy_first_stage_e/fresh_row_band_rescue_probe")
 TARGETS = (
     {
         "score": "Shostakovich-Sym5-Va",
@@ -84,7 +82,9 @@ def _load_json(path: Path) -> Any:
 
 def _resolve_input(path: Path, *, main_repo: Path) -> Path:
     expanded = path.expanduser()
-    candidates = [expanded] if expanded.is_absolute() else [Path.cwd() / expanded, main_repo / expanded]
+    candidates = (
+        [expanded] if expanded.is_absolute() else [Path.cwd() / expanded, main_repo / expanded]
+    )
     for candidate in candidates:
         resolved = candidate.resolve()
         if resolved.exists():
@@ -226,7 +226,9 @@ def build_report(*, main_repo: Path, drift_report_path: Path, output_root: Path)
         paths = record.get("paths", {})
         current_sr_path = _resolve_artifact(str(paths["current_sr"]), main_repo=main_repo)
         mixed_hybrid_path = _resolve_artifact(str(paths["mixed_hybrid"]), main_repo=main_repo)
-        image_path = (main_repo / "data" / "evaluation2" / "images" / score / f"{page}.png").resolve()
+        image_path = (
+            main_repo / "data" / "evaluation2" / "images" / score / f"{page}.png"
+        ).resolve()
         if not image_path.is_file():
             raise FileNotFoundError(image_path)
         mask_dir = current_sr_path.parent
@@ -267,14 +269,10 @@ def build_report(*, main_repo: Path, drift_report_path: Path, output_root: Path)
         for variant_name, boxes in variant_boxes.items():
             variants[variant_name]["delta_from_control"] = _semantic_delta(control_boxes, boxes)
 
-        page_targets = [
-            item for item in TARGETS if item["score"] == score and item["page"] == page
-        ]
+        page_targets = [item for item in TARGETS if item["score"] == score and item["page"] == page]
         for target in page_targets:
             reference = _normalize_box(target["reference"])
-            matches = {
-                name: _best_match(reference, boxes) for name, boxes in variant_boxes.items()
-            }
+            matches = {name: _best_match(reference, boxes) for name, boxes in variant_boxes.items()}
             result = {
                 "score": score,
                 "page": page,

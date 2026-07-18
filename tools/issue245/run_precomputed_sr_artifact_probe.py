@@ -18,7 +18,6 @@ import json
 import os
 import shutil
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
@@ -75,10 +74,17 @@ def _normalise_box(value: Sequence[Any]) -> Box:
 
 
 def _image_summary(path: Path) -> dict[str, Any]:
-    with Image.open(path) as image:
-        width, height = image.size
-        mode = image.mode
-        image_format = image.format
+    # Focused artifacts are trusted local x4 working images and exceed Pillow's
+    # conservative decompression-bomb limit. Keep the override scoped to this read.
+    previous_limit = Image.MAX_IMAGE_PIXELS
+    Image.MAX_IMAGE_PIXELS = None
+    try:
+        with Image.open(path) as image:
+            width, height = image.size
+            mode = image.mode
+            image_format = image.format
+    finally:
+        Image.MAX_IMAGE_PIXELS = previous_limit
     return {
         "path": str(path),
         "sha256": sha256_file(path),
@@ -172,7 +178,6 @@ def _run_logged(command: list[str], log_path: Path, *, cwd: Path) -> None:
         )
         assert process.stdout is not None
         for line in process.stdout:
-            sys.stdout.write(line)
             log.write(line)
         returncode = process.wait()
     if returncode != 0:
@@ -268,7 +273,6 @@ def _row_bands(
             "center": float(row["center"]),
             "top": int(row["top"]),
             "bottom": int(row["bottom"]),
-            "count": int(row["count"]),
         }
         for row in rows
     ]

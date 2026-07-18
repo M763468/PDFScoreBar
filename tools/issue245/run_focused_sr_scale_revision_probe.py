@@ -48,6 +48,7 @@ DEFAULT_DRIFT_REPORT = Path(
 )
 OUTPUT_REL = Path("logs/issue245_accuracy_first_stage_e/focused_sr_scale_revision_probe")
 ROW_CLUSTER_MAX_DIST = 25.0
+SR_WEIGHT_FILENAMES = ("RealESRGAN_x2plus.pth", "RealESRGAN_x4plus.pth")
 
 
 def _load_json(path: Path) -> Any:
@@ -153,6 +154,54 @@ def _container_image_path(main_repo: Path, image_path: Path) -> str:
     return str(Path("/workspace") / relative)
 
 
+def _container_workspace_path(worktree: Path, host_path: Path) -> str:
+    relative = host_path.resolve().relative_to(worktree.resolve())
+    return str(Path("/workspace") / relative)
+
+
+def _sr_weight_mounts(main_repo: Path, snapshot_root: Path | None) -> list[str]:
+    weights_root = main_repo / "external" / "realesrgan" / "weights"
+    missing = [
+        str(weights_root / filename)
+        for filename in SR_WEIGHT_FILENAMES
+        if not (weights_root / filename).is_file()
+    ]
+    if missing:
+        raise FileNotFoundError(f"Missing focused SR probe weights: {missing}")
+
+    mounts = [
+        "-v",
+        f"{weights_root}:/workspace/external/realesrgan/weights:ro",
+    ]
+    if snapshot_root is not None:
+        historical_weights_root = snapshot_root / "external" / "realesrgan" / "weights"
+        historical_weights_root.mkdir(parents=True, exist_ok=True)
+        mounts.extend(
+            [
+                "-v",
+                f"{weights_root}:/historical/external/realesrgan/weights:ro",
+            ]
+        )
+    return mounts
+
+
+def _container_user() -> str:
+    return f"{os.getuid()}:{os.getgid()}"
+
+
+def _container_runtime_env() -> list[str]:
+    return [
+        "-e",
+        "HOME=/tmp",
+        "-e",
+        "LOGNAME=issue245",
+        "-e",
+        "USER=issue245",
+        "-e",
+        "XDG_CACHE_HOME=/tmp",
+    ]
+
+
 def _run_variant(
     *,
     name: str,
@@ -172,17 +221,18 @@ def _run_variant(
     output_host.mkdir(parents=True)
 
     run_id = f"issue245_{name}"
-    output_container = Path("/workspace") / OUTPUT_REL / name / "evaluator"
+    output_container = Path(_container_workspace_path(worktree, output_root)) / name / "evaluator"
     mounts = [
         "-v",
         f"{worktree}:/workspace",
         "-v",
-        f"{main_repo / 'logs'}:/workspace/logs",
+        f"{main_repo / 'logs'}:/artifacts/logs:ro",
         "-v",
         f"{main_repo / 'data'}:/workspace/data:ro",
         "-w",
         "/workspace",
     ]
+    mounts.extend(_sr_weight_mounts(main_repo, snapshot_root))
     if snapshot_root is None:
         pythonpath = "/workspace"
         source_root = worktree
@@ -212,6 +262,9 @@ def _run_variant(
         "--rm",
         "--gpus",
         "all",
+        "--user",
+        _container_user(),
+        *_container_runtime_env(),
         *mounts,
         "-e",
         f"PYTHONPATH={pythonpath}",
@@ -273,6 +326,11 @@ def main() -> int:
         "--base-image",
         default=os.environ.get("ISSUE245_REVISION_BASE_IMAGE", "pdfscore_pipeline_gpu"),
     )
+    parser.add_argument(
+        "--output-root",
+        type=Path,
+        help="Writable output directory below the worktree (default: worktree logs path).",
+    )
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--rebuild", action="store_true")
     parser.add_argument("--remove-image", action="store_true")
@@ -302,7 +360,15 @@ def main() -> int:
         page["image_sha256"] = sha256_file(image_path)
         image_paths.append(image_path)
 
-    output_root = main_repo / OUTPUT_REL
+    output_root = (
+        args.output_root.expanduser().resolve()
+        if args.output_root is not None
+        else worktree / OUTPUT_REL
+    )
+    try:
+        output_root.relative_to(worktree.resolve())
+    except ValueError as error:
+        raise ValueError(f"Output root must be below the worktree: {output_root}") from error
     output_root.mkdir(parents=True, exist_ok=True)
     snapshot_root = output_root / "historical_source_snapshot"
     snapshot = extract_snapshot(worktree, args.historical_ref, snapshot_root)

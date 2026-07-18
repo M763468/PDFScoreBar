@@ -1,4 +1,5 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -27,3 +28,32 @@ def test_score_images_requires_only_the_canonical_pages(tmp_path: Path) -> None:
     assert runner.score_images(tmp_path, score) == [
         score_dir / f"{page}.png" for page in runner.SCORES[score]
     ]
+
+
+@pytest.mark.parametrize(
+    "override_key",
+    ["precomputed_probe_candidates_root", "cnn_bands_from"],
+)
+def test_fresh_runner_rejects_candidate_source_overrides(
+    tmp_path: Path, override_key: str
+) -> None:
+    config = tmp_path / "config.yaml"
+    config.write_text(
+        "detection:\n"
+        f"  {override_key}: logs/checkpoint/input\n"
+        "run: {}\n",
+        encoding="utf-8",
+    )
+    args = SimpleNamespace(
+        config=config,
+        image_root=tmp_path / "images",
+        gt_root=tmp_path / "gt",
+        output_root=tmp_path / "output",
+        scores=[],
+        score_threshold=0.1,
+        xdist_threshold=12.0,
+    )
+
+    with pytest.raises(ValueError, match=override_key):
+        runner.run(args)
+    assert not args.output_root.exists()

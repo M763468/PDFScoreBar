@@ -20,7 +20,6 @@ from tools.issue245.run_fresh_row_band_rescue_probe import (
     PRODUCTION_FILTER_KWARGS,
     PRODUCTION_PROBE_KWARGS,
     TARGETS,
-    _candidate_output,
     _find_page_record,
     _load_json,
     _normalize_box,
@@ -65,6 +64,16 @@ VARIANTS: dict[str, dict[str, Any]] = {
         "band_source": "row_stats",
         "band_row_pad_ratio": 0.75,
         "scan_existing_min_vertical_iou": 0.75,
+    },
+    "pad025_no_suppress": {
+        "band_source": "row_stats",
+        "band_row_pad_ratio": 0.25,
+        "scan_disable_existing_suppression": True,
+    },
+    "pad050_no_suppress": {
+        "band_source": "row_stats",
+        "band_row_pad_ratio": 0.50,
+        "scan_disable_existing_suppression": True,
     },
     "pad075_no_suppress": {
         "band_source": "row_stats",

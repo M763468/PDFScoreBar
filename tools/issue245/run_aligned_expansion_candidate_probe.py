@@ -35,9 +35,7 @@ DEFAULT_MAIN_REPO = Path("/home/masaki_muramatsu/ws_PDFScoreBar")
 DEFAULT_DRIFT_REPORT = Path(
     "logs/issue245_accuracy_first_stage_e/hybrid_row_band_source_drift.json"
 )
-DEFAULT_OUTPUT = Path(
-    "logs/issue245_accuracy_first_stage_e/aligned_expansion_candidate_probe"
-)
+DEFAULT_OUTPUT = Path("logs/issue245_accuracy_first_stage_e/aligned_expansion_candidate_probe")
 TRACE_VARIANT: dict[str, Any] = {
     "band_source": "row_stats",
     "band_row_pad_ratio": 0.25,
@@ -215,7 +213,9 @@ def _classify_target(matches: dict[str, dict[str, Any]]) -> str:
 
 def _write_boxes(path: Path, boxes: Iterable[Box]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps([list(box) for box in sorted(set(boxes))], indent=2), encoding="utf-8")
+    path.write_text(
+        json.dumps([list(box) for box in sorted(set(boxes))], indent=2), encoding="utf-8"
+    )
 
 
 def build_report(*, main_repo: Path, drift_report_path: Path, output_root: Path) -> dict[str, Any]:

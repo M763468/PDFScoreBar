@@ -22,7 +22,7 @@ def test_aligned_expansion_rejects_unrelated_boxes() -> None:
 
     assert _aligned_expansion_metrics((120, 175, 124, 325), existing) is None
     assert _aligned_expansion_metrics((102, 260, 106, 410), existing) is None
-    assert _aligned_expansion_metrics((102, 190, 106, 315), existing) is None
+    assert _aligned_expansion_metrics((102, 221, 106, 350), existing) is None
 
 
 def test_select_aligned_expansions_requires_sole_paper_drop_and_deduplicates() -> None:

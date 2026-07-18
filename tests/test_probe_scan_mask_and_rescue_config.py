@@ -17,11 +17,12 @@ def test_same_staff_mask_is_rejected_and_distinct_clef_is_retained(tmp_path: Pat
     staff = tmp_path / "page_004_staff_mask.png"
     clef = tmp_path / "page_004_clef_mask.png"
     staff.write_bytes(b"staff")
-    clef.write_bytes(b"clef")
+    clef.symlink_to(staff)
 
-    assert _build_clef_mask_map(tmp_path, {"page_004": staff}) == {"page_004": clef}
-    clef.unlink()
     assert _build_clef_mask_map(tmp_path, {"page_004": staff}) == {}
+    clef.unlink()
+    clef.write_bytes(b"clef")
+    assert _build_clef_mask_map(tmp_path, {"page_004": staff}) == {"page_004": clef}
 
 
 def test_aligned_rescue_defaults_off_and_extracts_without_probe_leakage() -> None:

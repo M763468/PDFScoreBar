@@ -2,10 +2,13 @@
 """Run the canonical Issue #120 full-68 detector route from fresh upstream artifacts.
 
 The production HybridDetector uses page stems as part of its intermediate
-layout.  Canonical full-68 pages repeat stems across scores, so this runner
+layout. Canonical full-68 pages repeat stems across scores, so this runner
 executes one score at a time, then collects only the freshly generated probe
-and CNN artifacts into the canonical evaluator layout.  It never reads a
-historical detector or candidate artifact as an input.
+and CNN artifacts into the canonical evaluator layout.
+
+A run is considered fresh only when the current hybrid output is authoritative
+for both probe generation and CNN band geometry. Candidate-source overrides are
+rejected even if HOMR/SR/OMR would otherwise execute.
 """
 
 from __future__ import annotations
@@ -21,6 +24,7 @@ from typing import Any
 
 from src.pipeline.core.config import load_yaml
 from src.pipeline.core.run_ids import build_probe_run_id_from_parts
+from src.pipeline.detection.input_contract import require_fresh_detector_input_contract
 from tools.issue120.eval_full68_from_intermediates import SCORES, evaluate
 
 DEFAULT_CONFIG = Path("configs/dense_full_pipeline.yaml")
@@ -88,19 +92,22 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "Choose a new output directory so fresh artifact provenance remains unambiguous."
         )
     config = load_yaml(args.config)
+    detection_config = config.setdefault("detection", {})
+    detector_input_contract = require_fresh_detector_input_contract(detection_config)
     selected = selected_scores(args.scores)
     args.output_root.mkdir(parents=True)
     fresh_results_root = args.output_root / "stage_e_full_pipeline"
     fresh_results_root.mkdir()
 
     provenance: dict[str, Any] = {
-        "schema_version": "issue245.fresh_stage_e_full68.v1",
+        "schema_version": "issue245.fresh_stage_e_full68.v2",
         "status": "running",
         "config": str(args.config),
         "image_root": str(args.image_root),
         "gt_root": str(args.gt_root),
         "selected_scores": selected,
         "expected_pages": sum(len(SCORES[score]) for score in selected),
+        "detector_input_contract": detector_input_contract,
         "historical_detector_candidate_artifact_used": False,
         "fresh_route": "HOMR + SR + official OMR-DLN -> hybrid -> probe -> current CNN",
         "score_runs": [],
@@ -115,8 +122,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     for score in selected:
         score_config = copy.deepcopy(config)
         detection = score_config.setdefault("detection", {})
-        if detection.get("precomputed_probe_candidates_root"):
-            raise ValueError("Fresh runner rejects detection.precomputed_probe_candidates_root")
+        score_input_contract = require_fresh_detector_input_contract(detection)
         detection["hybrid_output_root"] = str(args.output_root / "hybrid_runs")
         detection["probe_score_name"] = score
         run_id = f"issue245_fresh_{slugify(score)}"
@@ -148,6 +154,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 "hybrid_output_dir": str(result["hybrid_output_dir"]),
                 "probe_output_dir": str(probe_output_root),
                 "page_count": len(images),
+                "detector_input_contract": score_input_contract,
             }
         )
         provenance["copied_page_artifacts"].extend(copied)

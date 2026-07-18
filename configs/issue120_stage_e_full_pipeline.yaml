@@ -35,8 +35,11 @@ detection:
   min_width_ratio: 0.0
   probe_width: 4
   max_per_band: 80
-  # Focused rescue for short current-HOMR boxes: primary scan/filter/trim remain unchanged.
-  aligned_expansion_rescue_enabled: true
+
+  # Issue #245 aligned expansion is not part of the accepted Issue #120
+  # checkpoint contract. Keep it disabled unless an explicit experiment
+  # overrides this setting and records separate fresh-route validation.
+  aligned_expansion_rescue_enabled: false
   aligned_expansion_pad_ratio: 0.25
   aligned_expansion_x_tolerance: 4.0
   aligned_expansion_min_existing_coverage: 0.80

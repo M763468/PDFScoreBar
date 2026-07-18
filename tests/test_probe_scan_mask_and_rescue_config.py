@@ -32,12 +32,16 @@ def test_aligned_rescue_defaults_off_and_extracts_without_probe_leakage() -> Non
     assert cfg["enabled"] is False
 
 
-def test_canonical_dense_config_enables_rescue() -> None:
-    config = load_yaml(Path("configs/dense_full_pipeline.yaml"))
-    kwargs = get_probe_kwargs(config["detection"])
+def test_canonical_configs_keep_unvalidated_rescue_disabled() -> None:
+    for config_path in (
+        Path("configs/dense_full_pipeline.yaml"),
+        Path("configs/issue120_stage_e_full_pipeline.yaml"),
+    ):
+        config = load_yaml(config_path)
+        kwargs = get_probe_kwargs(config["detection"])
 
-    assert kwargs["aligned_expansion_rescue_enabled"] is True
-    assert kwargs["aligned_expansion_preserve_raw"] is False
+        assert kwargs["aligned_expansion_rescue_enabled"] is False, config_path
+        assert kwargs["aligned_expansion_preserve_raw"] is False, config_path
 
 
 def _run_rescue_wiring_case(

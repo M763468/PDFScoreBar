@@ -5,7 +5,7 @@ run:
 inputs:
   pdf_to_images:
     output_dir: data/evaluation2/images
-    image_glob: page_*.png
+    image_glob: "**/page_*.png"
 
 steps:
   pdf_to_images: false

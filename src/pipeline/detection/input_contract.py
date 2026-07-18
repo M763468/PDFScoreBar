@@ -39,9 +39,7 @@ def build_detector_input_contract(det_cfg: Mapping[str, Any]) -> dict[str, Any]:
         "precomputed_probe_candidates_root": (
             str(precomputed_probe) if uses_precomputed_probe else None
         ),
-        "cnn_bands_from_override": (
-            str(cnn_bands_override) if uses_cnn_bands_override else None
-        ),
+        "cnn_bands_from_override": (str(cnn_bands_override) if uses_cnn_bands_override else None),
         "override_keys": [
             key
             for key, enabled in (

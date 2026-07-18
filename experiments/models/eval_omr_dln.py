@@ -11,13 +11,16 @@ from ultralytics import YOLO
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(REPO_ROOT))
 from src.common.preprocessing import apply_advanced_sr
+from src.pipeline.detection.omr_dln_model import (
+    omr_dln_model_missing_message,
+    resolve_omr_dln_model_path,
+)
 
 # --- Configuration ---
 # NOTE TO USER: Please download the pretrained model weights from the Google Drive link
 # in the 'dmgonzalez8/OMR' repository. From the available models, download the
 # YOLOv8m model trained for MEASURE detection.
 # Rename it to 'YOLOv8m_Measures.pt' and place it in the directory below.
-MODEL_PATH = REPO_ROOT / "external/omr_dln/models/public_models/YOLOv8m_Measures.pt"
 BARLINE_WIDTH = 4  # px, width of inferred barline boxes for evaluation
 
 
@@ -86,17 +89,14 @@ def main():
             sys.exit(1)
 
         # --- Model Loading ---
-        print(f"--- DEBUG: Checking model path: {MODEL_PATH} ---", file=sys.stderr)
-        if not Path(MODEL_PATH).exists():
-            print(f"FATAL: Model not found at {MODEL_PATH}", file=sys.stderr)
-            print(
-                "Please download the pretrained YOLOv8m measure detection model, rename it, and place it in the correct directory.",
-                file=sys.stderr,
-            )
+        model_path = resolve_omr_dln_model_path(repository_root=REPO_ROOT)
+        print(f"--- DEBUG: Checking model path: {model_path} ---", file=sys.stderr)
+        if not model_path.is_file():
+            print(f"FATAL: {omr_dln_model_missing_message(model_path)}", file=sys.stderr)
             sys.exit(1)
 
-        print(f"--- DEBUG: Loading model: {MODEL_PATH} ---", file=sys.stderr)
-        model = YOLO(MODEL_PATH)
+        print(f"--- DEBUG: Loading model: {model_path} ---", file=sys.stderr)
+        model = YOLO(model_path)
         print("--- DEBUG: Model loaded successfully ---", file=sys.stderr)
 
         persistent_upsampler = None

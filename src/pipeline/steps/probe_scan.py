@@ -412,6 +412,7 @@ def run_probe_scan_batch(
         kwargs.update(detect_probe_kwargs)
 
     processed = 0
+    rescue_page_summaries: List[Dict[str, Any]] = []
     for img_path in tqdm(images, desc="Probe Scan", unit="page"):
         stem = img_path.stem
         current_score_name = score_name or img_path.parent.name
@@ -603,6 +604,11 @@ def run_probe_scan_batch(
                 clef_mask=clef_mask,
                 **filter_kwargs,
             )
+            sole_paper_overlap_count = sum(
+                1
+                for item in rescue_dropped
+                if [str(reason) for reason in item.get("reasons", [])] == ["low_paper_overlap"]
+            )
             selected_rescues = select_aligned_expansion_rescues(
                 rescue_dropped,
                 existing_boxes,
@@ -611,6 +617,8 @@ def run_probe_scan_batch(
                 min_height_ratio=aligned_rescue_cfg["min_height_ratio"],
                 max_height_ratio=aligned_rescue_cfg["max_height_ratio"],
             )
+            exact_duplicate_count = 0
+            added_count = 0
             for rescue in selected_rescues:
                 candidate = (
                     rescue
@@ -621,7 +629,27 @@ def run_probe_scan_batch(
                     abs(candidate[3] - candidate[1]) >= min_height_px
                     and abs(candidate[2] - candidate[0]) >= min_width_px
                 ):
-                    final_set.add(tuple(int(v) for v in candidate))
+                    candidate_tuple = tuple(int(v) for v in candidate)
+                    if candidate_tuple in final_set:
+                        exact_duplicate_count += 1
+                    else:
+                        final_set.add(candidate_tuple)
+                        added_count += 1
+            rescue_page_summaries.append(
+                {
+                    "score": current_score_name,
+                    "page": stem,
+                    "raw_candidate_count": len(rescue_candidates),
+                    "size_filtered_candidate_count": len(rescue_size_filtered),
+                    "sole_low_paper_overlap_candidate_count": sole_paper_overlap_count,
+                    "aligned_selection_count": len(selected_rescues),
+                    "trimmed_addition_count": added_count,
+                    "exact_duplicate_count": exact_duplicate_count,
+                    "existing_box_count": len(existing_boxes),
+                    "max_additions_per_existing_box": 1 if selected_rescues else 0,
+                    "preserve_raw": aligned_rescue_cfg["preserve_raw"],
+                }
+            )
             logger.info(
                 "Aligned expansion rescue selected %s candidates for %s/%s",
                 len(selected_rescues),
@@ -666,5 +694,44 @@ def run_probe_scan_batch(
         final_list = sorted(final_set)
         out_path.write_text(json.dumps(final_list, indent=2))
         processed += 1
+
+    if rescue_page_summaries:
+        rescue_summary_path = output_root / "aligned_expansion_rescue_summary.json"
+        rescue_summary_path.write_text(
+            json.dumps(
+                {
+                    "schema_version": "probe_scan.aligned_expansion_rescue.v1",
+                    "enabled": True,
+                    "preserve_raw": aligned_rescue_cfg["preserve_raw"],
+                    "page_count": len(rescue_page_summaries),
+                    "raw_candidate_count": sum(
+                        item["raw_candidate_count"] for item in rescue_page_summaries
+                    ),
+                    "sole_low_paper_overlap_candidate_count": sum(
+                        item["sole_low_paper_overlap_candidate_count"]
+                        for item in rescue_page_summaries
+                    ),
+                    "aligned_selection_count": sum(
+                        item["aligned_selection_count"] for item in rescue_page_summaries
+                    ),
+                    "trimmed_addition_count": sum(
+                        item["trimmed_addition_count"] for item in rescue_page_summaries
+                    ),
+                    "exact_duplicate_count": sum(
+                        item["exact_duplicate_count"] for item in rescue_page_summaries
+                    ),
+                    "existing_box_count": sum(
+                        item["existing_box_count"] for item in rescue_page_summaries
+                    ),
+                    "max_additions_per_existing_box": max(
+                        (item["max_additions_per_existing_box"] for item in rescue_page_summaries),
+                        default=0,
+                    ),
+                    "pages": rescue_page_summaries,
+                },
+                indent=2,
+            )
+            + "\n"
+        )
 
     return processed

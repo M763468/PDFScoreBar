@@ -1,53 +1,107 @@
 # Issue #245 fresh-route status
 
-The production route uses fresh HOMR/SR/OMR inputs; retained historical detector or
-candidate artifacts are not production inputs.
+## Status
 
-## Decisions
+The fresh upstream detector contract is not restored yet.
 
-- Historical reproduction was not adopted as the primary goal. Focused probes ruled
-  out the SR scale, evaluator revision, and retained SR working-image pixels as a
-  sufficient explanation for the three fresh residuals.
-- The fresh failures were traced to a staff mask reused as a clef mask, short
-  current row geometry, existing-box suppression, and the paper-overlap heuristic
-  on narrow ink lines.
-- `aligned_expansion_rescue` is opt-in by default and enabled by canonical dense
-  and Stage E configs. It runs a separate padded scan, accepts only sole
-  `low_paper_overlap` drops aligned to an existing box, and emits at most one
-  trimmed expansion per existing box.
-- Trimmed geometry restored the focused Shostakovich and Sibelius targets with
-  IoU 0.6369 and 0.6943. Generic paper-overlap threshold changes were not made.
-- The OMR-DLN weight is an externally distributed model, not a project training
-  output. The required `YOLOv8m_Measures.pt` is the measure-detection YOLOv8m
-  artifact from [dmgonzalez8/OMR](https://github.com/dmgonzalez8/OMR)'s
-  [official Google Drive folder](https://drive.google.com/drive/folders/13Z64ReEJGlMnCqPkA-dcCD8tzdtvLyqO?usp=sharing).
-  It is stored once outside the worktree and selected with `OMR_DLN_MODEL_PATH`.
-  The normal repository-relative path remains the compatible default, and a
-  missing-weight error prints the official download/rename/override instructions.
+A valid fresh run must use current HOMR/SR/OMR hybrid outputs as the authoritative
+source for both probe generation and CNN band geometry. It must not set:
 
-## Reproduction
-
-Focused candidate probe:
-
-```bash
-ISSUE245_MAIN_REPO_ROOT=/home/masaki_muramatsu/ws_PDFScoreBar \
-PYTHONPATH=. /home/masaki_muramatsu/ws_PDFScoreBar/.venv_pdf/bin/python \
-tools/issue245/run_aligned_expansion_candidate_probe.py --force
+```text
+detection.precomputed_probe_candidates_root
+detection.cnn_bands_from
 ```
 
-Focused CNN scoring:
+The difference between the historical checkpoint route and this fresh contract is
+documented in [`ISSUE245_REPRODUCIBILITY_ROOT_CAUSE.md`](ISSUE245_REPRODUCIBILITY_ROOT_CAUSE.md).
 
-```bash
-PYTHONPATH=. /home/masaki_muramatsu/ws_PDFScoreBar/.venv_pdf/bin/python \
-tools/issue245/run_focused_aligned_expansion_cnn.py \
---main-repo /home/masaki_muramatsu/ws_PDFScoreBar
+## Current decisions
+
+- Historical reproduction is not the primary goal. Focused probes ruled out SR
+  scale, evaluator revision, and retained SR working-image pixels as sufficient
+  explanations for the fresh residuals.
+- The accepted Issue #120 Stage E metric is a checkpoint/precomputed candidate
+  result. Its inventory records reference retained `hybrid_predictions`; it does
+  not prove that a newly supplied PDF regenerates equivalent HOMR/SR/OMR output.
+- The Issue #245 fresh runner now rejects precomputed probe candidates and CNN
+  band overrides before creating its output directory.
+- The OMR-DLN measure model has been restored from the official distribution and
+  can be selected through `OMR_DLN_MODEL_PATH`.
+- The aligned-expansion rescue remains implemented for explicit experiments but
+  is disabled in canonical dense and Issue #120 Stage E configs.
+- Generic paper-overlap or CNN threshold changes have not been made.
+
+## Focused aligned-expansion result
+
+The experimental aligned-expansion rescue restored the focused Shostakovich and
+Sibelius targets:
+
+```text
+Shostakovich page_013:
+  bbox=[1679,1145,1683,1296]
+  IoU=0.6369
+  CNN=0.9998832
+
+Sibelius page_004 x~1516:
+  bbox=[1514,4067,1518,4202]
+  IoU=0.6943
+  CNN=0.9999934
+
+Sibelius page_004 x~1926:
+  bbox=[1923,4067,1927,4200]
+  IoU=0.6377
+  CNN=0.9999875
 ```
 
-Fresh full pipeline uses `configs/dense_full_pipeline.yaml`. Its image glob is
-recursive because canonical Evaluation2 images are score-directory scoped.
+This establishes a mechanism on those pages only. It is not a production safety
+result.
 
-Fresh score-isolated Stage E route (prevents repeated `page_001` stems from
-colliding across scores):
+## Fresh Prokofiev safety failure
+
+The official OMR-DLN model was restored and loaded successfully as an OMR
+`detect` model. A fresh x2 SR/HOMR/OMR/hybrid run for
+`Va_Prokofiev_Symphony1` completed without historical detector or candidate
+artifacts.
+
+For `page_004`:
+
+- `[847,2490,854,2591]` was present and CNN accepted;
+- `[847,2675,854,2776]` was absent from the fresh candidate set;
+- the fresh producer had no clef-mask file, so the remaining miss was not caused
+  by the same-file staff/clef-mask rejection;
+- aligned expansion selected 131 candidates for 155 existing boxes;
+- all 131 were added after trimming;
+- 110 rescue candidates passed CNN;
+- two focused false positives were introduced;
+- the missing target was still not generated.
+
+This violates the rescue safety contract. Enabling the rescue in canonical
+configs before a fresh full-68 gate was an invalid promotion and has been
+reverted.
+
+## External model contract
+
+The required OMR-DLN model is the measure-detection `YOLOv8m_Measures.pt` from
+[dmgonzalez8/OMR](https://github.com/dmgonzalez8/OMR). It is an externally
+distributed model, not a project training output.
+
+Current verified model:
+
+```text
+path=/home/masaki_muramatsu/ws_PDFScoreBar/external/omr_dln/models/public_models/YOLOv8m_Measures.pt
+size=52,308,289 bytes
+sha256=00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212
+task=detect
+```
+
+The normal repository-relative path remains compatible. A shared read-only path
+can be selected with `OMR_DLN_MODEL_PATH` so worktrees do not duplicate the
+weight.
+
+## Fresh reproduction command
+
+The score-isolated fresh runner prevents repeated page stems across scores from
+colliding and rejects checkpoint candidate-source overrides:
 
 ```bash
 docker run --rm --gpus all \
@@ -62,27 +116,29 @@ docker run --rm --gpus all \
   --output-root logs/issue245_fresh_stage_e_full68/run_1
 ```
 
-`MAIN_SR_MODEL` is the official `RealESRGAN_x2plus.pth` release asset. It is also
-an ignored external weight and must be read-only mounted for a clean worktree.
+Each run must use a new output root. The provenance report records
+`detector_input_contract.mode=fresh_upstream` only when current hybrid outputs
+remain authoritative.
 
-## Focused fresh-route blocker (2026-07-19)
+## Next investigation boundary
 
-The official OMR-DLN model was restored and loaded successfully as an OMR
-`detect` model (including `systemMeasure` and `staffMeasure` classes, not COCO).
-A fresh x2 SR/HOMR/OMR/hybrid run for `Va_Prokofiev_Symphony1` completed with
-six/ six components present; no historical detector or candidate artifact was
-used.
+Do not tune the broad aligned-expansion selector next.
 
-The focused `page_004` primary path recovered the first historical detector
-target `[847,2490,854,2591]` (CNN score `0.9999963`) but did not generate a
-candidate for `[847,2675,854,2776]`. The same-file staff/clef rejection is
-covered by an actual same-file symlink test and falls back to no clef mask when
-no distinct mask exists; the fresh producer had no clef-mask file, so this
-remaining target is not a same-file-clef-filter drop.
+Trace the remaining Prokofiev reference `[847,2675,854,2776]` through:
 
-Enabling the trimmed aligned-expansion pass in this fresh run selected 131
-candidates for 155 existing boxes, added all 131, and yielded 2 focused false
-positives. It still did not produce the remaining detector target. This violates
-the rescue safety contract, so a full-68 result is intentionally not claimed and
-the runner must not be used for a release regression until a narrower,
-source-general selection condition has been validated.
+```text
+baseline HOMR
+SR-side HOMR
+OMR-DLN
+hybrid consensus
+row-band construction
+existing suppression
+raw probe generation
+heuristic filtering
+trim
+CNN
+```
+
+The next repair must target the first layer where the reference or its containing
+row disappears. It must remain default OFF until fresh full-68 detector,
+physical-measure, MMR, guard-case, and corrected-final gates pass.

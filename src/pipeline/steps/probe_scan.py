@@ -26,6 +26,7 @@ from src.pipeline.core.run_ids import (
 )
 from src.pipeline.steps.candidate_filters import (
     filter_probe_candidates,
+    select_aligned_expansion_rescues,
     split_box_vertically,
     trim_box_to_ink,
 )
@@ -154,6 +155,26 @@ def _extract_candidate_postprocess_cfg(
         "split_peak_prominence_ratio": float(
             resolved.pop("post_split_peak_prominence_ratio", 0.15)
         ),
+    }
+    return resolved, cfg
+
+
+def _extract_aligned_expansion_rescue_cfg(
+    kwargs: Dict[str, Any],
+) -> tuple[Dict[str, Any], Dict[str, Any]]:
+    """Extract an opt-in rescue scan configuration without changing the primary scan."""
+    resolved = dict(kwargs)
+    enabled = _parse_bool_like(resolved.pop("aligned_expansion_rescue_enabled", False))
+    cfg = {
+        "enabled": enabled,
+        "pad_ratio": float(resolved.pop("aligned_expansion_pad_ratio", 0.25)),
+        "x_tolerance": float(resolved.pop("aligned_expansion_x_tolerance", 4.0)),
+        "min_existing_coverage": float(
+            resolved.pop("aligned_expansion_min_existing_coverage", 0.80)
+        ),
+        "min_height_ratio": float(resolved.pop("aligned_expansion_min_height_ratio", 1.25)),
+        "max_height_ratio": float(resolved.pop("aligned_expansion_max_height_ratio", 2.00)),
+        "preserve_raw": _parse_bool_like(resolved.pop("aligned_expansion_preserve_raw", False)),
     }
     return resolved, cfg
 
@@ -457,6 +478,7 @@ def run_probe_scan_batch(
 
         page_kwargs = _resolve_scale_aware_probe_kwargs(kwargs, existing_boxes)
         page_kwargs, post_cfg = _extract_candidate_postprocess_cfg(page_kwargs, existing_boxes)
+        page_kwargs, aligned_rescue_cfg = _extract_aligned_expansion_rescue_cfg(page_kwargs)
         if page_kwargs is not kwargs and (
             "min_peak_distance" in page_kwargs or "x_merge_tol" in page_kwargs
         ):
@@ -498,8 +520,9 @@ def run_probe_scan_batch(
             f"--- [DEBUG_FN] {stem}: After height/width filter ({min_height_px}px): {len(filtered_candidates)} candidates"
         )
 
+        filter_kwargs = candidate_filter_kwargs or {}
+        dropped: List[Dict[str, Any]] = []
         if enable_heuristic_filters:
-            filter_kwargs = candidate_filter_kwargs or {}
             real_staff_mask = staff_mask if effective_band_source == "staff_mask" else None
             filtered_candidates, dropped = filter_probe_candidates(
                 candidates=filtered_candidates,
@@ -529,6 +552,66 @@ def run_probe_scan_batch(
                 final_set.add(tuple(int(v) for v in sb))
         for c in filtered_candidates:
             final_set.add(tuple(int(v) for v in c))
+
+        if aligned_rescue_cfg["enabled"] and enable_heuristic_filters:
+            rescue_kwargs = dict(page_kwargs)
+            rescue_kwargs.update(
+                {
+                    "band_row_pad_ratio": aligned_rescue_cfg["pad_ratio"],
+                    "scan_disable_existing_suppression": True,
+                }
+            )
+            rescue_candidates = detect_probe_scan(
+                base_img=img,
+                staff_mask=staff_mask,
+                existing_boxes=existing_boxes,
+                band_source=effective_band_source,
+                band_cluster_max_dist=band_cluster_max_dist,
+                band_min_row_count=band_min_row_count,
+                ink_threshold=ink_threshold,
+                min_ratio=min_ratio,
+                vertical_closing=vertical_closing,
+                **rescue_kwargs,
+            )
+            rescue_size_filtered = [
+                tuple(int(v) for v in candidate)
+                for candidate in rescue_candidates
+                if abs(candidate[3] - candidate[1]) >= min_height_px
+                and abs(candidate[2] - candidate[0]) >= min_width_px
+            ]
+            _, rescue_dropped = filter_probe_candidates(
+                candidates=rescue_size_filtered,
+                image=img,
+                existing_boxes=existing_boxes,
+                staff_mask=staff_mask if effective_band_source == "staff_mask" else None,
+                clef_mask=clef_mask,
+                **filter_kwargs,
+            )
+            selected_rescues = select_aligned_expansion_rescues(
+                rescue_dropped,
+                existing_boxes,
+                x_tolerance=aligned_rescue_cfg["x_tolerance"],
+                min_existing_vertical_coverage=aligned_rescue_cfg["min_existing_coverage"],
+                min_height_ratio=aligned_rescue_cfg["min_height_ratio"],
+                max_height_ratio=aligned_rescue_cfg["max_height_ratio"],
+            )
+            for rescue in selected_rescues:
+                candidate = (
+                    rescue
+                    if aligned_rescue_cfg["preserve_raw"]
+                    else trim_box_to_ink(img, rescue, ink_threshold=ink_threshold)
+                )
+                if (
+                    abs(candidate[3] - candidate[1]) >= min_height_px
+                    and abs(candidate[2] - candidate[0]) >= min_width_px
+                ):
+                    final_set.add(tuple(int(v) for v in candidate))
+            logger.info(
+                "Aligned expansion rescue selected %s candidates for %s/%s",
+                len(selected_rescues),
+                current_score_name,
+                stem,
+            )
 
         if post_cfg:
             if post_cfg.get("post_emit_unit_normalized_box"):

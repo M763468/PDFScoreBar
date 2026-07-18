@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, Iterable, List, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -249,3 +249,56 @@ def filter_probe_candidates(
             keep.append(b)
 
     return keep, dropped
+
+
+def select_aligned_expansion_rescues(
+    dropped: Iterable[Dict[str, Any]],
+    existing_boxes: Iterable[Tuple[int, int, int, int]],
+    *,
+    x_tolerance: float,
+    min_existing_vertical_coverage: float,
+    min_height_ratio: float,
+    max_height_ratio: float,
+) -> List[Tuple[int, int, int, int]]:
+    """Select one sole-paper-overlap expansion for each existing barline.
+
+    This intentionally operates only on an explicit rescue scan's dropped
+    records.  It must not weaken the primary candidate filter.
+    """
+    existing = [tuple(int(value) for value in box) for box in existing_boxes]
+    by_existing: Dict[
+        Tuple[int, int, int, int],
+        List[Tuple[Tuple[Any, ...], Tuple[int, int, int, int]]],
+    ] = {}
+    for item in dropped:
+        if [str(reason) for reason in item.get("reasons", [])] != ["low_paper_overlap"]:
+            continue
+        raw = item.get("bbox")
+        if not isinstance(raw, (list, tuple)) or len(raw) != 4:
+            continue
+        candidate = tuple(int(value) for value in raw)
+        candidate_h = abs(candidate[3] - candidate[1])
+        if candidate_h <= 0:
+            continue
+        candidate_x = (candidate[0] + candidate[2]) / 2.0
+        matches = []
+        for box in existing:
+            existing_h = abs(box[3] - box[1])
+            if existing_h <= 0:
+                continue
+            x_distance = abs(candidate_x - (box[0] + box[2]) / 2.0)
+            overlap = max(0, min(candidate[3], box[3]) - max(candidate[1], box[1]))
+            coverage = overlap / existing_h
+            height_ratio = candidate_h / existing_h
+            if x_distance > x_tolerance or coverage < min_existing_vertical_coverage:
+                continue
+            if not min_height_ratio <= height_ratio <= max_height_ratio:
+                continue
+            matches.append((x_distance, -coverage, abs(height_ratio - 1.5), box))
+        if not matches:
+            continue
+        x_distance, neg_coverage, ratio_distance, box = min(matches)
+        by_existing.setdefault(box, []).append(
+            ((x_distance, neg_coverage, ratio_distance, candidate), candidate)
+        )
+    return [min(items)[1] for _, items in sorted(by_existing.items())]

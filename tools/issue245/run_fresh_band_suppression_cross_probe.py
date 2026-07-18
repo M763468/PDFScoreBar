@@ -12,7 +12,7 @@ import json
 import os
 import shutil
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable
 
 from src.common import barline_iou
 from src.pipeline.steps.hybrid_consensus import load_json_boxes
@@ -34,9 +34,7 @@ DEFAULT_MAIN_REPO = Path("/home/masaki_muramatsu/ws_PDFScoreBar")
 DEFAULT_DRIFT_REPORT = Path(
     "logs/issue245_accuracy_first_stage_e/hybrid_row_band_source_drift.json"
 )
-DEFAULT_OUTPUT = Path(
-    "logs/issue245_accuracy_first_stage_e/fresh_band_suppression_cross_probe"
-)
+DEFAULT_OUTPUT = Path("logs/issue245_accuracy_first_stage_e/fresh_band_suppression_cross_probe")
 
 VARIANTS: dict[str, dict[str, Any]] = {
     "row_stats_control": {"band_source": "row_stats"},
@@ -138,7 +136,9 @@ def _target_debug_summary(
         selected.append(compact)
         candidate = _record_candidate(record)
         if candidate is not None and _accepted_status(compact["status"]):
-            raw_matches.append((candidate, float(barline_iou(reference, candidate)), compact["status"]))
+            raw_matches.append(
+                (candidate, float(barline_iou(reference, candidate)), compact["status"])
+            )
 
     selected.sort(key=lambda item: (abs(float(item["col"]) - cx), item["status"]))
     raw_matches.sort(key=lambda item: (-item[1], item[0]))
@@ -160,7 +160,7 @@ def _classify_target(
 ) -> str:
     if final_matches["row_stats_control"]["accepted"]:
         return "already_present_in_control"
-    for name in VARIANTS:
+    for name in final_matches:
         if name == "row_stats_control":
             continue
         if final_matches[name]["accepted"]:
@@ -178,7 +178,9 @@ def _classify_target(
 
 
 def _serializable_settings(settings: dict[str, Any]) -> dict[str, Any]:
-    return {key: str(value) if isinstance(value, Path) else value for key, value in settings.items()}
+    return {
+        key: str(value) if isinstance(value, Path) else value for key, value in settings.items()
+    }
 
 
 def build_report(*, main_repo: Path, drift_report_path: Path, output_root: Path) -> dict[str, Any]:

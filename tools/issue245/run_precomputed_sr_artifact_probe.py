@@ -44,9 +44,7 @@ DEFAULT_SCALE_REPORT = Path(
     "focused_sr_scale_revision_probe_sr_weights_userenv/"
     "focused_sr_scale_revision_probe_report.json"
 )
-DEFAULT_OUTPUT_ROOT = Path(
-    "logs/issue245_accuracy_first_stage_e/precomputed_sr_artifact_probe"
-)
+DEFAULT_OUTPUT_ROOT = Path("logs/issue245_accuracy_first_stage_e/precomputed_sr_artifact_probe")
 PROVENANCE_NAMES = (
     "run_config.json",
     "run.sh",
@@ -65,7 +63,9 @@ def _write_json(path: Path, payload: Any) -> None:
 
 
 def _slug(value: str) -> str:
-    return "".join(character.lower() if character.isalnum() else "_" for character in value).strip("_")
+    return "".join(character.lower() if character.isalnum() else "_" for character in value).strip(
+        "_"
+    )
 
 
 def _normalise_box(value: Sequence[Any]) -> Box:
@@ -357,12 +357,8 @@ def build_report(
             generated_x4_detection = Path(
                 str(scale_report["variants"]["current_source_x4"]["detections"][key]["path"])
             )
-            historical_sr_image = _find_working_image(
-                historical_detection, page, original_summary
-            )
-            generated_x4_image = _find_working_image(
-                generated_x4_detection, page, original_summary
-            )
+            historical_sr_image = _find_working_image(historical_detection, page, original_summary)
+            generated_x4_image = _find_working_image(generated_x4_detection, page, original_summary)
 
             page_slug = f"{_slug(score)}_{_slug(page)}"
             control = _run_precomputed(
@@ -387,9 +383,7 @@ def build_report(
             baseline_path = Path(str(page_item["paths"]["fresh_baseline"]))
             omr_path = Path(str(page_item["paths"]["current_omr"]))
             control_detection = Path(str(control["detection"]["path"]))
-            historical_pixels_detection = Path(
-                str(historical_pixels["detection"]["path"])
-            )
+            historical_pixels_detection = Path(str(historical_pixels["detection"]["path"]))
             control_rows, control_hybrid_count = _row_bands(
                 baseline_path=baseline_path,
                 sr_path=control_detection,
@@ -415,9 +409,7 @@ def build_report(
                 "historical_vs_regenerated_x4_same_bytes": (
                     sha256_file(historical_sr_image) == sha256_file(generated_x4_image)
                 ),
-                "historical_detection_provenance": _nearest_provenance_files(
-                    historical_detection
-                ),
+                "historical_detection_provenance": _nearest_provenance_files(historical_detection),
                 "generated_x4_detection_provenance": _nearest_provenance_files(
                     generated_x4_detection
                 ),

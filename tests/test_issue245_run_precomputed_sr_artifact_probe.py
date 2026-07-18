@@ -72,15 +72,18 @@ def test_path_to_container_maps_all_supported_roots(tmp_path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("x", encoding="utf-8")
 
-    assert _path_to_container(
-        worktree_file, worktree=worktree, main_repo=main_repo
-    ) == "/workspace/logs/probe.json"
-    assert _path_to_container(
-        main_log, worktree=worktree, main_repo=main_repo
-    ) == "/main_logs/historical/page.png"
-    assert _path_to_container(
-        main_data, worktree=worktree, main_repo=main_repo
-    ) == "/main_data/evaluation2/page.png"
+    assert (
+        _path_to_container(worktree_file, worktree=worktree, main_repo=main_repo)
+        == "/workspace/logs/probe.json"
+    )
+    assert (
+        _path_to_container(main_log, worktree=worktree, main_repo=main_repo)
+        == "/main_logs/historical/page.png"
+    )
+    assert (
+        _path_to_container(main_data, worktree=worktree, main_repo=main_repo)
+        == "/main_data/evaluation2/page.png"
+    )
 
 
 def test_reference_band_and_classifications() -> None:

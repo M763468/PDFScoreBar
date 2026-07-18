@@ -18,7 +18,8 @@ CNN_BANDS_OVERRIDE_KEY = "cnn_bands_from"
 
 
 def _configured(value: Any) -> bool:
-    return value is not None and str(value).strip() != ""
+    """Match the truthiness gate used by the detector path resolvers."""
+    return bool(value)
 
 
 def build_detector_input_contract(det_cfg: Mapping[str, Any]) -> dict[str, Any]:

@@ -13,8 +13,8 @@ for the corrected run.
 `src.pipeline.review.apply_corrections.apply_corrections_and_rerun()` accepts:
 
 ```python
-generate_final_pdf=True
-output_name="optional-name"
+generate_final_pdf = True
+output_name = "optional-name"
 ```
 
 The minimal CLI wrapper also accepts:

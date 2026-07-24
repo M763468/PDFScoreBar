@@ -1,0 +1,4 @@
+tests/test_issue252_prokofiev_probe_boundary.py
+tests/test_issue252_grouped_semantic_impact.py
+tests/test_detector_input_contract.py
+tests/test_detector_orchestrator_input_contract.py

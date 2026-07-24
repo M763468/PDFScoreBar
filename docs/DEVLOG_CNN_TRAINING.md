@@ -203,7 +203,7 @@ Refer to `docs/DEVELOPMENT_LOG.md` for the main branch history.
 **Implementation**:
 ```python
 min_height = image_height * min_height_ratio
-candidates = [c for c in candidates if (c['y2'] - c['y1']) >= min_height]
+candidates = [c for c in candidates if (c["y2"] - c["y1"]) >= min_height]
 ```
 
 **Impact**: Eliminated majority of FPs (text fragments, dots, short stems) while preserving all legitimate barlines.

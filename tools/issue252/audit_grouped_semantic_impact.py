@@ -163,7 +163,9 @@ def _compare_page_summaries(
         candidate_measure_count = (
             int(candidate_system.get("measure_count", 0)) if candidate_system is not None else 0
         )
-        geometry_equal = _geometry_signature(default_system) == _geometry_signature(candidate_system)
+        geometry_equal = _geometry_signature(default_system) == _geometry_signature(
+            candidate_system
+        )
         numbering_equal = _numbering_signature(default_system) == _numbering_signature(
             candidate_system
         )

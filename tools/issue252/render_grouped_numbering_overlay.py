@@ -324,8 +324,12 @@ def render_overlay(
     for box in cnn_barlines:
         _draw_box(canvas, _clip_box(box, width, height), COLORS["cnn_barline"], thickness=1)
 
-    _draw_box(canvas, _clip_box(target, width, height), COLORS["target"], thickness=4, label="target")
-    _draw_box(canvas, _clip_box(nearby, width, height), COLORS["nearby"], thickness=3, label="upper")
+    _draw_box(
+        canvas, _clip_box(target, width, height), COLORS["target"], thickness=4, label="target"
+    )
+    _draw_box(
+        canvas, _clip_box(nearby, width, height), COLORS["nearby"], thickness=3, label="upper"
+    )
 
     crop_box = _clip_box(crop or (0, 0, width, height), width, height)
     x1, y1, x2, y2 = crop_box

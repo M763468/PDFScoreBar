@@ -73,7 +73,9 @@ CNN scoring:
 
 ```python
 run_scoring_batch(
-    model=Path("logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth"),
+    model=Path(
+        "logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth"
+    ),
     images_root=Path("data/evaluation2/images"),
     logs=Path("logs/issue53_full_eval_rescue_v1"),
     threshold=0.1,

@@ -1,0 +1,3 @@
+tests/test_issue254_connector_artifact_contract.py
+tests/test_issue197_system_connector_evidence_extractor.py
+tests/test_issue197_system_grouping_connector_evidence.py

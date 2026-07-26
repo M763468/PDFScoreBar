@@ -1,6 +1,9 @@
 """Detection package providing barlines detection orchestration."""
 
+from .connector_artifacts import install_homr_connector_artifact_capture
 from .utils import resolve_barlines_and_masks_config, resolve_paths_from_detection
+
+install_homr_connector_artifact_capture()
 
 __all__ = [
     "DetectorOrchestrator",

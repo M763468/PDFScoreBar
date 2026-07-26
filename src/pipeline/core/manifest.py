@@ -6,6 +6,8 @@ import datetime as dt
 from pathlib import Path
 from typing import Any, Dict, List
 
+from src.common.connector_artifacts import describe_connector_artifacts
+
 
 def build_manifest(
     config: Dict[str, Any],
@@ -32,6 +34,9 @@ def build_manifest(
                 "page_run": page_run,
                 "barlines_json": resolved_item["barlines_json"],
                 "staff_mask": resolved_item["staff_mask"],
+                "connector_evidence": describe_connector_artifacts(
+                    Path(resolved_item["staff_mask"])
+                ),
                 "status": next(
                     (status for status in page_statuses if status["page_id"] == page_id),
                     None,

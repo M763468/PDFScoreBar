@@ -67,7 +67,9 @@ def install_homr_connector_artifact_capture(predictor_cls: type[Any] | None = No
 
 
 @contextmanager
-def capture_homr_threshold_masks(debug_cls: type[Any] | None = None) -> Iterator[dict[str, np.ndarray]]:
+def capture_homr_threshold_masks(
+    debug_cls: type[Any] | None = None,
+) -> Iterator[dict[str, np.ndarray]]:
     """Capture ``symbols`` and ``brace_dot`` masks emitted by HOMR's Debug boundary."""
 
     if debug_cls is None:

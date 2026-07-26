@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import logging
 from contextlib import contextmanager
+from contextvars import ContextVar
 from functools import wraps
 from pathlib import Path
-from threading import RLock
+from threading import Lock
 from typing import Any, Iterator
 
 import numpy as np
@@ -14,8 +15,13 @@ import numpy as np
 from src.common.connector_artifacts import write_connector_masks
 
 logger = logging.getLogger(__name__)
-_CAPTURE_LOCK = RLock()
-_PATCH_MARKER = "_pdfscore_connector_artifact_capture"
+_CAPTURE_CONTEXT: ContextVar[dict[str, np.ndarray] | None] = ContextVar(
+    "pdfscore_connector_artifact_capture",
+    default=None,
+)
+_HOOK_LOCK = Lock()
+_PREDICT_PATCH_MARKER = "_pdfscore_connector_artifact_capture"
+_DEBUG_PATCH_MARKER = "_pdfscore_connector_debug_capture"
 
 
 def install_homr_connector_artifact_capture(predictor_cls: type[Any] | None = None) -> bool:
@@ -29,7 +35,7 @@ def install_homr_connector_artifact_capture(predictor_cls: type[Any] | None = No
         predictor_cls = HomrPredictor
 
     original_predict = predictor_cls.predict
-    if getattr(original_predict, _PATCH_MARKER, False):
+    if getattr(original_predict, _PREDICT_PATCH_MARKER, False):
         return True
 
     @wraps(original_predict)
@@ -61,7 +67,7 @@ def install_homr_connector_artifact_capture(predictor_cls: type[Any] | None = No
                 )
         return result
 
-    setattr(predict_with_connector_artifacts, _PATCH_MARKER, True)
+    setattr(predict_with_connector_artifacts, _PREDICT_PATCH_MARKER, True)
     predictor_cls.predict = predict_with_connector_artifacts
     return True
 
@@ -70,7 +76,7 @@ def install_homr_connector_artifact_capture(predictor_cls: type[Any] | None = No
 def capture_homr_threshold_masks(
     debug_cls: type[Any] | None = None,
 ) -> Iterator[dict[str, np.ndarray]]:
-    """Capture ``symbols`` and ``brace_dot`` masks emitted by HOMR's Debug boundary."""
+    """Capture ``symbols`` and ``brace_dot`` masks emitted in the current execution context."""
 
     if debug_cls is None:
         try:
@@ -80,17 +86,31 @@ def capture_homr_threshold_masks(
             return
         debug_cls = Debug
 
+    _install_debug_capture_hook(debug_cls)
     captured: dict[str, np.ndarray] = {}
-    with _CAPTURE_LOCK:
-        original_write = debug_cls.write_threshold_image
+    token = _CAPTURE_CONTEXT.set(captured)
+    try:
+        yield captured
+    finally:
+        _CAPTURE_CONTEXT.reset(token)
 
+
+def _install_debug_capture_hook(debug_cls: type[Any]) -> None:
+    current_write = debug_cls.write_threshold_image
+    if getattr(current_write, _DEBUG_PATCH_MARKER, False):
+        return
+
+    with _HOOK_LOCK:
+        current_write = debug_cls.write_threshold_image
+        if getattr(current_write, _DEBUG_PATCH_MARKER, False):
+            return
+
+        @wraps(current_write)
         def write_and_capture(self: Any, suffix: str, image: np.ndarray) -> Any:
-            if suffix in {"symbols", "brace_dot"}:
+            captured = _CAPTURE_CONTEXT.get()
+            if captured is not None and suffix in {"symbols", "brace_dot"}:
                 captured[suffix] = np.array(image, copy=True)
-            return original_write(self, suffix, image)
+            return current_write(self, suffix, image)
 
+        setattr(write_and_capture, _DEBUG_PATCH_MARKER, True)
         debug_cls.write_threshold_image = write_and_capture
-        try:
-            yield captured
-        finally:
-            debug_cls.write_threshold_image = original_write

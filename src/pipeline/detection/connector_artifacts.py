@@ -12,7 +12,11 @@ from typing import Any, Iterator
 
 import numpy as np
 
-from src.common.connector_artifacts import write_connector_masks
+from src.common.connector_artifacts import (
+    connector_masks_complete,
+    invalidate_connector_masks,
+    write_connector_masks,
+)
 
 logger = logging.getLogger(__name__)
 _CAPTURE_CONTEXT: ContextVar[dict[str, np.ndarray] | None] = ContextVar(
@@ -22,6 +26,7 @@ _CAPTURE_CONTEXT: ContextVar[dict[str, np.ndarray] | None] = ContextVar(
 _HOOK_LOCK = Lock()
 _PREDICT_PATCH_MARKER = "_pdfscore_connector_artifact_capture"
 _DEBUG_PATCH_MARKER = "_pdfscore_connector_debug_capture"
+_SKIP_PATCH_MARKER = "_pdfscore_connector_skip_guard"
 
 
 def install_homr_connector_artifact_capture(predictor_cls: type[Any] | None = None) -> bool:
@@ -47,6 +52,11 @@ def install_homr_connector_artifact_capture(predictor_cls: type[Any] | None = No
         timeout_s: float = 0.0,
         image_run_dir: Path | None = None,
     ) -> Any:
+        output_dir = Path(image_run_dir) if image_run_dir is not None else None
+        stem = Path(image_path).stem
+        if output_dir is not None:
+            invalidate_connector_masks(output_dir, stem)
+
         with capture_homr_threshold_masks() as captured:
             result = original_predict(
                 self,
@@ -57,8 +67,8 @@ def install_homr_connector_artifact_capture(predictor_cls: type[Any] | None = No
                 image_run_dir=image_run_dir,
             )
 
-        if image_run_dir is not None:
-            paths = write_connector_masks(Path(image_run_dir), Path(image_path).stem, captured)
+        if output_dir is not None:
+            paths = write_connector_masks(output_dir, stem, captured)
             if paths is None:
                 logger.warning(
                     "HOMR did not expose both connector semantic masks for %s; "
@@ -69,6 +79,44 @@ def install_homr_connector_artifact_capture(predictor_cls: type[Any] | None = No
 
     setattr(predict_with_connector_artifacts, _PREDICT_PATCH_MARKER, True)
     predictor_cls.predict = predict_with_connector_artifacts
+    return True
+
+
+def install_homr_skip_existing_guard(detector_cls: type[Any] | None = None) -> bool:
+    """Require semantic connector pairs before treating HOMR outputs as complete."""
+
+    if detector_cls is None:
+        try:
+            from .hybrid import HybridDetector
+        except ImportError:
+            return False
+        detector_cls = HybridDetector
+
+    original_check = detector_cls._all_stems_exist
+    if getattr(original_check, _SKIP_PATCH_MARKER, False):
+        return True
+
+    @wraps(original_check)
+    def check_with_connector_artifacts(
+        self: Any,
+        base_dir: Path,
+        stems_to_check: list[str],
+        glob_pattern: str,
+    ) -> bool:
+        if not original_check(self, base_dir, stems_to_check, glob_pattern):
+            return False
+        if glob_pattern != "batch/*/*.json":
+            return True
+        complete = connector_masks_complete(base_dir, stems_to_check)
+        if not complete:
+            logger.info(
+                "HOMR outputs under %s predate the connector semantic contract; rerunning them.",
+                base_dir,
+            )
+        return complete
+
+    setattr(check_with_connector_artifacts, _SKIP_PATCH_MARKER, True)
+    detector_cls._all_stems_exist = check_with_connector_artifacts
     return True
 
 

@@ -3,14 +3,31 @@
 from __future__ import annotations
 
 import hashlib
+import os
+import uuid
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 import cv2
 import numpy as np
 
 CONNECTOR_SYMBOLS_SUFFIX = "_connector_symbols.png"
 CONNECTOR_BRACE_DOT_SUFFIX = "_connector_brace_dot.png"
+_STAFF_MASK_SUFFIXES = (
+    "_proxy_debug_3_staff.png",
+    "_debug_3_staff.png",
+    "_staff_mask.png",
+)
+
+
+def connector_mask_paths(image_run_dir: Path | str, stem: str) -> dict[str, Path]:
+    """Return stable connector-mask paths for one HOMR page output."""
+
+    root = Path(image_run_dir)
+    return {
+        "symbols": root / f"{stem}{CONNECTOR_SYMBOLS_SUFFIX}",
+        "brace_dot": root / f"{stem}{CONNECTOR_BRACE_DOT_SUFFIX}",
+    }
 
 
 def connector_mask_paths_for_staff_mask(
@@ -19,18 +36,35 @@ def connector_mask_paths_for_staff_mask(
     """Resolve stable connector masks stored beside a HOMR staff mask."""
 
     staff_path = Path(staff_mask_path)
-    suffix = "_staff_mask.png"
-    if not staff_path.name.endswith(suffix):
+    stem = _staff_mask_stem(staff_path.name)
+    if stem is None:
         return None
 
-    stem = staff_path.name[: -len(suffix)]
-    paths = {
-        "symbols": staff_path.with_name(f"{stem}{CONNECTOR_SYMBOLS_SUFFIX}"),
-        "brace_dot": staff_path.with_name(f"{stem}{CONNECTOR_BRACE_DOT_SUFFIX}"),
-    }
+    paths = connector_mask_paths(staff_path.parent, stem)
     if not all(path.is_file() for path in paths.values()):
         return None
     return paths
+
+
+def connector_masks_complete(
+    image_run_dir: Path | str,
+    stems: Sequence[str],
+) -> bool:
+    """Return whether every requested HOMR page has a complete semantic pair."""
+
+    root = Path(image_run_dir)
+    for stem in stems:
+        staff_path = root / "batch" / stem / f"{stem}_staff_mask.png"
+        if not staff_path.is_file() or connector_mask_paths_for_staff_mask(staff_path) is None:
+            return False
+    return True
+
+
+def invalidate_connector_masks(image_run_dir: Path | str, stem: str) -> None:
+    """Remove a previously published pair so stale semantics cannot be reused."""
+
+    for path in connector_mask_paths(image_run_dir, stem).values():
+        path.unlink(missing_ok=True)
 
 
 def write_connector_masks(
@@ -40,19 +74,31 @@ def write_connector_masks(
 ) -> dict[str, Path] | None:
     """Persist captured HOMR semantic masks with stable production filenames."""
 
+    image_run_dir.mkdir(parents=True, exist_ok=True)
+    paths = connector_mask_paths(image_run_dir, stem)
+    invalidate_connector_masks(image_run_dir, stem)
+
     required = {"symbols", "brace_dot"}
     if not required.issubset(masks):
         return None
 
-    image_run_dir.mkdir(parents=True, exist_ok=True)
-    paths = {
-        "symbols": image_run_dir / f"{stem}{CONNECTOR_SYMBOLS_SUFFIX}",
-        "brace_dot": image_run_dir / f"{stem}{CONNECTOR_BRACE_DOT_SUFFIX}",
-    }
-    for key, path in paths.items():
-        mask = _as_binary_u8(masks[key])
-        if not cv2.imwrite(str(path), mask):
-            raise RuntimeError(f"Failed to write connector mask: {path}")
+    temporary_paths: dict[str, Path] = {}
+    try:
+        for key, path in paths.items():
+            mask = _as_binary_u8(masks[key])
+            temporary_path = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp.png")
+            temporary_paths[key] = temporary_path
+            if not cv2.imwrite(str(temporary_path), mask):
+                raise RuntimeError(f"Failed to write connector mask: {temporary_path}")
+
+        for key, path in paths.items():
+            os.replace(temporary_paths[key], path)
+    except Exception:
+        for temporary_path in temporary_paths.values():
+            temporary_path.unlink(missing_ok=True)
+        invalidate_connector_masks(image_run_dir, stem)
+        raise
+
     return paths
 
 
@@ -85,6 +131,13 @@ def describe_connector_artifacts(staff_mask_path: Path | str) -> dict[str, Any]:
         "include_absent_pairs": True,
         "masks": mask_descriptions,
     }
+
+
+def _staff_mask_stem(filename: str) -> str | None:
+    for suffix in _STAFF_MASK_SUFFIXES:
+        if filename.endswith(suffix):
+            return filename[: -len(suffix)]
+    return None
 
 
 def _as_binary_u8(mask: np.ndarray) -> np.ndarray:

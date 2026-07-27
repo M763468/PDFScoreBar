@@ -5,6 +5,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+import pytest
 
 from src.common.connector_artifacts import (
     connector_mask_paths_for_staff_mask,
@@ -16,6 +17,7 @@ from src.pipeline.core.manifest import build_manifest
 from src.pipeline.detection.connector_artifacts import (
     capture_homr_threshold_masks,
     install_homr_connector_artifact_capture,
+    install_homr_skip_existing_guard,
 )
 
 
@@ -52,6 +54,26 @@ def test_stable_connector_artifact_contract_records_hashes_and_shape(tmp_path: P
     assert description["masks"]["symbols"]["sha256"] == expected_hash
 
 
+def test_debug_staff_mask_suffix_resolves_stable_connector_pair(tmp_path: Path) -> None:
+    write_connector_masks(
+        tmp_path,
+        "score",
+        {
+            "symbols": np.zeros((10, 10), dtype=np.uint8),
+            "brace_dot": np.zeros((10, 10), dtype=np.uint8),
+        },
+    )
+
+    expected = {
+        "symbols": tmp_path / "score_connector_symbols.png",
+        "brace_dot": tmp_path / "score_connector_brace_dot.png",
+    }
+    assert connector_mask_paths_for_staff_mask(tmp_path / "score_debug_3_staff.png") == expected
+    assert (
+        connector_mask_paths_for_staff_mask(tmp_path / "score_proxy_debug_3_staff.png") == expected
+    )
+
+
 def test_missing_semantic_pair_keeps_explicit_page_image_fallback(tmp_path: Path) -> None:
     staff_path = tmp_path / "score_staff_mask.png"
     _write_mask(staff_path, np.zeros((20, 20), dtype=np.uint8))
@@ -65,6 +87,18 @@ def test_missing_semantic_pair_keeps_explicit_page_image_fallback(tmp_path: Path
         "include_absent_pairs": False,
         "masks": {},
     }
+
+
+def test_incomplete_recapture_removes_previous_semantic_pair(tmp_path: Path) -> None:
+    masks = {
+        "symbols": np.ones((10, 10), dtype=np.uint8),
+        "brace_dot": np.ones((10, 10), dtype=np.uint8),
+    }
+    assert write_connector_masks(tmp_path, "score", masks) is not None
+
+    assert write_connector_masks(tmp_path, "score", {"symbols": masks["symbols"]}) is None
+    assert not (tmp_path / "score_connector_symbols.png").exists()
+    assert not (tmp_path / "score_connector_brace_dot.png").exists()
 
 
 def test_numbering_auto_resolves_connector_masks_from_staff_mask_siblings(
@@ -174,8 +208,6 @@ def test_predictor_wrapper_persists_stable_masks_without_changing_return_value(
             debug.write_threshold_image("brace_dot", np.ones((6, 7), dtype=np.uint8))
             return ("unchanged", sr_scale, timeout_s)
 
-    # Install against the test class, then provide its Debug class explicitly through the
-    # capture function used by the wrapper.
     import src.pipeline.detection.connector_artifacts as module
 
     original_capture = module.capture_homr_threshold_masks
@@ -195,3 +227,72 @@ def test_predictor_wrapper_persists_stable_masks_without_changing_return_value(
     assert result == ("unchanged", 2, 3.0)
     assert (tmp_path / "score_connector_symbols.png").is_file()
     assert (tmp_path / "score_connector_brace_dot.png").is_file()
+
+
+def test_predictor_failure_invalidates_previous_semantic_pair(tmp_path: Path) -> None:
+    write_connector_masks(
+        tmp_path,
+        "score",
+        {
+            "symbols": np.ones((4, 4), dtype=np.uint8),
+            "brace_dot": np.ones((4, 4), dtype=np.uint8),
+        },
+    )
+
+    class FakeDebug:
+        def write_threshold_image(self, suffix, image):
+            return None
+
+    class FailingPredictor:
+        def predict(
+            self,
+            image_path,
+            xml_args,
+            sr_scale=1,
+            timeout_s=0.0,
+            image_run_dir=None,
+        ):
+            raise RuntimeError("failed prediction")
+
+    import src.pipeline.detection.connector_artifacts as module
+
+    original_capture = module.capture_homr_threshold_masks
+    module.capture_homr_threshold_masks = lambda: original_capture(FakeDebug)
+    try:
+        assert install_homr_connector_artifact_capture(FailingPredictor)
+        with pytest.raises(RuntimeError, match="failed prediction"):
+            FailingPredictor().predict(
+                tmp_path / "score.png",
+                object(),
+                image_run_dir=tmp_path,
+            )
+    finally:
+        module.capture_homr_threshold_masks = original_capture
+
+    assert not (tmp_path / "score_connector_symbols.png").exists()
+    assert not (tmp_path / "score_connector_brace_dot.png").exists()
+
+
+def test_skip_existing_requires_complete_connector_artifacts(tmp_path: Path) -> None:
+    class FakeDetector:
+        def _all_stems_exist(self, base_dir, stems_to_check, glob_pattern):
+            return True
+
+    assert install_homr_skip_existing_guard(FakeDetector)
+    detector = FakeDetector()
+    assert not detector._all_stems_exist(tmp_path, ["score"], "batch/*/*.json")
+
+    page_dir = tmp_path / "batch" / "score"
+    page_dir.mkdir(parents=True)
+    _write_mask(page_dir / "score_staff_mask.png", np.zeros((10, 10), dtype=np.uint8))
+    write_connector_masks(
+        page_dir,
+        "score",
+        {
+            "symbols": np.zeros((10, 10), dtype=np.uint8),
+            "brace_dot": np.zeros((10, 10), dtype=np.uint8),
+        },
+    )
+
+    assert detector._all_stems_exist(tmp_path, ["score"], "batch/*/*.json")
+    assert detector._all_stems_exist(tmp_path, ["score"], "other/*.json")

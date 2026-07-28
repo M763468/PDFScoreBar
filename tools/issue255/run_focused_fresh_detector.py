@@ -75,9 +75,7 @@ def build_effective_config(
     config["inputs"]["pdf_to_images"].update(
         {"output_dir": str(image.parent.resolve()), "image_glob": image.name}
     )
-    config["run"].update(
-        {"run_id": run_id, "output_root": str(output_root.resolve())}
-    )
+    config["run"].update({"run_id": run_id, "output_root": str(output_root.resolve())})
     if config.get("detection") != canonical.get("detection"):
         raise ValueError("Focused run changed canonical detection settings")
     if config.get("steps") != canonical.get("steps"):
@@ -125,15 +123,11 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("Image path must preserve the requested score and page names")
 
     canonical = load_yaml(args.config)
-    if not isinstance(canonical, Mapping) or not isinstance(
-        canonical.get("detection"), Mapping
-    ):
+    if not isinstance(canonical, Mapping) or not isinstance(canonical.get("detection"), Mapping):
         raise ValueError("Canonical config lacks detection settings")
     detection = canonical["detection"]
     forbidden = [
-        key
-        for key in ("precomputed_probe_candidates_root", "cnn_bands_from")
-        if detection.get(key)
+        key for key in ("precomputed_probe_candidates_root", "cnn_bands_from") if detection.get(key)
     ]
     if forbidden:
         raise ValueError(f"Fresh run forbids detector source overrides: {forbidden}")
@@ -203,8 +197,12 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         },
         "coordinate_space": {
             "original": "input_image_pixels",
-            "probe": "sr_image_pixels" if detection.get("enable_sr", True) else "input_image_pixels",
-            "sr_scale": int(detection.get("sr_scale", 2)) if detection.get("enable_sr", True) else 1,
+            "probe": "sr_image_pixels"
+            if detection.get("enable_sr", True)
+            else "input_image_pixels",
+            "sr_scale": int(detection.get("sr_scale", 2))
+            if detection.get("enable_sr", True)
+            else 1,
             "cnn_output": "input_image_pixels",
         },
         "commands": result.get("commands", []),

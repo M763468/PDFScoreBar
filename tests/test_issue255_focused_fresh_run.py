@@ -31,16 +31,12 @@ def test_build_effective_config_preserves_detection_and_steps(tmp_path: Path) ->
 
     assert effective["detection"] == canonical["detection"]
     assert effective["steps"] == canonical["steps"]
-    assert effective["inputs"]["pdf_to_images"]["output_dir"] == str(
-        image_dir.resolve()
-    )
+    assert effective["inputs"]["pdf_to_images"]["output_dir"] == str(image_dir.resolve())
     assert effective["inputs"]["pdf_to_images"]["image_glob"] == image.name
     assert effective["run"]["run_id"] == "issue255_score_page004"
 
 
-def test_focused_runner_records_authoritative_fresh_artifacts(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_focused_runner_records_authoritative_fresh_artifacts(tmp_path: Path, monkeypatch) -> None:
     import tools.issue255.run_focused_fresh_detector as runner
 
     config_path = tmp_path / "configs" / "dense_full_pipeline.yaml"
@@ -90,9 +86,7 @@ def test_focused_runner_records_authoritative_fresh_artifacts(
         write(hybrid / "sr" / "batch" / stem / f"{stem}_staff_mask.png")
         write(hybrid / "omr_sr" / stem / "predictions.json", [])
         write(hybrid / "hybrid_results" / f"{stem}_hybrid.json", [])
-        probe_page = probe / runner.build_probe_run_id(
-            image.resolve(), score_name="Score"
-        )
+        probe_page = probe / runner.build_probe_run_id(image.resolve(), score_name="Score")
         write(probe_page / "pipeline2_no_peak_candidates.json", [])
         write(probe_page / "pipeline2_no_peak_scored.json", [])
         write(probe_page / "pipeline2_no_peak_filtered_cnn.json", [])

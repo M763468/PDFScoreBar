@@ -67,9 +67,7 @@ def _resolve_targets(
     metadata: Sequence[Mapping[str, Any]],
     accepted_iou: float,
 ) -> list[dict[str, Any]]:
-    missing = _missing_accepted_boxes(
-        accepted_boxes, current_boxes, accepted_iou=accepted_iou
-    )
+    missing = _missing_accepted_boxes(accepted_boxes, current_boxes, accepted_iou=accepted_iou)
     if not metadata:
         return [
             {
@@ -224,9 +222,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         source = trace["source_trace"]["missing"]
         probe = trace["variants"]["suppression_default"]["targets"]["missing"]
         cnn_scored = _scored_metrics(reference, scored, args.accepted_iou)
-        cnn_kept = target_metrics(
-            reference, cnn_accepted, accepted_iou=args.accepted_iou
-        )
+        cnn_kept = target_metrics(reference, cnn_accepted, accepted_iou=args.accepted_iou)
         final = target_metrics(reference, current, accepted_iou=args.accepted_iou)
         boundary = _first_loss_boundary(
             source_trace=source,

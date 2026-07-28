@@ -90,6 +90,7 @@ required_files=(
   tools/issue255/trace_focused_detector_boundaries.py
   tests/test_issue255_focused_fresh_run.py
   tests/test_issue255_focused_detector_inventory.py
+  scripts/run_issue255_focused_fresh.sh
   scripts/pr_validation_profiles/issue255-fresh-detector-production-recovery.txt
 )
 for path in "${required_files[@]}"; do
@@ -128,6 +129,11 @@ if failed:
     raise SystemExit("Invalid UTF-8 in changed files:\n" + "\n".join(failed))
 print(f"UTF-8 OK: {checked} changed text files")
 '
+
+echo "==> Bash syntax"
+bash -n \
+  scripts/run_issue255_focused_fresh.sh \
+  scripts/validate_issue255_local.sh
 
 echo "==> Python compile"
 PYTHONPATH=. "$python_bin" -m py_compile \

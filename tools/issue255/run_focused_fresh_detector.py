@@ -83,11 +83,43 @@ def build_effective_config(
     return config
 
 
-def _paths(image: Path, score: str, run_dir: Path, hybrid: Path, probe: Path):
+def _probe_page_dir(
+    *,
+    image: Path,
+    sr_image: Path,
+    probe_root: Path,
+    detection: Mapping[str, Any],
+) -> Path:
+    """Resolve the page directory exactly as probe scan and CNN scoring do."""
+    effective_image = (
+        sr_image
+        if bool(detection.get("enable_sr", True))
+        and not bool(detection.get("probe_use_original_images", False))
+        and sr_image.is_file()
+        else image
+    )
+    configured_score = detection.get("probe_score_name")
+    score_name = str(configured_score) if configured_score else None
+    return probe_root / build_probe_run_id(effective_image, score_name=score_name)
+
+
+def _paths(
+    image: Path,
+    run_dir: Path,
+    hybrid: Path,
+    probe: Path,
+    detection: Mapping[str, Any],
+) -> dict[str, Path | None]:
     stem = image.stem
     sr = hybrid / "sr" / "batch" / stem
     baseline = hybrid / "baseline" / "batch" / stem
-    probe_page = probe / build_probe_run_id(image, score_name=score)
+    probe_image = sr / f"{stem}.png"
+    probe_page = _probe_page_dir(
+        image=image,
+        sr_image=probe_image,
+        probe_root=probe,
+        detection=detection,
+    )
     accepted = probe_page / "pipeline2_no_peak_filtered_cnn.json"
     clef_candidates = (
         sr / f"{stem}_clef_mask.png",
@@ -103,7 +135,7 @@ def _paths(image: Path, score: str, run_dir: Path, hybrid: Path, probe: Path):
         "current_sr": sr / f"{stem}_detections.json",
         "current_omr": hybrid / "omr_sr" / stem / "predictions.json",
         "hybrid": hybrid / "hybrid_results" / f"{stem}_hybrid.json",
-        "probe_image": sr / f"{stem}.png",
+        "probe_image": probe_image,
         "staff_mask": sr / f"{stem}_staff_mask.png",
         "clef_mask": clef,
         "cnn_candidates": probe_page / "pipeline2_no_peak_candidates.json",
@@ -154,10 +186,10 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
 
     artifact_paths = _paths(
         image,
-        args.score,
         run_dir,
         Path(result["hybrid_output_dir"]),
         Path(result["probe_output_dir"]),
+        detection,
     )
     artifacts = {key: _artifact(path) for key, path in artifact_paths.items()}
     required = set(artifact_paths) - {"clef_mask"}

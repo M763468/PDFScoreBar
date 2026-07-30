@@ -92,6 +92,22 @@ if ! docker exec "$container_name" test -x "$container_python"; then
   exit 2
 fi
 
+host_head="$(git rev-parse HEAD)"
+container_head="$({
+  docker exec \
+    -w /workspace \
+    -e GIT_CONFIG_COUNT=1 \
+    -e GIT_CONFIG_KEY_0=safe.directory \
+    -e GIT_CONFIG_VALUE_0=/workspace \
+    "$container_name" git rev-parse HEAD
+} 2>/dev/null || true)"
+if [[ -z "$container_head" || "$container_head" != "$host_head" ]]; then
+  echo "Container /workspace does not match the checked-out repository HEAD." >&2
+  echo "  host:      $host_head" >&2
+  echo "  container: ${container_head:-<unavailable>}" >&2
+  exit 2
+fi
+
 output_root="$(realpath -m "$output_root")"
 case "$output_root" in
   "$repo_root"/*) ;;

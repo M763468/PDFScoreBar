@@ -86,11 +86,15 @@ if ! git rev-parse --verify --quiet "$base_ref^{commit}" >/dev/null; then
 fi
 
 required_files=(
+  src/pipeline/detection/omr_dln_model.py
   tools/issue255/run_focused_fresh_detector.py
   tools/issue255/trace_focused_detector_boundaries.py
   tests/test_issue255_focused_fresh_run.py
   tests/test_issue255_focused_detector_inventory.py
+  tests/test_issue255_pipeline_python_override.py
+  tests/test_omr_dln_model_contract.py
   scripts/run_issue255_focused_fresh.sh
+  scripts/run_issue255_focused_fresh_with_model.sh
   scripts/pr_validation_profiles/issue255-fresh-detector-production-recovery.txt
 )
 for path in "${required_files[@]}"; do
@@ -133,14 +137,22 @@ print(f"UTF-8 OK: {checked} changed text files")
 echo "==> Bash syntax"
 bash -n \
   scripts/run_issue255_focused_fresh.sh \
+  scripts/run_issue255_focused_fresh_with_model.sh \
   scripts/validate_issue255_local.sh
 
 echo "==> Python compile"
 PYTHONPATH=. "$python_bin" -m py_compile \
+  src/pipeline/core/python_env.py \
+  src/pipeline/core/subprocess_utils.py \
+  src/pipeline/detection/omr_dln_model.py \
+  experiments/models/eval_omr_dln.py \
   tools/issue255/run_focused_fresh_detector.py \
   tools/issue255/trace_focused_detector_boundaries.py \
   tests/test_issue255_focused_fresh_run.py \
-  tests/test_issue255_focused_detector_inventory.py
+  tests/test_issue255_focused_detector_inventory.py \
+  tests/test_issue255_pipeline_python_override.py \
+  tests/test_omr_dln_model_contract.py \
+  tests/test_subprocess_utils.py
 
 check_args=(
   issue255-fresh-detector-production-recovery

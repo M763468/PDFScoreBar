@@ -91,7 +91,6 @@ required_files=(
   tools/issue255/trace_focused_detector_boundaries.py
   tests/test_issue255_focused_fresh_run.py
   tests/test_issue255_focused_detector_inventory.py
-  tests/test_issue255_pipeline_python_override.py
   tests/test_omr_dln_model_contract.py
   scripts/run_issue255_focused_fresh.sh
   scripts/run_issue255_focused_fresh_with_model.sh
@@ -150,7 +149,6 @@ PYTHONPATH=. "$python_bin" -m py_compile \
   tools/issue255/trace_focused_detector_boundaries.py \
   tests/test_issue255_focused_fresh_run.py \
   tests/test_issue255_focused_detector_inventory.py \
-  tests/test_issue255_pipeline_python_override.py \
   tests/test_omr_dln_model_contract.py \
   tests/test_subprocess_utils.py
 

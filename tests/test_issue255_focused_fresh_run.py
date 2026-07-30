@@ -36,6 +36,26 @@ def test_build_effective_config_preserves_detection_and_steps(tmp_path: Path) ->
     assert effective["run"]["run_id"] == "issue255_score_page004"
 
 
+def test_probe_page_dir_follows_effective_sr_image_path(tmp_path: Path) -> None:
+    import tools.issue255.run_focused_fresh_detector as runner
+
+    image = tmp_path / "Score" / "page_004.png"
+    sr_image = tmp_path / "hybrid" / "sr" / "batch" / "page_004" / "page_004.png"
+    image.parent.mkdir()
+    sr_image.parent.mkdir(parents=True)
+    image.write_bytes(b"image")
+    sr_image.write_bytes(b"sr")
+
+    probe_page = runner._probe_page_dir(
+        image=image,
+        sr_image=sr_image,
+        probe_root=tmp_path / "probe",
+        detection={"enable_sr": True},
+    )
+
+    assert probe_page.name == "eval2_page_004_page_004"
+
+
 def test_focused_runner_records_authoritative_fresh_artifacts(tmp_path: Path, monkeypatch) -> None:
     import tools.issue255.run_focused_fresh_detector as runner
 
@@ -82,11 +102,12 @@ def test_focused_runner_records_authoritative_fresh_artifacts(tmp_path: Path, mo
         stem = image.stem
         write(hybrid / "baseline" / "batch" / stem / f"{stem}_detections.json", [])
         write(hybrid / "sr" / "batch" / stem / f"{stem}_detections.json", [])
-        write(hybrid / "sr" / "batch" / stem / f"{stem}.png")
+        sr_image = hybrid / "sr" / "batch" / stem / f"{stem}.png"
+        write(sr_image)
         write(hybrid / "sr" / "batch" / stem / f"{stem}_staff_mask.png")
         write(hybrid / "omr_sr" / stem / "predictions.json", [])
         write(hybrid / "hybrid_results" / f"{stem}_hybrid.json", [])
-        probe_page = probe / runner.build_probe_run_id(image.resolve(), score_name="Score")
+        probe_page = probe / runner.build_probe_run_id(sr_image)
         write(probe_page / "pipeline2_no_peak_candidates.json", [])
         write(probe_page / "pipeline2_no_peak_scored.json", [])
         write(probe_page / "pipeline2_no_peak_filtered_cnn.json", [])
@@ -120,3 +141,7 @@ def test_focused_runner_records_authoritative_fresh_artifacts(tmp_path: Path, mo
     assert report["detection_config_changed"] is False
     assert report["pipeline_steps_changed"] is False
     assert report["artifacts"]["final_barlines"]["exists"] is True
+    assert (
+        Path(report["artifacts"]["cnn_candidates"]["path"]).parent.name
+        == "eval2_page_004_page_004"
+    )

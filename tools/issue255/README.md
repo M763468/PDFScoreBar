@@ -7,9 +7,9 @@ production success.
 ## 1. Focused canonical fresh runs
 
 Run the two required focus pages through separate fresh detector executions with one
-command. The wrapper locates the official OMR-DLN measure model on the host, validates
-it inside the maintained production GPU container, and runs the complete focused route
-inside that same container:
+command. The gate first bootstraps the three HOMR GPU models as container root, records
+their hashes, then validates the official OMR-DLN measure model and runs the complete
+focused route as the host UID inside the maintained production GPU container:
 
 ```bash
 cd /home/masaki_muramatsu/ws_PDFScoreBar
@@ -19,9 +19,9 @@ git pull --ff-only
 
 PYTHON=/home/masaki_muramatsu/ws_PDFScoreBar/.venv_pdf/bin/python
 
-bash scripts/run_issue255_focused_fresh_with_model.sh \
+bash scripts/run_issue255_focused_fresh_gate.sh \
   --python "$PYTHON" \
-  --run-tag issue255_gate_03
+  --run-tag issue255_gate_04
 ```
 
 `--python` is the host interpreter used only to validate and display JSON artifacts. It
@@ -33,16 +33,29 @@ python:    /opt/venv_pipeline/bin/python
 workspace: /workspace
 ```
 
+HOMR stores its segmentation and transformer models beside the installed package. The
+bootstrap is therefore the only step executed as container root. It supports the
+historical zero-argument, one-argument and current three-argument `download_weights`
+APIs, verifies the GPU model files and writes:
+
+```text
+logs/issue255_focused_fresh/issue255_homr_model_bootstrap_<run-tag>.json
+```
+
+The detector batch itself remains host-UID-owned so repository outputs are not created
+as root. The lower-level `run_issue255_focused_fresh_with_model.sh` must not be used on a
+container whose HOMR models have not already been initialized.
+
 The wrapper verifies that the container `/workspace` commit matches the host checkout.
 It checks `OMR_DLN_MODEL_PATH`, the compatible repository-relative path and then
 searches `$HOME` for exactly one `YOLOv8m_Measures.pt`. When automatic discovery is
 ambiguous or finds nothing, specify the host weight explicitly:
 
 ```bash
-bash scripts/run_issue255_focused_fresh_with_model.sh \
+bash scripts/run_issue255_focused_fresh_gate.sh \
   --python "$PYTHON" \
   --omr-model /absolute/path/to/YOLOv8m_Measures.pt \
-  --run-tag issue255_gate_03
+  --run-tag issue255_gate_04
 ```
 
 A model inside the repository is used through `/workspace`. A model stored elsewhere is
@@ -56,10 +69,9 @@ The preflight writes:
 logs/issue255_focused_fresh/issue255_omr_dln_preflight_<run-tag>.json
 ```
 
-On failure, the wrapper prints the full JSON error, including the container Python,
-model paths, exception and traceback. The failed `issue255_gate_01` and
-`issue255_gate_02` artifacts remain evidence and are not reused. Always choose a new
-run tag.
+On failure, the gate prints the full JSON error and traceback. The failed
+`issue255_gate_01` through `issue255_gate_03` artifacts remain evidence and are not
+reused. Always choose a new run tag.
 
 The batch wrapper requires the Issue #255 branch and a clean tracked working tree. It
 runs these pages with distinct run IDs:
@@ -151,12 +163,12 @@ The wrapper runs:
 - `git diff --check origin/develop...HEAD`;
 - UTF-8 decoding for changed text files, covering the blob-corruption failure seen
   during the initial publication attempt;
-- `bash -n` for the local validation and focused fresh batch scripts;
+- `bash -n` for the local validation and focused fresh gate scripts;
 - `py_compile` for the Issue #255 tools and runtime helpers;
 - `make lint`;
-- the focused pytest profile, including OMR-DLN model resolution, subprocess
-  diagnostics, Issue #252 detector-boundary and Issue #254 connector-artifact contract
-  tests.
+- the focused pytest profile, including HOMR bootstrap compatibility, OMR-DLN model
+  resolution, subprocess diagnostics, Issue #252 detector-boundary and Issue #254
+  connector-artifact contract tests.
 
 Use `--pytest-only` for a quicker rerun or `--lint-only` to isolate lint failures. This
 validation script does not start HOMR, SR, OMR-DLN or CNN inference.

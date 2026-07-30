@@ -105,7 +105,11 @@ def get_pipeline_python(step_name: Optional[str] = None) -> List[str]:
     """
     env_python = os.environ.get("PIPELINE_PYTHON")
 
-    # 1. Check for heavy steps first
+    # 1. An explicit override must win over automatic container selection.
+    if env_python:
+        return [env_python]
+
+    # 2. Check for heavy steps.
     if step_name in ("detection", "homr", "omr_dln", "sr"):
         if is_in_container():
             if Path("/opt/venv_pipeline/bin/python").exists():
@@ -120,10 +124,6 @@ def get_pipeline_python(step_name: Optional[str] = None) -> List[str]:
                     return prefix + ["/opt/venv_sr/bin/python"]
                 else:
                     return prefix + ["/opt/venv_pipeline/bin/python"]
-
-    # 2. Explicit override
-    if env_python:
-        return [env_python]
 
     # 3. If already in container but not a heavy step (or heavy step venv missing)
     if is_in_container():

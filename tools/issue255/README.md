@@ -7,7 +7,8 @@ production success.
 ## 1. Focused canonical fresh runs
 
 Run the two required focus pages through separate fresh detector executions with one
-command:
+command. The wrapper validates the official OMR-DLN measure model before starting the
+expensive HOMR/SR stages:
 
 ```bash
 cd /home/masaki_muramatsu/ws_PDFScoreBar
@@ -17,10 +18,32 @@ git pull --ff-only
 
 PYTHON=/home/masaki_muramatsu/ws_PDFScoreBar/.venv_pdf/bin/python
 
-bash scripts/run_issue255_focused_fresh.sh \
+bash scripts/run_issue255_focused_fresh_with_model.sh \
   --python "$PYTHON" \
-  --run-tag issue255_gate_01
+  --run-tag issue255_gate_02
 ```
+
+The wrapper checks `OMR_DLN_MODEL_PATH`, the compatible repository-relative path and
+then searches `$HOME` for exactly one `YOLOv8m_Measures.pt`. When automatic discovery
+is ambiguous or finds nothing, specify the shared read-only weight explicitly:
+
+```bash
+bash scripts/run_issue255_focused_fresh_with_model.sh \
+  --python "$PYTHON" \
+  --omr-model /absolute/path/to/YOLOv8m_Measures.pt \
+  --run-tag issue255_gate_02
+```
+
+The preflight loads the model with Ultralytics and requires the `systemMeasure` and
+`staffMeasure` classes. Do not substitute a generic YOLO or symbol-detection weight.
+It writes:
+
+```text
+logs/issue255_focused_fresh/issue255_omr_dln_preflight_<run-tag>.json
+```
+
+The previous failed `issue255_gate_01` directories remain evidence and are not reused.
+Always choose a new run tag.
 
 The batch wrapper requires the Issue #255 branch and a clean tracked working tree. It
 runs these pages with distinct run IDs:
@@ -47,11 +70,13 @@ For a one-page rerun, `run_focused_fresh_detector.py` loads
 It changes only the selected image directory, image glob, run ID and output root:
 
 ```bash
+OMR_DLN_MODEL_PATH=/absolute/path/to/YOLOv8m_Measures.pt \
+PIPELINE_PYTHON="$PYTHON" \
 PYTHONPATH=. "$PYTHON" tools/issue255/run_focused_fresh_detector.py \
   --image data/evaluation2/images/Va_Prokofiev_Symphony1/page_004.png \
   --score Va_Prokofiev_Symphony1 \
   --page page_004 \
-  --run-id issue255_prokofiev_page004_fresh_01 \
+  --run-id issue255_prokofiev_page004_fresh_02 \
   --output-root logs/issue255_focused_fresh
 ```
 
@@ -120,9 +145,10 @@ The wrapper runs:
 - UTF-8 decoding for changed text files, covering the blob-corruption failure seen
   during the initial publication attempt;
 - `bash -n` for the local validation and focused fresh batch scripts;
-- `py_compile` for the Issue #255 tools and tests;
+- `py_compile` for the Issue #255 tools and runtime helpers;
 - `make lint`;
-- the focused pytest profile, including Issue #252 detector-boundary and Issue #254
+- the focused pytest profile, including OMR-DLN model resolution, explicit Python
+  selection, subprocess diagnostics, Issue #252 detector-boundary and Issue #254
   connector-artifact contract tests.
 
 Use `--pytest-only` for a quicker rerun or `--lint-only` to isolate lint failures. This

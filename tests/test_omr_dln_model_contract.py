@@ -13,19 +13,25 @@ from src.pipeline.detection.omr_dln_model import (
 def test_omr_dln_model_uses_repository_default() -> None:
     repository_root = Path("/workspace")
 
-    assert resolve_omr_dln_model_path(
-        repository_root=repository_root,
-        environment={},
-    ) == repository_root / MODEL_RELATIVE_PATH
+    assert (
+        resolve_omr_dln_model_path(
+            repository_root=repository_root,
+            environment={},
+        )
+        == repository_root / MODEL_RELATIVE_PATH
+    )
 
 
 def test_omr_dln_model_accepts_shared_override() -> None:
     shared_model = Path("/models/YOLOv8m_Measures.pt")
 
-    assert resolve_omr_dln_model_path(
-        repository_root=Path("/workspace"),
-        environment={MODEL_ENVIRONMENT_VARIABLE: str(shared_model)},
-    ) == shared_model
+    assert (
+        resolve_omr_dln_model_path(
+            repository_root=Path("/workspace"),
+            environment={MODEL_ENVIRONMENT_VARIABLE: str(shared_model)},
+        )
+        == shared_model
+    )
 
 
 def test_missing_model_message_identifies_only_supported_weight() -> None:

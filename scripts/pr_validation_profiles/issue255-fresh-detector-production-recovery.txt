@@ -3,6 +3,7 @@ tests/test_issue255_first_loss_bundle.py
 tests/test_issue255_gate05_first_loss_trace.py
 tests/test_issue255_gate05_trace_compact.py
 tests/test_issue255_low_paper_candidate_rescue.py
+tests/test_issue255_focused_candidate_rescue_evaluation.py
 tests/test_issue255_focused_detector_inventory.py
 tests/test_issue255_focused_fresh_run.py
 tests/test_issue255_homr_model_bootstrap.py

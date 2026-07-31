@@ -21,7 +21,16 @@ TOP_LEVEL_ACCEPTED_EVIDENCE = (
     "proxy_connector_pair_evidence.json",
     "system_grouping_decision_trace.json",
 )
-REFERENCE_SUFFIXES = {".json", ".yaml", ".yml", ".png", ".jpg", ".jpeg", ".txt", ".log"}
+REFERENCE_SUFFIXES = {
+    ".json",
+    ".yaml",
+    ".yml",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".txt",
+    ".log",
+}
 
 
 def _sha256(path: Path) -> str:
@@ -80,7 +89,9 @@ def _copy_tree(source: Path, destination: Path, manifest: list[dict[str, Any]]) 
 
 
 def _accepted_directory(accepted_root: Path, *, score: str, page: str) -> Path:
-    matches = sorted(path for path in accepted_root.glob(f"*_{score}_{page}") if path.is_dir())
+    matches = sorted(
+        path for path in accepted_root.glob(f"*_{score}_{page}") if path.is_dir()
+    )
     if len(matches) != 1:
         raise RuntimeError(
             f"Expected exactly one accepted directory for {score}/{page}, found {matches}"
@@ -137,7 +148,10 @@ def build_bundle(
             if not isinstance(artifacts, Mapping):
                 raise ValueError(f"Missing artifact inventory: {label}")
             for name, record in artifacts.items():
-                if not isinstance(record, Mapping) or record.get("exists") is not True:
+                if (
+                    not isinstance(record, Mapping)
+                    or record.get("exists") is not True
+                ):
                     continue
                 source = resolve_record_path(str(record["path"]), root=root)
                 suffix = "".join(source.suffixes) or ".bin"
@@ -167,7 +181,10 @@ def build_bundle(
                 continue
             for raw in iter_path_strings(json_payload):
                 reference = resolve_record_path(raw, root=root).resolve()
-                if not reference.is_file() or reference.suffix.lower() not in REFERENCE_SUFFIXES:
+                if (
+                    not reference.is_file()
+                    or reference.suffix.lower() not in REFERENCE_SUFFIXES
+                ):
                     continue
                 try:
                     relative = reference.relative_to(root.resolve())
@@ -201,7 +218,11 @@ def build_bundle(
     finally:
         shutil.rmtree(staging, ignore_errors=True)
 
-    return {**bundle_manifest, "output": str(output), "size_bytes": output.stat().st_size}
+    return {
+        **bundle_manifest,
+        "output": str(output),
+        "size_bytes": output.stat().st_size,
+    }
 
 
 def main() -> int:
@@ -217,7 +238,15 @@ def main() -> int:
             output=args.output,
         )
     except Exception as error:  # noqa: BLE001
-        print(json.dumps({"status": "failed", "error_type": type(error).__name__, "error": str(error)}))
+        print(
+            json.dumps(
+                {
+                    "status": "failed",
+                    "error_type": type(error).__name__,
+                    "error": str(error),
+                }
+            )
+        )
         return 1
     print(json.dumps(report, ensure_ascii=False))
     return 0

@@ -86,9 +86,15 @@ def build_compact_archive(*, trace_root: Path, output: Path) -> dict[str, Any]:
         )
         with tarfile.open(output, "w:gz") as archive:
             root_name = trace_root.name
-            archive.add(manifest_path, arcname=f"{root_name}/compact_manifest.json")
+            archive.add(
+                manifest_path,
+                arcname=f"{root_name}/compact_manifest.json",
+            )
             for path in files:
-                archive.add(path, arcname=f"{root_name}/{path.relative_to(trace_root)}")
+                archive.add(
+                    path,
+                    arcname=f"{root_name}/{path.relative_to(trace_root)}",
+                )
     return {
         **manifest,
         "output": str(output),
@@ -106,7 +112,11 @@ def main() -> int:
     except Exception as error:  # noqa: BLE001
         print(
             json.dumps(
-                {"status": "failed", "error_type": type(error).__name__, "error": str(error)},
+                {
+                    "status": "failed",
+                    "error_type": type(error).__name__,
+                    "error": str(error),
+                },
                 ensure_ascii=False,
             )
         )

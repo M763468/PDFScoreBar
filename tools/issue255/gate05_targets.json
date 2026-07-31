@@ -1,0 +1,68 @@
+{
+  "schema_version": "issue255.focused_targets.v1",
+  "accepted_reference_runtime_input": false,
+  "pages": {
+    "prokofiev": {
+      "score": "Va_Prokofiev_Symphony1",
+      "page": "page_004",
+      "accepted_barlines": "logs/issue120_e2e_recovery/stage_e_full_pipeline/intermediate/probe_scan/eval2_images_Va_Prokofiev_Symphony1_page_004/pipeline2_no_peak_filtered_cnn.json",
+      "targets": [
+        {
+          "id": "system01_x1785",
+          "system": 1,
+          "accepted_bbox": [1783, 965, 1787, 1066],
+          "downstream_effect": "one missing physical measure in system 1"
+        },
+        {
+          "id": "system01_x2523",
+          "system": 1,
+          "accepted_bbox": [2521, 965, 2525, 1066],
+          "downstream_effect": "one missing physical measure in system 1"
+        },
+        {
+          "id": "system07_x2627",
+          "system": 7,
+          "accepted_bbox": [2625, 2920, 2629, 3021],
+          "downstream_effect": "one missing physical measure in system 7"
+        },
+        {
+          "id": "system10_x893",
+          "system": 10,
+          "accepted_bbox": [891, 3831, 895, 3934],
+          "downstream_effect": "one missing physical measure in system 10"
+        }
+      ]
+    },
+    "shostakovich": {
+      "score": "Shostakovich-Sym5-Va",
+      "page": "page_014",
+      "accepted_barlines": "logs/issue120_e2e_recovery/stage_e_full_pipeline/intermediate/probe_scan/eval2_images_Shostakovich-Sym5-Va_page_014/pipeline2_no_peak_filtered_cnn.json",
+      "targets": [
+        {
+          "id": "system01_lower_x1120",
+          "system": 1,
+          "accepted_bbox": [1116, 772, 1125, 872],
+          "downstream_effect": "missing lower aligned pair for connector-supported first-system grouping"
+        },
+        {
+          "id": "system01_lower_x1994",
+          "system": 1,
+          "accepted_bbox": [1990, 772, 1999, 872],
+          "downstream_effect": "missing lower aligned pair for connector-supported first-system grouping"
+        },
+        {
+          "id": "system04_upper_x1476",
+          "system": 4,
+          "accepted_bbox": [1472, 2606, 1480, 2706],
+          "downstream_effect": "missing upper half of the interior physical-measure boundary"
+        },
+        {
+          "id": "system04_lower_x1478",
+          "system": 4,
+          "accepted_bbox": [1472, 2972, 1484, 3072],
+          "downstream_effect": "missing lower half of the interior physical-measure boundary"
+        }
+      ]
+    }
+  }
+}

@@ -1,5 +1,7 @@
+from tools.issue255.first_loss_boundary import (
+    classify_first_loss_boundary as _first_loss_boundary,
+)
 from tools.issue255.trace_focused_detector_boundaries import (
-    _first_loss_boundary,
     _missing_accepted_boxes,
     _resolve_targets,
 )
@@ -26,7 +28,9 @@ def test_missing_accepted_boxes_uses_iou_contract() -> None:
     accepted = [(10, 20, 14, 120), (30, 20, 34, 120)]
     current = [(10, 20, 14, 120)]
 
-    assert _missing_accepted_boxes(accepted, current, accepted_iou=0.5) == [(30, 20, 34, 120)]
+    assert _missing_accepted_boxes(accepted, current, accepted_iou=0.5) == [
+        (30, 20, 34, 120)
+    ]
 
 
 def test_resolve_targets_marks_already_present_metadata() -> None:
@@ -56,7 +60,7 @@ def test_first_loss_classifies_upstream_source_absence() -> None:
             cnn_accepted=_layer(True),
             accepted_final=False,
         )
-        == "baseline_homr"
+        == "absent_from_all_upstream_detectors"
     )
 
 

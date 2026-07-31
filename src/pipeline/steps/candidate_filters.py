@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Tuple
 
+from .low_paper_candidate_rescue import rescue_low_paper_candidates
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -93,7 +95,6 @@ def trim_box_to_ink(
     else:
         gray = crop
 
-    # Vertical projection: count ink pixels in each row
     row_ink = (gray < ink_threshold).sum(axis=1)
     row_ratio = row_ink / float(max(1, x_hi - x_lo))
 
@@ -165,12 +166,18 @@ def filter_probe_candidates(
     min_paper_overlap_ratio: float = 0.6,
     min_staff_overlap_ratio: float = 0.01,
     max_width_ratio: float | None = None,
+    rescue_low_paper_verticals: bool = False,
+    rescue_min_ink_ratio: float = 0.9,
+    rescue_max_height_median_ratio: float = 1.4,
+    rescue_gap_ratio: float = 1.5,
+    rescue_gap_margin_ratio: float = 0.1,
+    rescue_gap_nms_ratio: float = 0.5,
+    rescue_x_tolerance_height_ratio: float = 0.04,
+    rescue_min_x_tolerance: int = 4,
+    rescue_wide_seed_width_ratio: float = 3.0,
+    rescue_cross_band_max_distance_height_ratio: float = 4.0,
 ) -> Tuple[List[Tuple[int, int, int, int]], List[Dict[str, Any]]]:
-    """
-    Apply heuristic filters to remove false positive candidates.
-    Returns:
-        A tuple of (filtered_candidates, dropped_info)
-    """
+    """Apply heuristic filters to remove false positive candidates."""
     if not candidates:
         return [], []
 
@@ -231,6 +238,7 @@ def filter_probe_candidates(
             if staff_overlap < min_staff_overlap_ratio:
                 reasons.append("no_staff_overlap")
 
+        ink_ratio = 0.0
         y_lo, y_hi = max(0, min(y1, y2)), min(h_img, max(y1, y2))
         x_lo, x_hi = max(0, min(x1, x2)), min(w_img, max(x1, x2))
         if y_hi > y_lo and x_hi > x_lo:
@@ -240,12 +248,40 @@ def filter_probe_candidates(
                 reasons.append("low_ink_ratio")
 
         if reasons:
-            dropped.append({"bbox": b, "reasons": reasons})
-            if len(reasons) > 0:
-                # Log drops that are NOT the obvious left margin ones, to keep noise down
-                if "left_margin_zone" not in reasons:
-                    logger.debug(f"--- [DEBUG_DROP] Candidate {b} dropped. Reasons: {reasons}")
+            record: Dict[str, Any] = {"bbox": b, "reasons": reasons}
+            if rescue_low_paper_verticals:
+                record["ink_ratio"] = ink_ratio
+            dropped.append(record)
+            if "left_margin_zone" not in reasons:
+                logger.debug("--- [DEBUG_DROP] Candidate %s dropped. Reasons: %s", b, reasons)
         else:
             keep.append(b)
 
-    return keep, dropped
+    if rescue_low_paper_verticals:
+        rescued, dropped, rescue_details = rescue_low_paper_candidates(
+            dropped=dropped,
+            existing_boxes=existing_boxes,
+            median_height=median_h,
+            min_ink_ratio=rescue_min_ink_ratio,
+            max_height_median_ratio=rescue_max_height_median_ratio,
+            gap_ratio=rescue_gap_ratio,
+            gap_margin_ratio=rescue_gap_margin_ratio,
+            gap_nms_ratio=rescue_gap_nms_ratio,
+            x_tolerance_height_ratio=rescue_x_tolerance_height_ratio,
+            min_x_tolerance=rescue_min_x_tolerance,
+            wide_seed_width_ratio=rescue_wide_seed_width_ratio,
+            cross_band_max_distance_height_ratio=(
+                rescue_cross_band_max_distance_height_ratio
+            ),
+        )
+        keep.extend(rescued)
+        if rescue_details:
+            logger.info(
+                "Structured low-paper rescue retained %d of %d probe candidates",
+                len(rescued),
+                len(candidates),
+            )
+            for detail in rescue_details:
+                logger.debug("--- [DEBUG_RESCUE] %s", detail)
+
+    return sorted(set(keep)), dropped

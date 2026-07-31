@@ -1,19 +1,15 @@
 ---
 trigger: always_on
-description: Consult the local Graphify knowledge graph for codebase and architecture questions.
+description: Use the committed Graphify graph before broad searches for codebase structure, dependencies, call paths, and relevant files.
 ---
 
 ## Graphify利用ガイド
 
-このリポジトリではコードベースのナレッジグラフ化ツール `Graphify` (CLI: `graphify`) を利用できます。
-
-**利用ルール**:
-- **事前絞り込み**: リポジトリ全体を広範囲に検索する前に、既存グラフへ `graphify query "<question>"` などで問い合わせ、関連領域を絞り込む。
-- **ローカル完結を既定とする**: グラフの新規生成・全面再生成は `graphify extract . --code-only --force` を使用する。コードはローカルAST解析され、ドキュメント・PDF・画像は対象外となる。
-- **外部送信の禁止**: 明示的な承認と承認済みのローカルバックエンドがない限り、ドキュメント・PDF・画像を含むsemantic extractionや外部APIバックエンドを使用しない。
-- **直接確認**: Graphifyの結果だけで実装を判断せず、対象ソースを直接確認する。
-- **裏付け**: Graphifyにより推定された依存関係は、実際の実装またはテストコードで裏付ける。
-- **フォールバック**: Graphifyが失敗した場合や十分な情報が得られない場合は、通常の検索（`rg` / `grep` 等）やソース確認へ速やかにフォールバックする。
-- **過剰利用の禁止**: Graphifyを使うこと自体を目的化せず、単純な変更や調査では過剰な問い合わせをしない。
-- **ドキュメントのナビゲーション**: コードグラフを補完するドキュメント一覧として `graphify-out/wiki/index.md` を参照する。
-- **更新**: 既存のコード専用グラフは `graphify update .` で増分更新する。大規模な構造変更後や整合性に疑いがある場合は、上記のcode-only全面再生成を行う。
+- **共有グラフを優先する**: `graphify-out/graph.json` が存在する場合、構造・依存関係・call path・関連ファイルの調査では広範な検索より先にGraphifyへ問い合わせる。
+- **入口を統一する**: 新規worktreeを含め、通常は `scripts/graphify_query.sh "<question>"` を使う。Agent Skillとしては `.agents/skills/graphify/SKILL.md` を利用する。
+- **code-onlyを既定とする**: 無人の生成・再生成はローカルASTによるcode-onlyとし、document・PDF・imageのsemantic extractionを自動実行しない。
+- **document semanticsは明示選択制**: ユーザーがローカルcoding sessionまたはGemini API経路を明示的に選び、対象pathを限定した場合だけ実行する。
+- **共有する成果物を限定する**: `graph.json`、`GRAPH_REPORT.md`、`wiki/**`、`MANIFEST.json`だけを共有し、抽出cache・途中JSON・HTML・local path情報はコミットしない。
+- **直接確認する**: Graphifyの結果だけで実装を判断せず、対象sourceまたはtestで裏付ける。
+- **古さを考慮する**: branch固有の変更は共有グラフに未反映の場合がある。該当差分を直接確認し、必要な場合だけlocal refreshを行う。
+- **フォールバックする**: Graphifyが失敗した場合や情報が不十分な場合は、`rg` / `grep` とsource確認へ速やかに切り替える。

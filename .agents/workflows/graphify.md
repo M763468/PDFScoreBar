@@ -1,18 +1,18 @@
 ---
 name: graphify
-description: Query or rebuild the repository knowledge graph without external semantic extraction.
+description: Query the committed repository graph before broad code searches and rebuild it only when explicitly needed.
 ---
 
 # Workflow: graphify
 
-Use the existing graph first with `graphify query "<question>"`.
+1. Read `docs/ai-workflow/GRAPHIFY.md` for the repository policy.
+2. For architecture, dependency, call-path, or relevant-file questions, run:
 
-When a graph must be built or fully rebuilt, use:
+   ```bash
+   scripts/graphify_query.sh "<question>"
+   ```
 
-```bash
-graphify extract . --code-only --force
-```
-
-For an existing code-only graph, use `graphify update .` for incremental updates.
-
-Do not run semantic extraction over documents, PDFs, or images, and do not configure an external API backend, unless the user explicitly approves that data flow. If Graphify is unavailable or the result is insufficient, fall back to `rg`, `grep`, and direct source inspection.
+3. Verify returned locations directly in source or tests.
+4. Use `GRAPHIFY_REFRESH=1` only for a local worktree refresh and `GRAPHIFY_REBUILD=1` only for an explicit code-only rebuild.
+5. Do not perform document semantic extraction unless the user explicitly selects the local coding-session or Gemini API route and approves the path scope.
+6. Fall back to `rg`, `grep`, and direct source inspection when Graphify is stale, missing, or insufficient.

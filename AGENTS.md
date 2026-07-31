@@ -152,6 +152,7 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
     - `long-horizon-task`: 長期タスクの状態管理
     - `gemini-consultation`: Gemini への標準化された相談。`.agents/skills/gemini-consultation/SKILL.md` を利用し、相談時の入力整理・実行手順・記録方法を統一します。
     - `codex-delegation`: Codex への実装・検証タスクの委譲。`.agents/skills/codex-delegation/SKILL.md` を利用し、コンテキスト消費を抑えつつ精緻な実装と検証を行います。
+    - `graphify`: コードベース構造・依存関係・call path・関連ファイルの事前探索。`.agents/skills/graphify/SKILL.md` と `docs/ai-workflow/GRAPHIFY.md` に従い、共有グラフを広範検索より先に利用します。
 
 詳細は `docs/ai-workflow/WORKFLOW.md` を参照。
 
@@ -214,15 +215,11 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 
 ## Graphify利用ガイド
 
-このリポジトリではコードベースのナレッジグラフ化ツール `Graphify` (CLI: `graphify`) を利用できます。
+このリポジトリではGraphifyをコードベース構造・依存関係・call path・関連ファイルの事前探索に利用します。
 
-**利用ルール**:
-- **事前絞り込み**: リポジトリ全体を広範囲に検索する前に、既存グラフへ `graphify query "<question>"` などで問い合わせ、関連領域を絞り込む。
-- **ローカル完結を既定とする**: グラフの新規生成・全面再生成は `graphify extract . --code-only --force` を使用する。コードはローカルAST解析され、ドキュメント・PDF・画像は対象外となる。
-- **外部送信の禁止**: 明示的な承認と承認済みのローカルバックエンドがない限り、ドキュメント・PDF・画像を含むsemantic extractionや外部APIバックエンドを使用しない。
-- **直接確認**: Graphifyの結果だけで実装を判断せず、対象ソースを直接確認する。
-- **裏付け**: Graphifyにより推定された依存関係は、実際の実装またはテストコードで裏付ける。
-- **フォールバック**: Graphifyが失敗した場合や十分な情報が得られない場合は、通常の検索（`rg` / `grep` 等）やソース確認へ速やかにフォールバックする。
-- **過剰利用の禁止**: Graphifyを使うこと自体を目的化せず、単純な変更や調査では過剰な問い合わせをしない。
-- **ドキュメントのナビゲーション**: コードグラフを補完するドキュメント一覧として `graphify-out/wiki/index.md` を参照する。
-- **更新**: 既存のコード専用グラフは `graphify update .` で増分更新する。大規模な構造変更後や整合性に疑いがある場合は、上記のcode-only全面再生成を行う。
+- `graphify-out/graph.json` がある場合、広範な検索より先に `scripts/graphify_query.sh "<question>"` または `.agents/skills/graphify/SKILL.md` を利用する。
+- Graphifyの結果は対象source・testで直接確認する。
+- 通常の無人生成はcode-onlyとし、document semantic extractionはユーザーがlocal coding sessionまたはGemini API経路と対象scopeを明示した場合だけ行う。
+- 共有対象は `graph.json`、`GRAPH_REPORT.md`、`wiki/**`、`MANIFEST.json`だけとし、cacheや環境依存の途中生成物はコミットしない。
+- branch固有差分が未反映の場合は直接差分を確認し、必要な場合だけlocal refreshする。
+- Graphifyが使えない、古い、または不十分な場合は `rg` / `grep` とsource確認へフォールバックする。

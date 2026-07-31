@@ -58,5 +58,14 @@ def test_classifies_candidate_filter_and_cnn_filtering() -> None:
         "hybrid": _layer(True),
     }
 
-    assert _classify(source, probe=_probe(heuristic_filtered=_layer(False))) == "candidate_filter"
+    assert (
+        _classify(source, probe=_probe(heuristic_filtered=_layer(False)))
+        == "candidate_filter"
+    )
     assert _classify(source, kept=False) == "cnn_filtering"
+
+
+def test_inventory_entrypoint_installs_corrected_classifier() -> None:
+    from tools.issue255 import run_focused_detector_inventory as entrypoint
+
+    assert entrypoint.implementation._first_loss_boundary is classify_first_loss_boundary

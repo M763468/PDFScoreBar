@@ -93,7 +93,8 @@ data/evaluation2/**/missing_pages.json
 artifacts/
 
 # Graphify generated artifacts
-# Report is tracked for agents, but graphs and caches are excluded
-/graphify-out/
+# Keep the human-readable report and wiki; ignore graph data and caches.
+/graphify-out/*
 !/graphify-out/GRAPH_REPORT.md
 !/graphify-out/wiki/
+!/graphify-out/wiki/**

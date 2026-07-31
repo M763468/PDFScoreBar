@@ -45,4 +45,4 @@ Use `graphify update .` only for an existing code-only graph. After major struct
 
 ## Verification performed
 
-The PR validation path installs the official `graphifyy` package, creates a code-only graph with no API keys provided, confirms that `graphify-out/graph.json` contains nodes, and executes a query against that graph.
+On 2026-08-01, a temporary GitHub Actions workflow installed the official `graphifyy` package, created a code-only graph with all supported external API-key variables unset, confirmed that `graphify-out/graph.json` contained nodes, executed a query against that graph, checked the `.gitignore` exceptions, and ran `make lint`. The workflow created commit `9f63eef3e56bc300f9bec5b37900875d34b36efd` only after those steps succeeded, and the temporary workflow was then removed from the branch.

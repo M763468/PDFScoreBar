@@ -1,3 +1,4 @@
+tests/test_issue255_first_loss_boundary.py
 tests/test_issue255_focused_detector_inventory.py
 tests/test_issue255_focused_fresh_run.py
 tests/test_issue255_homr_model_bootstrap.py

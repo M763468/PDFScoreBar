@@ -96,3 +96,4 @@ artifacts/
 # Report is tracked for agents, but graphs and caches are excluded
 /graphify-out/
 !/graphify-out/GRAPH_REPORT.md
+!/graphify-out/wiki/

@@ -87,12 +87,16 @@ fi
 
 required_files=(
   src/pipeline/detection/omr_dln_model.py
+  src/pipeline/steps/low_paper_candidate_rescue.py
   tools/issue255/bootstrap_homr_models.py
+  tools/issue255/first_loss_boundary.py
   tools/issue255/run_focused_fresh_detector.py
   tools/issue255/trace_focused_detector_boundaries.py
+  tests/test_issue255_first_loss_boundary.py
   tests/test_issue255_focused_fresh_run.py
   tests/test_issue255_focused_detector_inventory.py
   tests/test_issue255_homr_model_bootstrap.py
+  tests/test_issue255_low_paper_candidate_rescue.py
   tests/test_omr_dln_model_contract.py
   scripts/run_issue255_focused_fresh.sh
   scripts/run_issue255_focused_fresh_with_model.sh
@@ -148,13 +152,18 @@ PYTHONPATH=. "$python_bin" -m py_compile \
   src/pipeline/core/python_env.py \
   src/pipeline/core/subprocess_utils.py \
   src/pipeline/detection/omr_dln_model.py \
+  src/pipeline/steps/candidate_filters.py \
+  src/pipeline/steps/low_paper_candidate_rescue.py \
   experiments/models/eval_omr_dln.py \
   tools/issue255/bootstrap_homr_models.py \
+  tools/issue255/first_loss_boundary.py \
   tools/issue255/run_focused_fresh_detector.py \
   tools/issue255/trace_focused_detector_boundaries.py \
+  tests/test_issue255_first_loss_boundary.py \
   tests/test_issue255_focused_fresh_run.py \
   tests/test_issue255_focused_detector_inventory.py \
   tests/test_issue255_homr_model_bootstrap.py \
+  tests/test_issue255_low_paper_candidate_rescue.py \
   tests/test_omr_dln_model_contract.py \
   tests/test_subprocess_utils.py
 

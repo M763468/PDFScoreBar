@@ -1,0 +1,386 @@
+name: Issue 258 Graphify finalize
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GEMINI_API_KEY: ""
+      GOOGLE_API_KEY: ""
+      GRAPHIFY_GEMINI_MODEL: ""
+    steps:
+      - name: Check out source branch
+        uses: actions/checkout@v4
+        with:
+          ref: task/introduce-graphify
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install official Graphify skill
+        run: |
+          python -m pip install --upgrade pip uv
+          uv tool install --upgrade graphifyy
+          graphify --version
+          graphify install --project --platform agents
+
+      - name: Write repository policy and query entry point
+        shell: bash
+        run: |
+          cat > .agents/rules/graphify.md <<'EOF'
+          ---
+          trigger: always_on
+          description: Use the committed Graphify graph before broad searches for codebase structure, dependencies, call paths, and relevant files.
+          ---
+
+          ## Graphify利用ガイド
+
+          - **共有グラフを優先する**: `graphify-out/graph.json` が存在する場合、構造・依存関係・call path・関連ファイルの調査では広範な検索より先にGraphifyへ問い合わせる。
+          - **入口を統一する**: 新規worktreeを含め、通常は `scripts/graphify_query.sh "<question>"` を使う。Agent Skillとしては `.agents/skills/graphify/SKILL.md` を利用する。
+          - **code-onlyを既定とする**: 無人の生成・再生成はローカルASTによるcode-onlyとし、document・PDF・imageのsemantic extractionを自動実行しない。
+          - **document semanticsは明示選択制**: ユーザーがローカルcoding sessionまたはGemini API経路を明示的に選び、対象pathを限定した場合だけ実行する。
+          - **共有する成果物を限定する**: `graph.json`、`GRAPH_REPORT.md`、`wiki/**`、`MANIFEST.json`だけを共有し、抽出cache・途中JSON・HTML・local path情報はコミットしない。
+          - **直接確認する**: Graphifyの結果だけで実装を判断せず、対象sourceまたはtestで裏付ける。
+          - **古さを考慮する**: branch固有の変更は共有グラフに未反映の場合がある。該当差分を直接確認し、必要な場合だけlocal refreshを行う。
+          - **フォールバックする**: Graphifyが失敗した場合や情報が不十分な場合は、`rg` / `grep` とsource確認へ速やかに切り替える。
+          EOF
+
+          cat > .agents/workflows/graphify.md <<'EOF'
+          ---
+          name: graphify
+          description: Query the committed repository graph before broad code searches and rebuild it only when explicitly needed.
+          ---
+
+          # Workflow: graphify
+
+          1. Read `docs/ai-workflow/GRAPHIFY.md` for the repository policy.
+          2. For architecture, dependency, call-path, or relevant-file questions, run:
+
+             ```bash
+             scripts/graphify_query.sh "<question>"
+             ```
+
+          3. Verify returned locations directly in source or tests.
+          4. Use `GRAPHIFY_REFRESH=1` only for a local worktree refresh and `GRAPHIFY_REBUILD=1` only for an explicit code-only rebuild.
+          5. Do not perform document semantic extraction unless the user explicitly selects the local coding-session or Gemini API route and approves the path scope.
+          6. Fall back to `rg`, `grep`, and direct source inspection when Graphify is stale, missing, or insufficient.
+          EOF
+
+          mkdir -p scripts
+          cat > scripts/graphify_query.sh <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          if [ "$#" -eq 0 ]; then
+              echo 'Usage: scripts/graphify_query.sh "<question>"' >&2
+              exit 2
+          fi
+
+          if ROOT=$(git rev-parse --show-toplevel 2>/dev/null); then
+              cd "$ROOT"
+          fi
+
+          GRAPH="graphify-out/graph.json"
+          MANIFEST="graphify-out/MANIFEST.json"
+          QUESTION="$*"
+
+          if command -v graphify >/dev/null 2>&1; then
+              GRAPHIFY=(graphify)
+          elif command -v uv >/dev/null 2>&1; then
+              GRAPHIFY=(uv tool run --from graphifyy graphify)
+          else
+              echo "Graphify is unavailable. Install it with: uv tool install graphifyy" >&2
+              exit 127
+          fi
+
+          rebuild_code_graph() {
+              "${GRAPHIFY[@]}" extract . --code-only --force
+              "${GRAPHIFY[@]}" cluster-only . --wiki --no-viz
+          }
+
+          if [ "${GRAPHIFY_REBUILD:-0}" = "1" ]; then
+              rebuild_code_graph
+          elif [ ! -s "$GRAPH" ]; then
+              echo "Shared Graphify graph is missing; creating a local code-only graph." >&2
+              rebuild_code_graph
+          elif [ "${GRAPHIFY_REFRESH:-0}" = "1" ]; then
+              # Shared caches are intentionally not committed. A portable local refresh is
+              # therefore a deterministic code-only rebuild rather than a cache-dependent update.
+              rebuild_code_graph
+          fi
+
+          if [ -f "$MANIFEST" ]; then
+              GENERATED_FROM=$(python - "$MANIFEST" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          print(data.get("generated_from_commit", ""))
+          PY
+              )
+              CURRENT_COMMIT=$(git rev-parse HEAD 2>/dev/null || true)
+              if [ -n "$GENERATED_FROM" ] && [ -n "$CURRENT_COMMIT" ] && [ "$GENERATED_FROM" != "$CURRENT_COMMIT" ]; then
+                  echo "Graphify graph was generated from $GENERATED_FROM; verify branch changes directly or set GRAPHIFY_REFRESH=1." >&2
+              fi
+          fi
+
+          "${GRAPHIFY[@]}" query "$QUESTION" --graph "$GRAPH"
+          EOF
+          chmod +x scripts/graphify_query.sh
+
+          cat > docs/ai-workflow/GRAPHIFY.md <<'EOF'
+          # Graphify operating procedure
+
+          ## Purpose
+
+          Graphify is the first-pass repository navigation aid for architecture, dependency, call-path, and relevant-file questions. Its output narrows the search space; source files and tests remain authoritative.
+
+          ## Agent entry points
+
+          The official project-scoped Agent Skill is tracked at `.agents/skills/graphify/`. Its description intentionally covers codebase architecture and file-relationship questions so compatible coding agents can select it proactively.
+
+          The repository-specific direct entry point is:
+
+          ```bash
+          scripts/graphify_query.sh "<question>"
+          ```
+
+          The script uses the committed graph immediately. This makes a fresh clone or worktree useful without first regenerating the graph. `GRAPHIFY_REFRESH=1` performs a local code-only rebuild; `GRAPHIFY_REBUILD=1` explicitly does the same even when a graph already exists.
+
+          ## Installation
+
+          Install the official package and project skill in an isolated environment:
+
+          ```bash
+          uv tool install graphifyy
+          graphify install --project --platform agents
+          ```
+
+          The project installation creates `.agents/skills/graphify/SKILL.md` and its `references/` files. These files are committed so a new coding session can discover the skill without rerunning the installer.
+
+          ## Shared durable outputs
+
+          Commit only portable results that improve later local and web-based repository navigation:
+
+          - `graphify-out/graph.json`: canonical queryable graph. It contains structural code results and, after an explicitly approved semantic refresh, merged semantic nodes and relationships.
+          - `graphify-out/GRAPH_REPORT.md`: human-readable graph and community summary.
+          - `graphify-out/wiki/**`: agent- and web-readable community/semantic map.
+          - `graphify-out/MANIFEST.json`: provenance, generation mode, semantic route and scope, version, size, and portability checks.
+
+          The following remain local and ignored:
+
+          - HTML/SVG/GraphML and database exports unless separately requested.
+          - `.graphify_*` analysis, label, root, interpreter, and temporary extraction files.
+          - `cache/`, converted sidecars, and Graphify's internal lowercase `manifest.json`.
+
+          The internal cache is useful in the workspace that generated it but is not necessary to query the committed graph. Not committing it avoids large, environment-specific churn.
+
+          ## Code graph generation
+
+          The default and unattended path is local AST extraction only:
+
+          ```bash
+          graphify extract . --code-only --force
+          graphify cluster-only . --wiki --no-viz
+          ```
+
+          This path does not send source code, documents, PDFs, or images to an LLM API. It skips non-code files and then derives communities, `GRAPH_REPORT.md`, and the wiki from the existing code graph.
+
+          Refresh shared artifacts after meaningful architectural changes, not on every feature branch. Ordinary worktrees should use the committed graph first and inspect branch-specific changes directly.
+
+          ## Document semantic extraction
+
+          Document semantics are opt-in. Do not start them merely because an API key exists in the environment.
+
+          Two routes are permitted when document understanding is needed:
+
+          1. **Local coding-session route**: explicitly assign extraction to a selected coding session. This may use the coding provider's model and data path; it is not necessarily offline. Apply the provider's data-handling policy and limit the input paths.
+          2. **Gemini API route**: explicitly set `GEMINI_API_KEY` or `GOOGLE_API_KEY` and use Graphify's Gemini backend only after confirming that the intended Google AI plan/quota and project settings will not create unintended additional charges. Never store the key in Git or repository files.
+
+          For either route:
+
+          - Prepare an allowlist of documentation paths before extraction.
+          - Exclude credentials, private notes, datasets, generated logs, model files, and other sensitive content.
+          - Record the route, backend/model, allowlisted scope, source revision, and Graphify version in `MANIFEST.json`.
+          - Review the semantic result before replacing the shared graph.
+          - Commit only the merged `graph.json`, `GRAPH_REPORT.md`, `wiki/**`, and provenance manifest. Keep semantic batch files and caches local.
+
+          A semantic refresh may be done in a dedicated session and PR when the output is substantial. The code-only graph remains a safe baseline.
+
+          ## Web-based use
+
+          GitHub-connected web clients cannot execute the local Graphify CLI. They can still use the committed `GRAPH_REPORT.md`, wiki, provenance manifest, and repository-relative paths as navigation aids. The committed `graph.json` also remains available to environments that can download the repository and run Graphify.
+
+          ## Verification rule
+
+          Treat Graphify output as navigation evidence, not final truth. Confirm relevant source and tests. If the graph is stale, unavailable, or too broad, fall back promptly to `rg`, `grep`, and direct inspection.
+          EOF
+
+          python - <<'PY'
+          import re
+          from pathlib import Path
+
+          agents = Path("AGENTS.md")
+          text = agents.read_text(encoding="utf-8")
+          section = """## Graphify利用ガイド
+
+          このリポジトリではGraphifyをコードベース構造・依存関係・call path・関連ファイルの事前探索に利用します。
+
+          - `graphify-out/graph.json` がある場合、広範な検索より先に `scripts/graphify_query.sh \"<question>\"` または `.agents/skills/graphify/SKILL.md` を利用する。
+          - Graphifyの結果は対象source・testで直接確認する。
+          - 通常の無人生成はcode-onlyとし、document semantic extractionはユーザーがlocal coding sessionまたはGemini API経路と対象scopeを明示した場合だけ行う。
+          - 共有対象は `graph.json`、`GRAPH_REPORT.md`、`wiki/**`、`MANIFEST.json`だけとし、cacheや環境依存の途中生成物はコミットしない。
+          - branch固有差分が未反映の場合は直接差分を確認し、必要な場合だけlocal refreshする。
+          - Graphifyが使えない、古い、または不十分な場合は `rg` / `grep` とsource確認へフォールバックする。
+          """
+          text = re.sub(r"## Graphify利用ガイド\n.*\Z", section, text, flags=re.S)
+
+          needle = "    - `codex-delegation`: Codex への実装・検証タスクの委譲。`.agents/skills/codex-delegation/SKILL.md` を利用し、コンテキスト消費を抑えつつ精緻な実装と検証を行います。\n"
+          graphify_item = "    - `graphify`: コードベース構造・依存関係・call path・関連ファイルの事前探索。`.agents/skills/graphify/SKILL.md` と `docs/ai-workflow/GRAPHIFY.md` に従い、共有グラフを広範検索より先に利用します。\n"
+          if graphify_item not in text:
+              text = text.replace(needle, needle + graphify_item)
+          agents.write_text(text, encoding="utf-8")
+          PY
+
+          cat > .gitignore.tmp <<'EOF'
+          # Graphify generated artifacts
+          # Commit portable graph/report/wiki results; ignore caches and local exports.
+          /graphify-out/*
+          !/graphify-out/graph.json
+          !/graphify-out/GRAPH_REPORT.md
+          !/graphify-out/MANIFEST.json
+          !/graphify-out/wiki/
+          !/graphify-out/wiki/**
+          EOF
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path(".gitignore")
+          text = path.read_text(encoding="utf-8")
+          marker = "# Graphify generated artifacts\n"
+          prefix = text.split(marker, 1)[0].rstrip()
+          block = Path(".gitignore.tmp").read_text(encoding="utf-8")
+          path.write_text(prefix + "\n\n" + block, encoding="utf-8")
+          Path(".gitignore.tmp").unlink()
+          PY
+
+          rm -f \
+            .github/workflows/issue258_graphify_bootstrap.yml \
+            .github/workflows/issue258_graphify_probe.yml \
+            .github/workflows/issue258_graphify_probe2.yml \
+            .github/workflows/issue258_graphify_finalize.yml
+
+      - name: Generate shared portable graph
+        shell: bash
+        run: |
+          GENERATED_FROM_COMMIT=$(git rev-parse HEAD)
+          graphify extract . --code-only --force
+          graphify cluster-only . --wiki --no-viz
+
+          test -s graphify-out/graph.json
+          test -s graphify-out/GRAPH_REPORT.md
+          test -s graphify-out/wiki/index.md
+
+          python - "$GENERATED_FROM_COMMIT" <<'PY'
+          import json
+          import subprocess
+          import sys
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          generated_from_commit = sys.argv[1]
+          graph_path = Path("graphify-out/graph.json")
+          graph_text = graph_path.read_text(encoding="utf-8")
+          repo_root = str(Path.cwd().resolve())
+          absolute_root_occurrences = graph_text.count(repo_root)
+          if absolute_root_occurrences:
+              raise SystemExit(
+                  f"graph.json is not portable: {absolute_root_occurrences} absolute root occurrence(s)"
+              )
+
+          graph = json.loads(graph_text)
+          edges = graph.get("links")
+          if edges is None:
+              edges = graph.get("edges", [])
+          manifest = {
+              "schema_version": 1,
+              "generated_at": datetime.now(timezone.utc).isoformat(),
+              "generated_from_commit": generated_from_commit,
+              "graphify_version": subprocess.check_output(
+                  ["graphify", "--version"], text=True
+              ).strip(),
+              "generation_mode": "code-only",
+              "semantic_route": "none",
+              "semantic_backend": None,
+              "semantic_model": None,
+              "semantic_scope": [],
+              "external_api_keys_present": False,
+              "portable": True,
+              "absolute_root_occurrences": absolute_root_occurrences,
+              "node_count": len(graph.get("nodes", [])),
+              "edge_count": len(edges),
+              "graph_bytes": graph_path.stat().st_size,
+              "tracked_outputs": [
+                  "graphify-out/graph.json",
+                  "graphify-out/GRAPH_REPORT.md",
+                  "graphify-out/wiki/**",
+                  "graphify-out/MANIFEST.json",
+              ],
+              "ignored_state": [
+                  "graphify-out/cache/**",
+                  "graphify-out/.graphify_*",
+                  "graphify-out/manifest.json",
+                  "graphify-out/graph.html",
+              ],
+          }
+          Path("graphify-out/MANIFEST.json").write_text(
+              json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Verify shared use and repository checks
+        shell: bash
+        run: |
+          bash -n scripts/graphify_query.sh
+          scripts/graphify_query.sh "detector orchestrator pipeline" > /tmp/graphify-query.txt
+          test -s /tmp/graphify-query.txt
+          ! grep -R "file://" graphify-out/wiki docs/ai-workflow/GRAPHIFY.md
+          if git check-ignore -q --no-index graphify-out/graph.json; then
+            echo "graph.json must be trackable" >&2
+            exit 1
+          fi
+          if git check-ignore -q --no-index graphify-out/GRAPH_REPORT.md; then
+            echo "GRAPH_REPORT.md must be trackable" >&2
+            exit 1
+          fi
+          if git check-ignore -q --no-index graphify-out/wiki/index.md; then
+            echo "wiki must be trackable" >&2
+            exit 1
+          fi
+          git diff --check
+          make lint
+
+      - name: Commit final Graphify integration
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add AGENTS.md .agents/rules/graphify.md .agents/workflows/graphify.md
+          git add .agents/skills/graphify scripts/graphify_query.sh docs/ai-workflow/GRAPHIFY.md .gitignore
+          git add -u .github/workflows
+          git add -f graphify-out/graph.json graphify-out/GRAPH_REPORT.md graphify-out/MANIFEST.json graphify-out/wiki
+          git commit -m "feat: add reusable Graphify skill and shared graph [graphify-bootstrap]"
+          git push origin HEAD:task/introduce-graphify

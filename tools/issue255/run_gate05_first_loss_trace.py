@@ -141,6 +141,17 @@ def _run_trace(
     return dict(report)
 
 
+def _git_head() -> str | None:
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    return result.stdout.strip() or None
+
+
 def build_report(*, batch: Path, targets: Path, output_root: Path) -> dict[str, Any]:
     batch = batch.resolve()
     targets = targets.resolve()
@@ -163,7 +174,9 @@ def build_report(*, batch: Path, targets: Path, output_root: Path) -> dict[str, 
     inventories = []
     try:
         runs_by_label = {
-            str(run["label"]): run for run in runs if isinstance(run, Mapping) and run.get("label")
+            str(run["label"]): run
+            for run in runs
+            if isinstance(run, Mapping) and run.get("label")
         }
         for label, page_spec in pages.items():
             if label not in runs_by_label or not isinstance(page_spec, Mapping):
@@ -178,7 +191,9 @@ def build_report(*, batch: Path, targets: Path, output_root: Path) -> dict[str, 
 
         rows = [item for report in inventories for item in report.get("inventory", [])]
         boundaries = Counter(
-            str(item.get("first_loss_boundary")) for item in rows if isinstance(item, Mapping)
+            str(item.get("first_loss_boundary"))
+            for item in rows
+            if isinstance(item, Mapping)
         )
         summary = {
             "schema_version": "issue255.gate05_first_loss_trace.v1",
@@ -198,17 +213,14 @@ def build_report(*, batch: Path, targets: Path, output_root: Path) -> dict[str, 
         archive_path = output_root.with_suffix(".tar.gz")
         with tarfile.open(archive_path, "w:gz") as archive:
             archive.add(output_root, arcname=output_root.name)
-        return {**summary, "archive": str(archive_path), "archive_size_bytes": archive_path.stat().st_size}
+        return {
+            **summary,
+            "archive": str(archive_path),
+            "archive_size_bytes": archive_path.stat().st_size,
+        }
     except Exception:
         shutil.rmtree(output_root, ignore_errors=True)
         raise
-
-
-def _git_head() -> str | None:
-    result = subprocess.run(
-        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, capture_output=True, check=False
-    )
-    return result.stdout.strip() or None
 
 
 def main() -> int:

@@ -28,7 +28,7 @@ def _classify(source, *, probe=None, scored=True, kept=True, final=False):
     )
 
 
-def test_classifies_absence_from_all_upstream_detectors() -> None:
+def test_classifies_absence_from_all_upstream_detectors_when_probe_does_not_recover() -> None:
     source = {
         "fresh_baseline": _layer(False),
         "current_sr": _layer(False),
@@ -36,10 +36,12 @@ def test_classifies_absence_from_all_upstream_detectors() -> None:
         "hybrid": _layer(False),
     }
 
-    assert _classify(source) == "absent_from_all_upstream_detectors"
+    assert _classify(source, probe=_probe(raw=_layer(False))) == (
+        "absent_from_all_upstream_detectors"
+    )
 
 
-def test_classifies_hybrid_consensus_loss() -> None:
+def test_classifies_hybrid_consensus_loss_when_probe_does_not_recover() -> None:
     source = {
         "fresh_baseline": _layer(True),
         "current_sr": _layer(False),
@@ -47,7 +49,21 @@ def test_classifies_hybrid_consensus_loss() -> None:
         "hybrid": _layer(False),
     }
 
-    assert _classify(source) == "hybrid_consensus"
+    assert _classify(source, probe=_probe(raw=_layer(False))) == "hybrid_consensus"
+
+
+def test_probe_recovery_moves_effective_loss_to_candidate_filter() -> None:
+    source = {
+        "fresh_baseline": _layer(False),
+        "current_sr": _layer(False),
+        "current_omr": _layer(False),
+        "hybrid": _layer(False),
+    }
+
+    assert (
+        _classify(source, probe=_probe(heuristic_filtered=_layer(False)))
+        == "candidate_filter"
+    )
 
 
 def test_classifies_candidate_filter_and_cnn_filtering() -> None:

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-cv2 = pytest.importorskip("cv2")
+pytest.importorskip("cv2")
 
 from src.pipeline.steps.candidate_filters import filter_probe_candidates
 from src.pipeline.steps.low_paper_candidate_rescue import rescue_low_paper_candidates
@@ -88,3 +88,41 @@ def test_rescue_refines_wide_existing_seed() -> None:
     assert rescued == [candidate]
     assert remaining == []
     assert details[0]["supports"] == ["wide_seed_refinement"]
+
+
+def test_gate05_target_geometries_are_supported_without_page_rules() -> None:
+    prokofiev = (3565, 1930, 3569, 2132)
+    shostakovich_upper = (2948, 5218, 2952, 5410)
+    shostakovich_lower = (2950, 5910, 2954, 6134)
+    dropped = [
+        {"bbox": prokofiev, "reasons": ["low_paper_overlap"], "ink_ratio": 0.94},
+        {
+            "bbox": shostakovich_upper,
+            "reasons": ["low_paper_overlap"],
+            "ink_ratio": 1.0,
+        },
+        {
+            "bbox": shostakovich_lower,
+            "reasons": ["low_paper_overlap"],
+            "ink_ratio": 1.0,
+        },
+    ]
+    existing = [
+        (2869, 1930, 2873, 2132),
+        (6381, 1930, 6385, 2132),
+        (190, 2400, 194, 2602),
+        (666, 2400, 670, 2602),
+    ]
+
+    rescued, remaining, details = rescue_low_paper_candidates(
+        dropped=dropped,
+        existing_boxes=existing,
+        median_height=202.0,
+    )
+
+    assert set(rescued) == {prokofiev, shostakovich_upper, shostakovich_lower}
+    assert remaining == []
+    support_by_box = {tuple(detail["bbox"]): detail["supports"] for detail in details}
+    assert "large_gap" in support_by_box[prokofiev]
+    assert "aligned_candidate" in support_by_box[shostakovich_upper]
+    assert "aligned_candidate" in support_by_box[shostakovich_lower]

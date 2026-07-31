@@ -211,3 +211,18 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 - **Codex**: Implementation Specialist, Repository Navigator, Verification Lead. Leads focused edits and sandbox validation.
 - **Consultation Mandate**: Gemini should proactively consult Codex (via `codex exec --sandbox read-only`) for second opinions on complex logic, type safety, or architectural impacts.
 - **Knowledge Synthesis Mandate**: Both agents must document newly discovered heuristics, anti-patterns, or visual failure modes in `docs/ai-workflow/LESSONS.md` to prevent regressions in future sessions.
+
+## Graphify利用ガイド
+
+このリポジトリではコードベースのナレッジグラフ化ツール `Graphify` (CLI: `graphify`) を利用できます。
+
+**利用ルール**:
+- **事前絞り込み**: リポジトリ全体を広範囲に検索する前に、`graphify query "<question>"` などで関連領域を絞り込む。
+- **直接確認**: Graphifyの結果だけで実装を判断せず、対象ソースを直接確認する。
+- **裏付け**: Graphifyにより推定された依存関係は、実際の実装またはテストコードで裏付ける。
+- **フォールバック**: Graphifyが失敗した場合や十分な情報が得られない場合は、通常の検索（grep等）やソース確認へ速やかにフォールバックする。
+- **過剰利用の禁止**: Graphifyを使うこと自体を目的化せず、単純な変更や調査では過剰な問い合わせをしない。
+- **グラフの更新と再生成**:
+  - コード修正後や大きな構造変更後には `graphify update .` でグラフを更新する。
+  - グラフが古い可能性がある場合は再生成（`graphify .`）する。
+

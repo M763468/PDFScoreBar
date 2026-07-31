@@ -1,7 +1,8 @@
 {
   "schema_version": 1,
   "generated_at": "2026-07-31T18:10:52.658127+00:00",
-  "generated_from_commit": "4fe4513737da636cf2d1b8da1e65961539866dd5",
+  "source_base_commit": "4fe4513737da636cf2d1b8da1e65961539866dd5",
+  "generation_input_state": "working-tree-after-graphify-integration",
   "graphify_version": "graphify 0.9.31",
   "generation_mode": "code-only",
   "semantic_route": "none",
@@ -14,6 +15,10 @@
   "node_count": 3959,
   "edge_count": 8906,
   "graph_bytes": 5167835,
+  "staleness_check": {
+    "method": "code-extension-diff-from-source-base",
+    "note": "The graph was generated after applying the Graphify integration files and before committing the durable artifacts. The query wrapper warns only when later source-code files differ from source_base_commit."
+  },
   "tracked_outputs": [
     "graphify-out/graph.json",
     "graphify-out/GRAPH_REPORT.md",

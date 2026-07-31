@@ -39,20 +39,53 @@ elif [ "${GRAPHIFY_REFRESH:-0}" = "1" ]; then
     rebuild_code_graph
 fi
 
-if [ -f "$MANIFEST" ]; then
-    GENERATED_FROM=$(python - "$MANIFEST" <<'PY'
+warn_if_code_changed_since_shared_graph() {
+    [ -f "$MANIFEST" ] || return 0
+    command -v git >/dev/null 2>&1 || return 0
+
+    local source_base
+    source_base=$(python - "$MANIFEST" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-print(data.get("generated_from_commit", ""))
+print(data.get("source_base_commit", data.get("generated_from_commit", "")))
 PY
     )
-    CURRENT_COMMIT=$(git rev-parse HEAD 2>/dev/null || true)
-    if [ -n "$GENERATED_FROM" ] && [ -n "$CURRENT_COMMIT" ] && [ "$GENERATED_FROM" != "$CURRENT_COMMIT" ]; then
-        echo "Graphify graph was generated from $GENERATED_FROM; verify branch changes directly or set GRAPHIFY_REFRESH=1." >&2
-    fi
-fi
+    [ -n "$source_base" ] || return 0
 
+    if ! git cat-file -e "${source_base}^{commit}" 2>/dev/null; then
+        echo "Graphify provenance commit $source_base is unavailable; verify relevant source directly." >&2
+        return 0
+    fi
+
+    if ! git merge-base --is-ancestor "$source_base" HEAD 2>/dev/null; then
+        echo "Current history diverges from Graphify base $source_base; verify branch changes directly or set GRAPHIFY_REFRESH=1." >&2
+        return 0
+    fi
+
+    # The shared graph was generated after applying the Graphify integration files
+    # but before committing the generated artifacts. Check only source-code formats,
+    # avoiding a permanent false warning caused by the artifact commit itself.
+    if ! git diff --quiet "$source_base"..HEAD -- \
+        ':(glob)**/*.py' \
+        ':(glob)**/*.pyi' \
+        ':(glob)**/*.c' \
+        ':(glob)**/*.cc' \
+        ':(glob)**/*.cpp' \
+        ':(glob)**/*.h' \
+        ':(glob)**/*.hpp' \
+        ':(glob)**/*.rs' \
+        ':(glob)**/*.go' \
+        ':(glob)**/*.java' \
+        ':(glob)**/*.js' \
+        ':(glob)**/*.jsx' \
+        ':(glob)**/*.ts' \
+        ':(glob)**/*.tsx'; then
+        echo "Code has changed since the shared Graphify graph base $source_base; verify changed files directly or set GRAPHIFY_REFRESH=1." >&2
+    fi
+}
+
+warn_if_code_changed_since_shared_graph
 "${GRAPHIFY[@]}" query "$QUESTION" --graph "$GRAPH"

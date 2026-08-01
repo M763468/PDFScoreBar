@@ -152,6 +152,7 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
     - `long-horizon-task`: 長期タスクの状態管理
     - `gemini-consultation`: Gemini への標準化された相談。`.agents/skills/gemini-consultation/SKILL.md` を利用し、相談時の入力整理・実行手順・記録方法を統一します。
     - `codex-delegation`: Codex への実装・検証タスクの委譲。`.agents/skills/codex-delegation/SKILL.md` を利用し、コンテキスト消費を抑えつつ精緻な実装と検証を行います。
+    - `graphify`: コードベース構造・依存関係・call path・関連ファイルの事前探索。`.agents/skills/graphify/SKILL.md` と `docs/ai-workflow/GRAPHIFY.md` に従い、共有グラフを広範検索より先に利用します。
 
 詳細は `docs/ai-workflow/WORKFLOW.md` を参照。
 
@@ -211,3 +212,14 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 - **Codex**: Implementation Specialist, Repository Navigator, Verification Lead. Leads focused edits and sandbox validation.
 - **Consultation Mandate**: Gemini should proactively consult Codex (via `codex exec --sandbox read-only`) for second opinions on complex logic, type safety, or architectural impacts.
 - **Knowledge Synthesis Mandate**: Both agents must document newly discovered heuristics, anti-patterns, or visual failure modes in `docs/ai-workflow/LESSONS.md` to prevent regressions in future sessions.
+
+## Graphify利用ガイド
+
+このリポジトリではGraphifyをコードベース構造・依存関係・call path・関連ファイルの事前探索に利用します。
+
+- `graphify-out/graph.json` がある場合、広範な検索より先に `scripts/graphify_query.sh "<question>"` または `.agents/skills/graphify/SKILL.md` を利用する。
+- Graphifyの結果は対象source・testで直接確認する。
+- 通常の無人生成はcode-onlyとし、document semantic extractionはユーザーがlocal coding sessionまたはGemini API経路と対象scopeを明示した場合だけ行う。
+- 共有対象は `graph.json`、`GRAPH_REPORT.md`、`wiki/**`、`MANIFEST.json`だけとし、cacheや環境依存の途中生成物はコミットしない。
+- branch固有差分が未反映の場合は直接差分を確認し、必要な場合だけlocal refreshする。
+- Graphifyが使えない、古い、または不十分な場合は `rg` / `grep` とsource確認へフォールバックする。

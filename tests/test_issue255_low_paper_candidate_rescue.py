@@ -75,6 +75,23 @@ def test_rescue_uses_cross_band_alignment() -> None:
     assert all("aligned_candidate" in detail["supports"] for detail in details)
 
 
+def test_rescue_does_not_duplicate_narrow_same_band_seed() -> None:
+    upper = (100, 100, 104, 200)
+    lower = (102, 300, 106, 400)
+    rescued, remaining, details = rescue_low_paper_candidates(
+        dropped=[
+            {"bbox": upper, "reasons": ["low_paper_overlap"], "ink_ratio": 1.0},
+            {"bbox": lower, "reasons": ["low_paper_overlap"], "ink_ratio": 1.0},
+        ],
+        existing_boxes=[(99, 100, 105, 200)],
+        median_height=100.0,
+    )
+
+    assert rescued == [lower]
+    assert any(tuple(item["bbox"]) == upper for item in remaining)
+    assert details[0]["supports"] == ["aligned_existing"]
+
+
 def test_rescue_refines_wide_existing_seed() -> None:
     candidate = (100, 100, 104, 200)
     rescued, remaining, details = rescue_low_paper_candidates(

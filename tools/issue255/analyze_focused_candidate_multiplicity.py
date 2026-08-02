@@ -533,6 +533,7 @@ def build_report(
     baseline_runs = _run_by_label(baseline_payload)
     pages: dict[str, dict[str, Any]] = {}
     page_inputs: dict[str, dict[str, Any]] = {}
+    baseline_metrics_by_page: dict[str, dict[str, int]] = {}
 
     for label, page_spec in target_payload["pages"].items():
         if not isinstance(page_spec, Mapping):
@@ -609,8 +610,8 @@ def build_report(
             "current": current,
             "scores": scores,
             "targets": targets,
-            "baseline_metrics": baseline_metrics,
         }
+        baseline_metrics_by_page[str(label)] = baseline_metrics
 
     policies = [
         Policy(
@@ -637,11 +638,11 @@ def build_report(
             result["all_targets_recovered"]
             and result["accepted_collision_count"] == 0
             and result["metrics"]["fp"]
-            <= page_inputs[label]["baseline_metrics"]["fp"]
+            <= baseline_metrics_by_page[label]["fp"]
             and result["metrics"]["fn"]
-            <= page_inputs[label]["baseline_metrics"]["fn"]
+            <= baseline_metrics_by_page[label]["fn"]
             and result["metrics"]["tp"]
-            >= page_inputs[label]["baseline_metrics"]["tp"]
+            >= baseline_metrics_by_page[label]["tp"]
             for label, result in page_results.items()
         )
         full_reference_safe = (
@@ -652,7 +653,7 @@ def build_report(
             max(
                 0,
                 result["metrics"]["fp"]
-                - page_inputs[label]["baseline_metrics"]["fp"],
+                - baseline_metrics_by_page[label]["fp"],
             )
             for label, result in page_results.items()
         )
@@ -660,7 +661,7 @@ def build_report(
             max(
                 0,
                 result["metrics"]["fn"]
-                - page_inputs[label]["baseline_metrics"]["fn"],
+                - baseline_metrics_by_page[label]["fn"],
             )
             for label, result in page_results.items()
         )

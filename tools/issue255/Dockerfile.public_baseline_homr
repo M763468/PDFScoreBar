@@ -1,0 +1,76 @@
+ARG BASE_IMAGE=pdfscore_pipeline_gpu
+FROM ${BASE_IMAGE}
+
+ARG HOMR_REPOSITORY=https://github.com/liebharc/homr.git
+ARG HOMR_COMMIT=864e2882f7a41afcf8f16654728a473ae56826d6
+
+USER root
+
+RUN if ! command -v git >/dev/null 2>&1; then \
+      apt-get update && \
+      apt-get install -y --no-install-recommends git ca-certificates && \
+      rm -rf /var/lib/apt/lists/*; \
+    fi
+
+RUN rm -rf /opt/issue255_public_homr && \
+    git clone --filter=blob:none "${HOMR_REPOSITORY}" /opt/issue255_public_homr && \
+    git -C /opt/issue255_public_homr checkout --detach "${HOMR_COMMIT}" && \
+    git -C /opt/issue255_public_homr rev-parse HEAD > /opt/issue255_public_homr_commit.txt
+
+RUN /opt/venv_pipeline/bin/python -m pip uninstall -y \
+      onnxruntime onnxruntime-gpu opencv-python opencv-python-headless numpy || true && \
+    /opt/venv_pipeline/bin/python -m pip install --no-cache-dir --no-deps \
+      numpy==2.2.6 \
+      opencv-python-headless==4.12.0.88 \
+      onnxruntime-gpu==1.22.0
+
+RUN PYTHONPATH=/opt/issue255_public_homr /opt/venv_pipeline/bin/python - <<'PY'
+import hashlib
+from pathlib import Path
+
+from homr.main import download_weights
+
+EXPECTED = {
+    "homr/segmentation/segnet_155-1240eedca553155b3c75fc9c7f643465383430a0.onnx":
+        "e6a7c1e84f8d2f19f20a47e0889be2392cd487d27fa77984e4877b86534dee83",
+    "homr/transformer/decoder_pytorch_model_220-c50aec7de6469480cf6f547695f48aed76d8422e-epoch-55.onnx":
+        "381646983d14f17a11e4be671aaf6e4f81727b3a9edf0cf4890109a321ffce68",
+    "homr/transformer/encoder_pytorch_model_220-c50aec7de6469480cf4890109a321ffce68":
+        "unused"
+}
+EXPECTED = {
+    "homr/segmentation/segnet_155-1240eedca553155b3c75fc9c7f643465383430a0.onnx":
+        "e6a7c1e84f8d2f19f20a47e0889be2392cd487d27fa77984e4877b86534dee83",
+    "homr/transformer/decoder_pytorch_model_220-c50aec7de6469480cf6f547695f48aed76d8422e-epoch-55.onnx":
+        "381646983d14f17a11e4be671aaf6e4f81727b3a9edf0cf4890109a321ffce68",
+    "homr/transformer/encoder_pytorch_model_220-c50aec7de6469480cf6f547695f48aed76d8422e-epoch-55.onnx":
+        "22a443b2ea18da82128ae52e85436d6fb4728ab68aee24adb2ac9dfc2003a30c",
+}
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+download_weights()
+root = Path("/opt/issue255_public_homr")
+for relative, expected in EXPECTED.items():
+    path = root / relative
+    if not path.is_file():
+        raise RuntimeError(f"Public HOMR model was not downloaded: {relative}")
+    actual = sha256(path)
+    if actual != expected:
+        raise RuntimeError(
+            f"Public HOMR model hash mismatch for {relative}: "
+            f"expected={expected} actual={actual}"
+        )
+PY
+
+ENV PYTHONPATH="/opt/issue255_public_homr:/workspace"
+
+LABEL issue255.homr.source_commit="${HOMR_COMMIT}"
+LABEL issue255.homr.profile="verified-public-baseline"

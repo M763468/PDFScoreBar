@@ -39,6 +39,58 @@ def test_filter_rescues_dark_vertical_inside_large_existing_gap() -> None:
     assert dropped_with_rescue == []
 
 
+def test_filter_does_not_rescue_duplicate_of_already_kept_candidate() -> None:
+    image = np.full((300, 400, 3), 255, dtype=np.uint8)
+    broad = (95, 100, 105, 200)
+    narrow = (99, 100, 101, 200)
+    image[100:200, 99:101] = 0
+    existing = [
+        (18, 100, 22, 200),
+        (78, 100, 82, 200),
+        (138, 100, 142, 200),
+        (198, 100, 202, 200),
+    ]
+
+    kept, dropped = filter_probe_candidates(
+        candidates=[broad, narrow],
+        image=image,
+        existing_boxes=existing,
+        left_margin_ratio=0.0,
+        min_paper_overlap_ratio=0.6,
+        rescue_low_paper_verticals=True,
+    )
+
+    assert kept == [broad]
+    assert any(tuple(item["bbox"]) == narrow for item in dropped)
+
+
+def test_filter_ignores_tall_spanning_seed_for_rescue_deduplication() -> None:
+    image = np.full((500, 400, 3), 255, dtype=np.uint8)
+    upper = (95, 100, 105, 200)
+    lower = (99, 300, 101, 400)
+    image[100:200, 99:101] = 0
+    image[300:400, 99:101] = 0
+    existing = [
+        (18, 100, 22, 200),
+        (78, 100, 82, 200),
+        (138, 100, 142, 200),
+        (198, 100, 202, 200),
+        (99, 0, 101, 400),
+    ]
+
+    kept, dropped = filter_probe_candidates(
+        candidates=[upper, lower],
+        image=image,
+        existing_boxes=existing,
+        left_margin_ratio=0.0,
+        min_paper_overlap_ratio=0.6,
+        rescue_low_paper_verticals=True,
+    )
+
+    assert kept == [upper, lower]
+    assert dropped == []
+
+
 def test_rescue_requires_only_low_paper_rejection() -> None:
     candidate = (100, 100, 104, 200)
     rescued, remaining, details = rescue_low_paper_candidates(

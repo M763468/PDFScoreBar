@@ -41,6 +41,26 @@ def _vertical_overlap_ratio(first: Box, second: Box) -> float:
     return float(intersection) / float(max(1, min(_height(first), _height(second))))
 
 
+def _duplicates_narrow_existing(
+    candidate: Box,
+    existing_boxes: Sequence[Box],
+    *,
+    x_tolerance: int,
+    wide_seed_width_ratio: float,
+) -> bool:
+    """Return whether a candidate duplicates an already narrow same-band seed."""
+    candidate_width = max(1, _width(candidate))
+    wide_seed_min_width = max(12.0, wide_seed_width_ratio * candidate_width)
+    for existing in existing_boxes:
+        if abs(_center_x(existing) - _center_x(candidate)) > x_tolerance:
+            continue
+        if _vertical_overlap_ratio(candidate, existing) < 0.5:
+            continue
+        if _width(existing) < wide_seed_min_width:
+            return True
+    return False
+
+
 def rescue_low_paper_candidates(
     *,
     dropped: Sequence[Mapping[str, Any]],
@@ -59,8 +79,9 @@ def rescue_low_paper_candidates(
     """Rescue only strongly supported verticals rejected solely as non-paper.
 
     A narrow dark line naturally has little bright-paper overlap inside its own
-    bounding box.  It is eligible only when no other heuristic rejected it and
-    one of three source-general geometry checks supports it:
+    bounding box. It is eligible only when no other heuristic rejected it, it
+    does not duplicate an already narrow same-band seed, and one of three
+    source-general geometry checks supports it:
 
     * it splits an abnormally large gap between existing barlines;
     * it aligns with a candidate or existing barline in another staff row;
@@ -91,15 +112,34 @@ def rescue_low_paper_candidates(
         int(min_x_tolerance),
         int(round(median_height * x_tolerance_height_ratio)),
     )
+    eligible = [
+        item
+        for item in eligible
+        if not _duplicates_narrow_existing(
+            _box(item["bbox"]),
+            normalized_existing,
+            x_tolerance=x_tolerance,
+            wide_seed_width_ratio=wide_seed_width_ratio,
+        )
+    ]
+    if not eligible:
+        return [], remaining, []
+
     candidate_bands = sorted({_band(item["bbox"]) for item in eligible})
     existing_x_by_band: dict[tuple[int, int], list[float]] = {}
     all_gaps: list[float] = []
     for band in candidate_bands:
         xs = sorted(
-            {_center_x(box) for box in normalized_existing if band[0] <= _center_y(box) <= band[1]}
+            {
+                _center_x(box)
+                for box in normalized_existing
+                if band[0] <= _center_y(box) <= band[1]
+            }
         )
         existing_x_by_band[band] = xs
-        all_gaps.extend(right - left for left, right in zip(xs, xs[1:]) if right > left)
+        all_gaps.extend(
+            right - left for left, right in zip(xs, xs[1:]) if right > left
+        )
     median_gap = float(median(all_gaps)) if all_gaps else 0.0
 
     selected: dict[Box, dict[str, Any]] = {}
@@ -111,9 +151,9 @@ def rescue_low_paper_candidates(
         supports[box].add(support)
 
     if median_gap > 0:
-        gap_groups: dict[tuple[tuple[int, int], float, float], list[dict[str, Any]]] = defaultdict(
-            list
-        )
+        gap_groups: dict[
+            tuple[tuple[int, int], float, float], list[dict[str, Any]]
+        ] = defaultdict(list)
         for item in eligible:
             box = _box(item["bbox"])
             x_center = _center_x(box)
@@ -142,7 +182,8 @@ def rescue_low_paper_candidates(
             for item in ordered:
                 x_center = _center_x(_box(item["bbox"]))
                 if any(
-                    abs(x_center - _center_x(_box(previous["bbox"]))) < median_gap * gap_nms_ratio
+                    abs(x_center - _center_x(_box(previous["bbox"])))
+                    < median_gap * gap_nms_ratio
                     for previous in kept
                 ):
                     continue
@@ -153,7 +194,9 @@ def rescue_low_paper_candidates(
     for item in sorted(eligible, key=lambda value: _center_x(_box(value["bbox"]))):
         x_center = _center_x(_box(item["bbox"]))
         if clusters:
-            cluster_center = float(median(_center_x(_box(value["bbox"])) for value in clusters[-1]))
+            cluster_center = float(
+                median(_center_x(_box(value["bbox"])) for value in clusters[-1])
+            )
             if abs(x_center - cluster_center) <= x_tolerance:
                 clusters[-1].append(item)
                 continue
@@ -174,7 +217,9 @@ def rescue_low_paper_candidates(
                 best_by_band[band] = item
 
         non_overlapping: list[dict[str, Any]] = []
-        for item in sorted(best_by_band.values(), key=lambda value: _band(_box(value["bbox"]))):
+        for item in sorted(
+            best_by_band.values(), key=lambda value: _band(_box(value["bbox"]))
+        ):
             box = _box(item["bbox"])
             if all(
                 _vertical_overlap_ratio(box, _box(previous["bbox"])) < 0.2
@@ -227,7 +272,8 @@ def rescue_low_paper_candidates(
     remaining = [
         dict(item)
         for item in dropped
-        if not isinstance(item.get("bbox"), Sequence) or _box(item["bbox"]) not in rescued_set
+        if not isinstance(item.get("bbox"), Sequence)
+        or _box(item["bbox"]) not in rescued_set
     ]
     details = [
         {

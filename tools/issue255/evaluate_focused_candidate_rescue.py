@@ -51,39 +51,66 @@ def _records(path: Path) -> list[Mapping[str, Any]]:
     return [item for item in payload if isinstance(item, Mapping)]
 
 
+def _match_box_details(
+    accepted: Sequence[Sequence[int | float]],
+    current: Sequence[Sequence[int | float]],
+    *,
+    accepted_iou: float = 0.5,
+) -> dict[str, Any]:
+    references = [normalize_box(box) for box in accepted]
+    predictions = [normalize_box(box) for box in current]
+    unmatched = set(range(len(references)))
+    matches = []
+    false_positive_boxes = []
+    for prediction in predictions:
+        ranked = sorted(
+            (
+                (float(barline_iou(prediction, references[index])), index)
+                for index in unmatched
+            ),
+            reverse=True,
+        )
+        if ranked and ranked[0][0] > accepted_iou:
+            iou, reference_index = ranked[0]
+            unmatched.remove(reference_index)
+            matches.append(
+                {
+                    "prediction": list(prediction),
+                    "reference": list(references[reference_index]),
+                    "iou": iou,
+                }
+            )
+        else:
+            false_positive_boxes.append(list(prediction))
+    return {
+        "tp": len(matches),
+        "fp": len(false_positive_boxes),
+        "fn": len(unmatched),
+        "matches": matches,
+        "false_positive_boxes": false_positive_boxes,
+        "false_negative_boxes": [
+            list(references[index]) for index in sorted(unmatched)
+        ],
+    }
+
+
 def _match_boxes(
     accepted: Sequence[Sequence[int | float]],
     current: Sequence[Sequence[int | float]],
     *,
     accepted_iou: float = 0.5,
 ) -> dict[str, int]:
-    references = [normalize_box(box) for box in accepted]
-    predictions = [normalize_box(box) for box in current]
-    unmatched = set(range(len(references)))
-    true_positive = 0
-    false_positive = 0
-    for prediction in predictions:
-        ranked = sorted(
-            ((float(barline_iou(prediction, references[index])), index) for index in unmatched),
-            reverse=True,
-        )
-        if ranked and ranked[0][0] > accepted_iou:
-            unmatched.remove(ranked[0][1])
-            true_positive += 1
-        else:
-            false_positive += 1
-    return {
-        "tp": true_positive,
-        "fp": false_positive,
-        "fn": len(unmatched),
-    }
+    details = _match_box_details(accepted, current, accepted_iou=accepted_iou)
+    return {key: int(details[key]) for key in ("tp", "fp", "fn")}
 
 
 def _best_score(
     reference: Sequence[int | float], scored: Sequence[Mapping[str, Any]]
 ) -> float | None:
     boxes = [
-        normalize_box(item["bbox"]) for item in scored if isinstance(item.get("bbox"), Sequence)
+        normalize_box(item["bbox"])
+        for item in scored
+        if isinstance(item.get("bbox"), Sequence)
     ]
     metrics = target_metrics(normalize_box(reference), boxes, accepted_iou=0.5)
     best = metrics.get("best")
@@ -96,6 +123,32 @@ def _best_score(
             score = item.get("score")
             return float(score) if isinstance(score, (int, float)) else None
     return None
+
+
+def _annotate_boxes(
+    boxes: Sequence[Sequence[int | float]],
+    *,
+    accepted: Sequence[Sequence[int | float]],
+    baseline: Sequence[Sequence[int | float]],
+    scored: Sequence[Mapping[str, Any]],
+    added: Sequence[Sequence[int | float]],
+) -> list[dict[str, Any]]:
+    rows = []
+    for box in boxes:
+        normalized = normalize_box(box)
+        accepted_metrics = target_metrics(normalized, accepted, accepted_iou=0.5)
+        baseline_metrics = target_metrics(normalized, baseline, accepted_iou=0.5)
+        added_metrics = target_metrics(normalized, added, accepted_iou=0.5)
+        rows.append(
+            {
+                "bbox": list(normalized),
+                "cnn_score": _best_score(normalized, scored),
+                "added_vs_baseline": bool(added_metrics["accepted"]),
+                "best_accepted_reference": accepted_metrics.get("best"),
+                "best_baseline_box": baseline_metrics.get("best"),
+            }
+        )
+    return rows
 
 
 def _run_by_label(batch: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
@@ -118,7 +171,9 @@ def _evaluate_page(
 ) -> dict[str, Any]:
     current_contract = current_run.get("contract")
     baseline_contract = baseline_run.get("contract")
-    if not isinstance(current_contract, Mapping) or not isinstance(baseline_contract, Mapping):
+    if not isinstance(current_contract, Mapping) or not isinstance(
+        baseline_contract, Mapping
+    ):
         raise ValueError(f"Incomplete focused contracts for {label}")
 
     accepted_path = _resolve_path(str(page_spec["accepted_barlines"]))
@@ -129,19 +184,25 @@ def _evaluate_page(
 
     count_names = ("cnn_candidates", "cnn_scored", "cnn_accepted", "final_barlines")
     baseline_counts = {
-        name: len(_load_json(_artifact_path(baseline_contract, name))) for name in count_names
+        name: len(_load_json(_artifact_path(baseline_contract, name)))
+        for name in count_names
     }
     current_counts = {
-        name: len(_load_json(_artifact_path(current_contract, name))) for name in count_names
+        name: len(_load_json(_artifact_path(current_contract, name)))
+        for name in count_names
     }
-    count_delta = {name: current_counts[name] - baseline_counts[name] for name in count_names}
+    count_delta = {
+        name: current_counts[name] - baseline_counts[name] for name in count_names
+    }
 
     targets = []
     raw_targets = page_spec.get("targets")
     if not isinstance(raw_targets, list):
         raise ValueError(f"Target list missing for {label}")
     for item in raw_targets:
-        if not isinstance(item, Mapping) or not isinstance(item.get("accepted_bbox"), Sequence):
+        if not isinstance(item, Mapping) or not isinstance(
+            item.get("accepted_bbox"), Sequence
+        ):
             raise ValueError(f"Invalid target for {label}: {item}")
         reference = normalize_box(item["accepted_bbox"])
         metrics = target_metrics(reference, current_final, accepted_iou=0.5)
@@ -154,8 +215,17 @@ def _evaluate_page(
             }
         )
 
-    baseline_metrics = _match_boxes(accepted, baseline_final)
-    current_metrics = _match_boxes(accepted, current_final)
+    baseline_details = _match_box_details(accepted, baseline_final)
+    current_details = _match_box_details(accepted, current_final)
+    added_details = _match_box_details(baseline_final, current_final)
+    added_boxes = added_details["false_positive_boxes"]
+
+    baseline_metrics = {
+        key: int(baseline_details[key]) for key in ("tp", "fp", "fn")
+    }
+    current_metrics = {
+        key: int(current_details[key]) for key in ("tp", "fp", "fn")
+    }
     return {
         "score": page_spec.get("score"),
         "page": page_spec.get("page"),
@@ -168,6 +238,29 @@ def _evaluate_page(
         "current_metrics": current_metrics,
         "focused_fp_delta": current_metrics["fp"] - baseline_metrics["fp"],
         "focused_fn_delta": current_metrics["fn"] - baseline_metrics["fn"],
+        "diagnostics": {
+            "baseline_false_positive_boxes": _annotate_boxes(
+                baseline_details["false_positive_boxes"],
+                accepted=accepted,
+                baseline=baseline_final,
+                scored=current_scored,
+                added=[],
+            ),
+            "current_false_positive_boxes": _annotate_boxes(
+                current_details["false_positive_boxes"],
+                accepted=accepted,
+                baseline=baseline_final,
+                scored=current_scored,
+                added=added_boxes,
+            ),
+            "added_final_boxes": _annotate_boxes(
+                added_boxes,
+                accepted=accepted,
+                baseline=baseline_final,
+                scored=current_scored,
+                added=added_boxes,
+            ),
+        },
         "targets": targets,
     }
 
@@ -182,9 +275,13 @@ def build_report(
     current_payload = _load_json(current_batch.resolve())
     baseline_payload = _load_json(baseline_batch.resolve())
     target_payload = _load_json(targets.resolve())
-    if not isinstance(current_payload, Mapping) or current_payload.get("status") != "completed":
+    if not isinstance(current_payload, Mapping) or current_payload.get(
+        "status"
+    ) != "completed":
         raise ValueError("Current focused batch must be completed")
-    if not isinstance(baseline_payload, Mapping) or baseline_payload.get("status") != "completed":
+    if not isinstance(baseline_payload, Mapping) or baseline_payload.get(
+        "status"
+    ) != "completed":
         raise ValueError("Baseline focused batch must be completed")
     if not isinstance(target_payload, Mapping) or not isinstance(
         target_payload.get("pages"), Mapping
@@ -206,20 +303,27 @@ def build_report(
 
     target_rows = [target for page in pages.values() for target in page["targets"]]
     report = {
-        "schema_version": "issue255.focused_candidate_rescue_evaluation.v1",
+        "schema_version": "issue255.focused_candidate_rescue_evaluation.v2",
         "status": "completed",
         "baseline_commit": baseline_payload.get("expected_commit"),
         "current_commit": current_payload.get("expected_commit"),
         "accepted_reference_runtime_input": False,
         "pages": pages,
         "gates": {
-            "all_targets_recovered": all(target["recovered"] for target in target_rows),
-            "focused_fp_delta_zero": all(page["focused_fp_delta"] == 0 for page in pages.values()),
+            "all_targets_recovered": all(
+                target["recovered"] for target in target_rows
+            ),
+            "focused_fp_delta_zero": all(
+                page["focused_fp_delta"] == 0 for page in pages.values()
+            ),
         },
     }
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    output.write_text(
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
     return report
 
 
@@ -240,7 +344,11 @@ def main() -> int:
     except Exception as error:  # noqa: BLE001
         print(
             json.dumps(
-                {"status": "failed", "error_type": type(error).__name__, "error": str(error)},
+                {
+                    "status": "failed",
+                    "error_type": type(error).__name__,
+                    "error": str(error),
+                },
                 ensure_ascii=False,
             )
         )

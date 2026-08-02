@@ -258,9 +258,18 @@ def filter_probe_candidates(
             keep.append(b)
 
     if rescue_low_paper_verticals:
+        max_support_height = (
+            median_h * rescue_max_height_median_ratio if median_h > 0 else None
+        )
+        rescue_support_boxes = [
+            box
+            for box in [*existing_boxes, *keep]
+            if max_support_height is None
+            or abs(box[3] - box[1]) <= max_support_height
+        ]
         rescued, dropped, rescue_details = rescue_low_paper_candidates(
             dropped=dropped,
-            existing_boxes=existing_boxes,
+            existing_boxes=rescue_support_boxes,
             median_height=median_h,
             min_ink_ratio=rescue_min_ink_ratio,
             max_height_median_ratio=rescue_max_height_median_ratio,
@@ -270,7 +279,9 @@ def filter_probe_candidates(
             x_tolerance_height_ratio=rescue_x_tolerance_height_ratio,
             min_x_tolerance=rescue_min_x_tolerance,
             wide_seed_width_ratio=rescue_wide_seed_width_ratio,
-            cross_band_max_distance_height_ratio=(rescue_cross_band_max_distance_height_ratio),
+            cross_band_max_distance_height_ratio=(
+                rescue_cross_band_max_distance_height_ratio
+            ),
         )
         keep.extend(rescued)
         if rescue_details:

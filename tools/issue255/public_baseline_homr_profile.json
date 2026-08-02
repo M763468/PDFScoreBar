@@ -1,0 +1,41 @@
+{
+  "schema_version": "issue255.public_baseline_homr_profile.v1",
+  "source_issue": 245,
+  "historical_candidate_artifact_runtime_input": false,
+  "homr": {
+    "repository": "https://github.com/liebharc/homr.git",
+    "commit": "864e2882f7a41afcf8f16654728a473ae56826d6",
+    "model_download_route": "homr.main.download_weights",
+    "release_tag": "onnx_checkpoints"
+  },
+  "packages": {
+    "numpy": "2.2.6",
+    "opencv-python-headless": "4.12.0.88",
+    "onnxruntime-gpu": "1.22.0"
+  },
+  "models": [
+    {
+      "path": "homr/segmentation/segnet_155-1240eedca553155b3c75fc9c7f643465383430a0.onnx",
+      "sha256": "e6a7c1e84f8d2f19f20a47e0889be2392cd487d27fa77984e4877b86534dee83"
+    },
+    {
+      "path": "homr/transformer/decoder_pytorch_model_220-c50aec7de6469480cf6f547695f48aed76d8422e-epoch-55.onnx",
+      "sha256": "381646983d14f17a11e4be671aaf6e4f81727b3a9edf0cf4890109a321ffce68"
+    },
+    {
+      "path": "homr/transformer/encoder_pytorch_model_220-c50aec7de6469480cf6f547695f48aed76d8422e-epoch-55.onnx",
+      "sha256": "22a443b2ea18da82128ae52e85436d6fb4728ab68aee24adb2ac9dfc2003a30c"
+    }
+  ],
+  "verified_full68_result": {
+    "pages_completed": 68,
+    "pages_semantic_equal": 68,
+    "historical_count": 4381,
+    "candidate_count": 4381,
+    "matched_count": 4381,
+    "historical_only_count": 0,
+    "candidate_only_count": 0,
+    "historical_thin_barline_tagged_count": 1038,
+    "candidate_thin_barline_tagged_count": 1038
+  }
+}

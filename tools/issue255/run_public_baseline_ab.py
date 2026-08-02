@@ -11,7 +11,6 @@ import re
 import shutil
 import subprocess
 import sys
-import tarfile
 import tempfile
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -109,8 +108,7 @@ def _extract_snapshot(commit: str, destination: Path) -> None:
     destination.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(suffix=".tar") as stream:
         _run(("git", "archive", "--format=tar", f"--output={stream.name}", commit), capture=True)
-        with tarfile.open(stream.name) as archive:
-            archive.extractall(destination, filter="data")
+        _run(("tar", "-xf", stream.name, "-C", str(destination)), capture=True)
 
 
 def _require_executable(command: str) -> None:
@@ -283,7 +281,7 @@ def _write_batches(*, root: Path, run_tag: str, commit: str) -> tuple[Path, Path
 
 
 def run_ab(args: argparse.Namespace) -> tuple[Path, Path]:
-    for command in ("docker", "git"):
+    for command in ("docker", "git", "tar"):
         _require_executable(command)
     if _git("branch", "--show-current") != EXPECTED_BRANCH:
         raise RuntimeError(f"Expected branch {EXPECTED_BRANCH}")

@@ -12,9 +12,7 @@ def test_invoke_download_weights_supports_known_homr_apis() -> None:
     def single(use_gpu_inference: bool) -> None:
         calls.append((use_gpu_inference,))
 
-    def current(
-        segnet_use_gpu: bool, transformer_use_gpu: bool, coreml_encoder: bool
-    ) -> None:
+    def current(segnet_use_gpu: bool, transformer_use_gpu: bool, coreml_encoder: bool) -> None:
         calls.append((segnet_use_gpu, transformer_use_gpu, coreml_encoder))
 
     assert invoke_download_weights(historical)["arguments"] == []

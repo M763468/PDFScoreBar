@@ -78,9 +78,7 @@ def test_rescue_uses_cross_band_alignment() -> None:
 def test_rescue_refines_wide_existing_seed() -> None:
     candidate = (100, 100, 104, 200)
     rescued, remaining, details = rescue_low_paper_candidates(
-        dropped=[
-            {"bbox": candidate, "reasons": ["low_paper_overlap"], "ink_ratio": 1.0}
-        ],
+        dropped=[{"bbox": candidate, "reasons": ["low_paper_overlap"], "ink_ratio": 1.0}],
         existing_boxes=[(92, 100, 116, 200)],
         median_height=100.0,
     )

@@ -52,9 +52,7 @@ def test_normalize_batch_accepts_only_explicitly_allowed_untracked_paths() -> No
 
     assert result["status"] == "completed"
     assert result["errors"] == []
-    assert result["provenance_adjustment"]["observed_untracked_paths"] == [
-        "graphify-out/"
-    ]
+    assert result["provenance_adjustment"]["observed_untracked_paths"] == ["graphify-out/"]
     assert all(run["errors"] == [] for run in result["runs"])
 
 

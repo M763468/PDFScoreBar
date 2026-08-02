@@ -270,9 +270,7 @@ def filter_probe_candidates(
             x_tolerance_height_ratio=rescue_x_tolerance_height_ratio,
             min_x_tolerance=rescue_min_x_tolerance,
             wide_seed_width_ratio=rescue_wide_seed_width_ratio,
-            cross_band_max_distance_height_ratio=(
-                rescue_cross_band_max_distance_height_ratio
-            ),
+            cross_band_max_distance_height_ratio=(rescue_cross_band_max_distance_height_ratio),
         )
         keep.extend(rescued)
         if rescue_details:

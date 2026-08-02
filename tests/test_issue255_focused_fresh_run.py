@@ -31,9 +31,7 @@ def test_build_effective_config_preserves_detection_and_steps(tmp_path: Path) ->
 
     assert effective["detection"] == canonical["detection"]
     assert effective["steps"] == canonical["steps"]
-    assert effective["inputs"]["pdf_to_images"]["output_dir"] == str(
-        image_dir.resolve()
-    )
+    assert effective["inputs"]["pdf_to_images"]["output_dir"] == str(image_dir.resolve())
     assert effective["inputs"]["pdf_to_images"]["image_glob"] == image.name
     assert effective["run"]["run_id"] == "issue255_score_page004"
 
@@ -58,9 +56,7 @@ def test_probe_page_dir_follows_effective_sr_image_path(tmp_path: Path) -> None:
     assert probe_page.name == "eval2_page_004_page_004"
 
 
-def test_focused_runner_records_authoritative_fresh_artifacts(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_focused_runner_records_authoritative_fresh_artifacts(tmp_path: Path, monkeypatch) -> None:
     import tools.issue255.run_focused_fresh_detector as runner
 
     config_path = tmp_path / "configs" / "dense_full_pipeline.yaml"
@@ -146,6 +142,5 @@ def test_focused_runner_records_authoritative_fresh_artifacts(
     assert report["pipeline_steps_changed"] is False
     assert report["artifacts"]["final_barlines"]["exists"] is True
     assert (
-        Path(report["artifacts"]["cnn_candidates"]["path"]).parent.name
-        == "eval2_page_004_page_004"
+        Path(report["artifacts"]["cnn_candidates"]["path"]).parent.name == "eval2_page_004_page_004"
     )

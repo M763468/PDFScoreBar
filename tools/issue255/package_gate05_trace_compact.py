@@ -40,9 +40,7 @@ def collect_report_files(trace_root: Path) -> list[Path]:
     if not trace_root.is_dir():
         raise FileNotFoundError(trace_root)
     files = sorted(
-        path
-        for path in trace_root.rglob("*")
-        if path.is_file() and path.name in INCLUDED_NAMES
+        path for path in trace_root.rglob("*") if path.is_file() and path.name in INCLUDED_NAMES
     )
     summary = trace_root / "issue255_gate05_first_loss_summary.json"
     if summary not in files:

@@ -16,8 +16,7 @@ from tools.issue252.probe_boundary import normalize_box, target_metrics
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_TARGETS = ROOT / "tools/issue255/gate05_targets.json"
 DEFAULT_BASELINE = (
-    ROOT
-    / "logs/issue255_focused_fresh/issue255_focused_fresh_batch_issue255_gate_05.json"
+    ROOT / "logs/issue255_focused_fresh/issue255_focused_fresh_batch_issue255_gate_05.json"
 )
 
 
@@ -65,10 +64,7 @@ def _match_boxes(
     false_positive = 0
     for prediction in predictions:
         ranked = sorted(
-            (
-                (float(barline_iou(prediction, references[index])), index)
-                for index in unmatched
-            ),
+            ((float(barline_iou(prediction, references[index])), index) for index in unmatched),
             reverse=True,
         )
         if ranked and ranked[0][0] > accepted_iou:
@@ -83,8 +79,12 @@ def _match_boxes(
     }
 
 
-def _best_score(reference: Sequence[int | float], scored: Sequence[Mapping[str, Any]]) -> float | None:
-    boxes = [normalize_box(item["bbox"]) for item in scored if isinstance(item.get("bbox"), Sequence)]
+def _best_score(
+    reference: Sequence[int | float], scored: Sequence[Mapping[str, Any]]
+) -> float | None:
+    boxes = [
+        normalize_box(item["bbox"]) for item in scored if isinstance(item.get("bbox"), Sequence)
+    ]
     metrics = target_metrics(normalize_box(reference), boxes, accepted_iou=0.5)
     best = metrics.get("best")
     if not isinstance(best, Mapping):
@@ -186,7 +186,9 @@ def build_report(
         raise ValueError("Current focused batch must be completed")
     if not isinstance(baseline_payload, Mapping) or baseline_payload.get("status") != "completed":
         raise ValueError("Baseline focused batch must be completed")
-    if not isinstance(target_payload, Mapping) or not isinstance(target_payload.get("pages"), Mapping):
+    if not isinstance(target_payload, Mapping) or not isinstance(
+        target_payload.get("pages"), Mapping
+    ):
         raise ValueError("Focused target manifest is invalid")
 
     current_runs = _run_by_label(current_payload)

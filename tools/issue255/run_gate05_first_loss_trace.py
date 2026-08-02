@@ -15,8 +15,7 @@ from typing import Any, Mapping
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BATCH = (
-    ROOT
-    / "logs/issue255_focused_fresh/issue255_focused_fresh_batch_issue255_gate_05.json"
+    ROOT / "logs/issue255_focused_fresh/issue255_focused_fresh_batch_issue255_gate_05.json"
 )
 DEFAULT_TARGETS = ROOT / "tools/issue255/gate05_targets.json"
 DEFAULT_OUTPUT = ROOT / "logs/issue255_first_loss/issue255_gate_05_trace"
@@ -174,9 +173,7 @@ def build_report(*, batch: Path, targets: Path, output_root: Path) -> dict[str, 
     inventories = []
     try:
         runs_by_label = {
-            str(run["label"]): run
-            for run in runs
-            if isinstance(run, Mapping) and run.get("label")
+            str(run["label"]): run for run in runs if isinstance(run, Mapping) and run.get("label")
         }
         for label, page_spec in pages.items():
             if label not in runs_by_label or not isinstance(page_spec, Mapping):
@@ -191,9 +188,7 @@ def build_report(*, batch: Path, targets: Path, output_root: Path) -> dict[str, 
 
         rows = [item for report in inventories for item in report.get("inventory", [])]
         boundaries = Counter(
-            str(item.get("first_loss_boundary"))
-            for item in rows
-            if isinstance(item, Mapping)
+            str(item.get("first_loss_boundary")) for item in rows if isinstance(item, Mapping)
         )
         summary = {
             "schema_version": "issue255.gate05_first_loss_trace.v1",

@@ -11,12 +11,7 @@ def test_compact_archive_excludes_large_debug_artifacts(tmp_path: Path) -> None:
     variant_root.mkdir(parents=True)
 
     (trace_root / "issue255_gate05_first_loss_summary.json").write_text("{}")
-    inventory = (
-        trace_root
-        / "prokofiev"
-        / "inventory"
-        / "focused_detector_inventory.json"
-    )
+    inventory = trace_root / "prokofiev" / "inventory" / "focused_detector_inventory.json"
     inventory.write_text("{}")
     (target_root / "probe_boundary_report.json").write_text("{}")
     (variant_root / "variant_report.json").write_text("{}")

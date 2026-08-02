@@ -60,10 +60,7 @@ def test_probe_recovery_moves_effective_loss_to_candidate_filter() -> None:
         "hybrid": _layer(False),
     }
 
-    assert (
-        _classify(source, probe=_probe(heuristic_filtered=_layer(False)))
-        == "candidate_filter"
-    )
+    assert _classify(source, probe=_probe(heuristic_filtered=_layer(False))) == "candidate_filter"
 
 
 def test_classifies_candidate_filter_and_cnn_filtering() -> None:
@@ -74,10 +71,7 @@ def test_classifies_candidate_filter_and_cnn_filtering() -> None:
         "hybrid": _layer(True),
     }
 
-    assert (
-        _classify(source, probe=_probe(heuristic_filtered=_layer(False)))
-        == "candidate_filter"
-    )
+    assert _classify(source, probe=_probe(heuristic_filtered=_layer(False))) == "candidate_filter"
     assert _classify(source, kept=False) == "cnn_filtering"
 
 

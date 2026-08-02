@@ -155,15 +155,11 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("Image path must preserve the requested score and page names")
 
     canonical = load_yaml(args.config)
-    if not isinstance(canonical, Mapping) or not isinstance(
-        canonical.get("detection"), Mapping
-    ):
+    if not isinstance(canonical, Mapping) or not isinstance(canonical.get("detection"), Mapping):
         raise ValueError("Canonical config lacks detection settings")
     detection = canonical["detection"]
     forbidden = [
-        key
-        for key in ("precomputed_probe_candidates_root", "cnn_bands_from")
-        if detection.get(key)
+        key for key in ("precomputed_probe_candidates_root", "cnn_bands_from") if detection.get(key)
     ]
     if forbidden:
         raise ValueError(f"Fresh run forbids detector source overrides: {forbidden}")

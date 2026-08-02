@@ -28,9 +28,7 @@ def test_missing_accepted_boxes_uses_iou_contract() -> None:
     accepted = [(10, 20, 14, 120), (30, 20, 34, 120)]
     current = [(10, 20, 14, 120)]
 
-    assert _missing_accepted_boxes(accepted, current, accepted_iou=0.5) == [
-        (30, 20, 34, 120)
-    ]
+    assert _missing_accepted_boxes(accepted, current, accepted_iou=0.5) == [(30, 20, 34, 120)]
 
 
 def test_resolve_targets_marks_already_present_metadata() -> None:

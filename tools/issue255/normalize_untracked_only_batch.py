@@ -45,8 +45,7 @@ def _untracked_paths(status: str) -> list[str]:
 def _is_allowed(path: str, prefixes: Sequence[str]) -> bool:
     normalized = path.lstrip("./")
     return any(
-        normalized == prefix.rstrip("/")
-        or normalized.startswith(prefix.rstrip("/") + "/")
+        normalized == prefix.rstrip("/") or normalized.startswith(prefix.rstrip("/") + "/")
         for prefix in prefixes
     )
 
@@ -73,10 +72,7 @@ def normalize_batch(
     top_errors = payload.get("errors")
     if not isinstance(top_errors, list) or not top_errors:
         raise ValueError("Failed batch lacks errors")
-    if any(
-        not isinstance(error, str) or not error.endswith(DIRTY_ERROR)
-        for error in top_errors
-    ):
+    if any(not isinstance(error, str) or not error.endswith(DIRTY_ERROR) for error in top_errors):
         raise ValueError(f"Batch contains a non-waivable error: {top_errors}")
 
     runs = payload.get("runs")
@@ -117,11 +113,7 @@ def normalize_batch(
         if not isinstance(status, str):
             raise ValueError(f"Run {index} repository status is missing")
         paths = _untracked_paths(status)
-        disallowed = [
-            path
-            for path in paths
-            if not _is_allowed(path, allowed_untracked_prefixes)
-        ]
+        disallowed = [path for path in paths if not _is_allowed(path, allowed_untracked_prefixes)]
         if disallowed:
             raise ValueError(f"Run {index} contains disallowed untracked paths: {disallowed}")
         all_untracked.extend(paths)

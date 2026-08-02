@@ -35,14 +35,6 @@ EXPECTED = {
         "e6a7c1e84f8d2f19f20a47e0889be2392cd487d27fa77984e4877b86534dee83",
     "homr/transformer/decoder_pytorch_model_220-c50aec7de6469480cf6f547695f48aed76d8422e-epoch-55.onnx":
         "381646983d14f17a11e4be671aaf6e4f81727b3a9edf0cf4890109a321ffce68",
-    "homr/transformer/encoder_pytorch_model_220-c50aec7de6469480cf4890109a321ffce68":
-        "unused"
-}
-EXPECTED = {
-    "homr/segmentation/segnet_155-1240eedca553155b3c75fc9c7f643465383430a0.onnx":
-        "e6a7c1e84f8d2f19f20a47e0889be2392cd487d27fa77984e4877b86534dee83",
-    "homr/transformer/decoder_pytorch_model_220-c50aec7de6469480cf6f547695f48aed76d8422e-epoch-55.onnx":
-        "381646983d14f17a11e4be671aaf6e4f81727b3a9edf0cf4890109a321ffce68",
     "homr/transformer/encoder_pytorch_model_220-c50aec7de6469480cf6f547695f48aed76d8422e-epoch-55.onnx":
         "22a443b2ea18da82128ae52e85436d6fb4728ab68aee24adb2ac9dfc2003a30c",
 }

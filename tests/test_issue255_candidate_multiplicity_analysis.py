@@ -1,3 +1,7 @@
+import json
+from pathlib import Path
+
+import tools.issue255.analyze_focused_candidate_multiplicity as multiplicity
 from tools.issue255.analyze_focused_candidate_multiplicity import (
     Policy,
     _accepted_root_collisions,
@@ -126,3 +130,112 @@ def test_full_reference_safety_rejects_policy_that_merges_accepted_pair() -> Non
 
     assert unsafe["collision_count"] == 1
     assert safe["collision_count"] == 0
+
+
+def test_build_report_runs_policy_sweep_with_separate_baseline_metrics(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    accepted_path = tmp_path / "accepted.json"
+    baseline_final = tmp_path / "baseline_final.json"
+    current_final = tmp_path / "current_final.json"
+    current_scored = tmp_path / "current_scored.json"
+    current_batch = tmp_path / "current_batch.json"
+    baseline_batch = tmp_path / "baseline_batch.json"
+    targets_path = tmp_path / "targets.json"
+
+    accepted = [[10, 20, 14, 120], [100, 20, 104, 120]]
+    baseline = [accepted[0]]
+    current = accepted
+
+    accepted_path.write_text(json.dumps(accepted), encoding="utf-8")
+    baseline_final.write_text(json.dumps(baseline), encoding="utf-8")
+    current_final.write_text(json.dumps(current), encoding="utf-8")
+    current_scored.write_text(
+        json.dumps([{"bbox": accepted[1], "score": 0.99}]),
+        encoding="utf-8",
+    )
+    current_batch.write_text(
+        json.dumps(
+            {
+                "status": "completed",
+                "expected_commit": "current",
+                "runs": [
+                    {
+                        "label": "focus",
+                        "contract": {
+                            "artifacts": {
+                                "final_barlines": {
+                                    "exists": True,
+                                    "path": str(current_final),
+                                },
+                                "cnn_scored": {
+                                    "exists": True,
+                                    "path": str(current_scored),
+                                },
+                            }
+                        },
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    baseline_batch.write_text(
+        json.dumps(
+            {
+                "status": "completed",
+                "expected_commit": "baseline",
+                "runs": [
+                    {
+                        "label": "focus",
+                        "contract": {
+                            "artifacts": {
+                                "final_barlines": {
+                                    "exists": True,
+                                    "path": str(baseline_final),
+                                }
+                            }
+                        },
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    targets_path.write_text(
+        json.dumps(
+            {
+                "pages": {
+                    "focus": {
+                        "score": "synthetic",
+                        "page": "page_001",
+                        "accepted_barlines": str(accepted_path),
+                        "targets": [{"accepted_bbox": accepted[1]}],
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        multiplicity,
+        "load_json_boxes",
+        lambda path: json.loads(Path(path).read_text(encoding="utf-8")),
+    )
+
+    report = multiplicity.build_report(
+        current_batch=current_batch,
+        baseline_batch=baseline_batch,
+        targets_path=targets_path,
+        accepted_root=None,
+    )
+
+    assert report["status"] == "completed"
+    assert report["pages"]["focus"]["baseline_metrics"] == {
+        "tp": 1,
+        "fp": 0,
+        "fn": 1,
+    }
+    assert report["policy_sweep"]["policy_count"] == 81

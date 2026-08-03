@@ -20,6 +20,10 @@ steps:
 detection:
   enable_sr: true
   sr_scale: 2
+  # Temporary Issue #255 instrumentation: the recovered Stage E filter needs the
+  # same-run HOMR clef debug mask. Remove or replace this with an explicit mask
+  # production contract before the final PR.
+  enable_debug: true
   crop_recenter_on_bbox_ink: true
   container_name: sr_eval_gpu_exp
   hybrid_output_root: logs/full_pipeline_runs/dense_full_pipeline/hybrid_output

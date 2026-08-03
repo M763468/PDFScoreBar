@@ -77,7 +77,9 @@ def _scored(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def _nearest(reference: Sequence[int | float], boxes: Sequence[Any]) -> dict[str, Any] | None:
+def _nearest(
+    reference: Sequence[int | float], boxes: Sequence[Any]
+) -> dict[str, Any] | None:
     metrics = target_metrics(normalize_box(reference), boxes, accepted_iou=0.5)
     best = metrics.get("best")
     return dict(best) if isinstance(best, Mapping) else None
@@ -107,7 +109,9 @@ def _layers(
     return layers
 
 
-def _combined(pages: Mapping[str, Mapping[str, Any]], metric_name: str) -> dict[str, int]:
+def _combined(
+    pages: Mapping[str, Mapping[str, Any]], metric_name: str
+) -> dict[str, int]:
     return {
         key: sum(int(page[metric_name][key]) for page in pages.values())
         for key in ("tp", "fp", "fn")

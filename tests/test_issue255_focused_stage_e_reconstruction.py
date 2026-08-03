@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import copy
+from pathlib import Path
+
+import yaml
 
 from tools.issue255.run_focused_stage_e_reconstruction import (
+    CONFIG,
     FRESH_CONTRACT,
     _effective,
     _first_loss,
+    _fresh_sources,
     _layer,
 )
 
@@ -67,6 +72,37 @@ def test_effective_config_changes_only_run_fields(tmp_path) -> None:
     assert effective["steps"] == canonical["steps"]
     assert effective["run"]["run_id"] == "focused"
     assert effective["run"]["output_root"] == str(tmp_path.resolve())
+
+
+def test_focused_config_enables_same_run_homr_debug_masks() -> None:
+    payload = yaml.safe_load(CONFIG.read_text(encoding="utf-8"))
+
+    assert payload["detection"]["enable_debug"] is True
+
+
+def test_fresh_sources_resolves_proxy_clef_debug_mask(tmp_path: Path) -> None:
+    image = tmp_path / "page_004.png"
+    image.touch()
+    hybrid_root = tmp_path / "hybrid"
+    baseline = hybrid_root / "baseline" / "batch" / image.stem
+    sr = hybrid_root / "sr" / "batch" / image.stem
+    omr = hybrid_root / "omr_sr" / image.stem
+    consensus = hybrid_root / "hybrid_results"
+    for directory in (baseline, sr, omr, consensus):
+        directory.mkdir(parents=True, exist_ok=True)
+
+    expected = {
+        "baseline": baseline / f"{image.stem}_detections.json",
+        "sr": sr / f"{image.stem}_detections.json",
+        "omr": omr / "predictions.json",
+        "hybrid": consensus / f"{image.stem}_hybrid.json",
+        "staff_mask": baseline / f"{image.stem}_staff_mask.png",
+        "clef_mask": baseline / f"{image.stem}_proxy_debug_7_clefs_keys.png",
+    }
+    for path in expected.values():
+        path.touch()
+
+    assert _fresh_sources(image, hybrid_root) == expected
 
 
 def test_fresh_contract_has_no_candidate_override_keys() -> None:

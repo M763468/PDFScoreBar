@@ -15,6 +15,7 @@ from typing import Any, Mapping
 from src.pipeline.core.config import load_yaml
 from src.pipeline.core.run_ids import build_probe_run_id
 from src.pipeline.detection import run_detection_step
+from src.pipeline.detection.hybrid import HybridDetector
 
 ROOT = Path(__file__).resolve().parents[2]
 CANONICAL_CONFIG = ROOT / "configs/dense_full_pipeline.yaml"
@@ -118,6 +119,37 @@ def _load_handoff(path: Path, image: Path) -> dict[str, Any]:
     return dict(payload)
 
 
+def _install_public_baseline_skip_override(handoff: Mapping[str, Any]) -> Path:
+    """Skip only the pre-generated public baseline despite connector-mask guard.
+
+    The production guard intentionally reruns HOMR outputs that predate the connector
+    artifact contract. This detector-only A/B must retain the freshly generated public
+    baseline detections while current SR/OMR/probe/CNN stages still execute. The
+    override is process-local and applies only to the exact baseline directory from
+    the validated handoff.
+    """
+
+    detection_path = Path(str(handoff["detection_path"])).resolve()
+    baseline_root = detection_path.parents[2]
+    guarded_check = HybridDetector._all_stems_exist
+    plain_check = getattr(guarded_check, "__wrapped__", None)
+    if plain_check is None:
+        raise RuntimeError("HOMR skip-existing guard wrapper was not installed")
+
+    def check_with_public_baseline(
+        self: HybridDetector,
+        base_dir: Path,
+        stems_to_check: list[str],
+        glob_pattern: str,
+    ) -> bool:
+        if Path(base_dir).resolve() == baseline_root:
+            return bool(plain_check(self, base_dir, stems_to_check, glob_pattern))
+        return bool(guarded_check(self, base_dir, stems_to_check, glob_pattern))
+
+    HybridDetector._all_stems_exist = check_with_public_baseline
+    return baseline_root
+
+
 def build_report(args: argparse.Namespace) -> dict[str, Any]:
     image = args.image.resolve()
     if not image.is_file():
@@ -143,10 +175,12 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     filter_kwargs["rescue_low_paper_verticals"] = False
 
     handoff = None
+    public_baseline_root = None
     if args.variant == "public_baseline":
         if args.baseline_handoff is None:
             raise ValueError("public_baseline requires --baseline-handoff")
         handoff = _load_handoff(args.baseline_handoff.resolve(), image)
+        public_baseline_root = _install_public_baseline_skip_override(handoff)
         # The fresh public baseline is already present in this unique run directory.
         # SR, OMR, consensus, probe and CNN outputs do not exist and still execute.
         config["detection"]["probe_skip_existing"] = True
@@ -184,6 +218,18 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     if missing:
         raise RuntimeError(f"Missing artifacts: {missing}")
 
+    if handoff is not None:
+        baseline_record = artifacts["fresh_baseline"]
+        if not isinstance(baseline_record, Mapping):
+            raise RuntimeError("Public baseline artifact record is missing")
+        expected_hash = str(handoff["detection_sha256"])
+        actual_hash = str(baseline_record.get("sha256"))
+        if actual_hash != expected_hash:
+            raise RuntimeError(
+                "Public baseline was overwritten during current downstream execution: "
+                f"expected={expected_hash} actual={actual_hash}"
+            )
+
     report = {
         "schema_version": "issue255.public_baseline_ab_run.v1",
         "status": "completed",
@@ -196,6 +242,10 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "execution_only_overrides": {
             "candidate_filter_kwargs.rescue_low_paper_verticals": False,
             "probe_skip_existing": args.variant == "public_baseline",
+            "baseline_connector_guard_bypass": args.variant == "public_baseline",
+            "baseline_connector_guard_bypass_root": (
+                str(public_baseline_root) if public_baseline_root is not None else None
+            ),
         },
         "baseline_profile_handoff": handoff,
         "coordinate_space": {

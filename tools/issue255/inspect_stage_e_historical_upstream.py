@@ -15,6 +15,7 @@ from typing import Any
 
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
 JSON_SUFFIXES = {".json"}
+BOX_STAGES = ("baseline", "sr", "omr", "hybrid")
 
 
 def _resolve(path: str | Path, root: Path) -> Path:
@@ -58,6 +59,10 @@ def _load_boxes(path: Path) -> list[tuple[int, int, int, int]] | None:
 def _classify(path: Path) -> str:
     lowered = path.as_posix().lower()
     name = path.name.lower()
+    if name == "baseline.json":
+        return "baseline"
+    if name == "sr.json":
+        return "sr"
     if "hybrid" in name and path.suffix.lower() == ".json":
         return "hybrid"
     if "omr" in lowered and path.suffix.lower() == ".json":
@@ -103,6 +108,99 @@ def _by_kind(rows: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
     return result
 
 
+def _single_box_record(rows: list[dict[str, Any]], kind: str) -> dict[str, Any] | None:
+    matches = [row for row in rows if row["kind"] == kind and row["box_count"] is not None]
+    return matches[0] if len(matches) == 1 else None
+
+
+def _box_stage_comparison(
+    historical_rows: list[dict[str, Any]],
+    fresh_rows: list[dict[str, Any]],
+    kind: str,
+) -> dict[str, Any] | None:
+    historical = _single_box_record(historical_rows, kind)
+    fresh = _single_box_record(fresh_rows, kind)
+    if historical is None or fresh is None:
+        return None
+    historical_boxes = set(_load_boxes(Path(historical["path"])) or [])
+    fresh_boxes = set(_load_boxes(Path(fresh["path"])) or [])
+    return {
+        "historical_path": historical["path"],
+        "fresh_path": fresh["path"],
+        "historical_count": len(historical_boxes),
+        "fresh_count": len(fresh_boxes),
+        "exact_common_count": len(historical_boxes & fresh_boxes),
+        "historical_only_count": len(historical_boxes - fresh_boxes),
+        "fresh_only_count": len(fresh_boxes - historical_boxes),
+        "exact_match": historical_boxes == fresh_boxes,
+    }
+
+
+def _json_record(path: Path) -> dict[str, Any]:
+    return {
+        "path": str(path),
+        "sha256": _sha256(path),
+        "content": json.loads(path.read_text(encoding="utf-8")),
+    }
+
+
+def _historical_homr_contracts(
+    historical_run: Path, page: str
+) -> dict[str, dict[str, Any] | None]:
+    result: dict[str, dict[str, Any] | None] = {}
+    for stage in ("baseline", "sr"):
+        stage_root = historical_run / stage / page
+        run_config = stage_root / "run_config.json"
+        metrics = stage_root / "metrics.json"
+        result[stage] = {
+            "run_config": _json_record(run_config) if run_config.is_file() else None,
+            "metrics": _json_record(metrics) if metrics.is_file() else None,
+        }
+    return result
+
+
+def _replace_path_part(path: Path, old: str, new: str) -> Path:
+    parts = list(path.parts)
+    try:
+        index = parts.index(old)
+    except ValueError:
+        return path
+    parts[index] = new
+    return Path(*parts)
+
+
+def _find_fresh_metadata(run_dir: Path, page: str, filename: str) -> Path | None:
+    roots = [run_dir, run_dir.parent, run_dir.parent.parent]
+    matches: set[Path] = set()
+    for root in roots:
+        if not root.is_dir():
+            continue
+        direct = root / filename
+        if direct.is_file():
+            matches.add(direct.resolve())
+        for candidate in root.glob(f"**/{filename}"):
+            if page in candidate.as_posix():
+                matches.add(candidate.resolve())
+    return next(iter(matches)) if len(matches) == 1 else None
+
+
+def _fresh_homr_contracts(
+    fresh_run_dir: Path, page: str
+) -> dict[str, dict[str, Any] | None]:
+    result: dict[str, dict[str, Any] | None] = {}
+    for stage, run_dir in (
+        ("baseline", fresh_run_dir),
+        ("sr", _replace_path_part(fresh_run_dir, "baseline", "sr")),
+    ):
+        result[stage] = {}
+        for filename in ("run_config.json", "metrics.json"):
+            path = _find_fresh_metadata(run_dir, page, filename)
+            result[stage][filename.removesuffix(".json")] = (
+                _json_record(path) if path is not None else None
+            )
+    return result
+
+
 def _page_report(
     *,
     page_key: str,
@@ -115,6 +213,20 @@ def _page_report(
     fresh_snapshot = source_run / "fresh_source_snapshot" / page["score"] / page["page"]
     historical_rows = _inventory(historical_run)
     fresh_rows = _inventory(fresh_snapshot)
+    stage_comparisons = {
+        kind: _box_stage_comparison(historical_rows, fresh_rows, kind)
+        for kind in BOX_STAGES
+    }
+    first_persisted_divergence = next(
+        (
+            kind
+            for kind in BOX_STAGES
+            if stage_comparisons[kind] is not None
+            and not stage_comparisons[kind]["exact_match"]
+        ),
+        None,
+    )
+    fresh_run_dir = _resolve(page["fresh_inventory_record"]["run_dir"], repo_root)
     return {
         "label": page_key,
         "score": page["score"],
@@ -125,6 +237,14 @@ def _page_report(
         "fresh_file_count": len(fresh_rows),
         "historical_by_kind": _by_kind(historical_rows),
         "fresh_by_kind": _by_kind(fresh_rows),
+        "box_stage_comparisons": stage_comparisons,
+        "first_persisted_divergence": first_persisted_divergence,
+        "historical_homr_contracts": _historical_homr_contracts(
+            historical_run, page["page"]
+        ),
+        "fresh_homr_contracts": _fresh_homr_contracts(
+            fresh_run_dir, page["page"]
+        ),
     }
 
 
@@ -144,7 +264,7 @@ def main() -> None:
     if not isinstance(pages, dict):
         raise ValueError("comparison.pages must be an object")
     report = {
-        "schema_version": "issue255.stage_e_historical_upstream_inventory.v1",
+        "schema_version": "issue255.stage_e_historical_upstream_inventory.v2",
         "status": "completed",
         "analysis_only": True,
         "restoration_scope_only": True,
@@ -160,6 +280,13 @@ def main() -> None:
             )
             for key, value in pages.items()
         },
+    }
+    report["conclusion"] = {
+        "first_persisted_divergence": {
+            key: value["first_persisted_divergence"]
+            for key, value in report["pages"].items()
+        },
+        "new_recovery_direction_introduced": False,
     }
     output = args.output or source_run / "stage_e_historical_upstream_inventory.json"
     output.parent.mkdir(parents=True, exist_ok=True)

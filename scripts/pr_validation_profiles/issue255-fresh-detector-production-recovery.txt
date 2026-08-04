@@ -12,6 +12,7 @@ tests/test_issue255_focused_stage_e_reconstruction.py
 tests/test_issue255_stage_e_reconstruction_residuals.py
 tests/test_issue255_stage_e_historical_inputs.py
 tests/test_issue255_stage_e_historical_upstream.py
+tests/test_issue255_public_baseline_stage_e_sources.py
 tests/test_issue255_homr_model_bootstrap.py
 tests/test_omr_dln_model_contract.py
 tests/test_subprocess_utils.py

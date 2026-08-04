@@ -191,9 +191,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         json.dumps(config, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
 
-    result = run_detection_step(
-        config, [image], [args.page], args.run_id, run_dir, dry_run=False
-    )
+    result = run_detection_step(config, [image], [args.page], args.run_id, run_dir, dry_run=False)
     contract = result.get("detector_input_contract")
     if not isinstance(contract, Mapping) or any(
         contract.get(key) != value for key, value in FRESH_CONTRACT.items()

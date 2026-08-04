@@ -33,9 +33,7 @@ def test_build_report_traces_residuals_without_inference(tmp_path: Path) -> None
             {"bbox": [30, 0, 34, 100], "score": 0.8},
         ],
     )
-    final = _write(
-        run_root / "final.json", [[0, 0, 4, 100], [30, 0, 34, 100]]
-    )
+    final = _write(run_root / "final.json", [[0, 0, 4, 100], [30, 0, 34, 100]])
     suggestions = _write(run_root / "suggestions.json", {"drop_suggested": []})
     page = {
         "score": "Score",

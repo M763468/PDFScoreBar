@@ -21,10 +21,7 @@ from tools.issue255.analyze_stage_e_reconstruction_residuals import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_RUN_ROOT = (
-    ROOT
-    / "logs/issue255_stage_e_public_baseline/issue255_public_stage_e_01"
-)
+DEFAULT_RUN_ROOT = ROOT / "logs/issue255_stage_e_public_baseline/issue255_public_stage_e_01"
 PUBLIC_REPORT_NAME = "public_baseline_stage_e_reconstruction_report.json"
 COMPAT_REPORT_NAME = "focused_stage_e_reconstruction_report.json"
 OUTPUT_NAME = "public_baseline_stage_e_residuals.json"
@@ -41,8 +38,7 @@ def _load(path: Path) -> Any:
 
 def _fresh_contract_matches(value: Any) -> bool:
     return isinstance(value, Mapping) and all(
-        value.get(key) == expected
-        for key, expected in FRESH_CONTRACT_REQUIRED.items()
+        value.get(key) == expected for key, expected in FRESH_CONTRACT_REQUIRED.items()
     )
 
 
@@ -52,9 +48,7 @@ def _compat_page(page: Mapping[str, Any], label: str) -> dict[str, Any]:
         raise ValueError(f"Public Stage E page lacks artifacts: {label}")
     public_final = artifacts.get("public_pipeline_final")
     if not isinstance(public_final, Mapping):
-        raise ValueError(
-            f"Public Stage E page lacks public_pipeline_final: {label}"
-        )
+        raise ValueError(f"Public Stage E page lacks public_pipeline_final: {label}")
     result = dict(page)
     compat_artifacts = dict(artifacts)
     compat_artifacts["control_final"] = dict(public_final)
@@ -125,15 +119,13 @@ def build_report(run_root: Path) -> dict[str, Any]:
                     "the full metadata-rich contract to a three-key dictionary."
                 ),
             },
-            "public_baselines_preserved": public.get("gates", {}).get(
-                "public_baselines_preserved"
-            ),
+            "public_baselines_preserved": public.get("gates", {}).get("public_baselines_preserved"),
             "upstream_gpu_rerun_performed": public.get("gates", {}).get(
                 "upstream_gpu_rerun_performed"
             ),
-            "historical_runtime_artifact_dependency_absent": public.get(
-                "gates", {}
-            ).get("historical_runtime_artifact_dependency_absent"),
+            "historical_runtime_artifact_dependency_absent": public.get("gates", {}).get(
+                "historical_runtime_artifact_dependency_absent"
+            ),
             "next_gpu_run_required": False,
         }
     )
@@ -154,9 +146,9 @@ def main() -> int:
                 "status": report["status"],
                 "output": str(output.resolve()),
                 "combined": report["combined"],
-                "fresh_contract_required_fields_match": report[
-                    "fresh_contract_gate"
-                ]["required_fields_match"],
+                "fresh_contract_required_fields_match": report["fresh_contract_gate"][
+                    "required_fields_match"
+                ],
             },
             indent=2,
             ensure_ascii=False,

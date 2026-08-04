@@ -157,11 +157,7 @@ def build_report(batch_path: Path) -> dict[str, Any]:
     if not isinstance(runs, list) or len(runs) != 2:
         raise ValueError("Expected exactly two focused public-baseline runs")
 
-    pages = {
-        str(run.get("label")): _page_report(run)
-        for run in runs
-        if isinstance(run, Mapping)
-    }
+    pages = {str(run.get("label")): _page_report(run) for run in runs if isinstance(run, Mapping)}
     if len(pages) != 2:
         raise ValueError("Public-baseline batch lacks two valid runs")
 

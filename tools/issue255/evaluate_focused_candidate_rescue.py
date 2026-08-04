@@ -64,10 +64,7 @@ def _match_box_details(
     false_positive_boxes = []
     for prediction in predictions:
         ranked = sorted(
-            (
-                (float(barline_iou(prediction, references[index])), index)
-                for index in unmatched
-            ),
+            ((float(barline_iou(prediction, references[index])), index) for index in unmatched),
             reverse=True,
         )
         if ranked and ranked[0][0] > accepted_iou:
@@ -88,9 +85,7 @@ def _match_box_details(
         "fn": len(unmatched),
         "matches": matches,
         "false_positive_boxes": false_positive_boxes,
-        "false_negative_boxes": [
-            list(references[index]) for index in sorted(unmatched)
-        ],
+        "false_negative_boxes": [list(references[index]) for index in sorted(unmatched)],
     }
 
 
@@ -108,9 +103,7 @@ def _best_score(
     reference: Sequence[int | float], scored: Sequence[Mapping[str, Any]]
 ) -> float | None:
     boxes = [
-        normalize_box(item["bbox"])
-        for item in scored
-        if isinstance(item.get("bbox"), Sequence)
+        normalize_box(item["bbox"]) for item in scored if isinstance(item.get("bbox"), Sequence)
     ]
     metrics = target_metrics(normalize_box(reference), boxes, accepted_iou=0.5)
     best = metrics.get("best")
@@ -171,9 +164,7 @@ def _evaluate_page(
 ) -> dict[str, Any]:
     current_contract = current_run.get("contract")
     baseline_contract = baseline_run.get("contract")
-    if not isinstance(current_contract, Mapping) or not isinstance(
-        baseline_contract, Mapping
-    ):
+    if not isinstance(current_contract, Mapping) or not isinstance(baseline_contract, Mapping):
         raise ValueError(f"Incomplete focused contracts for {label}")
 
     accepted_path = _resolve_path(str(page_spec["accepted_barlines"]))
@@ -184,25 +175,19 @@ def _evaluate_page(
 
     count_names = ("cnn_candidates", "cnn_scored", "cnn_accepted", "final_barlines")
     baseline_counts = {
-        name: len(_load_json(_artifact_path(baseline_contract, name)))
-        for name in count_names
+        name: len(_load_json(_artifact_path(baseline_contract, name))) for name in count_names
     }
     current_counts = {
-        name: len(_load_json(_artifact_path(current_contract, name)))
-        for name in count_names
+        name: len(_load_json(_artifact_path(current_contract, name))) for name in count_names
     }
-    count_delta = {
-        name: current_counts[name] - baseline_counts[name] for name in count_names
-    }
+    count_delta = {name: current_counts[name] - baseline_counts[name] for name in count_names}
 
     targets = []
     raw_targets = page_spec.get("targets")
     if not isinstance(raw_targets, list):
         raise ValueError(f"Target list missing for {label}")
     for item in raw_targets:
-        if not isinstance(item, Mapping) or not isinstance(
-            item.get("accepted_bbox"), Sequence
-        ):
+        if not isinstance(item, Mapping) or not isinstance(item.get("accepted_bbox"), Sequence):
             raise ValueError(f"Invalid target for {label}: {item}")
         reference = normalize_box(item["accepted_bbox"])
         metrics = target_metrics(reference, current_final, accepted_iou=0.5)
@@ -220,12 +205,8 @@ def _evaluate_page(
     added_details = _match_box_details(baseline_final, current_final)
     added_boxes = added_details["false_positive_boxes"]
 
-    baseline_metrics = {
-        key: int(baseline_details[key]) for key in ("tp", "fp", "fn")
-    }
-    current_metrics = {
-        key: int(current_details[key]) for key in ("tp", "fp", "fn")
-    }
+    baseline_metrics = {key: int(baseline_details[key]) for key in ("tp", "fp", "fn")}
+    current_metrics = {key: int(current_details[key]) for key in ("tp", "fp", "fn")}
     return {
         "score": page_spec.get("score"),
         "page": page_spec.get("page"),
@@ -275,13 +256,9 @@ def build_report(
     current_payload = _load_json(current_batch.resolve())
     baseline_payload = _load_json(baseline_batch.resolve())
     target_payload = _load_json(targets.resolve())
-    if not isinstance(current_payload, Mapping) or current_payload.get(
-        "status"
-    ) != "completed":
+    if not isinstance(current_payload, Mapping) or current_payload.get("status") != "completed":
         raise ValueError("Current focused batch must be completed")
-    if not isinstance(baseline_payload, Mapping) or baseline_payload.get(
-        "status"
-    ) != "completed":
+    if not isinstance(baseline_payload, Mapping) or baseline_payload.get("status") != "completed":
         raise ValueError("Baseline focused batch must be completed")
     if not isinstance(target_payload, Mapping) or not isinstance(
         target_payload.get("pages"), Mapping
@@ -310,12 +287,8 @@ def build_report(
         "accepted_reference_runtime_input": False,
         "pages": pages,
         "gates": {
-            "all_targets_recovered": all(
-                target["recovered"] for target in target_rows
-            ),
-            "focused_fp_delta_zero": all(
-                page["focused_fp_delta"] == 0 for page in pages.values()
-            ),
+            "all_targets_recovered": all(target["recovered"] for target in target_rows),
+            "focused_fp_delta_zero": all(page["focused_fp_delta"] == 0 for page in pages.values()),
         },
     }
     output = output.resolve()

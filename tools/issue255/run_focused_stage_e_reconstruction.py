@@ -127,9 +127,7 @@ def _page_specs(targets: Path, image_root: Path) -> list[dict[str, Any]]:
         if not image.is_file():
             raise FileNotFoundError(image)
         if not accepted.is_file():
-            raise FileNotFoundError(
-                f"Evaluation-only Stage E reference missing: {accepted}"
-            )
+            raise FileNotFoundError(f"Evaluation-only Stage E reference missing: {accepted}")
         result.append(
             {
                 "label": str(label),
@@ -200,16 +198,12 @@ def _normal_page(
     image: Path, hybrid_root: Path, probe_root: Path, detection: Mapping[str, Any]
 ) -> Path:
     effective = image
-    if detection.get("enable_sr", True) and not detection.get(
-        "probe_use_original_images", False
-    ):
+    if detection.get("enable_sr", True) and not detection.get("probe_use_original_images", False):
         sr_image = hybrid_root / "sr/batch" / image.stem / image.name
         if sr_image.is_file():
             effective = sr_image
     score = detection.get("probe_score_name")
-    return probe_root / build_probe_run_id(
-        effective, score_name=str(score) if score else None
-    )
+    return probe_root / build_probe_run_id(effective, score_name=str(score) if score else None)
 
 
 def _candidate_file(root: Path, image: Path, name: str) -> Path:
@@ -242,9 +236,7 @@ def _layer(reference: tuple[int, int, int, int], boxes: Sequence[Any]) -> dict[s
         "candidate_present": bool(metrics["accepted"]),
         "best_bbox": best.get("bbox") if isinstance(best, Mapping) else None,
         "best_iou": best.get("iou") if isinstance(best, Mapping) else 0.0,
-        "x_center_distance": (
-            best.get("x_center_distance") if isinstance(best, Mapping) else None
-        ),
+        "x_center_distance": (best.get("x_center_distance") if isinstance(best, Mapping) else None),
     }
 
 
@@ -258,9 +250,7 @@ def _scored_layer(
         for item in records:
             if normalize_box(item["bbox"]) == best:
                 value = item.get("score")
-                result["cnn_score"] = (
-                    float(value) if isinstance(value, (int, float)) else None
-                )
+                result["cnn_score"] = float(value) if isinstance(value, (int, float)) else None
                 break
     return result
 
@@ -275,9 +265,7 @@ def _drop_evidence(path: Path, reference: tuple[int, int, int, int]) -> list[dic
         box = normalize_box(item["bbox"])
         metrics = target_metrics(reference, [box], accepted_iou=0.5)
         best = metrics.get("best")
-        if isinstance(best, Mapping) and (
-            best["iou"] > 0 or best["x_center_distance"] <= 12.0
-        ):
+        if isinstance(best, Mapping) and (best["iou"] > 0 or best["x_center_distance"] <= 12.0):
             rows.append(
                 {
                     "bbox": list(box),
@@ -305,9 +293,7 @@ def _first_loss(layers: Mapping[str, Mapping[str, Any]]) -> str:
 
 def _effective(canonical: Mapping[str, Any], run_id: str, output: Path) -> dict[str, Any]:
     config = copy.deepcopy(dict(canonical))
-    config.setdefault("run", {}).update(
-        {"run_id": run_id, "output_root": str(output.resolve())}
-    )
+    config.setdefault("run", {}).update({"run_id": run_id, "output_root": str(output.resolve())})
     if config.get("detection") != canonical.get("detection"):
         raise ValueError("Focused run changed canonical detection config")
     if config.get("steps") != canonical.get("steps"):
@@ -327,9 +313,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError(f"Canonical config required: {CONFIG}")
     commit = _git("rev-parse", "HEAD")
     if args.expected_commit and commit != args.expected_commit:
-        raise ValueError(
-            f"HEAD mismatch: expected={args.expected_commit} actual={commit}"
-        )
+        raise ValueError(f"HEAD mismatch: expected={args.expected_commit} actual={commit}")
     run_root = args.output_root.resolve() / args.run_tag
     if run_root.exists() and any(run_root.iterdir()):
         raise FileExistsError(f"Run root must be new: {run_root}")
@@ -340,9 +324,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     if not isinstance(detection, Mapping):
         raise ValueError("Canonical config lacks detection settings")
     forbidden = [
-        key
-        for key in ("precomputed_probe_candidates_root", "cnn_bands_from")
-        if detection.get(key)
+        key for key in ("precomputed_probe_candidates_root", "cnn_bands_from") if detection.get(key)
     ]
     if forbidden:
         raise ValueError(f"Canonical fresh route contains overrides: {forbidden}")
@@ -415,13 +397,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         model_path=cnn_model,
         threshold=float(detection.get("cnn_threshold", 0.1)),
         score_name=(
-            str(detection["probe_score_name"])
-            if detection.get("probe_score_name")
-            else None
+            str(detection["probe_score_name"]) if detection.get("probe_score_name") else None
         ),
-        crop_recenter_on_bbox_ink=bool(
-            detection.get("crop_recenter_on_bbox_ink", False)
-        ),
+        crop_recenter_on_bbox_ink=bool(detection.get("crop_recenter_on_bbox_ink", False)),
         crop_recenter_max_shift_unit_ratio=float(
             detection.get("crop_recenter_max_shift_unit_ratio", 0.35)
         ),
@@ -477,9 +455,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 "cnn_accepted": _layer(reference, final_boxes),
                 "final_detector_output": _layer(reference, final_boxes),
             }
-            layers["clef_mask_filtering"]["drop_evidence"] = _drop_evidence(
-                suggestions, reference
-            )
+            layers["clef_mask_filtering"]["drop_evidence"] = _drop_evidence(suggestions, reference)
             target_rows.append(
                 {
                     **target,
@@ -505,12 +481,8 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 "historical_stage_e_reference": len(accepted_boxes),
             },
             "metrics": {
-                "normal_control": {
-                    key: control_metrics[key] for key in ("tp", "fp", "fn")
-                },
-                "reconstructed": {
-                    key: reconstructed_metrics[key] for key in ("tp", "fp", "fn")
-                },
+                "normal_control": {key: control_metrics[key] for key in ("tp", "fp", "fn")},
+                "reconstructed": {key: reconstructed_metrics[key] for key in ("tp", "fp", "fn")},
                 "delta_vs_control": {
                     key: reconstructed_metrics[key] - control_metrics[key]
                     for key in ("tp", "fp", "fn")
@@ -528,8 +500,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 "cnn_scored": _record(scored_path),
                 "cnn_accepted": _record(final),
                 "fresh_sources": {
-                    name: _record(path)
-                    for name, path in source_by_label[page["label"]].items()
+                    name: _record(path) for name, path in source_by_label[page["label"]].items()
                 },
             },
             "targets": target_rows,
@@ -572,16 +543,13 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "provenance": {
             "canonical_config": _record(args.config.resolve()),
             "effective_config": _record(effective_path),
-            "target_manifest": _record(
-                args.targets.resolve(), role="evaluation_metadata_only"
-            ),
+            "target_manifest": _record(args.targets.resolve(), role="evaluation_metadata_only"),
             "fresh_inventory": _record(inventory_path),
             "cnn_model": _record(cnn_model),
             "omr_dln_model": _record(omr_model),
             "input_images": [_record(page["image"]) for page in pages],
             "dense_raw_tree": _tree_record(
-                dense_root
-                / "dense_candidate_reconstruction/probe_candidates_from_inventory"
+                dense_root / "dense_candidate_reconstruction/probe_candidates_from_inventory"
             ),
             "filtered_tree": _tree_record(dense.filtered_root),
             "issue53_tree": _tree_record(dense.probe_rescue_root),
@@ -593,8 +561,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 target["first_loss_boundary"] == "recovered" for target in targets
             ),
             "focused_fp_increase_zero": all(
-                page["metrics"]["delta_vs_control"]["fp"] <= 0
-                for page in page_reports.values()
+                page["metrics"]["delta_vs_control"]["fp"] <= 0 for page in page_reports.values()
             ),
             "historical_runtime_artifact_dependency_absent": True,
             "fresh_contract_exact": contract == FRESH_CONTRACT
@@ -609,9 +576,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-tag", required=True)
-    parser.add_argument(
-        "--output-root", type=Path, default=ROOT / "logs/issue255_stage_e_focused"
-    )
+    parser.add_argument("--output-root", type=Path, default=ROOT / "logs/issue255_stage_e_focused")
     parser.add_argument("--config", type=Path, default=CONFIG)
     parser.add_argument("--targets", type=Path, default=TARGETS)
     parser.add_argument("--image-root", type=Path, default=IMAGE_ROOT)

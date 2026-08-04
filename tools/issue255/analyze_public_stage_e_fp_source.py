@@ -25,9 +25,7 @@ from tools.issue255.run_public_baseline_stage_e_reconstruction import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_RUN_ROOT = (
-    ROOT / "logs/issue255_stage_e_public_baseline/issue255_public_stage_e_01"
-)
+DEFAULT_RUN_ROOT = ROOT / "logs/issue255_stage_e_public_baseline/issue255_public_stage_e_01"
 DEFAULT_HISTORICAL_COMPARISON = (
     ROOT
     / "logs/issue255_stage_e_focused/issue255_stage_e_focused_03"
@@ -82,9 +80,7 @@ def _bands(boxes: Sequence[tuple[int, int, int, int]]) -> list[tuple[int, int]]:
     return [(int(stat["top"]), int(stat["bottom"])) for stat in stats]
 
 
-def _band_relation(
-    bbox: Sequence[int | float], bands: Sequence[tuple[int, int]]
-) -> dict[str, Any]:
+def _band_relation(bbox: Sequence[int | float], bands: Sequence[tuple[int, int]]) -> dict[str, Any]:
     box = normalize_box(bbox)
     cy = (box[1] + box[3]) / 2.0
     containing = [band for band in bands if band[0] <= cy <= band[1]]
@@ -172,7 +168,9 @@ def build_report(run_root: Path, historical_comparison: Path) -> dict[str, Any]:
     public_pages = public_report.get("pages")
     residual_pages = residual_report.get("pages")
     historical_pages = historical.get("pages")
-    if not all(isinstance(value, Mapping) for value in (public_pages, residual_pages, historical_pages)):
+    if not all(
+        isinstance(value, Mapping) for value in (public_pages, residual_pages, historical_pages)
+    ):
         raise ValueError("One or more reports lack page mappings")
 
     pages: dict[str, Any] = {}
@@ -190,7 +188,9 @@ def build_report(run_root: Path, historical_comparison: Path) -> dict[str, Any]:
         artifacts = public_page.get("artifacts")
         historical_inventory = historical_page.get("historical_inventory_record")
         layers = historical_page.get("layer_comparisons")
-        if not all(isinstance(value, Mapping) for value in (artifacts, historical_inventory, layers)):
+        if not all(
+            isinstance(value, Mapping) for value in (artifacts, historical_inventory, layers)
+        ):
             raise ValueError(f"Incomplete source metadata: {label}")
 
         image_path = _path(artifacts.get("image"), f"{label}.image")
@@ -312,9 +312,7 @@ def build_report(run_root: Path, historical_comparison: Path) -> dict[str, Any]:
         }
 
     classifications = [
-        row["classification"]
-        for page in pages.values()
-        for row in page["false_positives"]
+        row["classification"] for page in pages.values() for row in page["false_positives"]
     ]
     return {
         "schema_version": "issue255.public_stage_e_fp_source_analysis.v1",

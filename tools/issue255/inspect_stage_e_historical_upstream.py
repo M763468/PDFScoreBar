@@ -144,9 +144,7 @@ def _json_record(path: Path) -> dict[str, Any]:
     }
 
 
-def _historical_homr_contracts(
-    historical_run: Path, page: str
-) -> dict[str, dict[str, Any] | None]:
+def _historical_homr_contracts(historical_run: Path, page: str) -> dict[str, dict[str, Any] | None]:
     result: dict[str, dict[str, Any] | None] = {}
     for stage in ("baseline", "sr"):
         stage_root = historical_run / stage / page
@@ -184,9 +182,7 @@ def _find_fresh_metadata(run_dir: Path, page: str, filename: str) -> Path | None
     return next(iter(matches)) if len(matches) == 1 else None
 
 
-def _fresh_homr_contracts(
-    fresh_run_dir: Path, page: str
-) -> dict[str, dict[str, Any] | None]:
+def _fresh_homr_contracts(fresh_run_dir: Path, page: str) -> dict[str, dict[str, Any] | None]:
     result: dict[str, dict[str, Any] | None] = {}
     for stage, run_dir in (
         ("baseline", fresh_run_dir),
@@ -214,15 +210,13 @@ def _page_report(
     historical_rows = _inventory(historical_run)
     fresh_rows = _inventory(fresh_snapshot)
     stage_comparisons = {
-        kind: _box_stage_comparison(historical_rows, fresh_rows, kind)
-        for kind in BOX_STAGES
+        kind: _box_stage_comparison(historical_rows, fresh_rows, kind) for kind in BOX_STAGES
     }
     first_persisted_divergence = next(
         (
             kind
             for kind in BOX_STAGES
-            if stage_comparisons[kind] is not None
-            and not stage_comparisons[kind]["exact_match"]
+            if stage_comparisons[kind] is not None and not stage_comparisons[kind]["exact_match"]
         ),
         None,
     )
@@ -239,12 +233,8 @@ def _page_report(
         "fresh_by_kind": _by_kind(fresh_rows),
         "box_stage_comparisons": stage_comparisons,
         "first_persisted_divergence": first_persisted_divergence,
-        "historical_homr_contracts": _historical_homr_contracts(
-            historical_run, page["page"]
-        ),
-        "fresh_homr_contracts": _fresh_homr_contracts(
-            fresh_run_dir, page["page"]
-        ),
+        "historical_homr_contracts": _historical_homr_contracts(historical_run, page["page"]),
+        "fresh_homr_contracts": _fresh_homr_contracts(fresh_run_dir, page["page"]),
     }
 
 
@@ -283,8 +273,7 @@ def main() -> None:
     }
     report["conclusion"] = {
         "first_persisted_divergence": {
-            key: value["first_persisted_divergence"]
-            for key, value in report["pages"].items()
+            key: value["first_persisted_divergence"] for key, value in report["pages"].items()
         },
         "new_recovery_direction_introduced": False,
     }

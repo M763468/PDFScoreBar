@@ -28,9 +28,7 @@ from tools.issue255.run_focused_stage_e_reconstruction import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_RUN_ROOT = (
-    ROOT / "logs/issue255_stage_e_focused/issue255_stage_e_focused_03"
-)
+DEFAULT_RUN_ROOT = ROOT / "logs/issue255_stage_e_focused/issue255_stage_e_focused_03"
 REPORT_NAME = "focused_stage_e_reconstruction_report.json"
 OUTPUT_NAME = "stage_e_reconstruction_residuals.json"
 
@@ -77,9 +75,7 @@ def _scored(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def _nearest(
-    reference: Sequence[int | float], boxes: Sequence[Any]
-) -> dict[str, Any] | None:
+def _nearest(reference: Sequence[int | float], boxes: Sequence[Any]) -> dict[str, Any] | None:
     metrics = target_metrics(normalize_box(reference), boxes, accepted_iou=0.5)
     best = metrics.get("best")
     return dict(best) if isinstance(best, Mapping) else None
@@ -103,15 +99,11 @@ def _layers(
         "cnn_accepted": _layer(reference, final),
         "final_detector_output": _layer(reference, final),
     }
-    layers["clef_mask_filtering"]["drop_evidence"] = _drop_evidence(
-        suggestions, reference
-    )
+    layers["clef_mask_filtering"]["drop_evidence"] = _drop_evidence(suggestions, reference)
     return layers
 
 
-def _combined(
-    pages: Mapping[str, Mapping[str, Any]], metric_name: str
-) -> dict[str, int]:
+def _combined(pages: Mapping[str, Mapping[str, Any]], metric_name: str) -> dict[str, int]:
     return {
         key: sum(int(page[metric_name][key]) for page in pages.values())
         for key in ("tp", "fp", "fn")
@@ -134,19 +126,13 @@ def build_report(run_root: Path) -> dict[str, Any]:
             raise ValueError(f"Invalid page report: {label}")
         artifacts = page.get("artifacts")
         accepted_record = page.get("accepted_reference")
-        if not isinstance(artifacts, Mapping) or not isinstance(
-            accepted_record, Mapping
-        ):
+        if not isinstance(artifacts, Mapping) or not isinstance(accepted_record, Mapping):
             raise ValueError(f"Incomplete page artifacts: {label}")
 
         accepted_path = _record_path(accepted_record, f"{label}.accepted_reference")
-        control_path = _record_path(
-            artifacts["control_final"], f"{label}.control_final"
-        )
+        control_path = _record_path(artifacts["control_final"], f"{label}.control_final")
         raw_path = _record_path(artifacts["dense_raw"], f"{label}.dense_raw")
-        filtered_path = _record_path(
-            artifacts["filtered"], f"{label}.filtered"
-        )
+        filtered_path = _record_path(artifacts["filtered"], f"{label}.filtered")
         suggestions_path = _record_path(
             artifacts["filter_suggestions"], f"{label}.filter_suggestions"
         )
@@ -203,9 +189,7 @@ def build_report(run_root: Path) -> dict[str, Any]:
                 {
                     "prediction_bbox": list(prediction),
                     "nearest_accepted": _nearest(prediction, accepted),
-                    "present_in_control": bool(
-                        _layer(prediction, control)["candidate_present"]
-                    ),
+                    "present_in_control": bool(_layer(prediction, control)["candidate_present"]),
                     "cnn_score": layers["cnn_scored"].get("cnn_score"),
                     "layers": layers,
                 }
@@ -221,12 +205,8 @@ def build_report(run_root: Path) -> dict[str, Any]:
                 "control": len(control),
                 "reconstructed": len(final),
             },
-            "control_metrics": {
-                key: int(control_details[key]) for key in ("tp", "fp", "fn")
-            },
-            "reconstructed_metrics": {
-                key: int(final_details[key]) for key in ("tp", "fp", "fn")
-            },
+            "control_metrics": {key: int(control_details[key]) for key in ("tp", "fp", "fn")},
+            "reconstructed_metrics": {key: int(final_details[key]) for key in ("tp", "fp", "fn")},
             "control_to_reconstructed": {
                 "matched_count": int(control_to_final["tp"]),
                 "removed_control_count": int(control_to_final["fn"]),

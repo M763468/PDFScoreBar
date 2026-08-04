@@ -153,8 +153,7 @@ def _validate_public_run(
     page_id = str(run.get("page"))
     if score != page["score"] or page_id != page["page"]:
         raise ValueError(
-            f"Public run page mismatch: {score}/{page_id} != "
-            f"{page['score']}/{page['page']}"
+            f"Public run page mismatch: {score}/{page_id} != {page['score']}/{page['page']}"
         )
 
     image = _contract_artifact(contract, "image")
@@ -172,8 +171,7 @@ def _validate_public_run(
     actual_hash = _sha256(baseline)
     if actual_hash != expected_hash:
         raise ValueError(
-            f"Public baseline hash mismatch: expected={expected_hash} "
-            f"actual={actual_hash}"
+            f"Public baseline hash mismatch: expected={expected_hash} actual={actual_hash}"
         )
 
     directories = (baseline.parent, sr.parent)
@@ -220,9 +218,7 @@ def _load_public_sources(
     if not isinstance(runs, list) or len(runs) != len(pages):
         raise ValueError("Public-baseline batch page count mismatch")
 
-    by_label = {
-        str(run.get("label")): run for run in runs if isinstance(run, Mapping)
-    }
+    by_label = {str(run.get("label")): run for run in runs if isinstance(run, Mapping)}
     sources = {}
     for page in pages:
         label = str(page["label"])
@@ -238,9 +234,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError(f"Canonical config required: {CONFIG}")
     commit = _git("rev-parse", "HEAD")
     if args.expected_commit and commit != args.expected_commit:
-        raise ValueError(
-            f"HEAD mismatch: expected={args.expected_commit} actual={commit}"
-        )
+        raise ValueError(f"HEAD mismatch: expected={args.expected_commit} actual={commit}")
 
     run_root = args.output_root.resolve() / args.run_tag
     if run_root.exists() and any(run_root.iterdir()):
@@ -252,9 +246,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     if not isinstance(detection, Mapping):
         raise ValueError("Canonical config lacks detection settings")
     forbidden = [
-        key
-        for key in ("precomputed_probe_candidates_root", "cnn_bands_from")
-        if detection.get(key)
+        key for key in ("precomputed_probe_candidates_root", "cnn_bands_from") if detection.get(key)
     ]
     if forbidden:
         raise ValueError(f"Canonical fresh route contains overrides: {forbidden}")
@@ -311,13 +303,9 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         model_path=cnn_model,
         threshold=float(detection.get("cnn_threshold", 0.1)),
         score_name=(
-            str(detection["probe_score_name"])
-            if detection.get("probe_score_name")
-            else None
+            str(detection["probe_score_name"]) if detection.get("probe_score_name") else None
         ),
-        crop_recenter_on_bbox_ink=bool(
-            detection.get("crop_recenter_on_bbox_ink", False)
-        ),
+        crop_recenter_on_bbox_ink=bool(detection.get("crop_recenter_on_bbox_ink", False)),
         crop_recenter_max_shift_unit_ratio=float(
             detection.get("crop_recenter_max_shift_unit_ratio", 0.35)
         ),
@@ -415,12 +403,8 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 "historical_stage_e_reference": len(accepted_boxes),
             },
             "metrics": {
-                "public_pipeline": {
-                    key: public_metrics[key] for key in ("tp", "fp", "fn")
-                },
-                "reconstructed": {
-                    key: reconstructed_metrics[key] for key in ("tp", "fp", "fn")
-                },
+                "public_pipeline": {key: public_metrics[key] for key in ("tp", "fp", "fn")},
+                "reconstructed": {key: reconstructed_metrics[key] for key in ("tp", "fp", "fn")},
                 "delta_vs_public_pipeline": {
                     key: reconstructed_metrics[key] - public_metrics[key]
                     for key in ("tp", "fp", "fn")
@@ -454,9 +438,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "targets": target_rows,
         }
 
-    targets = [
-        target for page in page_reports.values() for target in page["targets"]
-    ]
+    targets = [target for page in page_reports.values() for target in page["targets"]]
     report = {
         "schema_version": "issue255.public_baseline_stage_e_reconstruction.v1",
         "status": "completed",
@@ -498,8 +480,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "cnn_model": _record(cnn_model),
             "input_images": [_record(page["image"]) for page in pages],
             "dense_raw_tree": _tree_record(
-                dense_root
-                / "dense_candidate_reconstruction/probe_candidates_from_inventory"
+                dense_root / "dense_candidate_reconstruction/probe_candidates_from_inventory"
             ),
             "filtered_tree": _tree_record(dense.filtered_root),
             "issue53_tree": _tree_record(dense.probe_rescue_root),
@@ -515,13 +496,11 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 for page in page_reports.values()
             ),
             "public_baselines_preserved": all(
-                _sha256(source["baseline"])
-                == str(source["handoff"]["detection_sha256"])
+                _sha256(source["baseline"]) == str(source["handoff"]["detection_sha256"])
                 for source in public.values()
             ),
             "fresh_contract_exact": all(
-                source["fresh_contract"] == FRESH_CONTRACT
-                for source in public.values()
+                source["fresh_contract"] == FRESH_CONTRACT for source in public.values()
             ),
             "historical_runtime_artifact_dependency_absent": True,
             "upstream_gpu_rerun_performed": False,

@@ -158,9 +158,7 @@ def _validate_profile() -> dict[str, Any]:
     return dict(payload)
 
 
-def _prepare_public_image(
-    *, container: str, rebuild: bool, output_root: Path
-) -> str:
+def _prepare_public_image(*, container: str, rebuild: bool, output_root: Path) -> str:
     base_image = _run(
         ("docker", "inspect", "--format", "{{.Config.Image}}", container), capture=True
     ).stdout.strip()
@@ -215,9 +213,7 @@ def _copy_model_into_container(container: str, model: Path) -> tuple[str, str | 
     return target, None
 
 
-def _write_handoff(
-    *, image: Path, detection: Path, provenance: Path, output: Path
-) -> None:
+def _write_handoff(*, image: Path, detection: Path, provenance: Path, output: Path) -> None:
     payload = {
         "schema_version": "issue255.public_baseline_handoff.v1",
         "status": "completed",
@@ -244,12 +240,7 @@ def _write_batches(*, root: Path, run_tag: str, commit: str) -> tuple[Path, Path
         runs = []
         for label, score, page, _image in PAGES:
             run_id = f"{prefix}{label}_{page}_{run_tag}"
-            contract_path = (
-                root
-                / "runs"
-                / run_id
-                / "issue255_public_baseline_ab_run_contract.json"
-            )
+            contract_path = root / "runs" / run_id / "issue255_public_baseline_ab_run_contract.json"
             contract = json.loads(contract_path.read_text(encoding="utf-8"))
             runs.append(
                 {
@@ -286,9 +277,7 @@ def run_ab(args: argparse.Namespace) -> tuple[Path, Path]:
     if _git("branch", "--show-current") != EXPECTED_BRANCH:
         raise RuntimeError(f"Expected branch {EXPECTED_BRANCH}")
     if _git("status", "--short", "--untracked-files=no"):
-        raise RuntimeError(
-            "Tracked working tree must be clean before authoritative A/B execution"
-        )
+        raise RuntimeError("Tracked working tree must be clean before authoritative A/B execution")
     if not re.fullmatch(r"[A-Za-z0-9._-]+", args.run_tag):
         raise ValueError("--run-tag contains unsupported characters")
     for path in (PROFILE_MANIFEST, PUBLIC_DOCKERFILE, VARIANT_RUNNER):
@@ -447,8 +436,7 @@ def run_ab(args: argparse.Namespace) -> tuple[Path, Path]:
             baseline_host.mkdir(parents=True)
             baseline_container = _container_path(baseline_host)
             public_env = (
-                "PYTHONPATH=/opt/issue255_public_homr:"
-                "/historical:/historical/src:/workspace"
+                "PYTHONPATH=/opt/issue255_public_homr:/historical:/historical/src:/workspace"
             )
             _run(
                 (

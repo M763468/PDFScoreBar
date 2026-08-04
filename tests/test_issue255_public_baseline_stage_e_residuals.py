@@ -18,9 +18,7 @@ def test_fresh_contract_matches_required_fields_with_extra_metadata() -> None:
     )
 
 
-def test_build_report_adapts_public_pipeline_control(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_build_report_adapts_public_pipeline_control(tmp_path: Path, monkeypatch) -> None:
     run_root = tmp_path / "run"
     run_root.mkdir()
     public_final = {"path": str(run_root / "public.json")}
@@ -57,16 +55,12 @@ def test_build_report_adapts_public_pipeline_control(
         },
         "pages": {"sample": page},
     }
-    (run_root / analyzer.PUBLIC_REPORT_NAME).write_text(
-        json.dumps(public_report), encoding="utf-8"
-    )
+    (run_root / analyzer.PUBLIC_REPORT_NAME).write_text(json.dumps(public_report), encoding="utf-8")
 
     captured = {}
 
     def fake_build(temp_root: Path):
-        compat = json.loads(
-            (temp_root / analyzer.COMPAT_REPORT_NAME).read_text(encoding="utf-8")
-        )
+        compat = json.loads((temp_root / analyzer.COMPAT_REPORT_NAME).read_text(encoding="utf-8"))
         captured.update(compat)
         return {
             "status": "completed",

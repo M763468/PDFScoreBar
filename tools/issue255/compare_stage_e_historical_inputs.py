@@ -149,25 +149,15 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         snapshot = run_root / "fresh_source_snapshot" / score / page
 
         current_raw = (
-            run_root
-            / "dense_route/dense_candidate_reconstruction/"
-            "probe_candidates_from_inventory"
-            / score
-            / page
-            / CANDIDATES
+            run_root / "dense_route/dense_candidate_reconstruction/"
+            "probe_candidates_from_inventory" / score / page / CANDIDATES
         )
         current_filtered = (
-            run_root
-            / "dense_route/dense_candidate_reconstruction/"
-            "probe_candidates_filtered"
-            / score
-            / page
-            / CANDIDATES
+            run_root / "dense_route/dense_candidate_reconstruction/"
+            "probe_candidates_filtered" / score / page / CANDIDATES
         )
         historical_raw = args.historical_raw_root.resolve() / score / page / CANDIDATES
-        historical_filtered = (
-            args.historical_filtered_root.resolve() / score / page / CANDIDATES
-        )
+        historical_filtered = args.historical_filtered_root.resolve() / score / page / CANDIDATES
 
         layers = {
             "dense_raw": _box_comparison(historical_raw, current_raw),
@@ -232,9 +222,7 @@ def main() -> int:
     )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    output = args.output or (
-        args.run_root.resolve() / "stage_e_historical_input_comparison.json"
-    )
+    output = args.output or (args.run_root.resolve() / "stage_e_historical_input_comparison.json")
     report = build_report(args)
     write_json(output, report)
     print(

@@ -31,9 +31,7 @@ from tools.issue252.probe_boundary import normalize_box
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_TARGETS = ROOT / "tools/issue255/gate05_targets.json"
 DEFAULT_BASELINE = (
-    ROOT
-    / "logs/issue255_focused_fresh/"
-    "issue255_focused_fresh_batch_issue255_gate_05.json"
+    ROOT / "logs/issue255_focused_fresh/issue255_focused_fresh_batch_issue255_gate_05.json"
 )
 
 Box = tuple[int, int, int, int]
@@ -241,19 +239,13 @@ def _stable_match_details(
         "fp": len(preds) - len(matches),
         "fn": len(refs) - len(matches),
         "matches": sorted(matches, key=lambda item: item["prediction_index"]),
-        "unmatched_prediction_indices": sorted(
-            set(range(len(preds))) - matched_pred_indices
-        ),
-        "unmatched_reference_indices": sorted(
-            set(range(len(refs))) - matched_ref_indices
-        ),
+        "unmatched_prediction_indices": sorted(set(range(len(preds))) - matched_pred_indices),
+        "unmatched_reference_indices": sorted(set(range(len(refs))) - matched_ref_indices),
         "false_positive_boxes": [
-            list(preds[index])
-            for index in sorted(set(range(len(preds))) - matched_pred_indices)
+            list(preds[index]) for index in sorted(set(range(len(preds))) - matched_pred_indices)
         ],
         "false_negative_boxes": [
-            list(refs[index])
-            for index in sorted(set(range(len(refs))) - matched_ref_indices)
+            list(refs[index]) for index in sorted(set(range(len(refs))) - matched_ref_indices)
         ],
     }
 
@@ -273,8 +265,7 @@ def _score_map(records: Sequence[Mapping[str, Any]]) -> dict[Box, float]:
 def _duplicate_relation(first: Box, second: Box, policy: Policy) -> bool:
     return (
         abs(_center_x(first) - _center_x(second)) <= policy.x_tolerance
-        and _vertical_overlap_ratio(first, second)
-        >= policy.min_vertical_overlap_ratio
+        and _vertical_overlap_ratio(first, second) >= policy.min_vertical_overlap_ratio
         and _height_ratio(first, second) >= policy.min_height_ratio
     )
 
@@ -292,8 +283,7 @@ def _target_recovery(
     predictions: Sequence[Box],
 ) -> list[bool]:
     return [
-        _best_reference(target, predictions, accepted_iou=0.5)[0] is not None
-        for target in targets
+        _best_reference(target, predictions, accepted_iou=0.5)[0] is not None for target in targets
     ]
 
 
@@ -339,9 +329,7 @@ def _multiplicity(
         "unrelated_prediction_indices": unrelated,
         "unrelated_boxes": [list(predictions[index]) for index in unrelated],
         "duplicate_group_count": len(duplicate_groups),
-        "duplicate_excess_count": sum(
-            group["excess_count"] for group in duplicate_groups
-        ),
+        "duplicate_excess_count": sum(group["excess_count"] for group in duplicate_groups),
         "duplicate_groups": duplicate_groups,
         "best_reference_by_prediction": best_rows,
     }
@@ -358,13 +346,8 @@ def _simulate_policy(
     include_details: bool = False,
 ) -> dict[str, Any]:
     baseline_to_current = _stable_match_details(baseline, current)
-    protected = {
-        int(match["prediction_index"])
-        for match in baseline_to_current["matches"]
-    }
-    additions = [
-        index for index in range(len(current)) if index not in protected
-    ]
+    protected = {int(match["prediction_index"]) for match in baseline_to_current["matches"]}
+    additions = [index for index in range(len(current)) if index not in protected]
     additions.sort(
         key=lambda index: (
             -scores.get(current[index], float("-inf")),
@@ -400,11 +383,7 @@ def _simulate_policy(
             accepted,
             accepted_iou=0.5,
         )
-        collision = (
-            candidate_ref is not None
-            and kept_ref is not None
-            and candidate_ref != kept_ref
-        )
+        collision = candidate_ref is not None and kept_ref is not None and candidate_ref != kept_ref
         if collision:
             accepted_collisions.append(
                 {
@@ -497,8 +476,7 @@ def _accepted_root_collisions(
         pair
         for pair in pairs
         if float(pair["x_distance"]) <= policy.x_tolerance
-        and float(pair["vertical_overlap_ratio"])
-        >= policy.min_vertical_overlap_ratio
+        and float(pair["vertical_overlap_ratio"]) >= policy.min_vertical_overlap_ratio
         and float(pair["height_ratio"]) >= policy.min_height_ratio
     ]
     return {
@@ -540,36 +518,26 @@ def build_report(
             raise ValueError(f"Invalid page specification: {label}")
         current_contract = current_runs[str(label)].get("contract")
         baseline_contract = baseline_runs[str(label)].get("contract")
-        if not isinstance(current_contract, Mapping) or not isinstance(
-            baseline_contract, Mapping
-        ):
+        if not isinstance(current_contract, Mapping) or not isinstance(baseline_contract, Mapping):
             raise ValueError(f"Incomplete focused contracts for {label}")
 
         accepted_path = _resolve_path(str(page_spec["accepted_barlines"]))
         accepted = [_box(box) for box in load_json_boxes(accepted_path)]
         baseline = [
             _box(box)
-            for box in load_json_boxes(
-                _artifact_path(baseline_contract, "final_barlines")
-            )
+            for box in load_json_boxes(_artifact_path(baseline_contract, "final_barlines"))
         ]
         current = [
-            _box(box)
-            for box in load_json_boxes(
-                _artifact_path(current_contract, "final_barlines")
-            )
+            _box(box) for box in load_json_boxes(_artifact_path(current_contract, "final_barlines"))
         ]
-        scores = _score_map(
-            _records(_artifact_path(current_contract, "cnn_scored"))
-        )
+        scores = _score_map(_records(_artifact_path(current_contract, "cnn_scored")))
         target_rows = page_spec.get("targets")
         if not isinstance(target_rows, list):
             raise ValueError(f"Target list missing for {label}")
         targets = [
             _box(item["accepted_bbox"])
             for item in target_rows
-            if isinstance(item, Mapping)
-            and isinstance(item.get("accepted_bbox"), Sequence)
+            if isinstance(item, Mapping) and isinstance(item.get("accepted_bbox"), Sequence)
         ]
 
         baseline_metrics = _metrics(accepted, baseline)
@@ -587,19 +555,14 @@ def build_report(
             "baseline_metrics": baseline_metrics,
             "current_metrics": current_metrics,
             "metric_delta": {
-                key: current_metrics[key] - baseline_metrics[key]
-                for key in ("tp", "fp", "fn")
+                key: current_metrics[key] - baseline_metrics[key] for key in ("tp", "fp", "fn")
             },
             "baseline_preservation": {
                 "matched_count": baseline_to_current["tp"],
                 "missing_baseline_count": baseline_to_current["fn"],
                 "new_current_count": baseline_to_current["fp"],
-                "missing_baseline_boxes": baseline_to_current[
-                    "false_negative_boxes"
-                ],
-                "new_current_boxes": baseline_to_current[
-                    "false_positive_boxes"
-                ],
+                "missing_baseline_boxes": baseline_to_current["false_negative_boxes"],
+                "new_current_boxes": baseline_to_current["false_positive_boxes"],
             },
             "multiplicity": multiplicity,
             "target_recovered": _target_recovery(targets, current),
@@ -637,41 +600,33 @@ def build_report(
         focused_pass = all(
             result["all_targets_recovered"]
             and result["accepted_collision_count"] == 0
-            and result["metrics"]["fp"]
-            <= baseline_metrics_by_page[label]["fp"]
-            and result["metrics"]["fn"]
-            <= baseline_metrics_by_page[label]["fn"]
-            and result["metrics"]["tp"]
-            >= baseline_metrics_by_page[label]["tp"]
+            and result["metrics"]["fp"] <= baseline_metrics_by_page[label]["fp"]
+            and result["metrics"]["fn"] <= baseline_metrics_by_page[label]["fn"]
+            and result["metrics"]["tp"] >= baseline_metrics_by_page[label]["tp"]
             for label, result in page_results.items()
         )
         full_reference_safe = (
-            accepted_safety["available"]
-            and accepted_safety["collision_count"] == 0
+            accepted_safety["available"] and accepted_safety["collision_count"] == 0
         )
         fp_excess = sum(
             max(
                 0,
-                result["metrics"]["fp"]
-                - baseline_metrics_by_page[label]["fp"],
+                result["metrics"]["fp"] - baseline_metrics_by_page[label]["fp"],
             )
             for label, result in page_results.items()
         )
         fn_excess = sum(
             max(
                 0,
-                result["metrics"]["fn"]
-                - baseline_metrics_by_page[label]["fn"],
+                result["metrics"]["fn"] - baseline_metrics_by_page[label]["fn"],
             )
             for label, result in page_results.items()
         )
         missing_targets = sum(
-            result["target_recovered"].count(False)
-            for result in page_results.values()
+            result["target_recovered"].count(False) for result in page_results.values()
         )
         accepted_collisions = sum(
-            result["accepted_collision_count"]
-            for result in page_results.values()
+            result["accepted_collision_count"] for result in page_results.values()
         )
         full_collisions = (
             int(accepted_safety["collision_count"])
@@ -754,8 +709,7 @@ def build_report(
             "detailed_policies": detailed,
             "all_policies": policy_rows,
         },
-        "next_gpu_run_authorized": bool(passing)
-        and accepted_pair_features["available"],
+        "next_gpu_run_authorized": bool(passing) and accepted_pair_features["available"],
     }
 
 
@@ -780,9 +734,7 @@ def main() -> int:
             current_batch=args.current_batch,
             baseline_batch=args.baseline_batch,
             targets_path=args.targets,
-            accepted_root=args.accepted_root.resolve()
-            if args.accepted_root
-            else None,
+            accepted_root=args.accepted_root.resolve() if args.accepted_root else None,
         )
         output = args.output.resolve()
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -807,15 +759,9 @@ def main() -> int:
         json.dumps(
             {
                 "status": report["status"],
-                "passing_policy_count": report["policy_sweep"][
-                    "passing_policy_count"
-                ],
-                "recommended_policy": report["policy_sweep"][
-                    "recommended_policy"
-                ],
-                "next_gpu_run_authorized": report[
-                    "next_gpu_run_authorized"
-                ],
+                "passing_policy_count": report["policy_sweep"]["passing_policy_count"],
+                "recommended_policy": report["policy_sweep"]["recommended_policy"],
+                "next_gpu_run_authorized": report["next_gpu_run_authorized"],
             },
             ensure_ascii=False,
         )

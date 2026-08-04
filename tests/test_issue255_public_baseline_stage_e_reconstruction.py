@@ -34,20 +34,11 @@ def _public_run(
 ) -> dict[str, object]:
     image = _write(root / "data/evaluation2/images" / score / f"{page}.png")
     baseline = _write(
-        root
-        / "logs/hybrid"
-        / label
-        / "baseline/batch"
-        / page
-        / f"{page}_detections.json"
+        root / "logs/hybrid" / label / "baseline/batch" / page / f"{page}_detections.json"
     )
-    sr = _write(
-        root / "logs/hybrid" / label / "sr/batch" / page / f"{page}_detections.json"
-    )
+    sr = _write(root / "logs/hybrid" / label / "sr/batch" / page / f"{page}_detections.json")
     omr = _write(root / "logs/hybrid" / label / "omr_sr" / page / "predictions.json")
-    hybrid = _write(
-        root / "logs/hybrid" / label / "hybrid_results" / f"{page}_hybrid.json"
-    )
+    hybrid = _write(root / "logs/hybrid" / label / "hybrid_results" / f"{page}_hybrid.json")
     final = _write(root / "logs/probe" / label / "pipeline2_no_peak_filtered_cnn.json")
     _write(baseline.parent / f"{page}_proxy_debug_3_staff.png")
     _write(baseline.parent / f"{page}_proxy_debug_7_clefs_keys.png")
@@ -153,12 +144,8 @@ def test_load_public_sources_validates_two_fresh_pages(tmp_path: Path) -> None:
     sources = _load_public_sources(batch, pages)
 
     assert set(sources) == {"prokofiev", "shostakovich"}
-    assert sources["prokofiev"]["staff_mask"].name.endswith(
-        "_proxy_debug_3_staff.png"
-    )
-    assert sources["prokofiev"]["clef_mask"].name.endswith(
-        "_proxy_debug_7_clefs_keys.png"
-    )
+    assert sources["prokofiev"]["staff_mask"].name.endswith("_proxy_debug_3_staff.png")
+    assert sources["prokofiev"]["clef_mask"].name.endswith("_proxy_debug_7_clefs_keys.png")
     assert sources["prokofiev"]["fresh_contract"]["override_keys"] == []
 
 
@@ -176,9 +163,7 @@ def test_load_public_sources_rejects_historical_runtime_input(
         score="score_a",
         page="page_004",
     )
-    run["contract"]["baseline_profile_handoff"][
-        "historical_artifact_used_as_runtime_input"
-    ] = True
+    run["contract"]["baseline_profile_handoff"]["historical_artifact_used_as_runtime_input"] = True
     batch = tmp_path / "public_batch.json"
     batch.write_text(
         json.dumps(

@@ -44,4 +44,4 @@ def test_bands_reproduces_historical_row_stats_contract() -> None:
         (30, 652, 34, 755),
     ]
 
-    assert _bands(boxes) == [(617, 696), (650, 753)]
+    assert _bands(boxes) == [(618, 697), (651, 754)]

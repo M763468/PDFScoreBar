@@ -59,6 +59,17 @@ def _path(value: Any, name: str) -> Path:
     return path
 
 
+def _directory(value: Any, name: str) -> Path:
+    if isinstance(value, Mapping):
+        value = value.get("path")
+    if not isinstance(value, (str, Path)):
+        raise ValueError(f"Missing directory for {name}")
+    path = _resolve_repo_artifact(value)
+    if not path.is_dir():
+        raise FileNotFoundError(f"Missing directory for {name}: {path}")
+    return path
+
+
 def _boxes(path: Path) -> list[tuple[int, int, int, int]]:
     return [normalize_box(box) for box in load_json_boxes(path)]
 
@@ -136,7 +147,7 @@ def _unique_blockers(
 def _historical_components(
     record: Mapping[str, Any], label: str
 ) -> tuple[dict[str, Path], dict[str, list[tuple[int, int, int, int]]]]:
-    run_dir = _path(record.get("run_dir"), f"{label}.historical_run_dir")
+    run_dir = _directory(record.get("run_dir"), f"{label}.historical_run_dir")
     rows = _inventory(run_dir)
     paths: dict[str, Path] = {}
     components: dict[str, list[tuple[int, int, int, int]]] = {}

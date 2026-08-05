@@ -22,10 +22,7 @@ def test_row_band_geometry_changes_existing_suppression() -> None:
             "x_center_distance": 1.0,
         }
     ]
-    assert (
-        _classification(public, historical)
-        == "row_band_geometry_changes_existing_suppression"
-    )
+    assert _classification(public, historical) == "row_band_geometry_changes_existing_suppression"
 
 
 def test_cluster_records_retains_members_and_median_band() -> None:

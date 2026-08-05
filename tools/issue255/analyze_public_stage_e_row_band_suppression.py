@@ -24,9 +24,7 @@ from tools.issue255.run_public_baseline_stage_e_reconstruction import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_RUN_ROOT = (
-    ROOT / "logs/issue255_stage_e_public_baseline/issue255_public_stage_e_01"
-)
+DEFAULT_RUN_ROOT = ROOT / "logs/issue255_stage_e_public_baseline/issue255_public_stage_e_01"
 SOURCE_NAME = "public_stage_e_fp_source_analysis.json"
 OUTPUT_NAME = "public_stage_e_row_band_suppression.json"
 CLUSTER_MAX_DIST = 25.0
@@ -108,9 +106,7 @@ def _find_cluster(
         return None
     nearest = min(
         records,
-        key=lambda record: abs(
-            target_center - (sum(record.get("band", [0, 0])) / 2.0)
-        ),
+        key=lambda record: abs(target_center - (sum(record.get("band", [0, 0])) / 2.0)),
     )
     return dict(nearest)
 
@@ -140,9 +136,7 @@ def _suppression_matches(
     return sorted(rows, key=lambda row: (row["x_center_distance"], row["y_center"]))
 
 
-def _classification(
-    public_blockers: Sequence[Any], historical_blockers: Sequence[Any]
-) -> str:
+def _classification(public_blockers: Sequence[Any], historical_blockers: Sequence[Any]) -> str:
     if not public_blockers and historical_blockers:
         return "row_band_geometry_changes_existing_suppression"
     if public_blockers and historical_blockers:
@@ -172,9 +166,7 @@ def build_report(run_root: Path) -> dict[str, Any]:
             raise ValueError(f"Incomplete FP source page: {label}")
 
         public_path = _path(paths.get("public_hybrid"), f"{label}.public_hybrid")
-        historical_path = _path(
-            paths.get("historical_hybrid"), f"{label}.historical_hybrid"
-        )
+        historical_path = _path(paths.get("historical_hybrid"), f"{label}.historical_hybrid")
         public_boxes = _boxes(public_path)
         historical_boxes = _boxes(historical_path)
         public_clusters = _cluster_records(public_boxes)
@@ -188,18 +180,12 @@ def build_report(run_root: Path) -> dict[str, Any]:
             x_center = (bbox[0] + bbox[2]) / 2.0
             public_row = item.get("public_row_band")
             historical_row = item.get("historical_row_band")
-            if not isinstance(public_row, Mapping) or not isinstance(
-                historical_row, Mapping
-            ):
+            if not isinstance(public_row, Mapping) or not isinstance(historical_row, Mapping):
                 raise ValueError(f"FP row lacks band analysis: {label}/{bbox}")
             public_band = public_row.get("nearest_band")
             historical_band = historical_row.get("nearest_band")
-            public_blockers = _suppression_matches(
-                public_boxes, public_band, x_center
-            )
-            historical_blockers = _suppression_matches(
-                historical_boxes, historical_band, x_center
-            )
+            public_blockers = _suppression_matches(public_boxes, public_band, x_center)
+            historical_blockers = _suppression_matches(historical_boxes, historical_band, x_center)
             rows.append(
                 {
                     "prediction_bbox": list(bbox),
@@ -207,18 +193,12 @@ def build_report(run_root: Path) -> dict[str, Any]:
                     "public_band": public_band,
                     "historical_band": historical_band,
                     "public_probe_ratio": public_row.get("probe_ratio_at_x"),
-                    "historical_probe_ratio": historical_row.get(
-                        "probe_ratio_at_x"
-                    ),
+                    "historical_probe_ratio": historical_row.get("probe_ratio_at_x"),
                     "public_cluster": _find_cluster(public_clusters, public_band),
-                    "historical_cluster": _find_cluster(
-                        historical_clusters, historical_band
-                    ),
+                    "historical_cluster": _find_cluster(historical_clusters, historical_band),
                     "public_existing_suppression_matches": public_blockers,
                     "historical_existing_suppression_matches": historical_blockers,
-                    "classification": _classification(
-                        public_blockers, historical_blockers
-                    ),
+                    "classification": _classification(public_blockers, historical_blockers),
                 }
             )
 
@@ -234,9 +214,7 @@ def build_report(run_root: Path) -> dict[str, Any]:
         }
 
     classifications = [
-        row["classification"]
-        for page in pages.values()
-        for row in page["false_positives"]
+        row["classification"] for page in pages.values() for row in page["false_positives"]
     ]
     return {
         "schema_version": "issue255.public_stage_e_row_band_suppression.v1",
@@ -254,8 +232,7 @@ def build_report(run_root: Path) -> dict[str, Any]:
         "summary": {
             "false_positive_count": len(classifications),
             "classifications": {
-                value: classifications.count(value)
-                for value in sorted(set(classifications))
+                value: classifications.count(value) for value in sorted(set(classifications))
             },
         },
         "historical_artifacts_used_for_analysis_only": True,

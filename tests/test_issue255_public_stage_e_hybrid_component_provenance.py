@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from tools.issue255.analyze_public_stage_e_hybrid_component_provenance import (
     _component_comparison,
+    _directory,
     _stage_provenance,
     _unique_blockers,
     _unique_cluster_members,
@@ -22,6 +25,13 @@ def test_component_comparison_reports_exact_set_difference() -> None:
         "public_only_count": 1,
         "exact_match": False,
     }
+
+
+def test_directory_accepts_existing_directory(tmp_path: Path) -> None:
+    run_dir = tmp_path / "historical_run"
+    run_dir.mkdir()
+
+    assert _directory(run_dir, "historical_run") == run_dir
 
 
 def test_stage_provenance_uses_iou_matching() -> None:

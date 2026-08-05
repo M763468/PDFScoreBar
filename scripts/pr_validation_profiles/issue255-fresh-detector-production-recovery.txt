@@ -16,6 +16,7 @@ tests/test_issue255_public_baseline_stage_e_sources.py
 tests/test_issue255_public_baseline_stage_e_reconstruction.py
 tests/test_issue255_public_baseline_stage_e_residuals.py
 tests/test_issue255_public_stage_e_fp_source.py
+tests/test_issue255_public_stage_e_row_band_suppression.py
 tests/test_issue255_homr_model_bootstrap.py
 tests/test_omr_dln_model_contract.py
 tests/test_subprocess_utils.py

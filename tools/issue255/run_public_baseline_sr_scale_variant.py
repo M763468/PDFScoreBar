@@ -65,10 +65,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     if not isinstance(overrides, dict):
         raise ValueError("Variant report lacks execution-only overrides")
     overrides["detection.sr_scale"] = args.sr_scale
-    report_path = (
-        Path(str(report["run_dir"]))
-        / "issue255_public_baseline_ab_run_contract.json"
-    )
+    report_path = Path(str(report["run_dir"])) / "issue255_public_baseline_ab_run_contract.json"
     report_path.write_text(
         json.dumps(report, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",

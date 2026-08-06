@@ -160,10 +160,7 @@ def _target_support(
     for side, boxes in targets.items():
         result[side] = []
         for bbox in boxes:
-            supported = any(
-                barline_iou(bbox, candidate) > ACCEPTED_IOU
-                for candidate in sr_boxes
-            )
+            supported = any(barline_iou(bbox, candidate) > ACCEPTED_IOU for candidate in sr_boxes)
             result[side].append(
                 {
                     "bbox": list(bbox),
@@ -267,18 +264,14 @@ def _analyze(
     targets = _load(target_report)
     comparison_pages = comparison.get("pages")
     target_pages = targets.get("pages")
-    if not isinstance(comparison_pages, Mapping) or not isinstance(
-        target_pages, Mapping
-    ):
+    if not isinstance(comparison_pages, Mapping) or not isinstance(target_pages, Mapping):
         raise ValueError("Analysis source reports lack page mappings")
 
     pages: dict[str, Any] = {}
     for label, contract in contracts.items():
         historical_page = comparison_pages.get(label)
         target_page = target_pages.get(label)
-        if not isinstance(historical_page, Mapping) or not isinstance(
-            target_page, Mapping
-        ):
+        if not isinstance(historical_page, Mapping) or not isinstance(target_page, Mapping):
             raise ValueError(f"Missing analysis source page: {label}")
         historical = _historical_paths(historical_page, label)
         artifacts = contract.get("artifacts")
@@ -320,8 +313,7 @@ def _analyze(
             ),
             "sr_image_comparison": {
                 "same_shape": shape_match,
-                "byte_exact": historical_image["sha256"]
-                == replay_image_record["sha256"],
+                "byte_exact": historical_image["sha256"] == replay_image_record["sha256"],
                 "historical": historical_image,
                 "replay": replay_image_record,
             },
@@ -364,9 +356,7 @@ def run(args: argparse.Namespace) -> Path:
     (run_root / "profile").mkdir(parents=True)
     (run_root / "runs").mkdir(parents=True)
 
-    config = yaml.safe_load(
-        (ROOT / "configs/dense_full_pipeline.yaml").read_text(encoding="utf-8")
-    )
+    config = yaml.safe_load((ROOT / "configs/dense_full_pipeline.yaml").read_text(encoding="utf-8"))
     hybrid_root = (ROOT / config["detection"]["hybrid_output_root"]).resolve()
     running = _run(
         ("docker", "ps", "--format", "{{.Names}}"),
@@ -449,10 +439,7 @@ def run(args: argparse.Namespace) -> Path:
             )
             _run(command, log=run_root / f"{run_id}.log")
             contract_path = (
-                run_root
-                / "runs"
-                / run_id
-                / "issue255_public_baseline_ab_run_contract.json"
+                run_root / "runs" / run_id / "issue255_public_baseline_ab_run_contract.json"
             )
             contract = _load(contract_path)
             if not isinstance(contract, Mapping) or contract.get("status") != "completed":
@@ -514,9 +501,7 @@ def run(args: argparse.Namespace) -> Path:
         "run_tag": args.run_tag,
         "sr_scale": args.sr_scale,
         "source_public_batch": _record(args.source_public_batch.resolve()),
-        "source_historical_comparison": _record(
-            args.historical_comparison.resolve()
-        ),
+        "source_historical_comparison": _record(args.historical_comparison.resolve()),
         "source_target_report": _record(args.target_report.resolve()),
         "historical_artifacts_used_for_analysis_only": True,
         "historical_artifact_used_as_runtime_input": False,
@@ -525,16 +510,13 @@ def run(args: argparse.Namespace) -> Path:
         "pages": pages,
         "summary": {
             "all_sr_images_restore_x4_geometry": all(
-                page["sr_image_comparison"]["same_shape"]
-                for page in pages.values()
+                page["sr_image_comparison"]["same_shape"] for page in pages.values()
             ),
             "all_sr_detections_exact_historical": all(
-                page["sr_detection_comparison"]["exact_match"]
-                for page in pages.values()
+                page["sr_detection_comparison"]["exact_match"] for page in pages.values()
             ),
             "all_hybrids_exact_historical": all(
-                page["hybrid_comparison"]["exact_match"]
-                for page in pages.values()
+                page["hybrid_comparison"]["exact_match"] for page in pages.values()
             ),
         },
     }

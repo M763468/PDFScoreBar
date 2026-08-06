@@ -115,9 +115,7 @@ def _find_public_run_contract(sr_detection: Path) -> Path | None:
     if run_id is None:
         return None
     root = ROOT / "logs/issue255_public_baseline_ab"
-    matches = list(
-        root.glob(f"**/runs/{run_id}/issue255_public_baseline_ab_run_contract.json")
-    )
+    matches = list(root.glob(f"**/runs/{run_id}/issue255_public_baseline_ab_run_contract.json"))
     return matches[0].resolve() if len(matches) == 1 else None
 
 
@@ -154,9 +152,7 @@ def _image_comparison(historical: Path | None, public: Path | None) -> dict[str,
     if historical_image.shape != public_image.shape:
         result["classification"] = "sr_image_geometry_differs"
         return result
-    difference = np.abs(
-        historical_image.astype(np.int16) - public_image.astype(np.int16)
-    )
+    difference = np.abs(historical_image.astype(np.int16) - public_image.astype(np.int16))
     result.update(
         {
             "mean_absolute_difference": float(difference.mean()),
@@ -164,15 +160,12 @@ def _image_comparison(historical: Path | None, public: Path | None) -> dict[str,
             "max_absolute_difference": int(difference.max()),
             "changed_pixel_ratio": float(np.count_nonzero(difference) / difference.size),
             "ink240_disagreement_ratio": float(
-                np.count_nonzero((historical_image < 240) != (public_image < 240))
-                / difference.size
+                np.count_nonzero((historical_image < 240) != (public_image < 240)) / difference.size
             ),
         }
     )
     result["classification"] = (
-        "sr_images_byte_exact"
-        if result["byte_exact"]
-        else "sr_image_generation_differs"
+        "sr_images_byte_exact" if result["byte_exact"] else "sr_image_generation_differs"
     )
     return result
 
@@ -369,21 +362,15 @@ def build_report(run_root: Path) -> dict[str, Any]:
             continue
         counterfactual_page = counterfactual_pages.get(label)
         public_page = public_pages.get(label)
-        if not isinstance(counterfactual_page, Mapping) or not isinstance(
-            public_page, Mapping
-        ):
+        if not isinstance(counterfactual_page, Mapping) or not isinstance(public_page, Mapping):
             raise ValueError(f"Missing page metadata: {label}")
         component_paths = provenance_page.get("component_paths")
         artifacts = public_page.get("artifacts")
-        if not isinstance(component_paths, Mapping) or not isinstance(
-            artifacts, Mapping
-        ):
+        if not isinstance(component_paths, Mapping) or not isinstance(artifacts, Mapping):
             raise ValueError(f"Missing artifact paths: {label}")
         historical_paths = component_paths.get("historical")
         public_paths = component_paths.get("public")
-        if not isinstance(historical_paths, Mapping) or not isinstance(
-            public_paths, Mapping
-        ):
+        if not isinstance(historical_paths, Mapping) or not isinstance(public_paths, Mapping):
             raise ValueError(f"Missing SR component paths: {label}")
 
         historical_detection = _path(
@@ -419,9 +406,7 @@ def build_report(run_root: Path) -> dict[str, Any]:
         public_run_contract = _find_public_run_contract(public_detection)
         handoff = public_page.get("source_contract")
         public_handoff = (
-            handoff.get("public_baseline_handoff")
-            if isinstance(handoff, Mapping)
-            else None
+            handoff.get("public_baseline_handoff") if isinstance(handoff, Mapping) else None
         )
         profile_provenance = (
             _optional_path(public_handoff.get("provenance_path"))
@@ -443,9 +428,7 @@ def build_report(run_root: Path) -> dict[str, Any]:
             "historical_sr_image": str(historical_sr_image)
             if historical_sr_image is not None
             else None,
-            "public_sr_image": str(public_sr_image)
-            if public_sr_image is not None
-            else None,
+            "public_sr_image": str(public_sr_image) if public_sr_image is not None else None,
             "sr_image_comparison": image_comparison,
             "target_sr_image_comparison": visual,
             "metadata": {
@@ -494,10 +477,7 @@ def main() -> int:
             {
                 "status": report["status"],
                 "output": str(output.resolve()),
-                "pages": {
-                    label: page["classification"]
-                    for label, page in report["pages"].items()
-                },
+                "pages": {label: page["classification"] for label, page in report["pages"].items()},
             },
             indent=2,
             ensure_ascii=False,

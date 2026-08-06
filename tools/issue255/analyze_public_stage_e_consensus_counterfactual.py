@@ -166,9 +166,7 @@ def _target_report(
             "sr": _support_match(bbox, list(components["public"]["sr"])),
             "omr": _support_match(bbox, list(components["public"]["omr"])),
         },
-        "included_in_variants": {
-            name: bbox in _box_set(boxes) for name, boxes in variants.items()
-        },
+        "included_in_variants": {name: bbox in _box_set(boxes) for name, boxes in variants.items()},
     }
 
 
@@ -177,9 +175,7 @@ def _variant_classification(
     historical_hybrid: Sequence[tuple[int, int, int, int]],
     public_hybrid: Sequence[tuple[int, int, int, int]],
 ) -> str:
-    hh_matches = _box_set(variants["historical_sr_historical_omr"]) == _box_set(
-        historical_hybrid
-    )
+    hh_matches = _box_set(variants["historical_sr_historical_omr"]) == _box_set(historical_hybrid)
     pp_matches = _box_set(variants["public_sr_public_omr"]) == _box_set(public_hybrid)
     if hh_matches and pp_matches:
         return "current_consensus_reproduces_both_from_component_inputs"
@@ -384,8 +380,7 @@ def build_report(run_root: Path) -> dict[str, Any]:
             ),
             "target_cluster_members": {
                 side: [
-                    _target_report(box, components=components, variants=variants)
-                    for box in boxes
+                    _target_report(box, components=components, variants=variants) for box in boxes
                 ]
                 for side, boxes in targets.items()
             },

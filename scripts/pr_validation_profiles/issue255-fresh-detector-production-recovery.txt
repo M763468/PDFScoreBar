@@ -22,6 +22,7 @@ tests/test_issue255_public_stage_e_consensus_counterfactual.py
 tests/test_issue255_public_stage_e_sr_reconstruction_gap.py
 tests/test_issue255_public_baseline_sr_x4_replay.py
 tests/test_issue255_public_baseline_sr_x4_safe_entrypoint.py
+tests/test_issue255_public_homr_on_sr_x4.py
 tests/test_issue255_homr_model_bootstrap.py
 tests/test_omr_dln_model_contract.py
 tests/test_subprocess_utils.py

@@ -14,7 +14,6 @@ import argparse
 import json
 import os
 import re
-import subprocess
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -56,10 +55,6 @@ IOU_THRESHOLDS = (0.25, 0.5, 0.75)
 
 def _load(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
-
-
-def _box_set(path: Path) -> set[tuple[int, int, int, int]]:
-    return {tuple(int(v) for v in box) for box in load_json_boxes(path)}
 
 
 def _greedy_match_count(
@@ -197,7 +192,7 @@ def run(args: argparse.Namespace) -> Path:
         raise RuntimeError("Tracked working tree must be clean before public-profile replay")
     if not re.fullmatch(r"[A-Za-z0-9._-]+", args.run_tag):
         raise ValueError("--run-tag contains unsupported characters")
-    _validate_profile()
+    profile = _validate_profile()
 
     x4_report_path = args.x4_report.resolve()
     x4_report = _load(x4_report_path)
@@ -229,7 +224,10 @@ def run(args: argparse.Namespace) -> Path:
     (run_root / "profile").mkdir(parents=True)
     (run_root / "runs").mkdir(parents=True)
 
-    running = _run(("docker", "ps", "--format", "{{.Names}}"), capture=True).stdout.splitlines()
+    running = _run(
+        ("docker", "ps", "--format", "{{.Names}}"),
+        capture=True,
+    ).stdout.splitlines()
     if args.container not in running:
         raise RuntimeError(f"Production container is not running: {args.container}")
     head = _git("rev-parse", "HEAD")
@@ -272,8 +270,12 @@ def run(args: argparse.Namespace) -> Path:
             raise ValueError(f"Historical runtime input in source public run: {label}")
 
         image_comparison = x4_page.get("sr_image_comparison")
-        replay_image_row = image_comparison.get("replay") if isinstance(image_comparison, Mapping) else None
-        replay_image_value = replay_image_row.get("path") if isinstance(replay_image_row, Mapping) else None
+        replay_image_row = (
+            image_comparison.get("replay") if isinstance(image_comparison, Mapping) else None
+        )
+        replay_image_value = (
+            replay_image_row.get("path") if isinstance(replay_image_row, Mapping) else None
+        )
         if not isinstance(replay_image_value, str):
             raise ValueError(f"SR x4 image path missing: {label}")
         replay_x4_image = _resolve_repo_artifact(replay_image_value)
@@ -282,7 +284,9 @@ def run(args: argparse.Namespace) -> Path:
 
         paths = x4_page.get("paths")
         historical_sr_value = paths.get("historical_sr") if isinstance(paths, Mapping) else None
-        historical_hybrid_value = paths.get("historical_hybrid") if isinstance(paths, Mapping) else None
+        historical_hybrid_value = (
+            paths.get("historical_hybrid") if isinstance(paths, Mapping) else None
+        )
         if not isinstance(historical_sr_value, str) or not isinstance(historical_hybrid_value, str):
             raise ValueError(f"Historical analysis paths missing: {label}")
         historical_sr = _resolve_repo_artifact(historical_sr_value)
@@ -310,7 +314,7 @@ def run(args: argparse.Namespace) -> Path:
             "-e",
             "HOME=/tmp",
             "-e",
-            "PYTHONPATH=/opt/issue255_public_homr:/historical:/historical/src:/workspace",
+            ("PYTHONPATH=/opt/issue255_public_homr:/historical:/historical/src:/workspace"),
             PUBLIC_IMAGE,
             "/opt/venv_pipeline/bin/python",
             _container_path(compat),
@@ -376,7 +380,10 @@ def run(args: argparse.Namespace) -> Path:
             },
             "public_profile_sr": str(public_sr),
             "recomputed_hybrid": str(recomputed_hybrid_path),
-            "sr_comparison": _compare_boxes(public_sr_boxes, historical_sr_boxes),
+            "sr_comparison": _compare_boxes(
+                public_sr_boxes,
+                historical_sr_boxes,
+            ),
             "hybrid_comparison": _compare_boxes(
                 recomputed_hybrid,
                 historical_hybrid_boxes,
@@ -397,7 +404,7 @@ def run(args: argparse.Namespace) -> Path:
         "repository_commit": head,
         "source_x4_report": str(x4_report_path),
         "source_public_batch": str(source_batch_path),
-        "public_homr_profile": _validate_profile(),
+        "public_homr_profile": profile,
         "historical_artifacts_used_for_analysis_only": True,
         "historical_artifact_used_as_runtime_input": False,
         "pages": page_reports,
@@ -424,7 +431,10 @@ def run(args: argparse.Namespace) -> Path:
         else None
     )
     output = run_root / "public_homr_on_sr_x4_report.json"
-    output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    output.write_text(
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
     return output
 
 

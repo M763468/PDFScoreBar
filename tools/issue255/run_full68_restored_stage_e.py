@@ -33,7 +33,12 @@ from tools.issue255.full68_restoration import (
     metric_mismatches,
 )
 from tools.issue255.run_focused_stage_e_reconstruction import _record, _tree_record
-from tools.issue255.run_public_baseline_stage_e_reconstruction import ROOT, _git, _resolve_repo_artifact
+from tools.issue255.run_public_baseline_ab import EXPECTED_BRANCH
+from tools.issue255.run_public_baseline_stage_e_reconstruction import (
+    ROOT,
+    _git,
+    _resolve_repo_artifact,
+)
 
 CANONICAL_CONFIG = ROOT / "configs/dense_full_pipeline.yaml"
 DEFAULT_OUTPUT_ROOT = ROOT / "logs/issue255_full68_restoration"
@@ -67,17 +72,50 @@ def _evaluation_args(
     )
 
 
+def _validate_upstream_execution_identity(
+    upstream: Mapping[str, Any],
+    *,
+    commit: str,
+    canonical_config_record: Mapping[str, Any],
+) -> None:
+    upstream_commit = upstream.get("repository_commit")
+    if upstream_commit != commit:
+        raise ValueError(
+            "Upstream replay commit differs from current checkout: "
+            f"upstream={upstream_commit} current={commit}"
+        )
+    upstream_config = upstream.get("canonical_config")
+    if not isinstance(upstream_config, Mapping):
+        raise ValueError("Upstream report lacks canonical config provenance")
+    expected_hash = canonical_config_record.get("sha256")
+    actual_hash = upstream_config.get("sha256")
+    if not isinstance(expected_hash, str) or actual_hash != expected_hash:
+        raise ValueError(
+            "Upstream replay canonical config differs from current config: "
+            f"upstream={actual_hash} current={expected_hash}"
+        )
+
+
 def run(args: argparse.Namespace) -> Path:
     if args.config.resolve() != CANONICAL_CONFIG.resolve():
         raise ValueError(f"Canonical config required: {CANONICAL_CONFIG}")
+    branch = _git("branch", "--show-current")
+    if branch != EXPECTED_BRANCH:
+        raise RuntimeError(f"Expected branch {EXPECTED_BRANCH}; found {branch}")
     if _git("status", "--short", "--untracked-files=no"):
         raise RuntimeError("Tracked working tree must be clean before authoritative replay")
     commit = _git("rev-parse", "HEAD")
+    canonical_config_record = _record(args.config.resolve())
 
     upstream_path = args.upstream_report.resolve()
     upstream = _load(upstream_path)
     if not isinstance(upstream, Mapping):
         raise ValueError("Upstream report must be a JSON object")
+    _validate_upstream_execution_identity(
+        upstream,
+        commit=commit,
+        canonical_config_record=canonical_config_record,
+    )
     inventory = inventory_from_upstream_report(upstream)
 
     run_root = args.output_root.resolve() / args.run_tag
@@ -102,7 +140,9 @@ def run(args: argparse.Namespace) -> Path:
     if not isinstance(detection, Mapping):
         raise ValueError("Canonical config lacks detection settings")
     forbidden = [
-        key for key in ("precomputed_probe_candidates_root", "cnn_bands_from") if detection.get(key)
+        key
+        for key in ("precomputed_probe_candidates_root", "cnn_bands_from")
+        if detection.get(key)
     ]
     if forbidden:
         raise ValueError(f"Canonical fresh route contains runtime overrides: {forbidden}")
@@ -130,9 +170,13 @@ def run(args: argparse.Namespace) -> Path:
         model_path=cnn_model,
         threshold=score_threshold,
         score_name=(
-            str(detection["probe_score_name"]) if detection.get("probe_score_name") else None
+            str(detection["probe_score_name"])
+            if detection.get("probe_score_name")
+            else None
         ),
-        crop_recenter_on_bbox_ink=bool(detection.get("crop_recenter_on_bbox_ink", False)),
+        crop_recenter_on_bbox_ink=bool(
+            detection.get("crop_recenter_on_bbox_ink", False)
+        ),
         crop_recenter_max_shift_unit_ratio=float(
             detection.get("crop_recenter_max_shift_unit_ratio", 0.35)
         ),
@@ -164,7 +208,7 @@ def run(args: argparse.Namespace) -> Path:
         "repository_commit": commit,
         "source_upstream_report": _record(upstream_path),
         "historical_artifact_used_as_runtime_input": False,
-        "canonical_config": _record(args.config.resolve()),
+        "canonical_config": canonical_config_record,
         "route": {
             "dense_generation_params": GENERATION_PARAMS,
             "clef_filter_params": FILTER_PARAMS,
@@ -177,19 +221,24 @@ def run(args: argparse.Namespace) -> Path:
         "artifacts": {
             "inventory": _record(inventory_path),
             "dense_raw_tree": _tree_record(
-                stage_e_root / "dense_candidate_reconstruction/probe_candidates_from_inventory"
+                stage_e_root
+                / "dense_candidate_reconstruction/probe_candidates_from_inventory"
             ),
             "filtered_tree": _tree_record(dense.filtered_root),
             "issue53_and_cnn_tree": _tree_record(dense.probe_rescue_root),
             "evaluation_contract": _record(eval_output / "evaluation_contract.json"),
             "detector_metrics": _record(eval_output / "detector_metrics.json"),
-            "detector_page_metrics": _record(eval_output / "detector_page_metrics.csv"),
+            "detector_page_metrics": _record(
+                eval_output / "detector_page_metrics.csv"
+            ),
         },
         "detector_summary": summary,
         "expected_current_gt_metrics": EXPECTED_CURRENT_GT_METRICS,
         "metric_mismatches": mismatches,
         "gates": {
             "page_count_68": summary.get("page_count") == 68,
+            "same_commit_as_upstream": True,
+            "same_canonical_config_as_upstream": True,
             "historical_runtime_artifact_dependency_absent": True,
             "cnn_apply_nms_false": True,
             "current_gt_historical_target_met": not mismatches,
@@ -214,7 +263,11 @@ def main() -> int:
     parser.add_argument("--upstream-report", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     parser.add_argument("--config", type=Path, default=CANONICAL_CONFIG)
-    parser.add_argument("--gt-root", type=Path, default=ROOT / "data/evaluation2/annotations")
+    parser.add_argument(
+        "--gt-root",
+        type=Path,
+        default=ROOT / "data/evaluation2/annotations",
+    )
     parser.add_argument("--verbose-dense-logs", action="store_true")
     args = parser.parse_args()
     try:
@@ -231,7 +284,12 @@ def main() -> int:
             )
         )
         return 1
-    print(json.dumps({"status": "completed", "report": str(report)}, ensure_ascii=False))
+    print(
+        json.dumps(
+            {"status": "completed", "report": str(report)},
+            ensure_ascii=False,
+        )
+    )
     return 0
 
 

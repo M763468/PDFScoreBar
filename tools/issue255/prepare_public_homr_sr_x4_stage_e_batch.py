@@ -75,7 +75,10 @@ def build_batch(report_path: Path) -> dict[str, Any]:
     if report.get("historical_artifact_used_as_runtime_input") is not False:
         raise ValueError("Source experiment used historical runtime artifacts")
     summary = report.get("summary")
-    if not isinstance(summary, Mapping) or summary.get("all_recomputed_hybrids_exact_historical") is not True:
+    if (
+        not isinstance(summary, Mapping)
+        or summary.get("all_recomputed_hybrids_exact_historical") is not True
+    ):
         raise ValueError("Fresh recomputed hybrids are not exact historical matches")
 
     source_batch_value = report.get("source_public_batch")
@@ -83,7 +86,10 @@ def build_batch(report_path: Path) -> dict[str, Any]:
         raise ValueError("Source experiment lacks public-baseline batch path")
     source_batch_path = _resolve_repo_artifact(source_batch_value)
     source_batch = _load(source_batch_path)
-    if not isinstance(source_batch, Mapping) or source_batch.get("status") != "completed":
+    if (
+        not isinstance(source_batch, Mapping)
+        or source_batch.get("status") != "completed"
+    ):
         raise ValueError("Source public-baseline batch is incomplete")
     if source_batch.get("variant") != "public_baseline":
         raise ValueError("Expected public-baseline source batch")
@@ -152,7 +158,10 @@ def main() -> int:
     batch = build_batch(args.report)
     output = args.output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(batch, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    output.write_text(
+        json.dumps(batch, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
     print(
         json.dumps(
             {

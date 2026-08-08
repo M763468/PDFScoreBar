@@ -26,9 +26,9 @@ from src.pipeline.steps.hybrid_consensus import (
 from tools.issue255.run_public_baseline_ab import (
     EXPECTED_BRANCH,
     ISSUE245_TOOLING_COMMIT,
+    PAGES,
     PDFSCORE_PROFILE_COMMIT,
     PUBLIC_IMAGE,
-    PAGES,
     ROOT,
     _container_path,
     _ensure_commit,

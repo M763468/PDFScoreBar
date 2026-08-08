@@ -42,6 +42,21 @@ def _fresh_contract_matches(value: Any) -> bool:
     )
 
 
+def _fresh_contract_interpretation(original_gate: Any, required_match: bool) -> str:
+    if original_gate is False and required_match:
+        return (
+            "This report was produced by the older replay runner whose summary gate "
+            "compared the full metadata-rich contract to a three-key dictionary. "
+            "The required fresh-contract fields themselves match."
+        )
+    if original_gate is required_match:
+        return "The replay summary gate agrees with required-field fresh-contract validation."
+    return (
+        "The replay summary gate and required-field validation disagree; inspect the "
+        "source report before using this result."
+    )
+
+
 def _compat_page(page: Mapping[str, Any], label: str) -> dict[str, Any]:
     artifacts = page.get("artifacts")
     if not isinstance(artifacts, Mapping):
@@ -113,13 +128,14 @@ def build_report(run_root: Path) -> dict[str, Any]:
                 "required_fields": FRESH_CONTRACT_REQUIRED,
                 "required_fields_match": required_match,
                 "pages": contract_rows,
-                "interpretation": (
-                    "The replay runner validated the required fresh-contract "
-                    "fields before execution. Its original summary gate compared "
-                    "the full metadata-rich contract to a three-key dictionary."
+                "interpretation": _fresh_contract_interpretation(
+                    original_gate,
+                    required_match,
                 ),
             },
-            "public_baselines_preserved": public.get("gates", {}).get("public_baselines_preserved"),
+            "public_baselines_preserved": public.get("gates", {}).get(
+                "public_baselines_preserved"
+            ),
             "upstream_gpu_rerun_performed": public.get("gates", {}).get(
                 "upstream_gpu_rerun_performed"
             ),

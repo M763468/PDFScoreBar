@@ -6,6 +6,7 @@ import pytest
 
 from tools.issue255.run_public_baseline_stage_e_reconstruction import (
     _find_historical_mask,
+    _fresh_contract_matches,
     _load_public_sources,
     _resolve_repo_artifact,
 )
@@ -74,6 +75,29 @@ def _public_run(
             },
         },
     }
+
+
+def test_fresh_contract_matches_required_fields_with_extra_metadata() -> None:
+    assert _fresh_contract_matches(
+        {
+            "mode": "fresh_upstream",
+            "fresh_upstream_authoritative": True,
+            "override_keys": [],
+            "schema_version": "pipeline.detector_input_contract.v1",
+            "hybrid_detection_may_execute": True,
+        }
+    )
+
+
+def test_fresh_contract_rejects_wrong_required_field() -> None:
+    assert not _fresh_contract_matches(
+        {
+            "mode": "fresh_upstream",
+            "fresh_upstream_authoritative": False,
+            "override_keys": [],
+            "schema_version": "pipeline.detector_input_contract.v1",
+        }
+    )
 
 
 def test_resolve_repo_artifact_remaps_host_checkout_path(tmp_path: Path) -> None:

@@ -78,6 +78,12 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _fresh_contract_matches(value: Any) -> bool:
+    return isinstance(value, Mapping) and all(
+        value.get(key) == expected for key, expected in FRESH_CONTRACT.items()
+    )
+
+
 def _resolve_repo_artifact(value: str | Path, root: Path = ROOT) -> Path:
     path = Path(value)
     if path.exists():
@@ -136,9 +142,7 @@ def _validate_public_run(
     if contract.get("variant") != "public_baseline":
         raise ValueError(f"Expected public-baseline run: {run.get('label')}")
     fresh = contract.get("detector_input_contract")
-    if not isinstance(fresh, Mapping) or any(
-        fresh.get(key) != value for key, value in FRESH_CONTRACT.items()
-    ):
+    if not _fresh_contract_matches(fresh):
         raise ValueError(f"Fresh contract mismatch: {run.get('label')}")
 
     handoff = contract.get("baseline_profile_handoff")
@@ -500,7 +504,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
                 for source in public.values()
             ),
             "fresh_contract_exact": all(
-                source["fresh_contract"] == FRESH_CONTRACT for source in public.values()
+                _fresh_contract_matches(source["fresh_contract"]) for source in public.values()
             ),
             "historical_runtime_artifact_dependency_absent": True,
             "upstream_gpu_rerun_performed": False,

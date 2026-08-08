@@ -140,9 +140,7 @@ def run(args: argparse.Namespace) -> Path:
     if not isinstance(detection, Mapping):
         raise ValueError("Canonical config lacks detection settings")
     forbidden = [
-        key
-        for key in ("precomputed_probe_candidates_root", "cnn_bands_from")
-        if detection.get(key)
+        key for key in ("precomputed_probe_candidates_root", "cnn_bands_from") if detection.get(key)
     ]
     if forbidden:
         raise ValueError(f"Canonical fresh route contains runtime overrides: {forbidden}")
@@ -170,13 +168,9 @@ def run(args: argparse.Namespace) -> Path:
         model_path=cnn_model,
         threshold=score_threshold,
         score_name=(
-            str(detection["probe_score_name"])
-            if detection.get("probe_score_name")
-            else None
+            str(detection["probe_score_name"]) if detection.get("probe_score_name") else None
         ),
-        crop_recenter_on_bbox_ink=bool(
-            detection.get("crop_recenter_on_bbox_ink", False)
-        ),
+        crop_recenter_on_bbox_ink=bool(detection.get("crop_recenter_on_bbox_ink", False)),
         crop_recenter_max_shift_unit_ratio=float(
             detection.get("crop_recenter_max_shift_unit_ratio", 0.35)
         ),
@@ -221,16 +215,13 @@ def run(args: argparse.Namespace) -> Path:
         "artifacts": {
             "inventory": _record(inventory_path),
             "dense_raw_tree": _tree_record(
-                stage_e_root
-                / "dense_candidate_reconstruction/probe_candidates_from_inventory"
+                stage_e_root / "dense_candidate_reconstruction/probe_candidates_from_inventory"
             ),
             "filtered_tree": _tree_record(dense.filtered_root),
             "issue53_and_cnn_tree": _tree_record(dense.probe_rescue_root),
             "evaluation_contract": _record(eval_output / "evaluation_contract.json"),
             "detector_metrics": _record(eval_output / "detector_metrics.json"),
-            "detector_page_metrics": _record(
-                eval_output / "detector_page_metrics.csv"
-            ),
+            "detector_page_metrics": _record(eval_output / "detector_page_metrics.csv"),
         },
         "detector_summary": summary,
         "expected_current_gt_metrics": EXPECTED_CURRENT_GT_METRICS,

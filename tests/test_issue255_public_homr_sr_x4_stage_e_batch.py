@@ -59,12 +59,14 @@ def test_build_batch_replaces_only_hybrid_runtime_artifact(tmp_path: Path) -> No
     contract = batch["runs"][0]["contract"]
     assert contract["artifacts"]["fresh_baseline"]["path"] == str(baseline)
     assert contract["artifacts"]["hybrid"]["path"] == str(restored_hybrid.resolve())
-    assert contract["artifacts"]["hybrid"]["sha256"] == hashlib.sha256(
-        restored_hybrid.read_bytes()
-    ).hexdigest()
-    assert contract["issue255_stage_e_hybrid_override"][
-        "historical_artifact_used_as_runtime_input"
-    ] is False
+    assert (
+        contract["artifacts"]["hybrid"]["sha256"]
+        == hashlib.sha256(restored_hybrid.read_bytes()).hexdigest()
+    )
+    assert (
+        contract["issue255_stage_e_hybrid_override"]["historical_artifact_used_as_runtime_input"]
+        is False
+    )
     assert batch["historical_artifact_used_as_runtime_input"] is False
     assert batch["variant"] == "public_baseline"
 

@@ -133,9 +133,7 @@ def build_report(run_root: Path) -> dict[str, Any]:
                     required_match,
                 ),
             },
-            "public_baselines_preserved": public.get("gates", {}).get(
-                "public_baselines_preserved"
-            ),
+            "public_baselines_preserved": public.get("gates", {}).get("public_baselines_preserved"),
             "upstream_gpu_rerun_performed": public.get("gates", {}).get(
                 "upstream_gpu_rerun_performed"
             ),

@@ -128,9 +128,7 @@ def _page_report_valid(path: Path) -> bool:
     artifacts = payload.get("artifacts")
     if not isinstance(artifacts, Mapping):
         return False
-    return all(
-        _artifact_record_valid(artifacts.get(name)) for name in REQUIRED_PAGE_ARTIFACTS
-    )
+    return all(_artifact_record_valid(artifacts.get(name)) for name in REQUIRED_PAGE_ARTIFACTS)
 
 
 def _container_head(container: str) -> str:
@@ -172,9 +170,7 @@ def _write_run_manifest(
     if path.is_file():
         existing = _load(path)
         if existing != expected:
-            raise ValueError(
-                "Existing run manifest does not match requested commit/page selection"
-            )
+            raise ValueError("Existing run manifest does not match requested commit/page selection")
         return
     if resume:
         raise FileNotFoundError(f"--resume requested but run manifest is missing: {path}")
@@ -267,9 +263,7 @@ def _run_page(
 
     baseline_root = hybrid_run_dir / "baseline"
     baseline_root.mkdir(parents=True)
-    public_env = (
-        "PYTHONPATH=/opt/issue255_public_homr:/historical:/historical/src:/workspace"
-    )
+    public_env = "PYTHONPATH=/opt/issue255_public_homr:/historical:/historical/src:/workspace"
     _run(
         (
             "docker",
@@ -617,20 +611,16 @@ def run(args: argparse.Namespace) -> Path:
             ),
             "completed_page_count": len(page_reports),
             "baseline_count": sum(
-                int(page["component_counts"]["fresh_baseline"])
-                for page in page_reports.values()
+                int(page["component_counts"]["fresh_baseline"]) for page in page_reports.values()
             ),
             "public_profile_sr_count": sum(
-                int(page["component_counts"]["public_profile_sr"])
-                for page in page_reports.values()
+                int(page["component_counts"]["public_profile_sr"]) for page in page_reports.values()
             ),
             "current_omr_count": sum(
-                int(page["component_counts"]["current_omr"])
-                for page in page_reports.values()
+                int(page["component_counts"]["current_omr"]) for page in page_reports.values()
             ),
             "restored_hybrid_count": sum(
-                int(page["component_counts"]["restored_hybrid"])
-                for page in page_reports.values()
+                int(page["component_counts"]["restored_hybrid"]) for page in page_reports.values()
             ),
         },
     }

@@ -18,6 +18,12 @@ def test_fresh_contract_matches_required_fields_with_extra_metadata() -> None:
     )
 
 
+def test_fresh_contract_interpretation_distinguishes_old_and_fixed_runner() -> None:
+    assert "older replay runner" in analyzer._fresh_contract_interpretation(False, True)
+    assert "agrees" in analyzer._fresh_contract_interpretation(True, True)
+    assert "disagree" in analyzer._fresh_contract_interpretation(True, False)
+
+
 def test_build_report_adapts_public_pipeline_control(tmp_path: Path, monkeypatch) -> None:
     run_root = tmp_path / "run"
     run_root.mkdir()
@@ -55,7 +61,10 @@ def test_build_report_adapts_public_pipeline_control(tmp_path: Path, monkeypatch
         },
         "pages": {"sample": page},
     }
-    (run_root / analyzer.PUBLIC_REPORT_NAME).write_text(json.dumps(public_report), encoding="utf-8")
+    (run_root / analyzer.PUBLIC_REPORT_NAME).write_text(
+        json.dumps(public_report),
+        encoding="utf-8",
+    )
 
     captured = {}
 
@@ -80,4 +89,5 @@ def test_build_report_adapts_public_pipeline_control(tmp_path: Path, monkeypatch
     assert report["control_role"] == "public_pipeline_final"
     assert report["fresh_contract_gate"]["original_report_value"] is False
     assert report["fresh_contract_gate"]["required_fields_match"] is True
+    assert "older replay runner" in report["fresh_contract_gate"]["interpretation"]
     assert report["next_gpu_run_required"] is False

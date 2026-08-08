@@ -70,8 +70,7 @@ def artifact_path(record: Mapping[str, Any], name: str) -> Path:
     actual_sha256 = _sha256(path)
     if actual_sha256 != expected_sha256:
         raise ValueError(
-            f"Artifact hash mismatch for {name}: "
-            f"expected={expected_sha256} actual={actual_sha256}"
+            f"Artifact hash mismatch for {name}: expected={expected_sha256} actual={actual_sha256}"
         )
     return path
 
@@ -95,10 +94,7 @@ def validate_upstream_report(
         row = pages.get(key)
         if not isinstance(row, Mapping) or row.get("status") != "completed":
             raise ValueError(f"Missing completed upstream page: {key}")
-        if (
-            row.get("score") != expected["score"]
-            or row.get("page") != expected["page"]
-        ):
+        if row.get("score") != expected["score"] or row.get("page") != expected["page"]:
             raise ValueError(f"Upstream page identity mismatch: {key}")
         if row.get("historical_artifact_used_as_runtime_input") is not False:
             raise ValueError(f"Historical runtime artifact dependency on page: {key}")

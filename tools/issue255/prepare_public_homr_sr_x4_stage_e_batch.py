@@ -86,10 +86,7 @@ def build_batch(report_path: Path) -> dict[str, Any]:
         raise ValueError("Source experiment lacks public-baseline batch path")
     source_batch_path = _resolve_repo_artifact(source_batch_value)
     source_batch = _load(source_batch_path)
-    if (
-        not isinstance(source_batch, Mapping)
-        or source_batch.get("status") != "completed"
-    ):
+    if not isinstance(source_batch, Mapping) or source_batch.get("status") != "completed":
         raise ValueError("Source public-baseline batch is incomplete")
     if source_batch.get("variant") != "public_baseline":
         raise ValueError("Expected public-baseline source batch")

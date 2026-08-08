@@ -64,9 +64,7 @@ def test_canonical_pages_are_68_and_unique() -> None:
 
     assert len(pages) == 68
     assert len({page["key"] for page in pages}) == 68
-    assert all(
-        Path(page["image"]).name == f"{page['page']}.png" for page in pages
-    )
+    assert all(Path(page["image"]).name == f"{page['page']}.png" for page in pages)
 
 
 def test_validate_upstream_report_accepts_required_fresh_fields_with_metadata(

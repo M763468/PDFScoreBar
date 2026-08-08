@@ -1,4 +1,5 @@
 import copy
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -13,7 +14,10 @@ from tools.issue255.full68_restoration import (
 
 
 def _artifact(path: Path) -> dict[str, object]:
-    return {"path": str(path), "sha256": "unused-by-contract-test"}
+    return {
+        "path": str(path),
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+    }
 
 
 def _full_report(tmp_path: Path) -> dict[str, object]:
@@ -60,7 +64,9 @@ def test_canonical_pages_are_68_and_unique() -> None:
 
     assert len(pages) == 68
     assert len({page["key"] for page in pages}) == 68
-    assert all(Path(page["image"]).name == f"{page['page']}.png" for page in pages)
+    assert all(
+        Path(page["image"]).name == f"{page['page']}.png" for page in pages
+    )
 
 
 def test_validate_upstream_report_accepts_required_fresh_fields_with_metadata(
@@ -80,6 +86,16 @@ def test_validate_upstream_report_rejects_historical_runtime_dependency(
     report["historical_artifact_used_as_runtime_input"] = True
 
     with pytest.raises(ValueError, match="Historical runtime artifact dependency"):
+        validate_upstream_report(report)
+
+
+def test_validate_upstream_report_rejects_changed_artifact(tmp_path: Path) -> None:
+    report = _full_report(tmp_path)
+    first_page = next(iter(report["pages"].values()))
+    image_path = Path(first_page["artifacts"]["image"]["path"])
+    image_path.write_bytes(b"changed-after-report")
+
+    with pytest.raises(ValueError, match="Artifact hash mismatch"):
         validate_upstream_report(report)
 
 

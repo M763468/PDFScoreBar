@@ -14,7 +14,6 @@ are reused with ``--resume``.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import re
@@ -26,7 +25,10 @@ from typing import Any
 
 import yaml
 
-from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
+from src.pipeline.steps.hybrid_consensus import (
+    apply_hybrid_consensus_filter,
+    load_json_boxes,
+)
 from tools.issue255.full68_restoration import canonical_pages, page_key
 from tools.issue255.run_public_baseline_ab import (
     EXPECTED_BRANCH,
@@ -126,7 +128,9 @@ def _page_report_valid(path: Path) -> bool:
     artifacts = payload.get("artifacts")
     if not isinstance(artifacts, Mapping):
         return False
-    return all(_artifact_record_valid(artifacts.get(name)) for name in REQUIRED_PAGE_ARTIFACTS)
+    return all(
+        _artifact_record_valid(artifacts.get(name)) for name in REQUIRED_PAGE_ARTIFACTS
+    )
 
 
 def _container_head(container: str) -> str:
@@ -151,9 +155,16 @@ def _container_head(container: str) -> str:
     ).stdout.strip()
 
 
-def _write_run_manifest(path: Path, pages: list[dict[str, Any]], *, resume: bool) -> None:
+def _write_run_manifest(
+    path: Path,
+    pages: list[dict[str, Any]],
+    *,
+    repository_commit: str,
+    resume: bool,
+) -> None:
     expected = {
         "schema_version": "issue255.full68_restored_upstream_manifest.v1",
+        "repository_commit": repository_commit,
         "sr_scale": SR_SCALE,
         "canonical_page_count": 68,
         "selected_pages": [str(page["key"]) for page in pages],
@@ -161,11 +172,16 @@ def _write_run_manifest(path: Path, pages: list[dict[str, Any]], *, resume: bool
     if path.is_file():
         existing = _load(path)
         if existing != expected:
-            raise ValueError("Existing run manifest does not match requested page selection")
+            raise ValueError(
+                "Existing run manifest does not match requested commit/page selection"
+            )
         return
     if resume:
         raise FileNotFoundError(f"--resume requested but run manifest is missing: {path}")
-    path.write_text(json.dumps(expected, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(expected, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
 
 
 def _write_runtime_provenance(
@@ -197,7 +213,10 @@ def _write_runtime_provenance(
         "sr_scale": SR_SCALE,
         "historical_artifact_used_as_runtime_input": False,
     }
-    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
     return payload
 
 
@@ -248,7 +267,9 @@ def _run_page(
 
     baseline_root = hybrid_run_dir / "baseline"
     baseline_root.mkdir(parents=True)
-    public_env = "PYTHONPATH=/opt/issue255_public_homr:/historical:/historical/src:/workspace"
+    public_env = (
+        "PYTHONPATH=/opt/issue255_public_homr:/historical:/historical/src:/workspace"
+    )
     _run(
         (
             "docker",
@@ -482,7 +503,6 @@ def run(args: argparse.Namespace) -> Path:
     run_root.mkdir(parents=True, exist_ok=True)
     for directory in ("pages", "profile", "tooling", "variant_runs"):
         (run_root / directory).mkdir(exist_ok=True)
-    _write_run_manifest(run_root / "run_manifest.json", pages, resume=args.resume)
 
     running = _run(
         ("docker", "ps", "--format", "{{.Names}}"),
@@ -496,6 +516,12 @@ def run(args: argparse.Namespace) -> Path:
         raise RuntimeError(
             f"Container /workspace HEAD mismatch: host={head} container={container_head}"
         )
+    _write_run_manifest(
+        run_root / "run_manifest.json",
+        pages,
+        repository_commit=head,
+        resume=args.resume,
+    )
 
     _ensure_commit(ISSUE245_TOOLING_COMMIT)
     _ensure_commit(PDFSCORE_PROFILE_COMMIT)
@@ -644,7 +670,12 @@ def main() -> int:
             )
         )
         return 1
-    print(json.dumps({"status": "completed", "report": str(report)}, ensure_ascii=False))
+    print(
+        json.dumps(
+            {"status": "completed", "report": str(report)},
+            ensure_ascii=False,
+        )
+    )
     return 0
 
 

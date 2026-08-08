@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -25,6 +26,14 @@ EXPECTED_CURRENT_GT_METRICS: dict[str, int | float] = {
     "fn_det": 0,
     "fn_cnn": 1,
 }
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def page_key(score: str, page: str) -> str:
@@ -55,10 +64,21 @@ def artifact_path(record: Mapping[str, Any], name: str) -> Path:
     path = _resolve_repo_artifact(value)
     if not path.is_file():
         raise FileNotFoundError(f"Artifact missing for {name}: {path}")
+    expected_sha256 = record.get("sha256")
+    if not isinstance(expected_sha256, str):
+        raise ValueError(f"Artifact record lacks sha256: {name}")
+    actual_sha256 = _sha256(path)
+    if actual_sha256 != expected_sha256:
+        raise ValueError(
+            f"Artifact hash mismatch for {name}: "
+            f"expected={expected_sha256} actual={actual_sha256}"
+        )
     return path
 
 
-def validate_upstream_report(report: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
+def validate_upstream_report(
+    report: Mapping[str, Any],
+) -> dict[str, Mapping[str, Any]]:
     if report.get("status") != "completed":
         raise ValueError("Full-68 upstream report is incomplete")
     if report.get("authoritative_full68") is not True:
@@ -75,7 +95,10 @@ def validate_upstream_report(report: Mapping[str, Any]) -> dict[str, Mapping[str
         row = pages.get(key)
         if not isinstance(row, Mapping) or row.get("status") != "completed":
             raise ValueError(f"Missing completed upstream page: {key}")
-        if row.get("score") != expected["score"] or row.get("page") != expected["page"]:
+        if (
+            row.get("score") != expected["score"]
+            or row.get("page") != expected["page"]
+        ):
             raise ValueError(f"Upstream page identity mismatch: {key}")
         if row.get("historical_artifact_used_as_runtime_input") is not False:
             raise ValueError(f"Historical runtime artifact dependency on page: {key}")
@@ -103,25 +126,36 @@ def validate_upstream_report(report: Mapping[str, Any]) -> dict[str, Mapping[str
     return validated
 
 
-def inventory_from_upstream_report(report: Mapping[str, Any]) -> list[dict[str, str]]:
+def inventory_from_upstream_report(
+    report: Mapping[str, Any],
+) -> list[dict[str, str]]:
     pages = validate_upstream_report(report)
     inventory = []
     for expected in canonical_pages():
         key = str(expected["key"])
         row = pages[key]
-        artifacts = row["artifacts"]
-        assert isinstance(artifacts, Mapping)
-        baseline = artifact_path(artifacts["fresh_baseline"], f"{key}.fresh_baseline")
+        artifacts = row.get("artifacts")
+        if not isinstance(artifacts, Mapping):
+            raise ValueError(f"Upstream page lacks artifacts after validation: {key}")
+        baseline_record = artifacts.get("fresh_baseline")
+        if not isinstance(baseline_record, Mapping):
+            raise ValueError(f"Missing fresh baseline record: {key}")
+        baseline = artifact_path(baseline_record, f"{key}.fresh_baseline")
+
+        def path_for(name: str) -> Path:
+            record = artifacts.get(name)
+            if not isinstance(record, Mapping):
+                raise ValueError(f"Missing artifact record: {key}.{name}")
+            return artifact_path(record, f"{key}.{name}")
+
         inventory.append(
             {
                 "score": str(expected["score"]),
                 "page": str(expected["page"]),
-                "image": str(artifact_path(artifacts["image"], f"{key}.image")),
-                "hybrid_predictions": str(
-                    artifact_path(artifacts["restored_hybrid"], f"{key}.restored_hybrid")
-                ),
-                "staff_mask": str(artifact_path(artifacts["staff_mask"], f"{key}.staff_mask")),
-                "clef_mask": str(artifact_path(artifacts["clef_mask"], f"{key}.clef_mask")),
+                "image": str(path_for("image")),
+                "hybrid_predictions": str(path_for("restored_hybrid")),
+                "staff_mask": str(path_for("staff_mask")),
+                "clef_mask": str(path_for("clef_mask")),
                 "run_dir": str(baseline.parent),
             }
         )

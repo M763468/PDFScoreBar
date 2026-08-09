@@ -14,10 +14,7 @@ def test_stage_e_verified_profile_is_pinned_and_artifact_free() -> None:
 
     assert profile["historical_detector_artifact_runtime_input"] is False
     assert profile["homr"]["commit"] == "864e2882f7a41afcf8f16654728a473ae56826d6"
-    assert (
-        profile["pdfscore_evaluator"]["commit"]
-        == "bd6ae56f8be6c87088143cfbf0ba09dee94fe0d7"
-    )
+    assert profile["pdfscore_evaluator"]["commit"] == "bd6ae56f8be6c87088143cfbf0ba09dee94fe0d7"
     assert profile["packages"] == {
         "numpy": "2.2.6",
         "opencv-python-headless": "4.12.0.88",

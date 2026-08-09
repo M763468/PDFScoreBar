@@ -25,7 +25,9 @@ def load_homr_profile(name: str) -> dict[str, Any]:
     if payload.get("schema_version") != "pipeline.homr_profile.v1":
         raise ValueError(f"Unsupported HOMR profile schema: {payload.get('schema_version')}")
     if payload.get("name") != name:
-        raise ValueError(f"HOMR profile name mismatch: expected={name} actual={payload.get('name')}")
+        raise ValueError(
+            f"HOMR profile name mismatch: expected={name} actual={payload.get('name')}"
+        )
     if payload.get("historical_detector_artifact_runtime_input") is not False:
         raise ValueError("HOMR profile must not permit historical detector artifacts")
     runtime = payload.get("runtime")

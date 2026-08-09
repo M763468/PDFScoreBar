@@ -169,7 +169,9 @@ def install_homr_api_compat(evaluator: Any) -> dict[str, Any]:
     }
 
 
-def _prepare_evaluator_argv(evaluator: Any, argv: list[str], *, segnet_cache_mode: str) -> list[str]:
+def _prepare_evaluator_argv(
+    evaluator: Any, argv: list[str], *, segnet_cache_mode: str
+) -> list[str]:
     prepared = list(argv)
     if segnet_cache_mode == "not_available":
         while "--enable-segnet-cache" in prepared:

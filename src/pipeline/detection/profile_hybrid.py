@@ -34,9 +34,7 @@ class VerifiedProfileHybridDetector(HybridDetector):
         if sr_scale not in (2, 4):
             raise ValueError(f"Unsupported SR scale for verified profile: {sr_scale}")
         if self.dry_run:
-            return {
-                image: output_root / "batch" / image.stem / image.name for image in self.images
-            }
+            return {image: output_root / "batch" / image.stem / image.name for image in self.images}
 
         model_name = "RealESRGAN_x4plus" if sr_scale == 4 else "RealESRGAN_x2plus"
         persistent_upsampler = None
@@ -114,7 +112,12 @@ class VerifiedProfileHybridDetector(HybridDetector):
             python_cmd_omr
             + ["experiments/models/eval_omr_dln.py", "--images"]
             + image_paths
-            + ["--output-dir", self._rel(omr_output), "--pre-computed-sr", self._rel(sr_output / "batch")]
+            + [
+                "--output-dir",
+                self._rel(omr_output),
+                "--pre-computed-sr",
+                self._rel(sr_output / "batch"),
+            ]
         )
         commands.append(omr_cmd)
         if not self.dry_run:
@@ -134,9 +137,7 @@ class VerifiedProfileHybridDetector(HybridDetector):
                 omr_json = omr_output / stem / "predictions.json"
                 output_json = hybrid_results_dir / f"{stem}_hybrid.json"
                 missing = [
-                    str(path)
-                    for path in (baseline_json, sr_json, omr_json)
-                    if not path.is_file()
+                    str(path) for path in (baseline_json, sr_json, omr_json) if not path.is_file()
                 ]
                 if missing:
                     raise FileNotFoundError(

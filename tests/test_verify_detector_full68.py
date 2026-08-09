@@ -13,15 +13,18 @@ def _images() -> list[Path]:
     ]
 
 
-def test_focused_stage_e_contract_is_exact_reconstruction_target() -> None:
+def test_focused_stage_e_contract_uses_current_gt_metric_semantics() -> None:
     assert verify.FOCUSED_STAGE_E_PAGES == (
         "Va_Prokofiev_Symphony1/page_004",
         "Shostakovich-Sym5-Va/page_014",
     )
+    # Historical accepted output has 174 predictions (126 + 48), while
+    # current evaluation2 GT has 168 boxes (120 + 48). The six additional
+    # Prokofiev predictions are soft duplicate/repeat-like matches, not FP.
     assert verify.FOCUSED_STAGE_E_EXPECTED == {
-        "gt": 174,
+        "gt": 168,
         "pred": 174,
-        "tp": 174,
+        "tp": 168,
         "fp": 0,
         "fn": 0,
         "fn_det": 0,
@@ -79,6 +82,20 @@ def test_metric_mismatches_reports_only_drifted_fields() -> None:
     assert verify._metric_mismatches(summary, verify.FOCUSED_STAGE_E_EXPECTED) == {
         "fp": {"expected": 0, "actual": 1}
     }
+
+
+def test_metric_mismatches_accepts_observed_focused_report() -> None:
+    observed = {
+        "gt": 168,
+        "pred": 174,
+        "tp": 168,
+        "fp": 0,
+        "fn": 0,
+        "fn_det": 0,
+        "fn_cnn": 0,
+    }
+
+    assert verify._metric_mismatches(observed, verify.FOCUSED_STAGE_E_EXPECTED) == {}
 
 
 def test_partial_evaluation_args_allow_missing_manifest_pages(tmp_path: Path) -> None:

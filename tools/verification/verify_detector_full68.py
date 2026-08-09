@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the production detector route and verify the canonical evaluation2 full-68 contract."""
+"""Run the production detector route and verify canonical evaluation2 detector contracts."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import json
 from argparse import Namespace
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from src.pipeline.core.config import load_yaml
 from src.pipeline.detection import run_detection_step
@@ -18,6 +18,19 @@ ROOT = Path(__file__).resolve().parents[2]
 CANONICAL_CONFIG = ROOT / "configs/dense_full_pipeline.yaml"
 DEFAULT_OUTPUT_ROOT = ROOT / "logs/verification/detector_full68"
 DEFAULT_GT_ROOT = ROOT / "data/evaluation2/annotations"
+FOCUSED_STAGE_E_PAGES = (
+    "Va_Prokofiev_Symphony1/page_004",
+    "Shostakovich-Sym5-Va/page_014",
+)
+FOCUSED_STAGE_E_EXPECTED = {
+    "gt": 174,
+    "pred": 174,
+    "tp": 174,
+    "fp": 0,
+    "fn": 0,
+    "fn_det": 0,
+    "fn_cnn": 0,
+}
 
 
 def _canonical_images() -> list[Path]:
@@ -34,8 +47,45 @@ def _canonical_images() -> list[Path]:
     return images
 
 
+def _page_selector(image: Path) -> str:
+    return f"{image.parent.name}/{image.stem}"
+
+
+def _select_images(
+    images: Sequence[Path],
+    *,
+    pages: Sequence[str] | None,
+    page_limit: int | None,
+) -> list[Path]:
+    if pages and page_limit is not None:
+        raise ValueError("--page and --page-limit cannot be used together")
+    if pages:
+        canonical = {_page_selector(image): image for image in images}
+        selected: list[Path] = []
+        seen: set[str] = set()
+        for selector in pages:
+            if selector in seen:
+                raise ValueError(f"Duplicate --page selector: {selector}")
+            seen.add(selector)
+            image = canonical.get(selector)
+            if image is None:
+                raise ValueError(f"Page is not in the canonical evaluation2 manifest: {selector}")
+            selected.append(image)
+        return selected
+    if page_limit is not None:
+        if page_limit <= 0 or page_limit > len(images):
+            raise ValueError(f"--page-limit must be between 1 and {len(images)}")
+        return list(images[:page_limit])
+    return list(images)
+
+
 def _evaluation_args(
-    *, results_dir: Path, gt_root: Path, output_dir: Path, score_threshold: float
+    *,
+    results_dir: Path,
+    gt_root: Path,
+    output_dir: Path,
+    score_threshold: float,
+    allow_partial: bool,
 ) -> Namespace:
     return Namespace(
         results_dir=str(results_dir),
@@ -47,7 +97,7 @@ def _evaluation_args(
         rule_name="center_anchor",
         vov_threshold=0.5,
         xdist_threshold=12.0,
-        allow_partial=False,
+        allow_partial=allow_partial,
         measure_summary_json=None,
     )
 
@@ -64,7 +114,20 @@ def _expected_metrics(config: Mapping[str, Any]) -> dict[str, Any]:
     expected = profile.get("verified_stage_e_full68")
     if not isinstance(expected, Mapping):
         raise ValueError("Stage E HOMR profile lacks verified full-68 metrics")
-    return {key: expected[key] for key in ("gt", "pred", "tp", "fp", "fn", "fn_det", "fn_cnn")}
+    return {
+        key: expected[key]
+        for key in ("gt", "pred", "tp", "fp", "fn", "fn_det", "fn_cnn")
+    }
+
+
+def _metric_mismatches(
+    summary: Mapping[str, Any], expected: Mapping[str, Any]
+) -> dict[str, dict[str, Any]]:
+    return {
+        key: {"expected": expected_value, "actual": summary.get(key)}
+        for key, expected_value in expected.items()
+        if summary.get(key) != expected_value
+    }
 
 
 def run(args: argparse.Namespace) -> Path:
@@ -74,11 +137,11 @@ def run(args: argparse.Namespace) -> Path:
     config = load_yaml(config_path)
     if not isinstance(config, Mapping):
         raise ValueError("Canonical config is not a mapping")
-    images = _canonical_images()
-    if args.page_limit is not None:
-        if args.page_limit <= 0 or args.page_limit > 68:
-            raise ValueError("--page-limit must be between 1 and 68")
-        images = images[: args.page_limit]
+    images = _select_images(
+        _canonical_images(),
+        pages=getattr(args, "page", None),
+        page_limit=args.page_limit,
+    )
 
     output_root = args.output_root.resolve()
     run_root = output_root / args.run_tag
@@ -104,13 +167,16 @@ def run(args: argparse.Namespace) -> Path:
     if contract.get("override_keys") != []:
         raise ValueError(f"Detector route contains candidate overrides: {contract}")
 
+    selected_pages = [_page_selector(image) for image in images]
+    authoritative_full68 = len(images) == 68 and not getattr(args, "page", None)
     report: dict[str, Any] = {
         "schema_version": "verification.detector_full68.v1",
         "status": "completed",
         "run_tag": args.run_tag,
         "config": str(config_path),
         "page_count": len(images),
-        "authoritative_full68": len(images) == 68,
+        "selected_pages": selected_pages,
+        "authoritative_full68": authoritative_full68,
         "historical_detector_artifact_runtime_input": False,
         "detector_input_contract": dict(contract),
         "detector_route": result.get("detector_route"),
@@ -119,39 +185,57 @@ def run(args: argparse.Namespace) -> Path:
         "probe_output_dir": str(result["probe_output_dir"]),
     }
 
-    if len(images) == 68:
-        detection = config["detection"]
-        assert isinstance(detection, Mapping)
-        eval_output = run_root / "eval_detector"
-        evaluation = full68_eval.evaluate(
-            _evaluation_args(
-                results_dir=Path(result["probe_output_dir"]),
-                gt_root=args.gt_root.resolve(),
-                output_dir=eval_output,
-                score_threshold=float(detection.get("cnn_threshold", 0.1)),
-            )
+    detection = config["detection"]
+    assert isinstance(detection, Mapping)
+    eval_output = run_root / "eval_detector"
+    evaluation = full68_eval.evaluate(
+        _evaluation_args(
+            results_dir=Path(result["probe_output_dir"]),
+            gt_root=args.gt_root.resolve(),
+            output_dir=eval_output,
+            score_threshold=float(detection.get("cnn_threshold", 0.1)),
+            allow_partial=not authoritative_full68,
         )
-        summary = asdict(evaluation.detector_summary)
-        expected = _expected_metrics(config)
-        mismatches = {
-            key: {"expected": expected_value, "actual": summary.get(key)}
-            for key, expected_value in expected.items()
-            if summary.get(key) != expected_value
+    )
+    summary = asdict(evaluation.detector_summary)
+    report.update(
+        {
+            "detector_summary": summary,
+            "evaluation_contract": str(eval_output / "evaluation_contract.json"),
+            "detector_metrics": str(eval_output / "detector_metrics.json"),
+            "detector_page_metrics": str(eval_output / "detector_page_metrics.csv"),
         }
+    )
+
+    if authoritative_full68:
+        expected = _expected_metrics(config)
+        mismatches = _metric_mismatches(summary, expected)
         report.update(
             {
-                "detector_summary": summary,
                 "expected_detector_metrics": expected,
                 "metric_mismatches": mismatches,
                 "historical_detector_target_met": not mismatches,
-                "evaluation_contract": str(eval_output / "evaluation_contract.json"),
-                "detector_metrics": str(eval_output / "detector_metrics.json"),
-                "detector_page_metrics": str(eval_output / "detector_page_metrics.csv"),
+                "verification_scope": "full68",
+            }
+        )
+    elif set(selected_pages) == set(FOCUSED_STAGE_E_PAGES) and len(selected_pages) == 2:
+        mismatches = _metric_mismatches(summary, FOCUSED_STAGE_E_EXPECTED)
+        report.update(
+            {
+                "expected_detector_metrics": dict(FOCUSED_STAGE_E_EXPECTED),
+                "metric_mismatches": mismatches,
+                "historical_detector_target_met": not mismatches,
+                "verification_scope": "focused_stage_e_two_page",
             }
         )
     else:
-        report["historical_detector_target_met"] = None
-        report["note"] = "Partial smoke run; full-68 metrics were not evaluated."
+        report.update(
+            {
+                "historical_detector_target_met": None,
+                "verification_scope": "partial_smoke",
+                "note": "Partial detector run; no historical target is defined for this page set.",
+            }
+        )
 
     report_path = run_root / "detector_full68_verification_report.json"
     report_path.write_text(
@@ -167,6 +251,11 @@ def main() -> int:
     parser.add_argument("--config", type=Path, default=CANONICAL_CONFIG)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     parser.add_argument("--gt-root", type=Path, default=DEFAULT_GT_ROOT)
+    parser.add_argument(
+        "--page",
+        action="append",
+        help="Canonical page selector SCORE/page_NNN. Repeat to run a focused subset.",
+    )
     parser.add_argument("--page-limit", type=int)
     args = parser.parse_args()
     try:

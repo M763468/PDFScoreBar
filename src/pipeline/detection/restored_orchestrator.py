@@ -14,7 +14,11 @@ from src.pipeline.steps.cnn_scoring import run_cnn_scoring_batch
 from src.pipeline.utils.io import ensure_dir
 
 from .config import get_cnn_apply_nms
-from .orchestrator import DetectorOrchestrator as BaseDetectorOrchestrator
+from .orchestrator import (
+    PROJECT_ROOT,
+    DetectorOrchestrator as BaseDetectorOrchestrator,
+    _split_score_page_from_stem,
+)
 from .profile_hybrid import VerifiedProfileHybridDetector
 
 DENSE_ROUTE_NAME = "dense_full_pipeline"
@@ -26,6 +30,11 @@ def _first_existing(directory: Path, names: tuple[str, ...], *, description: str
         if path.is_file():
             return path
     raise FileNotFoundError(f"Missing {description} in {directory}")
+
+
+def _score_page(image: Path) -> tuple[str, str]:
+    split = _split_score_page_from_stem(image.stem)
+    return split if split is not None else (image.parent.name, image.stem)
 
 
 class DetectorOrchestrator(BaseDetectorOrchestrator):
@@ -42,11 +51,16 @@ class DetectorOrchestrator(BaseDetectorOrchestrator):
     def _run_hybrid_detection(self) -> Dict[str, Any]:
         if not self.homr_profile:
             return super()._run_hybrid_detection()
+        missing_images = [str(image) for image in self.images if not image.is_file()]
+        if missing_images:
+            raise FileNotFoundError(
+                "Verified HOMR profile requires persisted image files: " + ", ".join(missing_images)
+            )
         detector = VerifiedProfileHybridDetector(
             det_cfg=self.det_cfg,
             images=self.images,
             run_id=self.run_id,
-            project_root=self.PROJECT_ROOT if hasattr(self, "PROJECT_ROOT") else Path(__file__).resolve().parents[3],
+            project_root=PROJECT_ROOT,
             dry_run=self.dry_run,
             skip_existing=self.skip_existing,
             in_memory_images=self.in_memory_images,
@@ -59,6 +73,7 @@ class DetectorOrchestrator(BaseDetectorOrchestrator):
             raise RuntimeError("Hybrid output is required before dense route reconstruction")
         records = []
         for image in self.images:
+            score, page = _score_page(image)
             stem = image.stem
             baseline_page = self.hybrid_output_dir / "baseline" / "batch" / stem
             hybrid = self.hybrid_output_dir / "hybrid_results" / f"{stem}_hybrid.json"
@@ -84,8 +99,8 @@ class DetectorOrchestrator(BaseDetectorOrchestrator):
             )
             records.append(
                 {
-                    "score": image.parent.name,
-                    "page": stem,
+                    "score": score,
+                    "page": page,
                     "image": str(image.resolve()),
                     "hybrid_predictions": str(hybrid.resolve()),
                     "staff_mask": str(staff_mask.resolve()),
@@ -118,7 +133,12 @@ class DetectorOrchestrator(BaseDetectorOrchestrator):
         if self.detector_route != DENSE_ROUTE_NAME:
             return super()._run_probe_scan()
         if self.dry_run:
-            probe_root = self.run_dir / "intermediate" / "dense_full_pipeline_route" / "probe_rescue_candidates"
+            probe_root = (
+                self.run_dir
+                / "intermediate"
+                / "dense_full_pipeline_route"
+                / "probe_rescue_candidates"
+            )
             return {
                 "commands": [["inprocess:dense_full_pipeline_route", "--dry-run"]],
                 "probe_output_dir": probe_root,
@@ -132,6 +152,7 @@ class DetectorOrchestrator(BaseDetectorOrchestrator):
             route_root=route_root,
             expected_pages=len(self.images),
         )
+        summary = self._dense_route.execution_summary or {}
         return {
             "commands": [
                 [
@@ -139,7 +160,7 @@ class DetectorOrchestrator(BaseDetectorOrchestrator):
                     "--inventory",
                     str(inventory),
                     "--summary",
-                    str(self._dense_route.execution_summary.get("summary_path", "")),
+                    str(summary.get("summary_path", "")),
                 ]
             ],
             "probe_output_dir": self._dense_route.probe_rescue_root,
@@ -154,13 +175,15 @@ class DetectorOrchestrator(BaseDetectorOrchestrator):
         cnn_model = self.det_cfg.get("cnn_model_path")
         if not cnn_model:
             raise ValueError("detection.cnn_model_path is required")
-        cnn_apply_nms = get_cnn_apply_nms(self.det_cfg)
-        if cnn_apply_nms:
+        if get_cnn_apply_nms(self.det_cfg):
             raise ValueError("Verified Stage E detector route requires cnn_apply_nms=false")
         bands_from = (
             self._dense_route.filtered_root
             if self._dense_route is not None
-            else self.run_dir / "intermediate" / "dense_full_pipeline_route" / "probe_candidates_filtered"
+            else self.run_dir
+            / "intermediate"
+            / "dense_full_pipeline_route"
+            / "probe_candidates_filtered"
         )
         if not self.dry_run:
             if self.probe_output_dir is None:

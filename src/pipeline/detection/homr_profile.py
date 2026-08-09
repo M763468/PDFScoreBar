@@ -31,7 +31,14 @@ def load_homr_profile(name: str) -> dict[str, Any]:
     runtime = payload.get("runtime")
     if not isinstance(runtime, Mapping):
         raise ValueError("HOMR profile lacks runtime settings")
-    for key in ("python", "homr_source", "pdfscore_source", "compat_entrypoint"):
+    for key in (
+        "python",
+        "homr_source",
+        "pdfscore_source",
+        "homr_commit_marker",
+        "pdfscore_commit_marker",
+        "compat_entrypoint",
+    ):
         if not isinstance(runtime.get(key), str) or not runtime.get(key):
             raise ValueError(f"HOMR profile runtime lacks {key}")
     return dict(payload)
@@ -81,20 +88,47 @@ def build_profile_command(
     return command
 
 
+def _required_commit(profile: Mapping[str, Any], section: str) -> str:
+    value = profile.get(section)
+    if not isinstance(value, Mapping) or not isinstance(value.get("commit"), str):
+        raise ValueError(f"HOMR profile lacks pinned commit: {section}")
+    return str(value["commit"])
+
+
 def validate_profile_runtime(profile: Mapping[str, Any]) -> None:
     runtime = profile["runtime"]
     assert isinstance(runtime, Mapping)
     python = Path(str(runtime["python"]))
     homr_source = Path(str(runtime["homr_source"]))
     pdfscore_source = Path(str(runtime["pdfscore_source"]))
+    homr_marker = Path(str(runtime["homr_commit_marker"]))
+    pdfscore_marker = Path(str(runtime["pdfscore_commit_marker"]))
     compat = Path(str(runtime["compat_entrypoint"]))
-    missing = [
-        str(path)
-        for path in (python, homr_source / "homr", pdfscore_source / "src", compat)
-        if not path.exists()
-    ]
+    required_paths = (
+        python,
+        homr_source / "homr",
+        pdfscore_source / "src",
+        homr_marker,
+        pdfscore_marker,
+        compat,
+    )
+    missing = [str(path) for path in required_paths if not path.exists()]
     if missing:
         raise FileNotFoundError("HOMR profile runtime is incomplete: " + ", ".join(missing))
+
+    expected_homr = _required_commit(profile, "homr")
+    expected_pdfscore = _required_commit(profile, "pdfscore_evaluator")
+    actual_homr = homr_marker.read_text(encoding="utf-8").strip()
+    actual_pdfscore = pdfscore_marker.read_text(encoding="utf-8").strip()
+    if actual_homr != expected_homr:
+        raise RuntimeError(
+            f"HOMR profile commit mismatch: expected={expected_homr} actual={actual_homr}"
+        )
+    if actual_pdfscore != expected_pdfscore:
+        raise RuntimeError(
+            "PDFScore evaluator profile commit mismatch: "
+            f"expected={expected_pdfscore} actual={actual_pdfscore}"
+        )
 
 
 def run_homr_profile(

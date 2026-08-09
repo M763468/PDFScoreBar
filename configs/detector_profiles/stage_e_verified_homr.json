@@ -42,6 +42,8 @@
     "python": "/opt/venv_stage_e_homr/bin/python",
     "homr_source": "/opt/homr_stage_e_profile",
     "pdfscore_source": "/opt/pdfscore_stage_e_profile",
+    "homr_commit_marker": "/opt/homr_stage_e_profile_commit.txt",
+    "pdfscore_commit_marker": "/opt/pdfscore_stage_e_profile_commit.txt",
     "compat_entrypoint": "/workspace/src/pipeline/detection/homr_profile_compat.py"
   },
   "verified_baseline_full68": {

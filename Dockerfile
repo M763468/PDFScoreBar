@@ -40,6 +40,9 @@ RUN /opt/venv_pipeline/bin/python docker/patch_homr_onnx_provider.py
 # Install project dependencies
 RUN uv pip install -e .
 
+# Apply basicsr patch before cloning the main venv into the isolated HOMR profile runtime.
+RUN /opt/venv_pipeline/bin/python -c "from pathlib import Path; import sysconfig; p = Path(sysconfig.get_paths()['purelib']) / 'basicsr' / 'data' / 'degradations.py'; s = p.read_text(); p.write_text(s.replace('from torchvision.transforms.functional_tensor import rgb_to_grayscale', 'from torchvision.transforms.functional import rgb_to_grayscale'))"
+
 # Keep the verified Stage E HOMR dependency stack isolated from the main OMR/CNN runtime.
 ARG STAGE_E_HOMR_COMMIT=864e2882f7a41afcf8f16654728a473ae56826d6
 ARG STAGE_E_PDFSCORE_COMMIT=bd6ae56f8be6c87088143cfbf0ba09dee94fe0d7
@@ -93,9 +96,6 @@ for relative, expected in EXPECTED.items():
         )
 PY
 
-# Apply basicsr patch for torchvision compatibility without importing basicsr/cv2 in the builder stage.
-RUN /opt/venv_pipeline/bin/python -c "from pathlib import Path; import sysconfig; p = Path(sysconfig.get_paths()['purelib']) / 'basicsr' / 'data' / 'degradations.py'; s = p.read_text(); p.write_text(s.replace('from torchvision.transforms.functional_tensor import rgb_to_grayscale', 'from torchvision.transforms.functional import rgb_to_grayscale'))"
-
 # Download model weights during build to a safe location (not masked by volume mount)
 # We place them in /opt/weights so they are always available. We will symlink them later if needed.
 RUN mkdir -p /opt/weights && \
@@ -104,6 +104,9 @@ RUN mkdir -p /opt/weights && \
 
 # --- Final Stage ---
 FROM nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04
+
+ARG STAGE_E_HOMR_COMMIT=864e2882f7a41afcf8f16654728a473ae56826d6
+ARG STAGE_E_PDFSCORE_COMMIT=bd6ae56f8be6c87088143cfbf0ba09dee94fe0d7
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1

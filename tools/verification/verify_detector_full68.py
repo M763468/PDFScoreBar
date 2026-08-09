@@ -114,10 +114,7 @@ def _expected_metrics(config: Mapping[str, Any]) -> dict[str, Any]:
     expected = profile.get("verified_stage_e_full68")
     if not isinstance(expected, Mapping):
         raise ValueError("Stage E HOMR profile lacks verified full-68 metrics")
-    return {
-        key: expected[key]
-        for key in ("gt", "pred", "tp", "fp", "fn", "fn_det", "fn_cnn")
-    }
+    return {key: expected[key] for key in ("gt", "pred", "tp", "fp", "fn", "fn_det", "fn_cnn")}
 
 
 def _metric_mismatches(

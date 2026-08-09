@@ -19,7 +19,7 @@ __all__ = [
 
 def __getattr__(name: str):
     if name in {"DetectorOrchestrator", "run_detection_step"}:
-        from .orchestrator import DetectorOrchestrator, run_detection_step
+        from .restored_orchestrator import DetectorOrchestrator, run_detection_step
 
         return {
             "DetectorOrchestrator": DetectorOrchestrator,

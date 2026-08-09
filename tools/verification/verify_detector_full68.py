@@ -201,7 +201,9 @@ def _run_production_groups(
         elif contract != canonical_contract:
             raise ValueError(f"Detector input contract drift between score runs: {score}")
         if result.get("detector_route") != "dense_full_pipeline":
-            raise ValueError(f"Unexpected detector route for {score}: {result.get('detector_route')}")
+            raise ValueError(
+                f"Unexpected detector route for {score}: {result.get('detector_route')}"
+            )
         if result.get("homr_profile") != "stage_e_verified":
             raise ValueError(f"Unexpected HOMR profile for {score}: {result.get('homr_profile')}")
 

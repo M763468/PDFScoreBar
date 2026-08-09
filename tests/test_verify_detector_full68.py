@@ -75,6 +75,40 @@ def test_select_images_rejects_page_and_limit_together() -> None:
         )
 
 
+def test_group_images_by_score_avoids_cross_score_stem_collisions() -> None:
+    groups = verify._group_images_by_score(_images())
+
+    assert groups == [
+        ("Va_Prokofiev_Symphony1", [_images()[0]]),
+        ("Shostakovich-Sym5-Va", [_images()[1], _images()[2]]),
+    ]
+
+
+def test_copy_probe_pages_uses_score_qualified_run_ids(tmp_path: Path) -> None:
+    images = [
+        tmp_path / "images/Score/page_001.png",
+        tmp_path / "images/Score/page_002.png",
+    ]
+    probe_root = tmp_path / "probe"
+    aggregate_root = tmp_path / "aggregate"
+    aggregate_root.mkdir()
+    for image in images:
+        run_id = f"eval2_Score_{image.stem}"
+        page_dir = probe_root / run_id
+        page_dir.mkdir(parents=True)
+        (page_dir / "pipeline2_no_peak_scored.json").write_text("[]\n", encoding="utf-8")
+
+    verify._copy_probe_pages(
+        score="Score",
+        images=images,
+        probe_root=probe_root,
+        aggregate_root=aggregate_root,
+    )
+
+    assert (aggregate_root / "eval2_Score_page_001/pipeline2_no_peak_scored.json").is_file()
+    assert (aggregate_root / "eval2_Score_page_002/pipeline2_no_peak_scored.json").is_file()
+
+
 def test_metric_mismatches_reports_only_drifted_fields() -> None:
     summary = dict(verify.FOCUSED_STAGE_E_EXPECTED)
     summary["fp"] = 1

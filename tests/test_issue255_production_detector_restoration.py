@@ -4,6 +4,7 @@ from pathlib import Path
 import yaml
 
 import src.pipeline.detection.restored_orchestrator as restored
+from src.pipeline.detection.input_contract import build_detector_input_contract
 from src.pipeline.detector_routes.dense_full_pipeline import DenseRouteArtifacts
 
 
@@ -39,6 +40,44 @@ def test_canonical_detector_config_uses_verified_restored_route() -> None:
     assert detection.get("precomputed_probe_candidates_root") is None
     assert detection.get("cnn_bands_from") is None
     assert "rescue_low_paper_verticals" not in detection.get("candidate_filter_kwargs", {})
+
+    contract = build_detector_input_contract(detection)
+    assert contract["mode"] == "fresh_upstream"
+    assert contract["fresh_upstream_authoritative"] is True
+    assert contract["override_keys"] == []
+    assert contract["detector_route"] == "dense_full_pipeline"
+    assert contract["homr_profile"] == "stage_e_verified"
+    assert contract["sr_scale"] == 4
+    assert contract["probe_use_original_images"] is True
+
+
+def test_verified_profile_is_selected_for_hybrid_detection(tmp_path: Path, monkeypatch) -> None:
+    image = tmp_path / "Score/page_001.png"
+    image.parent.mkdir(parents=True)
+    image.write_bytes(b"image")
+    captured = {}
+
+    class FakeProfileDetector:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+        def run(self):
+            return {"commands": [["profile"]], "hybrid_output_dir": tmp_path / "hybrid"}
+
+    monkeypatch.setattr(restored, "VerifiedProfileHybridDetector", FakeProfileDetector)
+    orchestrator = restored.DetectorOrchestrator(
+        config=_config(),
+        images=[image],
+        run_id="test",
+        run_dir=tmp_path / "run",
+        dry_run=False,
+    )
+
+    result = orchestrator._run_hybrid_detection()
+
+    assert captured["profile_name"] == "stage_e_verified"
+    assert captured["images"] == [image]
+    assert result["commands"] == [["profile"]]
 
 
 def test_dense_inventory_uses_only_current_hybrid_and_profile_masks(tmp_path: Path) -> None:

@@ -5,12 +5,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 from argparse import Namespace
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from src.pipeline.core.config import load_yaml
+from src.pipeline.core.run_ids import build_probe_run_id
 from src.pipeline.detection import run_detection_step
 from tools.issue120 import eval_full68_from_intermediates as full68_eval
 
@@ -84,6 +86,13 @@ def _select_images(
     return list(images)
 
 
+def _group_images_by_score(images: Sequence[Path]) -> list[tuple[str, list[Path]]]:
+    groups: dict[str, list[Path]] = {}
+    for image in images:
+        groups.setdefault(image.parent.name, []).append(image)
+    return list(groups.items())
+
+
 def _evaluation_args(
     *,
     results_dir: Path,
@@ -132,6 +141,93 @@ def _metric_mismatches(
     }
 
 
+def _validate_detector_result(result: Mapping[str, Any]) -> dict[str, Any]:
+    contract = result.get("detector_input_contract")
+    if not isinstance(contract, Mapping):
+        raise ValueError("Detector result lacks input contract")
+    if contract.get("mode") != "fresh_upstream":
+        raise ValueError(f"Detector route is not fresh upstream: {contract}")
+    if contract.get("fresh_upstream_authoritative") is not True:
+        raise ValueError(f"Detector fresh-upstream contract failed: {contract}")
+    if contract.get("override_keys") != []:
+        raise ValueError(f"Detector route contains candidate overrides: {contract}")
+    return dict(contract)
+
+
+def _copy_probe_pages(
+    *,
+    score: str,
+    images: Sequence[Path],
+    probe_root: Path,
+    aggregate_root: Path,
+) -> None:
+    for image in images:
+        run_id = build_probe_run_id(image, score_name=score)
+        source = probe_root / run_id
+        if not source.is_dir():
+            raise FileNotFoundError(f"Missing production probe page: {source}")
+        target = aggregate_root / run_id
+        if target.exists():
+            raise FileExistsError(target)
+        shutil.copytree(source, target)
+
+
+def _run_production_groups(
+    *,
+    config: Mapping[str, Any],
+    images: Sequence[Path],
+    run_tag: str,
+    run_root: Path,
+) -> tuple[list[dict[str, Any]], Path, dict[str, Any]]:
+    aggregate_probe_root = run_root / "aggregate_probe_output"
+    aggregate_probe_root.mkdir(parents=True, exist_ok=True)
+    production_runs: list[dict[str, Any]] = []
+    canonical_contract: dict[str, Any] | None = None
+
+    for score, score_images in _group_images_by_score(images):
+        score_run_id = f"{run_tag}__{score}"
+        score_run_root = run_root / "production_runs" / score
+        result = run_detection_step(
+            dict(config),
+            list(score_images),
+            [image.stem for image in score_images],
+            score_run_id,
+            score_run_root,
+            dry_run=False,
+        )
+        contract = _validate_detector_result(result)
+        if canonical_contract is None:
+            canonical_contract = contract
+        elif contract != canonical_contract:
+            raise ValueError(f"Detector input contract drift between score runs: {score}")
+        if result.get("detector_route") != "dense_full_pipeline":
+            raise ValueError(f"Unexpected detector route for {score}: {result.get('detector_route')}")
+        if result.get("homr_profile") != "stage_e_verified":
+            raise ValueError(f"Unexpected HOMR profile for {score}: {result.get('homr_profile')}")
+
+        probe_root = Path(result["probe_output_dir"])
+        _copy_probe_pages(
+            score=score,
+            images=score_images,
+            probe_root=probe_root,
+            aggregate_root=aggregate_probe_root,
+        )
+        production_runs.append(
+            {
+                "score": score,
+                "page_count": len(score_images),
+                "run_id": score_run_id,
+                "run_root": str(score_run_root),
+                "hybrid_output_dir": str(result["hybrid_output_dir"]),
+                "probe_output_dir": str(probe_root),
+            }
+        )
+
+    if canonical_contract is None:
+        raise ValueError("No production detector groups were executed")
+    return production_runs, aggregate_probe_root, canonical_contract
+
+
 def run(args: argparse.Namespace) -> Path:
     config_path = args.config.resolve()
     if config_path != CANONICAL_CONFIG.resolve():
@@ -150,24 +246,13 @@ def run(args: argparse.Namespace) -> Path:
     if run_root.exists() and any(run_root.iterdir()):
         raise FileExistsError(run_root)
     run_root.mkdir(parents=True, exist_ok=True)
-    page_ids = [image.stem for image in images]
-    result = run_detection_step(
-        dict(config),
-        images,
-        page_ids,
-        args.run_tag,
-        run_root,
-        dry_run=False,
+
+    production_runs, aggregate_probe_root, contract = _run_production_groups(
+        config=config,
+        images=images,
+        run_tag=args.run_tag,
+        run_root=run_root,
     )
-    contract = result.get("detector_input_contract")
-    if not isinstance(contract, Mapping):
-        raise ValueError("Detector result lacks input contract")
-    if contract.get("mode") != "fresh_upstream":
-        raise ValueError(f"Detector route is not fresh upstream: {contract}")
-    if contract.get("fresh_upstream_authoritative") is not True:
-        raise ValueError(f"Detector fresh-upstream contract failed: {contract}")
-    if contract.get("override_keys") != []:
-        raise ValueError(f"Detector route contains candidate overrides: {contract}")
 
     selected_pages = [_page_selector(image) for image in images]
     authoritative_full68 = len(images) == 68 and not getattr(args, "page", None)
@@ -180,11 +265,13 @@ def run(args: argparse.Namespace) -> Path:
         "selected_pages": selected_pages,
         "authoritative_full68": authoritative_full68,
         "historical_detector_artifact_runtime_input": False,
-        "detector_input_contract": dict(contract),
-        "detector_route": result.get("detector_route"),
-        "homr_profile": result.get("homr_profile"),
-        "hybrid_output_dir": str(result["hybrid_output_dir"]),
-        "probe_output_dir": str(result["probe_output_dir"]),
+        "detector_input_contract": contract,
+        "detector_route": "dense_full_pipeline",
+        "homr_profile": "stage_e_verified",
+        "score_isolated_production_runs": True,
+        "production_run_count": len(production_runs),
+        "production_runs": production_runs,
+        "probe_output_dir": str(aggregate_probe_root),
     }
 
     detection = config["detection"]
@@ -192,7 +279,7 @@ def run(args: argparse.Namespace) -> Path:
     eval_output = run_root / "eval_detector"
     evaluation = full68_eval.evaluate(
         _evaluation_args(
-            results_dir=Path(result["probe_output_dir"]),
+            results_dir=aggregate_probe_root,
             gt_root=args.gt_root.resolve(),
             output_dir=eval_output,
             score_threshold=float(detection.get("cnn_threshold", 0.1)),

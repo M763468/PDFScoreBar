@@ -81,30 +81,26 @@ def test_verified_profile_is_selected_for_hybrid_detection(tmp_path: Path, monke
     assert result["commands"] == [["profile"]]
 
 
-def test_verified_profile_releases_sr_buffers_after_each_page(tmp_path: Path, monkeypatch) -> None:
+def test_verified_profile_runs_sr_in_isolated_page_workers(tmp_path: Path, monkeypatch) -> None:
     images = [tmp_path / "page_001.png", tmp_path / "page_002.png"]
+    for image in images:
+        image.write_bytes(b"image")
     detector = object.__new__(profile_hybrid.VerifiedProfileHybridDetector)
     detector.dry_run = False
     detector.images = images
-    detector.in_memory_images = None
+    detector.project_root = tmp_path
     detector.det_cfg = {"sr_tile": -1, "sr_tile_pad": 10, "sr_fp32": False}
 
-    releases: list[str] = []
-    upsampler = object()
+    commands: list[list[str]] = []
 
-    monkeypatch.setattr(profile_hybrid, "log_vram_usage", lambda _message: None)
-    monkeypatch.setattr(profile_hybrid, "load_image", lambda _image, _cache: object())
-    monkeypatch.setattr(
-        profile_hybrid,
-        "apply_advanced_sr",
-        lambda _image, **_kwargs: (object(), upsampler),
-    )
-    monkeypatch.setattr(profile_hybrid.cv2, "imwrite", lambda _path, _image: True)
-    monkeypatch.setattr(
-        profile_hybrid,
-        "_release_sr_page_buffers",
-        lambda: releases.append("release"),
-    )
+    def fake_run(command, **_kwargs):
+        command = list(command)
+        commands.append(command)
+        output = Path(command[command.index("--output") + 1])
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(b"sr")
+
+    monkeypatch.setattr(profile_hybrid, "run_with_logging", fake_run)
 
     generated = detector._generate_sr_sources(tmp_path / "sr", sr_scale=4)
 
@@ -112,8 +108,14 @@ def test_verified_profile_releases_sr_buffers_after_each_page(tmp_path: Path, mo
         images[0]: tmp_path / "sr/batch/page_001/page_001.png",
         images[1]: tmp_path / "sr/batch/page_002/page_002.png",
     }
-    # One release per completed page plus the outer finalizer.
-    assert releases == ["release", "release", "release"]
+    assert len(commands) == 2
+    for command, image in zip(commands, images, strict=True):
+        assert command[1:4] == ["-m", "src.pipeline.detection.sr_page_worker", "--image"]
+        assert command[4] == str(image.resolve())
+        assert command[command.index("--scale") + 1] == "4"
+        assert command[command.index("--tile") + 1] == "-1"
+        assert command[command.index("--tile-pad") + 1] == "10"
+        assert "--fp32" not in command
 
 
 def test_dense_inventory_uses_only_current_hybrid_and_profile_masks(tmp_path: Path) -> None:

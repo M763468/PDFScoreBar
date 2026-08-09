@@ -22,10 +22,15 @@ FOCUSED_STAGE_E_PAGES = (
     "Va_Prokofiev_Symphony1/page_004",
     "Shostakovich-Sym5-Va/page_014",
 )
+# The historical accepted Stage E output contains 126 + 48 = 174 predictions.
+# Current evaluation2 GT contains 120 + 48 = 168 boxes. The six additional
+# Prokofiev predictions are duplicate/repeat-like soft matches under the canonical
+# evaluator, so they are not counted as FP. Keep this gate in current-GT metric
+# semantics rather than treating accepted-reference prediction count as GT count.
 FOCUSED_STAGE_E_EXPECTED = {
-    "gt": 174,
+    "gt": 168,
     "pred": 174,
-    "tp": 174,
+    "tp": 168,
     "fp": 0,
     "fn": 0,
     "fn_det": 0,

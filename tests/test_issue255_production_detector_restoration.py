@@ -3,6 +3,7 @@ from pathlib import Path
 
 import yaml
 
+import src.pipeline.detection.profile_hybrid as profile_hybrid
 import src.pipeline.detection.restored_orchestrator as restored
 from src.pipeline.detection.input_contract import build_detector_input_contract
 from src.pipeline.detector_routes.dense_full_pipeline import DenseRouteArtifacts
@@ -78,6 +79,41 @@ def test_verified_profile_is_selected_for_hybrid_detection(tmp_path: Path, monke
     assert captured["profile_name"] == "stage_e_verified"
     assert captured["images"] == [image]
     assert result["commands"] == [["profile"]]
+
+
+def test_verified_profile_releases_sr_buffers_after_each_page(tmp_path: Path, monkeypatch) -> None:
+    images = [tmp_path / "page_001.png", tmp_path / "page_002.png"]
+    detector = object.__new__(profile_hybrid.VerifiedProfileHybridDetector)
+    detector.dry_run = False
+    detector.images = images
+    detector.in_memory_images = None
+    detector.det_cfg = {"sr_tile": -1, "sr_tile_pad": 10, "sr_fp32": False}
+
+    releases: list[str] = []
+    upsampler = object()
+
+    monkeypatch.setattr(profile_hybrid, "log_vram_usage", lambda _message: None)
+    monkeypatch.setattr(profile_hybrid, "load_image", lambda _image, _cache: object())
+    monkeypatch.setattr(
+        profile_hybrid,
+        "apply_advanced_sr",
+        lambda _image, **_kwargs: (object(), upsampler),
+    )
+    monkeypatch.setattr(profile_hybrid.cv2, "imwrite", lambda _path, _image: True)
+    monkeypatch.setattr(
+        profile_hybrid,
+        "_release_sr_page_buffers",
+        lambda: releases.append("release"),
+    )
+
+    generated = detector._generate_sr_sources(tmp_path / "sr", sr_scale=4)
+
+    assert generated == {
+        images[0]: tmp_path / "sr/batch/page_001/page_001.png",
+        images[1]: tmp_path / "sr/batch/page_002/page_002.png",
+    }
+    # One release per completed page plus the outer finalizer.
+    assert releases == ["release", "release", "release"]
 
 
 def test_dense_inventory_uses_only_current_hybrid_and_profile_masks(tmp_path: Path) -> None:

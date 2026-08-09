@@ -23,6 +23,13 @@ from .hybrid import HybridDetector
 from .utils import log_vram_usage
 
 
+def _release_sr_page_buffers() -> None:
+    """Release per-page SR allocations before starting the next x4 page."""
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+
 class VerifiedProfileHybridDetector(HybridDetector):
     """Use the pinned HOMR profile while retaining current SR/OMR/consensus code."""
 
@@ -45,25 +52,37 @@ class VerifiedProfileHybridDetector(HybridDetector):
                 image_run_dir = output_root / "batch" / image.stem
                 ensure_dir(image_run_dir)
                 working_path = image_run_dir / image.name
-                image_bgr = load_image(image, self.in_memory_images)
-                upscaled, persistent_upsampler = apply_advanced_sr(
-                    image_bgr,
-                    model_name=model_name,
-                    scale=sr_scale,
-                    tile=self.det_cfg.get("sr_tile", -1),
-                    tile_pad=self.det_cfg.get("sr_tile_pad", 10),
-                    fp32=self.det_cfg.get("sr_fp32", False),
-                    upsampler=persistent_upsampler,
-                )
-                if not cv2.imwrite(str(working_path), upscaled):
-                    raise RuntimeError(f"Failed to write SR image: {working_path}")
-                generated[image] = working_path
+                image_bgr = None
+                upscaled = None
+                try:
+                    image_bgr = load_image(image, self.in_memory_images)
+                    upscaled, persistent_upsampler = apply_advanced_sr(
+                        image_bgr,
+                        model_name=model_name,
+                        scale=sr_scale,
+                        tile=self.det_cfg.get("sr_tile", -1),
+                        tile_pad=self.det_cfg.get("sr_tile_pad", 10),
+                        fp32=self.det_cfg.get("sr_fp32", False),
+                        upsampler=persistent_upsampler,
+                    )
+                    if not cv2.imwrite(str(working_path), upscaled):
+                        raise RuntimeError(f"Failed to write SR image: {working_path}")
+                    generated[image] = working_path
+                finally:
+                    # ``upscaled`` can be hundreds of MB for x4 score pages.  Python
+                    # evaluates the next apply_advanced_sr() call before replacing the
+                    # previous loop variable, so without explicit release the old x4
+                    # array overlaps the next page's inference buffers.
+                    if upscaled is not None:
+                        del upscaled
+                    if image_bgr is not None:
+                        del image_bgr
+                    _release_sr_page_buffers()
         finally:
             persistent_upsampler = None
+            _release_sr_page_buffers()
             if torch.cuda.is_available():
-                torch.cuda.empty_cache()
                 torch.cuda.synchronize()
-            gc.collect()
             log_vram_usage("After verified-profile SR generation")
         return generated
 

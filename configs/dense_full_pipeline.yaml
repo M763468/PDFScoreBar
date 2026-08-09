@@ -19,13 +19,16 @@ steps:
 
 detection:
   enable_sr: true
-  sr_scale: 2
+  sr_scale: 4
+  homr_profile: stage_e_verified
+  detector_route: dense_full_pipeline
+  probe_use_original_images: true
   crop_recenter_on_bbox_ink: true
   container_name: sr_eval_gpu_exp
   hybrid_output_root: logs/full_pipeline_runs/dense_full_pipeline/hybrid_output
 
-  # Dense full-pipeline detector settings recovered during the Issue #120 repair.
-  # The historical reproduction config remains in configs/issue120_stage_e_full_pipeline.yaml.
+  # Dense full-pipeline detector settings recovered during the Issue #120 repair
+  # and revalidated from fresh upstream across evaluation2 in Issue #255.
   band_source: row_stats
   band_cluster_max_dist: 25.0
   ink_threshold: 240

@@ -1,12 +1,15 @@
 import json
+import sys
+import types
 from pathlib import Path
+from types import SimpleNamespace
 
 import yaml
 
+import src.pipeline.detection.current_support_worker as support_worker
 import src.pipeline.detection.profile_hybrid as profile_hybrid
 import src.pipeline.detection.restored_orchestrator as restored
 from src.pipeline.detection.input_contract import build_detector_input_contract
-from src.pipeline.detector_routes.dense_full_pipeline import DenseRouteArtifacts
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,7 +22,6 @@ def _config() -> dict:
             "sr_scale": 4,
             "homr_profile": "stage_e_verified",
             "detector_route": "dense_full_pipeline",
-            "execution_mode": "isolated_per_page",
             "probe_use_original_images": True,
             "cnn_model_path": "model.pth",
             "cnn_threshold": 0.1,
@@ -36,7 +38,7 @@ def test_canonical_detector_config_uses_verified_restored_route() -> None:
     assert detection["sr_scale"] == 4
     assert detection["homr_profile"] == "stage_e_verified"
     assert detection["detector_route"] == "dense_full_pipeline"
-    assert detection["execution_mode"] == "isolated_per_page"
+    assert "execution_mode" not in detection
     assert detection["probe_use_original_images"] is True
     assert detection["cnn_threshold"] == 0.1
     assert detection["cnn_apply_nms"] is False
@@ -49,7 +51,6 @@ def test_canonical_detector_config_uses_verified_restored_route() -> None:
     assert contract["fresh_upstream_authoritative"] is True
     assert contract["override_keys"] == []
     assert contract["detector_route"] == "dense_full_pipeline"
-    assert contract["execution_mode"] == "isolated_per_page"
     assert contract["homr_profile"] == "stage_e_verified"
     assert contract["sr_scale"] == 4
     assert contract["probe_use_original_images"] is True
@@ -84,39 +85,122 @@ def test_verified_profile_is_selected_for_hybrid_detection(tmp_path: Path, monke
     assert result["commands"] == [["profile"]]
 
 
-def test_verified_profile_uses_historical_sr_generation_settings(
+def test_current_support_worker_reuses_maintained_x4_homr_path(
     tmp_path: Path, monkeypatch
 ) -> None:
-    image = tmp_path / "page_001.png"
+    image = tmp_path / "Score/page_001.png"
+    image.parent.mkdir(parents=True)
     image.write_bytes(b"image")
-    detector = object.__new__(profile_hybrid.VerifiedProfileHybridDetector)
-    detector.dry_run = False
-    detector.images = [image]
-    detector.in_memory_images = None
-    detector.det_cfg = {"sr_tile": -1, "sr_tile_pad": 10, "sr_fp32": False}
-
+    output_root = tmp_path / "support"
+    request_path = tmp_path / "request.json"
+    result_path = tmp_path / "result.json"
+    request_path.write_text(
+        json.dumps(
+            {
+                "detection": {"sr_scale": 4},
+                "image": str(image),
+                "output_root": str(output_root),
+            }
+        ),
+        encoding="utf-8",
+    )
     captured = {}
-    upsampler = object()
-    monkeypatch.setattr(profile_hybrid, "load_image", lambda _image, _cache: object())
 
-    def fake_sr(_image, **kwargs):
-        captured.update(kwargs)
-        return object(), upsampler
+    class FakeHybridDetector:
+        def __init__(self, **kwargs):
+            captured["init"] = kwargs
 
-    monkeypatch.setattr(profile_hybrid, "apply_advanced_sr", fake_sr)
-    monkeypatch.setattr(profile_hybrid.cv2, "imwrite", lambda _path, _image: True)
-    monkeypatch.setattr(profile_hybrid.gc, "collect", lambda: 0)
-    monkeypatch.setattr(profile_hybrid.torch.cuda, "is_available", lambda: False)
+        def _run_homr_in_process(self, sr_output, *, enable_sr, sr_scale):
+            captured["homr"] = {
+                "output": sr_output,
+                "enable_sr": enable_sr,
+                "sr_scale": sr_scale,
+            }
+            page = sr_output / "batch/page_001"
+            page.mkdir(parents=True)
+            (page / "page_001.png").write_bytes(b"sr")
+            (page / "page_001_detections.json").write_text("[]\n", encoding="utf-8")
 
-    generated = detector._generate_sr_sources(tmp_path / "sr", sr_scale=4)
+        def _rel(self, path):
+            return str(path)
 
-    assert generated == {image: tmp_path / "sr/batch/page_001/page_001.png"}
-    assert captured["model_name"] == "RealESRGAN_x4plus"
-    assert captured["scale"] == 4
-    assert captured["tile"] == -1
-    assert captured["tile_pad"] == 10
-    assert captured["fp32"] is False
-    assert captured["upsampler"] is None
+        def _get_python_cmd(self, _name):
+            return ["fake-python"]
+
+    fake_hybrid = types.ModuleType("src.pipeline.detection.hybrid")
+    fake_hybrid.HybridDetector = FakeHybridDetector
+    monkeypatch.setitem(sys.modules, "src.pipeline.detection.hybrid", fake_hybrid)
+
+    import src.pipeline.detection.connector_artifacts as connector_artifacts
+
+    monkeypatch.setattr(connector_artifacts, "install_homr_connector_artifact_capture", lambda: True)
+    monkeypatch.setattr(connector_artifacts, "install_homr_skip_existing_guard", lambda _cls: True)
+
+    def fake_run(command, **_kwargs):
+        captured["omr_command"] = list(command)
+        omr = output_root / "omr_sr/page_001/predictions.json"
+        omr.parent.mkdir(parents=True)
+        omr.write_text("[]\n", encoding="utf-8")
+
+    monkeypatch.setattr(support_worker, "run_with_logging", fake_run)
+
+    support_worker.run(request_path, result_path)
+    result = json.loads(result_path.read_text(encoding="utf-8"))
+
+    assert captured["homr"]["enable_sr"] is True
+    assert captured["homr"]["sr_scale"] == 4
+    assert result["sr_scale"] == 4
+    assert result["historical_detector_artifact_runtime_input"] is False
+    assert Path(result["sr_image"]).is_file()
+    assert Path(result["current_omr"]).is_file()
+    assert "--pre-computed-sr" in captured["omr_command"]
+
+
+def test_verified_profile_collects_current_support_per_page(tmp_path: Path, monkeypatch) -> None:
+    score = tmp_path / "Score"
+    score.mkdir()
+    images = [score / "page_001.png", score / "page_002.png"]
+    for image in images:
+        image.write_bytes(b"image")
+
+    detector = profile_hybrid.VerifiedProfileHybridDetector(
+        det_cfg=_config()["detection"],
+        images=images,
+        run_id="test",
+        project_root=tmp_path,
+        dry_run=False,
+        skip_existing=False,
+        profile_name="stage_e_verified",
+    )
+    calls = []
+
+    def fake_support(*, image: Path, output_root: Path):
+        calls.append(image)
+        artifacts = output_root / image.parent.name / image.stem / "artifacts"
+        sr = artifacts / "sr" / "batch" / image.stem / image.name
+        omr = artifacts / "omr_sr" / image.stem / "predictions.json"
+        sr.parent.mkdir(parents=True)
+        omr.parent.mkdir(parents=True)
+        sr.write_bytes(b"sr")
+        omr.write_text("[]\n", encoding="utf-8")
+        return (
+            {
+                "status": "completed",
+                "sr_image": str(sr),
+                "current_omr": str(omr),
+                "historical_detector_artifact_runtime_input": False,
+            },
+            ["support-worker", str(image)],
+        )
+
+    monkeypatch.setattr(detector, "_support_worker", fake_support)
+
+    sr_images, omr_predictions, commands = detector._generate_current_support(tmp_path / "out")
+
+    assert calls == images
+    assert list(sr_images) == images
+    assert list(omr_predictions) == images
+    assert len(commands) == 2
 
 
 def test_dense_inventory_uses_only_current_hybrid_and_profile_masks(tmp_path: Path) -> None:
@@ -183,8 +267,7 @@ def test_dense_route_cnn_uses_original_coordinates_and_nms_false(
     probe = tmp_path / "probe"
     filtered.mkdir()
     probe.mkdir()
-    orchestrator._dense_route = DenseRouteArtifacts(
-        image_paths=[image],
+    orchestrator._dense_route = SimpleNamespace(
         filtered_root=filtered,
         probe_rescue_root=probe,
         execution_summary={},
@@ -196,7 +279,9 @@ def test_dense_route_cnn_uses_original_coordinates_and_nms_false(
         captured.update(kwargs)
         return 1
 
-    monkeypatch.setattr(restored, "run_cnn_scoring_batch", fake_score)
+    fake_cnn = types.ModuleType("src.pipeline.steps.cnn_scoring")
+    fake_cnn.run_cnn_scoring_batch = fake_score
+    monkeypatch.setitem(sys.modules, "src.pipeline.steps.cnn_scoring", fake_cnn)
 
     orchestrator._run_cnn_scoring()
 

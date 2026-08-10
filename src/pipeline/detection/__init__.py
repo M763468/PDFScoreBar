@@ -1,4 +1,4 @@
-"""Detection package providing barlines detection orchestration."""
+"""Detection package providing barline detection orchestration."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ __all__ = [
 ]
 
 
-def _install_heavy_detector_hooks() -> None:
+def _install_standard_detector_hooks() -> None:
     from .connector_artifacts import (
         install_homr_connector_artifact_capture,
         install_homr_skip_existing_guard,
@@ -37,12 +37,18 @@ def run_detection_step(
     dry_run: bool,
     in_memory_images: Dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
-    """Dispatch detection without importing the heavy detector in the parent process."""
-    execution_mode = str(get_nested(config, "detection", "execution_mode", default="in_process"))
-    if execution_mode == "isolated_per_page":
-        from .isolation import run_detection_isolated_per_page
+    """Dispatch standard or verified Stage E production detection."""
+    det_cfg = get_nested(config, "detection", default={}) or {}
+    verified_route = (
+        str(det_cfg.get("detector_route", "standard")) == "dense_full_pipeline"
+        and bool(det_cfg.get("homr_profile"))
+    )
+    if verified_route:
+        # The verified route supervises its memory-heavy current x4 source phase
+        # explicitly; do not import the standard heavy detector in this process.
+        from .restored_orchestrator import run_detection_step as run_verified
 
-        return run_detection_isolated_per_page(
+        return run_verified(
             config,
             images,
             page_ids,
@@ -52,10 +58,10 @@ def run_detection_step(
             in_memory_images=in_memory_images,
         )
 
-    _install_heavy_detector_hooks()
-    from .restored_orchestrator import run_detection_step as run_in_process
+    _install_standard_detector_hooks()
+    from .orchestrator import run_detection_step as run_standard
 
-    return run_in_process(
+    return run_standard(
         config,
         images,
         page_ids,
@@ -68,8 +74,8 @@ def run_detection_step(
 
 def __getattr__(name: str):
     if name == "DetectorOrchestrator":
-        _install_heavy_detector_hooks()
-        from .restored_orchestrator import DetectorOrchestrator
+        _install_standard_detector_hooks()
+        from .orchestrator import DetectorOrchestrator
 
         return DetectorOrchestrator
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

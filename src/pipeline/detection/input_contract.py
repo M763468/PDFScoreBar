@@ -39,6 +39,7 @@ def build_detector_input_contract(det_cfg: Mapping[str, Any]) -> dict[str, Any]:
         "hybrid_output_authoritative_for_probe": not uses_precomputed_probe,
         "hybrid_output_authoritative_for_cnn_bands": not uses_cnn_bands_override,
         "detector_route": str(det_cfg.get("detector_route", "standard")),
+        "execution_mode": str(det_cfg.get("execution_mode", "in_process")),
         "homr_profile": det_cfg.get("homr_profile"),
         "sr_scale": int(det_cfg.get("sr_scale", 2)),
         "probe_use_original_images": bool(det_cfg.get("probe_use_original_images", False)),

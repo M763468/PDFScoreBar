@@ -19,6 +19,7 @@ def _config() -> dict:
             "sr_scale": 4,
             "homr_profile": "stage_e_verified",
             "detector_route": "dense_full_pipeline",
+            "execution_mode": "isolated_per_page",
             "probe_use_original_images": True,
             "cnn_model_path": "model.pth",
             "cnn_threshold": 0.1,
@@ -35,6 +36,7 @@ def test_canonical_detector_config_uses_verified_restored_route() -> None:
     assert detection["sr_scale"] == 4
     assert detection["homr_profile"] == "stage_e_verified"
     assert detection["detector_route"] == "dense_full_pipeline"
+    assert detection["execution_mode"] == "isolated_per_page"
     assert detection["probe_use_original_images"] is True
     assert detection["cnn_threshold"] == 0.1
     assert detection["cnn_apply_nms"] is False
@@ -47,6 +49,7 @@ def test_canonical_detector_config_uses_verified_restored_route() -> None:
     assert contract["fresh_upstream_authoritative"] is True
     assert contract["override_keys"] == []
     assert contract["detector_route"] == "dense_full_pipeline"
+    assert contract["execution_mode"] == "isolated_per_page"
     assert contract["homr_profile"] == "stage_e_verified"
     assert contract["sr_scale"] == 4
     assert contract["probe_use_original_images"] is True
@@ -81,41 +84,37 @@ def test_verified_profile_is_selected_for_hybrid_detection(tmp_path: Path, monke
     assert result["commands"] == [["profile"]]
 
 
-def test_verified_profile_runs_sr_in_isolated_page_workers(tmp_path: Path, monkeypatch) -> None:
-    images = [tmp_path / "page_001.png", tmp_path / "page_002.png"]
-    for image in images:
-        image.write_bytes(b"image")
+def test_verified_profile_uses_historical_sr_generation_settings(tmp_path: Path, monkeypatch) -> None:
+    image = tmp_path / "page_001.png"
+    image.write_bytes(b"image")
     detector = object.__new__(profile_hybrid.VerifiedProfileHybridDetector)
     detector.dry_run = False
-    detector.images = images
-    detector.project_root = tmp_path
+    detector.images = [image]
+    detector.in_memory_images = None
     detector.det_cfg = {"sr_tile": -1, "sr_tile_pad": 10, "sr_fp32": False}
 
-    commands: list[list[str]] = []
+    captured = {}
+    upsampler = object()
+    monkeypatch.setattr(profile_hybrid, "load_image", lambda _image, _cache: object())
 
-    def fake_run(command, **_kwargs):
-        command = list(command)
-        commands.append(command)
-        output = Path(command[command.index("--output") + 1])
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_bytes(b"sr")
+    def fake_sr(_image, **kwargs):
+        captured.update(kwargs)
+        return object(), upsampler
 
-    monkeypatch.setattr(profile_hybrid, "run_with_logging", fake_run)
+    monkeypatch.setattr(profile_hybrid, "apply_advanced_sr", fake_sr)
+    monkeypatch.setattr(profile_hybrid.cv2, "imwrite", lambda _path, _image: True)
+    monkeypatch.setattr(profile_hybrid.gc, "collect", lambda: 0)
+    monkeypatch.setattr(profile_hybrid.torch.cuda, "is_available", lambda: False)
 
     generated = detector._generate_sr_sources(tmp_path / "sr", sr_scale=4)
 
-    assert generated == {
-        images[0]: tmp_path / "sr/batch/page_001/page_001.png",
-        images[1]: tmp_path / "sr/batch/page_002/page_002.png",
-    }
-    assert len(commands) == 2
-    for command, image in zip(commands, images, strict=True):
-        assert command[1:4] == ["-m", "src.pipeline.detection.sr_page_worker", "--image"]
-        assert command[4] == str(image.resolve())
-        assert command[command.index("--scale") + 1] == "4"
-        assert command[command.index("--tile") + 1] == "-1"
-        assert command[command.index("--tile-pad") + 1] == "10"
-        assert "--fp32" not in command
+    assert generated == {image: tmp_path / "sr/batch/page_001/page_001.png"}
+    assert captured["model_name"] == "RealESRGAN_x4plus"
+    assert captured["scale"] == 4
+    assert captured["tile"] == -1
+    assert captured["tile_pad"] == 10
+    assert captured["fp32"] is False
+    assert captured["upsampler"] is None
 
 
 def test_dense_inventory_uses_only_current_hybrid_and_profile_masks(tmp_path: Path) -> None:

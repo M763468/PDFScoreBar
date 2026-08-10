@@ -28,8 +28,18 @@ def run(request_path: Path, result_path: Path) -> Path:
     if not image.is_file():
         raise FileNotFoundError(image)
 
-    # Import the heavy detector only inside this disposable worker and bypass
-    # the package-level isolation dispatcher to avoid recursive page workers.
+    # Import and patch the heavy detector only inside this disposable worker.
+    # The package-level dispatcher intentionally leaves these imports out of the
+    # long-lived parent process so the x4 SR peak has the same memory boundary as
+    # the successful Issue #255 one-page reconstruction workers.
+    from src.pipeline.detection.connector_artifacts import (
+        install_homr_connector_artifact_capture,
+        install_homr_skip_existing_guard,
+    )
+
+    install_homr_connector_artifact_capture()
+    install_homr_skip_existing_guard()
+
     from src.pipeline.detection.restored_orchestrator import run_detection_step
 
     result = run_detection_step(

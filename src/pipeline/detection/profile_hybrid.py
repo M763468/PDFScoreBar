@@ -1,142 +1,194 @@
-"""Hybrid detector route backed by the verified Stage E HOMR profile."""
+"""Hybrid source generation backed by the verified Stage E HOMR profile."""
 
 from __future__ import annotations
 
-import gc
 import json
 import os
+import subprocess
+import sys
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, Dict
 
-import cv2
-import torch
 from tqdm import tqdm
 
-from src.common.preprocessing import apply_advanced_sr
 from src.pipeline.core.subprocess_utils import run_with_logging
 from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
-from src.pipeline.utils.images import load_image
 from src.pipeline.utils.io import ensure_dir
 
 from .homr_profile import run_homr_profile
-from .hybrid import HybridDetector
 
 
-class VerifiedProfileHybridDetector(HybridDetector):
-    """Use the pinned HOMR profile while retaining current SR/OMR/consensus code."""
+class VerifiedProfileHybridDetector:
+    """Reconstruct the verified fresh hybrid without retaining heavy SR state.
 
-    def __init__(self, *args: Any, profile_name: str, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    The accepted Issue #255 full-68 replay used three explicit source phases:
+    verified HOMR baseline, current x4/OMR support, and verified HOMR on that fresh
+    x4 image.  Keep those boundaries here so the current Real-ESRGAN/HOMR peak does
+    not share a process with the rest of the production detector.
+    """
+
+    def __init__(
+        self,
+        *,
+        det_cfg: Dict[str, Any],
+        images: list[Path],
+        run_id: str,
+        project_root: Path,
+        dry_run: bool,
+        skip_existing: bool,
+        in_memory_images: Dict[str, Any] | None = None,
+        profile_name: str,
+    ) -> None:
+        if in_memory_images:
+            raise ValueError("Verified HOMR profile requires persisted image files")
+        self.det_cfg = det_cfg
+        self.images = images
+        self.run_id = run_id
+        self.project_root = project_root
+        self.dry_run = dry_run
+        self.skip_existing = skip_existing
         self.profile_name = profile_name
 
-    def _generate_sr_sources(self, output_root: Path, *, sr_scale: int) -> dict[Path, Path]:
-        """Generate fresh SR images inside the page-isolated detector process."""
-        if sr_scale not in (2, 4):
-            raise ValueError(f"Unsupported SR scale for verified profile: {sr_scale}")
-        if self.dry_run:
-            return {image: output_root / "batch" / image.stem / image.name for image in self.images}
+    def _support_worker(
+        self,
+        *,
+        image: Path,
+        output_root: Path,
+    ) -> tuple[dict[str, Any], list[str]]:
+        page_root = output_root / image.parent.name / image.stem
+        page_root.mkdir(parents=True, exist_ok=False)
+        request_path = page_root / "request.json"
+        result_path = page_root / "result.json"
+        request = {
+            "schema_version": "pipeline.current_x4_support_request.v1",
+            "detection": dict(self.det_cfg),
+            "image": str(image.resolve()),
+            "output_root": str((page_root / "artifacts").resolve()),
+        }
+        request_path.write_text(
+            json.dumps(request, indent=2, ensure_ascii=False, default=str) + "\n",
+            encoding="utf-8",
+        )
+        command = [
+            sys.executable,
+            "-m",
+            "src.pipeline.detection.current_support_worker",
+            "--request",
+            str(request_path),
+            "--result",
+            str(result_path),
+        ]
+        env = os.environ.copy()
+        env["PYTHONPATH"] = os.pathsep.join(
+            [str(self.project_root), env.get("PYTHONPATH", "")]
+        ).strip(os.pathsep)
+        log_path = page_root / "worker.log"
+        with log_path.open("w", encoding="utf-8") as log_file:
+            process = subprocess.run(
+                command,
+                cwd=self.project_root,
+                env=env,
+                stdout=log_file,
+                stderr=subprocess.STDOUT,
+                text=True,
+            )
+        if process.returncode != 0:
+            lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+            tail = "\n".join(lines[-60:])
+            raise RuntimeError(
+                f"Current x4 support failed ({process.returncode}): {image}\n"
+                f"--- worker log tail ---\n{tail}"
+            )
+        if not result_path.is_file():
+            raise FileNotFoundError(result_path)
+        payload = json.loads(result_path.read_text(encoding="utf-8"))
+        if not isinstance(payload, Mapping) or payload.get("status") != "completed":
+            raise ValueError(f"Incomplete current x4 support result: {result_path}")
+        if payload.get("historical_detector_artifact_runtime_input") is not False:
+            raise ValueError("Current x4 support must not use historical detector artifacts")
+        return dict(payload), command
 
-        model_name = "RealESRGAN_x4plus" if sr_scale == 4 else "RealESRGAN_x2plus"
-        generated: dict[Path, Path] = {}
-        persistent_upsampler = None
-        try:
-            for image in tqdm(self.images, desc="Verified profile SR", unit="page"):
-                if not image.is_file():
-                    raise FileNotFoundError(image)
-                image_run_dir = output_root / "batch" / image.stem
-                ensure_dir(image_run_dir)
-                working_path = image_run_dir / image.name
-                image_bgr = load_image(image, self.in_memory_images)
-                upscaled, persistent_upsampler = apply_advanced_sr(
-                    image_bgr,
-                    model_name=model_name,
-                    scale=sr_scale,
-                    tile=self.det_cfg.get("sr_tile", -1),
-                    tile_pad=self.det_cfg.get("sr_tile_pad", 10),
-                    fp32=self.det_cfg.get("sr_fp32", False),
-                    upsampler=persistent_upsampler,
-                )
-                if not cv2.imwrite(str(working_path), upscaled):
-                    raise RuntimeError(f"Failed to write SR image: {working_path}")
-                generated[image] = working_path
-                del upscaled
-                del image_bgr
-        finally:
-            persistent_upsampler = None
-            gc.collect()
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-                torch.cuda.synchronize()
-        return generated
+    def _generate_current_support(
+        self,
+        output_root: Path,
+    ) -> tuple[dict[Path, Path], dict[Path, Path], list[list[str]]]:
+        sr_images: dict[Path, Path] = {}
+        omr_predictions: dict[Path, Path] = {}
+        commands: list[list[str]] = []
+        if self.dry_run:
+            for image in self.images:
+                page_root = output_root / image.parent.name / image.stem / "artifacts"
+                sr_images[image] = page_root / "sr" / "batch" / image.stem / image.name
+                omr_predictions[image] = page_root / "omr_sr" / image.stem / "predictions.json"
+            return sr_images, omr_predictions, commands
+
+        for image in tqdm(self.images, desc="Current x4 support", unit="page"):
+            payload, command = self._support_worker(image=image, output_root=output_root)
+            sr_image = Path(str(payload["sr_image"])).resolve()
+            omr = Path(str(payload["current_omr"])).resolve()
+            for path in (sr_image, omr):
+                if not path.is_file():
+                    raise FileNotFoundError(path)
+            sr_images[image] = sr_image
+            omr_predictions[image] = omr
+            commands.append(command)
+        return sr_images, omr_predictions, commands
 
     def run(self) -> Dict[str, Any]:
         hybrid_root = Path(self.det_cfg.get("hybrid_output_root", "logs/hybrid_generalization"))
         hybrid_output_dir = hybrid_root / self.run_id
         ensure_dir(hybrid_output_dir)
 
-        image_paths = [self._rel(path) for path in self.images]
-        stems = [path.stem for path in self.images]
-        commands: list[list[str]] = []
-        enable_sr = bool(self.det_cfg.get("enable_sr", True))
-        if not enable_sr:
+        if not bool(self.det_cfg.get("enable_sr", True)):
             raise ValueError("The verified Stage E HOMR profile requires detection.enable_sr=true")
         sr_scale = int(self.det_cfg.get("sr_scale", 2))
+        if sr_scale != 4:
+            raise ValueError(f"The verified Stage E HOMR profile requires sr_scale=4, got {sr_scale}")
+
+        for image in self.images:
+            if not image.is_file():
+                raise FileNotFoundError(image)
 
         baseline_output = hybrid_output_dir / "baseline"
-        sr_source_output = hybrid_output_dir / "sr_source"
-        sr_output = hybrid_output_dir / "sr"
+        support_output = hybrid_output_dir / "current_support"
+        verified_sr_output = hybrid_output_dir / "sr"
+        hybrid_results_dir = hybrid_output_dir / "hybrid_results"
+        ensure_dir(hybrid_results_dir)
+        commands: list[list[str]] = []
 
-        if not self.dry_run:
+        if self.dry_run:
+            commands.append(["profile:homr", self.profile_name, "baseline"])
+            sr_images, omr_predictions, support_commands = self._generate_current_support(
+                support_output
+            )
+            commands.extend(support_commands)
+            commands.append(["profile:homr", self.profile_name, "sr_x4"])
+        else:
             baseline_result = run_homr_profile(
                 self.profile_name,
                 images=self.images,
                 output_root=baseline_output,
             )
             commands.extend(baseline_result["commands"])
-            sr_sources = self._generate_sr_sources(sr_source_output, sr_scale=sr_scale)
-            sr_result = run_homr_profile(
+            sr_images, omr_predictions, support_commands = self._generate_current_support(
+                support_output
+            )
+            commands.extend(support_commands)
+            verified_sr_result = run_homr_profile(
                 self.profile_name,
                 images=self.images,
-                output_root=sr_output,
-                precomputed_sr=sr_sources,
+                output_root=verified_sr_output,
+                precomputed_sr=sr_images,
             )
-            commands.extend(sr_result["commands"])
-        else:
-            sr_sources = self._generate_sr_sources(sr_source_output, sr_scale=sr_scale)
-            commands.append(["profile:homr", self.profile_name, "baseline"])
-            commands.append(["profile:homr", self.profile_name, f"sr_x{sr_scale}"])
+            commands.extend(verified_sr_result["commands"])
 
-        # Keep OMR-DLN on the current production runtime. It consumes the SR image
-        # copied into the canonical profile SR output tree by the evaluator.
-        omr_output = hybrid_output_dir / "omr_sr"
-        python_cmd_omr = self._get_python_cmd("omr_dln")
-        omr_cmd = (
-            python_cmd_omr
-            + ["experiments/models/eval_omr_dln.py", "--images"]
-            + image_paths
-            + [
-                "--output-dir",
-                self._rel(omr_output),
-                "--pre-computed-sr",
-                self._rel(sr_output / "batch"),
-            ]
-        )
-        commands.append(omr_cmd)
         if not self.dry_run:
-            env = os.environ.copy()
-            homr_path = self.project_root / "external" / "homr"
-            env["PYTHONPATH"] = os.pathsep.join(
-                [str(self.project_root), str(homr_path), env.get("PYTHONPATH", "")]
-            ).strip(os.pathsep)
-            run_with_logging(omr_cmd, env=env, check=True)
-
-        hybrid_results_dir = hybrid_output_dir / "hybrid_results"
-        ensure_dir(hybrid_results_dir)
-        if not self.dry_run:
-            for stem in tqdm(stems, desc="Hybrid Consensus", unit="page"):
+            for image in tqdm(self.images, desc="Verified hybrid consensus", unit="page"):
+                stem = image.stem
                 baseline_json = baseline_output / "batch" / stem / f"{stem}_detections.json"
-                sr_json = sr_output / "batch" / stem / f"{stem}_detections.json"
-                omr_json = omr_output / stem / "predictions.json"
+                sr_json = verified_sr_output / "batch" / stem / f"{stem}_detections.json"
+                omr_json = omr_predictions[image]
                 output_json = hybrid_results_dir / f"{stem}_hybrid.json"
                 missing = [
                     str(path) for path in (baseline_json, sr_json, omr_json) if not path.is_file()
@@ -159,6 +211,12 @@ class VerifiedProfileHybridDetector(HybridDetector):
             "commands": commands,
             "hybrid_output_dir": hybrid_output_dir,
             "homr_profile": self.profile_name,
-            "sr_source_output_dir": sr_source_output,
+            "current_support_output_dir": support_output,
             "historical_detector_artifact_runtime_input": False,
+            "source_generation_phases": [
+                "verified_baseline",
+                "current_x4_support",
+                "verified_homr_on_fresh_x4",
+                "current_consensus",
+            ],
         }

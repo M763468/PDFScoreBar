@@ -22,6 +22,7 @@ detection:
   sr_scale: 4
   homr_profile: stage_e_verified
   detector_route: dense_full_pipeline
+  execution_mode: isolated_per_page
   probe_use_original_images: true
   crop_recenter_on_bbox_ink: true
   container_name: sr_eval_gpu_exp

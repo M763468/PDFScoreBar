@@ -1,5 +1,6 @@
 tests/test_homr_profile.py
 tests/test_issue255_production_detector_restoration.py
+tests/test_detector_isolation.py
 tests/test_verify_detector_full68.py
 tests/test_detector_input_contract.py
 tests/test_detector_orchestrator_input_contract.py

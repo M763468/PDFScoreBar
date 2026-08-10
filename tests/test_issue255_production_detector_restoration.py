@@ -85,9 +85,7 @@ def test_verified_profile_is_selected_for_hybrid_detection(tmp_path: Path, monke
     assert result["commands"] == [["profile"]]
 
 
-def test_current_support_worker_reuses_maintained_x4_homr_path(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_current_support_worker_reuses_maintained_x4_homr_path(tmp_path: Path, monkeypatch) -> None:
     image = tmp_path / "Score/page_001.png"
     image.parent.mkdir(parents=True)
     image.write_bytes(b"image")
@@ -133,7 +131,9 @@ def test_current_support_worker_reuses_maintained_x4_homr_path(
 
     import src.pipeline.detection.connector_artifacts as connector_artifacts
 
-    monkeypatch.setattr(connector_artifacts, "install_homr_connector_artifact_capture", lambda: True)
+    monkeypatch.setattr(
+        connector_artifacts, "install_homr_connector_artifact_capture", lambda: True
+    )
     monkeypatch.setattr(connector_artifacts, "install_homr_skip_existing_guard", lambda _cls: True)
 
     def fake_run(command, **_kwargs):

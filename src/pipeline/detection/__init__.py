@@ -39,10 +39,9 @@ def run_detection_step(
 ) -> Dict[str, Any]:
     """Dispatch standard or verified Stage E production detection."""
     det_cfg = get_nested(config, "detection", default={}) or {}
-    verified_route = (
-        str(det_cfg.get("detector_route", "standard")) == "dense_full_pipeline"
-        and bool(det_cfg.get("homr_profile"))
-    )
+    verified_route = str(
+        det_cfg.get("detector_route", "standard")
+    ) == "dense_full_pipeline" and bool(det_cfg.get("homr_profile"))
     if verified_route:
         # The verified route supervises its memory-heavy current x4 source phase
         # explicitly; do not import the standard heavy detector in this process.

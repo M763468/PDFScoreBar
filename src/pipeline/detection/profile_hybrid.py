@@ -144,7 +144,9 @@ class VerifiedProfileHybridDetector:
             raise ValueError("The verified Stage E HOMR profile requires detection.enable_sr=true")
         sr_scale = int(self.det_cfg.get("sr_scale", 2))
         if sr_scale != 4:
-            raise ValueError(f"The verified Stage E HOMR profile requires sr_scale=4, got {sr_scale}")
+            raise ValueError(
+                f"The verified Stage E HOMR profile requires sr_scale=4, got {sr_scale}"
+            )
 
         for image in self.images:
             if not image.is_file():

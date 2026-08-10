@@ -7,14 +7,7 @@ from typing import Any, Dict, List
 
 from src.pipeline.core.config import get_nested
 
-from .connector_artifacts import (
-    install_homr_connector_artifact_capture,
-    install_homr_skip_existing_guard,
-)
 from .utils import resolve_barlines_and_masks_config, resolve_paths_from_detection
-
-install_homr_connector_artifact_capture()
-install_homr_skip_existing_guard()
 
 __all__ = [
     "DetectorOrchestrator",
@@ -22,6 +15,16 @@ __all__ = [
     "resolve_barlines_and_masks_config",
     "resolve_paths_from_detection",
 ]
+
+
+def _install_heavy_detector_hooks() -> None:
+    from .connector_artifacts import (
+        install_homr_connector_artifact_capture,
+        install_homr_skip_existing_guard,
+    )
+
+    install_homr_connector_artifact_capture()
+    install_homr_skip_existing_guard()
 
 
 def run_detection_step(
@@ -51,6 +54,7 @@ def run_detection_step(
             in_memory_images=in_memory_images,
         )
 
+    _install_heavy_detector_hooks()
     from .restored_orchestrator import run_detection_step as run_in_process
 
     return run_in_process(
@@ -66,6 +70,7 @@ def run_detection_step(
 
 def __getattr__(name: str):
     if name == "DetectorOrchestrator":
+        _install_heavy_detector_hooks()
         from .restored_orchestrator import DetectorOrchestrator
 
         return DetectorOrchestrator

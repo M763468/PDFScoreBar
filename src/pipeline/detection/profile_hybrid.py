@@ -2,16 +2,20 @@
 
 from __future__ import annotations
 
+import gc
 import json
 import os
-import sys
 from pathlib import Path
 from typing import Any, Dict
 
+import cv2
+import torch
 from tqdm import tqdm
 
+from src.common.preprocessing import apply_advanced_sr
 from src.pipeline.core.subprocess_utils import run_with_logging
 from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
+from src.pipeline.utils.images import load_image
 from src.pipeline.utils.io import ensure_dir
 
 from .homr_profile import run_homr_profile
@@ -25,65 +29,44 @@ class VerifiedProfileHybridDetector(HybridDetector):
         super().__init__(*args, **kwargs)
         self.profile_name = profile_name
 
-    def _sr_worker_command(
-        self,
-        *,
-        image: Path,
-        output: Path,
-        sr_scale: int,
-    ) -> list[str]:
-        tile_value = self.det_cfg.get("sr_tile", -1)
-        tile = -1 if tile_value is None else int(tile_value)
-        command = [
-            sys.executable,
-            "-m",
-            "src.pipeline.detection.sr_page_worker",
-            "--image",
-            str(image.resolve()),
-            "--output",
-            str(output.resolve()),
-            "--scale",
-            str(sr_scale),
-            "--tile",
-            str(tile),
-            "--tile-pad",
-            str(int(self.det_cfg.get("sr_tile_pad", 10))),
-        ]
-        if bool(self.det_cfg.get("sr_fp32", False)):
-            command.append("--fp32")
-        return command
-
     def _generate_sr_sources(self, output_root: Path, *, sr_scale: int) -> dict[Path, Path]:
+        """Generate fresh SR images inside the page-isolated detector process."""
         if sr_scale not in (2, 4):
             raise ValueError(f"Unsupported SR scale for verified profile: {sr_scale}")
         if self.dry_run:
             return {image: output_root / "batch" / image.stem / image.name for image in self.images}
 
-        env = os.environ.copy()
-        env["PYTHONPATH"] = os.pathsep.join(
-            [str(self.project_root), env.get("PYTHONPATH", "")]
-        ).strip(os.pathsep)
+        model_name = "RealESRGAN_x4plus" if sr_scale == 4 else "RealESRGAN_x2plus"
         generated: dict[Path, Path] = {}
-        for image in tqdm(self.images, desc="Verified profile SR", unit="page"):
-            if not image.is_file():
-                raise FileNotFoundError(image)
-            image_run_dir = output_root / "batch" / image.stem
-            ensure_dir(image_run_dir)
-            working_path = image_run_dir / image.name
-            command = self._sr_worker_command(
-                image=image,
-                output=working_path,
-                sr_scale=sr_scale,
-            )
-            # Real-ESRGAN retains large CPU/GPU allocations beyond one enhance call.
-            # A dedicated process per page guarantees that all page-local allocations
-            # are returned to the OS/driver before the next x4 page begins.  This is
-            # also the execution boundary used by the successful Issue #255 full-68
-            # restoration experiment.
-            run_with_logging(command, env=env, check=True)
-            if not working_path.is_file():
-                raise FileNotFoundError(f"SR worker did not create output: {working_path}")
-            generated[image] = working_path
+        persistent_upsampler = None
+        try:
+            for image in tqdm(self.images, desc="Verified profile SR", unit="page"):
+                if not image.is_file():
+                    raise FileNotFoundError(image)
+                image_run_dir = output_root / "batch" / image.stem
+                ensure_dir(image_run_dir)
+                working_path = image_run_dir / image.name
+                image_bgr = load_image(image, self.in_memory_images)
+                upscaled, persistent_upsampler = apply_advanced_sr(
+                    image_bgr,
+                    model_name=model_name,
+                    scale=sr_scale,
+                    tile=self.det_cfg.get("sr_tile", -1),
+                    tile_pad=self.det_cfg.get("sr_tile_pad", 10),
+                    fp32=self.det_cfg.get("sr_fp32", False),
+                    upsampler=persistent_upsampler,
+                )
+                if not cv2.imwrite(str(working_path), upscaled):
+                    raise RuntimeError(f"Failed to write SR image: {working_path}")
+                generated[image] = working_path
+                del upscaled
+                del image_bgr
+        finally:
+            persistent_upsampler = None
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
         return generated
 
     def run(self) -> Dict[str, Any]:

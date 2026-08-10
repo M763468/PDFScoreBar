@@ -38,9 +38,7 @@ def run_detection_step(
     in_memory_images: Dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
     """Dispatch detection without importing the heavy detector in the parent process."""
-    execution_mode = str(
-        get_nested(config, "detection", "execution_mode", default="in_process")
-    )
+    execution_mode = str(get_nested(config, "detection", "execution_mode", default="in_process"))
     if execution_mode == "isolated_per_page":
         from .isolation import run_detection_isolated_per_page
 

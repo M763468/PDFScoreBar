@@ -1,8 +1,8 @@
 from pathlib import Path
 
+from src.pipeline.core.run_ids import build_probe_run_id
 from src.pipeline.detection import isolation
 from src.pipeline.detection.input_contract import build_detector_input_contract
-from src.pipeline.core.run_ids import build_probe_run_id
 
 
 def _config() -> dict:
@@ -40,6 +40,8 @@ def test_isolated_detector_aggregates_page_outputs(tmp_path: Path, monkeypatch) 
         baseline = hybrid_root / "baseline" / "batch" / image.stem
         baseline.mkdir(parents=True)
         (baseline / f"{image.stem}_proxy_debug_3_staff.png").write_bytes(b"mask")
+        (baseline / f"{image.stem}_connector_symbols.png").write_bytes(b"symbols")
+        (baseline / f"{image.stem}_connector_brace_dot.png").write_bytes(b"brace")
         hybrid = hybrid_root / "hybrid_results" / f"{image.stem}_hybrid.json"
         hybrid.parent.mkdir(parents=True)
         hybrid.write_text("[]\n")
@@ -75,20 +77,15 @@ def test_isolated_detector_aggregates_page_outputs(tmp_path: Path, monkeypatch) 
     aggregate_probe = Path(result["probe_output_dir"])
     for image in images:
         assert (
-            aggregate_probe
-            / build_probe_run_id(image)
-            / "pipeline2_no_peak_filtered_cnn.json"
+            aggregate_probe / build_probe_run_id(image) / "pipeline2_no_peak_filtered_cnn.json"
         ).is_file()
 
     aggregate_hybrid = Path(result["hybrid_output_dir"])
     for image in images:
-        assert (
-            aggregate_hybrid
-            / "baseline"
-            / "batch"
-            / image.stem
-            / f"{image.stem}_proxy_debug_3_staff.png"
-        ).is_file()
+        baseline = aggregate_hybrid / "baseline" / "batch" / image.stem
+        assert (baseline / f"{image.stem}_proxy_debug_3_staff.png").is_file()
+        assert (baseline / f"{image.stem}_connector_symbols.png").is_file()
+        assert (baseline / f"{image.stem}_connector_brace_dot.png").is_file()
         assert (aggregate_hybrid / "hybrid_results" / f"{image.stem}_hybrid.json").is_file()
 
 

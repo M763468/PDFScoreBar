@@ -84,7 +84,9 @@ def test_verified_profile_is_selected_for_hybrid_detection(tmp_path: Path, monke
     assert result["commands"] == [["profile"]]
 
 
-def test_verified_profile_uses_historical_sr_generation_settings(tmp_path: Path, monkeypatch) -> None:
+def test_verified_profile_uses_historical_sr_generation_settings(
+    tmp_path: Path, monkeypatch
+) -> None:
     image = tmp_path / "page_001.png"
     image.write_bytes(b"image")
     detector = object.__new__(profile_hybrid.VerifiedProfileHybridDetector)

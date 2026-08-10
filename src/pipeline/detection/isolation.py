@@ -138,9 +138,9 @@ def _run_page_worker(
         str(result_path),
     ]
     env = os.environ.copy()
-    env["PYTHONPATH"] = os.pathsep.join(
-        [str(PROJECT_ROOT), env.get("PYTHONPATH", "")]
-    ).strip(os.pathsep)
+    env["PYTHONPATH"] = os.pathsep.join([str(PROJECT_ROOT), env.get("PYTHONPATH", "")]).strip(
+        os.pathsep
+    )
     log_path = page_root / "worker.log"
     with log_path.open("w", encoding="utf-8") as log_file:
         process = subprocess.run(

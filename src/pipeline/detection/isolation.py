@@ -66,16 +66,22 @@ def _copy_hybrid_downstream_artifacts(
     source_root: Path,
     target_root: Path,
 ) -> None:
-    """Copy only hybrid artifacts needed after detector scoring has completed."""
+    """Copy hybrid artifacts required by numbering after detector scoring."""
     stem = image.stem
     source_baseline = source_root / "baseline" / "batch" / stem
     target_baseline = target_root / "baseline" / "batch" / stem
     target_baseline.mkdir(parents=True, exist_ok=True)
     copied_mask = False
-    for pattern in ("*_debug_3_staff.png", "*_staff_mask.png"):
+    for pattern in (
+        "*_debug_3_staff.png",
+        "*_staff_mask.png",
+        "*_connector_symbols.png",
+        "*_connector_brace_dot.png",
+    ):
         for source in source_baseline.glob(pattern):
             shutil.copy2(source, target_baseline / source.name)
-            copied_mask = True
+            if pattern in {"*_debug_3_staff.png", "*_staff_mask.png"}:
+                copied_mask = True
     if not copied_mask:
         raise FileNotFoundError(f"Missing isolated baseline staff mask: {source_baseline}")
 
@@ -152,11 +158,10 @@ def _run_page_worker(
             tail = "\n".join(lines[-40:])
         except OSError:
             pass
-        raise subprocess.CalledProcessError(
-            process.returncode,
-            command,
-            output=tail,
-        )
+        detail = f"Isolated detector page failed ({process.returncode}): {image}"
+        if tail:
+            detail += f"\n--- worker log tail ---\n{tail}"
+        raise RuntimeError(detail)
     if not result_path.is_file():
         raise FileNotFoundError(f"Isolated detector worker did not write result: {result_path}")
     payload = json.loads(result_path.read_text(encoding="utf-8"))

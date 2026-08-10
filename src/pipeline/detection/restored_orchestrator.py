@@ -6,21 +6,14 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
-from src.pipeline.detector_routes.dense_full_pipeline import (
-    DenseRouteArtifacts,
-    reconstruct_dense_full_pipeline_route,
-)
-from src.pipeline.steps.cnn_scoring import run_cnn_scoring_batch
+from src.pipeline.core.run_ids import split_score_page_from_composite_stem
 from src.pipeline.utils.io import ensure_dir
 
 from .config import get_cnn_apply_nms
-from .orchestrator import (
-    PROJECT_ROOT,
-    DetectorOrchestrator as BaseDetectorOrchestrator,
-    _split_score_page_from_stem,
-)
+from .input_contract import build_detector_input_contract
 from .profile_hybrid import VerifiedProfileHybridDetector
 
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DENSE_ROUTE_NAME = "dense_full_pipeline"
 
 
@@ -33,29 +26,59 @@ def _first_existing(directory: Path, names: tuple[str, ...], *, description: str
 
 
 def _score_page(image: Path) -> tuple[str, str]:
-    split = _split_score_page_from_stem(image.stem)
+    split = split_score_page_from_composite_stem(image.stem)
     return split if split is not None else (image.parent.name, image.stem)
 
 
-class DetectorOrchestrator(BaseDetectorOrchestrator):
-    """Extend the standard detector with the verified fresh Stage E route."""
+class DetectorOrchestrator:
+    """Lightweight supervisor for the verified fresh Stage E route."""
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        *,
+        config: Dict[str, Any],
+        images: List[Path],
+        run_id: str,
+        run_dir: Path,
+        dry_run: bool,
+        in_memory_images: Dict[str, Any] | None = None,
+    ) -> None:
+        self.config = config
+        self.images = images
+        self.run_id = run_id
+        self.run_dir = run_dir
+        self.dry_run = dry_run
+        self.in_memory_images = in_memory_images
+        self.det_cfg = dict(config.get("detection") or {})
         self.detector_route = str(self.det_cfg.get("detector_route", "standard"))
         self.homr_profile = self.det_cfg.get("homr_profile")
-        self._dense_route: DenseRouteArtifacts | None = None
-        if self.detector_route == DENSE_ROUTE_NAME and not self.homr_profile:
-            raise ValueError("dense_full_pipeline production route requires detection.homr_profile")
+        self.skip_existing = bool(self.det_cfg.get("probe_skip_existing", False))
+        self.input_contract = build_detector_input_contract(self.det_cfg)
+        self.input_contract_path = self.run_dir / "intermediate" / "detector_input_contract.json"
+        self.hybrid_output_dir: Path | None = None
+        self.probe_output_dir: Path | None = None
+        self._dense_route: Any | None = None
+
+        if self.detector_route != DENSE_ROUTE_NAME:
+            raise ValueError(
+                f"Verified Stage E orchestrator requires detector_route={DENSE_ROUTE_NAME}"
+            )
+        if not self.homr_profile:
+            raise ValueError("Verified Stage E production route requires detection.homr_profile")
+        if in_memory_images:
+            raise ValueError("Verified Stage E production route requires persisted image files")
+
+    def _record_input_contract(self) -> Path | None:
+        if self.dry_run:
+            return None
+        ensure_dir(self.input_contract_path.parent)
+        self.input_contract_path.write_text(
+            json.dumps(self.input_contract, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        return self.input_contract_path
 
     def _run_hybrid_detection(self) -> Dict[str, Any]:
-        if not self.homr_profile:
-            return super()._run_hybrid_detection()
-        missing_images = [str(image) for image in self.images if not image.is_file()]
-        if missing_images:
-            raise FileNotFoundError(
-                "Verified HOMR profile requires persisted image files: " + ", ".join(missing_images)
-            )
         detector = VerifiedProfileHybridDetector(
             det_cfg=self.det_cfg,
             images=self.images,
@@ -129,9 +152,7 @@ class DetectorOrchestrator(BaseDetectorOrchestrator):
         exclude.write_text('{"excluded_pages": []}\n', encoding="utf-8")
         return inventory, exclude
 
-    def _run_probe_scan(self) -> Dict[str, Any]:
-        if self.detector_route != DENSE_ROUTE_NAME:
-            return super()._run_probe_scan()
+    def _run_dense_route(self) -> Dict[str, Any]:
         if self.dry_run:
             probe_root = (
                 self.run_dir
@@ -143,6 +164,12 @@ class DetectorOrchestrator(BaseDetectorOrchestrator):
                 "commands": [["inprocess:dense_full_pipeline_route", "--dry-run"]],
                 "probe_output_dir": probe_root,
             }
+
+        # Import the dense implementation only after x4 source generation has
+        # completed and its disposable support workers have exited.
+        from src.pipeline.detector_routes.dense_full_pipeline import (
+            reconstruct_dense_full_pipeline_route,
+        )
 
         inventory, exclude = self._write_dense_inventory()
         route_root = self.run_dir / "intermediate" / "dense_full_pipeline_route"
@@ -167,11 +194,8 @@ class DetectorOrchestrator(BaseDetectorOrchestrator):
         }
 
     def _run_cnn_scoring(self) -> Dict[str, Any]:
-        if self.detector_route != DENSE_ROUTE_NAME:
-            return super()._run_cnn_scoring()
         if self._dense_route is None and not self.dry_run:
             raise RuntimeError("Dense detector route was not reconstructed before CNN scoring")
-
         cnn_model = self.det_cfg.get("cnn_model_path")
         if not cnn_model:
             raise ValueError("detection.cnn_model_path is required")
@@ -188,6 +212,10 @@ class DetectorOrchestrator(BaseDetectorOrchestrator):
         if not self.dry_run:
             if self.probe_output_dir is None:
                 raise RuntimeError("Probe output root is missing")
+            # Keep torch/torchvision out of the supervisor until the x4 support
+            # workers and verified HOMR profile runs have completed.
+            from src.pipeline.steps.cnn_scoring import run_cnn_scoring_batch
+
             run_cnn_scoring_batch(
                 probe_output_root=self.probe_output_dir,
                 images=self.images,
@@ -226,6 +254,33 @@ class DetectorOrchestrator(BaseDetectorOrchestrator):
             ]
         }
 
+    def run_detection(self) -> Dict[str, Any]:
+        contract_path = self._record_input_contract()
+        commands: list[list[str]] = []
+
+        hybrid_result = self._run_hybrid_detection()
+        self.hybrid_output_dir = Path(hybrid_result["hybrid_output_dir"])
+        commands.extend(hybrid_result.get("commands", []))
+
+        dense_result = self._run_dense_route()
+        self.probe_output_dir = Path(dense_result["probe_output_dir"])
+        commands.extend(dense_result.get("commands", []))
+
+        cnn_result = self._run_cnn_scoring()
+        commands.extend(cnn_result.get("commands", []))
+
+        return {
+            "commands": commands,
+            "hybrid_output_dir": self.hybrid_output_dir,
+            "probe_output_dir": self.probe_output_dir,
+            "detector_input_contract": self.input_contract,
+            "detector_input_contract_path": contract_path,
+            "detector_route": self.detector_route,
+            "homr_profile": self.homr_profile,
+            "historical_detector_artifact_runtime_input": False,
+            "source_generation_phases": hybrid_result.get("source_generation_phases", []),
+        }
+
 
 def run_detection_step(
     config: Dict[str, Any],
@@ -237,8 +292,9 @@ def run_detection_step(
     dry_run: bool,
     in_memory_images: Dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
-    """Run standard or verified Stage E detection from fresh upstream inputs."""
-    del page_ids
+    """Run the verified Stage E detector from fresh upstream inputs."""
+    if len(images) != len(page_ids):
+        raise ValueError("images/page_ids length mismatch")
     orchestrator = DetectorOrchestrator(
         config=config,
         images=images,
@@ -247,7 +303,4 @@ def run_detection_step(
         dry_run=dry_run,
         in_memory_images=in_memory_images,
     )
-    result = orchestrator.run_detection()
-    result["detector_route"] = orchestrator.detector_route
-    result["homr_profile"] = orchestrator.homr_profile
-    return result
+    return orchestrator.run_detection()

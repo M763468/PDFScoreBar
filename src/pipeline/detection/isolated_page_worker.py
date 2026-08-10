@@ -28,11 +28,9 @@ def run(request_path: Path, result_path: Path) -> Path:
     if not image.is_file():
         raise FileNotFoundError(image)
 
-    # Import the detector only inside this disposable worker.  The successful
-    # Issue #255 full-68 reconstruction used the same one-page/one-process
-    # lifetime, which prevents the heavy HOMR/SR runtime from coexisting with
-    # the long-lived parent pipeline process.
-    from src.pipeline.detection import run_detection_step
+    # Import the heavy detector only inside this disposable worker and bypass
+    # the package-level isolation dispatcher to avoid recursive page workers.
+    from src.pipeline.detection.restored_orchestrator import run_detection_step
 
     result = run_detection_step(
         dict(config),

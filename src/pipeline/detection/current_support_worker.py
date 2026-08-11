@@ -1,9 +1,8 @@
-"""Generate current x4 SR and OMR support for one detector page.
+"""Generate current x4/HOMR/OMR support for one detector page.
 
-The restored Stage E hybrid consumes the verified HOMR baseline, verified HOMR on
-the fresh x4 image, and current OMR-DLN evidence.  Current HOMR-on-x4 detections
-are not part of that consensus, so this worker deliberately does not run them.
-The memory-heavy SR process exits before OMR-DLN starts.
+The current support path preserves connector-semantic HOMR artifacts, but keeps
+its three heavy phases disjoint: Real-ESRGAN SR, current HOMR on the persisted x4
+image, then OMR-DLN.  This avoids retaining HOMR state during the x4 SR peak.
 """
 
 from __future__ import annotations
@@ -40,38 +39,25 @@ def _load_completed_result(path: Path, *, name: str) -> dict[str, Any]:
     return dict(payload)
 
 
-def _run_current_sr(
+def _run_child_worker(
     *,
-    det_cfg: Mapping[str, Any],
-    image: Path,
-    output_root: Path,
+    name: str,
+    module: str,
+    request: Mapping[str, Any],
+    request_path: Path,
+    result_path: Path,
+    log_path: Path,
+    python_step: str,
     env: Mapping[str, str],
 ) -> tuple[dict[str, Any], list[str]]:
-    stem = image.stem
-    sr_image = output_root / "sr" / "batch" / stem / image.name
-    request_path = output_root / "current_sr_request.json"
-    result_path = output_root / "current_sr_result.json"
-    log_path = output_root / "current_sr_worker.log"
     request_path.parent.mkdir(parents=True, exist_ok=True)
     request_path.write_text(
-        json.dumps(
-            {
-                "schema_version": "pipeline.current_x4_sr_request.v1",
-                "detection": dict(det_cfg),
-                "image": str(image),
-                "output": str(sr_image),
-            },
-            indent=2,
-            ensure_ascii=False,
-            default=str,
-        )
-        + "\n",
+        json.dumps(dict(request), indent=2, ensure_ascii=False, default=str) + "\n",
         encoding="utf-8",
     )
-
-    command = get_pipeline_python("sr") + [
+    command = get_pipeline_python(python_step) + [
         "-m",
-        "src.pipeline.detection.current_sr_worker",
+        module,
         "--request",
         str(request_path),
         "--result",
@@ -90,15 +76,10 @@ def _run_current_sr(
         lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
         tail = "\n".join(lines[-60:])
         raise RuntimeError(
-            f"Current x4 SR failed ({process.returncode}): {image}\n"
-            f"--- SR worker log tail ---\n{tail}"
+            f"{name} failed ({process.returncode}): {request.get('image')}\n"
+            f"--- worker log tail ---\n{tail}"
         )
-
-    payload = _load_completed_result(result_path, name="current x4 SR")
-    actual_sr = Path(str(payload["sr_image"])).resolve()
-    if actual_sr != sr_image.resolve() or not actual_sr.is_file():
-        raise FileNotFoundError(f"Current x4 SR output mismatch: {actual_sr}")
-    return payload, command
+    return _load_completed_result(result_path, name=name), command
 
 
 def run(request_path: Path, result_path: Path) -> Path:
@@ -122,15 +103,45 @@ def run(request_path: Path, result_path: Path) -> Path:
         [str(PROJECT_ROOT), str(homr_path), env.get("PYTHONPATH", "")]
     ).strip(os.pathsep)
 
-    sr_payload, sr_command = _run_current_sr(
-        det_cfg=det_cfg,
-        image=image,
-        output_root=output_root,
+    stem = image.stem
+    sr_image = output_root / "sr" / "batch" / stem / image.name
+    sr_payload, sr_command = _run_child_worker(
+        name="Current x4 SR",
+        module="src.pipeline.detection.current_sr_worker",
+        request={
+            "schema_version": "pipeline.current_x4_sr_request.v1",
+            "detection": dict(det_cfg),
+            "image": str(image),
+            "output": str(sr_image),
+        },
+        request_path=output_root / "current_sr_request.json",
+        result_path=output_root / "current_sr_result.json",
+        log_path=output_root / "current_sr_worker.log",
+        python_step="sr",
         env=env,
     )
-    sr_image = Path(str(sr_payload["sr_image"])).resolve()
+    actual_sr = Path(str(sr_payload["sr_image"])).resolve()
+    if actual_sr != sr_image.resolve() or not actual_sr.is_file():
+        raise FileNotFoundError(f"Current x4 SR output mismatch: {actual_sr}")
 
-    stem = image.stem
+    current_homr_root = output_root / "current_homr"
+    homr_payload, homr_command = _run_child_worker(
+        name="Current HOMR on x4",
+        module="src.pipeline.detection.current_homr_worker",
+        request={
+            "schema_version": "pipeline.current_homr_on_x4_request.v1",
+            "detection": dict(det_cfg),
+            "image": str(image),
+            "sr_image": str(actual_sr),
+            "output_root": str(current_homr_root),
+        },
+        request_path=output_root / "current_homr_request.json",
+        result_path=output_root / "current_homr_result.json",
+        log_path=output_root / "current_homr_worker.log",
+        python_step="homr",
+        env=env,
+    )
+
     omr_output = output_root / "omr_sr"
     omr_cmd = get_pipeline_python("omr_dln") + [
         "experiments/models/eval_omr_dln.py",
@@ -148,17 +159,22 @@ def run(request_path: Path, result_path: Path) -> Path:
         raise FileNotFoundError(omr_predictions)
 
     payload = {
-        "schema_version": "pipeline.current_x4_support.v2",
+        "schema_version": "pipeline.current_x4_support.v3",
         "status": "completed",
         "image": str(image),
         "sr_scale": 4,
-        "sr_image": str(sr_image),
+        "sr_image": str(actual_sr),
         "sr_sha256": sr_payload.get("sr_sha256"),
+        "current_sr_detection": homr_payload.get("current_sr_detection"),
+        "current_homr_staff_mask": homr_payload.get("staff_mask"),
+        "connector_symbols": homr_payload.get("connector_symbols"),
+        "connector_brace_dot": homr_payload.get("connector_brace_dot"),
         "current_omr": str(omr_predictions),
         "support_root": str(output_root),
-        "current_homr_executed": False,
+        "current_homr_executed": True,
+        "memory_phase_boundaries": ["sr", "current_homr", "omr_dln"],
         "historical_detector_artifact_runtime_input": False,
-        "commands": [sr_command, omr_cmd],
+        "commands": [sr_command, homr_command, omr_cmd],
     }
     result_path.parent.mkdir(parents=True, exist_ok=True)
     result_path.write_text(

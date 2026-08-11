@@ -39,21 +39,33 @@ def run(request_path: Path, result_path: Path) -> Path:
     # bindings in predictor/heuristics do not bypass the shared boundary.
     import torch
 
-    from homr.main import ProcessingConfig
+    import homr.main as homr_main
     from homr.music_xml_generator import XmlGeneratorArguments
     from src.common.connector_artifacts import connector_mask_paths
+    from src.homr_eval_scripts.core import heuristics as homr_heuristics
+    from src.homr_eval_scripts.core import predictor as homr_predictor
     from src.homr_eval_scripts.core.metrics import BarlinePrediction
-    from src.homr_eval_scripts.core.predictor import HomrPredictor
     from src.homr_eval_scripts.core.reporting import save_homr_results
     from src.homr_eval_scripts.core.utils import DEFAULT_TUNING
     from src.pipeline.detection.connector_artifacts import install_homr_connector_artifact_capture
-    from src.pipeline.detection.homr_profile_compat import build_processing_config_compat
-
-    install_homr_connector_artifact_capture(HomrPredictor)
+    from src.pipeline.detection.homr_profile_compat import (
+        build_processing_config_compat,
+        install_current_homr_consumer_compat,
+    )
 
     use_gpu_inference = torch.cuda.is_available()
+    homr_api_compat = install_current_homr_consumer_compat(
+        homr_main,
+        homr_predictor,
+        homr_heuristics,
+        use_gpu_inference=use_gpu_inference,
+    )
+
+    HomrPredictor = homr_predictor.HomrPredictor
+    install_homr_connector_artifact_capture(HomrPredictor)
+
     config = build_processing_config_compat(
-        ProcessingConfig,
+        homr_main.ProcessingConfig,
         enable_debug=bool(det_cfg.get("enable_debug", False)),
         enable_cache=bool(det_cfg.get("enable_cache", True)),
         write_staff_positions=bool(det_cfg.get("write_staff_positions", False)),
@@ -121,6 +133,7 @@ def run(request_path: Path, result_path: Path) -> Path:
         "connector_brace_dot": (
             str(connector_paths["brace_dot"]) if connector_paths["brace_dot"].is_file() else None
         ),
+        "homr_api_compat": homr_api_compat,
         "historical_detector_artifact_runtime_input": False,
     }
     result_path.parent.mkdir(parents=True, exist_ok=True)

@@ -141,7 +141,7 @@ def run(request_path: Path, result_path: Path) -> Path:
         "--pre-computed-sr",
         str(output_root / "sr" / "batch"),
     ]
-    run_with_logging(omr_cmd, cwd=PROJECT_ROOT, env=env, check=True)
+    run_with_logging(omr_cmd, env=env, check=True)
 
     omr_predictions = omr_output / stem / "predictions.json"
     if not omr_predictions.is_file():

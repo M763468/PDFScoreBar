@@ -1,9 +1,9 @@
-"""Generate current x4 SR/HOMR/OMR support for one detector page.
+"""Generate current x4 SR and OMR support for one detector page.
 
-The verified Stage E production route keeps the accepted HOMR baseline/SR profile
-separate from the current runtime.  This worker supplies only the current x4 image
-and current OMR evidence.  It deliberately uses the maintained HybridDetector SR
-path that reproduced the Issue #255 full-68 x4 artifact byte-for-byte.
+The restored Stage E hybrid consumes the verified HOMR baseline, verified HOMR on
+the fresh x4 image, and current OMR-DLN evidence.  Current HOMR-on-x4 detections
+are not part of that consensus, so this worker deliberately does not run them.
+The memory-heavy SR process exits before OMR-DLN starts.
 """
 
 from __future__ import annotations
@@ -11,10 +11,12 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from src.pipeline.core.python_env import get_pipeline_python
 from src.pipeline.core.subprocess_utils import run_with_logging
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -25,6 +27,78 @@ def _load_request(path: Path) -> dict[str, Any]:
     if not isinstance(payload, Mapping):
         raise ValueError("Current-support request must be a mapping")
     return dict(payload)
+
+
+def _load_completed_result(path: Path, *, name: str) -> dict[str, Any]:
+    if not path.is_file():
+        raise FileNotFoundError(path)
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, Mapping) or payload.get("status") != "completed":
+        raise ValueError(f"Incomplete {name} result: {path}")
+    if payload.get("historical_detector_artifact_runtime_input") is not False:
+        raise ValueError(f"{name} must not use historical detector artifacts")
+    return dict(payload)
+
+
+def _run_current_sr(
+    *,
+    det_cfg: Mapping[str, Any],
+    image: Path,
+    output_root: Path,
+    env: Mapping[str, str],
+) -> tuple[dict[str, Any], list[str]]:
+    stem = image.stem
+    sr_image = output_root / "sr" / "batch" / stem / image.name
+    request_path = output_root / "current_sr_request.json"
+    result_path = output_root / "current_sr_result.json"
+    log_path = output_root / "current_sr_worker.log"
+    request_path.parent.mkdir(parents=True, exist_ok=True)
+    request_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "pipeline.current_x4_sr_request.v1",
+                "detection": dict(det_cfg),
+                "image": str(image),
+                "output": str(sr_image),
+            },
+            indent=2,
+            ensure_ascii=False,
+            default=str,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    command = get_pipeline_python("sr") + [
+        "-m",
+        "src.pipeline.detection.current_sr_worker",
+        "--request",
+        str(request_path),
+        "--result",
+        str(result_path),
+    ]
+    with log_path.open("w", encoding="utf-8") as log_file:
+        process = subprocess.run(
+            command,
+            cwd=PROJECT_ROOT,
+            env=dict(env),
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+    if process.returncode != 0:
+        lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+        tail = "\n".join(lines[-60:])
+        raise RuntimeError(
+            f"Current x4 SR failed ({process.returncode}): {image}\n"
+            f"--- SR worker log tail ---\n{tail}"
+        )
+
+    payload = _load_completed_result(result_path, name="current x4 SR")
+    actual_sr = Path(str(payload["sr_image"])).resolve()
+    if actual_sr != sr_image.resolve() or not actual_sr.is_file():
+        raise FileNotFoundError(f"Current x4 SR output mismatch: {actual_sr}")
+    return payload, command
 
 
 def run(request_path: Path, result_path: Path) -> Path:
@@ -42,71 +116,49 @@ def run(request_path: Path, result_path: Path) -> Path:
     if sr_scale != 4:
         raise ValueError(f"Verified Stage E current support requires sr_scale=4, got {sr_scale}")
 
-    # Import the heavy current detector only inside this disposable worker.
-    from src.pipeline.detection.connector_artifacts import (
-        install_homr_connector_artifact_capture,
-        install_homr_skip_existing_guard,
-    )
-    from src.pipeline.detection.hybrid import HybridDetector
-
-    install_homr_connector_artifact_capture()
-    install_homr_skip_existing_guard(HybridDetector)
-
-    detector = HybridDetector(
-        det_cfg=dict(det_cfg),
-        images=[image],
-        run_id="current_support",
-        project_root=PROJECT_ROOT,
-        dry_run=False,
-        skip_existing=False,
-        in_memory_images=None,
-    )
-
-    sr_output = output_root / "sr"
-    detector._run_homr_in_process(sr_output, enable_sr=True, sr_scale=sr_scale)
-
-    stem = image.stem
-    sr_page = sr_output / "batch" / stem
-    sr_image = sr_page / image.name
-    current_sr_detection = sr_page / f"{stem}_detections.json"
-    for required in (sr_image, current_sr_detection):
-        if not required.is_file():
-            raise FileNotFoundError(required)
-
-    omr_output = output_root / "omr_sr"
-    image_arg = detector._rel(image)
-    python_cmd_omr = detector._get_python_cmd("omr_dln")
-    omr_cmd = python_cmd_omr + [
-        "experiments/models/eval_omr_dln.py",
-        "--images",
-        image_arg,
-        "--output-dir",
-        detector._rel(omr_output),
-        "--pre-computed-sr",
-        detector._rel(sr_output / "batch"),
-    ]
     env = os.environ.copy()
     homr_path = PROJECT_ROOT / "external" / "homr"
     env["PYTHONPATH"] = os.pathsep.join(
         [str(PROJECT_ROOT), str(homr_path), env.get("PYTHONPATH", "")]
     ).strip(os.pathsep)
-    run_with_logging(omr_cmd, env=env, check=True)
+
+    sr_payload, sr_command = _run_current_sr(
+        det_cfg=det_cfg,
+        image=image,
+        output_root=output_root,
+        env=env,
+    )
+    sr_image = Path(str(sr_payload["sr_image"])).resolve()
+
+    stem = image.stem
+    omr_output = output_root / "omr_sr"
+    omr_cmd = get_pipeline_python("omr_dln") + [
+        "experiments/models/eval_omr_dln.py",
+        "--images",
+        str(image),
+        "--output-dir",
+        str(omr_output),
+        "--pre-computed-sr",
+        str(output_root / "sr" / "batch"),
+    ]
+    run_with_logging(omr_cmd, cwd=PROJECT_ROOT, env=env, check=True)
 
     omr_predictions = omr_output / stem / "predictions.json"
     if not omr_predictions.is_file():
         raise FileNotFoundError(omr_predictions)
 
     payload = {
-        "schema_version": "pipeline.current_x4_support.v1",
+        "schema_version": "pipeline.current_x4_support.v2",
         "status": "completed",
         "image": str(image),
-        "sr_scale": sr_scale,
+        "sr_scale": 4,
         "sr_image": str(sr_image),
-        "current_sr_detection": str(current_sr_detection),
+        "sr_sha256": sr_payload.get("sr_sha256"),
         "current_omr": str(omr_predictions),
         "support_root": str(output_root),
+        "current_homr_executed": False,
         "historical_detector_artifact_runtime_input": False,
-        "commands": [omr_cmd],
+        "commands": [sr_command, omr_cmd],
     }
     result_path.parent.mkdir(parents=True, exist_ok=True)
     result_path.write_text(

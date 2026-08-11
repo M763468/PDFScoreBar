@@ -18,6 +18,9 @@ import inspect
 import sys
 from typing import Any
 
+_CONSUMER_COMPAT_MARKER = "_pdfscore_homr_consumer_compat"
+_CONSUMER_COMPAT_ORIGINAL = "_pdfscore_homr_consumer_original"
+
 
 def _required_positional_count(callable_obj: Any) -> int:
     signature = inspect.signature(callable_obj)
@@ -39,6 +42,10 @@ def _gpu_available(evaluator: Any) -> bool:
             return False
     cuda_module = getattr(torch_module, "cuda", None)
     return bool(cuda_module is not None and cuda_module.is_available())
+
+
+def _original_consumer_callable(callable_obj: Any) -> Any:
+    return getattr(callable_obj, _CONSUMER_COMPAT_ORIGINAL, callable_obj)
 
 
 def processing_config_compat_mode(processing_config_cls: type[Any]) -> str:
@@ -146,6 +153,132 @@ def call_parse_staffs_compat(
         config=transformer_config,
         selected_staff=selected_staff,
     )
+
+
+def install_current_homr_consumer_compat(
+    homr_main: Any,
+    predictor_module: Any,
+    heuristics_module: Any,
+    *,
+    use_gpu_inference: bool,
+) -> dict[str, str]:
+    """Adapt the actual HOMR symbols consumed by the current worker.
+
+    ``HomrPredictor`` and the evaluator heuristics bind selected ``homr.main``
+    functions during module import. Patching only ``homr.main`` after those
+    imports therefore does not affect their global references. This installer
+    wraps both consumer-module bindings and the late-bound ``parse_staffs``
+    export explicitly.
+    """
+
+    original_download_weights = _original_consumer_callable(predictor_module.download_weights)
+    download_mode = download_weights_compat_mode(original_download_weights)
+
+    def predictor_download_weights_compat(requested_gpu: bool | None = None) -> Any:
+        effective_gpu = use_gpu_inference if requested_gpu is None else bool(requested_gpu)
+        return call_download_weights_compat(
+            original_download_weights,
+            use_gpu_inference=effective_gpu,
+        )
+
+    setattr(predictor_download_weights_compat, _CONSUMER_COMPAT_MARKER, True)
+    setattr(
+        predictor_download_weights_compat,
+        _CONSUMER_COMPAT_ORIGINAL,
+        original_download_weights,
+    )
+    predictor_module.download_weights = predictor_download_weights_compat
+
+    original_load_predictions = _original_consumer_callable(
+        heuristics_module.load_and_preprocess_predictions
+    )
+    load_mode = load_predictions_compat_mode(original_load_predictions)
+
+    def load_predictions_consumer_compat(
+        image_path: str,
+        enable_debug: bool,
+        enable_cache: bool,
+        requested_gpu: bool | None = None,
+    ) -> Any:
+        effective_gpu = use_gpu_inference if requested_gpu is None else bool(requested_gpu)
+        return call_load_predictions_compat(
+            original_load_predictions,
+            image_path,
+            enable_debug=enable_debug,
+            enable_cache=enable_cache,
+            use_gpu_inference=effective_gpu,
+        )
+
+    setattr(load_predictions_consumer_compat, _CONSUMER_COMPAT_MARKER, True)
+    setattr(
+        load_predictions_consumer_compat,
+        _CONSUMER_COMPAT_ORIGINAL,
+        original_load_predictions,
+    )
+    heuristics_module.load_and_preprocess_predictions = load_predictions_consumer_compat
+
+    original_parse_staffs = _original_consumer_callable(homr_main.parse_staffs)
+    parse_mode = parse_staffs_compat_mode(original_parse_staffs)
+
+    def parse_staffs_consumer_compat(
+        debug: Any,
+        multi_staffs: Any,
+        image: Any,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        selected_staff = int(kwargs.pop("selected_staff", -1))
+        provided_config = kwargs.pop("config", None)
+        if kwargs:
+            unexpected = ", ".join(sorted(kwargs))
+            raise TypeError(f"Unsupported parse_staffs keyword arguments: {unexpected}")
+        if len(args) > 1:
+            raise TypeError("Unsupported parse_staffs positional arguments")
+        if args:
+            if provided_config is not None:
+                raise TypeError("parse_staffs config supplied twice")
+            provided_config = args[0]
+
+        if parse_mode == "native_without_config_argument":
+            return original_parse_staffs(
+                debug,
+                multi_staffs,
+                image,
+                selected_staff=selected_staff,
+            )
+
+        if provided_config is None:
+            return call_parse_staffs_compat(
+                original_parse_staffs,
+                debug,
+                multi_staffs,
+                image,
+                selected_staff=selected_staff,
+                use_gpu_inference=use_gpu_inference,
+            )
+        if hasattr(provided_config, "use_gpu_inference"):
+            provided_config.use_gpu_inference = use_gpu_inference
+        return original_parse_staffs(
+            debug,
+            multi_staffs,
+            image,
+            config=provided_config,
+            selected_staff=selected_staff,
+        )
+
+    setattr(parse_staffs_consumer_compat, _CONSUMER_COMPAT_MARKER, True)
+    setattr(
+        parse_staffs_consumer_compat,
+        _CONSUMER_COMPAT_ORIGINAL,
+        original_parse_staffs,
+    )
+    homr_main.parse_staffs = parse_staffs_consumer_compat
+
+    return {
+        "download_weights_mode": download_mode,
+        "load_predictions_mode": load_mode,
+        "parse_staffs_mode": parse_mode,
+    }
 
 
 def _install_processing_config_compat(evaluator: Any, *, use_gpu_inference: bool) -> str:

@@ -12,7 +12,10 @@ from typing import Any, Dict
 
 from tqdm import tqdm
 
-from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
+from src.pipeline.steps.hybrid_consensus import (
+    apply_hybrid_consensus_filter,
+    load_json_boxes,
+)
 from src.pipeline.utils.io import ensure_dir
 
 from .homr_profile import run_homr_profile
@@ -105,7 +108,9 @@ class VerifiedProfileHybridDetector:
         if not isinstance(payload, Mapping) or payload.get("status") != "completed":
             raise ValueError(f"Incomplete current x4 support result: {result_path}")
         if payload.get("historical_detector_artifact_runtime_input") is not False:
-            raise ValueError("Current x4 support must not use historical detector artifacts")
+            raise ValueError(
+                "Current x4 support must not use historical detector artifacts"
+            )
         return dict(payload), command
 
     def _generate_page_sources(
@@ -130,7 +135,9 @@ class VerifiedProfileHybridDetector:
 
         if self.dry_run:
             for image in self.images:
-                page_root = support_output / image.parent.name / image.stem / "artifacts"
+                page_root = (
+                    support_output / image.parent.name / image.stem / "artifacts"
+                )
                 sr_images[image] = page_root / "sr" / "batch" / image.stem / image.name
                 omr_predictions[image] = (
                     page_root / "omr_sr" / image.stem / "predictions.json"
@@ -176,12 +183,16 @@ class VerifiedProfileHybridDetector:
         return sr_images, omr_predictions, commands
 
     def run(self) -> Dict[str, Any]:
-        hybrid_root = Path(self.det_cfg.get("hybrid_output_root", "logs/hybrid_generalization"))
+        hybrid_root = Path(
+            self.det_cfg.get("hybrid_output_root", "logs/hybrid_generalization")
+        )
         hybrid_output_dir = hybrid_root / self.run_id
         ensure_dir(hybrid_output_dir)
 
         if not bool(self.det_cfg.get("enable_sr", True)):
-            raise ValueError("The verified Stage E HOMR profile requires detection.enable_sr=true")
+            raise ValueError(
+                "The verified Stage E HOMR profile requires detection.enable_sr=true"
+            )
         sr_scale = int(self.det_cfg.get("sr_scale", 2))
         if sr_scale != 4:
             raise ValueError(
@@ -205,18 +216,27 @@ class VerifiedProfileHybridDetector:
         )
 
         if not self.dry_run:
-            for image in tqdm(self.images, desc="Verified hybrid consensus", unit="page"):
+            for image in tqdm(
+                self.images, desc="Verified hybrid consensus", unit="page"
+            ):
                 stem = image.stem
-                baseline_json = baseline_output / "batch" / stem / f"{stem}_detections.json"
-                sr_json = verified_sr_output / "batch" / stem / f"{stem}_detections.json"
+                baseline_json = (
+                    baseline_output / "batch" / stem / f"{stem}_detections.json"
+                )
+                sr_json = (
+                    verified_sr_output / "batch" / stem / f"{stem}_detections.json"
+                )
                 omr_json = omr_predictions[image]
                 output_json = hybrid_results_dir / f"{stem}_hybrid.json"
                 missing = [
-                    str(path) for path in (baseline_json, sr_json, omr_json) if not path.is_file()
+                    str(path)
+                    for path in (baseline_json, sr_json, omr_json)
+                    if not path.is_file()
                 ]
                 if missing:
                     raise FileNotFoundError(
-                        f"Verified-profile hybrid components missing for {stem}: {missing}"
+                        "Verified-profile hybrid components missing "
+                        f"for {stem}: {missing}"
                     )
                 hybrid_preds = apply_hybrid_consensus_filter(
                     baseline_boxes=load_json_boxes(baseline_json),

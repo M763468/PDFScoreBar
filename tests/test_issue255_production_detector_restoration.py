@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import yaml
 
+import src.pipeline.detection.current_homr_worker as homr_worker
 import src.pipeline.detection.current_sr_worker as sr_worker
 import src.pipeline.detection.current_support_worker as support_worker
 import src.pipeline.detection.profile_hybrid as profile_hybrid
@@ -139,7 +140,12 @@ def test_current_sr_worker_uses_verified_x4_settings(tmp_path: Path, monkeypatch
     assert output.is_file()
 
 
-def test_current_support_runs_sr_then_omr_without_current_homr(
+def test_current_homr_worker_is_lightweight_until_run() -> None:
+    assert callable(homr_worker.run)
+    assert callable(homr_worker.main)
+
+
+def test_current_support_runs_sr_homr_omr_as_separate_phases(
     tmp_path: Path, monkeypatch
 ) -> None:
     image = tmp_path / "Score/page_001.png"
@@ -160,20 +166,44 @@ def test_current_support_runs_sr_then_omr_without_current_homr(
     )
     calls: list[str] = []
 
-    def fake_sr(**_kwargs):
-        calls.append("sr")
-        sr = output_root / "sr/batch/page_001/page_001.png"
-        sr.parent.mkdir(parents=True)
-        sr.write_bytes(b"sr")
-        return (
-            {
-                "status": "completed",
-                "sr_image": str(sr),
-                "sr_sha256": "abc",
-                "historical_detector_artifact_runtime_input": False,
-            },
-            ["python", "current_sr_worker"],
-        )
+    def fake_child_worker(*, name, request, **_kwargs):
+        if name == "Current x4 SR":
+            calls.append("sr")
+            sr = output_root / "sr/batch/page_001/page_001.png"
+            sr.parent.mkdir(parents=True)
+            sr.write_bytes(b"sr")
+            return (
+                {
+                    "status": "completed",
+                    "sr_image": str(sr),
+                    "sr_sha256": "abc",
+                    "historical_detector_artifact_runtime_input": False,
+                },
+                ["python", "current_sr_worker"],
+            )
+        if name == "Current HOMR on x4":
+            calls.append("homr")
+            assert Path(request["sr_image"]).is_file()
+            homr_root = Path(request["output_root"]) / "batch/page_001"
+            homr_root.mkdir(parents=True)
+            detection = homr_root / "page_001_detections.json"
+            staff = homr_root / "page_001_staff_mask.png"
+            symbols = homr_root / "page_001_connector_symbols.png"
+            brace = homr_root / "page_001_connector_brace_dot.png"
+            for path in (detection, staff, symbols, brace):
+                path.write_bytes(b"artifact")
+            return (
+                {
+                    "status": "completed",
+                    "current_sr_detection": str(detection),
+                    "staff_mask": str(staff),
+                    "connector_symbols": str(symbols),
+                    "connector_brace_dot": str(brace),
+                    "historical_detector_artifact_runtime_input": False,
+                },
+                ["python", "current_homr_worker"],
+            )
+        raise AssertionError(name)
 
     def fake_pipeline_python(name):
         assert name == "omr_dln"
@@ -186,18 +216,22 @@ def test_current_support_runs_sr_then_omr_without_current_homr(
         omr.parent.mkdir(parents=True)
         omr.write_text("[]\n", encoding="utf-8")
 
-    monkeypatch.setattr(support_worker, "_run_current_sr", fake_sr)
+    monkeypatch.setattr(support_worker, "_run_child_worker", fake_child_worker)
     monkeypatch.setattr(support_worker, "get_pipeline_python", fake_pipeline_python)
     monkeypatch.setattr(support_worker, "run_with_logging", fake_run)
 
     support_worker.run(request, result)
     payload = json.loads(result.read_text(encoding="utf-8"))
 
-    assert calls == ["sr", "omr"]
-    assert payload["schema_version"] == "pipeline.current_x4_support.v2"
-    assert payload["current_homr_executed"] is False
+    assert calls == ["sr", "homr", "omr"]
+    assert payload["schema_version"] == "pipeline.current_x4_support.v3"
+    assert payload["current_homr_executed"] is True
+    assert payload["memory_phase_boundaries"] == ["sr", "current_homr", "omr_dln"]
     assert payload["sr_sha256"] == "abc"
     assert Path(payload["sr_image"]).is_file()
+    assert Path(payload["current_sr_detection"]).is_file()
+    assert Path(payload["connector_symbols"]).is_file()
+    assert Path(payload["connector_brace_dot"]).is_file()
     assert Path(payload["current_omr"]).is_file()
     assert payload["historical_detector_artifact_runtime_input"] is False
 

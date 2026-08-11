@@ -2,8 +2,13 @@
 """Run the pinned Stage E evaluator profile across compatible HOMR APIs.
 
 The production detector uses this entrypoint only inside the isolated HOMR
-profile runtime.  It adapts API-shape drift between the pinned PDFScore
+profile runtime. It adapts API-shape drift between the pinned PDFScore
 evaluator and pinned HOMR source without substituting detector artifacts.
+
+The public helpers in this module are also the compatibility boundary for the
+current HOMR worker. Callers pass the function/class object they actually hold,
+so compatibility does not depend on patching ``homr.main`` after another
+module has already bound a symbol with ``from homr.main import ...``.
 """
 
 from __future__ import annotations
@@ -36,11 +41,119 @@ def _gpu_available(evaluator: Any) -> bool:
     return bool(cuda_module is not None and cuda_module.is_available())
 
 
+def processing_config_compat_mode(processing_config_cls: type[Any]) -> str:
+    signature = inspect.signature(processing_config_cls)
+    if "use_gpu_inference" in signature.parameters:
+        return "gpu_argument_injected_when_missing"
+    return "native_without_gpu_argument"
+
+
+def build_processing_config_compat(
+    processing_config_cls: type[Any],
+    *,
+    enable_debug: bool,
+    enable_cache: bool,
+    write_staff_positions: bool,
+    use_gpu_inference: bool,
+) -> Any:
+    """Construct ProcessingConfig across the known five/six-field HOMR APIs."""
+    args = (
+        enable_debug,
+        enable_cache,
+        write_staff_positions,
+        False,
+        -1,
+    )
+    mode = processing_config_compat_mode(processing_config_cls)
+    if mode == "gpu_argument_injected_when_missing":
+        return processing_config_cls(*args, use_gpu_inference)
+    return processing_config_cls(*args)
+
+
+def download_weights_compat_mode(download_weights: Any) -> str:
+    signature = inspect.signature(download_weights)
+    if "use_gpu_inference" in signature.parameters:
+        return "gpu_argument_injected"
+    required_arguments = _required_positional_count(download_weights)
+    if required_arguments == 0:
+        return "native_zero_argument"
+    if required_arguments == 1:
+        return "gpu_argument_injected"
+    raise TypeError(f"Unsupported HOMR download_weights signature: {signature}")
+
+
+def call_download_weights_compat(download_weights: Any, *, use_gpu_inference: bool) -> Any:
+    """Call the bound download_weights symbol using its runtime signature."""
+    mode = download_weights_compat_mode(download_weights)
+    if mode == "native_zero_argument":
+        return download_weights()
+    return download_weights(use_gpu_inference)
+
+
+def load_predictions_compat_mode(load_predictions: Any) -> str:
+    signature = inspect.signature(load_predictions)
+    if "use_gpu_inference" in signature.parameters:
+        return "gpu_argument_injected_when_missing"
+    if _required_positional_count(load_predictions) <= 3:
+        return "native_without_gpu_argument"
+    raise TypeError(f"Unsupported HOMR load_and_preprocess_predictions signature: {signature}")
+
+
+def call_load_predictions_compat(
+    load_predictions: Any,
+    image_path: str,
+    *,
+    enable_debug: bool,
+    enable_cache: bool,
+    use_gpu_inference: bool,
+) -> Any:
+    """Call the bound preprocessing symbol across the known three/four-argument APIs."""
+    mode = load_predictions_compat_mode(load_predictions)
+    if mode == "gpu_argument_injected_when_missing":
+        return load_predictions(image_path, enable_debug, enable_cache, use_gpu_inference)
+    return load_predictions(image_path, enable_debug, enable_cache)
+
+
+def parse_staffs_compat_mode(parse_staffs: Any) -> str:
+    signature = inspect.signature(parse_staffs)
+    if "config" in signature.parameters:
+        return "transformer_config_injected_when_missing"
+    return "native_without_config_argument"
+
+
+def call_parse_staffs_compat(
+    parse_staffs: Any,
+    debug: Any,
+    multi_staffs: Any,
+    image: Any,
+    *,
+    selected_staff: int,
+    use_gpu_inference: bool,
+) -> Any:
+    """Call the bound parse_staffs symbol without TypeError-based fallbacks."""
+    mode = parse_staffs_compat_mode(parse_staffs)
+    if mode == "native_without_config_argument":
+        return parse_staffs(debug, multi_staffs, image, selected_staff=selected_staff)
+
+    configs_module = importlib.import_module("homr.transformer.configs")
+    transformer_config = configs_module.Config()
+    if hasattr(transformer_config, "use_gpu_inference"):
+        transformer_config.use_gpu_inference = use_gpu_inference
+    return parse_staffs(
+        debug,
+        multi_staffs,
+        image,
+        config=transformer_config,
+        selected_staff=selected_staff,
+    )
+
+
 def _install_processing_config_compat(evaluator: Any, *, use_gpu_inference: bool) -> str:
     original = evaluator.ProcessingConfig
+    mode = processing_config_compat_mode(original)
+    if mode == "native_without_gpu_argument":
+        return mode
     signature = inspect.signature(original)
-    if "use_gpu_inference" not in signature.parameters:
-        return "native_without_gpu_argument"
 
     def processing_config_compat(*args: Any, **kwargs: Any) -> Any:
         bound = signature.bind_partial(*args, **kwargs)
@@ -49,16 +162,17 @@ def _install_processing_config_compat(evaluator: Any, *, use_gpu_inference: bool
         return original(*args, **kwargs)
 
     evaluator.ProcessingConfig = processing_config_compat
-    return "gpu_argument_injected_when_missing"
+    return mode
 
 
 def _install_load_predictions_compat(evaluator: Any, *, use_gpu_inference: bool) -> str:
     original = getattr(evaluator, "load_and_preprocess_predictions", None)
     if original is None:
         return "not_exported"
+    mode = load_predictions_compat_mode(original)
+    if mode == "native_without_gpu_argument":
+        return mode
     signature = inspect.signature(original)
-    if "use_gpu_inference" not in signature.parameters:
-        return "native_without_gpu_argument"
 
     def load_predictions_compat(*args: Any, **kwargs: Any) -> Any:
         bound = signature.bind_partial(*args, **kwargs)
@@ -67,17 +181,17 @@ def _install_load_predictions_compat(evaluator: Any, *, use_gpu_inference: bool)
         return original(*args, **kwargs)
 
     evaluator.load_and_preprocess_predictions = load_predictions_compat
-    return "gpu_argument_injected_when_missing"
+    return mode
 
 
 def _install_parse_staffs_compat(evaluator: Any, *, use_gpu_inference: bool) -> str:
     original = getattr(evaluator, "parse_staffs", None)
     if original is None:
         return "not_exported"
+    mode = parse_staffs_compat_mode(original)
+    if mode == "native_without_config_argument":
+        return mode
     signature = inspect.signature(original)
-    if "config" not in signature.parameters:
-        return "native_without_config_argument"
-
     transformer_config: Any | None = None
 
     def parse_staffs_compat(*args: Any, **kwargs: Any) -> Any:
@@ -93,7 +207,7 @@ def _install_parse_staffs_compat(evaluator: Any, *, use_gpu_inference: bool) -> 
         return original(*args, **kwargs)
 
     evaluator.parse_staffs = parse_staffs_compat
-    return "transformer_config_injected_when_missing"
+    return mode
 
 
 def _install_segnet_cache_compat() -> str:
@@ -137,21 +251,16 @@ def _install_segnet_cache_compat() -> str:
 def install_homr_api_compat(evaluator: Any) -> dict[str, Any]:
     use_gpu_inference = _gpu_available(evaluator)
     original_download_weights = evaluator.download_weights
-    required_arguments = _required_positional_count(original_download_weights)
-    if required_arguments == 1:
+    download_mode = download_weights_compat_mode(original_download_weights)
+    if download_mode == "gpu_argument_injected":
 
         def download_weights_compat() -> None:
-            original_download_weights(use_gpu_inference)
+            call_download_weights_compat(
+                original_download_weights,
+                use_gpu_inference=use_gpu_inference,
+            )
 
         evaluator.download_weights = download_weights_compat
-        download_mode = "gpu_argument_injected"
-    elif required_arguments == 0:
-        download_mode = "native_zero_argument"
-    else:
-        raise TypeError(
-            "Unsupported HOMR download_weights signature: "
-            f"{inspect.signature(original_download_weights)}"
-        )
 
     return {
         "use_gpu_inference": use_gpu_inference,

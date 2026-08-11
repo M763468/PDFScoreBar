@@ -23,8 +23,8 @@ class VerifiedProfileHybridDetector:
 
     The accepted Issue #255 full-68 replay used three explicit source phases:
     verified HOMR baseline, current x4/OMR support, and verified HOMR on that fresh
-    x4 image.  Keep those boundaries here so the current Real-ESRGAN/HOMR peak does
-    not share a process with the rest of the production detector.
+    x4 image. Keep those heavy phases page-local so every subprocess exits before
+    source generation starts for the next page.
     """
 
     def __init__(
@@ -108,22 +108,54 @@ class VerifiedProfileHybridDetector:
             raise ValueError("Current x4 support must not use historical detector artifacts")
         return dict(payload), command
 
-    def _generate_current_support(
+    def _generate_page_sources(
         self,
-        output_root: Path,
+        *,
+        baseline_output: Path,
+        support_output: Path,
+        verified_sr_output: Path,
     ) -> tuple[dict[Path, Path], dict[Path, Path], list[list[str]]]:
+        """Generate all heavy detector sources page-by-page.
+
+        A score-wide verified baseline can leave the WSL/Docker host under enough
+        memory pressure that the next page's Real-ESRGAN x4 worker is OOM-killed.
+        Keep the source phases page-local instead: baseline process exits, current
+        support finishes with its own SR/HOMR/OMR process boundaries, then verified
+        HOMR-on-x4 exits before moving to the next page.
+        """
+
         sr_images: dict[Path, Path] = {}
         omr_predictions: dict[Path, Path] = {}
         commands: list[list[str]] = []
+
         if self.dry_run:
             for image in self.images:
-                page_root = output_root / image.parent.name / image.stem / "artifacts"
+                page_root = support_output / image.parent.name / image.stem / "artifacts"
                 sr_images[image] = page_root / "sr" / "batch" / image.stem / image.name
-                omr_predictions[image] = page_root / "omr_sr" / image.stem / "predictions.json"
+                omr_predictions[image] = (
+                    page_root / "omr_sr" / image.stem / "predictions.json"
+                )
+                commands.extend(
+                    [
+                        ["profile:homr", self.profile_name, "baseline", str(image)],
+                        ["current-support", str(image)],
+                        ["profile:homr", self.profile_name, "sr_x4", str(image)],
+                    ]
+                )
             return sr_images, omr_predictions, commands
 
-        for image in tqdm(self.images, desc="Current x4 support", unit="page"):
-            payload, command = self._support_worker(image=image, output_root=output_root)
+        for image in tqdm(self.images, desc="Verified source generation", unit="page"):
+            baseline_result = run_homr_profile(
+                self.profile_name,
+                images=[image],
+                output_root=baseline_output,
+            )
+            commands.extend(baseline_result["commands"])
+
+            payload, support_command = self._support_worker(
+                image=image,
+                output_root=support_output,
+            )
             sr_image = Path(str(payload["sr_image"])).resolve()
             omr = Path(str(payload["current_omr"])).resolve()
             for path in (sr_image, omr):
@@ -131,7 +163,16 @@ class VerifiedProfileHybridDetector:
                     raise FileNotFoundError(path)
             sr_images[image] = sr_image
             omr_predictions[image] = omr
-            commands.append(command)
+            commands.append(support_command)
+
+            verified_sr_result = run_homr_profile(
+                self.profile_name,
+                images=[image],
+                output_root=verified_sr_output,
+                precomputed_sr={image: sr_image},
+            )
+            commands.extend(verified_sr_result["commands"])
+
         return sr_images, omr_predictions, commands
 
     def run(self) -> Dict[str, Any]:
@@ -156,33 +197,12 @@ class VerifiedProfileHybridDetector:
         verified_sr_output = hybrid_output_dir / "sr"
         hybrid_results_dir = hybrid_output_dir / "hybrid_results"
         ensure_dir(hybrid_results_dir)
-        commands: list[list[str]] = []
 
-        if self.dry_run:
-            commands.append(["profile:homr", self.profile_name, "baseline"])
-            sr_images, omr_predictions, support_commands = self._generate_current_support(
-                support_output
-            )
-            commands.extend(support_commands)
-            commands.append(["profile:homr", self.profile_name, "sr_x4"])
-        else:
-            baseline_result = run_homr_profile(
-                self.profile_name,
-                images=self.images,
-                output_root=baseline_output,
-            )
-            commands.extend(baseline_result["commands"])
-            sr_images, omr_predictions, support_commands = self._generate_current_support(
-                support_output
-            )
-            commands.extend(support_commands)
-            verified_sr_result = run_homr_profile(
-                self.profile_name,
-                images=self.images,
-                output_root=verified_sr_output,
-                precomputed_sr=sr_images,
-            )
-            commands.extend(verified_sr_result["commands"])
+        sr_images, omr_predictions, commands = self._generate_page_sources(
+            baseline_output=baseline_output,
+            support_output=support_output,
+            verified_sr_output=verified_sr_output,
+        )
 
         if not self.dry_run:
             for image in tqdm(self.images, desc="Verified hybrid consensus", unit="page"):
@@ -214,10 +234,11 @@ class VerifiedProfileHybridDetector:
             "homr_profile": self.profile_name,
             "current_support_output_dir": support_output,
             "historical_detector_artifact_runtime_input": False,
+            "source_generation_scope": "page_local",
             "source_generation_phases": [
-                "verified_baseline",
-                "current_x4_support",
-                "verified_homr_on_fresh_x4",
+                "verified_baseline_per_page",
+                "current_x4_support_per_page",
+                "verified_homr_on_fresh_x4_per_page",
                 "current_consensus",
             ],
         }

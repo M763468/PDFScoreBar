@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import yaml
 
+import src.pipeline.detection.current_sr_worker as sr_worker
 import src.pipeline.detection.current_support_worker as support_worker
 import src.pipeline.detection.profile_hybrid as profile_hybrid
 import src.pipeline.detection.restored_orchestrator as restored
@@ -85,14 +86,69 @@ def test_verified_profile_is_selected_for_hybrid_detection(tmp_path: Path, monke
     assert result["commands"] == [["profile"]]
 
 
-def test_current_support_worker_reuses_maintained_x4_homr_path(tmp_path: Path, monkeypatch) -> None:
+def test_current_sr_worker_uses_verified_x4_settings(tmp_path: Path, monkeypatch) -> None:
+    image = tmp_path / "Score/page_001.png"
+    image.parent.mkdir(parents=True)
+    image.write_bytes(b"image")
+    output = tmp_path / "out/sr/batch/page_001/page_001.png"
+    request = tmp_path / "request.json"
+    result = tmp_path / "result.json"
+    request.write_text(
+        json.dumps(
+            {
+                "detection": {
+                    "sr_scale": 4,
+                    "sr_tile": -1,
+                    "sr_tile_pad": 10,
+                    "sr_fp32": False,
+                },
+                "image": str(image),
+                "output": str(output),
+            }
+        ),
+        encoding="utf-8",
+    )
+    captured = {}
+    monkeypatch.setattr(sr_worker, "load_image", lambda _image, _cache: object())
+
+    def fake_sr(_image, **kwargs):
+        captured.update(kwargs)
+        return object(), object()
+
+    def fake_imwrite(path, _image):
+        Path(path).write_bytes(b"sr")
+        return True
+
+    monkeypatch.setattr(sr_worker, "apply_advanced_sr", fake_sr)
+    monkeypatch.setattr(sr_worker.cv2, "imwrite", fake_imwrite)
+
+    sr_worker.run(request, result)
+    payload = json.loads(result.read_text(encoding="utf-8"))
+
+    assert captured == {
+        "model_name": "RealESRGAN_x4plus",
+        "scale": 4,
+        "tile": -1,
+        "tile_pad": 10,
+        "fp32": False,
+        "upsampler": None,
+    }
+    assert payload["sr_scale"] == 4
+    assert payload["historical_detector_artifact_runtime_input"] is False
+    assert payload["sr_sha256"]
+    assert output.is_file()
+
+
+def test_current_support_runs_sr_then_omr_without_current_homr(
+    tmp_path: Path, monkeypatch
+) -> None:
     image = tmp_path / "Score/page_001.png"
     image.parent.mkdir(parents=True)
     image.write_bytes(b"image")
     output_root = tmp_path / "support"
-    request_path = tmp_path / "request.json"
-    result_path = tmp_path / "result.json"
-    request_path.write_text(
+    request = tmp_path / "request.json"
+    result = tmp_path / "result.json"
+    request.write_text(
         json.dumps(
             {
                 "detection": {"sr_scale": 4},
@@ -102,58 +158,48 @@ def test_current_support_worker_reuses_maintained_x4_homr_path(tmp_path: Path, m
         ),
         encoding="utf-8",
     )
-    captured = {}
+    calls: list[str] = []
 
-    class FakeHybridDetector:
-        def __init__(self, **kwargs):
-            captured["init"] = kwargs
+    def fake_sr(**_kwargs):
+        calls.append("sr")
+        sr = output_root / "sr/batch/page_001/page_001.png"
+        sr.parent.mkdir(parents=True)
+        sr.write_bytes(b"sr")
+        return (
+            {
+                "status": "completed",
+                "sr_image": str(sr),
+                "sr_sha256": "abc",
+                "historical_detector_artifact_runtime_input": False,
+            },
+            ["python", "current_sr_worker"],
+        )
 
-        def _run_homr_in_process(self, sr_output, *, enable_sr, sr_scale):
-            captured["homr"] = {
-                "output": sr_output,
-                "enable_sr": enable_sr,
-                "sr_scale": sr_scale,
-            }
-            page = sr_output / "batch/page_001"
-            page.mkdir(parents=True)
-            (page / "page_001.png").write_bytes(b"sr")
-            (page / "page_001_detections.json").write_text("[]\n", encoding="utf-8")
-
-        def _rel(self, path):
-            return str(path)
-
-        def _get_python_cmd(self, _name):
-            return ["fake-python"]
-
-    fake_hybrid = types.ModuleType("src.pipeline.detection.hybrid")
-    fake_hybrid.HybridDetector = FakeHybridDetector
-    monkeypatch.setitem(sys.modules, "src.pipeline.detection.hybrid", fake_hybrid)
-
-    import src.pipeline.detection.connector_artifacts as connector_artifacts
-
-    monkeypatch.setattr(
-        connector_artifacts, "install_homr_connector_artifact_capture", lambda: True
-    )
-    monkeypatch.setattr(connector_artifacts, "install_homr_skip_existing_guard", lambda _cls: True)
+    def fake_pipeline_python(name):
+        assert name == "omr_dln"
+        return ["python"]
 
     def fake_run(command, **_kwargs):
-        captured["omr_command"] = list(command)
+        calls.append("omr")
+        assert "--pre-computed-sr" in command
         omr = output_root / "omr_sr/page_001/predictions.json"
         omr.parent.mkdir(parents=True)
         omr.write_text("[]\n", encoding="utf-8")
 
+    monkeypatch.setattr(support_worker, "_run_current_sr", fake_sr)
+    monkeypatch.setattr(support_worker, "get_pipeline_python", fake_pipeline_python)
     monkeypatch.setattr(support_worker, "run_with_logging", fake_run)
 
-    support_worker.run(request_path, result_path)
-    result = json.loads(result_path.read_text(encoding="utf-8"))
+    support_worker.run(request, result)
+    payload = json.loads(result.read_text(encoding="utf-8"))
 
-    assert captured["homr"]["enable_sr"] is True
-    assert captured["homr"]["sr_scale"] == 4
-    assert result["sr_scale"] == 4
-    assert result["historical_detector_artifact_runtime_input"] is False
-    assert Path(result["sr_image"]).is_file()
-    assert Path(result["current_omr"]).is_file()
-    assert "--pre-computed-sr" in captured["omr_command"]
+    assert calls == ["sr", "omr"]
+    assert payload["schema_version"] == "pipeline.current_x4_support.v2"
+    assert payload["current_homr_executed"] is False
+    assert payload["sr_sha256"] == "abc"
+    assert Path(payload["sr_image"]).is_file()
+    assert Path(payload["current_omr"]).is_file()
+    assert payload["historical_detector_artifact_runtime_input"] is False
 
 
 def test_verified_profile_collects_current_support_per_page(tmp_path: Path, monkeypatch) -> None:

@@ -16,6 +16,27 @@ def _load_request(path: Path) -> dict[str, Any]:
     return dict(payload)
 
 
+def _build_processing_config(
+    processing_config_cls: type[Any],
+    *,
+    enable_debug: bool,
+    enable_cache: bool,
+    write_staff_positions: bool,
+    use_gpu_inference: bool,
+) -> Any:
+    """Match the maintained evaluator's ProcessingConfig compatibility branch."""
+    args = (
+        enable_debug,
+        enable_cache,
+        write_staff_positions,
+        False,
+        -1,
+    )
+    if hasattr(processing_config_cls, "use_gpu_inference"):
+        return processing_config_cls(*args, use_gpu_inference)
+    return processing_config_cls(*args)
+
+
 def run(request_path: Path, result_path: Path) -> Path:
     request = _load_request(request_path)
     det_cfg = request.get("detection")
@@ -48,13 +69,13 @@ def run(request_path: Path, result_path: Path) -> Path:
 
     install_homr_connector_artifact_capture(HomrPredictor)
 
-    config = ProcessingConfig(
-        bool(det_cfg.get("enable_debug", False)),
-        bool(det_cfg.get("enable_cache", True)),
-        bool(det_cfg.get("write_staff_positions", False)),
-        False,
-        -1,
-        torch.cuda.is_available(),
+    use_gpu_inference = torch.cuda.is_available()
+    config = _build_processing_config(
+        ProcessingConfig,
+        enable_debug=bool(det_cfg.get("enable_debug", False)),
+        enable_cache=bool(det_cfg.get("enable_cache", True)),
+        write_staff_positions=bool(det_cfg.get("write_staff_positions", False)),
+        use_gpu_inference=use_gpu_inference,
     )
     tuning = DEFAULT_TUNING.copy()
     tuning.update(
@@ -63,7 +84,7 @@ def run(request_path: Path, result_path: Path) -> Path:
             "barline_max_width_factor": det_cfg.get("barline_max_width_factor", 1.0),
         }
     )
-    predictor = HomrPredictor(config, tuning, use_gpu_inference=torch.cuda.is_available())
+    predictor = HomrPredictor(config, tuning, use_gpu_inference=use_gpu_inference)
     xml_args = XmlGeneratorArguments(False, None, None)
 
     stem = image.stem

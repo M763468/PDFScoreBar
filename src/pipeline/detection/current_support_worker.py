@@ -167,6 +167,7 @@ def run(request_path: Path, result_path: Path) -> Path:
         "sr_sha256": sr_payload.get("sr_sha256"),
         "current_sr_detection": homr_payload.get("current_sr_detection"),
         "current_homr_staff_mask": homr_payload.get("staff_mask"),
+        "connector_complete": bool(homr_payload.get("connector_complete", False)),
         "connector_symbols": homr_payload.get("connector_symbols"),
         "connector_brace_dot": homr_payload.get("connector_brace_dot"),
         "current_omr": str(omr_predictions),

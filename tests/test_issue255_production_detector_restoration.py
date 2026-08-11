@@ -145,9 +145,7 @@ def test_current_homr_worker_is_lightweight_until_run() -> None:
     assert callable(homr_worker.main)
 
 
-def test_current_support_runs_sr_homr_omr_as_separate_phases(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_current_support_runs_sr_homr_omr_as_separate_phases(tmp_path: Path, monkeypatch) -> None:
     image = tmp_path / "Score/page_001.png"
     image.parent.mkdir(parents=True)
     image.write_bytes(b"image")

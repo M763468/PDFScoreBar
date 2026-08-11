@@ -9,7 +9,6 @@ import yaml
 import src.pipeline.detection.current_homr_worker as homr_worker
 import src.pipeline.detection.current_sr_worker as sr_worker
 import src.pipeline.detection.current_support_worker as support_worker
-import src.pipeline.detection.profile_hybrid as profile_hybrid
 import src.pipeline.detection.restored_orchestrator as restored
 from src.pipeline.detection.input_contract import build_detector_input_contract
 

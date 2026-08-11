@@ -57,9 +57,9 @@ def run(request_path: Path, result_path: Path) -> Path:
 
     # Load and patch current HOMR only after the Real-ESRGAN process has exited.
     import torch
+
     from homr.main import ProcessingConfig
     from homr.music_xml_generator import XmlGeneratorArguments
-
     from src.common.connector_artifacts import connector_mask_paths
     from src.homr_eval_scripts.core.metrics import BarlinePrediction
     from src.homr_eval_scripts.core.predictor import HomrPredictor

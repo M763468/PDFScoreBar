@@ -13,7 +13,6 @@ import src.pipeline.detection.profile_hybrid as profile_hybrid
 import src.pipeline.detection.restored_orchestrator as restored
 from src.pipeline.detection.input_contract import build_detector_input_contract
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 

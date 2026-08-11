@@ -99,11 +99,13 @@ def test_consumer_compat_adapts_legacy_bound_symbols() -> None:
     )
 
     predictor_module.download_weights(True)
-    assert heuristics_module.load_and_preprocess_predictions("page.png", True, False, True) == (
-        "predictions"
+    assert (
+        heuristics_module.load_and_preprocess_predictions("page.png", True, False, True)
+        == "predictions"
     )
-    assert homr_main.parse_staffs("debug", "staffs", "image", object(), selected_staff=3) == (
-        "staffs"
+    assert (
+        homr_main.parse_staffs("debug", "staffs", "image", object(), selected_staff=3)
+        == "staffs"
     )
 
     assert calls == {
@@ -153,11 +155,13 @@ def test_consumer_compat_preserves_current_bound_symbols() -> None:
     )
 
     predictor_module.download_weights(True)
-    assert heuristics_module.load_and_preprocess_predictions("page.png", False, True, True) == (
-        "predictions"
+    assert (
+        heuristics_module.load_and_preprocess_predictions("page.png", False, True, True)
+        == "predictions"
     )
-    assert homr_main.parse_staffs("debug", "staffs", "image", Config(), selected_staff=2) == (
-        "staffs"
+    assert (
+        homr_main.parse_staffs("debug", "staffs", "image", Config(), selected_staff=2)
+        == "staffs"
     )
 
     assert calls == {

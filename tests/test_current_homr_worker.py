@@ -104,8 +104,7 @@ def test_consumer_compat_adapts_legacy_bound_symbols() -> None:
         == "predictions"
     )
     assert (
-        homr_main.parse_staffs("debug", "staffs", "image", object(), selected_staff=3)
-        == "staffs"
+        homr_main.parse_staffs("debug", "staffs", "image", object(), selected_staff=3) == "staffs"
     )
 
     assert calls == {
@@ -160,8 +159,7 @@ def test_consumer_compat_preserves_current_bound_symbols() -> None:
         == "predictions"
     )
     assert (
-        homr_main.parse_staffs("debug", "staffs", "image", Config(), selected_staff=2)
-        == "staffs"
+        homr_main.parse_staffs("debug", "staffs", "image", Config(), selected_staff=2) == "staffs"
     )
 
     assert calls == {

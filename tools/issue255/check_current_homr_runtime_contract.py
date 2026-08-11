@@ -38,8 +38,20 @@ def _write_payload(payload: dict[str, Any], output: Path | None) -> None:
 def run() -> dict[str, Any]:
     import homr
     import homr.main as homr_main
-    from homr.music_xml_generator import XmlGeneratorArguments
+    from homr import constants
+    from homr.bar_line_detection import prepare_bar_line_image
+    from homr.bounding_boxes import create_rotated_bounding_boxes
+    from homr.brace_dot_detection import (
+        find_braces_brackets_and_grand_staff_lines,
+        prepare_brace_dot_image,
+    )
+    from homr.debug import Debug
+    from homr.music_xml_generator import XmlGeneratorArguments, generate_xml
+    from homr.note_detection import add_notes_to_staffs, combine_noteheads_with_stems
+    from homr.resize import calc_target_image_size
     from homr.segmentation.inference_segnet import Segnet
+    from homr.staff_detection import break_wide_fragments, detect_staff
+    from homr.title_detection import detect_title
     from homr.transformer.configs import Config
     from src.homr_eval_scripts.core import heuristics as homr_heuristics
     from src.homr_eval_scripts.core import predictor as homr_predictor
@@ -64,8 +76,7 @@ def run() -> dict[str, Any]:
     ]
     if shadowed:
         raise RuntimeError(
-            "Current HOMR runtime is shadowed by a non-authoritative source: "
-            + ", ".join(shadowed)
+            "Current HOMR runtime is shadowed by a non-authoritative source: " + ", ".join(shadowed)
         )
 
     signatures = {
@@ -77,9 +88,26 @@ def run() -> dict[str, Any]:
             homr_heuristics.load_and_preprocess_predictions
         ),
         "parse_staffs": _signature(homr_main.parse_staffs),
+        "predict_symbols": _signature(homr_main.predict_symbols),
+        "prepare_bar_line_image": _signature(prepare_bar_line_image),
+        "create_rotated_bounding_boxes": _signature(create_rotated_bounding_boxes),
+        "prepare_brace_dot_image": _signature(prepare_brace_dot_image),
+        "find_braces_brackets_and_grand_staff_lines": _signature(
+            find_braces_brackets_and_grand_staff_lines
+        ),
+        "combine_noteheads_with_stems": _signature(combine_noteheads_with_stems),
+        "add_notes_to_staffs": _signature(add_notes_to_staffs),
+        "calc_target_image_size": _signature(calc_target_image_size),
+        "break_wide_fragments": _signature(break_wide_fragments),
+        "detect_staff": _signature(detect_staff),
+        "detect_title": _signature(detect_title),
+        "bar_line_min_height": _signature(constants.bar_line_min_height),
+        "bar_line_max_width": _signature(constants.bar_line_max_width),
+        "Debug.write_threshold_image": _signature(Debug.write_threshold_image),
         "Segnet": _signature(Segnet),
         "Config": _signature(Config),
         "XmlGeneratorArguments": _signature(XmlGeneratorArguments),
+        "generate_xml": _signature(generate_xml),
     }
 
     processing_config = build_processing_config_compat(

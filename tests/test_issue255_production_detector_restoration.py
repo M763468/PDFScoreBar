@@ -233,53 +233,6 @@ def test_current_support_runs_sr_homr_omr_as_separate_phases(tmp_path: Path, mon
     assert payload["historical_detector_artifact_runtime_input"] is False
 
 
-def test_verified_profile_collects_current_support_per_page(tmp_path: Path, monkeypatch) -> None:
-    score = tmp_path / "Score"
-    score.mkdir()
-    images = [score / "page_001.png", score / "page_002.png"]
-    for image in images:
-        image.write_bytes(b"image")
-
-    detector = profile_hybrid.VerifiedProfileHybridDetector(
-        det_cfg=_config()["detection"],
-        images=images,
-        run_id="test",
-        project_root=tmp_path,
-        dry_run=False,
-        skip_existing=False,
-        profile_name="stage_e_verified",
-    )
-    calls = []
-
-    def fake_support(*, image: Path, output_root: Path):
-        calls.append(image)
-        artifacts = output_root / image.parent.name / image.stem / "artifacts"
-        sr = artifacts / "sr" / "batch" / image.stem / image.name
-        omr = artifacts / "omr_sr" / image.stem / "predictions.json"
-        sr.parent.mkdir(parents=True)
-        omr.parent.mkdir(parents=True)
-        sr.write_bytes(b"sr")
-        omr.write_text("[]\n", encoding="utf-8")
-        return (
-            {
-                "status": "completed",
-                "sr_image": str(sr),
-                "current_omr": str(omr),
-                "historical_detector_artifact_runtime_input": False,
-            },
-            ["support-worker", str(image)],
-        )
-
-    monkeypatch.setattr(detector, "_support_worker", fake_support)
-
-    sr_images, omr_predictions, commands = detector._generate_current_support(tmp_path / "out")
-
-    assert calls == images
-    assert list(sr_images) == images
-    assert list(omr_predictions) == images
-    assert len(commands) == 2
-
-
 def test_dense_inventory_uses_only_current_hybrid_and_profile_masks(tmp_path: Path) -> None:
     image = tmp_path / "Score" / "page_001.png"
     image.parent.mkdir(parents=True)

@@ -16,27 +16,6 @@ def _load_request(path: Path) -> dict[str, Any]:
     return dict(payload)
 
 
-def _build_processing_config(
-    processing_config_cls: type[Any],
-    *,
-    enable_debug: bool,
-    enable_cache: bool,
-    write_staff_positions: bool,
-    use_gpu_inference: bool,
-) -> Any:
-    """Match the maintained evaluator's ProcessingConfig compatibility branch."""
-    args = (
-        enable_debug,
-        enable_cache,
-        write_staff_positions,
-        False,
-        -1,
-    )
-    if hasattr(processing_config_cls, "use_gpu_inference"):
-        return processing_config_cls(*args, use_gpu_inference)
-    return processing_config_cls(*args)
-
-
 def run(request_path: Path, result_path: Path) -> Path:
     request = _load_request(request_path)
     det_cfg = request.get("detection")
@@ -55,7 +34,9 @@ def run(request_path: Path, result_path: Path) -> Path:
     if sr_scale != 4:
         raise ValueError(f"Verified Stage E current HOMR requires sr_scale=4, got {sr_scale}")
 
-    # Load and patch current HOMR only after the Real-ESRGAN process has exited.
+    # Load current HOMR only after the Real-ESRGAN process has exited. Compatibility
+    # is applied to the callable/class objects held by their consumers so import-time
+    # bindings in predictor/heuristics do not bypass the shared boundary.
     import torch
 
     from homr.main import ProcessingConfig
@@ -66,11 +47,12 @@ def run(request_path: Path, result_path: Path) -> Path:
     from src.homr_eval_scripts.core.reporting import save_homr_results
     from src.homr_eval_scripts.core.utils import DEFAULT_TUNING
     from src.pipeline.detection.connector_artifacts import install_homr_connector_artifact_capture
+    from src.pipeline.detection.homr_profile_compat import build_processing_config_compat
 
     install_homr_connector_artifact_capture(HomrPredictor)
 
     use_gpu_inference = torch.cuda.is_available()
-    config = _build_processing_config(
+    config = build_processing_config_compat(
         ProcessingConfig,
         enable_debug=bool(det_cfg.get("enable_debug", False)),
         enable_cache=bool(det_cfg.get("enable_cache", True)),

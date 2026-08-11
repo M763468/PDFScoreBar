@@ -2,7 +2,7 @@
 
 The current support path preserves connector-semantic HOMR artifacts, but keeps
 its three heavy phases disjoint: Real-ESRGAN SR, current HOMR on the persisted x4
-image, then OMR-DLN.  This avoids retaining HOMR state during the x4 SR peak.
+image, then OMR-DLN. This avoids retaining HOMR state during the x4 SR peak.
 """
 
 from __future__ import annotations
@@ -37,6 +37,32 @@ def _load_completed_result(path: Path, *, name: str) -> dict[str, Any]:
     if payload.get("historical_detector_artifact_runtime_input") is not False:
         raise ValueError(f"{name} must not use historical detector artifacts")
     return dict(payload)
+
+
+def _build_worker_environment(base_env: Mapping[str, str] | None = None) -> dict[str, str]:
+    """Build the fresh current-runtime environment without local HOMR shadow paths."""
+    env = dict(os.environ if base_env is None else base_env)
+    forbidden = {
+        (PROJECT_ROOT / "homr").resolve(),
+        (PROJECT_ROOT / "external" / "homr").resolve(),
+        Path("/opt/homr_stage_e_profile").resolve(),
+        Path("/opt/pdfscore_stage_e_profile").resolve(),
+        Path("/opt/pdfscore_stage_e_profile/src").resolve(),
+    }
+    retained: list[str] = []
+    for entry in env.get("PYTHONPATH", "").split(os.pathsep):
+        if not entry:
+            continue
+        try:
+            resolved = Path(entry).resolve()
+        except OSError:
+            resolved = Path(entry)
+        if resolved in forbidden or resolved == PROJECT_ROOT.resolve():
+            continue
+        retained.append(entry)
+
+    env["PYTHONPATH"] = os.pathsep.join([str(PROJECT_ROOT), *retained])
+    return env
 
 
 def _run_child_worker(
@@ -97,11 +123,7 @@ def run(request_path: Path, result_path: Path) -> Path:
     if sr_scale != 4:
         raise ValueError(f"Verified Stage E current support requires sr_scale=4, got {sr_scale}")
 
-    env = os.environ.copy()
-    homr_path = PROJECT_ROOT / "external" / "homr"
-    env["PYTHONPATH"] = os.pathsep.join(
-        [str(PROJECT_ROOT), str(homr_path), env.get("PYTHONPATH", "")]
-    ).strip(os.pathsep)
+    env = _build_worker_environment()
 
     stem = image.stem
     sr_image = output_root / "sr" / "batch" / stem / image.name
@@ -170,6 +192,7 @@ def run(request_path: Path, result_path: Path) -> Path:
         "connector_complete": bool(homr_payload.get("connector_complete", False)),
         "connector_symbols": homr_payload.get("connector_symbols"),
         "connector_brace_dot": homr_payload.get("connector_brace_dot"),
+        "homr_api_compat": homr_payload.get("homr_api_compat"),
         "current_omr": str(omr_predictions),
         "support_root": str(output_root),
         "current_homr_executed": True,

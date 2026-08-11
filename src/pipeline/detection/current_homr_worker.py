@@ -97,12 +97,12 @@ def run(request_path: Path, result_path: Path) -> Path:
 
     detection = image_run_dir / f"{stem}_detections.json"
     staff = image_run_dir / f"{stem}_staff_mask.png"
-    connector_paths = connector_mask_paths(image_run_dir, stem)
-    required = [detection, staff, *connector_paths.values()]
-    missing = [str(path) for path in required if not path.is_file()]
+    missing = [str(path) for path in (detection, staff) if not path.is_file()]
     if missing:
         raise FileNotFoundError("Current HOMR artifacts missing: " + ", ".join(missing))
 
+    connector_paths = connector_mask_paths(image_run_dir, stem)
+    connector_complete = all(path.is_file() for path in connector_paths.values())
     payload = {
         "schema_version": "pipeline.current_homr_on_x4.v1",
         "status": "completed",
@@ -111,8 +111,13 @@ def run(request_path: Path, result_path: Path) -> Path:
         "sr_scale": 4,
         "current_sr_detection": str(detection),
         "staff_mask": str(staff),
-        "connector_symbols": str(connector_paths["symbols"]),
-        "connector_brace_dot": str(connector_paths["brace_dot"]),
+        "connector_complete": connector_complete,
+        "connector_symbols": (
+            str(connector_paths["symbols"]) if connector_paths["symbols"].is_file() else None
+        ),
+        "connector_brace_dot": (
+            str(connector_paths["brace_dot"]) if connector_paths["brace_dot"].is_file() else None
+        ),
         "historical_detector_artifact_runtime_input": False,
     }
     result_path.parent.mkdir(parents=True, exist_ok=True)

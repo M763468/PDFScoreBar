@@ -34,6 +34,7 @@ from src.pipeline.steps.barlines import (
 from src.pipeline.steps.filters import get_user_exclude_indices, resolve_page_filters
 from src.pipeline.steps.numbering import (
     empty_numbering_payload,
+    rebase_mmr_overrides_to_page_local,
     run_mmr_batch,
 )
 from src.pipeline.utils.images import collect_images, resolve_page_ids
@@ -676,7 +677,9 @@ class PipelineOrchestrator:
             if step_mmr and not self.validate_only:
                 overrides_mmr = page_intermediate / "overrides_mmr.json"
                 if not self.dry_run and overrides_mmr.exists():
-                    mmr_overrides_payload = load_json(overrides_mmr)
+                    mmr_overrides_payload = rebase_mmr_overrides_to_page_local(
+                        load_json(overrides_mmr)
+                    )
 
             if (step_apply or step_overlay) and not self.validate_only:
                 overrides_payload = merge_measure_overrides(

@@ -5,7 +5,12 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from src.common.connector_artifacts import describe_connector_artifacts, write_connector_masks
+from src.common.connector_artifacts import (
+    connector_mask_paths_for_numbering,
+    connector_mask_paths_for_staff_mask,
+    describe_connector_artifacts,
+    write_connector_masks,
+)
 from src.pipeline.detection.utils import resolve_paths_from_detection
 
 
@@ -22,7 +27,9 @@ def _probe_root(tmp_path: Path, stem: str) -> Path:
     return probe_root
 
 
-def test_resolver_prefers_staff_mask_with_complete_connector_pair(tmp_path: Path) -> None:
+def test_resolver_keeps_staff_geometry_and_numbering_finds_connector_semantics(
+    tmp_path: Path,
+) -> None:
     stem = "page_001"
     hybrid_root = tmp_path / "hybrid"
 
@@ -40,7 +47,7 @@ def test_resolver_prefers_staff_mask_with_complete_connector_pair(tmp_path: Path
     semantic_staff = semantic_dir / f"{stem}_staff_mask.png"
     _write_mask(debug_staff)
     _write_mask(semantic_staff)
-    write_connector_masks(
+    written = write_connector_masks(
         semantic_dir,
         stem,
         {
@@ -48,6 +55,7 @@ def test_resolver_prefers_staff_mask_with_complete_connector_pair(tmp_path: Path
             "brace_dot": np.zeros((10, 10), dtype=np.uint8),
         },
     )
+    assert written is not None
 
     resolved = resolve_paths_from_detection(
         {"detection": {}},
@@ -58,7 +66,9 @@ def test_resolver_prefers_staff_mask_with_complete_connector_pair(tmp_path: Path
     )
 
     staff_mask = Path(resolved[0]["staff_mask"])
-    assert staff_mask == semantic_staff
+    assert staff_mask == debug_staff
+    assert connector_mask_paths_for_staff_mask(staff_mask) is None
+    assert connector_mask_paths_for_numbering(staff_mask) == written
     assert describe_connector_artifacts(staff_mask)["source"] == "proxy_symbol_layers"
 
 
@@ -78,4 +88,7 @@ def test_resolver_keeps_debug_staff_fallback_without_semantic_pair(tmp_path: Pat
         [tmp_path / "Score" / f"{stem}.png"],
     )
 
-    assert Path(resolved[0]["staff_mask"]) == debug_staff
+    staff_mask = Path(resolved[0]["staff_mask"])
+    assert staff_mask == debug_staff
+    assert connector_mask_paths_for_numbering(staff_mask) is None
+    assert describe_connector_artifacts(staff_mask)["source"] == "page_image_ink"

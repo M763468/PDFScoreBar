@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -60,6 +61,41 @@ def build_add_measure_numbers_cmd(
     if force_single_system:
         cmd.append("--force-single-system")
     return cmd
+
+
+def rebase_mmr_overrides_to_page_local(
+    payload: Optional[Dict[str, Any]],
+    *,
+    page_index: int,
+) -> Optional[Dict[str, Any]]:
+    """Select one global override page at the MMR Phase B -> Phase C boundary.
+
+    Phase B persists MMR overrides with batch-global page indices. Phase C
+    reconstructs one page at a time, so only overrides for the current global
+    page may cross this boundary. Manual corrections are merged in the same
+    global coordinate system before this helper is called, preserving their
+    precedence. The selected copies target the only page in the temporary Score
+    (page index 0); persisted Phase B and user payloads remain unchanged.
+    """
+    if payload is None:
+        return None
+
+    rebased = deepcopy(payload)
+    overrides = rebased.get("measure_overrides")
+    if not isinstance(overrides, list):
+        return rebased
+
+    selected = [
+        override
+        for override in overrides
+        if isinstance(override, dict) and override.get("page") == page_index
+    ]
+    for override in selected:
+        override["page"] = 0
+    rebased["measure_overrides"] = selected
+    if isinstance(rebased.get("overrides"), list):
+        rebased["overrides"] = deepcopy(selected)
+    return rebased
 
 
 def _is_default_mmr_ocr_engine(ocr_engine: Optional[Any]) -> bool:

@@ -85,7 +85,7 @@ class PipelineOrchestrator:
         self._mmr_persistence = _MMR_PERSISTENCE
 
     def _run_pdf_to_images(self) -> None:
-        """Step 1: Convert PDF to images in-process."""
+        """Step 1: Convert PDF pages to images in-process."""
         pdf_path = get_nested(self.config, "inputs", "pdf_path")
         pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
         if not pdf_path:
@@ -678,7 +678,8 @@ class PipelineOrchestrator:
                 overrides_mmr = page_intermediate / "overrides_mmr.json"
                 if not self.dry_run and overrides_mmr.exists():
                     mmr_overrides_payload = rebase_mmr_overrides_to_page_local(
-                        load_json(overrides_mmr)
+                        load_json(overrides_mmr),
+                        page_index=index - 1,
                     )
 
             if (step_apply or step_overlay) and not self.validate_only:

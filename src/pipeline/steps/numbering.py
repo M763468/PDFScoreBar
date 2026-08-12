@@ -65,13 +65,16 @@ def build_add_measure_numbers_cmd(
 
 def rebase_mmr_overrides_to_page_local(
     payload: Optional[Dict[str, Any]],
+    *,
+    page_index: int,
 ) -> Optional[Dict[str, Any]]:
-    """Copy a page-specific MMR payload into one-page Score coordinates.
+    """Select one global MMR page and copy it into one-page Score coordinates.
 
     Phase B persists MMR overrides with batch-global page indices. Phase C
-    reconstructs one page at a time, so MMR overrides selected for that page
-    must target the only page in the temporary Score (page index 0). The
-    persisted Phase B payload remains unchanged.
+    reconstructs one page at a time, so only overrides for the current global
+    page may cross this boundary. The selected copies target the only page in
+    the temporary Score (page index 0); the persisted Phase B payload remains
+    unchanged.
     """
     if payload is None:
         return None
@@ -81,9 +84,14 @@ def rebase_mmr_overrides_to_page_local(
     if not isinstance(overrides, list):
         return rebased
 
-    for override in overrides:
-        if isinstance(override, dict) and "page" in override:
-            override["page"] = 0
+    selected = [
+        override
+        for override in overrides
+        if isinstance(override, dict) and override.get("page") == page_index
+    ]
+    for override in selected:
+        override["page"] = 0
+    rebased["measure_overrides"] = selected
     return rebased
 
 

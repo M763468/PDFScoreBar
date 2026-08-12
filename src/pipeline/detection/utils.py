@@ -5,7 +5,6 @@ import subprocess
 from pathlib import Path
 from typing import Any, Dict, List
 
-from src.common.connector_artifacts import connector_mask_paths_for_staff_mask
 from src.pipeline.core.config import get_nested
 
 logger = logging.getLogger(__name__)
@@ -32,27 +31,17 @@ def resolve_paths_from_detection(
 
     staff_mask_map: Dict[str, Path] = {}
     if resolved_staff_mask_dir is not None and resolved_staff_mask_dir.exists():
-        staff_mask_candidates: Dict[str, List[Path]] = {}
-
-        # Preserve the legacy Proxy/SR preference when no semantic connector
-        # artifacts are available for a page.
+        # Pattern 1: *_debug_3_staff.png (Proxy/SR output)
         for path in resolved_staff_mask_dir.rglob("*_debug_3_staff.png"):
             name = path.name
             stem = name.replace("_proxy_debug_3_staff.png", "").replace("_debug_3_staff.png", "")
-            staff_mask_candidates.setdefault(stem, []).append(path)
-
+            staff_mask_map[stem] = path
+        # Pattern 2: *_staff_mask.png (Baseline in-process output)
         for path in resolved_staff_mask_dir.rglob("*_staff_mask.png"):
             name = path.name
             stem = name.replace("_staff_mask.png", "")
-            staff_mask_candidates.setdefault(stem, []).append(path)
-
-        for stem, candidates in staff_mask_candidates.items():
-            semantic_candidates = [
-                path
-                for path in candidates
-                if connector_mask_paths_for_staff_mask(path) is not None
-            ]
-            staff_mask_map[stem] = semantic_candidates[0] if semantic_candidates else candidates[0]
+            if stem not in staff_mask_map:
+                staff_mask_map[stem] = path
 
     for page_id, img_path in zip(page_ids, images):
         stem = img_path.stem

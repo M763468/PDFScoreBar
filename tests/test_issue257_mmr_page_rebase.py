@@ -81,7 +81,7 @@ def test_rebase_selects_only_current_global_page_without_mutating_source() -> No
         ]
 
 
-def test_three_page_phase_c_rebases_without_cross_page_leakage(
+def test_three_page_phase_c_preserves_manual_precedence_without_cross_page_leakage(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -89,6 +89,28 @@ def test_three_page_phase_c_rebases_without_cross_page_leakage(
     page_ids = ["page_001", "page_002", "page_003"]
     images = [tmp_path / f"{page_id}.png" for page_id in page_ids]
     persisted_payload = _global_mmr_payload()
+    manual_payload = {
+        "correction_type": "mmr_measure_span",
+        "items": [
+            {
+                "op": "suppress",
+                "page": 1,
+                "system": 0,
+                "measure": 1,
+                "comment": "suppress page 2 automatic MMR override",
+            },
+            {
+                "op": "set_measure_span",
+                "page": 2,
+                "system": 0,
+                "measure": 1,
+                "measure_span": 2,
+                "comment": "replace page 3 automatic MMR override",
+            },
+        ],
+    }
+    manual_overrides_path = tmp_path / "manual_measure_overrides.json"
+    write_json(manual_overrides_path, manual_payload)
 
     resolved = []
     for page_id in page_ids:
@@ -102,7 +124,7 @@ def test_three_page_phase_c_rebases_without_cross_page_leakage(
         )
 
     config = {
-        "inputs": {},
+        "inputs": {"measure_overrides": str(manual_overrides_path)},
         "steps": {
             "detection": False,
             "numbering_base": True,
@@ -196,10 +218,11 @@ def test_three_page_phase_c_rebases_without_cross_page_leakage(
 
     orchestrator.run()
 
+    assert load_json(manual_overrides_path) == manual_payload
     expected_numbers = [
         [1, 2, 4, 5],
-        [1, 2, 5, 6],
-        [1, 2, 6, 7],
+        [1, 2, 3, 4],
+        [1, 2, 4, 5],
     ]
     per_page_payloads = []
     for page_index, page_id in enumerate(page_ids):

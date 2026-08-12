@@ -214,6 +214,4 @@ def test_three_page_phase_c_rebases_without_cross_page_leakage(
         assert [measure["number"] for measure in measures] == expected_numbers[page_index]
 
     combined_payload = load_json(run_dir / "outputs" / "numbering_final.json")
-    assert combined_payload["pages"] == [
-        payload["pages"][0] for payload in per_page_payloads
-    ]
+    assert combined_payload["pages"] == [payload["pages"][0] for payload in per_page_payloads]

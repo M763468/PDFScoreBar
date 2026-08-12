@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -60,6 +61,30 @@ def build_add_measure_numbers_cmd(
     if force_single_system:
         cmd.append("--force-single-system")
     return cmd
+
+
+def rebase_mmr_overrides_to_page_local(
+    payload: Optional[Dict[str, Any]],
+) -> Optional[Dict[str, Any]]:
+    """Copy a page-specific MMR payload into one-page Score coordinates.
+
+    Phase B persists MMR overrides with batch-global page indices. Phase C
+    reconstructs one page at a time, so MMR overrides selected for that page
+    must target the only page in the temporary Score (page index 0). The
+    persisted Phase B payload remains unchanged.
+    """
+    if payload is None:
+        return None
+
+    rebased = deepcopy(payload)
+    overrides = rebased.get("measure_overrides")
+    if not isinstance(overrides, list):
+        return rebased
+
+    for override in overrides:
+        if isinstance(override, dict) and "page" in override:
+            override["page"] = 0
+    return rebased
 
 
 def _is_default_mmr_ocr_engine(ocr_engine: Optional[Any]) -> bool:

@@ -85,7 +85,7 @@ class PipelineOrchestrator:
         self._mmr_persistence = _MMR_PERSISTENCE
 
     def _run_pdf_to_images(self) -> None:
-        """Step 1: Convert PDF to images in-process."""
+        """Step 1: Convert PDF pages to images in-process."""
         pdf_path = get_nested(self.config, "inputs", "pdf_path")
         pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
         if not pdf_path:
@@ -604,13 +604,15 @@ class PipelineOrchestrator:
             classifier_key = ("classifier", str(model_path), str(device))
             if classifier_key not in self._mmr_persistence:
                 logger.info(
-                    f"Initializing persistent MMRClassifier with model: {model_path} on {device}")
+                    f"Initializing persistent MMRClassifier with model: {model_path} on {device}"
+                )
                 self._mmr_persistence[classifier_key] = MMRClassifier(model_path, device)
 
             ocr_key = ("ocr_engine", enable_rotation_tta)
             if ocr_key not in self._mmr_persistence:
                 logger.info(
-                    f"Initializing persistent MMROCREngine (RapidOCR) with rotation_tta={enable_rotation_tta}")
+                    f"Initializing persistent MMROCREngine (RapidOCR) with rotation_tta={enable_rotation_tta}"
+                )
                 self._mmr_persistence[ocr_key] = MMROCREngine(
                     enable_rotation_tta=enable_rotation_tta
                 )

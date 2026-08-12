@@ -34,6 +34,7 @@ from src.pipeline.steps.barlines import (
 from src.pipeline.steps.filters import get_user_exclude_indices, resolve_page_filters
 from src.pipeline.steps.numbering import (
     empty_numbering_payload,
+    rebase_mmr_overrides_to_page_local,
     run_mmr_batch,
 )
 from src.pipeline.utils.images import collect_images, resolve_page_ids
@@ -682,6 +683,11 @@ class PipelineOrchestrator:
                 overrides_payload = merge_measure_overrides(
                     mmr_overrides_payload, user_overrides_payload
                 )
+                if mmr_overrides_payload is not None:
+                    overrides_payload = rebase_mmr_overrides_to_page_local(
+                        overrides_payload,
+                        page_index=index - 1,
+                    )
                 if not self.dry_run and self.debug:
                     write_json(page_intermediate / "overrides_combined.json", overrides_payload)
 

@@ -1,0 +1,3 @@
+tests/test_issue257_mmr_page_rebase.py
+tests/test_numbering_overrides.py
+tests/test_manual_corrections.py

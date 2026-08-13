@@ -50,10 +50,11 @@ The default and unattended path is local AST extraction only:
 
 ```bash
 graphify extract . --code-only --force
-graphify cluster-only . --wiki --no-viz
+graphify cluster-only . --no-viz --no-label
+graphify export wiki
 ```
 
-This path does not send source code, documents, PDFs, or images to an LLM API. It skips non-code files and then derives communities, `GRAPH_REPORT.md`, and the wiki from the existing code graph.
+This path does not send source code, documents, PDFs, or images to an LLM API. `--no-label` also prevents the current CLI from selecting an LLM backend for community naming; communities remain deterministic `Community N` labels. It skips non-code files and then derives communities, `GRAPH_REPORT.md`, and the wiki from the existing code graph.
 
 Refresh shared artifacts after meaningful architectural changes, not on every feature branch. Ordinary worktrees should use the committed graph first and inspect branch-specific changes directly.
 

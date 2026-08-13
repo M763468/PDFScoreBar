@@ -1,0 +1,53 @@
+# dense_full_pipeline.py
+
+> 37 nodes · cohesion 0.11
+
+## Key Concepts
+
+- **dense_full_pipeline.py** (17 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **reconstruct_dense_full_pipeline_route()** (15 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **stage_e_dense_full_pipeline.py** (11 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **regenerate_dense_candidates()** (10 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **regenerate_probe_rescue_candidates()** (9 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **Path** (8 connections)
+- **DenseRouteArtifacts** (6 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **_run_command()** (6 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **reconstruct_stage_e_dense_route()** (6 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **StageEDenseRouteArtifacts** (6 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **load_route_image_paths()** (5 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **_phase_summary()** (5 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **Any** (5 connections)
+- **_write_compact_log()** (5 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **CommandLogSummary** (4 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **_write_execution_summary()** (4 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **Path** (4 connections)
+- **regenerate_dense_candidates()** (4 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **regenerate_issue53_candidates()** (4 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **_compact_log_path()** (3 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **.from_dense()** (3 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **.issue53_root()** (3 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+- **_add_params()** (2 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **.to_json()** (2 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **Popen** (1 connections)
+- *... and 12 more nodes in this community*
+
+## Relationships
+
+- [run_probe_scan_batch](run_probe_scan_batch.md) (3 shared connections)
+- [run_stage_e_full_pipeline.py](run_stage_e_full_pipeline.py.md) (3 shared connections)
+- [restored_orchestrator.py](restored_orchestrator.py.md) (2 shared connections)
+
+## Source Files
+
+- `src/pipeline/detector_routes/dense_full_pipeline.py`
+- `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
+
+## Audit Trail
+
+- EXTRACTED: 82 (98%)
+- INFERRED: 2 (2%)
+- AMBIGUOUS: 0 (0%)
+
+---
+
+*Part of the graphify knowledge wiki. See [index](index.md) to navigate.*

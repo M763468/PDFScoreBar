@@ -25,7 +25,8 @@ fi
 
 rebuild_code_graph() {
     "${GRAPHIFY[@]}" extract . --code-only --force
-    "${GRAPHIFY[@]}" cluster-only . --wiki --no-viz
+    "${GRAPHIFY[@]}" cluster-only . --no-viz --no-label
+    "${GRAPHIFY[@]}" export wiki
 }
 
 if [ "${GRAPHIFY_REBUILD:-0}" = "1" ]; then

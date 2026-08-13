@@ -219,7 +219,7 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 
 - `graphify-out/graph.json` がある場合、広範な検索より先に `scripts/graphify_query.sh "<question>"` または `.agents/skills/graphify/SKILL.md` を利用する。
 - Graphifyの結果は対象source・testで直接確認する。
-- 通常の無人生成はcode-onlyとし、document semantic extractionはユーザーがlocal coding sessionまたはGemini API経路と対象scopeを明示した場合だけ行う。
+- 通常の無人生成はcode-onlyとし、community labelingも `--no-label` で無効化する。document semantic extractionはユーザーがlocal coding sessionまたはGemini API経路と対象scopeを明示した場合だけ行う。
 - 共有対象は `graph.json`、`GRAPH_REPORT.md`、`wiki/**`、`MANIFEST.json`だけとし、cacheや環境依存の途中生成物はコミットしない。
 - branch固有差分が未反映の場合は直接差分を確認し、必要な場合だけlocal refreshする。
 - Graphifyが使えない、古い、または不十分な場合は `rg` / `grep` とsource確認へフォールバックする。

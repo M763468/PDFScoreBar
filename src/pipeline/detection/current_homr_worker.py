@@ -8,12 +8,29 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+import cv2
+import numpy as np
+
 
 def _load_request(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, Mapping):
         raise ValueError("Current-HOMR request must be a mapping")
     return dict(payload)
+
+
+def _resize_mask_to_image_size(mask: np.ndarray, image_size: tuple[int, int]) -> np.ndarray:
+    """Restore an SR-space HOMR mask to the original page-image coordinates."""
+    target_width, target_height = image_size
+    if mask.ndim != 2:
+        raise ValueError(f"Current-HOMR mask must be 2-D, got shape {mask.shape}")
+    if mask.shape == (target_height, target_width):
+        return mask
+    return cv2.resize(
+        mask,
+        (target_width, target_height),
+        interpolation=cv2.INTER_NEAREST,
+    )
 
 
 def run(request_path: Path, result_path: Path) -> Path:
@@ -29,6 +46,11 @@ def run(request_path: Path, result_path: Path) -> Path:
         raise FileNotFoundError(image)
     if not sr_image.is_file():
         raise FileNotFoundError(sr_image)
+
+    original_image = cv2.imread(str(image), cv2.IMREAD_GRAYSCALE)
+    if original_image is None:
+        raise RuntimeError(f"Failed to read current-HOMR source image: {image}")
+    image_size = (int(original_image.shape[1]), int(original_image.shape[0]))
 
     sr_scale = int(det_cfg.get("sr_scale", 2))
     if sr_scale != 4:
@@ -104,8 +126,8 @@ def run(request_path: Path, result_path: Path) -> Path:
             image,
             image_run_dir,
             metrics_predictions,
-            notehead_mask,
-            staff_mask,
+            _resize_mask_to_image_size(notehead_mask, image_size),
+            _resize_mask_to_image_size(staff_mask, image_size),
         )
     finally:
         predictor.cleanup()

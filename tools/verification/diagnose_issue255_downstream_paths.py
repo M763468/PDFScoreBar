@@ -10,7 +10,7 @@ from __future__ import annotations
 import argparse
 import inspect
 import json
-import subprocess
+import os
 import sys
 from pathlib import Path
 from typing import Any, Mapping
@@ -36,18 +36,6 @@ FOCUSED_SELECTORS = (
     "Va_Prokofiev_Symphony1/page_004",
 )
 EXPECTED_BRANCH = "fix/issue255-production-detector-restoration"
-
-
-def _git(*args: str) -> str | None:
-    result = subprocess.run(
-        ["git", "-C", str(ROOT), *args],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if result.returncode != 0:
-        return None
-    return result.stdout.strip()
 
 
 def _resolve_artifact_path(raw: str | Path) -> Path:
@@ -119,6 +107,24 @@ def _diagnose_page(
     }
 
 
+def _host_git_metadata() -> dict[str, Any]:
+    branch = os.environ.get("ISSUE255_GIT_BRANCH") or None
+    local_sha = os.environ.get("ISSUE255_GIT_LOCAL_SHA") or None
+    remote_sha = os.environ.get("ISSUE255_GIT_REMOTE_SHA") or None
+    dirty_raw = os.environ.get("ISSUE255_GIT_DIRTY")
+    dirty = None if dirty_raw is None else dirty_raw == "1"
+    commit_matches_remote = bool(local_sha and remote_sha and local_sha == remote_sha)
+    return {
+        "metadata_source": "host_environment",
+        "branch": branch,
+        "expected_branch": EXPECTED_BRANCH,
+        "local_sha": local_sha,
+        "remote_sha": remote_sha,
+        "commit_matches_remote": commit_matches_remote,
+        "dirty": dirty,
+    }
+
+
 def run(detector_report_path: Path, output_path: Path) -> Path:
     report = json.loads(detector_report_path.read_text(encoding="utf-8"))
     if not isinstance(report, Mapping):
@@ -136,11 +142,7 @@ def run(detector_report_path: Path, output_path: Path) -> Path:
             raise ValueError(f"Detector run not found for score: {score}")
         pages.append(_diagnose_page(selector=selector, detector_run=detector_run, config=config))
 
-    local_sha = _git("rev-parse", "HEAD")
-    branch = _git("branch", "--show-current")
-    remote_sha = _git("rev-parse", f"origin/{EXPECTED_BRANCH}")
-    dirty_lines = (_git("status", "--porcelain") or "").splitlines()
-
+    git = _host_git_metadata()
     module_paths = {
         "resolver": _rel(inspect.getsourcefile(resolve_paths_from_detection)),
         "connector_artifacts": _rel(
@@ -148,30 +150,21 @@ def run(detector_report_path: Path, output_path: Path) -> Path:
         ),
     }
 
-    commit_matches_remote = bool(local_sha and remote_sha and local_sha == remote_sha)
+    git_ok = bool(
+        git["branch"] == EXPECTED_BRANCH
+        and git["commit_matches_remote"]
+        and git["dirty"] is False
+    )
     payload = {
-        "schema_version": "verification.issue255_downstream_path_diagnostic.v1",
-        "git": {
-            "branch": branch,
-            "expected_branch": EXPECTED_BRANCH,
-            "local_sha": local_sha,
-            "remote_sha": remote_sha,
-            "commit_matches_remote": commit_matches_remote,
-            "dirty": bool(dirty_lines),
-            "dirty_paths": dirty_lines,
-        },
+        "schema_version": "verification.issue255_downstream_path_diagnostic.v2",
+        "git": git,
         "runtime": {
             "python_executable": sys.executable,
             "module_paths": module_paths,
         },
         "detector_report": _rel(detector_report_path),
         "pages": pages,
-        "passed": bool(
-            branch == EXPECTED_BRANCH
-            and commit_matches_remote
-            and not dirty_lines
-            and all(page["passed"] for page in pages)
-        ),
+        "passed": bool(git_ok and all(page["passed"] for page in pages)),
     }
 
     output_path.parent.mkdir(parents=True, exist_ok=True)

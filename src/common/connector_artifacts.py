@@ -33,12 +33,7 @@ def connector_mask_paths(image_run_dir: Path | str, stem: str) -> dict[str, Path
 def connector_mask_paths_for_staff_mask(
     staff_mask_path: Path | str,
 ) -> dict[str, Path] | None:
-    """Resolve stable connector masks stored beside a HOMR staff mask.
-
-    This is the strict producer-side sibling contract. Do not broaden it: the
-    skip-existing completeness guard relies on this function requiring the
-    semantic pair to be published beside the corresponding stable staff mask.
-    """
+    """Resolve stable connector masks stored beside a HOMR staff mask."""
 
     staff_path = Path(staff_mask_path)
     stem = _staff_mask_stem(staff_path.name)
@@ -49,53 +44,6 @@ def connector_mask_paths_for_staff_mask(
     if not all(path.is_file() for path in paths.values()):
         return None
     return paths
-
-
-def connector_mask_paths_for_numbering(
-    staff_mask_path: Path | str,
-) -> dict[str, Path] | None:
-    """Resolve connector semantics for a numbering consumer.
-
-    Numbering may intentionally use a Proxy/SR debug staff mask for stable staff
-    geometry while the current-HOMR semantic connector masks live under the same
-    hybrid run's ``current_support`` tree. Keep those two roles independent:
-    first accept a complete sibling pair, then look only in the nearest hybrid
-    run's ``current_support`` subtree for the same page stem.
-    """
-
-    staff_path = Path(staff_mask_path)
-    sibling_paths = connector_mask_paths_for_staff_mask(staff_path)
-    if sibling_paths is not None:
-        return sibling_paths
-
-    stem = _staff_mask_stem(staff_path.name)
-    if stem is None:
-        return None
-
-    for ancestor in staff_path.parents:
-        support_root = ancestor / "current_support"
-        if not support_root.is_dir():
-            continue
-
-        candidates: list[dict[str, Path]] = []
-        for symbols_path in support_root.rglob(f"{stem}{CONNECTOR_SYMBOLS_SUFFIX}"):
-            paths = connector_mask_paths(symbols_path.parent, stem)
-            if all(path.is_file() for path in paths.values()):
-                candidates.append(paths)
-
-        unique = {
-            (str(paths["symbols"].resolve()), str(paths["brace_dot"].resolve())): paths
-            for paths in candidates
-        }
-        if len(unique) > 1:
-            raise RuntimeError(
-                f"Ambiguous connector semantic pairs for {stem} under {support_root}"
-            )
-        if unique:
-            return next(iter(unique.values()))
-        return None
-
-    return None
 
 
 def connector_masks_complete(
@@ -155,9 +103,9 @@ def write_connector_masks(
 
 
 def describe_connector_artifacts(staff_mask_path: Path | str) -> dict[str, Any]:
-    """Describe the connector source actually available to numbering."""
+    """Describe the connector source used by numbering for manifest provenance."""
 
-    paths = connector_mask_paths_for_numbering(staff_mask_path)
+    paths = connector_mask_paths_for_staff_mask(staff_mask_path)
     if paths is None:
         return {
             "source": "page_image_ink",

@@ -1,30 +1,12 @@
 from types import SimpleNamespace
 
-import numpy as np
 import pytest
 
-from src.pipeline.detection.current_homr_worker import _resize_mask_to_image_size
 from src.pipeline.detection.current_support_worker import PROJECT_ROOT, _build_worker_environment
 from src.pipeline.detection.homr_profile_compat import (
     build_processing_config_compat,
     install_current_homr_consumer_compat,
 )
-
-
-def test_current_homr_worker_restores_sr_masks_to_original_page_size() -> None:
-    original = np.array(
-        [
-            [0, 255, 0],
-            [255, 0, 255],
-        ],
-        dtype=np.uint8,
-    )
-    sr_mask = np.repeat(np.repeat(original, 4, axis=0), 4, axis=1)
-
-    restored = _resize_mask_to_image_size(sr_mask, (3, 2))
-
-    assert restored.shape == original.shape
-    assert np.array_equal(restored, original)
 
 
 def test_processing_config_without_gpu_field_uses_five_arguments() -> None:

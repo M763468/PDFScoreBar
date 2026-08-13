@@ -247,7 +247,22 @@ class PipelineOrchestrator:
         barline_override_stats = res_a["barline_override_stats"]
 
         # Phase B: MMR Batch Detection
-        self.run_mmr_batch_detection(page_ids, excluded_page_ids, page_ctx)
+        mmr_page_ctx = page_ctx
+        detector_route = str(
+            get_nested(self.config, "detection", "detector_route", default="standard")
+        )
+        if (
+            get_nested(self.config, "steps", "mmr_overrides", default=False)
+            and not self.dry_run
+            and not self.validate_only
+            and detector_route == "dense_full_pipeline"
+        ):
+            from src.pipeline.mmr_geometry_handoff import build_mmr_page_context
+
+            mmr_page_ctx = build_mmr_page_context(
+                self, page_ids, excluded_page_ids, page_ctx
+            )
+        self.run_mmr_batch_detection(page_ids, excluded_page_ids, mmr_page_ctx)
 
         # Phase C: Final Numbering & Overlays
         numbering_final_paths = self.run_final_numbering_and_overlays(

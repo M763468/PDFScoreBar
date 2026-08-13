@@ -17,7 +17,7 @@ def build_manifest(
     images: List[Path],
     page_ids: List[str],
     page_runs: List[str],
-    resolved: List[Dict[str, str]],
+    resolved: List[Dict[str, Any]],
     commands: List[List[str]],
     page_statuses: List[Dict[str, Any]],
     barline_override_stats: Dict[str, Dict[str, int]],
@@ -37,6 +37,7 @@ def build_manifest(
                 "connector_evidence": describe_connector_artifacts(
                     Path(resolved_item["staff_mask"])
                 ),
+                "mmr_geometry": resolved_item.get("mmr_staff_geometry"),
                 "status": next(
                     (status for status in page_statuses if status["page_id"] == page_id),
                     None,

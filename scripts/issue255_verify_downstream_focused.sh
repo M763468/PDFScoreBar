@@ -7,12 +7,22 @@ BRANCH="fix/issue255-production-detector-restoration"
 RUN_TAG="${1:-issue255_downstream_focused_scores_$(date -u +%Y%m%dT%H%M%SZ)}"
 RUN_ROOT="logs/verification/downstream_full68/${RUN_TAG}"
 REPORT="${RUN_ROOT}/downstream_full68_verification_report.json"
-LOG="logs/verification/${RUN_TAG}.log"
-STATUS="logs/verification/issue255_downstream_focused_run_status.json"
+STATUS="issue255_downstream_focused_run_status.json"
 DIAGNOSTIC="logs/verification/issue255_downstream_path_diagnostic.json"
 
 cd "$ROOT"
-mkdir -p logs/verification
+
+# Host-side files must not be written under logs/verification because retained
+# Docker runs may leave that directory owned by root. Keep transient logs inside
+# Git metadata and expose only one easy-to-upload JSON at the repository root.
+RUNTIME_DIR="$(git rev-parse --git-path issue255-runtime)"
+EXCLUDE_FILE="$(git rev-parse --git-path info/exclude)"
+LOG="${RUNTIME_DIR}/${RUN_TAG}.log"
+mkdir -p "$RUNTIME_DIR"
+touch "$EXCLUDE_FILE"
+if ! grep -qxF "/${STATUS}" "$EXCLUDE_FILE"; then
+  printf '/%s\n' "$STATUS" >>"$EXCLUDE_FILE"
+fi
 rm -f "$STATUS" "$LOG"
 
 write_status() {
@@ -32,14 +42,13 @@ log_path = Path(sys.argv[6])
 diagnostic_path = Path(sys.argv[7])
 
 payload = {
-    "schema_version": "verification.issue255_downstream_focused_run_status.v1",
+    "schema_version": "verification.issue255_downstream_focused_run_status.v2",
     "run_tag": run_tag,
     "stage": stage,
     "exit_code": exit_code,
     "passed": exit_code == 0,
     "report_path": str(report_path),
     "report_exists": report_path.is_file(),
-    "log_path": str(log_path),
     "diagnostic_path": str(diagnostic_path),
 }
 

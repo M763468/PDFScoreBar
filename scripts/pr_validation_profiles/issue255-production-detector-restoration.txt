@@ -1,0 +1,9 @@
+tests/test_homr_profile.py
+tests/test_current_homr_worker.py
+tests/test_issue255_production_detector_restoration.py
+tests/test_issue255_page_local_source_generation.py
+tests/test_verify_detector_full68.py
+tests/test_detector_input_contract.py
+tests/test_detector_orchestrator_input_contract.py
+tests/test_pipeline_detection.py
+tests/test_issue254_connector_artifact_contract.py

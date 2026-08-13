@@ -1,9 +1,10 @@
 """Classify whether detector candidates come from fresh upstream or overrides.
 
 A run may execute HOMR/SR/OMR while still replacing the authoritative probe or
-CNN inputs with precomputed artifacts.  Metrics from that route are useful as a
+CNN inputs with precomputed artifacts. Metrics from that route are useful as a
 checkpoint, but they are not evidence that fresh upstream regeneration works.
-This module keeps that distinction machine-readable.
+This module keeps that distinction machine-readable and records the selected
+fresh detector profile without changing the fresh/precomputed classification.
 """
 
 from __future__ import annotations
@@ -37,6 +38,10 @@ def build_detector_input_contract(det_cfg: Mapping[str, Any]) -> dict[str, Any]:
         "hybrid_detection_may_execute": True,
         "hybrid_output_authoritative_for_probe": not uses_precomputed_probe,
         "hybrid_output_authoritative_for_cnn_bands": not uses_cnn_bands_override,
+        "detector_route": str(det_cfg.get("detector_route", "standard")),
+        "homr_profile": det_cfg.get("homr_profile"),
+        "sr_scale": int(det_cfg.get("sr_scale", 2)),
+        "probe_use_original_images": bool(det_cfg.get("probe_use_original_images", False)),
         "precomputed_probe_candidates_root": (
             str(precomputed_probe) if uses_precomputed_probe else None
         ),

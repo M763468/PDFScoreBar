@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple
 import cv2
 import numpy as np
 
-from src.common.connector_artifacts import connector_mask_paths_for_staff_mask
+from src.common.connector_artifacts import connector_mask_paths_for_numbering
 
 from .connector_aware_builder import ConnectorAwareSystemBuilder
 from .connector_evidence import SystemConnectorEvidenceExtractor
@@ -87,7 +87,7 @@ class MeasureNumberingPipeline:
         staves = self.extractor.extract(staff_mask_path, image_size)
 
         if connector_evidence is None and not connector_masks and not connector_mask_paths:
-            connector_mask_paths = connector_mask_paths_for_staff_mask(staff_mask_path)
+            connector_mask_paths = connector_mask_paths_for_numbering(staff_mask_path)
 
         if connector_evidence is None:
             if connector_masks or connector_mask_paths:

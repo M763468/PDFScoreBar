@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple
 import cv2
 import numpy as np
 
-from src.common.connector_artifacts import connector_mask_paths_for_staff_mask
+from src.common.connector_artifacts import connector_mask_paths_for_numbering
 
 from .connector_aware_builder import ConnectorAwareSystemBuilder
 from .connector_evidence import SystemConnectorEvidenceExtractor
@@ -87,12 +87,18 @@ class MeasureNumberingPipeline:
         staves = self.extractor.extract(staff_mask_path, image_size)
 
         if connector_evidence is None and not connector_masks and not connector_mask_paths:
-            connector_mask_paths = connector_mask_paths_for_staff_mask(staff_mask_path)
+            connector_mask_paths = connector_mask_paths_for_numbering(staff_mask_path)
 
         if connector_evidence is None:
             if connector_masks or connector_mask_paths:
-                connector_evidence = self.connector_extractor.extract_from_mask_maps(
+                evidence_staves = self._connector_evidence_staves(
                     staves,
+                    staff_mask_path,
+                    image_size,
+                    connector_mask_paths,
+                )
+                connector_evidence = self.connector_extractor.extract_from_mask_maps(
+                    evidence_staves,
                     image_size,
                     connector_masks=connector_masks,
                     connector_mask_paths=connector_mask_paths,
@@ -148,6 +154,53 @@ class MeasureNumberingPipeline:
         self.numberer.number_score(score, start_number=start_number)
 
         return score
+
+    def _connector_evidence_staves(
+        self,
+        geometry_staves: List[Staff],
+        staff_mask_path: Path,
+        image_size: Tuple[int, int],
+        connector_mask_paths: Optional[Mapping[str, Path | str]],
+    ) -> List[Staff]:
+        """Measure semantic masks against the staff geometry from the same producer.
+
+        The selected Proxy/SR staff geometry remains authoritative for system
+        construction. When connector masks are resolved from current-HOMR support,
+        use the sibling current-HOMR staff mask only to define connector-evidence
+        ROIs, then apply that ordered pair evidence to the unchanged numbering
+        geometry.
+        """
+        if not connector_mask_paths:
+            return geometry_staves
+
+        symbols_value = connector_mask_paths.get("symbols")
+        if symbols_value is None:
+            symbols_value = connector_mask_paths.get("symbol")
+        if symbols_value is None:
+            return geometry_staves
+
+        symbols_path = Path(symbols_value)
+        suffix = "_connector_symbols.png"
+        if not symbols_path.name.endswith(suffix):
+            return geometry_staves
+
+        stem = symbols_path.name[: -len(suffix)]
+        semantic_staff_path = symbols_path.with_name(f"{stem}_staff_mask.png")
+        if semantic_staff_path == staff_mask_path or not semantic_staff_path.is_file():
+            return geometry_staves
+
+        semantic_staves = self.extractor.extract(semantic_staff_path, image_size)
+        if len(semantic_staves) != len(geometry_staves):
+            logger.warning(
+                "Connector semantic staff count mismatch for %s: geometry=%d semantic=%d; "
+                "keeping numbering geometry for evidence",
+                staff_mask_path,
+                len(geometry_staves),
+                len(semantic_staves),
+            )
+            return geometry_staves
+
+        return semantic_staves
 
     def _image_to_connector_mask(self, image: np.ndarray) -> np.ndarray:
         if image.ndim == 3:

@@ -12,7 +12,6 @@ from src.pipeline.core.python_env import get_pipeline_python
 from src.pipeline.core.subprocess_utils import run_with_logging
 from src.pipeline.utils.io import load_json
 
-
 PRODUCER = "HybridDetector._run_homr_in_process"
 PRODUCER_RUNTIME = "current_pipeline_homr"
 
@@ -105,10 +104,7 @@ def _can_reuse_result(skip_existing: bool, result_path: Path, images: list[Path]
         masks = _validated_masks(load_json(result_path), result_path)
     except (OSError, ValueError, TypeError):
         return False
-    return all(
-        str(image) in masks and Path(str(masks[str(image)])).is_file()
-        for image in images
-    )
+    return all(str(image) in masks and Path(str(masks[str(image)])).is_file() for image in images)
 
 
 def _validated_masks(payload: Any, result_path: Path) -> Mapping[str, Any]:

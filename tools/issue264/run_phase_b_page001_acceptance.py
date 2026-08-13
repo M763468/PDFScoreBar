@@ -13,23 +13,36 @@ from tools.issue264.phase_b_page001_acceptance import run
 CANONICAL_RUN = "issue255_production_restore_full68_top_level_worker_01"
 
 
+def _matching_manifest(candidates: list[Path]) -> Path | None:
+    seen: set[Path] = set()
+    for candidate in candidates:
+        if candidate in seen or not candidate.is_file():
+            continue
+        seen.add(candidate)
+        payload = load_json(candidate)
+        if payload.get("run_id") == CANONICAL_RUN:
+            return candidate
+    return None
+
+
 def resolve_manifest(explicit: Path | None) -> Path:
     if explicit is not None:
         if not explicit.is_file():
             raise FileNotFoundError(explicit)
         return explicit
 
-    candidates = [
+    direct = [
         Path("logs/full_pipeline_runs") / CANONICAL_RUN / "manifest.json",
         Path("logs") / CANONICAL_RUN / "manifest.json",
     ]
-    candidates.extend(Path("logs").glob(f"**/{CANONICAL_RUN}/manifest.json"))
-    for candidate in candidates:
-        if not candidate.is_file():
-            continue
-        payload = load_json(candidate)
-        if payload.get("run_id") == CANONICAL_RUN:
-            return candidate
+    direct.extend(Path("logs").glob(f"**/{CANONICAL_RUN}/manifest.json"))
+    matched = _matching_manifest(direct)
+    if matched is not None:
+        return matched
+
+    matched = _matching_manifest(list(Path("logs").rglob("manifest.json")))
+    if matched is not None:
+        return matched
     raise FileNotFoundError(
         "Canonical detector manifest was not found. Use --detector-manifest PATH."
     )

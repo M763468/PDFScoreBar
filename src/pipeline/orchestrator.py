@@ -259,9 +259,7 @@ class PipelineOrchestrator:
         ):
             from src.pipeline.mmr_geometry_handoff import build_mmr_page_context
 
-            mmr_page_ctx = build_mmr_page_context(
-                self, page_ids, excluded_page_ids, page_ctx
-            )
+            mmr_page_ctx = build_mmr_page_context(self, page_ids, excluded_page_ids, page_ctx)
         self.run_mmr_batch_detection(page_ids, excluded_page_ids, mmr_page_ctx)
 
         # Phase C: Final Numbering & Overlays

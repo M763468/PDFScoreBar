@@ -16,9 +16,7 @@ from src.pipeline.utils.images import load_image
 from src.pipeline.utils.io import load_json, score_to_dict, write_json
 
 TARGET_STEM = "Va_Prokofiev_Symphony1_page_001"
-EXPECTED_STAFF_SHA256 = (
-    "7fa9d8dd4709ed28031e3b20c68eb97abb42f3f46ef5d8abe4835180aa40e660"
-)
+EXPECTED_STAFF_SHA256 = "7fa9d8dd4709ed28031e3b20c68eb97abb42f3f46ef5d8abe4835180aa40e660"
 EXPECTED_PHYSICAL = [5, 5, 5, 7, 7, 8, 5, 7, 10, 8, 5, 6]
 EXPECTED_OVERRIDES = [
     (7, 3, 5),
@@ -161,9 +159,7 @@ def run(detector_manifest: Path, run_dir: Path) -> Path:
     mmr_payload = load_json(Path(mmr_ctx[TARGET_STEM]["numbering_base"]))
     triples = override_triples(overrides_payload)
     row_starts = [
-        system.measures[0].number
-        for system in final_score.pages[0].systems
-        if system.measures
+        system.measures[0].number for system in final_score.pages[0].systems if system.measures
     ]
     staff_sha = sha256(mmr_staff_mask)
     base_physical = physical_counts(base_payload)

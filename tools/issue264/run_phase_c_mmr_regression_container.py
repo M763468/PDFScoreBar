@@ -11,7 +11,9 @@ from __future__ import annotations
 
 import os
 
+from tools.issue264 import phase_c_phase_a_support
 from tools.issue264 import run_phase_c_mmr_regression as runner
+from tools.issue264.phase_c_current_homr_isolated import run as run_current_homr_isolated
 from tools.issue264.phase_c_phase_a_support import (
     augment_report,
     install_phase_a_support_replay,
@@ -22,6 +24,10 @@ def main() -> int:
     host_git_head = os.environ.get("ISSUE264_HOST_GIT_HEAD")
     if host_git_head:
         runner.git_head = lambda: host_git_head
+
+    # Keep each current-HOMR page replay in a fresh process so 68-page validation
+    # cannot accumulate predictor/compatibility state or VRAM across pages.
+    phase_c_phase_a_support.run_current_homr = run_current_homr_isolated
 
     args = runner.parse_args()
     run_dir = args.output_root / args.run_id

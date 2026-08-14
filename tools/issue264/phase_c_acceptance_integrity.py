@@ -95,7 +95,9 @@ def build_producer_contract(runner: Any, *, git_head: str) -> dict[str, Any]:
     }
 
 
-def _source_non_index_gate_failures(report: Mapping[str, Any]) -> list[str]:
+def source_non_index_gate_failures(report: Mapping[str, Any]) -> list[str]:
+    """Return failed source gates that cannot be superseded by geometry rebasing."""
+
     gates = report.get("gates")
     if not isinstance(gates, Mapping):
         raise ValueError("Phase C source report lacks gates")
@@ -109,6 +111,16 @@ def _source_non_index_gate_failures(report: Mapping[str, Any]) -> list[str]:
         for name, passed in gates.items()
         if name not in DIRECT_INDEX_SCORE_GATES and not bool(passed)
     )
+
+
+def require_source_non_index_gates(report: Mapping[str, Any]) -> list[str]:
+    """Require all source gates unrelated to historical index-addressed scoring."""
+
+    failures = source_non_index_gate_failures(report)
+    if failures:
+        raise ValueError(f"Phase C non-index source gates failed: {failures}")
+    gates = report["gates"]
+    return sorted(name for name in gates if name not in DIRECT_INDEX_SCORE_GATES)
 
 
 def stamp_source_report(
@@ -172,9 +184,7 @@ def verify_source_report(
             "Phase C source report repository Git HEAD does not match current invocation"
         )
 
-    failures = _source_non_index_gate_failures(report)
-    if failures:
-        raise ValueError(f"Phase C non-index source gates failed: {failures}")
+    verified_non_index_gates = require_source_non_index_gates(report)
 
     gates = report["gates"]
     ignored_failures = sorted(
@@ -185,9 +195,7 @@ def verify_source_report(
         "expected_invocation_id": expected_invocation_id,
         "expected_git_head": expected_git_head,
         "ignored_direct_index_gate_failures": ignored_failures,
-        "verified_non_index_gates": sorted(
-            name for name in gates if name not in DIRECT_INDEX_SCORE_GATES
-        ),
+        "verified_non_index_gates": verified_non_index_gates,
     }
 
 
@@ -231,7 +239,7 @@ def validate_resume_contract(
     if recorded_contract != current_producer_contract:
         raise ValueError("Cannot resume: producer revision/config/input contract changed")
 
-    failures = _source_non_index_gate_failures(report)
+    failures = source_non_index_gate_failures(report)
     if failures:
         raise ValueError(f"Cannot resume: prior non-index source gates failed: {failures}")
     _verify_generated_artifacts(report)

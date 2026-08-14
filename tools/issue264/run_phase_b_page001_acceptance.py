@@ -20,6 +20,8 @@ def _matching_manifest(candidates: list[Path]) -> Path | None:
             continue
         seen.add(candidate)
         payload = load_json(candidate)
+        if not isinstance(payload, dict):
+            continue
         if payload.get("run_id") == CANONICAL_RUN:
             return candidate
     return None

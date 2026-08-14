@@ -54,6 +54,7 @@ def test_fixture_rebase_tracks_same_page_region_after_system_index_shift() -> No
     assert mappings[0]["current_key"] == [27, 1, 1]
     assert mappings[0]["changed"] is True
     assert mappings[0]["method"] == "historical_center_in_current_bbox"
+    assert mappings[0]["coalesced_equivalent_fixture"] is False
 
 
 def test_fixture_rebase_preserves_index_when_geometry_is_unchanged() -> None:
@@ -94,15 +95,51 @@ def test_fixture_rebase_rejects_weak_spatial_match() -> None:
         map_measure_bbox(ref, current)
 
 
-def test_fixture_rebase_rejects_multiple_gt_items_mapping_to_same_current_measure() -> None:
-    historical = _numbering([(100, [(0, 100), (100, 200)])])
-    current = _numbering([(100, [(0, 200)])])
+def test_fixture_rebase_coalesces_equivalent_items_after_system_merge() -> None:
+    historical = _numbering(
+        [
+            (100, [(0, 100)]),
+            (100, [(0, 100)]),
+        ]
+    )
+    current = _numbering([(100, [(0, 100)])])
     expected = {
         "overrides": [
-            {"page": 0, "system": 0, "measure": 0, "skip": 2},
-            {"page": 0, "system": 0, "measure": 1, "skip": 3},
+            {"page": 0, "system": 0, "measure": 0, "skip": 3},
+            {"page": 0, "system": 1, "measure": 0, "skip": 3},
         ]
     }
 
-    with pytest.raises(ValueError, match="Multiple historical fixtures"):
+    rebased, mappings = rebase_expected_overrides(
+        expected,
+        historical,
+        current,
+        global_page_index=20,
+    )
+
+    assert rebased["overrides"] == [
+        {"page": 20, "system": 0, "measure": 0, "skip": 3}
+    ]
+    assert len(mappings) == 2
+    assert mappings[0]["coalesced_equivalent_fixture"] is False
+    assert mappings[1]["coalesced_equivalent_fixture"] is True
+    assert mappings[1]["coalesced_with_historical_key"] == [20, 0, 0]
+
+
+def test_fixture_rebase_rejects_conflicting_items_after_system_merge() -> None:
+    historical = _numbering(
+        [
+            (100, [(0, 100)]),
+            (100, [(0, 100)]),
+        ]
+    )
+    current = _numbering([(100, [(0, 100)])])
+    expected = {
+        "overrides": [
+            {"page": 0, "system": 0, "measure": 0, "skip": 2},
+            {"page": 0, "system": 1, "measure": 0, "skip": 3},
+        ]
+    }
+
+    with pytest.raises(ValueError, match="Conflicting historical fixtures"):
         rebase_expected_overrides(expected, historical, current, global_page_index=0)

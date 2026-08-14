@@ -167,5 +167,5 @@ def test_phase_c_wrapper_runs_integrity_rebase_and_final_lint() -> None:
     assert "rescore_phase_c_mmr_geometry_rebased.py" in wrapper
     assert "direct-index runner exit:" in wrapper
     assert "requested_image_id" in wrapper
-    assert "docker rm -f \"$container\"" in wrapper
+    assert 'docker rm -f "$container"' in wrapper
     assert "make lint" in wrapper

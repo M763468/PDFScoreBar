@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """Rescore an Issue #264 Phase C report after spatially rebasing historical MMR GT.
 
-This command does not run detector, HOMR, CNN, OCR, SR, or numbering again.  It
+This command does not run detector, HOMR, CNN, OCR, SR, or numbering again. It
 uses the completed Phase C artifacts and corrects only the evaluation coordinate
 system: historical fixture indices are mapped by historical measure bbox onto the
 current Phase A numbering geometry.
+
+Historical fixture item count and current unique logical GT-event count are reported
+separately because current Phase A grouping may merge multiple historical systems
+that represented the same physical MMR.
 """
 
 from __future__ import annotations
@@ -17,6 +21,7 @@ from typing import Any, Mapping
 from src.pipeline.utils.io import load_json, write_json
 from tools.issue264.phase_c_fixture_rebase import (
     mapping_method_counts,
+    normalise_overrides,
     rebase_expected_overrides,
 )
 from tools.issue264.run_phase_c_mmr_regression import score_overrides
@@ -81,7 +86,14 @@ def _artifact_path(item: Mapping[str, Any], key: str) -> Path:
 
 
 def _summary_totals(page_reports: list[Mapping[str, Any]]) -> dict[str, Any]:
-    keys = ("expected", "detected", "matched_tp", "missed_fn", "skip_mismatch", "unexpected_fp")
+    keys = (
+        "expected",
+        "detected",
+        "matched_tp",
+        "missed_fn",
+        "skip_mismatch",
+        "unexpected_fp",
+    )
     totals = {key: 0 for key in keys}
     for page in page_reports:
         counts = page["scoring"]["counts"]
@@ -123,6 +135,8 @@ def run(report_path: Path, output_path: Path | None = None) -> Path:
     page_reports: list[dict[str, Any]] = []
     all_mappings: list[dict[str, Any]] = []
     changed_keys = 0
+    source_fixture_items = 0
+    coalesced_equivalent_items = 0
 
     for raw_page in raw_pages:
         if not isinstance(raw_page, Mapping):
@@ -130,7 +144,11 @@ def run(report_path: Path, output_path: Path | None = None) -> Path:
         page_id = str(raw_page["page_id"])
         global_index = int(raw_page["global_index"])
         fixture_path = FIXTURE_ROOT / f"expected_overrides_{page_id}.json"
-        expected_payload: Any = load_json(fixture_path) if fixture_path.is_file() else {"overrides": []}
+        expected_payload: Any = (
+            load_json(fixture_path) if fixture_path.is_file() else {"overrides": []}
+        )
+        source_page_items = len(normalise_overrides(expected_payload))
+        source_fixture_items += source_page_items
 
         artifact = artifacts.get(page_id)
         if artifact is None:
@@ -154,6 +172,9 @@ def run(report_path: Path, output_path: Path | None = None) -> Path:
             for mapping in mappings:
                 mapping["page_id"] = page_id
             changed_keys += sum(bool(mapping["changed"]) for mapping in mappings)
+            coalesced_equivalent_items += sum(
+                bool(mapping["coalesced_equivalent_fixture"]) for mapping in mappings
+            )
             all_mappings.extend(mappings)
 
         scoring = score_overrides(expected_payload, detected_payload)
@@ -167,8 +188,13 @@ def run(report_path: Path, output_path: Path | None = None) -> Path:
                 "scoring": scoring,
                 "fixture_rebase": {
                     "fixture_present": fixture_path.is_file(),
+                    "source_fixture_items": source_page_items,
+                    "rebased_unique_expected": scoring["counts"]["expected"],
                     "mapping_count": len(mappings),
                     "changed_key_count": sum(bool(mapping["changed"]) for mapping in mappings),
+                    "coalesced_equivalent_items": sum(
+                        bool(mapping["coalesced_equivalent_fixture"]) for mapping in mappings
+                    ),
                     "mappings": mappings,
                 },
             }
@@ -177,8 +203,9 @@ def run(report_path: Path, output_path: Path | None = None) -> Path:
     totals = _summary_totals(page_reports)
     gates = {
         "page_count_68": totals["pages"] == 68,
-        "expected_fixture_total_182": totals["expected"] == 182,
-        "fixture_rebase_complete_182": len(all_mappings) == 182,
+        "historical_source_fixture_items_182": source_fixture_items == 182,
+        "fixture_rebase_mapped_all_182_source_items": len(all_mappings) == 182,
+        "rebased_unique_expected_not_above_source": totals["expected"] <= source_fixture_items,
         "zero_expected_pages_scored": totals["zero_expected_pages"] == 16,
         "zero_expected_page_detections_zero": totals["zero_expected_page_detections"] == 0,
         "unexpected_fp_zero": totals["unexpected_fp"] == 0,
@@ -187,7 +214,7 @@ def run(report_path: Path, output_path: Path | None = None) -> Path:
     }
 
     rebased_report = {
-        "schema": "issue264.phase_c_mmr_geometry_rebased_score.v1",
+        "schema": "issue264.phase_c_mmr_geometry_rebased_score.v2",
         "status": "passed" if all(gates.values()) else "failed",
         "source_report": str(report_path),
         "source_git_head": report.get("repository", {}).get("git_head"),
@@ -195,14 +222,22 @@ def run(report_path: Path, output_path: Path | None = None) -> Path:
             "historical_numbering_geometry_use": "evaluation-only fixture bbox rebase",
             "historical_numbering_as_production_input": False,
             "detector_reexecuted": False,
+            "homr_reexecuted": False,
             "mmr_reexecuted": False,
+            "numbering_reexecuted": False,
             "current_phase_a_numbering_artifacts_reused": True,
             "current_mmr_override_artifacts_reused": True,
+            "equivalent_historical_fixture_items_after_current_system_merge": (
+                "coalesce when current key and skip are equal; reject conflicting skip"
+            ),
         },
         "original_direct_index_summary": report.get("current"),
+        "historical_source_fixture_items": source_fixture_items,
         "geometry_rebased_summary": totals,
         "fixture_rebase": {
-            "mapped_expected_overrides": len(all_mappings),
+            "mapped_historical_source_items": len(all_mappings),
+            "rebased_unique_expected_events": totals["expected"],
+            "coalesced_equivalent_source_items": coalesced_equivalent_items,
             "changed_index_keys": changed_keys,
             "unchanged_index_keys": len(all_mappings) - changed_keys,
             "mapping_methods": mapping_method_counts(all_mappings),
@@ -218,6 +253,7 @@ def run(report_path: Path, output_path: Path | None = None) -> Path:
         json.dumps(
             {
                 "status": rebased_report["status"],
+                "historical_source_fixture_items": source_fixture_items,
                 "geometry_rebased_summary": totals,
                 "fixture_rebase": rebased_report["fixture_rebase"],
                 "gates": gates,

@@ -38,6 +38,17 @@ if ! docker image inspect "$image" >/dev/null 2>&1; then
   false
 fi
 
+requested_image_id="$(docker image inspect --format '{{.Id}}' "$image")"
+if docker inspect "$container" >/dev/null 2>&1; then
+  existing_image_id="$(docker inspect --format '{{.Image}}' "$container")"
+  if [ "$existing_image_id" != "$requested_image_id" ]; then
+    echo "Container image mismatch; recreating dedicated Phase C container." >&2
+    echo "container image:  $existing_image_id" >&2
+    echo "requested image:  $requested_image_id" >&2
+    docker rm -f "$container" >/dev/null
+  fi
+fi
+
 if docker inspect "$container" >/dev/null 2>&1; then
   if [ "$(docker inspect --format '{{.State.Running}}' "$container")" != "true" ]; then
     docker start "$container" >/dev/null
@@ -54,6 +65,11 @@ else
 fi
 
 image_id="$(docker inspect --format '{{.Image}}' "$container")"
+if [ "$image_id" != "$requested_image_id" ]; then
+  echo "Phase C container image does not match requested image after setup." >&2
+  false
+fi
+
 echo "container: $container"
 echo "image:     $image"
 echo "image id:  $image_id"
@@ -117,4 +133,4 @@ make lint
 
 echo
 echo "source report:  $report"
-echo "rebased report: $rebased_report"
+echo "rebased report: $rebased_report"}

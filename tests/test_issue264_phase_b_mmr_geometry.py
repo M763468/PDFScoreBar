@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from src.pipeline import mmr_staff_support
 from src.pipeline.mmr_geometry_handoff import build_mmr_page_context
 from src.pipeline.mmr_geometry_layout import (
     numbering_layout_signature,
@@ -196,3 +197,99 @@ def test_worker_visible_path_translates_repository_path_for_docker() -> None:
     assert _worker_visible_path(repository_path, docker_exec=True) == (
         "/workspace/data/evaluation2/page_001.png"
     )
+
+
+def test_prepare_mmr_staff_masks_round_trips_docker_paths(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(mmr_staff_support, "PROJECT_ROOT", tmp_path)
+
+    image = tmp_path / "data" / "page_001.png"
+    image.parent.mkdir(parents=True)
+    image.write_bytes(b"image")
+
+    orchestrator_intermediate = tmp_path / "logs" / "run" / "intermediate"
+    page_intermediate = orchestrator_intermediate / "page_001"
+    page_intermediate.mkdir(parents=True)
+    numbering_base = page_intermediate / "numbering_base.json"
+    numbering_base.write_text("{}\n", encoding="utf-8")
+
+    docker_command = [
+        "docker",
+        "exec",
+        "-w",
+        "/workspace",
+        "-e",
+        "PYTHONPATH=/workspace",
+        "pdfscore_pipeline_gpu",
+        "/opt/venv_pipeline/bin/python",
+    ]
+    monkeypatch.setattr(
+        mmr_staff_support,
+        "get_pipeline_python",
+        lambda _step: docker_command,
+    )
+
+    result_root = orchestrator_intermediate / "mmr_staff_geometry" / "page_001"
+    request_path = result_root / "request.json"
+    result_path = result_root / "result.json"
+    host_staff_mask = result_root / "homr" / "batch" / "page_001" / "page_001_staff_mask.png"
+    worker_staff_mask = (
+        "/workspace/logs/run/intermediate/mmr_staff_geometry/page_001/"
+        "homr/batch/page_001/page_001_staff_mask.png"
+    )
+    captured: dict[str, list[str]] = {}
+
+    def fake_run(command: list[str], *, check: bool) -> None:
+        assert check is True
+        captured["command"] = command
+        request = json.loads(request_path.read_text(encoding="utf-8"))
+        assert request["images"] == ["/workspace/data/page_001.png"]
+        assert request["output_root"] == (
+            "/workspace/logs/run/intermediate/mmr_staff_geometry/page_001/homr"
+        )
+        assert command[-4:] == [
+            "--request",
+            "/workspace/logs/run/intermediate/mmr_staff_geometry/page_001/request.json",
+            "--result",
+            "/workspace/logs/run/intermediate/mmr_staff_geometry/page_001/result.json",
+        ]
+
+        host_staff_mask.parent.mkdir(parents=True)
+        host_staff_mask.write_bytes(b"staff")
+        result_path.write_text(
+            json.dumps(
+                {
+                    "status": "completed",
+                    "producer": "HybridDetector._run_homr_in_process",
+                    "producer_runtime": "current_pipeline_homr",
+                    "historical_detector_artifact_runtime_input": False,
+                    "staff_masks": {"/workspace/data/page_001.png": worker_staff_mask},
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+    monkeypatch.setattr(mmr_staff_support, "run_with_logging", fake_run)
+
+    page_ctx = {
+        "page_001": {
+            "image_path": image,
+            "numbering_base": numbering_base,
+            "intermediate_dir": page_intermediate,
+            "resolved": {},
+        }
+    }
+    orchestrator = SimpleNamespace(
+        intermediate_dir=orchestrator_intermediate,
+        config={},
+        skip_existing=False,
+    )
+
+    masks = prepare_mmr_staff_masks(orchestrator, ["page_001"], set(), page_ctx)
+
+    assert captured["command"][: len(docker_command)] == docker_command
+    assert masks == {"page_001": host_staff_mask}
+    assert page_ctx["page_001"]["mmr_staff_mask"] == host_staff_mask

@@ -10,9 +10,10 @@ image="${PIPELINE_IMAGE:-pdfscore_pipeline_gpu}"
 run_id="${RUN_ID:-issue264_phase_c_current_production_full68}"
 
 expected_base="acdda23a7ff1f0bc74f702a03f24f6a2985e8d1a"
+host_head="$(git rev-parse HEAD)"
 merge_base="$(git merge-base HEAD origin/develop 2>/dev/null || true)"
 echo "=== repository ==="
-echo "head:       $(git rev-parse HEAD)"
+echo "head:       $host_head"
 echo "branch:     $(git branch --show-current)"
 echo "merge-base: ${merge_base:-<unavailable>}"
 echo "Phase C baseline develop commit: $expected_base"
@@ -64,9 +65,10 @@ docker exec \
   -e PYTHONPATH=/workspace \
   -e ISSUE264_CONTAINER_NAME="$container" \
   -e ISSUE264_CONTAINER_IMAGE_ID="$image_id" \
+  -e ISSUE264_HOST_GIT_HEAD="$host_head" \
   "$container" \
   /opt/venv_pipeline/bin/python \
-  tools/issue264/run_phase_c_mmr_regression.py \
+  tools/issue264/run_phase_c_mmr_regression_container.py \
   --run-id "$run_id" \
   "$@"
 

@@ -1,12 +1,17 @@
 """Evaluation-only rebase of historical MMR fixtures onto current numbering geometry.
 
 Historical Issue #94/#221 fixtures identify an MMR by ``[page, system, measure]``.
-Those indices are not stable when Phase A grouping changes.  For current Phase C
+Those indices are not stable when Phase A grouping changes. For current Phase C
 acceptance, use the historical numbering payload only as GT geometry: locate the
 historical measure bbox named by the fixture, then map that bbox to the current
 Phase A measure occupying the same page region.
 
-This module is evaluation tooling only.  Historical numbering artifacts must never
+When historical grouping represented the same physical MMR on multiple systems,
+multiple historical fixture items may legitimately map to one current physical
+measure. Equivalent items with the same ``skip`` are coalesced into one current GT
+event. Conflicting items with different ``skip`` values remain an error.
+
+This module is evaluation tooling only. Historical numbering artifacts must never
 become production pipeline inputs.
 """
 
@@ -116,9 +121,9 @@ def map_measure_bbox(
 ) -> tuple[MeasureRef, dict[str, Any]]:
     """Map one historical measure to the current physical measure at the same location.
 
-    Prefer the current measure containing the historical bbox center.  If geometry
+    Prefer the current measure containing the historical bbox center. If geometry
     shifts move that center just outside the new bbox, fall back to strongest 2-D
-    overlap.  Ambiguous or weak mappings fail rather than silently changing GT.
+    overlap. Ambiguous or weak mappings fail rather than silently changing GT.
     """
 
     candidates = iter_measures(current_payload)
@@ -175,6 +180,10 @@ def normalise_overrides(payload: Any) -> list[dict[str, Any]]:
     return []
 
 
+def _skip(item: Mapping[str, Any]) -> int:
+    return int(item.get("skip") or 0)
+
+
 def rebase_expected_overrides(
     expected_payload: Any,
     historical_numbering: Mapping[str, Any],
@@ -182,13 +191,14 @@ def rebase_expected_overrides(
     *,
     global_page_index: int,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    rebased: list[dict[str, Any]] = []
+    rebased_by_key: dict[tuple[int, int, int], dict[str, Any]] = {}
+    source_key_by_current_key: dict[tuple[int, int, int], list[int]] = {}
     mappings: list[dict[str, Any]] = []
-    seen_current_keys: set[tuple[int, int, int]] = set()
 
     for item in normalise_overrides(expected_payload):
         old_system = int(item["system"])
         old_measure = int(item["measure"])
+        historical_key = [global_page_index, old_system, old_measure]
         historical_ref = measure_for_index(
             historical_numbering,
             system=old_system,
@@ -196,26 +206,39 @@ def rebase_expected_overrides(
         )
         current_ref, detail = map_measure_bbox(historical_ref, current_numbering)
         current_key = (global_page_index, current_ref.system, current_ref.measure)
-        if current_key in seen_current_keys:
-            raise ValueError(f"Multiple historical fixtures map to current key {current_key}")
-        seen_current_keys.add(current_key)
 
         mapped = dict(item)
         mapped["page"] = global_page_index
         mapped["system"] = current_ref.system
         mapped["measure"] = current_ref.measure
-        rebased.append(mapped)
+
+        existing = rebased_by_key.get(current_key)
+        coalesced = existing is not None
+        if existing is not None and _skip(existing) != _skip(mapped):
+            raise ValueError(
+                "Conflicting historical fixtures map to current key "
+                f"{current_key}: existing skip={_skip(existing)} incoming skip={_skip(mapped)}"
+            )
+        if existing is None:
+            rebased_by_key[current_key] = mapped
+            source_key_by_current_key[current_key] = historical_key
+
         mappings.append(
             {
-                "historical_key": [global_page_index, old_system, old_measure],
+                "historical_key": historical_key,
                 "current_key": list(current_key),
                 "changed": [old_system, old_measure]
                 != [current_ref.system, current_ref.measure],
+                "coalesced_equivalent_fixture": coalesced,
+                "coalesced_with_historical_key": (
+                    source_key_by_current_key[current_key] if coalesced else None
+                ),
+                "skip": _skip(mapped),
                 **detail,
             }
         )
 
-    return {"overrides": rebased}, mappings
+    return {"overrides": list(rebased_by_key.values())}, mappings
 
 
 def mapping_method_counts(mappings: Iterable[Mapping[str, Any]]) -> dict[str, int]:

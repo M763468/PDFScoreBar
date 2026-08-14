@@ -168,7 +168,9 @@ def verify_source_report(
         )
     repository = report.get("repository")
     if not isinstance(repository, Mapping) or repository.get("git_head") != expected_git_head:
-        raise ValueError("Phase C source report repository Git HEAD does not match current invocation")
+        raise ValueError(
+            "Phase C source report repository Git HEAD does not match current invocation"
+        )
 
     failures = _source_non_index_gate_failures(report)
     if failures:

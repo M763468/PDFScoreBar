@@ -11,7 +11,10 @@ from tools.issue264.phase_c_acceptance_integrity import (
     validate_resume_contract,
     verify_source_report,
 )
-from tools.issue264.rescore_phase_c_mmr_geometry_rebased import _artifact_path
+from tools.issue264.rescore_phase_c_mmr_geometry_rebased import (
+    _artifact_path,
+    _verify_source_acceptance,
+)
 
 
 def _detail(path: Path) -> dict[str, object]:
@@ -111,6 +114,26 @@ def test_source_gate_rejects_non_index_failure(tmp_path: Path) -> None:
         )
 
 
+def test_standalone_rescore_rejects_non_index_source_failure(tmp_path: Path) -> None:
+    report = tmp_path / "report.json"
+    payload = _source_report(report)
+    payload["gates"]["final_numbering_files_68"] = False  # type: ignore[index]
+
+    with pytest.raises(ValueError, match="non-index source gates failed"):
+        _verify_source_acceptance(payload)
+
+
+def test_standalone_rescore_allows_direct_index_only_failures(tmp_path: Path) -> None:
+    report = tmp_path / "report.json"
+    payload = _source_report(report)
+
+    verified = _verify_source_acceptance(payload)
+
+    assert "focused_physical" in verified
+    assert "final_numbering_files_68" in verified
+    assert "unexpected_fp_zero" not in verified
+
+
 def test_source_gate_rejects_stale_invocation(tmp_path: Path) -> None:
     report = tmp_path / "report.json"
     _source_report(report, invocation_id="invocation-old")
@@ -143,4 +166,6 @@ def test_phase_c_wrapper_runs_integrity_rebase_and_final_lint() -> None:
     assert "--expected-git-head" in wrapper
     assert "rescore_phase_c_mmr_geometry_rebased.py" in wrapper
     assert "direct-index runner exit:" in wrapper
+    assert "requested_image_id" in wrapper
+    assert "docker rm -f \"$container\"" in wrapper
     assert "make lint" in wrapper

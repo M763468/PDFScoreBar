@@ -12,9 +12,7 @@ from tools.issue264.phase_b_page001_acceptance import run
 
 CANONICAL_RUN = "issue255_production_restore_full68_top_level_worker_01"
 TARGET_STEM = "Va_Prokofiev_Symphony1_page_001"
-CANONICAL_IMAGE = Path(
-    "/workspace/data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png"
-)
+CANONICAL_IMAGE = Path("/workspace/data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png")
 CANONICAL_BARLINES = Path(
     "/workspace/logs/verification/detector_full68/"
     f"{CANONICAL_RUN}/production_runs/Va_Prokofiev_Symphony1/intermediate/"

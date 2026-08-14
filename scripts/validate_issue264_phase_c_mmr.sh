@@ -18,9 +18,13 @@ echo "merge-base: ${merge_base:-<unavailable>}"
 echo "Phase C baseline develop commit: $expected_base"
 
 echo
-echo "=== focused validation ==="
+echo "=== focused behavior validation ==="
+# Run behavior tests before the long real-artifact replay. The final PR lint/format
+# gate is intentionally run after artifact validation so formatter-only churn cannot
+# prevent collection of the expensive Phase C result.
 bash scripts/check_pr_slice.sh \
   issue264-phase-c-mmr-regression \
+  --pytest-only \
   --python "$python_bin"
 
 echo

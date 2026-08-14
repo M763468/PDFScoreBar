@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -9,7 +11,12 @@ from src.pipeline.mmr_geometry_layout import (
     numbering_layout_signature,
     require_compatible_mmr_layout,
 )
-from src.pipeline.mmr_staff_support import _validated_masks
+from src.pipeline.mmr_staff_support import (
+    PROJECT_ROOT,
+    _validated_masks,
+    _worker_visible_path,
+    prepare_mmr_staff_masks,
+)
 
 
 def _payload(counts: list[int]) -> dict:
@@ -112,3 +119,80 @@ def test_staff_geometry_result_requires_current_producer_and_runtime(tmp_path: P
     historical["historical_detector_artifact_runtime_input"] = True
     with pytest.raises(ValueError, match="must not use historical detector artifacts"):
         _validated_masks(historical, result_path)
+
+
+def test_skip_existing_hydrates_mmr_staff_geometry_provenance(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    image = tmp_path / "page_001.png"
+    image.write_bytes(b"image")
+    page_intermediate = tmp_path / "run" / "intermediate" / "page_001"
+    page_intermediate.mkdir(parents=True)
+    numbering_base = page_intermediate / "numbering_base.json"
+    numbering_base.write_text("{}\n", encoding="utf-8")
+    (page_intermediate / "overrides_mmr.json").write_text("{}\n", encoding="utf-8")
+
+    orchestrator_intermediate = tmp_path / "run" / "intermediate"
+    result_root = orchestrator_intermediate / "mmr_staff_geometry" / "page_001"
+    result_root.mkdir(parents=True)
+    staff_mask = result_root / "homr" / "batch" / "page_001" / "page_001_staff_mask.png"
+    staff_mask.parent.mkdir(parents=True)
+    staff_mask.write_bytes(b"staff")
+    result_path = result_root / "result.json"
+    result_path.write_text(
+        json.dumps(
+            {
+                "status": "completed",
+                "producer": "HybridDetector._run_homr_in_process",
+                "producer_runtime": "current_pipeline_homr",
+                "historical_detector_artifact_runtime_input": False,
+                "staff_masks": {str(image.resolve()): str(staff_mask)},
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        "src.pipeline.mmr_staff_support.get_pipeline_python",
+        lambda _step: ["python"],
+    )
+    monkeypatch.setattr(
+        "src.pipeline.mmr_staff_support.run_with_logging",
+        lambda *_args, **_kwargs: pytest.fail("worker should not run for valid retained result"),
+    )
+
+    page_ctx = {
+        "page_001": {
+            "image_path": image,
+            "numbering_base": numbering_base,
+            "intermediate_dir": page_intermediate,
+            "resolved": {},
+        }
+    }
+    orchestrator = SimpleNamespace(
+        intermediate_dir=orchestrator_intermediate,
+        config={},
+        skip_existing=True,
+    )
+
+    masks = prepare_mmr_staff_masks(orchestrator, ["page_001"], set(), page_ctx)
+
+    assert masks == {}
+    assert page_ctx["page_001"]["mmr_staff_mask"] == staff_mask
+    assert page_ctx["page_001"]["resolved"]["mmr_staff_geometry"] == {
+        "staff_mask": str(staff_mask),
+        "producer": "HybridDetector._run_homr_in_process",
+        "producer_runtime": "current_pipeline_homr",
+        "historical_detector_artifact_runtime_input": False,
+        "result_path": str(result_path),
+    }
+
+
+def test_worker_visible_path_translates_repository_path_for_docker() -> None:
+    repository_path = PROJECT_ROOT / "data" / "evaluation2" / "page_001.png"
+
+    assert _worker_visible_path(repository_path, docker_exec=True) == (
+        "/workspace/data/evaluation2/page_001.png"
+    )

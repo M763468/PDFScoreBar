@@ -9,6 +9,29 @@ container="${CONTAINER:-issue264_phase_c_gpu}"
 image="${PIPELINE_IMAGE:-pdfscore_pipeline_gpu}"
 run_id="${RUN_ID:-issue264_phase_c_current_production_full68}"
 
+# This wrapper owns the report location it validates. Forwarding the runner's own
+# run/output selectors would let the expensive replay write somewhere different
+# from the path checked below, so reject those overrides before doing any work.
+for arg in "$@"; do
+  case "$arg" in
+    --run-id | --run-id=* | --output-root | --output-root=*)
+      echo "Do not pass --run-id or --output-root through this validation wrapper." >&2
+      echo "Use RUN_ID to select the Phase C run id; the acceptance output root is fixed." >&2
+      false
+      ;;
+  esac
+done
+
+# The container imports the live bind-mounted repository. A dirty worktree would
+# execute bytes that are not represented by git rev-parse HEAD while the report
+# attributes the result to that commit, so acceptance requires an exact clean tree.
+worktree_status="$(git status --porcelain=v1 --untracked-files=all)"
+if [ -n "$worktree_status" ]; then
+  echo "Phase C acceptance requires a clean worktree, including untracked files." >&2
+  printf '%s\n' "$worktree_status" >&2
+  false
+fi
+
 expected_base="acdda23a7ff1f0bc74f702a03f24f6a2985e8d1a"
 host_head="$(git rev-parse HEAD)"
 merge_base="$(git merge-base HEAD origin/develop 2>/dev/null || true)"
@@ -133,4 +156,4 @@ make lint
 
 echo
 echo "source report:  $report"
-echo "rebased report: $rebased_report"}
+echo "rebased report: $rebased_report"

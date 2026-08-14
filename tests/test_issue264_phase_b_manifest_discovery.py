@@ -28,6 +28,22 @@ def test_matching_manifest_skips_non_mapping_json(tmp_path: Path) -> None:
     )
 
 
+def test_matching_manifest_skips_unreadable_json(tmp_path: Path) -> None:
+    broken_manifest = tmp_path / "broken_manifest.json"
+    broken_manifest.write_text('{"run_id": ', encoding="utf-8")
+
+    canonical_manifest = tmp_path / "canonical_manifest.json"
+    canonical_manifest.write_text(
+        json.dumps({"run_id": acceptance_entry.CANONICAL_RUN}) + "\n",
+        encoding="utf-8",
+    )
+
+    assert (
+        acceptance_entry._matching_manifest([broken_manifest, canonical_manifest])
+        == canonical_manifest
+    )
+
+
 def test_materialize_canonical_artifact_manifest(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

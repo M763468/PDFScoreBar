@@ -168,4 +168,8 @@ def test_phase_c_wrapper_runs_integrity_rebase_and_final_lint() -> None:
     assert "direct-index runner exit:" in wrapper
     assert "requested_image_id" in wrapper
     assert 'docker rm -f "$container"' in wrapper
+    assert "git status --porcelain=v1 --untracked-files=all" in wrapper
+    assert "Phase C acceptance requires a clean worktree" in wrapper
+    assert "--run-id | --run-id=* | --output-root | --output-root=*" in wrapper
+    assert "Do not pass --run-id or --output-root through this validation wrapper" in wrapper
     assert "make lint" in wrapper

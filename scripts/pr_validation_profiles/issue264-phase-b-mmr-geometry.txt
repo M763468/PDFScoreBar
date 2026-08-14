@@ -1,5 +1,6 @@
 tests/test_issue264_phase_b_mmr_geometry.py
 tests/test_issue264_phase_b_manifest.py
+tests/test_issue264_phase_b_manifest_discovery.py
 tests/test_issue257_mmr_page_rebase.py
 tests/test_numbering_overrides.py
 tests/test_manual_corrections.py

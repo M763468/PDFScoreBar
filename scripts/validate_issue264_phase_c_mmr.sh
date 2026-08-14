@@ -60,7 +60,12 @@ docker exec "$container" nvidia-smi >/dev/null
 
 echo
 echo "=== current-production full-68 MMR regression ==="
-docker exec \
+# The runner retains direct historical-index scoring as diagnostic evidence. That
+# direct score can fail solely because current Phase A grouping changed indices, so
+# always continue to the geometry-rebased acceptance scorer when the source report
+# was successfully written.
+raw_status=0
+if docker exec \
   -w /workspace \
   -e PYTHONPATH=/workspace \
   -e ISSUE264_CONTAINER_NAME="$container" \
@@ -70,7 +75,33 @@ docker exec \
   /opt/venv_pipeline/bin/python \
   tools/issue264/run_phase_c_mmr_regression_container.py \
   --run-id "$run_id" \
-  "$@"
+  "$@"; then
+  raw_status=0
+else
+  raw_status=$?
+fi
+
+report="logs/issue264_phase_c_mmr_regression/$run_id/phase_c_mmr_regression_report.json"
+if [ ! -f "$report" ]; then
+  echo "Phase C source report was not produced: $report" >&2
+  false
+fi
+
+echo "direct-index runner exit: $raw_status (diagnostic only; canonical gate follows)"
+echo "source report: $report"
 
 echo
-echo "report: logs/issue264_phase_c_mmr_regression/$run_id/phase_c_mmr_regression_report.json"
+echo "=== geometry-rebased MMR acceptance ==="
+rebased_report="logs/issue264_phase_c_mmr_regression/$run_id/phase_c_mmr_geometry_rebased_score_report.json"
+PYTHONPATH=. "$python_bin" \
+  tools/issue264/rescore_phase_c_mmr_geometry_rebased.py \
+  --report "$report" \
+  --output "$rebased_report"
+
+echo
+echo "=== final lint/format gate ==="
+make lint
+
+echo
+echo "source report:  $report"
+echo "rebased report: $rebased_report"

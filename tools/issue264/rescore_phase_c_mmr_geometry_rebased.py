@@ -22,6 +22,7 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
+from tools.issue264.phase_c_acceptance_integrity import require_source_non_index_gates
 from tools.issue264.phase_c_fixture_rebase import (
     mapping_method_counts,
     normalise_overrides,
@@ -226,10 +227,17 @@ def _summary_totals(page_reports: list[Mapping[str, Any]]) -> dict[str, Any]:
     return totals
 
 
+def _verify_source_acceptance(report: Mapping[str, Any]) -> list[str]:
+    """Require standalone rescoring to preserve all non-index source gates."""
+
+    return require_source_non_index_gates(report)
+
+
 def run(report_path: Path, output_path: Path | None = None) -> Path:
     report = _load_json(report_path)
     if not isinstance(report, Mapping):
         raise ValueError(f"Malformed Phase C report: {report_path}")
+    verified_source_non_index_gates = _verify_source_acceptance(report)
 
     page_inputs = _page_inputs(DEFAULT_PAGE_INDEX)
     artifacts = _artifact_index(report)
@@ -307,6 +315,7 @@ def run(report_path: Path, output_path: Path | None = None) -> Path:
 
     totals = _summary_totals(page_reports)
     gates = {
+        "source_non_index_gates_passed": True,
         "page_count_68": totals["pages"] == 68,
         "historical_source_fixture_items_182": source_fixture_items == 182,
         "fixture_rebase_mapped_all_182_source_items": len(all_mappings) == 182,
@@ -333,6 +342,7 @@ def run(report_path: Path, output_path: Path | None = None) -> Path:
             "current_phase_a_numbering_artifacts_reused": True,
             "current_mmr_override_artifacts_reused": True,
             "source_artifact_size_sha256_verified": True,
+            "source_non_index_gates_verified": verified_source_non_index_gates,
             "equivalent_historical_fixture_items_after_current_system_merge": (
                 "coalesce when current key and skip are equal; reject conflicting skip"
             ),

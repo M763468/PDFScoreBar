@@ -22,7 +22,10 @@ def test_matching_manifest_skips_non_mapping_json(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    assert acceptance_entry._matching_manifest([list_manifest, canonical_manifest]) == canonical_manifest
+    assert (
+        acceptance_entry._matching_manifest([list_manifest, canonical_manifest])
+        == canonical_manifest
+    )
 
 
 def test_materialize_canonical_artifact_manifest(

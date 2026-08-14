@@ -32,7 +32,10 @@ def _matching_manifest(candidates: list[Path]) -> Path | None:
         if candidate in seen or not candidate.is_file():
             continue
         seen.add(candidate)
-        payload = load_json(candidate)
+        try:
+            payload = load_json(candidate)
+        except (OSError, ValueError, TypeError):
+            continue
         if not isinstance(payload, dict):
             continue
         if payload.get("run_id") == CANONICAL_RUN:

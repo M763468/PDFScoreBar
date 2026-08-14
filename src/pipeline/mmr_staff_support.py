@@ -32,8 +32,7 @@ def prepare_mmr_staff_masks(
     targets = [
         page_id
         for page_id in page_ids
-        if page_id not in excluded_page_ids
-        and Path(page_ctx[page_id]["numbering_base"]).is_file()
+        if page_id not in excluded_page_ids and Path(page_ctx[page_id]["numbering_base"]).is_file()
     ]
     if not targets:
         return {}

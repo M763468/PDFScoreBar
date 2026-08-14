@@ -9,6 +9,9 @@ current Phase A numbering geometry.
 Historical fixture item count and current unique logical GT-event count are reported
 separately because current Phase A grouping may merge multiple historical systems
 that represented the same physical MMR.
+
+The tool is intentionally host-only and lightweight: it depends only on Python's
+standard library plus the evaluation-only rebase helper in this repository.
 """
 
 from __future__ import annotations
@@ -18,17 +21,89 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
-from src.pipeline.utils.io import load_json, write_json
 from tools.issue264.phase_c_fixture_rebase import (
     mapping_method_counts,
     normalise_overrides,
     rebase_expected_overrides,
 )
-from tools.issue264.run_phase_c_mmr_regression import score_overrides
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_PAGE_INDEX = PROJECT_ROOT / "logs/issue94_mmr_current_state/page_inputs.json"
 FIXTURE_ROOT = PROJECT_ROOT / "tests/fixtures"
+
+
+def _load_json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _write_json(path: Path, payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _override_key(item: Mapping[str, Any]) -> tuple[int, int, int]:
+    return int(item["page"]), int(item["system"]), int(item["measure"])
+
+
+def _override_skip(item: Mapping[str, Any]) -> int:
+    return int(item.get("skip") or 0)
+
+
+def _score_overrides(expected_payload: Any, detected_payload: Any) -> dict[str, Any]:
+    expected = normalise_overrides(expected_payload)
+    detected = normalise_overrides(detected_payload)
+    expected_by_key = {_override_key(item): item for item in expected}
+    detected_by_key = {_override_key(item): item for item in detected}
+
+    matched: list[dict[str, Any]] = []
+    missed: list[dict[str, Any]] = []
+    mismatch: list[dict[str, Any]] = []
+    unexpected: list[dict[str, Any]] = []
+
+    for key, expected_item in expected_by_key.items():
+        detected_item = detected_by_key.get(key)
+        if detected_item is None:
+            missed.append({"key": list(key), "expected_skip": _override_skip(expected_item)})
+            continue
+        if _override_skip(expected_item) == _override_skip(detected_item):
+            matched.append({"key": list(key), "skip": _override_skip(detected_item)})
+        else:
+            mismatch.append(
+                {
+                    "key": list(key),
+                    "expected_skip": _override_skip(expected_item),
+                    "detected_skip": _override_skip(detected_item),
+                    "detected_comment": detected_item.get("comment"),
+                }
+            )
+
+    for key, detected_item in detected_by_key.items():
+        if key not in expected_by_key:
+            unexpected.append(
+                {
+                    "key": list(key),
+                    "detected_skip": _override_skip(detected_item),
+                    "detected_comment": detected_item.get("comment"),
+                }
+            )
+
+    return {
+        "counts": {
+            "expected": len(expected),
+            "detected": len(detected),
+            "matched_tp": len(matched),
+            "missed_fn": len(missed),
+            "skip_mismatch": len(mismatch),
+            "unexpected_fp": len(unexpected),
+        },
+        "matched": matched,
+        "missed": missed,
+        "skip_mismatch": mismatch,
+        "unexpected": unexpected,
+    }
 
 
 def _resolve_project_path(value: str | Path) -> Path:
@@ -54,7 +129,7 @@ def _resolve_project_path(value: str | Path) -> Path:
 
 
 def _page_inputs(path: Path) -> dict[str, Mapping[str, Any]]:
-    payload = load_json(path)
+    payload = _load_json(path)
     pages = payload.get("pages") if isinstance(payload, Mapping) else None
     if not isinstance(pages, list):
         raise ValueError(f"Page index lacks pages list: {path}")
@@ -122,7 +197,7 @@ def _summary_totals(page_reports: list[Mapping[str, Any]]) -> dict[str, Any]:
 
 
 def run(report_path: Path, output_path: Path | None = None) -> Path:
-    report = load_json(report_path)
+    report = _load_json(report_path)
     if not isinstance(report, Mapping):
         raise ValueError(f"Malformed Phase C report: {report_path}")
 
@@ -145,7 +220,7 @@ def run(report_path: Path, output_path: Path | None = None) -> Path:
         global_index = int(raw_page["global_index"])
         fixture_path = FIXTURE_ROOT / f"expected_overrides_{page_id}.json"
         expected_payload: Any = (
-            load_json(fixture_path) if fixture_path.is_file() else {"overrides": []}
+            _load_json(fixture_path) if fixture_path.is_file() else {"overrides": []}
         )
         source_page_items = len(normalise_overrides(expected_payload))
         source_fixture_items += source_page_items
@@ -153,8 +228,8 @@ def run(report_path: Path, output_path: Path | None = None) -> Path:
         artifact = artifacts.get(page_id)
         if artifact is None:
             raise ValueError(f"Missing generated artifacts for {page_id}")
-        current_numbering = load_json(_artifact_path(artifact, "numbering_base"))
-        detected_payload = load_json(_artifact_path(artifact, "overrides_mmr"))
+        current_numbering = _load_json(_artifact_path(artifact, "numbering_base"))
+        detected_payload = _load_json(_artifact_path(artifact, "overrides_mmr"))
 
         mappings: list[dict[str, Any]] = []
         if fixture_path.is_file():
@@ -162,7 +237,7 @@ def run(report_path: Path, output_path: Path | None = None) -> Path:
             if page_input is None or not page_input.get("numbering_base"):
                 raise ValueError(f"Missing historical numbering_base mapping for {page_id}")
             historical_numbering_path = _resolve_project_path(str(page_input["numbering_base"]))
-            historical_numbering = load_json(historical_numbering_path)
+            historical_numbering = _load_json(historical_numbering_path)
             expected_payload, mappings = rebase_expected_overrides(
                 expected_payload,
                 historical_numbering,
@@ -177,7 +252,7 @@ def run(report_path: Path, output_path: Path | None = None) -> Path:
             )
             all_mappings.extend(mappings)
 
-        scoring = score_overrides(expected_payload, detected_payload)
+        scoring = _score_overrides(expected_payload, detected_payload)
         page_reports.append(
             {
                 "page_id": page_id,
@@ -248,7 +323,7 @@ def run(report_path: Path, output_path: Path | None = None) -> Path:
 
     if output_path is None:
         output_path = report_path.with_name("phase_c_mmr_geometry_rebased_score_report.json")
-    write_json(output_path, rebased_report)
+    _write_json(output_path, rebased_report)
     print(
         json.dumps(
             {
@@ -275,7 +350,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     output = run(args.report, args.output)
-    payload = load_json(output)
+    payload = _load_json(output)
     return 0 if payload.get("status") == "passed" else 1
 
 

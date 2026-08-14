@@ -28,7 +28,7 @@ echo "=== pipeline image/container ==="
 if ! docker image inspect "$image" >/dev/null 2>&1; then
   echo "Required pipeline image is missing: $image" >&2
   echo "Build the maintained image first (make docker-build)." >&2
-  return 1 2>/dev/null || false
+  false
 fi
 
 if docker inspect "$container" >/dev/null 2>&1; then

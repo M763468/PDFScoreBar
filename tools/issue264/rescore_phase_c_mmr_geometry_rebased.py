@@ -17,6 +17,7 @@ standard library plus the evaluation-only rebase helper in this repository.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 from typing import Any, Mapping
@@ -42,6 +43,14 @@ def _write_json(path: Path, payload: Any) -> None:
         json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _override_key(item: Mapping[str, Any]) -> tuple[int, int, int]:
@@ -153,11 +162,34 @@ def _artifact_index(report: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
     return result
 
 
+def _verify_artifact_detail(path: Path, detail: Mapping[str, Any], *, key: str) -> None:
+    expected_size = detail.get("size")
+    expected_sha256 = detail.get("sha256")
+    if expected_size is None or not expected_sha256:
+        raise ValueError(f"Generated artifact lacks recorded size/hash for {key}: {path}")
+
+    actual_size = path.stat().st_size
+    if actual_size != int(expected_size):
+        raise ValueError(
+            f"Generated artifact size changed for {key}: {path}; "
+            f"recorded={expected_size} actual={actual_size}"
+        )
+
+    actual_sha256 = _sha256_file(path)
+    if actual_sha256 != str(expected_sha256):
+        raise ValueError(
+            f"Generated artifact hash changed for {key}: {path}; "
+            f"recorded={expected_sha256} actual={actual_sha256}"
+        )
+
+
 def _artifact_path(item: Mapping[str, Any], key: str) -> Path:
     detail = item.get(key)
     if not isinstance(detail, Mapping) or not detail.get("path"):
         raise ValueError(f"Generated artifact lacks {key}")
-    return _resolve_project_path(str(detail["path"]))
+    path = _resolve_project_path(str(detail["path"]))
+    _verify_artifact_detail(path, detail, key=key)
+    return path
 
 
 def _summary_totals(page_reports: list[Mapping[str, Any]]) -> dict[str, Any]:
@@ -300,6 +332,7 @@ def run(report_path: Path, output_path: Path | None = None) -> Path:
             "numbering_reexecuted": False,
             "current_phase_a_numbering_artifacts_reused": True,
             "current_mmr_override_artifacts_reused": True,
+            "source_artifact_size_sha256_verified": True,
             "equivalent_historical_fixture_items_after_current_system_merge": (
                 "coalesce when current key and skip are equal; reject conflicting skip"
             ),

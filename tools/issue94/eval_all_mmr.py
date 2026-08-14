@@ -1,4 +1,19 @@
 # ruff: noqa: I001
+"""LEGACY Issue #94 full-68 MMR evaluator.
+
+This script is retained for reproducing the historical #94/#221 MMR-only numbers.
+It consumes ``logs/issue94_mmr_current_state/page_inputs.json`` and therefore uses
+historical ``numbering_base`` geometry instead of the current production Phase B
+current-HOMR MMR geometry handoff introduced by Issue #264 / PR #266.
+
+Its historical accounting also leaves ``unexpected`` empty when a page has no
+expected fixture, so the reported legacy ``FP=0`` does not prove that all zero-MMR
+pages were free of detections.  Preserve this behavior for historical comparability;
+do not use this entrypoint as a current production acceptance gate.
+
+For current production validation use:
+``tools/issue264/run_phase_c_mmr_regression.py``.
+"""
 
 import json
 import logging
@@ -19,6 +34,11 @@ logger = logging.getLogger("eval_all_mmr")
 
 
 def main():
+    logger.warning(
+        "LEGACY evaluation path: historical numbering geometry and legacy zero-fixture "
+        "FP accounting. Use tools/issue264/run_phase_c_mmr_regression.py for current "
+        "production acceptance."
+    )
     model_path = Path("tools/mmr_training/models/mmr_classifier_best.pth")
     page_inputs_path = Path("logs/issue94_mmr_current_state/page_inputs.json")
     output_root = Path("logs/issue94_mmr_current_state/eval")

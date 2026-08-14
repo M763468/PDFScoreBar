@@ -380,12 +380,7 @@ def _runtime_provenance(orchestrator: PipelineOrchestrator) -> dict[str, Any]:
 
 
 def _detector_provenance() -> dict[str, Any]:
-    eval_root = (
-        PROJECT_ROOT
-        / "logs/verification/detector_full68"
-        / CANONICAL_RUN
-        / "eval_detector"
-    )
+    eval_root = PROJECT_ROOT / "logs/verification/detector_full68" / CANONICAL_RUN / "eval_detector"
     files = {}
     for name in (
         "manifest.json",
@@ -508,7 +503,9 @@ def run(run_dir: Path, *, resume: bool = False) -> Path:
             totals[key] += score["counts"][key]
 
         geometry_provenance = page_ctx[spec.page_id]["resolved"].get("mmr_staff_geometry", {})
-        fresh_geometry = geometry_provenance.get("historical_detector_artifact_runtime_input") is False
+        fresh_geometry = (
+            geometry_provenance.get("historical_detector_artifact_runtime_input") is False
+        )
         all_fresh_geometry = all_fresh_geometry and fresh_geometry
 
         if spec.page_id in FOCUSED_PHYSICAL:
@@ -557,9 +554,7 @@ def run(run_dir: Path, *, resume: bool = False) -> Path:
             }
         )
 
-    detected_page_033 = load_json(
-        run_dir / "intermediate" / "page_033" / "overrides_mmr.json"
-    )
+    detected_page_033 = load_json(run_dir / "intermediate" / "page_033" / "overrides_mmr.json")
     one_bar_present = PAGE_033_ONE_BAR_KEY in index_overrides(
         normalise_overrides(detected_page_033)
     )
@@ -583,14 +578,11 @@ def run(run_dir: Path, *, resume: bool = False) -> Path:
         "page_033_one_bar_veto": focused_checks["page_033_one_bar_veto"]["passed"],
         "fresh_current_homr_mmr_geometry_all_pages": all_fresh_geometry,
         "focused_physical": all(
-            value["passed"]
-            for key, value in focused_checks.items()
-            if key.endswith("_physical")
+            value["passed"] for key, value in focused_checks.items() if key.endswith("_physical")
         ),
-        "phase_b_page_042_five_overrides": focused_checks[
-            "page_042_five_mmr_overrides"
-        ]["passed"],
-        "final_numbering_files_68": len(final_paths) == 68 and all(path.is_file() for path in final_paths),
+        "phase_b_page_042_five_overrides": focused_checks["page_042_five_mmr_overrides"]["passed"],
+        "final_numbering_files_68": len(final_paths) == 68
+        and all(path.is_file() for path in final_paths),
     }
 
     report = {

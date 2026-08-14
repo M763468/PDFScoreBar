@@ -190,16 +190,13 @@ def _classify(
             name: signature == candidate_signature for name, signature in signatures.items()
         },
         "staff_change_with_semantics_changes_layout": (
-            signatures["phase_a_staff__semantic"]
-            != signatures["phase_b_staff__semantic"]
+            signatures["phase_a_staff__semantic"] != signatures["phase_b_staff__semantic"]
         ),
         "evidence_change_with_phase_a_staff_changes_layout": (
-            signatures["phase_a_staff__semantic"]
-            != signatures["phase_a_staff__page_image_ink"]
+            signatures["phase_a_staff__semantic"] != signatures["phase_a_staff__page_image_ink"]
         ),
         "evidence_change_with_phase_b_staff_changes_layout": (
-            signatures["phase_b_staff__semantic"]
-            != signatures["phase_b_staff__page_image_ink"]
+            signatures["phase_b_staff__semantic"] != signatures["phase_b_staff__page_image_ink"]
         ),
     }
 

@@ -227,8 +227,7 @@ def rebase_expected_overrides(
             {
                 "historical_key": historical_key,
                 "current_key": list(current_key),
-                "changed": [old_system, old_measure]
-                != [current_ref.system, current_ref.measure],
+                "changed": [old_system, old_measure] != [current_ref.system, current_ref.measure],
                 "coalesced_equivalent_fixture": coalesced,
                 "coalesced_with_historical_key": (
                     source_key_by_current_key[current_key] if coalesced else None

@@ -190,9 +190,7 @@ def _summary_totals(page_reports: list[Mapping[str, Any]]) -> dict[str, Any]:
     recall = matched / expected if expected else 0.0
     totals["precision"] = precision
     totals["recall"] = recall
-    totals["f1"] = (
-        2.0 * precision * recall / (precision + recall) if precision + recall else 0.0
-    )
+    totals["f1"] = 2.0 * precision * recall / (precision + recall) if precision + recall else 0.0
     return totals
 
 

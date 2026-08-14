@@ -63,19 +63,11 @@ def ensure_phase_a_semantic_support(
         )
 
     score_root = replay_root / score
-    mirrored_staff = (
-        score_root
-        / "sr"
-        / "batch"
-        / page_name
-        / canonical_staff_mask.name
-    )
+    mirrored_staff = score_root / "sr" / "batch" / page_name / canonical_staff_mask.name
     mirrored_staff.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(canonical_staff_mask, mirrored_staff)
 
-    support_page_root = (
-        score_root / "current_support" / score / page_name / "artifacts"
-    )
+    support_page_root = score_root / "current_support" / score / page_name / "artifacts"
     homr_root = support_page_root / "current_homr"
     request_path = support_page_root / "current_homr_request.json"
     result_path = support_page_root / "current_homr_result.json"
@@ -138,9 +130,7 @@ def install_phase_a_support_replay(
     if not isinstance(detection_config, dict):
         raise ValueError("Canonical detection configuration must be a mapping")
 
-    original_resolver: Callable[[str, str, str], tuple[Path, Path, Path]] = (
-        runner._canonical_paths
-    )
+    original_resolver: Callable[[str, str, str], tuple[Path, Path, Path]] = runner._canonical_paths
     replay_root = run_dir / "phase_a_hybrid_replay"
     provenance: dict[str, dict[str, Any]] = {}
 
@@ -195,8 +185,8 @@ def augment_report(
             fallback_pages.append(page_id)
             base_path = intermediate / "numbering_base.json"
             effective_path = intermediate / "numbering_mmr_geometry.json"
-            from tools.issue264.run_phase_c_mmr_regression import physical_counts
             from src.pipeline.utils.io import load_json
+            from tools.issue264.run_phase_c_mmr_regression import physical_counts
 
             page["mmr_layout_decision"] = {
                 "numbering_geometry_source": "phase_a_base_fallback",

@@ -298,6 +298,10 @@ class RecordingOCR:
         )
         return result, elapsed
 
+    def begin_view(self) -> None:
+        """Compatibility with the Issue #274 production replay wrapper."""
+        return None
+
 
 class RecordingClassifier:
     def __init__(self, wrapped: Any):
@@ -583,6 +587,72 @@ def final_selected_candidate(trace: Mapping[str, Any]) -> dict[str, Any] | None:
     )
 
 
+def production_support_trace(
+    processor: Any,
+    recorder: Any,
+    image: Any,
+    page_data: Mapping[str, Any],
+    support: Mapping[str, Any],
+    page_num: int,
+    keys: list[tuple[int, int]],
+) -> list[dict[str, Any]]:
+    """Reuse the #274 production-exact wrapper for selected retained keys."""
+    from tools.issue274.audit_positive_geometry_disagreements import (
+        _production_exact_replay,
+        slice_one_measure,
+    )
+
+    rows = []
+    for sys_idx, measure_idx in keys:
+        sliced_page, sliced_support = slice_one_measure(page_data, support, sys_idx, measure_idx)
+        overrides, calls, predict_calls = _production_exact_replay(
+            processor=processor,
+            recorder=recorder,
+            image=image,
+            page_data=sliced_page,
+            support=sliced_support,
+            page_num=page_num,
+        )
+        rows.append(
+            {
+                "key": [sys_idx, measure_idx],
+                "overrides": overrides,
+                "calls": calls,
+                "cnn_calls": predict_calls,
+                "support_stats": dict(processor.support_stats),
+            }
+        )
+    return rows
+
+
+def assert_trace_matches_production(
+    processor: Any,
+    image: Any,
+    system: Mapping[str, Any],
+    measure: Mapping[str, Any],
+    probability: float,
+) -> dict[str, Any]:
+    """Assert the diagnostic final agrees with the unchanged production call."""
+    height, width = image.shape[:2]
+    traced = trace_view(
+        processor=processor, image=image, system=system, measure=measure, probability=probability
+    )
+    x1, y1, x2, y2 = measure["bbox"]
+    production = processor._detect_number_with_evidence(
+        image, system, x1, y1, x2, y2, probability, width, height
+    )
+    actual = (traced["final"]["found_num"], traced["final"]["score"], traced["one_bar_evidence"])
+    expected = (production[0], production[1], production[3])
+    if actual != expected:
+        raise AssertionError(f"diagnostic/production mismatch: {actual!r} != {expected!r}")
+    return {
+        "passed": True,
+        "found_num": expected[0],
+        "score": expected[1],
+        "one_bar_evidence": expected[2],
+    }
+
+
 def preflight() -> dict[str, Any]:
     from tools.issue264.run_phase_c_mmr_regression import build_page_specs
 
@@ -591,6 +661,7 @@ def preflight() -> dict[str, Any]:
     for page_id in ("page_025", "page_033", "page_042", "page_055"):
         paths = {
             "image": specs[page_id].image,
+            "numbering_base": ACCEPTED_ROOT / "intermediate" / page_id / "numbering_base.json",
             "accepted_geometry": ACCEPTED_ROOT
             / "intermediate"
             / page_id
@@ -679,6 +750,9 @@ def run(
                 probability=probability,
                 save_images=save_images,
                 image_root=output_root / "images" / page_id / name,
+            )
+            traced["diagnostic_vs_production"] = assert_trace_matches_production(
+                processor, image, system, measure, probability
             )
             traced["stage_comparison"] = compact_stages(traced)
             traced.pop("_ocr_calls", None)
@@ -798,6 +872,24 @@ def run(
             "expected_override_count": len(controls),
             "controls": controls,
         }
+        support = load_json(Path(pages[page_id]["reuse_support"]))
+        page_data = load_json(Path(pages[page_id]["numbering_base"]))
+        keys = override_keys(Path(pages[page_id]["accepted_overrides"]))
+        if page_id == "page_033":
+            causal = load_json(
+                PROJECT_ROOT / "logs/issue274_page033_xy_causal/issue274_page033_xy_causal.json"
+            )
+            keys = sorted(
+                {
+                    (int(item["system"]), int(item["measure"]))
+                    for item in causal.get("detect_calls", [])
+                    if item.get("one_bar_veto")
+                }
+                | set(keys)
+            )
+        report["cases"][page_id]["actual_reusable_support_path"] = production_support_trace(
+            processor, recorder, image, page_data, support, int(page_id.split("_")[1]), keys
+        )
     report["runtime"] = {
         "elapsed_sec": time.perf_counter() - started,
         "rapidocr_calls": recorder.calls,

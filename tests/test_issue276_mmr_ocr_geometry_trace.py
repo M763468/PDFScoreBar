@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from src.measure_numbering.mmr import MMROCREngine
+from tools.issue276.evaluate_geometry_jitter_consensus import project, strict_majority
 from tools.issue276.trace_mmr_ocr_geometry import (
     candidate_image_geometry,
     candidate_trace,
@@ -97,3 +98,11 @@ def test_final_selected_candidate_uses_final_variant_not_first_call():
         ],
     }
     assert final_selected_candidate(trace) == candidate_12
+
+
+def test_jitter_consensus_is_strict_and_one_is_not_a_vote():
+    assert strict_majority([97, 5, 5, 5, 6], 3) == 5
+    assert strict_majority([12, 42, 2, 2, 2], 3) == 2
+    assert strict_majority([1, 1, None, 2, 3], 3) is None
+    assert project(12, None, "KEEP") == 12
+    assert project(12, None, "REJECT") is None

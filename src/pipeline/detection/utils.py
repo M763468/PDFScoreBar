@@ -10,6 +10,28 @@ from src.pipeline.core.config import get_nested
 logger = logging.getLogger(__name__)
 
 
+def _discover_current_homr_staff_mask(staff_mask_path: Path, stem: str) -> Path | None:
+    """Find one retained current-HOMR mask beside a replay connector artifact."""
+
+    for ancestor in staff_mask_path.parents:
+        support_root = ancestor / "current_support"
+        if not support_root.is_dir():
+            continue
+        unique = {
+            str(path.resolve()): path
+            for path in support_root.rglob(f"{stem}_staff_mask.png")
+            if path.is_file()
+        }
+        if len(unique) > 1:
+            raise RuntimeError(
+                f"Ambiguous retained current-HOMR staff masks for {stem} under {support_root}"
+            )
+        if unique:
+            return next(iter(unique.values()))
+        return None
+    return None
+
+
 def resolve_paths_from_detection(
     config: Dict[str, Any],
     probe_output_dir: Path,
@@ -43,6 +65,13 @@ def resolve_paths_from_detection(
             if stem not in staff_mask_map:
                 staff_mask_map[stem] = path
 
+    current_support_root = hybrid_output_dir / "current_support"
+    current_homr_masks: Dict[str, list[Path]] = {}
+    if current_support_root.is_dir():
+        for path in current_support_root.rglob("*_staff_mask.png"):
+            stem = path.name.removesuffix("_staff_mask.png")
+            current_homr_masks.setdefault(stem, []).append(path)
+
     for page_id, img_path in zip(page_ids, images):
         stem = img_path.stem
 
@@ -61,6 +90,12 @@ def resolve_paths_from_detection(
                 barlines_path = hybrid_batch_json
 
         staff_mask_path = staff_mask_map.get(stem)
+        current_candidates = current_homr_masks.get(stem, [])
+        if len(current_candidates) > 1:
+            raise RuntimeError(
+                f"Ambiguous current-HOMR staff masks for {page_id} (stem: {stem}) under "
+                f"{current_support_root}: {current_candidates}"
+            )
 
         if not barlines_path or not barlines_path.exists():
             logger.warning(f"Warning: Barlines not found for {page_id} (stem: {stem})")
@@ -81,6 +116,9 @@ def resolve_paths_from_detection(
                 "page_run": stem,
                 "barlines_json": str(barlines_path),
                 "staff_mask": str(staff_mask_path),
+                "current_homr_staff_mask": str(current_candidates[0])
+                if current_candidates
+                else "MISSING_CURRENT_HOMR_STAFF_MASK.png",
             }
         )
 
@@ -120,6 +158,7 @@ def resolve_barlines_and_masks_config(
         staff_mask_path = Path(barlines_root) / staff_mask_pattern.format(
             page_run=page_run, page_id=page_id
         )
+        current_homr_staff_mask = _discover_current_homr_staff_mask(staff_mask_path, page_run)
 
         resolved.append(
             {
@@ -127,6 +166,9 @@ def resolve_barlines_and_masks_config(
                 "page_run": page_run,
                 "barlines_json": str(barlines_path),
                 "staff_mask": str(staff_mask_path),
+                "current_homr_staff_mask": str(current_homr_staff_mask)
+                if current_homr_staff_mask
+                else "MISSING_CURRENT_HOMR_STAFF_MASK.png",
             }
         )
     return resolved

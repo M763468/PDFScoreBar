@@ -132,6 +132,9 @@ def run_mmr_batch(
     classifier: Optional[Any] = None,
     ocr_engine: Optional[Any] = None,
     rapidocr_provider: str = "auto",
+    support_data: Optional[list[dict]] = None,
+    support_stats: Optional[dict[str, int]] = None,
+    processor_state: Optional[dict[str, Any]] = None,
 ) -> list[dict]:
     """Runs MMR detection in-process for a batch of pages."""
     from src.measure_numbering.mmr import MMROCREngine, MMRProcessor
@@ -163,8 +166,17 @@ def run_mmr_batch(
         classifier=classifier,
         ocr_engine=ocr_engine,
     )
+    if processor_state is not None:
+        processor_state["processor"] = processor
 
-    results = processor.process_pages(pages_data, image_paths, debug_root=debug_root)
+    if support_data is None:
+        results = processor.process_pages(pages_data, image_paths, debug_root=debug_root)
+    else:
+        results = processor.process_pages(
+            pages_data, image_paths, debug_root=debug_root, support_data=support_data
+        )
+    if support_stats is not None:
+        support_stats.update(processor.support_stats)
 
     for result, output_path in zip(results, output_paths):
         write_json(output_path, result)

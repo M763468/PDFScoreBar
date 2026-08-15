@@ -65,33 +65,32 @@ def test_mmr_handoff_does_not_replace_phase_a_numbering_path(
     tmp_path: Path,
 ) -> None:
     base_path = tmp_path / "numbering_base.json"
-    mmr_path = tmp_path / "numbering_mmr_geometry.json"
-    staff_mask = tmp_path / "fresh_staff_mask.png"
+    staff_mask = tmp_path / "current_staff_mask.png"
     base_path.write_text("{}\n", encoding="utf-8")
-    mmr_path.write_text("{}\n", encoding="utf-8")
     staff_mask.write_bytes(b"staff")
 
     page_ctx = {
         "page_001": {
             "numbering_base": base_path,
-            "resolved": {"staff_mask": "proxy_staff.png"},
+            "intermediate_dir": tmp_path,
+            "resolved": {
+                "staff_mask": "proxy_staff.png",
+                "current_homr_staff_mask": str(staff_mask),
+            },
         }
     }
 
     monkeypatch.setattr(
-        "src.pipeline.mmr_geometry_handoff.prepare_mmr_staff_masks",
-        lambda *_args, **_kwargs: {"page_001": staff_mask},
-    )
-    monkeypatch.setattr(
-        "src.pipeline.mmr_geometry_handoff.build_mmr_numbering_path",
-        lambda *_args, **_kwargs: mmr_path,
+        "src.pipeline.mmr_geometry_handoff.build_mmr_support",
+        lambda **_kwargs: {"provenance": {"source": "current_x4_support"}},
     )
 
     mmr_ctx = build_mmr_page_context(object(), ["page_001"], set(), page_ctx)
 
     assert page_ctx["page_001"]["numbering_base"] == base_path
     assert page_ctx["page_001"]["resolved"]["staff_mask"] == "proxy_staff.png"
-    assert mmr_ctx["page_001"]["numbering_base"] == mmr_path
+    assert mmr_ctx["page_001"]["numbering_base"] == base_path
+    assert mmr_ctx["page_001"]["mmr_support"] == tmp_path / "mmr_support.json"
 
 
 def test_staff_geometry_result_requires_current_producer_and_runtime(tmp_path: Path) -> None:

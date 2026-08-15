@@ -6,6 +6,7 @@ from src.measure_numbering.mmr import MMROCREngine
 from tools.issue276.trace_mmr_ocr_geometry import (
     candidate_image_geometry,
     candidate_trace,
+    final_selected_candidate,
     first_divergence,
     perturbations,
     staff_perturbations,
@@ -75,3 +76,24 @@ def test_first_divergence_uses_pipeline_order():
     right["processed_pixels"] = ["b"]
     right["selected_number"] = 5
     assert first_divergence(left, right) == "processed_pixels"
+
+
+def test_final_selected_candidate_uses_final_variant_not_first_call():
+    candidate_42 = {"numeric_value": 42, "spatial_score": 8.0, "selected": True}
+    candidate_12 = {"numeric_value": 12, "spatial_score": 4.0, "selected": True}
+    trace = {
+        "final": {"found_num": 12, "score": 4.0, "selected_variant": "heavy_dilate:0"},
+        "variants": [
+            {
+                "variant": "standard:0",
+                "aggregation": {"stave_index": 0},
+                "staves": [{"stave_index": 0, "numeric_candidates": [candidate_42]}],
+            },
+            {
+                "variant": "heavy_dilate:0",
+                "aggregation": {"stave_index": 0},
+                "staves": [{"stave_index": 0, "numeric_candidates": [candidate_12]}],
+            },
+        ],
+    }
+    assert final_selected_candidate(trace) == candidate_12

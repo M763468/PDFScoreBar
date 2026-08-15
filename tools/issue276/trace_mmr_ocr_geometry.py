@@ -560,6 +560,29 @@ def compact_stages(trace: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def final_selected_candidate(trace: Mapping[str, Any]) -> dict[str, Any] | None:
+    """Return the candidate that produced the final variant aggregation."""
+    final = trace["final"]
+    if final["found_num"] is None or final["selected_variant"] is None:
+        return None
+    variant = next(
+        item for item in trace["variants"] if item["variant"] == final["selected_variant"]
+    )
+    aggregate = variant["aggregation"]
+    if aggregate is None:
+        return None
+    stave = next(
+        item for item in variant["staves"] if item["stave_index"] == aggregate["stave_index"]
+    )
+    return next(
+        item
+        for item in stave["numeric_candidates"]
+        if item["numeric_value"] == final["found_num"]
+        and item["spatial_score"] == final["score"]
+        and item["selected"]
+    )
+
+
 def preflight() -> dict[str, Any]:
     from tools.issue264.run_phase_c_mmr_regression import build_page_specs
 
@@ -690,7 +713,8 @@ def run(
                     "name": item["name"],
                     "bbox": item["bbox"],
                     "found_num": traced["final"]["found_num"],
-                    "selected_candidate": traced["final"]["selected_variant"],
+                    "selected_variant": traced["final"]["selected_variant"],
+                    "selected_candidate": final_selected_candidate(traced),
                     "rapidocr_confidences": [
                         candidate["rapidocr_confidence"]
                         for call in traced["_ocr_calls"]
@@ -726,15 +750,7 @@ def run(
                     "actual_crop_pixel_hash": crop["crop_pixel_hash"],
                     "found_num": traced["final"]["found_num"],
                     "selected_variant": traced["final"]["selected_variant"],
-                    "selected_candidate": next(
-                        (
-                            c
-                            for call in crop_calls
-                            for c in call["numeric_candidates"]
-                            if c["selected"]
-                        ),
-                        None,
-                    ),
+                    "selected_candidate": final_selected_candidate(traced),
                     "spatial_score": traced["final"]["score"],
                     "validity": traced["final"]["valid"],
                 }

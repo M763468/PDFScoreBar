@@ -4,9 +4,11 @@ import numpy as np
 
 from src.measure_numbering.mmr import MMROCREngine
 from tools.issue276.trace_mmr_ocr_geometry import (
+    candidate_image_geometry,
     candidate_trace,
     first_divergence,
     perturbations,
+    staff_perturbations,
     trace_mask_hbar_candidates,
 )
 
@@ -39,7 +41,22 @@ def test_perturbations_are_deterministic_and_do_not_mutate_input():
     bbox = [10, 20, 30, 40]
     assert perturbations(bbox) == perturbations(bbox)
     assert bbox == [10, 20, 30, 40]
-    assert len(perturbations(bbox)) == 25
+    assert len(perturbations(bbox)) == 13
+
+
+def test_staff_perturbations_are_deterministic_non_mutating_and_move_crop():
+    system = {"staves": [{"bbox": [0, 20, 100, 80]}], "measures": []}
+    first = staff_perturbations(system, 0)
+    assert first == staff_perturbations(system, 0)
+    assert system["staves"][0]["bbox"] == [0, 20, 100, 80]
+    assert first[1]["system"]["staves"][0]["bbox"][1] != 20
+
+
+def test_processed_candidate_maps_through_border_to_image_coordinates():
+    candidate = {"bbox": [[20, 20], [40, 20], [40, 50], [20, 50]]}
+    mapped = candidate_image_geometry(candidate, [100, 200, 300, 400], 0)
+    assert mapped["candidate_image_bbox"] == [100, 200, 120, 230]
+    assert mapped["candidate_image_center"] == [110, 215]
 
 
 def test_first_divergence_uses_pipeline_order():

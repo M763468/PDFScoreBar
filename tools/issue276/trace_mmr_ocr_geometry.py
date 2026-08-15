@@ -209,21 +209,57 @@ def raw_detection_trace(ocr_result: Iterable[Any]) -> list[dict[str, Any]]:
 
 
 def perturbations(bbox: Iterable[int]) -> list[dict[str, Any]]:
-    """One-coordinate-at-a-time, symmetric perturbations; never mutates bbox."""
+    """Measure-driven horizontal perturbations; never mutates bbox."""
     base = list(bbox)
     result = [{"name": "baseline", "bbox": base.copy()}]
-    for index, name in enumerate(("x1", "y1", "x2", "y2")):
+    for index, name in ((0, "measure_x1"), (2, "measure_x2")):
         for delta in (-2, -1, 1, 2):
             changed = base.copy()
             changed[index] += delta
             result.append({"name": f"{name}{delta:+d}", "bbox": changed})
-    for axis, left, right in (("x", 0, 2), ("y", 1, 3)):
+    for axis, left, right in (("x", 0, 2),):
         for delta in (-2, -1, 1, 2):
             changed = base.copy()
             changed[left] += delta
             changed[right] += delta
             result.append({"name": f"shift_{axis}{delta:+d}", "bbox": changed})
     return result
+
+
+def staff_perturbations(system: Mapping[str, Any], stave_index: int) -> list[dict[str, Any]]:
+    """Return deep-copied, staff-driven vertical OCR-crop perturbations."""
+    original = list(system["staves"][stave_index]["bbox"])
+    result = [{"name": "baseline", "system": deepcopy(system)}]
+    for index, name in ((1, "staff_y1"), (3, "staff_y2")):
+        for delta in (-2, -1, 1, 2):
+            changed = deepcopy(system)
+            changed["staves"][stave_index]["bbox"][index] = original[index] + delta
+            result.append({"name": f"{name}{delta:+d}", "system": changed})
+    for delta in (-2, -1, 1, 2):
+        changed = deepcopy(system)
+        for index in (1, 3):
+            changed["staves"][stave_index]["bbox"][index] = original[index] + delta
+        result.append({"name": f"staff_shift_y{delta:+d}", "system": changed})
+    return result
+
+
+def candidate_image_geometry(
+    candidate: Mapping[str, Any], crop_bbox: list[int], angle: float
+) -> dict[str, Any]:
+    """Map angle=0 RapidOCR processed coordinates through the 20px border."""
+    if angle != 0:
+        return {"image_coordinate_mapping_available": False}
+    points = candidate["bbox"]
+    xs, ys = (
+        [point[0] + crop_bbox[0] - 20 for point in points],
+        [point[1] + crop_bbox[1] - 20 for point in points],
+    )
+    bbox = [min(xs), min(ys), max(xs), max(ys)]
+    return {
+        "image_coordinate_mapping_available": True,
+        "candidate_image_bbox": bbox,
+        "candidate_image_center": [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2],
+    }
 
 
 def first_divergence(left: Mapping[str, Any], right: Mapping[str, Any]) -> str | None:
@@ -263,6 +299,15 @@ class RecordingOCR:
         return result, elapsed
 
 
+class RecordingClassifier:
+    def __init__(self, wrapped: Any):
+        self.wrapped, self.calls = wrapped, 0
+
+    def predict(self, image: Any) -> float:
+        self.calls += 1
+        return self.wrapped.predict(image)
+
+
 def trace_view(
     *,
     processor: Any,
@@ -298,6 +343,59 @@ def trace_view(
             processed = processor.ocr.preprocess_variant(masked, mode=mode, angle=angle)
             raw, _ = processor.ocr.ocr_engine(processed)
             traced = candidate_trace(processor.ocr, raw, processed.shape[1], processed.shape[0])
+            measure_center = [(x1 + x2) / 2, (y1 + y2) / 2]
+            staff_center_y = (stave["bbox"][1] + stave["bbox"][3]) / 2
+            for candidate in traced["numeric_candidates"]:
+                candidate.update(candidate_image_geometry(candidate, [sx1, sy1, sx2, sy2], angle))
+                if candidate.get("image_coordinate_mapping_available"):
+                    cx, cy = candidate["candidate_image_center"]
+                    candidate.update(
+                        {
+                            "measure_bbox": list(measure["bbox"]),
+                            "measure_center": measure_center,
+                            "staff_bbox": list(stave["bbox"]),
+                            "staff_center_y": staff_center_y,
+                            "candidate_dx_from_measure_center": cx - measure_center[0],
+                            "candidate_dx_from_measure_center_norm": (cx - measure_center[0])
+                            / max(1, x2 - x1),
+                            "candidate_dy_from_measure_center": cy - measure_center[1],
+                            "candidate_dy_from_staff_center": cy - staff_center_y,
+                            "candidate_dy_from_staff_center_norm": (cy - staff_center_y)
+                            / max(1, stave["bbox"][3] - stave["bbox"][1]),
+                        }
+                    )
+                    masked_records = [item for item in mask_records if item["masked"]]
+                    if masked_records:
+                        nearest = min(
+                            masked_records,
+                            key=lambda item: (
+                                abs(
+                                    (item["mask_rectangle"][0] + item["mask_rectangle"][2]) / 2
+                                    + sx1
+                                    - cx
+                                )
+                                + abs(
+                                    (item["mask_rectangle"][1] + item["mask_rectangle"][3]) / 2
+                                    + sy1
+                                    - cy
+                                )
+                            ),
+                        )
+                        rect = nearest["mask_rectangle"]
+                        hx = (rect[0] + rect[2]) / 2 + sx1
+                        hy = (rect[1] + rect[3]) / 2 + sy1
+                        candidate.update(
+                            {
+                                "nearest_masked_hbar_bbox": [
+                                    rect[0] + sx1,
+                                    rect[1] + sy1,
+                                    rect[2] + sx1,
+                                    rect[3] + sy1,
+                                ],
+                                "candidate_dx_from_hbar_center": cx - hx,
+                                "candidate_dy_from_hbar_center": cy - hy,
+                            }
+                        )
             evidence = processor._count_high_confidence_one_bar_evidence(raw)
             evidence_by_variant[(mode, angle)] = (
                 evidence_by_variant.get((mode, angle), 0) + evidence
@@ -513,10 +611,11 @@ def run(
     if device.type != "cuda":
         raise RuntimeError("CUDA is required for retained Issue #276 OCR tracing")
     recorder = RecordingOCR(create_mmr_rapidocr("cuda"))
+    classifier = RecordingClassifier(MMRClassifier(MODEL_PATH, device))
     processor = MMRProcessor(
         MODEL_PATH,
         device,
-        classifier=MMRClassifier(MODEL_PATH, device),
+        classifier=classifier,
         ocr_engine=MMROCREngine(ocr_engine=recorder),
     )
     report: dict[str, Any] = {
@@ -601,7 +700,60 @@ def run(
                     "validity": traced["final"]["valid"],
                 }
             )
-        report["perturbation_summary"][page_id] = perturb
+        vertical = []
+        for stave_index in range(len(reuse.get("staves", []))):
+            baseline_crop = None
+            for item in staff_perturbations(reuse, stave_index):
+                system = item["system"]
+                measure = system["measures"][key[1]]
+                x1, y1, x2, y2 = measure["bbox"]
+                probability = processor.classifier.predict(
+                    image[max(0, y1 - 20) : min(h, y2 + 20), max(0, x1 - 20) : min(w, x2 + 20)]
+                )
+                traced = trace_view(
+                    processor=processor,
+                    image=image,
+                    system=system,
+                    measure=measure,
+                    probability=probability,
+                )
+                crop_calls = traced["_ocr_calls"]
+                crop = crop_calls[stave_index] if stave_index < len(crop_calls) else crop_calls[0]
+                entry = {
+                    "name": item["name"],
+                    "stave_index": stave_index,
+                    "actual_crop_bbox": crop["crop_bbox"],
+                    "actual_crop_pixel_hash": crop["crop_pixel_hash"],
+                    "found_num": traced["final"]["found_num"],
+                    "selected_variant": traced["final"]["selected_variant"],
+                    "selected_candidate": next(
+                        (
+                            c
+                            for call in crop_calls
+                            for c in call["numeric_candidates"]
+                            if c["selected"]
+                        ),
+                        None,
+                    ),
+                    "spatial_score": traced["final"]["score"],
+                    "validity": traced["final"]["valid"],
+                }
+                if item["name"] == "baseline":
+                    baseline_crop = entry
+                else:
+                    entry["actual_crop_changed"] = bool(
+                        baseline_crop
+                        and (
+                            entry["actual_crop_bbox"] != baseline_crop["actual_crop_bbox"]
+                            or entry["actual_crop_pixel_hash"]
+                            != baseline_crop["actual_crop_pixel_hash"]
+                        )
+                    )
+                vertical.append(entry)
+        report["perturbation_summary"][page_id] = {
+            "horizontal_measure_driven": perturb,
+            "vertical_staff_driven": vertical,
+        }
     for page_id in ("page_033", "page_042"):
         image = cv2.imread(pages[page_id]["image"])
         h, w = image.shape[:2]
@@ -633,7 +785,7 @@ def run(
     report["runtime"] = {
         "elapsed_sec": time.perf_counter() - started,
         "rapidocr_calls": recorder.calls,
-        "cnn_calls": "target and perturbation crops only",
+        "cnn_calls": classifier.calls,
     }
     path = output_root / "issue276_mmr_ocr_geometry_trace.json"
     write_json(path, report)

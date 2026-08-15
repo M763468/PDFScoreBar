@@ -417,6 +417,7 @@ class MMRProcessor:
 
         self.threshold = threshold
         self.rescue_threshold = rescue_threshold
+        self.support_stats = {"phase_a_ocr_fallback": 0, "alternate_veto_suppression": 0}
 
     def _count_high_confidence_one_bar_evidence(self, ocr_result: List) -> int:
         collector = getattr(self.ocr, "collect_one_bar_evidence", None)
@@ -452,13 +453,16 @@ class MMRProcessor:
         pages_data: List[Dict],
         image_paths: List[Path],
         debug_root: Optional[Path] = None,
+        support_data: Optional[List[Optional[Dict]]] = None,
     ) -> List[Dict[str, List[Dict]]]:
         """
         Process multiple pages and return measure overrides for each.
         Returns a list of dictionaries, one per page, containing 'measure_overrides'.
         """
         results = []
-        for page_data, img_path in zip(pages_data, image_paths):
+        if support_data is not None and len(support_data) != len(pages_data):
+            raise ValueError("support_data must have one entry for each MMR page")
+        for page_index, (page_data, img_path) in enumerate(zip(pages_data, image_paths)):
             image = cv2.imread(str(img_path))
             if image is None:
                 logger.error(f"Could not read image: {img_path}")
@@ -472,6 +476,23 @@ class MMRProcessor:
             debug_img = None
             if debug_root:
                 debug_img = image.copy()
+
+            support = support_data[page_index] if support_data is not None else None
+            if support is not None:
+                overrides = self._process_page_with_support(
+                    page_data=page_data,
+                    support=support,
+                    image=image,
+                    page_num=page_num,
+                    image_width=w_img,
+                    image_height=h_img,
+                    debug_img=debug_img,
+                )
+                if debug_img is not None and debug_root:
+                    debug_path = debug_root / f"page_{page_num:03d}_mmr_debug.png"
+                    cv2.imwrite(str(debug_path), debug_img)
+                results.append({"measure_overrides": overrides})
+                continue
 
             for page_entry in page_data.get("pages", []):
                 for sys_idx, system in enumerate(page_entry.get("systems", [])):
@@ -557,6 +578,160 @@ class MMRProcessor:
 
         return results
 
+    def _valid_status(
+        self,
+        found_num: Optional[int],
+        prob: float,
+        final_score: float,
+        one_bar_evidence_count: int,
+    ) -> tuple[bool, str, bool]:
+        if not found_num:
+            return False, "", False
+        vetoed = self._should_veto_one_bar_rest(
+            found_num, prob, final_score, one_bar_evidence_count
+        )
+        if vetoed:
+            return False, "one_bar_veto", True
+        if prob > self.threshold:
+            return True, "found", False
+        if final_score > 60:
+            return True, "rescue", False
+        return False, "", False
+
+    @staticmethod
+    def _support_view(support: Dict, name: str) -> Dict:
+        try:
+            view = support["views"][name]
+            if not isinstance(view, dict):
+                raise TypeError
+            return view
+        except (KeyError, TypeError) as error:
+            raise ValueError(f"Invalid MMR support sidecar: missing {name} view") from error
+
+    def _process_page_with_support(
+        self,
+        *,
+        page_data: Dict,
+        support: Dict,
+        image: np.ndarray,
+        page_num: int,
+        image_width: int,
+        image_height: int,
+        debug_img: Optional[np.ndarray],
+    ) -> List[Dict]:
+        """Apply current-x4 geometry without mutating Phase-A logical indices."""
+
+        primary_page = self._support_view(support, "primary")
+        alternate_page = self._support_view(support, "implicit_start_alternate")
+        fallback_page = self._support_view(support, "fallback")
+        primary_systems = primary_page.get("pages", [{}])[0].get("systems", [])
+        alternate_systems = alternate_page.get("pages", [{}])[0].get("systems", [])
+        fallback_systems = fallback_page.get("pages", [{}])[0].get("systems", [])
+        original_systems = page_data.get("pages", [{}])[0].get("systems", [])
+        if not (
+            len(primary_systems)
+            == len(alternate_systems)
+            == len(fallback_systems)
+            == len(original_systems)
+        ):
+            raise ValueError("MMR support topology differs from Phase-A numbering")
+
+        overrides: List[Dict] = []
+        for sys_idx, original_system in enumerate(original_systems):
+            primary_system = primary_systems[sys_idx]
+            alternate_system = alternate_systems[sys_idx]
+            fallback_system = fallback_systems[sys_idx]
+            original_measures = original_system.get("measures", [])
+            if not (
+                len(primary_system.get("measures", []))
+                == len(alternate_system.get("measures", []))
+                == len(fallback_system.get("measures", []))
+                == len(original_measures)
+            ):
+                raise ValueError("MMR support measure layout differs from Phase-A numbering")
+            for m_idx, original_measure in enumerate(original_measures):
+                primary_measure = primary_system["measures"][m_idx]
+                x1, y1, x2, y2 = primary_measure["bbox"]
+                margin = 20
+                cx1, cy1 = int(max(0, x1 - margin)), int(max(0, y1 - margin))
+                cx2, cy2 = int(min(image_width, x2 + margin)), int(min(image_height, y2 + margin))
+                prob = self.classifier.predict(image[cy1:cy2, cx1:cx2])
+                if prob <= self.rescue_threshold:
+                    continue
+
+                found_num, final_score, _debug, evidence = self._detect_number_with_evidence(
+                    image, primary_system, x1, y1, x2, y2, prob, image_width, image_height
+                )
+                is_valid, status_label, vetoed = self._valid_status(
+                    found_num, prob, final_score, evidence
+                )
+
+                alternate_measure = alternate_system["measures"][m_idx]
+                if is_valid and alternate_measure["bbox"][0] != primary_measure["bbox"][0]:
+                    ax1, ay1, ax2, ay2 = alternate_measure["bbox"]
+                    alt_num, alt_score, _alt_debug, alt_evidence = (
+                        self._detect_number_with_evidence(
+                            image,
+                            alternate_system,
+                            ax1,
+                            ay1,
+                            ax2,
+                            ay2,
+                            prob,
+                            image_width,
+                            image_height,
+                        )
+                    )
+                    if self._should_veto_one_bar_rest(alt_num, prob, alt_score, alt_evidence):
+                        is_valid, status_label, vetoed = False, "one_bar_veto", True
+                        self.support_stats["alternate_veto_suppression"] += 1
+
+                # A Phase-A retry is OCR-only: it reuses the primary CNN probability.
+                if found_num is None and prob > self.threshold:
+                    self.support_stats["phase_a_ocr_fallback"] += 1
+                    fallback_measure = fallback_system["measures"][m_idx]
+                    fx1, fy1, fx2, fy2 = fallback_measure["bbox"]
+                    found_num, final_score, _fallback_debug, evidence = (
+                        self._detect_number_with_evidence(
+                            image,
+                            fallback_system,
+                            fx1,
+                            fy1,
+                            fx2,
+                            fy2,
+                            prob,
+                            image_width,
+                            image_height,
+                        )
+                    )
+                    is_valid, status_label, vetoed = self._valid_status(
+                        found_num, prob, final_score, evidence
+                    )
+
+                if is_valid:
+                    overrides.append(
+                        {
+                            "page": page_num - 1,
+                            "system": sys_idx,
+                            "measure": m_idx,
+                            "skip": found_num - 1,
+                            "comment": f"CNN({prob:.2f})+OCR({final_score:.1f}): {found_num}",
+                        }
+                    )
+                    if debug_img is not None:
+                        self._draw_debug(
+                            debug_img, x1, y1, x2, y2, status_label, f"R{found_num}", f"P{prob:.2f}"
+                        )
+                elif vetoed:
+                    logger.info(
+                        "  [VETO] P%s S%s M%s: Prob=%.2f",
+                        page_num,
+                        sys_idx,
+                        original_measure["number"],
+                        prob,
+                    )
+        return overrides
+
     def _detect_number(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
         found_number, best_score, best_debug, _one_bar_evidence_count = (
             self._detect_number_with_evidence(image, system, x1, y1, x2, y2, prob, w_img, h_img)
@@ -601,7 +776,9 @@ class MMRProcessor:
                 one_bar_evidences[variant_key] = one_bar_evidences.get(
                     variant_key, 0
                 ) + self._count_high_confidence_one_bar_evidence(ocr_res)
-                num, score, dbg = self.ocr.select_best_candidate(ocr_res, ox2 - ox1, oy2 - oy1)
+                num, score, dbg = self.ocr.select_best_candidate(
+                    ocr_res, proc_img.shape[1], proc_img.shape[0]
+                )
                 stave_results.append((num, score, dbg))
 
             valid_results = [r for r in stave_results if r[0] is not None]
@@ -669,7 +846,9 @@ class MMRProcessor:
                         variant_key, 0
                     ) + self._count_high_confidence_one_bar_evidence(ocr_res)
 
-                    num, score, dbg = self.ocr.select_best_candidate(ocr_res, ox2 - ox1, oy2 - oy1)
+                    num, score, dbg = self.ocr.select_best_candidate(
+                        ocr_res, proc_img.shape[1], proc_img.shape[0]
+                    )
                     if num is not None and score > self.UNMASKED_FALLBACK_MIN_SCORE:
                         fallback_results.append((num, score, dbg))
 
@@ -712,6 +891,7 @@ def run_mmr_batch(
     threshold: float = 0.5,
     rescue_threshold: float = 0.1,
     enable_rotation_tta: bool = False,
+    support_data: Optional[List[Optional[Dict]]] = None,
 ) -> List[Dict[str, List[Dict]]]:
     ocr_engine = None
     if rapidocr_instance is not None:
@@ -726,4 +906,4 @@ def run_mmr_batch(
         rescue_threshold=rescue_threshold,
         enable_rotation_tta=enable_rotation_tta,
     )
-    return processor.process_pages(pages_data, image_paths, debug_root)
+    return processor.process_pages(pages_data, image_paths, debug_root, support_data)

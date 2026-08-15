@@ -587,6 +587,7 @@ class PipelineOrchestrator:
         mmr_input_pages = []
         mmr_input_images = []
         mmr_output_paths = []
+        mmr_support_data = []
 
         for page_id in page_ids:
             if page_id in excluded_page_ids:
@@ -603,6 +604,8 @@ class PipelineOrchestrator:
                 mmr_input_pages.append(load_json(numbering_base))
                 mmr_input_images.append(ctx["image_path"])
                 mmr_output_paths.append(overrides_mmr)
+                support_path = ctx.get("mmr_support")
+                mmr_support_data.append(load_json(support_path) if support_path else None)
             else:
                 logger.warning(f"MMR skipped for {page_id} because numbering_base.json is missing.")
 
@@ -640,6 +643,7 @@ class PipelineOrchestrator:
                 debug_root=debug_root,
                 classifier=self._mmr_persistence[classifier_key],
                 ocr_engine=self._mmr_persistence[ocr_key],
+                support_data=mmr_support_data,
             )
             if device.type == "cuda":
                 torch.cuda.empty_cache()

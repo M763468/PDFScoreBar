@@ -38,6 +38,7 @@ def build_manifest(
                     Path(resolved_item["staff_mask"])
                 ),
                 "mmr_geometry": resolved_item.get("mmr_staff_geometry"),
+                "mmr_support": resolved_item.get("mmr_support"),
                 "status": next(
                     (status for status in page_statuses if status["page_id"] == page_id),
                     None,

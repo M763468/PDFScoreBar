@@ -41,7 +41,6 @@ class StaffExtractor:
         processed = cv2.morphologyEx(processed, cv2.MORPH_CLOSE, h_kernel)
 
         num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(processed, connectivity=8)
-        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(processed, connectivity=8)
 
         staves = []
         for i in range(1, num_labels):

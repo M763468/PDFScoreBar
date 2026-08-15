@@ -418,6 +418,10 @@ class MMRProcessor:
         self.threshold = threshold
         self.rescue_threshold = rescue_threshold
         self.support_stats = {"phase_a_ocr_fallback": 0, "alternate_veto_suppression": 0}
+        # Runtime-only progress state.  This is deliberately separate from
+        # the MMR decision data so callers can record a useful failure report.
+        self.current_page_id: Optional[str] = None
+        self.last_completed_page_id: Optional[str] = None
 
     def _count_high_confidence_one_bar_evidence(self, ocr_result: List) -> int:
         collector = getattr(self.ocr, "collect_one_bar_evidence", None)
@@ -463,16 +467,20 @@ class MMRProcessor:
         if support_data is not None and len(support_data) != len(pages_data):
             raise ValueError("support_data must have one entry for each MMR page")
         for page_index, (page_data, img_path) in enumerate(zip(pages_data, image_paths)):
+            page_num = page_data.get("pages", [{}])[0].get("page_number", page_index + 1)
+            page_id = f"page_{int(page_num):03d}"
+            self.current_page_id = page_id
+            print(f"MMR page start: {page_id}", flush=True)
             image = cv2.imread(str(img_path))
             if image is None:
                 logger.error(f"Could not read image: {img_path}")
                 results.append({"measure_overrides": []})
+                self.last_completed_page_id = page_id
+                print(f"MMR page complete: {page_id}", flush=True)
                 continue
 
             h_img, w_img = image.shape[:2]
             overrides = []
-            page_num = page_data.get("pages", [{}])[0].get("page_number", 1)
-
             debug_img = None
             if debug_root:
                 debug_img = image.copy()
@@ -492,6 +500,8 @@ class MMRProcessor:
                     debug_path = debug_root / f"page_{page_num:03d}_mmr_debug.png"
                     cv2.imwrite(str(debug_path), debug_img)
                 results.append({"measure_overrides": overrides})
+                self.last_completed_page_id = page_id
+                print(f"MMR page complete: {page_id}", flush=True)
                 continue
 
             for page_entry in page_data.get("pages", []):
@@ -575,6 +585,8 @@ class MMRProcessor:
                 cv2.imwrite(str(debug_path), debug_img)
 
             results.append({"measure_overrides": overrides})
+            self.last_completed_page_id = page_id
+            print(f"MMR page complete: {page_id}", flush=True)
 
         return results
 

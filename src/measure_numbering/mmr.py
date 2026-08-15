@@ -467,7 +467,7 @@ class MMRProcessor:
         if support_data is not None and len(support_data) != len(pages_data):
             raise ValueError("support_data must have one entry for each MMR page")
         for page_index, (page_data, img_path) in enumerate(zip(pages_data, image_paths)):
-            page_num = page_data.get("pages", [{}])[0].get("page_number", page_index + 1)
+            page_num = page_data.get("pages", [{}])[0].get("page_number", 1)
             page_id = f"page_{int(page_num):03d}"
             self.current_page_id = page_id
             print(f"MMR page start: {page_id}", flush=True)

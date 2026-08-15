@@ -1,6 +1,7 @@
 import logging
 import re
 from collections import Counter
+from copy import deepcopy
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -750,7 +751,52 @@ class MMRProcessor:
         )
         return found_number, best_score, best_debug
 
+    JITTER_SCORE_TRIGGER = 5.0
+
     def _detect_number_with_evidence(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
+        """Use bounded J2 OCR geometry consensus for low-reliability baseline OCR only."""
+        baseline = self._detect_number_with_evidence_once(
+            image, system, x1, y1, x2, y2, prob, w_img, h_img
+        )
+        found, score, debug, evidence = baseline
+        if found is None or score > self.JITTER_SCORE_TRIGGER:
+            return baseline
+        views = [baseline]
+        for dx in (-2, 2):
+            views.append(
+                self._detect_number_with_evidence_once(
+                    image, system, x1 + dx, y1, x2 + dx, y2, prob, w_img, h_img
+                )
+            )
+        for dy in (-2, 2):
+            shifted = deepcopy(system)
+            for stave in shifted.get("staves", []):
+                stave["bbox"][1] += dy
+                stave["bbox"][3] += dy
+            views.append(
+                self._detect_number_with_evidence_once(
+                    image, shifted, x1, y1, x2, y2, prob, w_img, h_img
+                )
+            )
+        votes = Counter(item[0] for item in views if item[0] is not None and item[0] >= 2)
+        if not votes:
+            return baseline
+        majority, count = votes.most_common(1)[0]
+        if count < 3:
+            return baseline
+        if majority == found:
+            return baseline
+        representative = max(
+            (item for item in views if item[0] == majority), key=lambda item: item[1]
+        )
+        return (
+            representative[0],
+            representative[1],
+            f"{representative[2]},j2_consensus=3of5",
+            evidence,
+        )
+
+    def _detect_number_with_evidence_once(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
         variants = [("standard", 0)]
         if prob > self.threshold:
             variants = [("standard", 0), ("no_dilate", 0), ("heavy_dilate", 0)]

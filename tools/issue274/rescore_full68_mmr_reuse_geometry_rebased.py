@@ -2,7 +2,7 @@
 """Rescore completed Issue #274 full-68 MMR artifacts with rebased fixture geometry.
 
 This is evaluation-only: it reads historical fixtures, historical numbering,
-current retained Phase-A numbering, and completed MMR override artifacts.  It
+current retained Phase-A numbering, and completed MMR override artifacts. It
 never invokes detector, HOMR, SR, OMR-DLN, numbering, CUDA, CNN, or OCR.
 """
 
@@ -27,7 +27,6 @@ DEFAULT_ACCEPTED_ROOT = (
 )
 DEFAULT_PAGE_INPUTS = PROJECT_ROOT / "logs/issue94_mmr_current_state/page_inputs.json"
 FIXTURE_ROOT = PROJECT_ROOT / "tests/fixtures"
-CHANGED_PAGE_IDS = ("page_001", "page_025", "page_039", "page_055", "page_064")
 
 
 def _load_json(path: Path) -> Any:
@@ -79,6 +78,10 @@ def _index(payload: Any) -> dict[tuple[int, int, int], dict[str, Any]]:
     return {_key(item): item for item in normalise_overrides(payload)}
 
 
+def _semantic_index(payload: Any) -> dict[tuple[int, int, int], int]:
+    return {key: _skip(item) for key, item in _index(payload).items()}
+
+
 def _score(expected_payload: Any, detected_payload: Any) -> dict[str, Any]:
     expected_by_key = _index(expected_payload)
     detected_by_key = _index(detected_payload)
@@ -124,8 +127,17 @@ def _score(expected_payload: Any, detected_payload: Any) -> dict[str, Any]:
 
 
 def _summary(pages: list[Mapping[str, Any]]) -> dict[str, Any]:
-    names = ("expected", "detected", "matched_tp", "missed_fn", "skip_mismatch", "unexpected_fp")
-    totals = {name: sum(int(page["scoring"]["counts"][name]) for page in pages) for name in names}
+    names = (
+        "expected",
+        "detected",
+        "matched_tp",
+        "missed_fn",
+        "skip_mismatch",
+        "unexpected_fp",
+    )
+    totals = {
+        name: sum(int(page["scoring"]["counts"][name]) for page in pages) for name in names
+    }
     totals["pages"] = len(pages)
     totals["zero_expected_pages"] = sum(
         int(page["scoring"]["counts"]["expected"]) == 0 for page in pages
@@ -135,10 +147,17 @@ def _summary(pages: list[Mapping[str, Any]]) -> dict[str, Any]:
         for page in pages
         if int(page["scoring"]["counts"]["expected"]) == 0
     )
-    totals["precision"] = totals["matched_tp"] / totals["detected"] if totals["detected"] else 0.0
-    totals["recall"] = totals["matched_tp"] / totals["expected"] if totals["expected"] else 0.0
+    totals["precision"] = (
+        totals["matched_tp"] / totals["detected"] if totals["detected"] else 0.0
+    )
+    totals["recall"] = (
+        totals["matched_tp"] / totals["expected"] if totals["expected"] else 0.0
+    )
     totals["f1"] = (
-        2.0 * totals["precision"] * totals["recall"] / (totals["precision"] + totals["recall"])
+        2.0
+        * totals["precision"]
+        * totals["recall"]
+        / (totals["precision"] + totals["recall"])
         if totals["precision"] + totals["recall"]
         else 0.0
     )
@@ -177,6 +196,14 @@ def _json_item(item: Mapping[str, Any] | None) -> dict[str, Any] | None:
     return {"skip": _skip(item), "comment": item.get("comment")}
 
 
+def _semantic_items_differ(
+    accepted: Mapping[str, Any] | None, issue274: Mapping[str, Any] | None
+) -> bool:
+    if accepted is None or issue274 is None:
+        return accepted is not issue274
+    return _skip(accepted) != _skip(issue274)
+
+
 def _compare_changed_page(
     *,
     page_id: str,
@@ -190,7 +217,7 @@ def _compare_changed_page(
     differences = []
     for key in sorted(set(accepted_by_key) | set(issue274_by_key)):
         accepted, issue274 = accepted_by_key.get(key), issue274_by_key.get(key)
-        if _json_item(accepted) == _json_item(issue274):
+        if not _semantic_items_differ(accepted, issue274):
             continue
         expected = expected_by_key.get(key)
         differences.append(
@@ -207,13 +234,16 @@ def _compare_changed_page(
     return {
         "page_id": page_id,
         "rebased_expected": [
-            {"key": list(key), **_json_item(item)} for key, item in sorted(expected_by_key.items())
+            {"key": list(key), **_json_item(item)}
+            for key, item in sorted(expected_by_key.items())
         ],
         "accepted_issue264_output": [
-            {"key": list(key), **_json_item(item)} for key, item in sorted(accepted_by_key.items())
+            {"key": list(key), **_json_item(item)}
+            for key, item in sorted(accepted_by_key.items())
         ],
         "issue274_output": [
-            {"key": list(key), **_json_item(item)} for key, item in sorted(issue274_by_key.items())
+            {"key": list(key), **_json_item(item)}
+            for key, item in sorted(issue274_by_key.items())
         ],
         "differences": differences,
     }
@@ -253,6 +283,7 @@ def run(
     coalesced_items = 0
     changed_index_keys = 0
     changed_page_comparison = []
+    changed_page_ids = []
 
     for global_index, page_input in enumerate(page_inputs):
         page_id = str(page_input["page_id"])
@@ -312,7 +343,8 @@ def run(
                 },
             }
         )
-        if page_id in CHANGED_PAGE_IDS:
+        if _semantic_index(accepted) != _semantic_index(detected):
+            changed_page_ids.append(page_id)
             changed_page_comparison.append(
                 _compare_changed_page(
                     page_id=page_id,
@@ -334,7 +366,7 @@ def run(
         "skip_mismatch_not_above_6": totals["skip_mismatch"] <= 6,
     }
     report = {
-        "schema_version": "issue274.full68_mmr_reuse.geometry_rebased.v1",
+        "schema_version": "issue274.full68_mmr_reuse.geometry_rebased.v2",
         "status": "passed" if all(gates.values()) else "failed",
         "evaluation_contract": {
             "historical_numbering_geometry_use": "evaluation-only fixture bbox rebase",
@@ -374,6 +406,10 @@ def run(
             "unchanged_index_keys": len(mappings) - changed_index_keys,
             "mapping_methods": mapping_method_counts(mappings),
         },
+        "accepted_diff": {
+            "changed_pages": changed_page_ids,
+            "exact_pages": 68 - len(changed_page_ids),
+        },
         "changed_page_comparison": changed_page_comparison,
         "runtime": _runtime_with_explicit_allocator_names(source_report),
         "gates": gates,
@@ -388,6 +424,7 @@ def run(
                 "historical_source_fixture_items": source_fixture_items,
                 "geometry_rebased_summary": totals,
                 "fixture_rebase": report["fixture_rebase"],
+                "accepted_diff": report["accepted_diff"],
                 "gates": gates,
             },
             ensure_ascii=False,

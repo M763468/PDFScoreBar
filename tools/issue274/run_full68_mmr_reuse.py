@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""Run one full-68 MMR acceptance batch from retained Issue #274 artifacts only."""
+"""Run one full-68 MMR batch from retained Issue #274 artifacts only.
+
+Repository/commit provenance is intentionally checked outside this runner so the
+same retained-artifact replay can be reused from different worktrees and commits.
+The historical direct-index fixture score emitted here is diagnostic only; final
+acceptance uses the geometry-rebased rescorer.
+"""
 
 from __future__ import annotations
 
 import argparse
 import datetime as dt
-import os
-import subprocess
 import time
 import traceback
 from pathlib import Path
@@ -32,7 +36,6 @@ from tools.issue264.run_phase_c_mmr_regression import (
 )
 from tools.issue274.validate_mmr_support_mapping import _visible_path
 
-EXPECTED_HEAD = "a4bf1f565119b419dff2104efd6bf9bd3eb4fee5"
 EXPECTED_SUPPORT = {
     "pages": 68,
     "staff_slot_count": 677,
@@ -40,14 +43,6 @@ EXPECTED_SUPPORT = {
     "fallback_count": 0,
     "union_count": 13,
 }
-
-
-def _git_head() -> str:
-    if head := os.environ.get("ISSUE274_HEAD"):
-        return head
-    return subprocess.run(
-        ["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True
-    ).stdout.strip()
 
 
 def _empty_expected() -> dict[str, list[dict[str, Any]]]:
@@ -89,7 +84,14 @@ def _compare_accepted(expected: Any, actual: Any) -> dict[str, Any]:
 
 
 def _aggregate_scores(scores: list[dict[str, Any]]) -> dict[str, Any]:
-    names = ("expected", "detected", "matched_tp", "missed_fn", "skip_mismatch", "unexpected_fp")
+    names = (
+        "expected",
+        "detected",
+        "matched_tp",
+        "missed_fn",
+        "skip_mismatch",
+        "unexpected_fp",
+    )
     totals = {name: sum(score["counts"][name] for score in scores) for name in names}
     tp, fp, fn, mismatch = (
         totals["matched_tp"],
@@ -143,14 +145,15 @@ def _write_failure_report(
     if torch.cuda.is_available():
         runtime.update(
             {
-                "max_memory_allocated": torch.cuda.max_memory_allocated(),
-                "max_memory_reserved": torch.cuda.max_memory_reserved(),
+                "torch_cuda_max_memory_allocated": torch.cuda.max_memory_allocated(),
+                "torch_cuda_max_memory_reserved": torch.cuda.max_memory_reserved(),
+                "total_gpu_peak_measured": False,
             }
         )
     write_json(
         output_dir / "full68_failure.json",
         {
-            "schema_version": "issue274.full68_mmr_reuse.failure.v1",
+            "schema_version": "issue274.full68_mmr_reuse.failure.v2",
             "attempt_label": attempt_label,
             "timestamp": dt.datetime.now().astimezone().isoformat(),
             "exception_type": type(error).__name__,
@@ -165,8 +168,6 @@ def _write_failure_report(
 
 
 def _preflight(args: argparse.Namespace) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    if _git_head() != EXPECTED_HEAD:
-        raise RuntimeError(f"Unexpected HEAD: {_git_head()} (expected {EXPECTED_HEAD})")
     specs = build_page_specs()
     if [spec.page_id for spec in specs] != [f"page_{index:03d}" for index in range(1, 69)]:
         raise RuntimeError("Evaluation page mapping is not the unique page_001..page_068 sequence")
@@ -229,7 +230,7 @@ def main() -> None:
             return
 
         args.output_dir.mkdir(parents=True, exist_ok=True)
-        supports, support_data, pages_data, images, outputs = [], [], [], [], []
+        support_data, pages_data, images, outputs = [], [], [], []
         totals = {key: 0 for key in EXPECTED_SUPPORT}
         for item in pages:
             page_dir = args.output_dir / "intermediate" / item["page_id"]
@@ -242,7 +243,6 @@ def main() -> None:
             totals["pages"] += 1
             for key in ("staff_slot_count", "mapped_count", "fallback_count", "union_count"):
                 totals[key] += provenance[key]
-            supports.append(support)
             support_data.append(support)
             pages_data.append(load_json(item["numbering_base"]))
             images.append(item["image"])
@@ -252,7 +252,7 @@ def main() -> None:
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if device.type != "cuda":
-            raise RuntimeError("CUDA is required for this full-68 acceptance gate")
+            raise RuntimeError("CUDA is required for this full-68 MMR replay")
         classifier = MMRClassifier(args.model, device)
         provider = create_mmr_rapidocr("cuda")
         ocr = MMROCREngine(ocr_engine=provider)
@@ -283,9 +283,13 @@ def main() -> None:
             scores.append(score)
             comparisons.append(comparison)
             page_reports.append(
-                {"page_id": item["page_id"], "fixture_score": score, "accepted_diff": comparison}
+                {
+                    "page_id": item["page_id"],
+                    "direct_index_diagnostic_score": score,
+                    "accepted_diff": comparison,
+                }
             )
-        metrics = _aggregate_scores(scores)
+        direct_index_diagnostic_metrics = _aggregate_scores(scores)
         changed_pages = [
             item["page_id"] for item, diff in zip(pages, comparisons) if not diff["exact"]
         ]
@@ -305,7 +309,11 @@ def main() -> None:
         page_033_gate["passed"] = all(page_033_gate["required"].values())
         providers = collect_rapidocr_providers(provider)
         report = {
-            "schema_version": "issue274.full68_mmr_reuse.v1",
+            "schema_version": "issue274.full68_mmr_reuse.v2",
+            "evaluation_contract": {
+                "direct_index_metrics_are_acceptance": False,
+                "acceptance_scoring": "run rescore_full68_mmr_reuse_geometry_rebased.py on completed artifacts",
+            },
             "scope": {
                 "detector_reexecuted": False,
                 "homr_reexecuted": False,
@@ -316,9 +324,9 @@ def main() -> None:
                 **_attempt_counts(args.attempt_label),
                 "numbering_base_source": str(args.retained_root / "intermediate"),
             },
-            "preflight": {"head": _git_head(), "pages": len(pages), "passed": True},
+            "preflight": {"pages": len(pages), "passed": True},
             "support_aggregate": totals,
-            "metrics": metrics,
+            "direct_index_diagnostic_metrics": direct_index_diagnostic_metrics,
             "accepted_diff": {
                 "exact_pages": 68 - len(changed_pages),
                 "changed_pages": changed_pages,
@@ -350,7 +358,8 @@ def main() -> None:
         write_json(args.output_dir / "issue274_full68_mmr_reuse.json", report)
         print(
             {
-                "metrics": metrics,
+                "direct_index_diagnostic_metrics": direct_index_diagnostic_metrics,
+                "direct_index_metrics_are_acceptance": False,
                 "exact_pages": report["accepted_diff"]["exact_pages"],
                 "changed_pages": changed_pages,
                 "runtime": report["runtime"],

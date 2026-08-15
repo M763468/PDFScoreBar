@@ -132,6 +132,32 @@ class TestMMROCRHeuristics(unittest.TestCase):
         )
         self.assertEqual(result[0], 5)
         self.assertEqual(result[3], 1)
+        self.assertIn("j2_consensus=3of5", result[2])
+
+    def test_low_score_j2_no_majority_keeps_baseline_without_mutating_staves(self):
+        class Processor(MMRProcessor):
+            def __init__(self):
+                super().__init__(
+                    Path("unused"), torch.device("cpu"), classifier=object(), ocr_engine=object()
+                )
+                self.values = iter(
+                    [
+                        (12, 0.0, "base", 0),
+                        (2, 1.0, "x-", 0),
+                        (3, 1.0, "x+", 0),
+                        (4, 1.0, "y-", 0),
+                        (5, 1.0, "y+", 0),
+                    ]
+                )
+
+            def _detect_number_with_evidence_once(self, *args):
+                return next(self.values)
+
+        system = {"staves": [{"bbox": [0, 10, 50, 30]}, {"bbox": [0, 40, 50, 60]}]}
+        result = Processor()._detect_number_with_evidence(None, system, 0, 0, 10, 10, 1.0, 100, 100)
+        self.assertEqual(result, (12, 0.0, "base", 0))
+        self.assertEqual(system["staves"][0]["bbox"], [0, 10, 50, 30])
+        self.assertEqual(system["staves"][1]["bbox"], [0, 40, 50, 60])
 
 
 if __name__ == "__main__":

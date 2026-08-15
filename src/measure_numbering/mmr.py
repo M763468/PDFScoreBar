@@ -792,7 +792,7 @@ class MMRProcessor:
         return (
             representative[0],
             representative[1],
-            f"{representative[2]},j2_consensus=3of5",
+            f"{representative[2]},j2_consensus={count}of5",
             evidence,
         )
 

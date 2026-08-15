@@ -135,9 +135,7 @@ def _summary(pages: list[Mapping[str, Any]]) -> dict[str, Any]:
         "skip_mismatch",
         "unexpected_fp",
     )
-    totals = {
-        name: sum(int(page["scoring"]["counts"][name]) for page in pages) for name in names
-    }
+    totals = {name: sum(int(page["scoring"]["counts"][name]) for page in pages) for name in names}
     totals["pages"] = len(pages)
     totals["zero_expected_pages"] = sum(
         int(page["scoring"]["counts"]["expected"]) == 0 for page in pages
@@ -147,17 +145,10 @@ def _summary(pages: list[Mapping[str, Any]]) -> dict[str, Any]:
         for page in pages
         if int(page["scoring"]["counts"]["expected"]) == 0
     )
-    totals["precision"] = (
-        totals["matched_tp"] / totals["detected"] if totals["detected"] else 0.0
-    )
-    totals["recall"] = (
-        totals["matched_tp"] / totals["expected"] if totals["expected"] else 0.0
-    )
+    totals["precision"] = totals["matched_tp"] / totals["detected"] if totals["detected"] else 0.0
+    totals["recall"] = totals["matched_tp"] / totals["expected"] if totals["expected"] else 0.0
     totals["f1"] = (
-        2.0
-        * totals["precision"]
-        * totals["recall"]
-        / (totals["precision"] + totals["recall"])
+        2.0 * totals["precision"] * totals["recall"] / (totals["precision"] + totals["recall"])
         if totals["precision"] + totals["recall"]
         else 0.0
     )
@@ -234,16 +225,13 @@ def _compare_changed_page(
     return {
         "page_id": page_id,
         "rebased_expected": [
-            {"key": list(key), **_json_item(item)}
-            for key, item in sorted(expected_by_key.items())
+            {"key": list(key), **_json_item(item)} for key, item in sorted(expected_by_key.items())
         ],
         "accepted_issue264_output": [
-            {"key": list(key), **_json_item(item)}
-            for key, item in sorted(accepted_by_key.items())
+            {"key": list(key), **_json_item(item)} for key, item in sorted(accepted_by_key.items())
         ],
         "issue274_output": [
-            {"key": list(key), **_json_item(item)}
-            for key, item in sorted(issue274_by_key.items())
+            {"key": list(key), **_json_item(item)} for key, item in sorted(issue274_by_key.items())
         ],
         "differences": differences,
     }

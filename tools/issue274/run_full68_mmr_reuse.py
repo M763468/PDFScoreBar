@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Run one full-68 MMR batch from retained Issue #274 artifacts only.
 
-Repository/commit provenance is intentionally checked outside this runner so the
-same retained-artifact replay can be reused from different worktrees and commits.
-The historical direct-index fixture score emitted here is diagnostic only; final
-acceptance uses the geometry-rebased rescorer.
+Repository/commit provenance and cross-run attempt history are intentionally
+checked outside this runner so the same retained-artifact replay can be reused
+from different worktrees, commits, and validation sessions. The historical
+direct-index fixture score emitted here is diagnostic only; final acceptance
+uses the geometry-rebased rescorer.
 """
 
 from __future__ import annotations
@@ -122,19 +123,10 @@ def _retained_performance(path: Path) -> dict[str, Any]:
     }
 
 
-def _attempt_counts(attempt_label: str) -> dict[str, int | bool]:
-    return {
-        "initial_full68_attempts": 1,
-        "initial_attempt_completed": attempt_label != "recovery",
-        "recovery_full68_attempts": int(attempt_label == "recovery"),
-        "full68_mmr_invocations": 1 + int(attempt_label == "recovery"),
-    }
-
-
 def _write_failure_report(
     *,
     output_dir: Path,
-    attempt_label: str,
+    run_label: str,
     started: float,
     error: Exception,
     support_stats: dict[str, int],
@@ -154,7 +146,7 @@ def _write_failure_report(
         output_dir / "full68_failure.json",
         {
             "schema_version": "issue274.full68_mmr_reuse.failure.v2",
-            "attempt_label": attempt_label,
+            "run_label": run_label,
             "timestamp": dt.datetime.now().astimezone().isoformat(),
             "exception_type": type(error).__name__,
             "message": str(error),
@@ -218,7 +210,7 @@ def main() -> None:
     parser.add_argument("--model", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--preflight-only", action="store_true")
-    parser.add_argument("--attempt-label", choices=("initial", "recovery"), default="initial")
+    parser.add_argument("--run-label", default="full68")
     args = parser.parse_args()
     started = time.perf_counter()
     support_stats: dict[str, int] = {}
@@ -258,7 +250,7 @@ def main() -> None:
         ocr = MMROCREngine(ocr_engine=provider)
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
-        print(f"MMR batch start ({args.attempt_label})", flush=True)
+        print(f"MMR batch start ({args.run_label})", flush=True)
         actual = run_mmr_batch(
             pages_data=pages_data,
             image_paths=images,
@@ -321,7 +313,8 @@ def main() -> None:
                 "omr_dln_reexecuted": False,
                 "original_image_homr_execution": 0,
                 "second_numbering_rebuild": 0,
-                **_attempt_counts(args.attempt_label),
+                "full68_mmr_invocations_this_run": 1,
+                "run_label": args.run_label,
                 "numbering_base_source": str(args.retained_root / "intermediate"),
             },
             "preflight": {"pages": len(pages), "passed": True},
@@ -370,7 +363,7 @@ def main() -> None:
         args.output_dir.mkdir(parents=True, exist_ok=True)
         _write_failure_report(
             output_dir=args.output_dir,
-            attempt_label=args.attempt_label,
+            run_label=args.run_label,
             started=started,
             error=error,
             support_stats=support_stats,

@@ -23,6 +23,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from tools.issue274 import run_same_predictor_lifetime_equivalence as base  # noqa: E402
 
+_ORIGINAL_COMPARE_MASK_FILES = base._compare_mask_files  # noqa: SLF001
+
 
 def _binary_iou(left: np.ndarray, right: np.ndarray) -> float:
     left_binary = left > 0
@@ -45,7 +47,7 @@ def _compare_mask_files_shape_safe(left_path: Path, right_path: Path) -> dict[st
     right = base._load_mask(right_path)  # noqa: SLF001
 
     if left.shape == right.shape:
-        return base._compare_mask_files(left_path, right_path)  # noqa: SLF001
+        return _ORIGINAL_COMPARE_MASK_FILES(left_path, right_path)
 
     # Preserve all keys consumed by the existing gates and add diagnostics that
     # distinguish a coordinate-space/resize mismatch from a genuinely different

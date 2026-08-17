@@ -704,6 +704,11 @@ def main() -> int:
         if args.output_root.is_absolute()
         else (PROJECT_ROOT / args.output_root).resolve()
     )
+    if output_root.exists() and any(output_root.iterdir()):
+        raise SystemExit(
+            "Refusing to reuse a non-empty output root because HOMR cache files could "
+            f"invalidate the fresh-inference gate: {output_root}"
+        )
     output_root.mkdir(parents=True, exist_ok=True)
     report_path = output_root / "issue274_same_predictor_lifetime_equivalence.json"
 

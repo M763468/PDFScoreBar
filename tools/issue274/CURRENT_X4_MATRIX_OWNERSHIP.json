@@ -1,0 +1,39 @@
+{
+  "schema_version": "issue274.feature_ownership.v1",
+  "labels": {
+    "upstream_homr": "Implemented in the selected liebharc/homr revision.",
+    "pdfscore_upstream_orchestration": "PDFScoreBar orchestration/persistence/compatibility around upstream HOMR primitives or outputs.",
+    "pdfscore_extension": "Algorithm or policy introduced by PDFScoreBar rather than upstream HOMR."
+  },
+  "features": {
+    "autocrop_resize_color_adjust": "upstream_homr",
+    "segnet_extract": "upstream_homr",
+    "predict_symbols": "upstream_homr",
+    "break_wide_fragments": "upstream_homr",
+    "combine_noteheads_with_stems": "upstream_homr",
+    "detect_bar_lines": "upstream_homr",
+    "detect_staff": "upstream_homr",
+    "prepare_brace_dot_image": "upstream_homr",
+    "homr_prediction_npy_cache": "upstream_homr",
+    "pdfscore_outer_proxy_and_coordinate_mapping": "pdfscore_upstream_orchestration",
+    "pdfscore_segnet_session_cache": "pdfscore_upstream_orchestration",
+    "current_homr_worker_artifact_publication": "pdfscore_upstream_orchestration",
+    "connector_mask_capture_and_handoff": "pdfscore_upstream_orchestration",
+    "clefs_keys_mask_persistence_and_handoff": "pdfscore_upstream_orchestration",
+    "thin_barline_finder": "pdfscore_extension",
+    "thin_primary_replacement_policy": "pdfscore_extension",
+    "hybrid_consensus": "pdfscore_extension",
+    "directional_staff_slot_support": "pdfscore_extension",
+    "dense_probe": "pdfscore_extension",
+    "existing_box_suppression": "pdfscore_extension",
+    "one_box_one_band_suppression": "pdfscore_extension",
+    "candidate_filters": "pdfscore_extension",
+    "barline_cnn": "pdfscore_extension",
+    "mmr_support_mapping": "pdfscore_extension"
+  },
+  "notes": [
+    "The selected upstream HOMR revision is part of the producer contract; pinned and current preprocessing/model bundles are not equivalent.",
+    "A mask may contain upstream HOMR data while its stable filename, persistence, coordinate normalization, and downstream reuse contract are PDFScoreBar responsibilities.",
+    "Issue #274 must not describe dense suppression, thin-barline replacement, or hybrid consensus as upstream HOMR behavior."
+  ]
+}

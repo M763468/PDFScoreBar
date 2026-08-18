@@ -1,0 +1,36 @@
+{
+  "schema_version": "issue274.current_x4_consumer_matrix_plan.v1",
+  "producer_reexecution": {
+    "homr": false,
+    "sr": false,
+    "omr_dln": false,
+    "mmr": false
+  },
+  "consumer_reexecution": {
+    "hybrid_support": true,
+    "dense_probe": true,
+    "candidate_filters": true,
+    "barline_cnn": true
+  },
+  "focused_cases": [
+    ["Shostakovich-Sym5-Va", "page_013"],
+    ["Shostakovich-Sym5-Va", "page_015"],
+    ["Sibelius-Violin_Concerto-Viola", "page_004"],
+    ["Va_Prokofiev_Symphony1", "page_004"]
+  ],
+  "axes": {
+    "support": ["c_iou", "b_iou", "b_directional"],
+    "suppression": ["legacy", "best_band", "disabled_causal_upper_bound"],
+    "clef": ["retained_c", "none"]
+  },
+  "mandatory_replay_checks": [
+    "control_c_iou_legacy_retained_c_clef reproduces retained control focused metrics",
+    "b_iou_legacy_retained_c_clef reproduces retained B focused metrics"
+  ],
+  "selection_principles": [
+    "do not select by minimum focused error alone",
+    "prefer one-box/one-band topology semantics over globally disabling suppression",
+    "directional support thresholds are calibration values rather than empirical proof",
+    "a retained-C clef dependency means current clefs_keys must be persisted from the same B inference; it does not justify retaining C HOMR"
+  ]
+}

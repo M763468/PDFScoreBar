@@ -39,8 +39,7 @@ DEFAULT_AUDIT = Path(
     "issue274_evaluation2_gt_near_duplicate_audit.json"
 )
 DEFAULT_AB = Path(
-    "logs/issue274_homr_unification_analysis/stage_e_ab_01/"
-    "issue274_homr_x4_stage_e_ab.json"
+    "logs/issue274_homr_unification_analysis/stage_e_ab_01/issue274_homr_x4_stage_e_ab.json"
 )
 DEFAULT_CONTROL_ROOT = Path(
     "logs/verification/detector_full68/"
@@ -282,9 +281,7 @@ def raw_slot_greedy(predictions: Sequence[Box], gt: Sequence[Box]) -> dict[str, 
     }
 
 
-def event_adjacency(
-    predictions: Sequence[Box], events: Sequence[Event]
-) -> list[list[int]]:
+def event_adjacency(predictions: Sequence[Box], events: Sequence[Event]) -> list[list[int]]:
     return [
         [
             event_index
@@ -399,10 +396,7 @@ def build_events(
 
 
 def metrics_delta(candidate: Mapping[str, Any], control: Mapping[str, Any]) -> dict[str, int]:
-    return {
-        key: int(candidate.get(key, 0)) - int(control.get(key, 0))
-        for key in ("tp", "fn")
-    }
+    return {key: int(candidate.get(key, 0)) - int(control.get(key, 0)) for key in ("tp", "fn")}
 
 
 def page_stage_payload(
@@ -485,10 +479,7 @@ def main() -> int:
     if len(ab_pages) != 68:
         raise RuntimeError(f"Expected 68 A/B pages, got {len(ab_pages)}")
 
-    audit_pages = {
-        (str(row["score"]), str(row["page"])): row
-        for row in audit.get("pages", [])
-    }
+    audit_pages = {(str(row["score"]), str(row["page"])): row for row in audit.get("pages", [])}
     if len(audit_pages) != 68:
         raise RuntimeError(f"Expected 68 audit pages, got {len(audit_pages)}")
 
@@ -525,8 +516,7 @@ def main() -> int:
         gt = load_gt(gt_path)
         if len(gt) != int(audit_page["sorted_count"]):
             raise RuntimeError(
-                f"GT count mismatch for {score}/{page}: "
-                f"{len(gt)} vs {audit_page['sorted_count']}"
+                f"GT count mismatch for {score}/{page}: {len(gt)} vs {audit_page['sorted_count']}"
             )
         events, p1_rows = build_events(gt, p1_pairs, score=score, page=page)
 
@@ -547,14 +537,10 @@ def main() -> int:
             for stage in STAGES:
                 path = to_workspace(paths[stage], workspace)
                 if not path.is_file():
-                    raise FileNotFoundError(
-                        f"Missing retained {variant}/{stage}: {path}"
-                    )
+                    raise FileNotFoundError(f"Missing retained {variant}/{stage}: {path}")
                 scored_count = None
                 if stage == "scored":
-                    predictions, scored_count = load_scored_boxes(
-                        path, args.score_threshold
-                    )
+                    predictions, scored_count = load_scored_boxes(path, args.score_threshold)
                 else:
                     predictions = load_boxes(path)
                 stage_rows[stage] = page_stage_payload(
@@ -603,8 +589,7 @@ def main() -> int:
 
     if grouped_pair_total != p1_total:
         raise RuntimeError(
-            f"P1 grouped pair count mismatch: "
-            f"grouped={grouped_pair_total}, audit={p1_total}"
+            f"P1 grouped pair count mismatch: grouped={grouped_pair_total}, audit={p1_total}"
         )
 
     aggregate: dict[str, Any] = {}
@@ -675,12 +660,8 @@ def main() -> int:
         {
             "score": page["score"],
             "page": page["page"],
-            "physical_event_maximum": page["accepted_deltas"][
-                "physical_event_maximum"
-            ],
-            "singleton_event_independent": page["accepted_deltas"][
-                "singleton_event_independent"
-            ],
+            "physical_event_maximum": page["accepted_deltas"]["physical_event_maximum"],
+            "singleton_event_independent": page["accepted_deltas"]["singleton_event_independent"],
             "p1_pair_count": page["p1_pair_count"],
         }
         for page in page_rows
@@ -696,8 +677,7 @@ def main() -> int:
             "raw_gt_count": sum(int(page["raw_gt_count"]) for page in page_rows),
             "p1_pair_count": grouped_pair_total,
             "physical_event_count_under_p1_hypothesis": sum(
-                int(page["physical_event_count_under_p1_hypothesis"])
-                for page in page_rows
+                int(page["physical_event_count_under_p1_hypothesis"]) for page in page_rows
             ),
             "homr_reexecuted": False,
             "sr_reexecuted": False,
@@ -769,9 +749,7 @@ def main() -> int:
             {
                 "raw_gt_count": result["scope"]["raw_gt_count"],
                 "p1_pair_count": grouped_pair_total,
-                "physical_event_count": result["scope"][
-                    "physical_event_count_under_p1_hypothesis"
-                ],
+                "physical_event_count": result["scope"]["physical_event_count_under_p1_hypothesis"],
                 "control_physical": physical_control,
                 "candidate_physical": physical_candidate,
                 "control_singleton": singleton_control,

@@ -6,6 +6,7 @@ writing its JSON report because `write_json` was accidentally omitted.  Keep the
 original experiment intact and inject the missing writer here so the retained
 forensic record remains reproducible without changing the rendering logic.
 """
+
 from __future__ import annotations
 
 import json

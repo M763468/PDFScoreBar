@@ -34,7 +34,7 @@ import argparse
 import json
 from collections import Counter
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Mapping, Sequence
 
 import cv2
 import numpy as np
@@ -49,8 +49,7 @@ from tools.issue274.analyze_stage_e_first_pass_context_causality import (
 )
 
 AB_DEFAULT = Path(
-    "logs/issue274_homr_unification_analysis/stage_e_ab_01/"
-    "issue274_homr_x4_stage_e_ab.json"
+    "logs/issue274_homr_unification_analysis/stage_e_ab_01/issue274_homr_x4_stage_e_ab.json"
 )
 CAUSAL_DEFAULT = Path(
     "logs/issue274_homr_unification_analysis/stage_e_first_pass_causality_01/"
@@ -306,10 +305,7 @@ def static_full68_suppression_sweep(
             "thresholds": threshold_rows,
         }
 
-    aggregate = [
-        {"threshold": threshold, **dict(totals[threshold])}
-        for threshold in thresholds
-    ]
+    aggregate = [{"threshold": threshold, **dict(totals[threshold])} for threshold in thresholds]
     return aggregate, page_details
 
 
@@ -322,7 +318,10 @@ def find_thin_page(report: Mapping[str, Any], score: str, page: str) -> Mapping[
 
 def thin_primary_preservation_summary(thin_path: Path | None) -> dict[str, Any]:
     if thin_path is None or not thin_path.is_file():
-        return {"status": "missing_thin_report", "path": None if thin_path is None else str(thin_path)}
+        return {
+            "status": "missing_thin_report",
+            "path": None if thin_path is None else str(thin_path),
+        }
     report = load_json(thin_path)
     row = find_thin_page(report, "Shostakovich-Sym5-Va", "page_015")
     if row is None:

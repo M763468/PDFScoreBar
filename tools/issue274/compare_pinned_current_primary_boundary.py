@@ -15,6 +15,7 @@ The pinned cell uses the exact stage_e_verified runtime contract:
 
 The current cell uses /opt/venv_pipeline/bin/python and the current workspace source.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -28,20 +29,14 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import cv2
-import numpy as np
-
 from tools.issue274 import capture_primary_homr_stage_boundary as base
 
 ROOT = Path(__file__).resolve().parents[2]
 PROFILE_PATH = ROOT / "configs/detector_profiles/stage_e_verified_homr.json"
 AB_DEFAULT = Path(
-    "logs/issue274_homr_unification_analysis/stage_e_ab_01/"
-    "issue274_homr_x4_stage_e_ab.json"
+    "logs/issue274_homr_unification_analysis/stage_e_ab_01/issue274_homr_x4_stage_e_ab.json"
 )
-OUT_DEFAULT = Path(
-    "logs/issue274_homr_unification_analysis/pinned_current_primary_boundary_01"
-)
+OUT_DEFAULT = Path("logs/issue274_homr_unification_analysis/pinned_current_primary_boundary_01")
 DEFAULT_CASES = (
     ("Shostakovich-Sym5-Va", "page_013"),
     ("Sibelius-Violin_Concerto-Viola", "page_004"),
@@ -104,9 +99,7 @@ def _runtime_markers() -> dict[str, Any]:
         Path("/opt/pdfscore_stage_e_profile_commit.txt"),
     )
     return {
-        str(path): (
-            path.read_text(encoding="utf-8").strip() if path.is_file() else None
-        )
+        str(path): (path.read_text(encoding="utf-8").strip() if path.is_file() else None)
         for path in candidates
     }
 
@@ -188,7 +181,7 @@ def _profile_environment(profile: dict[str, Any]) -> tuple[str, dict[str, str]]:
     entries = [
         str(runtime["homr_source"]),
         str(runtime["pdfscore_source"]),
-        f'{runtime["pdfscore_source"]}/src',
+        f"{runtime['pdfscore_source']}/src",
         str(ROOT),
     ]
     env = os.environ.copy()
@@ -253,12 +246,8 @@ def _run_child(
             text=True,
         )
     if process.returncode:
-        tail = "\n".join(
-            log.read_text(encoding="utf-8", errors="replace").splitlines()[-80:]
-        )
-        raise RuntimeError(
-            f"{runtime} primary cell failed ({process.returncode})\n{tail}"
-        )
+        tail = "\n".join(log.read_text(encoding="utf-8", errors="replace").splitlines()[-80:])
+        raise RuntimeError(f"{runtime} primary cell failed ({process.returncode})\n{tail}")
     return _load_json(output / "cell_report.json")
 
 
@@ -268,15 +257,9 @@ def _validate_profile(profile: dict[str, Any]) -> dict[str, Any]:
     expected_pdfscore = profile["pdfscore_evaluator"]["commit"]
     homr_marker = Path(str(runtime["homr_commit_marker"]))
     pdfscore_marker = Path(str(runtime["pdfscore_commit_marker"]))
-    actual_homr = (
-        homr_marker.read_text(encoding="utf-8").strip()
-        if homr_marker.is_file()
-        else None
-    )
+    actual_homr = homr_marker.read_text(encoding="utf-8").strip() if homr_marker.is_file() else None
     actual_pdfscore = (
-        pdfscore_marker.read_text(encoding="utf-8").strip()
-        if pdfscore_marker.is_file()
-        else None
+        pdfscore_marker.read_text(encoding="utf-8").strip() if pdfscore_marker.is_file() else None
     )
     return {
         "name": profile.get("name"),
@@ -321,8 +304,7 @@ def run_master(args: argparse.Namespace) -> int:
             }
         if not all(item["exact"] for item in retained.values()):
             raise RuntimeError(
-                f"Generated proxy differs from retained B/C proxy for {score}/{page}: "
-                f"{retained}"
+                f"Generated proxy differs from retained B/C proxy for {score}/{page}: {retained}"
             )
 
         current = _run_child(
@@ -359,9 +341,7 @@ def run_master(args: argparse.Namespace) -> int:
             }
         )
 
-    divergent = [
-        case for case in case_reports if not case["comparison"]["all_exact"]
-    ]
+    divergent = [case for case in case_reports if not case["comparison"]["all_exact"]]
     first_stages = [
         case["comparison"]["first_divergence"]["stage"]
         for case in divergent

@@ -231,7 +231,9 @@ class VerifiedProfileHybridDetector:
         if payload.get("homr_neural_inference_count") != 2:
             raise ValueError("Verified source-page worker must execute exactly two HOMR inferences")
         if payload.get("x4_homr_neural_inference_count") != 1:
-            raise ValueError("Verified source-page worker must execute exactly one x4 HOMR inference")
+            raise ValueError(
+                "Verified source-page worker must execute exactly one x4 HOMR inference"
+            )
         return dict(payload), command
 
     def _generate_page_sources(

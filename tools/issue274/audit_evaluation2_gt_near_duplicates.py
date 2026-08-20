@@ -28,7 +28,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-from collections import Counter, defaultdict
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
@@ -130,9 +130,7 @@ def parse_records(path: Path) -> list[Record]:
                 bbox=normalize_bbox(value),
                 barline_type=str(item.get("barline_type") or item.get("type") or "barline"),
                 measure_number=(
-                    int(measure_number)
-                    if isinstance(measure_number, (int, float))
-                    else None
+                    int(measure_number) if isinstance(measure_number, (int, float)) else None
                 ),
             )
         )
@@ -182,7 +180,9 @@ def pair_metrics(a: Record, b: Record) -> dict[str, Any]:
     }
 
 
-def classify_pair(a: Record, b: Record, metrics: dict[str, Any]) -> tuple[str | None, str | None, list[str]]:
+def classify_pair(
+    a: Record, b: Record, metrics: dict[str, Any]
+) -> tuple[str | None, str | None, list[str]]:
     types = {a.barline_type, b.barline_type}
     both_plain = a.barline_type == "barline" and b.barline_type == "barline"
     declared_multi = bool(types & DECLARED_MULTI_TYPES)
@@ -191,10 +191,7 @@ def classify_pair(a: Record, b: Record, metrics: dict[str, Any]) -> tuple[str | 
     y_overlap = float(metrics["y_overlap_over_min_height"])
     x_center_delta = float(metrics["x_center_delta"])
 
-    gui_dedup = (
-        x_center_delta <= GUI_DEDUP_X_CENTER_TOL
-        and y_overlap >= GUI_DEDUP_Y_OVERLAP_MIN
-    )
+    gui_dedup = x_center_delta <= GUI_DEDUP_X_CENTER_TOL and y_overlap >= GUI_DEDUP_Y_OVERLAP_MIN
     reasons: list[str] = []
 
     if exact:
@@ -321,9 +318,19 @@ def main() -> int:
     parser.add_argument("--crop-padding", type=int, default=100)
     args = parser.parse_args()
 
-    annotation_root = (ROOT / args.annotations).resolve() if not args.annotations.is_absolute() else args.annotations.resolve()
-    image_root = (ROOT / args.images).resolve() if not args.images.is_absolute() else args.images.resolve()
-    output_root = (ROOT / args.output_root).resolve() if not args.output_root.is_absolute() else args.output_root.resolve()
+    annotation_root = (
+        (ROOT / args.annotations).resolve()
+        if not args.annotations.is_absolute()
+        else args.annotations.resolve()
+    )
+    image_root = (
+        (ROOT / args.images).resolve() if not args.images.is_absolute() else args.images.resolve()
+    )
+    output_root = (
+        (ROOT / args.output_root).resolve()
+        if not args.output_root.is_absolute()
+        else args.output_root.resolve()
+    )
     output_root.mkdir(parents=True, exist_ok=True)
 
     page_reports: list[dict[str, Any]] = []
@@ -404,8 +411,7 @@ def main() -> int:
                     "metrics": metrics,
                     "matches_existing_gui_auto_dedup": (
                         float(metrics["x_center_delta"]) <= GUI_DEDUP_X_CENTER_TOL
-                        and float(metrics["y_overlap_over_min_height"])
-                        >= GUI_DEDUP_Y_OVERLAP_MIN
+                        and float(metrics["y_overlap_over_min_height"]) >= GUI_DEDUP_Y_OVERLAP_MIN
                     ),
                     "within_measure_numberer_x1_dedup_threshold": (
                         float(metrics["x1_delta"]) < NUMBERER_X1_DEDUP_TOL

@@ -58,10 +58,7 @@ DEFAULT_GLOBAL_PAGES: tuple[str, ...] = (
     "page_013",  # prior topology-divergence case
 )
 
-DEFAULT_AB_GLOB = (
-    "logs/issue274_homr_unification_analysis/**/"
-    "issue274_homr_x4_stage_e_ab.json"
-)
+DEFAULT_AB_GLOB = "logs/issue274_homr_unification_analysis/**/issue274_homr_x4_stage_e_ab.json"
 
 
 def _json_load(path: Path) -> Any:
@@ -220,7 +217,9 @@ def _counter_examples(counter: Counter[Box], limit: int = 20) -> list[list[int]]
     return result
 
 
-def _tolerant_box_match(left: Sequence[Box], right: Sequence[Box], tolerance_px: int) -> dict[str, Any]:
+def _tolerant_box_match(
+    left: Sequence[Box], right: Sequence[Box], tolerance_px: int
+) -> dict[str, Any]:
     pairs: list[tuple[int, int, int, int]] = []
     for li, lhs in enumerate(left):
         for ri, rhs in enumerate(right):
@@ -468,6 +467,7 @@ def _save_source_predictions(
 
 def _build_shared_predictor(det_cfg: Mapping[str, Any]) -> tuple[Any, Any, dict[str, Any]]:
     import torch
+
     import homr
     import homr.main as homr_main
     from homr.music_xml_generator import XmlGeneratorArguments
@@ -592,20 +592,17 @@ def _compare_artifact_triplet(
 
 def _geometry_gate(compare: Mapping[str, Any]) -> bool:
     return bool(
-        compare["detections"]["exact_geometry_equal"]
-        and compare["staff_mask"]["binary_exact"]
+        compare["detections"]["exact_geometry_equal"] and compare["staff_mask"]["binary_exact"]
     )
 
 
 def _full_support_gate(compare: Mapping[str, Any]) -> bool:
-    return bool(
-        _geometry_gate(compare)
-        and compare["notehead_mask"]["binary_exact"]
-    )
+    return bool(_geometry_gate(compare) and compare["notehead_mask"]["binary_exact"])
 
 
 def _runtime_provenance() -> dict[str, Any]:
     import torch
+
     import homr
     import homr.main as homr_main
     from src.homr_eval_scripts.core import predictor as homr_predictor
@@ -622,14 +619,11 @@ def _runtime_provenance() -> dict[str, Any]:
             "numpy": np.__version__,
             "opencv": cv2.__version__,
             "torch": torch.__version__,
-            "onnxruntime": _package_version("onnxruntime-gpu")
-            or _package_version("onnxruntime"),
+            "onnxruntime": _package_version("onnxruntime-gpu") or _package_version("onnxruntime"),
             "homr": _package_version("homr"),
         },
         "cuda_available": bool(torch.cuda.is_available()),
-        "cuda_device": (
-            torch.cuda.get_device_name(0) if torch.cuda.is_available() else None
-        ),
+        "cuda_device": (torch.cuda.get_device_name(0) if torch.cuda.is_available() else None),
         "py_path": os.environ.get("PYTHONPATH"),
         "modules_before_shared_compat": {
             "homr": _module_fingerprint(homr),
@@ -645,9 +639,7 @@ def _canonical_case(global_page: str) -> tuple[str, str, str]:
     except ValueError as error:
         raise ValueError(f"Invalid canonical page label: {global_page}") from error
     flattened = [
-        (score, local_page)
-        for score, local_pages in SCORES.items()
-        for local_page in local_pages
+        (score, local_page) for score, local_pages in SCORES.items() for local_page in local_pages
     ]
     if index < 1 or index > len(flattened):
         raise ValueError(
@@ -686,10 +678,7 @@ def main() -> int:
     parser.add_argument(
         "--output-root",
         type=Path,
-        default=Path(
-            "logs/issue274_homr_unification_analysis/"
-            "same_predictor_lifetime_01"
-        ),
+        default=Path("logs/issue274_homr_unification_analysis/same_predictor_lifetime_01"),
     )
     parser.add_argument(
         "--case",
@@ -865,9 +854,7 @@ def main() -> int:
                 shared_x4_paths,
             )
 
-            same_shared_object = (
-                shared_id_before == shared_id_after_original == shared_id_after_x4
-            )
+            same_shared_object = shared_id_before == shared_id_after_original == shared_id_after_x4
             page_result = {
                 "canonical_page": global_page,
                 "score": score,
@@ -885,8 +872,7 @@ def main() -> int:
                     "baseline_working_image": baseline_working_meta,
                     "shared_working_image": shared_working_meta,
                     "baseline_vs_shared_working_pixel_exact": (
-                        baseline_working_meta["pixel_sha256"]
-                        == shared_working_meta["pixel_sha256"]
+                        baseline_working_meta["pixel_sha256"] == shared_working_meta["pixel_sha256"]
                     ),
                 },
                 "shared_predictor_lifetime": {
@@ -916,8 +902,7 @@ def main() -> int:
                 "gates": {
                     "same_shared_predictor_object": same_shared_object,
                     "working_original_pixels_exact": (
-                        baseline_working_meta["pixel_sha256"]
-                        == shared_working_meta["pixel_sha256"]
+                        baseline_working_meta["pixel_sha256"] == shared_working_meta["pixel_sha256"]
                     ),
                     "original_geometry_equivalent": _geometry_gate(original_comparison),
                     "original_full_support_exact": _full_support_gate(original_comparison),

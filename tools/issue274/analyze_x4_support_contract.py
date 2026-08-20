@@ -188,8 +188,7 @@ def same_x_disjoint_slot_hazards(
     xdist_unit_ratio: float,
 ) -> list[dict[str, Any]]:
     signatures = [
-        slot_signature(box, bands, coverage_threshold=slot_coverage_threshold)
-        for box in boxes
+        slot_signature(box, bands, coverage_threshold=slot_coverage_threshold) for box in boxes
     ]
     hazards: list[dict[str, Any]] = []
     for i in range(len(boxes)):
@@ -198,9 +197,7 @@ def same_x_disjoint_slot_hazards(
         for j in range(i + 1, len(boxes)):
             if not signatures[j]:
                 continue
-            xdist_units = abs(centre_x(boxes[i]) - centre_x(boxes[j])) / max(
-                unit_size, 1e-9
-            )
+            xdist_units = abs(centre_x(boxes[i]) - centre_x(boxes[j])) / max(unit_size, 1e-9)
             if xdist_units > xdist_unit_ratio:
                 continue
             if set(signatures[i]).isdisjoint(signatures[j]):
@@ -244,8 +241,7 @@ def main() -> int:
         "--ab-report",
         type=Path,
         default=Path(
-            "logs/issue274_homr_unification_analysis/stage_e_ab_01/"
-            "issue274_homr_x4_stage_e_ab.json"
+            "logs/issue274_homr_unification_analysis/stage_e_ab_01/issue274_homr_x4_stage_e_ab.json"
         ),
     )
     parser.add_argument(
@@ -287,9 +283,7 @@ def main() -> int:
     if len(page_records) != 68:
         raise RuntimeError(f"Expected 68 retained A/B/C pages, got {len(page_records)}")
 
-    critical = residual_critical_boxes(
-        residual_path if residual_path.is_file() else None
-    )
+    critical = residual_critical_boxes(residual_path if residual_path.is_file() else None)
     pages: list[dict[str, Any]] = []
 
     for record in page_records:
@@ -300,15 +294,9 @@ def main() -> int:
         c_path = to_workspace(record["c_pinned_x4_path"], workspace)
         omr_path = to_workspace(record["omr_path"], workspace)
 
-        missing = [
-            str(path)
-            for path in (a_path, b_path, c_path, omr_path)
-            if not path.is_file()
-        ]
+        missing = [str(path) for path in (a_path, b_path, c_path, omr_path) if not path.is_file()]
         if missing:
-            raise FileNotFoundError(
-                f"Missing retained artifacts for {score}/{page}: {missing}"
-            )
+            raise FileNotFoundError(f"Missing retained artifacts for {score}/{page}: {missing}")
 
         a_boxes = list(load_json_boxes(a_path))
         b_boxes = list(load_json_boxes(b_path))
@@ -332,15 +320,9 @@ def main() -> int:
     current_counts = Counter()
     for item in pages:
         for baseline in item["a"]:
-            b_support = has_iou_support(
-                baseline, item["b"], args.current_iou_threshold
-            )
-            c_support = has_iou_support(
-                baseline, item["c"], args.current_iou_threshold
-            )
-            omr_support = has_iou_support(
-                baseline, item["omr"], args.current_iou_threshold
-            )
+            b_support = has_iou_support(baseline, item["b"], args.current_iou_threshold)
+            c_support = has_iou_support(baseline, item["c"], args.current_iou_threshold)
+            omr_support = has_iou_support(baseline, item["omr"], args.current_iou_threshold)
             current_counts["baseline_total"] += 1
             current_counts["b_supported"] += int(b_support)
             current_counts["c_supported"] += int(c_support)
@@ -380,9 +362,7 @@ def main() -> int:
                         slot_coverage_threshold=gamma,
                         fallback_vertical_coverage=args.fallback_vertical_coverage,
                     )
-                    omr_support = has_iou_support(
-                        baseline, item["omr"], args.current_iou_threshold
-                    )
+                    omr_support = has_iou_support(baseline, item["omr"], args.current_iou_threshold)
 
                     if b_support:
                         b_set.add(index)
@@ -490,9 +470,7 @@ def main() -> int:
         "grid_signature": {
             f"alpha={cell['alpha_xdist_unit_ratio']:.3f},gamma={cell['gamma_slot_coverage']:.3f}": {
                 "producer_disagreement": cell["summary"].get("producer_disagreement", 0),
-                "combined_keep_disagreement": cell["summary"].get(
-                    "combined_keep_disagreement", 0
-                ),
+                "combined_keep_disagreement": cell["summary"].get("combined_keep_disagreement", 0),
                 "same_x_disjoint_slot_hazard_pairs": cell["summary"].get(
                     "same_x_disjoint_slot_hazard_pairs", 0
                 ),

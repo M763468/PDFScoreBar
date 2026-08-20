@@ -271,8 +271,7 @@ def main() -> int:
         "--ab-report",
         type=Path,
         default=Path(
-            "logs/issue274_homr_unification_analysis/stage_e_ab_01/"
-            "issue274_homr_x4_stage_e_ab.json"
+            "logs/issue274_homr_unification_analysis/stage_e_ab_01/issue274_homr_x4_stage_e_ab.json"
         ),
     )
     parser.add_argument(
@@ -286,9 +285,7 @@ def main() -> int:
     parser.add_argument(
         "--output-root",
         type=Path,
-        default=Path(
-            "logs/issue274_homr_unification_analysis/thin_policy_replay_01"
-        ),
+        default=Path("logs/issue274_homr_unification_analysis/thin_policy_replay_01"),
     )
     parser.add_argument("--workspace", type=Path, default=Path("/workspace"))
     parser.add_argument("--case", action="append", default=None)
@@ -306,9 +303,7 @@ def main() -> int:
     cases = list(args.case or DEFAULT_CASES)
     ab = load_json(ab_path)
     selected = select_records(ab, cases)
-    critical = residual_critical_boxes(
-        residual_path if residual_path.is_file() else None
-    )
+    critical = residual_critical_boxes(residual_path if residual_path.is_file() else None)
 
     requests = []
     for row in selected:
@@ -338,12 +333,10 @@ def main() -> int:
         base_boxes = [norm_box(box) for box in existing_boxes]
         legacy_cfg = legacy_thin_config(args.sr_scale)
         legacy_extra = [
-            norm_box(box)
-            for box in original_finder(image_path, base_boxes, config=legacy_cfg)
+            norm_box(box) for box in original_finder(image_path, base_boxes, config=legacy_cfg)
         ]
         current_extra = [
-            norm_box(box)
-            for box in original_finder(image_path, base_boxes, config=config)
+            norm_box(box) for box in original_finder(image_path, base_boxes, config=config)
         ]
         active_capture.clear()
         active_capture.update(
@@ -452,19 +445,14 @@ def main() -> int:
 
             retained_b = [
                 norm_box(box)
-                for box in load_json_boxes(
-                    to_workspace(row["b_current_x4_path"], workspace)
-                )
+                for box in load_json_boxes(to_workspace(row["b_current_x4_path"], workspace))
             ]
             retained_c = [
                 norm_box(box)
-                for box in load_json_boxes(
-                    to_workspace(row["c_pinned_x4_path"], workspace)
-                )
+                for box in load_json_boxes(to_workspace(row["c_pinned_x4_path"], workspace))
             ]
             a_boxes = [
-                norm_box(box)
-                for box in load_json_boxes(to_workspace(row["a_path"], workspace))
+                norm_box(box) for box in load_json_boxes(to_workspace(row["a_path"], workspace))
             ]
             bands, unit_size, slot_source = phase_a_slots(a_boxes)
 
@@ -524,12 +512,8 @@ def main() -> int:
                     "predictor_current_vs_retained_b": multiset_compare(
                         actual_current_source, retained_b
                     ),
-                    "legacy_policy_vs_retained_c": multiset_compare(
-                        legacy_source, retained_c
-                    ),
-                    "legacy_policy_vs_retained_b": multiset_compare(
-                        legacy_source, retained_b
-                    ),
+                    "legacy_policy_vs_retained_c": multiset_compare(legacy_source, retained_c),
+                    "legacy_policy_vs_retained_b": multiset_compare(legacy_source, retained_b),
                     "current_policy_vs_retained_c": multiset_compare(
                         replay_current_source, retained_c
                     ),
@@ -598,15 +582,15 @@ def main() -> int:
                         "pre_thin": row["pre_thin_count"],
                         "legacy_extra": row["legacy_extra_count"],
                         "current_extra": row["current_extra_count"],
-                        "current_replay_exact": row["checks"][
-                            "current_replay_vs_predictor"
-                        ]["exact_equal"],
-                        "current_vs_b_exact": row["checks"][
-                            "predictor_current_vs_retained_b"
-                        ]["exact_equal"],
-                        "legacy_vs_c_exact": row["checks"][
-                            "legacy_policy_vs_retained_c"
-                        ]["exact_equal"],
+                        "current_replay_exact": row["checks"]["current_replay_vs_predictor"][
+                            "exact_equal"
+                        ],
+                        "current_vs_b_exact": row["checks"]["predictor_current_vs_retained_b"][
+                            "exact_equal"
+                        ],
+                        "legacy_vs_c_exact": row["checks"]["legacy_policy_vs_retained_c"][
+                            "exact_equal"
+                        ],
                     }
                     for row in page_results
                 ],

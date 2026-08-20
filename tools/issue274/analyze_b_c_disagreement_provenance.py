@@ -53,7 +53,9 @@ def load_b_records(path: Path) -> list[dict[str, Any]]:
     return result
 
 
-def iou_supporters(query: Box, rows: list[dict[str, Any]], threshold: float) -> list[dict[str, Any]]:
+def iou_supporters(
+    query: Box, rows: list[dict[str, Any]], threshold: float
+) -> list[dict[str, Any]]:
     return [row for row in rows if barline_iou(query, row["box"]) > threshold]
 
 
@@ -67,8 +69,7 @@ def main() -> int:
         "--ab-report",
         type=Path,
         default=Path(
-            "logs/issue274_homr_unification_analysis/stage_e_ab_01/"
-            "issue274_homr_x4_stage_e_ab.json"
+            "logs/issue274_homr_unification_analysis/stage_e_ab_01/issue274_homr_x4_stage_e_ab.json"
         ),
     )
     parser.add_argument(
@@ -297,7 +298,9 @@ def main() -> int:
         },
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    output_path.write_text(
+        json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     print(
         json.dumps(
             {

@@ -141,11 +141,7 @@ def stage_paths(root: Path, score: str, page: str) -> dict[str, Path]:
             / "pipeline2_no_peak_candidates.json"
         ),
         "filtered_first_pass": (
-            root
-            / "probe_candidates_filtered"
-            / score
-            / page
-            / "pipeline2_no_peak_candidates.json"
+            root / "probe_candidates_filtered" / score / page / "pipeline2_no_peak_candidates.json"
         ),
         "final_pre_cnn": final_dir / "pipeline2_no_peak_candidates.json",
         "scored": final_dir / "pipeline2_no_peak_scored.json",
@@ -255,9 +251,7 @@ def adjacency(predictions: Sequence[Box], gt: Sequence[Box]) -> list[list[int]]:
     ]
 
 
-def maximum_matching(
-    pred_to_gt: Sequence[Sequence[int]], gt_count: int
-) -> tuple[int, list[int]]:
+def maximum_matching(pred_to_gt: Sequence[Sequence[int]], gt_count: int) -> tuple[int, list[int]]:
     gt_owner = [-1] * gt_count
 
     def augment(pred_index: int, seen: set[int]) -> bool:
@@ -308,22 +302,15 @@ def component_for_target(
     component_preds = sorted(seen_pred)
     component_gts = sorted(seen_gt)
     local_gt_map = {
-        global_index: local_index
-        for local_index, global_index in enumerate(component_gts)
+        global_index: local_index for local_index, global_index in enumerate(component_gts)
     }
     local_adj = [
-        [
-            local_gt_map[gt_index]
-            for gt_index in pred_to_gt[pred_index]
-            if gt_index in local_gt_map
-        ]
+        [local_gt_map[gt_index] for gt_index in pred_to_gt[pred_index] if gt_index in local_gt_map]
         for pred_index in component_preds
     ]
     matched, gt_owner = maximum_matching(local_adj, len(component_gts))
     unmatched_global = [
-        component_gts[local_index]
-        for local_index, owner in enumerate(gt_owner)
-        if owner == -1
+        component_gts[local_index] for local_index, owner in enumerate(gt_owner) if owner == -1
     ]
     prediction_rows = []
     for pred_index in component_preds:
@@ -347,16 +334,12 @@ def component_for_target(
         "maximum_cardinality": matched,
         "capacity_deficit": len(component_gts) - matched,
         "unmatched_gt_indices_in_one_maximum_matching": unmatched_global,
-        "ambiguous_prediction_count": sum(
-            1 for row in prediction_rows if row["degree"] > 1
-        ),
+        "ambiguous_prediction_count": sum(1 for row in prediction_rows if row["degree"] > 1),
         "predictions": prediction_rows,
     }
 
 
-def stage_payload(
-    path: Path, gt: list[Box], target_index: int, threshold: float
-) -> dict[str, Any]:
+def stage_payload(path: Path, gt: list[Box], target_index: int, threshold: float) -> dict[str, Any]:
     if not path.is_file():
         return {"path": str(path), "exists": False}
     if path.name == "pipeline2_no_peak_scored.json":
@@ -394,13 +377,9 @@ def first_capacity_divergence(
         bcomp = b.get("target_component") if isinstance(b, Mapping) else None
         if not isinstance(ccomp, Mapping) or not isinstance(bcomp, Mapping):
             continue
-        if int(bcomp.get("capacity_deficit", 0)) > int(
-            ccomp.get("capacity_deficit", 0)
-        ):
+        if int(bcomp.get("capacity_deficit", 0)) > int(ccomp.get("capacity_deficit", 0)):
             return stage
-        if int(bcomp.get("maximum_cardinality", 0)) < int(
-            ccomp.get("maximum_cardinality", 0)
-        ):
+        if int(bcomp.get("maximum_cardinality", 0)) < int(ccomp.get("maximum_cardinality", 0)):
             return stage
     return None
 
@@ -459,14 +438,10 @@ def main() -> int:
             for name in ("control", "candidate"):
                 paths = stage_paths(roots[name], score, page)
                 variants[name] = {
-                    stage: stage_payload(
-                        path, gt, target_index, args.score_threshold
-                    )
+                    stage: stage_payload(path, gt, target_index, args.score_threshold)
                     for stage, path in paths.items()
                 }
-            first = first_capacity_divergence(
-                variants["control"], variants["candidate"]
-            )
+            first = first_capacity_divergence(variants["control"], variants["candidate"])
             key = first or "none"
             first_divergences[key] = first_divergences.get(key, 0) + 1
             targets.append(

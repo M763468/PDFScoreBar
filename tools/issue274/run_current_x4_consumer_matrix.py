@@ -18,24 +18,24 @@ The disabled-suppression cells are causal upper bounds, not production proposals
 The one-box/one-band implementation is experiment-local: production source is not
 patched by this tool.
 """
+
 from __future__ import annotations
 
 import argparse
 import csv
 import inspect
 import json
-import shutil
 import textwrap
 from collections import Counter
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Mapping, Sequence
 
 import cv2
 import numpy as np
 import torch
 import yaml
 
-from src.common import Box, barline_iou
+from src.common import Box
 from src.common.barline_evaluation import greedy_barline_match, is_barline_match
 from src.pipeline.detection.config import get_cnn_apply_nms, get_probe_kwargs
 from src.pipeline.probe_detector import detect_probe_scan as production_detect_probe_scan
@@ -46,9 +46,9 @@ from src.pipeline.steps.candidate_filters import (
     trim_box_to_ink,
 )
 from src.pipeline.steps.cnn_scoring import (
-    GPUNormalize,
     MEAN,
     STD,
+    GPUNormalize,
     _load_model,
     _resolve_model_path,
     _score_directory,
@@ -72,17 +72,14 @@ from tools.issue274.analyze_x4_support_contract import (
 
 ROOT = Path(__file__).resolve().parents[2]
 AB_DEFAULT = Path(
-    "logs/issue274_homr_unification_analysis/stage_e_ab_01/"
-    "issue274_homr_x4_stage_e_ab.json"
+    "logs/issue274_homr_unification_analysis/stage_e_ab_01/issue274_homr_x4_stage_e_ab.json"
 )
 RESIDUAL_DEFAULT = Path(
     "logs/issue274_homr_unification_analysis/stage_e_ab_01/"
     "residual_trace_01/issue274_homr_x4_stage_e_residual_trace.json"
 )
 CONFIG_DEFAULT = Path("configs/dense_full_pipeline.yaml")
-OUT_DEFAULT = Path(
-    "logs/issue274_homr_unification_analysis/current_x4_consumer_matrix_01"
-)
+OUT_DEFAULT = Path("logs/issue274_homr_unification_analysis/current_x4_consumer_matrix_01")
 
 FOCUSED_CASES = (
     ("Shostakovich-Sym5-Va", "page_013"),
@@ -195,9 +192,7 @@ def read_config(path: Path) -> dict[str, Any]:
     return dict(detection)
 
 
-def find_ab_record(
-    ab: Mapping[str, Any], score: str, page: str
-) -> Mapping[str, Any]:
+def find_ab_record(ab: Mapping[str, Any], score: str, page: str) -> Mapping[str, Any]:
     for record in ab["hybrid_ab"]["pages"]:
         if record.get("score") == score and record.get("page") == page:
             return record
@@ -320,10 +315,7 @@ def make_best_band_probe() -> Any:
     """
     source = textwrap.dedent(inspect.getsource(production_detect_probe_scan))
     signature_old = "    scan_existing_min_vertical_iou: float = 0.0,\n"
-    signature_new = (
-        signature_old
-        + '    issue274_existing_suppression_mode: str = "legacy",\n'
-    )
+    signature_new = signature_old + '    issue274_existing_suppression_mode: str = "legacy",\n'
     if source.count(signature_old) != 1:
         raise RuntimeError("Could not locate probe suppression signature boundary")
     source = source.replace(signature_old, signature_new, 1)
@@ -493,9 +485,7 @@ def run_dense_page(
     min_ratio = float(det_cfg.get("min_ratio", 0.50))
     min_height_ratio = float(det_cfg.get("min_height_ratio", 0.012))
     min_width_ratio = (
-        float(det_cfg["min_width_ratio"])
-        if det_cfg.get("min_width_ratio") is not None
-        else 0.0001
+        float(det_cfg["min_width_ratio"]) if det_cfg.get("min_width_ratio") is not None else 0.0001
     )
     band_cluster_max_dist = (
         float(det_cfg["band_cluster_max_dist"])
@@ -584,8 +574,7 @@ def run_dense_page(
     filtered = [
         norm_box(box)
         for box in raw
-        if abs(box[3] - box[1]) >= min_height_px
-        and abs(box[2] - box[0]) >= min_width_px
+        if abs(box[3] - box[1]) >= min_height_px and abs(box[2] - box[0]) >= min_width_px
     ]
 
     if bool(det_cfg.get("enable_heuristic_filters", True)):
@@ -616,15 +605,13 @@ def run_dense_page(
     filtered = [
         norm_box(box)
         for box in trimmed
-        if abs(box[3] - box[1]) >= min_height_px
-        and abs(box[2] - box[0]) >= min_width_px
+        if abs(box[3] - box[1]) >= min_height_px and abs(box[2] - box[0]) >= min_width_px
     ]
 
     final_set = {
         norm_box(box)
         for box in seeds
-        if abs(box[3] - box[1]) >= min_height_px
-        and abs(box[2] - box[0]) >= min_width_px
+        if abs(box[3] - box[1]) >= min_height_px and abs(box[2] - box[0]) >= min_width_px
     }
     final_set.update(filtered)
 
@@ -643,18 +630,12 @@ def run_dense_page(
             split_boxes, _stats = split_wide_candidates(
                 boxes=list(final_set),
                 img=image,
-                min_split_width_unit_ratio=float(
-                    post_cfg.get("split_min_width_unit_ratio", 1.5)
-                ),
-                split_box_width_unit_ratio=float(
-                    post_cfg.get("split_box_width_unit_ratio", 0.8)
-                ),
+                min_split_width_unit_ratio=float(post_cfg.get("split_min_width_unit_ratio", 1.5)),
+                split_box_width_unit_ratio=float(post_cfg.get("split_box_width_unit_ratio", 0.8)),
                 split_peak_distance_unit_ratio=float(
                     post_cfg.get("split_peak_distance_unit_ratio", 0.5)
                 ),
-                peak_prominence_ratio=float(
-                    post_cfg.get("split_peak_prominence_ratio", 0.15)
-                ),
+                peak_prominence_ratio=float(post_cfg.get("split_peak_prominence_ratio", 0.15)),
                 require_exactly_two_peaks=False,
                 recenter_single_peak=False,
                 emit_merged_two_peak_box=False,
@@ -668,9 +649,7 @@ def run_dense_page(
         min_row_count=band_min_row_count,
     )
     bands = [
-        (int(row["top"]), int(row["bottom"]))
-        for row in row_stats
-        if row["bottom"] >= row["top"]
+        (int(row["top"]), int(row["bottom"])) for row in row_stats if row["bottom"] >= row["top"]
     ]
     ownership = best_band_ownership(seeds, bands)
     return sorted(final_set), {
@@ -741,11 +720,7 @@ def score_metrics(
     )
     pred_cardinality, pred_unmatched = maximum_cardinality(predictions, ground_truth)
     candidate_cardinality, candidate_unmatched = maximum_cardinality(candidates, ground_truth)
-    fn_det = sum(
-        1
-        for gt_index in greedy.false_negative_indices
-        if gt_index in candidate_unmatched
-    )
+    fn_det = sum(1 for gt_index in greedy.false_negative_indices if gt_index in candidate_unmatched)
     return {
         "gt": len(ground_truth),
         "pred": len(predictions),
@@ -824,10 +799,7 @@ def csv_metrics(path: Path) -> dict[tuple[str, str], dict[str, int]]:
 
 
 def comparable_metric_subset(metrics: Mapping[str, Any]) -> dict[str, int]:
-    return {
-        key: int(metrics[key])
-        for key in ("gt", "pred", "candidate_count", "tp", "fp", "fn")
-    }
+    return {key: int(metrics[key]) for key in ("gt", "pred", "candidate_count", "tp", "fp", "fn")}
 
 
 def main() -> int:
@@ -864,8 +836,7 @@ def main() -> int:
     expected_candidate = csv_metrics(candidate_csv)
 
     residual_by_page = {
-        (str(page["score"]), str(page["page"])): page
-        for page in residual.get("pages", [])
+        (str(page["score"]), str(page["page"])): page for page in residual.get("pages", [])
     }
     page_inputs: dict[tuple[str, str], dict[str, Any]] = {}
     for score, page in FOCUSED_CASES:
@@ -972,9 +943,7 @@ def main() -> int:
                 bands_from=hybrid_root,
                 current_score_name=score,
                 staff_vov_threshold=float(det_cfg.get("staff_vov_threshold", 0.5)),
-                crop_recenter_on_bbox_ink=bool(
-                    det_cfg.get("crop_recenter_on_bbox_ink", False)
-                ),
+                crop_recenter_on_bbox_ink=bool(det_cfg.get("crop_recenter_on_bbox_ink", False)),
                 crop_recenter_max_shift_unit_ratio=float(
                     det_cfg.get("crop_recenter_max_shift_unit_ratio", 0.35)
                 ),
@@ -986,16 +955,13 @@ def main() -> int:
             predictions = [
                 norm_box(row["bbox"])
                 for row in scored
-                if isinstance(row, Mapping)
-                and float(row.get("score", 0.0)) >= cnn_threshold
+                if isinstance(row, Mapping) and float(row.get("score", 0.0)) >= cnn_threshold
             ]
             metrics = score_metrics(predictions, candidates, ground_truth)
             for key in ("gt", "pred", "candidate_count", "tp", "fp", "fn", "fn_det", "fn_cnn"):
                 totals[key] += int(metrics[key])
             totals["maximum_cardinality"] += int(metrics["maximum_cardinality"])
-            totals["candidate_maximum_cardinality"] += int(
-                metrics["candidate_maximum_cardinality"]
-            )
+            totals["candidate_maximum_cardinality"] += int(metrics["candidate_maximum_cardinality"])
 
             page_report = {
                 "score": score,
@@ -1057,14 +1023,15 @@ def main() -> int:
             )
         replay_checks[label] = {"exact_all_pages": exact, "pages": rows}
 
-    if not replay_checks["control"]["exact_all_pages"] or not replay_checks["candidate"]["exact_all_pages"]:
+    if (
+        not replay_checks["control"]["exact_all_pages"]
+        or not replay_checks["candidate"]["exact_all_pages"]
+    ):
         decision = "invalid_matrix_replay_does_not_reproduce_retained_ab"
     else:
         preferred = by_name["b_directional_best_band_no_clef"]
         preferred_with_clef = by_name["b_directional_best_band_retained_c_clef"]
-        causal_upper = by_name[
-            "b_directional_suppression_disabled_retained_c_clef"
-        ]
+        causal_upper = by_name["b_directional_suppression_disabled_retained_c_clef"]
         focused_gt = preferred["summary"]["gt"]
         if (
             preferred["summary"]["maximum_cardinality"] == focused_gt

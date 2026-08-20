@@ -56,9 +56,7 @@ def _mask_exact(left: Path, right: Path) -> dict[str, Any]:
         "right_sha256": _sha256(right),
         "shape_equal": lhs.shape == rhs.shape,
         "array_exact": bool(lhs.shape == rhs.shape and np.array_equal(lhs, rhs)),
-        "binary_exact": bool(
-            lhs.shape == rhs.shape and np.array_equal(lhs > 0, rhs > 0)
-        ),
+        "binary_exact": bool(lhs.shape == rhs.shape and np.array_equal(lhs > 0, rhs > 0)),
     }
 
 
@@ -84,9 +82,7 @@ def _normalize_retained_x4_mask(retained: Path, shared: Path) -> dict[str, Any]:
         "normalized_array_exact": bool(np.array_equal(resized, new)),
         "normalized_binary_exact": bool(np.array_equal(resized > 0, new > 0)),
         "normalized_different_pixels": int(np.count_nonzero(resized != new)),
-        "normalized_different_binary_pixels": int(
-            np.count_nonzero((resized > 0) != (new > 0))
-        ),
+        "normalized_different_binary_pixels": int(np.count_nonzero((resized > 0) != (new > 0))),
     }
 
 
@@ -101,8 +97,12 @@ def _path_from_comparison(block: Mapping[str, Any], side: str) -> Path:
 
 
 def _connector_compare(retained_detection: Path, shared_detection: Path) -> dict[str, Any]:
-    retained_paths = connector_mask_paths(retained_detection.parent, retained_detection.stem.removesuffix("_detections"))
-    shared_paths = connector_mask_paths(shared_detection.parent, shared_detection.stem.removesuffix("_detections"))
+    retained_paths = connector_mask_paths(
+        retained_detection.parent, retained_detection.stem.removesuffix("_detections")
+    )
+    shared_paths = connector_mask_paths(
+        shared_detection.parent, shared_detection.stem.removesuffix("_detections")
+    )
     result: dict[str, Any] = {}
     for key in ("symbols", "brace_dot"):
         left = retained_paths[key]
@@ -229,7 +229,9 @@ def run(report_path: Path, output_path: Path) -> Path:
         "pages": page_results,
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    output_path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     return output_path
 
 
@@ -255,10 +257,25 @@ def main() -> int:
     try:
         path = run(args.report.resolve(), args.output.resolve())
     except Exception as error:  # noqa: BLE001
-        print(json.dumps({"status": "failed", "error_type": type(error).__name__, "error": str(error)}, ensure_ascii=False))
+        print(
+            json.dumps(
+                {"status": "failed", "error_type": type(error).__name__, "error": str(error)},
+                ensure_ascii=False,
+            )
+        )
         return 1
     payload = _load_json(path)
-    print(json.dumps({"status": payload["status"], "decision": payload["decision"], "summary": payload["summary"], "output": str(path)}, ensure_ascii=False))
+    print(
+        json.dumps(
+            {
+                "status": payload["status"],
+                "decision": payload["decision"],
+                "summary": payload["summary"],
+                "output": str(path),
+            },
+            ensure_ascii=False,
+        )
+    )
     return 0
 
 

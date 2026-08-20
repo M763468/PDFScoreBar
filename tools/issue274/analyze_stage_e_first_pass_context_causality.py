@@ -318,9 +318,9 @@ def main() -> int:
         for target in structural_targets:
             gt_bboxes = [
                 norm_box(box)
-                for box in target["variants"]["control"]["raw_first_pass"][
-                    "target_component"
-                ]["component_gt_bboxes"]
+                for box in target["variants"]["control"]["raw_first_pass"]["target_component"][
+                    "component_gt_bboxes"
+                ]
             ]
             variants = {
                 "control_production": run_variant(

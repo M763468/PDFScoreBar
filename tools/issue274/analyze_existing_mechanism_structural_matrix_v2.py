@@ -6,6 +6,7 @@ module-level default.  Keep the original commit as forensic history and patch on
 the input path here; all analysis logic remains in
 ``analyze_existing_mechanism_structural_matrix.py``.
 """
+
 from __future__ import annotations
 
 from pathlib import Path

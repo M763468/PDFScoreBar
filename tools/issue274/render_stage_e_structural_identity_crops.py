@@ -161,27 +161,19 @@ def main() -> int:
         image = cv2.imread(str(image_path))
         if image is None:
             raise FileNotFoundError(image_path)
-        control_hybrid = load_boxes(
-            to_workspace(control_meta["hybrid_predictions"], workspace)
-        )
-        candidate_hybrid = load_boxes(
-            to_workspace(candidate_meta["hybrid_predictions"], workspace)
-        )
+        control_hybrid = load_boxes(to_workspace(control_meta["hybrid_predictions"], workspace))
+        candidate_hybrid = load_boxes(to_workspace(candidate_meta["hybrid_predictions"], workspace))
 
         gt_boxes: list[Box] = []
         control_raw: list[Box] = []
         candidate_raw: list[Box] = []
         for target in targets:
-            control_component = target["variants"]["control"]["raw_first_pass"][
-                "target_component"
-            ]
+            control_component = target["variants"]["control"]["raw_first_pass"]["target_component"]
             candidate_component = target["variants"]["candidate"]["raw_first_pass"][
                 "target_component"
             ]
             gt_boxes.extend(norm_box(box) for box in control_component["component_gt_bboxes"])
-            control_raw.extend(
-                norm_box(row["bbox"]) for row in control_component["predictions"]
-            )
+            control_raw.extend(norm_box(row["bbox"]) for row in control_component["predictions"])
             candidate_raw.extend(
                 norm_box(row["bbox"]) for row in candidate_component["predictions"]
             )
@@ -285,7 +277,9 @@ def main() -> int:
     }
     report_path = output_root / "issue274_stage_e_structural_identity_crops.json"
     write_json(report_path, report)
-    print(json.dumps({"status": "completed", "report": str(report_path), "pages": len(report_pages)}))
+    print(
+        json.dumps({"status": "completed", "report": str(report_path), "pages": len(report_pages)})
+    )
     return 0
 
 

@@ -43,8 +43,7 @@ from src.measure_numbering.types import Score
 from tools.issue120.eval_full68_from_intermediates import SCORES
 
 AB_DEFAULT = Path(
-    "logs/issue274_homr_unification_analysis/stage_e_ab_01/"
-    "issue274_homr_x4_stage_e_ab.json"
+    "logs/issue274_homr_unification_analysis/stage_e_ab_01/issue274_homr_x4_stage_e_ab.json"
 )
 MULTIPLICITY_DEFAULT = Path(
     "logs/issue274_homr_unification_analysis/stage_e_multiplicity_provenance_01/"
@@ -291,13 +290,19 @@ def focused_targets(multiplicity: Mapping[str, Any]) -> dict[tuple[str, str], li
         key = (str(page["score"]), str(page["page"]))
         rows: list[dict[str, Any]] = []
         for target in page.get("targets", []):
-            control_component = target.get("variants", {}).get("control", {}).get("accepted", {}).get(
-                "target_component"
+            control_component = (
+                target.get("variants", {})
+                .get("control", {})
+                .get("accepted", {})
+                .get("target_component")
             )
             if not isinstance(control_component, Mapping):
-                control_component = target.get("variants", {}).get("control", {}).get(
-                    "raw_first_pass", {}
-                ).get("target_component")
+                control_component = (
+                    target.get("variants", {})
+                    .get("control", {})
+                    .get("raw_first_pass", {})
+                    .get("target_component")
+                )
             if not isinstance(control_component, Mapping):
                 continue
             component = control_component.get("component_gt_bboxes")
@@ -343,7 +348,7 @@ def main() -> int:
     observed = {(str(row["score"]), str(row["page"])) for row in records}
     if observed != expected:
         raise RuntimeError(
-            f"AB page set mismatch: missing={sorted(expected-observed)[:4]} extra={sorted(observed-expected)[:4]}"
+            f"AB page set mismatch: missing={sorted(expected - observed)[:4]} extra={sorted(observed - expected)[:4]}"
         )
 
     multiplicity = load_json(multiplicity_path)

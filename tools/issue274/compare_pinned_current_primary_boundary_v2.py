@@ -10,6 +10,7 @@ v1 comparison harness.
 The failed v1 output is intentionally retained.  A normal v2 master run writes
 to `pinned_current_primary_boundary_02` by default.
 """
+
 from __future__ import annotations
 
 import importlib
@@ -18,7 +19,6 @@ from pathlib import Path
 from typing import Any
 
 from tools.issue274 import compare_pinned_current_primary_boundary as v1
-
 
 # Exact primary-stage defaults constructed by bd6ae56.../homr_evaluator.py::main
 # when stage_e_verified invokes the evaluator without barline/generator tuning
@@ -46,9 +46,7 @@ HISTORICAL_PRIMARY_DEFAULT_TUNING: dict[str, Any] = {
     "gen_sobel_no_staff": False,
 }
 
-V2_DEFAULT_OUT = Path(
-    "logs/issue274_homr_unification_analysis/pinned_current_primary_boundary_02"
-)
+V2_DEFAULT_OUT = Path("logs/issue274_homr_unification_analysis/pinned_current_primary_boundary_02")
 
 
 def _prepare_tuning_contract() -> dict[str, Any]:
@@ -66,8 +64,7 @@ def _prepare_tuning_contract() -> dict[str, Any]:
     evaluator.DEFAULT_TUNING = dict(HISTORICAL_PRIMARY_DEFAULT_TUNING)
     return {
         "source": (
-            "bd6ae56_homr_evaluator_main_argparse_defaults_"
-            "stage_e_verified_no_tuning_overrides"
+            "bd6ae56_homr_evaluator_main_argparse_defaults_stage_e_verified_no_tuning_overrides"
         ),
         "injected": True,
         "values": dict(HISTORICAL_PRIMARY_DEFAULT_TUNING),

@@ -18,9 +18,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import subprocess
-import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any, Mapping
@@ -59,7 +57,7 @@ def artifact(path: Path) -> dict[str, Any]:
     return result
 
 
-RUNTIME_PROBE = r'''
+RUNTIME_PROBE = r"""
 from __future__ import annotations
 
 import hashlib
@@ -176,7 +174,7 @@ except Exception as exc:
     payload["segmentation"]["error"] = repr(exc)
 
 print(json.dumps(payload, ensure_ascii=False))
-'''
+"""
 
 
 def run_probe(*, python: Path, env: Mapping[str, str], cwd: Path) -> dict[str, Any]:
@@ -322,8 +320,7 @@ def main() -> int:
         "--ab-report",
         type=Path,
         default=Path(
-            "logs/issue274_homr_unification_analysis/stage_e_ab_01/"
-            "issue274_homr_x4_stage_e_ab.json"
+            "logs/issue274_homr_unification_analysis/stage_e_ab_01/issue274_homr_x4_stage_e_ab.json"
         ),
     )
     parser.add_argument(

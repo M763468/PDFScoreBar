@@ -10,6 +10,7 @@ Three isolated current-runtime cells then consume that same proxy:
 Only primary HOMR is run. Thin-barline recovery, XML/TrOMR parsing, SR, OMR-DLN,
 dense probe, CNN and MMR are excluded.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -29,8 +30,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 AB_DEFAULT = Path(
-    "logs/issue274_homr_unification_analysis/stage_e_ab_01/"
-    "issue274_homr_x4_stage_e_ab.json"
+    "logs/issue274_homr_unification_analysis/stage_e_ab_01/issue274_homr_x4_stage_e_ab.json"
 )
 OUT_DEFAULT = Path("logs/issue274_homr_unification_analysis/primary_stage_boundary_01")
 TARGET_PIXELS = 3.5 * 1000 * 1000
@@ -166,7 +166,14 @@ def capture_wrappers(module: Any, state: dict[str, Any]) -> dict[str, Any]:
             predictions, debug = original(*args, **kwargs)
             state["segmentation"] = {
                 name: arr_info(getattr(predictions, name, None))
-                for name in ("preprocessed", "staff", "notehead", "symbols", "stems_rest", "clefs_keys")
+                for name in (
+                    "preprocessed",
+                    "staff",
+                    "notehead",
+                    "symbols",
+                    "stems_rest",
+                    "clefs_keys",
+                )
             }
             return predictions, debug
 
@@ -237,6 +244,7 @@ def run_cell(name: str, proxy: Path, out: Path) -> int:
     shutil.copy2(proxy, cell_proxy)
 
     import torch
+
     import homr.main as homr_main
     from homr import constants
     from src.pipeline.detection.homr_profile_compat import (
@@ -389,7 +397,12 @@ def make_proxy(sr: Path, out: Path) -> dict[str, Any]:
         proxy = image
     if not cv2.imwrite(str(out), proxy):
         raise RuntimeError(f"Failed to write {out}")
-    return {"sr": file_info(sr), "sr_shape": [height, width], "scale": scale, "proxy": file_info(out)}
+    return {
+        "sr": file_info(sr),
+        "sr_shape": [height, width],
+        "scale": scale,
+        "proxy": file_info(out),
+    }
 
 
 def value_at(payload: Mapping[str, Any], path: str) -> Any:
@@ -471,9 +484,7 @@ def run_master(args: argparse.Namespace) -> int:
                 text=True,
             )
         if process.returncode:
-            tail = "\n".join(
-                log.read_text(encoding="utf-8", errors="replace").splitlines()[-60:]
-            )
+            tail = "\n".join(log.read_text(encoding="utf-8", errors="replace").splitlines()[-60:])
             raise RuntimeError(f"{name} failed ({process.returncode})\n{tail}")
         cells[name] = load_json(cell_out / "cell_report.json")
 
@@ -555,7 +566,11 @@ def main() -> int:
             return run_cell(args.cell, args.proxy.resolve(), args.cell_output.resolve())
         return run_master(args)
     except Exception as error:  # noqa: BLE001
-        print(json.dumps({"status": "failed", "error_type": type(error).__name__, "error": str(error)}))
+        print(
+            json.dumps(
+                {"status": "failed", "error_type": type(error).__name__, "error": str(error)}
+            )
+        )
         return 1
 
 

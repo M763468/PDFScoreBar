@@ -22,12 +22,14 @@ from .homr_profile import run_homr_profile
 
 
 class VerifiedProfileHybridDetector:
-    """Reconstruct the verified fresh hybrid without retaining heavy SR state.
+    """Reconstruct Stage E with one original-image and one x4 HOMR inference.
 
-    The accepted Issue #255 full-68 replay used three explicit source phases:
-    verified HOMR baseline, current x4/OMR support, and verified HOMR on that fresh
-    x4 image. Keep those heavy phases page-local and run the complete source phase
-    for each page in a disposable top-level Python worker before moving on.
+    Issue #274 keeps the verified HOMR baseline on the original image, but makes
+    current x4 support the single owner of x4 HOMR inference. The detector reuses
+    the current support worker's source-coordinate ``current_sr_detection`` JSON
+    for hybrid consensus instead of rerunning the verified/pinned HOMR profile on
+    the same x4 image. Heavy phases remain page-local and are run in a disposable
+    top-level Python worker before moving on.
     """
 
     def __init__(
@@ -111,15 +113,24 @@ class VerifiedProfileHybridDetector:
             raise ValueError("Current x4 support must not use historical detector artifacts")
         return dict(payload), command
 
+    @staticmethod
+    def _current_detection_path(payload: Mapping[str, Any]) -> Path:
+        value = payload.get("current_sr_detection")
+        if not value:
+            raise ValueError("Current x4 support result lacks current_sr_detection")
+        path = Path(str(value)).resolve()
+        if not path.is_file():
+            raise FileNotFoundError(path)
+        return path
+
     def _generate_one_page_sources_in_process(
         self,
         *,
         image: Path,
         baseline_output: Path,
         support_output: Path,
-        verified_sr_output: Path,
     ) -> dict[str, Any]:
-        """Generate all verified source artifacts for one page in this process."""
+        """Generate the two-HOMR source artifacts for one page in this process."""
 
         commands: list[list[str]] = []
         baseline_result = run_homr_profile(
@@ -135,24 +146,21 @@ class VerifiedProfileHybridDetector:
         )
         sr_image = Path(str(payload["sr_image"])).resolve()
         omr = Path(str(payload["current_omr"])).resolve()
+        current_sr_detection = self._current_detection_path(payload)
         for path in (sr_image, omr):
             if not path.is_file():
                 raise FileNotFoundError(path)
         commands.append(support_command)
 
-        verified_sr_result = run_homr_profile(
-            self.profile_name,
-            images=[image],
-            output_root=verified_sr_output,
-            precomputed_sr={image: sr_image},
-        )
-        commands.extend(verified_sr_result["commands"])
-
         return {
             "sr_image": str(sr_image),
+            "current_sr_detection": str(current_sr_detection),
             "current_omr": str(omr),
             "commands": commands,
             "historical_detector_artifact_runtime_input": False,
+            "homr_neural_inference_count": 2,
+            "x4_homr_neural_inference_count": 1,
+            "x4_detector_support_owner": "current_x4_support",
         }
 
     def _source_page_worker(
@@ -162,14 +170,13 @@ class VerifiedProfileHybridDetector:
         worker_output: Path,
         baseline_output: Path,
         support_output: Path,
-        verified_sr_output: Path,
     ) -> tuple[dict[str, Any], list[str]]:
         page_root = worker_output / image.parent.name / image.stem
         page_root.mkdir(parents=True, exist_ok=False)
         request_path = page_root / "request.json"
         result_path = page_root / "result.json"
         request = {
-            "schema_version": "pipeline.verified_source_page_request.v1",
+            "schema_version": "pipeline.verified_source_page_request.v2",
             "detection": dict(self.det_cfg),
             "image": str(image.resolve()),
             "run_id": self.run_id,
@@ -177,7 +184,6 @@ class VerifiedProfileHybridDetector:
             "profile_name": self.profile_name,
             "baseline_output": str(baseline_output.resolve()),
             "support_output": str(support_output.resolve()),
-            "verified_sr_output": str(verified_sr_output.resolve()),
         }
         request_path.write_text(
             json.dumps(request, indent=2, ensure_ascii=False, default=str) + "\n",
@@ -222,6 +228,10 @@ class VerifiedProfileHybridDetector:
             raise ValueError(f"Verified source-page worker lacks memory boundary: {result_path}")
         if payload.get("historical_detector_artifact_runtime_input") is not False:
             raise ValueError("Verified source-page worker must not use historical artifacts")
+        if payload.get("homr_neural_inference_count") != 2:
+            raise ValueError("Verified source-page worker must execute exactly two HOMR inferences")
+        if payload.get("x4_homr_neural_inference_count") != 1:
+            raise ValueError("Verified source-page worker must execute exactly one x4 HOMR inference")
         return dict(payload), command
 
     def _generate_page_sources(
@@ -229,51 +239,53 @@ class VerifiedProfileHybridDetector:
         *,
         baseline_output: Path,
         support_output: Path,
-        verified_sr_output: Path,
     ) -> tuple[dict[Path, Path], dict[Path, Path], list[list[str]]]:
         """Generate heavy detector sources with one top-level worker per page."""
 
-        sr_images: dict[Path, Path] = {}
+        current_sr_detections: dict[Path, Path] = {}
         omr_predictions: dict[Path, Path] = {}
         commands: list[list[str]] = []
 
         if self.dry_run:
             for image in self.images:
                 page_root = support_output / image.parent.name / image.stem / "artifacts"
-                sr_images[image] = page_root / "sr" / "batch" / image.stem / image.name
+                current_sr_detections[image] = (
+                    page_root
+                    / "current_homr"
+                    / "batch"
+                    / image.stem
+                    / f"{image.stem}_detections.json"
+                )
                 omr_predictions[image] = page_root / "omr_sr" / image.stem / "predictions.json"
                 commands.extend(
                     [
                         ["verified-source-page-worker", str(image)],
                         ["profile:homr", self.profile_name, "baseline", str(image)],
                         ["current-support", str(image)],
-                        ["profile:homr", self.profile_name, "sr_x4", str(image)],
                     ]
                 )
-            return sr_images, omr_predictions, commands
+            return current_sr_detections, omr_predictions, commands
 
         worker_output = baseline_output.parent / "source_page_workers"
-        for image in tqdm(self.images, desc="Verified source generation", unit="page"):
+        for image in tqdm(self.images, desc="Two-HOMR source generation", unit="page"):
             payload, worker_command = self._source_page_worker(
                 image=image,
                 worker_output=worker_output,
                 baseline_output=baseline_output,
                 support_output=support_output,
-                verified_sr_output=verified_sr_output,
             )
-            sr_image = Path(str(payload["sr_image"])).resolve()
+            current_sr_detection = self._current_detection_path(payload)
             omr = Path(str(payload["current_omr"])).resolve()
-            for path in (sr_image, omr):
-                if not path.is_file():
-                    raise FileNotFoundError(path)
-            sr_images[image] = sr_image
+            if not omr.is_file():
+                raise FileNotFoundError(omr)
+            current_sr_detections[image] = current_sr_detection
             omr_predictions[image] = omr
             commands.append(worker_command)
             child_commands = payload.get("commands")
             if isinstance(child_commands, list):
                 commands.extend(child_commands)
 
-        return sr_images, omr_predictions, commands
+        return current_sr_detections, omr_predictions, commands
 
     def run(self) -> Dict[str, Any]:
         hybrid_root = Path(self.det_cfg.get("hybrid_output_root", "logs/hybrid_generalization"))
@@ -294,21 +306,19 @@ class VerifiedProfileHybridDetector:
 
         baseline_output = hybrid_output_dir / "baseline"
         support_output = hybrid_output_dir / "current_support"
-        verified_sr_output = hybrid_output_dir / "sr"
         hybrid_results_dir = hybrid_output_dir / "hybrid_results"
         ensure_dir(hybrid_results_dir)
 
-        _, omr_predictions, commands = self._generate_page_sources(
+        current_sr_detections, omr_predictions, commands = self._generate_page_sources(
             baseline_output=baseline_output,
             support_output=support_output,
-            verified_sr_output=verified_sr_output,
         )
 
         if not self.dry_run:
-            for image in tqdm(self.images, desc="Verified hybrid consensus", unit="page"):
+            for image in tqdm(self.images, desc="Two-HOMR hybrid consensus", unit="page"):
                 stem = image.stem
                 baseline_json = baseline_output / "batch" / stem / f"{stem}_detections.json"
-                sr_json = verified_sr_output / "batch" / stem / f"{stem}_detections.json"
+                sr_json = current_sr_detections[image]
                 omr_json = omr_predictions[image]
                 output_json = hybrid_results_dir / f"{stem}_hybrid.json"
                 missing = [
@@ -316,7 +326,7 @@ class VerifiedProfileHybridDetector:
                 ]
                 if missing:
                     raise FileNotFoundError(
-                        f"Verified-profile hybrid components missing for {stem}: {missing}"
+                        f"Two-HOMR hybrid components missing for {stem}: {missing}"
                     )
                 hybrid_preds = apply_hybrid_consensus_filter(
                     baseline_boxes=load_json_boxes(baseline_json),
@@ -335,11 +345,14 @@ class VerifiedProfileHybridDetector:
             "current_support_output_dir": support_output,
             "historical_detector_artifact_runtime_input": False,
             "source_generation_scope": "top_level_python_per_page",
+            "homr_neural_inference_count_per_page": 2,
+            "x4_homr_neural_inference_count_per_page": 1,
+            "x4_detector_support_owner": "current_x4_support",
             "source_generation_phases": [
                 "verified_source_page_worker_per_page",
                 "verified_baseline_per_page",
                 "current_x4_support_per_page",
-                "verified_homr_on_fresh_x4_per_page",
+                "current_x4_detection_reused_for_consensus",
                 "current_consensus",
             ],
         }

@@ -1,4 +1,4 @@
-"""Generate one verified detector source page in a disposable Python process."""
+"""Generate one two-HOMR detector source page in a disposable Python process."""
 
 from __future__ import annotations
 
@@ -27,7 +27,6 @@ def run(request_path: Path, result_path: Path) -> Path:
     image = Path(str(request["image"])).resolve()
     baseline_output = Path(str(request["baseline_output"])).resolve()
     support_output = Path(str(request["support_output"])).resolve()
-    verified_sr_output = Path(str(request["verified_sr_output"])).resolve()
     project_root = Path(str(request["project_root"])).resolve()
     profile_name = str(request["profile_name"])
     run_id = str(request["run_id"])
@@ -45,15 +44,16 @@ def run(request_path: Path, result_path: Path) -> Path:
         image=image,
         baseline_output=baseline_output,
         support_output=support_output,
-        verified_sr_output=verified_sr_output,
     )
     payload.update(
         {
-            "schema_version": "pipeline.verified_source_page.v1",
+            "schema_version": "pipeline.verified_source_page.v2",
             "status": "completed",
             "image": str(image),
             "memory_boundary": "top_level_python_per_page",
             "historical_detector_artifact_runtime_input": False,
+            "homr_neural_inference_count": 2,
+            "x4_homr_neural_inference_count": 1,
         }
     )
     result_path.parent.mkdir(parents=True, exist_ok=True)

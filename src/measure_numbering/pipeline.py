@@ -161,14 +161,17 @@ class MeasureNumberingPipeline:
         image_size: Tuple[int, int],
         connector_mask_paths: Optional[Mapping[str, Path | str]],
     ) -> List[Staff]:
-        """Resolve the staff geometry paired with stable connector semantic masks.
+        """Resolve the staff geometry paired with connector semantic masks.
 
         The selected Proxy/SR staff geometry remains authoritative for system
-        construction. Stable ``*_connector_symbols.png`` artifacts are a declared
-        current-HOMR semantic contract: their sibling ``*_staff_mask.png`` defines
-        connector-evidence ROIs. A missing sibling or a staff-count mismatch is an
-        artifact-contract violation and must fail loudly rather than silently
-        changing the connector-evidence geometry.
+        construction. When the sibling current-HOMR staff extraction has the same
+        cardinality, use it only to define connector-evidence ROIs. Different HOMR
+        producers can legitimately disagree on staff component count; in that case
+        preserve the production contract used by the fresh full68 run and measure
+        the semantic masks against the authoritative numbering geometry instead.
+
+        A missing sibling staff artifact is still an incomplete declared support
+        bundle and fails loudly.
         """
         if not connector_mask_paths:
             return geometry_staves
@@ -196,11 +199,14 @@ class MeasureNumberingPipeline:
 
         semantic_staves = self.extractor.extract(semantic_staff_path, image_size)
         if len(semantic_staves) != len(geometry_staves):
-            raise RuntimeError(
-                "Connector semantic staff count mismatch: "
-                f"numbering_staff={staff_mask_path} geometry={len(geometry_staves)} "
-                f"semantic_staff={semantic_staff_path} semantic={len(semantic_staves)}"
+            logger.warning(
+                "Connector semantic staff count mismatch for %s: geometry=%d semantic=%d; "
+                "keeping numbering geometry for evidence",
+                staff_mask_path,
+                len(geometry_staves),
+                len(semantic_staves),
             )
+            return geometry_staves
 
         return semantic_staves
 

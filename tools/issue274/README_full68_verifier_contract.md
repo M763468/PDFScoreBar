@@ -82,7 +82,7 @@ old Issue255 current-support
 
 fresh post-PR265 current-support
   -> sibling semantic staff is restored to source-page coordinates
-  -> semantic staff count == A/Proxy staff count
+  -> semantic staff count == A/Proxy staff count on the focused residual pages
   -> _connector_evidence_staves() returns current-HOMR semantic geometry
   -> connector masks are measured with current-HOMR semantic ROIs
 ```
@@ -107,23 +107,48 @@ No additional inference is needed to resolve this point; the production fallback
 
 ## Final topology acceptance contract
 
-The post-hoc topology gate now compares like with like:
+The final causal gate does not compare two independent production runs. For every canonical page it freezes the actual fresh #274 A/original staff geometry, current-HOMR connector semantic support, and page image, then varies only the accepted detector barline set:
 
-1. discover or explicitly select the accepted Issue #264 Phase-C current-production full68 source report;
-2. require its non-index source gates and acceptance provenance, including 68/68 fresh current-HOMR Phase-A semantic support with no historical detector artifact as runtime input;
-3. verify each retained `numbering_base.json` against the size/SHA recorded in that report;
-4. compare those **serialized production** `numbering_base.json` files with the fresh two-HOMR serialized production `numbering_base.json` files for the same score/page;
-5. compare width/height, active systems, staff bboxes, measure numbers/bboxes, and `empty_systems`; only the page ordinal is excluded because the Phase-C run uses global evaluation page IDs while the fresh runner is score-scoped.
+- control: retained C/pinned-x4 accepted barlines;
+- candidate: actual fresh two-HOMR B/current-x4 accepted barlines.
 
-This is stricter and cleaner than the v4 reconstructed-signature comparison. It does not recompute numbering, does not change the expected answer, and does not use a pre-fix artifact contract as the reference.
+Two links are mandatory:
 
-If no unique accepted Phase-C report can be established from provenance, the gate is **unverified**. If serialized production numbering differs, the gate fails and reports the changed pages. No full68 inference should be rerun for a verifier-only failure.
+1. the candidate CPU reconstruction must reproduce the actual fresh serialized `numbering_base.json` exactly, excluding only page ordinal;
+2. control and candidate must have identical serialized staff grouping, measure-number topology, and empty-system grouping under those same frozen inputs.
 
-## Historical v4 residual accounting
+Measure-boundary bbox deltas are reported separately and do not replace the topology gate. No HOMR, SR, detector, CNN, MMR, or OCR inference is rerun.
+
+If the candidate reconstruction cannot reproduce the preserved fresh production artifact, the comparison is **unverified** until the replay contract mismatch is understood. The expected answer must not be changed merely to make the gate pass.
+
+## Historical v4/v5 residual accounting
 
 For completeness, v4 initially reported 25 differences because it also compared pre-serialization `page.systems` against serialized production `systems`. Production `score_to_dict()` moves zero-measure systems to `empty_systems`. Canonicalizing that representation reduced the 25 to 23 representation-only differences plus the two stale-semantic-reference differences above.
 
 Those two pages should no longer be described as demonstrated two-HOMR regressions. They demonstrated that v4 chose the wrong retained contract.
+
+v5 then selected an accepted post-PR #265 Phase-C run but compared two independently rerun A/original HOMR segmentations pixel-exactly. Its 68/68 changed result decomposed into 60 pages with only bbox differences, five more with only `empty_systems` segmentation differences, and three pages with active structural differences caused while A geometry also changed. v5 therefore was not a controlled Issue #274 comparison.
+
+## What the first v6 run exposed
+
+The first same-input v6 run is itself retained as verifier evidence. It processed 45 pages successfully and stopped only page-locally on 23 `Connector semantic staff count mismatch` errors. Among the 45 processed pages:
+
+- candidate reconstruction exact: 45/45;
+- control/candidate topology exact: 45/45;
+- measure geometry within 10 px: 45/45.
+
+There was no observed topology residual. All 23 failures came from the same replay-time exception.
+
+This exception was introduced **after** the preserved fresh full68 production run. At the full68 runner checkpoint `90bb6d24cb6040ef64f495350edbbf38b6f7403c`, `_connector_evidence_staves()` explicitly treated a semantic/current-HOMR staff-count mismatch as a supported producer disagreement: it logged a warning and returned the authoritative A/Proxy numbering geometry for connector-evidence ROIs. That is how the preserved run could legitimately serialize all 68 `numbering_base.json` files.
+
+A later Issue #274 diagnostic hardening changed the mismatch branch to `RuntimeError`. The first v6 run therefore detected a **post-run production-contract drift in the replay code**, not 23 two-HOMR regressions. Restoring the staff-count fallback is not a relaxation of the topology gate; it restores the exact semantic branch under which the candidate artifacts being verified were produced.
+
+The corrected contract distinguishes two cases:
+
+- sibling semantic staff artifact exists but its extracted count differs from A/numbering geometry -> warn and use authoritative A/numbering geometry for connector ROIs;
+- sibling semantic staff artifact is missing -> incomplete declared support bundle, hard error.
+
+The 23 mismatch pages remain recorded as evidence of this fallback branch. They must not be described as 23 semantic-geometry matches, but neither are they candidate regressions.
 
 ## Cleanup rule
 
@@ -134,5 +159,6 @@ Before Issue #274 is merged, temporary verifier code must be consolidated so tha
 - missing comparison artifacts are reported as an artifact-contract/precondition error rather than a functional regression;
 - serialized `systems` are never compared directly with pre-serialization `page.systems` without normalizing the `empty_systems` contract;
 - connector semantic provenance records both connector-mask artifacts and the semantic staff geometry/fallback used to define their ROIs;
+- legitimate staff-count fallback is recorded separately from a missing/incomplete support bundle;
 - a gate cannot silently switch from raw GT slot cardinality to audited physical-event coverage without recording both values and the audit provenance;
-- obsolete v2/v3/v4 interpretations remain documented as superseded rather than being silently rewritten.
+- obsolete v2/v3/v4/v5 interpretations remain documented as superseded rather than being silently rewritten.

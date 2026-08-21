@@ -54,8 +54,7 @@ def _require_current_homr_bundle(payload: Mapping[str, Any]) -> dict[str, Path]:
     missing_fields = [name for name in required_fields if not payload.get(name)]
     if missing_fields:
         raise ValueError(
-            "Current x4 support result lacks required HOMR artifacts: "
-            + ", ".join(missing_fields)
+            "Current x4 support result lacks required HOMR artifacts: " + ", ".join(missing_fields)
         )
 
     paths = {name: Path(str(payload[name])).resolve() for name in required_fields}

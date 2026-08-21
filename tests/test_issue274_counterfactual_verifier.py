@@ -20,9 +20,7 @@ def _page() -> dict:
                 ],
             }
         ],
-        "empty_systems": [
-            {"staves": [{"bbox": [10, 300, 990, 400]}], "reason": "no_measures"}
-        ],
+        "empty_systems": [{"staves": [{"bbox": [10, 300, 990, 400]}], "reason": "no_measures"}],
     }
 
 

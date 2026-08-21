@@ -145,7 +145,9 @@ def topology_signature(page: Mapping[str, Any]) -> tuple[Any, ...]:
         system_rows.append(
             (
                 tuple(_bbox(staff["bbox"]) for staff in staves if isinstance(staff, Mapping)),
-                tuple(int(measure["number"]) for measure in measures if isinstance(measure, Mapping)),
+                tuple(
+                    int(measure["number"]) for measure in measures if isinstance(measure, Mapping)
+                ),
             )
         )
 
@@ -339,7 +341,14 @@ def main() -> int:
                 candidate_path = to_workspace(str(manifest_row["barlines_json"]), workspace)
                 image_path = to_workspace(str(manifest_row["image_path"]), workspace)
                 control_path = accepted_path(control_root, score_name, page_name)
-                actual_path = run_root / "runs" / score_name / "intermediate" / page_name / "numbering_base.json"
+                actual_path = (
+                    run_root
+                    / "runs"
+                    / score_name
+                    / "intermediate"
+                    / page_name
+                    / "numbering_base.json"
+                )
 
                 for required in (staff_mask, candidate_path, image_path, control_path, actual_path):
                     if not required.is_file():
@@ -369,11 +378,12 @@ def main() -> int:
                 )
                 actual_page = load_single_page(actual_path)
 
-                candidate_exact = (
-                    exact_serialized_signature(candidate_page)
-                    == exact_serialized_signature(actual_page)
+                candidate_exact = exact_serialized_signature(
+                    candidate_page
+                ) == exact_serialized_signature(actual_page)
+                topology_equal = topology_signature(control_page) == topology_signature(
+                    candidate_page
                 )
-                topology_equal = topology_signature(control_page) == topology_signature(candidate_page)
                 geometry = geometry_delta(control_page, candidate_page)
 
                 counts["pages"] += 1

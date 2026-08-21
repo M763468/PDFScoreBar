@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from src.pipeline.mmr_geometry_handoff import build_mmr_page_context
 
 

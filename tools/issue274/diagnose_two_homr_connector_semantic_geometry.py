@@ -77,12 +77,8 @@ def compact_evidence(payload: Mapping[str, Any]) -> dict[str, Any]:
             {
                 "staff_pair": row.get("staff_pair"),
                 "left_connector_present": row.get("left_connector_present"),
-                "symbols_vertical_open_density": row.get(
-                    "symbols_vertical_open_density"
-                ),
-                "brace_dot_vertical_open_density": row.get(
-                    "brace_dot_vertical_open_density"
-                ),
+                "symbols_vertical_open_density": row.get("symbols_vertical_open_density"),
+                "brace_dot_vertical_open_density": row.get("brace_dot_vertical_open_density"),
                 "symbols_roi": (row.get("symbols") or {}).get("roi_xyxy"),
                 "brace_dot_roi": (row.get("brace_dot") or {}).get("roi_xyxy"),
             }
@@ -127,10 +123,7 @@ def active_signature(page: Any) -> tuple[Any, ...]:
         tuple(len(system.staves) for system in systems),
         tuple(len(system.measures) for system in systems),
         sum(len(system.measures) for system in systems),
-        tuple(
-            tuple(measure.number for measure in system.measures)
-            for system in systems
-        ),
+        tuple(tuple(measure.number for measure in system.measures) for system in systems),
     )
 
 
@@ -184,13 +177,11 @@ def main() -> int:
     workspace = args.workspace.resolve()
     run_root = to_workspace(args.run_root, workspace)
     diagnosis_path = to_workspace(
-        args.diagnosis
-        or (run_root / "two_homr_full68_topology_residual_diagnosis.json"),
+        args.diagnosis or (run_root / "two_homr_full68_topology_residual_diagnosis.json"),
         workspace,
     )
     output = to_workspace(
-        args.output
-        or (run_root / "two_homr_connector_semantic_geometry_diagnosis.json"),
+        args.output or (run_root / "two_homr_connector_semantic_geometry_diagnosis.json"),
         workspace,
     )
     diagnosis = load_json(diagnosis_path)
@@ -221,18 +212,10 @@ def main() -> int:
         image_size = (width, height)
 
         pipeline = MeasureNumberingPipeline()
-        retained_semantic_bboxes = staff_bboxes(
-            pipeline, retained_semantic_staff, image_size
-        )
-        fresh_semantic_bboxes = staff_bboxes(
-            pipeline, fresh_semantic_staff, image_size
-        )
-        retained_semantic_staves = pipeline.extractor.extract(
-            retained_semantic_staff, image_size
-        )
-        fresh_semantic_staves = pipeline.extractor.extract(
-            fresh_semantic_staff, image_size
-        )
+        retained_semantic_bboxes = staff_bboxes(pipeline, retained_semantic_staff, image_size)
+        fresh_semantic_bboxes = staff_bboxes(pipeline, fresh_semantic_staff, image_size)
+        retained_semantic_staves = pipeline.extractor.extract(retained_semantic_staff, image_size)
+        fresh_semantic_staves = pipeline.extractor.extract(fresh_semantic_staff, image_size)
 
         retained_evidence = pipeline.connector_extractor.extract_from_mask_maps(
             retained_semantic_staves,
@@ -244,19 +227,15 @@ def main() -> int:
             image_size,
             connector_mask_paths=fresh_connectors,
         )
-        fresh_masks_retained_geometry = (
-            pipeline.connector_extractor.extract_from_mask_maps(
-                retained_semantic_staves,
-                image_size,
-                connector_mask_paths=fresh_connectors,
-            )
+        fresh_masks_retained_geometry = pipeline.connector_extractor.extract_from_mask_maps(
+            retained_semantic_staves,
+            image_size,
+            connector_mask_paths=fresh_connectors,
         )
-        retained_masks_fresh_geometry = (
-            pipeline.connector_extractor.extract_from_mask_maps(
-                fresh_semantic_staves,
-                image_size,
-                connector_mask_paths=retained_connectors,
-            )
+        retained_masks_fresh_geometry = pipeline.connector_extractor.extract_from_mask_maps(
+            fresh_semantic_staves,
+            image_size,
+            connector_mask_paths=retained_connectors,
         )
 
         signatures = {
@@ -300,8 +279,7 @@ def main() -> int:
                     "retained_sha256": sha256(retained_semantic_staff),
                     "fresh_sha256": sha256(fresh_semantic_staff),
                     "same_sha256": (
-                        sha256(retained_semantic_staff)
-                        == sha256(fresh_semantic_staff)
+                        sha256(retained_semantic_staff) == sha256(fresh_semantic_staff)
                     ),
                     "retained_staff_count": len(retained_semantic_bboxes),
                     "fresh_staff_count": len(fresh_semantic_bboxes),
@@ -355,8 +333,7 @@ def main() -> int:
             {
                 "page_count": len(pages),
                 "semantic_staff_same_count": sum(
-                    int(bool(page["semantic_staff"]["same_sha256"]))
-                    for page in pages
+                    int(bool(page["semantic_staff"]["same_sha256"])) for page in pages
                 ),
                 "output": str(output),
             },

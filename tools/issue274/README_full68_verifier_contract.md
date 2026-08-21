@@ -92,6 +92,26 @@ The acceptance gate remains **failed/unverified** while either substantive resid
 
 This distinction is important: the 23 representation-only pages are a verifier contract bug, while the two residual pages are treated as possible real regressions until the causal diagnostic shows otherwise.
 
+## What the residual crossing exposed
+
+The two-page causal crossing established the following for both substantive residuals:
+
+- retained and fresh accepted barline lists are byte-for-byte equivalent as ordered bbox lists;
+- retained and fresh A/original numbering staff masks have identical SHA-256 hashes;
+- retained and fresh connector `symbols` masks have identical SHA-256 hashes;
+- retained and fresh connector `brace_dot` masks have identical SHA-256 hashes;
+- switching only the barline path does not change topology;
+- switching only the A/original staff-mask path does not change topology;
+- switching only the connector artifact path reproduces the fresh topology exactly.
+
+Therefore the remaining difference is path-dependent connector evidence, not a detector-box difference and not a change in the authoritative numbering staff mask or connector-mask pixel content.
+
+`MeasureNumberingPipeline._connector_evidence_staves()` derives connector-evidence ROIs from the `*_staff_mask.png` stored beside `*_connector_symbols.png`. That current-HOMR staff mask is an additional implicit input to connector grouping. It was not included in the first residual report, so the current evidence does **not** yet prove whether the two-HOMR architecture changed that semantic staff geometry or whether another path-resolution/provenance issue is involved.
+
+`diagnose_two_homr_connector_semantic_geometry.py` is the next CPU-only diagnostic. It compares the retained/fresh sibling current-HOMR staff masks, extracted staff bboxes, staff-pair connector evidence, and cross-runs connector-mask content against retained/fresh semantic staff geometry. No inference is rerun.
+
+The gate remains failed/unverified until this implicit semantic-geometry input is resolved. Do not reinterpret identical connector mask hashes as complete connector-input identity: connector evidence depends on both mask pixels and the staff geometry used to define each ROI.
+
 ## Cleanup rule
 
 Before Issue #274 is merged, temporary verifier code must be consolidated so that:
@@ -99,5 +119,6 @@ Before Issue #274 is merged, temporary verifier code must be consolidated so tha
 - detector-only baselines are never treated as numbering-pipeline baselines;
 - missing comparison artifacts are reported as an artifact-contract/precondition error rather than a functional regression;
 - serialized `systems` are never compared directly with pre-serialization `page.systems` without normalizing the `empty_systems` contract;
+- connector semantic provenance records both connector-mask artifacts and the semantic staff geometry used to define their ROIs;
 - a gate cannot silently switch from raw GT slot cardinality to audited physical-event coverage without recording both values and the audit provenance;
 - obsolete v2/v3/v4 post-hoc paths are removed or clearly deprecated after the final verifier is established.

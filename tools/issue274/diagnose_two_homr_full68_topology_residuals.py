@@ -28,7 +28,6 @@ from src.common.connector_artifacts import (
 )
 from src.measure_numbering.pipeline import MeasureNumberingPipeline
 from src.measure_numbering.types import Score
-from tools.issue120.eval_full68_from_intermediates import SCORES
 from tools.issue274.analyze_b_downstream_semantic_equivalence import (
     AB_DEFAULT,
     CANDIDATE_ROOT_DEFAULT,
@@ -90,10 +89,7 @@ def page_active_signature(page: Any) -> tuple[Any, ...]:
         tuple(len(system.staves) for system in active_systems),
         tuple(len(system.measures) for system in active_systems),
         sum(len(system.measures) for system in active_systems),
-        tuple(
-            tuple(measure.number for measure in system.measures)
-            for system in active_systems
-        ),
+        tuple(tuple(measure.number for measure in system.measures) for system in active_systems),
     )
 
 
@@ -185,15 +181,12 @@ def main() -> int:
     ab_path = to_workspace(args.ab_report, workspace)
     candidate_root = to_workspace(args.candidate_root, workspace)
     output = to_workspace(
-        args.output
-        or (run_root / "two_homr_full68_topology_residual_diagnosis.json"),
+        args.output or (run_root / "two_homr_full68_topology_residual_diagnosis.json"),
         workspace,
     )
 
     v4 = load_json(v4_path)
-    changed = (v4.get("fresh_numbering_base") or {}).get(
-        "topology_changed_pages", []
-    )
+    changed = (v4.get("fresh_numbering_base") or {}).get("topology_changed_pages", [])
     representation_only: list[dict[str, str]] = []
     substantive: list[dict[str, Any]] = []
     for row in changed:
@@ -217,10 +210,7 @@ def main() -> int:
             )
 
     ab = load_json(ab_path)
-    ab_records = {
-        (str(row["score"]), str(row["page"])): row
-        for row in ab["hybrid_ab"]["pages"]
-    }
+    ab_records = {(str(row["score"]), str(row["page"])): row for row in ab["hybrid_ab"]["pages"]}
 
     residuals: list[dict[str, Any]] = []
     for item in substantive:
@@ -233,9 +223,7 @@ def main() -> int:
         retained_staff = discover_a_staff_mask(retained_a_path, page)
         fresh_staff = to_workspace(str(fresh_manifest["staff_mask"]), workspace)
         retained_barlines = candidate_accepted_path(candidate_root, score, page)
-        fresh_barlines = to_workspace(
-            str(fresh_manifest["barlines_json"]), workspace
-        )
+        fresh_barlines = to_workspace(str(fresh_manifest["barlines_json"]), workspace)
         image_path = to_workspace(str(fresh_manifest["image_path"]), workspace)
 
         retained_connectors = connector_mask_paths_for_numbering(retained_staff)
@@ -283,12 +271,8 @@ def main() -> int:
             )
             matrix[name] = {
                 "signature": signature,
-                "equals_retained_v4": (
-                    signature == item["retained_active_signature"]
-                ),
-                "equals_fresh_v4": (
-                    signature == item["fresh_active_signature"]
-                ),
+                "equals_retained_v4": (signature == item["retained_active_signature"]),
+                "equals_fresh_v4": (signature == item["fresh_active_signature"]),
             }
 
         retained_staff_sha = sha256(retained_staff)
@@ -309,12 +293,8 @@ def main() -> int:
                     "fresh_sha256": fresh_staff_sha,
                     "same_sha256": retained_staff_sha == fresh_staff_sha,
                 },
-                "retained_connector_evidence": describe_connector_artifacts(
-                    retained_staff
-                ),
-                "fresh_connector_evidence_manifest": fresh_manifest.get(
-                    "connector_evidence"
-                ),
+                "retained_connector_evidence": describe_connector_artifacts(retained_staff),
+                "fresh_connector_evidence_manifest": fresh_manifest.get("connector_evidence"),
                 "retained_connector_paths": path_map(retained_connectors),
                 "fresh_connector_paths": path_map(fresh_connectors),
                 "reconstruction_matrix": matrix,

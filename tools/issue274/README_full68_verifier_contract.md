@@ -75,11 +75,29 @@ Only if both links pass may the fresh run claim downstream topology equivalence.
 
 If the retained semantic audit artifact is unavailable or its provenance/page set does not match the expected 68 pages, the topology status is **unverified**, not passed.
 
+## What the v4 fresh-link comparison exposed
+
+The first implementation of the two-link fresh comparison reported 25 changed pages. That count must not be interpreted as 25 production topology regressions.
+
+The retained semantic audit records `page.systems` directly before serialization, including systems with zero measures. Production `score_to_dict()` deliberately removes those systems from the serialized `systems` array and records them separately under `empty_systems`. The v4 comparator compared those two different representations as if they were the same contract.
+
+Canonicalizing both sides to active systems (`measure_count > 0`) splits the 25 reported pages into:
+
+- 23 representation-only differences: active system/staff membership, per-system measure counts, total measure count, and measure-number sequences are identical after zero-measure systems are excluded;
+- 2 substantive residuals where active topology still differs:
+  - `Va_Prokofiev_Symphony1/page_004`: fresh 12 active systems / 101 measures versus retained B 13 / 111;
+  - `Va__Prokofiev_Symphony5/page_022`: fresh 9 active systems / 36 measures versus retained B 8 / 33.
+
+The acceptance gate remains **failed/unverified** while either substantive residual remains. The correct response is not to weaken the signature again. `diagnose_two_homr_full68_topology_residuals.py` performs one CPU-only causal crossing on only those residual pages, comparing retained/fresh accepted barlines, authoritative staff masks, and connector semantic masks. It does not rerun HOMR, SR, detector, CNN, MMR, or OCR.
+
+This distinction is important: the 23 representation-only pages are a verifier contract bug, while the two residual pages are treated as possible real regressions until the causal diagnostic shows otherwise.
+
 ## Cleanup rule
 
 Before Issue #274 is merged, temporary verifier code must be consolidated so that:
 
 - detector-only baselines are never treated as numbering-pipeline baselines;
 - missing comparison artifacts are reported as an artifact-contract/precondition error rather than a functional regression;
+- serialized `systems` are never compared directly with pre-serialization `page.systems` without normalizing the `empty_systems` contract;
 - a gate cannot silently switch from raw GT slot cardinality to audited physical-event coverage without recording both values and the audit provenance;
-- obsolete v2/v3 post-hoc paths are removed or clearly deprecated after the final verifier is established.
+- obsolete v2/v3/v4 post-hoc paths are removed or clearly deprecated after the final verifier is established.

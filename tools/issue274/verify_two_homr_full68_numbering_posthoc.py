@@ -64,11 +64,7 @@ def load_single_page(path: Path) -> Mapping[str, Any] | None:
     if not isinstance(payload, Mapping):
         return None
     pages = payload.get("pages")
-    if (
-        not isinstance(pages, list)
-        or len(pages) != 1
-        or not isinstance(pages[0], Mapping)
-    ):
+    if not isinstance(pages, list) or len(pages) != 1 or not isinstance(pages[0], Mapping):
         return None
     return pages[0]
 
@@ -79,9 +75,7 @@ def serialized_topology_signature(page: Mapping[str, Any]) -> tuple[Any, ...]:
         return ()
     valid_systems = [system for system in systems if isinstance(system, Mapping)]
     staves_per_system = tuple(len(system.get("staves", [])) for system in valid_systems)
-    measures_per_system = tuple(
-        len(system.get("measures", [])) for system in valid_systems
-    )
+    measures_per_system = tuple(len(system.get("measures", [])) for system in valid_systems)
     measure_numbers = tuple(
         tuple(
             measure.get("number")
@@ -190,9 +184,7 @@ def main() -> int:
 
     expected = {(score, page) for score, pages in SCORES.items() for page in pages}
     expected_page_count = len(expected)
-    retained_map, retained_contract = semantic_audit_map(
-        semantic_audit, expected_page_count
-    )
+    retained_map, retained_contract = semantic_audit_map(semantic_audit, expected_page_count)
 
     rows: list[dict[str, Any]] = []
     missing_fresh: list[dict[str, str]] = []
@@ -200,14 +192,7 @@ def main() -> int:
     changed: list[dict[str, Any]] = []
 
     for score, page_id in sorted(expected):
-        fresh_path = (
-            run_root
-            / "runs"
-            / score
-            / "intermediate"
-            / page_id
-            / "numbering_base.json"
-        )
+        fresh_path = run_root / "runs" / score / "intermediate" / page_id / "numbering_base.json"
         fresh_page = load_single_page(fresh_path)
         retained_signature = retained_map.get((score, page_id))
         row: dict[str, Any] = {
@@ -279,12 +264,9 @@ def main() -> int:
                 "contain numbering outputs"
             ),
             "retained_link": (
-                "independent CPU-only semantic audit proves control == retained B "
-                "topology"
+                "independent CPU-only semantic audit proves control == retained B topology"
             ),
-            "fresh_link": (
-                "actual fresh numbering_base topology must equal retained B topology"
-            ),
+            "fresh_link": ("actual fresh numbering_base topology must equal retained B topology"),
             "rerun_inference": False,
             "rerun_numbering": False,
         },
@@ -308,8 +290,7 @@ def main() -> int:
         "gate_pass": gate_pass,
         "supersedes": {
             "v2_problem": (
-                "assumed score-level numbering artifacts existed under a detector-only "
-                "control root"
+                "assumed score-level numbering artifacts existed under a detector-only control root"
             ),
             "v3_problem": (
                 "fixed the fresh per-page path but retained the same nonexistent "
@@ -333,9 +314,7 @@ def main() -> int:
                 "detector_coverage_ok": detector_ok,
                 "downstream_reuse_ok": downstream_reuse_ok,
                 "retained_semantic_audit_ok": retained_contract["ok"],
-                "fresh_numbering_base_page_count": summary["fresh_numbering_base"][
-                    "page_count"
-                ],
+                "fresh_numbering_base_page_count": summary["fresh_numbering_base"]["page_count"],
                 "fresh_numbering_missing_page_count": len(missing_fresh),
                 "topology_changed_page_count": len(changed),
                 "topology_ok": topology_ok,

@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
-"""Validate fresh Issue #274 numbering against the accepted current-production baseline.
+"""Validate fresh Issue #274 numbering against the Issue #264 production baseline.
 
 The detector-only Issue #255 artifacts and the earlier Issue #274 retained semantic
-reconstruction are not valid numbering baselines for this gate. In particular, the
-old current-support tree predates PR #265's current-HOMR staff-mask coordinate fix.
-Current ``MeasureNumberingPipeline`` falls back to the A/Proxy numbering geometry
-when that sibling semantic staff mask extracts a different staff count, so the old
-reconstruction and a fresh post-#265 run can take different connector-evidence
-branches even when connector-mask bytes are identical.
+reconstruction are not valid numbering baselines for this gate. The latter uses a
+pre-PR #265 current-support tree whose current-HOMR staff masks predate the
+source-coordinate fix.
 
-The correct reference is the accepted Issue #264 Phase-C current-production full68
-source report. That run explicitly regenerated current-HOMR Phase-A semantics from
-retained x4 SR inputs after PR #265, kept detector inference frozen, and persisted
-all 68 production ``numbering_base.json`` files with hashes.
+The baseline is an Issue #264 Phase-C source report that proves the PR #265 semantic
+support contract on all 68 pages and persists hashed production ``numbering_base``
+artifacts. Historical Phase-C reports may predate the later
+``acceptance_provenance`` stamp; that stamp is therefore recorded but is not a
+precondition for using the report as a numbering baseline. The baseline must still
+pass every non-index source gate, including ``phase_a_fresh_current_homr_semantics_68``.
 
-This verifier performs no inference and no numbering recomputation. It verifies the
-Phase-C baseline provenance/hash contract, then compares serialized production
-numbering to serialized fresh production numbering page by page.
+No HOMR, SR, detector, CNN, MMR, OCR, or numbering computation is rerun.
 """
 
 from __future__ import annotations
@@ -31,6 +28,7 @@ from tools.issue120.eval_full68_from_intermediates import SCORES
 from tools.issue264.phase_c_acceptance_integrity import source_non_index_gate_failures
 
 DEFAULT_BASELINE_ROOT = Path("logs/issue264_phase_c_mmr_regression")
+EXPECTED_BASELINE_SCHEMA = "issue264.phase_c_mmr_regression.v1"
 
 
 def load_json(path: Path) -> Any:
@@ -83,7 +81,7 @@ def _bbox(value: Any) -> tuple[int, int, int, int] | None:
 
 
 def serialized_numbering_signature(page: Mapping[str, Any]) -> tuple[Any, ...]:
-    """Compare the stable serialized numbering contract, excluding page ordinal only."""
+    """Compare stable serialized numbering, excluding only the run-local page ordinal."""
 
     systems = page.get("systems", [])
     empty_systems = page.get("empty_systems", [])
@@ -128,6 +126,15 @@ def serialized_numbering_signature(page: Mapping[str, Any]) -> tuple[Any, ...]:
 
 
 def _phase_c_contract(report: Mapping[str, Any]) -> dict[str, Any]:
+    """Return whether a retained Phase-C report is valid as a numbering baseline.
+
+    ``acceptance_provenance`` was added after the accepted ``_02`` run had already
+    been produced. Requiring that later stamp retroactively rejects the actual
+    retained baseline. Instead, require the report's self-contained production
+    contract: schema, 68 page/artifact rows, fresh PR #265 semantic support, and
+    every non-index source gate.
+    """
+
     pages = report.get("pages")
     generated = report.get("generated_artifacts")
     evaluation_inputs = report.get("evaluation_inputs")
@@ -145,24 +152,37 @@ def _phase_c_contract(report: Mapping[str, Any]) -> dict[str, Any]:
     except (KeyError, TypeError, ValueError) as error:
         failures = [f"invalid non-index gate contract: {error}"]
 
-    ok = (
-        isinstance(pages, list)
-        and len(pages) == 68
-        and isinstance(generated, list)
-        and len(generated) == 68
-        and isinstance(acceptance, Mapping)
+    schema_ok = report.get("schema") == EXPECTED_BASELINE_SCHEMA
+    semantic_support_ok = (
+        semantic_support.get("producer") == "src.pipeline.detection.current_homr_worker"
+        and semantic_support.get("runtime_input") == "retained canonical x4 SR images"
         and int(semantic_support.get("pages", -1)) == 68
         and semantic_support.get("historical_detector_artifact_runtime_input") is False
         and semantic_support.get("detector_reexecuted") is False
         and semantic_support.get("real_esrgan_reexecuted") is False
         and semantic_support.get("omr_dln_reexecuted") is False
+    )
+    ok = (
+        schema_ok
+        and isinstance(pages, list)
+        and len(pages) == 68
+        and isinstance(generated, list)
+        and len(generated) == 68
+        and semantic_support_ok
         and not failures
     )
     return {
         "ok": ok,
+        "schema_ok": schema_ok,
         "page_count": len(pages) if isinstance(pages, list) else None,
         "generated_artifact_count": len(generated) if isinstance(generated, list) else None,
         "has_acceptance_provenance": isinstance(acceptance, Mapping),
+        "acceptance_provenance_required": False,
+        "acceptance_provenance_note": (
+            "The retained accepted _02 run predates the later acceptance-provenance stamp; "
+            "baseline eligibility is bound to its semantic-support, gate, and artifact-hash contract."
+        ),
+        "semantic_support_ok": semantic_support_ok,
         "semantic_support": dict(semantic_support),
         "non_index_gate_failures": failures,
     }
@@ -200,9 +220,10 @@ def discover_baseline_report(
 
     if len(accepted) != 1:
         raise RuntimeError(
-            "Expected exactly one accepted Issue #264 Phase-C baseline report; "
+            "Expected exactly one Issue #264 Phase-C numbering baseline; "
             f"accepted={[str(item[0]) for item in accepted]} rejected={rejected}. "
-            "Pass --baseline-report explicitly if multiple accepted reports are retained."
+            "Pass --baseline-report explicitly only when retained storage contains "
+            "multiple independently contract-valid baselines."
         )
     return accepted[0]
 
@@ -369,8 +390,9 @@ def main() -> int:
         "source_summary": str(summary_path),
         "expected_page_count": len(expected),
         "verification_contract": {
-            "baseline": "accepted Issue #264 Phase-C current-production full68 numbering_base",
-            "baseline_requires_pr265_semantics": True,
+            "baseline": "Issue #264 Phase-C PR265-semantic production numbering_base",
+            "baseline_requires_acceptance_provenance_stamp": False,
+            "baseline_requires_fresh_pr265_semantics": True,
             "comparison": "serialized production numbering_base vs serialized production numbering_base",
             "page_number_ordinal_compared": False,
             "staff_bboxes_compared": True,
@@ -405,9 +427,9 @@ def main() -> int:
         "supersedes": {
             "v2": "invalid detector-only numbering baseline assumption",
             "v3": "same control-numbering assumption remained on the control side",
-            "v4": (
-                "used a pre-PR265 stale current-support semantic audit; production fallback "
-                "therefore made it a different connector-evidence contract from fresh runs"
+            "v4": "used pre-PR265 stale current-support semantic artifacts",
+            "v5_initial": (
+                "incorrectly required a later acceptance_provenance stamp on the retained _02 run"
             ),
             "details": "tools/issue274/README_full68_verifier_contract.md",
         },
@@ -427,6 +449,10 @@ def main() -> int:
                 "detector_coverage_ok": detector_ok,
                 "downstream_reuse_ok": downstream_reuse_ok,
                 "baseline_contract_ok": baseline_contract["ok"],
+                "baseline_report": str(baseline_report_path),
+                "baseline_has_acceptance_provenance": baseline_contract[
+                    "has_acceptance_provenance"
+                ],
                 "baseline_page_count": len(baseline_map),
                 "fresh_numbering_page_count": summary["fresh_numbering_base"]["page_count"],
                 "changed_page_count": len(changed),

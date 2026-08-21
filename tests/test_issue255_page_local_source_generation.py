@@ -80,7 +80,9 @@ def test_one_page_source_worker_runs_two_homr_sources_in_order(tmp_path: Path, m
         calls.append(("support", image.stem))
         artifacts = output_root / image.parent.name / image.stem / "artifacts"
         sr = artifacts / "sr" / "batch" / image.stem / image.name
-        detection = artifacts / "current_homr" / "batch" / image.stem / f"{image.stem}_detections.json"
+        detection = (
+            artifacts / "current_homr" / "batch" / image.stem / f"{image.stem}_detections.json"
+        )
         omr = artifacts / "omr_sr" / image.stem / "predictions.json"
         sr.parent.mkdir(parents=True)
         detection.parent.mkdir(parents=True)
@@ -147,7 +149,9 @@ def test_verified_sources_launch_one_top_level_worker_per_page(tmp_path: Path, m
         del worker_output, baseline_output
         calls.append(image)
         artifacts = support_output / image.parent.name / image.stem / "artifacts"
-        detection = artifacts / "current_homr" / "batch" / image.stem / f"{image.stem}_detections.json"
+        detection = (
+            artifacts / "current_homr" / "batch" / image.stem / f"{image.stem}_detections.json"
+        )
         omr = artifacts / "omr_sr" / image.stem / "predictions.json"
         detection.parent.mkdir(parents=True)
         omr.parent.mkdir(parents=True)

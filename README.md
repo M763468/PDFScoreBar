@@ -1,49 +1,44 @@
-# PDF Score Measure Number Adder
+# PDFScoreBar
 
-This repository is an experimental workspace for automatically adding measure numbers to PDF sheet music.
+PDFScoreBar is a score-processing pipeline for barline detection, system/measure grouping,
+measure-number recognition, correction, and final output generation.
 
-The current repository map and operating rules are maintained in `docs/README.md`.
+## Current architecture
 
-## Current branch policy
+The canonical description of the production pipeline is:
 
-- `develop` is the active integration branch.
-- `main` is the stable/release branch.
-- Normal work branches should target `develop`.
-- Promotion from `develop` to `main` must use a dedicated promotion PR with explicit validation results.
+- [`docs/PIPELINE_ARCHITECTURE.md`](docs/PIPELINE_ARCHITECTURE.md) — current dense
+  production caller chain, two-HOMR ownership, coordinate/process boundaries, MMR reuse.
+- [`docs/TWO_HOMR_MILESTONE.md`](docs/TWO_HOMR_MILESTONE.md) — accepted Issue #274 / PR
+  #279 high-accuracy two-HOMR milestone and reproduction contract.
+- [`docs/README.md`](docs/README.md) — documentation index and historical/current
+  classification.
 
-See `docs/BRANCH_POLICY.md` for the standing policy and `AGENTS.md` for agent operating rules.
+Do not infer the current pipeline from old Issue investigation documents or stale generated
+Graphify output. Source/tests and the canonical architecture document are authoritative.
 
-## Main code areas
+## Development baseline
 
-- `src/`: pipeline and reusable project code.
-- `tools/`: maintained command-line utilities and evaluation helpers.
-- `experiments/`: experimental scripts that are not part of normal runtime.
-- `configs/`: pipeline and evaluation configuration files.
-- `docs/`: project documentation, validation policy, and historical records.
-- `data/`: retained evaluation fixtures and local data layout documentation.
+Normal development work targets `develop`; see [`docs/BRANCH_POLICY.md`](docs/BRANCH_POLICY.md).
+Before running repository commands, read [`docs/ENVIRONMENTS.md`](docs/ENVIRONMENTS.md) and
+choose validation using [`docs/dev/VALIDATION_POLICY.md`](docs/dev/VALIDATION_POLICY.md).
 
-Generated logs and run outputs should stay under ignored `logs/` paths unless a specific retention policy says otherwise.
-
-## Validation entry points
-
-Common lightweight validation commands are exposed through the `Makefile`:
+Common commands:
 
 ```bash
+make help
 make test-fast
 make lint
+make docker-build
+make run-smoke
+make run-pipeline CONFIG=configs/dense_full_pipeline.yaml
 ```
 
-Issue #120 / Stage E contract smoke validation is not a self-contained run from a clean checkout. It expects existing full-pipeline artifacts under `logs/issue120_e2e_recovery/stage_e_full_pipeline`. Generate those artifacts first, or reuse an existing local artifact directory, before running the smoke evaluator:
+The maintained full-pipeline runtime is `pdfscore_pipeline_gpu`. Generated experiment and
+pipeline outputs belong under `logs/` unless an explicit retention policy says otherwise.
 
-```bash
-make run-issue120-stage-e-full
-make eval-issue120-stage-e-smoke
-```
+## AI / repository navigation
 
-When the artifact directory already exists, `make eval-issue120-stage-e-smoke` can be run by itself to re-check the contract wiring.
-
-Select validation according to `docs/dev/VALIDATION_POLICY.md` and the scope of the current change.
-
-## License
-
-No explicit license has been declared in this repository.
+Repository-specific agent rules live in [`AGENTS.md`](AGENTS.md). Graphify is a first-pass
+navigation aid; its committed graph must be refreshed after meaningful architecture changes.
+See [`docs/ai-workflow/GRAPHIFY.md`](docs/ai-workflow/GRAPHIFY.md).

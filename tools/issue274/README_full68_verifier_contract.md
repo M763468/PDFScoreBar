@@ -1,6 +1,6 @@
 # Issue #274 — full68 verifier contract and false-negative gate history
 
-This note records why the first two post-hoc full68 topology checks returned a failing gate even though the fresh two-HOMR production run itself completed successfully. It is intentionally separate from the detector/HOMR implementation so that a later verifier change cannot be mistaken for changing the acceptance criterion merely to obtain a passing result.
+This note records why several post-hoc full68 topology checks returned a failing gate even though the fresh two-HOMR production run itself completed successfully. It is intentionally separate from the detector/HOMR implementation so that a later verifier change cannot be mistaken for changing the acceptance criterion merely to obtain a passing result.
 
 ## Detector FN=6: what it means
 
@@ -41,7 +41,7 @@ This failure did not show a production topology regression; it showed that the v
 
 ## Why the first post-hoc repair was also wrong
 
-`verify_two_homr_full68_numbering_posthoc.py` corrected only the fresh-side path assumption by reading the actual per-page Phase-C files:
+`verify_two_homr_full68_numbering_posthoc.py` first corrected only the fresh-side path assumption by reading the actual per-page Phase-C files:
 
 `runs/<score>/outputs/<page_id>/numbering_final.json`
 
@@ -57,68 +57,82 @@ The resulting report therefore showed:
 
 This second failure is useful evidence about the control artifact contract; it is not evidence for or against the two-HOMR architecture.
 
-## Correct topology evidence chain
+## Why the v4 retained semantic audit was not a current-production baseline
 
-Do not create a new comparator that simply weakens the topology requirement.
+The next repair used `analyze_b_downstream_semantic_equivalence.py` as a two-link reference. That audit was useful for proving that the B/current-x4 detector multiplicity differences did not change the downstream result under the retained artifacts available at that time. It is **not**, however, a valid post-PR #265 current-production numbering baseline.
 
-Issue #274 already has an independent retained-artifact CPU-only audit, `analyze_b_downstream_semantic_equivalence.py`, created before the fresh full68 run. It reconstructs both the retained control and the current-x4/B accepted barline sets through the same production `MeasureNumberingPipeline`, with the same authoritative A/original staff-mask contract and connector evidence. Its full68 result is:
+The reason is visible in the production code.
 
-- base-numbering topology unchanged: 68/68 pages;
-- focused detector multiplicity differences collapse to the same downstream x identity.
+`connector_mask_paths_for_numbering()` resolves the current-support `symbols` / `brace_dot` pair from the nearest `current_support` subtree. `MeasureNumberingPipeline._connector_evidence_staves()` then derives a sibling `*_staff_mask.png` path from the resolved symbols path. That sibling current-HOMR staff mask is used for connector-evidence ROIs only when its extracted staff count equals the authoritative A/Proxy numbering staff count. If the counts differ, production deliberately falls back to the A/Proxy staff geometry before evaluating the connector masks.
 
-The fresh full68 run should therefore be checked as a two-link chain rather than by assuming nonexistent control numbering files:
+The old Issue #255 current-support artifacts predate PR #265's coordinate fix. The residual audit showed:
 
-1. **Independent retained audit:** control topology == retained B/current-x4 topology on 68/68 pages.
-2. **Fresh production audit:** actual fresh per-page `numbering_base.json` topology == the retained B/current-x4 topology signature on 68/68 pages.
+- `Va_Prokofiev_Symphony1/page_004`: old semantic staff extracts 235 components, fresh post-#265 semantic staff extracts 13;
+- `Va__Prokofiev_Symphony5/page_022`: old semantic staff extracts 173 components, fresh post-#265 semantic staff extracts 11;
+- connector `symbols` and `brace_dot` mask bytes are identical between retained and fresh for both pages.
 
-Only if both links pass may the fresh run claim downstream topology equivalence. The second link must compare actual fresh production outputs, not recompute a convenient replacement output.
+Therefore the old retained semantic audit and the fresh run execute different production branches:
 
-If the retained semantic audit artifact is unavailable or its provenance/page set does not match the expected 68 pages, the topology status is **unverified**, not passed.
+```text
+old Issue255 current-support
+  -> sibling semantic staff is stale x4/SR-space
+  -> semantic staff count != A/Proxy staff count
+  -> _connector_evidence_staves() returns A/Proxy geometry
+  -> connector masks are measured with A/Proxy ROIs
 
-## What the v4 fresh-link comparison exposed
+fresh post-PR265 current-support
+  -> sibling semantic staff is restored to source-page coordinates
+  -> semantic staff count == A/Proxy staff count
+  -> _connector_evidence_staves() returns current-HOMR semantic geometry
+  -> connector masks are measured with current-HOMR semantic ROIs
+```
 
-The first implementation of the two-link fresh comparison reported 25 changed pages. That count must not be interpreted as 25 production topology regressions.
+This fully explains why switching only the connector artifact **path** changed the earlier reconstruction despite identical connector-mask hashes. The path selects the sibling semantic staff geometry, and the staff-count guard decides whether production uses it or falls back.
 
-The retained semantic audit records `page.systems` directly before serialization, including systems with zero measures. Production `score_to_dict()` deliberately removes those systems from the serialized `systems` array and records them separately under `empty_systems`. The v4 comparator compared those two different representations as if they were the same contract.
+PR #265 explicitly fixed this contract by restoring current-HOMR staff/notehead masks from x4 SR-space to source-page coordinates before persistence and by using the matching current-HOMR staff geometry only for connector-evidence ROIs. Its accepted focused `Va_Prokofiev_Symphony1/page_004` result is the same as the fresh two-HOMR run: membership `[1,1,1,1,1,1,2,1,1,1,1,1]` and 101 physical measures. The earlier v4 comparison's 13-system / 111-measure reference is stale-artifact fallback behavior, not the accepted current-production Phase-A result.
 
-Canonicalizing both sides to active systems (`measure_count > 0`) splits the 25 reported pages into:
+Issue #274 had already declared the merged Issue #264 Phase-C state as the regression baseline. The v4 verifier violated that requirement by substituting the older retained semantic audit.
 
-- 23 representation-only differences: active system/staff membership, per-system measure counts, total measure count, and measure-number sequences are identical after zero-measure systems are excluded;
-- 2 substantive residuals where active topology still differs:
-  - `Va_Prokofiev_Symphony1/page_004`: fresh 12 active systems / 101 measures versus retained B 13 / 111;
-  - `Va__Prokofiev_Symphony5/page_022`: fresh 9 active systems / 36 measures versus retained B 8 / 33.
+## Limitation of the first semantic-geometry diagnostic
 
-The acceptance gate remains **failed/unverified** while either substantive residual remains. The correct response is not to weaken the signature again. `diagnose_two_homr_full68_topology_residuals.py` performs one CPU-only causal crossing on only those residual pages, comparing retained/fresh accepted barlines, authoritative staff masks, and connector semantic masks. It does not rerun HOMR, SR, detector, CNN, MMR, or OCR.
+`diagnose_two_homr_connector_semantic_geometry.py` was useful for exposing the stale-versus-fresh sibling staff masks, but its original cross matrix directly passed extracted semantic staves to `extract_from_mask_maps()`. That bypasses the production `_connector_evidence_staves()` staff-count fallback described above.
 
-This distinction is important: the 23 representation-only pages are a verifier contract bug, while the two residual pages are treated as possible real regressions until the causal diagnostic shows otherwise.
+Consequently:
 
-## What the residual crossing exposed
+- the reported staff-mask hashes/counts are valid forensic observations;
+- the reported connector-mask byte identity is valid;
+- the raw cross-matrix evidence/topology values must **not** be treated as production replay evidence for the stale retained path.
 
-The two-page causal crossing established the following for both substantive residuals:
+No additional inference is needed to resolve this point; the production fallback is explicit in code and the stale coordinate-space defect is already the root cause fixed by PR #265.
 
-- retained and fresh accepted barline lists are byte-for-byte equivalent as ordered bbox lists;
-- retained and fresh A/original numbering staff masks have identical SHA-256 hashes;
-- retained and fresh connector `symbols` masks have identical SHA-256 hashes;
-- retained and fresh connector `brace_dot` masks have identical SHA-256 hashes;
-- switching only the barline path does not change topology;
-- switching only the A/original staff-mask path does not change topology;
-- switching only the connector artifact path reproduces the fresh topology exactly.
+## Final topology acceptance contract
 
-Therefore the remaining difference is path-dependent connector evidence, not a detector-box difference and not a change in the authoritative numbering staff mask or connector-mask pixel content.
+The post-hoc topology gate now compares like with like:
 
-`MeasureNumberingPipeline._connector_evidence_staves()` derives connector-evidence ROIs from the `*_staff_mask.png` stored beside `*_connector_symbols.png`. That current-HOMR staff mask is an additional implicit input to connector grouping. It was not included in the first residual report, so the current evidence does **not** yet prove whether the two-HOMR architecture changed that semantic staff geometry or whether another path-resolution/provenance issue is involved.
+1. discover or explicitly select the accepted Issue #264 Phase-C current-production full68 source report;
+2. require its non-index source gates and acceptance provenance, including 68/68 fresh current-HOMR Phase-A semantic support with no historical detector artifact as runtime input;
+3. verify each retained `numbering_base.json` against the size/SHA recorded in that report;
+4. compare those **serialized production** `numbering_base.json` files with the fresh two-HOMR serialized production `numbering_base.json` files for the same score/page;
+5. compare width/height, active systems, staff bboxes, measure numbers/bboxes, and `empty_systems`; only the page ordinal is excluded because the Phase-C run uses global evaluation page IDs while the fresh runner is score-scoped.
 
-`diagnose_two_homr_connector_semantic_geometry.py` is the next CPU-only diagnostic. It compares the retained/fresh sibling current-HOMR staff masks, extracted staff bboxes, staff-pair connector evidence, and cross-runs connector-mask content against retained/fresh semantic staff geometry. No inference is rerun.
+This is stricter and cleaner than the v4 reconstructed-signature comparison. It does not recompute numbering, does not change the expected answer, and does not use a pre-fix artifact contract as the reference.
 
-The gate remains failed/unverified until this implicit semantic-geometry input is resolved. Do not reinterpret identical connector mask hashes as complete connector-input identity: connector evidence depends on both mask pixels and the staff geometry used to define each ROI.
+If no unique accepted Phase-C report can be established from provenance, the gate is **unverified**. If serialized production numbering differs, the gate fails and reports the changed pages. No full68 inference should be rerun for a verifier-only failure.
+
+## Historical v4 residual accounting
+
+For completeness, v4 initially reported 25 differences because it also compared pre-serialization `page.systems` against serialized production `systems`. Production `score_to_dict()` moves zero-measure systems to `empty_systems`. Canonicalizing that representation reduced the 25 to 23 representation-only differences plus the two stale-semantic-reference differences above.
+
+Those two pages should no longer be described as demonstrated two-HOMR regressions. They demonstrated that v4 chose the wrong retained contract.
 
 ## Cleanup rule
 
 Before Issue #274 is merged, temporary verifier code must be consolidated so that:
 
 - detector-only baselines are never treated as numbering-pipeline baselines;
+- pre-PR #265 stale current-support artifacts are never treated as the current Phase-A semantic baseline;
 - missing comparison artifacts are reported as an artifact-contract/precondition error rather than a functional regression;
 - serialized `systems` are never compared directly with pre-serialization `page.systems` without normalizing the `empty_systems` contract;
-- connector semantic provenance records both connector-mask artifacts and the semantic staff geometry used to define their ROIs;
+- connector semantic provenance records both connector-mask artifacts and the semantic staff geometry/fallback used to define their ROIs;
 - a gate cannot silently switch from raw GT slot cardinality to audited physical-event coverage without recording both values and the audit provenance;
-- obsolete v2/v3/v4 post-hoc paths are removed or clearly deprecated after the final verifier is established.
+- obsolete v2/v3/v4 interpretations remain documented as superseded rather than being silently rewritten.

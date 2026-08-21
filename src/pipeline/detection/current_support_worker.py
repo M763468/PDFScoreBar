@@ -39,6 +39,33 @@ def _load_completed_result(path: Path, *, name: str) -> dict[str, Any]:
     return dict(payload)
 
 
+def _require_current_homr_bundle(payload: Mapping[str, Any]) -> dict[str, Path]:
+    """Validate the current-HOMR artifacts owned by canonical x4 support."""
+
+    if payload.get("connector_complete") is not True:
+        raise RuntimeError("Current x4 support requires a complete connector semantic pair")
+
+    required_fields = (
+        "current_sr_detection",
+        "staff_mask",
+        "connector_symbols",
+        "connector_brace_dot",
+    )
+    missing_fields = [name for name in required_fields if not payload.get(name)]
+    if missing_fields:
+        raise ValueError(
+            "Current x4 support result lacks required HOMR artifacts: " + ", ".join(missing_fields)
+        )
+
+    paths = {name: Path(str(payload[name])).resolve() for name in required_fields}
+    missing_files = [str(path) for path in paths.values() if not path.is_file()]
+    if missing_files:
+        raise FileNotFoundError(
+            "Current x4 support HOMR artifacts missing: " + ", ".join(missing_files)
+        )
+    return paths
+
+
 def _build_worker_environment(base_env: Mapping[str, str] | None = None) -> dict[str, str]:
     """Build the fresh current-runtime environment without local HOMR shadow paths."""
     env = dict(os.environ if base_env is None else base_env)
@@ -163,6 +190,7 @@ def run(request_path: Path, result_path: Path) -> Path:
         python_step="homr",
         env=env,
     )
+    homr_paths = _require_current_homr_bundle(homr_payload)
 
     omr_output = output_root / "omr_sr"
     omr_cmd = get_pipeline_python("omr_dln") + [
@@ -187,11 +215,11 @@ def run(request_path: Path, result_path: Path) -> Path:
         "sr_scale": 4,
         "sr_image": str(actual_sr),
         "sr_sha256": sr_payload.get("sr_sha256"),
-        "current_sr_detection": homr_payload.get("current_sr_detection"),
-        "current_homr_staff_mask": homr_payload.get("staff_mask"),
-        "connector_complete": bool(homr_payload.get("connector_complete", False)),
-        "connector_symbols": homr_payload.get("connector_symbols"),
-        "connector_brace_dot": homr_payload.get("connector_brace_dot"),
+        "current_sr_detection": str(homr_paths["current_sr_detection"]),
+        "current_homr_staff_mask": str(homr_paths["staff_mask"]),
+        "connector_complete": True,
+        "connector_symbols": str(homr_paths["connector_symbols"]),
+        "connector_brace_dot": str(homr_paths["connector_brace_dot"]),
         "homr_api_compat": homr_payload.get("homr_api_compat"),
         "current_omr": str(omr_predictions),
         "support_root": str(output_root),

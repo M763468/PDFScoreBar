@@ -61,6 +61,10 @@ def connector_mask_paths_for_numbering(
     hybrid run's ``current_support`` tree. Keep those two roles independent:
     first accept a complete sibling pair, then look only in the nearest hybrid
     run's ``current_support`` subtree for the same page stem.
+
+    A discovered ``current_support`` subtree is a declared semantic contract. If
+    that subtree lacks a complete pair for this page, fail instead of silently
+    changing connector evidence to the page-image fallback.
     """
 
     staff_path = Path(staff_mask_path)
@@ -93,7 +97,10 @@ def connector_mask_paths_for_numbering(
             )
         if unique:
             return next(iter(unique.values()))
-        return None
+        raise RuntimeError(
+            f"Current support exists but connector semantic pair is missing for {stem} "
+            f"under {support_root}"
+        )
 
     return None
 

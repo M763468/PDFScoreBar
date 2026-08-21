@@ -161,13 +161,14 @@ class MeasureNumberingPipeline:
         image_size: Tuple[int, int],
         connector_mask_paths: Optional[Mapping[str, Path | str]],
     ) -> List[Staff]:
-        """Measure semantic masks against the staff geometry from the same producer.
+        """Resolve the staff geometry paired with stable connector semantic masks.
 
         The selected Proxy/SR staff geometry remains authoritative for system
-        construction. When connector masks are resolved from current-HOMR support,
-        use the sibling current-HOMR staff mask only to define connector-evidence
-        ROIs, then apply that ordered pair evidence to the unchanged numbering
-        geometry.
+        construction. Stable ``*_connector_symbols.png`` artifacts are a declared
+        current-HOMR semantic contract: their sibling ``*_staff_mask.png`` defines
+        connector-evidence ROIs. A missing sibling or a staff-count mismatch is an
+        artifact-contract violation and must fail loudly rather than silently
+        changing the connector-evidence geometry.
         """
         if not connector_mask_paths:
             return geometry_staves
@@ -185,19 +186,21 @@ class MeasureNumberingPipeline:
 
         stem = symbols_path.name[: -len(suffix)]
         semantic_staff_path = symbols_path.with_name(f"{stem}_staff_mask.png")
-        if semantic_staff_path == staff_mask_path or not semantic_staff_path.is_file():
+        if semantic_staff_path == staff_mask_path:
             return geometry_staves
+        if not semantic_staff_path.is_file():
+            raise RuntimeError(
+                "Connector semantic artifact contract is incomplete: "
+                f"missing sibling staff mask {semantic_staff_path} for {symbols_path}"
+            )
 
         semantic_staves = self.extractor.extract(semantic_staff_path, image_size)
         if len(semantic_staves) != len(geometry_staves):
-            logger.warning(
-                "Connector semantic staff count mismatch for %s: geometry=%d semantic=%d; "
-                "keeping numbering geometry for evidence",
-                staff_mask_path,
-                len(geometry_staves),
-                len(semantic_staves),
+            raise RuntimeError(
+                "Connector semantic staff count mismatch: "
+                f"numbering_staff={staff_mask_path} geometry={len(geometry_staves)} "
+                f"semantic_staff={semantic_staff_path} semantic={len(semantic_staves)}"
             )
-            return geometry_staves
 
         return semantic_staves
 

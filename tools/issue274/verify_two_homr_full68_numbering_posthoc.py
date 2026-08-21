@@ -99,9 +99,7 @@ def serialized_numbering_signature(page: Mapping[str, Any]) -> tuple[Any, ...]:
         if not isinstance(staves, list) or not isinstance(measures, list):
             return ()
         staff_boxes = tuple(
-            _bbox(staff.get("bbox"))
-            for staff in staves
-            if isinstance(staff, Mapping)
+            _bbox(staff.get("bbox")) for staff in staves if isinstance(staff, Mapping)
         )
         measure_rows = tuple(
             (measure.get("number"), _bbox(measure.get("bbox")))
@@ -118,11 +116,7 @@ def serialized_numbering_signature(page: Mapping[str, Any]) -> tuple[Any, ...]:
         if not isinstance(staves, list):
             return ()
         empty_rows.append(
-            tuple(
-                _bbox(staff.get("bbox"))
-                for staff in staves
-                if isinstance(staff, Mapping)
-            )
+            tuple(_bbox(staff.get("bbox")) for staff in staves if isinstance(staff, Mapping))
         )
 
     return (
@@ -184,7 +178,9 @@ def discover_baseline_report(
         candidates = [to_workspace(explicit, workspace)]
     else:
         root = to_workspace(baseline_root, workspace)
-        candidates = sorted(root.rglob("phase_c_mmr_regression_report.json")) if root.is_dir() else []
+        candidates = (
+            sorted(root.rglob("phase_c_mmr_regression_report.json")) if root.is_dir() else []
+        )
 
     accepted: list[tuple[Path, Mapping[str, Any], dict[str, Any]]] = []
     rejected: list[dict[str, Any]] = []
@@ -255,7 +251,9 @@ def baseline_numbering_map(
             invalid.append({"page_id": page_id, "path": str(path), "reason": "sha256 mismatch"})
             continue
         if identity in result:
-            invalid.append({"page_id": page_id, "identity": identity, "reason": "duplicate identity"})
+            invalid.append(
+                {"page_id": page_id, "identity": identity, "reason": "duplicate identity"}
+            )
             continue
         result[identity] = path
     return result, invalid

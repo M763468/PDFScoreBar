@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-"""Isolate connector-semantic geometry in the two Issue #274 topology residuals.
+"""Inspect connector-semantic geometry for Issue #274 topology residuals.
 
 Post-hoc and CPU-only. No HOMR, SR, detector, CNN, MMR, OCR, or model inference
-is rerun. The previous residual diagnostic established that accepted barlines,
-A/original numbering staff masks, and connector symbol/brace-dot mask bytes are
-identical between retained and fresh runs, while switching only the connector
-artifact path changes topology.
+is rerun.
 
-Numbering derives connector-evidence staff ROIs from the current-HOMR staff mask
-stored beside ``*_connector_symbols.png``. This diagnostic compares that hidden
-path-dependent input and the resulting staff-pair evidence explicitly.
+Important production contract: connector-mask paths imply a sibling current-HOMR
+``*_staff_mask.png``, but ``MeasureNumberingPipeline._connector_evidence_staves``
+uses that semantic geometry only when its extracted staff count matches the
+A/Proxy numbering geometry. Otherwise production falls back to the A/Proxy staves.
+This diagnostic reports that resolution explicitly. The older v1 diagnostic
+bypassed this fallback in its cross matrix and must not be used as production
+replay evidence.
 """
 
 from __future__ import annotations
@@ -57,15 +58,8 @@ def semantic_staff_path(symbols_path: Path) -> Path:
     return symbols_path.with_name(f"{stem}_staff_mask.png")
 
 
-def staff_bboxes(
-    pipeline: MeasureNumberingPipeline,
-    mask_path: Path,
-    image_size: tuple[int, int],
-) -> list[list[int]]:
-    return [
-        [staff.bbox.x1, staff.bbox.y1, staff.bbox.x2, staff.bbox.y2]
-        for staff in pipeline.extractor.extract(mask_path, image_size)
-    ]
+def staff_bboxes(staves: list[Any]) -> list[list[int]]:
+    return [[staff.bbox.x1, staff.bbox.y1, staff.bbox.x2, staff.bbox.y2] for staff in staves]
 
 
 def compact_evidence(payload: Mapping[str, Any]) -> dict[str, Any]:
@@ -166,6 +160,29 @@ def read_connector_paths(row: Mapping[str, Any], key: str) -> dict[str, Path]:
     return result
 
 
+def resolve_production_evidence(
+    *,
+    pipeline: MeasureNumberingPipeline,
+    geometry_staves: list[Any],
+    geometry_staff_path: Path,
+    image_size: tuple[int, int],
+    connector_paths: Mapping[str, Path],
+) -> tuple[list[Any], dict[str, Any], str]:
+    resolved_staves = pipeline._connector_evidence_staves(  # noqa: SLF001
+        geometry_staves,
+        geometry_staff_path,
+        image_size,
+        connector_paths,
+    )
+    mode = "a_proxy_fallback" if resolved_staves is geometry_staves else "current_homr_semantic"
+    evidence = pipeline.connector_extractor.extract_from_mask_maps(
+        resolved_staves,
+        image_size,
+        connector_mask_paths=connector_paths,
+    )
+    return resolved_staves, evidence, mode
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workspace", type=Path, default=Path("/workspace"))
@@ -181,7 +198,7 @@ def main() -> int:
         workspace,
     )
     output = to_workspace(
-        args.output or (run_root / "two_homr_connector_semantic_geometry_diagnosis.json"),
+        args.output or (run_root / "two_homr_connector_semantic_geometry_diagnosis_v2.json"),
         workspace,
     )
     diagnosis = load_json(diagnosis_path)
@@ -192,7 +209,7 @@ def main() -> int:
             continue
         paths = row.get("paths") or {}
         retained_barlines = to_workspace(str(paths["retained_barlines"]), workspace)
-        retained_geometry_staff = to_workspace(str(paths["retained_staff"]), workspace)
+        geometry_staff_path = to_workspace(str(paths["retained_staff"]), workspace)
         image_path = to_workspace(str(paths["image"]), workspace)
         retained_connectors = {
             key: to_workspace(path, workspace)
@@ -202,8 +219,8 @@ def main() -> int:
             key: to_workspace(path, workspace)
             for key, path in read_connector_paths(row, "fresh_connector_paths").items()
         }
-        retained_semantic_staff = semantic_staff_path(retained_connectors["symbols"])
-        fresh_semantic_staff = semantic_staff_path(fresh_connectors["symbols"])
+        retained_semantic_path = semantic_staff_path(retained_connectors["symbols"])
+        fresh_semantic_path = semantic_staff_path(fresh_connectors["symbols"])
 
         image = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
         if image is None:
@@ -212,59 +229,27 @@ def main() -> int:
         image_size = (width, height)
 
         pipeline = MeasureNumberingPipeline()
-        retained_semantic_bboxes = staff_bboxes(pipeline, retained_semantic_staff, image_size)
-        fresh_semantic_bboxes = staff_bboxes(pipeline, fresh_semantic_staff, image_size)
-        retained_semantic_staves = pipeline.extractor.extract(retained_semantic_staff, image_size)
-        fresh_semantic_staves = pipeline.extractor.extract(fresh_semantic_staff, image_size)
+        geometry_staves = pipeline.extractor.extract(geometry_staff_path, image_size)
+        retained_semantic_staves = pipeline.extractor.extract(retained_semantic_path, image_size)
+        fresh_semantic_staves = pipeline.extractor.extract(fresh_semantic_path, image_size)
 
-        retained_evidence = pipeline.connector_extractor.extract_from_mask_maps(
-            retained_semantic_staves,
-            image_size,
-            connector_mask_paths=retained_connectors,
+        retained_resolved, retained_evidence, retained_mode = resolve_production_evidence(
+            pipeline=pipeline,
+            geometry_staves=geometry_staves,
+            geometry_staff_path=geometry_staff_path,
+            image_size=image_size,
+            connector_paths=retained_connectors,
         )
-        fresh_evidence = pipeline.connector_extractor.extract_from_mask_maps(
-            fresh_semantic_staves,
-            image_size,
-            connector_mask_paths=fresh_connectors,
-        )
-        fresh_masks_retained_geometry = pipeline.connector_extractor.extract_from_mask_maps(
-            retained_semantic_staves,
-            image_size,
-            connector_mask_paths=fresh_connectors,
-        )
-        retained_masks_fresh_geometry = pipeline.connector_extractor.extract_from_mask_maps(
-            fresh_semantic_staves,
-            image_size,
-            connector_mask_paths=retained_connectors,
+        fresh_resolved, fresh_evidence, fresh_mode = resolve_production_evidence(
+            pipeline=pipeline,
+            geometry_staves=geometry_staves,
+            geometry_staff_path=geometry_staff_path,
+            image_size=image_size,
+            connector_paths=fresh_connectors,
         )
 
-        signatures = {
-            "retained_evidence": run_with_evidence(
-                barlines_path=retained_barlines,
-                geometry_staff_path=retained_geometry_staff,
-                image_path=image_path,
-                evidence=retained_evidence,
-            ),
-            "fresh_evidence": run_with_evidence(
-                barlines_path=retained_barlines,
-                geometry_staff_path=retained_geometry_staff,
-                image_path=image_path,
-                evidence=fresh_evidence,
-            ),
-            "fresh_masks_retained_semantic_geometry": run_with_evidence(
-                barlines_path=retained_barlines,
-                geometry_staff_path=retained_geometry_staff,
-                image_path=image_path,
-                evidence=fresh_masks_retained_geometry,
-            ),
-            "retained_masks_fresh_semantic_geometry": run_with_evidence(
-                barlines_path=retained_barlines,
-                geometry_staff_path=retained_geometry_staff,
-                image_path=image_path,
-                evidence=retained_masks_fresh_geometry,
-            ),
-        }
-
+        retained_compact = compact_evidence(retained_evidence)
+        fresh_compact = compact_evidence(fresh_evidence)
         pages.append(
             {
                 "score": row.get("score"),
@@ -273,58 +258,62 @@ def main() -> int:
                     sha256(retained_connectors[key]) == sha256(fresh_connectors[key])
                     for key in ("symbols", "brace_dot")
                 ),
+                "authoritative_geometry": {
+                    "path": str(geometry_staff_path),
+                    "staff_count": len(geometry_staves),
+                    "bboxes": staff_bboxes(geometry_staves),
+                },
                 "semantic_staff": {
-                    "retained_path": str(retained_semantic_staff),
-                    "fresh_path": str(fresh_semantic_staff),
-                    "retained_sha256": sha256(retained_semantic_staff),
-                    "fresh_sha256": sha256(fresh_semantic_staff),
-                    "same_sha256": (
-                        sha256(retained_semantic_staff) == sha256(fresh_semantic_staff)
-                    ),
-                    "retained_staff_count": len(retained_semantic_bboxes),
-                    "fresh_staff_count": len(fresh_semantic_bboxes),
-                    "retained_bboxes": retained_semantic_bboxes,
-                    "fresh_bboxes": fresh_semantic_bboxes,
-                    "same_bboxes": retained_semantic_bboxes == fresh_semantic_bboxes,
+                    "retained": {
+                        "path": str(retained_semantic_path),
+                        "sha256": sha256(retained_semantic_path),
+                        "staff_count": len(retained_semantic_staves),
+                        "bboxes": staff_bboxes(retained_semantic_staves),
+                    },
+                    "fresh": {
+                        "path": str(fresh_semantic_path),
+                        "sha256": sha256(fresh_semantic_path),
+                        "staff_count": len(fresh_semantic_staves),
+                        "bboxes": staff_bboxes(fresh_semantic_staves),
+                    },
                 },
-                "evidence": {
-                    "retained": compact_evidence(retained_evidence),
-                    "fresh": compact_evidence(fresh_evidence),
-                    "changed_pairs": evidence_diff(
-                        compact_evidence(retained_evidence),
-                        compact_evidence(fresh_evidence),
+                "production_resolution": {
+                    "retained_mode": retained_mode,
+                    "fresh_mode": fresh_mode,
+                    "retained_resolved_staff_count": len(retained_resolved),
+                    "fresh_resolved_staff_count": len(fresh_resolved),
+                    "retained_evidence": retained_compact,
+                    "fresh_evidence": fresh_compact,
+                    "changed_pairs": evidence_diff(retained_compact, fresh_compact),
+                },
+                "topology_signatures": {
+                    "retained_production_resolution": run_with_evidence(
+                        barlines_path=retained_barlines,
+                        geometry_staff_path=geometry_staff_path,
+                        image_path=image_path,
+                        evidence=retained_evidence,
                     ),
-                    "fresh_masks_retained_semantic_geometry": compact_evidence(
-                        fresh_masks_retained_geometry
-                    ),
-                    "retained_masks_fresh_semantic_geometry": compact_evidence(
-                        retained_masks_fresh_geometry
+                    "fresh_production_resolution": run_with_evidence(
+                        barlines_path=retained_barlines,
+                        geometry_staff_path=geometry_staff_path,
+                        image_path=image_path,
+                        evidence=fresh_evidence,
                     ),
                 },
-                "topology_signatures": signatures,
-                "interpretation_guard": (
-                    "If connector mask bytes are equal and swapping only semantic staff "
-                    "geometry swaps evidence/topology, the residual is caused by the "
-                    "path-derived current-HOMR staff geometry rather than barline or "
-                    "connector-mask content."
-                ),
             }
         )
 
     result = {
-        "schema_version": "issue274.two_homr_connector_semantic_geometry.v1",
+        "schema_version": "issue274.two_homr_connector_semantic_geometry.v2",
         "status": "completed",
         "source_diagnosis": str(diagnosis_path),
         "page_count": len(pages),
         "pages": pages,
-        "rerun": {
-            "homr": False,
-            "sr": False,
-            "detector": False,
-            "cnn": False,
-            "mmr": False,
-            "ocr": False,
-            "numbering_cpu_only": True,
+        "contract": {
+            "production_staff_count_fallback_replayed": True,
+            "v1_cross_matrix_superseded": True,
+            "rerun_inference": False,
+            "rerun_numbering_cpu_only": True,
         },
     }
     write_json(output, result)
@@ -332,9 +321,15 @@ def main() -> int:
         json.dumps(
             {
                 "page_count": len(pages),
-                "semantic_staff_same_count": sum(
-                    int(bool(page["semantic_staff"]["same_sha256"])) for page in pages
-                ),
+                "resolution_modes": [
+                    {
+                        "score": page["score"],
+                        "page": page["page"],
+                        "retained": page["production_resolution"]["retained_mode"],
+                        "fresh": page["production_resolution"]["fresh_mode"],
+                    }
+                    for page in pages
+                ],
                 "output": str(output),
             },
             indent=2,

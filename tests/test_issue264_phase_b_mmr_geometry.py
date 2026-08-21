@@ -55,9 +55,7 @@ def test_mmr_handoff_reuses_current_x4_support_without_rebuilding_numbering(
     assert page_ctx["page_001"]["resolved"]["staff_mask"] == "proxy_staff.png"
     assert mmr_ctx["page_001"]["numbering_base"] == base_path
     assert mmr_ctx["page_001"]["mmr_support"] == tmp_path / "mmr_support.json"
-    assert mmr_ctx["page_001"]["resolved"]["mmr_support"] == {
-        "source": "current_x4_support"
-    }
+    assert mmr_ctx["page_001"]["resolved"]["mmr_support"] == {"source": "current_x4_support"}
 
 
 def test_mmr_handoff_requires_declared_current_homr_staff_mask(tmp_path: Path) -> None:

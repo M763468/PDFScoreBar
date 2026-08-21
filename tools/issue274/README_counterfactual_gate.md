@@ -41,8 +41,30 @@ Measure bbox geometry differences between control and candidate are reported sep
 
 This counterfactual reruns only deterministic CPU numbering.  It does not rerun HOMR, SR, detector inference, dense candidate generation, CNN, MMR or OCR.
 
+## What the first v6 run exposed
+
+The first v6 execution processed 45 pages and then reported 23 page-local errors.  The 45 processed pages were internally clean:
+
+- candidate reconstruction exact: 45/45;
+- control/candidate topology exact: 45/45;
+- all comparable measure geometry within 10 px.
+
+All 23 errors had the same cause: `Connector semantic staff count mismatch`.  There was no observed control-vs-candidate topology mismatch.
+
+That failure was not evidence of 23 two-HOMR regressions.  The preserved fresh full68 run had already completed numbering for all 68 pages.  Inspecting the code at the full68 runner checkpoint (`90bb6d24cb6040ef64f495350edbbf38b6f7403c`) showed that a current-HOMR semantic-staff count mismatch was an explicit supported branch: production logged a warning and used the authoritative A/Proxy numbering geometry to define connector-evidence ROIs.  A later Issue #274 diagnostic hardening changed that branch to `RuntimeError`, after the expensive full68 run had already been produced.
+
+Therefore v6's first failure exposed a **post-run contract drift in the replay code**, not a candidate regression and not a reason to weaken the causal topology gate.
+
+The production behavior has been restored for staff-count mismatch:
+
+- equal A/current-semantic staff counts -> use current-HOMR semantic staff geometry for connector ROIs;
+- differing counts -> warn and use authoritative A/numbering geometry for connector ROIs;
+- missing sibling current-HOMR staff artifact -> still fail as an incomplete declared support bundle.
+
+The 23 mismatch pages remain part of the evidence record.  They are legitimate producer disagreements handled by the production guard, not silently reclassified as successful semantic-geometry matches.
+
 ## Semantic-artifact failure policy
 
-The current numbering implementation no longer silently falls back when a resolved current-HOMR connector semantic bundle has a missing sibling staff mask or a staff-count mismatch.  Those conditions are artifact-contract violations and raise `RuntimeError`.
+A connector support bundle is incomplete if the resolved current-HOMR connector masks claim a sibling semantic staff artifact that does not exist; that remains a hard error.
 
-Therefore the counterfactual cannot hide a stale/mismatched semantic bundle by switching to A/Proxy geometry: such a page is recorded as an error and the gate fails.
+A **staff-count mismatch is different**.  The A/pinned numbering producer and the current-HOMR semantic producer are allowed to disagree on extracted component cardinality.  The production contract used by the fresh full68 run deliberately falls back to authoritative A/numbering geometry for connector-evidence ROIs in that case.  Treating this supported guard as an artifact failure would change production semantics after the candidate run and invalidate replay rather than strengthen it.

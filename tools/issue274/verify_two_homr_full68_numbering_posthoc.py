@@ -28,7 +28,10 @@ def load_json(path: Path) -> Any:
 
 def write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
 
 
 def to_workspace(value: str | Path, workspace: Path) -> Path:
@@ -93,7 +96,8 @@ def main() -> int:
     run_root = to_workspace(args.run_root, workspace)
     control_root = to_workspace(args.control_root, workspace)
     summary_path = to_workspace(
-        args.summary or (run_root / "two_homr_full68_fresh_summary.json"), workspace
+        args.summary or (run_root / "two_homr_full68_fresh_summary.json"),
+        workspace,
     )
     if not summary_path.is_file():
         raise FileNotFoundError(summary_path)
@@ -144,13 +148,16 @@ def main() -> int:
     detector_ok = bool((previous.get("detector") or {}).get("coverage_ok"))
     page_identity_ok = bool(previous.get("page_identity_ok"))
     old_downstream = previous.get("downstream") or {}
-    downstream_reuse_ok = (
-        not old_downstream.get("contract_bad_pages")
-        and int(old_downstream.get("fallback_page_count", 0)) >= 0
-    )
+    downstream_reuse_ok = not old_downstream.get("contract_bad_pages")
     topology_ok = len(rows) == expected_page_count and not missing and not changed
     gate_pass = all(
-        (architecture_ok, detector_ok, page_identity_ok, downstream_reuse_ok, topology_ok)
+        (
+            architecture_ok,
+            detector_ok,
+            page_identity_ok,
+            downstream_reuse_ok,
+            topology_ok,
+        )
     )
 
     summary = {
@@ -177,7 +184,8 @@ def main() -> int:
     }
 
     output = to_workspace(
-        args.output or (run_root / "two_homr_full68_fresh_summary_v3.json"), workspace
+        args.output or (run_root / "two_homr_full68_fresh_summary_v3.json"),
+        workspace,
     )
     summary["output"] = str(output)
     write_json(output, summary)

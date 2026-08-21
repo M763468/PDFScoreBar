@@ -66,7 +66,10 @@ def test_phase_c_numbering_baseline_rejects_pre_pr265_semantic_run() -> None:
     assert contract["non_index_gate_failures"]
 
 
-def test_connector_semantic_staff_count_mismatch_is_contract_error(tmp_path: Path) -> None:
+def test_connector_semantic_staff_count_mismatch_falls_back_to_numbering_geometry(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     stem = "page_001"
     geometry_staff = tmp_path / "sr" / "batch" / stem / f"{stem}_proxy_debug_3_staff.png"
     semantic_dir = tmp_path / "current_support" / "Score" / stem / "artifacts" / "current_homr"
@@ -84,13 +87,17 @@ def test_connector_semantic_staff_count_mismatch_is_contract_error(tmp_path: Pat
     )
     assert connector_paths is not None
 
-    with pytest.raises(RuntimeError, match="Connector semantic staff count mismatch"):
-        MeasureNumberingPipeline().process_page(
-            [],
-            geometry_staff,
-            (240, 240),
-            connector_mask_paths=connector_paths,
-        )
+    pipeline = MeasureNumberingPipeline()
+    geometry_staves = pipeline.extractor.extract(geometry_staff, (240, 240))
+    evidence_staves = pipeline._connector_evidence_staves(
+        geometry_staves,
+        geometry_staff,
+        (240, 240),
+        connector_paths,
+    )
+
+    assert evidence_staves == geometry_staves
+    assert "keeping numbering geometry for evidence" in caplog.text
 
 
 def test_connector_semantic_missing_staff_is_contract_error(tmp_path: Path) -> None:

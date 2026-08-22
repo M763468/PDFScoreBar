@@ -48,6 +48,7 @@ def run(request_path: Path, result_path: Path) -> Path:
         raise FileNotFoundError(image)
     if not sr_image.is_file():
         raise FileNotFoundError(sr_image)
+    set_context(page=image.stem, image=str(image), sr_image=str(sr_image))
 
     original_image = cv2.imread(str(image), cv2.IMREAD_GRAYSCALE)
     if original_image is None:
@@ -74,6 +75,9 @@ def run(request_path: Path, result_path: Path) -> Path:
         from src.pipeline.detection.connector_artifacts import (
             install_homr_connector_artifact_capture,
         )
+        from src.pipeline.detection.current_homr_perf import (
+            install_current_homr_perf_attribution,
+        )
         from src.pipeline.detection.homr_profile_compat import (
             build_processing_config_compat,
             install_current_homr_consumer_compat,
@@ -90,6 +94,7 @@ def run(request_path: Path, result_path: Path) -> Path:
 
     HomrPredictor = homr_predictor.HomrPredictor
     install_homr_connector_artifact_capture(HomrPredictor)
+    install_current_homr_perf_attribution(homr_main, homr_predictor, homr_heuristics)
 
     config = build_processing_config_compat(
         homr_main.ProcessingConfig,

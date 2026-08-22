@@ -205,49 +205,47 @@ def apply_advanced_sr(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     if upsampler is None:
-        try:
-            with _perf_span("sr_worker.realesrgan_model_initialization", cuda=True):
-                logger.info("Initializing Real-ESRGAN (%s) using device: %s", model_name, device)
-                if model_name == "RealESRGAN_x4plus":
-                    model = RRDBNet(
-                        num_in_ch=3,
-                        num_out_ch=3,
-                        num_feat=64,
-                        num_block=23,
-                        num_grow_ch=32,
-                        scale=4,
-                    )
-                    netscale = 4
-                    model_path = os.path.join(realesrgan_path, "weights", f"{model_name}.pth")
-                elif model_name == "RealESRGAN_x2plus":
-                    model = RRDBNet(
-                        num_in_ch=3,
-                        num_out_ch=3,
-                        num_feat=64,
-                        num_block=23,
-                        num_grow_ch=32,
-                        scale=2,
-                    )
-                    netscale = 2
-                    model_path = os.path.join(realesrgan_path, "weights", f"{model_name}.pth")
-                else:
-                    logger.warning(
-                        "Model %s not explicitly supported. A default (x2plus) will be used.",
-                        model_name,
-                    )
-                    model = RRDBNet(
-                        num_in_ch=3,
-                        num_out_ch=3,
-                        num_feat=64,
-                        num_block=23,
-                        num_grow_ch=32,
-                        scale=2,
-                    )
-                    netscale = 2
-                    model_path = os.path.join(
-                        realesrgan_path, "weights", "RealESRGAN_x2plus.pth"
-                    )
+        with _perf_span("sr_worker.realesrgan_model_initialization", cuda=True):
+            logger.info("Initializing Real-ESRGAN (%s) using device: %s", model_name, device)
+            if model_name == "RealESRGAN_x4plus":
+                model = RRDBNet(
+                    num_in_ch=3,
+                    num_out_ch=3,
+                    num_feat=64,
+                    num_block=23,
+                    num_grow_ch=32,
+                    scale=4,
+                )
+                netscale = 4
+                model_path = os.path.join(realesrgan_path, "weights", f"{model_name}.pth")
+            elif model_name == "RealESRGAN_x2plus":
+                model = RRDBNet(
+                    num_in_ch=3,
+                    num_out_ch=3,
+                    num_feat=64,
+                    num_block=23,
+                    num_grow_ch=32,
+                    scale=2,
+                )
+                netscale = 2
+                model_path = os.path.join(realesrgan_path, "weights", f"{model_name}.pth")
+            else:
+                logger.warning(
+                    "Model %s not explicitly supported. A default (x2plus) will be used.",
+                    model_name,
+                )
+                model = RRDBNet(
+                    num_in_ch=3,
+                    num_out_ch=3,
+                    num_feat=64,
+                    num_block=23,
+                    num_grow_ch=32,
+                    scale=2,
+                )
+                netscale = 2
+                model_path = os.path.join(realesrgan_path, "weights", "RealESRGAN_x2plus.pth")
 
+            try:
                 # Determine tiling strategy
                 if tile is None or tile == -1:
                     tile_size = (
@@ -273,9 +271,9 @@ def apply_advanced_sr(
                     half=use_half,
                     device=device,
                 )
-        except Exception as e:
-            logger.error("Real-ESRGAN initialization failed: %s", e)
-            return image, upsampler
+            except Exception as e:
+                logger.error("Real-ESRGAN initialization failed: %s", e)
+                return image, upsampler
 
     try:
         if image.ndim != 3 or image.shape[2] != 3:

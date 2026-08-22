@@ -78,9 +78,7 @@ def test_vectorized_run_extraction_matches_legacy_boundaries(
 
     assert _extract_vertical_runs(
         binary, min_height=min_height, max_height=max_height
-    ) == _legacy_extract_vertical_runs(
-        binary, min_height=min_height, max_height=max_height
-    )
+    ) == _legacy_extract_vertical_runs(binary, min_height=min_height, max_height=max_height)
 
 
 def test_vectorized_run_extraction_rejects_non_2d_input() -> None:

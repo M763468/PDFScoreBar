@@ -95,8 +95,7 @@ def _extract_vertical_runs(
     run_heights = end_y - start_y
     keep = (run_heights >= min_height_relaxed) & (run_heights <= max_height)
     return [
-        (int(x), int(y1), int(y2))
-        for x, y1, y2 in zip(start_x[keep], start_y[keep], end_y[keep])
+        (int(x), int(y1), int(y2)) for x, y1, y2 in zip(start_x[keep], start_y[keep], end_y[keep])
     ]
 
 

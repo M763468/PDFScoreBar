@@ -111,9 +111,7 @@ def _find_double_pairs_chunked(merged: Sequence[Box], *, cfg) -> set[Box]:
     starts = boxes[:, 0]
     widths = boxes[:, 2] - boxes[:, 0]
     heights = boxes[:, 3] - boxes[:, 1]
-    eligible = (widths <= cfg.double_pair_max_width) & (
-        heights >= cfg.double_pair_min_height
-    )
+    eligible = (widths <= cfg.double_pair_max_width) & (heights >= cfg.double_pair_min_height)
     paired = np.zeros(count, dtype=bool)
     indices = np.arange(count, dtype=np.int64)
 
@@ -146,18 +144,14 @@ def _find_double_pairs_chunked(merged: Sequence[Box], *, cfg) -> set[Box]:
             boxes[left_indices, 1], boxes[right_indices, 1]
         )
         valid = (overlap > 0) & (
-            overlap.astype(np.float64)
-            / np.maximum(heights[left_indices], heights[right_indices])
+            overlap.astype(np.float64) / np.maximum(heights[left_indices], heights[right_indices])
             >= cfg.double_pair_min_overlap
         )
         if np.any(valid):
             paired[left_indices[valid]] = True
             paired[right_indices[valid]] = True
 
-    return {
-        tuple(int(value) for value in boxes[index])
-        for index in np.flatnonzero(paired)
-    }
+    return {tuple(int(value) for value in boxes[index]) for index in np.flatnonzero(paired)}
 
 
 def _timed(stage: str, function: Callable[..., Any]) -> Callable[..., Any]:

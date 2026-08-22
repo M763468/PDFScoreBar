@@ -16,6 +16,7 @@ from tqdm import tqdm
 
 from src.common.barline_evaluation import barline_iou, barline_vertical_overlap
 from src.pipeline.core.run_ids import build_probe_run_id
+from src.pipeline.perf_trace import span
 from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask
 from src.pipeline.steps.filters import filter_by_staff_overlap
 from src.pipeline.steps.probe_scan import _build_staff_mask_map, _load_bands_for_image
@@ -290,25 +291,26 @@ def _score_directory(
     batch_tensors: List[torch.Tensor] = []
     valid_boxes: List[List[float]] = []
 
-    for box in candidates:
-        if not isinstance(box, list) or len(box) != 4:
-            continue
-        x1, y1, x2, y2 = box
-        cx, cy = int((x1 + x2) / 2), int((y1 + y2) / 2)
+    with span("detector.cnn_crop_preprocess"):
+        for box in candidates:
+            if not isinstance(box, list) or len(box) != 4:
+                continue
+            x1, y1, x2, y2 = box
+            cx, cy = int((x1 + x2) / 2), int((y1 + y2) / 2)
 
-        if crop_recenter_on_bbox_ink:
-            cx_adjusted = _compute_bbox_ink_center_x(
-                img, box, max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio
-            )
-            if cx_adjusted is not None:
-                cx = cx_adjusted
+            if crop_recenter_on_bbox_ink:
+                cx_adjusted = _compute_bbox_ink_center_x(
+                    img, box, max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio
+                )
+                if cx_adjusted is not None:
+                    cx = cx_adjusted
 
-        cw, ch = _crop_size_from_bbox(box)
-        crop = _center_crop(img, cx, cy, cw, ch)
-        crop_pil = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
-        tensor = to_tensor(crop_pil.resize((IMG_SIZE[1], IMG_SIZE[0]), resize_filter))
-        batch_tensors.append(tensor)
-        valid_boxes.append(box)
+            cw, ch = _crop_size_from_bbox(box)
+            crop = _center_crop(img, cx, cy, cw, ch)
+            crop_pil = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
+            tensor = to_tensor(crop_pil.resize((IMG_SIZE[1], IMG_SIZE[0]), resize_filter))
+            batch_tensors.append(tensor)
+            valid_boxes.append(box)
 
     if not batch_tensors:
         (run_dir / "pipeline2_no_peak_scored.json").write_text(json.dumps([], indent=2))
@@ -320,9 +322,10 @@ def _score_directory(
         chunk = batch_tensors[i : i + batch_size]
         batch_t = torch.stack(chunk).to(device)
         batch_t = gpu_norm(batch_t)
-        with torch.no_grad():
-            logits = model(batch_t)
-            score_chunks.append(torch.sigmoid(logits).cpu().numpy().flatten())
+        with span("detector.cnn_synchronized_gpu_inference", cuda=device.type == "cuda"):
+            with torch.no_grad():
+                logits = model(batch_t)
+                score_chunks.append(torch.sigmoid(logits).cpu().numpy().flatten())
     scores = np.concatenate(score_chunks)
 
     scored_results = []
@@ -335,46 +338,47 @@ def _score_directory(
             candidate_objects_for_filter.append(item)
 
     # --- Apply Geometric Filtering ---
-    if (staff_mask_path or bands_from) and candidate_objects_for_filter:
-        staff_bands = []
-        if staff_mask_path and staff_mask_path.exists():
-            mask = cv2.imread(str(staff_mask_path), cv2.IMREAD_GRAYSCALE)
-            if mask is not None:
-                staff_bands = staff_bands_from_mask(mask)
+    with span("detector.cnn_post_filtering_and_json_write"):
+        if (staff_mask_path or bands_from) and candidate_objects_for_filter:
+            staff_bands = []
+            if staff_mask_path and staff_mask_path.exists():
+                mask = cv2.imread(str(staff_mask_path), cv2.IMREAD_GRAYSCALE)
+                if mask is not None:
+                    staff_bands = staff_bands_from_mask(mask)
 
-        if not staff_bands and bands_from:
-            existing_boxes = _load_bands_for_image(
-                bands_from=bands_from,
-                current_score_name=current_score_name or "",
-                stem=image_path.stem,
-            )
-            if existing_boxes:
-                staff_bands_stats = build_row_stats(
-                    existing_boxes, cluster_max_dist=None, min_row_count=1
+            if not staff_bands and bands_from:
+                existing_boxes = _load_bands_for_image(
+                    bands_from=bands_from,
+                    current_score_name=current_score_name or "",
+                    stem=image_path.stem,
                 )
-                staff_bands = [(int(r["top"]), int(r["bottom"])) for r in staff_bands_stats]
+                if existing_boxes:
+                    staff_bands_stats = build_row_stats(
+                        existing_boxes, cluster_max_dist=None, min_row_count=1
+                    )
+                    staff_bands = [(int(r["top"]), int(r["bottom"])) for r in staff_bands_stats]
 
-        if staff_bands:
-            # Suppress items that fail staff VOV
-            kept_items = filter_by_staff_overlap(
-                candidate_objects_for_filter, staff_bands, vov_threshold=staff_vov_threshold
-            )
-            kept_indices = {id(item) for item in kept_items}
-            for item in candidate_objects_for_filter:
-                if id(item) not in kept_indices:
-                    item["score"] = 0.0
+            if staff_bands:
+                # Suppress items that fail staff VOV
+                kept_items = filter_by_staff_overlap(
+                    candidate_objects_for_filter, staff_bands, vov_threshold=staff_vov_threshold
+                )
+                kept_indices = {id(item) for item in kept_items}
+                for item in candidate_objects_for_filter:
+                    if id(item) not in kept_indices:
+                        item["score"] = 0.0
 
-    if apply_nms_enabled:
-        apply_nms(candidate_objects_for_filter)
+        if apply_nms_enabled:
+            apply_nms(candidate_objects_for_filter)
 
-    filtered_boxes = [
-        item["bbox"] for item in candidate_objects_for_filter if item["score"] >= threshold
-    ]
+        filtered_boxes = [
+            item["bbox"] for item in candidate_objects_for_filter if item["score"] >= threshold
+        ]
 
-    (run_dir / "pipeline2_no_peak_scored.json").write_text(json.dumps(scored_results, indent=2))
-    (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text(
-        json.dumps(filtered_boxes, indent=2)
-    )
+        (run_dir / "pipeline2_no_peak_scored.json").write_text(json.dumps(scored_results, indent=2))
+        (run_dir / "pipeline2_no_peak_filtered_cnn.json").write_text(
+            json.dumps(filtered_boxes, indent=2)
+        )
     return True
 
 
@@ -399,7 +403,8 @@ def run_cnn_scoring_batch(
     """Run CNN scoring for all probe output dirs with one model load."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     resolved_model_path = _resolve_model_path(model_path)
-    model = _load_model(resolved_model_path, device)
+    with span("detector.cnn_model_load"):
+        model = _load_model(resolved_model_path, device)
     gpu_norm = GPUNormalize(MEAN, STD).to(device)
 
     staff_mask_map = _build_staff_mask_map(staff_mask_dir)
@@ -408,23 +413,25 @@ def run_cnn_scoring_batch(
     for img_path in tqdm(images, desc="CNN Scoring", unit="page"):
         run_id = build_probe_run_id(img_path, score_name=score_name)
         run_dir = probe_output_root / run_id
-        if _score_directory(
-            run_dir=run_dir,
-            image_path=img_path,
-            model=model,
-            gpu_norm=gpu_norm,
-            threshold=threshold,
-            device=device,
-            batch_size=batch_size,
-            staff_mask_path=staff_mask_map.get(img_path.stem),
-            bands_from=bands_from,
-            current_score_name=score_name,
-            staff_vov_threshold=staff_vov_threshold,
-            crop_recenter_on_bbox_ink=crop_recenter_on_bbox_ink,
-            crop_recenter_max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio,
-            input_image_scale=input_image_scale,
-            apply_nms_enabled=apply_nms_enabled,
-            in_memory_images=in_memory_images,
-        ):
+        with span("detector.cnn_page_scoring", fields={"image": str(img_path)}):
+            scored = _score_directory(
+                run_dir=run_dir,
+                image_path=img_path,
+                model=model,
+                gpu_norm=gpu_norm,
+                threshold=threshold,
+                device=device,
+                batch_size=batch_size,
+                staff_mask_path=staff_mask_map.get(img_path.stem),
+                bands_from=bands_from,
+                current_score_name=score_name,
+                staff_vov_threshold=staff_vov_threshold,
+                crop_recenter_on_bbox_ink=crop_recenter_on_bbox_ink,
+                crop_recenter_max_shift_unit_ratio=crop_recenter_max_shift_unit_ratio,
+                input_image_scale=input_image_scale,
+                apply_nms_enabled=apply_nms_enabled,
+                in_memory_images=in_memory_images,
+            )
+        if scored:
             processed += 1
     return processed

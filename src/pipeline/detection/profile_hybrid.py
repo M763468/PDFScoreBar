@@ -12,6 +12,7 @@ from typing import Any, Dict
 
 from tqdm import tqdm
 
+from src.pipeline.perf_trace import span
 from src.pipeline.steps.hybrid_consensus import (
     apply_hybrid_consensus_filter,
     load_json_boxes,
@@ -88,15 +89,16 @@ class VerifiedProfileHybridDetector:
             [str(self.project_root), env.get("PYTHONPATH", "")]
         ).strip(os.pathsep)
         log_path = page_root / "worker.log"
-        with log_path.open("w", encoding="utf-8") as log_file:
-            process = subprocess.run(
-                command,
-                cwd=self.project_root,
-                env=env,
-                stdout=log_file,
-                stderr=subprocess.STDOUT,
-                text=True,
-            )
+        with span("detector.current_support_worker_parent_wall", fields={"image": str(image)}):
+            with log_path.open("w", encoding="utf-8") as log_file:
+                process = subprocess.run(
+                    command,
+                    cwd=self.project_root,
+                    env=env,
+                    stdout=log_file,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                )
         if process.returncode != 0:
             lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
             tail = "\n".join(lines[-60:])
@@ -133,11 +135,12 @@ class VerifiedProfileHybridDetector:
         """Generate the two-HOMR source artifacts for one page in this process."""
 
         commands: list[list[str]] = []
-        baseline_result = run_homr_profile(
-            self.profile_name,
-            images=[image],
-            output_root=baseline_output,
-        )
+        with span("detector.pinned_original_stage_e_homr_total", fields={"image": str(image)}):
+            baseline_result = run_homr_profile(
+                self.profile_name,
+                images=[image],
+                output_root=baseline_output,
+            )
         commands.extend(baseline_result["commands"])
 
         payload, support_command = self._support_worker(
@@ -270,12 +273,15 @@ class VerifiedProfileHybridDetector:
 
         worker_output = baseline_output.parent / "source_page_workers"
         for image in tqdm(self.images, desc="Two-HOMR source generation", unit="page"):
-            payload, worker_command = self._source_page_worker(
-                image=image,
-                worker_output=worker_output,
-                baseline_output=baseline_output,
-                support_output=support_output,
-            )
+            with span(
+                "detector.verified_source_page_worker_parent_wall", fields={"image": str(image)}
+            ):
+                payload, worker_command = self._source_page_worker(
+                    image=image,
+                    worker_output=worker_output,
+                    baseline_output=baseline_output,
+                    support_output=support_output,
+                )
             current_sr_detection = self._current_detection_path(payload)
             omr = Path(str(payload["current_omr"])).resolve()
             if not omr.is_file():
@@ -330,11 +336,12 @@ class VerifiedProfileHybridDetector:
                     raise FileNotFoundError(
                         f"Two-HOMR hybrid components missing for {stem}: {missing}"
                     )
-                hybrid_preds = apply_hybrid_consensus_filter(
-                    baseline_boxes=load_json_boxes(baseline_json),
-                    sr_boxes=load_json_boxes(sr_json),
-                    omr_boxes=load_json_boxes(omr_json),
-                )
+                with span("detector.hybrid_consensus", fields={"image": str(image)}):
+                    hybrid_preds = apply_hybrid_consensus_filter(
+                        baseline_boxes=load_json_boxes(baseline_json),
+                        sr_boxes=load_json_boxes(sr_json),
+                        omr_boxes=load_json_boxes(omr_json),
+                    )
                 output_json.write_text(
                     json.dumps(hybrid_preds, indent=2, ensure_ascii=False) + "\n",
                     encoding="utf-8",

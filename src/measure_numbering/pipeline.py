@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 
 from src.common.connector_artifacts import connector_mask_paths_for_numbering
+from src.pipeline.perf_trace import span
 
 from .connector_aware_builder import ConnectorAwareSystemBuilder
 from .connector_evidence import SystemConnectorEvidenceExtractor
@@ -83,34 +84,36 @@ class MeasureNumberingPipeline:
         connector_mask_paths: Optional[Mapping[str, Path | str]] = None,
         connector_evidence_output_path: Optional[Path] = None,
     ) -> Page:
-        staves = self.extractor.extract(staff_mask_path, image_size)
+        with span("phase_a.staff_extraction", fields={"staff_mask": str(staff_mask_path)}):
+            staves = self.extractor.extract(staff_mask_path, image_size)
 
         if connector_evidence is None and not connector_masks and not connector_mask_paths:
             connector_mask_paths = connector_mask_paths_for_numbering(staff_mask_path)
 
         if connector_evidence is None:
-            if connector_masks or connector_mask_paths:
-                evidence_staves = self._connector_evidence_staves(
-                    staves,
-                    staff_mask_path,
-                    image_size,
-                    connector_mask_paths,
-                )
-                connector_evidence = self.connector_extractor.extract_from_mask_maps(
-                    evidence_staves,
-                    image_size,
-                    connector_masks=connector_masks,
-                    connector_mask_paths=connector_mask_paths,
-                )
-            elif image is not None:
-                connector_evidence = self.connector_extractor.extract(
-                    staves,
-                    image_size,
-                    symbol_mask=self._image_to_connector_mask(image),
-                    source="page_image_ink",
-                    include_absent_pairs=False,
-                    connector_density_threshold=0.01,
-                )
+            with span("phase_a.connector_semantic_evidence"):
+                if connector_masks or connector_mask_paths:
+                    evidence_staves = self._connector_evidence_staves(
+                        staves,
+                        staff_mask_path,
+                        image_size,
+                        connector_mask_paths,
+                    )
+                    connector_evidence = self.connector_extractor.extract_from_mask_maps(
+                        evidence_staves,
+                        image_size,
+                        connector_masks=connector_masks,
+                        connector_mask_paths=connector_mask_paths,
+                    )
+                elif image is not None:
+                    connector_evidence = self.connector_extractor.extract(
+                        staves,
+                        image_size,
+                        symbol_mask=self._image_to_connector_mask(image),
+                        source="page_image_ink",
+                        include_absent_pairs=False,
+                        connector_density_threshold=0.01,
+                    )
 
         if connector_evidence is not None and connector_evidence_output_path is not None:
             self.connector_extractor.write_json(connector_evidence, connector_evidence_output_path)
@@ -121,12 +124,13 @@ class MeasureNumberingPipeline:
             for i, staff in enumerate(staves):
                 staff.system_index = i
 
-        systems = self.builder.build_systems(
-            staves,
-            barlines,
-            image=image,
-            connector_evidence=connector_evidence,
-        )
+        with span("phase_a.connector_aware_system_grouping"):
+            systems = self.builder.build_systems(
+                staves,
+                barlines,
+                image=image,
+                connector_evidence=connector_evidence,
+            )
 
         page = Page(
             systems=systems, page_number=page_number, width=image_size[0], height=image_size[1]
@@ -150,7 +154,8 @@ class MeasureNumberingPipeline:
             )
             score.pages.append(page)
 
-        self.numberer.number_score(score, start_number=start_number)
+        with span("phase_a.measure_numbering"):
+            self.numberer.number_score(score, start_number=start_number)
 
         return score
 

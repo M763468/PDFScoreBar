@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from src.pipeline.perf_trace import span
 from src.pipeline.steps.probe_scan import run_probe_scan_batch
 
 logger = logging.getLogger(__name__)
@@ -166,37 +167,38 @@ def _run_command(
     logger.info("+ %s > %s", " ".join(cmd), effective_log_path)
     started_at = time.perf_counter()
 
-    if verbose_logs:
-        with effective_log_path.open("w", encoding="utf-8") as log_file:
-            process = subprocess.run(cmd, stdout=log_file, stderr=subprocess.STDOUT)
-        duration_sec = time.perf_counter() - started_at
-        summary = CommandLogSummary(
-            command=cmd,
-            log_path=effective_log_path,
-            log_mode="verbose",
-            returncode=process.returncode,
-            duration_sec=duration_sec,
-            output_lines=-1,
-            output_bytes=-1,
-            omitted_middle_lines=0,
-            log_size_bytes=effective_log_path.stat().st_size,
-        )
-    else:
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            bufsize=1,
-        )
-        summary = _write_compact_log(
-            effective_log_path,
-            cmd=cmd,
-            process=process,
-            started_at=started_at,
-        )
+    with span("detector.dense_route_command", fields={"command": cmd[0] if cmd else ""}):
+        if verbose_logs:
+            with effective_log_path.open("w", encoding="utf-8") as log_file:
+                process = subprocess.run(cmd, stdout=log_file, stderr=subprocess.STDOUT)
+            duration_sec = time.perf_counter() - started_at
+            summary = CommandLogSummary(
+                command=cmd,
+                log_path=effective_log_path,
+                log_mode="verbose",
+                returncode=process.returncode,
+                duration_sec=duration_sec,
+                output_lines=-1,
+                output_bytes=-1,
+                omitted_middle_lines=0,
+                log_size_bytes=effective_log_path.stat().st_size,
+            )
+        else:
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                bufsize=1,
+            )
+            summary = _write_compact_log(
+                effective_log_path,
+                cmd=cmd,
+                process=process,
+                started_at=started_at,
+            )
 
     if summary.returncode != 0:
         raise subprocess.CalledProcessError(summary.returncode, cmd)

@@ -11,6 +11,8 @@ from typing import Any
 import cv2
 import numpy as np
 
+from src.pipeline.perf_trace import set_context, span
+
 
 def _load_request(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -59,7 +61,8 @@ def run(request_path: Path, result_path: Path) -> Path:
     # Load current HOMR only after the Real-ESRGAN process has exited. Compatibility
     # is applied to the callable/class objects held by their consumers so import-time
     # bindings in predictor/heuristics do not bypass the shared boundary.
-    import torch
+    with span("current_homr_worker.heavy_imports_cuda_init"):
+        import torch
 
     import homr.main as homr_main
     from homr.music_xml_generator import XmlGeneratorArguments
@@ -100,19 +103,21 @@ def run(request_path: Path, result_path: Path) -> Path:
             "barline_max_width_factor": det_cfg.get("barline_max_width_factor", 1.0),
         }
     )
-    predictor = HomrPredictor(config, tuning, use_gpu_inference=use_gpu_inference)
+    with span("current_homr_worker.predictor_model_initialization"):
+        predictor = HomrPredictor(config, tuning, use_gpu_inference=use_gpu_inference)
     xml_args = XmlGeneratorArguments(False, None, None)
 
     stem = image.stem
     image_run_dir = output_root / "batch" / stem
     image_run_dir.mkdir(parents=True, exist_ok=True)
     try:
-        predictions, _, _, _, notehead_mask, staff_mask, _, _ = predictor.predict(
-            sr_image,
-            xml_args,
-            sr_scale=sr_scale,
-            image_run_dir=image_run_dir,
-        )
+        with span("current_homr_worker.synchronized_prediction", cuda=True):
+            predictions, _, _, _, notehead_mask, staff_mask, _, _ = predictor.predict(
+                sr_image,
+                xml_args,
+                sr_scale=sr_scale,
+                image_run_dir=image_run_dir,
+            )
         metrics_predictions = [
             BarlinePrediction(
                 pred_bbox=prediction.pred_bbox,
@@ -122,13 +127,14 @@ def run(request_path: Path, result_path: Path) -> Path:
             )
             for prediction in predictions
         ]
-        save_homr_results(
-            image,
-            image_run_dir,
-            metrics_predictions,
-            _resize_mask_to_image_size(notehead_mask, image_size),
-            _resize_mask_to_image_size(staff_mask, image_size),
-        )
+        with span("current_homr_worker.artifact_generation_resizing_serialization"):
+            save_homr_results(
+                image,
+                image_run_dir,
+                metrics_predictions,
+                _resize_mask_to_image_size(notehead_mask, image_size),
+                _resize_mask_to_image_size(staff_mask, image_size),
+            )
     finally:
         predictor.cleanup()
 
@@ -171,6 +177,7 @@ def main() -> int:
     parser.add_argument("--request", type=Path, required=True)
     parser.add_argument("--result", type=Path, required=True)
     args = parser.parse_args()
+    set_context(process_role="current_homr_worker")
     try:
         result = run(args.request, args.result)
     except Exception as error:  # noqa: BLE001

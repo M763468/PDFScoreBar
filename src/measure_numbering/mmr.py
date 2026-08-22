@@ -13,6 +13,8 @@ from PIL import Image
 from rapidocr_onnxruntime import RapidOCR
 from torchvision import models, transforms
 
+from src.pipeline.perf_trace import span
+
 logger = logging.getLogger(__name__)
 
 # --- Preprocessing for Model ---
@@ -35,7 +37,8 @@ class MMRClassifier:
         if model is not None:
             self.model = model
         else:
-            self.model = self._load_model(model_path)
+            with span("mmr.MMRClassifier_initialization"):
+                self.model = self._load_model(model_path)
 
     def _load_model(self, model_path: Path) -> nn.Module:
         model = models.resnet18(weights=None)
@@ -65,9 +68,10 @@ class MMRClassifier:
 
         input_tensor = self.transform(pil_img).unsqueeze(0).to(self.device)
 
-        with torch.no_grad():
-            output = self.model(input_tensor)
-            prob = torch.sigmoid(output).item()
+        with span("mmr.CNN_preprocess_and_synchronized_inference", cuda=self.device.type == "cuda"):
+            with torch.no_grad():
+                output = self.model(input_tensor)
+                prob = torch.sigmoid(output).item()
 
         return prob
 
@@ -79,7 +83,8 @@ class MMROCREngine:
         if ocr_engine is not None:
             self.ocr_engine = ocr_engine
         else:
-            self.ocr_engine = RapidOCR()
+            with span("mmr.MMROCREngine_RapidOCR_initialization"):
+                self.ocr_engine = RapidOCR()
         self.enable_rotation_tta = enable_rotation_tta
         self.blacklist = [
             "Viol",
@@ -107,6 +112,11 @@ class MMROCREngine:
             "Presto",
             "Moderato",
         ]
+
+    def _ocr_call(self, proc_img: np.ndarray, *, kind: str) -> tuple:
+        """Time one OCR call without changing RapidOCR behavior."""
+        with span("mmr.ocr_call", fields={"ocr_kind": kind, "ocr_call": True}):
+            return self.ocr_engine(proc_img)
 
     def mask_hbar_candidates(
         self, img: np.ndarray, staff_top_rel: float, staff_height: float
@@ -762,22 +772,23 @@ class MMRProcessor:
         if found is None or score > self.JITTER_SCORE_TRIGGER:
             return baseline
         views = [baseline]
-        for dx in (-2, 2):
-            views.append(
-                self._detect_number_with_evidence_once(
-                    image, system, x1 + dx, y1, x2 + dx, y2, prob, w_img, h_img
+        with span("mmr.j2_geometry_jitter_retry_ocr"):
+            for dx in (-2, 2):
+                views.append(
+                    self._detect_number_with_evidence_once(
+                        image, system, x1 + dx, y1, x2 + dx, y2, prob, w_img, h_img
+                    )
                 )
-            )
-        for dy in (-2, 2):
-            shifted = deepcopy(system)
-            for stave in shifted.get("staves", []):
-                stave["bbox"][1] += dy
-                stave["bbox"][3] += dy
-            views.append(
-                self._detect_number_with_evidence_once(
-                    image, shifted, x1, y1, x2, y2, prob, w_img, h_img
+            for dy in (-2, 2):
+                shifted = deepcopy(system)
+                for stave in shifted.get("staves", []):
+                    stave["bbox"][1] += dy
+                    stave["bbox"][3] += dy
+                views.append(
+                    self._detect_number_with_evidence_once(
+                        image, shifted, x1, y1, x2, y2, prob, w_img, h_img
+                    )
                 )
-            )
         votes = Counter(item[0] for item in views if item[0] is not None and item[0] >= 2)
         if not votes:
             return baseline
@@ -829,7 +840,8 @@ class MMRProcessor:
                 if proc_img is None:
                     continue
 
-                ocr_res, _ = self.ocr.ocr_engine(proc_img)
+                ocr_kind = "baseline" if mode == "standard" and angle == 0 else "alternate"
+                ocr_res, _ = self.ocr._ocr_call(proc_img, kind=ocr_kind)
                 variant_key = (mode, angle)
                 one_bar_evidences[variant_key] = one_bar_evidences.get(
                     variant_key, 0
@@ -898,7 +910,7 @@ class MMRProcessor:
                     if proc_img is None:
                         continue
 
-                    ocr_res, _ = self.ocr.ocr_engine(proc_img)
+                    ocr_res, _ = self.ocr._ocr_call(proc_img, kind="fallback")
                     variant_key = (name, 0)
                     one_bar_evidences[variant_key] = one_bar_evidences.get(
                         variant_key, 0
@@ -964,4 +976,5 @@ def run_mmr_batch(
         rescue_threshold=rescue_threshold,
         enable_rotation_tta=enable_rotation_tta,
     )
-    return processor.process_pages(pages_data, image_paths, debug_root, support_data)
+    with span("mmr.batch_total"):
+        return processor.process_pages(pages_data, image_paths, debug_root, support_data)

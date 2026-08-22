@@ -23,6 +23,7 @@ from src.pipeline.detection import (
     resolve_paths_from_detection,
     run_detection_step,
 )
+from src.pipeline.perf_trace import set_context, span
 from src.pipeline.review.manual_correction_materializer import (
     materialize_manual_correction_review_package,
 )
@@ -157,6 +158,15 @@ class PipelineOrchestrator:
 
     def run(self, page_limit: Optional[int] = None) -> Path:
         """Executes the full pipeline."""
+        trace_token = set_context(run_id=self.run_id, process_role="pipeline_main")
+        try:
+            return self._run_traced(page_limit=page_limit)
+        finally:
+            from src.pipeline.perf_trace import reset_context
+
+            reset_context(trace_token)
+
+    def _run_traced(self, page_limit: Optional[int] = None) -> Path:
         self._validate_review_package_prerequisites()
         commands: List[List[str]] = []
 
@@ -181,9 +191,12 @@ class PipelineOrchestrator:
         persist_to_disk = self._should_persist_pdf_images(pdf_opts)
 
         # Only pass in_memory_images to collect_images if we actually used the cache (i.e. did not persist)
-        images = collect_images(
-            self.config, self.run_dir, in_memory_images=mem_images if not persist_to_disk else None
-        )
+        with span("pipeline.input_image_collection"):
+            images = collect_images(
+                self.config,
+                self.run_dir,
+                in_memory_images=mem_images if not persist_to_disk else None,
+            )
         if page_limit is not None:
             images = images[:page_limit]
         page_ids = resolve_page_ids(self.config, images)
@@ -200,15 +213,16 @@ class PipelineOrchestrator:
                     self.config["detection"] = {}
                 self.config["detection"]["probe_skip_existing"] = True
 
-            det_result = run_detection_step(
-                self.config,
-                images,
-                page_ids,
-                self.run_id,
-                self.run_dir,
-                dry_run=self.dry_run,
-                in_memory_images=mem_images if not persist_to_disk else None,
-            )
+            with span("pipeline.detection_total"):
+                det_result = run_detection_step(
+                    self.config,
+                    images,
+                    page_ids,
+                    self.run_id,
+                    self.run_dir,
+                    dry_run=self.dry_run,
+                    in_memory_images=mem_images if not persist_to_disk else None,
+                )
             commands.extend(det_result["commands"])
             probe_output_dir = det_result["probe_output_dir"]
             hybrid_output_dir = det_result["hybrid_output_dir"]
@@ -229,9 +243,10 @@ class PipelineOrchestrator:
                 self.config, page_ids, page_runs, excluded_page_ids=excluded_page_ids
             )
 
-        page_statuses = resolve_page_filters(
-            self.config, page_ids, images, resolved, excluded_indices
-        )
+        with span("pipeline.filter_resolution"):
+            page_statuses = resolve_page_filters(
+                self.config, page_ids, images, resolved, excluded_indices
+            )
 
         user_overrides_path = get_nested(self.config, "inputs", "measure_overrides")
         user_overrides_payload = None
@@ -239,9 +254,10 @@ class PipelineOrchestrator:
             user_overrides_payload = load_json(Path(user_overrides_path))
 
         # Phase A: Base Numbering & Barline Correction
-        res_a = self.run_base_numbering_and_barline_correction(
-            page_ids, images, resolved, excluded_page_ids
-        )
+        with span("pipeline.phase_a_base_numbering"):
+            res_a = self.run_base_numbering_and_barline_correction(
+                page_ids, images, resolved, excluded_page_ids
+            )
         page_ctx = res_a["page_ctx"]
         numbering_base_paths = res_a["numbering_base_paths"]
         barline_override_stats = res_a["barline_override_stats"]
@@ -259,13 +275,16 @@ class PipelineOrchestrator:
         ):
             from src.pipeline.mmr_geometry_handoff import build_mmr_page_context
 
-            mmr_page_ctx = build_mmr_page_context(self, page_ids, excluded_page_ids, page_ctx)
-        self.run_mmr_batch_detection(page_ids, excluded_page_ids, mmr_page_ctx)
+            with span("pipeline.mmr_support_handoff"):
+                mmr_page_ctx = build_mmr_page_context(self, page_ids, excluded_page_ids, page_ctx)
+        with span("pipeline.mmr_batch"):
+            self.run_mmr_batch_detection(page_ids, excluded_page_ids, mmr_page_ctx)
 
         # Phase C: Final Numbering & Overlays
-        numbering_final_paths = self.run_final_numbering_and_overlays(
-            page_ids, excluded_page_ids, page_ctx, user_overrides_payload
-        )
+        with span("pipeline.phase_c_final_numbering"):
+            numbering_final_paths = self.run_final_numbering_and_overlays(
+                page_ids, excluded_page_ids, page_ctx, user_overrides_payload
+            )
 
         # Post-processing: Combine results
         if len(numbering_base_paths) > 1 and not self.dry_run and not self.validate_only:
@@ -285,7 +304,8 @@ class PipelineOrchestrator:
             write_json(self.outputs_dir / "numbering_final.json", combined_final)
 
         if not self.dry_run:
-            write_json(self.run_dir / "filters.json", {"pages": page_statuses})
+            with span("pipeline.final_serialization"):
+                write_json(self.run_dir / "filters.json", {"pages": page_statuses})
 
             manifest_resolved = self._resolved_for_manifest(
                 page_ids=page_ids,

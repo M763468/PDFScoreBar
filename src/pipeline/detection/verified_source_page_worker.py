@@ -8,6 +8,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from src.pipeline.perf_trace import set_context, span
+
 from .profile_hybrid import VerifiedProfileHybridDetector
 
 
@@ -40,11 +42,15 @@ def run(request_path: Path, result_path: Path) -> Path:
         skip_existing=False,
         profile_name=profile_name,
     )
-    payload = detector._generate_one_page_sources_in_process(
-        image=image,
-        baseline_output=baseline_output,
-        support_output=support_output,
+    set_context(
+        run_id=run_id, page=image.stem, image=str(image), process_role="verified_source_page_worker"
     )
+    with span("detector.verified_source_page_worker_internal_total", fields={"image": str(image)}):
+        payload = detector._generate_one_page_sources_in_process(
+            image=image,
+            baseline_output=baseline_output,
+            support_output=support_output,
+        )
     payload.update(
         {
             "schema_version": "pipeline.verified_source_page.v2",

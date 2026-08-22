@@ -5,6 +5,11 @@ reproducible comparison milestone for later work, including Issue #281 performan
 optimization. It is a compact durable contract; the long Issue #274 investigation remains
 historical evidence.
 
+The intent is not to make every large evaluation/model artifact part of Git. The milestone
+is reproducible when the accepted source revision is checked out, the named external/local
+assets below are staged at their canonical paths, and their identity is recorded before a
+comparison run.
+
 ## Accepted revision
 
 - Accepted squash merge: `df130d12a71a8e7f65382f3e9d97e1ea9c3ee9ca`
@@ -99,29 +104,119 @@ docker run --rm --gpus all \
 
 Do not use `--skip-existing` when the purpose is a fresh production reproduction.
 
-## Required inputs and current reproducibility gap
+## Required local/external assets and staging contract
 
-A fresh checkout is **not by itself sufficient** to rerun the full accepted accuracy or
-performance experiment.
+Large evaluation images and the Issue #44 CNN checkpoint intentionally remain outside Git.
+That is part of the repository's artifact policy, not an unresolved requirement to commit
+them. A milestone comparison must stage the following assets at the paths expected by the
+accepted config.
 
-The canonical config expects at least:
+### Canonical evaluation2 page set
 
-- evaluation page images at `data/evaluation2/images/`;
-- detector GT at `data/evaluation2/annotations/` (tracked);
-- CNN barline classifier weight at
-  `logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth`;
-- MMR classifier weight at `tools/mmr_training/models/mmr_classifier_best.pth`;
-- the pinned Stage-E runtime/model material described by
+The canonical full-68 page selection is the `SCORES` mapping in
+`tools/issue120/eval_full68_from_intermediates.py`. It is the mechanically authoritative
+work/page list for this milestone. The image tree must contain the corresponding files at:
+
+```text
+data/evaluation2/images/<score>/<page>.png
+```
+
+and the tracked GT must contain the matching annotation pages under:
+
+```text
+data/evaluation2/annotations/<score>/<page>/
+```
+
+The evaluation2 history is Issue #16: five works were assembled and the usable score-page
+subset was reduced to 68 pages after non-score/omitted pages. Do not evaluate all filenames
+found under `data/evaluation2/images/` and call that the milestone; use the committed
+`SCORES` selection.
+
+A lightweight staging check is:
+
+```bash
+PYTHONPATH=. python - <<'PY'
+from pathlib import Path
+from tools.issue120.eval_full68_from_intermediates import SCORES
+
+root = Path("data/evaluation2")
+missing_images = []
+missing_gt = []
+count = 0
+for score, pages in SCORES.items():
+    for page in pages:
+        count += 1
+        image = root / "images" / score / f"{page}.png"
+        gt = root / "annotations" / score / page / "boxes_sorted.json"
+        if not image.is_file():
+            missing_images.append(str(image))
+        if not gt.is_file():
+            missing_gt.append(str(gt))
+
+print(f"canonical_pages={count}")
+print(f"missing_images={len(missing_images)}")
+print(f"missing_gt={len(missing_gt)}")
+if missing_images or missing_gt:
+    raise SystemExit(1)
+PY
+```
+
+Expected precondition is `canonical_pages=68`, `missing_images=0`, `missing_gt=0`.
+
+### CNN barline classifier checkpoint
+
+The production config expects:
+
+```text
+logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
+```
+
+This is the Issue #44 / PR #57 **Iter 7 final rescue** model. Its durable provenance and
+reconstruction procedure are already committed in `docs/ISSUE44_ITER7_FINAL_REPORT.md`:
+
+```bash
+.venv_cnn_classifier/bin/python tools/cnn_classifier/build_iter7_hard_samples.py
+cp -r datasets/cnn_classifier_v7_hard_mining/* datasets/cnn_classifier_v7_base/
+CNN_DATASET_ROOT=datasets/cnn_classifier_v7_base \
+  .venv_cnn_classifier/bin/python experiments/cnn_classifier/train.py \
+  --config configs/cnn_barline_runs/issue44_iter7_final_rescue/train.yaml
+```
+
+The exact checkpoint used by an existing accepted/local run should be reused from the
+canonical path above. Before a new comparison, record its content identity rather than
+relying only on the filename:
+
+```bash
+sha256sum \
+  logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
+```
+
+The historical work did not commit that large checkpoint or a durable SHA-256 for its
+specific local bytes. Therefore:
+
+- if the canonical checkpoint is still retained locally, its SHA-256 is the comparison-run
+  identity and should be copied into that run's small provenance summary;
+- if it has been lost, the committed Issue #44 Iter 7 procedure above is the canonical
+  reconstruction route;
+- a newly reconstructed checkpoint must be labelled as a reconstructed Iter 7 checkpoint,
+  not claimed to be byte-identical to the lost historical file unless its hash has been
+  independently matched.
+
+This is sufficient for the purpose of this milestone: future work can either compare using
+the retained accepted checkpoint or mechanically reconstruct the same Iter 7 training
+contract without reopening the Issue #44 investigation.
+
+### Other required model/runtime assets
+
+The canonical config additionally expects:
+
+- MMR classifier: `tools/mmr_training/models/mmr_classifier_best.pth`;
+- pinned Stage-E runtime/model material described by
   `configs/detector_profiles/stage_e_verified_homr.json`.
 
-`data/evaluation2/images/` and the configured CNN weight are not retained on `develop`.
-They are local/external reproduction dependencies. Therefore a new environment must stage
-those exact inputs before claiming a full milestone reproduction. The absence of the CNN
-weight from Git means its content hash and canonical recovery location should be recorded
-in a follow-up retention task before the milestone can be called fresh-clone reproducible.
-
-Never substitute a newly trained model, a different page-image export, or a different
-profile while reporting the accepted milestone; that creates a new experiment.
+The pinned HOMR profile carries its model hashes. Do not substitute a newly trained CNN, a
+different evaluation page selection/export, or another HOMR profile while reporting the
+accepted milestone; that constitutes a new experiment and must be labelled accordingly.
 
 ## Accepted accuracy evidence
 
@@ -184,7 +279,7 @@ The accepted production code is the PR #279 squash merge `df130d12...`; the orig
 
 For a new causal performance comparison:
 
-1. stage the exact representative page and configured model artifacts;
+1. stage the canonical page/model assets above and record the CNN checkpoint SHA-256;
 2. use the same `pdfscore_pipeline_gpu` image/hardware state for every compared ref;
 3. preserve the same `configs/dense_full_pipeline.yaml` content;
 4. run the production path through MMR so both removed inference boundaries are covered;
@@ -218,22 +313,28 @@ Keep in Git:
 
 - this milestone document and `docs/PIPELINE_ARCHITECTURE.md`;
 - `configs/dense_full_pipeline.yaml`;
+- `docs/ISSUE44_ITER7_FINAL_REPORT.md` and the Iter 7 train config/scripts needed to
+  reconstruct the CNN training contract;
+- `tools/issue120/eval_full68_from_intermediates.py` as the canonical 68-page selection;
 - the pinned HOMR profile JSON and its model hashes;
 - focused architecture/ownership tests;
-- small reusable Issue #274 replay/scoring utilities that remain useful;
-- a future hash/recovery record for the untracked CNN weight.
+- small reusable Issue #274 replay/scoring utilities that remain useful.
 
-Keep outside Git under ignored `logs/` unless a narrow fixture is explicitly approved:
+Keep outside Git under the existing local/ignored data and log policy:
 
+- evaluation page image bytes;
+- the large Issue #44 CNN checkpoint;
 - full detector/HOMR run trees;
 - x4 page images;
 - worker logs;
 - full68 generated `numbering_base`, `mmr_support`, and override trees;
 - resource-sampling streams and large visual overlays.
 
-For a retained experiment, preserve enough small metadata to recover: source commit,
-config content/hash, input identity/hash, model hashes, container/image identity, command,
-result summary, and paths to any intentionally retained external artifact.
+For each future retained comparison, preserve a small provenance summary containing at
+least: source commit, config content/hash, canonical page selection, CNN checkpoint SHA-256,
+HOMR profile/model hashes, container/image identity, command, result summary, and paths to
+any intentionally retained external artifact. This provides a durable comparison contract
+without committing large transient runs.
 
 ## Tag status
 

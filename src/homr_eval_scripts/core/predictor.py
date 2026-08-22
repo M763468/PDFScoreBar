@@ -154,6 +154,11 @@ class HomrPredictor:
                 inference_image_path = temp_proxy_path
                 cv2.imwrite(str(inference_image_path), proxy_img)
 
+        # Thin-barline post-processing needs the same source image in grayscale.
+        # Derive it from the already decoded input instead of decoding the x4 PNG again.
+        thin_barline_image = cv2.cvtColor(img_check, cv2.COLOR_BGR2GRAY)
+        del img_check
+
         # 2. Run core inference
         predictions, xml_path, seg_shape, runtime_s, notehead_mask, staff_mask = run_homr_on_image(
             inference_image_path,
@@ -243,6 +248,7 @@ class HomrPredictor:
             image_path,
             [p.orig_bbox for p in mapped_predictions],
             config=tb_config,
+            grayscale_image=thin_barline_image,
         )
 
         def _centre(box: Tuple[int, int, int, int]) -> Tuple[float, float]:

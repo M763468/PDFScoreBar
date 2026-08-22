@@ -2,19 +2,22 @@
 
 ## Purpose
 
-Graphify is the first-pass repository navigation aid for architecture, dependency, call-path, and relevant-file questions. Its output narrows the search space; source files and tests remain authoritative.
+Graphify is the first-pass repository navigation aid for architecture, dependency, call-path,
+and relevant-file questions. It narrows the search space; source files, tests, and
+`docs/PIPELINE_ARCHITECTURE.md` remain authoritative. Never use a stale graph to override
+newer source.
 
 ## Agent entry points
 
-The official project-scoped Agent Skill is tracked at `.agents/skills/graphify/`. Its description intentionally covers codebase architecture and file-relationship questions so compatible coding agents can select it proactively.
-
-The repository-specific direct entry point is:
+The project-scoped Agent Skill is tracked at `.agents/skills/graphify/`. The direct query
+entry point is:
 
 ```bash
 scripts/graphify_query.sh "<question>"
 ```
 
-The script uses the committed graph immediately. This makes a fresh clone or worktree useful without first regenerating the graph. `GRAPHIFY_REFRESH=1` performs a local code-only rebuild; `GRAPHIFY_REBUILD=1` explicitly does the same even when a graph already exists.
+The wrapper uses the committed graph immediately. `GRAPHIFY_REFRESH=1` or
+`GRAPHIFY_REBUILD=1` performs a local code-only rebuild before the query.
 
 ## Installation
 
@@ -25,28 +28,28 @@ uv tool install graphifyy
 graphify install --project --platform agents
 ```
 
-The project installation creates `.agents/skills/graphify/SKILL.md` and its `references/` files. These files are committed so a new coding session can discover the skill without rerunning the installer.
+The committed `.agents/skills/graphify/` files allow compatible agents to discover the skill
+without rerunning the installer.
 
 ## Shared durable outputs
 
-Commit only portable results that improve later local and web-based repository navigation:
+Commit only portable outputs that improve later local and web-based navigation:
 
-- `graphify-out/graph.json`: canonical queryable graph. It contains structural code results and, after an explicitly approved semantic refresh, merged semantic nodes and relationships.
-- `graphify-out/GRAPH_REPORT.md`: human-readable graph and community summary.
-- `graphify-out/wiki/**`: agent- and web-readable community/semantic map.
-- `graphify-out/MANIFEST.json`: provenance, generation mode, semantic route and scope, version, size, and portability checks.
+- `graphify-out/graph.json`
+- `graphify-out/GRAPH_REPORT.md`
+- `graphify-out/wiki/**`
+- `graphify-out/MANIFEST.json`
 
-The following remain local and ignored:
+Keep local/ignored:
 
-- HTML/SVG/GraphML and database exports unless separately requested.
-- `.graphify_*` analysis, label, root, interpreter, and temporary extraction files.
-- `cache/`, converted sidecars, and Graphify's internal lowercase `manifest.json`.
+- Graphify cache/state and `.graphify_*` sidecars;
+- internal lowercase `manifest.json`;
+- HTML/SVG/GraphML/database exports unless separately requested;
+- dated scratch exports and other runtime-only analysis output.
 
-The internal cache is useful in the workspace that generated it but is not necessary to query the committed graph. Not committing it avoids large, environment-specific churn.
+## Code-only refresh
 
-## Code graph generation
-
-The default and unattended path is local AST extraction only:
+The default unattended path is deterministic local AST extraction only:
 
 ```bash
 graphify extract . --code-only --force
@@ -54,33 +57,78 @@ graphify cluster-only . --no-viz --no-label
 graphify export wiki
 ```
 
-This path does not send source code, documents, PDFs, or images to an LLM API. `--no-label` also prevents the current CLI from selecting an LLM backend for community naming; communities remain deterministic `Community N` labels. It skips non-code files and then derives communities, `GRAPH_REPORT.md`, and the wiki from the existing code graph.
+This path does not send source code, documents, PDFs, or images to an LLM API. `--no-label`
+avoids LLM-backed community naming.
 
-Refresh shared artifacts after meaningful architectural changes, not on every feature branch. Ordinary worktrees should use the committed graph first and inspect branch-specific changes directly.
+### Required refresh order for architecture changes
+
+For a change that materially alters the production pipeline:
+
+1. inspect current source/tests and settle the architecture change;
+2. update stable/canonical docs, especially `docs/PIPELINE_ARCHITECTURE.md`;
+3. commit or otherwise freeze the exact source revision to be graphed;
+4. run the code-only Graphify commands above from that revision;
+5. update `graphify-out/MANIFEST.json` so `source_base_commit` is the exact revision used;
+6. review generated report/wiki/graph changes before committing them.
+
+Do not refresh the graph first and then use it as evidence for the new architecture.
+
+## Post-refresh verification
+
+At minimum verify:
+
+```bash
+git rev-parse HEAD
+scripts/graphify_query.sh "Trace the current dense production pipeline from detector source generation through MMR. Who owns x4 HOMR support?"
+rg -n "current_support_worker|VerifiedProfileHybridDetector|mmr_support_reuse" \
+  graphify-out/GRAPH_REPORT.md graphify-out/wiki graphify-out/graph.json
+```
+
+For the current two-HOMR architecture, the generated navigation output should lead to:
+
+- `src/pipeline/detection/profile_hybrid.py` / `VerifiedProfileHybridDetector`;
+- `src/pipeline/detection/current_support_worker.py` as the x4 HOMR support owner;
+- `src/pipeline/mmr_geometry_handoff.py` and `src/pipeline/mmr_support_reuse.py` downstream;
+- no current guidance to removed `mmr_staff_geometry_worker.py`, `mmr_geometry_layout.py`, or
+  `mmr_staff_support.py`.
+
+Inspect the diff for meaningful node/community/call-path changes rather than blindly
+committing timestamp-only churn. If a Graphify version upgrade causes broad serialization
+churn, record that fact in the manifest/PR.
+
+## Staleness rule
+
+Refresh shared Graphify artifacts after meaningful **code architecture** changes: stage
+ownership, module/call boundaries, major dependency flow, or new/removed architectural
+modules. Do not regenerate on every feature branch.
+
+The code-only graph does not ingest Markdown, so a docs-only wording edit does not by itself
+require a graph rebuild. However, a docs update that accompanies a code architecture change
+must be settled **before** the rebuild so the generated artifacts and canonical docs are
+reviewed against the same architecture state.
+
+`MANIFEST.json.source_base_commit` must name the exact commit whose code was extracted. The
+query wrapper warns when supported code extensions have changed since that base. A stale or
+unavailable base is a signal to verify source directly or rebuild; it is never permission to
+trust old graph content.
 
 ## Document semantic extraction
 
-Document semantics are opt-in. Do not start them merely because an API key exists in the environment.
+Document semantics are opt-in. Do not start them merely because an API key exists.
 
-Two routes are permitted when document understanding is needed:
+Permitted routes are:
 
-1. **Local coding-session route**: explicitly assign extraction to a selected coding session. This may use the coding provider's model and data path; it is not necessarily offline. Apply the provider's data-handling policy and limit the input paths.
-2. **Gemini API route**: explicitly set `GEMINI_API_KEY` or `GOOGLE_API_KEY` and use Graphify's Gemini backend only after confirming that the intended Google AI plan/quota and project settings will not create unintended additional charges. Never store the key in Git or repository files.
+1. an explicitly selected local coding session; or
+2. an explicitly configured Gemini API route after confirming the intended plan/quota and
+   project settings will not create unintended additional charges.
 
-For either route:
-
-- Prepare an allowlist of documentation paths before extraction.
-- Exclude credentials, private notes, datasets, generated logs, model files, and other sensitive content.
-- Record the route, backend/model, allowlisted scope, source revision, and Graphify version in `MANIFEST.json`.
-- Review the semantic result before replacing the shared graph.
-- Commit only the merged `graph.json`, `GRAPH_REPORT.md`, `wiki/**`, and provenance manifest. Keep semantic batch files and caches local.
-
-A semantic refresh may be done in a dedicated session and PR when the output is substantial. The code-only graph remains a safe baseline.
+For either route, prepare an allowlist, exclude credentials/private data/datasets/logs/models,
+record backend/model/scope/source revision in `MANIFEST.json`, and review semantic output
+before replacing the shared graph. Commit only the durable merged outputs above.
 
 ## Web-based use
 
-GitHub-connected web clients cannot execute the local Graphify CLI. They can still use the committed `GRAPH_REPORT.md`, wiki, provenance manifest, and repository-relative paths as navigation aids. The committed `graph.json` also remains available to environments that can download the repository and run Graphify.
-
-## Verification rule
-
-Treat Graphify output as navigation evidence, not final truth. Confirm relevant source and tests. If the graph is stale, unavailable, or too broad, fall back promptly to `rg`, `grep`, and direct inspection.
+GitHub-connected web clients cannot execute the local Graphify CLI. They can use the
+committed report/wiki/manifest as navigation aids and then verify current source through the
+repository connection. A local Graphify refresh must be performed in an environment where
+`graphifyy` is installed; generated outputs must not be hand-edited to simulate a refresh.

@@ -1,6 +1,6 @@
 # SystemBuilder
 
-> 30 nodes · cohesion 0.19
+> 29 nodes · cohesion 0.19
 
 ## Key Concepts
 
@@ -29,15 +29,17 @@
 - **.test_pipeline_page_image_fallback_can_generate_connector_evidence()** (4 connections) — `tests/test_issue197_system_grouping_connector_evidence.py`
 - **ndarray** (3 connections)
 - **._has_left_connector_evidence()** (3 connections) — `src/measure_numbering/builder.py`
-- *... and 5 more nodes in this community*
+- *... and 4 more nodes in this community*
 
 ## Relationships
 
-- [Staff](Staff.md) (13 shared connections)
-- [Barline](Barline.md) (11 shared connections)
+- [Staff](Staff.md) (18 shared connections)
 - [BBox](BBox.md) (5 shared connections)
 - [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (4 shared connections)
-- [object](object.md) (1 shared connections)
+- [StaffExtractor](StaffExtractor.md) (3 shared connections)
+- [MeasureNumberer](MeasureNumberer.md) (2 shared connections)
+- [object](object.md) (2 shared connections)
+- [load_local_gt](load_local_gt.md) (1 shared connections)
 
 ## Source Files
 
@@ -46,8 +48,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 96 (83%)
-- INFERRED: 19 (17%)
+- EXTRACTED: 96 (84%)
+- INFERRED: 18 (16%)
 - AMBIGUOUS: 0 (0%)
 
 ---

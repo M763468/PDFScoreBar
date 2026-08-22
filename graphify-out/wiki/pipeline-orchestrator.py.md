@@ -1,62 +1,54 @@
 # pipeline/orchestrator.py
 
-> 25 nodes · cohesion 0.15
+> 20 nodes · cohesion 0.21
 
 ## Key Concepts
 
-- **pipeline/orchestrator.py** (44 connections) — `src/pipeline/orchestrator.py`
-- **get_nested()** (31 connections) — `src/pipeline/core/config.py`
-- **filters.py** (12 connections) — `src/pipeline/steps/filters.py`
-- **detection/utils.py** (8 connections) — `src/pipeline/detection/utils.py`
-- **resolve_barlines_and_masks_config()** (8 connections) — `src/pipeline/detection/utils.py`
-- **resolve_paths_from_detection()** (8 connections) — `src/pipeline/detection/utils.py`
-- **resolve_page_filters()** (8 connections) — `src/pipeline/steps/filters.py`
-- **_ReviewPackageConfig** (6 connections) — `src/pipeline/orchestrator.py`
-- **is_blank_page()** (6 connections) — `src/pipeline/steps/filters.py`
-- **apply_barline_overrides()** (5 connections) — `src/pipeline/steps/barlines.py`
-- **normalize_barlines()** (5 connections) — `src/pipeline/steps/barlines.py`
-- **get_user_exclude_indices()** (5 connections) — `src/pipeline/steps/filters.py`
-- **Any** (5 connections)
-- **staff_detect_failed()** (5 connections) — `src/pipeline/steps/filters.py`
-- **._resolve_page_runs()** (4 connections) — `src/pipeline/orchestrator.py`
+- **pipeline/orchestrator.py** (47 connections) — `src/pipeline/orchestrator.py`
+- **._run_pdf_to_images()** (11 connections) — `src/pipeline/orchestrator.py`
+- **pdf_to_images.py** (10 connections) — `src/pdf_to_images.py`
+- **render_pdf_to_memory()** (8 connections) — `src/pdf_to_images.py`
+- **save_image()** (7 connections) — `src/pdf_to_images.py`
+- **PdfConversionError** (6 connections) — `src/pdf_to_images.py`
+- **render_pdf()** (6 connections) — `src/pdf_to_images.py`
+- **pixmap_to_array()** (5 connections) — `src/pdf_to_images.py`
+- **main()** (4 connections) — `src/pdf_to_images.py`
+- **normalise_pages()** (4 connections) — `src/pdf_to_images.py`
+- **ndarray** (4 connections)
+- **parse_args()** (3 connections) — `src/pdf_to_images.py`
 - **Path** (3 connections)
-- **Any** (2 connections)
-- **Path** (2 connections)
-- **Any** (2 connections)
-- **Utility functions for path resolution and system monitoring in detection.** (1 connections) — `src/pipeline/detection/utils.py`
-- **Resolves output paths for barlines and staff masks after detection.** (1 connections) — `src/pipeline/detection/utils.py`
-- **Resolves paths based on configuration when detection is skipped.** (1 connections) — `src/pipeline/detection/utils.py`
+- **resize_image()** (3 connections) — `src/pdf_to_images.py`
+- **Pixmap** (1 connections)
+- **Namespace** (1 connections)
+- **RuntimeError** (1 connections)
+- **Raised when a page cannot be rendered or saved.** (1 connections) — `src/pdf_to_images.py`
 - **Pipeline orchestration for end-to-end processing.** (1 connections) — `src/pipeline/orchestrator.py`
-- **Resolves which runs to use for each page (legacy manual resolution).** (1 connections) — `src/pipeline/orchestrator.py`
-- **Filtering helpers for blank/staff checks.** (1 connections) — `src/pipeline/steps/filters.py`
+- **Step 1: Convert PDF to images in-process.** (1 connections) — `src/pipeline/orchestrator.py`
 
 ## Relationships
 
-- [.run](run.md) (19 shared connections)
-- [load_image](load_image.md) (11 shared connections)
-- [run_stage_e_full_pipeline.py](run_stage_e_full_pipeline.py.md) (8 shared connections)
-- [run_detection_step](run_detection_step.md) (6 shared connections)
-- [pdf_to_images.py](pdf_to_images.py.md) (4 shared connections)
-- [steps/numbering.py](steps-numbering.py.md) (3 shared connections)
-- [score_candidates_batch.py](score_candidates_batch.py.md) (3 shared connections)
-- [Score](Score.md) (3 shared connections)
-- [manual_corrections.py](manual_corrections.py.md) (3 shared connections)
+- [get_nested](get_nested.md) (11 shared connections)
+- [load_image](load_image.md) (6 shared connections)
+- [load_json](load_json.md) (6 shared connections)
+- [run_mmr_batch](run_mmr_batch.md) (3 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (3 shared connections)
 - [PipelineOrchestrator](PipelineOrchestrator.md) (3 shared connections)
-- [cnn_scoring.py](cnn_scoring.py.md) (3 shared connections)
-- [detection/orchestrator.py](detection-orchestrator.py.md) (2 shared connections)
+- [materialize_manual_correction_review_package](materialize_manual_correction_review_package.md) (2 shared connections)
+- [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (2 shared connections)
+- [load_yaml](load_yaml.md) (2 shared connections)
+- [build_manifest](build_manifest.md) (1 shared connections)
+- [run_detection_step](run_detection_step.md) (1 shared connections)
+- [test_issue264_phase_a_connector_geometry.py](test_issue264_phase_a_connector_geometry.py.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/core/config.py`
-- `src/pipeline/detection/utils.py`
+- `src/pdf_to_images.py`
 - `src/pipeline/orchestrator.py`
-- `src/pipeline/steps/barlines.py`
-- `src/pipeline/steps/filters.py`
 
 ## Audit Trail
 
-- EXTRACTED: 126 (97%)
-- INFERRED: 4 (3%)
+- EXTRACTED: 88 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

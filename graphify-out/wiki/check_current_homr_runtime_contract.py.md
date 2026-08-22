@@ -15,9 +15,8 @@
 
 ## Relationships
 
-- [install_current_homr_consumer_compat](install_current_homr_consumer_compat.md) (4 shared connections)
+- [homr_profile_compat.py](homr_profile_compat.py.md) (6 shared connections)
 - [test_issue254_connector_artifact_contract.py](test_issue254_connector_artifact_contract.py.md) (2 shared connections)
-- [homr_profile_compat.py](homr_profile_compat.py.md) (2 shared connections)
 - [heuristics.py](heuristics.py.md) (2 shared connections)
 
 ## Source Files

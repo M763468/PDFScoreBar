@@ -1,6 +1,6 @@
 # dense_full_pipeline.py
 
-> 37 nodes · cohesion 0.11
+> 28 nodes · cohesion 0.15
 
 ## Key Concepts
 
@@ -10,10 +10,7 @@
 - **regenerate_dense_candidates()** (10 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
 - **regenerate_probe_rescue_candidates()** (9 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
 - **Path** (8 connections)
-- **DenseRouteArtifacts** (6 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
 - **_run_command()** (6 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **reconstruct_stage_e_dense_route()** (6 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **StageEDenseRouteArtifacts** (6 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
 - **load_route_image_paths()** (5 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
 - **_phase_summary()** (5 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
 - **Any** (5 connections)
@@ -24,18 +21,22 @@
 - **regenerate_dense_candidates()** (4 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
 - **regenerate_issue53_candidates()** (4 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
 - **_compact_log_path()** (3 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
-- **.from_dense()** (3 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
-- **.issue53_root()** (3 connections) — `src/pipeline/detector_routes/stage_e_dense_full_pipeline.py`
 - **_add_params()** (2 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
 - **.to_json()** (2 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
 - **Popen** (1 connections)
-- *... and 12 more nodes in this community*
+- **Dense full-pipeline detector route support. This module reconstructs detector-…** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **Load the detector-route image list from a benchmark inventory.** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **Regenerate the dense candidate/filter root inside this route run.** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **Regenerate probe-rescue candidates for the dense detector route.** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- **Rebuild all dense full-pipeline detector inputs from current-run sources.** (1 connections) — `src/pipeline/detector_routes/dense_full_pipeline.py`
+- *... and 3 more nodes in this community*
 
 ## Relationships
 
-- [run_probe_scan_batch](run_probe_scan_batch.md) (3 shared connections)
+- [DenseRouteArtifacts](DenseRouteArtifacts.md) (8 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (4 shared connections)
 - [run_stage_e_full_pipeline.py](run_stage_e_full_pipeline.py.md) (3 shared connections)
-- [restored_orchestrator.py](restored_orchestrator.py.md) (2 shared connections)
+- [detection/__init__.py](detection-__init__.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -44,8 +45,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 82 (98%)
-- INFERRED: 2 (2%)
+- EXTRACTED: 73 (99%)
+- INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -29,17 +29,17 @@
 ## Relationships
 
 - [iter_manifest](iter_manifest.md) (7 shared connections)
-- [greedy_barline_match](greedy_barline_match.md) (5 shared connections)
 - [eval_stage_e_contract.py](eval_stage_e_contract.py.md) (3 shared connections)
 - [PageRecord](PageRecord.md) (3 shared connections)
-- [trace_prokofiev_probe_boundary.py](trace_prokofiev_probe_boundary.py.md) (2 shared connections)
+- [greedy_barline_match](greedy_barline_match.md) (2 shared connections)
+- [is_barline_match](is_barline_match.md) (2 shared connections)
 - [dense_probe_candidate.py](dense_probe_candidate.py.md) (1 shared connections)
 - [compare_box_tree_stats.py](compare_box_tree_stats.py.md) (1 shared connections)
-- [inspect_stage_d_artifact_layout.py](inspect_stage_d_artifact_layout.py.md) (1 shared connections)
+- [barline_evaluation.py](barline_evaluation.py.md) (1 shared connections)
+- [inspect_stage_d_payload_schema.py](inspect_stage_d_payload_schema.py.md) (1 shared connections)
 - [run_issue36_dense_candidates_then_eval.py](run_issue36_dense_candidates_then_eval.py.md) (1 shared connections)
 - [run_issue53_probe_rescue_then_eval.py](run_issue53_probe_rescue_then_eval.py.md) (1 shared connections)
 - [run_stage_c_seed_regen_then_eval.py](run_stage_c_seed_regen_then_eval.py.md) (1 shared connections)
-- [run_stage_d_upstream_regen.py](run_stage_d_upstream_regen.py.md) (1 shared connections)
 
 ## Source Files
 

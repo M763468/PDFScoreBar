@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **PipelineOrchestrator** (35 connections) — `src/pipeline/orchestrator.py`
+- **PipelineOrchestrator** (40 connections) — `src/pipeline/orchestrator.py`
 - **test_issue236_review_package_pipeline_connection.py** (23 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
 - **_fake_pipeline_config()** (16 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
 - **_patch_lightweight_pipeline_phases()** (8 connections) — `tests/test_issue236_review_package_pipeline_connection.py`
@@ -28,15 +28,16 @@
 
 ## Relationships
 
-- [.run](run.md) (11 shared connections)
-- [run_stage_e_full_pipeline.py](run_stage_e_full_pipeline.py.md) (5 shared connections)
+- [get_nested](get_nested.md) (11 shared connections)
+- [load_yaml](load_yaml.md) (5 shared connections)
+- [run_phase_c_mmr_regression.py](run_phase_c_mmr_regression.py.md) (3 shared connections)
 - [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (3 shared connections)
 - [manual_correction_handoff.py](manual_correction_handoff.py.md) (3 shared connections)
-- [Barline](Barline.md) (2 shared connections)
-- [run_grouped_final_numbering_comparison.py](run_grouped_final_numbering_comparison.py.md) (1 shared connections)
+- [Staff](Staff.md) (2 shared connections)
+- [load_json](load_json.md) (2 shared connections)
+- [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (2 shared connections)
+- [MMRClassifier](MMRClassifier.md) (1 shared connections)
 - [MMROCREngine](MMROCREngine.md) (1 shared connections)
-- [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (1 shared connections)
-- [Score](Score.md) (1 shared connections)
 
 ## Source Files
 
@@ -45,8 +46,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 82 (95%)
-- INFERRED: 4 (5%)
+- EXTRACTED: 87 (96%)
+- INFERRED: 4 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

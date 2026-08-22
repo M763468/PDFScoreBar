@@ -1,23 +1,19 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-13T09:04:41Z",
-  "source_base_commit": "f425b42f12bb4aaf60cf49e79bab43379a0b78a1",
-  "generation_input_state": "clean-develop-working-tree-before-Graphify-artifact-updates",
-  "graphify_version": "graphify 0.9.41",
+  "generated_at": "2026-08-22T10:06:18Z",
+  "source_base_commit": "96c92bd0c5c784a30584e7dc971e6c4720041bc0",
+  "generation_input_state": "docs/current-pipeline-architecture-and-graphify-refresh at 96c92bd0, before committing refreshed Graphify artifacts",
+  "graphify_version": "not recorded for this refresh",
   "generation_mode": "code-only",
   "semantic_route": "none",
   "semantic_backend": null,
   "semantic_model": null,
   "semantic_scope": [],
-  "external_api_keys_present": true,
-  "portable": true,
-  "absolute_root_occurrences": 0,
-  "node_count": 4563,
-  "edge_count": 10593,
-  "graph_bytes": 6184148,
+  "node_count": 4980,
+  "edge_count": 11910,
   "staleness_check": {
     "method": "code-extension-diff-from-source-base",
-    "note": "The graph was generated from a clean develop working tree before updating the durable artifacts. The query wrapper warns only when later committed source-code files differ from source_base_commit."
+    "note": "The graph was generated from source revision 96c92bd0 before committing the refreshed durable artifacts. The query wrapper warns only when later committed source-code files differ from source_base_commit."
   },
   "tracked_outputs": [
     "graphify-out/graph.json",

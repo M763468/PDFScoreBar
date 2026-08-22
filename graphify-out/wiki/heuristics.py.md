@@ -1,6 +1,6 @@
 # heuristics.py
 
-> 63 nodes · cohesion 0.08
+> 65 nodes · cohesion 0.07
 
 ## Key Concepts
 
@@ -29,16 +29,17 @@
 - **generate_sobel_vertical_candidates_weak()** (5 connections) — `src/homr_eval_scripts/core/heuristics.py`
 - **generate_vertical_run_candidates_weak()** (5 connections) — `src/homr_eval_scripts/core/heuristics.py`
 - **resolve_clusters_dry_run()** (5 connections) — `src/homr_eval_scripts/core/heuristics.py`
-- *... and 38 more nodes in this community*
+- *... and 40 more nodes in this community*
 
 ## Relationships
 
-- [metrics.py](metrics.py.md) (13 shared connections)
+- [barline_evaluation.py](barline_evaluation.py.md) (10 shared connections)
 - [detect_thin_vertical_runs](detect_thin_vertical_runs.md) (5 shared connections)
 - [hybrid.py](hybrid.py.md) (5 shared connections)
-- [install_current_homr_consumer_compat](install_current_homr_consumer_compat.md) (2 shared connections)
+- [enable_segnet_cache](enable_segnet_cache.md) (3 shared connections)
+- [Path](Path.md) (3 shared connections)
+- [current_homr_worker.py](current_homr_worker.py.md) (2 shared connections)
 - [check_current_homr_runtime_contract.py](check_current_homr_runtime_contract.py.md) (2 shared connections)
-- [enable_segnet_cache](enable_segnet_cache.md) (2 shared connections)
 - [symbol_extraction.py](symbol_extraction.py.md) (1 shared connections)
 
 ## Source Files
@@ -49,7 +50,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 176 (99%)
+- EXTRACTED: 179 (99%)
 - INFERRED: 2 (1%)
 - AMBIGUOUS: 0 (0%)
 

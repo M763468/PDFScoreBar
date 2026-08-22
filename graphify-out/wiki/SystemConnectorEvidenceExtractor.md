@@ -25,7 +25,8 @@
 
 ## Relationships
 
-- [Staff](Staff.md) (6 shared connections)
+- [Staff](Staff.md) (4 shared connections)
+- [StaffExtractor](StaffExtractor.md) (2 shared connections)
 - [BBox](BBox.md) (2 shared connections)
 - [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (1 shared connections)
 

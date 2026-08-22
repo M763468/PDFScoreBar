@@ -1,12 +1,13 @@
 # ndarray
 
-> 15 nodes · cohesion 0.36
+> 18 nodes · cohesion 0.28
 
 ## Key Concepts
 
 - **ndarray** (25 connections)
 - **detect_staffs_with_barlines()** (17 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 - **Any** (11 connections)
+- **recover_end_barlines()** (9 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 - **_ensure_mask_shape()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 - **generate_sobel_vertical_candidates()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 - **generate_vertical_run_candidates()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
@@ -17,14 +18,15 @@
 - **generate_barline_cc_dilated()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 - **generate_barline_cc_relaxed()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 - **generate_barline_cc_tiny()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **_scan_vertical_line()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **Box** (1 connections)
 - **Future** (1 connections)
 - **Runs the core homr staff and symbol detection pipeline. Returns: A tuple…** (1 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 
 ## Relationships
 
-- [homr_evaluator.py](homr_evaluator.py.md) (15 shared connections)
+- [homr_evaluator.py](homr_evaluator.py.md) (20 shared connections)
 - [BarlinePrediction](BarlinePrediction.md) (12 shared connections)
-- [enable_segnet_cache](enable_segnet_cache.md) (1 shared connections)
 - [symbol_extraction.py](symbol_extraction.py.md) (1 shared connections)
 - [TransformInfo](TransformInfo.md) (1 shared connections)
 
@@ -34,7 +36,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 67 (99%)
+- EXTRACTED: 76 (99%)
 - INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 

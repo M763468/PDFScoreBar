@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **BBox** (84 connections) — `src/measure_numbering/types.py`
+- **BBox** (88 connections) — `src/measure_numbering/types.py`
 - **TestIssue194FirstIntervalGuard** (14 connections) — `tests/test_issue194_first_interval_guard.py`
 - **.create_system()** (11 connections) — `tests/test_issue194_first_interval_guard.py`
 - **TestIssue197SystemConnectorEvidenceExtractor** (11 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
@@ -33,18 +33,18 @@
 
 ## Relationships
 
-- [Barline](Barline.md) (27 shared connections)
-- [Staff](Staff.md) (22 shared connections)
-- [symbol_extraction.py](symbol_extraction.py.md) (16 shared connections)
+- [Staff](Staff.md) (45 shared connections)
+- [symbol_extraction.py](symbol_extraction.py.md) (18 shared connections)
+- [MeasureNumberer](MeasureNumberer.md) (6 shared connections)
 - [SystemBuilder](SystemBuilder.md) (5 shared connections)
-- [Score](Score.md) (4 shared connections)
+- [test_issue274_mmr_support_reuse.py](test_issue274_mmr_support_reuse.py.md) (4 shared connections)
 - [staffline_extraction.py](staffline_extraction.py.md) (4 shared connections)
-- [get_layer](get_layer.md) (3 shared connections)
-- [.process_page](process_page.md) (2 shared connections)
+- [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (3 shared connections)
+- [StaffExtractor](StaffExtractor.md) (2 shared connections)
+- [get_layer](get_layer.md) (2 shared connections)
 - [SystemConnectorEvidenceExtractor](SystemConnectorEvidenceExtractor.md) (2 shared connections)
-- [.number_system](number_system.md) (1 shared connections)
+- [load_local_gt](load_local_gt.md) (1 shared connections)
 - [ete.py](ete.py.md) (1 shared connections)
-- [oemer/utils.py](oemer-utils.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -56,8 +56,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 115 (85%)
-- INFERRED: 20 (15%)
+- EXTRACTED: 117 (84%)
+- INFERRED: 22 (16%)
 - AMBIGUOUS: 0 (0%)
 
 ---

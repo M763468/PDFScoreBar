@@ -1,56 +1,61 @@
 # VerifiedProfileHybridDetector
 
-> 32 nodes · cohesion 0.12
+> 76 nodes · cohesion 0.06
 
 ## Key Concepts
 
-- **VerifiedProfileHybridDetector** (14 connections) — `src/pipeline/detection/profile_hybrid.py`
-- **hybrid_consensus.py** (13 connections) — `src/pipeline/steps/hybrid_consensus.py`
-- **profile_hybrid.py** (12 connections) — `src/pipeline/detection/profile_hybrid.py`
-- **apply_hybrid_consensus_filter()** (9 connections) — `src/pipeline/steps/hybrid_consensus.py`
+- **VerifiedProfileHybridDetector** (17 connections) — `src/pipeline/detection/profile_hybrid.py`
+- **current_support_worker.py** (15 connections) — `src/pipeline/detection/current_support_worker.py`
+- **get_pipeline_python()** (11 connections) — `src/pipeline/core/python_env.py`
+- **homr_profile.py** (11 connections) — `src/pipeline/detection/homr_profile.py`
+- **run_with_logging()** (10 connections) — `src/pipeline/core/subprocess_utils.py`
+- **run()** (10 connections) — `src/pipeline/detection/current_support_worker.py`
+- **run_homr_profile()** (10 connections) — `src/pipeline/detection/homr_profile.py`
+- **test_issue274_two_homr_profile.py** (9 connections) — `tests/test_issue274_two_homr_profile.py`
+- **_require_current_homr_bundle()** (8 connections) — `src/pipeline/detection/current_support_worker.py`
+- **load_homr_profile()** (8 connections) — `src/pipeline/detection/homr_profile.py`
+- **test_homr_profile.py** (8 connections) — `tests/test_homr_profile.py`
+- **python_env.py** (7 connections) — `src/pipeline/core/python_env.py`
+- **build_profile_command()** (7 connections) — `src/pipeline/detection/homr_profile.py`
+- **Path** (7 connections)
+- **._generate_one_page_sources_in_process()** (7 connections) — `src/pipeline/detection/profile_hybrid.py`
 - **.run()** (7 connections) — `src/pipeline/detection/profile_hybrid.py`
 - **verified_source_page_worker.py** (7 connections) — `src/pipeline/detection/verified_source_page_worker.py`
+- **subprocess_utils.py** (6 connections) — `src/pipeline/core/subprocess_utils.py`
+- **_build_worker_environment()** (6 connections) — `src/pipeline/detection/current_support_worker.py`
 - **Path** (6 connections)
-- **._generate_one_page_sources_in_process()** (6 connections) — `src/pipeline/detection/profile_hybrid.py`
+- **_run_child_worker()** (6 connections) — `src/pipeline/detection/current_support_worker.py`
+- **Any** (6 connections)
+- **Any** (6 connections)
+- **._generate_page_sources()** (6 connections) — `src/pipeline/detection/profile_hybrid.py`
 - **run()** (6 connections) — `src/pipeline/detection/verified_source_page_worker.py`
-- **test_issue255_page_local_source_generation.py** (6 connections) — `tests/test_issue255_page_local_source_generation.py`
-- **_detector()** (6 connections) — `tests/test_issue255_page_local_source_generation.py`
-- **Any** (5 connections)
-- **._generate_page_sources()** (5 connections) — `src/pipeline/detection/profile_hybrid.py`
-- **._source_page_worker()** (4 connections) — `src/pipeline/detection/profile_hybrid.py`
-- **._support_worker()** (4 connections) — `src/pipeline/detection/profile_hybrid.py`
-- **_load_request()** (4 connections) — `src/pipeline/detection/verified_source_page_worker.py`
-- **Path** (4 connections)
-- **test_verified_source_page_worker_records_process_boundary()** (4 connections) — `tests/test_issue255_page_local_source_generation.py`
-- **.__init__()** (3 connections) — `src/pipeline/detection/profile_hybrid.py`
-- **_has_match()** (3 connections) — `src/pipeline/steps/hybrid_consensus.py`
-- **test_one_page_source_worker_runs_all_heavy_phases_in_order()** (3 connections) — `tests/test_issue255_page_local_source_generation.py`
-- **test_verified_sources_launch_one_top_level_worker_per_page()** (3 connections) — `tests/test_issue255_page_local_source_generation.py`
-- **main()** (2 connections) — `src/pipeline/detection/verified_source_page_worker.py`
-- **Path** (2 connections)
-- **Hybrid source generation backed by the verified Stage E HOMR profile.** (1 connections) — `src/pipeline/detection/profile_hybrid.py`
-- *... and 7 more nodes in this community*
+- *... and 51 more nodes in this community*
 
 ## Relationships
 
-- [run_probe_scan_batch](run_probe_scan_batch.md) (6 shared connections)
-- [trace_prokofiev_probe_boundary.py](trace_prokofiev_probe_boundary.py.md) (5 shared connections)
-- [restored_orchestrator.py](restored_orchestrator.py.md) (4 shared connections)
-- [score_candidates_batch.py](score_candidates_batch.py.md) (3 shared connections)
-- [current_support_worker.py](current_support_worker.py.md) (3 shared connections)
-- [hybrid.py](hybrid.py.md) (3 shared connections)
-- [barline_iou](barline_iou.md) (2 shared connections)
+- [hybrid.py](hybrid.py.md) (14 shared connections)
+- [run_mmr_batch](run_mmr_batch.md) (3 shared connections)
+- [homr_profile_compat.py](homr_profile_compat.py.md) (3 shared connections)
+- [test_issue255_production_detector_restoration.py](test_issue255_production_detector_restoration.py.md) (2 shared connections)
+- [detection/__init__.py](detection-__init__.py.md) (2 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (2 shared connections)
 
 ## Source Files
 
+- `src/pipeline/core/python_env.py`
+- `src/pipeline/core/subprocess_utils.py`
+- `src/pipeline/detection/current_support_worker.py`
+- `src/pipeline/detection/homr_profile.py`
 - `src/pipeline/detection/profile_hybrid.py`
 - `src/pipeline/detection/verified_source_page_worker.py`
-- `src/pipeline/steps/hybrid_consensus.py`
+- `tests/test_homr_profile.py`
 - `tests/test_issue255_page_local_source_generation.py`
+- `tests/test_issue274_two_homr_profile.py`
+- `tests/test_subprocess_utils.py`
 
 ## Audit Trail
 
-- EXTRACTED: 85 (99%)
+- EXTRACTED: 186 (99%)
 - INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 

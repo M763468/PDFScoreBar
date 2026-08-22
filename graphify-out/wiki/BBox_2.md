@@ -1,6 +1,6 @@
 # BBox
 
-> God node · 84 connections · `src/measure_numbering/types.py`
+> God node · 88 connections · `src/measure_numbering/types.py`
 
 **Community:** [BBox](BBox.md)
 
@@ -9,8 +9,9 @@
 ### calls
 - .number_system() `EXTRACTED`
 - .make_staff_pair() `EXTRACTED`
-- .create_system() `EXTRACTED`
 - .process_page() `EXTRACTED`
+- .create_system() `EXTRACTED`
+- _support_with_current() `EXTRACTED`
 - .make_barlines() `EXTRACTED`
 - run_verification() `EXTRACTED`
 - run_visualization() `EXTRACTED`
@@ -26,12 +27,12 @@
 - .extract() `EXTRACTED`
 - .setUp() `EXTRACTED`
 - .test_explicit_index_grouping() `EXTRACTED`
-- .test_single_staff_system() `EXTRACTED`
 
 ### contains
 - measure_numbering/types.py `EXTRACTED`
 
 ### imports
+- [test_issue274_mmr_support_reuse.py](test_issue274_mmr_support_reuse.py.md) `EXTRACTED`
 - pipeline.py `EXTRACTED`
 - test_issue257_mmr_page_rebase.py `EXTRACTED`
 - measure_numbering/numbering.py `EXTRACTED`
@@ -76,16 +77,18 @@
 - filter_lines() `EXTRACTED`
 
 ### uses
-- MeasureNumberer `INFERRED`
 - [MeasureNumberingPipeline](MeasureNumberingPipeline.md) `INFERRED`
+- [MeasureNumberer](MeasureNumberer.md) `INFERRED`
+- [StaffExtractor](StaffExtractor.md) `INFERRED`
 - TestIssue197SystemGroupingConnectorEvidence `INFERRED`
-- StaffExtractor `INFERRED`
 - TestIssue194FirstIntervalGuard `INFERRED`
 - TestIssue217EmptySystemOutputContract `INFERRED`
 - TestNumberingOverrides `INFERRED`
 - TestMeasureNumberer `INFERRED`
 - TestIssue197SystemConnectorEvidenceExtractor `INFERRED`
 - _FakeNumberingPipeline `INFERRED`
+- _FixedClassifier `INFERRED`
+- _ScriptedProcessor `INFERRED`
 - _FakeImage `INFERRED`
 - TestSystemBuilder `INFERRED`
 

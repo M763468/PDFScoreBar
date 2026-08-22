@@ -1,6 +1,6 @@
 # homr_evaluator.py
 
-> 35 nodes · cohesion 0.16
+> 36 nodes · cohesion 0.16
 
 ## Key Concepts
 
@@ -29,18 +29,18 @@
 - **prepare_working_image()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 - **save_debug_mask_overlay()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 - **save_debug_staff_overlay()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- *... and 10 more nodes in this community*
+- *... and 11 more nodes in this community*
 
 ## Relationships
 
-- [BarlinePrediction](BarlinePrediction.md) (31 shared connections)
-- [metrics.py](metrics.py.md) (15 shared connections)
-- [ndarray](ndarray.md) (15 shared connections)
+- [BarlinePrediction](BarlinePrediction.md) (28 shared connections)
+- [ndarray](ndarray.md) (20 shared connections)
+- [barline_evaluation.py](barline_evaluation.py.md) (15 shared connections)
 - [detect_thin_vertical_runs](detect_thin_vertical_runs.md) (7 shared connections)
 - [TransformInfo](TransformInfo.md) (7 shared connections)
-- [enable_segnet_cache](enable_segnet_cache.md) (4 shared connections)
-- [greedy_barline_match](greedy_barline_match.md) (3 shared connections)
+- [enable_segnet_cache](enable_segnet_cache.md) (3 shared connections)
 - [apply_advanced_sr](apply_advanced_sr.md) (3 shared connections)
+- [greedy_barline_match](greedy_barline_match.md) (2 shared connections)
 - [homr_profile_compat.py](homr_profile_compat.py.md) (2 shared connections)
 
 ## Source Files
@@ -49,7 +49,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 174 (95%)
+- EXTRACTED: 175 (95%)
 - INFERRED: 10 (5%)
 - AMBIGUOUS: 0 (0%)
 

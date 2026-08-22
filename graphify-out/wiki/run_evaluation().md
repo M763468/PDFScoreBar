@@ -35,7 +35,7 @@
 - _run_entrypoint() `INFERRED`
 
 ### references
-- Path `EXTRACTED`
+- [Path](Path.md) `EXTRACTED`
 
 ---
 

@@ -1,6 +1,6 @@
 # MMROCREngine
 
-> God node · 51 connections · `src/measure_numbering/mmr.py`
+> God node · 64 connections · `src/measure_numbering/mmr.py`
 
 **Community:** [MMROCREngine](MMROCREngine.md)
 
@@ -8,7 +8,14 @@
 
 ### calls
 - run_mmr_batch() `EXTRACTED`
+- run() `EXTRACTED`
+- run_legacy() `EXTRACTED`
 - [main()](main%28%29.md) `EXTRACTED`
+- [main()](main%28%29.md) `EXTRACTED`
+- run() `EXTRACTED`
+- [main()](main%28%29.md) `EXTRACTED`
+- run_h2_matrix() `EXTRACTED`
+- _representative_report() `EXTRACTED`
 - .run_mmr_batch_detection() `EXTRACTED`
 - run_mmr_batch() `EXTRACTED`
 - test_collect_one_bar_evidence_ignores_one_merged_into_multidigit() `EXTRACTED`
@@ -20,19 +27,19 @@
 - .collect_one_bar_evidence() `EXTRACTED`
 - .select_best_candidate() `EXTRACTED`
 - .collect_one_bar_evidence() `EXTRACTED`
-- .select_best_candidate() `EXTRACTED`
-- .collect_one_bar_evidence() `EXTRACTED`
-- .setUp() `EXTRACTED`
-- test_should_preserve_default_engine_with_matching_provider_mode() `EXTRACTED`
-- test_should_replace_default_engine_without_provider_mode() `EXTRACTED`
 
 ### contains
 - mmr.py `EXTRACTED`
 
 ### imports
 - [pipeline/orchestrator.py](pipeline-orchestrator.py.md) `EXTRACTED`
+- [audit_positive_geometry_disagreements.py](audit_positive_geometry_disagreements.py.md) `EXTRACTED`
 - [run_grouped_final_numbering_comparison.py](run_grouped_final_numbering_comparison.py.md) `EXTRACTED`
-- [steps/numbering.py](steps-numbering.py.md) `EXTRACTED`
+- run_full68_mmr_reuse.py `EXTRACTED`
+- [run_original_geometry_graft.py](run_original_geometry_graft.py.md) `EXTRACTED`
+- steps/numbering.py `EXTRACTED`
+- [diagnose_ocr_frame_changed_pages.py](diagnose_ocr_frame_changed_pages.py.md) `EXTRACTED`
+- run_representative_mmr_reuse.py `EXTRACTED`
 - [test_issue212_mmr_unmasked_fallback.py](test_issue212_mmr_unmasked_fallback.py.md) `EXTRACTED`
 - test_issue213_mmr_one_bar_veto.py `EXTRACTED`
 - test_pipeline_numbering_mmr_provider.py `EXTRACTED`
@@ -59,10 +66,11 @@
 
 ### uses
 - [PipelineOrchestrator](PipelineOrchestrator.md) `INFERRED`
+- [TestMMROCRHeuristics](TestMMROCRHeuristics.md) `INFERRED`
 - MaskedEmptyUnmaskedNumberOCR `INFERRED`
+- _RecordingRapidOCR `INFERRED`
 - CurrentEmptyLeftWideNumberOCR `INFERRED`
 - OneEvidencePerVariantOCR `INFERRED`
-- [TestMMROCRHeuristics](TestMMROCRHeuristics.md) `INFERRED`
 - MaskedNumberUnmaskedDifferentNumberOCR `INFERRED`
 - RaisesOnEmptyCropOCR `INFERRED`
 - _ReviewPackageConfig `INFERRED`

@@ -56,6 +56,50 @@ def _is_close(candidate: Box, existing: Sequence[Box], *, cfg: ThinBarlineConfig
     return False
 
 
+def _extract_vertical_runs(
+    binary: np.ndarray,
+    *,
+    min_height: int,
+    max_height: int,
+) -> List[Tuple[int, int, int]]:
+    """Return qualifying vertical runs in the legacy x-then-y order.
+
+    The original implementation walked every image pixel in Python.  This is
+    mechanically equivalent run-boundary detection performed in NumPy.  The
+    downstream merge/filter logic remains unchanged, so this helper must retain
+    the exact ``(x, y_start, y_end)`` ordering and relaxed-height semantics.
+    """
+
+    if binary.ndim != 2:
+        raise ValueError(f"Thin-barline binary image must be 2-D, got {binary.shape}")
+    if max_height < 1:
+        return []
+
+    min_height_relaxed = max(min_height - 1, 1)
+
+    # ``binary`` is 0/1 today, but use truthiness to preserve the old
+    # ``while column[y]`` behavior if the representation changes later.  Work
+    # in (x, y) order so np.nonzero emits the same ordering as the legacy
+    # outer-x / inner-y scan.
+    active_xy = np.asarray(binary != 0, dtype=np.int8).T
+    padded = np.pad(active_xy, ((0, 0), (1, 1)), mode="constant")
+    transitions = np.diff(padded, axis=1)
+
+    start_x, start_y = np.nonzero(transitions == 1)
+    end_x, end_y = np.nonzero(transitions == -1)
+    if start_x.size == 0:
+        return []
+    if start_x.shape != end_x.shape or not np.array_equal(start_x, end_x):
+        raise RuntimeError("Unbalanced thin-barline vertical run transitions")
+
+    run_heights = end_y - start_y
+    keep = (run_heights >= min_height_relaxed) & (run_heights <= max_height)
+    return [
+        (int(x), int(y1), int(y2))
+        for x, y1, y2 in zip(start_x[keep], start_y[keep], end_y[keep])
+    ]
+
+
 def detect_thin_vertical_runs(
     image_path: Path,
     existing_boxes: Iterable[Box],
@@ -80,27 +124,13 @@ def detect_thin_vertical_runs(
     if cfg.vertical_gap_fill > 0:
         kernel = np.ones((cfg.vertical_gap_fill + 1, 1), dtype=np.uint8)
         binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
-    height, width = binary.shape
+    _, width = binary.shape
 
-    runs: List[Tuple[int, int, int]] = []  # (x, y_start, y_end)
-    min_height_relaxed = max(cfg.min_height - 1, 1)
-    for x in range(width):
-        column = binary[:, x]
-        y = 0
-        while y < height:
-            # Skip background
-            while y < height and column[y] == 0:
-                y += 1
-            if y >= height:
-                break
-            start = y
-            while y < height and column[y]:
-                y += 1
-            run_height = y - start
-            if cfg.min_height <= run_height <= cfg.max_height:
-                runs.append((x, start, y))
-            elif min_height_relaxed <= run_height <= cfg.max_height:
-                runs.append((x, start, y))
+    runs = _extract_vertical_runs(
+        binary,
+        min_height=cfg.min_height,
+        max_height=cfg.max_height,
+    )
 
     if not runs:
         return []

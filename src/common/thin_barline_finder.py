@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from bisect import bisect_right
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Sequence, Tuple
@@ -11,6 +10,9 @@ import cv2
 import numpy as np
 
 from src.common import Box
+
+_RUN_X_BLOCK = 64
+_PAIR_OUTER_CHUNK = 1024
 
 
 @dataclass(frozen=True)
@@ -65,11 +67,9 @@ def _extract_vertical_runs(
 ) -> List[Tuple[int, int, int]]:
     """Return qualifying vertical runs in the legacy x-then-y order.
 
-    The original implementation walked every image pixel in Python. This
-    version detects all truth-value transitions in a single NumPy scan and
-    pairs consecutive transitions into the same runs. The downstream logic
-    therefore sees the exact same ``(x, y_start, y_end)`` ordering and relaxed
-    height semantics.
+    Process cache-sized x blocks so the very large x4 binary image does not
+    require one full-image transition temporary. Each block preserves the
+    legacy x-then-y ordering, and concatenating blocks preserves global order.
     """
 
     if binary.ndim != 2:
@@ -78,26 +78,37 @@ def _extract_vertical_runs(
         return []
 
     min_height_relaxed = max(min_height - 1, 1)
-    active_xy = (binary != 0).T
-    padded = np.pad(active_xy, ((0, 0), (1, 1)), mode="constant", constant_values=False)
-    edge_x, edge_y = np.nonzero(padded[:, 1:] != padded[:, :-1])
-    if edge_x.size == 0:
-        return []
-    if edge_x.size % 2:
-        raise RuntimeError("Unbalanced thin-barline vertical run transitions")
+    width = binary.shape[1]
+    runs: List[Tuple[int, int, int]] = []
+    for x_offset in range(0, width, _RUN_X_BLOCK):
+        x_end = min(width, x_offset + _RUN_X_BLOCK)
+        active_xy = (binary[:, x_offset:x_end] != 0).T
+        padded = np.pad(
+            active_xy,
+            ((0, 0), (1, 1)),
+            mode="constant",
+            constant_values=False,
+        )
+        edge_x, edge_y = np.nonzero(padded[:, 1:] != padded[:, :-1])
+        if edge_x.size == 0:
+            continue
+        if edge_x.size % 2:
+            raise RuntimeError("Unbalanced thin-barline vertical run transitions")
 
-    start_x = edge_x[0::2]
-    start_y = edge_y[0::2]
-    end_x = edge_x[1::2]
-    end_y = edge_y[1::2]
-    if start_x.shape != end_x.shape or not np.array_equal(start_x, end_x):
-        raise RuntimeError("Unbalanced thin-barline vertical run transitions")
+        start_x = edge_x[0::2]
+        start_y = edge_y[0::2]
+        end_x = edge_x[1::2]
+        end_y = edge_y[1::2]
+        if start_x.shape != end_x.shape or not np.array_equal(start_x, end_x):
+            raise RuntimeError("Unbalanced thin-barline vertical run transitions")
 
-    run_heights = end_y - start_y
-    keep = (run_heights >= min_height_relaxed) & (run_heights <= max_height)
-    return [
-        (int(x), int(y1), int(y2)) for x, y1, y2 in zip(start_x[keep], start_y[keep], end_y[keep])
-    ]
+        run_heights = end_y - start_y
+        keep = (run_heights >= min_height_relaxed) & (run_heights <= max_height)
+        runs.extend(
+            (int(x_offset + x), int(y1), int(y2))
+            for x, y1, y2 in zip(start_x[keep], start_y[keep], end_y[keep])
+        )
+    return runs
 
 
 def _vertical_overlap_ratio(box_a: Box, box_b: Box) -> float:
@@ -112,31 +123,57 @@ def _vertical_overlap_ratio(box_a: Box, box_b: Box) -> float:
 
 
 def _find_double_pairs(merged: Sequence[Box], *, cfg: ThinBarlineConfig) -> set[Box]:
-    """Return boxes participating in a valid nearby double-barline pair.
+    """Return exact double-barline membership with bounded vectorized chunks."""
 
-    ``merged`` is sorted by x. The legacy loop compared every vertically
-    distinct box sharing or overlapping the same x before reaching a box with
-    a positive horizontal gap. Those comparisons can never pass because their
-    gap is non-positive, so binary-search directly to the first positive gap.
-    """
+    if len(merged) < 2 or cfg.double_pair_max_gap <= 0:
+        return set()
 
-    starts = [box[0] for box in merged]
-    paired_boxes: set[Box] = set()
-    for i, a in enumerate(merged[:-1]):
-        j = bisect_right(starts, a[2], lo=i + 1)
-        max_start = a[2] + cfg.double_pair_max_gap
-        while j < len(merged) and starts[j] <= max_start:
-            b = merged[j]
-            overlap = _vertical_overlap_ratio(a, b)
-            if (
-                overlap >= cfg.double_pair_min_overlap
-                and min(a[3] - a[1], b[3] - b[1]) >= cfg.double_pair_min_height
-                and max(a[2] - a[0], b[2] - b[0]) <= cfg.double_pair_max_width
-            ):
-                paired_boxes.add(a)
-                paired_boxes.add(b)
-            j += 1
-    return paired_boxes
+    boxes = np.asarray(merged, dtype=np.int64)
+    count = len(boxes)
+    starts = boxes[:, 0]
+    widths = boxes[:, 2] - boxes[:, 0]
+    heights = boxes[:, 3] - boxes[:, 1]
+    eligible = (widths <= cfg.double_pair_max_width) & (heights >= cfg.double_pair_min_height)
+    paired = np.zeros(count, dtype=bool)
+    indices = np.arange(count, dtype=np.int64)
+
+    for chunk_start in range(0, count - 1, _PAIR_OUTER_CHUNK):
+        chunk_end = min(count - 1, chunk_start + _PAIR_OUTER_CHUNK)
+        outer = indices[chunk_start:chunk_end]
+        first = np.searchsorted(starts, boxes[outer, 2], side="right")
+        last = np.searchsorted(
+            starts,
+            boxes[outer, 2] + cfg.double_pair_max_gap,
+            side="right",
+        )
+        lengths = last - first
+        lengths = np.where(eligible[outer], lengths, 0)
+        total = int(lengths.sum())
+        if total == 0:
+            continue
+
+        left_indices = np.repeat(outer, lengths)
+        offsets = np.cumsum(lengths, dtype=np.int64) - lengths
+        right_indices = np.arange(total, dtype=np.int64) + np.repeat(first - offsets, lengths)
+
+        right_eligible = eligible[right_indices]
+        if not np.any(right_eligible):
+            continue
+        left_indices = left_indices[right_eligible]
+        right_indices = right_indices[right_eligible]
+
+        overlap = np.minimum(boxes[left_indices, 3], boxes[right_indices, 3]) - np.maximum(
+            boxes[left_indices, 1], boxes[right_indices, 1]
+        )
+        valid = (overlap > 0) & (
+            overlap.astype(np.float64) / np.maximum(heights[left_indices], heights[right_indices])
+            >= cfg.double_pair_min_overlap
+        )
+        if np.any(valid):
+            paired[left_indices[valid]] = True
+            paired[right_indices[valid]] = True
+
+    return {tuple(int(value) for value in boxes[index]) for index in np.flatnonzero(paired)}
 
 
 def _rectangle_sums(
@@ -181,8 +218,6 @@ def _filter_candidates(
             continue
         if y2 <= y1 or x2 <= x1:
             continue
-        # The legacy code rejects candidates when either immediate side window
-        # is empty. Do this geometrically before building rectangle statistics.
         if x1 <= 0 or x2 >= width:
             continue
         early.append((index, box))
@@ -200,9 +235,6 @@ def _filter_candidates(
     if core_width >= 1:
         integral_depth = cv2.CV_32S
     else:
-        # Very tall/wide unusual inputs may not permit an overflow-safe int32
-        # integral strip. Float64 still represents these integer sums exactly
-        # for realistic score image sizes.
         core_width = 64
         integral_depth = cv2.CV_64F
 

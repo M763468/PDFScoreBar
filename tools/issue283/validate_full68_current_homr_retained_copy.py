@@ -23,7 +23,9 @@ def _preflight_retained_copy(
     score, page = key
     image = base._visible_path(payload.get("image"))  # noqa: SLF001
     sr_image = base._visible_path(payload.get("sr_image"))  # noqa: SLF001
-    canonical_image = (base.ROOT / "data/evaluation2/images" / score / f"{page}.png").resolve()
+    canonical_image = (
+        base.ROOT / "data/evaluation2/images" / score / f"{page}.png"
+    ).resolve()
 
     if not image.is_file():
         raise FileNotFoundError(image)

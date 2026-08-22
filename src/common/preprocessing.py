@@ -17,6 +17,18 @@ def _env_flag_enabled(name: str) -> bool:
     return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
 
 
+@contextlib.contextmanager
+def _perf_span(name: str, *, cuda: bool = False):
+    """Use pipeline perf tracing only when the opt-in trace is enabled."""
+    if not os.environ.get("PDFSCORE_PERF_TRACE_DIR"):
+        yield
+        return
+    from src.pipeline.perf_trace import span
+
+    with span(name, cuda=cuda):
+        yield
+
+
 class _RealESRGANTileLogFilter:
     """Drop Real-ESRGAN per-tile progress prints while forwarding other stdout."""
 
@@ -180,9 +192,10 @@ def apply_advanced_sr(
     """
     realesrgan_path = os.path.abspath(os.path.join(__file__, "../../..", "external", "realesrgan"))
     try:
-        import torch
-        from basicsr.archs.rrdbnet_arch import RRDBNet
-        from realesrgan import RealESRGANer
+        with _perf_span("sr_worker.realesrgan_heavy_imports"):
+            import torch
+            from basicsr.archs.rrdbnet_arch import RRDBNet
+            from realesrgan import RealESRGANer
     except ImportError as e:
         logger.error("Error importing Real-ESRGAN dependencies: %s", e)
         logger.error("Please ensure you have installed the realesrgan package.")
@@ -192,56 +205,74 @@ def apply_advanced_sr(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     if upsampler is None:
-        logger.info("Initializing Real-ESRGAN (%s) using device: %s", model_name, device)
-        if model_name == "RealESRGAN_x4plus":
-            model = RRDBNet(
-                num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4
-            )
-            netscale = 4
-            model_path = os.path.join(realesrgan_path, "weights", f"{model_name}.pth")
-        elif model_name == "RealESRGAN_x2plus":
-            model = RRDBNet(
-                num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2
-            )
-            netscale = 2
-            model_path = os.path.join(realesrgan_path, "weights", f"{model_name}.pth")
-        else:
-            logger.warning(
-                "Model %s not explicitly supported. A default (x2plus) will be used.",
-                model_name,
-            )
-            model = RRDBNet(
-                num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2
-            )
-            netscale = 2
-            model_path = os.path.join(realesrgan_path, "weights", "RealESRGAN_x2plus.pth")
-
         try:
-            # Determine tiling strategy
-            if tile is None or tile == -1:
-                tile_size = (
-                    0
-                    if max(image.shape[:2]) <= IMAGE_SIZE_THRESHOLD_FOR_TILING
-                    else DEFAULT_TILE_SIZE
+            with _perf_span("sr_worker.realesrgan_model_initialization", cuda=True):
+                logger.info("Initializing Real-ESRGAN (%s) using device: %s", model_name, device)
+                if model_name == "RealESRGAN_x4plus":
+                    model = RRDBNet(
+                        num_in_ch=3,
+                        num_out_ch=3,
+                        num_feat=64,
+                        num_block=23,
+                        num_grow_ch=32,
+                        scale=4,
+                    )
+                    netscale = 4
+                    model_path = os.path.join(realesrgan_path, "weights", f"{model_name}.pth")
+                elif model_name == "RealESRGAN_x2plus":
+                    model = RRDBNet(
+                        num_in_ch=3,
+                        num_out_ch=3,
+                        num_feat=64,
+                        num_block=23,
+                        num_grow_ch=32,
+                        scale=2,
+                    )
+                    netscale = 2
+                    model_path = os.path.join(realesrgan_path, "weights", f"{model_name}.pth")
+                else:
+                    logger.warning(
+                        "Model %s not explicitly supported. A default (x2plus) will be used.",
+                        model_name,
+                    )
+                    model = RRDBNet(
+                        num_in_ch=3,
+                        num_out_ch=3,
+                        num_feat=64,
+                        num_block=23,
+                        num_grow_ch=32,
+                        scale=2,
+                    )
+                    netscale = 2
+                    model_path = os.path.join(
+                        realesrgan_path, "weights", "RealESRGAN_x2plus.pth"
+                    )
+
+                # Determine tiling strategy
+                if tile is None or tile == -1:
+                    tile_size = (
+                        0
+                        if max(image.shape[:2]) <= IMAGE_SIZE_THRESHOLD_FOR_TILING
+                        else DEFAULT_TILE_SIZE
+                    )
+                else:
+                    tile_size = tile
+
+                # Determine precision
+                use_half = False
+                if "cuda" in str(device) and not fp32:
+                    use_half = True
+
+                upsampler = RealESRGANer(
+                    scale=netscale,
+                    model_path=model_path,
+                    model=model,
+                    tile=tile_size,
+                    tile_pad=tile_pad,
+                    pre_pad=pre_pad,
+                    half=use_half,
+                    device=device,
                 )
-            else:
-                tile_size = tile
-
-            # Determine precision
-            use_half = False
-            if "cuda" in str(device) and not fp32:
-                use_half = True
-
-            upsampler = RealESRGANer(
-                scale=netscale,
-                model_path=model_path,
-                model=model,
-                tile=tile_size,
-                tile_pad=tile_pad,
-                pre_pad=pre_pad,
-                half=use_half,
-                device=device,
-            )
         except Exception as e:
             logger.error("Real-ESRGAN initialization failed: %s", e)
             return image, upsampler
@@ -250,8 +281,9 @@ def apply_advanced_sr(
         if image.ndim != 3 or image.shape[2] != 3:
             image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
-        with _suppress_realesrgan_tile_logs():
-            output, _ = upsampler.enhance(image, outscale=scale)
+        with _perf_span("sr_worker.synchronized_enhance", cuda=True):
+            with _suppress_realesrgan_tile_logs():
+                output, _ = upsampler.enhance(image, outscale=scale)
         return output, upsampler
     except Exception as e:
         logger.error("Real-ESRGAN inference failed: %s", e)

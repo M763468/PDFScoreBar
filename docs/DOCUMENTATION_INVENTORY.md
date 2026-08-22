@@ -13,8 +13,8 @@ audits; it is not intended to enumerate every Issue-specific forensic note indiv
   it creates a current-navigation problem.
 - **retire:** duplicates or contradicts current guidance and has no reason to remain in the
   active docs tree; Git history retains it.
-- **follow-up debt:** materially relevant but outside Issue #280's docs-only production-code
-  scope.
+- **separate cleanup:** a real implementation/config cleanup that is outside Issue #280's
+  documentation/metadata scope and is explicitly routed to an existing cleanup track.
 
 ## Inventory
 
@@ -24,7 +24,7 @@ audits; it is not intended to enumerate every Issue-specific forensic note indiv
 | `AGENTS.md` | repository agent constitution | current | keep; existing Graphify/validation/environment links remain valid |
 | `docs/README.md` | documentation index | canonical/current | rewrite current vs historical navigation |
 | `docs/PIPELINE_ARCHITECTURE.md` | production architecture | canonical/current | add; global architecture source |
-| `docs/TWO_HOMR_MILESTONE.md` | accepted architecture/accuracy/performance milestone | canonical/current | add |
+| `docs/TWO_HOMR_MILESTONE.md` | accepted architecture/accuracy/performance milestone | canonical/current | add and complete local/external asset staging contract |
 | `docs/ENVIRONMENTS.md` | execution/runtime guidance | current/reference | clarify unified container vs legacy compatibility fallback |
 | `docs/BRANCH_POLICY.md` | branch policy | current/reference | keep |
 | `docs/dev/VALIDATION_POLICY.md` | validation policy | current/reference | keep |
@@ -36,7 +36,7 @@ audits; it is not intended to enumerate every Issue-specific forensic note indiv
 | `docs/corrected_final_output.md` | corrected-output workflow | scoped/reference | keep; verify against its source path when modifying output workflow |
 | `docs/ai-workflow/GRAPHIFY.md` | Graphify operation | current/reference | update staleness/refresh verification rule |
 | `.agents/skills/graphify/**` | agent Graphify skill | current/reference | keep; generated/installed skill remains discoverable |
-| `graphify-out/**` durable set | generated navigation graph/wiki/report/manifest | current only when provenance is fresh | refresh after stable docs; stale source base must not be treated as architecture truth |
+| `graphify-out/**` durable set | generated navigation graph/wiki/report/manifest | current only when provenance is fresh | refresh after stable architecture changes; stale source base must not be treated as architecture truth |
 | `docs/PIPELINE_DATAFLOW.md` | old Phase-2 current architecture | stale | retire; merged into canonical architecture |
 | `docs/FULL_PIPELINE_README.md` | old Phase-1 orchestration guide | stale | retire; merged into canonical execution/architecture docs |
 | `docs/best_configuration_summary.md` | Jan-2026 detector experiment labeled Production Ready | stale/misleading | retire; superseded by current dense route/milestone |
@@ -64,21 +64,50 @@ labeled it “Production Ready”. Its metrics/config are historical, not the cu
 contract, so keeping it active would compete with the verified Stage-E profile and Issue #274
 milestone.
 
-## Follow-up documentation / reproducibility debt
+## Reproduction boundary resolved in #280
 
-1. **Untracked CNN model dependency.** `configs/dense_full_pipeline.yaml` references
-   `logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth`,
-   which is not retained in Git. Record its SHA-256 and canonical recovery/storage location.
-2. **Untracked evaluation page images.** `data/evaluation2/images/` is not retained on
-   `develop`; full milestone reproduction requires the exact page export to be staged.
-3. **Legacy runtime compatibility.** `docs/ENVIRONMENTS.md` correctly treats `sr_eval_gpu`
-   as non-canonical, but `src/pipeline/core/python_env.py` still contains a compatibility
-   fallback and `configs/dense_full_pipeline.yaml` contains a legacy-looking
-   `container_name: sr_eval_gpu_exp` key. Verify whether those can be removed in a separate
-   production/config cleanup Issue; Issue #280 does not change them.
-4. **Graphify runtime availability.** A Graphify refresh requires a local environment with
-   `graphifyy` installed. Generated outputs must never be hand-edited as a substitute for a
-   real refresh.
+The two-HOMR milestone deliberately does not commit large evaluation images or the Issue #44
+CNN checkpoint. `docs/TWO_HOMR_MILESTONE.md` now records the staging/recovery contract
+instead:
+
+- the canonical 68-page work/page identity is the committed `SCORES` mapping in
+  `tools/issue120/eval_full68_from_intermediates.py`;
+- the corresponding images must be staged under `data/evaluation2/images/<score>/<page>.png`
+  and are checked against the tracked annotation pages before a comparison run;
+- the production CNN checkpoint is the Issue #44 / PR #57 Iter 7 final-rescue artifact at
+  `logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth`;
+- `docs/ISSUE44_ITER7_FINAL_REPORT.md` is the committed reconstruction procedure for that
+  training contract;
+- future comparison runs record the staged checkpoint SHA-256 in their small provenance
+  summary.
+
+The historical large checkpoint did not have a durable SHA-256 committed at creation time.
+#280 does not manufacture one after the fact. If the retained local checkpoint exists, its
+hash identifies the comparison run; if it has been lost, the committed Iter 7 training
+procedure is the canonical reconstruction route and the rebuilt checkpoint must be labelled
+as reconstructed rather than falsely claimed byte-identical.
+
+This satisfies the repository's intended reproducibility level for the immediately preceding
+large refactor: accepted source/config/profile, canonical page selection, external-asset
+staging checks, model reconstruction path, and accuracy/performance contracts are all
+recorded without retaining enormous artifacts in Git.
+
+## Separate cleanup routed outside #280
+
+`docs/ENVIRONMENTS.md` correctly treats `sr_eval_gpu` as non-canonical, while
+`src/pipeline/core/python_env.py` still contains a compatibility fallback and
+`configs/dense_full_pipeline.yaml` contains the legacy-looking
+`container_name: sr_eval_gpu_exp` key.
+
+These are small implementation/config cleanup items, not documentation blockers. They are
+tracked with the existing repository-surface cleanup work (#230, parent #225) so they can be
+removed together with other legacy/debug surface after verifying that no maintained path
+still depends on them. Issue #280 intentionally does not change production runtime/config
+semantics.
+
+Graphify refresh itself requires a local environment with `graphifyy` installed. That is an
+operational prerequisite, not an outstanding repository change; the durable generated
+outputs and provenance manifest were refreshed in #280.
 
 ## Future audit rule
 

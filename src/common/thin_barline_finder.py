@@ -111,17 +111,6 @@ def _extract_vertical_runs(
     return runs
 
 
-def _vertical_overlap_ratio(box_a: Box, box_b: Box) -> float:
-    top = max(box_a[1], box_b[1])
-    bottom = min(box_a[3], box_b[3])
-    if bottom <= top:
-        return 0.0
-    overlap = bottom - top
-    height_a = max(box_a[3] - box_a[1], 1)
-    height_b = max(box_b[3] - box_b[1], 1)
-    return overlap / float(max(height_a, height_b))
-
-
 def _find_double_pairs(merged: Sequence[Box], *, cfg: ThinBarlineConfig) -> set[Box]:
     """Return exact double-barline membership with bounded vectorized chunks."""
 
@@ -408,19 +397,23 @@ def detect_thin_vertical_runs(
     existing_boxes: Iterable[Box],
     *,
     config: ThinBarlineConfig | None = None,
+    grayscale_image: np.ndarray | None = None,
 ) -> List[Box]:
     """Detect slender vertical runs likely corresponding to missed barlines.
 
-    The detector scans binary columns for contiguous runs of dark pixels whose
-    height matches typical staff spans (≈18–22 px). It merges neighbouring
-    columns, filters out candidates close to existing predictions, and returns
-    additional bounding boxes in image coordinates.
+    Callers that already own the decoded source image can pass ``grayscale_image``
+    to avoid decoding the same image again. Standalone callers may continue to
+    supply only ``image_path``.
     """
 
     cfg = config or ThinBarlineConfig()
-    image = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
+    image = grayscale_image
     if image is None:
-        raise FileNotFoundError(f"Failed to load image for thin barline detection: {image_path}")
+        image = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
+        if image is None:
+            raise FileNotFoundError(f"Failed to load image for thin barline detection: {image_path}")
+    elif image.ndim != 2:
+        raise ValueError(f"Thin-barline grayscale image must be 2-D, got {image.shape}")
 
     binary = (image < cfg.pixel_threshold).astype(np.uint8)
     if cfg.vertical_gap_fill > 0:

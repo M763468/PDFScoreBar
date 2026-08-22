@@ -6,7 +6,6 @@ import subprocess
 
 from tools.issue283 import run_current_homr_replay
 
-
 _ORIGINAL_POPEN = subprocess.Popen
 _WORKER_MODULE = "src.pipeline.detection.current_homr_worker"
 _EXPERIMENT_MODULE = "tools.issue283.current_homr_worker_gray_reuse"

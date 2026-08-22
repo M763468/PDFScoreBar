@@ -6,7 +6,6 @@ import subprocess
 
 from tools.issue283 import validate_vectorized_thin_barline
 
-
 _ORIGINAL_RUN = subprocess.run
 _BASE_RUNNER = "tools/issue283/run_current_homr_replay.py"
 _EXPERIMENT_RUNNER = "tools/issue283/run_gray_reuse_replay.py"

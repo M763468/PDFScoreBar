@@ -63,22 +63,24 @@ def run(request_path: Path, result_path: Path) -> Path:
     # bindings in predictor/heuristics do not bypass the shared boundary.
     with span("current_homr_worker.heavy_imports_cuda_init"):
         import torch
+        import homr.main as homr_main
+        from homr.music_xml_generator import XmlGeneratorArguments
+        from src.common.connector_artifacts import connector_mask_paths
+        from src.homr_eval_scripts.core import heuristics as homr_heuristics
+        from src.homr_eval_scripts.core import predictor as homr_predictor
+        from src.homr_eval_scripts.core.metrics import BarlinePrediction
+        from src.homr_eval_scripts.core.reporting import save_homr_results
+        from src.homr_eval_scripts.core.utils import DEFAULT_TUNING
+        from src.pipeline.detection.connector_artifacts import (
+            install_homr_connector_artifact_capture,
+        )
+        from src.pipeline.detection.homr_profile_compat import (
+            build_processing_config_compat,
+            install_current_homr_consumer_compat,
+        )
 
-    import homr.main as homr_main
-    from homr.music_xml_generator import XmlGeneratorArguments
-    from src.common.connector_artifacts import connector_mask_paths
-    from src.homr_eval_scripts.core import heuristics as homr_heuristics
-    from src.homr_eval_scripts.core import predictor as homr_predictor
-    from src.homr_eval_scripts.core.metrics import BarlinePrediction
-    from src.homr_eval_scripts.core.reporting import save_homr_results
-    from src.homr_eval_scripts.core.utils import DEFAULT_TUNING
-    from src.pipeline.detection.connector_artifacts import install_homr_connector_artifact_capture
-    from src.pipeline.detection.homr_profile_compat import (
-        build_processing_config_compat,
-        install_current_homr_consumer_compat,
-    )
+        use_gpu_inference = torch.cuda.is_available()
 
-    use_gpu_inference = torch.cuda.is_available()
     homr_api_compat = install_current_homr_consumer_compat(
         homr_main,
         homr_predictor,

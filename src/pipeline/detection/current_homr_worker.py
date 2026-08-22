@@ -64,6 +64,7 @@ def run(request_path: Path, result_path: Path) -> Path:
     # bindings in predictor/heuristics do not bypass the shared boundary.
     with span("current_homr_worker.heavy_imports_cuda_init"):
         import torch
+
         import homr.main as homr_main
         from homr.music_xml_generator import XmlGeneratorArguments
         from src.common.connector_artifacts import connector_mask_paths

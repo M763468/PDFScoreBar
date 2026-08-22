@@ -358,9 +358,7 @@ def _aggregate(root: Path, workload_results: list[dict[str, Any]]) -> None:
                 for line in path.read_text(encoding="utf-8").splitlines():
                     if line:
                         records.append(json.loads(line))
-    (root / "stage_timings.json").write_text(
-        json.dumps(records, indent=2) + "\n", encoding="utf-8"
-    )
+    (root / "stage_timings.json").write_text(json.dumps(records, indent=2) + "\n", encoding="utf-8")
     with (root / "stage_timings.csv").open("w", newline="", encoding="utf-8") as stream:
         fields = [
             "run_id",
@@ -467,9 +465,7 @@ def main() -> int:
             / "logs/cnn_barline_classification/issue44_iter7_final_rescue_v1"
             / "cnn_classifier_best.pth"
         ),
-        "mmr_checkpoint_sha256": sha256(
-            ROOT / "tools/mmr_training/models/mmr_classifier_best.pth"
-        ),
+        "mmr_checkpoint_sha256": sha256(ROOT / "tools/mmr_training/models/mmr_classifier_best.pth"),
         "homr_profile": {
             "path": str(ROOT / "configs/detector_profiles/stage_e_verified_homr.json"),
             "sha256": sha256(ROOT / "configs/detector_profiles/stage_e_verified_homr.json"),
@@ -489,10 +485,7 @@ def main() -> int:
     )
     _aggregate(root, results)
     (root / "compact_summary.json").write_text(
-        json.dumps(
-            {"workloads": results, "result_root": str(root)}, indent=2, default=str
-        )
-        + "\n",
+        json.dumps({"workloads": results, "result_root": str(root)}, indent=2, default=str) + "\n",
         encoding="utf-8",
     )
     return 0

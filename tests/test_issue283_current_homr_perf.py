@@ -22,9 +22,7 @@ def test_disabled_attribution_does_not_patch_consumer(monkeypatch):
 
     homr_heuristics.predict_symbols = predict_symbols
 
-    installed = install_current_homr_perf_attribution(
-        homr_main, homr_predictor, homr_heuristics
-    )
+    installed = install_current_homr_perf_attribution(homr_main, homr_predictor, homr_heuristics)
 
     assert installed == []
     assert homr_heuristics.predict_symbols is predict_symbols

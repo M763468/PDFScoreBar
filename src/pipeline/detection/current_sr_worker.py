@@ -48,21 +48,24 @@ def run(request_path: Path, result_path: Path) -> Path:
 
     with span("sr_worker.image_read_preprocess"):
         image_bgr = load_image(image, None)
-    with span("sr_worker.realesrgan_import_cuda_init"):
-        with span("sr_worker.synchronized_enhance", cuda=True):
-            upscaled, _upsampler = apply_advanced_sr(
-                image_bgr,
-                model_name="RealESRGAN_x4plus",
-                scale=4,
-                tile=det_cfg.get("sr_tile", -1),
-                tile_pad=int(det_cfg.get("sr_tile_pad", 10)),
-                fp32=bool(det_cfg.get("sr_fp32", False)),
-                upsampler=None,
-            )
+    # apply_advanced_sr owns the non-overlapping heavy-import, model-init and
+    # synchronization-correct inference spans so their durations are directly attributable.
+    with span("sr_worker.realesrgan_total"):
+        upscaled, _upsampler = apply_advanced_sr(
+            image_bgr,
+            model_name="RealESRGAN_x4plus",
+            scale=4,
+            tile=det_cfg.get("sr_tile", -1),
+            tile_pad=int(det_cfg.get("sr_tile_pad", 10)),
+            fp32=bool(det_cfg.get("sr_fp32", False)),
+            upsampler=None,
+        )
     output.parent.mkdir(parents=True, exist_ok=True)
     with span("sr_worker.image_write"):
         if not cv2.imwrite(str(output), upscaled):
             raise RuntimeError(f"Failed to write current x4 SR image: {output}")
+    with span("sr_worker.sha256"):
+        sr_sha256 = _sha256(output)
 
     payload = {
         "schema_version": "pipeline.current_x4_sr.v1",
@@ -70,7 +73,7 @@ def run(request_path: Path, result_path: Path) -> Path:
         "image": str(image),
         "sr_scale": 4,
         "sr_image": str(output),
-        "sr_sha256": _sha256(output),
+        "sr_sha256": sr_sha256,
         "historical_detector_artifact_runtime_input": False,
     }
     result_path.parent.mkdir(parents=True, exist_ok=True)

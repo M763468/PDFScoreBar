@@ -411,7 +411,9 @@ def detect_thin_vertical_runs(
     if image is None:
         image = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
         if image is None:
-            raise FileNotFoundError(f"Failed to load image for thin barline detection: {image_path}")
+            raise FileNotFoundError(
+                f"Failed to load image for thin barline detection: {image_path}"
+            )
     elif image.ndim != 2:
         raise ValueError(f"Thin-barline grayscale image must be 2-D, got {image.shape}")
 

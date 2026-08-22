@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 from collections import defaultdict
@@ -33,9 +34,7 @@ def _require_canonical_container() -> None:
     if not PIPELINE_PYTHON.is_file():
         raise RuntimeError(f"Missing canonical interpreter: {PIPELINE_PYTHON}")
     if not Path(sys.executable).as_posix().startswith("/opt/venv_pipeline/"):
-        raise RuntimeError(
-            f"Runner must use /opt/venv_pipeline/bin/python, got {sys.executable}"
-        )
+        raise RuntimeError(f"Runner must use /opt/venv_pipeline/bin/python, got {sys.executable}")
 
 
 def _sha256(path: Path) -> str:
@@ -124,9 +123,7 @@ def _discover_baseline_root(
                 break
             ancestor = ancestor.parent
 
-    complete: list[
-        tuple[Path, dict[tuple[str, str], tuple[Path, dict[str, Any]]]]
-    ] = []
+    complete: list[tuple[Path, dict[tuple[str, str], tuple[Path, dict[str, Any]]]]] = []
     for root, by_key in grouped.items():
         if set(by_key) != expected:
             continue
@@ -151,9 +148,10 @@ def _discover_baseline_root(
         "expected_pages": len(expected),
     }
     if len(leaf_complete) != 1:
+        roots = [str(root) for root, _ in leaf_complete]
         raise RuntimeError(
             "Expected exactly one independent complete 68-page current-HOMR baseline root; "
-            f"found {len(leaf_complete)}. See discovery.json."
+            f"found {len(leaf_complete)} from {len(rows)} candidate result files: {roots}"
         )
     return leaf_complete[0][0], leaf_complete[0][1], discovery
 
@@ -362,6 +360,11 @@ def _run_page(
         "all_artifacts_equal": exact,
     }
     page_result_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    if exact:
+        shutil.rmtree(replay_output / "current_homr_output", ignore_errors=True)
+        shutil.rmtree(replay_output / "traces", ignore_errors=True)
+        for transient in ("resource_samples.jsonl", "stage_timings.json"):
+            (replay_output / transient).unlink(missing_ok=True)
     print(f"DONE {score}/{page}: exact={exact}", flush=True)
     return result
 
@@ -381,9 +384,7 @@ def _write_summary(
     commit: str | None,
 ) -> dict[str, Any]:
     changed = [
-        f"{row['score']}/{row['page']}"
-        for row in page_results
-        if not row["all_artifacts_equal"]
+        f"{row['score']}/{row['page']}" for row in page_results if not row["all_artifacts_equal"]
     ]
     summary = {
         "schema_version": "issue283.full68_current_homr_validation.v1",

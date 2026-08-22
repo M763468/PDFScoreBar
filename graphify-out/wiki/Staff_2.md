@@ -1,6 +1,6 @@
 # Staff
 
-> God node · 47 connections · `src/measure_numbering/types.py`
+> God node · 51 connections · `src/measure_numbering/types.py`
 
 **Community:** [Staff](Staff.md)
 
@@ -9,6 +9,7 @@
 ### calls
 - .make_staff_pair() `EXTRACTED`
 - .create_system() `EXTRACTED`
+- _support_with_current() `EXTRACTED`
 - run_verification() `EXTRACTED`
 - run_visualization() `EXTRACTED`
 - .create_mock_score() `EXTRACTED`
@@ -28,6 +29,7 @@
 - measure_numbering/types.py `EXTRACTED`
 
 ### imports
+- [test_issue274_mmr_support_reuse.py](test_issue274_mmr_support_reuse.py.md) `EXTRACTED`
 - pipeline.py `EXTRACTED`
 - test_issue257_mmr_page_rebase.py `EXTRACTED`
 - verify_measure_numbering_pipeline.py `EXTRACTED`
@@ -48,11 +50,11 @@
 - Represents a single staff line (graphical entity) containing barlines and… `EXTRACTED`
 
 ### uses
-- [SystemBuilder](SystemBuilder.md) `INFERRED`
 - [MeasureNumberingPipeline](MeasureNumberingPipeline.md) `INFERRED`
+- [SystemBuilder](SystemBuilder.md) `INFERRED`
 - [SystemConnectorEvidenceExtractor](SystemConnectorEvidenceExtractor.md) `INFERRED`
+- [StaffExtractor](StaffExtractor.md) `INFERRED`
 - TestIssue197SystemGroupingConnectorEvidence `INFERRED`
-- StaffExtractor `INFERRED`
 - TestIssue194FirstIntervalGuard `INFERRED`
 - ConnectorAwareSystemBuilder `INFERRED`
 - TestIssue217EmptySystemOutputContract `INFERRED`
@@ -60,6 +62,8 @@
 - TestMeasureNumberer `INFERRED`
 - TestIssue197SystemConnectorEvidenceExtractor `INFERRED`
 - _FakeNumberingPipeline `INFERRED`
+- _FixedClassifier `INFERRED`
+- _ScriptedProcessor `INFERRED`
 - _FakeImage `INFERRED`
 - TestSystemBuilder `INFERRED`
 

@@ -23,7 +23,7 @@
 
 ## Relationships
 
-- [run_stage_e_full_pipeline.py](run_stage_e_full_pipeline.py.md) (3 shared connections)
+- [load_yaml](load_yaml.md) (3 shared connections)
 - [run_probe_scan_batch](run_probe_scan_batch.md) (3 shared connections)
 - [run_detection_step](run_detection_step.md) (2 shared connections)
 

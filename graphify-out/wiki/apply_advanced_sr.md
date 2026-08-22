@@ -36,7 +36,7 @@
 - [homr_evaluator.py](homr_evaluator.py.md) (3 shared connections)
 - [hybrid.py](hybrid.py.md) (3 shared connections)
 - [load_image](load_image.md) (3 shared connections)
-- [build_detector_input_contract](build_detector_input_contract.md) (2 shared connections)
+- [test_issue255_production_detector_restoration.py](test_issue255_production_detector_restoration.py.md) (2 shared connections)
 
 ## Source Files
 

@@ -29,14 +29,15 @@
 - [eval_full68_from_intermediates.py](eval_full68_from_intermediates.py.md) (7 shared connections)
 - [PageRecord](PageRecord.md) (6 shared connections)
 - [compare_box_tree_stats.py](compare_box_tree_stats.py.md) (4 shared connections)
-- [inspect_stage_d_artifact_layout.py](inspect_stage_d_artifact_layout.py.md) (4 shared connections)
+- [inspect_stage_d_payload_schema.py](inspect_stage_d_payload_schema.py.md) (4 shared connections)
 - [run_stage_c_seed_regen_then_eval.py](run_stage_c_seed_regen_then_eval.py.md) (4 shared connections)
 - [score_candidates_then_eval_full68.py](score_candidates_then_eval_full68.py.md) (4 shared connections)
 - [summarize_stage_c_seed_regen_outputs.py](summarize_stage_c_seed_regen_outputs.py.md) (4 shared connections)
-- [trace_prokofiev_probe_boundary.py](trace_prokofiev_probe_boundary.py.md) (4 shared connections)
 - [dense_probe_candidate.py](dense_probe_candidate.py.md) (3 shared connections)
 - [run_issue36_dense_candidates_then_eval.py](run_issue36_dense_candidates_then_eval.py.md) (2 shared connections)
 - [run_issue53_probe_rescue_then_eval.py](run_issue53_probe_rescue_then_eval.py.md) (2 shared connections)
+- [summarize_stage_c_filter_ablation.py](summarize_stage_c_filter_ablation.py.md) (2 shared connections)
+- [summarize_stage_c_filter_drop_reasons.py](summarize_stage_c_filter_drop_reasons.py.md) (2 shared connections)
 
 ## Source Files
 

@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **load_image()** (19 connections) — `src/pipeline/utils/images.py`
-- **images.py** (17 connections) — `src/pipeline/utils/images.py`
+- **load_image()** (21 connections) — `src/pipeline/utils/images.py`
+- **images.py** (18 connections) — `src/pipeline/utils/images.py`
 - **collect_images()** (13 connections) — `src/pipeline/utils/images.py`
 - **test_issue236_review_package_source_images.py** (7 connections) — `tests/test_issue236_review_package_source_images.py`
 - **load_image_size()** (6 connections) — `src/pipeline/utils/images.py`
@@ -28,16 +28,16 @@
 
 ## Relationships
 
-- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (11 shared connections)
-- [.run](run.md) (7 shared connections)
+- [get_nested](get_nested.md) (12 shared connections)
+- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (6 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (4 shared connections)
 - [apply_advanced_sr](apply_advanced_sr.md) (3 shared connections)
-- [steps/numbering.py](steps-numbering.py.md) (2 shared connections)
-- [run_stage_e_full_pipeline.py](run_stage_e_full_pipeline.py.md) (2 shared connections)
+- [load_json](load_json.md) (3 shared connections)
+- [run_mmr_batch](run_mmr_batch.md) (2 shared connections)
+- [load_yaml](load_yaml.md) (2 shared connections)
 - [hybrid.py](hybrid.py.md) (2 shared connections)
-- [cnn_scoring.py](cnn_scoring.py.md) (2 shared connections)
-- [run_probe_scan_batch](run_probe_scan_batch.md) (2 shared connections)
-- [Barline](Barline.md) (1 shared connections)
-- [main](main.md) (1 shared connections)
+- [Staff](Staff.md) (1 shared connections)
+- [greedy_barline_match](greedy_barline_match.md) (1 shared connections)
 
 ## Source Files
 
@@ -46,7 +46,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 77 (99%)
+- EXTRACTED: 80 (99%)
 - INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 

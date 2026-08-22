@@ -27,7 +27,9 @@
 
 ## Relationships
 
-- [greedy_barline_match](greedy_barline_match.md) (14 shared connections)
+- [barline_evaluation.py](barline_evaluation.py.md) (6 shared connections)
+- [greedy_barline_match](greedy_barline_match.md) (4 shared connections)
+- [is_barline_match](is_barline_match.md) (4 shared connections)
 - [barline_iou](barline_iou.md) (2 shared connections)
 
 ## Source Files

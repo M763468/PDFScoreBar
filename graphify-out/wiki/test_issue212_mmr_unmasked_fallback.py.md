@@ -1,6 +1,6 @@
 # test_issue212_mmr_unmasked_fallback.py
 
-> 30 nodes · cohesion 0.12
+> 37 nodes · cohesion 0.09
 
 ## Key Concepts
 
@@ -8,10 +8,15 @@
 - **MaskedEmptyUnmaskedNumberOCR** (12 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
 - **CurrentEmptyLeftWideNumberOCR** (11 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
 - **_processor()** (11 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
+- **MaskedNumberUnmaskedDifferentNumberOCR** (9 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
 - **RaisesOnEmptyCropOCR** (8 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
 - **_box()** (6 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
 - **CurrentEmptyLeftWideLowScoreOCR** (6 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
 - **MaskedEmptyUnmaskedLowScoreOCR** (6 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
+- **.collect_one_bar_evidence()** (3 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
+- **.select_best_candidate()** (3 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
+- **.collect_one_bar_evidence()** (3 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
+- **.select_best_candidate()** (3 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
 - **.collect_one_bar_evidence()** (3 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
 - **.select_best_candidate()** (3 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
 - **test_current_unmasked_fallback_runs_in_rescue_band()** (3 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
@@ -24,18 +29,14 @@
 - **test_unmasked_fallback_rejects_non_positive_score_candidate()** (3 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
 - **.ocr_engine()** (2 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
 - **.ocr_engine()** (2 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
-- **.ocr_engine()** (2 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
-- **.ocr_engine()** (2 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
-- **.ocr_engine()** (2 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
-- **.mask_hbar_candidates()** (1 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
-- **.preprocess_variant()** (1 connections) — `tests/test_issue212_mmr_unmasked_fallback.py`
-- *... and 5 more nodes in this community*
+- *... and 12 more nodes in this community*
 
 ## Relationships
 
-- [MMROCREngine](MMROCREngine.md) (11 shared connections)
+- [MMROCREngine](MMROCREngine.md) (13 shared connections)
 - [MMRProcessor](MMRProcessor.md) (8 shared connections)
-- [object](object.md) (5 shared connections)
+- [object](object.md) (7 shared connections)
+- [MMRClassifier](MMRClassifier.md) (1 shared connections)
 
 ## Source Files
 
@@ -43,8 +44,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 62 (83%)
-- INFERRED: 13 (17%)
+- EXTRACTED: 70 (79%)
+- INFERRED: 19 (21%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,6 +1,6 @@
 # manual_corrections.py
 
-> 42 nodes · cohesion 0.11
+> 40 nodes · cohesion 0.12
 
 ## Key Concepts
 
@@ -9,7 +9,6 @@
 - **merge_measure_overrides()** (17 connections) — `src/pipeline/steps/manual_corrections.py`
 - **apply_mmr_measure_span_corrections()** (12 connections) — `src/pipeline/steps/manual_corrections.py`
 - **merge_barline_overrides()** (12 connections) — `src/pipeline/steps/manual_corrections.py`
-- **barlines.py** (9 connections) — `src/pipeline/steps/barlines.py`
 - **barline_construction_overrides()** (9 connections) — `src/pipeline/steps/manual_corrections.py`
 - **measure_construction_overrides()** (9 connections) — `src/pipeline/steps/manual_corrections.py`
 - **normalise_measure_overrides()** (9 connections) — `src/pipeline/steps/manual_corrections.py`
@@ -29,27 +28,25 @@
 - **test_measure_construction_force_measure_is_separate_from_future_grouping_ops()** (3 connections) — `tests/test_manual_corrections.py`
 - **test_measure_construction_malformed_item_reports_descriptive_error()** (2 connections) — `tests/test_manual_corrections.py`
 - **test_merge_measure_overrides_applies_manual_last_regardless_of_payload_order()** (2 connections) — `tests/test_manual_corrections.py`
-- *... and 17 more nodes in this community*
+- **test_mmr_malformed_item_reports_descriptive_error()** (2 connections) — `tests/test_manual_corrections.py`
+- *... and 15 more nodes in this community*
 
 ## Relationships
 
 - [apply_corrections.py](apply_corrections.py.md) (5 shared connections)
-- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (3 shared connections)
 - [manual_correction_handoff.py](manual_correction_handoff.py.md) (3 shared connections)
+- [load_json](load_json.md) (3 shared connections)
 - [test_manual_correction_handoff.py](test_manual_correction_handoff.py.md) (2 shared connections)
-- [barline_iou](barline_iou.md) (1 shared connections)
-- [greedy_barline_match](greedy_barline_match.md) (1 shared connections)
-- [.run](run.md) (1 shared connections)
+- [get_nested](get_nested.md) (1 shared connections)
 
 ## Source Files
 
-- `src/pipeline/steps/barlines.py`
 - `src/pipeline/steps/manual_corrections.py`
 - `tests/test_manual_corrections.py`
 
 ## Audit Trail
 
-- EXTRACTED: 110 (99%)
+- EXTRACTED: 104 (99%)
 - INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 

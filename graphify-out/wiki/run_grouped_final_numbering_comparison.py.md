@@ -1,59 +1,62 @@
 # run_grouped_final_numbering_comparison.py
 
-> 24 nodes · cohesion 0.20
+> 87 nodes · cohesion 0.06
 
 ## Key Concepts
 
 - **run_grouped_final_numbering_comparison.py** (34 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
+- **audit_grouped_semantic_impact.py** (25 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **Any** (18 connections)
+- **render_overlay()** (18 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
 - **main()** (18 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
+- **_route_evidence()** (16 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **render_grouped_numbering_overlay.py** (16 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
+- **test_issue252_grouped_semantic_impact.py** (14 connections) — `tests/test_issue252_grouped_semantic_impact.py`
 - **_number_route()** (14 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- **MMRClassifier** (13 connections) — `src/measure_numbering/mmr.py`
+- **compare_grouped_final_numbering()** (12 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **_resolve_model_path()** (11 connections) — `src/pipeline/steps/cnn_scoring.py`
+- **_route()** (10 connections) — `tests/test_issue252_grouped_semantic_impact.py`
+- **Box** (10 connections)
 - **Path** (10 connections)
+- **Box** (9 connections)
+- **normalize_isolated_mmr_overrides()** (8 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **_target_component_memberships()** (8 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
 - **_score_candidates()** (8 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- **GPUNormalize** (7 connections) — `src/pipeline/steps/cnn_scoring.py`
+- **test_cnn_scoring_model_path.py** (7 connections) — `tests/test_cnn_scoring_model_path.py`
+- **_bbox()** (7 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **_system_signature()** (7 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **_connector_evidence()** (6 connections) — `tests/test_issue252_grouped_semantic_impact.py`
+- **main()** (6 connections) — `tools/issue252/audit_grouped_semantic_impact.py`
+- **_bbox()** (6 connections) — `tools/issue252/render_grouped_numbering_overlay.py`
 - **Any** (6 connections)
-- **_config()** (5 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- **_load()** (5 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- **_validate_cnn_staff_mask_contract()** (5 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- **_validate_image_contract()** (5 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- **_write()** (5 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- **_read_image_size()** (4 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- **.predict()** (3 connections) — `src/measure_numbering/mmr.py`
-- **_connector_mask_paths()** (3 connections) — `tools/issue252/run_grouped_final_numbering_comparison.py`
-- **GPUNormalize** (2 connections)
-- **.forward()** (2 connections) — `src/pipeline/steps/cnn_scoring.py`
-- **device** (2 connections)
-- **Handles CNN inference for Multi-Measure Rest (MMR) detection.** (1 connections) — `src/measure_numbering/mmr.py`
-- **Returns probability of being a Rest (Label 1).** (1 connections) — `src/measure_numbering/mmr.py`
-- **.__init__()** (1 connections) — `src/pipeline/steps/cnn_scoring.py`
-- **Tensor** (1 connections)
-- **Module** (1 connections)
+- *... and 62 more nodes in this community*
 
 ## Relationships
 
-- [cnn_scoring.py](cnn_scoring.py.md) (9 shared connections)
-- [MMRProcessor](MMRProcessor.md) (5 shared connections)
-- [Score](Score.md) (5 shared connections)
-- [MMROCREngine](MMROCREngine.md) (4 shared connections)
-- [test_issue252_grouped_semantic_impact.py](test_issue252_grouped_semantic_impact.py.md) (4 shared connections)
-- [run_stage_e_full_pipeline.py](run_stage_e_full_pipeline.py.md) (3 shared connections)
-- [steps/numbering.py](steps-numbering.py.md) (3 shared connections)
-- [audit_grouped_semantic_impact.py](audit_grouped_semantic_impact.py.md) (3 shared connections)
-- [render_overlay](render_overlay.md) (3 shared connections)
-- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (2 shared connections)
-- [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (2 shared connections)
-- [Staff](Staff.md) (2 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (11 shared connections)
+- [MMRClassifier](MMRClassifier.md) (4 shared connections)
+- [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (4 shared connections)
+- [Staff](Staff.md) (3 shared connections)
+- [MMROCREngine](MMROCREngine.md) (3 shared connections)
+- [diagnose_phase_b_layout_divergence.py](diagnose_phase_b_layout_divergence.py.md) (3 shared connections)
+- [load_yaml](load_yaml.md) (3 shared connections)
+- [run_mmr_batch](run_mmr_batch.md) (3 shared connections)
+- [StaffExtractor](StaffExtractor.md) (2 shared connections)
 
 ## Source Files
 
-- `src/measure_numbering/mmr.py`
 - `src/pipeline/steps/cnn_scoring.py`
+- `tests/test_cnn_scoring_model_path.py`
+- `tests/test_issue252_grouped_semantic_impact.py`
+- `tools/gui_helper/app.py`
+- `tools/issue252/audit_grouped_semantic_impact.py`
+- `tools/issue252/render_grouped_numbering_overlay.py`
 - `tools/issue252/run_grouped_final_numbering_comparison.py`
 
 ## Audit Trail
 
-- EXTRACTED: 100 (98%)
-- INFERRED: 2 (2%)
+- EXTRACTED: 276 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

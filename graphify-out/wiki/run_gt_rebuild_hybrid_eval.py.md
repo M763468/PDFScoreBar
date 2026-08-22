@@ -34,9 +34,10 @@
 ## Relationships
 
 - [build_cnn_dataset.py](build_cnn_dataset.py.md) (4 shared connections)
-- [greedy_barline_match](greedy_barline_match.md) (3 shared connections)
 - [detect_probe_scan](detect_probe_scan.md) (3 shared connections)
 - [barline_iou](barline_iou.md) (2 shared connections)
+- [greedy_barline_match](greedy_barline_match.md) (2 shared connections)
+- [barline_evaluation.py](barline_evaluation.py.md) (1 shared connections)
 
 ## Source Files
 

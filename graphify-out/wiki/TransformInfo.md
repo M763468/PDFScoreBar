@@ -13,7 +13,7 @@
 ## Relationships
 
 - [homr_evaluator.py](homr_evaluator.py.md) (7 shared connections)
-- [metrics.py](metrics.py.md) (3 shared connections)
+- [barline_evaluation.py](barline_evaluation.py.md) (3 shared connections)
 - [BarlinePrediction](BarlinePrediction.md) (2 shared connections)
 - [ndarray](ndarray.md) (1 shared connections)
 - [detect_thin_vertical_runs](detect_thin_vertical_runs.md) (1 shared connections)

@@ -29,17 +29,17 @@
 - [main()](main%28%29.md) `EXTRACTED`
 
 ### contains
-- barline_evaluation.py `EXTRACTED`
+- [barline_evaluation.py](barline_evaluation.py.md) `EXTRACTED`
 
 ### imports
 - [homr_evaluator.py](homr_evaluator.py.md) `EXTRACTED`
 - [run_gt_rebuild_hybrid_eval.py](run_gt_rebuild_hybrid_eval.py.md) `EXTRACTED`
 - [eval_full68_from_intermediates.py](eval_full68_from_intermediates.py.md) `EXTRACTED`
 - evaluate_barline_rules.py `EXTRACTED`
-- [metrics.py](metrics.py.md) `EXTRACTED`
+- metrics.py `EXTRACTED`
 - [diagnose_stage_e_fns.py](diagnose_stage_e_fns.py.md) `EXTRACTED`
 - [analysis_overlays.py](analysis_overlays.py.md) `EXTRACTED`
-- [mine_fn_cnn_hardpositives.py](mine_fn_cnn_hardpositives.py.md) `EXTRACTED`
+- mine_fn_cnn_hardpositives.py `EXTRACTED`
 - visualize_union_fp.py `EXTRACTED`
 - [review_overlay_generator.py](review_overlay_generator.py.md) `EXTRACTED`
 - [run_union_notehead_geom_eval.py](run_union_notehead_geom_eval.py.md) `EXTRACTED`

@@ -33,11 +33,11 @@
 
 ## Relationships
 
-- [cnn_scoring.py](cnn_scoring.py.md) (5 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (7 shared connections)
 - [score_candidates_batch.py](score_candidates_batch.py.md) (5 shared connections)
-- [trace_prokofiev_probe_boundary.py](trace_prokofiev_probe_boundary.py.md) (5 shared connections)
+- [trace_prokofiev_probe_boundary.py](trace_prokofiev_probe_boundary.py.md) (3 shared connections)
 - [run_gt_rebuild_hybrid_eval.py](run_gt_rebuild_hybrid_eval.py.md) (3 shared connections)
-- [run_probe_scan_batch](run_probe_scan_batch.md) (2 shared connections)
+- [_run_variant](_run_variant.md) (2 shared connections)
 
 ## Source Files
 

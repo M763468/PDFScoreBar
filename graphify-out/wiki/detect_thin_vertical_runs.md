@@ -27,10 +27,9 @@
 
 - [homr_evaluator.py](homr_evaluator.py.md) (7 shared connections)
 - [heuristics.py](heuristics.py.md) (5 shared connections)
-- [BarlinePrediction](BarlinePrediction.md) (3 shared connections)
-- [run_omerer.py](run_omerer.py.md) (2 shared connections)
+- [BarlinePrediction](BarlinePrediction.md) (4 shared connections)
+- [barline_evaluation.py](barline_evaluation.py.md) (2 shared connections)
 - [hybrid.py](hybrid.py.md) (1 shared connections)
-- [metrics.py](metrics.py.md) (1 shared connections)
 - [TransformInfo](TransformInfo.md) (1 shared connections)
 
 ## Source Files

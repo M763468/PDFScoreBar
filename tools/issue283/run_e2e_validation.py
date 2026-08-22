@@ -55,12 +55,18 @@ def main() -> int:
 
     commit = os.environ.get("PDFSCORE_ISSUE283_GIT_COMMIT") or git("rev-parse", "HEAD")
     dirty_env = os.environ.get("PDFSCORE_ISSUE283_GIT_DIRTY")
-    dirty = None if dirty_env is None else dirty_env.strip().lower() in {"1", "true", "yes", "on"}
+    dirty = (
+        None
+        if dirty_env is None
+        else dirty_env.strip().lower() in {"1", "true", "yes", "on"}
+    )
     provenance = {
         "schema_version": "issue283.e2e_validation.provenance.v1",
         "commit": commit,
         "dirty": dirty,
-        "docker_image": os.environ.get("PDFSCORE_ISSUE281_DOCKER_IMAGE", "pdfscore_pipeline_gpu"),
+        "docker_image": os.environ.get(
+            "PDFSCORE_ISSUE281_DOCKER_IMAGE", "pdfscore_pipeline_gpu"
+        ),
         "docker_image_identity": os.environ.get("PDFSCORE_ISSUE281_DOCKER_IMAGE_IDENTITY"),
         "config_sha256": sha256(ROOT / "configs/dense_full_pipeline.yaml"),
         "inputs": {

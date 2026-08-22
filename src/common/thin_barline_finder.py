@@ -240,12 +240,12 @@ def _filter_candidates(
         left_count = (y2 - y1) * (left_x2 - left_x1)
         right_count = (y2 - y1) * (right_x2 - right_x1)
 
-        left_sum = _rectangle_sums(
-            integral, y1, y2, local_x(left_x1), local_x(left_x2)
-        ).astype(np.float64)
-        right_sum = _rectangle_sums(
-            integral, y1, y2, local_x(right_x1), local_x(right_x2)
-        ).astype(np.float64)
+        left_sum = _rectangle_sums(integral, y1, y2, local_x(left_x1), local_x(left_x2)).astype(
+            np.float64
+        )
+        right_sum = _rectangle_sums(integral, y1, y2, local_x(right_x1), local_x(right_x2)).astype(
+            np.float64
+        )
         left_dark_count = _rectangle_sums(
             dark_integral, y1, y2, local_x(left_x1), local_x(left_x2)
         ).astype(np.float64)
@@ -288,9 +288,8 @@ def _filter_candidates(
                 relaxed_left_mean = relaxed_left_sum / relaxed_left_count[left_valid]
                 relaxed_left_ratio = relaxed_left_dark / relaxed_left_count[left_valid]
                 left_positions = np.flatnonzero(left_valid)
-                left_ok[left_positions] |= (
-                    (relaxed_left_mean >= cfg.adjacent_min_intensity)
-                    & (relaxed_left_ratio <= cfg.adjacent_relaxed_dark_ratio)
+                left_ok[left_positions] |= (relaxed_left_mean >= cfg.adjacent_min_intensity) & (
+                    relaxed_left_ratio <= cfg.adjacent_relaxed_dark_ratio
                 )
 
             if np.any(right_valid):
@@ -311,9 +310,8 @@ def _filter_candidates(
                 relaxed_right_mean = relaxed_right_sum / relaxed_right_count[right_valid]
                 relaxed_right_ratio = relaxed_right_dark / relaxed_right_count[right_valid]
                 right_positions = np.flatnonzero(right_valid)
-                right_ok[right_positions] |= (
-                    (relaxed_right_mean >= cfg.adjacent_min_intensity)
-                    & (relaxed_right_ratio <= cfg.adjacent_relaxed_dark_ratio)
+                right_ok[right_positions] |= (relaxed_right_mean >= cfg.adjacent_min_intensity) & (
+                    relaxed_right_ratio <= cfg.adjacent_relaxed_dark_ratio
                 )
 
         adjacency_ok = left_ok & right_ok
@@ -322,9 +320,7 @@ def _filter_candidates(
             one_side_ok = left_ok ^ right_ok
             failing_ratio = np.where(left_ok, right_dark_ratio, left_dark_ratio)
             single_side_override = (
-                (~adjacency_ok)
-                & one_side_ok
-                & (failing_ratio <= cfg.single_side_dark_ratio)
+                (~adjacency_ok) & one_side_ok & (failing_ratio <= cfg.single_side_dark_ratio)
             )
 
         box_widths = x2 - x1
@@ -366,9 +362,7 @@ def _filter_candidates(
         left_dark = left_dark_ratio > cfg.notehead_dark_ratio
         right_dark = right_dark_ratio > cfg.notehead_dark_ratio
         reject_notehead = (
-            left_dark and right_dark
-            if single_side_override
-            else left_dark or right_dark
+            left_dark and right_dark if single_side_override else left_dark or right_dark
         )
         if reject_notehead and std_intensity >= cfg.notehead_std_floor:
             continue

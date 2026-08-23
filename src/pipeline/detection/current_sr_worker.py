@@ -12,6 +12,7 @@ from typing import Any
 import cv2
 
 from src.common.preprocessing import apply_advanced_sr
+from src.pipeline.perf_trace import set_context, span
 from src.pipeline.utils.images import load_image
 
 
@@ -40,24 +41,32 @@ def run(request_path: Path, result_path: Path) -> Path:
     output = Path(str(request["output"])).resolve()
     if not image.is_file():
         raise FileNotFoundError(image)
+    set_context(page=image.name)
 
     sr_scale = int(det_cfg.get("sr_scale", 2))
     if sr_scale != 4:
         raise ValueError(f"Verified Stage E current SR requires sr_scale=4, got {sr_scale}")
 
-    image_bgr = load_image(image, None)
-    upscaled, _upsampler = apply_advanced_sr(
-        image_bgr,
-        model_name="RealESRGAN_x4plus",
-        scale=4,
-        tile=det_cfg.get("sr_tile", -1),
-        tile_pad=int(det_cfg.get("sr_tile_pad", 10)),
-        fp32=bool(det_cfg.get("sr_fp32", False)),
-        upsampler=None,
-    )
+    with span("sr_worker.image_read_preprocess"):
+        image_bgr = load_image(image, None)
+    # apply_advanced_sr owns the non-overlapping heavy-import, model-init and
+    # synchronization-correct inference spans so their durations are directly attributable.
+    with span("sr_worker.realesrgan_total"):
+        upscaled, _upsampler = apply_advanced_sr(
+            image_bgr,
+            model_name="RealESRGAN_x4plus",
+            scale=4,
+            tile=det_cfg.get("sr_tile", -1),
+            tile_pad=int(det_cfg.get("sr_tile_pad", 10)),
+            fp32=bool(det_cfg.get("sr_fp32", False)),
+            upsampler=None,
+        )
     output.parent.mkdir(parents=True, exist_ok=True)
-    if not cv2.imwrite(str(output), upscaled):
-        raise RuntimeError(f"Failed to write current x4 SR image: {output}")
+    with span("sr_worker.image_write"):
+        if not cv2.imwrite(str(output), upscaled):
+            raise RuntimeError(f"Failed to write current x4 SR image: {output}")
+    with span("sr_worker.sha256"):
+        sr_sha256 = _sha256(output)
 
     payload = {
         "schema_version": "pipeline.current_x4_sr.v1",
@@ -65,7 +74,7 @@ def run(request_path: Path, result_path: Path) -> Path:
         "image": str(image),
         "sr_scale": 4,
         "sr_image": str(output),
-        "sr_sha256": _sha256(output),
+        "sr_sha256": sr_sha256,
         "historical_detector_artifact_runtime_input": False,
     }
     result_path.parent.mkdir(parents=True, exist_ok=True)
@@ -81,6 +90,7 @@ def main() -> int:
     parser.add_argument("--request", type=Path, required=True)
     parser.add_argument("--result", type=Path, required=True)
     args = parser.parse_args()
+    set_context(process_role="current_sr_worker")
     try:
         result = run(args.request, args.result)
     except Exception as error:  # noqa: BLE001

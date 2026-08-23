@@ -29,7 +29,7 @@
 - run_batch_verification() `EXTRACTED`
 
 ### contains
-- probe_scan.py `EXTRACTED`
+- [probe_scan.py](probe_scan.py.md) `EXTRACTED`
 
 ### imports
 - [dense_probe_candidate.py](dense_probe_candidate.py.md) `EXTRACTED`
@@ -52,7 +52,7 @@
 
 ### references
 - [Any](Any.md) `EXTRACTED`
-- [Path](Path.md) `EXTRACTED`
+- Path `EXTRACTED`
 
 ---
 

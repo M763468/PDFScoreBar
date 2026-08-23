@@ -28,11 +28,12 @@
 
 ## Relationships
 
-- [create_mmr_rapidocr](create_mmr_rapidocr.md) (7 shared connections)
+- [run_mmr_batch](run_mmr_batch.md) (5 shared connections)
 - [MMRClassifier](MMRClassifier.md) (3 shared connections)
 - [MMROCREngine](MMROCREngine.md) (3 shared connections)
 - [MMRProcessor](MMRProcessor.md) (3 shared connections)
-- [run_phase_c_mmr_regression.py](run_phase_c_mmr_regression.py.md) (2 shared connections)
+- [write_json](write_json.md) (2 shared connections)
+- [load_json](load_json.md) (2 shared connections)
 
 ## Source Files
 

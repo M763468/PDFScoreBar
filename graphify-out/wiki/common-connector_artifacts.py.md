@@ -1,6 +1,6 @@
 # common/connector_artifacts.py
 
-> 28 nodes · cohesion 0.14
+> 24 nodes · cohesion 0.17
 
 ## Key Concepts
 
@@ -8,10 +8,8 @@
 - **describe_connector_artifacts()** (16 connections) — `src/common/connector_artifacts.py`
 - **connector_mask_paths_for_numbering()** (15 connections) — `src/common/connector_artifacts.py`
 - **connector_mask_paths_for_staff_mask()** (13 connections) — `src/common/connector_artifacts.py`
-- **detection/connector_artifacts.py** (13 connections) — `src/pipeline/detection/connector_artifacts.py`
 - **connector_mask_paths()** (9 connections) — `src/common/connector_artifacts.py`
 - **Path** (8 connections)
-- **install_homr_skip_existing_guard()** (8 connections) — `src/pipeline/detection/connector_artifacts.py`
 - **invalidate_connector_masks()** (7 connections) — `src/common/connector_artifacts.py`
 - **manifest.py** (7 connections) — `src/pipeline/core/manifest.py`
 - **connector_masks_complete()** (6 connections) — `src/common/connector_artifacts.py`
@@ -29,33 +27,30 @@
 - **Describe the connector source actually available to numbering.** (1 connections) — `src/common/connector_artifacts.py`
 - **Return stable connector-mask paths for one HOMR page output.** (1 connections) — `src/common/connector_artifacts.py`
 - **Resolve stable connector masks stored beside a HOMR staff mask. This is the…** (1 connections) — `src/common/connector_artifacts.py`
-- *... and 3 more nodes in this community*
+- **Resolve connector semantics for a numbering consumer. Numbering may…** (1 connections) — `src/common/connector_artifacts.py`
 
 ## Relationships
 
-- [test_issue254_connector_artifact_contract.py](test_issue254_connector_artifact_contract.py.md) (23 shared connections)
+- [test_issue254_connector_artifact_contract.py](test_issue254_connector_artifact_contract.py.md) (19 shared connections)
 - [test_issue264_phase_a_connector_geometry.py](test_issue264_phase_a_connector_geometry.py.md) (9 shared connections)
 - [phase_c_phase_a_support.py](phase_c_phase_a_support.py.md) (3 shared connections)
-- [detection/__init__.py](detection-__init__.py.md) (3 shared connections)
 - [Staff](Staff.md) (2 shared connections)
 - [current_homr_worker.py](current_homr_worker.py.md) (2 shared connections)
 - [build_manifest](build_manifest.md) (2 shared connections)
-- [hybrid.py](hybrid.py.md) (2 shared connections)
 - [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (1 shared connections)
 - [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (1 shared connections)
-- [load_json](load_json.md) (1 shared connections)
+- [phase_b_page001_acceptance.py](phase_b_page001_acceptance.py.md) (1 shared connections)
 - [test_issue274_mmr_support_reuse.py](test_issue274_mmr_support_reuse.py.md) (1 shared connections)
 
 ## Source Files
 
 - `src/common/connector_artifacts.py`
 - `src/pipeline/core/manifest.py`
-- `src/pipeline/detection/connector_artifacts.py`
 - `tests/test_issue274_connector_support_contract.py`
 
 ## Audit Trail
 
-- EXTRACTED: 103 (100%)
+- EXTRACTED: 87 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

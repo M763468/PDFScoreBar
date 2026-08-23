@@ -28,16 +28,17 @@
 
 ## Relationships
 
-- [get_nested](get_nested.md) (12 shared connections)
-- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (6 shared connections)
-- [run_probe_scan_batch](run_probe_scan_batch.md) (4 shared connections)
+- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (8 shared connections)
+- [get_nested](get_nested.md) (6 shared connections)
+- [.run](run.md) (6 shared connections)
 - [apply_advanced_sr](apply_advanced_sr.md) (3 shared connections)
-- [load_json](load_json.md) (3 shared connections)
-- [run_mmr_batch](run_mmr_batch.md) (2 shared connections)
+- [phase_b_page001_acceptance.py](phase_b_page001_acceptance.py.md) (3 shared connections)
+- [probe_scan.py](probe_scan.py.md) (3 shared connections)
 - [load_yaml](load_yaml.md) (2 shared connections)
 - [hybrid.py](hybrid.py.md) (2 shared connections)
 - [Staff](Staff.md) (1 shared connections)
-- [greedy_barline_match](greedy_barline_match.md) (1 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (1 shared connections)
+- [main](main.md) (1 shared connections)
 
 ## Source Files
 

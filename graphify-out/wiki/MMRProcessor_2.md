@@ -55,7 +55,7 @@
 - Integrated processor for batch MMR detection. `EXTRACTED`
 
 ### uses
-- [TestMMROCRHeuristics](TestMMROCRHeuristics.md) `INFERRED`
+- TestMMROCRHeuristics `INFERRED`
 - MaskedEmptyUnmaskedNumberOCR `INFERRED`
 - _RecordingRapidOCR `INFERRED`
 - CurrentEmptyLeftWideNumberOCR `INFERRED`

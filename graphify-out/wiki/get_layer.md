@@ -33,12 +33,13 @@
 
 ## Relationships
 
-- [symbol_extraction.py](symbol_extraction.py.md) (38 shared connections)
-- [ete.py](ete.py.md) (13 shared connections)
-- [build_system.py](build_system.py.md) (7 shared connections)
-- [dewarp.py](dewarp.py.md) (5 shared connections)
+- [symbol_extraction.py](symbol_extraction.py.md) (34 shared connections)
+- [ete.py](ete.py.md) (17 shared connections)
+- [build_system.py](build_system.py.md) (6 shared connections)
+- [notehead_extraction.py](notehead_extraction.py.md) (5 shared connections)
 - [staffline_extraction.py](staffline_extraction.py.md) (2 shared connections)
 - [BBox](BBox.md) (2 shared connections)
+- [Element](Element.md) (1 shared connections)
 
 ## Source Files
 

@@ -16,8 +16,8 @@
 - [common/connector_artifacts.py](common-connector_artifacts.py.md) (2 shared connections)
 - [test_issue254_connector_artifact_contract.py](test_issue254_connector_artifact_contract.py.md) (2 shared connections)
 - [test_issue274_mmr_support_reuse.py](test_issue274_mmr_support_reuse.py.md) (2 shared connections)
-- [load_json](load_json.md) (2 shared connections)
-- [get_nested](get_nested.md) (1 shared connections)
+- [phase_b_page001_acceptance.py](phase_b_page001_acceptance.py.md) (2 shared connections)
+- [.run](run.md) (1 shared connections)
 - [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (1 shared connections)
 
 ## Source Files

@@ -30,16 +30,14 @@
 
 ## Relationships
 
+- [MMRProcessor](MMRProcessor.md) (8 shared connections)
 - [Staff](Staff.md) (5 shared connections)
 - [BBox](BBox.md) (4 shared connections)
-- [MMRProcessor](MMRProcessor.md) (4 shared connections)
 - [test_issue264_phase_a_connector_geometry.py](test_issue264_phase_a_connector_geometry.py.md) (3 shared connections)
-- [build_mmr_page_context](build_mmr_page_context.md) (3 shared connections)
-- [mmr_support_reuse.py](mmr_support_reuse.py.md) (3 shared connections)
-- [object](object.md) (3 shared connections)
+- [phase_b_page001_acceptance.py](phase_b_page001_acceptance.py.md) (3 shared connections)
+- [write_json](write_json.md) (3 shared connections)
 - [build_manifest](build_manifest.md) (2 shared connections)
 - [common/connector_artifacts.py](common-connector_artifacts.py.md) (1 shared connections)
-- [MMRClassifier](MMRClassifier.md) (1 shared connections)
 
 ## Source Files
 

@@ -34,9 +34,10 @@
 ## Relationships
 
 - [DenseRouteArtifacts](DenseRouteArtifacts.md) (8 shared connections)
-- [run_probe_scan_batch](run_probe_scan_batch.md) (4 shared connections)
 - [run_stage_e_full_pipeline.py](run_stage_e_full_pipeline.py.md) (3 shared connections)
-- [detection/__init__.py](detection-__init__.py.md) (1 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (2 shared connections)
+- [restored_orchestrator.py](restored_orchestrator.py.md) (2 shared connections)
+- [probe_scan.py](probe_scan.py.md) (1 shared connections)
 
 ## Source Files
 

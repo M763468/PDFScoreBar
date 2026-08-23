@@ -25,15 +25,16 @@
 ## Relationships
 
 - [common/connector_artifacts.py](common-connector_artifacts.py.md) (9 shared connections)
-- [get_nested](get_nested.md) (7 shared connections)
+- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (5 shared connections)
 - [test_issue274_mmr_support_reuse.py](test_issue274_mmr_support_reuse.py.md) (3 shared connections)
 - [current_homr_worker.py](current_homr_worker.py.md) (3 shared connections)
 - [test_issue254_connector_artifact_contract.py](test_issue254_connector_artifact_contract.py.md) (3 shared connections)
-- [detection/__init__.py](detection-__init__.py.md) (2 shared connections)
+- [run_full_pipeline.py](run_full_pipeline.py.md) (2 shared connections)
+- [get_nested](get_nested.md) (2 shared connections)
 - [hybrid.py](hybrid.py.md) (2 shared connections)
 - [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (2 shared connections)
 - [load_yaml](load_yaml.md) (1 shared connections)
-- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (1 shared connections)
+- [.run](run.md) (1 shared connections)
 - [Staff](Staff.md) (1 shared connections)
 
 ## Source Files

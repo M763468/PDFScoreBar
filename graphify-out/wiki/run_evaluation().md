@@ -7,9 +7,9 @@
 ## Connections by Relation
 
 ### calls
-- [BarlinePrediction](BarlinePrediction.md) `EXTRACTED`
+- [ThinBarlineConfig](ThinBarlineConfig.md) `EXTRACTED`
 - detect_thin_vertical_runs() `EXTRACTED`
-- ThinBarlineConfig `EXTRACTED`
+- BarlinePrediction `EXTRACTED`
 - apply_advanced_sr() `EXTRACTED`
 - ImageMetrics `EXTRACTED`
 - run_homr_on_image() `EXTRACTED`
@@ -35,7 +35,7 @@
 - _run_entrypoint() `INFERRED`
 
 ### references
-- [Path](Path.md) `EXTRACTED`
+- Path `EXTRACTED`
 
 ---
 

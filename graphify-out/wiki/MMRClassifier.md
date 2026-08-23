@@ -1,11 +1,10 @@
 # MMRClassifier
 
-> 14 nodes · cohesion 0.22
+> 13 nodes · cohesion 0.23
 
 ## Key Concepts
 
 - **MMRClassifier** (26 connections) — `src/measure_numbering/mmr.py`
-- **mmr.py** (14 connections) — `src/measure_numbering/mmr.py`
 - **run_mmr_batch()** (6 connections) — `src/measure_numbering/mmr.py`
 - **.__init__()** (5 connections) — `src/measure_numbering/mmr.py`
 - **.__init__()** (5 connections) — `src/measure_numbering/mmr.py`
@@ -21,18 +20,17 @@
 
 ## Relationships
 
-- [MMRProcessor](MMRProcessor.md) (6 shared connections)
-- [MMROCREngine](MMROCREngine.md) (6 shared connections)
-- [run_grouped_final_numbering_comparison.py](run_grouped_final_numbering_comparison.py.md) (4 shared connections)
+- [MMRProcessor](MMRProcessor.md) (5 shared connections)
 - [audit_positive_geometry_disagreements.py](audit_positive_geometry_disagreements.py.md) (4 shared connections)
-- [run_phase_c_mmr_regression.py](run_phase_c_mmr_regression.py.md) (3 shared connections)
-- [create_mmr_rapidocr](create_mmr_rapidocr.md) (3 shared connections)
+- [MMROCREngine](MMROCREngine.md) (4 shared connections)
+- [run_grouped_final_numbering_comparison.py](run_grouped_final_numbering_comparison.py.md) (3 shared connections)
 - [diagnose_ocr_frame_changed_pages.py](diagnose_ocr_frame_changed_pages.py.md) (3 shared connections)
-- [get_nested](get_nested.md) (2 shared connections)
+- [load_json](load_json.md) (2 shared connections)
 - [run_original_geometry_graft.py](run_original_geometry_graft.py.md) (2 shared connections)
-- [test_issue212_mmr_unmasked_fallback.py](test_issue212_mmr_unmasked_fallback.py.md) (1 shared connections)
-- [object](object.md) (1 shared connections)
-- [test_issue274_mmr_support_reuse.py](test_issue274_mmr_support_reuse.py.md) (1 shared connections)
+- [write_json](write_json.md) (2 shared connections)
+- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (2 shared connections)
+- [.run](run.md) (1 shared connections)
+- [PipelineOrchestrator](PipelineOrchestrator.md) (1 shared connections)
 
 ## Source Files
 
@@ -40,8 +38,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 56 (95%)
-- INFERRED: 3 (5%)
+- EXTRACTED: 44 (94%)
+- INFERRED: 3 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

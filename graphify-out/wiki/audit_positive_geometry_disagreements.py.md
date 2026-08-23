@@ -33,13 +33,14 @@
 
 ## Relationships
 
-- [create_mmr_rapidocr](create_mmr_rapidocr.md) (9 shared connections)
+- [run_mmr_batch](run_mmr_batch.md) (6 shared connections)
 - [MMRClassifier](MMRClassifier.md) (4 shared connections)
 - [MMROCREngine](MMROCREngine.md) (4 shared connections)
 - [MMRProcessor](MMRProcessor.md) (4 shared connections)
 - [rescore_phase_c_mmr_geometry_rebased.py](rescore_phase_c_mmr_geometry_rebased.py.md) (3 shared connections)
 - [phase_c_fixture_rebase.py](phase_c_fixture_rebase.py.md) (3 shared connections)
-- [run_phase_c_mmr_regression.py](run_phase_c_mmr_regression.py.md) (3 shared connections)
+- [write_json](write_json.md) (3 shared connections)
+- [load_json](load_json.md) (3 shared connections)
 
 ## Source Files
 

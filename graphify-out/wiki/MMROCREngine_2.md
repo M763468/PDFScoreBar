@@ -66,7 +66,7 @@
 
 ### uses
 - [PipelineOrchestrator](PipelineOrchestrator.md) `INFERRED`
-- [TestMMROCRHeuristics](TestMMROCRHeuristics.md) `INFERRED`
+- TestMMROCRHeuristics `INFERRED`
 - MaskedEmptyUnmaskedNumberOCR `INFERRED`
 - _RecordingRapidOCR `INFERRED`
 - CurrentEmptyLeftWideNumberOCR `INFERRED`

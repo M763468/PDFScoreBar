@@ -1,63 +1,62 @@
 # load_json
 
-> 27 nodes · cohesion 0.18
+> 46 nodes · cohesion 0.13
 
 ## Key Concepts
 
 - **load_json()** (41 connections) — `src/pipeline/utils/io.py`
-- **write_json()** (30 connections) — `src/pipeline/utils/io.py`
-- **phase_b_page001_acceptance.py** (23 connections) — `tools/issue264/phase_b_page001_acceptance.py`
-- **run()** (14 connections) — `tools/issue264/phase_b_page001_acceptance.py`
-- **barlines.py** (11 connections) — `src/pipeline/steps/barlines.py`
-- **build_numbering()** (10 connections) — `tools/issue264/phase_b_page001_acceptance.py`
-- **normalize_barlines()** (9 connections) — `src/pipeline/steps/barlines.py`
-- **run_phase_b_page001_acceptance.py** (9 connections) — `tools/issue264/run_phase_b_page001_acceptance.py`
-- **test_issue264_phase_b_manifest.py** (6 connections) — `tests/test_issue264_phase_b_manifest.py`
-- **target_manifest_entry()** (6 connections) — `tools/issue264/phase_b_page001_acceptance.py`
-- **main()** (6 connections) — `tools/issue264/run_phase_b_page001_acceptance.py`
-- **apply_barline_overrides()** (5 connections) — `src/pipeline/steps/barlines.py`
-- **Path** (4 connections)
-- **write_manifest()** (4 connections) — `src/pipeline/utils/io.py`
-- **Any** (4 connections)
-- **Path** (4 connections)
-- **_matching_manifest()** (4 connections) — `tools/issue264/run_phase_b_page001_acceptance.py`
-- **materialize_canonical_artifact_manifest()** (4 connections) — `tools/issue264/run_phase_b_page001_acceptance.py`
-- **Path** (4 connections)
-- **resolve_manifest()** (4 connections) — `tools/issue264/run_phase_b_page001_acceptance.py`
-- **Any** (3 connections)
-- **override_triples()** (3 connections) — `tools/issue264/phase_b_page001_acceptance.py`
-- **physical_counts()** (3 connections) — `tools/issue264/phase_b_page001_acceptance.py`
-- **sha256()** (3 connections) — `tools/issue264/phase_b_page001_acceptance.py`
-- **Any** (2 connections)
-- *... and 2 more nodes in this community*
+- **run_phase_c_mmr_regression.py** (36 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **run_full68_mmr_reuse.py** (31 connections) — `tools/issue274/run_full68_mmr_reuse.py`
+- **run()** (22 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **main()** (19 connections) — `tools/issue274/run_full68_mmr_reuse.py`
+- **build_page_specs()** (18 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **score_overrides()** (12 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **normalise_overrides()** (11 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **Any** (11 connections)
+- **index_overrides()** (9 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **test_issue264_phase_c_mmr_regression.py** (8 connections) — `tests/test_issue264_phase_c_mmr_regression.py`
+- **override_skip()** (8 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **describe_file()** (7 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **physical_counts()** (7 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **Path** (7 connections)
+- **_runtime_provenance()** (7 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **_preflight()** (7 connections) — `tools/issue274/run_full68_mmr_reuse.py`
+- **Any** (7 connections)
+- **_semantic()** (7 connections) — `tools/issue274/run_full68_mmr_reuse.py`
+- **_artifact_hashes()** (6 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **_write_failure_report()** (6 connections) — `tools/issue274/run_full68_mmr_reuse.py`
+- **_load_expected()** (5 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **PageSpec** (5 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
+- **_compare_accepted()** (5 connections) — `tools/issue274/run_full68_mmr_reuse.py`
+- **_retained_performance()** (5 connections) — `tools/issue274/run_full68_mmr_reuse.py`
+- *... and 21 more nodes in this community*
 
 ## Relationships
 
-- [run_phase_c_mmr_regression.py](run_phase_c_mmr_regression.py.md) (14 shared connections)
-- [get_nested](get_nested.md) (10 shared connections)
-- [mmr_support_reuse.py](mmr_support_reuse.py.md) (8 shared connections)
-- [run_probe_scan_batch](run_probe_scan_batch.md) (7 shared connections)
-- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (6 shared connections)
-- [Staff](Staff.md) (6 shared connections)
-- [run_original_geometry_graft.py](run_original_geometry_graft.py.md) (6 shared connections)
-- [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (5 shared connections)
-- [diagnose_phase_b_layout_divergence.py](diagnose_phase_b_layout_divergence.py.md) (4 shared connections)
-- [create_mmr_rapidocr](create_mmr_rapidocr.md) (4 shared connections)
-- [manual_corrections.py](manual_corrections.py.md) (3 shared connections)
-- [build_mmr_page_context](build_mmr_page_context.md) (3 shared connections)
+- [write_json](write_json.md) (31 shared connections)
+- [run_original_geometry_graft.py](run_original_geometry_graft.py.md) (12 shared connections)
+- [run_mmr_batch](run_mmr_batch.md) (10 shared connections)
+- [phase_b_page001_acceptance.py](phase_b_page001_acceptance.py.md) (9 shared connections)
+- [load_yaml](load_yaml.md) (5 shared connections)
+- [.run](run.md) (4 shared connections)
+- [phase_c_phase_a_support.py](phase_c_phase_a_support.py.md) (4 shared connections)
+- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (3 shared connections)
+- [PipelineOrchestrator](PipelineOrchestrator.md) (3 shared connections)
+- [audit_positive_geometry_disagreements.py](audit_positive_geometry_disagreements.py.md) (3 shared connections)
+- [Staff](Staff.md) (2 shared connections)
+- [test_issue264_phase_b_manifest_discovery.py](test_issue264_phase_b_manifest_discovery.py.md) (2 shared connections)
 
 ## Source Files
 
-- `src/pipeline/steps/barlines.py`
 - `src/pipeline/utils/io.py`
-- `tests/test_issue264_phase_b_manifest.py`
-- `tools/issue264/phase_b_page001_acceptance.py`
-- `tools/issue264/run_phase_b_page001_acceptance.py`
+- `tests/test_issue264_phase_c_mmr_regression.py`
+- `tools/issue264/run_phase_c_mmr_regression.py`
+- `tools/issue274/run_full68_mmr_reuse.py`
 
 ## Audit Trail
 
-- EXTRACTED: 156 (99%)
-- INFERRED: 1 (1%)
+- EXTRACTED: 227 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

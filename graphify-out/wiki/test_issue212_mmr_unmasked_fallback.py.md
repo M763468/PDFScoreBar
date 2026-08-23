@@ -33,10 +33,8 @@
 
 ## Relationships
 
+- [MMRProcessor](MMRProcessor.md) (16 shared connections)
 - [MMROCREngine](MMROCREngine.md) (13 shared connections)
-- [MMRProcessor](MMRProcessor.md) (8 shared connections)
-- [object](object.md) (7 shared connections)
-- [MMRClassifier](MMRClassifier.md) (1 shared connections)
 
 ## Source Files
 

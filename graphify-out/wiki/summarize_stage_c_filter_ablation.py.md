@@ -24,7 +24,7 @@
 ## Relationships
 
 - [filter_probe_candidates](filter_probe_candidates.md) (3 shared connections)
-- [hybrid.py](hybrid.py.md) (3 shared connections)
+- [load_json_boxes](load_json_boxes.md) (3 shared connections)
 - [iter_manifest](iter_manifest.md) (2 shared connections)
 - [eval_full68_from_intermediates.py](eval_full68_from_intermediates.py.md) (1 shared connections)
 

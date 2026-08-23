@@ -37,7 +37,7 @@
 - [run_issue36_dense_candidates_then_eval.py](run_issue36_dense_candidates_then_eval.py.md) (2 shared connections)
 - [run_issue53_probe_rescue_then_eval.py](run_issue53_probe_rescue_then_eval.py.md) (2 shared connections)
 - [summarize_stage_c_filter_ablation.py](summarize_stage_c_filter_ablation.py.md) (2 shared connections)
-- [summarize_stage_c_filter_drop_reasons.py](summarize_stage_c_filter_drop_reasons.py.md) (2 shared connections)
+- [load_json_boxes](load_json_boxes.md) (2 shared connections)
 
 ## Source Files
 

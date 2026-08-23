@@ -24,10 +24,10 @@
 
 ## Relationships
 
-- [run_probe_scan_batch](run_probe_scan_batch.md) (4 shared connections)
+- [restored_orchestrator.py](restored_orchestrator.py.md) (3 shared connections)
 - [test_issue255_production_detector_restoration.py](test_issue255_production_detector_restoration.py.md) (3 shared connections)
+- [probe_scan.py](probe_scan.py.md) (2 shared connections)
 - [DetectorOrchestrator](DetectorOrchestrator.md) (1 shared connections)
-- [detection/__init__.py](detection-__init__.py.md) (1 shared connections)
 
 ## Source Files
 

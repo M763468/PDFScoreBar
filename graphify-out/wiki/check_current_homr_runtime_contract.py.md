@@ -15,8 +15,9 @@
 
 ## Relationships
 
-- [homr_profile_compat.py](homr_profile_compat.py.md) (6 shared connections)
+- [current_homr_worker.py](current_homr_worker.py.md) (4 shared connections)
 - [test_issue254_connector_artifact_contract.py](test_issue254_connector_artifact_contract.py.md) (2 shared connections)
+- [homr_profile_compat.py](homr_profile_compat.py.md) (2 shared connections)
 - [heuristics.py](heuristics.py.md) (2 shared connections)
 
 ## Source Files

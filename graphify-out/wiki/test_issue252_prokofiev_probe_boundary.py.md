@@ -1,6 +1,6 @@
 # test_issue252_prokofiev_probe_boundary.py
 
-> 13 nodes · cohesion 0.38
+> 14 nodes · cohesion 0.34
 
 ## Key Concepts
 
@@ -16,13 +16,13 @@
 - **_target_stage()** (4 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
 - **test_validate_fresh_contract_payload_rejects_nonfresh_contract()** (3 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
 - **parametrize** (2 connections)
+- **test_tool_local_side_context_can_reproduce_rejected_experiment()** (2 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
 - **test_validate_fresh_contract_payload_accepts_direct_and_nested_contracts()** (2 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
 
 ## Relationships
 
-- [trace_prokofiev_probe_boundary.py](trace_prokofiev_probe_boundary.py.md) (10 shared connections)
+- [trace_prokofiev_probe_boundary.py](trace_prokofiev_probe_boundary.py.md) (12 shared connections)
 - [filter_probe_candidates](filter_probe_candidates.md) (3 shared connections)
-- [_run_variant](_run_variant.md) (2 shared connections)
 
 ## Source Files
 
@@ -31,7 +31,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 45 (100%)
+- EXTRACTED: 46 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

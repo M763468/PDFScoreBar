@@ -25,9 +25,8 @@
 
 ## Relationships
 
-- [symbol_extraction.py](symbol_extraction.py.md) (6 shared connections)
+- [symbol_extraction.py](symbol_extraction.py.md) (7 shared connections)
 - [build_label.py](build_label.py.md) (2 shared connections)
-- [ete.py](ete.py.md) (1 shared connections)
 - [oemer/train.py](oemer-train.py.md) (1 shared connections)
 
 ## Source Files

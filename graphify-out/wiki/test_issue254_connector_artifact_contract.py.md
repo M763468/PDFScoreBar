@@ -1,13 +1,15 @@
 # test_issue254_connector_artifact_contract.py
 
-> 25 nodes · cohesion 0.17
+> 29 nodes · cohesion 0.16
 
 ## Key Concepts
 
 - **test_issue254_connector_artifact_contract.py** (23 connections) — `tests/test_issue254_connector_artifact_contract.py`
 - **write_connector_masks()** (20 connections) — `src/common/connector_artifacts.py`
 - **install_homr_connector_artifact_capture()** (14 connections) — `src/pipeline/detection/connector_artifacts.py`
+- **detection/connector_artifacts.py** (13 connections) — `src/pipeline/detection/connector_artifacts.py`
 - **Path** (10 connections)
+- **install_homr_skip_existing_guard()** (8 connections) — `src/pipeline/detection/connector_artifacts.py`
 - **_write_mask()** (8 connections) — `tests/test_issue254_connector_artifact_contract.py`
 - **capture_homr_threshold_masks()** (7 connections) — `src/pipeline/detection/connector_artifacts.py`
 - **test_stable_connector_artifact_contract_records_hashes_and_shape()** (6 connections) — `tests/test_issue254_connector_artifact_contract.py`
@@ -26,20 +28,20 @@
 - **test_capture_boundary_collects_masks_even_when_debug_writer_does_nothing()** (2 connections) — `tests/test_issue254_connector_artifact_contract.py`
 - **Persist captured HOMR semantic masks with stable production filenames.** (1 connections) — `src/common/connector_artifacts.py`
 - **ndarray** (1 connections)
-- **Capture ``symbols`` and ``brace_dot`` masks emitted in the current execution…** (1 connections) — `src/pipeline/detection/connector_artifacts.py`
-- **Wrap ``HomrPredictor.predict`` so semantic connector masks survive production…** (1 connections) — `src/pipeline/detection/connector_artifacts.py`
-- **ndarray** (1 connections)
+- **Capture HOMR connector semantics without enabling the full debug output surface.** (1 connections) — `src/pipeline/detection/connector_artifacts.py`
+- *... and 4 more nodes in this community*
 
 ## Relationships
 
-- [common/connector_artifacts.py](common-connector_artifacts.py.md) (23 shared connections)
+- [common/connector_artifacts.py](common-connector_artifacts.py.md) (19 shared connections)
+- [run_full_pipeline.py](run_full_pipeline.py.md) (5 shared connections)
 - [test_issue264_phase_a_connector_geometry.py](test_issue264_phase_a_connector_geometry.py.md) (3 shared connections)
+- [hybrid.py](hybrid.py.md) (2 shared connections)
 - [current_homr_worker.py](current_homr_worker.py.md) (2 shared connections)
-- [detection/__init__.py](detection-__init__.py.md) (2 shared connections)
 - [check_current_homr_runtime_contract.py](check_current_homr_runtime_contract.py.md) (2 shared connections)
 - [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (2 shared connections)
 - [build_manifest](build_manifest.md) (2 shared connections)
-- [object](object.md) (2 shared connections)
+- [MMRProcessor](MMRProcessor.md) (2 shared connections)
 - [Staff](Staff.md) (1 shared connections)
 
 ## Source Files
@@ -50,7 +52,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 89 (98%)
+- EXTRACTED: 101 (98%)
 - INFERRED: 2 (2%)
 - AMBIGUOUS: 0 (0%)
 

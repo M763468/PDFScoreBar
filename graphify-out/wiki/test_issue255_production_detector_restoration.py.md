@@ -17,13 +17,12 @@
 
 ## Relationships
 
+- [restored_orchestrator.py](restored_orchestrator.py.md) (4 shared connections)
 - [build_detector_input_contract](build_detector_input_contract.md) (3 shared connections)
-- [detection/__init__.py](detection-__init__.py.md) (3 shared connections)
 - [apply_advanced_sr](apply_advanced_sr.md) (2 shared connections)
-- [VerifiedProfileHybridDetector](VerifiedProfileHybridDetector.md) (2 shared connections)
-- [run_probe_scan_batch](run_probe_scan_batch.md) (1 shared connections)
+- [current_support_worker.py](current_support_worker.py.md) (2 shared connections)
 - [current_homr_worker.py](current_homr_worker.py.md) (1 shared connections)
-- [object](object.md) (1 shared connections)
+- [MMRProcessor](MMRProcessor.md) (1 shared connections)
 
 ## Source Files
 

@@ -265,7 +265,7 @@ def run(request_path: Path, result_path: Path) -> Path:
         raise FileNotFoundError(omr_predictions)
 
     payload = {
-        "schema_version": "pipeline.current_x4_support.v4",
+        "schema_version": "pipeline.current_x4_support.v3",
         "status": "completed",
         "image": str(image),
         "sr_scale": 4,

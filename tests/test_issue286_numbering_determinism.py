@@ -26,7 +26,15 @@ def _number_with_duplicate_order(*, wider_first: bool) -> System:
 def test_equal_x_duplicate_prefers_wider_barline_independent_of_insertion_order() -> None:
     for wider_first in (False, True):
         system = _number_with_duplicate_order(wider_first=wider_first)
-        assert len(system.measures) == 1
-        assert system.measures[0].bbox.x1 == 1799
+
+        # The production geometry has a large gap from the system left edge to
+        # the first detected barline, so numbering correctly inserts an implicit
+        # system-start (ghost) measure before the measured duplicate boundary.
+        assert len(system.measures) == 2
         assert system.measures[0].start_bar is not None
-        assert system.measures[0].start_bar.bbox == BBox(1788, 2993, 1799, 3091)
+        assert system.measures[0].start_bar.is_ghost is True
+
+        measured = system.measures[1]
+        assert measured.bbox.x1 == 1799
+        assert measured.start_bar is not None
+        assert measured.start_bar.bbox == BBox(1788, 2993, 1799, 3091)

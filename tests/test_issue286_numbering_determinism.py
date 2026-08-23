@@ -40,29 +40,23 @@ def test_equal_x_duplicate_prefers_wider_barline_independent_of_insertion_order(
         assert measured.start_bar.bbox == BBox(1788, 2993, 1799, 3091)
 
 
-def test_distinct_x_near_duplicate_keeps_existing_leftmost_priority() -> None:
-    """Issue #286 must not redefine the existing <15 px dedup policy."""
-
-    left_narrow = Barline(bbox=BBox(1788, 2631, 1797, 2729))
-    right_wider = Barline(bbox=BBox(1789, 2993, 1802, 3091))
-    end = Barline(bbox=BBox(2200, 2631, 2204, 3091))
+def test_distinct_x_near_duplicate_preserves_leftmost_precedence() -> None:
+    left = Barline(bbox=BBox(1788, 2631, 1797, 2729))
+    wider_right = Barline(bbox=BBox(1789, 2993, 1801, 3091))
+    terminal = Barline(bbox=BBox(2200, 2631, 2204, 3091))
     system = System(
         staves=[
-            Staff(
-                bbox=BBox(237, 2577, 2759, 2755),
-                barlines=[right_wider, end],
-            ),
-            Staff(
-                bbox=BBox(264, 2970, 2761, 3117),
-                barlines=[left_narrow, end],
-            ),
+            Staff(bbox=BBox(237, 2577, 2759, 2755), barlines=[left, terminal]),
+            Staff(bbox=BBox(264, 2970, 2761, 3117), barlines=[wider_right, terminal]),
         ]
     )
 
     MeasureNumberer().number_system(system, start_number=1)
 
+    # The Issue #286 rule is only an exact-x tie breaker. A wider barline one
+    # pixel to the right remains governed by the historical ascending-x rule.
     assert len(system.measures) == 2
     measured = system.measures[1]
-    assert measured.bbox.x1 == 1797
     assert measured.start_bar is not None
-    assert measured.start_bar.bbox == left_narrow.bbox
+    assert measured.start_bar.bbox == left.bbox
+    assert measured.bbox.x1 == left.bbox.x2

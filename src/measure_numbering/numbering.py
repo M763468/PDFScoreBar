@@ -60,7 +60,25 @@ class MeasureNumberer:
         for staff in system.staves:
             all_barlines.update(staff.barlines)
 
-        raw_sorted = sorted(list(all_barlines), key=lambda b: b.bbox.x1)
+        # ``all_barlines`` is a set because the same physical barline can be
+        # assigned to multiple staves.  Equal-x detections from different
+        # staves can still have different widths, though, and set iteration
+        # order must not decide which geometry survives the <15 px dedup pass.
+        # Preserve the existing leftmost-x priority, but for an exact x1 tie
+        # prefer the wider detection deterministically.  Remaining coordinates
+        # only make otherwise-equivalent cases stable; they do not alter the
+        # ordering between distinct x1 positions.
+        raw_sorted = sorted(
+            all_barlines,
+            key=lambda b: (
+                b.bbox.x1,
+                -b.bbox.width,
+                b.bbox.y1,
+                b.bbox.y2,
+                b.bbox.x2,
+                b.is_ghost,
+            ),
+        )
         sorted_barlines = self._deduplicate_barlines(raw_sorted)
 
         # 2. System and Staff geometry
@@ -193,8 +211,6 @@ class MeasureNumberer:
                 # Distance check (center to center or x1 to x1)
                 dist = abs(next_bar.bbox.x1 - current.bbox.x1)
                 if dist < self.DEDUPLICATION_THRESHOLD:
-                    # Merge: keep the one that is wider or just the first?
-                    # Usually detector produces multiple thin candidates.
                     continue
                 else:
                     deduped.append(current)

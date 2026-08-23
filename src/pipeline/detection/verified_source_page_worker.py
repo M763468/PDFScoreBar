@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from .profile_hybrid import VerifiedProfileHybridDetector
+from .profile_hybrid_batch_sr import BatchSRVerifiedProfileHybridDetector
 
 
 def _load_request(path: Path) -> dict[str, Any]:
@@ -35,7 +35,7 @@ def run(request_path: Path, result_path: Path) -> Path:
         raise ValueError("Verified source-page precomputed_sr must be a mapping")
     precomputed_sr = dict(precomputed_sr_raw) if precomputed_sr_raw is not None else None
 
-    detector = VerifiedProfileHybridDetector(
+    detector = BatchSRVerifiedProfileHybridDetector(
         det_cfg=dict(det_cfg),
         images=[image],
         run_id=run_id,

@@ -17,6 +17,7 @@ from typing import Any
 
 from src.pipeline.core.python_env import get_pipeline_python
 from src.pipeline.core.subprocess_utils import run_with_logging
+from src.pipeline.perf_trace import set_context, span
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
@@ -145,6 +146,7 @@ def run(request_path: Path, result_path: Path) -> Path:
     output_root = Path(str(request["output_root"])).resolve()
     if not image.is_file():
         raise FileNotFoundError(image)
+    set_context(page=image.name)
 
     sr_scale = int(det_cfg.get("sr_scale", 2))
     if sr_scale != 4:
@@ -154,21 +156,22 @@ def run(request_path: Path, result_path: Path) -> Path:
 
     stem = image.stem
     sr_image = output_root / "sr" / "batch" / stem / image.name
-    sr_payload, sr_command = _run_child_worker(
-        name="Current x4 SR",
-        module="src.pipeline.detection.current_sr_worker",
-        request={
-            "schema_version": "pipeline.current_x4_sr_request.v1",
-            "detection": dict(det_cfg),
-            "image": str(image),
-            "output": str(sr_image),
-        },
-        request_path=output_root / "current_sr_request.json",
-        result_path=output_root / "current_sr_result.json",
-        log_path=output_root / "current_sr_worker.log",
-        python_step="sr",
-        env=env,
-    )
+    with span("current_support.current_sr_subprocess"):
+        sr_payload, sr_command = _run_child_worker(
+            name="Current x4 SR",
+            module="src.pipeline.detection.current_sr_worker",
+            request={
+                "schema_version": "pipeline.current_x4_sr_request.v1",
+                "detection": dict(det_cfg),
+                "image": str(image),
+                "output": str(sr_image),
+            },
+            request_path=output_root / "current_sr_request.json",
+            result_path=output_root / "current_sr_result.json",
+            log_path=output_root / "current_sr_worker.log",
+            python_step="sr",
+            env=env,
+        )
     actual_sr = Path(str(sr_payload["sr_image"])).resolve()
     if actual_sr != sr_image.resolve() or not actual_sr.is_file():
         raise FileNotFoundError(f"Current x4 SR output mismatch: {actual_sr}")
@@ -241,6 +244,7 @@ def main() -> int:
     parser.add_argument("--request", type=Path, required=True)
     parser.add_argument("--result", type=Path, required=True)
     args = parser.parse_args()
+    set_context(process_role="current_support_worker")
     try:
         result = run(args.request, args.result)
     except Exception as error:  # noqa: BLE001

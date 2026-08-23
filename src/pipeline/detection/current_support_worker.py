@@ -1,8 +1,9 @@
 """Generate current x4/HOMR/OMR support for one detector page.
 
-The current support path preserves connector-semantic HOMR artifacts, but keeps
-its three heavy phases disjoint: Real-ESRGAN SR, current HOMR on the persisted x4
-image, then OMR-DLN. This avoids retaining HOMR state during the x4 SR peak.
+The current support path preserves connector-semantic HOMR artifacts.  SR may be
+materialized by a dedicated all-pages SR process before this worker starts; the
+current HOMR and OMR-DLN phases remain page-local and process-isolated so no
+Real-ESRGAN model state overlaps their GPU lifetime.
 """
 
 from __future__ import annotations
@@ -65,6 +66,43 @@ def _require_current_homr_bundle(payload: Mapping[str, Any]) -> dict[str, Path]:
             "Current x4 support HOMR artifacts missing: " + ", ".join(missing_files)
         )
     return paths
+
+
+def _require_precomputed_sr(
+    request: Mapping[str, Any], *, image: Path
+) -> dict[str, Any] | None:
+    raw = request.get("precomputed_sr")
+    if raw is None:
+        return None
+    if not isinstance(raw, Mapping):
+        raise ValueError("precomputed_sr must be a mapping")
+    if raw.get("historical_detector_artifact_runtime_input") is not False:
+        raise ValueError("Precomputed current x4 SR must not use historical artifacts")
+
+    payload_image = Path(str(raw.get("image", ""))).resolve()
+    if payload_image != image:
+        raise ValueError(
+            f"Precomputed current x4 SR image mismatch: expected={image}, actual={payload_image}"
+        )
+    if int(raw.get("sr_scale", 0)) != 4:
+        raise ValueError("Precomputed current x4 SR requires sr_scale=4")
+
+    sr_image = Path(str(raw.get("sr_image", ""))).resolve()
+    if not sr_image.is_file():
+        raise FileNotFoundError(sr_image)
+    sr_sha256 = str(raw.get("sr_sha256", "")).strip()
+    if not sr_sha256:
+        raise ValueError("Precomputed current x4 SR lacks sr_sha256")
+
+    return {
+        "schema_version": "pipeline.current_x4_sr.v1",
+        "status": "completed",
+        "image": str(image),
+        "sr_scale": 4,
+        "sr_image": str(sr_image),
+        "sr_sha256": sr_sha256,
+        "historical_detector_artifact_runtime_input": False,
+    }
 
 
 def _build_worker_environment(base_env: Mapping[str, str] | None = None) -> dict[str, str]:
@@ -156,25 +194,37 @@ def run(request_path: Path, result_path: Path) -> Path:
 
     stem = image.stem
     sr_image = output_root / "sr" / "batch" / stem / image.name
-    with span("current_support.current_sr_subprocess"):
-        sr_payload, sr_command = _run_child_worker(
-            name="Current x4 SR",
-            module="src.pipeline.detection.current_sr_worker",
-            request={
-                "schema_version": "pipeline.current_x4_sr_request.v1",
-                "detection": dict(det_cfg),
-                "image": str(image),
-                "output": str(sr_image),
-            },
-            request_path=output_root / "current_sr_request.json",
-            result_path=output_root / "current_sr_result.json",
-            log_path=output_root / "current_sr_worker.log",
-            python_step="sr",
-            env=env,
-        )
+    precomputed_sr = _require_precomputed_sr(request, image=image)
+    if precomputed_sr is None:
+        with span("current_support.current_sr_subprocess"):
+            sr_payload, sr_command = _run_child_worker(
+                name="Current x4 SR",
+                module="src.pipeline.detection.current_sr_worker",
+                request={
+                    "schema_version": "pipeline.current_x4_sr_request.v1",
+                    "detection": dict(det_cfg),
+                    "image": str(image),
+                    "output": str(sr_image),
+                },
+                request_path=output_root / "current_sr_request.json",
+                result_path=output_root / "current_sr_result.json",
+                log_path=output_root / "current_sr_worker.log",
+                python_step="sr",
+                env=env,
+            )
+        sr_execution_scope = "page_subprocess"
+        memory_phase_boundaries = ["sr", "current_homr", "omr_dln"]
+    else:
+        sr_payload = precomputed_sr
+        sr_command = ["precomputed-current-x4-sr", str(sr_payload["sr_image"])]
+        sr_execution_scope = "dedicated_sr_batch_process"
+        memory_phase_boundaries = ["sr_batch_process_exited", "current_homr", "omr_dln"]
+
     actual_sr = Path(str(sr_payload["sr_image"])).resolve()
-    if actual_sr != sr_image.resolve() or not actual_sr.is_file():
+    if precomputed_sr is None and actual_sr != sr_image.resolve():
         raise FileNotFoundError(f"Current x4 SR output mismatch: {actual_sr}")
+    if not actual_sr.is_file():
+        raise FileNotFoundError(actual_sr)
 
     current_homr_root = output_root / "current_homr"
     homr_payload, homr_command = _run_child_worker(
@@ -196,6 +246,9 @@ def run(request_path: Path, result_path: Path) -> Path:
     homr_paths = _require_current_homr_bundle(homr_payload)
 
     omr_output = output_root / "omr_sr"
+    # The batch worker writes the same stable per-page SR layout used by the old
+    # page-local SR worker, so OMR-DLN keeps consuming its existing persisted path.
+    sr_directory = actual_sr.parent.parent
     omr_cmd = get_pipeline_python("omr_dln") + [
         "experiments/models/eval_omr_dln.py",
         "--images",
@@ -203,7 +256,7 @@ def run(request_path: Path, result_path: Path) -> Path:
         "--output-dir",
         str(omr_output),
         "--pre-computed-sr",
-        str(output_root / "sr" / "batch"),
+        str(sr_directory),
     ]
     run_with_logging(omr_cmd, env=env, check=True)
 
@@ -212,12 +265,13 @@ def run(request_path: Path, result_path: Path) -> Path:
         raise FileNotFoundError(omr_predictions)
 
     payload = {
-        "schema_version": "pipeline.current_x4_support.v3",
+        "schema_version": "pipeline.current_x4_support.v4",
         "status": "completed",
         "image": str(image),
         "sr_scale": 4,
         "sr_image": str(actual_sr),
         "sr_sha256": sr_payload.get("sr_sha256"),
+        "sr_execution_scope": sr_execution_scope,
         "current_sr_detection": str(homr_paths["current_sr_detection"]),
         "current_homr_staff_mask": str(homr_paths["staff_mask"]),
         "connector_complete": True,
@@ -227,7 +281,7 @@ def run(request_path: Path, result_path: Path) -> Path:
         "current_omr": str(omr_predictions),
         "support_root": str(output_root),
         "current_homr_executed": True,
-        "memory_phase_boundaries": ["sr", "current_homr", "omr_dln"],
+        "memory_phase_boundaries": memory_phase_boundaries,
         "historical_detector_artifact_runtime_input": False,
         "commands": [sr_command, homr_command, omr_cmd],
     }

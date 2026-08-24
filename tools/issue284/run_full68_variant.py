@@ -67,10 +67,7 @@ def require_canonical_runtime(root: Path) -> None:
     if not PIPELINE_PYTHON.is_file():
         raise FileNotFoundError(PIPELINE_PYTHON)
     if not Path(sys.executable).as_posix().startswith("/opt/venv_pipeline/"):
-        raise RuntimeError(
-            "Runner must use /opt/venv_pipeline/bin/python, "
-            f"got {sys.executable}"
-        )
+        raise RuntimeError(f"Runner must use /opt/venv_pipeline/bin/python, got {sys.executable}")
 
 
 class ResourceSampler:
@@ -209,9 +206,7 @@ class ResourceSampler:
             "peak_process_tree_rss_bytes": self.peak_process_tree_rss_bytes,
             "peak_children_rss_bytes": self.peak_children_rss_bytes,
             "peak_gpu_memory_mb_by_uuid": self.peak_gpu_memory_mb_by_uuid,
-            "peak_gpu_utilization_pct_by_uuid": (
-                self.peak_gpu_utilization_pct_by_uuid
-            ),
+            "peak_gpu_utilization_pct_by_uuid": (self.peak_gpu_utilization_pct_by_uuid),
         }
 
 
@@ -264,14 +259,8 @@ def page_artifacts(
 ) -> dict[str, Any]:
     paths = {
         "hybrid": hybrid_run / "hybrid_results" / f"{page}_hybrid.json",
-        "numbering_base": pipeline_run
-        / "intermediate"
-        / page
-        / "numbering_base.json",
-        "overrides_mmr": pipeline_run
-        / "intermediate"
-        / page
-        / "overrides_mmr.json",
+        "numbering_base": pipeline_run / "intermediate" / page / "numbering_base.json",
+        "overrides_mmr": pipeline_run / "intermediate" / page / "overrides_mmr.json",
         "numbering_final": pipeline_run / "outputs" / page / "numbering_final.json",
         "current_support": hybrid_run / "current_support" / score / page / "result.json",
     }
@@ -280,9 +269,7 @@ def page_artifacts(
         raise FileNotFoundError("Missing full68 page artifacts: " + ", ".join(missing))
 
     support = load_json(paths["current_support"])
-    return {
-        key: str(value) for key, value in paths.items()
-    } | {
+    return {key: str(value) for key, value in paths.items()} | {
         "sr_sha256": support.get("sr_sha256"),
         "sr_execution_scope": support.get("sr_execution_scope"),
         "connector_complete": support.get("connector_complete"),
@@ -418,9 +405,7 @@ def write_variant_summary(
         "config": str(root / CANONICAL_CONFIG_REL),
         "config_sha256": config_sha,
         "canonical_page_count": sum(int(item.get("page_count", 0)) for item in completed),
-        "total_score_e2e_wall_sec": sum(
-            float(item.get("e2e_wall_sec", 0.0)) for item in completed
-        ),
+        "total_score_e2e_wall_sec": sum(float(item.get("e2e_wall_sec", 0.0)) for item in completed),
         "scores": score_summaries,
     }
     (output / "variant_summary.json").write_text(
@@ -485,9 +470,7 @@ def main() -> int:
                     "peak_gpu_memory_mb_by_uuid": summary["resources"].get(
                         "peak_gpu_memory_mb_by_uuid"
                     ),
-                    "sr_batch_wall_sec": (
-                        summary.get("sr_batch") or {}
-                    ).get("batch_wall_sec"),
+                    "sr_batch_wall_sec": (summary.get("sr_batch") or {}).get("batch_wall_sec"),
                 },
                 indent=2,
                 ensure_ascii=False,

@@ -30,13 +30,43 @@ IMAGE = ROOT / "data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png"
 WEIGHTS = ROOT / "external/realesrgan/weights/RealESRGAN_x4plus.pth"
 VARIANTS = {
     "baseline": {"benchmark": False, "channels_last": False, "batch": 1, "inference_mode": False},
-    "inference_mode": {"benchmark": False, "channels_last": False, "batch": 1, "inference_mode": True},
-    "cudnn_benchmark": {"benchmark": True, "channels_last": False, "batch": 1, "inference_mode": False},
-    "channels_last": {"benchmark": False, "channels_last": True, "batch": 1, "inference_mode": False},
-    "channels_last_benchmark": {"benchmark": True, "channels_last": True, "batch": 1, "inference_mode": False},
+    "inference_mode": {
+        "benchmark": False,
+        "channels_last": False,
+        "batch": 1,
+        "inference_mode": True,
+    },
+    "cudnn_benchmark": {
+        "benchmark": True,
+        "channels_last": False,
+        "batch": 1,
+        "inference_mode": False,
+    },
+    "channels_last": {
+        "benchmark": False,
+        "channels_last": True,
+        "batch": 1,
+        "inference_mode": False,
+    },
+    "channels_last_benchmark": {
+        "benchmark": True,
+        "channels_last": True,
+        "batch": 1,
+        "inference_mode": False,
+    },
     "batch2": {"benchmark": False, "channels_last": False, "batch": 2, "inference_mode": False},
-    "batch2_benchmark": {"benchmark": True, "channels_last": False, "batch": 2, "inference_mode": False},
-    "batch2_channels_last_benchmark": {"benchmark": True, "channels_last": True, "batch": 2, "inference_mode": False},
+    "batch2_benchmark": {
+        "benchmark": True,
+        "channels_last": False,
+        "batch": 2,
+        "inference_mode": False,
+    },
+    "batch2_channels_last_benchmark": {
+        "benchmark": True,
+        "channels_last": True,
+        "batch": 2,
+        "inference_mode": False,
+    },
 }
 
 
@@ -85,7 +115,9 @@ def _load_tiles() -> list[torch.Tensor]:
         tensor[:, :, 390:810, 790:1210],
     ]
     if any(tuple(tile.shape) != (1, 3, 420, 420) for tile in tiles):
-        raise RuntimeError(f"Unexpected representative tile shapes: {[tuple(t.shape) for t in tiles]}")
+        raise RuntimeError(
+            f"Unexpected representative tile shapes: {[tuple(t.shape) for t in tiles]}"
+        )
     return tiles
 
 
@@ -113,7 +145,9 @@ def _compare(candidate: torch.Tensor, reference: torch.Tensor) -> dict[str, Any]
             "different_fp16_values": int(torch.count_nonzero(delta).item()),
             "max_abs_fp16_diff": float(delta.max().item()),
             "mean_abs_fp16_diff": float(delta.mean().item()),
-            "uint8_equal": bool(torch.equal(_uint8_tensor(candidate_cpu), _uint8_tensor(reference_cpu))),
+            "uint8_equal": bool(
+                torch.equal(_uint8_tensor(candidate_cpu), _uint8_tensor(reference_cpu))
+            ),
         }
     )
     return result

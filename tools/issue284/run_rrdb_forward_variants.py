@@ -91,7 +91,9 @@ def main() -> int:
             "process_wall_sec": time.perf_counter() - started,
             "result": str(result_path),
             "log": str(log_path),
-            "status": payload.get("status") if payload else ("timeout" if timed_out else "missing_result"),
+            "status": payload.get("status")
+            if payload
+            else ("timeout" if timed_out else "missing_result"),
         }
         if payload:
             record.update(
@@ -118,7 +120,11 @@ def main() -> int:
             break
 
     baseline = next(
-        (item for item in records if item["variant"] == "baseline" and item["status"] == "completed"),
+        (
+            item
+            for item in records
+            if item["variant"] == "baseline" and item["status"] == "completed"
+        ),
         None,
     )
     baseline_per_tile = None

@@ -30,7 +30,9 @@ from tools.issue284.profile_realesrgan_hotpath import (
 )
 
 
-def _prepare_output_tensor(image_bgr: np.ndarray, *, tile: int, tile_pad: int) -> tuple[torch.Tensor, float]:
+def _prepare_output_tensor(
+    image_bgr: np.ndarray, *, tile: int, tile_pad: int
+) -> tuple[torch.Tensor, float]:
     upsampler, _ = create_upsampler(tile, tile_pad, 0, False)
     image = image_bgr.astype(np.float32)
     if float(np.max(image)) > 256:
@@ -136,7 +138,9 @@ def main() -> int:
     }
 
     try:
-        output, tile_wall = _prepare_output_tensor(image_bgr, tile=args.tile, tile_pad=args.tile_pad)
+        output, tile_wall = _prepare_output_tensor(
+            image_bgr, tile=args.tile, tile_pad=args.tile_pad
+        )
         legacy, legacy_stats = _legacy_cpu_conversion(output)
         candidate, candidate_stats = _gpu_uint8_conversion(output)
         comparison = _array_comparison(candidate, legacy)
@@ -149,14 +153,17 @@ def main() -> int:
                 "candidate_vs_legacy": comparison,
                 "conversion_saved_sec": legacy_stats["wall_sec"] - candidate_stats["wall_sec"],
                 "conversion_reduction_fraction": (
-                    (legacy_stats["wall_sec"] - candidate_stats["wall_sec"]) / legacy_stats["wall_sec"]
+                    (legacy_stats["wall_sec"] - candidate_stats["wall_sec"])
+                    / legacy_stats["wall_sec"]
                 ),
             }
         )
 
         reference_path = args.compare_image.resolve() if args.compare_image else None
         if reference_path is None and args.compare_baseline_summary:
-            reference_path = resolve_compare_image(args.compare_baseline_summary.resolve(), image_path)
+            reference_path = resolve_compare_image(
+                args.compare_baseline_summary.resolve(), image_path
+            )
         if reference_path is not None:
             result["candidate_vs_production_reference"] = compare_images(candidate, reference_path)
     except Exception as error:  # noqa: BLE001

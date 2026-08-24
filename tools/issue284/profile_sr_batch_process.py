@@ -104,7 +104,9 @@ def main() -> int:
         "current_three_page_sr_subprocess_total_sec": baseline_total,
         "candidate_three_page_sr_batch_process_sec": child_wall,
         "saved_sec": baseline_total - child_wall,
-        "reduction_fraction": ((baseline_total - child_wall) / baseline_total) if baseline_total else None,
+        "reduction_fraction": ((baseline_total - child_wall) / baseline_total)
+        if baseline_total
+        else None,
         "comparisons": comparisons,
         "all_sha256_equal": bool(comparisons) and all(item["sha256_equal"] for item in comparisons),
         "worker": worker,

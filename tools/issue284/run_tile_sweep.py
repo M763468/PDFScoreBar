@@ -24,7 +24,9 @@ DEFAULT_TILES = (480, 512, 576, 640)
 def _parse_tiles(value: str) -> list[int]:
     tiles = [int(item.strip()) for item in value.split(",") if item.strip()]
     if not tiles or any(tile <= 0 for tile in tiles):
-        raise argparse.ArgumentTypeError("tiles must be a comma-separated list of positive integers")
+        raise argparse.ArgumentTypeError(
+            "tiles must be a comma-separated list of positive integers"
+        )
     return tiles
 
 
@@ -94,7 +96,9 @@ def main() -> int:
         if payload:
             record.update(
                 {
-                    "profiled_enhance_total_wall_sec": payload.get("profiled_enhance_total_wall_sec"),
+                    "profiled_enhance_total_wall_sec": payload.get(
+                        "profiled_enhance_total_wall_sec"
+                    ),
                     "geometry": payload.get("geometry"),
                     "memory": payload.get("memory") or payload.get("memory_at_failure"),
                     "comparison": payload.get("comparison"),

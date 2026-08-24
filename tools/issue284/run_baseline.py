@@ -263,7 +263,9 @@ def run_workload(root: Path, name: str, images: list[str], *, tracing: bool) -> 
         "log": str(log_path),
         "resources": resources,
     }
-    (run_root / "run_summary.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    (run_root / "run_summary.json").write_text(
+        json.dumps(result, indent=2) + "\n", encoding="utf-8"
+    )
     if returncode:
         tail = log_path.read_text(encoding="utf-8", errors="replace").splitlines()[-80:]
         raise RuntimeError(f"{name} failed ({returncode})\n" + "\n".join(tail))
@@ -294,9 +296,8 @@ def summarize_stages(records: list[dict[str, Any]]) -> dict[str, Any]:
             "total_sec": sum(durations),
             "mean_sec": sum(durations) / len(durations) if durations else None,
             "pages": [item.get("page") for item in items],
-            "cuda_synchronized_all": bool(items) and all(
-                bool(item.get("cuda_synchronized")) for item in items
-            ),
+            "cuda_synchronized_all": bool(items)
+            and all(bool(item.get("cuda_synchronized")) for item in items),
         }
     return summary
 
@@ -350,7 +351,9 @@ def main() -> int:
         "provenance": {
             "git_commit": os.environ.get("PDFSCORE_ISSUE284_GIT_COMMIT"),
             "git_dirty": os.environ.get("PDFSCORE_ISSUE284_GIT_DIRTY"),
-            "docker_image": os.environ.get("PDFSCORE_ISSUE284_DOCKER_IMAGE", "pdfscore_pipeline_gpu"),
+            "docker_image": os.environ.get(
+                "PDFSCORE_ISSUE284_DOCKER_IMAGE", "pdfscore_pipeline_gpu"
+            ),
             "docker_image_identity": os.environ.get("PDFSCORE_ISSUE284_DOCKER_IMAGE_IDENTITY"),
             "config_sha256": sha256(CANONICAL_CONFIG),
             "input_sha256": {
@@ -364,11 +367,15 @@ def main() -> int:
         "stage_summary": stages,
         "current_enhance_mean_sec_per_page": stages["sr_worker.synchronized_enhance"]["mean_sec"],
         "current_enhance_e2e_share": enhance_total / float(three_page["e2e_wall_sec"]),
-        "current_sr_subprocess_mean_sec_per_page": stages["current_support.current_sr_subprocess"]["mean_sec"],
+        "current_sr_subprocess_mean_sec_per_page": stages["current_support.current_sr_subprocess"][
+            "mean_sec"
+        ],
         "current_sr_subprocess_e2e_share": sr_subprocess_total / float(three_page["e2e_wall_sec"]),
         "sr_outputs": collect_sr_outputs(output),
     }
-    (output / "trace_records.json").write_text(json.dumps(records, indent=2) + "\n", encoding="utf-8")
+    (output / "trace_records.json").write_text(
+        json.dumps(records, indent=2) + "\n", encoding="utf-8"
+    )
     summary_path = output / "baseline_summary.json"
     summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(summary, indent=2))

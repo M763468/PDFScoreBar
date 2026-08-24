@@ -37,9 +37,7 @@ def _select_numbering_staff_mask(hybrid_root: Path, stem: str) -> Path:
     staff_mask_map: dict[str, Path] = {}
     for path in hybrid_root.rglob("*_debug_3_staff.png"):
         name = path.name
-        path_stem = name.replace("_proxy_debug_3_staff.png", "").replace(
-            "_debug_3_staff.png", ""
-        )
+        path_stem = name.replace("_proxy_debug_3_staff.png", "").replace("_debug_3_staff.png", "")
         staff_mask_map[path_stem] = path
     for path in hybrid_root.rglob("*_staff_mask.png"):
         path_stem = path.name.replace("_staff_mask.png", "")
@@ -48,7 +46,9 @@ def _select_numbering_staff_mask(hybrid_root: Path, stem: str) -> Path:
 
     result = staff_mask_map.get(stem)
     if result is None or not result.is_file():
-        raise FileNotFoundError(f"Could not resolve numbering staff mask for {stem} under {hybrid_root}")
+        raise FileNotFoundError(
+            f"Could not resolve numbering staff mask for {stem} under {hybrid_root}"
+        )
     return result.resolve()
 
 
@@ -100,18 +100,12 @@ def _pair_semantics(candidate: Mapping[str, Any], reference: Mapping[str, Any]) 
             "staff_pair": ref.get("staff_pair"),
             "candidate_left_connector_present": cand.get("left_connector_present"),
             "reference_left_connector_present": ref.get("left_connector_present"),
-            "candidate_symbols_vertical_open_density": cand.get(
-                "symbols_vertical_open_density"
-            ),
-            "reference_symbols_vertical_open_density": ref.get(
-                "symbols_vertical_open_density"
-            ),
+            "candidate_symbols_vertical_open_density": cand.get("symbols_vertical_open_density"),
+            "reference_symbols_vertical_open_density": ref.get("symbols_vertical_open_density"),
             "candidate_brace_dot_vertical_open_density": cand.get(
                 "brace_dot_vertical_open_density"
             ),
-            "reference_brace_dot_vertical_open_density": ref.get(
-                "brace_dot_vertical_open_density"
-            ),
+            "reference_brace_dot_vertical_open_density": ref.get("brace_dot_vertical_open_density"),
         }
         densities = [
             float(values["candidate_symbols_vertical_open_density"] or 0.0),
@@ -119,7 +113,9 @@ def _pair_semantics(candidate: Mapping[str, Any], reference: Mapping[str, Any]) 
             float(values["candidate_brace_dot_vertical_open_density"] or 0.0),
             float(values["reference_brace_dot_vertical_open_density"] or 0.0),
         ]
-        values["minimum_abs_margin_to_threshold"] = min(abs(value - threshold) for value in densities)
+        values["minimum_abs_margin_to_threshold"] = min(
+            abs(value - threshold) for value in densities
+        )
         if any(
             cand.get(key) != ref.get(key)
             for key in (
@@ -189,7 +185,12 @@ def main() -> int:
 
     baseline_paths = _connector_paths(gate, "reference")
     candidate_paths = _connector_paths(gate, "candidate")
-    for path in [geometry_staff_mask, hybrid_reference, *baseline_paths.values(), *candidate_paths.values()]:
+    for path in [
+        geometry_staff_mask,
+        hybrid_reference,
+        *baseline_paths.values(),
+        *candidate_paths.values(),
+    ]:
         if not path.is_file():
             raise FileNotFoundError(path)
 
@@ -255,7 +256,9 @@ def main() -> int:
     )
 
     args.result.parent.mkdir(parents=True, exist_ok=True)
-    args.result.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    args.result.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     print(json.dumps(payload, indent=2, ensure_ascii=False))
     return 0
 

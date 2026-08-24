@@ -171,7 +171,9 @@ def compare_images(candidate: np.ndarray, reference_path: Path) -> dict[str, Any
     return result
 
 
-def create_upsampler(tile: int, tile_pad: int, pre_pad: int, fp32: bool) -> tuple[RealESRGANer, float]:
+def create_upsampler(
+    tile: int, tile_pad: int, pre_pad: int, fp32: bool
+) -> tuple[RealESRGANer, float]:
     model_path = ROOT / "external/realesrgan/weights/RealESRGAN_x4plus.pth"
     if not model_path.is_file():
         raise FileNotFoundError(f"Production Real-ESRGAN weight path is missing: {model_path}")
@@ -219,9 +221,11 @@ def profile_enhance(
         synchronized_wall(lambda: cpu_tensor.to(torch.device("cuda")))
     )
     if upsampler.half:
-        gpu_tensor, timings["preprocess_half_conversion_sec"], timings[
-            "preprocess_half_empty_sync_sec"
-        ] = synchronized_wall(gpu_tensor.half)
+        (
+            gpu_tensor,
+            timings["preprocess_half_conversion_sec"],
+            timings["preprocess_half_empty_sync_sec"],
+        ) = synchronized_wall(gpu_tensor.half)
     else:
         timings["preprocess_half_conversion_sec"] = 0.0
         timings["preprocess_half_empty_sync_sec"] = 0.0
@@ -229,9 +233,11 @@ def profile_enhance(
     if pre_pad:
         from torch.nn import functional as F
 
-        gpu_tensor, timings["preprocess_pre_pad_sec"], timings["preprocess_pre_pad_empty_sync_sec"] = (
-            synchronized_wall(lambda: F.pad(gpu_tensor, (0, pre_pad, 0, pre_pad), "reflect"))
-        )
+        (
+            gpu_tensor,
+            timings["preprocess_pre_pad_sec"],
+            timings["preprocess_pre_pad_empty_sync_sec"],
+        ) = synchronized_wall(lambda: F.pad(gpu_tensor, (0, pre_pad, 0, pre_pad), "reflect"))
     else:
         timings["preprocess_pre_pad_sec"] = 0.0
         timings["preprocess_pre_pad_empty_sync_sec"] = 0.0
@@ -240,9 +246,11 @@ def profile_enhance(
     batch, channel, height, width = gpu_tensor.shape
     geometry = tile_geometry(height, width, tile, tile_pad)
     output_shape = (batch, channel, height * 4, width * 4)
-    output, timings["tile_output_allocation_sec"], timings["tile_output_allocation_empty_sync_sec"] = (
-        synchronized_wall(lambda: gpu_tensor.new_zeros(output_shape))
-    )
+    (
+        output,
+        timings["tile_output_allocation_sec"],
+        timings["tile_output_allocation_empty_sync_sec"],
+    ) = synchronized_wall(lambda: gpu_tensor.new_zeros(output_shape))
 
     forward_events: list[tuple[torch.cuda.Event, torch.cuda.Event]] = []
     merge_events: list[tuple[torch.cuda.Event, torch.cuda.Event]] = []
@@ -288,12 +296,14 @@ def profile_enhance(
                 merge_start = torch.cuda.Event(enable_timing=True)
                 merge_end = torch.cuda.Event(enable_timing=True)
                 merge_start.record()
-                output[:, :, output_start_y:output_end_y, output_start_x:output_end_x] = output_tile[
-                    :,
-                    :,
-                    output_start_y_tile:output_end_y_tile,
-                    output_start_x_tile:output_end_x_tile,
-                ]
+                output[:, :, output_start_y:output_end_y, output_start_x:output_end_x] = (
+                    output_tile[
+                        :,
+                        :,
+                        output_start_y_tile:output_end_y_tile,
+                        output_start_x_tile:output_end_x_tile,
+                    ]
+                )
                 merge_end.record()
                 merge_events.append((merge_start, merge_end))
 
@@ -312,13 +322,17 @@ def profile_enhance(
     if pre_pad:
         _, _, out_h, out_w = post.size()
         post = post[:, :, 0 : out_h - pre_pad * 4, 0 : out_w - pre_pad * 4]
-    timings["postprocess_crop_cpu_sec"] = 0.0  # slicing above is a view; retained for ledger clarity
-
-    gpu_float, timings["output_half_to_float_sec"], timings["output_half_to_float_empty_sync_sec"] = (
-        synchronized_wall(lambda: post.data.squeeze().float())
+    timings["postprocess_crop_cpu_sec"] = (
+        0.0  # slicing above is a view; retained for ledger clarity
     )
-    cpu_float, timings["output_d2h_copy_sec"], timings["output_d2h_empty_sync_sec"] = synchronized_wall(
-        gpu_float.cpu
+
+    (
+        gpu_float,
+        timings["output_half_to_float_sec"],
+        timings["output_half_to_float_empty_sync_sec"],
+    ) = synchronized_wall(lambda: post.data.squeeze().float())
+    cpu_float, timings["output_d2h_copy_sec"], timings["output_d2h_empty_sync_sec"] = (
+        synchronized_wall(gpu_float.cpu)
     )
     cpu_float, timings["output_cpu_clamp_sec"] = timed_cpu(lambda: cpu_float.clamp_(0, 1))
     output_np, timings["output_tensor_to_numpy_sec"] = timed_cpu(cpu_float.numpy)
@@ -413,7 +427,9 @@ def main() -> int:
 
         reference_path = args.compare_image.resolve() if args.compare_image else None
         if reference_path is None and args.compare_baseline_summary:
-            reference_path = resolve_compare_image(args.compare_baseline_summary.resolve(), image_path)
+            reference_path = resolve_compare_image(
+                args.compare_baseline_summary.resolve(), image_path
+            )
         if reference_path is not None:
             result["comparison"] = compare_images(output, reference_path)
 

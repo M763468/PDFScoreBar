@@ -107,7 +107,9 @@ def main() -> int:
             "process_wall_sec": process_wall,
             "result": str(result_path),
             "log": str(log_path),
-            "status": payload.get("status") if payload else ("timed_out" if timed_out else "missing_result"),
+            "status": payload.get("status")
+            if payload
+            else ("timed_out" if timed_out else "missing_result"),
         }
         if payload:
             record.update(
@@ -124,7 +126,9 @@ def main() -> int:
         records.append(record)
 
     completed_records = [item for item in records if item.get("status") == "completed"]
-    faithful = [item for item in completed_records if (item.get("comparison") or {}).get("array_equal")]
+    faithful = [
+        item for item in completed_records if (item.get("comparison") or {}).get("array_equal")
+    ]
     fastest = min(
         completed_records,
         key=lambda item: float(item["profiled_total_wall_sec"]),

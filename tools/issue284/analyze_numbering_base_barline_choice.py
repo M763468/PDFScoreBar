@@ -73,8 +73,12 @@ def _system_staff_boxes(numbering: Mapping[str, Any], system_index: int) -> list
     return [[int(v) for v in staff["bbox"]] for staff in system.get("staves", [])]
 
 
-def _system_barlines(hybrid_boxes: Iterable[list[int]], staff_boxes: list[list[int]]) -> list[list[int]]:
-    return [box for box in hybrid_boxes if any(_overlaps_staff(box, staff) for staff in staff_boxes)]
+def _system_barlines(
+    hybrid_boxes: Iterable[list[int]], staff_boxes: list[list[int]]
+) -> list[list[int]]:
+    return [
+        box for box in hybrid_boxes if any(_overlaps_staff(box, staff) for staff in staff_boxes)
+    ]
 
 
 def _dedup_groups(boxes: list[list[int]]) -> list[list[list[int]]]:
@@ -201,14 +205,21 @@ def main() -> int:
             ),
             "baseline_profile_artifacts_equal": all(
                 artifact_comparison[name]["sha256_equal"]
-                for name in ("baseline_detection", "baseline_staff_proxy", "baseline_staff", "baseline_staff_mask")
+                for name in (
+                    "baseline_detection",
+                    "baseline_staff_proxy",
+                    "baseline_staff",
+                    "baseline_staff_mask",
+                )
                 if artifact_comparison[name]["candidate"]["exists"]
                 and artifact_comparison[name]["reference"]["exists"]
             ),
         },
     }
     args.result.parent.mkdir(parents=True, exist_ok=True)
-    args.result.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    args.result.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     print(json.dumps(payload, indent=2, ensure_ascii=False))
     return 0
 

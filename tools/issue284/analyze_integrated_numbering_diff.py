@@ -17,7 +17,9 @@ def _load(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _recursive_diff(left: Any, right: Any, path: str = "$", *, limit: int = 200) -> list[dict[str, Any]]:
+def _recursive_diff(
+    left: Any, right: Any, path: str = "$", *, limit: int = 200
+) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
 
     def walk(a: Any, b: Any, here: str) -> None:
@@ -33,15 +35,21 @@ def _recursive_diff(left: Any, right: Any, path: str = "$", *, limit: int = 200)
                     return
                 child = f"{here}.{key}"
                 if key not in a:
-                    out.append({"path": child, "left": None, "right": b[key], "kind": "missing_left"})
+                    out.append(
+                        {"path": child, "left": None, "right": b[key], "kind": "missing_left"}
+                    )
                 elif key not in b:
-                    out.append({"path": child, "left": a[key], "right": None, "kind": "missing_right"})
+                    out.append(
+                        {"path": child, "left": a[key], "right": None, "kind": "missing_right"}
+                    )
                 else:
                     walk(a[key], b[key], child)
             return
         if isinstance(a, list):
             if len(a) != len(b):
-                out.append({"path": f"{here}.length", "left": len(a), "right": len(b), "kind": "length"})
+                out.append(
+                    {"path": f"{here}.length", "left": len(a), "right": len(b), "kind": "length"}
+                )
             for index, (av, bv) in enumerate(zip(a, b)):
                 if len(out) >= limit:
                     return
@@ -86,7 +94,9 @@ def _artifact(run_root: Path, page: str, name: str) -> Path:
     return run_root / "intermediate" / page / name
 
 
-def _compare_artifact(left_path: Path, right_path: Path, *, semantics: bool = False) -> dict[str, Any]:
+def _compare_artifact(
+    left_path: Path, right_path: Path, *, semantics: bool = False
+) -> dict[str, Any]:
     result: dict[str, Any] = {
         "candidate": str(left_path),
         "reference": str(right_path),
@@ -181,9 +191,7 @@ def main() -> int:
             "this points to MMR/OCR run-to-run behavior rather than SR geometry."
         )
     elif first_divergence == "final_raw_only":
-        interpretation = (
-            "Production numbering topology is equal; the integrated runner's raw JSON equality gate is too strict."
-        )
+        interpretation = "Production numbering topology is equal; the integrated runner's raw JSON equality gate is too strict."
     elif first_divergence == "numbering_base":
         interpretation = "The first semantic difference is before MMR; investigate dense grouping/numbering inputs."
     elif first_divergence == "finalization":
@@ -204,7 +212,9 @@ def main() -> int:
         "interpretation": interpretation,
     }
     args.result.parent.mkdir(parents=True, exist_ok=True)
-    args.result.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    args.result.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     print(json.dumps(payload, indent=2, ensure_ascii=False))
     return 0
 

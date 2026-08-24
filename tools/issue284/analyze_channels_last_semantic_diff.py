@@ -112,7 +112,11 @@ def _mask_semantics(candidate: Path, reference: Path) -> dict[str, Any]:
     if cand is None or ref is None:
         raise FileNotFoundError(candidate if cand is None else reference)
     if cand.shape != ref.shape:
-        return {"same_shape": False, "candidate_shape": list(cand.shape), "reference_shape": list(ref.shape)}
+        return {
+            "same_shape": False,
+            "candidate_shape": list(cand.shape),
+            "reference_shape": list(ref.shape),
+        }
 
     cb = cand > 0
     rb = ref > 0
@@ -147,8 +151,12 @@ def _mask_semantics(candidate: Path, reference: Path) -> dict[str, Any]:
     if c_sig != r_sig:
         c_set = set(c_sig)
         r_set = set(r_sig)
-        result["candidate_only_component_signatures"] = [list(x) for x in sorted(c_set - r_set)[:50]]
-        result["reference_only_component_signatures"] = [list(x) for x in sorted(r_set - c_set)[:50]]
+        result["candidate_only_component_signatures"] = [
+            list(x) for x in sorted(c_set - r_set)[:50]
+        ]
+        result["reference_only_component_signatures"] = [
+            list(x) for x in sorted(r_set - c_set)[:50]
+        ]
     return result
 
 
@@ -190,7 +198,9 @@ def main() -> int:
     )
 
     args.result.parent.mkdir(parents=True, exist_ok=True)
-    args.result.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    args.result.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     print(json.dumps(payload, indent=2, ensure_ascii=False))
     return 0
 

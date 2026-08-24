@@ -68,9 +68,7 @@ def _require_current_homr_bundle(payload: Mapping[str, Any]) -> dict[str, Path]:
     return paths
 
 
-def _require_precomputed_sr(
-    request: Mapping[str, Any], *, image: Path
-) -> dict[str, Any] | None:
+def _require_precomputed_sr(request: Mapping[str, Any], *, image: Path) -> dict[str, Any] | None:
     raw = request.get("precomputed_sr")
     if raw is None:
         return None

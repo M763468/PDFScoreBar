@@ -193,9 +193,7 @@ def main() -> int:
     detection = _detection_config(summary)
 
     env = os.environ.copy()
-    env["PYTHONPATH"] = os.pathsep.join([str(ROOT), env.get("PYTHONPATH", "")]).strip(
-        os.pathsep
-    )
+    env["PYTHONPATH"] = os.pathsep.join([str(ROOT), env.get("PYTHONPATH", "")]).strip(os.pathsep)
 
     payload: dict[str, Any] = {
         "schema_version": "issue284.channels_last_downstream_gate.v1",

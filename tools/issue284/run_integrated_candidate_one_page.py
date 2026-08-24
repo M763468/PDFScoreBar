@@ -173,7 +173,9 @@ def main() -> int:
     candidate_run = output / "pipeline_output" / run_id
     candidate_final = candidate_run / "outputs" / "page_013" / "numbering_final.json"
     candidate_hybrid = output / "hybrid_output" / run_id / "hybrid_results" / "page_013_hybrid.json"
-    sr_batch_result = output / "hybrid_output" / run_id / "current_support" / "_sr_batch" / "result.json"
+    sr_batch_result = (
+        output / "hybrid_output" / run_id / "current_support" / "_sr_batch" / "result.json"
+    )
     if not sr_batch_result.is_file():
         raise FileNotFoundError(sr_batch_result)
     sr_batch = _load_json(sr_batch_result)
@@ -220,7 +222,9 @@ def main() -> int:
         "sr_batch": sr_batch,
         "sr_reference_sha256": baseline_sr_sha,
         "sr_candidate_sha256": candidate_sr_sha,
-        "sr_byte_identical_to_reference": bool(baseline_sr_sha and candidate_sr_sha == baseline_sr_sha),
+        "sr_byte_identical_to_reference": bool(
+            baseline_sr_sha and candidate_sr_sha == baseline_sr_sha
+        ),
         "hybrid": hybrid_comparison,
         "numbering_final": final_comparison,
         "production_semantics_equal": bool(

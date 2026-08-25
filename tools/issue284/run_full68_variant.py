@@ -16,6 +16,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import threading
@@ -27,6 +28,7 @@ import yaml
 
 PIPELINE_PYTHON = Path("/opt/venv_pipeline/bin/python")
 CANONICAL_CONFIG_REL = Path("configs/dense_full_pipeline.yaml")
+COMMIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
 
 def sha256(path: Path) -> str:
@@ -41,22 +43,20 @@ def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def git_commit(root: Path) -> str:
-    return subprocess.check_output(
-        ["git", "rev-parse", "HEAD"],
-        cwd=root,
-        text=True,
-    ).strip()
+def parse_source_commit(value: str) -> str:
+    commit = value.strip().lower()
+    if not COMMIT_SHA_RE.fullmatch(commit):
+        raise argparse.ArgumentTypeError(
+            "--source-commit must be a full 40-character hexadecimal commit SHA"
+        )
+    return commit
 
 
-def git_dirty(root: Path) -> bool:
-    return bool(
-        subprocess.check_output(
-            ["git", "status", "--porcelain"],
-            cwd=root,
-            text=True,
-        ).strip()
-    )
+def require_host_provenance(*, source_commit: str, clean_verified: bool) -> None:
+    if not COMMIT_SHA_RE.fullmatch(source_commit):
+        raise RuntimeError("Invalid host-verified source commit")
+    if not clean_verified:
+        raise RuntimeError("Full68 variant requires a host-verified clean checkout")
 
 
 def require_canonical_runtime(root: Path) -> None:
@@ -392,6 +392,8 @@ def write_variant_summary(
     label: str,
     root: Path,
     config_sha: str,
+    source_commit: str,
+    source_clean_verified: bool,
     score_summaries: list[dict[str, Any]],
 ) -> dict[str, Any]:
     completed = [item for item in score_summaries if item.get("status") == "completed"]
@@ -400,8 +402,13 @@ def write_variant_summary(
         "status": "completed" if len(completed) == 5 else "incomplete",
         "label": label,
         "project_root": str(root),
-        "git_commit": git_commit(root),
-        "git_dirty": git_dirty(root),
+        "git_commit": source_commit,
+        "git_dirty": not source_clean_verified,
+        "source_provenance": {
+            "verification": "host",
+            "git_commit": source_commit,
+            "git_clean_verified": source_clean_verified,
+        },
         "config": str(root / CANONICAL_CONFIG_REL),
         "config_sha256": config_sha,
         "canonical_page_count": sum(int(item.get("page_count", 0)) for item in completed),
@@ -420,12 +427,20 @@ def main() -> int:
     parser.add_argument("--project-root", type=Path, default=Path("/workspace"))
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--label", required=True)
+    parser.add_argument("--source-commit", type=parse_source_commit, required=True)
+    parser.add_argument(
+        "--host-clean-verified",
+        action="store_true",
+        help="Assert that the host verified the project checkout is clean before launch",
+    )
     args = parser.parse_args()
 
     root = args.project_root.resolve()
     require_canonical_runtime(root)
-    if git_dirty(root):
-        raise RuntimeError("Full68 variant requires a clean checkout")
+    require_host_provenance(
+        source_commit=args.source_commit,
+        clean_verified=args.host_clean_verified,
+    )
 
     output = args.output.resolve()
     if output.exists() and any(output.iterdir()):
@@ -453,6 +468,8 @@ def main() -> int:
             label=args.label,
             root=root,
             config_sha=config_sha,
+            source_commit=args.source_commit,
+            source_clean_verified=args.host_clean_verified,
             score_summaries=score_summaries,
         )
         if summary.get("status") != "completed":
@@ -483,6 +500,8 @@ def main() -> int:
         label=args.label,
         root=root,
         config_sha=config_sha,
+        source_commit=args.source_commit,
+        source_clean_verified=args.host_clean_verified,
         score_summaries=score_summaries,
     )
     print(json.dumps(payload, indent=2, ensure_ascii=False))

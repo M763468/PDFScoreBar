@@ -17,7 +17,9 @@ CANONICAL_IMAGE = "pdfscore_pipeline_gpu"
 CONTAINER_ROOT = Path("/workspace")
 PIPELINE_PYTHON = Path("/opt/venv_pipeline/bin/python")
 RUNNER_REL = Path("tools/issue284/run_full68_variant.py")
-DEFAULT_OUTPUT_ROOT = Path("logs/issue284")
+# Keep fresh full68 outputs separate from legacy/interrupted Issue #284 artifacts,
+# which may have been created by root-owned container runs.
+DEFAULT_OUTPUT_ROOT = Path("logs/issue284_full68_runs")
 MIN_S_FREE_GIB = 50.0
 POWERSHELL = Path("/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe")
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -87,7 +89,7 @@ def restore_checkout(root: Path, target: RestoreTarget) -> None:
     old_term = signal.signal(signal.SIGTERM, signal.SIG_IGN)
     try:
         if target.branch is not None:
-            checked(["git", "switch", target.branch], cwd=root)
+            checked(["git", "switch", target.branch"], cwd=root)
         else:
             checked(["git", "switch", "--detach", target.commit], cwd=root)
 
@@ -124,7 +126,7 @@ def s_free_gib() -> float:
             str(POWERSHELL),
             "-NoProfile",
             "-Command",
-            ("[Console]::Out.Write((Get-Volume -DriveLetter S).SizeRemaining)"),
+            "[Console]::Out.Write((Get-Volume -DriveLetter S).SizeRemaining)",
         ]
     )
     return parse_windows_free_bytes(output) / (1024**3)
@@ -135,7 +137,8 @@ def require_s_free_space() -> float:
     print(f"S: free space = {free:.2f} GiB", flush=True)
     if free < MIN_S_FREE_GIB:
         raise RuntimeError(
-            f"S: free space {free:.2f} GiB is below {MIN_S_FREE_GIB:.0f} GiB safety floor"
+            f"S: free space {free:.2f} GiB is below "
+            f"{MIN_S_FREE_GIB:.0f} GiB safety floor"
         )
     return free
 
@@ -206,7 +209,9 @@ def require_docker_runtime(root: Path) -> None:
     if not running:
         raise RuntimeError(f"{CANONICAL_CONTAINER} is not running")
     if image != CANONICAL_IMAGE:
-        raise RuntimeError(f"{CANONICAL_CONTAINER} uses {image!r}, expected {CANONICAL_IMAGE!r}")
+        raise RuntimeError(
+            f"{CANONICAL_CONTAINER} uses {image!r}, expected {CANONICAL_IMAGE!r}"
+        )
 
     require_workspace_mount(root)
 
@@ -397,7 +402,8 @@ def run_variant(
 
     if returncode != 0:
         raise RuntimeError(
-            f"{label} full68 failed with return code {returncode}; output retained at {output}"
+            f"{label} full68 failed with return code {returncode}; "
+            f"output retained at {output}"
         )
 
 
@@ -436,7 +442,9 @@ def main() -> int:
     candidate_commit = git_commit(root, args.candidate_ref)
 
     if control_commit != CONTROL_COMMIT:
-        raise RuntimeError(f"Control must resolve to {CONTROL_COMMIT}, got {control_commit}")
+        raise RuntimeError(
+            f"Control must resolve to {CONTROL_COMMIT}, got {control_commit}"
+        )
     if control_commit == candidate_commit:
         raise RuntimeError("Control and candidate resolve to the same commit")
 

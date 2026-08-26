@@ -91,7 +91,7 @@ def _fresh_runtime_dirs(output: Path, mode: str) -> dict[str, Path]:
     for path in roots.values():
         if path.exists():
             shutil.rmtree(path)
-        path.mkdir(parents=True)
+        path.mkdir()
     return roots
 
 
@@ -99,6 +99,23 @@ def _cleanup_runtime_dirs(runtime_dirs: dict[str, Path]) -> None:
     for path in runtime_dirs.values():
         if path.exists():
             shutil.rmtree(path)
+
+
+def _require_host_owned_output(output: Path) -> None:
+    if not output.is_dir():
+        raise FileNotFoundError(
+            "Output directory must be pre-created on the host by the invoking user: "
+            f"{output}"
+        )
+    if any(output.iterdir()):
+        raise FileExistsError(f"Output must be fresh and empty: {output}")
+    if not os.access(output, os.W_OK | os.X_OK):
+        stat = output.stat()
+        raise PermissionError(
+            "Output directory is not writable by the container UID/GID. "
+            f"path={output} owner_uid={stat.st_uid} owner_gid={stat.st_gid} "
+            f"runtime_uid={os.getuid()} runtime_gid={os.getgid()}"
+        )
 
 
 def main() -> int:
@@ -112,9 +129,7 @@ def main() -> int:
 
     _require_runtime()
     output = args.output.resolve()
-    if output.exists() and any(output.iterdir()):
-        raise FileExistsError(f"Output must be fresh and empty: {output}")
-    output.mkdir(parents=True, exist_ok=True)
+    _require_host_owned_output(output)
 
     candidate_summary = args.candidate_summary.resolve()
     reference = _reference_image(candidate_summary)
@@ -211,7 +226,7 @@ def main() -> int:
     )
 
     summary = {
-        "schema_version": "issue284.torch_compile_screening.v3",
+        "schema_version": "issue284.torch_compile_screening.v4",
         "torch_target": "2.13 stable only",
         "candidate_summary": str(candidate_summary),
         "reference_image": str(reference),

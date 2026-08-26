@@ -78,6 +78,7 @@ def run(request_path: Path, result_path: Path) -> Path:
             tile_pad=int(det_cfg.get("sr_tile_pad", 10)),
             fp32=bool(det_cfg.get("sr_fp32", False)),
             channels_last=bool(det_cfg.get("sr_channels_last", True)),
+            compile_mode=det_cfg.get("sr_compile_mode"),
         )
 
     torch = runtime.torch

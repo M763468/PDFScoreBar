@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import statistics
 import subprocess
@@ -80,6 +81,20 @@ def _steady_stats(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _fresh_runtime_dirs(output: Path, mode: str) -> dict[str, Path]:
+    roots = {
+        "home": output / f"runtime_home_{mode}",
+        "inductor": output / f"inductor_cache_{mode}",
+        "triton": output / f"triton_cache_{mode}",
+        "xdg": output / f"xdg_cache_{mode}",
+    }
+    for path in roots.values():
+        if path.exists():
+            shutil.rmtree(path)
+        path.mkdir(parents=True)
+    return roots
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--candidate-summary", type=Path, required=True)
@@ -103,10 +118,7 @@ def main() -> int:
     for mode in args.modes:
         result_path = output / f"{mode}.json"
         log_path = output / f"{mode}.console.log"
-        cache_dir = output / f"inductor_cache_{mode}"
-        if cache_dir.exists():
-            shutil.rmtree(cache_dir)
-        cache_dir.mkdir(parents=True)
+        runtime_dirs = _fresh_runtime_dirs(output, mode)
 
         command = [
             sys.executable,
@@ -120,8 +132,11 @@ def main() -> int:
             "--iterations",
             str(args.iterations),
         ]
-        env = dict(__import__("os").environ)
-        env["TORCHINDUCTOR_CACHE_DIR"] = str(cache_dir)
+        env = dict(os.environ)
+        env["HOME"] = str(runtime_dirs["home"])
+        env["XDG_CACHE_HOME"] = str(runtime_dirs["xdg"])
+        env["TORCHINDUCTOR_CACHE_DIR"] = str(runtime_dirs["inductor"])
+        env["TRITON_CACHE_DIR"] = str(runtime_dirs["triton"])
 
         started = time.perf_counter()
         timed_out = False
@@ -151,6 +166,7 @@ def main() -> int:
             "status": payload.get("status") if payload else ("timeout" if timed_out else "missing"),
             "result": str(result_path),
             "log": str(log_path),
+            "runtime_dirs": {key: str(value) for key, value in runtime_dirs.items()},
         }
         if payload:
             record.update(_steady_stats(payload))
@@ -187,7 +203,7 @@ def main() -> int:
     )
 
     summary = {
-        "schema_version": "issue284.torch_compile_screening.v1",
+        "schema_version": "issue284.torch_compile_screening.v2",
         "torch_target": "2.13 stable only",
         "candidate_summary": str(candidate_summary),
         "reference_image": str(reference),
@@ -209,7 +225,10 @@ def main() -> int:
 
     print(json.dumps(summary, indent=2, default=str))
     print(f"share_bundle={bundle}")
-    return 0 if eager and eager.get("status") == "completed" else 1
+    all_requested_completed = len(records) == len(args.modes) and all(
+        item.get("status") == "completed" for item in records
+    )
+    return 0 if all_requested_completed else 1
 
 
 if __name__ == "__main__":

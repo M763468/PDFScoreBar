@@ -1,6 +1,6 @@
 """Probe PyTorch/compiler capabilities and current SR compatibility for Issue #284.
 
-This profiling-only tool does not mutate the environment.  It records the active
+This profiling-only tool does not mutate the environment. It records the active
 Torch stack, available torch.compile modes, import compatibility for the packages
 used by the current SR path, and optionally runs the accepted page_013 current-SR
 runtime against a retained reference image.
@@ -42,9 +42,8 @@ def _compile_modes() -> dict[str, Any]:
     if not result["available"]:
         return result
     try:
-        import torch._inductor
-
-        result["modes"] = torch._inductor.list_mode_options()
+        inductor = importlib.import_module("torch._inductor")
+        result["modes"] = inductor.list_mode_options()
     except Exception as error:  # noqa: BLE001
         result["error"] = f"{type(error).__name__}: {error}"
     return result

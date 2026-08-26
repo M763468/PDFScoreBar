@@ -99,12 +99,17 @@ def main() -> int:
     torch.backends.cudnn.deterministic = False
 
     payload: dict[str, Any] = {
-        "schema_version": "issue284.torch_compile_variant.v1",
+        "schema_version": "issue284.torch_compile_variant.v2",
         "mode": args.mode,
         "torch_version": torch.__version__,
         "torch_cuda_version": torch.version.cuda,
         "cudnn_version": torch.backends.cudnn.version(),
-        "inductor_cache_dir": os.environ.get("TORCHINDUCTOR_CACHE_DIR"),
+        "cache_dirs": {
+            "home": os.environ.get("HOME"),
+            "xdg_cache_home": os.environ.get("XDG_CACHE_HOME"),
+            "torchinductor": os.environ.get("TORCHINDUCTOR_CACHE_DIR"),
+            "triton": os.environ.get("TRITON_CACHE_DIR"),
+        },
         "image": str(image_path),
         "reference_image": str(reference_path),
         "iterations_requested": args.iterations,

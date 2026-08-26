@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from src.pipeline.detection.current_sr_batch_worker import _items
+from src.pipeline.detection.current_sr_runtime import normalize_compile_mode
 from src.pipeline.detection.current_support_worker import _require_precomputed_sr
 from src.pipeline.detection.profile_hybrid_batch_sr import BatchSRVerifiedProfileHybridDetector
 
@@ -21,6 +22,18 @@ def _detector(tmp_path: Path, images: list[Path]) -> BatchSRVerifiedProfileHybri
         skip_existing=False,
         profile_name="stage_e_verified_homr",
     )
+
+
+def test_compile_mode_contract_accepts_supported_mode_and_off() -> None:
+    assert normalize_compile_mode("reduce-overhead") == "reduce-overhead"
+    assert normalize_compile_mode(None) is None
+    assert normalize_compile_mode("off") is None
+    assert normalize_compile_mode(False) is None
+
+
+def test_compile_mode_contract_rejects_unknown_mode() -> None:
+    with pytest.raises(ValueError, match="Unsupported current x4 SR compile mode"):
+        normalize_compile_mode("experimental")
 
 
 def test_precomputed_sr_contract_accepts_current_x4_artifact(tmp_path: Path) -> None:

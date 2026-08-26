@@ -104,8 +104,7 @@ def _cleanup_runtime_dirs(runtime_dirs: dict[str, Path]) -> None:
 def _require_host_owned_output(output: Path) -> None:
     if not output.is_dir():
         raise FileNotFoundError(
-            "Output directory must be pre-created on the host by the invoking user: "
-            f"{output}"
+            f"Output directory must be pre-created on the host by the invoking user: {output}"
         )
     if any(output.iterdir()):
         raise FileExistsError(f"Output must be fresh and empty: {output}")

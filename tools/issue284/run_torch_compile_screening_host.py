@@ -1,6 +1,6 @@
 """Run Issue #284 torch.compile screening in a disposable compiler-enabled image.
 
-The production image/container is not mutated.  This host-side wrapper derives a
+The production image/container is not mutated. This host-side wrapper derives a
 temporary image from the exact image used by ``pdfscore_pipeline_pytest_dev``, adds
 only the build toolchain required by Triton/Inductor, reuses the dev container's
 mounts, runs the existing screening as the invoking host UID/GID, then removes the
@@ -14,8 +14,8 @@ import json
 import os
 import shlex
 import subprocess
-import sys
 import time
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -59,6 +59,14 @@ def _container_image(container: str) -> str:
 
 def _dockerfile(base_image: str) -> str:
     return f"""FROM {base_image}\nUSER root\nRUN apt-get update \\\n && apt-get install -y --no-install-recommends build-essential python3.11-dev \\\n && rm -rf /var/lib/apt/lists/*\n"""
+
+
+def _append_metadata_to_bundle(output: Path, metadata_path: Path) -> None:
+    bundle = output / "issue284_torch_compile_screening_bundle.zip"
+    if not bundle.is_file() or not metadata_path.is_file():
+        return
+    with zipfile.ZipFile(bundle, "a", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.write(metadata_path, arcname=metadata_path.name)
 
 
 def main() -> int:
@@ -154,6 +162,7 @@ def main() -> int:
 
     print("Running screening:")
     print(" ".join(shlex.quote(item) for item in command))
+    returncode = 1
     try:
         completed = _run(command, check=False)
         metadata["screening_returncode"] = completed.returncode
@@ -162,6 +171,7 @@ def main() -> int:
         remove = _run(["docker", "image", "rm", "--force", tag], check=False)
         metadata["temporary_image_remove_returncode"] = remove.returncode
         metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
+        _append_metadata_to_bundle(output, metadata_path)
 
     return returncode
 

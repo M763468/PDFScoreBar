@@ -7,6 +7,15 @@ the exact SR/tile timing implementation and narrows sampling to fields already
 verified on the target system.
 """
 
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from tools.issue284 import profile_current_sr_timeline as timeline
 
 # Keep only fields known to return numeric values on the target RTX 4060 setup.

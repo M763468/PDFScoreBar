@@ -95,6 +95,12 @@ def _fresh_runtime_dirs(output: Path, mode: str) -> dict[str, Path]:
     return roots
 
 
+def _cleanup_runtime_dirs(runtime_dirs: dict[str, Path]) -> None:
+    for path in runtime_dirs.values():
+        if path.exists():
+            shutil.rmtree(path)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--candidate-summary", type=Path, required=True)
@@ -167,6 +173,7 @@ def main() -> int:
             "result": str(result_path),
             "log": str(log_path),
             "runtime_dirs": {key: str(value) for key, value in runtime_dirs.items()},
+            "runtime_dirs_cleaned": True,
         }
         if payload:
             record.update(_steady_stats(payload))
@@ -175,6 +182,7 @@ def main() -> int:
             record["dynamo_counters"] = payload.get("dynamo_counters")
         records.append(record)
         share_paths.extend([result_path, log_path])
+        _cleanup_runtime_dirs(runtime_dirs)
 
     eager = next((item for item in records if item["mode"] == "eager"), None)
     eager_steady = eager.get("steady_page_wall_sec_median") if eager else None
@@ -203,7 +211,7 @@ def main() -> int:
     )
 
     summary = {
-        "schema_version": "issue284.torch_compile_screening.v2",
+        "schema_version": "issue284.torch_compile_screening.v3",
         "torch_target": "2.13 stable only",
         "candidate_summary": str(candidate_summary),
         "reference_image": str(reference),

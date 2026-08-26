@@ -1,10 +1,10 @@
-"""Run Issue #284 torch.compile screening in a disposable compiler-enabled image.
+"""Run Issue #284 torch.compile screening in a disposable compiler-enabled container.
 
-The production image/container is not mutated. This host-side wrapper derives a
-temporary image from the exact image used by ``pdfscore_pipeline_pytest_dev``, adds
-only the build toolchain required by Triton/Inductor, reuses the dev container's
-mounts, runs the existing screening as the invoking host UID/GID, then removes the
-temporary image.
+The production image/container is not mutated. This host-side wrapper starts a
+temporary container from the exact image used by ``pdfscore_pipeline_pytest_dev``,
+reuses that container's mounts, installs only the build toolchain required by
+Triton/Inductor into the temporary container overlay, runs the existing screening
+as the invoking host UID/GID, then removes the temporary container.
 """
 
 from __future__ import annotations
@@ -27,7 +27,6 @@ def _run(
     *,
     check: bool = True,
     capture_output: bool = False,
-    input_text: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         command,
@@ -35,7 +34,6 @@ def _run(
         check=check,
         text=True,
         capture_output=capture_output,
-        input=input_text,
     )
 
 
@@ -55,10 +53,6 @@ def _container_image(container: str) -> str:
     if not image:
         raise RuntimeError(f"Could not resolve image for container {container}")
     return image
-
-
-def _dockerfile(base_image: str) -> str:
-    return f"""FROM {base_image}\nUSER root\nRUN apt-get update \\\n && apt-get install -y --no-install-recommends build-essential python3.11-dev \\\n && rm -rf /var/lib/apt/lists/*\n"""
 
 
 def _append_metadata_to_bundle(output: Path, metadata_path: Path) -> None:
@@ -97,14 +91,14 @@ def main() -> int:
     uid = os.getuid()
     gid = os.getgid()
     base_image = _container_image(args.container)
-    tag = f"pdfscore-issue284-compile-probe:{uid}-{int(time.time())}"
+    temporary_container = f"pdfscore-issue284-compile-probe-{uid}-{int(time.time())}"
 
     metadata_path = output / "compiler_probe_environment.json"
     metadata = {
-        "schema_version": "issue284.compile_probe_environment.v1",
+        "schema_version": "issue284.compile_probe_environment.v2",
         "base_container": args.container,
         "base_image": base_image,
-        "temporary_image": tag,
+        "temporary_container": temporary_container,
         "host_uid": uid,
         "host_gid": gid,
         "candidate_summary": str(candidate_summary),
@@ -112,33 +106,48 @@ def main() -> int:
         "toolchain_packages": ["build-essential", "python3.11-dev"],
     }
 
-    print(f"base_image={base_image}")
-    print(f"temporary_image={tag}")
-    print("Building disposable compiler-enabled image...")
-
-    build = _run(
-        ["docker", "build", "--tag", tag, "-"],
-        check=False,
-        input_text=_dockerfile(base_image),
-    )
-    metadata["docker_build_returncode"] = build.returncode
-    metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
-    if build.returncode != 0:
-        return build.returncode
-
     container_output = "/workspace/" + str(output.relative_to(ROOT)).replace(os.sep, "/")
     container_summary = "/workspace/" + str(candidate_summary.relative_to(ROOT)).replace(
         os.sep, "/"
     )
 
-    command = [
+    create_command = [
         "docker",
         "run",
-        "--rm",
+        "--detach",
         "--gpus",
         "all",
         "--volumes-from",
         args.container,
+        "--user",
+        "0:0",
+        "--workdir",
+        "/workspace",
+        "--name",
+        temporary_container,
+        base_image,
+        "sleep",
+        "infinity",
+    ]
+
+    install_command = [
+        "docker",
+        "exec",
+        "--user",
+        "0:0",
+        temporary_container,
+        "bash",
+        "-lc",
+        (
+            "apt-get update && "
+            "apt-get install -y --no-install-recommends build-essential python3.11-dev && "
+            "rm -rf /var/lib/apt/lists/*"
+        ),
+    ]
+
+    screening_command = [
+        "docker",
+        "exec",
         "--user",
         f"{uid}:{gid}",
         "--workdir",
@@ -147,7 +156,7 @@ def main() -> int:
         "CC=/usr/bin/gcc",
         "--env",
         "CXX=/usr/bin/g++",
-        tag,
+        temporary_container,
         "/opt/venv_pipeline/bin/python",
         "tools/issue284/run_torch_compile_screening.py",
         "--candidate-summary",
@@ -160,20 +169,42 @@ def main() -> int:
         str(args.timeout_sec),
     ]
 
-    print("Running screening:")
-    print(" ".join(shlex.quote(item) for item in command))
+    print(f"base_image={base_image}")
+    print(f"temporary_container={temporary_container}")
+    print("Starting disposable container:")
+    print(" ".join(shlex.quote(item) for item in create_command))
+
     returncode = 1
+    container_started = False
     try:
-        completed = _run(command, check=False)
+        created = _run(create_command, check=False)
+        metadata["container_start_returncode"] = created.returncode
+        if created.returncode != 0:
+            return created.returncode
+        container_started = True
+
+        print("Installing compiler toolchain in temporary container...")
+        installed = _run(install_command, check=False)
+        metadata["toolchain_install_returncode"] = installed.returncode
+        if installed.returncode != 0:
+            return installed.returncode
+
+        print("Running screening:")
+        print(" ".join(shlex.quote(item) for item in screening_command))
+        completed = _run(screening_command, check=False)
         metadata["screening_returncode"] = completed.returncode
         returncode = completed.returncode
+        return returncode
     finally:
-        remove = _run(["docker", "image", "rm", "--force", tag], check=False)
-        metadata["temporary_image_remove_returncode"] = remove.returncode
+        if container_started:
+            removed = _run(
+                ["docker", "rm", "--force", temporary_container],
+                check=False,
+                capture_output=True,
+            )
+            metadata["temporary_container_remove_returncode"] = removed.returncode
         metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
         _append_metadata_to_bundle(output, metadata_path)
-
-    return returncode
 
 
 if __name__ == "__main__":

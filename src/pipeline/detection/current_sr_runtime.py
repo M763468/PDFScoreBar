@@ -44,7 +44,9 @@ def normalize_compile_mode(value: object) -> str | None:
         return None
     if mode not in COMPILE_MODES:
         allowed = ", ".join(sorted(COMPILE_MODES))
-        raise ValueError(f"Unsupported current x4 SR compile mode {mode!r}; expected one of: {allowed}")
+        raise ValueError(
+            f"Unsupported current x4 SR compile mode {mode!r}; expected one of: {allowed}"
+        )
     return mode
 
 

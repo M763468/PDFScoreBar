@@ -44,7 +44,9 @@ GPU_QUERY_FIELDS = (
 
 def _require_runtime() -> None:
     if not Path("/.dockerenv").exists() or ROOT.resolve() != Path("/workspace").resolve():
-        raise RuntimeError("Issue #284 SR timeline profiling requires canonical /workspace container")
+        raise RuntimeError(
+            "Issue #284 SR timeline profiling requires canonical /workspace container"
+        )
     if not Path(sys.executable).as_posix().startswith("/opt/venv_pipeline/"):
         raise RuntimeError(f"Expected canonical pipeline Python, got {sys.executable}")
 
@@ -260,7 +262,9 @@ def _profile(
                     torch.cuda.synchronize()
                     record["forward_start_sec"] = forward_started - zero
                     record["forward_end_sec"] = time.perf_counter() - zero
-                    record["forward_wall_sec"] = record["forward_end_sec"] - record["forward_start_sec"]
+                    record["forward_wall_sec"] = (
+                        record["forward_end_sec"] - record["forward_start_sec"]
+                    )
 
                     output_start_x = input_start_x * 4
                     output_end_x = input_end_x * 4

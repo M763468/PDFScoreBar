@@ -24,9 +24,13 @@ DEFAULT_PAGES = (
 
 def _require_runtime() -> None:
     if not Path("/.dockerenv").exists() or ROOT.resolve() != Path("/workspace").resolve():
-        raise RuntimeError("Issue #284 persistent cuDNN profiling requires canonical /workspace container")
+        raise RuntimeError(
+            "Issue #284 persistent cuDNN profiling requires canonical /workspace container"
+        )
     if not Path(__import__("sys").executable).as_posix().startswith("/opt/venv_pipeline/"):
-        raise RuntimeError("Issue #284 persistent cuDNN profiling requires canonical pipeline Python")
+        raise RuntimeError(
+            "Issue #284 persistent cuDNN profiling requires canonical pipeline Python"
+        )
     if not torch.cuda.is_available():
         raise RuntimeError("Issue #284 persistent cuDNN profiling requires CUDA")
 

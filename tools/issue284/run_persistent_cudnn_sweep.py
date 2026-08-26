@@ -24,7 +24,9 @@ VARIANTS = (
 
 def _require_runtime() -> None:
     if not Path("/.dockerenv").exists() or ROOT.resolve() != Path("/workspace").resolve():
-        raise RuntimeError("Issue #284 persistent cuDNN sweep requires canonical /workspace container")
+        raise RuntimeError(
+            "Issue #284 persistent cuDNN sweep requires canonical /workspace container"
+        )
     if not Path(sys.executable).as_posix().startswith("/opt/venv_pipeline/"):
         raise RuntimeError(f"Expected canonical pipeline Python, got {sys.executable}")
 

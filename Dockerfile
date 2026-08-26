@@ -112,11 +112,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV PATH="/opt/venv_pipeline/bin:$PATH"
 
-# Install only runtime system dependencies
+# Install runtime system dependencies. torch.compile/Inductor needs a native
+# compiler in the final image because compilation occurs in the SR process.
 RUN apt-get update && apt-get install -y software-properties-common && \
     add-apt-repository -y ppa:deadsnakes/ppa && \
     apt-get update && apt-get install -y \
-    python3.11 libgl1 libgl1-mesa-glx libglib2.0-0 \
+    python3.11 python3.11-dev build-essential \
+    libgl1 libgl1-mesa-glx libglib2.0-0 \
     libgtk-3-0 libxrender1 libxext6 libsm6 \
     tzdata sudo \
     && rm -rf /var/lib/apt/lists/*

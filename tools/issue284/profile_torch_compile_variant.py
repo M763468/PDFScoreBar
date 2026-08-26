@@ -82,7 +82,9 @@ def main() -> int:
 
     _require_runtime()
     if args.iterations < 2:
-        raise ValueError("At least two full-page iterations are required to separate compile and steady-state")
+        raise ValueError(
+            "At least two full-page iterations are required to separate compile and steady-state"
+        )
 
     image_path = args.image.resolve()
     reference_path = args.reference_image.resolve()

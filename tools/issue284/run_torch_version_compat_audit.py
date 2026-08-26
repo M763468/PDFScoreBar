@@ -71,7 +71,9 @@ def _reference_image(candidate_summary: Path, project_root: Path) -> tuple[Path,
     return sr_host, sr_container
 
 
-def _probe_container(container: str, reference_container: str, timeout: float) -> tuple[dict[str, Any] | None, str, int]:
+def _probe_container(
+    container: str, reference_container: str, timeout: float
+) -> tuple[dict[str, Any] | None, str, int]:
     command = [
         "docker",
         "exec",
@@ -116,7 +118,9 @@ def main() -> int:
 
     project_root = args.project_root.resolve()
     if project_root != ROOT.resolve():
-        raise RuntimeError(f"Runner must execute from canonical checkout {ROOT}, got {project_root}")
+        raise RuntimeError(
+            f"Runner must execute from canonical checkout {ROOT}, got {project_root}"
+        )
     output = args.output.resolve()
     if output.exists() and any(output.iterdir()):
         raise FileExistsError(f"Output must be fresh and empty: {output}")
@@ -231,9 +235,11 @@ def main() -> int:
     finally:
         _run(["docker", "rm", "-f", temp_name], timeout=60)
 
-    current_sr = ((current_payload or {}).get("sr_probe") or {})
+    current_sr = (current_payload or {}).get("sr_probe") or {}
     preview_payload = preview_record.get("payload") or {}
-    preview_sr = (preview_payload.get("sr_probe") or {}) if isinstance(preview_payload, dict) else {}
+    preview_sr = (
+        (preview_payload.get("sr_probe") or {}) if isinstance(preview_payload, dict) else {}
+    )
     summary = {
         **records,
         "comparison": {

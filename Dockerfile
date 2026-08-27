@@ -37,10 +37,8 @@ RUN uv pip install git+https://github.com/xinntao/Real-ESRGAN.git@a4abfb2979a7bb
 RUN uv pip install git+https://github.com/liebharc/homr.git@b377620a3a55bd7ff657481cec5b688dfbc9cee9
 RUN /opt/venv_pipeline/bin/python docker/patch_homr_onnx_provider.py
 
-# Install project dependencies. Keep the deliberate onnxruntime-gpu==1.24.3
-# production pin, but use pip here because current uv can incorrectly report
-# that the published CPython 3.11 Linux wheel does not exist during resolution.
-RUN /opt/venv_pipeline/bin/python -m pip install --no-cache-dir -e .
+# Install project dependencies
+RUN uv pip install -e .
 
 # Apply basicsr patch before cloning the main venv into the isolated HOMR profile runtime.
 RUN /opt/venv_pipeline/bin/python -c "from pathlib import Path; import sysconfig; p = Path(sysconfig.get_paths()['purelib']) / 'basicsr' / 'data' / 'degradations.py'; s = p.read_text(); p.write_text(s.replace('from torchvision.transforms.functional_tensor import rgb_to_grayscale', 'from torchvision.transforms.functional import rgb_to_grayscale'))"

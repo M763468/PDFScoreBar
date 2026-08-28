@@ -1,10 +1,9 @@
 """Compare eager and torch.compile SR outputs through focused downstream consumers.
 
 This gate reuses already-materialized x4 SR PNGs. It runs current HOMR and OMR-DLN
-once for each SR input, then compares the downstream artifacts directly. If the
-current-SR detection and OMR predictions are equal, hybrid consensus is also
-unchanged for the same baseline detections because those are its only varying
-SR-side inputs.
+once for each SR input, compares normalized source-coordinate box sets, runs the
+verified Stage E baseline HOMR once, and then compares the actual hybrid consensus
+produced from the eager and compiled SR-side inputs.
 """
 
 from __future__ import annotations
@@ -17,6 +16,14 @@ from typing import Any
 
 import yaml
 
+from src.common import barline_iou
+from src.pipeline.detection.homr_profile import (
+    build_profile_command,
+    build_profile_environment,
+    load_homr_profile,
+    validate_profile_runtime,
+)
+from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
 from tools.issue284.run_channels_last_downstream_gate import (
     PIPELINE_PYTHON,
     ROOT,
@@ -28,6 +35,7 @@ from tools.issue284.run_channels_last_downstream_gate import (
 
 DEFAULT_IMAGE = ROOT / "data/evaluation2/images/Shostakovich-Sym5-Va/page_013.png"
 DEFAULT_CONFIG = ROOT / "configs/dense_full_pipeline.yaml"
+VERIFIED_PROFILE = "stage_e_verified"
 
 
 def _detection_config(path: Path) -> dict[str, Any]:
@@ -117,6 +125,59 @@ def _run_omr(
     return predictions, command_result
 
 
+def _run_verified_baseline(
+    *, image: Path, output: Path
+) -> tuple[Path, dict[str, Any]]:
+    profile = load_homr_profile(VERIFIED_PROFILE)
+    validate_profile_runtime(profile)
+    root = output / "verified_baseline"
+    root.mkdir(parents=True, exist_ok=True)
+    command = build_profile_command(profile, images=[image], output_root=root)
+    command_result = _run_command(
+        name="verified_stage_e_baseline",
+        command=command,
+        log_path=output / "verified_baseline.console.log",
+        env=build_profile_environment(profile),
+    )
+    detections = root / "batch" / image.stem / f"{image.stem}_detections.json"
+    if not detections.is_file():
+        raise FileNotFoundError(detections)
+    return detections, command_result
+
+
+def _box_set_comparison(candidate: Path, reference: Path) -> dict[str, Any]:
+    candidate_boxes = load_json_boxes(candidate)
+    reference_boxes = load_json_boxes(reference)
+    candidate_set = set(candidate_boxes)
+    reference_set = set(reference_boxes)
+
+    def best_iou(box: tuple[int, int, int, int], others: list[tuple[int, int, int, int]]) -> float:
+        if not others:
+            return 0.0
+        return max(float(barline_iou(box, other)) for other in others)
+
+    candidate_best = [best_iou(box, reference_boxes) for box in candidate_boxes]
+    reference_best = [best_iou(box, candidate_boxes) for box in reference_boxes]
+    candidate_only = [list(box) for box in candidate_boxes if box not in reference_set]
+    reference_only = [list(box) for box in reference_boxes if box not in candidate_set]
+
+    return {
+        "candidate_count": len(candidate_boxes),
+        "reference_count": len(reference_boxes),
+        "ordered_equal": candidate_boxes == reference_boxes,
+        "set_equal": candidate_set == reference_set,
+        "exact_shared_count": len(candidate_set & reference_set),
+        "candidate_only_count": len(candidate_only),
+        "reference_only_count": len(reference_only),
+        "candidate_only_boxes": candidate_only[:20],
+        "reference_only_boxes": reference_only[:20],
+        "candidate_min_best_iou": min(candidate_best) if candidate_best else None,
+        "reference_min_best_iou": min(reference_best) if reference_best else None,
+        "candidate_unmatched_iou_gt_0_5": sum(value <= 0.5 for value in candidate_best),
+        "reference_unmatched_iou_gt_0_5": sum(value <= 0.5 for value in reference_best),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--image", type=Path, default=DEFAULT_IMAGE)
@@ -148,12 +209,13 @@ def main() -> int:
     detection = _detection_config(config)
 
     payload: dict[str, Any] = {
-        "schema_version": "issue284.compile_pair_downstream_gate.v1",
+        "schema_version": "issue284.compile_pair_downstream_gate.v2",
         "status": "started",
         "image": str(image),
         "eager_sr": str(eager_sr),
         "compiled_sr": str(compiled_sr),
         "config": str(config),
+        "verified_baseline_profile": VERIFIED_PROFILE,
         "commands": [],
     }
 
@@ -204,6 +266,10 @@ def main() -> int:
                 artifact_comparisons[field] = _compare_image(compiled_path, eager_path)
         payload["current_homr_artifacts"] = artifact_comparisons
 
+        eager_detection = Path(str(eager_homr["current_sr_detection"])).resolve()
+        compiled_detection = Path(str(compiled_homr["current_sr_detection"])).resolve()
+        payload["current_homr_boxes"] = _box_set_comparison(compiled_detection, eager_detection)
+
         eager_omr, eager_omr_command = _run_omr(
             label="eager",
             image=image,
@@ -221,6 +287,32 @@ def main() -> int:
         )
         payload["commands"].append(compiled_omr_command)
         payload["omr_predictions"] = _compare_json(compiled_omr, eager_omr)
+        payload["omr_boxes"] = _box_set_comparison(compiled_omr, eager_omr)
+
+        baseline_detection, baseline_command = _run_verified_baseline(image=image, output=output)
+        payload["commands"].append(baseline_command)
+        baseline_boxes = load_json_boxes(baseline_detection)
+        eager_hybrid = apply_hybrid_consensus_filter(
+            baseline_boxes=baseline_boxes,
+            sr_boxes=load_json_boxes(eager_detection),
+            omr_boxes=load_json_boxes(eager_omr),
+        )
+        compiled_hybrid = apply_hybrid_consensus_filter(
+            baseline_boxes=baseline_boxes,
+            sr_boxes=load_json_boxes(compiled_detection),
+            omr_boxes=load_json_boxes(compiled_omr),
+        )
+        eager_set = {tuple(box) for box in eager_hybrid}
+        compiled_set = {tuple(box) for box in compiled_hybrid}
+        payload["hybrid_consensus"] = {
+            "baseline_count": len(baseline_boxes),
+            "eager_count": len(eager_hybrid),
+            "compiled_count": len(compiled_hybrid),
+            "ordered_equal": eager_hybrid == compiled_hybrid,
+            "set_equal": eager_set == compiled_set,
+            "eager_only": [list(box) for box in sorted(eager_set - compiled_set)],
+            "compiled_only": [list(box) for box in sorted(compiled_set - eager_set)],
+        }
 
         homr_equal = all(
             (
@@ -232,16 +324,15 @@ def main() -> int:
             if item.get("available", True)
         ) and all(item.get("available", True) for item in artifact_comparisons.values())
         omr_equal = bool(payload["omr_predictions"].get("parsed_equal"))
-        hybrid_inputs_equal = bool(
-            artifact_comparisons.get("current_sr_detection", {}).get("parsed_equal") and omr_equal
-        )
+        hybrid_equal = bool(payload["hybrid_consensus"]["ordered_equal"])
         payload.update(
             {
                 "status": "completed",
-                "all_current_homr_artifacts_equal": homr_equal,
-                "omr_predictions_equal": omr_equal,
-                "hybrid_sr_side_inputs_equal": hybrid_inputs_equal,
-                "all_focused_downstream_equal": homr_equal and omr_equal,
+                "strict_current_homr_artifacts_equal": homr_equal,
+                "strict_omr_predictions_equal": omr_equal,
+                "strict_intermediate_equal": homr_equal and omr_equal,
+                "focused_hybrid_consensus_equal": hybrid_equal,
+                "focused_consensus_gate_passed": hybrid_equal,
             }
         )
     except Exception as error:  # noqa: BLE001
@@ -258,7 +349,7 @@ def main() -> int:
 
     result_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(payload, indent=2))
-    return 0 if payload["all_focused_downstream_equal"] else 2
+    return 0 if payload["focused_consensus_gate_passed"] else 2
 
 
 if __name__ == "__main__":

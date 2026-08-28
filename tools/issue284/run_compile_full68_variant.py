@@ -172,9 +172,7 @@ def _run_score(
 
     if returncode != 0:
         summary["status"] = "failed"
-        summary["log_tail"] = log.read_text(
-            encoding="utf-8", errors="replace"
-        ).splitlines()[-100:]
+        summary["log_tail"] = log.read_text(encoding="utf-8", errors="replace").splitlines()[-100:]
         (score_root / "score_summary.json").write_text(
             json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8",
@@ -253,12 +251,9 @@ def _write_variant_summary(
             "compile_cache_final": _cache_snapshot(cache_root),
         },
         "canonical_page_count": sum(int(item.get("page_count", 0)) for item in completed),
-        "total_score_e2e_wall_sec": sum(
-            float(item.get("e2e_wall_sec", 0.0)) for item in completed
-        ),
+        "total_score_e2e_wall_sec": sum(float(item.get("e2e_wall_sec", 0.0)) for item in completed),
         "total_sr_batch_wall_sec": sum(
-            float((item.get("sr_batch") or {}).get("batch_wall_sec", 0.0))
-            for item in completed
+            float((item.get("sr_batch") or {}).get("batch_wall_sec", 0.0)) for item in completed
         ),
         "scores": score_summaries,
     }

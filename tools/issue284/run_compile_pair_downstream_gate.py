@@ -125,9 +125,7 @@ def _run_omr(
     return predictions, command_result
 
 
-def _run_verified_baseline(
-    *, image: Path, output: Path
-) -> tuple[Path, dict[str, Any]]:
+def _run_verified_baseline(*, image: Path, output: Path) -> tuple[Path, dict[str, Any]]:
     profile = load_homr_profile(VERIFIED_PROFILE)
     validate_profile_runtime(profile)
     root = output / "verified_baseline"
@@ -188,7 +186,9 @@ def main() -> int:
     args = parser.parse_args()
 
     if not Path("/.dockerenv").exists() or ROOT.resolve() != Path("/workspace").resolve():
-        raise RuntimeError("Issue #284 compile downstream gate requires canonical /workspace container")
+        raise RuntimeError(
+            "Issue #284 compile downstream gate requires canonical /workspace container"
+        )
     if not PIPELINE_PYTHON.is_file():
         raise FileNotFoundError(PIPELINE_PYTHON)
 

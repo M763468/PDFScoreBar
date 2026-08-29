@@ -1,10 +1,14 @@
 """Run one canonical full-68 Issue #284 variant with an explicit SR compile mode.
 
 This is a thin specialization of ``run_full68_variant.py`` for the final
-``torch.compile`` A/B.  It keeps the committed dense config as the provenance
+``torch.compile`` A/B. It keeps the committed dense config as the provenance
 anchor, overrides only ``detection.sr_compile_mode`` in each derived score config,
 and shares one Inductor/Triton cache across all five score processes when compile
 is enabled.
+
+The compiler cache is isolated only through PyTorch/Triton-specific environment
+variables. HOME and XDG_CACHE_HOME are deliberately preserved so the compiled and
+eager variants use the same downstream runtime/cache environment.
 
 The output layout and ``variant_summary.json`` remain compatible with
 ``compare_full68_variants.py``.
@@ -78,20 +82,18 @@ def _worker_env(root: Path, cache_root: Path | None) -> dict[str, str]:
     env["PYTHONPATH"] = str(root)
     env.pop("PDFSCORE_PERF_TRACE_DIR", None)
 
-    # Do not accidentally inherit a compile cache from the launch environment.
+    # Do not inherit an unrelated compiler cache from the launch environment.
+    # Keep HOME/XDG unchanged: those affect downstream libraries and would make
+    # this A/B broader than the SR compile-mode change under test.
     env.pop("TORCHINDUCTOR_CACHE_DIR", None)
     env.pop("TRITON_CACHE_DIR", None)
     if cache_root is None:
         return env
 
-    home = cache_root / "home"
-    xdg = cache_root / "xdg"
     inductor = cache_root / "inductor"
     triton = cache_root / "triton"
-    for path in (home, xdg, inductor, triton):
-        path.mkdir(parents=True, exist_ok=True)
-    env["HOME"] = str(home)
-    env["XDG_CACHE_HOME"] = str(xdg)
+    inductor.mkdir(parents=True, exist_ok=True)
+    triton.mkdir(parents=True, exist_ok=True)
     env["TORCHINDUCTOR_CACHE_DIR"] = str(inductor)
     env["TRITON_CACHE_DIR"] = str(triton)
     return env
@@ -249,6 +251,7 @@ def _write_variant_summary(
             "shared_compile_cache": cache_root is not None,
             "compile_cache_root": str(cache_root) if cache_root is not None else None,
             "compile_cache_final": _cache_snapshot(cache_root),
+            "home_xdg_preserved": True,
         },
         "canonical_page_count": sum(int(item.get("page_count", 0)) for item in completed),
         "total_score_e2e_wall_sec": sum(float(item.get("e2e_wall_sec", 0.0)) for item in completed),

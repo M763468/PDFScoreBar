@@ -24,6 +24,7 @@ from src.common.barline_evaluation import (  # noqa: E402
     greedy_barline_match,
     is_barline_match,
 )
+from src.pipeline.core.run_ids import build_probe_run_id_from_parts  # noqa: E402
 from tools.issue120.eval_full68_from_intermediates import (  # noqa: E402
     SCORES,
     boxes_from_candidates,
@@ -128,16 +129,65 @@ def final_path_rank(path: Path) -> tuple[int, int, str]:
     return (score, -len(path.parts), str(path))
 
 
+def referenced_final_paths(root: Path) -> list[Path]:
+    """Resolve detector artifacts referenced by retained run summaries."""
+    finals: list[Path] = []
+    for summary_path in sorted(root.rglob("*summary*.json")):
+        try:
+            if summary_path.stat().st_size > 10_000_000:
+                continue
+            summary = load_json(summary_path)
+        except (OSError, ValueError, TypeError):
+            continue
+        if not isinstance(summary, dict) or not isinstance(summary.get("scores"), list):
+            continue
+        for score_item in summary["scores"]:
+            if not isinstance(score_item, dict):
+                continue
+            score = str(score_item.get("score", ""))
+            raw_pipeline_run = score_item.get("pipeline_run")
+            if score not in SCORES or not raw_pipeline_run:
+                continue
+            pipeline_run = Path(str(raw_pipeline_run))
+            probes = [pipeline_run]
+            if not pipeline_run.is_absolute():
+                probes.extend((summary_path.parent / pipeline_run, PROJECT_ROOT / pipeline_run))
+            pipeline_dir = next((p for p in probes if p.is_dir()), None)
+            if pipeline_dir is None:
+                continue
+            for page in SCORES[score]:
+                run_id = build_probe_run_id_from_parts(score, page)
+                page_dir = (
+                    pipeline_dir
+                    / "intermediate"
+                    / "dense_full_pipeline_route"
+                    / "dense_candidate_reconstruction"
+                    / "probe_rescue_candidates"
+                    / run_id
+                )
+                for name in (
+                    "pipeline2_no_peak_scored.json",
+                    "pipeline2_no_peak_filtered_cnn.json",
+                ):
+                    candidate = page_dir / name
+                    if candidate.is_file():
+                        finals.append(candidate.resolve())
+                        break
+    return finals
+
+
 def discover_page_artifacts(root: Path) -> dict[tuple[str, str], dict[str, Any]]:
     if not root.is_dir():
         raise FileNotFoundError(root)
 
-    finals = list(root.rglob("pipeline2_no_peak_scored.json"))
+    finals = referenced_final_paths(root)
+    finals.extend(root.rglob("pipeline2_no_peak_scored.json"))
     if not finals:
-        finals = list(root.rglob("pipeline2_no_peak_filtered_cnn.json"))
+        finals.extend(root.rglob("pipeline2_no_peak_filtered_cnn.json"))
+    finals = sorted(set(path.resolve() for path in finals if path.is_file()))
     if not finals:
         raise FileNotFoundError(
-            f"No final Stage E detector JSON found under {root}. "
+            f"No final Stage E detector JSON found under or referenced by {root}. "
             "Expected pipeline2_no_peak_scored.json."
         )
 

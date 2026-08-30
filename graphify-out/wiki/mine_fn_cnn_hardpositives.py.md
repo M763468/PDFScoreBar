@@ -32,7 +32,7 @@
 ## Relationships
 
 - [barline_evaluation.py](barline_evaluation.py.md) (7 shared connections)
-- [run_probe_scan_batch](run_probe_scan_batch.md) (6 shared connections)
+- [score_candidates_batch.py](score_candidates_batch.py.md) (6 shared connections)
 - [barline_iou](barline_iou.md) (4 shared connections)
 - [greedy_barline_match](greedy_barline_match.md) (4 shared connections)
 

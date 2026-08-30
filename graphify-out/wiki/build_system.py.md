@@ -33,9 +33,8 @@
 
 ## Relationships
 
+- [symbol_extraction.py](symbol_extraction.py.md) (31 shared connections)
 - [Element](Element.md) (29 shared connections)
-- [symbol_extraction.py](symbol_extraction.py.md) (20 shared connections)
-- [notehead_extraction.py](notehead_extraction.py.md) (11 shared connections)
 - [ete.py](ete.py.md) (6 shared connections)
 - [get_layer](get_layer.md) (6 shared connections)
 - [staffline_extraction.py](staffline_extraction.py.md) (2 shared connections)

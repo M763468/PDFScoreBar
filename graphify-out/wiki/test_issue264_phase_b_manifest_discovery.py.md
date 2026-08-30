@@ -15,7 +15,7 @@
 ## Relationships
 
 - [load_json](load_json.md) (2 shared connections)
-- [write_json](write_json.md) (1 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (1 shared connections)
 
 ## Source Files
 

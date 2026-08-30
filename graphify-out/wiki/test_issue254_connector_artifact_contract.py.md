@@ -41,7 +41,7 @@
 - [check_current_homr_runtime_contract.py](check_current_homr_runtime_contract.py.md) (2 shared connections)
 - [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (2 shared connections)
 - [build_manifest](build_manifest.md) (2 shared connections)
-- [MMRProcessor](MMRProcessor.md) (2 shared connections)
+- [object](object.md) (2 shared connections)
 - [Staff](Staff.md) (1 shared connections)
 
 ## Source Files

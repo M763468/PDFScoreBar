@@ -28,7 +28,7 @@
 - [run_grouped_final_numbering_comparison.py](run_grouped_final_numbering_comparison.py.md) `EXTRACTED`
 - [evaluate_barline_rules.py](evaluate_barline_rules.py.md) `EXTRACTED`
 - [test_issue254_connector_artifact_contract.py](test_issue254_connector_artifact_contract.py.md) `EXTRACTED`
-- [phase_b_page001_acceptance.py](phase_b_page001_acceptance.py.md) `EXTRACTED`
+- phase_b_page001_acceptance.py `EXTRACTED`
 - [diagnose_phase_b_layout_divergence.py](diagnose_phase_b_layout_divergence.py.md) `EXTRACTED`
 - [test_issue264_phase_a_connector_geometry.py](test_issue264_phase_a_connector_geometry.py.md) `EXTRACTED`
 - test_issue197_system_grouping_connector_evidence.py `EXTRACTED`
@@ -53,9 +53,9 @@
 - [BBox](BBox.md) `INFERRED`
 - [Staff](Staff.md) `INFERRED`
 - Barline `INFERRED`
-- Score `INFERRED`
+- [Score](Score.md) `INFERRED`
 - [PipelineOrchestrator](PipelineOrchestrator.md) `INFERRED`
-- MeasureNumberer `INFERRED`
+- [MeasureNumberer](MeasureNumberer.md) `INFERRED`
 - Page `INFERRED`
 - [SystemConnectorEvidenceExtractor](SystemConnectorEvidenceExtractor.md) `INFERRED`
 - TestIssue197SystemGroupingConnectorEvidence `INFERRED`

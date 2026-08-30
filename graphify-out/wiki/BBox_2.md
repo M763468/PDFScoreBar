@@ -78,7 +78,7 @@
 
 ### uses
 - [MeasureNumberingPipeline](MeasureNumberingPipeline.md) `INFERRED`
-- MeasureNumberer `INFERRED`
+- [MeasureNumberer](MeasureNumberer.md) `INFERRED`
 - [StaffExtractor](StaffExtractor.md) `INFERRED`
 - TestIssue197SystemGroupingConnectorEvidence `INFERRED`
 - TestIssue194FirstIntervalGuard `INFERRED`

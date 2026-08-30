@@ -24,10 +24,11 @@
 ## Relationships
 
 - [phase_c_acceptance_integrity.py](phase_c_acceptance_integrity.py.md) (5 shared connections)
-- [load_json](load_json.md) (4 shared connections)
 - [common/connector_artifacts.py](common-connector_artifacts.py.md) (3 shared connections)
 - [load_yaml](load_yaml.md) (3 shared connections)
 - [current_homr_worker.py](current_homr_worker.py.md) (3 shared connections)
+- [load_json](load_json.md) (2 shared connections)
+- [run_phase_c_mmr_regression.py](run_phase_c_mmr_regression.py.md) (2 shared connections)
 - [inspect_stage_d_payload_schema.py](inspect_stage_d_payload_schema.py.md) (1 shared connections)
 
 ## Source Files

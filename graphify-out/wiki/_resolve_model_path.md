@@ -14,7 +14,7 @@
 
 ## Relationships
 
-- [probe_scan.py](probe_scan.py.md) (4 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (4 shared connections)
 - [run_grouped_final_numbering_comparison.py](run_grouped_final_numbering_comparison.py.md) (2 shared connections)
 
 ## Source Files

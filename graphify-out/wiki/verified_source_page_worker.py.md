@@ -20,8 +20,10 @@
 
 ## Relationships
 
-- [VerifiedProfileHybridDetector](VerifiedProfileHybridDetector.md) (3 shared connections)
-- [load_json_boxes](load_json_boxes.md) (2 shared connections)
+- [BatchSRVerifiedProfileHybridDetector](BatchSRVerifiedProfileHybridDetector.md) (2 shared connections)
+- [span](span.md) (1 shared connections)
+- [load_json_boxes](load_json_boxes.md) (1 shared connections)
+- [VerifiedProfileHybridDetector](VerifiedProfileHybridDetector.md) (1 shared connections)
 
 ## Source Files
 

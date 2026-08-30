@@ -17,7 +17,7 @@
 
 ## Relationships
 
-- [probe_scan.py](probe_scan.py.md) (3 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (3 shared connections)
 - [restored_orchestrator.py](restored_orchestrator.py.md) (3 shared connections)
 - [trace_prokofiev_probe_boundary.py](trace_prokofiev_probe_boundary.py.md) (3 shared connections)
 - [DetectorOrchestrator](DetectorOrchestrator.md) (2 shared connections)

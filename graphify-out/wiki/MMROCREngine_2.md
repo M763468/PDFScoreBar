@@ -40,7 +40,7 @@
 - steps/numbering.py `EXTRACTED`
 - [diagnose_ocr_frame_changed_pages.py](diagnose_ocr_frame_changed_pages.py.md) `EXTRACTED`
 - run_representative_mmr_reuse.py `EXTRACTED`
-- [test_issue212_mmr_unmasked_fallback.py](test_issue212_mmr_unmasked_fallback.py.md) `EXTRACTED`
+- test_issue212_mmr_unmasked_fallback.py `EXTRACTED`
 - test_issue213_mmr_one_bar_veto.py `EXTRACTED`
 - test_pipeline_numbering_mmr_provider.py `EXTRACTED`
 - test_mmr_ocr_heuristics.py `EXTRACTED`
@@ -66,7 +66,7 @@
 
 ### uses
 - [PipelineOrchestrator](PipelineOrchestrator.md) `INFERRED`
-- TestMMROCRHeuristics `INFERRED`
+- [TestMMROCRHeuristics](TestMMROCRHeuristics.md) `INFERRED`
 - MaskedEmptyUnmaskedNumberOCR `INFERRED`
 - _RecordingRapidOCR `INFERRED`
 - CurrentEmptyLeftWideNumberOCR `INFERRED`

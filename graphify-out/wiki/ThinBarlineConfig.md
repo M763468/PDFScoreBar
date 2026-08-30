@@ -34,13 +34,12 @@
 ## Relationships
 
 - [homr_evaluator.py](homr_evaluator.py.md) (8 shared connections)
-- [.predict](predict.md) (5 shared connections)
+- [heuristics.py](heuristics.py.md) (5 shared connections)
+- [metrics.py](metrics.py.md) (4 shared connections)
 - [test_thin_barline_finder.py](test_thin_barline_finder.py.md) (4 shared connections)
 - [_extract_vertical_runs](_extract_vertical_runs.md) (4 shared connections)
-- [heuristics.py](heuristics.py.md) (3 shared connections)
-- [metrics.py](metrics.py.md) (2 shared connections)
+- [.predict](predict.md) (2 shared connections)
 - [hybrid.py](hybrid.py.md) (1 shared connections)
-- [HomrPredictor](HomrPredictor.md) (1 shared connections)
 
 ## Source Files
 

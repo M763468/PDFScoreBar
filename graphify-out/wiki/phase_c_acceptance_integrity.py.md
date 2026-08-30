@@ -33,9 +33,9 @@
 
 ## Relationships
 
-- [test_issue264_phase_c_acceptance_integrity.py](test_issue264_phase_c_acceptance_integrity.py.md) (8 shared connections)
+- [test_issue264_phase_c_acceptance_integrity.py](test_issue264_phase_c_acceptance_integrity.py.md) (7 shared connections)
 - [phase_c_phase_a_support.py](phase_c_phase_a_support.py.md) (5 shared connections)
-- [rescore_phase_c_mmr_geometry_rebased.py](rescore_phase_c_mmr_geometry_rebased.py.md) (2 shared connections)
+- [rescore_phase_c_mmr_geometry_rebased.py](rescore_phase_c_mmr_geometry_rebased.py.md) (3 shared connections)
 
 ## Source Files
 

@@ -1,19 +1,19 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-23T09:08:51.675952Z",
-  "source_base_commit": "fefd2a3b437bf45caf20aac517dce994596a4681",
-  "generation_input_state": "perf/issue284-realesrgan-hotpath at fefd2a3b, before committing refreshed Graphify artifacts",
+  "generated_at": "2026-08-30T10:00:28.255978Z",
+  "source_base_commit": "6f02d3bd3ec811459612b35f9167e9511fdf41b0",
+  "generation_input_state": "perf/issue284-realesrgan-hotpath at 6f02d3bd, before committing refreshed Graphify artifacts",
   "graphify_version": "graphify 0.9.41",
   "generation_mode": "code-only",
   "semantic_route": "none",
   "semantic_backend": null,
   "semantic_model": null,
   "semantic_scope": [],
-  "node_count": 4980,
-  "edge_count": 11910,
+  "node_count": 5194,
+  "edge_count": 12435,
   "staleness_check": {
     "method": "code-extension-diff-from-source-base",
-    "note": "The graph was generated from source revision fefd2a3b437bf45caf20aac517dce994596a4681 before committing the refreshed durable artifacts. The query wrapper warns only when later committed source-code files differ from source_base_commit."
+    "note": "The graph was generated from source revision 6f02d3bd3ec811459612b35f9167e9511fdf41b0 before committing the refreshed durable artifacts. The query wrapper warns only when later committed source-code files differ from source_base_commit."
   },
   "tracked_outputs": [
     "graphify-out/graph.json",

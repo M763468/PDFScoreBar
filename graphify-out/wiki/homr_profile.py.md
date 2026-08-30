@@ -5,8 +5,8 @@
 ## Key Concepts
 
 - **homr_profile.py** (11 connections) — `src/pipeline/detection/homr_profile.py`
+- **run_homr_profile()** (11 connections) — `src/pipeline/detection/homr_profile.py`
 - **run_with_logging()** (10 connections) — `src/pipeline/core/subprocess_utils.py`
-- **run_homr_profile()** (10 connections) — `src/pipeline/detection/homr_profile.py`
 - **load_homr_profile()** (8 connections) — `src/pipeline/detection/homr_profile.py`
 - **test_homr_profile.py** (8 connections) — `tests/test_homr_profile.py`
 - **build_profile_command()** (7 connections) — `src/pipeline/detection/homr_profile.py`
@@ -32,6 +32,7 @@
 - [hybrid.py](hybrid.py.md) (3 shared connections)
 - [load_json_boxes](load_json_boxes.md) (2 shared connections)
 - [VerifiedProfileHybridDetector](VerifiedProfileHybridDetector.md) (1 shared connections)
+- [BatchSRVerifiedProfileHybridDetector](BatchSRVerifiedProfileHybridDetector.md) (1 shared connections)
 
 ## Source Files
 
@@ -42,8 +43,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 55 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 55 (98%)
+- INFERRED: 1 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

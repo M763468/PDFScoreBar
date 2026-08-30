@@ -8,8 +8,8 @@
 
 ### calls
 - ensure_dir() `EXTRACTED`
-- detect_probe_scan() `EXTRACTED`
 - load_image() `EXTRACTED`
+- detect_probe_scan() `EXTRACTED`
 - filter_probe_candidates() `EXTRACTED`
 - build_probe_run_id() `EXTRACTED`
 - ._run_probe_scan() `EXTRACTED`
@@ -29,7 +29,7 @@
 - run_batch_verification() `EXTRACTED`
 
 ### contains
-- [probe_scan.py](probe_scan.py.md) `EXTRACTED`
+- probe_scan.py `EXTRACTED`
 
 ### imports
 - [dense_probe_candidate.py](dense_probe_candidate.py.md) `EXTRACTED`

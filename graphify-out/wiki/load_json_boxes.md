@@ -30,18 +30,18 @@
 
 ## Relationships
 
-- [probe_scan.py](probe_scan.py.md) (6 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (8 shared connections)
 - [filter_probe_candidates](filter_probe_candidates.md) (6 shared connections)
 - [hybrid.py](hybrid.py.md) (5 shared connections)
 - [trace_prokofiev_probe_boundary.py](trace_prokofiev_probe_boundary.py.md) (5 shared connections)
 - [VerifiedProfileHybridDetector](VerifiedProfileHybridDetector.md) (3 shared connections)
 - [summarize_stage_c_filter_ablation.py](summarize_stage_c_filter_ablation.py.md) (3 shared connections)
 - [homr_profile.py](homr_profile.py.md) (2 shared connections)
-- [verified_source_page_worker.py](verified_source_page_worker.py.md) (2 shared connections)
 - [barline_iou](barline_iou.md) (2 shared connections)
 - [iter_manifest](iter_manifest.md) (2 shared connections)
-- [run_probe_scan_batch](run_probe_scan_batch.md) (1 shared connections)
-- [write_json](write_json.md) (1 shared connections)
+- [verified_source_page_worker.py](verified_source_page_worker.py.md) (1 shared connections)
+- [span](span.md) (1 shared connections)
+- [restored_orchestrator.py](restored_orchestrator.py.md) (1 shared connections)
 
 ## Source Files
 

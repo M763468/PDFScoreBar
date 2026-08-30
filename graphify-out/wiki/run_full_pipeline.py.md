@@ -35,15 +35,14 @@
 
 - [test_issue254_connector_artifact_contract.py](test_issue254_connector_artifact_contract.py.md) (5 shared connections)
 - [restored_orchestrator.py](restored_orchestrator.py.md) (5 shared connections)
-- [probe_scan.py](probe_scan.py.md) (5 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (5 shared connections)
 - [DetectorOrchestrator](DetectorOrchestrator.md) (5 shared connections)
 - [load_yaml](load_yaml.md) (4 shared connections)
+- [get_nested](get_nested.md) (4 shared connections)
 - [hybrid.py](hybrid.py.md) (3 shared connections)
 - [test_issue264_phase_a_connector_geometry.py](test_issue264_phase_a_connector_geometry.py.md) (2 shared connections)
-- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (2 shared connections)
-- [get_nested](get_nested.md) (2 shared connections)
 - [barline_iou](barline_iou.md) (2 shared connections)
-- [.run](run.md) (1 shared connections)
+- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (1 shared connections)
 - [barline_evaluation.py](barline_evaluation.py.md) (1 shared connections)
 
 ## Source Files

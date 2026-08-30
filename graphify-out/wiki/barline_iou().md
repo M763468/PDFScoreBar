@@ -50,7 +50,7 @@
 - common/__init__.py `EXTRACTED`
 - edge_crop_homr_merge.py `EXTRACTED`
 - generate_hybrid_results.py `EXTRACTED`
-- multi_crop_merge.py `EXTRACTED`
+- [multi_crop_merge.py](multi_crop_merge.py.md) `EXTRACTED`
 - [probe_postfilter_analysis.py](probe_postfilter_analysis.py.md) `EXTRACTED`
 
 ### rationale_for

@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **eval_full68_from_intermediates.py** (37 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **eval_full68_from_intermediates.py** (38 connections) — `tools/issue120/eval_full68_from_intermediates.py`
 - **evaluate()** (18 connections) — `tools/issue120/eval_full68_from_intermediates.py`
 - **Any** (6 connections)
 - **write_outputs()** (6 connections) — `tools/issue120/eval_full68_from_intermediates.py`
@@ -47,7 +47,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 77 (100%)
+- EXTRACTED: 78 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

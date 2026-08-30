@@ -33,7 +33,7 @@
 - [current_homr_worker.py](current_homr_worker.py.md) (10 shared connections)
 - [homr_evaluator.py](homr_evaluator.py.md) (2 shared connections)
 - [check_current_homr_runtime_contract.py](check_current_homr_runtime_contract.py.md) (2 shared connections)
-- [HomrPredictor](HomrPredictor.md) (1 shared connections)
+- [heuristics.py](heuristics.py.md) (1 shared connections)
 
 ## Source Files
 

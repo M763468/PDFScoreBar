@@ -26,17 +26,17 @@
 ## Relationships
 
 - [run_stage_e_full_pipeline.py](run_stage_e_full_pipeline.py.md) (6 shared connections)
-- [get_nested](get_nested.md) (5 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (5 shared connections)
 - [PipelineOrchestrator](PipelineOrchestrator.md) (5 shared connections)
-- [load_json](load_json.md) (5 shared connections)
 - [run_full_pipeline.py](run_full_pipeline.py.md) (4 shared connections)
+- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (4 shared connections)
 - [apply_corrections.py](apply_corrections.py.md) (4 shared connections)
+- [get_nested](get_nested.md) (4 shared connections)
 - [dense_probe_candidate.py](dense_probe_candidate.py.md) (3 shared connections)
 - [run_grouped_final_numbering_comparison.py](run_grouped_final_numbering_comparison.py.md) (3 shared connections)
 - [trace_prokofiev_probe_boundary.py](trace_prokofiev_probe_boundary.py.md) (3 shared connections)
 - [phase_c_phase_a_support.py](phase_c_phase_a_support.py.md) (3 shared connections)
-- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (2 shared connections)
-- [load_image](load_image.md) (2 shared connections)
+- [run_phase_c_mmr_regression.py](run_phase_c_mmr_regression.py.md) (3 shared connections)
 
 ## Source Files
 

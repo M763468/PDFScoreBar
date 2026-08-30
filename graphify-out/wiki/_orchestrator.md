@@ -19,7 +19,7 @@
 ## Relationships
 
 - [DetectorOrchestrator](DetectorOrchestrator.md) (2 shared connections)
-- [probe_scan.py](probe_scan.py.md) (1 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (1 shared connections)
 
 ## Source Files
 

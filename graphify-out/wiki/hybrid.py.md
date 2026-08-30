@@ -1,6 +1,6 @@
 # hybrid.py
 
-> 29 nodes · cohesion 0.13
+> 31 nodes · cohesion 0.11
 
 ## Key Concepts
 
@@ -16,10 +16,12 @@
 - **._get_python_cmd()** (4 connections) — `src/pipeline/detection/hybrid.py`
 - **_suppress_homr_low_value_internal_logs()** (4 connections) — `src/pipeline/detection/hybrid.py`
 - **log_vram_usage()** (4 connections) — `src/pipeline/detection/utils.py`
+- **.__init__()** (3 connections) — `src/homr_eval_scripts/core/predictor.py`
 - **.__init__()** (3 connections) — `src/pipeline/detection/hybrid.py`
 - **._omr_all_stems_exist()** (3 connections) — `src/pipeline/detection/hybrid.py`
 - **._rel()** (3 connections) — `src/pipeline/detection/hybrid.py`
 - **Any** (3 connections)
+- **ProcessingConfig** (2 connections)
 - **_env_flag_enabled()** (2 connections) — `src/pipeline/detection/hybrid.py`
 - **.flush()** (2 connections) — `src/pipeline/detection/hybrid.py`
 - **.__init__()** (2 connections) — `src/pipeline/detection/hybrid.py`
@@ -27,24 +29,22 @@
 - **.write()** (2 connections) — `src/pipeline/detection/hybrid.py`
 - **Persistent Homr Predictor for batch processing.** (1 connections) — `src/homr_eval_scripts/core/predictor.py`
 - **Hybrid detection engine using Homr and OMR-DLN.** (1 connections) — `src/pipeline/detection/hybrid.py`
-- **Encapsulates hybrid detection logic (Baseline, SR, OMR-DLN).** (1 connections) — `src/pipeline/detection/hybrid.py`
-- **Returns the appropriate python command, falling back to host if images are…** (1 connections) — `src/pipeline/detection/hybrid.py`
-- *... and 4 more nodes in this community*
+- *... and 6 more nodes in this community*
 
 ## Relationships
 
-- [metrics.py](metrics.py.md) (10 shared connections)
+- [metrics.py](metrics.py.md) (6 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (6 shared connections)
+- [heuristics.py](heuristics.py.md) (5 shared connections)
 - [load_json_boxes](load_json_boxes.md) (5 shared connections)
+- [reporting.py](reporting.py.md) (4 shared connections)
 - [run_stage_d_upstream_regen.py](run_stage_d_upstream_regen.py.md) (4 shared connections)
 - [current_support_worker.py](current_support_worker.py.md) (3 shared connections)
 - [homr_profile.py](homr_profile.py.md) (3 shared connections)
-- [run_probe_scan_batch](run_probe_scan_batch.md) (3 shared connections)
 - [apply_advanced_sr](apply_advanced_sr.md) (3 shared connections)
 - [run_full_pipeline.py](run_full_pipeline.py.md) (3 shared connections)
 - [test_issue254_connector_artifact_contract.py](test_issue254_connector_artifact_contract.py.md) (2 shared connections)
-- [heuristics.py](heuristics.py.md) (2 shared connections)
-- [.predict](predict.md) (2 shared connections)
-- [load_image](load_image.md) (2 shared connections)
+- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (2 shared connections)
 
 ## Source Files
 
@@ -54,8 +54,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 93 (90%)
-- INFERRED: 10 (10%)
+- EXTRACTED: 96 (91%)
+- INFERRED: 10 (9%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,6 +1,6 @@
 # DetectorOrchestrator
 
-> 26 nodes · cohesion 0.16
+> 24 nodes · cohesion 0.18
 
 ## Key Concepts
 
@@ -10,7 +10,6 @@
 - **._run_cnn_scoring()** (10 connections) — `src/pipeline/detection/orchestrator.py`
 - **.run_detection()** (7 connections) — `src/pipeline/detection/orchestrator.py`
 - **Any** (7 connections)
-- **_candidate_json_candidates()** (6 connections) — `src/pipeline/detection/orchestrator.py`
 - **._copy_precomputed_probe_candidates()** (6 connections) — `src/pipeline/detection/orchestrator.py`
 - **.__init__()** (6 connections) — `src/pipeline/detection/orchestrator.py`
 - **._get_effective_images_for_probe()** (5 connections) — `src/pipeline/detection/orchestrator.py`
@@ -27,15 +26,13 @@
 - **Step 2.2: Probe Scan (Host)** (1 connections) — `src/pipeline/detection/orchestrator.py`
 - **Step 2.3: CNN Scoring (Host)** (1 connections) — `src/pipeline/detection/orchestrator.py`
 - **Returns images and scale to use for probe scan (SR or original).** (1 connections) — `src/pipeline/detection/orchestrator.py`
-- **Return supported locations for a precomputed probe candidate JSON.** (1 connections) — `src/pipeline/detection/orchestrator.py`
 - **Orchestrates hybrid detection, probe scan, and CNN scoring.** (1 connections) — `src/pipeline/detection/orchestrator.py`
-- *... and 1 more nodes in this community*
+- **Persist which detector source is authoritative before executing stages.** (1 connections) — `src/pipeline/detection/orchestrator.py`
 
 ## Relationships
 
-- [probe_scan.py](probe_scan.py.md) (7 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (10 shared connections)
 - [run_full_pipeline.py](run_full_pipeline.py.md) (5 shared connections)
-- [run_probe_scan_batch](run_probe_scan_batch.md) (4 shared connections)
 - [_orchestrator](_orchestrator.md) (2 shared connections)
 - [hybrid.py](hybrid.py.md) (2 shared connections)
 - [get_cnn_apply_nms](get_cnn_apply_nms.md) (2 shared connections)
@@ -48,7 +45,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 74 (97%)
+- EXTRACTED: 70 (97%)
 - INFERRED: 2 (3%)
 - AMBIGUOUS: 0 (0%)
 

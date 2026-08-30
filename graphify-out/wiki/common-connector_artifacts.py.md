@@ -36,10 +36,9 @@
 - [phase_c_phase_a_support.py](phase_c_phase_a_support.py.md) (3 shared connections)
 - [Staff](Staff.md) (2 shared connections)
 - [current_homr_worker.py](current_homr_worker.py.md) (2 shared connections)
+- [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (2 shared connections)
 - [build_manifest](build_manifest.md) (2 shared connections)
-- [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (1 shared connections)
 - [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (1 shared connections)
-- [phase_b_page001_acceptance.py](phase_b_page001_acceptance.py.md) (1 shared connections)
 - [test_issue274_mmr_support_reuse.py](test_issue274_mmr_support_reuse.py.md) (1 shared connections)
 
 ## Source Files

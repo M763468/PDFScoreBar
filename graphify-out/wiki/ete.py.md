@@ -1,6 +1,6 @@
 # ete.py
 
-> 51 nodes · cohesion 0.07
+> 43 nodes · cohesion 0.08
 
 ## Key Concepts
 
@@ -13,7 +13,6 @@
 - **logger.py** (9 connections) — `external/oemer/oemer_src/oemer/logger.py`
 - **Grid** (7 connections) — `external/oemer/oemer_src/oemer/dewarp.py`
 - **GridGroup** (7 connections) — `external/oemer/oemer_src/oemer/dewarp.py`
-- **inference()** (7 connections) — `external/oemer/oemer_src/oemer/inference.py`
 - **ndarray** (6 connections)
 - **draw_teaser.py** (6 connections) — `external/oemer/oemer_src/oemer/draw_teaser.py`
 - **teaser()** (6 connections) — `external/oemer/oemer_src/oemer/draw_teaser.py`
@@ -28,32 +27,31 @@
 - **draw_bbox()** (3 connections) — `external/oemer/oemer_src/oemer/draw_teaser.py`
 - **get_parser()** (3 connections) — `external/oemer/oemer_src/oemer/ete.py`
 - **register_note_id()** (3 connections) — `external/oemer/oemer_src/oemer/ete.py`
-- **resize_image()** (3 connections) — `external/oemer/oemer_src/oemer/inference.py`
-- *... and 26 more nodes in this community*
+- **register_layer()** (3 connections) — `external/oemer/oemer_src/oemer/layers.py`
+- **.__lt__()** (2 connections) — `external/oemer/oemer_src/oemer/dewarp.py`
+- *... and 18 more nodes in this community*
 
 ## Relationships
 
-- [symbol_extraction.py](symbol_extraction.py.md) (23 shared connections)
+- [symbol_extraction.py](symbol_extraction.py.md) (24 shared connections)
 - [get_layer](get_layer.md) (17 shared connections)
 - [build_system.py](build_system.py.md) (6 shared connections)
-- [notehead_extraction.py](notehead_extraction.py.md) (6 shared connections)
 - [staffline_extraction.py](staffline_extraction.py.md) (6 shared connections)
+- [ml_detector/barline_detector.py](ml_detector-barline_detector.py.md) (3 shared connections)
 - [metrics.py](metrics.py.md) (3 shared connections)
 - [BBox](BBox.md) (1 shared connections)
 
 ## Source Files
 
-- `external/oemer/oemer_src/main.py`
 - `external/oemer/oemer_src/oemer/dewarp.py`
 - `external/oemer/oemer_src/oemer/draw_teaser.py`
 - `external/oemer/oemer_src/oemer/ete.py`
-- `external/oemer/oemer_src/oemer/inference.py`
 - `external/oemer/oemer_src/oemer/layers.py`
 - `external/oemer/oemer_src/oemer/logger.py`
 
 ## Audit Trail
 
-- EXTRACTED: 147 (100%)
+- EXTRACTED: 136 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

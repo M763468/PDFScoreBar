@@ -31,17 +31,17 @@
 ## Relationships
 
 - [homr_profile_compat.py](homr_profile_compat.py.md) (10 shared connections)
-- [metrics.py](metrics.py.md) (4 shared connections)
 - [check_current_homr_runtime_contract.py](check_current_homr_runtime_contract.py.md) (4 shared connections)
 - [test_issue264_phase_a_connector_geometry.py](test_issue264_phase_a_connector_geometry.py.md) (3 shared connections)
 - [phase_c_phase_a_support.py](phase_c_phase_a_support.py.md) (3 shared connections)
 - [current_support_worker.py](current_support_worker.py.md) (3 shared connections)
 - [common/connector_artifacts.py](common-connector_artifacts.py.md) (2 shared connections)
+- [metrics.py](metrics.py.md) (2 shared connections)
+- [reporting.py](reporting.py.md) (2 shared connections)
 - [test_issue254_connector_artifact_contract.py](test_issue254_connector_artifact_contract.py.md) (2 shared connections)
 - [heuristics.py](heuristics.py.md) (2 shared connections)
-- [test_issue255_production_detector_restoration.py](test_issue255_production_detector_restoration.py.md) (1 shared connections)
+- [build_detector_input_contract](build_detector_input_contract.md) (1 shared connections)
 - [hybrid.py](hybrid.py.md) (1 shared connections)
-- [MMRProcessor](MMRProcessor.md) (1 shared connections)
 
 ## Source Files
 

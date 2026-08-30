@@ -1,12 +1,11 @@
 # test_issue252_prokofiev_probe_boundary.py
 
-> 14 nodes · cohesion 0.34
+> 12 nodes · cohesion 0.41
 
 ## Key Concepts
 
 - **test_issue252_prokofiev_probe_boundary.py** (18 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
 - **classify_first_loss()** (9 connections) — `tools/issue252/probe_boundary.py`
-- **validate_fresh_contract_payload()** (7 connections) — `tools/issue252/probe_boundary.py`
 - **_source_trace()** (5 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
 - **test_classifies_baseline_homr_when_target_absent_before_probe()** (5 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
 - **test_classifies_existing_box_suppression_when_off_variant_restores_raw_target()** (5 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
@@ -16,12 +15,11 @@
 - **_target_stage()** (4 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
 - **test_validate_fresh_contract_payload_rejects_nonfresh_contract()** (3 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
 - **parametrize** (2 connections)
-- **test_tool_local_side_context_can_reproduce_rejected_experiment()** (2 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
 - **test_validate_fresh_contract_payload_accepts_direct_and_nested_contracts()** (2 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
 
 ## Relationships
 
-- [trace_prokofiev_probe_boundary.py](trace_prokofiev_probe_boundary.py.md) (12 shared connections)
+- [trace_prokofiev_probe_boundary.py](trace_prokofiev_probe_boundary.py.md) (11 shared connections)
 - [filter_probe_candidates](filter_probe_candidates.md) (3 shared connections)
 
 ## Source Files
@@ -31,7 +29,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 46 (100%)
+- EXTRACTED: 41 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

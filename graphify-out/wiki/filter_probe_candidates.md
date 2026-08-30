@@ -7,7 +7,7 @@
 - **filter_probe_candidates()** (21 connections) — `src/pipeline/steps/candidate_filters.py`
 - **candidate_filters.py** (16 connections) — `src/pipeline/steps/candidate_filters.py`
 - **reproduce_clean_seed_v12.py** (8 connections) — `tools/repro_accuracy/reproduce_clean_seed_v12.py`
-- **split_box_vertically()** (7 connections) — `src/pipeline/steps/candidate_filters.py`
+- **trim_box_to_ink()** (7 connections) — `src/pipeline/steps/candidate_filters.py`
 - **ndarray** (6 connections)
 - **main()** (5 connections) — `tools/repro_accuracy/reproduce_clean_seed_v12.py`
 - **_build_page_mask()** (4 connections) — `src/pipeline/steps/candidate_filters.py`
@@ -19,17 +19,16 @@
 - **test_rejected_paper_experiment_is_not_a_production_filter_option()** (2 connections) — `tests/test_issue252_prokofiev_probe_boundary.py`
 - **Any** (1 connections)
 - **Heuristic filters to remove false positive candidates.** (1 connections) — `src/pipeline/steps/candidate_filters.py`
-- **Split a box vertically into segments where ink is present, separated by gaps.** (1 connections) — `src/pipeline/steps/candidate_filters.py`
 - **Apply heuristic filters to remove false positive candidates. Returns: A tuple…** (1 connections) — `src/pipeline/steps/candidate_filters.py`
 - **Return binary mask of the paper area (largest bright connected component).** (1 connections) — `src/pipeline/steps/candidate_filters.py`
+- **Trim box vertically based on ink density.** (1 connections) — `src/pipeline/steps/candidate_filters.py`
 - **ArgumentParser** (1 connections)
 
 ## Relationships
 
+- [run_probe_scan_batch](run_probe_scan_batch.md) (8 shared connections)
 - [trace_prokofiev_probe_boundary.py](trace_prokofiev_probe_boundary.py.md) (8 shared connections)
 - [load_json_boxes](load_json_boxes.md) (6 shared connections)
-- [probe_scan.py](probe_scan.py.md) (4 shared connections)
-- [run_probe_scan_batch](run_probe_scan_batch.md) (4 shared connections)
 - [test_issue252_prokofiev_probe_boundary.py](test_issue252_prokofiev_probe_boundary.py.md) (3 shared connections)
 - [summarize_stage_c_filter_ablation.py](summarize_stage_c_filter_ablation.py.md) (3 shared connections)
 

@@ -33,12 +33,12 @@
 
 ## Relationships
 
-- [symbol_extraction.py](symbol_extraction.py.md) (11 shared connections)
+- [symbol_extraction.py](symbol_extraction.py.md) (13 shared connections)
 - [ete.py](ete.py.md) (6 shared connections)
-- [notehead_extraction.py](notehead_extraction.py.md) (3 shared connections)
 - [BBox](BBox.md) (3 shared connections)
 - [get_layer](get_layer.md) (2 shared connections)
 - [build_system.py](build_system.py.md) (2 shared connections)
+- [ml_detector/barline_detector.py](ml_detector-barline_detector.py.md) (1 shared connections)
 
 ## Source Files
 

@@ -1,0 +1,17 @@
+name: issue291 temporary GT audit
+
+on:
+  push:
+    branches:
+      - fix/issue291-normalize-duplicate-barline-gt
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reproduce Issue 274 P1/P3 audit
+        run: python3 tools/issue291/audit_gt_duplicate_pairs.py

@@ -1,16 +1,18 @@
 {
-  "schema_version": "issue291.gt_edit_plan.v1",
-  "status": "blocked_on_retained_numbering_review",
+  "schema_version": "issue291.gt_edit_plan.v2",
+  "status": "retained_numbering_gate_passed",
   "canonical_gt_modified": false,
-  "planned_raw_slot_delta_if_gate_passes": -13,
-  "planned_canonical_gt_count_if_gate_passes": 3567,
-  "same_ink_duplicate_policy": "keep one existing reviewed bbox; do not synthesize geometry",
+  "planned_raw_slot_delta": -13,
+  "planned_canonical_gt_count": 3567,
+  "same_ink_duplicate_policy": "keep the taller existing reviewed bbox; on equal height keep the earlier bbox; do not synthesize geometry",
   "false_gt_policy": "remove both annotations for historical P1 #12",
   "p3_policy": "preserve each physical line of double_barline/end_barline/repeat as separate GT bbox",
   "numbering_contract": {
     "gt_physical_lines": "separate identities",
-    "logical_measure_boundary": "nearby detected lines are collapsed downstream",
+    "logical_measure_boundary": "nearby detected lines may delimit one logical boundary region without creating an intervening measure",
+    "p1_12_current_behavior": "the false time-signature detection is used as the left edge of measure 1 but does not create an extra numbered measure",
     "measure_number_fields": "renumber sequentially after deletions, matching current GT save/sort contract"
   },
-  "gate": "verify retained final numbering around Va__Prokofiev_Symphony5/page_007 false-GT region and genuine Sibelius page_004 double-bar control before editing boxes_sorted.json"
+  "metric_guardrail": "corrected GT may expose an additional detector FP at P1 #12; do not retain false GT or change detector/model/threshold behavior to preserve legacy precision",
+  "next": "apply the reviewed 11 duplicate collapses plus the two-box P1 #12 deletion, then validate full68 GT and rescore retained predictions"
 }

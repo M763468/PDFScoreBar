@@ -13,7 +13,7 @@
   "edge_count": 12445,
   "staleness_check": {
     "method": "code-extension-diff-from-source-base",
-    "note": "The graph was generated from source revision 56c38cd0408efb84396343e3ccc8f1ed5f3808dd before committing the refreshed durable artifacts. The query wrapper warns only when later committed source-code files differ from source_base_commit."
+    "note": "The graph was generated from source revision 6a318aede2b82417d98df7524e4875743cc68b4a before committing the refreshed durable artifacts. The query wrapper warns only when later committed source-code files differ from source_base_commit."
   },
   "tracked_outputs": [
     "graphify-out/graph.json",

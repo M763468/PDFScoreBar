@@ -68,10 +68,18 @@ def run(request_path: Path, result_path: Path) -> Path:
     items = _items(request)
     set_context(process_role="current_sr_batch_worker")
 
+    # This is the performance-gate boundary for the dedicated SR worker. Start
+    # before the heavy runtime import/model setup so batch_wall_sec represents
+    # the whole SR phase rather than only per-page enhancement after init.
+    started_batch = time.perf_counter()
+
     # Heavy Real-ESRGAN/basicSR/torch imports occur only in this disposable SR
     # process and only once for the whole page batch.
+    started_runtime_import = time.perf_counter()
     from src.pipeline.detection.current_sr_runtime import CurrentX4SRRuntime
 
+    runtime_import_wall_sec = time.perf_counter() - started_runtime_import
+    started_model_initialization = time.perf_counter()
     with span("sr_batch.model_initialization", cuda=True):
         runtime = CurrentX4SRRuntime(
             tile=det_cfg.get("sr_tile", -1),
@@ -80,10 +88,10 @@ def run(request_path: Path, result_path: Path) -> Path:
             channels_last=bool(det_cfg.get("sr_channels_last", True)),
             compile_mode=det_cfg.get("sr_compile_mode"),
         )
+    model_initialization_wall_sec = time.perf_counter() - started_model_initialization
 
     torch = runtime.torch
     torch.cuda.reset_peak_memory_stats()
-    started_batch = time.perf_counter()
     outputs: list[dict[str, Any]] = []
 
     for item in items:
@@ -136,6 +144,9 @@ def run(request_path: Path, result_path: Path) -> Path:
         "outputs": outputs,
         "runtime": runtime.metadata(),
         "batch_wall_sec": time.perf_counter() - started_batch,
+        "batch_wall_scope": "runtime_import_model_init_and_page_processing",
+        "runtime_import_wall_sec": runtime_import_wall_sec,
+        "model_initialization_wall_sec": model_initialization_wall_sec,
         "peak_cuda_allocated_bytes": int(torch.cuda.max_memory_allocated()),
         "peak_cuda_reserved_bytes": int(torch.cuda.max_memory_reserved()),
         "historical_detector_artifact_runtime_input": False,

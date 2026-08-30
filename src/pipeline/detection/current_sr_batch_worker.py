@@ -70,7 +70,8 @@ def run(request_path: Path, result_path: Path) -> Path:
 
     # This is the performance-gate boundary for the dedicated SR worker. Start
     # before the heavy runtime import/model setup so batch_wall_sec represents
-    # the whole SR phase rather than only per-page enhancement after init.
+    # the whole worker-side SR phase rather than only per-page enhancement after
+    # initialization. Parent subprocess-launch overhead remains part of E2E.
     started_batch = time.perf_counter()
 
     # Heavy Real-ESRGAN/basicSR/torch imports occur only in this disposable SR

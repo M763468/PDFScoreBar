@@ -1,0 +1,16 @@
+{
+  "schema_version": "issue291.gt_edit_plan.v1",
+  "status": "blocked_on_retained_numbering_review",
+  "canonical_gt_modified": false,
+  "planned_raw_slot_delta_if_gate_passes": -13,
+  "planned_canonical_gt_count_if_gate_passes": 3567,
+  "same_ink_duplicate_policy": "keep one existing reviewed bbox; do not synthesize geometry",
+  "false_gt_policy": "remove both annotations for historical P1 #12",
+  "p3_policy": "preserve each physical line of double_barline/end_barline/repeat as separate GT bbox",
+  "numbering_contract": {
+    "gt_physical_lines": "separate identities",
+    "logical_measure_boundary": "nearby detected lines are collapsed downstream",
+    "measure_number_fields": "renumber sequentially after deletions, matching current GT save/sort contract"
+  },
+  "gate": "verify retained final numbering around Va__Prokofiev_Symphony5/page_007 false-GT region and genuine Sibelius page_004 double-bar control before editing boxes_sorted.json"
+}

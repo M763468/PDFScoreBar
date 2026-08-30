@@ -1,62 +1,58 @@
 # run_mmr_batch
 
-> 30 nodes · cohesion 0.17
+> 23 nodes · cohesion 0.15
 
 ## Key Concepts
 
 - **run_mmr_batch()** (25 connections) — `src/pipeline/steps/numbering.py`
 - **steps/numbering.py** (23 connections) — `src/pipeline/steps/numbering.py`
-- **eval_mmr_overrides.py** (15 connections) — `tools/issue94/eval_mmr_overrides.py`
-- **normalize_rapidocr_provider()** (10 connections) — `src/measure_numbering/rapidocr_provider.py`
-- **_build_summary()** (10 connections) — `tools/issue94/eval_mmr_overrides.py`
+- **test_pipeline_numbering_mmr_provider.py** (10 connections) — `tests/test_pipeline_numbering_mmr_provider.py`
 - **_should_replace_mmr_ocr_engine()** (9 connections) — `src/pipeline/steps/numbering.py`
-- **eval_all_mmr.py** (9 connections) — `tools/issue94/eval_all_mmr.py`
-- **Any** (8 connections)
+- **empty_numbering_payload()** (7 connections) — `src/pipeline/steps/numbering.py`
 - **rebase_mmr_overrides_to_page_local()** (7 connections) — `src/pipeline/steps/numbering.py`
-- **main()** (7 connections) — `tools/issue94/eval_mmr_overrides.py`
-- **main()** (6 connections) — `tools/issue94/eval_all_mmr.py`
-- **_load_json()** (6 connections) — `tools/issue94/eval_mmr_overrides.py`
-- **_write_json()** (6 connections) — `tools/issue94/eval_mmr_overrides.py`
+- **load_image_size()** (6 connections) — `src/pipeline/utils/images.py`
 - **Any** (5 connections)
-- **_index_overrides()** (5 connections) — `tools/issue94/eval_mmr_overrides.py`
 - **_is_default_mmr_ocr_engine()** (4 connections) — `src/pipeline/steps/numbering.py`
-- **_override_key()** (4 connections) — `tools/issue94/eval_mmr_overrides.py`
+- **ndarray** (4 connections)
+- **test_run_mmr_batch_updates_default_engine_in_place()** (4 connections) — `tests/test_pipeline_numbering_mmr_provider.py`
 - **build_add_measure_numbers_cmd()** (3 connections) — `src/pipeline/steps/numbering.py`
 - **Path** (3 connections)
-- **_measure_count()** (3 connections) — `tools/issue94/eval_mmr_overrides.py`
-- **_normalise_overrides()** (3 connections) — `tools/issue94/eval_mmr_overrides.py`
-- **_override_skip()** (3 connections) — `tools/issue94/eval_mmr_overrides.py`
-- **parse_args()** (3 connections) — `tools/issue94/eval_mmr_overrides.py`
-- **Path** (3 connections)
-- **OverrideKey** (2 connections)
-- *... and 5 more nodes in this community*
+- **CustomInjectedEngine** (3 connections) — `tests/test_pipeline_numbering_mmr_provider.py`
+- **ProviderOCR** (3 connections) — `tests/test_pipeline_numbering_mmr_provider.py`
+- **test_should_preserve_custom_injected_engine()** (3 connections) — `tests/test_pipeline_numbering_mmr_provider.py`
+- **test_should_preserve_default_engine_with_matching_provider_mode()** (3 connections) — `tests/test_pipeline_numbering_mmr_provider.py`
+- **test_should_replace_default_engine_without_provider_mode()** (3 connections) — `tests/test_pipeline_numbering_mmr_provider.py`
+- **test_should_replace_absent_engine()** (2 connections) — `tests/test_pipeline_numbering_mmr_provider.py`
+- **device** (1 connections)
+- **Numbering step helpers.** (1 connections) — `src/pipeline/steps/numbering.py`
+- **Runs MMR detection in-process for a batch of pages.** (1 connections) — `src/pipeline/steps/numbering.py`
+- **Select one global override page at the MMR Phase B -> Phase C boundary. Phase B…** (1 connections) — `src/pipeline/steps/numbering.py`
 
 ## Relationships
 
+- [eval_mmr_overrides.py](eval_mmr_overrides.py.md) (9 shared connections)
 - [MMROCREngine](MMROCREngine.md) (8 shared connections)
-- [create_mmr_rapidocr](create_mmr_rapidocr.md) (7 shared connections)
-- [get_nested](get_nested.md) (5 shared connections)
-- [VerifiedProfileHybridDetector](VerifiedProfileHybridDetector.md) (3 shared connections)
-- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (3 shared connections)
+- [load_json](load_json.md) (7 shared connections)
+- [.run](run.md) (5 shared connections)
+- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (4 shared connections)
+- [images.py](images.py.md) (4 shared connections)
+- [current_support_worker.py](current_support_worker.py.md) (3 shared connections)
+- [MMRProcessor](MMRProcessor.md) (3 shared connections)
 - [Staff](Staff.md) (3 shared connections)
 - [run_grouped_final_numbering_comparison.py](run_grouped_final_numbering_comparison.py.md) (3 shared connections)
-- [run_phase_c_mmr_regression.py](run_phase_c_mmr_regression.py.md) (3 shared connections)
-- [load_image](load_image.md) (2 shared connections)
-- [MMRProcessor](MMRProcessor.md) (2 shared connections)
-- [load_json](load_json.md) (2 shared connections)
 - [run_original_geometry_graft.py](run_original_geometry_graft.py.md) (2 shared connections)
+- [cnn_scoring.py](cnn_scoring.py.md) (2 shared connections)
 
 ## Source Files
 
-- `src/measure_numbering/rapidocr_provider.py`
 - `src/pipeline/steps/numbering.py`
-- `tools/issue94/eval_all_mmr.py`
-- `tools/issue94/eval_mmr_overrides.py`
+- `src/pipeline/utils/images.py`
+- `tests/test_pipeline_numbering_mmr_provider.py`
 
 ## Audit Trail
 
-- EXTRACTED: 115 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 90 (98%)
+- INFERRED: 2 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

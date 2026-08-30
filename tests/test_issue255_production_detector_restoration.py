@@ -195,6 +195,7 @@ def test_current_support_runs_sr_homr_omr_as_separate_phases(tmp_path: Path, mon
                     "staff_mask": str(staff),
                     "connector_symbols": str(symbols),
                     "connector_brace_dot": str(brace),
+                    "connector_complete": True,
                     "historical_detector_artifact_runtime_input": False,
                 },
                 ["python", "current_homr_worker"],

@@ -15,9 +15,11 @@
 
 ## Relationships
 
-- [oemer/train.py](oemer-train.py.md) (4 shared connections)
-- [symbol_extraction.py](symbol_extraction.py.md) (3 shared connections)
+- [oemer/train.py](oemer-train.py.md) (3 shared connections)
 - [classifier.py](classifier.py.md) (2 shared connections)
+- [symbol_extraction.py](symbol_extraction.py.md) (2 shared connections)
+- [DataLoader](DataLoader.md) (1 shared connections)
+- [build_system.py](build_system.py.md) (1 shared connections)
 
 ## Source Files
 

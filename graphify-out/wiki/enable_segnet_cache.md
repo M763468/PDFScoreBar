@@ -1,6 +1,6 @@
 # enable_segnet_cache
 
-> 17 nodes · cohesion 0.14
+> 21 nodes · cohesion 0.11
 
 ## Key Concepts
 
@@ -8,11 +8,15 @@
 - **segnet_cache.py** (6 connections) — `src/homr_eval_scripts/segnet_cache.py`
 - **clear_segnet_cache()** (6 connections) — `src/homr_eval_scripts/segnet_cache.py`
 - **_get_session()** (5 connections) — `src/homr_eval_scripts/segnet_cache.py`
+- **ProcessingConfig** (4 connections)
 - **CachedSegnet** (4 connections) — `src/homr_eval_scripts/segnet_cache.py`
 - **.cleanup()** (3 connections) — `src/homr_eval_scripts/core/predictor.py`
+- **.__init__()** (3 connections) — `src/homr_eval_scripts/core/predictor.py`
 - **.cleanup()** (3 connections) — `src/homr_eval_scripts/homr_evaluator.py`
+- **.__init__()** (3 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 - **_create_session()** (3 connections) — `src/homr_eval_scripts/segnet_cache.py`
 - **InferenceSession** (2 connections)
+- **ProcessingConfig** (2 connections)
 - **.__init__()** (2 connections) — `src/homr_eval_scripts/segnet_cache.py`
 - **Release VRAM and other resources.** (1 connections) — `src/homr_eval_scripts/core/predictor.py`
 - **Release VRAM and other resources.** (1 connections) — `src/homr_eval_scripts/homr_evaluator.py`
@@ -24,10 +28,11 @@
 
 ## Relationships
 
+- [homr_evaluator.py](homr_evaluator.py.md) (5 shared connections)
 - [heuristics.py](heuristics.py.md) (3 shared connections)
-- [homr_evaluator.py](homr_evaluator.py.md) (3 shared connections)
-- [BarlinePrediction](BarlinePrediction.md) (2 shared connections)
-- [hybrid.py](hybrid.py.md) (1 shared connections)
+- [hybrid.py](hybrid.py.md) (2 shared connections)
+- [metrics.py](metrics.py.md) (2 shared connections)
+- [ndarray](ndarray.md) (1 shared connections)
 - [homr_profile_compat.py](homr_profile_compat.py.md) (1 shared connections)
 
 ## Source Files
@@ -38,7 +43,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 28 (97%)
+- EXTRACTED: 36 (97%)
 - INFERRED: 1 (3%)
 - AMBIGUOUS: 0 (0%)
 

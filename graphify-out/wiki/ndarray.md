@@ -1,13 +1,12 @@
 # ndarray
 
-> 18 nodes · cohesion 0.28
+> 17 nodes · cohesion 0.29
 
 ## Key Concepts
 
 - **ndarray** (25 connections)
 - **detect_staffs_with_barlines()** (17 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 - **Any** (11 connections)
-- **recover_end_barlines()** (9 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 - **_ensure_mask_shape()** (7 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 - **generate_sobel_vertical_candidates()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 - **generate_vertical_run_candidates()** (6 connections) — `src/homr_eval_scripts/homr_evaluator.py`
@@ -25,10 +24,9 @@
 
 ## Relationships
 
-- [homr_evaluator.py](homr_evaluator.py.md) (20 shared connections)
-- [BarlinePrediction](BarlinePrediction.md) (12 shared connections)
+- [homr_evaluator.py](homr_evaluator.py.md) (29 shared connections)
+- [enable_segnet_cache](enable_segnet_cache.md) (1 shared connections)
 - [symbol_extraction.py](symbol_extraction.py.md) (1 shared connections)
-- [TransformInfo](TransformInfo.md) (1 shared connections)
 
 ## Source Files
 
@@ -36,7 +34,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 76 (99%)
+- EXTRACTED: 70 (99%)
 - INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,6 +1,6 @@
 # SystemBuilder
 
-> 29 nodes · cohesion 0.19
+> 29 nodes · cohesion 0.20
 
 ## Key Concepts
 
@@ -33,13 +33,11 @@
 
 ## Relationships
 
-- [Staff](Staff.md) (18 shared connections)
-- [BBox](BBox.md) (5 shared connections)
+- [Staff](Staff.md) (20 shared connections)
+- [BBox](BBox.md) (6 shared connections)
 - [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (4 shared connections)
 - [StaffExtractor](StaffExtractor.md) (3 shared connections)
-- [MeasureNumberer](MeasureNumberer.md) (2 shared connections)
-- [object](object.md) (2 shared connections)
-- [load_local_gt](load_local_gt.md) (1 shared connections)
+- [MMROCREngine](MMROCREngine.md) (1 shared connections)
 
 ## Source Files
 
@@ -48,8 +46,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 96 (84%)
-- INFERRED: 18 (16%)
+- EXTRACTED: 95 (83%)
+- INFERRED: 19 (17%)
 - AMBIGUOUS: 0 (0%)
 
 ---

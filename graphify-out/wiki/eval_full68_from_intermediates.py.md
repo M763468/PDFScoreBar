@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **eval_full68_from_intermediates.py** (37 connections) — `tools/issue120/eval_full68_from_intermediates.py`
+- **eval_full68_from_intermediates.py** (38 connections) — `tools/issue120/eval_full68_from_intermediates.py`
 - **evaluate()** (18 connections) — `tools/issue120/eval_full68_from_intermediates.py`
 - **Any** (6 connections)
 - **write_outputs()** (6 connections) — `tools/issue120/eval_full68_from_intermediates.py`
@@ -29,17 +29,17 @@
 ## Relationships
 
 - [iter_manifest](iter_manifest.md) (7 shared connections)
+- [barline_evaluation.py](barline_evaluation.py.md) (3 shared connections)
 - [eval_stage_e_contract.py](eval_stage_e_contract.py.md) (3 shared connections)
 - [PageRecord](PageRecord.md) (3 shared connections)
 - [greedy_barline_match](greedy_barline_match.md) (2 shared connections)
-- [is_barline_match](is_barline_match.md) (2 shared connections)
 - [dense_probe_candidate.py](dense_probe_candidate.py.md) (1 shared connections)
 - [compare_box_tree_stats.py](compare_box_tree_stats.py.md) (1 shared connections)
-- [barline_evaluation.py](barline_evaluation.py.md) (1 shared connections)
 - [inspect_stage_d_payload_schema.py](inspect_stage_d_payload_schema.py.md) (1 shared connections)
 - [run_issue36_dense_candidates_then_eval.py](run_issue36_dense_candidates_then_eval.py.md) (1 shared connections)
 - [run_issue53_probe_rescue_then_eval.py](run_issue53_probe_rescue_then_eval.py.md) (1 shared connections)
 - [run_stage_c_seed_regen_then_eval.py](run_stage_c_seed_regen_then_eval.py.md) (1 shared connections)
+- [run_stage_d_upstream_regen.py](run_stage_d_upstream_regen.py.md) (1 shared connections)
 
 ## Source Files
 
@@ -47,7 +47,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 77 (100%)
+- EXTRACTED: 78 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

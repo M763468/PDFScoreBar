@@ -1,6 +1,6 @@
 # apply_corrections.py
 
-> 14 nodes · cohesion 0.35
+> 13 nodes · cohesion 0.40
 
 ## Key Concepts
 
@@ -15,7 +15,6 @@
 - **_input_override_path()** (4 connections) — `src/pipeline/review/apply_corrections.py`
 - **_resolve_source_manifest_path()** (4 connections) — `src/pipeline/review/apply_corrections.py`
 - **_unique_existing_paths()** (3 connections) — `src/pipeline/review/apply_corrections.py`
-- **main()** (2 connections) — `src/pipeline/review/apply_corrections.py`
 - **Encode MMR suppress operations as neutral user overrides. The final numbering…** (1 connections) — `src/pipeline/review/apply_corrections.py`
 - **Read existing override payloads before canonical files may be overwritten.** (1 connections) — `src/pipeline/review/apply_corrections.py`
 
@@ -35,7 +34,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 61 (100%)
+- EXTRACTED: 60 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

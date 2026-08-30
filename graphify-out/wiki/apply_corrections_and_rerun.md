@@ -1,6 +1,6 @@
 # apply_corrections_and_rerun
 
-> 28 nodes · cohesion 0.15
+> 29 nodes · cohesion 0.15
 
 ## Key Concepts
 
@@ -27,9 +27,9 @@
 - **test_external_review_root_resolves_source_manifest()** (3 connections) — `tests/test_apply_corrections.py`
 - **test_rerun_config_sections_null()** (3 connections) — `tests/test_apply_corrections.py`
 - **test_shared_correction_outputs_not_duplicated_per_page()** (3 connections) — `tests/test_apply_corrections.py`
+- **main()** (2 connections) — `src/pipeline/review/apply_corrections.py`
 - **Path** (2 connections)
-- **test_malformed_manifest_and_config()** (2 connections) — `tests/test_apply_corrections.py`
-- *... and 3 more nodes in this community*
+- *... and 4 more nodes in this community*
 
 ## Relationships
 
@@ -52,7 +52,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 78 (100%)
+- EXTRACTED: 79 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

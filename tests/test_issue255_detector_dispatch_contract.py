@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 import src.pipeline.detection as detection
-import src.pipeline.detection.restored_orchestrator as restored
+import src.pipeline.detection.restored_orchestrator_batch_sr as restored_batch
 
 
 def _dense_config(*, profile: str | None = "stage_e_verified") -> dict:
@@ -50,7 +50,7 @@ def test_exported_orchestrator_dispatches_dense_route(tmp_path: Path, monkeypatc
             captured.update(kwargs)
 
     monkeypatch.setattr(
-        restored,
+        restored_batch,
         "DetectorOrchestrator",
         FakeVerifiedDetectorOrchestrator,
     )

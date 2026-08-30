@@ -1,0 +1,26 @@
+{
+  "schema_version": "issue291.visual_review_findings.v1",
+  "source": "user-reviewed issue291_p1_12pair_contact_sheet.png / issue291_p1_visual_review.json",
+  "canonical_gt_modified": false,
+  "historical_p1_count": 12,
+  "findings": {
+    "same_ink_duplicate_pairs": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    "false_gt_pairs": [12]
+  },
+  "p1_12": {
+    "score": "Va__Prokofiev_Symphony5",
+    "page": "page_007",
+    "indices": [0, 1],
+    "bboxes": [
+      [665, 908, 669, 1018],
+      [668, 908, 672, 1018]
+    ],
+    "review_result": "both annotations are not barlines",
+    "intended_correction": "remove both, subject to retained-numbering gate"
+  },
+  "guardrails": [
+    "Do not reinterpret semantic double_barline/end_barline/repeat P3 pairs as duplicates.",
+    "Do not edit detector/model/threshold/runtime under Issue #291.",
+    "Verify retained production final numbering around P1 #12 before canonical GT write."
+  ]
+}

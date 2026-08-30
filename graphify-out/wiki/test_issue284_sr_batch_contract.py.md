@@ -35,8 +35,9 @@
 
 - [span](span.md) (6 shared connections)
 - [current_support_worker.py](current_support_worker.py.md) (4 shared connections)
-- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (3 shared connections)
+- [cnn_scoring.py](cnn_scoring.py.md) (2 shared connections)
 - [BatchSRVerifiedProfileHybridDetector](BatchSRVerifiedProfileHybridDetector.md) (2 shared connections)
+- [images.py](images.py.md) (1 shared connections)
 
 ## Source Files
 

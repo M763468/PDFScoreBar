@@ -1,6 +1,6 @@
 # test_issue274_mmr_support_reuse.py
 
-> 23 nodes · cohesion 0.22
+> 22 nodes · cohesion 0.23
 
 ## Key Concepts
 
@@ -18,7 +18,6 @@
 - **_gate_support()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
 - **test_implicit_start_changes_only_alternate_start_x()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
 - **test_implicit_start_uses_system_minimum_base_and_mapped_x()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
-- **test_manifest_and_detection_resolve_explicit_current_support()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
 - **test_near_staff_left_normal_measure_does_not_enable_alternate()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
 - **test_ocr_candidate_scoring_receives_processed_dimensions()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
 - **test_support_mapping_handles_single_many_to_one_union_and_unmapped()** (4 connections) — `tests/test_issue274_mmr_support_reuse.py`
@@ -30,14 +29,14 @@
 
 ## Relationships
 
-- [object](object.md) (6 shared connections)
 - [Staff](Staff.md) (5 shared connections)
 - [MMRProcessor](MMRProcessor.md) (5 shared connections)
 - [BBox](BBox.md) (4 shared connections)
-- [test_issue264_phase_a_connector_geometry.py](test_issue264_phase_a_connector_geometry.py.md) (3 shared connections)
-- [load_json](load_json.md) (3 shared connections)
-- [build_manifest](build_manifest.md) (2 shared connections)
-- [common/connector_artifacts.py](common-connector_artifacts.py.md) (1 shared connections)
+- [build_manifest](build_manifest.md) (4 shared connections)
+- [phase_b_page001_acceptance.py](phase_b_page001_acceptance.py.md) (3 shared connections)
+- [mmr_support_reuse.py](mmr_support_reuse.py.md) (3 shared connections)
+- [MMROCREngine](MMROCREngine.md) (3 shared connections)
+- [get_nested](get_nested.md) (2 shared connections)
 
 ## Source Files
 
@@ -45,7 +44,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 75 (89%)
+- EXTRACTED: 73 (89%)
 - INFERRED: 9 (11%)
 - AMBIGUOUS: 0 (0%)
 

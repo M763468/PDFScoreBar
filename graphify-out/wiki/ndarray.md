@@ -1,6 +1,6 @@
 # ndarray
 
-> 18 nodes · cohesion 0.27
+> 17 nodes · cohesion 0.29
 
 ## Key Concepts
 
@@ -18,15 +18,14 @@
 - **generate_barline_cc_relaxed()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 - **generate_barline_cc_tiny()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 - **_scan_vertical_line()** (4 connections) — `src/homr_eval_scripts/homr_evaluator.py`
-- **autocrop_bounds()** (3 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 - **Box** (1 connections)
 - **Future** (1 connections)
 - **Runs the core homr staff and symbol detection pipeline. Returns: A tuple…** (1 connections) — `src/homr_eval_scripts/homr_evaluator.py`
 
 ## Relationships
 
-- [homr_evaluator.py](homr_evaluator.py.md) (25 shared connections)
-- [.predict](predict.md) (6 shared connections)
+- [homr_evaluator.py](homr_evaluator.py.md) (29 shared connections)
+- [enable_segnet_cache](enable_segnet_cache.md) (1 shared connections)
 - [symbol_extraction.py](symbol_extraction.py.md) (1 shared connections)
 
 ## Source Files
@@ -35,7 +34,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 72 (99%)
+- EXTRACTED: 70 (99%)
 - INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 

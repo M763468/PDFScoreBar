@@ -1,61 +1,55 @@
 # pipeline/orchestrator.py
 
-> 25 nodes · cohesion 0.18
+> 20 nodes · cohesion 0.19
 
 ## Key Concepts
 
 - **pipeline/orchestrator.py** (47 connections) — `src/pipeline/orchestrator.py`
-- **load_image()** (23 connections) — `src/pipeline/utils/images.py`
-- **images.py** (19 connections) — `src/pipeline/utils/images.py`
-- **collect_images()** (13 connections) — `src/pipeline/utils/images.py`
-- **empty_numbering_payload()** (7 connections) — `src/pipeline/steps/numbering.py`
-- **test_issue236_review_package_source_images.py** (7 connections) — `tests/test_issue236_review_package_source_images.py`
-- **_ReviewPackageConfig** (6 connections) — `src/pipeline/orchestrator.py`
-- **load_image_size()** (6 connections) — `src/pipeline/utils/images.py`
-- **Path** (6 connections)
-- **resolve_page_ids()** (6 connections) — `src/pipeline/utils/images.py`
-- **get_image_cache()** (5 connections) — `src/pipeline/utils/images.py`
-- **_config()** (5 connections) — `tests/test_issue236_review_package_source_images.py`
-- **_write_text()** (5 connections) — `tests/test_issue236_review_package_source_images.py`
+- **pdf_to_images.py** (10 connections) — `src/pdf_to_images.py`
+- **render_pdf_to_memory()** (8 connections) — `src/pdf_to_images.py`
+- **save_image()** (7 connections) — `src/pdf_to_images.py`
+- **PdfConversionError** (6 connections) — `src/pdf_to_images.py`
+- **render_pdf()** (6 connections) — `src/pdf_to_images.py`
+- **pixmap_to_array()** (5 connections) — `src/pdf_to_images.py`
+- **apply_barline_overrides()** (5 connections) — `src/pipeline/steps/barlines.py`
+- **main()** (4 connections) — `src/pdf_to_images.py`
+- **normalise_pages()** (4 connections) — `src/pdf_to_images.py`
 - **ndarray** (4 connections)
-- **_review_package_enabled()** (4 connections) — `src/pipeline/utils/images.py`
-- **_stage_external_review_images()** (4 connections) — `src/pipeline/utils/images.py`
-- **test_collect_images_keeps_external_source_images_without_review_package()** (4 connections) — `tests/test_issue236_review_package_source_images.py`
-- **test_collect_images_keeps_run_dir_source_images_for_review_package()** (4 connections) — `tests/test_issue236_review_package_source_images.py`
-- **test_collect_images_stages_external_source_images_for_review_package()** (4 connections) — `tests/test_issue236_review_package_source_images.py`
-- **_path_is_inside()** (3 connections) — `src/pipeline/utils/images.py`
-- **Any** (3 connections)
-- **Path** (2 connections)
+- **parse_args()** (3 connections) — `src/pdf_to_images.py`
+- **Path** (3 connections)
+- **resize_image()** (3 connections) — `src/pdf_to_images.py`
+- **Any** (2 connections)
+- **Pixmap** (1 connections)
+- **Namespace** (1 connections)
+- **RuntimeError** (1 connections)
+- **Raised when a page cannot be rendered or saved.** (1 connections) — `src/pdf_to_images.py`
 - **Pipeline orchestration for end-to-end processing.** (1 connections) — `src/pipeline/orchestrator.py`
-- **Image collection and page id helpers.** (1 connections) — `src/pipeline/utils/images.py`
-- **Loads an image, checking the in-memory cache first. If the file exists on disk,…** (1 connections) — `src/pipeline/utils/images.py`
 
 ## Relationships
 
-- [get_nested](get_nested.md) (15 shared connections)
-- [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (9 shared connections)
-- [run_mmr_batch](run_mmr_batch.md) (8 shared connections)
-- [filters.py](filters.py.md) (5 shared connections)
-- [pdf_to_images.py](pdf_to_images.py.md) (4 shared connections)
-- [run_probe_scan_batch](run_probe_scan_batch.md) (4 shared connections)
-- [load_yaml](load_yaml.md) (4 shared connections)
-- [Score](Score.md) (3 shared connections)
-- [test_issue284_sr_batch_contract.py](test_issue284_sr_batch_contract.py.md) (3 shared connections)
-- [span](span.md) (3 shared connections)
+- [get_nested](get_nested.md) (6 shared connections)
+- [.run](run.md) (5 shared connections)
+- [diagnose_phase_b_layout_divergence.py](diagnose_phase_b_layout_divergence.py.md) (4 shared connections)
+- [run_mmr_batch](run_mmr_batch.md) (4 shared connections)
+- [images.py](images.py.md) (3 shared connections)
+- [build_manifest](build_manifest.md) (2 shared connections)
 - [materialize_manual_correction_review_package](materialize_manual_correction_review_package.md) (2 shared connections)
+- [phase_b_page001_acceptance.py](phase_b_page001_acceptance.py.md) (2 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (2 shared connections)
 - [load_json](load_json.md) (2 shared connections)
+- [Score](Score.md) (2 shared connections)
+- [MMRProcessor](MMRProcessor.md) (2 shared connections)
 
 ## Source Files
 
+- `src/pdf_to_images.py`
 - `src/pipeline/orchestrator.py`
-- `src/pipeline/steps/numbering.py`
-- `src/pipeline/utils/images.py`
-- `tests/test_issue236_review_package_source_images.py`
+- `src/pipeline/steps/barlines.py`
 
 ## Audit Trail
 
-- EXTRACTED: 131 (96%)
-- INFERRED: 5 (4%)
+- EXTRACTED: 85 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

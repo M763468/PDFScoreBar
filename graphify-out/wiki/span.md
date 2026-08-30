@@ -36,12 +36,13 @@
 - [current_support_worker.py](current_support_worker.py.md) (8 shared connections)
 - [test_issue284_sr_batch_contract.py](test_issue284_sr_batch_contract.py.md) (6 shared connections)
 - [apply_advanced_sr](apply_advanced_sr.md) (5 shared connections)
-- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (3 shared connections)
-- [build_detector_input_contract](build_detector_input_contract.md) (2 shared connections)
+- [cnn_scoring.py](cnn_scoring.py.md) (2 shared connections)
+- [restored_orchestrator.py](restored_orchestrator.py.md) (2 shared connections)
 - [BatchSRVerifiedProfileHybridDetector](BatchSRVerifiedProfileHybridDetector.md) (2 shared connections)
+- [images.py](images.py.md) (1 shared connections)
 - [VerifiedProfileHybridDetector](VerifiedProfileHybridDetector.md) (1 shared connections)
-- [filter_probe_candidates](filter_probe_candidates.md) (1 shared connections)
-- [restored_orchestrator.py](restored_orchestrator.py.md) (1 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (1 shared connections)
+- [restored_orchestrator_batch_sr.py](restored_orchestrator_batch_sr.py.md) (1 shared connections)
 - [verified_source_page_worker.py](verified_source_page_worker.py.md) (1 shared connections)
 
 ## Source Files

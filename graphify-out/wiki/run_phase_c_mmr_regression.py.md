@@ -1,6 +1,6 @@
 # run_phase_c_mmr_regression.py
 
-> 31 nodes · cohesion 0.18
+> 30 nodes · cohesion 0.18
 
 ## Key Concepts
 
@@ -8,7 +8,6 @@
 - **run()** (22 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
 - **build_page_specs()** (18 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
 - **score_overrides()** (12 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
-- **normalise_overrides()** (11 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
 - **Any** (11 connections)
 - **index_overrides()** (9 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
 - **test_issue264_phase_c_mmr_regression.py** (8 connections) — `tests/test_issue264_phase_c_mmr_regression.py`
@@ -29,15 +28,15 @@
 - **parse_args()** (3 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
 - **validate_page_specs()** (3 connections) — `tools/issue264/run_phase_c_mmr_regression.py`
 - **test_parse_eval_image_stem_preserves_score_name_and_page()** (2 connections) — `tests/test_issue264_phase_c_mmr_regression.py`
-- *... and 6 more nodes in this community*
+- **test_physical_counts_reads_one_page_system_lengths()** (2 connections) — `tests/test_issue264_phase_c_mmr_regression.py`
+- *... and 5 more nodes in this community*
 
 ## Relationships
 
-- [load_json](load_json.md) (26 shared connections)
-- [run_original_geometry_graft.py](run_original_geometry_graft.py.md) (8 shared connections)
-- [run_mmr_batch](run_mmr_batch.md) (3 shared connections)
+- [load_json](load_json.md) (28 shared connections)
+- [run_original_geometry_graft.py](run_original_geometry_graft.py.md) (6 shared connections)
 - [load_yaml](load_yaml.md) (3 shared connections)
-- [object](object.md) (3 shared connections)
+- [phase_b_page001_acceptance.py](phase_b_page001_acceptance.py.md) (3 shared connections)
 - [PipelineOrchestrator](PipelineOrchestrator.md) (3 shared connections)
 - [audit_positive_geometry_disagreements.py](audit_positive_geometry_disagreements.py.md) (3 shared connections)
 - [diagnose_ocr_frame_changed_pages.py](diagnose_ocr_frame_changed_pages.py.md) (2 shared connections)
@@ -52,7 +51,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 137 (100%)
+- EXTRACTED: 130 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

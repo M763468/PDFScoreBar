@@ -1,12 +1,11 @@
 # phase_c_acceptance_integrity.py
 
-> 29 nodes · cohesion 0.16
+> 27 nodes · cohesion 0.16
 
 ## Key Concepts
 
 - **phase_c_acceptance_integrity.py** (16 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
 - **validate_resume_contract()** (11 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **verify_source_report()** (11 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
 - **Any** (10 connections)
 - **run_phase_c_mmr_regression_container.py** (10 connections) — `tools/issue264/run_phase_c_mmr_regression_container.py`
 - **Path** (8 connections)
@@ -27,15 +26,16 @@
 - **Namespace** (1 connections)
 - **Require all source gates unrelated to historical index-addressed scoring.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
 - **Bind a completed, augmented source report to this invocation and producer…** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- **Verify canonical non-index source gates and current-invocation identity.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
 - **Allow --resume only for a completed run produced by the exact current contract.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
-- *... and 4 more nodes in this community*
+- **Describe the revision/config/input bytes allowed to produce resumed artifacts.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- **Return failed source gates that cannot be superseded by geometry rebasing.** (1 connections) — `tools/issue264/phase_c_acceptance_integrity.py`
+- *... and 2 more nodes in this community*
 
 ## Relationships
 
-- [test_issue264_phase_c_acceptance_integrity.py](test_issue264_phase_c_acceptance_integrity.py.md) (7 shared connections)
+- [test_issue264_phase_c_acceptance_integrity.py](test_issue264_phase_c_acceptance_integrity.py.md) (10 shared connections)
 - [phase_c_phase_a_support.py](phase_c_phase_a_support.py.md) (5 shared connections)
-- [rescore_phase_c_mmr_geometry_rebased.py](rescore_phase_c_mmr_geometry_rebased.py.md) (3 shared connections)
+- [rescore_phase_c_mmr_geometry_rebased.py](rescore_phase_c_mmr_geometry_rebased.py.md) (2 shared connections)
 
 ## Source Files
 
@@ -45,7 +45,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 79 (100%)
+- EXTRACTED: 74 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

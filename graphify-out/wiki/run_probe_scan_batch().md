@@ -33,7 +33,7 @@
 
 ### imports
 - [dense_probe_candidate.py](dense_probe_candidate.py.md) `EXTRACTED`
-- detection/orchestrator.py `EXTRACTED`
+- [detection/orchestrator.py](detection-orchestrator.py.md) `EXTRACTED`
 - [dense_full_pipeline.py](dense_full_pipeline.py.md) `EXTRACTED`
 - [run_issue53_probe_rescue_then_eval.py](run_issue53_probe_rescue_then_eval.py.md) `EXTRACTED`
 - verify_final_comparison.py `EXTRACTED`

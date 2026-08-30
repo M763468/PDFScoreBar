@@ -1,11 +1,13 @@
 # diagnose_phase_b_layout_divergence.py
 
-> 17 nodes · cohesion 0.32
+> 20 nodes · cohesion 0.25
 
 ## Key Concepts
 
 - **diagnose_phase_b_layout_divergence.py** (21 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
 - **run()** (13 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **barlines.py** (11 connections) — `src/pipeline/steps/barlines.py`
+- **normalize_barlines()** (9 connections) — `src/pipeline/steps/barlines.py`
 - **Path** (8 connections)
 - **_rebuild()** (8 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
 - **Any** (7 connections)
@@ -20,21 +22,29 @@
 - **main()** (3 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
 - **parse_args()** (3 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
 - **_staff_membership()** (3 connections) — `tools/issue264/diagnose_phase_b_layout_divergence.py`
+- **Barline override helpers.** (1 connections) — `src/pipeline/steps/barlines.py`
 - **Namespace** (1 connections)
 
 ## Relationships
 
-- [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (6 shared connections)
 - [Score](Score.md) (5 shared connections)
+- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (4 shared connections)
+- [manual_corrections.py](manual_corrections.py.md) (3 shared connections)
+- [phase_b_page001_acceptance.py](phase_b_page001_acceptance.py.md) (3 shared connections)
+- [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (3 shared connections)
+- [.run](run.md) (2 shared connections)
 - [Staff](Staff.md) (2 shared connections)
+- [barline_iou](barline_iou.md) (1 shared connections)
+- [barline_evaluation.py](barline_evaluation.py.md) (1 shared connections)
 
 ## Source Files
 
+- `src/pipeline/steps/barlines.py`
 - `tools/issue264/diagnose_phase_b_layout_divergence.py`
 
 ## Audit Trail
 
-- EXTRACTED: 56 (100%)
+- EXTRACTED: 72 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

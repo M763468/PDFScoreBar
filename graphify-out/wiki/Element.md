@@ -35,7 +35,7 @@
 
 - [build_system.py](build_system.py.md) (29 shared connections)
 - [get_layer](get_layer.md) (1 shared connections)
-- [symbol_extraction.py](symbol_extraction.py.md) (1 shared connections)
+- [oemer/utils.py](oemer-utils.py.md) (1 shared connections)
 
 ## Source Files
 

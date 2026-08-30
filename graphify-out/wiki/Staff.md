@@ -1,11 +1,12 @@
 # Staff
 
-> 55 nodes · cohesion 0.11
+> 56 nodes · cohesion 0.12
 
 ## Key Concepts
 
 - **Staff** (51 connections) — `src/measure_numbering/types.py`
 - **Barline** (40 connections) — `src/measure_numbering/types.py`
+- **MeasureNumberer** (35 connections) — `src/measure_numbering/numbering.py`
 - **measure_numbering/types.py** (34 connections) — `src/measure_numbering/types.py`
 - **System** (31 connections) — `src/measure_numbering/types.py`
 - **pipeline.py** (28 connections) — `src/measure_numbering/pipeline.py`
@@ -27,21 +28,20 @@
 - **verify_divisi_batch.py** (9 connections) — `tools/verify_divisi_batch.py`
 - **connector_aware_builder.py** (8 connections) — `src/measure_numbering/connector_aware_builder.py`
 - **visualize_systems.py** (8 connections) — `src/measure_numbering/visualize_systems.py`
-- **load_local_gt()** (8 connections) — `src/measure_numbering/visualize_systems.py`
 - **test_issue194_first_interval_guard.py** (8 connections) — `tests/test_issue194_first_interval_guard.py`
-- *... and 30 more nodes in this community*
+- *... and 31 more nodes in this community*
 
 ## Relationships
 
-- [BBox](BBox.md) (44 shared connections)
-- [Score](Score.md) (31 shared connections)
-- [MeasureNumberer](MeasureNumberer.md) (24 shared connections)
-- [SystemBuilder](SystemBuilder.md) (21 shared connections)
-- [StaffExtractor](StaffExtractor.md) (15 shared connections)
-- [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (9 shared connections)
-- [load_json](load_json.md) (5 shared connections)
+- [BBox](BBox.md) (50 shared connections)
+- [Score](Score.md) (35 shared connections)
+- [SystemBuilder](SystemBuilder.md) (20 shared connections)
+- [StaffExtractor](StaffExtractor.md) (17 shared connections)
+- [.number_system](number_system.md) (8 shared connections)
+- [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (8 shared connections)
 - [test_issue274_mmr_support_reuse.py](test_issue274_mmr_support_reuse.py.md) (5 shared connections)
 - [SystemConnectorEvidenceExtractor](SystemConnectorEvidenceExtractor.md) (4 shared connections)
+- [load_json](load_json.md) (4 shared connections)
 - [run_grouped_final_numbering_comparison.py](run_grouped_final_numbering_comparison.py.md) (3 shared connections)
 - [run_mmr_batch](run_mmr_batch.md) (3 shared connections)
 - [common/connector_artifacts.py](common-connector_artifacts.py.md) (2 shared connections)
@@ -68,8 +68,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 290 (85%)
-- INFERRED: 53 (15%)
+- EXTRACTED: 297 (83%)
+- INFERRED: 60 (17%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -19,7 +19,7 @@
 
 ## Relationships
 
-- [restored_orchestrator.py](restored_orchestrator.py.md) (3 shared connections)
+- [restored_orchestrator_batch_sr.py](restored_orchestrator_batch_sr.py.md) (3 shared connections)
 - [verified_source_page_worker.py](verified_source_page_worker.py.md) (2 shared connections)
 - [test_issue284_sr_batch_contract.py](test_issue284_sr_batch_contract.py.md) (2 shared connections)
 - [span](span.md) (2 shared connections)

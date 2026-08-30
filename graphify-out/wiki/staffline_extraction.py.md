@@ -1,6 +1,6 @@
 # staffline_extraction.py
 
-> 46 nodes · cohesion 0.07
+> 47 nodes · cohesion 0.07
 
 ## Key Concepts
 
@@ -10,6 +10,7 @@
 - **further_infer_track_nums()** (10 connections) — `external/oemer/oemer_src/oemer/staffline_extraction.py`
 - **ndarray** (10 connections)
 - **extract()** (9 connections) — `external/oemer/oemer_src/oemer/staffline_extraction.py`
+- **Enum** (6 connections)
 - **extract_line()** (6 connections) — `external/oemer/oemer_src/oemer/staffline_extraction.py`
 - **extract_part()** (6 connections) — `external/oemer/oemer_src/oemer/staffline_extraction.py`
 - **setter** (6 connections)
@@ -28,17 +29,17 @@
 - **.x_left()** (2 connections) — `external/oemer/oemer_src/oemer/staffline_extraction.py`
 - **.x_right()** (2 connections) — `external/oemer/oemer_src/oemer/staffline_extraction.py`
 - **.y_center()** (2 connections) — `external/oemer/oemer_src/oemer/staffline_extraction.py`
-- **.y_lower()** (2 connections) — `external/oemer/oemer_src/oemer/staffline_extraction.py`
-- *... and 21 more nodes in this community*
+- *... and 22 more nodes in this community*
 
 ## Relationships
 
-- [symbol_extraction.py](symbol_extraction.py.md) (13 shared connections)
+- [symbol_extraction.py](symbol_extraction.py.md) (10 shared connections)
 - [ete.py](ete.py.md) (6 shared connections)
+- [oemer/utils.py](oemer-utils.py.md) (4 shared connections)
+- [build_system.py](build_system.py.md) (3 shared connections)
+- [get_layer](get_layer.md) (3 shared connections)
 - [BBox](BBox.md) (3 shared connections)
-- [get_layer](get_layer.md) (2 shared connections)
-- [build_system.py](build_system.py.md) (2 shared connections)
-- [ml_detector/barline_detector.py](ml_detector-barline_detector.py.md) (1 shared connections)
+- [Staff](Staff.md) (2 shared connections)
 
 ## Source Files
 
@@ -46,7 +47,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 101 (98%)
+- EXTRACTED: 106 (98%)
 - INFERRED: 2 (2%)
 - AMBIGUOUS: 0 (0%)
 

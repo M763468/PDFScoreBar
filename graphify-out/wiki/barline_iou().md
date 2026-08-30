@@ -48,9 +48,9 @@
 - [trace_stage_analysis.py](trace_stage_analysis.py.md) `EXTRACTED`
 - [hybrid_omr_dln_union.py](hybrid_omr_dln_union.py.md) `EXTRACTED`
 - common/__init__.py `EXTRACTED`
-- edge_crop_homr_merge.py `EXTRACTED`
+- [edge_crop_homr_merge.py](edge_crop_homr_merge.py.md) `EXTRACTED`
 - generate_hybrid_results.py `EXTRACTED`
-- [multi_crop_merge.py](multi_crop_merge.py.md) `EXTRACTED`
+- multi_crop_merge.py `EXTRACTED`
 - [probe_postfilter_analysis.py](probe_postfilter_analysis.py.md) `EXTRACTED`
 
 ### rationale_for

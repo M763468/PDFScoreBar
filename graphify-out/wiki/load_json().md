@@ -36,10 +36,10 @@
 - [run_phase_c_mmr_regression.py](run_phase_c_mmr_regression.py.md) `EXTRACTED`
 - run_full68_mmr_reuse.py `EXTRACTED`
 - [run_original_geometry_graft.py](run_original_geometry_graft.py.md) `EXTRACTED`
-- phase_b_page001_acceptance.py `EXTRACTED`
+- [phase_b_page001_acceptance.py](phase_b_page001_acceptance.py.md) `EXTRACTED`
 - test_issue257_mmr_page_rebase.py `EXTRACTED`
 - run_representative_mmr_reuse.py `EXTRACTED`
-- mmr_support_reuse.py `EXTRACTED`
+- [mmr_support_reuse.py](mmr_support_reuse.py.md) `EXTRACTED`
 - [phase_c_phase_a_support.py](phase_c_phase_a_support.py.md) `EXTRACTED`
 - validate_mmr_support_mapping.py `EXTRACTED`
 - run_phase_b_page001_acceptance.py `EXTRACTED`

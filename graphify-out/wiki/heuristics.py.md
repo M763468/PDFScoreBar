@@ -1,6 +1,6 @@
 # heuristics.py
 
-> 66 nodes · cohesion 0.07
+> 51 nodes · cohesion 0.10
 
 ## Key Concepts
 
@@ -20,8 +20,6 @@
 - **compute_candidate_stats()** (6 connections) — `src/homr_eval_scripts/core/heuristics.py`
 - **generate_sobel_vertical_candidates()** (6 connections) — `src/homr_eval_scripts/core/heuristics.py`
 - **generate_vertical_run_candidates()** (6 connections) — `src/homr_eval_scripts/core/heuristics.py`
-- **segnet_cache.py** (6 connections) — `src/homr_eval_scripts/segnet_cache.py`
-- **clear_segnet_cache()** (6 connections) — `src/homr_eval_scripts/segnet_cache.py`
 - **count_staff_crossings()** (5 connections) — `src/homr_eval_scripts/core/heuristics.py`
 - **export_measure_grid_candidates()** (5 connections) — `src/homr_eval_scripts/core/heuristics.py`
 - **generate_column_sum_candidates()** (5 connections) — `src/homr_eval_scripts/core/heuristics.py`
@@ -29,33 +27,31 @@
 - **generate_sobel_vertical_candidates_weak()** (5 connections) — `src/homr_eval_scripts/core/heuristics.py`
 - **generate_vertical_run_candidates_weak()** (5 connections) — `src/homr_eval_scripts/core/heuristics.py`
 - **resolve_clusters_dry_run()** (5 connections) — `src/homr_eval_scripts/core/heuristics.py`
-- *... and 41 more nodes in this community*
+- **resolve_tight_duplicates_dry_run()** (5 connections) — `src/homr_eval_scripts/core/heuristics.py`
+- **TransformInfo** (5 connections) — `src/homr_eval_scripts/core/utils.py`
+- *... and 26 more nodes in this community*
 
 ## Relationships
 
-- [metrics.py](metrics.py.md) (7 shared connections)
+- [metrics.py](metrics.py.md) (6 shared connections)
 - [ThinBarlineConfig](ThinBarlineConfig.md) (5 shared connections)
-- [hybrid.py](hybrid.py.md) (5 shared connections)
-- [reporting.py](reporting.py.md) (4 shared connections)
+- [core/utils.py](core-utils.py.md) (4 shared connections)
+- [enable_segnet_cache](enable_segnet_cache.md) (3 shared connections)
+- [hybrid.py](hybrid.py.md) (3 shared connections)
 - [current_homr_worker.py](current_homr_worker.py.md) (2 shared connections)
-- [check_current_homr_runtime_contract.py](check_current_homr_runtime_contract.py.md) (2 shared connections)
-- [.predict](predict.md) (2 shared connections)
+- [install_current_homr_consumer_compat](install_current_homr_consumer_compat.md) (2 shared connections)
 - [symbol_extraction.py](symbol_extraction.py.md) (1 shared connections)
-- [homr_evaluator.py](homr_evaluator.py.md) (1 shared connections)
-- [homr_profile_compat.py](homr_profile_compat.py.md) (1 shared connections)
 
 ## Source Files
 
 - `src/homr_eval_scripts/core/heuristics.py`
 - `src/homr_eval_scripts/core/predictor.py`
 - `src/homr_eval_scripts/core/utils.py`
-- `src/homr_eval_scripts/homr_evaluator.py`
-- `src/homr_eval_scripts/segnet_cache.py`
 
 ## Audit Trail
 
-- EXTRACTED: 172 (99%)
-- INFERRED: 2 (1%)
+- EXTRACTED: 151 (99%)
+- INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

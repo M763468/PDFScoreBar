@@ -1,6 +1,6 @@
 # MMRProcessor
 
-> 42 nodes · cohesion 0.08
+> 39 nodes · cohesion 0.09
 
 ## Key Concepts
 
@@ -12,6 +12,7 @@
 - **.process_pages()** (7 connections) — `src/measure_numbering/mmr.py`
 - **._detect_number_with_evidence()** (6 connections) — `src/measure_numbering/mmr.py`
 - **run_mmr_batch()** (6 connections) — `src/measure_numbering/mmr.py`
+- **_ReviewPackageConfig** (6 connections) — `src/pipeline/orchestrator.py`
 - **.__init__()** (5 connections) — `src/measure_numbering/mmr.py`
 - **.__init__()** (5 connections) — `src/measure_numbering/mmr.py`
 - **Path** (5 connections)
@@ -21,7 +22,6 @@
 - **test_issue208_mmr_variant_aggregation.py** (4 connections) — `tests/test_issue208_mmr_variant_aggregation.py`
 - **test_detect_number_uses_best_scored_variant_not_first_valid_variant()** (4 connections) — `tests/test_issue208_mmr_variant_aggregation.py`
 - **main()** (4 connections) — `tools/generate_numbering_overrides.py`
-- **.predict()** (3 connections) — `src/measure_numbering/mmr.py`
 - **._count_high_confidence_one_bar_evidence()** (3 connections) — `src/measure_numbering/mmr.py`
 - **._detect_number_with_evidence_once()** (3 connections) — `src/measure_numbering/mmr.py`
 - **._draw_debug()** (3 connections) — `src/measure_numbering/mmr.py`
@@ -29,12 +29,11 @@
 - **device** (3 connections)
 - **_copy_debug_image()** (3 connections) — `tools/generate_numbering_overrides.py`
 - **_resolve_model_path()** (3 connections) — `tools/generate_numbering_overrides.py`
-- *... and 17 more nodes in this community*
+- *... and 14 more nodes in this community*
 
 ## Relationships
 
-- [MMROCREngine](MMROCREngine.md) (16 shared connections)
-- [object](object.md) (8 shared connections)
+- [MMROCREngine](MMROCREngine.md) (25 shared connections)
 - [load_json](load_json.md) (8 shared connections)
 - [audit_positive_geometry_disagreements.py](audit_positive_geometry_disagreements.py.md) (8 shared connections)
 - [diagnose_ocr_frame_changed_pages.py](diagnose_ocr_frame_changed_pages.py.md) (6 shared connections)
@@ -42,20 +41,22 @@
 - [run_grouped_final_numbering_comparison.py](run_grouped_final_numbering_comparison.py.md) (4 shared connections)
 - [TestMMROCRHeuristics](TestMMROCRHeuristics.md) (3 shared connections)
 - [run_mmr_batch](run_mmr_batch.md) (3 shared connections)
+- [.run](run.md) (2 shared connections)
 - [run_original_geometry_graft.py](run_original_geometry_graft.py.md) (2 shared connections)
 - [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (2 shared connections)
-- [get_nested](get_nested.md) (1 shared connections)
+- [PipelineOrchestrator](PipelineOrchestrator.md) (1 shared connections)
 
 ## Source Files
 
 - `src/measure_numbering/mmr.py`
+- `src/pipeline/orchestrator.py`
 - `tests/test_issue208_mmr_variant_aggregation.py`
 - `tools/generate_numbering_overrides.py`
 
 ## Audit Trail
 
-- EXTRACTED: 123 (88%)
-- INFERRED: 17 (12%)
+- EXTRACTED: 121 (86%)
+- INFERRED: 20 (14%)
 - AMBIGUOUS: 0 (0%)
 
 ---

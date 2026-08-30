@@ -1,6 +1,6 @@
 # phase_c_fixture_rebase.py
 
-> 25 nodes · cohesion 0.21
+> 26 nodes · cohesion 0.20
 
 ## Key Concepts
 
@@ -21,6 +21,7 @@
 - **test_fixture_rebase_preserves_index_when_geometry_is_unchanged()** (3 connections) — `tests/test_issue264_phase_c_fixture_rebase.py`
 - **test_fixture_rebase_rejects_conflicting_items_after_system_merge()** (3 connections) — `tests/test_issue264_phase_c_fixture_rebase.py`
 - **test_fixture_rebase_tracks_same_page_region_after_system_index_shift()** (3 connections) — `tests/test_issue264_phase_c_fixture_rebase.py`
+- **_contains()** (3 connections) — `tools/issue264/phase_c_fixture_rebase.py`
 - **_normalise_bbox()** (3 connections) — `tools/issue264/phase_c_fixture_rebase.py`
 - **_single_page()** (3 connections) — `tools/issue264/phase_c_fixture_rebase.py`
 - **_skip()** (3 connections) — `tools/issue264/phase_c_fixture_rebase.py`
@@ -28,14 +29,14 @@
 - **_center()** (2 connections) — `tools/issue264/phase_c_fixture_rebase.py`
 - **_intersection_area()** (2 connections) — `tools/issue264/phase_c_fixture_rebase.py`
 - **Evaluation-only rebase of historical MMR fixtures onto current numbering…** (1 connections) — `tools/issue264/phase_c_fixture_rebase.py`
-- **Map one historical measure to the current physical measure at the same…** (1 connections) — `tools/issue264/phase_c_fixture_rebase.py`
+- *... and 1 more nodes in this community*
 
 ## Relationships
 
 - [rescore_phase_c_mmr_geometry_rebased.py](rescore_phase_c_mmr_geometry_rebased.py.md) (8 shared connections)
 - [rescore_full68_mmr_reuse_geometry_rebased.py](rescore_full68_mmr_reuse_geometry_rebased.py.md) (5 shared connections)
 - [audit_positive_geometry_disagreements.py](audit_positive_geometry_disagreements.py.md) (3 shared connections)
-- [MMROCREngine](MMROCREngine.md) (2 shared connections)
+- [MMROCREngine](MMROCREngine.md) (1 shared connections)
 
 ## Source Files
 
@@ -44,8 +45,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 80 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 80 (99%)
+- INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

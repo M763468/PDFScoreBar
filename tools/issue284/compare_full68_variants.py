@@ -10,10 +10,10 @@ computed from ``hybrid_results/*_hybrid.json`` before dense reconstruction,
 probe rescue, and CNN scoring. They are not final Stage E detector metrics.
 
 Retained full68 summaries may contain absolute paths from the canonical Docker
-checkout (usually ``/workspace``).  Those paths are provenance, not a requirement
-that later readers execute inside the same mount.  This comparator therefore
+checkout (usually ``/workspace``). Those paths are provenance, not a requirement
+that later readers execute inside the same mount. This comparator therefore
 resolves moved artifacts relative to the supplied variant root before falling
-back to the current repository root.
+back to the recorded absolute path or current repository root.
 """
 
 from __future__ import annotations
@@ -50,15 +50,23 @@ def sha256(path: Path) -> str:
 def resolve_retained_path(raw: object, *, variant_root: Path) -> Path:
     """Resolve an artifact path recorded before the retained variant was moved."""
     recorded = Path(str(raw))
-    candidates: list[Path] = [recorded]
+    candidates: list[Path] = []
 
-    # Canonical retained variants are frequently generated under
-    # /workspace/logs/.../<variant-name>/... and later inspected on the host or
-    # from an archive.  Re-anchor the suffix at the explicit variant root first.
+    # The caller-selected variant is authoritative. Canonical retained variants
+    # are frequently generated under /workspace/logs/.../<variant-name>/... and
+    # later copied to a host/archive location. Re-anchor that suffix before ever
+    # considering a still-existing absolute path from the original run.
     parts = recorded.parts
     for index, part in enumerate(parts):
         if part == variant_root.name:
             candidates.append(variant_root.joinpath(*parts[index + 1 :]))
+
+    # Relative paths are also interpreted inside the explicit variant root first.
+    if not recorded.is_absolute():
+        candidates.append(variant_root / recorded)
+
+    # The original recorded path is provenance-compatible only as a fallback.
+    candidates.append(recorded)
 
     # Also support a host checkout of the same repository when only the Docker
     # project-root prefix changed.
@@ -246,19 +254,20 @@ def normalize_overrides(path: Path) -> list[tuple[int, int, int]]:
 
 def support_semantics(path: Path, *, variant_root: Path) -> dict[str, Any]:
     payload = load_json(path)
+    connector_complete = payload.get("connector_complete")
 
-    def optional_artifact(raw: object) -> Path | None:
+    def connector_artifact(field: str) -> Path | None:
+        raw = payload.get(field)
         if not raw:
+            if connector_complete is True:
+                raise ValueError(f"Complete connector contract lacks required artifact field: {field}")
             return None
-        try:
-            return resolve_retained_path(raw, variant_root=variant_root)
-        except FileNotFoundError:
-            return None
+        return resolve_retained_path(raw, variant_root=variant_root)
 
-    symbols = optional_artifact(payload.get("connector_symbols"))
-    brace_dot = optional_artifact(payload.get("connector_brace_dot"))
+    symbols = connector_artifact("connector_symbols")
+    brace_dot = connector_artifact("connector_brace_dot")
     return {
-        "connector_complete": payload.get("connector_complete"),
+        "connector_complete": connector_complete,
         "historical_detector_artifact_runtime_input": payload.get(
             "historical_detector_artifact_runtime_input"
         ),
@@ -493,6 +502,8 @@ def main() -> int:
             "connector_contract_complete": all(
                 page["support"][side]["connector_complete"] is True
                 and page["support"][side]["historical_detector_artifact_runtime_input"] is False
+                and page["support"][side]["connector_symbols_sha256"] is not None
+                and page["support"][side]["connector_brace_dot_sha256"] is not None
                 for page in pages
                 for side in ("control", "candidate")
             ),

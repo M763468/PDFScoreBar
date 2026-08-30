@@ -28,12 +28,7 @@ def test_comparator_prefers_requested_variant_over_existing_recorded_path(tmp_pa
     relocated.write_text("relocated\n", encoding="utf-8")
 
     recorded = (
-        tmp_path
-        / "original"
-        / variant_name
-        / "Score"
-        / "hybrid_output"
-        / "page_001_hybrid.json"
+        tmp_path / "original" / variant_name / "Score" / "hybrid_output" / "page_001_hybrid.json"
     )
     recorded.parent.mkdir(parents=True)
     recorded.write_text("stale\n", encoding="utf-8")

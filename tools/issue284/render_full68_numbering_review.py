@@ -4,6 +4,10 @@
 This review helper is read-only: it consumes a completed full68
 ``variant_summary.json`` plus retained ``numbering_final.json`` artifacts. It
 does not rerun detection, grouping, MMR, or numbering.
+
+Retained summaries may contain absolute Docker paths such as ``/workspace/...``.
+Those paths are remapped relative to the explicitly supplied variant root so the
+same artifacts can be reviewed later from the host checkout or an archive.
 """
 
 from __future__ import annotations
@@ -16,12 +20,39 @@ from typing import Any, Mapping, Sequence
 import cv2
 import numpy as np
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 Box = tuple[int, int, int, int]
 COLORS = [(0, 120, 0), (170, 70, 0), (150, 0, 150), (0, 130, 170)]
 
 
 def load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def resolve_retained_path(raw: object, *, variant_root: Path) -> Path:
+    recorded = Path(str(raw))
+    candidates: list[Path] = [recorded]
+    parts = recorded.parts
+    for index, part in enumerate(parts):
+        if part == variant_root.name:
+            candidates.append(variant_root.joinpath(*parts[index + 1 :]))
+    if recorded.is_absolute():
+        try:
+            candidates.append(PROJECT_ROOT / recorded.relative_to(Path("/workspace")))
+        except ValueError:
+            pass
+
+    seen: set[Path] = set()
+    for candidate in candidates:
+        candidate = candidate.resolve(strict=False)
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        if candidate.exists():
+            return candidate
+
+    attempted = ", ".join(str(item) for item in seen)
+    raise FileNotFoundError(f"Retained artifact not found; recorded={recorded}; tried={attempted}")
 
 
 def box(value: Any) -> Box | None:
@@ -194,10 +225,11 @@ def main() -> int:
                 continue
             if not isinstance(raw, Mapping) or not raw.get("numbering_final"):
                 raise ValueError(f"Missing numbering_final artifact: {selector}")
+            numbering_path = resolve_retained_path(raw["numbering_final"], variant_root=variant)
             pages_out.append(
                 render(
                     image_path=args.image_root / score / f"{page_name}.png",
-                    numbering_path=Path(str(raw["numbering_final"])),
+                    numbering_path=numbering_path,
                     output_path=args.output_dir / score / f"{page_name}_numbering_final.png",
                     score=score,
                     page_name=str(page_name),

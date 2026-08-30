@@ -8,6 +8,12 @@ byte-identical.
 The GT metrics in this comparator are intentionally named ``hybrid_*``: they are
 computed from ``hybrid_results/*_hybrid.json`` before dense reconstruction,
 probe rescue, and CNN scoring. They are not final Stage E detector metrics.
+
+Retained full68 summaries may contain absolute paths from the canonical Docker
+checkout (usually ``/workspace``).  Those paths are provenance, not a requirement
+that later readers execute inside the same mount.  This comparator therefore
+resolves moved artifacts relative to the supplied variant root before falling
+back to the current repository root.
 """
 
 from __future__ import annotations
@@ -39,6 +45,42 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def resolve_retained_path(raw: object, *, variant_root: Path) -> Path:
+    """Resolve an artifact path recorded before the retained variant was moved."""
+    recorded = Path(str(raw))
+    candidates: list[Path] = [recorded]
+
+    # Canonical retained variants are frequently generated under
+    # /workspace/logs/.../<variant-name>/... and later inspected on the host or
+    # from an archive.  Re-anchor the suffix at the explicit variant root first.
+    parts = recorded.parts
+    for index, part in enumerate(parts):
+        if part == variant_root.name:
+            candidates.append(variant_root.joinpath(*parts[index + 1 :]))
+
+    # Also support a host checkout of the same repository when only the Docker
+    # project-root prefix changed.
+    if recorded.is_absolute():
+        for docker_root in (Path("/workspace"),):
+            try:
+                relative = recorded.relative_to(docker_root)
+            except ValueError:
+                continue
+            candidates.append(PROJECT_ROOT / relative)
+
+    seen: set[Path] = set()
+    for candidate in candidates:
+        candidate = candidate.resolve(strict=False)
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        if candidate.exists():
+            return candidate
+
+    attempted = ", ".join(str(item) for item in seen)
+    raise FileNotFoundError(f"Retained artifact not found; recorded={recorded}; tried={attempted}")
 
 
 def normalize_box(raw: Sequence[Any]) -> Box:
@@ -202,10 +244,19 @@ def normalize_overrides(path: Path) -> list[tuple[int, int, int]]:
     return sorted(values)
 
 
-def support_semantics(path: Path) -> dict[str, Any]:
+def support_semantics(path: Path, *, variant_root: Path) -> dict[str, Any]:
     payload = load_json(path)
-    symbols = Path(str(payload.get("connector_symbols", "")))
-    brace_dot = Path(str(payload.get("connector_brace_dot", "")))
+
+    def optional_artifact(raw: object) -> Path | None:
+        if not raw:
+            return None
+        try:
+            return resolve_retained_path(raw, variant_root=variant_root)
+        except FileNotFoundError:
+            return None
+
+    symbols = optional_artifact(payload.get("connector_symbols"))
+    brace_dot = optional_artifact(payload.get("connector_brace_dot"))
     return {
         "connector_complete": payload.get("connector_complete"),
         "historical_detector_artifact_runtime_input": payload.get(
@@ -213,10 +264,10 @@ def support_semantics(path: Path) -> dict[str, Any]:
         ),
         "sr_sha256": payload.get("sr_sha256"),
         "sr_execution_scope": payload.get("sr_execution_scope"),
-        "connector_symbols": str(symbols),
-        "connector_symbols_sha256": sha256(symbols) if symbols.is_file() else None,
-        "connector_brace_dot": str(brace_dot),
-        "connector_brace_dot_sha256": sha256(brace_dot) if brace_dot.is_file() else None,
+        "connector_symbols": str(symbols) if symbols is not None else None,
+        "connector_symbols_sha256": sha256(symbols) if symbols is not None else None,
+        "connector_brace_dot": str(brace_dot) if brace_dot is not None else None,
+        "connector_brace_dot_sha256": sha256(brace_dot) if brace_dot is not None else None,
     }
 
 
@@ -226,12 +277,14 @@ def score_map(summary: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 def page_artifact(
     summary: dict[str, Any],
+    variant_root: Path,
     score: str,
     page: str,
     key: str,
 ) -> Path:
     item = score_map(summary)[score]
-    return Path(item["page_artifacts"][page][key])
+    raw = item["page_artifacts"][page][key]
+    return resolve_retained_path(raw, variant_root=variant_root)
 
 
 def main() -> int:
@@ -241,8 +294,10 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
-    control_summary_path = args.control.resolve() / "variant_summary.json"
-    candidate_summary_path = args.candidate.resolve() / "variant_summary.json"
+    control_root = args.control.resolve()
+    candidate_root = args.candidate.resolve()
+    control_summary_path = control_root / "variant_summary.json"
+    candidate_summary_path = candidate_root / "variant_summary.json"
     control = load_json(control_summary_path)
     candidate = load_json(candidate_summary_path)
     if control.get("status") != "completed" or candidate.get("status") != "completed":
@@ -258,8 +313,8 @@ def main() -> int:
 
     for score, page_names in SCORES.items():
         for page in page_names:
-            control_hybrid_path = page_artifact(control, score, page, "hybrid")
-            candidate_hybrid_path = page_artifact(candidate, score, page, "hybrid")
+            control_hybrid_path = page_artifact(control, control_root, score, page, "hybrid")
+            candidate_hybrid_path = page_artifact(candidate, candidate_root, score, page, "hybrid")
             control_boxes = boxes_from_payload(load_json(control_hybrid_path))
             candidate_boxes = boxes_from_payload(load_json(candidate_hybrid_path))
             gt_path = (
@@ -280,24 +335,34 @@ def main() -> int:
             )
             hybrid_multiset_exact = sorted(candidate_boxes) == sorted(control_boxes)
 
-            base_control = numbering_view(page_artifact(control, score, page, "numbering_base"))
-            base_candidate = numbering_view(page_artifact(candidate, score, page, "numbering_base"))
-            final_control = numbering_view(page_artifact(control, score, page, "numbering_final"))
+            base_control = numbering_view(
+                page_artifact(control, control_root, score, page, "numbering_base")
+            )
+            base_candidate = numbering_view(
+                page_artifact(candidate, candidate_root, score, page, "numbering_base")
+            )
+            final_control = numbering_view(
+                page_artifact(control, control_root, score, page, "numbering_final")
+            )
             final_candidate = numbering_view(
-                page_artifact(candidate, score, page, "numbering_final")
+                page_artifact(candidate, candidate_root, score, page, "numbering_final")
             )
 
             base_bbox_diff = bbox_differences(base_control, base_candidate)
             final_bbox_diff = bbox_differences(final_control, final_candidate)
-            mmr_control = normalize_overrides(page_artifact(control, score, page, "overrides_mmr"))
+            mmr_control = normalize_overrides(
+                page_artifact(control, control_root, score, page, "overrides_mmr")
+            )
             mmr_candidate = normalize_overrides(
-                page_artifact(candidate, score, page, "overrides_mmr")
+                page_artifact(candidate, candidate_root, score, page, "overrides_mmr")
             )
             support_control = support_semantics(
-                page_artifact(control, score, page, "current_support")
+                page_artifact(control, control_root, score, page, "current_support"),
+                variant_root=control_root,
             )
             support_candidate = support_semantics(
-                page_artifact(candidate, score, page, "current_support")
+                page_artifact(candidate, candidate_root, score, page, "current_support"),
+                variant_root=candidate_root,
             )
 
             pages.append(
@@ -389,13 +454,13 @@ def main() -> int:
     summary = {
         "schema_version": "issue284.full68_comparison.v2",
         "control": {
-            "root": str(args.control.resolve()),
+            "root": str(control_root),
             "git_commit": control.get("git_commit"),
             "total_score_e2e_wall_sec": control.get("total_score_e2e_wall_sec"),
             "hybrid_vs_gt": control_aggregate,
         },
         "candidate": {
-            "root": str(args.candidate.resolve()),
+            "root": str(candidate_root),
             "git_commit": candidate.get("git_commit"),
             "total_score_e2e_wall_sec": candidate.get("total_score_e2e_wall_sec"),
             "hybrid_vs_gt": candidate_aggregate,

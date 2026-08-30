@@ -4,6 +4,10 @@ The comparison separates semantic/topology correctness from raw coordinate
 identity. This is required because Issue #286 established that exact-x barline
 representative geometry is not a stable raw-JSON oracle even when SR inputs are
 byte-identical.
+
+The GT metrics in this comparator are intentionally named ``hybrid_*``: they are
+computed from ``hybrid_results/*_hybrid.json`` before dense reconstruction,
+probe rescue, and CNN scoring. They are not final Stage E detector metrics.
 """
 
 from __future__ import annotations
@@ -61,7 +65,8 @@ def gt_boxes(path: Path) -> list[Box]:
     return boxes_from_payload(load_json(path))
 
 
-def detector_metrics(pred: list[Box], gt: list[Box]) -> dict[str, Any]:
+def hybrid_metrics(pred: list[Box], gt: list[Box]) -> dict[str, Any]:
+    """Evaluate one page's upstream hybrid-consensus boxes against raw GT slots."""
     result = greedy_barline_match(
         pred,
         gt,
@@ -83,7 +88,7 @@ def detector_metrics(pred: list[Box], gt: list[Box]) -> dict[str, Any]:
     }
 
 
-def aggregate_detector(items: Iterable[dict[str, Any]]) -> dict[str, Any]:
+def aggregate_hybrid(items: Iterable[dict[str, Any]]) -> dict[str, Any]:
     values = list(items)
     totals = {
         key: sum(int(item[key]) for item in values) for key in ("gt", "pred", "tp", "fp", "fn")
@@ -248,8 +253,8 @@ def main() -> int:
         raise RuntimeError("Control/candidate canonical config hashes differ")
 
     pages: list[dict[str, Any]] = []
-    control_detector: list[dict[str, Any]] = []
-    candidate_detector: list[dict[str, Any]] = []
+    control_hybrid: list[dict[str, Any]] = []
+    candidate_hybrid: list[dict[str, Any]] = []
 
     for score, page_names in SCORES.items():
         for page in page_names:
@@ -261,10 +266,10 @@ def main() -> int:
                 PROJECT_ROOT / "data/evaluation2/annotations" / score / page / "boxes_sorted.json"
             )
             ground_truth = gt_boxes(gt_path)
-            control_metrics = detector_metrics(control_boxes, ground_truth)
-            candidate_metrics = detector_metrics(candidate_boxes, ground_truth)
-            control_detector.append(control_metrics)
-            candidate_detector.append(candidate_metrics)
+            control_metrics = hybrid_metrics(control_boxes, ground_truth)
+            candidate_metrics = hybrid_metrics(candidate_boxes, ground_truth)
+            control_hybrid.append(control_metrics)
+            candidate_hybrid.append(candidate_metrics)
 
             intervariant = greedy_barline_match(
                 candidate_boxes,
@@ -307,7 +312,7 @@ def main() -> int:
                         "candidate_unmatched": len(intervariant.false_positive_indices),
                         "control_unmatched": len(intervariant.false_negative_indices),
                     },
-                    "detector_vs_gt": {
+                    "hybrid_vs_gt": {
                         "control": control_metrics,
                         "candidate": candidate_metrics,
                         "same_counts": control_metrics == candidate_metrics,
@@ -347,8 +352,8 @@ def main() -> int:
                 }
             )
 
-    control_aggregate = aggregate_detector(control_detector)
-    candidate_aggregate = aggregate_detector(candidate_detector)
+    control_aggregate = aggregate_hybrid(control_hybrid)
+    candidate_aggregate = aggregate_hybrid(candidate_hybrid)
 
     def count_pages(path: tuple[str, ...], expected: Any = True) -> int:
         count = 0
@@ -382,22 +387,22 @@ def main() -> int:
             )
 
     summary = {
-        "schema_version": "issue284.full68_comparison.v1",
+        "schema_version": "issue284.full68_comparison.v2",
         "control": {
             "root": str(args.control.resolve()),
             "git_commit": control.get("git_commit"),
             "total_score_e2e_wall_sec": control.get("total_score_e2e_wall_sec"),
-            "detector_vs_gt": control_aggregate,
+            "hybrid_vs_gt": control_aggregate,
         },
         "candidate": {
             "root": str(args.candidate.resolve()),
             "git_commit": candidate.get("git_commit"),
             "total_score_e2e_wall_sec": candidate.get("total_score_e2e_wall_sec"),
-            "detector_vs_gt": candidate_aggregate,
+            "hybrid_vs_gt": candidate_aggregate,
         },
         "page_count": len(pages),
         "hybrid_multiset_exact_pages": count_pages(("hybrid", "multiset_exact")),
-        "detector_metric_exact_pages": count_pages(("detector_vs_gt", "same_counts")),
+        "hybrid_metric_exact_pages": count_pages(("hybrid_vs_gt", "same_counts")),
         "base_topology_equal_pages": count_pages(("numbering_base", "topology_equal")),
         "base_numbers_equal_pages": count_pages(("numbering_base", "numbers_equal")),
         "final_topology_equal_pages": count_pages(("numbering_final", "topology_equal")),
@@ -414,7 +419,7 @@ def main() -> int:
         "coordinate_review_pages": coordinate_review_pages,
         "semantic_gate": {
             "all_68_pages": len(pages) == 68,
-            "detector_metrics_preserved_per_page": count_pages(("detector_vs_gt", "same_counts"))
+            "hybrid_metrics_preserved_per_page": count_pages(("hybrid_vs_gt", "same_counts"))
             == 68,
             "base_topology_preserved": count_pages(("numbering_base", "topology_equal")) == 68,
             "base_numbers_preserved": count_pages(("numbering_base", "numbers_equal")) == 68,
@@ -444,7 +449,7 @@ def main() -> int:
         for key in (
             "page_count",
             "hybrid_multiset_exact_pages",
-            "detector_metric_exact_pages",
+            "hybrid_metric_exact_pages",
             "base_topology_equal_pages",
             "base_numbers_equal_pages",
             "final_topology_equal_pages",
@@ -457,8 +462,8 @@ def main() -> int:
             "semantic_gate",
         )
     }
-    compact["control_detector_vs_gt"] = control_aggregate
-    compact["candidate_detector_vs_gt"] = candidate_aggregate
+    compact["control_hybrid_vs_gt"] = control_aggregate
+    compact["candidate_hybrid_vs_gt"] = candidate_aggregate
     compact["control_total_score_e2e_wall_sec"] = control.get("total_score_e2e_wall_sec")
     compact["candidate_total_score_e2e_wall_sec"] = candidate.get("total_score_e2e_wall_sec")
     print(json.dumps(compact, indent=2, ensure_ascii=False))

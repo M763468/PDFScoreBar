@@ -5,6 +5,11 @@ final gate keeps the Issue #286 coordinate policy already established there. In
 addition, this wrapper verifies the A/B provenance, compile modes, shared cache,
 and whether the compiled variant improves both total SR-batch and total score E2E
 wall time.
+
+A corrected compile-only rerun may legitimately be one harness-only commit ahead
+of the retained eager control. Such a pair is accepted only when the control is an
+ancestor of the candidate and every changed path is in the explicit harness-only
+allowlist below; production/config changes are never accepted through this path.
 """
 
 from __future__ import annotations
@@ -18,6 +23,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 COMPARATOR = ROOT / "tools/issue284/compare_full68_variants.py"
+ALLOWED_HARNESS_ONLY_PATHS = frozenset({"tools/issue284/run_compile_full68_variant.py"})
 
 
 def _load_json(path: Path) -> Any:
@@ -63,6 +69,30 @@ def _score_view(payload: dict[str, Any]) -> list[dict[str, Any]]:
     return rows
 
 
+def _git_changed_paths(base: str, head: str) -> list[str]:
+    process = subprocess.run(
+        ["git", "diff", "--name-only", base, head],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if process.returncode != 0:
+        return []
+    return sorted(line.strip() for line in process.stdout.splitlines() if line.strip())
+
+
+def _git_is_ancestor(base: str, head: str) -> bool:
+    process = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", base, head],
+        cwd=ROOT,
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    return process.returncode == 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--control", type=Path, required=True)
@@ -77,8 +107,32 @@ def main() -> int:
 
     control_ab = control.get("compile_ab") or {}
     candidate_ab = candidate.get("compile_ab") or {}
+    control_commit = str(control.get("git_commit") or "")
+    candidate_commit = str(candidate.get("git_commit") or "")
+    same_git_commit = bool(control_commit) and control_commit == candidate_commit
+    source_delta_paths = (
+        [] if same_git_commit else _git_changed_paths(control_commit, candidate_commit)
+    )
+    candidate_descends_from_control = (
+        False
+        if same_git_commit or not control_commit or not candidate_commit
+        else _git_is_ancestor(control_commit, candidate_commit)
+    )
+    harness_only_source_delta = (
+        not same_git_commit
+        and candidate_descends_from_control
+        and bool(source_delta_paths)
+        and set(source_delta_paths).issubset(ALLOWED_HARNESS_ONLY_PATHS)
+    )
+    source_compatible = same_git_commit or harness_only_source_delta
+
     provenance = {
-        "same_git_commit": control.get("git_commit") == candidate.get("git_commit"),
+        "source_compatible": source_compatible,
+        "same_git_commit": same_git_commit,
+        "candidate_descends_from_control": candidate_descends_from_control,
+        "harness_only_source_delta": harness_only_source_delta,
+        "source_delta_paths": source_delta_paths,
+        "allowed_harness_only_paths": sorted(ALLOWED_HARNESS_ONLY_PATHS),
         "same_canonical_config_sha256": (
             control.get("config_sha256") == candidate.get("config_sha256")
         ),
@@ -95,7 +149,21 @@ def main() -> int:
             (candidate_ab.get("compile_cache_final") or {}).get("file_count") or 0
         )
         > 0,
+        "candidate_home_xdg_preserved": candidate_ab.get("home_xdg_preserved") is True,
     }
+    provenance_valid = all(
+        (
+            provenance["source_compatible"],
+            provenance["same_canonical_config_sha256"],
+            provenance["control_mode_off"],
+            provenance["control_effective_mode_none"],
+            provenance["candidate_mode_reduce_overhead"],
+            provenance["candidate_effective_mode_reduce_overhead"],
+            provenance["candidate_shared_compile_cache"],
+            provenance["candidate_compile_cache_nonempty"],
+            provenance["candidate_home_xdg_preserved"],
+        )
+    )
 
     comparison_path = args.output.resolve().with_name(
         args.output.resolve().stem + ".semantic_comparison.json"
@@ -160,7 +228,7 @@ def main() -> int:
     }
 
     final_gate = {
-        "provenance_valid": all(provenance.values()),
+        "provenance_valid": provenance_valid,
         "correctness_preserved": (
             correctness["semantic_gate_passed"] and correctness["coordinate_review_clear"]
         ),
@@ -169,7 +237,7 @@ def main() -> int:
     final_gate["passed"] = all(final_gate.values())
 
     payload = {
-        "schema_version": "issue284.compile_full68_final_gate.v2",
+        "schema_version": "issue284.compile_full68_final_gate.v3",
         "status": "completed",
         "control": str(control_root),
         "candidate": str(candidate_root),

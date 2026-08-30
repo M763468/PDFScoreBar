@@ -484,8 +484,7 @@ def main() -> int:
         "coordinate_review_pages": coordinate_review_pages,
         "semantic_gate": {
             "all_68_pages": len(pages) == 68,
-            "hybrid_metrics_preserved_per_page": count_pages(("hybrid_vs_gt", "same_counts"))
-            == 68,
+            "hybrid_metrics_preserved_per_page": count_pages(("hybrid_vs_gt", "same_counts")) == 68,
             "base_topology_preserved": count_pages(("numbering_base", "topology_equal")) == 68,
             "base_numbers_preserved": count_pages(("numbering_base", "numbers_equal")) == 68,
             "final_topology_preserved": count_pages(("numbering_final", "topology_equal")) == 68,

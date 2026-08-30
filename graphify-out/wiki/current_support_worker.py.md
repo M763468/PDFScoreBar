@@ -42,7 +42,7 @@
 - [build_detector_input_contract](build_detector_input_contract.md) (2 shared connections)
 - [VerifiedProfileHybridDetector](VerifiedProfileHybridDetector.md) (2 shared connections)
 - [BatchSRVerifiedProfileHybridDetector](BatchSRVerifiedProfileHybridDetector.md) (1 shared connections)
-- [load_json_boxes](load_json_boxes.md) (1 shared connections)
+- [filter_probe_candidates](filter_probe_candidates.md) (1 shared connections)
 
 ## Source Files
 

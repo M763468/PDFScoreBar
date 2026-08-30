@@ -42,8 +42,8 @@
 - [notehead_fn_cause_analysis.py](notehead_fn_cause_analysis.py.md) (3 shared connections)
 - [trace_stage_analysis.py](trace_stage_analysis.py.md) (2 shared connections)
 - [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (2 shared connections)
-- [run_probe_scan_batch](run_probe_scan_batch.md) (2 shared connections)
-- [load_json_boxes](load_json_boxes.md) (2 shared connections)
+- [cnn_scoring.py](cnn_scoring.py.md) (2 shared connections)
+- [filter_probe_candidates](filter_probe_candidates.md) (2 shared connections)
 - [evaluate_barline_rules.py](evaluate_barline_rules.py.md) (2 shared connections)
 
 ## Source Files

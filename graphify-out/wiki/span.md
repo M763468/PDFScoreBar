@@ -40,7 +40,7 @@
 - [build_detector_input_contract](build_detector_input_contract.md) (2 shared connections)
 - [BatchSRVerifiedProfileHybridDetector](BatchSRVerifiedProfileHybridDetector.md) (2 shared connections)
 - [VerifiedProfileHybridDetector](VerifiedProfileHybridDetector.md) (1 shared connections)
-- [load_json_boxes](load_json_boxes.md) (1 shared connections)
+- [filter_probe_candidates](filter_probe_candidates.md) (1 shared connections)
 - [restored_orchestrator.py](restored_orchestrator.py.md) (1 shared connections)
 - [verified_source_page_worker.py](verified_source_page_worker.py.md) (1 shared connections)
 

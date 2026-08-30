@@ -41,10 +41,10 @@
 - [hybrid.py](hybrid.py.md) (6 shared connections)
 - [ThinBarlineConfig](ThinBarlineConfig.md) (4 shared connections)
 - [score_candidates_batch.py](score_candidates_batch.py.md) (4 shared connections)
-- [run_probe_scan_batch](run_probe_scan_batch.md) (4 shared connections)
 - [ete.py](ete.py.md) (3 shared connections)
 - [.predict](predict.md) (3 shared connections)
-- [current_homr_worker.py](current_homr_worker.py.md) (2 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (2 shared connections)
+- [cnn_scoring.py](cnn_scoring.py.md) (2 shared connections)
 
 ## Source Files
 

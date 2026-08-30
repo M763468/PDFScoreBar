@@ -33,7 +33,7 @@
 
 ### imports
 - [run_gt_rebuild_hybrid_eval.py](run_gt_rebuild_hybrid_eval.py.md) `EXTRACTED`
-- cnn_scoring.py `EXTRACTED`
+- [cnn_scoring.py](cnn_scoring.py.md) `EXTRACTED`
 - [run_full_pipeline.py](run_full_pipeline.py.md) `EXTRACTED`
 - [evaluate_barline_rules.py](evaluate_barline_rules.py.md) `EXTRACTED`
 - [diagnose_stage_e_fns.py](diagnose_stage_e_fns.py.md) `EXTRACTED`

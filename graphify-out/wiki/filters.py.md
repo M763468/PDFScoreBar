@@ -19,7 +19,7 @@
 
 - [get_nested](get_nested.md) (7 shared connections)
 - [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (5 shared connections)
-- [run_probe_scan_batch](run_probe_scan_batch.md) (3 shared connections)
+- [cnn_scoring.py](cnn_scoring.py.md) (3 shared connections)
 - [score_candidates_batch.py](score_candidates_batch.py.md) (3 shared connections)
 - [load_yaml](load_yaml.md) (1 shared connections)
 

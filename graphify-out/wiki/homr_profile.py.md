@@ -30,7 +30,7 @@
 
 - [current_support_worker.py](current_support_worker.py.md) (3 shared connections)
 - [hybrid.py](hybrid.py.md) (3 shared connections)
-- [load_json_boxes](load_json_boxes.md) (2 shared connections)
+- [filter_probe_candidates](filter_probe_candidates.md) (2 shared connections)
 - [VerifiedProfileHybridDetector](VerifiedProfileHybridDetector.md) (1 shared connections)
 - [BatchSRVerifiedProfileHybridDetector](BatchSRVerifiedProfileHybridDetector.md) (1 shared connections)
 

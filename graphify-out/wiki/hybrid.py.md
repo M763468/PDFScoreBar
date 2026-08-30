@@ -36,7 +36,7 @@
 - [metrics.py](metrics.py.md) (6 shared connections)
 - [run_probe_scan_batch](run_probe_scan_batch.md) (6 shared connections)
 - [heuristics.py](heuristics.py.md) (5 shared connections)
-- [load_json_boxes](load_json_boxes.md) (5 shared connections)
+- [filter_probe_candidates](filter_probe_candidates.md) (5 shared connections)
 - [reporting.py](reporting.py.md) (4 shared connections)
 - [run_stage_d_upstream_regen.py](run_stage_d_upstream_regen.py.md) (4 shared connections)
 - [current_support_worker.py](current_support_worker.py.md) (3 shared connections)

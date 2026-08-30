@@ -33,14 +33,15 @@
 
 ## Relationships
 
-- [run_probe_scan_batch](run_probe_scan_batch.md) (9 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (7 shared connections)
 - [build_detector_input_contract](build_detector_input_contract.md) (7 shared connections)
 - [run_full_pipeline.py](run_full_pipeline.py.md) (5 shared connections)
 - [get_cnn_apply_nms](get_cnn_apply_nms.md) (3 shared connections)
 - [VerifiedProfileHybridDetector](VerifiedProfileHybridDetector.md) (3 shared connections)
 - [BatchSRVerifiedProfileHybridDetector](BatchSRVerifiedProfileHybridDetector.md) (3 shared connections)
 - [dense_full_pipeline.py](dense_full_pipeline.py.md) (2 shared connections)
-- [load_json_boxes](load_json_boxes.md) (1 shared connections)
+- [cnn_scoring.py](cnn_scoring.py.md) (2 shared connections)
+- [filter_probe_candidates](filter_probe_candidates.md) (1 shared connections)
 - [test_issue255_detector_dispatch_contract.py](test_issue255_detector_dispatch_contract.py.md) (1 shared connections)
 - [span](span.md) (1 shared connections)
 

@@ -36,7 +36,7 @@
 - [barline_evaluation.py](barline_evaluation.py.md) (27 shared connections)
 - [metrics.py](metrics.py.md) (11 shared connections)
 - [barline_iou](barline_iou.md) (9 shared connections)
-- [run_probe_scan_batch](run_probe_scan_batch.md) (8 shared connections)
+- [cnn_scoring.py](cnn_scoring.py.md) (6 shared connections)
 - [mine_fn_cnn_hardpositives.py](mine_fn_cnn_hardpositives.py.md) (4 shared connections)
 - [diagnose_stage_e_fns.py](diagnose_stage_e_fns.py.md) (4 shared connections)
 - [score_candidates_batch.py](score_candidates_batch.py.md) (4 shared connections)

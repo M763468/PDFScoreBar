@@ -33,7 +33,7 @@
 
 ## Relationships
 
-- [run_probe_scan_batch](run_probe_scan_batch.md) (8 shared connections)
+- [cnn_scoring.py](cnn_scoring.py.md) (10 shared connections)
 - [Score](Score.md) (5 shared connections)
 - [MMRProcessor](MMRProcessor.md) (4 shared connections)
 - [Staff](Staff.md) (3 shared connections)
@@ -42,7 +42,6 @@
 - [run_mmr_batch](run_mmr_batch.md) (3 shared connections)
 - [StaffExtractor](StaffExtractor.md) (2 shared connections)
 - [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (2 shared connections)
-- [_resolve_model_path](_resolve_model_path.md) (2 shared connections)
 
 ## Source Files
 

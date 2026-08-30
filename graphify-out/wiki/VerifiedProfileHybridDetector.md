@@ -21,7 +21,7 @@
 ## Relationships
 
 - [restored_orchestrator.py](restored_orchestrator.py.md) (3 shared connections)
-- [load_json_boxes](load_json_boxes.md) (3 shared connections)
+- [filter_probe_candidates](filter_probe_candidates.md) (3 shared connections)
 - [current_support_worker.py](current_support_worker.py.md) (2 shared connections)
 - [span](span.md) (1 shared connections)
 - [verified_source_page_worker.py](verified_source_page_worker.py.md) (1 shared connections)

@@ -31,13 +31,14 @@
 
 ## Relationships
 
-- [run_probe_scan_batch](run_probe_scan_batch.md) (10 shared connections)
+- [run_probe_scan_batch](run_probe_scan_batch.md) (9 shared connections)
 - [run_full_pipeline.py](run_full_pipeline.py.md) (5 shared connections)
 - [_orchestrator](_orchestrator.md) (2 shared connections)
 - [hybrid.py](hybrid.py.md) (2 shared connections)
 - [get_cnn_apply_nms](get_cnn_apply_nms.md) (2 shared connections)
 - [get_nested](get_nested.md) (1 shared connections)
 - [build_detector_input_contract](build_detector_input_contract.md) (1 shared connections)
+- [cnn_scoring.py](cnn_scoring.py.md) (1 shared connections)
 
 ## Source Files
 

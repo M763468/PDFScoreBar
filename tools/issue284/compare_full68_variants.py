@@ -260,7 +260,9 @@ def support_semantics(path: Path, *, variant_root: Path) -> dict[str, Any]:
         raw = payload.get(field)
         if not raw:
             if connector_complete is True:
-                raise ValueError(f"Complete connector contract lacks required artifact field: {field}")
+                raise ValueError(
+                    f"Complete connector contract lacks required artifact field: {field}"
+                )
             return None
         return resolve_retained_path(raw, variant_root=variant_root)
 

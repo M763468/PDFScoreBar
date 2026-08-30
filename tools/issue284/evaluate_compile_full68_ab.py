@@ -1,7 +1,7 @@
 """Evaluate the final Issue #284 eager-vs-compile canonical full-68 A/B.
 
 The semantic comparison is delegated to ``compare_full68_variants.py`` so this
-final gate keeps the Issue #286 coordinate policy already established there.  In
+final gate keeps the Issue #286 coordinate policy already established there. In
 addition, this wrapper verifies the A/B provenance, compile modes, shared cache,
 and whether the compiled variant improves both total SR-batch and total score E2E
 wall time.
@@ -144,7 +144,7 @@ def main() -> int:
         "coordinate_review_page_count": int(comparison.get("coordinate_review_page_count") or 0),
         "coordinate_review_clear": int(comparison.get("coordinate_review_page_count") or 0) == 0,
         "hybrid_multiset_exact_pages": comparison.get("hybrid_multiset_exact_pages"),
-        "detector_metric_exact_pages": comparison.get("detector_metric_exact_pages"),
+        "hybrid_metric_exact_pages": comparison.get("hybrid_metric_exact_pages"),
         "base_topology_equal_pages": comparison.get("base_topology_equal_pages"),
         "base_numbers_equal_pages": comparison.get("base_numbers_equal_pages"),
         "final_topology_equal_pages": comparison.get("final_topology_equal_pages"),
@@ -169,7 +169,7 @@ def main() -> int:
     final_gate["passed"] = all(final_gate.values())
 
     payload = {
-        "schema_version": "issue284.compile_full68_final_gate.v1",
+        "schema_version": "issue284.compile_full68_final_gate.v2",
         "status": "completed",
         "control": str(control_root),
         "candidate": str(candidate_root),

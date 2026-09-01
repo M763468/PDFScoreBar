@@ -14,6 +14,11 @@ import cv2
 from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter
 
 EXPECTED_HOMR_COMMIT = "b377620a3a55bd7ff657481cec5b688dfbc9cee9"
+EXPECTED_MODEL_KEYS = {
+    "segnet_fp16": "segnet",
+    "transformer_encoder_fp16": "encoder",
+    "transformer_decoder_fp16": "decoder",
+}
 
 
 def load_json(path: Path) -> Any:
@@ -103,6 +108,17 @@ def box_comparison(
     }
 
 
+def _session_role(model: object) -> str | None:
+    name = Path(str(model)).name.lower()
+    if "segnet" in name:
+        return "segnet"
+    if name.startswith("encoder_"):
+        return "encoder"
+    if name.startswith("decoder_"):
+        return "decoder"
+    return None
+
+
 def maintained_runtime_contract(worker: dict[str, Any]) -> dict[str, Any]:
     runtime = worker.get("runtime")
     if not isinstance(runtime, dict):
@@ -110,17 +126,48 @@ def maintained_runtime_contract(worker: dict[str, Any]) -> dict[str, Any]:
     sessions = worker.get("onnx_sessions")
     if not isinstance(sessions, list):
         sessions = []
-    fp16_sessions = [
-        item
-        for item in sessions
-        if isinstance(item, dict) and str(item.get("model", "")).endswith("_fp16.onnx")
-    ]
-    cuda_fp16 = bool(fp16_sessions) and all(
-        isinstance(item.get("active_providers"), list)
-        and bool(item["active_providers"])
-        and item["active_providers"][0] == "CUDAExecutionProvider"
-        for item in fp16_sessions
+
+    role_sessions: dict[str, list[dict[str, Any]]] = {
+        "segnet": [],
+        "encoder": [],
+        "decoder": [],
+    }
+    for item in sessions:
+        if not isinstance(item, dict):
+            continue
+        model = str(item.get("model", ""))
+        if not model.endswith("_fp16.onnx"):
+            continue
+        role = _session_role(model)
+        if role is not None:
+            role_sessions[role].append(item)
+
+    role_cuda_first = {
+        role: bool(items)
+        and all(
+            isinstance(item.get("active_providers"), list)
+            and bool(item["active_providers"])
+            and item["active_providers"][0] == "CUDAExecutionProvider"
+            for item in items
+        )
+        for role, items in role_sessions.items()
+    }
+
+    models = worker.get("models")
+    if not isinstance(models, dict):
+        models = {}
+    model_hashes = {
+        key: (
+            value.get("sha256")
+            if isinstance(value := models.get(key), dict) and value.get("exists") is True
+            else None
+        )
+        for key in EXPECTED_MODEL_KEYS
+    }
+    model_hashes_captured = all(
+        isinstance(value, str) and len(value) == 64 for value in model_hashes.values()
     )
+
     installed_commit = runtime.get("homr_installed_commit")
     coordinate_checks = worker.get("coordinate_checks")
     coordinate_ok = bool(
@@ -131,17 +178,24 @@ def maintained_runtime_contract(worker: dict[str, Any]) -> dict[str, Any]:
     connector_ok = bool(
         isinstance(artifacts, dict) and artifacts.get("connector_complete") is True
     )
+    all_fp16_cuda = all(role_cuda_first.values())
     return {
         "expected_homr_commit": EXPECTED_HOMR_COMMIT,
         "installed_homr_commit": installed_commit,
         "commit_verified": installed_commit == EXPECTED_HOMR_COMMIT,
-        "fp16_session_count": len(fp16_sessions),
-        "fp16_cuda_first_provider": cuda_fp16,
+        "fp16_session_count_by_role": {
+            role: len(items) for role, items in role_sessions.items()
+        },
+        "fp16_cuda_first_provider_by_role": role_cuda_first,
+        "all_required_fp16_roles_cuda_first": all_fp16_cuda,
+        "model_sha256": model_hashes,
+        "model_hashes_captured": model_hashes_captured,
         "coordinate_contract": coordinate_ok,
         "connector_complete": connector_ok,
         "hard_contract_pass": (
             installed_commit == EXPECTED_HOMR_COMMIT
-            and cuda_fp16
+            and all_fp16_cuda
+            and model_hashes_captured
             and coordinate_ok
             and connector_ok
         ),

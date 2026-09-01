@@ -15,6 +15,7 @@ BASE_COMMIT = "9df0be734dcb0b7fec14b56c8d1a8b20ec55af5d"
 BRANCH = "perf/issue294-homr-baseline-refresh"
 CONTAINER_ROOT = Path("/workspace")
 PIPELINE_PYTHON = "/opt/venv_pipeline/bin/python"
+PINNED_HOMR_PYTHON = "/opt/venv_stage_e_homr/bin/python"
 SCORE = "Shostakovich-Sym5-Va"
 ALLOWED_PAGES = {"012", "013", "014"}
 
@@ -101,6 +102,29 @@ def _run_comparator(summary: Path, comparison: Path) -> None:
     )
 
 
+def _run_pinned_runtime_probe(output: Path) -> dict[str, object]:
+    checked(
+        [
+            "docker",
+            "exec",
+            "-w",
+            str(CONTAINER_ROOT),
+            CONTAINER,
+            PINNED_HOMR_PYTHON,
+            "tools/issue294/probe_pinned_homr_runtime.py",
+            "--output",
+            str(container_path(output)),
+        ],
+        cwd=PROJECT_ROOT,
+    )
+    if not output.is_file():
+        raise FileNotFoundError(output)
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict) or payload.get("status") != "completed":
+        raise ValueError(f"Incomplete pinned runtime probe: {output}")
+    return payload
+
+
 def _run_fixed_support_replay(summary: Path, support_root: Path, replay_root: Path) -> None:
     checked(
         [
@@ -178,6 +202,9 @@ def run(run_tag: str, pages: list[str], support_root: Path | None = None) -> dic
     if not comparison.is_file():
         raise FileNotFoundError(comparison)
 
+    pinned_probe_path = output_root / "A_pinned_runtime_probe.json"
+    pinned_probe = _run_pinned_runtime_probe(pinned_probe_path)
+
     replay_report: Path | None = None
     if resolved_support_root is not None:
         replay_root = output_root / "fixed_support_replay"
@@ -196,6 +223,8 @@ def run(run_tag: str, pages: list[str], support_root: Path | None = None) -> dic
         "pages": pages,
         "summary": str(summary.relative_to(PROJECT_ROOT)),
         "comparison": str(comparison.relative_to(PROJECT_ROOT)),
+        "pinned_runtime_probe": str(pinned_probe_path.relative_to(PROJECT_ROOT)),
+        "pinned_runtime_hard_contract": pinned_probe.get("hard_contract_pass"),
         "fixed_support_root": (
             str(resolved_support_root.relative_to(PROJECT_ROOT))
             if resolved_support_root is not None
@@ -210,9 +239,13 @@ def run(run_tag: str, pages: list[str], support_root: Path | None = None) -> dic
         json.dumps(provenance, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
+    if pinned_probe.get("hard_contract_pass") is not True:
+        raise RuntimeError(f"Pinned Stage-E runtime provenance gate failed: {pinned_probe_path}")
+
     result = {
         "summary": str(summary),
         "comparison": str(comparison),
+        "pinned_runtime_probe": str(pinned_probe_path),
         "provenance": str(provenance_path),
     }
     if replay_report is not None:

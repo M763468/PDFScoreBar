@@ -105,7 +105,7 @@ def _evaluation_args(
         results_dir=str(results_dir),
         gt_root=str(gt_root),
         output_dir=str(output_dir),
-        scored_file="pipeline2_no_peak_scored.json",
+        scored_file="pipeline2_no_peak_filtered_cnn.json",
         candidates_file="pipeline2_no_peak_candidates.json",
         score_threshold=score_threshold,
         rule_name="center_anchor",

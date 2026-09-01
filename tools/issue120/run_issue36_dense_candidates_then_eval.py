@@ -40,7 +40,7 @@ DEFAULT_HISTORICAL_FILTERED = Path("logs/issue36_prep/probe_candidates_filtered_
 DEFAULT_HISTORICAL_SCORING_INPUT = Path(
     "logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12"
 )
-TARGET_DETECTOR = {"tp": 3580, "fp": 0, "fn": 1}
+TARGET_DETECTOR = {"tp": 3566, "fp": 3, "fn": 1}
 
 GENERATION_PARAMS = {
     "band_source": "row_stats",

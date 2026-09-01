@@ -7,6 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 GT_ROOT = ROOT / "data/evaluation2/annotations"
+PROFILE_PATH = ROOT / "configs/detector_profiles/stage_e_verified_homr.json"
 
 EXPECTED_PAGE_COUNT = 68
 EXPECTED_GT_COUNT = 3567
@@ -138,6 +139,27 @@ def test_issue291_canonical_gt_count() -> None:
 
     total = sum(len(_load_rows(path)) for path in files)
     assert total == EXPECTED_GT_COUNT
+
+
+def test_issue291_stage_e_profile_uses_corrected_final_accepted_contract() -> None:
+    profile = json.loads(PROFILE_PATH.read_text(encoding="utf-8"))
+    metrics = profile["verified_stage_e_full68"]
+
+    assert metrics["gt"] == EXPECTED_GT_COUNT
+    assert {
+        key: metrics[key]
+        for key in ("pred", "tp", "fp", "fn", "fn_det", "fn_cnn")
+    } == {
+        "pred": 3599,
+        "tp": 3565,
+        "fp": 3,
+        "fn": 2,
+        "fn_det": 0,
+        "fn_cnn": 2,
+    }
+    assert metrics["soft_duplicate_or_repeat_like"] == 31
+    assert metrics["canonical_gt_rebase_issue"] == 291
+    assert metrics["evaluated_artifact"] == "pipeline2_no_peak_filtered_cnn.json"
 
 
 def test_issue291_changed_pages_are_sequentially_renumbered() -> None:

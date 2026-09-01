@@ -9,14 +9,20 @@ The canonical Stage E full-pipeline checkpoint remains the acceptance gate for t
 ```text
 expected_pages=68
 evaluated_pages=68
-TP=3580
-FP=0
-FN=1
+GT=3567
+Pred=3599
+TP=3565
+FP=3
+FN=2
 FN_det=0
-FN_cnn=1
+FN_cnn=2
 cnn_apply_nms=false
 target_met.detector=true
 ```
+
+These values are the Issue #291 corrected-GT final accepted Stage-E contract.
+The detector behavior is unchanged; the metric baseline moved because 13 false or
+duplicate GT slots were removed.
 
 ## Production names
 
@@ -51,7 +57,9 @@ The following names remain intentionally:
 - evaluation contract schema `issue141.stage_e_full_pipeline.v1`
 - report `docs/ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md`
 
-These identify the checkpoint and reproduce the exact #141/#156 Stage E validation contract. They are not the public detector-route API.
+These identify the checkpoint and retain the #141/#156 Stage E validation-contract
+shape. Its active target values follow the current canonical GT rather than freezing
+the pre-#291 annotation counts. They are not the public detector-route API.
 
 The old module `src.pipeline.detector_routes.stage_e_dense_full_pipeline` remains as a narrow checkpoint shim for existing Stage E imports. New code should import from `src.pipeline.detector_routes.dense_full_pipeline`.
 

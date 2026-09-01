@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-TARGET = {"tp": 3580, "fp": 0, "fn": 1}
+TARGET = {"tp": 3565, "fp": 3, "fn": 2}
 
 
 def load_json(path: Path) -> Any:

@@ -31,7 +31,7 @@ DEFAULT_HISTORICAL_FILTERED = Path("logs/issue36_prep/probe_candidates_filtered_
 DEFAULT_HISTORICAL_SCORING_INPUT = Path(
     "logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12"
 )
-TARGET_DETECTOR = {"tp": 3580, "fp": 0, "fn": 1}
+TARGET_DETECTOR = {"tp": 3566, "fp": 3, "fn": 1}
 REMOVED_CONFIG_KEYS = {"issue53_candidates_root": "probe_rescue_candidates_root"}
 REMOVED_WORKFLOW_KEYS = {
     "skip_issue53_regeneration": "skip_probe_rescue_regeneration",

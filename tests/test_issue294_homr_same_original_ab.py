@@ -31,6 +31,14 @@ def _write_detection(path: Path, boxes: list[tuple[int, int, int, int]]) -> None
     )
 
 
+def _model_provenance() -> dict[str, dict[str, object]]:
+    return {
+        "segnet_fp16": {"exists": True, "sha256": "a" * 64},
+        "transformer_encoder_fp16": {"exists": True, "sha256": "b" * 64},
+        "transformer_decoder_fp16": {"exists": True, "sha256": "c" * 64},
+    }
+
+
 def test_issue294_box_comparison_reports_exact_and_consensus_parity() -> None:
     left = [(10, 10, 14, 100), (50, 20, 54, 110)]
     right = [(10, 10, 14, 100), (51, 20, 55, 110)]
@@ -48,16 +56,21 @@ def test_issue294_box_comparison_reports_exact_and_consensus_parity() -> None:
     assert result["right_support_fraction"] == 1.0
 
 
-def test_issue294_runtime_contract_requires_pinned_commit_cuda_and_coordinates() -> None:
+def test_issue294_runtime_contract_requires_all_models_cuda_and_coordinates() -> None:
     worker = {
         "runtime": {"homr_installed_commit": EXPECTED_HOMR_COMMIT},
+        "models": _model_provenance(),
         "onnx_sessions": [
             {
-                "model": "/tmp/segnet_fp16.onnx",
+                "model": "/tmp/segnet_308_fp16.onnx",
                 "active_providers": ["CUDAExecutionProvider", "CPUExecutionProvider"],
             },
             {
-                "model": "/tmp/encoder_fp16.onnx",
+                "model": "/tmp/encoder_model_fp16.onnx",
+                "active_providers": ["CUDAExecutionProvider", "CPUExecutionProvider"],
+            },
+            {
+                "model": "/tmp/decoder_model_fp16.onnx",
                 "active_providers": ["CUDAExecutionProvider", "CPUExecutionProvider"],
             },
         ],
@@ -68,7 +81,8 @@ def test_issue294_runtime_contract_requires_pinned_commit_cuda_and_coordinates()
     result = maintained_runtime_contract(worker)
 
     assert result["commit_verified"] is True
-    assert result["fp16_cuda_first_provider"] is True
+    assert result["all_required_fp16_roles_cuda_first"] is True
+    assert result["model_hashes_captured"] is True
     assert result["coordinate_contract"] is True
     assert result["connector_complete"] is True
     assert result["hard_contract_pass"] is True
@@ -77,11 +91,20 @@ def test_issue294_runtime_contract_requires_pinned_commit_cuda_and_coordinates()
 def test_issue294_runtime_contract_rejects_fp16_cpu_fallback() -> None:
     worker = {
         "runtime": {"homr_installed_commit": EXPECTED_HOMR_COMMIT},
+        "models": _model_provenance(),
         "onnx_sessions": [
             {
-                "model": "/tmp/segnet_fp16.onnx",
+                "model": "/tmp/segnet_308_fp16.onnx",
                 "active_providers": ["CPUExecutionProvider"],
-            }
+            },
+            {
+                "model": "/tmp/encoder_model_fp16.onnx",
+                "active_providers": ["CUDAExecutionProvider"],
+            },
+            {
+                "model": "/tmp/decoder_model_fp16.onnx",
+                "active_providers": ["CUDAExecutionProvider"],
+            },
         ],
         "coordinate_checks": {"masks_match_original_shape": True},
         "artifacts": {"connector_complete": True},
@@ -89,7 +112,8 @@ def test_issue294_runtime_contract_rejects_fp16_cpu_fallback() -> None:
 
     result = maintained_runtime_contract(worker)
 
-    assert result["fp16_cuda_first_provider"] is False
+    assert result["fp16_cuda_first_provider_by_role"]["segnet"] is False
+    assert result["all_required_fp16_roles_cuda_first"] is False
     assert result["hard_contract_pass"] is False
 
 

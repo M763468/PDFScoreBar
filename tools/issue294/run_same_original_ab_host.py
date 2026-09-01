@@ -50,9 +50,7 @@ def require_host_checkout() -> str:
 
 
 def require_container() -> None:
-    running = capture(
-        ["docker", "inspect", "--format", "{{.State.Running}}", CONTAINER]
-    )
+    running = capture(["docker", "inspect", "--format", "{{.State.Running}}", CONTAINER])
     if running != "true":
         raise RuntimeError(f"Container {CONTAINER} is not running")
     image_id = capture(["docker", "inspect", "--format", "{{.Image}}", CONTAINER])
@@ -82,7 +80,51 @@ def container_path(host_path: Path) -> Path:
     return CONTAINER_ROOT / relative
 
 
-def run(run_tag: str, pages: list[str]) -> dict[str, str]:
+def _run_comparator(summary: Path, comparison: Path) -> None:
+    checked(
+        [
+            "docker",
+            "exec",
+            "-w",
+            str(CONTAINER_ROOT),
+            "-e",
+            "PYTHONPATH=/workspace",
+            CONTAINER,
+            PIPELINE_PYTHON,
+            "tools/issue294/compare_same_original_ab.py",
+            "--summary",
+            str(container_path(summary)),
+            "--output",
+            str(container_path(comparison)),
+        ],
+        cwd=PROJECT_ROOT,
+    )
+
+
+def _run_fixed_support_replay(summary: Path, support_root: Path, replay_root: Path) -> None:
+    checked(
+        [
+            "docker",
+            "exec",
+            "-w",
+            str(CONTAINER_ROOT),
+            "-e",
+            "PYTHONPATH=/workspace",
+            CONTAINER,
+            PIPELINE_PYTHON,
+            "tools/issue294/replay_hybrid_with_fixed_support.py",
+            "--summary",
+            str(container_path(summary)),
+            "--support-root",
+            str(container_path(support_root)),
+            "--output-root",
+            str(container_path(replay_root)),
+        ],
+        cwd=PROJECT_ROOT,
+    )
+
+
+def run(run_tag: str, pages: list[str], support_root: Path | None = None) -> dict[str, str]:
     source_commit = require_host_checkout()
     require_container()
     invalid = [page for page in pages if page not in ALLOWED_PAGES]
@@ -99,6 +141,13 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
     for image in images:
         if not image.is_file():
             raise FileNotFoundError(image)
+
+    resolved_support_root: Path | None = None
+    if support_root is not None:
+        resolved_support_root = support_root.resolve()
+        if not resolved_support_root.is_dir():
+            raise FileNotFoundError(resolved_support_root)
+        container_path(resolved_support_root)
 
     output_root = PROJECT_ROOT / "logs/issue294" / run_tag
     if output_root.exists():
@@ -125,26 +174,17 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
     if not summary.is_file():
         raise FileNotFoundError(summary)
     comparison = output_root / "comparison.json"
-    checked(
-        [
-            "docker",
-            "exec",
-            "-w",
-            str(CONTAINER_ROOT),
-            "-e",
-            "PYTHONPATH=/workspace",
-            CONTAINER,
-            PIPELINE_PYTHON,
-            "tools/issue294/compare_same_original_ab.py",
-            "--summary",
-            str(container_path(summary)),
-            "--output",
-            str(container_path(comparison)),
-        ],
-        cwd=PROJECT_ROOT,
-    )
+    _run_comparator(summary, comparison)
     if not comparison.is_file():
         raise FileNotFoundError(comparison)
+
+    replay_report: Path | None = None
+    if resolved_support_root is not None:
+        replay_root = output_root / "fixed_support_replay"
+        _run_fixed_support_replay(summary, resolved_support_root, replay_root)
+        replay_report = replay_root / "report.json"
+        if not replay_report.is_file():
+            raise FileNotFoundError(replay_report)
 
     provenance = {
         "schema_version": "issue294.same_original_host_provenance.v1",
@@ -156,17 +196,28 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
         "pages": pages,
         "summary": str(summary.relative_to(PROJECT_ROOT)),
         "comparison": str(comparison.relative_to(PROJECT_ROOT)),
+        "fixed_support_root": (
+            str(resolved_support_root.relative_to(PROJECT_ROOT))
+            if resolved_support_root is not None
+            else None
+        ),
+        "fixed_support_replay": (
+            str(replay_report.relative_to(PROJECT_ROOT)) if replay_report is not None else None
+        ),
     }
     provenance_path = output_root / "host_provenance.json"
     provenance_path.write_text(
         json.dumps(provenance, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
-    return {
+    result = {
         "summary": str(summary),
         "comparison": str(comparison),
         "provenance": str(provenance_path),
     }
+    if replay_report is not None:
+        result["fixed_support_replay"] = str(replay_report)
+    return result
 
 
 def main() -> int:
@@ -179,9 +230,17 @@ def main() -> int:
         dest="pages",
         help="Representative page number. Repeat for multiple pages. Defaults to page 013.",
     )
+    parser.add_argument(
+        "--support-root",
+        type=Path,
+        help=(
+            "Optional retained production current_support root. When supplied, replay A/B "
+            "against the exact same current-x4 HOMR and OMR-DLN support artifacts."
+        ),
+    )
     args = parser.parse_args()
     try:
-        result = run(args.run_tag, args.pages or ["013"])
+        result = run(args.run_tag, args.pages or ["013"], args.support_root)
     except Exception as error:  # noqa: BLE001
         print(
             json.dumps(

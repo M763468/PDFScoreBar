@@ -13,6 +13,7 @@ import argparse
 import hashlib
 import importlib.metadata
 import json
+import platform
 import subprocess
 import sys
 import time
@@ -20,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 import cv2
+import numpy as np
 
 EXPECTED_HOMR_COMMIT = "b377620a3a55bd7ff657481cec5b688dfbc9cee9"
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -248,11 +250,15 @@ def run(image: Path, output_root: Path, result_path: Path) -> dict[str, Any]:
         },
         "runtime": {
             "python": sys.executable,
+            "python_version": platform.python_version(),
             "source_commit": _source_commit(),
             "homr_module": str(Path(str(homr.__file__)).resolve()),
             "homr_expected_commit": EXPECTED_HOMR_COMMIT,
             "homr_installed_commit": installed_commit,
             "homr_direct_url": direct_url,
+            "numpy_version": np.__version__,
+            "opencv_version": cv2.__version__,
+            "torch_version": torch.__version__,
             "torch_cuda_available": use_gpu_inference,
             "onnxruntime_version": ort.__version__,
             "onnxruntime_available_providers": list(ort.get_available_providers()),

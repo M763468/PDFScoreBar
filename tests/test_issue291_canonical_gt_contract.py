@@ -146,10 +146,7 @@ def test_issue291_stage_e_profile_uses_corrected_final_accepted_contract() -> No
     metrics = profile["verified_stage_e_full68"]
 
     assert metrics["gt"] == EXPECTED_GT_COUNT
-    assert {
-        key: metrics[key]
-        for key in ("pred", "tp", "fp", "fn", "fn_det", "fn_cnn")
-    } == {
+    assert {key: metrics[key] for key in ("pred", "tp", "fp", "fn", "fn_det", "fn_cnn")} == {
         "pred": 3599,
         "tp": 3565,
         "fp": 3,

@@ -97,9 +97,7 @@ def test_copy_probe_pages_uses_score_qualified_run_ids(tmp_path: Path) -> None:
         page_dir = probe_root / run_id
         page_dir.mkdir(parents=True)
         (page_dir / "pipeline2_no_peak_scored.json").write_text("[]\n", encoding="utf-8")
-        (page_dir / "pipeline2_no_peak_filtered_cnn.json").write_text(
-            "[]\n", encoding="utf-8"
-        )
+        (page_dir / "pipeline2_no_peak_filtered_cnn.json").write_text("[]\n", encoding="utf-8")
 
     verify._copy_probe_pages(
         score="Score",
@@ -110,12 +108,8 @@ def test_copy_probe_pages_uses_score_qualified_run_ids(tmp_path: Path) -> None:
 
     assert (aggregate_root / "eval2_Score_page_001/pipeline2_no_peak_scored.json").is_file()
     assert (aggregate_root / "eval2_Score_page_002/pipeline2_no_peak_scored.json").is_file()
-    assert (
-        aggregate_root / "eval2_Score_page_001/pipeline2_no_peak_filtered_cnn.json"
-    ).is_file()
-    assert (
-        aggregate_root / "eval2_Score_page_002/pipeline2_no_peak_filtered_cnn.json"
-    ).is_file()
+    assert (aggregate_root / "eval2_Score_page_001/pipeline2_no_peak_filtered_cnn.json").is_file()
+    assert (aggregate_root / "eval2_Score_page_002/pipeline2_no_peak_filtered_cnn.json").is_file()
 
 
 def test_metric_mismatches_reports_only_drifted_fields() -> None:

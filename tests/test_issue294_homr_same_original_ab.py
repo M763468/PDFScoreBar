@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from tools.issue294.compare_same_original_ab import (
@@ -5,8 +6,29 @@ from tools.issue294.compare_same_original_ab import (
     box_comparison,
     maintained_runtime_contract,
 )
+from tools.issue294.replay_hybrid_with_fixed_support import compare_page
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _write_detection(path: Path, boxes: list[tuple[int, int, int, int]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "predictions": [
+                    {
+                        "pred_bbox": list(box),
+                        "orig_bbox": list(box),
+                        "system_index": 0,
+                        "staff_index": 0,
+                    }
+                    for box in boxes
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
 def test_issue294_box_comparison_reports_exact_and_consensus_parity() -> None:
@@ -91,3 +113,64 @@ def test_issue294_runner_keeps_pinned_profile_as_variant_a() -> None:
     assert "build_profile_command" in source
     assert "run_maintained_homr_original.py" in source
     assert '"input_contract": "same_original_page"' in source
+
+
+def test_issue294_fixed_support_replay_changes_only_baseline(tmp_path: Path) -> None:
+    score = "SyntheticScore"
+    stem = "page_013"
+    image = tmp_path / score / f"{stem}.png"
+
+    a_detection = tmp_path / "ab" / "A.json"
+    b_detection = tmp_path / "ab" / "B.json"
+    _write_detection(a_detection, [(10, 10, 14, 100), (50, 20, 54, 110)])
+    _write_detection(b_detection, [(11, 10, 15, 100), (80, 20, 84, 110)])
+
+    support_root = tmp_path / "support"
+    page_root = support_root / score / stem
+    x4_detection = (
+        page_root
+        / "artifacts/current_homr/batch"
+        / stem
+        / f"{stem}_detections.json"
+    )
+    omr_detection = page_root / "artifacts/omr_sr" / stem / "predictions.json"
+    _write_detection(x4_detection, [(10, 10, 14, 100)])
+    omr_detection.parent.mkdir(parents=True, exist_ok=True)
+    omr_detection.write_text("[]\n", encoding="utf-8")
+    page_root.mkdir(parents=True, exist_ok=True)
+    (page_root / "result.json").write_text(
+        json.dumps(
+            {
+                "status": "completed",
+                "connector_complete": True,
+                "historical_detector_artifact_runtime_input": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    page = {
+        "image": str(image),
+        "A_pinned": {"artifacts": {"detections": str(a_detection)}},
+        "B_maintained": {"worker": {"artifacts": {"detections": str(b_detection)}}},
+    }
+    output_root = tmp_path / "replay"
+
+    result = compare_page(page, support_root, output_root)
+
+    assert result["support"]["shared_by_A_and_B"] is True
+    assert result["hybrid_counts"] == {"A": 1, "B": 1}
+    assert result["hybrid_delta"]["exact_multiset_equal"] is False
+    assert result["hybrid_delta"]["matched_center_anchor"] == 1
+    assert result["hybrid_delta"]["coordinate_review_required"] is True
+
+
+def test_issue294_host_runner_can_attach_fixed_support_replay() -> None:
+    source = (PROJECT_ROOT / "tools/issue294/run_same_original_ab_host.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'CONTAINER = "pdfscore_issue293_profile"' in source
+    assert "--support-root" in source
+    assert "replay_hybrid_with_fixed_support.py" in source
+    assert "fixed_support_replay" in source

@@ -1,9 +1,0 @@
-cd /home/masaki_muramatsu/ws_PDFScoreBar
-git fetch origin
-git switch fix/issue291-normalize-duplicate-barline-gt
-git pull --ff-only
-
-PYTHONPATH=. .venv_pdf/bin/python \
-  tools/issue291/review_retained_numbering_boundaries.py \
-  --search-root logs \
-  --output-dir logs/issue291/retained_numbering_review_01

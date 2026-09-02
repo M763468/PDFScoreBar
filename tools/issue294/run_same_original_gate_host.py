@@ -17,7 +17,7 @@ _BOOTSTRAP_ROOT = Path(__file__).resolve().parents[2]
 if str(_BOOTSTRAP_ROOT) not in sys.path:
     sys.path.insert(0, str(_BOOTSTRAP_ROOT))
 
-from tools.issue294.run_same_original_ab_host import (  # noqa: E402
+from tools.issue294.run_same_original_ab_host_historical import (  # noqa: E402
     CONTAINER,
     CONTAINER_ROOT,
     PIPELINE_PYTHON,

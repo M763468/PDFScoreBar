@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from tools.issue294.run_downstream_candidate_matrix import _comparison
-from tools.issue294.run_latest_homr_detector_original import _processing_config
+from tools.issue294.run_latest_homr_detector_original import _download_segnet
 
 
 def _variant(*, final_count: int, total_measures: int, measures: list[int]) -> dict:
@@ -47,26 +47,26 @@ def test_operational_gate_rejects_measure_count_drift() -> None:
     assert comparison["count_topology_numbering_pass"] is False
 
 
-def test_latest_processing_config_supports_split_gpu_fields() -> None:
-    class LatestProcessingConfig:
-        def __init__(
-            self,
-            enable_debug: bool,
-            enable_cache: bool,
-            write_staff_positions: bool,
-            read_staff_positions: bool,
-            selected_staff: int,
-            transformer_use_gpu: bool,
-            segnet_use_gpu: bool,
-            coreml_encoder: bool,
-            title_detection: bool,
-        ) -> None:
-            self.transformer_use_gpu = transformer_use_gpu
-            self.segnet_use_gpu = segnet_use_gpu
-            self.title_detection = title_detection
+def test_latest_download_requests_segnet_gpu_without_transformer_gpu() -> None:
+    observed: dict[str, bool] = {}
 
-    config = _processing_config(LatestProcessingConfig, use_gpu=True)
+    def latest_download(
+        segnet_use_gpu: bool,
+        transformer_use_gpu: bool,
+        coreml_encoder: bool,
+    ) -> None:
+        observed.update(
+            {
+                "segnet_use_gpu": segnet_use_gpu,
+                "transformer_use_gpu": transformer_use_gpu,
+                "coreml_encoder": coreml_encoder,
+            }
+        )
 
-    assert config.segnet_use_gpu is True
-    assert config.transformer_use_gpu is False
-    assert config.title_detection is False
+    _download_segnet(latest_download, use_gpu=True)
+
+    assert observed == {
+        "segnet_use_gpu": True,
+        "transformer_use_gpu": False,
+        "coreml_encoder": False,
+    }

@@ -85,7 +85,11 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
     - **Documentation**: See `docs/GT_PREPARATION_POLICY.md` and `docs/BARLINE_MATCHER.md`.
 - **GT Labeling Consistency**:
     - Use specific labels for complex barlines: `double_barline`, `end_barline`, `repeat`.
-    - Treat multi-line barlines as a **single logical event** with a single encompassing BBox.
+    - In detector GT, store each physical vertical stroke of a multi-line barline as an
+      independent BBox with the same complex-barline label.
+    - Treat those physical strokes as one logical boundary region only in the downstream
+      numbering layer. See `docs/GT_PREPARATION_POLICY.md` for the authoritative split
+      between detector identities and logical events.
 
 ### Issue Template Conformance
 - **Template-First Issue Bodies**: When creating or updating GitHub Issues, always align the body with the corresponding file in `.github/ISSUE_TEMPLATE/`.

@@ -22,15 +22,15 @@ import eval_full68_from_intermediates as full68_eval  # noqa: E402
 EXPECTED_DETECTOR_METRICS: dict[str, int | float] = {
     "page_count": 68,
     "expected_page_count": 68,
-    "gt": 3581,
-    "pred": 3600,
-    "tp": 3580,
-    "fp": 0,
-    "fn": 1,
+    "gt": 3567,
+    "pred": 3599,
+    "tp": 3565,
+    "fp": 3,
+    "fn": 2,
     "fn_det": 0,
-    "fn_cnn": 1,
-    "precision": 1.0,
-    "recall": 0.9997207483943032,
+    "fn_cnn": 2,
+    "precision": 0.9991591928251121,
+    "recall": 0.999439304737875,
 }
 
 
@@ -271,7 +271,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--eval-output-dir", type=Path, default=None)
     parser.add_argument("--page-limit", type=int, default=None)
     parser.add_argument("--gt-root", type=Path, default=Path("data/evaluation2/annotations"))
-    parser.add_argument("--scored-file", default="pipeline2_no_peak_scored.json")
+    parser.add_argument("--scored-file", default="pipeline2_no_peak_filtered_cnn.json")
     parser.add_argument("--candidates-file", default="pipeline2_no_peak_candidates.json")
     parser.add_argument("--score-threshold", type=float, default=0.1)
     parser.add_argument(

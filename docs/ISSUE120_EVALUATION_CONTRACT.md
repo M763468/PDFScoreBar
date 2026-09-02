@@ -186,17 +186,24 @@ Recommended local workflow:
 4. Run `make eval-issue120-full ISSUE120_RESULTS_DIR=<path>`.
 5. Commit only source/tool/doc changes, not the generated output tree.
 
-## Historical-best verification
+## Retained golden-baseline verification
 
-The local run below reproduces the detector-intermediate historical target from saved intermediates:
+Issue #291 rebased this gate on the corrected 3,567-slot canonical GT without
+regenerating detector predictions. The retained saved intermediates now reproduce:
 
 ```text
 Pages: 68/68
-Detector: GT=3581 Pred=3597 TP=3580 FP=0 FN=1 FN_det=0 FN_cnn=1 Precision=1.000000 Recall=0.999721
+Detector: GT=3567 Pred=3597 TP=3566 FP=3 FN=1 FN_det=0 FN_cnn=1 Precision=0.999159 Recall=0.999720
 ```
 
 This should be described precisely as:
 
-> The saved post-CNN-scoring detector intermediates under `data/evaluation2/golden_baseline_eval2_bc23deb` reproduce `TP=3580 / FP=0 / FN=1` under the canonical 68-page evaluator.
+> The saved post-CNN-scoring detector intermediates under `data/evaluation2/golden_baseline_eval2_bc23deb` reproduce `TP=3566 / FP=3 / FN=1` against the Issue #291 corrected canonical GT under the 68-page evaluator.
+
+The three hard FPs are expected under the corrected data contract: two are the
+time-signature-stroke predictions exposed by removing false GT on
+`Va__Prokofiev_Symphony5/page_007`, and one is the retained
+`Va__Prokofiev_Symphony5/page_015` residual. They are metric baselines, not permission
+to restore false GT or weaken detector thresholds.
 
 It should not be described as full pipeline reproduction unless the upstream OMR/SR/HOMR/hybrid/probe/CNN generation path is also regenerated or otherwise proven.

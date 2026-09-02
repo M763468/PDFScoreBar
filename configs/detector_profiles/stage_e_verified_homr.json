@@ -56,15 +56,18 @@
     "candidate_only_count": 0
   },
   "verified_stage_e_full68": {
-    "gt": 3580,
-    "pred": 3600,
-    "tp": 3579,
-    "fp": 1,
-    "fn": 1,
+    "gt": 3567,
+    "pred": 3599,
+    "tp": 3565,
+    "fp": 3,
+    "fn": 2,
     "fn_det": 0,
-    "fn_cnn": 1,
+    "fn_cnn": 2,
+    "soft_duplicate_or_repeat_like": 31,
     "cnn_threshold": 0.1,
     "cnn_apply_nms": false,
-    "sr_scale": 4
+    "sr_scale": 4,
+    "canonical_gt_rebase_issue": 291,
+    "evaluated_artifact": "pipeline2_no_peak_filtered_cnn.json"
   }
 }

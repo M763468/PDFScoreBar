@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Run an immutable upstream HOMR source commit as a detector-material candidate.
 
-This Issue #294 experiment intentionally stops before Transformer parsing and
-MusicXML generation.  The Stage-E baseline is consumed downstream for barline,
-staff and clef geometry; current-x4 HOMR remains the connector-semantic source.
-The worker therefore measures the maintained upstream SegNet/barline path while
-keeping the original-page coordinate contract used by PDFScoreBar.
+This Issue #294 experiment intentionally stops before staff grouping, title OCR,
+Transformer parsing and MusicXML generation.  The Stage-E baseline is consumed
+downstream for barline/staff/clef material; current-x4 HOMR remains the
+connector-semantic source.  The worker therefore measures only the maintained
+upstream path needed by PDFScoreBar's baseline role.
 """
 
 from __future__ import annotations
@@ -38,7 +38,9 @@ def sha256(path: Path) -> str:
 
 def _git_head(path: Path) -> str:
     return subprocess.check_output(
-        ["git", "-C", str(path), "rev-parse", "HEAD"], text=True, stderr=subprocess.PIPE
+        ["git", "-C", str(path), "rev-parse", "HEAD"],
+        text=True,
+        stderr=subprocess.PIPE,
     ).strip()
 
 
@@ -47,34 +49,6 @@ def _shape(path: Path) -> list[int] | None:
     if image is None:
         return None
     return [int(image.shape[1]), int(image.shape[0])]
-
-
-def _processing_config(cls: type[Any], *, use_gpu: bool) -> Any:
-    values: dict[str, Any] = {
-        "enable_debug": False,
-        "enable_cache": True,
-        "write_staff_positions": False,
-        "read_staff_positions": False,
-        "selected_staff": -1,
-        "use_gpu_inference": use_gpu,
-        "transformer_use_gpu": False,
-        "segnet_use_gpu": use_gpu,
-        "coreml_encoder": False,
-        "title_detection": False,
-    }
-    signature = inspect.signature(cls)
-    kwargs = {name: values[name] for name in signature.parameters if name in values}
-    missing = [
-        name
-        for name, parameter in signature.parameters.items()
-        if parameter.default is inspect.Parameter.empty
-        and parameter.kind
-        in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
-        and name not in kwargs
-    ]
-    if missing:
-        raise TypeError(f"Unsupported latest ProcessingConfig fields: {missing}; {signature}")
-    return cls(**kwargs)
 
 
 def _download_segnet(download_weights: Any, *, use_gpu: bool) -> None:
@@ -114,6 +88,54 @@ def _make_proxy(image: Path, image_run_dir: Path) -> tuple[Path, float, float, n
     if not cv2.imwrite(str(proxy_path), proxy):
         raise RuntimeError(f"Failed to write proxy: {proxy_path}")
     return proxy_path, width / proxy_width, height / proxy_height, original
+
+
+def _load_predictions(homr_main: Any, image: Path, *, use_gpu: bool) -> tuple[Any, Any]:
+    loader = homr_main.load_and_preprocess_predictions
+    signature = inspect.signature(loader)
+    if "segnet_use_gpu" in signature.parameters or len(signature.parameters) >= 4:
+        return loader(str(image), False, True, use_gpu)
+    if "use_gpu_inference" in signature.parameters:
+        return loader(str(image), False, True, use_gpu)
+    return loader(str(image), False, True)
+
+
+def _detect_material(homr_main: Any, inference_image: Path, *, use_gpu: bool) -> tuple:
+    from homr import constants
+    from homr.note_detection import combine_noteheads_with_stems
+    from homr.staff_detection import break_wide_fragments
+
+    predictions, debug = _load_predictions(homr_main, inference_image, use_gpu=use_gpu)
+    symbols = homr_main.predict_symbols(debug, predictions)
+    symbols.staff_fragments = break_wide_fragments(symbols.staff_fragments)
+    noteheads_with_stems = combine_noteheads_with_stems(symbols.noteheads, symbols.stems_rest)
+    if not noteheads_with_stems:
+        raise RuntimeError("No noteheads found")
+
+    average_note_head_height = float(
+        np.median([notehead.notehead.size[1] for notehead in noteheads_with_stems])
+    )
+    all_noteheads = [notehead.notehead for notehead in noteheads_with_stems]
+    all_stems = [note.stem for note in noteheads_with_stems if note.stem is not None]
+    bar_lines_or_rests = [
+        line
+        for line in symbols.bar_lines
+        if not line.is_overlapping_with_any(all_noteheads)
+        and not line.is_overlapping_with_any(all_stems)
+    ]
+    min_height = constants.bar_line_min_height(average_note_head_height)
+    max_width = constants.bar_line_max_width(average_note_head_height)
+    bar_line_boxes = [
+        line
+        for line in bar_lines_or_rests
+        if line.size[1] >= min_height and line.size[0] <= max_width
+    ]
+    return (
+        bar_line_boxes,
+        predictions.notehead,
+        predictions.staff,
+        predictions.clefs_keys,
+    )
 
 
 def _map_predictions(
@@ -195,9 +217,10 @@ def _postprocess(
             overlap = max(0, bottom - top)
             existing_height = max(existing[3] - existing[1], 1)
             overlap_fraction = overlap / float(max(existing_height, extra_height))
-            if overlap_fraction >= 0.6 or abs(cy_existing - cy_extra) <= max(
+            same_column = overlap_fraction >= 0.6 or abs(cy_existing - cy_extra) <= max(
                 existing_height, extra_height
-            ):
+            )
+            if same_column:
                 if extra_height >= existing_height:
                     predictions[index] = BarlinePrediction(
                         pred_bbox=box,
@@ -250,7 +273,9 @@ def run(
         raise FileNotFoundError(homr_source / "homr")
     actual_commit = _git_head(homr_source)
     if actual_commit != expected_commit:
-        raise RuntimeError(f"Latest HOMR checkout mismatch: expected={expected_commit} actual={actual_commit}")
+        raise RuntimeError(
+            f"Latest HOMR checkout mismatch: expected={expected_commit} actual={actual_commit}"
+        )
     if output_root.exists():
         raise FileExistsError(output_root)
     if result_path.exists():
@@ -262,9 +287,7 @@ def run(
     import torch
     from homr.segmentation import config as segnet_config
     from homr.transformer.configs import Config
-    from src.homr_eval_scripts.core.heuristics import detect_staffs_with_barlines
     from src.homr_eval_scripts.core.reporting import save_homr_results
-    from src.homr_eval_scripts.core.utils import DEFAULT_TUNING
 
     imported_homr = Path(str(homr.__file__)).resolve()
     if homr_source not in imported_homr.parents:
@@ -290,20 +313,11 @@ def run(
     image_run_dir = output_root / "batch" / stem
     image_run_dir.mkdir(parents=True, exist_ok=False)
     try:
-        config = _processing_config(homr_main.ProcessingConfig, use_gpu=use_gpu)
         _download_segnet(homr_main.download_weights, use_gpu=use_gpu)
         inference_image, proxy_x, proxy_y, original = _make_proxy(image, image_run_dir)
         detector_started = time.perf_counter()
-        (
-            _multi_staffs,
-            _preprocessed,
-            _debug,
-            _title_future,
-            bar_line_boxes,
-            notehead_mask,
-            staff_mask,
-        ) = detect_staffs_with_barlines(
-            str(inference_image), config, DEFAULT_TUNING.copy(), use_gpu
+        bar_line_boxes, notehead_mask, staff_mask, clef_mask = _detect_material(
+            homr_main, inference_image, use_gpu=use_gpu
         )
         detector_core_sec = time.perf_counter() - detector_started
 
@@ -320,19 +334,29 @@ def run(
             (width, height),
             interpolation=cv2.INTER_NEAREST,
         )
+        clef_resized = cv2.resize(
+            (clef_mask * 255).astype(np.uint8),
+            (width, height),
+            interpolation=cv2.INTER_NEAREST,
+        )
         mapped = _postprocess(image, original, mapped, notehead_resized, staff_resized)
         detection = save_homr_results(
             image, image_run_dir, mapped, notehead_resized, staff_resized
         )
+        clef_path = image_run_dir / f"{stem}_clef_mask.png"
+        if not cv2.imwrite(str(clef_path), clef_resized):
+            raise RuntimeError(f"Failed to write clef mask: {clef_path}")
     finally:
         ort.InferenceSession = original_session
 
-    segnet = Path(segnet_config.segnet_path_onnx_fp16 if use_gpu else segnet_config.segnet_path_onnx)
+    segnet = Path(
+        segnet_config.segnet_path_onnx_fp16 if use_gpu else segnet_config.segnet_path_onnx
+    )
     transformer = Config().filepaths
     payload = {
-        "schema_version": "issue294.latest_detector_material.v1",
+        "schema_version": "issue294.latest_detector_material.v2",
         "status": "completed",
-        "scope": "detector_material_only_pre_transformer",
+        "scope": "segnet_barline_staff_clef_material_only_pre_transformer",
         "historical_detector_artifact_runtime_input": False,
         "image": str(image),
         "homr": {
@@ -348,6 +372,7 @@ def run(
             "onnxruntime_version": ort.__version__,
             "torch_version": torch.__version__,
             "cuda": use_gpu,
+            "compatibility_mode": "latest_source_on_pipeline_runtime_detector_material_only",
         },
         "models": {
             "segnet": {
@@ -368,17 +393,20 @@ def run(
         "timings_sec": {
             "detector_core": detector_core_sec,
             "worker_total": time.perf_counter() - started,
+            "timing_comparable_to_full_A_or_B": False,
         },
         "artifacts": {
             "detections": str(detection),
             "staff_mask": str(image_run_dir / f"{stem}_staff_mask.png"),
             "notehead_mask": str(image_run_dir / f"{stem}_notehead_mask.png"),
+            "clef_mask": str(clef_path),
             "proxy": str(inference_image) if inference_image != image else None,
         },
         "coordinate_checks": {
             "original_shape_wh": [int(original.shape[1]), int(original.shape[0])],
             "staff_mask_shape_wh": _shape(image_run_dir / f"{stem}_staff_mask.png"),
             "notehead_mask_shape_wh": _shape(image_run_dir / f"{stem}_notehead_mask.png"),
+            "clef_mask_shape_wh": _shape(clef_path),
         },
     }
     result_path.parent.mkdir(parents=True, exist_ok=True)
@@ -412,7 +440,11 @@ def main() -> int:
         return 1
     print(
         json.dumps(
-            {"status": "completed", "result": str(args.result.resolve()), "scope": payload["scope"]},
+            {
+                "status": "completed",
+                "result": str(args.result.resolve()),
+                "scope": payload["scope"],
+            },
             ensure_ascii=False,
         )
     )

@@ -155,7 +155,17 @@ def run(run_tag: str, source_commit: str | None = None) -> dict[str, str]:
     if pinned_probe.get("status") != "completed" or pinned_probe.get("hard_contract_pass") is not True:
         raise RuntimeError(f"Pinned Stage-E runtime provenance gate failed: {pinned_probe_path}")
 
-    # Container tools above may have created new root-owned files.
+    # Complete semantic comparison before committing host provenance. If this
+    # stage fails, the finalizer remains safely retryable without deleting a
+    # partially finalized provenance record.
+    musicxml = output_root / "musicxml_comparison.json"
+    if not musicxml.exists():
+        _run_musicxml_comparison(summary, musicxml)
+    musicxml_payload = _load_mapping(musicxml)
+    if musicxml_payload.get("status") != "completed":
+        raise ValueError(f"MusicXML comparison is incomplete: {musicxml}")
+
+    # Container tools above may have created root-owned files.
     _restore_host_ownership(output_root)
 
     provenance_path = output_root / "host_provenance.json"
@@ -184,6 +194,7 @@ def run(run_tag: str, source_commit: str | None = None) -> dict[str, str]:
         "comparison": str(comparison.relative_to(PROJECT_ROOT)),
         "pinned_runtime_probe": str(pinned_probe_path.relative_to(PROJECT_ROOT)),
         "pinned_runtime_hard_contract": True,
+        "musicxml_comparison": str(musicxml.relative_to(PROJECT_ROOT)),
         "fixed_support_root": None,
         "fixed_support_replay": None,
         "recovered_existing_run": True,
@@ -193,14 +204,6 @@ def run(run_tag: str, source_commit: str | None = None) -> dict[str, str]:
         encoding="utf-8",
     )
 
-    musicxml = output_root / "musicxml_comparison.json"
-    if not musicxml.exists():
-        _run_musicxml_comparison(summary, musicxml)
-    musicxml_payload = _load_mapping(musicxml)
-    if musicxml_payload.get("status") != "completed":
-        raise ValueError(f"MusicXML comparison is incomplete: {musicxml}")
-
-    _restore_host_ownership(output_root)
     return {
         "summary": str(summary),
         "comparison": str(comparison),

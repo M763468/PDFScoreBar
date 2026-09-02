@@ -12,11 +12,11 @@ The same-original A/B compares more than runtime behavior:
 
 Therefore A-vs-B is a whole candidate-stack comparison, not a runtime-only causal attribution. See `model_lineage.json`.
 
-The Stage-E baseline is operationally consumed as detector material. Barline/staff/clef material is created before Transformer parsing/MusicXML generation, while connector semantics remain owned by the current-x4 support producer. MusicXML differences are therefore not a primary replacement gate when the PDFScoreBar downstream barline/count/topology/numbering result is preserved.
+The Stage-E baseline is operationally consumed as detector material. Barline/staff/clef material is created before Transformer parsing/MusicXML generation, while connector semantics remain owned by the current-x4 support producer. MusicXML differences are therefore not a primary replacement gate when PDFScoreBar's downstream barline/count/topology/numbering result is preserved.
 
 ## Primary downstream candidate matrix
 
-Run the current control, the maintained-family candidate, and the latest upstream detector-material candidate together:
+Run the historical control, the maintained-family candidate, and the latest upstream detector-material candidate together:
 
 ```bash
 PYTHON=/home/masaki_muramatsu/ws_PDFScoreBar/.venv_pdf/bin/python
@@ -27,30 +27,31 @@ $PYTHON tools/issue294/run_downstream_candidate_matrix_host.py \
 
 The host wrapper:
 
-1. reruns the historical A and maintained-family B on the same original page;
-2. resolves upstream `liebharc/homr` `main` to an immutable commit and checks out that exact commit under the ignored Issue #294 log cache;
-3. runs C from that exact source commit as a detector-material-only candidate (Transformer/MusicXML are deliberately not executed);
-4. generates one current-x4 HOMR + OMR-DLN support bundle and freezes it for all variants;
-5. freezes A's historical staff/clef geometry for this causal gate;
-6. replays A/B/C through production hybrid consensus, dense candidate reconstruction, CNN scoring, and `MeasureNumberingPipeline`;
-7. reports final CNN barline count, measure count, system/staff/measure topology, numbering, and exact final-box equality.
+1. reruns historical A and full maintained-family B on the same original page;
+2. checks out immutable HOMR `b377620...` plus the current upstream `main` resolved to its exact commit;
+3. runs detector-material-only probes for B and C, stopping before title OCR, staff grouping, Transformer parsing and MusicXML;
+4. records whether B detector-material boxes reproduce the existing full B worker boxes;
+5. generates one current-x4 HOMR + OMR-DLN support bundle and freezes it for all variants;
+6. runs a frozen-A staff/clef replay as a causal diagnostic;
+7. runs the primary candidate-native staff/clef replay;
+8. sends every variant through production hybrid consensus, dense candidate reconstruction, CNN scoring, and `MeasureNumberingPipeline`.
 
-The primary pass criterion is `count_topology_numbering_pass`. Exact final box identity is recorded but is not required if the operational count/topology/numbering result is unchanged.
+The primary pass criterion is `candidate_native_geometry -> count_topology_numbering_pass`. It compares final CNN barline count, total measures, per-system staff/measure topology, and numbering. Exact final box identity is recorded but is not required when the operational result is unchanged.
 
-This first matrix intentionally freezes historical staff/clef geometry so it answers whether changing baseline barline material degrades the final operational result. A candidate-native staff/clef mask gate is still required before production promotion.
+The frozen-A geometry mode is diagnostic only: if native geometry fails but frozen geometry passes, the problem is in candidate staff/clef material rather than baseline barline boxes.
 
 ## Upstream update policy
 
 Production must never depend on floating `main`. The intended maintenance flow is:
 
-1. discover the current upstream `main`;
+1. discover current upstream `main`;
 2. resolve it to an immutable commit;
 3. record source/model/runtime provenance and hashes;
 4. run the downstream matrix on representative/focused pages;
-5. run the mandatory risk pages (`013/045/066/067`) and then full68 when the focused gate passes;
+5. run mandatory risk pages (`013/045/066/067`) and then full68 when the focused gate passes;
 6. only then manually promote the pinned production commit/model/runtime.
 
-This lets upstream development continue without silently changing production behavior.
+This allows upstream HOMR development to continue without silently changing production behavior. Because the Stage-E baseline role only requires detector material, a successful detector-material design can also decouple future baseline updates from Transformer model churn.
 
 ## Optional GT diagnostic
 

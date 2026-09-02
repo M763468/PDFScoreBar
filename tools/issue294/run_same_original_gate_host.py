@@ -6,9 +6,18 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import sys
 from pathlib import Path
 
-from tools.issue294.run_same_original_ab_host import (
+# Allow this host entrypoint to be executed directly (``python tools/...py``)
+# without requiring callers to export PYTHONPATH first. Python otherwise puts
+# only ``tools/issue294`` on sys.path, so the repository-level ``tools``
+# namespace cannot be imported.
+_BOOTSTRAP_ROOT = Path(__file__).resolve().parents[2]
+if str(_BOOTSTRAP_ROOT) not in sys.path:
+    sys.path.insert(0, str(_BOOTSTRAP_ROOT))
+
+from tools.issue294.run_same_original_ab_host import (  # noqa: E402
     CONTAINER,
     CONTAINER_ROOT,
     PIPELINE_PYTHON,

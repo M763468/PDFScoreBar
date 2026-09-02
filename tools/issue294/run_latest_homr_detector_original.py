@@ -2,10 +2,9 @@
 """Run an immutable upstream HOMR source commit as a detector-material candidate.
 
 This Issue #294 experiment intentionally stops before staff grouping, title OCR,
-Transformer parsing and MusicXML generation.  The Stage-E baseline is consumed
+Transformer parsing and MusicXML generation. The Stage-E baseline is consumed
 downstream for barline/staff/clef material; current-x4 HOMR remains the
-connector-semantic source.  The worker therefore measures only the maintained
-upstream path needed by PDFScoreBar's baseline role.
+connector-semantic source. Only the SegNet weight is materialized for this run.
 """
 
 from __future__ import annotations
@@ -26,6 +25,7 @@ import numpy as np
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 TARGET_PIXELS = 3.5 * 1000 * 1000
+MODEL_RELEASE_BASE = "https://github.com/liebharc/homr/releases/download/onnx_checkpoints/"
 
 
 def sha256(path: Path) -> str:
@@ -51,25 +51,25 @@ def _shape(path: Path) -> list[int] | None:
     return [int(image.shape[1]), int(image.shape[0])]
 
 
-def _download_segnet(download_weights: Any, *, use_gpu: bool) -> None:
-    signature = inspect.signature(download_weights)
-    names = set(signature.parameters)
-    if {"segnet_use_gpu", "transformer_use_gpu"}.issubset(names):
-        kwargs: dict[str, Any] = {
-            "segnet_use_gpu": use_gpu,
-            "transformer_use_gpu": False,
-        }
-        if "coreml_encoder" in names:
-            kwargs["coreml_encoder"] = False
-        download_weights(**kwargs)
-        return
-    if "use_gpu_inference" in names or len(signature.parameters) == 1:
-        download_weights(use_gpu)
-        return
-    if not signature.parameters:
-        download_weights()
-        return
-    raise TypeError(f"Unsupported latest download_weights signature: {signature}")
+def _ensure_segnet_model(segnet_config: Any, *, use_gpu: bool) -> Path:
+    from homr import download_utils
+
+    path = Path(
+        segnet_config.segnet_path_onnx_fp16 if use_gpu else segnet_config.segnet_path_onnx
+    )
+    if path.is_file():
+        return path
+    base_name = path.name.split(".")[0]
+    zip_path = path.parent / f"{base_name}.zip"
+    try:
+        download_utils.download_file(MODEL_RELEASE_BASE + zip_path.name, str(zip_path))
+        download_utils.unzip_file(str(zip_path), str(path.parent))
+    finally:
+        if zip_path.exists():
+            zip_path.unlink()
+    if not path.is_file():
+        raise FileNotFoundError(f"SegNet download did not materialize {path}")
+    return path
 
 
 def _make_proxy(image: Path, image_run_dir: Path) -> tuple[Path, float, float, np.ndarray]:
@@ -130,12 +130,7 @@ def _detect_material(homr_main: Any, inference_image: Path, *, use_gpu: bool) ->
         for line in bar_lines_or_rests
         if line.size[1] >= min_height and line.size[0] <= max_width
     ]
-    return (
-        bar_line_boxes,
-        predictions.notehead,
-        predictions.staff,
-        predictions.clefs_keys,
-    )
+    return bar_line_boxes, predictions.notehead, predictions.staff, predictions.clefs_keys
 
 
 def _map_predictions(
@@ -274,7 +269,7 @@ def run(
     actual_commit = _git_head(homr_source)
     if actual_commit != expected_commit:
         raise RuntimeError(
-            f"Latest HOMR checkout mismatch: expected={expected_commit} actual={actual_commit}"
+            f"HOMR checkout mismatch: expected={expected_commit} actual={actual_commit}"
         )
     if output_root.exists():
         raise FileExistsError(output_root)
@@ -313,7 +308,7 @@ def run(
     image_run_dir = output_root / "batch" / stem
     image_run_dir.mkdir(parents=True, exist_ok=False)
     try:
-        _download_segnet(homr_main.download_weights, use_gpu=use_gpu)
+        segnet = _ensure_segnet_model(segnet_config, use_gpu=use_gpu)
         inference_image, proxy_x, proxy_y, original = _make_proxy(image, image_run_dir)
         detector_started = time.perf_counter()
         bar_line_boxes, notehead_mask, staff_mask, clef_mask = _detect_material(
@@ -349,12 +344,9 @@ def run(
     finally:
         ort.InferenceSession = original_session
 
-    segnet = Path(
-        segnet_config.segnet_path_onnx_fp16 if use_gpu else segnet_config.segnet_path_onnx
-    )
     transformer = Config().filepaths
     payload = {
-        "schema_version": "issue294.latest_detector_material.v2",
+        "schema_version": "issue294.upstream_detector_material.v3",
         "status": "completed",
         "scope": "segnet_barline_staff_clef_material_only_pre_transformer",
         "historical_detector_artifact_runtime_input": False,
@@ -372,21 +364,19 @@ def run(
             "onnxruntime_version": ort.__version__,
             "torch_version": torch.__version__,
             "cuda": use_gpu,
-            "compatibility_mode": "latest_source_on_pipeline_runtime_detector_material_only",
+            "compatibility_mode": "upstream_source_on_pipeline_runtime_detector_material_only",
         },
         "models": {
-            "segnet": {
-                "path": str(segnet),
-                "sha256": sha256(segnet) if segnet.is_file() else None,
-                "executed": True,
-            },
+            "segnet": {"path": str(segnet), "sha256": sha256(segnet), "executed": True},
             "transformer_encoder": {
                 "path": str(Path(transformer.encoder_path_fp16)),
                 "executed": False,
+                "downloaded_by_this_worker": False,
             },
             "transformer_decoder": {
                 "path": str(Path(transformer.decoder_path_fp16)),
                 "executed": False,
+                "downloaded_by_this_worker": False,
             },
         },
         "onnx_sessions": sessions,

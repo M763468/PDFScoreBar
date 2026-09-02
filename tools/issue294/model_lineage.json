@@ -19,7 +19,7 @@
       "segnet": "segnet_308-3296ccd40960f90ca6ab9c035cca945675d30a0f_fp16.onnx",
       "transformer": "pytorch_model_426-b6fd20809a8dcaf10dfd39a4ca4f64c6f056e644_fp16",
       "precision": "FP16",
-      "matrix_scope": "detector_material_only_pre_transformer"
+      "matrix_scope": "segnet_barline_staff_clef_material_only_pre_transformer"
     }
   },
   "interpretation": {
@@ -35,8 +35,9 @@
     ],
     "B_is_current_upstream_main": false,
     "observed_main_changes_transformer_again": "331 -> 426",
-    "downstream_barline_material_is_generated_pre_transformer": true,
-    "primary_gate": "Freeze current-x4/OMR support and control geometry; compare A, B and an immutable latest-main commit after hybrid consensus, dense candidate reconstruction, CNN scoring and MeasureNumberingPipeline.",
+    "downstream_barline_staff_clef_material_is_generated_pre_transformer": true,
+    "primary_gate": "Use each candidate's native barline/staff/clef material with fixed current-x4/OMR support, then compare A/B/C after hybrid consensus, dense candidate reconstruction, CNN scoring and MeasureNumberingPipeline.",
+    "causal_diagnostic": "Repeat with A staff/clef geometry frozen for every candidate to isolate barline-source effects from staff/clef material effects.",
     "production_update_policy": "Never track main as a floating production dependency. Discover main, resolve an immutable commit, capture model/runtime provenance, run focused/full gates, then manually promote the pinned commit only after acceptance.",
     "ground_truth_role": "Optional diagnostic; missing local GT must not block the operational downstream gate.",
     "musicxml_role": "Not an acceptance gate for the Stage-E baseline when downstream barline/count/topology/numbering material is preserved."

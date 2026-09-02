@@ -1,6 +1,6 @@
 {
   "schema_version": "issue294.homr_model_lineage.v1",
-  "purpose": "Record the model-generation confound in the Issue #294 maintained-HOMR replacement investigation.",
+  "purpose": "Record the model-generation confound and update policy in the Issue #294 maintained-HOMR replacement investigation.",
   "variants": {
     "A_pinned_historical": {
       "homr_commit": "864e2882f7a41afcf8f16654728a473ae56826d6",
@@ -18,7 +18,8 @@
       "homr_commit": "3fe86a3e84db43af19eae452e29830c1f46c3b34",
       "segnet": "segnet_308-3296ccd40960f90ca6ab9c035cca945675d30a0f_fp16.onnx",
       "transformer": "pytorch_model_426-b6fd20809a8dcaf10dfd39a4ca4f64c6f056e644_fp16",
-      "precision": "FP16"
+      "precision": "FP16",
+      "matrix_scope": "detector_material_only_pre_transformer"
     }
   },
   "interpretation": {
@@ -33,7 +34,11 @@
       "transformer architecture/vocabulary/configuration"
     ],
     "B_is_current_upstream_main": false,
-    "current_main_changes_transformer_again": "331 -> 426",
-    "required_followup": "Evaluate standalone barline GT accuracy first, then distinguish maintained-family candidate behavior from current upstream tip and isolate model-generation effects before production replacement claims."
+    "observed_main_changes_transformer_again": "331 -> 426",
+    "downstream_barline_material_is_generated_pre_transformer": true,
+    "primary_gate": "Freeze current-x4/OMR support and control geometry; compare A, B and an immutable latest-main commit after hybrid consensus, dense candidate reconstruction, CNN scoring and MeasureNumberingPipeline.",
+    "production_update_policy": "Never track main as a floating production dependency. Discover main, resolve an immutable commit, capture model/runtime provenance, run focused/full gates, then manually promote the pinned commit only after acceptance.",
+    "ground_truth_role": "Optional diagnostic; missing local GT must not block the operational downstream gate.",
+    "musicxml_role": "Not an acceptance gate for the Stage-E baseline when downstream barline/count/topology/numbering material is preserved."
   }
 }

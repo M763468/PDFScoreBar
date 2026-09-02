@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -79,6 +80,26 @@ def require_container() -> None:
 def container_path(host_path: Path) -> Path:
     relative = host_path.resolve().relative_to(PROJECT_ROOT.resolve())
     return CONTAINER_ROOT / relative
+
+
+def _restore_host_ownership(path: Path) -> None:
+    """Return container-created experiment outputs to the invoking host user."""
+
+    resolved = path.resolve()
+    if not resolved.exists():
+        return
+    checked(
+        [
+            "docker",
+            "exec",
+            CONTAINER,
+            "chown",
+            "-R",
+            f"{os.getuid()}:{os.getgid()}",
+            str(container_path(resolved)),
+        ],
+        cwd=PROJECT_ROOT,
+    )
 
 
 def _run_comparator(summary: Path, comparison: Path) -> None:
@@ -196,22 +217,31 @@ def run(run_tag: str, pages: list[str], support_root: Path | None = None) -> dic
 
     summary = output_root / "summary.json"
     if not summary.is_file():
+        _restore_host_ownership(output_root)
         raise FileNotFoundError(summary)
+
     comparison = output_root / "comparison.json"
-    _run_comparator(summary, comparison)
-    if not comparison.is_file():
-        raise FileNotFoundError(comparison)
-
     pinned_probe_path = output_root / "A_pinned_runtime_probe.json"
-    pinned_probe = _run_pinned_runtime_probe(pinned_probe_path)
-
     replay_report: Path | None = None
-    if resolved_support_root is not None:
-        replay_root = output_root / "fixed_support_replay"
-        _run_fixed_support_replay(summary, resolved_support_root, replay_root)
-        replay_report = replay_root / "report.json"
-        if not replay_report.is_file():
-            raise FileNotFoundError(replay_report)
+    pinned_probe: dict[str, object]
+    try:
+        _run_comparator(summary, comparison)
+        if not comparison.is_file():
+            raise FileNotFoundError(comparison)
+
+        pinned_probe = _run_pinned_runtime_probe(pinned_probe_path)
+
+        if resolved_support_root is not None:
+            replay_root = output_root / "fixed_support_replay"
+            _run_fixed_support_replay(summary, resolved_support_root, replay_root)
+            replay_report = replay_root / "report.json"
+            if not replay_report.is_file():
+                raise FileNotFoundError(replay_report)
+    finally:
+        # docker exec runs as root in the production container. Restore the
+        # mounted run tree before any host-side write (and even on post-run
+        # failures) so provenance and later cleanup remain user-writable.
+        _restore_host_ownership(output_root)
 
     provenance = {
         "schema_version": "issue294.same_original_host_provenance.v1",
@@ -225,6 +255,7 @@ def run(run_tag: str, pages: list[str], support_root: Path | None = None) -> dic
         "comparison": str(comparison.relative_to(PROJECT_ROOT)),
         "pinned_runtime_probe": str(pinned_probe_path.relative_to(PROJECT_ROOT)),
         "pinned_runtime_hard_contract": pinned_probe.get("hard_contract_pass"),
+        "host_output_owner": {"uid": os.getuid(), "gid": os.getgid()},
         "fixed_support_root": (
             str(resolved_support_root.relative_to(PROJECT_ROOT))
             if resolved_support_root is not None

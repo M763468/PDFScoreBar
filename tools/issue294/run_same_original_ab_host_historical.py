@@ -16,6 +16,13 @@ _ORIGINAL_CHECKED = base.checked
 
 def _historical_checked(command: list[str], *, cwd: Path | None = None) -> None:
     rewritten = [_REWRITES.get(part, part) for part in command]
+    if "tools/issue294/run_same_original_ab_historical.py" in rewritten:
+        source_commit = base.capture(["git", "rev-parse", "HEAD"], cwd=base.PROJECT_ROOT)
+        container_index = rewritten.index(base.CONTAINER)
+        rewritten[container_index:container_index] = [
+            "-e",
+            f"ISSUE294_SOURCE_COMMIT={source_commit}",
+        ]
     _ORIGINAL_CHECKED(rewritten, cwd=cwd)
 
 

@@ -16,6 +16,7 @@ from pathlib import Path
 from tools.issue294 import run_same_original_ab as base
 
 SOURCE_COMMIT_ENV = "ISSUE294_SOURCE_COMMIT"
+_ORIGINAL_SOURCE_COMMIT = base._source_commit
 
 
 def historical_artifact_paths(root: Path, stem: str) -> dict[str, str]:
@@ -31,7 +32,7 @@ def host_supplied_source_commit() -> str | None:
     value = os.environ.get(SOURCE_COMMIT_ENV, "").strip()
     if value:
         return value
-    return base._source_commit()
+    return _ORIGINAL_SOURCE_COMMIT()
 
 
 def main() -> int:

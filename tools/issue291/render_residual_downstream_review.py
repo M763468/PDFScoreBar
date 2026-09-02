@@ -217,9 +217,7 @@ def case_artifact_map_from_root(
         if len(matched) == 1:
             page_map[(case.score, case.page)] = matched[0]
         elif not matched:
-            raise FileNotFoundError(
-                f"No {artifact_name} for {case.score}/{case.page} under {root}"
-            )
+            raise FileNotFoundError(f"No {artifact_name} for {case.score}/{case.page} under {root}")
         else:
             options = "\n".join(str(path) for path in matched)
             raise RuntimeError(

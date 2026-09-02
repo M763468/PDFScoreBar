@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -24,12 +25,13 @@ from tools.issue294.run_same_original_ab_host import (  # noqa: E402
     _restore_host_ownership,
     _run_comparator,
     _run_pinned_runtime_probe,
-    capture,
     checked,
     container_path,
     require_container,
     require_host_checkout,
 )
+
+_COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 
 
 def _load_mapping(path: Path) -> dict[str, object]:
@@ -54,6 +56,46 @@ def _require_experiment_commit_ancestor(experiment_commit: str, current_head: st
         )
 
 
+def _resolve_experiment_commit(
+    summary_payload: dict[str, object],
+    explicit_source_commit: str | None,
+    finalizer_commit: str,
+) -> tuple[str, dict[str, object] | None]:
+    raw = summary_payload.get("source_commit")
+    summary_commit = raw if isinstance(raw, str) and raw else None
+    override = explicit_source_commit.strip() if explicit_source_commit else None
+
+    if summary_commit is not None:
+        if not _COMMIT_RE.fullmatch(summary_commit):
+            raise ValueError(f"Invalid source_commit in existing summary: {summary_commit!r}")
+        if override is not None and override != summary_commit:
+            raise ValueError(
+                f"Explicit --source-commit {override} disagrees with summary source_commit {summary_commit}"
+            )
+        experiment_commit = summary_commit
+        recovery = None
+    else:
+        if override is None:
+            raise ValueError(
+                "Existing A/B summary lacks source_commit; rerun finalizer with the known "
+                "experiment HEAD via --source-commit"
+            )
+        if not _COMMIT_RE.fullmatch(override):
+            raise ValueError(f"Invalid --source-commit: {override!r}")
+        experiment_commit = override
+        recovery = {
+            "required": True,
+            "reason": "inner_runner_git_probe_returned_null",
+            "summary_source_commit": raw,
+            "method": "explicit_known_experiment_head",
+            "recovered_source_commit": override,
+            "summary_mutated": False,
+        }
+
+    _require_experiment_commit_ancestor(experiment_commit, finalizer_commit)
+    return experiment_commit, recovery
+
+
 def _run_musicxml_comparison(summary: Path, output: Path) -> None:
     checked(
         [
@@ -75,7 +117,7 @@ def _run_musicxml_comparison(summary: Path, output: Path) -> None:
     )
 
 
-def run(run_tag: str) -> dict[str, str]:
+def run(run_tag: str, source_commit: str | None = None) -> dict[str, str]:
     finalizer_commit = require_host_checkout()
     require_container()
 
@@ -92,10 +134,11 @@ def run(run_tag: str) -> dict[str, str]:
     summary_payload = _load_mapping(summary)
     if summary_payload.get("status") != "completed":
         raise ValueError(f"Existing A/B summary is incomplete: {summary}")
-    experiment_commit = summary_payload.get("source_commit")
-    if not isinstance(experiment_commit, str) or not experiment_commit:
-        raise ValueError(f"Existing A/B summary lacks source_commit: {summary}")
-    _require_experiment_commit_ancestor(experiment_commit, finalizer_commit)
+    experiment_commit, source_commit_recovery = _resolve_experiment_commit(
+        summary_payload,
+        source_commit,
+        finalizer_commit,
+    )
 
     comparison = output_root / "comparison.json"
     if not comparison.exists():
@@ -130,6 +173,7 @@ def run(run_tag: str) -> dict[str, str]:
     provenance = {
         "schema_version": "issue294.same_original_host_provenance.v1",
         "source_commit": experiment_commit,
+        "source_commit_recovery": source_commit_recovery,
         "finalized_by_commit": finalizer_commit,
         "branch": BRANCH,
         "develop": BASE_COMMIT,
@@ -169,9 +213,16 @@ def run(run_tag: str) -> dict[str, str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-tag", required=True)
+    parser.add_argument(
+        "--source-commit",
+        help=(
+            "Known experiment HEAD used only to recover legacy runs whose summary source_commit "
+            "is null. It must be an ancestor of the current branch HEAD."
+        ),
+    )
     args = parser.parse_args()
     try:
-        result = run(args.run_tag)
+        result = run(args.run_tag, args.source_commit)
     except Exception as error:  # noqa: BLE001
         print(
             json.dumps(

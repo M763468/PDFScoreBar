@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the Issue #294 A/B/latest downstream candidate matrix from the host."""
+"""Run the Issue #294 historical/B/latest downstream candidate matrix from the host."""
 
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from tools.issue294 import run_same_original_ab_host_historical as historical
 
 HOMR_URL = "https://github.com/liebharc/homr.git"
 HOMR_CACHE_ROOT = PROJECT_ROOT / "logs/issue294/_upstream_homr"
+B_COMMIT = "b377620a3a55bd7ff657481cec5b688dfbc9cee9"
 
 
 def _latest_main_commit() -> str:
@@ -46,13 +47,14 @@ def _prepare_homr_source(commit: str) -> Path:
 
 
 def run(run_tag: str, pages: list[str]) -> dict[str, str]:
-    # Existing historical adapter owns all branch/container/base-image provenance checks.
+    # Existing historical adapter owns branch/container/base-image provenance checks.
     ab = historical.run(run_tag, pages, None)
     output_root = PROJECT_ROOT / "logs/issue294" / run_tag
     summary = Path(ab["summary"]).resolve()
 
     latest_commit = _latest_main_commit()
-    homr_source = _prepare_homr_source(latest_commit)
+    b_source = _prepare_homr_source(B_COMMIT)
+    c_source = _prepare_homr_source(latest_commit)
     matrix_root = output_root / "downstream_candidate_matrix"
     command = [
         "docker",
@@ -66,9 +68,13 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
         "tools/issue294/run_downstream_candidate_matrix.py",
         "--summary",
         str(base.container_path(summary)),
-        "--homr-source",
-        str(base.container_path(homr_source)),
-        "--homr-commit",
+        "--b-homr-source",
+        str(base.container_path(b_source)),
+        "--b-homr-commit",
+        B_COMMIT,
+        "--c-homr-source",
+        str(base.container_path(c_source)),
+        "--c-homr-commit",
         latest_commit,
         "--output-root",
         str(base.container_path(matrix_root)),
@@ -77,7 +83,9 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
         base.checked(command, cwd=PROJECT_ROOT)
     finally:
         base._restore_host_ownership(output_root)
-        base._restore_host_ownership(homr_source)
+        base._restore_host_ownership(b_source)
+        if c_source != b_source:
+            base._restore_host_ownership(c_source)
 
     report = matrix_root / "report.json"
     if not report.is_file():
@@ -87,19 +95,22 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
         raise ValueError(f"Incomplete downstream matrix: {report}")
 
     provenance = {
-        "schema_version": "issue294.downstream_candidate_matrix_host.v1",
+        "schema_version": "issue294.downstream_candidate_matrix_host.v2",
         "run_tag": run_tag,
         "pages": pages,
         "same_original_summary": str(summary.relative_to(PROJECT_ROOT)),
+        "B_source": str(b_source.relative_to(PROJECT_ROOT)),
+        "B_commit": B_COMMIT,
         "upstream_discovery_ref": "refs/heads/main",
         "upstream_resolved_commit": latest_commit,
-        "upstream_source": str(homr_source.relative_to(PROJECT_ROOT)),
+        "upstream_source": str(c_source.relative_to(PROJECT_ROOT)),
         "upstream_tracking_policy": (
             "discover floating main, resolve immutable commit, gate immutable candidate, "
             "never switch production to a floating ref"
         ),
         "matrix_report": str(report.relative_to(PROJECT_ROOT)),
         "gates": payload.get("gates"),
+        "diagnostics": payload.get("diagnostics"),
     }
     provenance_path = output_root / "downstream_candidate_matrix_host.json"
     provenance_path.write_text(
@@ -110,6 +121,7 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
         "summary": str(summary),
         "matrix_report": str(report),
         "provenance": str(provenance_path),
+        "B_homr_commit": B_COMMIT,
         "latest_homr_commit": latest_commit,
     }
 

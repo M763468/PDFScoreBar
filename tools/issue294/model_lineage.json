@@ -1,0 +1,39 @@
+{
+  "schema_version": "issue294.homr_model_lineage.v1",
+  "purpose": "Record the model-generation confound in the Issue #294 maintained-HOMR replacement investigation.",
+  "variants": {
+    "A_pinned_historical": {
+      "homr_commit": "864e2882f7a41afcf8f16654728a473ae56826d6",
+      "segnet": "segnet_155-1240eedca553155b3c75fc9c7f643465383430a0.onnx",
+      "transformer": "pytorch_model_220-c50aec7de6469480cf6f547695f48aed76d8422e-epoch-55",
+      "precision": "FP32"
+    },
+    "B_maintained_family_candidate": {
+      "homr_commit": "b377620a3a55bd7ff657481cec5b688dfbc9cee9",
+      "segnet": "segnet_308-3296ccd40960f90ca6ab9c035cca945675d30a0f_fp16.onnx",
+      "transformer": "pytorch_model_331-e10346542968cc71fbcce0c0696f3ac963f11ae1_fp16",
+      "precision": "FP16"
+    },
+    "C_upstream_main_observed_2026_09_03": {
+      "homr_commit": "3fe86a3e84db43af19eae452e29830c1f46c3b34",
+      "segnet": "segnet_308-3296ccd40960f90ca6ab9c035cca945675d30a0f_fp16.onnx",
+      "transformer": "pytorch_model_426-b6fd20809a8dcaf10dfd39a4ca4f64c6f056e644_fp16",
+      "precision": "FP16"
+    }
+  },
+  "interpretation": {
+    "A_vs_B_is_runtime_only": false,
+    "A_vs_B_changes": [
+      "HOMR source/code",
+      "Python package/runtime versions",
+      "ONNX Runtime version/provider behavior",
+      "SegNet generation 155 -> 308",
+      "Transformer generation 220 -> 331",
+      "model precision FP32 -> FP16",
+      "transformer architecture/vocabulary/configuration"
+    ],
+    "B_is_current_upstream_main": false,
+    "current_main_changes_transformer_again": "331 -> 426",
+    "required_followup": "Evaluate standalone barline GT accuracy first, then distinguish maintained-family candidate behavior from current upstream tip and isolate model-generation effects before production replacement claims."
+  }
+}

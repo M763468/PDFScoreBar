@@ -35,7 +35,6 @@ COLORS = {
     "fp": (0, 0, 255),
     "fn": (255, 90, 0),
     "measure": (0, 170, 220),
-    "system": (120, 80, 20),
     "text": (20, 20, 20),
 }
 
@@ -200,9 +199,14 @@ def prediction_map_from_manifest(manifest_path: Path) -> dict[tuple[str, str], P
     return page_map
 
 
-def prediction_map_from_root(root: Path) -> dict[tuple[str, str], Path]:
+def case_artifact_map_from_root(
+    root: Path,
+    *,
+    filename: str,
+    artifact_name: str,
+) -> dict[tuple[str, str], Path]:
     root = root.resolve()
-    candidates = sorted(root.rglob("pipeline2_no_peak_filtered_cnn.json"))
+    candidates = sorted(root.rglob(filename))
     page_map: dict[tuple[str, str], Path] = {}
     for case in CASES:
         matched = [
@@ -214,14 +218,30 @@ def prediction_map_from_root(root: Path) -> dict[tuple[str, str], Path]:
             page_map[(case.score, case.page)] = matched[0]
         elif not matched:
             raise FileNotFoundError(
-                f"No filtered-CNN artifact for {case.score}/{case.page} under {root}"
+                f"No {artifact_name} for {case.score}/{case.page} under {root}"
             )
         else:
             options = "\n".join(str(path) for path in matched)
             raise RuntimeError(
-                f"Ambiguous filtered-CNN artifacts for {case.score}/{case.page}:\n{options}"
+                f"Ambiguous {artifact_name} files for {case.score}/{case.page}:\n{options}"
             )
     return page_map
+
+
+def prediction_map_from_root(root: Path) -> dict[tuple[str, str], Path]:
+    return case_artifact_map_from_root(
+        root,
+        filename="pipeline2_no_peak_filtered_cnn.json",
+        artifact_name="filtered-CNN artifact",
+    )
+
+
+def numbering_map_from_root(root: Path) -> dict[tuple[str, str], Path]:
+    return case_artifact_map_from_root(
+        root,
+        filename="numbering_final.json",
+        artifact_name="numbering_final artifact",
+    )
 
 
 def numbering_map_from_variant(variant_root: Path) -> dict[tuple[str, str], Path]:
@@ -277,7 +297,9 @@ def system_measure_records(numbering_page: Mapping[str, Any]) -> list[dict[str, 
     return records
 
 
-def relevant_system_indices(records: Sequence[Mapping[str, Any]], targets: Sequence[Box]) -> set[int]:
+def relevant_system_indices(
+    records: Sequence[Mapping[str, Any]], targets: Sequence[Box]
+) -> set[int]:
     target_centers_y = [(box[1] + box[3]) / 2.0 for box in targets]
     system_ranges: dict[int, tuple[int, int]] = {}
     for record in records:
@@ -531,11 +553,16 @@ def main() -> int:
         type=Path,
         help="One retained Stage-E run root containing pipeline2_no_peak_filtered_cnn.json",
     )
-    parser.add_argument(
+    numbering_group = parser.add_mutually_exclusive_group(required=True)
+    numbering_group.add_argument(
         "--variant",
         type=Path,
-        required=True,
         help="Completed retained full68 variant root containing variant_summary.json",
+    )
+    numbering_group.add_argument(
+        "--numbering-root",
+        type=Path,
+        help="One retained full68 output root containing numbering_final.json files",
     )
     parser.add_argument(
         "--image-root",
@@ -569,7 +596,13 @@ def main() -> int:
         prediction_map = prediction_map_from_root(args.prediction_root.resolve())
         prediction_source = str(args.prediction_root.resolve())
 
-    numbering_map = numbering_map_from_variant(args.variant)
+    if args.variant:
+        numbering_map = numbering_map_from_variant(args.variant)
+        numbering_source = str(args.variant.resolve())
+    else:
+        numbering_map = numbering_map_from_root(args.numbering_root.resolve())
+        numbering_source = str(args.numbering_root.resolve())
+
     requested = set(args.case)
     known_ids = {case.case_id for case in CASES}
     unknown = requested - known_ids
@@ -615,8 +648,7 @@ def main() -> int:
     while len(tiles) < rows * columns:
         tiles.append(blank.copy())
     sheet_rows = [
-        np.hstack(tiles[index : index + columns])
-        for index in range(0, len(tiles), columns)
+        np.hstack(tiles[index : index + columns]) for index in range(0, len(tiles), columns)
     ]
     sheet = np.vstack(sheet_rows)
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -627,7 +659,7 @@ def main() -> int:
     payload = {
         "schema_version": "issue291.residual_downstream_review.v1",
         "prediction_source": prediction_source,
-        "variant": str(args.variant.resolve()),
+        "numbering_source": numbering_source,
         "image_root": str(args.image_root.resolve()),
         "gt_root": str(args.gt_root.resolve()),
         "case_count": len(rendered),

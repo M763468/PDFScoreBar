@@ -14,6 +14,12 @@ set -euo pipefail
 #
 # This is deliberately a small corrected-data fine-tune first. If it cannot
 # safely repair x=580, the issue moves to a richer model/input experiment.
+#
+# Retained artifacts under logs/ may have been created by a root-running
+# container. Linux fs.protected_hardlinks can therefore reject hard links made
+# by the host user even when those files are readable. All retained inputs in
+# this experiment are read-only, so mirrors reuse them through symbolic links
+# rather than hard links.
 
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
@@ -66,13 +72,13 @@ if len(files) != 68 or total != 3567 or target in boxes:
     raise SystemExit("canonical GT preflight failed")
 PY
 
-echo "==> mirror current retained Stage-E scored candidates"
+echo "==> mirror current retained Stage-E scored candidates (read-only symlinks)"
 count=0
 while IFS= read -r src; do
   page_dir="$(basename "$(dirname "$src")")"
   dst_dir="$MIRROR/$page_dir"
   mkdir -p "$dst_dir"
-  ln "$src" "$dst_dir/pipeline2_no_peak_scored.json"
+  ln -s "$src" "$dst_dir/pipeline2_no_peak_scored.json"
   count=$((count + 1))
 done < <(
   find "$RUN_ROOT/runs" \
@@ -115,9 +121,9 @@ if [[ -z "$SOURCE_DATASET" ]]; then
   exit 5
 fi
 mkdir -p "$DATASET"
-cp -al "$SOURCE_DATASET/deepscores" "$DATASET/deepscores"
+ln -s "$SOURCE_DATASET/deepscores" "$DATASET/deepscores"
 if [[ -d "$SOURCE_DATASET/deepscores_probe" ]]; then
-  cp -al "$SOURCE_DATASET/deepscores_probe" "$DATASET/deepscores_probe"
+  ln -s "$SOURCE_DATASET/deepscores_probe" "$DATASET/deepscores_probe"
 fi
 echo "non_eval2_source=$SOURCE_DATASET"
 

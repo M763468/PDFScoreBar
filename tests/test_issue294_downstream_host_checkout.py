@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -55,6 +57,22 @@ def test_issue294_upstream_cache_uses_ignored_temp_tree() -> None:
     assert host.HOMR_CACHE_ROOT == host.PROJECT_ROOT / "temp/issue294_upstream_homr"
 
 
+def test_issue294_explicit_latest_commit_stays_immutable(monkeypatch) -> None:
+    commit = "457e7c6518a10ba755db2e60883419e56c4d7369"
+    monkeypatch.setattr(
+        host,
+        "_latest_main_commit",
+        lambda: (_ for _ in ()).throw(AssertionError("floating main must not be resolved")),
+    )
+
+    assert host._resolve_latest_commit(commit) == commit
+
+
+def test_issue294_rejects_invalid_explicit_latest_commit() -> None:
+    with pytest.raises(ValueError, match="Invalid immutable HOMR commit"):
+        host._resolve_latest_commit("main")
+
+
 def test_issue294_downstream_reuses_completed_same_original_run(tmp_path, monkeypatch) -> None:
     run_tag = "resume"
     run_root = tmp_path / "logs/issue294" / run_tag
@@ -92,6 +110,59 @@ def test_issue294_downstream_reuses_completed_same_original_run(tmp_path, monkey
     assert resolved == summary.resolve()
     assert reused is True
     assert container_checks == [True]
+
+
+def test_issue294_detector_preflight_uses_source_first_pythonpath(tmp_path, monkeypatch) -> None:
+    source = tmp_path / "temp/issue294_upstream_homr" / host.B_COMMIT
+    source.mkdir(parents=True)
+    monkeypatch.setattr(host, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(host.base, "container_path", lambda _path: Path("/workspace/temp/candidate"))
+    observed: list[list[str]] = []
+
+    payload = {
+        "status": "completed",
+        "homr_commit": host.B_COMMIT,
+        "optional_modules_imported": [],
+    }
+
+    def fake_run(command, **kwargs):
+        observed.append(command)
+        return subprocess.CompletedProcess(command, 0, stdout=json.dumps(payload) + "\n", stderr="")
+
+    monkeypatch.setattr(host.subprocess, "run", fake_run)
+
+    result = host._run_detector_preflight("B", source, host.B_COMMIT)
+
+    assert result == payload
+    assert "PYTHONPATH=/workspace/temp/candidate:/workspace" in observed[0]
+    assert "--preflight-only" in observed[0]
+
+
+def test_issue294_detector_preflight_rejects_optional_application_imports(
+    tmp_path, monkeypatch
+) -> None:
+    source = tmp_path / "candidate"
+    source.mkdir()
+    monkeypatch.setattr(host, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(host.base, "container_path", lambda _path: Path("/workspace/candidate"))
+    payload = {
+        "status": "completed",
+        "homr_commit": host.B_COMMIT,
+        "optional_modules_imported": ["homr.pdf_utils"],
+    }
+    monkeypatch.setattr(
+        host.subprocess,
+        "run",
+        lambda command, **kwargs: subprocess.CompletedProcess(
+            command,
+            0,
+            stdout=json.dumps(payload) + "\n",
+            stderr="",
+        ),
+    )
+
+    with pytest.raises(RuntimeError, match="excluded optional HOMR modules"):
+        host._run_detector_preflight("B", source, host.B_COMMIT)
 
 
 def test_issue294_downstream_discards_only_incomplete_matrix_tree(tmp_path) -> None:

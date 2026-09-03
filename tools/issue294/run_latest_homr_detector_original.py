@@ -14,7 +14,6 @@ import hashlib
 import inspect
 import json
 import platform
-import subprocess
 import sys
 import time
 from pathlib import Path
@@ -36,12 +35,47 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _git_head(path: Path) -> str:
-    return subprocess.check_output(
-        ["git", "-C", str(path), "rev-parse", "HEAD"],
-        text=True,
-        stderr=subprocess.PIPE,
-    ).strip()
+def _git_dir(path: Path) -> Path:
+    marker = path / ".git"
+    if marker.is_dir():
+        return marker
+    if marker.is_file():
+        text = marker.read_text(encoding="utf-8").strip()
+        prefix = "gitdir:"
+        if not text.lower().startswith(prefix):
+            raise RuntimeError(f"Unsupported .git file: {marker}")
+        target = text[len(prefix) :].strip()
+        resolved = Path(target)
+        if not resolved.is_absolute():
+            resolved = (path / resolved).resolve()
+        if not resolved.is_dir():
+            raise FileNotFoundError(resolved)
+        return resolved
+    raise FileNotFoundError(marker)
+
+
+def _checkout_head(path: Path) -> str:
+    """Resolve checkout HEAD without requiring a git executable in the runtime image."""
+
+    git_dir = _git_dir(path)
+    head = (git_dir / "HEAD").read_text(encoding="utf-8").strip()
+    if not head.startswith("ref: "):
+        return head
+
+    ref = head.removeprefix("ref: ").strip()
+    loose_ref = git_dir / ref
+    if loose_ref.is_file():
+        return loose_ref.read_text(encoding="utf-8").strip()
+
+    packed_refs = git_dir / "packed-refs"
+    if packed_refs.is_file():
+        for line in packed_refs.read_text(encoding="utf-8").splitlines():
+            if not line or line.startswith(("#", "^")):
+                continue
+            commit, separator, candidate_ref = line.partition(" ")
+            if separator and candidate_ref == ref:
+                return commit
+    raise RuntimeError(f"Unable to resolve Git HEAD ref {ref!r} under {git_dir}")
 
 
 def _shape(path: Path) -> list[int] | None:
@@ -266,7 +300,7 @@ def run(
         raise FileNotFoundError(image)
     if not (homr_source / "homr").is_dir():
         raise FileNotFoundError(homr_source / "homr")
-    actual_commit = _git_head(homr_source)
+    actual_commit = _checkout_head(homr_source)
     if actual_commit != expected_commit:
         raise RuntimeError(
             f"HOMR checkout mismatch: expected={expected_commit} actual={actual_commit}"
@@ -346,7 +380,7 @@ def run(
 
     transformer = Config().filepaths
     payload = {
-        "schema_version": "issue294.upstream_detector_material.v3",
+        "schema_version": "issue294.upstream_detector_material.v4",
         "status": "completed",
         "scope": "segnet_barline_staff_clef_material_only_pre_transformer",
         "historical_detector_artifact_runtime_input": False,
@@ -354,6 +388,7 @@ def run(
         "homr": {
             "source": str(homr_source),
             "commit": actual_commit,
+            "commit_verification": "read_git_metadata_without_git_executable",
             "module": str(imported_homr),
         },
         "runtime": {

@@ -8,6 +8,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -17,10 +18,17 @@ from tools.issue294 import run_same_original_ab_host as base
 from tools.issue294 import run_same_original_ab_host_historical as historical
 
 HOMR_URL = "https://github.com/liebharc/homr.git"
-HOMR_CACHE_ROOT = PROJECT_ROOT / "logs/issue294/_upstream_homr"
+# Keep host-owned third-party checkouts out of logs/. Docker-created Issue #294
+# outputs can leave that tree or its parents root-owned after interrupted runs.
+# temp/ is repository-ignored and remains mount-visible at /workspace/temp.
+HOMR_CACHE_ROOT = PROJECT_ROOT / "temp/issue294_upstream_homr"
 B_COMMIT = "b377620a3a55bd7ff657481cec5b688dfbc9cee9"
 ISSUE294_BRANCH = base.BRANCH
 ISSUE294_BASE_COMMIT = base.BASE_COMMIT
+
+
+def _load_json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def _latest_main_commit() -> str:
@@ -71,6 +79,65 @@ def _require_issue294_checkout() -> dict[str, str]:
     }
 
 
+def _validate_existing_summary(summary: Path, pages: list[str]) -> dict[str, Any]:
+    payload = _load_json(summary)
+    if not isinstance(payload, dict) or payload.get("status") != "completed":
+        raise ValueError(f"Existing same-original summary is incomplete: {summary}")
+    raw_pages = payload.get("pages")
+    if not isinstance(raw_pages, list) or not raw_pages:
+        raise ValueError(f"Existing same-original summary has no pages: {summary}")
+
+    actual_pages: list[str] = []
+    for page in raw_pages:
+        if not isinstance(page, dict) or not isinstance(page.get("image"), str):
+            raise ValueError(f"Invalid page record in existing summary: {summary}")
+        actual_pages.append(Path(str(page["image"])).stem.removeprefix("page_"))
+    if actual_pages != pages:
+        raise ValueError(
+            "Existing same-original summary page mismatch: "
+            f"requested={pages} existing={actual_pages} summary={summary}"
+        )
+    return payload
+
+
+def _resolve_same_original_summary(
+    run_tag: str,
+    pages: list[str],
+    checkout: dict[str, str],
+) -> tuple[Path, bool]:
+    """Reuse a completed A/B run or create it once when absent."""
+
+    output_root = PROJECT_ROOT / "logs/issue294" / run_tag
+    summary = output_root / "summary.json"
+    if summary.is_file():
+        _validate_existing_summary(summary, pages)
+        # Reused runs still need the production container for the downstream matrix.
+        base.require_container()
+        return summary.resolve(), True
+
+    if output_root.exists():
+        raise RuntimeError(
+            f"Issue #294 run directory exists without a completed summary: {output_root}. "
+            "Use a new --run-tag or remove the incomplete run directory."
+        )
+
+    # The shared historical host adapter still contains an older exact-develop
+    # assertion. The downstream matrix owns the invariant we actually need here:
+    # clean Issue #294 branch, unchanged merge-base, and develop descending from
+    # that fixed base. Reuse the already-validated source commit while the shared
+    # A/B runner performs its remaining container checks.
+    previous_require_host_checkout = base.require_host_checkout
+    base.require_host_checkout = lambda: checkout["head"]
+    try:
+        ab = historical.run(run_tag, pages, None)
+    finally:
+        base.require_host_checkout = previous_require_host_checkout
+
+    summary = Path(ab["summary"]).resolve()
+    _validate_existing_summary(summary, pages)
+    return summary, False
+
+
 def _prepare_homr_source(commit: str) -> Path:
     source = HOMR_CACHE_ROOT / commit
     if not source.exists():
@@ -90,26 +157,19 @@ def _prepare_homr_source(commit: str) -> Path:
 
 def run(run_tag: str, pages: list[str]) -> dict[str, str]:
     checkout = _require_issue294_checkout()
-
-    # The shared historical host adapter still contains an older exact-develop
-    # assertion. The downstream matrix owns the stricter invariant we actually
-    # need here: clean Issue #294 branch, unchanged merge-base, and a develop
-    # ref that still descends from that fixed base. Reuse the validated source
-    # commit while the shared A/B runner performs its remaining container checks.
-    previous_require_host_checkout = base.require_host_checkout
-    base.require_host_checkout = lambda: checkout["head"]
-    try:
-        ab = historical.run(run_tag, pages, None)
-    finally:
-        base.require_host_checkout = previous_require_host_checkout
-
+    summary, reused_same_original = _resolve_same_original_summary(run_tag, pages, checkout)
     output_root = PROJECT_ROOT / "logs/issue294" / run_tag
-    summary = Path(ab["summary"]).resolve()
 
     latest_commit = _latest_main_commit()
     b_source = _prepare_homr_source(B_COMMIT)
     c_source = _prepare_homr_source(latest_commit)
     matrix_root = output_root / "downstream_candidate_matrix"
+    if matrix_root.exists():
+        raise RuntimeError(
+            f"Downstream matrix output already exists: {matrix_root}. "
+            "Use a new --run-tag if this is a distinct experiment."
+        )
+
     command = [
         "docker",
         "exec",
@@ -144,16 +204,18 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
     report = matrix_root / "report.json"
     if not report.is_file():
         raise FileNotFoundError(report)
-    payload = json.loads(report.read_text(encoding="utf-8"))
+    payload = _load_json(report)
     if not isinstance(payload, dict) or payload.get("status") != "completed":
         raise ValueError(f"Incomplete downstream matrix: {report}")
 
     provenance = {
-        "schema_version": "issue294.downstream_candidate_matrix_host.v3",
+        "schema_version": "issue294.downstream_candidate_matrix_host.v4",
         "run_tag": run_tag,
         "pages": pages,
         "checkout": checkout,
         "same_original_summary": str(summary.relative_to(PROJECT_ROOT)),
+        "same_original_reused": reused_same_original,
+        "homr_cache_root": str(HOMR_CACHE_ROOT.relative_to(PROJECT_ROOT)),
         "B_source": str(b_source.relative_to(PROJECT_ROOT)),
         "B_commit": B_COMMIT,
         "upstream_discovery_ref": "refs/heads/main",
@@ -174,6 +236,7 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
     )
     return {
         "summary": str(summary),
+        "same_original_reused": str(reused_same_original).lower(),
         "matrix_report": str(report),
         "provenance": str(provenance_path),
         "B_homr_commit": B_COMMIT,

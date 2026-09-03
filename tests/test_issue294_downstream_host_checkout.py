@@ -92,3 +92,29 @@ def test_issue294_downstream_reuses_completed_same_original_run(tmp_path, monkey
     assert resolved == summary.resolve()
     assert reused is True
     assert container_checks == [True]
+
+
+def test_issue294_downstream_discards_only_incomplete_matrix_tree(tmp_path) -> None:
+    matrix_root = tmp_path / "downstream_candidate_matrix"
+    partial = matrix_root / "01_page_013" / "B_b377_material.log"
+    partial.parent.mkdir(parents=True)
+    partial.write_text("failed", encoding="utf-8")
+
+    report, reused = host._prepare_matrix_output(matrix_root)
+
+    assert report == matrix_root / "report.json"
+    assert reused is False
+    assert not matrix_root.exists()
+
+
+def test_issue294_downstream_reuses_completed_matrix_tree(tmp_path) -> None:
+    matrix_root = tmp_path / "downstream_candidate_matrix"
+    matrix_root.mkdir(parents=True)
+    report = matrix_root / "report.json"
+    report.write_text(json.dumps({"status": "completed"}), encoding="utf-8")
+
+    resolved_report, reused = host._prepare_matrix_output(matrix_root)
+
+    assert resolved_report == report
+    assert reused is True
+    assert matrix_root.is_dir()

@@ -1,22 +1,25 @@
 #!/usr/bin/env python3
 """Run an immutable upstream HOMR source commit as a detector-material candidate.
 
-This Issue #294 experiment intentionally stops before staff grouping, title OCR,
-Transformer parsing and MusicXML generation. The Stage-E baseline is consumed
-downstream for barline/staff/clef material; current-x4 HOMR remains the
-connector-semantic source. Only the SegNet weight is materialized for this run.
+This Issue #294 experiment intentionally stops before staff grouping, PDF input,
+title OCR, Transformer parsing, and MusicXML generation. The Stage-E baseline is
+consumed downstream for barline/staff/clef material; current-x4 HOMR remains the
+connector-semantic source. Only detector-path modules and the SegNet weight are
+materialized for this run.
 """
 
 from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import inspect
 import json
 import platform
 import sys
 import time
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import cv2
@@ -25,6 +28,30 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 TARGET_PIXELS = 3.5 * 1000 * 1000
 MODEL_RELEASE_BASE = "https://github.com/liebharc/homr/releases/download/onnx_checkpoints/"
+DETECTOR_ONLY_MODULES = (
+    "homr",
+    "homr.autocrop",
+    "homr.bar_line_detection",
+    "homr.bounding_boxes",
+    "homr.color_adjust",
+    "homr.constants",
+    "homr.debug",
+    "homr.download_utils",
+    "homr.model",
+    "homr.noise_filtering",
+    "homr.note_detection",
+    "homr.resize",
+    "homr.segmentation.config",
+    "homr.segmentation.inference_segnet",
+    "homr.staff_detection",
+)
+EXCLUDED_OPTIONAL_MODULES = (
+    "homr.main",
+    "homr.pdf_utils",
+    "homr.title_detection",
+    "homr.transformer.configs",
+    "homr.music_xml_generator",
+)
 
 
 def sha256(path: Path) -> str:
@@ -106,6 +133,71 @@ def _ensure_segnet_model(segnet_config: Any, *, use_gpu: bool) -> Path:
     return path
 
 
+def _verify_source(homr_source: Path, expected_commit: str) -> tuple[str, Path]:
+    source = homr_source.resolve()
+    if not (source / "homr").is_dir():
+        raise FileNotFoundError(source / "homr")
+    actual_commit = _checkout_head(source)
+    if actual_commit != expected_commit:
+        raise RuntimeError(
+            f"HOMR checkout mismatch: expected={expected_commit} actual={actual_commit}"
+        )
+    homr = importlib.import_module("homr")
+    imported_homr = Path(str(homr.__file__)).resolve()
+    if source not in imported_homr.parents:
+        raise RuntimeError(f"Expected HOMR import from {source}, got {imported_homr}")
+    return actual_commit, imported_homr
+
+
+def preflight(homr_source: Path, expected_commit: str) -> dict[str, Any]:
+    """Import exactly the detector-only dependency closure before expensive matrix work."""
+
+    actual_commit, imported_homr = _verify_source(homr_source, expected_commit)
+    imported: dict[str, str | None] = {}
+    for module_name in DETECTOR_ONLY_MODULES:
+        module = importlib.import_module(module_name)
+        raw_file = getattr(module, "__file__", None)
+        imported[module_name] = str(Path(raw_file).resolve()) if raw_file else None
+
+    from homr.segmentation.inference_segnet import extract
+
+    extract_parameters = inspect.signature(extract).parameters
+    required_extract_parameters = {"original_image", "img_path_str", "use_cache", "use_gpu_inference"}
+    missing = sorted(required_extract_parameters - set(extract_parameters))
+    if missing:
+        raise RuntimeError(f"Unsupported HOMR SegNet extract signature; missing={missing}")
+
+    import onnxruntime as ort
+
+    providers = list(ort.get_available_providers())
+    return {
+        "status": "completed",
+        "scope": "detector_only_import_preflight",
+        "homr_source": str(homr_source.resolve()),
+        "homr_commit": actual_commit,
+        "homr_module": str(imported_homr),
+        "commit_verification": "read_git_metadata_without_git_executable",
+        "imported_modules": imported,
+        "excluded_optional_modules": list(EXCLUDED_OPTIONAL_MODULES),
+        "optional_modules_imported": [
+            module for module in EXCLUDED_OPTIONAL_MODULES if module in sys.modules
+        ],
+        "runtime": {
+            "python": sys.executable,
+            "python_version": platform.python_version(),
+            "numpy_version": np.__version__,
+            "opencv_version": cv2.__version__,
+            "onnxruntime_version": ort.__version__,
+            "providers": providers,
+        },
+        "segnet_extract_parameters": list(extract_parameters),
+        "detector_runtime_classification": (
+            "upstream_source_detector_material_on_existing_pipeline_runtime; "
+            "not yet an upstream-supported full maintained-runtime gate"
+        ),
+    }
+
+
 def _make_proxy(image: Path, image_run_dir: Path) -> tuple[Path, float, float, np.ndarray]:
     original = cv2.imread(str(image))
     if original is None:
@@ -124,23 +216,93 @@ def _make_proxy(image: Path, image_run_dir: Path) -> tuple[Path, float, float, n
     return proxy_path, width / proxy_width, height / proxy_height, original
 
 
-def _load_predictions(homr_main: Any, image: Path, *, use_gpu: bool) -> tuple[Any, Any]:
-    loader = homr_main.load_and_preprocess_predictions
-    signature = inspect.signature(loader)
-    if "segnet_use_gpu" in signature.parameters or len(signature.parameters) >= 4:
-        return loader(str(image), False, True, use_gpu)
-    if "use_gpu_inference" in signature.parameters:
-        return loader(str(image), False, True, use_gpu)
-    return loader(str(image), False, True)
+def _load_predictions(image: Path, *, use_gpu: bool) -> tuple[Any, Any]:
+    """Mirror HOMR's detector preprocessing without importing homr.main."""
+
+    from homr import color_adjust
+    from homr.autocrop import autocrop
+    from homr.debug import Debug
+    from homr.model import InputPredictions
+    from homr.noise_filtering import filter_predictions
+    from homr.resize import resize_image
+    from homr.segmentation.inference_segnet import extract
+    from homr.staff_detection import make_lines_stronger
+
+    original = cv2.imread(str(image))
+    if original is None:
+        raise FileNotFoundError(image)
+    original = autocrop(original)
+    original = resize_image(original)
+    preprocessed = color_adjust.apply_clahe(original)
+    result = extract(
+        preprocessed,
+        str(image),
+        use_cache=False,
+        use_gpu_inference=use_gpu,
+        step_size=320,
+    )
+    original_image = cv2.resize(original, (result.staff.shape[1], result.staff.shape[0]))
+    preprocessed_image = cv2.resize(
+        preprocessed,
+        (result.staff.shape[1], result.staff.shape[0]),
+    )
+    predictions = InputPredictions(
+        original=original_image,
+        preprocessed=preprocessed_image,
+        notehead=result.notehead.astype(np.uint8),
+        symbols=result.symbols.astype(np.uint8),
+        staff=result.staff.astype(np.uint8),
+        clefs_keys=result.clefs_keys.astype(np.uint8),
+        stems_rest=result.stems_rests.astype(np.uint8),
+    )
+    debug = Debug(predictions.original, str(image), False)
+    predictions = filter_predictions(predictions, debug)
+    predictions.staff = make_lines_stronger(predictions.staff, (1, 2))
+    return predictions, debug
 
 
-def _detect_material(homr_main: Any, inference_image: Path, *, use_gpu: bool) -> tuple:
+def _predict_symbols(debug: Any, predictions: Any) -> Any:
+    """Mirror HOMR predict_symbols without importing the full application module."""
+
+    from homr.bar_line_detection import prepare_bar_line_image
+    from homr.bounding_boxes import create_bounding_ellipses, create_rotated_bounding_boxes
+
+    noteheads = create_bounding_ellipses(predictions.notehead, min_size=(4, 4))
+    staff_fragments = create_rotated_bounding_boxes(
+        predictions.staff,
+        skip_merging=True,
+        min_size=(5, 1),
+        max_size=(10000, 100),
+    )
+    clefs_keys = create_rotated_bounding_boxes(
+        predictions.clefs_keys,
+        min_size=(20, 40),
+        max_size=(1000, 1000),
+    )
+    stems_rest = create_rotated_bounding_boxes(predictions.stems_rest)
+    bar_line_img = prepare_bar_line_image(predictions.stems_rest)
+    debug.write_threshold_image("bar_line_img", bar_line_img)
+    bar_lines = create_rotated_bounding_boxes(
+        bar_line_img,
+        skip_merging=True,
+        min_size=(1, 5),
+    )
+    return SimpleNamespace(
+        noteheads=noteheads,
+        staff_fragments=staff_fragments,
+        clefs_keys=clefs_keys,
+        stems_rest=stems_rest,
+        bar_lines=bar_lines,
+    )
+
+
+def _detect_material(inference_image: Path, *, use_gpu: bool) -> tuple[Any, ...]:
     from homr import constants
     from homr.note_detection import combine_noteheads_with_stems
     from homr.staff_detection import break_wide_fragments
 
-    predictions, debug = _load_predictions(homr_main, inference_image, use_gpu=use_gpu)
-    symbols = homr_main.predict_symbols(debug, predictions)
+    predictions, debug = _load_predictions(inference_image, use_gpu=use_gpu)
+    symbols = _predict_symbols(debug, predictions)
     symbols.staff_fragments = break_wide_fragments(symbols.staff_fragments)
     noteheads_with_stems = combine_noteheads_with_stems(symbols.noteheads, symbols.stems_rest)
     if not noteheads_with_stems:
@@ -293,36 +455,28 @@ def run(
 ) -> dict[str, Any]:
     started = time.perf_counter()
     image = image.resolve()
-    homr_source = homr_source.resolve()
     output_root = output_root.resolve()
     result_path = result_path.resolve()
     if not image.is_file():
         raise FileNotFoundError(image)
-    if not (homr_source / "homr").is_dir():
-        raise FileNotFoundError(homr_source / "homr")
-    actual_commit = _checkout_head(homr_source)
-    if actual_commit != expected_commit:
-        raise RuntimeError(
-            f"HOMR checkout mismatch: expected={expected_commit} actual={actual_commit}"
-        )
     if output_root.exists():
         raise FileExistsError(output_root)
     if result_path.exists():
         raise FileExistsError(result_path)
 
-    import homr
-    import homr.main as homr_main
+    preflight_payload = preflight(homr_source, expected_commit)
+    actual_commit = str(preflight_payload["homr_commit"])
+    imported_homr = Path(str(preflight_payload["homr_module"]))
+
     import onnxruntime as ort
-    import torch
     from homr.segmentation import config as segnet_config
-    from homr.transformer.configs import Config
     from src.homr_eval_scripts.core.reporting import save_homr_results
 
-    imported_homr = Path(str(homr.__file__)).resolve()
-    if homr_source not in imported_homr.parents:
-        raise RuntimeError(f"Expected HOMR import from {homr_source}, got {imported_homr}")
-
-    use_gpu = bool(torch.cuda.is_available())
+    providers = list(ort.get_available_providers())
+    use_gpu = any(
+        provider in providers
+        for provider in ("CUDAExecutionProvider", "ROCMExecutionProvider", "CoreMLExecutionProvider")
+    )
     sessions: list[dict[str, Any]] = []
     original_session = ort.InferenceSession
 
@@ -346,7 +500,8 @@ def run(
         inference_image, proxy_x, proxy_y, original = _make_proxy(image, image_run_dir)
         detector_started = time.perf_counter()
         bar_line_boxes, notehead_mask, staff_mask, clef_mask = _detect_material(
-            homr_main, inference_image, use_gpu=use_gpu
+            inference_image,
+            use_gpu=use_gpu,
         )
         detector_core_sec = time.perf_counter() - detector_started
 
@@ -370,7 +525,11 @@ def run(
         )
         mapped = _postprocess(image, original, mapped, notehead_resized, staff_resized)
         detection = save_homr_results(
-            image, image_run_dir, mapped, notehead_resized, staff_resized
+            image,
+            image_run_dir,
+            mapped,
+            notehead_resized,
+            staff_resized,
         )
         clef_path = image_run_dir / f"{stem}_clef_mask.png"
         if not cv2.imwrite(str(clef_path), clef_resized):
@@ -378,39 +537,44 @@ def run(
     finally:
         ort.InferenceSession = original_session
 
-    transformer = Config().filepaths
     payload = {
-        "schema_version": "issue294.upstream_detector_material.v4",
+        "schema_version": "issue294.upstream_detector_material.v5",
         "status": "completed",
         "scope": "segnet_barline_staff_clef_material_only_pre_transformer",
         "historical_detector_artifact_runtime_input": False,
         "image": str(image),
         "homr": {
-            "source": str(homr_source),
+            "source": str(homr_source.resolve()),
             "commit": actual_commit,
             "commit_verification": "read_git_metadata_without_git_executable",
             "module": str(imported_homr),
         },
+        "preflight": preflight_payload,
         "runtime": {
             "python": sys.executable,
             "python_version": platform.python_version(),
             "numpy_version": np.__version__,
             "opencv_version": cv2.__version__,
             "onnxruntime_version": ort.__version__,
-            "torch_version": torch.__version__,
-            "cuda": use_gpu,
-            "compatibility_mode": "upstream_source_on_pipeline_runtime_detector_material_only",
+            "providers": providers,
+            "gpu_requested": use_gpu,
+            "compatibility_mode": (
+                "upstream_source_detector_material_on_existing_pipeline_runtime; "
+                "not yet an upstream-supported full maintained-runtime gate"
+            ),
         },
         "models": {
             "segnet": {"path": str(segnet), "sha256": sha256(segnet), "executed": True},
             "transformer_encoder": {
-                "path": str(Path(transformer.encoder_path_fp16)),
+                "path": None,
                 "executed": False,
+                "imported": False,
                 "downloaded_by_this_worker": False,
             },
             "transformer_decoder": {
-                "path": str(Path(transformer.decoder_path_fp16)),
+                "path": None,
                 "executed": False,
+                "imported": False,
                 "downloaded_by_this_worker": False,
             },
         },
@@ -435,19 +599,29 @@ def run(
         },
     }
     result_path.parent.mkdir(parents=True, exist_ok=True)
-    result_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
+    result_path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
     return payload
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--image", type=Path, required=True)
     parser.add_argument("--homr-source", type=Path, required=True)
     parser.add_argument("--homr-commit", required=True)
-    parser.add_argument("--output-root", type=Path, required=True)
-    parser.add_argument("--result", type=Path, required=True)
+    parser.add_argument("--preflight-only", action="store_true")
+    parser.add_argument("--image", type=Path)
+    parser.add_argument("--output-root", type=Path)
+    parser.add_argument("--result", type=Path)
     args = parser.parse_args()
     try:
+        if args.preflight_only:
+            payload = preflight(args.homr_source, args.homr_commit)
+            print(json.dumps(payload, ensure_ascii=False))
+            return 0
+        if args.image is None or args.output_root is None or args.result is None:
+            parser.error("--image, --output-root, and --result are required unless --preflight-only")
         payload = run(
             args.image,
             args.homr_source,

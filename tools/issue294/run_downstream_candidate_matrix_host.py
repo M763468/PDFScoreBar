@@ -40,6 +40,13 @@ def _latest_main_commit() -> str:
     return parts[0]
 
 
+def _resolve_latest_commit(explicit: str | None) -> str:
+    commit = explicit.strip() if explicit else _latest_main_commit()
+    if len(commit) != 40 or any(character not in "0123456789abcdef" for character in commit):
+        raise ValueError(f"Invalid immutable HOMR commit: {commit!r}")
+    return commit
+
+
 def _require_issue294_checkout() -> dict[str, str]:
     """Validate the fixed Issue #294 branch base without freezing local develop HEAD."""
 
@@ -211,6 +218,31 @@ def _run_detector_preflight(label: str, source: Path, commit: str) -> dict[str, 
     return payload
 
 
+def _prepare_candidates(latest_commit: str) -> tuple[Path, Path, dict[str, Any], dict[str, Any]]:
+    b_source = _prepare_homr_source(B_COMMIT)
+    c_source = _prepare_homr_source(latest_commit)
+    b_preflight = _run_detector_preflight("B_b377", b_source, B_COMMIT)
+    c_preflight = _run_detector_preflight("C_latest", c_source, latest_commit)
+    return b_source, c_source, b_preflight, c_preflight
+
+
+def run_preflight(latest_commit: str | None = None) -> dict[str, Any]:
+    checkout = _require_issue294_checkout()
+    base.require_container()
+    resolved_latest = _resolve_latest_commit(latest_commit)
+    b_source, c_source, b_preflight, c_preflight = _prepare_candidates(resolved_latest)
+    return {
+        "status": "completed",
+        "checkout": checkout,
+        "B_homr_commit": B_COMMIT,
+        "B_source": str(b_source.relative_to(PROJECT_ROOT)),
+        "B_detector_preflight": b_preflight,
+        "latest_homr_commit": resolved_latest,
+        "latest_source": str(c_source.relative_to(PROJECT_ROOT)),
+        "latest_detector_preflight": c_preflight,
+    }
+
+
 def _prepare_matrix_output(matrix_root: Path) -> tuple[Path, bool]:
     """Reuse a completed matrix or discard only an incomplete generated matrix tree."""
 
@@ -229,21 +261,20 @@ def _prepare_matrix_output(matrix_root: Path) -> tuple[Path, bool]:
     return report, False
 
 
-def run(run_tag: str, pages: list[str]) -> dict[str, str]:
+def run(
+    run_tag: str,
+    pages: list[str],
+    latest_commit: str | None = None,
+) -> dict[str, str]:
     checkout = _require_issue294_checkout()
     summary, reused_same_original = _resolve_same_original_summary(run_tag, pages, checkout)
     output_root = PROJECT_ROOT / "logs/issue294" / run_tag
 
-    latest_commit = _latest_main_commit()
-    b_source = _prepare_homr_source(B_COMMIT)
-    c_source = _prepare_homr_source(latest_commit)
+    resolved_latest = _resolve_latest_commit(latest_commit)
+    b_source, c_source, b_preflight, c_preflight = _prepare_candidates(resolved_latest)
 
-    # Do this before deleting/re-running any generated matrix work. This catches
-    # source/runtime import incompatibilities (such as optional PDF/OCR deps) at
-    # the cheapest boundary and for both candidates before fixed support or CNN work.
-    b_preflight = _run_detector_preflight("B_b377", b_source, B_COMMIT)
-    c_preflight = _run_detector_preflight("C_latest", c_source, latest_commit)
-
+    # Only after both exact source/runtime import closures pass do we discard an
+    # incomplete generated matrix and start fixed support / detector / CNN work.
     matrix_root = output_root / "downstream_candidate_matrix"
     report, reused_matrix = _prepare_matrix_output(matrix_root)
 
@@ -267,7 +298,7 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
             "--c-homr-source",
             str(base.container_path(c_source)),
             "--c-homr-commit",
-            latest_commit,
+            resolved_latest,
             "--output-root",
             str(base.container_path(matrix_root)),
         ]
@@ -286,7 +317,7 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
         raise ValueError(f"Incomplete downstream matrix: {report}")
 
     provenance = {
-        "schema_version": "issue294.downstream_candidate_matrix_host.v6",
+        "schema_version": "issue294.downstream_candidate_matrix_host.v7",
         "run_tag": run_tag,
         "pages": pages,
         "checkout": checkout,
@@ -297,8 +328,8 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
         "B_source": str(b_source.relative_to(PROJECT_ROOT)),
         "B_commit": B_COMMIT,
         "B_detector_preflight": b_preflight,
-        "upstream_discovery_ref": "refs/heads/main",
-        "upstream_resolved_commit": latest_commit,
+        "upstream_discovery_ref": "refs/heads/main" if latest_commit is None else None,
+        "upstream_resolved_commit": resolved_latest,
         "upstream_source": str(c_source.relative_to(PROJECT_ROOT)),
         "upstream_detector_preflight": c_preflight,
         "upstream_tracking_policy": (
@@ -321,7 +352,7 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
         "downstream_matrix_reused": str(reused_matrix).lower(),
         "provenance": str(provenance_path),
         "B_homr_commit": B_COMMIT,
-        "latest_homr_commit": latest_commit,
+        "latest_homr_commit": resolved_latest,
     }
 
 
@@ -330,7 +361,15 @@ def main() -> int:
         description=__doc__,
         epilog=f"Required checkout: git switch {ISSUE294_BRANCH}",
     )
-    parser.add_argument("--run-tag", required=True)
+    parser.add_argument("--run-tag")
+    parser.add_argument("--preflight-only", action="store_true")
+    parser.add_argument(
+        "--latest-homr-commit",
+        help=(
+            "Immutable upstream HOMR commit to gate. When omitted, resolve refs/heads/main once "
+            "for this invocation."
+        ),
+    )
     parser.add_argument(
         "--page",
         action="append",
@@ -340,7 +379,16 @@ def main() -> int:
     )
     args = parser.parse_args()
     try:
-        result = run(args.run_tag, args.pages or ["013"])
+        if args.preflight_only:
+            result = run_preflight(args.latest_homr_commit)
+        else:
+            if not args.run_tag:
+                parser.error("--run-tag is required unless --preflight-only")
+            result = run(
+                args.run_tag,
+                args.pages or ["013"],
+                args.latest_homr_commit,
+            )
     except Exception as error:  # noqa: BLE001
         print(
             json.dumps(

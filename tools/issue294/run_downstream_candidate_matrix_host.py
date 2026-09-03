@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -155,6 +156,24 @@ def _prepare_homr_source(commit: str) -> Path:
     return source
 
 
+def _prepare_matrix_output(matrix_root: Path) -> tuple[Path, bool]:
+    """Reuse a completed matrix or discard only an incomplete generated matrix tree."""
+
+    report = matrix_root / "report.json"
+    if not matrix_root.exists():
+        return report, False
+    if report.is_file():
+        payload = _load_json(report)
+        if isinstance(payload, dict) and payload.get("status") == "completed":
+            return report, True
+
+    # The host wrapper's previous finally block restores ownership after a failed
+    # docker invocation. Removing this generated subtree is safe and preserves the
+    # completed same-original A/B summary and provenance in its parent run root.
+    shutil.rmtree(matrix_root)
+    return report, False
+
+
 def run(run_tag: str, pages: list[str]) -> dict[str, str]:
     checkout = _require_issue294_checkout()
     summary, reused_same_original = _resolve_same_original_summary(run_tag, pages, checkout)
@@ -164,44 +183,40 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
     b_source = _prepare_homr_source(B_COMMIT)
     c_source = _prepare_homr_source(latest_commit)
     matrix_root = output_root / "downstream_candidate_matrix"
-    if matrix_root.exists():
-        raise RuntimeError(
-            f"Downstream matrix output already exists: {matrix_root}. "
-            "Use a new --run-tag if this is a distinct experiment."
-        )
+    report, reused_matrix = _prepare_matrix_output(matrix_root)
 
-    command = [
-        "docker",
-        "exec",
-        "-w",
-        str(base.CONTAINER_ROOT),
-        "-e",
-        "PYTHONPATH=/workspace",
-        base.CONTAINER,
-        base.PIPELINE_PYTHON,
-        "tools/issue294/run_downstream_candidate_matrix.py",
-        "--summary",
-        str(base.container_path(summary)),
-        "--b-homr-source",
-        str(base.container_path(b_source)),
-        "--b-homr-commit",
-        B_COMMIT,
-        "--c-homr-source",
-        str(base.container_path(c_source)),
-        "--c-homr-commit",
-        latest_commit,
-        "--output-root",
-        str(base.container_path(matrix_root)),
-    ]
-    try:
-        base.checked(command, cwd=PROJECT_ROOT)
-    finally:
-        base._restore_host_ownership(output_root)
-        base._restore_host_ownership(b_source)
-        if c_source != b_source:
-            base._restore_host_ownership(c_source)
+    if not reused_matrix:
+        command = [
+            "docker",
+            "exec",
+            "-w",
+            str(base.CONTAINER_ROOT),
+            "-e",
+            "PYTHONPATH=/workspace",
+            base.CONTAINER,
+            base.PIPELINE_PYTHON,
+            "tools/issue294/run_downstream_candidate_matrix.py",
+            "--summary",
+            str(base.container_path(summary)),
+            "--b-homr-source",
+            str(base.container_path(b_source)),
+            "--b-homr-commit",
+            B_COMMIT,
+            "--c-homr-source",
+            str(base.container_path(c_source)),
+            "--c-homr-commit",
+            latest_commit,
+            "--output-root",
+            str(base.container_path(matrix_root)),
+        ]
+        try:
+            base.checked(command, cwd=PROJECT_ROOT)
+        finally:
+            base._restore_host_ownership(output_root)
+            base._restore_host_ownership(b_source)
+            if c_source != b_source:
+                base._restore_host_ownership(c_source)
 
-    report = matrix_root / "report.json"
     if not report.is_file():
         raise FileNotFoundError(report)
     payload = _load_json(report)
@@ -209,12 +224,13 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
         raise ValueError(f"Incomplete downstream matrix: {report}")
 
     provenance = {
-        "schema_version": "issue294.downstream_candidate_matrix_host.v4",
+        "schema_version": "issue294.downstream_candidate_matrix_host.v5",
         "run_tag": run_tag,
         "pages": pages,
         "checkout": checkout,
         "same_original_summary": str(summary.relative_to(PROJECT_ROOT)),
         "same_original_reused": reused_same_original,
+        "downstream_matrix_reused": reused_matrix,
         "homr_cache_root": str(HOMR_CACHE_ROOT.relative_to(PROJECT_ROOT)),
         "B_source": str(b_source.relative_to(PROJECT_ROOT)),
         "B_commit": B_COMMIT,
@@ -238,6 +254,7 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
         "summary": str(summary),
         "same_original_reused": str(reused_same_original).lower(),
         "matrix_report": str(report),
+        "downstream_matrix_reused": str(reused_matrix).lower(),
         "provenance": str(provenance_path),
         "B_homr_commit": B_COMMIT,
         "latest_homr_commit": latest_commit,

@@ -156,6 +156,61 @@ def _prepare_homr_source(commit: str) -> Path:
     return source
 
 
+def _run_detector_preflight(label: str, source: Path, commit: str) -> dict[str, Any]:
+    """Verify the exact detector-only import closure inside the production container first."""
+
+    container_source = base.container_path(source)
+    command = [
+        "docker",
+        "exec",
+        "-w",
+        str(base.CONTAINER_ROOT),
+        "-e",
+        f"PYTHONPATH={container_source}:{base.CONTAINER_ROOT}",
+        base.CONTAINER,
+        base.PIPELINE_PYTHON,
+        "tools/issue294/run_latest_homr_detector_original.py",
+        "--homr-source",
+        str(container_source),
+        "--homr-commit",
+        commit,
+        "--preflight-only",
+    ]
+    completed = subprocess.run(
+        command,
+        cwd=PROJECT_ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if completed.returncode != 0:
+        raise RuntimeError(
+            f"{label} detector preflight failed ({completed.returncode}):\n"
+            f"stdout:\n{completed.stdout}\nstderr:\n{completed.stderr}"
+        )
+    lines = [line for line in completed.stdout.splitlines() if line.strip()]
+    if not lines:
+        raise RuntimeError(f"{label} detector preflight produced no JSON output")
+    try:
+        payload = json.loads(lines[-1])
+    except json.JSONDecodeError as error:
+        raise RuntimeError(
+            f"{label} detector preflight returned invalid JSON: {lines[-1]!r}"
+        ) from error
+    if not isinstance(payload, dict) or payload.get("status") != "completed":
+        raise RuntimeError(f"{label} detector preflight incomplete: {payload!r}")
+    optional = payload.get("optional_modules_imported")
+    if optional != []:
+        raise RuntimeError(f"{label} imported excluded optional HOMR modules: {optional!r}")
+    if payload.get("homr_commit") != commit:
+        raise RuntimeError(
+            f"{label} detector preflight commit mismatch: expected={commit} "
+            f"actual={payload.get('homr_commit')}"
+        )
+    return payload
+
+
 def _prepare_matrix_output(matrix_root: Path) -> tuple[Path, bool]:
     """Reuse a completed matrix or discard only an incomplete generated matrix tree."""
 
@@ -182,6 +237,13 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
     latest_commit = _latest_main_commit()
     b_source = _prepare_homr_source(B_COMMIT)
     c_source = _prepare_homr_source(latest_commit)
+
+    # Do this before deleting/re-running any generated matrix work. This catches
+    # source/runtime import incompatibilities (such as optional PDF/OCR deps) at
+    # the cheapest boundary and for both candidates before fixed support or CNN work.
+    b_preflight = _run_detector_preflight("B_b377", b_source, B_COMMIT)
+    c_preflight = _run_detector_preflight("C_latest", c_source, latest_commit)
+
     matrix_root = output_root / "downstream_candidate_matrix"
     report, reused_matrix = _prepare_matrix_output(matrix_root)
 
@@ -224,7 +286,7 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
         raise ValueError(f"Incomplete downstream matrix: {report}")
 
     provenance = {
-        "schema_version": "issue294.downstream_candidate_matrix_host.v5",
+        "schema_version": "issue294.downstream_candidate_matrix_host.v6",
         "run_tag": run_tag,
         "pages": pages,
         "checkout": checkout,
@@ -234,9 +296,11 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
         "homr_cache_root": str(HOMR_CACHE_ROOT.relative_to(PROJECT_ROOT)),
         "B_source": str(b_source.relative_to(PROJECT_ROOT)),
         "B_commit": B_COMMIT,
+        "B_detector_preflight": b_preflight,
         "upstream_discovery_ref": "refs/heads/main",
         "upstream_resolved_commit": latest_commit,
         "upstream_source": str(c_source.relative_to(PROJECT_ROOT)),
+        "upstream_detector_preflight": c_preflight,
         "upstream_tracking_policy": (
             "discover floating main, resolve immutable commit, gate immutable candidate, "
             "never switch production to a floating ref"

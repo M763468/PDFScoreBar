@@ -5,7 +5,12 @@ import types
 from pathlib import Path
 
 from tools.issue294.run_downstream_candidate_matrix import _comparison
-from tools.issue294.run_latest_homr_detector_original import _checkout_head, _ensure_segnet_model
+from tools.issue294.run_latest_homr_detector_original import (
+    DETECTOR_ONLY_MODULES,
+    EXCLUDED_OPTIONAL_MODULES,
+    _checkout_head,
+    _ensure_segnet_model,
+)
 
 
 def _variant(*, final_count: int, total_measures: int, measures: list[int]) -> dict:
@@ -84,6 +89,25 @@ def test_latest_materializes_only_selected_segnet_weight(tmp_path: Path, monkeyp
     assert len(requested_urls) == 1
     assert requested_urls[0].endswith("/segnet_fp16.zip")
     assert "transformer" not in requested_urls[0]
+
+
+def test_detector_only_import_contract_excludes_full_application_dependencies() -> None:
+    assert set(DETECTOR_ONLY_MODULES).isdisjoint(EXCLUDED_OPTIONAL_MODULES)
+    assert "homr.main" not in DETECTOR_ONLY_MODULES
+    assert "homr.pdf_utils" not in DETECTOR_ONLY_MODULES
+    assert "homr.title_detection" not in DETECTOR_ONLY_MODULES
+    assert "homr.transformer.configs" not in DETECTOR_ONLY_MODULES
+    assert "homr.music_xml_generator" not in DETECTOR_ONLY_MODULES
+
+
+def test_detector_runner_source_does_not_import_excluded_optional_modules() -> None:
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "tools/issue294/run_latest_homr_detector_original.py"
+    ).read_text(encoding="utf-8")
+    for module in EXCLUDED_OPTIONAL_MODULES:
+        assert f"import {module}" not in source
+        assert f"from {module} import" not in source
 
 
 def test_checkout_head_reads_detached_head_without_git_binary(tmp_path: Path) -> None:

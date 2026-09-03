@@ -5,7 +5,7 @@ import types
 from pathlib import Path
 
 from tools.issue294.run_downstream_candidate_matrix import _comparison
-from tools.issue294.run_latest_homr_detector_original import _ensure_segnet_model
+from tools.issue294.run_latest_homr_detector_original import _checkout_head, _ensure_segnet_model
 
 
 def _variant(*, final_count: int, total_measures: int, measures: list[int]) -> dict:
@@ -84,3 +84,27 @@ def test_latest_materializes_only_selected_segnet_weight(tmp_path: Path, monkeyp
     assert len(requested_urls) == 1
     assert requested_urls[0].endswith("/segnet_fp16.zip")
     assert "transformer" not in requested_urls[0]
+
+
+def test_checkout_head_reads_detached_head_without_git_binary(tmp_path: Path) -> None:
+    commit = "b377620a3a55bd7ff657481cec5b688dfbc9cee9"
+    source = tmp_path / "homr"
+    git_dir = source / ".git"
+    git_dir.mkdir(parents=True)
+    (git_dir / "HEAD").write_text(commit + "\n", encoding="utf-8")
+
+    assert _checkout_head(source) == commit
+
+
+def test_checkout_head_reads_packed_symbolic_ref_without_git_binary(tmp_path: Path) -> None:
+    commit = "457e7c6518a10ba755db2e60883419e56c4d7369"
+    source = tmp_path / "homr"
+    git_dir = source / ".git"
+    git_dir.mkdir(parents=True)
+    (git_dir / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
+    (git_dir / "packed-refs").write_text(
+        f"# pack-refs with: peeled fully-peeled sorted\n{commit} refs/heads/main\n",
+        encoding="utf-8",
+    )
+
+    assert _checkout_head(source) == commit

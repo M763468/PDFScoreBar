@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import sys
+import types
+from pathlib import Path
+
 from tools.issue294.run_downstream_candidate_matrix import _comparison
-from tools.issue294.run_latest_homr_detector_original import _download_segnet
+from tools.issue294.run_latest_homr_detector_original import _ensure_segnet_model
 
 
 def _variant(*, final_count: int, total_measures: int, measures: list[int]) -> dict:
@@ -47,26 +51,36 @@ def test_operational_gate_rejects_measure_count_drift() -> None:
     assert comparison["count_topology_numbering_pass"] is False
 
 
-def test_latest_download_requests_segnet_gpu_without_transformer_gpu() -> None:
-    observed: dict[str, bool] = {}
+def test_latest_materializes_only_selected_segnet_weight(tmp_path: Path, monkeypatch) -> None:
+    fp32 = tmp_path / "segnet_fp32.onnx"
+    fp16 = tmp_path / "segnet_fp16.onnx"
+    requested_urls: list[str] = []
 
-    def latest_download(
-        segnet_use_gpu: bool,
-        transformer_use_gpu: bool,
-        coreml_encoder: bool,
-    ) -> None:
-        observed.update(
-            {
-                "segnet_use_gpu": segnet_use_gpu,
-                "transformer_use_gpu": transformer_use_gpu,
-                "coreml_encoder": coreml_encoder,
-            }
-        )
+    download_utils = types.ModuleType("homr.download_utils")
 
-    _download_segnet(latest_download, use_gpu=True)
+    def download_file(url: str, destination: str) -> None:
+        requested_urls.append(url)
+        Path(destination).write_bytes(b"fake zip")
 
-    assert observed == {
-        "segnet_use_gpu": True,
-        "transformer_use_gpu": False,
-        "coreml_encoder": False,
-    }
+    def unzip_file(_archive: str, destination: str) -> None:
+        Path(destination, fp16.name).write_bytes(b"segnet")
+
+    download_utils.download_file = download_file  # type: ignore[attr-defined]
+    download_utils.unzip_file = unzip_file  # type: ignore[attr-defined]
+    homr = types.ModuleType("homr")
+    homr.download_utils = download_utils  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "homr", homr)
+    monkeypatch.setitem(sys.modules, "homr.download_utils", download_utils)
+
+    config = types.SimpleNamespace(
+        segnet_path_onnx=str(fp32),
+        segnet_path_onnx_fp16=str(fp16),
+    )
+
+    resolved = _ensure_segnet_model(config, use_gpu=True)
+
+    assert resolved == fp16
+    assert resolved.read_bytes() == b"segnet"
+    assert len(requested_urls) == 1
+    assert requested_urls[0].endswith("/segnet_fp16.zip")
+    assert "transformer" not in requested_urls[0]

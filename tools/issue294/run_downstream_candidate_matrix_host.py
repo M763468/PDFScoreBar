@@ -19,6 +19,8 @@ from tools.issue294 import run_same_original_ab_host_historical as historical
 HOMR_URL = "https://github.com/liebharc/homr.git"
 HOMR_CACHE_ROOT = PROJECT_ROOT / "logs/issue294/_upstream_homr"
 B_COMMIT = "b377620a3a55bd7ff657481cec5b688dfbc9cee9"
+ISSUE294_BRANCH = base.BRANCH
+ISSUE294_BASE_COMMIT = base.BASE_COMMIT
 
 
 def _latest_main_commit() -> str:
@@ -27,6 +29,46 @@ def _latest_main_commit() -> str:
     if len(parts) != 2 or parts[1] != "refs/heads/main":
         raise RuntimeError(f"Unexpected HOMR ls-remote result: {text!r}")
     return parts[0]
+
+
+def _require_issue294_checkout() -> dict[str, str]:
+    """Validate the fixed Issue #294 branch base without freezing local develop HEAD."""
+
+    status = base.capture(["git", "status", "--porcelain"], cwd=PROJECT_ROOT)
+    if status:
+        raise RuntimeError("Issue #294 experiment requires a clean host checkout:\n" + status)
+
+    branch = base.capture(["git", "branch", "--show-current"], cwd=PROJECT_ROOT)
+    if branch != ISSUE294_BRANCH:
+        raise RuntimeError(
+            f"Expected branch {ISSUE294_BRANCH}, got {branch or '<detached>'}. "
+            f"Run: git switch {ISSUE294_BRANCH}"
+        )
+
+    head = base.capture(["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT)
+    develop = base.capture(["git", "rev-parse", "develop"], cwd=PROJECT_ROOT)
+    base_in_develop = base.capture(
+        ["git", "merge-base", ISSUE294_BASE_COMMIT, "develop"], cwd=PROJECT_ROOT
+    )
+    if base_in_develop != ISSUE294_BASE_COMMIT:
+        raise RuntimeError(
+            "Current develop no longer contains the fixed Issue #294 base: "
+            f"base={ISSUE294_BASE_COMMIT} develop={develop} merge_base={base_in_develop}"
+        )
+
+    branch_merge_base = base.capture(["git", "merge-base", "HEAD", "develop"], cwd=PROJECT_ROOT)
+    if branch_merge_base != ISSUE294_BASE_COMMIT:
+        raise RuntimeError(
+            "Issue #294 branch base changed unexpectedly: "
+            f"expected={ISSUE294_BASE_COMMIT} actual={branch_merge_base}"
+        )
+
+    return {
+        "branch": branch,
+        "head": head,
+        "base_commit": ISSUE294_BASE_COMMIT,
+        "develop_head": develop,
+    }
 
 
 def _prepare_homr_source(commit: str) -> Path:
@@ -47,8 +89,20 @@ def _prepare_homr_source(commit: str) -> Path:
 
 
 def run(run_tag: str, pages: list[str]) -> dict[str, str]:
-    # Existing historical adapter owns branch/container/base-image provenance checks.
-    ab = historical.run(run_tag, pages, None)
+    checkout = _require_issue294_checkout()
+
+    # The shared historical host adapter still contains an older exact-develop
+    # assertion. The downstream matrix owns the stricter invariant we actually
+    # need here: clean Issue #294 branch, unchanged merge-base, and a develop
+    # ref that still descends from that fixed base. Reuse the validated source
+    # commit while the shared A/B runner performs its remaining container checks.
+    previous_require_host_checkout = base.require_host_checkout
+    base.require_host_checkout = lambda: checkout["head"]
+    try:
+        ab = historical.run(run_tag, pages, None)
+    finally:
+        base.require_host_checkout = previous_require_host_checkout
+
     output_root = PROJECT_ROOT / "logs/issue294" / run_tag
     summary = Path(ab["summary"]).resolve()
 
@@ -95,9 +149,10 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
         raise ValueError(f"Incomplete downstream matrix: {report}")
 
     provenance = {
-        "schema_version": "issue294.downstream_candidate_matrix_host.v2",
+        "schema_version": "issue294.downstream_candidate_matrix_host.v3",
         "run_tag": run_tag,
         "pages": pages,
+        "checkout": checkout,
         "same_original_summary": str(summary.relative_to(PROJECT_ROOT)),
         "B_source": str(b_source.relative_to(PROJECT_ROOT)),
         "B_commit": B_COMMIT,
@@ -127,7 +182,10 @@ def run(run_tag: str, pages: list[str]) -> dict[str, str]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        epilog=f"Required checkout: git switch {ISSUE294_BRANCH}",
+    )
     parser.add_argument("--run-tag", required=True)
     parser.add_argument(
         "--page",

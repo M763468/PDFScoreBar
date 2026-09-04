@@ -10,7 +10,7 @@ import subprocess
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-CONTAINER = "pdfscore_issue293_profile"
+CONTAINER = "pdfscore_issue294_profile_worktree"
 EXPECTED_IMAGE_ID = "sha256:5e1265263a5ba014814002c02fcfaf7f07a61e7000c13697db6c3087c7d2acdc"
 BASE_COMMIT = "9df0be734dcb0b7fec14b56c8d1a8b20ec55af5d"
 BRANCH = "perf/issue294-homr-baseline-refresh"

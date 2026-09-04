@@ -18,6 +18,7 @@ import json
 import platform
 import sys
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -52,6 +53,39 @@ EXCLUDED_OPTIONAL_MODULES = (
     "homr.transformer.configs",
     "homr.music_xml_generator",
 )
+STEM_CONTEXT_HEURISTICS = {
+    "notehead_proximity_threshold_px": 5,
+    "min_overlap_px": 5,
+    "max_height_px": 24,
+    "max_width_px": 4,
+    "staff_crossing_enabled": False,
+    "min_staff_crossings": 3,
+}
+
+
+@dataclass
+class BarlinePrediction:
+    pred_bbox: tuple[int, int, int, int]
+    orig_bbox: tuple[int, int, int, int]
+    system_index: int
+    staff_index: int
+
+
+@dataclass
+class TransformInfo:
+    original_shape: tuple[int, int]
+    crop_box: tuple[int, int, int, int]
+    resize_shape: tuple[int, int]
+    seg_shape: tuple[int, int]
+    resize_scale: tuple[float, float]
+    seg_scale: tuple[float, float]
+
+    @property
+    def total_scale(self) -> tuple[float, float]:
+        return (
+            self.resize_scale[0] * self.seg_scale[0],
+            self.resize_scale[1] * self.seg_scale[1],
+        )
 
 
 def sha256(path: Path) -> str:
@@ -112,6 +146,18 @@ def _shape(path: Path) -> list[int] | None:
     return [int(image.shape[1]), int(image.shape[0])]
 
 
+def _excluded_imports() -> list[str]:
+    return [module for module in EXCLUDED_OPTIONAL_MODULES if module in sys.modules]
+
+
+def _assert_excluded_modules_absent(stage: str) -> None:
+    imported = _excluded_imports()
+    if imported:
+        raise RuntimeError(
+            f"Excluded full-application HOMR modules imported during {stage}: {imported}"
+        )
+
+
 def _ensure_segnet_model(segnet_config: Any, *, use_gpu: bool) -> Path:
     from homr import download_utils
 
@@ -170,6 +216,7 @@ def preflight(homr_source: Path, expected_commit: str) -> dict[str, Any]:
     import onnxruntime as ort
 
     providers = list(ort.get_available_providers())
+    _assert_excluded_modules_absent("detector preflight")
     return {
         "status": "completed",
         "scope": "detector_only_import_preflight",
@@ -179,9 +226,7 @@ def preflight(homr_source: Path, expected_commit: str) -> dict[str, Any]:
         "commit_verification": "read_git_metadata_without_git_executable",
         "imported_modules": imported,
         "excluded_optional_modules": list(EXCLUDED_OPTIONAL_MODULES),
-        "optional_modules_imported": [
-            module for module in EXCLUDED_OPTIONAL_MODULES if module in sys.modules
-        ],
+        "optional_modules_imported": _excluded_imports(),
         "runtime": {
             "python": sys.executable,
             "python_version": platform.python_version(),
@@ -217,7 +262,7 @@ def _make_proxy(image: Path, image_run_dir: Path) -> tuple[Path, float, float, n
 
 
 def _load_predictions(image: Path, *, use_gpu: bool) -> tuple[Any, Any]:
-    """Mirror HOMR's detector preprocessing without importing homr.main."""
+    """Mirror HOMR detector preprocessing without importing homr.main."""
 
     from homr import color_adjust
     from homr.autocrop import autocrop
@@ -329,23 +374,104 @@ def _detect_material(inference_image: Path, *, use_gpu: bool) -> tuple[Any, ...]
     return bar_line_boxes, predictions.notehead, predictions.staff, predictions.clefs_keys
 
 
+def _autocrop_bounds(image: np.ndarray) -> tuple[tuple[int, int, int, int], bool]:
+    """Pure copy of the evaluator coordinate helper, without heuristics imports."""
+
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    hist = cv2.calcHist([image], [0], None, [256], [0, 256])
+    dominant = int(
+        max(
+            enumerate(hist),
+            key=lambda item: float(item[1].item() if hasattr(item[1], "item") else item[1]),
+        )[0]
+    )
+    thresh = cv2.threshold(gray, max(dominant - 30, 0), 255, cv2.THRESH_BINARY)[1]
+    morph = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
+    morph = cv2.morphologyEx(morph, cv2.MORPH_ERODE, np.ones((9, 9), np.uint8))
+    contours_tuple = cv2.findContours(morph, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours = contours_tuple[0] if len(contours_tuple) == 2 else contours_tuple[1]
+    area_thresh = 0.0
+    big_contour = None
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        if area > area_thresh:
+            area_thresh = area
+            big_contour = contour
+
+    height, width = image.shape[:2]
+    if big_contour is None:
+        return (0, 0, width, height), False
+    x, y, crop_width, crop_height = cv2.boundingRect(big_contour)
+    is_full_page_view = x < width * 0.25 or y < height * 0.25
+    if is_full_page_view:
+        return (0, 0, width, height), False
+    return (x, y, crop_width, crop_height), True
+
+
+def _compute_transform_info(image_path: Path, seg_shape: tuple[int, int]) -> TransformInfo:
+    from homr.resize import calc_target_image_size
+
+    original = cv2.imread(str(image_path))
+    if original is None:
+        raise RuntimeError(f"Failed to load image for transform computation: {image_path}")
+    crop_box, cropped = _autocrop_bounds(original)
+    crop_x, crop_y, crop_width, crop_height = crop_box
+    if not cropped:
+        crop_x = crop_y = 0
+        crop_width = original.shape[1]
+        crop_height = original.shape[0]
+
+    target_width, target_height = calc_target_image_size(crop_width, crop_height)
+    resize_scale_x = target_width / crop_width
+    resize_scale_y = target_height / crop_height
+    seg_height, seg_width = seg_shape
+    seg_scale_x = seg_width / target_width
+    seg_scale_y = seg_height / target_height
+    return TransformInfo(
+        original_shape=(original.shape[1], original.shape[0]),
+        crop_box=(crop_x, crop_y, crop_width, crop_height),
+        resize_shape=(target_width, target_height),
+        seg_shape=(seg_width, seg_height),
+        resize_scale=(resize_scale_x, resize_scale_y),
+        seg_scale=(seg_scale_x, seg_scale_y),
+    )
+
+
+def _map_pred_to_orig(
+    box: tuple[int, int, int, int], transform: TransformInfo
+) -> tuple[int, int, int, int]:
+    crop_x, crop_y, *_ = transform.crop_box
+    scale_x, scale_y = transform.total_scale
+    inv_scale_x = 1.0 / scale_x if scale_x != 0 else 0.0
+    inv_scale_y = 1.0 / scale_y if scale_y != 0 else 0.0
+    orig_width, orig_height = transform.original_shape
+    x1, y1, x2, y2 = box
+    mapped = (
+        int(round(x1 * inv_scale_x + crop_x)),
+        int(round(y1 * inv_scale_y + crop_y)),
+        int(round(x2 * inv_scale_x + crop_x)),
+        int(round(y2 * inv_scale_y + crop_y)),
+    )
+    x1c = max(0, min(orig_width - 1, mapped[0]))
+    y1c = max(0, min(orig_height - 1, mapped[1]))
+    x2c = max(0, min(orig_width - 1, mapped[2]))
+    y2c = max(0, min(orig_height - 1, mapped[3]))
+    return (x1c, y1c, max(x1c, x2c), max(y1c, y2c))
+
+
 def _map_predictions(
     bar_line_boxes: list[Any],
     inference_image: Path,
     seg_shape: tuple[int, int],
     proxy_scale_x: float,
     proxy_scale_y: float,
-) -> list[Any]:
-    from src.homr_eval_scripts.core.heuristics import compute_transform_info
-    from src.homr_eval_scripts.core.metrics import BarlinePrediction
-    from src.homr_eval_scripts.core.utils import map_pred_to_orig
-
-    transform = compute_transform_info(inference_image, seg_shape)
-    mapped: list[Any] = []
+) -> list[BarlinePrediction]:
+    transform = _compute_transform_info(inference_image, seg_shape)
+    mapped: list[BarlinePrediction] = []
     for barline_box in bar_line_boxes:
         raw = barline_box.to_bounding_box().box
         pred_bbox = tuple(int(value) for value in raw)
-        x1, y1, x2, y2 = map_pred_to_orig(pred_bbox, transform)
+        x1, y1, x2, y2 = _map_pred_to_orig(pred_bbox, transform)
         if proxy_scale_x != 1.0 or proxy_scale_y != 1.0:
             x1 = int(round(x1 * proxy_scale_x))
             y1 = int(round(y1 * proxy_scale_y))
@@ -362,17 +488,58 @@ def _map_predictions(
     return mapped
 
 
+def _filter_notehead_proximity(
+    detections: list[BarlinePrediction], notehead_mask: np.ndarray
+) -> list[BarlinePrediction]:
+    """Mirror the currently enabled safe stem filter without importing heuristics.py."""
+
+    cfg = STEM_CONTEXT_HEURISTICS
+    if cfg["staff_crossing_enabled"]:
+        raise RuntimeError("Issue #294 detector adapter assumes staff-crossing filter is disabled")
+
+    kept: list[BarlinePrediction] = []
+    mask_height, mask_width = notehead_mask.shape
+    proximity = int(cfg["notehead_proximity_threshold_px"])
+    min_overlap = int(cfg["min_overlap_px"])
+    max_height = int(cfg["max_height_px"])
+    max_width = int(cfg["max_width_px"])
+
+    for pred in detections:
+        x1, y1, x2, y2 = pred.orig_bbox
+        width = x2 - x1
+        height = y2 - y1
+        is_small_candidate = (height < max_height) and (width < max_width)
+        search_x1 = max(0, x1 - proximity)
+        search_x2 = min(mask_width, x2 + proximity)
+        y1c = max(0, min(mask_height, y1))
+        y2c = max(0, min(mask_height, y2))
+        if y1c >= y2c or search_x1 >= search_x2:
+            kept.append(pred)
+            continue
+        search_window = notehead_mask[y1c:y2c, search_x1:search_x2]
+        if not np.any(search_window):
+            kept.append(pred)
+            continue
+        box_x1 = max(0, min(mask_width, x1))
+        box_x2 = max(0, min(mask_width, x2))
+        overlap_area = (
+            0
+            if box_x1 >= box_x2
+            else int(np.count_nonzero(notehead_mask[y1c:y2c, box_x1:box_x2]))
+        )
+        if is_small_candidate and overlap_area >= min_overlap:
+            continue
+        kept.append(pred)
+    return kept
+
+
 def _postprocess(
     image: Path,
     original: np.ndarray,
-    predictions: list[Any],
+    predictions: list[BarlinePrediction],
     notehead_mask: np.ndarray,
-    staff_mask: np.ndarray,
-) -> list[Any]:
+) -> list[BarlinePrediction]:
     from src.common.thin_barline_finder import ThinBarlineConfig, detect_thin_vertical_runs
-    from src.homr_eval_scripts.core.heuristics import filter_detections_by_notehead_proximity
-    from src.homr_eval_scripts.core.metrics import BarlinePrediction
-    from src.homr_eval_scripts.core.utils import STEM_CONTEXT_HEURISTICS
 
     thin_config = ThinBarlineConfig(
         min_height=18,
@@ -430,20 +597,45 @@ def _postprocess(
                     staff_index=-1,
                 )
             )
+    return _filter_notehead_proximity(predictions, notehead_mask)
 
-    cfg = STEM_CONTEXT_HEURISTICS
-    filtered, _rejected = filter_detections_by_notehead_proximity(
-        predictions,
-        notehead_mask,
-        cfg["notehead_proximity_threshold_px"],
-        cfg["min_overlap_px"],
-        cfg["max_height_px"],
-        cfg["max_width_px"],
-        staff_mask,
-        cfg["min_staff_crossings"],
-        cfg["staff_crossing_enabled"],
+
+def _save_homr_results(
+    image_path: Path,
+    image_run_dir: Path,
+    predictions: list[BarlinePrediction],
+    notehead_mask: np.ndarray,
+    staff_mask: np.ndarray,
+) -> Path:
+    image_run_dir.mkdir(parents=True, exist_ok=True)
+    stem = image_path.stem
+    notehead_path = image_run_dir / f"{stem}_notehead_mask.png"
+    staff_path = image_run_dir / f"{stem}_staff_mask.png"
+    if not cv2.imwrite(str(notehead_path), notehead_mask):
+        raise RuntimeError(f"Failed to write notehead mask: {notehead_path}")
+    if not cv2.imwrite(str(staff_path), staff_mask):
+        raise RuntimeError(f"Failed to write staff mask: {staff_path}")
+    detections_path = image_run_dir / f"{stem}_detections.json"
+    detections_path.write_text(
+        json.dumps(
+            {
+                "image": str(image_path),
+                "predictions": [
+                    {
+                        "pred_bbox": pred.pred_bbox,
+                        "orig_bbox": pred.orig_bbox,
+                        "system_index": pred.system_index,
+                        "staff_index": pred.staff_index,
+                    }
+                    for pred in predictions
+                ],
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
     )
-    return filtered
+    return detections_path
 
 
 def run(
@@ -470,7 +662,6 @@ def run(
 
     import onnxruntime as ort
     from homr.segmentation import config as segnet_config
-    from src.homr_eval_scripts.core.reporting import save_homr_results
 
     providers = list(ort.get_available_providers())
     use_gpu = any(
@@ -500,8 +691,7 @@ def run(
         inference_image, proxy_x, proxy_y, original = _make_proxy(image, image_run_dir)
         detector_started = time.perf_counter()
         bar_line_boxes, notehead_mask, staff_mask, clef_mask = _detect_material(
-            inference_image,
-            use_gpu=use_gpu,
+            inference_image, use_gpu=use_gpu
         )
         detector_core_sec = time.perf_counter() - detector_started
 
@@ -523,22 +713,19 @@ def run(
             (width, height),
             interpolation=cv2.INTER_NEAREST,
         )
-        mapped = _postprocess(image, original, mapped, notehead_resized, staff_resized)
-        detection = save_homr_results(
-            image,
-            image_run_dir,
-            mapped,
-            notehead_resized,
-            staff_resized,
+        mapped = _postprocess(image, original, mapped, notehead_resized)
+        detection = _save_homr_results(
+            image, image_run_dir, mapped, notehead_resized, staff_resized
         )
         clef_path = image_run_dir / f"{stem}_clef_mask.png"
         if not cv2.imwrite(str(clef_path), clef_resized):
             raise RuntimeError(f"Failed to write clef mask: {clef_path}")
+        _assert_excluded_modules_absent("detector inference and postprocessing")
     finally:
         ort.InferenceSession = original_session
 
     payload = {
-        "schema_version": "issue294.upstream_detector_material.v5",
+        "schema_version": "issue294.upstream_detector_material.v6",
         "status": "completed",
         "scope": "segnet_barline_staff_clef_material_only_pre_transformer",
         "historical_detector_artifact_runtime_input": False,
@@ -550,6 +737,7 @@ def run(
             "module": str(imported_homr),
         },
         "preflight": preflight_payload,
+        "postrun_optional_modules_imported": _excluded_imports(),
         "runtime": {
             "python": sys.executable,
             "python_version": platform.python_version(),
@@ -600,8 +788,7 @@ def run(
     }
     result_path.parent.mkdir(parents=True, exist_ok=True)
     result_path.write_text(
-        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     return payload
 

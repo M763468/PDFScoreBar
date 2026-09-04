@@ -5,10 +5,16 @@ from pathlib import Path
 
 import pytest
 
-from tools.issue294.run_detector_material_smoke_host import _load_result
+from tools.issue294 import run_detector_material_smoke_host as smoke
 
 
-def _write_result(tmp_path: Path, *, cuda: bool = True, mask_shape: list[int] | None = None) -> Path:
+def _write_result(
+    tmp_path: Path,
+    *,
+    gpu_requested: bool = True,
+    mask_shape: list[int] | None = None,
+    optional_modules: list[str] | None = None,
+) -> Path:
     artifacts = {}
     for key in ("detections", "staff_mask", "notehead_mask", "clef_mask"):
         path = tmp_path / f"{key}.dat"
@@ -20,7 +26,8 @@ def _write_result(tmp_path: Path, *, cuda: bool = True, mask_shape: list[int] | 
     payload = {
         "status": "completed",
         "homr": {"commit": "457e7c6518a10ba755db2e60883419e56c4d7369"},
-        "runtime": {"cuda": cuda},
+        "preflight": {"optional_modules_imported": optional_modules or []},
+        "runtime": {"gpu_requested": gpu_requested},
         "onnx_sessions": [
             {
                 "active_providers": [
@@ -46,17 +53,17 @@ def test_detector_smoke_accepts_completed_cuda_coordinate_contract(tmp_path: Pat
     commit = "457e7c6518a10ba755db2e60883419e56c4d7369"
     result = _write_result(tmp_path)
 
-    payload = _load_result(result, label="C_latest", commit=commit)
+    payload = smoke._load_result(result, label="C_latest", commit=commit)
 
     assert payload["homr"]["commit"] == commit
 
 
-def test_detector_smoke_rejects_non_cuda_runtime(tmp_path: Path) -> None:
+def test_detector_smoke_rejects_non_gpu_runtime(tmp_path: Path) -> None:
     commit = "457e7c6518a10ba755db2e60883419e56c4d7369"
-    result = _write_result(tmp_path, cuda=False)
+    result = _write_result(tmp_path, gpu_requested=False)
 
-    with pytest.raises(RuntimeError, match="did not use CUDA runtime"):
-        _load_result(result, label="C_latest", commit=commit)
+    with pytest.raises(RuntimeError, match="did not request GPU runtime"):
+        smoke._load_result(result, label="C_latest", commit=commit)
 
 
 def test_detector_smoke_rejects_coordinate_shape_drift(tmp_path: Path) -> None:
@@ -64,4 +71,18 @@ def test_detector_smoke_rejects_coordinate_shape_drift(tmp_path: Path) -> None:
     result = _write_result(tmp_path, mask_shape=[1919, 2715])
 
     with pytest.raises(RuntimeError, match="coordinate shape mismatch"):
-        _load_result(result, label="C_latest", commit=commit)
+        smoke._load_result(result, label="C_latest", commit=commit)
+
+
+def test_detector_smoke_rejects_optional_module_import(tmp_path: Path) -> None:
+    commit = "457e7c6518a10ba755db2e60883419e56c4d7369"
+    result = _write_result(tmp_path, optional_modules=["homr.pdf_utils"])
+
+    with pytest.raises(RuntimeError, match="imported excluded optional HOMR modules"):
+        smoke._load_result(result, label="C_latest", commit=commit)
+
+
+def test_detector_smoke_maps_workspace_artifact_path_to_host(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(smoke, "PROJECT_ROOT", tmp_path)
+
+    assert smoke._host_path("/workspace/temp/example.json") == tmp_path / "temp/example.json"

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -86,3 +88,20 @@ def test_detector_smoke_maps_workspace_artifact_path_to_host(tmp_path: Path, mon
     monkeypatch.setattr(smoke, "PROJECT_ROOT", tmp_path)
 
     assert smoke._host_path("/workspace/temp/example.json") == tmp_path / "temp/example.json"
+
+
+def test_detector_smoke_script_direct_execution_bootstraps_repo_root(tmp_path: Path) -> None:
+    script = smoke.PROJECT_ROOT / "tools/issue294/run_detector_material_smoke_host.py"
+
+    completed = subprocess.run(
+        [sys.executable, str(script), "--help"],
+        cwd=tmp_path,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "ModuleNotFoundError" not in completed.stderr
+    assert "--latest-homr-commit" in completed.stdout

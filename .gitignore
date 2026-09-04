@@ -27,7 +27,7 @@ uv.lock
 
 # Debug outputs
 debug_outputs/
-logs/
+logs
 temp.txt
 
 # Local build logs (keep out of repo root)
@@ -89,7 +89,7 @@ data/evaluation2/**/manifest.json
 data/evaluation2/**/missing_pages.json
 
 # AI Agent artifacts
-artifacts/
+artifacts
 
 # Graphify generated artifacts
 # Commit portable graph/report/wiki results; ignore caches and local exports.

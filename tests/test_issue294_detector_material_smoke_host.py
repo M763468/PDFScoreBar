@@ -16,6 +16,7 @@ def _write_result(
     gpu_requested: bool = True,
     mask_shape: list[int] | None = None,
     optional_modules: list[str] | None = None,
+    postrun_optional_modules: list[str] | None = None,
 ) -> Path:
     artifacts = {}
     for key in ("detections", "staff_mask", "notehead_mask", "clef_mask"):
@@ -29,6 +30,7 @@ def _write_result(
         "status": "completed",
         "homr": {"commit": "457e7c6518a10ba755db2e60883419e56c4d7369"},
         "preflight": {"optional_modules_imported": optional_modules or []},
+        "postrun_optional_modules_imported": postrun_optional_modules or [],
         "runtime": {"gpu_requested": gpu_requested},
         "onnx_sessions": [
             {
@@ -76,11 +78,19 @@ def test_detector_smoke_rejects_coordinate_shape_drift(tmp_path: Path) -> None:
         smoke._load_result(result, label="C_latest", commit=commit)
 
 
-def test_detector_smoke_rejects_optional_module_import(tmp_path: Path) -> None:
+def test_detector_smoke_rejects_preflight_optional_module_import(tmp_path: Path) -> None:
     commit = "457e7c6518a10ba755db2e60883419e56c4d7369"
     result = _write_result(tmp_path, optional_modules=["homr.pdf_utils"])
 
-    with pytest.raises(RuntimeError, match="imported excluded optional HOMR modules"):
+    with pytest.raises(RuntimeError, match="during preflight"):
+        smoke._load_result(result, label="C_latest", commit=commit)
+
+
+def test_detector_smoke_rejects_postrun_optional_module_import(tmp_path: Path) -> None:
+    commit = "457e7c6518a10ba755db2e60883419e56c4d7369"
+    result = _write_result(tmp_path, postrun_optional_modules=["homr.main"])
+
+    with pytest.raises(RuntimeError, match="after inference"):
         smoke._load_result(result, label="C_latest", commit=commit)
 
 

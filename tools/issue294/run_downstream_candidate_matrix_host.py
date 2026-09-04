@@ -121,7 +121,7 @@ def _resolve_same_original_summary(
         _validate_existing_summary(summary, pages)
         # Reused runs still need the production container for the downstream matrix.
         base.require_container()
-        return summary.resolve(), True
+        return summary, True
 
     if output_root.exists():
         raise RuntimeError(
@@ -141,7 +141,7 @@ def _resolve_same_original_summary(
     finally:
         base.require_host_checkout = previous_require_host_checkout
 
-    summary = Path(ab["summary"]).resolve()
+    summary = output_root / "summary.json"
     _validate_existing_summary(summary, pages)
     return summary, False
 

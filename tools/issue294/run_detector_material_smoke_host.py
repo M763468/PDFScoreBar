@@ -7,13 +7,17 @@ import argparse
 import json
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
-from tools.issue294 import run_downstream_candidate_matrix_host as matrix_host
-from tools.issue294 import run_same_original_ab_host as base
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from tools.issue294 import run_downstream_candidate_matrix_host as matrix_host  # noqa: E402
+from tools.issue294 import run_same_original_ab_host as base  # noqa: E402
+
 SMOKE_ROOT = PROJECT_ROOT / "temp/issue294_detector_smoke"
 
 

@@ -69,6 +69,46 @@ Validation strength is governed by `docs/dev/VALIDATION_POLICY.md`. The scripts 
    scripts/local_pr_validation.sh --pr 123 --with-gpu --with-full-eval --post-comment
    ```
 
+## When the manager worktree is busy
+
+The manager worktree may be running another issue's long-lived command. Treat it as
+occupied for the duration of that command. Run the new issue from its dedicated worktree
+and keep its code, branch, and working directory there.
+
+Separate the paths explicitly:
+
+- `WORKTREE`: the issue worktree; tracked code and the command's working directory
+- `MAIN_REPO`: the manager worktree; retained `logs/` and optionally read-only `data/`
+
+For a host-only command, such as CNN training or an audit script, run it directly from
+`WORKTREE`. Shared-output links or an explicit `MAIN_REPO/logs/` output path retain the
+results without changing the manager checkout.
+
+For a Docker command, mount the issue worktree as the code and `/workspace` root, then
+mount manager data and logs separately:
+
+```bash
+MAIN_REPO=/home/masaki_muramatsu/ws_PDFScoreBar
+WORKTREE=/home/masaki_muramatsu/ws_PDFScoreBar_issue173
+
+docker run --rm --gpus all \
+  --user "$(id -u):$(id -g)" \
+  -v "$WORKTREE":/workspace \
+  -v "$MAIN_REPO/data":/workspace/data:ro \
+  -v "$MAIN_REPO/logs":/workspace/logs \
+  -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_gpu \
+  /opt/venv_pipeline/bin/python <worktree-relative-script> \
+  --output-root /workspace/logs/<issue>/<run>
+```
+
+An existing container whose `/workspace` is mounted from `MAIN_REPO` executes the
+manager checkout and is not suitable for code from `WORKTREE`; start a dedicated
+container with the worktree mount. Before a long run, record `pwd`, branch, HEAD, the
+container mount source, and the output path. The code mount must be `WORKTREE`, while
+retained outputs must be under `MAIN_REPO/logs/`.
+
 ## Local Actions for Codex App
 
 Useful commands to expose or run from Codex app:

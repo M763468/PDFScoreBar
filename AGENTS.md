@@ -50,6 +50,11 @@ This document provides a set of rules and guidelines for AI agents (such as Jule
 ### Environment & Execution
 - **Check Environments First**: Before executing any code, you **MUST** read `docs/ENVIRONMENTS.md`. This project uses a mix of Docker containers (`pdf_score_dev_gpu`, `homr_eval_gpu`, etc.) and host-based virtual environments (`.venv_pdf`, etc.). Identify the correct environment for your task.
 - **Docker Preference**: Prefer running tasks inside the appropriate Docker container whenever possible to ensure reproducibility. For local PR validation helpers, see `docs/dev/codex_local_automation.md`.
+
+- **Worktree-based execution**: When the manager worktree is occupied, use the dedicated
+  issue worktree for code and execution. Follow the canonical procedure in
+  [`docs/dev/codex_local_automation.md`](docs/dev/codex_local_automation.md#when-the-manager-worktree-is-busy),
+  including the host-only versus Docker decision and manager `logs/`/`data/` sharing.
 - **Pytest-Capable Persistent Pipeline Container**: For repeated full-pipeline / Issue #94 / Issue #120 / MMR evaluation work that also needs repository tests, prefer a named long-lived pytest-capable container instead of repeated `docker run --rm` invocations. The base image remains `pdfscore_pipeline_gpu`, but the persistent local container may have `pytest` installed once in `/opt/venv_pipeline` for validation.
     - Create when absent: `docker run -dit --gpus all --name pdfscore_pipeline_pytest_dev -v "$PWD":/workspace -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_gpu bash`
     - Start when stopped: `docker start pdfscore_pipeline_pytest_dev`

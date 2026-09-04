@@ -75,6 +75,10 @@ DOCKER_EXTRA_ARGS="-v /home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/pdf
   make run-pipeline CONFIG=configs/evaluation2_e2e_verification_full.yaml
 ```
 
+For the complete procedure when the manager worktree is occupied, including the Docker
+mount layout and host-only execution choice, see
+[`docs/dev/codex_local_automation.md`](codex_local_automation.md#when-the-manager-worktree-is-busy).
+
 Keep machine-specific paths in local commands or PR comments, not in committed configs.
 
 ## Notes

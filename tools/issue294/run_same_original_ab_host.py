@@ -76,7 +76,14 @@ def require_container() -> None:
 
 
 def container_path(host_path: Path) -> Path:
-    relative = host_path.resolve().relative_to(PROJECT_ROOT.resolve())
+    resolved = host_path.resolve()
+    try:
+        relative = resolved.relative_to(PROJECT_ROOT.resolve())
+    except ValueError:
+        # This worktree shares logs/data via symlinks to the manager worktree.
+        # The profiling container mounts that manager path at the same absolute
+        # location, so preserve it for container-side access.
+        return resolved
     return CONTAINER_ROOT / relative
 
 

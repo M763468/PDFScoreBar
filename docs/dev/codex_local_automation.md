@@ -31,6 +31,19 @@ Validation strength is governed by `docs/dev/VALIDATION_POLICY.md`. The scripts 
    make setup-local-worktree-links LOCAL_DATA_ROOT=/path/to/pdfscore-local-assets
    ```
 
+   To create the worktree and share generated outputs in one command, use:
+
+   ```bash
+   make setup-shared-worktree \
+     BRANCH=issue-173-codex-local-automation \
+     WORKTREE=/home/masaki_muramatsu/ws_PDFScoreBar_issue173 \
+     SHARED_ROOT=/home/masaki_muramatsu/ws_PDFScoreBar
+   ```
+
+   This links `logs/` and `artifacts/` as well as available local datasets,
+   caches, and virtual environments. Outputs remain in `SHARED_ROOT` after the
+   issue worktree is removed.
+
 4. Implement changes using the usual repository commands. The automation scripts are optional.
 5. Run the lightest relevant validation first:
 

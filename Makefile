@@ -1,4 +1,4 @@
-.PHONY: help lint format test-fast verify-pipeline-smoke verify-gpu-smoke verify-full-eval local-pr-validation setup-local-worktree-links
+.PHONY: help lint format test-fast verify-pipeline-smoke verify-gpu-smoke verify-full-eval local-pr-validation setup-local-worktree-links setup-shared-worktree
 
 PYTHON ?= python3
 FULL_EVAL_CONFIG ?= configs/evaluation2_e2e_verification_full.yaml
@@ -245,6 +245,7 @@ compare-issue120-stage-d-boxes: ## Compare Golden Baseline fixture vs regenerate
 		--output-dir "$(ISSUE120_STAGE_D_BOX_STATS_DIR)"
 
 repo-tree: ## Generate a repository directory overview
+	@mkdir -p artifacts
 	tree -L 3 -I "artifacts|logs|temp|datasets|.git|__pycache__|.venv*" > artifacts/repo_tree.txt
 
 check-consistency: ## Check repository consistency (Manifest and Freshness)
@@ -257,7 +258,16 @@ setup-worktree: ## Setup a new worktree and container (usage: make setup-worktre
 	@if [ -z "$(BRANCH)" ]; then echo "Error: BRANCH is required."; exit 1; fi
 	@./.agents/skills/worktree-manager/run.sh add $(BRANCH)
 
+setup-shared-worktree: ## Create a worktree and share local outputs (usage: make setup-shared-worktree BRANCH=branch WORKTREE=path SHARED_ROOT=path)
+	@if [ -z "$(BRANCH)" ] || [ -z "$(WORKTREE)" ]; then \
+		echo "Error: BRANCH and WORKTREE are required."; \
+		echo "Usage: make setup-shared-worktree BRANCH=branch WORKTREE=path SHARED_ROOT=path"; \
+		exit 1; \
+	fi
+	@scripts/setup_shared_worktree.sh --branch "$(BRANCH)" --worktree "$(WORKTREE)" --shared-root "$(or $(SHARED_ROOT),$(CURDIR))"
+
 test: ## Run test suite
+	@mkdir -p artifacts
 	PYTHONPATH=. .venv_pdf/bin/pytest tests/ > artifacts/test_results.txt
 
 repo-summary: ## Generate comprehensive repository summary
@@ -279,4 +289,3 @@ artifact-summary: ## Summarize all artifacts
 	./.agents/skills/artifact-clerk/run.sh
 
 -include tools/issue120/Makefile.stage_e.mk
-

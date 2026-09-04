@@ -28,7 +28,6 @@ uv.lock
 # Debug outputs
 debug_outputs/
 logs/
-!logs/README.md
 temp.txt
 
 # Local build logs (keep out of repo root)

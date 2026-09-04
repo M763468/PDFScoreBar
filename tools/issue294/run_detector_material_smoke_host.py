@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,15 @@ def _image_for_page(page: str) -> Path:
     return image
 
 
+def _host_path(raw: str) -> Path:
+    path = Path(raw)
+    try:
+        relative = path.relative_to(base.CONTAINER_ROOT)
+    except ValueError:
+        return path
+    return PROJECT_ROOT / relative
+
+
 def _load_result(path: Path, *, label: str, commit: str) -> dict[str, Any]:
     if not path.is_file():
         raise FileNotFoundError(path)
@@ -37,9 +47,16 @@ def _load_result(path: Path, *, label: str, commit: str) -> dict[str, Any]:
             f"actual={homr.get('commit') if isinstance(homr, dict) else None}"
         )
 
+    preflight = payload.get("preflight")
+    if not isinstance(preflight, dict) or preflight.get("optional_modules_imported") != []:
+        raise RuntimeError(
+            f"{label} detector smoke imported excluded optional HOMR modules: "
+            f"{preflight.get('optional_modules_imported') if isinstance(preflight, dict) else None}"
+        )
+
     runtime = payload.get("runtime")
-    if not isinstance(runtime, dict) or runtime.get("cuda") is not True:
-        raise RuntimeError(f"{label} detector smoke did not use CUDA runtime: {runtime!r}")
+    if not isinstance(runtime, dict) or runtime.get("gpu_requested") is not True:
+        raise RuntimeError(f"{label} detector smoke did not request GPU runtime: {runtime!r}")
 
     sessions = payload.get("onnx_sessions")
     if not isinstance(sessions, list) or not sessions:
@@ -55,7 +72,7 @@ def _load_result(path: Path, *, label: str, commit: str) -> dict[str, Any]:
     if not isinstance(artifacts, dict):
         raise RuntimeError(f"{label} detector smoke artifacts missing")
     for key in ("detections", "staff_mask", "notehead_mask", "clef_mask"):
-        artifact = Path(str(artifacts.get(key, "")))
+        artifact = _host_path(str(artifacts.get(key, "")))
         if not artifact.is_file():
             raise FileNotFoundError(f"{label} {key}: {artifact}")
 
@@ -120,6 +137,25 @@ def _run_one(
     return _load_result(result_path, label=label, commit=commit)
 
 
+def _prepare_smoke_root(run_tag: str, *, page: str, latest_commit: str) -> tuple[Path, Path, bool]:
+    root = SMOKE_ROOT / run_tag
+    report_path = root / "report.json"
+    if not root.exists():
+        return root, report_path, False
+    if report_path.is_file():
+        payload = json.loads(report_path.read_text(encoding="utf-8"))
+        if (
+            isinstance(payload, dict)
+            and payload.get("status") == "completed"
+            and payload.get("page") == page
+            and payload.get("C_homr_commit") == latest_commit
+            and payload.get("B_homr_commit") == matrix_host.B_COMMIT
+        ):
+            return root, report_path, True
+    shutil.rmtree(root)
+    return root, report_path, False
+
+
 def run(run_tag: str, page: str, latest_commit: str) -> dict[str, Any]:
     checkout = matrix_host._require_issue294_checkout()
     base.require_container()
@@ -129,10 +165,21 @@ def run(run_tag: str, page: str, latest_commit: str) -> dict[str, Any]:
     resolved_latest = matrix_host._resolve_latest_commit(latest_commit)
     b_source, c_source, b_preflight, c_preflight = matrix_host._prepare_candidates(resolved_latest)
     image = _image_for_page(page)
+    root, report_path, reused = _prepare_smoke_root(
+        run_tag,
+        page=page,
+        latest_commit=resolved_latest,
+    )
+    if reused:
+        return {
+            "status": "completed",
+            "report": str(report_path),
+            "page": page,
+            "B_homr_commit": matrix_host.B_COMMIT,
+            "latest_homr_commit": resolved_latest,
+            "smoke_reused": True,
+        }
 
-    root = SMOKE_ROOT / run_tag
-    if root.exists():
-        raise FileExistsError(root)
     root.mkdir(parents=True, exist_ok=False)
     try:
         b_result = _run_one(
@@ -150,7 +197,7 @@ def run(run_tag: str, page: str, latest_commit: str) -> dict[str, Any]:
             root=root,
         )
         report = {
-            "schema_version": "issue294.detector_material_smoke_host.v1",
+            "schema_version": "issue294.detector_material_smoke_host.v2",
             "status": "completed",
             "checkout": checkout,
             "page": page,
@@ -164,11 +211,11 @@ def run(run_tag: str, page: str, latest_commit: str) -> dict[str, Any]:
             "gates": {
                 "B_detector_material_runtime": True,
                 "C_detector_material_runtime": True,
-                "both_cuda": True,
+                "both_active_cuda_session": True,
                 "both_coordinate_shapes_match_original": True,
+                "excluded_optional_modules_absent": True,
             },
         }
-        report_path = root / "report.json"
         report_path.write_text(
             json.dumps(report, indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8",
@@ -185,6 +232,7 @@ def run(run_tag: str, page: str, latest_commit: str) -> dict[str, Any]:
         "page": page,
         "B_homr_commit": matrix_host.B_COMMIT,
         "latest_homr_commit": resolved_latest,
+        "smoke_reused": False,
     }
 
 

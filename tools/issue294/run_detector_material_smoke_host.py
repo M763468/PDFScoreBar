@@ -54,8 +54,13 @@ def _load_result(path: Path, *, label: str, commit: str) -> dict[str, Any]:
     preflight = payload.get("preflight")
     if not isinstance(preflight, dict) or preflight.get("optional_modules_imported") != []:
         raise RuntimeError(
-            f"{label} detector smoke imported excluded optional HOMR modules: "
+            f"{label} detector smoke imported excluded optional HOMR modules during preflight: "
             f"{preflight.get('optional_modules_imported') if isinstance(preflight, dict) else None}"
+        )
+    if payload.get("postrun_optional_modules_imported") != []:
+        raise RuntimeError(
+            f"{label} detector smoke imported excluded optional HOMR modules after inference: "
+            f"{payload.get('postrun_optional_modules_imported')!r}"
         )
 
     runtime = payload.get("runtime")
@@ -201,7 +206,7 @@ def run(run_tag: str, page: str, latest_commit: str) -> dict[str, Any]:
             root=root,
         )
         report = {
-            "schema_version": "issue294.detector_material_smoke_host.v2",
+            "schema_version": "issue294.detector_material_smoke_host.v3",
             "status": "completed",
             "checkout": checkout,
             "page": page,
@@ -217,7 +222,7 @@ def run(run_tag: str, page: str, latest_commit: str) -> dict[str, Any]:
                 "C_detector_material_runtime": True,
                 "both_active_cuda_session": True,
                 "both_coordinate_shapes_match_original": True,
-                "excluded_optional_modules_absent": True,
+                "excluded_optional_modules_absent_pre_and_post": True,
             },
         }
         report_path.write_text(

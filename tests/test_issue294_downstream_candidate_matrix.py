@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import sys
 import types
 from pathlib import Path
@@ -8,6 +9,7 @@ from tools.issue294.run_downstream_candidate_matrix import _comparison
 from tools.issue294.run_latest_homr_detector_original import (
     DETECTOR_ONLY_MODULES,
     EXCLUDED_OPTIONAL_MODULES,
+    STEM_CONTEXT_HEURISTICS,
     _checkout_head,
     _ensure_segnet_model,
 )
@@ -100,14 +102,34 @@ def test_detector_only_import_contract_excludes_full_application_dependencies() 
     assert "homr.music_xml_generator" not in DETECTOR_ONLY_MODULES
 
 
-def test_detector_runner_source_does_not_import_excluded_optional_modules() -> None:
-    source = (
+def test_detector_runner_static_import_closure_avoids_full_evaluator_and_optional_homr() -> None:
+    source_path = (
         Path(__file__).resolve().parents[1]
         / "tools/issue294/run_latest_homr_detector_original.py"
-    ).read_text(encoding="utf-8")
+    )
+    tree = ast.parse(source_path.read_text(encoding="utf-8"))
+    imported_modules: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported_modules.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imported_modules.add(node.module)
+
     for module in EXCLUDED_OPTIONAL_MODULES:
-        assert f"import {module}" not in source
-        assert f"from {module} import" not in source
+        assert module not in imported_modules
+    assert not any(module.startswith("src.homr_eval_scripts.core") for module in imported_modules)
+    assert "src.common.thin_barline_finder" in imported_modules
+
+
+def test_detector_adapter_pins_current_safe_stem_filter_contract() -> None:
+    assert STEM_CONTEXT_HEURISTICS == {
+        "notehead_proximity_threshold_px": 5,
+        "min_overlap_px": 5,
+        "max_height_px": 24,
+        "max_width_px": 4,
+        "staff_crossing_enabled": False,
+        "min_staff_crossings": 3,
+    }
 
 
 def test_checkout_head_reads_detached_head_without_git_binary(tmp_path: Path) -> None:

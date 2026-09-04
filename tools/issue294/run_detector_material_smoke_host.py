@@ -18,7 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from tools.issue294 import run_downstream_candidate_matrix_host as matrix_host  # noqa: E402
 from tools.issue294 import run_same_original_ab_host as base  # noqa: E402
 
-SMOKE_ROOT = PROJECT_ROOT / "temp/issue294_detector_smoke"
+SMOKE_ROOT = PROJECT_ROOT / "logs/issue294"
 
 
 def _image_for_page(page: str) -> Path:

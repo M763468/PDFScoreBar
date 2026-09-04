@@ -10,6 +10,10 @@ import pytest
 from tools.issue294 import run_detector_material_smoke_host as smoke
 
 
+def test_detector_smoke_persists_runs_under_logs() -> None:
+    assert smoke.SMOKE_ROOT == smoke.PROJECT_ROOT / "logs/issue294"
+
+
 def _write_result(
     tmp_path: Path,
     *,

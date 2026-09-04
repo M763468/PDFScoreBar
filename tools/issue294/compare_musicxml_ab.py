@@ -172,7 +172,11 @@ def main() -> int:
         return 1
     print(
         json.dumps(
-            {"status": "completed", "output": str(args.output.resolve()), "aggregate": report["aggregate"]},
+            {
+                "status": "completed",
+                "output": str(args.output.resolve()),
+                "aggregate": report["aggregate"],
+            },
             ensure_ascii=False,
         )
     )

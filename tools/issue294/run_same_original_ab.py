@@ -12,7 +12,6 @@ import argparse
 import json
 import os
 import subprocess
-import sys
 import threading
 import time
 from pathlib import Path
@@ -207,9 +206,7 @@ def _run_process(
         "resources": resources,
     }
     if returncode != 0:
-        tail = "\n".join(
-            log_path.read_text(encoding="utf-8", errors="replace").splitlines()[-80:]
-        )
+        tail = "\n".join(log_path.read_text(encoding="utf-8", errors="replace").splitlines()[-80:])
         raise RuntimeError(
             f"Experiment process failed ({returncode}): {' '.join(command)}\n"
             f"--- log tail ---\n{tail}"

@@ -100,7 +100,9 @@ def _support_paths(support_root: Path, score: str, stem: str) -> dict[str, Path]
         ),
         "omr_dln": artifacts / "omr_sr" / stem / "predictions.json",
     }
-    missing = [str(path) for name, path in derived.items() if name != "result" and not path.is_file()]
+    missing = [
+        str(path) for name, path in derived.items() if name != "result" and not path.is_file()
+    ]
     if missing:
         raise FileNotFoundError("Fixed support artifacts missing: " + ", ".join(missing))
     return derived
@@ -230,8 +232,7 @@ def _aggregate_metrics(pages: list[dict[str, Any]], variant: str) -> dict[str, A
     if len(metrics) != len(pages):
         return None
     totals = {
-        name: sum(int(item[name]) for item in metrics)
-        for name in ("gt", "pred", "tp", "fp", "fn")
+        name: sum(int(item[name]) for item in metrics) for name in ("gt", "pred", "tp", "fp", "fn")
     }
     tp = totals["tp"]
     fp = totals["fp"]

@@ -103,10 +103,11 @@ def run(image: Path, output_root: Path, result_path: Path) -> dict[str, Any]:
         raise RuntimeError(f"Failed to read source image: {image}")
 
     import_started = time.perf_counter()
-    import homr
-    import homr.main as homr_main
     import onnxruntime as ort
     import torch
+
+    import homr
+    import homr.main as homr_main
     from homr.music_xml_generator import XmlGeneratorArguments
     from homr.segmentation import config as segnet_config
     from homr.transformer.configs import Config

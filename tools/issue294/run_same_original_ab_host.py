@@ -57,9 +57,7 @@ def require_container() -> None:
         raise RuntimeError(f"Container {CONTAINER} is not running")
     image_id = capture(["docker", "inspect", "--format", "{{.Image}}", CONTAINER])
     if image_id != EXPECTED_IMAGE_ID:
-        raise RuntimeError(
-            f"Container {CONTAINER} uses {image_id}, expected {EXPECTED_IMAGE_ID}"
-        )
+        raise RuntimeError(f"Container {CONTAINER} uses {image_id}, expected {EXPECTED_IMAGE_ID}")
     workspace_source = capture(
         [
             "docker",

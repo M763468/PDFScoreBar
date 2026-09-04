@@ -113,9 +113,10 @@ def run(output: Path) -> dict[str, Any]:
     markers = validate_markers(profile, runtime_paths)
 
     import cv2
-    import homr
     import numpy as np
     import onnxruntime as ort
+
+    import homr
     from homr.segmentation.config import segnet_path_onnx
     from homr.segmentation.inference_segnet import Segnet
     from homr.transformer.configs import Config
@@ -191,9 +192,7 @@ def run(output: Path) -> dict[str, Any]:
         required_roles[role] = True
         providers = record.get("active_providers")
         role_cuda_first[role] = bool(
-            isinstance(providers, list)
-            and providers
-            and providers[0] == "CUDAExecutionProvider"
+            isinstance(providers, list) and providers and providers[0] == "CUDAExecutionProvider"
         )
 
     payload = {

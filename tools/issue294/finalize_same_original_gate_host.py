@@ -152,7 +152,10 @@ def run(run_tag: str, source_commit: str | None = None) -> dict[str, str]:
         pinned_probe = _load_mapping(pinned_probe_path)
     else:
         pinned_probe = _run_pinned_runtime_probe(pinned_probe_path)
-    if pinned_probe.get("status") != "completed" or pinned_probe.get("hard_contract_pass") is not True:
+    if (
+        pinned_probe.get("status") != "completed"
+        or pinned_probe.get("hard_contract_pass") is not True
+    ):
         raise RuntimeError(f"Pinned Stage-E runtime provenance gate failed: {pinned_probe_path}")
 
     # Complete semantic comparison before committing host provenance. If this

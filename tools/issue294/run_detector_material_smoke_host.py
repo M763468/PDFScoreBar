@@ -71,8 +71,7 @@ def _load_result(path: Path, *, label: str, commit: str) -> dict[str, Any]:
     if not isinstance(sessions, list) or not sessions:
         raise RuntimeError(f"{label} detector smoke recorded no ONNX sessions")
     if not any(
-        isinstance(session, dict)
-        and "CUDAExecutionProvider" in session.get("active_providers", [])
+        isinstance(session, dict) and "CUDAExecutionProvider" in session.get("active_providers", [])
         for session in sessions
     ):
         raise RuntimeError(f"{label} detector smoke has no active CUDA ONNX session: {sessions!r}")

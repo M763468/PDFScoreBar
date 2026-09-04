@@ -104,8 +104,7 @@ def test_detector_only_import_contract_excludes_full_application_dependencies() 
 
 def test_detector_runner_static_import_closure_avoids_full_evaluator_and_optional_homr() -> None:
     source_path = (
-        Path(__file__).resolve().parents[1]
-        / "tools/issue294/run_latest_homr_detector_original.py"
+        Path(__file__).resolve().parents[1] / "tools/issue294/run_latest_homr_detector_original.py"
     )
     tree = ast.parse(source_path.read_text(encoding="utf-8"))
     imported_modules: set[str] = set()

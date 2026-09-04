@@ -118,20 +118,18 @@ def test_issue294_runtime_contract_rejects_fp16_cpu_fallback() -> None:
 
 
 def test_issue294_candidate_worker_is_original_image_only() -> None:
-    source = (
-        PROJECT_ROOT / "tools/issue294/run_maintained_homr_original.py"
-    ).read_text(encoding="utf-8")
+    source = (PROJECT_ROOT / "tools/issue294/run_maintained_homr_original.py").read_text(
+        encoding="utf-8"
+    )
 
     assert "sr_scale=1" in source
     assert "sr_scale=4" not in source
     assert "coord / sr_scale" not in source
-    assert "coordinate_space\": \"original_page" in source
+    assert 'coordinate_space": "original_page' in source
 
 
 def test_issue294_runner_keeps_pinned_profile_as_variant_a() -> None:
-    source = (PROJECT_ROOT / "tools/issue294/run_same_original_ab.py").read_text(
-        encoding="utf-8"
-    )
+    source = (PROJECT_ROOT / "tools/issue294/run_same_original_ab.py").read_text(encoding="utf-8")
 
     assert 'PROFILE_NAME = "stage_e_verified"' in source
     assert "build_profile_command" in source
@@ -151,12 +149,7 @@ def test_issue294_fixed_support_replay_changes_only_baseline(tmp_path: Path) -> 
 
     support_root = tmp_path / "support"
     page_root = support_root / score / stem
-    x4_detection = (
-        page_root
-        / "artifacts/current_homr/batch"
-        / stem
-        / f"{stem}_detections.json"
-    )
+    x4_detection = page_root / "artifacts/current_homr/batch" / stem / f"{stem}_detections.json"
     omr_detection = page_root / "artifacts/omr_sr" / stem / "predictions.json"
     _write_detection(x4_detection, [(10, 10, 14, 100)])
     omr_detection.parent.mkdir(parents=True, exist_ok=True)

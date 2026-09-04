@@ -148,7 +148,9 @@ def _run_detector_material(
     )
     (output_root.parent / f"{label}.log").write_text(process.stdout or "", encoding="utf-8")
     if process.returncode != 0:
-        raise RuntimeError(f"{label} detector-material run failed ({process.returncode}):\n{process.stdout}")
+        raise RuntimeError(
+            f"{label} detector-material run failed ({process.returncode}):\n{process.stdout}"
+        )
     result = load_json(result_path)
     if not isinstance(result, dict) or result.get("status") != "completed":
         raise ValueError(f"Incomplete detector-material candidate: {result_path}")
@@ -264,9 +266,7 @@ def _run_downstream_variant(
             if detection_config.get("probe_score_name")
             else None
         ),
-        crop_recenter_on_bbox_ink=bool(
-            detection_config.get("crop_recenter_on_bbox_ink", False)
-        ),
+        crop_recenter_on_bbox_ink=bool(detection_config.get("crop_recenter_on_bbox_ink", False)),
         crop_recenter_max_shift_unit_ratio=float(
             detection_config.get("crop_recenter_max_shift_unit_ratio", 0.35)
         ),
@@ -461,9 +461,7 @@ def run(
             "B_b377": b_detection,
             "C_latest": c_artifacts["detections"],
         }
-        frozen_geometry = {
-            label: a_geometry for label in ("A_pinned", "B_b377", "C_latest")
-        }
+        frozen_geometry = {label: a_geometry for label in ("A_pinned", "B_b377", "C_latest")}
         native_geometry = {
             "A_pinned": a_geometry,
             "B_b377": {"staff": b_artifacts["staff_mask"], "clef": b_artifacts["clef_mask"]},

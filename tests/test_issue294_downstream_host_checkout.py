@@ -116,7 +116,9 @@ def test_issue294_detector_preflight_uses_source_first_pythonpath(tmp_path, monk
     source = tmp_path / "temp/issue294_upstream_homr" / host.B_COMMIT
     source.mkdir(parents=True)
     monkeypatch.setattr(host, "PROJECT_ROOT", tmp_path)
-    monkeypatch.setattr(host.base, "container_path", lambda _path: Path("/workspace/temp/candidate"))
+    monkeypatch.setattr(
+        host.base, "container_path", lambda _path: Path("/workspace/temp/candidate")
+    )
     observed: list[list[str]] = []
 
     payload = {

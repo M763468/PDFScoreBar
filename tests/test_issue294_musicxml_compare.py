@@ -7,7 +7,9 @@ def _write(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
-def test_issue294_musicxml_canonicalization_ignores_attribute_order_and_space(tmp_path: Path) -> None:
+def test_issue294_musicxml_canonicalization_ignores_attribute_order_and_space(
+    tmp_path: Path,
+) -> None:
     left = tmp_path / "A.musicxml"
     right = tmp_path / "B.musicxml"
     _write(

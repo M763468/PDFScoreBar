@@ -161,9 +161,7 @@ def _assert_excluded_modules_absent(stage: str) -> None:
 def _ensure_segnet_model(segnet_config: Any, *, use_gpu: bool) -> Path:
     from homr import download_utils
 
-    path = Path(
-        segnet_config.segnet_path_onnx_fp16 if use_gpu else segnet_config.segnet_path_onnx
-    )
+    path = Path(segnet_config.segnet_path_onnx_fp16 if use_gpu else segnet_config.segnet_path_onnx)
     if path.is_file():
         return path
     base_name = path.name.split(".")[0]
@@ -208,7 +206,12 @@ def preflight(homr_source: Path, expected_commit: str) -> dict[str, Any]:
     from homr.segmentation.inference_segnet import extract
 
     extract_parameters = inspect.signature(extract).parameters
-    required_extract_parameters = {"original_image", "img_path_str", "use_cache", "use_gpu_inference"}
+    required_extract_parameters = {
+        "original_image",
+        "img_path_str",
+        "use_cache",
+        "use_gpu_inference",
+    }
     missing = sorted(required_extract_parameters - set(extract_parameters))
     if missing:
         raise RuntimeError(f"Unsupported HOMR SegNet extract signature; missing={missing}")
@@ -523,9 +526,7 @@ def _filter_notehead_proximity(
         box_x1 = max(0, min(mask_width, x1))
         box_x2 = max(0, min(mask_width, x2))
         overlap_area = (
-            0
-            if box_x1 >= box_x2
-            else int(np.count_nonzero(notehead_mask[y1c:y2c, box_x1:box_x2]))
+            0 if box_x1 >= box_x2 else int(np.count_nonzero(notehead_mask[y1c:y2c, box_x1:box_x2]))
         )
         if is_small_candidate and overlap_area >= min_overlap:
             continue
@@ -661,12 +662,17 @@ def run(
     imported_homr = Path(str(preflight_payload["homr_module"]))
 
     import onnxruntime as ort
+
     from homr.segmentation import config as segnet_config
 
     providers = list(ort.get_available_providers())
     use_gpu = any(
         provider in providers
-        for provider in ("CUDAExecutionProvider", "ROCMExecutionProvider", "CoreMLExecutionProvider")
+        for provider in (
+            "CUDAExecutionProvider",
+            "ROCMExecutionProvider",
+            "CoreMLExecutionProvider",
+        )
     )
     sessions: list[dict[str, Any]] = []
     original_session = ort.InferenceSession
@@ -808,7 +814,9 @@ def main() -> int:
             print(json.dumps(payload, ensure_ascii=False))
             return 0
         if args.image is None or args.output_root is None or args.result is None:
-            parser.error("--image, --output-root, and --result are required unless --preflight-only")
+            parser.error(
+                "--image, --output-root, and --result are required unless --preflight-only"
+            )
         payload = run(
             args.image,
             args.homr_source,

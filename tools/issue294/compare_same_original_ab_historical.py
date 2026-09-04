@@ -104,7 +104,9 @@ def run(summary_path: Path, output: Path) -> dict[str, Any]:
             "maintained_runtime_hard_contracts": hard_contracts,
             "eligible_for_box_geometry_review": timing_gate and hard_contracts,
             "raw_mask_comparison_complete": raw_masks_complete,
-            "eligible_for_full_geometry_review": timing_gate and hard_contracts and raw_masks_complete,
+            "eligible_for_full_geometry_review": timing_gate
+            and hard_contracts
+            and raw_masks_complete,
         },
     }
     output = output.resolve()
@@ -132,7 +134,11 @@ def main() -> int:
         return 1
     print(
         json.dumps(
-            {"status": report["status"], "output": str(args.output.resolve()), "gates": report["gates"]},
+            {
+                "status": report["status"],
+                "output": str(args.output.resolve()),
+                "gates": report["gates"],
+            },
             ensure_ascii=False,
         )
     )

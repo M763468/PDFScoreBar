@@ -44,9 +44,7 @@ def _resolve_gt(ground_truth_root: Path, image: Path) -> tuple[Path, str]:
     existing = [(mode, path.resolve()) for mode, path in candidates if path.is_file()]
     if not existing:
         expected = "\n".join(f"  - {path}" for _, path in candidates)
-        raise FileNotFoundError(
-            f"No GT JSON found for {image}. Checked:\n{expected}"
-        )
+        raise FileNotFoundError(f"No GT JSON found for {image}. Checked:\n{expected}")
     if len(existing) > 1:
         details = "\n".join(f"  - {mode}: {path}" for mode, path in existing)
         raise ValueError(
@@ -196,9 +194,7 @@ def run(
         image = Path(image_value)
         gt_path, gt_mode = _resolve_gt(ground_truth_root, image)
         ground_truth = load_ground_truth_boxes(gt_path)
-        a = _summarize_variant(
-            _detection_path(raw_page, "A_pinned"), ground_truth, iou_threshold
-        )
+        a = _summarize_variant(_detection_path(raw_page, "A_pinned"), ground_truth, iou_threshold)
         b = _summarize_variant(
             _detection_path(raw_page, "B_maintained"), ground_truth, iou_threshold
         )

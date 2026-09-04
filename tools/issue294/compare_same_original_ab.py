@@ -175,17 +175,13 @@ def maintained_runtime_contract(worker: dict[str, Any]) -> dict[str, Any]:
         and coordinate_checks.get("masks_match_original_shape") is True
     )
     artifacts = worker.get("artifacts")
-    connector_ok = bool(
-        isinstance(artifacts, dict) and artifacts.get("connector_complete") is True
-    )
+    connector_ok = bool(isinstance(artifacts, dict) and artifacts.get("connector_complete") is True)
     all_fp16_cuda = all(role_cuda_first.values())
     return {
         "expected_homr_commit": EXPECTED_HOMR_COMMIT,
         "installed_homr_commit": installed_commit,
         "commit_verified": installed_commit == EXPECTED_HOMR_COMMIT,
-        "fp16_session_count_by_role": {
-            role: len(items) for role, items in role_sessions.items()
-        },
+        "fp16_session_count_by_role": {role: len(items) for role, items in role_sessions.items()},
         "fp16_cuda_first_provider_by_role": role_cuda_first,
         "all_required_fp16_roles_cuda_first": all_fp16_cuda,
         "model_sha256": model_hashes,

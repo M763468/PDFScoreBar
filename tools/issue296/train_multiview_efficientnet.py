@@ -23,6 +23,16 @@ import experiments.cnn_classifier.train as trainer
 from tools.issue296.multiview_model import build_multiview_model
 
 THRESHOLDS = [0.001, 0.002, 0.005, 0.01, 0.02, 0.03, 0.05, 0.075, 0.1, 0.15, 0.2, 0.3, 0.5, 0.7]
+LAZY_NEUTRAL_CONTEXT = "lazy_neutral_padded_tight_no_extra_context"
+
+
+def neutral_square_pad(image: Image.Image) -> Image.Image:
+    """White-pad a tight RGB crop to square without another disk read."""
+    width, height = image.size
+    side = max(width, height)
+    canvas = Image.new("RGB", (side, side), (255, 255, 255))
+    canvas.paste(image, ((side - width) // 2, (side - height) // 2))
+    return canvas
 
 
 class MultiViewDataset(Dataset):
@@ -39,8 +49,18 @@ class MultiViewDataset(Dataset):
 
     def __getitem__(self, index: int):
         row = self.rows[index]
-        tight = Image.open(row["tight_path"]).convert("RGB")
-        context = Image.open(row["context_path"]).convert("RGB")
+        with Image.open(row["tight_path"]) as handle:
+            tight = handle.convert("RGB")
+
+        if row.get("context_policy") == LAZY_NEUTRAL_CONTEXT:
+            context = neutral_square_pad(tight)
+        else:
+            context_path = row.get("context_path", "")
+            if not context_path:
+                raise RuntimeError(f"missing context_path for row: {row}")
+            with Image.open(context_path) as handle:
+                context = handle.convert("RGB")
+
         return (
             self.tight_transform(tight),
             self.context_transform(context),
@@ -71,7 +91,9 @@ def metrics_from_probs(probs: torch.Tensor, labels: torch.Tensor) -> dict:
             "f1": f1,
         }
         rows.append(row)
-        if best is None or f1 > best["f1"] or (abs(f1 - best["f1"]) < 1e-12 and threshold > best["threshold"]):
+        if best is None or f1 > best["f1"] or (
+            abs(f1 - best["f1"]) < 1e-12 and threshold > best["threshold"]
+        ):
             best = row
     assert best is not None
     return {"best": best, "rows": rows}
@@ -161,7 +183,9 @@ def main() -> int:
     gpu_train = trainer.get_gpu_transforms("train", sp_density=0.02, sp_p=0.3).to(device)
     gpu_val = trainer.get_gpu_transforms("val").to(device)
     criterion = nn.BCEWithLogitsLoss()
-    optimizer = optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
+    optimizer = optim.AdamW(
+        model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay
+    )
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
     scaler = torch.amp.GradScaler("cuda", enabled=device.type == "cuda")
 
@@ -172,7 +196,9 @@ def main() -> int:
         model.train()
         gpu_train.train()
         loss_sum = 0.0
-        for tight, context, labels in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{args.epochs} [Train]"):
+        for tight, context, labels in tqdm(
+            train_loader, desc=f"Epoch {epoch + 1}/{args.epochs} [Train]"
+        ):
             tight = gpu_train(tight.to(device, non_blocking=True))
             context = gpu_train(context.to(device, non_blocking=True))
             labels = labels.to(device, non_blocking=True).unsqueeze(1)
@@ -185,7 +211,9 @@ def main() -> int:
             scaler.update()
             loss_sum += float(loss.item())
 
-        val_loss, val_metrics = evaluate(model, val_loader, gpu_val, device, device.type == "cuda")
+        val_loss, val_metrics = evaluate(
+            model, val_loader, gpu_val, device, device.type == "cuda"
+        )
         selected = val_metrics["best"]
         row = {
             "epoch": epoch + 1,
@@ -204,13 +232,14 @@ def main() -> int:
     last_path = args.work_dir / "cnn_classifier_last.pth"
     torch.save(model.state_dict(), last_path)
     summary = {
-        "schema_version": "issue296.multiview_training.v1",
+        "schema_version": "issue296.multiview_training.v2",
         "dataset": str(args.dataset),
         "initialization": "torchvision ImageNet EfficientNet-B0 only",
         "production_checkpoint_used": False,
         "shared_backbone": True,
         "tight_size": [256, 128],
         "context_size": [256, 256],
+        "deepscores_context": "lazy neutral white-pad from already-loaded tight image",
         "epochs": args.epochs,
         "batch_size": args.batch_size,
         "learning_rate": args.learning_rate,

@@ -540,6 +540,8 @@ def _postprocess(
     predictions: list[BarlinePrediction],
     notehead_mask: np.ndarray,
 ) -> list[BarlinePrediction]:
+    """Mirror the production HomrPredictor thin-barline merge and safe stem filter."""
+
     from src.common.thin_barline_finder import ThinBarlineConfig, detect_thin_vertical_runs
 
     thin_config = ThinBarlineConfig(
@@ -561,6 +563,18 @@ def _postprocess(
     def centre(box: tuple[int, int, int, int]) -> tuple[float, float]:
         return ((box[0] + box[2]) / 2.0, (box[1] + box[3]) / 2.0)
 
+    def vertical_overlap_fraction(
+        box_a: tuple[int, int, int, int], box_b: tuple[int, int, int, int]
+    ) -> float:
+        top = max(box_a[1], box_b[1])
+        bottom = min(box_a[3], box_b[3])
+        if bottom <= top:
+            return 0.0
+        overlap = bottom - top
+        height_a = max(box_a[3] - box_a[1], 1)
+        height_b = max(box_b[3] - box_b[1], 1)
+        return overlap / float(max(height_a, height_b))
+
     for box_raw in extras:
         box = tuple(int(value) for value in box_raw)
         cx_extra, cy_extra = centre(box)
@@ -571,15 +585,24 @@ def _postprocess(
             cx_existing, cy_existing = centre(existing)
             if abs(cx_existing - cx_extra) > 2:
                 continue
-            top = max(existing[1], box[1])
-            bottom = min(existing[3], box[3])
-            overlap = max(0, bottom - top)
+
             existing_height = max(existing[3] - existing[1], 1)
-            overlap_fraction = overlap / float(max(existing_height, extra_height))
-            same_column = overlap_fraction >= 0.6 or abs(cy_existing - cy_extra) <= max(
-                existing_height, extra_height
-            )
-            if same_column:
+            centre_gap = abs(cy_existing - cy_extra)
+            vertical_overlap = vertical_overlap_fraction(existing, box)
+
+            if vertical_overlap >= 0.6:
+                if extra_height > existing_height:
+                    predictions[index] = BarlinePrediction(
+                        pred_bbox=box,
+                        orig_bbox=box,
+                        system_index=-2,
+                        staff_index=-1,
+                    )
+                replaced = True
+                break
+
+            max_height = max(extra_height, existing_height)
+            if centre_gap <= max_height:
                 if extra_height >= existing_height:
                     predictions[index] = BarlinePrediction(
                         pred_bbox=box,
@@ -589,6 +612,7 @@ def _postprocess(
                     )
                 replaced = True
                 break
+
         if not replaced:
             predictions.append(
                 BarlinePrediction(

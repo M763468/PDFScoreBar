@@ -22,6 +22,7 @@ def _host_tests_step() -> dict[str, object]:
         "tests/test_issue294_downstream_candidate_matrix.py",
         "tests/test_issue294_global_page_host.py",
         "tests/test_issue294_full68_refresh_experiment.py",
+        "tests/test_issue294_full68_refresh_experiment_hosttests.py",
     ]
     env = os.environ.copy()
     existing = env.get("PYTHONPATH")

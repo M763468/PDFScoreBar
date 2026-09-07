@@ -36,7 +36,7 @@ The host wrapper:
 7. runs the primary candidate-native staff/clef replay;
 8. sends every variant through production hybrid consensus, dense candidate reconstruction, CNN scoring, and `MeasureNumberingPipeline`.
 
-The primary pass criterion is `candidate_native_geometry -> count_topology_numbering_pass`. It compares final CNN barline count, total measures, per-system staff/measure topology, and numbering. Exact final box identity is recorded but is not required when the operational result is unchanged.
+The primary pass criterion is `candidate_native_geometry -> count_topology_numbering_pass`. It compares final CNN barline count, total measures, non-empty per-system staff/measure topology, and numbering. Exact final box identity is recorded but is not required when the operational result is unchanged. Differences in extracted empty systems (for example, scan-border components with no measures) are retained as the `extracted_system_topology_equal` diagnostic and do not override otherwise identical serialized measure semantics.
 
 The frozen-A geometry mode is diagnostic only: if native geometry fails but frozen geometry passes, the problem is in candidate staff/clef material rather than baseline barline boxes.
 

@@ -325,6 +325,19 @@ codex> gemini -i "この差分を中間レビューして"
 - Evidence: `timeout 180s gemini -p "<prompt>"` 相当の実行方針で応答取得、加えて上記3ファイルの差分確認
 - Notes: 追加で自動化する場合は `Decision Log` と `LESSONS.md` 追記を行う小スクリプト化を検討
 
+### 2026-09-07 JST / Issue #294 page_067 semantic gate
+
+- Mode: `codex_primary`
+- Writer: `codex`
+- Phase: `mid-review`
+- Trigger: A-equality と accepted topology/GT/MMR evidence が逆方向を示したため、full68 進行判断を批判的に確認する必要があった。
+- Question (summary): page_067 の maintained candidates を semantic improvement と扱えるか、two-staff spanning barline をどう扱うか。
+- Secondary answer (summary): artifact-derived evaluation data の外部送信が安全審査で拒否され、Gemini 回答は取得していない。
+- Decision: `rejected`
+- Action taken: 外部相談を迂回せず、retained #197 topology、barline GT、fresh B/C matrix、CUDA MMR audit のローカル証拠で判断した。
+- Evidence: B/C は 33 measures と accepted system topologyを復元し、GT 36/36・FN 0、MMR override `[]` exact。A は 30/36・FN 6。
+- Notes: 外部 consultation に artifact-derived data を渡す場合は、送信 scope の明示承認が必要。
+
 ## Enhanced Sub-agent Collaboration (2026-02-25 Optimization)
 
 ### Reasoning Delegation

@@ -137,7 +137,7 @@ def _resolve_same_original_summary(
     previous_require_host_checkout = base.require_host_checkout
     base.require_host_checkout = lambda: checkout["head"]
     try:
-        ab = historical.run(run_tag, pages, None)
+        historical.run(run_tag, pages, None)
     finally:
         base.require_host_checkout = previous_require_host_checkout
 

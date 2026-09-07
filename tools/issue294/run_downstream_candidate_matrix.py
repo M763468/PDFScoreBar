@@ -318,16 +318,23 @@ def _run_downstream_variant(
 def _comparison(control: dict[str, Any], candidate: dict[str, Any]) -> dict[str, Any]:
     control_pages = control["numbering"]["pages"]
     candidate_pages = candidate["numbering"]["pages"]
-    control_topology = [
+    control_extracted_topology = [
         [system["staff_count"], system["measure_count"]]
         for page in control_pages
         for system in page["systems"]
     ]
-    candidate_topology = [
+    candidate_extracted_topology = [
         [system["staff_count"], system["measure_count"]]
         for page in candidate_pages
         for system in page["systems"]
     ]
+    # Staff masks can retain scan-border components that build empty systems.
+    # Production serialization deliberately separates those components from
+    # semantic systems (see measure_numbering.serialization.score_to_dict).
+    # Keep the raw extraction comparison as a diagnostic, but gate the
+    # per-system measure topology on systems that actually contain measures.
+    control_topology = [item for item in control_extracted_topology if item[1] > 0]
+    candidate_topology = [item for item in candidate_extracted_topology if item[1] > 0]
     control_numbers = [
         number
         for page in control_pages
@@ -345,6 +352,8 @@ def _comparison(control: dict[str, Any], candidate: dict[str, Any]) -> dict[str,
         == control["final_barline_count"],
         "total_measures_equal": candidate["numbering"]["total_measures"]
         == control["numbering"]["total_measures"],
+        "extracted_system_topology_equal": candidate_extracted_topology
+        == control_extracted_topology,
         "system_measure_topology_equal": candidate_topology == control_topology,
         "numbering_equal": candidate_numbers == control_numbers,
         "final_barline_boxes_exact": candidate["final_barlines"] == control["final_barlines"],

@@ -58,6 +58,21 @@ def test_operational_gate_rejects_measure_count_drift() -> None:
     assert comparison["count_topology_numbering_pass"] is False
 
 
+def test_operational_gate_records_but_does_not_fail_on_extra_empty_system() -> None:
+    control = _variant(final_count=10, total_measures=9, measures=list(range(1, 10)))
+    candidate = _variant(final_count=10, total_measures=9, measures=list(range(1, 10)))
+    candidate["numbering"]["pages"][0]["systems"].insert(
+        0,
+        {"staff_count": 1, "measure_count": 0, "measure_numbers": []},
+    )
+
+    comparison = _comparison(control, candidate)
+
+    assert comparison["extracted_system_topology_equal"] is False
+    assert comparison["system_measure_topology_equal"] is True
+    assert comparison["count_topology_numbering_pass"] is True
+
+
 def test_latest_materializes_only_selected_segnet_weight(tmp_path: Path, monkeypatch) -> None:
     fp32 = tmp_path / "segnet_fp32.onnx"
     fp16 = tmp_path / "segnet_fp16.onnx"

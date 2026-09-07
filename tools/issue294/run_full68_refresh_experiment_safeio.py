@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Run the Issue #294 full68 experiment without root writes to the bind mount.
 
-Temporary experiment-only compatibility wrapper.  The profiling container's
-/workspace is a live bind mount of the Issue #294 worktree.  Once the driver's
+Temporary experiment-only compatibility wrapper. The profiling container's
+/workspace is a live bind mount of the Issue #294 worktree. Once the driver's
 round-trip check has passed, tracked source synchronization must therefore be
 read-only: compare host/container hashes rather than extracting a tar archive as
-container root.  Likewise, make the Real-ESRGAN weight bind-visible from the host
+container root. Likewise, make the Real-ESRGAN weight bind-visible from the host
 instead of copying it into /workspace with docker cp.
 """
 
@@ -22,6 +22,49 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from tools.issue294 import run_full68_refresh_experiment as driver
 from tools.issue294.run_full68_refresh_experiment_hosttests import _host_tests_step
+
+_BASE_CONTAINER_STEP = driver._container_step
+
+
+def _container_and_shared_path_step() -> dict[str, object]:
+    detail = dict(_BASE_CONTAINER_STEP())
+    shared_paths: dict[str, dict[str, object]] = {}
+    for name in ("temp", "logs"):
+        host_path = driver.PROJECT_ROOT / name
+        if not os.path.lexists(host_path):
+            raise FileNotFoundError(f"Missing shared host path: {host_path}")
+        link_target = os.readlink(host_path) if host_path.is_symlink() else None
+        try:
+            host_resolved = host_path.resolve(strict=True)
+        except FileNotFoundError as error:
+            raise RuntimeError(
+                f"Shared host path is broken: {host_path} -> {link_target!r}"
+            ) from error
+        try:
+            container_resolved = driver._docker_capture(
+                ["exec", driver.CONTAINER, "readlink", "-f", f"/workspace/{name}"]
+            )
+        except RuntimeError as error:
+            raise RuntimeError(
+                "Issue #294 shared output path is not resolvable inside the profiling container: "
+                f"/workspace/{name}; host={host_path}; link_target={link_target!r}; "
+                f"expected_resolved={host_resolved}. Ensure the manager worktree is mounted at "
+                "the same absolute host path and shared symlinks remain valid after mapping the "
+                "issue worktree to /workspace."
+            ) from error
+        if container_resolved != str(host_resolved):
+            raise RuntimeError(
+                "Issue #294 shared output path resolves differently on host and container: "
+                f"/workspace/{name} -> {container_resolved}; host={host_path} -> {host_resolved}; "
+                f"link_target={link_target!r}."
+            )
+        shared_paths[name] = {
+            "host_path": str(host_path),
+            "link_target": link_target,
+            "resolved": str(host_resolved),
+        }
+    detail["shared_output_paths"] = shared_paths
+    return detail
 
 
 def _read_only_source_sync_step() -> dict[str, object]:
@@ -90,6 +133,7 @@ def _bind_visible_weight_step() -> dict[str, object]:
 
 
 def main() -> int:
+    driver._container_step = _container_and_shared_path_step
     driver._sync_source_step = _read_only_source_sync_step
     driver._weight_step = _bind_visible_weight_step
     driver._tests_step = _host_tests_step

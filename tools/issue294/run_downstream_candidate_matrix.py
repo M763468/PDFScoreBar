@@ -83,6 +83,34 @@ def _load_production_detection() -> dict[str, Any]:
     return dict(detection)
 
 
+def _validate_fixed_support_sr(image: Path, result: dict[str, Any]) -> None:
+    """Reject a nominally completed current-SR fallback before semantic scoring."""
+
+    sr_image = Path(str(result.get("sr_image", "")))
+    if not sr_image.is_file():
+        raise FileNotFoundError(f"Fixed support sr_image: {sr_image}")
+    sr_scale = int(result.get("sr_scale", 0))
+    if sr_scale != 4:
+        raise RuntimeError(f"Fixed support requires sr_scale=4, got {sr_scale}")
+
+    source_data = cv2.imread(str(image))
+    sr_data = cv2.imread(str(sr_image))
+    if source_data is None:
+        raise FileNotFoundError(image)
+    if sr_data is None:
+        raise FileNotFoundError(sr_image)
+    source_height, source_width = source_data.shape[:2]
+    sr_height, sr_width = sr_data.shape[:2]
+    expected = (source_width * sr_scale, source_height * sr_scale)
+    actual = (sr_width, sr_height)
+    if actual != expected:
+        raise RuntimeError(
+            "Fixed support current-SR did not produce the required x4 geometry: "
+            f"source={(source_width, source_height)} expected={expected} actual={actual}. "
+            "Do not score fallback-to-original support as a candidate regression."
+        )
+
+
 def _generate_fixed_support(image: Path, output_root: Path) -> dict[str, Any]:
     request_path = output_root / "request.json"
     result_path = output_root / "result.json"
@@ -98,6 +126,7 @@ def _generate_fixed_support(image: Path, output_root: Path) -> dict[str, Any]:
     result = load_json(result_path)
     if not isinstance(result, dict) or result.get("status") != "completed":
         raise ValueError(f"Incomplete fixed support: {result_path}")
+    _validate_fixed_support_sr(image, result)
     for key in (
         "current_sr_detection",
         "current_omr",

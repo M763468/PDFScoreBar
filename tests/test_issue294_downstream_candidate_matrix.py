@@ -5,7 +5,14 @@ import sys
 import types
 from pathlib import Path
 
-from tools.issue294.run_downstream_candidate_matrix import _comparison
+import cv2
+import numpy as np
+import pytest
+
+from tools.issue294.run_downstream_candidate_matrix import (
+    _comparison,
+    _validate_fixed_support_sr,
+)
 from tools.issue294.run_latest_homr_detector_original import (
     DETECTOR_ONLY_MODULES,
     EXCLUDED_OPTIONAL_MODULES,
@@ -71,6 +78,26 @@ def test_operational_gate_records_but_does_not_fail_on_extra_empty_system() -> N
     assert comparison["extracted_system_topology_equal"] is False
     assert comparison["system_measure_topology_equal"] is True
     assert comparison["count_topology_numbering_pass"] is True
+
+
+def test_fixed_support_sr_rejects_fallback_to_original_geometry(tmp_path: Path) -> None:
+    image = tmp_path / "page.png"
+    fallback = tmp_path / "fallback.png"
+    pixels = np.zeros((12, 8, 3), dtype=np.uint8)
+    assert cv2.imwrite(str(image), pixels)
+    assert cv2.imwrite(str(fallback), pixels)
+
+    with pytest.raises(RuntimeError, match="fallback-to-original"):
+        _validate_fixed_support_sr(image, {"sr_image": str(fallback), "sr_scale": 4})
+
+
+def test_fixed_support_sr_accepts_true_x4_geometry(tmp_path: Path) -> None:
+    image = tmp_path / "page.png"
+    sr_image = tmp_path / "page_x4.png"
+    assert cv2.imwrite(str(image), np.zeros((12, 8, 3), dtype=np.uint8))
+    assert cv2.imwrite(str(sr_image), np.zeros((48, 32, 3), dtype=np.uint8))
+
+    _validate_fixed_support_sr(image, {"sr_image": str(sr_image), "sr_scale": 4})
 
 
 def test_latest_materializes_only_selected_segnet_weight(tmp_path: Path, monkeypatch) -> None:

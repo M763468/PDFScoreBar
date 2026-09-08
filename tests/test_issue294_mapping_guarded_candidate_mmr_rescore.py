@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
+import pytest
+
 from src.measure_numbering.types import BBox, Measure
 from tools.issue264.phase_c_fixture_rebase import rebase_expected_overrides
 from tools.issue294.rescore_full68_mmr_audit import _score_overrides
 from tools.issue294.rescore_mapping_guarded_candidate_mmr import (
+    _assert_source_numbering_shape,
     _rebase_accepted_expected_to_candidate,
     _score_to_numbering,
 )
@@ -169,3 +172,36 @@ def test_accepted_issue264_equivalent_source_items_remain_coalesced() -> None:
     assert mappings[1]["accepted_source_coalesced"] is True
     assert mappings[1]["candidate_coalesced"] is True
     assert mappings[1]["candidate_coalesced_with_historical_key"] == [0, 1, 0]
+
+
+def test_source_numbering_shape_accepts_completed_audit_geometry() -> None:
+    source_page = {
+        "page_id": "page_001",
+        "total_measures": 3,
+        "system_staff_counts": [1, 2],
+        "system_measure_counts": [1, 2],
+    }
+    reconstructed = {
+        "total_measures": 3,
+        "system_staff_counts": [1, 2],
+        "system_measure_counts": [1, 2],
+    }
+
+    _assert_source_numbering_shape(source_page, reconstructed)
+
+
+def test_source_numbering_shape_rejects_wrong_geometry_contract() -> None:
+    source_page = {
+        "page_id": "page_001",
+        "total_measures": 3,
+        "system_staff_counts": [1, 2],
+        "system_measure_counts": [1, 2],
+    }
+    reconstructed = {
+        "total_measures": 3,
+        "system_staff_counts": [1, 1, 1],
+        "system_measure_counts": [1, 1, 1],
+    }
+
+    with pytest.raises(RuntimeError, match="page_001"):
+        _assert_source_numbering_shape(source_page, reconstructed)

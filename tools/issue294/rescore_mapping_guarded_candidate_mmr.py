@@ -3,6 +3,13 @@
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from tools.issue294._mapping_guarded_candidate_mmr_rescore import (
     _assert_source_numbering_shape,
     _rebase_accepted_expected_to_candidate,

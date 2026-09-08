@@ -10,32 +10,50 @@ from tools.issue294.rescore_full68_mmr_audit import _score_overrides
 from tools.issue294.rescore_mapping_guarded_candidate_mmr import (
     _assert_source_numbering_shape,
     _rebase_accepted_expected_to_candidate,
+    _score_shape,
     _score_to_numbering,
 )
 
 
-def test_score_to_numbering_preserves_empty_system_indices() -> None:
+def test_score_to_numbering_uses_serialized_mmr_system_indices() -> None:
     measure = Measure(number=1, start_bar=None, end_bar=None, bbox=BBox(10, 20, 30, 40))
     score = SimpleNamespace(
         pages=[
             SimpleNamespace(
+                page_number=1,
+                width=100,
+                height=200,
                 systems=[
-                    SimpleNamespace(measures=[]),
-                    SimpleNamespace(measures=[measure]),
-                ]
+                    SimpleNamespace(
+                        staves=[SimpleNamespace(bbox=BBox(0, 0, 50, 10))],
+                        measures=[],
+                    ),
+                    SimpleNamespace(
+                        staves=[SimpleNamespace(bbox=BBox(0, 20, 50, 40))],
+                        measures=[measure],
+                    ),
+                ],
             )
         ]
     )
 
-    assert _score_to_numbering(score) == {
-        "pages": [
-            {
-                "systems": [
-                    {"measures": []},
-                    {"measures": [{"bbox": [10, 20, 30, 40]}]},
-                ]
-            }
-        ]
+    numbering = _score_to_numbering(score)
+    assert numbering["pages"][0]["systems"] == [
+        {
+            "staves": [{"bbox": [0, 20, 50, 40]}],
+            "measures": [{"number": 1, "bbox": [10, 20, 30, 40]}],
+        }
+    ]
+    assert numbering["pages"][0]["empty_systems"] == [
+        {
+            "staves": [{"bbox": [0, 0, 50, 10]}],
+            "reason": "no_measures",
+        }
+    ]
+    assert _score_shape(score) == {
+        "total_measures": 1,
+        "system_staff_counts": [1],
+        "system_measure_counts": [1],
     }
 
 

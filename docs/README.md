@@ -11,6 +11,7 @@ use the current source/tests and the documents in the first section below.
 | [`PIPELINE_ARCHITECTURE.md`](PIPELINE_ARCHITECTURE.md) | **Canonical current production architecture**: dense route, stage ownership, coordinate spaces, process/memory boundaries, fallbacks |
 | [`TWO_HOMR_MILESTONE.md`](TWO_HOMR_MILESTONE.md) | Accepted Issue #274 / PR #279 two-HOMR accuracy/performance milestone and reproduction contract |
 | [`DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md) | Audit classification of durable docs and cleanup/maintenance rules |
+| [`HISTORY_INDEX.md`](HISTORY_INDEX.md) | Navigation across major historical Issue/experiment lineages; not a current-state source of truth |
 | [`ENVIRONMENTS.md`](ENVIRONMENTS.md) | Maintained runtime/development environments |
 | [`BRANCH_POLICY.md`](BRANCH_POLICY.md) | Branch/base/promotion policy |
 | [`dev/VALIDATION_POLICY.md`](dev/VALIDATION_POLICY.md) | Validation requirements by change type |
@@ -50,6 +51,10 @@ These remain useful durable references when working in their domains:
 
 ## Historical / forensic records
 
+Use `HISTORY_INDEX.md` to locate the relevant lineage before opening old Issue-specific
+records. Do not preload unrelated historical material simply because it is newer or more
+detailed.
+
 Documents named for a specific Issue, experiment, phase, or dated investigation are kept as
 historical evidence unless explicitly promoted into the current durable set. Examples include:
 
@@ -84,7 +89,7 @@ process/memory boundaries change:
 
 1. update `PIPELINE_ARCHITECTURE.md` in the same change;
 2. update `TWO_HOMR_MILESTONE.md` only when the accepted comparison milestone itself changes;
-3. check this index and `DOCUMENTATION_INVENTORY.md` for newly stale guidance;
+3. check this index, `HISTORY_INDEX.md`, and `DOCUMENTATION_INVENTORY.md` for newly stale guidance;
 4. after stable docs are settled, refresh Graphify according to `ai-workflow/GRAPHIFY.md`.
 
 Issue-specific forensic notes do not need mechanical rewrites for every architecture change.

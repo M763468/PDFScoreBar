@@ -4,7 +4,7 @@ output_dir: logs/cnn_barline_classification/issue48_rule_eval/eval2_th0p1
 threshold: 0.1
 scored_glob: "*_scored.json"
 
-fn_det_classification_csv: docs/ISSUE48_FN_DET15_CLASSIFICATION.csv
+fn_det_classification_csv: configs/cnn_barline_runs/issue44_baseline_v1/fixtures/issue48_fn_det15_classification.csv
 
 numbering_eval: true
 images_root: data/evaluation2/images

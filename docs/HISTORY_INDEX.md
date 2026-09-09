@@ -41,13 +41,15 @@ Primary lineage:
 
 Start with:
 
-- [`docs/ISSUE120_RESTART_PLAN.md`](ISSUE120_RESTART_PLAN.md)
+- [Issue #120](https://github.com/M763468/PDFScoreBar/issues/120) and its accepted follow-up Issue comments for forensic reconstruction history
+- [Issue #136](https://github.com/M763468/PDFScoreBar/issues/136) for the Stage-B scoring/NMS causal boundary
+- [Issue #141](https://github.com/M763468/PDFScoreBar/issues/141) for the Stage-E full-pipeline validation record
 - [`docs/ISSUE120_EVALUATION_CONTRACT.md`](ISSUE120_EVALUATION_CONTRACT.md)
-- [`docs/ISSUE120_HISTORICAL_BEST_AUDIT.md`](ISSUE120_HISTORICAL_BEST_AUDIT.md)
 - [`docs/ISSUE120_ARTIFACT_RETENTION.md`](ISSUE120_ARTIFACT_RETENTION.md)
+- [`docs/ISSUE120_NMS_POLICY.md`](ISSUE120_NMS_POLICY.md)
 - [`docs/refactors/issue120/`](refactors/issue120/)
 
-Use Issue threads for forensic detail. Do not interpret the old rebuild branch model or old `next step` sections as current branch state.
+Use Issue threads for forensic detail. Do not interpret old rebuild-branch models or historical `next step` sections as current branch state.
 
 ### Measure numbering / MMR
 

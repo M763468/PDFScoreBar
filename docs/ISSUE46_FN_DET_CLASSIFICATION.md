@@ -8,8 +8,6 @@ Issue #46 の Acceptance Criteria
 
 を満たすため、baseline (`eval2_fn_det_candidates_th0p5.csv`) を正本として分類結果を固定する。
 
-> This file remains a historical classification record for Issue #46. The detailed experiment chronology lives in `docs/ISSUE46_FN_DET_EXPERIMENT_LOG.md`, and the corresponding Issue discussion is the forensic record.
-
 ## Source
 
 - `logs/cnn_barline_classification/issue44_baseline_v1/eval2_fn_det_candidates_th0p5.csv`

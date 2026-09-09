@@ -4,11 +4,8 @@ This directory traces the remaining box-instance mismatch on
 `Va_Prokofiev_Symphony1/page_004` and determines whether it changes the
 connector-supported final numbering result.
 
-The investigation conclusion is recorded in:
-
-```text
-docs/issue252_prokofiev_detector_conclusion.md
-```
+This README is the retained reproduction and decision record for the Issue #252 audit.
+Forensic discussion remains in [Issue #252](https://github.com/M763468/PDFScoreBar/issues/252).
 
 ## Retained tools
 
@@ -250,7 +247,8 @@ contracts report `base_equals_final = false`.
 
 Therefore the target is a box-instance detector FN but is redundant for the current
 connector-supported grouped boundary. The side-context candidate remains rejected
-because it changes unrelated page geometry and page-wide numbering.
+because it changes unrelated page geometry and page-wide numbering. No detector or
+candidate-filter configuration is promoted from Issue #252.
 
 ## 3. Relationship to Issue #254
 

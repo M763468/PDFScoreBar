@@ -18,13 +18,14 @@ audits; it is not intended to enumerate every Issue-specific forensic note indiv
 
 ## Inventory
 
-| Document / area | Role | Classification | #280 action |
+| Document / area | Role | Classification | #280/#300 action |
 | --- | --- | --- | --- |
 | `README.md` | repository entry | current | update to point to canonical architecture/milestone |
 | `AGENTS.md` | repository agent constitution | current | keep; existing Graphify/validation/environment links remain valid |
-| `docs/README.md` | documentation index | canonical/current | rewrite current vs historical navigation |
-| `docs/PIPELINE_ARCHITECTURE.md` | production architecture | canonical/current | add; global architecture source |
-| `docs/TWO_HOMR_MILESTONE.md` | accepted architecture/accuracy/performance milestone | canonical/current | add and complete local/external asset staging contract |
+| `docs/README.md` | documentation index | canonical/current | current vs historical navigation |
+| `docs/HISTORY_INDEX.md` | historical lineage navigation | current/reference | #300 adds; points to existing milestones/forensic records without duplicating them |
+| `docs/PIPELINE_ARCHITECTURE.md` | production architecture | canonical/current | global architecture source |
+| `docs/TWO_HOMR_MILESTONE.md` | accepted architecture/accuracy/performance milestone | canonical/current | complete local/external asset staging contract |
 | `docs/ENVIRONMENTS.md` | execution/runtime guidance | current/reference | clarify unified container vs legacy compatibility fallback |
 | `docs/BRANCH_POLICY.md` | branch policy | current/reference | keep |
 | `docs/dev/VALIDATION_POLICY.md` | validation policy | current/reference | keep |
@@ -47,8 +48,28 @@ audits; it is not intended to enumerate every Issue-specific forensic note indiv
 | `docs/refactors/issue*/**` | scoped design/history | historical/scoped | keep by default; current global architecture lives elsewhere |
 | `docs/notes/**`, `docs/future/**` | notes/plans | historical/planning | keep unless separately superseded/approved for deletion |
 | `docs/model_experiments/**`, `docs/fp_reduction/**` | experiment records | historical | keep |
-| `configs/dense_full_pipeline.yaml` | canonical dense production config | current runtime input, not prose | reference from canonical docs; do not alter under docs-only Issue #280 |
+| `configs/dense_full_pipeline.yaml` | canonical dense production config | current runtime input, not prose | reference from canonical docs; do not alter under docs-only work |
 | `configs/detector_profiles/stage_e_verified_homr.json` | pinned profile provenance | canonical machine-readable reference | reference from milestone doc |
+
+## Historical navigation rule added in #300
+
+Historical records remain evidence, but agents should not scan or preload them indiscriminately.
+Use `docs/HISTORY_INDEX.md` to select the lineage relevant to the active Issue/PR, and then
+open only the accepted milestone or forensic record needed for that task.
+
+Historical ephemeral state is never authoritative without revalidation. Examples include:
+
+- branch or `develop` HEAD values;
+- worktree/container state;
+- run tags and local artifact paths;
+- current blockers;
+- unfinished PASS/FAIL status;
+- `next step` instructions.
+
+For important experiments, prefer a recoverable chain of
+`hypothesis -> script/command -> commit -> fixed provenance -> result -> disposition` over
+retaining chat transcripts or copying the same result into another summary document.
+Invalidated or superseded results remain useful history, but must stay labelled as such.
 
 ## Dead/stale-path audit findings
 
@@ -115,3 +136,7 @@ A new durable document should answer one of three questions clearly: “how the 
 now”, “how to operate it now”, or “what happened in a past investigation”. If it mixes those
 roles, split or label it. Current global architecture must be reachable from the root README
 without reading Issue history.
+
+For historical investigations, prefer a compact navigation/index layer plus the original
+Issue/PR/commit evidence over a second full narrative copy. This keeps historical knowledge
+available without making every past investigation active context.

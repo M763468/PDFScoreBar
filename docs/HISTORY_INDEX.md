@@ -1,6 +1,6 @@
 # PDFScoreBar History Index
 
-This document is a navigation layer, not a second source of truth.
+> Navigation layer only. This file is not a second source of truth.
 
 ## Purpose
 
@@ -16,14 +16,12 @@ For a current task:
 2. inspect current source/tests and that target's GitHub state;
 3. read canonical/current docs relevant to the subsystem;
 4. use the lineage below only for necessary historical evidence;
-5. treat branch HEADs, run tags, local paths, blockers, and `next step` text in historical records as stale until revalidated.
-
-A newer comment on an unrelated Issue does not supersede the current task's accepted contract merely because it is newer.
+5. treat branch HEADs, run tags, local paths, blockers, and `next step` records in historical material as stale until revalidated.
 
 ## Canonical current entry points
 
 - [`docs/PIPELINE_ARCHITECTURE.md`](PIPELINE_ARCHITECTURE.md) — current production architecture
-- [`docs/TWO_HOMR_MILESTONE.md`](TWO_HOMR_MILESTONE.md) — accepted #274 / [PR #279](https://github.com/M763468/PDFScoreBar/pull/279) comparison milestone
+- [`docs/TWO_HOMR_MILESTONE.md`](TWO_HOMR_MILESTONE.md) — accepted #274 / PR #279 comparison milestone
 - [`docs/DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md) — documentation classification
 - [`docs/ENVIRONMENTS.md`](ENVIRONMENTS.md) — maintained execution environments
 - [`docs/BRANCH_POLICY.md`](BRANCH_POLICY.md) — branch policy
@@ -80,7 +78,7 @@ Start with:
 - [`docs/TWO_HOMR_MILESTONE.md`](TWO_HOMR_MILESTONE.md)
 - #245 / #255 / #264 / #274 Issue records when forensic detail is required
 
-The accepted [PR #279](https://github.com/M763468/PDFScoreBar/pull/279) milestone is the comparison anchor. Earlier producer counts and temporary Phase-A/Phase-B arrangements are historical.
+The accepted PR #279 milestone is the comparison anchor. Earlier producer counts and temporary Phase-A / Phase-B arrangements are historical.
 
 ### Performance optimization
 
@@ -92,7 +90,7 @@ Start with:
 
 - #281 for the first post-#274 attribution framework
 - #283 for current-x4 HOMR optimization
-- #284 / [PR #292](https://github.com/M763468/PDFScoreBar/pull/292) for Real-ESRGAN optimization
+- #284 / PR #292 for Real-ESRGAN optimization
 - #293 for the post-#292 measured backlog
 - #294 only when the active task actually concerns baseline-HOMR replacement
 
@@ -152,6 +150,6 @@ A result invalidated by a harness, environment, provenance, coordinate/index, or
 
 Chat transcripts and restart prompts are not durable repository documentation.
 
-Once an Issue's important decisions, experiment provenance, accepted/rejected results, and follow-ups are recoverable from GitHub / source / tests / durable docs, old chat sessions and handoff prompts do not need to be retained as active AI context.
+Once an Issue's important decisions, experiment provenance, accepted/rejected results, and follow-ups are recoverable from GitHub / source / tests / this documentation index, old chat sessions and handoff prompts may be removed from active AI-project context.
 
 Do not copy full chat transcripts into this repository.

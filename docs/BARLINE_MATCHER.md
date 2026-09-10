@@ -31,6 +31,17 @@ through a `barline_staff_units.v1` page manifest, which also records coordinate
 dimensions and source provenance. Supplying an explicit pixel threshold is
 legacy reproduction mode only.
 
+These terms describe different contracts and must not be conflated:
+
+- **Pair eligibility** is the geometric predicate above. More than one
+  candidate may be eligible for the same GT.
+- **Per-candidate training labels** remain the dataset builder's `any pair`
+  target: a candidate is positive when it has any eligible GT. The builder is
+  intentionally not changed to owner or one-to-one semantics.
+- **Greedy evaluation assignment** consumes each GT at most once and records
+  hard matches plus soft duplicate/repeat classifications. Its assignment is
+  not a replacement training label for the per-candidate classifier.
+
 ## Duplicate & Repeat Classification
 After greedy pairing, unmatched predictions are revisited:
 - **Duplicate (`reason="duplicate"`)** when
@@ -51,6 +62,13 @@ This ensures the logical layer behaves consistently across different score resol
 This Issue #313 contract is intentionally limited to strong `center_anchor`
 acceptance. It does not make the legacy IoU padding or duplicate/repeat soft
 classification pixel thresholds resolution-independent.
+
+The canonical page manifest is tracked at
+`data/evaluation2/staff_units.json`. Its `source_sha256` values define the
+integrity boundary for the external staff-mask snapshot; when a source is
+materialized, consumers may verify that hash. Every canonical center-anchor
+consumer also checks that the manifest dimensions equal the actual input image
+dimensions before matching.
 
 ## Left-margin Exclusion Rule
 `apply_left_margin_exclusion` runs after matching to reclassify select detections as false positives. The homr evaluator currently keeps the guard disabled (`LEFT_MARGIN_FORCE_FP_GT_INDICES = set()`), so no matches are demoted by default. When re-enabled, any GT index listed in the set and matched to a predicted width ≤ `LEFT_MARGIN_FORCE_FP_MAX_WIDTH` (2 px) will be forced back to an FP to suppress intentionally ignored left-gutter pillars.

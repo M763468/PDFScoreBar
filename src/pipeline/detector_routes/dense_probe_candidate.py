@@ -92,7 +92,7 @@ class DenseProbeCandidateConfig:
     scorer: str = "pipeline"
     cnn_apply_nms: bool = False
     score_threshold: float = 0.1
-    staff_units_json: Path = Path("logs/issue313/staff_units.json")
+    staff_units_json: Path = Path("data/evaluation2/staff_units.json")
     xdist_unit_ratio: float = 0.5
     no_clean_output: bool = False
     skip_issue36_regeneration: bool = False

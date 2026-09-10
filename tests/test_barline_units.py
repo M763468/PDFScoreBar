@@ -2,16 +2,20 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
 import pytest
 
-from src.common.barline_evaluation import is_barline_match
+from src.common.barline_evaluation import center_anchor_xdist_limit, is_barline_match
 from src.common.barline_units import (
     STAFF_UNITS_SCHEMA_VERSION,
+    PageStaffUnit,
     load_page_staff_units,
     require_page_staff_unit,
+    validate_coordinate_dimensions,
+    verify_source_hash,
 )
 
 
@@ -82,3 +86,45 @@ def test_staff_unit_manifest_preserves_page_provenance(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="no entry"):
         require_page_staff_unit(units, "score", "page_002")
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+def test_staff_unit_manifest_rejects_nonfinite_unit_size(tmp_path: Path, value: float) -> None:
+    manifest_path = tmp_path / "staff_units.json"
+    _manifest(manifest_path)
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    payload["pages"]["score/page_001"]["unit_size"] = value
+    manifest_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="unit_size must be positive"):
+        load_page_staff_units(manifest_path)
+
+
+def test_normalized_matcher_rejects_nonfinite_values() -> None:
+    with pytest.raises(ValueError, match="unit_size must be finite"):
+        center_anchor_xdist_limit(unit_size=float("nan"))
+    with pytest.raises(ValueError, match="xdist_unit_ratio must be finite"):
+        center_anchor_xdist_limit(unit_size=24.0, xdist_unit_ratio=float("inf"))
+
+
+def test_manifest_dimensions_and_source_hash_are_verified(tmp_path: Path) -> None:
+    unit = PageStaffUnit(
+        unit_size=24.0,
+        coordinate_width=1000,
+        coordinate_height=1400,
+        source_kind="staff_mask",
+        source_path="staff_mask.bin",
+        source_sha256="",
+    )
+    source = tmp_path / unit.source_path
+    source.write_bytes(b"staff-mask")
+    unit = PageStaffUnit(
+        **{**unit.__dict__, "source_sha256": hashlib.sha256(b"staff-mask").hexdigest()}
+    )
+    validate_coordinate_dimensions(unit, width=1000, height=1400, page="score/page_001")
+    with pytest.raises(ValueError, match="dimensions mismatch"):
+        validate_coordinate_dimensions(unit, width=999, height=1400, page="score/page_001")
+    assert verify_source_hash(unit, source_root=tmp_path) == source
+    source.write_bytes(b"changed")
+    with pytest.raises(ValueError, match="hash mismatch"):
+        verify_source_hash(unit, source_root=tmp_path)

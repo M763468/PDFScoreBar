@@ -209,9 +209,9 @@ def _build_eval_args(
         rule_name=args.rule_name,
         vov_threshold=args.vov_threshold,
         staff_units_json=args.staff_units_json,
+        image_root=args.image_root,
         xdist_unit_ratio=args.xdist_unit_ratio,
         legacy_fixed_12px=False,
-        xdist_threshold=12.0,
         allow_partial=args.allow_partial,
         measure_summary_json=args.measure_summary_json,
     )
@@ -282,6 +282,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--vov-threshold", type=float, default=0.5)
     parser.add_argument("--staff-units-json", type=Path, required=True)
+    parser.add_argument(
+        "--image-root",
+        type=Path,
+        default=Path("data/evaluation2/images"),
+        help="Root containing page images in the manifest coordinate frame.",
+    )
     parser.add_argument("--xdist-unit-ratio", type=float, default=0.5)
     parser.add_argument("--link-mode", choices=["copy", "symlink", "hardlink"], default="copy")
     parser.add_argument("--allow-partial", action="store_true")

@@ -28,6 +28,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
+from PIL import Image
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -40,6 +42,7 @@ from src.common.barline_units import (  # noqa: E402
     PageStaffUnit,
     load_page_staff_units,
     require_page_staff_unit,
+    validate_coordinate_dimensions,
 )
 
 # Canonical Issue #120 evaluation2 page set: 68 pages.
@@ -184,6 +187,7 @@ class EvaluationContract:
     xdist_unit_ratio: float | None
     legacy_xdist_threshold: float | None
     staff_units_manifest: str | None
+    image_root: str | None
     detector_summary: DetectorSummary
     measure_count_summary: dict[str, Any]
 
@@ -336,6 +340,7 @@ def evaluate(args: argparse.Namespace) -> EvaluationContract:
     if manifest_arg:
         units = load_page_staff_units(Path(manifest_arg))
     legacy_xdist = 12.0 if legacy_mode else None
+    image_root = Path(getattr(args, "image_root", "data/evaluation2/images"))
 
     page_metrics: list[PageMetric] = []
     missing_pages: list[dict[str, str]] = []
@@ -360,6 +365,19 @@ def evaluate(args: argparse.Namespace) -> EvaluationContract:
         gts = boxes_from_gt(load_json(gt_path))
         preds = boxes_from_scored(load_json(scored_path), score_threshold=args.score_threshold)
         page_unit = require_page_staff_unit(units, record.score, record.page) if units else None
+        if args.rule_name == "center_anchor" and not legacy_mode:
+            image_path = image_root / record.score / f"{record.page}.png"
+            if not image_path.is_file():
+                raise FileNotFoundError(
+                    f"Canonical input image missing for {record.score}/{record.page}: {image_path}"
+                )
+            with Image.open(image_path) as image:
+                validate_coordinate_dimensions(
+                    page_unit,
+                    width=image.width,
+                    height=image.height,
+                    page=f"{record.score}/{record.page}",
+                )
 
         match_result = greedy_barline_match(
             preds,
@@ -469,6 +487,9 @@ def evaluate(args: argparse.Namespace) -> EvaluationContract:
         xdist_unit_ratio=None if legacy_mode else ratio,
         legacy_xdist_threshold=legacy_xdist,
         staff_units_manifest=str(manifest_arg) if manifest_arg else None,
+        image_root=str(image_root)
+        if args.rule_name == "center_anchor" and not legacy_mode
+        else None,
         detector_summary=detector_summary,
         measure_count_summary=read_measure_summary(args.measure_summary_json),
     )
@@ -532,6 +553,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--staff-units-json",
         type=Path,
         help="barline_staff_units.v1 manifest in the same coordinate frame as inputs",
+    )
+    parser.add_argument(
+        "--image-root",
+        type=Path,
+        default=Path("data/evaluation2/images"),
+        help="Root containing page images in the manifest coordinate frame",
     )
     parser.add_argument("--xdist-unit-ratio", type=float, default=CENTER_ANCHOR_XDIST_UNIT_RATIO)
     parser.add_argument(

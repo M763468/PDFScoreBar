@@ -12,6 +12,8 @@ import json
 import sys
 from pathlib import Path
 
+from PIL import Image
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -20,7 +22,11 @@ from src.common.barline_evaluation import (
     greedy_barline_match,
     is_barline_match,
 )
-from src.common.barline_units import load_page_staff_units, require_page_staff_unit
+from src.common.barline_units import (
+    load_page_staff_units,
+    require_page_staff_unit,
+    validate_coordinate_dimensions,
+)
 
 # Canonical Issue #120 evaluation2 page set: 68 pages.
 SCORES: dict[str, list[str]] = {
@@ -96,6 +102,12 @@ def main():
         required=True,
         help="Page-level staff-unit manifest in the evaluated box coordinate frame.",
     )
+    parser.add_argument(
+        "--image-root",
+        type=Path,
+        default=Path("data/evaluation2/images"),
+        help="Fallback root containing page images in the manifest coordinate frame.",
+    )
     parser.add_argument("--xdist-unit-ratio", type=float, default=CENTER_ANCHOR_XDIST_UNIT_RATIO)
     args = parser.parse_args()
 
@@ -156,6 +168,20 @@ def main():
 
             gts = boxes_from_gt(json.loads(gt_path.read_text()))
             page_unit = require_page_staff_unit(staff_units, score, page)
+            image_path = Path(pdata.get("image_path", ""))
+            if not image_path.is_file():
+                image_path = args.image_root / score / f"{page}.png"
+            if not image_path.is_file():
+                raise FileNotFoundError(
+                    f"Canonical input image missing for {score}/{page}: {image_path}"
+                )
+            with Image.open(image_path) as image:
+                validate_coordinate_dimensions(
+                    page_unit,
+                    width=image.width,
+                    height=image.height,
+                    page=f"{score}/{page}",
+                )
             scored_data = json.loads(scored_path.read_text())
             # filtered_cnn is a list of plain bbox arrays (already filtered), not scored dicts
             preds = boxes_from_scored(scored_data, score_threshold=args.score_threshold)

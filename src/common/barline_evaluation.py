@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Iterable, List, Optional, Sequence, Tuple
 
@@ -138,8 +139,12 @@ def center_anchor_xdist_limit(
 ) -> float:
     """Return the strong-pair X tolerance in the boxes' coordinate frame."""
 
+    if not math.isfinite(unit_size):
+        raise ValueError("unit_size must be finite")
     if unit_size <= 0:
         raise ValueError("unit_size must be positive")
+    if not math.isfinite(xdist_unit_ratio):
+        raise ValueError("xdist_unit_ratio must be finite")
     if xdist_unit_ratio <= 0:
         raise ValueError("xdist_unit_ratio must be positive")
     return unit_size * xdist_unit_ratio

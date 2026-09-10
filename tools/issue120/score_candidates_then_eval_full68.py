@@ -130,6 +130,8 @@ def run_eval(args: argparse.Namespace, provenance_path: Path) -> None:
         str(args.score_threshold),
         "--staff-units-json",
         str(args.staff_units_json),
+        "--image-root",
+        str(args.image_root),
         "--xdist-unit-ratio",
         str(args.xdist_unit_ratio),
     ]

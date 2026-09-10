@@ -19,7 +19,7 @@ dense_probe_candidate_route:
     score_threshold: 0.1
     # Strong center-anchor pair acceptance in the original evaluation2 frame.
     # The manifest must describe the same coordinate system as candidates/GT.
-    staff_units_json: logs/issue313/staff_units.json
+    staff_units_json: data/evaluation2/staff_units.json
     xdist_unit_ratio: 0.5
 
   workflow:

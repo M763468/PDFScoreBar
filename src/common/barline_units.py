@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
@@ -43,13 +45,50 @@ def _parse_page_unit(key: str, value: Any) -> PageStaffUnit:
         source_sha256 = str(data["source_sha256"])
     except KeyError as exc:
         raise ValueError(f"pages[{key!r}] lacks {exc.args[0]!r}") from exc
-    if not unit_size > 0:
+    if not math.isfinite(unit_size) or not unit_size > 0:
         raise ValueError(f"pages[{key!r}].unit_size must be positive")
     if width <= 0 or height <= 0:
         raise ValueError(f"pages[{key!r}] coordinate dimensions must be positive")
     if not source_kind or not source_path or len(source_sha256) != 64:
         raise ValueError(f"pages[{key!r}] has incomplete provenance")
     return PageStaffUnit(unit_size, width, height, source_kind, source_path, source_sha256)
+
+
+def validate_coordinate_dimensions(
+    unit: PageStaffUnit, *, width: int, height: int, page: str
+) -> None:
+    """Fail loudly when boxes and the page-unit manifest use different frames."""
+
+    if (width, height) != (unit.coordinate_width, unit.coordinate_height):
+        raise ValueError(
+            f"Coordinate dimensions mismatch for {page}: manifest="
+            f"{unit.coordinate_width}x{unit.coordinate_height}, input={width}x{height}"
+        )
+
+
+def verify_source_hash(
+    unit: PageStaffUnit, *, source_root: Path | None = None, required: bool = False
+) -> Path | None:
+    """Verify a materialized provenance source when one is available.
+
+    The tracked manifest records the hash boundary even when the Phase 1 source
+    snapshot is external. Set ``required=True`` for a run that materializes it.
+    """
+
+    source = Path(unit.source_path)
+    if source_root is not None and not source.is_absolute():
+        source = source_root / source
+    if not source.exists():
+        if required:
+            raise FileNotFoundError(f"Staff-unit provenance source is missing: {source}")
+        return None
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    if digest != unit.source_sha256:
+        raise ValueError(
+            f"Staff-unit provenance hash mismatch for {source}: "
+            f"manifest={unit.source_sha256}, actual={digest}"
+        )
+    return source
 
 
 def load_page_staff_units(path: Path) -> dict[str, PageStaffUnit]:

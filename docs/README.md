@@ -48,8 +48,10 @@ package is documented in `manual_correction_review_package.md`.
 - Historical CNN training and active-learning results have been distilled into Issue #44;
   exact retired prose remains recoverable from Git history.
 - `GT_PREPARATION_POLICY.md` and `BARLINE_MATCHER.md` remain current labeling/evaluation references.
-- `DEVLOG_MEASURE_NUMBERING.md` remains a historical development log pending compression under
-  the documentation-cleanup umbrella; verify old claims against current source before use.
+- For MMR/measure-numbering maintenance, start with
+  [`refactors/issue94/MMR_CURRENT_STATE.md`](refactors/issue94/MMR_CURRENT_STATE.md), current source/tests,
+  and the Issue #94 lineage. [`DEVLOG_MEASURE_NUMBERING.md`](DEVLOG_MEASURE_NUMBERING.md) is now only a
+  compact legacy milestone ledger.
 
 ## Historical / forensic records
 
@@ -57,6 +59,9 @@ Use `HISTORY_INDEX.md` to locate the relevant lineage before opening old Issue-s
 records. Important decisions and experiment results should be recovered from the relevant
 Issue/PR/commit and retained reproduction tooling rather than from old restart prompts,
 plans, or execution diaries.
+
+`DEVELOPMENT_LOG.md` and `DEVLOG_MEASURE_NUMBERING.md` are compact historical milestone ledgers,
+not active work logs. Their former detailed execution diaries remain recoverable through Git history.
 
 Completed task-control bundles (`Prompt.md`, `Plan.md`, `Implement.md`, dated execution
 `Log.md`, and one-off benchmark summaries) are not durable current documentation once their

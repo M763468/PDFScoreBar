@@ -33,16 +33,16 @@ Issue #280 established the repository documentation audit against the accepted #
 | `.agents/skills/graphify/**` | agent Graphify skill | current/reference | keep |
 | `graphify-out/**` durable set | generated navigation graph/wiki/report/manifest | current only when provenance is fresh | refresh after stable architecture changes |
 | `docs/PIPELINE_DATAFLOW.md`, `docs/FULL_PIPELINE_README.md`, `docs/best_configuration_summary.md` | obsolete current-guide narratives | retired | removed in earlier cleanup; recover through Git history |
-| `docs/CNN_RETRAINING_GUIDE.md` | #44-era FP active-learning / ResNet18 plan | retire | historical core moved to #44; current verified CNN is #296 / PR #310 plus source/config/tests |
-| `docs/performance_comparison.md` | dated Phase 1–6 performance narrative | retire | benchmark ledger distilled into #78; later performance lineage is in #281–#294 |
-| `docs/DEVELOPMENT_LOG.md` | large pre-/early-Issue development diary | historical | pending section-level compression under #308 |
-| `docs/DEVLOG_CNN_TRAINING.md` | CNN development diary | retire | durable early experiment ledger moved to Issue #44; current verified CNN is #296 / PR #310 plus source/config/tests |
-| `docs/DEVLOG_MEASURE_NUMBERING.md` | numbering development diary | historical | pending compression; later Issue/refactor records carry current/scoped contracts |
+| `docs/CNN_RETRAINING_GUIDE.md` | #44-era FP active-learning / ResNet18 plan | retired | historical core moved to #44; current verified CNN is #296 / PR #310 plus source/config/tests |
+| `docs/performance_comparison.md` | dated Phase 1–6 performance narrative | retired | benchmark ledger distilled into #78; later performance lineage is in #281–#294 |
+| `docs/DEVELOPMENT_LOG.md` | project-origin / pre-Issue history | historical/reference | compressed to a short legacy milestone ledger; exact old execution diary is Git-history only |
+| `docs/DEVLOG_CNN_TRAINING.md` | CNN development diary | retired | durable early experiment ledger moved to Issue #44; current verified CNN is #296 / PR #310 plus source/config/tests |
+| `docs/DEVLOG_MEASURE_NUMBERING.md` | early numbering/MMR development history | historical/reference | compressed to a short legacy milestone ledger; current/scoped MMR analysis is `docs/refactors/issue94/MMR_CURRENT_STATE.md` and Issue #94 |
 | top-level `docs/ISSUE*.md` | Issue forensic/reproduction records | historical | keep only while unique durable evidence or an active reproduction contract remains; otherwise distill and retire |
 | `docs/refactors/issue*/**` | scoped design/history | historical/scoped | audit individually; keep current scoped contracts, retire temporary handoff/task-control bundles after distillation |
-| `docs/long-horizon-tasks/**` | completed Prompt/Plan/Log/Benchmarks task bundles | retire | important #25/#60/#70 results moved to their Issue threads; remove active-looking task-control copies |
+| `docs/long-horizon-tasks/**` | completed Prompt/Plan/Log/Benchmarks task bundles | retired | important #25/#60/#70 results moved to their Issue threads; active-looking task-control copies removed |
 | `docs/notes/**`, `docs/future/**` | notes/plans | historical/planning | retire when superseded and decisions are recoverable elsewhere |
-| `docs/model_experiments/*.md` | old model survey/future plans | retire when superseded | active-looking plan text is not a current model roadmap; preserve accepted experiment evidence elsewhere |
+| `docs/model_experiments/*.md` | old model survey/future plans | retired when superseded | active-looking plan text is not a current model roadmap; accepted experiment evidence remains elsewhere |
 | `docs/model_experiments/*.pdf` | historical model survey artifacts | historical / audit pending | do not delete without content-level audit |
 | `docs/fp_reduction/**` | duplicate Dec-2025 FP-reduction narratives | retired | removed after reusable safety guidance moved to `docs/ai-workflow/LESSONS.md`; tooling remains under `experiments/fp_reduction/` |
 | `configs/dense_full_pipeline.yaml` | canonical dense production config | current runtime input, not prose | authoritative for current selected model/threshold/runtime values |
@@ -61,7 +61,7 @@ A historical document can be retired from the active tree when all of the follow
 3. the file is not the sole current operating/reproduction contract;
 4. surviving repository links are updated in the same cleanup change.
 
-Completed `Prompt.md`, `Plan.md`, handoff, and execution-diary files should normally be retired once this gate is met. Git history is sufficient for recovering their exact prose.
+Completed `Prompt.md`, `Plan.md`, handoff, and execution-diary files should normally be retired once this gate is met. When a filename still serves as useful historical navigation, replacing a large diary with a compact, explicitly historical ledger is preferred to preserving stale run-by-run state.
 
 For important experiments, prefer a recoverable chain of
 
@@ -85,12 +85,13 @@ Keeping these two layers distinct lets the project reproduce the accepted #274 c
 
 ## Cleanup history
 
-The documentation-cleanup lineage progressively moved durable information out of redundant narratives before deleting them:
+The documentation-cleanup lineage progressively moved durable information out of redundant narratives before deleting or compressing them:
 
 - #300 / PR #301: added historical navigation and active-context retention guidance;
 - #302 / PR #305: retired the first redundant historical-doc batch and relocated a rerun CSV into a config-owned fixture location;
 - #306 / PR #307: distilled #19/#46/FP-reduction conclusions and reusable safety guidance;
 - #308 / PR #309: moved current detector-input provenance/NMS contracts into canonical architecture and retired duplicate #120/#163/#245 narratives;
+- #308 / PR #314: retired completed task-control bundles, stale CNN/history guides, and duplicate historical narratives after Issue-side distillation;
 - later #308 PRs continue the same rule without creating a new Issue for each small docs-only slice.
 
 ## Separate implementation cleanup

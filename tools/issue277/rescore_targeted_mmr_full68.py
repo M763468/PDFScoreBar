@@ -178,15 +178,17 @@ def run(
     accepted_path: Path,
     positive_risk_path: Path,
     output_path: Path,
+    candidate_schema: str = "issue277.targeted_mmr_full68.v1",
+    candidate_name: str = "targeted",
 ) -> dict[str, Any]:
     candidate = _load_json(run_path)
     accepted = _load_json(accepted_path)
     positive_risk = _load_json(positive_risk_path)
 
     if not isinstance(candidate, Mapping) or candidate.get("status") != "completed":
-        raise ValueError("Targeted full68 report is not completed")
-    if candidate.get("schema_version") != "issue277.targeted_mmr_full68.v1":
-        raise ValueError("Unexpected targeted full68 schema")
+        raise ValueError(f"{candidate_name} full68 report is not completed")
+    if candidate.get("schema_version") != candidate_schema:
+        raise ValueError(f"Unexpected {candidate_name} full68 schema")
     if not isinstance(accepted, Mapping) or accepted.get("status") != "passed":
         raise ValueError("Accepted Issue #264 rebase report is not passed")
     if not isinstance(positive_risk, Mapping) or positive_risk.get("status") != "completed":

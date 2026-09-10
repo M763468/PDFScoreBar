@@ -136,6 +136,53 @@ the detector/topology/numbering/MMR semantic contracts. The final Issue #284 ful
 preserved those contracts on all 68 canonical pages while reducing both SR-batch and E2E
 wall time.
 
+## Detector input provenance and scoring defaults
+
+Detector input provenance is a machine-readable contract, not something inferred from a
+run-directory name or from the fact that HOMR/SR/OMR executed. `src/pipeline/detection/input_contract.py`
+classifies each detector configuration as one of:
+
+```text
+fresh_upstream
+precomputed_candidate_route
+```
+
+A run is `fresh_upstream` only when both candidate-source overrides are unset:
+
+```text
+precomputed_probe_candidates_root
+cnn_bands_from
+```
+
+If either override is configured, the run is a `precomputed_candidate_route`, even if the
+current HOMR/SR/OMR stages also execute and even if the run writes new candidate JSON into a
+new output directory. New output bytes do not prove fresh authoritative inputs.
+
+The detector orchestrator records this contract in:
+
+```text
+<run_dir>/intermediate/detector_input_contract.json
+```
+
+A result may be described as a fresh detector validation only when the manifest reports:
+
+```text
+mode = fresh_upstream
+fresh_upstream_authoritative = true
+override_keys = []
+```
+
+Checkpoint/precomputed routes remain useful for historical regression, CNN comparison, and
+downstream isolation, but their metrics must remain labelled with that input mode. The
+forensic investigation that established this distinction is retained in Issue #245 and PR
+#251; current source/tests and the machine-readable manifest are authoritative now.
+
+CNN scoring NMS is default-off in `src/pipeline/detection/config.py`
+(`DEFAULT_CNN_APPLY_NMS = False`) and remains an explicit opt-in through
+`detection.cnn_apply_nms: true`. Issue #142 records the historical causal evidence and PR
+#154 that established this default. Any future default change requires explicit canonical
+accuracy/downstream evidence rather than a silent scoring-policy change.
+
 ## Detector consensus and dense candidate route
 
 `BatchSRVerifiedProfileHybridDetector` retains the same consensus semantics as

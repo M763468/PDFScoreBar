@@ -43,10 +43,11 @@ Start with:
 
 - [Issue #120](https://github.com/M763468/PDFScoreBar/issues/120) and its accepted follow-up Issue comments for forensic reconstruction history
 - [Issue #136](https://github.com/M763468/PDFScoreBar/issues/136) for the Stage-B scoring/NMS causal boundary
+- [Issue #142](https://github.com/M763468/PDFScoreBar/issues/142) for the accepted CNN-scoring NMS default-off decision and PR #154 evidence
 - [Issue #141](https://github.com/M763468/PDFScoreBar/issues/141) for the Stage-E full-pipeline validation record
+- [Issue #163](https://github.com/M763468/PDFScoreBar/issues/163) for the rejected HOMR/SR overlap experiment, evidence branch/commit, and fixed-subset reproduction details
 - [`docs/ISSUE120_EVALUATION_CONTRACT.md`](ISSUE120_EVALUATION_CONTRACT.md)
 - [`docs/ISSUE120_ARTIFACT_RETENTION.md`](ISSUE120_ARTIFACT_RETENTION.md)
-- [`docs/ISSUE120_NMS_POLICY.md`](ISSUE120_NMS_POLICY.md)
 - [`docs/refactors/issue120/`](refactors/issue120/)
 
 Use Issue threads for forensic detail. Do not interpret the old rebuild branch model or old `next step` sections as current branch state.
@@ -76,9 +77,10 @@ Primary lineage:
 
 Start with:
 
-- [`docs/PIPELINE_ARCHITECTURE.md`](PIPELINE_ARCHITECTURE.md)
+- [`docs/PIPELINE_ARCHITECTURE.md`](PIPELINE_ARCHITECTURE.md), including the current detector-input provenance contract
 - [`docs/TWO_HOMR_MILESTONE.md`](TWO_HOMR_MILESTONE.md)
-- #245 / #255 / #264 / #274 Issue records when forensic detail is required
+- [Issue #245](https://github.com/M763468/PDFScoreBar/issues/245) / [PR #251](https://github.com/M763468/PDFScoreBar/pull/251) for forensic detail behind `fresh_upstream` vs `precomputed_candidate_route`
+- #255 / #264 / #274 Issue records when further forensic detail is required
 
 The accepted [PR #279](https://github.com/M763468/PDFScoreBar/pull/279) milestone is the comparison anchor. Earlier producer counts and temporary Phase-A/Phase-B arrangements are historical.
 

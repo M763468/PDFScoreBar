@@ -10,7 +10,8 @@ audits; it is not intended to enumerate every Issue-specific forensic note indiv
 - **current/reference:** still accurate within a narrower domain, but not the global
   architecture source.
 - **historical:** useful evidence or rationale from a past Issue/experiment; preserve unless
-  it creates a current-navigation problem.
+  it creates a current-navigation problem or its durable content is already recoverable from
+  a self-contained Issue/PR/commit/source/test record.
 - **retire:** duplicates or contradicts current guidance and has no reason to remain in the
   active docs tree; Git history retains it.
 - **separate cleanup:** a real implementation/config cleanup that is outside Issue #280's
@@ -18,13 +19,13 @@ audits; it is not intended to enumerate every Issue-specific forensic note indiv
 
 ## Inventory
 
-| Document / area | Role | Classification | #280/#300 action |
+| Document / area | Role | Classification | #280/#300+ action |
 | --- | --- | --- | --- |
 | `README.md` | repository entry | current | update to point to canonical architecture/milestone |
 | `AGENTS.md` | repository agent constitution | current | keep; existing Graphify/validation/environment links remain valid |
 | `docs/README.md` | documentation index | canonical/current | current vs historical navigation |
-| `docs/HISTORY_INDEX.md` | historical lineage navigation | current/reference | #300 adds; points to existing milestones/forensic records without duplicating them |
-| `docs/PIPELINE_ARCHITECTURE.md` | production architecture | canonical/current | global architecture source |
+| `docs/HISTORY_INDEX.md` | historical lineage navigation | current/reference | #300 adds; points to milestones/Issue evidence without duplicating it |
+| `docs/PIPELINE_ARCHITECTURE.md` | production architecture | canonical/current | global architecture source, including detector-input provenance |
 | `docs/TWO_HOMR_MILESTONE.md` | accepted architecture/accuracy/performance milestone | canonical/current | complete local/external asset staging contract |
 | `docs/ENVIRONMENTS.md` | execution/runtime guidance | current/reference | clarify unified container vs legacy compatibility fallback |
 | `docs/BRANCH_POLICY.md` | branch policy | current/reference | keep |
@@ -38,16 +39,17 @@ audits; it is not intended to enumerate every Issue-specific forensic note indiv
 | `docs/ai-workflow/GRAPHIFY.md` | Graphify operation | current/reference | update staleness/refresh verification rule |
 | `.agents/skills/graphify/**` | agent Graphify skill | current/reference | keep; generated/installed skill remains discoverable |
 | `graphify-out/**` durable set | generated navigation graph/wiki/report/manifest | current only when provenance is fresh | refresh after stable architecture changes; stale source base must not be treated as architecture truth |
-| `docs/PIPELINE_DATAFLOW.md` | old Phase-2 current architecture | stale | retire; merged into canonical architecture |
-| `docs/FULL_PIPELINE_README.md` | old Phase-1 orchestration guide | stale | retire; merged into canonical execution/architecture docs |
-| `docs/best_configuration_summary.md` | Jan-2026 detector experiment labeled Production Ready | stale/misleading | retire; superseded by current dense route/milestone |
-| `docs/performance_comparison.md` | dated optimization history | historical | keep; index explicitly labels historical |
-| `docs/DEVELOPMENT_LOG.md` | development history | historical | keep |
-| `docs/DEVLOG_*.md` | component development history | historical/reference | keep; verify old claims against source |
-| top-level `docs/ISSUE*.md` | Issue forensic/reproduction records | historical | keep by default; do not rewrite merely to match current code |
+| `docs/PIPELINE_DATAFLOW.md` | old Phase-2 current architecture | stale | retired; merged into canonical architecture |
+| `docs/FULL_PIPELINE_README.md` | old Phase-1 orchestration guide | stale | retired; merged into canonical execution/architecture docs |
+| `docs/best_configuration_summary.md` | Jan-2026 detector experiment labeled Production Ready | stale/misleading | retired; superseded by current dense route/milestone |
+| `docs/performance_comparison.md` | dated optimization history | historical | keep pending dedicated compression audit; index labels it historical |
+| `docs/DEVELOPMENT_LOG.md` | development history | historical | keep pending section-level audit |
+| `docs/DEVLOG_*.md` | component development history | historical/reference | keep pending section-level audit; verify old claims against source |
+| top-level `docs/ISSUE*.md` | Issue forensic/reproduction records | historical | keep only while they contain unique durable evidence or an active reproduction contract; otherwise migrate the unique core and retire the duplicate copy |
 | `docs/refactors/issue*/**` | scoped design/history | historical/scoped | keep by default; current global architecture lives elsewhere |
-| `docs/notes/**`, `docs/future/**` | notes/plans | historical/planning | keep unless separately superseded/approved for deletion |
-| `docs/model_experiments/**`, `docs/fp_reduction/**` | experiment records | historical | keep |
+| `docs/notes/**`, `docs/future/**` | notes/plans | historical/planning | retire when superseded and durable decisions are recoverable elsewhere |
+| `docs/model_experiments/**` | experiment records | historical | keep pending separate experiment/PDF audit |
+| `docs/fp_reduction/**` | duplicate Dec-2025 FP-reduction narratives | retired | removed in #306 / PR #307 after reusable safety guidance moved to `docs/ai-workflow/LESSONS.md`; reproducibility tooling remains under `experiments/fp_reduction/` |
 | `configs/dense_full_pipeline.yaml` | canonical dense production config | current runtime input, not prose | reference from canonical docs; do not alter under docs-only work |
 | `configs/detector_profiles/stage_e_verified_homr.json` | pinned profile provenance | canonical machine-readable reference | reference from milestone doc |
 
@@ -70,6 +72,21 @@ For important experiments, prefer a recoverable chain of
 `hypothesis -> script/command -> commit -> fixed provenance -> result -> disposition` over
 retaining chat transcripts or copying the same result into another summary document.
 Invalidated or superseded results remain useful history, but must stay labelled as such.
+
+## Historical retirement rule refined after #300
+
+A historical document is not automatically permanent merely because it contains useful past
+information. It can be retired from the active tree when all of the following are true:
+
+1. accepted/rejected decisions and important experiment provenance are recoverable from the
+   relevant Issue/PR/commit or retained experiment tooling;
+2. any reusable cross-Issue rule has been moved to a current generic guide or architecture
+   contract;
+3. the file is not the sole current operating/reproduction contract;
+4. surviving repository links are updated in the same cleanup change.
+
+Git history remains the archive for the retired prose body. This rule was exercised by the
+historical cleanup batches tracked in #302/#306 and continues in #308.
 
 ## Dead/stale-path audit findings
 

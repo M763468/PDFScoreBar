@@ -89,7 +89,9 @@ def load_model_artifact_manifest(path: Path | str) -> ModelArtifactManifest:
     try:
         payload = json.loads(manifest_path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
-        raise ModelArtifactManifestError(f"Model artifact manifest not found: {manifest_path}") from exc
+        raise ModelArtifactManifestError(
+            f"Model artifact manifest not found: {manifest_path}"
+        ) from exc
     except json.JSONDecodeError as exc:
         raise ModelArtifactManifestError(
             f"Invalid JSON in model artifact manifest {manifest_path}: {exc}"
@@ -113,9 +115,7 @@ def load_model_artifact_manifest(path: Path | str) -> ModelArtifactManifest:
 
     digest = _require_text(payload, "sha256", manifest_path=manifest_path).lower()
     if not _SHA256_RE.fullmatch(digest):
-        raise ModelArtifactManifestError(
-            f"Manifest {manifest_path} has invalid sha256: {digest!r}"
-        )
+        raise ModelArtifactManifestError(f"Manifest {manifest_path} has invalid sha256: {digest!r}")
 
     cache_path_text = _require_text(payload, "cache_path", manifest_path=manifest_path)
 

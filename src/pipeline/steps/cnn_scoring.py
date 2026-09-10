@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 IMG_SIZE = (256, 128)  # H, W
 MEAN = [0.485, 0.456, 0.406]
 STD = [0.229, 0.224, 0.225]
+SUPPORTED_MODEL_ARCHITECTURES = {"resnet18", "efficientnet_b0"}
 
 
 class GPUNormalize(torch.nn.Module):
@@ -59,48 +60,42 @@ def _resolve_model_path(model_path: Path | str | None) -> Path:
     )
 
 
-def _build_model() -> torch.nn.Module:
-    """Build the only production CNN architecture accepted by the dense route."""
-    model = models.efficientnet_b0(weights=None)
-    model.classifier[1] = torch.nn.Linear(model.classifier[1].in_features, 1)
-    return model
-
-
-def _validate_efficientnet_b0_state_dict(state_dict: Dict[str, torch.Tensor]) -> None:
-    """Fail early when a legacy or otherwise incompatible checkpoint is configured."""
-    required = {"classifier.1.weight", "classifier.1.bias"}
-    if required.issubset(state_dict):
-        return
-    if "fc.weight" in state_dict or "fc.bias" in state_dict:
-        raise ValueError(
-            "Configured CNN checkpoint is a legacy ResNet checkpoint. "
-            "Production CNN scoring requires the Issue #296 D27 EfficientNet-B0 checkpoint."
-        )
+def _build_model(model_architecture: str) -> torch.nn.Module:
+    if model_architecture == "resnet18":
+        model = models.resnet18(weights=None)
+        model.fc = torch.nn.Linear(model.fc.in_features, 1)
+        return model
+    if model_architecture == "efficientnet_b0":
+        model = models.efficientnet_b0(weights=None)
+        model.classifier[1] = torch.nn.Linear(model.classifier[1].in_features, 1)
+        return model
+    supported = ", ".join(sorted(SUPPORTED_MODEL_ARCHITECTURES))
     raise ValueError(
-        "Configured CNN checkpoint is not D27-compatible EfficientNet-B0. "
-        "Production CNN scoring requires classifier.1.weight and classifier.1.bias."
+        f"Unsupported CNN model architecture: {model_architecture}. Supported: {supported}"
+    )
+
+
+def _infer_model_architecture(state_dict: Dict[str, torch.Tensor]) -> str:
+    if "fc.weight" in state_dict and "fc.bias" in state_dict:
+        return "resnet18"
+    if "classifier.1.weight" in state_dict and "classifier.1.bias" in state_dict:
+        return "efficientnet_b0"
+    raise ValueError(
+        "Unable to infer CNN model architecture from checkpoint state_dict. "
+        f"Supported: {', '.join(sorted(SUPPORTED_MODEL_ARCHITECTURES))}"
     )
 
 
 def _load_model(model_path: Path, device: torch.device) -> torch.nn.Module:
     state_dict = torch.load(model_path, map_location=device)
-    if not isinstance(state_dict, dict):
-        raise ValueError(
-            "Configured CNN checkpoint must be a state_dict for the Issue #296 D27 EfficientNet-B0 model."
-        )
 
-    # Handle torch.compile prefix used by historical training runs.
+    # Handle torch.compile prefix
     if any(k.startswith("_orig_mod.") for k in state_dict.keys()):
         state_dict = {k.replace("_orig_mod.", ""): v for k, v in state_dict.items()}
 
-    _validate_efficientnet_b0_state_dict(state_dict)
-    model = _build_model()
-    try:
-        model.load_state_dict(state_dict)
-    except RuntimeError as exc:
-        raise ValueError(
-            "Configured CNN checkpoint is not compatible with the production EfficientNet-B0 model."
-        ) from exc
+    model_architecture = _infer_model_architecture(state_dict)
+    model = _build_model(model_architecture)
+    model.load_state_dict(state_dict)
     model.to(device)
     model.eval()
     return model

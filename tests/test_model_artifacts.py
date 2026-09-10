@@ -14,7 +14,9 @@ from src.common.model_artifacts import (
 )
 
 
-def _write_manifest(tmp_path, *, payload=b"accepted-d27-checkpoint", cache_path="cnn/d27/model.pth"):
+def _write_manifest(
+    tmp_path, *, payload=b"accepted-d27-checkpoint", cache_path="cnn/d27/model.pth"
+):
     manifest = tmp_path / "models" / "barline_cnn" / "manifest.json"
     manifest.parent.mkdir(parents=True)
     manifest.write_text(

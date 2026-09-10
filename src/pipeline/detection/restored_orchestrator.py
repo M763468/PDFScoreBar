@@ -199,6 +199,15 @@ class DetectorOrchestrator:
         cnn_model = self.det_cfg.get("cnn_model_path")
         if not cnn_model:
             raise ValueError("detection.cnn_model_path is required")
+        if "cnn_threshold" not in self.det_cfg or self.det_cfg.get("cnn_threshold") is None:
+            raise ValueError(
+                "Verified Stage E detector route requires explicit detection.cnn_threshold"
+            )
+        cnn_threshold = float(self.det_cfg["cnn_threshold"])
+        if "cnn_apply_nms" not in self.det_cfg:
+            raise ValueError(
+                "Verified Stage E detector route requires explicit detection.cnn_apply_nms=false"
+            )
         if get_cnn_apply_nms(self.det_cfg):
             raise ValueError("Verified Stage E detector route requires cnn_apply_nms=false")
         bands_from = (
@@ -220,7 +229,7 @@ class DetectorOrchestrator:
                 probe_output_root=self.probe_output_dir,
                 images=self.images,
                 model_path=Path(str(cnn_model)),
-                threshold=float(self.det_cfg.get("cnn_threshold", 0.1)),
+                threshold=cnn_threshold,
                 score_name=(
                     str(self.det_cfg["probe_score_name"])
                     if self.det_cfg.get("probe_score_name")

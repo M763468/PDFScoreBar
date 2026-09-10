@@ -61,7 +61,7 @@ Primary lineage:
 
 Start with:
 
-- [Issue #44](https://github.com/M763468/PDFScoreBar/issues/44) for the evaluation2-era CNN baseline, historical active-learning notes, and staff-band distillation
+- [Issue #44](https://github.com/M763468/PDFScoreBar/issues/44) for the evaluation2-era CNN baseline, historical active-learning notes, and staff-band/training distillation
 - [Issue #46](https://github.com/M763468/PDFScoreBar/issues/46) for detector/CNN residual experiments and their final ledger
 - [Issue #51](https://github.com/M763468/PDFScoreBar/issues/51) for the corrected residual classification and 15-case disposition
 - [Issue #296](https://github.com/M763468/PDFScoreBar/issues/296) / [PR #310](https://github.com/M763468/PDFScoreBar/pull/310) for the current-producer candidate-aligned EfficientNet-B0 adoption on the verified Stage-E route
@@ -77,15 +77,16 @@ Primary lineage:
 
 Start with:
 
-- [`docs/DEVLOG_MEASURE_NUMBERING.md`](DEVLOG_MEASURE_NUMBERING.md) for early development history only, pending compression
-- [`docs/refactors/issue94/`](refactors/issue94/)
+- [Issue #94](https://github.com/M763468/PDFScoreBar/issues/94) for the distilled early numbering/MMR milestones and investigation history
+- [`docs/refactors/issue94/MMR_CURRENT_STATE.md`](refactors/issue94/MMR_CURRENT_STATE.md) for the maintained/scoped MMR current-state analysis and later 68-page evaluation
+- [`docs/DEVLOG_MEASURE_NUMBERING.md`](DEVLOG_MEASURE_NUMBERING.md) only when a compact legacy milestone summary is useful; exact former diary prose is in Git history
 - [`docs/refactors/issue194/`](refactors/issue194/)
 - [`docs/refactors/issue201/`](refactors/issue201/)
 - [Issue #244](https://github.com/M763468/PDFScoreBar/issues/244) for the row-start numbering forensic investigation
 - #264 / #274 records for the accepted geometry-rebased downstream contract
 - current source/tests for present behavior
 
-The component devlog is historical/reference material, not the current specification.
+The legacy ledger is historical navigation, not the current specification.
 
 ### Fresh detector restoration / connector-aware grouping / HOMR support reuse
 
@@ -155,7 +156,7 @@ Use current source and current user-facing docs for present behavior.
 
 Useful anchors:
 
-#45 / #63 / #168 / #173 / #185 / #190 / #230 / #241 / #258 / #261 / #280
+#6 / #45 / #63 / #168 / #173 / #185 / #190 / #230 / #241 / #258 / #261 / #280
 
 Start with:
 
@@ -166,8 +167,9 @@ Start with:
 - [`docs/SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md)
 - [`docs/ai-workflow/`](ai-workflow/)
 - [`docs/DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md)
+- [`docs/DEVELOPMENT_LOG.md`](DEVELOPMENT_LOG.md) only for the compact pre-/early-Issue project-origin milestone ledger
 
-Issue #45 / PR #184 and Issue #185 / PR #188 are the historical anchors for script-layout cleanup. Issue #63 retains the distilled environment/path follow-up that previously lived in a temporary task bundle.
+Issue #45 / PR #184 and Issue #185 / PR #188 are the historical anchors for script-layout cleanup. Issue #63 retains the distilled environment/path follow-up that previously lived in a temporary task bundle. Issue #6 / PR #11 marks the transition to standardized Makefile/ruff development workflow.
 
 Temporary recovery commands and machine-local paths in old Issues are historical evidence only.
 

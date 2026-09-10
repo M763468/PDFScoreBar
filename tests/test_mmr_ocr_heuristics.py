@@ -325,9 +325,32 @@ class TestMMROCRHeuristics(unittest.TestCase):
         )
         self.assertEqual(
             processor.ocr.preprocess_calls[-1],
-            ((200, 159, 3), "no_dilate"),
+            ((80, 115, 3), "no_dilate"),
         )
-        self.assertEqual(processor.ocr.mask_calls, [((200, 159, 3), 80, 40)])
+        self.assertEqual(processor.ocr.mask_calls, [((80, 115, 3), 20.0, 40.0)])
+
+    def test_targeted_shifted_crop_scales_with_staff_height_and_uses_clamped_offset(self):
+        processor = object.__new__(MMRProcessor)
+        processor.ocr = _TargetedRetryOCR()
+        image = np.zeros((300, 500, 3), dtype=np.uint8)
+
+        self.assertEqual(
+            processor._run_targeted_shifted_staff(
+                image, [101, 0, 200, 20], [0, 100, 400, 180], 500, 300
+            ),
+            (6, 24.0),
+        )
+        self.assertEqual(processor.ocr.preprocess_calls[-1], ((160, 131, 3), "no_dilate"))
+        self.assertEqual(processor.ocr.mask_calls[-1], ((160, 131, 3), 40.0, 80.0))
+
+        self.assertEqual(
+            processor._run_targeted_shifted_staff(
+                image, [101, 0, 200, 20], [0, 10, 400, 50], 500, 300
+            ),
+            (6, 24.0),
+        )
+        self.assertEqual(processor.ocr.preprocess_calls[-1], ((70, 115, 3), "no_dilate"))
+        self.assertEqual(processor.ocr.mask_calls[-1], ((70, 115, 3), 10.0, 40.0))
 
 
 _TargetedHarnessBase = MMRProcessor if MMRProcessor is not None else object

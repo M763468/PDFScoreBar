@@ -185,3 +185,67 @@ def test_verified_stage_e_rejects_legacy_path_and_manifest_ambiguity(tmp_path: P
 
     with pytest.raises(ValueError, match="does not accept detection.cnn_model_path"):
         orchestrator._run_cnn_scoring()
+
+
+def test_issue252_grouped_comparison_resolves_production_manifest(
+    tmp_path: Path, monkeypatch
+) -> None:
+    from tools.issue252 import run_grouped_final_numbering_comparison as grouped
+
+    config = yaml.safe_load((ROOT / "configs/dense_full_pipeline.yaml").read_text(encoding="utf-8"))
+    detection = config["detection"]
+    expected_model = tmp_path / "model.pth"
+    captured = {}
+
+    def fake_resolve(manifest_path: Path, *, project_root: Path) -> Path:
+        captured["manifest_path"] = manifest_path
+        captured["project_root"] = project_root
+        return expected_model
+
+    monkeypatch.setattr(grouped, "resolve_model_artifact", fake_resolve)
+    monkeypatch.setattr(
+        grouped,
+        "_resolve_model_path",
+        lambda _value: pytest.fail("legacy cnn_model_path resolver must not be used"),
+    )
+
+    resolved = grouped._resolve_cnn_model_path(detection)
+
+    assert resolved == expected_model
+    assert captured["manifest_path"] == ROOT / PRODUCTION_MANIFEST_CONFIG_PATH
+    assert captured["project_root"] == ROOT
+
+
+def test_issue252_grouped_comparison_preserves_legacy_model_path(
+    tmp_path: Path, monkeypatch
+) -> None:
+    from tools.issue252 import run_grouped_final_numbering_comparison as grouped
+
+    expected_model = tmp_path / "legacy.pth"
+    seen = []
+
+    def fake_resolve(value):
+        seen.append(value)
+        return expected_model
+
+    monkeypatch.setattr(grouped, "_resolve_model_path", fake_resolve)
+    monkeypatch.setattr(
+        grouped,
+        "resolve_model_artifact",
+        lambda *_args, **_kwargs: pytest.fail("manifest resolver must not be used"),
+    )
+
+    assert grouped._resolve_cnn_model_path({"cnn_model_path": "legacy.pth"}) == expected_model
+    assert seen == ["legacy.pth"]
+
+
+def test_issue252_grouped_comparison_rejects_manifest_path_ambiguity() -> None:
+    from tools.issue252 import run_grouped_final_numbering_comparison as grouped
+
+    with pytest.raises(ValueError, match="must not define both"):
+        grouped._resolve_cnn_model_path(
+            {
+                "cnn_model_manifest": PRODUCTION_MANIFEST_CONFIG_PATH,
+                "cnn_model_path": "legacy.pth",
+            }
+        )

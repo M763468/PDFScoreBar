@@ -36,7 +36,7 @@ Issue #280 established the repository documentation audit against the accepted #
 | `docs/CNN_RETRAINING_GUIDE.md` | #44-era FP active-learning / ResNet18 plan | retire | historical core moved to #44; current verified CNN is #296 / PR #310 plus source/config/tests |
 | `docs/performance_comparison.md` | dated Phase 1–6 performance narrative | retire | benchmark ledger distilled into #78; later performance lineage is in #281–#294 |
 | `docs/DEVELOPMENT_LOG.md` | large pre-/early-Issue development diary | historical | pending section-level compression under #308 |
-| `docs/DEVLOG_CNN_TRAINING.md` | CNN development diary | historical | pending compression now that #296 / PR #310 defines the current verified CNN contract |
+| `docs/DEVLOG_CNN_TRAINING.md` | CNN development diary | retire | durable early experiment ledger moved to Issue #44; current verified CNN is #296 / PR #310 plus source/config/tests |
 | `docs/DEVLOG_MEASURE_NUMBERING.md` | numbering development diary | historical | pending compression; later Issue/refactor records carry current/scoped contracts |
 | top-level `docs/ISSUE*.md` | Issue forensic/reproduction records | historical | keep only while unique durable evidence or an active reproduction contract remains; otherwise distill and retire |
 | `docs/refactors/issue*/**` | scoped design/history | historical/scoped | audit individually; keep current scoped contracts, retire temporary handoff/task-control bundles after distillation |

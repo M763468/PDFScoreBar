@@ -45,10 +45,11 @@ package is documented in `manual_correction_review_package.md`.
   especially `configs/dense_full_pipeline.yaml` and `PIPELINE_ARCHITECTURE.md`.
 - The verified Stage-E CNN was refreshed in Issue #296 / PR #310 to the current-producer,
   candidate-aligned EfficientNet-B0 contract. Older ResNet18 retraining notes are historical.
+- Historical CNN training and active-learning results have been distilled into Issue #44;
+  exact retired prose remains recoverable from Git history.
 - `GT_PREPARATION_POLICY.md` and `BARLINE_MATCHER.md` remain current labeling/evaluation references.
-- `DEVLOG_MEASURE_NUMBERING.md` and `DEVLOG_CNN_TRAINING.md` are historical development logs pending
-  separate compression under the documentation-cleanup umbrella; verify all old claims against
-  current source before using them.
+- `DEVLOG_MEASURE_NUMBERING.md` remains a historical development log pending compression under
+  the documentation-cleanup umbrella; verify old claims against current source before use.
 
 ## Historical / forensic records
 

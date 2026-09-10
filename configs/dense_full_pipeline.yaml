@@ -49,8 +49,10 @@ detection:
     min_paper_overlap_ratio: 0.6
     min_staff_overlap_ratio: 0.02
 
-  cnn_model_path: logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
-  cnn_threshold: 0.1
+  # Issue #296 D27: current-producer candidate-aligned EfficientNet-B0,
+  # selected on untouched validation at epoch 9.
+  cnn_model_path: logs/cnn_barline_classification/issue296_efficientnet_b0_current_candidate_aligned_v1/cnn_classifier_epoch_9.pth
+  cnn_threshold: 0.4965248107910156
   cnn_apply_nms: false
   divisi_rescue: true
   scan_gap_rescue: true

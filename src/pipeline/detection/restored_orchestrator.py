@@ -30,6 +30,25 @@ def _score_page(image: Path) -> tuple[str, str]:
     return split if split is not None else (image.parent.name, image.stem)
 
 
+def _validate_verified_cnn_checkpoint(model_path: Path) -> None:
+    """Reject checkpoints that do not match the verified D27 architecture."""
+    import torch
+
+    from src.pipeline.steps.cnn_scoring import _infer_model_architecture
+
+    state_dict = torch.load(model_path, map_location="cpu")
+    if not isinstance(state_dict, dict):
+        raise ValueError("Verified Stage E detector route requires a CNN state_dict checkpoint")
+    if any(key.startswith("_orig_mod.") for key in state_dict):
+        state_dict = {key.removeprefix("_orig_mod."): value for key, value in state_dict.items()}
+    architecture = _infer_model_architecture(state_dict)
+    if architecture != "efficientnet_b0":
+        raise ValueError(
+            "Verified Stage E detector route requires an EfficientNet-B0 CNN checkpoint; "
+            f"configured checkpoint is {architecture}"
+        )
+
+
 class DetectorOrchestrator:
     """Lightweight supervisor for the verified fresh Stage E route."""
 
@@ -199,6 +218,15 @@ class DetectorOrchestrator:
         cnn_model = self.det_cfg.get("cnn_model_path")
         if not cnn_model:
             raise ValueError("detection.cnn_model_path is required")
+        if "cnn_threshold" not in self.det_cfg or self.det_cfg.get("cnn_threshold") is None:
+            raise ValueError(
+                "Verified Stage E detector route requires explicit detection.cnn_threshold"
+            )
+        cnn_threshold = float(self.det_cfg["cnn_threshold"])
+        if "cnn_apply_nms" not in self.det_cfg:
+            raise ValueError(
+                "Verified Stage E detector route requires explicit detection.cnn_apply_nms=false"
+            )
         if get_cnn_apply_nms(self.det_cfg):
             raise ValueError("Verified Stage E detector route requires cnn_apply_nms=false")
         bands_from = (
@@ -216,11 +244,13 @@ class DetectorOrchestrator:
             # workers and verified HOMR profile runs have completed.
             from src.pipeline.steps.cnn_scoring import run_cnn_scoring_batch
 
+            model_path = Path(str(cnn_model))
+            _validate_verified_cnn_checkpoint(model_path)
             run_cnn_scoring_batch(
                 probe_output_root=self.probe_output_dir,
                 images=self.images,
-                model_path=Path(str(cnn_model)),
-                threshold=float(self.det_cfg.get("cnn_threshold", 0.1)),
+                model_path=model_path,
+                threshold=cnn_threshold,
                 score_name=(
                     str(self.det_cfg["probe_score_name"])
                     if self.det_cfg.get("probe_score_name")

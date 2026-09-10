@@ -175,7 +175,16 @@ No authoritative original-coordinate proxy connector masks were identified in th
 retained artifacts, so the local run explicitly recorded page-image ink as the
 connector source with `--allow-page-image-connector-fallback`.
 
+Issue #315 moved the production CNN identity from a direct `cnn_model_path` under
+`logs/` to `cnn_model_manifest`. Materialize the tracked production artifact before
+running this comparison. The runner resolves and SHA-256 verifies the manifest-backed
+cache entry, while retaining support for older configs that still use only
+`cnn_model_path`.
+
 ```bash
+PYTHONPATH=. "$PYTHON" -m src.common.model_artifacts materialize \
+  models/barline_cnn/manifest.json
+
 OUTPUT_ROOT=logs/issue252_grouped_final_numbering_comparison_side_context_ratio_2
 rm -rf "$OUTPUT_ROOT"
 

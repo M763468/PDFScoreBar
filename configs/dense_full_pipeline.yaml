@@ -50,8 +50,8 @@ detection:
     min_staff_overlap_ratio: 0.02
 
   # Issue #296 D27: current-producer candidate-aligned EfficientNet-B0,
-  # selected on untouched validation at epoch 9.
-  cnn_model_path: logs/cnn_barline_classification/issue296_efficientnet_b0_current_candidate_aligned_v1/cnn_classifier_epoch_9.pth
+  # selected on untouched validation at epoch 9 and published by Issue #315.
+  cnn_model_manifest: models/barline_cnn/manifest.json
   cnn_threshold: 0.4965248107910156
   cnn_apply_nms: false
   divisi_rescue: true

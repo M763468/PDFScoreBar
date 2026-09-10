@@ -43,7 +43,7 @@ Issue #280 established the repository documentation audit against the accepted #
 | `docs/long-horizon-tasks/**` | completed Prompt/Plan/Log/Benchmarks task bundles | retired | important #25/#60/#70 results moved to their Issue threads; active-looking task-control copies removed |
 | `docs/notes/**`, `docs/future/**` | notes/plans | historical/planning | retire when superseded and decisions are recoverable elsewhere |
 | `docs/model_experiments/*.md` | old model survey/future plans | retired when superseded | active-looking plan text is not a current model roadmap; accepted experiment evidence remains elsewhere |
-| `docs/model_experiments/*.pdf` | historical model survey artifacts | historical / audit pending | do not delete without content-level audit |
+| `docs/model_experiments/*.pdf` | pre-experiment literature/dataset/model surveys | retired | content-level audit under #308 found no unique project-specific operating/reproduction contract; project-specific experiment evidence remains under `experiments/models/`, and exact old survey prose remains in Git history |
 | `docs/fp_reduction/**` | duplicate Dec-2025 FP-reduction narratives | retired | removed after reusable safety guidance moved to `docs/ai-workflow/LESSONS.md`; tooling remains under `experiments/fp_reduction/` |
 | `configs/dense_full_pipeline.yaml` | canonical dense production config | current runtime input, not prose | authoritative for current selected model/threshold/runtime values |
 | `configs/detector_profiles/stage_e_verified_homr.json` | pinned HOMR profile provenance | canonical machine-readable reference | keep |
@@ -92,7 +92,8 @@ The documentation-cleanup lineage progressively moved durable information out of
 - #306 / PR #307: distilled #19/#46/FP-reduction conclusions and reusable safety guidance;
 - #308 / PR #309: moved current detector-input provenance/NMS contracts into canonical architecture and retired duplicate #120/#163/#245 narratives;
 - #308 / PR #314: retired completed task-control bundles, stale CNN/history guides, and duplicate historical narratives after Issue-side distillation;
-- later #308 PRs continue the same rule without creating a new Issue for each small docs-only slice.
+- #308 / PR #316: compressed the remaining global and measure-numbering execution diaries into compact historical milestone ledgers;
+- later #308 cleanup applies the same retirement gate to audited model-survey artifacts without creating a separate Issue.
 
 ## Separate implementation cleanup
 

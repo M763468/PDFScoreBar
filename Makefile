@@ -10,7 +10,8 @@ ISSUE120_RESULTS_DIR ?= data/evaluation2/golden_baseline_eval2_bc23deb
 ISSUE120_GT_ROOT ?= data/evaluation2/annotations
 ISSUE120_OUTPUT_DIR ?= logs/issue120_e2e_recovery/latest_full_report
 ISSUE120_SCORE_THRESHOLD ?= 0.1
-ISSUE120_XDIST_THRESHOLD ?= 12.0
+ISSUE120_STAFF_UNITS_JSON ?= logs/issue313/staff_units.json
+ISSUE120_XDIST_UNIT_RATIO ?= 0.5
 ISSUE120_MEASURE_SUMMARY ?=
 ISSUE120_PROVENANCE_JSON ?=
 ISSUE120_CANDIDATES_DIR ?= data/evaluation2/golden_baseline_eval2_bc23deb
@@ -156,7 +157,8 @@ eval-issue120-full: ## Evaluate Issue #120 canonical full-68 detector intermedia
 		--gt-root "$(ISSUE120_GT_ROOT)" \
 		--output-dir "$(ISSUE120_OUTPUT_DIR)" \
 		--score-threshold "$(ISSUE120_SCORE_THRESHOLD)" \
-		--xdist-threshold "$(ISSUE120_XDIST_THRESHOLD)" \
+		--staff-units-json "$(ISSUE120_STAFF_UNITS_JSON)" \
+		--xdist-unit-ratio "$(ISSUE120_XDIST_UNIT_RATIO)" \
 		$$MEASURE_ARG && \
 	PYTHONPATH=. python3 tools/issue120/attach_eval_provenance.py \
 		--output-dir "$(ISSUE120_OUTPUT_DIR)" \
@@ -178,7 +180,8 @@ verify-issue120-stage-b: ## Re-score Issue #120 candidates in Docker, then evalu
 		--scoring-output-dir "$(ISSUE120_STAGE_B_SCORING_DIR)" \
 		--eval-output-dir "$(ISSUE120_STAGE_B_EVAL_DIR)" \
 		--score-threshold "$(ISSUE120_SCORE_THRESHOLD)" \
-		--xdist-threshold "$(ISSUE120_XDIST_THRESHOLD)" \
+		--staff-units-json "$(ISSUE120_STAFF_UNITS_JSON)" \
+		--xdist-unit-ratio "$(ISSUE120_XDIST_UNIT_RATIO)" \
 		$$BANDS_ARG $$CLEAN_ARG
 
 verify-issue120-stage-b-native: ## Re-score Issue #120 candidates using the current host Python environment
@@ -195,7 +198,8 @@ verify-issue120-stage-b-native: ## Re-score Issue #120 candidates using the curr
 		--scoring-output-dir "$(ISSUE120_STAGE_B_SCORING_DIR)" \
 		--eval-output-dir "$(ISSUE120_STAGE_B_EVAL_DIR)" \
 		--score-threshold "$(ISSUE120_SCORE_THRESHOLD)" \
-		--xdist-threshold "$(ISSUE120_XDIST_THRESHOLD)" \
+		--staff-units-json "$(ISSUE120_STAFF_UNITS_JSON)" \
+		--xdist-unit-ratio "$(ISSUE120_XDIST_UNIT_RATIO)" \
 		$$BANDS_ARG $$CLEAN_ARG
 
 regen-issue120-stage-d-upstream: ## Regenerate Issue #120 Stage-D upstream artifacts in Docker/GPU
@@ -279,4 +283,3 @@ artifact-summary: ## Summarize all artifacts
 	./.agents/skills/artifact-clerk/run.sh
 
 -include tools/issue120/Makefile.stage_e.mk
-

@@ -128,8 +128,10 @@ def run_eval(args: argparse.Namespace, provenance_path: Path) -> None:
         str(args.eval_output_dir),
         "--score-threshold",
         str(args.score_threshold),
-        "--xdist-threshold",
-        str(args.xdist_threshold),
+        "--staff-units-json",
+        str(args.staff_units_json),
+        "--xdist-unit-ratio",
+        str(args.xdist_unit_ratio),
     ]
     subprocess.run(cmd, check=True)
     subprocess.run(
@@ -215,7 +217,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--bands-from", type=Path, default=None)
     parser.add_argument("--staff-mask-dir", type=Path, default=None)
     parser.add_argument("--score-threshold", type=float, default=0.1)
-    parser.add_argument("--xdist-threshold", type=float, default=12.0)
+    parser.add_argument("--staff-units-json", type=Path, required=True)
+    parser.add_argument("--xdist-unit-ratio", type=float, default=0.5)
     parser.add_argument("--staff-vov-threshold", type=float, default=0.5)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--scorer", choices=["pipeline", "legacy"], default="pipeline")

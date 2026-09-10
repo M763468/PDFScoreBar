@@ -92,7 +92,8 @@ class DenseProbeCandidateConfig:
     scorer: str = "pipeline"
     cnn_apply_nms: bool = False
     score_threshold: float = 0.1
-    xdist_threshold: float = 12.0
+    staff_units_json: Path = Path("logs/issue313/staff_units.json")
+    xdist_unit_ratio: float = 0.5
     no_clean_output: bool = False
     skip_issue36_regeneration: bool = False
     skip_probe_rescue_regeneration: bool = False
@@ -231,6 +232,7 @@ def validate_inputs(config: DenseProbeCandidateConfig, paths: DenseProbeCandidat
         config.image_root,
         config.gt_root,
         config.model_path,
+        config.staff_units_json,
     ]
     missing = [str(path) for path in required if not path.exists()]
     if missing:
@@ -448,8 +450,10 @@ def build_score_eval_command(
         str(paths.eval_output_dir),
         "--score-threshold",
         str(config.score_threshold),
-        "--xdist-threshold",
-        str(config.xdist_threshold),
+        "--staff-units-json",
+        str(config.staff_units_json),
+        "--xdist-unit-ratio",
+        str(config.xdist_unit_ratio),
         "--bands-from",
         str(paths.filtered_candidates_root),
     ]
@@ -677,7 +681,8 @@ def build_route_provenance(
             "cnn_apply_nms": config.cnn_apply_nms,
             "model_path": str(config.model_path),
             "score_threshold": config.score_threshold,
-            "xdist_threshold": config.xdist_threshold,
+            "staff_units_json": str(config.staff_units_json),
+            "xdist_unit_ratio": config.xdist_unit_ratio,
             "stage_b_provenance": load_optional_json(
                 paths.eval_output_dir / "stage_b_provenance.json"
             ),
@@ -814,8 +819,11 @@ def config_from_yaml(path: Path) -> DenseProbeCandidateConfig:
         score_threshold=float(
             scoring.get("score_threshold", DenseProbeCandidateConfig.score_threshold)
         ),
-        xdist_threshold=float(
-            scoring.get("xdist_threshold", DenseProbeCandidateConfig.xdist_threshold)
+        staff_units_json=_path_from_config(
+            scoring, "staff_units_json", default=DenseProbeCandidateConfig.staff_units_json
+        ),
+        xdist_unit_ratio=float(
+            scoring.get("xdist_unit_ratio", DenseProbeCandidateConfig.xdist_unit_ratio)
         ),
         no_clean_output=bool(
             workflow.get("no_clean_output", DenseProbeCandidateConfig.no_clean_output)
@@ -880,7 +888,8 @@ def config_from_args(args: argparse.Namespace) -> DenseProbeCandidateConfig:
         "route_provenance": args.route_provenance,
         "scorer": args.scorer,
         "score_threshold": args.score_threshold,
-        "xdist_threshold": args.xdist_threshold,
+        "staff_units_json": args.staff_units_json,
+        "xdist_unit_ratio": args.xdist_unit_ratio,
     }
     for key, value in overrides.items():
         if value is not None:
@@ -936,7 +945,8 @@ def build_arg_parser(description: str | None = None) -> argparse.ArgumentParser:
         help="Explicit CNN NMS setting. Issue #120 dense route uses --no-pipeline-nms.",
     )
     parser.add_argument("--score-threshold", type=float, default=None)
-    parser.add_argument("--xdist-threshold", type=float, default=None)
+    parser.add_argument("--staff-units-json", type=Path, default=None)
+    parser.add_argument("--xdist-unit-ratio", type=float, default=None)
     parser.add_argument("--no-clean-output", action="store_true")
     parser.add_argument("--skip-issue36-regeneration", action="store_true")
     parser.add_argument("--skip-probe-rescue-regeneration", action="store_true")

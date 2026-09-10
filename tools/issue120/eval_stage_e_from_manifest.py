@@ -15,7 +15,12 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.common.barline_evaluation import greedy_barline_match, is_barline_match
+from src.common.barline_evaluation import (
+    CENTER_ANCHOR_XDIST_UNIT_RATIO,
+    greedy_barline_match,
+    is_barline_match,
+)
+from src.common.barline_units import load_page_staff_units, require_page_staff_unit
 
 # Canonical Issue #120 evaluation2 page set: 68 pages.
 SCORES: dict[str, list[str]] = {
@@ -85,11 +90,18 @@ def main():
     parser.add_argument("--score-threshold", type=float, default=0.1)
     parser.add_argument("--rule-name", default="center_anchor")
     parser.add_argument("--vov-threshold", type=float, default=0.5)
-    parser.add_argument("--xdist-threshold", type=float, default=12.0)
+    parser.add_argument(
+        "--staff-units-json",
+        type=Path,
+        required=True,
+        help="Page-level staff-unit manifest in the evaluated box coordinate frame.",
+    )
+    parser.add_argument("--xdist-unit-ratio", type=float, default=CENTER_ANCHOR_XDIST_UNIT_RATIO)
     args = parser.parse_args()
 
     manifest = json.loads(args.manifest.read_text())
     pages = manifest.get("pages", [])
+    staff_units = load_page_staff_units(args.staff_units_json)
 
     # Build mapping: image_stem -> pipeline page data
     # Image stems are like "Shostakovich-Festival_Overture_Va_page_001"
@@ -143,6 +155,7 @@ def main():
                 continue
 
             gts = boxes_from_gt(json.loads(gt_path.read_text()))
+            page_unit = require_page_staff_unit(staff_units, score, page)
             scored_data = json.loads(scored_path.read_text())
             # filtered_cnn is a list of plain bbox arrays (already filtered), not scored dicts
             preds = boxes_from_scored(scored_data, score_threshold=args.score_threshold)
@@ -152,7 +165,8 @@ def main():
                 gts,
                 rule_name=args.rule_name,
                 vov_threshold=args.vov_threshold,
-                xdist_threshold=args.xdist_threshold,
+                unit_size=page_unit.unit_size,
+                xdist_unit_ratio=args.xdist_unit_ratio,
             )
 
             tp = len(match_result.matches)
@@ -170,7 +184,8 @@ def main():
                             gt,
                             rule_name=args.rule_name,
                             vov_threshold=args.vov_threshold,
-                            xdist_threshold=args.xdist_threshold,
+                            unit_size=page_unit.unit_size,
+                            xdist_unit_ratio=args.xdist_unit_ratio,
                         )
                         for c in cand_boxes
                     ):

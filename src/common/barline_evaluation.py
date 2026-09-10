@@ -19,6 +19,10 @@ BARLINE_REPEAT_OVERLAP_THRESHOLD = 0.8
 
 VOV_RANK_MULTIPLIER = 1000  # Used for legacy scalar ranking if needed
 
+# Strong center-anchor pair acceptance is half one staff-line spacing.  This is
+# deliberately distinct from the 1.2-unit logical duplicate-merging policy.
+CENTER_ANCHOR_XDIST_UNIT_RATIO = 0.5
+
 
 def _ensure_ordered(box: Box) -> Box:
     x1, y1, x2, y2 = box
@@ -129,6 +133,18 @@ def center_distance_x(box_a: Box, box_b: Box) -> float:
     return abs((box_a[0] + box_a[2]) / 2.0 - (box_b[0] + box_b[2]) / 2.0)
 
 
+def center_anchor_xdist_limit(
+    *, unit_size: float, xdist_unit_ratio: float = CENTER_ANCHOR_XDIST_UNIT_RATIO
+) -> float:
+    """Return the strong-pair X tolerance in the boxes' coordinate frame."""
+
+    if unit_size <= 0:
+        raise ValueError("unit_size must be positive")
+    if xdist_unit_ratio <= 0:
+        raise ValueError("xdist_unit_ratio must be positive")
+    return unit_size * xdist_unit_ratio
+
+
 def barline_vertical_overlap(box_a: Box, box_b: Box) -> float:
     """Return vertical overlap ratio between two boxes (range 0..1)."""
 
@@ -150,12 +166,24 @@ def is_barline_match(
     *,
     iou_threshold: float = 0.5,
     vov_threshold: float = 0.5,
-    xdist_threshold: float = 12.0,
+    xdist_threshold: float | None = None,
+    unit_size: float | None = None,
+    xdist_unit_ratio: float = CENTER_ANCHOR_XDIST_UNIT_RATIO,
 ) -> bool:
     """Check if a predicted box matches a ground truth box according to specified rule."""
     if rule_name == "baseline_iou":
         return barline_iou(pred, gt) >= iou_threshold
     if rule_name == "center_anchor":
+        if unit_size is not None:
+            if xdist_threshold is not None:
+                raise ValueError("Specify unit_size or legacy xdist_threshold, not both")
+            xdist_threshold = center_anchor_xdist_limit(
+                unit_size=unit_size, xdist_unit_ratio=xdist_unit_ratio
+            )
+        if xdist_threshold is None:
+            raise ValueError(
+                "center_anchor requires unit_size for normalized matching or an explicit legacy xdist_threshold"
+            )
         vov = barline_vertical_overlap(pred, gt)
         xdist = center_distance_x(pred, gt)
         return vov >= vov_threshold and xdist <= xdist_threshold
@@ -239,7 +267,9 @@ def greedy_barline_match(
     rule_name: str = "baseline_iou",
     iou_threshold: float = 0.5,
     vov_threshold: float = 0.5,
-    xdist_threshold: float = 12.0,
+    xdist_threshold: float | None = None,
+    unit_size: float | None = None,
+    xdist_unit_ratio: float = CENTER_ANCHOR_XDIST_UNIT_RATIO,
     duplicate_iou_threshold: float = BARLINE_DUPLICATE_IOU_THRESHOLD,
     duplicate_x_tolerance: float = BARLINE_DUPLICATE_X_TOLERANCE,
     repeat_x_tolerance: float = BARLINE_REPEAT_X_TOLERANCE,
@@ -274,6 +304,8 @@ def greedy_barline_match(
                 iou_threshold=iou_threshold,
                 vov_threshold=vov_threshold,
                 xdist_threshold=xdist_threshold,
+                unit_size=unit_size,
+                xdist_unit_ratio=xdist_unit_ratio,
             ):
                 rank = get_barline_match_rank(pred, gt, rule_name)
                 candidates.append((rank, p_idx, g_idx, iou, vov, xdist))

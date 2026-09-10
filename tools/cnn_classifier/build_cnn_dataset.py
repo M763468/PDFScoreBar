@@ -19,6 +19,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from src.common.barline_evaluation import is_barline_match
+from src.common.barline_units import PageStaffUnit, load_page_staff_units, require_page_staff_unit
 
 DEFAULT_PAGES = [
     {
@@ -67,8 +68,19 @@ def load_config_file(config_path: Path):
     return data
 
 
-def _is_canonical_candidate_match(candidate, gt_box):
+def _is_canonical_candidate_match(candidate, gt_box, *, unit_size: float):
     """Match a generated candidate with the canonical production/evaluation contract."""
+    return is_barline_match(
+        tuple(candidate),
+        tuple(gt_box),
+        rule_name="center_anchor",
+        vov_threshold=0.5,
+        unit_size=unit_size,
+    )
+
+
+def _is_historical_candidate_match(candidate, gt_box):
+    """Reproduce fixed-pixel labeling for non-canonical legacy sampling only."""
     return is_barline_match(
         tuple(candidate),
         tuple(gt_box),
@@ -225,7 +237,7 @@ def extract_local_tp_fp(
             fp_candidates = []
             for raw_cand in candidates:
                 cand = [x * 1.0 for x in raw_cand]
-                if not any(_is_canonical_candidate_match(cand, gt_box) for gt_box in gt_boxes):
+                if not any(_is_historical_candidate_match(cand, gt_box) for gt_box in gt_boxes):
                     fp_candidates.append(cand)
 
             for idx, box in enumerate(tqdm(fp_candidates, desc=f"{page['name']} FP", leave=False)):
@@ -253,7 +265,7 @@ def extract_local_tp_fp(
             matched_indices = {
                 i
                 for i, pred_box in enumerate(pred_boxes)
-                if any(_is_canonical_candidate_match(pred_box, gt_box) for gt_box in gt_boxes)
+                if any(_is_historical_candidate_match(pred_box, gt_box) for gt_box in gt_boxes)
             }
             fp_indices = [i for i in range(len(pred_boxes)) if i not in matched_indices]
             for idx in tqdm(fp_indices, desc=f"{page['name']} FP-Legacy", leave=False):
@@ -319,6 +331,7 @@ def extract_eval2_tp_fp(
     images_root,
     candidates_root,
     candidate_filename,
+    page_staff_units: dict[str, PageStaffUnit],
 ):
     tp_dir = output_root / "eval2" / "tp"
     fp_dir = output_root / "eval2" / "fp"
@@ -353,6 +366,7 @@ def extract_eval2_tp_fp(
         except ValueError as exc:
             print(f"Warning: {page['gt']} - {exc}")
             continue
+        page_unit = require_page_staff_unit(page_staff_units, score, page_name)
 
         for i, box in enumerate(tqdm(gt_boxes, desc=f"{score}/{page_name} GT", leave=False)):
             x1, y1, x2, y2 = box
@@ -396,7 +410,10 @@ def extract_eval2_tp_fp(
         fp_candidates = []
         for raw_cand in candidates:
             cand = [x * 1.0 for x in raw_cand]
-            if not any(_is_canonical_candidate_match(cand, gt_box) for gt_box in gt_boxes):
+            if not any(
+                _is_canonical_candidate_match(cand, gt_box, unit_size=page_unit.unit_size)
+                for gt_box in gt_boxes
+            ):
                 fp_candidates.append(cand)
 
         for idx, box in enumerate(tqdm(fp_candidates, desc=f"{score}/{page_name} FP", leave=False)):
@@ -597,7 +614,7 @@ def extract_deepscores_probe_fp(
         fp_boxes = [
             cand
             for cand in candidates
-            if not any(_is_canonical_candidate_match(cand, gt_box) for gt_box in tp_boxes)
+            if not any(_is_historical_candidate_match(cand, gt_box) for gt_box in tp_boxes)
         ]
 
         for idx, box in enumerate(fp_boxes):
@@ -1010,6 +1027,11 @@ def main():
         default="expanded_candidates_nopeak.json",
     )
     parser.add_argument(
+        "--staff-units-json",
+        type=Path,
+        help="barline_staff_units.v1 manifest required for canonical evaluation2 labels.",
+    )
+    parser.add_argument(
         "--deepscores-probe-max-total",
         type=int,
         default=None,
@@ -1064,6 +1086,8 @@ def main():
             )
             print(f"Local crops: TP={tp_count}, FP={fp_count}")
         if not args.skip_eval2:
+            if args.staff_units_json is None:
+                parser.error("--staff-units-json is required unless --skip-eval2 is set")
             tp_count, fp_count = extract_eval2_tp_fp(
                 repo_root,
                 output_root,
@@ -1076,6 +1100,7 @@ def main():
                 repo_root / args.eval2_images_root,
                 repo_root / args.eval2_candidates_root,
                 args.eval2_candidate_file,
+                load_page_staff_units(args.staff_units_json),
             )
             print(f"Eval2 crops: TP={tp_count}, FP={fp_count}")
         if not args.skip_deepscores and not args.skip_deepscores_fp:

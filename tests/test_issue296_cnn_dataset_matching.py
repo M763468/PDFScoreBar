@@ -39,21 +39,21 @@ def test_candidate_with_no_horizontal_iou_can_still_be_canonical_positive():
     candidate = [108, 100, 112, 200]
 
     assert candidate[0] > gt_box[2]
-    assert _is_canonical_candidate_match(candidate, gt_box) is True
+    assert _is_canonical_candidate_match(candidate, gt_box, unit_size=24.0) is True
 
 
 def test_candidate_outside_center_anchor_xdist_is_negative():
     gt_box = [100, 100, 104, 200]
     candidate = [115, 100, 119, 200]
 
-    assert _is_canonical_candidate_match(candidate, gt_box) is False
+    assert _is_canonical_candidate_match(candidate, gt_box, unit_size=24.0) is False
 
 
 def test_candidate_requires_half_vertical_overlap():
     gt_box = [100, 100, 104, 200]
     candidate = [100, 160, 104, 240]
 
-    assert _is_canonical_candidate_match(candidate, gt_box) is False
+    assert _is_canonical_candidate_match(candidate, gt_box, unit_size=24.0) is False
 
 
 def test_dataset_builder_help_works_without_pythonpath(tmp_path):

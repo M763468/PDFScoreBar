@@ -73,7 +73,9 @@ def build_contract(args: argparse.Namespace) -> dict[str, Any]:
         "evaluated_pages": detector.get("page_count"),
         "missing_pages": missing_pages,
         "score_threshold": args.score_threshold,
-        "xdist_threshold": args.xdist_threshold,
+        "matching_mode": "staff_unit",
+        "xdist_unit_ratio": args.xdist_unit_ratio,
+        "staff_units_manifest": str(args.staff_units_json),
         "canonical_detector_target": TARGET,
         "target_met": {"detector": target_met},
         "cnn_apply_nms": get_nested(manifest, "config", "detection", "cnn_apply_nms"),
@@ -98,7 +100,8 @@ def main() -> None:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--numbering-output", type=Path)
     parser.add_argument("--score-threshold", type=float, default=0.1)
-    parser.add_argument("--xdist-threshold", type=float, default=12.0)
+    parser.add_argument("--staff-units-json", type=Path, required=True)
+    parser.add_argument("--xdist-unit-ratio", type=float, default=0.5)
     args = parser.parse_args()
 
     output = args.output or args.eval_dir / "evaluation_contract.json"

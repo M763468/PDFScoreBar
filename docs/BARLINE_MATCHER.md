@@ -21,6 +21,16 @@ During the matrix construction the matcher also records, for each prediction, tw
 - **Fallback best** – best IoU regardless of overlap, with tie-breaking by overlap then X-distance.
 These records feed the soft-match classification described below.
 
+### Canonical Center Anchor
+
+For canonical strong-pair acceptance, `center_anchor` requires vertical overlap
+of at least `0.5` and a center-X distance no greater than
+`0.5 * unit_size`. `unit_size` is the page's staff-line spacing in exactly the
+same coordinate frame as the compared boxes. Canonical consumers supply this
+through a `barline_staff_units.v1` page manifest, which also records coordinate
+dimensions and source provenance. Supplying an explicit pixel threshold is
+legacy reproduction mode only.
+
 ## Duplicate & Repeat Classification
 After greedy pairing, unmatched predictions are revisited:
 - **Duplicate (`reason="duplicate"`)** when
@@ -37,6 +47,10 @@ While legacy thresholds are defined in pixels (px), new implementations (Issue #
 - **Deduplication Threshold**: `1.2 * unit_size`
 - **Implicit Start Assumption**: `4.0 * unit_size`
 This ensures the logical layer behaves consistently across different score resolutions (e.g., 300dpi vs 600dpi).
+
+This Issue #313 contract is intentionally limited to strong `center_anchor`
+acceptance. It does not make the legacy IoU padding or duplicate/repeat soft
+classification pixel thresholds resolution-independent.
 
 ## Left-margin Exclusion Rule
 `apply_left_margin_exclusion` runs after matching to reclassify select detections as false positives. The homr evaluator currently keeps the guard disabled (`LEFT_MARGIN_FORCE_FP_GT_INDICES = set()`), so no matches are demoted by default. When re-enabled, any GT index listed in the set and matched to a predicted width ≤ `LEFT_MARGIN_FORCE_FP_MAX_WIDTH` (2 px) will be forced back to an FP to suppress intentionally ignored left-gutter pillars.

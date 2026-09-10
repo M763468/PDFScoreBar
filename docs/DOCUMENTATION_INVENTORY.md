@@ -1,159 +1,106 @@
 # Durable Documentation Inventory
 
-Issue #280 audited the repository documentation against `develop` at PR #279's accepted
-production state. This file records the durable classification and the rule used for future
-audits; it is not intended to enumerate every Issue-specific forensic note individually.
+Issue #280 established the repository documentation audit against the accepted #274-era production state. This file now records the durable classification and the rule used for continuing audits; it is not intended to enumerate every Issue-specific forensic note individually.
 
 ## Classification rule
 
 - **canonical/current:** intended to describe how the repository should be used now.
-- **current/reference:** still accurate within a narrower domain, but not the global
-  architecture source.
-- **historical:** useful evidence or rationale from a past Issue/experiment; preserve unless
-  it creates a current-navigation problem or its durable content is already recoverable from
-  a self-contained Issue/PR/commit/source/test record.
-- **retire:** duplicates or contradicts current guidance and has no reason to remain in the
-  active docs tree; Git history retains it.
-- **separate cleanup:** a real implementation/config cleanup that is outside Issue #280's
-  documentation/metadata scope and is explicitly routed to an existing cleanup track.
+- **current/reference:** still accurate within a narrower domain, but not the global architecture source.
+- **historical:** useful evidence or rationale from a past Issue/experiment; keep only while it adds durable value not already recoverable from a self-contained Issue/PR/commit/source/test/tooling record.
+- **retire:** duplicates or contradicts current guidance, consists mainly of completed task-control state, or has had its unique durable content migrated elsewhere; Git history retains the old body.
+- **separate cleanup:** implementation/config cleanup that belongs to another existing track rather than this documentation audit.
 
 ## Inventory
 
-| Document / area | Role | Classification | #280/#300+ action |
+| Document / area | Role | Classification | Current action |
 | --- | --- | --- | --- |
-| `README.md` | repository entry | current | update to point to canonical architecture/milestone |
-| `AGENTS.md` | repository agent constitution | current | keep; existing Graphify/validation/environment links remain valid |
-| `docs/README.md` | documentation index | canonical/current | current vs historical navigation |
-| `docs/HISTORY_INDEX.md` | historical lineage navigation | current/reference | #300 adds; points to milestones/Issue evidence without duplicating it |
+| `README.md` | repository entry | current | point to canonical architecture and durable docs |
+| `AGENTS.md` | repository agent constitution | current | keep |
+| `docs/README.md` | documentation index | canonical/current | keep current-vs-historical navigation accurate |
+| `docs/HISTORY_INDEX.md` | historical lineage navigation | current/reference | point to Issues/PRs/commits and retained contracts without duplicating them |
 | `docs/PIPELINE_ARCHITECTURE.md` | production architecture | canonical/current | global architecture source, including detector-input provenance |
-| `docs/TWO_HOMR_MILESTONE.md` | accepted architecture/accuracy/performance milestone | canonical/current | complete local/external asset staging contract |
-| `docs/ENVIRONMENTS.md` | execution/runtime guidance | current/reference | clarify unified container vs legacy compatibility fallback |
+| `docs/TWO_HOMR_MILESTONE.md` | accepted #274 architecture/accuracy/performance comparison | frozen milestone | keep as the #274 / PR #279 reproduction record; do not silently rewrite for later production changes |
+| `docs/ENVIRONMENTS.md` | execution/runtime guidance | current/reference | keep |
 | `docs/BRANCH_POLICY.md` | branch policy | current/reference | keep |
 | `docs/dev/VALIDATION_POLICY.md` | validation policy | current/reference | keep |
 | `docs/REGRESSION_TEST_WORKFLOW.md` | regression workflow | current/reference | keep |
 | `docs/GT_PREPARATION_POLICY.md` | GT policy | current/reference | keep |
 | `docs/BARLINE_MATCHER.md` | matching/evaluation rules | current/reference | keep |
-| `docs/CNN_RETRAINING_GUIDE.md` | CNN training guide | current/reference | keep; not a production architecture source |
+| `docs/SCRIPT_MANAGEMENT.md` | script placement/lifecycle policy | current/reference | keep compact; historical move/delete ledger belongs in #45 / PR #184 |
 | `docs/manual_correction_review_package.md` | internal review handoff | current/reference | keep |
-| `docs/corrected_final_output.md` | corrected-output workflow | scoped/reference | keep; verify against its source path when modifying output workflow |
-| `docs/ai-workflow/GRAPHIFY.md` | Graphify operation | current/reference | update staleness/refresh verification rule |
-| `.agents/skills/graphify/**` | agent Graphify skill | current/reference | keep; generated/installed skill remains discoverable |
-| `graphify-out/**` durable set | generated navigation graph/wiki/report/manifest | current only when provenance is fresh | refresh after stable architecture changes; stale source base must not be treated as architecture truth |
-| `docs/PIPELINE_DATAFLOW.md` | old Phase-2 current architecture | stale | retired; merged into canonical architecture |
-| `docs/FULL_PIPELINE_README.md` | old Phase-1 orchestration guide | stale | retired; merged into canonical execution/architecture docs |
-| `docs/best_configuration_summary.md` | Jan-2026 detector experiment labeled Production Ready | stale/misleading | retired; superseded by current dense route/milestone |
-| `docs/performance_comparison.md` | dated optimization history | historical | keep pending dedicated compression audit; index labels it historical |
-| `docs/DEVELOPMENT_LOG.md` | development history | historical | keep pending section-level audit |
-| `docs/DEVLOG_*.md` | component development history | historical/reference | keep pending section-level audit; verify old claims against source |
-| top-level `docs/ISSUE*.md` | Issue forensic/reproduction records | historical | keep only while they contain unique durable evidence or an active reproduction contract; otherwise migrate the unique core and retire the duplicate copy |
-| `docs/refactors/issue*/**` | scoped design/history | historical/scoped | keep by default; current global architecture lives elsewhere |
-| `docs/notes/**`, `docs/future/**` | notes/plans | historical/planning | retire when superseded and durable decisions are recoverable elsewhere |
-| `docs/model_experiments/**` | experiment records | historical | keep pending separate experiment/PDF audit |
-| `docs/fp_reduction/**` | duplicate Dec-2025 FP-reduction narratives | retired | removed in #306 / PR #307 after reusable safety guidance moved to `docs/ai-workflow/LESSONS.md`; reproducibility tooling remains under `experiments/fp_reduction/` |
-| `configs/dense_full_pipeline.yaml` | canonical dense production config | current runtime input, not prose | reference from canonical docs; do not alter under docs-only work |
-| `configs/detector_profiles/stage_e_verified_homr.json` | pinned profile provenance | canonical machine-readable reference | reference from milestone doc |
+| `docs/corrected_final_output.md` | corrected-output workflow | scoped/reference | keep; verify against source when modifying output workflow |
+| `docs/ai-workflow/GRAPHIFY.md` | Graphify operation | current/reference | keep |
+| `.agents/skills/graphify/**` | agent Graphify skill | current/reference | keep |
+| `graphify-out/**` durable set | generated navigation graph/wiki/report/manifest | current only when provenance is fresh | refresh after stable architecture changes |
+| `docs/PIPELINE_DATAFLOW.md`, `docs/FULL_PIPELINE_README.md`, `docs/best_configuration_summary.md` | obsolete current-guide narratives | retired | removed in earlier cleanup; recover through Git history |
+| `docs/CNN_RETRAINING_GUIDE.md` | #44-era FP active-learning / ResNet18 plan | retire | historical core moved to #44; current verified CNN is #296 / PR #310 plus source/config/tests |
+| `docs/performance_comparison.md` | dated Phase 1–6 performance narrative | retire | benchmark ledger distilled into #78; later performance lineage is in #281–#294 |
+| `docs/DEVELOPMENT_LOG.md` | large pre-/early-Issue development diary | historical | pending section-level compression under #308 |
+| `docs/DEVLOG_CNN_TRAINING.md` | CNN development diary | historical | pending compression now that #296 / PR #310 defines the current verified CNN contract |
+| `docs/DEVLOG_MEASURE_NUMBERING.md` | numbering development diary | historical | pending compression; later Issue/refactor records carry current/scoped contracts |
+| top-level `docs/ISSUE*.md` | Issue forensic/reproduction records | historical | keep only while unique durable evidence or an active reproduction contract remains; otherwise distill and retire |
+| `docs/refactors/issue*/**` | scoped design/history | historical/scoped | audit individually; keep current scoped contracts, retire temporary handoff/task-control bundles after distillation |
+| `docs/long-horizon-tasks/**` | completed Prompt/Plan/Log/Benchmarks task bundles | retire | important #25/#60/#70 results moved to their Issue threads; remove active-looking task-control copies |
+| `docs/notes/**`, `docs/future/**` | notes/plans | historical/planning | retire when superseded and decisions are recoverable elsewhere |
+| `docs/model_experiments/*.md` | old model survey/future plans | retire when superseded | active-looking plan text is not a current model roadmap; preserve accepted experiment evidence elsewhere |
+| `docs/model_experiments/*.pdf` | historical model survey artifacts | historical / audit pending | do not delete without content-level audit |
+| `docs/fp_reduction/**` | duplicate Dec-2025 FP-reduction narratives | retired | removed after reusable safety guidance moved to `docs/ai-workflow/LESSONS.md`; tooling remains under `experiments/fp_reduction/` |
+| `configs/dense_full_pipeline.yaml` | canonical dense production config | current runtime input, not prose | authoritative for current selected model/threshold/runtime values |
+| `configs/detector_profiles/stage_e_verified_homr.json` | pinned HOMR profile provenance | canonical machine-readable reference | keep |
 
-## Historical navigation rule added in #300
+## Historical navigation and retirement rule
 
-Historical records remain evidence, but agents should not scan or preload them indiscriminately.
-Use `docs/HISTORY_INDEX.md` to select the lineage relevant to the active Issue/PR, and then
-open only the accepted milestone or forensic record needed for that task.
+Historical records remain evidence, but agents should not scan or preload them indiscriminately. Use `docs/HISTORY_INDEX.md` to select the lineage relevant to the active Issue/PR, then open only the accepted milestone or forensic record needed for that task.
 
-Historical ephemeral state is never authoritative without revalidation. Examples include:
+Historical ephemeral state is never authoritative without revalidation. Examples include branch/`develop` HEADs, worktree/container state, local artifact paths, current blockers, unfinished PASS/FAIL status, and `next step` instructions.
 
-- branch or `develop` HEAD values;
-- worktree/container state;
-- run tags and local artifact paths;
-- current blockers;
-- unfinished PASS/FAIL status;
-- `next step` instructions.
+A historical document can be retired from the active tree when all of the following are true:
 
-For important experiments, prefer a recoverable chain of
-`hypothesis -> script/command -> commit -> fixed provenance -> result -> disposition` over
-retaining chat transcripts or copying the same result into another summary document.
-Invalidated or superseded results remain useful history, but must stay labelled as such.
-
-## Historical retirement rule refined after #300
-
-A historical document is not automatically permanent merely because it contains useful past
-information. It can be retired from the active tree when all of the following are true:
-
-1. accepted/rejected decisions and important experiment provenance are recoverable from the
-   relevant Issue/PR/commit or retained experiment tooling;
-2. any reusable cross-Issue rule has been moved to a current generic guide or architecture
-   contract;
+1. accepted/rejected decisions and important experiment provenance are recoverable from the relevant Issue/PR/commit/source/test or retained experiment tooling;
+2. reusable cross-Issue rules have been moved to a current generic guide or architecture contract;
 3. the file is not the sole current operating/reproduction contract;
 4. surviving repository links are updated in the same cleanup change.
 
-Git history remains the archive for the retired prose body. This rule was exercised by the
-historical cleanup batches tracked in #302/#306 and continues in #308.
+Completed `Prompt.md`, `Plan.md`, handoff, and execution-diary files should normally be retired once this gate is met. Git history is sufficient for recovering their exact prose.
 
-## Dead/stale-path audit findings
+For important experiments, prefer a recoverable chain of
 
-The two retired architecture guides were specifically problematic because they described old
-phase plans as present behavior. `FULL_PIPELINE_README.md` called the orchestrator a “Phase
-1” thin wrapper and deferred I/O/parallelism to a future “Phase 2”; the current orchestrator
-already contains in-process rendering and a substantially different dense detector route.
-`PIPELINE_DATAFLOW.md` likewise mixed old subprocess/persistence claims with architecture
-that predates the verified two-HOMR route.
+`hypothesis -> script/command -> commit -> fixed provenance -> result -> disposition`
 
-`best_configuration_summary.md` documented an older geometric+CNN detector experiment and
-labeled it “Production Ready”. Its metrics/config are historical, not the current production
-contract, so keeping it active would compete with the verified Stage-E profile and Issue #274
-milestone.
+over retaining chat transcripts or copying the same result into another summary document. Invalidated or superseded results must stay labelled as such.
 
-## Reproduction boundary resolved in #280
+## Frozen #274 milestone versus current production
 
-The two-HOMR milestone deliberately does not commit large evaluation images or the Issue #44
-CNN checkpoint. `docs/TWO_HOMR_MILESTONE.md` now records the staging/recovery contract
-instead:
+`docs/TWO_HOMR_MILESTONE.md` deliberately preserves the accepted #274 / PR #279 comparison contract. That comparison used the Issue #44 / PR #57 Iter 7 final-rescue CNN artifact at:
 
-- the canonical 68-page work/page identity is the committed `SCORES` mapping in
-  `tools/issue120/eval_full68_from_intermediates.py`;
-- the corresponding images must be staged under `data/evaluation2/images/<score>/<page>.png`
-  and are checked against the tracked annotation pages before a comparison run;
-- the production CNN checkpoint is the Issue #44 / PR #57 Iter 7 final-rescue artifact at
-  `logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth`;
-- `docs/ISSUE44_ITER7_FINAL_REPORT.md` is the committed reconstruction procedure for that
-  training contract;
-- future comparison runs record the staged checkpoint SHA-256 in their small provenance
-  summary.
+```text
+logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth
+```
 
-The historical large checkpoint did not have a durable SHA-256 committed at creation time.
-#280 does not manufacture one after the fact. If the retained local checkpoint exists, its
-hash identifies the comparison run; if it has been lost, the committed Iter 7 training
-procedure is the canonical reconstruction route and the rebuilt checkpoint must be labelled
-as reconstructed rather than falsely claimed byte-identical.
+`docs/ISSUE44_ITER7_FINAL_REPORT.md` remains the reconstruction procedure for **that historical comparison checkpoint**. This does not mean Iter 7 is the current production CNN.
 
-This satisfies the repository's intended reproducibility level for the immediately preceding
-large refactor: accepted source/config/profile, canonical page selection, external-asset
-staging checks, model reconstruction path, and accuracy/performance contracts are all
-recorded without retaining enormous artifacts in Git.
+The verified dense production route was later refreshed in Issue #296 / PR #310 to the current-producer candidate-aligned EfficientNet-B0 D27 checkpoint and validation-selected threshold. Current source/tests and `configs/dense_full_pipeline.yaml` are authoritative for the active production model contract.
 
-## Separate cleanup routed outside #280
+Keeping these two layers distinct lets the project reproduce the accepted #274 comparison without turning a frozen milestone into competing current guidance.
 
-`docs/ENVIRONMENTS.md` correctly treats `sr_eval_gpu` as non-canonical, while
-`src/pipeline/core/python_env.py` still contains a compatibility fallback and
-`configs/dense_full_pipeline.yaml` contains the legacy-looking
-`container_name: sr_eval_gpu_exp` key.
+## Cleanup history
 
-These are small implementation/config cleanup items, not documentation blockers. They are
-tracked with the existing repository-surface cleanup work (#230, parent #225) so they can be
-removed together with other legacy/debug surface after verifying that no maintained path
-still depends on them. Issue #280 intentionally does not change production runtime/config
-semantics.
+The documentation-cleanup lineage progressively moved durable information out of redundant narratives before deleting them:
 
-Graphify refresh itself requires a local environment with `graphifyy` installed. That is an
-operational prerequisite, not an outstanding repository change; the durable generated
-outputs and provenance manifest were refreshed in #280.
+- #300 / PR #301: added historical navigation and active-context retention guidance;
+- #302 / PR #305: retired the first redundant historical-doc batch and relocated a rerun CSV into a config-owned fixture location;
+- #306 / PR #307: distilled #19/#46/FP-reduction conclusions and reusable safety guidance;
+- #308 / PR #309: moved current detector-input provenance/NMS contracts into canonical architecture and retired duplicate #120/#163/#245 narratives;
+- later #308 PRs continue the same rule without creating a new Issue for each small docs-only slice.
+
+## Separate implementation cleanup
+
+Documentation cleanup must not silently change production runtime/config semantics. Legacy environment keys, compatibility fallbacks, model behavior, matcher semantics, or similar implementation concerns belong to their existing implementation Issues when they require code changes.
+
+Graphify refresh requires a local environment with `graphifyy` installed. That operational prerequisite is not a reason to preserve stale prose in the active docs tree.
 
 ## Future audit rule
 
-A new durable document should answer one of three questions clearly: “how the system works
-now”, “how to operate it now”, or “what happened in a past investigation”. If it mixes those
-roles, split or label it. Current global architecture must be reachable from the root README
-without reading Issue history.
+A durable document should answer one of three questions clearly: **how the system works now**, **how to operate it now**, or **what durable evidence from a past investigation still needs a local repository contract**. If it mixes those roles, split, distill, or label it.
 
-For historical investigations, prefer a compact navigation/index layer plus the original
-Issue/PR/commit evidence over a second full narrative copy. This keeps historical knowledge
-available without making every past investigation active context.
+For historical investigations, prefer a compact navigation/index layer plus original Issue/PR/commit evidence over a second full narrative copy. This keeps historical knowledge recoverable without making every past investigation active context.

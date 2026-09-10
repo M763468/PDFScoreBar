@@ -136,6 +136,10 @@ kind/path, and source hash. It is required because evaluation2 has mixed staff
 scales. Canonical consumers compare its dimensions with the actual page image
 and fail loudly on mismatch. `--legacy-fixed-12px` exists only in the direct
 evaluator for historical reproduction; it is not the canonical contract.
+The refresh helper emits the portable `external://issue313-phase1/...` source
+identifier used by the tracked manifest; it never records the local absolute
+staff-mask path. The SHA-256 is computed from the local audit input while the
+portable identifier documents the external snapshot that hash refers to.
 
 These defaults intentionally match the previous `verify_golden_baseline.py` contract rather than later ad-hoc restore scripts.
 

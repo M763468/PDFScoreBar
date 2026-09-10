@@ -23,6 +23,10 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _portable_source_path(score: str, page: str) -> str:
+    return f"external://issue313-phase1/homr_staff_mask/{score}/{page}_staff_mask.png"
+
+
 def build_manifest(audit_path: Path) -> dict[str, Any]:
     audit = json.loads(audit_path.read_text(encoding="utf-8"))
     pages: dict[str, dict[str, Any]] = {}
@@ -32,12 +36,14 @@ def build_manifest(audit_path: Path) -> dict[str, Any]:
             raise FileNotFoundError(f"Missing audited staff mask: {mask_path}")
         with Image.open(mask_path) as image:
             width, height = image.size
-        pages[_page_key(entry["group"])] = {
+        key = _page_key(entry["group"])
+        score, page = key.split("/", 1)
+        pages[key] = {
             "unit_size": entry["unit_size"],
             "coordinate_width": width,
             "coordinate_height": height,
-            "source_kind": "homr_staff_mask",
-            "source_path": str(mask_path),
+            "source_kind": "homr_staff_mask_snapshot",
+            "source_path": _portable_source_path(score, page),
             "source_sha256": _sha256(mask_path),
         }
     return {"schema_version": STAFF_UNITS_SCHEMA_VERSION, "pages": pages}

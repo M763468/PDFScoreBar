@@ -19,7 +19,12 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from src.common.barline_evaluation import is_barline_match
-from src.common.barline_units import PageStaffUnit, load_page_staff_units, require_page_staff_unit
+from src.common.barline_units import (
+    PageStaffUnit,
+    load_page_staff_units,
+    require_page_staff_unit,
+    validate_coordinate_dimensions,
+)
 
 DEFAULT_PAGES = [
     {
@@ -87,6 +92,21 @@ def _is_historical_candidate_match(candidate, gt_box):
         rule_name="center_anchor",
         vov_threshold=0.5,
         xdist_threshold=12.0,
+    )
+
+
+def _validate_eval2_image_frame(
+    image_path: Path, image: np.ndarray, *, page_unit: PageStaffUnit, score: str, page: str
+) -> None:
+    """Reject x4/original (or other) frame mismatches before canonical matching."""
+
+    if image.ndim < 2:
+        raise ValueError(f"Unable to determine image dimensions for {image_path}")
+    validate_coordinate_dimensions(
+        page_unit,
+        width=int(image.shape[1]),
+        height=int(image.shape[0]),
+        page=f"{score}/{page}",
     )
 
 
@@ -367,6 +387,13 @@ def extract_eval2_tp_fp(
             print(f"Warning: {page['gt']} - {exc}")
             continue
         page_unit = require_page_staff_unit(page_staff_units, score, page_name)
+        _validate_eval2_image_frame(
+            image_path,
+            img,
+            page_unit=page_unit,
+            score=score,
+            page=page_name,
+        )
 
         for i, box in enumerate(tqdm(gt_boxes, desc=f"{score}/{page_name} GT", leave=False)):
             x1, y1, x2, y2 = box

@@ -1,15 +1,15 @@
 # PDFScoreBar Documentation Index
 
 This index separates **current durable guidance** from **historical investigation records**.
-When a historical Issue document conflicts with current source or the canonical architecture,
-use the current source/tests and the documents in the first section below.
+When historical material conflicts with current source, tests, config, or canonical architecture,
+use the current artifacts first.
 
 ## Start here: current durable guidance
 
 | Document | Role |
 | --- | --- |
-| [`PIPELINE_ARCHITECTURE.md`](PIPELINE_ARCHITECTURE.md) | **Canonical current production architecture**: dense route, stage ownership, coordinate spaces, process/memory boundaries, fallbacks |
-| [`TWO_HOMR_MILESTONE.md`](TWO_HOMR_MILESTONE.md) | Accepted Issue #274 / PR #279 two-HOMR accuracy/performance milestone and reproduction contract |
+| [`PIPELINE_ARCHITECTURE.md`](PIPELINE_ARCHITECTURE.md) | **Canonical current production architecture**: dense route, stage ownership, coordinate spaces, process/memory boundaries, detector-input provenance |
+| [`TWO_HOMR_MILESTONE.md`](TWO_HOMR_MILESTONE.md) | Frozen accepted Issue #274 / PR #279 comparison milestone and reproduction contract |
 | [`DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md) | Audit classification of durable docs and cleanup/maintenance rules |
 | [`HISTORY_INDEX.md`](HISTORY_INDEX.md) | Navigation across major historical Issue/experiment lineages; not a current-state source of truth |
 | [`ENVIRONMENTS.md`](ENVIRONMENTS.md) | Maintained runtime/development environments |
@@ -18,6 +18,7 @@ use the current source/tests and the documents in the first section below.
 | [`REGRESSION_TEST_WORKFLOW.md`](REGRESSION_TEST_WORKFLOW.md) | Regression-test workflow |
 | [`GT_PREPARATION_POLICY.md`](GT_PREPARATION_POLICY.md) | Ground-truth labeling policy |
 | [`BARLINE_MATCHER.md`](BARLINE_MATCHER.md) | Barline matching/evaluation contract |
+| [`SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md) | Current placement/lifecycle rules for production, tools, experiments, and scratch scripts |
 | [`manual_correction_review_package.md`](manual_correction_review_package.md) | Current internal manual-correction review-package handoff |
 | [`ai-workflow/GRAPHIFY.md`](ai-workflow/GRAPHIFY.md) | Graphify query, refresh, retention, and staleness rules |
 
@@ -27,7 +28,7 @@ are also current entry points.
 ## Execution and output guidance
 
 Use `src/pipeline/main.py` through the Makefile instead of old phase-specific orchestration
-documents:
+or task-control documents:
 
 ```bash
 make run-pipeline CONFIG=configs/dense_full_pipeline.yaml
@@ -35,61 +36,56 @@ make run-pipeline CONFIG=configs/dense_full_pipeline.yaml
 
 The public/output-profile design records under `docs/refactors/issue226/` through
 `docs/refactors/issue229/` remain useful for their scoped contracts. They are not a second
-source of truth for the detector/MMR architecture. The currently connected internal review
+source of truth for detector/MMR architecture. The currently connected internal review
 package is documented in `manual_correction_review_package.md`.
 
-## Detector, numbering, and training reference
+## Detector, numbering, and CNN reference
 
-These remain useful durable references when working in their domains:
-
-- `CNN_RETRAINING_GUIDE.md`
-- `GT_PREPARATION_POLICY.md`
-- `BARLINE_MATCHER.md`
-- `DEVLOG_MEASURE_NUMBERING.md` — development history/reference; verify current behavior
-  against source before treating old decisions as current.
-- `DEVLOG_CNN_TRAINING.md` — training history/reference.
+- Current detector and CNN runtime behavior is defined by source, tests, and the active config,
+  especially `configs/dense_full_pipeline.yaml` and `PIPELINE_ARCHITECTURE.md`.
+- The verified Stage-E CNN was refreshed in Issue #296 / PR #310 to the current-producer,
+  candidate-aligned EfficientNet-B0 contract. Older ResNet18 retraining notes are historical.
+- Historical CNN training and active-learning results have been distilled into Issue #44;
+  exact retired prose remains recoverable from Git history.
+- `GT_PREPARATION_POLICY.md` and `BARLINE_MATCHER.md` remain current labeling/evaluation references.
+- `DEVLOG_MEASURE_NUMBERING.md` remains a historical development log pending compression under
+  the documentation-cleanup umbrella; verify old claims against current source before use.
 
 ## Historical / forensic records
 
 Use `HISTORY_INDEX.md` to locate the relevant lineage before opening old Issue-specific
-records. Do not preload unrelated historical material simply because it is newer or more
-detailed.
+records. Important decisions and experiment results should be recovered from the relevant
+Issue/PR/commit and retained reproduction tooling rather than from old restart prompts,
+plans, or execution diaries.
 
-Documents named for a specific Issue, experiment, phase, or dated investigation are kept as
-historical evidence unless explicitly promoted into the current durable set. Examples include:
+Completed task-control bundles (`Prompt.md`, `Plan.md`, `Implement.md`, dated execution
+`Log.md`, and one-off benchmark summaries) are not durable current documentation once their
+important results are captured in Issue/PR/commit history. Git history remains available for
+archaeology.
 
-- top-level `ISSUE*.md` files;
-- `docs/refactors/issue*/` design/investigation records;
-- `docs/notes/`, `docs/future/`, `docs/model_experiments/`, and similar experiment/planning
-  material;
-- `performance_comparison.md`, which is a dated optimization history, **not** the current
-  performance baseline. Use `TWO_HOMR_MILESTONE.md` for the current milestone.
+The two PDFs under `docs/model_experiments/` remain historical artifacts pending content-level
+audit. Their neighboring obsolete Markdown planning files are not current guidance.
 
-Historical records should normally be preserved rather than rewritten to match current code.
-If a historical file is still linked as a current guide, fix the index/link or add an explicit
-historical marker.
+## Frozen milestones versus current production
 
-## Retired current-guide documents
+`TWO_HOMR_MILESTONE.md` intentionally freezes the accepted Issue #274 / PR #279 comparison
+contract, including the CNN checkpoint used for that comparison. It should not be silently
+rewritten whenever production later changes.
 
-Issue #280 consolidated and removed documents that still presented obsolete architecture as
-current guidance:
-
-- `PIPELINE_DATAFLOW.md` — old Phase-2 architecture narrative;
-- `FULL_PIPELINE_README.md` — old Phase-1 orchestrator guide;
-- `best_configuration_summary.md` — January 2026 detector experiment labeled “Production
-  Ready”, superseded by the verified dense production route and current milestone.
-
-Their historical context is recoverable from Git history and related Issue records; keeping
-them in the active docs tree would create competing current specifications.
+For **current** production model/config values, use `configs/dense_full_pipeline.yaml`, current
+source/tests, and the active architecture document. For example, the production CNN changed
+later in Issue #296 / PR #310 while the #274 milestone remains useful historical evidence.
 
 ## Maintenance rule
 
-When production stage ownership, authoritative geometry, coordinate contracts, or major
-process/memory boundaries change:
+When production stage ownership, authoritative geometry, coordinate contracts, model contracts,
+or major process/memory boundaries change:
 
-1. update `PIPELINE_ARCHITECTURE.md` in the same change;
-2. update `TWO_HOMR_MILESTONE.md` only when the accepted comparison milestone itself changes;
+1. update `PIPELINE_ARCHITECTURE.md` when the architecture contract changes;
+2. update `TWO_HOMR_MILESTONE.md` only when that accepted comparison milestone itself is deliberately replaced;
 3. check this index, `HISTORY_INDEX.md`, and `DOCUMENTATION_INVENTORY.md` for newly stale guidance;
-4. after stable docs are settled, refresh Graphify according to `ai-workflow/GRAPHIFY.md`.
+4. move reusable lessons out of Issue-specific narratives before retiring redundant prose;
+5. after stable docs are settled, refresh Graphify according to `ai-workflow/GRAPHIFY.md`.
 
-Issue-specific forensic notes do not need mechanical rewrites for every architecture change.
+Issue-specific forensic notes do not need mechanical rewrites for every architecture change,
+but stale files should not remain linked as current operating guidance.

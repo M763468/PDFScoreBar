@@ -4,16 +4,16 @@ This document is a navigation layer, not a second source of truth.
 
 ## Purpose
 
-PDFScoreBar has a long investigation history. This index helps maintainers and AI agents find the right historical evidence without treating old Issue state, handoff notes, or experiment logs as current repository state.
+PDFScoreBar has a long investigation history. This index helps maintainers and AI agents find the right historical evidence without treating old Issue state, handoff notes, task plans, or experiment diaries as current repository state.
 
-Use current source/tests and current durable documentation first. Follow historical links only when they explain a requirement, accepted contract, regression guard, or prior decision.
+Use current source/tests/config and current durable documentation first. Follow historical links only when they explain a requirement, accepted contract, regression guard, or prior decision.
 
 ## Reading order
 
 For a current task:
 
 1. identify the active Issue / PR from the current request;
-2. inspect current source/tests and that target's GitHub state;
+2. inspect current source/tests/config and that target's GitHub state;
 3. read canonical/current docs relevant to the subsystem;
 4. use the lineage below only for necessary historical evidence;
 5. treat branch HEADs, run tags, local paths, blockers, and `next step` text in historical records as stale until revalidated.
@@ -23,13 +23,14 @@ A newer comment on an unrelated Issue does not supersede the current task's acce
 ## Canonical current entry points
 
 - [`docs/PIPELINE_ARCHITECTURE.md`](PIPELINE_ARCHITECTURE.md) — current production architecture
-- [`docs/TWO_HOMR_MILESTONE.md`](TWO_HOMR_MILESTONE.md) — accepted #274 / [PR #279](https://github.com/M763468/PDFScoreBar/pull/279) comparison milestone
+- [`docs/TWO_HOMR_MILESTONE.md`](TWO_HOMR_MILESTONE.md) — frozen accepted #274 / [PR #279](https://github.com/M763468/PDFScoreBar/pull/279) comparison milestone
 - [`docs/DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md) — documentation classification
 - [`docs/ENVIRONMENTS.md`](ENVIRONMENTS.md) — maintained execution environments
 - [`docs/BRANCH_POLICY.md`](BRANCH_POLICY.md) — branch policy
 - [`docs/dev/VALIDATION_POLICY.md`](dev/VALIDATION_POLICY.md) — validation policy
 - [`docs/BARLINE_MATCHER.md`](BARLINE_MATCHER.md) — detector matching/evaluation contract
 - [`docs/GT_PREPARATION_POLICY.md`](GT_PREPARATION_POLICY.md) — GT policy
+- [`docs/SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md) — script ownership and lifecycle
 
 ## Historical lineages
 
@@ -52,6 +53,22 @@ Start with:
 
 Use Issue threads for forensic detail. Do not interpret the old rebuild branch model or old `next step` sections as current branch state.
 
+### CNN classifier / candidate matching
+
+Primary lineage:
+
+#44 → #45 / #46 / #51 / #53 → later detector reconstruction → #296 / [PR #310](https://github.com/M763468/PDFScoreBar/pull/310)
+
+Start with:
+
+- [Issue #44](https://github.com/M763468/PDFScoreBar/issues/44) for the evaluation2-era CNN baseline, historical active-learning notes, and staff-band distillation
+- [Issue #46](https://github.com/M763468/PDFScoreBar/issues/46) for detector/CNN residual experiments and their final ledger
+- [Issue #51](https://github.com/M763468/PDFScoreBar/issues/51) for the corrected residual classification and 15-case disposition
+- [Issue #296](https://github.com/M763468/PDFScoreBar/issues/296) / [PR #310](https://github.com/M763468/PDFScoreBar/pull/310) for the current-producer candidate-aligned EfficientNet-B0 adoption on the verified Stage-E route
+- current `configs/dense_full_pipeline.yaml`, source, and tests for present model/threshold behavior
+
+Old ResNet18 training plans and FP-based active-learning guidance are historical; do not use them as the current production CNN contract.
+
 ### Measure numbering / MMR
 
 Primary lineage:
@@ -60,14 +77,15 @@ Primary lineage:
 
 Start with:
 
-- [`docs/DEVLOG_MEASURE_NUMBERING.md`](DEVLOG_MEASURE_NUMBERING.md) for early development history only
+- [`docs/DEVLOG_MEASURE_NUMBERING.md`](DEVLOG_MEASURE_NUMBERING.md) for early development history only, pending compression
 - [`docs/refactors/issue94/`](refactors/issue94/)
 - [`docs/refactors/issue194/`](refactors/issue194/)
 - [`docs/refactors/issue201/`](refactors/issue201/)
-- current source/tests for present behavior
+- [Issue #244](https://github.com/M763468/PDFScoreBar/issues/244) for the row-start numbering forensic investigation
 - #264 / #274 records for the accepted geometry-rebased downstream contract
+- current source/tests for present behavior
 
-[`docs/DEVLOG_MEASURE_NUMBERING.md`](DEVLOG_MEASURE_NUMBERING.md) is historical/reference material, not the current specification.
+The component devlog is historical/reference material, not the current specification.
 
 ### Fresh detector restoration / connector-aware grouping / HOMR support reuse
 
@@ -82,23 +100,31 @@ Start with:
 - [Issue #245](https://github.com/M763468/PDFScoreBar/issues/245) / [PR #251](https://github.com/M763468/PDFScoreBar/pull/251) for forensic detail behind `fresh_upstream` vs `precomputed_candidate_route`
 - #255 / #264 / #274 Issue records when further forensic detail is required
 
-The accepted [PR #279](https://github.com/M763468/PDFScoreBar/pull/279) milestone is the comparison anchor. Earlier producer counts and temporary Phase-A/Phase-B arrangements are historical.
+The accepted [PR #279](https://github.com/M763468/PDFScoreBar/pull/279) milestone is a frozen comparison anchor. Later production changes do not retroactively rewrite that accepted record.
 
 ### Performance optimization
 
-Primary lineage:
+Early lineage:
+
+#25 / #60 / #70 / #78 → later production optimization work
+
+Recent lineage:
 
 #281 → #283 / #284 → #293 → #294
 
 Start with:
 
+- [Issue #25](https://github.com/M763468/PDFScoreBar/issues/25) for early SR accuracy/cost investigation and recovered task-log findings
+- [Issue #60](https://github.com/M763468/PDFScoreBar/issues/60) for early dataflow/MMR batching measurements
+- [Issue #70](https://github.com/M763468/PDFScoreBar/issues/70) for the early 8GB VRAM/tile=400 performance milestone
+- [Issue #78](https://github.com/M763468/PDFScoreBar/issues/78) for the compressed historical Phase 1–6 benchmark ledger
 - #281 for the first post-#274 attribution framework
 - #283 for current-x4 HOMR optimization
 - #284 / [PR #292](https://github.com/M763468/PDFScoreBar/pull/292) for Real-ESRGAN optimization
 - #293 for the post-#292 measured backlog
 - #294 only when the active task actually concerns baseline-HOMR replacement
 
-Do not permanently privilege #294. If another Issue is active, resolve that Issue first.
+Old benchmark recommendations are evidence, not current tuning defaults. Resolve current source/config and the active performance Issue before acting on historical numbers.
 
 ### Downstream-impacting x=580 false barline
 
@@ -129,7 +155,7 @@ Use current source and current user-facing docs for present behavior.
 
 Useful anchors:
 
-#168 / #173 / #190 / #230 / #241 / #258 / #261 / #280
+#45 / #63 / #168 / #173 / #185 / #190 / #230 / #241 / #258 / #261 / #280
 
 Start with:
 
@@ -137,8 +163,11 @@ Start with:
 - [`docs/BRANCH_POLICY.md`](BRANCH_POLICY.md)
 - [`docs/ENVIRONMENTS.md`](ENVIRONMENTS.md)
 - [`docs/dev/VALIDATION_POLICY.md`](dev/VALIDATION_POLICY.md)
+- [`docs/SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md)
 - [`docs/ai-workflow/`](ai-workflow/)
 - [`docs/DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md)
+
+Issue #45 / PR #184 and Issue #185 / PR #188 are the historical anchors for script-layout cleanup. Issue #63 retains the distilled environment/path follow-up that previously lived in a temporary task bundle.
 
 Temporary recovery commands and machine-local paths in old Issues are historical evidence only.
 
@@ -152,8 +181,8 @@ A result invalidated by a harness, environment, provenance, coordinate/index, or
 
 ## Session / handoff retention rule
 
-Chat transcripts and restart prompts are not durable repository documentation.
+Chat transcripts, restart prompts, task prompts, and completed execution plans are not durable repository documentation.
 
-Once an Issue's important decisions, experiment provenance, accepted/rejected results, and follow-ups are recoverable from GitHub / source / tests / durable docs, old chat sessions and handoff prompts do not need to be retained as active AI context.
+Once an Issue's important decisions, experiment provenance, accepted/rejected results, and follow-ups are recoverable from GitHub / source / tests / durable docs, those working records do not need to remain in the active docs tree.
 
 Do not copy full chat transcripts into this repository.

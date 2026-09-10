@@ -19,7 +19,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -72,7 +72,7 @@ class TargetedRetryProcessor(base.ComposedProcessor):
         w_img: int,
         h_img: int,
     ):
-        return MMRProcessor._detect_number_with_evidence(
+        return MMRProcessor._detect_number_with_evidence_j2(
             self, image, system, x1, y1, x2, y2, prob, w_img, h_img
         )
 

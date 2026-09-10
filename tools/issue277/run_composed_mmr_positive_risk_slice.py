@@ -374,7 +374,7 @@ class ComposedProcessor(MMRProcessor):
             self.threshold < prob < self.ONE_BAR_VETO_PROB_MAX
             and one_bar_evidence >= self.ONE_BAR_VETO_MIN_EVIDENCE
         ):
-            result = super()._detect_number_with_evidence(
+            result = super()._detect_number_with_evidence_j2(
                 image,
                 system,
                 x1,
@@ -474,7 +474,7 @@ class ComposedProcessor(MMRProcessor):
         # Unresolved cases retain the current merged J2 contract. This is
         # intentionally conservative for the risk-slice; call-cost impact is
         # measured explicitly and determines whether the composition is useful.
-        result = super()._detect_number_with_evidence(
+        result = super()._detect_number_with_evidence_j2(
             image,
             system,
             x1,

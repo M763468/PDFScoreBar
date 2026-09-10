@@ -47,7 +47,7 @@ class J2ReferenceProcessor(MMRProcessor):
         self.decision_trace.clear()
 
     def _detect_number_with_evidence(self, *args: Any, **kwargs: Any):
-        result = super()._detect_number_with_evidence(*args, **kwargs)
+        result = super()._detect_number_with_evidence_j2(*args, **kwargs)
         self.decision_trace.append(
             {
                 "stage": "merged_j2",

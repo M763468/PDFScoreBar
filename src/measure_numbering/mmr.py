@@ -754,6 +754,8 @@ class MMRProcessor:
     JITTER_SCORE_TRIGGER = 5.0
     TARGETED_X1_SHIFT_FRACTION = 0.01
     TARGETED_UPPER_STAFF_MARGIN_RATIO = 0.5
+    TARGETED_SHIFTED_X_MARGIN_STAFF_RATIO = 0.2
+    TARGETED_SHIFTED_Y_MARGIN_STAFF_RATIO = 0.5
 
     def _detect_number_with_evidence(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
         """Retry low-reliability OCR with candidate-native Issue #277 crops."""
@@ -873,15 +875,18 @@ class MMRProcessor:
     ) -> Tuple[Optional[int], float]:
         x1, _y1, x2, _y2 = (int(value) for value in measure_bbox)
         _sx1, sy1, _sx2, sy2 = (int(value) for value in staff_bbox)
-        margin_y = 80
-        ox1 = max(0, min(w_img, x1 - 30))
-        ox2 = max(0, min(w_img, x2 + 30))
+        staff_height = max(1.0, float(sy2 - sy1))
+        margin_x = int(round(staff_height * self.TARGETED_SHIFTED_X_MARGIN_STAFF_RATIO))
+        margin_y = int(round(staff_height * self.TARGETED_SHIFTED_Y_MARGIN_STAFF_RATIO))
+        ox1 = max(0, min(w_img, x1 - margin_x))
+        ox2 = max(0, min(w_img, x2 + margin_x))
         oy1 = max(0, min(h_img, sy1 - margin_y))
         oy2 = max(0, min(h_img, sy2 + margin_y))
         crop = image[oy1:oy2, ox1:ox2]
         if crop is None or crop.size == 0:
             return None, 0.0
-        crop = self.ocr.mask_hbar_candidates(crop, margin_y, sy2 - sy1)
+        staff_top_rel = float(sy1 - oy1)
+        crop = self.ocr.mask_hbar_candidates(crop, staff_top_rel, staff_height)
         if crop is None or crop.size == 0:
             return None, 0.0
         processed = self.ocr.preprocess_variant(crop, mode="no_dilate", angle=0)

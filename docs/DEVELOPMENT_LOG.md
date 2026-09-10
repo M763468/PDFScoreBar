@@ -62,7 +62,9 @@ more useful as a complementary signal than as a wholesale replacement for the hi
 path.
 
 See retained experiment tooling/READMEs and Git history when exact old commands or measurements are
-needed. The two historical PDFs under `docs/model_experiments/` remain separately audit-gated.
+needed. The pre-experiment model-survey PDFs were retired after content audit because they contained
+exploratory literature, dataset, licensing, and architecture recommendations rather than accepted
+project-specific experiment evidence or an operating/reproduction contract.
 
 ### 6. Real-ESRGAN and hybrid-consensus experiments changed the architecture direction
 

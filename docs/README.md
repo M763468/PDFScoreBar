@@ -68,8 +68,10 @@ Completed task-control bundles (`Prompt.md`, `Plan.md`, `Implement.md`, dated ex
 important results are captured in Issue/PR/commit history. Git history remains available for
 archaeology.
 
-The two PDFs under `docs/model_experiments/` remain historical artifacts pending content-level
-audit. Their neighboring obsolete Markdown planning files are not current guidance.
+The two pre-experiment model-survey PDFs formerly under `docs/model_experiments/` were retired
+after content-level audit in Issue #308. They contained exploratory literature/dataset recommendations
+rather than accepted project-specific evidence. Durable experiment results remain under
+`experiments/models/`, with exact retired survey prose recoverable from Git history.
 
 ## Frozen milestones versus current production
 

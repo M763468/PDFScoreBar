@@ -40,9 +40,7 @@ def _validate_verified_cnn_checkpoint(model_path: Path) -> None:
     if not isinstance(state_dict, dict):
         raise ValueError("Verified Stage E detector route requires a CNN state_dict checkpoint")
     if any(key.startswith("_orig_mod.") for key in state_dict):
-        state_dict = {
-            key.removeprefix("_orig_mod."): value for key, value in state_dict.items()
-        }
+        state_dict = {key.removeprefix("_orig_mod."): value for key, value in state_dict.items()}
     architecture = _infer_model_architecture(state_dict)
     if architecture != "efficientnet_b0":
         raise ValueError(

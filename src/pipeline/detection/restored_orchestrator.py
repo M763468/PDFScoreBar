@@ -80,8 +80,7 @@ def _validate_verified_cnn_manifest(
     manifest_threshold = production_contract.get("cnn_threshold")
     if not isinstance(manifest_threshold, (int, float)):
         raise ValueError(
-            "Verified Stage E model manifest requires numeric "
-            "production_contract.cnn_threshold"
+            "Verified Stage E model manifest requires numeric production_contract.cnn_threshold"
         )
     if not math.isclose(
         float(manifest_threshold),

@@ -752,9 +752,151 @@ class MMRProcessor:
         return found_number, best_score, best_debug
 
     JITTER_SCORE_TRIGGER = 5.0
+    TARGETED_X1_SHIFT_FRACTION = 0.01
+    TARGETED_UPPER_STAFF_MARGIN_RATIO = 0.5
 
     def _detect_number_with_evidence(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
-        """Use bounded J2 OCR geometry consensus for low-reliability baseline OCR only."""
+        """Retry low-reliability OCR with candidate-native Issue #277 crops."""
+        baseline = self._detect_number_with_evidence_once(
+            image, system, x1, y1, x2, y2, prob, w_img, h_img
+        )
+        found, score, debug, evidence = baseline
+
+        # Preserve the validated J2 behavior for low-CNN rescue and marginal
+        # one-bar cases. The targeted retries do not replace those contracts.
+        if prob <= self.threshold or (
+            self.threshold < prob < self.ONE_BAR_VETO_PROB_MAX
+            and evidence >= self.ONE_BAR_VETO_MIN_EVIDENCE
+        ):
+            return self._detect_number_with_evidence_j2(
+                image, system, x1, y1, x2, y2, prob, w_img, h_img
+            )
+
+        if found is not None and score > self.JITTER_SCORE_TRIGGER:
+            return baseline
+
+        measure_bbox = [int(x1), int(y1), int(x2), int(y2)]
+        staves = system.get("staves", [])
+        full_span_values = [
+            self._run_targeted_full_span_staff(image, measure_bbox, stave["bbox"], w_img, h_img)
+            for stave in staves
+        ]
+        retry_num, retry_score = self._aggregate_targeted_staff_results(full_span_values)
+        if self._targeted_retry_candidate_acceptable(retry_num, retry_score):
+            return (
+                retry_num,
+                retry_score,
+                "issue277_targeted_full_span_unmasked_heavy_dilate",
+                evidence,
+            )
+
+        shifted_bbox = self._targeted_shift_x1(measure_bbox)
+        shifted_values = []
+        if shifted_bbox[0] != measure_bbox[0]:
+            shifted_values = [
+                self._run_targeted_shifted_staff(image, shifted_bbox, stave["bbox"], w_img, h_img)
+                for stave in staves
+            ]
+        retry_num, retry_score = self._aggregate_targeted_staff_results(shifted_values)
+        if self._targeted_retry_candidate_acceptable(retry_num, retry_score):
+            return (
+                retry_num,
+                retry_score,
+                "issue277_targeted_scale_relative_x1_masked_no_dilate",
+                evidence,
+            )
+
+        if found is None:
+            return baseline
+
+        return self._detect_number_with_evidence_j2(
+            image, system, x1, y1, x2, y2, prob, w_img, h_img
+        )
+
+    @classmethod
+    def _targeted_shift_x1(cls, bbox: List[int]) -> List[int]:
+        x1, y1, x2, y2 = (int(value) for value in bbox)
+        dx = int(round((x2 - x1) * cls.TARGETED_X1_SHIFT_FRACTION))
+        return [x1 + dx, y1, x2, y2]
+
+    @staticmethod
+    def _targeted_retry_candidate_acceptable(number: Optional[int], score: float) -> bool:
+        return number is not None and number >= 2 and score > 0.0
+
+    @staticmethod
+    def _aggregate_targeted_staff_results(
+        values: List[Tuple[Optional[int], float]],
+    ) -> Tuple[Optional[int], float]:
+        votes = Counter(value for value, _score in values if value is not None and value >= 2)
+        if not votes:
+            return None, 0.0
+        support = max(votes.values())
+        leaders = [value for value, count in votes.items() if count == support]
+        if len(leaders) != 1:
+            return None, 0.0
+        selected = leaders[0]
+        score = max(score for value, score in values if value == selected)
+        return selected, score
+
+    def _run_targeted_full_span_staff(
+        self, image, measure_bbox, staff_bbox, w_img, h_img
+    ) -> Tuple[Optional[int], float]:
+        x1, _y1, x2, _y2 = (float(value) for value in measure_bbox)
+        _sx1, sy1, _sx2, sy2 = (float(value) for value in staff_bbox)
+        staff_height = max(1.0, sy2 - sy1)
+        ox1 = max(0, min(w_img, int(round(x1))))
+        ox2 = max(0, min(w_img, int(round(x2))))
+        oy1 = max(
+            0,
+            min(
+                h_img,
+                int(round(sy1 - self.TARGETED_UPPER_STAFF_MARGIN_RATIO * staff_height)),
+            ),
+        )
+        oy2 = max(0, min(h_img, int(round(sy2))))
+        crop = image[oy1:oy2, ox1:ox2]
+        if crop is None or crop.size == 0:
+            return None, 0.0
+        processed = self.ocr.preprocess_variant(crop, mode="heavy_dilate", angle=0)
+        if processed is None or processed.size == 0:
+            return None, 0.0
+        ocr_result, _ = self.ocr.ocr_engine(processed)
+        number, score, _debug = self.ocr.select_best_candidate(
+            ocr_result or [], processed.shape[1], processed.shape[0]
+        )
+        if number is None or number < 2:
+            return None, 0.0
+        return number, score
+
+    def _run_targeted_shifted_staff(
+        self, image, measure_bbox, staff_bbox, w_img, h_img
+    ) -> Tuple[Optional[int], float]:
+        x1, _y1, x2, _y2 = (int(value) for value in measure_bbox)
+        _sx1, sy1, _sx2, sy2 = (int(value) for value in staff_bbox)
+        margin_y = 80
+        ox1 = max(0, min(w_img, x1 - 30))
+        ox2 = max(0, min(w_img, x2 + 30))
+        oy1 = max(0, min(h_img, sy1 - margin_y))
+        oy2 = max(0, min(h_img, sy2 + margin_y))
+        crop = image[oy1:oy2, ox1:ox2]
+        if crop is None or crop.size == 0:
+            return None, 0.0
+        crop = self.ocr.mask_hbar_candidates(crop, margin_y, sy2 - sy1)
+        if crop is None or crop.size == 0:
+            return None, 0.0
+        processed = self.ocr.preprocess_variant(crop, mode="no_dilate", angle=0)
+        if processed is None or processed.size == 0:
+            return None, 0.0
+        ocr_result, _ = self.ocr.ocr_engine(processed)
+        number, score, _debug = self.ocr.select_best_candidate(
+            ocr_result or [], processed.shape[1], processed.shape[0]
+        )
+        if number is None or number < 2:
+            return None, 0.0
+        return number, score
+
+    def _detect_number_with_evidence_j2(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
+        """Retain merged J2 as the fallback for contracts targeted v2 cannot resolve."""
         baseline = self._detect_number_with_evidence_once(
             image, system, x1, y1, x2, y2, prob, w_img, h_img
         )

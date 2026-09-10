@@ -1,6 +1,7 @@
 import unittest
 from pathlib import Path
 
+import numpy as np
 import torch
 
 try:
@@ -108,7 +109,7 @@ class TestMMROCRHeuristics(unittest.TestCase):
         self.assertEqual(num, 39)
         self.assertIn("merged", debug)
 
-    def test_low_score_j2_majority_replaces_baseline_and_one_bar_is_preserved(self):
+    def test_low_score_j2_fallback_replaces_baseline_and_preserves_one_bar(self):
         class Processor(MMRProcessor):
             def __init__(self):
                 super().__init__(
@@ -127,7 +128,7 @@ class TestMMROCRHeuristics(unittest.TestCase):
             def _detect_number_with_evidence_once(self, *args):
                 return next(self.values)
 
-        result = Processor()._detect_number_with_evidence(
+        result = Processor()._detect_number_with_evidence_j2(
             None, {"staves": []}, 0, 0, 10, 10, 1.0, 100, 100
         )
         self.assertEqual(result[0], 5)
@@ -154,7 +155,9 @@ class TestMMROCRHeuristics(unittest.TestCase):
                 return next(self.values)
 
         system = {"staves": [{"bbox": [0, 10, 50, 30]}, {"bbox": [0, 40, 50, 60]}]}
-        result = Processor()._detect_number_with_evidence(None, system, 0, 0, 10, 10, 1.0, 100, 100)
+        result = Processor()._detect_number_with_evidence_j2(
+            None, system, 0, 0, 10, 10, 1.0, 100, 100
+        )
         self.assertEqual(result, (12, 0.0, "base", 0))
         self.assertEqual(system["staves"][0]["bbox"], [0, 10, 50, 30])
         self.assertEqual(system["staves"][1]["bbox"], [0, 40, 50, 60])
@@ -173,7 +176,9 @@ class TestMMROCRHeuristics(unittest.TestCase):
 
         processor = Processor()
         self.assertEqual(
-            processor._detect_number_with_evidence(None, {"staves": []}, 0, 0, 1, 1, 1.0, 10, 10),
+            processor._detect_number_with_evidence_j2(
+                None, {"staves": []}, 0, 0, 1, 1, 1.0, 10, 10
+            ),
             (8, 5.1, "baseline", 2),
         )
         self.assertEqual(processor.calls, 1)
@@ -201,10 +206,199 @@ class TestMMROCRHeuristics(unittest.TestCase):
 
         system = {"staves": [{"bbox": [0, 10, 50, 30]}, {"bbox": [0, 40, 50, 60]}]}
         processor = Processor()
-        result = processor._detect_number_with_evidence(None, system, 0, 0, 1, 1, 1.0, 100, 100)
+        result = processor._detect_number_with_evidence_j2(None, system, 0, 0, 1, 1, 1.0, 100, 100)
         self.assertEqual(result, (12, 0.0, "base", 0))
         self.assertEqual([stave["bbox"][1] for stave in processor.systems[3]["staves"]], [8, 38])
         self.assertEqual([stave["bbox"][1] for stave in processor.systems[4]["staves"]], [12, 42])
+
+    def test_targeted_high_score_one_shot_is_authoritative(self):
+        processor = _TargetedHarness(
+            baseline=(9, 5.1, "baseline", 0),
+            full_span=(6, 40.0),
+            shifted=(6, 40.0),
+        )
+
+        self.assertEqual(_run_targeted(processor), (9, 5.1, "baseline", 0))
+        self.assertEqual((processor.full_span_calls, processor.shifted_calls), (0, 0))
+        self.assertEqual(processor.j2_calls, 0)
+
+    def test_targeted_low_score_uses_full_span_retry_first(self):
+        processor = _TargetedHarness(
+            baseline=(97, -44.0, "baseline", 0),
+            full_span=(5, 24.0),
+            shifted=(6, 40.0),
+        )
+
+        result = _run_targeted(processor)
+
+        self.assertEqual(result[:2], (5, 24.0))
+        self.assertIn("full_span_unmasked_heavy_dilate", result[2])
+        self.assertEqual((processor.full_span_calls, processor.shifted_calls), (1, 0))
+        self.assertEqual(processor.j2_calls, 0)
+
+    def test_targeted_none_uses_scale_relative_second_retry(self):
+        processor = _TargetedHarness(
+            baseline=(None, 0.0, "baseline", 0),
+            full_span=(None, 0.0),
+            shifted=(6, 24.0),
+        )
+
+        result = _run_targeted(processor)
+
+        self.assertEqual(result[:2], (6, 24.0))
+        self.assertIn("scale_relative_x1_masked_no_dilate", result[2])
+        self.assertEqual(processor.shifted_bbox, [101, 0, 200, 20])
+        self.assertEqual(processor.j2_calls, 0)
+
+    def test_targeted_unresolved_low_score_uses_j2_fallback(self):
+        processor = _TargetedHarness(
+            baseline=(37, -10.0, "baseline", 0),
+            full_span=(None, 0.0),
+            shifted=(111, -68.0),
+            j2=(37, 29.0, "j2", 0),
+        )
+
+        self.assertEqual(_run_targeted(processor), (37, 29.0, "j2", 0))
+        self.assertEqual(processor.j2_calls, 1)
+
+    def test_targeted_unresolved_none_keeps_one_shot_without_j2_repeat(self):
+        processor = _TargetedHarness(
+            baseline=(None, 0.0, "baseline", 0),
+            full_span=(None, 0.0),
+            shifted=(111, -68.0),
+            j2=(7, 20.0, "unexpected", 0),
+        )
+
+        self.assertEqual(_run_targeted(processor), (None, 0.0, "baseline", 0))
+        self.assertEqual(processor.j2_calls, 0)
+
+    def test_targeted_low_cnn_and_one_bar_sensitive_cases_keep_j2(self):
+        cases = (
+            (0.4, (8, -5.0, "baseline", 0)),
+            (0.55, (11, -16.0, "baseline", 2)),
+        )
+        for prob, baseline in cases:
+            with self.subTest(prob=prob, baseline=baseline):
+                processor = _TargetedHarness(
+                    baseline=baseline,
+                    full_span=(2, 40.0),
+                    shifted=(2, 40.0),
+                    j2=(None, 0.0, "j2", baseline[3]),
+                )
+
+                self.assertEqual(_run_targeted(processor, prob=prob)[0], None)
+                self.assertEqual((processor.full_span_calls, processor.shifted_calls), (0, 0))
+                self.assertEqual(processor.j2_calls, 1)
+
+    def test_targeted_retry_requires_unique_span_with_positive_score(self):
+        self.assertTrue(MMRProcessor._targeted_retry_candidate_acceptable(3, 0.1))
+        self.assertFalse(MMRProcessor._targeted_retry_candidate_acceptable(3, 0.0))
+        self.assertFalse(MMRProcessor._targeted_retry_candidate_acceptable(1, 50.0))
+        self.assertFalse(MMRProcessor._targeted_retry_candidate_acceptable(None, 50.0))
+        self.assertEqual(
+            MMRProcessor._aggregate_targeted_staff_results([(3, 10.0), (4, 20.0)]),
+            (None, 0.0),
+        )
+
+    def test_targeted_x1_shift_is_measure_width_relative(self):
+        self.assertEqual(
+            MMRProcessor._targeted_shift_x1([398, 1350, 836, 1506]),
+            [402, 1350, 836, 1506],
+        )
+
+    def test_targeted_retry_helpers_preserve_crop_and_preprocessing_contract(self):
+        processor = object.__new__(MMRProcessor)
+        processor.ocr = _TargetedRetryOCR()
+        image = np.zeros((300, 500, 3), dtype=np.uint8)
+        staff_bbox = [0, 100, 400, 140]
+
+        self.assertEqual(
+            processor._run_targeted_full_span_staff(image, [100, 0, 200, 20], staff_bbox, 500, 300),
+            (6, 24.0),
+        )
+        self.assertEqual(processor.ocr.preprocess_calls, [((60, 100, 3), "heavy_dilate")])
+        self.assertEqual(processor.ocr.mask_calls, [])
+
+        self.assertEqual(
+            processor._run_targeted_shifted_staff(image, [101, 0, 200, 20], staff_bbox, 500, 300),
+            (6, 24.0),
+        )
+        self.assertEqual(
+            processor.ocr.preprocess_calls[-1],
+            ((200, 159, 3), "no_dilate"),
+        )
+        self.assertEqual(processor.ocr.mask_calls, [((200, 159, 3), 80, 40)])
+
+
+_TargetedHarnessBase = MMRProcessor if MMRProcessor is not None else object
+
+
+class _TargetedHarness(_TargetedHarnessBase):
+    def __init__(self, *, baseline, full_span, shifted, j2=(None, 0.0, "j2", 0)):
+        self.threshold = 0.5
+        self.baseline = baseline
+        self.full_span = full_span
+        self.shifted = shifted
+        self.j2 = j2
+        self.full_span_calls = 0
+        self.shifted_calls = 0
+        self.j2_calls = 0
+        self.shifted_bbox = None
+
+    def _detect_number_with_evidence_once(self, *args):
+        return self.baseline
+
+    def _detect_number_with_evidence_j2(self, *args):
+        self.j2_calls += 1
+        return self.j2
+
+    def _run_targeted_full_span_staff(self, *args):
+        self.full_span_calls += 1
+        return self.full_span
+
+    def _run_targeted_shifted_staff(self, _image, measure_bbox, *args):
+        self.shifted_calls += 1
+        self.shifted_bbox = measure_bbox
+        return self.shifted
+
+
+class _TargetedRetryOCR:
+    def __init__(self):
+        self.preprocess_calls = []
+        self.mask_calls = []
+        self.ocr_engine = lambda _image: ([], 0.0)
+
+    def mask_hbar_candidates(self, crop, margin_y, staff_height):
+        self.mask_calls.append((crop.shape, margin_y, staff_height))
+        return crop
+
+    def preprocess_variant(self, crop, mode, angle):
+        self.preprocess_calls.append((crop.shape, mode))
+        self.assert_angle_zero(angle)
+        return crop
+
+    @staticmethod
+    def assert_angle_zero(angle):
+        if angle != 0:
+            raise AssertionError(f"Unexpected retry rotation: {angle}")
+
+    @staticmethod
+    def select_best_candidate(_ocr_result, _width, _height):
+        return 6, 24.0, "candidate"
+
+
+def _run_targeted(processor, *, prob=0.99):
+    return processor._detect_number_with_evidence(
+        None,
+        {"staves": [{"bbox": [0, 0, 100, 20]}]},
+        100,
+        0,
+        200,
+        20,
+        prob,
+        1000,
+        1000,
+    )
 
 
 if __name__ == "__main__":

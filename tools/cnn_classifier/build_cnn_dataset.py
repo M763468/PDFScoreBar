@@ -14,6 +14,12 @@ import yaml
 from PIL import Image
 from tqdm import tqdm
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from src.common.barline_evaluation import is_barline_match
+
 DEFAULT_PAGES = [
     {
         "name": "page_001",
@@ -61,19 +67,15 @@ def load_config_file(config_path: Path):
     return data
 
 
-def barline_iou(box1, box2):
-    x1_1, y1_1, x2_1, y2_1 = box1
-    x1_2, y1_2, x2_2, y2_2 = box2
-    inter_x1 = max(x1_1, x1_2)
-    inter_y1 = max(y1_1, y1_2)
-    inter_x2 = min(x2_1, x2_2)
-    inter_y2 = min(y2_1, y2_2)
-    if inter_x2 < inter_x1 or inter_y2 < inter_y1:
-        return 0.0
-    inter_area = (inter_x2 - inter_x1 + 1) * (inter_y2 - inter_y1 + 1)
-    area1 = (x2_1 - x1_1 + 1) * (y2_1 - y1_1 + 1)
-    area2 = (x2_2 - x1_2 + 1) * (y2_2 - y1_2 + 1)
-    return inter_area / float(area1 + area2 - inter_area)
+def _is_canonical_candidate_match(candidate, gt_box):
+    """Match a generated candidate with the canonical production/evaluation contract."""
+    return is_barline_match(
+        tuple(candidate),
+        tuple(gt_box),
+        rule_name="center_anchor",
+        vov_threshold=0.5,
+        xdist_threshold=12.0,
+    )
 
 
 def center_crop(img, cx, cy, crop_w, crop_h):
@@ -148,7 +150,6 @@ def extract_local_tp_fp(
     output_root,
     crop_w,
     crop_h,
-    iou_threshold,
     crop_scale,
     min_crop_h,
     max_crop_h,
@@ -172,14 +173,11 @@ def extract_local_tp_fp(
     for page in DEFAULT_PAGES:
         image_path = repo_root / page["image"]
         gt_path = repo_root / page["gt"]
-        # preds_path unused if predictions_root is provided
         img = cv2.imread(str(image_path))
         if img is None:
             raise FileNotFoundError(f"Image not found: {image_path}")
         with gt_path.open("r") as f:
             gt_data = json.load(f)
-        gt_boxes = [entry["barline_location"] for entry in gt_data]
-
         gt_boxes = [entry["barline_location"] for entry in gt_data]
 
         for i, box in enumerate(tqdm(gt_boxes, desc=f"{page['name']} GT", leave=False)):
@@ -201,9 +199,7 @@ def extract_local_tp_fp(
             tp_count += 1
 
         if predictions_root:
-            # Load candidates from logs
             filename = candidate_filename.replace("{page}", page["name"])
-
             cand_path = Path(predictions_root) / "per_page" / page["name"] / filename
             if not cand_path.exists():
                 cand_path = Path(predictions_root) / page["name"] / filename
@@ -216,7 +212,6 @@ def extract_local_tp_fp(
                 data = json.load(f)
 
             if isinstance(data, list):
-                # Support both [x1,y1,x2,y2] and {"bbox": [x1,y1,x2,y2], ...}
                 if len(data) > 0 and isinstance(data[0], dict) and "bbox" in data[0]:
                     candidates = [item["bbox"] for item in data]
                 else:
@@ -227,24 +222,10 @@ def extract_local_tp_fp(
                 print(f"Unknown JSON format in {candidate_filename}")
                 candidates = []
 
-            # Auto-detect scale mismatch REMOVED.
-            # Reason: Incompatible with pure FP files (fp_boxes.json) which have 0 overlap by definition.
-            # Auto-scale logic would find 0 matches at scale 1.0 and pick random scales that have accidental overlap.
-            # Reverting to fixed scale (assume 1.0 for fp_boxes.json as in v2).
-            best_scale = 1.0
-
-            # Filter matches: if candidate overlaps GT, it's a TP (already handled above), so skip.
-            # Only keep non-matching candidates as FP (Hard Negatives).
             fp_candidates = []
             for raw_cand in candidates:
-                cand = [x * best_scale for x in raw_cand]  # Apply scale (1.0)
-                is_match = False
-                for gt_box in gt_boxes:
-                    iou = barline_iou(gt_box, cand)
-                    if iou > iou_threshold:
-                        is_match = True
-                        break
-                if not is_match:
+                cand = [x * 1.0 for x in raw_cand]
+                if not any(_is_canonical_candidate_match(cand, gt_box) for gt_box in gt_boxes):
                     fp_candidates.append(cand)
 
             for idx, box in enumerate(tqdm(fp_candidates, desc=f"{page['name']} FP", leave=False)):
@@ -266,22 +247,14 @@ def extract_local_tp_fp(
                 fp_count += 1
 
         else:
-            # Fallback to dynamic FP generation (legacy)
             preds_path = repo_root / page["preds"]
             with preds_path.open("r") as f:
                 pred_boxes = json.load(f)
-            matched_indices = set()
-            for gt_box in gt_boxes:
-                best_iou = 0.0
-                best_idx = -1
-                for i, pred_box in enumerate(pred_boxes):
-                    iou = barline_iou(gt_box, pred_box)
-                    if iou > best_iou:
-                        best_iou = iou
-                        best_idx = i
-                if best_iou > iou_threshold:
-                    matched_indices.add(best_idx)
-
+            matched_indices = {
+                i
+                for i, pred_box in enumerate(pred_boxes)
+                if any(_is_canonical_candidate_match(pred_box, gt_box) for gt_box in gt_boxes)
+            }
             fp_indices = [i for i in range(len(pred_boxes)) if i not in matched_indices]
             for idx in tqdm(fp_indices, desc=f"{page['name']} FP-Legacy", leave=False):
                 box = pred_boxes[idx]
@@ -306,13 +279,9 @@ def extract_local_tp_fp(
 
 
 def find_latest_gt(page_dir: Path) -> Path | None:
-    # Find all matching files
     candidates = list(page_dir.glob("boxes_sorted*.json"))
     if not candidates:
         return None
-    # Sort by name descending (v20260109 > v20260106 > .json)
-    # Note: '_' (95) > '.' (46), so boxes_sorted_... comes after boxes_sorted.json in ascending
-    # so in descending, boxes_sorted_... comes first.
     candidates.sort(key=lambda p: p.name, reverse=True)
     return candidates[0]
 
@@ -343,7 +312,6 @@ def extract_eval2_tp_fp(
     output_root,
     crop_w,
     crop_h,
-    iou_threshold,
     crop_scale,
     min_crop_h,
     max_crop_h,
@@ -407,7 +375,6 @@ def extract_eval2_tp_fp(
         run_dir = candidates_root / f"eval2_{score}_{page_name}"
         cand_path = run_dir / candidate_filename
         if not cand_path.exists():
-            # Newer logs may store candidates as <root>/<score>/<page>/<file>.
             cand_path = candidates_root / score / page_name / candidate_filename
         if not cand_path.exists():
             print(f"Warning: eval2 candidate file not found: {cand_path}")
@@ -416,7 +383,6 @@ def extract_eval2_tp_fp(
         with cand_path.open("r") as f:
             data = json.load(f)
         if isinstance(data, list):
-            # Support both [x1,y1,x2,y2] and {"bbox": [x1,y1,x2,y2], ...}
             if len(data) > 0 and isinstance(data[0], dict) and "bbox" in data[0]:
                 candidates = [item["bbox"] for item in data]
             else:
@@ -430,13 +396,7 @@ def extract_eval2_tp_fp(
         fp_candidates = []
         for raw_cand in candidates:
             cand = [x * 1.0 for x in raw_cand]
-            is_match = False
-            for gt_box in gt_boxes:
-                iou = barline_iou(gt_box, cand)
-                if iou > iou_threshold:
-                    is_match = True
-                    break
-            if not is_match:
+            if not any(_is_canonical_candidate_match(cand, gt_box) for gt_box in gt_boxes):
                 fp_candidates.append(cand)
 
         for idx, box in enumerate(tqdm(fp_candidates, desc=f"{score}/{page_name} FP", leave=False)):
@@ -544,7 +504,6 @@ def extract_deepscores_probe_fp(
     output_root,
     crop_w,
     crop_h,
-    iou_threshold,
     crop_scale,
     min_crop_h,
     max_crop_h,
@@ -562,16 +521,9 @@ def extract_deepscores_probe_fp(
     if max_total is not None and existing >= max_total:
         return existing
 
-    # Add repo root/tools to sys.path to import detect_probe_scan
-    (
-        ds_root.parents[2] / "tools"
-    )  # This ds_root usage is risky if ds_root is absolute path elsewhere.
-    # Better: repo_root is calculated in main, but not passed here.
-    # Let's assume we are running from repo root or calculate it relative to this file.
-    this_file = Path(__file__).resolve()
-    repo_root = this_file.parents[2]
-    if str(repo_root / "tools") not in sys.path:
-        sys.path.append(str(repo_root / "tools"))
+    tools_dir = REPO_ROOT / "tools"
+    if str(tools_dir) not in sys.path:
+        sys.path.append(str(tools_dir))
 
     from run_gt_rebuild_hybrid_eval import detect_probe_scan
 
@@ -642,16 +594,11 @@ def extract_deepscores_probe_fp(
         tp_boxes = expand_boxes_to_staff_boxes(tp_boxes, staff_boxes, img.shape[0])
         candidates = expand_boxes_to_staff_boxes(candidates, staff_boxes, img.shape[0])
 
-        fp_boxes = []
-        for cand in candidates:
-            is_match = False
-            for gt_box in tp_boxes:
-                iou = barline_iou(gt_box, cand)
-                if iou > iou_threshold:
-                    is_match = True
-                    break
-            if not is_match:
-                fp_boxes.append(cand)
+        fp_boxes = [
+            cand
+            for cand in candidates
+            if not any(_is_canonical_candidate_match(cand, gt_box) for gt_box in tp_boxes)
+        ]
 
         for idx, box in enumerate(fp_boxes):
             if max_total is not None and total >= max_total:
@@ -711,8 +658,6 @@ def extract_deepscores_negatives(
         cat_id_to_name = {str(k): v["name"] for k, v in categories.items()}
 
         images = {str(img["id"]): img for img in data["images"]}
-        annotations = data["annotations"]
-
         annotations = data["annotations"]
 
         for img_id, img_info in tqdm(images.items(), desc=f"Scanning {split_name}"):
@@ -797,11 +742,9 @@ def extract_deepscores_tp_from_segmentation(
                 continue
             if comp["h"] < min_height:
                 continue
-            # Logic for vertical_ratio check removed as per user request to relax filters
             x1, y1, x2, y2 = comp["bbox"]
             cx = int(round((x1 + x2) / 2))
             cy = int(round((y1 + y2) / 2))
-            # match segmentation filename to image filename
             image_name = seg_path.name.replace("_seg.png", ".png")
             image_path = img_root / image_name
             img = cv2.imread(str(image_path))
@@ -868,9 +811,7 @@ def assign_splits(samples, ratios, seed, force_train=None):
     split_counts = {k: 0 for k in ratios}
     split_groups = {k: [] for k in ratios}
 
-    # 1. Handle Forced Groups First
     remaining_groups = []
-
     for group in groups:
         if group in force_train:
             split_groups["train"].append(group)
@@ -880,12 +821,10 @@ def assign_splits(samples, ratios, seed, force_train=None):
 
     def split_score(split_key):
         target = split_targets.get(split_key, 1)
-        # Avoid division by zero if target is 0
         if target <= 0:
             return float("inf")
         return split_counts[split_key] / target
 
-    # 2. Greedily assign the rest
     groups_sorted = sorted(remaining_groups, key=lambda g: len(group_to_samples[g]), reverse=True)
     for group in groups_sorted:
         split_key = min(split_counts.keys(), key=split_score)
@@ -988,13 +927,13 @@ def main():
     parser.add_argument(
         "--predictions-root",
         type=Path,
-        help="Path to the root of the predictions logs (e.g. logs/gt_rebuild_hybrid_eval/...) containing per_page/{page}/fp_boxes.json. If provided, explicit FP boxes are used.",
+        help="Path to the root of the predictions logs containing per_page/{page}/ candidate JSON.",
     )
     parser.add_argument(
         "--fp-source-file",
         type=str,
         default="geom_kept.json",
-        help="Filename in the predictions-root/per_page/{page}/ directory to load as FP candidates (default: geom_kept.json). GT subtraction is applied.",
+        help="Filename in predictions-root/per_page/{page}/ to load as FP candidates.",
     )
     parser.add_argument("--crop-width", type=int, default=128)
     parser.add_argument("--crop-height", type=int, default=256)
@@ -1006,7 +945,6 @@ def main():
     )
     parser.add_argument("--min-crop-height", type=int, default=48)
     parser.add_argument("--max-crop-height", type=int, default=256)
-    parser.add_argument("--iou-threshold", type=float, default=0.5)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max-per-image", type=int, default=5)
     parser.add_argument("--max-total", type=int, default=10000)
@@ -1089,7 +1027,6 @@ def main():
         default=0,
         help="Segmentation count for DeepScores probe FP scan.",
     )
-
     parser.add_argument(
         "--force-train",
         type=str,
@@ -1099,17 +1036,18 @@ def main():
 
     if pre_args.config:
         config_values = load_config_file(pre_args.config)
+        if any(key.replace("-", "_") == "iou_threshold" for key in config_values):
+            parser.error(
+                "iou_threshold was removed: candidate labels are fixed to canonical "
+                "center_anchor/vov=0.5/xdist=12 semantics"
+            )
         parser.set_defaults(
             **{k.replace("-", "_"): v for k, v in config_values.items() if k not in {"config"}}
         )
 
     args = parser.parse_args()
     output_root = Path(args.output_root)
-    # ... (lines 1067-1147 omitted for brevity in replacement, so I must target specific blocks)
-    # Actually I should split this into two edits or use multi_replace.
-    # Let's use multi_replace_file_content.
-
-    repo_root = Path(__file__).resolve().parents[2]
+    repo_root = REPO_ROOT
 
     if not args.only_split:
         if not args.skip_local:
@@ -1118,7 +1056,6 @@ def main():
                 output_root,
                 args.crop_width,
                 args.crop_height,
-                args.iou_threshold,
                 args.crop_scale,
                 args.min_crop_height,
                 args.max_crop_height,
@@ -1132,7 +1069,6 @@ def main():
                 output_root,
                 args.crop_width,
                 args.crop_height,
-                args.iou_threshold,
                 args.crop_scale,
                 args.min_crop_height,
                 args.max_crop_height,
@@ -1164,7 +1100,6 @@ def main():
                 args.tp_palette_index,
                 args.tp_min_area,
                 args.tp_min_height,
-                # args.tp_vertical_ratio removed
                 args.tp_max_total,
                 args.tp_seg_offset,
                 args.tp_seg_count,
@@ -1176,7 +1111,6 @@ def main():
                 output_root,
                 args.crop_width,
                 args.crop_height,
-                args.iou_threshold,
                 args.crop_scale,
                 args.min_crop_height,
                 args.max_crop_height,

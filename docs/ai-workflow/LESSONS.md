@@ -11,6 +11,7 @@
 - **lesson_004**: When debugging OMR False Positives, always generate and inspect overlay images (`debug_outputs/`) before modifying geometric filter logic.
 - **lesson_007**: In FN_det analysis, separate "double/end-bar merging" from generic geometric mismatch; mixing them weakens root-cause reproducibility.
 - **lesson_008**: Rule-only GT matching changes (IoU/IoA/center) do not change candidate sets, so measure-number KPI may stay unchanged; evaluate detector-side variants separately for KPI inversion checks.
+- **lesson_016**: Don't promote aggressive geometry-only FP filters from a focused page without recall and downstream regression gates. In the Dec-2025 FP-reduction experiments, staff-crossing, local-cluster, tight-duplicate, and measure-grid heuristics introduced 18, 57, 3, and 108 FNs respectively because fragmented true barlines can look shorter, weaker, or as tightly spaced as artifacts. Treat candidate/filter changes as evaluation-sensitive and validate TP/FN plus downstream semantics before adoption.
 
 ### Pipeline & Infrastructure
 - **lesson_009**: Don't assume the current environment (e.g., `.venv_pdf`) has all ML dependencies. Always check `docs/ENVIRONMENTS.md` and use the specified container (e.g., `sr_eval_gpu`) for integrated runs.

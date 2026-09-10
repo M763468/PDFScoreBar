@@ -55,7 +55,7 @@ The following names remain intentionally:
 - `configs/issue120_stage_e_full_pipeline.yaml`
 - `logs/issue120_e2e_recovery/stage_e_full_pipeline/`
 - evaluation contract schema `issue141.stage_e_full_pipeline.v1`
-- report `docs/ISSUE141_STAGE_E_FULL_PIPELINE_REPORT.md`
+- validation evidence in [Issue #141](https://github.com/M763468/PDFScoreBar/issues/141) and the naming/checkpoint follow-up in [Issue #156](https://github.com/M763468/PDFScoreBar/issues/156)
 
 These identify the checkpoint and retain the #141/#156 Stage E validation-contract
 shape. Its active target values follow the current canonical GT rather than freezing

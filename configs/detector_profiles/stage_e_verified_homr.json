@@ -57,17 +57,20 @@
   },
   "verified_stage_e_full68": {
     "gt": 3567,
-    "pred": 3599,
+    "pred": 3610,
     "tp": 3565,
-    "fp": 3,
+    "fp": 1,
     "fn": 2,
     "fn_det": 0,
     "fn_cnn": 2,
-    "soft_duplicate_or_repeat_like": 31,
-    "cnn_threshold": 0.1,
+    "soft_duplicate_or_repeat_like": 44,
+    "cnn_architecture": "efficientnet_b0",
+    "cnn_checkpoint": "logs/cnn_barline_classification/issue296_efficientnet_b0_current_candidate_aligned_v1/cnn_classifier_epoch_9.pth",
+    "cnn_threshold": 0.4965248107910156,
     "cnn_apply_nms": false,
     "sr_scale": 4,
     "canonical_gt_rebase_issue": 291,
+    "cnn_refresh_issue": 296,
     "evaluated_artifact": "pipeline2_no_peak_filtered_cnn.json"
   }
 }

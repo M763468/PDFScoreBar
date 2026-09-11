@@ -55,9 +55,15 @@ docker cp "$ACCEPTED_REBASE" "$CONTAINER:$CONTAINER_ACCEPTED"
 
 # Validate the known Real-ESRGAN production support weight before any expensive inference.
 WEIGHT_SOURCE=""
-for candidate in \
-  "$PROJECT_ROOT/$WEIGHT_REL" \
-  "$PROJECT_ROOT/../ws_PDFScoreBar/$WEIGHT_REL"; do
+WEIGHT_CANDIDATES=()
+if [[ -n "${ISSUE294_REALESRGAN_WEIGHT:-}" ]]; then
+  WEIGHT_CANDIDATES+=("$ISSUE294_REALESRGAN_WEIGHT")
+fi
+WEIGHT_CANDIDATES+=(
+  "$PROJECT_ROOT/$WEIGHT_REL"
+  "$PROJECT_ROOT/../ws_PDFScoreBar/$WEIGHT_REL"
+)
+for candidate in "${WEIGHT_CANDIDATES[@]}"; do
   if [[ -f "$candidate" ]] \
     && [[ "$(stat -c '%s' "$candidate")" == "$WEIGHT_SIZE" ]] \
     && [[ "$(sha256sum "$candidate" | awk '{print $1}')" == "$WEIGHT_SHA" ]]; then
@@ -67,7 +73,7 @@ for candidate in \
 done
 if [[ -z "$WEIGHT_SOURCE" ]]; then
   echo "ERROR: verified RealESRGAN_x4plus.pth not found."
-  echo "Set ISSUE294_REALESRGAN_WEIGHT by placing the verified file at $PROJECT_ROOT/$WEIGHT_REL."
+  echo "Set ISSUE294_REALESRGAN_WEIGHT to the verified weight path or place it at $PROJECT_ROOT/$WEIGHT_REL."
   exit 2
 fi
 mkdir -p "$PROJECT_ROOT/$(dirname "$WEIGHT_REL")"

@@ -19,7 +19,8 @@ ISSUE120_RESULTS_DIR=data/evaluation2/golden_baseline_eval2_bc23deb
 ISSUE120_GT_ROOT=data/evaluation2/annotations
 ISSUE120_OUTPUT_DIR=logs/issue120_e2e_recovery/latest_full_report
 ISSUE120_SCORE_THRESHOLD=0.1
-ISSUE120_XDIST_THRESHOLD=12.0
+ISSUE120_STAFF_UNITS_JSON=data/evaluation2/staff_units.json
+ISSUE120_XDIST_UNIT_RATIO=0.5
 ISSUE120_MEASURE_SUMMARY=
 ISSUE120_PROVENANCE_JSON=
 ```
@@ -32,7 +33,9 @@ PYTHONPATH=. python3 tools/issue120/eval_full68_from_intermediates.py \
   --gt-root data/evaluation2/annotations \
   --output-dir logs/issue120_e2e_recovery/latest_full_report \
   --score-threshold 0.1 \
-  --xdist-threshold 12.0
+  --staff-units-json data/evaluation2/staff_units.json \
+  --image-root data/evaluation2/images \
+  --xdist-unit-ratio 0.5
 
 PYTHONPATH=. python3 tools/issue120/attach_eval_provenance.py \
   --output-dir logs/issue120_e2e_recovery/latest_full_report \
@@ -115,9 +118,28 @@ Matching rule defaults:
 ```text
 rule_name=center_anchor
 vov_threshold=0.5
-xdist_threshold=12.0
+xdist_unit_ratio=0.5
 score_threshold=0.1
 ```
+
+The canonical page-level manifest is a tracked input, not a generated file under
+`logs/`. When refreshing it from the Phase 1 audit, use:
+
+```bash
+PYTHONPATH=. python3 tools/issue313/build_staff_units_manifest.py \
+  --audit-json logs/issue313_audit/audit.json \
+  --output data/evaluation2/staff_units.json
+```
+
+The manifest records the page's staff spacing, box-coordinate dimensions, source
+kind/path, and source hash. It is required because evaluation2 has mixed staff
+scales. Canonical consumers compare its dimensions with the actual page image
+and fail loudly on mismatch. `--legacy-fixed-12px` exists only in the direct
+evaluator for historical reproduction; it is not the canonical contract.
+The refresh helper emits the portable `external://issue313-phase1/...` source
+identifier used by the tracked manifest; it never records the local absolute
+staff-mask path. The SHA-256 is computed from the local audit input while the
+portable identifier documents the external snapshot that hash refers to.
 
 These defaults intentionally match the previous `verify_golden_baseline.py` contract rather than later ad-hoc restore scripts.
 

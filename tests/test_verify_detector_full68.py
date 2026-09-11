@@ -147,4 +147,6 @@ def test_partial_evaluation_args_allow_missing_manifest_pages(tmp_path: Path) ->
     assert args.allow_partial is True
     assert args.scored_file == "pipeline2_no_peak_filtered_cnn.json"
     assert args.score_threshold == 0.1
-    assert args.xdist_threshold == 12.0
+    assert args.staff_units_json == str(verify.DEFAULT_STAFF_UNITS_JSON)
+    assert args.xdist_unit_ratio == 0.5
+    assert args.legacy_fixed_12px is False

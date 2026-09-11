@@ -1,0 +1,549 @@
+{
+  "schema_version": "barline_staff_units.v1",
+  "pages": {
+    "Shostakovich-Festival_Overture_Va/page_001": {
+      "unit_size": 28,
+      "coordinate_width": 3640,
+      "coordinate_height": 5155,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Festival_Overture_Va/page_001_staff_mask.png",
+      "source_sha256": "18c63346a73b7a1821c96073aa9fc4670b703799d8a558413f8e3c7aa1bb99f3"
+    },
+    "Shostakovich-Festival_Overture_Va/page_002": {
+      "unit_size": 28.5,
+      "coordinate_width": 3640,
+      "coordinate_height": 5155,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Festival_Overture_Va/page_002_staff_mask.png",
+      "source_sha256": "715679894926d4cac54da308d7c5e41a631e90eb5aedf54707b46dbe93aea34e"
+    },
+    "Shostakovich-Festival_Overture_Va/page_003": {
+      "unit_size": 28,
+      "coordinate_width": 3640,
+      "coordinate_height": 5155,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Festival_Overture_Va/page_003_staff_mask.png",
+      "source_sha256": "488f87a94ea61e3089396e1e36afc0ea2215de4116edc0497b317e58641e70eb"
+    },
+    "Shostakovich-Festival_Overture_Va/page_004": {
+      "unit_size": 28.5,
+      "coordinate_width": 3640,
+      "coordinate_height": 5155,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Festival_Overture_Va/page_004_staff_mask.png",
+      "source_sha256": "ea39780cfcb5dbc8ee176731db9370a21bed54041eeb3cf9494332df665947df"
+    },
+    "Shostakovich-Festival_Overture_Va/page_005": {
+      "unit_size": 27.5,
+      "coordinate_width": 3640,
+      "coordinate_height": 5155,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Festival_Overture_Va/page_005_staff_mask.png",
+      "source_sha256": "b8f65d1b4838cd83b4c98fa075859a92eed4e40ba475e2a8732ba52c009d1bdb"
+    },
+    "Shostakovich-Festival_Overture_Va/page_006": {
+      "unit_size": 28.5,
+      "coordinate_width": 3640,
+      "coordinate_height": 5155,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Festival_Overture_Va/page_006_staff_mask.png",
+      "source_sha256": "96f60e6dbb66510c4f999512f9265b937c9a809e73e9900fa62396d265aea4d5"
+    },
+    "Shostakovich-Festival_Overture_Va/page_007": {
+      "unit_size": 26.75,
+      "coordinate_width": 3640,
+      "coordinate_height": 5155,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Festival_Overture_Va/page_007_staff_mask.png",
+      "source_sha256": "de7bca0866947476475a826a36aec7cc13918590e25d60be14326bdaaf03fa6b"
+    },
+    "Shostakovich-Festival_Overture_Va/page_008": {
+      "unit_size": 28.5,
+      "coordinate_width": 3640,
+      "coordinate_height": 5155,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Festival_Overture_Va/page_008_staff_mask.png",
+      "source_sha256": "4375eb53b36e67765bbcd61a05173c1d1e72729c3a1d7b1f74e4425e3b456d76"
+    },
+    "Shostakovich-Festival_Overture_Va/page_009": {
+      "unit_size": 28,
+      "coordinate_width": 3640,
+      "coordinate_height": 5155,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Festival_Overture_Va/page_009_staff_mask.png",
+      "source_sha256": "1236194749eba6b1dbf1f98d145eb35ce3b9f253a3df3c198054e4d4599801be"
+    },
+    "Shostakovich-Sym5-Va/page_002": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_002_staff_mask.png",
+      "source_sha256": "1c7ae7e3deb84acd09963bcb240509bbd62a1ec269c1cde96b9d088ca7179444"
+    },
+    "Shostakovich-Sym5-Va/page_003": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_003_staff_mask.png",
+      "source_sha256": "f0172c8a0d1c5e3aa63be0baca86f9e4953eea577455edc792c2e37c740711b0"
+    },
+    "Shostakovich-Sym5-Va/page_004": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_004_staff_mask.png",
+      "source_sha256": "a2d6964f221e5d5c61c5738b47ed1337d1455667d9a79654b3c0eb8c67dabb23"
+    },
+    "Shostakovich-Sym5-Va/page_005": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_005_staff_mask.png",
+      "source_sha256": "af4bda8edef578489d9e1f3a8aa7d1b5a63d7895bb64534eba8a5d6ab2c9712c"
+    },
+    "Shostakovich-Sym5-Va/page_006": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_006_staff_mask.png",
+      "source_sha256": "cabfcf90ede1adb0f067b60d49a1f4087f726653f71912cd65981a4133214b81"
+    },
+    "Shostakovich-Sym5-Va/page_007": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_007_staff_mask.png",
+      "source_sha256": "6c2fe9ad3dead6d5f7f6cdb1068af113384ad64a86c8709e4b747daf4957e37d"
+    },
+    "Shostakovich-Sym5-Va/page_008": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_008_staff_mask.png",
+      "source_sha256": "75fcf468ece6cf92cc18af0fbcbf2487fbeb10995703f61f308ee9937df07e88"
+    },
+    "Shostakovich-Sym5-Va/page_009": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_009_staff_mask.png",
+      "source_sha256": "a810df7863dafc84fae120e64e5cbb5df787aeae860d9ca0ae846c34a1f82e3d"
+    },
+    "Shostakovich-Sym5-Va/page_010": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_010_staff_mask.png",
+      "source_sha256": "b7c9fe5d10b240c706986d8966d7d20d63d8d977bb0bbf7ac094699eb54de597"
+    },
+    "Shostakovich-Sym5-Va/page_011": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_011_staff_mask.png",
+      "source_sha256": "3c0e646bfa552016e505563847b4533890c48ba19cf0a7e6c78bcff1aca975bc"
+    },
+    "Shostakovich-Sym5-Va/page_012": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_012_staff_mask.png",
+      "source_sha256": "b94d41a00cdfbc735ed202fb0bd1c8b98b10312c705251fced01771181a98303"
+    },
+    "Shostakovich-Sym5-Va/page_013": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_013_staff_mask.png",
+      "source_sha256": "7bdc49e28c5b1a58f3e867e8c16ac038b56c1db4c7f228acbab8a28039947dd0"
+    },
+    "Shostakovich-Sym5-Va/page_014": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_014_staff_mask.png",
+      "source_sha256": "f479fdb51f0149bdb32c9b8769c65cd49685211668cdc7e297e6f4b25a85378c"
+    },
+    "Shostakovich-Sym5-Va/page_015": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_015_staff_mask.png",
+      "source_sha256": "d99d21a8b6465d9557c90feb2304bd558b642a9bf030a3a946bb57f233320db6"
+    },
+    "Shostakovich-Sym5-Va/page_016": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_016_staff_mask.png",
+      "source_sha256": "0b820d2287d8ad5074429fcaa2be4b4dc568a043cbc85834820ad8032c254492"
+    },
+    "Shostakovich-Sym5-Va/page_018": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_018_staff_mask.png",
+      "source_sha256": "f67aa2f69e9d1b582964c31ff110cda1de57c88d100110d9494f4713105029c6"
+    },
+    "Shostakovich-Sym5-Va/page_019": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_019_staff_mask.png",
+      "source_sha256": "64cb9050f8fa64be11307fa4c2213b1d4b162430d8ca1a5eb8e016dbb7696c8a"
+    },
+    "Shostakovich-Sym5-Va/page_020": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_020_staff_mask.png",
+      "source_sha256": "c4f2ed338afb1342938cf8dc091534687e5fce527a5ac64b74add8a4928f12f2"
+    },
+    "Shostakovich-Sym5-Va/page_021": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_021_staff_mask.png",
+      "source_sha256": "2d4e570c94dcf2437c3a252d46ecd1e77b0c46de2d96b86c974e400dc0c8e6bd"
+    },
+    "Shostakovich-Sym5-Va/page_022": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_022_staff_mask.png",
+      "source_sha256": "9898e2ffbc2a15da74abe5a000fe8b272f2d5978bcc5d742f8b26d4116901e8c"
+    },
+    "Shostakovich-Sym5-Va/page_024": {
+      "unit_size": 24.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_024_staff_mask.png",
+      "source_sha256": "f36eb337cb7c10260dadf26d645ba0ab4a6735522260434cf5f5ecfddde26dae"
+    },
+    "Shostakovich-Sym5-Va/page_025": {
+      "unit_size": 20.5,
+      "coordinate_width": 2960,
+      "coordinate_height": 4210,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Shostakovich-Sym5-Va/page_025_staff_mask.png",
+      "source_sha256": "8a03ad6cb8242bb7009b19a2070faccada3b0ba3d0ac529c430de2f5ee799771"
+    },
+    "Sibelius-Violin_Concerto-Viola/page_001": {
+      "unit_size": 26.5,
+      "coordinate_width": 3600,
+      "coordinate_height": 4680,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Sibelius-Violin_Concerto-Viola/page_001_staff_mask.png",
+      "source_sha256": "bd25d508e1b678f922476750029e74a35d282a775216ddaf8f5066a98f272ff0"
+    },
+    "Sibelius-Violin_Concerto-Viola/page_002": {
+      "unit_size": 26.5,
+      "coordinate_width": 3600,
+      "coordinate_height": 4680,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Sibelius-Violin_Concerto-Viola/page_002_staff_mask.png",
+      "source_sha256": "8c51f60f90096b57db3b2cecbb610c0e4703993b166eff1b45c65e38562b1f6c"
+    },
+    "Sibelius-Violin_Concerto-Viola/page_003": {
+      "unit_size": 26.25,
+      "coordinate_width": 3600,
+      "coordinate_height": 4680,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Sibelius-Violin_Concerto-Viola/page_003_staff_mask.png",
+      "source_sha256": "e9e4301fc5caf2b3b08fe1e49a09991a9122c81936828467f1840cfe621cbe75"
+    },
+    "Sibelius-Violin_Concerto-Viola/page_004": {
+      "unit_size": 26,
+      "coordinate_width": 3600,
+      "coordinate_height": 4680,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Sibelius-Violin_Concerto-Viola/page_004_staff_mask.png",
+      "source_sha256": "143d516dd07d83e416be620c984ac3e62f08f03bbc68ebf5e0917692e2054e5e"
+    },
+    "Sibelius-Violin_Concerto-Viola/page_005": {
+      "unit_size": 26,
+      "coordinate_width": 3600,
+      "coordinate_height": 4680,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Sibelius-Violin_Concerto-Viola/page_005_staff_mask.png",
+      "source_sha256": "fe481b54d7b4ede4d47c8b782779e64117518731bfecff6eaa3bef4785e651ae"
+    },
+    "Sibelius-Violin_Concerto-Viola/page_006": {
+      "unit_size": 26,
+      "coordinate_width": 3600,
+      "coordinate_height": 4680,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Sibelius-Violin_Concerto-Viola/page_006_staff_mask.png",
+      "source_sha256": "f6e506b752fcca939924a4286ccba1c93c10c2c1a3d858279fab8fa2c0579aa8"
+    },
+    "Sibelius-Violin_Concerto-Viola/page_007": {
+      "unit_size": 26.5,
+      "coordinate_width": 3600,
+      "coordinate_height": 4680,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Sibelius-Violin_Concerto-Viola/page_007_staff_mask.png",
+      "source_sha256": "64c20c0e1217380066960aa0d4bfc981a54b14c5fbac0aeb330373e2bf12101c"
+    },
+    "Sibelius-Violin_Concerto-Viola/page_008": {
+      "unit_size": 26.5,
+      "coordinate_width": 3600,
+      "coordinate_height": 4680,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Sibelius-Violin_Concerto-Viola/page_008_staff_mask.png",
+      "source_sha256": "412f9e2fef66e87151ddb9b3edc35c4abc019f9fb946f4619838303af6afda14"
+    },
+    "Sibelius-Violin_Concerto-Viola/page_009": {
+      "unit_size": 26.5,
+      "coordinate_width": 3600,
+      "coordinate_height": 4680,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Sibelius-Violin_Concerto-Viola/page_009_staff_mask.png",
+      "source_sha256": "7df0d63eb6e6dcef4b6cb1cd9151dad58276d77b844ffa1449704e9fa3ec90cc"
+    },
+    "Sibelius-Violin_Concerto-Viola/page_010": {
+      "unit_size": 26.5,
+      "coordinate_width": 3600,
+      "coordinate_height": 4680,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Sibelius-Violin_Concerto-Viola/page_010_staff_mask.png",
+      "source_sha256": "bc049a750204b5b306f18605315e744cce9bffc833f2902311f0addcb9b5e986"
+    },
+    "Va_Prokofiev_Symphony1/page_001": {
+      "unit_size": 24.75,
+      "coordinate_width": 3600,
+      "coordinate_height": 4680,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va_Prokofiev_Symphony1/page_001_staff_mask.png",
+      "source_sha256": "2ddb421b3675f77aebae6f81e86c6d11b50e0883ca82d2d03f7af16a8d3e3734"
+    },
+    "Va_Prokofiev_Symphony1/page_002": {
+      "unit_size": 24.5,
+      "coordinate_width": 3600,
+      "coordinate_height": 4680,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va_Prokofiev_Symphony1/page_002_staff_mask.png",
+      "source_sha256": "1a9a3f0dad500576f7bea3f279f90cbb1c7d397171395d8add1a563228742bd3"
+    },
+    "Va_Prokofiev_Symphony1/page_003": {
+      "unit_size": 25,
+      "coordinate_width": 3600,
+      "coordinate_height": 4680,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va_Prokofiev_Symphony1/page_003_staff_mask.png",
+      "source_sha256": "d4af50bb94fdb3dac6a6aae44b3b6c8077b498d263151f0031fc3ffbc4488fa1"
+    },
+    "Va_Prokofiev_Symphony1/page_004": {
+      "unit_size": 24.5,
+      "coordinate_width": 3600,
+      "coordinate_height": 4680,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va_Prokofiev_Symphony1/page_004_staff_mask.png",
+      "source_sha256": "92ff83048aea7bf90124a9d54756f7d759ceaea01a1e35821772e53938bc641a"
+    },
+    "Va_Prokofiev_Symphony1/page_005": {
+      "unit_size": 25,
+      "coordinate_width": 3600,
+      "coordinate_height": 4680,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va_Prokofiev_Symphony1/page_005_staff_mask.png",
+      "source_sha256": "fbaf1d184adae49b906ea6308a3d9bc5005bf69f316efd230b025c2ba1de70c9"
+    },
+    "Va_Prokofiev_Symphony1/page_006": {
+      "unit_size": 25,
+      "coordinate_width": 3600,
+      "coordinate_height": 4680,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va_Prokofiev_Symphony1/page_006_staff_mask.png",
+      "source_sha256": "99a1cf77a6250df24c41d71f423b0a79a7c9fab46b28f973ed972cba9d06e6a4"
+    },
+    "Va__Prokofiev_Symphony5/page_001": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_001_staff_mask.png",
+      "source_sha256": "a71339290936540a2c9475651f7676ef566d2cefe8d11992606a86bbb006584c"
+    },
+    "Va__Prokofiev_Symphony5/page_002": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_002_staff_mask.png",
+      "source_sha256": "a3b10f3df8b6df83f624efc6b3e805c7feacb095a98a1e5cbf763acd0d3e2537"
+    },
+    "Va__Prokofiev_Symphony5/page_003": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_003_staff_mask.png",
+      "source_sha256": "968e4a217c0ccc350f9b3b02847b9809d600dbafc69c93345d3ef194b50f8521"
+    },
+    "Va__Prokofiev_Symphony5/page_004": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_004_staff_mask.png",
+      "source_sha256": "ffa6a44d1ed600e00547e82944f5d96eb95e6787ba03daba7970f25122da4474"
+    },
+    "Va__Prokofiev_Symphony5/page_005": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_005_staff_mask.png",
+      "source_sha256": "477491c9a267ec795121bbfe1038f9fcbfd23bab7198adb7f6d4b60d8ce36f1a"
+    },
+    "Va__Prokofiev_Symphony5/page_007": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_007_staff_mask.png",
+      "source_sha256": "0df1b035cfc3152baa26feb6035dc9dcf9abc4e6c4d00cce76057d1d4892af20"
+    },
+    "Va__Prokofiev_Symphony5/page_008": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_008_staff_mask.png",
+      "source_sha256": "1a4fa4815085240cc9d612b95d10a7b413d0500c4d223473830008cc1cfc42e4"
+    },
+    "Va__Prokofiev_Symphony5/page_009": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_009_staff_mask.png",
+      "source_sha256": "7f680c18fd382812f83a885db7e6810050774825b82d23b659675e7bf5027c2f"
+    },
+    "Va__Prokofiev_Symphony5/page_010": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_010_staff_mask.png",
+      "source_sha256": "e12fb5d63b95c4de39bdbc9d7a2ca28b5e126aa18e5f0aac1584025babbdb183"
+    },
+    "Va__Prokofiev_Symphony5/page_011": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_011_staff_mask.png",
+      "source_sha256": "8336e811d31691eecff45840b0d5fd3f1ab04da416c8680648c2955366cc709b"
+    },
+    "Va__Prokofiev_Symphony5/page_013": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_013_staff_mask.png",
+      "source_sha256": "9a8ae6218087e20069b8e499f9d728ff6be3105ab2c795b62f7d56bc040bbcac"
+    },
+    "Va__Prokofiev_Symphony5/page_014": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_014_staff_mask.png",
+      "source_sha256": "0afbb38b2ac14a8732f3a62a4083eca2e177d3735e2c454294b9212498e561e1"
+    },
+    "Va__Prokofiev_Symphony5/page_015": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_015_staff_mask.png",
+      "source_sha256": "1a47b94141d9ffccdf1a6164c6f8b7d1e7d089fed779b7b23e7702562e02e3c5"
+    },
+    "Va__Prokofiev_Symphony5/page_016": {
+      "unit_size": 26.75,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_016_staff_mask.png",
+      "source_sha256": "0a4caf36fe896aa446164395133cd58e02e878cbadd5057e045691d187064227"
+    },
+    "Va__Prokofiev_Symphony5/page_017": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_017_staff_mask.png",
+      "source_sha256": "230a077f7081e97cafdbc75b7171c92c7d2ac2866263355958a9aa1841e2425b"
+    },
+    "Va__Prokofiev_Symphony5/page_018": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_018_staff_mask.png",
+      "source_sha256": "0147b4102290bd46916e419f505353442f6bf614135556cb038f360ad4f2cc27"
+    },
+    "Va__Prokofiev_Symphony5/page_019": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_019_staff_mask.png",
+      "source_sha256": "7eb7feeebd8902fd592b8edefc58f9e570eeb2edad83b8f1528d1cc36440ccbb"
+    },
+    "Va__Prokofiev_Symphony5/page_020": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_020_staff_mask.png",
+      "source_sha256": "6857bb2ed0ca3128c8d6169c1a55121e4b9b11ba2440e772b0d5027af02664cd"
+    },
+    "Va__Prokofiev_Symphony5/page_021": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_021_staff_mask.png",
+      "source_sha256": "4332e716a7ee8d042cf6a6a7f771b522dc078b202e271442bb07ea01b0982873"
+    },
+    "Va__Prokofiev_Symphony5/page_022": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_022_staff_mask.png",
+      "source_sha256": "c4451f078053217b18a41d858db94d79f50d69171f0928e736c96046bf48f844"
+    },
+    "Va__Prokofiev_Symphony5/page_023": {
+      "unit_size": 27,
+      "coordinate_width": 3685,
+      "coordinate_height": 5174,
+      "source_kind": "homr_staff_mask_snapshot",
+      "source_path": "external://issue313-phase1/homr_staff_mask/Va__Prokofiev_Symphony5/page_023_staff_mask.png",
+      "source_sha256": "25028660fc8048f74fb0b654c249b73dee52cc2176f1846d4ea93c8b366750c7"
+    }
+  }
+}

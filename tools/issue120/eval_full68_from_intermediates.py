@@ -28,12 +28,21 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
+from PIL import Image
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.common.barline_evaluation import (  # noqa: E402
+    CENTER_ANCHOR_XDIST_UNIT_RATIO,
     greedy_barline_match,
     is_barline_match,
+)
+from src.common.barline_units import (  # noqa: E402
+    PageStaffUnit,
+    load_page_staff_units,
+    require_page_staff_unit,
+    validate_coordinate_dimensions,
 )
 
 # Canonical Issue #120 evaluation2 page set: 68 pages.
@@ -174,7 +183,11 @@ class EvaluationContract:
     score_threshold: float
     rule_name: str
     vov_threshold: float
-    xdist_threshold: float
+    matching_mode: str
+    xdist_unit_ratio: float | None
+    legacy_xdist_threshold: float | None
+    staff_units_manifest: str | None
+    image_root: str | None
     detector_summary: DetectorSummary
     measure_count_summary: dict[str, Any]
 
@@ -259,7 +272,9 @@ def has_candidate_for_gt(
     *,
     rule_name: str,
     vov_threshold: float,
-    xdist_threshold: float,
+    xdist_threshold: float | None,
+    unit_size: float | None,
+    xdist_unit_ratio: float,
 ) -> bool:
     return any(
         is_barline_match(
@@ -268,6 +283,8 @@ def has_candidate_for_gt(
             rule_name=rule_name,
             vov_threshold=vov_threshold,
             xdist_threshold=xdist_threshold,
+            unit_size=unit_size,
+            xdist_unit_ratio=xdist_unit_ratio,
         )
         for cand in candidates
     )
@@ -312,6 +329,18 @@ def evaluate(args: argparse.Namespace) -> EvaluationContract:
     gt_root = Path(args.gt_root)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    legacy_mode = bool(getattr(args, "legacy_fixed_12px", False))
+    ratio = float(getattr(args, "xdist_unit_ratio", CENTER_ANCHOR_XDIST_UNIT_RATIO))
+    manifest_arg = getattr(args, "staff_units_json", None)
+    if args.rule_name == "center_anchor" and not legacy_mode and not manifest_arg:
+        raise ValueError(
+            "center_anchor requires --staff-units-json; use --legacy-fixed-12px only for historical reproduction"
+        )
+    units: dict[str, PageStaffUnit] = {}
+    if manifest_arg:
+        units = load_page_staff_units(Path(manifest_arg))
+    legacy_xdist = 12.0 if legacy_mode else None
+    image_root = Path(getattr(args, "image_root", "data/evaluation2/images"))
 
     page_metrics: list[PageMetric] = []
     missing_pages: list[dict[str, str]] = []
@@ -335,13 +364,29 @@ def evaluate(args: argparse.Namespace) -> EvaluationContract:
 
         gts = boxes_from_gt(load_json(gt_path))
         preds = boxes_from_scored(load_json(scored_path), score_threshold=args.score_threshold)
+        page_unit = require_page_staff_unit(units, record.score, record.page) if units else None
+        if args.rule_name == "center_anchor" and not legacy_mode:
+            image_path = image_root / record.score / f"{record.page}.png"
+            if not image_path.is_file():
+                raise FileNotFoundError(
+                    f"Canonical input image missing for {record.score}/{record.page}: {image_path}"
+                )
+            with Image.open(image_path) as image:
+                validate_coordinate_dimensions(
+                    page_unit,
+                    width=image.width,
+                    height=image.height,
+                    page=f"{record.score}/{record.page}",
+                )
 
         match_result = greedy_barline_match(
             preds,
             gts,
             rule_name=args.rule_name,
             vov_threshold=args.vov_threshold,
-            xdist_threshold=args.xdist_threshold,
+            xdist_threshold=legacy_xdist,
+            unit_size=page_unit.unit_size if page_unit else None,
+            xdist_unit_ratio=ratio,
         )
 
         candidate_boxes: list[tuple[int, int, int, int]] | None = None
@@ -358,7 +403,9 @@ def evaluate(args: argparse.Namespace) -> EvaluationContract:
                     gt,
                     rule_name=args.rule_name,
                     vov_threshold=args.vov_threshold,
-                    xdist_threshold=args.xdist_threshold,
+                    xdist_threshold=legacy_xdist,
+                    unit_size=page_unit.unit_size if page_unit else None,
+                    xdist_unit_ratio=ratio,
                 ):
                     fn_cnn += 1
                 else:
@@ -436,7 +483,13 @@ def evaluate(args: argparse.Namespace) -> EvaluationContract:
         score_threshold=args.score_threshold,
         rule_name=args.rule_name,
         vov_threshold=args.vov_threshold,
-        xdist_threshold=args.xdist_threshold,
+        matching_mode="legacy_fixed_px" if legacy_mode else "staff_unit",
+        xdist_unit_ratio=None if legacy_mode else ratio,
+        legacy_xdist_threshold=legacy_xdist,
+        staff_units_manifest=str(manifest_arg) if manifest_arg else None,
+        image_root=str(image_root)
+        if args.rule_name == "center_anchor" and not legacy_mode
+        else None,
         detector_summary=detector_summary,
         measure_count_summary=read_measure_summary(args.measure_summary_json),
     )
@@ -496,7 +549,23 @@ def build_parser() -> argparse.ArgumentParser:
         "--rule-name", default="center_anchor", choices=["center_anchor", "baseline_iou"]
     )
     parser.add_argument("--vov-threshold", type=float, default=0.5)
-    parser.add_argument("--xdist-threshold", type=float, default=12.0)
+    parser.add_argument(
+        "--staff-units-json",
+        type=Path,
+        help="barline_staff_units.v1 manifest in the same coordinate frame as inputs",
+    )
+    parser.add_argument(
+        "--image-root",
+        type=Path,
+        default=Path("data/evaluation2/images"),
+        help="Root containing page images in the manifest coordinate frame",
+    )
+    parser.add_argument("--xdist-unit-ratio", type=float, default=CENTER_ANCHOR_XDIST_UNIT_RATIO)
+    parser.add_argument(
+        "--legacy-fixed-12px",
+        action="store_true",
+        help="Reproduce the historical fixed-12px center-anchor contract",
+    )
     parser.add_argument(
         "--allow-partial",
         action="store_true",

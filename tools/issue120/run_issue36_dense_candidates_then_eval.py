@@ -40,6 +40,7 @@ DEFAULT_HISTORICAL_FILTERED = Path("logs/issue36_prep/probe_candidates_filtered_
 DEFAULT_HISTORICAL_SCORING_INPUT = Path(
     "logs/cnn_barline_classification/issue44_baseline_v1/scoring_input_eval2_v12"
 )
+DEFAULT_STAFF_UNITS_JSON = Path("data/evaluation2/staff_units.json")
 TARGET_DETECTOR = {"tp": 3566, "fp": 3, "fn": 1}
 
 GENERATION_PARAMS = {
@@ -205,8 +206,10 @@ def build_score_command(args: argparse.Namespace) -> list[str]:
         str(args.eval_output_dir),
         "--score-threshold",
         str(args.score_threshold),
-        "--xdist-threshold",
-        str(args.xdist_threshold),
+        "--staff-units-json",
+        str(args.staff_units_json),
+        "--xdist-unit-ratio",
+        str(args.xdist_unit_ratio),
     ]
     if args.clean_output:
         cmd.append("--clean-output")
@@ -274,6 +277,7 @@ def main() -> None:
     )
     parser.add_argument("--image-root", type=Path, default=Path("data/evaluation2/images"))
     parser.add_argument("--gt-root", type=Path, default=Path("data/evaluation2/annotations"))
+    parser.add_argument("--staff-units-json", type=Path, default=DEFAULT_STAFF_UNITS_JSON)
     parser.add_argument("--model-path", type=Path, default=DEFAULT_MODEL)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     parser.add_argument(
@@ -286,7 +290,7 @@ def main() -> None:
         "--historical-scoring-input-root", type=Path, default=DEFAULT_HISTORICAL_SCORING_INPUT
     )
     parser.add_argument("--score-threshold", type=float, default=0.1)
-    parser.add_argument("--xdist-threshold", type=float, default=12.0)
+    parser.add_argument("--xdist-unit-ratio", type=float, default=0.5)
     parser.add_argument("--scorer", choices=["pipeline", "legacy"], default="pipeline")
     parser.add_argument(
         "--pipeline-nms",
@@ -410,7 +414,8 @@ def main() -> None:
             "scorer": args.scorer,
             "cnn_apply_nms": args.pipeline_nms,
             "score_threshold": args.score_threshold,
-            "xdist_threshold": args.xdist_threshold,
+            "xdist_unit_ratio": args.xdist_unit_ratio,
+            "staff_units_json": str(args.staff_units_json),
         },
         "detector_target": TARGET_DETECTOR,
         "detector_summary": detector_summary(args.eval_output_dir),

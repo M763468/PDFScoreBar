@@ -327,6 +327,95 @@ class TestMMROCRHeuristics(unittest.TestCase):
         self.assertEqual(MMROCREngine._hbar_mask_geometry(80, True), (8, 80, 8, 80, 10))
         self.assertEqual(MMROCREngine._hbar_mask_geometry(1, True), (1, 1, 1, 1, 1))
 
+    def test_preprocess_geometry_is_targeted_opt_in_and_staff_relative(self):
+        self.assertEqual(MMROCREngine._preprocess_geometry("heavy_dilate", None, False), (3, 20))
+        self.assertEqual(MMROCREngine._preprocess_geometry("standard", None, False), (2, 20))
+        self.assertEqual(MMROCREngine._preprocess_geometry("heavy_dilate", 40, True), (3, 20))
+        self.assertEqual(MMROCREngine._preprocess_geometry("standard", 40, True), (2, 20))
+        self.assertEqual(MMROCREngine._preprocess_geometry("no_dilate", 40, True), (0, 20))
+        self.assertEqual(MMROCREngine._preprocess_geometry("heavy_dilate", 80, True), (6, 40))
+        self.assertEqual(MMROCREngine._preprocess_geometry("standard", 80, True), (4, 40))
+        self.assertEqual(MMROCREngine._preprocess_geometry("no_dilate", 80, True), (0, 40))
+
+    def test_relative_no_dilate_preprocess_scales_border_only_for_opt_in(self):
+        image = np.zeros((10, 12, 3), dtype=np.uint8)
+        self.assertEqual(
+            self.ocr.preprocess_variant(
+                image, mode="no_dilate", staff_height=40, use_staff_relative_geometry=True
+            ).shape,
+            (50, 52),
+        )
+        self.assertEqual(
+            self.ocr.preprocess_variant(
+                image, mode="no_dilate", staff_height=80, use_staff_relative_geometry=True
+            ).shape,
+            (90, 92),
+        )
+        self.assertEqual(self.ocr.preprocess_variant(image, mode="no_dilate").shape, (50, 52))
+
+    def test_wrapper_reuses_baseline_for_each_j2_entry_path(self):
+        class Processor(MMRProcessor):
+            def __init__(self, baseline):
+                super().__init__(
+                    Path("unused"), torch.device("cpu"), classifier=object(), ocr_engine=object()
+                )
+                self.baseline = baseline
+                self.once_calls = 0
+                self.j2_baselines = []
+
+            def _detect_number_with_evidence_once(self, *args):
+                self.once_calls += 1
+                return self.baseline
+
+            def _detect_number_with_evidence_j2(self, *args):
+                self.j2_baselines.append(args[-1])
+                return args[-1]
+
+            def _run_targeted_full_span_staff(self, *args):
+                return None, 0.0
+
+            def _run_targeted_shifted_staff(self, *args):
+                return None, 0.0
+
+        cases = (
+            (0.4, (8, 0.0, "low-cnn", 0)),
+            (0.55, (8, 0.0, "one-bar", 2)),
+            (0.99, (8, 0.0, "unresolved", 0)),
+        )
+        for prob, baseline in cases:
+            with self.subTest(prob=prob):
+                processor = Processor(baseline)
+                self.assertEqual(_run_targeted(processor, prob=prob), baseline)
+                self.assertEqual(processor.once_calls, 1)
+                self.assertEqual(processor.j2_baselines, [baseline])
+
+    def test_wrapper_j2_consensus_uses_five_total_views(self):
+        class Processor(MMRProcessor):
+            def __init__(self):
+                super().__init__(
+                    Path("unused"), torch.device("cpu"), classifier=object(), ocr_engine=object()
+                )
+                self.values = iter(
+                    [
+                        (12, 0.0, "base", 0),
+                        (5, 24.0, "x-", 0),
+                        (5, 25.0, "x+", 0),
+                        (5, 23.0, "y-", 0),
+                        (6, -44.0, "y+", 0),
+                    ]
+                )
+                self.once_calls = 0
+
+            def _detect_number_with_evidence_once(self, *args):
+                self.once_calls += 1
+                return next(self.values)
+
+        processor = Processor()
+        result = _run_targeted(processor, prob=0.4)
+        self.assertEqual(result[0], 5)
+        self.assertIn("j2_consensus=3of5", result[2])
+        self.assertEqual(processor.once_calls, 5)
+
     def test_targeted_retry_helpers_preserve_crop_and_preprocessing_contract(self):
         processor = object.__new__(MMRProcessor)
         processor.ocr = _TargetedRetryOCR()
@@ -337,7 +426,10 @@ class TestMMROCRHeuristics(unittest.TestCase):
             processor._run_targeted_full_span_staff(image, [100, 0, 200, 20], staff_bbox, 500, 300),
             (6, 24.0),
         )
-        self.assertEqual(processor.ocr.preprocess_calls, [((60, 100, 3), "heavy_dilate")])
+        self.assertEqual(
+            processor.ocr.preprocess_calls,
+            [((60, 100, 3), "heavy_dilate", 40.0, True)],
+        )
         self.assertEqual(processor.ocr.mask_calls, [])
 
         self.assertEqual(
@@ -346,7 +438,7 @@ class TestMMROCRHeuristics(unittest.TestCase):
         )
         self.assertEqual(
             processor.ocr.preprocess_calls[-1],
-            ((80, 115, 3), "no_dilate"),
+            ((80, 115, 3), "no_dilate", 40.0, True),
         )
         self.assertEqual(processor.ocr.mask_calls, [((80, 115, 3), 20.0, 40.0, True)])
 
@@ -361,7 +453,9 @@ class TestMMROCRHeuristics(unittest.TestCase):
             ),
             (6, 24.0),
         )
-        self.assertEqual(processor.ocr.preprocess_calls[-1], ((160, 131, 3), "no_dilate"))
+        self.assertEqual(
+            processor.ocr.preprocess_calls[-1], ((160, 131, 3), "no_dilate", 80.0, True)
+        )
         self.assertEqual(processor.ocr.mask_calls[-1], ((160, 131, 3), 40.0, 80.0, True))
 
         self.assertEqual(
@@ -370,7 +464,9 @@ class TestMMROCRHeuristics(unittest.TestCase):
             ),
             (6, 24.0),
         )
-        self.assertEqual(processor.ocr.preprocess_calls[-1], ((70, 115, 3), "no_dilate"))
+        self.assertEqual(
+            processor.ocr.preprocess_calls[-1], ((70, 115, 3), "no_dilate", 40.0, True)
+        )
         self.assertEqual(processor.ocr.mask_calls[-1], ((70, 115, 3), 10.0, 40.0, True))
 
 
@@ -408,6 +504,7 @@ class _TargetedHarness(_TargetedHarnessBase):
 
 class _TargetedRetryOCR:
     supports_staff_relative_hbar_geometry = True
+    supports_staff_relative_preprocess_geometry = True
 
     def __init__(self):
         self.preprocess_calls = []
@@ -418,8 +515,10 @@ class _TargetedRetryOCR:
         self.mask_calls.append((crop.shape, margin_y, staff_height, use_staff_relative_geometry))
         return crop
 
-    def preprocess_variant(self, crop, mode, angle):
-        self.preprocess_calls.append((crop.shape, mode))
+    def preprocess_variant(
+        self, crop, mode, angle, staff_height=None, use_staff_relative_geometry=False
+    ):
+        self.preprocess_calls.append((crop.shape, mode, staff_height, use_staff_relative_geometry))
         self.assert_angle_zero(angle)
         return crop
 

@@ -76,6 +76,7 @@ class MMROCREngine:
     """Handles RapidOCR and post-processing for MMR number detection."""
 
     supports_staff_relative_hbar_geometry = True
+    supports_staff_relative_preprocess_geometry = True
 
     def __init__(self, enable_rotation_tta: bool = False, ocr_engine: Optional[RapidOCR] = None):
         if ocr_engine is not None:
@@ -182,8 +183,29 @@ class MMROCREngine:
             image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
         )
 
+    @staticmethod
+    def _preprocess_geometry(
+        mode: str, staff_height: Optional[float], use_staff_relative_geometry: bool
+    ) -> Tuple[int, int]:
+        """Return dilation-kernel size and border for an OCR preprocessing variant."""
+        if not use_staff_relative_geometry:
+            return (3 if mode == "heavy_dilate" else 2), 20
+
+        effective_staff_height = max(1.0, staff_height or 1.0)
+        border = max(1, int(round(0.5 * effective_staff_height)))
+        if mode == "heavy_dilate":
+            return max(1, int(round(0.075 * effective_staff_height))), border
+        if mode == "no_dilate":
+            return 0, border
+        return max(1, int(round(0.05 * effective_staff_height))), border
+
     def preprocess_variant(
-        self, img: np.ndarray, mode: str = "standard", angle: float = 0
+        self,
+        img: np.ndarray,
+        mode: str = "standard",
+        angle: float = 0,
+        staff_height: Optional[float] = None,
+        use_staff_relative_geometry: bool = False,
     ) -> Optional[np.ndarray]:
         if img is None:
             return None
@@ -194,16 +216,18 @@ class MMROCREngine:
         _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
         binary_white_bg = cv2.bitwise_not(binary)
 
+        kernel_size, border = self._preprocess_geometry(
+            mode, staff_height, use_staff_relative_geometry
+        )
         if mode == "no_dilate":
             final = binary_white_bg
-        elif mode == "heavy_dilate":
-            kernel = np.ones((3, 3), np.uint8)
-            final = cv2.dilate(binary_white_bg, kernel, iterations=1)
         else:
-            kernel = np.ones((2, 2), np.uint8)
+            kernel = np.ones((kernel_size, kernel_size), np.uint8)
             final = cv2.dilate(binary_white_bg, kernel, iterations=1)
 
-        return cv2.copyMakeBorder(final, 20, 20, 20, 20, cv2.BORDER_CONSTANT, value=255)
+        return cv2.copyMakeBorder(
+            final, border, border, border, border, cv2.BORDER_CONSTANT, value=255
+        )
 
     def merge_ocr_results(self, ocr_result: List) -> List:
         if not ocr_result or len(ocr_result) < 2:
@@ -802,7 +826,7 @@ class MMRProcessor:
             and evidence >= self.ONE_BAR_VETO_MIN_EVIDENCE
         ):
             return self._detect_number_with_evidence_j2(
-                image, system, x1, y1, x2, y2, prob, w_img, h_img
+                image, system, x1, y1, x2, y2, prob, w_img, h_img, baseline
             )
 
         if found is not None and score > self.JITTER_SCORE_TRIGGER:
@@ -843,7 +867,7 @@ class MMRProcessor:
             return baseline
 
         return self._detect_number_with_evidence_j2(
-            image, system, x1, y1, x2, y2, prob, w_img, h_img
+            image, system, x1, y1, x2, y2, prob, w_img, h_img, baseline
         )
 
     @classmethod
@@ -896,7 +920,16 @@ class MMRProcessor:
         crop = image[oy1:oy2, ox1:ox2]
         if crop is None or crop.size == 0:
             return None, 0.0
-        processed = self.ocr.preprocess_variant(crop, mode="heavy_dilate", angle=0)
+        if getattr(self.ocr, "supports_staff_relative_preprocess_geometry", False):
+            processed = self.ocr.preprocess_variant(
+                crop,
+                mode="heavy_dilate",
+                angle=0,
+                staff_height=staff_height,
+                use_staff_relative_geometry=True,
+            )
+        else:
+            processed = self.ocr.preprocess_variant(crop, mode="heavy_dilate", angle=0)
         if processed is None or processed.size == 0:
             return None, 0.0
         ocr_result, _ = self.ocr.ocr_engine(processed)
@@ -929,7 +962,16 @@ class MMRProcessor:
             crop = self.ocr.mask_hbar_candidates(crop, staff_top_rel, staff_height)
         if crop is None or crop.size == 0:
             return None, 0.0
-        processed = self.ocr.preprocess_variant(crop, mode="no_dilate", angle=0)
+        if getattr(self.ocr, "supports_staff_relative_preprocess_geometry", False):
+            processed = self.ocr.preprocess_variant(
+                crop,
+                mode="no_dilate",
+                angle=0,
+                staff_height=staff_height,
+                use_staff_relative_geometry=True,
+            )
+        else:
+            processed = self.ocr.preprocess_variant(crop, mode="no_dilate", angle=0)
         if processed is None or processed.size == 0:
             return None, 0.0
         ocr_result, _ = self.ocr.ocr_engine(processed)
@@ -940,11 +982,14 @@ class MMRProcessor:
             return None, 0.0
         return number, score
 
-    def _detect_number_with_evidence_j2(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
+    def _detect_number_with_evidence_j2(
+        self, image, system, x1, y1, x2, y2, prob, w_img, h_img, baseline=None
+    ):
         """Retain merged J2 as the fallback for contracts targeted v2 cannot resolve."""
-        baseline = self._detect_number_with_evidence_once(
-            image, system, x1, y1, x2, y2, prob, w_img, h_img
-        )
+        if baseline is None:
+            baseline = self._detect_number_with_evidence_once(
+                image, system, x1, y1, x2, y2, prob, w_img, h_img
+            )
         found, score, debug, evidence = baseline
         if found is None or score > self.JITTER_SCORE_TRIGGER:
             return baseline

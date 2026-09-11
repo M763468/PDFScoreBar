@@ -75,6 +75,8 @@ class MMRClassifier:
 class MMROCREngine:
     """Handles RapidOCR and post-processing for MMR number detection."""
 
+    supports_staff_relative_hbar_geometry = True
+
     def __init__(self, enable_rotation_tta: bool = False, ocr_engine: Optional[RapidOCR] = None):
         if ocr_engine is not None:
             self.ocr_engine = ocr_engine
@@ -921,7 +923,10 @@ class MMRProcessor:
         if crop is None or crop.size == 0:
             return None, 0.0
         staff_top_rel = float(sy1 - oy1)
-        crop = self.ocr.mask_hbar_candidates(crop, staff_top_rel, staff_height, True)
+        if getattr(self.ocr, "supports_staff_relative_hbar_geometry", False):
+            crop = self.ocr.mask_hbar_candidates(crop, staff_top_rel, staff_height, True)
+        else:
+            crop = self.ocr.mask_hbar_candidates(crop, staff_top_rel, staff_height)
         if crop is None or crop.size == 0:
             return None, 0.0
         processed = self.ocr.preprocess_variant(crop, mode="no_dilate", angle=0)

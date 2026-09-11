@@ -407,6 +407,8 @@ class _TargetedHarness(_TargetedHarnessBase):
 
 
 class _TargetedRetryOCR:
+    supports_staff_relative_hbar_geometry = True
+
     def __init__(self):
         self.preprocess_calls = []
         self.mask_calls = []

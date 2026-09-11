@@ -1,10 +1,10 @@
 from pathlib import Path
 
 from src.measure_numbering.pipeline import MeasureNumberingPipeline
+from tools.issue294 import run_downstream_candidate_matrix_mapping_guarded as guarded_matrix
 from tools.issue294.evaluate_mapping_guarded_connector_positive_candidate import (
     MappingGuardedConnectorPositivePipeline,
 )
-from tools.issue294 import run_downstream_candidate_matrix_mapping_guarded as guarded_matrix
 from tools.issue294.run_post277_mapping_guarded_full68_host import (
     MAPPING_GUARDED_MATRIX_SCRIPT,
     STANDARD_MATRIX_SCRIPT,
@@ -30,7 +30,15 @@ def test_rewrite_matrix_command_only_swaps_issue294_matrix_entrypoint() -> None:
 
 
 def test_rewrite_matrix_command_leaves_other_commands_unchanged() -> None:
-    command = ["docker", "exec", "container", "chown", "-R", "1000:1000", "/workspace/logs"]
+    command = [
+        "docker",
+        "exec",
+        "container",
+        "chown",
+        "-R",
+        "1000:1000",
+        "/workspace/logs",
+    ]
     assert rewrite_matrix_command(command) == command
 
 

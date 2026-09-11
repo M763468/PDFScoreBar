@@ -35,6 +35,7 @@ DEFAULT_REGEN_CANDIDATES = DEFAULT_REGEN_OUTPUT / "probe_candidates_filtered_v12
 DEFAULT_MODEL = Path(
     "logs/cnn_barline_classification/issue44_iter7_final_rescue_v1/cnn_classifier_best.pth"
 )
+DEFAULT_STAFF_UNITS_JSON = Path("data/evaluation2/staff_units.json")
 
 SCORE_TO_RUN = {
     "Shostakovich-Festival_Overture_Va": "20260324_121505",
@@ -189,8 +190,10 @@ def build_stage_b_cmd(args: argparse.Namespace) -> list[str]:
         str(args.stage_c_eval_dir),
         "--score-threshold",
         str(args.score_threshold),
-        "--xdist-threshold",
-        str(args.xdist_threshold),
+        "--staff-units-json",
+        str(args.staff_units_json),
+        "--xdist-unit-ratio",
+        str(args.xdist_unit_ratio),
     ]
     if args.scorer == "pipeline" and not args.pipeline_nms:
         cmd.append("--disable-pipeline-nms")
@@ -207,6 +210,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--regenerated-candidates-dir", type=Path, default=DEFAULT_REGEN_CANDIDATES)
     parser.add_argument("--image-root", type=Path, default=Path("data/evaluation2/images"))
     parser.add_argument("--gt-root", type=Path, default=Path("data/evaluation2/annotations"))
+    parser.add_argument("--staff-units-json", type=Path, default=DEFAULT_STAFF_UNITS_JSON)
     parser.add_argument("--model-path", type=Path, default=DEFAULT_MODEL)
     parser.add_argument(
         "--stage-c-scoring-dir",
@@ -221,7 +225,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--scorer", choices=["pipeline", "legacy"], default="pipeline")
     parser.add_argument("--pipeline-nms", action="store_true", default=False)
     parser.add_argument("--score-threshold", type=float, default=0.1)
-    parser.add_argument("--xdist-threshold", type=float, default=12.0)
+    parser.add_argument("--xdist-unit-ratio", type=float, default=0.5)
     parser.add_argument("--bands-from", type=Path, default=None)
     parser.add_argument(
         "--min-total-candidates",

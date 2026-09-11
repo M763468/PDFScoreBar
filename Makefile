@@ -231,7 +231,9 @@ verify-issue120-stage-d: ## Run Stage-C verifier against regenerated Stage-D ups
 		--bands-from "$(ISSUE120_STAGE_D_BANDS_FROM)" \
 		--output-root "$(ISSUE120_STAGE_D_CANDIDATES_DIR)" \
 		--scoring-output-dir "$(ISSUE120_STAGE_D_SCORING_DIR)" \
-		--eval-output-dir "$(ISSUE120_STAGE_D_EVAL_DIR)" > "$$LOG_FILE" 2>&1 || \
+		--eval-output-dir "$(ISSUE120_STAGE_D_EVAL_DIR)" \
+		--staff-units-json "$(ISSUE120_STAFF_UNITS_JSON)" \
+		--xdist-unit-ratio "$(ISSUE120_XDIST_UNIT_RATIO)" > "$$LOG_FILE" 2>&1 || \
 		(EXIT_CODE=$$?; echo "Stage-D verifier failed with exit code $$EXIT_CODE. See $$LOG_FILE"; exit $$EXIT_CODE); \
 	echo "Stage-D verifier complete. See $$LOG_FILE"
 

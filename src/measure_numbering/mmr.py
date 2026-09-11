@@ -108,8 +108,32 @@ class MMROCREngine:
             "Moderato",
         ]
 
+    @staticmethod
+    def _hbar_mask_geometry(
+        staff_height: float, use_staff_relative_geometry: bool
+    ) -> Tuple[int, int, int, int, int]:
+        """Return vertical-kernel and contour-mask geometry for an OCR crop."""
+        if not use_staff_relative_geometry:
+            # Retain the legacy J2/baseline masking contract exactly by default.
+            return 4, 40, 4, 40, 5
+
+        def scaled(ratio: float) -> int:
+            return max(1, int(round(ratio * staff_height)))
+
+        return (
+            scaled(0.10),
+            scaled(1.00),
+            scaled(0.10),
+            scaled(1.00),
+            scaled(0.125),
+        )
+
     def mask_hbar_candidates(
-        self, img: np.ndarray, staff_top_rel: float, staff_height: float
+        self,
+        img: np.ndarray,
+        staff_top_rel: float,
+        staff_height: float,
+        use_staff_relative_geometry: bool = False,
     ) -> np.ndarray:
         if img is None:
             return img
@@ -117,7 +141,10 @@ class MMROCREngine:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
-        v_erode_kernel = np.ones((4, 1), np.uint8)
+        kernel_height, min_width, min_height, max_center_distance, padding = (
+            self._hbar_mask_geometry(staff_height, use_staff_relative_geometry)
+        )
+        v_erode_kernel = np.ones((kernel_height, 1), np.uint8)
         thick_objects = cv2.erode(binary, v_erode_kernel, iterations=1)
         thick_objects = cv2.dilate(thick_objects, v_erode_kernel, iterations=1)
 
@@ -130,12 +157,14 @@ class MMROCREngine:
             cy = y + h / 2.0
             dist_center = abs(cy - staff_center)
 
-            if w > 40 and h > 4 and dist_center < 40:
-                pad = 5
+            if w > min_width and h > min_height and dist_center < max_center_distance:
                 cv2.rectangle(
                     masked_img,
-                    (max(0, x - pad), max(0, y - pad)),
-                    (min(img.shape[1], x + w + pad), min(img.shape[0], y + h + pad)),
+                    (max(0, x - padding), max(0, y - padding)),
+                    (
+                        min(img.shape[1], x + w + padding),
+                        min(img.shape[0], y + h + padding),
+                    ),
                     (255, 255, 255),
                     -1,
                 )
@@ -818,7 +847,13 @@ class MMRProcessor:
     @classmethod
     def _targeted_shift_x1(cls, bbox: List[int]) -> List[int]:
         x1, y1, x2, y2 = (int(value) for value in bbox)
-        dx = int(round((x2 - x1) * cls.TARGETED_X1_SHIFT_FRACTION))
+        width = x2 - x1
+        if width <= 1:
+            return [x1, y1, x2, y2]
+        dx = min(
+            width - 1,
+            max(1, int(round(width * cls.TARGETED_X1_SHIFT_FRACTION))),
+        )
         return [x1 + dx, y1, x2, y2]
 
     @staticmethod
@@ -886,7 +921,7 @@ class MMRProcessor:
         if crop is None or crop.size == 0:
             return None, 0.0
         staff_top_rel = float(sy1 - oy1)
-        crop = self.ocr.mask_hbar_candidates(crop, staff_top_rel, staff_height)
+        crop = self.ocr.mask_hbar_candidates(crop, staff_top_rel, staff_height, True)
         if crop is None or crop.size == 0:
             return None, 0.0
         processed = self.ocr.preprocess_variant(crop, mode="no_dilate", angle=0)

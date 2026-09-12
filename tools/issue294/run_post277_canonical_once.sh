@@ -14,14 +14,54 @@ TRACE_DIR="$PROJECT_ROOT/logs/issue294"
 TRACE_TAG="$(date +%Y%m%d_%H%M%S)"
 TRACE_LOG="$TRACE_DIR/issue294_post277_driver_${TRACE_TAG}.trace.log"
 EXPECTED_IMAGE_ID="sha256:5e1265263a5ba014814002c02fcfaf7f07a61e7000c13697db6c3087c7d2acdc"
+SOURCE_CONTAINER="${ISSUE294_SOURCE_CONTAINER:-pdfscore_issue294_profile_worktree}"
 HEAD="$(git rev-parse HEAD)"
 CONTAINER="pdfscore_issue294_post277_${HEAD:0:12}_${TRACE_TAG}"
+TEMP_IMAGE=""
 mkdir -p "$TRACE_DIR"
 
 cleanup() {
   docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
+  if [[ -n "$TEMP_IMAGE" ]]; then
+    docker image rm "$TEMP_IMAGE" >/dev/null 2>&1 || true
+  fi
 }
 trap cleanup EXIT
+
+# Resolve an actually runnable image. A container can retain its original .Image ID
+# after Docker has pruned that image from the local image store, so the bare SHA is
+# not necessarily usable by `docker run`.
+if ! docker inspect "$SOURCE_CONTAINER" >/dev/null 2>&1; then
+  echo "ERROR: source container missing: $SOURCE_CONTAINER" >&2
+  exit 2
+fi
+SOURCE_IMAGE_ID="$(docker inspect --format '{{.Image}}' "$SOURCE_CONTAINER")"
+SOURCE_IMAGE_REF="$(docker inspect --format '{{.Config.Image}}' "$SOURCE_CONTAINER")"
+if [[ "$SOURCE_IMAGE_ID" != "$EXPECTED_IMAGE_ID" ]]; then
+  echo "ERROR: source container image mismatch: $SOURCE_IMAGE_ID != $EXPECTED_IMAGE_ID" >&2
+  exit 2
+fi
+
+IMAGE_REF=""
+DERIVED_IMAGE=0
+if [[ -n "$SOURCE_IMAGE_REF" ]] && docker image inspect "$SOURCE_IMAGE_REF" >/dev/null 2>&1; then
+  ref_id="$(docker image inspect --format '{{.Id}}' "$SOURCE_IMAGE_REF")"
+  if [[ "$ref_id" == "$EXPECTED_IMAGE_ID" ]]; then
+    IMAGE_REF="$SOURCE_IMAGE_REF"
+  fi
+fi
+if [[ -z "$IMAGE_REF" ]] && docker image inspect "$SOURCE_IMAGE_ID" >/dev/null 2>&1; then
+  IMAGE_REF="$SOURCE_IMAGE_ID"
+fi
+if [[ -z "$IMAGE_REF" ]]; then
+  TEMP_IMAGE="pdfscore_issue294_ephemeral_base:${HEAD:0:12}-${TRACE_TAG}"
+  printf 'Base image was pruned; snapshotting source container as temporary image: %s\n' "$TEMP_IMAGE"
+  docker commit "$SOURCE_CONTAINER" "$TEMP_IMAGE" >/dev/null
+  IMAGE_REF="$TEMP_IMAGE"
+  DERIVED_IMAGE=1
+fi
+printf 'source_container=%s\nsource_image_ref=%s\nsource_image_id=%s\nexecution_image_ref=%s\nderived_image=%s\n' \
+  "$SOURCE_CONTAINER" "$SOURCE_IMAGE_REF" "$SOURCE_IMAGE_ID" "$IMAGE_REF" "$DERIVED_IMAGE"
 
 # The issue worktree intentionally contains host-local symlinks for retained data,
 # logs, models and third-party assets. A plain /workspace bind does not expose an
@@ -56,12 +96,12 @@ docker run -dit --gpus all \
   "${MOUNT_ARGS[@]}" \
   -w /workspace \
   -e PYTHONPATH=/workspace \
-  "$EXPECTED_IMAGE_ID" bash >/dev/null
+  "$IMAGE_REF" bash >/dev/null
 
 actual_image="$(docker inspect --format '{{.Image}}' "$CONTAINER")"
 workspace_source="$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/workspace"}}{{.Source}}{{end}}{{end}}' "$CONTAINER")"
-if [[ "$actual_image" != "$EXPECTED_IMAGE_ID" ]]; then
-  echo "ERROR: dedicated container image mismatch: $actual_image" >&2
+if [[ "$DERIVED_IMAGE" == "0" && "$actual_image" != "$EXPECTED_IMAGE_ID" ]]; then
+  echo "ERROR: dedicated container image mismatch: $actual_image != $EXPECTED_IMAGE_ID" >&2
   exit 2
 fi
 if [[ "$(readlink -f "$workspace_source")" != "$(readlink -f "$PROJECT_ROOT")" ]]; then
@@ -76,6 +116,13 @@ if ! docker exec "$CONTAINER" /opt/venv_pipeline/bin/python -c 'import pytest' >
 fi
 
 export ISSUE294_CONTAINER="$CONTAINER"
+export ISSUE294_EXPECTED_IMAGE_ID="$EXPECTED_IMAGE_ID"
+if [[ "$DERIVED_IMAGE" == "1" ]]; then
+  export ISSUE294_DERIVED_FROM_EXPECTED_IMAGE=1
+  export ISSUE294_SOURCE_IMAGE_ID="$SOURCE_IMAGE_ID"
+else
+  unset ISSUE294_DERIVED_FROM_EXPECTED_IMAGE ISSUE294_SOURCE_IMAGE_ID || true
+fi
 printf 'container=%s\ncontainer_workspace_source=%s\ncontainer_image_id=%s\n' \
   "$CONTAINER" "$workspace_source" "$actual_image"
 

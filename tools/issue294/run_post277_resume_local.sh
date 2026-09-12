@@ -7,7 +7,11 @@ set -euo pipefail
 PROJECT_ROOT="$(git rev-parse --show-toplevel)"
 cd "$PROJECT_ROOT"
 
-CONTAINER="${ISSUE294_CONTAINER:-pdfscore_issue294_profile_worktree}"
+REQUESTED_CONTAINER="${ISSUE294_CONTAINER:-pdfscore_issue294_profile_worktree}"
+CONTAINER="$REQUESTED_CONTAINER"
+WORKTREE_CONTAINER_BASE="${ISSUE294_WORKTREE_CONTAINER:-pdfscore_issue294_post277_worktree}"
+EXPECTED_IMAGE_ID="sha256:5e1265263a5ba014814002c02fcfaf7f07a61e7000c13697db6c3087c7d2acdc"
+CONTAINER_IMAGE="${ISSUE294_CONTAINER_IMAGE:-$EXPECTED_IMAGE_ID}"
 REQUIRED_DEVELOP="edc17ee08de6694827c67d4ab8b30c2adc1f05e3"
 LATEST_HOMR="${ISSUE294_LATEST_HOMR_COMMIT:-457e7c6518a10ba755db2e60883419e56c4d7369}"
 ACCEPTED_REBASE="${ISSUE294_ACCEPTED_REBASE_REPORT:-/home/masaki_muramatsu/issue264_phase_c_rescore/phase_c_mmr_geometry_rebased_score_report.json}"
@@ -25,8 +29,19 @@ CONTAINER_ACCEPTED="/tmp/issue294_phase_c_mmr_geometry_rebased_score_report.json
 mkdir -p "$PROJECT_ROOT/logs/issue294"
 exec > >(tee -a "$LOCAL_LOG") 2>&1
 
+record_attempt_on_exit() {
+  local status=$?
+  trap - EXIT
+  if [[ -f "$PROJECT_ROOT/tools/issue294/record_post277_acceptance.py" ]]; then
+    python3 "$PROJECT_ROOT/tools/issue294/record_post277_acceptance.py" || true
+  fi
+  exit "$status"
+}
+trap record_attempt_on_exit EXIT
+
 printf 'Issue #294 post-#277 local runner\n'
-printf 'repo=%s\nrun_tag=%s\ncontainer=%s\n' "$PROJECT_ROOT" "$RUN_TAG" "$CONTAINER"
+printf 'repo=%s\nrun_tag=%s\nrequested_container=%s\n' \
+  "$PROJECT_ROOT" "$RUN_TAG" "$REQUESTED_CONTAINER"
 
 HEAD="$(git rev-parse HEAD)"
 if ! git merge-base --is-ancestor "$REQUIRED_DEVELOP" "$HEAD"; then
@@ -36,17 +51,115 @@ if ! git merge-base --is-ancestor "$REQUIRED_DEVELOP" "$HEAD"; then
 fi
 printf 'execution_head=%s\nrequired_develop=%s\n' "$HEAD" "$REQUIRED_DEVELOP"
 
+container_exists() {
+  docker inspect "$1" >/dev/null 2>&1
+}
+
+container_workspace_source() {
+  docker inspect --format '{{range .Mounts}}{{if eq .Destination "/workspace"}}{{.Source}}{{end}}{{end}}' "$1"
+}
+
+start_if_stopped() {
+  local name="$1"
+  if [[ "$(docker inspect --format '{{.State.Running}}' "$name")" != "true" ]]; then
+    docker start "$name" >/dev/null
+  fi
+}
+
+ensure_issue_worktree_container() {
+  local project_real source source_real dedicated image common_git logs_source data_source
+  project_real="$(readlink -f "$PROJECT_ROOT")"
+
+  if container_exists "$REQUESTED_CONTAINER"; then
+    start_if_stopped "$REQUESTED_CONTAINER"
+    source="$(container_workspace_source "$REQUESTED_CONTAINER")"
+    source_real=""
+    if [[ -n "$source" && -e "$source" ]]; then
+      source_real="$(readlink -f "$source")"
+    fi
+    if [[ "$source_real" == "$project_real" ]]; then
+      CONTAINER="$REQUESTED_CONTAINER"
+      return
+    fi
+    printf 'container_mount_mismatch=%s -> %s\n' "${source:-<none>}" "$project_real"
+  fi
+
+  image="${CONTAINER_IMAGE:-pdfscore_pipeline_gpu}"
+  dedicated="$WORKTREE_CONTAINER_BASE"
+  if container_exists "$dedicated"; then
+    source="$(container_workspace_source "$dedicated")"
+    source_real=""
+    if [[ -n "$source" && -e "$source" ]]; then
+      source_real="$(readlink -f "$source")"
+    fi
+    if [[ "$source_real" != "$project_real" ]]; then
+      dedicated="${WORKTREE_CONTAINER_BASE}_${HEAD:0:12}_${STAMP}"
+    fi
+  fi
+
+  if ! container_exists "$dedicated"; then
+    common_git="$(readlink -f "$(git rev-parse --git-common-dir)")"
+    logs_source="$(readlink -f "$PROJECT_ROOT/logs")"
+    data_source=""
+    if [[ -e "$PROJECT_ROOT/data" ]]; then
+      data_source="$(readlink -f "$PROJECT_ROOT/data")"
+    fi
+
+    args=(
+      docker run -dit --gpus all
+      --name "$dedicated"
+      -v "$project_real:/workspace"
+      -v "$common_git:$common_git:ro"
+      -w /workspace
+      -e PYTHONPATH=/workspace
+    )
+    if [[ "$logs_source" != "$project_real/logs" ]]; then
+      args+=( -v "$logs_source:$logs_source" )
+    fi
+    if [[ -n "$data_source" && -d "$data_source" && "$data_source" != "$project_real/data" ]]; then
+      args+=( -v "$data_source:$data_source:ro" )
+    fi
+    "${args[@]}" "$image" bash >/dev/null
+  else
+    start_if_stopped "$dedicated"
+  fi
+
+  source="$(container_workspace_source "$dedicated")"
+  source_real="$(readlink -f "$source")"
+  if [[ "$source_real" != "$project_real" ]]; then
+    echo "ERROR: dedicated container /workspace mismatch: $source_real != $project_real"
+    exit 2
+  fi
+  CONTAINER="$dedicated"
+
+  if ! docker exec "$CONTAINER" /opt/venv_pipeline/bin/python -c 'import pytest' >/dev/null 2>&1; then
+    docker exec "$CONTAINER" /opt/venv_pipeline/bin/python -m pip install pytest
+  fi
+}
+
+ensure_issue_worktree_container
+export ISSUE294_CONTAINER="$CONTAINER"
+ACTUAL_IMAGE_ID="$(docker inspect --format '{{.Image}}' "$CONTAINER")"
+if [[ "$ACTUAL_IMAGE_ID" != "$EXPECTED_IMAGE_ID" ]]; then
+  echo "ERROR: container image mismatch: $ACTUAL_IMAGE_ID != $EXPECTED_IMAGE_ID"
+  exit 2
+fi
+docker exec "$CONTAINER" git config --global --add safe.directory /workspace >/dev/null
+CONTAINER_HEAD="$(docker exec -w /workspace "$CONTAINER" git rev-parse HEAD)"
+if [[ "$CONTAINER_HEAD" != "$HEAD" ]]; then
+  echo "ERROR: container worktree HEAD mismatch: $CONTAINER_HEAD != $HEAD"
+  exit 2
+fi
+printf 'container=%s\ncontainer_workspace_source=%s\ncontainer_image_id=%s\ncontainer_head=%s\n' \
+  "$CONTAINER" "$(container_workspace_source "$CONTAINER")" \
+  "$ACTUAL_IMAGE_ID" "$CONTAINER_HEAD"
+
 if [[ ! -f "$ACCEPTED_REBASE" ]]; then
   echo "ERROR: accepted #264 rebase report missing: $ACCEPTED_REBASE"
   exit 2
 fi
 if [[ ! -f "$OLD_MANIFEST" ]]; then
   echo "ERROR: retained valid full68 manifest missing: $OLD_MANIFEST"
-  exit 2
-fi
-
-if [[ "$(docker inspect --format '{{.State.Running}}' "$CONTAINER")" != "true" ]]; then
-  echo "ERROR: container is not running: $CONTAINER"
   exit 2
 fi
 

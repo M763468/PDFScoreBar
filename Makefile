@@ -63,10 +63,14 @@ clean-logs: ## Remove old logs (older than 30d) from logs/ category subdirs, exc
 		fi; \
 	done
 
-docker-clean: ## Remove the pipeline container and image (cleanup for space saving)
-	@echo "Cleaning up Docker container and image..."
+docker-clean: ## Remove the canonical pipeline container
+	@echo "Cleaning up Docker pipeline container..."
 	-docker rm -f pdfscore_pipeline_gpu
-	-docker rmi pdfscore_pipeline_gpu
+
+docker-clean-full: docker-clean ## Also remove the pipeline image (explicit full cleanup)
+	@echo "Removing Docker pipeline image..."
+	@image_id=$$(docker image ls --quiet pdfscore_pipeline_gpu) || exit $$?; \
+	if [ -n "$$image_id" ]; then docker rmi pdfscore_pipeline_gpu; fi
 
 docker-build: ## Build the unified Docker image with cleanup and logging to artifacts/
 	@mkdir -p artifacts

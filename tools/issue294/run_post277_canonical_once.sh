@@ -16,6 +16,7 @@ TRACE_LOG="$TRACE_DIR/issue294_post277_driver_${TRACE_TAG}.trace.log"
 EXECUTION_IMAGE_REF="${ISSUE294_EXECUTION_IMAGE:-pdfscore_pipeline_gpu:latest}"
 RETAINED_PERF_IMAGE_ID="sha256:5e1265263a5ba014814002c02fcfaf7f07a61e7000c13697db6c3087c7d2acdc"
 HEAD="$(git rev-parse HEAD)"
+COMMON_GIT="$(readlink -f "$(git rev-parse --git-common-dir)")"
 CONTAINER="pdfscore_issue294_post277_${HEAD:0:12}_${TRACE_TAG}"
 mkdir -p "$TRACE_DIR"
 
@@ -39,8 +40,13 @@ printf 'execution_image_ref=%s\nexecution_image_id=%s\nretained_performance_base
 # logs, models and third-party assets. A plain /workspace bind does not expose an
 # absolute symlink target inside the container, so bind each existing target at the
 # same absolute path. Output/cache roots stay writable; other local assets are read-only.
+# The worktree's .git file also points into the manager checkout's common Git dir, so
+# mount that directory read-only at its original absolute path for provenance checks.
 declare -A SEEN_TARGETS=()
-MOUNT_ARGS=( -v "$PROJECT_ROOT:/workspace" )
+MOUNT_ARGS=(
+  -v "$PROJECT_ROOT:/workspace"
+  -v "$COMMON_GIT:$COMMON_GIT:ro"
+)
 while IFS= read -r -d '' link; do
   target="$(readlink -f "$link" 2>/dev/null || true)"
   [[ -n "$target" && -e "$target" ]] || continue
@@ -80,6 +86,26 @@ if [[ "$(readlink -f "$workspace_source")" != "$(readlink -f "$PROJECT_ROOT")" ]
   echo "ERROR: dedicated container /workspace mismatch: $workspace_source" >&2
   exit 2
 fi
+
+# The production image intentionally omits Git, while the experiment-only MMR runner
+# records Git provenance. Install Git only in this disposable container layer and
+# verify that the mounted worktree resolves to the exact host execution HEAD.
+if ! docker exec "$CONTAINER" git --version >/dev/null 2>&1; then
+  docker exec "$CONTAINER" bash -lc \
+    'apt-get update >/dev/null && apt-get install -y git >/dev/null && rm -rf /var/lib/apt/lists/*'
+fi
+docker exec "$CONTAINER" git config --global --add safe.directory /workspace
+container_head="$(docker exec -w /workspace "$CONTAINER" git rev-parse HEAD)"
+if [[ "$container_head" != "$HEAD" ]]; then
+  echo "ERROR: container Git HEAD mismatch: $container_head != $HEAD" >&2
+  exit 2
+fi
+if ! docker exec -w /workspace "$CONTAINER" \
+  git merge-base --is-ancestor edc17ee08de6694827c67d4ab8b30c2adc1f05e3 "$HEAD"; then
+  echo "ERROR: container Git provenance cannot verify required develop ancestry" >&2
+  exit 2
+fi
+printf 'container_git_head=%s\ncontainer_git_common_dir=%s\n' "$container_head" "$COMMON_GIT"
 
 # Preserve the previous dedicated-container behavior: targeted pytest is part of
 # the existing validation sequence, so make it available if the base image lacks it.

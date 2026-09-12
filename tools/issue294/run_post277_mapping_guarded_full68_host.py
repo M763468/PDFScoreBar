@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -85,6 +86,10 @@ def rewrite_matrix_command(command: list[str]) -> list[str]:
 
 
 def run(*, run_tag: str, latest_commit: str, chunk_size: int) -> dict[str, Any]:
+    container_override = os.environ.get("ISSUE294_CONTAINER")
+    if container_override:
+        base.CONTAINER = container_override
+
     checkout = require_post277_checkout()
     original_checkout = matrix_host._require_issue294_checkout
     original_checked = base.checked
@@ -124,6 +129,7 @@ def run(*, run_tag: str, latest_commit: str, chunk_size: int) -> dict[str, Any]:
         "production_source_modified": False,
         "production_dispatch_modified": False,
         "matrix_entrypoint": MAPPING_GUARDED_MATRIX_SCRIPT,
+        "container": base.CONTAINER,
         "detector_preflight": preflight,
         "full68_manifest": str((root / "full68_host.json").resolve()),
         "completed_page_count": int(payload["completed_page_count"]),

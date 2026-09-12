@@ -6,15 +6,16 @@ usage() {
 Usage: scripts/gpu_smoke.sh [--timeout DURATION] [--command COMMAND] [--metadata-only]
 
 Runs a bounded GPU/pipeline smoke command and records reproducibility metadata.
+The default command performs the canonical Docker runtime preflight before pipeline execution.
 
 Environment:
   GPU_SMOKE_TIMEOUT   Default timeout duration. Default: 45m
-  GPU_SMOKE_CMD       Command to run. Default: make run-smoke
+  GPU_SMOKE_CMD       Command to run. Default: scripts/docker_runtime_validation.sh
 USAGE
 }
 
 timeout_duration="${GPU_SMOKE_TIMEOUT:-45m}"
-smoke_cmd="${GPU_SMOKE_CMD:-make run-smoke}"
+smoke_cmd="${GPU_SMOKE_CMD:-scripts/docker_runtime_validation.sh}"
 metadata_only=0
 
 while [[ $# -gt 0 ]]; do
@@ -63,11 +64,20 @@ commit="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
   echo "git_status:"
   git status --short || true
   echo
-  echo "gpu_info:"
+  echo "host_gpu_info:"
   if command -v nvidia-smi >/dev/null 2>&1; then
     nvidia-smi || true
   else
-    echo "nvidia-smi not found"
+    echo "nvidia-smi not found (informational; container preflight is authoritative)"
+  fi
+  echo
+  echo "docker_image:"
+  if command -v docker >/dev/null 2>&1; then
+    docker image inspect "${DOCKER_IMAGE:-pdfscore_pipeline_gpu}" \
+      --format 'id={{.Id}} asset_contract={{index .Config.Labels "pdfscore.runtime.asset_contract"}}' \
+      2>/dev/null || echo "image not found: ${DOCKER_IMAGE:-pdfscore_pipeline_gpu}"
+  else
+    echo "docker not found"
   fi
   echo
 } | tee "$log_file"

@@ -19,7 +19,7 @@ OMR_MANIFEST = PROJECT_ROOT / "models" / "omr_dln" / "manifest.json"
 
 def _write_external_manifest(tmp_path: Path, *, version: str, payload: bytes) -> Path:
     manifest = tmp_path / "models" / "fixture" / "manifest.json"
-    manifest.parent.mkdir(parents=True)
+    manifest.parent.mkdir(parents=True, exist_ok=True)
     manifest.write_text(
         json.dumps(
             {

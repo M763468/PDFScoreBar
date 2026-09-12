@@ -5,6 +5,16 @@
 logs/
 logs_user/
 
+# Ignore local build outputs, datasets, and analysis artifacts.  The canonical
+# runtime receives the repository through a bind mount, so these are not image
+# inputs and would otherwise make the final COPY layer unnecessarily large.
+artifacts/
+datasets/
+temp/
+graphify-out/
+.mypy_cache/
+.ruff_cache/
+
 # Ignore local production model cache
 .model_cache/
 

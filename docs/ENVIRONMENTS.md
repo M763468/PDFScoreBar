@@ -48,9 +48,15 @@ The ownership rules are:
 | verified historical Stage-E HOMR stack | Docker image | `/opt/venv_stage_e_homr`, `/opt/homr_stage_e_profile`, `/opt/pdfscore_stage_e_profile` |
 | Real-ESRGAN x2/x4 weights | Docker image | `/opt/pdfscore-assets/realesrgan` |
 | canonical smoke CNN bytes | Docker image, derived from the tracked #315 manifest | `/opt/pdfscore-assets/barline_cnn_smoke.pth` |
-| OMR-DLN `YOLOv8m_Measures.pt` | operator/external asset | host path supplied by `OMR_DLN_MODEL_PATH`, mounted read-only by the validation wrapper |
+| OMR-DLN `YOLOv8m_Measures.pt` | operator/external asset | selected manifest version in the common host model cache, mounted read-only below `/opt/pdfscore-external/omr-dln-measures/<version>/` |
 | repository source/config/input data | active checkout | bind-mounted at `/workspace` |
 | generated run artifacts | active checkout/operator | ignored `logs/`, `artifacts/`, and configured output paths |
+
+The cross-model version/provenance/integrity and update rules are inventoried in
+`docs/MODEL_ARTIFACT_CONTRACT.md`. Repository-managed model artifacts default to the
+checkout-local `.model_cache` namespace; `PDFSCOREBAR_MODEL_CACHE` may select a shared host
+cache so clean worktrees can reuse the same verified selected artifact without relying on an
+operator-local checkout path.
 
 The Real-ESRGAN resolver uses `PDFSCORE_REALESRGAN_WEIGHTS_DIR` in the image and retains the
 legacy checkout path only as a host-development fallback. A canonical Docker smoke must not
@@ -61,11 +67,21 @@ tracked `models/barline_cnn/manifest.json` through `src.common.model_artifacts`,
 SHA-256 check, then exposes the verified bytes at the stable smoke-only path above. Production
 CNN artifact migration remains owned by Issue #315 and its manifest contract.
 
-The OMR-DLN weight is different: it is externally distributed and is not silently downloaded
-or substituted by the Docker build. For canonical smoke, point `OMR_DLN_MODEL_PATH` at the
-existing official `YOLOv8m_Measures.pt`; the wrapper mounts that file read-only at a stable
-container path. The legacy repository-local OMR-DLN model path remains accepted for local
-compatibility.
+The OMR-DLN weight is different: it is externally distributed and is not silently downloaded,
+redistributed, or substituted by the Docker build. Register the selected official
+`YOLOv8m_Measures.pt` once in the common cache with:
+
+```bash
+python3 -m src.common.model_artifacts import \
+  models/omr_dln/manifest.json /path/to/official/YOLOv8m_Measures.pt
+```
+
+The import verifies the selected version digest before atomically publishing the file to the
+cache. Canonical `make verify-gpu-smoke` resolves that selected cache entry itself and mounts
+it read-only at the manifest-declared container path. `OMR_DLN_MODEL_PATH` remains an explicit
+compatibility override and is verified against the same selected-version digest before use.
+The legacy repository-local OMR-DLN path also remains accepted for compatibility, but it is
+not the canonical staging workflow.
 
 ### Source/image compatibility
 
@@ -177,8 +193,9 @@ those compatibility remnants requires separate verification.
 The accepted two-HOMR milestone is **not fresh-clone reproducible** today because its exact
 evaluation page images are not retained in Git. The milestone doc records that dependency
 rather than silently substituting new artifacts. The Docker smoke removes the former
-ignored/local-only CNN dependency, but it still intentionally requires its configured test
-input and the explicit external OMR-DLN model.
+ignored/local-only CNN dependency. OMR-DLN remains an explicit external asset, but once its
+selected version is registered in the common model cache, canonical smoke no longer depends
+on an ad-hoc checkout-local model path.
 
 ## Persistent pytest-capable pipeline container
 

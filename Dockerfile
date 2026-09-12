@@ -37,13 +37,9 @@ RUN uv pip install git+https://github.com/xinntao/Real-ESRGAN.git@a4abfb2979a7bb
 RUN uv pip install git+https://github.com/liebharc/homr.git@b377620a3a55bd7ff657481cec5b688dfbc9cee9
 RUN /opt/venv_pipeline/bin/python docker/patch_homr_onnx_provider.py
 
-# HOMR downloads its runtime models lazily. Materialize the CUDA/FP16 models
-# during the image build so canonical GPU validation never depends on a late download.
-RUN /opt/venv_pipeline/bin/python - <<'PY'
-from homr.main import download_weights
-
-download_weights(True)
-PY
+# HOMR's supported init command materializes its CUDA/FP16 and OCR model assets.
+# Do this during build so canonical GPU validation never depends on a late download.
+RUN /opt/venv_pipeline/bin/python -m homr.main --init --gpu force
 
 # Install project dependencies
 RUN uv pip install -e .

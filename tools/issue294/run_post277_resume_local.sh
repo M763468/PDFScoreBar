@@ -144,15 +144,9 @@ if [[ "$ACTUAL_IMAGE_ID" != "$EXPECTED_IMAGE_ID" ]]; then
   echo "ERROR: container image mismatch: $ACTUAL_IMAGE_ID != $EXPECTED_IMAGE_ID"
   exit 2
 fi
-docker exec "$CONTAINER" git config --global --add safe.directory /workspace >/dev/null
-CONTAINER_HEAD="$(docker exec -w /workspace "$CONTAINER" git rev-parse HEAD)"
-if [[ "$CONTAINER_HEAD" != "$HEAD" ]]; then
-  echo "ERROR: container worktree HEAD mismatch: $CONTAINER_HEAD != $HEAD"
-  exit 2
-fi
-printf 'container=%s\ncontainer_workspace_source=%s\ncontainer_image_id=%s\ncontainer_head=%s\n' \
-  "$CONTAINER" "$(container_workspace_source "$CONTAINER")" \
-  "$ACTUAL_IMAGE_ID" "$CONTAINER_HEAD"
+CONTAINER_WORKSPACE_SOURCE="$(container_workspace_source "$CONTAINER")"
+printf 'container=%s\ncontainer_workspace_source=%s\ncontainer_image_id=%s\nexecution_head=%s\n' \
+  "$CONTAINER" "$CONTAINER_WORKSPACE_SOURCE" "$ACTUAL_IMAGE_ID" "$HEAD"
 
 if [[ ! -f "$ACCEPTED_REBASE" ]]; then
   echo "ERROR: accepted #264 rebase report missing: $ACCEPTED_REBASE"

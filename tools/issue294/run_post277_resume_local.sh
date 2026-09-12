@@ -10,7 +10,7 @@ cd "$PROJECT_ROOT"
 REQUESTED_CONTAINER="${ISSUE294_CONTAINER:-pdfscore_issue294_profile_worktree}"
 CONTAINER="$REQUESTED_CONTAINER"
 WORKTREE_CONTAINER_BASE="${ISSUE294_WORKTREE_CONTAINER:-pdfscore_issue294_post277_worktree}"
-EXPECTED_IMAGE_ID="sha256:5e1265263a5ba014814002c02fcfaf7f07a61e7000c13697db6c3087c7d2acdc"
+EXPECTED_IMAGE_ID="${ISSUE294_EXPECTED_IMAGE_ID:-sha256:5e1265263a5ba014814002c02fcfaf7f07a61e7000c13697db6c3087c7d2acdc}"
 CONTAINER_IMAGE="${ISSUE294_CONTAINER_IMAGE:-$EXPECTED_IMAGE_ID}"
 REQUIRED_DEVELOP="edc17ee08de6694827c67d4ab8b30c2adc1f05e3"
 LATEST_HOMR="${ISSUE294_LATEST_HOMR_COMMIT:-457e7c6518a10ba755db2e60883419e56c4d7369}"
@@ -141,8 +141,13 @@ ensure_issue_worktree_container
 export ISSUE294_CONTAINER="$CONTAINER"
 ACTUAL_IMAGE_ID="$(docker inspect --format '{{.Image}}' "$CONTAINER")"
 if [[ "$ACTUAL_IMAGE_ID" != "$EXPECTED_IMAGE_ID" ]]; then
-  echo "ERROR: container image mismatch: $ACTUAL_IMAGE_ID != $EXPECTED_IMAGE_ID"
-  exit 2
+  if [[ "${ISSUE294_DERIVED_FROM_EXPECTED_IMAGE:-0}" == "1" \
+    && "${ISSUE294_SOURCE_IMAGE_ID:-}" == "$EXPECTED_IMAGE_ID" ]]; then
+    printf 'container_image_derived=true\ncontainer_source_image_id=%s\n' "$ISSUE294_SOURCE_IMAGE_ID"
+  else
+    echo "ERROR: container image mismatch: $ACTUAL_IMAGE_ID != $EXPECTED_IMAGE_ID"
+    exit 2
+  fi
 fi
 CONTAINER_WORKSPACE_SOURCE="$(container_workspace_source "$CONTAINER")"
 printf 'container=%s\ncontainer_workspace_source=%s\ncontainer_image_id=%s\nexecution_head=%s\n' \

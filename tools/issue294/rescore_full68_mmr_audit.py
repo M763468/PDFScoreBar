@@ -392,7 +392,10 @@ def run(source_report_path: Path, output_path: Path | None = None) -> Path:
     for mode in MODES:
         left = conditions[f"{mode}:B_b377"]["pages"]
         right = conditions[f"{mode}:C_latest"]["pages"]
-        per_page = [l["actual"] == r["actual"] for l, r in zip(left, right)]
+        per_page = [
+            left_page["actual"] == right_page["actual"]
+            for left_page, right_page in zip(left, right)
+        ]
         comparisons[f"{mode}:B_vs_C"] = {
             "all_pages_exact": all(per_page),
             "different_pages": [

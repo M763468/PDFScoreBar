@@ -69,7 +69,8 @@ docker-clean: ## Remove the canonical pipeline container
 
 docker-clean-full: docker-clean ## Also remove the pipeline image (explicit full cleanup)
 	@echo "Removing Docker pipeline image..."
-	-docker rmi pdfscore_pipeline_gpu
+	@image_id=$$(docker image ls --quiet pdfscore_pipeline_gpu) || exit $$?; \
+	if [ -n "$$image_id" ]; then docker rmi pdfscore_pipeline_gpu; fi
 
 docker-build: ## Build the unified Docker image with cleanup and logging to artifacts/
 	@mkdir -p artifacts

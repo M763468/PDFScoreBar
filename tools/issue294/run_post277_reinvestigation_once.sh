@@ -52,15 +52,27 @@ docker run -dit --gpus all \
   -e PYTHONPATH=/workspace \
   "$EXECUTION_IMAGE_ID" bash >/dev/null
 
+retry_status=0
+provenance_status=0
+
+set +e
 docker exec -w /workspace "$CONTAINER" /opt/venv_pipeline/bin/python \
   tools/issue294/diagnose_post277_mmr_retry_evolution.py >"$RETRY_OUTPUT"
-python3 -m json.tool "$RETRY_OUTPUT" >/dev/null
-
+retry_status=$?
 docker exec -w /workspace "$CONTAINER" /opt/venv_pipeline/bin/python \
   tools/issue294/diagnose_post277_homr_x_provenance.py >"$PROVENANCE_OUTPUT"
+provenance_status=$?
+set -e
+
+python3 -m json.tool "$RETRY_OUTPUT" >/dev/null
 python3 -m json.tool "$PROVENANCE_OUTPUT" >/dev/null
 
 printf '\n=== MMR retry evolution ===\n'
 cat "$RETRY_OUTPUT"
 printf '\n=== HOMR X provenance ===\n'
 cat "$PROVENANCE_OUTPUT"
+printf '\nretry_status=%s\nprovenance_status=%s\n' "$retry_status" "$provenance_status"
+
+if (( retry_status != 0 || provenance_status != 0 )); then
+  exit 1
+fi

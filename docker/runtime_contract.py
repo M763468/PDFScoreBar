@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -19,6 +20,7 @@ SOURCE_CONTRACT_FILES = (
     Path("pyproject.toml"),
 )
 SOURCE_SUFFIXES = frozenset({".py", ".toml"})
+RUNTIME_MODULES = ("homr", "realesrgan", "basicsr", "ultralytics")
 
 
 def _source_contract_files(root: Path) -> Iterable[Path]:
@@ -44,7 +46,11 @@ def _source_contract_files(root: Path) -> Iterable[Path]:
 def source_fingerprint(root: Path) -> str:
     """Hash runtime-sensitive source independently of git/worktree metadata."""
     digest = hashlib.sha256()
-    for path in sorted(_source_contract_files(root), key=lambda item: item.relative_to(root).as_posix()):
+    paths = sorted(
+        _source_contract_files(root),
+        key=lambda item: item.relative_to(root).as_posix(),
+    )
+    for path in paths:
         relative = path.relative_to(root).as_posix().encode("utf-8")
         digest.update(relative)
         digest.update(b"\0")
@@ -89,6 +95,7 @@ def run_preflight(workspace: Path, config_path: Path, expected_fingerprint_path:
 
     sys.path.insert(0, str(workspace))
 
+    import onnxruntime as ort
     import torch
     import yaml
 
@@ -99,6 +106,7 @@ def run_preflight(workspace: Path, config_path: Path, expected_fingerprint_path:
     config = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
     inputs = config.get("inputs") or {}
     detection = config.get("detection") or {}
+    mmr = config.get("mmr") or {}
 
     input_path = _resolve_input_path(workspace, inputs.get("pdf_path"))
     if input_path is not None:
@@ -129,8 +137,21 @@ def run_preflight(workspace: Path, config_path: Path, expected_fingerprint_path:
                 resolved_manifest_model = str(
                     resolve_model_artifact(manifest_path, project_root=workspace)
                 )
-            except Exception as exc:  # fail-fast report should retain the actionable resolver error
+            except Exception as exc:
                 errors.append(f"CNN manifest artifact is unavailable: {exc}")
+
+    mmr_model_path = _resolve_input_path(workspace, mmr.get("model_path"))
+    if mmr_model_path is not None:
+        _require_file(mmr_model_path, role="configured MMR model", errors=errors)
+
+    module_origins: dict[str, str | None] = {}
+    for module_name in RUNTIME_MODULES:
+        spec = importlib.util.find_spec(module_name)
+        if spec is None:
+            errors.append(f"required runtime module is unavailable: {module_name}")
+            module_origins[module_name] = None
+        else:
+            module_origins[module_name] = spec.origin
 
     for marker in (
         Path("/opt/homr_stage_e_profile_commit.txt"),
@@ -143,6 +164,12 @@ def run_preflight(workspace: Path, config_path: Path, expected_fingerprint_path:
         errors.append("CUDA is not available inside the canonical Docker runtime")
     device = torch.cuda.get_device_name(torch.cuda.current_device()) if cuda_available else None
 
+    onnx_providers = ort.get_available_providers()
+    if "CUDAExecutionProvider" not in onnx_providers:
+        errors.append(
+            "onnxruntime CUDAExecutionProvider is unavailable inside the canonical Docker runtime"
+        )
+
     payload = {
         "status": "pass" if not errors else "fail",
         "source_fingerprint": actual_fingerprint,
@@ -150,9 +177,14 @@ def run_preflight(workspace: Path, config_path: Path, expected_fingerprint_path:
         "input": str(input_path) if input_path is not None else None,
         "realesrgan_weights": sr_weights,
         "omr_dln_model": str(omr_model),
-        "cnn_model": str(cnn_model_path) if cnn_model_path is not None else resolved_manifest_model,
+        "cnn_model": (
+            str(cnn_model_path) if cnn_model_path is not None else resolved_manifest_model
+        ),
+        "mmr_model": str(mmr_model_path) if mmr_model_path is not None else None,
+        "runtime_modules": module_origins,
         "cuda_available": cuda_available,
         "cuda_device": device,
+        "onnxruntime_providers": onnx_providers,
         "errors": errors,
     }
     stream = sys.stdout if not errors else sys.stderr

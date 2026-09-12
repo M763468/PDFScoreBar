@@ -134,8 +134,7 @@ def _attempt_from_log(path: Path) -> dict[str, Any]:
         "experiment_head_from_log": fields.get("head") or fields.get("execution_head"),
         "focused": focused,
         "manifest": _path_from_field(fields.get("manifest")) or run_dir / "full68_host.json",
-        "mmr": _path_from_field(fields.get("mmr"))
-        or run_dir / "post277_mapping_guarded_mmr.json",
+        "mmr": _path_from_field(fields.get("mmr")) or run_dir / "post277_mapping_guarded_mmr.json",
         "wrapper": run_dir / "post277_mapping_guarded_full68_host.json",
         "run_dir": run_dir,
     }
@@ -168,9 +167,7 @@ def _latest_attempt() -> dict[str, Any]:
             "runner_log": None,
             "runner_completed_marker": False,
             "experiment_head_from_log": None,
-            "focused": (
-                LOG_ROOT / f"issue294_post277_focused_{suffix}.json" if suffix else None
-            ),
+            "focused": LOG_ROOT / f"issue294_post277_focused_{suffix}.json" if suffix else None,
             "manifest": run_dir / "full68_host.json",
             "mmr": run_dir / "post277_mapping_guarded_mmr.json",
             "wrapper": run_dir / "post277_mapping_guarded_full68_host.json",
@@ -376,7 +373,9 @@ def _build_record(attempt: Mapping[str, Any]) -> dict[str, Any]:
         checks["full68_mmr_status_completed"] = mmr.get("status") == "completed"
         checks["full68_mmr_mode"] = mmr.get("mode") == "full68"
         selected_pages = mmr.get("selected_pages")
-        checks["full68_mmr_68_pages"] = isinstance(selected_pages, list) and len(selected_pages) == 68
+        checks["full68_mmr_68_pages"] = (
+            isinstance(selected_pages, list) and len(selected_pages) == 68
+        )
         checks["full68_mmr_all_gates_pass"] = bool(mmr.get("all_gates_pass"))
         mmr_manifest = mmr.get("manifest")
         if experiment_head:
@@ -475,7 +474,9 @@ def _build_record(attempt: Mapping[str, Any]) -> dict[str, Any]:
                 wrapper.get("production_source_modified") if isinstance(wrapper, Mapping) else None
             ),
             "production_dispatch_modified": (
-                wrapper.get("production_dispatch_modified") if isinstance(wrapper, Mapping) else None
+                wrapper.get("production_dispatch_modified")
+                if isinstance(wrapper, Mapping)
+                else None
             ),
         },
         "full68_mmr": {
@@ -550,18 +551,15 @@ def _issue_markdown(record: Mapping[str, Any]) -> str:
 
     if focused["failed_gates"]:
         lines.append(
-            "Focused failed gates: "
-            + ", ".join(f"`{item}`" for item in focused["failed_gates"])
+            "Focused failed gates: " + ", ".join(f"`{item}`" for item in focused["failed_gates"])
         )
     if mmr["failed_gates"]:
         lines.append(
-            "Full68 MMR failed gates: "
-            + ", ".join(f"`{item}`" for item in mmr["failed_gates"])
+            "Full68 MMR failed gates: " + ", ".join(f"`{item}`" for item in mmr["failed_gates"])
         )
     if record["missing_artifacts"]:
         lines.append(
-            "Missing artifacts: "
-            + ", ".join(f"`{item}`" for item in record["missing_artifacts"])
+            "Missing artifacts: " + ", ".join(f"`{item}`" for item in record["missing_artifacts"])
         )
     if record["failures"]:
         lines.append("Validation failures:")
@@ -646,7 +644,9 @@ def _post_issue_comment(body: str, marker: str) -> dict[str, Any]:
 def main() -> int:
     try:
         if shutil.which("gh") is None:
-            raise RuntimeError("GitHub CLI `gh` is required to persist the run record on Issue #294")
+            raise RuntimeError(
+                "GitHub CLI `gh` is required to persist the run record on Issue #294"
+            )
         _capture(["gh", "auth", "status"])
 
         attempt = _latest_attempt()

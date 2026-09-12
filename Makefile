@@ -128,7 +128,7 @@ verify-full-eval: ## Run opt-in full evaluation entrypoint (long-running)
 local-pr-validation: ## Run local PR validation (usage: make local-pr-validation PR=123 WITH_GPU=1 WITH_FULL_EVAL=1 POST_COMMENT=1)
 	@scripts/local_pr_validation.sh $(if $(PR),--pr $(PR),) $(if $(WITH_GPU),--with-gpu,) $(if $(WITH_FULL_EVAL),--with-full-eval,) $(if $(POST_COMMENT),--post-comment,)
 
-setup-local-worktree-links: ## Link local-only data into this worktree (usage: make setup-local-worktree-links LOCAL_DATA_ROOT=/path/to/assets)
+setup-local-worktree-links: ## Link local-only data into this worktree (usage: make setup-worktree BRANCH=branch_name)
 	@if [ -z "$(LOCAL_DATA_ROOT)" ]; then \
 		echo "Error: LOCAL_DATA_ROOT is required."; \
 		echo "Usage: make setup-local-worktree-links LOCAL_DATA_ROOT=/path/to/assets"; \

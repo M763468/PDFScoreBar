@@ -86,7 +86,6 @@ class CurrentX4SRRuntime:
         self.compile_mode = normalize_compile_mode(compile_mode)
         self.scale = 4
         self.device = torch.device("cuda")
-        self.weights = weights
 
         model = RRDBNet(
             num_in_ch=3,
@@ -207,7 +206,6 @@ class CurrentX4SRRuntime:
         return {
             "runtime": "current_x4_channels_last_gpu_uint8_cpu_stitch",
             "model": "RealESRGAN_x4plus",
-            "weights": str(self.weights),
             "scale": 4,
             "tile": self.tile,
             "tile_pad": self.tile_pad,

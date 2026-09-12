@@ -87,7 +87,9 @@ def _box_delta(left: tuple[int, int, int, int], right: tuple[int, int, int, int]
     return max(abs(a - b) for a, b in zip(left, right))
 
 
-def _nearest(box: tuple[int, int, int, int], candidates: list[tuple[int, int, int, int]]) -> dict[str, Any]:
+def _nearest(
+    box: tuple[int, int, int, int], candidates: list[tuple[int, int, int, int]]
+) -> dict[str, Any]:
     if not candidates:
         return {"box": None, "max_abs_delta": None}
     other = min(candidates, key=lambda candidate: _box_delta(box, candidate))
@@ -100,7 +102,9 @@ def _multiset_difference(
 ) -> tuple[list[tuple[int, int, int, int]], list[tuple[int, int, int, int]]]:
     left_counter = Counter(left)
     right_counter = Counter(right)
-    return list((left_counter - right_counter).elements()), list((right_counter - left_counter).elements())
+    return list((left_counter - right_counter).elements()), list(
+        (right_counter - left_counter).elements()
+    )
 
 
 def _report_page_key(page: Mapping[str, Any]) -> tuple[str, str]:
@@ -337,8 +341,7 @@ def run(manifest_path: Path, output_path: Path) -> dict[str, Any]:
         for label in ("A_pinned", "B_b377", "C_latest")
     }
     page_052_target = {
-        label: _system_containing(detail, 11)
-        for label, detail in page_052_details.items()
+        label: _system_containing(detail, 11) for label, detail in page_052_details.items()
     }
 
     payload = {

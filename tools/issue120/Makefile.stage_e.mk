@@ -4,8 +4,10 @@ ISSUE120_STAGE_E_RUN_ROOT ?= $(ISSUE120_STAGE_E_OUTPUT)/stage_e_full_pipeline
 ISSUE120_STAGE_E_EVAL_INPUTS_DIR ?= $(ISSUE120_STAGE_E_RUN_ROOT)/eval_inputs
 ISSUE120_STAGE_E_EVAL_DIR ?= $(ISSUE120_STAGE_E_RUN_ROOT)/eval_detector
 ISSUE120_STAGE_E_GT_ROOT ?= data/evaluation2/annotations
+ISSUE120_STAGE_E_IMAGE_ROOT ?= data/evaluation2/images
+ISSUE120_STAGE_E_STAFF_UNITS_JSON ?= data/evaluation2/staff_units.json
 ISSUE120_STAGE_E_SCORE_THRESHOLD ?= 0.1
-ISSUE120_STAGE_E_XDIST_THRESHOLD ?= 12.0
+ISSUE120_STAGE_E_XDIST_UNIT_RATIO ?= 0.5
 ISSUE120_STAGE_E_SMOKE_PAGES ?= 2
 ISSUE120_STAGE_E_EXTRA_ARGS ?=
 ISSUE120_STAGE_E_EVAL_EXTRA_ARGS ?=
@@ -28,7 +30,9 @@ eval-issue120-stage-e-full: ## Build Stage E eval inputs and write detector cont
 		--eval-output-dir $(ISSUE120_STAGE_E_EVAL_DIR) \
 		--gt-root $(ISSUE120_STAGE_E_GT_ROOT) \
 		--score-threshold $(ISSUE120_STAGE_E_SCORE_THRESHOLD) \
-		--xdist-threshold $(ISSUE120_STAGE_E_XDIST_THRESHOLD) \
+		--staff-units-json $(ISSUE120_STAGE_E_STAFF_UNITS_JSON) \
+		--xdist-unit-ratio $(ISSUE120_STAGE_E_XDIST_UNIT_RATIO) \
+		--image-root $(ISSUE120_STAGE_E_IMAGE_ROOT) \
 		$(ISSUE120_STAGE_E_EVAL_EXTRA_ARGS)
 
 eval-issue120-stage-e-smoke: ## Smoke-check Stage E contract wiring on the first N pages

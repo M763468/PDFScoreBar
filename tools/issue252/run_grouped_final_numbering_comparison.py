@@ -12,6 +12,7 @@ from typing import Any, Mapping
 import cv2
 import torch
 
+from src.common.model_artifacts import resolve_model_artifact
 from src.measure_numbering.mmr import MMRClassifier, MMROCREngine
 from src.measure_numbering.pipeline import MeasureNumberingPipeline
 from src.measure_numbering.serialization import score_to_dict
@@ -33,6 +34,7 @@ from tools.issue252.audit_grouped_semantic_impact import (
 )
 from tools.issue252.render_grouped_numbering_overlay import render_overlay
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 Box = tuple[int, int, int, int]
 
 
@@ -56,6 +58,23 @@ def _config(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     if not isinstance(mmr, Mapping):
         raise ValueError(f"Config must contain mmr mapping: {path}")
     return dict(detection), dict(mmr)
+
+
+def _resolve_cnn_model_path(detection: Mapping[str, Any]) -> Path:
+    """Resolve either the versioned manifest contract or the legacy direct model path."""
+    manifest_raw = detection.get("cnn_model_manifest")
+    model_path_raw = detection.get("cnn_model_path")
+    if manifest_raw and model_path_raw:
+        raise ValueError(
+            "CNN config must not define both detection.cnn_model_manifest and "
+            "detection.cnn_model_path"
+        )
+    if manifest_raw:
+        manifest_path = Path(str(manifest_raw))
+        if not manifest_path.is_absolute():
+            manifest_path = PROJECT_ROOT / manifest_path
+        return resolve_model_artifact(manifest_path, project_root=PROJECT_ROOT)
+    return _resolve_model_path(model_path_raw)
 
 
 def _read_image_size(path: Path) -> tuple[int, int]:
@@ -361,7 +380,7 @@ def main() -> int:
     )
     detection, mmr = _config(args.config)
     cnn_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    cnn_model_path = _resolve_model_path(detection.get("cnn_model_path"))
+    cnn_model_path = _resolve_cnn_model_path(detection)
     cnn_model = _load_model(cnn_model_path, cnn_device)
     gpu_norm = GPUNormalize(MEAN, STD).to(cnn_device)
 

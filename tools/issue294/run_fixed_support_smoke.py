@@ -90,7 +90,9 @@ def run(image: Path, output_root: Path) -> dict[str, Any]:
         "support_result": result,
         "checks": checks,
     }
-    report_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    report_path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     if not passed:
         raise RuntimeError(f"Fixed-support smoke failed checks: {checks}")
     return payload

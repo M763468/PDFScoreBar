@@ -34,9 +34,7 @@ from tools.issue294 import run_same_original_ab_host as base
 REQUIRED_DEVELOP_COMMIT = "edc17ee08de6694827c67d4ab8b30c2adc1f05e3"
 DEFAULT_LATEST_COMMIT = "457e7c6518a10ba755db2e60883419e56c4d7369"
 STANDARD_MATRIX_SCRIPT = "tools/issue294/run_downstream_candidate_matrix.py"
-MAPPING_GUARDED_MATRIX_SCRIPT = (
-    "tools/issue294/run_downstream_candidate_matrix_mapping_guarded.py"
-)
+MAPPING_GUARDED_MATRIX_SCRIPT = "tools/issue294/run_downstream_candidate_matrix_mapping_guarded.py"
 
 
 def _capture(command: list[str]) -> str:

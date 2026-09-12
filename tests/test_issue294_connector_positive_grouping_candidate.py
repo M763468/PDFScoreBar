@@ -22,11 +22,7 @@ def _aligned_barlines(first: Staff, second: Staff, xs: list[int]) -> list[Barlin
 
 
 def _evidence(present: bool):
-    return {
-        "staff_pairs": [
-            {"staff_pair": [0, 1], "left_connector_present": present}
-        ]
-    }
+    return {"staff_pairs": [{"staff_pair": [0, 1], "left_connector_present": present}]}
 
 
 def test_positive_connector_merges_within_normal_distance_without_alignment() -> None:

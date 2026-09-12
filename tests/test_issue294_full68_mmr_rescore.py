@@ -69,9 +69,7 @@ def test_geometry_rebase_repairs_direct_index_false_mismatch() -> None:
         ]
     }
     current_numbering = _signature_to_numbering(current_signature)
-    historical_expected = {
-        "overrides": [{"page": 0, "system": 1, "measure": 0, "skip": 2}]
-    }
+    historical_expected = {"overrides": [{"page": 0, "system": 1, "measure": 0, "skip": 2}]}
     actual = {"overrides": [{"page": 0, "system": 0, "measure": 0, "skip": 2}]}
 
     direct = _score_overrides(historical_expected, actual)

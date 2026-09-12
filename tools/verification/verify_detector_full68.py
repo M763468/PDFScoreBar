@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CANONICAL_CONFIG = ROOT / "configs/dense_full_pipeline.yaml"
 DEFAULT_OUTPUT_ROOT = ROOT / "logs/verification/detector_full68"
 DEFAULT_GT_ROOT = ROOT / "data/evaluation2/annotations"
+DEFAULT_STAFF_UNITS_JSON = ROOT / "data/evaluation2/staff_units.json"
 FOCUSED_STAGE_E_PAGES = (
     "Va_Prokofiev_Symphony1/page_004",
     "Shostakovich-Sym5-Va/page_014",
@@ -105,12 +106,15 @@ def _evaluation_args(
         results_dir=str(results_dir),
         gt_root=str(gt_root),
         output_dir=str(output_dir),
-        scored_file="pipeline2_no_peak_scored.json",
+        scored_file="pipeline2_no_peak_filtered_cnn.json",
         candidates_file="pipeline2_no_peak_candidates.json",
         score_threshold=score_threshold,
         rule_name="center_anchor",
         vov_threshold=0.5,
-        xdist_threshold=12.0,
+        staff_units_json=str(DEFAULT_STAFF_UNITS_JSON),
+        image_root=str(ROOT / "data/evaluation2/images"),
+        xdist_unit_ratio=0.5,
+        legacy_fixed_12px=False,
         allow_partial=allow_partial,
         measure_summary_json=None,
     )

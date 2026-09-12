@@ -228,11 +228,13 @@ def test_ocr_candidate_scoring_receives_processed_dimensions() -> None:
 
         def __init__(self):
             self.dimensions = []
+            self.preprocess_modes = []
 
         def mask_hbar_candidates(self, image, *_args):
             return image
 
-        def preprocess_variant(self, _image, **_kwargs):
+        def preprocess_variant(self, _image, **kwargs):
+            self.preprocess_modes.append(kwargs["mode"])
             return np.zeros((60, 80, 3), dtype=np.uint8)
 
         def ocr_engine(self, _image):
@@ -260,7 +262,16 @@ def test_ocr_candidate_scoring_receives_processed_dimensions() -> None:
         200,
         100,
     )
-    assert ocr.dimensions == [(80, 60)] * 5
+    assert ocr.dimensions == [(80, 60)] * 7
+    assert ocr.preprocess_modes == [
+        "standard",
+        "no_dilate",
+        "heavy_dilate",
+        "standard",
+        "standard",
+        "heavy_dilate",
+        "no_dilate",
+    ]
 
 
 def test_handoff_uses_sidecar_not_original_homr_worker(

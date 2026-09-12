@@ -95,9 +95,7 @@ class ConnectorPositiveWithinDistanceBuilder(ConnectorAwareSystemBuilder):
                 continue
 
             if image is not None:
-                aligned_connection = self._check_aligned_connection(
-                    s1, s2, aligned_pairs, image
-                )
+                aligned_connection = self._check_aligned_connection(s1, s2, aligned_pairs, image)
                 if aligned_connection and within_distance:
                     union(index, index + 1)
                     continue
@@ -161,16 +159,10 @@ def _nonempty(signature: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _numbers(signature: list[dict[str, Any]]) -> list[int]:
-    return [
-        int(number)
-        for system in signature
-        for number in system["measure_numbers"]
-    ]
+    return [int(number) for system in signature for number in system["measure_numbers"]]
 
 
-def _comparison(
-    left: list[dict[str, Any]], right: list[dict[str, Any]]
-) -> dict[str, Any]:
+def _comparison(left: list[dict[str, Any]], right: list[dict[str, Any]]) -> dict[str, Any]:
     left_nonempty = _nonempty(left)
     right_nonempty = _nonempty(right)
     return {
@@ -211,12 +203,8 @@ def _run_numbering(
                 "image_size": image_size,
                 "page_number": 1,
                 "connector_mask_paths": {
-                    "symbols": str(
-                        _resolve_project_path(str(support["connector_symbols"]))
-                    ),
-                    "brace_dot": str(
-                        _resolve_project_path(str(support["connector_brace_dot"]))
-                    ),
+                    "symbols": str(_resolve_project_path(str(support["connector_symbols"]))),
+                    "brace_dot": str(_resolve_project_path(str(support["connector_brace_dot"]))),
                 },
             }
         ]
@@ -239,9 +227,7 @@ def run(manifest_path: Path, output_path: Path) -> dict[str, Any]:
     for page_id, summary in summaries.items():
         page = _matrix_for_summary(summary, matrix_pages)
         image_size = _page_image_size(page)
-        support = _load_json(
-            _resolve_project_path(str(page["fixed_inputs"]["support_result"]))
-        )
+        support = _load_json(_resolve_project_path(str(page["fixed_inputs"]["support_result"])))
         native = page["modes"]["candidate_native_geometry"]["variants"]
 
         page_result: dict[str, Any] = {
@@ -267,9 +253,7 @@ def run(manifest_path: Path, output_path: Path) -> dict[str, Any]:
             )
 
             if current != retained:
-                reconstruction_mismatches.append(
-                    {"page_id": page_id, "label": label}
-                )
+                reconstruction_mismatches.append({"page_id": page_id, "label": label})
             if candidate_signature != current:
                 changed_pages[label].append(page_id)
 
@@ -296,10 +280,7 @@ def run(manifest_path: Path, output_path: Path) -> dict[str, Any]:
         )
         page_result["candidate_B_vs_C"] = _comparison(b_candidate, c_candidate)
 
-        if (
-            page_id == "page_052"
-            or any(page_id in values for values in changed_pages.values())
-        ):
+        if page_id == "page_052" or any(page_id in values for values in changed_pages.values()):
             pages[page_id] = page_result
 
     payload = {
@@ -344,14 +325,12 @@ def main() -> int:
     parser.add_argument(
         "--full68-manifest",
         type=Path,
-        default=PROJECT_ROOT
-        / "logs/issue294/issue294_full68_refresh_02/full68_host.json",
+        default=PROJECT_ROOT / "logs/issue294/issue294_full68_refresh_02/full68_host.json",
     )
     parser.add_argument(
         "--output",
         type=Path,
-        default=PROJECT_ROOT
-        / "logs/issue294/issue294_full68_refresh_02/"
+        default=PROJECT_ROOT / "logs/issue294/issue294_full68_refresh_02/"
         "connector_positive_grouping_candidate_01.json",
     )
     args = parser.parse_args()
@@ -364,9 +343,7 @@ def main() -> int:
                     "exact_all_pages_all_labels"
                 ],
                 "candidate_changed_pages": payload["candidate_changed_pages"],
-                "candidate_B_C_exact_all_pages": payload[
-                    "candidate_B_C_exact_all_pages"
-                ],
+                "candidate_B_C_exact_all_pages": payload["candidate_B_C_exact_all_pages"],
                 "output": str(args.output),
             },
             indent=2,

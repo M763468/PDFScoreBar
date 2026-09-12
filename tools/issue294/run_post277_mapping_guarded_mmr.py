@@ -62,8 +62,7 @@ REQUIRED_DEVELOP_COMMIT = "edc17ee08de6694827c67d4ab8b30c2adc1f05e3"
 DEFAULT_MODEL = PROJECT_ROOT / "tools/mmr_training/models/mmr_classifier_best.pth"
 DEFAULT_MANIFEST = PROJECT_ROOT / "logs/issue294/issue294_full68_refresh_02/full68_host.json"
 DEFAULT_ACCEPTED_REBASE = Path(
-    "/home/masaki_muramatsu/issue264_phase_c_rescore/"
-    "phase_c_mmr_geometry_rebased_score_report.json"
+    "/home/masaki_muramatsu/issue264_phase_c_rescore/phase_c_mmr_geometry_rebased_score_report.json"
 )
 FOCUSED_PAGE_IDS = (
     "page_001",
@@ -162,9 +161,7 @@ def _manifest_checkout_head(manifest: Mapping[str, Any]) -> str | None:
 
 def _page_error_count(page: Mapping[str, Any]) -> int:
     counts = page["scoring"]["counts"]
-    return int(counts["missed_fn"]) + int(counts["skip_mismatch"]) + int(
-        counts["unexpected_fp"]
-    )
+    return int(counts["missed_fn"]) + int(counts["skip_mismatch"]) + int(counts["unexpected_fp"])
 
 
 def candidate_not_worse(
@@ -181,8 +178,7 @@ def candidate_not_worse(
 
 def production_reference_gates(totals: Mapping[str, Any]) -> dict[str, bool]:
     return {
-        key: int(totals.get(key, -1)) == expected
-        for key, expected in PRODUCTION_REFERENCE.items()
+        key: int(totals.get(key, -1)) == expected for key, expected in PRODUCTION_REFERENCE.items()
     }
 
 
@@ -312,8 +308,7 @@ def _score_variant(
             "page_033_one_bar_veto": page_033_veto,
             "page_042_five_overrides": page_042_exact,
             "unexpected_fp_zero": int(totals["unexpected_fp"]) == 0,
-            "zero_expected_page_detections_zero": int(totals["zero_expected_page_detections"])
-            == 0,
+            "zero_expected_page_detections_zero": int(totals["zero_expected_page_detections"]) == 0,
         },
     }
 
@@ -347,8 +342,7 @@ def _candidate_gates(
         gates.update(
             {
                 "expected_177": int(candidate["totals"]["expected"]) == 177,
-                "zero_expected_pages_16": int(candidate["totals"]["zero_expected_pages"])
-                == 16,
+                "zero_expected_pages_16": int(candidate["totals"]["zero_expected_pages"]) == 16,
             }
         )
     return gates
@@ -458,23 +452,19 @@ def run(
         "B_C_actual_exact_selected_pages": b_c_actual_exact,
         "B_C_numbering_shape_exact_selected_pages": b_c_shape_exact,
         **{
-            f"B_{key}": value
-            for key, value in _candidate_gates(baseline, b, full68=full68).items()
+            f"B_{key}": value for key, value in _candidate_gates(baseline, b, full68=full68).items()
         },
         **{
-            f"C_{key}": value
-            for key, value in _candidate_gates(baseline, c, full68=full68).items()
+            f"C_{key}": value for key, value in _candidate_gates(baseline, c, full68=full68).items()
         },
     }
     if "page_052" in selected_ids:
         gates["page_052_B_C_shape_exact"] = (
-            b_pages["page_052"]["numbering_shape"]
-            == c_pages["page_052"]["numbering_shape"]
+            b_pages["page_052"]["numbering_shape"] == c_pages["page_052"]["numbering_shape"]
         )
     if "page_067" in selected_ids:
         gates["page_067_B_C_shape_exact"] = (
-            b_pages["page_067"]["numbering_shape"]
-            == c_pages["page_067"]["numbering_shape"]
+            b_pages["page_067"]["numbering_shape"] == c_pages["page_067"]["numbering_shape"]
         )
     if expect_production_reference:
         for key, value in production_reference_gates(baseline["totals"]).items():

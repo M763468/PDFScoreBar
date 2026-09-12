@@ -13,6 +13,8 @@ import src.pipeline.detection.restored_orchestrator as restored
 from src.pipeline.detection.input_contract import build_detector_input_contract
 
 ROOT = Path(__file__).resolve().parents[1]
+D27_MANIFEST = "models/barline_cnn/manifest.json"
+D27_THRESHOLD = 0.4965248107910156
 
 
 def _config() -> dict:
@@ -23,8 +25,8 @@ def _config() -> dict:
             "homr_profile": "stage_e_verified",
             "detector_route": "dense_full_pipeline",
             "probe_use_original_images": True,
-            "cnn_model_path": "model.pth",
-            "cnn_threshold": 0.1,
+            "cnn_model_manifest": D27_MANIFEST,
+            "cnn_threshold": D27_THRESHOLD,
             "cnn_apply_nms": False,
         }
     }
@@ -40,7 +42,9 @@ def test_canonical_detector_config_uses_verified_restored_route() -> None:
     assert detection["detector_route"] == "dense_full_pipeline"
     assert "execution_mode" not in detection
     assert detection["probe_use_original_images"] is True
-    assert detection["cnn_threshold"] == 0.1
+    assert detection["cnn_model_manifest"] == D27_MANIFEST
+    assert detection.get("cnn_model_path") is None
+    assert detection["cnn_threshold"] == D27_THRESHOLD
     assert detection["cnn_apply_nms"] is False
     assert detection.get("precomputed_probe_candidates_root") is None
     assert detection.get("cnn_bands_from") is None
@@ -276,7 +280,7 @@ def test_dense_inventory_uses_only_current_hybrid_and_profile_masks(tmp_path: Pa
     assert json.loads(exclude_path.read_text(encoding="utf-8")) == {"excluded_pages": []}
 
 
-def test_dense_route_cnn_uses_original_coordinates_and_nms_false(
+def test_dense_route_cnn_uses_manifest_original_coordinates_and_nms_false(
     tmp_path: Path, monkeypatch
 ) -> None:
     image = tmp_path / "Score/page_001.png"
@@ -285,7 +289,6 @@ def test_dense_route_cnn_uses_original_coordinates_and_nms_false(
     model = tmp_path / "model.pth"
     model.write_bytes(b"model")
     config = _config()
-    config["detection"]["cnn_model_path"] = str(model)
     orchestrator = restored.DetectorOrchestrator(
         config=config,
         images=[image],
@@ -304,6 +307,12 @@ def test_dense_route_cnn_uses_original_coordinates_and_nms_false(
     )
     orchestrator.probe_output_dir = probe
     captured = {}
+    resolved = {}
+
+    def fake_resolve(manifest_path, *, cnn_threshold):
+        resolved["manifest_path"] = manifest_path
+        resolved["cnn_threshold"] = cnn_threshold
+        return model
 
     def fake_score(**kwargs):
         captured.update(kwargs)
@@ -311,10 +320,16 @@ def test_dense_route_cnn_uses_original_coordinates_and_nms_false(
 
     fake_cnn = types.ModuleType("src.pipeline.steps.cnn_scoring")
     fake_cnn.run_cnn_scoring_batch = fake_score
+    monkeypatch.setattr(restored, "_resolve_verified_cnn_artifact", fake_resolve)
     monkeypatch.setitem(sys.modules, "src.pipeline.steps.cnn_scoring", fake_cnn)
 
     orchestrator._run_cnn_scoring()
 
+    assert resolved == {
+        "manifest_path": D27_MANIFEST,
+        "cnn_threshold": D27_THRESHOLD,
+    }
+    assert captured["model_path"] == model
     assert captured["images"] == [image]
     assert captured["input_image_scale"] == 1.0
     assert captured["bands_from"] == filtered

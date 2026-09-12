@@ -278,7 +278,14 @@ def _score_condition(
 
         scoring = _score_overrides(expected, actual)
         counts = scoring["counts"]
-        for key in ("expected", "detected", "matched_tp", "missed_fn", "skip_mismatch", "unexpected_fp"):
+        for key in (
+            "expected",
+            "detected",
+            "matched_tp",
+            "missed_fn",
+            "skip_mismatch",
+            "unexpected_fp",
+        ):
             totals[key] += int(counts[key])
         if counts["expected"] == 0:
             totals["zero_expected_pages"] += 1
@@ -321,7 +328,8 @@ def _score_condition(
     gates = {
         "page_count_68": totals["pages"] == 68,
         "historical_source_fixture_items_182": totals["historical_source_fixture_items"] == 182,
-        "fixture_rebase_mapped_all_182_source_items": totals["mapped_historical_source_items"] == 182,
+        "fixture_rebase_mapped_all_182_source_items": totals["mapped_historical_source_items"]
+        == 182,
         "zero_expected_pages_scored": totals["zero_expected_pages"] == 16,
         "zero_expected_page_detections_zero": totals["zero_expected_page_detections"] == 0,
         "unexpected_fp_zero": totals["unexpected_fp"] == 0,
@@ -387,16 +395,18 @@ def run(source_report_path: Path, output_path: Path | None = None) -> Path:
         per_page = [l["actual"] == r["actual"] for l, r in zip(left, right)]
         comparisons[f"{mode}:B_vs_C"] = {
             "all_pages_exact": all(per_page),
-            "different_pages": [left[i]["page_id"] for i, equal in enumerate(per_page) if not equal],
+            "different_pages": [
+                left[i]["page_id"] for i, equal in enumerate(per_page) if not equal
+            ],
         }
 
     gates = {
         "all_condition_acceptance_gates": all(
             all(condition["gates"].values()) for condition in conditions.values()
         ),
-        "B_C_candidate_native_mmr_exact": comparisons[
-            "candidate_native_geometry:B_vs_C"
-        ]["all_pages_exact"],
+        "B_C_candidate_native_mmr_exact": comparisons["candidate_native_geometry:B_vs_C"][
+            "all_pages_exact"
+        ],
         "B_C_frozen_A_mmr_exact": comparisons["frozen_A_geometry:B_vs_C"]["all_pages_exact"],
     }
     payload = {

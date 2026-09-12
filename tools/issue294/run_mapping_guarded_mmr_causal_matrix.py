@@ -273,7 +273,9 @@ def run(
     if not geometry.get("B_C_differing_page_sets_equal") or not geometry.get(
         "B_C_geometry_diagnostic_exact"
     ):
-        raise RuntimeError("B/C geometry equivalence gate failed; one-label causal probe is invalid")
+        raise RuntimeError(
+            "B/C geometry equivalence gate failed; one-label causal probe is invalid"
+        )
     if not model_path.is_file():
         raise FileNotFoundError(model_path)
 
@@ -307,7 +309,9 @@ def run(
         image = cv2.imread(str(image_path))
         if image is None:
             raise FileNotFoundError(image_path)
-        fixed = _load_json(_resolve_project_path(str(matrix_page["fixed_inputs"]["support_result"])))
+        fixed = _load_json(
+            _resolve_project_path(str(matrix_page["fixed_inputs"]["support_result"]))
+        )
         current_staff_mask = _resolve_project_path(str(fixed["current_homr_staff_mask"]))
         global_index = int(page_id.removeprefix("page_")) - 1
 
@@ -413,16 +417,14 @@ def main() -> int:
     parser.add_argument(
         "--geometry-diagnostic",
         type=Path,
-        default=PROJECT_ROOT
-        / "logs/issue294/issue294_full68_refresh_02/"
+        default=PROJECT_ROOT / "logs/issue294/issue294_full68_refresh_02/"
         "mapping_guarded_mmr_geometry_delta_diagnostic_01.json",
     )
     parser.add_argument("--model", type=Path, default=DEFAULT_MODEL)
     parser.add_argument(
         "--output",
         type=Path,
-        default=PROJECT_ROOT
-        / "logs/issue294/issue294_full68_refresh_02/"
+        default=PROJECT_ROOT / "logs/issue294/issue294_full68_refresh_02/"
         "mapping_guarded_mmr_causal_matrix_01.json",
     )
     args = parser.parse_args()

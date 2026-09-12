@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 IMG_SIZE = (256, 128)  # H, W
 MEAN = [0.485, 0.456, 0.406]
 STD = [0.229, 0.224, 0.225]
+SUPPORTED_MODEL_ARCHITECTURES = {"resnet18", "efficientnet_b0"}
 
 
 class GPUNormalize(torch.nn.Module):
@@ -59,16 +60,41 @@ def _resolve_model_path(model_path: Path | str | None) -> Path:
     )
 
 
+def _build_model(model_architecture: str) -> torch.nn.Module:
+    if model_architecture == "resnet18":
+        model = models.resnet18(weights=None)
+        model.fc = torch.nn.Linear(model.fc.in_features, 1)
+        return model
+    if model_architecture == "efficientnet_b0":
+        model = models.efficientnet_b0(weights=None)
+        model.classifier[1] = torch.nn.Linear(model.classifier[1].in_features, 1)
+        return model
+    supported = ", ".join(sorted(SUPPORTED_MODEL_ARCHITECTURES))
+    raise ValueError(
+        f"Unsupported CNN model architecture: {model_architecture}. Supported: {supported}"
+    )
+
+
+def _infer_model_architecture(state_dict: Dict[str, torch.Tensor]) -> str:
+    if "fc.weight" in state_dict and "fc.bias" in state_dict:
+        return "resnet18"
+    if "classifier.1.weight" in state_dict and "classifier.1.bias" in state_dict:
+        return "efficientnet_b0"
+    raise ValueError(
+        "Unable to infer CNN model architecture from checkpoint state_dict. "
+        f"Supported: {', '.join(sorted(SUPPORTED_MODEL_ARCHITECTURES))}"
+    )
+
+
 def _load_model(model_path: Path, device: torch.device) -> torch.nn.Module:
-    model = models.resnet18(weights=None)
-    in_features = model.fc.in_features
-    model.fc = torch.nn.Linear(in_features, 1)
     state_dict = torch.load(model_path, map_location=device)
 
     # Handle torch.compile prefix
     if any(k.startswith("_orig_mod.") for k in state_dict.keys()):
         state_dict = {k.replace("_orig_mod.", ""): v for k, v in state_dict.items()}
 
+    model_architecture = _infer_model_architecture(state_dict)
+    model = _build_model(model_architecture)
     model.load_state_dict(state_dict)
     model.to(device)
     model.eval()

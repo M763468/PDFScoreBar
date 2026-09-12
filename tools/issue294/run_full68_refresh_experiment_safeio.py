@@ -108,9 +108,7 @@ def _bind_visible_weight_step() -> dict[str, object]:
     if not target.is_file():
         raise FileNotFoundError(target)
     if target.stat().st_size != driver.EXPECTED_WEIGHT_SIZE:
-        raise RuntimeError(
-            f"Real-ESRGAN weight size mismatch: {target.stat().st_size}"
-        )
+        raise RuntimeError(f"Real-ESRGAN weight size mismatch: {target.stat().st_size}")
     host_hash = driver._sha256(target)
     if host_hash != driver.EXPECTED_WEIGHT_SHA256:
         raise RuntimeError(f"Host Real-ESRGAN weight SHA mismatch: {host_hash}")

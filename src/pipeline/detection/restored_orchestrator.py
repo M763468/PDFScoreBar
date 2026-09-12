@@ -3,9 +3,15 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Any, Dict, List
 
+from src.common.model_artifacts import (
+    ModelArtifactManifest,
+    load_model_artifact_manifest,
+    resolve_model_artifact,
+)
 from src.pipeline.core.run_ids import split_score_page_from_composite_stem
 from src.pipeline.utils.io import ensure_dir
 
@@ -28,6 +34,81 @@ def _first_existing(directory: Path, names: tuple[str, ...], *, description: str
 def _score_page(image: Path) -> tuple[str, str]:
     split = split_score_page_from_composite_stem(image.stem)
     return split if split is not None else (image.parent.name, image.stem)
+
+
+def _validate_verified_cnn_checkpoint(model_path: Path) -> None:
+    """Reject checkpoints that do not match the verified D27 architecture."""
+    import torch
+
+    from src.pipeline.steps.cnn_scoring import _infer_model_architecture
+
+    state_dict = torch.load(model_path, map_location="cpu")
+    if not isinstance(state_dict, dict):
+        raise ValueError("Verified Stage E detector route requires a CNN state_dict checkpoint")
+    if any(key.startswith("_orig_mod.") for key in state_dict):
+        state_dict = {key.removeprefix("_orig_mod."): value for key, value in state_dict.items()}
+    architecture = _infer_model_architecture(state_dict)
+    if architecture != "efficientnet_b0":
+        raise ValueError(
+            "Verified Stage E detector route requires an EfficientNet-B0 CNN checkpoint; "
+            f"configured checkpoint is {architecture}"
+        )
+
+
+def _resolve_manifest_path(manifest_path: Path | str) -> Path:
+    path = Path(manifest_path)
+    return path if path.is_absolute() else PROJECT_ROOT / path
+
+
+def _validate_verified_cnn_manifest(
+    manifest: ModelArtifactManifest,
+    *,
+    cnn_threshold: float,
+) -> None:
+    """Ensure the tracked artifact identity matches the verified Stage E contract."""
+    if manifest.architecture != "efficientnet_b0":
+        raise ValueError(
+            "Verified Stage E detector route requires an EfficientNet-B0 model manifest; "
+            f"configured manifest architecture is {manifest.architecture!r}"
+        )
+
+    production_contract = manifest.raw.get("production_contract")
+    if not isinstance(production_contract, dict):
+        raise ValueError(
+            "Verified Stage E model manifest requires object field 'production_contract'"
+        )
+    manifest_threshold = production_contract.get("cnn_threshold")
+    if not isinstance(manifest_threshold, (int, float)):
+        raise ValueError(
+            "Verified Stage E model manifest requires numeric production_contract.cnn_threshold"
+        )
+    if not math.isclose(
+        float(manifest_threshold),
+        cnn_threshold,
+        rel_tol=0.0,
+        abs_tol=1e-12,
+    ):
+        raise ValueError(
+            "Verified Stage E CNN threshold does not match the model manifest: "
+            f"config={cnn_threshold} manifest={float(manifest_threshold)}"
+        )
+
+
+def _resolve_verified_cnn_artifact(
+    manifest_path: Path | str,
+    *,
+    cnn_threshold: float,
+) -> Path:
+    """Resolve and integrity-check the verified Stage E model from its manifest."""
+    resolved_manifest_path = _resolve_manifest_path(manifest_path)
+    manifest = load_model_artifact_manifest(resolved_manifest_path)
+    _validate_verified_cnn_manifest(manifest, cnn_threshold=cnn_threshold)
+    model_path = resolve_model_artifact(
+        resolved_manifest_path,
+        project_root=PROJECT_ROOT,
+    )
+    _validate_verified_cnn_checkpoint(model_path)
+    return model_path
 
 
 class DetectorOrchestrator:
@@ -196,9 +277,25 @@ class DetectorOrchestrator:
     def _run_cnn_scoring(self) -> Dict[str, Any]:
         if self._dense_route is None and not self.dry_run:
             raise RuntimeError("Dense detector route was not reconstructed before CNN scoring")
-        cnn_model = self.det_cfg.get("cnn_model_path")
-        if not cnn_model:
-            raise ValueError("detection.cnn_model_path is required")
+        cnn_model_manifest = self.det_cfg.get("cnn_model_manifest")
+        if not cnn_model_manifest:
+            raise ValueError(
+                "Verified Stage E detector route requires explicit detection.cnn_model_manifest"
+            )
+        if self.det_cfg.get("cnn_model_path"):
+            raise ValueError(
+                "Verified Stage E detector route does not accept detection.cnn_model_path; "
+                "use detection.cnn_model_manifest so model identity and SHA-256 are verified"
+            )
+        if "cnn_threshold" not in self.det_cfg or self.det_cfg.get("cnn_threshold") is None:
+            raise ValueError(
+                "Verified Stage E detector route requires explicit detection.cnn_threshold"
+            )
+        cnn_threshold = float(self.det_cfg["cnn_threshold"])
+        if "cnn_apply_nms" not in self.det_cfg:
+            raise ValueError(
+                "Verified Stage E detector route requires explicit detection.cnn_apply_nms=false"
+            )
         if get_cnn_apply_nms(self.det_cfg):
             raise ValueError("Verified Stage E detector route requires cnn_apply_nms=false")
         bands_from = (
@@ -216,11 +313,15 @@ class DetectorOrchestrator:
             # workers and verified HOMR profile runs have completed.
             from src.pipeline.steps.cnn_scoring import run_cnn_scoring_batch
 
+            model_path = _resolve_verified_cnn_artifact(
+                cnn_model_manifest,
+                cnn_threshold=cnn_threshold,
+            )
             run_cnn_scoring_batch(
                 probe_output_root=self.probe_output_dir,
                 images=self.images,
-                model_path=Path(str(cnn_model)),
-                threshold=float(self.det_cfg.get("cnn_threshold", 0.1)),
+                model_path=model_path,
+                threshold=cnn_threshold,
                 score_name=(
                     str(self.det_cfg["probe_score_name"])
                     if self.det_cfg.get("probe_score_name")
@@ -244,6 +345,8 @@ class DetectorOrchestrator:
                     "inprocess:cnn_scoring",
                     "--route",
                     DENSE_ROUTE_NAME,
+                    "--model-manifest",
+                    str(cnn_model_manifest),
                     "--bands-from",
                     str(bands_from),
                     "--input-image-scale",

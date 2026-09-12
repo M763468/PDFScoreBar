@@ -31,8 +31,10 @@ def _host_tests_step() -> dict[str, object]:
     ]
     env = os.environ.copy()
     existing = env.get("PYTHONPATH")
-    env["PYTHONPATH"] = str(driver.PROJECT_ROOT) if not existing else os.pathsep.join(
-        [str(driver.PROJECT_ROOT), existing]
+    env["PYTHONPATH"] = (
+        str(driver.PROJECT_ROOT)
+        if not existing
+        else os.pathsep.join([str(driver.PROJECT_ROOT), existing])
     )
     completed = driver.subprocess.run(
         [sys.executable, "-m", "pytest", *tests],

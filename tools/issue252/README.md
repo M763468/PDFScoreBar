@@ -4,11 +4,8 @@ This directory traces the remaining box-instance mismatch on
 `Va_Prokofiev_Symphony1/page_004` and determines whether it changes the
 connector-supported final numbering result.
 
-The investigation conclusion is recorded in:
-
-```text
-docs/issue252_prokofiev_detector_conclusion.md
-```
+This README is the retained reproduction and decision record for the Issue #252 audit.
+Forensic discussion remains in [Issue #252](https://github.com/M763468/PDFScoreBar/issues/252).
 
 ## Retained tools
 
@@ -178,7 +175,16 @@ No authoritative original-coordinate proxy connector masks were identified in th
 retained artifacts, so the local run explicitly recorded page-image ink as the
 connector source with `--allow-page-image-connector-fallback`.
 
+Issue #315 moved the production CNN identity from a direct `cnn_model_path` under
+`logs/` to `cnn_model_manifest`. Materialize the tracked production artifact before
+running this comparison. The runner resolves and SHA-256 verifies the manifest-backed
+cache entry, while retaining support for older configs that still use only
+`cnn_model_path`.
+
 ```bash
+PYTHONPATH=. "$PYTHON" -m src.common.model_artifacts materialize \
+  models/barline_cnn/manifest.json
+
 OUTPUT_ROOT=logs/issue252_grouped_final_numbering_comparison_side_context_ratio_2
 rm -rf "$OUTPUT_ROOT"
 
@@ -250,7 +256,8 @@ contracts report `base_equals_final = false`.
 
 Therefore the target is a box-instance detector FN but is redundant for the current
 connector-supported grouped boundary. The side-context candidate remains rejected
-because it changes unrelated page geometry and page-wide numbering.
+because it changes unrelated page geometry and page-wide numbering. No detector or
+candidate-filter configuration is promoted from Issue #252.
 
 ## 3. Relationship to Issue #254
 

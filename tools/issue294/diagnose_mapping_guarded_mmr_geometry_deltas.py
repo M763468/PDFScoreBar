@@ -47,9 +47,7 @@ def _compact_map(items: Any) -> dict[tuple[int, int, int], int]:
     return {_key(item): int(item.get("skip") or 0) for item in items if isinstance(item, Mapping)}
 
 
-def differing_override_keys(
-    left: Any, right: Any
-) -> list[tuple[int, int, int]]:
+def differing_override_keys(left: Any, right: Any) -> list[tuple[int, int, int]]:
     """Return sorted semantic keys whose retained override presence/value differs."""
 
     left_map = _compact_map(left)
@@ -94,9 +92,7 @@ def _numbering(
     matrix_page: Mapping[str, Any], *, mode: str, label: str, page_number: int
 ) -> tuple[dict[str, Any], str]:
     variant = matrix_page["modes"][mode]["variants"][label]
-    fixed = _load_json(
-        _resolve_project_path(str(matrix_page["fixed_inputs"]["support_result"]))
-    )
+    fixed = _load_json(_resolve_project_path(str(matrix_page["fixed_inputs"]["support_result"])))
     pipeline = MappingGuardedConnectorPositivePipeline()
     staff_mask = _resolve_project_path(str(variant["staff_mask"]))
     score = pipeline.run_sequential(
@@ -116,7 +112,9 @@ def _numbering(
     return score_to_dict(score), pipeline.last_evidence_geometry_mode
 
 
-def _measure_snapshot(numbering: Mapping[str, Any], support: Mapping[str, Any], key: tuple[int, int, int]) -> dict[str, Any]:
+def _measure_snapshot(
+    numbering: Mapping[str, Any], support: Mapping[str, Any], key: tuple[int, int, int]
+) -> dict[str, Any]:
     _page, system_index, measure_index = key
     page = numbering["pages"][0]
     systems = page.get("systems", [])
@@ -142,8 +140,7 @@ def _measure_snapshot(numbering: Mapping[str, Any], support: Mapping[str, Any], 
                 int(value) for value in view_system["measures"][measure_index]["bbox"]
             ],
             "staff_bboxes": [
-                [int(value) for value in staff["bbox"]]
-                for staff in view_system.get("staves", [])
+                [int(value) for value in staff["bbox"]] for staff in view_system.get("staves", [])
             ],
         }
     return result
@@ -170,10 +167,9 @@ def _snapshot_delta(frozen: Mapping[str, Any], native: Mapping[str, Any]) -> dic
         ),
         "views": view_deltas,
         "any_measure_geometry_changed": any(
-            not item["equal"] for item in [
-                bbox_delta(
-                    list(frozen["base_measure_bbox"]), list(native["base_measure_bbox"])
-                ),
+            not item["equal"]
+            for item in [
+                bbox_delta(list(frozen["base_measure_bbox"]), list(native["base_measure_bbox"])),
                 *view_deltas.values(),
             ]
         ),
@@ -182,7 +178,9 @@ def _snapshot_delta(frozen: Mapping[str, Any], native: Mapping[str, Any]) -> dic
     }
 
 
-def _condition_pages(rescore: Mapping[str, Any], mode: str, label: str) -> dict[str, Mapping[str, Any]]:
+def _condition_pages(
+    rescore: Mapping[str, Any], mode: str, label: str
+) -> dict[str, Mapping[str, Any]]:
     condition = rescore["conditions"][f"{mode}:{label}"]
     return {str(page["page_id"]): page for page in condition["pages"]}
 
@@ -335,7 +333,9 @@ def run(manifest_path: Path, rescore_path: Path, output_path: Path) -> dict[str,
         },
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    output_path.write_text(
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     return report
 
 

@@ -146,7 +146,9 @@ def _panel(image: np.ndarray, label: str) -> np.ndarray:
     body = _letterbox(image, PANEL_SIZE[0], PANEL_SIZE[1] - 42)
     panel = np.full((PANEL_SIZE[1], PANEL_SIZE[0], 3), 255, dtype=np.uint8)
     panel[42:, :] = body
-    cv2.putText(panel, label[:68], (8, 26), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 0), 1, cv2.LINE_AA)
+    cv2.putText(
+        panel, label[:68], (8, 26), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 0), 1, cv2.LINE_AA
+    )
     return panel
 
 
@@ -178,7 +180,16 @@ def _context_panel(
         sx = native_x1 + int(item["dx1"]) - x1
         if 0 <= sx < crop.shape[1]:
             cv2.line(crop, (sx, 0), (sx, crop.shape[0] - 1), (180, 180, 180), 1)
-    cv2.putText(crop, "green=frozen reference  red=native  gray=sweep x1", (8, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 0), 1, cv2.LINE_AA)
+    cv2.putText(
+        crop,
+        "green=frozen reference  red=native  gray=sweep x1",
+        (8, 24),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.55,
+        (0, 0, 0),
+        1,
+        cv2.LINE_AA,
+    )
     return crop
 
 
@@ -301,7 +312,9 @@ def run(
         )
         panels.append(
             _panel(
-                _review_crop(image, frozen_bbox, [list(bbox) for bbox in frozen["primary_staff_bboxes"]]),
+                _review_crop(
+                    image, frozen_bbox, [list(bbox) for bbox in frozen["primary_staff_bboxes"]]
+                ),
                 f"frozen ref dx1={frozen_dx1:+d}px skip={frozen_skip}",
             )
         )
@@ -331,8 +344,12 @@ def run(
                     "primary_staff_bboxes": staff_bboxes,
                 },
                 "sweep": sweep,
-                "expected_hit_fractions": [item["fraction"] for item in sweep if item["expected_hit"]],
-                "distinct_valid_skips": sorted({int(item["skip"]) for item in sweep if item["skip"] is not None}),
+                "expected_hit_fractions": [
+                    item["fraction"] for item in sweep if item["expected_hit"]
+                ],
+                "distinct_valid_skips": sorted(
+                    {int(item["skip"]) for item in sweep if item["skip"] is not None}
+                ),
                 "native_zero_matches_causal_native": zero_ok,
                 "review_image": str(image_output),
             }

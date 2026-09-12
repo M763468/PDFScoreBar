@@ -36,10 +36,8 @@ def test_host_targeted_tests_use_invoking_python(monkeypatch) -> None:
 
 def test_experiment_wrappers_support_direct_execution_outside_repo(tmp_path) -> None:
     scripts = [
-        wrapper.driver.PROJECT_ROOT
-        / "tools/issue294/run_full68_refresh_experiment_hosttests.py",
-        wrapper.driver.PROJECT_ROOT
-        / "tools/issue294/run_full68_refresh_experiment_safeio.py",
+        wrapper.driver.PROJECT_ROOT / "tools/issue294/run_full68_refresh_experiment_hosttests.py",
+        wrapper.driver.PROJECT_ROOT / "tools/issue294/run_full68_refresh_experiment_safeio.py",
     ]
     for script in scripts:
         completed = subprocess.run(

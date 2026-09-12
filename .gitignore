@@ -30,6 +30,9 @@ debug_outputs/
 logs
 temp.txt
 
+# Local production model cache (materialized from versioned manifests)
+.model_cache/
+
 # Local build logs (keep out of repo root)
 docker_build_*.log
 

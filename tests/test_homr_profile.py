@@ -20,11 +20,21 @@ def test_stage_e_verified_profile_is_pinned_and_artifact_free() -> None:
         "opencv-python-headless": "4.12.0.88",
         "onnxruntime-gpu": "1.22.0",
     }
-    assert profile["verified_stage_e_full68"]["tp"] == 3579
-    assert profile["verified_stage_e_full68"]["fp"] == 1
-    assert profile["verified_stage_e_full68"]["fn"] == 1
-    assert profile["verified_stage_e_full68"]["cnn_apply_nms"] is False
-    assert profile["verified_stage_e_full68"]["sr_scale"] == 4
+    assert profile["verified_stage_e_full68"] == {
+        "gt": 3567,
+        "pred": 3599,
+        "tp": 3565,
+        "fp": 3,
+        "fn": 2,
+        "fn_det": 0,
+        "fn_cnn": 2,
+        "soft_duplicate_or_repeat_like": 31,
+        "cnn_threshold": 0.1,
+        "cnn_apply_nms": False,
+        "sr_scale": 4,
+        "canonical_gt_rebase_issue": 291,
+        "evaluated_artifact": "pipeline2_no_peak_filtered_cnn.json",
+    }
 
 
 def test_profile_environment_prioritizes_pinned_sources(monkeypatch) -> None:

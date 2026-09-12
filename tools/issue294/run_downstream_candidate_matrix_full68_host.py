@@ -38,20 +38,18 @@ def _slug(value: str) -> str:
 
 
 def _canonical_mappings() -> list[dict[str, Any]]:
-    mappings = [
-        global_host._resolve_global_page(f"page_{index:03d}") for index in range(1, 69)
-    ]
+    mappings = [global_host._resolve_global_page(f"page_{index:03d}") for index in range(1, 69)]
     ids = [str(item["global_page_id"]) for item in mappings]
     if ids != [f"page_{index:03d}" for index in range(1, 69)]:
         raise RuntimeError("Canonical Issue #294 full68 mapping is not page_001..page_068")
     if len({(str(item["score"]), str(item["page_name"])) for item in mappings}) != 68:
-        raise RuntimeError("Canonical Issue #294 full68 mapping contains duplicate score/page pairs")
+        raise RuntimeError(
+            "Canonical Issue #294 full68 mapping contains duplicate score/page pairs"
+        )
     return mappings
 
 
-def _chunk_mappings(
-    mappings: list[dict[str, Any]], chunk_size: int
-) -> list[list[dict[str, Any]]]:
+def _chunk_mappings(mappings: list[dict[str, Any]], chunk_size: int) -> list[list[dict[str, Any]]]:
     if chunk_size < 1:
         raise ValueError("chunk_size must be >= 1")
     by_score: OrderedDict[str, list[dict[str, Any]]] = OrderedDict()
@@ -106,9 +104,7 @@ def _page_summary(mapping: dict[str, Any], page: dict[str, Any]) -> dict[str, An
         "image": str(page["image"]),
         "B_full_vs_detector_material": fidelity,
         "frozen_A_geometry": _mode_summary(page["modes"]["frozen_A_geometry"]),
-        "candidate_native_geometry": _mode_summary(
-            page["modes"]["candidate_native_geometry"]
-        ),
+        "candidate_native_geometry": _mode_summary(page["modes"]["candidate_native_geometry"]),
     }
 
 
@@ -260,8 +256,7 @@ def run(
     actual_ids = [str(item["global_page_id"]) for item in page_summaries]
     if actual_ids != expected_ids:
         raise RuntimeError(
-            "Full68 completed page order mismatch: "
-            f"expected={expected_ids} actual={actual_ids}"
+            f"Full68 completed page order mismatch: expected={expected_ids} actual={actual_ids}"
         )
 
     payload = {

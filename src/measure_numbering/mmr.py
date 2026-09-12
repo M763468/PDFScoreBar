@@ -75,6 +75,9 @@ class MMRClassifier:
 class MMROCREngine:
     """Handles RapidOCR and post-processing for MMR number detection."""
 
+    supports_staff_relative_hbar_geometry = True
+    supports_staff_relative_preprocess_geometry = True
+
     def __init__(self, enable_rotation_tta: bool = False, ocr_engine: Optional[RapidOCR] = None):
         if ocr_engine is not None:
             self.ocr_engine = ocr_engine
@@ -108,8 +111,32 @@ class MMROCREngine:
             "Moderato",
         ]
 
+    @staticmethod
+    def _hbar_mask_geometry(
+        staff_height: float, use_staff_relative_geometry: bool
+    ) -> Tuple[int, int, int, int, int]:
+        """Return vertical-kernel and contour-mask geometry for an OCR crop."""
+        if not use_staff_relative_geometry:
+            # Retain the legacy J2/baseline masking contract exactly by default.
+            return 4, 40, 4, 40, 5
+
+        def scaled(ratio: float) -> int:
+            return max(1, int(round(ratio * staff_height)))
+
+        return (
+            scaled(0.10),
+            scaled(1.00),
+            scaled(0.10),
+            scaled(1.00),
+            scaled(0.125),
+        )
+
     def mask_hbar_candidates(
-        self, img: np.ndarray, staff_top_rel: float, staff_height: float
+        self,
+        img: np.ndarray,
+        staff_top_rel: float,
+        staff_height: float,
+        use_staff_relative_geometry: bool = False,
     ) -> np.ndarray:
         if img is None:
             return img
@@ -117,7 +144,10 @@ class MMROCREngine:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
-        v_erode_kernel = np.ones((4, 1), np.uint8)
+        kernel_height, min_width, min_height, max_center_distance, padding = (
+            self._hbar_mask_geometry(staff_height, use_staff_relative_geometry)
+        )
+        v_erode_kernel = np.ones((kernel_height, 1), np.uint8)
         thick_objects = cv2.erode(binary, v_erode_kernel, iterations=1)
         thick_objects = cv2.dilate(thick_objects, v_erode_kernel, iterations=1)
 
@@ -130,12 +160,14 @@ class MMROCREngine:
             cy = y + h / 2.0
             dist_center = abs(cy - staff_center)
 
-            if w > 40 and h > 4 and dist_center < 40:
-                pad = 5
+            if w > min_width and h > min_height and dist_center < max_center_distance:
                 cv2.rectangle(
                     masked_img,
-                    (max(0, x - pad), max(0, y - pad)),
-                    (min(img.shape[1], x + w + pad), min(img.shape[0], y + h + pad)),
+                    (max(0, x - padding), max(0, y - padding)),
+                    (
+                        min(img.shape[1], x + w + padding),
+                        min(img.shape[0], y + h + padding),
+                    ),
                     (255, 255, 255),
                     -1,
                 )
@@ -151,8 +183,29 @@ class MMROCREngine:
             image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
         )
 
+    @staticmethod
+    def _preprocess_geometry(
+        mode: str, staff_height: Optional[float], use_staff_relative_geometry: bool
+    ) -> Tuple[int, int]:
+        """Return dilation-kernel size and border for an OCR preprocessing variant."""
+        if not use_staff_relative_geometry:
+            return (3 if mode == "heavy_dilate" else 2), 20
+
+        effective_staff_height = max(1.0, staff_height or 1.0)
+        border = max(1, int(round(0.5 * effective_staff_height)))
+        if mode == "heavy_dilate":
+            return max(1, int(round(0.075 * effective_staff_height))), border
+        if mode == "no_dilate":
+            return 0, border
+        return max(1, int(round(0.05 * effective_staff_height))), border
+
     def preprocess_variant(
-        self, img: np.ndarray, mode: str = "standard", angle: float = 0
+        self,
+        img: np.ndarray,
+        mode: str = "standard",
+        angle: float = 0,
+        staff_height: Optional[float] = None,
+        use_staff_relative_geometry: bool = False,
     ) -> Optional[np.ndarray]:
         if img is None:
             return None
@@ -163,16 +216,18 @@ class MMROCREngine:
         _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
         binary_white_bg = cv2.bitwise_not(binary)
 
+        kernel_size, border = self._preprocess_geometry(
+            mode, staff_height, use_staff_relative_geometry
+        )
         if mode == "no_dilate":
             final = binary_white_bg
-        elif mode == "heavy_dilate":
-            kernel = np.ones((3, 3), np.uint8)
-            final = cv2.dilate(binary_white_bg, kernel, iterations=1)
         else:
-            kernel = np.ones((2, 2), np.uint8)
+            kernel = np.ones((kernel_size, kernel_size), np.uint8)
             final = cv2.dilate(binary_white_bg, kernel, iterations=1)
 
-        return cv2.copyMakeBorder(final, 20, 20, 20, 20, cv2.BORDER_CONSTANT, value=255)
+        return cv2.copyMakeBorder(
+            final, border, border, border, border, cv2.BORDER_CONSTANT, value=255
+        )
 
     def merge_ocr_results(self, ocr_result: List) -> List:
         if not ocr_result or len(ocr_result) < 2:
@@ -752,12 +807,189 @@ class MMRProcessor:
         return found_number, best_score, best_debug
 
     JITTER_SCORE_TRIGGER = 5.0
+    TARGETED_X1_SHIFT_FRACTION = 0.01
+    TARGETED_UPPER_STAFF_MARGIN_RATIO = 0.5
+    TARGETED_SHIFTED_X_MARGIN_STAFF_RATIO = 0.2
+    TARGETED_SHIFTED_Y_MARGIN_STAFF_RATIO = 0.5
 
     def _detect_number_with_evidence(self, image, system, x1, y1, x2, y2, prob, w_img, h_img):
-        """Use bounded J2 OCR geometry consensus for low-reliability baseline OCR only."""
+        """Retry low-reliability OCR with candidate-native Issue #277 crops."""
         baseline = self._detect_number_with_evidence_once(
             image, system, x1, y1, x2, y2, prob, w_img, h_img
         )
+        found, score, debug, evidence = baseline
+
+        # Preserve the validated J2 behavior for low-CNN rescue and marginal
+        # one-bar cases. The targeted retries do not replace those contracts.
+        if prob <= self.threshold or (
+            self.threshold < prob < self.ONE_BAR_VETO_PROB_MAX
+            and evidence >= self.ONE_BAR_VETO_MIN_EVIDENCE
+        ):
+            return self._detect_number_with_evidence_j2(
+                image, system, x1, y1, x2, y2, prob, w_img, h_img, baseline
+            )
+
+        if found is not None and score > self.JITTER_SCORE_TRIGGER:
+            return baseline
+
+        measure_bbox = [int(x1), int(y1), int(x2), int(y2)]
+        staves = system.get("staves", [])
+        full_span_values = [
+            self._run_targeted_full_span_staff(image, measure_bbox, stave["bbox"], w_img, h_img)
+            for stave in staves
+        ]
+        retry_num, retry_score = self._aggregate_targeted_staff_results(full_span_values)
+        if self._targeted_retry_candidate_acceptable(retry_num, retry_score):
+            return (
+                retry_num,
+                retry_score,
+                "issue277_targeted_full_span_unmasked_heavy_dilate",
+                evidence,
+            )
+
+        shifted_bbox = self._targeted_shift_x1(measure_bbox)
+        shifted_values = []
+        if shifted_bbox[0] != measure_bbox[0]:
+            shifted_values = [
+                self._run_targeted_shifted_staff(image, shifted_bbox, stave["bbox"], w_img, h_img)
+                for stave in staves
+            ]
+        retry_num, retry_score = self._aggregate_targeted_staff_results(shifted_values)
+        if self._targeted_retry_candidate_acceptable(retry_num, retry_score):
+            return (
+                retry_num,
+                retry_score,
+                "issue277_targeted_scale_relative_x1_masked_no_dilate",
+                evidence,
+            )
+
+        if found is None:
+            return baseline
+
+        return self._detect_number_with_evidence_j2(
+            image, system, x1, y1, x2, y2, prob, w_img, h_img, baseline
+        )
+
+    @classmethod
+    def _targeted_shift_x1(cls, bbox: List[int]) -> List[int]:
+        x1, y1, x2, y2 = (int(value) for value in bbox)
+        width = x2 - x1
+        if width <= 1:
+            return [x1, y1, x2, y2]
+        dx = min(
+            width - 1,
+            max(1, int(round(width * cls.TARGETED_X1_SHIFT_FRACTION))),
+        )
+        return [x1 + dx, y1, x2, y2]
+
+    @staticmethod
+    def _targeted_retry_candidate_acceptable(number: Optional[int], score: float) -> bool:
+        return number is not None and number >= 2 and score > 0.0
+
+    @staticmethod
+    def _aggregate_targeted_staff_results(
+        values: List[Tuple[Optional[int], float]],
+    ) -> Tuple[Optional[int], float]:
+        votes = Counter(value for value, _score in values if value is not None and value >= 2)
+        if not votes:
+            return None, 0.0
+        support = max(votes.values())
+        leaders = [value for value, count in votes.items() if count == support]
+        if len(leaders) != 1:
+            return None, 0.0
+        selected = leaders[0]
+        score = max(score for value, score in values if value == selected)
+        return selected, score
+
+    def _run_targeted_full_span_staff(
+        self, image, measure_bbox, staff_bbox, w_img, h_img
+    ) -> Tuple[Optional[int], float]:
+        x1, _y1, x2, _y2 = (float(value) for value in measure_bbox)
+        _sx1, sy1, _sx2, sy2 = (float(value) for value in staff_bbox)
+        staff_height = max(1.0, sy2 - sy1)
+        ox1 = max(0, min(w_img, int(round(x1))))
+        ox2 = max(0, min(w_img, int(round(x2))))
+        oy1 = max(
+            0,
+            min(
+                h_img,
+                int(round(sy1 - self.TARGETED_UPPER_STAFF_MARGIN_RATIO * staff_height)),
+            ),
+        )
+        oy2 = max(0, min(h_img, int(round(sy2))))
+        crop = image[oy1:oy2, ox1:ox2]
+        if crop is None or crop.size == 0:
+            return None, 0.0
+        if getattr(self.ocr, "supports_staff_relative_preprocess_geometry", False):
+            processed = self.ocr.preprocess_variant(
+                crop,
+                mode="heavy_dilate",
+                angle=0,
+                staff_height=staff_height,
+                use_staff_relative_geometry=True,
+            )
+        else:
+            processed = self.ocr.preprocess_variant(crop, mode="heavy_dilate", angle=0)
+        if processed is None or processed.size == 0:
+            return None, 0.0
+        ocr_result, _ = self.ocr.ocr_engine(processed)
+        number, score, _debug = self.ocr.select_best_candidate(
+            ocr_result or [], processed.shape[1], processed.shape[0]
+        )
+        if number is None or number < 2:
+            return None, 0.0
+        return number, score
+
+    def _run_targeted_shifted_staff(
+        self, image, measure_bbox, staff_bbox, w_img, h_img
+    ) -> Tuple[Optional[int], float]:
+        x1, _y1, x2, _y2 = (int(value) for value in measure_bbox)
+        _sx1, sy1, _sx2, sy2 = (int(value) for value in staff_bbox)
+        staff_height = max(1.0, float(sy2 - sy1))
+        margin_x = int(round(staff_height * self.TARGETED_SHIFTED_X_MARGIN_STAFF_RATIO))
+        margin_y = int(round(staff_height * self.TARGETED_SHIFTED_Y_MARGIN_STAFF_RATIO))
+        ox1 = max(0, min(w_img, x1 - margin_x))
+        ox2 = max(0, min(w_img, x2 + margin_x))
+        oy1 = max(0, min(h_img, sy1 - margin_y))
+        oy2 = max(0, min(h_img, sy2 + margin_y))
+        crop = image[oy1:oy2, ox1:ox2]
+        if crop is None or crop.size == 0:
+            return None, 0.0
+        staff_top_rel = float(sy1 - oy1)
+        if getattr(self.ocr, "supports_staff_relative_hbar_geometry", False):
+            crop = self.ocr.mask_hbar_candidates(crop, staff_top_rel, staff_height, True)
+        else:
+            crop = self.ocr.mask_hbar_candidates(crop, staff_top_rel, staff_height)
+        if crop is None or crop.size == 0:
+            return None, 0.0
+        if getattr(self.ocr, "supports_staff_relative_preprocess_geometry", False):
+            processed = self.ocr.preprocess_variant(
+                crop,
+                mode="no_dilate",
+                angle=0,
+                staff_height=staff_height,
+                use_staff_relative_geometry=True,
+            )
+        else:
+            processed = self.ocr.preprocess_variant(crop, mode="no_dilate", angle=0)
+        if processed is None or processed.size == 0:
+            return None, 0.0
+        ocr_result, _ = self.ocr.ocr_engine(processed)
+        number, score, _debug = self.ocr.select_best_candidate(
+            ocr_result or [], processed.shape[1], processed.shape[0]
+        )
+        if number is None or number < 2:
+            return None, 0.0
+        return number, score
+
+    def _detect_number_with_evidence_j2(
+        self, image, system, x1, y1, x2, y2, prob, w_img, h_img, baseline=None
+    ):
+        """Retain merged J2 as the fallback for contracts targeted v2 cannot resolve."""
+        if baseline is None:
+            baseline = self._detect_number_with_evidence_once(
+                image, system, x1, y1, x2, y2, prob, w_img, h_img
+            )
         found, score, debug, evidence = baseline
         if found is None or score > self.JITTER_SCORE_TRIGGER:
             return baseline

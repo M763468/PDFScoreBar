@@ -170,7 +170,14 @@ def _score_condition(
         totals["base_measures"] += total_measures
         if counts["expected"] == 0:
             totals["zero_expected_pages"] += 1
-        for key in ("expected", "detected", "matched_tp", "missed_fn", "skip_mismatch", "unexpected_fp"):
+        for key in (
+            "expected",
+            "detected",
+            "matched_tp",
+            "missed_fn",
+            "skip_mismatch",
+            "unexpected_fp",
+        ):
             totals[key] += int(counts[key])
 
         expected_compact = _compact(expected)
@@ -310,12 +317,10 @@ def run(manifest_path: Path, model_path: Path) -> dict[str, Any]:
         "all_condition_acceptance_gates": all(
             all(condition["gates"].values()) for condition in conditions.values()
         ),
-        "B_C_candidate_native_mmr_exact": comparisons[
-            "candidate_native_geometry:B_vs_C"
-        ]["all_pages_exact"],
-        "B_C_frozen_A_mmr_exact": comparisons["frozen_A_geometry:B_vs_C"][
+        "B_C_candidate_native_mmr_exact": comparisons["candidate_native_geometry:B_vs_C"][
             "all_pages_exact"
         ],
+        "B_C_frozen_A_mmr_exact": comparisons["frozen_A_geometry:B_vs_C"]["all_pages_exact"],
     }
     return {
         "schema_version": "issue294.full68_mmr_audit.v1",
@@ -342,7 +347,9 @@ def main() -> int:
     try:
         payload = run(args.full68_manifest, args.model)
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        args.output.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
     except Exception as error:  # noqa: BLE001
         print(
             json.dumps(

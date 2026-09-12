@@ -5,6 +5,9 @@
 logs/
 logs_user/
 
+# Ignore local production model cache
+.model_cache/
+
 # Ignore data directory
 data/
 

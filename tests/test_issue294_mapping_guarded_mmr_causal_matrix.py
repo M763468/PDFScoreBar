@@ -118,7 +118,9 @@ def test_primary_component_conditions_change_only_requested_component():
         measure_index=0,
         condition="native_revert_primary_measure",
     )
-    assert reverted_measure["primary"]["measures"][0]["bbox"] == frozen_primary["measures"][0]["bbox"]
+    assert (
+        reverted_measure["primary"]["measures"][0]["bbox"] == frozen_primary["measures"][0]["bbox"]
+    )
     assert reverted_measure["primary"]["staves"] == native_primary["staves"]
 
     reverted_staff = _condition_systems(

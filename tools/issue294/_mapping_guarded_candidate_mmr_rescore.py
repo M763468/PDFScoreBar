@@ -121,21 +121,15 @@ def _assert_source_numbering_shape(
 ) -> None:
     expected = {
         "total_measures": int(source_page.get("total_measures", -1)),
-        "system_staff_counts": [
-            int(value) for value in source_page.get("system_staff_counts", [])
-        ],
+        "system_staff_counts": [int(value) for value in source_page.get("system_staff_counts", [])],
         "system_measure_counts": [
             int(value) for value in source_page.get("system_measure_counts", [])
         ],
     }
     actual = {
         "total_measures": int(reconstructed["total_measures"]),
-        "system_staff_counts": [
-            int(value) for value in reconstructed["system_staff_counts"]
-        ],
-        "system_measure_counts": [
-            int(value) for value in reconstructed["system_measure_counts"]
-        ],
+        "system_staff_counts": [int(value) for value in reconstructed["system_staff_counts"]],
+        "system_measure_counts": [int(value) for value in reconstructed["system_measure_counts"]],
     }
     if actual != expected:
         raise RuntimeError(
@@ -153,9 +147,7 @@ def _run_numbering_score(
     pipeline: Any,
 ) -> Any:
     variant = matrix_page["modes"][mode]["variants"][label]
-    support = _load_json(
-        _resolve_project_path(str(matrix_page["fixed_inputs"]["support_result"]))
-    )
+    support = _load_json(_resolve_project_path(str(matrix_page["fixed_inputs"]["support_result"])))
     staff_mask = _resolve_project_path(str(variant["staff_mask"]))
     return pipeline.run_sequential(
         [
@@ -165,12 +157,8 @@ def _run_numbering_score(
                 "image_size": _page_image_size(matrix_page),
                 "page_number": page_number,
                 "connector_mask_paths": {
-                    "symbols": str(
-                        _resolve_project_path(str(support["connector_symbols"]))
-                    ),
-                    "brace_dot": str(
-                        _resolve_project_path(str(support["connector_brace_dot"]))
-                    ),
+                    "symbols": str(_resolve_project_path(str(support["connector_symbols"]))),
+                    "brace_dot": str(_resolve_project_path(str(support["connector_brace_dot"]))),
                 },
             }
         ]
@@ -243,9 +231,7 @@ def _accepted_rebase_pages(
         raise ValueError("Accepted rebase report must contain 68 pages")
 
     actual_fingerprint = {
-        "historical_source_fixture_items": int(
-            payload.get("historical_source_fixture_items") or 0
-        ),
+        "historical_source_fixture_items": int(payload.get("historical_source_fixture_items") or 0),
         "expected": int(summary.get("expected") or 0),
         "detected": int(summary.get("detected") or 0),
         "matched_tp": int(summary.get("matched_tp") or 0),
@@ -254,9 +240,7 @@ def _accepted_rebase_pages(
         "unexpected_fp": int(summary.get("unexpected_fp") or 0),
         "pages": int(summary.get("pages") or 0),
         "zero_expected_pages": int(summary.get("zero_expected_pages") or 0),
-        "zero_expected_page_detections": int(
-            summary.get("zero_expected_page_detections") or 0
-        ),
+        "zero_expected_page_detections": int(summary.get("zero_expected_page_detections") or 0),
         "mapped_historical_source_items": int(
             fixture_rebase.get("mapped_historical_source_items") or 0
         ),
@@ -381,8 +365,8 @@ def _rebase_accepted_expected_to_candidate(
                 int(value) for value in historical_key_raw
             ]
 
-        method = str(detail["method"]).replace("historical", "accepted").replace(
-            "current", "candidate"
+        method = (
+            str(detail["method"]).replace("historical", "accepted").replace("current", "candidate")
         )
         mappings.append(
             {
@@ -394,14 +378,10 @@ def _rebase_accepted_expected_to_candidate(
                     int(accepted_key_raw[2]),
                 ]
                 != [candidate_ref.system, candidate_ref.measure],
-                "accepted_source_coalesced": bool(
-                    anchor.get("coalesced_equivalent_fixture")
-                ),
+                "accepted_source_coalesced": bool(anchor.get("coalesced_equivalent_fixture")),
                 "candidate_coalesced": candidate_coalesced,
                 "candidate_coalesced_with_historical_key": (
-                    source_key_by_candidate_key[candidate_key]
-                    if candidate_coalesced
-                    else None
+                    source_key_by_candidate_key[candidate_key] if candidate_coalesced else None
                 ),
                 "skip": _skip(mapped),
                 "method": method,
@@ -529,9 +509,7 @@ def _candidate_condition(
         expected_compact = _compact(expected)
         actual_compact = _compact(actual)
         if page_id == "page_042":
-            page_042_exact = (
-                expected_compact == actual_compact and len(expected_compact) == 5
-            )
+            page_042_exact = expected_compact == actual_compact and len(expected_compact) == 5
         if page_id == "page_033":
             page_033_veto = not any(
                 _override_key(item) == PAGE_033_ONE_BAR_KEY for item in actual_compact
@@ -553,20 +531,16 @@ def _candidate_condition(
                 "expected_rebase": {
                     "mapping_count": len(expected_mappings),
                     "changed_key_count": sum(
-                        bool(item["changed_from_accepted"])
-                        for item in expected_mappings
+                        bool(item["changed_from_accepted"]) for item in expected_mappings
                     ),
                     "candidate_coalesced_items": sum(
-                        bool(item["candidate_coalesced"])
-                        for item in expected_mappings
+                        bool(item["candidate_coalesced"]) for item in expected_mappings
                     ),
                 },
                 "actual_rebase": {
                     "source_geometry": "reconstructed_run_full68_mmr_audit_numbering",
                     "mapping_count": len(actual_mappings),
-                    "changed_key_count": sum(
-                        bool(item["changed"]) for item in actual_mappings
-                    ),
+                    "changed_key_count": sum(bool(item["changed"]) for item in actual_mappings),
                 },
             }
         )
@@ -577,21 +551,13 @@ def _candidate_condition(
             "source_numbering_reconstruction_exact_pages"
         ]
         == 68,
-        "accepted_source_fixture_items_182": totals["accepted_source_fixture_items"]
+        "accepted_source_fixture_items_182": totals["accepted_source_fixture_items"] == 182,
+        "accepted_rebase_mapped_all_182_source_items": totals["mapped_accepted_source_items"]
         == 182,
-        "accepted_rebase_mapped_all_182_source_items": totals[
-            "mapped_accepted_source_items"
-        ]
-        == 182,
-        "retained_actual_rebase_mapped_all_items": totals[
-            "mapped_retained_actual_items"
-        ]
+        "retained_actual_rebase_mapped_all_items": totals["mapped_retained_actual_items"]
         == totals["retained_actual_items"],
         "zero_expected_pages_scored": totals["zero_expected_pages"] == 16,
-        "zero_expected_page_detections_zero": totals[
-            "zero_expected_page_detections"
-        ]
-        == 0,
+        "zero_expected_page_detections_zero": totals["zero_expected_page_detections"] == 0,
         "unexpected_fp_zero": totals["unexpected_fp"] == 0,
         "missed_fn_not_above_3": totals["missed_fn"] <= 3,
         "skip_mismatch_not_above_6": totals["skip_mismatch"] <= 6,
@@ -608,16 +574,13 @@ def _candidate_condition(
                 bool(item["changed_from_accepted"]) for item in expected_mappings_all
             ),
             "candidate_coalesced_items": sum(
-                bool(item["candidate_coalesced"])
-                for item in expected_mappings_all
+                bool(item["candidate_coalesced"]) for item in expected_mappings_all
             ),
         },
         "actual_rebase": {
             "source_geometry": "reconstructed_run_full68_mmr_audit_numbering",
             "mapping_methods": mapping_method_counts(actual_mappings_all),
-            "changed_index_keys": sum(
-                bool(item["changed"]) for item in actual_mappings_all
-            ),
+            "changed_index_keys": sum(bool(item["changed"]) for item in actual_mappings_all),
         },
         "pages": pages,
     }
@@ -638,9 +601,7 @@ def run(
     if not isinstance(manifest, Mapping) or manifest.get("status") != "completed":
         raise ValueError("Full68 manifest is not completed")
     matrix_pages = _load_matrix_pages(manifest)
-    accepted_pages, accepted_provenance = _accepted_rebase_pages(
-        accepted_rebase_report_path
-    )
+    accepted_pages, accepted_provenance = _accepted_rebase_pages(accepted_rebase_report_path)
     conditions_raw = source.get("conditions")
     if not isinstance(conditions_raw, Mapping):
         raise ValueError("Source MMR audit lacks conditions")
@@ -717,8 +678,7 @@ def main() -> int:
     parser.add_argument(
         "--source-report",
         type=Path,
-        default=PROJECT_ROOT
-        / "logs/issue294/issue294_full68_refresh_02/full68_mmr_audit_01.json",
+        default=PROJECT_ROOT / "logs/issue294/issue294_full68_refresh_02/full68_mmr_audit_01.json",
     )
     parser.add_argument(
         "--accepted-rebase-report",
@@ -738,15 +698,11 @@ def main() -> int:
         json.dumps(
             {
                 "status": payload["status"],
-                "accepted_issue264_rebase_sha256": payload[
-                    "accepted_issue264_rebase_report"
-                ]["sha256"],
-                "B_C_actual_rebased_exact_by_mode": payload[
-                    "B_C_actual_rebased_exact_by_mode"
+                "accepted_issue264_rebase_sha256": payload["accepted_issue264_rebase_report"][
+                    "sha256"
                 ],
-                "all_condition_acceptance_gates": payload[
-                    "all_condition_acceptance_gates"
-                ],
+                "B_C_actual_rebased_exact_by_mode": payload["B_C_actual_rebased_exact_by_mode"],
+                "all_condition_acceptance_gates": payload["all_condition_acceptance_gates"],
                 "output": str(args.output),
             },
             indent=2,

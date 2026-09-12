@@ -57,14 +57,14 @@ def _vertical_iou(left: Staff, right: Staff) -> float:
 def _best_index(source: Staff, candidates: list[Staff]) -> tuple[int | None, float]:
     if not candidates:
         return None, 0.0
-    scored = [(_vertical_iou(source, candidate), index) for index, candidate in enumerate(candidates)]
+    scored = [
+        (_vertical_iou(source, candidate), index) for index, candidate in enumerate(candidates)
+    ]
     best_iou, best_index = max(scored, key=lambda item: (item[0], -item[1]))
     return best_index, best_iou
 
 
-def _identity_mapping_reliable(
-    geometry_staves: list[Staff], evidence_staves: list[Staff]
-) -> bool:
+def _identity_mapping_reliable(geometry_staves: list[Staff], evidence_staves: list[Staff]) -> bool:
     """Require positive-overlap reciprocal identity correspondence for every staff.
 
     No numeric tuning threshold is introduced: each same-index pair must overlap,
@@ -181,9 +181,7 @@ def run(manifest_path: Path, output_path: Path) -> dict[str, Any]:
     for page_id, summary in summaries.items():
         page = _matrix_for_summary(summary, matrix_pages)
         image_size = _page_image_size(page)
-        support = _load_json(
-            _resolve_project_path(str(page["fixed_inputs"]["support_result"]))
-        )
+        support = _load_json(_resolve_project_path(str(page["fixed_inputs"]["support_result"])))
         native = page["modes"]["candidate_native_geometry"]["variants"]
         page_result: dict[str, Any] = {
             "score": summary["score"],
@@ -277,7 +275,9 @@ def run(manifest_path: Path, output_path: Path) -> dict[str, Any]:
         "pages": pages,
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    output_path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     return payload
 
 
@@ -291,8 +291,7 @@ def main() -> int:
     parser.add_argument(
         "--output",
         type=Path,
-        default=PROJECT_ROOT
-        / "logs/issue294/issue294_full68_refresh_02/"
+        default=PROJECT_ROOT / "logs/issue294/issue294_full68_refresh_02/"
         "mapping_guarded_connector_positive_candidate_01.json",
     )
     args = parser.parse_args()

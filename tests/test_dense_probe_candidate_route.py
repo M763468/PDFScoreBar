@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from src.pipeline.detector_routes.dense_probe_candidate import (
+    TARGET_DETECTOR,
     DenseProbeCandidateConfig,
     build_route_provenance,
     build_score_eval_command,
@@ -14,6 +15,10 @@ from src.pipeline.detector_routes.dense_probe_candidate import (
     validate_workflow_config,
 )
 from src.pipeline.detector_routes.dense_probe_candidate_route import build_parser
+
+
+def test_dense_probe_candidate_target_tracks_issue291_canonical_gt() -> None:
+    assert TARGET_DETECTOR == {"tp": 3566, "fp": 3, "fn": 1}
 
 
 def test_dense_probe_candidate_config_records_nms_disabled():

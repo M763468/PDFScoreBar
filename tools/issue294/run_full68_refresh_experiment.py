@@ -26,7 +26,6 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from tools.issue294 import run_downstream_candidate_matrix_full68_host as full68_host
-from tools.issue294 import run_same_original_ab_host as base
 
 CONTAINER = "pdfscore_issue294_profile_worktree"
 EXPECTED_IMAGE_ID = "sha256:5e1265263a5ba014814002c02fcfaf7f07a61e7000c13697db6c3087c7d2acdc"
@@ -142,7 +141,10 @@ def _container_step() -> dict[str, Any]:
                 f"printf '%s\\n' '{token}' > '/workspace/{container_to_host.name}'",
             ]
         )
-        if not container_to_host.is_file() or container_to_host.read_text(encoding="utf-8").strip() != token:
+        if (
+            not container_to_host.is_file()
+            or container_to_host.read_text(encoding="utf-8").strip() != token
+        ):
             raise RuntimeError(
                 "Container -> host /workspace bind round-trip failed. The current host wrappers "
                 "cannot checkpoint safely until the bind is repaired/recreated."
@@ -207,7 +209,9 @@ def _sync_source_step() -> dict[str, Any]:
     for relative in paths:
         host_path = PROJECT_ROOT / relative
         host_hash = _sha256(host_path)
-        container_hash = _docker_capture(["exec", CONTAINER, "sha256sum", f"/workspace/{relative}"]).split()[0]
+        container_hash = _docker_capture(
+            ["exec", CONTAINER, "sha256sum", f"/workspace/{relative}"]
+        ).split()[0]
         if host_hash != container_hash:
             raise RuntimeError(f"Source sync SHA mismatch for {relative}")
         hashes[relative] = {"host": host_hash, "container": container_hash}
@@ -276,7 +280,9 @@ def _input_preflight_step(latest_commit: str) -> dict[str, Any]:
         _docker_test_file(path)
 
     mappings = full68_host._canonical_mappings()
-    missing_host_images = [str(item["image"]) for item in mappings if not Path(str(item["image"])).is_file()]
+    missing_host_images = [
+        str(item["image"]) for item in mappings if not Path(str(item["image"])).is_file()
+    ]
     if missing_host_images:
         raise FileNotFoundError("Missing canonical host images: " + repr(missing_host_images))
 
@@ -395,9 +401,7 @@ def _full68_step(run_tag: str, latest_commit: str, chunk_size: int) -> dict[str,
     )
     manifest_path = PROJECT_ROOT / "logs/issue294" / run_tag / "full68_host.json"
     if not manifest_path.is_file():
-        raise RuntimeError(
-            f"full68 runner returned {rc} without a manifest: {manifest_path}"
-        )
+        raise RuntimeError(f"full68 runner returned {rc} without a manifest: {manifest_path}")
     manifest = _load_json(manifest_path)
     if manifest.get("status") != "completed" or int(manifest.get("completed_page_count", 0)) != 68:
         raise RuntimeError(

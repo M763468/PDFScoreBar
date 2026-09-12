@@ -12,10 +12,21 @@ import json
 import sys
 from pathlib import Path
 
+from PIL import Image
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.common.barline_evaluation import greedy_barline_match, is_barline_match
+from src.common.barline_evaluation import (
+    CENTER_ANCHOR_XDIST_UNIT_RATIO,
+    greedy_barline_match,
+    is_barline_match,
+)
+from src.common.barline_units import (
+    load_page_staff_units,
+    require_page_staff_unit,
+    validate_coordinate_dimensions,
+)
 
 # Canonical Issue #120 evaluation2 page set: 68 pages.
 SCORES: dict[str, list[str]] = {
@@ -85,11 +96,24 @@ def main():
     parser.add_argument("--score-threshold", type=float, default=0.1)
     parser.add_argument("--rule-name", default="center_anchor")
     parser.add_argument("--vov-threshold", type=float, default=0.5)
-    parser.add_argument("--xdist-threshold", type=float, default=12.0)
+    parser.add_argument(
+        "--staff-units-json",
+        type=Path,
+        required=True,
+        help="Page-level staff-unit manifest in the evaluated box coordinate frame.",
+    )
+    parser.add_argument(
+        "--image-root",
+        type=Path,
+        default=Path("data/evaluation2/images"),
+        help="Fallback root containing page images in the manifest coordinate frame.",
+    )
+    parser.add_argument("--xdist-unit-ratio", type=float, default=CENTER_ANCHOR_XDIST_UNIT_RATIO)
     args = parser.parse_args()
 
     manifest = json.loads(args.manifest.read_text())
     pages = manifest.get("pages", [])
+    staff_units = load_page_staff_units(args.staff_units_json)
 
     # Build mapping: image_stem -> pipeline page data
     # Image stems are like "Shostakovich-Festival_Overture_Va_page_001"
@@ -143,6 +167,21 @@ def main():
                 continue
 
             gts = boxes_from_gt(json.loads(gt_path.read_text()))
+            page_unit = require_page_staff_unit(staff_units, score, page)
+            image_path = Path(pdata.get("image_path", ""))
+            if not image_path.is_file():
+                image_path = args.image_root / score / f"{page}.png"
+            if not image_path.is_file():
+                raise FileNotFoundError(
+                    f"Canonical input image missing for {score}/{page}: {image_path}"
+                )
+            with Image.open(image_path) as image:
+                validate_coordinate_dimensions(
+                    page_unit,
+                    width=image.width,
+                    height=image.height,
+                    page=f"{score}/{page}",
+                )
             scored_data = json.loads(scored_path.read_text())
             # filtered_cnn is a list of plain bbox arrays (already filtered), not scored dicts
             preds = boxes_from_scored(scored_data, score_threshold=args.score_threshold)
@@ -152,7 +191,8 @@ def main():
                 gts,
                 rule_name=args.rule_name,
                 vov_threshold=args.vov_threshold,
-                xdist_threshold=args.xdist_threshold,
+                unit_size=page_unit.unit_size,
+                xdist_unit_ratio=args.xdist_unit_ratio,
             )
 
             tp = len(match_result.matches)
@@ -170,7 +210,8 @@ def main():
                             gt,
                             rule_name=args.rule_name,
                             vov_threshold=args.vov_threshold,
-                            xdist_threshold=args.xdist_threshold,
+                            unit_size=page_unit.unit_size,
+                            xdist_unit_ratio=args.xdist_unit_ratio,
                         )
                         for c in cand_boxes
                     ):
@@ -255,12 +296,15 @@ def main():
         sys.exit(1)
 
     # Canonical target check
-    CANONICAL = {"tp": 3580, "fp": 0, "fn": 1}
+    CANONICAL = {"tp": 3565, "fp": 3, "fn": 2}
     match = (
         total_tp == CANONICAL["tp"] and total_fp == CANONICAL["fp"] and total_fn == CANONICAL["fn"]
     )
     if match:
-        print("\n✅ CANONICAL TARGET MET: TP=3580, FP=0, FN=1")
+        print(
+            "\n✅ CANONICAL TARGET MET: "
+            f"TP={CANONICAL['tp']}, FP={CANONICAL['fp']}, FN={CANONICAL['fn']}"
+        )
     else:
         print("\n❌ CANONICAL TARGET NOT MET.")
         print(f"   Expected: TP={CANONICAL['tp']} FP={CANONICAL['fp']} FN={CANONICAL['fn']}")

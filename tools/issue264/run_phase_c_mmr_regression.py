@@ -72,13 +72,13 @@ HISTORICAL_BASELINE = {
 }
 
 ACCEPTED_DETECTOR = {
-    "GT": 3580,
-    "Pred": 3600,
-    "TP": 3579,
-    "FP": 1,
-    "FN": 1,
+    "GT": 3567,
+    "Pred": 3599,
+    "TP": 3565,
+    "FP": 3,
+    "FN": 2,
     "FN_det": 0,
-    "FN_cnn": 1,
+    "FN_cnn": 2,
     "candidate_count": 29774,
 }
 

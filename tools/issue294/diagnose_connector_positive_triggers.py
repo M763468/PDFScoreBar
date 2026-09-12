@@ -65,7 +65,10 @@ def _staff_mapping_metrics(
             center_deltas.append(None)
 
         if evidence_staves:
-            scored = [(_vertical_iou(geometry, evidence), index) for index, evidence in enumerate(evidence_staves)]
+            scored = [
+                (_vertical_iou(geometry, evidence), index)
+                for index, evidence in enumerate(evidence_staves)
+            ]
             best_iou, best_index = max(scored, key=lambda item: (item[0], -item[1]))
             best_indices.append(best_index)
             best_ious.append(best_iou)
@@ -90,9 +93,7 @@ def _is_relaxed_trigger(
     builder = ConnectorAwareSystemBuilder()
     within_distance = gap <= avg_height * builder.DIVISI_DIST_RATIO
     return bool(
-        left_connector_present
-        and within_distance
-        and aligned_count < builder.MIN_ALIGN_COUNT
+        left_connector_present and within_distance and aligned_count < builder.MIN_ALIGN_COUNT
     )
 
 
@@ -108,7 +109,9 @@ def _nearest_cross_staff_x_delta(left: Staff, right: Staff) -> float | None:
     return float(min(abs(a - b) for a in left_x for b in right_x))
 
 
-def _variant_triggers(page: Mapping[str, Any], label: str, image_size: tuple[int, int]) -> list[dict[str, Any]]:
+def _variant_triggers(
+    page: Mapping[str, Any], label: str, image_size: tuple[int, int]
+) -> list[dict[str, Any]]:
     variant = page["modes"]["candidate_native_geometry"]["variants"][label]
     staff_mask = _resolve_project_path(str(variant["staff_mask"]))
     pipeline = MeasureNumberingPipeline()
@@ -169,7 +172,10 @@ def _variant_triggers(page: Mapping[str, Any], label: str, image_size: tuple[int
                 "gap_over_avg_height": gap / avg_height if avg_height else None,
                 "aligned_barline_pair_count": aligned_count,
                 "assigned_barline_counts": [len(left.barlines), len(right.barlines)],
-                "assigned_barline_x_centers": [_assigned_x_centers(left), _assigned_x_centers(right)],
+                "assigned_barline_x_centers": [
+                    _assigned_x_centers(left),
+                    _assigned_x_centers(right),
+                ],
                 "nearest_cross_staff_x_delta": _nearest_cross_staff_x_delta(left, right),
                 "connector_evidence": pair_evidence,
                 "staff_index_mapping": _staff_mapping_metrics(staves, evidence_staves, index),
@@ -238,7 +244,9 @@ def run(manifest_path: Path, output_path: Path) -> dict[str, Any]:
         "triggers": triggers,
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    output_path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     return payload
 
 

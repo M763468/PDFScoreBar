@@ -105,7 +105,12 @@ def _pair_decision(
 
 
 def _threshold_decision(
-    *, gap: float, avg_height: float, aligned_count: int, evidence: Mapping[str, Any] | None, threshold: float
+    *,
+    gap: float,
+    avg_height: float,
+    aligned_count: int,
+    evidence: Mapping[str, Any] | None,
+    threshold: float,
 ) -> dict[str, Any]:
     present = _evidence_max_vertical_density(evidence) >= threshold
     result = _pair_decision(
@@ -120,7 +125,9 @@ def _threshold_decision(
     return result
 
 
-def _unknown_absence_decision(*, gap: float, avg_height: float, aligned_count: int) -> dict[str, Any]:
+def _unknown_absence_decision(
+    *, gap: float, avg_height: float, aligned_count: int
+) -> dict[str, Any]:
     """Counterfactual where a generated negative connector pair is treated as unknown."""
     return _pair_decision(
         gap=gap,
@@ -188,10 +195,7 @@ def _variant_diagnostic(page: Mapping[str, Any], label: str) -> dict[str, Any]:
             explicit_evidence=explicit,
             left_connector_present=left_present,
         )
-        target_like = (
-            1150 <= s1.bbox.y1 <= 1550
-            and 1500 <= s2.bbox.y1 <= 1900
-        )
+        target_like = 1150 <= s1.bbox.y1 <= 1550 and 1500 <= s2.bbox.y1 <= 1900
         pairs.append(
             {
                 "pair": [index, index + 1],
@@ -275,7 +279,9 @@ def run(manifest_path: Path, output_path: Path) -> dict[str, Any]:
         "variants": {label: _variant_diagnostic(page, label) for label in LABELS},
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    output_path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     return payload
 
 

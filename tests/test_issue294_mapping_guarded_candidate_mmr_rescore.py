@@ -77,12 +77,8 @@ def test_retained_actual_can_be_rebased_after_empty_system_is_removed() -> None:
             }
         ]
     }
-    retained_actual = {
-        "overrides": [{"page": 0, "system": 1, "measure": 0, "skip": 3}]
-    }
-    candidate_expected = {
-        "overrides": [{"page": 0, "system": 0, "measure": 0, "skip": 3}]
-    }
+    retained_actual = {"overrides": [{"page": 0, "system": 1, "measure": 0, "skip": 3}]}
+    candidate_expected = {"overrides": [{"page": 0, "system": 0, "measure": 0, "skip": 3}]}
 
     rebased_actual, mappings = rebase_expected_overrides(
         retained_actual,
@@ -134,9 +130,7 @@ def test_accepted_issue264_anchor_rebases_without_historical_numbering_file() ->
         global_page_index=0,
     )
 
-    assert rebased == {
-        "overrides": [{"page": 0, "system": 0, "measure": 0, "skip": 3}]
-    }
+    assert rebased == {"overrides": [{"page": 0, "system": 0, "measure": 0, "skip": 3}]}
     assert mappings[0]["source_historical_key"] == [0, 2, 0]
     assert mappings[0]["accepted_key"] == [0, 1, 0]
     assert mappings[0]["candidate_key"] == [0, 0, 0]
@@ -182,9 +176,7 @@ def test_accepted_issue264_equivalent_source_items_remain_coalesced() -> None:
         global_page_index=0,
     )
 
-    assert rebased == {
-        "overrides": [{"page": 0, "system": 0, "measure": 0, "skip": 3}]
-    }
+    assert rebased == {"overrides": [{"page": 0, "system": 0, "measure": 0, "skip": 3}]}
     assert len(mappings) == 2
     assert mappings[0]["candidate_coalesced"] is False
     assert mappings[1]["accepted_source_coalesced"] is True

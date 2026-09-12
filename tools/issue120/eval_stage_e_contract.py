@@ -22,15 +22,15 @@ import eval_full68_from_intermediates as full68_eval  # noqa: E402
 EXPECTED_DETECTOR_METRICS: dict[str, int | float] = {
     "page_count": 68,
     "expected_page_count": 68,
-    "gt": 3581,
-    "pred": 3600,
-    "tp": 3580,
-    "fp": 0,
-    "fn": 1,
+    "gt": 3567,
+    "pred": 3599,
+    "tp": 3565,
+    "fp": 3,
+    "fn": 2,
     "fn_det": 0,
-    "fn_cnn": 1,
-    "precision": 1.0,
-    "recall": 0.9997207483943032,
+    "fn_cnn": 2,
+    "precision": 0.9991591928251121,
+    "recall": 0.999439304737875,
 }
 
 
@@ -208,7 +208,10 @@ def _build_eval_args(
         score_threshold=args.score_threshold,
         rule_name=args.rule_name,
         vov_threshold=args.vov_threshold,
-        xdist_threshold=args.xdist_threshold,
+        staff_units_json=args.staff_units_json,
+        image_root=args.image_root,
+        xdist_unit_ratio=args.xdist_unit_ratio,
+        legacy_fixed_12px=False,
         allow_partial=args.allow_partial,
         measure_summary_json=args.measure_summary_json,
     )
@@ -271,14 +274,21 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--eval-output-dir", type=Path, default=None)
     parser.add_argument("--page-limit", type=int, default=None)
     parser.add_argument("--gt-root", type=Path, default=Path("data/evaluation2/annotations"))
-    parser.add_argument("--scored-file", default="pipeline2_no_peak_scored.json")
+    parser.add_argument("--scored-file", default="pipeline2_no_peak_filtered_cnn.json")
     parser.add_argument("--candidates-file", default="pipeline2_no_peak_candidates.json")
     parser.add_argument("--score-threshold", type=float, default=0.1)
     parser.add_argument(
         "--rule-name", default="center_anchor", choices=["center_anchor", "baseline_iou"]
     )
     parser.add_argument("--vov-threshold", type=float, default=0.5)
-    parser.add_argument("--xdist-threshold", type=float, default=12.0)
+    parser.add_argument("--staff-units-json", type=Path, required=True)
+    parser.add_argument(
+        "--image-root",
+        type=Path,
+        default=Path("data/evaluation2/images"),
+        help="Root containing page images in the manifest coordinate frame.",
+    )
+    parser.add_argument("--xdist-unit-ratio", type=float, default=0.5)
     parser.add_argument("--link-mode", choices=["copy", "symlink", "hardlink"], default="copy")
     parser.add_argument("--allow-partial", action="store_true")
     parser.add_argument("--allow-missing-candidates", action="store_true")

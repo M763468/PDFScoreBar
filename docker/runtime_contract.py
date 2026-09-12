@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Iterable
@@ -61,9 +62,32 @@ def source_fingerprint(root: Path) -> str:
     return digest.hexdigest()
 
 
+def _symlink_ancestor(path: Path) -> tuple[Path, Path] | None:
+    """Return the nearest symlink in a missing path chain, including dangling links."""
+    for candidate in (path, *path.parents):
+        if candidate.is_symlink():
+            try:
+                target = candidate.readlink()
+            except OSError:
+                target = Path("<unreadable>")
+            return candidate, target
+    return None
+
+
 def _require_file(path: Path, *, role: str, errors: list[str]) -> None:
-    if not path.is_file():
-        errors.append(f"{role} is missing: {path}")
+    if path.is_file():
+        return
+
+    message = f"{role} is missing: {path}"
+    symlink = _symlink_ancestor(path)
+    if symlink is not None:
+        link, target = symlink
+        message += (
+            f"; path crosses symlink {link} -> {target}. A bind mount of /workspace does not "
+            "automatically expose targets outside that mounted checkout. Explicitly bind the "
+            "required external target or materialize it under the documented ownership contract."
+        )
+    errors.append(message)
 
 
 def _resolve_input_path(workspace: Path, value: object) -> Path | None:
@@ -73,8 +97,19 @@ def _resolve_input_path(workspace: Path, value: object) -> Path | None:
     return path if path.is_absolute() else workspace / path
 
 
+def _host_provenance() -> dict[str, str | None]:
+    return {
+        "source_root": os.environ.get("PDFSCORE_HOST_SOURCE_ROOT"),
+        "branch": os.environ.get("PDFSCORE_HOST_SOURCE_BRANCH"),
+        "commit": os.environ.get("PDFSCORE_HOST_SOURCE_COMMIT"),
+        "image_ref": os.environ.get("PDFSCORE_DOCKER_IMAGE_REF"),
+        "image_id": os.environ.get("PDFSCORE_DOCKER_IMAGE_ID"),
+    }
+
+
 def run_preflight(workspace: Path, config_path: Path, expected_fingerprint_path: Path) -> int:
     errors: list[str] = []
+    host_provenance = _host_provenance()
     expected_fingerprint = (
         expected_fingerprint_path.read_text(encoding="utf-8").strip()
         if expected_fingerprint_path.is_file()
@@ -90,7 +125,18 @@ def run_preflight(workspace: Path, config_path: Path, expected_fingerprint_path:
         )
 
     if errors:
-        print(json.dumps({"status": "fail", "errors": errors}, indent=2), file=sys.stderr)
+        print(
+            json.dumps(
+                {
+                    "status": "fail",
+                    "source_fingerprint": actual_fingerprint,
+                    "host_provenance": host_provenance,
+                    "errors": errors,
+                },
+                indent=2,
+            ),
+            file=sys.stderr,
+        )
         return 2
 
     sys.path.insert(0, str(workspace))
@@ -173,6 +219,7 @@ def run_preflight(workspace: Path, config_path: Path, expected_fingerprint_path:
     payload = {
         "status": "pass" if not errors else "fail",
         "source_fingerprint": actual_fingerprint,
+        "host_provenance": host_provenance,
         "config": str(config_path),
         "input": str(input_path) if input_path is not None else None,
         "realesrgan_weights": sr_weights,

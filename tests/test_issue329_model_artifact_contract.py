@@ -80,23 +80,17 @@ def test_omr_manifest_records_selected_version_identity_and_external_ownership()
 
     assert manifest.model_id == "omr-dln-measures"
     assert manifest.version == "phase1-validated-v1"
-    assert manifest.sha256 == (
-        "00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212"
-    )
+    assert manifest.sha256 == ("00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212")
     assert manifest.ownership == "external/operator-supplied"
     assert manifest.is_downloadable is False
-    assert manifest.cache_path == Path(
-        "omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt"
-    )
+    assert manifest.cache_path == Path("omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt")
     assert manifest.runtime_path == (
         "/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt"
     )
 
 
 def test_canonical_docker_validation_uses_manifest_resolver_and_read_only_mount() -> None:
-    script = (PROJECT_ROOT / "scripts" / "docker_runtime_validation.sh").read_text(
-        encoding="utf-8"
-    )
+    script = (PROJECT_ROOT / "scripts" / "docker_runtime_validation.sh").read_text(encoding="utf-8")
 
     assert "models/omr_dln/manifest.json" in script
     assert "src.common.model_artifacts verify" in script
@@ -110,21 +104,13 @@ def test_docker_build_verifies_selected_realesrgan_release_bytes() -> None:
 
     assert "Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth" in dockerfile
     assert "Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth" in dockerfile
-    assert (
-        "4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1"
-        in dockerfile
-    )
-    assert (
-        "49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb"
-        in dockerfile
-    )
+    assert "4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1" in dockerfile
+    assert "49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb" in dockerfile
     assert "sha256sum -c -" in dockerfile
 
 
 def test_inventory_documents_all_canonical_model_families() -> None:
-    inventory = (PROJECT_ROOT / "docs" / "MODEL_ARTIFACT_CONTRACT.md").read_text(
-        encoding="utf-8"
-    )
+    inventory = (PROJECT_ROOT / "docs" / "MODEL_ARTIFACT_CONTRACT.md").read_text(encoding="utf-8")
 
     for identity in (
         "barline-cnn",

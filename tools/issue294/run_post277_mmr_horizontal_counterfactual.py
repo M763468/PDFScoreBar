@@ -9,6 +9,7 @@ No thresholds, production dispatch, or candidate grouping logic are changed.
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from copy import deepcopy
@@ -86,9 +87,22 @@ def _page_summary(scored: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def main() -> int:
-    manifest = _load_json(DEFAULT_MANIFEST)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
+    parser.add_argument("--accepted-rebase-report", type=Path, default=DEFAULT_ACCEPTED_REBASE)
+    parser.add_argument("--model", type=Path, default=DEFAULT_MODEL)
+    args = parser.parse_args()
+
+    manifest_path = args.manifest.resolve()
+    accepted_rebase_path = args.accepted_rebase_report.resolve()
+    model_path = args.model.resolve()
+    for required in (manifest_path, accepted_rebase_path, model_path):
+        if not required.is_file():
+            raise FileNotFoundError(required)
+
+    manifest = _load_json(manifest_path)
     matrix_pages = _load_matrix_pages(manifest)
-    accepted_pages, accepted_provenance = _accepted_rebase_pages(DEFAULT_ACCEPTED_REBASE)
+    accepted_pages, accepted_provenance = _accepted_rebase_pages(accepted_rebase_path)
     specs_by_id = {str(spec.page_id): spec for spec in build_page_specs()}
     specs = [specs_by_id[page_id] for page_id in PAGE_IDS]
 
@@ -141,13 +155,13 @@ def main() -> int:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type != "cuda":
         raise RuntimeError("Counterfactual MMR replay requires CUDA")
-    classifier = MMRClassifier(DEFAULT_MODEL, device)
+    classifier = MMRClassifier(model_path, device)
     rapidocr = create_mmr_rapidocr("cuda")
     providers = collect_rapidocr_providers(rapidocr)
     if not providers_include_cuda(providers):
         raise RuntimeError(f"RapidOCR did not activate CUDA: {providers}")
     processor = MMRProcessor(
-        model_path=DEFAULT_MODEL,
+        model_path=model_path,
         device=device,
         classifier=classifier,
         ocr_engine=MMROCREngine(ocr_engine=rapidocr),
@@ -171,6 +185,11 @@ def main() -> int:
         "status": "completed",
         "diagnostic_only": True,
         "pages": list(PAGE_IDS),
+        "inputs": {
+            "manifest": str(manifest_path),
+            "accepted_rebase_report": str(accepted_rebase_path),
+            "model": str(model_path),
+        },
         "contract": {
             "topology_and_numbering": "B_b377_mapping_guarded",
             "measure_y": "B_b377_mapping_guarded",

@@ -10,10 +10,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any, Mapping
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.measure_numbering.pipeline import MeasureNumberingPipeline
 from tools.issue264.run_phase_c_mmr_regression import build_page_specs
@@ -133,8 +136,12 @@ def main() -> int:
         for page in scored_pages.values():
             keys.update(_event_keys(page))
 
-        expected = {name: _compact_events(page, "expected") for name, page in scored_pages.items()}
-        actual = {name: _compact_events(page, "actual") for name, page in scored_pages.items()}
+        expected = {
+            name: _compact_events(page, "expected") for name, page in scored_pages.items()
+        }
+        actual = {
+            name: _compact_events(page, "actual") for name, page in scored_pages.items()
+        }
         events: list[dict[str, Any]] = []
 
         for system_idx, measure_idx in sorted(keys):
@@ -168,10 +175,12 @@ def main() -> int:
                         geometry[name]["primary_measure_bbox"], baseline["primary_measure_bbox"]
                     ),
                     "alternate_measure_bbox": _delta(
-                        geometry[name]["alternate_measure_bbox"], baseline["alternate_measure_bbox"]
+                        geometry[name]["alternate_measure_bbox"],
+                        baseline["alternate_measure_bbox"],
                     ),
                     "fallback_measure_bbox": _delta(
-                        geometry[name]["fallback_measure_bbox"], baseline["fallback_measure_bbox"]
+                        geometry[name]["fallback_measure_bbox"],
+                        baseline["fallback_measure_bbox"],
                     ),
                 }
 

@@ -2,10 +2,13 @@ import contextlib
 import logging
 import os
 import sys
+from pathlib import Path
 from typing import Any, Optional
 
 import cv2
 import numpy as np
+
+from src.common.realesrgan_assets import resolve_realesrgan_weight
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +123,7 @@ def apply_vertical_closing(
 
     # Apply the closing operation.
     closed_image = cv2.morphologyEx(processed_image, cv2.MORPH_CLOSE, kernel)
+
     if debug_dir:
         cv2.imwrite(os.path.join(debug_dir, "02_closed.png"), closed_image)
 
@@ -174,7 +178,7 @@ def apply_advanced_sr(
     upsampler: Optional[Any] = None,
 ) -> Any:
     """
-    Applies advanced super-resolution using a locally cloned Real-ESRGAN repository.
+    Applies advanced super-resolution using the installed Real-ESRGAN runtime.
 
     Args:
         image: Input image (BGR numpy array).
@@ -190,7 +194,6 @@ def apply_advanced_sr(
         Upscaled image (if upsampler was provided) OR Tuple[Upscaled image, upsampler].
         For backward compatibility, it returns just the image if upsampler was provided.
     """
-    realesrgan_path = os.path.abspath(os.path.join(__file__, "../../..", "external", "realesrgan"))
     try:
         with _perf_span("sr_worker.realesrgan_heavy_imports"):
             import torch
@@ -207,6 +210,7 @@ def apply_advanced_sr(
     if upsampler is None:
         with _perf_span("sr_worker.realesrgan_model_initialization", cuda=True):
             logger.info("Initializing Real-ESRGAN (%s) using device: %s", model_name, device)
+            weight_model_name = model_name
             if model_name == "RealESRGAN_x4plus":
                 model = RRDBNet(
                     num_in_ch=3,
@@ -217,7 +221,6 @@ def apply_advanced_sr(
                     scale=4,
                 )
                 netscale = 4
-                model_path = os.path.join(realesrgan_path, "weights", f"{model_name}.pth")
             elif model_name == "RealESRGAN_x2plus":
                 model = RRDBNet(
                     num_in_ch=3,
@@ -228,7 +231,6 @@ def apply_advanced_sr(
                     scale=2,
                 )
                 netscale = 2
-                model_path = os.path.join(realesrgan_path, "weights", f"{model_name}.pth")
             else:
                 logger.warning(
                     "Model %s not explicitly supported. A default (x2plus) will be used.",
@@ -243,7 +245,14 @@ def apply_advanced_sr(
                     scale=2,
                 )
                 netscale = 2
-                model_path = os.path.join(realesrgan_path, "weights", "RealESRGAN_x2plus.pth")
+                weight_model_name = "RealESRGAN_x2plus"
+
+            model_path = str(
+                resolve_realesrgan_weight(
+                    weight_model_name,
+                    project_root=Path(__file__).resolve().parents[2],
+                )
+            )
 
             try:
                 # Determine tiling strategy

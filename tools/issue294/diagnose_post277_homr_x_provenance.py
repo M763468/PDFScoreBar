@@ -102,7 +102,7 @@ def run() -> dict[str, Any]:
     differing = _differing_keys(focused)
     manifest = _load_json(DEFAULT_MANIFEST)
     matrix_pages = _load_matrix_pages(manifest)
-    specs_all = build_page_specs(PROJECT_ROOT)
+    specs_all = build_page_specs()
     specs = [spec for spec in specs_all if str(spec.page_id) in differing]
 
     built: dict[str, tuple[list[dict[str, Any]], list[str]]] = {}

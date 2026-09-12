@@ -161,9 +161,7 @@ def load_model_artifact_manifest(path: Path | str) -> ModelArtifactManifest:
 
     digest = _require_text(payload, "sha256", manifest_path=manifest_path).lower()
     if not _SHA256_RE.fullmatch(digest):
-        raise ModelArtifactManifestError(
-            f"Manifest {manifest_path} has invalid sha256: {digest!r}"
-        )
+        raise ModelArtifactManifestError(f"Manifest {manifest_path} has invalid sha256: {digest!r}")
 
     cache_path_text = _require_text(payload, "cache_path", manifest_path=manifest_path)
     ownership = _optional_text(payload, "ownership") or (
@@ -186,9 +184,7 @@ def load_model_artifact_manifest(path: Path | str) -> ModelArtifactManifest:
     )
 
 
-def get_model_cache_root(
-    *, project_root: Path, cache_root: Path | str | None = None
-) -> Path:
+def get_model_cache_root(*, project_root: Path, cache_root: Path | str | None = None) -> Path:
     """Resolve the local model cache root without touching experiment logs."""
     if cache_root is not None:
         return Path(cache_root)
@@ -245,9 +241,7 @@ def resolve_model_artifact(
 ) -> Path:
     """Resolve a cached production artifact and verify its digest before use."""
     manifest = load_model_artifact_manifest(manifest_path)
-    artifact = model_artifact_path(
-        manifest, project_root=project_root, cache_root=cache_root
-    )
+    artifact = model_artifact_path(manifest, project_root=project_root, cache_root=cache_root)
     try:
         return verify_model_artifact(artifact, expected_sha256=manifest.sha256)
     except ModelArtifactMissingError as exc:
@@ -310,9 +304,7 @@ def import_model_artifact(
 ) -> Path:
     """Verify operator-supplied bytes and atomically register them in the common cache."""
     manifest = load_model_artifact_manifest(manifest_path)
-    artifact = model_artifact_path(
-        manifest, project_root=project_root, cache_root=cache_root
-    )
+    artifact = model_artifact_path(manifest, project_root=project_root, cache_root=cache_root)
     return _publish_verified_file(
         Path(source_path).expanduser(),
         artifact,
@@ -336,9 +328,7 @@ def materialize_model_artifact(
             f"Artifact {manifest.model_id}@{manifest.version} is operator-supplied; "
             f"use: python -m src.common.model_artifacts import {manifest.path} /path/to/{manifest.asset_name}"
         )
-    artifact = model_artifact_path(
-        manifest, project_root=project_root, cache_root=cache_root
-    )
+    artifact = model_artifact_path(manifest, project_root=project_root, cache_root=cache_root)
     if artifact.exists() and not force:
         return verify_model_artifact(artifact, expected_sha256=manifest.sha256)
 
@@ -428,9 +418,7 @@ def main(argv: list[str] | None = None) -> int:
         )
     else:
         manifest = load_model_artifact_manifest(manifest_path)
-        path = model_artifact_path(
-            manifest, project_root=project_root, cache_root=args.cache_root
-        )
+        path = model_artifact_path(manifest, project_root=project_root, cache_root=args.cache_root)
     print(path)
     return 0
 

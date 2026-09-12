@@ -220,7 +220,7 @@ regen-issue120-stage-d-upstream: ## Regenerate Issue #120 Stage-D upstream artif
 		--output-root "$(ISSUE120_STAGE_D_OUTPUT_ROOT)" \
 		--compose-source "$(ISSUE120_STAGE_D_COMPOSE_SOURCE)" \
 		$$CLEAN_ARG $$SCORES_ARG > "$$LOG_FILE" 2>&1 || \
-		(EXIT_CODE=$$?; echo "Stage-D upstream regeneration failed with exit code $$EXIT_CODE. See artifacts/issue120_stage_d_regen..."; exit $$EXIT_CODE); \
+		(EXIT_CODE=$$?; echo "Stage-D upstream regeneration failed with exit code $$EXIT_CODE. See $$LOG_FILE"; exit $$EXIT_CODE); \
 	echo "Stage-D upstream regeneration complete. See $$LOG_FILE"
 
 verify-issue120-stage-d: ## Run Stage-C verifier against regenerated Stage-D upstream artifacts

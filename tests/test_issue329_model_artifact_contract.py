@@ -103,3 +103,35 @@ def test_canonical_docker_validation_uses_manifest_resolver_and_read_only_mount(
     assert "src.common.model_artifacts verify-file" in script
     assert '"$omr_host:$omr_container:ro"' in script
     assert "PDFSCOREBAR_MODEL_CACHE" in script
+
+
+def test_docker_build_verifies_selected_realesrgan_release_bytes() -> None:
+    dockerfile = (PROJECT_ROOT / "Dockerfile").read_text(encoding="utf-8")
+
+    assert "Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth" in dockerfile
+    assert "Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth" in dockerfile
+    assert (
+        "4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1"
+        in dockerfile
+    )
+    assert (
+        "49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb"
+        in dockerfile
+    )
+    assert "sha256sum -c -" in dockerfile
+
+
+def test_inventory_documents_all_canonical_model_families() -> None:
+    inventory = (PROJECT_ROOT / "docs" / "MODEL_ARTIFACT_CONTRACT.md").read_text(
+        encoding="utf-8"
+    )
+
+    for identity in (
+        "barline-cnn",
+        "omr-dln-measures",
+        "realesrgan-x4plus",
+        "realesrgan-x2plus",
+        "Maintained HOMR runtime assets",
+        "Pinned Stage-E HOMR assets",
+    ):
+        assert identity in inventory

@@ -10,12 +10,12 @@ The default command performs the canonical Docker runtime preflight before pipel
 
 Environment:
   GPU_SMOKE_TIMEOUT   Default timeout duration. Default: 45m
-  GPU_SMOKE_CMD       Command to run. Default: scripts/docker_runtime_validation.sh
+  GPU_SMOKE_CMD       Command to run. Default: bash scripts/docker_runtime_validation.sh
 USAGE
 }
 
 timeout_duration="${GPU_SMOKE_TIMEOUT:-45m}"
-smoke_cmd="${GPU_SMOKE_CMD:-scripts/docker_runtime_validation.sh}"
+smoke_cmd="${GPU_SMOKE_CMD:-bash scripts/docker_runtime_validation.sh}"
 metadata_only=0
 
 while [[ $# -gt 0 ]]; do

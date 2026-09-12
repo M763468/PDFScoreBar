@@ -96,8 +96,8 @@ for relative, expected in EXPECTED.items():
         )
 PY
 
-# Download model weights during build to a safe location (not masked by volume mount)
-# We place them in /opt/weights so they are always available. We will symlink them later if needed.
+# Real-ESRGAN weights are image-owned runtime assets. Keep them outside /workspace
+# so the canonical source bind mount cannot hide them.
 RUN mkdir -p /opt/weights && \
     wget https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth -O /opt/weights/RealESRGAN_x4plus.pth && \
     wget https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth -O /opt/weights/RealESRGAN_x2plus.pth
@@ -111,6 +111,8 @@ ARG STAGE_E_PDFSCORE_COMMIT=bd6ae56f8be6c87088143cfbf0ba09dee94fe0d7
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV PATH="/opt/venv_pipeline/bin:$PATH"
+ENV PDFSCORE_REALESRGAN_WEIGHTS_DIR=/opt/pdfscore-assets/realesrgan
+ENV PDFSCOREBAR_MODEL_CACHE=/opt/pdfscore-assets/model-cache
 
 # Install runtime system dependencies. torch.compile/Inductor needs a native
 # compiler in the final image because compilation occurs in the SR process.
@@ -125,19 +127,36 @@ RUN apt-get update && apt-get install -y software-properties-common && \
 
 WORKDIR /workspace
 
-# Copy the main runtime and the isolated verified Stage E HOMR runtime.
+# Copy the main runtime, image-owned SR assets, and the isolated verified Stage E HOMR runtime.
 COPY --from=builder /opt/venv_pipeline /opt/venv_pipeline
 COPY --from=builder /opt/venv_stage_e_homr /opt/venv_stage_e_homr
 COPY --from=builder /opt/homr_stage_e_profile /opt/homr_stage_e_profile
 COPY --from=builder /opt/pdfscore_stage_e_profile /opt/pdfscore_stage_e_profile
 COPY --from=builder /opt/homr_stage_e_profile_commit.txt /opt/homr_stage_e_profile_commit.txt
 COPY --from=builder /opt/pdfscore_stage_e_profile_commit.txt /opt/pdfscore_stage_e_profile_commit.txt
+COPY --from=builder /opt/weights /opt/pdfscore-assets/realesrgan
 
-# Copy source code and external packages
+# Copy source code. Canonical runtime mounts the active checkout over /workspace,
+# so persistent runtime assets and the source fingerprint live under /opt instead.
 COPY . /workspace
+
+# Reuse the production artifact contract from Issue #315 for the smoke CNN. The
+# manifest remains authoritative; Docker only materializes its verified bytes into
+# an image-owned cache and exposes a stable validation-only path.
+RUN mkdir -p /opt/pdfscore-runtime && \
+    cp /workspace/docker/runtime_contract.py /opt/pdfscore-runtime/runtime_contract.py && \
+    /opt/venv_pipeline/bin/python /opt/pdfscore-runtime/runtime_contract.py fingerprint /workspace \
+      > /opt/pdfscore-runtime/source_fingerprint.txt && \
+    CNN_MODEL_PATH=$(/opt/venv_pipeline/bin/python -m src.common.model_artifacts materialize \
+      /workspace/models/barline_cnn/manifest.json --cache-root "${PDFSCOREBAR_MODEL_CACHE}") && \
+    ln -s "${CNN_MODEL_PATH}" /opt/pdfscore-assets/barline_cnn_smoke.pth && \
+    test -s /opt/pdfscore-assets/realesrgan/RealESRGAN_x2plus.pth && \
+    test -s /opt/pdfscore-assets/realesrgan/RealESRGAN_x4plus.pth && \
+    test -s /opt/pdfscore-assets/barline_cnn_smoke.pth
 
 LABEL pdfscore.detector.homr_profile="stage_e_verified"
 LABEL pdfscore.detector.homr_commit="${STAGE_E_HOMR_COMMIT}"
 LABEL pdfscore.detector.pdfscore_evaluator_commit="${STAGE_E_PDFSCORE_COMMIT}"
+LABEL pdfscore.runtime.asset_contract="v1"
 
 CMD ["bash"]

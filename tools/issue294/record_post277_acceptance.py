@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
-"""Record the latest completed Issue #294 post-#277 acceptance run.
+"""Record the latest Issue #294 post-#277 runner attempt.
 
-This temporary experiment helper locates the newest completed local runner log,
-validates the focused/full68 artifacts and provenance, writes a compact machine-
-readable acceptance record under that run directory, and posts an idempotent summary
-to GitHub Issue #294. It does not rerun inference or modify production code/config.
+This temporary experiment helper discovers the newest local runner attempt from its
+log/run tag even when the runner exited before its final ``=== completed ===`` block.
+It records existing focused/full68 artifacts, validates their provenance and gates,
+writes a compact JSON/Markdown record under the run directory (or logs/issue294 for
+an incomplete run), and posts the same idempotent summary to Issue #294.
+
+The recorder does not rerun inference and does not modify production code/config.
+A failed acceptance gate is evidence: it is recorded as ``failed`` rather than being
+discarded as "no completed run".
 """
 
 from __future__ import annotations
@@ -23,6 +28,7 @@ LOG_ROOT = PROJECT_ROOT / "logs/issue294"
 REPOSITORY = "M763468/PDFScoreBar"
 ISSUE_NUMBER = 294
 MAINTAINED_HOMR_COMMIT = "b377620a3a55bd7ff657481cec5b688dfbc9cee9"
+RUN_PREFIX = "issue294_post277_full68_"
 REQUIRED_VARIANTS = (
     "A_production",
     "B_b377_mapping_guarded",
@@ -63,54 +69,134 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _resolve_recorded_path(value: str) -> Path:
+def _log_fields(path: Path) -> dict[str, str]:
+    fields: dict[str, str] = {}
+    completed = False
+    for raw_line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw_line.strip()
+        if line == "=== completed ===":
+            completed = True
+            continue
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if key in {
+            "run_tag",
+            "execution_head",
+            "head",
+            "focused",
+            "manifest",
+            "mmr",
+            "log",
+        }:
+            fields[key] = value
+    if completed:
+        fields["runner_completed_marker"] = "true"
+    return fields
+
+
+def _path_from_field(value: str | None) -> Path | None:
+    if not value:
+        return None
     path = Path(value)
     return path if path.is_absolute() else PROJECT_ROOT / path
 
 
-def _parse_completed_log(path: Path) -> dict[str, str]:
-    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
-    marker_indexes = [index for index, line in enumerate(lines) if line.strip() == "=== completed ==="]
-    if not marker_indexes:
-        raise ValueError(f"Runner log has no completed marker: {path}")
-    fields: dict[str, str] = {}
-    for line in lines[marker_indexes[-1] + 1 :]:
-        if not line.strip():
-            if fields:
-                break
-            continue
-        if "=" not in line:
-            if fields:
-                break
-            continue
-        key, value = line.split("=", 1)
-        fields[key.strip()] = value.strip()
-    required = {"head", "run_tag", "focused", "manifest", "mmr", "log"}
-    missing = sorted(required - fields.keys())
-    if missing:
-        raise ValueError(f"Runner completion block missing fields {missing}: {path}")
-    return fields
+def _suffix_for_run_tag(run_tag: str) -> str | None:
+    if run_tag.startswith(RUN_PREFIX):
+        return run_tag.removeprefix(RUN_PREFIX)
+    return None
 
 
-def _latest_completed_run() -> tuple[Path, dict[str, str]]:
-    candidates = sorted(
-        LOG_ROOT.glob("issue294_post277_full68_*_resume_local.log"),
+def _attempt_from_log(path: Path) -> dict[str, Any]:
+    fields = _log_fields(path)
+    run_tag = fields.get("run_tag")
+    if not run_tag:
+        name = path.name
+        suffix = "_resume_local.log"
+        if name.startswith(RUN_PREFIX) and name.endswith(suffix):
+            run_tag = name[: -len(suffix)]
+    if not run_tag:
+        raise ValueError(f"Cannot determine run_tag from {path}")
+
+    run_dir = LOG_ROOT / run_tag
+    suffix = _suffix_for_run_tag(run_tag)
+    focused = _path_from_field(fields.get("focused"))
+    if focused is None and suffix:
+        focused = LOG_ROOT / f"issue294_post277_focused_{suffix}.json"
+
+    return {
+        "run_tag": run_tag,
+        "runner_log": path,
+        "runner_completed_marker": fields.get("runner_completed_marker") == "true",
+        "experiment_head_from_log": fields.get("head") or fields.get("execution_head"),
+        "focused": focused,
+        "manifest": _path_from_field(fields.get("manifest")) or run_dir / "full68_host.json",
+        "mmr": _path_from_field(fields.get("mmr"))
+        or run_dir / "post277_mapping_guarded_mmr.json",
+        "wrapper": run_dir / "post277_mapping_guarded_full68_host.json",
+        "run_dir": run_dir,
+    }
+
+
+def _latest_attempt() -> dict[str, Any]:
+    logs = sorted(
+        LOG_ROOT.glob(f"{RUN_PREFIX}*_resume_local.log"),
         key=lambda path: path.stat().st_mtime,
         reverse=True,
     )
-    failures: list[str] = []
-    for path in candidates:
+    errors: list[str] = []
+    for path in logs:
         try:
-            return path, _parse_completed_log(path)
+            return _attempt_from_log(path)
         except ValueError as error:
-            failures.append(str(error))
-    detail = "; ".join(failures[:3]) if failures else "no runner logs found"
-    raise FileNotFoundError(f"No completed Issue #294 post-#277 runner log under {LOG_ROOT}: {detail}")
+            errors.append(str(error))
+
+    dirs = sorted(
+        (path for path in LOG_ROOT.glob(f"{RUN_PREFIX}*") if path.is_dir()),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    if dirs:
+        run_dir = dirs[0]
+        run_tag = run_dir.name
+        suffix = _suffix_for_run_tag(run_tag)
+        return {
+            "run_tag": run_tag,
+            "runner_log": None,
+            "runner_completed_marker": False,
+            "experiment_head_from_log": None,
+            "focused": (
+                LOG_ROOT / f"issue294_post277_focused_{suffix}.json" if suffix else None
+            ),
+            "manifest": run_dir / "full68_host.json",
+            "mmr": run_dir / "post277_mapping_guarded_mmr.json",
+            "wrapper": run_dir / "post277_mapping_guarded_full68_host.json",
+            "run_dir": run_dir,
+        }
+
+    detail = "; ".join(errors[:3]) if errors else "no runner logs or run directories found"
+    raise FileNotFoundError(f"No Issue #294 post-#277 attempt under {LOG_ROOT}: {detail}")
 
 
-def _require(condition: bool, message: str) -> None:
-    if not condition:
-        raise RuntimeError(message)
+def _manifest_head(payload: Mapping[str, Any] | None) -> str | None:
+    if not isinstance(payload, Mapping):
+        return None
+    checkout = payload.get("checkout")
+    if isinstance(checkout, Mapping) and isinstance(checkout.get("head"), str):
+        return str(checkout["head"])
+    return None
+
+
+def _nested_head(payload: Mapping[str, Any] | None, key: str) -> str | None:
+    if not isinstance(payload, Mapping):
+        return None
+    nested = payload.get(key)
+    if isinstance(nested, Mapping) and isinstance(nested.get("head"), str):
+        return str(nested["head"])
+    return None
 
 
 def _git_is_ancestor(ancestor: str, descendant: str) -> bool:
@@ -125,213 +211,382 @@ def _git_is_ancestor(ancestor: str, descendant: str) -> bool:
     return completed.returncode == 0
 
 
-def _manifest_head(manifest: Mapping[str, Any]) -> str | None:
-    checkout = manifest.get("checkout")
-    if isinstance(checkout, Mapping) and isinstance(checkout.get("head"), str):
-        return str(checkout["head"])
-    return None
+def _failed_gates(payload: Mapping[str, Any] | None) -> list[str]:
+    if not isinstance(payload, Mapping):
+        return []
+    gates = payload.get("gates")
+    if not isinstance(gates, Mapping):
+        return []
+    return sorted(str(key) for key, value in gates.items() if not bool(value))
 
 
-def _variant_summary(mmr: Mapping[str, Any]) -> dict[str, Any]:
+def _variant_summary(mmr: Mapping[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(mmr, Mapping):
+        return {}
     variants = mmr.get("variants")
-    _require(isinstance(variants, Mapping), "MMR report lacks variants")
-    summary: dict[str, Any] = {}
+    if not isinstance(variants, Mapping):
+        return {}
+    result: dict[str, Any] = {}
     for name in REQUIRED_VARIANTS:
         variant = variants.get(name)
-        _require(isinstance(variant, Mapping), f"MMR report lacks variant {name}")
+        if not isinstance(variant, Mapping):
+            continue
         totals = variant.get("totals")
         gates = variant.get("gates")
-        _require(isinstance(totals, Mapping), f"MMR variant {name} lacks totals")
-        _require(isinstance(gates, Mapping), f"MMR variant {name} lacks gates")
-        summary[name] = {
-            "totals": {key: totals.get(key) for key in totals},
-            "gates": {key: bool(value) for key, value in gates.items()},
+        result[name] = {
+            "totals": dict(totals) if isinstance(totals, Mapping) else None,
+            "gates": (
+                {str(key): bool(value) for key, value in gates.items()}
+                if isinstance(gates, Mapping)
+                else None
+            ),
             "elapsed_sec": variant.get("elapsed_sec"),
             "support_stats": variant.get("support_stats"),
         }
-    return summary
+    return result
 
 
-def _validate_and_build_record(
-    *,
-    runner_log: Path,
-    completion: Mapping[str, str],
-    focused_path: Path,
-    manifest_path: Path,
-    mmr_path: Path,
-    wrapper_path: Path,
-) -> dict[str, Any]:
-    focused = _load_json(focused_path)
-    manifest = _load_json(manifest_path)
-    mmr = _load_json(mmr_path)
-    wrapper = _load_json(wrapper_path)
+def _artifact_entry(path: Path | None) -> dict[str, Any] | None:
+    if path is None or not path.is_file():
+        return None
+    return {
+        "path": str(path.resolve()),
+        "sha256": _sha256(path),
+        "size_bytes": path.stat().st_size,
+        "mtime_utc": datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat(),
+    }
 
-    experiment_head = str(completion["head"])
+
+def _log_tail(path: Path | None, *, lines: int = 40) -> list[str]:
+    if path is None or not path.is_file():
+        return []
+    content = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    return content[-lines:]
+
+
+def _build_record(attempt: Mapping[str, Any]) -> dict[str, Any]:
+    paths = {
+        "runner_log": attempt.get("runner_log"),
+        "focused_mmr": attempt.get("focused"),
+        "full68_manifest": attempt.get("manifest"),
+        "full68_wrapper": attempt.get("wrapper"),
+        "full68_mmr": attempt.get("mmr"),
+    }
+    payloads: dict[str, dict[str, Any] | None] = {}
+    parse_errors: list[str] = []
+    for name in ("focused_mmr", "full68_manifest", "full68_wrapper", "full68_mmr"):
+        path = paths[name]
+        if isinstance(path, Path) and path.is_file():
+            try:
+                payloads[name] = _load_json(path)
+            except Exception as error:  # noqa: BLE001
+                payloads[name] = None
+                parse_errors.append(f"{name}: {type(error).__name__}: {error}")
+        else:
+            payloads[name] = None
+
+    focused = payloads["focused_mmr"]
+    manifest = payloads["full68_manifest"]
+    wrapper = payloads["full68_wrapper"]
+    mmr = payloads["full68_mmr"]
+
+    experiment_head = attempt.get("experiment_head_from_log")
+    candidate_heads = [
+        experiment_head,
+        _nested_head(focused, "git"),
+        _manifest_head(manifest),
+        _nested_head(wrapper, "checkout"),
+        _nested_head(mmr, "git"),
+    ]
+    heads = [str(value) for value in candidate_heads if value]
+    if experiment_head is None and heads:
+        experiment_head = heads[0]
+
     current_head = _capture(["git", "rev-parse", "HEAD"])
     current_branch = _capture(["git", "branch", "--show-current"]) or "<detached>"
-    _require(
-        _git_is_ancestor(experiment_head, current_head),
-        f"Experiment HEAD {experiment_head} is not an ancestor of current HEAD {current_head}",
+
+    checks: dict[str, bool] = {}
+    failures: list[str] = list(parse_errors)
+    missing = [
+        name
+        for name in ("focused_mmr", "full68_manifest", "full68_wrapper", "full68_mmr")
+        if payloads[name] is None
+    ]
+
+    if heads:
+        checks["artifact_heads_consistent"] = len(set(heads)) == 1
+        if not checks["artifact_heads_consistent"]:
+            failures.append(f"artifact HEAD mismatch: {sorted(set(heads))}")
+    else:
+        checks["artifact_heads_consistent"] = False
+        failures.append("no experiment HEAD found in log/artifacts")
+
+    checks["experiment_head_is_ancestor_of_collector"] = bool(
+        experiment_head and _git_is_ancestor(str(experiment_head), current_head)
     )
+    if not checks["experiment_head_is_ancestor_of_collector"]:
+        failures.append(
+            f"experiment HEAD {experiment_head!r} is not an ancestor of collector HEAD {current_head}"
+        )
 
-    run_tag = str(completion["run_tag"])
-    _require(manifest.get("status") == "completed", "Full68 manifest status is not completed")
-    _require(int(manifest.get("completed_page_count", 0)) == 68, "Full68 manifest is not 68/68")
-    _require(_manifest_head(manifest) == experiment_head, "Full68 manifest HEAD mismatch")
+    if isinstance(focused, Mapping):
+        checks["focused_status_completed"] = focused.get("status") == "completed"
+        checks["focused_mode"] = focused.get("mode") == "focused"
+        checks["focused_all_gates_pass"] = bool(focused.get("all_gates_pass"))
+        for key in ("focused_status_completed", "focused_mode", "focused_all_gates_pass"):
+            if not checks[key]:
+                failures.append(key)
 
-    _require(wrapper.get("status") == "completed", "Post-#277 full68 wrapper is not completed")
-    _require(str(wrapper.get("run_tag")) == run_tag, "Full68 wrapper run_tag mismatch")
-    _require(int(wrapper.get("completed_page_count", 0)) == 68, "Full68 wrapper is not 68/68")
-    wrapper_checkout = wrapper.get("checkout")
-    _require(isinstance(wrapper_checkout, Mapping), "Full68 wrapper lacks checkout provenance")
-    _require(wrapper_checkout.get("head") == experiment_head, "Full68 wrapper HEAD mismatch")
+    if isinstance(manifest, Mapping):
+        checks["full68_manifest_status_completed"] = manifest.get("status") == "completed"
+        checks["full68_manifest_68_pages"] = int(manifest.get("completed_page_count", 0)) == 68
+        if experiment_head:
+            checks["full68_manifest_head_matches"] = _manifest_head(manifest) == experiment_head
+        for key in (
+            "full68_manifest_status_completed",
+            "full68_manifest_68_pages",
+            "full68_manifest_head_matches",
+        ):
+            if key in checks and not checks[key]:
+                failures.append(key)
 
-    _require(focused.get("status") == "completed", "Focused MMR status is not completed")
-    _require(focused.get("mode") == "focused", "Focused MMR report has wrong mode")
-    _require(bool(focused.get("all_gates_pass")), "Focused MMR acceptance gates did not all pass")
-    focused_git = focused.get("git")
-    _require(isinstance(focused_git, Mapping), "Focused MMR report lacks git provenance")
-    _require(focused_git.get("head") == experiment_head, "Focused MMR HEAD mismatch")
-
-    _require(mmr.get("status") == "completed", "Full68 MMR status is not completed")
-    _require(mmr.get("mode") == "full68", "Full68 MMR report has wrong mode")
-    _require(bool(mmr.get("all_gates_pass")), "Full68 MMR acceptance gates did not all pass")
-    selected_pages = mmr.get("selected_pages")
-    _require(isinstance(selected_pages, list) and len(selected_pages) == 68, "MMR report is not full68")
-    mmr_git = mmr.get("git")
-    _require(isinstance(mmr_git, Mapping), "Full68 MMR report lacks git provenance")
-    _require(mmr_git.get("head") == experiment_head, "Full68 MMR HEAD mismatch")
-    mmr_manifest = mmr.get("manifest")
-    _require(isinstance(mmr_manifest, Mapping), "Full68 MMR report lacks manifest provenance")
-    _require(mmr_manifest.get("checkout_head") == experiment_head, "Full68 MMR manifest HEAD mismatch")
-    _require(bool(mmr_manifest.get("require_manifest_head")), "Full68 MMR did not require manifest HEAD")
-
-    overall_gates = mmr.get("gates")
-    _require(isinstance(overall_gates, Mapping), "Full68 MMR report lacks gates")
-    failed_overall = sorted(key for key, value in overall_gates.items() if not bool(value))
-    _require(not failed_overall, f"Full68 MMR failed gates: {failed_overall}")
+    if isinstance(wrapper, Mapping):
+        checks["full68_wrapper_status_completed"] = wrapper.get("status") == "completed"
+        checks["full68_wrapper_68_pages"] = int(wrapper.get("completed_page_count", 0)) == 68
+        checks["full68_wrapper_run_tag_matches"] = str(wrapper.get("run_tag")) == str(
+            attempt["run_tag"]
+        )
+        if experiment_head:
+            checks["full68_wrapper_head_matches"] = (
+                _nested_head(wrapper, "checkout") == experiment_head
+            )
+        for key in (
+            "full68_wrapper_status_completed",
+            "full68_wrapper_68_pages",
+            "full68_wrapper_run_tag_matches",
+            "full68_wrapper_head_matches",
+        ):
+            if key in checks and not checks[key]:
+                failures.append(key)
 
     variants = _variant_summary(mmr)
-    reference = mmr.get("production_reference_expected")
-    _require(isinstance(reference, Mapping), "Full68 MMR lacks production reference")
-    a_totals = variants["A_production"]["totals"]
-    reference_mismatch = {
-        key: {"expected": reference.get(key), "actual": a_totals.get(key)}
-        for key in REFERENCE_KEYS
-        if int(a_totals.get(key, -1)) != int(reference.get(key, -2))
-    }
-    _require(not reference_mismatch, f"Production reference mismatch: {reference_mismatch}")
+    reference = None
+    reference_mismatch: dict[str, Any] = {}
+    if isinstance(mmr, Mapping):
+        checks["full68_mmr_status_completed"] = mmr.get("status") == "completed"
+        checks["full68_mmr_mode"] = mmr.get("mode") == "full68"
+        selected_pages = mmr.get("selected_pages")
+        checks["full68_mmr_68_pages"] = isinstance(selected_pages, list) and len(selected_pages) == 68
+        checks["full68_mmr_all_gates_pass"] = bool(mmr.get("all_gates_pass"))
+        mmr_manifest = mmr.get("manifest")
+        if experiment_head:
+            checks["full68_mmr_head_matches"] = _nested_head(mmr, "git") == experiment_head
+            checks["full68_mmr_manifest_head_matches"] = bool(
+                isinstance(mmr_manifest, Mapping)
+                and mmr_manifest.get("checkout_head") == experiment_head
+            )
+        checks["full68_mmr_require_manifest_head"] = bool(
+            isinstance(mmr_manifest, Mapping) and mmr_manifest.get("require_manifest_head")
+        )
+        reference_raw = mmr.get("production_reference_expected")
+        if isinstance(reference_raw, Mapping):
+            reference = dict(reference_raw)
+        a_variant = variants.get("A_production")
+        a_totals = a_variant.get("totals") if isinstance(a_variant, Mapping) else None
+        if isinstance(reference, Mapping) and isinstance(a_totals, Mapping):
+            reference_mismatch = {
+                key: {"expected": reference.get(key), "actual": a_totals.get(key)}
+                for key in REFERENCE_KEYS
+                if int(a_totals.get(key, -1)) != int(reference.get(key, -2))
+            }
+            checks["production_reference_exact"] = not reference_mismatch
+        else:
+            checks["production_reference_exact"] = False
+        for key in (
+            "full68_mmr_status_completed",
+            "full68_mmr_mode",
+            "full68_mmr_68_pages",
+            "full68_mmr_all_gates_pass",
+            "full68_mmr_head_matches",
+            "full68_mmr_manifest_head_matches",
+            "full68_mmr_require_manifest_head",
+            "production_reference_exact",
+        ):
+            if key in checks and not checks[key]:
+                failures.append(key)
 
-    source_files = {
-        "runner_log": runner_log,
-        "focused_mmr": focused_path,
-        "full68_manifest": manifest_path,
-        "full68_wrapper": wrapper_path,
-        "full68_mmr": mmr_path,
-    }
+    if missing:
+        status = "incomplete"
+    elif failures:
+        status = "failed"
+    else:
+        status = "passed"
+
     artifacts = {
-        name: {
-            "path": str(path.resolve()),
-            "sha256": _sha256(path),
-            "size_bytes": path.stat().st_size,
-        }
-        for name, path in source_files.items()
+        name: entry
+        for name, path in paths.items()
+        if (entry := _artifact_entry(path if isinstance(path, Path) else None)) is not None
     }
 
     return {
-        "schema_version": "issue294.post277_acceptance_record.v1",
-        "status": "passed",
+        "schema_version": "issue294.post277_attempt_record.v2",
+        "status": status,
         "recorded_at_utc": datetime.now(timezone.utc).isoformat(),
         "repository": REPOSITORY,
         "issue": ISSUE_NUMBER,
-        "run_tag": run_tag,
+        "run_tag": attempt["run_tag"],
+        "runner_completed_marker": bool(attempt.get("runner_completed_marker")),
         "experiment_execution_head": experiment_head,
         "collector": {
             "head": current_head,
             "branch": current_branch,
-            "experiment_head_is_ancestor": True,
         },
         "artifacts": artifacts,
-        "full68": {
-            "completed_page_count": 68,
-            "manifest_status": manifest.get("status"),
-            "wrapper_status": wrapper.get("status"),
-            "maintained_homr_commit": MAINTAINED_HOMR_COMMIT,
-            "latest_homr_commit": wrapper.get("latest_homr_commit"),
-            "manifest_gates_diagnostic_only": manifest.get("gates"),
-            "mapping_guarded_grouping": wrapper.get("mapping_guarded_grouping"),
-            "production_source_modified": wrapper.get("production_source_modified"),
-            "production_dispatch_modified": wrapper.get("production_dispatch_modified"),
-            "historical_A_comparison_gates_diagnostic_only": wrapper.get(
-                "historical_A_comparison_gates_diagnostic_only"
+        "missing_artifacts": missing,
+        "checks": checks,
+        "failures": failures,
+        "focused_mmr": {
+            "status": focused.get("status") if isinstance(focused, Mapping) else None,
+            "all_gates_pass": (
+                bool(focused.get("all_gates_pass")) if isinstance(focused, Mapping) else None
+            ),
+            "failed_gates": _failed_gates(focused),
+            "selected_page_count": (
+                len(focused.get("selected_pages", [])) if isinstance(focused, Mapping) else None
             ),
         },
-        "focused_mmr": {
-            "all_gates_pass": True,
-            "selected_page_count": len(focused.get("selected_pages", [])),
-            "gates": focused.get("gates"),
+        "full68": {
+            "manifest_status": manifest.get("status") if isinstance(manifest, Mapping) else None,
+            "completed_page_count": (
+                manifest.get("completed_page_count") if isinstance(manifest, Mapping) else None
+            ),
+            "manifest_gates_diagnostic_only": (
+                manifest.get("gates") if isinstance(manifest, Mapping) else None
+            ),
+            "wrapper_status": wrapper.get("status") if isinstance(wrapper, Mapping) else None,
+            "maintained_homr_commit": MAINTAINED_HOMR_COMMIT,
+            "latest_homr_commit": (
+                wrapper.get("latest_homr_commit") if isinstance(wrapper, Mapping) else None
+            ),
+            "mapping_guarded_grouping": (
+                wrapper.get("mapping_guarded_grouping") if isinstance(wrapper, Mapping) else None
+            ),
+            "production_source_modified": (
+                wrapper.get("production_source_modified") if isinstance(wrapper, Mapping) else None
+            ),
+            "production_dispatch_modified": (
+                wrapper.get("production_dispatch_modified") if isinstance(wrapper, Mapping) else None
+            ),
         },
         "full68_mmr": {
-            "all_gates_pass": True,
-            "selected_page_count": len(selected_pages),
-            "production_reference_expected": dict(reference),
+            "status": mmr.get("status") if isinstance(mmr, Mapping) else None,
+            "all_gates_pass": bool(mmr.get("all_gates_pass")) if isinstance(mmr, Mapping) else None,
+            "failed_gates": _failed_gates(mmr),
+            "production_reference_expected": reference,
+            "production_reference_mismatch": reference_mismatch,
             "variants": variants,
-            "gates": {key: bool(value) for key, value in overall_gates.items()},
-            "runtime": mmr.get("runtime"),
-            "accepted_issue264_rebase": mmr.get("accepted_issue264_rebase"),
-            "execution_contract": mmr.get("execution_contract"),
+            "runtime": mmr.get("runtime") if isinstance(mmr, Mapping) else None,
+            "accepted_issue264_rebase": (
+                mmr.get("accepted_issue264_rebase") if isinstance(mmr, Mapping) else None
+            ),
+            "execution_contract": (
+                mmr.get("execution_contract") if isinstance(mmr, Mapping) else None
+            ),
         },
+        "runner_log_tail": _log_tail(
+            paths["runner_log"] if isinstance(paths["runner_log"], Path) else None
+        ),
     }
 
 
-def _metric_cell(totals: Mapping[str, Any]) -> str:
+def _metric_cell(totals: Mapping[str, Any] | None) -> str:
+    if not isinstance(totals, Mapping):
+        return "n/a"
     return "/".join(str(totals.get(key, "?")) for key in REFERENCE_KEYS)
 
 
 def _issue_markdown(record: Mapping[str, Any]) -> str:
-    full68_mmr = record["full68_mmr"]
-    variants = full68_mmr["variants"]
-    run_tag = record["run_tag"]
-    experiment_head = record["experiment_execution_head"]
-    marker = f"<!-- issue294-post277-acceptance:{run_tag}:{experiment_head} -->"
+    run_tag = str(record["run_tag"])
+    experiment_head = str(record.get("experiment_execution_head") or "unknown")
+    marker = f"<!-- issue294-post277-run-record:{run_tag}:{experiment_head} -->"
+    full68 = record["full68"]
+    focused = record["focused_mmr"]
+    mmr = record["full68_mmr"]
     lines = [
         marker,
-        "## Post-#277 canonical full68 acceptance record",
+        "## Post-#277 canonical full68 run record",
         "",
         f"- status: **{record['status']}**",
         f"- run tag: `{run_tag}`",
         f"- experiment HEAD: `{experiment_head}`",
         f"- collector HEAD: `{record['collector']['head']}`",
-        f"- maintained HOMR candidate (B): `{record['full68']['maintained_homr_commit']}`",
-        f"- latest HOMR comparison candidate (C): `{record['full68']['latest_homr_commit']}`",
-        "- full68: 68/68 completed",
-        f"- focused MMR gates: `{record['focused_mmr']['all_gates_pass']}`",
-        f"- full68 MMR gates: `{full68_mmr['all_gates_pass']}`",
-        "- production source/dispatch modified by experiment: "
-        f"`{record['full68']['production_source_modified']}` / "
-        f"`{record['full68']['production_dispatch_modified']}`",
+        f"- runner completed marker: `{record['runner_completed_marker']}`",
+        f"- full68 manifest: `{full68['manifest_status']}` / pages `{full68['completed_page_count']}`",
+        f"- focused MMR all gates pass: `{focused['all_gates_pass']}`",
+        f"- full68 MMR all gates pass: `{mmr['all_gates_pass']}`",
         "",
-        "MMR metrics are `expected/detected/TP/FN/mismatch/FP`:",
-        "",
-        "| variant | metrics |",
-        "| --- | --- |",
     ]
-    for name in REQUIRED_VARIANTS:
-        lines.append(f"| `{name}` | `{_metric_cell(variants[name]['totals'])}` |")
-    lines.extend(
-        [
-            "",
-            "Production reference:",
-            f"`{_metric_cell(full68_mmr['production_reference_expected'])}`",
-            "",
-            "All full68 semantic gates, per-page candidate-not-worse gates, zero-fixture controls, "
-            "row-start controls, page033 one-bar veto, page042 controls, and B/C exactness gates passed.",
-            "",
-            "Artifact provenance (SHA-256):",
-        ]
-    )
+
+    if mmr["variants"]:
+        lines.extend(
+            [
+                "MMR metrics are `expected/detected/TP/FN/mismatch/FP`:",
+                "",
+                "| variant | metrics |",
+                "| --- | --- |",
+            ]
+        )
+        for name in REQUIRED_VARIANTS:
+            variant = mmr["variants"].get(name)
+            totals = variant.get("totals") if isinstance(variant, Mapping) else None
+            lines.append(f"| `{name}` | `{_metric_cell(totals)}` |")
+        lines.extend(
+            [
+                "",
+                f"Production reference: `{_metric_cell(mmr['production_reference_expected'])}`",
+                "",
+            ]
+        )
+
+    if focused["failed_gates"]:
+        lines.append(
+            "Focused failed gates: "
+            + ", ".join(f"`{item}`" for item in focused["failed_gates"])
+        )
+    if mmr["failed_gates"]:
+        lines.append(
+            "Full68 MMR failed gates: "
+            + ", ".join(f"`{item}`" for item in mmr["failed_gates"])
+        )
+    if record["missing_artifacts"]:
+        lines.append(
+            "Missing artifacts: "
+            + ", ".join(f"`{item}`" for item in record["missing_artifacts"])
+        )
+    if record["failures"]:
+        lines.append("Validation failures:")
+        for failure in record["failures"]:
+            lines.append(f"- `{failure}`")
+
+    lines.extend(["", "Artifact provenance (SHA-256):"])
     for name, artifact in record["artifacts"].items():
         lines.append(f"- `{name}`: `{artifact['sha256']}` — `{artifact['path']}`")
+
+    tail = record.get("runner_log_tail") or []
+    if record["status"] != "passed" and tail:
+        tail_text = "\n".join(str(line) for line in tail)
+        if len(tail_text) > 6000:
+            tail_text = tail_text[-6000:]
+        lines.extend(
+            [
+                "",
+                "Runner log tail:",
+                "",
+                "```text",
+                tail_text,
+                "```",
+            ]
+        )
     return "\n".join(lines) + "\n"
 
 
@@ -364,7 +619,6 @@ def _post_issue_comment(body: str, marker: str) -> dict[str, Any]:
             "id": existing.get("id"),
             "html_url": existing.get("html_url"),
         }
-    payload = json.dumps({"body": body}, ensure_ascii=False)
     raw = _capture(
         [
             "gh",
@@ -377,7 +631,7 @@ def _post_issue_comment(body: str, marker: str) -> dict[str, Any]:
             "-",
             f"repos/{REPOSITORY}/issues/{ISSUE_NUMBER}/comments",
         ],
-        input_text=payload,
+        input_text=json.dumps({"body": body}, ensure_ascii=False),
     )
     response = json.loads(raw)
     if not isinstance(response, Mapping):
@@ -392,38 +646,20 @@ def _post_issue_comment(body: str, marker: str) -> dict[str, Any]:
 def main() -> int:
     try:
         if shutil.which("gh") is None:
-            raise RuntimeError("GitHub CLI `gh` is required to persist the acceptance record on Issue #294")
+            raise RuntimeError("GitHub CLI `gh` is required to persist the run record on Issue #294")
         _capture(["gh", "auth", "status"])
 
-        runner_log, completion = _latest_completed_run()
-        focused_path = _resolve_recorded_path(completion["focused"])
-        manifest_path = _resolve_recorded_path(completion["manifest"])
-        mmr_path = _resolve_recorded_path(completion["mmr"])
-        run_dir = manifest_path.parent
-        wrapper_path = run_dir / "post277_mapping_guarded_full68_host.json"
+        attempt = _latest_attempt()
+        record = _build_record(attempt)
 
-        for label, path in (
-            ("focused", focused_path),
-            ("manifest", manifest_path),
-            ("mmr", mmr_path),
-            ("wrapper", wrapper_path),
-        ):
-            if not path.is_file():
-                raise FileNotFoundError(f"{label} artifact missing: {path}")
+        run_dir = attempt["run_dir"]
+        output_dir = run_dir if run_dir.is_dir() else LOG_ROOT
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_path = output_dir / "post277_attempt_record.json"
+        markdown_path = output_dir / "post277_attempt_record.md"
 
-        record = _validate_and_build_record(
-            runner_log=runner_log,
-            completion=completion,
-            focused_path=focused_path,
-            manifest_path=manifest_path,
-            mmr_path=mmr_path,
-            wrapper_path=wrapper_path,
-        )
-        output_path = run_dir / "post277_acceptance_record.json"
-        markdown_path = run_dir / "post277_acceptance_record.md"
         markdown = _issue_markdown(record)
         marker = markdown.splitlines()[0]
-
         markdown_path.write_text(markdown, encoding="utf-8")
         issue_comment = _post_issue_comment(markdown, marker)
         record["issue_comment"] = issue_comment
@@ -435,12 +671,19 @@ def main() -> int:
         print(
             json.dumps(
                 {
+                    "recorded": True,
                     "status": record["status"],
                     "run_tag": record["run_tag"],
                     "experiment_execution_head": record["experiment_execution_head"],
                     "collector_head": record["collector"]["head"],
+                    "runner_completed_marker": record["runner_completed_marker"],
                     "focused_all_gates_pass": record["focused_mmr"]["all_gates_pass"],
                     "full68_all_gates_pass": record["full68_mmr"]["all_gates_pass"],
+                    "failed_gates": {
+                        "focused": record["focused_mmr"]["failed_gates"],
+                        "full68": record["full68_mmr"]["failed_gates"],
+                    },
+                    "missing_artifacts": record["missing_artifacts"],
                     "record": str(output_path),
                     "issue_comment": issue_comment,
                 },
@@ -448,12 +691,14 @@ def main() -> int:
                 ensure_ascii=False,
             )
         )
+        # Recording a failed/incomplete experiment is successful recorder execution.
         return 0
     except Exception as error:  # noqa: BLE001
         print(
             json.dumps(
                 {
-                    "status": "failed",
+                    "recorded": False,
+                    "status": "recorder_failed",
                     "error_type": type(error).__name__,
                     "error": str(error),
                 },

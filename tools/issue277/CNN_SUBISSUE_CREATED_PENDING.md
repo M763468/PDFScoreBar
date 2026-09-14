@@ -1,0 +1,1 @@
+Classifier retraining/model work is being split from #277 because it has an independent dataset/training/model-artifact acceptance boundary. See the GitHub child issue created from `tools/issue277/classifier_geometry_issue_draft.md` once assigned.

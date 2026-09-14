@@ -1,0 +1,3 @@
+Title: [Investigation] Make the MMR classifier robust to small support-geometry perturbations
+
+Scope summary: classifier-only reproduction, geometry perturbation benchmark, source-space geometry augmentation, aspect-preserving input normalization, held-out-score validation, model artifact provenance, then handoff back to #277 OCR evaluation.

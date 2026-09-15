@@ -1,7 +1,6 @@
 {
   "margin_px": 20,
   "deltas_px": [1, 2, 4],
-  "candidate_variants": "geometry",
   "acceptance_excluded_tags": [
     "acceptance-control",
     "issue277-control",
@@ -10,7 +9,9 @@
   ],
   "split": {
     "group_level": "score",
+    "fallback_group_level": "page",
     "seed": 42,
-    "validation_ratio": 0.2
+    "validation_ratio": 0.2,
+    "test_ratio": 0.2
   }
 }

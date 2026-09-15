@@ -18,19 +18,77 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
+
 import cv2
 import numpy as np
 import torch
+import torch.nn as nn
 from PIL import Image, ImageOps
-from torchvision import transforms
-
-from src.measure_numbering.mmr import MMRClassifier
+from torchvision import models, transforms
 
 DEFAULT_MAIN_THRESHOLD = 0.5
 DEFAULT_RESCUE_THRESHOLD = 0.1
 DEFAULT_MARGIN_PX = 20
 DEFAULT_DELTAS_PX = (1, 2, 4)
 DEFAULT_DPI_SCALES = (0.8, 1.0, 1.25)
+
+# Experiment-local mirror of src.measure_numbering.mmr.MMRClassifier.
+#
+# Keep this deliberately small: Issue #332 is classifier-only, and the documented
+# CNN classifier environment does not carry RapidOCR. Importing the production
+# mmr.py module would pull in RapidOCR even though classifier inference does not use it.
+# Phase-0 reproduction against retained #277 probabilities validates that this mirror
+# remains behaviorally equivalent to the production classifier contract.
+PRODUCTION_TRANSFORM = transforms.Compose(
+    [
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            [0.485, 0.456, 0.406],
+            [0.229, 0.224, 0.225],
+        ),
+    ]
+)
+
+
+class ProductionMMRClassifierMirror:
+    """Classifier-only mirror of the production MMRClassifier inference contract."""
+
+    def __init__(self, model_path: Path, device: torch.device):
+        self.device = device
+        self.transform = PRODUCTION_TRANSFORM
+
+        model = models.resnet18(weights=None)
+        model.fc = nn.Linear(model.fc.in_features, 1)
+
+        state_dict = torch.load(
+            model_path,
+            map_location=self.device,
+            weights_only=True,
+        )
+        if any(key.startswith("_orig_mod.") for key in state_dict):
+            state_dict = {
+                key.replace("_orig_mod.", ""): value
+                for key, value in state_dict.items()
+            }
+
+        model.load_state_dict(state_dict)
+        self.model = model.to(self.device)
+        self.model.eval()
+
+    def predict(self, cv2_img: np.ndarray) -> float:
+        if cv2_img is None or cv2_img.size == 0:
+            return 0.0
+
+        rgb = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
+        tensor = (
+            self.transform(Image.fromarray(rgb))
+            .unsqueeze(0)
+            .to(self.device)
+        )
+
+        with torch.no_grad():
+            return float(torch.sigmoid(self.model(tensor)).item())
 
 
 @dataclass(frozen=True)
@@ -161,7 +219,7 @@ def _letterbox_transform() -> transforms.Compose:
 
 class Predictor:
     def __init__(self, model_path: Path, device: torch.device, resize_mode: str):
-        self.classifier = MMRClassifier(model_path, device)
+        self.classifier = ProductionMMRClassifierMirror(model_path, device)
         self.device = device
         self.resize_mode = resize_mode
         self.letterbox_transform = _letterbox_transform()
@@ -367,6 +425,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "dpi_scales": list(dpi_scales),
             "resize_modes": list(resize_modes),
             "staff_y_dependency": "none-direct: classifier crop derives from measure bbox only",
+            "classifier_loader": "experiment-local production MMRClassifier mirror",
+            "classifier_reference": "src/measure_numbering/mmr.py::MMRClassifier",
+            "rapidocr_involved": False,
         },
         "elapsed_seconds": time.perf_counter() - started,
         "summary": summaries,

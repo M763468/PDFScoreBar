@@ -1,67 +1,189 @@
 import json
+import random
 from pathlib import Path
+from types import SimpleNamespace
 
 import cv2
 import numpy as np
-import pytest
+from torchvision import transforms
 
-from tools.mmr_training.issue332.materialize_geometry_dataset import freeze_split, materialize
+from tools.mmr_training.issue332.geometry_training import (
+    SemanticMMRDataset,
+    choose_geometry_bbox,
+    prepare_split_contract,
+)
+from tools.mmr_training.train_mmr_classifier import _manifest_datasets
 
 
-def _sample(sample_id, score_id, page_id, label=0, tags=None):
+def _sample(sample_id, score_id, page_id, label, image_path="page.png", tags=None):
     return {
         "sample_id": sample_id,
         "score_id": score_id,
         "page_id": page_id,
-        "image_path": "page.png",
+        "image_path": image_path,
         "bbox": [20, 20, 60, 60],
         "label": label,
         "tags": tags or [],
     }
 
 
-def test_freeze_split_keeps_score_siblings_together_and_is_deterministic():
-    samples = [
-        _sample("a1", "score-a", "page-1"),
-        _sample("a2", "score-a", "page-2", 1),
-        _sample("b1", "score-b", "page-1"),
-        _sample("c1", "score-c", "page-1"),
-    ]
-    first = freeze_split(samples, seed=42, validation_ratio=0.25, group_level="score")
-    assert first == freeze_split(samples, seed=42, validation_ratio=0.25, group_level="score")
-    assert first["a1"] == first["a2"]
+def _balanced_samples():
+    samples = []
+    for score_index in range(6):
+        score = f"score-{score_index}"
+        samples.append(_sample(f"{score}-neg", score, "page-1", 0))
+        samples.append(_sample(f"{score}-pos", score, "page-2", 1))
+    return samples
 
 
-def test_materialize_excludes_acceptance_controls_and_pairs_datasets(tmp_path: Path):
-    cv2.imwrite(str(tmp_path / "page.png"), np.full((100, 100, 3), 255, dtype=np.uint8))
-    source_manifest = tmp_path / "source.json"
-    source_manifest.write_text(
+def test_acceptance_controls_are_excluded_before_group_split(tmp_path: Path):
+    samples = _balanced_samples()
+    samples.append(_sample("control", "control-score", "page-1", 0))
+    manifest = tmp_path / "source.json"
+    manifest.write_text(json.dumps({"samples": samples}), encoding="utf-8")
+    acceptance = tmp_path / "acceptance.json"
+    acceptance.write_text(
+        json.dumps({"samples": [_sample("control", "control-score", "page-1", 0)]}),
+        encoding="utf-8",
+    )
+
+    eligible, contract = prepare_split_contract(
+        manifest_path=manifest,
+        split_path=tmp_path / "split.json",
+        acceptance_manifest_path=acceptance,
+        seed=42,
+        validation_ratio=0.2,
+        test_ratio=0.2,
+    )
+
+    assert "control" not in {sample["sample_id"] for sample in eligible}
+    assert "control" not in contract["assignments"]
+    assert contract["excluded_before_split"] is True
+    assert contract["excluded_sample_ids"] == ["control"]
+
+    score_splits = {}
+    for sample in eligible:
+        score_splits.setdefault(sample["score_id"], set()).add(
+            contract["assignments"][sample["sample_id"]]
+        )
+    assert all(len(splits) == 1 for splits in score_splits.values())
+
+
+def test_split_artifact_is_reused_and_deterministic(tmp_path: Path):
+    manifest = tmp_path / "source.json"
+    manifest.write_text(json.dumps({"samples": _balanced_samples()}), encoding="utf-8")
+    split = tmp_path / "split.json"
+
+    _, first = prepare_split_contract(
+        manifest_path=manifest,
+        split_path=split,
+        seed=17,
+        validation_ratio=0.2,
+        test_ratio=0.2,
+    )
+    _, second = prepare_split_contract(
+        manifest_path=manifest,
+        split_path=split,
+        seed=999,
+        validation_ratio=0.3,
+        test_ratio=0.3,
+    )
+
+    assert first == second
+    assert set(first["assignments"].values()) == {"train", "validation", "test"}
+
+
+def test_geometry_candidate_keeps_one_semantic_item_per_epoch(tmp_path: Path):
+    image_path = tmp_path / "page.png"
+    cv2.imwrite(str(image_path), np.full((100, 100, 3), 255, dtype=np.uint8))
+    sample = _sample("x", "score-a", "page-1", 1, image_path=str(image_path))
+    transform = transforms.ToTensor()
+
+    baseline = SemanticMMRDataset(
+        [sample],
+        manifest_path=tmp_path / "manifest.json",
+        transform=transform,
+        geometry_policy="none",
+        seed=42,
+    )
+    candidate = SemanticMMRDataset(
+        [sample],
+        manifest_path=tmp_path / "manifest.json",
+        transform=transform,
+        geometry_policy="absolute",
+        deltas_px=(1, 2, 4),
+        seed=42,
+    )
+
+    assert len(baseline) == len(candidate) == 1
+    variants = {
+        choose_geometry_bbox(
+            sample,
+            policy="absolute",
+            deltas_px=(1, 2, 4),
+            rng=random.Random(seed),
+        )[0]
+        for seed in range(100)
+    }
+    assert "native" in variants
+    assert any(name.startswith("translate_x_") for name in variants)
+    assert any(name.startswith("translate_y_") for name in variants)
+    assert any(name.startswith("x1_") for name in variants)
+    assert any(name.startswith("x2_") for name in variants)
+    assert any(name.startswith("expand_contract_x_") for name in variants)
+
+
+def test_manifest_trainer_uses_frozen_split_without_resplitting(tmp_path: Path):
+    image_path = tmp_path / "page.png"
+    cv2.imwrite(str(image_path), np.full((100, 100, 3), 255, dtype=np.uint8))
+    samples = [{**sample, "image_path": str(image_path)} for sample in _balanced_samples()]
+    manifest = tmp_path / "source.json"
+    manifest.write_text(json.dumps({"samples": samples}), encoding="utf-8")
+
+    config = tmp_path / "config.json"
+    config.write_text(
         json.dumps(
             {
-                "samples": [
-                    _sample("train", "score-a", "page-1", 1),
-                    _sample("control", "score-b", "page-1", tags=["issue277-control"]),
-                ]
+                "margin_px": 20,
+                "deltas_px": [1, 2, 4],
+                "split": {
+                    "seed": 42,
+                    "group_level": "score",
+                    "fallback_group_level": "page",
+                    "validation_ratio": 0.2,
+                    "test_ratio": 0.2,
+                },
             }
         ),
         encoding="utf-8",
     )
-    config = tmp_path / "config.json"
-    config.write_text(
-        json.dumps({"deltas_px": [1], "split": {"validation_ratio": 0.5}}), encoding="utf-8"
+    args = SimpleNamespace(
+        manifest=str(manifest),
+        split_manifest=str(tmp_path / "split.json"),
+        geometry_config=str(config),
+        acceptance_manifest=None,
+        seed=42,
+        geometry_augmentation="absolute",
     )
-    result = materialize(
-        manifest_path=source_manifest, output_root=tmp_path / "out", config_path=config
+
+    train, validation, test, _, contract = _manifest_datasets(
+        args,
+        transforms.ToTensor(),
+        transforms.ToTensor(),
+        text_noise=None,
     )
-    rows = result["rows"]
-    assert rows and all(row["sample_id"] != "control" for row in rows)
-    assert {row["dataset"] for row in rows} == {"baseline", "candidate"}
-    assert {row["split"] for row in rows} == {result["split_contract"]["assignments"]["train"]}
-    assert result["data_contract"]["acceptance_controls_excluded_from_training"] is True
 
-
-def test_materialize_rejects_missing_source_page(tmp_path: Path):
-    manifest = tmp_path / "source.json"
-    manifest.write_text(json.dumps({"samples": [_sample("x", "s", "p")]}), encoding="utf-8")
-    with pytest.raises(FileNotFoundError):
-        materialize(manifest_path=manifest, output_root=tmp_path / "out")
+    expected = {
+        split: {
+            sample_id
+            for sample_id, assigned in contract["assignments"].items()
+            if assigned == split
+        }
+        for split in ("train", "validation", "test")
+    }
+    assert {sample["sample_id"] for sample in train.samples} == expected["train"]
+    assert {sample["sample_id"] for sample in validation.samples} == expected["validation"]
+    assert {sample["sample_id"] for sample in test.samples} == expected["test"]
+    assert train.geometry_policy == "absolute"
+    assert validation.geometry_policy == "none"
+    assert test.geometry_policy == "none"

@@ -1,7 +1,7 @@
 """Split-safe semantic training helpers for the MMR classifier.
 
 The helpers in this module keep Issue #332 geometry experiments on the regular
-``train_mmr_classifier.py`` path.  They freeze semantic train/validation/test
+``train_mmr_classifier.py`` path. They freeze semantic train/validation/test
 membership before augmentation and apply source-space geometry perturbations
 on-the-fly so baseline and candidate see the same number of semantic samples
 per epoch.
@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence
 
 import cv2
-import numpy as np
 import torch
 from PIL import Image
 from torch.utils.data import Dataset

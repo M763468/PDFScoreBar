@@ -1,0 +1,8 @@
+{
+  "main_threshold": 0.5,
+  "rescue_threshold": 0.1,
+  "margin_px": 20,
+  "deltas_px": [1, 2, 4],
+  "dpi_scales": [0.8, 1.0, 1.25],
+  "resize_modes": ["direct", "letterbox"]
+}

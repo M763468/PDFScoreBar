@@ -2,6 +2,7 @@ import argparse
 import io
 import json
 import random
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -12,6 +13,10 @@ from PIL import Image, ImageDraw, ImageFont
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 from torchvision import models, transforms
 from torchvision.models import ResNet18_Weights
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from tools.mmr_training.issue332.geometry_training import (
     DEFAULT_DELTAS_PX,
@@ -498,6 +503,9 @@ def train_model(args):
     optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
 
+    output_model_path = Path(args.output_model)
+    output_model_path.parent.mkdir(parents=True, exist_ok=True)
+
     best_f1 = -1.0
     best_epoch = None
     tqdm = _get_progress_bar()
@@ -541,7 +549,7 @@ def train_model(args):
         if val_metrics["f1"] > best_f1:
             best_f1 = val_metrics["f1"]
             best_epoch = epoch + 1
-            torch.save(model.state_dict(), args.output_model)
+            torch.save(model.state_dict(), output_model_path)
             print(f"  Saved best model to {args.output_model}")
 
         scheduler.step()
@@ -555,8 +563,8 @@ def train_model(args):
         "best_epoch": best_epoch,
         "selection_metric": "validation_f1",
         "best_validation_f1": best_f1,
-        "output_model": str(Path(args.output_model).resolve()),
-        "output_model_sha256": sha256_file(Path(args.output_model)),
+        "output_model": str(output_model_path.resolve()),
+        "output_model_sha256": sha256_file(output_model_path),
         "test_used_for_model_selection": False,
     }
 
@@ -566,7 +574,7 @@ def train_model(args):
         result["split_manifest_sha256"] = sha256_file(Path(args.split_manifest))
 
     if test_dataset is not None:
-        best_state = torch.load(args.output_model, map_location=device, weights_only=True)
+        best_state = torch.load(output_model_path, map_location=device, weights_only=True)
         model.load_state_dict(best_state)
         test_loader = _make_loader(test_dataset, [], args, train=False)
         test_metrics, probabilities = _evaluate_loader(model, test_loader, device)

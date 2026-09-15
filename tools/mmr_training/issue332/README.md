@@ -42,6 +42,8 @@ The regular `tools/mmr_training/train_mmr_classifier.py` entrypoint is the autho
 
 Geometry augmentation is sampled on-the-fly from the source-page bbox. One semantic sample remains one training item per epoch, so an augmentation candidate does not gain extra optimizer steps merely because more perturbation variants exist. Validation and test always use native geometry; test metrics are computed only after the best validation-F1 checkpoint has been selected.
 
+Semantic-manifest mode defaults to the recorded production-checkpoint training profile: 20 epochs, batch size 32, Adam, BCEWithLogitsLoss positive weighting, no weighted sampler, no positive-only text-noise overlay, and no cosine scheduler. The later AdamW/text-noise experiment remains available through `--training-profile current` but is not part of the primary Issue #332 causal comparison.
+
 Baseline example:
 
 ```bash
@@ -50,6 +52,7 @@ python tools/mmr_training/train_mmr_classifier.py \
   --acceptance-manifest logs/issue332/acceptance_controls_manifest.json \
   --split-manifest logs/issue332/training_split_v1.json \
   --geometry-config tools/mmr_training/issue332/geometry_augmentation_config.json \
+  --training-profile historical \
   --geometry-augmentation none \
   --output-model logs/issue332/models/retrain_baseline.pth \
   --metrics-output logs/issue332/retrain_baseline_metrics.json
@@ -63,9 +66,10 @@ python tools/mmr_training/train_mmr_classifier.py \
   --acceptance-manifest logs/issue332/acceptance_controls_manifest.json \
   --split-manifest logs/issue332/training_split_v1.json \
   --geometry-config tools/mmr_training/issue332/geometry_augmentation_config.json \
+  --training-profile historical \
   --geometry-augmentation absolute \
   --output-model logs/issue332/models/geometry_aug_v1.pth \
   --metrics-output logs/issue332/geometry_aug_v1_metrics.json
 ```
 
-The two runs above share the same frozen split and semantic epoch length. Their intended causal difference is source-space bbox augmentation only.
+The two runs above share the same frozen split, optimizer/training profile, and semantic epoch length. Their intended causal difference is source-space bbox augmentation only.

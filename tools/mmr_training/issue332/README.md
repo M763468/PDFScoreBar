@@ -18,12 +18,12 @@ Do not put expected OCR numbers in the manifest. Labels and tags are evaluation 
 
 The required Phase-0 classifier controls from #332 are `page_010 s2 m1`, `page_011 s8 m0`, and `page_033 s0 m0`. Add the retained #276/#277 negative, zero-fixture, and one-bar controls to the same manifest before treating a run as an acceptance benchmark.
 
-## Run
+## Geometry benchmark
 
 From the repository root, with the model/data environment already materialized:
 
 ```bash
-uv run python tools/mmr_training/issue332_geometry_benchmark.py \
+python tools/mmr_training/issue332_geometry_benchmark.py \
   --manifest /path/to/issue332_manifest.json \
   --model tools/mmr_training/models/mmr_classifier_best.pth \
   --config tools/mmr_training/issue332/benchmark_config.json \
@@ -38,29 +38,34 @@ The output records checkpoint/config/manifest SHA-256, runtime identity, every p
 
 ## Split/training rule
 
-Any retraining dataset must freeze score/page/semantic-measure membership before generating perturbations. Augmented siblings from one semantic measure must never cross train/validation/test boundaries. Prefer whole-score holdout; otherwise use page-group holdout and report per-score results.
+The regular `tools/mmr_training/train_mmr_classifier.py` entrypoint is the authoritative training path. In semantic-manifest mode it excludes retained acceptance controls before splitting, freezes train/validation/test membership by complete score groups (falling back to page groups only when required for class coverage), and reuses the same split artifact across baseline and candidate runs.
 
-## Geometry augmentation dataset materialization
+Geometry augmentation is sampled on-the-fly from the source-page bbox. One semantic sample remains one training item per epoch, so an augmentation candidate does not gain extra optimizer steps merely because more perturbation variants exist. Validation and test always use native geometry; test metrics are computed only after the best validation-F1 checkpoint has been selected.
 
-Use the experiment-only materializer after the source training manifest and retained
-acceptance manifest have been verified locally:
+Baseline example:
 
 ```bash
-uv run python tools/mmr_training/issue332/materialize_geometry_dataset.py \
+python tools/mmr_training/train_mmr_classifier.py \
   --manifest /path/to/training_manifest.json \
   --acceptance-manifest logs/issue332/acceptance_controls_manifest.json \
-  --config tools/mmr_training/issue332/geometry_augmentation_config.json \
-  --output-root datasets/issue332_geometry_v1
+  --split-manifest logs/issue332/training_split_v1.json \
+  --geometry-config tools/mmr_training/issue332/geometry_augmentation_config.json \
+  --geometry-augmentation none \
+  --output-model logs/issue332/models/retrain_baseline.pth \
+  --metrics-output logs/issue332/retrain_baseline_metrics.json
 ```
 
-The source manifest contains semantic samples and source-page bboxes. Complete score
-groups are assigned to a deterministic split before any sibling is generated. Controls
-listed in the acceptance manifest or tagged `acceptance-control`, `issue277-control`,
-`zero-fixture`, or `one-bar` are excluded from both training datasets. `baseline/` has
-native fixed-margin crops; `candidate/` has native plus common-policy source-space
-`x1`, `x2`, x/y translation, and x expand/contract variants at +/-1/2/4 px for both
-labels. The existing direct 224x224 preprocessing remains the training-time step.
+Absolute-pixel geometry candidate:
 
-The generated `dataset_manifest.json` records source/config hashes, frozen assignments,
-crop hashes, and the split/no-leakage contract. Keep generated datasets under ignored
-`datasets/` or `logs/`; this tool does not create model weights.
+```bash
+python tools/mmr_training/train_mmr_classifier.py \
+  --manifest /path/to/training_manifest.json \
+  --acceptance-manifest logs/issue332/acceptance_controls_manifest.json \
+  --split-manifest logs/issue332/training_split_v1.json \
+  --geometry-config tools/mmr_training/issue332/geometry_augmentation_config.json \
+  --geometry-augmentation absolute \
+  --output-model logs/issue332/models/geometry_aug_v1.pth \
+  --metrics-output logs/issue332/geometry_aug_v1_metrics.json
+```
+
+The two runs above share the same frozen split and semantic epoch length. Their intended causal difference is source-space bbox augmentation only.

@@ -1,0 +1,16 @@
+{
+  "margin_px": 20,
+  "deltas_px": [1, 2, 4],
+  "candidate_variants": "geometry",
+  "acceptance_excluded_tags": [
+    "acceptance-control",
+    "issue277-control",
+    "zero-fixture",
+    "one-bar"
+  ],
+  "split": {
+    "group_level": "score",
+    "seed": 42,
+    "validation_ratio": 0.2
+  }
+}

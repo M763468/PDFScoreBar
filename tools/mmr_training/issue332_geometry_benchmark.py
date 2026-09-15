@@ -18,7 +18,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-
 import cv2
 import numpy as np
 import torch
@@ -67,10 +66,7 @@ class ProductionMMRClassifierMirror:
             weights_only=True,
         )
         if any(key.startswith("_orig_mod.") for key in state_dict):
-            state_dict = {
-                key.replace("_orig_mod.", ""): value
-                for key, value in state_dict.items()
-            }
+            state_dict = {key.replace("_orig_mod.", ""): value for key, value in state_dict.items()}
 
         model.load_state_dict(state_dict)
         self.model = model.to(self.device)
@@ -81,11 +77,7 @@ class ProductionMMRClassifierMirror:
             return 0.0
 
         rgb = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
-        tensor = (
-            self.transform(Image.fromarray(rgb))
-            .unsqueeze(0)
-            .to(self.device)
-        )
+        tensor = self.transform(Image.fromarray(rgb)).unsqueeze(0).to(self.device)
 
         with torch.no_grad():
             return float(torch.sigmoid(self.model(tensor)).item())
@@ -126,9 +118,7 @@ def _validated_bbox(raw: Sequence[float]) -> tuple[float, float, float, float]:
     return x1, y1, x2, y2
 
 
-def generate_geometry_variants(
-    bbox: Sequence[float], deltas_px: Iterable[int]
-) -> list[Variant]:
+def generate_geometry_variants(bbox: Sequence[float], deltas_px: Iterable[int]) -> list[Variant]:
     """Return native plus bounded source-space geometry perturbations."""
     x1, y1, x2, y2 = _validated_bbox(bbox)
     variants = [Variant("native", (x1, y1, x2, y2))]
@@ -153,9 +143,7 @@ def generate_geometry_variants(
     return variants
 
 
-def add_dpi_variants(
-    variants: Sequence[Variant], dpi_scales: Iterable[float]
-) -> list[Variant]:
+def add_dpi_variants(variants: Sequence[Variant], dpi_scales: Iterable[float]) -> list[Variant]:
     result: list[Variant] = []
     for scale in dpi_scales:
         scale = float(scale)
@@ -288,7 +276,9 @@ def _decision(probability: float, threshold: float) -> bool:
     return probability >= threshold
 
 
-def _summary(rows: Sequence[dict[str, Any]], main_threshold: float, rescue_threshold: float) -> dict[str, Any]:
+def _summary(
+    rows: Sequence[dict[str, Any]], main_threshold: float, rescue_threshold: float
+) -> dict[str, Any]:
     by_sample: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
         by_sample.setdefault(row["sample_id"], []).append(row)
@@ -297,7 +287,8 @@ def _summary(rows: Sequence[dict[str, Any]], main_threshold: float, rescue_thres
     crossings_rescue = 0
     for sample_id, sample_rows in sorted(by_sample.items()):
         native_candidates = [
-            row for row in sample_rows
+            row
+            for row in sample_rows
             if row["variant"] == "native" and float(row["dpi_scale"]) == 1.0
         ]
         if len(native_candidates) != 1:
@@ -321,12 +312,16 @@ def _summary(rows: Sequence[dict[str, Any]], main_threshold: float, rescue_thres
             "crosses_main_threshold": main_cross,
             "crosses_rescue_threshold": rescue_cross,
         }
-    native_rows = [row for row in rows if row["variant"] == "native" and float(row["dpi_scale"]) == 1.0]
+    native_rows = [
+        row for row in rows if row["variant"] == "native" and float(row["dpi_scale"]) == 1.0
+    ]
     all_correct = sum(
-        int(_decision(float(row["probability"]), main_threshold) == bool(row["label"])) for row in rows
+        int(_decision(float(row["probability"]), main_threshold) == bool(row["label"]))
+        for row in rows
     )
     native_correct = sum(
-        int(_decision(float(row["probability"]), main_threshold) == bool(row["label"])) for row in native_rows
+        int(_decision(float(row["probability"]), main_threshold) == bool(row["label"]))
+        for row in native_rows
     )
     return {
         "sample_count": len(samples),
@@ -368,7 +363,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         image = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
         if image is None:
             raise FileNotFoundError(f"could not load source image: {image_path}")
-        variants = add_dpi_variants(generate_geometry_variants(sample["bbox"], deltas_px), dpi_scales)
+        variants = add_dpi_variants(
+            generate_geometry_variants(sample["bbox"], deltas_px), dpi_scales
+        )
         for variant in variants:
             scaled_image, scaled_bbox = _scale_page_and_bbox(image, variant.bbox, variant.dpi_scale)
             crop = crop_measure(scaled_image, scaled_bbox, margin_px=margin_px)
@@ -400,7 +397,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         mode_rows = [row for row in rows if row["resize_mode"] == mode]
         summaries[mode] = _summary(mode_rows, main_threshold, rescue_threshold)
         summaries[mode]["mean_inference_ms"] = (
-            sum(float(row["inference_ms"]) for row in mode_rows) / len(mode_rows) if mode_rows else None
+            sum(float(row["inference_ms"]) for row in mode_rows) / len(mode_rows)
+            if mode_rows
+            else None
         )
     return {
         "provenance": {
@@ -442,11 +441,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--config", type=Path)
     parser.add_argument(
-        "--resize-mode", action="append", choices=("direct", "letterbox"),
+        "--resize-mode",
+        action="append",
+        choices=("direct", "letterbox"),
         help="May be repeated. Defaults to config resize_modes or direct.",
     )
     parser.add_argument(
-        "--device", default="cuda" if torch.cuda.is_available() else "cpu",
+        "--device",
+        default="cuda" if torch.cuda.is_available() else "cpu",
         help="torch device (default: cuda when available, otherwise cpu)",
     )
     return parser

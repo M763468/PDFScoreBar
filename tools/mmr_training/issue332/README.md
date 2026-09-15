@@ -39,3 +39,28 @@ The output records checkpoint/config/manifest SHA-256, runtime identity, every p
 ## Split/training rule
 
 Any retraining dataset must freeze score/page/semantic-measure membership before generating perturbations. Augmented siblings from one semantic measure must never cross train/validation/test boundaries. Prefer whole-score holdout; otherwise use page-group holdout and report per-score results.
+
+## Geometry augmentation dataset materialization
+
+Use the experiment-only materializer after the source training manifest and retained
+acceptance manifest have been verified locally:
+
+```bash
+uv run python tools/mmr_training/issue332/materialize_geometry_dataset.py \
+  --manifest /path/to/training_manifest.json \
+  --acceptance-manifest logs/issue332/acceptance_controls_manifest.json \
+  --config tools/mmr_training/issue332/geometry_augmentation_config.json \
+  --output-root datasets/issue332_geometry_v1
+```
+
+The source manifest contains semantic samples and source-page bboxes. Complete score
+groups are assigned to a deterministic split before any sibling is generated. Controls
+listed in the acceptance manifest or tagged `acceptance-control`, `issue277-control`,
+`zero-fixture`, or `one-bar` are excluded from both training datasets. `baseline/` has
+native fixed-margin crops; `candidate/` has native plus common-policy source-space
+`x1`, `x2`, x/y translation, and x expand/contract variants at +/-1/2/4 px for both
+labels. The existing direct 224x224 preprocessing remains the training-time step.
+
+The generated `dataset_manifest.json` records source/config hashes, frozen assignments,
+crop hashes, and the split/no-leakage contract. Keep generated datasets under ignored
+`datasets/` or `logs/`; this tool does not create model weights.

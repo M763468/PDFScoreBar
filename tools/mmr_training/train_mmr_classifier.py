@@ -31,16 +31,14 @@ from tools.mmr_training.issue332.geometry_training import (
 def calculate_metrics(y_true, y_pred):
     y_true = np.asarray(y_true).reshape(-1)
     y_pred = np.asarray(y_pred).reshape(-1)
-
     tp = int(np.sum((y_true == 1) & (y_pred == 1)))
     tn = int(np.sum((y_true == 0) & (y_pred == 0)))
     fp = int(np.sum((y_true == 0) & (y_pred == 1)))
     fn = int(np.sum((y_true == 1) & (y_pred == 0)))
-
     acc = (tp + tn) / len(y_true) if len(y_true) else 0.0
-    prec = tp / (tp + fp) if (tp + fp) else 0.0
-    rec = tp / (tp + fn) if (tp + fn) else 0.0
-    f1 = 2 * prec * rec / (prec + rec) if (prec + rec) else 0.0
+    prec = tp / (tp + fp) if tp + fp else 0.0
+    rec = tp / (tp + fn) if tp + fn else 0.0
+    f1 = 2 * prec * rec / (prec + rec) if prec + rec else 0.0
     return acc, prec, rec, f1
 
 
@@ -70,12 +68,12 @@ def manual_train_test_split(paths, labels, test_size=0.2, random_state=42):
     random.Random(random_state).shuffle(combined)
     split_idx = int(len(combined) * (1 - test_size))
     train_data = combined[:split_idx]
-    test_data = combined[split_idx:]
-    if not train_data or not test_data:
+    val_data = combined[split_idx:]
+    if not train_data or not val_data:
         raise ValueError("legacy crop split produced an empty partition")
     x_train, y_train = zip(*train_data)
-    x_test, y_test = zip(*test_data)
-    return list(x_train), list(x_test), list(y_train), list(y_test)
+    x_val, y_val = zip(*val_data)
+    return list(x_train), list(x_val), list(y_train), list(y_val)
 
 
 def set_seed(seed=42):
@@ -134,9 +132,7 @@ class TextNoiseOverlay:
         if cx2 <= cx1 or cy2 <= cy1:
             return 0.0
         patch = staff_mask[cy1:cy2, cx1:cx2]
-        if patch.size == 0:
-            return 0.0
-        return float(np.count_nonzero(patch)) / float(patch.size)
+        return float(np.count_nonzero(patch)) / float(patch.size) if patch.size else 0.0
 
     def __call__(self, image, staff_mask=None):
         if random.random() > self.prob:
@@ -155,7 +151,9 @@ class TextNoiseOverlay:
         staff_top, staff_bottom = self._estimate_staff_band(staff_mask, h)
 
         for _ in range(self.max_attempts):
-            pos_type = random.choices(["top", "bottom", "cross"], weights=[0.45, 0.45, 0.10], k=1)[0]
+            pos_type = random.choices(
+                ["top", "bottom", "cross"], weights=[0.45, 0.45, 0.10], k=1
+            )[0]
             if pos_type == "top":
                 y = random.randint(-text_h // 2, max(0, h // 3))
             elif pos_type == "bottom":
@@ -208,7 +206,11 @@ class MMRDataset(Dataset):
     def __getitem__(self, idx):
         img_path = self.image_paths[idx]
         label = self.labels[idx]
-        image = Image.open(img_path).convert("RGB")
+        try:
+            image = Image.open(img_path).convert("RGB")
+        except Exception as exc:
+            print(f"Error loading {img_path}: {exc}")
+            image = Image.new("RGB", (224, 224), (0, 0, 0))
 
         staff_mask = None
         if self.staff_mask_root:
@@ -232,14 +234,13 @@ def load_fonts_from_zip(zip_path):
     zip_path = Path(zip_path)
     if not zip_path.exists():
         return []
-    fonts = []
     import zipfile
 
+    fonts = []
     with zipfile.ZipFile(zip_path, "r") as zf:
         for name in zf.namelist():
-            if not name.lower().endswith((".ttf", ".otf")):
-                continue
-            fonts.append(io.BytesIO(zf.read(name)))
+            if name.lower().endswith((".ttf", ".otf")):
+                fonts.append(io.BytesIO(zf.read(name)))
     return fonts
 
 
@@ -284,16 +285,51 @@ def _transforms():
 
 def _text_noise(args):
     terms = [
-        "pizz.", "arco", "div.", "unis.", "solo", "tutti", "a 2", "cresc.", "dim.",
-        "espress.", "dolce", "sempre", "sim.", "f", "p", "mf", "mp", "ff", "pp",
-        "sfz", "Allegro", "Andante", "Largo", "Presto", "Moderato", "Tempo I",
-        "Cadenza", "G.P.", "V.S.", "attacca", "rit.", "rall.", "accel.", "a tempo",
-        "cant.", "marc.", "legg.", "stacc.", "ten.", "con sord.", "senza sord.",
-        "sul G", "sul D",
+        "pizz.",
+        "arco",
+        "div.",
+        "unis.",
+        "solo",
+        "tutti",
+        "a 2",
+        "cresc.",
+        "dim.",
+        "espress.",
+        "dolce",
+        "sempre",
+        "sim.",
+        "f",
+        "p",
+        "mf",
+        "mp",
+        "ff",
+        "pp",
+        "sfz",
+        "Allegro",
+        "Andante",
+        "Largo",
+        "Presto",
+        "Moderato",
+        "Tempo I",
+        "Cadenza",
+        "G.P.",
+        "V.S.",
+        "attacca",
+        "rit.",
+        "rall.",
+        "accel.",
+        "a tempo",
+        "cant.",
+        "marc.",
+        "legg.",
+        "stacc.",
+        "ten.",
+        "con sord.",
+        "senza sord.",
+        "sul G",
+        "sul D",
     ]
-    font_paths = []
-    font_paths.extend(load_fonts_from_dir(args.text_font_dir))
-    font_paths.extend(load_fonts_from_zip(args.text_fonts_zip))
+    font_paths = load_fonts_from_dir(args.text_font_dir) + load_fonts_from_zip(args.text_fonts_zip)
     return TextNoiseOverlay(
         terms=terms,
         prob=args.text_noise_prob,
@@ -341,7 +377,14 @@ def _legacy_datasets(args, train_transform, eval_transform, text_noise):
         text_noise=text_noise,
     )
     val_dataset = MMRDataset(val_paths, val_labels, transform=eval_transform)
-    return train_dataset, val_dataset, None, train_labels, None
+    return (
+        train_dataset,
+        val_dataset,
+        None,
+        train_labels,
+        None,
+        (len(paths_0), len(paths_1)),
+    )
 
 
 def _manifest_datasets(args, train_transform, eval_transform, text_noise):
@@ -399,7 +442,18 @@ def _manifest_datasets(args, train_transform, eval_transform, text_noise):
         margin_px=margin_px,
         seed=args.seed,
     )
-    return train_dataset, val_dataset, test_dataset, train_dataset.labels, split_contract
+    class_counts = (
+        sum(int(sample["label"]) == 0 for sample in eligible),
+        sum(int(sample["label"]) == 1 for sample in eligible),
+    )
+    return (
+        train_dataset,
+        val_dataset,
+        test_dataset,
+        train_dataset.labels,
+        split_contract,
+        class_counts,
+    )
 
 
 def _make_loader(dataset, labels, args, *, train):
@@ -408,8 +462,8 @@ def _make_loader(dataset, labels, args, *, train):
         negatives = sum(int(label) == 0 for label in labels)
         if positives == 0 or negatives == 0:
             raise ValueError("training split must contain both classes")
-        positive_sample_weight = negatives / positives
-        weights = [positive_sample_weight if int(label) == 1 else 1.0 for label in labels]
+        positive_weight = negatives / positives
+        weights = [positive_weight if int(label) == 1 else 1.0 for label in labels]
         sampler = WeightedRandomSampler(weights, num_samples=len(labels), replacement=True)
         return DataLoader(
             dataset,
@@ -431,8 +485,7 @@ def _evaluate_loader(model, loader, device):
     model.eval()
     with torch.no_grad():
         for images, labels in loader:
-            images = images.to(device)
-            outputs = model(images)
+            outputs = model(images.to(device))
             probabilities.extend(torch.sigmoid(outputs).reshape(-1).cpu().tolist())
             targets.extend(labels.reshape(-1).cpu().tolist())
     predictions = [1 if probability >= 0.5 else 0 for probability in probabilities]
@@ -468,30 +521,40 @@ def train_model(args):
             print(f"[Warn] TensorBoard not available: {exc}")
 
     train_transform, eval_transform = _transforms()
-    text_noise = _text_noise(args)
+    text_noise = _text_noise(args) if args.training_profile == "current" else None
 
     if args.manifest:
-        train_dataset, val_dataset, test_dataset, train_labels, split_contract = _manifest_datasets(
-            args, train_transform, eval_transform, text_noise
-        )
+        (
+            train_dataset,
+            val_dataset,
+            test_dataset,
+            train_labels,
+            split_contract,
+            class_counts,
+        ) = _manifest_datasets(args, train_transform, eval_transform, text_noise)
         mode = "semantic-manifest"
     else:
-        train_dataset, val_dataset, test_dataset, train_labels, split_contract = _legacy_datasets(
-            args, train_transform, eval_transform, text_noise
-        )
+        (
+            train_dataset,
+            val_dataset,
+            test_dataset,
+            train_labels,
+            split_contract,
+            class_counts,
+        ) = _legacy_datasets(args, train_transform, eval_transform, text_noise)
         mode = "legacy-crops"
 
     print(
-        f"Data mode={mode} train={len(train_dataset)} validation={len(val_dataset)} "
+        f"Data mode={mode} profile={args.training_profile} "
+        f"train={len(train_dataset)} validation={len(val_dataset)} "
         f"test={len(test_dataset) if test_dataset is not None else 0}"
     )
     train_loader = _make_loader(train_dataset, train_labels, args, train=True)
     val_loader = _make_loader(val_dataset, [], args, train=False)
 
-    positives = sum(int(label) == 1 for label in train_labels)
-    negatives = sum(int(label) == 0 for label in train_labels)
-    if positives == 0:
-        raise ValueError("training split contains no positive samples")
+    negatives, positives = class_counts
+    if positives == 0 or negatives == 0:
+        raise ValueError("training corpus must contain both classes")
 
     model = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
     model.fc = nn.Linear(model.fc.in_features, 1)
@@ -500,12 +563,15 @@ def train_model(args):
     criterion = nn.BCEWithLogitsLoss(
         pos_weight=torch.tensor([negatives / positives], device=device)
     )
-    optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
+    if args.training_profile == "historical":
+        optimizer = optim.Adam(model.parameters(), lr=args.lr)
+        scheduler = None
+    else:
+        optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
 
     output_model_path = Path(args.output_model)
     output_model_path.parent.mkdir(parents=True, exist_ok=True)
-
     best_f1 = -1.0
     best_epoch = None
     tqdm = _get_progress_bar()
@@ -532,7 +598,7 @@ def train_model(args):
 
         val_metrics, _ = _evaluate_loader(model, val_loader, device)
         epoch_loss = running_loss / len(train_dataset)
-        lr = scheduler.get_last_lr()[0]
+        lr = optimizer.param_groups[0]["lr"]
         print(
             f"Epoch {epoch + 1}/{args.epochs}: Loss={epoch_loss:.4f} | "
             f"Val Acc={val_metrics['accuracy']:.4f} "
@@ -550,15 +616,22 @@ def train_model(args):
             best_f1 = val_metrics["f1"]
             best_epoch = epoch + 1
             torch.save(model.state_dict(), output_model_path)
-            print(f"  Saved best model to {args.output_model}")
+            print(f"  Saved best model to {output_model_path}")
 
-        scheduler.step()
+        if scheduler is not None:
+            scheduler.step()
 
     if writer:
         writer.close()
 
     result = {
         "mode": mode,
+        "training_profile": args.training_profile,
+        "epochs": args.epochs,
+        "batch_size": args.batch_size,
+        "optimizer": "Adam" if args.training_profile == "historical" else "AdamW",
+        "weighted_sampler": bool(args.use_weighted_sampler),
+        "text_noise_enabled": text_noise is not None,
         "geometry_augmentation": args.geometry_augmentation if args.manifest else None,
         "best_epoch": best_epoch,
         "selection_metric": "validation_f1",
@@ -616,15 +689,25 @@ def build_parser():
         choices=("none", "absolute"),
         default="none",
     )
+    parser.add_argument(
+        "--training-profile",
+        choices=("historical", "current"),
+        default=None,
+        help="Defaults to historical for semantic manifests and current for legacy crops.",
+    )
     parser.add_argument("--output-model", type=str, default="mmr_classifier_best.pth")
     parser.add_argument("--metrics-output", type=str, default=None)
-    parser.add_argument("--epochs", type=int, default=10)
-    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument("--epochs", type=int, default=None)
+    parser.add_argument("--batch-size", type=int, default=None)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--no-weighted-sampler", dest="use_weighted_sampler", action="store_false")
-    parser.set_defaults(use_weighted_sampler=True)
+    sampler = parser.add_mutually_exclusive_group()
+    sampler.add_argument("--weighted-sampler", dest="use_weighted_sampler", action="store_true")
+    sampler.add_argument(
+        "--no-weighted-sampler", dest="use_weighted_sampler", action="store_false"
+    )
+    parser.set_defaults(use_weighted_sampler=None)
     parser.add_argument("--staff-mask-root", type=str, default=None)
     parser.add_argument("--staff-mask-suffix", type=str, default="_staff")
     parser.add_argument("--staff-mask-ext", type=str, default=".png")
@@ -648,6 +731,16 @@ def main():
         parser.error("--split-manifest is required with --manifest")
     if not args.manifest and args.geometry_augmentation != "none":
         parser.error("--geometry-augmentation requires --manifest")
+
+    if args.training_profile is None:
+        args.training_profile = "historical" if args.manifest else "current"
+    if args.epochs is None:
+        args.epochs = 20 if args.training_profile == "historical" else 10
+    if args.batch_size is None:
+        args.batch_size = 32 if args.training_profile == "historical" else 64
+    if args.use_weighted_sampler is None:
+        args.use_weighted_sampler = args.training_profile == "current"
+
     train_model(args)
 
 

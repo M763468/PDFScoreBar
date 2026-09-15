@@ -166,7 +166,7 @@ def test_manifest_trainer_uses_frozen_split_without_resplitting(tmp_path: Path):
         geometry_augmentation="absolute",
     )
 
-    train, validation, test, _, contract = _manifest_datasets(
+    train, validation, test, _, contract, class_counts = _manifest_datasets(
         args,
         transforms.ToTensor(),
         transforms.ToTensor(),
@@ -187,3 +187,4 @@ def test_manifest_trainer_uses_frozen_split_without_resplitting(tmp_path: Path):
     assert train.geometry_policy == "absolute"
     assert validation.geometry_policy == "none"
     assert test.geometry_policy == "none"
+    assert class_counts == (6, 6)

@@ -30,9 +30,18 @@ python tools/mmr_training/issue332_geometry_benchmark.py \
   --output logs/issue332/baseline_geometry.json
 ```
 
-The committed config evaluates native crop geometry plus source-space `x1`, `x2`, x-translation, y-translation, and symmetric x expand/contract at +/-1/2/4 px. It also applies coherent whole-page DPI metamorphs at 0.8x/1.0x/1.25x. Source coordinates scale with the page; the production fixed 20 px margin remains fixed so resolution sensitivity is measured rather than hidden.
+The committed config evaluates native geometry plus source-space `x1`, `x2`,
+x-translation, y-translation, and symmetric x expand/contract at +/-1/2/4 px.
+It also applies coherent whole-page DPI metamorphs at 0.8x/1.0x/1.25x. Source
+coordinates scale with the page; the production fixed 20 px margin remains
+fixed so resolution sensitivity is measured rather than hidden.
 
-Both current direct `224x224` warp and an experimental aspect-preserving white letterbox can be measured from the same source variants. The direct result is the production-contract baseline; letterbox is only an input-contract candidate.
+The same source variants can be evaluated under either independent input mode:
+`direct` or `letterbox`. The production-contract baseline is
+`direct-native` (direct input mode applied to native geometry); `letterbox` is
+only an input-contract candidate. Geometry and input mode are separate axes, so
+`direct-native`, `letterbox-native`, `direct-x1`, and `letterbox-x1` are
+unambiguous combinations.
 
 The output records checkpoint/config/manifest SHA-256, runtime identity, every probability, decisions at 0.5 and 0.1, per-sample min/max/range/max-delta, threshold crossings, and mean inference time. Retain output under ignored `logs/issue332/` unless the repository artifact policy explicitly says otherwise.
 
@@ -43,9 +52,16 @@ the source-page bbox `(x1, y1, x2, y2)` and a signed pixel delta `d`. The
 implementation samples `abs(d)` from `{1, 2, 4}` and independently samples the
 sign, so the effective values are `-1, -2, -4, +1, +2, +4` pixels.
 
-- **native**: Leave the source-manifest bbox unchanged, crop the source page
-  with the fixed `20 px` margin, then apply the production direct `224x224`
-  input transform.
+- **native geometry**: Leave the source-manifest bbox unchanged. This term
+  describes only the geometry variant; it does not select an input mode.
+  Cropping uses the fixed `20 px` margin for every geometry variant.
+- **input mode**: The independent post-crop conversion to the model input.
+  `direct` resizes to `224x224` with independent horizontal and vertical
+  scaling. `letterbox` preserves aspect ratio, uses PIL bilinear resampling,
+  pastes the result centered on a white `224x224` canvas, and then applies the
+  same ImageNet normalization. Thus `direct-native` means native geometry plus
+  direct mode, while `letterbox-native` means native geometry plus letterbox
+  mode.
 - **source-space geometry augmentation**: Change the measure bbox in original
   source-page coordinates before the fixed-margin crop and before the `224x224`
   resize. It does not alter the page image itself.
@@ -76,12 +92,16 @@ The five absolute families are exactly these coordinate transforms:
 These definitions are asserted by
 `tests/test_issue332_geometry_dataset.py::test_geometry_family_coordinates_match_benchmark_contract`.
 
-- **direct resize**: Resize the cropped image directly to `(224, 224)` with
-  `torchvision.transforms.Resize`, allowing independent horizontal and
-  vertical scaling (the production input contract).
-- **aspect-preserving resize + letterbox**: Resize while preserving the crop's
-  aspect ratio, then pad the remaining area to a `224x224` canvas. This is an
-  experimental input-contract comparison, not the current baseline contract.
+- **direct resize**: The `direct` input mode: resize the cropped image directly
+  to `(224, 224)` with `torchvision.transforms.Resize`, allowing independent
+  horizontal and vertical scaling, then convert to tensor and apply ImageNet
+  normalization.
+- **aspect-preserving resize + letterbox**: The `letterbox` input mode:
+  convert to RGB, use `PIL.ImageOps.contain` with
+  `Image.Resampling.BILINEAR`, paste the contained image at the centered offset
+  on a white `(224, 224)` RGB canvas, then convert to tensor and apply ImageNet
+  normalization. This is an experimental input-contract comparison, not the
+  current baseline contract.
 - **main crossing (0.5)**: A semantic sample for which native and at least one
   source-space perturbation make different binary decisions at probability
   threshold `0.5` (`p >= 0.5` is positive).
@@ -96,7 +116,23 @@ These definitions are asserted by
 
 ## Split/training rule
 
-The regular `tools/mmr_training/train_mmr_classifier.py` entrypoint is the authoritative training path. In semantic-manifest mode it excludes retained acceptance controls before splitting, freezes train/validation/test membership by complete score groups (falling back to page groups only when required for class coverage), and reuses the same split artifact across baseline and candidate runs.
+The regular `tools/mmr_training/train_mmr_classifier.py` entrypoint is the
+authoritative training path. The primary Issue #332 split is
+`within-score-grouped`: after the seven acceptance controls are completely
+excluded, the five scores are split independently into train/validation/test
+using page groups. The canonical config uses seed `42`, validation ratio
+`0.125`, test ratio `0.125`, `group_level=page`, and
+`fallback_group_level=system`.
+
+Each score must have class coverage in all three partitions whenever possible.
+Only a score for which page-group assignment cannot establish complete class
+coverage may use the minimum permitted system-group fallback. If that fallback
+also cannot establish complete coverage, split creation fails rather than
+silently weakening the contract. The split artifact records the selected group
+level for every score, the page-level coverage report, and the fallback reason
+(`page grouping could not establish class coverage`). Augmentation is applied
+only after this membership is frozen, and the same split artifact is reused by
+baseline and candidates.
 
 Geometry augmentation is sampled on-the-fly from the source-page bbox. One semantic sample remains one training item per epoch, so an augmentation candidate does not gain extra optimizer steps merely because more perturbation variants exist. Validation and test always use native geometry; test metrics are computed only after the best validation-F1 checkpoint has been selected.
 

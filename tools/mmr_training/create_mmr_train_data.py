@@ -1,9 +1,36 @@
 import argparse
+import hashlib
 import json
 import re
 from pathlib import Path
 
 import cv2
+
+
+def sha256_file(path):
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def resolve_input_path(raw_path, source_root=None):
+    path = Path(raw_path)
+    if path.is_absolute():
+        return path
+    candidates = []
+    if source_root is not None:
+        candidates.append(Path(source_root) / path)
+    candidates.extend((Path.cwd() / path, path))
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0] if candidates else path
+
+
+def score_id_from_page_name(name):
+    return re.sub(r"_page_\d+$", "", str(name))
 
 
 def map_global_index_to_bbox(numbering_data):
@@ -17,6 +44,18 @@ def map_global_index_to_bbox(numbering_data):
             for measure in system["measures"]:
                 mapping.append(measure["bbox"])
     return mapping
+
+
+def iter_measure_records(numbering_data):
+    """Yield system index, local measure index, global index, and source bbox."""
+    pages = numbering_data.get("pages", [])
+    if not pages:
+        return
+    global_index = 0
+    for system_index, system in enumerate(pages[0].get("systems", [])):
+        for measure_index, measure in enumerate(system.get("measures", [])):
+            yield system_index, measure_index, global_index, measure["bbox"]
+            global_index += 1
 
 
 def extract_page_token(*candidates):
@@ -64,6 +103,8 @@ def create_dataset_from_configs(
     staff_mask_output=None,
     staff_mask_roots=None,
     deepscores_seg_roots=None,
+    manifest_output=None,
+    source_root=None,
 ):
     """
     Iterates over pages defined in the provided config files and creates training data.
@@ -77,6 +118,7 @@ def create_dataset_from_configs(
 
     count_0 = 0
     count_1 = 0
+    manifest_samples = []
 
     staff_mask_output = Path(staff_mask_output) if staff_mask_output else None
     if staff_mask_output:
@@ -87,6 +129,7 @@ def create_dataset_from_configs(
 
     for config_path in config_paths:
         print(f"Loading config: {config_path}")
+        config_path = Path(config_path)
         with open(config_path, "r") as f:
             config = json.load(f)
 
@@ -98,7 +141,7 @@ def create_dataset_from_configs(
             print(f"Processing {name}...")
 
             # 1. Load Ground Truth (rest_gt)
-            gt_path = Path(page["rest_gt"])
+            gt_path = resolve_input_path(page["rest_gt"], source_root)
             if not gt_path.exists():
                 print(f"  [Skip] GT not found: {gt_path}")
                 continue
@@ -114,7 +157,7 @@ def create_dataset_from_configs(
                 print("  [Skip] Numbering path not in config.")
                 continue
 
-            numbering_path = Path(page["numbering"])
+            numbering_path = resolve_input_path(page["numbering"], source_root)
             if not numbering_path.exists():
                 print(f"  [Skip] Numbering file not found: {numbering_path}")
                 continue
@@ -122,10 +165,10 @@ def create_dataset_from_configs(
             with open(numbering_path, "r") as f:
                 numbering_data = json.load(f)
 
-            bboxes = map_global_index_to_bbox(numbering_data)
+            measure_records = list(iter_measure_records(numbering_data))
 
             # 3. Load Image
-            img_path = Path(page["image"])
+            img_path = resolve_input_path(page["image"], source_root)
             if not img_path.exists():
                 print(f"  [Skip] Image not found: {img_path}")
                 continue
@@ -165,7 +208,7 @@ def create_dataset_from_configs(
                 print(f"  [Warn] Staff mask not found for {name}")
 
             # 4. Process Measures
-            for idx, bbox in enumerate(bboxes):
+            for system_index, measure_index, idx, bbox in measure_records:
                 x1, y1, x2, y2 = bbox
 
                 # Label
@@ -203,10 +246,57 @@ def create_dataset_from_configs(
                 else:
                     count_0 += 1
 
+                manifest_samples.append(
+                    {
+                        "sample_id": f"{score_id_from_page_name(name)}::{extract_page_token(numbering_path, name)}::s{system_index}::m{measure_index}",
+                        "score_id": score_id_from_page_name(name),
+                        "page_id": extract_page_token(numbering_path, name),
+                        "system_index": system_index,
+                        "measure_index": measure_index,
+                        "global_measure_index": idx,
+                        "image_path": str(img_path.resolve()),
+                        "bbox": [x1, y1, x2, y2],
+                        "label": label,
+                        "provenance": {
+                            "generator": "tools/mmr_training/create_mmr_train_data.py",
+                            "config_path": str(config_path.resolve()),
+                            "config_sha256": sha256_file(config_path),
+                            "image_path": str(img_path.resolve()),
+                            "image_sha256": sha256_file(img_path),
+                            "numbering_path": str(numbering_path.resolve()),
+                            "numbering_sha256": sha256_file(numbering_path),
+                            "rest_gt_path": str(gt_path.resolve()),
+                            "rest_gt_sha256": sha256_file(gt_path),
+                        },
+                    }
+                )
+
     print("\nDataset Generation Complete.")
     print(f"  Rest Samples (1): {count_1}")
     print(f"  Normal Samples (0): {count_0}")
     print(f"  Output: {output_root}")
+    if manifest_output is not None:
+        manifest_output = Path(manifest_output)
+        manifest_output.parent.mkdir(parents=True, exist_ok=True)
+        manifest_output.write_text(
+            json.dumps(
+                {
+                    "schema": "issue332.mmr_semantic_source_manifest.v1",
+                    "provenance": {
+                        "generator": "tools/mmr_training/create_mmr_train_data.py",
+                        "config_paths": [str(Path(path).resolve()) for path in config_paths],
+                        "source_root": str(Path(source_root).resolve()) if source_root else None,
+                        "margin_px": 20,
+                        "sample_count": len(manifest_samples),
+                    },
+                    "samples": manifest_samples,
+                },
+                indent=2,
+                sort_keys=True,
+            ),
+            encoding="utf-8",
+        )
+        print(f"  Manifest: {manifest_output}")
 
 
 if __name__ == "__main__":
@@ -214,6 +304,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--configs", nargs="+", type=Path, required=True, help="List of rest_gt config JSON files"
     )
+    parser.add_argument("--manifest-output", type=Path, default=None)
+    parser.add_argument("--source-root", type=Path, default=None)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument(
         "--staff-mask-output",
@@ -244,4 +336,6 @@ if __name__ == "__main__":
         staff_mask_output=args.staff_mask_output,
         staff_mask_roots=args.staff_mask_roots,
         deepscores_seg_roots=args.deepscores_seg_roots,
+        manifest_output=args.manifest_output,
+        source_root=args.source_root,
     )

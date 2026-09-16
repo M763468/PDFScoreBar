@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 from torchvision import transforms
 
+from tools.mmr_training.create_mmr_train_data import create_dataset_from_configs
 from tools.mmr_training.issue332.geometry_training import (
     GEOMETRY_FAMILIES,
     SemanticMMRDataset,
@@ -39,12 +40,25 @@ def _balanced_samples():
 
 def test_acceptance_controls_are_excluded_before_group_split(tmp_path: Path):
     samples = _balanced_samples()
-    samples.append(_sample("control", "control-score", "page-1", 0))
+    samples.append(
+        {
+            **_sample("control", "control-score", "page_010", 0),
+            "system_index": 2,
+            "measure_index": 1,
+        }
+    )
+    samples.append(
+        {
+            **_sample("renamed-control", "control-score", "page_010", 0),
+            "system_index": 2,
+            "measure_index": 1,
+        }
+    )
     manifest = tmp_path / "source.json"
     manifest.write_text(json.dumps({"samples": samples}), encoding="utf-8")
     acceptance = tmp_path / "acceptance.json"
     acceptance.write_text(
-        json.dumps({"samples": [_sample("control", "control-score", "page-1", 0)]}),
+        json.dumps({"samples": [_sample("page_010_s2_m1", "control-score", "page_010", 0)]}),
         encoding="utf-8",
     )
 
@@ -57,10 +71,10 @@ def test_acceptance_controls_are_excluded_before_group_split(tmp_path: Path):
         test_ratio=0.2,
     )
 
-    assert "control" not in {sample["sample_id"] for sample in eligible}
+    assert {"control", "renamed-control"}.isdisjoint({sample["sample_id"] for sample in eligible})
     assert "control" not in contract["assignments"]
     assert contract["excluded_before_split"] is True
-    assert contract["excluded_sample_ids"] == ["control"]
+    assert contract["excluded_sample_ids"] == ["control", "renamed-control"]
 
     score_splits = {}
     for sample in eligible:
@@ -216,3 +230,60 @@ def test_manifest_trainer_uses_frozen_split_without_resplitting(tmp_path: Path):
     assert validation.geometry_policy == "none"
     assert test.geometry_policy == "none"
     assert class_counts == (6, 6)
+
+
+def test_formal_generator_emits_semantic_manifest_with_provenance(tmp_path: Path):
+    image_path = tmp_path / "page.png"
+    cv2.imwrite(str(image_path), np.full((100, 100, 3), 255, dtype=np.uint8))
+    numbering_path = tmp_path / "numbering.json"
+    numbering_path.write_text(
+        json.dumps(
+            {
+                "pages": [
+                    {
+                        "systems": [
+                            {"measures": [{"bbox": [10, 10, 50, 50]}, {"bbox": [50, 10, 90, 50]}]}
+                        ]
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    gt_path = tmp_path / "rest_gt.json"
+    gt_path.write_text(
+        json.dumps({"overrides": [{"measure_index": 1, "rest_count": 2}]}), encoding="utf-8"
+    )
+    config_path = tmp_path / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "pages": [
+                    {
+                        "name": "score-a_page_001",
+                        "image": "page.png",
+                        "numbering": "numbering.json",
+                        "rest_gt": "rest_gt.json",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    manifest_path = tmp_path / "manifest.json"
+    create_dataset_from_configs(
+        [config_path],
+        tmp_path / "dataset",
+        manifest_output=manifest_path,
+        source_root=tmp_path,
+    )
+
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert len(payload["samples"]) == 2
+    assert payload["samples"][0]["score_id"] == "score-a"
+    assert payload["samples"][0]["page_id"] == "page_001"
+    assert payload["samples"][0]["system_index"] == 0
+    assert payload["samples"][0]["measure_index"] == 0
+    assert payload["samples"][1]["global_measure_index"] == 1
+    assert [sample["label"] for sample in payload["samples"]] == [0, 1]
+    assert payload["samples"][0]["provenance"]["numbering_sha256"]

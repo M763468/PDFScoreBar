@@ -12,6 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 import random
+import re
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
@@ -96,6 +97,20 @@ def load_semantic_samples(path: Path) -> list[dict[str, Any]]:
         sample["tags"] = [str(tag) for tag in sample.get("tags", [])]
         samples.append(sample)
     return samples
+
+
+def semantic_identity(sample: dict[str, Any]) -> tuple[str, str, int, int] | None:
+    """Return the stable score/page/system/measure identity when available."""
+    score_id = str(sample.get("score_id", ""))
+    page_id = str(sample.get("page_id", ""))
+    if "system_index" in sample and "measure_index" in sample:
+        return score_id, page_id, int(sample["system_index"]), int(sample["measure_index"])
+    match = re.search(
+        r"(?:^|::)page_(\d+)(?:_|::)s(\d+)(?:_|::)m(\d+)$", str(sample.get("sample_id", ""))
+    )
+    if match:
+        return score_id, f"page_{match.group(1)}", int(match.group(2)), int(match.group(3))
+    return None
 
 
 def _group_key(sample: dict[str, Any], group_level: str) -> str:
@@ -244,16 +259,24 @@ def prepare_split_contract(
     """Exclude acceptance controls, then create or validate a frozen split artifact."""
 
     samples = load_semantic_samples(manifest_path)
-    acceptance_ids = (
-        {sample["sample_id"] for sample in load_semantic_samples(acceptance_manifest_path)}
-        if acceptance_manifest_path
-        else set()
+    acceptance_samples = (
+        load_semantic_samples(acceptance_manifest_path) if acceptance_manifest_path else []
     )
+    acceptance_ids = {sample["sample_id"] for sample in acceptance_samples}
+    acceptance_semantic_ids = {
+        identity
+        for sample in acceptance_samples
+        if (identity := semantic_identity(sample)) is not None
+    }
     excluded_tag_set = {str(tag) for tag in excluded_tags}
     excluded_ids = {
         sample["sample_id"]
         for sample in samples
         if sample["sample_id"] in acceptance_ids
+        or (
+            semantic_identity(sample) is not None
+            and semantic_identity(sample) in acceptance_semantic_ids
+        )
         or bool(set(sample.get("tags", [])) & excluded_tag_set)
     }
     eligible = [sample for sample in samples if sample["sample_id"] not in excluded_ids]
@@ -310,6 +333,9 @@ def prepare_split_contract(
         "test_ratio": test_ratio,
         "excluded_before_split": True,
         "excluded_sample_ids": sorted(excluded_ids),
+        "excluded_semantic_identities": [
+            list(identity) for identity in sorted(acceptance_semantic_ids)
+        ],
         "assignments": assignments,
         "counts": {
             name: {

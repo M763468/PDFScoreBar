@@ -2,6 +2,7 @@ import argparse
 import io
 import json
 import random
+import subprocess
 import sys
 from pathlib import Path
 
@@ -378,13 +379,18 @@ def _legacy_datasets(args, train_transform, eval_transform, text_noise):
         text_noise=text_noise,
     )
     val_dataset = MMRDataset(val_paths, val_labels, transform=eval_transform)
+    class_counts = {
+        "train": {"0": len(y0_train), "1": len(y1_train)},
+        "val": {"0": len(y0_val), "1": len(y1_val)},
+        "test": {"0": 0, "1": 0},
+    }
     return (
         train_dataset,
         val_dataset,
         None,
         train_labels,
         None,
-        (len(paths_0), len(paths_1)),
+        class_counts,
     )
 
 
@@ -459,10 +465,20 @@ def _manifest_datasets(args, train_transform, eval_transform, text_noise):
         seed=args.seed,
         geometry_augmentation_probability=0.0,
     )
-    class_counts = (
-        sum(int(sample["label"]) == 0 for sample in eligible),
-        sum(int(sample["label"]) == 1 for sample in eligible),
-    )
+    class_counts = {
+        "train": {
+            "0": sum(int(sample["label"]) == 0 for sample in train_samples),
+            "1": sum(int(sample["label"]) == 1 for sample in train_samples),
+        },
+        "val": {
+            "0": sum(int(sample["label"]) == 0 for sample in val_samples),
+            "1": sum(int(sample["label"]) == 1 for sample in val_samples),
+        },
+        "test": {
+            "0": sum(int(sample["label"]) == 0 for sample in test_samples),
+            "1": sum(int(sample["label"]) == 1 for sample in test_samples),
+        },
+    }
     return (
         train_dataset,
         val_dataset,
@@ -474,6 +490,11 @@ def _manifest_datasets(args, train_transform, eval_transform, text_noise):
 
 
 def _make_loader(dataset, labels, args, *, train):
+    loader_options = {
+        "num_workers": args.num_workers,
+        "pin_memory": torch.cuda.is_available(),
+        "persistent_workers": args.num_workers > 0,
+    }
     if train and args.use_weighted_sampler:
         positives = sum(int(label) == 1 for label in labels)
         negatives = sum(int(label) == 0 for label in labels)
@@ -486,13 +507,13 @@ def _make_loader(dataset, labels, args, *, train):
             dataset,
             batch_size=args.batch_size,
             sampler=sampler,
-            num_workers=args.num_workers,
+            **loader_options,
         )
     return DataLoader(
         dataset,
         batch_size=args.batch_size,
         shuffle=train,
-        num_workers=args.num_workers,
+        **loader_options,
     )
 
 
@@ -500,9 +521,10 @@ def _evaluate_loader(model, loader, device):
     probabilities = []
     targets = []
     model.eval()
-    with torch.no_grad():
+    non_blocking = device.type == "cuda"
+    with torch.inference_mode():
         for images, labels in loader:
-            outputs = model(images.to(device))
+            outputs = model(images.to(device, non_blocking=non_blocking))
             probabilities.extend(torch.sigmoid(outputs).reshape(-1).cpu().tolist())
             targets.extend(labels.reshape(-1).cpu().tolist())
     predictions = [1 if probability >= 0.5 else 0 for probability in probabilities]
@@ -521,6 +543,29 @@ def _per_score_metrics(dataset, probabilities):
         score_id: metrics_payload(item["y_true"], item["y_pred"])
         for score_id, item in sorted(grouped.items())
     }
+
+
+def _training_code_commit() -> str | None:
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=PROJECT_ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return completed.stdout.strip() or None
+
+
+def _train_pos_weight(class_counts: dict[str, dict[str, int]]) -> float:
+    train_counts = class_counts["train"]
+    negatives = int(train_counts["0"])
+    positives = int(train_counts["1"])
+    if positives == 0 or negatives == 0:
+        raise ValueError("training corpus must contain both classes")
+    return negatives / positives
 
 
 def train_model(args):
@@ -569,17 +614,13 @@ def train_model(args):
     train_loader = _make_loader(train_dataset, train_labels, args, train=True)
     val_loader = _make_loader(val_dataset, [], args, train=False)
 
-    negatives, positives = class_counts
-    if positives == 0 or negatives == 0:
-        raise ValueError("training corpus must contain both classes")
+    pos_weight = _train_pos_weight(class_counts)
 
     model = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
     model.fc = nn.Linear(model.fc.in_features, 1)
     model = model.to(device)
 
-    criterion = nn.BCEWithLogitsLoss(
-        pos_weight=torch.tensor([negatives / positives], device=device)
-    )
+    criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([pos_weight], device=device))
     if args.training_profile == "historical":
         optimizer = optim.Adam(model.parameters(), lr=args.lr)
         scheduler = None
@@ -604,9 +645,10 @@ def train_model(args):
             train_iter = tqdm(train_loader, desc=f"Train {epoch + 1}/{args.epochs}", leave=False)
 
         for images, labels in train_iter:
-            images = images.to(device)
-            labels = labels.unsqueeze(1).to(device)
-            optimizer.zero_grad()
+            non_blocking = device.type == "cuda"
+            images = images.to(device, non_blocking=non_blocking)
+            labels = labels.unsqueeze(1).to(device, non_blocking=non_blocking)
+            optimizer.zero_grad(set_to_none=True)
             outputs = model(images)
             loss = criterion(outputs, labels)
             loss.backward()
@@ -649,6 +691,8 @@ def train_model(args):
         "optimizer": "Adam" if args.training_profile == "historical" else "AdamW",
         "weighted_sampler": bool(args.use_weighted_sampler),
         "text_noise_enabled": text_noise is not None,
+        "class_counts": class_counts,
+        "pos_weight": float(pos_weight),
         "geometry_augmentation": args.geometry_augmentation if args.manifest else None,
         "geometry_augmentation_probability": (
             args.geometry_augmentation_probability if args.manifest else None
@@ -659,6 +703,19 @@ def train_model(args):
         "output_model": str(output_model_path.resolve()),
         "output_model_sha256": sha256_file(output_model_path),
         "test_used_for_model_selection": False,
+        "provenance": {
+            "training_code_commit": _training_code_commit(),
+            "manifest_sha256": sha256_file(Path(args.manifest)) if args.manifest else None,
+            "split_sha256": (
+                sha256_file(Path(args.split_manifest))
+                if split_contract is not None and Path(args.split_manifest).is_file()
+                else None
+            ),
+            "seed": int(args.seed),
+            "profile": args.training_profile,
+            "class_counts": class_counts,
+            "pos_weight": float(pos_weight),
+        },
     }
 
     if split_contract is not None:

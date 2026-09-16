@@ -13,6 +13,7 @@ import hashlib
 import json
 import random
 import re
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
@@ -49,6 +50,7 @@ GEOMETRY_FAMILIES = (
     "translate_y",
     "expand_contract_x",
 )
+SOURCE_PAGE_CACHE_SIZE = 16
 
 
 def sha256_file(path: Path) -> str:
@@ -57,6 +59,20 @@ def sha256_file(path: Path) -> str:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+@lru_cache(maxsize=SOURCE_PAGE_CACHE_SIZE)
+def _read_source_page(path: str):
+    """Read one source page; the bounded cache is private to each worker process."""
+    return cv2.imread(path, cv2.IMREAD_COLOR)
+
+
+def clear_source_page_cache() -> None:
+    _read_source_page.cache_clear()
+
+
+def source_page_cache_info():
+    return _read_source_page.cache_info()
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -428,25 +444,28 @@ class SemanticMMRDataset(Dataset):
         self.geometry_augmentation_probability = float(geometry_augmentation_probability)
         if not 0.0 <= self.geometry_augmentation_probability <= 1.0:
             raise ValueError("geometry_augmentation_probability must be between 0 and 1")
-        self.epoch = 0
+        # A shared scalar keeps epoch-dependent geometry sampling correct when
+        # persistent DataLoader workers retain their dataset copies.
+        self._epoch_state = torch.zeros(1, dtype=torch.int64).share_memory_()
 
     def __len__(self) -> int:
         return len(self.samples)
 
     def set_epoch(self, epoch: int) -> None:
-        self.epoch = int(epoch)
+        self._epoch_state[0] = int(epoch)
 
     @property
     def labels(self) -> list[int]:
         return [int(sample["label"]) for sample in self.samples]
 
     def _rng(self, idx: int) -> random.Random:
-        return random.Random(self.seed + self.epoch * 1_000_003 + idx * 1009)
+        epoch = int(self._epoch_state[0].item())
+        return random.Random(self.seed + epoch * 1_000_003 + idx * 1009)
 
     def __getitem__(self, idx: int):
         sample = self.samples[idx]
         image_path = resolve_image_path(self.manifest_path, sample["image_path"])
-        image = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
+        image = _read_source_page(str(image_path))
         if image is None:
             raise FileNotFoundError(f"could not load source image: {image_path}")
 
@@ -463,15 +482,14 @@ class SemanticMMRDataset(Dataset):
         label = int(sample["label"])
 
         staff_mask = None
-        raw_staff_mask = sample.get("staff_mask_path")
-        if raw_staff_mask:
-            staff_mask_path = resolve_image_path(self.manifest_path, str(raw_staff_mask))
-            full_mask = cv2.imread(str(staff_mask_path), cv2.IMREAD_GRAYSCALE)
-            if full_mask is None:
-                raise FileNotFoundError(f"could not load staff mask: {staff_mask_path}")
-            staff_mask = crop_measure(full_mask, bbox, margin_px=self.margin_px)
-
         if label == 1 and self.text_noise is not None:
+            raw_staff_mask = sample.get("staff_mask_path")
+            if raw_staff_mask:
+                staff_mask_path = resolve_image_path(self.manifest_path, str(raw_staff_mask))
+                full_mask = cv2.imread(str(staff_mask_path), cv2.IMREAD_GRAYSCALE)
+                if full_mask is None:
+                    raise FileNotFoundError(f"could not load staff mask: {staff_mask_path}")
+                staff_mask = crop_measure(full_mask, bbox, margin_px=self.margin_px)
             pil_image = self.text_noise(pil_image, staff_mask)
         if self.transform is not None:
             pil_image = self.transform(pil_image)

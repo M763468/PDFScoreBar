@@ -7,15 +7,18 @@ import cv2
 import numpy as np
 from torchvision import transforms
 
+import tools.mmr_training.issue332.geometry_training as geometry_training
 from tools.mmr_training.create_mmr_train_data import create_dataset_from_configs
 from tools.mmr_training.issue332.geometry_training import (
     DEFAULT_GEOMETRY_AUGMENTATION_PROBABILITY,
     GEOMETRY_FAMILIES,
     SemanticMMRDataset,
     choose_geometry_bbox,
+    clear_source_page_cache,
     prepare_split_contract,
+    source_page_cache_info,
 )
-from tools.mmr_training.train_mmr_classifier import _manifest_datasets
+from tools.mmr_training.train_mmr_classifier import _manifest_datasets, _train_pos_weight
 
 
 def _sample(sample_id, score_id, page_id, label, image_path="page.png", tags=None):
@@ -320,7 +323,54 @@ def test_manifest_trainer_uses_frozen_split_without_resplitting(tmp_path: Path):
     assert train.geometry_augmentation_probability == 5 / 6
     assert validation.geometry_augmentation_probability == 0.0
     assert test.geometry_augmentation_probability == 0.0
-    assert class_counts == (6, 6)
+    assert class_counts == {
+        "train": {"0": 4, "1": 4},
+        "val": {"0": 1, "1": 1},
+        "test": {"0": 1, "1": 1},
+    }
+    assert _train_pos_weight(class_counts) == 1.0
+    assert (
+        _train_pos_weight(
+            {
+                "train": {"0": 3, "1": 1},
+                "val": {"0": 100, "1": 1},
+                "test": {"0": 1, "1": 100},
+            }
+        )
+        == 3.0
+    )
+
+
+def test_source_page_decode_is_cached_and_unused_staff_mask_is_not_read(tmp_path, monkeypatch):
+    image_path = tmp_path / "page.png"
+    cv2.imwrite(str(image_path), np.full((100, 100, 3), 255, dtype=np.uint8))
+    sample = {
+        **_sample("cached", "score-a", "page-1", 1, image_path=str(image_path)),
+        "staff_mask_path": "missing-staff-mask.png",
+    }
+    clear_source_page_cache()
+    original_imread = geometry_training.cv2.imread
+    calls = []
+
+    def counting_imread(path, flags):
+        calls.append((path, flags))
+        return original_imread(path, flags)
+
+    monkeypatch.setattr(geometry_training.cv2, "imread", counting_imread)
+    dataset = SemanticMMRDataset(
+        [sample],
+        manifest_path=tmp_path / "manifest.json",
+        transform=transforms.ToTensor(),
+        text_noise=None,
+    )
+
+    dataset[0]
+    dataset[0]
+
+    assert len(calls) == 1
+    assert calls[0][0] == str(image_path.resolve())
+    assert source_page_cache_info().maxsize == 16
+    assert source_page_cache_info().hits >= 1
 
 
 def test_formal_generator_emits_semantic_manifest_with_provenance(tmp_path: Path):

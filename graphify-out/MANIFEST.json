@@ -1,19 +1,19 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-30T12:42:23.876043Z",
-  "source_base_commit": "6a318aede2b82417d98df7524e4875743cc68b4a",
-  "generation_input_state": "perf/issue284-realesrgan-hotpath at 6a318aed, before committing refreshed Graphify artifacts",
+  "generated_at": "2026-09-16T07:54:36.972Z",
+  "source_base_commit": "3e6ff7bd8c00438f0a42e7a91ac7a4833928c2ab",
+  "generation_input_state": "investigation/issue332-mmr-classifier-robustness at 3e6ff7bd",
   "graphify_version": "graphify 0.9.41",
   "generation_mode": "code-only",
   "semantic_route": "none",
   "semantic_backend": null,
   "semantic_model": null,
   "semantic_scope": [],
-  "node_count": 5197,
-  "edge_count": 12445,
+  "node_count": 5232,
+  "edge_count": 12262,
   "staleness_check": {
     "method": "code-extension-diff-from-source-base",
-    "note": "The graph was generated from source revision 6a318aede2b82417d98df7524e4875743cc68b4a before committing the refreshed durable artifacts. The query wrapper warns only when later committed source-code files differ from source_base_commit."
+    "note": "The graph was generated from source revision 3e6ff7bd8c00438f0a42e7a91ac7a4833928c2ab. The query wrapper warns only when later committed source-code files differ from source_base_commit."
   },
   "tracked_outputs": [
     "graphify-out/graph.json",

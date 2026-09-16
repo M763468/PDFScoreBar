@@ -2,7 +2,7 @@
 
 > God node · 47 connections · `src/pipeline/steps/probe_scan.py`
 
-**Community:** [run_probe_scan_batch](run_probe_scan_batch.md)
+**Community:** [Community 8](Community_8.md)
 
 ## Connections by Relation
 
@@ -32,10 +32,10 @@
 - probe_scan.py `EXTRACTED`
 
 ### imports
-- [dense_probe_candidate.py](dense_probe_candidate.py.md) `EXTRACTED`
-- [detection/orchestrator.py](detection-orchestrator.py.md) `EXTRACTED`
-- [dense_full_pipeline.py](dense_full_pipeline.py.md) `EXTRACTED`
-- [run_issue53_probe_rescue_then_eval.py](run_issue53_probe_rescue_then_eval.py.md) `EXTRACTED`
+- dense_probe_candidate.py `EXTRACTED`
+- detection/orchestrator.py `EXTRACTED`
+- dense_full_pipeline.py `EXTRACTED`
+- run_issue53_probe_rescue_then_eval.py `EXTRACTED`
 - verify_final_comparison.py `EXTRACTED`
 - unified_recipe.py `EXTRACTED`
 - verify_sr_levels_with_v12.py `EXTRACTED`
@@ -51,7 +51,7 @@
 - Generate probe candidates for all pages in-process. Output format and file… `EXTRACTED`
 
 ### references
-- [Any](Any.md) `EXTRACTED`
+- Any `EXTRACTED`
 - Path `EXTRACTED`
 
 ---

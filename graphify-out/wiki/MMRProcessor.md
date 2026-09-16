@@ -1,63 +1,80 @@
 # MMRProcessor
 
-> 39 nodes · cohesion 0.09
+> God node · 58 connections · `src/measure_numbering/mmr.py`
 
-## Key Concepts
+**Community:** [Community 23](Community_23.md)
 
-- **MMRProcessor** (50 connections) — `src/measure_numbering/mmr.py`
-- **MMRClassifier** (26 connections) — `src/measure_numbering/mmr.py`
-- **mmr.py** (14 connections) — `src/measure_numbering/mmr.py`
-- **._process_page_with_support()** (9 connections) — `src/measure_numbering/mmr.py`
-- **VariantOCR** (8 connections) — `tests/test_issue208_mmr_variant_aggregation.py`
-- **.process_pages()** (7 connections) — `src/measure_numbering/mmr.py`
-- **._detect_number_with_evidence()** (6 connections) — `src/measure_numbering/mmr.py`
-- **run_mmr_batch()** (6 connections) — `src/measure_numbering/mmr.py`
-- **_ReviewPackageConfig** (6 connections) — `src/pipeline/orchestrator.py`
-- **.__init__()** (5 connections) — `src/measure_numbering/mmr.py`
-- **.__init__()** (5 connections) — `src/measure_numbering/mmr.py`
-- **Path** (5 connections)
-- **generate_numbering_overrides.py** (5 connections) — `tools/generate_numbering_overrides.py`
-- **._load_model()** (4 connections) — `src/measure_numbering/mmr.py`
-- **._should_veto_one_bar_rest()** (4 connections) — `src/measure_numbering/mmr.py`
-- **test_issue208_mmr_variant_aggregation.py** (4 connections) — `tests/test_issue208_mmr_variant_aggregation.py`
-- **test_detect_number_uses_best_scored_variant_not_first_valid_variant()** (4 connections) — `tests/test_issue208_mmr_variant_aggregation.py`
-- **main()** (4 connections) — `tools/generate_numbering_overrides.py`
-- **._count_high_confidence_one_bar_evidence()** (3 connections) — `src/measure_numbering/mmr.py`
-- **._detect_number_with_evidence_once()** (3 connections) — `src/measure_numbering/mmr.py`
-- **._draw_debug()** (3 connections) — `src/measure_numbering/mmr.py`
-- **._valid_status()** (3 connections) — `src/measure_numbering/mmr.py`
-- **device** (3 connections)
-- **_copy_debug_image()** (3 connections) — `tools/generate_numbering_overrides.py`
-- **_resolve_model_path()** (3 connections) — `tools/generate_numbering_overrides.py`
-- *... and 14 more nodes in this community*
+## Connections by Relation
 
-## Relationships
+### calls
+- run_mmr_batch() `EXTRACTED`
+- run() `EXTRACTED`
+- run_legacy() `EXTRACTED`
+- run() `EXTRACTED`
+- [main()](main%28%29.md) `EXTRACTED`
+- run_h2_matrix() `EXTRACTED`
+- _processor() `EXTRACTED`
+- run_mmr_batch() `EXTRACTED`
+- test_detect_number_uses_best_scored_variant_not_first_valid_variant() `EXTRACTED`
+- test_detect_number_preserves_three_value_contract() `EXTRACTED`
+- test_detect_number_uses_max_one_bar_evidence_across_variants_not_sum() `EXTRACTED`
+- test_one_bar_veto_targets_marginal_cnn_negative_ocr_score_only() `EXTRACTED`
+- test_ocr_candidate_scoring_receives_processed_dimensions() `EXTRACTED`
+- [main()](main%28%29.md) `EXTRACTED`
+- test_count_one_bar_evidence_is_compatible_with_minimal_injected_ocr() `EXTRACTED`
 
-- [MMROCREngine](MMROCREngine.md) (25 shared connections)
-- [load_json](load_json.md) (8 shared connections)
-- [audit_positive_geometry_disagreements.py](audit_positive_geometry_disagreements.py.md) (8 shared connections)
-- [diagnose_ocr_frame_changed_pages.py](diagnose_ocr_frame_changed_pages.py.md) (6 shared connections)
-- [test_issue274_mmr_support_reuse.py](test_issue274_mmr_support_reuse.py.md) (5 shared connections)
-- [run_grouped_final_numbering_comparison.py](run_grouped_final_numbering_comparison.py.md) (4 shared connections)
-- [TestMMROCRHeuristics](TestMMROCRHeuristics.md) (3 shared connections)
-- [run_mmr_batch](run_mmr_batch.md) (3 shared connections)
-- [.run](run.md) (2 shared connections)
-- [run_original_geometry_graft.py](run_original_geometry_graft.py.md) (2 shared connections)
-- [pipeline/orchestrator.py](pipeline-orchestrator.py.md) (2 shared connections)
-- [PipelineOrchestrator](PipelineOrchestrator.md) (1 shared connections)
+### contains
+- mmr.py `EXTRACTED`
 
-## Source Files
+### imports
+- audit_positive_geometry_disagreements.py `EXTRACTED`
+- test_issue274_mmr_support_reuse.py `EXTRACTED`
+- steps/numbering.py `EXTRACTED`
+- diagnose_ocr_frame_changed_pages.py `EXTRACTED`
+- run_representative_mmr_reuse.py `EXTRACTED`
+- test_issue212_mmr_unmasked_fallback.py `EXTRACTED`
+- test_issue213_mmr_one_bar_veto.py `EXTRACTED`
+- test_mmr_ocr_heuristics.py `EXTRACTED`
+- generate_numbering_overrides.py `EXTRACTED`
+- test_issue208_mmr_variant_aggregation.py `EXTRACTED`
 
-- `src/measure_numbering/mmr.py`
-- `src/pipeline/orchestrator.py`
-- `tests/test_issue208_mmr_variant_aggregation.py`
-- `tools/generate_numbering_overrides.py`
+### method
+- ._detect_number_with_evidence() `EXTRACTED`
+- ._process_page_with_support() `EXTRACTED`
+- .process_pages() `EXTRACTED`
+- .__init__() `EXTRACTED`
+- ._detect_number_with_evidence_once() `EXTRACTED`
+- ._should_veto_one_bar_rest() `EXTRACTED`
+- ._targeted_shift_x1() `EXTRACTED`
+- ._detect_number_with_evidence_j2() `EXTRACTED`
+- ._draw_debug() `EXTRACTED`
+- ._count_high_confidence_one_bar_evidence() `EXTRACTED`
+- ._valid_status() `EXTRACTED`
+- ._targeted_retry_candidate_acceptable() `EXTRACTED`
+- ._aggregate_targeted_staff_results() `EXTRACTED`
+- ._support_view() `EXTRACTED`
+- ._detect_number() `EXTRACTED`
+- ._run_targeted_full_span_staff() `EXTRACTED`
+- ._run_targeted_shifted_staff() `EXTRACTED`
 
-## Audit Trail
+### rationale_for
+- Integrated processor for batch MMR detection. `EXTRACTED`
 
-- EXTRACTED: 121 (86%)
-- INFERRED: 20 (14%)
-- AMBIGUOUS: 0 (0%)
+### uses
+- TestMMROCRHeuristics `INFERRED`
+- _TargetedHarness `INFERRED`
+- MaskedEmptyUnmaskedNumberOCR `INFERRED`
+- _RecordingRapidOCR `INFERRED`
+- CurrentEmptyLeftWideNumberOCR `INFERRED`
+- OneEvidencePerVariantOCR `INFERRED`
+- _TargetedRetryOCR `INFERRED`
+- MaskedNumberUnmaskedDifferentNumberOCR `INFERRED`
+- _FixedClassifier `INFERRED`
+- _ScriptedProcessor `INFERRED`
+- VariantOCR `INFERRED`
+- RaisesOnEmptyCropOCR `INFERRED`
+- CurrentEmptyLeftWideLowScoreOCR `INFERRED`
+- MaskedEmptyUnmaskedLowScoreOCR `INFERRED`
 
 ---
 

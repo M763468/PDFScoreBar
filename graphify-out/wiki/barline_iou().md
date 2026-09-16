@@ -2,7 +2,7 @@
 
 > God node · 59 connections · `src/common/barline_evaluation.py`
 
-**Community:** [barline_iou](barline_iou.md)
+**Community:** [Community 45](Community_45.md)
 
 ## Connections by Relation
 
@@ -29,29 +29,29 @@
 - choose_representative() `EXTRACTED`
 
 ### contains
-- [barline_evaluation.py](barline_evaluation.py.md) `EXTRACTED`
+- barline_evaluation.py `EXTRACTED`
 
 ### imports
-- [run_gt_rebuild_hybrid_eval.py](run_gt_rebuild_hybrid_eval.py.md) `EXTRACTED`
-- [cnn_scoring.py](cnn_scoring.py.md) `EXTRACTED`
-- [run_full_pipeline.py](run_full_pipeline.py.md) `EXTRACTED`
-- [evaluate_barline_rules.py](evaluate_barline_rules.py.md) `EXTRACTED`
-- [diagnose_stage_e_fns.py](diagnose_stage_e_fns.py.md) `EXTRACTED`
+- run_gt_rebuild_hybrid_eval.py `EXTRACTED`
+- cnn_scoring.py `EXTRACTED`
+- run_full_pipeline.py `EXTRACTED`
+- evaluate_barline_rules.py `EXTRACTED`
+- diagnose_stage_e_fns.py `EXTRACTED`
 - probe_boundary.py `EXTRACTED`
-- [mine_fn_cnn_hardpositives.py](mine_fn_cnn_hardpositives.py.md) `EXTRACTED`
+- mine_fn_cnn_hardpositives.py `EXTRACTED`
 - hybrid_consensus.py `EXTRACTED`
-- [musicxml_density_filter.py](musicxml_density_filter.py.md) `EXTRACTED`
+- musicxml_density_filter.py `EXTRACTED`
 - mine_hard_negatives.py `EXTRACTED`
-- [notehead_fn_cause_analysis.py](notehead_fn_cause_analysis.py.md) `EXTRACTED`
+- notehead_fn_cause_analysis.py `EXTRACTED`
 - barlines.py `EXTRACTED`
 - visualize_remaining_fn_v2.py `EXTRACTED`
-- [trace_stage_analysis.py](trace_stage_analysis.py.md) `EXTRACTED`
-- [hybrid_omr_dln_union.py](hybrid_omr_dln_union.py.md) `EXTRACTED`
+- trace_stage_analysis.py `EXTRACTED`
 - common/__init__.py `EXTRACTED`
-- [edge_crop_homr_merge.py](edge_crop_homr_merge.py.md) `EXTRACTED`
+- hybrid_omr_dln_union.py `EXTRACTED`
+- edge_crop_homr_merge.py `EXTRACTED`
 - generate_hybrid_results.py `EXTRACTED`
 - multi_crop_merge.py `EXTRACTED`
-- [probe_postfilter_analysis.py](probe_postfilter_analysis.py.md) `EXTRACTED`
+- probe_postfilter_analysis.py `EXTRACTED`
 
 ### rationale_for
 - Compute IoU for slender barline boxes with symmetric padding applied. `EXTRACTED`

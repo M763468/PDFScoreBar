@@ -2,7 +2,7 @@
 
 > God node · 51 connections · `tools/run_gt_rebuild_hybrid_eval.py`
 
-**Community:** [run_gt_rebuild_hybrid_eval.py](run_gt_rebuild_hybrid_eval.py.md)
+**Community:** [Community 3](Community_3.md)
 
 ## Connections by Relation
 
@@ -29,7 +29,7 @@
 - load_notehead_mask() `EXTRACTED`
 
 ### contains
-- [run_gt_rebuild_hybrid_eval.py](run_gt_rebuild_hybrid_eval.py.md) `EXTRACTED`
+- run_gt_rebuild_hybrid_eval.py `EXTRACTED`
 
 ---
 

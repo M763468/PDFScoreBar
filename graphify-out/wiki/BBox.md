@@ -1,65 +1,74 @@
 # BBox
 
-> 32 nodes · cohesion 0.10
+> God node · 63 connections · `src/measure_numbering/types.py`
 
-## Key Concepts
+**Community:** [Community 63](Community_63.md)
 
-- **BBox** (88 connections) — `src/measure_numbering/types.py`
-- **TestIssue194FirstIntervalGuard** (14 connections) — `tests/test_issue194_first_interval_guard.py`
-- **.create_system()** (11 connections) — `tests/test_issue194_first_interval_guard.py`
-- **TestIssue197SystemConnectorEvidenceExtractor** (11 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
-- **load_local_gt()** (8 connections) — `src/measure_numbering/visualize_systems.py`
-- **TestSystemBuilder** (7 connections) — `src/measure_numbering/test_builder.py`
-- **debug_end_bar_removal.py** (5 connections) — `experiments/legacy/tools_archive/debug_end_bar_removal.py`
-- **load_barlines()** (4 connections) — `experiments/legacy/tools_archive/debug_end_bar_removal.py`
-- **.setUp()** (4 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
-- **.test_explicit_index_grouping()** (3 connections) — `src/measure_numbering/test_builder.py`
-- **.test_single_staff_system()** (3 connections) — `src/measure_numbering/test_builder.py`
-- **visualize_systems()** (3 connections) — `src/measure_numbering/visualize_systems.py`
-- **.test_force_measure_override_preserves_short_ghost_interval()** (3 connections) — `tests/test_issue194_first_interval_guard.py`
-- **.test_keeps_normal_width_first_interval_after_ghost_start()** (3 connections) — `tests/test_issue194_first_interval_guard.py`
-- **.test_keeps_short_first_interval_without_ghost_start()** (3 connections) — `tests/test_issue194_first_interval_guard.py`
-- **.test_median_uses_real_following_intervals_for_ghost_start()** (3 connections) — `tests/test_issue194_first_interval_guard.py`
-- **.test_override_indices_follow_visible_measure_indices()** (3 connections) — `tests/test_issue194_first_interval_guard.py`
-- **.test_skips_narrow_first_interval_after_ghost_start()** (3 connections) — `tests/test_issue194_first_interval_guard.py`
-- **.test_connector_roi_width_scales_with_staff_height()** (3 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
-- **.test_vertical_open_kernel_is_capped_for_small_gap_roi()** (3 connections) — `tests/test_issue197_system_connector_evidence_extractor.py`
-- **debug_end_bar_removal()** (2 connections) — `experiments/legacy/tools_archive/debug_end_bar_removal.py`
-- **.setUp()** (2 connections) — `src/measure_numbering/test_builder.py`
-- **.center()** (1 connections) — `src/measure_numbering/types.py`
-- **.height()** (1 connections) — `src/measure_numbering/types.py`
-- **.width()** (1 connections) — `src/measure_numbering/types.py`
-- *... and 7 more nodes in this community*
+## Connections by Relation
 
-## Relationships
+### calls
+- .number_system() `EXTRACTED`
+- .make_staff_pair() `EXTRACTED`
+- .process_page() `EXTRACTED`
+- .create_system() `EXTRACTED`
+- _support_with_current() `EXTRACTED`
+- .make_barlines() `EXTRACTED`
+- run_verification() `EXTRACTED`
+- run_visualization() `EXTRACTED`
+- .create_mock_score() `EXTRACTED`
+- .make_numbered_system() `EXTRACTED`
+- .test_score_flow() `EXTRACTED`
+- _one_page() `EXTRACTED`
+- load_local_gt() `EXTRACTED`
+- .make_empty_system() `EXTRACTED`
+- .test_single_system_flow() `EXTRACTED`
+- [main()](main%28%29.md) `EXTRACTED`
+- load_barlines() `EXTRACTED`
+- .extract() `EXTRACTED`
+- .setUp() `EXTRACTED`
+- .test_explicit_index_grouping() `EXTRACTED`
 
-- [Staff](Staff.md) (50 shared connections)
-- [symbol_extraction.py](symbol_extraction.py.md) (17 shared connections)
-- [SystemBuilder](SystemBuilder.md) (6 shared connections)
-- [Score](Score.md) (4 shared connections)
-- [test_issue274_mmr_support_reuse.py](test_issue274_mmr_support_reuse.py.md) (4 shared connections)
-- [MeasureNumberingPipeline](MeasureNumberingPipeline.md) (3 shared connections)
-- [get_layer](get_layer.md) (3 shared connections)
-- [staffline_extraction.py](staffline_extraction.py.md) (3 shared connections)
-- [StaffExtractor](StaffExtractor.md) (2 shared connections)
-- [SystemConnectorEvidenceExtractor](SystemConnectorEvidenceExtractor.md) (2 shared connections)
-- [.number_system](number_system.md) (1 shared connections)
-- [ete.py](ete.py.md) (1 shared connections)
+### contains
+- measure_numbering/types.py `EXTRACTED`
 
-## Source Files
+### imports
+- test_issue274_mmr_support_reuse.py `EXTRACTED`
+- pipeline.py `EXTRACTED`
+- test_issue257_mmr_page_rebase.py `EXTRACTED`
+- measure_numbering/numbering.py `EXTRACTED`
+- verify_measure_numbering_pipeline.py `EXTRACTED`
+- visualize_measure_numbering.py `EXTRACTED`
+- test_issue217_empty_system_output_contract.py `EXTRACTED`
+- test_numbering.py `EXTRACTED`
+- test_numbering_overrides.py `EXTRACTED`
+- test_issue197_system_grouping_connector_evidence.py `EXTRACTED`
+- verify_divisi_batch.py `EXTRACTED`
+- visualize_systems.py `EXTRACTED`
+- test_issue194_first_interval_guard.py `EXTRACTED`
+- test_builder.py `EXTRACTED`
+- test_issue197_system_connector_evidence_extractor.py `EXTRACTED`
+- debug_end_bar_removal.py `EXTRACTED`
 
-- `experiments/legacy/tools_archive/debug_end_bar_removal.py`
-- `src/measure_numbering/test_builder.py`
-- `src/measure_numbering/types.py`
-- `src/measure_numbering/visualize_systems.py`
-- `tests/test_issue194_first_interval_guard.py`
-- `tests/test_issue197_system_connector_evidence_extractor.py`
+### method
+- .width() `EXTRACTED`
+- .height() `EXTRACTED`
+- .center() `EXTRACTED`
 
-## Audit Trail
-
-- EXTRACTED: 126 (85%)
-- INFERRED: 22 (15%)
-- AMBIGUOUS: 0 (0%)
+### uses
+- [MeasureNumberingPipeline](MeasureNumberingPipeline.md) `INFERRED`
+- MeasureNumberer `INFERRED`
+- StaffExtractor `INFERRED`
+- TestIssue197SystemGroupingConnectorEvidence `INFERRED`
+- TestIssue194FirstIntervalGuard `INFERRED`
+- TestIssue217EmptySystemOutputContract `INFERRED`
+- TestNumberingOverrides `INFERRED`
+- TestMeasureNumberer `INFERRED`
+- TestIssue197SystemConnectorEvidenceExtractor `INFERRED`
+- _FakeNumberingPipeline `INFERRED`
+- _FixedClassifier `INFERRED`
+- _ScriptedProcessor `INFERRED`
+- _FakeImage `INFERRED`
+- TestSystemBuilder `INFERRED`
 
 ---
 

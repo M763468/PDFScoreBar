@@ -1,19 +1,20 @@
 # greedy_barline_match()
 
-> God node · 116 connections · `src/common/barline_evaluation.py`
+> God node · 118 connections · `src/common/barline_evaluation.py`
 
-**Community:** [greedy_barline_match](greedy_barline_match.md)
+**Community:** [Community 11](Community_11.md)
 
 ## Connections by Relation
 
 ### calls
 - [barline_iou()](barline_iou%28%29.md) `EXTRACTED`
 - [main()](main%28%29.md) `EXTRACTED`
-- BarlineMatch `EXTRACTED`
-- BarlineSoftMatch `EXTRACTED`
 - is_barline_match() `EXTRACTED`
 - evaluate() `EXTRACTED`
+- BarlineMatch `EXTRACTED`
+- BarlineSoftMatch `EXTRACTED`
 - barline_vertical_overlap() `EXTRACTED`
+- render_case() `EXTRACTED`
 - center_distance_x() `EXTRACTED`
 - [main()](main%28%29.md) `EXTRACTED`
 - [main()](main%28%29.md) `EXTRACTED`
@@ -22,36 +23,35 @@
 - [main()](main%28%29.md) `EXTRACTED`
 - [main()](main%28%29.md) `EXTRACTED`
 - [main()](main%28%29.md) `EXTRACTED`
+- [main()](main%28%29.md) `EXTRACTED`
 - get_barline_match_rank() `EXTRACTED`
 - [main()](main%28%29.md) `EXTRACTED`
 - evaluate_detections() `EXTRACTED`
-- compute_metrics() `EXTRACTED`
-- greedy_match_by_rule() `EXTRACTED`
 
 ### contains
-- [barline_evaluation.py](barline_evaluation.py.md) `EXTRACTED`
+- barline_evaluation.py `EXTRACTED`
 
 ### imports
-- [homr_evaluator.py](homr_evaluator.py.md) `EXTRACTED`
-- [run_gt_rebuild_hybrid_eval.py](run_gt_rebuild_hybrid_eval.py.md) `EXTRACTED`
-- [eval_full68_from_intermediates.py](eval_full68_from_intermediates.py.md) `EXTRACTED`
-- [evaluate_barline_rules.py](evaluate_barline_rules.py.md) `EXTRACTED`
-- [metrics.py](metrics.py.md) `EXTRACTED`
-- [diagnose_stage_e_fns.py](diagnose_stage_e_fns.py.md) `EXTRACTED`
-- [compare_full68_variants.py](compare_full68_variants.py.md) `EXTRACTED`
-- [analysis_overlays.py](analysis_overlays.py.md) `EXTRACTED`
-- [mine_fn_cnn_hardpositives.py](mine_fn_cnn_hardpositives.py.md) `EXTRACTED`
+- homr_evaluator.py `EXTRACTED`
+- run_gt_rebuild_hybrid_eval.py `EXTRACTED`
+- eval_full68_from_intermediates.py `EXTRACTED`
+- evaluate_barline_rules.py `EXTRACTED`
+- metrics.py `EXTRACTED`
+- render_residual_downstream_review.py `EXTRACTED`
+- diagnose_stage_e_fns.py `EXTRACTED`
+- compare_full68_variants.py `EXTRACTED`
+- analysis_overlays.py `EXTRACTED`
+- mine_fn_cnn_hardpositives.py `EXTRACTED`
 - visualize_union_fp.py `EXTRACTED`
-- [review_overlay_generator.py](review_overlay_generator.py.md) `EXTRACTED`
-- [run_union_notehead_geom_eval.py](run_union_notehead_geom_eval.py.md) `EXTRACTED`
-- [musicxml_density_filter.py](musicxml_density_filter.py.md) `EXTRACTED`
-- [export_review_boxes.py](export_review_boxes.py.md) `EXTRACTED`
-- visualize_remaining_fn_v2.py `EXTRACTED`
-- [hybrid_omr_dln_union.py](hybrid_omr_dln_union.py.md) `EXTRACTED`
-- re_evaluate_global.py `EXTRACTED`
-- verify_final_comparison.py `EXTRACTED`
-- common/__init__.py `EXTRACTED`
+- review_overlay_generator.py `EXTRACTED`
+- run_union_notehead_geom_eval.py `EXTRACTED`
 - eval_stage_e_from_manifest.py `EXTRACTED`
+- musicxml_density_filter.py `EXTRACTED`
+- export_review_boxes.py `EXTRACTED`
+- visualize_remaining_fn_v2.py `EXTRACTED`
+- common/__init__.py `EXTRACTED`
+- hybrid_omr_dln_union.py `EXTRACTED`
+- re_evaluate_global.py `EXTRACTED`
 
 ### rationale_for
 - Greedy matching based on specified rule (IoU or Center-Anchor). `EXTRACTED`

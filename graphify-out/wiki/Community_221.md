@@ -1,0 +1,32 @@
+# Community 221
+
+> 6 nodes · cohesion 0.47
+
+## Key Concepts
+
+- **deleteSelected()** (5 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **runAutoDedup()** (5 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **setDirty()** (5 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **syncTypeSelect()** (4 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **updateStats()** (4 connections) — `tools/gt_relabel_gui/app_gt.js`
+- **updateDirtyStatus()** (3 connections) — `tools/gt_relabel_gui/app_gt.js`
+
+## Relationships
+
+- [Community 15](Community_15.md) (6 shared connections)
+- [Community 129](Community_129.md) (4 shared connections)
+- [Community 172](Community_172.md) (2 shared connections)
+
+## Source Files
+
+- `tools/gt_relabel_gui/app_gt.js`
+
+## Audit Trail
+
+- EXTRACTED: 19 (100%)
+- INFERRED: 0 (0%)
+- AMBIGUOUS: 0 (0%)
+
+---
+
+*Part of the graphify knowledge wiki. See [index](index.md) to navigate.*

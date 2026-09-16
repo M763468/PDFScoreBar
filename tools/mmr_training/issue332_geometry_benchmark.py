@@ -79,7 +79,7 @@ class ProductionMMRClassifierMirror:
         rgb = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2RGB)
         tensor = self.transform(Image.fromarray(rgb)).unsqueeze(0).to(self.device)
 
-        with torch.no_grad():
+        with torch.inference_mode():
             return float(torch.sigmoid(self.model(tensor)).item())
 
 
@@ -217,7 +217,7 @@ class Predictor:
             return float(self.classifier.predict(crop))
         rgb = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
         tensor = self.letterbox_transform(Image.fromarray(rgb)).unsqueeze(0).to(self.device)
-        with torch.no_grad():
+        with torch.inference_mode():
             return float(torch.sigmoid(self.classifier.model(tensor)).item())
 
 

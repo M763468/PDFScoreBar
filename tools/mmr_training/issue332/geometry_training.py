@@ -13,6 +13,7 @@ import hashlib
 import json
 import random
 import re
+import subprocess
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable, Sequence
@@ -83,6 +84,15 @@ def _load_json(path: Path) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError(f"expected JSON object: {path}")
     return payload
+
+
+def _git_head() -> str | None:
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
 
 
 def load_semantic_samples(path: Path) -> list[dict[str, Any]]:
@@ -163,6 +173,39 @@ def _coverage_ok(
             if total[label] >= 3 and counts[label] == 0:
                 return False
     return True
+
+
+def _eligible_samples(
+    *,
+    manifest_path: Path,
+    acceptance_manifest_path: Path | None,
+    excluded_tags: Sequence[str],
+) -> tuple[list[dict[str, Any]], set[str], set[tuple[str, str, int, int] | None]]:
+    samples = load_semantic_samples(manifest_path)
+    acceptance_samples = (
+        load_semantic_samples(acceptance_manifest_path) if acceptance_manifest_path else []
+    )
+    acceptance_ids = {sample["sample_id"] for sample in acceptance_samples}
+    acceptance_semantic_ids = {
+        identity
+        for sample in acceptance_samples
+        if (identity := semantic_identity(sample)) is not None
+    }
+    excluded_tag_set = {str(tag) for tag in excluded_tags}
+    excluded_ids = {
+        sample["sample_id"]
+        for sample in samples
+        if sample["sample_id"] in acceptance_ids
+        or (
+            semantic_identity(sample) is not None
+            and semantic_identity(sample) in acceptance_semantic_ids
+        )
+        or bool(set(sample.get("tags", [])) & excluded_tag_set)
+    }
+    eligible = [sample for sample in samples if sample["sample_id"] not in excluded_ids]
+    if not eligible:
+        raise ValueError("all semantic samples were excluded from training")
+    return eligible, excluded_ids, acceptance_semantic_ids
 
 
 def _candidate_assignment(
@@ -280,30 +323,11 @@ def prepare_split_contract(
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Exclude acceptance controls, then create or validate a frozen split artifact."""
 
-    samples = load_semantic_samples(manifest_path)
-    acceptance_samples = (
-        load_semantic_samples(acceptance_manifest_path) if acceptance_manifest_path else []
+    eligible, excluded_ids, acceptance_semantic_ids = _eligible_samples(
+        manifest_path=manifest_path,
+        acceptance_manifest_path=acceptance_manifest_path,
+        excluded_tags=excluded_tags,
     )
-    acceptance_ids = {sample["sample_id"] for sample in acceptance_samples}
-    acceptance_semantic_ids = {
-        identity
-        for sample in acceptance_samples
-        if (identity := semantic_identity(sample)) is not None
-    }
-    excluded_tag_set = {str(tag) for tag in excluded_tags}
-    excluded_ids = {
-        sample["sample_id"]
-        for sample in samples
-        if sample["sample_id"] in acceptance_ids
-        or (
-            semantic_identity(sample) is not None
-            and semantic_identity(sample) in acceptance_semantic_ids
-        )
-        or bool(set(sample.get("tags", [])) & excluded_tag_set)
-    }
-    eligible = [sample for sample in samples if sample["sample_id"] not in excluded_ids]
-    if not eligible:
-        raise ValueError("all semantic samples were excluded from training")
 
     source_sha = sha256_file(manifest_path)
     acceptance_sha = sha256_file(acceptance_manifest_path) if acceptance_manifest_path else None
@@ -374,6 +398,134 @@ def prepare_split_contract(
     split_path.parent.mkdir(parents=True, exist_ok=True)
     split_path.write_text(json.dumps(contract, indent=2, sort_keys=True), encoding="utf-8")
     return eligible, contract
+
+
+def prepare_score_level_folds(
+    *,
+    manifest_path: Path,
+    output_dir: Path,
+    acceptance_manifest_path: Path | None = None,
+    excluded_tags: Sequence[str] = DEFAULT_EXCLUDED_TAGS,
+    seed: int = DEFAULT_SPLIT_SEED,
+    training_profile: str = "historical",
+) -> list[dict[str, Any]]:
+    """Write five cyclic score-level train/validation/test split artifacts.
+
+    The score order is deterministic. Fold ``i`` uses score ``i`` as test,
+    score ``i + 1`` modulo five as validation, and the remaining three scores
+    as train. Acceptance controls are removed before assignments are made.
+    """
+
+    eligible, excluded_ids, acceptance_semantic_ids = _eligible_samples(
+        manifest_path=manifest_path,
+        acceptance_manifest_path=acceptance_manifest_path,
+        excluded_tags=excluded_tags,
+    )
+    scores = sorted({sample["score_id"] for sample in eligible})
+    if len(scores) != 5:
+        raise ValueError(f"score-level folds require exactly five scores, got {scores}")
+
+    source_sha = sha256_file(manifest_path)
+    acceptance_sha = sha256_file(acceptance_manifest_path) if acceptance_manifest_path else None
+    output_dir.mkdir(parents=True, exist_ok=True)
+    folds: list[dict[str, Any]] = []
+
+    for fold_index, test_score in enumerate(scores):
+        validation_score = scores[(fold_index + 1) % len(scores)]
+        score_split = {
+            test_score: "test",
+            validation_score: "validation",
+        }
+        score_split.update({score: "train" for score in scores if score not in score_split})
+        assignments = {sample["sample_id"]: score_split[sample["score_id"]] for sample in eligible}
+        split_samples = {
+            name: [sample for sample in eligible if assignments[sample["sample_id"]] == name]
+            for name in ("train", "validation", "test")
+        }
+        counts = {name: _class_counts(items) for name, items in split_samples.items()}
+        if any(counts[name]["0"] == 0 or counts[name]["1"] == 0 for name in counts):
+            raise ValueError(f"fold {fold_index + 1} lacks class coverage: {counts}")
+
+        fold_id = f"fold_{fold_index + 1}"
+        contract: dict[str, Any] = {
+            "schema": "issue332.mmr_training_score_fold.v1",
+            "fold_id": fold_id,
+            "score_order": scores,
+            "test_score": test_score,
+            "validation_score": validation_score,
+            "train_scores": [
+                score for score in scores if score not in {test_score, validation_score}
+            ],
+            "seed": seed,
+            "training_profile": training_profile,
+            "excluded_before_split": True,
+            "excluded_sample_ids": sorted(excluded_ids),
+            "excluded_semantic_identities": [
+                list(identity)
+                for identity in sorted(acceptance_semantic_ids)
+                if identity is not None
+            ],
+            "assignments": assignments,
+            "counts": {
+                name: {
+                    "samples": len(split_samples[name]),
+                    "classes": counts[name],
+                    "scores": sorted({sample["score_id"] for sample in split_samples[name]}),
+                    "pages": sorted(
+                        {
+                            f"{sample['score_id']}::{sample['page_id']}"
+                            for sample in split_samples[name]
+                        }
+                    ),
+                }
+                for name in ("train", "validation", "test")
+            },
+            "provenance": {
+                "source_manifest": str(manifest_path.resolve()),
+                "source_manifest_sha256": source_sha,
+                "acceptance_manifest": str(acceptance_manifest_path.resolve())
+                if acceptance_manifest_path
+                else None,
+                "acceptance_manifest_sha256": acceptance_sha,
+                "training_code_commit": _git_head(),
+            },
+        }
+        canonical = json.dumps(contract, indent=2, sort_keys=True).encode("utf-8")
+        contract["provenance"]["fold_payload_sha256"] = hashlib.sha256(canonical).hexdigest()
+        path = output_dir / f"{fold_id}.json"
+        path.write_text(json.dumps(contract, indent=2, sort_keys=True), encoding="utf-8")
+        folds.append({"fold_id": fold_id, "path": str(path), **contract})
+
+    index = {
+        "schema": "issue332.mmr_training_score_folds.v1",
+        "score_order": scores,
+        "seed": seed,
+        "training_profile": training_profile,
+        "provenance": {
+            "source_manifest": str(manifest_path.resolve()),
+            "source_manifest_sha256": source_sha,
+            "acceptance_manifest": str(acceptance_manifest_path.resolve())
+            if acceptance_manifest_path
+            else None,
+            "acceptance_manifest_sha256": acceptance_sha,
+            "training_code_commit": _git_head(),
+        },
+        "folds": [
+            {
+                "fold_id": fold["fold_id"],
+                "path": fold["path"],
+                "test_score": fold["test_score"],
+                "validation_score": fold["validation_score"],
+                "train_scores": fold["train_scores"],
+                "fold_payload_sha256": fold["provenance"]["fold_payload_sha256"],
+            }
+            for fold in folds
+        ],
+    }
+    (output_dir / "index.json").write_text(
+        json.dumps(index, indent=2, sort_keys=True), encoding="utf-8"
+    )
+    return folds
 
 
 def samples_for_split(

@@ -15,9 +15,11 @@ from tools.mmr_training.issue332.geometry_training import (
     SemanticMMRDataset,
     choose_geometry_bbox,
     clear_source_page_cache,
+    prepare_score_level_folds,
     prepare_split_contract,
     source_page_cache_info,
 )
+from tools.mmr_training.issue332_score_evaluation import summarize_native_rows
 from tools.mmr_training.train_mmr_classifier import (
     _legacy_datasets,
     _manifest_datasets,
@@ -467,3 +469,64 @@ def test_formal_generator_emits_semantic_manifest_with_provenance(tmp_path: Path
     assert payload["samples"][1]["global_measure_index"] == 1
     assert [sample["label"] for sample in payload["samples"]] == [0, 1]
     assert payload["samples"][0]["provenance"]["numbering_sha256"]
+
+
+def test_score_level_folds_are_cyclic_and_have_class_coverage(tmp_path: Path):
+    samples = []
+    for score_index in range(5):
+        score = f"score-{score_index}"
+        for local_index, label in enumerate((0, 0, 1, 1)):
+            samples.append(_sample(f"{score}-{local_index}", score, f"page-{local_index}", label))
+    manifest = tmp_path / "source.json"
+    manifest.write_text(json.dumps({"samples": samples}), encoding="utf-8")
+    acceptance = tmp_path / "acceptance.json"
+    acceptance.write_text(json.dumps({"samples": [samples[2]]}), encoding="utf-8")
+
+    folds = prepare_score_level_folds(
+        manifest_path=manifest,
+        output_dir=tmp_path / "folds",
+        acceptance_manifest_path=acceptance,
+        seed=42,
+        training_profile="historical",
+    )
+
+    assert len(folds) == 5
+    assert (tmp_path / "folds" / "index.json").is_file()
+    score_order = sorted({sample["score_id"] for sample in samples})
+    for index, fold in enumerate(folds):
+        assert fold["test_score"] == score_order[index]
+        assert fold["validation_score"] == score_order[(index + 1) % 5]
+        assert fold["train_scores"] == [
+            score
+            for score in score_order
+            if score not in {fold["test_score"], fold["validation_score"]}
+        ]
+        assert all(
+            counts["0"] > 0 and counts["1"] > 0
+            for counts in (
+                fold["counts"][name]["classes"] for name in ("train", "validation", "test")
+            )
+        )
+        assert samples[2]["sample_id"] not in fold["assignments"]
+        assert fold["provenance"]["source_manifest_sha256"]
+        assert fold["provenance"]["acceptance_manifest_sha256"]
+        assert fold["provenance"]["fold_payload_sha256"]
+
+
+def test_score_level_summary_reports_confusion_and_metrics():
+    rows = [
+        {"score_id": "a", "label": 1, "prediction": 1},
+        {"score_id": "a", "label": 0, "prediction": 1},
+        {"score_id": "b", "label": 0, "prediction": 0},
+        {"score_id": "b", "label": 1, "prediction": 0},
+    ]
+    summary = summarize_native_rows(rows)
+    assert summary["pooled"]["confusion_matrix"] == {"tn": 1, "fp": 1, "fn": 1, "tp": 1}
+    assert summary["pooled"]["precision"] == 0.5
+    assert summary["pooled"]["recall"] == 0.5
+    assert summary["by_score"]["a"]["confusion_matrix"] == {
+        "tn": 0,
+        "fp": 1,
+        "fn": 0,
+        "tp": 1,
+    }

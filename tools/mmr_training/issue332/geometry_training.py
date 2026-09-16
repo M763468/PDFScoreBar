@@ -32,6 +32,7 @@ from tools.mmr_training.issue332_geometry_benchmark import (
 DEFAULT_SPLIT_SEED = 42
 DEFAULT_VALIDATION_RATIO = 0.2
 DEFAULT_TEST_RATIO = 0.2
+WITHIN_SCORE_SPLIT_MODE = "within-score-grouped"
 DEFAULT_MARGIN_PX = 20
 DEFAULT_DELTAS_PX = (1, 2, 4)
 # The previous absolute policy sampled native plus five perturbation families
@@ -150,7 +151,11 @@ def _group_key(sample: dict[str, Any], group_level: str) -> str:
         return sample["score_id"]
     if group_level == "page":
         return f"{sample['score_id']}::{sample['page_id']}"
-    raise ValueError("group_level must be 'score' or 'page'")
+    if group_level == "system":
+        if "system_index" not in sample:
+            raise ValueError("system grouping requires system_index")
+        return f"{sample['score_id']}::{sample['page_id']}::s{sample['system_index']}"
+    raise ValueError("group_level must be 'score', 'page', or 'system'")
 
 
 def _class_counts(samples: Iterable[dict[str, Any]]) -> dict[str, int]:
@@ -309,6 +314,188 @@ def freeze_split(
     )
 
 
+def _coverage_report(
+    split_samples: dict[str, list[dict[str, Any]]],
+    all_samples: Sequence[dict[str, Any]],
+) -> dict[str, Any]:
+    total = _class_counts(all_samples)
+    report: dict[str, Any] = {}
+    for name in ("train", "validation", "test"):
+        counts = _class_counts(split_samples[name])
+        missing = [label for label in ("0", "1") if total[label] >= 3 and counts[label] == 0]
+        report[name] = {"classes": counts, "missing_classes": missing}
+    return {
+        "overall_classes": total,
+        "splits": report,
+        "complete": all(not value["missing_classes"] for value in report.values()),
+    }
+
+
+def _best_grouped_assignment(
+    samples: Sequence[dict[str, Any]],
+    *,
+    group_level: str,
+    seed: int,
+    validation_ratio: float,
+    test_ratio: float,
+    attempts: int = 4096,
+) -> tuple[dict[str, str] | None, dict[str, Any]]:
+    """Find a deterministic group assignment closest to the requested ratios.
+
+    Coverage is scored before ratio error.  This keeps the page-level contract
+    primary while making the result stable for small, imbalanced score corpora.
+    """
+
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for sample in samples:
+        groups.setdefault(_group_key(sample, group_level), []).append(sample)
+    if len(groups) < 3:
+        return None, {
+            "group_count": len(groups),
+            "coverage": None,
+            "reason": "fewer than three groups",
+        }
+
+    target = {
+        "train": len(samples) * (1.0 - validation_ratio - test_ratio),
+        "validation": len(samples) * validation_ratio,
+        "test": len(samples) * test_ratio,
+    }
+    best: tuple[tuple[float, float, float], dict[str, str], dict[str, Any]] | None = None
+    split_names = ("train", "validation", "test")
+    for attempt in range(attempts):
+        rng = random.Random(seed + attempt * 1009)
+        names = list(groups)
+        rng.shuffle(names)
+        assignment_by_group: dict[str, str] = {}
+        sizes = {name: 0 for name in split_names}
+        # Seed each split with one group so every score is represented in all
+        # three partitions, even when page groups are small.
+        for name, split in zip(names[:3], split_names):
+            assignment_by_group[name] = split
+            sizes[split] += len(groups[name])
+        for group_name in names[3:]:
+            group_size = len(groups[group_name])
+            deficits = {split: max(target[split] - sizes[split], 0.0) for split in split_names}
+            max_deficit = max(deficits.values())
+            candidates = [split for split in split_names if deficits[split] == max_deficit]
+            split = rng.choice(candidates)
+            assignment_by_group[group_name] = split
+            sizes[split] += group_size
+
+        assignments = {
+            sample["sample_id"]: assignment_by_group[_group_key(sample, group_level)]
+            for sample in samples
+        }
+        split_samples = {
+            name: [sample for sample in samples if assignments[sample["sample_id"]] == name]
+            for name in split_names
+        }
+        coverage = _coverage_report(split_samples, samples)
+        missing = sum(len(value["missing_classes"]) for value in coverage["splits"].values())
+        ratio_error = sum(abs(len(split_samples[name]) - target[name]) for name in split_names)
+        # A small deterministic tie breaker avoids depending on dictionary order.
+        score = (float(missing), ratio_error, rng.random())
+        if best is None or score < best[0]:
+            best = (score, assignments, coverage)
+            if missing == 0 and ratio_error == 0:
+                break
+
+    assert best is not None
+    _score, assignments, coverage = best
+    return assignments, {
+        "group_count": len(groups),
+        "coverage": coverage,
+        "sample_counts": {
+            name: sum(1 for sample_id, split in assignments.items() if split == name)
+            for name in split_names
+        },
+    }
+
+
+def _prepare_within_score_split(
+    samples: Sequence[dict[str, Any]],
+    *,
+    seed: int,
+    validation_ratio: float,
+    test_ratio: float,
+    group_level: str,
+    fallback_group_level: str | None,
+) -> tuple[dict[str, str], dict[str, Any]]:
+    scores = sorted({sample["score_id"] for sample in samples})
+    if len(scores) != 5:
+        raise ValueError(f"within-score split requires exactly five scores, got {scores}")
+    if group_level != "page":
+        raise ValueError("within-score grouped mode requires page as the primary group level")
+
+    all_assignments: dict[str, str] = {}
+    coverage: dict[str, Any] = {}
+    for score_index, score_id in enumerate(scores):
+        score_samples = [sample for sample in samples if sample["score_id"] == score_id]
+        page_assignments, page_report = _best_grouped_assignment(
+            score_samples,
+            group_level=group_level,
+            seed=seed + score_index * 100003,
+            validation_ratio=validation_ratio,
+            test_ratio=test_ratio,
+        )
+        if page_assignments is None:
+            page_complete = False
+            selected_assignments = None
+        else:
+            page_complete = bool(page_report["coverage"]["complete"])
+            selected_assignments = page_assignments
+        selected_level = group_level
+        fallback = None
+        if not page_complete and fallback_group_level:
+            system_assignments, system_report = _best_grouped_assignment(
+                score_samples,
+                group_level=fallback_group_level,
+                seed=seed + score_index * 100003,
+                validation_ratio=validation_ratio,
+                test_ratio=test_ratio,
+            )
+            if system_assignments is not None and system_report["coverage"]["complete"]:
+                selected_assignments = system_assignments
+                selected_level = fallback_group_level
+                fallback = {
+                    "from": group_level,
+                    "to": fallback_group_level,
+                    "reason": "page grouping could not establish class coverage",
+                    "page_report": page_report,
+                }
+            else:
+                fallback = {
+                    "from": group_level,
+                    "to": None,
+                    "reason": "page and permitted fallback grouping could not establish class coverage",
+                    "page_report": page_report,
+                    "fallback_report": system_report if system_assignments is not None else None,
+                }
+        if selected_assignments is None:
+            raise ValueError(f"score {score_id} cannot be split with the permitted group levels")
+        for sample_id, split in selected_assignments.items():
+            if sample_id in all_assignments:
+                raise ValueError(f"duplicate assignment for sample {sample_id}")
+            all_assignments[sample_id] = split
+        selected_samples = {
+            name: [
+                sample
+                for sample in score_samples
+                if selected_assignments[sample["sample_id"]] == name
+            ]
+            for name in ("train", "validation", "test")
+        }
+        coverage[score_id] = {
+            "selected_group_level": selected_level,
+            "page": page_report,
+            "fallback": fallback,
+            "selected": _coverage_report(selected_samples, score_samples),
+        }
+
+    return all_assignments, coverage
+
+
 def prepare_split_contract(
     *,
     manifest_path: Path,
@@ -320,6 +507,7 @@ def prepare_split_contract(
     test_ratio: float = DEFAULT_TEST_RATIO,
     group_level: str = "score",
     fallback_group_level: str | None = "page",
+    split_mode: str = "score-grouped",
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Exclude acceptance controls, then create or validate a frozen split artifact."""
 
@@ -334,6 +522,11 @@ def prepare_split_contract(
 
     if split_path.exists():
         contract = _load_json(split_path)
+        existing_mode = contract.get("split_mode", "score-grouped")
+        if existing_mode != split_mode:
+            raise ValueError(
+                f"existing split mode {existing_mode!r} does not match requested {split_mode!r}"
+            )
         provenance = contract.get("provenance", {})
         if provenance.get("source_manifest_sha256") != source_sha:
             raise ValueError("existing split source manifest SHA256 does not match")
@@ -348,14 +541,28 @@ def prepare_split_contract(
             raise ValueError("existing split assignments do not match eligible semantic samples")
         return eligible, contract
 
-    assignments, used_group_level = freeze_split(
-        eligible,
-        seed=seed,
-        validation_ratio=validation_ratio,
-        test_ratio=test_ratio,
-        group_level=group_level,
-        fallback_group_level=fallback_group_level,
-    )
+    if split_mode == WITHIN_SCORE_SPLIT_MODE:
+        assignments, score_coverage = _prepare_within_score_split(
+            eligible,
+            seed=seed,
+            validation_ratio=validation_ratio,
+            test_ratio=test_ratio,
+            group_level=group_level,
+            fallback_group_level=fallback_group_level,
+        )
+        used_group_level = group_level
+    elif split_mode == "score-grouped":
+        assignments, used_group_level = freeze_split(
+            eligible,
+            seed=seed,
+            validation_ratio=validation_ratio,
+            test_ratio=test_ratio,
+            group_level=group_level,
+            fallback_group_level=fallback_group_level,
+        )
+        score_coverage = None
+    else:
+        raise ValueError(f"unsupported split mode: {split_mode}")
 
     split_samples = {
         name: [sample for sample in eligible if assignments[sample["sample_id"]] == name]
@@ -363,6 +570,7 @@ def prepare_split_contract(
     }
     contract = {
         "schema": "issue332.mmr_training_split.v1",
+        "split_mode": split_mode,
         "provenance": {
             "source_manifest": str(manifest_path.resolve()),
             "source_manifest_sha256": source_sha,
@@ -370,11 +578,13 @@ def prepare_split_contract(
             if acceptance_manifest_path
             else None,
             "acceptance_manifest_sha256": acceptance_sha,
+            "training_code_commit": _git_head(),
         },
         "seed": seed,
         "requested_group_level": group_level,
         "used_group_level": used_group_level,
         "fallback_group_level": fallback_group_level,
+        "score_coverage": score_coverage,
         "validation_ratio": validation_ratio,
         "test_ratio": test_ratio,
         "excluded_before_split": True,

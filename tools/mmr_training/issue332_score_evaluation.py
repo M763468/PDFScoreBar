@@ -122,6 +122,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument(
+        "--split-manifest",
+        type=Path,
+        default=None,
+        help="Optional frozen split artifact; evaluate only its test assignment.",
+    )
+    parser.add_argument(
         "--model",
         action="append",
         required=True,
@@ -146,6 +152,16 @@ def main() -> None:
         model_specs.append((name, Path(raw_path)))
 
     samples = _load_manifest(args.manifest)
+    split_contract = None
+    if args.split_manifest:
+        split_contract = json.loads(args.split_manifest.read_text(encoding="utf-8"))
+        assignments = split_contract.get("assignments")
+        if not isinstance(assignments, dict):
+            raise ValueError("split artifact must contain assignments")
+        test_ids = {sample_id for sample_id, split in assignments.items() if split == "test"}
+        samples = [sample for sample in samples if sample["sample_id"] in test_ids]
+        if {sample["sample_id"] for sample in samples} != test_ids:
+            raise ValueError("split test assignments do not match manifest samples")
     scores = sorted({sample["score_id"] for sample in samples})
     if len(scores) != 5:
         raise ValueError(f"expected canonical five scores, got {scores}")
@@ -167,6 +183,12 @@ def main() -> None:
             "git_head": _git_head(),
             "manifest_path": str(args.manifest.resolve()),
             "manifest_sha256": sha256_file(args.manifest),
+            "split_manifest_path": (
+                str(args.split_manifest.resolve()) if args.split_manifest else None
+            ),
+            "split_manifest_sha256": (
+                sha256_file(args.split_manifest) if args.split_manifest else None
+            ),
             "device": str(device),
             "torch_version": torch.__version__,
             "opencv_version": cv2.__version__,
@@ -175,6 +197,7 @@ def main() -> None:
         },
         "scores": scores,
         "samples": len(samples),
+        "split_counts": split_contract.get("counts") if split_contract else None,
         "elapsed_seconds": time.perf_counter() - started,
         "models": models_result,
     }

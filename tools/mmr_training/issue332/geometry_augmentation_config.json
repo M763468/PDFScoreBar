@@ -9,10 +9,11 @@
     "one-bar"
   ],
   "split": {
-    "group_level": "score",
-    "fallback_group_level": "page",
+    "mode": "within-score-grouped",
+    "group_level": "page",
+    "fallback_group_level": "system",
     "seed": 42,
-    "validation_ratio": 0.2,
-    "test_ratio": 0.2
+    "validation_ratio": 0.125,
+    "test_ratio": 0.125
   }
 }

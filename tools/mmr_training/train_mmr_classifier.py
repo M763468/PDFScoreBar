@@ -414,6 +414,7 @@ def _manifest_datasets(args, train_transform, eval_transform, text_noise):
         test_ratio=float(split_config.get("test_ratio", 0.2)),
         group_level=str(split_config.get("group_level", "score")),
         fallback_group_level=split_config.get("fallback_group_level", "page"),
+        split_mode=str(split_config.get("mode", "score-grouped")),
     )
 
     train_samples = samples_for_split(eligible, split_contract, "train")

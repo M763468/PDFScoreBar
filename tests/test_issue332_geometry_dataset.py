@@ -12,6 +12,7 @@ from tools.mmr_training.create_mmr_train_data import create_dataset_from_configs
 from tools.mmr_training.issue332.geometry_training import (
     DEFAULT_GEOMETRY_AUGMENTATION_PROBABILITY,
     GEOMETRY_FAMILIES,
+    WITHIN_SCORE_SPLIT_MODE,
     SemanticMMRDataset,
     choose_geometry_bbox,
     clear_source_page_cache,
@@ -158,6 +159,91 @@ def test_split_artifact_is_reused_and_deterministic(tmp_path: Path):
 
     assert first == second
     assert set(first["assignments"].values()) == {"train", "validation", "test"}
+
+
+def test_within_score_split_keeps_pages_together_and_covers_each_score(tmp_path: Path):
+    samples = []
+    for score_index in range(5):
+        score = f"score-{score_index}"
+        for page_index in range(6):
+            page = f"page-{page_index}"
+            samples.append(_sample(f"{score}-{page}-neg", score, page, 0))
+            samples.append(_sample(f"{score}-{page}-pos", score, page, 1))
+    manifest = tmp_path / "source.json"
+    manifest.write_text(json.dumps({"samples": samples}), encoding="utf-8")
+
+    eligible, contract = prepare_split_contract(
+        manifest_path=manifest,
+        split_path=tmp_path / "within.json",
+        seed=42,
+        validation_ratio=0.125,
+        test_ratio=0.125,
+        group_level="page",
+        fallback_group_level="system",
+        split_mode=WITHIN_SCORE_SPLIT_MODE,
+    )
+
+    assert contract["split_mode"] == WITHIN_SCORE_SPLIT_MODE
+    assert all(
+        set(info["scores"]) == {f"score-{index}" for index in range(5)}
+        for info in contract["counts"].values()
+    )
+    assert all(
+        info["selected_group_level"] == "page" for info in contract["score_coverage"].values()
+    )
+    page_splits = {}
+    for sample in eligible:
+        key = (sample["score_id"], sample["page_id"])
+        page_splits.setdefault(key, set()).add(contract["assignments"][sample["sample_id"]])
+    assert all(len(splits) == 1 for splits in page_splits.values())
+    for score_info in contract["score_coverage"].values():
+        assert score_info["selected"]["complete"] is True
+
+
+def test_within_score_split_records_minimal_system_fallback(tmp_path: Path):
+    samples = []
+    for score_index in range(5):
+        score = f"score-{score_index}"
+        if score_index == 0:
+            for system_index in range(6):
+                samples.append(
+                    {
+                        **_sample(f"{score}-s{system_index}-neg", score, "page-1", 0),
+                        "system_index": system_index,
+                        "measure_index": 0,
+                    }
+                )
+                samples.append(
+                    {
+                        **_sample(f"{score}-s{system_index}-pos", score, "page-1", 1),
+                        "system_index": system_index,
+                        "measure_index": 1,
+                    }
+                )
+        else:
+            for page_index in range(6):
+                page = f"page-{page_index}"
+                samples.append(_sample(f"{score}-{page}-neg", score, page, 0))
+                samples.append(_sample(f"{score}-{page}-pos", score, page, 1))
+    manifest = tmp_path / "source.json"
+    manifest.write_text(json.dumps({"samples": samples}), encoding="utf-8")
+
+    _, contract = prepare_split_contract(
+        manifest_path=manifest,
+        split_path=tmp_path / "within.json",
+        seed=42,
+        validation_ratio=0.125,
+        test_ratio=0.125,
+        group_level="page",
+        fallback_group_level="system",
+        split_mode=WITHIN_SCORE_SPLIT_MODE,
+    )
+
+    score_info = contract["score_coverage"]["score-0"]
+    assert score_info["selected_group_level"] == "system"
+    assert score_info["fallback"]["from"] == "page"
+    assert score_info["fallback"]["to"] == "system"
+    assert score_info["selected"]["complete"] is True
 
 
 def test_geometry_candidate_keeps_one_semantic_item_per_epoch(tmp_path: Path):

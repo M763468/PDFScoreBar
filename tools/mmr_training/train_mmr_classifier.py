@@ -151,9 +151,9 @@ class TextNoiseOverlay:
         staff_top, staff_bottom = self._estimate_staff_band(staff_mask, h)
 
         for _ in range(self.max_attempts):
-            pos_type = random.choices(
-                ["top", "bottom", "cross"], weights=[0.45, 0.45, 0.10], k=1
-            )[0]
+            pos_type = random.choices(["top", "bottom", "cross"], weights=[0.45, 0.45, 0.10], k=1)[
+                0
+            ]
             if pos_type == "top":
                 y = random.randint(-text_h // 2, max(0, h // 3))
             elif pos_type == "bottom":
@@ -704,9 +704,7 @@ def build_parser():
     parser.add_argument("--seed", type=int, default=42)
     sampler = parser.add_mutually_exclusive_group()
     sampler.add_argument("--weighted-sampler", dest="use_weighted_sampler", action="store_true")
-    sampler.add_argument(
-        "--no-weighted-sampler", dest="use_weighted_sampler", action="store_false"
-    )
+    sampler.add_argument("--no-weighted-sampler", dest="use_weighted_sampler", action="store_false")
     parser.set_defaults(use_weighted_sampler=None)
     parser.add_argument("--staff-mask-root", type=str, default=None)
     parser.add_argument("--staff-mask-suffix", type=str, default="_staff")

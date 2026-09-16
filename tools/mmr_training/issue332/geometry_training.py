@@ -37,6 +37,14 @@ DEFAULT_EXCLUDED_TAGS = (
     "zero-fixture",
     "one-bar",
 )
+GEOMETRY_FAMILIES = (
+    "native",
+    "x1",
+    "x2",
+    "translate_x",
+    "translate_y",
+    "expand_contract_x",
+)
 
 
 def sha256_file(path: Path) -> str:
@@ -347,8 +355,16 @@ def choose_geometry_bbox(
     if policy != "absolute":
         raise ValueError(f"unsupported geometry policy: {policy}")
 
-    variants = generate_geometry_variants(bbox, deltas_px)
-    variant = variants[rng.randrange(len(variants))]
+    family = rng.choice(GEOMETRY_FAMILIES)
+    if family == "native":
+        return "native", bbox
+
+    delta = int(rng.choice(tuple(deltas_px)))
+    sign = int(rng.choice((-1, 1)))
+    suffix = "minus" if sign < 0 else "plus"
+    variant_name = f"{family}_{suffix}_{delta}px"
+    variants = generate_geometry_variants(bbox, (delta,))
+    variant = next(variant for variant in variants if variant.name == variant_name)
     return variant.name, list(variant.bbox)
 
 

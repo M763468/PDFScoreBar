@@ -8,6 +8,7 @@ import numpy as np
 from torchvision import transforms
 
 from tools.mmr_training.issue332.geometry_training import (
+    GEOMETRY_FAMILIES,
     SemanticMMRDataset,
     choose_geometry_bbox,
     prepare_split_contract,
@@ -131,6 +132,33 @@ def test_geometry_candidate_keeps_one_semantic_item_per_epoch(tmp_path: Path):
     assert any(name.startswith("x1_") for name in variants)
     assert any(name.startswith("x2_") for name in variants)
     assert any(name.startswith("expand_contract_x_") for name in variants)
+
+
+def test_absolute_geometry_sampling_balances_families_deltas_and_signs():
+    sample = _sample("x", "score-a", "page-1", 1)
+    rng = random.Random(332)
+    names = [
+        choose_geometry_bbox(sample, policy="absolute", deltas_px=(1, 2, 4), rng=rng)[0]
+        for _ in range(6000)
+    ]
+    family_counts = {family: 0 for family in GEOMETRY_FAMILIES}
+    delta_counts = {family: {delta: 0 for delta in (1, 2, 4)} for family in GEOMETRY_FAMILIES[1:]}
+    sign_counts = {
+        family: {sign: 0 for sign in ("minus", "plus")} for family in GEOMETRY_FAMILIES[1:]
+    }
+    for name in names:
+        if name == "native":
+            family_counts["native"] += 1
+            continue
+        family = next(family for family in GEOMETRY_FAMILIES[1:] if name.startswith(family + "_"))
+        sign, delta_text = name[len(family) + 1 :].split("_", 1)
+        delta = int(delta_text.removesuffix("px"))
+        family_counts[family] += 1
+        delta_counts[family][delta] += 1
+        sign_counts[family][sign] += 1
+    assert all(850 <= count <= 1150 for count in family_counts.values())
+    assert all(275 <= count <= 400 for counts in delta_counts.values() for count in counts.values())
+    assert all(425 <= count <= 575 for counts in sign_counts.values() for count in counts.values())
 
 
 def test_manifest_trainer_uses_frozen_split_without_resplitting(tmp_path: Path):

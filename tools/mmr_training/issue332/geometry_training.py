@@ -759,6 +759,7 @@ def choose_geometry_bbox(
     deltas_px: Sequence[int],
     rng: random.Random,
     geometry_augmentation_probability: float = DEFAULT_GEOMETRY_AUGMENTATION_PROBABILITY,
+    geometry_families: Sequence[str] | None = None,
 ) -> tuple[str, list[float]]:
     bbox = list(_validated_bbox(sample["bbox"]))
     probability = float(geometry_augmentation_probability)
@@ -772,7 +773,16 @@ def choose_geometry_bbox(
     if rng.random() >= probability:
         return "native", bbox
 
-    family = rng.choice(GEOMETRY_FAMILIES[1:])
+    selected_families = tuple(
+        GEOMETRY_FAMILIES[1:] if geometry_families is None else geometry_families
+    )
+    invalid_families = set(selected_families) - set(GEOMETRY_FAMILIES[1:])
+    if not selected_families or invalid_families:
+        raise ValueError(
+            "geometry_families must contain one or more supported perturbation families: "
+            f"{sorted(invalid_families)}"
+        )
+    family = rng.choice(selected_families)
     delta = int(rng.choice(tuple(deltas_px)))
     sign = int(rng.choice((-1, 1)))
     suffix = "minus" if sign < 0 else "plus"
@@ -797,6 +807,7 @@ class SemanticMMRDataset(Dataset):
         seed: int = DEFAULT_SPLIT_SEED,
         text_noise=None,
         geometry_augmentation_probability: float = DEFAULT_GEOMETRY_AUGMENTATION_PROBABILITY,
+        geometry_families: Sequence[str] | None = None,
     ):
         self.samples = list(samples)
         self.manifest_path = manifest_path
@@ -807,6 +818,15 @@ class SemanticMMRDataset(Dataset):
         self.seed = int(seed)
         self.text_noise = text_noise
         self.geometry_augmentation_probability = float(geometry_augmentation_probability)
+        self.geometry_families = tuple(
+            GEOMETRY_FAMILIES[1:] if geometry_families is None else geometry_families
+        )
+        invalid_families = set(self.geometry_families) - set(GEOMETRY_FAMILIES[1:])
+        if not self.geometry_families or invalid_families:
+            raise ValueError(
+                "geometry_families must contain one or more supported perturbation families: "
+                f"{sorted(invalid_families)}"
+            )
         if not 0.0 <= self.geometry_augmentation_probability <= 1.0:
             raise ValueError("geometry_augmentation_probability must be between 0 and 1")
         # A shared scalar keeps epoch-dependent geometry sampling correct when
@@ -840,6 +860,7 @@ class SemanticMMRDataset(Dataset):
             deltas_px=self.deltas_px,
             rng=self._rng(idx),
             geometry_augmentation_probability=self.geometry_augmentation_probability,
+            geometry_families=self.geometry_families,
         )
         crop = crop_measure(image, bbox, margin_px=self.margin_px)
         rgb = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)

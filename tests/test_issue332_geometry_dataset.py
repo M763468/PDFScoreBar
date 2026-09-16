@@ -20,6 +20,7 @@ from tools.mmr_training.issue332.geometry_training import (
     prepare_split_contract,
     source_page_cache_info,
 )
+from tools.mmr_training.issue332_geometry_benchmark import generate_geometry_variants
 from tools.mmr_training.issue332_score_evaluation import summarize_native_rows
 from tools.mmr_training.train_mmr_classifier import (
     _legacy_datasets,
@@ -329,6 +330,37 @@ def test_geometry_augmentation_probability_controls_native_exposure():
     ]
     native_count = names.count("native")
     assert 2850 <= native_count <= 3150
+
+
+def test_geometry_augmentation_can_restrict_to_one_family():
+    sample = _sample("x", "score-a", "page-1", 1)
+    rng = random.Random(332)
+    names = [
+        choose_geometry_bbox(
+            sample,
+            policy="absolute",
+            deltas_px=(1, 2, 4),
+            rng=rng,
+            geometry_augmentation_probability=1.0,
+            geometry_families=("translate_y",),
+        )[0]
+        for _ in range(1000)
+    ]
+    assert all(name.startswith("translate_y_") for name in names)
+    assert {name.rsplit("_", 2)[-2] for name in names} == {"minus", "plus"}
+    assert {name.rsplit("_", 1)[-1] for name in names} == {"1px", "2px", "4px"}
+
+
+def test_geometry_family_coordinates_match_benchmark_contract():
+    variants = {
+        variant.name: variant.bbox for variant in generate_geometry_variants((10, 20, 30, 40), (2,))
+    }
+    assert variants["x1_plus_2px"] == (12, 20, 30, 40)
+    assert variants["x2_plus_2px"] == (10, 20, 32, 40)
+    assert variants["translate_x_plus_2px"] == (12, 20, 32, 40)
+    assert variants["translate_y_plus_2px"] == (10, 22, 30, 42)
+    assert variants["expand_contract_x_plus_2px"] == (8, 20, 32, 40)
+    assert variants["expand_contract_x_minus_2px"] == (12, 20, 28, 40)
 
 
 def test_absolute_geometry_sampling_balances_families_deltas_and_signs():

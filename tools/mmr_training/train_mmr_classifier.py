@@ -23,6 +23,7 @@ from tools.mmr_training.issue332.geometry_training import (
     DEFAULT_DELTAS_PX,
     DEFAULT_EXCLUDED_TAGS,
     DEFAULT_GEOMETRY_AUGMENTATION_PROBABILITY,
+    GEOMETRY_FAMILIES,
     SemanticMMRDataset,
     prepare_split_contract,
     samples_for_split,
@@ -435,6 +436,17 @@ def _manifest_datasets(args, train_transform, eval_transform, text_noise):
     if args.geometry_augmentation == "none":
         geometry_probability = 0.0
     args.geometry_augmentation_probability = geometry_probability
+    configured_families = getattr(args, "geometry_augmentation_families", None)
+    geometry_families = tuple(
+        configured_families or config.get("geometry_augmentation_families", GEOMETRY_FAMILIES[1:])
+    )
+    invalid_families = set(geometry_families) - set(GEOMETRY_FAMILIES[1:])
+    if not geometry_families or invalid_families:
+        raise ValueError(
+            "geometry_augmentation_families must contain supported families: "
+            f"{sorted(invalid_families)}"
+        )
+    args.geometry_augmentation_families = list(geometry_families)
 
     train_dataset = SemanticMMRDataset(
         train_samples,
@@ -446,6 +458,7 @@ def _manifest_datasets(args, train_transform, eval_transform, text_noise):
         seed=args.seed,
         text_noise=text_noise,
         geometry_augmentation_probability=geometry_probability,
+        geometry_families=geometry_families,
     )
     val_dataset = SemanticMMRDataset(
         val_samples,
@@ -456,6 +469,7 @@ def _manifest_datasets(args, train_transform, eval_transform, text_noise):
         margin_px=margin_px,
         seed=args.seed,
         geometry_augmentation_probability=0.0,
+        geometry_families=geometry_families,
     )
     test_dataset = SemanticMMRDataset(
         test_samples,
@@ -466,6 +480,7 @@ def _manifest_datasets(args, train_transform, eval_transform, text_noise):
         margin_px=margin_px,
         seed=args.seed,
         geometry_augmentation_probability=0.0,
+        geometry_families=geometry_families,
     )
     class_counts = {
         "train": {
@@ -710,6 +725,9 @@ def train_model(args):
         "geometry_augmentation_probability": (
             args.geometry_augmentation_probability if args.manifest else None
         ),
+        "geometry_augmentation_families": (
+            args.geometry_augmentation_families if args.manifest else None
+        ),
         "best_epoch": best_epoch,
         "selection_metric": "validation_f1",
         "best_validation_f1": best_f1,
@@ -730,6 +748,9 @@ def train_model(args):
             "pos_weight": float(pos_weight),
             "pos_weight_counts": pos_weight_counts,
             "pos_weight_source": pos_weight_source,
+            "geometry_augmentation_families": (
+                args.geometry_augmentation_families if args.manifest else None
+            ),
         },
     }
 
@@ -786,6 +807,14 @@ def build_parser():
         type=float,
         default=None,
         help="Probability of source-space perturbation for absolute geometry policy.",
+    )
+    parser.add_argument(
+        "--geometry-augmentation-family",
+        dest="geometry_augmentation_families",
+        action="append",
+        choices=GEOMETRY_FAMILIES[1:],
+        default=None,
+        help="Restrict absolute geometry sampling to one or more perturbation families.",
     )
     parser.add_argument(
         "--training-profile",

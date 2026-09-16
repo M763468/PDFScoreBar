@@ -36,6 +36,64 @@ Both current direct `224x224` warp and an experimental aspect-preserving white l
 
 The output records checkpoint/config/manifest SHA-256, runtime identity, every probability, decisions at 0.5 and 0.1, per-sample min/max/range/max-delta, threshold crossings, and mean inference time. Retain output under ignored `logs/issue332/` unless the repository artifact policy explicitly says otherwise.
 
+## Issue #332 terminology and coordinate contract
+
+The following terms are normative for the Issue #332 artifacts. The formulas use
+the source-page bbox `(x1, y1, x2, y2)` and a signed pixel delta `d`. The
+implementation samples `abs(d)` from `{1, 2, 4}` and independently samples the
+sign, so the effective values are `-1, -2, -4, +1, +2, +4` pixels.
+
+- **native**: Leave the source-manifest bbox unchanged, crop the source page
+  with the fixed `20 px` margin, then apply the production direct `224x224`
+  input transform.
+- **source-space geometry augmentation**: Change the measure bbox in original
+  source-page coordinates before the fixed-margin crop and before the `224x224`
+  resize. It does not alter the page image itself.
+- **absolute geometry augmentation**: Use fixed source-page pixel deltas
+  `d ∈ {-4, -2, -1, +1, +2, +4}`. No staff-height or other resolution
+  normalization is applied.
+- **all-family absolute**: Select one family uniformly from `x1`, `x2`,
+  `translate-x`, `translate-y`, and `expand/contract-x` for each perturbed
+  semantic sample.
+- **family-targeted absolute**: Restrict that selection to the family or
+  families explicitly supplied by `--geometry-augmentation-family`; a
+  single-family run selects only that family.
+- **augmentation probability `p`**: For each semantic training sample in each
+  epoch, apply one source-space perturbation with probability `p`. With
+  probability `1-p`, use the native bbox. Thus p10, p25, and p50 mean `0.10`,
+  `0.25`, and `0.50`, respectively. Validation and test use native geometry.
+
+The five absolute families are exactly these coordinate transforms:
+
+| Family | Transformed bbox |
+| --- | --- |
+| `x1` | `(x1 + d, y1, x2, y2)` |
+| `x2` | `(x1, y1, x2 + d, y2)` |
+| `translate-x` | `(x1 + d, y1, x2 + d, y2)` |
+| `translate-y` | `(x1, y1 + d, x2, y2 + d)` |
+| `expand/contract-x` | `(x1 - d, y1, x2 + d, y2)`; positive `d` expands and negative `d` contracts |
+
+These definitions are asserted by
+`tests/test_issue332_geometry_dataset.py::test_geometry_family_coordinates_match_benchmark_contract`.
+
+- **direct resize**: Resize the cropped image directly to `(224, 224)` with
+  `torchvision.transforms.Resize`, allowing independent horizontal and
+  vertical scaling (the production input contract).
+- **aspect-preserving resize + letterbox**: Resize while preserving the crop's
+  aspect ratio, then pad the remaining area to a `224x224` canvas. This is an
+  experimental input-contract comparison, not the current baseline contract.
+- **main crossing (0.5)**: A semantic sample for which native and at least one
+  source-space perturbation make different binary decisions at probability
+  threshold `0.5` (`p >= 0.5` is positive).
+- **rescue crossing (0.1)**: The same definition at the rescue threshold
+  `0.1`.
+- **native FP**: A native sample with label `0` whose native probability is at
+  least `0.5`.
+- **perturbation crossing**: A main- or rescue-threshold crossing caused by a
+  perturbation relative to that sample's native decision. A sample is counted
+  once per threshold even if several families or deltas cross; the detailed
+  artifact retains every crossing family, delta, sign, and probability.
+
 ## Split/training rule
 
 The regular `tools/mmr_training/train_mmr_classifier.py` entrypoint is the authoritative training path. In semantic-manifest mode it excludes retained acceptance controls before splitting, freezes train/validation/test membership by complete score groups (falling back to page groups only when required for class coverage), and reuses the same split artifact across baseline and candidate runs.

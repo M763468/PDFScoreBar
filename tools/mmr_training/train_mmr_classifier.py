@@ -378,6 +378,7 @@ def _legacy_datasets(args, train_transform, eval_transform, text_noise):
         staff_mask_ext=args.staff_mask_ext,
         text_noise=text_noise,
     )
+    train_dataset.full_corpus_class_counts = {"0": len(paths_0), "1": len(paths_1)}
     val_dataset = MMRDataset(val_paths, val_labels, transform=eval_transform)
     class_counts = {
         "train": {"0": len(y0_train), "1": len(y1_train)},
@@ -560,9 +561,12 @@ def _training_code_commit() -> str | None:
 
 
 def _train_pos_weight(class_counts: dict[str, dict[str, int]]) -> float:
-    train_counts = class_counts["train"]
-    negatives = int(train_counts["0"])
-    positives = int(train_counts["1"])
+    return _pos_weight_from_counts(class_counts["train"])
+
+
+def _pos_weight_from_counts(class_counts: dict[str, int]) -> float:
+    negatives = int(class_counts["0"])
+    positives = int(class_counts["1"])
     if positives == 0 or negatives == 0:
         raise ValueError("training corpus must contain both classes")
     return negatives / positives
@@ -614,7 +618,13 @@ def train_model(args):
     train_loader = _make_loader(train_dataset, train_labels, args, train=True)
     val_loader = _make_loader(val_dataset, [], args, train=False)
 
-    pos_weight = _train_pos_weight(class_counts)
+    if mode == "semantic-manifest":
+        pos_weight_counts = class_counts["train"]
+        pos_weight_source = "train_split"
+    else:
+        pos_weight_counts = train_dataset.full_corpus_class_counts
+        pos_weight_source = "full_corpus"
+    pos_weight = _pos_weight_from_counts(pos_weight_counts)
 
     model = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
     model.fc = nn.Linear(model.fc.in_features, 1)
@@ -693,6 +703,8 @@ def train_model(args):
         "text_noise_enabled": text_noise is not None,
         "class_counts": class_counts,
         "pos_weight": float(pos_weight),
+        "pos_weight_counts": pos_weight_counts,
+        "pos_weight_source": pos_weight_source,
         "geometry_augmentation": args.geometry_augmentation if args.manifest else None,
         "geometry_augmentation_probability": (
             args.geometry_augmentation_probability if args.manifest else None
@@ -715,6 +727,8 @@ def train_model(args):
             "profile": args.training_profile,
             "class_counts": class_counts,
             "pos_weight": float(pos_weight),
+            "pos_weight_counts": pos_weight_counts,
+            "pos_weight_source": pos_weight_source,
         },
     }
 

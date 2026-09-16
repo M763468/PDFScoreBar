@@ -50,7 +50,10 @@ GEOMETRY_FAMILIES = (
     "translate_y",
     "expand_contract_x",
 )
-SOURCE_PAGE_CACHE_SIZE = 16
+# The canonical 68-page corpus has page-grouped samples: four cached pages
+# retain the observed hit rate while keeping one worker below the measured RSS
+# of larger 8/16-page caches.
+SOURCE_PAGE_CACHE_SIZE = 4
 
 
 def sha256_file(path: Path) -> str:

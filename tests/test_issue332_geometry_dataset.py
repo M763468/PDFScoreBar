@@ -18,7 +18,11 @@ from tools.mmr_training.issue332.geometry_training import (
     prepare_split_contract,
     source_page_cache_info,
 )
-from tools.mmr_training.train_mmr_classifier import _manifest_datasets, _train_pos_weight
+from tools.mmr_training.train_mmr_classifier import (
+    _legacy_datasets,
+    _manifest_datasets,
+    _train_pos_weight,
+)
 
 
 def _sample(sample_id, score_id, page_id, label, image_path="page.png", tags=None):
@@ -369,8 +373,41 @@ def test_source_page_decode_is_cached_and_unused_staff_mask_is_not_read(tmp_path
 
     assert len(calls) == 1
     assert calls[0][0] == str(image_path.resolve())
-    assert source_page_cache_info().maxsize == 16
+    assert source_page_cache_info().maxsize == 4
     assert source_page_cache_info().hits >= 1
+
+
+def test_legacy_mode_retains_full_corpus_pos_weight_counts(tmp_path):
+    data_root = tmp_path / "legacy"
+    for label in (0, 1):
+        class_root = data_root / "train" / str(label)
+        class_root.mkdir(parents=True)
+        for index in range(5):
+            cv2.imwrite(
+                str(class_root / f"sample-{index}.jpg"),
+                np.full((32, 32, 3), 255, dtype=np.uint8),
+            )
+    args = SimpleNamespace(
+        data_root=str(data_root),
+        seed=42,
+        staff_mask_root=None,
+        staff_mask_suffix="_staff",
+        staff_mask_ext=".png",
+    )
+
+    train, _validation, _test, _labels, _split, class_counts = _legacy_datasets(
+        args,
+        transforms.ToTensor(),
+        transforms.ToTensor(),
+        text_noise=None,
+    )
+
+    assert class_counts == {
+        "train": {"0": 4, "1": 4},
+        "val": {"0": 1, "1": 1},
+        "test": {"0": 0, "1": 0},
+    }
+    assert train.full_corpus_class_counts == {"0": 5, "1": 5}
 
 
 def test_formal_generator_emits_semantic_manifest_with_provenance(tmp_path: Path):

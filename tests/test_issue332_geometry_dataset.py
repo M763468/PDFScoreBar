@@ -9,6 +9,7 @@ from torchvision import transforms
 
 from tools.mmr_training.create_mmr_train_data import create_dataset_from_configs
 from tools.mmr_training.issue332.geometry_training import (
+    DEFAULT_GEOMETRY_AUGMENTATION_PROBABILITY,
     GEOMETRY_FAMILIES,
     SemanticMMRDataset,
     choose_geometry_bbox,
@@ -190,6 +191,51 @@ def test_geometry_candidate_keeps_one_semantic_item_per_epoch(tmp_path: Path):
     assert any(name.startswith("expand_contract_x_") for name in variants)
 
 
+def test_geometry_augmentation_probability_controls_native_exposure():
+    sample = _sample("x", "score-a", "page-1", 1)
+    assert (
+        choose_geometry_bbox(
+            sample,
+            policy="absolute",
+            deltas_px=(1, 2, 4),
+            rng=random.Random(42),
+            geometry_augmentation_probability=0.0,
+        )[0]
+        == "native"
+    )
+
+    rng = random.Random(42)
+    names = [
+        choose_geometry_bbox(
+            sample,
+            policy="absolute",
+            deltas_px=(1, 2, 4),
+            rng=rng,
+            geometry_augmentation_probability=1.0,
+        )[0]
+        for _ in range(1000)
+    ]
+    assert "native" not in names
+    assert all(
+        any(name.startswith(family + "_") for family in GEOMETRY_FAMILIES[1:]) for name in names
+    )
+    assert DEFAULT_GEOMETRY_AUGMENTATION_PROBABILITY == 5 / 6
+
+    rng = random.Random(332)
+    names = [
+        choose_geometry_bbox(
+            sample,
+            policy="absolute",
+            deltas_px=(1, 2, 4),
+            rng=rng,
+            geometry_augmentation_probability=0.25,
+        )[0]
+        for _ in range(4000)
+    ]
+    native_count = names.count("native")
+    assert 2850 <= native_count <= 3150
+
+
 def test_absolute_geometry_sampling_balances_families_deltas_and_signs():
     sample = _sample("x", "score-a", "page-1", 1)
     rng = random.Random(332)
@@ -271,6 +317,9 @@ def test_manifest_trainer_uses_frozen_split_without_resplitting(tmp_path: Path):
     assert train.geometry_policy == "absolute"
     assert validation.geometry_policy == "none"
     assert test.geometry_policy == "none"
+    assert train.geometry_augmentation_probability == 5 / 6
+    assert validation.geometry_augmentation_probability == 0.0
+    assert test.geometry_augmentation_probability == 0.0
     assert class_counts == (6, 6)
 
 

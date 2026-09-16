@@ -21,6 +21,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from tools.mmr_training.issue332.geometry_training import (
     DEFAULT_DELTAS_PX,
     DEFAULT_EXCLUDED_TAGS,
+    DEFAULT_GEOMETRY_AUGMENTATION_PROBABILITY,
     SemanticMMRDataset,
     prepare_split_contract,
     samples_for_split,
@@ -413,6 +414,19 @@ def _manifest_datasets(args, train_transform, eval_transform, text_noise):
     test_samples = samples_for_split(eligible, split_contract, "test")
     margin_px = int(config.get("margin_px", 20))
     deltas_px = tuple(int(value) for value in config.get("deltas_px", DEFAULT_DELTAS_PX))
+    geometry_probability = (
+        getattr(args, "geometry_augmentation_probability", None)
+        if getattr(args, "geometry_augmentation_probability", None) is not None
+        else float(
+            config.get(
+                "geometry_augmentation_probability",
+                DEFAULT_GEOMETRY_AUGMENTATION_PROBABILITY,
+            )
+        )
+    )
+    if args.geometry_augmentation == "none":
+        geometry_probability = 0.0
+    args.geometry_augmentation_probability = geometry_probability
 
     train_dataset = SemanticMMRDataset(
         train_samples,
@@ -423,6 +437,7 @@ def _manifest_datasets(args, train_transform, eval_transform, text_noise):
         margin_px=margin_px,
         seed=args.seed,
         text_noise=text_noise,
+        geometry_augmentation_probability=geometry_probability,
     )
     val_dataset = SemanticMMRDataset(
         val_samples,
@@ -432,6 +447,7 @@ def _manifest_datasets(args, train_transform, eval_transform, text_noise):
         deltas_px=deltas_px,
         margin_px=margin_px,
         seed=args.seed,
+        geometry_augmentation_probability=0.0,
     )
     test_dataset = SemanticMMRDataset(
         test_samples,
@@ -441,6 +457,7 @@ def _manifest_datasets(args, train_transform, eval_transform, text_noise):
         deltas_px=deltas_px,
         margin_px=margin_px,
         seed=args.seed,
+        geometry_augmentation_probability=0.0,
     )
     class_counts = (
         sum(int(sample["label"]) == 0 for sample in eligible),
@@ -633,6 +650,9 @@ def train_model(args):
         "weighted_sampler": bool(args.use_weighted_sampler),
         "text_noise_enabled": text_noise is not None,
         "geometry_augmentation": args.geometry_augmentation if args.manifest else None,
+        "geometry_augmentation_probability": (
+            args.geometry_augmentation_probability if args.manifest else None
+        ),
         "best_epoch": best_epoch,
         "selection_metric": "validation_f1",
         "best_validation_f1": best_f1,
@@ -688,6 +708,12 @@ def build_parser():
         "--geometry-augmentation",
         choices=("none", "absolute"),
         default="none",
+    )
+    parser.add_argument(
+        "--geometry-augmentation-probability",
+        type=float,
+        default=None,
+        help="Probability of source-space perturbation for absolute geometry policy.",
     )
     parser.add_argument(
         "--training-profile",

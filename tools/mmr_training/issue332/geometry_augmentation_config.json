@@ -1,6 +1,7 @@
 {
   "margin_px": 20,
   "deltas_px": [1, 2, 4],
+  "geometry_augmentation_probability": 0.8333333333333334,
   "acceptance_excluded_tags": [
     "acceptance-control",
     "issue277-control",

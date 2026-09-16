@@ -32,6 +32,9 @@ DEFAULT_VALIDATION_RATIO = 0.2
 DEFAULT_TEST_RATIO = 0.2
 DEFAULT_MARGIN_PX = 20
 DEFAULT_DELTAS_PX = (1, 2, 4)
+# The previous absolute policy sampled native plus five perturbation families
+# uniformly, so its perturbation exposure was 5/6.
+DEFAULT_GEOMETRY_AUGMENTATION_PROBABILITY = 5.0 / 6.0
 DEFAULT_EXCLUDED_TAGS = (
     "acceptance-control",
     "issue277-control",
@@ -374,17 +377,21 @@ def choose_geometry_bbox(
     policy: str,
     deltas_px: Sequence[int],
     rng: random.Random,
+    geometry_augmentation_probability: float = DEFAULT_GEOMETRY_AUGMENTATION_PROBABILITY,
 ) -> tuple[str, list[float]]:
     bbox = list(_validated_bbox(sample["bbox"]))
+    probability = float(geometry_augmentation_probability)
+    if not 0.0 <= probability <= 1.0:
+        raise ValueError("geometry_augmentation_probability must be between 0 and 1")
     if policy == "none":
         return "native", bbox
     if policy != "absolute":
         raise ValueError(f"unsupported geometry policy: {policy}")
 
-    family = rng.choice(GEOMETRY_FAMILIES)
-    if family == "native":
+    if rng.random() >= probability:
         return "native", bbox
 
+    family = rng.choice(GEOMETRY_FAMILIES[1:])
     delta = int(rng.choice(tuple(deltas_px)))
     sign = int(rng.choice((-1, 1)))
     suffix = "minus" if sign < 0 else "plus"
@@ -408,6 +415,7 @@ class SemanticMMRDataset(Dataset):
         margin_px: int = DEFAULT_MARGIN_PX,
         seed: int = DEFAULT_SPLIT_SEED,
         text_noise=None,
+        geometry_augmentation_probability: float = DEFAULT_GEOMETRY_AUGMENTATION_PROBABILITY,
     ):
         self.samples = list(samples)
         self.manifest_path = manifest_path
@@ -417,6 +425,9 @@ class SemanticMMRDataset(Dataset):
         self.margin_px = int(margin_px)
         self.seed = int(seed)
         self.text_noise = text_noise
+        self.geometry_augmentation_probability = float(geometry_augmentation_probability)
+        if not 0.0 <= self.geometry_augmentation_probability <= 1.0:
+            raise ValueError("geometry_augmentation_probability must be between 0 and 1")
         self.epoch = 0
 
     def __len__(self) -> int:
@@ -444,6 +455,7 @@ class SemanticMMRDataset(Dataset):
             policy=self.geometry_policy,
             deltas_px=self.deltas_px,
             rng=self._rng(idx),
+            geometry_augmentation_probability=self.geometry_augmentation_probability,
         )
         crop = crop_measure(image, bbox, margin_px=self.margin_px)
         rgb = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)

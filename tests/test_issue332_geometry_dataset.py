@@ -84,6 +84,48 @@ def test_acceptance_controls_are_excluded_before_group_split(tmp_path: Path):
     assert all(len(splits) == 1 for splits in score_splits.values())
 
 
+def test_all_seven_acceptance_controls_match_semantic_identity(tmp_path: Path):
+    controls = [
+        ("score-a", "page_010", 2, 1),
+        ("score-b", "page_011", 8, 0),
+        ("score-c", "page_033", 0, 0),
+        ("score-d", "page_025", 0, 0),
+        ("score-c", "page_033", 2, 7),
+        ("score-e", "page_042", 8, 0),
+        ("score-f", "page_055", 1, 1),
+    ]
+    samples = []
+    acceptance_samples = []
+    for index, (score, page, system, measure) in enumerate(controls):
+        samples.append(
+            {
+                **_sample(f"source-{index}", score, page, 0),
+                "system_index": system,
+                "measure_index": measure,
+            }
+        )
+        acceptance_samples.append(_sample(f"{page}_s{system}_m{measure}", score, page, 0))
+    # Add non-control samples so score-level splitting has enough groups.
+    samples.extend(_balanced_samples())
+    manifest = tmp_path / "source.json"
+    manifest.write_text(json.dumps({"samples": samples}), encoding="utf-8")
+    acceptance = tmp_path / "acceptance.json"
+    acceptance.write_text(json.dumps({"samples": acceptance_samples}), encoding="utf-8")
+
+    eligible, contract = prepare_split_contract(
+        manifest_path=manifest,
+        split_path=tmp_path / "split.json",
+        acceptance_manifest_path=acceptance,
+        seed=42,
+        validation_ratio=0.2,
+        test_ratio=0.2,
+    )
+
+    assert len(contract["excluded_semantic_identities"]) == 7
+    assert len(contract["excluded_sample_ids"]) == 7
+    assert len(eligible) == len(samples) - 7
+
+
 def test_split_artifact_is_reused_and_deterministic(tmp_path: Path):
     manifest = tmp_path / "source.json"
     manifest.write_text(json.dumps({"samples": _balanced_samples()}), encoding="utf-8")
@@ -261,6 +303,8 @@ def test_formal_generator_emits_semantic_manifest_with_provenance(tmp_path: Path
                 "pages": [
                     {
                         "name": "score-a_page_001",
+                        "score_id": "explicit-score",
+                        "page_id": "explicit-page-001",
                         "image": "page.png",
                         "numbering": "numbering.json",
                         "rest_gt": "rest_gt.json",
@@ -280,8 +324,8 @@ def test_formal_generator_emits_semantic_manifest_with_provenance(tmp_path: Path
 
     payload = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert len(payload["samples"]) == 2
-    assert payload["samples"][0]["score_id"] == "score-a"
-    assert payload["samples"][0]["page_id"] == "page_001"
+    assert payload["samples"][0]["score_id"] == "explicit-score"
+    assert payload["samples"][0]["page_id"] == "explicit-page-001"
     assert payload["samples"][0]["system_index"] == 0
     assert payload["samples"][0]["measure_index"] == 0
     assert payload["samples"][1]["global_measure_index"] == 1

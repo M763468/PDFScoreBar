@@ -33,6 +33,15 @@ def score_id_from_page_name(name):
     return re.sub(r"_page_\d+$", "", str(name))
 
 
+def page_identity(page, name, numbering_path):
+    """Resolve stable score/page identity, preferring explicit config fields."""
+    score_id = str(page.get("score_id") or score_id_from_page_name(name))
+    page_id = str(page.get("page_id") or extract_page_token(numbering_path, name))
+    if not page_id or page_id == "None":
+        raise ValueError(f"could not resolve page_id for config entry: {name}")
+    return score_id, page_id
+
+
 def map_global_index_to_bbox(numbering_data):
     """
     Returns a list mapping global_index -> bbox [x1, y1, x2, y2]
@@ -166,6 +175,7 @@ def create_dataset_from_configs(
                 numbering_data = json.load(f)
 
             measure_records = list(iter_measure_records(numbering_data))
+            score_id, page_id = page_identity(page, name, numbering_path)
 
             # 3. Load Image
             img_path = resolve_input_path(page["image"], source_root)
@@ -248,9 +258,9 @@ def create_dataset_from_configs(
 
                 manifest_samples.append(
                     {
-                        "sample_id": f"{score_id_from_page_name(name)}::{extract_page_token(numbering_path, name)}::s{system_index}::m{measure_index}",
-                        "score_id": score_id_from_page_name(name),
-                        "page_id": extract_page_token(numbering_path, name),
+                        "sample_id": f"{score_id}::{page_id}::s{system_index}::m{measure_index}",
+                        "score_id": score_id,
+                        "page_id": page_id,
                         "system_index": system_index,
                         "measure_index": measure_index,
                         "global_measure_index": idx,

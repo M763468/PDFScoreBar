@@ -25,6 +25,15 @@ import torch.nn as nn
 from PIL import Image, ImageOps
 from torchvision import models, transforms
 
+from tools.mmr_training.issue332.staff_model import StaffRelativeResNet18
+from tools.mmr_training.issue332.staff_view import (
+    STAFF_CORE_CENTER_VIEW,
+    crop_source_bbox,
+    source_staff_bboxes,
+    staff_relative_roi_bboxes,
+    staff_view_contract,
+)
+
 DEFAULT_MAIN_THRESHOLD = 0.5
 DEFAULT_RESCUE_THRESHOLD = 0.1
 DEFAULT_MARGIN_PX = 20
@@ -221,6 +230,34 @@ class Predictor:
             return float(torch.sigmoid(self.classifier.model(tensor)).item())
 
 
+class StaffRelativePredictor:
+    def __init__(self, model_path: Path, device: torch.device, resize_mode: str):
+        self.device = device
+        self.resize_mode = resize_mode
+        self.transform = PRODUCTION_TRANSFORM if resize_mode == "direct" else _letterbox_transform()
+        model = StaffRelativeResNet18(weights=None)
+        state_dict = torch.load(model_path, map_location=device, weights_only=True)
+        model.load_state_dict(state_dict)
+        self.model = model.to(device)
+        self.model.eval()
+
+    def predict(
+        self,
+        image: np.ndarray,
+        sample: dict[str, Any],
+        measure_bbox: Sequence[float],
+    ) -> float:
+        tensors = []
+        for roi_bbox in staff_relative_roi_bboxes(sample, measure_bbox):
+            crop = crop_source_bbox(image, roi_bbox)
+            rgb = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
+            tensors.append(self.transform(Image.fromarray(rgb)))
+        staff_images = torch.stack(tensors).unsqueeze(0).to(self.device)
+        staff_mask = torch.ones((1, len(tensors)), dtype=torch.bool, device=self.device)
+        with torch.inference_mode():
+            return float(torch.sigmoid(self.model(staff_images, staff_mask)).item())
+
+
 def _load_config(path: Path | None) -> dict[str, Any]:
     if path is None:
         return {}
@@ -353,7 +390,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     samples = _load_manifest(args.manifest)
     model_path = args.model.resolve()
     device = torch.device(args.device)
-    predictors = {mode: Predictor(model_path, device, mode) for mode in resize_modes}
+    classifier_view = args.classifier_view
+    if classifier_view == STAFF_CORE_CENTER_VIEW:
+        predictors = {
+            mode: StaffRelativePredictor(model_path, device, mode) for mode in resize_modes
+        }
+    else:
+        predictors = {mode: Predictor(model_path, device, mode) for mode in resize_modes}
     rows: list[dict[str, Any]] = []
     started = time.perf_counter()
     for sample in samples:
@@ -371,7 +414,17 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             crop = crop_measure(scaled_image, scaled_bbox, margin_px=margin_px)
             for mode, predictor in predictors.items():
                 infer_started = time.perf_counter()
-                probability = predictor.predict(crop)
+                if classifier_view == STAFF_CORE_CENTER_VIEW:
+                    scaled_sample = dict(sample)
+                    # Use canonical source staff bboxes directly so the perturbed measure
+                    # never mutates staff geometry.
+                    scaled_sample["_staff_bboxes"] = [
+                        [float(value) * variant.dpi_scale for value in bbox]
+                        for bbox in source_staff_bboxes(sample)
+                    ]
+                    probability = predictor.predict(scaled_image, scaled_sample, scaled_bbox)
+                else:
+                    probability = predictor.predict(crop)
                 rows.append(
                     {
                         "sample_id": sample["sample_id"],
@@ -423,8 +476,20 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "deltas_px": list(deltas_px),
             "dpi_scales": list(dpi_scales),
             "resize_modes": list(resize_modes),
-            "staff_y_dependency": "none-direct: classifier crop derives from measure bbox only",
-            "classifier_loader": "experiment-local production MMRClassifier mirror",
+            "classifier_view": classifier_view,
+            "staff_y_dependency": (
+                "source-numbering staff bbox fixed; measure perturbation recomputes center window"
+                if classifier_view == STAFF_CORE_CENTER_VIEW
+                else "none-direct: classifier crop derives from measure bbox only"
+            ),
+            "classifier_view_contract": (
+                staff_view_contract() if classifier_view == STAFF_CORE_CENTER_VIEW else None
+            ),
+            "classifier_loader": (
+                "shared ResNet18 staff encoder with max-logit aggregation"
+                if classifier_view == STAFF_CORE_CENTER_VIEW
+                else "experiment-local production MMRClassifier mirror"
+            ),
             "classifier_reference": "src/measure_numbering/mmr.py::MMRClassifier",
             "rapidocr_involved": False,
         },
@@ -440,6 +505,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--model", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--config", type=Path)
+    parser.add_argument(
+        "--classifier-view",
+        choices=("full_measure", STAFF_CORE_CENTER_VIEW),
+        default="full_measure",
+    )
     parser.add_argument(
         "--resize-mode",
         action="append",

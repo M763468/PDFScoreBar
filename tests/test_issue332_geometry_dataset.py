@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import cv2
 import numpy as np
+import torch
 from torchvision import transforms
 
 import tools.mmr_training.issue332.geometry_training as geometry_training
@@ -14,11 +15,18 @@ from tools.mmr_training.issue332.geometry_training import (
     GEOMETRY_FAMILIES,
     WITHIN_SCORE_SPLIT_MODE,
     SemanticMMRDataset,
+    StaffRelativeMMRDataset,
     choose_geometry_bbox,
     clear_source_page_cache,
+    collate_staff_relative_batch,
     prepare_score_level_folds,
     prepare_split_contract,
     source_page_cache_info,
+)
+from tools.mmr_training.issue332.staff_model import StaffRelativeResNet18
+from tools.mmr_training.issue332.staff_view import (
+    STAFF_CORE_CENTER_VIEW,
+    staff_relative_roi_bboxes,
 )
 from tools.mmr_training.issue332_geometry_benchmark import generate_geometry_variants
 from tools.mmr_training.issue332_score_evaluation import summarize_native_rows
@@ -285,6 +293,65 @@ def test_geometry_candidate_keeps_one_semantic_item_per_epoch(tmp_path: Path):
     assert any(name.startswith("x1_") for name in variants)
     assert any(name.startswith("x2_") for name in variants)
     assert any(name.startswith("expand_contract_x_") for name in variants)
+
+
+def test_staff_core_center_roi_uses_source_staff_bbox_and_measure_center():
+    sample = {
+        **_sample("staff", "score-a", "page-1", 1),
+        "bbox": [100, 200, 500, 400],
+        "staff_bboxes": [[80, 220, 700, 320], [80, 500, 700, 600]],
+    }
+    rois = staff_relative_roi_bboxes(sample)
+    assert rois == ((150.0, 220.0, 450.0, 320.0), (150.0, 500.0, 450.0, 600.0))
+
+    perturbed = staff_relative_roi_bboxes(sample, [120, 200, 520, 400])
+    assert perturbed == ((170.0, 220.0, 470.0, 320.0), (170.0, 500.0, 470.0, 600.0))
+    assert STAFF_CORE_CENTER_VIEW == "staff-core-center-3h"
+
+
+def test_staff_relative_dataset_is_one_measure_item_with_variable_staff_count(tmp_path: Path):
+    image_path = tmp_path / "page.png"
+    cv2.imwrite(str(image_path), np.full((160, 240, 3), 255, dtype=np.uint8))
+    sample = {
+        **_sample("staff", "score-a", "page-1", 1, image_path=str(image_path)),
+        "bbox": [40, 20, 200, 140],
+        "staff_bboxes": [[20, 30, 220, 70], [20, 90, 220, 130]],
+    }
+    dataset = StaffRelativeMMRDataset(
+        [sample], manifest_path=tmp_path / "manifest.json", transform=transforms.ToTensor()
+    )
+    staff_images, label = dataset[0]
+    batch_images, staff_mask, labels = collate_staff_relative_batch([(staff_images, label)])
+    assert len(dataset) == 1
+    assert tuple(staff_images.shape) == (2, 3, 40, 120)
+    assert tuple(batch_images.shape) == (1, 2, 3, 40, 120)
+    assert staff_mask.tolist() == [[True, True]]
+    assert labels.tolist() == [1.0]
+
+
+def test_staff_relative_model_aggregates_to_one_measure_logit(monkeypatch):
+    class FakeEncoder(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = torch.nn.Linear(3, 1, bias=False)
+            torch.nn.init.constant_(self.fc.weight, 1.0)
+
+        def forward(self, images):
+            return images.mean(dim=(2, 3)).sum(dim=1, keepdim=True)
+
+    monkeypatch.setattr(
+        "tools.mmr_training.issue332.staff_model.models.resnet18",
+        lambda weights: FakeEncoder(),
+    )
+    model = StaffRelativeResNet18(weights=None)
+    images = torch.zeros((2, 2, 3, 4, 4))
+    images[0, 1] = 1.0
+    images[1, 1] = 1.0
+    mask = torch.tensor([[True, True], [True, False]])
+    logits = model(images, mask)
+    assert logits.shape == (2, 1)
+    assert logits[0].item() == 3.0
+    assert logits[1].item() == 0.0
 
 
 def test_geometry_augmentation_probability_controls_native_exposure():

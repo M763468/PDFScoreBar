@@ -25,9 +25,16 @@ from tools.mmr_training.issue332.geometry_training import (
     DEFAULT_GEOMETRY_AUGMENTATION_PROBABILITY,
     GEOMETRY_FAMILIES,
     SemanticMMRDataset,
+    StaffRelativeMMRDataset,
+    collate_staff_relative_batch,
     prepare_split_contract,
     samples_for_split,
     sha256_file,
+)
+from tools.mmr_training.issue332.staff_model import StaffRelativeResNet18
+from tools.mmr_training.issue332.staff_view import (
+    STAFF_CORE_CENTER_VIEW,
+    staff_view_contract,
 )
 
 
@@ -448,7 +455,14 @@ def _manifest_datasets(args, train_transform, eval_transform, text_noise):
         )
     args.geometry_augmentation_families = list(geometry_families)
 
-    train_dataset = SemanticMMRDataset(
+    classifier_view = getattr(args, "classifier_view", "full_measure")
+    if classifier_view not in {"full_measure", STAFF_CORE_CENTER_VIEW}:
+        raise ValueError(f"unsupported classifier view: {classifier_view}")
+    dataset_class = (
+        StaffRelativeMMRDataset if classifier_view == STAFF_CORE_CENTER_VIEW else SemanticMMRDataset
+    )
+
+    train_dataset = dataset_class(
         train_samples,
         manifest_path=manifest_path,
         transform=train_transform,
@@ -460,7 +474,7 @@ def _manifest_datasets(args, train_transform, eval_transform, text_noise):
         geometry_augmentation_probability=geometry_probability,
         geometry_families=geometry_families,
     )
-    val_dataset = SemanticMMRDataset(
+    val_dataset = dataset_class(
         val_samples,
         manifest_path=manifest_path,
         transform=eval_transform,
@@ -471,7 +485,7 @@ def _manifest_datasets(args, train_transform, eval_transform, text_noise):
         geometry_augmentation_probability=0.0,
         geometry_families=geometry_families,
     )
-    test_dataset = SemanticMMRDataset(
+    test_dataset = dataset_class(
         test_samples,
         manifest_path=manifest_path,
         transform=eval_transform,
@@ -512,6 +526,8 @@ def _make_loader(dataset, labels, args, *, train):
         "pin_memory": torch.cuda.is_available(),
         "persistent_workers": args.num_workers > 0,
     }
+    if getattr(dataset, "is_staff_relative", False):
+        loader_options["collate_fn"] = collate_staff_relative_batch
     if train and args.use_weighted_sampler:
         positives = sum(int(label) == 1 for label in labels)
         negatives = sum(int(label) == 0 for label in labels)
@@ -534,14 +550,24 @@ def _make_loader(dataset, labels, args, *, train):
     )
 
 
+def _forward_batch(model, batch, device):
+    if len(batch) == 3:
+        images, staff_mask, labels = batch
+        return model(
+            images.to(device, non_blocking=device.type == "cuda"),
+            staff_mask.to(device, non_blocking=device.type == "cuda"),
+        ), labels
+    images, labels = batch
+    return model(images.to(device, non_blocking=device.type == "cuda")), labels
+
+
 def _evaluate_loader(model, loader, device):
     probabilities = []
     targets = []
     model.eval()
-    non_blocking = device.type == "cuda"
     with torch.inference_mode():
-        for images, labels in loader:
-            outputs = model(images.to(device, non_blocking=non_blocking))
+        for batch in loader:
+            outputs, labels = _forward_batch(model, batch, device)
             probabilities.extend(torch.sigmoid(outputs).reshape(-1).cpu().tolist())
             targets.extend(labels.reshape(-1).cpu().tolist())
     predictions = [1 if probability >= 0.5 else 0 for probability in probabilities]
@@ -586,6 +612,16 @@ def _pos_weight_from_counts(class_counts: dict[str, int]) -> float:
     if positives == 0 or negatives == 0:
         raise ValueError("training corpus must contain both classes")
     return negatives / positives
+
+
+def _build_model(classifier_view: str):
+    if classifier_view == STAFF_CORE_CENTER_VIEW:
+        return StaffRelativeResNet18()
+    if classifier_view != "full_measure":
+        raise ValueError(f"unsupported classifier view: {classifier_view}")
+    model = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
+    model.fc = nn.Linear(model.fc.in_features, 1)
+    return model
 
 
 def train_model(args):
@@ -642,8 +678,8 @@ def train_model(args):
         pos_weight_source = "full_corpus"
     pos_weight = _pos_weight_from_counts(pos_weight_counts)
 
-    model = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
-    model.fc = nn.Linear(model.fc.in_features, 1)
+    classifier_view = getattr(args, "classifier_view", "full_measure")
+    model = _build_model(classifier_view)
     model = model.to(device)
 
     criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([pos_weight], device=device))
@@ -670,16 +706,15 @@ def train_model(args):
         if tqdm:
             train_iter = tqdm(train_loader, desc=f"Train {epoch + 1}/{args.epochs}", leave=False)
 
-        for images, labels in train_iter:
+        for batch in train_iter:
             non_blocking = device.type == "cuda"
-            images = images.to(device, non_blocking=non_blocking)
+            outputs, labels = _forward_batch(model, batch, device)
             labels = labels.unsqueeze(1).to(device, non_blocking=non_blocking)
             optimizer.zero_grad(set_to_none=True)
-            outputs = model(images)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
-            running_loss += loss.item() * images.size(0)
+            running_loss += loss.item() * labels.size(0)
 
         val_metrics, _ = _evaluate_loader(model, val_loader, device)
         epoch_loss = running_loss / len(train_dataset)
@@ -717,6 +752,7 @@ def train_model(args):
         "optimizer": "Adam" if args.training_profile == "historical" else "AdamW",
         "weighted_sampler": bool(args.use_weighted_sampler),
         "text_noise_enabled": text_noise is not None,
+        "classifier_view": classifier_view,
         "class_counts": class_counts,
         "pos_weight": float(pos_weight),
         "pos_weight_counts": pos_weight_counts,
@@ -750,6 +786,10 @@ def train_model(args):
             "pos_weight_source": pos_weight_source,
             "geometry_augmentation_families": (
                 args.geometry_augmentation_families if args.manifest else None
+            ),
+            "classifier_view": classifier_view,
+            "classifier_view_contract": (
+                staff_view_contract() if classifier_view == STAFF_CORE_CENTER_VIEW else None
             ),
         },
     }
@@ -792,6 +832,12 @@ def build_parser():
     )
     parser.add_argument("--acceptance-manifest", type=str, default=None)
     parser.add_argument("--split-manifest", type=str, default=None)
+    parser.add_argument(
+        "--classifier-view",
+        choices=("full_measure", STAFF_CORE_CENTER_VIEW),
+        default="full_measure",
+        help="Classifier input view; staff-relative view is one item per measure with max aggregation.",
+    )
     parser.add_argument(
         "--geometry-config",
         type=str,

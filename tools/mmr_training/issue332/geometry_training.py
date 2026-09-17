@@ -23,6 +23,11 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset
 
+from tools.mmr_training.issue332.staff_view import (
+    STAFF_CORE_CENTER_VIEW,
+    crop_source_bbox,
+    staff_relative_roi_bboxes,
+)
 from tools.mmr_training.issue332_geometry_benchmark import (
     _validated_bbox,
     crop_measure,
@@ -880,3 +885,50 @@ class SemanticMMRDataset(Dataset):
         if self.transform is not None:
             pil_image = self.transform(pil_image)
         return pil_image, torch.tensor(label, dtype=torch.float32)
+
+
+class StaffRelativeMMRDataset(SemanticMMRDataset):
+    """One semantic measure item containing one transformed crop per staff."""
+
+    is_staff_relative = True
+    classifier_view = STAFF_CORE_CENTER_VIEW
+
+    def __getitem__(self, idx: int):
+        sample = self.samples[idx]
+        image_path = resolve_image_path(self.manifest_path, sample["image_path"])
+        image = _read_source_page(str(image_path))
+        if image is None:
+            raise FileNotFoundError(f"could not load source image: {image_path}")
+
+        _variant_name, measure_bbox = choose_geometry_bbox(
+            sample,
+            policy=self.geometry_policy,
+            deltas_px=self.deltas_px,
+            rng=self._rng(idx),
+            geometry_augmentation_probability=self.geometry_augmentation_probability,
+            geometry_families=self.geometry_families,
+        )
+        crops = []
+        for roi_bbox in staff_relative_roi_bboxes(sample, measure_bbox):
+            crop = crop_source_bbox(image, roi_bbox)
+            rgb = cv2.cvtColor(crop, cv2.COLOR_BGR2RGB)
+            pil_image = Image.fromarray(rgb)
+            if self.transform is not None:
+                pil_image = self.transform(pil_image)
+            crops.append(pil_image)
+        return torch.stack(crops), torch.tensor(int(sample["label"]), dtype=torch.float32)
+
+
+def collate_staff_relative_batch(batch):
+    """Pad variable staff counts while retaining one label per semantic measure."""
+    staff_batches, labels = zip(*batch)
+    max_staff = max(item.shape[0] for item in staff_batches)
+    batch_images = staff_batches[0].new_zeros(
+        (len(staff_batches), max_staff, *staff_batches[0].shape[1:])
+    )
+    staff_mask = torch.zeros((len(staff_batches), max_staff), dtype=torch.bool)
+    for batch_index, item in enumerate(staff_batches):
+        count = item.shape[0]
+        batch_images[batch_index, :count] = item
+        staff_mask[batch_index, :count] = True
+    return batch_images, staff_mask, torch.stack(labels)

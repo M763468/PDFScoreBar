@@ -127,6 +127,46 @@ as one view per staff. Combining those views, and any rule such as max/OR
 aggregation, is a proposed classifier design question and is not defined by
 this diagnostic vocabulary.
 
+## Staff-relative candidate contract
+
+For the next causal comparison, the single candidate classifier detection view
+is `staff-core-center-3h`. The existing full-measure view remains the fixed
+baseline reference only; it is not a candidate input for this comparison.
+
+For each semantic measure and each source-numbering staff bbox
+`(sx1, sy1, sx2, sy2)`, define `h = sy2 - sy1` and
+`cx = (measure_x1 + measure_x2) / 2`. The candidate ROI is exactly:
+
+```text
+x1' = max(measure_x1, cx - 1.5*h)
+y1' = sy1
+x2' = min(measure_x2, cx + 1.5*h)
+y2' = sy2
+```
+
+Thus each staff crop has height `h` and width `min(measure_width, 3*h)`;
+there is no fixed-pixel margin. The source staff bbox comes only from the
+canonical `system["staves"][*]["bbox"]` in the sample's numbering provenance.
+If a measure bbox is geometrically perturbed for a later robustness evaluation,
+only `cx`, `x1'`, and `x2'` are recomputed; the source staff bbox itself is not
+borrowed from or changed by the perturbation. The crop is then converted using
+the existing direct `224x224` ImageNet-normalized input transform.
+
+The 182 canonical positive samples yield 194 staff views (12 measures have
+two staves). A diagnostic audit records the non-staff ink retained by center
+windows over all 194 views: the `3*h` window has median retention `0.978`
+(10th percentile `0.455`) after conservative staff-line removal, while
+`2.5*h` has median `0.848`. The `3*h` choice therefore prioritizes retaining
+old-style or off-center notation; the measure-boundary clip still removes
+left context whenever the measure is wider than `3*h` (102/194 staff views in
+the audit). See `logs/issue332/roi_diagnosis/positive_roi_ratio_audit.json`.
+
+The classifier uses one shared ResNet18 encoder for every staff crop, obtains
+one logit per staff, and defines the measure logit as
+`max(staff_logits)`. BCE is evaluated once against the semantic measure label,
+not once per staff crop. Staff count is variable and padded only within a
+batch with an explicit staff mask.
+
 - **direct resize**: The `direct` input mode: resize the cropped image directly
   to `(224, 224)` with `torchvision.transforms.Resize`, allowing independent
   horizontal and vertical scaling, then convert to tensor and apply ImageNet

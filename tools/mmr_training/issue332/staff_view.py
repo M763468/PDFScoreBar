@@ -114,4 +114,8 @@ def staff_view_contract() -> dict[str, Any]:
             "if measure bbox is perturbed, recompute center/window from perturbed measure bbox; "
             "keep source staff bbox fixed"
         ),
+        "future_acceptance_caveat": (
+            "measure translate-y perturbation does not move the staff ROI; future acceptance must "
+            "also evaluate independent source staff-bbox +/-1/2/4px sensitivity"
+        ),
     }

@@ -152,6 +152,12 @@ only `cx`, `x1'`, and `x2'` are recomputed; the source staff bbox itself is not
 borrowed from or changed by the perturbation. The crop is then converted using
 the existing direct `224x224` ImageNet-normalized input transform.
 
+This fixed-staff provenance is a diagnostic limitation, not a claim of full
+geometry invariance: a measure `translate-y` perturbation does not move the
+staff-relative ROI in y. Any future acceptance envelope for this view must
+therefore evaluate an independent source-staff-bbox sensitivity of `±1/2/4px`
+in addition to measure-bbox perturbations.
+
 The 182 canonical positive samples yield 194 staff views (12 measures have
 two staves). A diagnostic audit records the non-staff ink retained by center
 windows over all 194 views: the `3*h` window has median retention `0.978`

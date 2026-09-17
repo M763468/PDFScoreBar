@@ -23,6 +23,7 @@ from tools.mmr_training.issue332.geometry_training import (
     prepare_split_contract,
     source_page_cache_info,
 )
+from tools.mmr_training.issue332.staff_failure_diagnosis import staff_band_full_width_rois
 from tools.mmr_training.issue332.staff_model import StaffRelativeResNet18
 from tools.mmr_training.issue332.staff_view import (
     STAFF_CORE_CENTER_VIEW,
@@ -307,6 +308,18 @@ def test_staff_core_center_roi_uses_source_staff_bbox_and_measure_center():
     perturbed = staff_relative_roi_bboxes(sample, [120, 200, 520, 400])
     assert perturbed == ((170.0, 220.0, 470.0, 320.0), (170.0, 500.0, 470.0, 600.0))
     assert STAFF_CORE_CENTER_VIEW == "staff-core-center-3h"
+
+
+def test_diagnostic_staff_band_full_width_keeps_measure_x_and_staff_y():
+    sample = {
+        **_sample("staff", "score-a", "page-1", 0),
+        "bbox": [100, 200, 500, 400],
+        "staff_bboxes": [[80, 220, 700, 320], [80, 500, 700, 600]],
+    }
+    assert staff_band_full_width_rois(sample) == (
+        (100.0, 220.0, 500.0, 320.0),
+        (100.0, 500.0, 500.0, 600.0),
+    )
 
 
 def test_staff_relative_dataset_is_one_measure_item_with_variable_staff_count(tmp_path: Path):

@@ -92,6 +92,41 @@ The five absolute families are exactly these coordinate transforms:
 These definitions are asserted by
 `tests/test_issue332_geometry_dataset.py::test_geometry_family_coordinates_match_benchmark_contract`.
 
+## Diagnostic classifier views (proposed, not a training contract)
+
+The following view names are diagnostic vocabulary for the Issue #332 failure
+analysis. They do not change the current `direct-native` production baseline,
+and none of the staff-relative views below has been trained or accepted as a
+replacement input contract.
+
+- **classifier detection view**: The image region supplied to the MMR
+  existence classifier. It is distinct from the OCR/count view and from the
+  full-measure view; an experiment must record its view name explicitly.
+- **OCR/count view**: A staff-relative region used by the existing OCR/MMR
+  path. It may use multiple staff crops and the existing H-bar masking or
+  staff-relative preprocessing. It is not implicitly the classifier input.
+- **full-measure view**: The current classifier view: the complete source
+  measure bbox with the fixed `20 px` margin, followed by the selected input
+  mode (`direct` or `letterbox`). This is view A in the diagnostic artifacts.
+- **staff-context view**: A per-staff diagnostic crop with `x=measure_x1..x2`
+  and `y=staff_y1 - 0.5*h .. staff_y2`, where `h=staff_y2-staff_y1`.
+  The `0.5*h` upper margin is the existing OCR targeted full-span ratio
+  (`TARGETED_UPPER_STAFF_MARGIN_RATIO`); no new ratio is introduced here.
+- **staff-core view**: A per-staff diagnostic crop with
+  `x=measure_x1..x2` and `y=staff_y1..staff_y2`. This diagnostic crop retains
+  the staff and measure contents but excludes the inter-staff region and the
+  upper staff-relative context. The diagnostic images apply no OCR mask,
+  dilation, or other preprocessing.
+- **staff-relative normalization**: Derive crop margins or geometry from the
+  measured staff height `h`, rather than from a fixed source-pixel constant.
+  In this diagnosis the only such margin is the existing `0.5*h` staff-context
+  margin; resizing to `224x224` remains a separate input-mode operation.
+
+For systems with multiple staves, staff-context and staff-core are represented
+as one view per staff. Combining those views, and any rule such as max/OR
+aggregation, is a proposed classifier design question and is not defined by
+this diagnostic vocabulary.
+
 - **direct resize**: The `direct` input mode: resize the cropped image directly
   to `(224, 224)` with `torchvision.transforms.Resize`, allowing independent
   horizontal and vertical scaling, then convert to tensor and apply ImageNet

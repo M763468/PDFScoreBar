@@ -1,0 +1,967 @@
+{
+  "schema_version": "issue333.production_candidate_result.v1",
+  "experiment_id": "phase2-production-geometry-producer-v1",
+  "source_commit": "d8788539",
+  "producer": "src.pipeline.movement_boundary_candidates",
+  "evaluation_profile": "full source document ordered input; initial musical system needs no reset",
+  "metrics": {
+    "development": {
+      "system_starts": 168,
+      "true_boundaries": 9,
+      "review_candidates": 11,
+      "true_positive": 9,
+      "false_reset_if_unreviewed": 2,
+      "missed_boundary": 0,
+      "candidate_precision": 0.818182,
+      "candidate_recall": 1.0,
+      "review_burden": 0.065476,
+      "false_candidate_locations": [
+        [
+          "prokofiev1",
+          "page_004",
+          7
+        ],
+        [
+          "sibelius",
+          "page_005",
+          6
+        ]
+      ],
+      "missed_boundary_locations": []
+    },
+    "holdout": {
+      "system_starts": 107,
+      "true_boundaries": 5,
+      "review_candidates": 5,
+      "true_positive": 5,
+      "false_reset_if_unreviewed": 0,
+      "missed_boundary": 0,
+      "candidate_precision": 1.0,
+      "candidate_recall": 1.0,
+      "review_burden": 0.046729,
+      "false_candidate_locations": [],
+      "missed_boundary_locations": []
+    },
+    "all": {
+      "system_starts": 275,
+      "true_boundaries": 14,
+      "review_candidates": 16,
+      "true_positive": 14,
+      "false_reset_if_unreviewed": 2,
+      "missed_boundary": 0,
+      "candidate_precision": 0.875,
+      "candidate_recall": 1.0,
+      "review_burden": 0.058182,
+      "false_candidate_locations": [
+        [
+          "prokofiev1",
+          "page_004",
+          7
+        ],
+        [
+          "sibelius",
+          "page_005",
+          6
+        ]
+      ],
+      "missed_boundary_locations": []
+    }
+  },
+  "records": [
+    {
+      "score": "festival",
+      "page_id": "page_001",
+      "system": 0,
+      "selected_for_full_document_review": false,
+      "producer_record": {
+        "id": "page:0:system:0",
+        "page": 0,
+        "system": 0,
+        "state": "no_boundary",
+        "signals": [
+          {
+            "kind": "initial_input_system",
+            "artifact": "logs/issue333/fresh/runs/festival/intermediate/numbering_base.json",
+            "raw": {
+              "reset_required": false
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_001",
+          "source_page": 0,
+          "image": "logs/issue333/fresh/runs/festival/inputs/images/page_001.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "prokofiev1",
+      "page_id": "page_003",
+      "system": 0,
+      "selected_for_full_document_review": false,
+      "producer_record": {
+        "id": "page:0:system:0",
+        "page": 0,
+        "system": 0,
+        "state": "no_boundary",
+        "signals": [
+          {
+            "kind": "initial_input_system",
+            "artifact": "logs/issue333/fresh/runs/prokofiev1/intermediate/numbering_base.json",
+            "raw": {
+              "reset_required": false
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_003",
+          "source_page": 2,
+          "image": "logs/issue333/fresh/runs/prokofiev1/inputs/images/page_003.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "prokofiev1",
+      "page_id": "page_003",
+      "system": 3,
+      "selected_for_full_document_review": true,
+      "producer_record": {
+        "id": "page:0:system:3",
+        "page": 0,
+        "system": 3,
+        "state": "ambiguous_review_required",
+        "signals": [
+          {
+            "kind": "system_layout",
+            "artifact": "logs/issue333/fresh/runs/prokofiev1/intermediate/numbering_base.json",
+            "raw": {
+              "top_staff_bbox": [
+                513.0,
+                1581.0,
+                3204.0,
+                1759.0
+              ],
+              "page_width": 3600,
+              "page_height": 4680,
+              "left_median_px": 403.0,
+              "indent_page_ratio": 0.030556,
+              "preceding_gap_px": 221.0,
+              "preceding_gap_to_page_median": 1.578571,
+              "matched_rules": [
+                "relative_indent"
+              ]
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_003",
+          "source_page": 2,
+          "image": "logs/issue333/fresh/runs/prokofiev1/inputs/images/page_003.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "prokofiev1",
+      "page_id": "page_004",
+      "system": 3,
+      "selected_for_full_document_review": true,
+      "producer_record": {
+        "id": "page:1:system:3",
+        "page": 1,
+        "system": 3,
+        "state": "ambiguous_review_required",
+        "signals": [
+          {
+            "kind": "system_layout",
+            "artifact": "logs/issue333/fresh/runs/prokofiev1/intermediate/numbering_base.json",
+            "raw": {
+              "top_staff_bbox": [
+                521.0,
+                1581.0,
+                3198.0,
+                1737.0
+              ],
+              "page_width": 3600,
+              "page_height": 4680,
+              "left_median_px": 405.0,
+              "indent_page_ratio": 0.032222,
+              "preceding_gap_px": 159.0,
+              "preceding_gap_to_page_median": 1.251969,
+              "matched_rules": [
+                "relative_indent"
+              ]
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_004",
+          "source_page": 3,
+          "image": "logs/issue333/fresh/runs/prokofiev1/inputs/images/page_004.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "prokofiev1",
+      "page_id": "page_004",
+      "system": 7,
+      "selected_for_full_document_review": true,
+      "producer_record": {
+        "id": "page:1:system:7",
+        "page": 1,
+        "system": 7,
+        "state": "ambiguous_review_required",
+        "signals": [
+          {
+            "kind": "system_layout",
+            "artifact": "logs/issue333/fresh/runs/prokofiev1/intermediate/numbering_base.json",
+            "raw": {
+              "top_staff_bbox": [
+                405.0,
+                2897.0,
+                3206.0,
+                3058.0
+              ],
+              "page_width": 3600,
+              "page_height": 4680,
+              "left_median_px": 405.0,
+              "indent_page_ratio": 0.0,
+              "preceding_gap_px": 289.0,
+              "preceding_gap_to_page_median": 2.275591,
+              "matched_rules": [
+                "whitespace_outlier"
+              ]
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_004",
+          "source_page": 3,
+          "image": "logs/issue333/fresh/runs/prokofiev1/inputs/images/page_004.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "prokofiev1",
+      "page_id": "page_004",
+      "system": 8,
+      "selected_for_full_document_review": true,
+      "producer_record": {
+        "id": "page:1:system:8",
+        "page": 1,
+        "system": 8,
+        "state": "ambiguous_review_required",
+        "signals": [
+          {
+            "kind": "system_layout",
+            "artifact": "logs/issue333/fresh/runs/prokofiev1/intermediate/numbering_base.json",
+            "raw": {
+              "top_staff_bbox": [
+                525.0,
+                3258.0,
+                3206.0,
+                3395.0
+              ],
+              "page_width": 3600,
+              "page_height": 4680,
+              "left_median_px": 405.0,
+              "indent_page_ratio": 0.033333,
+              "preceding_gap_px": 200.0,
+              "preceding_gap_to_page_median": 1.574803,
+              "matched_rules": [
+                "relative_indent"
+              ]
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_004",
+          "source_page": 3,
+          "image": "logs/issue333/fresh/runs/prokofiev1/inputs/images/page_004.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "prokofiev5",
+      "page_id": "page_007",
+      "system": 0,
+      "selected_for_full_document_review": true,
+      "producer_record": {
+        "id": "page:1:system:0",
+        "page": 1,
+        "system": 0,
+        "state": "no_boundary",
+        "signals": [
+          {
+            "kind": "system_layout",
+            "artifact": "logs/issue333/fresh/runs/prokofiev5/intermediate/numbering_base.json",
+            "raw": {
+              "top_staff_bbox": [
+                485.0,
+                872.0,
+                3460.0,
+                1039.0
+              ],
+              "page_width": 3685,
+              "page_height": 5174,
+              "left_median_px": 203.0,
+              "indent_page_ratio": 0.076526,
+              "preceding_gap_px": null,
+              "preceding_gap_to_page_median": null,
+              "matched_rules": [
+                "relative_indent"
+              ]
+            }
+          },
+          {
+            "kind": "initial_input_system",
+            "artifact": "logs/issue333/fresh/runs/prokofiev5/intermediate/numbering_base.json",
+            "raw": {
+              "reset_required": false
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_007",
+          "source_page": 6,
+          "image": "logs/issue333/fresh/runs/prokofiev5/inputs/images/page_007.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "prokofiev5",
+      "page_id": "page_013",
+      "system": 0,
+      "selected_for_full_document_review": true,
+      "producer_record": {
+        "id": "page:2:system:0",
+        "page": 2,
+        "system": 0,
+        "state": "ambiguous_review_required",
+        "signals": [
+          {
+            "kind": "system_layout",
+            "artifact": "logs/issue333/fresh/runs/prokofiev5/intermediate/numbering_base.json",
+            "raw": {
+              "top_staff_bbox": [
+                506.0,
+                903.0,
+                3472.0,
+                1087.0
+              ],
+              "page_width": 3685,
+              "page_height": 5174,
+              "left_median_px": 222.0,
+              "indent_page_ratio": 0.077069,
+              "preceding_gap_px": null,
+              "preceding_gap_to_page_median": null,
+              "matched_rules": [
+                "relative_indent"
+              ]
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_013",
+          "source_page": 12,
+          "image": "logs/issue333/fresh/runs/prokofiev5/inputs/images/page_013.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "prokofiev5",
+      "page_id": "page_016",
+      "system": 5,
+      "selected_for_full_document_review": true,
+      "producer_record": {
+        "id": "page:3:system:5",
+        "page": 3,
+        "system": 5,
+        "state": "ambiguous_review_required",
+        "signals": [
+          {
+            "kind": "system_layout",
+            "artifact": "logs/issue333/fresh/runs/prokofiev5/intermediate/numbering_base.json",
+            "raw": {
+              "top_staff_bbox": [
+                499.0,
+                3550.0,
+                3460.0,
+                3713.0
+              ],
+              "page_width": 3685,
+              "page_height": 5174,
+              "left_median_px": 212.0,
+              "indent_page_ratio": 0.077883,
+              "preceding_gap_px": 1152.0,
+              "preceding_gap_to_page_median": 4.282528,
+              "matched_rules": [
+                "relative_indent",
+                "whitespace_outlier"
+              ]
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_016",
+          "source_page": 15,
+          "image": "logs/issue333/fresh/runs/prokofiev5/inputs/images/page_016.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "shostakovich5",
+      "page_id": "page_007",
+      "system": 0,
+      "selected_for_full_document_review": false,
+      "producer_record": {
+        "id": "page:0:system:0",
+        "page": 0,
+        "system": 0,
+        "state": "no_boundary",
+        "signals": [
+          {
+            "kind": "initial_input_system",
+            "artifact": "logs/issue333/fresh/runs/shostakovich5/intermediate/numbering_base.json",
+            "raw": {
+              "reset_required": false
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_007",
+          "source_page": 6,
+          "image": "logs/issue333/fresh/runs/shostakovich5/inputs/images/page_007.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "shostakovich5",
+      "page_id": "page_008",
+      "system": 5,
+      "selected_for_full_document_review": true,
+      "producer_record": {
+        "id": "page:1:system:5",
+        "page": 1,
+        "system": 5,
+        "state": "ambiguous_review_required",
+        "signals": [
+          {
+            "kind": "system_layout",
+            "artifact": "logs/issue333/fresh/runs/shostakovich5/intermediate/numbering_base.json",
+            "raw": {
+              "top_staff_bbox": [
+                259.0,
+                2594.0,
+                2764.0,
+                2741.0
+              ],
+              "page_width": 2960,
+              "page_height": 4210,
+              "left_median_px": 259.0,
+              "indent_page_ratio": 0.0,
+              "preceding_gap_px": 583.0,
+              "preceding_gap_to_page_median": 2.551422,
+              "matched_rules": [
+                "whitespace_outlier"
+              ]
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_008",
+          "source_page": 7,
+          "image": "logs/issue333/fresh/runs/shostakovich5/inputs/images/page_008.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "sibelius",
+      "page_id": "page_005",
+      "system": 0,
+      "selected_for_full_document_review": false,
+      "producer_record": {
+        "id": "page:0:system:0",
+        "page": 0,
+        "system": 0,
+        "state": "no_boundary",
+        "signals": [
+          {
+            "kind": "initial_input_system",
+            "artifact": "logs/issue333/fresh/runs/sibelius/intermediate/numbering_base.json",
+            "raw": {
+              "reset_required": false
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_005",
+          "source_page": 4,
+          "image": "logs/issue333/fresh/runs/sibelius/inputs/images/page_005.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "sibelius",
+      "page_id": "page_005",
+      "system": 6,
+      "selected_for_full_document_review": true,
+      "producer_record": {
+        "id": "page:0:system:6",
+        "page": 0,
+        "system": 6,
+        "state": "ambiguous_review_required",
+        "signals": [
+          {
+            "kind": "system_layout",
+            "artifact": "logs/issue333/fresh/runs/sibelius/intermediate/numbering_base.json",
+            "raw": {
+              "top_staff_bbox": [
+                382.0,
+                2752.0,
+                3240.0,
+                2914.0
+              ],
+              "page_width": 3600,
+              "page_height": 4680,
+              "left_median_px": 384.0,
+              "indent_page_ratio": -0.000556,
+              "preceding_gap_px": 401.0,
+              "preceding_gap_to_page_median": 2.546032,
+              "matched_rules": [
+                "whitespace_outlier"
+              ]
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_005",
+          "source_page": 4,
+          "image": "logs/issue333/fresh/runs/sibelius/inputs/images/page_005.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "sibelius",
+      "page_id": "page_006",
+      "system": 0,
+      "selected_for_full_document_review": true,
+      "producer_record": {
+        "id": "page:1:system:0",
+        "page": 1,
+        "system": 0,
+        "state": "ambiguous_review_required",
+        "signals": [
+          {
+            "kind": "system_layout",
+            "artifact": "logs/issue333/fresh/runs/sibelius/intermediate/numbering_base.json",
+            "raw": {
+              "top_staff_bbox": [
+                457.0,
+                670.0,
+                3219.0,
+                848.0
+              ],
+              "page_width": 3600,
+              "page_height": 4680,
+              "left_median_px": 369.0,
+              "indent_page_ratio": 0.024444,
+              "preceding_gap_px": null,
+              "preceding_gap_to_page_median": null,
+              "matched_rules": [
+                "relative_indent"
+              ]
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_006",
+          "source_page": 5,
+          "image": "logs/issue333/fresh/runs/sibelius/inputs/images/page_006.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "sibelius",
+      "page_id": "page_007",
+      "system": 0,
+      "selected_for_full_document_review": true,
+      "producer_record": {
+        "id": "page:2:system:0",
+        "page": 2,
+        "system": 0,
+        "state": "ambiguous_review_required",
+        "signals": [
+          {
+            "kind": "system_layout",
+            "artifact": "logs/issue333/fresh/runs/sibelius/intermediate/numbering_base.json",
+            "raw": {
+              "top_staff_bbox": [
+                521.0,
+                706.0,
+                3213.0,
+                869.0
+              ],
+              "page_width": 3600,
+              "page_height": 4680,
+              "left_median_px": 386.0,
+              "indent_page_ratio": 0.0375,
+              "preceding_gap_px": null,
+              "preceding_gap_to_page_median": null,
+              "matched_rules": [
+                "relative_indent"
+              ]
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_007",
+          "source_page": 6,
+          "image": "logs/issue333/fresh/runs/sibelius/inputs/images/page_007.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "beethoven9",
+      "page_id": "page_005",
+      "system": 0,
+      "selected_for_full_document_review": false,
+      "producer_record": {
+        "id": "page:0:system:0",
+        "page": 0,
+        "system": 0,
+        "state": "no_boundary",
+        "signals": [
+          {
+            "kind": "initial_input_system",
+            "artifact": "logs/issue333/phase2/runs/issue333_phase2_beethoven9/intermediate/numbering_base.json",
+            "raw": {
+              "reset_required": false
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_005",
+          "source_page": 4,
+          "image": "logs/issue333/phase2/runs/issue333_phase2_beethoven9/inputs/images/page_005.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "beethoven9",
+      "page_id": "page_006",
+      "system": 0,
+      "selected_for_full_document_review": true,
+      "producer_record": {
+        "id": "page:1:system:0",
+        "page": 1,
+        "system": 0,
+        "state": "ambiguous_review_required",
+        "signals": [
+          {
+            "kind": "system_layout",
+            "artifact": "logs/issue333/phase2/runs/issue333_phase2_beethoven9/intermediate/numbering_base.json",
+            "raw": {
+              "top_staff_bbox": [
+                295.0,
+                498.0,
+                3059.0,
+                653.0
+              ],
+              "page_width": 3240,
+              "page_height": 4320,
+              "left_median_px": 204.0,
+              "indent_page_ratio": 0.028086,
+              "preceding_gap_px": null,
+              "preceding_gap_to_page_median": null,
+              "matched_rules": [
+                "relative_indent"
+              ]
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_006",
+          "source_page": 5,
+          "image": "logs/issue333/phase2/runs/issue333_phase2_beethoven9/inputs/images/page_006.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "beethoven9",
+      "page_id": "page_011",
+      "system": 2,
+      "selected_for_full_document_review": true,
+      "producer_record": {
+        "id": "page:3:system:2",
+        "page": 3,
+        "system": 2,
+        "state": "ambiguous_review_required",
+        "signals": [
+          {
+            "kind": "system_layout",
+            "artifact": "logs/issue333/phase2/runs/issue333_phase2_beethoven9/intermediate/numbering_base.json",
+            "raw": {
+              "top_staff_bbox": [
+                304.0,
+                1105.0,
+                3058.0,
+                1271.0
+              ],
+              "page_width": 3240,
+              "page_height": 4320,
+              "left_median_px": 209.0,
+              "indent_page_ratio": 0.029321,
+              "preceding_gap_px": 231.0,
+              "preceding_gap_to_page_median": 1.917012,
+              "matched_rules": [
+                "relative_indent",
+                "whitespace_outlier"
+              ]
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_011",
+          "source_page": 10,
+          "image": "logs/issue333/phase2/runs/issue333_phase2_beethoven9/inputs/images/page_011.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "beethoven9",
+      "page_id": "page_014",
+      "system": 0,
+      "selected_for_full_document_review": true,
+      "producer_record": {
+        "id": "page:5:system:0",
+        "page": 5,
+        "system": 0,
+        "state": "ambiguous_review_required",
+        "signals": [
+          {
+            "kind": "system_layout",
+            "artifact": "logs/issue333/phase2/runs/issue333_phase2_beethoven9/intermediate/numbering_base.json",
+            "raw": {
+              "top_staff_bbox": [
+                310.0,
+                467.0,
+                3054.0,
+                648.0
+              ],
+              "page_width": 3240,
+              "page_height": 4320,
+              "left_median_px": 209.0,
+              "indent_page_ratio": 0.031173,
+              "preceding_gap_px": null,
+              "preceding_gap_to_page_median": null,
+              "matched_rules": [
+                "relative_indent"
+              ]
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_014",
+          "source_page": 13,
+          "image": "logs/issue333/phase2/runs/issue333_phase2_beethoven9/inputs/images/page_014.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "toy_symphony",
+      "page_id": "page_003",
+      "system": 0,
+      "selected_for_full_document_review": false,
+      "producer_record": {
+        "id": "page:0:system:0",
+        "page": 0,
+        "system": 0,
+        "state": "no_boundary",
+        "signals": [
+          {
+            "kind": "system_layout",
+            "artifact": "logs/issue333/phase2/runs/issue333_phase2_toy_symphony/intermediate/numbering_base.json",
+            "raw": {
+              "top_staff_bbox": [
+                313.0,
+                505.0,
+                2774.0,
+                638.0
+              ],
+              "page_width": 2962,
+              "page_height": 3956,
+              "left_median_px": 206.0,
+              "indent_page_ratio": 0.036124,
+              "preceding_gap_px": null,
+              "preceding_gap_to_page_median": null,
+              "matched_rules": [
+                "relative_indent"
+              ]
+            }
+          },
+          {
+            "kind": "initial_input_system",
+            "artifact": "logs/issue333/phase2/runs/issue333_phase2_toy_symphony/intermediate/numbering_base.json",
+            "raw": {
+              "reset_required": false
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_003",
+          "source_page": 2,
+          "image": "logs/issue333/phase2/runs/issue333_phase2_toy_symphony/inputs/images/page_003.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "toy_symphony",
+      "page_id": "page_003",
+      "system": 8,
+      "selected_for_full_document_review": true,
+      "producer_record": {
+        "id": "page:0:system:8",
+        "page": 0,
+        "system": 8,
+        "state": "ambiguous_review_required",
+        "signals": [
+          {
+            "kind": "system_layout",
+            "artifact": "logs/issue333/phase2/runs/issue333_phase2_toy_symphony/intermediate/numbering_base.json",
+            "raw": {
+              "top_staff_bbox": [
+                312.0,
+                2227.0,
+                2772.0,
+                2386.0
+              ],
+              "page_width": 2962,
+              "page_height": 3956,
+              "left_median_px": 206.0,
+              "indent_page_ratio": 0.035787,
+              "preceding_gap_px": 53.0,
+              "preceding_gap_to_page_median": 1.0,
+              "matched_rules": [
+                "relative_indent"
+              ]
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_003",
+          "source_page": 2,
+          "image": "logs/issue333/phase2/runs/issue333_phase2_toy_symphony/inputs/images/page_003.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    },
+    {
+      "score": "toy_symphony",
+      "page_id": "page_003",
+      "system": 12,
+      "selected_for_full_document_review": true,
+      "producer_record": {
+        "id": "page:0:system:12",
+        "page": 0,
+        "system": 12,
+        "state": "ambiguous_review_required",
+        "signals": [
+          {
+            "kind": "system_layout",
+            "artifact": "logs/issue333/phase2/runs/issue333_phase2_toy_symphony/intermediate/numbering_base.json",
+            "raw": {
+              "top_staff_bbox": [
+                321.0,
+                3198.0,
+                2771.0,
+                3367.0
+              ],
+              "page_width": 2962,
+              "page_height": 3956,
+              "left_median_px": 206.0,
+              "indent_page_ratio": 0.038825,
+              "preceding_gap_px": 186.0,
+              "preceding_gap_to_page_median": 3.509434,
+              "matched_rules": [
+                "relative_indent",
+                "whitespace_outlier"
+              ]
+            }
+          }
+        ],
+        "references": {
+          "page_id": "page_003",
+          "source_page": 2,
+          "image": "logs/issue333/phase2/runs/issue333_phase2_toy_symphony/inputs/images/page_003.png"
+        },
+        "provenance": {
+          "review": null
+        }
+      }
+    }
+  ],
+  "interpretation": "The producer preserves locked holdout recall with no holdout false candidate and keeps total review burden below 6%; development whitespace false candidates remain explicitly review-only.",
+  "disposition": "Production candidate/evidence producer approved; automatic export remains disabled."
+}

@@ -6,17 +6,18 @@ usage() {
 Usage: scripts/docker_runtime_validation.sh [--config PATH] [--preflight-only]
 
 Validates the canonical Docker runtime contract, then runs the configured pipeline smoke.
-The OMR-DLN model is an explicit external asset and must be available via either:
+OMR-DLN is an external/operator-supplied artifact. Canonical validation resolves the
+selected, digest-verified version from the common model cache. One-time registration:
 
-  OMR_DLN_MODEL_PATH=/absolute/path/to/YOLOv8m_Measures.pt
+  python3 -m src.common.model_artifacts import models/omr_dln/manifest.json /path/to/YOLOv8m_Measures.pt
 
-or the legacy local path:
-
-  external/omr_dln/models/public_models/YOLOv8m_Measures.pt
+OMR_DLN_MODEL_PATH remains a verified explicit compatibility override.
 
 Environment:
-  DOCKER_IMAGE       Canonical Docker image reference. Default: pdfscore_pipeline_gpu
-  DOCKER_EXTRA_ARGS  Extra arguments passed to docker run.
+  DOCKER_IMAGE              Canonical Docker image reference. Default: pdfscore_pipeline_gpu
+  DOCKER_EXTRA_ARGS         Extra arguments passed to docker run.
+  PDFSCOREBAR_MODEL_CACHE   Optional shared host model-cache root. Default: .model_cache
+  OMR_DLN_MODEL_PATH        Optional explicit OMR-DLN compatibility override.
 USAGE
 }
 
@@ -45,7 +46,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-for cmd in docker git realpath; do
+for cmd in docker git realpath python3; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
     echo "Required host command is missing: $cmd" >&2
     exit 2
@@ -103,17 +104,48 @@ if [[ ! -f "$config_host" ]]; then
   exit 2
 fi
 
-omr_host="${OMR_DLN_MODEL_PATH:-$repo_root/external/omr_dln/models/public_models/YOLOv8m_Measures.pt}"
-if [[ ! -f "$omr_host" ]]; then
-  cat >&2 <<EOF
-OMR-DLN external model is missing: $omr_host
-Set OMR_DLN_MODEL_PATH to the existing read-only YOLOv8m_Measures.pt path.
-The model is intentionally not owned or downloaded by the Docker image.
+omr_manifest="$repo_root/models/omr_dln/manifest.json"
+omr_container="$(
+  python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["runtime_path"])' \
+    "$omr_manifest"
+)"
+
+verify_explicit_omr() {
+  local candidate="$1"
+  PYTHONPATH="$repo_root" python3 -m src.common.model_artifacts verify-file \
+    "$omr_manifest" "$candidate"
+}
+
+resolve_cached_omr() {
+  PYTHONPATH="$repo_root" python3 -m src.common.model_artifacts verify "$omr_manifest"
+}
+
+if [[ -n "${OMR_DLN_MODEL_PATH:-}" ]]; then
+  omr_host="$(verify_explicit_omr "$OMR_DLN_MODEL_PATH")"
+else
+  set +e
+  omr_host="$(resolve_cached_omr 2>/dev/null)"
+  omr_status=$?
+  set -e
+  if [[ "$omr_status" -ne 0 ]]; then
+    legacy_omr="$repo_root/external/omr_dln/models/public_models/YOLOv8m_Measures.pt"
+    if [[ -f "$legacy_omr" ]]; then
+      echo "Using verified legacy OMR-DLN path; import it into the common cache for canonical reuse." >&2
+      omr_host="$(verify_explicit_omr "$legacy_omr")"
+    else
+      cat >&2 <<EOF
+Selected OMR-DLN artifact is not registered in the common model cache.
+Manifest: $omr_manifest
+Register the official YOLOv8m_Measures.pt once with:
+  python3 -m src.common.model_artifacts import models/omr_dln/manifest.json /path/to/YOLOv8m_Measures.pt
+The import verifies the selected version digest before publishing to .model_cache.
+OMR_DLN_MODEL_PATH remains available as a verified compatibility override.
 EOF
-  exit 2
+      exit 2
+    fi
+  fi
 fi
 omr_host="$(realpath "$omr_host")"
-omr_container="/opt/pdfscore-external/omr-dln/YOLOv8m_Measures.pt"
 
 extra_args=()
 if [[ -n "${DOCKER_EXTRA_ARGS:-}" ]]; then
@@ -147,6 +179,9 @@ Canonical Docker validation provenance:
   commit:      $host_commit
   image_ref:   $image_ref
   image_id:    $image_id
+  omr_manifest: models/omr_dln/manifest.json
+  omr_host:    $omr_host
+  omr_runtime: $omr_container
 EOF
 
 echo "Validating Docker runtime contract..."

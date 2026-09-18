@@ -10,7 +10,7 @@ body:
     attributes:
       value: |
         > [!TIP]
-        > AIエージェントにこのIssueの下書きを依頼するには `issue-creation` を、実装を依頼するには `issue-solver` スキルを使用してください。
+        > AIエージェントにIssueの下書きを依頼する場合は `issue-creation` を利用できます。実装はこのIssueを直接指定して依頼してください。専用の実装skillは不要です。
 
   - type: markdown
     attributes:
@@ -23,21 +23,21 @@ body:
     attributes:
       label: "Base branch"
       description: "作業ブランチの元となる親ブランチ名を指定します。"
-      placeholder: "例: feature/<topic-name>"
+      placeholder: "例: develop"
 
   - type: input
     id: branch_name
     attributes:
       label: "Branch name"
       description: "AIが作成する作業ブランチ名を指定します。"
-      placeholder: "例: feature/123-update-docs"
+      placeholder: "例: chore/123-update-docs"
 
   - type: input
     id: pr_base
     attributes:
       label: "PR base"
-      description: "PRの向き先となるブランチ（通常はBase branchと同じ）"
-      placeholder: "例: feature/<topic-name>"
+      description: "PRの向き先となるブランチ（通常はdevelop）"
+      placeholder: "例: develop"
 
   - type: textarea
     id: goal
@@ -51,7 +51,7 @@ body:
     id: done
     attributes:
       label: "Done"
-      description: "完了判定を箇条書きで。"
+      description: "完了判定を箇条書きで。結果を見た後に別の基準へ読み替えない。"
       placeholder: |
         - README に CLI 例が追加されている
     validations:

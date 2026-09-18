@@ -101,10 +101,13 @@ for relative, expected in EXPECTED.items():
 PY
 
 # Real-ESRGAN weights are image-owned runtime assets. Keep them outside /workspace
-# so the canonical source bind mount cannot hide them.
+# so the canonical source bind mount cannot hide them. The selected release bytes are
+# verified before they become part of the image; a silent replacement fails the build.
 RUN mkdir -p /opt/weights && \
     wget https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth -O /opt/weights/RealESRGAN_x4plus.pth && \
-    wget https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth -O /opt/weights/RealESRGAN_x2plus.pth
+    wget https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth -O /opt/weights/RealESRGAN_x2plus.pth && \
+    echo "4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1  /opt/weights/RealESRGAN_x4plus.pth" | sha256sum -c - && \
+    echo "49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb  /opt/weights/RealESRGAN_x2plus.pth" | sha256sum -c -
 
 # --- Final Stage ---
 FROM nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04

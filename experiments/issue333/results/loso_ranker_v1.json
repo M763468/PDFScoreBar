@@ -1,0 +1,783 @@
+{
+  "schema_version": "issue333.cross_score_result.v1",
+  "experiment_id": "phase2-leave-one-score-out-ranker-v1",
+  "status": "cross-score exploratory; all scores are used in six of seven training folds",
+  "architecture": "class-balanced logistic regression, C=0.1, StandardScaler numeric, optional char_wb TF-IDF(2,5)",
+  "parameters": {
+    "seed": 333,
+    "solver": "liblinear",
+    "max_iter": 2000
+  },
+  "threshold_selection": "in-fold training cutoff maximizing TP, with zero training FP for automatic",
+  "runtime": {
+    "scikit-learn": "1.2.0",
+    "scipy": "1.15.3",
+    "numpy": "1.26.4",
+    "joblib": "1.6.0"
+  },
+  "folds": [
+    {
+      "held_out_score": "beethoven9",
+      "architectures": {
+        "numeric": {
+          "automatic_threshold_from_training": 4.058964971675121,
+          "candidate_threshold_from_training": 2.05533000265421,
+          "automatic": {
+            "system_starts": 93,
+            "true_boundaries": 3,
+            "predicted": 0,
+            "true_positive": 0,
+            "false_reset": 0,
+            "missed_boundary": 3,
+            "precision": null,
+            "recall": 0.0,
+            "false_reset_locations": [],
+            "missed_boundary_locations": [
+              [
+                "beethoven9",
+                "page_006",
+                0
+              ],
+              [
+                "beethoven9",
+                "page_011",
+                2
+              ],
+              [
+                "beethoven9",
+                "page_014",
+                0
+              ]
+            ]
+          },
+          "candidate": {
+            "system_starts": 93,
+            "true_boundaries": 3,
+            "predicted": 2,
+            "true_positive": 2,
+            "false_reset": 0,
+            "missed_boundary": 1,
+            "precision": 1.0,
+            "recall": 0.666667,
+            "false_reset_locations": [],
+            "missed_boundary_locations": [
+              [
+                "beethoven9",
+                "page_014",
+                0
+              ]
+            ]
+          },
+          "checkpoint": {
+            "path": "logs/issue333/phase2/models/loso_v1/beethoven9_numeric.joblib",
+            "sha256": "98f95ed0c5724dd824619cc6af1710d04d595be1f2540adbe76431e64d00b02a"
+          }
+        },
+        "numeric_plus_ocr_char_tfidf": {
+          "automatic_threshold_from_training": 3.9685952835802136,
+          "candidate_threshold_from_training": 2.11042750328297,
+          "automatic": {
+            "system_starts": 93,
+            "true_boundaries": 3,
+            "predicted": 0,
+            "true_positive": 0,
+            "false_reset": 0,
+            "missed_boundary": 3,
+            "precision": null,
+            "recall": 0.0,
+            "false_reset_locations": [],
+            "missed_boundary_locations": [
+              [
+                "beethoven9",
+                "page_006",
+                0
+              ],
+              [
+                "beethoven9",
+                "page_011",
+                2
+              ],
+              [
+                "beethoven9",
+                "page_014",
+                0
+              ]
+            ]
+          },
+          "candidate": {
+            "system_starts": 93,
+            "true_boundaries": 3,
+            "predicted": 2,
+            "true_positive": 2,
+            "false_reset": 0,
+            "missed_boundary": 1,
+            "precision": 1.0,
+            "recall": 0.666667,
+            "false_reset_locations": [],
+            "missed_boundary_locations": [
+              [
+                "beethoven9",
+                "page_014",
+                0
+              ]
+            ]
+          },
+          "checkpoint": {
+            "path": "logs/issue333/phase2/models/loso_v1/beethoven9_numeric_plus_ocr_char_tfidf.joblib",
+            "sha256": "addfd302216ebc2077628ee13fcab9465d3bee34512e291eac3cd53875e65235"
+          }
+        }
+      }
+    },
+    {
+      "held_out_score": "festival",
+      "architectures": {
+        "numeric": {
+          "automatic_threshold_from_training": 5.6597947544627765,
+          "candidate_threshold_from_training": 2.5292644771361887,
+          "automatic": {
+            "system_starts": 36,
+            "true_boundaries": 0,
+            "predicted": 0,
+            "true_positive": 0,
+            "false_reset": 0,
+            "missed_boundary": 0,
+            "precision": null,
+            "recall": null,
+            "false_reset_locations": [],
+            "missed_boundary_locations": []
+          },
+          "candidate": {
+            "system_starts": 36,
+            "true_boundaries": 0,
+            "predicted": 0,
+            "true_positive": 0,
+            "false_reset": 0,
+            "missed_boundary": 0,
+            "precision": null,
+            "recall": null,
+            "false_reset_locations": [],
+            "missed_boundary_locations": []
+          },
+          "checkpoint": {
+            "path": "logs/issue333/phase2/models/loso_v1/festival_numeric.joblib",
+            "sha256": "6859a3724806328b3d072c89f29882f0a065d180e28cf8ae8e9c25a33847a3f6"
+          }
+        },
+        "numeric_plus_ocr_char_tfidf": {
+          "automatic_threshold_from_training": 5.597366139644227,
+          "candidate_threshold_from_training": 2.6130654843616368,
+          "automatic": {
+            "system_starts": 36,
+            "true_boundaries": 0,
+            "predicted": 0,
+            "true_positive": 0,
+            "false_reset": 0,
+            "missed_boundary": 0,
+            "precision": null,
+            "recall": null,
+            "false_reset_locations": [],
+            "missed_boundary_locations": []
+          },
+          "candidate": {
+            "system_starts": 36,
+            "true_boundaries": 0,
+            "predicted": 0,
+            "true_positive": 0,
+            "false_reset": 0,
+            "missed_boundary": 0,
+            "precision": null,
+            "recall": null,
+            "false_reset_locations": [],
+            "missed_boundary_locations": []
+          },
+          "checkpoint": {
+            "path": "logs/issue333/phase2/models/loso_v1/festival_numeric_plus_ocr_char_tfidf.joblib",
+            "sha256": "e64febcb6321a8435acd51834fb45880d2ef05ba9a9e568d10d325395a0cf55e"
+          }
+        }
+      }
+    },
+    {
+      "held_out_score": "prokofiev1",
+      "architectures": {
+        "numeric": {
+          "automatic_threshold_from_training": 4.773826179452355,
+          "candidate_threshold_from_training": 2.9643673215584854,
+          "automatic": {
+            "system_starts": 24,
+            "true_boundaries": 3,
+            "predicted": 2,
+            "true_positive": 2,
+            "false_reset": 0,
+            "missed_boundary": 1,
+            "precision": 1.0,
+            "recall": 0.666667,
+            "false_reset_locations": [],
+            "missed_boundary_locations": [
+              [
+                "prokofiev1",
+                "page_003",
+                3
+              ]
+            ]
+          },
+          "candidate": {
+            "system_starts": 24,
+            "true_boundaries": 3,
+            "predicted": 3,
+            "true_positive": 3,
+            "false_reset": 0,
+            "missed_boundary": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "false_reset_locations": [],
+            "missed_boundary_locations": []
+          },
+          "checkpoint": {
+            "path": "logs/issue333/phase2/models/loso_v1/prokofiev1_numeric.joblib",
+            "sha256": "88289ccf810c6c5e0bf644573930530769bb09474cca66ac44fdbbe16dac939e"
+          }
+        },
+        "numeric_plus_ocr_char_tfidf": {
+          "automatic_threshold_from_training": 4.652826061551182,
+          "candidate_threshold_from_training": 3.056081270635489,
+          "automatic": {
+            "system_starts": 24,
+            "true_boundaries": 3,
+            "predicted": 2,
+            "true_positive": 2,
+            "false_reset": 0,
+            "missed_boundary": 1,
+            "precision": 1.0,
+            "recall": 0.666667,
+            "false_reset_locations": [],
+            "missed_boundary_locations": [
+              [
+                "prokofiev1",
+                "page_003",
+                3
+              ]
+            ]
+          },
+          "candidate": {
+            "system_starts": 24,
+            "true_boundaries": 3,
+            "predicted": 3,
+            "true_positive": 3,
+            "false_reset": 0,
+            "missed_boundary": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "false_reset_locations": [],
+            "missed_boundary_locations": []
+          },
+          "checkpoint": {
+            "path": "logs/issue333/phase2/models/loso_v1/prokofiev1_numeric_plus_ocr_char_tfidf.joblib",
+            "sha256": "7e45cbe2db7f7a54c66a0828f56f5a1c8bd5b4a86d940b2dc7dd72d6bb8b1a26"
+          }
+        }
+      }
+    },
+    {
+      "held_out_score": "prokofiev5",
+      "architectures": {
+        "numeric": {
+          "automatic_threshold_from_training": 6.020235349128541,
+          "candidate_threshold_from_training": 3.1919337692627248,
+          "automatic": {
+            "system_starts": 34,
+            "true_boundaries": 3,
+            "predicted": 3,
+            "true_positive": 3,
+            "false_reset": 0,
+            "missed_boundary": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "false_reset_locations": [],
+            "missed_boundary_locations": []
+          },
+          "candidate": {
+            "system_starts": 34,
+            "true_boundaries": 3,
+            "predicted": 3,
+            "true_positive": 3,
+            "false_reset": 0,
+            "missed_boundary": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "false_reset_locations": [],
+            "missed_boundary_locations": []
+          },
+          "checkpoint": {
+            "path": "logs/issue333/phase2/models/loso_v1/prokofiev5_numeric.joblib",
+            "sha256": "2139975007a68eea643112f30b526bfc6382717aa7ca064a2504a0fb91130f53"
+          }
+        },
+        "numeric_plus_ocr_char_tfidf": {
+          "automatic_threshold_from_training": 5.96657081896552,
+          "candidate_threshold_from_training": 3.1661057097228116,
+          "automatic": {
+            "system_starts": 34,
+            "true_boundaries": 3,
+            "predicted": 3,
+            "true_positive": 3,
+            "false_reset": 0,
+            "missed_boundary": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "false_reset_locations": [],
+            "missed_boundary_locations": []
+          },
+          "candidate": {
+            "system_starts": 34,
+            "true_boundaries": 3,
+            "predicted": 3,
+            "true_positive": 3,
+            "false_reset": 0,
+            "missed_boundary": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "false_reset_locations": [],
+            "missed_boundary_locations": []
+          },
+          "checkpoint": {
+            "path": "logs/issue333/phase2/models/loso_v1/prokofiev5_numeric_plus_ocr_char_tfidf.joblib",
+            "sha256": "01b05aadd550ec60f4c793fe3eb72f97fbd4b612243bd2d3ba9b1c35141462eb"
+          }
+        }
+      }
+    },
+    {
+      "held_out_score": "shostakovich5",
+      "architectures": {
+        "numeric": {
+          "automatic_threshold_from_training": 5.99312095454051,
+          "candidate_threshold_from_training": 2.694660096180011,
+          "automatic": {
+            "system_starts": 27,
+            "true_boundaries": 1,
+            "predicted": 0,
+            "true_positive": 0,
+            "false_reset": 0,
+            "missed_boundary": 1,
+            "precision": null,
+            "recall": 0.0,
+            "false_reset_locations": [],
+            "missed_boundary_locations": [
+              [
+                "shostakovich5",
+                "page_008",
+                5
+              ]
+            ]
+          },
+          "candidate": {
+            "system_starts": 27,
+            "true_boundaries": 1,
+            "predicted": 1,
+            "true_positive": 1,
+            "false_reset": 0,
+            "missed_boundary": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "false_reset_locations": [],
+            "missed_boundary_locations": []
+          },
+          "checkpoint": {
+            "path": "logs/issue333/phase2/models/loso_v1/shostakovich5_numeric.joblib",
+            "sha256": "26d51bdbeaddccb4d57e8160100aecdccdcf87c138003e901432a033c4da586c"
+          }
+        },
+        "numeric_plus_ocr_char_tfidf": {
+          "automatic_threshold_from_training": 5.884900609577004,
+          "candidate_threshold_from_training": 2.792285790246223,
+          "automatic": {
+            "system_starts": 27,
+            "true_boundaries": 1,
+            "predicted": 0,
+            "true_positive": 0,
+            "false_reset": 0,
+            "missed_boundary": 1,
+            "precision": null,
+            "recall": 0.0,
+            "false_reset_locations": [],
+            "missed_boundary_locations": [
+              [
+                "shostakovich5",
+                "page_008",
+                5
+              ]
+            ]
+          },
+          "candidate": {
+            "system_starts": 27,
+            "true_boundaries": 1,
+            "predicted": 1,
+            "true_positive": 1,
+            "false_reset": 0,
+            "missed_boundary": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "false_reset_locations": [],
+            "missed_boundary_locations": []
+          },
+          "checkpoint": {
+            "path": "logs/issue333/phase2/models/loso_v1/shostakovich5_numeric_plus_ocr_char_tfidf.joblib",
+            "sha256": "c702817f14d8802ff27fb24edab91f5fcb2a950f82de9b56b5cf1660a647b8b7"
+          }
+        }
+      }
+    },
+    {
+      "held_out_score": "sibelius",
+      "architectures": {
+        "numeric": {
+          "automatic_threshold_from_training": 4.711475310899816,
+          "candidate_threshold_from_training": 2.816865096701179,
+          "automatic": {
+            "system_starts": 47,
+            "true_boundaries": 2,
+            "predicted": 2,
+            "true_positive": 2,
+            "false_reset": 0,
+            "missed_boundary": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "false_reset_locations": [],
+            "missed_boundary_locations": []
+          },
+          "candidate": {
+            "system_starts": 47,
+            "true_boundaries": 2,
+            "predicted": 2,
+            "true_positive": 2,
+            "false_reset": 0,
+            "missed_boundary": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "false_reset_locations": [],
+            "missed_boundary_locations": []
+          },
+          "checkpoint": {
+            "path": "logs/issue333/phase2/models/loso_v1/sibelius_numeric.joblib",
+            "sha256": "135dbd0810e3a50be67a061a23a975bb3c730e33cc66ccc81a538bfdc0bac7ef"
+          }
+        },
+        "numeric_plus_ocr_char_tfidf": {
+          "automatic_threshold_from_training": 4.623161361207587,
+          "candidate_threshold_from_training": 2.887550318681165,
+          "automatic": {
+            "system_starts": 47,
+            "true_boundaries": 2,
+            "predicted": 2,
+            "true_positive": 2,
+            "false_reset": 0,
+            "missed_boundary": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "false_reset_locations": [],
+            "missed_boundary_locations": []
+          },
+          "candidate": {
+            "system_starts": 47,
+            "true_boundaries": 2,
+            "predicted": 2,
+            "true_positive": 2,
+            "false_reset": 0,
+            "missed_boundary": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "false_reset_locations": [],
+            "missed_boundary_locations": []
+          },
+          "checkpoint": {
+            "path": "logs/issue333/phase2/models/loso_v1/sibelius_numeric_plus_ocr_char_tfidf.joblib",
+            "sha256": "2c527b4826c4ccab3c65b6e30612b70cfaa16435d8d8edfc0283465ebc4e02c6"
+          }
+        }
+      }
+    },
+    {
+      "held_out_score": "toy_symphony",
+      "architectures": {
+        "numeric": {
+          "automatic_threshold_from_training": 2.8682677021038745,
+          "candidate_threshold_from_training": 2.8682677021038745,
+          "automatic": {
+            "system_starts": 14,
+            "true_boundaries": 2,
+            "predicted": 2,
+            "true_positive": 1,
+            "false_reset": 1,
+            "missed_boundary": 1,
+            "precision": 0.5,
+            "recall": 0.5,
+            "false_reset_locations": [
+              [
+                "toy_symphony",
+                "page_003",
+                0
+              ]
+            ],
+            "missed_boundary_locations": [
+              [
+                "toy_symphony",
+                "page_003",
+                8
+              ]
+            ]
+          },
+          "candidate": {
+            "system_starts": 14,
+            "true_boundaries": 2,
+            "predicted": 2,
+            "true_positive": 1,
+            "false_reset": 1,
+            "missed_boundary": 1,
+            "precision": 0.5,
+            "recall": 0.5,
+            "false_reset_locations": [
+              [
+                "toy_symphony",
+                "page_003",
+                0
+              ]
+            ],
+            "missed_boundary_locations": [
+              [
+                "toy_symphony",
+                "page_003",
+                8
+              ]
+            ]
+          },
+          "checkpoint": {
+            "path": "logs/issue333/phase2/models/loso_v1/toy_symphony_numeric.joblib",
+            "sha256": "cede7e3bfadd2f00965afc2d537da5e04983e138b8686c66908f4e62f9795c33"
+          }
+        },
+        "numeric_plus_ocr_char_tfidf": {
+          "automatic_threshold_from_training": 2.8278098624497723,
+          "candidate_threshold_from_training": 2.8278098624497723,
+          "automatic": {
+            "system_starts": 14,
+            "true_boundaries": 2,
+            "predicted": 2,
+            "true_positive": 1,
+            "false_reset": 1,
+            "missed_boundary": 1,
+            "precision": 0.5,
+            "recall": 0.5,
+            "false_reset_locations": [
+              [
+                "toy_symphony",
+                "page_003",
+                0
+              ]
+            ],
+            "missed_boundary_locations": [
+              [
+                "toy_symphony",
+                "page_003",
+                8
+              ]
+            ]
+          },
+          "candidate": {
+            "system_starts": 14,
+            "true_boundaries": 2,
+            "predicted": 2,
+            "true_positive": 1,
+            "false_reset": 1,
+            "missed_boundary": 1,
+            "precision": 0.5,
+            "recall": 0.5,
+            "false_reset_locations": [
+              [
+                "toy_symphony",
+                "page_003",
+                0
+              ]
+            ],
+            "missed_boundary_locations": [
+              [
+                "toy_symphony",
+                "page_003",
+                8
+              ]
+            ]
+          },
+          "checkpoint": {
+            "path": "logs/issue333/phase2/models/loso_v1/toy_symphony_numeric_plus_ocr_char_tfidf.joblib",
+            "sha256": "eaa14326b0a0012095deeb3d2617ef7c94612cdb2b81c4ad5ca44eda9c8f90cf"
+          }
+        }
+      }
+    }
+  ],
+  "aggregate": {
+    "numeric": {
+      "automatic": {
+        "system_starts": 275,
+        "true_boundaries": 14,
+        "predicted": 9,
+        "true_positive": 8,
+        "false_reset": 1,
+        "missed_boundary": 6,
+        "precision": 0.888889,
+        "recall": 0.571429,
+        "false_reset_locations": [
+          [
+            "toy_symphony",
+            "page_003",
+            0
+          ]
+        ],
+        "missed_boundary_locations": [
+          [
+            "beethoven9",
+            "page_006",
+            0
+          ],
+          [
+            "beethoven9",
+            "page_011",
+            2
+          ],
+          [
+            "beethoven9",
+            "page_014",
+            0
+          ],
+          [
+            "prokofiev1",
+            "page_003",
+            3
+          ],
+          [
+            "shostakovich5",
+            "page_008",
+            5
+          ],
+          [
+            "toy_symphony",
+            "page_003",
+            8
+          ]
+        ]
+      },
+      "candidate": {
+        "system_starts": 275,
+        "true_boundaries": 14,
+        "predicted": 13,
+        "true_positive": 12,
+        "false_reset": 1,
+        "missed_boundary": 2,
+        "precision": 0.923077,
+        "recall": 0.857143,
+        "false_reset_locations": [
+          [
+            "toy_symphony",
+            "page_003",
+            0
+          ]
+        ],
+        "missed_boundary_locations": [
+          [
+            "beethoven9",
+            "page_014",
+            0
+          ],
+          [
+            "toy_symphony",
+            "page_003",
+            8
+          ]
+        ]
+      }
+    },
+    "numeric_plus_ocr_char_tfidf": {
+      "automatic": {
+        "system_starts": 275,
+        "true_boundaries": 14,
+        "predicted": 9,
+        "true_positive": 8,
+        "false_reset": 1,
+        "missed_boundary": 6,
+        "precision": 0.888889,
+        "recall": 0.571429,
+        "false_reset_locations": [
+          [
+            "toy_symphony",
+            "page_003",
+            0
+          ]
+        ],
+        "missed_boundary_locations": [
+          [
+            "beethoven9",
+            "page_006",
+            0
+          ],
+          [
+            "beethoven9",
+            "page_011",
+            2
+          ],
+          [
+            "beethoven9",
+            "page_014",
+            0
+          ],
+          [
+            "prokofiev1",
+            "page_003",
+            3
+          ],
+          [
+            "shostakovich5",
+            "page_008",
+            5
+          ],
+          [
+            "toy_symphony",
+            "page_003",
+            8
+          ]
+        ]
+      },
+      "candidate": {
+        "system_starts": 275,
+        "true_boundaries": 14,
+        "predicted": 13,
+        "true_positive": 12,
+        "false_reset": 1,
+        "missed_boundary": 2,
+        "precision": 0.923077,
+        "recall": 0.857143,
+        "false_reset_locations": [
+          [
+            "toy_symphony",
+            "page_003",
+            0
+          ]
+        ],
+        "missed_boundary_locations": [
+          [
+            "beethoven9",
+            "page_014",
+            0
+          ],
+          [
+            "toy_symphony",
+            "page_003",
+            8
+          ]
+        ]
+      }
+    }
+  },
+  "interpretation": "Source-held-out folds test ranking generalization but do not supply calibrated probabilities or an untouched final corpus.",
+  "disposition": "Reject both rankers: automatic folds miss 6/14 boundaries and still false-reset; candidate folds miss 2/14 and are inferior to the frozen geometry candidate. Adding OCR character TF-IDF did not change any selected location."
+}

@@ -191,6 +191,11 @@ def main() -> None:
             for architecture, values in aggregate.items()
         },
         "interpretation": "Source-held-out folds test ranking generalization but do not supply calibrated probabilities or an untouched final corpus.",
+        "disposition": (
+            "Reject both rankers: automatic folds miss 6/14 boundaries and still false-reset; "
+            "candidate folds miss 2/14 and are inferior to the frozen geometry candidate. "
+            "Adding OCR character TF-IDF did not change any selected location."
+        ),
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")

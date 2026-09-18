@@ -1,0 +1,372 @@
+{
+  "schema_version": "issue333.experiment_result.v1",
+  "experiment_id": "phase2-frozen-geometry-v1",
+  "hypothesis": "The Phase 1 geometry rule generalizes as a high-recall, low-burden candidate generator.",
+  "parameters": {
+    "relative_indent_min_page_ratio": 0.02,
+    "preceding_gap_min_page_median_ratio": 1.75,
+    "selection_provenance": "Phase 1; unchanged before holdout evaluation"
+  },
+  "metrics": {
+    "development": {
+      "system_starts": 168,
+      "true_boundaries": 9,
+      "candidates": 11,
+      "true_positive": 9,
+      "false_reset": 2,
+      "missed_boundary": 0,
+      "precision": 0.818182,
+      "recall": 1.0,
+      "review_burden": 0.065476,
+      "false_reset_locations": [
+        [
+          "prokofiev1",
+          "page_004",
+          7
+        ],
+        [
+          "sibelius",
+          "page_005",
+          6
+        ]
+      ],
+      "missed_boundary_locations": []
+    },
+    "holdout": {
+      "system_starts": 107,
+      "true_boundaries": 5,
+      "candidates": 6,
+      "true_positive": 5,
+      "false_reset": 1,
+      "missed_boundary": 0,
+      "precision": 0.833333,
+      "recall": 1.0,
+      "review_burden": 0.056075,
+      "false_reset_locations": [
+        [
+          "toy_symphony",
+          "page_003",
+          0
+        ]
+      ],
+      "missed_boundary_locations": []
+    },
+    "all": {
+      "system_starts": 275,
+      "true_boundaries": 14,
+      "candidates": 17,
+      "true_positive": 14,
+      "false_reset": 3,
+      "missed_boundary": 0,
+      "precision": 0.823529,
+      "recall": 1.0,
+      "review_burden": 0.061818,
+      "false_reset_locations": [
+        [
+          "prokofiev1",
+          "page_004",
+          7
+        ],
+        [
+          "sibelius",
+          "page_005",
+          6
+        ],
+        [
+          "toy_symphony",
+          "page_003",
+          0
+        ]
+      ],
+      "missed_boundary_locations": []
+    }
+  },
+  "per_score": {
+    "beethoven9": {
+      "system_starts": 93,
+      "true_boundaries": 3,
+      "candidates": 3,
+      "true_positive": 3,
+      "false_reset": 0,
+      "missed_boundary": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "review_burden": 0.032258,
+      "false_reset_locations": [],
+      "missed_boundary_locations": []
+    },
+    "festival": {
+      "system_starts": 36,
+      "true_boundaries": 0,
+      "candidates": 0,
+      "true_positive": 0,
+      "false_reset": 0,
+      "missed_boundary": 0,
+      "precision": null,
+      "recall": null,
+      "review_burden": 0.0,
+      "false_reset_locations": [],
+      "missed_boundary_locations": []
+    },
+    "prokofiev1": {
+      "system_starts": 24,
+      "true_boundaries": 3,
+      "candidates": 4,
+      "true_positive": 3,
+      "false_reset": 1,
+      "missed_boundary": 0,
+      "precision": 0.75,
+      "recall": 1.0,
+      "review_burden": 0.166667,
+      "false_reset_locations": [
+        [
+          "prokofiev1",
+          "page_004",
+          7
+        ]
+      ],
+      "missed_boundary_locations": []
+    },
+    "prokofiev5": {
+      "system_starts": 34,
+      "true_boundaries": 3,
+      "candidates": 3,
+      "true_positive": 3,
+      "false_reset": 0,
+      "missed_boundary": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "review_burden": 0.088235,
+      "false_reset_locations": [],
+      "missed_boundary_locations": []
+    },
+    "shostakovich5": {
+      "system_starts": 27,
+      "true_boundaries": 1,
+      "candidates": 1,
+      "true_positive": 1,
+      "false_reset": 0,
+      "missed_boundary": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "review_burden": 0.037037,
+      "false_reset_locations": [],
+      "missed_boundary_locations": []
+    },
+    "sibelius": {
+      "system_starts": 47,
+      "true_boundaries": 2,
+      "candidates": 3,
+      "true_positive": 2,
+      "false_reset": 1,
+      "missed_boundary": 0,
+      "precision": 0.666667,
+      "recall": 1.0,
+      "review_burden": 0.06383,
+      "false_reset_locations": [
+        [
+          "sibelius",
+          "page_005",
+          6
+        ]
+      ],
+      "missed_boundary_locations": []
+    },
+    "toy_symphony": {
+      "system_starts": 14,
+      "true_boundaries": 2,
+      "candidates": 3,
+      "true_positive": 2,
+      "false_reset": 1,
+      "missed_boundary": 0,
+      "precision": 0.666667,
+      "recall": 1.0,
+      "review_burden": 0.214286,
+      "false_reset_locations": [
+        [
+          "toy_symphony",
+          "page_003",
+          0
+        ]
+      ],
+      "missed_boundary_locations": []
+    }
+  },
+  "evidence": [
+    {
+      "score": "prokofiev1",
+      "page_id": "page_003",
+      "system": 3,
+      "signals": [
+        "relative_indent"
+      ],
+      "indent_ratio": 0.030556,
+      "gap_ratio": 1.578571
+    },
+    {
+      "score": "prokofiev1",
+      "page_id": "page_004",
+      "system": 3,
+      "signals": [
+        "relative_indent"
+      ],
+      "indent_ratio": 0.032222,
+      "gap_ratio": 1.251969
+    },
+    {
+      "score": "prokofiev1",
+      "page_id": "page_004",
+      "system": 7,
+      "signals": [
+        "whitespace_outlier"
+      ],
+      "indent_ratio": 0.0,
+      "gap_ratio": 2.275591
+    },
+    {
+      "score": "prokofiev1",
+      "page_id": "page_004",
+      "system": 8,
+      "signals": [
+        "relative_indent"
+      ],
+      "indent_ratio": 0.033333,
+      "gap_ratio": 1.574803
+    },
+    {
+      "score": "prokofiev5",
+      "page_id": "page_007",
+      "system": 0,
+      "signals": [
+        "relative_indent"
+      ],
+      "indent_ratio": 0.076526,
+      "gap_ratio": null
+    },
+    {
+      "score": "prokofiev5",
+      "page_id": "page_013",
+      "system": 0,
+      "signals": [
+        "relative_indent"
+      ],
+      "indent_ratio": 0.077069,
+      "gap_ratio": null
+    },
+    {
+      "score": "prokofiev5",
+      "page_id": "page_016",
+      "system": 5,
+      "signals": [
+        "relative_indent",
+        "whitespace_outlier"
+      ],
+      "indent_ratio": 0.077883,
+      "gap_ratio": 4.282528
+    },
+    {
+      "score": "shostakovich5",
+      "page_id": "page_008",
+      "system": 5,
+      "signals": [
+        "whitespace_outlier"
+      ],
+      "indent_ratio": 0.0,
+      "gap_ratio": 2.551422
+    },
+    {
+      "score": "sibelius",
+      "page_id": "page_005",
+      "system": 6,
+      "signals": [
+        "whitespace_outlier"
+      ],
+      "indent_ratio": -0.000556,
+      "gap_ratio": 2.546032
+    },
+    {
+      "score": "sibelius",
+      "page_id": "page_006",
+      "system": 0,
+      "signals": [
+        "relative_indent"
+      ],
+      "indent_ratio": 0.024444,
+      "gap_ratio": null
+    },
+    {
+      "score": "sibelius",
+      "page_id": "page_007",
+      "system": 0,
+      "signals": [
+        "relative_indent"
+      ],
+      "indent_ratio": 0.0375,
+      "gap_ratio": null
+    },
+    {
+      "score": "beethoven9",
+      "page_id": "page_006",
+      "system": 0,
+      "signals": [
+        "relative_indent"
+      ],
+      "indent_ratio": 0.028086,
+      "gap_ratio": null
+    },
+    {
+      "score": "beethoven9",
+      "page_id": "page_011",
+      "system": 2,
+      "signals": [
+        "relative_indent",
+        "whitespace_outlier"
+      ],
+      "indent_ratio": 0.029321,
+      "gap_ratio": 1.917012
+    },
+    {
+      "score": "beethoven9",
+      "page_id": "page_014",
+      "system": 0,
+      "signals": [
+        "relative_indent"
+      ],
+      "indent_ratio": 0.031173,
+      "gap_ratio": null
+    },
+    {
+      "score": "toy_symphony",
+      "page_id": "page_003",
+      "system": 0,
+      "signals": [
+        "relative_indent"
+      ],
+      "indent_ratio": 0.036124,
+      "gap_ratio": null
+    },
+    {
+      "score": "toy_symphony",
+      "page_id": "page_003",
+      "system": 8,
+      "signals": [
+        "relative_indent"
+      ],
+      "indent_ratio": 0.035787,
+      "gap_ratio": 1.0
+    },
+    {
+      "score": "toy_symphony",
+      "page_id": "page_003",
+      "system": 12,
+      "signals": [
+        "relative_indent",
+        "whitespace_outlier"
+      ],
+      "indent_ratio": 0.038825,
+      "gap_ratio": 3.509434
+    }
+  ],
+  "interpretation": "The frozen rule retained every holdout boundary and proposed only 6 of 107 holdout system starts, but its Toy Symphony first-system proposal is a false reset.",
+  "disposition": "Useful source-general candidate generator; rejected as a silent automatic resolver."
+}

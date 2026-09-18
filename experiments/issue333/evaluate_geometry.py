@@ -132,8 +132,13 @@ def main() -> None:
             for score in sorted({item[0] for item in universe})
         },
         "evidence": evidence,
-        "interpretation": None,
-        "disposition": None,
+        "interpretation": (
+            "The frozen rule retained every holdout boundary and proposed only 6 of 107 "
+            "holdout system starts, but its Toy Symphony first-system proposal is a false reset."
+        ),
+        "disposition": (
+            "Useful source-general candidate generator; rejected as a silent automatic resolver."
+        ),
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")

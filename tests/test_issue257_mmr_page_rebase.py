@@ -355,6 +355,37 @@ def test_issue268_explicit_boundary_resets_at_mid_page_system_and_preserves_prov
     assert second_page["numbering_metadata"]["start_number"] == 3
 
 
+def test_issue268_rejects_boundary_inside_excluded_page(tmp_path: Path) -> None:
+    orchestrator = PipelineOrchestrator(
+        {"steps": {"apply_measure_overrides": True}},
+        "issue268-excluded-boundary",
+        tmp_path / "run",
+    )
+    orchestrator._persistence = {"numbering_pipeline": _FakeNumberingPipeline()}
+    boundaries = load_movement_boundary_payload(
+        {
+            "boundaries": [
+                {
+                    "page": 1,
+                    "system": 2,
+                    "reset_number": 1,
+                    "source": "manual",
+                    "provenance": {"kind": "fixture"},
+                }
+            ]
+        }
+    )
+
+    with pytest.raises(ValueError, match="excluded pages"):
+        orchestrator.run_final_numbering_and_overlays(
+            ["page_002"],
+            {"page_002"},
+            {"page_002": {"index": 2}},
+            None,
+            boundaries,
+        )
+
+
 def test_issue268_numberer_boundary_reset_precedes_existing_set_number_override() -> None:
     numberer = MeasureNumberer()
     score = Score()

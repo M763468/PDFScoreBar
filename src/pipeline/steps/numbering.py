@@ -118,6 +118,25 @@ def movement_boundaries_for_page(
     ]
 
 
+def reject_movement_boundaries_on_excluded_pages(
+    payload: Mapping[str, Any], excluded_page_indices: set[int]
+) -> None:
+    """Reject resolved boundaries whose target page is excluded from numbering."""
+    invalid = [
+        boundary
+        for boundary in payload.get("boundaries", [])
+        if isinstance(boundary, dict) and boundary.get("page") in excluded_page_indices
+    ]
+    if invalid:
+        locations = ", ".join(
+            f"page={boundary['page']},system={boundary['system']}" for boundary in invalid
+        )
+        raise ValueError(
+            "Movement boundaries cannot target excluded pages; resolve the boundary input "
+            f"without excluded targets ({locations})"
+        )
+
+
 def final_numbering_metadata(
     *,
     page_index: int,

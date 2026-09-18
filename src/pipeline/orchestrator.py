@@ -40,6 +40,7 @@ from src.pipeline.steps.numbering import (
     movement_boundaries_for_page,
     persisted_final_next_number,
     rebase_mmr_overrides_to_page_local,
+    reject_movement_boundaries_on_excluded_pages,
     run_mmr_batch,
 )
 from src.pipeline.utils.images import collect_images, resolve_page_ids
@@ -252,6 +253,10 @@ class PipelineOrchestrator:
                     "Movement boundary page is outside the ordered pipeline input: "
                     f"{boundary['page']} >= {len(page_ids)}"
                 )
+        reject_movement_boundaries_on_excluded_pages(
+            movement_boundaries,
+            {index - 1 for index in excluded_indices if 1 <= index <= len(page_ids)},
+        )
 
         # Phase A: Base Numbering & Barline Correction
         res_a = self.run_base_numbering_and_barline_correction(
@@ -708,6 +713,14 @@ class PipelineOrchestrator:
 
         movement_boundaries = movement_boundaries or self._movement_boundaries
         movement_boundaries = movement_boundaries or load_movement_boundary_payload(None)
+        reject_movement_boundaries_on_excluded_pages(
+            movement_boundaries,
+            {
+                page_ctx[page_id]["index"] - 1
+                for page_id in excluded_page_ids
+                if page_id in page_ctx
+            },
+        )
         current_number = 1
 
         for page_id in tqdm(page_ids, desc="Phase C: Final Numbering", unit="page"):
@@ -725,15 +738,6 @@ class PipelineOrchestrator:
                     empty_final = page_outputs / "numbering_final.json"
                     numbering_final_paths.append(empty_final)
                     if not self.dry_run:
-                        for boundary in page_boundaries:
-                            if boundary["system"] == 0:
-                                current_number = boundary["reset_number"]
-                            else:
-                                logger.warning(
-                                    "Ignoring movement boundary at excluded page %s system %s",
-                                    index - 1,
-                                    boundary["system"],
-                                )
                         empty_payload = empty_numbering_payload(index, image_path)
                         empty_payload["numbering_metadata"] = final_numbering_metadata(
                             page_index=index - 1,

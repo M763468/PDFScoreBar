@@ -116,6 +116,17 @@ def main() -> None:
             }
             for row, score in zip(rows, scores, strict=True)
         ],
+        "interpretation": (
+            "The frozen ranker did not generalize: it missed every Beethoven boundary and "
+            "four of five holdout boundaries overall. Exact lexical consensus was less brittle "
+            "but missed OCR variants 'prestoxd' and 'meuuetto'. Geometry retained all five "
+            "boundaries with one first-musical-system false proposal."
+        ),
+        "disposition": {
+            "frozen_ranker": "rejected for automatic resolution and candidate generation",
+            "structured_consensus": "rejected as sole candidate generator",
+            "geometry": "retain as high-recall review candidate baseline",
+        },
         "warning": "Decision scores are uncalibrated and are not production confidence.",
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)

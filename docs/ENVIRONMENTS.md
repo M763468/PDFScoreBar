@@ -199,10 +199,50 @@ on an ad-hoc checkout-local model path.
 
 ## Persistent pytest-capable pipeline container
 
-For repeated pipeline evaluation that also needs repository pytest, follow `AGENTS.md` and
-use the documented persistent `pdfscore_pipeline_pytest_dev` pattern when appropriate. The
-base image remains `pdfscore_pipeline_gpu`; do not weaken or rewrite pytest coverage because
-the runtime image lacks pytest by default.
+For repeated pipeline evaluation that also needs repository pytest, use a named persistent
+container based on `pdfscore_pipeline_gpu`. The production runtime intentionally does not
+include pytest; do not weaken or rewrite repository pytest coverage for that reason.
+
+Create the container when absent:
+
+```bash
+docker run -dit --gpus all \
+  --name pdfscore_pipeline_pytest_dev \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_gpu bash
+```
+
+Start it when it already exists but is stopped:
+
+```bash
+docker start pdfscore_pipeline_pytest_dev
+```
+
+Install pytest once into the persistent validation container if it is missing:
+
+```bash
+docker exec -w /workspace pdfscore_pipeline_pytest_dev \
+  /opt/venv_pipeline/bin/python -m pip install pytest
+```
+
+Run repository pytest with:
+
+```bash
+docker exec -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_pytest_dev \
+  /opt/venv_pipeline/bin/python -m pytest <tests-or-options>
+```
+
+Pipeline/evaluation commands may use the same interpreter:
+
+```bash
+docker exec -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_pytest_dev \
+  /opt/venv_pipeline/bin/python <script-or-module>
+```
+
+Remove this persistent container only when cleanup is explicitly intended; its purpose is to
+avoid reinstalling validation-only tooling into short-lived production-runtime containers.
 
 ## Review helpers
 

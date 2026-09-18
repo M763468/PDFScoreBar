@@ -22,6 +22,7 @@ responsible for checking the repository and validating the result.
 
 ## Historical material
 
-Older consultation procedures and logs remain available in Git history and in the Issues/PRs that
-recorded the underlying engineering decisions. They should not be copied into new task context unless
-they are directly relevant to the active target.
+The previous operational workflow and consultation logs are preserved at
+`docs/archive/ai-workflow/CODEX_GEMINI_COLLAB_202602.md` for historical reference only.
+Do not preload or copy that history into a new task unless it is directly relevant to the active
+target.

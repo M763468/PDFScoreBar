@@ -286,3 +286,23 @@ artifacts for the measure-geometry envelope.  It also fuses the retained
 independent staff-bbox perturbations with the unchanged full-measure native
 probability, so staff `translate-y`, top, bottom, and symmetric height changes
 at `±1/2/4px` remain an explicit acceptance gate.
+
+## Final pre-production validation
+
+`final_candidate_validation.py` freezes the same manifest, split, thresholds,
+and three checkpoint SHAs in `final_validation_config.json`. It performs only
+the requested final checks:
+
+- causal controls for the current bounded head, full-only plus one learned
+  bias, and convex dual-view with bias fixed to zero;
+- the full Cartesian product of 31 measure-bbox variants and 25 independent
+  staff-bbox variants (`775` joint combinations per semantic measure);
+- coherent whole-page DPI metamorphs at `0.8x`, `1.0x`, and `1.25x`, scaling
+  both measure and staff bboxes while retaining the full branch's fixed 20 px
+  margin.
+
+The joint evaluator deduplicates identical integer source ROIs and batches
+only encoder inference. It does not alter crop formulas or model inputs.
+`integration_runtime_benchmark.py` separately compares the full-only and
+bounded dual-view routes over the canonical manifest order, excludes page I/O,
+uses identical warmup conditions, and does not call RapidOCR.

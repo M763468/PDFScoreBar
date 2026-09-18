@@ -1,0 +1,17 @@
+{
+  "acceptance_manifest_sha256": "a6e4f716b0e02c0f73ba16817aba41ae59a5c4b491c8b3d3f589e9e4720b6538",
+  "deltas_px": [1, 2, 4],
+  "dpi_scales": [0.8, 1.0, 1.25],
+  "epochs": 300,
+  "full_model_sha256": "92f52a27a68a54d8ab49f5e6f6f2156e4f3d7e1634774c69baff5e031a697a46",
+  "fusion_model_sha256": "a639a0582e3b27e86a323c81701cdd2dbfe91310eb28275222abf840ed0077a2",
+  "learning_rate": 0.03,
+  "main_threshold": 0.5,
+  "manifest_sha256": "984ec18e1e36be6469e53a0578e1d0f120ac0bab79fd62ca75c67a93ff7b7113",
+  "margin_px": 20,
+  "seed": 42,
+  "split_sha256": "b3475b61eef261a669cba8bf87297f6066a718412c028165752d8774d2f4a93f",
+  "staff_families": ["translate_y", "top", "bottom", "height"],
+  "staff_model_sha256": "882c0613036d49d3cf9f21f226d1e057af76a44be1bf02cad5221c23fcced4fc",
+  "threshold_rescue": 0.1
+}

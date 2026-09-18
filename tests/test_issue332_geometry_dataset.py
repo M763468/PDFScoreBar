@@ -16,6 +16,11 @@ from tools.mmr_training.issue332.dual_view_fusion import (
     fit_fusion_head,
     fuse_probabilities,
 )
+from tools.mmr_training.issue332.final_candidate_validation import (
+    FullOnlyBias,
+    ZeroBiasDualView,
+    _envelope_summary,
+)
 from tools.mmr_training.issue332.geometry_training import (
     DEFAULT_GEOMETRY_AUGMENTATION_PROBABILITY,
     GEOMETRY_FAMILIES,
@@ -776,3 +781,32 @@ def test_frozen_logit_fusion_fits_complementary_views_deterministically():
     assert min(weights) >= 0.0
     assert sum(weights) == pytest.approx(1.0)
     assert fit["best"]["validation_f1"] == 1.0
+
+
+def test_final_causal_control_heads_preserve_their_constraints():
+    features = torch.tensor([[2.0, -4.0], [-1.0, 3.0]])
+    full_only = FullOnlyBias()
+    full_only.bias.data.fill_(0.25)
+    assert torch.allclose(full_only(features).reshape(-1), features[:, 0] + 0.25)
+
+    zero_bias = ZeroBiasDualView()
+    weights = zero_bias.effective_weights()
+    assert min(float(value) for value in weights.detach()) >= 0.0
+    assert float(weights.detach().sum()) == pytest.approx(1.0)
+    assert torch.allclose(zero_bias(features).reshape(-1), features.mean(dim=1))
+
+
+def test_final_envelope_records_unique_crossings_and_direction():
+    rows = [
+        {"sample_id": "negative", "label": 0, "variant": "native", "probability": 0.05},
+        {"sample_id": "negative", "label": 0, "variant": "joint-a", "probability": 0.2},
+        {"sample_id": "negative", "label": 0, "variant": "joint-b", "probability": 0.6},
+        {"sample_id": "positive", "label": 1, "variant": "native", "probability": 0.8},
+        {"sample_id": "positive", "label": 1, "variant": "joint-a", "probability": 0.4},
+    ]
+    summary = _envelope_summary(rows)
+    assert summary["main"]["unique_crossing_count"] == 2
+    assert summary["main"]["negative_to_positive"] == ["negative"]
+    assert summary["main"]["positive_to_negative"] == ["positive"]
+    assert summary["rescue"]["unique_crossing_count"] == 1
+    assert summary["samples"]["negative"]["probability_range"] == pytest.approx(0.55)

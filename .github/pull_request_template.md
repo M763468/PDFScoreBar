@@ -2,29 +2,29 @@
 - Closes # / Relates to # / N/A
 
 ## What
-- 
+- <!-- describe the change -->
 
 ## Why
-- 
+- <!-- explain why it is needed -->
 
 ## Scope
 **In:**
-- 
+- <!-- in scope -->
 
 **Out:**
-- 
+- <!-- out of scope -->
 
 ## How to test
-- 
+- <!-- commands/checks and results -->
 
 ## Validation skipped or deferred
-- None / 
+- None / <!-- skipped check and reason -->
 
 ## Notes / implementation details
-- 
+- <!-- optional -->
 
 ## Screenshots / logs (optional)
-- 
+- <!-- optional -->
 
 ## Checklist
 - [ ] 変更は依頼されたタスク / Issue のスコープ内である

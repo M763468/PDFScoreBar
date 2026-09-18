@@ -113,6 +113,67 @@ def test_materialize_corrected_final_outputs_creates_clean_pdf_and_review_summar
     assert review_summary["warnings"] == []
 
 
+def test_materialize_corrected_final_outputs_uses_cross_page_final_numbers_for_row_labels(
+    tmp_path,
+):
+    handoff_path, corrected_run = _setup_final_output_fixture(tmp_path)
+    handoff = json.loads(handoff_path.read_text(encoding="utf-8"))
+
+    for page_number, first_measure_number in ((2, 44), (3, 1)):
+        page_id = f"page_{page_number:03d}"
+        source_path = handoff_path.parent / "pages" / page_id / "source.png"
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        Image.new("RGB", (300, 200), "white").save(source_path)
+        _write_json(
+            corrected_run / "outputs" / page_id / "numbering_final.json",
+            {
+                "pages": [
+                    {
+                        "page_number": page_number,
+                        "width": 300,
+                        "height": 200,
+                        "systems": [
+                            {
+                                "staves": [{"bbox": [80, 60, 260, 100]}],
+                                "measures": [
+                                    {
+                                        "number": first_measure_number,
+                                        "bbox": [90, 60, 160, 100],
+                                    }
+                                ],
+                            }
+                        ],
+                        "empty_systems": [],
+                    }
+                ]
+            },
+        )
+        handoff["pages"].append(
+            {
+                "page_id": page_id,
+                "page_number": page_number,
+                "source_image": f"pages/{page_id}/source.png",
+                "numbering_final": f"pages/{page_id}/numbering_final.json",
+                "correction_output": "corrections",
+            }
+        )
+    handoff_path.write_text(json.dumps(handoff, indent=2), encoding="utf-8")
+
+    materialize_corrected_final_outputs(
+        handoff_path=handoff_path,
+        corrected_run_dir=corrected_run,
+    )
+
+    summary = json.loads(
+        (corrected_run / "review" / "corrected_final_summary.json").read_text(encoding="utf-8")
+    )
+    assert [page["row_labels"][0]["row_start_measure_number"] for page in summary["pages"]] == [
+        42,
+        44,
+        1,
+    ]
+
+
 def test_materialize_corrected_final_outputs_uses_explicit_output_name(tmp_path):
     handoff_path, corrected_run = _setup_final_output_fixture(tmp_path, output_name="ignored")
 

@@ -1,0 +1,25 @@
+{
+  "schema_version": "pdfscorebar.model_artifact.v1",
+  "model_id": "omr-dln-measures",
+  "version": "phase1-validated-v1",
+  "architecture": "YOLOv8m measure detector",
+  "distribution": {
+    "mode": "operator-supplied",
+    "asset": "YOLOv8m_Measures.pt",
+    "official_repository": "https://github.com/dmgonzalez8/OMR",
+    "official_model_folder": "https://drive.google.com/drive/folders/13Z64ReEJGlMnCqPkA-dcCD8tzdtvLyqO?usp=sharing",
+    "automation_policy": "manual import required because the upstream repository does not publish an explicit license for automated redistribution"
+  },
+  "sha256": "00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212",
+  "cache_path": "omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt",
+  "ownership": "external/operator-supplied",
+  "runtime_path": "/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt",
+  "provenance": {
+    "upstream_repository": "dmgonzalez8/OMR",
+    "upstream_model_folder": "Google Drive folder linked by upstream README",
+    "identity_basis": "bytes used by PDFScoreBar Issue #329 Phase 1 canonical validation",
+    "validated_pr": 330,
+    "validated_merge_commit": "37cf9d76797f2d5f983dc6b55fa42366b58477a0",
+    "note": "The digest identifies this selected version only. A model update must register a new version/provenance/digest tuple."
+  }
+}

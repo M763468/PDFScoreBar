@@ -13,13 +13,20 @@ fi
 GRAPH="graphify-out/graph.json"
 MANIFEST="graphify-out/MANIFEST.json"
 QUESTION="$*"
+EXPLICIT_REBUILD=0
+
+if [ "${GRAPHIFY_REBUILD:-0}" = "1" ] || [ "${GRAPHIFY_REFRESH:-0}" = "1" ]; then
+    EXPLICIT_REBUILD=1
+fi
 
 if command -v graphify >/dev/null 2>&1; then
     GRAPHIFY=(graphify)
-elif command -v uv >/dev/null 2>&1; then
+elif [ "$EXPLICIT_REBUILD" = "1" ] && command -v uv >/dev/null 2>&1; then
+    # An explicit rebuild/refresh may use the isolated uv tool path.
     GRAPHIFY=(uv tool run --from graphifyy graphify)
 else
-    echo "Graphify is unavailable. Install it with: uv tool install graphifyy" >&2
+    echo "Graphify is unavailable; fall back to direct source/test inspection." >&2
+    echo "For explicit maintenance, install it with: uv tool install graphifyy" >&2
     exit 127
 fi
 
@@ -31,13 +38,14 @@ rebuild_code_graph() {
 
 if [ "${GRAPHIFY_REBUILD:-0}" = "1" ]; then
     rebuild_code_graph
-elif [ ! -s "$GRAPH" ]; then
-    echo "Shared Graphify graph is missing; creating a local code-only graph." >&2
-    rebuild_code_graph
 elif [ "${GRAPHIFY_REFRESH:-0}" = "1" ]; then
     # Shared caches are intentionally not committed. A portable local refresh is
     # therefore a deterministic code-only rebuild rather than a cache-dependent update.
     rebuild_code_graph
+elif [ ! -s "$GRAPH" ]; then
+    echo "Shared Graphify graph is missing; fall back to direct source/test inspection." >&2
+    echo "To rebuild explicitly, rerun with GRAPHIFY_REBUILD=1." >&2
+    exit 3
 fi
 
 warn_if_code_changed_since_shared_graph() {
@@ -66,9 +74,6 @@ PY
         return 0
     fi
 
-    # The shared graph was generated after applying the Graphify integration files
-    # but before committing the generated artifacts. Check only source-code formats,
-    # avoiding a permanent false warning caused by the artifact commit itself.
     if ! git diff --quiet "$source_base"..HEAD -- \
         ':(glob)**/*.py' \
         ':(glob)**/*.pyi' \

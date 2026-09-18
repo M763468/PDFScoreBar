@@ -1,40 +1,33 @@
-> [!TIP]
-> AIエージェントにこのPRの説明文作成やセルフレビューを依頼するには、`pr-explanation` や `pr-review` スキルを使用してください。
-
 ## Related Issue
-- Closes #
+- Closes # / Relates to # / N/A
 
-## What (What was implemented)
-- 
+## What
+- <!-- describe the change -->
 
-## Why (Why this change is needed)
-- 
+## Why
+- <!-- explain why it is needed -->
 
-## Scope (In / Out)
+## Scope
 **In:**
-- 
+- <!-- in scope -->
 
 **Out:**
-- 
+- <!-- out of scope -->
 
 ## How to test
+- <!-- commands/checks and results -->
 
-### AI-side checks (performed by author / AI)
-- 
+## Validation skipped or deferred
+- None / <!-- skipped check and reason -->
 
-### Human-side checks (to be performed locally)
-- 
+## Notes / implementation details
+- <!-- optional -->
 
-## Notes / Implementation details
-- 
-
-## Screenshots / Logs (optional)
-- 
+## Screenshots / logs (optional)
+- <!-- optional -->
 
 ## Checklist
-- [ ] 対象 Issue の Goal / Acceptance Criteria をすべて満たしている
-- [ ] Issue に書かれていない機能を先取りしていない
-- [ ] 入出力仕様（パス・ファイル名）が Issue と一致している
-- [ ] エラー時のログが分かりやすい
-- [ ] 依存追加が最小限である
+- [ ] 変更は依頼されたタスク / Issue のスコープ内である
+- [ ] 変更内容に応じた validation を実施した、または skip/defer 理由を記載した
+- [ ] 依存関係・Docker・CI・評価条件を意図せず変更していない
 - [ ] README / ドキュメント更新の要否を確認した

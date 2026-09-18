@@ -12,7 +12,8 @@ This is the maintained full-pipeline Docker image.
 
 - Dockerfile: `Dockerfile`
 - Build target: `make docker-build`
-- Smoke entry point: `make run-smoke`
+- Canonical GPU validation entry point: `make verify-gpu-smoke`
+- Low-level smoke target: `make run-smoke`
 - Pipeline entry point: `make run-pipeline CONFIG=<config.yaml>`
 - Container interpreter: `/opt/venv_pipeline/bin/python`
 - Normal mounted repository root: `/workspace`
@@ -21,8 +22,105 @@ The image installs project/runtime dependencies and the maintained HOMR ONNX pro
 from `docker/patch_homr_onnx_provider.py`. Use this image for the verified dense production
 route and Stage-E/full-pipeline validation that needs Docker/GPU execution.
 
+`make verify-gpu-smoke` is the authoritative environment gate. Before pipeline execution it
+runs `scripts/docker_runtime_validation.sh`, which checks the bind-mounted source against the
+source fingerprint recorded when the image was built, validates required assets, and probes
+CUDA inside the container. Host `nvidia-smi` output is metadata only; the container CUDA probe
+is authoritative.
+
+`make run-smoke` remains a lower-level pipeline invocation and does not replace that preflight.
+
 Read `PIPELINE_ARCHITECTURE.md` for the current two-HOMR process boundaries; container names
 or old phase diagrams are not an architecture contract.
+
+## Docker source, mount, and asset ownership contract
+
+The canonical runtime deliberately bind-mounts the active checkout at `/workspace`. This
+means source files copied into `/workspace` during `docker build` are hidden at runtime. Files
+that must survive that mount therefore must not rely on image contents under `/workspace`.
+
+The ownership rules are:
+
+| Runtime dependency | Owner | Canonical location / mechanism |
+|---|---|---|
+| main Python/runtime dependencies | Docker image | `/opt/venv_pipeline` |
+| maintained current HOMR package/runtime | Docker image | installed in `/opt/venv_pipeline` from the Dockerfile pin |
+| verified historical Stage-E HOMR stack | Docker image | `/opt/venv_stage_e_homr`, `/opt/homr_stage_e_profile`, `/opt/pdfscore_stage_e_profile` |
+| Real-ESRGAN x2/x4 weights | Docker image | `/opt/pdfscore-assets/realesrgan` |
+| canonical smoke CNN bytes | Docker image, derived from the tracked #315 manifest | `/opt/pdfscore-assets/barline_cnn_smoke.pth` |
+| OMR-DLN `YOLOv8m_Measures.pt` | operator/external asset | selected manifest version in the common host model cache, mounted read-only below `/opt/pdfscore-external/omr-dln-measures/<version>/` |
+| repository source/config/input data | active checkout | bind-mounted at `/workspace` |
+| generated run artifacts | active checkout/operator | ignored `logs/`, `artifacts/`, and configured output paths |
+
+The cross-model version/provenance/integrity and update rules are inventoried in
+`docs/MODEL_ARTIFACT_CONTRACT.md`. Repository-managed model artifacts default to the
+checkout-local `.model_cache` namespace; `PDFSCOREBAR_MODEL_CACHE` may select a shared host
+cache so clean worktrees can reuse the same verified selected artifact without relying on an
+operator-local checkout path.
+
+The Real-ESRGAN resolver uses `PDFSCORE_REALESRGAN_WEIGHTS_DIR` in the image and retains the
+legacy checkout path only as a host-development fallback. A canonical Docker smoke must not
+require weights to be manually copied into `external/realesrgan/weights`.
+
+The smoke CNN does not create a second production model contract. Docker materializes the
+tracked `models/barline_cnn/manifest.json` through `src.common.model_artifacts`, including its
+SHA-256 check, then exposes the verified bytes at the stable smoke-only path above. Production
+CNN artifact migration remains owned by Issue #315 and its manifest contract.
+
+The OMR-DLN weight is different: it is externally distributed and is not silently downloaded,
+redistributed, or substituted by the Docker build. Register the selected official
+`YOLOv8m_Measures.pt` once in the common cache with:
+
+```bash
+python3 -m src.common.model_artifacts import \
+  models/omr_dln/manifest.json /path/to/official/YOLOv8m_Measures.pt
+```
+
+The import verifies the selected version digest before atomically publishing the file to the
+cache. Canonical `make verify-gpu-smoke` resolves that selected cache entry itself and mounts
+it read-only at the manifest-declared container path. `OMR_DLN_MODEL_PATH` remains an explicit
+compatibility override and is verified against the same selected-version digest before use.
+The legacy repository-local OMR-DLN path also remains accepted for compatibility, but it is
+not the canonical staging workflow.
+
+### Source/image compatibility
+
+The final image stores a fingerprint of runtime-sensitive source outside `/workspace` at:
+
+```text
+/opt/pdfscore-runtime/source_fingerprint.txt
+```
+
+The GPU-smoke preflight recomputes the fingerprint from the bind-mounted checkout. A mismatch
+fails before expensive model work with an instruction to rebuild the image. This prevents the
+historical failure mode where source from one branch/worktree is run against dependencies
+built for another source state. Config files are intentionally not part of the fingerprint so
+validation configs can vary without requiring an image rebuild; runtime-sensitive Python,
+Docker, and dependency-definition files are covered.
+
+## Docker build and cleanup lifecycle
+
+`make docker-build` performs the normal cleanup contract first and then builds the canonical
+image. The normal cleanup removes only the canonical container:
+
+```text
+make docker-clean
+  -> docker rm -f pdfscore_pipeline_gpu
+```
+
+It does **not** remove the image. Image removal is explicit:
+
+```text
+make docker-clean-full
+  -> docker-clean
+  -> docker rmi pdfscore_pipeline_gpu
+```
+
+This split is the Issue #261 / PR #325 contract and should be preserved. A build failure such
+as `context canceled` must be diagnosed from the actual Docker/build signal and build-context
+evidence; it must not be attributed to `docker rmi` merely because cleanup happened nearby.
+Build-context reduction belongs to `.dockerignore` maintenance and does not change runtime
+asset ownership.
 
 ## Host / uv environments
 
@@ -93,15 +191,58 @@ those compatibility remnants requires separate verification.
   operations; use `/mnt/*` as source/archive rather than metadata-heavy scratch space.
 
 The accepted two-HOMR milestone is **not fresh-clone reproducible** today because its exact
-evaluation page images and configured CNN weight are not retained in Git. The milestone doc
-records that dependency rather than silently substituting new artifacts.
+evaluation page images are not retained in Git. The milestone doc records that dependency
+rather than silently substituting new artifacts. The Docker smoke removes the former
+ignored/local-only CNN dependency. OMR-DLN remains an explicit external asset, but once its
+selected version is registered in the common model cache, canonical smoke no longer depends
+on an ad-hoc checkout-local model path.
 
 ## Persistent pytest-capable pipeline container
 
-For repeated pipeline evaluation that also needs repository pytest, follow `AGENTS.md` and
-use the documented persistent `pdfscore_pipeline_pytest_dev` pattern when appropriate. The
-base image remains `pdfscore_pipeline_gpu`; do not weaken or rewrite pytest coverage because
-the runtime image lacks pytest by default.
+For repeated pipeline evaluation that also needs repository pytest, use a named persistent
+container based on `pdfscore_pipeline_gpu`. The production runtime intentionally does not
+include pytest; do not weaken or rewrite repository pytest coverage for that reason.
+
+Create the container when absent:
+
+```bash
+docker run -dit --gpus all \
+  --name pdfscore_pipeline_pytest_dev \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_gpu bash
+```
+
+Start it when it already exists but is stopped:
+
+```bash
+docker start pdfscore_pipeline_pytest_dev
+```
+
+Install pytest once into the persistent validation container if it is missing:
+
+```bash
+docker exec -w /workspace pdfscore_pipeline_pytest_dev \
+  /opt/venv_pipeline/bin/python -m pip install pytest
+```
+
+Run repository pytest with:
+
+```bash
+docker exec -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_pytest_dev \
+  /opt/venv_pipeline/bin/python -m pytest <tests-or-options>
+```
+
+Pipeline/evaluation commands may use the same interpreter:
+
+```bash
+docker exec -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_pytest_dev \
+  /opt/venv_pipeline/bin/python <script-or-module>
+```
+
+Remove this persistent container only when cleanup is explicitly intended; its purpose is to
+avoid reinstalling validation-only tooling into short-lived production-runtime containers.
 
 ## Review helpers
 

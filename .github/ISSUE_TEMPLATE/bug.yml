@@ -5,14 +5,12 @@ labels:
   - "bug"
   - "priority:med"
   - "scope:small"
-  - "priority:med"
-  - "scope:small"
 body:
   - type: markdown
     attributes:
       value: |
         > [!TIP]
-        > AIエージェントにこのIssueの下書きを依頼するには `issue-creation` を、調査・実装を依頼するには `problem-investigation` や `issue-solver` スキルを使用してください。
+        > AIエージェントにIssueの下書きを依頼する場合は `issue-creation` を利用できます。調査・修正はこのIssueを直接指定して依頼してください。専用の実装・調査skillは不要です。
 
   - type: markdown
     attributes:
@@ -31,21 +29,21 @@ body:
     attributes:
       label: "Base branch"
       description: "作業ブランチの元となる親ブランチ名を指定します。"
-      placeholder: "例: feature/<topic-name>"
+      placeholder: "例: develop"
 
   - type: input
     id: branch_name
     attributes:
       label: "Branch name"
       description: "AIが作成する作業ブランチ名を指定します。"
-      placeholder: "例: feature/123-fix-bug"
+      placeholder: "例: fix/123-fix-bug"
 
   - type: input
     id: pr_base
     attributes:
       label: "PR base"
-      description: "PRの向き先となるブランチ（通常はBase branchと同じ）"
-      placeholder: "例: feature/<topic-name>"
+      description: "PRの向き先となるブランチ（通常はdevelop）"
+      placeholder: "例: develop"
 
   - type: textarea
     id: steps
@@ -53,8 +51,8 @@ body:
       label: "再現手順"
       description: "最小手順で書く。"
       placeholder: |
-        1. utacopy run input.wav --out out/
-        2. out/ を確認
+        1. 問題を再現するコマンドを実行
+        2. 出力を確認
     validations:
       required: true
 
@@ -62,7 +60,7 @@ body:
     id: expected
     attributes:
       label: "期待動作"
-      placeholder: "例: out/ に processed.wav が生成される"
+      placeholder: "期待する結果を記載"
     validations:
       required: true
 
@@ -70,7 +68,7 @@ body:
     id: actual
     attributes:
       label: "実際の動作"
-      placeholder: "例: out/ が生成されず、エラーで終了する"
+      placeholder: "実際の結果を記載"
     validations:
       required: true
 
@@ -101,7 +99,7 @@ body:
     attributes:
       label: "受け入れ条件（修正完了の定義）"
       placeholder: |
-        - 上記再現手順でエラーが発生しない
-        - 想定出力が生成される
+        - 上記再現手順で問題が発生しない
+        - 既存の関連回帰テストが維持される
     validations:
       required: true

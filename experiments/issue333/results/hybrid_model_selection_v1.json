@@ -1,0 +1,204 @@
+{
+  "schema_version": "issue333.model_selection_result.v1",
+  "experiment_id": "phase2-hybrid-model-selection-v1",
+  "source_commit": "0e55d0a8",
+  "split": {
+    "fit": [
+      "festival",
+      "prokofiev1",
+      "prokofiev5"
+    ],
+    "validation": [
+      "shostakovich5",
+      "sibelius"
+    ]
+  },
+  "label_counts": {
+    "fit_system_starts": 94,
+    "fit_boundaries": 6,
+    "validation_system_starts": 74,
+    "validation_boundaries": 3
+  },
+  "preprocessing": {
+    "numeric_features": [
+      "page_start",
+      "system_index_ratio",
+      "top_ratio",
+      "left_ratio",
+      "indent_ratio",
+      "gap_page_ratio",
+      "gap_median_ratio",
+      "system_height_ratio",
+      "system_width_ratio",
+      "measure_count",
+      "ocr_count",
+      "max_ocr_height_to_page_median",
+      "has_tempo",
+      "has_ordinal",
+      "has_form",
+      "has_trio",
+      "semantic_heading",
+      "geometry_candidate",
+      "structured_consensus"
+    ],
+    "text": "OCR associated with preceding gap; char_wb TF-IDF ngram_range=(2,5)",
+    "standardization": "StandardScaler fit on fit scores only"
+  },
+  "architecture": "StandardScaler numeric + char TF-IDF -> class-balanced logistic regression",
+  "parameters": {
+    "seed": 333,
+    "solver": "liblinear",
+    "max_iter": 2000
+  },
+  "runtime": {
+    "scikit-learn": "1.2.0",
+    "scipy": "1.15.3",
+    "numpy": "1.26.4",
+    "joblib": "1.6.0"
+  },
+  "command": "python experiments/issue333/evaluate_hybrid.py --fixture tests/fixtures/movement_boundaries/issue333_representative.json --ocr logs/issue333/fresh/heading_ocr.json --output experiments/issue333/results/hybrid_model_selection_v1.json --checkpoint logs/issue333/phase2/models/hybrid_ranker_v1.joblib",
+  "trials": [
+    {
+      "C": 0.1,
+      "automatic_threshold": 3.7570098936694807,
+      "candidate_threshold": 3.7570098936694807,
+      "automatic": {
+        "system_starts": 74,
+        "true_boundaries": 3,
+        "predicted": 3,
+        "true_positive": 3,
+        "false_reset": 0,
+        "missed_boundary": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "review_burden": 0.040541,
+        "false_reset_locations": [],
+        "missed_boundary_locations": []
+      },
+      "candidate": {
+        "system_starts": 74,
+        "true_boundaries": 3,
+        "predicted": 3,
+        "true_positive": 3,
+        "false_reset": 0,
+        "missed_boundary": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "review_burden": 0.040541,
+        "false_reset_locations": [],
+        "missed_boundary_locations": []
+      }
+    },
+    {
+      "C": 1.0,
+      "automatic_threshold": 5.203342930607187,
+      "candidate_threshold": 5.203342930607187,
+      "automatic": {
+        "system_starts": 74,
+        "true_boundaries": 3,
+        "predicted": 3,
+        "true_positive": 3,
+        "false_reset": 0,
+        "missed_boundary": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "review_burden": 0.040541,
+        "false_reset_locations": [],
+        "missed_boundary_locations": []
+      },
+      "candidate": {
+        "system_starts": 74,
+        "true_boundaries": 3,
+        "predicted": 3,
+        "true_positive": 3,
+        "false_reset": 0,
+        "missed_boundary": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "review_burden": 0.040541,
+        "false_reset_locations": [],
+        "missed_boundary_locations": []
+      }
+    },
+    {
+      "C": 10.0,
+      "automatic_threshold": 6.947359555106407,
+      "candidate_threshold": 6.947359555106407,
+      "automatic": {
+        "system_starts": 74,
+        "true_boundaries": 3,
+        "predicted": 3,
+        "true_positive": 3,
+        "false_reset": 0,
+        "missed_boundary": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "review_burden": 0.040541,
+        "false_reset_locations": [],
+        "missed_boundary_locations": []
+      },
+      "candidate": {
+        "system_starts": 74,
+        "true_boundaries": 3,
+        "predicted": 3,
+        "true_positive": 3,
+        "false_reset": 0,
+        "missed_boundary": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "review_burden": 0.040541,
+        "false_reset_locations": [],
+        "missed_boundary_locations": []
+      }
+    }
+  ],
+  "selected": {
+    "C": 0.1,
+    "automatic_threshold": 3.7570098936694807,
+    "candidate_threshold": 3.7570098936694807,
+    "automatic": {
+      "system_starts": 74,
+      "true_boundaries": 3,
+      "predicted": 3,
+      "true_positive": 3,
+      "false_reset": 0,
+      "missed_boundary": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "review_burden": 0.040541,
+      "false_reset_locations": [],
+      "missed_boundary_locations": []
+    },
+    "candidate": {
+      "system_starts": 74,
+      "true_boundaries": 3,
+      "predicted": 3,
+      "true_positive": 3,
+      "false_reset": 0,
+      "missed_boundary": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "review_burden": 0.040541,
+      "false_reset_locations": [],
+      "missed_boundary_locations": []
+    }
+  },
+  "structured_consensus_validation": {
+    "system_starts": 74,
+    "true_boundaries": 3,
+    "predicted": 3,
+    "true_positive": 3,
+    "false_reset": 0,
+    "missed_boundary": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "review_burden": 0.040541,
+    "false_reset_locations": [],
+    "missed_boundary_locations": []
+  },
+  "checkpoint": {
+    "path": "logs/issue333/phase2/models/hybrid_ranker_v1.joblib",
+    "sha256": "7381d789e4ae50bad1aa7283cfbe677e8e035f447c32da6f8c3bea3d6a7b9059"
+  },
+  "warning": "Decision scores and thresholds are not calibrated probabilities."
+}

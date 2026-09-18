@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.metadata
 import json
 from pathlib import Path
 
@@ -166,7 +167,14 @@ def main() -> None:
     report = {
         "schema_version": "issue333.model_selection_result.v1",
         "experiment_id": "phase2-hybrid-model-selection-v1",
+        "source_commit": "0e55d0a8",
         "split": {"fit": sorted(FIT), "validation": sorted(VALIDATION)},
+        "label_counts": {
+            "fit_system_starts": len(fit_rows),
+            "fit_boundaries": int(y_fit.sum()),
+            "validation_system_starts": len(val_rows),
+            "validation_boundaries": int(y_val.sum()),
+        },
         "preprocessing": {
             "numeric_features": NUMERIC,
             "text": "OCR associated with preceding gap; char_wb TF-IDF ngram_range=(2,5)",
@@ -174,6 +182,17 @@ def main() -> None:
         },
         "architecture": "StandardScaler numeric + char TF-IDF -> class-balanced logistic regression",
         "parameters": {"seed": 333, "solver": "liblinear", "max_iter": 2000},
+        "runtime": {
+            name: importlib.metadata.version(name)
+            for name in ("scikit-learn", "scipy", "numpy", "joblib")
+        },
+        "command": (
+            "python experiments/issue333/evaluate_hybrid.py --fixture "
+            "tests/fixtures/movement_boundaries/issue333_representative.json "
+            "--ocr logs/issue333/fresh/heading_ocr.json --output "
+            "experiments/issue333/results/hybrid_model_selection_v1.json "
+            "--checkpoint logs/issue333/phase2/models/hybrid_ranker_v1.joblib"
+        ),
         "trials": trials,
         "selected": selected_trial,
         "structured_consensus_validation": metrics(val_rows, structured),

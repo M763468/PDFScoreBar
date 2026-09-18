@@ -10,6 +10,7 @@ from torchvision import transforms
 
 import tools.mmr_training.issue332.geometry_training as geometry_training
 from tools.mmr_training.create_mmr_train_data import create_dataset_from_configs
+from tools.mmr_training.issue332.dual_view_diagnosis import _staff_bbox_variants
 from tools.mmr_training.issue332.geometry_training import (
     DEFAULT_GEOMETRY_AUGMENTATION_PROBABILITY,
     GEOMETRY_FAMILIES,
@@ -320,6 +321,14 @@ def test_diagnostic_staff_band_full_width_keeps_measure_x_and_staff_y():
         (100.0, 220.0, 500.0, 320.0),
         (100.0, 500.0, 500.0, 600.0),
     )
+
+
+def test_diagnostic_staff_bbox_sensitivity_variants_keep_x_and_apply_signed_y_rules():
+    variants = dict(_staff_bbox_variants([[10, 20, 100, 60]], deltas=(1,)))
+    assert variants["staff_translate_y_plus_1px"] == [[10.0, 21.0, 100.0, 61.0]]
+    assert variants["staff_top_plus_1px"] == [[10.0, 21.0, 100.0, 60.0]]
+    assert variants["staff_bottom_plus_1px"] == [[10.0, 20.0, 100.0, 61.0]]
+    assert variants["staff_height_plus_1px"] == [[10.0, 19.0, 100.0, 61.0]]
 
 
 def test_staff_relative_dataset_is_one_measure_item_with_variable_staff_count(tmp_path: Path):

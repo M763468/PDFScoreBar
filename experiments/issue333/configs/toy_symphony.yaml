@@ -1,0 +1,32 @@
+run:
+  run_id: issue333_phase2_toy_symphony
+  output_root: logs/issue333/phase2/runs
+inputs:
+  pdf_path: /source-evaluation/pdfs/おもちゃの交響曲_bass.pdf
+  pdf_to_images:
+    dpi: 360
+    pages: "3"
+steps:
+  pdf_to_images: true
+  detection: true
+  filter_pages: true
+  apply_barline_overrides: false
+  numbering_base: true
+  mmr_overrides: false
+  apply_measure_overrides: false
+  overlay: false
+detection:
+  sr_scale: 2
+  container_name: pdfscore_issue333
+  hybrid_output_root: logs/issue333/phase2/hybrid/toy_symphony
+  ink_threshold: 230
+  min_ratio: 0.70
+  min_height_ratio: 0.012
+  cnn_model_path: /opt/pdfscore-assets/barline_cnn_smoke.pth
+  cnn_threshold: 0.1
+filters:
+  blank_page: auto
+  staff_detect: auto
+numbering:
+  force_single_system: false
+

@@ -1,0 +1,32 @@
+{
+  "schema_version": "issue333.corpus.v2",
+  "sources": [
+    {
+      "score": "beethoven9",
+      "work": "Symphony No. 9",
+      "part": "Violin I",
+      "pdf_filename": "IMSLP19910-PMLP01607-Beethoven_Symphony_9_V1.pdf",
+      "sha256": "94edf21f3eb5601bf83d34ecac5b6474d66d6cbc711da60dc01e3e247b551d2b",
+      "page_count": 20,
+      "native_toc": false,
+      "native_text": false,
+      "split": "holdout",
+      "evaluated_source_pages": [4, 5, 9, 10, 12, 13, 14]
+    },
+    {
+      "score": "toy_symphony",
+      "work": "Toy Symphony",
+      "part": "Bass",
+      "pdf_filename": "おもちゃの交響曲_bass.pdf",
+      "sha256": "9d505c3183ac4cca03da0f6b855fbbd4f379062cbd41da945795fe747fc16ee8",
+      "page_count": 4,
+      "native_toc": true,
+      "native_toc_semantics": "scanner page labels only; not movement structure",
+      "native_text": false,
+      "split": "holdout",
+      "evaluated_source_pages": [2]
+    }
+  ],
+  "ground_truth_policy": "Visual source-page review plus fresh current-pipeline system alignment; no inference from historical numbering artifacts.",
+  "copyrighted_bytes_committed": false
+}

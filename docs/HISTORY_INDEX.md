@@ -88,6 +88,24 @@ Start with:
 
 The legacy ledger is historical navigation, not the current specification.
 
+### Movement-aware numbering
+
+Primary lineage:
+
+#268 → #333
+
+Start with:
+
+- [`docs/MOVEMENT_BOUNDARY_CONTRACT.md`](MOVEMENT_BOUNDARY_CONTRACT.md) for the
+  current resolved consumer and candidate/evidence contracts;
+- [`docs/ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md`](ISSUE333_MOVEMENT_BOUNDARY_INVESTIGATION.md)
+  for the representative fixture, bounded strategy comparison, and automatic
+  detection disposition;
+- current source/tests for numbering behavior.
+
+Issue #268 owns consumption/reset semantics. Issue #333 found no evidence for
+measure-level movement starts and did not approve a silent automatic producer.
+
 ### Fresh detector restoration / connector-aware grouping / HOMR support reuse
 
 Primary lineage:

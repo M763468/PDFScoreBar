@@ -1,0 +1,166 @@
+{
+  "schema_version": "issue333.movement_boundary_fixture.v1",
+  "coordinate_system": {
+    "page": "zero-based source PDF page",
+    "system": "zero-based system in fresh current-pipeline numbering_base artifact"
+  },
+  "source_commit": "862a9833e2a349106107ed7709c597ba07b18a01",
+  "render_dpi": 360,
+  "sources": [
+    {
+      "score": "festival",
+      "pdf_filename": "Shostakovich-Festival_Overture_Va.pdf",
+      "sha256": "ef591486a2f84ac5620ae0fec8dcd6c6302077cf5fbf072c963b94541a84c09e",
+      "evaluated_pages": [0, 1, 7, 8]
+    },
+    {
+      "score": "prokofiev1",
+      "pdf_filename": "Va_Prokofiev_Symphony1.pdf",
+      "sha256": "19ae15f01835456df08194c072be428c9b94fb51c7a1e04fdea7c0a789a50b41",
+      "evaluated_pages": [2, 3]
+    },
+    {
+      "score": "prokofiev5",
+      "pdf_filename": "Va__Prokofiev_Symphony5.pdf",
+      "sha256": "68c91104c0922e1648d69c37bbf55c9f5acb938bd80817d0ea6fffac28210e90",
+      "evaluated_pages": [5, 6, 12, 15, 16]
+    },
+    {
+      "score": "shostakovich5",
+      "pdf_filename": "Shostakovich-Sym5-Va.pdf",
+      "sha256": "fdbd3c78d83264a82ca4bb5fd22a812466b1c0d70695adccb2a6d7b78a37753e",
+      "evaluated_pages": [6, 7, 8]
+    },
+    {
+      "score": "sibelius",
+      "pdf_filename": "Sibelius-Violin_Concerto-Viola.pdf",
+      "sha256": "23e5c1ad18090789a7a93e032b34f2effcf218d549c6715fa093e89b5a76f959",
+      "evaluated_pages": [4, 5, 6, 7]
+    }
+  ],
+  "boundaries": [
+    {
+      "score": "prokofiev1",
+      "movement": "II",
+      "page": 2,
+      "page_id": "page_003",
+      "system": 3,
+      "placement": "mid_page"
+    },
+    {
+      "score": "prokofiev1",
+      "movement": "III",
+      "page": 3,
+      "page_id": "page_004",
+      "system": 3,
+      "placement": "mid_page"
+    },
+    {
+      "score": "prokofiev1",
+      "movement": "IV",
+      "page": 3,
+      "page_id": "page_004",
+      "system": 8,
+      "placement": "mid_page"
+    },
+    {
+      "score": "prokofiev5",
+      "movement": "II",
+      "page": 6,
+      "page_id": "page_007",
+      "system": 0,
+      "placement": "page_start"
+    },
+    {
+      "score": "prokofiev5",
+      "movement": "III",
+      "page": 12,
+      "page_id": "page_013",
+      "system": 0,
+      "placement": "page_start"
+    },
+    {
+      "score": "prokofiev5",
+      "movement": "IV",
+      "page": 15,
+      "page_id": "page_016",
+      "system": 5,
+      "placement": "mid_page"
+    },
+    {
+      "score": "shostakovich5",
+      "movement": "II",
+      "page": 7,
+      "page_id": "page_008",
+      "system": 5,
+      "placement": "mid_page"
+    },
+    {
+      "score": "sibelius",
+      "movement": "II",
+      "page": 5,
+      "page_id": "page_006",
+      "system": 0,
+      "placement": "page_start"
+    },
+    {
+      "score": "sibelius",
+      "movement": "III",
+      "page": 6,
+      "page_id": "page_007",
+      "system": 0,
+      "placement": "page_start"
+    }
+  ],
+  "reviewed_negatives": [
+    {
+      "score": "festival",
+      "page": 1,
+      "page_id": "page_002",
+      "system": 0,
+      "reason": "ordinary_page_continuation"
+    },
+    {
+      "score": "festival",
+      "page": 7,
+      "page_id": "page_008",
+      "system": 0,
+      "reason": "multi_page_movement_continuation"
+    },
+    {
+      "score": "festival",
+      "page": 8,
+      "page_id": "page_009",
+      "system": 3,
+      "reason": "heading_like_tempo_change_without_movement"
+    },
+    {
+      "score": "festival",
+      "page": 8,
+      "page_id": "page_009",
+      "system": 8,
+      "reason": "end_like_barline_without_following_reset"
+    },
+    {
+      "score": "prokofiev1",
+      "page": 3,
+      "page_id": "page_004",
+      "system": 7,
+      "reason": "strong_whitespace_without_movement"
+    },
+    {
+      "score": "prokofiev5",
+      "page": 15,
+      "page_id": "page_016",
+      "system": 3,
+      "reason": "piu_lento_heading_without_movement"
+    },
+    {
+      "score": "sibelius",
+      "page": 4,
+      "page_id": "page_005",
+      "system": 6,
+      "reason": "strong_whitespace_without_movement"
+    }
+  ]
+}

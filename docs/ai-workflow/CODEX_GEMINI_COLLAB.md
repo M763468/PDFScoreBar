@@ -203,6 +203,18 @@ codex> gemini -i "この差分を中間レビューして"
 - 重複した質問
 - 明らかな確認だけの短いやり取り
 
+### 2026-09-18 JST / issue-268
+
+- Mode: `codex_primary`
+- Writer: `codex`
+- Phase: `design`
+- Trigger: score-level numbering state and page-local MMR override rebasing cross a core pipeline boundary.
+- Question (summary): review Phase-A preservation, Phase-C continuation, explicit system reset, provenance, and skip-existing state reuse.
+- Secondary answer (summary): Gemini CLI could not authenticate in this environment, so no answer was available; local source and focused tests remained authoritative.
+- Decision: `rejected`
+- Action taken: retained Phase-A/MMR contracts and implemented the minimal Phase-C state consumer with explicit metadata and safe artifact reuse checks.
+- Evidence: focused Issue #268/#257, numbering override, final-output, and corrected-rerun tests.
+
 ### ログ記入テンプレート
 
 ```md

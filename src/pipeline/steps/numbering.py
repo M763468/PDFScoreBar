@@ -4,12 +4,16 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Mapping, Optional
 
 import torch
 
 from src.pipeline.core.python_env import get_pipeline_python
 from src.pipeline.utils.images import load_image_size
+from src.pipeline.utils.io import load_json
+
+MOVEMENT_BOUNDARY_SCHEMA_VERSION = "issue268.movement_boundaries.v1"
+FINAL_NUMBERING_SCHEMA_VERSION = "issue268.final_numbering.v1"
 
 
 def empty_numbering_payload(page_number: int, image_path: Path) -> Dict[str, Any]:
@@ -24,6 +28,146 @@ def empty_numbering_payload(page_number: int, image_path: Path) -> Dict[str, Any
             }
         ]
     }
+
+
+def load_movement_boundary_payload(raw_input: Any) -> Dict[str, Any]:
+    """Load and validate explicit, resolved movement boundaries.
+
+    The payload is intentionally detector-independent. Page and system indices
+    are zero-based and refer to the ordered pipeline input. A boundary is an
+    instruction to reset immediately before the selected system; it is not
+    inferred from page breaks, barlines, or ``MeasureAttribute.set_number``.
+    """
+    if raw_input is None:
+        return {"schema_version": MOVEMENT_BOUNDARY_SCHEMA_VERSION, "boundaries": []}
+
+    if isinstance(raw_input, (str, Path)):
+        payload = load_json(Path(raw_input))
+    else:
+        payload = raw_input
+    if not isinstance(payload, dict):
+        raise ValueError("movement boundaries must be a JSON object or input path")
+
+    schema_version = payload.get("schema_version", MOVEMENT_BOUNDARY_SCHEMA_VERSION)
+    if schema_version != MOVEMENT_BOUNDARY_SCHEMA_VERSION:
+        raise ValueError(
+            "Unsupported movement boundary schema_version: "
+            f"{schema_version!r}; expected {MOVEMENT_BOUNDARY_SCHEMA_VERSION!r}"
+        )
+
+    raw_boundaries = payload.get("boundaries", [])
+    if not isinstance(raw_boundaries, list):
+        raise ValueError("movement boundaries 'boundaries' must be a list")
+
+    boundaries: list[Dict[str, Any]] = []
+    seen: set[tuple[int, int]] = set()
+    for index, raw_boundary in enumerate(raw_boundaries):
+        if not isinstance(raw_boundary, dict):
+            raise ValueError(f"movement boundary {index} must be an object")
+        try:
+            page = _strict_boundary_int(raw_boundary["page"], "page")
+            system = _strict_boundary_int(raw_boundary["system"], "system")
+            reset_number = _strict_boundary_int(raw_boundary["reset_number"], "reset_number")
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                "movement boundaries require integer page, system, and reset_number: "
+                f"{raw_boundary!r}"
+            ) from exc
+        if page < 0 or system < 0:
+            raise ValueError("movement boundary page and system must be non-negative")
+
+        key = (page, system)
+        if key in seen:
+            raise ValueError(f"duplicate movement boundary at page/system {key}")
+        seen.add(key)
+
+        source = raw_boundary.get("source")
+        provenance = raw_boundary.get("provenance")
+        if not isinstance(source, str) or not source.strip():
+            raise ValueError(f"movement boundary {index} requires a non-empty source")
+        if not isinstance(provenance, dict):
+            raise ValueError(f"movement boundary {index} requires provenance object")
+
+        boundary = deepcopy(raw_boundary)
+        boundary.update({"page": page, "system": system, "reset_number": reset_number})
+        boundaries.append(boundary)
+
+    boundaries.sort(key=lambda item: (item["page"], item["system"]))
+    return {"schema_version": MOVEMENT_BOUNDARY_SCHEMA_VERSION, "boundaries": boundaries}
+
+
+def _strict_boundary_int(value: Any, field: str) -> int:
+    if isinstance(value, bool):
+        raise ValueError(f"movement boundary {field} must be an integer")
+    if isinstance(value, float) and not value.is_integer():
+        raise ValueError(f"movement boundary {field} must be an integer")
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"movement boundary {field} must be an integer") from exc
+
+
+def movement_boundaries_for_page(
+    payload: Mapping[str, Any], page_index: int
+) -> list[Dict[str, Any]]:
+    """Return resolved boundary records for one global page index."""
+    return [
+        deepcopy(boundary)
+        for boundary in payload.get("boundaries", [])
+        if isinstance(boundary, dict) and boundary.get("page") == page_index
+    ]
+
+
+def final_numbering_metadata(
+    *,
+    page_index: int,
+    start_number: int,
+    next_number: int,
+    boundaries: list[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Build additive metadata shared by page-level final artifacts."""
+    return {
+        "schema_version": FINAL_NUMBERING_SCHEMA_VERSION,
+        "page_index": page_index,
+        "start_number": start_number,
+        "next_number": next_number,
+        "movement_boundaries": deepcopy(boundaries),
+    }
+
+
+def persisted_final_next_number(
+    path: Path,
+    *,
+    expected_start_number: int,
+    expected_boundaries: list[Dict[str, Any]],
+) -> Optional[int]:
+    """Return reusable score state only from a matching final artifact.
+
+    Older page-local artifacts intentionally return ``None``. Reconstructing
+    score state from their visible maximum would lose MMR skip semantics.
+    """
+    try:
+        payload = load_json(path)
+    except (OSError, ValueError, TypeError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    metadata = payload.get("numbering_metadata")
+    if not isinstance(metadata, dict):
+        return None
+    if metadata.get("schema_version") != FINAL_NUMBERING_SCHEMA_VERSION:
+        return None
+    if metadata.get("start_number") != expected_start_number:
+        return None
+    if metadata.get("movement_boundaries") != expected_boundaries:
+        return None
+    next_number = metadata.get("next_number")
+    if isinstance(next_number, bool):
+        return None
+    try:
+        return int(next_number)
+    except (TypeError, ValueError):
+        return None
 
 
 def build_add_measure_numbers_cmd(

@@ -9,7 +9,6 @@ from pathlib import Path
 
 from src.pipeline.movement_boundary_candidates import build_movement_boundary_evidence
 
-
 HOLDOUT = {"beethoven9", "toy_symphony"}
 
 
@@ -60,10 +59,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     fixture = json.loads(args.fixture.read_text(encoding="utf-8"))
-    truth = {
-        (item["score"], item["page_id"], item["system"])
-        for item in fixture["boundaries"]
-    }
+    truth = {(item["score"], item["page_id"], item["system"]) for item in fixture["boundaries"]}
     predicted = set()
     universe = set()
     records = []

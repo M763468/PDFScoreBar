@@ -260,7 +260,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     production_classifier = MMRClassifier(args.production_model, device)
     full_model, staff_model = _load_encoders(args.full_model, args.staff_model, device)
     fusion = MonotonicLogitFusion()
-    fusion.load_state_dict(torch.load(args.fusion_model, map_location="cpu", weights_only=True))
+    fusion_bundle = torch.load(args.fusion_model, map_location="cpu", weights_only=True)
+    fusion.load_state_dict(fusion_bundle["fusion_state_dict"])
     fusion.eval()
     weights = [float(value) for value in fusion.effective_weights()]
     bias = float(fusion.bias.item())

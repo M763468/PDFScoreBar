@@ -263,7 +263,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     fusion_bundle = torch.load(args.fusion_model, map_location="cpu", weights_only=True)
     fusion.load_state_dict(fusion_bundle["fusion_state_dict"])
     fusion.eval()
-    weights = [float(value) for value in fusion.effective_weights()]
+    weights = [float(value) for value in fusion.effective_weights().detach()]
     bias = float(fusion.bias.item())
 
     rows = []
@@ -315,7 +315,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         )
         expected_by_key = {
             (int(item["system"]), int(item["measure"])): int(item["skip"])
-            for item in expected_payload.get("measure_overrides", [])
+            for item in expected_payload.get("overrides", [])
         }
         for local_index, (system_index, measure_index, bbox, staff_bboxes) in enumerate(identities):
             staff_start, staff_end = staff_slices[local_index]

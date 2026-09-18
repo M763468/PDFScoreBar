@@ -772,6 +772,26 @@ def build_parser() -> argparse.ArgumentParser:
 
 if __name__ == "__main__":
     result = run(build_parser().parse_args())
+    joint_summary = None
+    if "joint_geometry" in result:
+        joint_summary = {
+            scope: {
+                "main": value["main"],
+                "rescue": value["rescue"],
+                "misclassified_samples": value["any_main_misclassification_sample_count"],
+            }
+            for scope, value in result["joint_geometry"].items()
+        }
+    dpi_summary = None
+    if "coherent_dpi" in result:
+        dpi_summary = {
+            scope: {
+                "main_crossings": value["summary"]["main"]["unique_crossing_count"],
+                "rescue_crossings": value["summary"]["rescue"]["unique_crossing_count"],
+                "per_scale": value["per_scale"],
+            }
+            for scope, value in result["coherent_dpi"].items()
+        }
     print(
         json.dumps(
             {
@@ -794,8 +814,8 @@ if __name__ == "__main__":
                     }
                     for name, value in result["causal_controls"].items()
                 },
-                "joint": result.get("joint_geometry"),
-                "dpi": result.get("coherent_dpi"),
+                "joint": joint_summary,
+                "dpi": dpi_summary,
             },
             indent=2,
         )

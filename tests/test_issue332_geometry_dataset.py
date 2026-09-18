@@ -34,6 +34,12 @@ from tools.mmr_training.issue332.geometry_training import (
     prepare_split_contract,
     source_page_cache_info,
 )
+from tools.mmr_training.issue332.production_replay_validation import (
+    _dpi_requests,
+    _route,
+    _variant_parts,
+    baseline_joint_summary,
+)
 from tools.mmr_training.issue332.staff_failure_diagnosis import staff_band_full_width_rois
 from tools.mmr_training.issue332.staff_model import StaffRelativeResNet18
 from tools.mmr_training.issue332.staff_view import (
@@ -810,3 +816,78 @@ def test_final_envelope_records_unique_crossings_and_direction():
     assert summary["main"]["positive_to_negative"] == ["positive"]
     assert summary["rescue"]["unique_crossing_count"] == 1
     assert summary["samples"]["negative"]["probability_range"] == pytest.approx(0.55)
+
+
+def test_baseline_joint_repeats_measure_probability_across_staff_space():
+    payload = {
+        "rows": [
+            {
+                "sample_id": "sample",
+                "label": 0,
+                "variant": "native",
+                "dpi_scale": 1.0,
+                "resize_mode": "direct",
+                "probability": 0.4,
+            },
+            {
+                "sample_id": "sample",
+                "label": 0,
+                "variant": "x1_plus_1px",
+                "dpi_scale": 1.0,
+                "resize_mode": "direct",
+                "probability": 0.6,
+            },
+        ]
+    }
+    summary = baseline_joint_summary(payload, staff_variant_names=["native", "staff_top_plus_1px"])
+    assert summary["joint_variants_per_sample"] == 4
+    assert summary["main"]["unique_crossing_count"] == 1
+    assert summary["main"]["crossing_variant_count"] == 2
+    assert summary["samples"][0]["probability_range"] == pytest.approx(0.2)
+
+
+def test_production_replay_variant_and_route_contract():
+    assert _variant_parts("measure=x1_plus_4px|staff=staff_translate_y_minus_1px") == (
+        "x1_plus_4px",
+        "staff_translate_y_minus_1px",
+    )
+    assert _route(0.1) == "below_rescue"
+    assert _route(0.5) == "rescue"
+    assert _route(0.55) == "main_veto_sensitive"
+    assert _route(0.6) == "main"
+
+
+def test_production_replay_dpi_requests_use_one_x_as_native():
+    samples = {"sample": {"sample_id": "sample"}}
+    validation = {
+        "coherent_dpi": {
+            "primary": {
+                "rows": [
+                    {
+                        "sample_id": "sample",
+                        "dpi_scale": 0.8,
+                        "probability": 0.09,
+                        "variant": "dpi_0.8",
+                    },
+                    {
+                        "sample_id": "sample",
+                        "dpi_scale": 1.0,
+                        "probability": 0.2,
+                        "variant": "dpi_1",
+                    },
+                    {
+                        "sample_id": "sample",
+                        "dpi_scale": 1.25,
+                        "probability": 0.6,
+                        "variant": "dpi_1.25",
+                    },
+                ]
+            }
+        }
+    }
+    requests, native = _dpi_requests(validation, samples, "primary")
+    assert native["sample"]["probability"] == pytest.approx(0.2)
+    assert [request["threshold_crossings"] for request in requests] == [
+        ["rescue"],
+        ["main"],
+    ]

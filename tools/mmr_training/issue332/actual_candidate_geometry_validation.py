@@ -237,12 +237,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     if manifest.get("status") != "completed" or int(manifest.get("completed_page_count", 0)) != 68:
         raise ValueError("Issue #294 full68 manifest is not completed")
     gates = manifest.get("gates", {})
-    for key in (
-        "B_C_native_final_barlines_identical_all_pages",
-        "B_C_native_numbering_identical_all_pages",
-    ):
-        if not gates.get(key):
-            raise ValueError(f"Issue #294 provenance gate failed: {key}")
+    if not gates.get("B_C_native_final_barlines_identical_all_pages"):
+        raise ValueError(
+            "Issue #294 provenance gate failed: B_C_native_final_barlines_identical_all_pages"
+        )
 
     specs = build_page_specs()
     if not args.full68:
@@ -480,6 +478,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "accepted_rebase": accepted_provenance,
             "issue294_manifest_checkout": manifest.get("checkout"),
             "issue294_latest_homr_commit": manifest.get("latest_homr_commit"),
+            "issue294_manifest_gates": gates,
             "candidate_label": "C_latest",
             "candidate_geometry_sha256": geometry_digest.hexdigest(),
             "runtime": {

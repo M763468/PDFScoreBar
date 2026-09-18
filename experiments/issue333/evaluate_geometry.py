@@ -43,6 +43,8 @@ def predict(pages: dict) -> tuple[set[tuple[str, str, int]], list[dict]]:
     evidence = []
     for (score, page_id), page in pages.items():
         boxes = [system["staves"][0]["bbox"] for system in page["systems"]]
+        if not boxes:
+            continue
         left_median = median(box[0] for box in boxes)
         gaps = [boxes[index][1] - boxes[index - 1][3] for index in range(1, len(boxes))]
         gap_median = median(gaps) if gaps else None

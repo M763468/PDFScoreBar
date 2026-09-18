@@ -21,7 +21,11 @@ from tools.mmr_training.issue332.dual_view_diagnosis import (
     _metrics,
     _probability_envelope,
 )
-from tools.mmr_training.issue332.dual_view_fusion import fuse_probabilities, sha256_file
+from tools.mmr_training.issue332.dual_view_fusion import (
+    MonotonicLogitFusion,
+    fuse_probabilities,
+    sha256_file,
+)
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -40,10 +44,10 @@ def _key(row: dict[str, Any]) -> tuple[str, str, float, str]:
 def _load_fusion(path: Path) -> tuple[list[float], float, dict[str, Any]]:
     payload = torch.load(path, map_location="cpu", weights_only=True)
     state = payload["fusion_state_dict"]
-    weights = [float(value) for value in state["weights"]]
-    bias = float(state["bias"])
-    if min(weights) < 0.0:
-        raise ValueError("serialized fusion weights are not monotonic")
+    model = MonotonicLogitFusion()
+    model.load_state_dict(state)
+    weights = [float(value) for value in model.effective_weights().detach()]
+    bias = float(model.bias.detach())
     return weights, bias, payload
 
 
@@ -222,8 +226,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "full_mean_inference_ms": full_runtime,
             "staff_mean_inference_ms": staff_runtime,
             "estimated_serial_dual_view_ms": full_runtime + staff_runtime,
-            "fusion_head_cost": "negligible two-weight affine operation",
-            "parameter_count": "two ResNet18 encoders plus 3 fusion scalars",
+            "fusion_head_cost": "negligible convex mixture plus bias",
+            "parameter_count": "two ResNet18 encoders plus 2 fusion scalars",
         },
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)

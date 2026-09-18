@@ -254,15 +254,16 @@ The two runs above share the same frozen split, optimizer/training profile, and 
 After the full-measure and `staff-core-center-3h` diagnostics established
 complementary native errors, the next single candidate isolates fusion from
 representation learning.  It freezes both existing ResNet18 checkpoints and
-fits only three scalars over their measure-level logits:
+fits only a convex mixing scalar and bias over their measure-level logits:
 
 ```text
-fusion_logit = w_full * full_logit + w_staff * max(staff_logits) + bias
-w_full >= 0, w_staff >= 0
+fusion_logit = alpha * full_logit + (1 - alpha) * max(staff_logits) + bias
+0 <= alpha <= 1
 ```
 
-The non-negative constraint makes each view monotonic evidence for MMR rather
-than allowing the tiny fusion head to learn an inverted shortcut.  Feature
+The convex constraint makes each view monotonic evidence for MMR, prevents the
+head from creating artificial robustness by unbounded logit-scale growth, and
+does not allow an inverted shortcut.  Feature
 extraction and head fitting use only native train/validation members from the
 unchanged primary split.  The test split is evaluated only after selection by
 validation F1 (unweighted validation BCE breaks ties).  There is no encoder

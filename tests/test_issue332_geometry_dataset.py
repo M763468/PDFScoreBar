@@ -772,5 +772,7 @@ def test_frozen_logit_fusion_fits_complementary_views_deterministically():
     )
     probabilities = torch.sigmoid(model(features)).reshape(-1)
     assert ((probabilities >= 0.5).to(torch.float32) == labels.reshape(-1)).all()
-    assert min(float(value) for value in model.weights.detach()) >= 0.0
+    weights = [float(value) for value in model.effective_weights().detach()]
+    assert min(weights) >= 0.0
+    assert sum(weights) == pytest.approx(1.0)
     assert fit["best"]["validation_f1"] == 1.0

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Train the Issue #332 frozen-logit dual-view fusion candidate.
 
-The two existing ResNet18 checkpoints remain frozen.  Only a monotonic affine
+The two existing ResNet18 checkpoints remain frozen.  Only a monotonic convex
 head over their measure-level logits is fitted, which isolates the causal
 question of whether the observed view complementarity generalizes beyond the
 diagnostic ``min(probability)`` rule.
@@ -41,7 +41,7 @@ from tools.mmr_training.issue332.staff_model import StaffRelativeResNet18
 from tools.mmr_training.issue332.staff_view import crop_source_bbox, staff_relative_roi_bboxes
 from tools.mmr_training.issue332_geometry_benchmark import crop_measure
 
-FUSION_VIEW = "frozen-logit-monotonic-affine"
+FUSION_VIEW = "frozen-logit-convex-mixture"
 DIRECT_TRANSFORM = transforms.Compose(
     [
         transforms.Resize((224, 224)),
@@ -69,19 +69,20 @@ def _git_head() -> str | None:
 
 
 class MonotonicLogitFusion(nn.Module):
-    """Affine fusion whose two evidence weights are projected non-negative."""
+    """Convex logit mixture with a learned bias and bounded evidence scale."""
 
     def __init__(self) -> None:
         super().__init__()
-        self.weights = nn.Parameter(torch.ones(2))
+        self.full_weight_logit = nn.Parameter(torch.zeros(1))
         self.bias = nn.Parameter(torch.zeros(1))
 
     def forward(self, logits: torch.Tensor) -> torch.Tensor:
-        return logits @ self.weights.clamp_min(0.0).unsqueeze(1) + self.bias
+        weights = self.effective_weights()
+        return logits @ weights.unsqueeze(1) + self.bias
 
-    def project_monotonic(self) -> None:
-        with torch.no_grad():
-            self.weights.clamp_(min=0.0)
+    def effective_weights(self) -> torch.Tensor:
+        full_weight = torch.sigmoid(self.full_weight_logit).reshape(())
+        return torch.stack((full_weight, 1.0 - full_weight))
 
 
 def fuse_logits(
@@ -241,7 +242,6 @@ def fit_fusion_head(
         loss = criterion(model(train_features), train_labels)
         loss.backward()
         optimizer.step()
-        model.project_monotonic()
         validation_metrics, _probabilities, validation_loss = _evaluate_head(
             model, validation_features, validation_labels
         )
@@ -250,7 +250,7 @@ def fit_fusion_head(
             "train_loss": float(loss.detach()),
             "validation_loss": validation_loss,
             "validation_f1": validation_metrics["f1"],
-            "weights": [float(value) for value in model.weights.detach()],
+            "weights": [float(value) for value in model.effective_weights().detach()],
             "bias": float(model.bias.detach()),
         }
         history.append(entry)
@@ -283,6 +283,47 @@ def _per_score(
     }
 
 
+def load_retained_native_logits(
+    path: Path,
+    *,
+    manifest_sha256: str,
+    split_sha256: str,
+    full_model_sha256: str,
+    staff_model_sha256: str,
+) -> dict[str, tuple[torch.Tensor, torch.Tensor, list[dict[str, Any]]]]:
+    """Reuse immutable encoder outputs after validating their full provenance."""
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    provenance = payload["provenance"]
+    expected = {
+        "manifest_sha256": manifest_sha256,
+        "split_sha256": split_sha256,
+        "full_model_sha256": full_model_sha256,
+        "staff_model_sha256": staff_model_sha256,
+    }
+    mismatches = {
+        key: (provenance.get(key), value)
+        for key, value in expected.items()
+        if provenance.get(key) != value
+    }
+    if mismatches:
+        raise ValueError(f"retained feature provenance mismatch: {mismatches}")
+    result = {}
+    for name in ("train", "validation", "test"):
+        rows = payload["splits"][name]["rows"]
+        result[name] = (
+            torch.tensor(
+                [[row["full_logit"], row["staff_logit"]] for row in rows],
+                dtype=torch.float32,
+            ),
+            torch.tensor([row["label"] for row in rows], dtype=torch.float32).unsqueeze(1),
+            [
+                {key: value for key, value in row.items() if key != "fusion_probability"}
+                for row in rows
+            ],
+        )
+    return result
+
+
 def run(args: argparse.Namespace) -> dict[str, Any]:
     config = json.loads(args.config.read_text(encoding="utf-8"))
     expected_contract = {
@@ -291,7 +332,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "rescue_threshold": 0.1,
         "seed": 42,
         "training_geometry": "native-only",
-        "weight_constraint": "non-negative",
+        "weight_constraint": "convex-combination",
     }
     mismatches = {
         key: (config.get(key), value)
@@ -323,19 +364,28 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         name: samples_for_split(eligible, split_contract, name)
         for name in ("train", "validation", "test")
     }
-    full_model, staff_model = _load_encoders(args.full_model, args.staff_model, device)
-    extracted = {}
+    source_hashes = {
+        "manifest_sha256": sha256_file(args.manifest),
+        "split_sha256": sha256_file(args.split_manifest),
+        "full_model_sha256": sha256_file(args.full_model),
+        "staff_model_sha256": sha256_file(args.staff_model),
+    }
     total_inference_seconds = 0.0
-    for name in ("train", "validation", "test"):
-        features, labels, rows, inference_seconds = extract_native_logits(
-            split_samples[name],
-            manifest_path=args.manifest,
-            full_model=full_model,
-            staff_model=staff_model,
-            device=device,
-        )
-        extracted[name] = (features, labels, rows)
-        total_inference_seconds += inference_seconds
+    if args.feature_artifact:
+        extracted = load_retained_native_logits(args.feature_artifact, **source_hashes)
+    else:
+        full_model, staff_model = _load_encoders(args.full_model, args.staff_model, device)
+        extracted = {}
+        for name in ("train", "validation", "test"):
+            features, labels, rows, inference_seconds = extract_native_logits(
+                split_samples[name],
+                manifest_path=args.manifest,
+                full_model=full_model,
+                staff_model=staff_model,
+                device=device,
+            )
+            extracted[name] = (features, labels, rows)
+            total_inference_seconds += inference_seconds
 
     model, fit = fit_fusion_head(
         extracted["train"][0],
@@ -366,7 +416,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "rows": rows,
         }
 
-    weights = [float(value) for value in model.weights.detach()]
+    weights = [float(value) for value in model.effective_weights().detach()]
     output = {
         "provenance": {
             "issue": 332,
@@ -377,6 +427,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "full_model_sha256": sha256_file(args.full_model),
             "staff_model_sha256": sha256_file(args.staff_model),
             "fusion_model_sha256": sha256_file(args.output_model),
+            "feature_artifact": (
+                str(args.feature_artifact.resolve()) if args.feature_artifact else None
+            ),
+            "feature_artifact_sha256": (
+                sha256_file(args.feature_artifact) if args.feature_artifact else None
+            ),
+            "retained_native_logits_reused": bool(args.feature_artifact),
             "config_sha256": sha256_file(args.config),
             "seed": seed,
             "device": str(device),
@@ -387,7 +444,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "view": FUSION_VIEW,
             "encoders": "frozen existing full-measure and staff-core-center-3h ResNet18",
             "features": ["full_measure_logit", "max_staff_logit"],
-            "fusion": "non-negative affine weights plus bias",
+            "fusion": "convex mixture weights summing to one plus bias",
             "loss": "BCEWithLogitsLoss with training-split positive class weight",
             "thresholds": {"main": 0.5, "rescue": 0.1},
             "training_geometry": "native only",
@@ -397,12 +454,21 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "selected_parameters": {"weights": weights, "bias": float(model.bias.detach())},
         "splits": split_results,
         "runtime": {
-            "encoder_inference_seconds": total_inference_seconds,
+            "encoder_inference_seconds": (
+                None if args.feature_artifact else total_inference_seconds
+            ),
             "semantic_samples": sum(len(value) for value in split_samples.values()),
             "mean_encoder_inference_ms_per_measure": (
-                total_inference_seconds
+                None
+                if args.feature_artifact
+                else total_inference_seconds
                 / sum(len(value) for value in split_samples.values())
                 * 1000.0
+            ),
+            "retained_feature_runtime": (
+                json.loads(args.feature_artifact.read_text(encoding="utf-8")).get("runtime")
+                if args.feature_artifact
+                else None
             ),
         },
     }
@@ -419,6 +485,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--full-model", type=Path, required=True)
     parser.add_argument("--staff-model", type=Path, required=True)
     parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument(
+        "--feature-artifact",
+        type=Path,
+        help="Reuse retained native encoder logits after strict provenance validation.",
+    )
     parser.add_argument("--output-model", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")

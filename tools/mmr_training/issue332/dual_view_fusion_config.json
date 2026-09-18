@@ -1,5 +1,5 @@
 {
-  "candidate": "frozen-logit-monotonic-affine",
+  "candidate": "frozen-logit-convex-mixture",
   "epochs": 300,
   "learning_rate": 0.03,
   "loss": "BCEWithLogitsLoss",
@@ -7,5 +7,5 @@
   "rescue_threshold": 0.1,
   "seed": 42,
   "training_geometry": "native-only",
-  "weight_constraint": "non-negative"
+  "weight_constraint": "convex-combination"
 }

@@ -43,8 +43,7 @@ Current project-specific uses include:
 - `issue-post-mortem`: distill a completed investigation into durable evidence when that record is
   actually needed;
 - `graphify`: query an existing graph for a difficult cross-module dependency/call-path question;
-- `visual-diff-viewer`: collect relevant OMR images when visual comparison is useful;
-- `worktree-manager`: repository-specific worktree setup/management where applicable.
+- `visual-diff-viewer`: collect relevant OMR images when visual comparison is useful.
 
 Do not route routine status reporting, Issue/PR reading, PR creation/review, documentation updates,
 test generation, dependency inspection, diff explanation, or generic debugging through a dedicated

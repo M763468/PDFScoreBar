@@ -248,3 +248,40 @@ python tools/mmr_training/train_mmr_classifier.py \
 ```
 
 The two runs above share the same frozen split, optimizer/training profile, and semantic epoch length. Their intended causal difference is source-space bbox augmentation only.
+
+## Frozen-logit dual-view causal candidate
+
+After the full-measure and `staff-core-center-3h` diagnostics established
+complementary native errors, the next single candidate isolates fusion from
+representation learning.  It freezes both existing ResNet18 checkpoints and
+fits only three scalars over their measure-level logits:
+
+```text
+fusion_logit = w_full * full_logit + w_staff * max(staff_logits) + bias
+w_full >= 0, w_staff >= 0
+```
+
+The non-negative constraint makes each view monotonic evidence for MMR rather
+than allowing the tiny fusion head to learn an inverted shortcut.  Feature
+extraction and head fitting use only native train/validation members from the
+unchanged primary split.  The test split is evaluated only after selection by
+validation F1 (unweighted validation BCE breaks ties).  There is no encoder
+fine-tuning, geometry augmentation, threshold tuning, or RapidOCR input.
+
+```bash
+python tools/mmr_training/issue332/dual_view_fusion.py \
+  --manifest logs/issue332/source_manifest.json \
+  --split-manifest logs/issue332/primary_within_score_split.json \
+  --acceptance-manifest logs/issue332/acceptance_controls_manifest.json \
+  --full-model logs/issue332/primary_within_score_baseline_none.pth \
+  --staff-model logs/issue332/staff_core_center_3h_none.pth \
+  --config tools/mmr_training/issue332/dual_view_fusion_config.json \
+  --output-model logs/issue332/dual_view_fusion.pth \
+  --output logs/issue332/dual_view_fusion_training.json
+```
+
+The evaluation script reuses the retained, aligned full/staff probability
+artifacts for the measure-geometry envelope.  It also fuses the retained
+independent staff-bbox perturbations with the unchanged full-measure native
+probability, so staff `translate-y`, top, bottom, and symmetric height changes
+at `±1/2/4px` remain an explicit acceptance gate.

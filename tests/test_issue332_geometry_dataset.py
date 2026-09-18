@@ -5,12 +5,17 @@ from types import SimpleNamespace
 
 import cv2
 import numpy as np
+import pytest
 import torch
 from torchvision import transforms
 
 import tools.mmr_training.issue332.geometry_training as geometry_training
 from tools.mmr_training.create_mmr_train_data import create_dataset_from_configs
 from tools.mmr_training.issue332.dual_view_diagnosis import _staff_bbox_variants
+from tools.mmr_training.issue332.dual_view_fusion import (
+    fit_fusion_head,
+    fuse_probabilities,
+)
 from tools.mmr_training.issue332.geometry_training import (
     DEFAULT_GEOMETRY_AUGMENTATION_PROBABILITY,
     GEOMETRY_FAMILIES,
@@ -737,3 +742,35 @@ def test_score_level_summary_reports_confusion_and_metrics():
         "fn": 0,
         "tp": 1,
     }
+
+
+def test_dual_view_fusion_is_monotonic_in_each_probability():
+    common = {"weights": [0.75, 1.25], "bias": -0.3}
+    base = fuse_probabilities(0.2, 0.3, **common)
+    assert fuse_probabilities(0.4, 0.3, **common) > base
+    assert fuse_probabilities(0.2, 0.6, **common) > base
+
+
+def test_dual_view_fusion_rejects_negative_weights():
+    with pytest.raises(ValueError, match="non-negative"):
+        fuse_probabilities(0.2, 0.3, weights=[1.0, -0.1], bias=0.0)
+
+
+def test_frozen_logit_fusion_fits_complementary_views_deterministically():
+    # Positives are high in both views.  Each negative is high in only one,
+    # matching the complementarity observed in the retained Issue #332 data.
+    features = torch.tensor([[4.0, 4.0], [3.0, 3.0], [4.0, -4.0], [-4.0, 4.0], [-3.0, -3.0]])
+    labels = torch.tensor([[1.0], [1.0], [0.0], [0.0], [0.0]])
+    torch.manual_seed(42)
+    model, fit = fit_fusion_head(
+        features,
+        labels,
+        features,
+        labels,
+        epochs=200,
+        learning_rate=0.03,
+    )
+    probabilities = torch.sigmoid(model(features)).reshape(-1)
+    assert ((probabilities >= 0.5).to(torch.float32) == labels.reshape(-1)).all()
+    assert min(float(value) for value in model.weights.detach()) >= 0.0
+    assert fit["best"]["validation_f1"] == 1.0

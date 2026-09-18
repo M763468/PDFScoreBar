@@ -1,0 +1,461 @@
+{
+  "schema_version": "issue333.experiment_result.v1",
+  "experiment_id": "phase2-post-holdout-robust-verifier-v1",
+  "status": "exploratory_post_holdout; cannot supersede the locked holdout result",
+  "hypothesis": "Fuzzy musical-heading matching repairs OCR variants while a universal initial-system invariant removes the Toy first-movement false proposal.",
+  "parameters": {
+    "vocabulary": [
+      "adagio",
+      "allegro",
+      "andante",
+      "finale",
+      "gavotte",
+      "grave",
+      "larghetto",
+      "largo",
+      "lento",
+      "menuett",
+      "menuetto",
+      "minuet",
+      "moderato",
+      "prestissimo",
+      "presto",
+      "scherzo",
+      "vivace",
+      "vivacissimo"
+    ],
+    "fuzzy_similarity": "difflib.SequenceMatcher ratio",
+    "fuzzy_min_ratio": 0.8,
+    "candidate_gate": "frozen Phase 1 geometry rule",
+    "initial_invariant": "the first musical system in a complete document never needs a reset"
+  },
+  "metrics": {
+    "development": {
+      "geometry_candidate": {
+        "system_starts": 168,
+        "true_boundaries": 9,
+        "predicted": 11,
+        "true_positive": 9,
+        "false_reset": 2,
+        "missed_boundary": 0,
+        "precision": 0.818182,
+        "recall": 1.0,
+        "review_burden": 0.065476,
+        "false_reset_locations": [
+          [
+            "prokofiev1",
+            "page_004",
+            7
+          ],
+          [
+            "sibelius",
+            "page_005",
+            6
+          ]
+        ],
+        "missed_boundary_locations": []
+      },
+      "exact_semantic_consensus": {
+        "system_starts": 168,
+        "true_boundaries": 9,
+        "predicted": 9,
+        "true_positive": 9,
+        "false_reset": 0,
+        "missed_boundary": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "review_burden": 0.053571,
+        "false_reset_locations": [],
+        "missed_boundary_locations": []
+      },
+      "fuzzy_semantic_consensus": {
+        "system_starts": 168,
+        "true_boundaries": 9,
+        "predicted": 9,
+        "true_positive": 9,
+        "false_reset": 0,
+        "missed_boundary": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "review_burden": 0.053571,
+        "false_reset_locations": [],
+        "missed_boundary_locations": []
+      },
+      "fuzzy_consensus_excluding_initial_document_system": {
+        "system_starts": 168,
+        "true_boundaries": 9,
+        "predicted": 9,
+        "true_positive": 9,
+        "false_reset": 0,
+        "missed_boundary": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "review_burden": 0.053571,
+        "false_reset_locations": [],
+        "missed_boundary_locations": []
+      }
+    },
+    "holdout": {
+      "geometry_candidate": {
+        "system_starts": 107,
+        "true_boundaries": 5,
+        "predicted": 6,
+        "true_positive": 5,
+        "false_reset": 1,
+        "missed_boundary": 0,
+        "precision": 0.833333,
+        "recall": 1.0,
+        "review_burden": 0.056075,
+        "false_reset_locations": [
+          [
+            "toy_symphony",
+            "page_003",
+            0
+          ]
+        ],
+        "missed_boundary_locations": []
+      },
+      "exact_semantic_consensus": {
+        "system_starts": 107,
+        "true_boundaries": 5,
+        "predicted": 4,
+        "true_positive": 3,
+        "false_reset": 1,
+        "missed_boundary": 2,
+        "precision": 0.75,
+        "recall": 0.6,
+        "review_burden": 0.037383,
+        "false_reset_locations": [
+          [
+            "toy_symphony",
+            "page_003",
+            0
+          ]
+        ],
+        "missed_boundary_locations": [
+          [
+            "beethoven9",
+            "page_014",
+            0
+          ],
+          [
+            "toy_symphony",
+            "page_003",
+            8
+          ]
+        ]
+      },
+      "fuzzy_semantic_consensus": {
+        "system_starts": 107,
+        "true_boundaries": 5,
+        "predicted": 6,
+        "true_positive": 5,
+        "false_reset": 1,
+        "missed_boundary": 0,
+        "precision": 0.833333,
+        "recall": 1.0,
+        "review_burden": 0.056075,
+        "false_reset_locations": [
+          [
+            "toy_symphony",
+            "page_003",
+            0
+          ]
+        ],
+        "missed_boundary_locations": []
+      },
+      "fuzzy_consensus_excluding_initial_document_system": {
+        "system_starts": 107,
+        "true_boundaries": 5,
+        "predicted": 5,
+        "true_positive": 5,
+        "false_reset": 0,
+        "missed_boundary": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "review_burden": 0.046729,
+        "false_reset_locations": [],
+        "missed_boundary_locations": []
+      }
+    },
+    "all": {
+      "geometry_candidate": {
+        "system_starts": 275,
+        "true_boundaries": 14,
+        "predicted": 17,
+        "true_positive": 14,
+        "false_reset": 3,
+        "missed_boundary": 0,
+        "precision": 0.823529,
+        "recall": 1.0,
+        "review_burden": 0.061818,
+        "false_reset_locations": [
+          [
+            "prokofiev1",
+            "page_004",
+            7
+          ],
+          [
+            "sibelius",
+            "page_005",
+            6
+          ],
+          [
+            "toy_symphony",
+            "page_003",
+            0
+          ]
+        ],
+        "missed_boundary_locations": []
+      },
+      "exact_semantic_consensus": {
+        "system_starts": 275,
+        "true_boundaries": 14,
+        "predicted": 13,
+        "true_positive": 12,
+        "false_reset": 1,
+        "missed_boundary": 2,
+        "precision": 0.923077,
+        "recall": 0.857143,
+        "review_burden": 0.047273,
+        "false_reset_locations": [
+          [
+            "toy_symphony",
+            "page_003",
+            0
+          ]
+        ],
+        "missed_boundary_locations": [
+          [
+            "beethoven9",
+            "page_014",
+            0
+          ],
+          [
+            "toy_symphony",
+            "page_003",
+            8
+          ]
+        ]
+      },
+      "fuzzy_semantic_consensus": {
+        "system_starts": 275,
+        "true_boundaries": 14,
+        "predicted": 15,
+        "true_positive": 14,
+        "false_reset": 1,
+        "missed_boundary": 0,
+        "precision": 0.933333,
+        "recall": 1.0,
+        "review_burden": 0.054545,
+        "false_reset_locations": [
+          [
+            "toy_symphony",
+            "page_003",
+            0
+          ]
+        ],
+        "missed_boundary_locations": []
+      },
+      "fuzzy_consensus_excluding_initial_document_system": {
+        "system_starts": 275,
+        "true_boundaries": 14,
+        "predicted": 14,
+        "true_positive": 14,
+        "false_reset": 0,
+        "missed_boundary": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "review_burden": 0.050909,
+        "false_reset_locations": [],
+        "missed_boundary_locations": []
+      }
+    }
+  },
+  "fuzzy_evidence": [
+    {
+      "score": "prokofiev1",
+      "page_id": "page_003",
+      "system": 3,
+      "label": 1,
+      "geometry_candidate": true,
+      "match": {
+        "observed": "larghetto",
+        "expected": "larghetto",
+        "similarity": 1.0
+      },
+      "ocr_text": "p con brio | 1 | larghetto .: | a | :54 | senzaespresst | div."
+    },
+    {
+      "score": "prokofiev1",
+      "page_id": "page_004",
+      "system": 3,
+      "label": 1,
+      "geometry_candidate": true,
+      "match": {
+        "observed": "gavotte",
+        "expected": "gavotte",
+        "similarity": 1.0
+      },
+      "ocr_text": "pp | pp | i1 | non troppo allegro d : 144 | gavotte"
+    },
+    {
+      "score": "prokofiev1",
+      "page_id": "page_004",
+      "system": 8,
+      "label": 1,
+      "geometry_candidate": true,
+      "match": {
+        "observed": "vivace",
+        "expected": "vivace",
+        "similarity": 1.0
+      },
+      "ocr_text": "mp> | molto vivace d:152 | iv | dit."
+    },
+    {
+      "score": "prokofiev5",
+      "page_id": "page_007",
+      "system": 0,
+      "label": 1,
+      "geometry_candidate": true,
+      "match": {
+        "observed": "allegro",
+        "expected": "allegro",
+        "similarity": 1.0
+      },
+      "ocr_text": "ii | allegro marcato j=132 | 26 | 27 | pizz. | 5"
+    },
+    {
+      "score": "prokofiev5",
+      "page_id": "page_013",
+      "system": 0,
+      "label": 1,
+      "geometry_candidate": true,
+      "match": {
+        "observed": "adagio",
+        "expected": "adagio",
+        "similarity": 1.0
+      },
+      "ocr_text": "5g adagio j=60"
+    },
+    {
+      "score": "shostakovich5",
+      "page_id": "page_008",
+      "system": 5,
+      "label": 1,
+      "geometry_candidate": true,
+      "match": {
+        "observed": "allegretto",
+        "expected": "allegro",
+        "similarity": 0.823529
+      },
+      "ocr_text": "morendo | ii | (f1.) | allegretto j= 138 | u! | 48 | 12 | 49 | 二"
+    },
+    {
+      "score": "sibelius",
+      "page_id": "page_006",
+      "system": 0,
+      "label": 1,
+      "geometry_candidate": true,
+      "match": {
+        "observed": "adagio",
+        "expected": "adagio",
+        "similarity": 1.0
+      },
+      "ocr_text": "sibelius violin concerto | bratsche. | ii. | adagio di molto. | pizz."
+    },
+    {
+      "score": "sibelius",
+      "page_id": "page_007",
+      "system": 0,
+      "label": 1,
+      "geometry_candidate": true,
+      "match": {
+        "observed": "allegro",
+        "expected": "allegro",
+        "similarity": 1.0
+      },
+      "ocr_text": "sibelius ——violin concerto | bratsche. | iii. | allegro, ma non tanto. | 2 bratschen."
+    },
+    {
+      "score": "beethoven9",
+      "page_id": "page_006",
+      "system": 0,
+      "label": 1,
+      "geometry_candidate": true,
+      "match": {
+        "observed": "vivace",
+        "expected": "vivace",
+        "similarity": 1.0
+      },
+      "ocr_text": "beethoven — symphony no. 9 | violino i | molto vivace d. = 116 | viol.11 | ti | 2 | 2 | viola | 2 | vcllo."
+    },
+    {
+      "score": "beethoven9",
+      "page_id": "page_011",
+      "system": 2,
+      "label": 1,
+      "geometry_candidate": true,
+      "match": {
+        "observed": "adagio",
+        "expected": "adagio",
+        "similarity": 1.0
+      },
+      "ocr_text": "fp | g.p f | adagio molto e cantabile j: so | clar.i | fag. i"
+    },
+    {
+      "score": "beethoven9",
+      "page_id": "page_014",
+      "system": 0,
+      "label": 1,
+      "geometry_candidate": true,
+      "match": {
+        "observed": "prestoxd",
+        "expected": "presto",
+        "similarity": 0.857143
+      },
+      "ocr_text": "beethoven — symphony no. 9 | 14 | violino i | prestoxd = 96 | legni | 6 | 10"
+    },
+    {
+      "score": "toy_symphony",
+      "page_id": "page_003",
+      "system": 0,
+      "label": 0,
+      "geometry_candidate": true,
+      "match": {
+        "observed": "allegro",
+        "expected": "allegro",
+        "similarity": 1.0
+      },
+      "ocr_text": "kinder-symphonie. | basso. | j. haydn. | allegro."
+    },
+    {
+      "score": "toy_symphony",
+      "page_id": "page_003",
+      "system": 8,
+      "label": 1,
+      "geometry_candidate": true,
+      "match": {
+        "observed": "meuuetto",
+        "expected": "menuetto",
+        "similarity": 0.875
+      },
+      "ocr_text": "meuuetto."
+    },
+    {
+      "score": "toy_symphony",
+      "page_id": "page_003",
+      "system": 12,
+      "label": 1,
+      "geometry_candidate": true,
+      "match": {
+        "observed": "finale",
+        "expected": "finale",
+        "similarity": 1.0
+      },
+      "ocr_text": "men. d. c. | finale. | allegro."
+    }
+  ],
+  "interpretation": "This error-aware rule is informative but was designed after inspecting holdout failures and is not independent production evidence.",
+  "disposition": "Do not enable automatic reset; retain geometry candidates for review and use fuzzy text only as additional evidence."
+}

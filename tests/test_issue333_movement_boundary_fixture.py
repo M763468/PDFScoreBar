@@ -18,13 +18,32 @@ def test_issue333_representative_fixture_covers_required_boundary_shapes() -> No
     negatives = fixture["reviewed_negatives"]
 
     assert fixture["coordinate_system"] == {
-        "page": "zero-based source PDF page",
+        "page": "zero-based ordered pipeline input page for the full_document_no_omissions consumer profile",
+        "source_page": "zero-based physical source PDF page",
+        "fresh_run_input_page": "zero-based ordered input page within the selected-page fresh run",
         "system": "zero-based system in fresh current-pipeline numbering_base artifact",
     }
+    assert fixture["consumer_profile"] == "full_document_no_omissions; therefore page equals source_page in this fixture only"
+    assert len(boundaries) == 14
+    assert {source["score"] for source in fixture["sources"]} >= {
+        "beethoven9",
+        "toy_symphony",
+    }
+    assert all(item["page"] == item["source_page"] for item in boundaries)
     assert any(item["placement"] == "page_start" for item in boundaries)
     assert any(item["placement"] == "mid_page" for item in boundaries)
     assert (
         len([item for item in boundaries if item["score"] == "prokofiev1" and item["page"] == 3])
+        == 2
+    )
+    assert (
+        len(
+            [
+                item
+                for item in boundaries
+                if item["score"] == "toy_symphony" and item["page"] == 2
+            ]
+        )
         == 2
     )
 
@@ -34,6 +53,7 @@ def test_issue333_representative_fixture_covers_required_boundary_shapes() -> No
     assert "strong_whitespace_without_movement" in reasons
     assert "heading_like_tempo_change_without_movement" in reasons
     assert "end_like_barline_without_following_reset" in reasons
+    assert "trio_subsection_heading_not_movement" in reasons
 
 
 def test_issue333_fixture_boundaries_are_valid_issue268_manual_inputs() -> None:

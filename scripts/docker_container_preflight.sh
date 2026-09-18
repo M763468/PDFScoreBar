@@ -151,8 +151,8 @@ for name in "${required_modules[@]}"; do
       cat >&2 <<EOF
 Required validation module is missing: pytest
 The production runtime intentionally does not include pytest. Use the documented
-pdfscore_pipeline_pytest_dev pattern in AGENTS.md and install pytest there once, then rerun
-this preflight before executing repository tests.
+pdfscore_pipeline_pytest_dev pattern in docs/ENVIRONMENTS.md and install pytest there once,
+then rerun this preflight before executing repository tests.
 EOF
     else
       echo "Required container Python module is missing: $name" >&2

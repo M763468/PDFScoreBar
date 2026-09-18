@@ -10,13 +10,13 @@ body:
     attributes:
       value: |
         > [!TIP]
-        > AIエージェントにこのIssueの下書きを依頼するには `issue-creation` を、実装を依頼するには `issue-solver` スキルを使用してください。
+        > AIエージェントにIssueの下書きを依頼する場合は `issue-creation` を利用できます。実装はこのIssueを直接指定して依頼してください。専用の実装skillは不要です。
 
   - type: markdown
     attributes:
       value: |
         ## ✨ Feature Issue
-        目的・背景・入出力を明確に書くことで、AIエージェントが迷わず実装できます。
+        目的・背景・入出力・完了条件を明確に書いてください。
 
   - type: markdown
     attributes:
@@ -29,7 +29,7 @@ body:
     attributes:
       label: "Base branch"
       description: "作業ブランチの元となる親ブランチ名を指定します。"
-      placeholder: "例: feature/<topic-name>"
+      placeholder: "例: develop"
 
   - type: input
     id: branch_name
@@ -42,15 +42,14 @@ body:
     id: pr_base
     attributes:
       label: "PR base"
-      description: "PRの向き先となるブランチ（通常はBase branchと同じ）"
-      placeholder: "例: feature/<topic-name>"
+      description: "PRの向き先となるブランチ（通常はdevelop）"
+      placeholder: "例: develop"
 
   - type: textarea
     id: goal
     attributes:
       label: "Goal（このIssueで達成したいこと）"
       description: "最終的に達成したい成果を簡潔に記述。"
-      placeholder: "例: input.wav を処理して out/ に MIDI を生成できるようにする"
     validations:
       required: true
 
@@ -59,7 +58,6 @@ body:
     attributes:
       label: "Background / Context（なぜ必要か）"
       description: "背景・課題・前提を記述。"
-      placeholder: "例: 現状は手作業で前処理しているため再現性が低い"
     validations:
       required: true
 
@@ -70,10 +68,9 @@ body:
       description: "このIssueでやること／やらないことを明確に。"
       placeholder: |
         In:
-        - Demucs を呼び出して vocals.wav / piano.wav を生成
+        -
         Out:
-        - 学習やモデル改良
-        - GUI対応
+        -
     validations:
       required: true
 
@@ -82,12 +79,6 @@ body:
     attributes:
       label: "Inputs / Outputs（入出力仕様）"
       description: "入力と出力（ファイル名・形式・ディレクトリ）を明記。"
-      placeholder: |
-        Input:
-        - input.wav (44.1kHz stereo)
-        Output:
-        - out/separated/vocals.wav
-        - out/separated/piano.wav
     validations:
       required: true
 
@@ -95,9 +86,7 @@ body:
     id: cli
     attributes:
       label: "CLI usage example（想定コマンド）"
-      description: "実行例（CLI名は仮でOK）。"
-      placeholder: |
-        utacopy run input.wav --out out/ --steps separate
+      description: "必要な場合は実行例を記載。不要ならN/A。"
     validations:
       required: true
 
@@ -105,11 +94,11 @@ body:
     id: acceptance
     attributes:
       label: "Acceptance Criteria（完了条件）"
-      description: "機械的に判定できるDone条件。"
+      description: "機械的に判定できるDone条件。結果を見た後に別の指標へ読み替えない。"
       placeholder: |
-        - コマンドが exit code 0 で終了する
-        - out/separated/vocals.wav と out/separated/piano.wav が生成され再生できる
-        - README に実行手順が追記されている
+        - 主要な入出力契約を満たす
+        - 既存の関連精度・回帰ゲートを維持する
+        - 必要なドキュメントが更新される
     validations:
       required: true
 
@@ -118,8 +107,5 @@ body:
     attributes:
       label: "Implementation Notes（実装メモ）"
       description: "設計方針、ライブラリ、注意点など。"
-      placeholder: |
-        - subprocess で demucs を呼び出す
-        - 同一入力ならスキップできるオプションがあると良い
     validations:
       required: false

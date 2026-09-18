@@ -11,6 +11,10 @@ from torchvision import transforms
 
 import tools.mmr_training.issue332.geometry_training as geometry_training
 from tools.mmr_training.create_mmr_train_data import create_dataset_from_configs
+from tools.mmr_training.issue332.actual_candidate_geometry_validation import (
+    compare_models,
+    summarize_rows,
+)
 from tools.mmr_training.issue332.dual_view_diagnosis import _staff_bbox_variants
 from tools.mmr_training.issue332.dual_view_fusion import (
     fit_fusion_head,
@@ -35,6 +39,7 @@ from tools.mmr_training.issue332.geometry_training import (
     source_page_cache_info,
 )
 from tools.mmr_training.issue332.production_replay_validation import (
+    _baseline_crossing_requests,
     _dpi_requests,
     _route,
     _variant_parts,
@@ -891,3 +896,42 @@ def test_production_replay_dpi_requests_use_one_x_as_native():
         ["rescue"],
         ["main"],
     ]
+
+
+def test_baseline_crossing_requests_merge_threshold_membership():
+    sample = {"sample_id": "sample"}
+    summary = {
+        "samples": [
+            {
+                "sample_id": "sample",
+                "main_crossing_variants": [{"variant": "measure=x|staff=y", "probability": 0.4}],
+                "rescue_crossing_variants": [{"variant": "measure=x|staff=y", "probability": 0.4}],
+            }
+        ]
+    }
+    requests = _baseline_crossing_requests(summary, {"sample": sample})
+    assert len(requests) == 1
+    assert requests[0]["threshold_crossings"] == ["main", "rescue"]
+
+
+def test_actual_geometry_summary_and_comparison_distinguish_regression():
+    rows = [
+        {
+            "page_id": "page_001",
+            "score_id": "score",
+            "page_name": "page_001",
+            "system_index": 0,
+            "measure_index": 0,
+            "expected_skip": 2,
+            "models": {
+                "baseline": {"probability": 0.9, "route": "main", "final_skip": 2},
+                "candidate": {"probability": 0.4, "route": "rescue", "final_skip": None},
+            },
+        }
+    ]
+    summary = summarize_rows(rows, "candidate")
+    comparison = compare_models(rows, "baseline", "candidate")
+    assert summary["classifier"]["confusion_matrix"]["fn"] == 1
+    assert summary["final"]["lost_override"] == 1
+    assert comparison["route_change_count"] == 1
+    assert comparison["new_final_regression_count"] == 1

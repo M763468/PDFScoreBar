@@ -345,6 +345,28 @@ def _crossing_requests(
     return requests
 
 
+def _baseline_crossing_requests(
+    summary: dict[str, Any], samples: dict[str, dict[str, Any]]
+) -> list[dict[str, Any]]:
+    requests = []
+    for item in summary["samples"]:
+        crossing_by_variant: dict[str, dict[str, Any]] = {}
+        for threshold_name in ("main", "rescue"):
+            for crossing in item[f"{threshold_name}_crossing_variants"]:
+                entry = crossing_by_variant.setdefault(
+                    crossing["variant"],
+                    {
+                        "sample": samples[item["sample_id"]],
+                        "variant": crossing["variant"],
+                        "probability": float(crossing["probability"]),
+                        "threshold_crossings": [],
+                    },
+                )
+                entry["threshold_crossings"].append(threshold_name)
+        requests.extend(crossing_by_variant.values())
+    return requests
+
+
 def _dpi_requests(
     validation: dict[str, Any],
     samples: dict[str, dict[str, Any]],
@@ -505,19 +527,75 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     )
     replay = ProductionReplay(processor, config["deltas_px"])
     started = time.perf_counter()
-    scope_outputs = {}
-    for scope in ("primary", "controls"):
-        requests = _crossing_requests(validation, samples, scope)
+    if args.existing_candidate_replay is not None:
+        existing = json.loads(args.existing_candidate_replay.read_text(encoding="utf-8"))
+        scope_outputs = existing["production_replay"]
+        dpi_outputs = existing["coherent_dpi_production_replay"]
+    else:
+        scope_outputs = {}
+        for scope in ("primary", "controls"):
+            requests = _crossing_requests(validation, samples, scope)
+            crossing_sample_ids = sorted({request["sample"]["sample_id"] for request in requests})
+            native_by_sample = {
+                sample_id: replay.replay(
+                    samples[sample_id],
+                    "measure=native|staff=native",
+                    next(
+                        item["native_probability"]
+                        for item in validation["joint_geometry"][scope]["samples"]
+                        if item["sample_id"] == sample_id
+                    ),
+                )
+                for sample_id in crossing_sample_ids
+            }
+            rows = []
+            for index, request in enumerate(requests):
+                row = replay.replay(request["sample"], request["variant"], request["probability"])
+                row["threshold_crossings"] = request["threshold_crossings"]
+                rows.append(row)
+                if (index + 1) % 100 == 0:
+                    print(f"production replay {scope}: {index + 1}/{len(requests)}", flush=True)
+            scope_outputs[scope] = {
+                "request_count": len(requests),
+                "native": native_by_sample,
+                "summary": _summarize_replay(requests, native_by_sample, rows),
+                "rows": rows,
+            }
+
+        dpi_outputs = {}
+        for scope in ("primary", "controls"):
+            requests, native_requests = _dpi_requests(validation, samples, scope)
+            native_by_sample = {
+                sample_id: replay.replay_dpi(item["sample"], item["scale"], item["probability"])
+                for sample_id, item in native_requests.items()
+            }
+            rows = []
+            for index, request in enumerate(requests):
+                row = replay.replay_dpi(request["sample"], request["scale"], request["probability"])
+                row["threshold_crossings"] = request["threshold_crossings"]
+                rows.append(row)
+                if (index + 1) % 100 == 0:
+                    print(f"DPI production replay {scope}: {index + 1}/{len(requests)}", flush=True)
+            dpi_outputs[scope] = {
+                "request_count": len(requests),
+                "native": native_by_sample,
+                "summary": _summarize_replay(requests, native_by_sample, rows),
+                "rows": rows,
+            }
+
+    baseline_outputs = {}
+    for scope, baseline_summary in (("primary", baseline_primary), ("controls", baseline_controls)):
+        requests = _baseline_crossing_requests(baseline_summary, samples)
+        native_probability_by_sample = {
+            item["sample_id"]: float(item["native_probability"])
+            for item in baseline_summary["samples"]
+        }
         crossing_sample_ids = sorted({request["sample"]["sample_id"] for request in requests})
         native_by_sample = {
             sample_id: replay.replay(
                 samples[sample_id],
                 "measure=native|staff=native",
-                next(
-                    item["native_probability"]
-                    for item in validation["joint_geometry"][scope]["samples"]
-                    if item["sample_id"] == sample_id
-                ),
+                native_probability_by_sample[sample_id],
             )
             for sample_id in crossing_sample_ids
         }
@@ -527,29 +605,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             row["threshold_crossings"] = request["threshold_crossings"]
             rows.append(row)
             if (index + 1) % 100 == 0:
-                print(f"production replay {scope}: {index + 1}/{len(requests)}", flush=True)
-        scope_outputs[scope] = {
-            "request_count": len(requests),
-            "native": native_by_sample,
-            "summary": _summarize_replay(requests, native_by_sample, rows),
-            "rows": rows,
-        }
-
-    dpi_outputs = {}
-    for scope in ("primary", "controls"):
-        requests, native_requests = _dpi_requests(validation, samples, scope)
-        native_by_sample = {
-            sample_id: replay.replay_dpi(item["sample"], item["scale"], item["probability"])
-            for sample_id, item in native_requests.items()
-        }
-        rows = []
-        for index, request in enumerate(requests):
-            row = replay.replay_dpi(request["sample"], request["scale"], request["probability"])
-            row["threshold_crossings"] = request["threshold_crossings"]
-            rows.append(row)
-            if (index + 1) % 100 == 0:
-                print(f"DPI production replay {scope}: {index + 1}/{len(requests)}", flush=True)
-        dpi_outputs[scope] = {
+                print(
+                    f"baseline production replay {scope}: {index + 1}/{len(requests)}", flush=True
+                )
+        baseline_outputs[scope] = {
             "request_count": len(requests),
             "native": native_by_sample,
             "summary": _summarize_replay(requests, native_by_sample, rows),
@@ -563,6 +622,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "final_validation_sha256": sha256_file(args.final_validation),
             "full_primary_sha256": sha256_file(args.full_primary),
             "full_controls_sha256": sha256_file(args.full_controls),
+            "existing_candidate_replay_sha256": (
+                sha256_file(args.existing_candidate_replay)
+                if args.existing_candidate_replay is not None
+                else None
+            ),
             "runtime": {
                 "python": platform.python_version(),
                 "opencv": cv2.__version__,
@@ -592,6 +656,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             },
         },
         "production_replay": scope_outputs,
+        "baseline_production_replay": baseline_outputs,
         "coherent_dpi_production_replay": dpi_outputs,
         "rapidocr_cache": {
             "engine_calls": cached_rapidocr.calls,
@@ -619,6 +684,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--controls-manifest", type=Path, required=True)
     parser.add_argument("--full-primary", type=Path, required=True)
     parser.add_argument("--full-controls", type=Path, required=True)
+    parser.add_argument("--existing-candidate-replay", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     return parser
 
@@ -637,6 +703,10 @@ if __name__ == "__main__":
                 },
                 "production_replay": {
                     scope: value["summary"] for scope, value in result["production_replay"].items()
+                },
+                "baseline_production_replay": {
+                    scope: value["summary"]
+                    for scope, value in result["baseline_production_replay"].items()
                 },
                 "coherent_dpi_production_replay": {
                     scope: value["summary"]

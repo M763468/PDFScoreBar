@@ -66,6 +66,13 @@ container state, run tags, and issue handoff notes do not belong here.
 
 For performance, detector, evaluation, model/runtime, or replacement investigations:
 
+- treat the user/Issue acceptance criteria, primary metrics, target dataset, and required regression
+  gates as the evaluation contract for that run;
+- do not redefine success after seeing results: switching the primary metric, narrowing the dataset,
+  excluding failing cases, changing tolerance/seed/filter/config, or introducing a compensating
+  threshold change creates a new experiment and does not erase the original result;
+- report every originally required gate and any regression even when another metric improves; never
+  describe accuracy/quality as preserved unless the agreed regression gates actually pass;
 - compare candidates on equivalent inputs before making causal performance claims;
 - record enough provenance to reproduce material results: source/candidate commit, runtime/model
   identity, fixed inputs/config, command, and retained log/artifact path;
@@ -78,6 +85,10 @@ For performance, detector, evaluation, model/runtime, or replacement investigati
   equality alone may be insufficient;
 - prefer `unit_size` or another documented resolution-normalized unit for new geometric thresholds
   unless the relevant contract explicitly requires pixel coordinates.
+
+If the evaluation contract itself must change, state the proposed change and reason explicitly. Keep
+the result under the old contract visible, and obtain user/Issue approval before treating the new
+contract as the authoritative pass/fail criterion.
 
 ## 7. Skills and auxiliary agents
 

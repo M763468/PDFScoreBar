@@ -85,6 +85,12 @@ contract, not a numbering input. Its top-level shape is:
     "input_manifest": "runs/example/manifest.json",
     "input_manifest_sha256": "..."
   },
+  "input_artifacts": {
+    "numbering_base": {
+      "path": "runs/example/intermediate/numbering_base.json",
+      "sha256": "..."
+    }
+  },
   "producer": {
     "name": "...",
     "version": "...",
@@ -132,10 +138,15 @@ verified mapping exists. `state` is one of:
 - `ambiguous_review_required` — candidate only; never reset silently;
 - `no_boundary` — reviewed/rejected evidence retained to prevent re-proposal.
 
-Signals retain raw observations and their source artifact. Numeric confidence
-is optional and must not be emitted without calibration evidence. A producer
-must retain its parameters and source/runtime provenance; thresholds or
-unreviewed evidence are not hidden in the resolved consumer payload.
+Signals retain raw observations and their source artifact. The evidence also
+binds the complete geometry input through
+`input_artifacts.numbering_base.path` + `sha256`, so the candidate locations
+remain auditable even if the original file is later overwritten or the evidence
+artifact is moved. This top-level geometry identity is retained even when no
+layout candidate is emitted. Numeric confidence is optional and must not be
+emitted without calibration evidence. A producer must retain its parameters
+and source/runtime provenance; thresholds or unreviewed evidence are not hidden
+in the resolved consumer payload.
 
 After review, export a new `issue268.movement_boundaries.v1` payload containing
 only resolved records. Use `source` such as `manual`, `configured`,
@@ -168,8 +179,10 @@ python -m tools.generate_movement_boundary_candidates \
 ```
 
 The manifest and numbering artifact must have the same ordered page count.
-Raw normalized layout values, matched rules, image references, source hash,
-manifest hash, parameters, and producer commit are retained for GUI or manual
+The CLI hashes the exact `numbering_base.json` bytes and records that SHA-256
+beside the artifact path at the top level of the evidence. Raw normalized layout
+values, matched rules, image references, source hash, manifest hash, numbering
+artifact hash, parameters, and producer commit are retained for GUI or manual
 review. Export to `issue268.movement_boundaries.v1` remains a separate explicit
 review/configuration action.
 

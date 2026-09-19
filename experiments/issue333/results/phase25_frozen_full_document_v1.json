@@ -10,19 +10,139 @@
     "sr_scale": 4,
     "source_artifact_index": "experiments/issue333/phase25_run_index.json"
   },
-  "thresholds": {"relative_indent_min_page_ratio": 0.02, "preceding_gap_min_page_median_ratio": 1.75},
-  "denominator": {"source_pages": 97, "musical_pages": 89, "systems": 917, "true_boundaries": 16},
+  "thresholds": {
+    "relative_indent_min_page_ratio": 0.02,
+    "preceding_gap_min_page_median_ratio": 1.75
+  },
+  "denominator": {
+    "source_pages": 97,
+    "musical_pages": 89,
+    "systems": 917,
+    "true_boundaries": 16
+  },
   "frozen_first_staff": {
-    "candidate_count": 27, "tp": 14, "fp": 13, "fn": 2,
-    "recall": 0.875, "candidate_precision": 0.518519,
-    "false_candidates": [["prokofiev1",3,7],["prokofiev1",5,4],["prokofiev5",2,3],["prokofiev5",4,3],["prokofiev5",4,6],["prokofiev5",15,9],["prokofiev5",18,7],["sibelius",0,1],["sibelius",1,1],["sibelius",1,2],["sibelius",2,4],["sibelius",3,8],["sibelius",4,6]],
-    "missed_boundaries": [["shostakovich5",10,0],["shostakovich5",15,0]]
+    "candidate_count": 27,
+    "tp": 14,
+    "fp": 13,
+    "fn": 2,
+    "recall": 0.875,
+    "candidate_precision": 0.518519,
+    "false_candidates": [
+      [
+        "prokofiev1",
+        3,
+        7
+      ],
+      [
+        "prokofiev1",
+        5,
+        4
+      ],
+      [
+        "prokofiev5",
+        2,
+        3
+      ],
+      [
+        "prokofiev5",
+        4,
+        3
+      ],
+      [
+        "prokofiev5",
+        4,
+        6
+      ],
+      [
+        "prokofiev5",
+        15,
+        9
+      ],
+      [
+        "prokofiev5",
+        18,
+        7
+      ],
+      [
+        "sibelius",
+        0,
+        1
+      ],
+      [
+        "sibelius",
+        1,
+        1
+      ],
+      [
+        "sibelius",
+        1,
+        2
+      ],
+      [
+        "sibelius",
+        2,
+        4
+      ],
+      [
+        "sibelius",
+        3,
+        8
+      ],
+      [
+        "sibelius",
+        4,
+        6
+      ]
+    ],
+    "missed_boundaries": [
+      [
+        "shostakovich5",
+        10,
+        0
+      ],
+      [
+        "shostakovich5",
+        15,
+        0
+      ]
+    ]
   },
   "all_staff_union_comparison": {
-    "candidate_count": 15, "tp": 14, "fp": 1, "fn": 2,
-    "recall": 0.875, "candidate_precision": 0.933333,
-    "false_candidates": [["prokofiev1",5,4]],
-    "missed_boundaries": [["shostakovich5",10,0],["shostakovich5",15,0]]
+    "candidate_count": 15,
+    "tp": 14,
+    "fp": 1,
+    "fn": 2,
+    "recall": 0.875,
+    "candidate_precision": 0.933333,
+    "false_candidates": [
+      [
+        "prokofiev1",
+        5,
+        4
+      ]
+    ],
+    "missed_boundaries": [
+      [
+        "shostakovich5",
+        10,
+        0
+      ],
+      [
+        "shostakovich5",
+        15,
+        0
+      ]
+    ]
   },
-  "interpretation": "First-staff geometry is unsafe as a production review signal on multi-staff systems. Union materially reduces false candidates but does not recover heading-only page starts; no silent reset is authorized."
+  "interpretation": "First-staff geometry is unsafe as a production review signal on multi-staff systems. Union materially reduces false candidates but does not recover heading-only page starts; no silent reset is authorized.",
+  "source_commit_role": "preregistered Phase 2.5 baseline/protocol context; not the evaluator or candidate implementation commit",
+  "execution_provenance": {
+    "evaluator_commit": "c440f7fe1a0dd2bee8e15bb767fe47fc82b81396",
+    "candidate_implementation_commit": "d8788539d77e49ad512587398dab945465a8daeb",
+    "union_production_adoption_commit": "a4223414501adb881c65751a28b0a45df2973a44",
+    "result_record_commit": "a4223414501adb881c65751a28b0a45df2973a44",
+    "working_directory": "repository root",
+    "evaluation_command": "python experiments/issue333/evaluate_phase25_full_documents.py --corpus experiments/issue333/corpus.json --ground-truth experiments/issue333/phase25_ground_truth.json --runs experiments/issue333/phase25_run_index.json --output experiments/issue333/results/phase25_frozen_full_document_v1.json",
+    "note": "The evaluator commit performs the all-staff-union comparison by unioning staff bboxes before invoking the frozen candidate implementation. The later a4223414 commit adopts the equivalent all-staff-union geometry in producer v2."
+  }
 }

@@ -17,6 +17,17 @@ def _system(left: int, top: int, right: int = 900, bottom: int | None = None) ->
     }
 
 
+def _build(numbering: dict, **kwargs) -> dict:
+    return build_movement_boundary_evidence(
+        numbering,
+        source_document=kwargs.pop("source_document", SOURCE),
+        producer_source_commit="abc123",
+        numbering_artifact=NUMBERING_ARTIFACT,
+        numbering_artifact_sha256=NUMBERING_SHA256,
+        **kwargs,
+    )
+
+
 def test_geometry_producer_separates_initial_state_and_review_candidates() -> None:
     numbering = {
         "pages": [
@@ -32,12 +43,8 @@ def test_geometry_producer_separates_initial_state_and_review_candidates() -> No
             }
         ]
     }
-    result = build_movement_boundary_evidence(
+    result = _build(
         numbering,
-        source_document=SOURCE,
-        producer_source_commit="abc123",
-        numbering_artifact=NUMBERING_ARTIFACT,
-        numbering_artifact_sha256=NUMBERING_SHA256,
         manifest_pages=[
             {
                 "page_id": "page_003",
@@ -93,13 +100,7 @@ def test_geometry_producer_uses_all_staff_union_for_system_spacing() -> None:
             }
         ]
     }
-    result = build_movement_boundary_evidence(
-        numbering,
-        source_document=SOURCE,
-        producer_source_commit="abc123",
-        numbering_artifact=NUMBERING_ARTIFACT,
-        numbering_artifact_sha256=NUMBERING_SHA256
-    )
+    result = _build(numbering)
     assert result["producer"]["version"] == "2"
     raw = result["candidates"][1]["signals"][0]["raw"]
     assert raw["system_bbox"] == [150.0, 500.0, 910.0, 710.0]
@@ -107,12 +108,8 @@ def test_geometry_producer_uses_all_staff_union_for_system_spacing() -> None:
 
 
 def test_page_id_is_not_used_as_source_page_provenance() -> None:
-    result = build_movement_boundary_evidence(
+    result = _build(
         {"pages": [{"width": 1000, "height": 1000, "systems": [_system(100, 100)]}]},
-        source_document=SOURCE,
-        producer_source_commit="abc123",
-        numbering_artifact=NUMBERING_ARTIFACT,
-        numbering_artifact_sha256=NUMBERING_SHA256,
         manifest_pages=[
             {
                 "page_id": "page_042",
@@ -137,13 +134,7 @@ def test_direct_source_reference_must_match_top_level_digest() -> None:
             "source_document": {"sha256": "a" * 64},
         },
     }
-    evidence = build_movement_boundary_evidence(
-        numbering,
-        source_document=SOURCE,
-        producer_source_commit="abc123",
-        numbering_artifact=NUMBERING_ARTIFACT,
-        numbering_artifact_sha256=NUMBERING_SHA256, manifest_pages=[valid]
-    )
+    evidence = _build(numbering, manifest_pages=[valid])
     assert evidence["candidates"][0]["references"]["source_page"] == 0
     assert evidence["candidates"][0]["references"]["source_reference"] == valid["source_reference"]
 
@@ -161,36 +152,22 @@ def test_direct_source_reference_must_match_top_level_digest() -> None:
         },
     ):
         with pytest.raises(ValueError, match="direct_pdf_render"):
-            build_movement_boundary_evidence(
+            _build(
                 numbering,
-                source_document=SOURCE,
-                producer_source_commit="abc123",
-        numbering_artifact=NUMBERING_ARTIFACT,
-        numbering_artifact_sha256=NUMBERING_SHA256,
                 manifest_pages=[{"page_id": "page_001", "source_reference": source_reference}],
             )
 
 
 def test_evidence_is_not_accepted_as_resolved_consumer_input() -> None:
-    evidence = build_movement_boundary_evidence(
-        {"pages": [{"width": 1000, "height": 1000, "systems": [_system(100, 100)]}]},
-        source_document=SOURCE,
-        producer_source_commit="abc123",
-        numbering_artifact=NUMBERING_ARTIFACT,
-        numbering_artifact_sha256=NUMBERING_SHA256,
+    evidence = _build(
+        {"pages": [{"width": 1000, "height": 1000, "systems": [_system(100, 100)]}]}
     )
     with pytest.raises(ValueError, match="Unsupported movement boundary schema_version"):
         load_movement_boundary_payload(evidence)
 
 
 def test_numbering_artifact_digest_is_retained_without_candidates() -> None:
-    result = build_movement_boundary_evidence(
-        {"pages": [{"width": 1000, "height": 1000, "systems": []}]},
-        source_document=SOURCE,
-        producer_source_commit="abc123",
-        numbering_artifact=NUMBERING_ARTIFACT,
-        numbering_artifact_sha256=NUMBERING_SHA256,
-    )
+    result = _build({"pages": [{"width": 1000, "height": 1000, "systems": []}]})
     assert result["candidates"] == []
     assert result["input_artifacts"]["numbering_base"] == {
         "path": NUMBERING_ARTIFACT,
@@ -201,19 +178,26 @@ def test_numbering_artifact_digest_is_retained_without_candidates() -> None:
 def test_manifest_alignment_and_source_digest_are_validated() -> None:
     numbering = {"pages": [{"width": 1000, "height": 1000, "systems": []}]}
     with pytest.raises(ValueError, match="manifest page count"):
+        _build(numbering, manifest_pages=[])
+    with pytest.raises(ValueError, match="sha256"):
+        _build(numbering, source_document={"sha256": "not-a-digest"})
+
+
+def test_numbering_artifact_digest_is_required_and_validated() -> None:
+    numbering = {"pages": [{"width": 1000, "height": 1000, "systems": []}]}
+    with pytest.raises(ValueError, match="numbering_artifact must be non-empty"):
         build_movement_boundary_evidence(
             numbering,
             source_document=SOURCE,
             producer_source_commit="abc123",
-        numbering_artifact=NUMBERING_ARTIFACT,
-        numbering_artifact_sha256=NUMBERING_SHA256,
-            manifest_pages=[],
+            numbering_artifact="",
+            numbering_artifact_sha256=NUMBERING_SHA256,
         )
-    with pytest.raises(ValueError, match="sha256"):
+    with pytest.raises(ValueError, match="numbering_artifact_sha256"):
         build_movement_boundary_evidence(
             numbering,
-            source_document={"sha256": "not-a-digest"},
+            source_document=SOURCE,
             producer_source_commit="abc123",
-        numbering_artifact=NUMBERING_ARTIFACT,
-        numbering_artifact_sha256=NUMBERING_SHA256,
+            numbering_artifact=NUMBERING_ARTIFACT,
+            numbering_artifact_sha256="not-a-digest",
         )

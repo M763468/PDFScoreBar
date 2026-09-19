@@ -16,6 +16,25 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _validate_manifest_source_hash(manifest: dict, source_sha256: str) -> None:
+    hashes = set()
+    for page in manifest.get("pages", []):
+        reference = page.get("source_reference") if isinstance(page, dict) else None
+        if not isinstance(reference, dict) or reference.get("kind") != "direct_pdf_render":
+            continue
+        document = reference.get("source_document")
+        digest = document.get("sha256") if isinstance(document, dict) else None
+        if not isinstance(digest, str):
+            raise ValueError(
+                "direct_pdf_render source_reference must contain source_document.sha256"
+            )
+        hashes.add(digest.lower())
+    if hashes and (hashes != {source_sha256.lower()}):
+        raise ValueError(
+            "--source-pdf-sha256 does not match verified direct_pdf_render manifest provenance"
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--numbering-base", type=Path, required=True)
@@ -29,8 +48,10 @@ def main() -> None:
     manifest_pages = manifest.get("pages") if isinstance(manifest, dict) else None
     if not isinstance(manifest_pages, list):
         raise ValueError("manifest must contain a pages list")
+    source_sha256 = args.source_pdf_sha256.lower()
+    _validate_manifest_source_hash(manifest, source_sha256)
     source_document = {
-        "sha256": args.source_pdf_sha256.lower(),
+        "sha256": source_sha256,
         "page_order": "ordered_pipeline_input",
         "input_manifest": str(args.manifest),
         "input_manifest_sha256": sha256(args.manifest),

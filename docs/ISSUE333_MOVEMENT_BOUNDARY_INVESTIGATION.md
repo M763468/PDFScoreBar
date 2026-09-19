@@ -62,15 +62,13 @@ if candidates were exported without review.
 | frozen learned ranker, locked holdout | 1 | 1 | 4 | 0.500 | 0.200 |
 | learned ranker automatic, seven-score LOSO | 8 | 1 | 6 | 0.889 | 0.571 |
 | learned ranker candidate, seven-score LOSO | 12 | 1 | 2 | 0.923 | 0.857 |
-| production geometry review producer, development | 9 | 2 | 0 | 0.818 | 1.000 |
-| production geometry review producer, locked holdout | 5 | 0 | 0 | 1.000 | 1.000 |
-| production geometry review producer, all | 14 | 2 | 0 | 0.875 | 1.000 |
+| production geometry review producer, development (historical selected-page) | 9 | 2 | 0 | 0.818 | 1.000 |
+| production geometry review producer, locked holdout (historical selected-page) | 5 | 0 | 0 | 1.000 | 1.000 |
+| production geometry review producer, all (historical selected-page) | 14 | 2 | 0 | 0.875 | 1.000 |
 
-The production producer excludes the initial musical system under the
-full-document profile because numbering already starts at one. Its all-corpus
-review burden is 16/275 system starts (5.82%); the two retained false candidates
-are large-whitespace continuations. It emits them as
-`ambiguous_review_required`, never as resets.
+These rows are historical selected-page results and are superseded by the
+Phase 2.5 full-document replay below. They must not be read as complete-corpus
+recall or production-worthiness evidence.
 
 ### Learned model and error analysis
 
@@ -105,10 +103,14 @@ both false-reset and recall requirements, while the only zero-error combined
 rule is post-holdout. A bounded zero-error result from seven orchestral parts is
 not sufficient source-general safety evidence.
 
-The geometry producer is production-worthy as a semi-automatic review stage:
+The geometry producer is an assistive/review candidate producer, not a complete
+detector and not proof that every movement start has been found:
 
-- it preserves 100% candidate recall on the locked holdout and full corpus;
-- holdout review burden is 5/107 (4.67%), total burden is 16/275 (5.82%);
+- Phase 2.5 all-staff-union geometry finds 14/16 transitions and emits one
+  false candidate on 917 systems;
+- 15/917 is candidate-generation burden only, not the total human review burden
+  required for correctness, because candidate absence does not establish
+  `no_boundary`;
 - it uses normalized, explainable layout signals and retains raw observations;
 - every proposal is `ambiguous_review_required` and cannot be consumed as an
   Issue #268 reset;
@@ -119,7 +121,8 @@ The producer is `src.pipeline.movement_boundary_candidates`, with the CLI
 `tools/generate_movement_boundary_candidates.py`. It is intentionally not
 wired into default pipeline routing. OCR evidence may be added by a future GUI
 or producer revision, but OCR is not required for the current high-recall
-candidate stage.
+  candidate stage. The Phase 2.5 result is the current disposition; all earlier
+  selected-page claims above are historical/superseded.
 
 ## Reproduction and retained artifacts
 
@@ -181,9 +184,11 @@ changes only Issue #333 evidence generation, not detector, grouping, or
 numbering semantics.
 
 `source_page` is now provenance-only and is emitted only from a verified direct
-PDF render manifest whose image stems match configured physical pages. External,
-selected, reordered, or pre-rendered inputs retain ordered `page`/`page_id` and
-omit physical `source_page`; page-id text is never parsed as provenance. The
+PDF render manifest whose image stems match configured physical pages. A
+selected direct-PDF render may retain that explicit physical mapping. External,
+reordered, or pre-rendered inputs retain ordered `page`/`page_id` and omit
+physical `source_page` unless an independent verified mapping exists; page-id
+text is never parsed as provenance. The
 resolved Issue #268 consumer contract remains unchanged.
 
 Silent automatic reset remains rejected: the exploratory union+OCR result still

@@ -61,8 +61,11 @@ evidence. Production numbering may consume a boundary only when it is either:
 - confirmed automatic under a separately validated producer policy.
 
 An ambiguous candidate must not be copied into `inputs.movement_boundaries`.
-Omitting it means numbering continues; an operator can review the evidence and
-then add the same zero-based page/system location deterministically. No current
+Candidate absence does not establish `no_boundary`; only an explicitly
+reviewed/rejected record may use that state (apart from the initial-input-system
+bookkeeping record). If no boundary is resolved, numbering continues; an
+operator can review evidence and add the same zero-based page/system location
+deterministically. No current
 automatic producer is approved as the production default. The geometry
 producer below is approved only for candidate/review use and is not wired into
 default pipeline routing.
@@ -119,7 +122,10 @@ contract, not a numbering input. Its top-level shape is:
 `page` and `system` use the same zero-based ordered-input coordinates as the
 resolved contract. They must be derived from the actual input manifest;
 `source_page` is separate provenance and is not a consumer coordinate when
-pages were selected, omitted, or reordered. `state` is one of:
+pages were selected, omitted, or reordered. A verified direct-PDF render may
+retain an explicit physical source-page mapping even for a selected subset;
+external, pre-rendered, or reordered inputs omit it unless an independent
+verified mapping exists. `state` is one of:
 
 - `confirmed_automatic` — a validated policy may export a resolved boundary;
 - `explicit_manual_configured` — an operator/config supplied the resolution;
@@ -175,7 +181,13 @@ and exact zero-based page/system locations without retaining copyrighted PDF or
 image bytes.
 
 `source_page` is emitted only when the manifest contains a verified direct-PDF
-render reference with source digest and physical page. External, reordered,
-selected, or pre-rendered image inputs retain ordered `page` and `page_id` but
-omit `source_page`; a `page_NNN` stem is never interpreted as a physical PDF
-page.
+render reference with source digest and physical page. A selected direct-PDF
+render can therefore retain explicit physical mappings. External, pre-rendered,
+or reordered image inputs retain ordered `page` and `page_id` but omit
+`source_page` unless an independent verified mapping exists; a `page_NNN` stem
+is never interpreted as a physical PDF page.
+
+The producer is assistive only: Phase 2.5 all-staff-union replay found 14/16
+transitions and one false candidate. Its 15/917 candidate rate is generation
+burden, not total correctness review burden. Candidate absence never means
+`no_boundary`.

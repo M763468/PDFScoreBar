@@ -170,6 +170,7 @@ class PipelineOrchestrator:
         """Executes the full pipeline."""
         self._validate_review_package_prerequisites()
         commands: List[List[str]] = []
+        pdf_rendered_this_run = False
 
         if get_nested(self.config, "steps", "pdf_to_images", default=False):
             if (
@@ -181,6 +182,7 @@ class PipelineOrchestrator:
             else:
                 self._run_pdf_to_images()
                 commands.append(["inprocess:pdf_to_images"])
+                pdf_rendered_this_run = True
 
         logger.info("Collecting images...")
         from src.pipeline.utils.images import get_image_cache
@@ -198,7 +200,9 @@ class PipelineOrchestrator:
         if page_limit is not None:
             images = images[:page_limit]
         page_ids = resolve_page_ids(self.config, images)
-        source_page_references = resolve_source_page_references(self.config, images)
+        source_page_references = resolve_source_page_references(
+            self.config, images, rendered_this_run=pdf_rendered_this_run
+        )
         logger.info(f"Collected {len(images)} images.")
 
         run_detection = get_nested(self.config, "steps", "detection", default=False)

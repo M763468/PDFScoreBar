@@ -48,6 +48,18 @@ def test_external_or_reordered_images_have_unknown_source_page() -> None:
     ]
 
 
+def test_skipped_pdf_render_does_not_claim_direct_provenance(tmp_path: Path) -> None:
+    pdf = tmp_path / "score.pdf"
+    _pdf(pdf)
+    config = {
+        "steps": {"pdf_to_images": True},
+        "inputs": {"pdf_path": str(pdf), "pdf_to_images": {"pages": "1"}},
+    }
+    assert resolve_source_page_references(
+        config, [Path("page_001.png")], rendered_this_run=False
+    ) == [None]
+
+
 def test_direct_pdf_render_rejects_stale_or_reordered_page_stems(tmp_path: Path) -> None:
     pdf = tmp_path / "score.pdf"
     _pdf(pdf)

@@ -110,7 +110,7 @@ def resolve_page_ids(config: Dict[str, Any], images: List[Path]) -> List[str]:
 
 
 def resolve_source_page_references(
-    config: Dict[str, Any], images: List[Path]
+    config: Dict[str, Any], images: List[Path], *, rendered_this_run: bool = True
 ) -> List[Dict[str, Any] | None]:
     """Return physical PDF provenance only for this process's direct renderer.
 
@@ -118,6 +118,14 @@ def resolve_source_page_references(
     interpreted as physical PDF page identities.
     """
     if not get_nested(config, "steps", "pdf_to_images", default=False):
+        return [None] * len(images)
+    # Reusing files from a previous run is not evidence that they came from the
+    # currently configured PDF.  A future retained-provenance implementation
+    # may opt in explicitly; absent that proof, fail closed.
+    if not rendered_this_run:
+        logger.warning(
+            "pdf_to_images was skipped; omitting direct_pdf_render provenance for reused images"
+        )
         return [None] * len(images)
     pdf_path_value = get_nested(config, "inputs", "pdf_path")
     if not isinstance(pdf_path_value, str) or not pdf_path_value:

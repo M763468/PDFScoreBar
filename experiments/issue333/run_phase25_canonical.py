@@ -43,12 +43,13 @@ def main() -> None:
         raise ValueError("source PDF digest mismatch")
 
     config = deepcopy(load_yaml(baseline_path))
-    run_id = f"canonical_{args.score}"
+    run_id = f"canonical_musical_{args.score}"
     output_root = Path("logs/issue333/phase25/canonical")
     config["run"] = {"run_id": run_id, "output_root": str(output_root)}
     config["inputs"]["pdf_path"] = str(pdf_path)
     config["inputs"]["pdf_to_images"] = {
         "dpi": 300.0,
+        "pages": ",".join(str(index + 1) for index in source["musical_source_pages"]),
         "prefix": "page",
         "format": "png",
         "image_glob": "page_*.png",
@@ -68,6 +69,8 @@ def main() -> None:
         "source_pdf": str(pdf_path),
         "source_pdf_sha256": source["sha256"],
         "source_page_count": source["page_count"],
+        "musical_source_pages": source["musical_source_pages"],
+        "page_selection_semantics": "one-based physical PDF pages passed to normalise_pages; rendered stems retain the physical source index",
         "baseline_config": str(baseline_path),
         "baseline_config_sha256": _sha256(baseline_path),
         "generated_config": str(generated_path),

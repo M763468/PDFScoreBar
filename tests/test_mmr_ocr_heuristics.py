@@ -222,6 +222,27 @@ class TestMMROCRHeuristics(unittest.TestCase):
         self.assertEqual((processor.full_span_calls, processor.shifted_calls), (0, 0))
         self.assertEqual(processor.j2_calls, 0)
 
+    def test_unmasked_fallback_retry_must_improve_spatial_score(self):
+        class Processor(_TargetedHarness):
+            def _run_calibrated_shifted_staff_values(self, *args):
+                return 7, 10.0
+
+        processor = Processor(
+            baseline=(2, 20.0, "unmasked_fallback_standard", 0),
+            full_span=(None, 0.0),
+            shifted=(None, 0.0),
+        )
+        self.assertEqual(_run_targeted(processor), (2, 20.0, "unmasked_fallback_standard", 0))
+
+        processor = Processor(
+            baseline=(11, 20.0, "unmasked_fallback_standard", 0),
+            full_span=(None, 0.0),
+            shifted=(None, 0.0),
+        )
+        processor._run_calibrated_shifted_staff_values = lambda *args: (3, 30.0)
+        result = _run_targeted(processor)
+        self.assertEqual(result[:2], (3, 30.0))
+
     def test_targeted_low_score_uses_full_span_retry_first(self):
         processor = _TargetedHarness(
             baseline=(97, -44.0, "baseline", 0),

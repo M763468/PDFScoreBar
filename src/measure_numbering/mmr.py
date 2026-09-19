@@ -876,7 +876,10 @@ class MMRProcessor:
                 retry_num, retry_score = self._run_calibrated_shifted_staff_values(
                     image, self._targeted_shift_x1(measure_bbox), system.get("staves", []), w_img, h_img
                 )
-                if self._targeted_retry_candidate_acceptable(retry_num, retry_score):
+                if (
+                    self._targeted_retry_candidate_acceptable(retry_num, retry_score)
+                    and retry_score > score
+                ):
                     return retry_num, retry_score, "issue277_calibrated_shifted_unmasked_fallback_retry", evidence
             return baseline
 

@@ -104,6 +104,14 @@ class StageFull68InputsTest(unittest.TestCase):
             )
             self.assertTrue(provenance["validation"]["read_only_mount_ready"])
             self.assertFalse(any(path.is_symlink() for path in output.rglob("*")))
+            symlink_parent_rows = [
+                row for row in provenance["files"]
+                if "/issue294/logs/" in row["source_lookup_path"]
+            ]
+            self.assertTrue(symlink_parent_rows)
+            self.assertTrue(
+                all("/old_worktree/logs/" in row["resolved_source"] for row in symlink_parent_rows)
+            )
 
             runtime_manifest = json.loads(
                 (output / "runtime/manifest.json").read_text(encoding="utf-8")

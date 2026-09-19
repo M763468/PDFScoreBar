@@ -43,7 +43,11 @@ from src.pipeline.steps.numbering import (
     reject_movement_boundaries_on_excluded_pages,
     run_mmr_batch,
 )
-from src.pipeline.utils.images import collect_images, resolve_page_ids
+from src.pipeline.utils.images import (
+    collect_images,
+    resolve_page_ids,
+    resolve_source_page_references,
+)
 from src.pipeline.utils.io import ensure_dir, load_json, score_to_dict, write_json
 
 logger = logging.getLogger(__name__)
@@ -194,6 +198,7 @@ class PipelineOrchestrator:
         if page_limit is not None:
             images = images[:page_limit]
         page_ids = resolve_page_ids(self.config, images)
+        source_page_references = resolve_source_page_references(self.config, images)
         logger.info(f"Collected {len(images)} images.")
 
         run_detection = get_nested(self.config, "steps", "detection", default=False)
@@ -339,6 +344,7 @@ class PipelineOrchestrator:
                 commands=commands,
                 page_statuses=page_statuses,
                 barline_override_stats=barline_override_stats,
+                source_page_references=source_page_references,
             )
             write_json(self.run_dir / "manifest.json", manifest)
             logger.info(f"Wrote manifest to {self.run_dir / 'manifest.json'}")

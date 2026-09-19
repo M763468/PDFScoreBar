@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import shutil
 from pathlib import Path
@@ -106,6 +107,45 @@ def resolve_page_ids(config: Dict[str, Any], images: List[Path]) -> List[str]:
 
     prefix = get_nested(config, "inputs", "pdf_to_images", "prefix", default="page")
     return [f"{prefix}_{index:03d}" for index in range(1, len(images) + 1)]
+
+
+def resolve_source_page_references(
+    config: Dict[str, Any], images: List[Path]
+) -> List[Dict[str, Any] | None]:
+    """Return physical PDF provenance only for this process's direct renderer.
+
+    External images and historical page_NNN names are intentionally not
+    interpreted as physical PDF page identities.
+    """
+    if not get_nested(config, "steps", "pdf_to_images", default=False):
+        return [None] * len(images)
+    pdf_path_value = get_nested(config, "inputs", "pdf_path")
+    if not isinstance(pdf_path_value, str) or not pdf_path_value:
+        raise ValueError("direct PDF rendering requires inputs.pdf_path")
+
+    import fitz
+
+    from src.pdf_to_images import normalise_pages
+
+    pdf_path = Path(pdf_path_value)
+    with fitz.open(pdf_path) as document:
+        pdf_opts = get_nested(config, "inputs", "pdf_to_images", default={}) or {}
+        source_pages = normalise_pages(pdf_opts.get("pages"), document.page_count)
+    if len(images) > len(source_pages):
+        raise ValueError("rendered image count exceeds configured physical PDF pages")
+    source_pages = source_pages[: len(images)]
+    digest = hashlib.sha256(pdf_path.read_bytes()).hexdigest()
+    return [
+        {
+            "kind": "direct_pdf_render",
+            "source_page": source_page,
+            "source_document": {
+                "path": str(pdf_path),
+                "sha256": digest,
+            },
+        }
+        for source_page in source_pages
+    ]
 
 
 def load_image(

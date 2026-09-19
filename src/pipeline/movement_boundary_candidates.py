@@ -16,7 +16,6 @@ PRODUCER_NAME = "pdfscorebar.geometry_movement_boundary_candidates"
 PRODUCER_VERSION = "1"
 DEFAULT_INDENT_RATIO = 0.02
 DEFAULT_GAP_RATIO = 1.75
-_SOURCE_PAGE_ID = re.compile(r"^page_(\d+)$")
 
 
 def _system_box(system: Mapping[str, Any]) -> tuple[float, float, float, float]:
@@ -35,16 +34,6 @@ def _system_box(system: Mapping[str, Any]) -> tuple[float, float, float, float]:
     return values
 
 
-def _source_page(page_id: str | None) -> int | None:
-    if page_id is None:
-        return None
-    match = _SOURCE_PAGE_ID.fullmatch(page_id)
-    if match is None:
-        return None
-    value = int(match.group(1))
-    return value - 1 if value > 0 else None
-
-
 def _page_reference(manifest_page: Mapping[str, Any] | None) -> dict[str, Any]:
     if manifest_page is None:
         return {}
@@ -53,9 +42,12 @@ def _page_reference(manifest_page: Mapping[str, Any] | None) -> dict[str, Any]:
     reference = {}
     if isinstance(page_id, str) and page_id:
         reference["page_id"] = page_id
-        source_page = _source_page(page_id)
-        if source_page is not None:
+    source_reference = manifest_page.get("source_reference")
+    if isinstance(source_reference, Mapping):
+        source_page = source_reference.get("source_page")
+        if isinstance(source_page, int) and not isinstance(source_page, bool) and source_page >= 0:
             reference["source_page"] = source_page
+            reference["source_reference"] = deepcopy(dict(source_reference))
     if isinstance(image_path, str) and image_path:
         reference["image"] = image_path
     return reference

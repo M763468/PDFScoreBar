@@ -6,10 +6,20 @@ from src.pipeline.steps.numbering import load_movement_boundary_payload
 FIXTURE = (
     Path(__file__).parent / "fixtures" / "movement_boundaries" / "issue333_representative.json"
 )
+PHASE25_GT = Path(__file__).parents[1] / "experiments" / "issue333" / "phase25_ground_truth.json"
 
 
 def _load_fixture() -> dict:
     return json.loads(FIXTURE.read_text(encoding="utf-8"))
+
+
+def test_phase25_ground_truth_contains_complete_transition_inventory() -> None:
+    ground_truth = json.loads(PHASE25_GT.read_text(encoding="utf-8"))
+    transitions = ground_truth["boundaries"]
+    assert len(transitions) == 16
+    shost = [item for item in transitions if item["score"] == "shostakovich5"]
+    assert {(item["page"], item["system"]) for item in shost} == {(6, 5), (10, 0), (15, 0)}
+    assert all("measure" not in item for item in transitions)
 
 
 def test_issue333_representative_fixture_covers_required_boundary_shapes() -> None:

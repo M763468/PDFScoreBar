@@ -467,6 +467,22 @@ class TestMMROCRHeuristics(unittest.TestCase):
         )
         self.assertEqual(processor.ocr.mask_calls, [((80, 115, 3), 20.0, 40.0, True)])
 
+    def test_calibrated_shifted_retry_uses_new_capabilities(self):
+        processor = object.__new__(MMRProcessor)
+        processor.ocr = _TargetedRetryOCR()
+        image = np.zeros((300, 500, 3), dtype=np.uint8)
+
+        self.assertEqual(
+            processor._run_calibrated_shifted_staff_values(
+                image, [101, 0, 200, 20], [{"bbox": [0, 100, 400, 140]}], 500, 300
+            ),
+            (6, 24.0),
+        )
+        self.assertEqual(processor.ocr.calibrated_mask_calls, [((80, 115, 3), 20.0, 40.0)])
+        self.assertEqual(
+            processor.ocr.preprocess_calls[-1], ((80, 115, 3), "no_dilate", 40.0, True)
+        )
+
     def test_targeted_shifted_crop_scales_with_staff_height_and_uses_clamped_offset(self):
         processor = object.__new__(MMRProcessor)
         processor.ocr = _TargetedRetryOCR()
@@ -534,10 +550,15 @@ class _TargetedRetryOCR:
     def __init__(self):
         self.preprocess_calls = []
         self.mask_calls = []
+        self.calibrated_mask_calls = []
         self.ocr_engine = lambda _image: ([], 0.0)
 
     def mask_hbar_candidates(self, crop, margin_y, staff_height, use_staff_relative_geometry=False):
         self.mask_calls.append((crop.shape, margin_y, staff_height, use_staff_relative_geometry))
+        return crop
+
+    def mask_hbar_candidates_calibrated(self, crop, margin_y, staff_height):
+        self.calibrated_mask_calls.append((crop.shape, margin_y, staff_height))
         return crop
 
     def preprocess_variant(

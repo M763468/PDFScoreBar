@@ -20,6 +20,7 @@ def _pdf(path: Path, pages: int = 4) -> None:
 def test_direct_pdf_selection_retains_physical_source_pages(tmp_path: Path) -> None:
     pdf = tmp_path / "score.pdf"
     _pdf(pdf)
+    source_sha256 = hashlib.sha256(pdf.read_bytes()).hexdigest()
     config = {
         "steps": {"pdf_to_images": True},
         "inputs": {"pdf_path": str(pdf), "pdf_to_images": {"pages": "3,1,4"}},
@@ -27,13 +28,14 @@ def test_direct_pdf_selection_retains_physical_source_pages(tmp_path: Path) -> N
     references = resolve_source_page_references(
         config,
         [Path("page_001.png"), Path("page_003.png"), Path("page_004.png")],
+        rendered_this_run=True,
+        rendered_source_sha256=source_sha256,
+        rendered_source_pages=[0, 2, 3],
     )
     assert [item["source_page"] for item in references if item is not None] == [0, 2, 3]
     assert all(item["kind"] == "direct_pdf_render" for item in references if item)
     assert all(
-        item["source_document"]["sha256"] == hashlib.sha256(pdf.read_bytes()).hexdigest()
-        for item in references
-        if item
+        item["source_document"]["sha256"] == source_sha256 for item in references if item
     )
 
 
@@ -60,12 +62,60 @@ def test_skipped_pdf_render_does_not_claim_direct_provenance(tmp_path: Path) -> 
     ) == [None]
 
 
+def test_direct_pdf_render_requires_render_step_identity(tmp_path: Path) -> None:
+    pdf = tmp_path / "score.pdf"
+    _pdf(pdf)
+    config = {
+        "steps": {"pdf_to_images": True},
+        "inputs": {"pdf_path": str(pdf), "pdf_to_images": {"pages": "1"}},
+    }
+    with pytest.raises(ValueError, match="verified rendered source SHA-256"):
+        resolve_source_page_references(
+            config,
+            [Path("page_001.png")],
+            rendered_this_run=True,
+            rendered_source_pages=[0],
+        )
+
+
 def test_direct_pdf_render_rejects_stale_or_reordered_page_stems(tmp_path: Path) -> None:
     pdf = tmp_path / "score.pdf"
     _pdf(pdf)
+    source_sha256 = hashlib.sha256(pdf.read_bytes()).hexdigest()
     config = {
         "steps": {"pdf_to_images": True},
         "inputs": {"pdf_path": str(pdf), "pdf_to_images": {"pages": "1,3"}},
     }
     with pytest.raises(ValueError, match="physical page selection"):
-        resolve_source_page_references(config, [Path("page_003.png"), Path("page_001.png")])
+        resolve_source_page_references(
+            config,
+            [Path("page_003.png"), Path("page_001.png")],
+            rendered_this_run=True,
+            rendered_source_sha256=source_sha256,
+            rendered_source_pages=[0, 2],
+        )
+
+
+def test_direct_pdf_provenance_does_not_rehash_mutated_source_path(tmp_path: Path) -> None:
+    pdf = tmp_path / "score.pdf"
+    _pdf(pdf, pages=2)
+    rendered_sha256 = hashlib.sha256(pdf.read_bytes()).hexdigest()
+
+    replacement = tmp_path / "replacement.pdf"
+    _pdf(replacement, pages=3)
+    pdf.write_bytes(replacement.read_bytes())
+    assert hashlib.sha256(pdf.read_bytes()).hexdigest() != rendered_sha256
+
+    config = {
+        "steps": {"pdf_to_images": True},
+        "inputs": {"pdf_path": str(pdf), "pdf_to_images": {"pages": "1"}},
+    }
+    references = resolve_source_page_references(
+        config,
+        [Path("page_001.png")],
+        rendered_this_run=True,
+        rendered_source_sha256=rendered_sha256,
+        rendered_source_pages=[0],
+    )
+    assert references[0] is not None
+    assert references[0]["source_document"]["sha256"] == rendered_sha256

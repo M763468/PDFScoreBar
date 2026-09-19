@@ -242,13 +242,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             ocr_engine=candidate_counter
         ),
     )
-    proposed = focused_probe.CandidatePolicyProcessor(
-        args.model,
-        torch.device("cuda"),
-        classifier=classifier,
-        ocr_engine=MMROCREngine(ocr_engine=candidate_counter),
-        calibrated_processor=calibrated_processor,
-        counter=candidate_counter,
+    proposed = (
+        MMRProcessor(args.model, torch.device("cuda"), classifier=classifier,
+                     ocr_engine=MMROCREngine(ocr_engine=candidate_counter))
+        if args.production_source
+        else focused_probe.CandidatePolicyProcessor(
+            args.model, torch.device("cuda"), classifier=classifier,
+            ocr_engine=MMROCREngine(ocr_engine=candidate_counter),
+            calibrated_processor=calibrated_processor, counter=candidate_counter,
+        )
     )
 
     totals = {
@@ -429,7 +431,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         },
         "page_count": len(pages),
         "totals": totals,
-        "policy_stats": proposed.policy_stats,
+        "policy_stats": getattr(proposed, "policy_stats", {"production_source": True}),
         "current_ocr_calls": current_counter.calls,
         "candidate_ocr_calls": candidate_counter.calls,
         "ocr_call_delta": candidate_counter.calls - current_counter.calls,
@@ -478,6 +480,7 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--accepted-rebase-report", type=Path, required=True)
     parser.add_argument("--model", type=Path, default=base.DEFAULT_MODEL)
+    parser.add_argument("--production-source", action="store_true")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
 

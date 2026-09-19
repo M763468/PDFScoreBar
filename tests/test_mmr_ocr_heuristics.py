@@ -321,6 +321,10 @@ class TestMMROCRHeuristics(unittest.TestCase):
                     100 + expected_shift,
                 )
 
+    def test_native_inset_is_symmetric_and_measure_relative(self):
+        self.assertEqual(MMRProcessor._native_inset_bbox([100, 0, 500, 20]), [101, 0, 499, 20])
+        self.assertEqual(MMRProcessor._native_inset_bbox([100, 0, 102, 20]), [100, 0, 102, 20])
+
     def test_hbar_mask_geometry_is_opt_in_and_staff_relative(self):
         self.assertEqual(MMROCREngine._hbar_mask_geometry(40, False), (4, 40, 4, 40, 5))
         self.assertEqual(MMROCREngine._hbar_mask_geometry(40, True), (4, 40, 4, 40, 5))

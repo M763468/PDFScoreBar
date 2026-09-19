@@ -1082,14 +1082,25 @@ class MMRProcessor:
             crop = image[top:bottom, max(0, x1 - margin_x) : min(w_img, x2 + margin_x)]
             if crop is None or crop.size == 0:
                 continue
-            crop = self.ocr.mask_hbar_candidates_calibrated(crop, float(sy1 - top), staff_height)
-            processed = self.ocr.preprocess_variant(
-                crop,
-                mode="no_dilate",
-                angle=0,
-                staff_height=staff_height,
-                use_staff_relative_geometry=True,
-            )
+            staff_top_rel = float(sy1 - top)
+            calibrated_mask = getattr(self.ocr, "mask_hbar_candidates_calibrated", None)
+            if callable(calibrated_mask):
+                crop = calibrated_mask(crop, staff_top_rel, staff_height)
+            else:
+                # Preserve the injected OCR adapter contract used before
+                # Issue #345. The calibrated mask is production-only; legacy
+                # adapters receive the original three-argument call.
+                crop = self.ocr.mask_hbar_candidates(crop, staff_top_rel, staff_height)
+            if getattr(self.ocr, "supports_staff_relative_preprocess_geometry", False):
+                processed = self.ocr.preprocess_variant(
+                    crop,
+                    mode="no_dilate",
+                    angle=0,
+                    staff_height=staff_height,
+                    use_staff_relative_geometry=True,
+                )
+            else:
+                processed = self.ocr.preprocess_variant(crop, mode="no_dilate", angle=0)
             if processed is None or processed.size == 0:
                 continue
             ocr_result, _ = self.ocr.ocr_engine(processed)

@@ -6,6 +6,7 @@ from pathlib import Path
 import fitz
 import pytest
 
+from src.pdf_to_images import render_pdf_to_memory
 from src.pipeline.utils.images import resolve_source_page_references
 
 
@@ -119,3 +120,23 @@ def test_direct_pdf_provenance_does_not_rehash_mutated_source_path(tmp_path: Pat
     )
     assert references[0] is not None
     assert references[0]["source_document"]["sha256"] == rendered_sha256
+
+
+def test_renderer_uses_provenance_bound_source_bytes(tmp_path: Path) -> None:
+    pdf = tmp_path / "score.pdf"
+    _pdf(pdf, pages=2)
+    source_bytes = pdf.read_bytes()
+
+    replacement = tmp_path / "replacement.pdf"
+    _pdf(replacement, pages=1)
+    pdf.write_bytes(replacement.read_bytes())
+
+    rendered = render_pdf_to_memory(
+        pdf,
+        dpi=72.0,
+        pages=[1],
+        source_bytes=source_bytes,
+    )
+
+    assert len(rendered) == 1
+    assert rendered[0][0] == 1

@@ -62,6 +62,7 @@ def main() -> None:
         producer_source_commit=args.producer_source_commit,
         manifest_pages=manifest_pages,
         numbering_artifact=str(args.numbering_base),
+        numbering_artifact_sha256=sha256(args.numbering_base),
     )
     write_json(args.output, evidence)
     print(json.dumps({"output": str(args.output), "records": len(evidence["candidates"])}))

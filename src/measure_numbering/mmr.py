@@ -868,18 +868,17 @@ class MMRProcessor:
                 if self._targeted_retry_candidate_acceptable(inset_num, inset_score):
                     return inset_num, inset_score, f"{inset_debug},issue277_native_symmetric_inset", inset_evidence
 
-        # A normal high-score OCR result stays authoritative. An unmasked
-        # fallback is deliberately broad, so corroborate only that path with
-        # one narrow candidate-native crop before returning it.
+        # A normal high-score OCR result stays authoritative. The left-wide
+        # fallback is deliberately broad, so corroborate only that generic
+        # fallback subtype with one narrow candidate-native crop before
+        # returning it. The standard fallback remains authoritative because
+        # its narrower crop has already been spatially constrained.
         if found is not None and score > self.JITTER_SCORE_TRIGGER:
-            if "unmasked_fallback" in str(debug):
+            if "left_wide_unmasked_fallback" in str(debug):
                 retry_num, retry_score = self._run_calibrated_shifted_staff_values(
                     image, self._targeted_shift_x1(measure_bbox), system.get("staves", []), w_img, h_img
                 )
-                if (
-                    self._targeted_retry_candidate_acceptable(retry_num, retry_score)
-                    and retry_score > score
-                ):
+                if self._targeted_retry_candidate_acceptable(retry_num, retry_score):
                     return retry_num, retry_score, "issue277_calibrated_shifted_unmasked_fallback_retry", evidence
             return baseline
 

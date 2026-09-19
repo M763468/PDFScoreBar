@@ -1,0 +1,12 @@
+{
+  "experiment_id": "issue333-phase25-heading-ocr-v1",
+  "hypothesis": "An independent page-start OCR probe can recover page-start movement headings missed by geometry without changing MMR OCR/CNN behavior.",
+  "source_commit": "67045c46",
+  "runtime": {"package": "rapidocr-onnxruntime", "version": "1.4.4", "model_hashes_recorded_in": "logs/issue333/phase25/page_start_ocr.json"},
+  "strategy": "non-initial page, exact Roman ordinal token plus tempo token in top crop; investigation-only",
+  "input": "all 89 musical pages across seven audited sources",
+  "added_candidates": [["shostakovich5",10,0],["shostakovich5",15,0]],
+  "union_plus_probe": {"candidate_count": 17, "tp": 16, "fp": 1, "fn": 0, "recall": 1.0, "candidate_precision": 0.941176, "false_candidates": [["prokofiev1",5,4]]},
+  "limitations": ["OCR ordinal on Shostakovich source page 11 was recognized as II although the visual heading is III; location is useful but semantic ordinal is not trusted.", "post-audit exploratory result; not a locked holdout and not a production OCR change"],
+  "disposition": "candidate/review evidence only"
+}

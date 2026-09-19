@@ -108,6 +108,72 @@ def resolve_page_ids(config: Dict[str, Any], images: List[Path]) -> List[str]:
     return [f"{prefix}_{index:03d}" for index in range(1, len(images) + 1)]
 
 
+def resolve_source_page_references(
+    config: Dict[str, Any],
+    images: List[Path],
+    *,
+    rendered_this_run: bool = False,
+    rendered_source_sha256: str | None = None,
+    rendered_source_pages: List[int] | None = None,
+) -> List[Dict[str, Any] | None]:
+    """Return physical PDF provenance only for this process's direct renderer.
+
+    External images and historical page_NNN names are intentionally not
+    interpreted as physical PDF page identities. Direct-render provenance must
+    be supplied by the render step that consumed the source bytes.
+    """
+    if not get_nested(config, "steps", "pdf_to_images", default=False):
+        return [None] * len(images)
+    # Reusing files from a previous run is not evidence that they came from the
+    # currently configured PDF. A future retained-provenance implementation
+    # may opt in explicitly; absent that proof, fail closed.
+    if not rendered_this_run:
+        logger.warning(
+            "pdf_to_images was skipped; omitting direct_pdf_render provenance for reused images"
+        )
+        return [None] * len(images)
+    pdf_path_value = get_nested(config, "inputs", "pdf_path")
+    if not isinstance(pdf_path_value, str) or not pdf_path_value:
+        raise ValueError("direct PDF rendering requires inputs.pdf_path")
+    if (
+        not isinstance(rendered_source_sha256, str)
+        or len(rendered_source_sha256) != 64
+        or any(char not in "0123456789abcdefABCDEF" for char in rendered_source_sha256)
+    ):
+        raise ValueError("direct PDF rendering requires the verified rendered source SHA-256")
+    if not isinstance(rendered_source_pages, list) or any(
+        not isinstance(page, int) or isinstance(page, bool) or page < 0
+        for page in rendered_source_pages
+    ):
+        raise ValueError("direct PDF rendering requires verified physical source pages")
+
+    source_pages = rendered_source_pages
+    if len(images) > len(source_pages):
+        raise ValueError("rendered image count exceeds verified physical PDF pages")
+    source_pages = source_pages[: len(images)]
+    pdf_opts = get_nested(config, "inputs", "pdf_to_images", default={}) or {}
+    prefix = str(pdf_opts.get("prefix", "page"))
+    expected_stems = [f"{prefix}_{source_page + 1:03d}" for source_page in source_pages]
+    actual_stems = [image.stem for image in images]
+    if actual_stems != expected_stems:
+        raise ValueError(
+            "direct PDF rendered images do not match configured physical page selection: "
+            f"expected {expected_stems}, got {actual_stems}"
+        )
+    pdf_path = Path(pdf_path_value)
+    return [
+        {
+            "kind": "direct_pdf_render",
+            "source_page": source_page,
+            "source_document": {
+                "path": str(pdf_path),
+                "sha256": rendered_source_sha256.lower(),
+            },
+        }
+        for source_page in source_pages
+    ]
+
+
 def load_image(
     image_path: Path, in_memory_images: Dict[str, np.ndarray] | None = None
 ) -> np.ndarray:

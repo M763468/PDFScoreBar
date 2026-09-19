@@ -164,12 +164,18 @@ def render_pdf_to_memory(
     target_width: Optional[int] = None,
     target_height: Optional[int] = None,
     interpolation: str = "area",
+    source_bytes: bytes | None = None,
 ) -> List[tuple[int, np.ndarray]]:
-    if not pdf_path.exists():
+    if source_bytes is None and not pdf_path.exists():
         raise FileNotFoundError(f"PDF not found: {pdf_path}")
 
     rendered: List[tuple[int, np.ndarray]] = []
-    with fitz.open(pdf_path) as document:
+    document_source = (
+        fitz.open(stream=source_bytes, filetype="pdf")
+        if source_bytes is not None
+        else fitz.open(pdf_path)
+    )
+    with document_source as document:
         for page_index in pages:
             page = document.load_page(page_index)
             matrix = fitz.Matrix(dpi / 72.0, dpi / 72.0)

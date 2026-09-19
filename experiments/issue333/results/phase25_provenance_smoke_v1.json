@@ -1,0 +1,27 @@
+{
+  "experiment_id": "issue333-phase25-provenance-smoke-v1",
+  "source_commit": "8b6d90fc",
+  "command": "docker exec -w /workspace -e PYTHONPATH=/workspace pdfscore_issue333_phase2 /opt/venv_pipeline/bin/python src/pipeline/main.py --config configs/issue333_provenance_smoke.yaml",
+  "exit_code": 0,
+  "input": {
+    "mounted_pdf": "/source-evaluation2/pdfs/Va_Prokofiev_Symphony1.pdf",
+    "source_sha256": "19ae15f01835456df08194c072be428c9b94fb51c7a1e04fdea7c0a789a50b41",
+    "selected_physical_pages": [0],
+    "gpu_container": "pdfscore_issue333_phase2"
+  },
+  "evidence": {
+    "log": "logs/issue333/hardening_smoke/issue333_provenance_smoke/pipeline.log",
+    "manifest": "logs/issue333/hardening_smoke/issue333_provenance_smoke/manifest.json",
+    "page_id": "page_001",
+    "source_reference": {
+      "kind": "direct_pdf_render",
+      "source_page": 0,
+      "source_document_sha256": "19ae15f01835456df08194c072be428c9b94fb51c7a1e04fdea7c0a789a50b41"
+    }
+  },
+  "supersedes": {
+    "command": "make verify-pipeline-smoke",
+    "result": "failed before pipeline work because the worktree-relative Prokofiev PDF was absent",
+    "log": "artifacts/smoke_test.log"
+  }
+}

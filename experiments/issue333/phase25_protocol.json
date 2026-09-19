@@ -1,0 +1,45 @@
+{
+  "schema_version": "issue333.experiment_protocol.v2",
+  "experiment_id": "phase25-full-document-canonical-v1",
+  "source_commit_before_results": "22e632442e36fe54ab70fe8610307274f8b6b643",
+  "purpose": "Correct Phase 2 selected-page and route limitations before judging the review producer.",
+  "ground_truth": {
+    "scope": "all physical pages of all seven PDFs",
+    "method": "visual source-page audit followed by fresh canonical numbering_base system alignment",
+    "no_inference_from_historical_numbering": true
+  },
+  "canonical_route": {
+    "config_baseline": "configs/dense_full_pipeline.yaml",
+    "detector_route": "dense_full_pipeline",
+    "homr_profile": "stage_e_verified",
+    "enable_sr": true,
+    "sr_scale": 4,
+    "cnn_model_manifest": "models/barline_cnn/manifest.json",
+    "detector_input_mode_required": "fresh_upstream"
+  },
+  "frozen_producer": {
+    "source_commit": "22e632442e36fe54ab70fe8610307274f8b6b643",
+    "producer_version": "1",
+    "geometry": "first_staff_bbox",
+    "relative_indent_min_page_ratio": 0.02,
+    "preceding_gap_min_page_median_ratio": 1.75,
+    "threshold_selection_after_replay_forbidden": true
+  },
+  "metrics": [
+    "total_source_pages",
+    "musical_pages",
+    "systems",
+    "true_boundaries",
+    "candidate_count",
+    "true_positive",
+    "false_candidate",
+    "missed_boundary",
+    "recall",
+    "candidate_precision",
+    "candidates_per_page",
+    "candidates_per_musical_page",
+    "candidates_per_system"
+  ],
+  "reporting": "False candidates and missed boundaries are reported separately with exact locations.",
+  "phase2_status": "Historical selected-page results remain visible but are not deployment metrics."
+}

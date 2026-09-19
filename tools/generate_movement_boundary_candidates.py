@@ -9,11 +9,12 @@ import json
 from pathlib import Path
 
 from src.pipeline.movement_boundary_candidates import build_movement_boundary_evidence
-from src.pipeline.utils.io import load_json, write_json
+from src.pipeline.utils.io import write_json
 
 
-def sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+def load_json_with_sha256(path: Path) -> tuple[object, str]:
+    data = path.read_bytes()
+    return json.loads(data.decode("utf-8")), hashlib.sha256(data).hexdigest()
 
 
 def _validate_manifest_source_hash(manifest: dict, source_sha256: str) -> None:
@@ -44,7 +45,8 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
-    manifest = load_json(args.manifest)
+    manifest, manifest_sha256 = load_json_with_sha256(args.manifest)
+    numbering_base, numbering_sha256 = load_json_with_sha256(args.numbering_base)
     manifest_pages = manifest.get("pages") if isinstance(manifest, dict) else None
     if not isinstance(manifest_pages, list):
         raise ValueError("manifest must contain a pages list")
@@ -54,15 +56,15 @@ def main() -> None:
         "sha256": source_sha256,
         "page_order": "ordered_pipeline_input",
         "input_manifest": str(args.manifest),
-        "input_manifest_sha256": sha256(args.manifest),
+        "input_manifest_sha256": manifest_sha256,
     }
     evidence = build_movement_boundary_evidence(
-        load_json(args.numbering_base),
+        numbering_base,
         source_document=source_document,
         producer_source_commit=args.producer_source_commit,
         manifest_pages=manifest_pages,
         numbering_artifact=str(args.numbering_base),
-        numbering_artifact_sha256=sha256(args.numbering_base),
+        numbering_artifact_sha256=numbering_sha256,
     )
     write_json(args.output, evidence)
     print(json.dumps({"output": str(args.output), "records": len(evidence["candidates"])}))

@@ -112,11 +112,20 @@ class Stager:
             raise RuntimeError(f"SHA mismatch while staging {source} -> {destination}")
         if destination.is_symlink():
             raise RuntimeError(f"Staged file unexpectedly became symlink: {destination}")
+        lookup_path = source.absolute()
+        try:
+            resolved_source = source.resolve(strict=True)
+            resolved_source_error = None
+        except OSError as error:
+            resolved_source = None
+            resolved_source_error = str(error)
         self.files.append(
             {
                 "role": role,
                 "source_reference": str(reference),
-                "resolved_source": str(source.absolute()),
+                "source_lookup_path": str(lookup_path),
+                "resolved_source": None if resolved_source is None else str(resolved_source),
+                "resolved_source_error": resolved_source_error,
                 "source_sha256": source_sha,
                 "size": source.stat().st_size,
                 "staged_path": str(destination.relative_to(self.output_root)),

@@ -185,7 +185,10 @@ render reference with source digest and physical page. A selected direct-PDF
 render can therefore retain explicit physical mappings. External, pre-rendered,
 or reordered image inputs retain ordered `page` and `page_id` but omit
 `source_page` unless an independent verified mapping exists; a `page_NNN` stem
-is never interpreted as a physical PDF page.
+is never interpreted as a physical PDF page. The core evidence API applies the
+same rule: a direct-PDF reference must have a valid nonnegative `source_page`,
+a valid source-document SHA-256, and a digest matching top-level
+`source_document.sha256`; contradictory verified references fail fast.
 
 The producer is assistive only: Phase 2.5 all-staff-union replay found 14/16
 transitions and one false candidate. Its 15/917 candidate rate is generation

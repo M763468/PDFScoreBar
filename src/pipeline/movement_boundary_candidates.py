@@ -41,7 +41,9 @@ def _system_box(system: Mapping[str, Any]) -> tuple[float, float, float, float]:
     )
 
 
-def _page_reference(manifest_page: Mapping[str, Any] | None) -> dict[str, Any]:
+def _page_reference(
+    manifest_page: Mapping[str, Any] | None, *, source_document_sha256: str
+) -> dict[str, Any]:
     if manifest_page is None:
         return {}
     page_id = manifest_page.get("page_id")
@@ -51,8 +53,23 @@ def _page_reference(manifest_page: Mapping[str, Any] | None) -> dict[str, Any]:
         reference["page_id"] = page_id
     source_reference = manifest_page.get("source_reference")
     if isinstance(source_reference, Mapping):
-        source_page = source_reference.get("source_page")
-        if isinstance(source_page, int) and not isinstance(source_page, bool) and source_page >= 0:
+        kind = source_reference.get("kind")
+        if kind == "direct_pdf_render":
+            source_page = source_reference.get("source_page")
+            if not isinstance(source_page, int) or isinstance(source_page, bool) or source_page < 0:
+                raise ValueError(
+                    "direct_pdf_render source_reference.source_page must be a nonnegative integer"
+                )
+            source_document = source_reference.get("source_document")
+            digest = source_document.get("sha256") if isinstance(source_document, Mapping) else None
+            if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", digest):
+                raise ValueError(
+                    "direct_pdf_render source_reference requires a valid source_document.sha256"
+                )
+            if digest.lower() != source_document_sha256.lower():
+                raise ValueError(
+                    "direct_pdf_render source_reference.sha256 does not match source_document.sha256"
+                )
             reference["source_page"] = source_page
             reference["source_reference"] = deepcopy(dict(source_reference))
     if isinstance(image_path, str) and image_path:
@@ -120,7 +137,8 @@ def build_movement_boundary_evidence(
         gaps = [boxes[index][1] - boxes[index - 1][3] for index in range(1, len(boxes))]
         gap_median = median(gaps) if gaps else None
         page_reference = _page_reference(
-            manifest_pages[page_index] if manifest_pages is not None else None
+            manifest_pages[page_index] if manifest_pages is not None else None,
+            source_document_sha256=source_sha256,
         )
         for system_index, box in enumerate(boxes):
             indent_value = (box[0] - left_median) / width

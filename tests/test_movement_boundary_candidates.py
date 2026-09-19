@@ -100,12 +100,56 @@ def test_page_id_is_not_used_as_source_page_provenance() -> None:
         {"pages": [{"width": 1000, "height": 1000, "systems": [_system(100, 100)]}]},
         source_document=SOURCE,
         producer_source_commit="abc123",
-        manifest_pages=[{"page_id": "page_042", "image_path": "external/reordered.png"}],
+        manifest_pages=[
+            {
+                "page_id": "page_042",
+                "image_path": "external/reordered.png",
+                "source_reference": {"kind": "external_mapping", "source_page": 42},
+            }
+        ],
     )
     assert result["candidates"][0]["references"] == {
         "page_id": "page_042",
         "image": "external/reordered.png",
     }
+
+
+def test_direct_source_reference_must_match_top_level_digest() -> None:
+    numbering = {"pages": [{"width": 1000, "height": 1000, "systems": [_system(100, 100)]}]}
+    valid = {
+        "page_id": "page_001",
+        "source_reference": {
+            "kind": "direct_pdf_render",
+            "source_page": 0,
+            "source_document": {"sha256": "a" * 64},
+        },
+    }
+    evidence = build_movement_boundary_evidence(
+        numbering, source_document=SOURCE, producer_source_commit="abc123", manifest_pages=[valid]
+    )
+    assert evidence["candidates"][0]["references"]["source_page"] == 0
+    assert evidence["candidates"][0]["references"]["source_reference"] == valid["source_reference"]
+
+    for source_reference in (
+        {
+            "kind": "direct_pdf_render",
+            "source_page": 0,
+            "source_document": {"sha256": "b" * 64},
+        },
+        {"kind": "direct_pdf_render", "source_page": 0, "source_document": {}},
+        {
+            "kind": "direct_pdf_render",
+            "source_page": True,
+            "source_document": {"sha256": "a" * 64},
+        },
+    ):
+        with pytest.raises(ValueError, match="direct_pdf_render"):
+            build_movement_boundary_evidence(
+                numbering,
+                source_document=SOURCE,
+                producer_source_commit="abc123",
+                manifest_pages=[{"page_id": "page_001", "source_reference": source_reference}],
+            )
 
 
 def test_evidence_is_not_accepted_as_resolved_consumer_input() -> None:

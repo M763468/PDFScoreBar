@@ -33,8 +33,14 @@ from src.pipeline.steps.barlines import (
 )
 from src.pipeline.steps.filters import get_user_exclude_indices, resolve_page_filters
 from src.pipeline.steps.numbering import (
+    FINAL_NUMBERING_SCHEMA_VERSION,
     empty_numbering_payload,
+    final_numbering_metadata,
+    load_movement_boundary_payload,
+    movement_boundaries_for_page,
+    persisted_final_next_number,
     rebase_mmr_overrides_to_page_local,
+    reject_movement_boundaries_on_excluded_pages,
     run_mmr_batch,
 )
 from src.pipeline.utils.images import collect_images, resolve_page_ids
@@ -76,6 +82,7 @@ class PipelineOrchestrator:
         self.validate_only = validate_only
         self.skip_existing = skip_existing
         self.debug = debug
+        self._movement_boundaries: Dict[str, Any] | None = None
 
         self.intermediate_dir = run_dir / "intermediate"
         self.outputs_dir = run_dir / "outputs"
@@ -237,6 +244,19 @@ class PipelineOrchestrator:
         user_overrides_payload = None
         if user_overrides_path:
             user_overrides_payload = load_json(Path(user_overrides_path))
+        movement_boundaries = load_movement_boundary_payload(
+            get_nested(self.config, "inputs", "movement_boundaries")
+        )
+        for boundary in movement_boundaries["boundaries"]:
+            if boundary["page"] >= len(page_ids):
+                raise ValueError(
+                    "Movement boundary page is outside the ordered pipeline input: "
+                    f"{boundary['page']} >= {len(page_ids)}"
+                )
+        reject_movement_boundaries_on_excluded_pages(
+            movement_boundaries,
+            {index - 1 for index in excluded_indices if 1 <= index <= len(page_ids)},
+        )
 
         # Phase A: Base Numbering & Barline Correction
         res_a = self.run_base_numbering_and_barline_correction(
@@ -263,6 +283,7 @@ class PipelineOrchestrator:
         self.run_mmr_batch_detection(page_ids, excluded_page_ids, mmr_page_ctx)
 
         # Phase C: Final Numbering & Overlays
+        self._movement_boundaries = movement_boundaries
         numbering_final_paths = self.run_final_numbering_and_overlays(
             page_ids, excluded_page_ids, page_ctx, user_overrides_payload
         )
@@ -277,10 +298,25 @@ class PipelineOrchestrator:
             write_json(self.intermediate_dir / "numbering_base.json", combined_base)
 
         if len(numbering_final_paths) > 1 and not self.dry_run and not self.validate_only:
+            final_pages = [
+                page for path in numbering_final_paths for page in load_json(path)["pages"]
+            ]
+            page_metadata = [
+                load_json(path).get("numbering_metadata") for path in numbering_final_paths
+            ]
             combined_final = {
-                "pages": [
-                    page for path in numbering_final_paths for page in load_json(path)["pages"]
-                ]
+                "pages": final_pages,
+                "numbering_metadata": {
+                    "schema_version": FINAL_NUMBERING_SCHEMA_VERSION,
+                    "start_number": 1,
+                    "next_number": (
+                        page_metadata[-1].get("next_number")
+                        if isinstance(page_metadata[-1], dict)
+                        else None
+                    ),
+                    "movement_boundaries": movement_boundaries["boundaries"],
+                    "pages": page_metadata,
+                },
             }
             write_json(self.outputs_dir / "numbering_final.json", combined_final)
 
@@ -656,6 +692,7 @@ class PipelineOrchestrator:
         excluded_page_ids: Set[str],
         page_ctx: Dict[str, Dict[str, Any]],
         user_overrides_payload: Optional[Dict[str, Any]],
+        movement_boundaries: Optional[Dict[str, Any]] = None,
     ) -> List[Path]:
         """Phase C: Final Numbering & Overlays."""
         step_mmr = get_nested(self.config, "steps", "mmr_overrides", default=False)
@@ -674,6 +711,18 @@ class PipelineOrchestrator:
             numbering_pipeline = MeasureNumberingPipeline()
             self._persistence["numbering_pipeline"] = numbering_pipeline
 
+        movement_boundaries = movement_boundaries or self._movement_boundaries
+        movement_boundaries = movement_boundaries or load_movement_boundary_payload(None)
+        reject_movement_boundaries_on_excluded_pages(
+            movement_boundaries,
+            {
+                page_ctx[page_id]["index"] - 1
+                for page_id in excluded_page_ids
+                if page_id in page_ctx
+            },
+        )
+        current_number = 1
+
         for page_id in tqdm(page_ids, desc="Phase C: Final Numbering", unit="page"):
             ctx = page_ctx[page_id]
             page_intermediate = ctx["intermediate_dir"]
@@ -681,13 +730,22 @@ class PipelineOrchestrator:
             index = ctx["index"]
             image_path = ctx["image_path"]
             resolved_item = ctx["resolved"]
+            page_boundaries = movement_boundaries_for_page(movement_boundaries, index - 1)
+            page_start_number = current_number
 
             if page_id in excluded_page_ids:
                 if (step_apply or step_overlay) and not self.validate_only:
                     empty_final = page_outputs / "numbering_final.json"
                     numbering_final_paths.append(empty_final)
                     if not self.dry_run:
-                        write_json(empty_final, empty_numbering_payload(index, image_path))
+                        empty_payload = empty_numbering_payload(index, image_path)
+                        empty_payload["numbering_metadata"] = final_numbering_metadata(
+                            page_index=index - 1,
+                            start_number=page_start_number,
+                            next_number=current_number,
+                            boundaries=page_boundaries,
+                        )
+                        write_json(empty_final, empty_payload)
                 continue
 
             mmr_overrides_payload = None
@@ -700,7 +758,7 @@ class PipelineOrchestrator:
                 overrides_payload = merge_measure_overrides(
                     mmr_overrides_payload, user_overrides_payload
                 )
-                if mmr_overrides_payload is not None:
+                if overrides_payload is not None:
                     overrides_payload = rebase_mmr_overrides_to_page_local(
                         overrides_payload,
                         page_index=index - 1,
@@ -712,12 +770,22 @@ class PipelineOrchestrator:
                 numbering_final_paths.append(final_json)
                 overlay_path = page_outputs / "numbering_overlay.png" if step_overlay else None
 
-                if (
+                persisted_next_number = None
+                if self.skip_existing and final_json.exists():
+                    persisted_next_number = persisted_final_next_number(
+                        final_json,
+                        expected_start_number=current_number,
+                        expected_boundaries=page_boundaries,
+                    )
+                can_skip_existing = (
                     self.skip_existing
                     and final_json.exists()
                     and (not overlay_path or overlay_path.exists())
-                ):
+                    and persisted_next_number is not None
+                )
+                if can_skip_existing:
                     logger.info(f"Skipping final_numbering for {page_id}: file exists.")
+                    current_number = persisted_next_number
                 else:
                     if not self.dry_run:
                         raw_barlines = load_json(Path(resolved_item["barlines_json"]))
@@ -747,10 +815,25 @@ class PipelineOrchestrator:
                         temp_score.pages.append(page_obj)
 
                         ov = overrides_payload.get("measure_overrides")
-                        numbering_pipeline.numberer.number_score(
-                            temp_score, start_number=1, overrides=ov
+                        local_boundary_resets = {
+                            (0, boundary["system"]): boundary["reset_number"]
+                            for boundary in page_boundaries
+                        }
+                        next_number = numbering_pipeline.numberer.number_score(
+                            temp_score,
+                            start_number=current_number,
+                            overrides=ov,
+                            boundary_resets=local_boundary_resets,
                         )
-                        write_json(final_json, score_to_dict(temp_score))
+                        final_payload = score_to_dict(temp_score)
+                        final_payload["numbering_metadata"] = final_numbering_metadata(
+                            page_index=index - 1,
+                            start_number=current_number,
+                            next_number=next_number,
+                            boundaries=page_boundaries,
+                        )
+                        write_json(final_json, final_payload)
+                        current_number = next_number
 
                         if step_overlay and overlay_path:
                             from tools.add_measure_numbers import render_overlay

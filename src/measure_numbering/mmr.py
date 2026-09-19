@@ -173,6 +173,42 @@ class MMROCREngine:
                 )
         return masked_img
 
+    def mask_hbar_candidates_calibrated(
+        self, img: np.ndarray, staff_top_rel: float, staff_height: float
+    ) -> np.ndarray:
+        """Use the prior fixed bar-mask expressed in candidate staff units."""
+        if img is None:
+            return img
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        scale = max(1.0, float(staff_height))
+        kernel_height, min_width, min_height, max_distance, padding = (
+            max(1, int(round(ratio * scale))) for ratio in (0.025, 0.25, 0.025, 0.25, 0.03125)
+        )
+        kernel = np.ones((kernel_height, 1), np.uint8)
+        thick = cv2.dilate(cv2.erode(binary, kernel, iterations=1), kernel, iterations=1)
+        contours, _ = cv2.findContours(thick, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        masked = img.copy()
+        center = staff_top_rel + scale / 2.0
+        for contour in contours:
+            x, y, width, height = cv2.boundingRect(contour)
+            if (
+                width > min_width
+                and height > min_height
+                and abs(y + height / 2.0 - center) < max_distance
+            ):
+                cv2.rectangle(
+                    masked,
+                    (max(0, x - padding), max(0, y - padding)),
+                    (
+                        min(img.shape[1], x + width + padding),
+                        min(img.shape[0], y + height + padding),
+                    ),
+                    (255, 255, 255),
+                    -1,
+                )
+        return masked
+
     def rotate_image(self, image: np.ndarray, angle: float) -> np.ndarray:
         if angle == 0:
             return image
@@ -808,6 +844,7 @@ class MMRProcessor:
 
     JITTER_SCORE_TRIGGER = 5.0
     TARGETED_X1_SHIFT_FRACTION = 0.01
+    NATIVE_INSET_FRACTION = 0.0025
     TARGETED_UPPER_STAFF_MARGIN_RATIO = 0.5
     TARGETED_SHIFTED_X_MARGIN_STAFF_RATIO = 0.2
     TARGETED_SHIFTED_Y_MARGIN_STAFF_RATIO = 0.5
@@ -829,10 +866,49 @@ class MMRProcessor:
                 image, system, x1, y1, x2, y2, prob, w_img, h_img, baseline
             )
 
+        measure_bbox = [int(x1), int(y1), int(x2), int(y2)]
+
+        # A high-CNN candidate with no OCR number has no semantic result to
+        # preserve. Retry exactly once with a symmetric, measure-relative crop
+        # inset; this excludes neighbouring notation without an external frame.
+        if found is None:
+            inset_bbox = self._native_inset_bbox(measure_bbox)
+            if inset_bbox != measure_bbox:
+                inset = self._detect_number_with_evidence_once(
+                    image, system, *inset_bbox, prob, w_img, h_img
+                )
+                inset_num, inset_score, inset_debug, inset_evidence = inset
+                if self._targeted_retry_candidate_acceptable(inset_num, inset_score):
+                    return (
+                        inset_num,
+                        inset_score,
+                        f"{inset_debug},issue277_native_symmetric_inset",
+                        inset_evidence,
+                    )
+
+        # A normal high-score OCR result stays authoritative. The left-wide
+        # fallback is deliberately broad, so corroborate only that generic
+        # fallback subtype with one narrow candidate-native crop before
+        # returning it. The standard fallback remains authoritative because
+        # its narrower crop has already been spatially constrained.
         if found is not None and score > self.JITTER_SCORE_TRIGGER:
+            if "left_wide_unmasked_fallback" in str(debug):
+                retry_num, retry_score = self._run_calibrated_shifted_staff_values(
+                    image,
+                    self._targeted_shift_x1(measure_bbox),
+                    system.get("staves", []),
+                    w_img,
+                    h_img,
+                )
+                if self._targeted_retry_candidate_acceptable(retry_num, retry_score):
+                    return (
+                        retry_num,
+                        retry_score,
+                        "issue277_calibrated_shifted_unmasked_fallback_retry",
+                        evidence,
+                    )
             return baseline
 
-        measure_bbox = [int(x1), int(y1), int(x2), int(y2)]
         staves = system.get("staves", [])
         full_span_values = [
             self._run_targeted_full_span_staff(image, measure_bbox, stave["bbox"], w_img, h_img)
@@ -881,6 +957,17 @@ class MMRProcessor:
             max(1, int(round(width * cls.TARGETED_X1_SHIFT_FRACTION))),
         )
         return [x1 + dx, y1, x2, y2]
+
+    @classmethod
+    def _native_inset_bbox(cls, bbox: List[int]) -> List[int]:
+        x1, y1, x2, y2 = (int(value) for value in bbox)
+        width = x2 - x1
+        if width <= 2:
+            return [x1, y1, x2, y2]
+        inset = min(max(1, int(round(width * cls.NATIVE_INSET_FRACTION))), (width - 1) // 2)
+        if x1 + inset >= x2 - inset:
+            return [x1, y1, x2, y2]
+        return [x1 + inset, y1, x2 - inset, y2]
 
     @staticmethod
     def _targeted_retry_candidate_acceptable(number: Optional[int], score: float) -> bool:
@@ -981,6 +1068,36 @@ class MMRProcessor:
         if number is None or number < 2:
             return None, 0.0
         return number, score
+
+    def _run_calibrated_shifted_staff_values(self, image, measure_bbox, staves, w_img, h_img):
+        """One narrow retry for broad unmasked-fallback evidence only."""
+        values = []
+        x1, _y1, x2, _y2 = (int(value) for value in measure_bbox)
+        for stave in staves:
+            _sx1, sy1, _sx2, sy2 = (int(value) for value in stave["bbox"])
+            staff_height = max(1.0, float(sy2 - sy1))
+            margin_x = int(round(staff_height * self.TARGETED_SHIFTED_X_MARGIN_STAFF_RATIO))
+            margin_y = int(round(staff_height * self.TARGETED_SHIFTED_Y_MARGIN_STAFF_RATIO))
+            top, bottom = max(0, sy1 - margin_y), min(h_img, sy2 + margin_y)
+            crop = image[top:bottom, max(0, x1 - margin_x) : min(w_img, x2 + margin_x)]
+            if crop is None or crop.size == 0:
+                continue
+            crop = self.ocr.mask_hbar_candidates_calibrated(crop, float(sy1 - top), staff_height)
+            processed = self.ocr.preprocess_variant(
+                crop,
+                mode="no_dilate",
+                angle=0,
+                staff_height=staff_height,
+                use_staff_relative_geometry=True,
+            )
+            if processed is None or processed.size == 0:
+                continue
+            ocr_result, _ = self.ocr.ocr_engine(processed)
+            number, retry_score, _debug = self.ocr.select_best_candidate(
+                ocr_result or [], processed.shape[1], processed.shape[0]
+            )
+            values.append((number if number is not None and number >= 2 else None, retry_score))
+        return self._aggregate_targeted_staff_results(values)
 
     def _detect_number_with_evidence_j2(
         self, image, system, x1, y1, x2, y2, prob, w_img, h_img, baseline=None

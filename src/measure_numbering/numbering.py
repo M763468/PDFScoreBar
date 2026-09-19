@@ -16,7 +16,11 @@ class MeasureNumberer:
     FIRST_GHOST_MEASURE_MAX_STAFF_HEIGHT_RATIO = 1.2
 
     def number_score(
-        self, score: Score, start_number: int = 1, overrides: Optional[List[Dict[str, Any]]] = None
+        self,
+        score: Score,
+        start_number: int = 1,
+        overrides: Optional[List[Dict[str, Any]]] = None,
+        boundary_resets: Optional[Dict[tuple[int, int], int]] = None,
     ) -> int:
         """
         Numbers all pages and systems in a score sequentially.
@@ -25,6 +29,9 @@ class MeasureNumberer:
         current_number = start_number
         if not score.pages:
             return current_number
+
+        boundary_resets = boundary_resets or {}
+        applied_boundaries: set[tuple[int, int]] = set()
 
         # Map overrides by (page_index, system_index, measure_index) for fast lookup
         ov_map = {}
@@ -35,11 +42,21 @@ class MeasureNumberer:
 
         for p_idx, page in enumerate(score.pages):
             for s_idx, system in enumerate(page.systems):
+                boundary_key = (p_idx, s_idx)
+                if boundary_key in boundary_resets:
+                    current_number = boundary_resets[boundary_key]
+                    applied_boundaries.add(boundary_key)
                 # Prepare system-specific overrides
                 sys_ov = {
                     m_idx: ov for (p, s, m_idx), ov in ov_map.items() if p == p_idx and s == s_idx
                 }
                 current_number = self.number_system(system, current_number, overrides=sys_ov)
+
+        unknown_boundaries = set(boundary_resets) - applied_boundaries
+        if unknown_boundaries:
+            raise ValueError(
+                f"Movement boundary targets missing score systems: {sorted(unknown_boundaries)}"
+            )
 
         return current_number
 

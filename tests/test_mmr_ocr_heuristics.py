@@ -222,6 +222,27 @@ class TestMMROCRHeuristics(unittest.TestCase):
         self.assertEqual((processor.full_span_calls, processor.shifted_calls), (0, 0))
         self.assertEqual(processor.j2_calls, 0)
 
+    def test_standard_fallback_stays_authoritative_but_left_wide_retries(self):
+        class Processor(_TargetedHarness):
+            def _run_calibrated_shifted_staff_values(self, *args):
+                return 7, 10.0
+
+        processor = Processor(
+            baseline=(2, 20.0, "unmasked_fallback_standard", 0),
+            full_span=(None, 0.0),
+            shifted=(None, 0.0),
+        )
+        self.assertEqual(_run_targeted(processor), (2, 20.0, "unmasked_fallback_standard", 0))
+
+        processor = Processor(
+            baseline=(11, 20.0, "left_wide_unmasked_fallback_standard", 0),
+            full_span=(None, 0.0),
+            shifted=(None, 0.0),
+        )
+        processor._run_calibrated_shifted_staff_values = lambda *args: (3, 10.0)
+        result = _run_targeted(processor)
+        self.assertEqual(result[:2], (3, 10.0))
+
     def test_targeted_low_score_uses_full_span_retry_first(self):
         processor = _TargetedHarness(
             baseline=(97, -44.0, "baseline", 0),
@@ -320,6 +341,10 @@ class TestMMROCRHeuristics(unittest.TestCase):
                     MMRProcessor._targeted_shift_x1([100, 0, 100 + width, 20])[0],
                     100 + expected_shift,
                 )
+
+    def test_native_inset_is_symmetric_and_measure_relative(self):
+        self.assertEqual(MMRProcessor._native_inset_bbox([100, 0, 500, 20]), [101, 0, 499, 20])
+        self.assertEqual(MMRProcessor._native_inset_bbox([100, 0, 102, 20]), [100, 0, 102, 20])
 
     def test_hbar_mask_geometry_is_opt_in_and_staff_relative(self):
         self.assertEqual(MMROCREngine._hbar_mask_geometry(40, False), (4, 40, 4, 40, 5))

@@ -63,7 +63,8 @@ evidence. Production numbering may consume a boundary only when it is either:
 An ambiguous candidate must not be copied into `inputs.movement_boundaries`.
 Omitting it means numbering continues; an operator can review the evidence and
 then add the same zero-based page/system location deterministically. No current
-automatic producer is approved as the production default.
+automatic producer is approved as the production default. The geometry
+producer below is approved only for candidate/review use.
 
 ## Candidate and evidence artifact
 
@@ -76,7 +77,9 @@ contract, not a numbering input. Its top-level shape is:
   "schema_version": "issue333.movement_boundary_evidence.v1",
   "source_document": {
     "sha256": "...",
-    "page_order": "source_pdf"
+    "page_order": "ordered_pipeline_input",
+    "input_manifest": "runs/example/manifest.json",
+    "input_manifest_sha256": "..."
   },
   "producer": {
     "name": "...",
@@ -101,6 +104,11 @@ contract, not a numbering input. Its top-level shape is:
           "raw": {"preceding_gap_px": 200, "left_x_px": 525}
         }
       ],
+      "references": {
+        "page_id": "page_004",
+        "source_page": 3,
+        "image": "runs/example/inputs/images/page_004.png"
+      },
       "provenance": {"review": null}
     }
   ]
@@ -108,7 +116,9 @@ contract, not a numbering input. Its top-level shape is:
 ```
 
 `page` and `system` use the same zero-based ordered-input coordinates as the
-resolved contract. `state` is one of:
+resolved contract. They must be derived from the actual input manifest;
+`source_page` is separate provenance and is not a consumer coordinate when
+pages were selected, omitted, or reordered. `state` is one of:
 
 - `confirmed_automatic` — a validated policy may export a resolved boundary;
 - `explicit_manual_configured` — an operator/config supplied the resolution;
@@ -124,6 +134,35 @@ After review, export a new `issue268.movement_boundaries.v1` payload containing
 only resolved records. Use `source` such as `manual`, `configured`,
 `reviewed_candidate`, or a specific validated automatic producer, and retain
 the evidence artifact identity in `provenance`.
+
+## Geometry review producer
+
+`src.pipeline.movement_boundary_candidates.build_movement_boundary_evidence`
+and `tools/generate_movement_boundary_candidates.py` implement the validated
+review-only producer. The explainable candidate rule is the Phase 1 frozen
+rule: the top staff begins at least 2% of page width to the right of the page
+median, or its preceding gap is at least 1.75 times the page median gap. The
+first non-empty input system is retained as `no_boundary` because an initial
+reset is unnecessary. Other matched locations are always
+`ambiguous_review_required`; the producer never emits numeric confidence or a
+resolved reset.
+
+From the repository root:
+
+```bash
+python -m tools.generate_movement_boundary_candidates \
+  --numbering-base runs/example/intermediate/numbering_base.json \
+  --manifest runs/example/manifest.json \
+  --source-pdf-sha256 <sha256> \
+  --producer-source-commit <commit> \
+  --output runs/example/movement_boundary_evidence.json
+```
+
+The manifest and numbering artifact must have the same ordered page count.
+Raw normalized layout values, matched rules, image references, source hash,
+manifest hash, parameters, and producer commit are retained for GUI or manual
+review. Export to `issue268.movement_boundaries.v1` remains a separate explicit
+review/configuration action.
 
 The representative Issue #333 fixture is
 `tests/fixtures/movement_boundaries/issue333_representative.json`. It fixes

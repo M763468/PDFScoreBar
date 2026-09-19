@@ -23,7 +23,10 @@ def test_issue333_representative_fixture_covers_required_boundary_shapes() -> No
         "fresh_run_input_page": "zero-based ordered input page within the selected-page fresh run",
         "system": "zero-based system in fresh current-pipeline numbering_base artifact",
     }
-    assert fixture["consumer_profile"] == "full_document_no_omissions; therefore page equals source_page in this fixture only"
+    assert (
+        fixture["consumer_profile"]
+        == "full_document_no_omissions; therefore page equals source_page in this fixture only"
+    )
     assert len(boundaries) == 14
     assert {source["score"] for source in fixture["sources"]} >= {
         "beethoven9",
@@ -37,13 +40,7 @@ def test_issue333_representative_fixture_covers_required_boundary_shapes() -> No
         == 2
     )
     assert (
-        len(
-            [
-                item
-                for item in boundaries
-                if item["score"] == "toy_symphony" and item["page"] == 2
-            ]
-        )
+        len([item for item in boundaries if item["score"] == "toy_symphony" and item["page"] == 2])
         == 2
     )
 

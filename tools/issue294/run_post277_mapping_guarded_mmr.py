@@ -58,7 +58,7 @@ from tools.issue294.rescore_full68_mmr_audit import (
     _score_overrides,
 )
 
-REQUIRED_DEVELOP_COMMIT = "edc17ee08de6694827c67d4ab8b30c2adc1f05e3"
+REQUIRED_DEVELOP_COMMIT = "3ae4b710076cd7f4d7e0aa2a1270817d4f3d77b2"
 DEFAULT_MODEL = PROJECT_ROOT / "tools/mmr_training/models/mmr_classifier_best.pth"
 DEFAULT_MANIFEST = PROJECT_ROOT / "logs/issue294/issue294_full68_refresh_02/full68_host.json"
 DEFAULT_ACCEPTED_REBASE = Path(

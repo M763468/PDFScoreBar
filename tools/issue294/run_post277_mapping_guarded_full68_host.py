@@ -32,7 +32,7 @@ from tools.issue294 import run_downstream_candidate_matrix_full68_host as full68
 from tools.issue294 import run_downstream_candidate_matrix_host as matrix_host
 from tools.issue294 import run_same_original_ab_host as base
 
-REQUIRED_DEVELOP_COMMIT = "edc17ee08de6694827c67d4ab8b30c2adc1f05e3"
+REQUIRED_DEVELOP_COMMIT = "3ae4b710076cd7f4d7e0aa2a1270817d4f3d77b2"
 DEFAULT_LATEST_COMMIT = "457e7c6518a10ba755db2e60883419e56c4d7369"
 STANDARD_MATRIX_SCRIPT = "tools/issue294/run_downstream_candidate_matrix.py"
 MAPPING_GUARDED_MATRIX_SCRIPT = "tools/issue294/run_downstream_candidate_matrix_mapping_guarded.py"

@@ -101,7 +101,7 @@ if [[ "$container_head" != "$HEAD" ]]; then
   exit 2
 fi
 if ! docker exec -w /workspace "$CONTAINER" \
-  git merge-base --is-ancestor edc17ee08de6694827c67d4ab8b30c2adc1f05e3 "$HEAD"; then
+  git merge-base --is-ancestor 3ae4b710076cd7f4d7e0aa2a1270817d4f3d77b2 "$HEAD"; then
   echo "ERROR: container Git provenance cannot verify required develop ancestry" >&2
   exit 2
 fi

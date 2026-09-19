@@ -182,6 +182,43 @@ def production_reference_gates(totals: Mapping[str, Any]) -> dict[str, bool]:
     }
 
 
+def _row_start_error_signatures(
+    page: Mapping[str, Any], field: str
+) -> set[tuple[int, int, int, int | None, int | None]]:
+    expected = {
+        (int(item["page"]), int(item["system"]), int(item["measure"])): int(item["skip"])
+        for item in page["expected"]
+        if int(item["measure"]) == 0
+    }
+    actual = {
+        (int(item["page"]), int(item["system"]), int(item["measure"])): int(item["skip"])
+        for item in page[field]
+        if int(item["measure"]) == 0
+    }
+    return {
+        (*key, expected.get(key), actual.get(key))
+        for key in expected.keys() | actual.keys()
+        if expected.get(key) != actual.get(key)
+    }
+
+
+def candidate_row_start_no_new_regression(
+    baseline_page: Mapping[str, Any], candidate_page: Mapping[str, Any]
+) -> bool:
+    """Require candidate row-start errors to preserve production error semantics.
+
+    The accepted production reference contains a documented residual on some pages,
+    so candidate row starts must not be judged by absolute equality alone. The
+    candidate may repair a production residual, but any remaining error must have
+    the same key, expected skip, and actual skip-or-missing state as production.
+    The canonical row-start result remains in each variant as diagnostic evidence.
+    """
+
+    baseline_errors = _row_start_error_signatures(baseline_page, "actual")
+    candidate_errors = _row_start_error_signatures(candidate_page, "actual")
+    return candidate_errors <= baseline_errors
+
+
 def _build_variant_inputs(
     *,
     specs: list[Any],
@@ -336,7 +373,15 @@ def _candidate_gates(
         <= int(baseline["totals"]["skip_mismatch"]),
         "matched_tp_not_below_production": int(candidate["totals"]["matched_tp"])
         >= int(baseline["totals"]["matched_tp"]),
-        **{f"candidate_{key}": bool(value) for key, value in candidate["gates"].items()},
+        "candidate_row_start_no_new_regression_vs_production": all(
+            candidate_row_start_no_new_regression(baseline_page, candidate_pages[page_id])
+            for page_id, baseline_page in baseline_pages.items()
+        ),
+        **{
+            f"candidate_{key}": bool(value)
+            for key, value in candidate["gates"].items()
+            if key != "row_start_semantics"
+        },
     }
     if full68:
         gates.update(

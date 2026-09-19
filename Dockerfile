@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y software-properties-common && \
     apt-get update && apt-get install -y \
     python3.11 python3.11-venv python3.11-dev python3-pip \
     wget git curl build-essential \
+    libgl1 libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv
@@ -33,16 +34,32 @@ RUN uv pip install --no-cache-dir --upgrade pip setuptools wheel
 
 # Install external packages from git to avoid missing-path errors on clean checkouts
 # Pinned to specific commits for reproducible builds
+ARG MAINTAINED_HOMR_COMMIT=457e7c6518a10ba755db2e60883419e56c4d7369
 RUN uv pip install git+https://github.com/xinntao/Real-ESRGAN.git@a4abfb2979a7bbff3f69f58f58ae324608821e27
-RUN uv pip install git+https://github.com/liebharc/homr.git@b377620a3a55bd7ff657481cec5b688dfbc9cee9
+RUN uv pip install git+https://github.com/liebharc/homr.git@${MAINTAINED_HOMR_COMMIT}
+# The retained historical Stage-E evaluator imports the legacy musicxml package;
+# keep it in the cloned compatibility runtime even though maintained HOMR no longer
+# declares it.
+RUN uv pip install musicxml==1.4
 RUN /opt/venv_pipeline/bin/python docker/patch_homr_onnx_provider.py
+
+# HOMR's supported init command needs ONNX Runtime at this stage; the project
+# dependency install below pins the same maintained runtime contract explicitly.
+RUN uv pip install onnxruntime-gpu==1.24.4
+
+# Install project dependencies
+RUN uv pip install -e .
+
+# Maintained HOMR declares both generic and GPU ONNX Runtime distributions.  The
+# generic distribution wins the import namespace if left installed, hiding the
+# CUDA execution provider required by the production contract.  Keep the pinned
+# GPU distribution as the sole owner of that namespace.
+RUN uv pip uninstall -y onnxruntime && \
+    uv pip install --no-cache-dir --force-reinstall --no-deps onnxruntime-gpu==1.24.4
 
 # HOMR's supported init command materializes its CUDA/FP16 and OCR model assets.
 # Do this during build so canonical GPU validation never depends on a late download.
 RUN /opt/venv_pipeline/bin/python -m homr.main --init --gpu force
-
-# Install project dependencies
-RUN uv pip install -e .
 
 # Apply basicsr patch before cloning the main venv into the isolated HOMR profile runtime.
 RUN /opt/venv_pipeline/bin/python -c "from pathlib import Path; import sysconfig; p = Path(sysconfig.get_paths()['purelib']) / 'basicsr' / 'data' / 'degradations.py'; s = p.read_text(); p.write_text(s.replace('from torchvision.transforms.functional_tensor import rgb_to_grayscale', 'from torchvision.transforms.functional import rgb_to_grayscale'))"
@@ -114,6 +131,7 @@ FROM nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04
 
 ARG STAGE_E_HOMR_COMMIT=864e2882f7a41afcf8f16654728a473ae56826d6
 ARG STAGE_E_PDFSCORE_COMMIT=bd6ae56f8be6c87088143cfbf0ba09dee94fe0d7
+ARG MAINTAINED_HOMR_COMMIT=457e7c6518a10ba755db2e60883419e56c4d7369
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
@@ -141,6 +159,8 @@ COPY --from=builder /opt/homr_stage_e_profile /opt/homr_stage_e_profile
 COPY --from=builder /opt/pdfscore_stage_e_profile /opt/pdfscore_stage_e_profile
 COPY --from=builder /opt/homr_stage_e_profile_commit.txt /opt/homr_stage_e_profile_commit.txt
 COPY --from=builder /opt/pdfscore_stage_e_profile_commit.txt /opt/pdfscore_stage_e_profile_commit.txt
+RUN echo "${MAINTAINED_HOMR_COMMIT}" > /opt/homr_maintained_profile_commit.txt && \
+    echo "workspace-runtime" > /opt/pdfscore_maintained_profile_commit.txt
 COPY --from=builder /opt/weights /opt/pdfscore-assets/realesrgan
 
 # Copy source code. Canonical runtime mounts the active checkout over /workspace,
@@ -161,9 +181,11 @@ RUN mkdir -p /opt/pdfscore-runtime && \
     test -s /opt/pdfscore-assets/realesrgan/RealESRGAN_x4plus.pth && \
     test -s /opt/pdfscore-assets/barline_cnn_smoke.pth
 
-LABEL pdfscore.detector.homr_profile="stage_e_verified"
-LABEL pdfscore.detector.homr_commit="${STAGE_E_HOMR_COMMIT}"
-LABEL pdfscore.detector.pdfscore_evaluator_commit="${STAGE_E_PDFSCORE_COMMIT}"
+LABEL pdfscore.detector.homr_profile="maintained_original"
+LABEL pdfscore.detector.homr_commit="${MAINTAINED_HOMR_COMMIT}"
+LABEL pdfscore.detector.pdfscore_evaluator_commit="workspace-runtime"
+LABEL pdfscore.detector.historical_homr_commit="${STAGE_E_HOMR_COMMIT}"
+LABEL pdfscore.detector.historical_pdfscore_evaluator_commit="${STAGE_E_PDFSCORE_COMMIT}"
 LABEL pdfscore.runtime.asset_contract="v1"
 
 CMD ["bash"]

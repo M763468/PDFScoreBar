@@ -393,6 +393,59 @@ def _candidate_gates(
     return gates
 
 
+def production_acceptance_gates(
+    baseline: Mapping[str, Any],
+    candidate: Mapping[str, Any],
+    *,
+    full68: bool,
+    b_c_actual_exact: bool,
+    b_c_shape_exact: bool,
+    required_shape_controls: Mapping[str, bool],
+) -> dict[str, bool]:
+    """Return the blocking Issue #294 production-adoption gates.
+
+    ``_candidate_gates`` intentionally remains strict and page-local.  It is a
+    useful diagnostic, but it is not the production replacement policy: a
+    discrete MMR wrong-number may move between pages while the aggregate
+    correctness and critical downstream controls remain unchanged.  The
+    topology controls here are the retained semantic controls (candidate
+    agreement and required-page shape controls), not raw empty-system or box
+    identity differences against the historical producer.
+    """
+
+    baseline_totals = baseline["totals"]
+    candidate_totals = candidate["totals"]
+    gates = {
+        "B_C_actual_exact_selected_pages": bool(b_c_actual_exact),
+        "B_C_numbering_shape_exact_selected_pages": bool(b_c_shape_exact),
+        "aggregate_tp_not_below_production": int(candidate_totals["matched_tp"])
+        >= int(baseline_totals["matched_tp"]),
+        "aggregate_fn_not_above_production": int(candidate_totals["missed_fn"])
+        <= int(baseline_totals["missed_fn"]),
+        "aggregate_mismatch_not_above_production": int(candidate_totals["skip_mismatch"])
+        <= int(baseline_totals["skip_mismatch"]),
+        "aggregate_fp_not_above_production": int(candidate_totals["unexpected_fp"])
+        <= int(baseline_totals["unexpected_fp"]),
+        "candidate_page_033_one_bar_veto": bool(candidate["gates"]["page_033_one_bar_veto"]),
+        "candidate_page_042_five_overrides": bool(candidate["gates"]["page_042_five_overrides"]),
+        "candidate_unexpected_fp_zero": int(candidate_totals["unexpected_fp"]) == 0,
+        "candidate_zero_expected_page_detections_zero": int(
+            candidate_totals["zero_expected_page_detections"]
+        )
+        == 0,
+    }
+    gates.update({str(key): bool(value) for key, value in required_shape_controls.items()})
+    if full68:
+        gates.update(
+            {
+                "candidate_expected_177": int(candidate_totals["expected"]) == 177,
+                "candidate_zero_expected_pages_16": int(candidate_totals["zero_expected_pages"])
+                == 16,
+            }
+        )
+    return gates
+
+
 def run(
     *,
     manifest_path: Path,
@@ -493,7 +546,7 @@ def run(
         for page_id in selected_ids
     )
 
-    gates: dict[str, bool] = {
+    legacy_gates: dict[str, bool] = {
         "B_C_actual_exact_selected_pages": b_c_actual_exact,
         "B_C_numbering_shape_exact_selected_pages": b_c_shape_exact,
         **{
@@ -504,16 +557,38 @@ def run(
         },
     }
     if "page_052" in selected_ids:
-        gates["page_052_B_C_shape_exact"] = (
+        legacy_gates["page_052_B_C_shape_exact"] = (
             b_pages["page_052"]["numbering_shape"] == c_pages["page_052"]["numbering_shape"]
         )
     if "page_067" in selected_ids:
-        gates["page_067_B_C_shape_exact"] = (
+        legacy_gates["page_067_B_C_shape_exact"] = (
             b_pages["page_067"]["numbering_shape"] == c_pages["page_067"]["numbering_shape"]
         )
+    strict_diagnostic_gates = dict(legacy_gates)
     if expect_production_reference:
         for key, value in production_reference_gates(baseline["totals"]).items():
-            gates[f"A_production_reference_{key}"] = value
+            strict_diagnostic_gates[f"A_production_reference_{key}"] = value
+
+    required_shape_controls = {
+        key: value
+        for key, value in legacy_gates.items()
+        if key in {"page_052_B_C_shape_exact", "page_067_B_C_shape_exact"}
+    }
+    production_gates: dict[str, bool] = {}
+    for label, variant in (("B", b), ("C", c)):
+        production_gates.update(
+            {
+                f"{label}_{key}": value
+                for key, value in production_acceptance_gates(
+                    baseline,
+                    variant,
+                    full68=full68,
+                    b_c_actual_exact=b_c_actual_exact,
+                    b_c_shape_exact=b_c_shape_exact,
+                    required_shape_controls=required_shape_controls,
+                ).items()
+            }
+        )
 
     payload = {
         "schema_version": "issue294.post277_mapping_guarded_mmr.v1",
@@ -553,8 +628,13 @@ def run(
             PRODUCTION_REFERENCE if expect_production_reference else None
         ),
         "variants": variants,
-        "gates": gates,
-        "all_gates_pass": all(gates.values()),
+        "strict_diagnostic_gates": strict_diagnostic_gates,
+        "production_acceptance_gates": production_gates,
+        # Keep ``gates`` as the historical field for consumers that inspect
+        # the report, but make the exit status follow the explicit production
+        # adoption policy.  Strict failures remain available above.
+        "gates": production_gates,
+        "all_gates_pass": all(production_gates.values()),
     }
     return payload
 

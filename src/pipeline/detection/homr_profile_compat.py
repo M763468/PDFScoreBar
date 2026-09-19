@@ -50,7 +50,10 @@ def _original_consumer_callable(callable_obj: Any) -> Any:
 
 def processing_config_compat_mode(processing_config_cls: type[Any]) -> str:
     signature = inspect.signature(processing_config_cls)
-    if "use_gpu_inference" in signature.parameters:
+    if any(
+        name in signature.parameters
+        for name in ("use_gpu_inference", "transformer_use_gpu", "segnet_use_gpu")
+    ):
         return "gpu_argument_injected_when_missing"
     return "native_without_gpu_argument"
 
@@ -64,16 +67,39 @@ def build_processing_config_compat(
     use_gpu_inference: bool,
 ) -> Any:
     """Construct ProcessingConfig across the known five/six-field HOMR APIs."""
-    args = (
-        enable_debug,
-        enable_cache,
-        write_staff_positions,
-        False,
-        -1,
-    )
-    mode = processing_config_compat_mode(processing_config_cls)
-    if mode == "gpu_argument_injected_when_missing":
-        return processing_config_cls(*args, use_gpu_inference)
+    values = {
+        "enable_debug": enable_debug,
+        "enable_cache": enable_cache,
+        "write_staff_positions": write_staff_positions,
+        "read_staff_positions": False,
+        "selected_staff": -1,
+        # HOMR versions have used both one combined GPU flag and separate
+        # transformer/segnet flags. Keep the runtime choice identical.
+        "use_gpu_inference": use_gpu_inference,
+        "transformer_use_gpu": use_gpu_inference,
+        "segnet_use_gpu": use_gpu_inference,
+        "coreml_encoder": False,
+        "title_detection": False,
+    }
+    parameters = list(inspect.signature(processing_config_cls).parameters.values())
+    args: list[Any] = []
+    for parameter in parameters:
+        if parameter.kind not in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        ):
+            if parameter.default is inspect.Parameter.empty:
+                raise TypeError(
+                    f"Unsupported required HOMR ProcessingConfig parameter: {parameter}"
+                )
+            continue
+        if parameter.name not in values:
+            if parameter.default is inspect.Parameter.empty:
+                raise TypeError(
+                    f"Unsupported required HOMR ProcessingConfig parameter: {parameter.name}"
+                )
+            continue
+        args.append(values[parameter.name])
     return processing_config_cls(*args)
 
 
@@ -81,6 +107,8 @@ def download_weights_compat_mode(download_weights: Any) -> str:
     signature = inspect.signature(download_weights)
     if "use_gpu_inference" in signature.parameters:
         return "gpu_argument_injected"
+    if {"segnet_use_gpu", "transformer_use_gpu"}.issubset(signature.parameters):
+        return "split_gpu_arguments"
     required_arguments = _required_positional_count(download_weights)
     if required_arguments == 0:
         return "native_zero_argument"
@@ -94,12 +122,14 @@ def call_download_weights_compat(download_weights: Any, *, use_gpu_inference: bo
     mode = download_weights_compat_mode(download_weights)
     if mode == "native_zero_argument":
         return download_weights()
+    if mode == "split_gpu_arguments":
+        return download_weights(use_gpu_inference, use_gpu_inference, False)
     return download_weights(use_gpu_inference)
 
 
 def load_predictions_compat_mode(load_predictions: Any) -> str:
     signature = inspect.signature(load_predictions)
-    if "use_gpu_inference" in signature.parameters:
+    if "use_gpu_inference" in signature.parameters or "segnet_use_gpu" in signature.parameters:
         return "gpu_argument_injected_when_missing"
     if _required_positional_count(load_predictions) <= 3:
         return "native_without_gpu_argument"
@@ -188,6 +218,24 @@ def install_current_homr_consumer_compat(
         original_download_weights,
     )
     predictor_module.download_weights = predictor_download_weights_compat
+
+    original_generate_xml = getattr(predictor_module, "generate_xml", None)
+    if original_generate_xml is not None:
+        original_generate_xml = _original_consumer_callable(original_generate_xml)
+
+        def generate_xml_consumer_compat(*args: Any, **kwargs: Any) -> Any:
+            xml = original_generate_xml(*args, **kwargs)
+            if hasattr(xml, "write"):
+                return xml
+            import xml.etree.ElementTree as element_tree
+
+            if isinstance(xml, element_tree.Element):
+                return element_tree.ElementTree(xml)
+            return xml
+
+        setattr(generate_xml_consumer_compat, _CONSUMER_COMPAT_MARKER, True)
+        setattr(generate_xml_consumer_compat, _CONSUMER_COMPAT_ORIGINAL, original_generate_xml)
+        predictor_module.generate_xml = generate_xml_consumer_compat
 
     original_load_predictions = _original_consumer_callable(
         heuristics_module.load_and_preprocess_predictions

@@ -73,6 +73,45 @@ def test_processing_config_with_gpu_field_uses_six_arguments() -> None:
     assert captured["args"] == (True, False, True, False, -1, True)
 
 
+def test_processing_config_with_split_gpu_fields_uses_current_arguments() -> None:
+    captured = {}
+
+    class CurrentProcessingConfig:
+        def __init__(
+            self,
+            enable_debug,
+            enable_cache,
+            write_staff_positions,
+            read_staff_positions,
+            selected_staff,
+            transformer_use_gpu,
+            segnet_use_gpu,
+            coreml_encoder,
+            title_detection,
+        ):
+            captured["args"] = (
+                enable_debug,
+                enable_cache,
+                write_staff_positions,
+                read_staff_positions,
+                selected_staff,
+                transformer_use_gpu,
+                segnet_use_gpu,
+                coreml_encoder,
+                title_detection,
+            )
+
+    build_processing_config_compat(
+        CurrentProcessingConfig,
+        enable_debug=True,
+        enable_cache=False,
+        write_staff_positions=True,
+        use_gpu_inference=True,
+    )
+
+    assert captured["args"] == (True, False, True, False, -1, True, True, False, False)
+
+
 def test_consumer_compat_adapts_legacy_bound_symbols() -> None:
     calls = {}
 
@@ -169,6 +208,58 @@ def test_consumer_compat_preserves_current_bound_symbols() -> None:
     }
     assert modes == {
         "download_weights_mode": "gpu_argument_injected",
+        "load_predictions_mode": "gpu_argument_injected_when_missing",
+        "parse_staffs_mode": "transformer_config_injected_when_missing",
+    }
+
+
+def test_consumer_compat_adapts_split_gpu_bound_symbols() -> None:
+    calls = {}
+
+    def maintained_download_weights(segnet_use_gpu, transformer_use_gpu, coreml_encoder):
+        calls["download"] = (segnet_use_gpu, transformer_use_gpu, coreml_encoder)
+
+    def maintained_load_predictions(image_path, enable_debug, enable_cache, segnet_use_gpu):
+        calls["load"] = (image_path, enable_debug, enable_cache, segnet_use_gpu)
+        return "predictions"
+
+    def maintained_parse_staffs(debug, staffs, image, config, selected_staff=-1):
+        calls["parse"] = (debug, staffs, image, selected_staff)
+        return "staffs"
+
+    def maintained_generate_xml(*args, **kwargs):
+        del args, kwargs
+        import xml.etree.ElementTree as element_tree
+
+        return element_tree.Element("score-partwise")
+
+    predictor_module = SimpleNamespace(
+        download_weights=maintained_download_weights,
+        generate_xml=maintained_generate_xml,
+    )
+    heuristics_module = SimpleNamespace(load_and_preprocess_predictions=maintained_load_predictions)
+    homr_main = SimpleNamespace(parse_staffs=maintained_parse_staffs)
+
+    modes = install_current_homr_consumer_compat(
+        homr_main,
+        predictor_module,
+        heuristics_module,
+        use_gpu_inference=True,
+    )
+
+    predictor_module.download_weights(True)
+    assert hasattr(predictor_module.generate_xml(), "write")
+    assert (
+        heuristics_module.load_and_preprocess_predictions("page.png", True, False, True)
+        == "predictions"
+    )
+
+    assert calls == {
+        "download": (True, True, False),
+        "load": ("page.png", True, False, True),
+    }
+    assert modes == {
+        "download_weights_mode": "split_gpu_arguments",
         "load_predictions_mode": "gpu_argument_injected_when_missing",
         "parse_staffs_mode": "transformer_config_injected_when_missing",
     }

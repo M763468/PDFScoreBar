@@ -3,6 +3,7 @@ from tools.issue294.run_post277_mapping_guarded_mmr import (
     candidate_not_worse,
     candidate_row_start_no_new_regression,
     focused_page_ids,
+    production_acceptance_gates,
     production_reference_gates,
 )
 
@@ -106,3 +107,96 @@ def test_production_reference_gate_requires_exact_merged_277_totals() -> None:
     gates = production_reference_gates(changed)
     assert not gates["skip_mismatch"]
     assert all(value for key, value in gates.items() if key != "skip_mismatch")
+
+
+def _variant_totals() -> dict:
+    return {
+        "expected": 177,
+        "detected": 174,
+        "matched_tp": 170,
+        "missed_fn": 3,
+        "skip_mismatch": 4,
+        "unexpected_fp": 0,
+        "zero_expected_pages": 16,
+        "zero_expected_page_detections": 0,
+    }
+
+
+def _variant() -> dict:
+    return {
+        "totals": _variant_totals(),
+        "gates": {
+            "page_033_one_bar_veto": True,
+            "page_042_five_overrides": True,
+        },
+    }
+
+
+def test_production_acceptance_allows_equal_severity_page_error_redistribution() -> None:
+    baseline = {"totals": _variant_totals()}
+    candidate = _variant()
+
+    gates = production_acceptance_gates(
+        baseline,
+        candidate,
+        full68=True,
+        b_c_actual_exact=True,
+        b_c_shape_exact=True,
+        required_shape_controls={
+            "page_052_B_C_shape_exact": True,
+            "page_067_B_C_shape_exact": True,
+        },
+    )
+
+    assert all(gates.values())
+
+
+def test_production_acceptance_rejects_aggregate_fp_regression() -> None:
+    baseline = {"totals": _variant_totals()}
+    candidate = _variant()
+    candidate["totals"]["unexpected_fp"] = 1
+
+    gates = production_acceptance_gates(
+        baseline,
+        candidate,
+        full68=True,
+        b_c_actual_exact=True,
+        b_c_shape_exact=True,
+        required_shape_controls={"page_067_B_C_shape_exact": True},
+    )
+
+    assert gates["aggregate_fp_not_above_production"] is False
+    assert gates["candidate_unexpected_fp_zero"] is False
+
+
+def test_production_acceptance_rejects_zero_fixture_pollution() -> None:
+    baseline = {"totals": _variant_totals()}
+    candidate = _variant()
+    candidate["totals"]["zero_expected_page_detections"] = 1
+
+    gates = production_acceptance_gates(
+        baseline,
+        candidate,
+        full68=True,
+        b_c_actual_exact=True,
+        b_c_shape_exact=True,
+        required_shape_controls={"page_067_B_C_shape_exact": True},
+    )
+
+    assert gates["candidate_zero_expected_page_detections_zero"] is False
+
+
+def test_production_acceptance_rejects_required_topology_control_failure() -> None:
+    baseline = {"totals": _variant_totals()}
+    candidate = _variant()
+
+    gates = production_acceptance_gates(
+        baseline,
+        candidate,
+        full68=True,
+        b_c_actual_exact=True,
+        b_c_shape_exact=True,
+        required_shape_controls={"page_067_B_C_shape_exact": False},
+    )
+
+    assert gates["page_067_B_C_shape_exact"] is False

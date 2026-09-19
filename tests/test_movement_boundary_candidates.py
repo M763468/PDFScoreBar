@@ -159,9 +159,7 @@ def test_direct_source_reference_must_match_top_level_digest() -> None:
 
 
 def test_evidence_is_not_accepted_as_resolved_consumer_input() -> None:
-    evidence = _build(
-        {"pages": [{"width": 1000, "height": 1000, "systems": [_system(100, 100)]}]}
-    )
+    evidence = _build({"pages": [{"width": 1000, "height": 1000, "systems": [_system(100, 100)]}]})
     with pytest.raises(ValueError, match="Unsupported movement boundary schema_version"):
         load_movement_boundary_payload(evidence)
 

@@ -192,8 +192,21 @@ class MMROCREngine:
         center = staff_top_rel + scale / 2.0
         for contour in contours:
             x, y, width, height = cv2.boundingRect(contour)
-            if width > min_width and height > min_height and abs(y + height / 2.0 - center) < max_distance:
-                cv2.rectangle(masked, (max(0, x - padding), max(0, y - padding)), (min(img.shape[1], x + width + padding), min(img.shape[0], y + height + padding)), (255, 255, 255), -1)
+            if (
+                width > min_width
+                and height > min_height
+                and abs(y + height / 2.0 - center) < max_distance
+            ):
+                cv2.rectangle(
+                    masked,
+                    (max(0, x - padding), max(0, y - padding)),
+                    (
+                        min(img.shape[1], x + width + padding),
+                        min(img.shape[0], y + height + padding),
+                    ),
+                    (255, 255, 255),
+                    -1,
+                )
         return masked
 
     def rotate_image(self, image: np.ndarray, angle: float) -> np.ndarray:
@@ -866,7 +879,12 @@ class MMRProcessor:
                 )
                 inset_num, inset_score, inset_debug, inset_evidence = inset
                 if self._targeted_retry_candidate_acceptable(inset_num, inset_score):
-                    return inset_num, inset_score, f"{inset_debug},issue277_native_symmetric_inset", inset_evidence
+                    return (
+                        inset_num,
+                        inset_score,
+                        f"{inset_debug},issue277_native_symmetric_inset",
+                        inset_evidence,
+                    )
 
         # A normal high-score OCR result stays authoritative. The left-wide
         # fallback is deliberately broad, so corroborate only that generic
@@ -876,10 +894,19 @@ class MMRProcessor:
         if found is not None and score > self.JITTER_SCORE_TRIGGER:
             if "left_wide_unmasked_fallback" in str(debug):
                 retry_num, retry_score = self._run_calibrated_shifted_staff_values(
-                    image, self._targeted_shift_x1(measure_bbox), system.get("staves", []), w_img, h_img
+                    image,
+                    self._targeted_shift_x1(measure_bbox),
+                    system.get("staves", []),
+                    w_img,
+                    h_img,
                 )
                 if self._targeted_retry_candidate_acceptable(retry_num, retry_score):
-                    return retry_num, retry_score, "issue277_calibrated_shifted_unmasked_fallback_retry", evidence
+                    return (
+                        retry_num,
+                        retry_score,
+                        "issue277_calibrated_shifted_unmasked_fallback_retry",
+                        evidence,
+                    )
             return baseline
 
         staves = system.get("staves", [])
@@ -1052,15 +1079,23 @@ class MMRProcessor:
             margin_x = int(round(staff_height * self.TARGETED_SHIFTED_X_MARGIN_STAFF_RATIO))
             margin_y = int(round(staff_height * self.TARGETED_SHIFTED_Y_MARGIN_STAFF_RATIO))
             top, bottom = max(0, sy1 - margin_y), min(h_img, sy2 + margin_y)
-            crop = image[top:bottom, max(0, x1 - margin_x):min(w_img, x2 + margin_x)]
+            crop = image[top:bottom, max(0, x1 - margin_x) : min(w_img, x2 + margin_x)]
             if crop is None or crop.size == 0:
                 continue
             crop = self.ocr.mask_hbar_candidates_calibrated(crop, float(sy1 - top), staff_height)
-            processed = self.ocr.preprocess_variant(crop, mode="no_dilate", angle=0, staff_height=staff_height, use_staff_relative_geometry=True)
+            processed = self.ocr.preprocess_variant(
+                crop,
+                mode="no_dilate",
+                angle=0,
+                staff_height=staff_height,
+                use_staff_relative_geometry=True,
+            )
             if processed is None or processed.size == 0:
                 continue
             ocr_result, _ = self.ocr.ocr_engine(processed)
-            number, retry_score, _debug = self.ocr.select_best_candidate(ocr_result or [], processed.shape[1], processed.shape[0])
+            number, retry_score, _debug = self.ocr.select_best_candidate(
+                ocr_result or [], processed.shape[1], processed.shape[0]
+            )
             values.append((number if number is not None and number >= 2 else None, retry_score))
         return self._aggregate_targeted_staff_results(values)
 

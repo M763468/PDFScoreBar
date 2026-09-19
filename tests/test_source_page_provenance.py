@@ -35,9 +35,7 @@ def test_direct_pdf_selection_retains_physical_source_pages(tmp_path: Path) -> N
     )
     assert [item["source_page"] for item in references if item is not None] == [0, 2, 3]
     assert all(item["kind"] == "direct_pdf_render" for item in references if item)
-    assert all(
-        item["source_document"]["sha256"] == source_sha256 for item in references if item
-    )
+    assert all(item["source_document"]["sha256"] == source_sha256 for item in references if item)
 
 
 def test_external_or_reordered_images_have_unknown_source_page() -> None:

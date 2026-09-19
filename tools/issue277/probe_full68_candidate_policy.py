@@ -219,7 +219,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     manifest = base._load_json(manifest_path)
     matrix_pages = base._load_matrix_pages(manifest, issue294_root)
     accepted_pages, accepted_provenance = _accepted_pages(accepted_path)
-    specs = base.build_page_specs()
+    specs = base.build_page_specs(args.page_index)
     if len(specs) != 68:
         raise RuntimeError(f"Expected 68 page specs, got {len(specs)}")
 
@@ -484,6 +484,7 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--accepted-rebase-report", type=Path, required=True)
     parser.add_argument("--model", type=Path, default=base.DEFAULT_MODEL)
+    parser.add_argument("--page-index", type=Path, required=True)
     parser.add_argument("--production-source", action="store_true")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()

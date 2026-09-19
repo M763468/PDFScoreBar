@@ -1,6 +1,7 @@
 {
   "schema_version": "issue333.experiment_result.v1",
   "experiment_id": "phase2-frozen-geometry-v1",
+  "source_commit": "6f542646",
   "hypothesis": "The Phase 1 geometry rule generalizes as a high-recall, low-burden candidate generator.",
   "parameters": {
     "relative_indent_min_page_ratio": 0.02,

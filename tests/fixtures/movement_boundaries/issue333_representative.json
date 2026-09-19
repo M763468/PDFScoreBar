@@ -7,7 +7,10 @@
     "system": "zero-based system in fresh current-pipeline numbering_base artifact"
   },
   "consumer_profile": "full_document_no_omissions; therefore page equals source_page in this fixture only",
-  "source_commit": "862a9833e2a349106107ed7709c597ba07b18a01",
+  "fresh_run_source_commits": {
+    "phase1": "862a9833e2a349106107ed7709c597ba07b18a01",
+    "phase2": "d820a5ba234957bc385448911165434697026107"
+  },
   "render_dpi": 360,
   "sources": [
     {

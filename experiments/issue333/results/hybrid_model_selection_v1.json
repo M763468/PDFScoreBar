@@ -200,5 +200,6 @@
     "path": "logs/issue333/phase2/models/hybrid_ranker_v1.joblib",
     "sha256": "7381d789e4ae50bad1aa7283cfbe677e8e035f447c32da6f8c3bea3d6a7b9059"
   },
-  "warning": "Decision scores and thresholds are not calibrated probabilities."
+  "warning": "Decision scores and thresholds are not calibrated probabilities.",
+  "disposition": "Selected only for the locked holdout evaluation; subsequently invalidated by experiments/issue333/results/frozen_hybrid_holdout_v1.json."
 }

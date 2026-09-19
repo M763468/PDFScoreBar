@@ -1,6 +1,7 @@
 {
   "schema_version": "issue333.experiment_result.v1",
   "experiment_id": "phase2-post-holdout-robust-verifier-v1",
+  "source_commit": "bc9b6e23",
   "status": "exploratory_post_holdout; cannot supersede the locked holdout result",
   "hypothesis": "Fuzzy musical-heading matching repairs OCR variants while a universal initial-system invariant removes the Toy first-movement false proposal.",
   "parameters": {

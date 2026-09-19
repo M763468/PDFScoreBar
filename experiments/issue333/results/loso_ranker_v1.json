@@ -1,6 +1,7 @@
 {
   "schema_version": "issue333.cross_score_result.v1",
   "experiment_id": "phase2-leave-one-score-out-ranker-v1",
+  "source_commit": "0ab19671",
   "status": "cross-score exploratory; all scores are used in six of seven training folds",
   "architecture": "class-balanced logistic regression, C=0.1, StandardScaler numeric, optional char_wb TF-IDF(2,5)",
   "parameters": {

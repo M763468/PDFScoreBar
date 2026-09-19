@@ -2,6 +2,7 @@
   "schema_version": "issue333.holdout_result.v1",
   "experiment_id": "phase2-frozen-hybrid-holdout-v1",
   "source_commit": "5dec308a",
+  "evaluator_source_commit": "1d7a95a9",
   "holdout_scores": [
     "beethoven9",
     "toy_symphony"

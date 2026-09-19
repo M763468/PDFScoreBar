@@ -83,7 +83,8 @@ def build_movement_boundary_evidence(
     source_document: Mapping[str, Any],
     producer_source_commit: str,
     manifest_pages: Sequence[Mapping[str, Any]] | None = None,
-    numbering_artifact: str | None = None,
+    numbering_artifact: str,
+    numbering_artifact_sha256: str,
     indent_ratio: float = DEFAULT_INDENT_RATIO,
     gap_ratio: float = DEFAULT_GAP_RATIO,
 ) -> dict[str, Any]:
@@ -106,6 +107,12 @@ def build_movement_boundary_evidence(
         raise ValueError("source_document.sha256 must be a 64-character hexadecimal digest")
     if not isinstance(producer_source_commit, str) or not producer_source_commit.strip():
         raise ValueError("producer_source_commit must be non-empty")
+    if not isinstance(numbering_artifact, str) or not numbering_artifact.strip():
+        raise ValueError("numbering_artifact must be non-empty")
+    if not isinstance(numbering_artifact_sha256, str) or not re.fullmatch(
+        r"[0-9a-fA-F]{64}", numbering_artifact_sha256
+    ):
+        raise ValueError("numbering_artifact_sha256 must be a 64-character hexadecimal digest")
     if indent_ratio < 0 or gap_ratio <= 0:
         raise ValueError("movement candidate ratios must be positive")
 
@@ -199,6 +206,12 @@ def build_movement_boundary_evidence(
     return {
         "schema_version": EVIDENCE_SCHEMA_VERSION,
         "source_document": deepcopy(dict(source_document)),
+        "input_artifacts": {
+            "numbering_base": {
+                "path": numbering_artifact,
+                "sha256": numbering_artifact_sha256.lower(),
+            }
+        },
         "coordinate_system": {
             "page": "zero-based ordered pipeline input page",
             "system": "zero-based system in numbering_base page",

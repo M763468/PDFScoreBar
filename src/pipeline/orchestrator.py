@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -95,8 +96,8 @@ class PipelineOrchestrator:
         self._persistence = _PIPELINE_PERSISTENCE
         self._mmr_persistence = _MMR_PERSISTENCE
 
-    def _run_pdf_to_images(self) -> None:
-        """Step 1: Convert PDF to images in-process."""
+    def _run_pdf_to_images(self) -> tuple[str, list[int]] | None:
+        """Step 1: Convert PDF to images in-process and retain exact source identity."""
         pdf_path = get_nested(self.config, "inputs", "pdf_path")
         pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
         if not pdf_path:
@@ -107,12 +108,14 @@ class PipelineOrchestrator:
 
         if self.dry_run:
             logger.info(f"Executing (dry-run): render_pdf {pdf_path} -> {output_dir}")
-            return
+            return None
 
         import fitz
 
         pdf_path = Path(pdf_path)
-        with fitz.open(pdf_path) as doc:
+        source_bytes = pdf_path.read_bytes()
+        source_sha256 = hashlib.sha256(source_bytes).hexdigest()
+        with fitz.open(stream=source_bytes, filetype="pdf") as doc:
             pages = normalise_pages(pdf_opts.get("pages"), doc.page_count)
 
         logger.info(f"Rendering PDF: {pdf_path} (pages: {pages}) -> {output_dir}")
@@ -127,6 +130,7 @@ class PipelineOrchestrator:
             target_width=pdf_opts.get("target_width"),
             target_height=pdf_opts.get("target_height"),
             interpolation=str(pdf_opts.get("interpolation", "area")),
+            source_bytes=source_bytes,
         )
 
         cache = get_image_cache()
@@ -148,6 +152,8 @@ class PipelineOrchestrator:
 
                 destination = output_dir / f"{stem}.{fmt}"
                 save_image(destination, image, fmt=fmt)
+
+        return source_sha256, pages
 
     def _resolve_page_runs(self, page_ids: List[str]) -> List[str]:
         """Resolves which runs to use for each page (legacy manual resolution)."""
@@ -171,6 +177,8 @@ class PipelineOrchestrator:
         self._validate_review_package_prerequisites()
         commands: List[List[str]] = []
         pdf_rendered_this_run = False
+        rendered_source_sha256: str | None = None
+        rendered_source_pages: list[int] | None = None
 
         if get_nested(self.config, "steps", "pdf_to_images", default=False):
             if (
@@ -180,9 +188,11 @@ class PipelineOrchestrator:
             ):
                 logger.info("Skipping pdf_to_images: output directory exists and is not empty.")
             else:
-                self._run_pdf_to_images()
+                render_provenance = self._run_pdf_to_images()
                 commands.append(["inprocess:pdf_to_images"])
-                pdf_rendered_this_run = True
+                if render_provenance is not None:
+                    rendered_source_sha256, rendered_source_pages = render_provenance
+                    pdf_rendered_this_run = True
 
         logger.info("Collecting images...")
         from src.pipeline.utils.images import get_image_cache
@@ -201,7 +211,11 @@ class PipelineOrchestrator:
             images = images[:page_limit]
         page_ids = resolve_page_ids(self.config, images)
         source_page_references = resolve_source_page_references(
-            self.config, images, rendered_this_run=pdf_rendered_this_run
+            self.config,
+            images,
+            rendered_this_run=pdf_rendered_this_run,
+            rendered_source_sha256=rendered_source_sha256,
+            rendered_source_pages=rendered_source_pages,
         )
         logger.info(f"Collected {len(images)} images.")
 

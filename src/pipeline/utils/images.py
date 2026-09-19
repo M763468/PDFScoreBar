@@ -134,6 +134,14 @@ def resolve_source_page_references(
     if len(images) > len(source_pages):
         raise ValueError("rendered image count exceeds configured physical PDF pages")
     source_pages = source_pages[: len(images)]
+    prefix = str(pdf_opts.get("prefix", "page"))
+    expected_stems = [f"{prefix}_{source_page + 1:03d}" for source_page in source_pages]
+    actual_stems = [image.stem for image in images]
+    if actual_stems != expected_stems:
+        raise ValueError(
+            "direct PDF rendered images do not match configured physical page selection: "
+            f"expected {expected_stems}, got {actual_stems}"
+        )
     digest = hashlib.sha256(pdf_path.read_bytes()).hexdigest()
     return [
         {

@@ -80,7 +80,7 @@ def test_geometry_producer_uses_all_staff_union_for_system_spacing() -> None:
             "height": 1400,
             "systems": [
                 {"staves": [{"bbox": [100, 100, 900, 150]}, {"bbox": [110, 260, 910, 310]}]},
-                    {"staves": [{"bbox": [130, 500, 900, 550]}, {"bbox": [140, 660, 910, 710]}]},
+                {"staves": [{"bbox": [150, 500, 900, 550]}, {"bbox": [160, 660, 910, 710]}]},
             ],
         }]
     }
@@ -89,7 +89,7 @@ def test_geometry_producer_uses_all_staff_union_for_system_spacing() -> None:
     )
     assert result["producer"]["version"] == "2"
     raw = result["candidates"][1]["signals"][0]["raw"]
-    assert raw["system_bbox"] == [130.0, 500.0, 910.0, 710.0]
+    assert raw["system_bbox"] == [150.0, 500.0, 910.0, 710.0]
     assert raw["geometry_representation"] == "all_staff_union"
 
 

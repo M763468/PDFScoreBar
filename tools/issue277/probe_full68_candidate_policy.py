@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from datetime import datetime, timezone
@@ -22,7 +23,10 @@ from typing import Any, Mapping
 
 import torch
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_SOURCE_ROOT = os.environ.get("ISSUE277_SOURCE_ROOT")
+PROJECT_ROOT = (
+    Path(_SOURCE_ROOT).resolve() if _SOURCE_ROOT else Path(__file__).resolve().parents[2]
+)
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 

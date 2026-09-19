@@ -9,8 +9,10 @@ import cv2
 import numpy as np
 import pytest
 
+from tools.issue294 import run_downstream_candidate_matrix as matrix
 from tools.issue294.run_downstream_candidate_matrix import (
     _comparison,
+    _load_production_detection,
     _validate_fixed_support_sr,
 )
 from tools.issue294.run_latest_homr_detector_original import (
@@ -52,6 +54,26 @@ def test_operational_gate_does_not_require_exact_box_identity() -> None:
 
     assert comparison["count_topology_numbering_pass"] is True
     assert comparison["final_barline_boxes_exact"] is False
+
+
+def test_production_detection_resolves_manifest_backed_cnn(tmp_path: Path, monkeypatch) -> None:
+    config = tmp_path / "dense.yaml"
+    config.write_text(
+        "detection:\n"
+        "  cnn_model_manifest: models/barline_cnn/manifest.json\n"
+        "  cnn_threshold: 0.5\n",
+        encoding="utf-8",
+    )
+    model = tmp_path / "cnn.pth"
+    model.write_bytes(b"verified-model")
+    monkeypatch.setattr(matrix, "PRODUCTION_CONFIG", config)
+    monkeypatch.setattr(matrix, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(matrix, "resolve_model_artifact", lambda *args, **kwargs: model)
+
+    detection = _load_production_detection()
+
+    assert detection["cnn_model_path"] == str(model)
+    assert detection["cnn_threshold"] == 0.5
 
 
 def test_operational_gate_rejects_measure_count_drift() -> None:

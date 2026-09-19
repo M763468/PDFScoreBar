@@ -20,6 +20,7 @@ from typing import Any
 import cv2
 import yaml
 
+from src.common.model_artifacts import resolve_model_artifact
 from src.measure_numbering.pipeline import MeasureNumberingPipeline
 from src.pipeline.detection.current_support_worker import run as run_current_support
 from src.pipeline.detector_routes.dense_full_pipeline import reconstruct_dense_full_pipeline_route
@@ -80,7 +81,13 @@ def _load_production_detection() -> dict[str, Any]:
     detection = payload.get("detection") if isinstance(payload, dict) else None
     if not isinstance(detection, dict):
         raise ValueError(f"Missing detection config: {PRODUCTION_CONFIG}")
-    return dict(detection)
+    resolved = dict(detection)
+    manifest_path = resolved.get("cnn_model_manifest")
+    if manifest_path and "cnn_model_path" not in resolved:
+        resolved["cnn_model_path"] = str(
+            resolve_model_artifact(manifest_path, project_root=PROJECT_ROOT)
+        )
+    return resolved
 
 
 def _validate_fixed_support_sr(image: Path, result: dict[str, Any]) -> None:

@@ -75,14 +75,16 @@ def test_geometry_producer_separates_initial_state_and_review_candidates() -> No
 
 def test_geometry_producer_uses_all_staff_union_for_system_spacing() -> None:
     numbering = {
-        "pages": [{
-            "width": 1000,
-            "height": 1400,
-            "systems": [
-                {"staves": [{"bbox": [100, 100, 900, 150]}, {"bbox": [110, 260, 910, 310]}]},
-                {"staves": [{"bbox": [150, 500, 900, 550]}, {"bbox": [160, 660, 910, 710]}]},
-            ],
-        }]
+        "pages": [
+            {
+                "width": 1000,
+                "height": 1400,
+                "systems": [
+                    {"staves": [{"bbox": [100, 100, 900, 150]}, {"bbox": [110, 260, 910, 310]}]},
+                    {"staves": [{"bbox": [150, 500, 900, 550]}, {"bbox": [160, 660, 910, 710]}]},
+                ],
+            }
+        ]
     }
     result = build_movement_boundary_evidence(
         numbering, source_document=SOURCE, producer_source_commit="abc123"

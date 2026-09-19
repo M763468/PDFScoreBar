@@ -1,0 +1,29 @@
+{
+  "schema_version": "issue333.experiment_protocol.v1",
+  "experiment_id": "phase2-source-generalization-v1",
+  "locked_before_holdout_pipeline_evaluation": true,
+  "development": {
+    "fit_scores": ["festival", "prokofiev1", "prokofiev5"],
+    "validation_scores": ["shostakovich5", "sibelius"],
+    "source": "tests/fixtures/movement_boundaries/issue333_representative.json"
+  },
+  "holdout": {
+    "scores": ["beethoven9", "toy_symphony"],
+    "use": "single final evaluation after development feature and cutoff selection",
+    "warning": "Post-holdout changes are exploratory and do not supersede the locked result."
+  },
+  "primary_metrics": {
+    "candidate": ["recall", "candidates_per_page", "review_burden"],
+    "automatic": ["false_reset", "precision", "missed_boundary", "recall"],
+    "reporting": "false reset and missed boundary are always separate"
+  },
+  "automatic_policy": {
+    "priority": "false-reset safety",
+    "minimum_evidence": "independent source-level holdout with no false reset",
+    "zero_prediction_not_sufficient": true,
+    "numeric_confidence": "forbidden unless separately calibrated"
+  },
+  "granularity": "zero-based source page plus zero-based current-pipeline system",
+  "seed": 333
+}
+

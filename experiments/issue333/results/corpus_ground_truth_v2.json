@@ -1,0 +1,48 @@
+{
+  "schema_version": "issue333.experiment_result.v1",
+  "experiment_id": "phase2-corpus-ground-truth-v2",
+  "hypothesis": "Additional local scores provide source-style diversity and movement starts not already represented by Phase 1.",
+  "source_commit": "d820a5ba",
+  "inputs": {
+    "corpus": "experiments/issue333/corpus.json",
+    "input_document_hashes": [
+      "94edf21f3eb5601bf83d34ecac5b6474d66d6cbc711da60dc01e3e247b551d2b",
+      "9d505c3183ac4cca03da0f6b855fbbd4f379062cbd41da945795fe747fc16ee8"
+    ],
+    "fresh_run_configs": [
+      "experiments/issue333/configs/beethoven9.yaml",
+      "experiments/issue333/configs/toy_symphony.yaml"
+    ]
+  },
+  "runtime": {
+    "docker_image_id": "sha256:80573e47bc87db82f4773a0a51fc3b1901012f7b0138a67a7c1d8ab1518a988c",
+    "render_dpi": 360,
+    "current_pipeline": true
+  },
+  "result": {
+    "additional_scores": 2,
+    "additional_evaluated_pages": 8,
+    "additional_system_starts": 107,
+    "additional_boundaries": 5,
+    "total_scores": 7,
+    "total_evaluated_pages": 26,
+    "total_system_starts": 275,
+    "total_boundaries": 14,
+    "total_negatives": 261,
+    "measure_level_boundaries": 0,
+    "holdout_boundaries": [
+      ["beethoven9", 5, 0],
+      ["beethoven9", 10, 2],
+      ["beethoven9", 13, 0],
+      ["toy_symphony", 2, 8],
+      ["toy_symphony", 2, 12]
+    ]
+  },
+  "interpretation": "The added corpus covers a different engraving, page-start and mid-page starts, and two starts on one dense single-staff page. All observed starts remain system-aligned.",
+  "disposition": "Use as locked source-level holdout; retain the issue268 page/system consumer granularity.",
+  "artifacts": [
+    "logs/issue333/phase2/runs/issue333_phase2_beethoven9",
+    "logs/issue333/phase2/runs/issue333_phase2_toy_symphony",
+    "logs/issue333/phase2_corpus/contact_sheets"
+  ]
+}

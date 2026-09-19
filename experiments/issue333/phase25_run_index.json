@@ -1,0 +1,63 @@
+{
+  "schema_version": "issue333.canonical_artifact_index.v1",
+  "producer_source_commit": "22e632442e36fe54ab70fe8610307274f8b6b643",
+  "runs": [
+    {
+      "score": "festival",
+      "root": "/home/masaki_muramatsu/ws_PDFScoreBar/logs/issue296/production_validation/issue296_d27_prod_20260910_001002/full/runs/Shostakovich-Festival_Overture_Va",
+      "artifact_source_commit": "9c63e2b4d97d350edef543eb7b140a2059d5c12e",
+      "kind": "retained_accepted_full68"
+    },
+    {
+      "score": "prokofiev1",
+      "root": "/home/masaki_muramatsu/ws_PDFScoreBar/logs/issue296/production_validation/issue296_d27_prod_20260910_001002/full/runs/Va_Prokofiev_Symphony1",
+      "artifact_source_commit": "9c63e2b4d97d350edef543eb7b140a2059d5c12e",
+      "kind": "retained_accepted_full68"
+    },
+    {
+      "score": "prokofiev5",
+      "root": "/home/masaki_muramatsu/ws_PDFScoreBar/logs/issue296/production_validation/issue296_d27_prod_20260910_001002/full/runs/Va__Prokofiev_Symphony5",
+      "artifact_source_commit": "9c63e2b4d97d350edef543eb7b140a2059d5c12e",
+      "kind": "retained_accepted_full68"
+    },
+    {
+      "score": "shostakovich5",
+      "root": "/home/masaki_muramatsu/ws_PDFScoreBar/logs/issue296/production_validation/issue296_d27_prod_20260910_001002/full/runs/Shostakovich-Sym5-Va",
+      "artifact_source_commit": "9c63e2b4d97d350edef543eb7b140a2059d5c12e",
+      "kind": "retained_accepted_full68"
+    },
+    {
+      "score": "sibelius",
+      "root": "/home/masaki_muramatsu/ws_PDFScoreBar/logs/issue296/production_validation/issue296_d27_prod_20260910_001002/full/runs/Sibelius-Violin_Concerto-Viola",
+      "artifact_source_commit": "9c63e2b4d97d350edef543eb7b140a2059d5c12e",
+      "kind": "retained_accepted_full68"
+    },
+    {
+      "score": "beethoven9",
+      "root": "logs/issue333/phase25/canonical/canonical_musical_beethoven9",
+      "artifact_source_commit": "c440f7fe",
+      "kind": "fresh_phase25"
+    },
+    {
+      "score": "toy_symphony",
+      "root": "logs/issue333/phase25/canonical/canonical_musical_toy_symphony",
+      "artifact_source_commit": "1dc15e13",
+      "kind": "fresh_phase25"
+    }
+  ],
+  "retained_full68_equivalence": {
+    "detector_contract": {
+      "mode": "fresh_upstream",
+      "detector_route": "dense_full_pipeline",
+      "homr_profile": "stage_e_verified",
+      "sr_scale": 4,
+      "override_keys": []
+    },
+    "input_pages": "All 68 retained input PNG SHA-256 values equal the current local evaluation2 image bytes.",
+    "cnn_checkpoint_sha256": "f41a9b578396493a83e39ed284b1781f65d6adec8f624e6b7234e917c919c5cd",
+    "current_model_manifest": "models/barline_cnn/manifest.json",
+    "threshold": 0.4965248107910156,
+    "source_comparison": "Changes after 9c63e2b4 publish or validate the same D27 checkpoint/SR assets, normalize evaluator matching, and add Issue #268 Phase-C numbering. They do not change Phase-A staff/system grouping semantics. The accepted downstream guard reports zero non-target logical topology impacts.",
+    "accepted_gate": "/home/masaki_muramatsu/ws_PDFScoreBar/logs/issue296/production_validation/issue296_d27_prod_20260910_001002/full_guard.json"
+  }
+}

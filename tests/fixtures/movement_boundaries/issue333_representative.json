@@ -1,0 +1,297 @@
+{
+  "schema_version": "issue333.movement_boundary_fixture.v2",
+  "coordinate_system": {
+    "page": "zero-based ordered pipeline input page for the full_document_no_omissions consumer profile",
+    "source_page": "zero-based physical source PDF page",
+    "fresh_run_input_page": "zero-based ordered input page within the selected-page fresh run",
+    "system": "zero-based system in fresh current-pipeline numbering_base artifact"
+  },
+  "consumer_profile": "full_document_no_omissions; therefore page equals source_page in this fixture only",
+  "fresh_run_source_commits": {
+    "phase1": "862a9833e2a349106107ed7709c597ba07b18a01",
+    "phase2": "d820a5ba234957bc385448911165434697026107"
+  },
+  "render_dpi": 360,
+  "sources": [
+    {
+      "score": "festival",
+      "pdf_filename": "Shostakovich-Festival_Overture_Va.pdf",
+      "sha256": "ef591486a2f84ac5620ae0fec8dcd6c6302077cf5fbf072c963b94541a84c09e",
+      "evaluated_pages": [0, 1, 7, 8],
+      "first_musical_source_page": 0
+    },
+    {
+      "score": "prokofiev1",
+      "pdf_filename": "Va_Prokofiev_Symphony1.pdf",
+      "sha256": "19ae15f01835456df08194c072be428c9b94fb51c7a1e04fdea7c0a789a50b41",
+      "evaluated_pages": [2, 3],
+      "first_musical_source_page": 0
+    },
+    {
+      "score": "prokofiev5",
+      "pdf_filename": "Va__Prokofiev_Symphony5.pdf",
+      "sha256": "68c91104c0922e1648d69c37bbf55c9f5acb938bd80817d0ea6fffac28210e90",
+      "evaluated_pages": [5, 6, 12, 15, 16],
+      "first_musical_source_page": 0
+    },
+    {
+      "score": "shostakovich5",
+      "pdf_filename": "Shostakovich-Sym5-Va.pdf",
+      "sha256": "fdbd3c78d83264a82ca4bb5fd22a812466b1c0d70695adccb2a6d7b78a37753e",
+      "evaluated_pages": [6, 7, 8],
+      "first_musical_source_page": 1
+    },
+    {
+      "score": "sibelius",
+      "pdf_filename": "Sibelius-Violin_Concerto-Viola.pdf",
+      "sha256": "23e5c1ad18090789a7a93e032b34f2effcf218d549c6715fa093e89b5a76f959",
+      "evaluated_pages": [4, 5, 6, 7],
+      "first_musical_source_page": 0
+    },
+    {
+      "score": "beethoven9",
+      "pdf_filename": "IMSLP19910-PMLP01607-Beethoven_Symphony_9_V1.pdf",
+      "sha256": "94edf21f3eb5601bf83d34ecac5b6474d66d6cbc711da60dc01e3e247b551d2b",
+      "evaluated_pages": [4, 5, 9, 10, 12, 13, 14],
+      "first_musical_source_page": 0,
+      "split": "locked_holdout"
+    },
+    {
+      "score": "toy_symphony",
+      "pdf_filename": "おもちゃの交響曲_bass.pdf",
+      "sha256": "9d505c3183ac4cca03da0f6b855fbbd4f379062cbd41da945795fe747fc16ee8",
+      "evaluated_pages": [2],
+      "first_musical_source_page": 2,
+      "split": "locked_holdout"
+    }
+  ],
+  "boundaries": [
+    {
+      "score": "prokofiev1",
+      "movement": "II",
+      "page": 2,
+      "source_page": 2,
+      "fresh_run_input_page": 0,
+      "page_id": "page_003",
+      "system": 3,
+      "placement": "mid_page"
+    },
+    {
+      "score": "prokofiev1",
+      "movement": "III",
+      "page": 3,
+      "source_page": 3,
+      "fresh_run_input_page": 1,
+      "page_id": "page_004",
+      "system": 3,
+      "placement": "mid_page"
+    },
+    {
+      "score": "prokofiev1",
+      "movement": "IV",
+      "page": 3,
+      "source_page": 3,
+      "fresh_run_input_page": 1,
+      "page_id": "page_004",
+      "system": 8,
+      "placement": "mid_page"
+    },
+    {
+      "score": "prokofiev5",
+      "movement": "II",
+      "page": 6,
+      "source_page": 6,
+      "fresh_run_input_page": 1,
+      "page_id": "page_007",
+      "system": 0,
+      "placement": "page_start"
+    },
+    {
+      "score": "prokofiev5",
+      "movement": "III",
+      "page": 12,
+      "source_page": 12,
+      "fresh_run_input_page": 2,
+      "page_id": "page_013",
+      "system": 0,
+      "placement": "page_start"
+    },
+    {
+      "score": "prokofiev5",
+      "movement": "IV",
+      "page": 15,
+      "source_page": 15,
+      "fresh_run_input_page": 3,
+      "page_id": "page_016",
+      "system": 5,
+      "placement": "mid_page"
+    },
+    {
+      "score": "shostakovich5",
+      "movement": "II",
+      "page": 7,
+      "source_page": 7,
+      "fresh_run_input_page": 1,
+      "page_id": "page_008",
+      "system": 5,
+      "placement": "mid_page"
+    },
+    {
+      "score": "sibelius",
+      "movement": "II",
+      "page": 5,
+      "source_page": 5,
+      "fresh_run_input_page": 1,
+      "page_id": "page_006",
+      "system": 0,
+      "placement": "page_start"
+    },
+    {
+      "score": "sibelius",
+      "movement": "III",
+      "page": 6,
+      "source_page": 6,
+      "fresh_run_input_page": 2,
+      "page_id": "page_007",
+      "system": 0,
+      "placement": "page_start"
+    },
+    {
+      "score": "beethoven9",
+      "movement": "II",
+      "page": 5,
+      "source_page": 5,
+      "fresh_run_input_page": 1,
+      "page_id": "page_006",
+      "system": 0,
+      "placement": "page_start"
+    },
+    {
+      "score": "beethoven9",
+      "movement": "III",
+      "page": 10,
+      "source_page": 10,
+      "fresh_run_input_page": 3,
+      "page_id": "page_011",
+      "system": 2,
+      "placement": "mid_page"
+    },
+    {
+      "score": "beethoven9",
+      "movement": "IV",
+      "page": 13,
+      "source_page": 13,
+      "fresh_run_input_page": 5,
+      "page_id": "page_014",
+      "system": 0,
+      "placement": "page_start"
+    },
+    {
+      "score": "toy_symphony",
+      "movement": "II",
+      "page": 2,
+      "source_page": 2,
+      "fresh_run_input_page": 0,
+      "page_id": "page_003",
+      "system": 8,
+      "placement": "mid_page"
+    },
+    {
+      "score": "toy_symphony",
+      "movement": "III",
+      "page": 2,
+      "source_page": 2,
+      "fresh_run_input_page": 0,
+      "page_id": "page_003",
+      "system": 12,
+      "placement": "mid_page"
+    }
+  ],
+  "reviewed_negatives": [
+    {
+      "score": "festival",
+      "page": 1,
+      "page_id": "page_002",
+      "system": 0,
+      "reason": "ordinary_page_continuation"
+    },
+    {
+      "score": "festival",
+      "page": 7,
+      "page_id": "page_008",
+      "system": 0,
+      "reason": "multi_page_movement_continuation"
+    },
+    {
+      "score": "festival",
+      "page": 8,
+      "page_id": "page_009",
+      "system": 3,
+      "reason": "heading_like_tempo_change_without_movement"
+    },
+    {
+      "score": "festival",
+      "page": 8,
+      "page_id": "page_009",
+      "system": 8,
+      "reason": "end_like_barline_without_following_reset"
+    },
+    {
+      "score": "prokofiev1",
+      "page": 3,
+      "page_id": "page_004",
+      "system": 7,
+      "reason": "strong_whitespace_without_movement"
+    },
+    {
+      "score": "prokofiev5",
+      "page": 15,
+      "page_id": "page_016",
+      "system": 3,
+      "reason": "piu_lento_heading_without_movement"
+    },
+    {
+      "score": "sibelius",
+      "page": 4,
+      "page_id": "page_005",
+      "system": 6,
+      "reason": "strong_whitespace_without_movement"
+    },
+    {
+      "score": "beethoven9",
+      "page": 10,
+      "source_page": 10,
+      "fresh_run_input_page": 3,
+      "page_id": "page_011",
+      "system": 1,
+      "reason": "presto_heading_and_end_of_previous_movement_before_real_boundary"
+    },
+    {
+      "score": "beethoven9",
+      "page": 13,
+      "source_page": 13,
+      "fresh_run_input_page": 5,
+      "page_id": "page_014",
+      "system": 1,
+      "reason": "tempo_heading_within_fourth_movement"
+    },
+    {
+      "score": "toy_symphony",
+      "page": 2,
+      "source_page": 2,
+      "fresh_run_input_page": 0,
+      "page_id": "page_003",
+      "system": 0,
+      "reason": "initial_document_system_requires_no_reset"
+    },
+    {
+      "score": "toy_symphony",
+      "page": 2,
+      "source_page": 2,
+      "fresh_run_input_page": 0,
+      "page_id": "page_003",
+      "system": 10,
+      "reason": "trio_subsection_heading_not_movement"
+    }
+  ]
+}

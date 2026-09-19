@@ -1,0 +1,28 @@
+{
+  "experiment_id": "issue333-phase25-frozen-full-document-v1",
+  "hypothesis": "The frozen Phase 2 geometry candidate rule generalizes from selected pages to complete audited documents.",
+  "source_commit": "22e63244",
+  "corpus": "experiments/issue333/corpus.json",
+  "ground_truth": "experiments/issue333/phase25_ground_truth.json",
+  "canonical_route": {
+    "detector_route": "dense_full_pipeline",
+    "phase_a_geometry": "fresh_upstream authoritative Stage-E verified geometry",
+    "sr_scale": 4,
+    "source_artifact_index": "experiments/issue333/phase25_run_index.json"
+  },
+  "thresholds": {"relative_indent_min_page_ratio": 0.02, "preceding_gap_min_page_median_ratio": 1.75},
+  "denominator": {"source_pages": 97, "musical_pages": 89, "systems": 917, "true_boundaries": 16},
+  "frozen_first_staff": {
+    "candidate_count": 27, "tp": 14, "fp": 13, "fn": 2,
+    "recall": 0.875, "candidate_precision": 0.518519,
+    "false_candidates": [["prokofiev1",3,7],["prokofiev1",5,4],["prokofiev5",2,3],["prokofiev5",4,3],["prokofiev5",4,6],["prokofiev5",15,9],["prokofiev5",18,7],["sibelius",0,1],["sibelius",1,1],["sibelius",1,2],["sibelius",2,4],["sibelius",3,8],["sibelius",4,6]],
+    "missed_boundaries": [["shostakovich5",10,0],["shostakovich5",15,0]]
+  },
+  "all_staff_union_comparison": {
+    "candidate_count": 15, "tp": 14, "fp": 1, "fn": 2,
+    "recall": 0.875, "candidate_precision": 0.933333,
+    "false_candidates": [["prokofiev1",5,4]],
+    "missed_boundaries": [["shostakovich5",10,0],["shostakovich5",15,0]]
+  },
+  "interpretation": "First-staff geometry is unsafe as a production review signal on multi-staff systems. Union materially reduces false candidates but does not recover heading-only page starts; no silent reset is authorized."
+}

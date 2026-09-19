@@ -13,7 +13,7 @@ from typing import Any, Mapping, Sequence
 
 EVIDENCE_SCHEMA_VERSION = "issue333.movement_boundary_evidence.v1"
 PRODUCER_NAME = "pdfscorebar.geometry_movement_boundary_candidates"
-PRODUCER_VERSION = "1"
+PRODUCER_VERSION = "2"
 DEFAULT_INDENT_RATIO = 0.02
 DEFAULT_GAP_RATIO = 1.75
 
@@ -22,16 +22,23 @@ def _system_box(system: Mapping[str, Any]) -> tuple[float, float, float, float]:
     staves = system.get("staves")
     if not isinstance(staves, list) or not staves:
         raise ValueError("movement candidate systems require at least one staff")
-    first_staff = staves[0]
-    if not isinstance(first_staff, Mapping):
-        raise ValueError("movement candidate staff must be an object")
-    bbox = first_staff.get("bbox")
-    if not isinstance(bbox, list) or len(bbox) != 4:
-        raise ValueError("movement candidate staff bbox must contain four coordinates")
-    values = tuple(float(value) for value in bbox)
-    if values[2] <= values[0] or values[3] <= values[1]:
-        raise ValueError("movement candidate staff bbox must have positive area")
-    return values
+    boxes = []
+    for staff in staves:
+        if not isinstance(staff, Mapping):
+            raise ValueError("movement candidate staff must be an object")
+        bbox = staff.get("bbox")
+        if not isinstance(bbox, list) or len(bbox) != 4:
+            raise ValueError("movement candidate staff bbox must contain four coordinates")
+        values = tuple(float(value) for value in bbox)
+        if values[2] <= values[0] or values[3] <= values[1]:
+            raise ValueError("movement candidate staff bbox must have positive area")
+        boxes.append(values)
+    return (
+        min(box[0] for box in boxes),
+        min(box[1] for box in boxes),
+        max(box[2] for box in boxes),
+        max(box[3] for box in boxes),
+    )
 
 
 def _page_reference(manifest_page: Mapping[str, Any] | None) -> dict[str, Any]:
@@ -132,7 +139,8 @@ def build_movement_boundary_evidence(
             if not signals and not is_initial:
                 continue
             raw = {
-                "top_staff_bbox": [round(value, 3) for value in box],
+                "system_bbox": [round(value, 3) for value in box],
+                "geometry_representation": "all_staff_union",
                 "page_width": width,
                 "page_height": height,
                 "left_median_px": round(left_median, 3),

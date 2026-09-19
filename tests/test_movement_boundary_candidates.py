@@ -69,7 +69,28 @@ def test_geometry_producer_separates_initial_state_and_review_candidates() -> No
         "relative_indent",
         "whitespace_outlier",
     ]
+    assert candidate["signals"][0]["raw"]["geometry_representation"] == "all_staff_union"
     assert "confidence" not in candidate
+
+
+def test_geometry_producer_uses_all_staff_union_for_system_spacing() -> None:
+    numbering = {
+        "pages": [{
+            "width": 1000,
+            "height": 1400,
+            "systems": [
+                {"staves": [{"bbox": [100, 100, 900, 150]}, {"bbox": [110, 260, 910, 310]}]},
+                {"staves": [{"bbox": [100, 500, 900, 550]}, {"bbox": [110, 660, 910, 710]}]},
+            ],
+        }]
+    }
+    result = build_movement_boundary_evidence(
+        numbering, source_document=SOURCE, producer_source_commit="abc123"
+    )
+    assert result["producer"]["version"] == "2"
+    raw = result["candidates"][1]["signals"][0]["raw"]
+    assert raw["system_bbox"] == [100.0, 100.0, 910.0, 310.0]
+    assert raw["geometry_representation"] == "all_staff_union"
 
 
 def test_page_id_is_not_used_as_source_page_provenance() -> None:

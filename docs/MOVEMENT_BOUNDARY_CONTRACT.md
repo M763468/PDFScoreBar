@@ -64,7 +64,8 @@ An ambiguous candidate must not be copied into `inputs.movement_boundaries`.
 Omitting it means numbering continues; an operator can review the evidence and
 then add the same zero-based page/system location deterministically. No current
 automatic producer is approved as the production default. The geometry
-producer below is approved only for candidate/review use.
+producer below is approved only for candidate/review use and is not wired into
+default pipeline routing.
 
 ## Candidate and evidence artifact
 
@@ -139,9 +140,11 @@ the evidence artifact identity in `provenance`.
 
 `src.pipeline.movement_boundary_candidates.build_movement_boundary_evidence`
 and `tools/generate_movement_boundary_candidates.py` implement the validated
-review-only producer. The explainable candidate rule is the Phase 1 frozen
-rule: the top staff begins at least 2% of page width to the right of the page
-median, or its preceding gap is at least 1.75 times the page median gap. The
+review-only producer (version 2). The explainable candidate rule uses the
+reconstructed union across all staff bboxes: it begins at least 2% of page
+width to the right of the page median, or its preceding gap is at least 1.75
+times the page median gap. First-staff-only geometry was rejected after the
+multi-staff audit because it creates false whitespace/indent signals. The
 first non-empty input system is retained as `no_boundary` because an initial
 reset is unnecessary. Other matched locations are always
 `ambiguous_review_required`; the producer never emits numeric confidence or a
@@ -165,6 +168,14 @@ review. Export to `issue268.movement_boundaries.v1` remains a separate explicit
 review/configuration action.
 
 The representative Issue #333 fixture is
-`tests/fixtures/movement_boundaries/issue333_representative.json`. It fixes
-source-PDF hashes and exact zero-based page/system locations without retaining
-copyrighted PDF or image bytes.
+`tests/fixtures/movement_boundaries/issue333_representative.json`; the complete
+seven-source inventory and full-document ground truth are retained under
+`experiments/issue333/phase25_ground_truth.json`. Both fix source-PDF hashes
+and exact zero-based page/system locations without retaining copyrighted PDF or
+image bytes.
+
+`source_page` is emitted only when the manifest contains a verified direct-PDF
+render reference with source digest and physical page. External, reordered,
+selected, or pre-rendered image inputs retain ordered `page` and `page_id` but
+omit `source_page`; a `page_NNN` stem is never interpreted as a physical PDF
+page.

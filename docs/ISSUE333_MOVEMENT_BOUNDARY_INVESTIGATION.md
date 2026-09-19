@@ -146,3 +146,50 @@ missed-boundary reporting, source-level splits, raw failure locations, and a
 calibrated policy if numeric confidence is exposed. Thousands rather than
 hundreds of representative negative system starts are needed before a zero-FP
 observation can support a sub-per-mille false-reset claim.
+
+## Phase 2.5 review-blocker resolution
+
+The preceding Phase 2 tables remain historical selected-page and locked-holdout
+results. The complete seven-source audit contains 23 movement starts (seven
+document starts and 16 transitions), 97 physical pages, 89 musical pages, and
+917 canonical reconstructed systems. Shostakovich Symphony No. 5 movements
+III and IV are included at ordered page/system `(10, 0)` and `(15, 0)` (source
+pages 11 and 17).
+
+Canonical artifacts use `dense_full_pipeline`, fresh-upstream authoritative
+Stage-E geometry, and SR scale 4. Retained Issue-296 input images were
+byte-compared against current evaluation2 assets; Beethoven 9 was freshly
+replayed and Toy Symphony was run on its one musical page because its
+non-musical title/advert pages crash the pinned Stage-E worker. The exclusions
+are explicit in `experiments/issue333/corpus.json`, not selected-page sampling.
+
+| geometry | candidates | TP | false candidates | missed | recall | candidate precision |
+|---|---:|---:|---:|---:|---:|---:|
+| first staff (frozen v1) | 27 | 14 | 13 | 2 | 0.875 | 0.518519 |
+| all-staff union | 15 | 14 | 1 | 2 | 0.875 | 0.933333 |
+| union + independent page-start OCR (exploratory) | 17 | 16 | 1 | 0 | 1.000 | 0.941176 |
+
+The only all-staff false candidate is Prokofiev 1 ordered page 5/system 4,
+an ordinary continuation with strong whitespace. The two frozen misses are the
+Shostakovich III/IV page-start systems. Exact locations are retained in
+`experiments/issue333/results/phase25_frozen_full_document_v1.json`.
+
+The audit found 37 multi-staff systems. Their meaningful spacing extent is the
+union of all staff bboxes; first-staff-only geometry was therefore replaced by
+producer v2, which records `geometry_representation: all_staff_union`. This
+changes only Issue #333 evidence generation, not detector, grouping, or
+numbering semantics.
+
+`source_page` is now provenance-only and is emitted only from a verified direct
+PDF render manifest whose image stems match configured physical pages. External,
+selected, reordered, or pre-rendered inputs retain ordered `page`/`page_id` and
+omit physical `source_page`; page-id text is never parsed as provenance. The
+resolved Issue #268 consumer contract remains unchanged.
+
+Silent automatic reset remains rejected: the exploratory union+OCR result still
+contains one false candidate and was evaluated after the complete audit. The
+all-staff geometry producer is justified as a semi-automatic review producer
+with manageable full-document burden (15 candidates / 917 systems). The OCR
+probe is retained as raw evidence only and does not change MMR OCR/CNN. Every
+proposal remains `ambiguous_review_required`; reviewed locations must be
+exported explicitly as manual/configured `issue268.movement_boundaries.v1`.

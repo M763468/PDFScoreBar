@@ -16,8 +16,10 @@ import platform
 import subprocess
 import sys
 import time
+from contextlib import contextmanager
+from functools import wraps
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 import cv2
 import numpy as np
@@ -88,6 +90,81 @@ def _serialize_requested_providers(value: Any) -> Any:
     return repr(value)
 
 
+@contextmanager
+def _capture_homr_clef_mask(
+    heuristics_module: Any,
+) -> Iterator[dict[str, np.ndarray]]:
+    """Capture the clef/key segmentation mask from the existing HOMR SegNet pass."""
+
+    original_load_predictions = heuristics_module.load_and_preprocess_predictions
+    captured: dict[str, np.ndarray] = {}
+
+    @wraps(original_load_predictions)
+    def load_predictions_with_clef_capture(*args: Any, **kwargs: Any) -> Any:
+        result = original_load_predictions(*args, **kwargs)
+        predictions = result[0] if isinstance(result, tuple) and result else None
+        clef_mask = getattr(predictions, "clefs_keys", None)
+        if clef_mask is not None:
+            captured["clef_mask"] = np.array(clef_mask, copy=True)
+        return result
+
+    heuristics_module.load_and_preprocess_predictions = load_predictions_with_clef_capture
+    try:
+        yield captured
+    finally:
+        heuristics_module.load_and_preprocess_predictions = original_load_predictions
+
+
+def _providers_request_cuda(value: Any) -> bool:
+    if isinstance(value, str):
+        return value == "CUDAExecutionProvider"
+    if isinstance(value, dict):
+        return any(
+            _providers_request_cuda(key) or _providers_request_cuda(item)
+            for key, item in value.items()
+        )
+    if isinstance(value, (list, tuple)):
+        return any(_providers_request_cuda(item) for item in value)
+    return False
+
+
+def _validate_cuda_session_records(
+    session_records: list[dict[str, Any]],
+    *,
+    use_gpu_inference: bool,
+    available_providers: list[str],
+) -> None:
+    """Fail closed when a CUDA-requesting HOMR ONNX session falls back to CPU."""
+
+    if not use_gpu_inference:
+        return
+    if "CUDAExecutionProvider" not in available_providers:
+        raise RuntimeError("CUDAExecutionProvider is unavailable for GPU HOMR inference")
+
+    cuda_requested = [
+        record
+        for record in session_records
+        if _providers_request_cuda(record.get("requested_providers"))
+    ]
+    if not cuda_requested:
+        raise RuntimeError("GPU HOMR inference created no CUDA-requesting ONNX sessions")
+
+    for record in cuda_requested:
+        model = str(record.get("model", "<unknown>"))
+        error_type = record.get("error_type")
+        if error_type:
+            raise RuntimeError(
+                f"CUDA ONNX session initialization failed for {model}: "
+                f"{error_type}: {record.get('error')}"
+            )
+        active = record.get("active_providers")
+        if not isinstance(active, list) or "CUDAExecutionProvider" not in active:
+            raise RuntimeError(
+                f"CUDA-requesting ONNX session did not activate CUDA for {model}: "
+                f"active_providers={active}"
+            )
+
+
 def run(image: Path, output_root: Path, result_path: Path) -> dict[str, Any]:
     started = time.perf_counter()
     image = image.resolve()
@@ -126,11 +203,24 @@ def run(image: Path, output_root: Path, result_path: Path) -> dict[str, Any]:
         requested = kwargs.get("providers")
         if requested is None and len(args) >= 2:
             requested = args[1]
-        session = original_inference_session(path_or_bytes, *args, **kwargs)
+        serialized_requested = _serialize_requested_providers(requested)
+        try:
+            session = original_inference_session(path_or_bytes, *args, **kwargs)
+        except Exception as error:
+            session_records.append(
+                {
+                    "model": str(path_or_bytes),
+                    "requested_providers": serialized_requested,
+                    "active_providers": [],
+                    "error_type": type(error).__name__,
+                    "error": str(error),
+                }
+            )
+            raise
         session_records.append(
             {
                 "model": str(path_or_bytes),
-                "requested_providers": _serialize_requested_providers(requested),
+                "requested_providers": serialized_requested,
                 "active_providers": list(session.get_providers()),
             }
         )
@@ -170,21 +260,22 @@ def run(image: Path, output_root: Path, result_path: Path) -> dict[str, Any]:
     image_run_dir.mkdir(parents=True, exist_ok=False)
     try:
         predict_started = time.perf_counter()
-        (
-            predictions,
-            _xml_path,
-            _seg_shape,
-            homr_core_sec,
-            notehead_mask,
-            staff_mask,
-            _rejected,
-            _added,
-        ) = predictor.predict(
-            image,
-            XmlGeneratorArguments(False, None, None),
-            sr_scale=1,
-            image_run_dir=image_run_dir,
-        )
+        with _capture_homr_clef_mask(homr_heuristics) as captured_masks:
+            (
+                predictions,
+                _xml_path,
+                _seg_shape,
+                homr_core_sec,
+                notehead_mask,
+                staff_mask,
+                _rejected,
+                _added,
+            ) = predictor.predict(
+                image,
+                XmlGeneratorArguments(False, None, None),
+                sr_scale=1,
+                image_run_dir=image_run_dir,
+            )
         predict_wall_sec = time.perf_counter() - predict_started
         serialization_started = time.perf_counter()
         detection = save_homr_results(
@@ -194,6 +285,16 @@ def run(image: Path, output_root: Path, result_path: Path) -> dict[str, Any]:
             notehead_mask,
             staff_mask,
         )
+        clef_mask = captured_masks.get("clef_mask")
+        if clef_mask is None:
+            raise RuntimeError("Maintained HOMR did not expose the SegNet clef/key mask")
+        target_size = (int(original_shape[0]), int(original_shape[1]))
+        if clef_mask.shape != (target_size[1], target_size[0]):
+            clef_mask = cv2.resize(clef_mask, target_size, interpolation=cv2.INTER_NEAREST)
+        clef_mask_path = image_run_dir / f"{stem}_clef_mask.png"
+        clef_mask_u8 = ((clef_mask > 0) * 255).astype(np.uint8)
+        if not cv2.imwrite(str(clef_mask_path), clef_mask_u8):
+            raise RuntimeError(f"Failed to write maintained HOMR clef mask: {clef_mask_path}")
         serialization_sec = time.perf_counter() - serialization_started
     finally:
         predictor.cleanup()
@@ -224,7 +325,11 @@ def run(image: Path, output_root: Path, result_path: Path) -> dict[str, Any]:
         }
         for name, path in model_paths.items()
     }
-    mask_shapes = {"staff": _image_shape(staff), "notehead": _image_shape(notehead)}
+    mask_shapes = {
+        "staff": _image_shape(staff),
+        "notehead": _image_shape(notehead),
+        "clef": _image_shape(clef_mask_path),
+    }
     payload = {
         "schema_version": "pipeline.maintained_original_homr.v1",
         "status": "completed",
@@ -269,6 +374,7 @@ def run(image: Path, output_root: Path, result_path: Path) -> dict[str, Any]:
             "detections": str(detection),
             "staff_mask": str(staff),
             "notehead_mask": str(notehead),
+            "clef_mask": str(clef_mask_path),
             "connector_symbols": str(connector_paths["symbols"])
             if connector_paths["symbols"].is_file()
             else None,
@@ -280,16 +386,17 @@ def run(image: Path, output_root: Path, result_path: Path) -> dict[str, Any]:
         "coordinate_checks": {
             "staff_mask_shape_wh": mask_shapes["staff"],
             "notehead_mask_shape_wh": mask_shapes["notehead"],
+            "clef_mask_shape_wh": mask_shapes["clef"],
             "masks_match_original_shape": all(
                 shape == original_shape for shape in mask_shapes.values()
             ),
         },
     }
-    if (
-        use_gpu_inference
-        and "CUDAExecutionProvider" not in payload["runtime"]["onnxruntime_available_providers"]
-    ):
-        raise RuntimeError("CUDAExecutionProvider is unavailable for GPU HOMR inference")
+    _validate_cuda_session_records(
+        session_records,
+        use_gpu_inference=use_gpu_inference,
+        available_providers=list(ort.get_available_providers()),
+    )
     result_path.parent.mkdir(parents=True, exist_ok=True)
     result_path.write_text(
         json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"

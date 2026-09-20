@@ -22,7 +22,7 @@ def _config() -> dict:
         "detection": {
             "enable_sr": True,
             "sr_scale": 4,
-            "homr_profile": "stage_e_verified",
+            "homr_profile": "maintained_original",
             "detector_route": "dense_full_pipeline",
             "probe_use_original_images": True,
             "cnn_model_manifest": D27_MANIFEST,
@@ -38,7 +38,7 @@ def test_canonical_detector_config_uses_verified_restored_route() -> None:
 
     assert detection["enable_sr"] is True
     assert detection["sr_scale"] == 4
-    assert detection["homr_profile"] == "stage_e_verified"
+    assert detection["homr_profile"] == "maintained_original"
     assert detection["detector_route"] == "dense_full_pipeline"
     assert "execution_mode" not in detection
     assert detection["probe_use_original_images"] is True
@@ -55,7 +55,7 @@ def test_canonical_detector_config_uses_verified_restored_route() -> None:
     assert contract["fresh_upstream_authoritative"] is True
     assert contract["override_keys"] == []
     assert contract["detector_route"] == "dense_full_pipeline"
-    assert contract["homr_profile"] == "stage_e_verified"
+    assert contract["homr_profile"] == "maintained_original"
     assert contract["sr_scale"] == 4
     assert contract["probe_use_original_images"] is True
 
@@ -84,7 +84,7 @@ def test_verified_profile_is_selected_for_hybrid_detection(tmp_path: Path, monke
 
     result = orchestrator._run_hybrid_detection()
 
-    assert captured["profile_name"] == "stage_e_verified"
+    assert captured["profile_name"] == "maintained_original"
     assert captured["images"] == [image]
     assert result["commands"] == [["profile"]]
 

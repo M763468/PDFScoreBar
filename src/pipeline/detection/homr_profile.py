@@ -12,7 +12,10 @@ from src.pipeline.core.subprocess_utils import run_with_logging
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PROFILE_DIR = PROJECT_ROOT / "configs" / "detector_profiles"
-SUPPORTED_PROFILES = {"stage_e_verified": PROFILE_DIR / "stage_e_verified_homr.json"}
+SUPPORTED_PROFILES = {
+    "stage_e_verified": PROFILE_DIR / "stage_e_verified_homr.json",
+    "maintained_original": PROFILE_DIR / "maintained_original_homr.json",
+}
 
 
 def load_homr_profile(name: str) -> dict[str, Any]:
@@ -143,6 +146,36 @@ def run_homr_profile(
     profile = load_homr_profile(profile_name)
     validate_profile_runtime(profile)
     output_root.mkdir(parents=True, exist_ok=True)
+
+    if profile_name == "maintained_original":
+        if precomputed_sr is not None:
+            raise ValueError("The maintained original profile does not consume precomputed SR")
+        if len(images) != 1:
+            raise ValueError("The maintained original profile runs one page per worker")
+        from .maintained_homr_worker import run as run_maintained_homr
+
+        image = Path(images[0]).resolve()
+        result_path = output_root / "batch" / image.stem / "worker_result.json"
+        payload = run_maintained_homr(image, output_root, result_path)
+        command = [
+            str(profile["runtime"]["python"]),
+            "-m",
+            "src.pipeline.detection.maintained_homr_worker",
+            "--image",
+            str(image),
+            "--output-root",
+            str(output_root),
+            "--result",
+            str(result_path),
+        ]
+        return {
+            "profile": profile_name,
+            "manifest": str(SUPPORTED_PROFILES[profile_name]),
+            "historical_detector_artifact_runtime_input": False,
+            "commands": [command],
+            "worker": payload,
+        }
+
     env = build_profile_environment(profile)
 
     if precomputed_sr is None:

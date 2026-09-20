@@ -148,17 +148,26 @@ Dataset and generated model paths are operator-local unless an explicit retentio
 otherwise. Do not interpret a `logs/` model path in a production config as proof that the
 weight is present in a fresh checkout.
 
-## Pinned Stage-E HOMR profile
+## HOMR profiles
 
-The dense production route uses a pinned original-image HOMR profile whose exact provenance,
+The dense production route uses an immutable maintained original-image HOMR profile whose
+commit and runtime paths are stored in:
+
+```text
+configs/detector_profiles/maintained_original_homr.json
+```
+
+The historical Stage-E profile remains available for reproduction. Its exact provenance,
 package versions, model hashes, and `/opt/` runtime paths are stored in:
 
 ```text
 configs/detector_profiles/stage_e_verified_homr.json
 ```
 
-That pinned profile is distinct from the current-runtime HOMR used by `current_x4_support`.
-See `TWO_HOMR_MILESTONE.md` for reproduction requirements.
+The maintained original profile and current-runtime HOMR used by `current_x4_support` share
+the main image/runtime but retain separate input and coordinate contracts. The historical
+profile is not selected by the canonical dense route. See `TWO_HOMR_MILESTONE.md` for
+reproduction requirements.
 
 ## Legacy compatibility environments
 

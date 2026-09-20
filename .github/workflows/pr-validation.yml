@@ -31,6 +31,6 @@ jobs:
       - name: Run Issue 352 focused tests
         run: |
           PYTHONPATH=. python -m pytest tests/test_model_artifacts.py tests/test_docker_runtime_contract.py
-          bash -n scripts/docker_runtime_validation.sh scripts/gpu_smoke.sh
+          bash -n scripts/docker_build.sh scripts/docker_runtime_validation.sh scripts/gpu_smoke.sh
           python -m py_compile scripts/docker_image_resolver.py src/common/model_artifacts.py docker/runtime_contract.py
           make help >/dev/null

@@ -346,6 +346,46 @@ def test_temporary_build_does_not_clean_or_retag_canonical(tmp_path: Path) -> No
     assert "pdfscore_pipeline_gpu" not in calls[0]
 
 
+def test_failed_build_preserves_previous_provenance(tmp_path: Path) -> None:
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    docker = bin_dir / "docker"
+    docker.write_text(
+        "#!/usr/bin/env bash\nset -euo pipefail\n"
+        'printf "%s\\n" "$*" >>"$DOCKER_CALL_LOG"\n'
+        'if [[ "${1:-}" == "build" ]]; then exit 17; fi\n',
+        encoding="utf-8",
+    )
+    docker.chmod(0o755)
+    call_log = tmp_path / "docker_calls.log"
+    artifacts = tmp_path / "artifacts"
+    artifacts.mkdir()
+    provenance = artifacts / "docker_build_provenance.txt"
+    provenance.write_text("previous_success\n", encoding="utf-8")
+    env = os.environ.copy()
+    env["PATH"] = f"{bin_dir}{os.pathsep}{env['PATH']}"
+    env["DOCKER_CALL_LOG"] = str(call_log)
+    env["GIT_DIR"] = subprocess.check_output(
+        ["git", "rev-parse", "--absolute-git-dir"], cwd=PROJECT_ROOT, text=True
+    ).strip()
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "docker").mkdir()
+    shutil.copyfile(PROJECT_ROOT / "scripts/docker_build.sh", tmp_path / "scripts/docker_build.sh")
+    shutil.copyfile(
+        PROJECT_ROOT / "docker/runtime_contract.py", tmp_path / "docker/runtime_contract.py"
+    )
+    result = subprocess.run(
+        ["bash", "scripts/docker_build.sh"],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 17
+    assert provenance.read_text(encoding="utf-8") == "previous_success\n"
+    assert not list(artifacts.glob(".docker_build_provenance.*"))
+
+
 def test_image_inventory_filters_before_inspecting(monkeypatch) -> None:
     resolver = _load_image_resolver_module()
     calls = []

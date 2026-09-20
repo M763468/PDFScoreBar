@@ -6,6 +6,11 @@ python_bin="${PYTHON:-python3}"
 artifact_dir="artifacts"
 build_log="$artifact_dir/docker_build.log"
 provenance_file="$artifact_dir/docker_build_provenance.txt"
+provenance_tmp="$(mktemp "$artifact_dir/.docker_build_provenance.XXXXXX")"
+cleanup() {
+  rm -f "$provenance_tmp"
+}
+trap cleanup EXIT
 
 mkdir -p "$artifact_dir"
 
@@ -22,7 +27,7 @@ printf 'source_root=%s\nsource_branch=%s\nsource_commit=%s\nsource_fingerprint=%
   "$source_commit" \
   "$source_fingerprint" \
   "$image_ref" \
-  >"$provenance_file"
+  >"$provenance_tmp"
 
 set +e
 docker build \
@@ -39,4 +44,5 @@ if [[ "$status" -ne 0 ]]; then
   exit "$status"
 fi
 
+mv -f "$provenance_tmp" "$provenance_file"
 echo "Docker build finished successfully. Provenance: $provenance_file"

@@ -6,12 +6,9 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from src.measure_numbering.pipeline import MeasureNumberingPipeline
 from src.measure_numbering.serialization import score_to_dict
 from src.measure_numbering.types import Score
 from src.pipeline.core.config import get_nested, load_yaml
-from src.pipeline.mmr_support_reuse import build_mmr_support_data
-from src.pipeline.review.final_output import materialize_corrected_final_outputs
 from src.pipeline.review.manual_correction_handoff import (
     canonicalize_manual_correction_outputs,
     load_manual_correction_handoff,
@@ -24,13 +21,6 @@ from src.pipeline.steps.manual_corrections import (
     normalise_barline_overrides,
     normalise_measure_overrides,
 )
-from src.pipeline.steps.numbering import (
-    final_numbering_metadata,
-    load_movement_boundary_payload,
-    movement_boundaries_for_page,
-    run_mmr_batch,
-)
-from src.pipeline.utils.images import load_image
 from src.pipeline.utils.io import ensure_dir, load_json, write_json
 
 logger = logging.getLogger(__name__)
@@ -477,6 +467,9 @@ def _rebuild_phase_a_numbering(
     page_index: int,
     force_single_system: bool,
 ) -> tuple[Dict[str, Any], List[List[int]], Dict[str, int]]:
+    from src.measure_numbering.pipeline import MeasureNumberingPipeline
+    from src.pipeline.utils.images import load_image
+
     corrected_barlines, stats = apply_barline_overrides(
         list(reviewed_barlines),
         current_barline_overrides,
@@ -616,6 +609,10 @@ def _final_numbering_from_retained_geometry(
     overrides: List[Dict[str, Any]],
     page_boundaries: List[Dict[str, Any]],
 ) -> tuple[Dict[str, Any], int]:
+    from src.measure_numbering.pipeline import MeasureNumberingPipeline
+    from src.pipeline.steps.numbering import final_numbering_metadata
+    from src.pipeline.utils.images import load_image
+
     image = load_image(source_image)
     height, width = image.shape[:2]
     pipeline = MeasureNumberingPipeline()
@@ -854,6 +851,8 @@ def _run_retained_artifact_correction(
         all_targets.update(state["mmr_targets"])
 
     if mmr_states:
+        from src.pipeline.steps.numbering import run_mmr_batch
+
         model_path_raw = get_nested(source_config, "mmr", "model_path")
         if not model_path_raw:
             raise ValueError("mmr.model_path is required for selective correction rerun")
@@ -872,6 +871,8 @@ def _run_retained_artifact_correction(
         for state in mmr_states:
             support = None
             if dense_mmr:
+                from src.pipeline.mmr_support_reuse import build_mmr_support_data
+
                 current_mask = _current_homr_staff_mask(
                     state["manifest_page"],
                     source_root=source_root,
@@ -933,6 +934,11 @@ def _run_retained_artifact_correction(
                 "overrides": deepcopy(state["auto_mmr"]),
             },
         )
+
+    from src.pipeline.steps.numbering import (
+        load_movement_boundary_payload,
+        movement_boundaries_for_page,
+    )
 
     movement_boundaries = load_movement_boundary_payload(
         get_nested(source_config, "inputs", "movement_boundaries")
@@ -1178,6 +1184,8 @@ def apply_corrections_and_rerun(
     _write_apply_summary(summary, new_run_dir, corrections_dir)
 
     if generate_final_pdf:
+        from src.pipeline.review.final_output import materialize_corrected_final_outputs
+
         final_summary = materialize_corrected_final_outputs(
             handoff_path=handoff_path,
             corrected_run_dir=new_run_dir,

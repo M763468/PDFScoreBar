@@ -1,8 +1,40 @@
+import subprocess
+import sys
+from pathlib import Path
+
 from src.pipeline.review.apply_corrections import (
     _barline_neighborhood_keys,
     _remap_measure_key,
     _reuse_auto_mmr_overrides,
 )
+
+
+def test_helpers_import_without_image_or_inference_runtime():
+    # Use a fresh interpreter so modules imported by other tests cannot hide
+    # an accidental dependency on the image/GPU runtime during collection.
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            """
+import importlib.abc
+import sys
+
+class BlockRuntime(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname.split('.')[0] in {'cv2', 'torch', 'PIL', 'onnxruntime'}:
+            raise ImportError(f'Unexpected runtime import: {fullname}')
+
+sys.meta_path.insert(0, BlockRuntime())
+from src.pipeline.review.apply_corrections import _bbox_overlap_score
+assert _bbox_overlap_score([0, 0, 10, 10], [0, 0, 10, 10]) == 1.0
+""",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def _numbering(*measure_bboxes):

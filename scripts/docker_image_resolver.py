@@ -167,7 +167,9 @@ def image_info(image_ref: str) -> ImageInfo | None:
     config = payload.get("Config")
     labels = config.get("Labels") if isinstance(config, dict) else None
     tags_raw = payload.get("RepoTags")
-    tags = tuple(tag for tag in tags_raw if isinstance(tag, str)) if isinstance(tags_raw, list) else ()
+    tags = (
+        tuple(tag for tag in tags_raw if isinstance(tag, str)) if isinstance(tags_raw, list) else ()
+    )
     fingerprint = _label(labels, SOURCE_FINGERPRINT_LABEL)
     if fingerprint is None:
         fingerprint = _embedded_fingerprint(image_id)
@@ -346,7 +348,9 @@ def _resolve(args: argparse.Namespace) -> int:
     print(f"  develop_fingerprint: {develop_fingerprint or '<unavailable>'}", file=sys.stderr)
     print(f"  guidance: {guidance}", file=sys.stderr)
     if args.explicit:
-        print("  note: DOCKER_IMAGE is explicit, so no alternate image was selected.", file=sys.stderr)
+        print(
+            "  note: DOCKER_IMAGE is explicit, so no alternate image was selected.", file=sys.stderr
+        )
     return 2
 
 

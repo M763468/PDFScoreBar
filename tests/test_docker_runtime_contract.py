@@ -73,9 +73,7 @@ def test_source_fingerprint_detects_runtime_source_drift_but_ignores_config(tmp_
     assert runtime_contract.source_fingerprint(tmp_path) != initial
 
 
-def test_runtime_contract_mismatch_defers_rebuild_classification(
-    tmp_path: Path, capsys
-) -> None:
+def test_runtime_contract_mismatch_defers_rebuild_classification(tmp_path: Path, capsys) -> None:
     runtime_contract = _load_runtime_contract_module()
     workspace = tmp_path / "workspace"
     (workspace / "src").mkdir(parents=True)
@@ -166,7 +164,11 @@ def test_default_image_resolution_reuses_matching_local_image(
 
     monkeypatch.setattr(resolver, "image_info", lambda _ref: requested)
     monkeypatch.setattr(resolver, "working_tree_fingerprint", lambda _root: "active-source")
-    monkeypatch.setattr(resolver, "git_ref_fingerprint", lambda _root, ref: "active-source" if ref == "HEAD" else "develop-source")
+    monkeypatch.setattr(
+        resolver,
+        "git_ref_fingerprint",
+        lambda _root, ref: "active-source" if ref == "HEAD" else "develop-source",
+    )
     monkeypatch.setattr(resolver, "_find_develop_ref", lambda _root: "origin/develop")
     monkeypatch.setattr(resolver, "_topic_has_runtime_diff", lambda _root, _ref: True)
     monkeypatch.setattr(resolver, "list_runtime_images", lambda: [requested, compatible])
@@ -234,9 +236,7 @@ def test_stale_topic_base_does_not_reuse_older_matching_image(
     assert "Refresh the topic branch" in captured.err
 
 
-def test_explicit_image_override_is_not_substituted(
-    tmp_path: Path, monkeypatch, capsys
-) -> None:
+def test_explicit_image_override_is_not_substituted(tmp_path: Path, monkeypatch, capsys) -> None:
     resolver = _load_image_resolver_module()
     requested = resolver.ImageInfo(
         image_id="sha256:explicit",

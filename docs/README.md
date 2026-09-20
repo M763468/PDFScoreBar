@@ -19,7 +19,7 @@ use the current artifacts first.
 | [`GT_PREPARATION_POLICY.md`](GT_PREPARATION_POLICY.md) | Ground-truth labeling policy |
 | [`BARLINE_MATCHER.md`](BARLINE_MATCHER.md) | Barline matching/evaluation contract |
 | [`SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md) | Current placement/lifecycle rules for production, tools, experiments, and scratch scripts |
-| [`manual_correction_review_package.md`](manual_correction_review_package.md) | Current internal manual-correction review-package handoff |
+| [`manual_correction_review_package.md`](manual_correction_review_package.md) | Current config-first end-to-end manual-correction review workflow |
 | [`ai-workflow/GRAPHIFY.md`](ai-workflow/GRAPHIFY.md) | Graphify query, refresh, retention, and staleness rules |
 
 The root [`README.md`](../README.md), [`AGENTS.md`](../AGENTS.md), and repository `Makefile`
@@ -36,8 +36,8 @@ make run-pipeline CONFIG=configs/dense_full_pipeline.yaml
 
 The public/output-profile design records under `docs/refactors/issue226/` through
 `docs/refactors/issue229/` remain useful for their scoped contracts. They are not a second
-source of truth for detector/MMR architecture. The currently connected internal review
-package is documented in `manual_correction_review_package.md`.
+source of truth for detector/MMR architecture. The currently connected review-package, GUI, corrected-rerun, and corrected-final workflow is documented in
+`manual_correction_review_package.md`.
 
 ## Detector, numbering, and CNN reference
 

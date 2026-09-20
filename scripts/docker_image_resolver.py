@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import importlib.util
 import json
 import subprocess
@@ -312,8 +311,8 @@ def classify_mismatch(
     if image_fingerprint is None:
         return (
             "image_provenance_missing",
-            "The image does not expose a source fingerprint. Rebuild it once with the "
-            "current canonical build path so compatibility can be verified.",
+            "The image runtime compatibility fingerprint could not be derived. Rebuild it once "
+            "with the current canonical build path so compatibility can be verified.",
         )
 
     return (
@@ -405,10 +404,9 @@ def _resolve(args: argparse.Namespace) -> int:
         topic_has_runtime_diff=topic_diff,
     )
 
-    # A docs/non-runtime topic that is merely behind current develop should refresh its
-    # base instead of falling back to an older image that happens to match stale source.
-    # For genuine topic runtime changes or a stale canonical tag, however, reuse an
-    # already-built compatible image before asking for another build.
+    # A topic that is merely behind current develop's environment contract should refresh its
+    # base instead of falling back to an older image. Bind-mounted source-only changes are
+    # compatible and return above; genuine environment changes can reuse a matching local image.
     reusable_categories = {
         "topic_runtime_change",
         "stale_image",

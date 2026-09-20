@@ -21,7 +21,7 @@ detection:
   enable_sr: true
   sr_scale: 4
   sr_compile_mode: reduce-overhead
-  homr_profile: stage_e_verified
+  homr_profile: maintained_original
   detector_route: dense_full_pipeline
   probe_use_original_images: true
   crop_recenter_on_bbox_ink: true

@@ -21,14 +21,16 @@ from src.pipeline.core.subprocess_utils import run_with_logging
 from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
 from src.pipeline.utils.io import ensure_dir
 
+from .homr_profile_compat import build_processing_config_compat
 from .utils import log_vram_usage
 
 try:
     from homr.main import ProcessingConfig
     from homr.music_xml_generator import XmlGeneratorArguments
     from src.common.preprocessing import apply_advanced_sr
+    from src.homr_eval_scripts.core import heuristics as homr_heuristics
+    from src.homr_eval_scripts.core import predictor as homr_predictor
     from src.homr_eval_scripts.core.metrics import BarlinePrediction
-    from src.homr_eval_scripts.core.predictor import HomrPredictor
     from src.homr_eval_scripts.core.reporting import save_homr_results
     from src.homr_eval_scripts.core.utils import DEFAULT_TUNING
 
@@ -337,13 +339,23 @@ class HybridDetector:
             logger.info(f"Dry run: In-process Homr for {len(self.images)} images -> {output_root}")
             return
 
-        config = ProcessingConfig(
-            bool(self.det_cfg.get("enable_debug", False)),
-            bool(self.det_cfg.get("enable_cache", True)),
-            bool(self.det_cfg.get("write_staff_positions", False)),
-            False,
-            -1,
-            torch.cuda.is_available(),
+        use_gpu_inference = torch.cuda.is_available()
+        import homr.main as homr_main
+
+        from .homr_profile_compat import install_current_homr_consumer_compat
+
+        install_current_homr_consumer_compat(
+            homr_main,
+            homr_predictor,
+            homr_heuristics,
+            use_gpu_inference=use_gpu_inference,
+        )
+        config = build_processing_config_compat(
+            ProcessingConfig,
+            enable_debug=bool(self.det_cfg.get("enable_debug", False)),
+            enable_cache=bool(self.det_cfg.get("enable_cache", True)),
+            write_staff_positions=bool(self.det_cfg.get("write_staff_positions", False)),
+            use_gpu_inference=use_gpu_inference,
         )
         tuning = DEFAULT_TUNING.copy()
         tuning.update(
@@ -354,7 +366,9 @@ class HybridDetector:
         )
 
         with _suppress_homr_low_value_internal_logs():
-            predictor = HomrPredictor(config, tuning, use_gpu_inference=torch.cuda.is_available())
+            predictor = homr_predictor.HomrPredictor(
+                config, tuning, use_gpu_inference=use_gpu_inference
+            )
         xml_args = XmlGeneratorArguments(False, None, None)
 
         try:

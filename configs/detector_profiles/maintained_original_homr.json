@@ -1,0 +1,32 @@
+{
+  "schema_version": "pipeline.homr_profile.v1",
+  "name": "maintained_original",
+  "description": "Immutable maintained HOMR on original-page input for the authoritative baseline.",
+  "historical_detector_artifact_runtime_input": false,
+  "homr": {
+    "repository": "https://github.com/liebharc/homr.git",
+    "commit": "457e7c6518a10ba755db2e60883419e56c4d7369"
+  },
+  "pdfscore_evaluator": {
+    "repository": "workspace-mounted PDFScoreBar source",
+    "commit": "workspace-runtime"
+  },
+  "input_contract": {
+    "sr_scale": 1,
+    "coordinate_space": "original_page",
+    "connector_capture": true
+  },
+  "runtime": {
+    "python": "/opt/venv_pipeline/bin/python",
+    "homr_source": "/opt/venv_pipeline/lib/python3.11/site-packages",
+    "pdfscore_source": "/workspace",
+    "homr_commit_marker": "/opt/homr_maintained_profile_commit.txt",
+    "pdfscore_commit_marker": "/opt/pdfscore_maintained_profile_commit.txt",
+    "compat_entrypoint": "/workspace/src/pipeline/detection/maintained_homr_worker.py"
+  },
+  "production_dispatch": {
+    "role": "authoritative_original_baseline",
+    "support_owner": "current_x4_support",
+    "floating_upstream": false
+  }
+}

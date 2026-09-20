@@ -80,9 +80,7 @@ def test_runtime_fingerprint_ignores_bind_mounted_source_and_provenance_tail(
     tmp_path: Path,
 ) -> None:
     runtime_contract = _load_runtime_contract_module()
-    boundary = (
-        "# Copy source code. Canonical runtime mounts the active checkout over /workspace,\n"
-    )
+    boundary = "# Copy source code. Canonical runtime mounts the active checkout over /workspace,\n"
     (tmp_path / "Dockerfile").write_text(
         "FROM runtime\nRUN install-runtime\n" + boundary + "COPY . /workspace\nLABEL source=old\n",
         encoding="utf-8",

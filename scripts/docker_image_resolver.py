@@ -171,14 +171,15 @@ def image_info(image_ref: str) -> ImageInfo | None:
         tuple(tag for tag in tags_raw if isinstance(tag, str)) if isinstance(tags_raw, list) else ()
     )
     fingerprint = _label(labels, SOURCE_FINGERPRINT_LABEL)
-    if fingerprint is None:
+    asset_contract = _label(labels, ASSET_CONTRACT_LABEL)
+    if fingerprint is None and asset_contract == EXPECTED_ASSET_CONTRACT:
         fingerprint = _embedded_fingerprint(image_id)
     created = payload.get("Created")
     return ImageInfo(
         image_id=image_id,
         tags=tags,
         created=created if isinstance(created, str) else None,
-        asset_contract=_label(labels, ASSET_CONTRACT_LABEL),
+        asset_contract=asset_contract,
         source_fingerprint=fingerprint,
         source_commit=_label(labels, SOURCE_COMMIT_LABEL),
         source_branch=_label(labels, SOURCE_BRANCH_LABEL),

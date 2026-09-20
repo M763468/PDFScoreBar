@@ -8,6 +8,8 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from src.common.realesrgan_assets import resolve_realesrgan_weight
 from src.pipeline.detection.omr_dln_model import resolve_omr_dln_model_path
 
@@ -279,14 +281,22 @@ def _write_fake_docker(bin_dir: Path) -> Path:
         "#!/usr/bin/env bash\n"
         "set -euo pipefail\n"
         'printf "%s\\n" "$*" >>"$DOCKER_CALL_LOG"\n'
-        'if [[ "${1:-} ${2:-}" == "image ls" ]]; then echo "fake-image-id"; fi\n',
+        'if [[ "${1:-} ${2:-}" == "image ls" ]]; then\n'
+        '  case "${FAKE_IMAGE_STATE:-present}" in\n'
+        "    absent) exit 0 ;;\n"
+        '    error) echo "Docker daemon unavailable" >&2; exit 42 ;;\n'
+        '    *) echo "fake-image-id" ;;\n'
+        "  esac\n"
+        "fi\n",
         encoding="utf-8",
     )
     docker.chmod(0o755)
     return docker
 
 
-def _run_make_with_fake_docker(target: str, tmp_path: Path, *args: str) -> list[str]:
+def _run_make_with_fake_docker(
+    target: str, tmp_path: Path, *args: str, image_state: str = "present", fails: bool = False
+) -> list[str]:
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     _write_fake_docker(bin_dir)
@@ -294,6 +304,7 @@ def _run_make_with_fake_docker(target: str, tmp_path: Path, *args: str) -> list[
     env = os.environ.copy()
     env["PATH"] = f"{bin_dir}{os.pathsep}{env['PATH']}"
     env["DOCKER_CALL_LOG"] = str(call_log)
+    env["FAKE_IMAGE_STATE"] = image_state
     # Build tests must not truncate a real build's artifacts/provenance in the checkout.
     env["GIT_DIR"] = subprocess.check_output(
         ["git", "rev-parse", "--absolute-git-dir"], cwd=PROJECT_ROOT, text=True
@@ -311,7 +322,11 @@ def _run_make_with_fake_docker(target: str, tmp_path: Path, *args: str) -> list[
         capture_output=True,
         text=True,
     )
-    assert result.returncode == 0, result.stdout + result.stderr
+    if fails:
+        assert result.returncode != 0
+        assert "Docker daemon unavailable" in result.stderr
+    else:
+        assert result.returncode == 0, result.stdout + result.stderr
     return call_log.read_text(encoding="utf-8").splitlines()
 
 
@@ -373,6 +388,61 @@ def test_docker_clean_full_removes_container_then_image(tmp_path: Path) -> None:
 
     assert calls == [
         "rm -f pdfscore_pipeline_gpu",
-        "image inspect pdfscore_pipeline_gpu",
+        "image ls --quiet pdfscore_pipeline_gpu",
         "rmi pdfscore_pipeline_gpu",
     ]
+
+
+@pytest.mark.parametrize("image_state", ["absent", "error"])
+def test_full_cleanup_distinguishes_absence_from_docker_error(tmp_path, image_state):
+    calls = _run_make_with_fake_docker(
+        "docker-clean-full",
+        tmp_path,
+        "DOCKER_IMAGE=pdfscore-test:temporary",
+        image_state=image_state,
+        fails=image_state == "error",
+    )
+    assert calls == ["rm -f pdfscore_pipeline_gpu", "image ls --quiet pdfscore-test:temporary"]
+
+
+@pytest.mark.parametrize("contract", [None, "v2", "v1"])
+def test_legacy_fingerprint_only_starts_recognized_contract_images(
+    monkeypatch, tmp_path, capsys, contract
+):
+    resolver = _load_image_resolver_module()
+    labels = {} if contract is None else {resolver.ASSET_CONTRACT_LABEL: contract}
+    monkeypatch.setattr(
+        resolver,
+        "_inspect_image",
+        lambda ref: {
+            "Id": "sha256:fixture",
+            "Config": {"Labels": labels},
+        },
+    )
+    calls = []
+
+    def embedded(image_id):
+        calls.append(image_id)
+        return "a" * 64
+
+    monkeypatch.setattr(resolver, "_embedded_fingerprint", embedded)
+    info = resolver.image_info("fixture")
+    assert info.asset_contract == contract
+    if contract == "v1":
+        assert calls == ["sha256:fixture"]
+        assert info.source_fingerprint == "a" * 64
+    else:
+        assert calls == []
+        assert info.source_fingerprint is None
+        assert (
+            resolver._resolve(
+                SimpleNamespace(
+                    repo_root=tmp_path,
+                    image_ref="fixture",
+                    explicit=True,
+                )
+            )
+            == 2
+        )
+        assert "expected PDFScoreBar runtime contract label" in capsys.readouterr().err
+        assert calls == []

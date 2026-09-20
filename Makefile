@@ -70,7 +70,8 @@ docker-clean: ## Remove the canonical pipeline container
 
 docker-clean-full: docker-clean ## Also remove the pipeline image (explicit full cleanup)
 	@echo "Removing Docker pipeline image..."
-	@if docker image inspect "$(DOCKER_IMAGE)" >/dev/null 2>&1; then docker rmi "$(DOCKER_IMAGE)"; fi
+	@image_id=$$(docker image ls --quiet "$(DOCKER_IMAGE)") || exit $$?; \
+	if [ -n "$$image_id" ]; then docker rmi "$(DOCKER_IMAGE)"; fi
 
 docker-build: ## Build the selected Docker image without removing containers or images
 	@mkdir -p artifacts

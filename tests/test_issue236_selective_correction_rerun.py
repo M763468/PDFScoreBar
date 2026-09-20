@@ -44,9 +44,7 @@ def test_barline_neighborhood_only_targets_measures_touching_changed_barline():
         (0, 0, 1),
         (0, 0, 2),
     }
-    assert _barline_neighborhood_keys(corrected, correction, page_index=0) == {
-        (0, 0, 1)
-    }
+    assert _barline_neighborhood_keys(corrected, correction, page_index=0) == {(0, 0, 1)}
 
 
 def test_measure_key_remaps_by_geometry_after_removed_barline():

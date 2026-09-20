@@ -1,17 +1,16 @@
-# Manual Correction Review Package Output
+# Manual Correction Review Workflow
 
-This document describes the config-first production connection that emits a
-manual correction review package from `run_pipeline()`.
+This document describes the current config-first manual-correction workflow. It connects one
+pipeline run to the existing manual GUI, saves package-local corrections, reruns the pipeline with
+those corrections, and can materialize the corrected final score-numbered PDF.
 
-This is not the full #226/#227 user-facing `OUTPUT_DIR/{final,review,debug}`
-profile materializer. The public output profile contract is still defined in
-`docs/refactors/issue227/ISSUE227_OUTPUT_PROFILES.md` and remains a later
-integration surface. This connection only lets the current pipeline run emit
-the #229 manual-correction handoff from the current internal run layout.
+This is still not a new public `pdfscorebar` console surface. Normal pipeline execution remains
+config-first through `make run-pipeline` / `src.pipeline.main`, and the correction workflow reuses
+the existing review helpers and GUI.
 
-## Config
+## 1. Emit the review package
 
-Enable review package output explicitly:
+Enable manual-correction review output explicitly:
 
 ```yaml
 outputs:
@@ -21,10 +20,11 @@ outputs:
     root: review
 ```
 
-When `manual_correction_package` is missing or false, the pipeline does not
-create a review package.
+Run the normal pipeline:
 
-## Output Location
+```bash
+make run-pipeline CONFIG=<config.yaml>
+```
 
 By default, the package is written under the internal pipeline run directory:
 
@@ -44,29 +44,118 @@ By default, the package is written under the internal pipeline run directory:
 `outputs.review.root` can override that package root:
 
 - relative paths are resolved from `<run_dir>`;
-- absolute paths are allowed for controlled callers that already own a public
-  review directory;
-- the materializer still reads only artifacts from the current `run_dir` and
-  rejects run artifacts resolved outside that root.
+- absolute paths are allowed for controlled callers that already own a review directory;
+- the materializer still reads current-run artifacts deterministically and rejects run artifacts
+  resolved outside the source run.
 
-The current internal pipeline layout keeps implementation artifacts in
-`<run_dir>/outputs/<page_id>/` and `<run_dir>/intermediate/<page_id>/`.
-The review package is a curated handoff copied from those artifacts, not a
-replacement for the internal working tree and not the final public profile
-contract.
+The handoff records the page identity and coordinate-space relationship needed by the GUI. Normal
+manual review must start from this handoff rather than assembling image, numbering, MMR, or barline
+paths from unrelated `logs/` runs.
 
-## Source Command Metadata
+## 2. Open the existing manual GUI from the handoff
 
-`outputs.review.source_pipeline_command` is optional. When present, it is copied
-into `manual_correction_input.json` as trace metadata. The current config-first
-entrypoint does not reconstruct the shell command automatically; a future
-user-facing CLI can pass execution context when it owns argument resolution.
+Launch the existing GUI directly from the review package:
 
-## Non-goals
+```bash
+python3 tools/gt_relabel_gui/server.py \
+  --mode manual \
+  --handoff <run_dir>/review/manual_correction_input.json \
+  --host 127.0.0.1 \
+  --port 8010
+```
 
-This connection does not implement:
+Then open `http://127.0.0.1:8010`.
 
-- corrected rerun;
-- applying canonical manual overrides back into the pipeline;
-- corrected final PDF regeneration;
-- the full `final/review/debug` public output materializer.
+The `--handoff` route:
+
+- validates the strict same-package review contract before serving the GUI;
+- requires the source image, final numbering, review overlay, MMR evidence, and review barlines to
+  exist;
+- uses the handoff's review directory as the GUI root;
+- rejects a separate `--root` or `--config`, preventing normal use from substituting unrelated
+  artifacts;
+- keeps the current page-local `manual_outputs` routing.
+
+The legacy one-page `manual_config_builder.py` remains available for development/legacy uses, but
+it is not the normal #236 review workflow because it accepts arbitrary artifact paths.
+
+## 3. Save corrections
+
+The existing GUI stages corrections under the review package's `corrections/` directory. The
+current correction surfaces are:
+
+```text
+review/corrections/
+  mmr_measure_spans.json
+  measure_construction_overrides.json
+  barline_construction_overrides.json
+```
+
+These are GUI staging files. The pipeline consumes canonical:
+
+```text
+review/corrections/
+  measure_overrides.json
+  barline_overrides.json
+```
+
+The apply helper performs the staging-to-canonical conversion and refuses to replace existing
+canonical files unless overwrite is explicitly requested.
+
+## 4. Apply corrections, rerun, and generate the corrected final PDF
+
+Use the existing apply helper in the maintained pipeline runtime:
+
+```bash
+docker run --rm --gpus all \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_gpu \
+  /opt/venv_pipeline/bin/python -m src.pipeline.review.apply_corrections \
+  <run_dir>/review/manual_correction_input.json \
+  --generate-final-pdf
+```
+
+Use `--output-name <name>` when an explicit final output name is needed. If canonical correction
+files already exist and replacing them is intentional, add `--overwrite`.
+
+The helper:
+
+1. validates the handoff;
+2. canonicalizes the GUI staging files;
+3. carries forward existing correction inputs when applicable;
+4. creates a corrected pipeline config with measure/barline override application enabled;
+5. reruns the pipeline without recursively generating another manual-correction package;
+6. when `--generate-final-pdf` is set, renders the corrected final PDF from the corrected rerun's
+   final numbering.
+
+The corrected run writes:
+
+```text
+<corrected_run_dir>/
+  final/
+    <output-name>_score_numbered.pdf
+  review/
+    correction_summary.json
+    corrected_final_summary.json
+```
+
+The final PDF is the clean row-start-number deliverable. Correction provenance and review/debug
+metadata remain outside `final/`.
+
+## Source command metadata
+
+`outputs.review.source_pipeline_command` is optional. When present, it is copied into
+`manual_correction_input.json` as trace metadata. The current config-first entrypoint does not
+reconstruct the shell command automatically.
+
+## Scope boundary
+
+This workflow intentionally reuses the existing review package, GUI, correction helpers, rerun path,
+and final renderer. It does not:
+
+- add a second correction workflow or a new `pdfscorebar` public CLI;
+- change detector, HOMR, MMR, grouping, barline, or numbering accuracy behavior;
+- implement movement-boundary review; future movement review should extend the same review/correction
+  UX rather than create a disconnected path.

@@ -16,7 +16,7 @@ OMR_DLN_MODEL_PATH remains a verified explicit compatibility override.
 Environment:
   DOCKER_IMAGE              Canonical Docker image reference. Default: pdfscore_pipeline_gpu
   DOCKER_EXTRA_ARGS         Extra arguments passed to docker run.
-  PDFSCOREBAR_MODEL_CACHE   Optional shared host model-cache root. Default: .model_cache
+  PDFSCOREBAR_MODEL_CACHE   Optional shared host model-cache root. Default: XDG/user cache
   OMR_DLN_MODEL_PATH        Optional explicit OMR-DLN compatibility override.
 USAGE
 }
@@ -61,28 +61,27 @@ if [[ -z "$host_branch" ]]; then
 fi
 image_ref="${DOCKER_IMAGE:-pdfscore_pipeline_gpu}"
 
-# Resolve the mutable canonical reference exactly once. All subsequent container
-# launches use the immutable ID so a concurrent rebuild/tag update cannot mix
-# runtimes within one validation run.
-image_id="$(docker image inspect "$image_ref" --format '{{.Id}}' 2>/dev/null || true)"
-if [[ -z "$image_id" ]]; then
-  echo "Docker image reference is not available locally: $image_ref. Run 'make docker-build' first." >&2
-  exit 2
+# Resolve the mutable canonical reference once, but reuse another compatible local
+# PDFScoreBar image when the default tag points at a different worktree. An
+# explicit DOCKER_IMAGE remains authoritative and is never silently substituted.
+resolver_args=(resolve --repo-root "$repo_root" --image-ref "$image_ref")
+if [[ -n "${DOCKER_IMAGE:-}" ]]; then
+  resolver_args+=(--explicit)
 fi
+set +e
+image_id="$(
+  python3 "$repo_root/scripts/docker_image_resolver.py" "${resolver_args[@]}"
+)"
+resolver_status=$?
+set -e
+if [[ "$resolver_status" -ne 0 ]]; then
+  exit "$resolver_status"
+fi
+
 asset_contract="$(
   docker image inspect "$image_id" \
     --format '{{index .Config.Labels "pdfscore.runtime.asset_contract"}}' 2>/dev/null || true
 )"
-if [[ "$asset_contract" != "v1" ]]; then
-  cat >&2 <<EOF
-Docker image does not expose the expected PDFScoreBar runtime contract label.
-  image_ref:      $image_ref
-  image_id:       $image_id
-  asset_contract: ${asset_contract:-<missing>}
-Rebuild the canonical image from the active checkout.
-EOF
-  exit 2
-fi
 
 if [[ "$config" = /* ]]; then
   case "$config" in
@@ -105,6 +104,11 @@ if [[ ! -f "$config_host" ]]; then
 fi
 
 omr_manifest="$repo_root/models/omr_dln/manifest.json"
+model_cache_root="$(
+  PYTHONPATH="$repo_root" python3 -c \
+    'from pathlib import Path; import sys; from src.common.model_artifacts import get_model_cache_root; print(get_model_cache_root(project_root=Path(sys.argv[1])))' \
+    "$repo_root"
+)"
 omr_container="$(
   python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["runtime_path"])' \
     "$omr_manifest"
@@ -138,7 +142,8 @@ Selected OMR-DLN artifact is not registered in the common model cache.
 Manifest: $omr_manifest
 Register the official YOLOv8m_Measures.pt once with:
   python3 -m src.common.model_artifacts import models/omr_dln/manifest.json /path/to/YOLOv8m_Measures.pt
-The import verifies the selected version digest before publishing to .model_cache.
+The import verifies the selected version digest before publishing to:
+  $model_cache_root
 OMR_DLN_MODEL_PATH remains available as a verified compatibility override.
 EOF
       exit 2
@@ -179,6 +184,7 @@ Canonical Docker validation provenance:
   commit:      $host_commit
   image_ref:   $image_ref
   image_id:    $image_id
+  model_cache: $model_cache_root
   omr_manifest: models/omr_dln/manifest.json
   omr_host:    $omr_host
   omr_runtime: $omr_container

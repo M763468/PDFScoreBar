@@ -317,6 +317,6 @@ def test_docker_clean_full_removes_container_then_image(tmp_path: Path) -> None:
 
     assert calls == [
         "rm -f pdfscore_pipeline_gpu",
-        "image ls --quiet pdfscore_pipeline_gpu",
+        "image inspect pdfscore_pipeline_gpu",
         "rmi pdfscore_pipeline_gpu",
     ]

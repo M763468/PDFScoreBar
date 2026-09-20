@@ -74,7 +74,7 @@ commit="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
   echo "docker_image:"
   if command -v docker >/dev/null 2>&1; then
     docker image inspect "${DOCKER_IMAGE:-pdfscore_pipeline_gpu}" \
-      --format 'id={{.Id}} asset_contract={{index .Config.Labels "pdfscore.runtime.asset_contract"}}' \
+      --format 'id={{.Id}} asset_contract={{index .Config.Labels "pdfscore.runtime.asset_contract"}} source_fingerprint={{index .Config.Labels "pdfscore.runtime.source_fingerprint"}} source_commit={{index .Config.Labels "pdfscore.runtime.source_commit"}} source_branch={{index .Config.Labels "pdfscore.runtime.source_branch"}}' \
       2>/dev/null || echo "image not found: ${DOCKER_IMAGE:-pdfscore_pipeline_gpu}"
   else
     echo "docker not found"

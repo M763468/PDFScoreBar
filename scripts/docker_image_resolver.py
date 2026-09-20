@@ -19,10 +19,12 @@ SOURCE_COMMIT_LABEL = "pdfscore.runtime.source_commit"
 SOURCE_BRANCH_LABEL = "pdfscore.runtime.source_branch"
 EXPECTED_ASSET_CONTRACT = "v1"
 EMBEDDED_FINGERPRINT_PATH = "/opt/pdfscore-runtime/source_fingerprint.txt"
-RUNTIME_SCOPE = ("src", "experiments/models", "docker", "Dockerfile", "pyproject.toml")
-RUNTIME_ROOTS = ("src/", "experiments/models/", "docker/")
-RUNTIME_FILES = frozenset({"Dockerfile", "pyproject.toml"})
-RUNTIME_SUFFIXES = frozenset({".py", ".toml"})
+RUNTIME_SCOPE = (
+    "Dockerfile",
+    "pyproject.toml",
+    "docker/patch_homr_onnx_provider.py",
+    "models/barline_cnn/manifest.json",
+)
 
 
 @dataclass(frozen=True)
@@ -65,40 +67,30 @@ def _load_runtime_contract(repo_root: Path):
     return module
 
 
-def working_tree_fingerprint(repo_root: Path) -> str:
+def working_tree_source_fingerprint(repo_root: Path) -> str:
     return _load_runtime_contract(repo_root).source_fingerprint(repo_root)
 
 
-def _eligible_git_path(path: str) -> bool:
-    if path in RUNTIME_FILES:
-        return True
-    return path.startswith(RUNTIME_ROOTS) and Path(path).suffix in RUNTIME_SUFFIXES
+def working_tree_fingerprint(repo_root: Path) -> str:
+    """Return the image/runtime compatibility fingerprint for the active checkout."""
+    return _load_runtime_contract(repo_root).runtime_fingerprint(repo_root)
 
 
 def git_ref_fingerprint(repo_root: Path, ref: str) -> str:
-    listing = _run(
-        ["git", "ls-tree", "-r", "--name-only", ref, "--", *RUNTIME_SCOPE],
-        cwd=repo_root,
-        check=True,
-    )
-    paths = sorted(path for path in listing.stdout.splitlines() if _eligible_git_path(path))
-
-    digest = hashlib.sha256()
-    for relative in paths:
+    runtime_contract = _load_runtime_contract(repo_root)
+    entries: dict[str, bytes | None] = {}
+    for relative in RUNTIME_SCOPE:
         blob = subprocess.run(
             ["git", "show", f"{ref}:{relative}"],
             cwd=repo_root,
             check=False,
             capture_output=True,
         )
-        if blob.returncode != 0:
-            detail = blob.stderr.decode("utf-8", errors="replace").strip()
-            raise RuntimeError(f"Unable to read {ref}:{relative}: {detail}")
-        digest.update(relative.encode("utf-8"))
-        digest.update(b"\0")
-        digest.update(blob.stdout)
-        digest.update(b"\0")
-    return digest.hexdigest()
+        if blob.returncode == 0:
+            entries[relative] = blob.stdout
+        else:
+            entries[relative] = None
+    return runtime_contract.runtime_fingerprint_entries(entries)
 
 
 def _find_develop_ref(repo_root: Path) -> str | None:
@@ -110,13 +102,16 @@ def _find_develop_ref(repo_root: Path) -> str | None:
 
 
 def _topic_has_runtime_diff(repo_root: Path, develop_ref: str) -> bool | None:
-    result = _run(
-        ["git", "diff", "--name-only", f"{develop_ref}...HEAD", "--", *RUNTIME_SCOPE],
-        cwd=repo_root,
-    )
-    if result.returncode != 0:
+    merge_base = _run(["git", "merge-base", develop_ref, "HEAD"], cwd=repo_root)
+    if merge_base.returncode != 0:
         return None
-    return any(_eligible_git_path(path) for path in result.stdout.splitlines())
+    base = merge_base.stdout.strip()
+    if not base:
+        return None
+    try:
+        return git_ref_fingerprint(repo_root, base) != git_ref_fingerprint(repo_root, "HEAD")
+    except RuntimeError:
+        return None
 
 
 def _inspect_image(image_ref: str) -> dict[str, object] | None:
@@ -147,6 +142,58 @@ def _embedded_fingerprint(image_id: str) -> str | None:
             "cat",
             image_id,
             EMBEDDED_FINGERPRINT_PATH,
+        ]
+    )
+    if result.returncode != 0:
+        return None
+    value = result.stdout.strip()
+    if len(value) == 64 and all(ch in "0123456789abcdefABCDEF" for ch in value):
+        return value.lower()
+    return None
+
+
+RUNTIME_FINGERPRINT_SCRIPT = r"""
+from pathlib import Path
+import hashlib
+
+root = Path("/workspace")
+files = (
+    Path("Dockerfile"),
+    Path("pyproject.toml"),
+    Path("docker/patch_homr_onnx_provider.py"),
+    Path("models/barline_cnn/manifest.json"),
+)
+boundary_marker = b"# Copy source code. Canonical runtime mounts the active checkout over /workspace,"
+
+digest = hashlib.sha256()
+for relative in files:
+    path = root / relative
+    payload = path.read_bytes() if path.is_file() else b"<missing>"
+    if relative == Path("Dockerfile"):
+        boundary = payload.find(boundary_marker)
+        if boundary >= 0:
+            payload = payload[:boundary]
+    digest.update(relative.as_posix().encode("utf-8"))
+    digest.update(b"\0")
+    digest.update(payload)
+    digest.update(b"\0")
+print(digest.hexdigest())
+"""
+
+
+def _embedded_runtime_fingerprint(info: ImageInfo) -> str | None:
+    if info.asset_contract != EXPECTED_ASSET_CONTRACT:
+        return None
+    result = _run(
+        [
+            "docker",
+            "run",
+            "--rm",
+            "--entrypoint",
+            "/opt/venv_pipeline/bin/python",
+            info.image_id,
+            "-c",
+            RUNTIME_FINGERPRINT_SCRIPT,
         ]
     )
     if result.returncode != 0:
@@ -220,12 +267,12 @@ def classify_mismatch(
     topic_has_runtime_diff: bool | None,
 ) -> tuple[str, str]:
     if image_fingerprint == active_fingerprint:
-        return "compatible", "The selected image matches the active runtime-sensitive source."
+        return "compatible", "The selected image matches the active runtime environment contract."
 
     if active_fingerprint != head_fingerprint:
         return (
             "working_tree_runtime_change",
-            "The active checkout has uncommitted or untracked runtime-sensitive changes. "
+            "The active checkout has uncommitted or untracked image/environment-defining changes. "
             "Resolve those changes before deciding whether an image rebuild is required.",
         )
 
@@ -237,15 +284,16 @@ def classify_mismatch(
     ):
         return (
             "stale_topic_base",
-            "The image matches current develop, while this topic has no runtime-sensitive "
-            "changes of its own. Refresh the topic branch onto current develop and retry; "
+            "The image matches current develop's runtime environment, while this topic has no "
+            "image/environment-defining changes of its own. Refresh the topic branch onto current "
+            "develop and retry; "
             "do not rebuild solely for this mismatch.",
         )
 
     if topic_has_runtime_diff is True:
         return (
             "topic_runtime_change",
-            "This topic changes runtime-sensitive files relative to current develop. "
+            "This topic changes image/environment-defining inputs relative to current develop. "
             "Reuse a matching local image or build a runtime image for this source state with "
             "make docker-build DOCKER_IMAGE=pdfscore-topic:<tag>.",
         )
@@ -257,7 +305,7 @@ def classify_mismatch(
     ):
         return (
             "stale_image",
-            "The selected image does not match current develop runtime source. "
+            "The selected image does not match current develop's runtime environment contract. "
             "Build the canonical image from the intended current target source.",
         )
 
@@ -292,7 +340,9 @@ def _resolve(args: argparse.Namespace) -> int:
         if not args.explicit:
             active_fingerprint = working_tree_fingerprint(repo_root)
             for candidate in list_runtime_images():
-                if candidate.source_fingerprint == active_fingerprint:
+                if candidate.source_fingerprint is None:
+                    continue
+                if _embedded_runtime_fingerprint(candidate) == active_fingerprint:
                     print(_format_info(candidate), file=sys.stderr)
                     print(candidate.image_id)
                     return 0
@@ -312,9 +362,30 @@ def _resolve(args: argparse.Namespace) -> int:
         )
         return 2
 
-    active_fingerprint = working_tree_fingerprint(repo_root)
-    if requested.source_fingerprint == active_fingerprint:
+    active_source_fingerprint = working_tree_source_fingerprint(repo_root)
+    if requested.source_fingerprint == active_source_fingerprint:
         print(_format_info(requested), file=sys.stderr)
+        print(requested.image_id)
+        return 0
+
+    if requested.source_fingerprint is None:
+        print(
+            "Docker image source provenance is missing; refusing compatibility-only reuse.",
+            file=sys.stderr,
+        )
+        return 2
+
+    active_fingerprint = working_tree_fingerprint(repo_root)
+    requested_runtime_fingerprint = _embedded_runtime_fingerprint(requested)
+    if requested_runtime_fingerprint == active_fingerprint:
+        print(
+            "Image build source differs, but the image/runtime environment contract matches "
+            "the active checkout; reusing the image with bind-mounted application source.",
+            file=sys.stderr,
+        )
+        print(_format_info(requested), file=sys.stderr)
+        print(f"  image_runtime_fingerprint={requested_runtime_fingerprint}", file=sys.stderr)
+        print(f"  active_source_fingerprint={active_source_fingerprint}", file=sys.stderr)
         print(requested.image_id)
         return 0
 
@@ -328,7 +399,7 @@ def _resolve(args: argparse.Namespace) -> int:
     )
     category, guidance = classify_mismatch(
         active_fingerprint=active_fingerprint,
-        image_fingerprint=requested.source_fingerprint,
+        image_fingerprint=requested_runtime_fingerprint,
         head_fingerprint=head_fingerprint,
         develop_fingerprint=develop_fingerprint,
         topic_has_runtime_diff=topic_diff,
@@ -348,21 +419,33 @@ def _resolve(args: argparse.Namespace) -> int:
         for candidate in list_runtime_images():
             if candidate.image_id == requested.image_id:
                 continue
-            if candidate.source_fingerprint == active_fingerprint:
+            if candidate.source_fingerprint is None:
+                continue
+            candidate_runtime_fingerprint = _embedded_runtime_fingerprint(candidate)
+            if candidate_runtime_fingerprint == active_fingerprint:
                 print(
-                    "Canonical tag points to different source; reusing a compatible local "
-                    "PDFScoreBar runtime image.",
+                    "Canonical tag points to a different build source; reusing a local "
+                    "PDFScoreBar image with a matching runtime environment contract.",
                     file=sys.stderr,
                 )
                 print(_format_info(candidate), file=sys.stderr)
+                print(
+                    f"  image_runtime_fingerprint={candidate_runtime_fingerprint}",
+                    file=sys.stderr,
+                )
                 print(candidate.image_id)
                 return 0
 
-    print("Docker runtime source mismatch:", file=sys.stderr)
+    print("Docker runtime compatibility mismatch:", file=sys.stderr)
     print(f"  category: {category}", file=sys.stderr)
     print(f"  image_ref: {args.image_ref}", file=sys.stderr)
     print(f"  {_format_info(requested)}", file=sys.stderr)
-    print(f"  active_fingerprint: {active_fingerprint}", file=sys.stderr)
+    print(f"  active_runtime_fingerprint: {active_fingerprint}", file=sys.stderr)
+    print(f"  active_source_fingerprint: {active_source_fingerprint}", file=sys.stderr)
+    print(
+        f"  image_runtime_fingerprint: {requested_runtime_fingerprint or '<unavailable>'}",
+        file=sys.stderr,
+    )
     print(f"  head_fingerprint: {head_fingerprint}", file=sys.stderr)
     print(f"  develop_ref: {develop_ref or '<unavailable>'}", file=sys.stderr)
     print(f"  develop_fingerprint: {develop_fingerprint or '<unavailable>'}", file=sys.stderr)

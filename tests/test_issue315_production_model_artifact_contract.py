@@ -22,6 +22,12 @@ EXPECTED_RELEASE_ASSET = "cnn_classifier_epoch_9.pth"
 EXPECTED_CACHE_PATH = "barline_cnn/issue296-d27-v1/cnn_classifier_epoch_9.pth"
 
 
+@pytest.fixture(autouse=True)
+def isolated_model_cache(tmp_path: Path, monkeypatch) -> None:
+    # Keep manifest/integrity fixtures independent of real registered user artifacts.
+    monkeypatch.setenv("PDFSCOREBAR_MODEL_CACHE", str(tmp_path / ".model_cache"))
+
+
 def _write_test_manifest(tmp_path: Path, *, payload: bytes) -> Path:
     manifest = tmp_path / "models/barline_cnn/manifest.json"
     manifest.parent.mkdir(parents=True)

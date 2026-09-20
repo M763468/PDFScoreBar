@@ -6,13 +6,14 @@ python_bin="${PYTHON:-python3}"
 artifact_dir="artifacts"
 build_log="$artifact_dir/docker_build.log"
 provenance_file="$artifact_dir/docker_build_provenance.txt"
+
+mkdir -p "$artifact_dir"
+
 provenance_tmp="$(mktemp "$artifact_dir/.docker_build_provenance.XXXXXX")"
 cleanup() {
   rm -f "$provenance_tmp"
 }
 trap cleanup EXIT
-
-mkdir -p "$artifact_dir"
 
 source_fingerprint="$(PYTHONPATH=. "$python_bin" docker/runtime_contract.py fingerprint .)"
 source_commit="$(git rev-parse HEAD)"

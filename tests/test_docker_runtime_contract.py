@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -293,10 +294,18 @@ def _run_make_with_fake_docker(target: str, tmp_path: Path, *args: str) -> list[
     env = os.environ.copy()
     env["PATH"] = f"{bin_dir}{os.pathsep}{env['PATH']}"
     env["DOCKER_CALL_LOG"] = str(call_log)
+    # Build tests must not truncate a real build's artifacts/provenance in the checkout.
+    env["GIT_DIR"] = subprocess.check_output(
+        ["git", "rev-parse", "--absolute-git-dir"], cwd=PROJECT_ROOT, text=True
+    ).strip()
+    for relative in ("scripts/docker_build.sh", "docker/runtime_contract.py"):
+        destination = tmp_path / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(PROJECT_ROOT / relative, destination)
 
     result = subprocess.run(
-        ["make", target, *args],
-        cwd=PROJECT_ROOT,
+        ["make", "-f", str(PROJECT_ROOT / "Makefile"), target, *args],
+        cwd=tmp_path,
         env=env,
         check=False,
         capture_output=True,

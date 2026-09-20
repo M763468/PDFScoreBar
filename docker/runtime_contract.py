@@ -121,7 +121,9 @@ def run_preflight(workspace: Path, config_path: Path, expected_fingerprint_path:
     elif actual_fingerprint != expected_fingerprint:
         errors.append(
             "bind-mounted source does not match the source used to build the image; "
-            f"expected={expected_fingerprint} actual={actual_fingerprint}. Rebuild the image."
+            f"expected={expected_fingerprint} actual={actual_fingerprint}. "
+            "Host-side validation must classify whether the topic base is stale, "
+            "the topic changes runtime source, or the image itself is stale before rebuilding."
         )
 
     if errors:

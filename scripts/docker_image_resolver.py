@@ -310,7 +310,7 @@ def classify_mismatch(
 
     if image_fingerprint is None:
         return (
-            "image_provenance_missing",
+            "runtime_contract_unavailable",
             "The image runtime compatibility fingerprint could not be derived. Rebuild it once "
             "with the current canonical build path so compatibility can be verified.",
         )
@@ -326,7 +326,7 @@ def _format_info(info: ImageInfo) -> str:
     tags = ",".join(info.tags) if info.tags else "<untagged>"
     return (
         f"id={info.image_id} tags={tags} created={info.created or '<unknown>'} "
-        f"fingerprint={info.source_fingerprint or '<missing>'} "
+        f"source_fingerprint={info.source_fingerprint or '<missing>'} "
         f"commit={info.source_commit or '<legacy/unknown>'} "
         f"branch={info.source_branch or '<legacy/unknown>'}"
     )
@@ -362,11 +362,6 @@ def _resolve(args: argparse.Namespace) -> int:
         return 2
 
     active_source_fingerprint = working_tree_source_fingerprint(repo_root)
-    if requested.source_fingerprint == active_source_fingerprint:
-        print(_format_info(requested), file=sys.stderr)
-        print(requested.image_id)
-        return 0
-
     if requested.source_fingerprint is None:
         print(
             "Docker image source provenance is missing; refusing compatibility-only reuse.",
@@ -377,11 +372,17 @@ def _resolve(args: argparse.Namespace) -> int:
     active_fingerprint = working_tree_fingerprint(repo_root)
     requested_runtime_fingerprint = _embedded_runtime_fingerprint(requested)
     if requested_runtime_fingerprint == active_fingerprint:
-        print(
-            "Image build source differs, but the image/runtime environment contract matches "
-            "the active checkout; reusing the image with bind-mounted application source.",
-            file=sys.stderr,
-        )
+        if requested.source_fingerprint == active_source_fingerprint:
+            print(
+                "Image source provenance and runtime environment contract both match.",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                "Image build source differs, but the image/runtime environment contract matches "
+                "the active checkout; reusing the image with bind-mounted application source.",
+                file=sys.stderr,
+            )
         print(_format_info(requested), file=sys.stderr)
         print(f"  image_runtime_fingerprint={requested_runtime_fingerprint}", file=sys.stderr)
         print(f"  active_source_fingerprint={active_source_fingerprint}", file=sys.stderr)

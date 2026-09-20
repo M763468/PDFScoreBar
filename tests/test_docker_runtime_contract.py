@@ -236,6 +236,41 @@ def test_default_image_resolution_reuses_matching_local_image(
     assert "matching runtime environment contract" in captured.err
 
 
+def test_matching_source_still_requires_runtime_contract_match(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    resolver = _load_image_resolver_module()
+    requested = resolver.ImageInfo(
+        image_id="sha256:requested",
+        tags=("pdfscore_pipeline_gpu:latest",),
+        created=None,
+        asset_contract="v1",
+        source_fingerprint="same-source",
+        source_commit="same",
+        source_branch="develop",
+    )
+    monkeypatch.setattr(resolver, "image_info", lambda _ref: requested)
+    monkeypatch.setattr(resolver, "working_tree_source_fingerprint", lambda _root: "same-source")
+    monkeypatch.setattr(resolver, "working_tree_fingerprint", lambda _root: "new-runtime")
+    monkeypatch.setattr(resolver, "_embedded_runtime_fingerprint", lambda _info: "old-runtime")
+    monkeypatch.setattr(resolver, "git_ref_fingerprint", lambda _root, _ref: "new-runtime")
+    monkeypatch.setattr(resolver, "_find_develop_ref", lambda _root: "origin/develop")
+    monkeypatch.setattr(resolver, "_topic_has_runtime_diff", lambda _root, _ref: True)
+    monkeypatch.setattr(
+        resolver,
+        "list_runtime_images",
+        lambda: (_ for _ in ()).throw(AssertionError("explicit image must not be substituted")),
+    )
+
+    status = resolver._resolve(
+        SimpleNamespace(repo_root=tmp_path, image_ref="pdfscore_pipeline_gpu", explicit=True)
+    )
+
+    captured = capsys.readouterr()
+    assert status == 2
+    assert "runtime compatibility mismatch" in captured.err
+
+
 def test_source_only_mismatch_reuses_requested_runtime_compatible_image(
     tmp_path: Path, monkeypatch, capsys
 ) -> None:

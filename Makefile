@@ -72,10 +72,9 @@ docker-clean-full: docker-clean ## Also remove the pipeline image (explicit full
 	@echo "Removing Docker pipeline image..."
 	@if docker image inspect "$(DOCKER_IMAGE)" >/dev/null 2>&1; then docker rmi "$(DOCKER_IMAGE)"; fi
 
-docker-build: ## Build the unified Docker image with cleanup and logging to artifacts/
+docker-build: ## Build the selected Docker image without removing containers or images
 	@mkdir -p artifacts
 	@echo "Starting Docker build. Logging to artifacts/docker_build.log..."
-	-$(MAKE) docker-clean
 	@DOCKER_IMAGE="$(DOCKER_IMAGE)" PYTHON="$(PYTHON)" bash scripts/docker_build.sh
 
 promote-log: ## Promote a log from worktree to permanent logs (usage: make promote-log SRC=path/to/log DEST=category)

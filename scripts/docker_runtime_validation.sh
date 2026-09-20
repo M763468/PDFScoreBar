@@ -78,11 +78,6 @@ if [[ "$resolver_status" -ne 0 ]]; then
   exit "$resolver_status"
 fi
 
-asset_contract="$(
-  docker image inspect "$image_id" \
-    --format '{{index .Config.Labels "pdfscore.runtime.asset_contract"}}' 2>/dev/null || true
-)"
-
 if [[ "$config" = /* ]]; then
   case "$config" in
     "$repo_root"/*)
@@ -127,11 +122,11 @@ resolve_cached_omr() {
 if [[ -n "${OMR_DLN_MODEL_PATH:-}" ]]; then
   omr_host="$(verify_explicit_omr "$OMR_DLN_MODEL_PATH")"
 else
-  set +e
-  omr_host="$(resolve_cached_omr 2>/dev/null)"
-  omr_status=$?
-  set -e
-  if [[ "$omr_status" -ne 0 ]]; then
+  cached_omr="$(PYTHONPATH="$repo_root" python3 -m src.common.model_artifacts path "$omr_manifest")"
+  if [[ -e "$cached_omr" || -L "$cached_omr" ]]; then
+    # A registered but corrupt artifact must fail; never hide it with a legacy fallback.
+    omr_host="$(resolve_cached_omr)"
+  else
     legacy_omr="$repo_root/external/omr_dln/models/public_models/YOLOv8m_Measures.pt"
     if [[ -f "$legacy_omr" ]]; then
       echo "Using verified legacy OMR-DLN path; import it into the common cache for canonical reuse." >&2

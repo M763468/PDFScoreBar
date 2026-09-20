@@ -96,10 +96,12 @@ The final image stores a fingerprint of runtime-sensitive source outside `/works
 
 The GPU-smoke host resolver recomputes the fingerprint from the bind-mounted checkout before
 expensive model work. The canonical tag is resolved to an immutable image ID for the run. If
-that tag points at different source, validation first searches local PDFScoreBar runtime images
-for a matching fingerprint. If none matches, it compares the active topic with the available
-`develop` reference and distinguishes a stale topic base from topic-owned runtime changes and
-a genuinely stale image. A stale topic base should be refreshed onto current `develop`; it is
+that tag points at different source, validation compares the active topic with the available
+`origin/develop` (or local `develop`) reference and distinguishes a stale topic base from
+topic-owned runtime changes and a genuinely stale image. Fetch `origin` before classification
+when that reference may be outdated. Except for a stale topic base, validation searches local
+PDFScoreBar runtime images for a matching fingerprint before recommending a build; it also
+searches when the default tag is absent. A stale topic base should be refreshed onto current `develop`; it is
 not a reason by itself to rebuild the image. The in-container fingerprint check remains as the
 final integrity guard. Config files are intentionally outside the fingerprint so validation
 configs can vary without image rebuilds; runtime-sensitive Python, Docker, and dependency
@@ -119,8 +121,8 @@ specific image and never silently substitutes another local image.
 
 ## Docker build and cleanup lifecycle
 
-`make docker-build` performs the normal cleanup contract first and then builds the canonical
-image. The normal cleanup removes only the canonical container:
+`make docker-build` builds the selected image without removing containers or images used by
+other worktrees. Container cleanup is a separate explicit command:
 
 ```text
 make docker-clean
@@ -135,7 +137,8 @@ make docker-clean-full
   -> docker rmi pdfscore_pipeline_gpu
 ```
 
-This split is the Issue #261 / PR #325 contract and should be preserved. A build failure such
+The container/image cleanup split from Issue #261 / PR #325 is preserved; Issue #352 removes
+implicit container cleanup from builds to avoid interrupting other worktrees. A build failure such
 as `context canceled` must be diagnosed from the actual Docker/build signal and build-context
 evidence; it must not be attributed to `docker rmi` merely because cleanup happened nearby.
 Build-context reduction belongs to `.dockerignore` maintenance and does not change runtime

@@ -285,7 +285,7 @@ def _write_fake_docker(bin_dir: Path) -> Path:
     return docker
 
 
-def _run_make_with_fake_docker(target: str, tmp_path: Path) -> list[str]:
+def _run_make_with_fake_docker(target: str, tmp_path: Path, *args: str) -> list[str]:
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     _write_fake_docker(bin_dir)
@@ -295,7 +295,7 @@ def _run_make_with_fake_docker(target: str, tmp_path: Path) -> list[str]:
     env["DOCKER_CALL_LOG"] = str(call_log)
 
     result = subprocess.run(
-        ["make", target],
+        ["make", target, *args],
         cwd=PROJECT_ROOT,
         env=env,
         check=False,
@@ -310,6 +310,53 @@ def test_docker_clean_removes_only_the_canonical_container(tmp_path: Path) -> No
     calls = _run_make_with_fake_docker("docker-clean", tmp_path)
 
     assert calls == ["rm -f pdfscore_pipeline_gpu"]
+
+
+def test_temporary_build_does_not_clean_or_retag_canonical(tmp_path: Path) -> None:
+    calls = _run_make_with_fake_docker(
+        "docker-build", tmp_path, "DOCKER_IMAGE=pdfscore-test:temporary"
+    )
+    assert len(calls) == 1
+    assert calls[0].startswith("build --build-arg PDFSCORE_SOURCE_FINGERPRINT=")
+    assert " -t pdfscore-test:temporary ." in calls[0]
+    assert "pdfscore_pipeline_gpu" not in calls[0]
+
+
+def test_image_inventory_filters_before_inspecting(monkeypatch) -> None:
+    resolver = _load_image_resolver_module()
+    calls = []
+
+    def run(args, **kwargs):
+        calls.append(args)
+        return SimpleNamespace(stdout="")
+
+    monkeypatch.setattr(resolver, "_run", run)
+    assert resolver.list_runtime_images() == []
+    assert calls == [
+        [
+            "docker",
+            "image",
+            "ls",
+            "--no-trunc",
+            "--quiet",
+            "--filter",
+            "label=pdfscore.runtime.asset_contract=v1",
+        ]
+    ]
+
+
+def test_missing_default_image_reuses_local_but_explicit_does_not(tmp_path, monkeypatch, capsys):
+    resolver = _load_image_resolver_module()
+    candidate = resolver.ImageInfo("sha256:match", (), None, "v1", "active", None, None)
+    monkeypatch.setattr(resolver, "image_info", lambda ref: None)
+    monkeypatch.setattr(resolver, "working_tree_fingerprint", lambda root: "active")
+    monkeypatch.setattr(resolver, "list_runtime_images", lambda: [candidate])
+    args = SimpleNamespace(repo_root=tmp_path, image_ref="missing", explicit=False)
+    assert resolver._resolve(args) == 0
+    assert capsys.readouterr().out.strip() == candidate.image_id
+    args.explicit = True
+    assert resolver._resolve(args) == 2
+    assert capsys.readouterr().out == ""
 
 
 def test_docker_clean_full_removes_container_then_image(tmp_path: Path) -> None:

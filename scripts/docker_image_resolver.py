@@ -186,7 +186,18 @@ def image_info(image_ref: str) -> ImageInfo | None:
 
 
 def list_runtime_images() -> list[ImageInfo]:
-    result = _run(["docker", "image", "ls", "--no-trunc", "--quiet"], check=True)
+    result = _run(
+        [
+            "docker",
+            "image",
+            "ls",
+            "--no-trunc",
+            "--quiet",
+            "--filter",
+            f"label={ASSET_CONTRACT_LABEL}={EXPECTED_ASSET_CONTRACT}",
+        ],
+        check=True,
+    )
     images: list[ImageInfo] = []
     seen: set[str] = set()
     for image_id in result.stdout.splitlines():
@@ -234,7 +245,8 @@ def classify_mismatch(
         return (
             "topic_runtime_change",
             "This topic changes runtime-sensitive files relative to current develop. "
-            "After refreshing the base, build a runtime image for this source state.",
+            "Reuse a matching local image or build a runtime image for this source state with "
+            "make docker-build DOCKER_IMAGE=pdfscore-topic:<tag>.",
         )
 
     if (
@@ -276,9 +288,16 @@ def _resolve(args: argparse.Namespace) -> int:
     repo_root = args.repo_root.resolve()
     requested = image_info(args.image_ref)
     if requested is None:
+        if not args.explicit:
+            active_fingerprint = working_tree_fingerprint(repo_root)
+            for candidate in list_runtime_images():
+                if candidate.source_fingerprint == active_fingerprint:
+                    print(_format_info(candidate), file=sys.stderr)
+                    print(candidate.image_id)
+                    return 0
         print(
             f"Docker image reference is not available locally: {args.image_ref}. "
-            "Run 'make docker-build' first.",
+            f"Build the intended source with 'make docker-build DOCKER_IMAGE={args.image_ref}'.",
             file=sys.stderr,
         )
         return 2

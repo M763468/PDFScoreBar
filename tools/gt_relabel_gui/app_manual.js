@@ -704,6 +704,23 @@ canvas.addEventListener("mousedown", (event) => {
   }
 
   const imgPt = canvasToImg(pt);
+
+  // In barline correction mode, barlines usually lie inside measure boxes.
+  // Prioritize the active correction surface so measure hit-testing does not
+  // make existing barlines effectively unselectable.
+  if (currentType() === "barline_construction") {
+    const barline = pickBarline(imgPt);
+    if (barline) {
+      selectedMeasure = null;
+      selectedBarline = barline;
+      selectedItemIndex = null;
+      updateSelectionMeta();
+      renderItems();
+      draw();
+      return;
+    }
+  }
+
   const measure = pickMeasure(imgPt);
   if (measure) selectMeasure(measure);
   else {

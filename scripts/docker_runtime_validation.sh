@@ -54,6 +54,9 @@ for cmd in docker git realpath python3; do
 done
 
 repo_root="$(realpath "$(git rev-parse --show-toplevel)")"
+host_runtime_fingerprint="$(
+  PYTHONPATH="$repo_root" python3 "$repo_root/docker/runtime_contract.py"     runtime-fingerprint "$repo_root"
+)"
 host_commit="$(git -C "$repo_root" rev-parse HEAD)"
 host_branch="$(git -C "$repo_root" branch --show-current)"
 if [[ -z "$host_branch" ]]; then
@@ -179,6 +182,7 @@ Canonical Docker validation provenance:
   commit:      $host_commit
   image_ref:   $image_ref
   image_id:    $image_id
+  runtime_fingerprint: $host_runtime_fingerprint
   model_cache: $model_cache_root
   omr_manifest: models/omr_dln/manifest.json
   omr_host:    $omr_host
@@ -187,9 +191,10 @@ EOF
 
 echo "Validating Docker runtime contract..."
 docker "${common_args[@]}" \
-  /opt/venv_pipeline/bin/python /opt/pdfscore-runtime/runtime_contract.py preflight \
+  /opt/venv_pipeline/bin/python /workspace/docker/runtime_contract.py preflight \
   --workspace /workspace \
-  --config "$container_config"
+  --config "$container_config" \
+  --expected-fingerprint-value "$host_runtime_fingerprint"
 
 if [[ "$preflight_only" -eq 1 ]]; then
   echo "Docker runtime preflight passed."

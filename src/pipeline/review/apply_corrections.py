@@ -221,7 +221,6 @@ def _write_apply_summary(summary: dict[str, Any], new_run_dir: Path, corrections
     )
 
 
-
 def _resolve_package_artifact(package_root: Path, raw_path: Any, *, role: str) -> Path:
     if not isinstance(raw_path, str) or not raw_path:
         raise ValueError(f"{role} must be a non-empty package-relative path")

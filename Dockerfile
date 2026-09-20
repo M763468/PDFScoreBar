@@ -149,6 +149,9 @@ FROM nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04
 ARG STAGE_E_HOMR_COMMIT=864e2882f7a41afcf8f16654728a473ae56826d6
 ARG STAGE_E_PDFSCORE_COMMIT=bd6ae56f8be6c87088143cfbf0ba09dee94fe0d7
 ARG MAINTAINED_HOMR_COMMIT=457e7c6518a10ba755db2e60883419e56c4d7369
+ARG PDFSCORE_SOURCE_FINGERPRINT
+ARG PDFSCORE_SOURCE_COMMIT
+ARG PDFSCORE_SOURCE_BRANCH
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
@@ -190,8 +193,16 @@ COPY . /workspace
 # an image-owned cache and exposes a stable validation-only path.
 RUN mkdir -p /opt/pdfscore-runtime && \
     cp /workspace/docker/runtime_contract.py /opt/pdfscore-runtime/runtime_contract.py && \
-    /opt/venv_pipeline/bin/python /opt/pdfscore-runtime/runtime_contract.py fingerprint /workspace \
+    ACTUAL_SOURCE_FINGERPRINT=$(/opt/venv_pipeline/bin/python \
+      /opt/pdfscore-runtime/runtime_contract.py fingerprint /workspace) && \
+    printf '%s\n' "${ACTUAL_SOURCE_FINGERPRINT}" \
       > /opt/pdfscore-runtime/source_fingerprint.txt && \
+    if [ -n "${PDFSCORE_SOURCE_FINGERPRINT}" ] && \
+       [ "${ACTUAL_SOURCE_FINGERPRINT}" != "${PDFSCORE_SOURCE_FINGERPRINT}" ]; then \
+      echo "Docker build source fingerprint changed during build context transfer" >&2; \
+      echo "expected=${PDFSCORE_SOURCE_FINGERPRINT} actual=${ACTUAL_SOURCE_FINGERPRINT}" >&2; \
+      exit 1; \
+    fi && \
     CNN_MODEL_PATH=$(/opt/venv_pipeline/bin/python -m src.common.model_artifacts materialize \
       /workspace/models/barline_cnn/manifest.json --cache-root "${PDFSCOREBAR_MODEL_CACHE}") && \
     ln -s "${CNN_MODEL_PATH}" /opt/pdfscore-assets/barline_cnn_smoke.pth && \
@@ -205,5 +216,8 @@ LABEL pdfscore.detector.pdfscore_evaluator_commit="workspace-runtime"
 LABEL pdfscore.detector.historical_homr_commit="${STAGE_E_HOMR_COMMIT}"
 LABEL pdfscore.detector.historical_pdfscore_evaluator_commit="${STAGE_E_PDFSCORE_COMMIT}"
 LABEL pdfscore.runtime.asset_contract="v1"
+LABEL pdfscore.runtime.source_fingerprint="${PDFSCORE_SOURCE_FINGERPRINT}"
+LABEL pdfscore.runtime.source_commit="${PDFSCORE_SOURCE_COMMIT}"
+LABEL pdfscore.runtime.source_branch="${PDFSCORE_SOURCE_BRANCH}"
 
 CMD ["bash"]

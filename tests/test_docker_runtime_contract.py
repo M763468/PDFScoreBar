@@ -3,7 +3,9 @@ from __future__ import annotations
 import importlib.util
 import os
 import subprocess
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 from src.common.realesrgan_assets import resolve_realesrgan_weight
 from src.pipeline.detection.omr_dln_model import resolve_omr_dln_model_path
@@ -16,6 +18,16 @@ def _load_runtime_contract_module():
     spec = importlib.util.spec_from_file_location("pdfscore_runtime_contract", module_path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_image_resolver_module():
+    module_path = PROJECT_ROOT / "scripts" / "docker_image_resolver.py"
+    spec = importlib.util.spec_from_file_location("pdfscore_docker_image_resolver", module_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -59,6 +71,115 @@ def test_source_fingerprint_detects_runtime_source_drift_but_ignores_config(tmp_
 
     (tmp_path / "src" / "worker.py").write_text("VALUE = 2\n", encoding="utf-8")
     assert runtime_contract.source_fingerprint(tmp_path) != initial
+
+
+def test_runtime_contract_mismatch_defers_rebuild_classification(
+    tmp_path: Path, capsys
+) -> None:
+    runtime_contract = _load_runtime_contract_module()
+    workspace = tmp_path / "workspace"
+    (workspace / "src").mkdir(parents=True)
+    (workspace / "src" / "worker.py").write_text("VALUE = 1\n", encoding="utf-8")
+    expected = tmp_path / "expected.txt"
+    expected.write_text("different-fingerprint\n", encoding="utf-8")
+
+    status = runtime_contract.run_preflight(
+        workspace,
+        tmp_path / "unused-config.yaml",
+        expected,
+    )
+
+    captured = capsys.readouterr()
+    assert status == 2
+    assert "must classify whether the topic base is stale" in captured.err
+    assert "Rebuild the image." not in captured.err
+
+
+def test_image_mismatch_classifies_stale_topic_base() -> None:
+    resolver = _load_image_resolver_module()
+
+    category, guidance = resolver.classify_mismatch(
+        active_fingerprint="old-topic",
+        image_fingerprint="current-develop",
+        head_fingerprint="old-topic",
+        develop_fingerprint="current-develop",
+        topic_has_runtime_diff=False,
+    )
+
+    assert category == "stale_topic_base"
+    assert "Refresh the topic branch" in guidance
+    assert "do not rebuild solely" in guidance
+
+
+def test_image_mismatch_classifies_topic_runtime_change() -> None:
+    resolver = _load_image_resolver_module()
+
+    category, guidance = resolver.classify_mismatch(
+        active_fingerprint="topic-runtime",
+        image_fingerprint="current-develop",
+        head_fingerprint="topic-runtime",
+        develop_fingerprint="current-develop",
+        topic_has_runtime_diff=True,
+    )
+
+    assert category == "topic_runtime_change"
+    assert "build a runtime image" in guidance
+
+
+def test_image_mismatch_classifies_stale_image() -> None:
+    resolver = _load_image_resolver_module()
+
+    category, guidance = resolver.classify_mismatch(
+        active_fingerprint="current-develop",
+        image_fingerprint="old-image",
+        head_fingerprint="current-develop",
+        develop_fingerprint="current-develop",
+        topic_has_runtime_diff=False,
+    )
+
+    assert category == "stale_image"
+    assert "Build the canonical image" in guidance
+
+
+def test_default_image_resolution_reuses_matching_local_image(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    resolver = _load_image_resolver_module()
+    requested = resolver.ImageInfo(
+        image_id="sha256:requested",
+        tags=("pdfscore_pipeline_gpu:latest",),
+        created="2026-09-20T00:00:00Z",
+        asset_contract="v1",
+        source_fingerprint="other-source",
+        source_commit="old",
+        source_branch="develop",
+    )
+    compatible = resolver.ImageInfo(
+        image_id="sha256:compatible",
+        tags=("pdfscore_issue352:latest",),
+        created="2026-09-21T00:00:00Z",
+        asset_contract="v1",
+        source_fingerprint="active-source",
+        source_commit="new",
+        source_branch="topic",
+    )
+
+    monkeypatch.setattr(resolver, "image_info", lambda _ref: requested)
+    monkeypatch.setattr(resolver, "working_tree_fingerprint", lambda _root: "active-source")
+    monkeypatch.setattr(resolver, "list_runtime_images", lambda: [requested, compatible])
+
+    status = resolver._resolve(
+        SimpleNamespace(
+            repo_root=tmp_path,
+            image_ref="pdfscore_pipeline_gpu",
+            explicit=False,
+        )
+    )
+
+    captured = capsys.readouterr()
+    assert status == 0
+    assert captured.out.strip() == "sha256:compatible"
+    assert "reusing a compatible local" in captured.err
 
 
 def _write_fake_docker(bin_dir: Path) -> Path:

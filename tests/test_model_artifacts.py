@@ -8,10 +8,16 @@ from src.common.model_artifacts import (
     ModelArtifactIntegrityError,
     ModelArtifactManifestError,
     ModelArtifactMissingError,
+    get_model_cache_root,
     load_model_artifact_manifest,
     materialize_model_artifact,
     resolve_model_artifact,
 )
+
+
+@pytest.fixture(autouse=True)
+def _isolate_model_cache(tmp_path, monkeypatch):
+    monkeypatch.setenv("PDFSCOREBAR_MODEL_CACHE", str(tmp_path / ".model_cache"))
 
 
 def _write_manifest(
@@ -38,6 +44,33 @@ def _write_manifest(
         encoding="utf-8",
     )
     return manifest
+
+
+def test_default_model_cache_uses_xdg_cache_home(tmp_path, monkeypatch):
+    monkeypatch.delenv("PDFSCOREBAR_MODEL_CACHE", raising=False)
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "xdg"))
+
+    assert get_model_cache_root(project_root=tmp_path / "checkout") == (
+        tmp_path / "xdg" / "pdfscorebar" / "models"
+    )
+
+
+def test_default_model_cache_uses_user_cache_when_xdg_is_unset(tmp_path, monkeypatch):
+    monkeypatch.delenv("PDFSCOREBAR_MODEL_CACHE", raising=False)
+    monkeypatch.delenv("XDG_CACHE_HOME", raising=False)
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+
+    assert get_model_cache_root(project_root=tmp_path / "checkout") == (
+        tmp_path / "home" / ".cache" / "pdfscorebar" / "models"
+    )
+
+
+def test_explicit_model_cache_env_overrides_xdg_default(tmp_path, monkeypatch):
+    override = tmp_path / "explicit"
+    monkeypatch.setenv("PDFSCOREBAR_MODEL_CACHE", str(override))
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "xdg"))
+
+    assert get_model_cache_root(project_root=tmp_path / "checkout") == override
 
 
 def test_resolve_model_artifact_accepts_matching_cached_bytes(tmp_path):

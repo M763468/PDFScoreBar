@@ -76,9 +76,20 @@ docker-build: ## Build the unified Docker image with cleanup and logging to arti
 	@mkdir -p artifacts
 	@echo "Starting Docker build. Logging to artifacts/docker_build.log..."
 	-$(MAKE) docker-clean
-	docker build -t pdfscore_pipeline_gpu . > artifacts/docker_build.log 2>&1 || \
-		(EXIT_CODE=$$?; echo "Docker build failed with exit code $$EXIT_CODE. See artifacts/docker_build.log"; exit $$EXIT_CODE)
-	@echo "Docker build finished successfully."
+	@SOURCE_FINGERPRINT=$(PYTHONPATH=. $(PYTHON) docker/runtime_contract.py fingerprint .); \
+	SOURCE_COMMIT=$(git rev-parse HEAD); \
+	SOURCE_BRANCH=$(git branch --show-current); \
+	if [ -z "$SOURCE_BRANCH" ]; then SOURCE_BRANCH="(detached)"; fi; \
+	printf 'source_root=%s\nsource_branch=%s\nsource_commit=%s\nsource_fingerprint=%s\n' \
+		"$(pwd)" "$SOURCE_BRANCH" "$SOURCE_COMMIT" "$SOURCE_FINGERPRINT" \
+		> artifacts/docker_build_provenance.txt; \
+	docker build \
+		--build-arg "PDFSCORE_SOURCE_FINGERPRINT=$SOURCE_FINGERPRINT" \
+		--build-arg "PDFSCORE_SOURCE_COMMIT=$SOURCE_COMMIT" \
+		--build-arg "PDFSCORE_SOURCE_BRANCH=$SOURCE_BRANCH" \
+		-t pdfscore_pipeline_gpu . > artifacts/docker_build.log 2>&1 || \
+		(EXIT_CODE=$?; echo "Docker build failed with exit code $EXIT_CODE. See artifacts/docker_build.log"; exit $EXIT_CODE)
+	@echo "Docker build finished successfully. Provenance: artifacts/docker_build_provenance.txt"
 
 promote-log: ## Promote a log from worktree to permanent logs (usage: make promote-log SRC=path/to/log DEST=category)
 	@if [ -z "$(SRC)" ] || [ -z "$(DEST)" ]; then \

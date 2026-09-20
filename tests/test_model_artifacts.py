@@ -73,6 +73,24 @@ def test_explicit_model_cache_env_overrides_xdg_default(tmp_path, monkeypatch):
     assert get_model_cache_root(project_root=tmp_path / "checkout") == override
 
 
+def test_default_shared_cache_is_reused_across_worktrees(tmp_path, monkeypatch):
+    payload = b"accepted-d27-checkpoint"
+    worktree_a = tmp_path / "worktree-a"
+    worktree_b = tmp_path / "worktree-b"
+    manifest_a = _write_manifest(worktree_a, payload=payload)
+    manifest_b = _write_manifest(worktree_b, payload=payload)
+
+    monkeypatch.delenv("PDFSCOREBAR_MODEL_CACHE", raising=False)
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "xdg"))
+
+    cached = tmp_path / "xdg" / "pdfscorebar" / "models" / "cnn" / "d27" / "model.pth"
+    cached.parent.mkdir(parents=True)
+    cached.write_bytes(payload)
+
+    assert resolve_model_artifact(manifest_a, project_root=worktree_a) == cached
+    assert resolve_model_artifact(manifest_b, project_root=worktree_b) == cached
+
+
 def test_resolve_model_artifact_accepts_matching_cached_bytes(tmp_path):
     payload = b"accepted-d27-checkpoint"
     manifest_path = _write_manifest(tmp_path, payload=payload)

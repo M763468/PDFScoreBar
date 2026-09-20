@@ -81,8 +81,8 @@ docker-build: ## Build the unified Docker image with cleanup and logging to arti
 	SOURCE_COMMIT=$(git rev-parse HEAD); \
 	SOURCE_BRANCH=$(git branch --show-current); \
 	if [ -z "$SOURCE_BRANCH" ]; then SOURCE_BRANCH="(detached)"; fi; \
-	printf 'source_root=%s\nsource_branch=%s\nsource_commit=%s\nsource_fingerprint=%s\n' \
-		"$(pwd)" "$SOURCE_BRANCH" "$SOURCE_COMMIT" "$SOURCE_FINGERPRINT" \
+	printf 'source_root=%s\nsource_branch=%s\nsource_commit=%s\nsource_fingerprint=%s\nimage_ref=%s\n' \
+		"$(pwd)" "$SOURCE_BRANCH" "$SOURCE_COMMIT" "$SOURCE_FINGERPRINT" "$(DOCKER_IMAGE)" \
 		> artifacts/docker_build_provenance.txt; \
 	docker build \
 		--build-arg "PDFSCORE_SOURCE_FINGERPRINT=$SOURCE_FINGERPRINT" \

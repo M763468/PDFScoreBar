@@ -111,14 +111,12 @@ def _find_develop_ref(repo_root: Path) -> str | None:
 
 def _topic_has_runtime_diff(repo_root: Path, develop_ref: str) -> bool | None:
     result = _run(
-        ["git", "diff", "--quiet", f"{develop_ref}...HEAD", "--", *RUNTIME_SCOPE],
+        ["git", "diff", "--name-only", f"{develop_ref}...HEAD", "--", *RUNTIME_SCOPE],
         cwd=repo_root,
     )
-    if result.returncode == 0:
-        return False
-    if result.returncode == 1:
-        return True
-    return None
+    if result.returncode != 0:
+        return None
+    return any(_eligible_git_path(path) for path in result.stdout.splitlines())
 
 
 def _inspect_image(image_ref: str) -> dict[str, object] | None:

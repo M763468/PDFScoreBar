@@ -512,7 +512,7 @@ def main() -> None:
     if args.handoff and args.config:
         raise SystemExit("--handoff and --config are mutually exclusive")
     if args.handoff and args.root:
-        raise SystemExit("--root must not be supplied with --handoff; the review package is the root")
+        raise SystemExit(\n            "--root must not be supplied with --handoff; the review package is the root"\n        )
 
     server = HTTPServer((args.host, args.port), Handler)
     server.ui_root = Path(__file__).resolve().parent
@@ -524,7 +524,7 @@ def main() -> None:
             raise SystemExit(f"Invalid manual correction handoff: {exc}") from exc
     elif args.mode in {"gt", "rest", "manual"}:
         if not args.config:
-            raise SystemExit("--config is required in gt/rest/manual mode unless manual --handoff is used")
+            raise SystemExit(\n                "--config is required in gt/rest/manual mode unless manual --handoff is used"\n            )
         server.root = (args.root or REPO_ROOT).resolve()
         config_data = json.loads(args.config.read_text())
         server.gt_config = config_data.get("pages", config_data)

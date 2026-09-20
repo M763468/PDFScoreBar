@@ -53,10 +53,11 @@ The ownership rules are:
 | generated run artifacts | active checkout/operator | ignored `logs/`, `artifacts/`, and configured output paths |
 
 The cross-model version/provenance/integrity and update rules are inventoried in
-`docs/MODEL_ARTIFACT_CONTRACT.md`. Repository-managed model artifacts default to the
-checkout-local `.model_cache` namespace; `PDFSCOREBAR_MODEL_CACHE` may select a shared host
-cache so clean worktrees can reuse the same verified selected artifact without relying on an
-operator-local checkout path.
+`docs/MODEL_ARTIFACT_CONTRACT.md`. Host-side model artifacts default to a shared per-user
+cache at `$XDG_CACHE_HOME/pdfscorebar/models`, or `~/.cache/pdfscorebar/models` when
+`XDG_CACHE_HOME` is unset. `PDFSCOREBAR_MODEL_CACHE` remains the explicit override. The
+default is intentionally independent of the active checkout so one verified registration can
+be reused across worktrees.
 
 The Real-ESRGAN resolver uses `PDFSCORE_REALESRGAN_WEIGHTS_DIR` in the image and retains the
 legacy checkout path only as a host-development fallback. A canonical Docker smoke must not
@@ -91,12 +92,28 @@ The final image stores a fingerprint of runtime-sensitive source outside `/works
 /opt/pdfscore-runtime/source_fingerprint.txt
 ```
 
-The GPU-smoke preflight recomputes the fingerprint from the bind-mounted checkout. A mismatch
-fails before expensive model work with an instruction to rebuild the image. This prevents the
-historical failure mode where source from one branch/worktree is run against dependencies
-built for another source state. Config files are intentionally not part of the fingerprint so
-validation configs can vary without requiring an image rebuild; runtime-sensitive Python,
-Docker, and dependency-definition files are covered.
+The GPU-smoke host resolver recomputes the fingerprint from the bind-mounted checkout before
+expensive model work. The canonical tag is resolved to an immutable image ID for the run. If
+that tag points at different source, validation first searches local PDFScoreBar runtime images
+for a matching fingerprint. If none matches, it compares the active topic with the available
+`develop` reference and distinguishes a stale topic base from topic-owned runtime changes and
+a genuinely stale image. A stale topic base should be refreshed onto current `develop`; it is
+not a reason by itself to rebuild the image. The in-container fingerprint check remains as the
+final integrity guard. Config files are intentionally outside the fingerprint so validation
+configs can vary without image rebuilds; runtime-sensitive Python, Docker, and dependency
+definition files remain covered.
+
+Canonical builds record source fingerprint, commit, and branch labels in the image and write
+host-side build provenance to `artifacts/docker_build_provenance.txt`. Existing pre-#352
+runtime images without those labels remain inspectable through the embedded fingerprint file.
+To list reusable local runtime images and their provenance, run:
+
+```bash
+python3 scripts/docker_image_resolver.py list
+```
+
+`DOCKER_IMAGE=<ref>` remains an explicit override. When it is set, validation verifies that
+specific image and never silently substitutes another local image.
 
 ## Docker build and cleanup lifecycle
 

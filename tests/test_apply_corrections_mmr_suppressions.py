@@ -92,7 +92,7 @@ def test_apply_corrections_preserves_mmr_suppressions_in_corrected_rerun(
         mmr_corrections=mmr_suppression,
     )
 
-    with patch("src.pipeline.review.apply_corrections.run_pipeline"):
+    with patch("src.pipeline.review.apply_corrections._run_retained_artifact_correction"):
         new_run_dir = apply_corrections_and_rerun(handoff_path, dry_run=True)
 
     corrections_dir = review_dir / "corrections"
@@ -137,7 +137,7 @@ def test_apply_corrections_keeps_mmr_enabled_without_suppressions(tmp_path: Path
         mmr_payload=source_mmr_override,
     )
 
-    with patch("src.pipeline.review.apply_corrections.run_pipeline"):
+    with patch("src.pipeline.review.apply_corrections._run_retained_artifact_correction"):
         new_run_dir = apply_corrections_and_rerun(handoff_path, dry_run=True)
 
     rerun_config = json.loads(

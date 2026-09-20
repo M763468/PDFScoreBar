@@ -492,6 +492,7 @@ def test_current_worker_environment_removes_homr_shadow_paths() -> None:
     assert "/keep-me" in entries
     assert env["OTHER"] == "value"
 
+
 def test_maintained_worker_captures_clef_mask_from_existing_segnet_result() -> None:
     clef_mask = np.array([[0, 1], [1, 0]], dtype=np.uint8)
     predictions = SimpleNamespace(clefs_keys=clef_mask)
@@ -557,4 +558,3 @@ def test_cuda_session_validation_rejects_failed_cuda_initialization() -> None:
             use_gpu_inference=True,
             available_providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
         )
-

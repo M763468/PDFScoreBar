@@ -43,7 +43,8 @@ Immutable identity/provenance for this version:
 - release asset: `cnn_classifier_epoch_9.pth`
 - SHA-256: `f41a9b578396493a83e39ed284b1781f65d6adec8f624e6b7234e917c919c5cd`
 - size: `16339553` bytes
-- local cache path: `.model_cache/barline_cnn/issue296-d27-v1/cnn_classifier_epoch_9.pth`
+- cache-relative path: `barline_cnn/issue296-d27-v1/cnn_classifier_epoch_9.pth`
+  below the resolved host cache root (see below)
 - production threshold: `0.4965248107910156`
 - `cnn_apply_nms: false`
 - #296 training/evaluation matcher provenance: `center_anchor`, `vov_threshold=0.5`,
@@ -57,12 +58,22 @@ threshold, crop/scoring path, or model-quality decision.
 
 ## Local cache
 
-By default, materialized models live under repo-local `.model_cache/`, which is ignored by Git.
-Set `PDFSCOREBAR_MODEL_CACHE` to use another persistent cache root, for example a mounted model
-volume in a container or a dedicated local artifact disk.
+Cache roots resolve in this order:
 
-The cache is disposable: deleting it must not destroy the durable model because the release asset
-and tracked manifest are sufficient to restore it.
+1. Explicit `cache_root` (`--cache-root` for the CLI).
+2. `PDFSCOREBAR_MODEL_CACHE`.
+3. `$XDG_CACHE_HOME/pdfscorebar/models`.
+4. `~/.cache/pdfscorebar/models` when XDG is unset.
+
+The normal default is shared across worktrees. For the production CNN, the fallback path is
+`~/.cache/pdfscorebar/models/barline_cnn/issue296-d27-v1/cnn_classifier_epoch_9.pth`.
+Use the `path` command below to inspect the actual selected location. Existing checkout-local
+`.model_cache/` directories are not searched or migrated automatically; select one explicitly
+with `PDFSCOREBAR_MODEL_CACHE="$PWD/.model_cache"` if needed during migration.
+
+Release-backed cached artifacts can be restored from their release asset and tracked manifest.
+The shared cache may also contain operator-supplied artifacts, so the entire cache root must not
+be treated as disposable. See [the canonical artifact contract](MODEL_ARTIFACT_CONTRACT.md).
 
 ## Materialize and verify
 
@@ -115,5 +126,9 @@ verified against the tracked digest.
 ## Cleanup
 
 Experiment checkpoints under `logs/` may be removed only after the accepted production bytes have
-been published and independently materialized/verified. Cached files under `.model_cache/` may be
-removed at any time and recreated from the manifest.
+been published and independently materialized/verified. Before removing a release-backed cached
+file, resolve its exact location with `python -m src.common.model_artifacts path <manifest>`
+(using the same cache overrides as validation) and check whether another worktree needs it.
+Remove only the intended artifact, not the shared cache root; operator-supplied artifacts need
+their own retained source for re-import. Checkout-local `.model_cache/` is only an explicit
+legacy override, not the default cleanup location.

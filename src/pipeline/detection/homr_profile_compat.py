@@ -52,6 +52,8 @@ def processing_config_compat_mode(processing_config_cls: type[Any]) -> str:
     signature = inspect.signature(processing_config_cls)
     if "use_gpu_inference" in signature.parameters:
         return "gpu_argument_injected_when_missing"
+    if {"transformer_use_gpu", "segnet_use_gpu"}.issubset(signature.parameters):
+        return "split_gpu_arguments_injected_when_missing"
     return "native_without_gpu_argument"
 
 
@@ -64,16 +66,39 @@ def build_processing_config_compat(
     use_gpu_inference: bool,
 ) -> Any:
     """Construct ProcessingConfig across the known five/six-field HOMR APIs."""
-    args = (
-        enable_debug,
-        enable_cache,
-        write_staff_positions,
-        False,
-        -1,
-    )
-    mode = processing_config_compat_mode(processing_config_cls)
-    if mode == "gpu_argument_injected_when_missing":
-        return processing_config_cls(*args, use_gpu_inference)
+    values = {
+        "enable_debug": enable_debug,
+        "enable_cache": enable_cache,
+        "write_staff_positions": write_staff_positions,
+        "read_staff_positions": False,
+        "selected_staff": -1,
+        # HOMR versions have used both one combined GPU flag and separate
+        # transformer/segnet flags. Keep the runtime choice identical.
+        "use_gpu_inference": use_gpu_inference,
+        "transformer_use_gpu": use_gpu_inference,
+        "segnet_use_gpu": use_gpu_inference,
+        "coreml_encoder": False,
+        "title_detection": False,
+    }
+    parameters = list(inspect.signature(processing_config_cls).parameters.values())
+    args: list[Any] = []
+    for parameter in parameters:
+        if parameter.kind not in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        ):
+            if parameter.default is inspect.Parameter.empty:
+                raise TypeError(
+                    f"Unsupported required HOMR ProcessingConfig parameter: {parameter}"
+                )
+            continue
+        if parameter.name not in values:
+            if parameter.default is inspect.Parameter.empty:
+                raise TypeError(
+                    f"Unsupported required HOMR ProcessingConfig parameter: {parameter.name}"
+                )
+            continue
+        args.append(values[parameter.name])
     return processing_config_cls(*args)
 
 
@@ -81,6 +106,8 @@ def download_weights_compat_mode(download_weights: Any) -> str:
     signature = inspect.signature(download_weights)
     if "use_gpu_inference" in signature.parameters:
         return "gpu_argument_injected"
+    if {"segnet_use_gpu", "transformer_use_gpu"}.issubset(signature.parameters):
+        return "split_gpu_arguments"
     required_arguments = _required_positional_count(download_weights)
     if required_arguments == 0:
         return "native_zero_argument"
@@ -94,6 +121,8 @@ def call_download_weights_compat(download_weights: Any, *, use_gpu_inference: bo
     mode = download_weights_compat_mode(download_weights)
     if mode == "native_zero_argument":
         return download_weights()
+    if mode == "split_gpu_arguments":
+        return download_weights(use_gpu_inference, use_gpu_inference, False)
     return download_weights(use_gpu_inference)
 
 
@@ -101,6 +130,8 @@ def load_predictions_compat_mode(load_predictions: Any) -> str:
     signature = inspect.signature(load_predictions)
     if "use_gpu_inference" in signature.parameters:
         return "gpu_argument_injected_when_missing"
+    if any(name in signature.parameters for name in ("transformer_use_gpu", "segnet_use_gpu")):
+        return "split_gpu_arguments_injected_when_missing"
     if _required_positional_count(load_predictions) <= 3:
         return "native_without_gpu_argument"
     raise TypeError(f"Unsupported HOMR load_and_preprocess_predictions signature: {signature}")
@@ -118,6 +149,14 @@ def call_load_predictions_compat(
     mode = load_predictions_compat_mode(load_predictions)
     if mode == "gpu_argument_injected_when_missing":
         return load_predictions(image_path, enable_debug, enable_cache, use_gpu_inference)
+    if mode == "split_gpu_arguments_injected_when_missing":
+        signature = inspect.signature(load_predictions)
+        gpu_kwargs = {
+            name: use_gpu_inference
+            for name in ("transformer_use_gpu", "segnet_use_gpu")
+            if name in signature.parameters
+        }
+        return load_predictions(image_path, enable_debug, enable_cache, **gpu_kwargs)
     return load_predictions(image_path, enable_debug, enable_cache)
 
 
@@ -188,6 +227,24 @@ def install_current_homr_consumer_compat(
         original_download_weights,
     )
     predictor_module.download_weights = predictor_download_weights_compat
+
+    original_generate_xml = getattr(predictor_module, "generate_xml", None)
+    if original_generate_xml is not None:
+        original_generate_xml = _original_consumer_callable(original_generate_xml)
+
+        def generate_xml_consumer_compat(*args: Any, **kwargs: Any) -> Any:
+            xml = original_generate_xml(*args, **kwargs)
+            if hasattr(xml, "write"):
+                return xml
+            import xml.etree.ElementTree as element_tree
+
+            if isinstance(xml, element_tree.Element):
+                return element_tree.ElementTree(xml)
+            return xml
+
+        setattr(generate_xml_consumer_compat, _CONSUMER_COMPAT_MARKER, True)
+        setattr(generate_xml_consumer_compat, _CONSUMER_COMPAT_ORIGINAL, original_generate_xml)
+        predictor_module.generate_xml = generate_xml_consumer_compat
 
     original_load_predictions = _original_consumer_callable(
         heuristics_module.load_and_preprocess_predictions
@@ -290,12 +347,36 @@ def _install_processing_config_compat(evaluator: Any, *, use_gpu_inference: bool
 
     def processing_config_compat(*args: Any, **kwargs: Any) -> Any:
         bound = signature.bind_partial(*args, **kwargs)
-        if "use_gpu_inference" not in bound.arguments:
-            kwargs["use_gpu_inference"] = use_gpu_inference
+        if mode == "gpu_argument_injected_when_missing":
+            if "use_gpu_inference" not in bound.arguments:
+                kwargs["use_gpu_inference"] = use_gpu_inference
+        elif mode == "split_gpu_arguments_injected_when_missing":
+            if "transformer_use_gpu" not in bound.arguments:
+                kwargs["transformer_use_gpu"] = use_gpu_inference
+            if "segnet_use_gpu" not in bound.arguments:
+                kwargs["segnet_use_gpu"] = use_gpu_inference
+        else:
+            return original(*args, **kwargs)
         return original(*args, **kwargs)
 
     evaluator.ProcessingConfig = processing_config_compat
     return mode
+
+
+def _inject_gpu_keyword_for_signature(
+    signature: inspect.Signature,
+    kwargs: dict[str, Any],
+    bound: inspect.BoundArguments,
+    *,
+    use_gpu_inference: bool,
+) -> None:
+    if "use_gpu_inference" in signature.parameters:
+        if "use_gpu_inference" not in bound.arguments:
+            kwargs["use_gpu_inference"] = use_gpu_inference
+        return
+    for name in ("transformer_use_gpu", "segnet_use_gpu"):
+        if name in signature.parameters and name not in bound.arguments:
+            kwargs[name] = use_gpu_inference
 
 
 def _install_load_predictions_compat(evaluator: Any, *, use_gpu_inference: bool) -> str:
@@ -309,8 +390,12 @@ def _install_load_predictions_compat(evaluator: Any, *, use_gpu_inference: bool)
 
     def load_predictions_compat(*args: Any, **kwargs: Any) -> Any:
         bound = signature.bind_partial(*args, **kwargs)
-        if "use_gpu_inference" not in bound.arguments:
-            kwargs["use_gpu_inference"] = use_gpu_inference
+        _inject_gpu_keyword_for_signature(
+            signature,
+            kwargs,
+            bound,
+            use_gpu_inference=use_gpu_inference,
+        )
         return original(*args, **kwargs)
 
     evaluator.load_and_preprocess_predictions = load_predictions_compat
@@ -385,7 +470,7 @@ def install_homr_api_compat(evaluator: Any) -> dict[str, Any]:
     use_gpu_inference = _gpu_available(evaluator)
     original_download_weights = evaluator.download_weights
     download_mode = download_weights_compat_mode(original_download_weights)
-    if download_mode == "gpu_argument_injected":
+    if download_mode in {"gpu_argument_injected", "split_gpu_arguments"}:
 
         def download_weights_compat() -> None:
             call_download_weights_compat(

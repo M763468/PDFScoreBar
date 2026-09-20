@@ -21,7 +21,7 @@ The dense production config selects:
 ```yaml
 detection:
   detector_route: dense_full_pipeline
-  homr_profile: stage_e_verified
+  homr_profile: maintained_original
   enable_sr: true
   sr_scale: 4
   sr_compile_mode: reduce-overhead
@@ -50,7 +50,7 @@ PDF or persisted page images
             -> persisted x4 images + per-page provenance
        -> SR process exits and releases its CUDA/model state
        -> page-local verified source worker
-            -> pinned Stage-E HOMR on original image
+            -> maintained HOMR pinned at immutable commit on original image
             -> current x4 support consumer
                  -> current-runtime HOMR on precomputed persisted x4 image
                  -> OMR-DLN on the same persisted x4 image
@@ -59,7 +59,7 @@ PDF or persisted page images
        -> CNN scoring
   -> page filtering / user barline corrections
   -> Phase A physical grouping + numbering_base
-       -> pinned original-image staff geometry
+       -> maintained original-image staff geometry
        -> current-x4 connector semantic evidence
   -> current-x4 MMR support sidecar
        -> reuse Phase-A topology/x geometry
@@ -80,12 +80,12 @@ For each page on the dense production route there are exactly two HOMR neural in
 purposes. The all-pages Real-ESRGAN phase is not an additional HOMR inference; it is the
 shared x4 image producer consumed by the page-local source workers.
 
-### 1. Original-image pinned Stage-E HOMR
+### 1. Original-image maintained HOMR
 
-- **Producer:** `run_homr_profile("stage_e_verified", ...)` through
+- **Producer:** `run_homr_profile("maintained_original", ...)` through
   `BatchSRVerifiedProfileHybridDetector` / `VerifiedProfileHybridDetector`.
 - **Input:** original/source page image, scale 1.
-- **Provenance:** `configs/detector_profiles/stage_e_verified_homr.json`.
+- **Provenance:** `configs/detector_profiles/maintained_original_homr.json`.
 - **Role:** authoritative detector baseline and authoritative staff geometry for Phase-A
   system/measure construction.
 - **Coordinate space:** source-page coordinates.
@@ -112,9 +112,13 @@ x4 in the current production path.
 - **Consumers:** detector hybrid consensus, connector-aware grouping support, and MMR
   vertical staff support.
 
+The selected maintained commit is immutable and is not rerun on x4 in the current
+production path. The historical `stage_e_verified` profile remains isolated in the image
+for reproduction and is not part of canonical dispatch.
+
 The production path does not initialize Real-ESRGAN inside each page-local support worker.
 The dedicated SR process finishes all pages first and exits. Only then do disposable
-page-local workers run pinned baseline HOMR plus current-x4 HOMR and OMR-DLN. This prevents
+page-local workers run maintained baseline HOMR plus current-x4 HOMR and OMR-DLN. This prevents
 Real-ESRGAN model/activation state from overlapping the later HOMR/OMR GPU phases while
 still reusing the SR model across pages.
 
@@ -188,7 +192,7 @@ accuracy/downstream evidence rather than a silent scoring-policy change.
 `BatchSRVerifiedProfileHybridDetector` retains the same consensus semantics as
 `VerifiedProfileHybridDetector` and combines:
 
-- pinned original-image baseline detections;
+- maintained original-image baseline detections;
 - `current_x4_support.current_sr_detection`;
 - OMR-DLN predictions produced from the persisted x4 support image.
 
@@ -208,7 +212,7 @@ layout with `MeasureNumberingPipeline`.
 
 - **Barline x geometry:** accepted dense detector output, after optional user barline
   corrections.
-- **Staff/system geometry:** pinned original-image Stage-E staff mask.
+- **Staff/system geometry:** maintained original-image staff mask.
 - **Connector semantics:** current-x4 HOMR connector semantic artifacts discovered from
   the declared current-support subtree.
 - **Image used by numbering:** source/original page image.
@@ -265,7 +269,7 @@ and could diverge from Phase A. Current MMR support instead reuses the Phase-A t
 | `current_sr_batch_worker` | one disposable process for all selected pages | owns Real-ESRGAN model/import/CUDA lifetime and persisted x4 generation |
 | SR batch process exit | hard phase boundary | releases Real-ESRGAN/compile/CUDA state before HOMR/OMR |
 | `verified_source_page_worker` | disposable top-level Python worker per page, started after SR batch | bounds lifetime of page-local verified source generation |
-| pinned original HOMR | inside page worker | pinned-profile baseline only |
+| maintained original HOMR | inside page worker | immutable maintained baseline only |
 | `current_support_worker` | child worker using precomputed x4 | current x4 HOMR + OMR-DLN support contract; does not own production SR model lifetime |
 | dense route + CNN | imported/run after source workers exit | avoids retaining heavy source-generation state |
 | MMR batch | main pipeline process | reuses persistent classifier/OCR; no HOMR execution |

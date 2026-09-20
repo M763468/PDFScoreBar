@@ -22,19 +22,35 @@ def test_stage_e_verified_profile_is_pinned_and_artifact_free() -> None:
     }
     assert profile["verified_stage_e_full68"] == {
         "gt": 3567,
-        "pred": 3599,
+        "pred": 3610,
         "tp": 3565,
-        "fp": 3,
+        "fp": 1,
         "fn": 2,
         "fn_det": 0,
         "fn_cnn": 2,
-        "soft_duplicate_or_repeat_like": 31,
-        "cnn_threshold": 0.1,
+        "soft_duplicate_or_repeat_like": 44,
+        "cnn_architecture": "efficientnet_b0",
+        "cnn_checkpoint": "logs/cnn_barline_classification/issue296_efficientnet_b0_current_candidate_aligned_v1/cnn_classifier_epoch_9.pth",
+        "cnn_threshold": 0.4965248107910156,
         "cnn_apply_nms": False,
         "sr_scale": 4,
         "canonical_gt_rebase_issue": 291,
+        "cnn_refresh_issue": 296,
         "evaluated_artifact": "pipeline2_no_peak_filtered_cnn.json",
     }
+
+
+def test_maintained_original_profile_is_immutable_and_original_space() -> None:
+    profile = load_homr_profile("maintained_original")
+
+    assert profile["historical_detector_artifact_runtime_input"] is False
+    assert profile["homr"]["commit"] == "457e7c6518a10ba755db2e60883419e56c4d7369"
+    assert profile["input_contract"] == {
+        "sr_scale": 1,
+        "coordinate_space": "original_page",
+        "connector_capture": True,
+    }
+    assert profile["production_dispatch"]["floating_upstream"] is False
 
 
 def test_profile_environment_prioritizes_pinned_sources(monkeypatch) -> None:

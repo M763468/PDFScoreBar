@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import src.pipeline.detection.profile_hybrid as profile_hybrid
+import src.pipeline.detection.profile_hybrid_batch_sr as profile_hybrid_batch_sr
 import src.pipeline.detection.verified_source_page_worker as source_worker
 
 
@@ -235,7 +236,7 @@ def test_verified_source_page_worker_records_process_boundary(tmp_path: Path, mo
         }
 
     monkeypatch.setattr(
-        profile_hybrid.VerifiedProfileHybridDetector,
+        profile_hybrid_batch_sr.BatchSRVerifiedProfileHybridDetector,
         "_generate_one_page_sources_in_process",
         fake_generate,
     )
@@ -243,7 +244,7 @@ def test_verified_source_page_worker_records_process_boundary(tmp_path: Path, mo
     source_worker.run(request, result)
     payload = json.loads(result.read_text(encoding="utf-8"))
 
-    assert payload["schema_version"] == "pipeline.verified_source_page.v2"
+    assert payload["schema_version"] == "pipeline.verified_source_page.v3"
     assert payload["status"] == "completed"
     assert payload["memory_boundary"] == "top_level_python_per_page"
     assert payload["sr_image"] == str(sr)

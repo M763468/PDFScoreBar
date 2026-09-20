@@ -32,12 +32,18 @@ ENCODER_NEW = """providers=[
                         )
                     ],"""
 
+ENCODER_CURRENT_OLD = 'gpu_providers({"cudnn_conv_algo_search": "DEFAULT"})'
+ENCODER_CURRENT_NEW = 'gpu_providers({"cudnn_conv_algo_search": "HEURISTIC"})'
+
 DECODER_OLD = 'config.filepaths.decoder_path_fp16, providers=["CUDAExecutionProvider"]'
 
 DECODER_NEW = (
     "config.filepaths.decoder_path_fp16, "
     'providers=[("CUDAExecutionProvider", {"cudnn_conv_algo_search": "HEURISTIC"})]'
 )
+
+DECODER_CURRENT_OLD = "providers, device = gpu_providers()"
+DECODER_CURRENT_NEW = 'providers, device = gpu_providers({"cudnn_conv_algo_search": "HEURISTIC"})'
 
 
 def replace_exact(path: Path, old: str, new: str) -> None:
@@ -47,9 +53,22 @@ def replace_exact(path: Path, old: str, new: str) -> None:
     path.write_text(text.replace(old, new, 1), encoding="utf-8")
 
 
+def replace_one_of(path: Path, replacements: list[tuple[str, str]]) -> None:
+    text = path.read_text(encoding="utf-8")
+    for old, new in replacements:
+        if old in text:
+            path.write_text(text.replace(old, new, 1), encoding="utf-8")
+            return
+    raise RuntimeError(f"Expected HOMR patch target not found in {path}")
+
+
 def main() -> None:
-    replace_exact(ENCODER_PATH, ENCODER_OLD, ENCODER_NEW)
-    replace_exact(DECODER_PATH, DECODER_OLD, DECODER_NEW)
+    replace_one_of(
+        ENCODER_PATH, [(ENCODER_OLD, ENCODER_NEW), (ENCODER_CURRENT_OLD, ENCODER_CURRENT_NEW)]
+    )
+    replace_one_of(
+        DECODER_PATH, [(DECODER_OLD, DECODER_NEW), (DECODER_CURRENT_OLD, DECODER_CURRENT_NEW)]
+    )
     print("Patched HOMR transformer ONNX CUDA provider options to HEURISTIC")
 
 

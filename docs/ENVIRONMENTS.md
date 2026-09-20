@@ -57,7 +57,9 @@ The cross-model version/provenance/integrity and update rules are inventoried in
 cache at `$XDG_CACHE_HOME/pdfscorebar/models`, or `~/.cache/pdfscorebar/models` when
 `XDG_CACHE_HOME` is unset. `PDFSCOREBAR_MODEL_CACHE` remains the explicit override. The
 default is intentionally independent of the active checkout so one verified registration can
-be reused across worktrees.
+be reused across worktrees. An existing checkout-local cache can still be selected explicitly
+with `PDFSCOREBAR_MODEL_CACHE="$PWD/.model_cache"` during migration; it is no longer an
+implicit fallback.
 
 The Real-ESRGAN resolver uses `PDFSCORE_REALESRGAN_WEIGHTS_DIR` in the image and retains the
 legacy checkout path only as a host-development fallback. A canonical Docker smoke must not
@@ -138,6 +140,19 @@ as `context canceled` must be diagnosed from the actual Docker/build signal and 
 evidence; it must not be attributed to `docker rmi` merely because cleanup happened nearby.
 Build-context reduction belongs to `.dockerignore` maintenance and does not change runtime
 asset ownership.
+
+`make docker-build` updates the shared `pdfscore_pipeline_gpu` tag by default and records the
+source fingerprint/commit/branch used for that build. When a topic branch intentionally changes
+runtime-sensitive files and should not repoint the shared tag, build an explicit temporary tag:
+
+```bash
+make docker-build DOCKER_IMAGE=pdfscore_issue352
+```
+
+The validation resolver can reuse that image by fingerprint without requiring the mutable
+canonical tag to point at it. `make docker-clean` never removes runtime images. Full image
+removal remains explicit; use `DOCKER_IMAGE=<ref> make docker-clean-full` when intentionally
+removing a non-default tag.
 
 ## Host / uv environments
 

@@ -76,6 +76,46 @@ def test_source_fingerprint_detects_runtime_source_drift_but_ignores_config(tmp_
     assert runtime_contract.source_fingerprint(tmp_path) != initial
 
 
+def test_runtime_fingerprint_ignores_bind_mounted_source_and_provenance_tail(
+    tmp_path: Path,
+) -> None:
+    runtime_contract = _load_runtime_contract_module()
+    boundary = (
+        "# Copy source code. Canonical runtime mounts the active checkout over /workspace,\n"
+    )
+    (tmp_path / "Dockerfile").write_text(
+        "FROM runtime\nRUN install-runtime\n" + boundary + "COPY . /workspace\nLABEL source=old\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "pyproject.toml").write_text("[project]\nname='fixture'\n", encoding="utf-8")
+    (tmp_path / "docker").mkdir()
+    (tmp_path / "docker" / "patch_homr_onnx_provider.py").write_text(
+        "PATCH = 1\n", encoding="utf-8"
+    )
+    manifest = tmp_path / "models" / "barline_cnn" / "manifest.json"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text('{"sha256": "abc"}\n', encoding="utf-8")
+    (tmp_path / "src").mkdir()
+    source = tmp_path / "src" / "worker.py"
+    source.write_text("VALUE = 1\n", encoding="utf-8")
+
+    initial = runtime_contract.runtime_fingerprint(tmp_path)
+
+    source.write_text("VALUE = 2\n", encoding="utf-8")
+    assert runtime_contract.runtime_fingerprint(tmp_path) == initial
+
+    (tmp_path / "Dockerfile").write_text(
+        "FROM runtime\nRUN install-runtime\n" + boundary + "COPY . /workspace\nLABEL source=new\n",
+        encoding="utf-8",
+    )
+    assert runtime_contract.runtime_fingerprint(tmp_path) == initial
+
+    (tmp_path / "pyproject.toml").write_text(
+        "[project]\nname='fixture'\ndependencies=['new-runtime']\n", encoding="utf-8"
+    )
+    assert runtime_contract.runtime_fingerprint(tmp_path) != initial
+
+
 def test_runtime_contract_mismatch_defers_rebuild_classification(tmp_path: Path, capsys) -> None:
     runtime_contract = _load_runtime_contract_module()
     workspace = tmp_path / "workspace"
@@ -92,7 +132,7 @@ def test_runtime_contract_mismatch_defers_rebuild_classification(tmp_path: Path,
 
     captured = capsys.readouterr()
     assert status == 2
-    assert "must classify whether the topic base is stale" in captured.err
+    assert "image/environment-defining inputs" in captured.err
     assert "Rebuild the image." not in captured.err
 
 
@@ -166,11 +206,17 @@ def test_default_image_resolution_reuses_matching_local_image(
     )
 
     monkeypatch.setattr(resolver, "image_info", lambda _ref: requested)
-    monkeypatch.setattr(resolver, "working_tree_fingerprint", lambda _root: "active-source")
+    monkeypatch.setattr(resolver, "working_tree_source_fingerprint", lambda _root: "active-source")
+    monkeypatch.setattr(resolver, "working_tree_fingerprint", lambda _root: "active-runtime")
+    monkeypatch.setattr(
+        resolver,
+        "_embedded_runtime_fingerprint",
+        lambda info: "active-runtime" if info.image_id == compatible.image_id else "other-runtime",
+    )
     monkeypatch.setattr(
         resolver,
         "git_ref_fingerprint",
-        lambda _root, ref: "active-source" if ref == "HEAD" else "develop-source",
+        lambda _root, ref: "active-runtime" if ref == "HEAD" else "develop-runtime",
     )
     monkeypatch.setattr(resolver, "_find_develop_ref", lambda _root: "origin/develop")
     monkeypatch.setattr(resolver, "_topic_has_runtime_diff", lambda _root, _ref: True)
@@ -187,7 +233,36 @@ def test_default_image_resolution_reuses_matching_local_image(
     captured = capsys.readouterr()
     assert status == 0
     assert captured.out.strip() == "sha256:compatible"
-    assert "reusing a compatible local" in captured.err
+    assert "matching runtime environment contract" in captured.err
+
+
+def test_source_only_mismatch_reuses_requested_runtime_compatible_image(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    resolver = _load_image_resolver_module()
+    requested = resolver.ImageInfo(
+        image_id="sha256:requested",
+        tags=("pdfscore_pipeline_gpu:latest",),
+        created=None,
+        asset_contract="v1",
+        source_fingerprint="image-source",
+        source_commit="old",
+        source_branch="develop",
+    )
+    monkeypatch.setattr(resolver, "image_info", lambda _ref: requested)
+    monkeypatch.setattr(resolver, "working_tree_source_fingerprint", lambda _root: "new-source")
+    monkeypatch.setattr(resolver, "working_tree_fingerprint", lambda _root: "same-runtime")
+    monkeypatch.setattr(resolver, "_embedded_runtime_fingerprint", lambda _info: "same-runtime")
+
+    status = resolver._resolve(
+        SimpleNamespace(repo_root=tmp_path, image_ref="pdfscore_pipeline_gpu", explicit=False)
+    )
+
+    captured = capsys.readouterr()
+    assert status == 0
+    assert captured.out.strip() == requested.image_id
+    assert "build source differs" in captured.err
+    assert "runtime environment contract matches" in captured.err
 
 
 def test_stale_topic_base_does_not_reuse_older_matching_image(
@@ -214,11 +289,17 @@ def test_stale_topic_base_does_not_reuse_older_matching_image(
     )
 
     monkeypatch.setattr(resolver, "image_info", lambda _ref: requested)
-    monkeypatch.setattr(resolver, "working_tree_fingerprint", lambda _root: "old-topic")
+    monkeypatch.setattr(resolver, "working_tree_source_fingerprint", lambda _root: "old-topic")
+    monkeypatch.setattr(resolver, "working_tree_fingerprint", lambda _root: "old-runtime")
+    monkeypatch.setattr(
+        resolver,
+        "_embedded_runtime_fingerprint",
+        lambda info: "develop-runtime" if info.image_id == requested.image_id else "old-runtime",
+    )
     monkeypatch.setattr(
         resolver,
         "git_ref_fingerprint",
-        lambda _root, ref: "old-topic" if ref == "HEAD" else "develop-source",
+        lambda _root, ref: "old-runtime" if ref == "HEAD" else "develop-runtime",
     )
     monkeypatch.setattr(resolver, "_find_develop_ref", lambda _root: "origin/develop")
     monkeypatch.setattr(resolver, "_topic_has_runtime_diff", lambda _root, _ref: False)
@@ -252,8 +333,10 @@ def test_explicit_image_override_is_not_substituted(tmp_path: Path, monkeypatch,
     )
 
     monkeypatch.setattr(resolver, "image_info", lambda _ref: requested)
-    monkeypatch.setattr(resolver, "working_tree_fingerprint", lambda _root: "active-source")
-    monkeypatch.setattr(resolver, "git_ref_fingerprint", lambda _root, _ref: "active-source")
+    monkeypatch.setattr(resolver, "working_tree_source_fingerprint", lambda _root: "active-source")
+    monkeypatch.setattr(resolver, "working_tree_fingerprint", lambda _root: "active-runtime")
+    monkeypatch.setattr(resolver, "_embedded_runtime_fingerprint", lambda _info: "other-runtime")
+    monkeypatch.setattr(resolver, "git_ref_fingerprint", lambda _root, _ref: "active-runtime")
     monkeypatch.setattr(resolver, "_find_develop_ref", lambda _root: "origin/develop")
     monkeypatch.setattr(resolver, "_topic_has_runtime_diff", lambda _root, _ref: True)
     monkeypatch.setattr(
@@ -451,6 +534,7 @@ def test_missing_default_image_reuses_local_but_explicit_does_not(tmp_path, monk
     candidate = resolver.ImageInfo("sha256:match", (), None, "v1", "active", None, None)
     monkeypatch.setattr(resolver, "image_info", lambda ref: None)
     monkeypatch.setattr(resolver, "working_tree_fingerprint", lambda root: "active")
+    monkeypatch.setattr(resolver, "_embedded_runtime_fingerprint", lambda info: "active")
     monkeypatch.setattr(resolver, "list_runtime_images", lambda: [candidate])
     args = SimpleNamespace(repo_root=tmp_path, image_ref="missing", explicit=False)
     assert resolver._resolve(args) == 0

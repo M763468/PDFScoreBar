@@ -247,8 +247,7 @@ def _resolve_retained_artifact(raw_path: Any, *, source_root: Path, role: str) -
         if candidate.exists():
             return candidate.resolve()
     raise FileNotFoundError(
-        f"{role} does not exist in retained source context: {raw_path} "
-        f"(source_root={source_root})"
+        f"{role} does not exist in retained source context: {raw_path} (source_root={source_root})"
     )
 
 
@@ -272,9 +271,7 @@ def _measure_bbox(payload: Dict[str, Any], system_index: int, measure_index: int
         )
     bbox = measures[measure_index].get("bbox")
     if not isinstance(bbox, list) or len(bbox) != 4:
-        raise ValueError(
-            f"measure bbox is invalid: system={system_index} measure={measure_index}"
-        )
+        raise ValueError(f"measure bbox is invalid: system={system_index} measure={measure_index}")
     return [int(value) for value in bbox]
 
 
@@ -308,9 +305,7 @@ def _remap_measure_key(
     measures = systems[system_index].get("measures")
     if not isinstance(measures, list) or not measures:
         if strict:
-            raise ValueError(
-                f"Cannot remap correction key {key}: corrected system has no measures"
-            )
+            raise ValueError(f"Cannot remap correction key {key}: corrected system has no measures")
         return None
 
     ranked: List[tuple[float, int]] = []
@@ -645,8 +640,7 @@ def _final_numbering_from_retained_geometry(
         local_overrides.append(item)
 
     boundary_resets = {
-        (0, int(boundary["system"])): int(boundary["reset_number"])
-        for boundary in page_boundaries
+        (0, int(boundary["system"])): int(boundary["reset_number"]) for boundary in page_boundaries
     }
     next_number = pipeline.numberer.number_score(
         score,
@@ -678,7 +672,9 @@ def _run_retained_artifact_correction(
     manifest_pages = _manifest_pages_by_id(source_manifest)
     current_barlines = _current_barline_overrides(staging_paths)
     current_correction_pages = _current_staging_pages(staging_paths)
-    canonical_measure_payload = _read_json_object_if_exists(canonical_paths["measure_overrides"]) or {}
+    canonical_measure_payload = (
+        _read_json_object_if_exists(canonical_paths["measure_overrides"]) or {}
+    )
     user_measure_overrides = normalise_measure_overrides(canonical_measure_payload)
     force_single_system = bool(
         get_nested(source_config, "numbering", "force_single_system", default=False)
@@ -867,9 +863,7 @@ def _run_retained_artifact_correction(
             get_nested(source_config, "mmr", "enable_rotation_tta", default=False)
         )
         threshold = float(get_nested(source_config, "mmr", "threshold", default=0.5))
-        rescue_threshold = float(
-            get_nested(source_config, "mmr", "rescue_threshold", default=0.1)
-        )
+        rescue_threshold = float(get_nested(source_config, "mmr", "rescue_threshold", default=0.1))
         rapidocr_provider = str(
             get_nested(source_config, "mmr", "rapidocr_provider", default="auto")
         )
@@ -956,14 +950,10 @@ def _run_retained_artifact_correction(
         final_path = page_outputs / "numbering_final.json"
         source_metadata = state["source_final"].get("numbering_metadata")
         source_start = (
-            source_metadata.get("start_number")
-            if isinstance(source_metadata, dict)
-            else None
+            source_metadata.get("start_number") if isinstance(source_metadata, dict) else None
         )
         source_next = (
-            source_metadata.get("next_number")
-            if isinstance(source_metadata, dict)
-            else None
+            source_metadata.get("next_number") if isinstance(source_metadata, dict) else None
         )
 
         page_has_new_correction = page_index in current_correction_pages
@@ -980,9 +970,7 @@ def _run_retained_artifact_correction(
             continue
 
         page_overrides = list(state["auto_mmr"]) + [
-            item
-            for item in execution_user_overrides
-            if int(item.get("page", -1)) == page_index
+            item for item in execution_user_overrides if int(item.get("page", -1)) == page_index
         ]
         page_boundaries = movement_boundaries_for_page(movement_boundaries, page_index)
         final_payload, current_number = _final_numbering_from_retained_geometry(

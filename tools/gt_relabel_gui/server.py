@@ -7,6 +7,7 @@ import argparse
 import json
 import mimetypes
 import os
+import sys
 import time
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -15,6 +16,31 @@ from urllib.parse import parse_qs, urlparse
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 Box = tuple[int, int, int, int]
+
+
+def _manual_handoff_config(handoff_path: Path) -> tuple[Path, list[dict]]:
+    """Build strict manual-GUI page config directly from one review package handoff."""
+
+    repo_root = str(REPO_ROOT)
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+
+    from src.pipeline.review.manual_correction_handoff import (
+        build_manual_gui_config,
+        load_manual_correction_handoff,
+    )
+
+    resolved_handoff = handoff_path.resolve()
+    config = build_manual_gui_config(
+        load_manual_correction_handoff(resolved_handoff),
+        handoff_path=resolved_handoff,
+        mode="issue229_smoke_strict",
+        require_existing_artifacts=True,
+    )
+    pages = config.get("pages")
+    if not isinstance(pages, list) or not pages:
+        raise ValueError("manual correction handoff produced no GUI pages")
+    return resolved_handoff.parent, pages
 
 
 @dataclass
@@ -472,16 +498,37 @@ def main() -> None:
     parser.add_argument("--root", type=Path)
     parser.add_argument("--mode", choices=["relabel", "gt", "rest", "manual"], default="relabel")
     parser.add_argument("--config", type=Path, help="GUI config JSON for gt/rest/manual modes")
+    parser.add_argument(
+        "--handoff",
+        type=Path,
+        help="review/manual_correction_input.json; valid only with --mode manual",
+    )
     parser.add_argument("--port", type=int, default=8010)
     parser.add_argument("--host", default="0.0.0.0")
     args = parser.parse_args()
 
+    if args.handoff and args.mode != "manual":
+        raise SystemExit("--handoff is only valid with --mode manual")
+    if args.handoff and args.config:
+        raise SystemExit("--handoff and --config are mutually exclusive")
+    if args.handoff and args.root:
+        raise SystemExit(
+            "--root must not be supplied with --handoff; the review package is the root"
+        )
+
     server = HTTPServer((args.host, args.port), Handler)
     server.ui_root = Path(__file__).resolve().parent
     server.mode = args.mode
-    if args.mode in {"gt", "rest", "manual"}:
+    if args.mode == "manual" and args.handoff:
+        try:
+            server.root, server.gt_config = _manual_handoff_config(args.handoff)
+        except (OSError, ValueError) as exc:
+            raise SystemExit(f"Invalid manual correction handoff: {exc}") from exc
+    elif args.mode in {"gt", "rest", "manual"}:
         if not args.config:
-            raise SystemExit("--config is required in gt/rest/manual mode")
+            raise SystemExit(
+                "--config is required in gt/rest/manual mode unless manual --handoff is used"
+            )
         server.root = (args.root or REPO_ROOT).resolve()
         config_data = json.loads(args.config.read_text())
         server.gt_config = config_data.get("pages", config_data)

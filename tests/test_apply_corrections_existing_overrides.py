@@ -115,7 +115,7 @@ def test_apply_corrections_carries_forward_existing_override_inputs(tmp_path: Pa
     }
     handoff_path.write_text(json.dumps(handoff), encoding="utf-8")
 
-    with patch("src.pipeline.review.apply_corrections.run_pipeline"):
+    with patch("src.pipeline.review.apply_corrections._run_retained_artifact_correction"):
         new_run_dir = apply_corrections_and_rerun(handoff_path, dry_run=True)
 
     measure_payload = json.loads(
@@ -248,7 +248,7 @@ def test_apply_corrections_carries_forward_same_path_existing_override_inputs(
     }
     handoff_path.write_text(json.dumps(handoff), encoding="utf-8")
 
-    with patch("src.pipeline.review.apply_corrections.run_pipeline"):
+    with patch("src.pipeline.review.apply_corrections._run_retained_artifact_correction"):
         apply_corrections_and_rerun(handoff_path, overwrite=True, dry_run=True)
 
     measure_payload = json.loads(measure_override_path.read_text(encoding="utf-8"))

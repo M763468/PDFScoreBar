@@ -63,9 +63,10 @@ def _setup_review_package(tmp_path: Path) -> Path:
     return handoff_path
 
 
-@patch("src.pipeline.review.apply_corrections.run_pipeline")
-def test_apply_corrections_and_rerun(mock_run_pipeline, tmp_path):
+@patch("src.pipeline.review.apply_corrections._run_retained_artifact_correction")
+def test_apply_corrections_and_rerun(mock_retained_rerun, tmp_path):
     handoff_path = _setup_review_package(tmp_path)
+    mock_retained_rerun.return_value = {}
 
     new_run_dir = apply_corrections_and_rerun(
         handoff_path=handoff_path, run_id="corrected_run_123", dry_run=False
@@ -100,14 +101,13 @@ def test_apply_corrections_and_rerun(mock_run_pipeline, tmp_path):
     summary_path = new_run_dir / "review" / "correction_summary.json"
     assert summary_path.exists()
 
-    # Verify run_pipeline was called
-    mock_run_pipeline.assert_called_once_with(
-        config_path=config_path, run_id="corrected_run_123", output_root=tmp_path, dry_run=False
-    )
+    # Verify the retained-artifact executor was used instead of the normal
+    # full pipeline entrypoint.
+    mock_retained_rerun.assert_called_once()
 
 
-@patch("src.pipeline.review.apply_corrections.run_pipeline")
-def test_apply_corrections_dry_run(mock_run_pipeline, tmp_path):
+@patch("src.pipeline.review.apply_corrections._run_retained_artifact_correction")
+def test_apply_corrections_dry_run(mock_retained_rerun, tmp_path):
     handoff_path = _setup_review_package(tmp_path)
 
     new_run_dir = apply_corrections_and_rerun(
@@ -116,7 +116,7 @@ def test_apply_corrections_dry_run(mock_run_pipeline, tmp_path):
 
     config_path = new_run_dir / "corrected_pipeline_config.json"
     assert config_path.exists()
-    mock_run_pipeline.assert_not_called()
+    mock_retained_rerun.assert_not_called()
 
 
 def test_external_review_root_resolves_source_manifest(tmp_path):
@@ -144,7 +144,7 @@ def test_external_review_root_resolves_source_manifest(tmp_path):
     }
     handoff_path.write_text(json.dumps(handoff), encoding="utf-8")
 
-    with patch("src.pipeline.review.apply_corrections.run_pipeline"):
+    with patch("src.pipeline.review.apply_corrections._run_retained_artifact_correction"):
         new_run_dir = apply_corrections_and_rerun(handoff_path, dry_run=True)
         # Verify it resolved manifest correctly from original_run
         config_path = new_run_dir / "corrected_pipeline_config.json"
@@ -218,7 +218,7 @@ def test_custom_correction_outputs(tmp_path):
     }
     handoff_path.write_text(json.dumps(handoff), encoding="utf-8")
 
-    with patch("src.pipeline.review.apply_corrections.run_pipeline"):
+    with patch("src.pipeline.review.apply_corrections._run_retained_artifact_correction"):
         apply_corrections_and_rerun(handoff_path, dry_run=True)
 
     corrections_dir = review_dir / "corrections"
@@ -295,7 +295,7 @@ def test_rerun_config_sections_null(tmp_path):
     }
     handoff_path.write_text(json.dumps(handoff), encoding="utf-8")
 
-    with patch("src.pipeline.review.apply_corrections.run_pipeline"):
+    with patch("src.pipeline.review.apply_corrections._run_retained_artifact_correction"):
         new_run_dir = apply_corrections_and_rerun(handoff_path, dry_run=True)
 
     config_path = new_run_dir / "corrected_pipeline_config.json"
@@ -355,7 +355,7 @@ def test_shared_correction_outputs_not_duplicated_per_page(tmp_path):
     }
     handoff_path.write_text(json.dumps(handoff), encoding="utf-8")
 
-    with patch("src.pipeline.review.apply_corrections.run_pipeline"):
+    with patch("src.pipeline.review.apply_corrections._run_retained_artifact_correction"):
         apply_corrections_and_rerun(handoff_path, dry_run=True, overwrite=True)
 
     measure_payload = json.loads(
@@ -433,7 +433,7 @@ def test_custom_per_page_correction_outputs_merged_correctly(tmp_path):
     }
     handoff_path.write_text(json.dumps(handoff), encoding="utf-8")
 
-    with patch("src.pipeline.review.apply_corrections.run_pipeline"):
+    with patch("src.pipeline.review.apply_corrections._run_retained_artifact_correction"):
         apply_corrections_and_rerun(handoff_path, dry_run=True, overwrite=True)
 
     corrections_dir = review_dir / "corrections"

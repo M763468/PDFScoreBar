@@ -66,6 +66,7 @@ def _setup_review_package(tmp_path: Path) -> Path:
 @patch("src.pipeline.review.apply_corrections._run_retained_artifact_correction")
 def test_apply_corrections_and_rerun(mock_retained_rerun, tmp_path):
     handoff_path = _setup_review_package(tmp_path)
+    mock_retained_rerun.return_value = {}
 
     new_run_dir = apply_corrections_and_rerun(
         handoff_path=handoff_path, run_id="corrected_run_123", dry_run=False

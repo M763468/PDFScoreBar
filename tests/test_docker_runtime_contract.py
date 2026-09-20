@@ -346,6 +346,43 @@ def test_temporary_build_does_not_clean_or_retag_canonical(tmp_path: Path) -> No
     assert "pdfscore_pipeline_gpu" not in calls[0]
 
 
+def test_direct_build_creates_artifact_directory_before_tempfile(tmp_path: Path) -> None:
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    docker = bin_dir / "docker"
+    docker.write_text("#!/usr/bin/env bash\nset -euo pipefail\nexit 0\n", encoding="utf-8")
+    docker.chmod(0o755)
+
+    env = os.environ.copy()
+    env["PATH"] = f"{bin_dir}{os.pathsep}{env['PATH']}"
+    env["GIT_DIR"] = subprocess.check_output(
+        ["git", "rev-parse", "--absolute-git-dir"], cwd=PROJECT_ROOT, text=True
+    ).strip()
+
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "docker").mkdir()
+    shutil.copyfile(PROJECT_ROOT / "scripts/docker_build.sh", tmp_path / "scripts/docker_build.sh")
+    shutil.copyfile(
+        PROJECT_ROOT / "docker/runtime_contract.py", tmp_path / "docker/runtime_contract.py"
+    )
+
+    artifacts = tmp_path / "artifacts"
+    assert not artifacts.exists()
+
+    result = subprocess.run(
+        ["bash", "scripts/docker_build.sh"],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (artifacts / "docker_build.log").is_file()
+    assert (artifacts / "docker_build_provenance.txt").is_file()
+    assert not list(artifacts.glob(".docker_build_provenance.*"))
+
+
 def test_failed_build_preserves_previous_provenance(tmp_path: Path) -> None:
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()

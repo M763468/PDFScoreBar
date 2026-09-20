@@ -149,9 +149,6 @@ FROM nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04
 ARG STAGE_E_HOMR_COMMIT=864e2882f7a41afcf8f16654728a473ae56826d6
 ARG STAGE_E_PDFSCORE_COMMIT=bd6ae56f8be6c87088143cfbf0ba09dee94fe0d7
 ARG MAINTAINED_HOMR_COMMIT=457e7c6518a10ba755db2e60883419e56c4d7369
-ARG PDFSCORE_SOURCE_FINGERPRINT
-ARG PDFSCORE_SOURCE_COMMIT
-ARG PDFSCORE_SOURCE_BRANCH
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
@@ -187,6 +184,11 @@ COPY --from=builder /opt/weights /opt/pdfscore-assets/realesrgan
 # Copy source code. Canonical runtime mounts the active checkout over /workspace,
 # so persistent runtime assets and the source fingerprint live under /opt instead.
 COPY . /workspace
+
+# Source provenance must not invalidate the expensive runtime dependency layers.
+ARG PDFSCORE_SOURCE_FINGERPRINT
+ARG PDFSCORE_SOURCE_COMMIT
+ARG PDFSCORE_SOURCE_BRANCH
 
 # Reuse the production artifact contract from Issue #315 for the smoke CNN. The
 # manifest remains authoritative; Docker only materializes its verified bytes into

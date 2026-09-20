@@ -166,6 +166,9 @@ def test_default_image_resolution_reuses_matching_local_image(
 
     monkeypatch.setattr(resolver, "image_info", lambda _ref: requested)
     monkeypatch.setattr(resolver, "working_tree_fingerprint", lambda _root: "active-source")
+    monkeypatch.setattr(resolver, "git_ref_fingerprint", lambda _root, ref: "active-source" if ref == "HEAD" else "develop-source")
+    monkeypatch.setattr(resolver, "_find_develop_ref", lambda _root: "origin/develop")
+    monkeypatch.setattr(resolver, "_topic_has_runtime_diff", lambda _root, _ref: True)
     monkeypatch.setattr(resolver, "list_runtime_images", lambda: [requested, compatible])
 
     status = resolver._resolve(
@@ -180,6 +183,93 @@ def test_default_image_resolution_reuses_matching_local_image(
     assert status == 0
     assert captured.out.strip() == "sha256:compatible"
     assert "reusing a compatible local" in captured.err
+
+
+def test_stale_topic_base_does_not_reuse_older_matching_image(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    resolver = _load_image_resolver_module()
+    requested = resolver.ImageInfo(
+        image_id="sha256:develop",
+        tags=("pdfscore_pipeline_gpu:latest",),
+        created=None,
+        asset_contract="v1",
+        source_fingerprint="develop-source",
+        source_commit="develop",
+        source_branch="develop",
+    )
+    stale_matching = resolver.ImageInfo(
+        image_id="sha256:stale",
+        tags=("old-topic:latest",),
+        created=None,
+        asset_contract="v1",
+        source_fingerprint="old-topic",
+        source_commit="old",
+        source_branch="topic",
+    )
+
+    monkeypatch.setattr(resolver, "image_info", lambda _ref: requested)
+    monkeypatch.setattr(resolver, "working_tree_fingerprint", lambda _root: "old-topic")
+    monkeypatch.setattr(
+        resolver,
+        "git_ref_fingerprint",
+        lambda _root, ref: "old-topic" if ref == "HEAD" else "develop-source",
+    )
+    monkeypatch.setattr(resolver, "_find_develop_ref", lambda _root: "origin/develop")
+    monkeypatch.setattr(resolver, "_topic_has_runtime_diff", lambda _root, _ref: False)
+    monkeypatch.setattr(resolver, "list_runtime_images", lambda: [requested, stale_matching])
+
+    status = resolver._resolve(
+        SimpleNamespace(
+            repo_root=tmp_path,
+            image_ref="pdfscore_pipeline_gpu",
+            explicit=False,
+        )
+    )
+
+    captured = capsys.readouterr()
+    assert status == 2
+    assert captured.out == ""
+    assert "category: stale_topic_base" in captured.err
+    assert "Refresh the topic branch" in captured.err
+
+
+def test_explicit_image_override_is_not_substituted(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    resolver = _load_image_resolver_module()
+    requested = resolver.ImageInfo(
+        image_id="sha256:explicit",
+        tags=("explicit:latest",),
+        created=None,
+        asset_contract="v1",
+        source_fingerprint="other-source",
+        source_commit="other",
+        source_branch="other",
+    )
+
+    monkeypatch.setattr(resolver, "image_info", lambda _ref: requested)
+    monkeypatch.setattr(resolver, "working_tree_fingerprint", lambda _root: "active-source")
+    monkeypatch.setattr(resolver, "git_ref_fingerprint", lambda _root, _ref: "active-source")
+    monkeypatch.setattr(resolver, "_find_develop_ref", lambda _root: "origin/develop")
+    monkeypatch.setattr(resolver, "_topic_has_runtime_diff", lambda _root, _ref: True)
+    monkeypatch.setattr(
+        resolver,
+        "list_runtime_images",
+        lambda: (_ for _ in ()).throw(AssertionError("must not search alternate images")),
+    )
+
+    status = resolver._resolve(
+        SimpleNamespace(
+            repo_root=tmp_path,
+            image_ref="explicit",
+            explicit=True,
+        )
+    )
+
+    captured = capsys.readouterr()
+    assert status == 2
+    assert "DOCKER_IMAGE is explicit" in captured.err
 
 
 def _write_fake_docker(bin_dir: Path) -> Path:

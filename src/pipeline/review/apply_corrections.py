@@ -1046,8 +1046,18 @@ def apply_corrections_and_rerun(
             if key in manual_outputs and manual_outputs[key]:
                 staging_paths[key].append(package_root / manual_outputs[key])
 
-    # 2. Find/Load source config before canonicalization so same-path existing
-    # override inputs can be read before overwrite=True replaces them.
+    # 2. Resolve the reviewed source run. The retained source manifest is required
+    # for a real correction rerun even when an explicit config is supplied, because
+    # the correction path reuses reviewed detector/MMR artifacts rather than
+    # regenerating them.
+    manifest_path = _resolve_source_manifest_path(normalized, package_root)
+    source_manifest: Dict[str, Any] | None = None
+    if manifest_path.exists():
+        raw_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if not isinstance(raw_manifest, dict):
+            raise ValueError("manifest.json must be a JSON object.")
+        source_manifest = raw_manifest
+
     source_config: Dict[str, Any] = {}
     config_base_dir: Path | None = None
     if config_path:
@@ -1060,23 +1070,17 @@ def apply_corrections_and_rerun(
         if not isinstance(source_config, dict):
             raise ValueError("Source configuration must be a dictionary/mapping.")
     else:
-        manifest_path = _resolve_source_manifest_path(normalized, package_root)
-        if not manifest_path.exists():
+        if source_manifest is None:
             raise FileNotFoundError(f"Source manifest not found: {manifest_path}")
         config_base_dir = manifest_path.parent
-
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        if not isinstance(manifest, dict):
-            raise ValueError("manifest.json must be a JSON object.")
-        if "config" not in manifest:
+        if "config" not in source_manifest:
             raise ValueError("manifest.json does not contain a 'config' key.")
-        source_config = manifest["config"]
+        source_config = source_manifest["config"]
         if not isinstance(source_config, dict):
             raise ValueError("Source configuration must be a dictionary/mapping.")
 
-        # We can also use this to set default output_root
-        if not output_root:
-            output_root = manifest_path.parent.parent
+    if not output_root and source_manifest is not None:
+        output_root = manifest_path.parent.parent
 
     existing_override_inputs = _read_existing_override_inputs(
         source_config=source_config,
@@ -1108,8 +1112,18 @@ def apply_corrections_and_rerun(
 
     if not isinstance(rerun_config.get("steps"), dict):
         rerun_config["steps"] = {}
+    # The corrected run is retained-artifact based. These flags describe the
+    # execution contract and also prevent this config from being mistaken for a
+    # fresh detector rerun if inspected later.
+    rerun_config["steps"]["pdf_to_images"] = False
+    rerun_config["steps"]["detection"] = False
     rerun_config["steps"]["apply_measure_overrides"] = True
     rerun_config["steps"]["apply_barline_overrides"] = True
+    rerun_config["correction_rerun"] = {
+        "mode": "retained_artifacts_selective",
+        "source_manifest": str(manifest_path),
+        "upstream_inference_rerun": False,
+    }
 
     if not isinstance(rerun_config.get("outputs"), dict):
         rerun_config["outputs"] = {}
@@ -1155,14 +1169,26 @@ def apply_corrections_and_rerun(
         logger.info(f"Dry run. Would execute pipeline with config: {new_config_path}")
         return new_run_dir
 
-    # 6. Execute
-    logger.info(f"Executing corrected pipeline rerun: {run_id_value}")
-    run_pipeline(
-        config_path=new_config_path,
-        run_id=run_id_value,
-        output_root=out_root,
-        dry_run=dry_run,
+    # 6. Execute only the downstream correction boundary against retained
+    # reviewed artifacts. Do not regenerate PDF images, detector/HOMR/SR/OMR-DLN,
+    # probe candidates, or CNN scores.
+    if source_manifest is None:
+        raise FileNotFoundError(
+            f"Source manifest is required for retained-artifact correction rerun: {manifest_path}"
+        )
+    logger.info(f"Executing retained-artifact corrected rerun: {run_id_value}")
+    selective_summary = _run_retained_artifact_correction(
+        normalized_handoff=normalized,
+        package_root=package_root,
+        source_manifest=source_manifest,
+        source_root=manifest_path.parent,
+        source_config=source_config,
+        canonical_paths=canonical_paths,
+        staging_paths=staging_paths,
+        new_run_dir=new_run_dir,
     )
+    summary.update(selective_summary)
+    _write_apply_summary(summary, new_run_dir, corrections_dir)
 
     if generate_final_pdf:
         final_summary = materialize_corrected_final_outputs(

@@ -54,7 +54,29 @@ paths from unrelated `logs/` runs.
 
 ## 2. Open the existing manual GUI from the handoff
 
-Launch the existing GUI directly from the review package:
+When the review package was produced by the canonical Docker pipeline, launch the GUI in the same
+maintained Docker runtime. Pipeline artifacts on the bind-mounted worktree may be owned by the
+container user, so a host-side GUI process is not guaranteed to have write permission for
+`review/corrections/`.
+
+```bash
+docker run --rm -it \
+  -p 127.0.0.1:8010:8010 \
+  -v "$PWD":/workspace \
+  -w /workspace \
+  -e PYTHONPATH=/workspace \
+  pdfscore_pipeline_gpu \
+  /opt/venv_pipeline/bin/python tools/gt_relabel_gui/server.py \
+  --mode manual \
+  --handoff <run_dir>/review/manual_correction_input.json \
+  --host 0.0.0.0 \
+  --port 8010
+```
+
+Then open `http://127.0.0.1:8010`.
+
+For a review package that is already writable by the current host user, the lightweight host launch
+remains valid:
 
 ```bash
 python3 tools/gt_relabel_gui/server.py \
@@ -63,8 +85,6 @@ python3 tools/gt_relabel_gui/server.py \
   --host 127.0.0.1 \
   --port 8010
 ```
-
-Then open `http://127.0.0.1:8010`.
 
 The `--handoff` route:
 
@@ -104,13 +124,20 @@ canonical files unless overwrite is explicitly requested.
 
 ## 4. Apply corrections, rerun, and generate the corrected final PDF
 
-Use the existing apply helper in the maintained pipeline runtime:
+Use the existing apply helper in the maintained pipeline runtime. When OMR-DLN is registered
+in the shared host cache, mount the selected verified artifact at its manifest-declared runtime
+path:
 
 ```bash
+OMR_HOST="$HOME/.cache/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt"
+OMR_RUNTIME="/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt"
+
 docker run --rm --gpus all \
   -v "$PWD":/workspace \
+  -v "$OMR_HOST:$OMR_RUNTIME:ro" \
   -w /workspace \
   -e PYTHONPATH=/workspace \
+  -e OMR_DLN_MODEL_PATH="$OMR_RUNTIME" \
   pdfscore_pipeline_gpu \
   /opt/venv_pipeline/bin/python -m src.pipeline.review.apply_corrections \
   <run_dir>/review/manual_correction_input.json \

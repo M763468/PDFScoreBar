@@ -23,6 +23,18 @@ SOURCE_CONTRACT_FILES = (
 SOURCE_SUFFIXES = frozenset({".py", ".toml"})
 RUNTIME_MODULES = ("homr", "realesrgan", "basicsr", "ultralytics")
 
+# Image/runtime compatibility is intentionally narrower than source provenance.
+# The active checkout is bind-mounted at /workspace, so application Python does
+# not require an image rebuild. These inputs define the image-owned environment
+# and assets that must remain compatible with the selected image.
+RUNTIME_CONTRACT_FILES = (
+    Path("Dockerfile"),
+    Path("pyproject.toml"),
+    Path("docker/patch_homr_onnx_provider.py"),
+    Path("models/barline_cnn/manifest.json"),
+)
+DOCKERFILE_RUNTIME_BOUNDARY = b"# Copy source code. Canonical runtime mounts the active checkout over /workspace,"
+
 
 def _source_contract_files(root: Path) -> Iterable[Path]:
     seen: set[Path] = set()
@@ -60,6 +72,36 @@ def source_fingerprint(root: Path) -> str:
                 digest.update(chunk)
         digest.update(b"\0")
     return digest.hexdigest()
+
+
+def _runtime_contract_bytes(relative: Path, payload: bytes | None) -> bytes:
+    if payload is None:
+        return b"<missing>"
+    if relative == Path("Dockerfile"):
+        boundary = payload.find(DOCKERFILE_RUNTIME_BOUNDARY)
+        if boundary >= 0:
+            return payload[:boundary]
+    return payload
+
+
+def runtime_fingerprint_entries(entries: dict[str, bytes | None]) -> str:
+    """Hash only image/environment-defining inputs, not bind-mounted app source."""
+    digest = hashlib.sha256()
+    for relative in RUNTIME_CONTRACT_FILES:
+        key = relative.as_posix()
+        digest.update(key.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(_runtime_contract_bytes(relative, entries.get(key)))
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def runtime_fingerprint(root: Path) -> str:
+    entries: dict[str, bytes | None] = {}
+    for relative in RUNTIME_CONTRACT_FILES:
+        path = root / relative
+        entries[relative.as_posix()] = path.read_bytes() if path.is_file() else None
+    return runtime_fingerprint_entries(entries)
 
 
 def _symlink_ancestor(path: Path) -> tuple[Path, Path] | None:
@@ -107,23 +149,42 @@ def _host_provenance() -> dict[str, str | None]:
     }
 
 
-def run_preflight(workspace: Path, config_path: Path, expected_fingerprint_path: Path) -> int:
+def run_preflight(
+    workspace: Path,
+    config_path: Path,
+    expected_fingerprint_path: Path,
+    *,
+    expected_fingerprint_value: str | None = None,
+    expected_source_fingerprint_path: Path = Path(
+        "/opt/pdfscore-runtime/source_fingerprint.txt"
+    ),
+) -> int:
     errors: list[str] = []
     host_provenance = _host_provenance()
-    expected_fingerprint = (
-        expected_fingerprint_path.read_text(encoding="utf-8").strip()
-        if expected_fingerprint_path.is_file()
-        else ""
+    expected_runtime_fingerprint = (
+        expected_fingerprint_value.strip()
+        if expected_fingerprint_value
+        else (
+            expected_fingerprint_path.read_text(encoding="utf-8").strip()
+            if expected_fingerprint_path.is_file()
+            else ""
+        )
     )
-    actual_fingerprint = source_fingerprint(workspace)
-    if not expected_fingerprint:
-        errors.append(f"image source fingerprint is missing: {expected_fingerprint_path}")
-    elif actual_fingerprint != expected_fingerprint:
+    actual_runtime_fingerprint = runtime_fingerprint(workspace)
+    actual_source_fingerprint = source_fingerprint(workspace)
+    image_source_fingerprint = (
+        expected_source_fingerprint_path.read_text(encoding="utf-8").strip()
+        if expected_source_fingerprint_path.is_file()
+        else None
+    )
+
+    if not expected_runtime_fingerprint:
+        errors.append("selected image runtime compatibility fingerprint is missing")
+    elif actual_runtime_fingerprint != expected_runtime_fingerprint:
         errors.append(
-            "bind-mounted source does not match the source used to build the image; "
-            f"expected={expected_fingerprint} actual={actual_fingerprint}. "
-            "Host-side validation must classify whether the topic base is stale, "
-            "the topic changes runtime source, or the image itself is stale before rebuilding."
+            "bind-mounted checkout changed image/environment-defining inputs after host "
+            "image resolution; "
+            f"expected={expected_runtime_fingerprint} actual={actual_runtime_fingerprint}"
         )
 
     if errors:
@@ -131,7 +192,14 @@ def run_preflight(workspace: Path, config_path: Path, expected_fingerprint_path:
             json.dumps(
                 {
                     "status": "fail",
-                    "source_fingerprint": actual_fingerprint,
+                    "runtime_fingerprint": actual_runtime_fingerprint,
+                    "source_fingerprint": actual_source_fingerprint,
+                    "image_source_fingerprint": image_source_fingerprint,
+                    "source_fingerprint_match": (
+                        image_source_fingerprint == actual_source_fingerprint
+                        if image_source_fingerprint
+                        else None
+                    ),
                     "host_provenance": host_provenance,
                     "errors": errors,
                 },
@@ -220,7 +288,14 @@ def run_preflight(workspace: Path, config_path: Path, expected_fingerprint_path:
 
     payload = {
         "status": "pass" if not errors else "fail",
-        "source_fingerprint": actual_fingerprint,
+        "runtime_fingerprint": actual_runtime_fingerprint,
+        "source_fingerprint": actual_source_fingerprint,
+        "image_source_fingerprint": image_source_fingerprint,
+        "source_fingerprint_match": (
+            image_source_fingerprint == actual_source_fingerprint
+            if image_source_fingerprint
+            else None
+        ),
         "host_provenance": host_provenance,
         "config": str(config_path),
         "input": str(input_path) if input_path is not None else None,
@@ -248,13 +323,27 @@ def _build_parser() -> argparse.ArgumentParser:
     fingerprint = subparsers.add_parser("fingerprint")
     fingerprint.add_argument("root", type=Path)
 
+    runtime = subparsers.add_parser("runtime-fingerprint")
+    runtime.add_argument("root", type=Path)
+
     preflight = subparsers.add_parser("preflight")
     preflight.add_argument("--workspace", type=Path, default=Path("/workspace"))
     preflight.add_argument("--config", type=Path, required=True)
     preflight.add_argument(
         "--expected-fingerprint",
         type=Path,
+        default=Path("/opt/pdfscore-runtime/runtime_fingerprint.txt"),
+        help="Compatibility fingerprint file; retained for script/test compatibility.",
+    )
+    preflight.add_argument(
+        "--expected-fingerprint-value",
+        help="Host-resolved image/runtime compatibility fingerprint.",
+    )
+    preflight.add_argument(
+        "--expected-source-fingerprint",
+        type=Path,
         default=Path("/opt/pdfscore-runtime/source_fingerprint.txt"),
+        help="Image build-source fingerprint used only for provenance reporting.",
     )
     return parser
 
@@ -264,7 +353,16 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "fingerprint":
         print(source_fingerprint(args.root))
         return 0
-    return run_preflight(args.workspace, args.config, args.expected_fingerprint)
+    if args.command == "runtime-fingerprint":
+        print(runtime_fingerprint(args.root))
+        return 0
+    return run_preflight(
+        args.workspace,
+        args.config,
+        args.expected_fingerprint,
+        expected_fingerprint_value=args.expected_fingerprint_value,
+        expected_source_fingerprint_path=args.expected_source_fingerprint,
+    )
 
 
 if __name__ == "__main__":

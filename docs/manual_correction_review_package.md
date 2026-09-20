@@ -152,10 +152,26 @@ The helper:
 1. validates the handoff;
 2. canonicalizes the GUI staging files;
 3. carries forward existing correction inputs when applicable;
-4. creates a corrected pipeline config with measure/barline override application enabled;
-5. reruns the pipeline without recursively generating another manual-correction package;
-6. when `--generate-final-pdf` is set, renders the corrected final PDF from the corrected rerun's
-   final numbering.
+4. fixes the rerun to the retained artifacts from the reviewed source run;
+5. applies new barline corrections to the reviewed barline artifact without rerunning PDF rendering,
+   HOMR, Real-ESRGAN, OMR-DLN, probe generation, or CNN scoring;
+6. reuses the previous automatic MMR result everywhere except measures directly touched by a changed
+   barline;
+7. selectively reruns MMR only for those touched measures, excluding any measure that already has an
+   explicit manual MMR correction;
+8. regenerates final numbering only where required, while copying an unchanged reviewed final page
+   verbatim when its start number is still valid;
+9. when `--generate-final-pdf` is set, renders the corrected final PDF from the corrected final
+   numbering.
+
+For a removed barline, the selective MMR boundary is the two reviewed measures touching that
+barline and the merged corrected measure. For an added barline, it is the reviewed measure being
+split and the two corrected measures created around the new barline. Measures outside that local
+topology change keep their previous MMR result.
+
+The corrected-run config records `correction_rerun.mode=retained_artifacts_selective` and disables
+fresh `pdf_to_images` / `detection` steps for provenance. A correction apply must therefore not
+depend on detector/SR/CNN inference merely to regenerate numbering.
 
 The corrected run writes:
 

@@ -298,20 +298,6 @@ def _resolve(args: argparse.Namespace) -> int:
         print(requested.image_id)
         return 0
 
-    if not args.explicit:
-        for candidate in list_runtime_images():
-            if candidate.image_id == requested.image_id:
-                continue
-            if candidate.source_fingerprint == active_fingerprint:
-                print(
-                    "Canonical tag points to different source; reusing a compatible local "
-                    "PDFScoreBar runtime image.",
-                    file=sys.stderr,
-                )
-                print(_format_info(candidate), file=sys.stderr)
-                print(candidate.image_id)
-                return 0
-
     head_fingerprint = git_ref_fingerprint(repo_root, "HEAD")
     develop_ref = _find_develop_ref(repo_root)
     develop_fingerprint = (
@@ -327,6 +313,30 @@ def _resolve(args: argparse.Namespace) -> int:
         develop_fingerprint=develop_fingerprint,
         topic_has_runtime_diff=topic_diff,
     )
+
+    # A docs/non-runtime topic that is merely behind current develop should refresh its
+    # base instead of falling back to an older image that happens to match stale source.
+    # For genuine topic runtime changes or a stale canonical tag, however, reuse an
+    # already-built compatible image before asking for another build.
+    reusable_categories = {
+        "topic_runtime_change",
+        "stale_image",
+        "image_provenance_missing",
+        "unclassified_mismatch",
+    }
+    if not args.explicit and category in reusable_categories:
+        for candidate in list_runtime_images():
+            if candidate.image_id == requested.image_id:
+                continue
+            if candidate.source_fingerprint == active_fingerprint:
+                print(
+                    "Canonical tag points to different source; reusing a compatible local "
+                    "PDFScoreBar runtime image.",
+                    file=sys.stderr,
+                )
+                print(_format_info(candidate), file=sys.stderr)
+                print(candidate.image_id)
+                return 0
 
     print("Docker runtime source mismatch:", file=sys.stderr)
     print(f"  category: {category}", file=sys.stderr)

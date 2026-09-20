@@ -550,6 +550,7 @@ class MMRProcessor:
         image_paths: List[Path],
         debug_root: Optional[Path] = None,
         support_data: Optional[List[Optional[Dict]]] = None,
+        target_measure_keys: Optional[set[tuple[int, int, int]]] = None,
     ) -> List[Dict[str, List[Dict]]]:
         """
         Process multiple pages and return measure overrides for each.
@@ -587,6 +588,7 @@ class MMRProcessor:
                     image_width=w_img,
                     image_height=h_img,
                     debug_img=debug_img,
+                    target_measure_keys=target_measure_keys,
                 )
                 if debug_img is not None and debug_root:
                     debug_path = debug_root / f"page_{page_num:03d}_mmr_debug.png"
@@ -599,6 +601,11 @@ class MMRProcessor:
             for page_entry in page_data.get("pages", []):
                 for sys_idx, system in enumerate(page_entry.get("systems", [])):
                     for m_idx, measure in enumerate(system.get("measures", [])):
+                        if (
+                            target_measure_keys is not None
+                            and (page_num - 1, sys_idx, m_idx) not in target_measure_keys
+                        ):
+                            continue
                         x1, y1, x2, y2 = measure["bbox"]
                         margin = 20
                         cx1, cy1 = int(max(0, x1 - margin)), int(max(0, y1 - margin))
@@ -722,6 +729,7 @@ class MMRProcessor:
         image_width: int,
         image_height: int,
         debug_img: Optional[np.ndarray],
+        target_measure_keys: Optional[set[tuple[int, int, int]]] = None,
     ) -> List[Dict]:
         """Apply current-x4 geometry without mutating Phase-A logical indices."""
 
@@ -754,6 +762,11 @@ class MMRProcessor:
             ):
                 raise ValueError("MMR support measure layout differs from Phase-A numbering")
             for m_idx, original_measure in enumerate(original_measures):
+                if (
+                    target_measure_keys is not None
+                    and (page_num - 1, sys_idx, m_idx) not in target_measure_keys
+                ):
+                    continue
                 primary_measure = primary_system["measures"][m_idx]
                 x1, y1, x2, y2 = primary_measure["bbox"]
                 margin = 20

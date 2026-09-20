@@ -298,6 +298,7 @@ def run_mmr_batch(
     support_data: Optional[list[dict]] = None,
     support_stats: Optional[dict[str, int]] = None,
     processor_state: Optional[dict[str, Any]] = None,
+    target_measure_keys: Optional[set[tuple[int, int, int]]] = None,
 ) -> list[dict]:
     """Runs MMR detection in-process for a batch of pages."""
     from src.measure_numbering.mmr import MMROCREngine, MMRProcessor
@@ -333,10 +334,19 @@ def run_mmr_batch(
         processor_state["processor"] = processor
 
     if support_data is None:
-        results = processor.process_pages(pages_data, image_paths, debug_root=debug_root)
+        results = processor.process_pages(
+            pages_data,
+            image_paths,
+            debug_root=debug_root,
+            target_measure_keys=target_measure_keys,
+        )
     else:
         results = processor.process_pages(
-            pages_data, image_paths, debug_root=debug_root, support_data=support_data
+            pages_data,
+            image_paths,
+            debug_root=debug_root,
+            support_data=support_data,
+            target_measure_keys=target_measure_keys,
         )
     if support_stats is not None:
         support_stats.update(processor.support_stats)

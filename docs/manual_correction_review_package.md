@@ -59,6 +59,12 @@ maintained Docker runtime. Pipeline artifacts on the bind-mounted worktree may b
 container user, so a host-side GUI process is not guaranteed to have write permission for
 `review/corrections/`.
 
+The Docker snippets below assume `<review_root>` is inside the repository mounted at
+`/workspace` (the normal case, including the default `<run_dir>/review`). If a controlled caller
+uses an absolute review root outside the repository, that directory must be bind-mounted separately
+at a container path and the `--handoff` argument must use that container-visible path. Any retained
+source artifacts referenced by the handoff must likewise remain reachable at the recorded paths.
+
 ```bash
 docker run --rm -it \
   -p 127.0.0.1:8010:8010 \
@@ -68,7 +74,7 @@ docker run --rm -it \
   pdfscore_pipeline_gpu \
   /opt/venv_pipeline/bin/python tools/gt_relabel_gui/server.py \
   --mode manual \
-  --handoff <run_dir>/review/manual_correction_input.json \
+  --handoff <review_root>/manual_correction_input.json \
   --host 0.0.0.0 \
   --port 8010
 ```
@@ -81,7 +87,7 @@ remains valid:
 ```bash
 python3 tools/gt_relabel_gui/server.py \
   --mode manual \
-  --handoff <run_dir>/review/manual_correction_input.json \
+  --handoff <review_root>/manual_correction_input.json \
   --host 127.0.0.1 \
   --port 8010
 ```
@@ -124,9 +130,14 @@ canonical files unless overwrite is explicitly requested.
 
 ## 4. Apply corrections, rerun, and generate the corrected final PDF
 
-Use the existing apply helper in the maintained pipeline runtime. When OMR-DLN is registered
-in the shared host cache, mount the selected verified artifact at its manifest-declared runtime
-path:
+Use the existing apply helper in the maintained pipeline runtime. The command below has the same
+workspace assumption as the GUI command: `<review_root>` is inside the repository mounted at
+`/workspace`. For an absolute external review root, add an explicit bind mount for that package
+and pass its container-visible handoff path; retained source-artifact paths in the handoff must also
+be reachable inside the container.
+
+When OMR-DLN is registered in the shared host cache, mount the selected verified artifact at its
+manifest-declared runtime path:
 
 ```bash
 OMR_HOST="$HOME/.cache/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt"
@@ -140,7 +151,7 @@ docker run --rm --gpus all \
   -e OMR_DLN_MODEL_PATH="$OMR_RUNTIME" \
   pdfscore_pipeline_gpu \
   /opt/venv_pipeline/bin/python -m src.pipeline.review.apply_corrections \
-  <run_dir>/review/manual_correction_input.json \
+  <review_root>/manual_correction_input.json \
   --generate-final-pdf
 ```
 

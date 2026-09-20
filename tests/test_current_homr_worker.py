@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 from src.pipeline.detection.current_support_worker import PROJECT_ROOT, _build_worker_environment
@@ -12,7 +13,9 @@ from src.pipeline.detection.homr_profile_compat import (
 )
 from src.pipeline.detection.maintained_homr_worker import (
     EXPECTED_HOMR_COMMIT,
+    _capture_homr_clef_mask,
     _homr_installed_commit,
+    _validate_cuda_session_records,
 )
 
 
@@ -488,3 +491,70 @@ def test_current_worker_environment_removes_homr_shadow_paths() -> None:
     assert "/opt/pdfscore_stage_e_profile/src" not in entries
     assert "/keep-me" in entries
     assert env["OTHER"] == "value"
+
+def test_maintained_worker_captures_clef_mask_from_existing_segnet_result() -> None:
+    clef_mask = np.array([[0, 1], [1, 0]], dtype=np.uint8)
+    predictions = SimpleNamespace(clefs_keys=clef_mask)
+
+    def load_predictions(*_args, **_kwargs):
+        return predictions, object()
+
+    heuristics_module = SimpleNamespace(load_and_preprocess_predictions=load_predictions)
+
+    with _capture_homr_clef_mask(heuristics_module) as captured:
+        result = heuristics_module.load_and_preprocess_predictions("page.png", False, True, True)
+
+    assert result[0] is predictions
+    assert np.array_equal(captured["clef_mask"], clef_mask)
+    assert captured["clef_mask"] is not clef_mask
+    assert heuristics_module.load_and_preprocess_predictions is load_predictions
+
+
+def test_cuda_session_validation_accepts_active_cuda_provider() -> None:
+    _validate_cuda_session_records(
+        [
+            {
+                "model": "encoder.onnx",
+                "requested_providers": [
+                    ["CUDAExecutionProvider", {"cudnn_conv_algo_search": "HEURISTIC"}],
+                    "CPUExecutionProvider",
+                ],
+                "active_providers": ["CUDAExecutionProvider", "CPUExecutionProvider"],
+            }
+        ],
+        use_gpu_inference=True,
+        available_providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+    )
+
+
+def test_cuda_session_validation_rejects_cpu_fallback() -> None:
+    with pytest.raises(RuntimeError, match="did not activate CUDA"):
+        _validate_cuda_session_records(
+            [
+                {
+                    "model": "segnet.onnx",
+                    "requested_providers": ["CUDAExecutionProvider"],
+                    "active_providers": ["CPUExecutionProvider"],
+                }
+            ],
+            use_gpu_inference=True,
+            available_providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+        )
+
+
+def test_cuda_session_validation_rejects_failed_cuda_initialization() -> None:
+    with pytest.raises(RuntimeError, match="initialization failed"):
+        _validate_cuda_session_records(
+            [
+                {
+                    "model": "decoder.onnx",
+                    "requested_providers": ["CUDAExecutionProvider"],
+                    "active_providers": [],
+                    "error_type": "RuntimeError",
+                    "error": "CUDA init failed",
+                }
+            ],
+            use_gpu_inference=True,
+            available_providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+        )
+

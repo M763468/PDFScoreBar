@@ -94,22 +94,41 @@ The final image stores a fingerprint of runtime-sensitive source outside `/works
 /opt/pdfscore-runtime/source_fingerprint.txt
 ```
 
-The GPU-smoke host resolver recomputes the fingerprint from the bind-mounted checkout before
-expensive model work. The canonical tag is resolved to an immutable image ID for the run. If
-that tag points at different source, validation compares the active topic with the available
+Canonical Docker validation keeps two different identities deliberately separate:
+
+- the **source fingerprint** is broad provenance for the checkout used to build an image; it
+  includes bind-mounted application Python and remains useful for identifying source drift;
+- the **runtime compatibility fingerprint** covers the image/environment-defining contract:
+  the dependency/build portion of the Dockerfile before the bind-mounted source copy,
+  `pyproject.toml`, the HOMR ONNX-provider build patch, and the image-owned barline-CNN
+  manifest.
+
+The GPU-smoke host resolver first resolves the mutable canonical tag to an immutable image ID.
+An exact source-fingerprint match is still accepted directly. When source provenance differs,
+the resolver derives the compatibility fingerprint from the recognized PDFScoreBar image's
+retained build-source copy and compares that with the active checkout. Therefore a Python-only
+change under bind-mounted `src/` can reuse an existing compatible image, while dependency,
+CUDA/HOMR build-contract, patch, or image-owned model-contract changes still require compatible
+image selection or a rebuild.
+
+If the compatibility contract differs, validation compares the active topic with the available
 `origin/develop` (or local `develop`) reference and distinguishes a stale topic base from
-topic-owned runtime changes and a genuinely stale image. Fetch `origin` before classification
-when that reference may be outdated. Except for a stale topic base, validation searches local
-PDFScoreBar runtime images for a matching fingerprint before recommending a build; it also
-searches when the default tag is absent. A stale topic base should be refreshed onto current `develop`; it is
-not a reason by itself to rebuild the image. The in-container fingerprint check remains as the
-final integrity guard. Config files are intentionally outside the fingerprint so validation
-configs can vary without image rebuilds; runtime-sensitive Python, Docker, and dependency
-definition files remain covered.
+topic-owned environment changes and a genuinely stale image. Fetch `origin` before
+classification when that reference may be outdated. A stale topic base should be refreshed onto
+current `develop`; it is not a reason by itself to rebuild the image. Except for that case, the
+resolver searches local PDFScoreBar images for a matching runtime compatibility fingerprint
+before recommending another build.
+
+The in-container preflight runs the active checkout's contract code after host-side image
+resolution and rechecks the bind-mounted compatibility fingerprint, protecting against source
+changes between selection and execution. A source-fingerprint mismatch is reported as provenance
+rather than treated by itself as an image incompatibility.
 
 Canonical builds record source fingerprint, commit, and branch labels in the image and write
 host-side build provenance to `artifacts/docker_build_provenance.txt`. Existing pre-#352
-runtime images without those labels remain inspectable through the embedded fingerprint file.
+runtime images without those labels remain inspectable through the embedded source fingerprint;
+their runtime compatibility can be derived from the retained build-source copy without requiring
+a rebuild solely to add new metadata.
 To list reusable local runtime images and their provenance, run:
 
 ```bash

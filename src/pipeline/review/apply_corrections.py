@@ -347,7 +347,7 @@ def _barline_neighborhood_keys(
     barline_overrides: List[Dict[str, Any]],
     *,
     page_index: int,
-    radius: int = 1,
+    radius: int = 0,
 ) -> set[tuple[int, int, int]]:
     page = _first_numbering_page(numbering_payload, role="barline-neighborhood numbering")
     systems = page.get("systems")

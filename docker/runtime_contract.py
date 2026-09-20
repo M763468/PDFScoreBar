@@ -33,7 +33,9 @@ RUNTIME_CONTRACT_FILES = (
     Path("docker/patch_homr_onnx_provider.py"),
     Path("models/barline_cnn/manifest.json"),
 )
-DOCKERFILE_RUNTIME_BOUNDARY = b"# Copy source code. Canonical runtime mounts the active checkout over /workspace,"
+DOCKERFILE_RUNTIME_BOUNDARY = (
+    b"# Copy source code. Canonical runtime mounts the active checkout over /workspace,"
+)
 
 
 def _source_contract_files(root: Path) -> Iterable[Path]:
@@ -155,9 +157,7 @@ def run_preflight(
     expected_fingerprint_path: Path,
     *,
     expected_fingerprint_value: str | None = None,
-    expected_source_fingerprint_path: Path = Path(
-        "/opt/pdfscore-runtime/source_fingerprint.txt"
-    ),
+    expected_source_fingerprint_path: Path = Path("/opt/pdfscore-runtime/source_fingerprint.txt"),
 ) -> int:
     errors: list[str] = []
     host_provenance = _host_provenance()

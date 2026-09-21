@@ -167,7 +167,6 @@ def test_runtime_fingerprint_keeps_unknown_provenance_syntax_and_post_copy_steps
     assert normalized_v1 != normalized_v2
 
 
-
 def test_runtime_contract_mismatch_defers_rebuild_classification(tmp_path: Path, capsys) -> None:
     runtime_contract = _load_runtime_contract_module()
     workspace = tmp_path / "workspace"

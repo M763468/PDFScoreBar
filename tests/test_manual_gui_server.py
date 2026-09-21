@@ -184,3 +184,9 @@ def test_manual_gui_separates_one_based_display_from_saved_indices():
     assert "Measures only:" in html_source
     assert "Saved correction indices keep the existing internal" in html_source
     assert 'helpPanel.scrollIntoView({ behavior: "smooth", block: "start" });' in app_source
+    assert "function saveCorrectionType(type)" in app_source
+    assert "function saveDirtyTypes()" in app_source
+    assert "saveCorrectionTypes(Array.from(dirtyTypes))" in app_source
+    assert "saveDirtyTypes().catch(() => {});" in app_source
+    assert "typeSelect.value = type" not in app_source
+    assert "Save corrections writes every staged correction type" in html_source

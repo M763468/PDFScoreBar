@@ -125,9 +125,20 @@ def replay_source_provenance(retained_checkout: Any) -> dict[str, Any]:
     retained_head = str(retained_checkout["head"])
     current_head = git_head()
     files = {}
+    comparable = True
     for path in REPLAY_SOURCE_FILES:
-        retained_blob = git_blob_sha(retained_head, path)
-        current_blob = git_blob_sha(current_head, path)
+        try:
+            retained_blob = git_blob_sha(retained_head, path)
+            current_blob = git_blob_sha(current_head, path)
+        except subprocess.CalledProcessError as exc:
+            comparable = False
+            files[path] = {
+                "retained_blob": None,
+                "current_blob": None,
+                "equal": None,
+                "error": exc.stderr.strip() or str(exc),
+            }
+            continue
         files[path] = {
             "retained_blob": retained_blob,
             "current_blob": current_blob,
@@ -136,7 +147,11 @@ def replay_source_provenance(retained_checkout: Any) -> dict[str, Any]:
     return {
         "retained_head": retained_head,
         "current_head": current_head,
-        "all_equal": all(item["equal"] for item in files.values()),
+        "all_equal": (
+            all(item["equal"] for item in files.values())
+            if comparable
+            else None
+        ),
         "files": files,
     }
 

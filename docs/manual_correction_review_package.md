@@ -113,6 +113,57 @@ The `--handoff` route:
 The legacy one-page `manual_config_builder.py` remains available for development/legacy uses, but
 it is not the normal #236 review workflow because it accepts arbitrary artifact paths.
 
+### Manual GUI quick guide
+
+The GUI is split into a left correction/navigation sidebar and a score canvas on the right.
+The overlay controls are in the toolbar above the score canvas.
+
+Initial overlay state:
+
+| Overlay | Initial state | Purpose |
+| --- | --- | --- |
+| Measures | on | Show normal measure geometry. |
+| Barlines | on | Show current barline geometry. |
+| Labels | off | Show regular overlay labels. Keep this off for a less crowded score. |
+| Base MMR state | on | Show base/automatic MMR state. |
+| Manual state | on | Show staged manual corrections. |
+
+Useful review views:
+
+- **Barlines only:** Measures off, Barlines on, Labels off, Base MMR state off,
+  Manual state off.
+- **Measures only:** Measures on, Barlines off, Labels off, Base MMR state off,
+  Manual state off.
+- **Staged barline removals:** Barlines may be off while Manual state remains on; the staged
+  removal remains visible independently of the normal barline layer.
+
+The selected object and an active draft remain visible even when their normal overlay layer is
+hidden. Selected objects are highlighted separately so reviewers can reduce overlay density without
+losing the active target.
+
+Typical correction flow:
+
+1. Choose a correction type and operation in the left sidebar.
+2. Use **Select object**, or **Draw barline box** when adding a barline.
+3. Use **Stage change** and inspect the staged state in both the canvas and **Current page results**.
+4. Use **Unstage selected** / **Clear staged override** if the staged edit is not wanted.
+5. Use **Save corrections** to write package-local correction JSON under
+   `review/corrections/`.
+
+Visible Page / System / Measure identifiers are **1-based** for reviewer readability. Persisted
+correction targets keep the existing internal **0-based** indices; the GUI must not translate the
+saved schema.
+
+Canvas navigation:
+
+- zoom: mouse wheel;
+- pan: Space + drag or middle-mouse drag;
+- previous/next page: buttons in the sticky header or Left/Right arrow keys;
+- Delete/Backspace removes the currently selected staged correction when applicable.
+
+The GUI also exposes this guide from the **Help** button in the sticky header, so the reviewer does
+not need the repository documentation open while correcting a score.
+
 ## 3. Save corrections
 
 The existing GUI stages corrections under the review package's `corrections/` directory. The

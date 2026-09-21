@@ -76,13 +76,22 @@ def test_source_fingerprint_detects_runtime_source_drift_but_ignores_config(tmp_
     assert runtime_contract.source_fingerprint(tmp_path) != initial
 
 
-def test_runtime_fingerprint_ignores_bind_mounted_source_and_provenance_tail(
+def test_runtime_fingerprint_ignores_bind_mounted_source_but_hashes_image_owned_steps(
     tmp_path: Path,
 ) -> None:
     runtime_contract = _load_runtime_contract_module()
-    boundary = "# Copy source code. Canonical runtime mounts the active checkout over /workspace,\n"
-    (tmp_path / "Dockerfile").write_text(
-        "FROM runtime\nRUN install-runtime\n" + boundary + "COPY . /workspace\nLABEL source=old\n",
+    dockerfile = tmp_path / "Dockerfile"
+    dockerfile.write_text(
+        "FROM runtime\n"
+        "RUN install-runtime\n"
+        "COPY . /workspace\n"
+        "RUN materialize-cnn-v1\n"
+        "ARG PDFSCORE_SOURCE_FINGERPRINT\n"
+        "ARG PDFSCORE_SOURCE_COMMIT\n"
+        "ARG PDFSCORE_SOURCE_BRANCH\n"
+        'LABEL pdfscore.runtime.source_fingerprint="${PDFSCORE_SOURCE_FINGERPRINT}"\n'
+        'LABEL pdfscore.runtime.source_commit="${PDFSCORE_SOURCE_COMMIT}"\n'
+        'LABEL pdfscore.runtime.source_branch="${PDFSCORE_SOURCE_BRANCH}"\n',
         encoding="utf-8",
     )
     (tmp_path / "pyproject.toml").write_text("[project]\nname='fixture'\n", encoding="utf-8")
@@ -102,16 +111,39 @@ def test_runtime_fingerprint_ignores_bind_mounted_source_and_provenance_tail(
     source.write_text("VALUE = 2\n", encoding="utf-8")
     assert runtime_contract.runtime_fingerprint(tmp_path) == initial
 
-    (tmp_path / "Dockerfile").write_text(
-        "FROM runtime\nRUN install-runtime\n" + boundary + "COPY . /workspace\nLABEL source=new\n",
+    dockerfile.write_text(
+        "FROM runtime\n"
+        "RUN install-runtime\n"
+        "COPY . /workspace\n"
+        "RUN materialize-cnn-v1\n"
+        "ARG PDFSCORE_SOURCE_FINGERPRINT=changed-provenance-only\n"
+        'LABEL pdfscore.runtime.source_fingerprint="changed-provenance-only"\n',
         encoding="utf-8",
     )
     assert runtime_contract.runtime_fingerprint(tmp_path) == initial
 
-    (tmp_path / "pyproject.toml").write_text(
-        "[project]\nname='fixture'\ndependencies=['new-runtime']\n", encoding="utf-8"
+    dockerfile.write_text(
+        "FROM runtime\n"
+        "RUN install-runtime\n"
+        "COPY . /workspace\n"
+        "RUN materialize-cnn-v2\n"
+        "ARG PDFSCORE_SOURCE_FINGERPRINT=changed-provenance-only\n"
+        'LABEL pdfscore.runtime.source_fingerprint="changed-provenance-only"\n',
+        encoding="utf-8",
     )
     assert runtime_contract.runtime_fingerprint(tmp_path) != initial
+
+
+def test_runtime_fingerprint_normalizes_legacy_and_current_source_provenance_steps(
+    tmp_path: Path,
+) -> None:
+    runtime_contract = _load_runtime_contract_module()
+    legacy = b"""RUN mkdir -p /opt/pdfscore-runtime && \\\n    cp /workspace/docker/runtime_contract.py /opt/pdfscore-runtime/runtime_contract.py && \\\n    /opt/venv_pipeline/bin/python /opt/pdfscore-runtime/runtime_contract.py fingerprint /workspace \\\n      > /opt/pdfscore-runtime/source_fingerprint.txt && \\\n    CNN_MODEL_PATH=$(materialize-cnn) && \\\n    test -s /opt/pdfscore-assets/barline_cnn_smoke.pth\n"""
+    current = b"""RUN mkdir -p /opt/pdfscore-runtime && \\\n    cp /workspace/docker/runtime_contract.py /opt/pdfscore-runtime/runtime_contract.py && \\\n    ACTUAL_SOURCE_FINGERPRINT=$(fingerprint-source) && \\\n    printf '%s\\n' "${ACTUAL_SOURCE_FINGERPRINT}" \\\n      > /opt/pdfscore-runtime/source_fingerprint.txt && \\\n    if [ -n "${PDFSCORE_SOURCE_FINGERPRINT}" ] && \\\n       [ "${ACTUAL_SOURCE_FINGERPRINT}" != "${PDFSCORE_SOURCE_FINGERPRINT}" ]; then \\\n      echo mismatch >&2; \\\n      exit 1; \\\n    fi && \\\n    CNN_MODEL_PATH=$(materialize-cnn) && \\\n    test -s /opt/pdfscore-assets/barline_cnn_smoke.pth\n"""
+
+    assert runtime_contract._dockerfile_runtime_contract(legacy) == (
+        runtime_contract._dockerfile_runtime_contract(current)
+    )
 
 
 def test_runtime_contract_mismatch_defers_rebuild_classification(tmp_path: Path, capsys) -> None:

@@ -258,24 +258,30 @@ def test_issue294_retained_replay_difference_identifies_system_fields() -> None:
 def test_issue294_runtime_contract_drift_reports_wrong_or_missing_versions() -> None:
     drift = runtime_contract_drift(
         {
+            "python_major_minor": "3.12",
             "packages": {
                 "numpy": "0.0.0",
                 "opencv-python-headless": "4.10.0.84",
-            }
+            },
         }
     )
 
     assert {
-        "distribution": "numpy",
+        "component": "python_major_minor",
+        "expected": "3.11",
+        "actual": "3.12",
+    } in drift
+    assert {
+        "component": "numpy",
         "expected": "1.26.4",
         "actual": "0.0.0",
     } in drift
     assert {
-        "distribution": "scipy",
+        "component": "scipy",
         "expected": "1.15.3",
         "actual": None,
     } in drift
-    assert all(item["distribution"] != "opencv-python-headless" for item in drift)
+    assert all(item["component"] != "opencv-python-headless" for item in drift)
 
 
 

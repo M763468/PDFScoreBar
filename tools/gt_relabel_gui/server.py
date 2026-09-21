@@ -352,7 +352,9 @@ class Handler(BaseHTTPRequestHandler):
                 None,
             )
             if config is None:
-                self.send_error(400, "No movement boundary evidence is attached to this review package")
+                self.send_error(
+                    400, "No movement boundary evidence is attached to this review package"
+                )
                 return
             evidence_rel = config.get("movement_boundary_evidence")
             resolved_rel = config.get("movement_boundary_resolved_output")

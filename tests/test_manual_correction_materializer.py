@@ -84,6 +84,25 @@ def test_materializes_review_package_from_manifest_resolved_barlines(tmp_path):
     assert handoff_on_disk["pages"][0]["barlines_review_source"] == page["barlines_review_source"]
 
 
+def test_materializer_accepts_manifest_declared_shared_source_image(tmp_path):
+    run_root = _fake_run_root(tmp_path)
+    shared_image = tmp_path / "input_images" / "page_001.png"
+    _write_text(shared_image, "shared-source-image")
+    (run_root / "inputs" / "images" / "page_001.png").unlink()
+
+    manifest_path = run_root / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["run_dir"] = "source_run"
+    manifest["pages"][0]["image_path"] = "input_images/page_001.png"
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    review_root = tmp_path / "review"
+    materialize_manual_correction_review_package(run_root=run_root, review_root=review_root)
+
+    copied = review_root / "pages" / "page_001" / "source.png"
+    assert copied.read_text() == "shared-source-image"
+
+
 def test_materialized_handoff_validates_and_builds_page_local_gui_config(tmp_path):
     run_root = _fake_run_root(tmp_path)
     review_root = tmp_path / "review"

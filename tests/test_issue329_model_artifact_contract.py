@@ -17,6 +17,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OMR_MANIFEST = PROJECT_ROOT / "models" / "omr_dln" / "manifest.json"
 
 
+@pytest.fixture(autouse=True)
+def isolated_model_cache(tmp_path: Path, monkeypatch) -> None:
+    # Fixture imports must never publish synthetic bytes into the user's shared cache.
+    monkeypatch.setenv("PDFSCOREBAR_MODEL_CACHE", str(tmp_path / ".model_cache"))
+
+
 def _write_external_manifest(tmp_path: Path, *, version: str, payload: bytes) -> Path:
     manifest = tmp_path / "models" / "fixture" / "manifest.json"
     manifest.parent.mkdir(parents=True, exist_ok=True)

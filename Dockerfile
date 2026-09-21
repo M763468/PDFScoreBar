@@ -185,13 +185,26 @@ COPY --from=builder /opt/weights /opt/pdfscore-assets/realesrgan
 # so persistent runtime assets and the source fingerprint live under /opt instead.
 COPY . /workspace
 
+# Source provenance must not invalidate the expensive runtime dependency layers.
+ARG PDFSCORE_SOURCE_FINGERPRINT
+ARG PDFSCORE_SOURCE_COMMIT
+ARG PDFSCORE_SOURCE_BRANCH
+
 # Reuse the production artifact contract from Issue #315 for the smoke CNN. The
 # manifest remains authoritative; Docker only materializes its verified bytes into
 # an image-owned cache and exposes a stable validation-only path.
 RUN mkdir -p /opt/pdfscore-runtime && \
     cp /workspace/docker/runtime_contract.py /opt/pdfscore-runtime/runtime_contract.py && \
-    /opt/venv_pipeline/bin/python /opt/pdfscore-runtime/runtime_contract.py fingerprint /workspace \
+    ACTUAL_SOURCE_FINGERPRINT=$(/opt/venv_pipeline/bin/python \
+      /opt/pdfscore-runtime/runtime_contract.py fingerprint /workspace) && \
+    printf '%s\n' "${ACTUAL_SOURCE_FINGERPRINT}" \
       > /opt/pdfscore-runtime/source_fingerprint.txt && \
+    if [ -n "${PDFSCORE_SOURCE_FINGERPRINT}" ] && \
+       [ "${ACTUAL_SOURCE_FINGERPRINT}" != "${PDFSCORE_SOURCE_FINGERPRINT}" ]; then \
+      echo "Docker build source fingerprint changed during build context transfer" >&2; \
+      echo "expected=${PDFSCORE_SOURCE_FINGERPRINT} actual=${ACTUAL_SOURCE_FINGERPRINT}" >&2; \
+      exit 1; \
+    fi && \
     CNN_MODEL_PATH=$(/opt/venv_pipeline/bin/python -m src.common.model_artifacts materialize \
       /workspace/models/barline_cnn/manifest.json --cache-root "${PDFSCOREBAR_MODEL_CACHE}") && \
     ln -s "${CNN_MODEL_PATH}" /opt/pdfscore-assets/barline_cnn_smoke.pth && \
@@ -205,5 +218,8 @@ LABEL pdfscore.detector.pdfscore_evaluator_commit="workspace-runtime"
 LABEL pdfscore.detector.historical_homr_commit="${STAGE_E_HOMR_COMMIT}"
 LABEL pdfscore.detector.historical_pdfscore_evaluator_commit="${STAGE_E_PDFSCORE_COMMIT}"
 LABEL pdfscore.runtime.asset_contract="v1"
+LABEL pdfscore.runtime.source_fingerprint="${PDFSCORE_SOURCE_FINGERPRINT}"
+LABEL pdfscore.runtime.source_commit="${PDFSCORE_SOURCE_COMMIT}"
+LABEL pdfscore.runtime.source_branch="${PDFSCORE_SOURCE_BRANCH}"
 
 CMD ["bash"]

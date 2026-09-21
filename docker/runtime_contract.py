@@ -23,6 +23,53 @@ SOURCE_CONTRACT_FILES = (
 SOURCE_SUFFIXES = frozenset({".py", ".toml"})
 RUNTIME_MODULES = ("homr", "realesrgan", "basicsr", "ultralytics")
 
+# Image/runtime compatibility is intentionally narrower than source provenance.
+# The active checkout is bind-mounted at /workspace, so application Python does
+# not require an image rebuild. These inputs define the image-owned environment
+# and assets that must remain compatible with the selected image.
+RUNTIME_CONTRACT_FILES = (
+    Path("Dockerfile"),
+    Path("pyproject.toml"),
+    Path("docker/patch_homr_onnx_provider.py"),
+    Path("models/barline_cnn/manifest.json"),
+    Path("src/common/model_artifacts.py"),
+    Path("src/common/__init__.py"),
+    Path("src/common/barline_evaluation.py"),
+)
+
+LEGACY_SOURCE_PROVENANCE_LINES = (
+    "/opt/venv_pipeline/bin/python /opt/pdfscore-runtime/runtime_contract.py "
+    "fingerprint /workspace \\",
+    "> /opt/pdfscore-runtime/source_fingerprint.txt && \\",
+)
+CURRENT_SOURCE_PROVENANCE_LINES = (
+    "ACTUAL_SOURCE_FINGERPRINT=$(/opt/venv_pipeline/bin/python \\",
+    "/opt/pdfscore-runtime/runtime_contract.py fingerprint /workspace) && \\",
+    "printf '%s\\n' \"${ACTUAL_SOURCE_FINGERPRINT}\" \\",
+    "> /opt/pdfscore-runtime/source_fingerprint.txt && \\",
+    'if [ -n "${PDFSCORE_SOURCE_FINGERPRINT}" ] && \\',
+    '[ "${ACTUAL_SOURCE_FINGERPRINT}" != "${PDFSCORE_SOURCE_FINGERPRINT}" ]; then \\',
+    'echo "Docker build source fingerprint changed during build context transfer" >&2; \\',
+    'echo "expected=${PDFSCORE_SOURCE_FINGERPRINT} actual=${ACTUAL_SOURCE_FINGERPRINT}" >&2; \\',
+    "exit 1; \\",
+    "fi && \\",
+)
+
+PROVENANCE_ARG_LINES = frozenset(
+    {
+        "ARG PDFSCORE_SOURCE_FINGERPRINT",
+        "ARG PDFSCORE_SOURCE_COMMIT",
+        "ARG PDFSCORE_SOURCE_BRANCH",
+    }
+)
+PROVENANCE_LABEL_LINES = frozenset(
+    {
+        'LABEL pdfscore.runtime.source_fingerprint="${PDFSCORE_SOURCE_FINGERPRINT}"',
+        'LABEL pdfscore.runtime.source_commit="${PDFSCORE_SOURCE_COMMIT}"',
+        'LABEL pdfscore.runtime.source_branch="${PDFSCORE_SOURCE_BRANCH}"',
+    }
+)
+
 
 def _source_contract_files(root: Path) -> Iterable[Path]:
     seen: set[Path] = set()
@@ -60,6 +107,69 @@ def source_fingerprint(root: Path) -> str:
                 digest.update(chunk)
         digest.update(b"\0")
     return digest.hexdigest()
+
+
+def _remove_exact_sequence(lines: list[str], sequence: tuple[str, ...]) -> list[str]:
+    """Remove only a known provenance command sequence; unknown syntax remains hashed."""
+    output: list[str] = []
+    index = 0
+    width = len(sequence)
+    while index < len(lines):
+        stripped_window = tuple(line.strip() for line in lines[index : index + width])
+        if stripped_window == sequence:
+            index += width
+            continue
+        output.append(lines[index])
+        index += 1
+    return output
+
+
+def _dockerfile_runtime_contract(payload: bytes) -> bytes:
+    """Strip only known source-provenance commands from compatibility hashing."""
+    lines = payload.decode("utf-8").splitlines()
+    lines = _remove_exact_sequence(lines, LEGACY_SOURCE_PROVENANCE_LINES)
+    lines = _remove_exact_sequence(lines, CURRENT_SOURCE_PROVENANCE_LINES)
+
+    normalized: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped in PROVENANCE_ARG_LINES:
+            continue
+        if stripped in PROVENANCE_LABEL_LINES:
+            continue
+        if not stripped or stripped.startswith("#"):
+            continue
+        normalized.append(line.rstrip())
+
+    return ("\n".join(normalized) + "\n").encode("utf-8")
+
+
+def _runtime_contract_bytes(relative: Path, payload: bytes | None) -> bytes:
+    if payload is None:
+        return b"<missing>"
+    if relative == Path("Dockerfile"):
+        return _dockerfile_runtime_contract(payload)
+    return payload
+
+
+def runtime_fingerprint_entries(entries: dict[str, bytes | None]) -> str:
+    """Hash only image/environment-defining inputs, not bind-mounted app source."""
+    digest = hashlib.sha256()
+    for relative in RUNTIME_CONTRACT_FILES:
+        key = relative.as_posix()
+        digest.update(key.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(_runtime_contract_bytes(relative, entries.get(key)))
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def runtime_fingerprint(root: Path) -> str:
+    entries: dict[str, bytes | None] = {}
+    for relative in RUNTIME_CONTRACT_FILES:
+        path = root / relative
+        entries[relative.as_posix()] = path.read_bytes() if path.is_file() else None
+    return runtime_fingerprint_entries(entries)
 
 
 def _symlink_ancestor(path: Path) -> tuple[Path, Path] | None:
@@ -107,21 +217,40 @@ def _host_provenance() -> dict[str, str | None]:
     }
 
 
-def run_preflight(workspace: Path, config_path: Path, expected_fingerprint_path: Path) -> int:
+def run_preflight(
+    workspace: Path,
+    config_path: Path,
+    expected_fingerprint_path: Path,
+    *,
+    expected_fingerprint_value: str | None = None,
+    expected_source_fingerprint_path: Path = Path("/opt/pdfscore-runtime/source_fingerprint.txt"),
+) -> int:
     errors: list[str] = []
     host_provenance = _host_provenance()
-    expected_fingerprint = (
-        expected_fingerprint_path.read_text(encoding="utf-8").strip()
-        if expected_fingerprint_path.is_file()
-        else ""
+    expected_runtime_fingerprint = (
+        expected_fingerprint_value.strip()
+        if expected_fingerprint_value
+        else (
+            expected_fingerprint_path.read_text(encoding="utf-8").strip()
+            if expected_fingerprint_path.is_file()
+            else ""
+        )
     )
-    actual_fingerprint = source_fingerprint(workspace)
-    if not expected_fingerprint:
-        errors.append(f"image source fingerprint is missing: {expected_fingerprint_path}")
-    elif actual_fingerprint != expected_fingerprint:
+    actual_runtime_fingerprint = runtime_fingerprint(workspace)
+    actual_source_fingerprint = source_fingerprint(workspace)
+    image_source_fingerprint = (
+        expected_source_fingerprint_path.read_text(encoding="utf-8").strip()
+        if expected_source_fingerprint_path.is_file()
+        else None
+    )
+
+    if not expected_runtime_fingerprint:
+        errors.append("selected image runtime compatibility fingerprint is missing")
+    elif actual_runtime_fingerprint != expected_runtime_fingerprint:
         errors.append(
-            "bind-mounted source does not match the source used to build the image; "
-            f"expected={expected_fingerprint} actual={actual_fingerprint}. Rebuild the image."
+            "bind-mounted checkout changed image/environment-defining inputs after host "
+            "image resolution; "
+            f"expected={expected_runtime_fingerprint} actual={actual_runtime_fingerprint}"
         )
 
     if errors:
@@ -129,7 +258,14 @@ def run_preflight(workspace: Path, config_path: Path, expected_fingerprint_path:
             json.dumps(
                 {
                     "status": "fail",
-                    "source_fingerprint": actual_fingerprint,
+                    "runtime_fingerprint": actual_runtime_fingerprint,
+                    "source_fingerprint": actual_source_fingerprint,
+                    "image_source_fingerprint": image_source_fingerprint,
+                    "source_fingerprint_match": (
+                        image_source_fingerprint == actual_source_fingerprint
+                        if image_source_fingerprint
+                        else None
+                    ),
                     "host_provenance": host_provenance,
                     "errors": errors,
                 },
@@ -218,7 +354,14 @@ def run_preflight(workspace: Path, config_path: Path, expected_fingerprint_path:
 
     payload = {
         "status": "pass" if not errors else "fail",
-        "source_fingerprint": actual_fingerprint,
+        "runtime_fingerprint": actual_runtime_fingerprint,
+        "source_fingerprint": actual_source_fingerprint,
+        "image_source_fingerprint": image_source_fingerprint,
+        "source_fingerprint_match": (
+            image_source_fingerprint == actual_source_fingerprint
+            if image_source_fingerprint
+            else None
+        ),
         "host_provenance": host_provenance,
         "config": str(config_path),
         "input": str(input_path) if input_path is not None else None,
@@ -246,13 +389,27 @@ def _build_parser() -> argparse.ArgumentParser:
     fingerprint = subparsers.add_parser("fingerprint")
     fingerprint.add_argument("root", type=Path)
 
+    runtime = subparsers.add_parser("runtime-fingerprint")
+    runtime.add_argument("root", type=Path)
+
     preflight = subparsers.add_parser("preflight")
     preflight.add_argument("--workspace", type=Path, default=Path("/workspace"))
     preflight.add_argument("--config", type=Path, required=True)
     preflight.add_argument(
         "--expected-fingerprint",
         type=Path,
+        default=Path("/opt/pdfscore-runtime/runtime_fingerprint.txt"),
+        help="Compatibility fingerprint file; retained for script/test compatibility.",
+    )
+    preflight.add_argument(
+        "--expected-fingerprint-value",
+        help="Host-resolved image/runtime compatibility fingerprint.",
+    )
+    preflight.add_argument(
+        "--expected-source-fingerprint",
+        type=Path,
         default=Path("/opt/pdfscore-runtime/source_fingerprint.txt"),
+        help="Image build-source fingerprint used only for provenance reporting.",
     )
     return parser
 
@@ -262,7 +419,16 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "fingerprint":
         print(source_fingerprint(args.root))
         return 0
-    return run_preflight(args.workspace, args.config, args.expected_fingerprint)
+    if args.command == "runtime-fingerprint":
+        print(runtime_fingerprint(args.root))
+        return 0
+    return run_preflight(
+        args.workspace,
+        args.config,
+        args.expected_fingerprint,
+        expected_fingerprint_value=args.expected_fingerprint_value,
+        expected_source_fingerprint_path=args.expected_source_fingerprint,
+    )
 
 
 if __name__ == "__main__":

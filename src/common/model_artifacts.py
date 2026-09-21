@@ -17,7 +17,8 @@ from urllib.request import Request, urlopen
 
 SCHEMA_VERSION = "pdfscorebar.model_artifact.v1"
 MODEL_CACHE_ENV = "PDFSCOREBAR_MODEL_CACHE"
-DEFAULT_CACHE_DIR = ".model_cache"
+XDG_CACHE_HOME_ENV = "XDG_CACHE_HOME"
+DEFAULT_CACHE_SUBDIR = Path("pdfscorebar") / "models"
 _SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 
 
@@ -185,13 +186,23 @@ def load_model_artifact_manifest(path: Path | str) -> ModelArtifactManifest:
 
 
 def get_model_cache_root(*, project_root: Path, cache_root: Path | str | None = None) -> Path:
-    """Resolve the local model cache root without touching experiment logs."""
+    """Resolve the shared host model cache root without touching experiment logs.
+
+    project_root remains part of the public helper signature for compatibility,
+    but the default cache is intentionally independent of the active checkout.
+    """
     if cache_root is not None:
         return Path(cache_root)
+
     env_value = os.environ.get(MODEL_CACHE_ENV)
     if env_value:
         return Path(env_value)
-    return project_root / DEFAULT_CACHE_DIR
+
+    xdg_cache_home = os.environ.get(XDG_CACHE_HOME_ENV)
+    if xdg_cache_home:
+        return Path(xdg_cache_home) / DEFAULT_CACHE_SUBDIR
+
+    return Path.home() / ".cache" / DEFAULT_CACHE_SUBDIR
 
 
 def model_artifact_path(

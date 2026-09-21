@@ -5,6 +5,7 @@ FULL_EVAL_CONFIG ?= configs/evaluation2_e2e_verification_full.yaml
 FULL_EVAL_TIMEOUT ?= 8h
 FAST_TESTS ?= tests/test_numbering_overrides.py tests/test_pipeline_detection.py tests/test_probe_bands.py tests/test_subprocess_utils.py
 DOCKER_EXTRA_ARGS ?=
+DOCKER_IMAGE ?= pdfscore_pipeline_gpu
 
 ISSUE120_RESULTS_DIR ?= data/evaluation2/golden_baseline_eval2_bc23deb
 ISSUE120_GT_ROOT ?= data/evaluation2/annotations
@@ -69,16 +70,13 @@ docker-clean: ## Remove the canonical pipeline container
 
 docker-clean-full: docker-clean ## Also remove the pipeline image (explicit full cleanup)
 	@echo "Removing Docker pipeline image..."
-	@image_id=$$(docker image ls --quiet pdfscore_pipeline_gpu) || exit $$?; \
-	if [ -n "$$image_id" ]; then docker rmi pdfscore_pipeline_gpu; fi
+	@image_id=$$(docker image ls --quiet "$(DOCKER_IMAGE)") || exit $$?; \
+	if [ -n "$$image_id" ]; then docker rmi "$(DOCKER_IMAGE)"; fi
 
-docker-build: ## Build the unified Docker image with cleanup and logging to artifacts/
+docker-build: ## Build the selected Docker image without removing containers or images
 	@mkdir -p artifacts
 	@echo "Starting Docker build. Logging to artifacts/docker_build.log..."
-	-$(MAKE) docker-clean
-	docker build -t pdfscore_pipeline_gpu . > artifacts/docker_build.log 2>&1 || \
-		(EXIT_CODE=$$?; echo "Docker build failed with exit code $$EXIT_CODE. See artifacts/docker_build.log"; exit $$EXIT_CODE)
-	@echo "Docker build finished successfully."
+	@DOCKER_IMAGE="$(DOCKER_IMAGE)" PYTHON="$(PYTHON)" bash scripts/docker_build.sh
 
 promote-log: ## Promote a log from worktree to permanent logs (usage: make promote-log SRC=path/to/log DEST=category)
 	@if [ -z "$(SRC)" ] || [ -z "$(DEST)" ]; then \

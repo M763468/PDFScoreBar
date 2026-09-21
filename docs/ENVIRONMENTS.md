@@ -53,10 +53,13 @@ The ownership rules are:
 | generated run artifacts | active checkout/operator | ignored `logs/`, `artifacts/`, and configured output paths |
 
 The cross-model version/provenance/integrity and update rules are inventoried in
-`docs/MODEL_ARTIFACT_CONTRACT.md`. Repository-managed model artifacts default to the
-checkout-local `.model_cache` namespace; `PDFSCOREBAR_MODEL_CACHE` may select a shared host
-cache so clean worktrees can reuse the same verified selected artifact without relying on an
-operator-local checkout path.
+`docs/MODEL_ARTIFACT_CONTRACT.md`. Host-side model artifacts default to a shared per-user
+cache at `$XDG_CACHE_HOME/pdfscorebar/models`, or `~/.cache/pdfscorebar/models` when
+`XDG_CACHE_HOME` is unset. `PDFSCOREBAR_MODEL_CACHE` remains the explicit override. The
+default is intentionally independent of the active checkout so one verified registration can
+be reused across worktrees. An existing checkout-local cache can still be selected explicitly
+with `PDFSCOREBAR_MODEL_CACHE="$PWD/.model_cache"` during migration; it is no longer an
+implicit fallback.
 
 The Real-ESRGAN resolver uses `PDFSCORE_REALESRGAN_WEIGHTS_DIR` in the image and retains the
 legacy checkout path only as a host-development fallback. A canonical Docker smoke must not
@@ -91,17 +94,58 @@ The final image stores a fingerprint of runtime-sensitive source outside `/works
 /opt/pdfscore-runtime/source_fingerprint.txt
 ```
 
-The GPU-smoke preflight recomputes the fingerprint from the bind-mounted checkout. A mismatch
-fails before expensive model work with an instruction to rebuild the image. This prevents the
-historical failure mode where source from one branch/worktree is run against dependencies
-built for another source state. Config files are intentionally not part of the fingerprint so
-validation configs can vary without requiring an image rebuild; runtime-sensitive Python,
-Docker, and dependency-definition files are covered.
+Canonical Docker validation keeps two different identities deliberately separate:
+
+- the **source fingerprint** is broad provenance for the checkout used to build an image; it
+  includes bind-mounted application Python and remains useful for identifying source drift;
+- the **runtime compatibility fingerprint** covers the image/environment-defining contract:
+  Dockerfile instructions across the full build (including post-copy image-owned materialization),
+  `pyproject.toml`, the HOMR ONNX-provider build patch, the image-owned barline-CNN manifest,
+  and the project-local model-artifact materializer/import chain executed while that CNN is
+  materialized. Dockerfile comments plus only the recognized source-provenance-only
+  ARG/LABEL/fingerprint-emission commands are normalized out; unknown command spellings remain
+  hashed rather than being ignored.
+
+The GPU-smoke host resolver first resolves the mutable canonical tag to an immutable image ID.
+Every recognized image is then checked against the runtime compatibility fingerprint before it
+is accepted. Source-fingerprint equality affects provenance diagnostics only; it never bypasses
+compatibility validation. When source provenance differs, the resolver derives the compatibility
+fingerprint from the recognized PDFScoreBar image's retained build-source copy and compares that
+with the active checkout. Therefore a Python-only change under bind-mounted `src/` can reuse an
+existing compatible image, while dependency, CUDA/HOMR build-contract, patch, or image-owned
+model-contract changes still require compatible image selection or a rebuild.
+
+If the compatibility contract differs, validation compares the active topic with the available
+`origin/develop` (or local `develop`) reference and distinguishes a stale topic base from
+topic-owned environment changes and a genuinely stale image. Fetch `origin` before
+classification when that reference may be outdated. A stale topic base should be refreshed onto
+current `develop`; it is not a reason by itself to rebuild the image. Except for that case, the
+resolver searches local PDFScoreBar images for a matching runtime compatibility fingerprint
+before recommending another build.
+
+The in-container preflight runs the active checkout's contract code after host-side image
+resolution and rechecks the bind-mounted compatibility fingerprint, protecting against source
+changes between selection and execution. A source-fingerprint mismatch is reported as provenance
+rather than treated by itself as an image incompatibility.
+
+Canonical builds record source fingerprint, commit, and branch labels in the image and write
+host-side build provenance to `artifacts/docker_build_provenance.txt`. Existing pre-#352
+runtime images without those labels remain inspectable through the embedded source fingerprint;
+their runtime compatibility can be derived from the retained build-source copy without requiring
+a rebuild solely to add new metadata.
+To list reusable local runtime images and their provenance, run:
+
+```bash
+python3 scripts/docker_image_resolver.py list
+```
+
+`DOCKER_IMAGE=<ref>` remains an explicit override. When it is set, validation verifies that
+specific image and never silently substitutes another local image.
 
 ## Docker build and cleanup lifecycle
 
-`make docker-build` performs the normal cleanup contract first and then builds the canonical
-image. The normal cleanup removes only the canonical container:
+`make docker-build` builds the selected image without removing containers or images used by
+other worktrees. Container cleanup is a separate explicit command:
 
 ```text
 make docker-clean
@@ -116,11 +160,25 @@ make docker-clean-full
   -> docker rmi pdfscore_pipeline_gpu
 ```
 
-This split is the Issue #261 / PR #325 contract and should be preserved. A build failure such
+The container/image cleanup split from Issue #261 / PR #325 is preserved; Issue #352 removes
+implicit container cleanup from builds to avoid interrupting other worktrees. A build failure such
 as `context canceled` must be diagnosed from the actual Docker/build signal and build-context
 evidence; it must not be attributed to `docker rmi` merely because cleanup happened nearby.
 Build-context reduction belongs to `.dockerignore` maintenance and does not change runtime
 asset ownership.
+
+`make docker-build` updates the shared `pdfscore_pipeline_gpu` tag by default and records the
+source fingerprint/commit/branch used for that build. When a topic branch intentionally changes
+runtime-sensitive files and should not repoint the shared tag, build an explicit temporary tag:
+
+```bash
+make docker-build DOCKER_IMAGE=pdfscore_issue352
+```
+
+The validation resolver can reuse that image by fingerprint without requiring the mutable
+canonical tag to point at it. `make docker-clean` never removes runtime images. Full image
+removal remains explicit; use `DOCKER_IMAGE=<ref> make docker-clean-full` when intentionally
+removing a non-default tag.
 
 ## Host / uv environments
 

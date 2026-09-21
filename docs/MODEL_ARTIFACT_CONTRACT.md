@@ -18,8 +18,9 @@ version in cache.
 ## Path and ownership conventions
 
 - Repository-managed downloadable artifacts use `src.common.model_artifacts` and default to
-  `.model_cache/<model-id>/<version>/<asset>` (or `PDFSCOREBAR_MODEL_CACHE` when a shared
-  host cache is configured).
+  `$XDG_CACHE_HOME/pdfscorebar/models/<model-id>/<version>/<asset>`, or
+  `~/.cache/pdfscorebar/models/<model-id>/<version>/<asset>` when `XDG_CACHE_HOME` is
+  unset. `PDFSCOREBAR_MODEL_CACHE` remains the explicit cache-root override.
 - Image-owned assets live outside `/workspace`, normally below `/opt/pdfscore-assets`, so the
   active-checkout bind mount cannot hide them.
 - External/operator-supplied assets are registered in the same host-side version namespace
@@ -37,8 +38,9 @@ version in cache.
   the #315 production artifact migration
 - expected SHA-256: `f41a9b578396493a83e39ed284b1781f65d6adec8f624e6b7234e917c919c5cd`
 - ownership: repository-managed release artifact; canonical smoke copy is image-owned
-- host materialization: `.model_cache/barline_cnn/issue296-d27-v1/cnn_classifier_epoch_9.pth`
-  (or the same suffix below `PDFSCOREBAR_MODEL_CACHE`)
+- host materialization:
+  `$XDG_CACHE_HOME/pdfscorebar/models/barline_cnn/issue296-d27-v1/cnn_classifier_epoch_9.pth`
+  (or the `~/.cache/pdfscorebar/models` fallback / `PDFSCOREBAR_MODEL_CACHE` override)
 - container runtime: materialized under `/opt/pdfscore-assets/model-cache/...` and exposed to
   smoke validation at `/opt/pdfscore-assets/barline_cnn_smoke.pth`
 - resolver/materializer: `src.common.model_artifacts`
@@ -56,8 +58,9 @@ version in cache.
   and the exact bytes used by the final Phase 1 validation in PR #330
 - expected SHA-256: `00d0bd8b399ae872f029eb38ed3985fcef33ca81cae414992b5cdb9062e91212`
 - ownership: external/operator-supplied
-- host materialization: `.model_cache/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt`
-  (or the same suffix below `PDFSCOREBAR_MODEL_CACHE`)
+- host materialization:
+  `$XDG_CACHE_HOME/pdfscorebar/models/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt`
+  (or the `~/.cache/pdfscorebar/models` fallback / `PDFSCOREBAR_MODEL_CACHE` override)
 - container runtime: `/opt/pdfscore-external/omr-dln-measures/phase1-validated-v1/YOLOv8m_Measures.pt`
 - resolver/materializer: `src.common.model_artifacts verify/import`; canonical Docker validation
   resolves the selected cached artifact and mounts it read-only
@@ -173,9 +176,9 @@ python3 -m src.common.model_artifacts import \
 ```
 
 The import rejects bytes that do not match the selected version digest and publishes verified
-bytes atomically. Afterwards `make verify-gpu-smoke` resolves the cache entry itself. A shared
-cache can be selected explicitly with `PDFSCOREBAR_MODEL_CACHE`; this is preferable when
-validating multiple clean worktrees against the same registered external artifact.
+bytes atomically. Afterwards `make verify-gpu-smoke` resolves the cache entry itself. The
+normal host default is already shared across worktrees through the XDG/user cache; use
+`PDFSCOREBAR_MODEL_CACHE` only when an explicit alternate cache root is required.
 
 ## Updating a model
 

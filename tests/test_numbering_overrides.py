@@ -22,6 +22,46 @@ class TestNumberingOverrides(unittest.TestCase):
         score.pages.append(page)
         return score
 
+    def test_equal_x_dedup_prefers_wider_independent_of_input_order(self):
+        def make_system(reverse: bool) -> System:
+            narrow = Barline(bbox=BBox(100, 100, 107, 150))
+            wide = Barline(bbox=BBox(100, 160, 109, 210))
+            right_top = Barline(bbox=BBox(300, 100, 307, 150))
+            right_bottom = Barline(bbox=BBox(300, 160, 307, 210))
+            top = Staff(bbox=BBox(90, 100, 400, 150), barlines=[narrow, right_top])
+            bottom = Staff(bbox=BBox(90, 160, 400, 210), barlines=[wide, right_bottom])
+            staves = [bottom, top] if reverse else [top, bottom]
+            return System(staves=staves)
+
+        forward = make_system(reverse=False)
+        reverse = make_system(reverse=True)
+
+        self.numberer.number_system(forward, start_number=1)
+        self.numberer.number_system(reverse, start_number=1)
+
+        self.assertEqual(forward.measures[0].bbox.x1, 109)
+        self.assertEqual(reverse.measures[0].bbox.x1, 109)
+        self.assertEqual(forward.measures[0].start_bar.bbox, BBox(100, 160, 109, 210))
+        self.assertEqual(reverse.measures[0].start_bar.bbox, BBox(100, 160, 109, 210))
+
+    def test_distinct_x_dedup_keeps_earlier_x_even_if_later_barline_is_wider(self):
+        early = Barline(bbox=BBox(100, 100, 104, 200))
+        later_wide = Barline(bbox=BBox(110, 100, 130, 200))
+        right = Barline(bbox=BBox(300, 100, 304, 200))
+        system = System(
+            staves=[
+                Staff(
+                    bbox=BBox(90, 100, 400, 200),
+                    barlines=[later_wide, right, early],
+                )
+            ]
+        )
+
+        self.numberer.number_system(system, start_number=1)
+
+        self.assertEqual(system.measures[0].start_bar.bbox, early.bbox)
+        self.assertEqual(system.measures[0].bbox.x1, early.bbox.x2)
+
     def test_anacrusis_override(self):
         score = self.create_mock_score()
         # Set first measure to number 0

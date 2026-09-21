@@ -1,3 +1,5 @@
+import subprocess
+import sys
 from pathlib import Path
 
 from src.measure_numbering.types import Barline, BBox, Page, Staff, System
@@ -128,3 +130,24 @@ def test_issue294_paths_rebase_to_retained_manifest_root(tmp_path: Path) -> None
 
     assert inferred_root == retained_root
     assert resolved == target.resolve()
+
+
+def test_issue286_audit_scripts_are_directly_executable() -> None:
+    project_root = Path(__file__).resolve().parents[1]
+    scripts = (
+        "tools/issue286/audit_current_full68_equal_x.py",
+        "tools/issue286/audit_issue294_retained_equal_x.py",
+    )
+
+    for script in scripts:
+        result = subprocess.run(
+            [sys.executable, script, "--help"],
+            cwd=project_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert result.returncode == 0, (
+            f"{script} failed as a direct CLI: stdout={result.stdout!r} "
+            f"stderr={result.stderr!r}"
+        )

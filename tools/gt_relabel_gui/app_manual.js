@@ -770,9 +770,8 @@ function loadPage() {
   });
 }
 
-function saveCurrentType() {
-  if (!currentPage) return Promise.resolve();
-  const type = currentType();
+function saveCorrectionType(type) {
+  if (!currentPage) return Promise.resolve(null);
   const payload = {
     page: pageValue(),
     correction_type: type,
@@ -789,7 +788,21 @@ function saveCurrentType() {
     })
     .then((data) => {
       setDirty(type, false);
-      saveStatus.textContent = `Saved ${type}: ${data.output}. Re-run evaluation separately.`;
+      return { type, output: data.output };
+    });
+}
+
+function saveCorrectionTypes(types) {
+  const uniqueTypes = Array.from(new Set(types));
+  if (!currentPage || !uniqueTypes.length) return Promise.resolve([]);
+  return Promise.all(uniqueTypes.map((type) => saveCorrectionType(type)))
+    .then((saved) => {
+      if (saved.length === 1) {
+        saveStatus.textContent = `Saved ${saved[0].type}: ${saved[0].output}. Re-run evaluation separately.`;
+      } else {
+        saveStatus.textContent = `Saved ${saved.length} correction types: ${saved.map((item) => item.type).join(", ")}. Re-run evaluation separately.`;
+      }
+      return saved;
     })
     .catch((error) => {
       saveStatus.textContent = `Save failed: ${error.message}`;
@@ -797,25 +810,24 @@ function saveCurrentType() {
     });
 }
 
+function saveDirtyTypes() {
+  const types = Array.from(dirtyTypes);
+  if (!types.length) {
+    saveStatus.textContent = "No staged changes to save.";
+    return Promise.resolve([]);
+  }
+  return saveCorrectionTypes(types);
+}
+
 function switchPage(nextIndex) {
   if (nextIndex === currentIndex) return;
-  const activeType = currentType();
-  const savePromises = Array.from(dirtyTypes).map((type) => {
-    typeSelect.value = type;
-    updateOps();
-    return saveCurrentType();
-  });
-  Promise.all(savePromises)
+  saveCorrectionTypes(Array.from(dirtyTypes))
     .then(() => {
-      typeSelect.value = activeType;
-      updateOps();
       currentIndex = nextIndex;
       loadPage();
     })
     .catch((error) => {
       console.error("Page switch aborted due to save failure:", error);
-      typeSelect.value = activeType;
-      updateOps();
     });
 }
 
@@ -824,7 +836,7 @@ drawModeBtn.onclick = () => setMode("draw");
 addItemBtn.onclick = addCorrectionItem;
 deleteItemBtn.onclick = deleteSelectedItem;
 saveBtn.onclick = () => {
-  saveCurrentType().catch(() => {});
+  saveDirtyTypes().catch(() => {});
 };
 helpBtn.onclick = () => {
   helpPanel.open = true;

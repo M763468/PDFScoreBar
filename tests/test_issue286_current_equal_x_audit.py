@@ -182,6 +182,7 @@ def test_issue294_summary_separates_retained_replay_drift_from_selector_delta() 
                 "retained_to_current_replay": {
                     "logical_equal": False,
                     "geometry_equal": False,
+                    "difference": {"page_differences": [{"page_index": 0}]},
                 },
                 "selectors": selectors,
             }
@@ -194,6 +195,9 @@ def test_issue294_summary_separates_retained_replay_drift_from_selector_delta() 
     assert summary["retained_to_current_replay_geometry_mismatch_pages"] == [
         "Score/page_001"
     ]
+    assert summary["retained_to_current_replay_difference_details"] == {
+        "Score/page_001": {"page_differences": [{"page_index": 0}]}
+    }
     for result in summary["selectors"].values():
         assert result["logical_changed_from_current_replay_pages"] == []
         assert result["geometry_changed_from_current_replay_pages"] == []

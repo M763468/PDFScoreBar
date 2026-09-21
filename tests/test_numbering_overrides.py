@@ -44,6 +44,31 @@ class TestNumberingOverrides(unittest.TestCase):
         self.assertEqual(forward.measures[0].start_bar.bbox, BBox(100, 160, 109, 210))
         self.assertEqual(reverse.measures[0].start_bar.bbox, BBox(100, 160, 109, 210))
 
+    def test_equal_x_equal_width_uses_geometry_tiebreak_independent_of_input_order(self):
+        def make_system(reverse: bool) -> System:
+            top = Barline(bbox=BBox(100, 100, 108, 150))
+            bottom = Barline(bbox=BBox(100, 160, 108, 210))
+            right = Barline(bbox=BBox(300, 100, 308, 210))
+            candidates = [bottom, top] if reverse else [top, bottom]
+            return System(
+                staves=[
+                    Staff(
+                        bbox=BBox(90, 100, 400, 210),
+                        barlines=[*candidates, right],
+                    )
+                ]
+            )
+
+        forward = make_system(reverse=False)
+        reverse = make_system(reverse=True)
+
+        self.numberer.number_system(forward, start_number=1)
+        self.numberer.number_system(reverse, start_number=1)
+
+        expected = BBox(100, 100, 108, 150)
+        self.assertEqual(forward.measures[0].start_bar.bbox, expected)
+        self.assertEqual(reverse.measures[0].start_bar.bbox, expected)
+
     def test_distinct_x_dedup_keeps_earlier_x_even_if_later_barline_is_wider(self):
         early = Barline(bbox=BBox(100, 100, 104, 200))
         later_wide = Barline(bbox=BBox(110, 100, 130, 200))

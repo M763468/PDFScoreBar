@@ -579,6 +579,10 @@ def summarize(pages: dict[tuple[str, str], dict[str, Any]]) -> dict[str, Any]:
         "retained_to_current_replay_geometry_mismatch_pages": [
             f"{score}/{page}" for score, page in retained_replay_geometry_mismatch
         ],
+        "retained_to_current_replay_difference_details": {
+            f"{score}/{page}": pages[(score, page)]["retained_to_current_replay"]["difference"]
+            for score, page in retained_replay_logical_mismatch
+        },
         "selectors": selectors,
     }
 

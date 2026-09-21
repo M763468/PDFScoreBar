@@ -10,6 +10,7 @@ from tools.issue286.audit_current_full68_equal_x import (
     groups,
     number,
     resolve_artifact,
+    summarize as summarize_current,
 )
 from tools.issue286.audit_issue294_retained_equal_x import (
     geometry_signature,
@@ -275,3 +276,45 @@ def test_issue294_runtime_contract_drift_reports_wrong_or_missing_versions() -> 
         "actual": None,
     } in drift
     assert all(item["distribution"] != "opencv-python-headless" for item in drift)
+
+
+
+def test_generic_issue286_summary_separates_replay_drift_from_selector_delta() -> None:
+    selectors = {
+        name: {
+            "topology_equal_to_current_replay": True,
+            "semantic_equal_to_current_replay": True,
+        }
+        for name in (
+            "staff_order_first",
+            "staff_order_last",
+            "topmost",
+            "bottommost",
+            "narrower",
+            "wider",
+            "tallest",
+            "shortest",
+        )
+    }
+    summary = summarize_current(
+        {
+            ("Score", "page_001"): {
+                "equal_x_ties": [],
+                "retained_to_current_replay": {
+                    "semantic_equal": False,
+                    "topology_equal": False,
+                },
+                "selectors": selectors,
+            }
+        }
+    )
+
+    assert summary["retained_to_current_replay_semantic_mismatch_pages"] == [
+        "Score/page_001"
+    ]
+    assert summary["retained_to_current_replay_topology_mismatch_pages"] == [
+        "Score/page_001"
+    ]
+    for result in summary["selectors"].values():
+        assert result["topology_changed_from_current_replay_pages"] == []
+        assert result["semantic_changed_from_current_replay_pages"] == []

@@ -71,11 +71,13 @@ commit="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
     echo "nvidia-smi not found (informational; container preflight is authoritative)"
   fi
   echo
-  echo "docker_image:"
+  requested_image_ref="${DOCKER_IMAGE:-pdfscore_pipeline_gpu}"
+  echo "requested_image_ref=${requested_image_ref}"
+  echo "requested_image_inspect:"
   if command -v docker >/dev/null 2>&1; then
-    docker image inspect "${DOCKER_IMAGE:-pdfscore_pipeline_gpu}" \
-      --format 'id={{.Id}} asset_contract={{index .Config.Labels "pdfscore.runtime.asset_contract"}} source_fingerprint={{index .Config.Labels "pdfscore.runtime.source_fingerprint"}} source_commit={{index .Config.Labels "pdfscore.runtime.source_commit"}} source_branch={{index .Config.Labels "pdfscore.runtime.source_branch"}}' \
-      2>/dev/null || echo "image not found: ${DOCKER_IMAGE:-pdfscore_pipeline_gpu}"
+    docker image inspect "$requested_image_ref" \
+      --format 'requested_image_id={{.Id}} asset_contract={{index .Config.Labels "pdfscore.runtime.asset_contract"}} source_fingerprint={{index .Config.Labels "pdfscore.runtime.source_fingerprint"}} source_commit={{index .Config.Labels "pdfscore.runtime.source_commit"}} source_branch={{index .Config.Labels "pdfscore.runtime.source_branch"}}' \
+      2>/dev/null || echo "requested image not found: $requested_image_ref"
   else
     echo "docker not found"
   fi

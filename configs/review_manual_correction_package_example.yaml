@@ -1,6 +1,8 @@
 # Example fragment for enabling config-first manual correction review packages.
-# Merge this under a normal pipeline config that already defines run, inputs,
-# steps, detection, filters, mmr, and numbering.
+# For production-accuracy review, merge this into the current production config
+# (configs/dense_full_pipeline.yaml or an explicitly equivalent derivative).
+# Workflow-only/legacy smoke configs are valid for GUI mechanics but must not be
+# interpreted as production detector-accuracy evidence.
 outputs:
   review:
     manual_correction_package: true

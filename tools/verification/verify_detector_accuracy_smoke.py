@@ -74,15 +74,11 @@ def _assert_detection_contract(
 
     actual_detection = config.get("detection")
     reference_detection = reference.get("detection")
-    if not isinstance(actual_detection, Mapping) or not isinstance(
-        reference_detection, Mapping
-    ):
+    if not isinstance(actual_detection, Mapping) or not isinstance(reference_detection, Mapping):
         raise ValueError("Both smoke and reference configs must define detection mappings")
 
     allowed_raw = validation.get("allowed_detection_differences", [])
-    if not isinstance(allowed_raw, list) or not all(
-        isinstance(item, str) for item in allowed_raw
-    ):
+    if not isinstance(allowed_raw, list) or not all(isinstance(item, str) for item in allowed_raw):
         raise ValueError("allowed_detection_differences must be a list of strings")
     allowed = set(allowed_raw)
 
@@ -137,11 +133,7 @@ def verify(config_path: Path, run_dir: Path | None) -> dict[str, Any] | None:
     if not isinstance(pages, list):
         raise ValueError("Run manifest lacks pages")
     page = next(
-        (
-            item
-            for item in pages
-            if isinstance(item, Mapping) and item.get("page_id") == page_id
-        ),
+        (item for item in pages if isinstance(item, Mapping) and item.get("page_id") == page_id),
         None,
     )
     if page is None:
@@ -166,8 +158,7 @@ def verify(config_path: Path, run_dir: Path | None) -> dict[str, Any] | None:
     expected_source_sha = str(validation["expected_source_pdf_sha256"]).lower()
     if source_sha != expected_source_sha:
         raise RuntimeError(
-            "Accuracy smoke source PDF changed: "
-            f"expected={expected_source_sha} actual={source_sha}"
+            f"Accuracy smoke source PDF changed: expected={expected_source_sha} actual={source_sha}"
         )
 
     gt_path = _resolve_repo_path(str(validation["gt_path"]))
@@ -211,15 +202,11 @@ def verify(config_path: Path, run_dir: Path | None) -> dict[str, Any] | None:
     if len(gt) != expected_gt_count:
         failures.append(f"gt_count expected={expected_gt_count} actual={len(gt)}")
     if summary["hard_fp_count"] != expected_hard_fp:
-        failures.append(
-            f"hard_fp expected={expected_hard_fp} actual={summary['hard_fp_count']}"
-        )
+        failures.append(f"hard_fp expected={expected_hard_fp} actual={summary['hard_fp_count']}")
     if summary["fn_count"] != expected_fn:
         failures.append(f"fn expected={expected_fn} actual={summary['fn_count']}")
     if summary["soft_count"] != expected_soft:
-        failures.append(
-            f"soft expected={expected_soft} actual={summary['soft_count']}"
-        )
+        failures.append(f"soft expected={expected_soft} actual={summary['soft_count']}")
     if failures:
         summary["status"] = "failed"
         summary["failures"] = failures

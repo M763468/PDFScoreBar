@@ -9,6 +9,11 @@ from tools.issue286.audit_current_full68_equal_x import (
     number,
     resolve_artifact,
 )
+from tools.issue286.audit_issue294_retained_equal_x import (
+    geometry_signature,
+    logical_signature,
+    signature,
+)
 
 
 def _synthetic_page() -> Page:
@@ -77,3 +82,28 @@ def test_workspace_manifest_paths_rebase_to_active_checkout(tmp_path: Path) -> N
     resolved = resolve_artifact("/workspace/logs/example/result.json", project_root=tmp_path)
 
     assert resolved == (tmp_path / "logs/example/result.json").resolve()
+
+
+def test_issue294_signature_preserves_empty_system_as_diagnostic() -> None:
+    page = _synthetic_page()
+    page.systems.append(System(staves=[Staff(BBox(90, 100, 400, 140))]))
+
+    payload = signature(page)
+
+    assert payload["pages"][0]["system_count"] == 2
+    assert payload["pages"][0]["systems"][1]["measure_count"] == 0
+    assert len(logical_signature(payload)["pages"][0]["systems"]) == 1
+
+
+def test_issue294_geometry_signature_tracks_representative_bbox() -> None:
+    page = _synthetic_page()
+    narrow_page, _ = apply_selector(page, "narrower")
+    wide_page, _ = apply_selector(page, "wider")
+
+    narrow = signature(narrow_page)
+    wide = signature(wide_page)
+
+    assert logical_signature(narrow) == logical_signature(wide)
+    assert geometry_signature(narrow) != geometry_signature(wide)
+    assert geometry_signature(narrow)[0][0] == 107
+    assert geometry_signature(wide)[0][0] == 109

@@ -113,6 +113,24 @@ The `--handoff` route:
 The legacy one-page `manual_config_builder.py` remains available for development/legacy uses, but
 it is not the normal #236 review workflow because it accepts arbitrary artifact paths.
 
+### Optional movement-boundary evidence
+
+When movement-boundary review is needed, keep the same review package and attach
+the review-only Issue #333 evidence artifact:
+
+```bash
+python -m tools.movement_boundary_review attach \
+  --handoff <review_root>/manual_correction_input.json \
+  --evidence <run>/movement_boundary_evidence.json
+```
+
+The attach step copies the evidence into the package and records package-local
+paths in the handoff. It does not approve any candidate or change numbering.
+The existing GUI then exposes a **Movement boundary** correction type. Reviewers
+may accept or reject explicit candidates and may add a boundary at a
+non-candidate system. A missing candidate is not a reviewed negative and cannot
+be saved as `no_boundary`.
+
 ### Manual GUI quick guide
 
 The GUI is split into a left correction/navigation sidebar and a score canvas on the right.
@@ -176,7 +194,24 @@ review/corrections/
   barline_construction_overrides.json
 ```
 
-These are GUI staging files. The pipeline consumes canonical:
+These are GUI staging files. When movement evidence is attached, the GUI also
+uses:
+
+```text
+review/
+  movement_boundary_evidence.json
+  corrections/
+    movement_boundaries_review.json
+    movement_boundaries.json
+```
+
+`movement_boundaries_review.json` retains explicit accepted/rejected/manual
+review actions. **Export movement boundaries** writes
+`movement_boundaries.json` as `issue268.movement_boundaries.v1`, containing
+only reviewed boundaries. Rejected candidates stay in the review record and are
+not numbering inputs.
+
+The pipeline consumes canonical:
 
 ```text
 review/corrections/
@@ -270,5 +305,5 @@ and final renderer. It does not:
 
 - add a second correction workflow or a new `pdfscorebar` public CLI;
 - change detector, HOMR, MMR, grouping, barline, or numbering accuracy behavior;
-- implement movement-boundary review; future movement review should extend the same review/correction
-  UX rather than create a disconnected path.
+- silently infer movement boundaries or convert unreviewed candidates into numbering resets; movement
+  review is explicit and package-local, and its resolved export remains separate from ordinary correction reruns.

@@ -234,6 +234,14 @@ def wider(boxes: list[BBoxTuple], _rank: dict[BBoxTuple, tuple[int, int]]) -> BB
     return min(boxes, key=lambda box: (-(box[2] - box[0]), box))
 
 
+def tallest(boxes: list[BBoxTuple], _rank: dict[BBoxTuple, tuple[int, int]]) -> BBoxTuple:
+    return min(boxes, key=lambda box: (-(box[3] - box[1]), box))
+
+
+def shortest(boxes: list[BBoxTuple], _rank: dict[BBoxTuple, tuple[int, int]]) -> BBoxTuple:
+    return min(boxes, key=lambda box: (box[3] - box[1], box))
+
+
 SELECTORS: dict[str, Selector] = {
     "staff_order_first": staff_first,
     "staff_order_last": staff_last,
@@ -241,6 +249,8 @@ SELECTORS: dict[str, Selector] = {
     "bottommost": bottommost,
     "narrower": narrower,
     "wider": wider,
+    "tallest": tallest,
+    "shortest": shortest,
 }
 
 

@@ -342,6 +342,64 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         parsed = urlparse(self.path)
+        if parsed.path == "/api/export_movement_boundaries" and self.server.mode == "manual":
+            config = next(
+                (
+                    page
+                    for page in getattr(self.server, "gt_config", [])
+                    if isinstance(page, dict) and page.get("movement_boundary_evidence")
+                ),
+                None,
+            )
+            if config is None:
+                self.send_error(400, "No movement boundary evidence is attached to this review package")
+                return
+            evidence_rel = config.get("movement_boundary_evidence")
+            resolved_rel = config.get("movement_boundary_resolved_output")
+            page = config.get("page")
+            review_rel = _manual_output_for(self.server, "movement_boundary", page)
+            if not isinstance(evidence_rel, str) or not evidence_rel:
+                self.send_error(400, "Invalid movement boundary evidence path")
+                return
+            if not isinstance(resolved_rel, str) or not resolved_rel:
+                self.send_error(400, "Invalid movement boundary resolved output path")
+                return
+            if not review_rel:
+                self.send_error(400, "Invalid movement boundary review output path")
+                return
+            try:
+                evidence_path = safe_path(self.server.root, evidence_rel)
+                review_path = safe_path(self.server.root, review_rel)
+                output_path = safe_path(self.server.root, resolved_rel)
+                if not review_path.exists():
+                    self.send_error(400, "Save movement-boundary review decisions before export")
+                    return
+
+                repo_root = str(REPO_ROOT)
+                if repo_root not in sys.path:
+                    sys.path.insert(0, repo_root)
+                from src.pipeline.review.movement_boundary_review import (
+                    write_resolved_movement_boundaries,
+                )
+
+                resolved = write_resolved_movement_boundaries(
+                    evidence_path=evidence_path,
+                    review_path=review_path,
+                    output_path=output_path,
+                    evidence_artifact=evidence_rel,
+                    overwrite=True,
+                )
+            except (OSError, ValueError) as exc:
+                self.send_error(400, str(exc))
+                return
+            self._serve_json(
+                {
+                    "output": str(output_path),
+                    "count": len(resolved.get("boundaries", [])),
+                    "schema_version": resolved.get("schema_version"),
+                }
+            )
+            return
         if parsed.path == "/api/probe_log":
             body = self.rfile.read(int(self.headers.get("Content-Length", "0")))
             payload = json.loads(body.decode("utf-8"))

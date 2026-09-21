@@ -9,7 +9,6 @@ import pytest
 from src.pipeline.review.movement_boundary_review import (
     MovementBoundaryReviewError,
     attach_movement_boundary_evidence,
-    build_resolved_movement_boundaries,
     validate_movement_boundary_review,
     write_resolved_movement_boundaries,
 )
@@ -71,7 +70,7 @@ def _review(*items: dict) -> dict:
     }
 
 
-def test_export_covers_accepted_rejected_and_manual_boundary() -> None:
+def test_export_covers_accepted_rejected_and_manual_boundary(tmp_path: Path) -> None:
     evidence = _evidence(_candidate(0, 1), _candidate(0, 2))
     review = _review(
         {
@@ -93,12 +92,24 @@ def test_export_covers_accepted_rejected_and_manual_boundary() -> None:
             "reason": "missed by candidate producer",
         },
     )
+    evidence_path = tmp_path / "movement_boundary_evidence.json"
+    review_path = tmp_path / "corrections" / "movement_boundaries_review.json"
+    output_path = tmp_path / "corrections" / "movement_boundaries.json"
+    evidence_path.write_text(
+        json.dumps(evidence, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    review_path.parent.mkdir(parents=True)
+    review_path.write_text(
+        json.dumps(review, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
 
-    resolved = build_resolved_movement_boundaries(
-        evidence=evidence,
-        review=review,
+    resolved = write_resolved_movement_boundaries(
+        evidence_path=evidence_path,
+        review_path=review_path,
+        output_path=output_path,
         evidence_artifact="movement_boundary_evidence.json",
-        evidence_sha256="c" * 64,
     )
 
     assert resolved["schema_version"] == "issue268.movement_boundaries.v1"
@@ -114,8 +125,10 @@ def test_export_covers_accepted_rejected_and_manual_boundary() -> None:
     assert manual["provenance"]["review"]["action"] == "manual_boundary"
     assert manual["provenance"]["evidence"]["candidate_id"] is None
 
-    # The existing resolved consumer must accept the exported payload unchanged.
-    assert load_movement_boundary_payload(resolved) == resolved
+    # The rejected candidate remains in review staging but never reaches the
+    # resolved payload consumed by the existing #268 numbering path.
+    assert json.loads(review_path.read_text(encoding="utf-8"))["items"][1]["op"] == "no_boundary"
+    assert load_movement_boundary_payload(output_path) == resolved
 
 
 def test_candidate_absence_cannot_be_reviewed_as_no_boundary() -> None:

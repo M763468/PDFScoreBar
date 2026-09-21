@@ -97,9 +97,11 @@ promote-log: ## Promote a log from worktree to permanent logs (usage: make promo
 run-smoke: ## Run production-representative detector accuracy smoke
 	@mkdir -p artifacts
 	@echo "Running canonical production-accuracy smoke..."
-	@DOCKER_EXTRA_ARGS="$(DOCKER_EXTRA_ARGS)" bash scripts/docker_runtime_validation.sh \
-		--config configs/smoke_test.yaml > artifacts/smoke_test.log 2>&1 || \
-		(EXIT_CODE=$?; echo "Smoke test failed with exit code $EXIT_CODE. See artifacts/smoke_test.log"; exit $EXIT_CODE)
+	@if ! DOCKER_EXTRA_ARGS="$(DOCKER_EXTRA_ARGS)" bash scripts/docker_runtime_validation.sh \
+		--config configs/smoke_test.yaml > artifacts/smoke_test.log 2>&1; then \
+		echo "Smoke test failed. See artifacts/smoke_test.log"; \
+		exit 1; \
+	fi
 	@echo "Production-accuracy smoke passed. See artifacts/smoke_test.log"
 
 run-smoke-sr: run-smoke ## Alias for run-smoke (deprecated)

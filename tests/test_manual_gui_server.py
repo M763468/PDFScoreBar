@@ -195,8 +195,8 @@ def test_manual_gui_separates_one_based_display_from_saved_indices():
     assert 'id="movementSystemInput"' in html_source
     assert 'id="exportMovementBtn"' in html_source
     assert "Candidate absence is never treated as a negative" in html_source
-    assert 'movement_boundary: [' in app_source
-    assert 'function renderMovementRows()' in app_source
+    assert "movement_boundary: [" in app_source
+    assert "function renderMovementRows()" in app_source
     assert 'candidate.state === "ambiguous_review_required"' in app_source
-    assert 'Candidate absence is not a reviewed no-boundary' in app_source
+    assert "Candidate absence is not a reviewed no-boundary" in app_source
     assert 'fetch("/api/export_movement_boundaries"' in app_source

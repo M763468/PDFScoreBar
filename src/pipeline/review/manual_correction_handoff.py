@@ -143,11 +143,16 @@ def _manual_output_paths(page: Dict[str, Any], *, package_root: Optional[Path]) 
         if not isinstance(configured, dict):
             raise ManualCorrectionHandoffError("correction_outputs must be an object")
         output_paths: Dict[str, str] = {}
-        for key in GUI_OUTPUT_KEYS:
+        required_keys = set(GUI_OUTPUT_KEYS) - {"movement_boundary"}
+        for key in required_keys:
             if key not in configured:
                 raise ManualCorrectionHandoffError(f"correction_outputs.{key} is required")
+        for key, default_filename in GUI_OUTPUT_KEYS.items():
+            raw_output = configured.get(key)
+            if key == "movement_boundary" and _is_missing(raw_output):
+                raw_output = f"corrections/{default_filename}"
             resolved = _resolve_package_path(
-                configured[key],
+                raw_output,
                 package_root=package_root,
                 field=f"correction_outputs.{key}",
                 required=True,

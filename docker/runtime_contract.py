@@ -32,6 +32,28 @@ RUNTIME_CONTRACT_FILES = (
     Path("pyproject.toml"),
     Path("docker/patch_homr_onnx_provider.py"),
     Path("models/barline_cnn/manifest.json"),
+    Path("src/common/model_artifacts.py"),
+    Path("src/common/__init__.py"),
+    Path("src/common/barline_evaluation.py"),
+)
+
+LEGACY_SOURCE_PROVENANCE_LINES = (
+    "/opt/venv_pipeline/bin/python /opt/pdfscore-runtime/runtime_contract.py "
+    "fingerprint /workspace \\",
+    "> /opt/pdfscore-runtime/source_fingerprint.txt && \\",
+)
+CURRENT_SOURCE_PROVENANCE_LINES = (
+    "ACTUAL_SOURCE_FINGERPRINT=$(/opt/venv_pipeline/bin/python \\",
+    "/opt/pdfscore-runtime/runtime_contract.py fingerprint /workspace) && \\",
+    "printf '%s\\n' \"${ACTUAL_SOURCE_FINGERPRINT}\" \\",
+    "> /opt/pdfscore-runtime/source_fingerprint.txt && \\",
+    "if [ -n \"${PDFSCORE_SOURCE_FINGERPRINT}\" ] && \\",
+    "[ \"${ACTUAL_SOURCE_FINGERPRINT}\" != \"${PDFSCORE_SOURCE_FINGERPRINT}\" ]; then \\",
+    'echo "Docker build source fingerprint changed during build context transfer" >&2; \\',
+    'echo "expected=${PDFSCORE_SOURCE_FINGERPRINT} '
+    'actual=${ACTUAL_SOURCE_FINGERPRINT}" >&2; \\',
+    "exit 1; \\",
+    "fi && \\",
 )
 
 
@@ -73,40 +95,34 @@ def source_fingerprint(root: Path) -> str:
     return digest.hexdigest()
 
 
-def _dockerfile_runtime_contract(payload: bytes) -> bytes:
-    """Strip source-provenance-only Dockerfile instructions from compatibility hashing."""
-    lines = payload.decode("utf-8").splitlines()
-    normalized: list[str] = []
-    skipping_source_check = False
-    skipping_legacy_source_write = False
+def _remove_exact_sequence(lines: list[str], sequence: tuple[str, ...]) -> list[str]:
+    """Remove only a known provenance command sequence; unknown syntax remains hashed."""
+    output: list[str] = []
+    index = 0
+    width = len(sequence)
+    while index < len(lines):
+        stripped_window = tuple(line.strip() for line in lines[index : index + width])
+        if stripped_window == sequence:
+            index += width
+            continue
+        output.append(lines[index])
+        index += 1
+    return output
 
+
+def _dockerfile_runtime_contract(payload: bytes) -> bytes:
+    """Strip only known source-provenance commands from compatibility hashing."""
+    lines = payload.decode("utf-8").splitlines()
+    lines = _remove_exact_sequence(lines, LEGACY_SOURCE_PROVENANCE_LINES)
+    lines = _remove_exact_sequence(lines, CURRENT_SOURCE_PROVENANCE_LINES)
+
+    normalized: list[str] = []
     for line in lines:
         stripped = line.strip()
-
         if stripped.startswith("ARG PDFSCORE_SOURCE_"):
             continue
         if stripped.startswith("LABEL pdfscore.runtime.source_"):
             continue
-
-        if "ACTUAL_SOURCE_FINGERPRINT=$(" in stripped:
-            skipping_source_check = True
-            continue
-        if skipping_source_check:
-            if stripped == "fi && \\":
-                skipping_source_check = False
-            continue
-
-        if stripped.startswith(
-            "/opt/venv_pipeline/bin/python "
-            "/opt/pdfscore-runtime/runtime_contract.py fingerprint /workspace"
-        ):
-            skipping_legacy_source_write = True
-            continue
-        if skipping_legacy_source_write:
-            if "/opt/pdfscore-runtime/source_fingerprint.txt" in stripped:
-                skipping_legacy_source_write = False
-            continue
-
         if not stripped or stripped.startswith("#"):
             continue
         normalized.append(line.rstrip())

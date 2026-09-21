@@ -368,12 +368,16 @@ def audit_page(
         force_single,
     )
     replay = number(copy.deepcopy(page_obj))
+    replay_topology = topology(replay)
     selector_results = {}
     for name in SELECTORS:
         selected_page, decisions = apply_selector(page_obj, name)
         candidate = number(selected_page)
+        candidate_topology = topology(candidate)
         selector_results[name] = {
-            "topology_equal_to_retained": topology(candidate) == retained_topology,
+            "topology_equal_to_current_replay": candidate_topology == replay_topology,
+            "semantic_equal_to_current_replay": candidate == replay,
+            "topology_equal_to_retained": candidate_topology == retained_topology,
             "semantic_equal_to_retained": candidate == retained_semantic,
             "decisions": decisions,
         }
@@ -396,9 +400,9 @@ def audit_page(
             "staff_mask": sha256(staff_mask_path),
             "numbering_base": sha256(retained_path),
         },
-        "replay": {
-            "semantic_equal_to_retained": replay == retained_semantic,
-            "topology_equal_to_retained": topology(replay) == retained_topology,
+        "retained_to_current_replay": {
+            "semantic_equal": replay == retained_semantic,
+            "topology_equal": replay_topology == retained_topology,
         },
         "equal_x_ties": inventory_ties(page_obj),
         "selectors": selector_results,
@@ -407,31 +411,47 @@ def audit_page(
 
 def summarize(pages: dict[tuple[str, str], dict[str, Any]]) -> dict[str, Any]:
     tie_pages = [key for key, value in pages.items() if value["equal_x_ties"]]
-    replay_mismatch = [
-        key for key, value in pages.items() if not value["replay"]["semantic_equal_to_retained"]
+    retained_replay_semantic_mismatch = [
+        key
+        for key, value in pages.items()
+        if not value["retained_to_current_replay"]["semantic_equal"]
+    ]
+    retained_replay_topology_mismatch = [
+        key
+        for key, value in pages.items()
+        if not value["retained_to_current_replay"]["topology_equal"]
     ]
     selector_summary = {}
     for name in SELECTORS:
-        topology_changed = [
+        topology_changed_from_replay = [
             key
             for key, value in pages.items()
-            if not value["selectors"][name]["topology_equal_to_retained"]
+            if not value["selectors"][name]["topology_equal_to_current_replay"]
         ]
-        semantic_changed = [
+        semantic_changed_from_replay = [
             key
             for key, value in pages.items()
-            if not value["selectors"][name]["semantic_equal_to_retained"]
+            if not value["selectors"][name]["semantic_equal_to_current_replay"]
         ]
         selector_summary[name] = {
-            "topology_changed_pages": [f"{score}/{page}" for score, page in topology_changed],
-            "semantic_changed_pages": [f"{score}/{page}" for score, page in semantic_changed],
+            "topology_changed_from_current_replay_pages": [
+                f"{score}/{page}" for score, page in topology_changed_from_replay
+            ],
+            "semantic_changed_from_current_replay_pages": [
+                f"{score}/{page}" for score, page in semantic_changed_from_replay
+            ],
         }
     return {
         "page_count": len(pages),
         "equal_x_tie_page_count": len(tie_pages),
         "equal_x_tie_group_count": sum(len(pages[key]["equal_x_ties"]) for key in tie_pages),
         "equal_x_tie_pages": [f"{score}/{page}" for score, page in tie_pages],
-        "replay_mismatch_pages": [f"{score}/{page}" for score, page in replay_mismatch],
+        "retained_to_current_replay_semantic_mismatch_pages": [
+            f"{score}/{page}" for score, page in retained_replay_semantic_mismatch
+        ],
+        "retained_to_current_replay_topology_mismatch_pages": [
+            f"{score}/{page}" for score, page in retained_replay_topology_mismatch
+        ],
         "selectors": selector_summary,
     }
 
@@ -491,9 +511,19 @@ def main() -> int:
 
     summary = summarize(pages)
     result = {
-        "schema_version": "issue286.current_full68_equal_x_audit.v1",
+        "schema_version": "issue286.current_full68_equal_x_audit.v2",
         "source_commit": git_head(),
         "purpose": "Current Phase-A replay and exact-x sensitivity; no production selector chosen.",
+        "comparison_definitions": {
+            "retained_to_current_replay": (
+                "Compare the numbering_base saved by the supplied run with a new calculation "
+                "from its retained page inputs using the current checkout."
+            ),
+            "selector_to_current_replay": (
+                "Compare each deterministic exact-x selector with the unmodified current replay "
+                "of the same reconstructed page, isolating selector-only effects."
+            ),
+        },
         "current_production_contract": expected_contract,
         "manifests": manifests,
         "summary": summary,
@@ -509,7 +539,11 @@ def main() -> int:
         encoding="utf-8",
     )
     print(json.dumps(summary, indent=2, ensure_ascii=False))
-    return 2 if summary["replay_mismatch_pages"] else 0
+    return (
+        2
+        if summary["retained_to_current_replay_semantic_mismatch_pages"]
+        else 0
+    )
 
 
 if __name__ == "__main__":

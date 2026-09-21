@@ -100,9 +100,11 @@ Canonical Docker validation keeps two different identities deliberately separate
   includes bind-mounted application Python and remains useful for identifying source drift;
 - the **runtime compatibility fingerprint** covers the image/environment-defining contract:
   Dockerfile instructions across the full build (including post-copy image-owned materialization),
-  `pyproject.toml`, the HOMR ONNX-provider build patch, and the image-owned barline-CNN
-  manifest. Dockerfile comments plus the source-provenance-only ARG/LABEL/fingerprint-emission
-  steps are normalized out so provenance metadata changes do not force a rebuild.
+  `pyproject.toml`, the HOMR ONNX-provider build patch, the image-owned barline-CNN manifest,
+  and the project-local model-artifact materializer/import chain executed while that CNN is
+  materialized. Dockerfile comments plus only the recognized source-provenance-only
+  ARG/LABEL/fingerprint-emission commands are normalized out; unknown command spellings remain
+  hashed rather than being ignored.
 
 The GPU-smoke host resolver first resolves the mutable canonical tag to an immutable image ID.
 Every recognized image is then checked against the runtime compatibility fingerprint before it

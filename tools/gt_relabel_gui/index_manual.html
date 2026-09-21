@@ -41,6 +41,7 @@
           <button id="prevBtn" class="btn">Previous page</button>
           <button id="nextBtn" class="btn">Next page</button>
           <button id="saveBtn" class="btn">Save corrections</button>
+          <button id="exportMovementBtn" class="btn" style="display:none;">Export movement boundaries</button>
           <button id="helpBtn" class="btn">Help</button>
         </div>
         <div class="small" id="saveStatus"></div>
@@ -54,6 +55,7 @@
             <option value="mmr_measure_span">MMR measure span</option>
             <option value="barline_construction">Barline construction</option>
             <option value="measure_construction">Measure construction</option>
+            <option value="movement_boundary">Movement boundary</option>
           </select>
         </label>
       </div>
@@ -65,6 +67,11 @@
       <div class="row" id="measureSpanRow">
         <label class="small">Measure span
           <input id="measureSpanInput" type="number" min="1" value="2" />
+        </label>
+      </div>
+      <div class="row" id="movementSystemRow" style="display:none;">
+        <label class="small">System (visible 1-based)
+          <input id="movementSystemInput" type="number" min="1" value="1" />
         </label>
       </div>
       <div class="row">
@@ -91,6 +98,7 @@
           </ul>
           <p><strong>Selected objects and active drafts always stay visible.</strong> This lets you hide other layers without losing the active target.</p>
           <p><strong>Correction flow:</strong> choose Type/Operation → Select object or Draw barline box → Stage change → inspect Current page results → Save corrections. Save corrections writes every staged correction type on the current page.</p>
+          <p><strong>Movement boundaries:</strong> choose Movement boundary. Candidate rows show their raw evidence and review state. Select a candidate row or enter a visible 1-based system. Mark boundary accepts a candidate or adds a non-candidate boundary. Mark no boundary is allowed only for an explicit candidate; candidate absence is never treated as a negative. Save before using Export movement boundaries.</p>
           <p>Visible Page / System / Measure identifiers are <strong>1-based</strong>. Saved correction indices keep the existing internal <strong>0-based</strong> schema.</p>
           <p><strong>Canvas:</strong> mouse wheel = zoom; Space+drag or middle mouse = pan. Left/Right arrows change page. Delete/Backspace unstages the selected correction when applicable.</p>
           <p>Save writes package-local correction JSON under <code>review/corrections/</code>; applying corrections and regenerating outputs is a separate step.</p>
@@ -101,6 +109,7 @@
         <summary>Current page results</summary>
         <div class="small">
           MMR rows show <code>base</code> from the configured MMR artifact and <code>effective</code> after manual corrections.
+          Movement rows show unresolved/reviewed candidate state plus raw Issue #333 evidence; manually added boundaries are listed separately.
           Visible Page / System / Measure identifiers are 1-based; saved correction indices remain unchanged.
         </div>
         <div id="itemList"></div>

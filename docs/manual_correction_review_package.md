@@ -45,8 +45,10 @@ By default, the package is written under the internal pipeline run directory:
 
 - relative paths are resolved from `<run_dir>`;
 - absolute paths are allowed for controlled callers that already own a review directory;
-- the materializer still reads current-run artifacts deterministically and rejects run artifacts
-  resolved outside the source run.
+- the materializer still requires derived numbering/MMR/barline artifacts from the selected
+  source run; the exact `image_path` recorded by that manifest may live outside the per-score
+  run directory (for example, a shared batch `input_images/` directory) and is copied into the
+  package without searching fallback runs.
 
 The handoff records the page identity and coordinate-space relationship needed by the GUI. Normal
 manual review must start from this handoff rather than assembling image, numbering, MMR, or barline

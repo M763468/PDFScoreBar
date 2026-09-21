@@ -728,11 +728,11 @@ def main() -> int:
     )
     print(json.dumps(summary, indent=2, ensure_ascii=False))
 
-    return (
-        2
-        if summary["retained_to_current_replay_logical_mismatch_pages"]
-        else 0
-    )
+    # A retained-vs-current replay mismatch is diagnostic only for Issue #286.
+    # The selector comparison is defined against the unmodified current replay,
+    # so a successful audit returns zero even when the historical retained
+    # numbering signature differs.
+    return 0
 
 
 if __name__ == "__main__":

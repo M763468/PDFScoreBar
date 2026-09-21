@@ -102,7 +102,12 @@ def test_runtime_fingerprint_ignores_bind_mounted_source_but_hashes_image_owned_
     manifest = tmp_path / "models" / "barline_cnn" / "manifest.json"
     manifest.parent.mkdir(parents=True)
     manifest.write_text('{"sha256": "abc"}\n', encoding="utf-8")
-    (tmp_path / "src").mkdir()
+    common = tmp_path / "src" / "common"
+    common.mkdir(parents=True)
+    materializer = common / "model_artifacts.py"
+    materializer.write_text("MATERIALIZER = 1\n", encoding="utf-8")
+    (common / "__init__.py").write_text("", encoding="utf-8")
+    (common / "barline_evaluation.py").write_text("BOX = 1\n", encoding="utf-8")
     source = tmp_path / "src" / "worker.py"
     source.write_text("VALUE = 1\n", encoding="utf-8")
 
@@ -133,17 +138,34 @@ def test_runtime_fingerprint_ignores_bind_mounted_source_but_hashes_image_owned_
     )
     assert runtime_contract.runtime_fingerprint(tmp_path) != initial
 
+    materializer.write_text("MATERIALIZER = 2\n", encoding="utf-8")
+    assert runtime_contract.runtime_fingerprint(tmp_path) != initial
+
 
 def test_runtime_fingerprint_normalizes_legacy_and_current_source_provenance_steps(
     tmp_path: Path,
 ) -> None:
     runtime_contract = _load_runtime_contract_module()
     legacy = b"""RUN mkdir -p /opt/pdfscore-runtime && \\\n    cp /workspace/docker/runtime_contract.py /opt/pdfscore-runtime/runtime_contract.py && \\\n    /opt/venv_pipeline/bin/python /opt/pdfscore-runtime/runtime_contract.py fingerprint /workspace \\\n      > /opt/pdfscore-runtime/source_fingerprint.txt && \\\n    CNN_MODEL_PATH=$(materialize-cnn) && \\\n    test -s /opt/pdfscore-assets/barline_cnn_smoke.pth\n"""
-    current = b"""RUN mkdir -p /opt/pdfscore-runtime && \\\n    cp /workspace/docker/runtime_contract.py /opt/pdfscore-runtime/runtime_contract.py && \\\n    ACTUAL_SOURCE_FINGERPRINT=$(fingerprint-source) && \\\n    printf '%s\\n' "${ACTUAL_SOURCE_FINGERPRINT}" \\\n      > /opt/pdfscore-runtime/source_fingerprint.txt && \\\n    if [ -n "${PDFSCORE_SOURCE_FINGERPRINT}" ] && \\\n       [ "${ACTUAL_SOURCE_FINGERPRINT}" != "${PDFSCORE_SOURCE_FINGERPRINT}" ]; then \\\n      echo mismatch >&2; \\\n      exit 1; \\\n    fi && \\\n    CNN_MODEL_PATH=$(materialize-cnn) && \\\n    test -s /opt/pdfscore-assets/barline_cnn_smoke.pth\n"""
+    current = b"""RUN mkdir -p /opt/pdfscore-runtime && \\\n    cp /workspace/docker/runtime_contract.py /opt/pdfscore-runtime/runtime_contract.py && \\\n    ACTUAL_SOURCE_FINGERPRINT=$(/opt/venv_pipeline/bin/python \\\n      /opt/pdfscore-runtime/runtime_contract.py fingerprint /workspace) && \\\n    printf '%s\\n' "${ACTUAL_SOURCE_FINGERPRINT}" \\\n      > /opt/pdfscore-runtime/source_fingerprint.txt && \\\n    if [ -n "${PDFSCORE_SOURCE_FINGERPRINT}" ] && \\\n       [ "${ACTUAL_SOURCE_FINGERPRINT}" != "${PDFSCORE_SOURCE_FINGERPRINT}" ]; then \\\n      echo "Docker build source fingerprint changed during build context transfer" >&2; \\\n      echo "expected=${PDFSCORE_SOURCE_FINGERPRINT} actual=${ACTUAL_SOURCE_FINGERPRINT}" >&2; \\\n      exit 1; \\\n    fi && \\\n    CNN_MODEL_PATH=$(materialize-cnn) && \\\n    test -s /opt/pdfscore-assets/barline_cnn_smoke.pth\n"""
 
     assert runtime_contract._dockerfile_runtime_contract(legacy) == (
         runtime_contract._dockerfile_runtime_contract(current)
     )
+
+
+def test_runtime_fingerprint_keeps_unknown_provenance_syntax_and_post_copy_steps() -> None:
+    runtime_contract = _load_runtime_contract_module()
+    variant_v1 = b"""RUN mkdir -p /opt/pdfscore-runtime && \\\n    ACTUAL_SOURCE_FINGERPRINT=$(/opt/venv_pipeline/bin/python \\\n      /opt/pdfscore-runtime/runtime_contract.py fingerprint /workspace) && \\\n    if [ -n "${PDFSCORE_SOURCE_FINGERPRINT}" ]; then \\\n      exit 1; \\\n    fi; \\\n    RUN materialize-cnn-v1\n"""
+    variant_v2 = variant_v1.replace(b"materialize-cnn-v1", b"materialize-cnn-v2")
+
+    normalized_v1 = runtime_contract._dockerfile_runtime_contract(variant_v1)
+    normalized_v2 = runtime_contract._dockerfile_runtime_contract(variant_v2)
+
+    assert b"fi; \\" in normalized_v1
+    assert b"materialize-cnn-v1" in normalized_v1
+    assert normalized_v1 != normalized_v2
+
 
 
 def test_runtime_contract_mismatch_defers_rebuild_classification(tmp_path: Path, capsys) -> None:

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import hashlib
+import subprocess
+import sys
+from pathlib import Path
 
 import pytest
 
@@ -44,3 +47,19 @@ def test_load_json_with_sha256_hashes_exact_consumed_bytes(tmp_path) -> None:
 
     assert loaded == {"pages": []}
     assert digest == hashlib.sha256(payload).hexdigest()
+
+
+def test_movement_boundary_clis_support_direct_script_execution(tmp_path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    for script in (
+        repo_root / "tools" / "generate_movement_boundary_candidates.py",
+        repo_root / "tools" / "movement_boundary_review.py",
+    ):
+        result = subprocess.run(
+            [sys.executable, str(script), "--help"],
+            cwd=tmp_path,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert result.returncode == 0, result.stderr

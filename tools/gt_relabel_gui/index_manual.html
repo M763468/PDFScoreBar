@@ -41,6 +41,7 @@
           <button id="prevBtn" class="btn">Previous page</button>
           <button id="nextBtn" class="btn">Next page</button>
           <button id="saveBtn" class="btn">Save corrections</button>
+          <button id="helpBtn" class="btn">Help</button>
         </div>
         <div class="small" id="saveStatus"></div>
         <div class="small" id="dirtyStatus"></div>
@@ -78,6 +79,23 @@
         <button id="deleteItemBtn" class="btn" disabled>Unstage selected</button>
       </div>
       <div class="small" id="selectionMeta">No selection</div>
+
+      <details class="section" id="helpPanel">
+        <summary>Help: reviewing corrections</summary>
+        <div class="small">
+          <p><strong>Overlay controls are above the score canvas.</strong> Labels start off to keep the score readable.</p>
+          <ul>
+            <li><strong>Barlines only:</strong> Measures off, Barlines on, Labels off, Base MMR state off, Manual state off.</li>
+            <li><strong>Measures only:</strong> Measures on, Barlines off, Labels off, Base MMR state off, Manual state off.</li>
+            <li><strong>Staged removals:</strong> keep Manual state on; staged barline removals remain visible even if Barlines is off.</li>
+          </ul>
+          <p><strong>Selected objects and active drafts always stay visible.</strong> This lets you hide other layers without losing the active target.</p>
+          <p><strong>Correction flow:</strong> choose Type/Operation → Select object or Draw barline box → Stage change → inspect Current page results → Save corrections.</p>
+          <p>Visible Page / System / Measure identifiers are <strong>1-based</strong>. Saved correction indices keep the existing internal <strong>0-based</strong> schema.</p>
+          <p><strong>Canvas:</strong> mouse wheel = zoom; Space+drag or middle mouse = pan. Left/Right arrows change page. Delete/Backspace unstages the selected correction when applicable.</p>
+          <p>Save writes package-local correction JSON under <code>review/corrections/</code>; applying corrections and regenerating outputs is a separate step.</p>
+        </div>
+      </details>
 
       <details class="section" open>
         <summary>Current page results</summary>

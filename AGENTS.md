@@ -49,6 +49,13 @@ container state, run tags, and issue handoff notes do not belong here.
   check and exact reason. Do not treat a blocked check as a pass.
 - Keep large datasets, model artifacts, caches, and generated evaluation output out of git unless an
   explicit retention policy says otherwise.
+- Keep issue-scoped generated logs and retained artifacts under one issue root:
+  `logs/issue<N>/<category-or-purpose>/<run-or-artifact>/...`. For Issue-scoped work this takes
+  precedence over the repository-wide category roots in `logs/README.md`; use those category names
+  inside the Issue root when helpful, and do not duplicate the same run in both locations. Do not
+  create new sibling roots such as `logs/issue<N>_foo` and `logs/issue<N>_bar` for the same
+  Issue. Preserve existing historical directories unless a deliberate migration is needed; do not
+  rewrite old evidence solely for cleanup.
 
 ## 5. Validation
 

@@ -38,16 +38,17 @@ from tools.issue286.audit_current_full68_equal_x import (
 
 CURRENT_CONFIG = PROJECT_ROOT / "configs/dense_full_pipeline.yaml"
 CURRENT_HOMR_PROFILE = PROJECT_ROOT / "configs/detector_profiles/maintained_original_homr.json"
+CURRENT_PYPROJECT = PROJECT_ROOT / "pyproject.toml"
+RUNTIME_DISTRIBUTIONS = (
+    "numpy",
+    "opencv-python-headless",
+    "scipy",
+)
 
 
 def runtime_provenance() -> dict[str, Any]:
     packages = {}
-    for distribution in (
-        "numpy",
-        "opencv-python-headless",
-        "opencv-python",
-        "scipy",
-    ):
+    for distribution in (*RUNTIME_DISTRIBUTIONS, "opencv-python"):
         try:
             packages[distribution] = importlib.metadata.version(distribution)
         except importlib.metadata.PackageNotFoundError:
@@ -57,6 +58,39 @@ def runtime_provenance() -> dict[str, Any]:
         "python_version": sys.version,
         "packages": packages,
     }
+
+
+def expected_runtime_versions() -> dict[str, str]:
+    text = CURRENT_PYPROJECT.read_text(encoding="utf-8")
+    versions = {}
+    for distribution in RUNTIME_DISTRIBUTIONS:
+        marker = f'"{distribution}=='
+        start = text.find(marker)
+        if start < 0:
+            raise ValueError(f"Missing exact runtime dependency in {CURRENT_PYPROJECT}: {distribution}")
+        value_start = start + len(marker)
+        value_end = text.find('"', value_start)
+        if value_end < 0:
+            raise ValueError(f"Malformed runtime dependency in {CURRENT_PYPROJECT}: {distribution}")
+        versions[distribution] = text[value_start:value_end]
+    return versions
+
+
+def runtime_contract_drift(runtime: dict[str, Any]) -> list[dict[str, Any]]:
+    expected = expected_runtime_versions()
+    packages = runtime.get("packages") or {}
+    drift = []
+    for distribution, expected_version in expected.items():
+        actual_version = packages.get(distribution)
+        if actual_version != expected_version:
+            drift.append(
+                {
+                    "distribution": distribution,
+                    "expected": expected_version,
+                    "actual": actual_version,
+                }
+            )
+    return drift
 
 
 def git_head() -> str:
@@ -495,6 +529,14 @@ def main() -> int:
         action="store_true",
         help="Allow retained #294 evidence that does not match current C/threshold provenance.",
     )
+    parser.add_argument(
+        "--allow-runtime-drift",
+        action="store_true",
+        help=(
+            "Allow the audit Python environment to differ from the exact numpy/OpenCV/SciPy "
+            "versions pinned by the current project. Diagnostic use only."
+        ),
+    )
     args = parser.parse_args()
 
     full68_manifest = args.full68_manifest.resolve()
@@ -506,6 +548,14 @@ def main() -> int:
     )
     manifest = pages_with_metadata.pop(("__manifest__", "__metadata__"))
     contract = current_contract()
+    runtime = runtime_provenance()
+    runtime_drift = runtime_contract_drift(runtime)
+    if runtime_drift and not args.allow_runtime_drift:
+        raise ValueError(
+            "Audit runtime does not match current project runtime pins: "
+            f"{runtime_drift}"
+        )
+
     drift = []
     if manifest.get("latest_homr_commit") != contract["homr_commit"]:
         drift.append(
@@ -548,7 +598,9 @@ def main() -> int:
     result = {
         "schema_version": "issue286.issue294_retained_equal_x_audit.v2",
         "source_commit": git_head(),
-        "runtime_provenance": runtime_provenance(),
+        "runtime_provenance": runtime,
+        "runtime_contract_expected": expected_runtime_versions(),
+        "runtime_contract_drift": runtime_drift,
         "full68_manifest": str(full68_manifest),
         "retained_project_root": str(retained_root),
         "retained_checkout": manifest.get("checkout"),

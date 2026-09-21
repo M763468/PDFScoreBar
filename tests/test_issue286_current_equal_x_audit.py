@@ -12,6 +12,8 @@ from tools.issue286.audit_current_full68_equal_x import (
 from tools.issue286.audit_issue294_retained_equal_x import (
     geometry_signature,
     logical_signature,
+    resolve_project_path,
+    retained_project_root,
     signature,
 )
 
@@ -107,3 +109,22 @@ def test_issue294_geometry_signature_tracks_representative_bbox() -> None:
     assert geometry_signature(narrow) != geometry_signature(wide)
     assert geometry_signature(narrow)[0][0] == 107
     assert geometry_signature(wide)[0][0] == 109
+
+
+def test_issue294_paths_rebase_to_retained_manifest_root(tmp_path: Path) -> None:
+    retained_root = tmp_path / "retained"
+    manifest = retained_root / "logs/issue294/run/full68_host.json"
+    target = retained_root / "logs/issue294/child/report.json"
+    manifest.parent.mkdir(parents=True)
+    target.parent.mkdir(parents=True)
+    manifest.write_text("{}\n", encoding="utf-8")
+    target.write_text("{}\n", encoding="utf-8")
+
+    inferred_root = retained_project_root(manifest)
+    resolved = resolve_project_path(
+        "/home/user/ws_PDFScoreBar_issue294/logs/issue294/child/report.json",
+        artifact_roots=(inferred_root,),
+    )
+
+    assert inferred_root == retained_root
+    assert resolved == target.resolve()

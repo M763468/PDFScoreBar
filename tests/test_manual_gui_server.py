@@ -7,6 +7,7 @@ import pytest
 from tools.gt_relabel_gui.server import (
     _manual_handoff_config,
     _manual_output_for,
+    _manual_payload,
     _page_config_for,
 )
 
@@ -138,3 +139,54 @@ def test_manual_handoff_config_rejects_missing_strict_artifact(tmp_path):
 
     with pytest.raises(ValueError, match="does not exist"):
         _manual_handoff_config(handoff_path)
+
+
+def test_manual_payload_preserves_zero_based_correction_targets():
+    item = {
+        "op": "set_measure_span",
+        "page": 0,
+        "system": 2,
+        "measure": 2,
+        "measure_span": 4,
+    }
+
+    payload = _manual_payload("mmr_measure_span", [item])
+
+    assert payload["items"] == [item]
+    assert payload["items"][0]["page"] == 0
+    assert payload["items"][0]["system"] == 2
+    assert payload["items"][0]["measure"] == 2
+
+
+def test_manual_gui_separates_one_based_display_from_saved_indices():
+    repo_root = Path(__file__).resolve().parents[1]
+    app_source = (repo_root / "tools" / "gt_relabel_gui" / "app_manual.js").read_text(
+        encoding="utf-8"
+    )
+    html_source = (repo_root / "tools" / "gt_relabel_gui" / "index_manual.html").read_text(
+        encoding="utf-8"
+    )
+
+    assert "function displayIndex(value)" in app_source
+    assert "return Number.isFinite(numeric) ? numeric + 1 : value;" in app_source
+    assert "system: selectedMeasure.system" in app_source
+    assert "measure: selectedMeasure.measure" in app_source
+    assert "manualItemSummary(item, index, type)" in app_source
+    assert 'id="showMeasuresToggle"' in html_source
+    assert 'id="showBarlinesToggle"' in html_source
+    assert 'id="showLabelsToggle"' in html_source
+    assert 'id="showBaseToggle"' in html_source
+    assert 'id="showManualToggle"' in html_source
+    assert 'id="showLabelsToggle" type="checkbox" />' in html_source
+    assert 'id="helpBtn"' in html_source
+    assert 'id="helpPanel"' in html_source
+    assert "Barlines only:" in html_source
+    assert "Measures only:" in html_source
+    assert "Saved correction indices keep the existing internal" in html_source
+    assert 'helpPanel.scrollIntoView({ behavior: "smooth", block: "start" });' in app_source
+    assert "function saveCorrectionType(type)" in app_source
+    assert "function saveDirtyTypes()" in app_source
+    assert "saveCorrectionTypes(Array.from(dirtyTypes))" in app_source
+    assert "saveDirtyTypes().catch(() => {});" in app_source
+    assert "typeSelect.value = type" not in app_source
+    assert "Save corrections writes every staged correction type" in html_source

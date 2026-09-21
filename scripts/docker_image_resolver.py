@@ -188,6 +188,21 @@ current_source_provenance_lines = (
     "fi && \\",
 )
 
+provenance_arg_lines = frozenset(
+    {
+        "ARG PDFSCORE_SOURCE_FINGERPRINT",
+        "ARG PDFSCORE_SOURCE_COMMIT",
+        "ARG PDFSCORE_SOURCE_BRANCH",
+    }
+)
+provenance_label_lines = frozenset(
+    {
+        'LABEL pdfscore.runtime.source_fingerprint="${PDFSCORE_SOURCE_FINGERPRINT}"',
+        'LABEL pdfscore.runtime.source_commit="${PDFSCORE_SOURCE_COMMIT}"',
+        'LABEL pdfscore.runtime.source_branch="${PDFSCORE_SOURCE_BRANCH}"',
+    }
+)
+
 
 def remove_exact_sequence(lines, sequence):
     output = []
@@ -211,9 +226,9 @@ def dockerfile_runtime_contract(payload):
 
     for line in lines:
         stripped = line.strip()
-        if stripped.startswith("ARG PDFSCORE_SOURCE_"):
+        if stripped in provenance_arg_lines:
             continue
-        if stripped.startswith("LABEL pdfscore.runtime.source_"):
+        if stripped in provenance_label_lines:
             continue
         if not stripped or stripped.startswith("#"):
             continue

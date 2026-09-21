@@ -42,6 +42,12 @@ const measureSpanRow = document.getElementById("measureSpanRow");
 const measureSpanInput = document.getElementById("measureSpanInput");
 const reasonInput = document.getElementById("reasonInput");
 
+const showMeasuresToggle = document.getElementById("showMeasuresToggle");
+const showBarlinesToggle = document.getElementById("showBarlinesToggle");
+const showLabelsToggle = document.getElementById("showLabelsToggle");
+const showBaseToggle = document.getElementById("showBaseToggle");
+const showManualToggle = document.getElementById("showManualToggle");
+
 let image = new Image();
 let viewScale = 1.0;
 let viewOffset = { x: 0, y: 0 };
@@ -63,14 +69,14 @@ const HIT_PADDING = 7;
 
 const OPS = {
   mmr_measure_span: [
-    ["set_measure_span", "set_measure_span"],
-    ["suppress", "suppress"],
+    ["set_measure_span", "Set measure span"],
+    ["suppress", "Suppress MMR override"],
   ],
   barline_construction: [
-    ["add_barline", "add_barline"],
-    ["remove_barline", "remove_barline"],
+    ["remove_barline", "Remove existing barline"],
+    ["add_barline", "Add barline"],
   ],
-  measure_construction: [["force_measure", "force_measure"]],
+  measure_construction: [["force_measure", "Force measure interval"]],
 };
 
 function fetchJSON(url) {
@@ -93,6 +99,45 @@ function pageValue() {
   if (currentPage.page !== undefined) return currentPage.page;
   if (currentPage.page_index !== undefined) return currentPage.page_index;
   return currentIndex;
+}
+
+function displayIndex(value) {
+  const numeric = parseInt(value, 10);
+  return Number.isFinite(numeric) ? numeric + 1 : value;
+}
+
+function displayPageNumberFor(page, fallbackIndex) {
+  if (page && page.source_page_number !== undefined) return page.source_page_number;
+  if (page && page.page !== undefined) return displayIndex(page.page);
+  if (page && page.page_index !== undefined) return displayIndex(page.page_index);
+  return displayIndex(fallbackIndex);
+}
+
+function displayPageNumber() {
+  return displayPageNumberFor(currentPage, currentIndex);
+}
+
+function measureDisplayLabel(measure) {
+  return `S${displayIndex(measure.system)} M${displayIndex(measure.measure)}`;
+}
+
+function operationLabel(correctionType, op) {
+  const match = (OPS[correctionType] || []).find(([value]) => value === op);
+  return match ? match[1] : op;
+}
+
+function manualItemSummary(item, index, correctionType) {
+  const parts = [
+    `Staged ${index + 1}`,
+    operationLabel(correctionType, item.op),
+    `Page ${displayIndex(item.page)}`,
+  ];
+  if (item.system !== undefined) parts.push(`System ${displayIndex(item.system)}`);
+  if (item.measure !== undefined) parts.push(`Measure ${displayIndex(item.measure)}`);
+  if (item.interval !== undefined) parts.push(`Measure ${displayIndex(item.interval)}`);
+  if (item.measure_span !== undefined) parts.push(`span ${item.measure_span}`);
+  if (Array.isArray(item.bbox)) parts.push(`bbox=[${item.bbox.join(", ")}]`);
+  return parts.join(" · ");
 }
 
 function measureKey(page, system, measure) {
@@ -209,32 +254,98 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(image, viewOffset.x, viewOffset.y, image.width * viewScale, image.height * viewScale);
 
+  const showMeasures = showMeasuresToggle.checked;
+  const showBarlines = showBarlinesToggle.checked;
+  const showLabels = showLabelsToggle.checked;
+  const showBase = showBaseToggle.checked;
+  const showManual = showManualToggle.checked;
+
   const baseMap = baseMmrMap();
   const manualMap = manualMmrMap();
   measures.forEach((measure) => {
     const effective = effectiveMmrState(measure, baseMap, manualMap);
+    const baseVisible = showBase && effective.baseSpan > 1;
+    const manualVisible = showManual && Boolean(effective.manualOp);
+    const geometryVisible = showMeasures || baseVisible || manualVisible;
+    if (!geometryVisible) return;
+
     let color = COLOR_MEASURE;
-    let label = `S${measure.system} M${measure.measure}`;
-    if (effective.baseSpan > 1) color = COLOR_BASE_MMR;
-    if (effective.manualOp === "set_measure_span") color = COLOR_MANUAL;
-    if (effective.manualOp === "suppress") color = COLOR_SUPPRESSED;
-    if (effective.baseSpan > 1 || effective.effectiveSpan > 1 || effective.manualOp) {
+    let thickness = 1.5;
+    let fill = false;
+    if (baseVisible) color = COLOR_BASE_MMR;
+    if (manualVisible) {
+      color = effective.manualOp === "suppress" ? COLOR_SUPPRESSED : COLOR_MANUAL;
+      thickness = 2.5;
+      fill = true;
+    }
+
+    let label = measureDisplayLabel(measure);
+    if ((baseVisible || manualVisible) && (effective.baseSpan > 1 || effective.effectiveSpan > 1 || effective.manualOp)) {
       label += ` b${effective.baseSpan}->e${effective.effectiveSpan}`;
     }
-    drawBox(measure.bbox, color, effective.manualOp ? 2.5 : 1.5, Boolean(effective.manualOp));
-    drawLabel(measure.bbox, label, color);
+    drawBox(measure.bbox, color, thickness, fill);
+    if (showLabels) drawLabel(measure.bbox, label, color);
   });
 
-  barlines.forEach((barline, index) => {
-    drawBox(barline.bbox, COLOR_BARLINE, 1.2);
-    drawLabel(barline.bbox, `B${index + 1}`, COLOR_BARLINE);
-  });
+  if (showBarlines) {
+    barlines.forEach((barline, index) => {
+      drawBox(barline.bbox, COLOR_BARLINE, 1.2);
+      if (showLabels) drawLabel(barline.bbox, `B${index + 1}`, COLOR_BARLINE);
+    });
+  }
 
-  if (selectedMeasure) drawBox(selectedMeasure.bbox, COLOR_SELECTED, 3, true);
-  if (selectedBarline) drawBox(selectedBarline.bbox, COLOR_SELECTED, 3, true);
+  if (showManual) {
+    itemsForCurrentPage("barline_construction").forEach((item) => {
+      if (!Array.isArray(item.bbox)) return;
+      const isRemove = item.op === "remove_barline";
+      const color = isRemove ? COLOR_SUPPRESSED : COLOR_MANUAL;
+      drawBox(item.bbox, color, 2.5, isRemove);
+      if (showLabels) drawLabel(item.bbox, operationLabel("barline_construction", item.op), color);
+    });
+
+    itemsForCurrentPage("measure_construction").forEach((item) => {
+      const measure = measures.find(
+        (candidate) =>
+          String(candidate.system) === String(item.system) &&
+          String(candidate.measure) === String(item.interval)
+      );
+      if (!measure) return;
+      drawBox(measure.bbox, COLOR_MANUAL, 2.5, true);
+      if (showLabels) drawLabel(measure.bbox, operationLabel("measure_construction", item.op), COLOR_MANUAL);
+    });
+  }
+
+  if (selectedMeasure) {
+    drawBox(selectedMeasure.bbox, COLOR_SELECTED, 3, true);
+    drawLabel(selectedMeasure.bbox, measureDisplayLabel(selectedMeasure), COLOR_SELECTED);
+  }
+  if (selectedBarline) {
+    drawBox(selectedBarline.bbox, COLOR_SELECTED, 3, true);
+    const barlineIndex = barlines.indexOf(selectedBarline);
+    drawLabel(
+      selectedBarline.bbox,
+      barlineIndex >= 0 ? `Barline ${barlineIndex + 1}` : "Selected barline",
+      COLOR_SELECTED
+    );
+  }
+
+  if (selectedItemIndex !== null && currentType() !== "mmr_measure_span") {
+    const stagedItem = itemsForCurrentPage(currentType())[selectedItemIndex];
+    if (stagedItem && Array.isArray(stagedItem.bbox)) {
+      drawBox(stagedItem.bbox, COLOR_SELECTED, 3, true);
+    } else if (stagedItem && currentType() === "measure_construction") {
+      const measure = measures.find(
+        (candidate) =>
+          String(candidate.system) === String(stagedItem.system) &&
+          String(candidate.measure) === String(stagedItem.interval)
+      );
+      if (measure) drawBox(measure.bbox, COLOR_SELECTED, 3, true);
+    }
+  }
+
   if (draftBBox) {
     drawBox(draftBBox, COLOR_DRAFT, 2);
-    drawLabel(draftBBox, "draft", COLOR_DRAFT);
+    drawLabel(draftBBox, "Draft", COLOR_DRAFT);
   }
   if (isDrawing && drawStart) {
     ctx.strokeStyle = COLOR_DRAFT;
@@ -312,11 +423,19 @@ function updateSelectionMeta() {
   if (selectedMeasure) {
     const state = effectiveMmrState(selectedMeasure);
     parts.push(
-      `measure: page=${pageValue()} system=${selectedMeasure.system} measure=${selectedMeasure.measure} base=${state.baseSpan} effective=${state.effectiveSpan}`
+      `Page ${displayPageNumber()} / System ${displayIndex(selectedMeasure.system)} / Measure ${displayIndex(selectedMeasure.measure)} | base=${state.baseSpan} effective=${state.effectiveSpan}`
     );
   }
-  if (selectedBarline) parts.push(`barline bbox=[${selectedBarline.bbox.join(", ")}]`);
-  if (draftBBox) parts.push(`draft bbox=[${draftBBox.join(", ")}]`);
+  if (selectedBarline) {
+    const barlineIndex = barlines.indexOf(selectedBarline);
+    const label = barlineIndex >= 0 ? `Barline ${barlineIndex + 1}` : "Selected barline";
+    parts.push(`${label} | bbox=[${selectedBarline.bbox.join(", ")}]`);
+  }
+  if (draftBBox) parts.push(`Draft bbox=[${draftBBox.join(", ")}]`);
+  if (selectedItemIndex !== null && currentType() !== "mmr_measure_span") {
+    const item = itemsForCurrentPage(currentType())[selectedItemIndex];
+    if (item) parts.push(manualItemSummary(item, selectedItemIndex, currentType()));
+  }
   selectionMeta.textContent = parts.length ? parts.join(" | ") : "No selection";
 }
 
@@ -325,7 +444,8 @@ function renderPageList() {
   pages.forEach((page, index) => {
     const div = document.createElement("div");
     div.className = "list-item" + (index === currentIndex ? " active" : "");
-    div.textContent = page.name || `page ${index}`;
+    const pageNumber = displayPageNumberFor(page, index);
+    div.textContent = `Page ${pageNumber}${page.name ? ` · ${page.name}` : ""}`;
     div.onclick = () => switchPage(index);
     pageList.appendChild(div);
   });
@@ -355,8 +475,11 @@ function renderMmrRows() {
     const div = document.createElement("div");
     const key = measureKey(pageValue(), measure.system, measure.measure);
     div.className = "list-item" + (key === selectedKey ? " active" : "");
-    const status = state.manualOp || (state.baseSpan > 1 ? "base" : "normal");
-    div.textContent = `S${measure.system} M${measure.measure} | base=${state.baseSpan} effective=${state.effectiveSpan} | ${status}`;
+    let status = "Normal";
+    if (state.baseSpan > 1) status = "Base MMR";
+    if (state.manualOp === "set_measure_span") status = "Staged: set span";
+    if (state.manualOp === "suppress") status = "Staged: suppress";
+    div.textContent = `System ${displayIndex(measure.system)} · Measure ${displayIndex(measure.measure)} | base=${state.baseSpan} → effective=${state.effectiveSpan} | ${status}`;
     div.onclick = () => selectMeasure(measure);
     itemList.appendChild(div);
   });
@@ -374,25 +497,42 @@ function renderManualItems() {
   items.forEach((item, index) => {
     const div = document.createElement("div");
     div.className = "list-item" + (index === selectedItemIndex ? " active" : "");
-    div.textContent = `${index + 1}. ${item.op} ${JSON.stringify(item)}`;
+    div.textContent = manualItemSummary(item, index, type);
     div.onclick = () => {
       selectedItemIndex = index;
+      updateSelectionMeta();
       renderItems();
+      draw();
     };
     itemList.appendChild(div);
   });
   if (!items.length) {
     const div = document.createElement("div");
     div.className = "small";
-    div.textContent = "No manual correction items for this page/type.";
+    div.textContent = "No staged corrections for this page/type.";
     itemList.appendChild(div);
   }
+}
+
+function updateActionButtons() {
+  const type = currentType();
+  if (type === "mmr_measure_span") {
+    const canClear = Boolean(selectedMeasure && manualMmrMap().get(selectedMeasureKey()));
+    deleteItemBtn.textContent = "Clear staged override";
+    deleteItemBtn.disabled = !canClear;
+    return;
+  }
+  const items = itemsForCurrentPage(type);
+  const canUnstage = selectedItemIndex !== null && Boolean(items[selectedItemIndex]);
+  deleteItemBtn.textContent = "Unstage selected";
+  deleteItemBtn.disabled = !canUnstage;
 }
 
 function renderItems() {
   itemList.innerHTML = "";
   if (currentType() === "mmr_measure_span") renderMmrRows();
   else renderManualItems();
+  updateActionButtons();
 }
 
 function currentReason() {
@@ -435,7 +575,7 @@ function addCorrectionItem() {
     renderItems();
     updateSelectionMeta();
     draw();
-    saveStatus.textContent = `Staged ${item.op}. Save writes corrections only; re-run evaluation separately.`;
+    saveStatus.textContent = `Staged: ${operationLabel(type, item.op)}. Save writes corrections only; re-run evaluation separately.`;
     return;
   }
 
@@ -469,7 +609,9 @@ function addCorrectionItem() {
   setDirty(type, true);
   selectedItemIndex = pageItems.length - 1;
   renderItems();
-  saveStatus.textContent = `Added ${item.op}. Save writes corrections only; re-run evaluation separately.`;
+  updateSelectionMeta();
+  draw();
+  saveStatus.textContent = `Staged: ${operationLabel(type, item.op)}. Save writes corrections only; re-run evaluation separately.`;
 }
 
 function deleteSelectedItem() {
@@ -489,7 +631,10 @@ function deleteSelectedItem() {
   selectedItemIndex = null;
   replaceItemsForCurrentPage(type, pageItems);
   setDirty(type, true);
+  updateSelectionMeta();
   renderItems();
+  draw();
+  saveStatus.textContent = "Removed staged correction.";
 }
 
 function loadCorrections() {
@@ -602,7 +747,7 @@ function loadPage() {
   selectedItemIndex = null;
   draftBBox = null;
   saveStatus.textContent = "";
-  pageMeta.textContent = `${currentPage.name || currentIndex} | page=${pageValue()} | Save only writes correction JSON`;
+  pageMeta.textContent = `Page ${displayPageNumber()}${currentPage.name ? ` · ${currentPage.name}` : ""} | Save writes correction JSON only`;
 
   image.onload = () => {
     resetView();
@@ -682,6 +827,16 @@ saveBtn.onclick = () => {
 
 typeSelect.onchange = updateOps;
 opSelect.onchange = updateControlState;
+
+[
+  showMeasuresToggle,
+  showBarlinesToggle,
+  showLabelsToggle,
+  showBaseToggle,
+  showManualToggle,
+].forEach((toggle) => {
+  toggle.onchange = draw;
+});
 
 prevBtn.onclick = () => switchPage(Math.max(0, currentIndex - 1));
 nextBtn.onclick = () => switchPage(Math.min(pages.length - 1, currentIndex + 1));

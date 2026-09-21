@@ -3,7 +3,7 @@
 PYTHON ?= python3
 FULL_EVAL_CONFIG ?= configs/evaluation2_e2e_verification_full.yaml
 FULL_EVAL_TIMEOUT ?= 8h
-FAST_TESTS ?= tests/test_numbering_overrides.py tests/test_pipeline_detection.py tests/test_probe_bands.py tests/test_subprocess_utils.py
+FAST_TESTS ?= tests/test_numbering_overrides.py tests/test_pipeline_detection.py tests/test_probe_bands.py tests/test_subprocess_utils.py tests/test_issue355_trusted_accuracy_smoke.py
 DOCKER_EXTRA_ARGS ?=
 DOCKER_IMAGE ?= pdfscore_pipeline_gpu
 
@@ -94,13 +94,15 @@ promote-log: ## Promote a log from worktree to permanent logs (usage: make promo
 	@mv $(SRC) logs/$(DEST)/
 	@echo "Promoted $(SRC) to logs/$(DEST)/"
 
-run-smoke: ## Run smoke test inside pdfscore_pipeline_gpu container
+run-smoke: ## Run production-representative detector accuracy smoke
 	@mkdir -p artifacts
-	@echo "Running smoke test..."
-	@docker run --rm --gpus all $(DOCKER_EXTRA_ARGS) -v $(PWD):/workspace -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_gpu \
-		/opt/venv_pipeline/bin/python src/pipeline/main.py --config "configs/smoke_test.yaml" > artifacts/smoke_test.log 2>&1 || \
-		(EXIT_CODE=$$?; echo "Smoke test failed with exit code $$EXIT_CODE. See artifacts/smoke_test.log"; exit $$EXIT_CODE)
-	@echo "Smoke test complete successfully. See artifacts/smoke_test.log"
+	@echo "Running canonical production-accuracy smoke..."
+	@if ! DOCKER_EXTRA_ARGS="$(DOCKER_EXTRA_ARGS)" bash scripts/docker_runtime_validation.sh \
+		--config configs/smoke_test.yaml > artifacts/smoke_test.log 2>&1; then \
+		echo "Smoke test failed. See artifacts/smoke_test.log"; \
+		exit 1; \
+	fi
+	@echo "Production-accuracy smoke passed. See artifacts/smoke_test.log"
 
 run-smoke-sr: run-smoke ## Alias for run-smoke (deprecated)
 

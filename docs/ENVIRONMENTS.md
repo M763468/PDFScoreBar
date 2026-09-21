@@ -13,7 +13,7 @@ This is the maintained full-pipeline Docker image.
 - Dockerfile: `Dockerfile`
 - Build target: `make docker-build`
 - Canonical GPU validation entry point: `make verify-gpu-smoke`
-- Low-level smoke target: `make run-smoke`
+- Production-representative detector accuracy smoke: `make run-smoke`
 - Pipeline entry point: `make run-pipeline CONFIG=<config.yaml>`
 - Container interpreter: `/opt/venv_pipeline/bin/python`
 - Normal mounted repository root: `/workspace`
@@ -25,10 +25,16 @@ route and Stage-E/full-pipeline validation that needs Docker/GPU execution.
 `make verify-gpu-smoke` is the authoritative environment gate. Before pipeline execution it
 runs `scripts/docker_runtime_validation.sh`, which checks the bind-mounted source against the
 source fingerprint recorded when the image was built, validates required assets, and probes
-CUDA inside the container. Host `nvidia-smi` output is metadata only; the container CUDA probe
-is authoritative.
+CUDA inside the container. The standard `configs/smoke_test.yaml` then runs the current dense
+production detector contract on `Va_Prokofiev_Symphony1/page_001` from a fresh 360-DPI PDF
+render and applies an explicit GT accuracy gate. The smoke fails if the rendered input no longer
+matches the accepted evaluation image identity, if the detector settings drift from
+`configs/dense_full_pipeline.yaml`, or if the page produces any hard FP/FN/soft residual.
+Host `nvidia-smi` output is metadata only; the container CUDA probe is authoritative.
 
-`make run-smoke` remains a lower-level pipeline invocation and does not replace that preflight.
+`make run-smoke` uses the same canonical runtime validation and accuracy gate without the outer
+`gpu_smoke.sh` metadata/timeout wrapper. Smoke runs receive unique run IDs, so rerunning the
+check does not require deleting root-owned Docker artifacts first.
 
 Read `PIPELINE_ARCHITECTURE.md` for the current two-HOMR process boundaries; container names
 or old phase diagrams are not an architecture contract.
@@ -65,10 +71,12 @@ The Real-ESRGAN resolver uses `PDFSCORE_REALESRGAN_WEIGHTS_DIR` in the image and
 legacy checkout path only as a host-development fallback. A canonical Docker smoke must not
 require weights to be manually copied into `external/realesrgan/weights`.
 
-The smoke CNN does not create a second production model contract. Docker materializes the
-tracked `models/barline_cnn/manifest.json` through `src.common.model_artifacts`, including its
-SHA-256 check, then exposes the verified bytes at the stable smoke-only path above. Production
-CNN artifact migration remains owned by Issue #315 and its manifest contract.
+The image-owned smoke CNN path remains available for legacy/workflow-only fixtures, but it is
+not the standard accuracy smoke and must not be used as production-accuracy evidence. The
+standard smoke uses the same `models/barline_cnn/manifest.json`, threshold, dense detector route,
+and x4 support contract as `configs/dense_full_pipeline.yaml`. Docker still materializes the
+tracked manifest through `src.common.model_artifacts`, including its SHA-256 check, and exposes
+the verified bytes at the stable smoke-only compatibility path above.
 
 The OMR-DLN weight is different: it is externally distributed and is not silently downloaded,
 redistributed, or substituted by the Docker build. Register the selected official

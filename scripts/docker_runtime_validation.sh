@@ -201,8 +201,29 @@ if [[ "$preflight_only" -eq 1 ]]; then
   exit 0
 fi
 
+pipeline_args=(
+  /opt/venv_pipeline/bin/python
+  src/pipeline/main.py
+  --config
+  "$container_config"
+)
+accuracy_args=(
+  /opt/venv_pipeline/bin/python
+  tools/verification/verify_detector_accuracy_smoke.py
+  --config
+  "$container_config"
+)
+
+if [[ "$config_relative" == "configs/smoke_test.yaml" ]]; then
+  smoke_run_id="smoke_test_detection_$(date -u +%Y%m%dT%H%M%SZ)"
+  pipeline_args+=(--run-id "$smoke_run_id")
+  accuracy_args+=(--run-dir "/workspace/logs/full_pipeline_runs/$smoke_run_id")
+fi
+
 echo "Running canonical pipeline smoke..."
-docker "${common_args[@]}" \
-  /opt/venv_pipeline/bin/python src/pipeline/main.py --config "$container_config"
+docker "${common_args[@]}" "${pipeline_args[@]}"
+
+echo "Running configured post-pipeline accuracy validation..."
+docker "${common_args[@]}" "${accuracy_args[@]}"
 
 echo "Docker runtime validation completed successfully."

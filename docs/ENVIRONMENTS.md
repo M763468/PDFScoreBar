@@ -99,9 +99,10 @@ Canonical Docker validation keeps two different identities deliberately separate
 - the **source fingerprint** is broad provenance for the checkout used to build an image; it
   includes bind-mounted application Python and remains useful for identifying source drift;
 - the **runtime compatibility fingerprint** covers the image/environment-defining contract:
-  the dependency/build portion of the Dockerfile before the bind-mounted source copy,
+  Dockerfile instructions across the full build (including post-copy image-owned materialization),
   `pyproject.toml`, the HOMR ONNX-provider build patch, and the image-owned barline-CNN
-  manifest.
+  manifest. Dockerfile comments plus the source-provenance-only ARG/LABEL/fingerprint-emission
+  steps are normalized out so provenance metadata changes do not force a rebuild.
 
 The GPU-smoke host resolver first resolves the mutable canonical tag to an immutable image ID.
 Every recognized image is then checked against the runtime compatibility fingerprint before it

@@ -178,3 +178,9 @@ def test_manual_gui_separates_one_based_display_from_saved_indices():
     assert 'id="showBaseToggle"' in html_source
     assert 'id="showManualToggle"' in html_source
     assert 'id="showLabelsToggle" type="checkbox" />' in html_source
+    assert 'id="helpBtn"' in html_source
+    assert 'id="helpPanel"' in html_source
+    assert "Barlines only:" in html_source
+    assert "Measures only:" in html_source
+    assert "Saved correction indices keep the existing internal" in html_source
+    assert 'helpPanel.scrollIntoView({ behavior: "smooth", block: "start" });' in app_source

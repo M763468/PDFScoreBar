@@ -62,7 +62,7 @@ PROVENANCE_ARG_LINES = frozenset(
         "ARG PDFSCORE_SOURCE_BRANCH",
     }
 )
-PROVENANCE_LABEL_PREFIXES = frozenset(
+PROVENANCE_LABEL_LINES = frozenset(
     {
         'LABEL pdfscore.runtime.source_fingerprint="${PDFSCORE_SOURCE_FINGERPRINT}"',
         'LABEL pdfscore.runtime.source_commit="${PDFSCORE_SOURCE_COMMIT}"',
@@ -135,7 +135,7 @@ def _dockerfile_runtime_contract(payload: bytes) -> bytes:
         stripped = line.strip()
         if stripped in PROVENANCE_ARG_LINES:
             continue
-        if stripped in PROVENANCE_LABEL_PREFIXES:
+        if stripped in PROVENANCE_LABEL_LINES:
             continue
         if not stripped or stripped.startswith("#"):
             continue

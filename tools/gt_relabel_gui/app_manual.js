@@ -31,6 +31,8 @@ const selectionMeta = document.getElementById("selectionMeta");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const saveBtn = document.getElementById("saveBtn");
+const helpBtn = document.getElementById("helpBtn");
+const helpPanel = document.getElementById("helpPanel");
 const selectModeBtn = document.getElementById("selectModeBtn");
 const drawModeBtn = document.getElementById("drawModeBtn");
 const addItemBtn = document.getElementById("addItemBtn");
@@ -823,6 +825,10 @@ addItemBtn.onclick = addCorrectionItem;
 deleteItemBtn.onclick = deleteSelectedItem;
 saveBtn.onclick = () => {
   saveCurrentType().catch(() => {});
+};
+helpBtn.onclick = () => {
+  helpPanel.open = true;
+  helpPanel.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
 typeSelect.onchange = updateOps;

@@ -47,11 +47,10 @@ CURRENT_SOURCE_PROVENANCE_LINES = (
     "/opt/pdfscore-runtime/runtime_contract.py fingerprint /workspace) && \\",
     "printf '%s\\n' \"${ACTUAL_SOURCE_FINGERPRINT}\" \\",
     "> /opt/pdfscore-runtime/source_fingerprint.txt && \\",
-    "if [ -n \"${PDFSCORE_SOURCE_FINGERPRINT}\" ] && \\",
-    "[ \"${ACTUAL_SOURCE_FINGERPRINT}\" != \"${PDFSCORE_SOURCE_FINGERPRINT}\" ]; then \\",
+    'if [ -n "${PDFSCORE_SOURCE_FINGERPRINT}" ] && \\',
+    '[ "${ACTUAL_SOURCE_FINGERPRINT}" != "${PDFSCORE_SOURCE_FINGERPRINT}" ]; then \\',
     'echo "Docker build source fingerprint changed during build context transfer" >&2; \\',
-    'echo "expected=${PDFSCORE_SOURCE_FINGERPRINT} '
-    'actual=${ACTUAL_SOURCE_FINGERPRINT}" >&2; \\',
+    'echo "expected=${PDFSCORE_SOURCE_FINGERPRINT} actual=${ACTUAL_SOURCE_FINGERPRINT}" >&2; \\',
     "exit 1; \\",
     "fi && \\",
 )

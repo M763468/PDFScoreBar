@@ -11,7 +11,7 @@ import json
 import shutil
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping
 
 EVIDENCE_SCHEMA_VERSION = "issue333.movement_boundary_evidence.v1"
 RESOLVED_SCHEMA_VERSION = "issue268.movement_boundaries.v1"
@@ -327,12 +327,13 @@ def attach_movement_boundary_evidence(
         )
 
     destination = package_root / DEFAULT_EVIDENCE_FILENAME
+    same_file = evidence_file == destination.resolve()
     if destination.exists() and not overwrite:
         if destination.read_bytes() != evidence_bytes:
             raise FileExistsError(
                 f"Refusing to overwrite attached movement evidence: {destination}"
             )
-    else:
+    elif not same_file:
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(evidence_file, destination)
 

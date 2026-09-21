@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import importlib.metadata
 import json
 import subprocess
 import sys
@@ -37,6 +38,25 @@ from tools.issue286.audit_current_full68_equal_x import (
 
 CURRENT_CONFIG = PROJECT_ROOT / "configs/dense_full_pipeline.yaml"
 CURRENT_HOMR_PROFILE = PROJECT_ROOT / "configs/detector_profiles/maintained_original_homr.json"
+
+
+def runtime_provenance() -> dict[str, Any]:
+    packages = {}
+    for distribution in (
+        "numpy",
+        "opencv-python-headless",
+        "opencv-python",
+        "scipy",
+    ):
+        try:
+            packages[distribution] = importlib.metadata.version(distribution)
+        except importlib.metadata.PackageNotFoundError:
+            continue
+    return {
+        "python_executable": sys.executable,
+        "python_version": sys.version,
+        "packages": packages,
+    }
 
 
 def git_head() -> str:
@@ -527,6 +547,7 @@ def main() -> int:
     result = {
         "schema_version": "issue286.issue294_retained_equal_x_audit.v2",
         "source_commit": git_head(),
+        "runtime_provenance": runtime_provenance(),
         "full68_manifest": str(full68_manifest),
         "retained_project_root": str(retained_root),
         "retained_checkout": manifest.get("checkout"),

@@ -485,6 +485,7 @@ def summarize(pages: dict[tuple[str, str], dict[str, Any]]) -> dict[str, Any]:
         "selectors": selectors,
     }
 
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--full68-manifest", type=Path, required=True)

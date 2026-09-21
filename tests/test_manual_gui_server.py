@@ -125,6 +125,7 @@ def test_manual_handoff_config_uses_strict_review_package_root(tmp_path):
                 "mmr_measure_span": "corrections/mmr_measure_spans.json",
                 "measure_construction": "corrections/measure_construction_overrides.json",
                 "barline_construction": "corrections/barline_construction_overrides.json",
+                "movement_boundary": "corrections/movement_boundaries_review.json",
             },
             "mmr": "pages/page_001/mmr_overrides.json",
             "barlines": "pages/page_001/barlines_review.json",
@@ -190,3 +191,12 @@ def test_manual_gui_separates_one_based_display_from_saved_indices():
     assert "saveDirtyTypes().catch(() => {});" in app_source
     assert "typeSelect.value = type" not in app_source
     assert "Save corrections writes every staged correction type" in html_source
+    assert 'value="movement_boundary"' in html_source
+    assert 'id="movementSystemInput"' in html_source
+    assert 'id="exportMovementBtn"' in html_source
+    assert "Candidate absence is never treated as a negative" in html_source
+    assert 'movement_boundary: [' in app_source
+    assert 'function renderMovementRows()' in app_source
+    assert 'candidate.state === "ambiguous_review_required"' in app_source
+    assert 'Candidate absence is not a reviewed no-boundary' in app_source
+    assert 'fetch("/api/export_movement_boundaries"' in app_source

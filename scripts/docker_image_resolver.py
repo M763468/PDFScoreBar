@@ -23,6 +23,9 @@ RUNTIME_SCOPE = (
     "pyproject.toml",
     "docker/patch_homr_onnx_provider.py",
     "models/barline_cnn/manifest.json",
+    "src/common/model_artifacts.py",
+    "src/common/__init__.py",
+    "src/common/barline_evaluation.py",
 )
 
 
@@ -161,42 +164,57 @@ files = (
     Path("pyproject.toml"),
     Path("docker/patch_homr_onnx_provider.py"),
     Path("models/barline_cnn/manifest.json"),
+    Path("src/common/model_artifacts.py"),
+    Path("src/common/__init__.py"),
+    Path("src/common/barline_evaluation.py"),
 )
+
+legacy_source_provenance_lines = (
+    "/opt/venv_pipeline/bin/python /opt/pdfscore-runtime/runtime_contract.py "
+    "fingerprint /workspace \\",
+    "> /opt/pdfscore-runtime/source_fingerprint.txt && \\",
+)
+current_source_provenance_lines = (
+    "ACTUAL_SOURCE_FINGERPRINT=$(/opt/venv_pipeline/bin/python \\",
+    "/opt/pdfscore-runtime/runtime_contract.py fingerprint /workspace) && \\",
+    "printf '%s\\n' \"${ACTUAL_SOURCE_FINGERPRINT}\" \\",
+    "> /opt/pdfscore-runtime/source_fingerprint.txt && \\",
+    "if [ -n \"${PDFSCORE_SOURCE_FINGERPRINT}\" ] && \\",
+    "[ \"${ACTUAL_SOURCE_FINGERPRINT}\" != \"${PDFSCORE_SOURCE_FINGERPRINT}\" ]; then \\",
+    'echo "Docker build source fingerprint changed during build context transfer" >&2; \\',
+    'echo "expected=${PDFSCORE_SOURCE_FINGERPRINT} '
+    'actual=${ACTUAL_SOURCE_FINGERPRINT}" >&2; \\',
+    "exit 1; \\",
+    "fi && \\",
+)
+
+
+def remove_exact_sequence(lines, sequence):
+    output = []
+    index = 0
+    width = len(sequence)
+    while index < len(lines):
+        stripped_window = tuple(line.strip() for line in lines[index : index + width])
+        if stripped_window == sequence:
+            index += width
+            continue
+        output.append(lines[index])
+        index += 1
+    return output
 
 
 def dockerfile_runtime_contract(payload):
     lines = payload.decode("utf-8").splitlines()
+    lines = remove_exact_sequence(lines, legacy_source_provenance_lines)
+    lines = remove_exact_sequence(lines, current_source_provenance_lines)
     normalized = []
-    skipping_source_check = False
-    skipping_legacy_source_write = False
 
     for line in lines:
         stripped = line.strip()
-
         if stripped.startswith("ARG PDFSCORE_SOURCE_"):
             continue
         if stripped.startswith("LABEL pdfscore.runtime.source_"):
             continue
-
-        if "ACTUAL_SOURCE_FINGERPRINT=$(" in stripped:
-            skipping_source_check = True
-            continue
-        if skipping_source_check:
-            if stripped == "fi && \\":
-                skipping_source_check = False
-            continue
-
-        if stripped.startswith(
-            "/opt/venv_pipeline/bin/python "
-            "/opt/pdfscore-runtime/runtime_contract.py fingerprint /workspace"
-        ):
-            skipping_legacy_source_write = True
-            continue
-        if skipping_legacy_source_write:
-            if "/opt/pdfscore-runtime/source_fingerprint.txt" in stripped:
-                skipping_legacy_source_write = False
-            continue
-
         if not stripped or stripped.startswith("#"):
             continue
         normalized.append(line.rstrip())

@@ -64,6 +64,7 @@ def runtime_provenance() -> dict[str, Any]:
     return {
         "python_executable": sys.executable,
         "python_version": sys.version,
+        "python_major_minor": f"{sys.version_info.major}.{sys.version_info.minor}",
         "packages": packages,
     }
 
@@ -84,16 +85,33 @@ def expected_runtime_versions() -> dict[str, str]:
     return versions
 
 
+def expected_runtime_contract() -> dict[str, Any]:
+    return {
+        "python_major_minor": "3.11",
+        "packages": expected_runtime_versions(),
+    }
+
+
 def runtime_contract_drift(runtime: dict[str, Any]) -> list[dict[str, Any]]:
-    expected = expected_runtime_versions()
-    packages = runtime.get("packages") or {}
+    expected = expected_runtime_contract()
     drift = []
-    for distribution, expected_version in expected.items():
+    actual_python = runtime.get("python_major_minor")
+    if actual_python != expected["python_major_minor"]:
+        drift.append(
+            {
+                "component": "python_major_minor",
+                "expected": expected["python_major_minor"],
+                "actual": actual_python,
+            }
+        )
+
+    packages = runtime.get("packages") or {}
+    for distribution, expected_version in expected["packages"].items():
         actual_version = packages.get(distribution)
         if actual_version != expected_version:
             drift.append(
                 {
-                    "distribution": distribution,
+                    "component": distribution,
                     "expected": expected_version,
                     "actual": actual_version,
                 }
@@ -669,7 +687,7 @@ def main() -> int:
         "schema_version": "issue286.issue294_retained_equal_x_audit.v2",
         "source_commit": git_head(),
         "runtime_provenance": runtime,
-        "runtime_contract_expected": expected_runtime_versions(),
+        "runtime_contract_expected": expected_runtime_contract(),
         "runtime_contract_drift": runtime_drift,
         "full68_manifest": str(full68_manifest),
         "retained_project_root": str(retained_root),

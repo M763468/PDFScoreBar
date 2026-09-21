@@ -14,8 +14,13 @@ import argparse
 import copy
 import json
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.measure_numbering.numbering import MeasureNumberer
 from src.measure_numbering.pipeline import MeasureNumberingPipeline
@@ -30,7 +35,6 @@ from tools.issue286.audit_current_full68_equal_x import (
     inventory_ties,
 )
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CURRENT_CONFIG = PROJECT_ROOT / "configs/dense_full_pipeline.yaml"
 CURRENT_HOMR_PROFILE = PROJECT_ROOT / "configs/detector_profiles/maintained_original_homr.json"
 

@@ -14,8 +14,10 @@ from tools.issue286.audit_current_full68_equal_x import (
 )
 from tools.issue286.audit_issue294_retained_equal_x import (
     geometry_signature,
+    git_head,
     logical_signature,
     resolve_project_path,
+    replay_source_provenance,
     retained_project_root,
     retained_to_current_replay_difference,
     runtime_contract_drift,
@@ -341,3 +343,24 @@ def test_issue286_current_runtime_runner_has_valid_bash_syntax() -> None:
         check=False,
     )
     assert result.returncode == 0, result.stderr
+
+
+
+def test_issue286_git_head_uses_host_provenance_without_git(monkeypatch) -> None:
+    monkeypatch.setenv("ISSUE286_SOURCE_COMMIT", "abc123")
+    monkeypatch.setenv("PATH", "")
+
+    assert git_head() == "abc123"
+
+
+def test_issue286_source_provenance_is_nonblocking_without_git(monkeypatch) -> None:
+    monkeypatch.setenv("ISSUE286_SOURCE_COMMIT", "abc123")
+    monkeypatch.setenv("PATH", "")
+
+    provenance = replay_source_provenance({"head": "retained123"})
+
+    assert provenance["retained_head"] == "retained123"
+    assert provenance["current_head"] == "abc123"
+    assert provenance["all_equal"] is None
+    assert provenance["files"]
+    assert all(item["equal"] is None for item in provenance["files"].values())

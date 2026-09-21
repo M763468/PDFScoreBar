@@ -55,6 +55,21 @@ CURRENT_SOURCE_PROVENANCE_LINES = (
     "fi && \\",
 )
 
+PROVENANCE_ARG_LINES = frozenset(
+    {
+        "ARG PDFSCORE_SOURCE_FINGERPRINT",
+        "ARG PDFSCORE_SOURCE_COMMIT",
+        "ARG PDFSCORE_SOURCE_BRANCH",
+    }
+)
+PROVENANCE_LABEL_PREFIXES = frozenset(
+    {
+        'LABEL pdfscore.runtime.source_fingerprint="${PDFSCORE_SOURCE_FINGERPRINT}"',
+        'LABEL pdfscore.runtime.source_commit="${PDFSCORE_SOURCE_COMMIT}"',
+        'LABEL pdfscore.runtime.source_branch="${PDFSCORE_SOURCE_BRANCH}"',
+    }
+)
+
 
 def _source_contract_files(root: Path) -> Iterable[Path]:
     seen: set[Path] = set()
@@ -118,9 +133,9 @@ def _dockerfile_runtime_contract(payload: bytes) -> bytes:
     normalized: list[str] = []
     for line in lines:
         stripped = line.strip()
-        if stripped.startswith("ARG PDFSCORE_SOURCE_"):
+        if stripped in PROVENANCE_ARG_LINES:
             continue
-        if stripped.startswith("LABEL pdfscore.runtime.source_"):
+        if stripped in PROVENANCE_LABEL_PREFIXES:
             continue
         if not stripped or stripped.startswith("#"):
             continue

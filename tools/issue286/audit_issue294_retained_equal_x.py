@@ -46,39 +46,58 @@ def git_head() -> str:
     return result.stdout.strip()
 
 
-def resolve_project_path(value: str | Path) -> Path:
+def retained_project_root(full68_manifest: Path) -> Path:
+    """Infer the retained checkout root from an existing manifest under logs/."""
+    resolved = full68_manifest.resolve()
+    parts = resolved.parts
+    if "logs" not in parts:
+        raise ValueError(f"Retained manifest is not under a logs tree: {resolved}")
+    index = parts.index("logs")
+    return Path(*parts[:index])
+
+
+def resolve_project_path(
+    value: str | Path,
+    *,
+    artifact_roots: tuple[Path, ...] = (),
+) -> Path:
     raw = Path(value)
     if raw.is_file():
-        return raw
+        return raw.resolve()
+
+    roots = tuple(dict.fromkeys((*artifact_roots, PROJECT_ROOT)))
+
     if not raw.is_absolute():
-        candidate = PROJECT_ROOT / raw
-        if candidate.is_file():
-            return candidate.resolve()
+        for root in roots:
+            candidate = root / raw
+            if candidate.is_file():
+                return candidate.resolve()
 
     text = str(raw)
     if "/workspace/" in text:
-        candidate = PROJECT_ROOT / text.split("/workspace/", 1)[1]
-        if candidate.is_file():
-            return candidate.resolve()
+        suffix = text.split("/workspace/", 1)[1]
+        for root in roots:
+            candidate = root / suffix
+            if candidate.is_file():
+                return candidate.resolve()
 
     parts = raw.parts
     for marker in ("ws_PDFScoreBar", "ws_PDFScoreBar_issue294"):
         if marker in parts:
             index = parts.index(marker)
-            candidate = PROJECT_ROOT.joinpath(*parts[index + 1 :])
-            if candidate.is_file():
-                return candidate.resolve()
+            for root in roots:
+                candidate = root.joinpath(*parts[index + 1 :])
+                if candidate.is_file():
+                    return candidate.resolve()
 
-    if "logs" in parts:
-        index = parts.index("logs")
-        candidate = PROJECT_ROOT.joinpath(*parts[index:])
-        if candidate.is_file():
-            return candidate.resolve()
-    if "data" in parts:
-        index = parts.index("data")
-        candidate = PROJECT_ROOT.joinpath(*parts[index:])
-        if candidate.is_file():
-            return candidate.resolve()
+    for anchor in ("logs", "data"):
+        if anchor in parts:
+            index = parts.index(anchor)
+            for root in roots:
+                candidate = root.joinpath(*parts[index:])
+                if candidate.is_file():
+                    return candidate.resolve()
+
     raise FileNotFoundError(raw)
 
 
@@ -178,7 +197,11 @@ def geometry_signature(payload: dict[str, Any]) -> list[list[int]]:
     ]
 
 
-def matrix_pages(full68_manifest: Path) -> dict[tuple[str, str], dict[str, Any]]:
+def matrix_pages(
+    full68_manifest: Path,
+    *,
+    artifact_roots: tuple[Path, ...] = (),
+) -> dict[tuple[str, str], dict[str, Any]]:
     manifest = load_json(full68_manifest)
     if manifest.get("schema_version") != "issue294.full68_host.v1":
         raise ValueError(f"Unexpected Issue #294 full68 schema: {manifest.get('schema_version')}")
@@ -190,7 +213,10 @@ def matrix_pages(full68_manifest: Path) -> dict[tuple[str, str], dict[str, Any]]
     if not isinstance(chunks, list):
         raise ValueError("Issue #294 full68 manifest lacks completed_chunks")
     for chunk in chunks:
-        report_path = resolve_project_path(str(chunk["matrix_report"]))
+        report_path = resolve_project_path(
+            str(chunk["matrix_report"]),
+            artifact_roots=artifact_roots,
+        )
         report = load_json(report_path)
         if report.get("status") != "completed":
             raise ValueError(f"Incomplete matrix report: {report_path}")
@@ -212,15 +238,34 @@ def matrix_pages(full68_manifest: Path) -> dict[tuple[str, str], dict[str, Any]]
     return pages
 
 
-def make_page(matrix_page: dict[str, Any]) -> tuple[Any, dict[str, Any], dict[str, Any]]:
-    image_path = resolve_project_path(str(matrix_page["image"]))
+def make_page(
+    matrix_page: dict[str, Any],
+    *,
+    artifact_roots: tuple[Path, ...] = (),
+) -> tuple[Any, dict[str, Any], dict[str, Any]]:
+    image_path = resolve_project_path(
+        str(matrix_page["image"]),
+        artifact_roots=artifact_roots,
+    )
     mode = matrix_page["modes"]["candidate_native_geometry"]
     variant = mode["variants"]["C_latest"]
-    support_path = resolve_project_path(str(matrix_page["fixed_inputs"]["support_result"]))
+    support_path = resolve_project_path(
+        str(matrix_page["fixed_inputs"]["support_result"]),
+        artifact_roots=artifact_roots,
+    )
     support = load_json(support_path)
-    staff_mask = resolve_project_path(str(variant["staff_mask"]))
-    connector_symbols = resolve_project_path(str(support["connector_symbols"]))
-    connector_brace_dot = resolve_project_path(str(support["connector_brace_dot"]))
+    staff_mask = resolve_project_path(
+        str(variant["staff_mask"]),
+        artifact_roots=artifact_roots,
+    )
+    connector_symbols = resolve_project_path(
+        str(support["connector_symbols"]),
+        artifact_roots=artifact_roots,
+    )
+    connector_brace_dot = resolve_project_path(
+        str(support["connector_brace_dot"]),
+        artifact_roots=artifact_roots,
+    )
 
     image = load_image(image_path)
     height, width = image.shape[:2]
@@ -246,8 +291,16 @@ def make_page(matrix_page: dict[str, Any]) -> tuple[Any, dict[str, Any], dict[st
     }
 
 
-def audit_page(identity: tuple[str, str], matrix_page: dict[str, Any]) -> dict[str, Any]:
-    page_obj, variant, paths = make_page(matrix_page)
+def audit_page(
+    identity: tuple[str, str],
+    matrix_page: dict[str, Any],
+    *,
+    artifact_roots: tuple[Path, ...] = (),
+) -> dict[str, Any]:
+    page_obj, variant, paths = make_page(
+        matrix_page,
+        artifact_roots=artifact_roots,
+    )
     retained = variant["numbering"]
     replay = signature(page_obj)
     retained_logical = logical_signature(retained)
@@ -332,7 +385,12 @@ def main() -> int:
     args = parser.parse_args()
 
     full68_manifest = args.full68_manifest.resolve()
-    pages_with_metadata = matrix_pages(full68_manifest)
+    retained_root = retained_project_root(full68_manifest)
+    artifact_roots = (retained_root,)
+    pages_with_metadata = matrix_pages(
+        full68_manifest,
+        artifact_roots=artifact_roots,
+    )
     manifest = pages_with_metadata.pop(("__manifest__", "__metadata__"))
     contract = current_contract()
     drift = []
@@ -352,7 +410,11 @@ def main() -> int:
             identity = (score, page)
             matrix_page = pages_with_metadata[identity]
             threshold_values.add(float(matrix_page["fixed_inputs"]["cnn_threshold"]))
-            pages[identity] = audit_page(identity, matrix_page)
+            pages[identity] = audit_page(
+                identity,
+                matrix_page,
+                artifact_roots=artifact_roots,
+            )
 
     current_threshold = float(contract["cnn_threshold"])
     if threshold_values != {current_threshold}:
@@ -374,6 +436,7 @@ def main() -> int:
         "schema_version": "issue286.issue294_retained_equal_x_audit.v1",
         "source_commit": git_head(),
         "full68_manifest": str(full68_manifest),
+        "retained_project_root": str(retained_root),
         "retained_checkout": manifest.get("checkout"),
         "retained_latest_homr_commit": manifest.get("latest_homr_commit"),
         "current_contract": contract,

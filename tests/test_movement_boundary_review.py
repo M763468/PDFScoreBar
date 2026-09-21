@@ -210,10 +210,7 @@ def test_attach_movement_evidence_keeps_review_package_local(tmp_path: Path) -> 
     )
 
     assert updated["movement_boundary_evidence"] == "movement_boundary_evidence.json"
-    assert (
-        updated["movement_boundary_resolved_output"]
-        == "corrections/movement_boundaries.json"
-    )
+    assert updated["movement_boundary_resolved_output"] == "corrections/movement_boundaries.json"
     attached = review_root / "movement_boundary_evidence.json"
     assert attached.read_bytes() == source_evidence.read_bytes()
 

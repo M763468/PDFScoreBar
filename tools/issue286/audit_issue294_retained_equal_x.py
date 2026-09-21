@@ -14,6 +14,7 @@ import argparse
 import copy
 import importlib.metadata
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -148,13 +149,14 @@ def replay_source_provenance(retained_checkout: Any) -> dict[str, Any]:
         try:
             retained_blob = git_blob_sha(retained_head, path)
             current_blob = git_blob_sha(current_head, path)
-        except subprocess.CalledProcessError as exc:
+        except (subprocess.CalledProcessError, FileNotFoundError) as exc:
             comparable = False
+            stderr = getattr(exc, "stderr", None)
             files[path] = {
                 "retained_blob": None,
                 "current_blob": None,
                 "equal": None,
-                "error": exc.stderr.strip() or str(exc),
+                "error": stderr.strip() if stderr else str(exc),
             }
             continue
         files[path] = {
@@ -175,13 +177,20 @@ def replay_source_provenance(retained_checkout: Any) -> dict[str, Any]:
 
 
 def git_head() -> str:
-    result = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=PROJECT_ROOT,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
+    host_commit = os.environ.get("ISSUE286_SOURCE_COMMIT")
+    if host_commit:
+        return host_commit
+
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return "unavailable"
     return result.stdout.strip()
 
 

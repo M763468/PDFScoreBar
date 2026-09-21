@@ -104,12 +104,13 @@ Canonical Docker validation keeps two different identities deliberately separate
   manifest.
 
 The GPU-smoke host resolver first resolves the mutable canonical tag to an immutable image ID.
-An exact source-fingerprint match is still accepted directly. When source provenance differs,
-the resolver derives the compatibility fingerprint from the recognized PDFScoreBar image's
-retained build-source copy and compares that with the active checkout. Therefore a Python-only
-change under bind-mounted `src/` can reuse an existing compatible image, while dependency,
-CUDA/HOMR build-contract, patch, or image-owned model-contract changes still require compatible
-image selection or a rebuild.
+Every recognized image is then checked against the runtime compatibility fingerprint before it
+is accepted. Source-fingerprint equality affects provenance diagnostics only; it never bypasses
+compatibility validation. When source provenance differs, the resolver derives the compatibility
+fingerprint from the recognized PDFScoreBar image's retained build-source copy and compares that
+with the active checkout. Therefore a Python-only change under bind-mounted `src/` can reuse an
+existing compatible image, while dependency, CUDA/HOMR build-contract, patch, or image-owned
+model-contract changes still require compatible image selection or a rebuild.
 
 If the compatibility contract differs, validation compares the active topic with the available
 `origin/develop` (or local `develop`) reference and distinguishes a stale topic base from

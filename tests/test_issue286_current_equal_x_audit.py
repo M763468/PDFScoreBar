@@ -17,6 +17,7 @@ from tools.issue286.audit_issue294_retained_equal_x import (
     resolve_project_path,
     retained_project_root,
     retained_to_current_replay_difference,
+    runtime_contract_drift,
     signature,
     summarize as summarize_issue294,
 )
@@ -246,3 +247,27 @@ def test_issue294_retained_replay_difference_identifies_system_fields() -> None:
         "retained": [1, 2],
         "current_replay": [1],
     }
+
+
+
+def test_issue294_runtime_contract_drift_reports_wrong_or_missing_versions() -> None:
+    drift = runtime_contract_drift(
+        {
+            "packages": {
+                "numpy": "0.0.0",
+                "opencv-python-headless": "4.10.0.84",
+            }
+        }
+    )
+
+    assert {
+        "distribution": "numpy",
+        "expected": "1.26.4",
+        "actual": "0.0.0",
+    } in drift
+    assert {
+        "distribution": "scipy",
+        "expected": "1.15.3",
+        "actual": None,
+    } in drift
+    assert all(item["distribution"] != "opencv-python-headless" for item in drift)

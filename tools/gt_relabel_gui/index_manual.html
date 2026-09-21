@@ -4,41 +4,48 @@
     <meta charset="utf-8" />
     <title>Manual Correction Editor</title>
     <style>
-      body { margin: 0; font-family: Arial, sans-serif; display: flex; height: 100vh; }
-      #sidebar { width: 430px; border-right: 1px solid #ccc; padding: 12px; overflow-y: auto; }
-      #main { flex: 1; display: flex; flex-direction: column; }
-      #toolbar { padding: 8px; border-bottom: 1px solid #ccc; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+      body { margin: 0; font-family: Arial, sans-serif; display: flex; height: 100vh; color: #222; }
+      #sidebar { width: 390px; border-right: 1px solid #ccc; padding: 0 12px 12px; overflow-y: auto; background: #fafafa; }
+      #main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+      #sidebarHeader { position: sticky; top: 0; z-index: 2; margin: 0 -12px 10px; padding: 10px 12px; background: #fff; border-bottom: 1px solid #ddd; }
+      #toolbar { padding: 8px 10px; border-bottom: 1px solid #ccc; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; background: #fafafa; }
       #canvas { flex: 1; background: #111; cursor: default; }
-      .btn { padding: 6px 10px; border: 1px solid #999; background: #f5f5f5; cursor: pointer; }
+      .btn { padding: 6px 10px; border: 1px solid #999; border-radius: 3px; background: #f5f5f5; cursor: pointer; }
       .btn.active { background: #cde8ff; border-color: #2b78c5; }
       .btn:disabled { color: #aaa; cursor: not-allowed; }
-      .list-item { padding: 5px; border-bottom: 1px solid #eee; cursor: pointer; font-family: monospace; font-size: 12px; }
-      .list-item.active { background: #eef6ff; }
+      .list-item { padding: 6px; border-bottom: 1px solid #eee; cursor: pointer; font-family: monospace; font-size: 12px; line-height: 1.35; }
+      .list-item.active { background: #eef6ff; outline: 1px solid #9ac8ee; outline-offset: -1px; }
       .small { font-size: 12px; color: #555; }
       .row { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-      .row label { display: inline-flex; align-items: center; gap: 4px; }
+      .row label, .overlay-toggle { display: inline-flex; align-items: center; gap: 4px; }
       .legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; }
       .dot { width: 10px; height: 10px; display: inline-block; border: 1px solid #333; }
-      #pageList, #itemList { max-height: 24vh; overflow-y: auto; border: 1px solid #eee; }
+      .section { margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px; }
+      details.section > summary { cursor: pointer; font-weight: bold; }
+      details.section[open] > summary { margin-bottom: 6px; }
+      #pageList, #itemList { max-height: 24vh; overflow-y: auto; border: 1px solid #eee; background: #fff; }
       input[type="number"] { width: 80px; }
-      input[type="text"] { width: 360px; }
-      select { max-width: 260px; }
+      input[type="text"] { width: 335px; max-width: 100%; }
+      select { max-width: 250px; }
       code { font-size: 11px; }
+      .toolbar-label { font-weight: bold; font-size: 12px; }
+      .spacer { flex: 1; }
     </style>
   </head>
   <body>
     <div id="sidebar">
-      <div><strong>Manual Correction Editor</strong></div>
-      <div class="small" id="pageMeta"></div>
-      <div class="row">
-        <button id="prevBtn" class="btn">Prev</button>
-        <button id="nextBtn" class="btn">Next</button>
-        <button id="saveBtn" class="btn">Save type</button>
+      <div id="sidebarHeader">
+        <div><strong>Manual Correction Editor</strong></div>
+        <div class="small" id="pageMeta"></div>
+        <div class="row">
+          <button id="prevBtn" class="btn">Previous page</button>
+          <button id="nextBtn" class="btn">Next page</button>
+          <button id="saveBtn" class="btn">Save corrections</button>
+        </div>
+        <div class="small" id="saveStatus"></div>
+        <div class="small" id="dirtyStatus"></div>
       </div>
-      <div class="small" id="saveStatus"></div>
-      <div class="small" id="dirtyStatus"></div>
 
-      <hr />
       <div><strong>Correction</strong></div>
       <div class="row">
         <label class="small">Type
@@ -65,36 +72,39 @@
         </label>
       </div>
       <div class="row">
-        <button id="selectModeBtn" class="btn active">Select</button>
-        <button id="drawModeBtn" class="btn">Draw bbox</button>
-        <button id="addItemBtn" class="btn">Stage correction</button>
-        <button id="deleteItemBtn" class="btn">Remove staged</button>
+        <button id="selectModeBtn" class="btn active">Select object</button>
+        <button id="drawModeBtn" class="btn">Draw barline box</button>
+        <button id="addItemBtn" class="btn">Stage change</button>
+        <button id="deleteItemBtn" class="btn" disabled>Unstage selected</button>
       </div>
       <div class="small" id="selectionMeta">No selection</div>
 
-      <hr />
-      <div><strong>Base / effective result for current page/type</strong></div>
-      <div class="small">
-        MMR rows show <code>base</code> from the configured MMR artifact and <code>effective</code> after manual corrections.
-      </div>
-      <div id="itemList"></div>
+      <details class="section" open>
+        <summary>Current page results</summary>
+        <div class="small">
+          MMR rows show <code>base</code> from the configured MMR artifact and <code>effective</code> after manual corrections.
+          Visible Page / System / Measure identifiers are 1-based; saved correction indices remain unchanged.
+        </div>
+        <div id="itemList"></div>
+      </details>
 
-      <hr />
-      <div><strong>Legend</strong></div>
-      <div class="legend">
+      <details class="section">
+        <summary>Legend</summary>
+        <div class="legend">
         <span><span class="dot" style="background:#3aa3ff;"></span>Normal measure</span>
         <span><span class="dot" style="background:#46c46b;"></span>Base MMR/barline</span>
         <span><span class="dot" style="background:#b35cff;"></span>Manual override</span>
         <span><span class="dot" style="background:#ff3b30;"></span>Suppressed/draft</span>
-        <span><span class="dot" style="background:#ff8a00;"></span>Selected</span>
-      </div>
+          <span><span class="dot" style="background:#ff8a00;"></span>Selected</span>
+        </div>
+      </details>
 
-      <hr />
-      <div><strong>Pages</strong></div>
-      <div id="pageList"></div>
+      <details class="section">
+        <summary>Pages</summary>
+        <div id="pageList"></div>
+      </details>
 
-      <hr />
-      <div class="small">
+      <div class="section small">
         Zoom: mouse wheel<br />
         Pan: space+drag or middle mouse<br />
         Save writes correction JSON only. Re-run evaluation separately.<br />
@@ -103,9 +113,14 @@
     </div>
     <div id="main">
       <div id="toolbar">
-        <span class="small">
-          Uses base artifact + manual correction + effective view. Future grouping operations are intentionally not editable here.
-        </span>
+        <span class="toolbar-label">Overlays</span>
+        <label class="overlay-toggle small"><input id="showMeasuresToggle" type="checkbox" checked />Measures</label>
+        <label class="overlay-toggle small"><input id="showBarlinesToggle" type="checkbox" checked />Barlines</label>
+        <label class="overlay-toggle small"><input id="showLabelsToggle" type="checkbox" />Labels</label>
+        <label class="overlay-toggle small"><input id="showBaseToggle" type="checkbox" checked />Base MMR state</label>
+        <label class="overlay-toggle small"><input id="showManualToggle" type="checkbox" checked />Manual state</label>
+        <span class="spacer"></span>
+        <span class="small">Selected object and active draft stay visible.</span>
       </div>
       <canvas id="canvas"></canvas>
     </div>

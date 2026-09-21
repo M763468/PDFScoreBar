@@ -5,10 +5,12 @@ let currentPage = null;
 let measures = [];
 let baseMmrOverrides = [];
 let barlines = [];
+let movementEvidenceCandidates = [];
 let correctionsByType = {
   mmr_measure_span: [],
   barline_construction: [],
   measure_construction: [],
+  movement_boundary: [],
 };
 
 let selectedMeasure = null;
@@ -31,6 +33,7 @@ const selectionMeta = document.getElementById("selectionMeta");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const saveBtn = document.getElementById("saveBtn");
+const exportMovementBtn = document.getElementById("exportMovementBtn");
 const helpBtn = document.getElementById("helpBtn");
 const helpPanel = document.getElementById("helpPanel");
 const selectModeBtn = document.getElementById("selectModeBtn");
@@ -42,6 +45,8 @@ const typeSelect = document.getElementById("typeSelect");
 const opSelect = document.getElementById("opSelect");
 const measureSpanRow = document.getElementById("measureSpanRow");
 const measureSpanInput = document.getElementById("measureSpanInput");
+const movementSystemRow = document.getElementById("movementSystemRow");
+const movementSystemInput = document.getElementById("movementSystemInput");
 const reasonInput = document.getElementById("reasonInput");
 
 const showMeasuresToggle = document.getElementById("showMeasuresToggle");
@@ -79,6 +84,10 @@ const OPS = {
     ["add_barline", "Add barline"],
   ],
   measure_construction: [["force_measure", "Force measure interval"]],
+  movement_boundary: [
+    ["boundary", "Mark movement boundary"],
+    ["no_boundary", "Mark no boundary"],
+  ],
 };
 
 function fetchJSON(url) {
@@ -176,6 +185,7 @@ function updateControlState() {
   const op = currentOp();
   measureSpanRow.style.display =
     type === "mmr_measure_span" && op === "set_measure_span" ? "flex" : "none";
+  movementSystemRow.style.display = type === "movement_boundary" ? "flex" : "none";
   drawModeBtn.disabled = !(type === "barline_construction");
   if (drawModeBtn.disabled && mode === "draw") setMode("select");
   renderItems();
@@ -493,6 +503,85 @@ function renderMmrRows() {
   }
 }
 
+function movementCandidateAt(system) {
+  return movementEvidenceCandidates.find(
+    (candidate) =>
+      String(candidate.page) === String(pageValue()) &&
+      String(candidate.system) === String(system) &&
+      candidate.state === "ambiguous_review_required"
+  );
+}
+
+function movementEvidenceText(candidate) {
+  const evidence = {
+    signals: candidate.signals || [],
+    references: candidate.references || {},
+  };
+  return JSON.stringify(evidence);
+}
+
+function renderMovementRows() {
+  const items = itemsForCurrentPage("movement_boundary");
+  const bySystem = new Map(items.map((item, index) => [String(item.system), { item, index }]));
+  const candidates = movementEvidenceCandidates.filter(
+    (candidate) =>
+      String(candidate.page) === String(pageValue()) &&
+      candidate.state === "ambiguous_review_required"
+  );
+  const candidateSystems = new Set(candidates.map((candidate) => String(candidate.system)));
+
+  candidates.forEach((candidate) => {
+    const review = bySystem.get(String(candidate.system));
+    const div = document.createElement("div");
+    div.className =
+      "list-item" + (review && review.index === selectedItemIndex ? " active" : "");
+    const status = review
+      ? review.item.op === "boundary"
+        ? "reviewed movement boundary"
+        : "reviewed no-boundary"
+      : "unresolved candidate";
+    const title = document.createElement("div");
+    title.textContent = `Candidate · System ${displayIndex(candidate.system)} · ${status}`;
+    div.appendChild(title);
+    const raw = document.createElement("div");
+    raw.className = "small";
+    raw.textContent = `Raw evidence: ${movementEvidenceText(candidate)}`;
+    div.appendChild(raw);
+    div.onclick = () => {
+      movementSystemInput.value = String(displayIndex(candidate.system));
+      selectedItemIndex = review ? review.index : null;
+      updateSelectionMeta();
+      renderItems();
+      draw();
+    };
+    itemList.appendChild(div);
+  });
+
+  items.forEach((item, index) => {
+    if (candidateSystems.has(String(item.system))) return;
+    const div = document.createElement("div");
+    div.className = "list-item" + (index === selectedItemIndex ? " active" : "");
+    div.textContent =
+      `Manual boundary · System ${displayIndex(item.system)} · reviewed movement boundary`;
+    div.onclick = () => {
+      movementSystemInput.value = String(displayIndex(item.system));
+      selectedItemIndex = index;
+      updateSelectionMeta();
+      renderItems();
+      draw();
+    };
+    itemList.appendChild(div);
+  });
+
+  if (!candidates.length && !items.length) {
+    const div = document.createElement("div");
+    div.className = "small";
+    div.textContent =
+      "No movement candidates on this page. Candidate absence is not a no-boundary; enter a system to add a boundary manually.";
+    itemList.appendChild(div);
+  }
+}
+
 function renderManualItems() {
   const type = currentType();
   const items = itemsForCurrentPage(type);
@@ -533,6 +622,7 @@ function updateActionButtons() {
 function renderItems() {
   itemList.innerHTML = "";
   if (currentType() === "mmr_measure_span") renderMmrRows();
+  else if (currentType() === "movement_boundary") renderMovementRows();
   else renderManualItems();
   updateActionButtons();
 }
@@ -578,6 +668,45 @@ function addCorrectionItem() {
     updateSelectionMeta();
     draw();
     saveStatus.textContent = `Staged: ${operationLabel(type, item.op)}. Save writes corrections only; re-run evaluation separately.`;
+    return;
+  }
+
+  if (type === "movement_boundary") {
+    const visibleSystem = parseInt(movementSystemInput.value, 10);
+    if (!Number.isFinite(visibleSystem) || visibleSystem < 1) {
+      saveStatus.textContent = "System must be a visible 1-based integer.";
+      return;
+    }
+    const system = visibleSystem - 1;
+    const candidate = movementCandidateAt(system);
+    if (op === "no_boundary" && !candidate) {
+      saveStatus.textContent =
+        "Candidate absence is not a reviewed no-boundary. Mark no boundary only for an explicit candidate.";
+      return;
+    }
+    item = {
+      op,
+      page,
+      system,
+      reason: currentReason(),
+      evidence_candidate_id: candidate ? candidate.id : null,
+      review_kind: candidate
+        ? op === "boundary"
+          ? "accepted_candidate"
+          : "rejected_candidate"
+        : "manual_boundary",
+    };
+    const pageItems = itemsForCurrentPage(type).filter(
+      (existing) => String(existing.system) !== String(system)
+    );
+    pageItems.push(item);
+    replaceItemsForCurrentPage(type, pageItems);
+    setDirty(type, true);
+    selectedItemIndex = pageItems.length - 1;
+    renderItems();
+    updateSelectionMeta();
+    draw();
+    saveStatus.textContent = `Staged: ${operationLabel(type, item.op)} at System ${visibleSystem}.`;
     return;
   }
 
@@ -716,6 +845,22 @@ function barlinePathFromPage(page) {
   return page.barlines || page.barline_candidates || page.detected_barlines || null;
 }
 
+function loadMovementEvidence(path) {
+  movementEvidenceCandidates = [];
+  if (!path) return Promise.resolve();
+  return fetchJSON(`/api/template?path=${encodeURIComponent(path)}`)
+    .then((data) => {
+      const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+      movementEvidenceCandidates = candidates.filter(
+        (candidate) => String(candidate.page) === String(pageValue())
+      );
+    })
+    .catch((error) => {
+      movementEvidenceCandidates = [];
+      saveStatus.textContent = `Movement evidence load failed: ${error.message}`;
+    });
+}
+
 function loadBarlines(path) {
   barlines = [];
   if (!path) return Promise.resolve();
@@ -737,6 +882,9 @@ function selectMeasure(measure) {
   selectedItemIndex = null;
   const state = effectiveMmrState(measure);
   measureSpanInput.value = String(state.effectiveSpan || state.baseSpan || 1);
+  if (currentType() === "movement_boundary") {
+    movementSystemInput.value = String(displayIndex(measure.system));
+  }
   updateSelectionMeta();
   renderItems();
   draw();
@@ -749,6 +897,7 @@ function loadPage() {
   selectedItemIndex = null;
   draftBBox = null;
   saveStatus.textContent = "";
+  exportMovementBtn.style.display = currentPage.movement_boundary_evidence ? "" : "none";
   pageMeta.textContent = `Page ${displayPageNumber()}${currentPage.name ? ` · ${currentPage.name}` : ""} | Save writes correction JSON only`;
 
   image.onload = () => {
@@ -761,6 +910,7 @@ function loadPage() {
     loadNumbering(currentPage.numbering),
     loadMmr(mmrPathFromPage(currentPage)),
     loadBarlines(barlinePathFromPage(currentPage)),
+    loadMovementEvidence(currentPage.movement_boundary_evidence),
     loadCorrections(),
   ]).then(() => {
     updateSelectionMeta();
@@ -837,6 +987,27 @@ addItemBtn.onclick = addCorrectionItem;
 deleteItemBtn.onclick = deleteSelectedItem;
 saveBtn.onclick = () => {
   saveDirtyTypes().catch(() => {});
+};
+exportMovementBtn.onclick = () => {
+  saveDirtyTypes()
+    .then(() =>
+      fetch("/api/export_movement_boundaries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      })
+    )
+    .then((response) => {
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+      return response.json();
+    })
+    .then((data) => {
+      saveStatus.textContent =
+        `Exported ${data.count} resolved movement boundaries: ${data.output}`;
+    })
+    .catch((error) => {
+      saveStatus.textContent = `Movement boundary export failed: ${error.message}`;
+    });
 };
 helpBtn.onclick = () => {
   helpPanel.open = true;

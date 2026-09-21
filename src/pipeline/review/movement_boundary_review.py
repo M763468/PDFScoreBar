@@ -197,7 +197,9 @@ def build_resolved_movement_boundaries(
         or len(evidence_sha256) != 64
         or any(ch not in "0123456789abcdefABCDEF" for ch in evidence_sha256)
     ):
-        raise MovementBoundaryReviewError("evidence_sha256 must be a 64-character hexadecimal digest")
+        raise MovementBoundaryReviewError(
+            "evidence_sha256 must be a 64-character hexadecimal digest"
+        )
 
     normalized_evidence = validate_movement_boundary_evidence(evidence)
     normalized_review = validate_movement_boundary_review(review, evidence=normalized_evidence)
@@ -301,7 +303,9 @@ def attach_movement_boundary_evidence(
 
     pages = handoff.get("pages")
     if not isinstance(pages, list) or not pages:
-        raise MovementBoundaryReviewError("manual correction handoff pages must be a non-empty list")
+        raise MovementBoundaryReviewError(
+            "manual correction handoff pages must be a non-empty list"
+        )
     page_indices: set[int] = set()
     for index, page in enumerate(pages):
         if not isinstance(page, Mapping):
@@ -343,9 +347,7 @@ def attach_movement_boundary_evidence(
             raise FileExistsError("manual correction handoff already points to movement evidence")
 
     handoff["movement_boundary_evidence"] = DEFAULT_EVIDENCE_FILENAME
-    handoff["movement_boundary_resolved_output"] = (
-        f"corrections/{DEFAULT_RESOLVED_FILENAME}"
-    )
+    handoff["movement_boundary_resolved_output"] = f"corrections/{DEFAULT_RESOLVED_FILENAME}"
     handoff_file.write_text(
         json.dumps(handoff, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",

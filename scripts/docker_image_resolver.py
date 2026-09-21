@@ -162,16 +162,54 @@ files = (
     Path("docker/patch_homr_onnx_provider.py"),
     Path("models/barline_cnn/manifest.json"),
 )
-boundary_marker = b"# Copy source code. Canonical runtime mounts the active checkout over /workspace,"
+
+
+def dockerfile_runtime_contract(payload):
+    lines = payload.decode("utf-8").splitlines()
+    normalized = []
+    skipping_source_check = False
+    skipping_legacy_source_write = False
+
+    for line in lines:
+        stripped = line.strip()
+
+        if stripped.startswith("ARG PDFSCORE_SOURCE_"):
+            continue
+        if stripped.startswith("LABEL pdfscore.runtime.source_"):
+            continue
+
+        if "ACTUAL_SOURCE_FINGERPRINT=$(" in stripped:
+            skipping_source_check = True
+            continue
+        if skipping_source_check:
+            if stripped == "fi && \\":
+                skipping_source_check = False
+            continue
+
+        if stripped.startswith(
+            "/opt/venv_pipeline/bin/python "
+            "/opt/pdfscore-runtime/runtime_contract.py fingerprint /workspace"
+        ):
+            skipping_legacy_source_write = True
+            continue
+        if skipping_legacy_source_write:
+            if "/opt/pdfscore-runtime/source_fingerprint.txt" in stripped:
+                skipping_legacy_source_write = False
+            continue
+
+        if not stripped or stripped.startswith("#"):
+            continue
+        normalized.append(line.rstrip())
+
+    return ("\n".join(normalized) + "\n").encode("utf-8")
+
 
 digest = hashlib.sha256()
 for relative in files:
     path = root / relative
     payload = path.read_bytes() if path.is_file() else b"<missing>"
-    if relative == Path("Dockerfile"):
-        boundary = payload.find(boundary_marker)
-        if boundary >= 0:
-            payload = payload[:boundary]
+    if relative == Path("Dockerfile") and payload != b"<missing>":
+        payload = dockerfile_runtime_contract(payload)
     digest.update(relative.as_posix().encode("utf-8"))
     digest.update(b"\0")
     digest.update(payload)

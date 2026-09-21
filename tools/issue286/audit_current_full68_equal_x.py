@@ -18,6 +18,10 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Callable
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from src.measure_numbering.numbering import MeasureNumberer
 from src.measure_numbering.pipeline import MeasureNumberingPipeline
 from src.measure_numbering.serialization import score_to_dict
@@ -28,7 +32,6 @@ from src.pipeline.utils.images import load_image
 from src.pipeline.utils.io import load_json
 from tools.issue120.eval_full68_from_intermediates import SCORES
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CURRENT_CONFIG = PROJECT_ROOT / "configs/dense_full_pipeline.yaml"
 BBoxTuple = tuple[int, int, int, int]
 Selector = Callable[[list[BBoxTuple], dict[BBoxTuple, tuple[int, int]]], BBoxTuple]

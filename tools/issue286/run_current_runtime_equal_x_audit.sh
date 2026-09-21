@@ -40,6 +40,7 @@ if [[ -z "$IMAGE_ID" ]]; then
 fi
 
 mkdir -p "$(dirname "$RESULT")"
+SOURCE_COMMIT="$(git -C "$PROJECT_ROOT" rev-parse HEAD)"
 
 docker_args=(
   --rm
@@ -47,6 +48,7 @@ docker_args=(
   --workdir "$PROJECT_ROOT"
   --env "HOME=/tmp"
   --env "PYTHONPATH=$PROJECT_ROOT"
+  --env "ISSUE286_SOURCE_COMMIT=$SOURCE_COMMIT"
   --mount "type=bind,src=$PROJECT_ROOT,dst=$PROJECT_ROOT"
   --mount "type=bind,src=$MANAGER_ROOT,dst=$MANAGER_ROOT,readonly"
 )
@@ -60,6 +62,7 @@ echo "resolved_image_id=$IMAGE_ID"
 echo "manifest=$MANIFEST"
 echo "manifest_sha256=$actual_manifest_sha"
 echo "result=$RESULT"
+echo "source_commit=$SOURCE_COMMIT"
 
 echo
 echo "=== Current-compatible runtime identity ==="

@@ -33,9 +33,6 @@ RUNTIME_CONTRACT_FILES = (
     Path("docker/patch_homr_onnx_provider.py"),
     Path("models/barline_cnn/manifest.json"),
 )
-DOCKERFILE_RUNTIME_BOUNDARY = (
-    b"# Copy source code. Canonical runtime mounts the active checkout over /workspace,"
-)
 
 
 def _source_contract_files(root: Path) -> Iterable[Path]:
@@ -76,13 +73,52 @@ def source_fingerprint(root: Path) -> str:
     return digest.hexdigest()
 
 
+def _dockerfile_runtime_contract(payload: bytes) -> bytes:
+    """Strip source-provenance-only Dockerfile instructions from compatibility hashing."""
+    lines = payload.decode("utf-8").splitlines()
+    normalized: list[str] = []
+    skipping_source_check = False
+    skipping_legacy_source_write = False
+
+    for line in lines:
+        stripped = line.strip()
+
+        if stripped.startswith("ARG PDFSCORE_SOURCE_"):
+            continue
+        if stripped.startswith("LABEL pdfscore.runtime.source_"):
+            continue
+
+        if "ACTUAL_SOURCE_FINGERPRINT=$(" in stripped:
+            skipping_source_check = True
+            continue
+        if skipping_source_check:
+            if stripped == "fi && \\":
+                skipping_source_check = False
+            continue
+
+        if stripped.startswith(
+            "/opt/venv_pipeline/bin/python "
+            "/opt/pdfscore-runtime/runtime_contract.py fingerprint /workspace"
+        ):
+            skipping_legacy_source_write = True
+            continue
+        if skipping_legacy_source_write:
+            if "/opt/pdfscore-runtime/source_fingerprint.txt" in stripped:
+                skipping_legacy_source_write = False
+            continue
+
+        if not stripped or stripped.startswith("#"):
+            continue
+        normalized.append(line.rstrip())
+
+    return ("\n".join(normalized) + "\n").encode("utf-8")
+
+
 def _runtime_contract_bytes(relative: Path, payload: bytes | None) -> bytes:
     if payload is None:
         return b"<missing>"
     if relative == Path("Dockerfile"):
-        boundary = payload.find(DOCKERFILE_RUNTIME_BOUNDARY)
-        if boundary >= 0:
-            return payload[:boundary]
+        return _dockerfile_runtime_contract(payload)
     return payload
 
 

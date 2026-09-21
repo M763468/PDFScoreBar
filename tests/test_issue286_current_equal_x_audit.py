@@ -1,0 +1,79 @@
+from pathlib import Path
+
+from src.measure_numbering.types import Barline, BBox, Page, Staff, System
+from tools.issue286.audit_current_full68_equal_x import (
+    apply_selector,
+    canonical_keys,
+    contract_diff,
+    groups,
+    number,
+    resolve_artifact,
+)
+
+
+def _synthetic_page() -> Page:
+    left_narrow = Barline(BBox(100, 0, 107, 40))
+    left_wide = Barline(BBox(100, 50, 109, 90))
+    right_top = Barline(BBox(300, 0, 307, 40))
+    right_bottom = Barline(BBox(300, 50, 307, 90))
+    top = Staff(BBox(90, 0, 400, 40), barlines=[left_narrow, right_top])
+    bottom = Staff(BBox(90, 50, 400, 90), barlines=[left_wide, right_bottom])
+    return Page(
+        systems=[System(staves=[top, bottom])],
+        page_number=1,
+        width=400,
+        height=100,
+    )
+
+
+def test_current_issue286_manifest_contract_has_68_pages() -> None:
+    assert len(canonical_keys()) == 68
+
+
+def test_exact_x_selectors_change_geometry_not_topology() -> None:
+    page = _synthetic_page()
+
+    narrow_page, _ = apply_selector(page, "narrower")
+    wide_page, _ = apply_selector(page, "wider")
+
+    narrow = number(narrow_page)
+    wide = number(wide_page)
+
+    narrow_measure = narrow["pages"][0]["systems"][0]["measures"][0]
+    wide_measure = wide["pages"][0]["systems"][0]["measures"][0]
+
+    assert narrow_measure["number"] == wide_measure["number"] == 1
+    assert narrow_measure["bbox"][0] == 107
+    assert wide_measure["bbox"][0] == 109
+
+
+def test_selector_does_not_prune_distinct_x_near_duplicates() -> None:
+    page = _synthetic_page()
+    system = page.systems[0]
+    system.staves[0].barlines.append(Barline(BBox(110, 0, 118, 40)))
+
+    exact_x, _ = groups(system)
+    assert 100 in exact_x
+    assert 110 not in exact_x
+
+    selected, _ = apply_selector(page, "staff_order_first")
+    assert any(barline.bbox.x1 == 110 for barline in selected.systems[0].staves[0].barlines)
+
+
+def test_contract_diff_reports_current_producer_drift() -> None:
+    expected = {"detection": {"homr_profile": "maintained_original"}}
+    actual = {"detection": {"homr_profile": "stage_e_verified"}}
+
+    assert contract_diff(expected, actual) == [
+        {
+            "path": "$.detection.homr_profile",
+            "expected": "maintained_original",
+            "actual": "stage_e_verified",
+        }
+    ]
+
+
+def test_workspace_manifest_paths_rebase_to_active_checkout(tmp_path: Path) -> None:
+    resolved = resolve_artifact("/workspace/logs/example/result.json", project_root=tmp_path)
+
+    assert resolved == (tmp_path / "logs/example/result.json").resolve()

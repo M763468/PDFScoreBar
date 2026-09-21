@@ -147,8 +147,8 @@ Typical correction flow:
 2. Use **Select object**, or **Draw barline box** when adding a barline.
 3. Use **Stage change** and inspect the staged state in both the canvas and **Current page results**.
 4. Use **Unstage selected** / **Clear staged override** if the staged edit is not wanted.
-5. Use **Save corrections** to write package-local correction JSON under
-   `review/corrections/`.
+5. Use **Save corrections** to write all staged correction types for the current page as
+   package-local correction JSON under `review/corrections/`.
 
 Visible Page / System / Measure identifiers are **1-based** for reviewer readability. Persisted
 correction targets keep the existing internal **0-based** indices; the GUI must not translate the

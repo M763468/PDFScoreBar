@@ -2,11 +2,12 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SOURCE_COMMIT="$(git -C "$PROJECT_ROOT" rev-parse HEAD)"
 MANAGER_ROOT="${ISSUE286_RETAINED_ROOT:-$(dirname "$PROJECT_ROOT")/ws_PDFScoreBar}"
 IMAGE_REF="${ISSUE286_CURRENT_IMAGE_REF:-pdfscore_pipeline_gpu}"
 MANIFEST="${ISSUE286_RETAINED_MANIFEST:-$MANAGER_ROOT/logs/issue294/issue294_full68_fresh_0154e40c/full68_host.json}"
 EXPECTED_MANIFEST_SHA="528033693819eee4e6d9913cb794922b3473bb7d4df7ea3ab92f2d7215603fc5"
-RESULT="${ISSUE286_RESULT:-$PROJECT_ROOT/logs/issue286/issue286_current_equal_x_current_runtime.json}"
+RESULT="${ISSUE286_RESULT:-$PROJECT_ROOT/logs/issue286/eval/current_runtime_${SOURCE_COMMIT:0:12}/equal_x_audit.json}"
 
 if [[ ! -e "$PROJECT_ROOT/.git" ]]; then
   echo "ERROR: project root is not a Git checkout: $PROJECT_ROOT" >&2
@@ -40,7 +41,6 @@ if [[ -z "$IMAGE_ID" ]]; then
 fi
 
 mkdir -p "$(dirname "$RESULT")"
-SOURCE_COMMIT="$(git -C "$PROJECT_ROOT" rev-parse HEAD)"
 
 docker_args=(
   --rm

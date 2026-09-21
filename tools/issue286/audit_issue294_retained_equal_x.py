@@ -546,6 +546,9 @@ def summarize(pages: dict[tuple[str, str], dict[str, Any]]) -> dict[str, Any]:
         for key, value in pages.items()
         if not value["retained_to_current_replay"]["geometry_equal"]
     ]
+    retained_replay_any_mismatch = sorted(
+        set(retained_replay_logical_mismatch) | set(retained_replay_geometry_mismatch)
+    )
 
     selectors = {}
     for name in SELECTORS:
@@ -581,7 +584,7 @@ def summarize(pages: dict[tuple[str, str], dict[str, Any]]) -> dict[str, Any]:
         ],
         "retained_to_current_replay_difference_details": {
             f"{score}/{page}": pages[(score, page)]["retained_to_current_replay"]["difference"]
-            for score, page in retained_replay_logical_mismatch
+            for score, page in retained_replay_any_mismatch
         },
         "selectors": selectors,
     }

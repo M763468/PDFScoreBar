@@ -77,7 +77,17 @@ class MeasureNumberer:
         for staff in system.staves:
             all_barlines.update(staff.barlines)
 
-        raw_sorted = sorted(list(all_barlines), key=lambda b: b.bbox.x1)
+        raw_sorted = sorted(
+            all_barlines,
+            key=lambda barline: (
+                barline.bbox.x1,
+                -barline.bbox.width,
+                barline.bbox.y1,
+                barline.bbox.y2,
+                barline.bbox.x2,
+                barline.is_ghost,
+            ),
+        )
         sorted_barlines = self._deduplicate_barlines(raw_sorted)
 
         # 2. System and Staff geometry

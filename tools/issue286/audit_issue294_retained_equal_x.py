@@ -44,6 +44,14 @@ RUNTIME_DISTRIBUTIONS = (
     "opencv-python-headless",
     "scipy",
 )
+REPLAY_SOURCE_FILES = (
+    "src/measure_numbering/pipeline.py",
+    "src/measure_numbering/numbering.py",
+    "src/measure_numbering/builder.py",
+    "src/measure_numbering/connector_aware_builder.py",
+    "src/measure_numbering/connector_evidence.py",
+    "src/measure_numbering/types.py",
+)
 
 
 def runtime_provenance() -> dict[str, Any]:
@@ -91,6 +99,46 @@ def runtime_contract_drift(runtime: dict[str, Any]) -> list[dict[str, Any]]:
                 }
             )
     return drift
+
+
+def git_blob_sha(ref: str, path: str) -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", f"{ref}:{path}"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout.strip()
+
+
+def replay_source_provenance(retained_checkout: Any) -> dict[str, Any]:
+    if not isinstance(retained_checkout, dict) or not retained_checkout.get("head"):
+        return {
+            "retained_head": None,
+            "current_head": git_head(),
+            "all_equal": None,
+            "files": {},
+            "note": "Retained manifest has no checkout.head; source equality was not evaluated.",
+        }
+
+    retained_head = str(retained_checkout["head"])
+    current_head = git_head()
+    files = {}
+    for path in REPLAY_SOURCE_FILES:
+        retained_blob = git_blob_sha(retained_head, path)
+        current_blob = git_blob_sha(current_head, path)
+        files[path] = {
+            "retained_blob": retained_blob,
+            "current_blob": current_blob,
+            "equal": retained_blob == current_blob,
+        }
+    return {
+        "retained_head": retained_head,
+        "current_head": current_head,
+        "all_equal": all(item["equal"] for item in files.values()),
+        "files": files,
+    }
 
 
 def git_head() -> str:
@@ -604,6 +652,7 @@ def main() -> int:
         "full68_manifest": str(full68_manifest),
         "retained_project_root": str(retained_root),
         "retained_checkout": manifest.get("checkout"),
+        "replay_source_provenance": replay_source_provenance(manifest.get("checkout")),
         "retained_latest_homr_commit": manifest.get("latest_homr_commit"),
         "current_contract": contract,
         "contract_drift": drift,

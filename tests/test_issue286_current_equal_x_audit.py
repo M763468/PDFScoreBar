@@ -16,7 +16,9 @@ from tools.issue286.audit_issue294_retained_equal_x import (
     logical_signature,
     resolve_project_path,
     retained_project_root,
+    retained_to_current_replay_difference,
     signature,
+    summarize as summarize_issue294,
 )
 
 
@@ -151,3 +153,96 @@ def test_issue286_audit_scripts_are_directly_executable() -> None:
             f"{script} failed as a direct CLI: stdout={result.stdout!r} "
             f"stderr={result.stderr!r}"
         )
+
+
+
+def test_issue294_summary_separates_retained_replay_drift_from_selector_delta() -> None:
+    page_key = ("Score", "page_001")
+    selectors = {
+        name: {
+            "logical_equal_to_current_replay": True,
+            "geometry_equal_to_current_replay": True,
+        }
+        for name in (
+            "staff_order_first",
+            "staff_order_last",
+            "topmost",
+            "bottommost",
+            "narrower",
+            "wider",
+            "tallest",
+            "shortest",
+        )
+    }
+    summary = summarize_issue294(
+        {
+            page_key: {
+                "equal_x_ties": [],
+                "retained_to_current_replay": {
+                    "logical_equal": False,
+                    "geometry_equal": False,
+                },
+                "selectors": selectors,
+            }
+        }
+    )
+
+    assert summary["retained_to_current_replay_logical_mismatch_pages"] == [
+        "Score/page_001"
+    ]
+    assert summary["retained_to_current_replay_geometry_mismatch_pages"] == [
+        "Score/page_001"
+    ]
+    for result in summary["selectors"].values():
+        assert result["logical_changed_from_current_replay_pages"] == []
+        assert result["geometry_changed_from_current_replay_pages"] == []
+
+
+def test_issue294_retained_replay_difference_identifies_system_fields() -> None:
+    retained = {
+        "total_measures": 2,
+        "pages": [
+            {
+                "page_number": 1,
+                "system_count": 1,
+                "total_measures": 2,
+                "systems": [
+                    {
+                        "staff_count": 2,
+                        "measure_count": 2,
+                        "measure_numbers": [1, 2],
+                        "measure_bboxes": [[0, 0, 10, 20], [10, 0, 20, 20]],
+                    }
+                ],
+            }
+        ],
+    }
+    replay = {
+        "total_measures": 1,
+        "pages": [
+            {
+                "page_number": 1,
+                "system_count": 1,
+                "total_measures": 1,
+                "systems": [
+                    {
+                        "staff_count": 2,
+                        "measure_count": 1,
+                        "measure_numbers": [1],
+                        "measure_bboxes": [[0, 0, 20, 20]],
+                    }
+                ],
+            }
+        ],
+    }
+
+    difference = retained_to_current_replay_difference(retained, replay)
+
+    assert difference["retained_total_measures"] == 2
+    assert difference["current_replay_total_measures"] == 1
+    system = difference["page_differences"][0]["system_differences"][0]
+    assert system["measure_count"] == {"retained": 2, "current_replay": 1}
+    assert system["measure_numbers"] == {
+        "retained": [1, 2],
+        "current_replay": [1],
+    }

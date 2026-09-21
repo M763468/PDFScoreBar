@@ -52,6 +52,14 @@ The handoff records the page identity and coordinate-space relationship needed b
 manual review must start from this handoff rather than assembling image, numbering, MMR, or barline
 paths from unrelated `logs/` runs.
 
+A review package faithfully displays the detector artifact produced by its source run; that does
+not by itself make the source run production-accuracy evidence. Before interpreting visible misses
+or false positives as production regressions, verify that the source manifest uses the current
+`dense_full_pipeline` detector contract and production model manifest/threshold. The standard
+`make verify-gpu-smoke` / `make run-smoke` path performs this check automatically and gates its
+one-page review against canonical GT. Workflow-only or legacy smoke artifacts must not be used to
+draw conclusions about production detector accuracy.
+
 ## 2. Open the existing manual GUI from the handoff
 
 When the review package was produced by the canonical Docker pipeline, launch the GUI in the same

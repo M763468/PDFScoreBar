@@ -121,8 +121,12 @@ def test_runtime_fingerprint_ignores_bind_mounted_source_but_hashes_image_owned_
         "RUN install-runtime\n"
         "COPY . /workspace\n"
         "RUN materialize-cnn-v1\n"
-        "ARG PDFSCORE_SOURCE_FINGERPRINT=changed-provenance-only\n"
-        'LABEL pdfscore.runtime.source_fingerprint="changed-provenance-only"\n',
+        "ARG PDFSCORE_SOURCE_FINGERPRINT\n"
+        "ARG PDFSCORE_SOURCE_COMMIT\n"
+        "ARG PDFSCORE_SOURCE_BRANCH\n"
+        'LABEL pdfscore.runtime.source_fingerprint="${PDFSCORE_SOURCE_FINGERPRINT}"\n'
+        'LABEL pdfscore.runtime.source_commit="${PDFSCORE_SOURCE_COMMIT}"\n'
+        'LABEL pdfscore.runtime.source_branch="${PDFSCORE_SOURCE_BRANCH}"\n',
         encoding="utf-8",
     )
     assert runtime_contract.runtime_fingerprint(tmp_path) == initial
@@ -132,14 +136,37 @@ def test_runtime_fingerprint_ignores_bind_mounted_source_but_hashes_image_owned_
         "RUN install-runtime\n"
         "COPY . /workspace\n"
         "RUN materialize-cnn-v2\n"
-        "ARG PDFSCORE_SOURCE_FINGERPRINT=changed-provenance-only\n"
-        'LABEL pdfscore.runtime.source_fingerprint="changed-provenance-only"\n',
+        "ARG PDFSCORE_SOURCE_FINGERPRINT\n"
+        "ARG PDFSCORE_SOURCE_COMMIT\n"
+        "ARG PDFSCORE_SOURCE_BRANCH\n"
+        'LABEL pdfscore.runtime.source_fingerprint="${PDFSCORE_SOURCE_FINGERPRINT}"\n'
+        'LABEL pdfscore.runtime.source_commit="${PDFSCORE_SOURCE_COMMIT}"\n'
+        'LABEL pdfscore.runtime.source_branch="${PDFSCORE_SOURCE_BRANCH}"\n',
         encoding="utf-8",
     )
     assert runtime_contract.runtime_fingerprint(tmp_path) != initial
 
     materializer.write_text("MATERIALIZER = 2\n", encoding="utf-8")
     assert runtime_contract.runtime_fingerprint(tmp_path) != initial
+
+
+def test_runtime_fingerprint_hashes_unknown_source_prefixed_arg_and_label() -> None:
+    runtime_contract = _load_runtime_contract_module()
+    first = b"""FROM runtime
+ARG PDFSCORE_SOURCE_ASSET=one
+RUN printf '%s\\n' "${PDFSCORE_SOURCE_ASSET}" > /opt/source-asset
+LABEL pdfscore.runtime.source_asset="one"
+"""
+    second = first.replace(b"ASSET=one", b"ASSET=two").replace(
+        b'source_asset="one"', b'source_asset="two"'
+    )
+
+    normalized_first = runtime_contract._dockerfile_runtime_contract(first)
+    normalized_second = runtime_contract._dockerfile_runtime_contract(second)
+
+    assert b"ARG PDFSCORE_SOURCE_ASSET=one" in normalized_first
+    assert b'LABEL pdfscore.runtime.source_asset="one"' in normalized_first
+    assert normalized_first != normalized_second
 
 
 def test_runtime_fingerprint_normalizes_legacy_and_current_source_provenance_steps(

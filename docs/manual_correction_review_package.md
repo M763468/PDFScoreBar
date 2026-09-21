@@ -57,7 +57,7 @@ not by itself make the source run production-accuracy evidence. Before interpret
 or false positives as production regressions, verify that the source manifest uses the current
 `dense_full_pipeline` detector contract and production model manifest/threshold. The standard
 `make verify-gpu-smoke` / `make run-smoke` path performs this check automatically and gates its
-one-page review against canonical GT. Workflow-only or legacy smoke artifacts must not be used to
+one-page detector result against canonical GT. Workflow-only or legacy smoke artifacts must not be used to
 draw conclusions about production detector accuracy.
 
 ## 2. Open the existing manual GUI from the handoff

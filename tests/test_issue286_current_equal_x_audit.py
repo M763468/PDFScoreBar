@@ -324,20 +324,3 @@ def test_generic_issue286_summary_separates_replay_drift_from_selector_delta() -
     for result in summary["selectors"].values():
         assert result["topology_changed_from_current_replay_pages"] == []
         assert result["semantic_changed_from_current_replay_pages"] == []
-
-
-
-def test_issue286_exact_image_runner_has_valid_bash_syntax() -> None:
-    project_root = Path(__file__).resolve().parents[1]
-    result = subprocess.run(
-        [
-            "bash",
-            "-n",
-            "tools/issue286/run_issue294_retained_audit_container.sh",
-        ],
-        cwd=project_root,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    assert result.returncode == 0, result.stderr

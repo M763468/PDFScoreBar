@@ -300,16 +300,14 @@ def main() -> None:
             float(result.get("probe_elapsed_seconds", 0.0)) for result in results
         ),
         "full_width_columns": sum(
-            int(result.get("probe_stats", {}).get("full_width_columns", 0))
-            for result in results
+            int(result.get("probe_stats", {}).get("full_width_columns", 0)) for result in results
         ),
         "eligible_domain_columns": sum(
             int(result.get("probe_stats", {}).get("eligible_domain_columns", 0))
             for result in results
         ),
         "projected_columns": sum(
-            int(result.get("probe_stats", {}).get("projected_columns", 0))
-            for result in results
+            int(result.get("probe_stats", {}).get("projected_columns", 0)) for result in results
         ),
         "results": results,
         "skipped_pages": skipped,

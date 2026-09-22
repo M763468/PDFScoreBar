@@ -1,6 +1,7 @@
 import pytest
 
 from src.pipeline.engine_contract import (
+    ContractValidationError,
     JobResult,
     JobStatus,
     ProgressEvent,
@@ -144,7 +145,6 @@ def test_summary_resources_are_job_result_compatible_without_sampling():
     assert result.resources["progress_sink_error_count"] == 0
 
 
-
 def test_stage_auto_starts_job_stream():
     events = []
     recorder = TelemetryRecorder("job-1", on_progress=events.append)
@@ -181,3 +181,22 @@ def test_gpu_utilization_query_uses_peak_visible_device(monkeypatch):
 
     assert seen is True
     assert utilization == 87.0
+
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"elapsed_ms": -1},
+        {"detail_code": ""},
+    ],
+)
+def test_progress_event_rejects_invalid_additive_telemetry_fields(kwargs):
+    with pytest.raises(ContractValidationError):
+        ProgressEvent(
+            job_id="job-1",
+            sequence=0,
+            kind=ProgressKind.STAGE_PROGRESS,
+            stage_id="numbering",
+            **kwargs,
+        )

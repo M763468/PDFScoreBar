@@ -99,3 +99,44 @@ python tools/issue267/compare_numbering_count_signatures.py \
 Acceptance requires `exact_match=true`, zero changed/missing/added pages, and a
 zero total physical-measure delta. The report is also the durable per-page record
 for locating any regression if the gate fails.
+
+### Local full-68 count-validation procedure
+
+The #267 replay is intentionally downstream-only. It reuses:
+
+- canonical retained detector barlines from
+  `issue255_production_restore_full68_top_level_worker_01`;
+- the accepted Issue #264 Phase-C `_02` Phase-A replay tree
+  (`issue264_phase_c_current_production_full68_02/phase_a_hybrid_replay`),
+  including fresh source-coordinate connector semantics;
+- the retained evaluation2 page images.
+
+It does **not** rerun detector inference, SR, HOMR, MMR CNN, or OCR.
+
+Prepare a detached pre-#267 baseline worktree at
+`6bef8bc0c74b2237ef5cda2e4e837c698eb90dde` and a candidate worktree, then run:
+
+```bash
+ARTIFACT_ROOT=/path/to/checkout-with-retained-data-and-logs
+BASE_CODE_ROOT=/path/to/pre-267-worktree
+CANDIDATE_CODE_ROOT=/path/to/issue267-worktree
+
+PYTHON_BIN=/path/to/repo-python \
+ARTIFACT_ROOT="$ARTIFACT_ROOT" \
+BASE_CODE_ROOT="$BASE_CODE_ROOT" \
+CANDIDATE_CODE_ROOT="$CANDIDATE_CODE_ROOT" \
+bash "$CANDIDATE_CODE_ROOT/scripts/validate_issue267_numbering_counts.sh"
+```
+
+The wrapper refuses a baseline HEAD other than the recorded pre-#267 commit,
+runs the same 68 retained inputs through both code roots, and writes:
+
+- `baseline/intermediate/page_*/numbering_base.json`;
+- `candidate/intermediate/page_*/numbering_base.json`;
+- one replay provenance report for each side;
+- `count_compare.json` with the exact page/system signature comparison.
+
+The accepted Issue #264 `_02` replay directory must already exist under
+`ARTIFACT_ROOT/logs/issue264_phase_c_mmr_regression/`. Do not silently
+substitute a newly generated HOMR/support run for the final comparison, because
+that would mix producer/runtime variation into the #267 geometry comparison.

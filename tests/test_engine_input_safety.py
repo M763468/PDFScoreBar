@@ -12,6 +12,7 @@ from src.pipeline.engine_input_safety import (
     InputSafetyError,
     JobSafetyPolicy,
     enforce_attempt_disk_budget,
+    resolve_local_input_path,
     validate_local_input_reference,
     validate_local_pdf,
     validate_output_name,
@@ -184,6 +185,45 @@ def test_page_and_render_amplification_are_rejected_before_rendering(tmp_path: P
             policy=JobSafetyPolicy(max_total_render_pixels=10_000_000),
         )
     assert total_info.value.code == "input_pdf_total_render_pixels_limit_exceeded"
+
+
+def test_raw_page_selection_is_bounded_before_deduplication(tmp_path: Path):
+    pdf_path = tmp_path / "score.pdf"
+    _write_pdf(pdf_path)
+
+    with pytest.raises(InputSafetyError) as exc_info:
+        validate_local_pdf(
+            "score.pdf",
+            allowed_root=tmp_path,
+            requested_pages=[1, 1],
+            policy=JobSafetyPolicy(max_selected_pages=1),
+        )
+
+    assert exc_info.value.code == "input_pdf_selected_pages_limit_exceeded"
+
+
+def test_path_resolution_oserror_is_normalized(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    input_root = tmp_path / "input"
+    input_root.mkdir()
+    pdf_path = input_root / "score.pdf"
+    _write_pdf(pdf_path)
+
+    original_resolve = Path.resolve
+
+    def raise_for_input(self: Path, strict: bool = False) -> Path:
+        if self == pdf_path:
+            raise PermissionError("denied")
+        return original_resolve(self, strict=strict)
+
+    monkeypatch.setattr(Path, "resolve", raise_for_input)
+
+    with pytest.raises(InputSafetyError) as exc_info:
+        resolve_local_input_path("score.pdf", allowed_root=input_root)
+
+    assert exc_info.value.code == "input_pdf_unavailable"
+    assert exc_info.value.debug_context["exception"] == "PermissionError"
 
 
 def test_out_of_range_page_and_disk_budget_have_stable_codes(tmp_path: Path):

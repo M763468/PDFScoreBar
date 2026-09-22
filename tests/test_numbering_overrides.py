@@ -99,8 +99,12 @@ class TestNumberingOverrides(unittest.TestCase):
                 mask[row : row + 1, :] = 255
             return mask
 
-        self.assertAlmostEqual(extractor._estimate_unit_size(make_mask(10), scale_y=1.0), 10.0)
-        self.assertAlmostEqual(extractor._estimate_unit_size(make_mask(20), scale_y=1.0), 20.0)
+        self.assertAlmostEqual(
+            extractor._estimate_unit_size(make_mask(10), scale_y=1.0), 10.0
+        )
+        self.assertAlmostEqual(
+            extractor._estimate_unit_size(make_mask(20), scale_y=1.0), 20.0
+        )
 
     def test_numbering_geometry_thresholds_are_resolution_independent(self):
         def make_system(scale: int) -> System:

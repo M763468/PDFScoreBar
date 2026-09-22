@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
@@ -10,6 +11,7 @@ import numpy as np
 
 from .bands import (
     build_divisi_map,
+    compute_domain_ratios,
     resolve_bands,
     resolve_x_domains,
     scan_staff_band_from_ink,
@@ -100,7 +102,9 @@ def detect_probe_scan(
     divisi_min_ratio: float = 0.5,
     vertical_closing: int = 0,
     debug_path: Path | None = None,
+    scan_stats: Dict[str, object] | None = None,
 ) -> List[Box]:
+    scan_started_at = time.perf_counter()
     gray = cv2.cvtColor(base_img, cv2.COLOR_BGR2GRAY)
     ink = (gray < ink_threshold).astype(np.uint8)
     if vertical_closing > 0:
@@ -119,6 +123,21 @@ def detect_probe_scan(
         config=band_selection,
     )
     if not bands:
+        if scan_stats is not None:
+            scan_stats.update(
+                {
+                    "band_count": 0,
+                    "image_width": w,
+                    "full_width_columns": 0,
+                    "eligible_domain_columns": 0,
+                    "projected_columns": 0,
+                    "full_width_domain_count": 0,
+                    "raw_peak_count": 0,
+                    "selected_peak_count": 0,
+                    "candidate_count": 0,
+                    "elapsed_seconds": time.perf_counter() - scan_started_at,
+                }
+            )
         return []
 
     x_domains = resolve_x_domains(
@@ -195,6 +214,13 @@ def detect_probe_scan(
                 best = (int(by1), int(by2))
         return best
 
+    full_width_columns = 0
+    eligible_domain_columns = 0
+    projected_columns = 0
+    full_width_domain_count = 0
+    raw_peak_count = 0
+    selected_peak_count = 0
+
     candidates: List[Box] = []
     accepted_by_band: dict[int, list[float]] = {}
     trusted_accepted_by_band: dict[int, list[float]] = {}
@@ -202,6 +228,11 @@ def detect_probe_scan(
     debug_records = []
     for band_idx, (y1, y2) in enumerate(bands):
         domain_x1, domain_x2 = x_domains[band_idx] if band_idx < len(x_domains) else (0, w - 1)
+        domain_width = max(0, domain_x2 - domain_x1 + 1)
+        full_width_columns += w
+        eligible_domain_columns += domain_width
+        if domain_x1 == 0 and domain_x2 == w - 1:
+            full_width_domain_count += 1
         scan_base_y1 = y1
         scan_base_y2 = y2
         if band_source == "horiz_scan":
@@ -260,25 +291,42 @@ def detect_probe_scan(
             ext_y2 = min(h - 1, int(round(band_center + ext_h / 2)))
             ext_band = ink[ext_y1 : ext_y2 + 1, :]
             ext_band_h = max(1, ext_y2 - ext_y1 + 1)
-        col_sums = band.sum(axis=0)
-        stripe_sums = np.convolve(col_sums, kernel, mode="same")
-        ratios = stripe_sums / float(band_h * width)
+        ratios, projected = compute_domain_ratios(
+            band,
+            kernel=kernel,
+            width=width,
+            image_width=w,
+            x_domain=(domain_x1, domain_x2),
+        )
+        projected_columns += projected
         if ext_band is not None and ext_y1 is not None and ext_y2 is not None:
-            ext_col_sums = ext_band.sum(axis=0)
-            ext_stripe_sums = np.convolve(ext_col_sums, kernel, mode="same")
-            ext_ratios = ext_stripe_sums / float(ext_band_h * width)
+            ext_ratios, _ = compute_domain_ratios(
+                ext_band,
+                kernel=kernel,
+                width=width,
+                image_width=w,
+                x_domain=(domain_x1, domain_x2),
+            )
             top_h = max(0, band_y1 - ext_y1)
             bottom_h = max(0, ext_y2 - band_y2)
             if top_h > 0:
                 top_band = ink[ext_y1:band_y1, :]
-                top_col_sums = top_band.sum(axis=0)
-                top_stripe_sums = np.convolve(top_col_sums, kernel, mode="same")
-                ext_top_ratios = top_stripe_sums / float(top_h * width)
+                ext_top_ratios, _ = compute_domain_ratios(
+                    top_band,
+                    kernel=kernel,
+                    width=width,
+                    image_width=w,
+                    x_domain=(domain_x1, domain_x2),
+                )
             if bottom_h > 0:
                 bottom_band = ink[band_y2 + 1 : ext_y2 + 1, :]
-                bottom_col_sums = bottom_band.sum(axis=0)
-                bottom_stripe_sums = np.convolve(bottom_col_sums, kernel, mode="same")
-                ext_bottom_ratios = bottom_stripe_sums / float(bottom_h * width)
+                ext_bottom_ratios, _ = compute_domain_ratios(
+                    bottom_band,
+                    kernel=kernel,
+                    width=width,
+                    image_width=w,
+                    x_domain=(domain_x1, domain_x2),
+                )
         if ratios.size < 3:
             continue
 
@@ -292,6 +340,7 @@ def detect_probe_scan(
             & (ratios >= np.roll(ratios, -1))
         )[0]
         peaks = peaks[(peaks >= domain_x1) & (peaks <= domain_x2)]
+        raw_peak_count += int(peaks.size)
         if peaks.size == 0:
             debug_records.append(
                 {
@@ -311,6 +360,7 @@ def detect_probe_scan(
             selected.append((x, score))
             if max_per_band > 0 and len(selected) >= max_per_band:
                 break
+        selected_peak_count += len(selected)
         for x, score in selected:
             left = max(0, int(x - refine_window))
             right = min(len(ratios) - 1, int(x + refine_window))
@@ -956,5 +1006,28 @@ def detect_probe_scan(
             x_domains=x_domains,
             extend_top_max_ratio=extend_top_max_ratio,
             extend_bottom_max_ratio=extend_bottom_max_ratio,
+        )
+    if scan_stats is not None:
+        scan_stats.update(
+            {
+                "band_count": len(bands),
+                "image_width": w,
+                "full_width_columns": full_width_columns,
+                "eligible_domain_columns": eligible_domain_columns,
+                "projected_columns": projected_columns,
+                "full_width_domain_count": full_width_domain_count,
+                "raw_peak_count": raw_peak_count,
+                "selected_peak_count": selected_peak_count,
+                "candidate_count": len(candidates),
+                "eligible_width_ratio": (
+                    eligible_domain_columns / float(full_width_columns)
+                    if full_width_columns
+                    else 1.0
+                ),
+                "projected_width_ratio": (
+                    projected_columns / float(full_width_columns) if full_width_columns else 1.0
+                ),
+                "elapsed_seconds": time.perf_counter() - scan_started_at,
+            }
         )
     return candidates

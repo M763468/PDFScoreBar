@@ -716,8 +716,7 @@ class JobResult:
         if not isinstance(reason_codes, list):
             raise ContractValidationError("review.reason_codes must be a list")
         review["reason_codes"] = [
-            _require_string(reason_code, "review.reason_codes[]")
-            for reason_code in reason_codes
+            _require_string(reason_code, "review.reason_codes[]") for reason_code in reason_codes
         ]
         object.__setattr__(self, "review", review)
 
@@ -756,9 +755,7 @@ class JobResult:
                 artifact for artifact in artifacts if artifact.artifact_id == source_artifact_id
             )
             if source_artifact.sha256 is None:
-                raise ContractValidationError(
-                    "review correction source artifact requires sha256"
-                )
+                raise ContractValidationError("review correction source artifact requires sha256")
             if source_artifact.coordinate_space is None:
                 raise ContractValidationError(
                     "review correction source artifact requires coordinate_space"

@@ -192,6 +192,42 @@ def test_duplicate_correction_ids_and_internal_override_are_rejected():
         )
 
 
+def test_malformed_corrections_and_failure_payloads_are_rejected():
+    request_payload = {
+        "schema": "pdfscorebar.engine.job_request.v1",
+        "contract_version": "1",
+        "input": {
+            "kind": "local_path",
+            "reference": "score.pdf",
+        },
+        "corrections": [],
+    }
+    with pytest.raises(
+        ContractValidationError,
+        match="corrections must be an object",
+    ):
+        JobRequest.from_dict(request_payload)
+
+    result_payload = {
+        "schema": "pdfscorebar.engine.job_result.v1",
+        "contract_version": "1",
+        "job_id": "job",
+        "status": "succeeded",
+        "provenance": _provenance(),
+        "pages": {
+            "requested": 1,
+            "processed": 1,
+            "skipped": 0,
+        },
+        "failure": [],
+    }
+    with pytest.raises(
+        ContractValidationError,
+        match="failure must be an object",
+    ):
+        JobResult.from_dict(result_payload)
+
+
 def test_success_warning_review_required_and_failure_results():
     final = ArtifactDescriptor(
         artifact_id="final.pdf",
@@ -317,6 +353,25 @@ def test_invalid_result_shapes_are_rejected():
                 "requested": 1,
                 "processed": 1,
                 "skipped": 0,
+            },
+        )
+
+    with pytest.raises(
+        ContractValidationError,
+        match="correction_source_artifact_id",
+    ):
+        JobResult(
+            job_id="job",
+            status="review_required",
+            provenance=_provenance(),
+            pages={
+                "requested": 1,
+                "processed": 1,
+                "skipped": 0,
+            },
+            review={
+                "required": True,
+                "reason_codes": ["movement_boundary_ambiguous"],
             },
         )
 

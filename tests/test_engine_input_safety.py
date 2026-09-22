@@ -202,9 +202,7 @@ def test_raw_page_selection_is_bounded_before_deduplication(tmp_path: Path):
     assert exc_info.value.code == "input_pdf_selected_pages_limit_exceeded"
 
 
-def test_path_resolution_oserror_is_normalized(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
+def test_path_resolution_oserror_is_normalized(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     input_root = tmp_path / "input"
     input_root.mkdir()
     pdf_path = input_root / "score.pdf"

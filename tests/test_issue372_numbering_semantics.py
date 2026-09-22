@@ -101,3 +101,77 @@ def test_fresh_downstream_d27_delta_reconstruction_preserves_list_semantics() ->
         (20, 0, 24, 100),
         (30, 0, 34, 100),
     ]
+
+
+def test_current_homr_staff_mask_resolves_child_current_support_result(
+    tmp_path: Path,
+) -> None:
+    import json
+    from experiments.issue372.run_fresh_downstream_semantic_replay import (
+        _current_homr_staff_mask,
+    )
+
+    hybrid_root = tmp_path / "hybrid_run"
+    hybrid = hybrid_root / "hybrid_results" / "page_001_hybrid.json"
+    hybrid.parent.mkdir(parents=True)
+    hybrid.write_text("[]")
+
+    source_result = (
+        hybrid_root
+        / "source_page_workers"
+        / "Score"
+        / "page_001"
+        / "result.json"
+    )
+    source_result.parent.mkdir(parents=True)
+    source_result.write_text(json.dumps({
+        "status": "completed",
+        "current_sr_detection": str(
+            hybrid_root
+            / "current_support"
+            / "Score"
+            / "page_001"
+            / "artifacts"
+            / "current_homr"
+            / "batch"
+            / "page_001"
+            / "page_001_detections.json"
+        ),
+    }))
+
+    staff = (
+        hybrid_root
+        / "current_support"
+        / "Score"
+        / "page_001"
+        / "artifacts"
+        / "current_homr"
+        / "batch"
+        / "page_001"
+        / "page_001_staff_mask.png"
+    )
+    staff.parent.mkdir(parents=True)
+    staff.write_bytes(b"mask")
+
+    child_result = (
+        hybrid_root
+        / "current_support"
+        / "Score"
+        / "page_001"
+        / "result.json"
+    )
+    child_result.parent.mkdir(parents=True, exist_ok=True)
+    child_result.write_text(json.dumps({
+        "status": "completed",
+        "current_homr_staff_mask": str(staff),
+        "historical_detector_artifact_runtime_input": False,
+    }))
+
+    resolved = _current_homr_staff_mask(
+        {"hybrid_predictions": str(hybrid)},
+        score="Score",
+        page="page_001",
+        issue43_repo_root=tmp_path,
+    )
+
+    assert resolved == staff

@@ -65,7 +65,7 @@ class ResourceSampler:
         if not self._started:
             return
         self._stop.set()
-        self._thread.join(timeout=max(1.0, self.interval_seconds * 2.0))
+        self._thread.join(timeout=max(3.0, self.interval_seconds * 2.0 + 2.5))
 
     def _sample_process_tree(self, sample_time: float) -> tuple[set[int], int, float | None]:
         process_ids = {os.getpid()}
@@ -346,13 +346,14 @@ class TelemetryRecorder:
             completed = True
         finally:
             elapsed_ms = max((time.perf_counter_ns() - started_ns) // 1_000_000, 0)
-            self._stage_spans.append(
-                {
-                    "stage_id": stage_id,
-                    "elapsed_ms": elapsed_ms,
-                    "state": "completed" if completed else "aborted",
-                }
-            )
+            span = {
+                "stage_id": stage_id,
+                "elapsed_ms": elapsed_ms,
+                "state": "completed" if completed else "aborted",
+            }
+            if detail_code is not None:
+                span["detail_code"] = detail_code
+            self._stage_spans.append(span)
             if completed and not self._terminal_emitted:
                 self.emit(
                     ProgressKind.STAGE_COMPLETED,

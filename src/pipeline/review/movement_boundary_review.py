@@ -350,7 +350,6 @@ def attach_movement_boundary_evidence(
     normalized_evidence_bytes = (
         json.dumps(evidence, indent=2, ensure_ascii=False) + "\n"
     ).encode("utf-8")
-    same_file = evidence_file == destination.resolve()
     if destination.exists() and not overwrite:
         existing_bytes = destination.read_bytes()
         if existing_bytes not in {evidence_bytes, normalized_evidence_bytes}:

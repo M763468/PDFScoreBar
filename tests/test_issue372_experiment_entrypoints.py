@@ -112,3 +112,21 @@ def test_inspect_merged_double_x4_geometry_direct_entrypoint_bootstraps_repo(
         ROOT / "experiments/issue372/inspect_merged_double_x4_geometry.py",
         cwd=tmp_path,
     )
+
+
+def test_trace_merged_double_d27_current_geometry_direct_entrypoint_bootstraps_repo(
+    tmp_path: Path,
+) -> None:
+    _assert_direct_help_succeeds(
+        ROOT / "experiments/issue372/trace_merged_double_d27_current_geometry.py",
+        cwd=tmp_path,
+    )
+
+
+def test_screen_retained_row_gap_promotion_direct_entrypoint_bootstraps_repo(
+    tmp_path: Path,
+) -> None:
+    _assert_direct_help_succeeds(
+        ROOT / "experiments/issue372/screen_retained_row_gap_promotion.py",
+        cwd=tmp_path,
+    )

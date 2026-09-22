@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 from src.measure_numbering.types import Barline, BBox, Page, Staff, System
+from tools.issue286.check_current_runtime_equal_x_result import evaluate_acceptance
 from tools.issue286.audit_current_full68_equal_x import (
     apply_selector,
     canonical_keys,
@@ -364,3 +365,84 @@ def test_issue286_source_provenance_is_nonblocking_without_git(monkeypatch) -> N
     assert provenance["all_equal"] is None
     assert provenance["files"]
     assert all(item["equal"] is None for item in provenance["files"].values())
+
+
+
+def _issue286_acceptance_fixture(selected: list[int]) -> dict:
+    selector_names = (
+        "staff_order_first",
+        "staff_order_last",
+        "topmost",
+        "bottommost",
+        "narrower",
+        "wider",
+        "tallest",
+        "shortest",
+    )
+    selectors = {
+        name: {
+            "logical_changed_from_current_replay_pages": [],
+            "geometry_changed_from_current_replay_pages": [],
+        }
+        for name in selector_names
+    }
+    pages = {}
+    for index in range(36):
+        page_name = (
+            "Shostakovich-Sym5-Va/page_013"
+            if index == 0
+            else f"Synthetic/page_{index:03d}"
+        )
+        x1 = 1788 if index == 0 else 1000 + index
+        boxes = (
+            [[1788, 2631, 1795, 2729], [1788, 2991, 1797, 3089]]
+            if index == 0
+            else [[x1, 0, x1 + 7, 100], [x1, 120, x1 + 9, 220]]
+        )
+        chosen = selected if index == 0 else boxes[1]
+        pages[page_name] = {
+            "selectors": {
+                "wider": {
+                    "decisions": [
+                        {
+                            "x1": x1,
+                            "boxes": boxes,
+                            "selected": chosen,
+                            "selected_measure_left_x": chosen[2],
+                        }
+                    ]
+                }
+            }
+        }
+    return {
+        "runtime_contract_drift": [],
+        "contract_drift": [],
+        "summary": {
+            "page_count": 68,
+            "equal_x_tie_page_count": 16,
+            "equal_x_tie_group_count": 36,
+            "selectors": selectors,
+        },
+        "pages": pages,
+    }
+
+
+def test_issue286_acceptance_uses_current_widest_geometry_not_historical_x2() -> None:
+    data = _issue286_acceptance_fixture([1788, 2991, 1797, 3089])
+
+    compact, failures = evaluate_acceptance(data)
+
+    assert failures == []
+    assert compact["acceptance"] == "PASS"
+    assert compact["page_013_x1788_current_wider_decision"][0][
+        "selected_measure_left_x"
+    ] == 1797
+
+
+def test_issue286_acceptance_rejects_non_widest_current_candidate() -> None:
+    data = _issue286_acceptance_fixture([1788, 2631, 1795, 2729])
+
+    compact, failures = evaluate_acceptance(data)
+
+    assert compact["acceptance"] == "FAIL"
+    assert any("did not choose a widest candidate" in failure for failure in failures)

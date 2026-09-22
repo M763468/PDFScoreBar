@@ -277,7 +277,6 @@ def detect_probe_scan(
         band_h = max(1, band_y2 - band_y1 + 1)
         target_h = band_h
         ext_band = None
-        ext_band_h = None
         ext_ratios = None
         ext_top_ratios = None
         ext_bottom_ratios = None
@@ -290,7 +289,6 @@ def detect_probe_scan(
             ext_y1 = max(0, int(round(band_center - ext_h / 2)))
             ext_y2 = min(h - 1, int(round(band_center + ext_h / 2)))
             ext_band = ink[ext_y1 : ext_y2 + 1, :]
-            ext_band_h = max(1, ext_y2 - ext_y1 + 1)
         ratios, projected = compute_domain_ratios(
             band,
             kernel=kernel,

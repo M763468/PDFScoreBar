@@ -42,6 +42,7 @@ def test_progress_event_telemetry_fields_round_trip_deterministically():
     assert restored.to_dict()["elapsed_ms"] == 1250
     assert restored.to_dict()["detail_code"] == "detection.completed"
 
+
 @pytest.mark.parametrize(
     ("status", "kind"),
     [

@@ -129,7 +129,32 @@ def test_materialized_handoff_validates_and_builds_page_local_gui_config(tmp_pat
         "mmr_measure_span": "corrections/mmr_measure_spans.json",
         "measure_construction": "corrections/measure_construction_overrides.json",
         "barline_construction": "corrections/barline_construction_overrides.json",
+        "movement_boundary": "corrections/movement_boundaries_review.json",
     }
+
+
+def test_materializer_allows_missing_pre_rendered_overlay(tmp_path):
+    run_root = _fake_run_root(tmp_path)
+    overlay = run_root / "outputs" / "page_001" / "numbering_overlay.png"
+    overlay.unlink()
+
+    review_root = tmp_path / "review"
+    handoff = materialize_manual_correction_review_package(
+        run_root=run_root,
+        review_root=review_root,
+    )
+
+    assert "review_overlay" not in handoff["pages"][0]
+    assert not (review_root / "pages" / "page_001" / "review_overlay.png").exists()
+
+    handoff_path = review_root / "manual_correction_input.json"
+    validated = validate_manual_correction_handoff(
+        handoff,
+        handoff_path=handoff_path,
+        mode="issue229_smoke_strict",
+        require_existing_artifacts=True,
+    )
+    assert validated["pages"][0]["page_id"] == "page_001"
 
 
 def test_materializer_errors_when_manifest_has_no_barlines_source(tmp_path):

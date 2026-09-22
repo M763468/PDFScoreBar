@@ -47,3 +47,18 @@ jobs:
 
       - name: Run engine telemetry contract tests
         run: PYTHONPATH=. python -m pytest tests/test_engine_contract.py tests/test_engine_telemetry.py
+
+      - name: Run config-runner telemetry entrypoint tests
+        run: |
+          PYTHONPATH=. python - <<'PY'
+          import sys
+          import types
+
+          import pytest
+
+          stub = types.ModuleType("src.pipeline.orchestrator")
+          stub.PipelineOrchestrator = object
+          sys.modules["src.pipeline.orchestrator"] = stub
+
+          raise SystemExit(pytest.main(["tests/test_pipeline_telemetry.py", "-q"]))
+          PY

@@ -706,11 +706,19 @@ class JobResult:
         )
 
         review = _object(self.review, "review")
-        if not isinstance(
-            review.get("required", False),
-            bool,
-        ):
+        if "required" not in review:
+            raise ContractValidationError("review.required is required")
+        if not isinstance(review["required"], bool):
             raise ContractValidationError("review.required must be boolean")
+        if "reason_codes" not in review:
+            raise ContractValidationError("review.reason_codes is required")
+        reason_codes = review["reason_codes"]
+        if not isinstance(reason_codes, list):
+            raise ContractValidationError("review.reason_codes must be a list")
+        review["reason_codes"] = [
+            _require_string(reason_code, "review.reason_codes[]")
+            for reason_code in reason_codes
+        ]
         object.__setattr__(self, "review", review)
 
         if self.status in {JobStatus.FAILED, JobStatus.CANCELLED} and self.failure is None:
@@ -743,6 +751,17 @@ class JobResult:
             if source_artifact_id not in artifact_ids:
                 raise ContractValidationError(
                     "review correction source must reference a result artifact"
+                )
+            source_artifact = next(
+                artifact for artifact in artifacts if artifact.artifact_id == source_artifact_id
+            )
+            if source_artifact.sha256 is None:
+                raise ContractValidationError(
+                    "review correction source artifact requires sha256"
+                )
+            if source_artifact.coordinate_space is None:
+                raise ContractValidationError(
+                    "review correction source artifact requires coordinate_space"
                 )
 
         if self.resources is not None:

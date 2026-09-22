@@ -463,9 +463,13 @@ long as it also preserves the explicit `review_required` status. Callers must no
 
 ### #338
 
+Accepted safety semantics are recorded in
+[`ENGINE_INPUT_SAFETY.md`](ENGINE_INPUT_SAFETY.md):
+
 - untrusted-PDF/path/network safety;
 - concrete configurable per-job bounds;
-- rejection before unnecessary expensive inference where feasible.
+- rejection before unnecessary expensive inference where feasible;
+- worker/container hard-resource and offline-runtime assumptions.
 
 ### #339
 

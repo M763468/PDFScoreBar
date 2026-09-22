@@ -62,12 +62,14 @@ def _resolve_scale_aware_probe_kwargs(
     Supported pseudo keys (removed before detect_probe_scan call):
     - min_peak_distance_unit_ratio
     - x_merge_tol_unit_ratio
+    - scan_x_domain_pad_unit_ratio
     """
     resolved = dict(kwargs)
     unit_size = _estimate_unit_size_from_existing_boxes(existing_boxes)
     if unit_size is None:
         resolved.pop("min_peak_distance_unit_ratio", None)
         resolved.pop("x_merge_tol_unit_ratio", None)
+        resolved.pop("scan_x_domain_pad_unit_ratio", None)
         return resolved
 
     if "min_peak_distance_unit_ratio" in resolved and "min_peak_distance" not in resolved:
@@ -81,6 +83,12 @@ def _resolve_scale_aware_probe_kwargs(
         resolved["x_merge_tol"] = max(1, int(round(unit_size * ratio)))
     else:
         resolved.pop("x_merge_tol_unit_ratio", None)
+
+    if "scan_x_domain_pad_unit_ratio" in resolved and "scan_x_domain_pad" not in resolved:
+        ratio = float(resolved.pop("scan_x_domain_pad_unit_ratio"))
+        resolved["scan_x_domain_pad"] = max(0, int(round(unit_size * ratio)))
+    else:
+        resolved.pop("scan_x_domain_pad_unit_ratio", None)
 
     return resolved
 
@@ -458,14 +466,18 @@ def run_probe_scan_batch(
         page_kwargs = _resolve_scale_aware_probe_kwargs(kwargs, existing_boxes)
         page_kwargs, post_cfg = _extract_candidate_postprocess_cfg(page_kwargs, existing_boxes)
         if page_kwargs is not kwargs and (
-            "min_peak_distance" in page_kwargs or "x_merge_tol" in page_kwargs
+            "min_peak_distance" in page_kwargs
+            or "x_merge_tol" in page_kwargs
+            or "scan_x_domain_pad" in page_kwargs
         ):
             logger.info(
-                "Probe scan scale-aware params for %s/%s: min_peak_distance=%s x_merge_tol=%s",
+                "Probe scan scale-aware params for %s/%s: "
+                "min_peak_distance=%s x_merge_tol=%s scan_x_domain_pad=%s",
                 current_score_name,
                 stem,
                 page_kwargs.get("min_peak_distance"),
                 page_kwargs.get("x_merge_tol"),
+                page_kwargs.get("scan_x_domain_pad"),
             )
 
         effective_band_source = page_kwargs.pop("band_source", band_source)

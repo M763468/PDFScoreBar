@@ -4,12 +4,13 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 Usage:
-  experiments/issue43/run_full68_x_domain_ab.sh RUN_TAG [extra Python args...]
+  bash experiments/issue43/run_full68_x_domain_ab.sh RUN_TAG [extra Python args...]
 
 Examples:
-  experiments/issue43/run_full68_x_domain_ab.sh issue43_full68_01
-  experiments/issue43/run_full68_x_domain_ab.sh issue43_full68_recheck \
-    --inventory logs/issue43/full68_x_domain_ab/issue43_full68_01/retained_upstream_inventory.json
+  bash experiments/issue43/run_full68_x_domain_ab.sh issue43_full68_01
+  bash experiments/issue43/run_full68_x_domain_ab.sh issue43_full68_recheck \
+    --upstream-manifest \
+    logs/issue43/full68_x_domain_ab/issue43_full68_01/retained_upstream_manifest.json
 
 Runs the Issue #43 A/B inside the canonical compatible GPU image, bind-mounting
 the active checkout and the manifest-verified external OMR-DLN artifact.

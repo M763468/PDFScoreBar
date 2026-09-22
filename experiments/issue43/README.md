@@ -94,3 +94,20 @@ The first one-page effective A/B on `Va_Prokofiev_Symphony1/page_001` showed:
 The full68 retained-upstream run is intended to answer the remaining Issue #43
 question: whether pages outside that smoke page actually contain removable
 margin/non-staff probe candidates without detector-accuracy regression.
+
+
+## Audit candidate deltas after full68
+
+After a completed full68 run, audit whether removed/added rescue candidates are
+low-scoring, edge-biased, outside the local staff-mask-supported X span, or
+GT-matchable without rerunning HOMR/SR or detector reconstruction:
+
+```bash
+RUN_TAG=$(cat logs/issue43/latest_full68_run_tag.txt)
+REPORT="logs/issue43/full68_x_domain_ab/$RUN_TAG/issue43_full68_x_domain_ab_report.json"
+
+python experiments/issue43/audit_full68_candidate_changes.py \
+  --report "$REPORT"
+```
+
+The audit writes `candidate_delta_audit.json` beside the main full68 report.

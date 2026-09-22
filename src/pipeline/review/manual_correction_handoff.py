@@ -33,7 +33,7 @@ STAGING_TO_CANONICAL_FILENAMES = {
 
 _REQUIRED_TOP_LEVEL_FIELDS = ("schema_version", "pages")
 _REQUIRED_PAGE_FIELDS = ("page_id", "page_number", "source_image", "numbering_final")
-_STRICT_PAGE_FIELDS = ("review_overlay", "mmr_overrides", "barlines_review")
+_STRICT_PAGE_FIELDS = ("mmr_overrides", "barlines_review")
 
 
 class ManualCorrectionHandoffError(ValueError):
@@ -188,7 +188,8 @@ def validate_manual_correction_handoff(
 
     ``base_v1`` accepts optional MMR/barline/review-overlay evidence so older
     review-profile producers can be adapted. ``issue229_smoke_strict`` requires
-    the artifacts needed by the #215/#229 GUI smoke path.
+    the MMR/barline artifacts used by the manual GUI; the pre-rendered review
+    overlay is optional because the GUI renders its active overlays itself.
     """
 
     if not isinstance(payload, dict):

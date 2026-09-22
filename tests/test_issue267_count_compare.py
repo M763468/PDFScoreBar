@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import sys
 from pathlib import Path
+
+import pytest
 
 from tools.issue267.compare_numbering_count_signatures import (
     collect_run_signatures,
@@ -206,3 +211,53 @@ def test_issue267_replay_resolves_accepted_retained_inputs(tmp_path: Path) -> No
         / "phase_a_hybrid_replay/TestScore/sr/batch/page_001"
         / "page_001_proxy_debug_3_staff.png"
     )
+
+
+def _init_git_repo(path: Path) -> str:
+    path.mkdir(parents=True)
+    subprocess.run(["git", "init", "-q", str(path)], check=True)
+    subprocess.run(["git", "-C", str(path), "config", "user.email", "issue267@example.invalid"], check=True)
+    subprocess.run(["git", "-C", str(path), "config", "user.name", "Issue267 Test"], check=True)
+    tracked = path / "tracked.txt"
+    tracked.write_text("clean\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(path), "add", "tracked.txt"], check=True)
+    subprocess.run(["git", "-C", str(path), "commit", "-q", "-m", "fixture"], check=True)
+    return subprocess.check_output(
+        ["git", "-C", str(path), "rev-parse", "HEAD"],
+        text=True,
+    ).strip()
+
+
+@pytest.mark.parametrize("dirty_label", ["baseline", "candidate"])
+def test_issue267_validation_rejects_dirty_tracked_code_worktree(
+    tmp_path: Path,
+    dirty_label: str,
+) -> None:
+    baseline = tmp_path / "baseline"
+    candidate = tmp_path / "candidate"
+    artifact_root = tmp_path / "artifacts"
+    artifact_root.mkdir()
+    baseline_sha = _init_git_repo(baseline)
+    _init_git_repo(candidate)
+
+    dirty_root = baseline if dirty_label == "baseline" else candidate
+    (dirty_root / "tracked.txt").write_text("dirty\n", encoding="utf-8")
+
+    script = Path(__file__).resolve().parents[1] / "scripts/validate_issue267_numbering_counts.sh"
+    result = subprocess.run(
+        ["bash", str(script)],
+        env={
+            **os.environ,
+            "ARTIFACT_ROOT": str(artifact_root),
+            "BASE_CODE_ROOT": str(baseline),
+            "CANDIDATE_CODE_ROOT": str(candidate),
+            "ISSUE267_BASE_SHA": baseline_sha,
+            "PYTHON_BIN": sys.executable,
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 2
+    assert f"tracked edits in the {dirty_label} worktree" in result.stderr

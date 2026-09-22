@@ -408,7 +408,7 @@ function updateMovementTargetMeta() {
   const system = selectedMovementSystem;
   if (system === null || !Number.isFinite(system)) {
     movementTargetMeta.textContent =
-      "No target system selected. Click any measure in the intended system or enter its system number.";
+      "No target system selected. Click anywhere inside the intended system or enter its system number.";
   } else {
     const bounds = systemBounds(system);
     const state = movementStateAt(system);
@@ -588,6 +588,17 @@ function pickMeasure(imgPt) {
 function pickBarline(imgPt) {
   for (let i = barlines.length - 1; i >= 0; i--) {
     if (pointInImageBox(imgPt, barlines[i].bbox)) return barlines[i];
+  }
+  return null;
+}
+
+function pickSystem(imgPt) {
+  const systems = Array.from(new Set(measures.map((measure) => String(measure.system))))
+    .map((value) => parseInt(value, 10))
+    .filter((value) => Number.isFinite(value));
+  for (let i = systems.length - 1; i >= 0; i--) {
+    const bounds = systemBounds(systems[i]);
+    if (bounds && pointInImageBox(imgPt, bounds)) return systems[i];
   }
   return null;
 }
@@ -791,7 +802,7 @@ function renderMovementRows() {
     const div = document.createElement("div");
     div.className = "small";
     div.textContent =
-      "No movement candidate or resolved boundary is recorded on this page. Click a measure in a system to add a boundary manually before that system.";
+      "No movement candidate or resolved boundary is recorded on this page. Click a system to add a boundary manually before it.";
     itemList.appendChild(div);
   }
 }
@@ -1298,6 +1309,30 @@ canvas.addEventListener("mousedown", (event) => {
   }
 
   const imgPt = canvasToImg(pt);
+
+  if (currentType() === "movement_boundary") {
+    const system = pickSystem(imgPt);
+    if (system !== null) {
+      selectedMovementSystem = system;
+      selectedMeasure = pickMeasure(imgPt);
+      selectedBarline = null;
+      selectedItemIndex = null;
+      movementSystemInput.value = String(displayIndex(system));
+      updateSelectionMeta();
+      renderItems();
+      draw();
+      return;
+    }
+    selectedMovementSystem = null;
+    selectedMeasure = null;
+    selectedBarline = null;
+    selectedItemIndex = null;
+    movementSystemInput.value = "";
+    updateSelectionMeta();
+    renderItems();
+    draw();
+    return;
+  }
 
   // In barline correction mode, barlines usually lie inside measure boxes.
   // Prioritize the active correction surface so measure hit-testing does not

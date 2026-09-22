@@ -1,6 +1,12 @@
+import tempfile
 import unittest
+from pathlib import Path
+
+import cv2
+import numpy as np
 
 from src.measure_numbering.numbering import MeasureNumberer
+from src.measure_numbering.pipeline import StaffExtractor
 from src.measure_numbering.types import Barline, BBox, Page, Score, Staff, System
 
 
@@ -86,6 +92,119 @@ class TestNumberingOverrides(unittest.TestCase):
 
         self.assertEqual(system.measures[0].start_bar.bbox, early.bbox)
         self.assertEqual(system.measures[0].bbox.x1, early.bbox.x2)
+
+    def test_staff_unit_estimator_scales_with_staff_line_spacing(self):
+        extractor = StaffExtractor()
+
+        def make_mask(spacing: int) -> np.ndarray:
+            mask = np.zeros((spacing * 8, 200), dtype=np.uint8)
+            for row in [spacing, spacing * 2, spacing * 3, spacing * 4, spacing * 5]:
+                mask[row : row + 1, :] = 255
+            return mask
+
+        self.assertAlmostEqual(extractor._estimate_unit_size(make_mask(10), scale_y=1.0), 10.0)
+        self.assertAlmostEqual(extractor._estimate_unit_size(make_mask(20), scale_y=1.0), 20.0)
+
+    def test_staff_unit_estimator_handles_short_extractable_staves_at_two_scales(self):
+        extractor = StaffExtractor(min_width_ratio=0.1)
+
+        def make_mask(scale: int) -> np.ndarray:
+            spacing = 10 * scale
+            mask = np.zeros((spacing * 8, 200 * scale), dtype=np.uint8)
+            x1 = 10 * scale
+            x2 = 40 * scale  # 15% page width: extractable, below page-wide 25% gate.
+            for row in [spacing, spacing * 2, spacing * 3, spacing * 4, spacing * 5]:
+                mask[row : row + scale, x1:x2] = 255
+            return mask
+
+        for scale, expected_unit in ((1, 10.0), (2, 20.0)):
+            mask = make_mask(scale)
+            self.assertIsNone(extractor._estimate_unit_size(mask, scale_y=1.0))
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                path = Path(tmp_dir) / "short_staff.png"
+                self.assertTrue(cv2.imwrite(str(path), mask))
+                staves = extractor.extract(path, (mask.shape[1], mask.shape[0]))
+            self.assertEqual(len(staves), 1)
+            self.assertAlmostEqual(staves[0].unit_size, expected_unit)
+
+    def test_numbering_geometry_thresholds_are_resolution_independent(self):
+        def make_system(scale: int) -> System:
+            unit = 10 * scale
+            y1 = 100 * scale
+            y2 = y1 + 4 * unit
+            staff = Staff(
+                bbox=BBox(0, y1, 120 * scale, y2),
+                unit_size=float(unit),
+                barlines=[
+                    Barline(bbox=BBox(10 * scale, y1, 12 * scale, y2)),
+                    # 1.0 unit away: must deduplicate under the 1.2-unit rule.
+                    Barline(bbox=BBox(20 * scale, y1, 22 * scale, y2)),
+                    Barline(bbox=BBox(80 * scale, y1, 82 * scale, y2)),
+                ],
+            )
+            return System(staves=[staff])
+
+        base = make_system(1)
+        doubled = make_system(2)
+        self.numberer.number_system(base, start_number=1)
+        self.numberer.number_system(doubled, start_number=1)
+
+        self.assertEqual(len(base.measures), 1)
+        self.assertEqual(len(doubled.measures), 1)
+        self.assertEqual(base.measures[0].start_bar.bbox.x1, 10)
+        self.assertEqual(doubled.measures[0].start_bar.bbox.x1, 20)
+        self.assertEqual(doubled.measures[0].bbox.x1, base.measures[0].bbox.x1 * 2)
+        self.assertEqual(doubled.measures[0].bbox.x2, base.measures[0].bbox.x2 * 2)
+
+    def test_implicit_start_threshold_scales_with_resolution(self):
+        def make_system(scale: int) -> System:
+            unit = 10 * scale
+            y1 = 100 * scale
+            y2 = y1 + 4 * unit
+            return System(
+                staves=[
+                    Staff(
+                        bbox=BBox(0, y1, 120 * scale, y2),
+                        unit_size=float(unit),
+                        barlines=[
+                            Barline(bbox=BBox(50 * scale, y1, 52 * scale, y2)),
+                            Barline(bbox=BBox(100 * scale, y1, 102 * scale, y2)),
+                        ],
+                    )
+                ]
+            )
+
+        for scale in (1, 2):
+            system = make_system(scale)
+            self.numberer.number_system(system, start_number=1)
+            self.assertTrue(system.measures[0].start_bar.is_ghost)
+
+    def test_min_measure_width_scales_with_resolution(self):
+        def make_system(scale: int) -> System:
+            unit = 10 * scale
+            y1 = 100 * scale
+            y2 = y1 + 4 * unit
+            return System(
+                staves=[
+                    Staff(
+                        bbox=BBox(0, y1, 120 * scale, y2),
+                        unit_size=float(unit),
+                        barlines=[
+                            Barline(bbox=BBox(10 * scale, y1, 15 * scale, y2)),
+                            # x1 distance is 1.3 units (not deduped), but the
+                            # interval after the first bar is only 0.8 unit.
+                            Barline(bbox=BBox(23 * scale, y1, 25 * scale, y2)),
+                            Barline(bbox=BBox(80 * scale, y1, 82 * scale, y2)),
+                        ],
+                    )
+                ]
+            )
+
+        for scale in (1, 2):
+            system = make_system(scale)
+            self.numberer.number_system(system, start_number=1)
+            self.assertEqual(len(system.measures), 1)
+            self.assertEqual(system.measures[0].start_bar.bbox.x1, 23 * scale)
 
     def test_anacrusis_override(self):
         score = self.create_mock_score()

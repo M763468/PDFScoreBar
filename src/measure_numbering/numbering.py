@@ -1,3 +1,4 @@
+import math
 from typing import Any, Dict, List, Optional
 
 from .types import Barline, BBox, Measure, MeasureAttribute, Score, System
@@ -8,10 +9,11 @@ class MeasureNumberer:
     Assigns measure numbers to systems of music.
     """
 
-    # Constants for logic thresholds
-    DEDUPLICATION_THRESHOLD = 15  # px: merge barlines closer than this
-    IMPLICIT_START_THRESHOLD = 50  # px: if first barline is > this from edge, assume hidden measure
-    MIN_MEASURE_WIDTH = 25  # px: reject intervals narrower than this (e.g. double barlines)
+    # Musical-geometry thresholds are expressed in staff-line spacing units.
+    DEDUPLICATION_THRESHOLD_UNITS = 1.2
+    IMPLICIT_START_THRESHOLD_UNITS = 4.0
+    MIN_MEASURE_WIDTH_UNITS = 1.0
+    STAFF_HEIGHT_UNITS_FALLBACK = 4.0
     FIRST_GHOST_MEASURE_MAX_MEDIAN_RATIO = 0.5
     FIRST_GHOST_MEASURE_MAX_STAFF_HEIGHT_RATIO = 1.2
 
@@ -71,6 +73,10 @@ class MeasureNumberer:
             return start_number
 
         overrides = overrides or {}
+        unit_size = self._system_unit_size(system)
+        deduplication_threshold = unit_size * self.DEDUPLICATION_THRESHOLD_UNITS
+        implicit_start_threshold = unit_size * self.IMPLICIT_START_THRESHOLD_UNITS
+        min_measure_width = unit_size * self.MIN_MEASURE_WIDTH_UNITS
 
         # 1. Collect and Deduplicate barlines in the system
         all_barlines = set()
@@ -88,7 +94,7 @@ class MeasureNumberer:
                 barline.is_ghost,
             ),
         )
-        sorted_barlines = self._deduplicate_barlines(raw_sorted)
+        sorted_barlines = self._deduplicate_barlines(raw_sorted, deduplication_threshold)
 
         # 2. System and Staff geometry
         sys_x1 = min(s.bbox.x1 for s in system.staves)
@@ -100,11 +106,11 @@ class MeasureNumberer:
         # 3. Detect and insert Implicit Start if necessary
         if sorted_barlines:
             first_bar = sorted_barlines[0]
-            if first_bar.bbox.x1 - sys_x1 > self.IMPLICIT_START_THRESHOLD:
+            if first_bar.bbox.x1 - sys_x1 > implicit_start_threshold:
                 ghost_start = Barline(bbox=BBox(sys_x1, sys_y1, sys_x1 + 1, sys_y2), is_ghost=True)
                 sorted_barlines.insert(0, ghost_start)
 
-        interval_widths = self._measure_interval_widths(sorted_barlines)
+        interval_widths = self._measure_interval_widths(sorted_barlines, min_measure_width)
         median_widths = (
             interval_widths[1:]
             if sorted_barlines and sorted_barlines[0].is_ghost
@@ -128,7 +134,7 @@ class MeasureNumberer:
                 measure_width = m_x2 - m_x1
 
                 # Check for insufficient width (e.g. double barline gap)
-                if measure_width < self.MIN_MEASURE_WIDTH:
+                if measure_width < min_measure_width:
                     continue
 
                 visible_measure_idx = len(system.measures)
@@ -189,13 +195,43 @@ class MeasureNumberer:
             and measure_width < avg_staff_height * self.FIRST_GHOST_MEASURE_MAX_STAFF_HEIGHT_RATIO
         )
 
-    def _measure_interval_widths(self, barlines: List[Barline]) -> List[float]:
+    def _measure_interval_widths(
+        self, barlines: List[Barline], min_measure_width: float
+    ) -> List[float]:
         widths = []
         for left_bar, right_bar in zip(barlines, barlines[1:]):
             width = right_bar.bbox.x1 - left_bar.bbox.x2
-            if width >= self.MIN_MEASURE_WIDTH:
+            if width >= min_measure_width:
                 widths.append(width)
         return widths
+
+    def _system_unit_size(self, system: System) -> float:
+        """Resolve staff-line spacing in the system/barline coordinate frame."""
+        explicit_units = [
+            float(staff.unit_size)
+            for staff in system.staves
+            if staff.unit_size is not None
+            and math.isfinite(float(staff.unit_size))
+            and float(staff.unit_size) > 0
+        ]
+        if explicit_units:
+            unit_size = self._median(explicit_units)
+            assert unit_size is not None
+            return unit_size
+
+        # Compatibility for direct/synthetic System construction. Production
+        # StaffExtractor supplies mask-derived unit_size; when it is absent, staff
+        # height is still a resolution-normalized geometry scale rather than a px
+        # constant. A five-line staff spans approximately four staff spaces.
+        staff_heights = [
+            float(staff.bbox.height)
+            for staff in system.staves
+            if math.isfinite(float(staff.bbox.height)) and float(staff.bbox.height) > 0
+        ]
+        median_staff_height = self._median(staff_heights)
+        if median_staff_height is None:
+            raise ValueError("Cannot resolve numbering unit_size from empty/invalid staff geometry")
+        return median_staff_height / self.STAFF_HEIGHT_UNITS_FALLBACK
 
     def _median(self, values: List[float]) -> Optional[float]:
         if not values:
@@ -206,7 +242,9 @@ class MeasureNumberer:
             return sorted_values[midpoint]
         return (sorted_values[midpoint - 1] + sorted_values[midpoint]) / 2
 
-    def _deduplicate_barlines(self, barlines: List[Barline]) -> List[Barline]:
+    def _deduplicate_barlines(
+        self, barlines: List[Barline], deduplication_threshold: float
+    ) -> List[Barline]:
         """
         Merges barlines that are too close to each other.
         """
@@ -219,7 +257,7 @@ class MeasureNumberer:
             for next_bar in barlines[1:]:
                 # Distance check (center to center or x1 to x1)
                 dist = abs(next_bar.bbox.x1 - current.bbox.x1)
-                if dist < self.DEDUPLICATION_THRESHOLD:
+                if dist < deduplication_threshold:
                     # Keep the first candidate in the deterministic ordering above.
                     # For exact x1 ties this is the wider barline; distinct x1 positions
                     # continue to prefer the earlier x1 as before.

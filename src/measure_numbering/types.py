@@ -82,6 +82,11 @@ class Staff:
     system_index: Optional[int] = None  # Explicit index from upstream (homr)
     bracket_group: Optional[int] = None  # ID of the bracket this staff belongs to
 
+    # Staff-line spacing in the same coordinate frame as bbox/barlines.
+    # Kept after the legacy fields so positional construction remains compatible.
+    # Production extraction populates this from the staff mask when available.
+    unit_size: Optional[float] = None
+
 
 @dataclass
 class System:

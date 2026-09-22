@@ -129,10 +129,17 @@ python -m tools.movement_boundary_review attach \
 
 The attach step copies the evidence into the package and records package-local
 paths in the handoff. It does not approve any candidate or change numbering.
-The existing GUI then exposes a **Movement boundary** correction type. Reviewers
-may accept or reject explicit candidates and may add a boundary at a
-non-candidate system. A missing candidate is not a reviewed negative and cannot
-be saved as `no_boundary`.
+The existing GUI then exposes a **Movement boundary** correction type. A
+movement boundary always means **immediately before the target system**: the
+first measure of that system starts the new movement. Reviewers can click
+anywhere inside a system to target it; direct 1-based system entry remains
+available. The canvas draws distinct markers for unresolved candidates,
+existing resolved boundaries, reviewed/manual boundaries, and reviewed
+no-boundary locations, and highlights the complete selected system rather than
+presenting a selected measure as the boundary target. Reviewers may accept or
+reject explicit candidates and may add a boundary at a non-candidate system. A
+missing candidate is not a reviewed negative and cannot be saved as
+`no_boundary`.
 
 ### Manual GUI quick guide
 

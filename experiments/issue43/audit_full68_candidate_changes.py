@@ -36,7 +36,11 @@ def _normalize_box(item: Any) -> tuple[int, int, int, int] | None:
     if isinstance(item, Mapping):
         for key in ("barline_location", "orig_bbox", "pred_bbox", "bbox", "box"):
             value = item.get(key)
-            if isinstance(value, Sequence) and not isinstance(value, (str, bytes)) and len(value) == 4:
+            if (
+                isinstance(value, Sequence)
+                and not isinstance(value, (str, bytes))
+                and len(value) == 4
+            ):
                 return tuple(int(round(float(v))) for v in value)
     return None
 
@@ -185,9 +189,7 @@ def _audit_box(
     return {
         "bbox": list(box),
         "cnn_score": score_value,
-        "cnn_at_or_above_threshold": (
-            score_value is not None and score_value >= threshold
-        ),
+        "cnn_at_or_above_threshold": (score_value is not None and score_value >= threshold),
         "x_center_ratio": x_ratio,
         "left_edge_12pct": x_ratio < EDGE_RATIO,
         "right_edge_12pct": x_ratio > 1.0 - EDGE_RATIO,
@@ -210,9 +212,7 @@ def _audit_box(
 
 def _summarize(records: Sequence[Mapping[str, Any]], *, threshold: float) -> dict[str, Any]:
     scores = [
-        float(record["cnn_score"])
-        for record in records
-        if record.get("cnn_score") is not None
+        float(record["cnn_score"]) for record in records if record.get("cnn_score") is not None
     ]
     outside_known = [
         bool(record["outside_staff_span_for_candidate_y"])
@@ -226,8 +226,7 @@ def _summarize(records: Sequence[Mapping[str, Any]], *, threshold: float) -> dic
             bool(record["cnn_at_or_above_threshold"]) for record in records
         ),
         "cnn_below_threshold": sum(
-            record.get("cnn_score") is not None
-            and float(record["cnn_score"]) < threshold
+            record.get("cnn_score") is not None and float(record["cnn_score"]) < threshold
             for record in records
         ),
         "cnn_score_max": max(scores) if scores else None,

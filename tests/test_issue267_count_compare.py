@@ -10,14 +10,40 @@ from tools.issue267.compare_numbering_count_signatures import (
 from tools.issue267.run_numbering_count_replay import build_page_specs
 
 
-def _write_numbering(path: Path, counts: list[int]) -> None:
+def _write_numbering(
+    path: Path,
+    counts: list[int],
+    *,
+    measure_x_offset: int = 0,
+    empty_systems: list[dict] | None = None,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    systems = []
+    for system_index, count in enumerate(counts):
+        y1 = 100 * system_index
+        y2 = y1 + 80
+        systems.append(
+            {
+                "staves": [{"bbox": [0, y1, 1000, y2]}],
+                "measures": [
+                    {
+                        "number": measure_index + 1,
+                        "bbox": [
+                            measure_x_offset + measure_index * 100,
+                            y1,
+                            measure_x_offset + (measure_index + 1) * 100,
+                            y2,
+                        ],
+                    }
+                    for measure_index in range(count)
+                ],
+            }
+        )
     payload = {
         "pages": [
             {
-                "systems": [
-                    {"measures": [{"number": i + 1} for i in range(count)]} for count in counts
-                ]
+                "systems": systems,
+                "empty_systems": empty_systems or [],
             }
         ]
     }
@@ -68,15 +94,60 @@ def test_issue267_count_comparator_identifies_changed_page(tmp_path: Path) -> No
 
     assert report["exact_match"] is False
     assert report["total_measure_delta"] == -1
-    assert report["changed_pages"] == [
-        {
-            "page_id": "page_001",
-            "baseline": [5, 6],
-            "candidate": [5, 5],
-            "baseline_total": 11,
-            "candidate_total": 10,
-        }
-    ]
+    assert len(report["changed_pages"]) == 1
+    changed = report["changed_pages"][0]
+    assert changed["page_id"] == "page_001"
+    assert changed["baseline_counts"] == [5, 6]
+    assert changed["candidate_counts"] == [5, 5]
+    assert changed["baseline_total"] == 11
+    assert changed["candidate_total"] == 10
+
+
+def test_issue267_comparator_detects_boundary_shift_with_same_counts(tmp_path: Path) -> None:
+    baseline = tmp_path / "baseline"
+    candidate = tmp_path / "candidate"
+    _write_numbering(
+        baseline / "intermediate" / "page_001" / "numbering_base.json",
+        [2],
+    )
+    _write_numbering(
+        candidate / "intermediate" / "page_001" / "numbering_base.json",
+        [2],
+        measure_x_offset=1,
+    )
+
+    report = compare_signatures(
+        collect_run_signatures(baseline),
+        collect_run_signatures(candidate),
+    )
+
+    assert report["exact_match"] is False
+    assert report["total_measure_delta"] == 0
+    assert report["changed_pages"][0]["baseline_counts"] == [2]
+    assert report["changed_pages"][0]["candidate_counts"] == [2]
+
+
+def test_issue267_comparator_detects_empty_system_change(tmp_path: Path) -> None:
+    baseline = tmp_path / "baseline"
+    candidate = tmp_path / "candidate"
+    _write_numbering(
+        baseline / "intermediate" / "page_001" / "numbering_base.json",
+        [2],
+        empty_systems=[{"staves": [{"bbox": [0, 300, 1000, 380]}], "reason": "no_measures"}],
+    )
+    _write_numbering(
+        candidate / "intermediate" / "page_001" / "numbering_base.json",
+        [2],
+    )
+
+    report = compare_signatures(
+        collect_run_signatures(baseline),
+        collect_run_signatures(candidate),
+    )
+
+    assert report["exact_match"] is False
+    assert report["total_measure_delta"] == 0
+    assert len(report["changed_pages"]) == 1
 
 
 def test_issue267_replay_resolves_accepted_retained_inputs(tmp_path: Path) -> None:

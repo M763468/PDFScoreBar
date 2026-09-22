@@ -130,3 +130,12 @@ def test_screen_retained_row_gap_promotion_direct_entrypoint_bootstraps_repo(
         ROOT / "experiments/issue372/screen_retained_row_gap_promotion.py",
         cwd=tmp_path,
     )
+
+
+def test_compare_final_numbering_semantics_direct_entrypoint(
+    tmp_path: Path,
+) -> None:
+    _assert_direct_help_succeeds(
+        ROOT / "experiments/issue372/compare_final_numbering_semantics.py",
+        cwd=tmp_path,
+    )

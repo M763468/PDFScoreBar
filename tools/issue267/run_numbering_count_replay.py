@@ -168,6 +168,9 @@ def run(
     support_run: str,
     page_limit: int | None,
 ) -> Path:
+    code_root = code_root.resolve()
+    input_root = input_root.resolve()
+    output_root = output_root.resolve()
     _install_code_root(code_root)
 
     import cv2

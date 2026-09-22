@@ -165,6 +165,22 @@ def _inventory_records(path: Path) -> dict[str, Mapping[str, Any]]:
     return result
 
 
+def _staff_mask_from_support_payload(
+    payload: Mapping[str, Any],
+    *,
+    issue43_repo_root: Path,
+) -> Path | None:
+    """Resolve the current-x4 HOMR staff mask from supported retained schemas."""
+    for key in ("current_homr_staff_mask", "staff_mask"):
+        raw = payload.get(key)
+        if not raw:
+            continue
+        path = _host_path(str(raw), issue43_repo_root)
+        if path.is_file():
+            return path
+    return None
+
+
 def _current_homr_staff_mask(
     record: Mapping[str, Any],
     *,
@@ -172,18 +188,74 @@ def _current_homr_staff_mask(
     page: str,
     issue43_repo_root: Path,
 ) -> Path:
+    """Resolve retained current-x4 staff geometry across source-worker schemas.
+
+    The maintained-HOMR adoption commit intentionally kept the top-level
+    verified source-page result small: it forwarded current_sr_detection/current_omr
+    but did not forward current_homr_staff_mask. The child current-support result
+    under sibling current_support/<score>/<page>/result.json retained the full
+    connector-semantic bundle, including the staff mask.
+
+    Newer source-page schemas may forward the mask directly, so prefer that when
+    present and fall back to the child result. As a final provenance-preserving
+    fallback, derive the staff-mask sibling from current_sr_detection; both files
+    are emitted by the same current_homr_worker batch directory.
+    """
     hybrid_raw = record.get("hybrid_predictions")
     if not hybrid_raw:
         raise ValueError(f"{score}/{page}: inventory lacks hybrid_predictions")
     hybrid = _host_path(str(hybrid_raw), issue43_repo_root)
-    result_path = _source_worker_result(hybrid, score=score, page=page)
-    payload = _load_json(result_path)
-    if not isinstance(payload, Mapping) or not payload.get("current_homr_staff_mask"):
-        raise ValueError(f"{score}/{page}: current support lacks current_homr_staff_mask")
-    path = _host_path(str(payload["current_homr_staff_mask"]), issue43_repo_root)
-    if not path.is_file():
-        raise FileNotFoundError(path)
-    return path
+    if not hybrid.is_file():
+        raise FileNotFoundError(hybrid)
+
+    source_result = _source_worker_result(hybrid, score=score, page=page)
+    source_payload = _load_json(source_result)
+    if not isinstance(source_payload, Mapping):
+        raise ValueError(f"{score}/{page}: invalid source-worker result: {source_result}")
+
+    direct = _staff_mask_from_support_payload(
+        source_payload,
+        issue43_repo_root=issue43_repo_root,
+    )
+    if direct is not None:
+        return direct
+
+    hybrid_root = hybrid.parent.parent
+    child_result = hybrid_root / "current_support" / score / page / "result.json"
+    if child_result.is_file():
+        child_payload = _load_json(child_result)
+        if not isinstance(child_payload, Mapping):
+            raise ValueError(
+                f"{score}/{page}: invalid current-support result: {child_result}"
+            )
+        if child_payload.get("status") != "completed":
+            raise ValueError(
+                f"{score}/{page}: incomplete current-support result: {child_result}"
+            )
+        if child_payload.get("historical_detector_artifact_runtime_input") is not False:
+            raise ValueError(
+                f"{score}/{page}: current-support result used historical artifacts"
+            )
+        child_mask = _staff_mask_from_support_payload(
+            child_payload,
+            issue43_repo_root=issue43_repo_root,
+        )
+        if child_mask is not None:
+            return child_mask
+
+    detection_raw = source_payload.get("current_sr_detection")
+    if detection_raw:
+        detection = _host_path(str(detection_raw), issue43_repo_root)
+        expected = detection.with_name(
+            detection.name.replace("_detections.json", "_staff_mask.png")
+        )
+        if expected != detection and expected.is_file():
+            return expected
+
+    raise ValueError(
+        f"{score}/{page}: unable to resolve retained current-x4 HOMR staff mask; "
+        f"source_result={source_result} child_result={child_result}"
+    )
 
 
 def _score_to_payload(

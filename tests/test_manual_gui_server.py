@@ -207,20 +207,16 @@ def test_manual_gui_separates_one_based_display_from_saved_indices():
     assert "saveCorrectionTypes(Array.from(dirtyTypes))" in app_source
     assert "saveDirtyTypes().catch(() => {});" in app_source
     assert "typeSelect.value = type" not in app_source
-    assert "Save corrections writes every staged correction type" in html_source
     assert 'value="movement_boundary"' in html_source
     assert 'id="movementSystemInput"' in html_source
     assert 'id="exportMovementBtn"' in html_source
-    assert "Candidate absence is never treated as a negative" in html_source
     assert "movement_boundary: [" in app_source
     assert "function renderMovementRows()" in app_source
     assert 'candidate.state === "ambiguous_review_required"' in app_source
-    assert "Candidate absence is not a reviewed no-boundary" in app_source
     assert 'fetch("/api/export_movement_boundaries"' in app_source
     assert 'id="movementBoundaryPanel"' in html_source
     assert "immediately BEFORE the target system" in html_source
     assert 'id="showMovementToggle"' in html_source
-    assert "Existing resolved boundary" in html_source
     assert "function systemBounds(system)" in app_source
     assert "function pickSystem(imgPt)" in app_source
     assert "function drawMovementMarker(system, state, selected = false)" in app_source
@@ -230,3 +226,18 @@ def test_manual_gui_separates_one_based_display_from_saved_indices():
     assert "boundary position is BEFORE this system" in app_source
     assert 'currentType() === "movement_boundary"' in app_source
     assert "System ${visibleSystem} is not present on this page." in app_source
+    assert "Movement decisions are saved immediately" in html_source
+    assert "Finish movement review" in html_source
+    assert "Boundary used by current numbering" in html_source
+    assert "Suggested boundary" in html_source
+    assert "Confirmed boundary" in html_source
+    assert "Checked: no boundary" in html_source
+    assert "function queueMovementSave(page, items)" in app_source
+    assert "function waitForMovementSaves()" in app_source
+    assert 'saveBtn.style.display = movementMode ? "none" : "";' in app_source
+    assert 'selectModeBtn.style.display = barlineMode ? "" : "none";' in app_source
+    assert 'drawModeBtn.style.display = barlineMode ? "" : "none";' in app_source
+    assert 'deleteItemBtn.textContent = "Clear saved decision";' in app_source
+    assert "unresolvedMovementSuggestionCount()" in app_source
+    assert "Review every suggested boundary before finishing." in app_source
+    assert 'window.addEventListener("blur", releaseTransientInteraction);' in app_source

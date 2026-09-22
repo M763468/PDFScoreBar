@@ -444,7 +444,6 @@ class PipelineOrchestrator:
         required_steps = {
             "numbering_base": get_nested(self.config, "steps", "numbering_base", default=False),
             "mmr_overrides": get_nested(self.config, "steps", "mmr_overrides", default=False),
-            "overlay": get_nested(self.config, "steps", "overlay", default=False),
         }
         missing = [name for name, enabled in required_steps.items() if not enabled]
         if missing:

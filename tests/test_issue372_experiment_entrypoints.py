@@ -76,3 +76,12 @@ def test_resume_x4_gap_counterfactual_evaluation_direct_entrypoint_bootstraps_re
         ROOT / "experiments/issue372/resume_x4_gap_counterfactual_evaluation.py",
         cwd=tmp_path,
     )
+
+
+def test_attribute_retained_residuals_direct_entrypoint_bootstraps_repo(
+    tmp_path: Path,
+) -> None:
+    _assert_direct_help_succeeds(
+        ROOT / "experiments/issue372/attribute_retained_residuals.py",
+        cwd=tmp_path,
+    )

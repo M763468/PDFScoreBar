@@ -287,23 +287,34 @@ def resolve_local_input_path(
     return resolved
 
 
+def _filesystem_unavailable(exc: OSError) -> InputSafetyError:
+    return _error(
+        ErrorCategory.INPUT,
+        "input_pdf_unavailable",
+        "The input PDF is unavailable.",
+        debug={"exception": type(exc).__name__},
+    )
+
+
 def _read_bounded_file(
     path: Path, *, max_bytes: int, allow_symlinks: bool
 ) -> tuple[bytearray, int, str]:
-    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+    flags = (
+        os.O_RDONLY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NONBLOCK", 0)
+    )
     if not allow_symlinks:
         flags |= getattr(os, "O_NOFOLLOW", 0)
     try:
         fd = os.open(path, flags)
     except OSError as exc:
-        raise _error(
-            ErrorCategory.INPUT,
-            "input_pdf_unavailable",
-            "The input PDF is unavailable.",
-            debug={"exception": type(exc).__name__},
-        ) from exc
+        raise _filesystem_unavailable(exc) from exc
     try:
-        file_stat = os.fstat(fd)
+        try:
+            file_stat = os.fstat(fd)
+        except OSError as exc:
+            raise _filesystem_unavailable(exc) from exc
         if not stat.S_ISREG(file_stat.st_mode):
             raise _error(
                 ErrorCategory.INPUT,
@@ -322,7 +333,10 @@ def _read_bounded_file(
         digest = hashlib.sha256()
         total = 0
         while True:
-            chunk = os.read(fd, min(_MIB, max_bytes + 1 - total))
+            try:
+                chunk = os.read(fd, min(_MIB, max_bytes + 1 - total))
+            except OSError as exc:
+                raise _filesystem_unavailable(exc) from exc
             if not chunk:
                 break
             total += len(chunk)

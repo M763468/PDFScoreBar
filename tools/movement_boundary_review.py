@@ -12,9 +12,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from src.pipeline.review.manual_correction_handoff import build_manual_gui_config
 from src.pipeline.review.movement_boundary_review import (
     DEFAULT_RESOLVED_FILENAME,
-    DEFAULT_REVIEW_FILENAME,
     attach_movement_boundary_evidence,
     write_resolved_movement_boundaries,
 )
@@ -54,14 +54,20 @@ def _export_from_handoff(handoff_path: Path, *, overwrite: bool) -> dict:
         evidence_raw,
         field="movement_boundary_evidence",
     )
-    correction_outputs = payload.get("correction_outputs")
-    review_raw = (
-        correction_outputs.get("movement_boundary")
-        if isinstance(correction_outputs, dict)
-        else None
-    )
-    if not isinstance(review_raw, str) or not review_raw:
-        review_raw = f"corrections/{DEFAULT_REVIEW_FILENAME}"
+    gui_config = build_manual_gui_config(payload, handoff_path=handoff_path)
+    review_outputs = {
+        page["manual_outputs"]["movement_boundary"]
+        for page in gui_config["pages"]
+        if isinstance(page.get("manual_outputs"), dict)
+        and isinstance(page["manual_outputs"].get("movement_boundary"), str)
+        and page["manual_outputs"]["movement_boundary"]
+    }
+    if len(review_outputs) != 1:
+        raise ValueError(
+            "movement boundary review output must resolve to one shared package-local path "
+            "across all handoff pages"
+        )
+    review_raw = next(iter(review_outputs))
     review_path = _package_path(
         package_root,
         review_raw,

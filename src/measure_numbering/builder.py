@@ -16,7 +16,11 @@ class SystemBuilder:
 
     DIVISI_DIST_RATIO = 1.5
     CONNECTOR_RESCUE_DIST_RATIO = 1.56
-    ALIGN_TOL = 10
+    ALIGN_TOL_UNITS = 0.4
+    CONNECTION_X_MARGIN_UNITS = 0.08
+    SMALL_CONNECTION_GAP_UNITS = 0.2
+    MIN_STAFF_OVERLAP_UNITS = 0.4
+    STAFF_HEIGHT_UNITS_FALLBACK = 4.0
     MIN_ALIGN_COUNT = 2
     CONNECTOR_RESCUE_MIN_ALIGN_COUNT = 3
     FALSE_MERGE_MAX_ALIGN_COUNT = 2
@@ -158,7 +162,8 @@ class SystemBuilder:
             c1 = (b1.bbox.x1 + b1.bbox.x2) / 2
             for b2 in s2.barlines:
                 c2 = (b2.bbox.x1 + b2.bbox.x2) / 2
-                if abs(c1 - c2) <= self.ALIGN_TOL:
+                unit_size = self._pair_unit_size(s1, s2)
+                if abs(c1 - c2) <= unit_size * self.ALIGN_TOL_UNITS:
                     aligned_pairs.append((b1, b2))
         return aligned_pairs
 
@@ -241,6 +246,7 @@ class SystemBuilder:
         if not aligned_pairs:
             return False
 
+        unit_size = self._pair_unit_size(s1, s2)
         y1_bot = int(s1.bbox.y2)
         y2_top = int(s2.bbox.y1)
         gap_h = y2_top - y1_bot
@@ -265,12 +271,13 @@ class SystemBuilder:
             x1 = int(min(b1.bbox.x1, b2.bbox.x1))
             x2 = int(max(b1.bbox.x2, b2.bbox.x2))
 
-            x1 = max(0, x1 - 2)
-            x2 = min(w_img, x2 + 2)
+            x_margin = max(1, int(round(unit_size * self.CONNECTION_X_MARGIN_UNITS)))
+            x1 = max(0, x1 - x_margin)
+            x2 = min(w_img, x2 + x_margin)
 
             roi = bin_img[y1_bot:y2_top, x1:x2]
 
-            if gap_h < 5:
+            if gap_h < unit_size * self.SMALL_CONNECTION_GAP_UNITS:
                 valid_connections += 1
                 continue
 
@@ -282,6 +289,17 @@ class SystemBuilder:
                 valid_connections += 1
 
         return valid_connections >= 1
+
+    def _staff_unit_size(self, staff: Staff) -> float:
+        if staff.unit_size is not None and float(staff.unit_size) > 0:
+            return float(staff.unit_size)
+        height = float(staff.bbox.height)
+        if height <= 0:
+            raise ValueError("Cannot resolve staff unit_size from invalid staff geometry")
+        return height / self.STAFF_HEIGHT_UNITS_FALLBACK
+
+    def _pair_unit_size(self, s1: Staff, s2: Staff) -> float:
+        return (self._staff_unit_size(s1) + self._staff_unit_size(s2)) / 2.0
 
     def _assign_barlines_to_staves(self, staves: List[Staff], barlines: List[Barline]):
         for bar in barlines:
@@ -295,5 +313,7 @@ class SystemBuilder:
                 if inter_y2 > inter_y1:
                     overlap_h = inter_y2 - inter_y1
                     staff_h = s_y2 - s_y1
-                    if overlap_h > staff_h * 0.2 or overlap_h > 10:
+                    min_overlap = staff_h * 0.2
+                    unit_overlap = self._staff_unit_size(staff) * self.MIN_STAFF_OVERLAP_UNITS
+                    if overlap_h > min_overlap or overlap_h > unit_overlap:
                         staff.barlines.append(bar)

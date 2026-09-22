@@ -131,9 +131,7 @@ def run(report_path: Path) -> dict[str, Any]:
             if prod_scores[box] != full_scores[box]
         ]
         threshold_crossings = [
-            item
-            for item in score_deltas
-            if item["production_accept"] != item["full_width_accept"]
+            item for item in score_deltas if item["production_accept"] != item["full_width_accept"]
         ]
 
         changed_pages.append(
@@ -153,15 +151,11 @@ def run(report_path: Path) -> dict[str, Any]:
                 "final_removed_in_full_width": [
                     list(box) for box in sorted(prod_final - full_final)
                 ],
-                "final_added_in_full_width": [
-                    list(box) for box in sorted(full_final - prod_final)
-                ],
+                "final_added_in_full_width": [list(box) for box in sorted(full_final - prod_final)],
                 "scored_box_sets_exact": set(prod_scores) == set(full_scores),
                 "score_delta_count": len(score_deltas),
                 "max_abs_score_delta": (
-                    max(abs(float(item["delta"])) for item in score_deltas)
-                    if score_deltas
-                    else 0.0
+                    max(abs(float(item["delta"])) for item in score_deltas) if score_deltas else 0.0
                 ),
                 "threshold_crossing_count": len(threshold_crossings),
                 "threshold_crossings": threshold_crossings,

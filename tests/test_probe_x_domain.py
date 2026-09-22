@@ -5,7 +5,7 @@ import numpy as np
 
 from src.pipeline.detection.config import get_probe_kwargs
 from src.pipeline.probe_detector import detect_probe_scan
-from src.pipeline.probe_detector.bands import resolve_x_domains
+from src.pipeline.probe_detector.bands import compute_domain_ratios, resolve_x_domains
 from src.pipeline.steps.probe_scan import _resolve_scale_aware_probe_kwargs
 
 
@@ -64,6 +64,33 @@ class TestProbeXDomains(unittest.TestCase):
         )
 
         self.assertEqual(domains, [(25, 149)])
+
+    def test_domain_local_projection_matches_full_width_values_inside_domain(self):
+        band = np.zeros((20, 200), dtype=np.uint8)
+        band[:, 18:22] = 1
+        band[:, 118:122] = 1
+        kernel = np.ones(4, dtype=np.int32)
+
+        full, full_projected = compute_domain_ratios(
+            band,
+            kernel=kernel,
+            width=4,
+            image_width=200,
+            x_domain=(0, 199),
+        )
+        bounded, bounded_projected = compute_domain_ratios(
+            band,
+            kernel=kernel,
+            width=4,
+            image_width=200,
+            x_domain=(80, 160),
+        )
+
+        np.testing.assert_allclose(bounded[80:161], full[80:161])
+        self.assertEqual(full_projected, 200)
+        self.assertLess(bounded_projected, full_projected)
+        self.assertTrue(np.all(bounded[:80] == 0))
+        self.assertTrue(np.all(bounded[161:] == 0))
 
     def test_scale_aware_padding_is_resolved_from_existing_box_height(self):
         resolved = _resolve_scale_aware_probe_kwargs(
@@ -127,6 +154,7 @@ class TestProbeXDomainDetection(unittest.TestCase):
         staff_mask: np.ndarray | None = None,
         max_per_band: int = 10,
         min_ratio: float = 0.5,
+        scan_stats: dict | None = None,
     ):
         kwargs = {}
         if mode is not None:
@@ -146,6 +174,7 @@ class TestProbeXDomainDetection(unittest.TestCase):
             refine_window=2,
             max_per_band=max_per_band,
             vertical_closing=0,
+            scan_stats=scan_stats,
             **kwargs,
         )
 
@@ -176,6 +205,23 @@ class TestProbeXDomainDetection(unittest.TestCase):
         bounded = self._detect(image, mode="staff_mask", staff_mask=empty_mask)
 
         self.assertEqual(bounded, full_width)
+
+    def test_staff_mask_domain_reports_reduced_projected_width(self):
+        image = self._base_image()
+        stats = {}
+
+        self._detect(
+            image,
+            mode="staff_mask",
+            staff_mask=self._staff_mask(),
+            scan_stats=stats,
+        )
+
+        self.assertGreater(stats["full_width_columns"], 0)
+        self.assertLess(stats["eligible_domain_columns"], stats["full_width_columns"])
+        self.assertLess(stats["projected_columns"], stats["full_width_columns"])
+        self.assertLess(stats["eligible_width_ratio"], 1.0)
+        self.assertLess(stats["projected_width_ratio"], 1.0)
 
     def test_bounded_domain_prevents_margin_peak_from_consuming_candidate_budget(self):
         image = self._base_image(outside_height=41, inside_height=31)

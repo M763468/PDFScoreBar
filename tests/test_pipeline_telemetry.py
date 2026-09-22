@@ -111,3 +111,21 @@ def test_run_pipeline_emits_terminal_failure_when_orchestrator_construction_fail
         ProgressKind.JOB_STARTED,
         ProgressKind.JOB_FAILED,
     ]
+
+
+def test_resource_sampling_keeps_default_summary_in_run_directory(monkeypatch, tmp_path):
+    _patch_minimal_pipeline(monkeypatch, _SuccessfulOrchestrator)
+
+    result = run_pipeline(
+        Path("unused.yaml"),
+        run_id="job-resources",
+        output_root=tmp_path,
+        sample_resources=True,
+        resource_sample_interval_seconds=0.01,
+    )
+
+    summary_path = result / "telemetry.json"
+    assert summary_path.is_file()
+    summary_text = summary_path.read_text()
+    assert "resource_sample_count" in summary_text
+    assert "pdfscorebar.engine.telemetry_summary.v1" in summary_text

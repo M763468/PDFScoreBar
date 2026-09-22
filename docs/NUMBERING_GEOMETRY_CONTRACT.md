@@ -11,15 +11,16 @@ barline bounding boxes.
 The production `StaffExtractor` estimates one page-level unit from the original
 staff mask before its connected-component morphology:
 
-1. find rows whose staff-mask foreground covers at least 25% of the mask width;
+1. find rows whose staff-mask foreground exceeds the same normalized width floor used for extractable staff components (`min_width_ratio`, default 10% of mask width);
 2. merge adjacent active rows into line runs;
 3. measure adjacent run-center spacings;
 4. compute the initial median spacing;
 5. retain spacings between 0.5x and 1.5x that median;
 6. use their mean and map it into the target/page coordinate frame.
 
-This matches the page-scale concept established by the canonical
-`barline_staff_units.v1` work. A `Staff` carries the resolved unit internally.
+This uses the same staff-line-spacing concept established by the canonical
+`barline_staff_units.v1` work, while aligning the row-persistence floor with the
+actual widths that `StaffExtractor` can accept. A `Staff` carries the resolved unit internally.
 The numbering JSON serializer deliberately does not expose this transient field.
 
 For direct/synthetic `Staff` construction where no explicit unit is available,
@@ -97,8 +98,11 @@ python tools/issue267/compare_numbering_count_signatures.py \
 ```
 
 Acceptance requires `exact_match=true`, zero changed/missing/added pages, and a
-zero total physical-measure delta. The report is also the durable per-page record
-for locating any regression if the gate fails.
+zero total physical-measure delta. `exact_match` compares the complete ordered
+numbering geometry serialized by `score_to_dict`: staff BBoxes, measure numbers
+and BBoxes, plus `empty_systems`. Count equality alone is not sufficient. The
+report is also the durable per-page record for locating any regression if the
+gate fails.
 
 ### Local full-68 count-validation procedure
 
@@ -134,7 +138,7 @@ runs the same 68 retained inputs through both code roots, and writes:
 - `baseline/intermediate/page_*/numbering_base.json`;
 - `candidate/intermediate/page_*/numbering_base.json`;
 - one replay provenance report for each side;
-- `count_compare.json` with the exact page/system signature comparison.
+- `count_compare.json` with the exact semantic numbering-geometry comparison and physical-measure count summary.
 
 The accepted Issue #264 `_02` replay directory must already exist under
 `ARTIFACT_ROOT/logs/issue264_phase_c_mmr_regression/`. Do not silently

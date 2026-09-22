@@ -31,6 +31,8 @@ v1 schemas are:
 
 Compatibility rules:
 
+- required v1 fields must be present in serialized records; deserializers do not
+  substitute constructor defaults for an omitted required wire field;
 - adding an optional field with unchanged meaning is additive within v1;
 - v1 readers ignore unknown optional object fields;
 - removing/renaming a required field or changing its meaning requires a new
@@ -111,6 +113,14 @@ Each descriptor has:
 - optional `sha256`;
 - optional `coordinate_space`.
 
+When `coordinate_space` is present, v1 requires these non-empty string
+members so geometry provenance is meaningful and comparable:
+
+- `type`;
+- `origin`;
+- `units`;
+- `version`.
+
 A `relative_path` must remain inside its returned artifact package. Absolute
 paths and `..` traversal are rejected. Internal `logs/` or implementation
 paths are therefore not required API fields.
@@ -144,6 +154,10 @@ Every CorrectionSet identifies the exact source being corrected:
 - `source_artifact_sha256`;
 - `source_contract_version`;
 - `coordinate_space`.
+
+The correction source `coordinate_space` uses the same required
+`type` / `origin` / `units` / `version` members as an artifact
+descriptor. An empty coordinate object is not a valid provenance identity.
 
 The engine must reject a correction set when any of those values no longer
 matches the source artifact. It must not guess, rescale, or silently apply a
@@ -345,7 +359,9 @@ These are public work units, not internal function names. Their implementation
 may change without changing the contract.
 
 Terminal progress kinds are `job_succeeded`, `job_review_required`,
-`job_failed`, and `job_cancelled`. No event may follow a terminal event.
+`job_failed`, and `job_cancelled`. Serialized events include `terminal`
+as a required boolean derived from `kind`; readers reject a non-boolean or a
+value that disagrees with `kind`. No event may follow a terminal event.
 `validate_progress_sequence()` enforces job identity, strict monotonicity, and
 terminal ordering.
 

@@ -14,7 +14,7 @@ workflow. Issue #338 does not silently turn arbitrary repository paths or
 current YAML configuration into a public upload API.
 
 The reusable implementation is
-\`src/pipeline/engine_input_safety.py\`.
+`src/pipeline/engine_input_safety.py`.
 
 ## 1. Security boundary
 
@@ -26,10 +26,10 @@ For a future untrusted one-job adapter:
 1. the caller supplies PDF bytes or an already-staged engine reference;
 2. the adapter stages the input under a worker-owned input root;
 3. the engine preflights path, byte, PDF, page, and predicted render bounds;
-4. rejected input returns a structured v1 \`EngineError\` before page rendering
+4. rejected input returns a structured v1 `EngineError` before page rendering
    or model inference where feasible;
 5. accepted work executes inside the worker/container resource boundary;
-6. only artifacts advertised by a terminal non-failure \`JobResult\` are public.
+6. only artifacts advertised by a terminal non-failure `JobResult` are public.
 
 Authentication, accounts, billing, global rate limiting, IP reputation, queue
 fairness, and cross-job scheduling remain service/control-plane concerns. They
@@ -42,17 +42,17 @@ not designed to accept arbitrary public uploads.
 
 | Area | Current behavior | Issue #338 consequence |
 | --- | --- | --- |
-| PDF byte loading | \`PipelineOrchestrator._run_pdf_to_images()\` calls \`Path.read_bytes()\` before opening PyMuPDF | Untrusted adapters must enforce a byte cap before the current unbounded read pattern |
-| PDF parsing | PyMuPDF opens the full source bytes and exposes \`page_count\` | Parser errors/encryption need deterministic public-safe mapping |
-| Rendering | \`render_pdf_to_memory()\` calls \`page.get_pixmap()\` and accumulates rendered pages in a list | Predicted dimensions/per-page/total pixels must be bounded before rendering |
+| PDF byte loading | `PipelineOrchestrator._run_pdf_to_images()` calls `Path.read_bytes()` before opening PyMuPDF | Untrusted adapters must enforce a byte cap before the current unbounded read pattern |
+| PDF parsing | PyMuPDF opens the full source bytes and exposes `page_count` | Parser errors/encryption need deterministic public-safe mapping |
+| Rendering | `render_pdf_to_memory()` calls `page.get_pixmap()` and accumulates rendered pages in a list | Predicted dimensions/per-page/total pixels must be bounded before rendering |
 | Page selection | Existing helpers validate selected page indices | Untrusted execution additionally needs document-page and selected-page ceilings |
 | Input paths | Config accepts operator-provided paths | Public jobs must resolve only inside a worker-owned input root and reject traversal/URL-like references |
 | Symlinks | No general public-input symlink policy exists | Untrusted input defaults to no symlink traversal |
-| Output names | v1 exposes caller \`output_name\` | It is a filename stem only, not a path |
-| Artifact paths | v1 artifact \`relative_path\` already rejects absolute/\`..\` traversal | Preserve this existing contract |
+| Output names | v1 exposes caller `output_name` | It is a filename stem only, not a path |
+| Artifact paths | v1 artifact `relative_path` already rejects absolute/`..` traversal | Preserve this existing contract |
 | Child processes | Heavy stages already use process boundaries in several paths | #337 termination semantics still require worker/process-group integration |
 | Runtime downloads | Production model/runtime assets are materialized explicitly during build/preparation; runtime resolvers verify local assets | Ordinary job execution must remain offline and fail if required local assets are unavailable |
-| Logs | Current internal pipeline logs can contain full local paths and child output | \`pipeline.log\` is diagnostic, not a public caller response |
+| Logs | Current internal pipeline logs can contain full local paths and child output | `pipeline.log` is diagnostic, not a public caller response |
 | Cleanup/publication | #337 defines attempt cleanup and states that internal path existence is not publication | Limit/input rejection is a failed attempt and must not publish partial final/review artifacts |
 
 The direct PDF renderer also hashes the source and records provenance. That is
@@ -61,7 +61,7 @@ absolute paths into public metadata.
 
 ## 3. Default per-job policy
 
-\`JobSafetyPolicy\` provides concrete defaults and allows a worker/service
+`JobSafetyPolicy` provides concrete defaults and allows a worker/service
 adapter to choose stricter values for its deployment.
 
 | Limit | Default |
@@ -83,44 +83,44 @@ wire schema. Raising them is an operational/security decision and does not
 remove the worker/container hard-resource requirements below.
 
 The page/pixel limits are calculated from PyMuPDF page geometry and the actual
-requested render DPI before \`get_pixmap()\`. They bound output amplification,
+requested render DPI before `get_pixmap()`. They bound output amplification,
 but they cannot prove that a pathological PDF has cheap parsing/rendering
 complexity.
 
 ## 4. PDF preflight contract
 
-\`validate_local_pdf()\` performs the reusable preflight.
+`validate_local_pdf()` performs the reusable preflight.
 
 ### 4.1 Path/reference checks
 
-For an untrusted \`local_path\` request:
+For an untrusted `local_path` request:
 
-- URL-like references such as \`http:\`, \`https:\`, \`file:\`, or other URI
+- URL-like references such as `http:`, `https:`, `file:`, or other URI
   schemes are rejected;
-- control characters and explicit \`..\` path components are rejected;
-- the resolved file must remain inside a worker-owned \`allowed_root\`;
+- control characters and explicit `..` path components are rejected;
+- the resolved file must remain inside a worker-owned `allowed_root`;
 - symlink components are rejected by default;
 - the final opened object must be a regular file;
 - the adapter should make the staged input root immutable to the untrusted
   caller before validation begins.
 
-The implementation also uses \`O_NOFOLLOW\` where available for the final file.
+The implementation also uses `O_NOFOLLOW` where available for the final file.
 Filesystem validation alone cannot eliminate every time-of-check/time-of-use
 race if another actor can mutate parent directories concurrently. That is why
 the worker-owned, non-attacker-writable staging root is part of the contract.
 
-\`engine_ref\` is an opaque engine-owned identity. Resolving it to storage is
+`engine_ref` is an opaque engine-owned identity. Resolving it to storage is
 an adapter responsibility, but the resolved object must enter the same bounded
 PDF validation path before rendering.
 
 ### 4.2 Bounded byte read
 
 The input is opened as a regular file and read incrementally up to
-\`max_pdf_bytes\`; SHA-256 is computed during the same read. A size observed
+`max_pdf_bytes`; SHA-256 is computed during the same read. A size observed
 above the configured limit rejects the job before PyMuPDF parsing.
 
 The bounded preflight intentionally avoids the current
-\`Path.read_bytes()\`-before-validation pattern for untrusted inputs.
+`Path.read_bytes()`-before-validation pattern for untrusted inputs.
 
 ### 4.3 PDF validity and encryption
 
@@ -156,40 +156,40 @@ the security boundary.
 
 ## 5. Output names and path construction
 
-The v1 \`config_overrides.output_name\` is a caller-visible filename stem only.
+The v1 `config_overrides.output_name` is a caller-visible filename stem only.
 
 It must be non-empty and must not contain:
 
-- \`/\` or \`\\\`;
-- \`.\` or \`..\` as the whole value;
+- `/` or `\\`;
+- `.` or `..` as the whole value;
 - ASCII control characters;
 - more than 200 UTF-8 bytes.
 
-The engine/adapter chooses directories. A caller cannot use \`output_name\` to
+The engine/adapter chooses directories. A caller cannot use `output_name` to
 select an absolute path, parent directory, model path, run root, temp root, or
 other internal location.
 
 Existing v1 artifact descriptors retain their separate containment rule:
-\`relative_path\` artifacts cannot be absolute and cannot contain \`..\`.
+`relative_path` artifacts cannot be absolute and cannot contain `..`.
 
 ## 6. Structured rejection categories
 
-Preflight failures map into the existing v1 \`EngineError\` envelope.
+Preflight failures map into the existing v1 `EngineError` envelope.
 
 | Condition | Category | Code | Retryable |
 | --- | --- | --- | --- |
-| malformed/unreadable PDF | \`input\` | \`input_pdf_invalid\` | false |
-| encrypted/password PDF | \`input\` | \`input_pdf_encrypted\` | false |
-| missing/non-regular input | \`input\` | \`input_pdf_unavailable\` | false |
-| URL/traversal/symlink/outside-root input | \`input\` | \`input_reference_not_allowed\` | false |
-| invalid request page list | \`invalid_request\` | \`request_pages_invalid\` / \`request_page_out_of_range\` | false |
-| unsafe output stem | \`invalid_request\` | \`output_name_invalid\` | false |
-| input bytes exceed policy | \`resource\` | \`input_pdf_bytes_limit_exceeded\` | false |
-| document/selected pages exceed policy | \`resource\` | \`input_pdf_page_limit_exceeded\` / \`input_pdf_selected_pages_limit_exceeded\` | false |
-| render dimension exceeds policy | \`resource\` | \`input_pdf_render_dimension_limit_exceeded\` | false |
-| page pixels exceed policy | \`resource\` | \`input_pdf_render_pixels_limit_exceeded\` | false |
-| total render pixels exceed policy | \`resource\` | \`input_pdf_total_render_pixels_limit_exceeded\` | false |
-| attempt storage exceeds policy | \`resource\` | \`attempt_disk_budget_exceeded\` | false |
+| malformed/unreadable PDF | `input` | `input_pdf_invalid` | false |
+| encrypted/password PDF | `input` | `input_pdf_encrypted` | false |
+| missing/non-regular input | `input` | `input_pdf_unavailable` | false |
+| URL/traversal/symlink/outside-root input | `input` | `input_reference_not_allowed` | false |
+| invalid request page list | `invalid_request` | `request_pages_invalid` / `request_page_out_of_range` | false |
+| unsafe output stem | `invalid_request` | `output_name_invalid` | false |
+| input bytes exceed policy | `resource` | `input_pdf_bytes_limit_exceeded` | false |
+| document/selected pages exceed policy | `resource` | `input_pdf_page_limit_exceeded` / `input_pdf_selected_pages_limit_exceeded` | false |
+| render dimension exceeds policy | `resource` | `input_pdf_render_dimension_limit_exceeded` | false |
+| page pixels exceed policy | `resource` | `input_pdf_render_pixels_limit_exceeded` | false |
+| total render pixels exceed policy | `resource` | `input_pdf_total_render_pixels_limit_exceeded` | false |
+| attempt storage exceeds policy | `resource` | `attempt_disk_budget_exceeded` | false |
 
 Configured limit rejection is a non-success engine result. It must not be
 automatically retried unchanged and must not publish partial final/review
@@ -197,13 +197,13 @@ artifacts.
 
 ## 7. Public-safe versus diagnostic information
 
-\`InputSafetyError.to_engine_error()\` maps preflight failure into the v1
+`InputSafetyError.to_engine_error()` maps preflight failure into the v1
 envelope.
 
 Public responses may contain:
 
 - stable category/code;
-- bounded \`public_message\`;
+- bounded `public_message`;
 - actionability/retryability;
 - validated metadata intentionally selected for the result contract.
 
@@ -216,11 +216,11 @@ Public responses must not contain:
 - child command lines/environment;
 - model/cache locations;
 - internal run/temp directory names;
-- raw \`pipeline.log\`.
+- raw `pipeline.log`.
 
 Precise parser exceptions, internal paths, limits observed, stage names, and
-stack traces may exist in trusted diagnostics/\`debug_context\`.
-\`EngineError.to_dict()\` continues to omit \`debug_context\` by default.
+stack traces may exist in trusted diagnostics/`debug_context`.
+`EngineError.to_dict()` continues to omit `debug_context` by default.
 
 ## 8. Runtime network and model assets
 
@@ -231,7 +231,7 @@ Stage-E HOMR, Real-ESRGAN, and the production CNN assets during image
 construction/preparation. Runtime resolvers verify local materialized assets
 and fail when required assets are missing.
 
-\`src.common.model_artifacts materialize\` is an explicit operator/build action
+`src.common.model_artifacts materialize` is an explicit operator/build action
 and may use the network. A job executor must not invoke it, HOMR initialization
 downloads, arbitrary URLs, or equivalent download helpers to make a job
 succeed.
@@ -266,8 +266,8 @@ A worker that accepts arbitrary PDFs must provide, outside the pure helper:
 - outbound network disabled for ordinary jobs;
 - quarantine/deletion of the attempt workspace after hard termination.
 
-The engine exposes \`max_attempt_disk_bytes\` and
-\`enforce_attempt_disk_budget()\` as an in-process hook. A filesystem/container
+The engine exposes `max_attempt_disk_bytes` and
+`enforce_attempt_disk_budget()` as an in-process hook. A filesystem/container
 quota is still the hard backstop because a killed or compromised process cannot
 be trusted to call the hook.
 
@@ -314,7 +314,7 @@ Internal file existence is not publication.
 ## 12. Implementation status
 
 Issue #338 intentionally adds the reusable validation/policy layer without
-rewiring the current production \`run_pipeline()\` execution path.
+rewiring the current production `run_pipeline()` execution path.
 
 Implemented now:
 
@@ -323,16 +323,16 @@ Implemented now:
 - page-selection and pre-render dimension/pixel limits;
 - validated metadata without absolute paths;
 - local path/root/traversal/URL/symlink checks;
-- caller \`output_name\` filename-stem validation;
+- caller `output_name` filename-stem validation;
 - attempt-disk budget hook;
-- v1 \`EngineError\` mapping;
+- v1 `EngineError` mapping;
 - focused tests for the implemented behaviors.
 
-Still owned by a future production \`JobExecutor\`/worker adapter:
+Still owned by a future production `JobExecutor`/worker adapter:
 
 - invoking this preflight before current PDF rendering;
 - applying the disk hook throughout attempt writes;
-- mapping terminal failures into a concrete \`JobResult\`;
+- mapping terminal failures into a concrete `JobResult`;
 - hard CPU/RAM/VRAM/filesystem/container controls;
 - outbound-network policy enforcement at worker/container level;
 - process-group termination integration from #337.

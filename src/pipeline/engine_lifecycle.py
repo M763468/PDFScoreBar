@@ -8,6 +8,7 @@ pipeline adapter.
 
 from __future__ import annotations
 
+import math
 import threading
 import time
 from dataclasses import dataclass, field
@@ -70,12 +71,19 @@ class ExecutionDeadline:
 
     deadline_monotonic: float
 
+    def __post_init__(self) -> None:
+        if not math.isfinite(self.deadline_monotonic):
+            raise ValueError("deadline_monotonic must be finite")
+
     @classmethod
     def after(cls, seconds: float, *, now: Optional[float] = None) -> "ExecutionDeadline":
-        if seconds <= 0:
-            raise ValueError("deadline duration must be > 0 seconds")
+        duration = float(seconds)
+        if not math.isfinite(duration) or duration <= 0:
+            raise ValueError("deadline duration must be finite and > 0 seconds")
         start = time.monotonic() if now is None else float(now)
-        return cls(deadline_monotonic=start + float(seconds))
+        if not math.isfinite(start):
+            raise ValueError("monotonic start must be finite")
+        return cls(deadline_monotonic=start + duration)
 
     def remaining_seconds(self, *, now: Optional[float] = None) -> float:
         current = time.monotonic() if now is None else float(now)

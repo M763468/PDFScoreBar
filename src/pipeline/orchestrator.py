@@ -586,6 +586,14 @@ class PipelineOrchestrator:
                     "remove_requests": 0,
                     "unmatched_remove": 0,
                 }
+                self._telemetry_progress(
+                    "measure_construction",
+                    page_number=index,
+                    completed_units=index,
+                    total_units=len(page_ids),
+                    unit="page",
+                    detail_code="page_skipped.user_excluded",
+                )
                 continue
 
             # 1. Barline Correction
@@ -667,6 +675,15 @@ class PipelineOrchestrator:
                         numbering_pipeline.numberer.number_score(temp_score, start_number=1)
                         write_json(numbering_base, score_to_dict(temp_score))
 
+            self._telemetry_progress(
+                "measure_construction",
+                page_number=index,
+                completed_units=index,
+                total_units=len(page_ids),
+                unit="page",
+                detail_code="measure_construction.page_completed",
+            )
+
         return {
             "page_ctx": page_ctx,
             "numbering_base_paths": numbering_base_paths,
@@ -695,6 +712,7 @@ class PipelineOrchestrator:
         mmr_input_pages = []
         mmr_input_images = []
         mmr_output_paths = []
+        mmr_input_page_numbers = []
         mmr_support_data = []
 
         for page_id in page_ids:
@@ -712,10 +730,16 @@ class PipelineOrchestrator:
                 mmr_input_pages.append(load_json(numbering_base))
                 mmr_input_images.append(ctx["image_path"])
                 mmr_output_paths.append(overrides_mmr)
+                mmr_input_page_numbers.append(ctx["index"])
                 support_path = ctx.get("mmr_support")
                 mmr_support_data.append(load_json(support_path) if support_path else None)
             else:
                 logger.warning(f"MMR skipped for {page_id} because numbering_base.json is missing.")
+                self._telemetry_progress(
+                    "measure_number_recognition",
+                    page_number=ctx["index"],
+                    detail_code="mmr.skipped_missing_numbering_base",
+                )
 
         if mmr_input_pages:
             logger.info(f"Running MMR batch for {len(mmr_input_pages)} pages...")
@@ -755,6 +779,15 @@ class PipelineOrchestrator:
             )
             if device.type == "cuda":
                 torch.cuda.empty_cache()
+            for completed, page_number in enumerate(mmr_input_page_numbers, start=1):
+                self._telemetry_progress(
+                    "measure_number_recognition",
+                    page_number=page_number,
+                    completed_units=completed,
+                    total_units=len(mmr_input_page_numbers),
+                    unit="page",
+                    detail_code="mmr.page_completed",
+                )
         else:
             logger.info("No pages to process for MMR batch.")
 
@@ -818,6 +851,14 @@ class PipelineOrchestrator:
                             boundaries=page_boundaries,
                         )
                         write_json(empty_final, empty_payload)
+                self._telemetry_progress(
+                    "numbering",
+                    page_number=index,
+                    completed_units=index,
+                    total_units=len(page_ids),
+                    unit="page",
+                    detail_code="page_skipped.user_excluded",
+                )
                 continue
 
             mmr_overrides_payload = None
@@ -911,5 +952,14 @@ class PipelineOrchestrator:
                             from tools.add_measure_numbers import render_overlay
 
                             render_overlay(temp_score, image_path, overlay_path)
+
+            self._telemetry_progress(
+                "numbering",
+                page_number=index,
+                completed_units=index,
+                total_units=len(page_ids),
+                unit="page",
+                detail_code="numbering.page_completed",
+            )
 
         return numbering_final_paths

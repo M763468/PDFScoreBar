@@ -55,6 +55,10 @@ def run_pipeline(
     run_dir = Path(output_root_value) / run_id_value
     ensure_dir(run_dir)
 
+    effective_telemetry_summary_path = telemetry_summary_path
+    if sample_resources and effective_telemetry_summary_path is None:
+        effective_telemetry_summary_path = run_dir / "telemetry.json"
+
     telemetry = None
 
     # Setup File Logging for this run
@@ -86,7 +90,7 @@ def run_pipeline(
             handler.setLevel(console_log_level)
 
     try:
-        if on_progress is not None or telemetry_summary_path is not None or sample_resources:
+        if on_progress is not None or effective_telemetry_summary_path is not None or sample_resources:
             telemetry = TelemetryRecorder(
                 run_id_value,
                 on_progress=on_progress,
@@ -123,10 +127,10 @@ def run_pipeline(
     finally:
         if telemetry is not None:
             telemetry.close()
-            if telemetry_summary_path is not None:
+            if effective_telemetry_summary_path is not None:
                 try:
-                    telemetry_summary_path.parent.mkdir(parents=True, exist_ok=True)
-                    telemetry_summary_path.write_text(
+                    effective_telemetry_summary_path.parent.mkdir(parents=True, exist_ok=True)
+                    effective_telemetry_summary_path.write_text(
                         canonical_json(telemetry.summary()) + "\n",
                         encoding="utf-8",
                     )

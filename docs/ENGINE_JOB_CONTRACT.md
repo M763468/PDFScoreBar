@@ -326,8 +326,9 @@ Stable v1 categories are:
 belongs only in optional `debug_context`, which serialization excludes by
 default.
 
-Issue #337 may refine lifecycle/retry policy, but it should preserve this
-public error envelope unless the engine contract version changes.
+Issue #337 defines the lifecycle/retry policy in
+[`ENGINE_JOB_LIFECYCLE.md`](ENGINE_JOB_LIFECYCLE.md) while preserving this
+public error envelope and the v1 terminal-status values.
 
 ## 8. ProgressEvent
 

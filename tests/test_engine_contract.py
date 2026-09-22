@@ -227,6 +227,25 @@ def test_malformed_corrections_and_failure_payloads_are_rejected():
     ):
         JobResult.from_dict(result_payload)
 
+    malformed_artifact_payload = {
+        "schema": "pdfscorebar.engine.job_result.v1",
+        "contract_version": "1",
+        "job_id": "job",
+        "status": "succeeded",
+        "provenance": _provenance(),
+        "pages": {
+            "requested": 1,
+            "processed": 1,
+            "skipped": 0,
+        },
+        "artifacts": [None],
+    }
+    with pytest.raises(
+        ContractValidationError,
+        match="artifact entries must be objects",
+    ):
+        JobResult.from_dict(malformed_artifact_payload)
+
 
 def test_success_warning_review_required_and_failure_results():
     final = ArtifactDescriptor(
@@ -365,6 +384,30 @@ def test_invalid_result_shapes_are_rejected():
                 "reason_codes": ["movement_boundary_ambiguous"],
             },
         )
+
+    malformed_review_source_payload = {
+        "schema": "pdfscorebar.engine.job_result.v1",
+        "contract_version": "1",
+        "job_id": "job",
+        "status": "review_required",
+        "provenance": _provenance(),
+        "pages": {
+            "requested": 1,
+            "processed": 1,
+            "skipped": 0,
+        },
+        "artifacts": [_review_artifact().to_dict()],
+        "review": {
+            "required": True,
+            "reason_codes": ["movement_boundary_ambiguous"],
+            "correction_source_artifact_id": [],
+        },
+    }
+    with pytest.raises(
+        ContractValidationError,
+        match="review.correction_source_artifact_id must be a non-empty string",
+    ):
+        JobResult.from_dict(malformed_review_source_payload)
 
 
 def test_progress_sequence_is_monotonic_and_terminal():

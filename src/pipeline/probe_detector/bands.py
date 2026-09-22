@@ -241,7 +241,6 @@ def resolve_x_domains(
     return domains
 
 
-
 def compute_domain_ratios(
     band_img: np.ndarray,
     *,
@@ -278,6 +277,7 @@ def compute_domain_ratios(
     ratios = np.zeros(image_width, dtype=np.float64)
     ratios[x1 : x2 + 1] = local_stripe_sums[local_start:local_stop] / denominator
     return ratios, ext_x2 - ext_x1 + 1
+
 
 def scan_staff_band_from_ink(
     ink: np.ndarray,
@@ -427,9 +427,7 @@ def build_divisi_map(
             continue
 
         x_domain = (
-            x_domains[i]
-            if x_domains is not None and i < len(x_domains)
-            else (0, ink.shape[1] - 1)
+            x_domains[i] if x_domains is not None and i < len(x_domains) else (0, ink.shape[1] - 1)
         )
         ratios, _ = compute_domain_ratios(
             band_img,

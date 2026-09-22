@@ -368,7 +368,7 @@ class PipelineOrchestrator:
                     ]
                 }
                 write_json(self.intermediate_dir / "numbering_base.json", combined_base)
-    
+
             if len(numbering_final_paths) > 1 and not self.dry_run and not self.validate_only:
                 final_pages = [
                     page for path in numbering_final_paths for page in load_json(path)["pages"]
@@ -391,10 +391,10 @@ class PipelineOrchestrator:
                     },
                 }
                 write_json(self.outputs_dir / "numbering_final.json", combined_final)
-    
+
             if not self.dry_run:
                 write_json(self.run_dir / "filters.json", {"pages": page_statuses})
-    
+
                 manifest_resolved = self._resolved_for_manifest(
                     page_ids=page_ids,
                     resolved=resolved,
@@ -416,7 +416,7 @@ class PipelineOrchestrator:
                 write_json(self.run_dir / "manifest.json", manifest)
                 logger.info(f"Wrote manifest to {self.run_dir / 'manifest.json'}")
                 self._materialize_review_package_if_requested(page_ids, excluded_page_ids)
-    
+
         return self.run_dir
 
     def _materialize_review_package_if_requested(

@@ -735,10 +735,15 @@ class JobResult:
             raise ContractValidationError(
                 "review_required status requires correction_source_artifact_id"
             )
-        if source_artifact_id is not None and source_artifact_id not in artifact_ids:
-            raise ContractValidationError(
-                "review correction source must reference a result artifact"
+        if source_artifact_id is not None:
+            _require_string(
+                source_artifact_id,
+                "review.correction_source_artifact_id",
             )
+            if source_artifact_id not in artifact_ids:
+                raise ContractValidationError(
+                    "review correction source must reference a result artifact"
+                )
 
         if self.resources is not None:
             resources = _object(
@@ -804,6 +809,8 @@ class JobResult:
         warnings = payload.get("warnings", [])
         if not isinstance(artifacts, list) or not isinstance(warnings, list):
             raise ContractValidationError("artifacts and warnings must be lists")
+        if any(not isinstance(artifact, Mapping) for artifact in artifacts):
+            raise ContractValidationError("artifact entries must be objects")
         failure = payload.get("failure")
         if failure is not None and not isinstance(failure, Mapping):
             raise ContractValidationError("failure must be an object")

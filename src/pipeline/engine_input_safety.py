@@ -11,7 +11,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
 
-from src.pipeline.engine_contract import EngineError, ErrorCategory
+from src.pipeline.engine_contract import (
+    MAX_REQUEST_PAGE_ENTRIES,
+    EngineError,
+    ErrorCategory,
+)
 
 _MIB = 1024 * 1024
 _GIB = 1024 * _MIB
@@ -24,7 +28,7 @@ class JobSafetyPolicy:
 
     max_pdf_bytes: int = 256 * _MIB
     max_document_pages: int = 500
-    max_selected_pages: int = 200
+    max_selected_pages: int = MAX_REQUEST_PAGE_ENTRIES
     max_render_width_px: int = 12_000
     max_render_height_px: int = 12_000
     max_render_pixels_per_page: int = 64_000_000

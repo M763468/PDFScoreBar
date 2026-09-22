@@ -200,6 +200,8 @@ def test_malformed_corrections_and_failure_payloads_are_rejected():
             "kind": "local_path",
             "reference": "score.pdf",
         },
+        "output_profile": "final",
+        "config_overrides": {},
         "corrections": [],
     }
     with pytest.raises(
@@ -218,6 +220,12 @@ def test_malformed_corrections_and_failure_payloads_are_rejected():
             "requested": 1,
             "processed": 1,
             "skipped": 0,
+        },
+        "artifacts": [],
+        "warnings": [],
+        "review": {
+            "required": False,
+            "reason_codes": [],
         },
         "failure": [],
     }
@@ -239,6 +247,11 @@ def test_malformed_corrections_and_failure_payloads_are_rejected():
             "skipped": 0,
         },
         "artifacts": [None],
+        "warnings": [],
+        "review": {
+            "required": False,
+            "reason_codes": [],
+        },
     }
     with pytest.raises(
         ContractValidationError,
@@ -397,6 +410,7 @@ def test_invalid_result_shapes_are_rejected():
             "skipped": 0,
         },
         "artifacts": [_review_artifact().to_dict()],
+        "warnings": [],
         "review": {
             "required": True,
             "reason_codes": ["movement_boundary_ambiguous"],
@@ -420,10 +434,12 @@ def test_invalid_result_shapes_are_rejected():
             "processed": 1,
             "skipped": 0,
         },
+        "artifacts": [],
+        "warnings": [],
     }
     with pytest.raises(
         ContractValidationError,
-        match="review.required is required",
+        match="job result missing required field\(s\): review",
     ):
         JobResult.from_dict(missing_review_payload)
 
@@ -484,6 +500,109 @@ def test_invalid_result_shapes_are_rejected():
                 "correction_source_artifact_id": source_without_coordinate_space.artifact_id,
             },
         )
+
+
+def test_required_wire_fields_and_malformed_scalar_types_are_rejected():
+    request_payload = {
+        "schema": "pdfscorebar.engine.job_request.v1",
+        "contract_version": "1",
+        "input": {
+            "kind": "local_path",
+            "reference": "score.pdf",
+        },
+        "output_profile": "final",
+        "config_overrides": {},
+    }
+    for missing in ("output_profile", "config_overrides"):
+        malformed = dict(request_payload)
+        del malformed[missing]
+        with pytest.raises(
+            ContractValidationError,
+            match="job request missing required field",
+        ):
+            JobRequest.from_dict(malformed)
+
+    malformed_config = dict(request_payload)
+    malformed_config["config_overrides"] = None
+    with pytest.raises(
+        ContractValidationError,
+        match="config_overrides must be an object",
+    ):
+        JobRequest.from_dict(malformed_config)
+
+    malformed_kind = {
+        **request_payload,
+        "input": {
+            "kind": [],
+            "reference": "score.pdf",
+        },
+    }
+    with pytest.raises(
+        ContractValidationError,
+        match="input.kind must be a non-empty string",
+    ):
+        JobRequest.from_dict(malformed_kind)
+
+    correction_set = CorrectionSet(
+        correction_set_id="set-1",
+        source={
+            "source_job_id": "job-1",
+            "source_artifact_id": "review.manual_correction_input",
+            "source_artifact_sha256": SHA_A,
+            "source_contract_version": "1",
+            "coordinate_space": COORDINATE_SPACE,
+        },
+        records=(),
+    )
+    serialized_corrections = correction_set.to_dict()
+    for missing in ("records", "reprocess_mode", "conflict_policy"):
+        malformed = dict(serialized_corrections)
+        del malformed[missing]
+        with pytest.raises(
+            ContractValidationError,
+            match="correction set missing required field",
+        ):
+            CorrectionSet.from_dict(malformed)
+
+    with pytest.raises(
+        ContractValidationError,
+        match="coordinate_space missing required field",
+    ):
+        ArtifactDescriptor(
+            artifact_id="review.manual_correction_input",
+            role="review.manual_correction_input",
+            location_kind="relative_path",
+            reference="review/manual_correction_input.json",
+            media_type="application/json",
+            sha256=SHA_A,
+            coordinate_space={},
+        )
+
+    terminal_event = ProgressEvent(
+        "job-1",
+        0,
+        ProgressKind.JOB_SUCCEEDED,
+        "job",
+    ).to_dict()
+    terminal_event["terminal"] = 1
+    with pytest.raises(
+        ContractValidationError,
+        match="progress.terminal must be boolean",
+    ):
+        ProgressEvent.from_dict(terminal_event)
+
+    malformed_stage = ProgressEvent(
+        "job-1",
+        0,
+        ProgressKind.JOB_STARTED,
+        "job",
+    ).to_dict()
+    malformed_stage["stage_id"] = []
+    with pytest.raises(
+        ContractValidationError,
+        match="progress.stage_id must be a non-empty string",
+    ):
+        ProgressEvent.from_dict(malformed_stage)
 
 
 def test_progress_sequence_is_monotonic_and_terminal():

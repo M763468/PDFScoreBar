@@ -133,15 +133,17 @@ The existing GUI then exposes a **Movement boundary** correction type. A
 movement boundary always means **immediately before the target system**: the
 first measure of that system starts the new movement. Reviewers can click
 anywhere inside a system to target it; direct 1-based system entry remains
-available. The canvas draws distinct markers for unresolved candidates,
-existing resolved boundaries, reviewed/manual boundaries, and reviewed
-no-boundary locations, and highlights the complete selected system rather than
-presenting a selected measure as the boundary target. The Pages list also
-annotates pages with unresolved candidates and saved movement review actions so
-a whole-score review does not require opening pages blindly. Reviewers may accept or
-reject explicit candidates and may add a boundary at a non-candidate system. A
-missing candidate is not a reviewed negative and cannot be saved as
-`no_boundary`.
+available. Movement decisions are persisted immediately when the reviewer
+confirms **boundary** or **no boundary**; there is no separate Save step for
+this correction type. The movement UI hides unrelated Select/Draw/Save controls
+and only shows clearing controls when an existing saved decision is selected.
+The canvas uses user-facing states: **Suggested boundary**, **Confirmed
+boundary**, **Checked: no boundary**, and **Boundary used by current
+numbering**. The Pages list also annotates pages with pending suggestions and
+saved movement decisions so a whole-score review does not require opening pages
+blindly. **Finish movement review** is enabled only after all suggested
+boundaries have been reviewed; it creates the boundary input for the next
+numbering run and does not change the score currently displayed in the GUI.
 
 ### Manual GUI quick guide
 
@@ -171,14 +173,18 @@ The selected object and an active draft remain visible even when their normal ov
 hidden. Selected objects are highlighted separately so reviewers can reduce overlay density without
 losing the active target.
 
-Typical correction flow:
+Typical correction flow for MMR/barline/measure corrections:
 
 1. Choose a correction type and operation in the left sidebar.
-2. Use **Select object**, or **Draw barline box** when adding a barline.
+2. Select the target object; barline editing additionally exposes Select/Draw modes.
 3. Use **Stage change** and inspect the staged state in both the canvas and **Current page results**.
-4. Use **Unstage selected** / **Clear staged override** if the staged edit is not wanted.
-5. Use **Save corrections** to write all staged correction types for the current page as
-   package-local correction JSON under `review/corrections/`.
+4. Use the clear/unstage action if the staged edit is not wanted.
+5. Use **Save corrections** to persist those staged correction types.
+
+Movement-boundary review is deliberately simpler: select a system, confirm
+**boundary** or **no boundary**, and the decision is saved immediately. After
+all suggested boundaries are reviewed, use **Finish movement review** to create
+the boundary data consumed by the next numbering run.
 
 Visible Page / System / Measure identifiers are **1-based** for reviewer readability. Persisted
 correction targets keep the existing internal **0-based** indices; the GUI must not translate the
@@ -206,8 +212,9 @@ review/corrections/
   barline_construction_overrides.json
 ```
 
-These are GUI staging files. When movement evidence is attached, the GUI also
-uses:
+These are GUI staging files. Movement-boundary decisions do not use the
+stage-then-save interaction; each decision is saved immediately. When movement
+evidence is attached, the GUI also uses:
 
 ```text
 review/
@@ -218,10 +225,11 @@ review/
 ```
 
 `movement_boundaries_review.json` retains explicit accepted/rejected/manual
-review actions. **Export movement boundaries** writes
+review actions. **Finish movement review** writes
 `movement_boundaries.json` as `issue268.movement_boundaries.v1`, containing
-only reviewed boundaries. Rejected candidates stay in the review record and are
-not numbering inputs.
+only confirmed boundaries. Checked no-boundary locations stay in the review
+record and are not numbering inputs. This finalization step does not rerun
+numbering or alter the score shown in the review GUI.
 
 The pipeline consumes canonical:
 

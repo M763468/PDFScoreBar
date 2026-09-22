@@ -694,7 +694,7 @@ def run(args: argparse.Namespace) -> Path:
 
     provenance: dict[str, Any] = {
         "schema_version": "issue43.probe_x_domain_full68_ab.v2",
-        "source_commit": _git_head(),
+        "source_commit": _source_commit(),
         "config": str(config_path),
         "config_sha256": _sha256(config_path),
         "homr_profile": config["detection"]["homr_profile"],

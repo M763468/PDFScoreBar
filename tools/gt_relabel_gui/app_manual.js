@@ -6,6 +6,7 @@ let measures = [];
 let baseMmrOverrides = [];
 let barlines = [];
 let movementEvidenceCandidates = [];
+let allMovementEvidenceCandidates = [];
 let resolvedMovementBoundaries = [];
 let selectedMovementSystem = null;
 let correctionsByType = {
@@ -680,7 +681,33 @@ function renderPageList() {
     const div = document.createElement("div");
     div.className = "list-item" + (index === currentIndex ? " active" : "");
     const pageNumber = displayPageNumberFor(page, index);
-    div.textContent = `Page ${pageNumber}${page.name ? ` · ${page.name}` : ""}`;
+    const pageCoordinate =
+      page.page !== undefined
+        ? page.page
+        : page.page_index !== undefined
+          ? page.page_index
+          : index;
+    const pageCandidates = allMovementEvidenceCandidates.filter(
+      (candidate) =>
+        String(candidate.page) === String(pageCoordinate) &&
+        candidate.state === "ambiguous_review_required"
+    );
+    const reviews = (correctionsByType.movement_boundary || []).filter(
+      (item) => String(item.page) === String(pageCoordinate)
+    );
+    const reviewedSystems = new Set(reviews.map((item) => String(item.system)));
+    const unresolvedCandidates = pageCandidates.filter(
+      (candidate) => !reviewedSystems.has(String(candidate.system))
+    ).length;
+    const reviewedBoundaries = reviews.filter((item) => item.op === "boundary").length;
+    const reviewedNoBoundary = reviews.filter((item) => item.op === "no_boundary").length;
+    const movementParts = [];
+    if (unresolvedCandidates) movementParts.push(`candidate ${unresolvedCandidates}`);
+    if (reviewedBoundaries) movementParts.push(`boundary ${reviewedBoundaries}`);
+    if (reviewedNoBoundary) movementParts.push(`no-boundary ${reviewedNoBoundary}`);
+    const movementSummary = movementParts.length ? ` · movement: ${movementParts.join(", ")}` : "";
+    div.textContent =
+      `Page ${pageNumber}${page.name ? ` · ${page.name}` : ""}${movementSummary}`;
     div.onclick = () => switchPage(index);
     pageList.appendChild(div);
   });
@@ -1094,16 +1121,18 @@ function barlinePathFromPage(page) {
 
 function loadMovementEvidence(path) {
   movementEvidenceCandidates = [];
+  allMovementEvidenceCandidates = [];
   if (!path) return Promise.resolve();
   return fetchJSON(`/api/template?path=${encodeURIComponent(path)}`)
     .then((data) => {
-      const candidates = Array.isArray(data.candidates) ? data.candidates : [];
-      movementEvidenceCandidates = candidates.filter(
+      allMovementEvidenceCandidates = Array.isArray(data.candidates) ? data.candidates : [];
+      movementEvidenceCandidates = allMovementEvidenceCandidates.filter(
         (candidate) => String(candidate.page) === String(pageValue())
       );
     })
     .catch((error) => {
       movementEvidenceCandidates = [];
+      allMovementEvidenceCandidates = [];
       saveStatus.textContent = `Movement evidence load failed: ${error.message}`;
     });
 }

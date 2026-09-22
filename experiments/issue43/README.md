@@ -25,7 +25,7 @@ Production defaults are not changed by this experiment.
 From the Issue #43 worktree:
 
 ```bash
-experiments/issue43/run_full68_x_domain_ab.sh issue43_full68_01
+bash experiments/issue43/run_full68_x_domain_ab.sh issue43_full68_01
 ```
 
 The maintained-HOMR/SR upstream runs once. Both downstream variants reuse the

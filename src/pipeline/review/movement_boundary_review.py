@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import shutil
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Mapping
@@ -348,15 +347,19 @@ def attach_movement_boundary_evidence(
         )
 
     destination = package_root / DEFAULT_EVIDENCE_FILENAME
+    normalized_evidence_bytes = (
+        json.dumps(evidence, indent=2, ensure_ascii=False) + "\n"
+    ).encode("utf-8")
     same_file = evidence_file == destination.resolve()
     if destination.exists() and not overwrite:
-        if destination.read_bytes() != evidence_bytes:
+        existing_bytes = destination.read_bytes()
+        if existing_bytes not in {evidence_bytes, normalized_evidence_bytes}:
             raise FileExistsError(
                 f"Refusing to overwrite attached movement evidence: {destination}"
             )
-    elif not same_file:
+    if overwrite or not destination.exists() or destination.read_bytes() != normalized_evidence_bytes:
         destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(evidence_file, destination)
+        destination.write_bytes(normalized_evidence_bytes)
 
     if "movement_boundary_evidence" in handoff and not overwrite:
         existing = handoff.get("movement_boundary_evidence")

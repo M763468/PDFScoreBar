@@ -1,5 +1,8 @@
+import tempfile
 import unittest
+from pathlib import Path
 
+import cv2
 import numpy as np
 
 from src.measure_numbering.numbering import MeasureNumberer
@@ -109,13 +112,20 @@ class TestNumberingOverrides(unittest.TestCase):
             spacing = 10 * scale
             mask = np.zeros((spacing * 8, 200 * scale), dtype=np.uint8)
             x1 = 10 * scale
-            x2 = 40 * scale  # 15% page width: extractable, but below the old 25% gate.
+            x2 = 40 * scale  # 15% page width: extractable, below page-wide 25% gate.
             for row in [spacing, spacing * 2, spacing * 3, spacing * 4, spacing * 5]:
                 mask[row : row + scale, x1:x2] = 255
             return mask
 
-        self.assertAlmostEqual(extractor._estimate_unit_size(make_mask(1), scale_y=1.0), 10.0)
-        self.assertAlmostEqual(extractor._estimate_unit_size(make_mask(2), scale_y=1.0), 20.0)
+        for scale, expected_unit in ((1, 10.0), (2, 20.0)):
+            mask = make_mask(scale)
+            self.assertIsNone(extractor._estimate_unit_size(mask, scale_y=1.0))
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                path = Path(tmp_dir) / "short_staff.png"
+                self.assertTrue(cv2.imwrite(str(path), mask))
+                staves = extractor.extract(path, (mask.shape[1], mask.shape[0]))
+            self.assertEqual(len(staves), 1)
+            self.assertAlmostEqual(staves[0].unit_size, expected_unit)
 
     def test_numbering_geometry_thresholds_are_resolution_independent(self):
         def make_system(scale: int) -> System:

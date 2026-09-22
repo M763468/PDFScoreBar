@@ -22,6 +22,8 @@ let selectedItemIndex = null;
 let draftBBox = null;
 let mode = "select";
 let dirtyTypes = new Set();
+let movementSaveChain = Promise.resolve();
+let movementLastSaveError = null;
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -982,7 +984,6 @@ function addCorrectionItem() {
     );
     pageItems.push(item);
     replaceItemsForCurrentPage(type, pageItems);
-    setDirty(type, true);
     selectedItemIndex = pageItems.length - 1;
     renderItems();
     updateSelectionMeta();
@@ -992,7 +993,7 @@ function addCorrectionItem() {
         ? `Saving confirmed boundary BEFORE System ${visibleSystem}...`
         : `Saving checked no-boundary decision BEFORE System ${visibleSystem}...`;
 
-    saveCorrectionType(type)
+    queueMovementSave(page, pageItems)
       .then(() => {
         renderItems();
         renderPageList();
@@ -1000,8 +1001,8 @@ function addCorrectionItem() {
         draw();
         saveStatus.textContent =
           item.op === "boundary"
-            ? `Saved: boundary confirmed BEFORE System ${visibleSystem}.`
-            : `Saved: checked no boundary BEFORE System ${visibleSystem}.`;
+            ? `Saved automatically: boundary confirmed BEFORE System ${visibleSystem}.`
+            : `Saved automatically: checked no boundary BEFORE System ${visibleSystem}.`;
       })
       .catch((error) => {
         saveStatus.textContent = `Movement decision save failed: ${error.message}`;
@@ -1060,20 +1061,21 @@ function deleteSelectedItem() {
   pageItems.splice(selectedItemIndex, 1);
   selectedItemIndex = null;
   replaceItemsForCurrentPage(type, pageItems);
-  setDirty(type, true);
+  if (type !== "movement_boundary") setDirty(type, true);
   updateSelectionMeta();
   renderItems();
   draw();
 
   if (type === "movement_boundary") {
+    const page = pageValue();
     saveStatus.textContent = "Removing saved movement decision...";
-    saveCorrectionType(type)
+    queueMovementSave(page, pageItems)
       .then(() => {
         renderItems();
         renderPageList();
         updateSelectionMeta();
         draw();
-        saveStatus.textContent = "Saved: movement decision cleared.";
+        saveStatus.textContent = "Saved automatically: movement decision cleared.";
       })
       .catch((error) => {
         saveStatus.textContent = `Movement decision save failed: ${error.message}`;
@@ -1249,26 +1251,50 @@ function loadPage() {
   });
 }
 
-function saveCorrectionType(type) {
-  if (!currentPage) return Promise.resolve(null);
+function saveCorrectionPage(type, page, items) {
   const payload = {
-    page: pageValue(),
+    page,
     correction_type: type,
-    items: itemsForCurrentPage(type),
+    items,
   };
   return fetch("/api/save", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
-  })
-    .then((response) => {
-      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-      return response.json();
-    })
-    .then((data) => {
-      setDirty(type, false);
-      return { type, output: data.output };
-    });
+  }).then((response) => {
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+    return response.json();
+  });
+}
+
+function saveCorrectionType(type) {
+  if (!currentPage) return Promise.resolve(null);
+  return saveCorrectionPage(type, pageValue(), itemsForCurrentPage(type)).then((data) => {
+    setDirty(type, false);
+    return { type, output: data.output };
+  });
+}
+
+function queueMovementSave(page, items) {
+  const capturedItems = items.map((item) => ({ ...item }));
+  const operation = movementSaveChain.then(() =>
+    saveCorrectionPage("movement_boundary", page, capturedItems)
+  );
+  movementSaveChain = operation.then(
+    () => {
+      movementLastSaveError = null;
+    },
+    (error) => {
+      movementLastSaveError = error;
+    }
+  );
+  return operation;
+}
+
+function waitForMovementSaves() {
+  return movementSaveChain.then(() => {
+    if (movementLastSaveError) throw movementLastSaveError;
+  });
 }
 
 function saveCorrectionTypes(types) {
@@ -1312,12 +1338,14 @@ function blurActiveControl() {
 
 function switchPage(nextIndex) {
   if (nextIndex === currentIndex) return;
-  saveCorrectionTypes(Array.from(dirtyTypes))
+  waitForMovementSaves()
+    .then(() => saveCorrectionTypes(Array.from(dirtyTypes)))
     .then(() => {
       currentIndex = nextIndex;
       loadPage();
     })
     .catch((error) => {
+      saveStatus.textContent = `Page change blocked because a save failed: ${error.message}`;
       console.error("Page switch aborted due to save failure:", error);
     });
 }
@@ -1348,11 +1376,14 @@ saveBtn.onclick = (event) => {
 exportMovementBtn.onclick = (event) => {
   event.currentTarget.blur();
   releaseTransientInteraction();
-  fetch("/api/export_movement_boundaries", {
+  waitForMovementSaves()
+    .then(() =>
+      fetch("/api/export_movement_boundaries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: "{}",
       })
+    )
     .then((response) => {
       if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
       return response.json();

@@ -79,12 +79,12 @@ echo "=== candidate replay ==="
   --output-root "$candidate_run"
 
 echo
-echo "=== exact semantic numbering-geometry comparison ==="
+echo "=== physical-measure count comparison with semantic diagnostics ==="
 "$python_bin" "$repo_root/tools/issue267/compare_numbering_count_signatures.py" \
   --baseline-run "$baseline_run" \
   --candidate-run "$candidate_run" \
   --output "$compare_report"
 
 echo
-echo "PASS: #267 semantic numbering geometry and physical-measure counts are identical."
+echo "PASS: #267 physical-measure counts are identical; inspect semantic_match separately for geometry diagnostics."
 echo "report: $compare_report"

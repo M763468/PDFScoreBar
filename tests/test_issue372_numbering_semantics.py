@@ -1,5 +1,7 @@
 """Focused tests for Issue #372 final-numbering semantic comparator."""
 
+from pathlib import Path
+
 from experiments.issue372.compare_final_numbering_semantics import compare
 
 

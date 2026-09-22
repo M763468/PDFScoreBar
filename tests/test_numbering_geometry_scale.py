@@ -136,6 +136,4 @@ def test_staff_unit_size_is_not_serialized_into_numbering_json() -> None:
 
     payload = score_to_dict(score)
 
-    assert payload["pages"][0]["empty_systems"][0]["staves"] == [
-        {"bbox": [0, 10, 100, 50]}
-    ]
+    assert payload["pages"][0]["empty_systems"][0]["staves"] == [{"bbox": [0, 10, 100, 50]}]

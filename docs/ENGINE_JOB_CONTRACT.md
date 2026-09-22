@@ -72,7 +72,7 @@ Required semantics:
 v1 intentionally allows only these configuration overrides:
 
 - `pages`: one-based page numbers requested by the caller;
-- `output_name`: caller-visible output stem.
+- `output_name`: caller-visible output stem. It is a filename stem, not a caller-selected path; Issue #338 defines the concrete safety validation.
 
 Arbitrary repository config keys, model implementation paths, output roots,
 worker settings, and internal run-directory paths are not part of the external
@@ -328,7 +328,10 @@ default.
 
 Issue #337 defines the lifecycle/retry policy in
 [`ENGINE_JOB_LIFECYCLE.md`](ENGINE_JOB_LIFECYCLE.md) while preserving this
-public error envelope and the v1 terminal-status values.
+public error envelope and the v1 terminal-status values. Issue #338 defines
+untrusted-PDF/path/network/resource safety in
+[`ENGINE_INPUT_SAFETY.md`](ENGINE_INPUT_SAFETY.md) without adding a second
+error envelope or changing the v1 terminal statuses.
 
 ## 8. ProgressEvent
 

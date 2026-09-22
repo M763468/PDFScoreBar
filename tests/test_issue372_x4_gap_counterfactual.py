@@ -105,3 +105,38 @@ def test_missing_model_fails_before_output_root_is_created(
         counterfactual.run(args)
 
     assert not output_root.exists()
+
+
+def test_legacy_evaluation_args_do_not_mix_staff_units_with_fixed_xdist(
+    tmp_path,
+) -> None:
+    args = counterfactual._evaluation_args(
+        results_dir=tmp_path / "results",
+        output_dir=tmp_path / "out",
+        gt_root=tmp_path / "gt",
+        image_root=tmp_path / "images",
+        staff_units=tmp_path / "staff_units.json",
+        threshold=0.4965248107910156,
+        legacy=True,
+    )
+
+    assert args.legacy_fixed_12px is True
+    assert args.staff_units_json is None
+
+
+def test_current_evaluation_args_keep_staff_units(
+    tmp_path,
+) -> None:
+    staff_units = tmp_path / "staff_units.json"
+    args = counterfactual._evaluation_args(
+        results_dir=tmp_path / "results",
+        output_dir=tmp_path / "out",
+        gt_root=tmp_path / "gt",
+        image_root=tmp_path / "images",
+        staff_units=staff_units,
+        threshold=0.4965248107910156,
+        legacy=False,
+    )
+
+    assert args.legacy_fixed_12px is False
+    assert args.staff_units_json == str(staff_units)

@@ -131,6 +131,45 @@ def test_export_covers_accepted_rejected_and_manual_boundary(tmp_path: Path) -> 
     assert load_movement_boundary_payload(output_path) == resolved
 
 
+def test_export_rejects_unresolved_review_required_candidate(tmp_path: Path) -> None:
+    evidence_path = tmp_path / "movement_boundary_evidence.json"
+    review_path = tmp_path / "corrections" / "movement_boundaries_review.json"
+    output_path = tmp_path / "corrections" / "movement_boundaries.json"
+    evidence_path.write_text(
+        json.dumps(_evidence(_candidate(0, 1), _candidate(0, 2)), indent=2) + "\n",
+        encoding="utf-8",
+    )
+    review_path.parent.mkdir(parents=True, exist_ok=True)
+    review_path.write_text(
+        json.dumps(
+            _review(
+                {
+                    "op": "boundary",
+                    "page": 0,
+                    "system": 1,
+                    "reason": "confirmed",
+                }
+            ),
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        MovementBoundaryReviewError,
+        match=r"review-required candidates remain unresolved: \(page=0, system=2\)",
+    ):
+        write_resolved_movement_boundaries(
+            evidence_path=evidence_path,
+            review_path=review_path,
+            output_path=output_path,
+            evidence_artifact="movement_boundary_evidence.json",
+        )
+
+    assert not output_path.exists()
+
+
 def test_candidate_absence_cannot_be_reviewed_as_no_boundary() -> None:
     evidence = _evidence(_candidate(0, 1))
 

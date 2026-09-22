@@ -6,6 +6,8 @@ let measures = [];
 let baseMmrOverrides = [];
 let barlines = [];
 let movementEvidenceCandidates = [];
+let resolvedMovementBoundaries = [];
+let selectedMovementSystem = null;
 let correctionsByType = {
   mmr_measure_span: [],
   barline_construction: [],
@@ -45,8 +47,11 @@ const typeSelect = document.getElementById("typeSelect");
 const opSelect = document.getElementById("opSelect");
 const measureSpanRow = document.getElementById("measureSpanRow");
 const measureSpanInput = document.getElementById("measureSpanInput");
+const movementBoundaryPanel = document.getElementById("movementBoundaryPanel");
 const movementSystemRow = document.getElementById("movementSystemRow");
 const movementSystemInput = document.getElementById("movementSystemInput");
+const movementTargetMeta = document.getElementById("movementTargetMeta");
+const movementPageStatus = document.getElementById("movementPageStatus");
 const reasonInput = document.getElementById("reasonInput");
 
 const showMeasuresToggle = document.getElementById("showMeasuresToggle");
@@ -54,6 +59,7 @@ const showBarlinesToggle = document.getElementById("showBarlinesToggle");
 const showLabelsToggle = document.getElementById("showLabelsToggle");
 const showBaseToggle = document.getElementById("showBaseToggle");
 const showManualToggle = document.getElementById("showManualToggle");
+const showMovementToggle = document.getElementById("showMovementToggle");
 
 let image = new Image();
 let viewScale = 1.0;
@@ -72,6 +78,10 @@ const COLOR_SUPPRESSED = "#ff3b30";
 const COLOR_BARLINE = "#46c46b";
 const COLOR_SELECTED = "#ff8a00";
 const COLOR_DRAFT = "#ff3b30";
+const COLOR_MOVEMENT_CANDIDATE = "#ffd60a";
+const COLOR_MOVEMENT_BOUNDARY = "#b35cff";
+const COLOR_MOVEMENT_EXISTING = "#00c2ff";
+const COLOR_MOVEMENT_REJECTED = "#9aa0a6";
 const HIT_PADDING = 7;
 
 const OPS = {
@@ -85,8 +95,8 @@ const OPS = {
   ],
   measure_construction: [["force_measure", "Force measure interval"]],
   movement_boundary: [
-    ["boundary", "Mark movement boundary"],
-    ["no_boundary", "Mark no boundary"],
+    ["boundary", "Set boundary BEFORE target system"],
+    ["no_boundary", "Reject candidate (no boundary here)"],
   ],
 };
 
@@ -185,7 +195,17 @@ function updateControlState() {
   const op = currentOp();
   measureSpanRow.style.display =
     type === "mmr_measure_span" && op === "set_measure_span" ? "flex" : "none";
-  movementSystemRow.style.display = type === "movement_boundary" ? "flex" : "none";
+  movementBoundaryPanel.style.display = type === "movement_boundary" ? "" : "none";
+  if (type === "movement_boundary" && selectedMeasure && selectedMovementSystem === null) {
+    selectedMovementSystem = selectedMeasure.system;
+    movementSystemInput.value = String(displayIndex(selectedMovementSystem));
+  }
+  if (type === "movement_boundary") {
+    addItemBtn.textContent =
+      op === "boundary" ? "Stage boundary before system" : "Stage candidate rejection";
+  } else {
+    addItemBtn.textContent = "Stage change";
+  }
   drawModeBtn.disabled = !(type === "barline_construction");
   if (drawModeBtn.disabled && mode === "draw") setMode("select");
   renderItems();
@@ -261,6 +281,166 @@ function drawLabel(box, text, color) {
   ctx.fillText(text, p.x + 3, p.y - 3);
 }
 
+function systemBounds(system) {
+  const systemMeasures = measures.filter(
+    (measure) => String(measure.system) === String(system)
+  );
+  if (!systemMeasures.length) return null;
+  return systemMeasures.reduce(
+    (bounds, measure) => [
+      Math.min(bounds[0], measure.bbox[0]),
+      Math.min(bounds[1], measure.bbox[1]),
+      Math.max(bounds[2], measure.bbox[2]),
+      Math.max(bounds[3], measure.bbox[3]),
+    ],
+    [
+      systemMeasures[0].bbox[0],
+      systemMeasures[0].bbox[1],
+      systemMeasures[0].bbox[2],
+      systemMeasures[0].bbox[3],
+    ]
+  );
+}
+
+function movementReviewAt(system) {
+  return itemsForCurrentPage("movement_boundary").find(
+    (item) => String(item.system) === String(system)
+  );
+}
+
+function resolvedMovementAt(system) {
+  return resolvedMovementBoundaries.find(
+    (item) =>
+      String(item.page) === String(pageValue()) &&
+      String(item.system) === String(system)
+  );
+}
+
+function movementStateAt(system) {
+  const review = movementReviewAt(system);
+  const candidate = movementCandidateAt(system);
+  const resolved = resolvedMovementAt(system);
+  if (review) {
+    if (review.op === "boundary") {
+      return {
+        kind: candidate ? "reviewed_candidate_boundary" : "manual_boundary",
+        label: candidate ? "Reviewed boundary" : "Manual boundary",
+        color: COLOR_MOVEMENT_BOUNDARY,
+        dashed: false,
+      };
+    }
+    return {
+      kind: "reviewed_no_boundary",
+      label: "Reviewed: no boundary",
+      color: COLOR_MOVEMENT_REJECTED,
+      dashed: true,
+    };
+  }
+  if (resolved) {
+    return {
+      kind: "existing_resolved_boundary",
+      label: "Existing resolved boundary",
+      color: COLOR_MOVEMENT_EXISTING,
+      dashed: false,
+    };
+  }
+  if (candidate) {
+    return {
+      kind: "unresolved_candidate",
+      label: "Unresolved candidate",
+      color: COLOR_MOVEMENT_CANDIDATE,
+      dashed: true,
+    };
+  }
+  return null;
+}
+
+function movementSystemsOnPage() {
+  const systems = new Set();
+  movementEvidenceCandidates.forEach((candidate) => {
+    if (
+      String(candidate.page) === String(pageValue()) &&
+      candidate.state === "ambiguous_review_required"
+    ) {
+      systems.add(String(candidate.system));
+    }
+  });
+  itemsForCurrentPage("movement_boundary").forEach((item) => systems.add(String(item.system)));
+  resolvedMovementBoundaries.forEach((item) => {
+    if (String(item.page) === String(pageValue())) systems.add(String(item.system));
+  });
+  return Array.from(systems)
+    .map((value) => parseInt(value, 10))
+    .filter((value) => Number.isFinite(value))
+    .sort((a, b) => a - b);
+}
+
+function drawMovementMarker(system, state, selected = false) {
+  const bounds = systemBounds(system);
+  if (!bounds) return;
+  const [x1, y1, x2, y2] = bounds;
+  const lineY = Math.max(2, y1 - 8);
+  const p1 = imgToCanvas({ x: Math.max(0, x1 - 8), y: lineY });
+  const p2 = imgToCanvas({ x: Math.min(image.width, x2 + 8), y: lineY });
+  ctx.save();
+  ctx.strokeStyle = selected ? COLOR_SELECTED : state.color;
+  ctx.lineWidth = selected ? 4 : 3;
+  ctx.setLineDash(state.dashed && !selected ? [8, 5] : []);
+  ctx.beginPath();
+  ctx.moveTo(p1.x, p1.y);
+  ctx.lineTo(p2.x, p2.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  const labelBox = [x1, lineY, x2, y2];
+  drawLabel(
+    labelBox,
+    `${selected ? "TARGET" : state.label}: before S${displayIndex(system)}`,
+    selected ? COLOR_SELECTED : state.color
+  );
+  if (selected) drawBox(bounds, COLOR_SELECTED, 3, true);
+  ctx.restore();
+}
+
+function updateMovementTargetMeta() {
+  if (!movementTargetMeta || !movementPageStatus) return;
+  if (currentType() !== "movement_boundary") return;
+
+  const system = selectedMovementSystem;
+  if (system === null || !Number.isFinite(system)) {
+    movementTargetMeta.textContent =
+      "No target system selected. Click any measure in the intended system or enter its system number.";
+  } else {
+    const bounds = systemBounds(system);
+    const state = movementStateAt(system);
+    const clicked =
+      selectedMeasure && String(selectedMeasure.system) === String(system)
+        ? ` Selected via Measure ${displayIndex(selectedMeasure.measure)}; that measure is only used to identify the system.`
+        : "";
+    const status = state ? ` Current state: ${state.label}.` : " Current state: no candidate or resolved boundary.";
+    movementTargetMeta.textContent = bounds
+      ? `Target: System ${displayIndex(system)}. A boundary will be placed BEFORE this system.${clicked}${status}`
+      : `System ${displayIndex(system)} is not present on this page.`;
+  }
+
+  const systems = movementSystemsOnPage();
+  const counts = {
+    existing: 0,
+    reviewed: 0,
+    rejected: 0,
+    candidates: 0,
+  };
+  systems.forEach((systemIndex) => {
+    const state = movementStateAt(systemIndex);
+    if (!state) return;
+    if (state.kind === "existing_resolved_boundary") counts.existing += 1;
+    else if (state.kind === "reviewed_no_boundary") counts.rejected += 1;
+    else if (state.kind === "unresolved_candidate") counts.candidates += 1;
+    else counts.reviewed += 1;
+  });
+  movementPageStatus.textContent =
+    `This page: existing resolved boundaries ${counts.existing} · reviewed/staged boundaries ${counts.reviewed} · reviewed no-boundary ${counts.rejected} · unresolved candidates ${counts.candidates}`;
+}
+
 function draw() {
   if (!image.complete) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -327,7 +507,30 @@ function draw() {
     });
   }
 
-  if (selectedMeasure) {
+  if (showMovementToggle.checked) {
+    movementSystemsOnPage().forEach((system) => {
+      const state = movementStateAt(system);
+      if (state) drawMovementMarker(system, state, false);
+    });
+  }
+
+  if (
+    currentType() === "movement_boundary" &&
+    selectedMovementSystem !== null &&
+    systemBounds(selectedMovementSystem)
+  ) {
+    drawMovementMarker(
+      selectedMovementSystem,
+      movementStateAt(selectedMovementSystem) || {
+        label: "Target",
+        color: COLOR_SELECTED,
+        dashed: false,
+      },
+      true
+    );
+  }
+
+  if (selectedMeasure && currentType() !== "movement_boundary") {
     drawBox(selectedMeasure.bbox, COLOR_SELECTED, 3, true);
     drawLabel(selectedMeasure.bbox, measureDisplayLabel(selectedMeasure), COLOR_SELECTED);
   }
@@ -432,7 +635,15 @@ function effectiveMmrState(measure, baseMap = null, manualMap = null) {
 
 function updateSelectionMeta() {
   const parts = [];
-  if (selectedMeasure) {
+  if (currentType() === "movement_boundary" && selectedMovementSystem !== null) {
+    const source =
+      selectedMeasure && String(selectedMeasure.system) === String(selectedMovementSystem)
+        ? ` (clicked Measure ${displayIndex(selectedMeasure.measure)})`
+        : "";
+    parts.push(
+      `Movement target: Page ${displayPageNumber()} / System ${displayIndex(selectedMovementSystem)}${source} — boundary position is BEFORE this system`
+    );
+  } else if (selectedMeasure) {
     const state = effectiveMmrState(selectedMeasure);
     parts.push(
       `Page ${displayPageNumber()} / System ${displayIndex(selectedMeasure.system)} / Measure ${displayIndex(selectedMeasure.measure)} | base=${state.baseSpan} effective=${state.effectiveSpan}`
@@ -449,6 +660,7 @@ function updateSelectionMeta() {
     if (item) parts.push(manualItemSummary(item, selectedItemIndex, currentType()));
   }
   selectionMeta.textContent = parts.length ? parts.join(" | ") : "No selection";
+  updateMovementTargetMeta();
 }
 
 function renderPageList() {
@@ -523,32 +735,50 @@ function movementEvidenceText(candidate) {
 function renderMovementRows() {
   const items = itemsForCurrentPage("movement_boundary");
   const bySystem = new Map(items.map((item, index) => [String(item.system), { item, index }]));
-  const candidates = movementEvidenceCandidates.filter(
-    (candidate) =>
-      String(candidate.page) === String(pageValue()) &&
-      candidate.state === "ambiguous_review_required"
-  );
-  const candidateSystems = new Set(candidates.map((candidate) => String(candidate.system)));
+  const systems = movementSystemsOnPage();
 
-  candidates.forEach((candidate) => {
-    const review = bySystem.get(String(candidate.system));
+  const guide = document.createElement("div");
+  guide.className = "small";
+  guide.textContent =
+    "All locations below mean BEFORE System N. Click a row to target that system on the score.";
+  itemList.appendChild(guide);
+
+  systems.forEach((system) => {
+    const review = bySystem.get(String(system));
+    const candidate = movementCandidateAt(system);
+    const resolved = resolvedMovementAt(system);
+    const state = movementStateAt(system);
+    if (!state) return;
+
     const div = document.createElement("div");
     div.className =
-      "list-item" + (review && review.index === selectedItemIndex ? " active" : "");
-    const status = review
-      ? review.item.op === "boundary"
-        ? "reviewed movement boundary"
-        : "reviewed no-boundary"
-      : "unresolved candidate";
+      "list-item" +
+      (selectedMovementSystem !== null && String(selectedMovementSystem) === String(system)
+        ? " active"
+        : "");
+
     const title = document.createElement("div");
-    title.textContent = `Candidate · System ${displayIndex(candidate.system)} · ${status}`;
+    let suffix = state.label;
+    if (review && review.op === "boundary" && candidate) suffix = "reviewed candidate → boundary";
+    else if (review && review.op === "boundary") suffix = "manual boundary";
+    else if (review && review.op === "no_boundary") suffix = "candidate rejected / no boundary";
+    else if (resolved) suffix = `existing resolved boundary · reset=${resolved.reset_number ?? 1}`;
+    else if (candidate) suffix = "unresolved candidate";
+    title.textContent = `BEFORE System ${displayIndex(system)} · ${suffix}`;
     div.appendChild(title);
-    const raw = document.createElement("div");
-    raw.className = "small";
-    raw.textContent = `Raw evidence: ${movementEvidenceText(candidate)}`;
-    div.appendChild(raw);
+
+    if (candidate) {
+      const raw = document.createElement("div");
+      raw.className = "small";
+      raw.textContent = `Raw evidence: ${movementEvidenceText(candidate)}`;
+      div.appendChild(raw);
+    }
+
     div.onclick = () => {
-      movementSystemInput.value = String(displayIndex(candidate.system));
+      selectedMovementSystem = system;
+      selectedMeasure = null;
+      selectedBarline = null;
+      movementSystemInput.value = String(displayIndex(system));
       selectedItemIndex = review ? review.index : null;
       updateSelectionMeta();
       renderItems();
@@ -557,27 +787,11 @@ function renderMovementRows() {
     itemList.appendChild(div);
   });
 
-  items.forEach((item, index) => {
-    if (candidateSystems.has(String(item.system))) return;
-    const div = document.createElement("div");
-    div.className = "list-item" + (index === selectedItemIndex ? " active" : "");
-    div.textContent =
-      `Manual boundary · System ${displayIndex(item.system)} · reviewed movement boundary`;
-    div.onclick = () => {
-      movementSystemInput.value = String(displayIndex(item.system));
-      selectedItemIndex = index;
-      updateSelectionMeta();
-      renderItems();
-      draw();
-    };
-    itemList.appendChild(div);
-  });
-
-  if (!candidates.length && !items.length) {
+  if (!systems.length) {
     const div = document.createElement("div");
     div.className = "small";
     div.textContent =
-      "No movement candidates on this page. Candidate absence is not a no-boundary; enter a system to add a boundary manually.";
+      "No movement candidate or resolved boundary is recorded on this page. Click a measure in a system to add a boundary manually before that system.";
     itemList.appendChild(div);
   }
 }
@@ -678,6 +892,13 @@ function addCorrectionItem() {
       return;
     }
     const system = visibleSystem - 1;
+    selectedMovementSystem = system;
+    if (!systemBounds(system)) {
+      saveStatus.textContent = `System ${visibleSystem} is not present on this page.`;
+      updateSelectionMeta();
+      draw();
+      return;
+    }
     const candidate = movementCandidateAt(system);
     if (op === "no_boundary" && !candidate) {
       saveStatus.textContent =
@@ -706,7 +927,10 @@ function addCorrectionItem() {
     renderItems();
     updateSelectionMeta();
     draw();
-    saveStatus.textContent = `Staged: ${operationLabel(type, item.op)} at System ${visibleSystem}.`;
+    saveStatus.textContent =
+      item.op === "boundary"
+        ? `Staged boundary BEFORE System ${visibleSystem}.`
+        : `Staged candidate rejection: no boundary before System ${visibleSystem}.`;
     return;
   }
 
@@ -788,8 +1012,20 @@ function loadCorrections() {
 
 function loadNumbering(path) {
   measures = [];
+  resolvedMovementBoundaries = [];
   if (!path) return Promise.resolve();
   return fetchJSON(`/api/template?path=${encodeURIComponent(path)}`).then((data) => {
+    const metadata = data && data.numbering_metadata;
+    const recordedBoundaries =
+      metadata && Array.isArray(metadata.movement_boundaries)
+        ? metadata.movement_boundaries
+        : [];
+    resolvedMovementBoundaries = recordedBoundaries.filter(
+      (boundary) =>
+        boundary &&
+        boundary.system !== undefined &&
+        (boundary.page === undefined || String(boundary.page) === String(pageValue()))
+    );
     const pageData = (data.pages && data.pages[0]) || data;
     const systems = pageData.systems || [];
     systems.forEach((system, systemIndex) => {
@@ -883,6 +1119,7 @@ function selectMeasure(measure) {
   const state = effectiveMmrState(measure);
   measureSpanInput.value = String(state.effectiveSpan || state.baseSpan || 1);
   if (currentType() === "movement_boundary") {
+    selectedMovementSystem = measure.system;
     movementSystemInput.value = String(displayIndex(measure.system));
   }
   updateSelectionMeta();
@@ -895,6 +1132,7 @@ function loadPage() {
   selectedMeasure = null;
   selectedBarline = null;
   selectedItemIndex = null;
+  selectedMovementSystem = null;
   draftBBox = null;
   saveStatus.textContent = "";
   exportMovementBtn.style.display = currentPage.movement_boundary_evidence ? "" : "none";
@@ -1016,6 +1254,17 @@ helpBtn.onclick = () => {
 
 typeSelect.onchange = updateOps;
 opSelect.onchange = updateControlState;
+movementSystemInput.oninput = () => {
+  const visibleSystem = parseInt(movementSystemInput.value, 10);
+  selectedMovementSystem =
+    Number.isFinite(visibleSystem) && visibleSystem >= 1 ? visibleSystem - 1 : null;
+  selectedMeasure = null;
+  selectedBarline = null;
+  selectedItemIndex = null;
+  updateSelectionMeta();
+  renderItems();
+  draw();
+};
 
 [
   showMeasuresToggle,
@@ -1023,6 +1272,7 @@ opSelect.onchange = updateControlState;
   showLabelsToggle,
   showBaseToggle,
   showManualToggle,
+  showMovementToggle,
 ].forEach((toggle) => {
   toggle.onchange = draw;
 });

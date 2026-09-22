@@ -264,7 +264,8 @@ def test_attach_movement_evidence_keeps_review_package_local(tmp_path: Path) -> 
     assert updated["movement_boundary_evidence"] == "movement_boundary_evidence.json"
     assert updated["movement_boundary_resolved_output"] == "corrections/movement_boundaries.json"
     attached = review_root / "movement_boundary_evidence.json"
-    assert attached.read_bytes() == source_evidence.read_bytes()
+    attached_payload = json.loads(attached.read_text(encoding="utf-8"))
+    assert attached_payload == _evidence(_candidate(0, 1))
 
 
 def test_attach_rejects_candidate_page_absent_from_review_package(tmp_path: Path) -> None:
@@ -292,3 +293,46 @@ def test_attach_rejects_candidate_page_absent_from_review_package(tmp_path: Path
             handoff_path=handoff_path,
             evidence_path=evidence_path,
         )
+
+
+def test_attach_persists_synthesized_candidate_ids(tmp_path: Path) -> None:
+    review_root = tmp_path / "review"
+    handoff_path = review_root / "manual_correction_input.json"
+    handoff_path.parent.mkdir(parents=True)
+    handoff_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "kind": "manual_correction_input",
+                "pages": [
+                    {
+                        "page_id": "page_001",
+                        "page_number": 1,
+                        "source_image": "pages/page_001/source.png",
+                        "numbering_final": "pages/page_001/numbering_final.json",
+                    }
+                ],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    evidence = _evidence(_candidate(0, 0))
+    evidence["candidates"][0].pop("id")
+    source_evidence = tmp_path / "producer" / "evidence.json"
+    source_evidence.parent.mkdir()
+    source_evidence.write_text(
+        json.dumps(evidence, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    attach_movement_boundary_evidence(
+        handoff_path=handoff_path,
+        evidence_path=source_evidence,
+    )
+
+    attached_payload = json.loads(
+        (review_root / "movement_boundary_evidence.json").read_text(encoding="utf-8")
+    )
+    assert attached_payload["candidates"][0]["id"] == "page:0:system:0"

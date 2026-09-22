@@ -7,7 +7,11 @@ from src.pipeline.engine_contract import (
     ProgressKind,
     validate_progress_sequence,
 )
-from src.pipeline.engine_telemetry import TELEMETRY_SUMMARY_SCHEMA, TelemetryRecorder
+from src.pipeline.engine_telemetry import (
+    TELEMETRY_SUMMARY_SCHEMA,
+    ResourceSampler,
+    TelemetryRecorder,
+)
 
 
 def _provenance() -> dict[str, str]:
@@ -138,3 +142,42 @@ def test_summary_resources_are_job_result_compatible_without_sampling():
     assert summary["stage_spans"][0]["stage_id"] == "artifact_materialization"
     assert result.resources["wall_time_seconds"] >= 0
     assert result.resources["progress_sink_error_count"] == 0
+
+
+
+def test_stage_auto_starts_job_stream():
+    events = []
+    recorder = TelemetryRecorder("job-1", on_progress=events.append)
+
+    with recorder.stage("input_validation"):
+        pass
+    recorder.terminal(JobStatus.SUCCEEDED)
+
+    assert events[0].kind is ProgressKind.JOB_STARTED
+    validate_progress_sequence(events)
+
+
+def test_gpu_process_memory_query_filters_to_process_tree(monkeypatch):
+    def fake_check_output(command, **kwargs):
+        assert "--query-compute-apps=pid,used_gpu_memory" in command
+        return "100, 256\n200, 128\n"
+
+    monkeypatch.setattr("src.pipeline.engine_telemetry.subprocess.check_output", fake_check_output)
+
+    memory_bytes, seen = ResourceSampler._query_gpu_process_memory({100})
+
+    assert seen is True
+    assert memory_bytes == 256 * 1024 * 1024
+
+
+def test_gpu_utilization_query_uses_peak_visible_device(monkeypatch):
+    def fake_check_output(command, **kwargs):
+        assert "--query-gpu=utilization.gpu" in command
+        return "10\n87\n"
+
+    monkeypatch.setattr("src.pipeline.engine_telemetry.subprocess.check_output", fake_check_output)
+
+    utilization, seen = ResourceSampler._query_device_gpu_utilization()
+
+    assert seen is True
+    assert utilization == 87.0

@@ -152,6 +152,16 @@ class PipelineOrchestrator:
         from src.pdf_to_images import render_pdf_to_memory
         from src.pipeline.utils.images import get_image_cache
 
+        def report_render_progress(completed: int, _source_page_index: int) -> None:
+            self._telemetry_progress(
+                "pdf_render",
+                page_number=completed,
+                completed_units=completed,
+                total_units=len(pages),
+                unit="page",
+                detail_code="pdf_render.page_prepared",
+            )
+
         rendered = render_pdf_to_memory(
             pdf_path,
             dpi=float(pdf_opts.get("dpi", 300.0)),
@@ -161,6 +171,7 @@ class PipelineOrchestrator:
             target_height=pdf_opts.get("target_height"),
             interpolation=str(pdf_opts.get("interpolation", "area")),
             source_bytes=source_bytes,
+            on_page_rendered=report_render_progress if self.telemetry is not None else None,
         )
 
         cache = get_image_cache()
@@ -169,7 +180,7 @@ class PipelineOrchestrator:
 
         persist_to_disk = self._should_persist_pdf_images(pdf_opts)
 
-        for completed, (page_index, image) in enumerate(rendered, start=1):
+        for page_index, image in rendered:
             stem = f"{prefix}_{page_index + 1:03d}"
 
             # Cache only if we are NOT persisting to disk (to save memory)
@@ -182,15 +193,6 @@ class PipelineOrchestrator:
 
                 destination = output_dir / f"{stem}.{fmt}"
                 save_image(destination, image, fmt=fmt)
-
-            self._telemetry_progress(
-                "pdf_render",
-                page_number=completed,
-                completed_units=completed,
-                total_units=len(rendered),
-                unit="page",
-                detail_code="pdf_render.page_prepared",
-            )
 
         return source_sha256, pages
 

@@ -48,7 +48,8 @@ class ResourceSampler:
         self._previous_cpu_seconds: float | None = None
         self._sample_count = 0
         self._psutil_available: bool | None = None
-        self._nvidia_smi_seen = False
+        self._gpu_memory_seen = False
+        self._gpu_utilization_seen = False
         self._peak_process_tree_rss_bytes = 0
         self._peak_process_tree_cpu_percent = 0.0
         self._peak_process_count = 0
@@ -65,7 +66,7 @@ class ResourceSampler:
         if not self._started:
             return
         self._stop.set()
-        self._thread.join(timeout=max(3.0, self.interval_seconds * 2.0 + 2.5))
+        self._thread.join(timeout=max(5.0, self.interval_seconds + 4.5))
 
     def _sample_process_tree(self, sample_time: float) -> tuple[set[int], int, float | None]:
         process_ids = {os.getpid()}
@@ -182,7 +183,8 @@ class ResourceSampler:
             self._peak_device_gpu_utilization_percent,
             gpu_utilization,
         )
-        self._nvidia_smi_seen = self._nvidia_smi_seen or gpu_memory_seen or gpu_utilization_seen
+        self._gpu_memory_seen = self._gpu_memory_seen or gpu_memory_seen
+        self._gpu_utilization_seen = self._gpu_utilization_seen or gpu_utilization_seen
 
     def _run(self) -> None:
         while not self._stop.is_set():
@@ -204,14 +206,11 @@ class ResourceSampler:
                     "peak_process_count": self._peak_process_count,
                 }
             )
-        if self._nvidia_smi_seen:
-            result.update(
-                {
-                    "peak_gpu_memory_bytes": self._peak_gpu_memory_bytes,
-                    "peak_device_gpu_utilization_percent": (
-                        self._peak_device_gpu_utilization_percent
-                    ),
-                }
+        if self._gpu_memory_seen:
+            result["peak_gpu_memory_bytes"] = self._peak_gpu_memory_bytes
+        if self._gpu_utilization_seen:
+            result["peak_device_gpu_utilization_percent"] = (
+                self._peak_device_gpu_utilization_percent
             )
         return result
 

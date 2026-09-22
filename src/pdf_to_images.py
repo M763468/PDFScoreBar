@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import Callable, List, Optional, Sequence
 
 import cv2
 import fitz  # PyMuPDF
@@ -165,6 +165,7 @@ def render_pdf_to_memory(
     target_height: Optional[int] = None,
     interpolation: str = "area",
     source_bytes: bytes | None = None,
+    on_page_rendered: Callable[[int, int], None] | None = None,
 ) -> List[tuple[int, np.ndarray]]:
     if source_bytes is None and not pdf_path.exists():
         raise FileNotFoundError(f"PDF not found: {pdf_path}")
@@ -188,6 +189,8 @@ def render_pdf_to_memory(
                 interpolation=interpolation,
             )
             rendered.append((page_index, image))
+            if on_page_rendered is not None:
+                on_page_rendered(len(rendered), page_index)
     return rendered
 
 

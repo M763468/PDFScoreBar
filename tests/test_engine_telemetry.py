@@ -183,6 +183,56 @@ def test_gpu_utilization_query_uses_peak_visible_device(monkeypatch):
     assert utilization == 87.0
 
 
+def test_resource_summary_omits_gpu_memory_when_only_utilization_is_measurable(monkeypatch):
+    sampler = ResourceSampler()
+    monkeypatch.setattr(
+        sampler,
+        "_sample_process_tree",
+        lambda sample_time: ({100}, 0, None),
+    )
+    monkeypatch.setattr(
+        sampler,
+        "_query_gpu_process_memory",
+        lambda process_ids: (0, False),
+    )
+    monkeypatch.setattr(
+        sampler,
+        "_query_device_gpu_utilization",
+        lambda: (42.0, True),
+    )
+
+    sampler._sample_once()
+    summary = sampler.summary()
+
+    assert "peak_gpu_memory_bytes" not in summary
+    assert summary["peak_device_gpu_utilization_percent"] == 42.0
+
+
+def test_resource_summary_omits_gpu_utilization_when_only_memory_is_measurable(monkeypatch):
+    sampler = ResourceSampler()
+    monkeypatch.setattr(
+        sampler,
+        "_sample_process_tree",
+        lambda sample_time: ({100}, 0, None),
+    )
+    monkeypatch.setattr(
+        sampler,
+        "_query_gpu_process_memory",
+        lambda process_ids: (256 * 1024 * 1024, True),
+    )
+    monkeypatch.setattr(
+        sampler,
+        "_query_device_gpu_utilization",
+        lambda: (0.0, False),
+    )
+
+    sampler._sample_once()
+    summary = sampler.summary()
+
+    assert summary["peak_gpu_memory_bytes"] == 256 * 1024 * 1024
+    assert "peak_device_gpu_utilization_percent" not in summary
+
+
 @pytest.mark.parametrize(
     "kwargs",
     [

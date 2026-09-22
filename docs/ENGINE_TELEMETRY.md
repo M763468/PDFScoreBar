@@ -89,7 +89,7 @@ Current config-first codes include:
 
 | Code | Meaning |
 | --- | --- |
-| pdf_render.page_prepared | rendered page is prepared for the next pipeline work |
+| pdf_render.page_prepared | one rendered/resized in-memory page is prepared; emitted immediately after that page render completes |
 | detection.source_generation_and_scoring | coarse dense/standard detection span |
 | measure_construction.page_completed | one page completed base construction/numbering work |
 | mmr.page_completed | one prepared page completed MMR batch output |

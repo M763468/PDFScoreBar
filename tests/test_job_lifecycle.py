@@ -41,9 +41,15 @@ def test_execution_deadline_is_monotonic_and_reports_remaining_time():
     assert deadline.remaining_seconds(now=111.0) == 0.0
 
 
-def test_execution_deadline_rejects_non_positive_duration():
-    with pytest.raises(ValueError, match="must be > 0"):
+def test_execution_deadline_rejects_invalid_duration_and_clock_values():
+    with pytest.raises(ValueError, match="finite and > 0"):
         ExecutionDeadline.after(0.0, now=100.0)
+    with pytest.raises(ValueError, match="finite and > 0"):
+        ExecutionDeadline.after(float("inf"), now=100.0)
+    with pytest.raises(ValueError, match="monotonic start must be finite"):
+        ExecutionDeadline.after(1.0, now=float("nan"))
+    with pytest.raises(ValueError, match="deadline_monotonic must be finite"):
+        ExecutionDeadline(deadline_monotonic=float("nan"))
 
 
 def test_execution_control_raises_deadline_exceeded_with_stage():

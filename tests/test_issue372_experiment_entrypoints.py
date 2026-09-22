@@ -9,49 +9,43 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_compare_retained_detector_contracts_direct_entrypoint_bootstraps_repo(
-    tmp_path: Path,
-) -> None:
-    script = ROOT / "experiments/issue372/compare_retained_detector_contracts.py"
+def _assert_direct_help_succeeds(script: Path, *, cwd: Path) -> None:
     result = subprocess.run(
         [sys.executable, str(script), "--help"],
-        cwd=tmp_path,
+        cwd=cwd,
         capture_output=True,
         text=True,
         timeout=30,
         check=False,
     )
     assert result.returncode == 0, result.stderr
-    assert "Issue #372 retained-only detector regression comparison" in result.stdout
+    assert f"usage: {script.name}" in result.stdout
+    assert "Traceback" not in result.stderr
+    assert "ModuleNotFoundError" not in result.stderr
+
+
+def test_compare_retained_detector_contracts_direct_entrypoint_bootstraps_repo(
+    tmp_path: Path,
+) -> None:
+    _assert_direct_help_succeeds(
+        ROOT / "experiments/issue372/compare_retained_detector_contracts.py",
+        cwd=tmp_path,
+    )
 
 
 def test_materialize_issue43_outputs_direct_entrypoint(
     tmp_path: Path,
 ) -> None:
-    script = ROOT / "experiments/issue372/materialize_issue43_production_outputs.py"
-    result = subprocess.run(
-        [sys.executable, str(script), "--help"],
+    _assert_direct_help_succeeds(
+        ROOT / "experiments/issue372/materialize_issue43_production_outputs.py",
         cwd=tmp_path,
-        capture_output=True,
-        text=True,
-        timeout=30,
-        check=False,
     )
-    assert result.returncode == 0, result.stderr
-    assert "Materialize Issue #43 saved production detector JSONs" in result.stdout
 
 
 def test_trace_retained_candidate_losses_direct_entrypoint_bootstraps_repo(
     tmp_path: Path,
 ) -> None:
-    script = ROOT / "experiments/issue372/trace_retained_candidate_losses.py"
-    result = subprocess.run(
-        [sys.executable, str(script), "--help"],
+    _assert_direct_help_succeeds(
+        ROOT / "experiments/issue372/trace_retained_candidate_losses.py",
         cwd=tmp_path,
-        capture_output=True,
-        text=True,
-        timeout=30,
-        check=False,
     )
-    assert result.returncode == 0, result.stderr
-    assert "Trace Issue #372 newly missing GTs across retained candidate stages" in result.stdout

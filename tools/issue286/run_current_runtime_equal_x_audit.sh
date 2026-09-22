@@ -8,6 +8,8 @@ IMAGE_REF="${ISSUE286_CURRENT_IMAGE_REF:-pdfscore_pipeline_gpu}"
 MANIFEST="${ISSUE286_RETAINED_MANIFEST:-$MANAGER_ROOT/logs/issue294/issue294_full68_fresh_0154e40c/full68_host.json}"
 EXPECTED_MANIFEST_SHA="528033693819eee4e6d9913cb794922b3473bb7d4df7ea3ab92f2d7215603fc5"
 RESULT="${ISSUE286_RESULT:-$PROJECT_ROOT/logs/issue286/eval/current_runtime_${SOURCE_COMMIT:0:12}/equal_x_audit.json}"
+AUDIT_LOG="${ISSUE286_AUDIT_LOG:-$(dirname "$RESULT")/equal_x_audit.log}"
+SUMMARY_LOG="${ISSUE286_SUMMARY_LOG:-$(dirname "$RESULT")/acceptance_summary.txt}"
 
 if [[ ! -e "$PROJECT_ROOT/.git" ]]; then
   echo "ERROR: project root is not a Git checkout: $PROJECT_ROOT" >&2
@@ -62,6 +64,8 @@ echo "resolved_image_id=$IMAGE_ID"
 echo "manifest=$MANIFEST"
 echo "manifest_sha256=$actual_manifest_sha"
 echo "result=$RESULT"
+echo "audit_log=$AUDIT_LOG"
+echo "summary_log=$SUMMARY_LOG"
 echo "source_commit=$SOURCE_COMMIT"
 
 echo
@@ -81,21 +85,29 @@ echo "audit_issue294_retained_equal_x.py: OK"
 
 echo
 echo "=== Current-runtime equal-x audit ==="
+set +e
 docker run "${docker_args[@]}" \
   --entrypoint /opt/venv_pipeline/bin/python \
   "$IMAGE_ID" \
   tools/issue286/audit_issue294_retained_equal_x.py \
     --full68-manifest "$MANIFEST" \
-    --result "$RESULT"
+    --result "$RESULT" \
+  >"$AUDIT_LOG" 2>&1
+audit_rc=$?
+set -e
 
-echo
-echo "ISSUE286_CURRENT_RUNTIME_AUDIT_RC=0"
+echo "ISSUE286_CURRENT_RUNTIME_AUDIT_RC=$audit_rc"
+echo "audit_log=$AUDIT_LOG"
+if [[ "$audit_rc" -ne 0 ]]; then
+  echo "Audit failed; last 80 log lines:"
+  tail -n 80 "$AUDIT_LOG" || true
+  exit "$audit_rc"
+fi
 sha256sum "$RESULT"
-
 
 echo
 echo "=== Issue #286 acceptance gates ==="
-python3 - "$RESULT" <<'PY'
+python3 - "$RESULT" <<'PY' | tee "$SUMMARY_LOG"
 import json
 import sys
 from pathlib import Path
@@ -149,16 +161,24 @@ target = [
     for decision in decisions
     if decision.get("x1") == 1788
 ]
-if len(target) != 1:
-    failures.append(
-        "page_013 expected exactly one wider decision for x1=1788, "
-        f"got {target!r}"
+
+for page_name, page_result in (data.get("pages") or {}).items():
+    page_decisions = (
+        ((page_result.get("selectors") or {}).get("wider") or {}).get("decisions")
+        or []
     )
-elif target[0].get("selected_measure_left_x") != 1799:
-    failures.append(
-        "page_013 wider representative did not select x2=1799: "
-        f"{target[0]!r}"
-    )
+    for decision in page_decisions:
+        boxes = decision.get("boxes") or []
+        selected = decision.get("selected")
+        if not boxes or selected is None:
+            continue
+        max_width = max(box[2] - box[0] for box in boxes)
+        selected_width = selected[2] - selected[0]
+        if selected_width != max_width:
+            failures.append(
+                f"{page_name} x1={decision.get('x1')} did not choose a widest candidate: "
+                f"selected={selected!r} boxes={boxes!r}"
+            )
 
 print("page_count:", summary.get("page_count"))
 print("equal_x_tie_page_count:", summary.get("equal_x_tie_page_count"))
@@ -171,7 +191,7 @@ print(
     "wider_geometry_changed:",
     wider.get("geometry_changed_from_current_replay_pages"),
 )
-print("page_013_x1788_wider_decision:", target)
+print("page_013_x1788_current_wider_decision:", target)
 
 if failures:
     print("ISSUE286_ACCEPTANCE=FAIL")

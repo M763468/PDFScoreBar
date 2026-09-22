@@ -68,7 +68,7 @@ adapter to choose stricter values for its deployment.
 | --- | ---: |
 | PDF bytes | 256 MiB |
 | document pages | 500 |
-| selected pages | 200 |
+| selected pages / raw requested-page entries | 200 |
 | rendered width per page | 12,000 px |
 | rendered height per page | 12,000 px |
 | rendered pixels per page | 64,000,000 |
@@ -139,6 +139,7 @@ and secret-handling contract.
 Before rendering page content, preflight validates:
 
 - total document page count;
+- raw requested-page entry count before deduplication;
 - selected page count;
 - selected page indices;
 - predicted width and height at the requested DPI;

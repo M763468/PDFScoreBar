@@ -108,6 +108,30 @@ def _object(value: Any, field_name: str) -> dict[str, Any]:
     return {str(key): item for key, item in value.items()}
 
 
+def _require_fields(
+    payload: Mapping[str, Any],
+    field_names: Iterable[str],
+    object_name: str,
+) -> None:
+    missing = [field_name for field_name in field_names if field_name not in payload]
+    if missing:
+        raise ContractValidationError(
+            f"{object_name} missing required field(s): {', '.join(missing)}"
+        )
+
+
+def _coordinate_space(value: Any, field_name: str) -> dict[str, Any]:
+    coordinate_space = _object(value, field_name)
+    required_fields = ("type", "origin", "units", "version")
+    _require_fields(coordinate_space, required_fields, field_name)
+    for key in required_fields:
+        coordinate_space[key] = _require_string(
+            coordinate_space[key],
+            f"{field_name}.{key}",
+        )
+    return coordinate_space
+
+
 def _sha256(value: Any, field_name: str, *, required: bool = False) -> str | None:
     if value is None and not required:
         return None
@@ -187,7 +211,7 @@ class ArtifactDescriptor:
             object.__setattr__(
                 self,
                 "coordinate_space",
-                _object(self.coordinate_space, "coordinate_space"),
+                _coordinate_space(self.coordinate_space, "coordinate_space"),
             )
         if self.location_kind == "relative_path":
             path = PurePosixPath(self.reference)
@@ -338,7 +362,7 @@ class CorrectionSet:
             "correction.source.source_artifact_sha256",
             required=True,
         )
-        source["coordinate_space"] = _object(
+        source["coordinate_space"] = _coordinate_space(
             source.get("coordinate_space"),
             "correction.source.coordinate_space",
         )
@@ -401,26 +425,31 @@ class CorrectionSet:
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "CorrectionSet":
         _envelope(payload, SCHEMA_CORRECTIONS)
-        records = payload.get("records", [])
+        _require_fields(
+            payload,
+            (
+                "correction_set_id",
+                "source",
+                "records",
+                "reprocess_mode",
+                "conflict_policy",
+            ),
+            "correction set",
+        )
+        records = payload["records"]
         if not isinstance(records, list):
             raise ContractValidationError("correction records must be a list")
         return cls(
-            correction_set_id=payload.get("correction_set_id"),
+            correction_set_id=payload["correction_set_id"],
             source=_object(
-                payload.get("source"),
+                payload["source"],
                 "correction.source",
             ),
             records=tuple(records),
             schema=payload["schema"],
             contract_version=payload["contract_version"],
-            reprocess_mode=payload.get(
-                "reprocess_mode",
-                "reuse_compatible_artifacts",
-            ),
-            conflict_policy=payload.get(
-                "conflict_policy",
-                "reject",
-            ),
+            reprocess_mode=payload["reprocess_mode"],
+            conflict_policy=payload["conflict_policy"],
         )
 
 
@@ -520,14 +549,19 @@ class JobRequest:
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "JobRequest":
         _envelope(payload, SCHEMA_REQUEST)
+        _require_fields(
+            payload,
+            ("input", "output_profile", "config_overrides"),
+            "job request",
+        )
         corrections = payload.get("corrections")
         if corrections is not None and not isinstance(corrections, Mapping):
             raise ContractValidationError("corrections must be an object")
         return cls(
-            input=_object(payload.get("input"), "input"),
-            output_profile=payload.get("output_profile", "final"),
+            input=_object(payload["input"], "input"),
+            output_profile=payload["output_profile"],
             config_overrides=_object(
-                payload.get("config_overrides"),
+                payload["config_overrides"],
                 "config_overrides",
             ),
             corrections=(
@@ -602,12 +636,17 @@ class EngineError:
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "EngineError":
         _envelope(payload, SCHEMA_ERROR)
+        _require_fields(
+            payload,
+            ("category", "code", "public_message", "user_actionable", "retryable"),
+            "engine error",
+        )
         return cls(
-            category=payload.get("category"),
-            code=payload.get("code"),
-            public_message=payload.get("public_message"),
-            user_actionable=payload.get("user_actionable"),
-            retryable=payload.get("retryable"),
+            category=payload["category"],
+            code=payload["code"],
+            public_message=payload["public_message"],
+            user_actionable=payload["user_actionable"],
+            retryable=payload["retryable"],
             debug_context=_object(
                 payload.get("debug_context"),
                 "error.debug_context",
@@ -760,6 +799,10 @@ class JobResult:
                 raise ContractValidationError(
                     "review correction source artifact requires coordinate_space"
                 )
+            _coordinate_space(
+                source_artifact.coordinate_space,
+                "review correction source artifact coordinate_space",
+            )
 
         if self.resources is not None:
             resources = _object(
@@ -821,8 +864,13 @@ class JobResult:
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "JobResult":
         _envelope(payload, SCHEMA_RESULT)
-        artifacts = payload.get("artifacts", [])
-        warnings = payload.get("warnings", [])
+        _require_fields(
+            payload,
+            ("job_id", "status", "provenance", "pages", "artifacts", "warnings", "review"),
+            "job result",
+        )
+        artifacts = payload["artifacts"]
+        warnings = payload["warnings"]
         if not isinstance(artifacts, list) or not isinstance(warnings, list):
             raise ContractValidationError("artifacts and warnings must be lists")
         if any(not isinstance(artifact, Mapping) for artifact in artifacts):
@@ -831,20 +879,20 @@ class JobResult:
         if failure is not None and not isinstance(failure, Mapping):
             raise ContractValidationError("failure must be an object")
         return cls(
-            job_id=payload.get("job_id"),
-            status=payload.get("status"),
+            job_id=payload["job_id"],
+            status=payload["status"],
             provenance=_object(
-                payload.get("provenance"),
+                payload["provenance"],
                 "provenance",
             ),
             pages=_object(
-                payload.get("pages"),
+                payload["pages"],
                 "pages",
             ),
             artifacts=tuple(ArtifactDescriptor.from_dict(artifact) for artifact in artifacts),
             warnings=tuple(warnings),
             review=_object(
-                payload.get("review"),
+                payload["review"],
                 "review",
             ),
             failure=(EngineError.from_dict(failure) if isinstance(failure, Mapping) else None),
@@ -947,11 +995,16 @@ class ProgressEvent:
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "ProgressEvent":
         _envelope(payload, SCHEMA_PROGRESS)
+        _require_fields(
+            payload,
+            ("job_id", "sequence", "kind", "stage_id", "terminal"),
+            "progress event",
+        )
         event = cls(
-            job_id=payload.get("job_id"),
-            sequence=payload.get("sequence"),
-            kind=payload.get("kind"),
-            stage_id=payload.get("stage_id"),
+            job_id=payload["job_id"],
+            sequence=payload["sequence"],
+            kind=payload["kind"],
+            stage_id=payload["stage_id"],
             page_number=payload.get("page_number"),
             completed_units=payload.get("completed_units"),
             total_units=payload.get("total_units"),
@@ -959,7 +1012,9 @@ class ProgressEvent:
             schema=payload["schema"],
             contract_version=payload["contract_version"],
         )
-        if "terminal" in payload and payload["terminal"] != event.terminal:
+        if not isinstance(payload["terminal"], bool):
+            raise ContractValidationError("progress.terminal must be boolean")
+        if payload["terminal"] != event.terminal:
             raise ContractValidationError("progress.terminal disagrees with progress.kind")
         return event
 

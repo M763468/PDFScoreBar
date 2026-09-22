@@ -299,11 +299,7 @@ def _filesystem_unavailable(exc: OSError) -> InputSafetyError:
 def _read_bounded_file(
     path: Path, *, max_bytes: int, allow_symlinks: bool
 ) -> tuple[bytearray, int, str]:
-    flags = (
-        os.O_RDONLY
-        | getattr(os, "O_CLOEXEC", 0)
-        | getattr(os, "O_NONBLOCK", 0)
-    )
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NONBLOCK", 0)
     if not allow_symlinks:
         flags |= getattr(os, "O_NOFOLLOW", 0)
     try:

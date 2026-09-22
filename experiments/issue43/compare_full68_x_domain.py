@@ -188,7 +188,9 @@ def _generate_current_upstream_inventory(
         if result.get("homr_profile") != "maintained_original":
             raise RuntimeError(f"Unexpected HOMR profile for {score}: {result}")
 
-        inventory = score_run_root / "intermediate" / "dense_full_pipeline_inputs" / "inventory.json"
+        inventory = (
+            score_run_root / "intermediate" / "dense_full_pipeline_inputs" / "inventory.json"
+        )
         if not inventory.is_file():
             raise FileNotFoundError(inventory)
         inventory_paths.append(inventory)

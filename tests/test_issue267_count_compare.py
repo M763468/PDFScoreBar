@@ -216,7 +216,9 @@ def test_issue267_replay_resolves_accepted_retained_inputs(tmp_path: Path) -> No
 def _init_git_repo(path: Path) -> str:
     path.mkdir(parents=True)
     subprocess.run(["git", "init", "-q", str(path)], check=True)
-    subprocess.run(["git", "-C", str(path), "config", "user.email", "issue267@example.invalid"], check=True)
+    subprocess.run(
+        ["git", "-C", str(path), "config", "user.email", "issue267@example.invalid"], check=True
+    )
     subprocess.run(["git", "-C", str(path), "config", "user.name", "Issue267 Test"], check=True)
     tracked = path / "tracked.txt"
     tracked.write_text("clean\n", encoding="utf-8")

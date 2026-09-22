@@ -3,7 +3,7 @@ import unittest
 import cv2
 import numpy as np
 
-from src.pipeline.detection.config import get_probe_kwargs
+from src.pipeline.detection.config import get_probe_kwargs, get_probe_x_domain_kwargs
 from src.pipeline.probe_detector import detect_probe_scan
 from src.pipeline.probe_detector.bands import compute_domain_ratios, resolve_x_domains
 from src.pipeline.steps.probe_scan import _resolve_scale_aware_probe_kwargs
@@ -100,6 +100,23 @@ class TestProbeXDomains(unittest.TestCase):
 
         self.assertEqual(resolved["scan_x_domain_pad"], 15)
         self.assertNotIn("scan_x_domain_pad_unit_ratio", resolved)
+
+    def test_dense_route_extracts_only_x_domain_options(self):
+        kwargs = get_probe_x_domain_kwargs(
+            {
+                "scan_x_domain_mode": "staff_mask",
+                "scan_x_domain_pad_unit_ratio": 1.0,
+                "max_per_band": 80,
+            }
+        )
+
+        self.assertEqual(
+            kwargs,
+            {
+                "scan_x_domain_mode": "staff_mask",
+                "scan_x_domain_pad_unit_ratio": 1.0,
+            },
+        )
 
     def test_detection_config_forwards_x_domain_options(self):
         kwargs = get_probe_kwargs(

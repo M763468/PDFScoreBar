@@ -103,3 +103,12 @@ def test_screen_retained_x4_injection_boundaries_direct_entrypoint_bootstraps_re
         ROOT / "experiments/issue372/screen_retained_x4_injection_boundaries.py",
         cwd=tmp_path,
     )
+
+
+def test_inspect_merged_double_x4_geometry_direct_entrypoint_bootstraps_repo(
+    tmp_path: Path,
+) -> None:
+    _assert_direct_help_succeeds(
+        ROOT / "experiments/issue372/inspect_merged_double_x4_geometry.py",
+        cwd=tmp_path,
+    )

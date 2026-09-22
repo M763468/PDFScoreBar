@@ -473,6 +473,9 @@ class JobRequest:
         if "pages" in overrides:
             pages = overrides["pages"]
             if not isinstance(pages, list) or not pages:
+                raise ContractValidationError(
+                    "config_overrides.pages must be a non-empty list"
+                )
 
             overrides["pages"] = sorted(
                 {

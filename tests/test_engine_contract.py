@@ -439,7 +439,7 @@ def test_invalid_result_shapes_are_rejected():
     }
     with pytest.raises(
         ContractValidationError,
-        match="job result missing required field\(s\): review",
+        match=r"job result missing required field\(s\): review",
     ):
         JobResult.from_dict(missing_review_payload)
 

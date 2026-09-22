@@ -22,6 +22,7 @@ use the current artifacts first.
 | [`SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md) | Current placement/lifecycle rules for production, tools, experiments, and scratch scripts |
 | [`manual_correction_review_package.md`](manual_correction_review_package.md) | Current config-first end-to-end manual-correction review workflow |
 | [`ENGINE_JOB_CONTRACT.md`](ENGINE_JOB_CONTRACT.md) | **Versioned engine contract**: v1 `JobRequest` / `JobResult` / `ProgressEvent` / `EngineError` / correction schemas and compatibility rules; production executor adapter is not yet wired |
+| [`ENGINE_JOB_LIFECYCLE.md`](ENGINE_JOB_LIFECYCLE.md) | **One-job lifecycle contract**: #337 timeout/cancellation, retryability, partial-artifact publication, cleanup, and review/correction terminal semantics layered on the v1 engine contract |
 | [`ai-workflow/GRAPHIFY.md`](ai-workflow/GRAPHIFY.md) | Graphify query, refresh, retention, and staleness rules |
 
 The root [`README.md`](../README.md), [`AGENTS.md`](../AGENTS.md), and repository `Makefile`

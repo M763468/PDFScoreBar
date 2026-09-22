@@ -414,7 +414,8 @@ Focused tests cover:
 - NaN rejection.
 
 This contract-only change does not alter detector/MMR/numbering inference,
-model loading, GPU execution, or canonical evaluation outputs. Wiring a real
-pipeline executor, lifecycle/cancellation behavior, untrusted-input safety,
-richer telemetry, and container compatibility remain follow-up work under
-#337-#340.
+model loading, GPU execution, or canonical evaluation outputs. The one-job
+lifecycle/cancellation semantics are now defined by
+[`ENGINE_JOB_LIFECYCLE.md`](ENGINE_JOB_LIFECYCLE.md), while production executor
+wiring, untrusted-input safety, richer telemetry, and container compatibility
+remain follow-up implementation work under #337-#340.

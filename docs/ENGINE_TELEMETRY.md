@@ -28,6 +28,17 @@ The contract separates three layers:
 Telemetry must not change detector, HOMR, OMR-DLN, grouping, numbering, MMR, correction, or artifact
 publication semantics.
 
+### 1.1 Acceptance versus engine start
+
+The v1 engine progress stream begins when engine execution starts. Its first job-level event is
+`job_started`; there is intentionally no `job_accepted` `ProgressKind`.
+
+Request admission/acceptance belongs to the caller, worker, queue, or future service wrapper. Such a
+wrapper may expose an accepted/queued state in its own lifecycle, but it must not serialize that
+wrapper state as a new v1 engine `ProgressEvent` kind. This keeps queue admission semantics outside
+the one-job engine contract while making the accepted -> started boundary explicit for external
+adapters.
+
 ## 2. Stable ProgressEvent vocabulary
 
 Issue #339 does **not** add new v1 enum or stage-registry values. The existing closed v1 vocabulary
@@ -88,6 +99,21 @@ Current config-first codes include:
 
 Unknown detail codes are additive observations, not new terminal states.
 
+### 2.2 Warnings and skipped pages
+
+A public-safe warning that is useful while a job is running may be surfaced as a
+`stage_progress` event with a stable namespaced `detail_code` and, where meaningful, a
+`page_number`. The progress stream does not carry arbitrary diagnostic text, internal paths, or
+stack traces.
+
+Terminal warning retention remains the responsibility of `JobResult.warnings`, whose stable
+`code` / caller-safe `message` contract is defined by `ENGINE_JOB_CONTRACT.md`. A progress
+detail is therefore an observation, not a substitute for the terminal result.
+
+Skipped-page details follow the same rule. A skip such as `page_skipped.user_excluded` does not by
+itself imply failure, review-required, or success; the terminal state is determined by the same
+lifecycle/result disposition used for the job.
+
 ## 3. Ordering and terminal semantics
 
 The v1 ordering rules remain unchanged:
@@ -119,8 +145,15 @@ construct its JobResult.
 
 Per-page progress is reported only where the current execution boundary can state it truthfully.
 
-page_number is the one-based page ordinal inside the engine job's ordered page set. It is
-not a promise that the source PDF page index is contiguous; the same ordinal is used across stages.
+`page_number` is a one-based ordinal within the work set reported by that stage. It is not a
+promise that the source PDF page index is contiguous. Once the config-first runner has collected its
+ordered pipeline page set, downstream construction/MMR/numbering stages use the same page ordinal.
+
+Preprocessing can legitimately have a different work set. For example, the current config-first
+runner applies `page_limit` after PDF rendering, so `pdf_render` may report more prepared pages
+than later stages process. Callers must therefore use each event's `stage_id`,
+`completed_units`, and `total_units` together rather than treating a page ordinal as a global
+cross-stage source-page identifier.
 
 When completed_units / total_units are present:
 
@@ -261,7 +294,13 @@ geometry, grouping/MMR/numbering rules, or artifact publication rules. Default e
 construct the recorder. Opt-in coarse timing uses only monotonic host timing; optional resource
 sampling uses observational host/NVIDIA queries and does not synchronize GPU work.
 
-For those reasons a detector/full68 accuracy rerun is not a causal requirement for the contract
-change itself. If later work moves telemetry inside numerically sensitive GPU kernels, changes
-process/model lifetime, or changes scheduling, validation must be reclassified under
-docs/dev/VALIDATION_POLICY.md.
+Because the current implementation touches the pipeline/orchestrator surface, repository validation
+policy still requires the applicable pipeline smoke check even though telemetry is default-off.
+That smoke validates wiring/runtime compatibility; it is distinct from claiming a numerical
+accuracy change.
+
+A detector/full68 accuracy rerun is not a causal requirement for this observer-only contract change
+because candidate generation, routing, numerical behavior, and output semantics are unchanged.
+If later work moves telemetry inside numerically sensitive GPU kernels, changes process/model
+lifetime or scheduling, or changes outputs, validation must be reclassified under
+`docs/dev/VALIDATION_POLICY.md`.

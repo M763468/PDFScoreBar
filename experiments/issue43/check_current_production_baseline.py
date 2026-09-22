@@ -142,12 +142,8 @@ def run(report_path: Path, *, image_root: Path) -> dict[str, Any]:
     all_keys = sorted(set(production_files) | set(full_width_files))
     changes = []
     for key in all_keys:
-        production_boxes = (
-            _box_set(production_files[key]) if key in production_files else set()
-        )
-        full_width_boxes = (
-            _box_set(full_width_files[key]) if key in full_width_files else set()
-        )
+        production_boxes = _box_set(production_files[key]) if key in production_files else set()
+        full_width_boxes = _box_set(full_width_files[key]) if key in full_width_files else set()
         if production_boxes != full_width_boxes:
             changes.append(
                 {

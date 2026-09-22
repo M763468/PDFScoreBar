@@ -426,9 +426,7 @@ def validate_local_pdf(
                     "The input PDF exceeds the per-job page limit.",
                     debug={"page_count": page_count, "limit": policy.max_document_pages},
                 )
-            selected = _selected_pages(
-                requested_pages, page_count=page_count, policy=policy
-            )
+            selected = _selected_pages(requested_pages, page_count=page_count, policy=policy)
             matrix = fitz.Matrix(dpi / 72.0, dpi / 72.0)
             pages: list[ValidatedPageMetadata] = []
             total_pixels = 0
@@ -471,9 +469,7 @@ def validate_local_pdf(
                         "The requested PDF pages exceed the per-job render budget.",
                         debug={"total_render_pixels": total_pixels},
                     )
-                pages.append(
-                    ValidatedPageMetadata(page_number, width, height, pixels)
-                )
+                pages.append(ValidatedPageMetadata(page_number, width, height, pixels))
     except InputSafetyError:
         raise
     except Exception as exc:

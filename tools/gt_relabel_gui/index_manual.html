@@ -30,6 +30,8 @@
       code { font-size: 11px; }
       .toolbar-label { font-weight: bold; font-size: 12px; }
       .spacer { flex: 1; }
+      .movement-guide { margin-top: 6px; padding: 8px; border: 1px solid #d7b44a; background: #fff8dc; font-size: 12px; line-height: 1.4; }
+      .movement-status { margin-top: 6px; padding: 6px; border: 1px solid #ddd; background: #fff; font-size: 12px; line-height: 1.4; }
     </style>
   </head>
   <body>
@@ -69,10 +71,20 @@
           <input id="measureSpanInput" type="number" min="1" value="2" />
         </label>
       </div>
-      <div class="row" id="movementSystemRow" style="display:none;">
-        <label class="small">System (visible 1-based)
-          <input id="movementSystemInput" type="number" min="1" value="1" />
-        </label>
+      <div id="movementBoundaryPanel" style="display:none;">
+        <div class="movement-guide">
+          <strong>Movement boundary target</strong><br />
+          A boundary is inserted <strong>immediately BEFORE the target system</strong>.
+          The first measure of that system becomes the start of the new movement.
+          Click any measure in the target system; the GUI will select the whole system.
+        </div>
+        <div class="row" id="movementSystemRow">
+          <label class="small">Target system (visible 1-based)
+            <input id="movementSystemInput" type="number" min="1" value="1" />
+          </label>
+        </div>
+        <div class="movement-status" id="movementTargetMeta">No movement system selected.</div>
+        <div class="movement-status" id="movementPageStatus"></div>
       </div>
       <div class="row">
         <label class="small">Reason
@@ -98,7 +110,7 @@
           </ul>
           <p><strong>Selected objects and active drafts always stay visible.</strong> This lets you hide other layers without losing the active target.</p>
           <p><strong>Correction flow:</strong> choose Type/Operation → Select object or Draw barline box → Stage change → inspect Current page results → Save corrections. Save corrections writes every staged correction type on the current page.</p>
-          <p><strong>Movement boundaries:</strong> choose Movement boundary. Candidate rows show their raw evidence and review state. Select a candidate row or enter a visible 1-based system. Mark boundary accepts a candidate or adds a non-candidate boundary. Mark no boundary is allowed only for an explicit candidate; candidate absence is never treated as a negative. Save before using Export movement boundaries.</p>
+          <p><strong>Movement boundaries:</strong> a boundary is always placed <strong>before the selected system</strong>, never after it. Click any measure in the intended system; the measure is only a hit target and the whole system becomes the movement target. The canvas shows candidate, existing/resolved, staged boundary, and reviewed no-boundary markers. Mark boundary accepts a candidate or adds a non-candidate boundary. Mark no boundary is allowed only for an explicit candidate; candidate absence is never treated as a negative. Save before using Export movement boundaries.</p>
           <p>Visible Page / System / Measure identifiers are <strong>1-based</strong>. Saved correction indices keep the existing internal <strong>0-based</strong> schema.</p>
           <p><strong>Canvas:</strong> mouse wheel = zoom; Space+drag or middle mouse = pan. Left/Right arrows change page. Delete/Backspace unstages the selected correction when applicable.</p>
           <p>Save writes package-local correction JSON under <code>review/corrections/</code>; applying corrections and regenerating outputs is a separate step.</p>
@@ -109,7 +121,7 @@
         <summary>Current page results</summary>
         <div class="small">
           MMR rows show <code>base</code> from the configured MMR artifact and <code>effective</code> after manual corrections.
-          Movement rows show unresolved/reviewed candidate state plus raw Issue #333 evidence; manually added boundaries are listed separately.
+          Movement rows state whether the location is an unresolved candidate, existing resolved boundary, reviewed boundary, reviewed no-boundary, or manual boundary. Every movement location is expressed as <strong>before System N</strong>.
           Visible Page / System / Measure identifiers are 1-based; saved correction indices remain unchanged.
         </div>
         <div id="itemList"></div>
@@ -122,7 +134,11 @@
         <span><span class="dot" style="background:#46c46b;"></span>Base MMR/barline</span>
         <span><span class="dot" style="background:#b35cff;"></span>Manual override</span>
         <span><span class="dot" style="background:#ff3b30;"></span>Suppressed/draft</span>
-          <span><span class="dot" style="background:#ff8a00;"></span>Selected</span>
+        <span><span class="dot" style="background:#ff8a00;"></span>Selected target</span>
+        <span><span class="dot" style="background:#ffd60a;"></span>Movement candidate</span>
+        <span><span class="dot" style="background:#b35cff;"></span>Reviewed/manual boundary</span>
+        <span><span class="dot" style="background:#00c2ff;"></span>Existing resolved boundary</span>
+        <span><span class="dot" style="background:#9aa0a6;"></span>Reviewed no-boundary</span>
         </div>
       </details>
 
@@ -146,6 +162,7 @@
         <label class="overlay-toggle small"><input id="showLabelsToggle" type="checkbox" />Labels</label>
         <label class="overlay-toggle small"><input id="showBaseToggle" type="checkbox" checked />Base MMR state</label>
         <label class="overlay-toggle small"><input id="showManualToggle" type="checkbox" checked />Manual state</label>
+        <label class="overlay-toggle small"><input id="showMovementToggle" type="checkbox" checked />Movement boundaries</label>
         <span class="spacer"></span>
         <span class="small">Selected object and active draft stay visible.</span>
       </div>

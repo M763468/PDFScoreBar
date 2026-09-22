@@ -3,7 +3,8 @@ from __future__ import annotations
 import numpy as np
 
 from src.measure_numbering.builder import SystemBuilder
-from src.measure_numbering.types import Barline, BBox, Staff
+from src.measure_numbering.serialization import score_to_dict
+from src.measure_numbering.types import Barline, BBox, Page, Score, Staff, System
 
 
 def _staff(
@@ -81,3 +82,60 @@ def test_builder_barline_staff_overlap_floor_scales_with_unit_size() -> None:
 
         assert accepted in staff.barlines
         assert rejected not in staff.barlines
+
+
+def test_builder_staff_height_fallback_is_resolution_independent() -> None:
+    builder = SystemBuilder()
+
+    for scale in (1, 2):
+        upper = Staff(
+            bbox=BBox(0, 100 * scale, 500 * scale, 200 * scale),
+            barlines=[
+                Barline(
+                    bbox=BBox(
+                        100 * scale,
+                        100 * scale,
+                        102 * scale,
+                        200 * scale,
+                    )
+                )
+            ],
+        )
+        within = Staff(
+            bbox=BBox(0, 230 * scale, 500 * scale, 330 * scale),
+            barlines=[
+                Barline(
+                    bbox=BBox(
+                        108 * scale,
+                        230 * scale,
+                        110 * scale,
+                        330 * scale,
+                    )
+                )
+            ],
+        )
+
+        assert len(builder._find_aligned_pairs(upper, within)) == 1
+
+
+def test_staff_unit_size_is_not_serialized_into_numbering_json() -> None:
+    staff = Staff(
+        bbox=BBox(0, 10, 100, 50),
+        unit_size=12.5,
+    )
+    score = Score(
+        pages=[
+            Page(
+                page_number=1,
+                width=100,
+                height=100,
+                systems=[System(staves=[staff])],
+            )
+        ]
+    )
+
+    payload = score_to_dict(score)
+
+    assert payload["pages"][0]["empty_systems"][0]["staves"] == [
+        {"bbox": [0, 10, 100, 50]}
+    ]

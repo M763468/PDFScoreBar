@@ -286,9 +286,7 @@ def test_success_warning_review_required_and_failure_results():
             "reason_codes": [
                 "movement_boundary_ambiguous",
             ],
-            "correction_source_artifact_id": (
-                "review.manual_correction_input"
-            ),
+            "correction_source_artifact_id": ("review.manual_correction_input"),
         },
     )
     assert review.to_dict()["review"]["required"] is True
@@ -305,9 +303,7 @@ def test_success_warning_review_required_and_failure_results():
         failure=EngineError(
             category=ErrorCategory.INPUT,
             code="input_pdf_invalid",
-            public_message=(
-                "The input PDF could not be read."
-            ),
+            public_message=("The input PDF could not be read."),
             user_actionable=True,
             retryable=False,
             debug_context={
@@ -317,12 +313,7 @@ def test_success_warning_review_required_and_failure_results():
     )
 
     assert "debug_context" not in failure.to_dict()["failure"]
-    assert (
-        "debug_context"
-        in failure.to_dict(
-            include_debug_context=True
-        )["failure"]
-    )
+    assert "debug_context" in failure.to_dict(include_debug_context=True)["failure"]
 
 
 def test_invalid_result_shapes_are_rejected():

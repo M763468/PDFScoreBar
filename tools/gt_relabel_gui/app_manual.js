@@ -216,7 +216,7 @@ function updateControlState() {
   saveBtn.style.display = movementMode ? "none" : "";
   exportMovementBtn.style.display =
     movementMode && currentPage && currentPage.movement_boundary_evidence ? "" : "none";
-  reasonRow.style.display = "";
+  reasonRow.style.display = movementMode ? "none" : "";
 
   if (movementMode && selectedMeasure && selectedMovementSystem === null) {
     selectedMovementSystem = selectedMeasure.system;
@@ -461,6 +461,7 @@ function updateMovementTargetMeta() {
   });
   movementPageStatus.textContent =
     `This page: current-numbering boundaries ${counts.existing} · confirmed boundaries ${counts.reviewed} · checked no-boundary ${counts.rejected} · suggestions to review ${counts.candidates}`;
+  updateMovementFinishButton();
 }
 
 function draw() {
@@ -696,6 +697,38 @@ function updateSelectionMeta() {
   updateMovementTargetMeta();
 }
 
+function movementReviewKey(page, system) {
+  return `${page}:${system}`;
+}
+
+function unresolvedMovementSuggestionCount() {
+  const decided = new Set(
+    (correctionsByType.movement_boundary || [])
+      .filter((item) => item && item.evidence_candidate_id)
+      .map((item) => movementReviewKey(item.page, item.system))
+  );
+  return allMovementEvidenceCandidates.filter(
+    (candidate) =>
+      candidate &&
+      candidate.state === "ambiguous_review_required" &&
+      !decided.has(movementReviewKey(candidate.page, candidate.system))
+  ).length;
+}
+
+function updateMovementFinishButton() {
+  if (!exportMovementBtn) return;
+  const remaining = unresolvedMovementSuggestionCount();
+  exportMovementBtn.disabled = remaining > 0;
+  exportMovementBtn.textContent =
+    remaining > 0
+      ? `Finish movement review (${remaining} suggestion${remaining === 1 ? "" : "s"} left)`
+      : "Finish movement review";
+  exportMovementBtn.title =
+    remaining > 0
+      ? "Review every suggested boundary before finishing."
+      : "Create boundary data for the next numbering run. The displayed score will not change.";
+}
+
 function renderPageList() {
   pageList.innerHTML = "";
   pages.forEach((page, index) => {
@@ -732,6 +765,7 @@ function renderPageList() {
     div.onclick = () => switchPage(index);
     pageList.appendChild(div);
   });
+  updateMovementFinishButton();
 }
 
 function itemsForCurrentPage(correctionType) {
@@ -827,10 +861,15 @@ function renderMovementRows() {
     div.appendChild(title);
 
     if (candidate) {
-      const raw = document.createElement("div");
-      raw.className = "small";
-      raw.textContent = `Raw evidence: ${movementEvidenceText(candidate)}`;
-      div.appendChild(raw);
+      const details = document.createElement("details");
+      details.className = "small";
+      const summary = document.createElement("summary");
+      summary.textContent = "Detection details";
+      const raw = document.createElement("code");
+      raw.textContent = movementEvidenceText(candidate);
+      details.appendChild(summary);
+      details.appendChild(raw);
+      div.appendChild(details);
     }
 
     div.onclick = () => {
@@ -889,9 +928,14 @@ function updateActionButtons() {
   }
   const items = itemsForCurrentPage(type);
   const canRemove = selectedItemIndex !== null && Boolean(items[selectedItemIndex]);
+  if (type === "movement_boundary") {
+    deleteItemBtn.style.display = canRemove ? "" : "none";
+    deleteItemBtn.textContent = "Clear saved decision";
+    deleteItemBtn.disabled = !canRemove;
+    return;
+  }
   deleteItemBtn.style.display = "";
-  deleteItemBtn.textContent =
-    type === "movement_boundary" ? "Clear saved decision" : "Unstage selected";
+  deleteItemBtn.textContent = "Unstage selected";
   deleteItemBtn.disabled = !canRemove;
 }
 
@@ -971,7 +1015,7 @@ function addCorrectionItem() {
       op,
       page,
       system,
-      reason: currentReason(),
+      reason: candidate ? "movement boundary review" : "manual movement boundary",
       evidence_candidate_id: candidate ? candidate.id : null,
       review_kind: candidate
         ? op === "boundary"
@@ -1376,6 +1420,12 @@ saveBtn.onclick = (event) => {
 exportMovementBtn.onclick = (event) => {
   event.currentTarget.blur();
   releaseTransientInteraction();
+  const remaining = unresolvedMovementSuggestionCount();
+  if (remaining > 0) {
+    saveStatus.textContent =
+      `Review the remaining ${remaining} suggested boundar${remaining === 1 ? "y" : "ies"} before finishing.`;
+    return;
+  }
   waitForMovementSaves()
     .then(() =>
       fetch("/api/export_movement_boundaries", {

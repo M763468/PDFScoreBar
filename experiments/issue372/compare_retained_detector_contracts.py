@@ -19,9 +19,14 @@ import argparse
 import hashlib
 import json
 import subprocess
+import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from PIL import Image
 
@@ -40,7 +45,6 @@ from src.common.barline_units import (
 )
 from tools.issue120 import eval_full68_from_intermediates as full68_eval
 
-ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_D27_SUMMARY = (
     ROOT
     / "logs/issue296/diagnostic_27_current_candidate_aligned/full68/clean_full68_summary.json"

@@ -157,7 +157,9 @@ def validate_inputs(specs: list[PageSpec], *, expect_full68: bool) -> None:
             if not path.is_file():
                 missing.append(f"{spec.page_id} {label}: {path}")
     if missing:
-        raise FileNotFoundError("Missing Issue #267 replay inputs:\n" + "\n".join(f"- {x}" for x in missing))
+        raise FileNotFoundError(
+            "Missing Issue #267 replay inputs:\n" + "\n".join(f"- {x}" for x in missing)
+        )
 
 
 def run(
@@ -236,10 +238,7 @@ def run(
                 },
             }
         )
-        print(
-            f"{spec.page_id}: systems={len(counts)} "
-            f"physical={sum(counts)} signature={counts}"
-        )
+        print(f"{spec.page_id}: systems={len(counts)} physical={sum(counts)} signature={counts}")
 
     report = {
         "schema_version": "issue267.numbering_count_replay.v1",

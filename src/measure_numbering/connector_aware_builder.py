@@ -33,7 +33,7 @@ class ConnectorAwareSystemBuilder(BaseSystemBuilder):
                 parent[root_j] = root_i
 
         global_heights = [s.bbox.height for s in staves]
-        avg_height = sum(global_heights) / len(global_heights) if global_heights else 100.0
+        avg_height = sum(global_heights) / len(global_heights)
 
         for i in range(len(staves) - 1):
             s1 = staves[i]

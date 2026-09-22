@@ -75,9 +75,11 @@ run-directory paths.
 
 The following are future directions, not current runtime claims:
 
-- a versioned external `JobRequest` / `JobResult` engine API;
-- a stable structured `ProgressEvent` stream;
-- a stable structured `EngineError` taxonomy;
+- a production adapter that executes the current pipeline through the versioned
+  `JobRequest` / `JobResult` library boundary;
+- production emission of the defined structured `ProgressEvent` stream;
+- production mapping of current failures into the defined structured `EngineError`
+  taxonomy;
 - a service/control-plane implementation;
 - a production queue, job database, or object-storage integration;
 - a guaranteed public `pdfscorebar` console surface.
@@ -86,10 +88,10 @@ The following are future directions, not current runtime claims:
 
 | Concern | Current state | Target direction |
 | --- | --- | --- |
-| Job invocation | Config/run-directory oriented | Versioned one-job engine request |
-| Engine result | Internal run directory + known artifacts | Structured result with artifact descriptors and provenance |
-| Progress | Logs and current stage-specific behavior | Stable structured progress/events |
-| Errors | Existing exceptions/logging/exit behavior | Structured engine error categories |
+| Job invocation | Config/run-directory oriented; v1 request types are defined but not wired to production execution | Versioned one-job engine request |
+| Engine result | Internal run directory + known artifacts; v1 result/artifact types are defined | Structured result with artifact descriptors and provenance |
+| Progress | Logs/current stage behavior; v1 event semantics are defined but not emitted by production | Stable structured progress/events |
+| Errors | Existing exceptions/logging/exit behavior; v1 error envelope is defined but not wired | Structured engine error categories |
 | Final/review outputs | Implemented current artifacts | Stable external artifact descriptors |
 | Corrections | Config-first review package + existing GUI/apply path | Versioned correction input/output contract reusing current semantics |
 | Service/control plane | Not implemented | Separate consumer of the engine contract |
@@ -216,23 +218,16 @@ The exact transport and UI may differ by caller. A local CLI may open the curren
 desktop or web application may provide another UI. The engine boundary should nevertheless preserve
 one compatible correction meaning.
 
-At minimum, the future contract design must explicitly decide:
+The v1 machine contract is now defined in
+[`ENGINE_JOB_CONTRACT.md`](ENGINE_JOB_CONTRACT.md). It maps the current barline,
+measure-construction, MMR, and movement-boundary concepts into versioned correction records; binds
+each correction set to the source job/artifact hash/coordinate/version; treats corrected execution
+as a new job that may reuse compatible retained artifacts; rejects conflicts and stale source
+identity; and defines explicit review-required result semantics.
 
-- which correction operations are stable supported engine inputs;
-- how current barline, measure-construction, MMR, and movement-boundary correction concepts map into
-  versioned correction records;
-- how correction provenance identifies the source job/artifacts/coordinate space being corrected;
-- whether a corrected request is a new job, a reprocess operation, or both at the contract level;
-- idempotency and overwrite/conflict behavior;
-- whether a result can explicitly require or recommend review;
-- how unchanged retained artifacts may be reused without exposing internal run-directory layout;
-- which final/review artifacts are regenerated after each correction class;
-- how stale corrections are rejected when their source artifact/coordinate/version contract no
-  longer matches.
-
-The current review package and correction application behavior provide concrete semantics to reuse,
-but the exact machine schema belongs to the versioned contract work rather than this architecture
-document.
+The current review package and correction application behavior remain the concrete operator/runtime
+semantics to reuse. The v1 contract provides the stable external envelope without requiring callers
+to understand the internal run-directory layout.
 
 The engine owns interpretation and application of supported corrections. A future service may own
 review sessions, collaborative UI state, persistence/history, and long-term storage of user
@@ -240,8 +235,11 @@ decisions.
 
 ## 5. Versioned engine contract direction
 
-Issue #336 is expected to define the exact serialized contract. At the architecture level, the
-boundary should include the following concepts.
+Issue #336 defines the exact v1 serialized contract in
+[`ENGINE_JOB_CONTRACT.md`](ENGINE_JOB_CONTRACT.md), with lightweight Python representations in
+`src/pipeline/engine_contract.py`. This section remains the architecture-level summary of that
+boundary; the contract document owns exact fields, compatibility, correction provenance,
+idempotency/conflict behavior, and deterministic serialization.
 
 ### JobRequest
 
@@ -362,7 +360,7 @@ authentication/account/billing design part of the current engine contract work.
 
 - #334 — parent Epic and service-readiness workstream definition.
 - #335 — this durable architecture/responsibility-boundary record.
-- #336 — exact versioned JobRequest/JobResult/ProgressEvent/EngineError contract.
+- #336 — v1 JobRequest/JobResult/ProgressEvent/EngineError/CorrectionSet contract and shared Python types.
 - #337 — bounded execution, cancellation/retry, partial output, and cleanup semantics.
 - #338 — untrusted-PDF / anonymous-job engine-side safety contract.
 - #339 — structured progress and resource telemetry.
@@ -404,7 +402,7 @@ This architecture document does not:
 - implement a service, HTTP API, queue, database, or object store;
 - select a cloud/vendor/deployment platform;
 - design authentication, accounts, or billing;
-- define the exact serialized schemas owned by #336 and related issues;
+- duplicate the exact serialized schemas owned by `ENGINE_JOB_CONTRACT.md`;
 - replace the current manual-correction operating guide;
 - redefine detector/HOMR/OMR-DLN/MMR/numbering behavior;
 - require Phase 3 or later service code to live in this repository;

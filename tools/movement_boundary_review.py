@@ -54,10 +54,18 @@ def _export_from_handoff(handoff_path: Path, *, overwrite: bool) -> dict:
         evidence_raw,
         field="movement_boundary_evidence",
     )
+    correction_outputs = payload.get("correction_outputs")
+    review_raw = (
+        correction_outputs.get("movement_boundary")
+        if isinstance(correction_outputs, dict)
+        else None
+    )
+    if not isinstance(review_raw, str) or not review_raw:
+        review_raw = f"corrections/{DEFAULT_REVIEW_FILENAME}"
     review_path = _package_path(
         package_root,
-        f"corrections/{DEFAULT_REVIEW_FILENAME}",
-        field="movement boundary review output",
+        review_raw,
+        field="correction_outputs.movement_boundary",
     )
     output_path = _package_path(
         package_root,

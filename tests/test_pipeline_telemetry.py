@@ -92,7 +92,6 @@ def test_run_pipeline_emits_terminal_failure_without_swallowing_exception(
     ]
 
 
-
 def test_run_pipeline_emits_terminal_failure_when_orchestrator_construction_fails(
     monkeypatch,
     tmp_path,

@@ -102,6 +102,21 @@ class TestNumberingOverrides(unittest.TestCase):
         self.assertAlmostEqual(extractor._estimate_unit_size(make_mask(10), scale_y=1.0), 10.0)
         self.assertAlmostEqual(extractor._estimate_unit_size(make_mask(20), scale_y=1.0), 20.0)
 
+    def test_staff_unit_estimator_handles_short_extractable_staves_at_two_scales(self):
+        extractor = StaffExtractor(min_width_ratio=0.1)
+
+        def make_mask(scale: int) -> np.ndarray:
+            spacing = 10 * scale
+            mask = np.zeros((spacing * 8, 200 * scale), dtype=np.uint8)
+            x1 = 10 * scale
+            x2 = 40 * scale  # 15% page width: extractable, but below the old 25% gate.
+            for row in [spacing, spacing * 2, spacing * 3, spacing * 4, spacing * 5]:
+                mask[row : row + scale, x1:x2] = 255
+            return mask
+
+        self.assertAlmostEqual(extractor._estimate_unit_size(make_mask(1), scale_y=1.0), 10.0)
+        self.assertAlmostEqual(extractor._estimate_unit_size(make_mask(2), scale_y=1.0), 20.0)
+
     def test_numbering_geometry_thresholds_are_resolution_independent(self):
         def make_system(scale: int) -> System:
             unit = 10 * scale

@@ -554,6 +554,8 @@ class JobRequest:
     def from_dict(cls, payload: Mapping[str, Any]) -> "JobRequest":
         _envelope(payload, SCHEMA_REQUEST)
         corrections = payload.get("corrections")
+        if corrections is not None and not isinstance(corrections, Mapping):
+            raise ContractValidationError("corrections must be an object")
         return cls(
             input=_object(payload.get("input"), "input"),
             output_profile=payload.get("output_profile", "final"),
@@ -820,6 +822,14 @@ class JobResult:
             for artifact in artifacts
         }
         if (
+            self.status is JobStatus.REVIEW_REQUIRED
+            and source_artifact_id is None
+        ):
+            raise ContractValidationError(
+                "review_required status requires "
+                "correction_source_artifact_id"
+            )
+        if (
             source_artifact_id is not None
             and source_artifact_id not in artifact_ids
         ):
@@ -911,6 +921,8 @@ class JobResult:
                 "artifacts and warnings must be lists"
             )
         failure = payload.get("failure")
+        if failure is not None and not isinstance(failure, Mapping):
+            raise ContractValidationError("failure must be an object")
         return cls(
             job_id=payload.get("job_id"),
             status=payload.get("status"),

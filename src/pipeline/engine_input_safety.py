@@ -237,6 +237,18 @@ def _reject_symlink_components(candidate: Path, root: Path) -> None:
             )
 
 
+def _resolve_existing_input_path(path: Path) -> Path:
+    try:
+        return path.resolve(strict=True)
+    except OSError as exc:
+        raise _error(
+            ErrorCategory.INPUT,
+            "input_pdf_unavailable",
+            "The input PDF is unavailable.",
+            debug={"exception": type(exc).__name__},
+        ) from exc
+
+
 def resolve_local_input_path(
     reference: str,
     *,
@@ -249,24 +261,16 @@ def resolve_local_input_path(
     if allowed_root is None:
         if policy.require_input_root:
             raise ValueError("allowed_root is required by the untrusted-input safety policy")
-        return Path(reference).resolve(strict=True)
+        return _resolve_existing_input_path(Path(reference))
 
-    root = Path(allowed_root).resolve(strict=True)
+    root = _resolve_existing_input_path(Path(allowed_root))
     if not root.is_dir():
         raise ValueError("allowed_root must resolve to a directory")
     raw_path = Path(reference)
     candidate = raw_path if raw_path.is_absolute() else root / raw_path
     if not policy.allow_symlinks:
         _reject_symlink_components(candidate, root)
-    try:
-        resolved = candidate.resolve(strict=True)
-    except FileNotFoundError as exc:
-        raise _error(
-            ErrorCategory.INPUT,
-            "input_pdf_unavailable",
-            "The input PDF is unavailable.",
-            debug={"exception": type(exc).__name__},
-        ) from exc
+    resolved = _resolve_existing_input_path(candidate)
     try:
         resolved.relative_to(root)
     except ValueError as exc:
@@ -342,7 +346,17 @@ def _selected_pages(
         selected = tuple(range(1, page_count + 1))
     else:
         values: set[int] = set()
-        for page in requested_pages:
+        for requested_count, page in enumerate(requested_pages, start=1):
+            if requested_count > policy.max_selected_pages:
+                raise _error(
+                    ErrorCategory.RESOURCE,
+                    "input_pdf_selected_pages_limit_exceeded",
+                    "The requested PDF pages exceed the per-job page limit.",
+                    debug={
+                        "requested_pages_seen": requested_count,
+                        "limit": policy.max_selected_pages,
+                    },
+                )
             if not isinstance(page, int) or isinstance(page, bool) or page < 1:
                 raise _error(
                     ErrorCategory.INVALID_REQUEST,

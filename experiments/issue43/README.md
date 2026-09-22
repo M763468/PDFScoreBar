@@ -25,11 +25,15 @@ Production defaults are not changed by this experiment.
 
 ## First full68 run
 
-From the Issue #43 worktree:
+From the Issue #43 worktree, if the local-only evaluation images live in the main worktree:
 
 ```bash
-bash experiments/issue43/run_full68_x_domain_ab.sh issue43_full68_01
+PDFSCORE_EVAL2_IMAGES_ROOT=/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images \
+  bash experiments/issue43/run_full68_x_domain_ab.sh issue43_full68_01
 ```
+
+If `data/evaluation2/images` already exists inside the Issue #43 worktree, the
+environment variable can be omitted.
 
 The maintained-HOMR/SR upstream runs once per score. Both downstream variants
 reuse the resulting score-isolated inventories.
@@ -53,7 +57,8 @@ logs/issue43/full68_x_domain_ab/issue43_full68_01/
 Use a new run tag and the retained upstream manifest:
 
 ```bash
-bash experiments/issue43/run_full68_x_domain_ab.sh issue43_full68_recheck \
+PDFSCORE_EVAL2_IMAGES_ROOT=/home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images \
+  bash experiments/issue43/run_full68_x_domain_ab.sh issue43_full68_recheck \
   --upstream-manifest \
   logs/issue43/full68_x_domain_ab/issue43_full68_01/retained_upstream_manifest.json
 ```

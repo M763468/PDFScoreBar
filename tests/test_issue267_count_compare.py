@@ -15,8 +15,7 @@ def _write_numbering(path: Path, counts: list[int]) -> None:
         "pages": [
             {
                 "systems": [
-                    {"measures": [{"number": i + 1} for i in range(count)]}
-                    for count in counts
+                    {"measures": [{"number": i + 1} for i in range(count)]} for count in counts
                 ]
             }
         ]

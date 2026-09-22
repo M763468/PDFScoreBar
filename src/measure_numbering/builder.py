@@ -1,3 +1,4 @@
+import math
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -158,11 +159,11 @@ class SystemBuilder:
 
     def _find_aligned_pairs(self, s1: Staff, s2: Staff) -> List[Tuple[Barline, Barline]]:
         aligned_pairs: List[Tuple[Barline, Barline]] = []
+        unit_size = self._pair_unit_size(s1, s2)
         for b1 in s1.barlines:
             c1 = (b1.bbox.x1 + b1.bbox.x2) / 2
             for b2 in s2.barlines:
                 c2 = (b2.bbox.x1 + b2.bbox.x2) / 2
-                unit_size = self._pair_unit_size(s1, s2)
                 if abs(c1 - c2) <= unit_size * self.ALIGN_TOL_UNITS:
                     aligned_pairs.append((b1, b2))
         return aligned_pairs
@@ -291,7 +292,11 @@ class SystemBuilder:
         return valid_connections >= 1
 
     def _staff_unit_size(self, staff: Staff) -> float:
-        if staff.unit_size is not None and float(staff.unit_size) > 0:
+        if (
+            staff.unit_size is not None
+            and math.isfinite(float(staff.unit_size))
+            and float(staff.unit_size) > 0
+        ):
             return float(staff.unit_size)
         height = float(staff.bbox.height)
         if height <= 0:

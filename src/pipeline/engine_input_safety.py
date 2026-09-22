@@ -12,9 +12,9 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from src.pipeline.engine_contract import (
+    MAX_REQUEST_PAGE_ENTRIES,
     EngineError,
     ErrorCategory,
-    MAX_REQUEST_PAGE_ENTRIES,
 )
 
 _MIB = 1024 * 1024

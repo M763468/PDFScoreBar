@@ -3,6 +3,7 @@ import math
 import pytest
 
 from src.pipeline.engine_contract import (
+    MAX_REQUEST_PAGE_ENTRIES,
     ArtifactDescriptor,
     ContractValidationError,
     CorrectionSet,
@@ -10,7 +11,6 @@ from src.pipeline.engine_contract import (
     ErrorCategory,
     JobRequest,
     JobResult,
-    MAX_REQUEST_PAGE_ENTRIES,
     JobStatus,
     ProgressEvent,
     ProgressKind,

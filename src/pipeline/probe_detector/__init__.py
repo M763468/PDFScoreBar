@@ -201,9 +201,7 @@ def detect_probe_scan(
     rejected_records: list[dict] = []
     debug_records = []
     for band_idx, (y1, y2) in enumerate(bands):
-        domain_x1, domain_x2 = (
-            x_domains[band_idx] if band_idx < len(x_domains) else (0, w - 1)
-        )
+        domain_x1, domain_x2 = x_domains[band_idx] if band_idx < len(x_domains) else (0, w - 1)
         scan_base_y1 = y1
         scan_base_y2 = y2
         if band_source == "horiz_scan":

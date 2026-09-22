@@ -134,9 +134,7 @@ class TestProbeXDomainDetection(unittest.TestCase):
         return detect_probe_scan(
             base_img=image,
             staff_mask=(
-                staff_mask
-                if staff_mask is not None
-                else np.zeros(image.shape[:2], dtype=np.uint8)
+                staff_mask if staff_mask is not None else np.zeros(image.shape[:2], dtype=np.uint8)
             ),
             existing_boxes=[],
             band_source="row_stats",

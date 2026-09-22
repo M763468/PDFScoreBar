@@ -90,7 +90,11 @@ def run_pipeline(
             handler.setLevel(console_log_level)
 
     try:
-        if on_progress is not None or effective_telemetry_summary_path is not None or sample_resources:
+        if (
+            on_progress is not None
+            or effective_telemetry_summary_path is not None
+            or sample_resources
+        ):
             telemetry = TelemetryRecorder(
                 run_id_value,
                 on_progress=on_progress,

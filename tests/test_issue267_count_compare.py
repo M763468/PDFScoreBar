@@ -7,6 +7,7 @@ from tools.issue267.compare_numbering_count_signatures import (
     collect_run_signatures,
     compare_signatures,
 )
+from tools.issue267.run_numbering_count_replay import build_page_specs
 
 
 def _write_numbering(path: Path, counts: list[int]) -> None:
@@ -76,3 +77,50 @@ def test_issue267_count_comparator_identifies_changed_page(tmp_path: Path) -> No
             "candidate_total": 10,
         }
     ]
+
+
+def test_issue267_replay_resolves_accepted_retained_inputs(tmp_path: Path) -> None:
+    page_index = tmp_path / "logs/issue94_mmr_current_state/page_inputs.json"
+    page_index.parent.mkdir(parents=True)
+    page_index.write_text(
+        json.dumps(
+            {
+                "pages": [
+                    {
+                        "page_id": "page_001",
+                        "image": "/legacy/path/TestScore_page_001.png",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    specs = build_page_specs(
+        tmp_path,
+        support_run="issue264_phase_c_current_production_full68_02",
+        page_limit=1,
+    )
+
+    assert len(specs) == 1
+    spec = specs[0]
+    assert spec.page_id == "page_001"
+    assert spec.score == "TestScore"
+    assert spec.page_name == "page_001"
+    assert spec.image == tmp_path / "data/evaluation2/images/TestScore/page_001.png"
+    assert spec.barlines == (
+        tmp_path
+        / "logs/verification/detector_full68"
+        / "issue255_production_restore_full68_top_level_worker_01"
+        / "production_runs/TestScore"
+        / "intermediate/dense_full_pipeline_route/dense_candidate_reconstruction"
+        / "probe_rescue_candidates/eval2_TestScore_page_001"
+        / "pipeline2_no_peak_filtered_cnn.json"
+    )
+    assert spec.staff_mask == (
+        tmp_path
+        / "logs/issue264_phase_c_mmr_regression"
+        / "issue264_phase_c_current_production_full68_02"
+        / "phase_a_hybrid_replay/TestScore/sr/batch/page_001"
+        / "page_001_proxy_debug_3_staff.png"
+    )

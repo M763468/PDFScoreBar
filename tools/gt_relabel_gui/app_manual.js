@@ -1219,13 +1219,22 @@ function barlinePathFromPage(page) {
   return page.barlines || page.barline_candidates || page.detected_barlines || null;
 }
 
+function movementEvidenceCandidateId(candidate) {
+  if (candidate && typeof candidate.id === "string" && candidate.id) return candidate.id;
+  return `page:${candidate.page}:system:${candidate.system}`;
+}
+
 function loadMovementEvidence(path) {
   movementEvidenceCandidates = [];
   allMovementEvidenceCandidates = [];
   if (!path) return Promise.resolve();
   return fetchJSON(`/api/template?path=${encodeURIComponent(path)}`)
     .then((data) => {
-      allMovementEvidenceCandidates = Array.isArray(data.candidates) ? data.candidates : [];
+      const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+      allMovementEvidenceCandidates = candidates.map((candidate) => ({
+        ...candidate,
+        id: movementEvidenceCandidateId(candidate),
+      }));
       movementEvidenceCandidates = allMovementEvidenceCandidates.filter(
         (candidate) => String(candidate.page) === String(pageValue())
       );

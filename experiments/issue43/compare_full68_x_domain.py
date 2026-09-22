@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Issue #43 full-68 A/B using one retained current-production upstream inventory.
+"""Issue #43 full-68 A/B using retained current-production upstream inventories.
 
-The expensive maintained-HOMR/SR upstream is generated once unless --inventory is
-provided. Both probe X-domain variants are then reconstructed from the exact same
-inventory, scored with the current production CNN contract, and evaluated with the
-canonical evaluation2 detector evaluator.
+The expensive maintained-HOMR/SR upstream is generated once per score unless an
+upstream manifest is supplied. Both probe X-domain variants are then reconstructed
+score-by-score from the exact same inventories, scored with the current production
+CNN contract, aggregated, and evaluated with the canonical evaluation2 detector
+evaluator.
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ import argparse
 import copy
 import hashlib
 import json
+import shutil
 import subprocess
 import time
 from argparse import Namespace
@@ -24,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CANONICAL_CONFIG = ROOT / "configs/dense_full_pipeline.yaml"
 DEFAULT_OUTPUT_ROOT = ROOT / "logs/issue43/full68_x_domain_ab"
 EXPECTED_PAGES = 68
+UPSTREAM_MANIFEST_SCHEMA = "issue43.probe_x_domain_upstream_manifest.v1"
 
 
 def _load_json(path: Path) -> Any:
@@ -71,59 +74,48 @@ def _canonical_images() -> list[Path]:
     return images
 
 
-def _group_images_by_score(images: Sequence[Path]) -> list[tuple[str, list[Path]]]:
+def _group_images_by_score(images: Sequence[Path]) -> dict[str, list[Path]]:
     groups: dict[str, list[Path]] = {}
     for image in images:
         groups.setdefault(image.parent.name, []).append(image)
-    return list(groups.items())
+    return groups
 
 
-def _validate_inventory(path: Path) -> dict[str, Any]:
+def _expected_page_keys(images: Sequence[Path]) -> set[tuple[str, str]]:
+    return {(image.parent.name, image.stem) for image in images}
+
+
+def _validate_inventory(path: Path, *, images: Sequence[Path]) -> dict[str, Any]:
     payload = _load_json(path)
     if not isinstance(payload, dict):
         raise ValueError(f"Inventory must be a JSON object: {path}")
     records = payload.get("records")
     if not isinstance(records, list):
         raise ValueError(f"Inventory lacks records list: {path}")
-    if len(records) != EXPECTED_PAGES:
+    if len(records) != len(images):
         raise ValueError(
-            f"Inventory must contain {EXPECTED_PAGES} pages: {path} has {len(records)}"
+            f"Inventory page count mismatch: expected={len(images)} actual={len(records)} path={path}"
         )
 
-    keys: set[tuple[str, str]] = set()
+    expected = _expected_page_keys(images)
+    actual: set[tuple[str, str]] = set()
     for record in records:
         if not isinstance(record, Mapping):
             raise ValueError(f"Inventory record is not an object: {record!r}")
         key = (str(record.get("score")), str(record.get("page")))
-        if key in keys:
+        if key in actual:
             raise ValueError(f"Duplicate inventory page: {key[0]}/{key[1]}")
-        keys.add(key)
+        actual.add(key)
         for field in ("image", "hybrid_predictions", "staff_mask", "clef_mask"):
             raw = record.get(field)
             if not raw or not Path(str(raw)).is_file():
                 raise FileNotFoundError(f"Inventory {key[0]}/{key[1]} missing {field}: {raw}")
+
+    if actual != expected:
+        missing = sorted(expected - actual)
+        extra = sorted(actual - expected)
+        raise ValueError(f"Inventory page set mismatch: missing={missing} extra={extra}")
     return payload
-
-
-def _merge_inventories(paths: Sequence[Path], output: Path) -> Path:
-    records: list[dict[str, Any]] = []
-    for path in paths:
-        payload = _load_json(path)
-        page_records = payload.get("records") if isinstance(payload, dict) else None
-        if not isinstance(page_records, list):
-            raise ValueError(f"Inventory lacks records list: {path}")
-        records.extend(dict(item) for item in page_records if isinstance(item, Mapping))
-
-    _write_json(
-        output,
-        {
-            "schema_version": "pipeline.detector_routes.current_run_inventory.v1",
-            "historical_detector_artifact_runtime_input": False,
-            "records": records,
-        },
-    )
-    _validate_inventory(output)
-    return output
 
 
 def _load_canonical_config(path: Path) -> dict[str, Any]:
@@ -147,20 +139,20 @@ def _load_canonical_config(path: Path) -> dict[str, Any]:
     return config
 
 
-def _generate_current_upstream_inventory(
+def _generate_current_upstream_manifest(
     *,
     config: Mapping[str, Any],
-    images: Sequence[Path],
+    image_groups: Mapping[str, Sequence[Path]],
     run_root: Path,
     run_tag: str,
 ) -> tuple[Path, list[dict[str, Any]]]:
     from src.pipeline.detection import run_detection_step
 
-    inventory_paths: list[Path] = []
     production_runs: list[dict[str, Any]] = []
+    manifest_groups: list[dict[str, Any]] = []
     hybrid_root = run_root / "upstream_hybrid"
 
-    for score, score_images in _group_images_by_score(images):
+    for score, score_images in image_groups.items():
         score_config = copy.deepcopy(dict(config))
         detection = score_config["detection"]
         assert isinstance(detection, dict)
@@ -191,9 +183,7 @@ def _generate_current_upstream_inventory(
         inventory = (
             score_run_root / "intermediate" / "dense_full_pipeline_inputs" / "inventory.json"
         )
-        if not inventory.is_file():
-            raise FileNotFoundError(inventory)
-        inventory_paths.append(inventory)
+        _validate_inventory(inventory, images=score_images)
         production_runs.append(
             {
                 "score": score,
@@ -204,11 +194,84 @@ def _generate_current_upstream_inventory(
                 "probe_output_dir": str(result["probe_output_dir"]),
                 "elapsed_seconds": elapsed,
                 "inventory": str(inventory),
+                "inventory_sha256": _sha256(inventory),
+            }
+        )
+        manifest_groups.append(
+            {
+                "score": score,
+                "page_count": len(score_images),
+                "inventory": str(inventory),
+                "inventory_sha256": _sha256(inventory),
             }
         )
 
-    merged = _merge_inventories(inventory_paths, run_root / "retained_upstream_inventory.json")
-    return merged, production_runs
+    manifest_path = run_root / "retained_upstream_manifest.json"
+    _write_json(
+        manifest_path,
+        {
+            "schema_version": UPSTREAM_MANIFEST_SCHEMA,
+            "source_commit": _git_head(),
+            "groups": manifest_groups,
+        },
+    )
+    return manifest_path, production_runs
+
+
+def _validate_upstream_manifest(
+    path: Path,
+    *,
+    image_groups: Mapping[str, Sequence[Path]],
+) -> list[dict[str, Any]]:
+    payload = _load_json(path)
+    if not isinstance(payload, Mapping):
+        raise ValueError(f"Upstream manifest must be an object: {path}")
+    if payload.get("schema_version") != UPSTREAM_MANIFEST_SCHEMA:
+        raise ValueError(
+            f"Unsupported upstream manifest schema: {payload.get('schema_version')!r}"
+        )
+    groups = payload.get("groups")
+    if not isinstance(groups, list):
+        raise ValueError(f"Upstream manifest lacks groups list: {path}")
+
+    by_score: dict[str, dict[str, Any]] = {}
+    for group in groups:
+        if not isinstance(group, Mapping):
+            raise ValueError(f"Invalid upstream group: {group!r}")
+        score = str(group.get("score"))
+        if score in by_score:
+            raise ValueError(f"Duplicate upstream score group: {score}")
+        by_score[score] = dict(group)
+
+    if set(by_score) != set(image_groups):
+        raise ValueError(
+            "Upstream manifest score set mismatch: "
+            f"expected={sorted(image_groups)} actual={sorted(by_score)}"
+        )
+
+    validated: list[dict[str, Any]] = []
+    for score, score_images in image_groups.items():
+        group = by_score[score]
+        inventory = Path(str(group.get("inventory")))
+        if not inventory.is_file():
+            raise FileNotFoundError(inventory)
+        _validate_inventory(inventory, images=score_images)
+        expected_sha = group.get("inventory_sha256")
+        actual_sha = _sha256(inventory)
+        if expected_sha and str(expected_sha) != actual_sha:
+            raise RuntimeError(
+                f"Retained inventory digest changed for {score}: "
+                f"expected={expected_sha} actual={actual_sha}"
+            )
+        validated.append(
+            {
+                "score": score,
+                "page_count": len(score_images),
+                "inventory": str(inventory),
+                "inventory_sha256": actual_sha,
+            }
+        )
+    return validated
 
 
 def _resolve_production_cnn(config: Mapping[str, Any]) -> tuple[Path, float]:
@@ -253,12 +316,89 @@ def _evaluation_args(
     )
 
 
+def _sum_generation_stats(groups: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    full_width_columns = sum(int(group.get("full_width_columns", 0)) for group in groups)
+    eligible_domain_columns = sum(
+        int(group.get("eligible_domain_columns", 0)) for group in groups
+    )
+    projected_columns = sum(int(group.get("projected_columns", 0)) for group in groups)
+    return {
+        "probe_elapsed_seconds_total": sum(
+            float(group.get("probe_elapsed_seconds_total", 0.0)) for group in groups
+        ),
+        "full_width_columns": full_width_columns,
+        "eligible_domain_columns": eligible_domain_columns,
+        "projected_columns": projected_columns,
+        "eligible_width_ratio": (
+            eligible_domain_columns / float(full_width_columns)
+            if full_width_columns
+            else 1.0
+        ),
+        "projected_width_ratio": (
+            projected_columns / float(full_width_columns) if full_width_columns else 1.0
+        ),
+    }
+
+
+def _sum_rescue_stats(groups: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    full_width_columns = sum(int(group.get("full_width_columns", 0)) for group in groups)
+    eligible_domain_columns = sum(
+        int(group.get("eligible_domain_columns", 0)) for group in groups
+    )
+    projected_columns = sum(int(group.get("projected_columns", 0)) for group in groups)
+    full_width_domain_count = 0
+    band_count = 0
+    raw_peak_count = 0
+    selected_peak_count = 0
+    candidate_count = 0
+
+    for group in groups:
+        for page in group.get("pages", []):
+            if not isinstance(page, Mapping):
+                continue
+            stats = page.get("detector_stats")
+            if not isinstance(stats, Mapping):
+                continue
+            full_width_domain_count += int(stats.get("full_width_domain_count", 0))
+            band_count += int(stats.get("band_count", 0))
+            raw_peak_count += int(stats.get("raw_peak_count", 0))
+            selected_peak_count += int(stats.get("selected_peak_count", 0))
+            candidate_count += int(stats.get("candidate_count", 0))
+
+    return {
+        "total_detect_elapsed_seconds": sum(
+            float(group.get("total_detect_elapsed_seconds", 0.0)) for group in groups
+        ),
+        "full_width_columns": full_width_columns,
+        "eligible_domain_columns": eligible_domain_columns,
+        "projected_columns": projected_columns,
+        "eligible_width_ratio": (
+            eligible_domain_columns / float(full_width_columns)
+            if full_width_columns
+            else 1.0
+        ),
+        "projected_width_ratio": (
+            projected_columns / float(full_width_columns) if full_width_columns else 1.0
+        ),
+        "full_width_domain_count": full_width_domain_count,
+        "band_count": band_count,
+        "raw_peak_count": raw_peak_count,
+        "selected_peak_count": selected_peak_count,
+        "candidate_count": candidate_count,
+    }
+
+
+def _copy_tree(source: Path, destination: Path) -> None:
+    if source.exists():
+        shutil.copytree(source, destination, dirs_exist_ok=True)
+
+
 def _run_downstream_variant(
     *,
     name: str,
     config: Mapping[str, Any],
-    images: Sequence[Path],
-    inventory: Path,
+    image_groups: Mapping[str, Sequence[Path]],
+    upstream_groups: Sequence[Mapping[str, Any]],
     exclude: Path,
     variant_root: Path,
     probe_x_domain_kwargs: Mapping[str, Any],
@@ -271,70 +411,117 @@ def _run_downstream_variant(
     from src.pipeline.steps.cnn_scoring import run_cnn_scoring_batch
     from tools.issue120 import eval_full68_from_intermediates as full68_eval
 
-    started = time.perf_counter()
-    route = reconstruct_dense_full_pipeline_route(
-        inventory=inventory,
-        exclude=exclude,
-        route_root=variant_root / "route",
-        expected_pages=EXPECTED_PAGES,
-        probe_x_domain_kwargs=dict(probe_x_domain_kwargs),
-        collect_probe_stats=True,
-    )
-    reconstruction_elapsed = time.perf_counter() - started
+    upstream_by_score = {str(group["score"]): group for group in upstream_groups}
+    aggregate_raw = variant_root / "aggregate_raw_candidates"
+    aggregate_filtered = variant_root / "aggregate_filtered_candidates"
+    aggregate_probe = variant_root / "aggregate_probe_output"
+
+    group_reports: list[dict[str, Any]] = []
+    generation_stats: list[Mapping[str, Any]] = []
+    rescue_stats: list[Mapping[str, Any]] = []
+    total_started = time.perf_counter()
 
     detection = config["detection"]
     assert isinstance(detection, Mapping)
-    scoring_started = time.perf_counter()
-    scored = run_cnn_scoring_batch(
-        probe_output_root=route.probe_rescue_root,
-        images=images,
-        model_path=model_path,
-        threshold=score_threshold,
-        batch_size=int(detection.get("cnn_batch_size", 64)),
-        bands_from=route.filtered_root,
-        staff_vov_threshold=float(detection.get("staff_vov_threshold", 0.5)),
-        crop_recenter_on_bbox_ink=bool(detection.get("crop_recenter_on_bbox_ink", False)),
-        crop_recenter_max_shift_unit_ratio=float(
-            detection.get("crop_recenter_max_shift_unit_ratio", 0.35)
-        ),
-        input_image_scale=1.0,
-        apply_nms_enabled=False,
-    )
-    scoring_elapsed = time.perf_counter() - scoring_started
-    if scored != EXPECTED_PAGES:
-        raise RuntimeError(f"{name}: CNN scoring processed {scored}/{EXPECTED_PAGES} pages")
+
+    for score, score_images in image_groups.items():
+        upstream = upstream_by_score[score]
+        inventory = Path(str(upstream["inventory"]))
+        score_root = variant_root / "groups" / score
+
+        reconstruction_started = time.perf_counter()
+        route = reconstruct_dense_full_pipeline_route(
+            inventory=inventory,
+            exclude=exclude,
+            route_root=score_root / "route",
+            expected_pages=len(score_images),
+            probe_x_domain_kwargs=dict(probe_x_domain_kwargs),
+            collect_probe_stats=True,
+        )
+        reconstruction_elapsed = time.perf_counter() - reconstruction_started
+
+        scoring_started = time.perf_counter()
+        scored = run_cnn_scoring_batch(
+            probe_output_root=route.probe_rescue_root,
+            images=score_images,
+            model_path=model_path,
+            threshold=score_threshold,
+            score_name=score,
+            batch_size=int(detection.get("cnn_batch_size", 64)),
+            bands_from=route.filtered_root,
+            staff_vov_threshold=float(detection.get("staff_vov_threshold", 0.5)),
+            crop_recenter_on_bbox_ink=bool(
+                detection.get("crop_recenter_on_bbox_ink", False)
+            ),
+            crop_recenter_max_shift_unit_ratio=float(
+                detection.get("crop_recenter_max_shift_unit_ratio", 0.35)
+            ),
+            input_image_scale=1.0,
+            apply_nms_enabled=False,
+        )
+        scoring_elapsed = time.perf_counter() - scoring_started
+        if scored != len(score_images):
+            raise RuntimeError(
+                f"{name}/{score}: CNN scoring processed {scored}/{len(score_images)} pages"
+            )
+
+        dense_root = score_root / "route" / "dense_candidate_reconstruction"
+        group_generation = _load_json(dense_root / "probe_generation_summary.json")
+        group_rescue = _load_json(
+            dense_root / "probe_rescue_candidates" / "probe_scan_stats_summary.json"
+        )
+        generation_stats.append(group_generation)
+        rescue_stats.append(group_rescue)
+
+        _copy_tree(dense_root / "probe_candidates_from_inventory", aggregate_raw)
+        _copy_tree(dense_root / "probe_candidates_filtered", aggregate_filtered)
+        _copy_tree(route.probe_rescue_root, aggregate_probe)
+
+        group_reports.append(
+            {
+                "score": score,
+                "page_count": len(score_images),
+                "inventory": str(inventory),
+                "route_root": str(score_root / "route"),
+                "probe_rescue_root": str(route.probe_rescue_root),
+                "reconstruction_seconds": reconstruction_elapsed,
+                "cnn_scoring_seconds": scoring_elapsed,
+                "generation_stats": group_generation,
+                "rescue_stats": group_rescue,
+                "execution_summary": route.execution_summary,
+            }
+        )
 
     evaluation_started = time.perf_counter()
     evaluation = full68_eval.evaluate(
         _evaluation_args(
-            results_dir=route.probe_rescue_root,
+            results_dir=aggregate_probe,
             output_dir=variant_root / "eval",
             score_threshold=score_threshold,
         )
     )
     evaluation_elapsed = time.perf_counter() - evaluation_started
 
-    dense_root = variant_root / "route" / "dense_candidate_reconstruction"
-    generation_summary_path = dense_root / "probe_generation_summary.json"
-    rescue_summary_path = dense_root / "probe_rescue_candidates" / "probe_scan_stats_summary.json"
-
     return {
         "name": name,
         "probe_x_domain_kwargs": dict(probe_x_domain_kwargs),
-        "route_root": str(variant_root / "route"),
-        "raw_candidates_root": str(dense_root / "probe_candidates_from_inventory"),
-        "filtered_candidates_root": str(dense_root / "probe_candidates_filtered"),
-        "probe_rescue_root": str(route.probe_rescue_root),
+        "raw_candidates_root": str(aggregate_raw),
+        "filtered_candidates_root": str(aggregate_filtered),
+        "probe_rescue_root": str(aggregate_probe),
         "detector_summary": asdict(evaluation.detector_summary),
         "timing": {
-            "reconstruction_seconds": reconstruction_elapsed,
-            "cnn_scoring_seconds": scoring_elapsed,
+            "reconstruction_seconds": sum(
+                float(group["reconstruction_seconds"]) for group in group_reports
+            ),
+            "cnn_scoring_seconds": sum(
+                float(group["cnn_scoring_seconds"]) for group in group_reports
+            ),
             "evaluation_seconds": evaluation_elapsed,
-            "total_downstream_seconds": time.perf_counter() - started,
+            "total_downstream_seconds": time.perf_counter() - total_started,
         },
-        "generation_stats": _load_json(generation_summary_path),
-        "rescue_stats": _load_json(rescue_summary_path),
-        "execution_summary": route.execution_summary,
+        "generation_stats": _sum_generation_stats(generation_stats),
+        "rescue_stats": _sum_rescue_stats(rescue_stats),
+        "groups": group_reports,
     }
 
 
@@ -487,6 +674,8 @@ def _build_comparison(
             "projected_width_ratio": projected_ratio,
             "projected_width_reduction_ratio": 1.0 - projected_ratio,
             "rescue_projected_width_ratio": rescue.get("projected_width_ratio"),
+            "rescue_full_width_domain_count": rescue.get("full_width_domain_count"),
+            "rescue_band_count": rescue.get("band_count"),
         },
         "candidate_reduction_observed": any(
             stages[stage_name]["removed_total"] > stages[stage_name]["added_total"]
@@ -504,6 +693,7 @@ def run(args: argparse.Namespace) -> Path:
     config_path = args.config.resolve()
     config = _load_canonical_config(config_path)
     images = _canonical_images()
+    image_groups = _group_images_by_score(images)
 
     output_root = args.output_root.resolve()
     run_root = output_root / args.run_tag
@@ -512,32 +702,39 @@ def run(args: argparse.Namespace) -> Path:
     run_root.mkdir(parents=True, exist_ok=True)
 
     provenance: dict[str, Any] = {
-        "schema_version": "issue43.probe_x_domain_full68_ab.v1",
+        "schema_version": "issue43.probe_x_domain_full68_ab.v2",
         "source_commit": _git_head(),
         "config": str(config_path),
         "config_sha256": _sha256(config_path),
         "homr_profile": config["detection"]["homr_profile"],
         "detector_route": config["detection"]["detector_route"],
         "page_count": len(images),
+        "score_count": len(image_groups),
         "same_upstream_inventory_for_both_variants": True,
+        "score_isolated_downstream_reconstruction": True,
     }
 
-    if args.inventory is None:
-        inventory, production_runs = _generate_current_upstream_inventory(
+    if args.upstream_manifest is None:
+        manifest_path, production_runs = _generate_current_upstream_manifest(
             config=config,
-            images=images,
+            image_groups=image_groups,
             run_root=run_root,
             run_tag=args.run_tag,
         )
-        provenance["upstream_mode"] = "fresh_current_production_once"
+        provenance["upstream_mode"] = "fresh_current_production_once_per_score"
         provenance["production_runs"] = production_runs
     else:
-        inventory = args.inventory.resolve()
-        _validate_inventory(inventory)
-        provenance["upstream_mode"] = "retained_inventory"
+        manifest_path = args.upstream_manifest.resolve()
+        provenance["upstream_mode"] = "retained_upstream_manifest"
         provenance["production_runs"] = []
-    provenance["inventory"] = str(inventory)
-    provenance["inventory_sha256"] = _sha256(inventory)
+
+    upstream_groups = _validate_upstream_manifest(
+        manifest_path,
+        image_groups=image_groups,
+    )
+    provenance["upstream_manifest"] = str(manifest_path)
+    provenance["upstream_manifest_sha256"] = _sha256(manifest_path)
+    provenance["upstream_groups"] = upstream_groups
 
     exclude = run_root / "exclude.json"
     _write_json(exclude, {"excluded_pages": []})
@@ -550,8 +747,8 @@ def run(args: argparse.Namespace) -> Path:
     full_width = _run_downstream_variant(
         name="full_width",
         config=config,
-        images=images,
-        inventory=inventory,
+        image_groups=image_groups,
+        upstream_groups=upstream_groups,
         exclude=exclude,
         variant_root=run_root / "full_width",
         probe_x_domain_kwargs={"scan_x_domain_mode": "full_width"},
@@ -561,8 +758,8 @@ def run(args: argparse.Namespace) -> Path:
     staff_mask = _run_downstream_variant(
         name="staff_mask",
         config=config,
-        images=images,
-        inventory=inventory,
+        image_groups=image_groups,
+        upstream_groups=upstream_groups,
         exclude=exclude,
         variant_root=run_root / "staff_mask",
         probe_x_domain_kwargs={
@@ -610,11 +807,11 @@ def main() -> int:
     parser.add_argument("--config", type=Path, default=CANONICAL_CONFIG)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     parser.add_argument(
-        "--inventory",
+        "--upstream-manifest",
         type=Path,
         help=(
-            "Reuse an existing 68-page current-production dense inventory and skip "
-            "the expensive HOMR/SR upstream generation."
+            "Reuse a retained Issue #43 current-production per-score upstream manifest "
+            "and skip the expensive HOMR/SR upstream generation."
         ),
     )
     parser.add_argument(

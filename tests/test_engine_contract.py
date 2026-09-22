@@ -409,6 +409,82 @@ def test_invalid_result_shapes_are_rejected():
     ):
         JobResult.from_dict(malformed_review_source_payload)
 
+    missing_review_payload = {
+        "schema": "pdfscorebar.engine.job_result.v1",
+        "contract_version": "1",
+        "job_id": "job",
+        "status": "succeeded",
+        "provenance": _provenance(),
+        "pages": {
+            "requested": 1,
+            "processed": 1,
+            "skipped": 0,
+        },
+    }
+    with pytest.raises(
+        ContractValidationError,
+        match="review.required is required",
+    ):
+        JobResult.from_dict(missing_review_payload)
+
+    source_without_hash = ArtifactDescriptor(
+        artifact_id="review.manual_correction_input",
+        role="review.manual_correction_input",
+        location_kind="relative_path",
+        reference="review/manual_correction_input.json",
+        media_type="application/json",
+        coordinate_space=COORDINATE_SPACE,
+    )
+    with pytest.raises(
+        ContractValidationError,
+        match="correction source artifact requires sha256",
+    ):
+        JobResult(
+            job_id="job",
+            status="review_required",
+            provenance=_provenance(),
+            pages={
+                "requested": 1,
+                "processed": 1,
+                "skipped": 0,
+            },
+            artifacts=(source_without_hash,),
+            review={
+                "required": True,
+                "reason_codes": ["movement_boundary_ambiguous"],
+                "correction_source_artifact_id": source_without_hash.artifact_id,
+            },
+        )
+
+    source_without_coordinate_space = ArtifactDescriptor(
+        artifact_id="review.manual_correction_input",
+        role="review.manual_correction_input",
+        location_kind="relative_path",
+        reference="review/manual_correction_input.json",
+        media_type="application/json",
+        sha256=SHA_A,
+    )
+    with pytest.raises(
+        ContractValidationError,
+        match="correction source artifact requires coordinate_space",
+    ):
+        JobResult(
+            job_id="job",
+            status="review_required",
+            provenance=_provenance(),
+            pages={
+                "requested": 1,
+                "processed": 1,
+                "skipped": 0,
+            },
+            artifacts=(source_without_coordinate_space,),
+            review={
+                "required": True,
+                "reason_codes": ["movement_boundary_ambiguous"],
+                "correction_source_artifact_id": source_without_coordinate_space.artifact_id,
+            },
+        )
+
 
 def test_progress_sequence_is_monotonic_and_terminal():
     events = [

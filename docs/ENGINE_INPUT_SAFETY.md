@@ -101,6 +101,9 @@ For an untrusted `local_path` request:
 - the resolved file must remain inside a worker-owned `allowed_root`;
 - symlink components are rejected by default;
 - the final opened object must be a regular file;
+- the file is opened with nonblocking semantics where available before the
+  descriptor-level regular-file check, so FIFOs and similar special files
+  cannot stall preflight while waiting for a peer;
 - the adapter should make the staged input root immutable to the untrusted
   caller before validation begins.
 
@@ -117,7 +120,10 @@ PDF validation path before rendering.
 
 The input is opened as a regular file and read incrementally up to
 `max_pdf_bytes`; SHA-256 is computed during the same read. A size observed
-above the configured limit rejects the job before PyMuPDF parsing.
+above the configured limit rejects the job before PyMuPDF parsing. Expected
+filesystem failures while opening, inspecting, or reading the staged input are
+normalized to the stable `input_pdf_unavailable` error rather than escaping as
+raw `OSError` exceptions.
 
 The bounded preflight intentionally avoids the current
 `Path.read_bytes()`-before-validation pattern for untrusted inputs.

@@ -85,3 +85,12 @@ def test_attribute_retained_residuals_direct_entrypoint_bootstraps_repo(
         ROOT / "experiments/issue372/attribute_retained_residuals.py",
         cwd=tmp_path,
     )
+
+
+def test_clarify_retained_residuals_direct_entrypoint_bootstraps_repo(
+    tmp_path: Path,
+) -> None:
+    _assert_direct_help_succeeds(
+        ROOT / "experiments/issue372/clarify_retained_residuals.py",
+        cwd=tmp_path,
+    )

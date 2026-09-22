@@ -37,6 +37,7 @@ for cmd in docker git python3 realpath; do
 done
 
 repo_root="$(realpath "$(git rev-parse --show-toplevel)")"
+source_commit="$(git -C "$repo_root" rev-parse HEAD)"
 image_ref="${DOCKER_IMAGE:-pdfscore_pipeline_gpu}"
 
 resolver_args=(resolve --repo-root "$repo_root" --image-ref "$image_ref")
@@ -74,6 +75,7 @@ docker run --rm --gpus all \
   -w /workspace \
   -e PYTHONPATH=/workspace \
   -e "OMR_DLN_MODEL_PATH=$omr_container" \
+  -e "ISSUE43_SOURCE_COMMIT=$source_commit" \
   "$image_id" \
   /opt/venv_pipeline/bin/python \
   experiments/issue43/compare_full68_x_domain.py \

@@ -235,6 +235,10 @@ python -m src.pipeline.main \
   --sample-resources
 ~~~
 
+When resource sampling is enabled without an explicit telemetry summary path, the config-first
+runner retains the compact summary as `telemetry.json` inside that run directory instead of
+discarding the sampled values.
+
 JSONL progress is machine-readable and independent of console/file log wording. Diagnostic
 pipeline.log remains useful for developers but is not a caller state contract.
 

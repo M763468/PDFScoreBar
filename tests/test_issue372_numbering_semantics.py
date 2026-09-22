@@ -71,3 +71,33 @@ def test_measure_count_change_fails_logical_gate() -> None:
 
     assert report["logical_numbering_match"] is False
     assert report["logical_changed_page_count"] == 1
+
+
+def test_fresh_downstream_d27_delta_reconstruction_preserves_list_semantics() -> None:
+    from experiments.issue372.run_fresh_downstream_semantic_replay import (
+        apply_acceptance_deltas,
+    )
+
+    control = [
+        (10, 0, 14, 100),
+        (20, 0, 24, 100),
+        (20, 0, 24, 100),
+    ]
+    deltas = [
+        {
+            "bbox": [10, 0, 14, 100],
+            "control_accept": True,
+            "clean_accept": False,
+        },
+        {
+            "bbox": [30, 0, 34, 100],
+            "control_accept": False,
+            "clean_accept": True,
+        },
+    ]
+
+    assert apply_acceptance_deltas(control, deltas) == [
+        (20, 0, 24, 100),
+        (20, 0, 24, 100),
+        (30, 0, 34, 100),
+    ]

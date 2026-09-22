@@ -475,13 +475,19 @@ def reconstruct_dense_full_pipeline_route(
         phase_summaries=phases,
         probe_x_domain_kwargs=probe_x_domain_kwargs,
     )
+    x_domain_mode = str((probe_x_domain_kwargs or {}).get("scan_x_domain_mode", "full_width"))
+    staff_mask_paths = (
+        _load_staff_mask_paths(inventory, exclude)
+        if x_domain_mode in {"staff_mask", "staff_mask_or_existing_boxes"}
+        else None
+    )
     probe_rescue_root = regenerate_probe_rescue_candidates(
         image_paths=image_paths,
         filtered_root=filtered_root,
         route_root=route_root,
         phase_summaries=phases,
         probe_x_domain_kwargs=probe_x_domain_kwargs,
-        staff_mask_paths=_load_staff_mask_paths(inventory, exclude),
+        staff_mask_paths=staff_mask_paths,
         collect_probe_stats=collect_probe_stats,
     )
 

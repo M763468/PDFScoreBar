@@ -1,9 +1,12 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from experiments.issue43.compare_full68_x_domain import (
     UPSTREAM_MANIFEST_SCHEMA,
     _group_images_by_score,
+    _source_commit,
     _validate_inventory,
     _validate_upstream_manifest,
 )
@@ -117,3 +120,20 @@ def test_upstream_manifest_accepts_same_page_stem_in_separate_scores(tmp_path):
 
     assert [group["score"] for group in groups] == ["ScoreA", "ScoreB"]
     assert [group["page_count"] for group in groups] == [1, 1]
+
+
+def test_source_commit_comes_from_host_environment(monkeypatch):
+    commit = "a" * 40
+    monkeypatch.setenv("ISSUE43_SOURCE_COMMIT", commit)
+
+    assert _source_commit() == commit
+
+
+def test_source_commit_rejects_missing_or_invalid_value(monkeypatch):
+    monkeypatch.delenv("ISSUE43_SOURCE_COMMIT", raising=False)
+    with pytest.raises(RuntimeError, match="ISSUE43_SOURCE_COMMIT"):
+        _source_commit()
+
+    monkeypatch.setenv("ISSUE43_SOURCE_COMMIT", "not-a-commit")
+    with pytest.raises(RuntimeError, match="ISSUE43_SOURCE_COMMIT"):
+        _source_commit()

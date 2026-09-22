@@ -227,9 +227,7 @@ def _validate_upstream_manifest(
     if not isinstance(payload, Mapping):
         raise ValueError(f"Upstream manifest must be an object: {path}")
     if payload.get("schema_version") != UPSTREAM_MANIFEST_SCHEMA:
-        raise ValueError(
-            f"Unsupported upstream manifest schema: {payload.get('schema_version')!r}"
-        )
+        raise ValueError(f"Unsupported upstream manifest schema: {payload.get('schema_version')!r}")
     groups = payload.get("groups")
     if not isinstance(groups, list):
         raise ValueError(f"Upstream manifest lacks groups list: {path}")
@@ -318,9 +316,7 @@ def _evaluation_args(
 
 def _sum_generation_stats(groups: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     full_width_columns = sum(int(group.get("full_width_columns", 0)) for group in groups)
-    eligible_domain_columns = sum(
-        int(group.get("eligible_domain_columns", 0)) for group in groups
-    )
+    eligible_domain_columns = sum(int(group.get("eligible_domain_columns", 0)) for group in groups)
     projected_columns = sum(int(group.get("projected_columns", 0)) for group in groups)
     return {
         "probe_elapsed_seconds_total": sum(
@@ -330,9 +326,7 @@ def _sum_generation_stats(groups: Sequence[Mapping[str, Any]]) -> dict[str, Any]
         "eligible_domain_columns": eligible_domain_columns,
         "projected_columns": projected_columns,
         "eligible_width_ratio": (
-            eligible_domain_columns / float(full_width_columns)
-            if full_width_columns
-            else 1.0
+            eligible_domain_columns / float(full_width_columns) if full_width_columns else 1.0
         ),
         "projected_width_ratio": (
             projected_columns / float(full_width_columns) if full_width_columns else 1.0
@@ -450,9 +444,7 @@ def _run_downstream_variant(
             batch_size=int(detection.get("cnn_batch_size", 64)),
             bands_from=route.filtered_root,
             staff_vov_threshold=float(detection.get("staff_vov_threshold", 0.5)),
-            crop_recenter_on_bbox_ink=bool(
-                detection.get("crop_recenter_on_bbox_ink", False)
-            ),
+            crop_recenter_on_bbox_ink=bool(detection.get("crop_recenter_on_bbox_ink", False)),
             crop_recenter_max_shift_unit_ratio=float(
                 detection.get("crop_recenter_max_shift_unit_ratio", 0.35)
             ),

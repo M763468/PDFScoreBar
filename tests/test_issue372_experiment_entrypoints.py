@@ -39,3 +39,19 @@ def test_materialize_issue43_outputs_direct_entrypoint(
     )
     assert result.returncode == 0, result.stderr
     assert "Materialize Issue #43 saved production detector JSONs" in result.stdout
+
+
+def test_trace_retained_candidate_losses_direct_entrypoint_bootstraps_repo(
+    tmp_path: Path,
+) -> None:
+    script = ROOT / "experiments/issue372/trace_retained_candidate_losses.py"
+    result = subprocess.run(
+        [sys.executable, str(script), "--help"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "Trace Issue #372 newly missing GTs across retained candidate stages" in result.stdout

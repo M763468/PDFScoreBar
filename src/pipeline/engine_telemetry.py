@@ -182,9 +182,7 @@ class ResourceSampler:
             self._peak_device_gpu_utilization_percent,
             gpu_utilization,
         )
-        self._nvidia_smi_seen = (
-            self._nvidia_smi_seen or gpu_memory_seen or gpu_utilization_seen
-        )
+        self._nvidia_smi_seen = self._nvidia_smi_seen or gpu_memory_seen or gpu_utilization_seen
 
     def _run(self) -> None:
         while not self._stop.is_set():

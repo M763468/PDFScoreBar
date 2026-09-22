@@ -41,6 +41,23 @@ for root in "$artifact_root" "$base_code_root" "$candidate_code_root"; do
   fi
 done
 
+require_clean_tracked_worktree() {
+  local label="$1"
+  local root="$2"
+  local dirty
+
+  dirty="$(git -C "$root" status --porcelain --untracked-files=no)"
+  if [[ -n "$dirty" ]]; then
+    echo "Refusing to run #267 replay with tracked edits in the $label worktree." >&2
+    echo "root: $root" >&2
+    echo "$dirty" >&2
+    exit 2
+  fi
+}
+
+require_clean_tracked_worktree "baseline" "$base_code_root"
+require_clean_tracked_worktree "candidate" "$candidate_code_root"
+
 actual_base_sha="$(git -C "$base_code_root" rev-parse HEAD)"
 if [[ "$actual_base_sha" != "$expected_base_sha" ]]; then
   echo "Refusing to use the wrong #267 baseline." >&2

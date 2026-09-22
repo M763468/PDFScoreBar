@@ -53,6 +53,7 @@ const movementSystemRow = document.getElementById("movementSystemRow");
 const movementSystemInput = document.getElementById("movementSystemInput");
 const movementTargetMeta = document.getElementById("movementTargetMeta");
 const movementPageStatus = document.getElementById("movementPageStatus");
+const reasonRow = document.getElementById("reasonRow");
 const reasonInput = document.getElementById("reasonInput");
 
 const showMeasuresToggle = document.getElementById("showMeasuresToggle");
@@ -96,8 +97,8 @@ const OPS = {
   ],
   measure_construction: [["force_measure", "Force measure interval"]],
   movement_boundary: [
-    ["boundary", "Set boundary BEFORE target system"],
-    ["no_boundary", "Reject candidate (no boundary here)"],
+    ["boundary", "Confirm boundary BEFORE target system"],
+    ["no_boundary", "Confirm no boundary here"],
   ],
 };
 
@@ -194,21 +195,39 @@ function updateOps() {
 function updateControlState() {
   const type = currentType();
   const op = currentOp();
+  const movementMode = type === "movement_boundary";
+  const barlineMode = type === "barline_construction";
+
   measureSpanRow.style.display =
     type === "mmr_measure_span" && op === "set_measure_span" ? "flex" : "none";
-  movementBoundaryPanel.style.display = type === "movement_boundary" ? "" : "none";
-  if (type === "movement_boundary" && selectedMeasure && selectedMovementSystem === null) {
+  movementBoundaryPanel.style.display = movementMode ? "" : "none";
+
+  // Only barline editing has two interaction modes. Other correction surfaces
+  // select their target directly on the score.
+  selectModeBtn.style.display = barlineMode ? "" : "none";
+  drawModeBtn.style.display = barlineMode ? "" : "none";
+  drawModeBtn.disabled = !barlineMode;
+  if (!barlineMode && mode === "draw") setMode("select");
+
+  // Movement review persists each decision immediately, so a separate Save
+  // button would create an unnecessary second commit step.
+  saveBtn.style.display = movementMode ? "none" : "";
+  exportMovementBtn.style.display =
+    movementMode && currentPage && currentPage.movement_boundary_evidence ? "" : "none";
+  reasonRow.style.display = "";
+
+  if (movementMode && selectedMeasure && selectedMovementSystem === null) {
     selectedMovementSystem = selectedMeasure.system;
     movementSystemInput.value = String(displayIndex(selectedMovementSystem));
   }
-  if (type === "movement_boundary") {
+
+  if (movementMode) {
     addItemBtn.textContent =
-      op === "boundary" ? "Stage boundary before system" : "Stage candidate rejection";
+      op === "boundary" ? "Confirm boundary before system" : "Confirm no boundary here";
   } else {
     addItemBtn.textContent = "Stage change";
   }
-  drawModeBtn.disabled = !(type === "barline_construction");
-  if (drawModeBtn.disabled && mode === "draw") setMode("select");
+
   renderItems();
   updateSelectionMeta();
   draw();
@@ -325,14 +344,14 @@ function movementStateAt(system) {
     if (review.op === "boundary") {
       return {
         kind: candidate ? "reviewed_candidate_boundary" : "manual_boundary",
-        label: candidate ? "Reviewed boundary" : "Manual boundary",
+        label: candidate ? "Confirmed boundary" : "Confirmed boundary (manual)",
         color: COLOR_MOVEMENT_BOUNDARY,
         dashed: false,
       };
     }
     return {
       kind: "reviewed_no_boundary",
-      label: "Reviewed: no boundary",
+      label: "Checked: no boundary",
       color: COLOR_MOVEMENT_REJECTED,
       dashed: true,
     };
@@ -340,7 +359,7 @@ function movementStateAt(system) {
   if (resolved) {
     return {
       kind: "existing_resolved_boundary",
-      label: "Existing resolved boundary",
+      label: "Boundary used by current numbering",
       color: COLOR_MOVEMENT_EXISTING,
       dashed: false,
     };
@@ -348,7 +367,7 @@ function movementStateAt(system) {
   if (candidate) {
     return {
       kind: "unresolved_candidate",
-      label: "Unresolved candidate",
+      label: "Suggested boundary — needs review",
       color: COLOR_MOVEMENT_CANDIDATE,
       dashed: true,
     };
@@ -417,7 +436,7 @@ function updateMovementTargetMeta() {
       selectedMeasure && String(selectedMeasure.system) === String(system)
         ? ` Selected via Measure ${displayIndex(selectedMeasure.measure)}; that measure is only used to identify the system.`
         : "";
-    const status = state ? ` Current state: ${state.label}.` : " Current state: no candidate or resolved boundary.";
+    const status = state ? ` Current state: ${state.label}.` : " Current state: no suggested or confirmed boundary.";
     movementTargetMeta.textContent = bounds
       ? `Target: System ${displayIndex(system)}. A boundary will be placed BEFORE this system.${clicked}${status}`
       : `System ${displayIndex(system)} is not present on this page.`;
@@ -439,7 +458,7 @@ function updateMovementTargetMeta() {
     else counts.reviewed += 1;
   });
   movementPageStatus.textContent =
-    `This page: existing resolved boundaries ${counts.existing} · reviewed/staged boundaries ${counts.reviewed} · reviewed no-boundary ${counts.rejected} · unresolved candidates ${counts.candidates}`;
+    `This page: current-numbering boundaries ${counts.existing} · confirmed boundaries ${counts.reviewed} · checked no-boundary ${counts.rejected} · suggestions to review ${counts.candidates}`;
 }
 
 function draw() {
@@ -702,9 +721,9 @@ function renderPageList() {
     const reviewedBoundaries = reviews.filter((item) => item.op === "boundary").length;
     const reviewedNoBoundary = reviews.filter((item) => item.op === "no_boundary").length;
     const movementParts = [];
-    if (unresolvedCandidates) movementParts.push(`candidate ${unresolvedCandidates}`);
-    if (reviewedBoundaries) movementParts.push(`boundary ${reviewedBoundaries}`);
-    if (reviewedNoBoundary) movementParts.push(`no-boundary ${reviewedNoBoundary}`);
+    if (unresolvedCandidates) movementParts.push(`suggested ${unresolvedCandidates}`);
+    if (reviewedBoundaries) movementParts.push(`confirmed ${reviewedBoundaries}`);
+    if (reviewedNoBoundary) movementParts.push(`checked-no-boundary ${reviewedNoBoundary}`);
     const movementSummary = movementParts.length ? ` · movement: ${movementParts.join(", ")}` : "";
     div.textContent =
       `Page ${pageNumber}${page.name ? ` · ${page.name}` : ""}${movementSummary}`;
@@ -797,11 +816,11 @@ function renderMovementRows() {
 
     const title = document.createElement("div");
     let suffix = state.label;
-    if (review && review.op === "boundary" && candidate) suffix = "reviewed candidate → boundary";
-    else if (review && review.op === "boundary") suffix = "manual boundary";
-    else if (review && review.op === "no_boundary") suffix = "candidate rejected / no boundary";
-    else if (resolved) suffix = `existing resolved boundary · reset=${resolved.reset_number ?? 1}`;
-    else if (candidate) suffix = "unresolved candidate";
+    if (review && review.op === "boundary" && candidate) suffix = "confirmed boundary";
+    else if (review && review.op === "boundary") suffix = "confirmed boundary (manual)";
+    else if (review && review.op === "no_boundary") suffix = "checked: no boundary";
+    else if (resolved) suffix = `boundary used by current numbering · reset=${resolved.reset_number ?? 1}`;
+    else if (candidate) suffix = "suggested boundary — needs review";
     title.textContent = `BEFORE System ${displayIndex(system)} · ${suffix}`;
     div.appendChild(title);
 
@@ -829,7 +848,7 @@ function renderMovementRows() {
     const div = document.createElement("div");
     div.className = "small";
     div.textContent =
-      "No movement candidate or resolved boundary is recorded on this page. Click a system to add a boundary manually before it.";
+      "No suggested or current-numbering boundary is shown on this page. Click a system to confirm a boundary manually before it.";
     itemList.appendChild(div);
   }
 }
@@ -861,14 +880,17 @@ function updateActionButtons() {
   const type = currentType();
   if (type === "mmr_measure_span") {
     const canClear = Boolean(selectedMeasure && manualMmrMap().get(selectedMeasureKey()));
+    deleteItemBtn.style.display = "";
     deleteItemBtn.textContent = "Clear staged override";
     deleteItemBtn.disabled = !canClear;
     return;
   }
   const items = itemsForCurrentPage(type);
-  const canUnstage = selectedItemIndex !== null && Boolean(items[selectedItemIndex]);
-  deleteItemBtn.textContent = "Unstage selected";
-  deleteItemBtn.disabled = !canUnstage;
+  const canRemove = selectedItemIndex !== null && Boolean(items[selectedItemIndex]);
+  deleteItemBtn.style.display = "";
+  deleteItemBtn.textContent =
+    type === "movement_boundary" ? "Clear saved decision" : "Unstage selected";
+  deleteItemBtn.disabled = !canRemove;
 }
 
 function renderItems() {
@@ -940,7 +962,7 @@ function addCorrectionItem() {
     const candidate = movementCandidateAt(system);
     if (op === "no_boundary" && !candidate) {
       saveStatus.textContent =
-        "Candidate absence is not a reviewed no-boundary. Mark no boundary only for an explicit candidate.";
+        "No suggested boundary exists at this system. 'No boundary here' is only needed to dismiss a shown suggestion.";
       return;
     }
     item = {
@@ -967,8 +989,23 @@ function addCorrectionItem() {
     draw();
     saveStatus.textContent =
       item.op === "boundary"
-        ? `Staged boundary BEFORE System ${visibleSystem}.`
-        : `Staged candidate rejection: no boundary before System ${visibleSystem}.`;
+        ? `Saving confirmed boundary BEFORE System ${visibleSystem}...`
+        : `Saving checked no-boundary decision BEFORE System ${visibleSystem}...`;
+
+    saveCorrectionType(type)
+      .then(() => {
+        renderItems();
+        renderPageList();
+        updateSelectionMeta();
+        draw();
+        saveStatus.textContent =
+          item.op === "boundary"
+            ? `Saved: boundary confirmed BEFORE System ${visibleSystem}.`
+            : `Saved: checked no boundary BEFORE System ${visibleSystem}.`;
+      })
+      .catch((error) => {
+        saveStatus.textContent = `Movement decision save failed: ${error.message}`;
+      });
     return;
   }
 
@@ -1027,6 +1064,23 @@ function deleteSelectedItem() {
   updateSelectionMeta();
   renderItems();
   draw();
+
+  if (type === "movement_boundary") {
+    saveStatus.textContent = "Removing saved movement decision...";
+    saveCorrectionType(type)
+      .then(() => {
+        renderItems();
+        renderPageList();
+        updateSelectionMeta();
+        draw();
+        saveStatus.textContent = "Saved: movement decision cleared.";
+      })
+      .catch((error) => {
+        saveStatus.textContent = `Movement decision save failed: ${error.message}`;
+      });
+    return;
+  }
+
   saveStatus.textContent = "Removed staged correction.";
 }
 
@@ -1175,8 +1229,7 @@ function loadPage() {
   selectedMovementSystem = null;
   draftBBox = null;
   saveStatus.textContent = "";
-  exportMovementBtn.style.display = currentPage.movement_boundary_evidence ? "" : "none";
-  pageMeta.textContent = `Page ${displayPageNumber()}${currentPage.name ? ` · ${currentPage.name}` : ""} | Save writes correction JSON only`;
+  pageMeta.textContent = `Page ${displayPageNumber()}${currentPage.name ? ` · ${currentPage.name}` : ""}`;
 
   image.onload = () => {
     resetView();
@@ -1191,10 +1244,8 @@ function loadPage() {
     loadMovementEvidence(currentPage.movement_boundary_evidence),
     loadCorrections(),
   ]).then(() => {
-    updateSelectionMeta();
-    renderItems();
+    updateControlState();
     renderPageList();
-    draw();
   });
 }
 
@@ -1247,6 +1298,18 @@ function saveDirtyTypes() {
   return saveCorrectionTypes(types);
 }
 
+function releaseTransientInteraction() {
+  isPanning = false;
+  isDrawing = false;
+  drawStart = null;
+  spaceDown = false;
+}
+
+function blurActiveControl() {
+  const active = document.activeElement;
+  if (active && typeof active.blur === "function") active.blur();
+}
+
 function switchPage(nextIndex) {
   if (nextIndex === currentIndex) return;
   saveCorrectionTypes(Array.from(dirtyTypes))
@@ -1259,32 +1322,47 @@ function switchPage(nextIndex) {
     });
 }
 
-selectModeBtn.onclick = () => setMode("select");
-drawModeBtn.onclick = () => setMode("draw");
-addItemBtn.onclick = addCorrectionItem;
-deleteItemBtn.onclick = deleteSelectedItem;
-saveBtn.onclick = () => {
+selectModeBtn.onclick = (event) => {
+  event.currentTarget.blur();
+  setMode("select");
+};
+drawModeBtn.onclick = (event) => {
+  event.currentTarget.blur();
+  setMode("draw");
+};
+addItemBtn.onclick = (event) => {
+  event.currentTarget.blur();
+  releaseTransientInteraction();
+  addCorrectionItem();
+};
+deleteItemBtn.onclick = (event) => {
+  event.currentTarget.blur();
+  releaseTransientInteraction();
+  deleteSelectedItem();
+};
+saveBtn.onclick = (event) => {
+  event.currentTarget.blur();
+  releaseTransientInteraction();
   saveDirtyTypes().catch(() => {});
 };
-exportMovementBtn.onclick = () => {
-  saveDirtyTypes()
-    .then(() =>
-      fetch("/api/export_movement_boundaries", {
+exportMovementBtn.onclick = (event) => {
+  event.currentTarget.blur();
+  releaseTransientInteraction();
+  fetch("/api/export_movement_boundaries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: "{}",
       })
-    )
     .then((response) => {
       if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
       return response.json();
     })
     .then((data) => {
       saveStatus.textContent =
-        `Exported ${data.count} resolved movement boundaries: ${data.output}`;
+        `Movement review finished: ${data.count} confirmed boundaries are ready for the next numbering run. The displayed score is unchanged.`;
     })
     .catch((error) => {
-      saveStatus.textContent = `Movement boundary export failed: ${error.message}`;
+      saveStatus.textContent = `Finish movement review failed: ${error.message}`;
     });
 };
 helpBtn.onclick = () => {
@@ -1442,15 +1520,31 @@ canvas.addEventListener(
 window.addEventListener("keydown", (event) => {
   const tag = event.target && event.target.tagName ? event.target.tagName.toLowerCase() : "";
   if (tag === "input" || tag === "select" || tag === "textarea") return;
-  if (event.key === " ") spaceDown = true;
-  if (event.key === "ArrowLeft") prevBtn.click();
-  if (event.key === "ArrowRight") nextBtn.click();
+  if (event.key === " ") {
+    if (tag === "button") blurActiveControl();
+    event.preventDefault();
+    spaceDown = true;
+  }
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    prevBtn.click();
+  }
+  if (event.key === "ArrowRight") {
+    event.preventDefault();
+    nextBtn.click();
+  }
   if (event.key === "Delete" || event.key === "Backspace") deleteSelectedItem();
 });
 
 window.addEventListener("keyup", (event) => {
   if (event.key === " ") spaceDown = false;
 });
+
+window.addEventListener("mouseup", () => {
+  isPanning = false;
+});
+
+window.addEventListener("blur", releaseTransientInteraction);
 
 window.addEventListener("resize", () => {
   if (!image.complete) return;

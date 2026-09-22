@@ -11,6 +11,7 @@ import numpy as np
 from .bands import (
     build_divisi_map,
     resolve_bands,
+    resolve_x_domains,
     scan_staff_band_from_ink,
 )
 from .debug import write_debug_output
@@ -46,6 +47,8 @@ def detect_probe_scan(
     band_scan_pad: int = 0,
     band_scan_pad_ratio: float = 0.0,
     save_row_profile: bool = False,
+    scan_x_domain_mode: str = "full_width",
+    scan_x_domain_pad: int = 0,
     probe_width: int = 4,
     ink_threshold: int = 180,
     min_ratio: float = 0.85,
@@ -118,6 +121,15 @@ def detect_probe_scan(
     if not bands:
         return []
 
+    x_domains = resolve_x_domains(
+        mode=scan_x_domain_mode,
+        bands=bands,
+        staff_mask=staff_mask,
+        existing_boxes=existing_boxes,
+        image_width=w,
+        pad=scan_x_domain_pad,
+    )
+
     width = max(1, int(probe_width))
     kernel = np.ones(width, dtype=np.int32)
 
@@ -141,6 +153,7 @@ def detect_probe_scan(
         image_h=h,
         global_height=global_height,
         config=divisi_cfg,
+        x_domains=x_domains,
     )
 
     def has_existing(x_center: float, y1: int, y2: int) -> bool:
@@ -188,6 +201,9 @@ def detect_probe_scan(
     rejected_records: list[dict] = []
     debug_records = []
     for band_idx, (y1, y2) in enumerate(bands):
+        domain_x1, domain_x2 = (
+            x_domains[band_idx] if band_idx < len(x_domains) else (0, w - 1)
+        )
         scan_base_y1 = y1
         scan_base_y2 = y2
         if band_source == "horiz_scan":
@@ -277,8 +293,16 @@ def detect_probe_scan(
             & (ratios >= np.roll(ratios, 1))
             & (ratios >= np.roll(ratios, -1))
         )[0]
+        peaks = peaks[(peaks >= domain_x1) & (peaks <= domain_x2)]
         if peaks.size == 0:
-            debug_records.append({"band": [y1, y2], "status": "no_peaks", "band_idx": band_idx})
+            debug_records.append(
+                {
+                    "band": [y1, y2],
+                    "status": "no_peaks",
+                    "band_idx": band_idx,
+                    "scan_x_domain": [domain_x1, domain_x2],
+                }
+            )
             continue
         peak_scores = [(int(x), float(ratios[x])) for x in peaks]
         peak_scores.sort(key=lambda item: item[1], reverse=True)
@@ -457,6 +481,7 @@ def detect_probe_scan(
             record_base = {
                 "band": [band_y1, band_y2],
                 "staff_band": [y1, y2],
+                "scan_x_domain": [domain_x1, domain_x2],
                 "pred_band": list(pred_band) if pred_band is not None else None,
                 "ext_band": [int(ext_y1), int(ext_y2)]
                 if ext_y1 is not None and ext_y2 is not None
@@ -881,6 +906,8 @@ def detect_probe_scan(
             "band_scan_pad": band_scan_pad,
             "band_scan_pad_ratio": band_scan_pad_ratio,
             "save_row_profile": save_row_profile,
+            "scan_x_domain_mode": scan_x_domain_mode,
+            "scan_x_domain_pad": scan_x_domain_pad,
             "probe_width": width,
             "ink_threshold": ink_threshold,
             "min_ratio": min_ratio,
@@ -928,6 +955,7 @@ def detect_probe_scan(
             width=width,
             params=debug_params,
             divisi_map=divisi_map,
+            x_domains=x_domains,
             extend_top_max_ratio=extend_top_max_ratio,
             extend_bottom_max_ratio=extend_bottom_max_ratio,
         )

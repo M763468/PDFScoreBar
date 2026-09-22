@@ -14,6 +14,10 @@ Examples:
 
 Runs the Issue #43 A/B inside the canonical compatible GPU image, bind-mounting
 the active checkout and the manifest-verified external OMR-DLN artifact.
+
+Environment:
+  PDFSCORE_EVAL2_IMAGES_ROOT  Optional host path to canonical evaluation2/images.
+                              Mounted read-only at /workspace/data/evaluation2/images.
 USAGE
 }
 
@@ -53,9 +57,20 @@ omr_container="$(
     "$omr_manifest"
 )"
 
+extra_mounts=()
+if [[ -n "${PDFSCORE_EVAL2_IMAGES_ROOT:-}" ]]; then
+  images_root="$(realpath "${PDFSCORE_EVAL2_IMAGES_ROOT}")"
+  if [[ ! -d "$images_root" ]]; then
+    echo "PDFSCORE_EVAL2_IMAGES_ROOT is not a directory: $images_root" >&2
+    exit 2
+  fi
+  extra_mounts+=(-v "$images_root:/workspace/data/evaluation2/images:ro")
+fi
+
 docker run --rm --gpus all \
   -v "$repo_root:/workspace" \
   -v "$omr_host:$omr_container:ro" \
+  "${extra_mounts[@]}" \
   -w /workspace \
   -e PYTHONPATH=/workspace \
   -e "OMR_DLN_MODEL_PATH=$omr_container" \

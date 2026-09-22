@@ -180,7 +180,6 @@ def _append_if_staff_like(
         out.append((y1, y2))
 
 
-
 def resolve_x_domains(
     *,
     mode: str,
@@ -240,6 +239,7 @@ def resolve_x_domains(
             domains.append((x1, x2))
 
     return domains
+
 
 def scan_staff_band_from_ink(
     ink: np.ndarray,

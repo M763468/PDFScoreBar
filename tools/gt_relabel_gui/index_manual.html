@@ -43,7 +43,7 @@
           <button id="prevBtn" class="btn">Previous page</button>
           <button id="nextBtn" class="btn">Next page</button>
           <button id="saveBtn" class="btn">Save corrections</button>
-          <button id="exportMovementBtn" class="btn" style="display:none;">Export movement boundaries</button>
+          <button id="exportMovementBtn" class="btn" style="display:none;">Finish movement review</button>
           <button id="helpBtn" class="btn">Help</button>
         </div>
         <div class="small" id="saveStatus"></div>
@@ -76,7 +76,8 @@
           <strong>Movement boundary target</strong><br />
           A boundary is inserted <strong>immediately BEFORE the target system</strong>.
           The first measure of that system becomes the start of the new movement.
-          Click anywhere inside the target system; the GUI will select the whole system.
+          Click anywhere inside the target system; the GUI will select the whole system.<br />
+          <strong>Movement decisions are saved immediately.</strong> There is no separate Save step.
         </div>
         <div class="row" id="movementSystemRow">
           <label class="small">Target system (visible 1-based)
@@ -85,13 +86,17 @@
         </div>
         <div class="movement-status" id="movementTargetMeta">No movement system selected.</div>
         <div class="movement-status" id="movementPageStatus"></div>
+        <div class="movement-status">
+          <strong>Finish movement review</strong> creates the boundary data used by the next numbering run.
+          It does <strong>not</strong> change the score currently displayed in this GUI.
+        </div>
       </div>
-      <div class="row">
+      <div class="row" id="reasonRow">
         <label class="small">Reason
           <input id="reasonInput" type="text" value="manual correction" />
         </label>
       </div>
-      <div class="row">
+      <div class="row" id="actionRow">
         <button id="selectModeBtn" class="btn active">Select object</button>
         <button id="drawModeBtn" class="btn">Draw barline box</button>
         <button id="addItemBtn" class="btn">Stage change</button>
@@ -109,8 +114,8 @@
             <li><strong>Staged removals:</strong> keep Manual state on; staged barline removals remain visible even if Barlines is off.</li>
           </ul>
           <p><strong>Selected objects and active drafts always stay visible.</strong> This lets you hide other layers without losing the active target.</p>
-          <p><strong>Correction flow:</strong> choose Type/Operation → Select object or Draw barline box → Stage change → inspect Current page results → Save corrections. Save corrections writes every staged correction type on the current page.</p>
-          <p><strong>Movement boundaries:</strong> a boundary is always placed <strong>before the selected system</strong>, never after it. Click anywhere inside the intended system; the whole system becomes the movement target. If a measure is hit, its measure number is shown only as selection context. The canvas shows candidate, existing/resolved, staged boundary, and reviewed no-boundary markers. Mark boundary accepts a candidate or adds a non-candidate boundary. Mark no boundary is allowed only for an explicit candidate; candidate absence is never treated as a negative. Save before using Export movement boundaries.</p>
+          <p><strong>Other correction types:</strong> choose Type/Operation → Select object or Draw barline box → Stage change → inspect Current page results → Save corrections.</p>
+          <p><strong>Movement boundaries:</strong> a boundary is always placed <strong>before the selected system</strong>, never after it. Click anywhere inside the intended system; the whole system becomes the movement target. If a measure is hit, its measure number is shown only as selection context. Yellow marks a suggested boundary, purple a confirmed boundary, cyan a boundary already used by the current numbering, and gray a checked no-boundary location. Choosing the boundary/no-boundary action saves that decision immediately. <strong>Finish movement review</strong> only creates the boundary data for a later numbering run; it does not alter the currently displayed score.</p>
           <p>Visible Page / System / Measure identifiers are <strong>1-based</strong>. Saved correction indices keep the existing internal <strong>0-based</strong> schema.</p>
           <p><strong>Canvas:</strong> mouse wheel = zoom; Space+drag or middle mouse = pan. Left/Right arrows change page. Delete/Backspace unstages the selected correction when applicable.</p>
           <p>Save writes package-local correction JSON under <code>review/corrections/</code>; applying corrections and regenerating outputs is a separate step.</p>
@@ -121,7 +126,7 @@
         <summary>Current page results</summary>
         <div class="small">
           MMR rows show <code>base</code> from the configured MMR artifact and <code>effective</code> after manual corrections.
-          Movement rows state whether the location is an unresolved candidate, existing resolved boundary, reviewed boundary, reviewed no-boundary, or manual boundary. Every movement location is expressed as <strong>before System N</strong>.
+          Movement rows show suggested boundaries, confirmed boundaries, checked no-boundary locations, and boundaries already used by the current numbering. Every movement location is expressed as <strong>before System N</strong>.
           Visible Page / System / Measure identifiers are 1-based; saved correction indices remain unchanged.
         </div>
         <div id="itemList"></div>
@@ -135,10 +140,10 @@
         <span><span class="dot" style="background:#b35cff;"></span>Manual override</span>
         <span><span class="dot" style="background:#ff3b30;"></span>Suppressed/draft</span>
         <span><span class="dot" style="background:#ff8a00;"></span>Selected target</span>
-        <span><span class="dot" style="background:#ffd60a;"></span>Movement candidate</span>
-        <span><span class="dot" style="background:#b35cff;"></span>Reviewed/manual boundary</span>
-        <span><span class="dot" style="background:#00c2ff;"></span>Existing resolved boundary</span>
-        <span><span class="dot" style="background:#9aa0a6;"></span>Reviewed no-boundary</span>
+        <span><span class="dot" style="background:#ffd60a;"></span>Suggested boundary</span>
+        <span><span class="dot" style="background:#b35cff;"></span>Confirmed boundary</span>
+        <span><span class="dot" style="background:#00c2ff;"></span>Boundary used by current numbering</span>
+        <span><span class="dot" style="background:#9aa0a6;"></span>Checked: no boundary</span>
         </div>
       </details>
 
@@ -150,7 +155,7 @@
       <div class="section small">
         Zoom: mouse wheel<br />
         Pan: space+drag or middle mouse<br />
-        Save writes correction JSON only. Re-run evaluation separately.<br />
+        Movement decisions save immediately. Other correction types use Save corrections.<br />
         Output: package-local <code>review/corrections/</code> from the active manual config
       </div>
     </div>

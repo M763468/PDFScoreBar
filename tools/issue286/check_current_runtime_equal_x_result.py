@@ -12,6 +12,16 @@ from typing import Any
 EXPECTED_PAGE_COUNT = 68
 EXPECTED_TIE_PAGE_COUNT = 16
 EXPECTED_TIE_GROUP_COUNT = 36
+EXPECTED_SELECTORS = {
+    "staff_order_first",
+    "staff_order_last",
+    "topmost",
+    "bottommost",
+    "narrower",
+    "wider",
+    "tallest",
+    "shortest",
+}
 
 
 def evaluate_acceptance(data: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
@@ -35,6 +45,10 @@ def evaluate_acceptance(data: dict[str, Any]) -> tuple[dict[str, Any], list[str]
         )
 
     selectors = summary.get("selectors") or {}
+    missing_selectors = sorted(EXPECTED_SELECTORS - set(selectors))
+    if missing_selectors:
+        failures.append(f"missing selector summaries: {missing_selectors!r}")
+
     wider = selectors.get("wider") or {}
     wider_logical = wider.get("logical_changed_from_current_replay_pages") or []
     wider_geometry = wider.get("geometry_changed_from_current_replay_pages") or []
@@ -75,6 +89,12 @@ def evaluate_acceptance(data: dict[str, Any]) -> tuple[dict[str, Any], list[str]
                     f"{page_name} x1={decision.get('x1')} did not choose a widest "
                     f"candidate: selected={selected!r} boxes={boxes!r}"
                 )
+
+    if wider_decision_count != EXPECTED_TIE_GROUP_COUNT:
+        failures.append(
+            f"wider_decision_count={wider_decision_count!r}; "
+            f"expected={EXPECTED_TIE_GROUP_COUNT}"
+        )
 
     page_013 = (data.get("pages") or {}).get("Shostakovich-Sym5-Va/page_013") or {}
     page_013_decisions = (

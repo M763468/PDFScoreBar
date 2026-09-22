@@ -206,6 +206,23 @@ def build_resolved_movement_boundaries(
     candidates = {
         (item["page"], item["system"]): item for item in normalized_evidence["candidates"]
     }
+    required_review_locations = {
+        (item["page"], item["system"])
+        for item in normalized_evidence["candidates"]
+        if item["state"] == "ambiguous_review_required"
+    }
+    reviewed_locations = {
+        (item["page"], item["system"]) for item in normalized_review["items"]
+    }
+    unresolved_locations = sorted(required_review_locations - reviewed_locations)
+    if unresolved_locations:
+        formatted = ", ".join(
+            f"(page={page}, system={system})" for page, system in unresolved_locations
+        )
+        raise MovementBoundaryReviewError(
+            "cannot export movement boundaries while review-required candidates remain "
+            f"unresolved: {formatted}"
+        )
 
     boundaries: list[dict[str, Any]] = []
     for item in normalized_review["items"]:

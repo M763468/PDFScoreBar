@@ -79,6 +79,7 @@ def test_build_manual_gui_config_maps_handoff_to_current_gui_config(tmp_path):
                 "mmr_measure_span": "corrections/mmr_measure_spans.json",
                 "measure_construction": "corrections/measure_construction_overrides.json",
                 "barline_construction": "corrections/barline_construction_overrides.json",
+                "movement_boundary": "corrections/movement_boundaries_review.json",
             },
             "mmr": "pages/page_003/mmr_overrides.json",
             "barlines": "pages/page_003/barlines_review.json",
@@ -100,6 +101,23 @@ def test_handoff_base_mode_allows_missing_optional_review_evidence(tmp_path):
 
     assert normalized["pages"][0]["gui_page_index_zero_based"] == 2
     assert "mmr_overrides" not in normalized["pages"][0]
+
+
+def test_handoff_strict_mode_allows_missing_pre_rendered_overlay(tmp_path):
+    handoff_path, handoff = _review_package(tmp_path)
+    (handoff_path.parent / "pages" / "page_003" / "review_overlay.png").unlink()
+    handoff["pages"][0].pop("review_overlay")
+
+    normalized = validate_manual_correction_handoff(
+        handoff,
+        handoff_path=handoff_path,
+        mode="issue229_smoke_strict",
+        require_existing_artifacts=True,
+    )
+
+    assert "review_overlay" not in normalized["pages"][0]
+    assert normalized["pages"][0]["mmr_overrides"] == "pages/page_003/mmr_overrides.json"
+    assert normalized["pages"][0]["barlines_review"] == "pages/page_003/barlines_review.json"
 
 
 def test_handoff_strict_mode_requires_review_evidence(tmp_path):
@@ -140,7 +158,10 @@ def test_handoff_uses_explicit_correction_outputs_without_staging_suffix(tmp_pat
 
     config = build_manual_gui_config(handoff, handoff_path=handoff_path)
 
-    assert config["pages"][0]["manual_outputs"] == handoff["pages"][0]["correction_outputs"]
+    assert config["pages"][0]["manual_outputs"] == {
+        **handoff["pages"][0]["correction_outputs"],
+        "movement_boundary": "corrections/movement_boundaries_review.json",
+    }
     assert all("_staging" not in key for key in config["pages"][0]["manual_outputs"])
 
 
@@ -265,3 +286,38 @@ def test_canonicalize_allows_explicit_overwrite(tmp_path):
 
     assert outputs["measure_overrides"].exists()
     assert outputs["barline_overrides"].exists()
+
+
+def test_handoff_exposes_attached_movement_evidence_to_existing_gui(tmp_path):
+    handoff_path, handoff = _review_package(tmp_path)
+    evidence_path = handoff_path.parent / "movement_boundary_evidence.json"
+    _write_json(
+        evidence_path,
+        {
+            "schema_version": "issue333.movement_boundary_evidence.v1",
+            "candidates": [],
+        },
+    )
+    handoff["movement_boundary_evidence"] = "movement_boundary_evidence.json"
+    handoff["movement_boundary_resolved_output"] = "corrections/movement_boundaries.json"
+
+    config = build_manual_gui_config(
+        handoff,
+        handoff_path=handoff_path,
+        mode="issue229_smoke_strict",
+        require_existing_artifacts=True,
+    )
+
+    assert config["pages"][0]["movement_boundary_evidence"] == "movement_boundary_evidence.json"
+    assert (
+        config["pages"][0]["movement_boundary_resolved_output"]
+        == "corrections/movement_boundaries.json"
+    )
+
+
+def test_handoff_rejects_movement_evidence_outside_review_package(tmp_path):
+    handoff_path, handoff = _review_package(tmp_path)
+    handoff["movement_boundary_evidence"] = "../movement_boundary_evidence.json"
+
+    with pytest.raises(ManualCorrectionHandoffError, match="inside the review package"):
+        validate_manual_correction_handoff(handoff, handoff_path=handoff_path)

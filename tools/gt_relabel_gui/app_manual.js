@@ -5,10 +5,15 @@ let currentPage = null;
 let measures = [];
 let baseMmrOverrides = [];
 let barlines = [];
+let movementEvidenceCandidates = [];
+let allMovementEvidenceCandidates = [];
+let resolvedMovementBoundaries = [];
+let selectedMovementSystem = null;
 let correctionsByType = {
   mmr_measure_span: [],
   barline_construction: [],
   measure_construction: [],
+  movement_boundary: [],
 };
 
 let selectedMeasure = null;
@@ -17,6 +22,8 @@ let selectedItemIndex = null;
 let draftBBox = null;
 let mode = "select";
 let dirtyTypes = new Set();
+let movementSaveChain = Promise.resolve();
+let movementLastSaveError = null;
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -31,6 +38,7 @@ const selectionMeta = document.getElementById("selectionMeta");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const saveBtn = document.getElementById("saveBtn");
+const exportMovementBtn = document.getElementById("exportMovementBtn");
 const helpBtn = document.getElementById("helpBtn");
 const helpPanel = document.getElementById("helpPanel");
 const selectModeBtn = document.getElementById("selectModeBtn");
@@ -42,6 +50,12 @@ const typeSelect = document.getElementById("typeSelect");
 const opSelect = document.getElementById("opSelect");
 const measureSpanRow = document.getElementById("measureSpanRow");
 const measureSpanInput = document.getElementById("measureSpanInput");
+const movementBoundaryPanel = document.getElementById("movementBoundaryPanel");
+const movementSystemRow = document.getElementById("movementSystemRow");
+const movementSystemInput = document.getElementById("movementSystemInput");
+const movementTargetMeta = document.getElementById("movementTargetMeta");
+const movementPageStatus = document.getElementById("movementPageStatus");
+const reasonRow = document.getElementById("reasonRow");
 const reasonInput = document.getElementById("reasonInput");
 
 const showMeasuresToggle = document.getElementById("showMeasuresToggle");
@@ -49,6 +63,7 @@ const showBarlinesToggle = document.getElementById("showBarlinesToggle");
 const showLabelsToggle = document.getElementById("showLabelsToggle");
 const showBaseToggle = document.getElementById("showBaseToggle");
 const showManualToggle = document.getElementById("showManualToggle");
+const showMovementToggle = document.getElementById("showMovementToggle");
 
 let image = new Image();
 let viewScale = 1.0;
@@ -67,6 +82,10 @@ const COLOR_SUPPRESSED = "#ff3b30";
 const COLOR_BARLINE = "#46c46b";
 const COLOR_SELECTED = "#ff8a00";
 const COLOR_DRAFT = "#ff3b30";
+const COLOR_MOVEMENT_CANDIDATE = "#ffd60a";
+const COLOR_MOVEMENT_BOUNDARY = "#b35cff";
+const COLOR_MOVEMENT_EXISTING = "#00c2ff";
+const COLOR_MOVEMENT_REJECTED = "#9aa0a6";
 const HIT_PADDING = 7;
 
 const OPS = {
@@ -79,6 +98,10 @@ const OPS = {
     ["add_barline", "Add barline"],
   ],
   measure_construction: [["force_measure", "Force measure interval"]],
+  movement_boundary: [
+    ["boundary", "Confirm boundary BEFORE target system"],
+    ["no_boundary", "Confirm no boundary here"],
+  ],
 };
 
 function fetchJSON(url) {
@@ -174,10 +197,39 @@ function updateOps() {
 function updateControlState() {
   const type = currentType();
   const op = currentOp();
+  const movementMode = type === "movement_boundary";
+  const barlineMode = type === "barline_construction";
+
   measureSpanRow.style.display =
     type === "mmr_measure_span" && op === "set_measure_span" ? "flex" : "none";
-  drawModeBtn.disabled = !(type === "barline_construction");
-  if (drawModeBtn.disabled && mode === "draw") setMode("select");
+  movementBoundaryPanel.style.display = movementMode ? "" : "none";
+
+  // Only barline editing has two interaction modes. Other correction surfaces
+  // select their target directly on the score.
+  selectModeBtn.style.display = barlineMode ? "" : "none";
+  drawModeBtn.style.display = barlineMode ? "" : "none";
+  drawModeBtn.disabled = !barlineMode;
+  if (!barlineMode && mode === "draw") setMode("select");
+
+  // Movement review persists each decision immediately, so a separate Save
+  // button would create an unnecessary second commit step.
+  saveBtn.style.display = movementMode ? "none" : "";
+  exportMovementBtn.style.display =
+    movementMode && currentPage && currentPage.movement_boundary_evidence ? "" : "none";
+  reasonRow.style.display = movementMode ? "none" : "";
+
+  if (movementMode && selectedMeasure && selectedMovementSystem === null) {
+    selectedMovementSystem = selectedMeasure.system;
+    movementSystemInput.value = String(displayIndex(selectedMovementSystem));
+  }
+
+  if (movementMode) {
+    addItemBtn.textContent =
+      op === "boundary" ? "Confirm boundary before system" : "Confirm no boundary here";
+  } else {
+    addItemBtn.textContent = "Stage change";
+  }
+
   renderItems();
   updateSelectionMeta();
   draw();
@@ -251,6 +303,167 @@ function drawLabel(box, text, color) {
   ctx.fillText(text, p.x + 3, p.y - 3);
 }
 
+function systemBounds(system) {
+  const systemMeasures = measures.filter(
+    (measure) => String(measure.system) === String(system)
+  );
+  if (!systemMeasures.length) return null;
+  return systemMeasures.reduce(
+    (bounds, measure) => [
+      Math.min(bounds[0], measure.bbox[0]),
+      Math.min(bounds[1], measure.bbox[1]),
+      Math.max(bounds[2], measure.bbox[2]),
+      Math.max(bounds[3], measure.bbox[3]),
+    ],
+    [
+      systemMeasures[0].bbox[0],
+      systemMeasures[0].bbox[1],
+      systemMeasures[0].bbox[2],
+      systemMeasures[0].bbox[3],
+    ]
+  );
+}
+
+function movementReviewAt(system) {
+  return itemsForCurrentPage("movement_boundary").find(
+    (item) => String(item.system) === String(system)
+  );
+}
+
+function resolvedMovementAt(system) {
+  return resolvedMovementBoundaries.find(
+    (item) =>
+      String(item.page) === String(pageValue()) &&
+      String(item.system) === String(system)
+  );
+}
+
+function movementStateAt(system) {
+  const review = movementReviewAt(system);
+  const candidate = movementCandidateAt(system);
+  const resolved = resolvedMovementAt(system);
+  if (review) {
+    if (review.op === "boundary") {
+      return {
+        kind: candidate ? "reviewed_candidate_boundary" : "manual_boundary",
+        label: candidate ? "Confirmed boundary" : "Confirmed boundary (manual)",
+        color: COLOR_MOVEMENT_BOUNDARY,
+        dashed: false,
+      };
+    }
+    return {
+      kind: "reviewed_no_boundary",
+      label: "Checked: no boundary",
+      color: COLOR_MOVEMENT_REJECTED,
+      dashed: true,
+    };
+  }
+  if (resolved) {
+    return {
+      kind: "existing_resolved_boundary",
+      label: "Boundary used by current numbering",
+      color: COLOR_MOVEMENT_EXISTING,
+      dashed: false,
+    };
+  }
+  if (candidate) {
+    return {
+      kind: "unresolved_candidate",
+      label: "Suggested boundary — needs review",
+      color: COLOR_MOVEMENT_CANDIDATE,
+      dashed: true,
+    };
+  }
+  return null;
+}
+
+function movementSystemsOnPage() {
+  const systems = new Set();
+  movementEvidenceCandidates.forEach((candidate) => {
+    if (
+      String(candidate.page) === String(pageValue()) &&
+      candidate.state === "ambiguous_review_required"
+    ) {
+      systems.add(String(candidate.system));
+    }
+  });
+  itemsForCurrentPage("movement_boundary").forEach((item) => systems.add(String(item.system)));
+  resolvedMovementBoundaries.forEach((item) => {
+    if (String(item.page) === String(pageValue())) systems.add(String(item.system));
+  });
+  return Array.from(systems)
+    .map((value) => parseInt(value, 10))
+    .filter((value) => Number.isFinite(value))
+    .sort((a, b) => a - b);
+}
+
+function drawMovementMarker(system, state, selected = false) {
+  const bounds = systemBounds(system);
+  if (!bounds) return;
+  const [x1, y1, x2, y2] = bounds;
+  const lineY = Math.max(2, y1 - 8);
+  const p1 = imgToCanvas({ x: Math.max(0, x1 - 8), y: lineY });
+  const p2 = imgToCanvas({ x: Math.min(image.width, x2 + 8), y: lineY });
+  ctx.save();
+  ctx.strokeStyle = selected ? COLOR_SELECTED : state.color;
+  ctx.lineWidth = selected ? 4 : 3;
+  ctx.setLineDash(state.dashed && !selected ? [8, 5] : []);
+  ctx.beginPath();
+  ctx.moveTo(p1.x, p1.y);
+  ctx.lineTo(p2.x, p2.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  const labelBox = [x1, lineY, x2, y2];
+  drawLabel(
+    labelBox,
+    `${selected ? "TARGET" : state.label}: before S${displayIndex(system)}`,
+    selected ? COLOR_SELECTED : state.color
+  );
+  if (selected) drawBox(bounds, COLOR_SELECTED, 3, true);
+  ctx.restore();
+}
+
+function updateMovementTargetMeta() {
+  if (!movementTargetMeta || !movementPageStatus) return;
+  if (currentType() !== "movement_boundary") return;
+
+  const system = selectedMovementSystem;
+  if (system === null || !Number.isFinite(system)) {
+    movementTargetMeta.textContent =
+      "No target system selected. Click anywhere inside the intended system or enter its system number.";
+  } else {
+    const bounds = systemBounds(system);
+    const state = movementStateAt(system);
+    const clicked =
+      selectedMeasure && String(selectedMeasure.system) === String(system)
+        ? ` Selected via Measure ${displayIndex(selectedMeasure.measure)}; that measure is only used to identify the system.`
+        : "";
+    const status = state ? ` Current state: ${state.label}.` : " Current state: no suggested or confirmed boundary.";
+    movementTargetMeta.textContent = bounds
+      ? `Target: System ${displayIndex(system)}. A boundary will be placed BEFORE this system.${clicked}${status}`
+      : `System ${displayIndex(system)} is not present on this page.`;
+  }
+
+  const systems = movementSystemsOnPage();
+  const counts = {
+    existing: 0,
+    reviewed: 0,
+    rejected: 0,
+    candidates: 0,
+  };
+  systems.forEach((systemIndex) => {
+    const state = movementStateAt(systemIndex);
+    if (!state) return;
+    if (state.kind === "existing_resolved_boundary") counts.existing += 1;
+    else if (state.kind === "reviewed_no_boundary") counts.rejected += 1;
+    else if (state.kind === "unresolved_candidate") counts.candidates += 1;
+    else counts.reviewed += 1;
+  });
+  movementPageStatus.textContent =
+    `This page: current-numbering boundaries ${counts.existing} · confirmed boundaries ${counts.reviewed} · checked no-boundary ${counts.rejected} · suggestions to review ${counts.candidates}`;
+  updateMovementFinishButton();
+}
+
 function draw() {
   if (!image.complete) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -317,7 +530,30 @@ function draw() {
     });
   }
 
-  if (selectedMeasure) {
+  if (showMovementToggle.checked) {
+    movementSystemsOnPage().forEach((system) => {
+      const state = movementStateAt(system);
+      if (state) drawMovementMarker(system, state, false);
+    });
+  }
+
+  if (
+    currentType() === "movement_boundary" &&
+    selectedMovementSystem !== null &&
+    systemBounds(selectedMovementSystem)
+  ) {
+    drawMovementMarker(
+      selectedMovementSystem,
+      movementStateAt(selectedMovementSystem) || {
+        label: "Target",
+        color: COLOR_SELECTED,
+        dashed: false,
+      },
+      true
+    );
+  }
+
+  if (selectedMeasure && currentType() !== "movement_boundary") {
     drawBox(selectedMeasure.bbox, COLOR_SELECTED, 3, true);
     drawLabel(selectedMeasure.bbox, measureDisplayLabel(selectedMeasure), COLOR_SELECTED);
   }
@@ -379,6 +615,17 @@ function pickBarline(imgPt) {
   return null;
 }
 
+function pickSystem(imgPt) {
+  const systems = Array.from(new Set(measures.map((measure) => String(measure.system))))
+    .map((value) => parseInt(value, 10))
+    .filter((value) => Number.isFinite(value));
+  for (let i = systems.length - 1; i >= 0; i--) {
+    const bounds = systemBounds(systems[i]);
+    if (bounds && pointInImageBox(imgPt, bounds)) return systems[i];
+  }
+  return null;
+}
+
 function baseMmrMap() {
   const page = pageValue();
   const result = new Map();
@@ -422,7 +669,15 @@ function effectiveMmrState(measure, baseMap = null, manualMap = null) {
 
 function updateSelectionMeta() {
   const parts = [];
-  if (selectedMeasure) {
+  if (currentType() === "movement_boundary" && selectedMovementSystem !== null) {
+    const source =
+      selectedMeasure && String(selectedMeasure.system) === String(selectedMovementSystem)
+        ? ` (clicked Measure ${displayIndex(selectedMeasure.measure)})`
+        : "";
+    parts.push(
+      `Movement target: Page ${displayPageNumber()} / System ${displayIndex(selectedMovementSystem)}${source} — boundary position is BEFORE this system`
+    );
+  } else if (selectedMeasure) {
     const state = effectiveMmrState(selectedMeasure);
     parts.push(
       `Page ${displayPageNumber()} / System ${displayIndex(selectedMeasure.system)} / Measure ${displayIndex(selectedMeasure.measure)} | base=${state.baseSpan} effective=${state.effectiveSpan}`
@@ -439,6 +694,39 @@ function updateSelectionMeta() {
     if (item) parts.push(manualItemSummary(item, selectedItemIndex, currentType()));
   }
   selectionMeta.textContent = parts.length ? parts.join(" | ") : "No selection";
+  updateMovementTargetMeta();
+}
+
+function movementReviewKey(page, system) {
+  return `${page}:${system}`;
+}
+
+function unresolvedMovementSuggestionCount() {
+  const decided = new Set(
+    (correctionsByType.movement_boundary || [])
+      .filter((item) => item && item.evidence_candidate_id)
+      .map((item) => movementReviewKey(item.page, item.system))
+  );
+  return allMovementEvidenceCandidates.filter(
+    (candidate) =>
+      candidate &&
+      candidate.state === "ambiguous_review_required" &&
+      !decided.has(movementReviewKey(candidate.page, candidate.system))
+  ).length;
+}
+
+function updateMovementFinishButton() {
+  if (!exportMovementBtn) return;
+  const remaining = unresolvedMovementSuggestionCount();
+  exportMovementBtn.disabled = remaining > 0;
+  exportMovementBtn.textContent =
+    remaining > 0
+      ? `Finish movement review (${remaining} suggestion${remaining === 1 ? "" : "s"} left)`
+      : "Finish movement review";
+  exportMovementBtn.title =
+    remaining > 0
+      ? "Review every suggested boundary before finishing."
+      : "Create boundary data for the next numbering run. The displayed score will not change.";
 }
 
 function renderPageList() {
@@ -447,10 +735,37 @@ function renderPageList() {
     const div = document.createElement("div");
     div.className = "list-item" + (index === currentIndex ? " active" : "");
     const pageNumber = displayPageNumberFor(page, index);
-    div.textContent = `Page ${pageNumber}${page.name ? ` · ${page.name}` : ""}`;
+    const pageCoordinate =
+      page.page !== undefined
+        ? page.page
+        : page.page_index !== undefined
+          ? page.page_index
+          : index;
+    const pageCandidates = allMovementEvidenceCandidates.filter(
+      (candidate) =>
+        String(candidate.page) === String(pageCoordinate) &&
+        candidate.state === "ambiguous_review_required"
+    );
+    const reviews = (correctionsByType.movement_boundary || []).filter(
+      (item) => String(item.page) === String(pageCoordinate)
+    );
+    const reviewedSystems = new Set(reviews.map((item) => String(item.system)));
+    const unresolvedCandidates = pageCandidates.filter(
+      (candidate) => !reviewedSystems.has(String(candidate.system))
+    ).length;
+    const reviewedBoundaries = reviews.filter((item) => item.op === "boundary").length;
+    const reviewedNoBoundary = reviews.filter((item) => item.op === "no_boundary").length;
+    const movementParts = [];
+    if (unresolvedCandidates) movementParts.push(`suggested ${unresolvedCandidates}`);
+    if (reviewedBoundaries) movementParts.push(`confirmed ${reviewedBoundaries}`);
+    if (reviewedNoBoundary) movementParts.push(`checked-no-boundary ${reviewedNoBoundary}`);
+    const movementSummary = movementParts.length ? ` · movement: ${movementParts.join(", ")}` : "";
+    div.textContent =
+      `Page ${pageNumber}${page.name ? ` · ${page.name}` : ""}${movementSummary}`;
     div.onclick = () => switchPage(index);
     pageList.appendChild(div);
   });
+  updateMovementFinishButton();
 }
 
 function itemsForCurrentPage(correctionType) {
@@ -493,6 +808,92 @@ function renderMmrRows() {
   }
 }
 
+function movementCandidateAt(system) {
+  return movementEvidenceCandidates.find(
+    (candidate) =>
+      String(candidate.page) === String(pageValue()) &&
+      String(candidate.system) === String(system) &&
+      candidate.state === "ambiguous_review_required"
+  );
+}
+
+function movementEvidenceText(candidate) {
+  const evidence = {
+    signals: candidate.signals || [],
+    references: candidate.references || {},
+  };
+  return JSON.stringify(evidence);
+}
+
+function renderMovementRows() {
+  const items = itemsForCurrentPage("movement_boundary");
+  const bySystem = new Map(items.map((item, index) => [String(item.system), { item, index }]));
+  const systems = movementSystemsOnPage();
+
+  const guide = document.createElement("div");
+  guide.className = "small";
+  guide.textContent =
+    "All locations below mean BEFORE System N. Click a row to target that system on the score.";
+  itemList.appendChild(guide);
+
+  systems.forEach((system) => {
+    const review = bySystem.get(String(system));
+    const candidate = movementCandidateAt(system);
+    const resolved = resolvedMovementAt(system);
+    const state = movementStateAt(system);
+    if (!state) return;
+
+    const div = document.createElement("div");
+    div.className =
+      "list-item" +
+      (selectedMovementSystem !== null && String(selectedMovementSystem) === String(system)
+        ? " active"
+        : "");
+
+    const title = document.createElement("div");
+    let suffix = state.label;
+    if (review && review.op === "boundary" && candidate) suffix = "confirmed boundary";
+    else if (review && review.op === "boundary") suffix = "confirmed boundary (manual)";
+    else if (review && review.op === "no_boundary") suffix = "checked: no boundary";
+    else if (resolved) suffix = `boundary used by current numbering · reset=${resolved.reset_number ?? 1}`;
+    else if (candidate) suffix = "suggested boundary — needs review";
+    title.textContent = `BEFORE System ${displayIndex(system)} · ${suffix}`;
+    div.appendChild(title);
+
+    if (candidate) {
+      const details = document.createElement("details");
+      details.className = "small";
+      const summary = document.createElement("summary");
+      summary.textContent = "Detection details";
+      const raw = document.createElement("code");
+      raw.textContent = movementEvidenceText(candidate);
+      details.appendChild(summary);
+      details.appendChild(raw);
+      div.appendChild(details);
+    }
+
+    div.onclick = () => {
+      selectedMovementSystem = system;
+      selectedMeasure = null;
+      selectedBarline = null;
+      movementSystemInput.value = String(displayIndex(system));
+      selectedItemIndex = review ? review.index : null;
+      updateSelectionMeta();
+      renderItems();
+      draw();
+    };
+    itemList.appendChild(div);
+  });
+
+  if (!systems.length) {
+    const div = document.createElement("div");
+    div.className = "small";
+    div.textContent =
+      "No suggested or current-numbering boundary is shown on this page. Click a system to confirm a boundary manually before it.";
+    itemList.appendChild(div);
+  }
+}
+
 function renderManualItems() {
   const type = currentType();
   const items = itemsForCurrentPage(type);
@@ -520,19 +921,28 @@ function updateActionButtons() {
   const type = currentType();
   if (type === "mmr_measure_span") {
     const canClear = Boolean(selectedMeasure && manualMmrMap().get(selectedMeasureKey()));
+    deleteItemBtn.style.display = "";
     deleteItemBtn.textContent = "Clear staged override";
     deleteItemBtn.disabled = !canClear;
     return;
   }
   const items = itemsForCurrentPage(type);
-  const canUnstage = selectedItemIndex !== null && Boolean(items[selectedItemIndex]);
+  const canRemove = selectedItemIndex !== null && Boolean(items[selectedItemIndex]);
+  if (type === "movement_boundary") {
+    deleteItemBtn.style.display = canRemove ? "" : "none";
+    deleteItemBtn.textContent = "Clear saved decision";
+    deleteItemBtn.disabled = !canRemove;
+    return;
+  }
+  deleteItemBtn.style.display = "";
   deleteItemBtn.textContent = "Unstage selected";
-  deleteItemBtn.disabled = !canUnstage;
+  deleteItemBtn.disabled = !canRemove;
 }
 
 function renderItems() {
   itemList.innerHTML = "";
   if (currentType() === "mmr_measure_span") renderMmrRows();
+  else if (currentType() === "movement_boundary") renderMovementRows();
   else renderManualItems();
   updateActionButtons();
 }
@@ -578,6 +988,69 @@ function addCorrectionItem() {
     updateSelectionMeta();
     draw();
     saveStatus.textContent = `Staged: ${operationLabel(type, item.op)}. Save writes corrections only; re-run evaluation separately.`;
+    return;
+  }
+
+  if (type === "movement_boundary") {
+    const visibleSystem = parseInt(movementSystemInput.value, 10);
+    if (!Number.isFinite(visibleSystem) || visibleSystem < 1) {
+      saveStatus.textContent = "System must be a visible 1-based integer.";
+      return;
+    }
+    const system = visibleSystem - 1;
+    selectedMovementSystem = system;
+    if (!systemBounds(system)) {
+      saveStatus.textContent = `System ${visibleSystem} is not present on this page.`;
+      updateSelectionMeta();
+      draw();
+      return;
+    }
+    const candidate = movementCandidateAt(system);
+    if (op === "no_boundary" && !candidate) {
+      saveStatus.textContent =
+        "No suggested boundary exists at this system. 'No boundary here' is only needed to dismiss a shown suggestion.";
+      return;
+    }
+    item = {
+      op,
+      page,
+      system,
+      reason: candidate ? "movement boundary review" : "manual movement boundary",
+      evidence_candidate_id: candidate ? candidate.id : null,
+      review_kind: candidate
+        ? op === "boundary"
+          ? "accepted_candidate"
+          : "rejected_candidate"
+        : "manual_boundary",
+    };
+    const pageItems = itemsForCurrentPage(type).filter(
+      (existing) => String(existing.system) !== String(system)
+    );
+    pageItems.push(item);
+    replaceItemsForCurrentPage(type, pageItems);
+    selectedItemIndex = pageItems.length - 1;
+    renderItems();
+    updateSelectionMeta();
+    draw();
+    saveStatus.textContent =
+      item.op === "boundary"
+        ? `Saving confirmed boundary BEFORE System ${visibleSystem}...`
+        : `Saving checked no-boundary decision BEFORE System ${visibleSystem}...`;
+
+    queueMovementSave(page, pageItems)
+      .then(() => {
+        renderItems();
+        renderPageList();
+        updateSelectionMeta();
+        draw();
+        saveStatus.textContent =
+          item.op === "boundary"
+            ? `Saved automatically: boundary confirmed BEFORE System ${visibleSystem}.`
+            : `Saved automatically: checked no boundary BEFORE System ${visibleSystem}.`;
+      })
+      .catch((error) => {
+        saveStatus.textContent = `Movement decision save failed: ${error.message}`;
+      });
     return;
   }
 
@@ -632,10 +1105,28 @@ function deleteSelectedItem() {
   pageItems.splice(selectedItemIndex, 1);
   selectedItemIndex = null;
   replaceItemsForCurrentPage(type, pageItems);
-  setDirty(type, true);
+  if (type !== "movement_boundary") setDirty(type, true);
   updateSelectionMeta();
   renderItems();
   draw();
+
+  if (type === "movement_boundary") {
+    const page = pageValue();
+    saveStatus.textContent = "Removing saved movement decision...";
+    queueMovementSave(page, pageItems)
+      .then(() => {
+        renderItems();
+        renderPageList();
+        updateSelectionMeta();
+        draw();
+        saveStatus.textContent = "Saved automatically: movement decision cleared.";
+      })
+      .catch((error) => {
+        saveStatus.textContent = `Movement decision save failed: ${error.message}`;
+      });
+    return;
+  }
+
   saveStatus.textContent = "Removed staged correction.";
 }
 
@@ -659,8 +1150,20 @@ function loadCorrections() {
 
 function loadNumbering(path) {
   measures = [];
+  resolvedMovementBoundaries = [];
   if (!path) return Promise.resolve();
   return fetchJSON(`/api/template?path=${encodeURIComponent(path)}`).then((data) => {
+    const metadata = data && data.numbering_metadata;
+    const recordedBoundaries =
+      metadata && Array.isArray(metadata.movement_boundaries)
+        ? metadata.movement_boundaries
+        : [];
+    resolvedMovementBoundaries = recordedBoundaries.filter(
+      (boundary) =>
+        boundary &&
+        boundary.system !== undefined &&
+        (boundary.page === undefined || String(boundary.page) === String(pageValue()))
+    );
     const pageData = (data.pages && data.pages[0]) || data;
     const systems = pageData.systems || [];
     systems.forEach((system, systemIndex) => {
@@ -716,6 +1219,33 @@ function barlinePathFromPage(page) {
   return page.barlines || page.barline_candidates || page.detected_barlines || null;
 }
 
+function movementEvidenceCandidateId(candidate) {
+  if (candidate && typeof candidate.id === "string" && candidate.id) return candidate.id;
+  return `page:${candidate.page}:system:${candidate.system}`;
+}
+
+function loadMovementEvidence(path) {
+  movementEvidenceCandidates = [];
+  allMovementEvidenceCandidates = [];
+  if (!path) return Promise.resolve();
+  return fetchJSON(`/api/template?path=${encodeURIComponent(path)}`)
+    .then((data) => {
+      const candidates = Array.isArray(data.candidates) ? data.candidates : [];
+      allMovementEvidenceCandidates = candidates.map((candidate) => ({
+        ...candidate,
+        id: movementEvidenceCandidateId(candidate),
+      }));
+      movementEvidenceCandidates = allMovementEvidenceCandidates.filter(
+        (candidate) => String(candidate.page) === String(pageValue())
+      );
+    })
+    .catch((error) => {
+      movementEvidenceCandidates = [];
+      allMovementEvidenceCandidates = [];
+      saveStatus.textContent = `Movement evidence load failed: ${error.message}`;
+    });
+}
+
 function loadBarlines(path) {
   barlines = [];
   if (!path) return Promise.resolve();
@@ -737,6 +1267,10 @@ function selectMeasure(measure) {
   selectedItemIndex = null;
   const state = effectiveMmrState(measure);
   measureSpanInput.value = String(state.effectiveSpan || state.baseSpan || 1);
+  if (currentType() === "movement_boundary") {
+    selectedMovementSystem = measure.system;
+    movementSystemInput.value = String(displayIndex(measure.system));
+  }
   updateSelectionMeta();
   renderItems();
   draw();
@@ -747,9 +1281,10 @@ function loadPage() {
   selectedMeasure = null;
   selectedBarline = null;
   selectedItemIndex = null;
+  selectedMovementSystem = null;
   draftBBox = null;
   saveStatus.textContent = "";
-  pageMeta.textContent = `Page ${displayPageNumber()}${currentPage.name ? ` · ${currentPage.name}` : ""} | Save writes correction JSON only`;
+  pageMeta.textContent = `Page ${displayPageNumber()}${currentPage.name ? ` · ${currentPage.name}` : ""}`;
 
   image.onload = () => {
     resetView();
@@ -761,35 +1296,58 @@ function loadPage() {
     loadNumbering(currentPage.numbering),
     loadMmr(mmrPathFromPage(currentPage)),
     loadBarlines(barlinePathFromPage(currentPage)),
+    loadMovementEvidence(currentPage.movement_boundary_evidence),
     loadCorrections(),
   ]).then(() => {
-    updateSelectionMeta();
-    renderItems();
+    updateControlState();
     renderPageList();
-    draw();
   });
 }
 
-function saveCorrectionType(type) {
-  if (!currentPage) return Promise.resolve(null);
+function saveCorrectionPage(type, page, items) {
   const payload = {
-    page: pageValue(),
+    page,
     correction_type: type,
-    items: itemsForCurrentPage(type),
+    items,
   };
   return fetch("/api/save", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
-  })
-    .then((response) => {
-      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-      return response.json();
-    })
-    .then((data) => {
-      setDirty(type, false);
-      return { type, output: data.output };
-    });
+  }).then((response) => {
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+    return response.json();
+  });
+}
+
+function saveCorrectionType(type) {
+  if (!currentPage) return Promise.resolve(null);
+  return saveCorrectionPage(type, pageValue(), itemsForCurrentPage(type)).then((data) => {
+    setDirty(type, false);
+    return { type, output: data.output };
+  });
+}
+
+function queueMovementSave(page, items) {
+  const capturedItems = items.map((item) => ({ ...item }));
+  const operation = movementSaveChain.then(() =>
+    saveCorrectionPage("movement_boundary", page, capturedItems)
+  );
+  movementSaveChain = operation.then(
+    () => {
+      movementLastSaveError = null;
+    },
+    (error) => {
+      movementLastSaveError = error;
+    }
+  );
+  return operation;
+}
+
+function waitForMovementSaves() {
+  return movementSaveChain.then(() => {
+    if (movementLastSaveError) throw movementLastSaveError;
+  });
 }
 
 function saveCorrectionTypes(types) {
@@ -819,24 +1377,83 @@ function saveDirtyTypes() {
   return saveCorrectionTypes(types);
 }
 
+function releaseTransientInteraction() {
+  isPanning = false;
+  isDrawing = false;
+  drawStart = null;
+  spaceDown = false;
+}
+
+function blurActiveControl() {
+  const active = document.activeElement;
+  if (active && typeof active.blur === "function") active.blur();
+}
+
 function switchPage(nextIndex) {
   if (nextIndex === currentIndex) return;
-  saveCorrectionTypes(Array.from(dirtyTypes))
+  waitForMovementSaves()
+    .then(() => saveCorrectionTypes(Array.from(dirtyTypes)))
     .then(() => {
       currentIndex = nextIndex;
       loadPage();
     })
     .catch((error) => {
+      saveStatus.textContent = `Page change blocked because a save failed: ${error.message}`;
       console.error("Page switch aborted due to save failure:", error);
     });
 }
 
-selectModeBtn.onclick = () => setMode("select");
-drawModeBtn.onclick = () => setMode("draw");
-addItemBtn.onclick = addCorrectionItem;
-deleteItemBtn.onclick = deleteSelectedItem;
-saveBtn.onclick = () => {
+selectModeBtn.onclick = (event) => {
+  event.currentTarget.blur();
+  setMode("select");
+};
+drawModeBtn.onclick = (event) => {
+  event.currentTarget.blur();
+  setMode("draw");
+};
+addItemBtn.onclick = (event) => {
+  event.currentTarget.blur();
+  releaseTransientInteraction();
+  addCorrectionItem();
+};
+deleteItemBtn.onclick = (event) => {
+  event.currentTarget.blur();
+  releaseTransientInteraction();
+  deleteSelectedItem();
+};
+saveBtn.onclick = (event) => {
+  event.currentTarget.blur();
+  releaseTransientInteraction();
   saveDirtyTypes().catch(() => {});
+};
+exportMovementBtn.onclick = (event) => {
+  event.currentTarget.blur();
+  releaseTransientInteraction();
+  const remaining = unresolvedMovementSuggestionCount();
+  if (remaining > 0) {
+    saveStatus.textContent =
+      `Review the remaining ${remaining} suggested boundar${remaining === 1 ? "y" : "ies"} before finishing.`;
+    return;
+  }
+  waitForMovementSaves()
+    .then(() =>
+      fetch("/api/export_movement_boundaries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      })
+    )
+    .then((response) => {
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+      return response.json();
+    })
+    .then((data) => {
+      saveStatus.textContent =
+        `Movement review finished: ${data.count} confirmed boundaries are ready for the next numbering run. The displayed score is unchanged.`;
+    })
+    .catch((error) => {
+      saveStatus.textContent = `Finish movement review failed: ${error.message}`;
+    });
 };
 helpBtn.onclick = () => {
   helpPanel.open = true;
@@ -845,6 +1462,17 @@ helpBtn.onclick = () => {
 
 typeSelect.onchange = updateOps;
 opSelect.onchange = updateControlState;
+movementSystemInput.oninput = () => {
+  const visibleSystem = parseInt(movementSystemInput.value, 10);
+  selectedMovementSystem =
+    Number.isFinite(visibleSystem) && visibleSystem >= 1 ? visibleSystem - 1 : null;
+  selectedMeasure = null;
+  selectedBarline = null;
+  selectedItemIndex = null;
+  updateSelectionMeta();
+  renderItems();
+  draw();
+};
 
 [
   showMeasuresToggle,
@@ -852,6 +1480,7 @@ opSelect.onchange = updateControlState;
   showLabelsToggle,
   showBaseToggle,
   showManualToggle,
+  showMovementToggle,
 ].forEach((toggle) => {
   toggle.onchange = draw;
 });
@@ -877,6 +1506,30 @@ canvas.addEventListener("mousedown", (event) => {
   }
 
   const imgPt = canvasToImg(pt);
+
+  if (currentType() === "movement_boundary") {
+    const system = pickSystem(imgPt);
+    if (system !== null) {
+      selectedMovementSystem = system;
+      selectedMeasure = pickMeasure(imgPt);
+      selectedBarline = null;
+      selectedItemIndex = null;
+      movementSystemInput.value = String(displayIndex(system));
+      updateSelectionMeta();
+      renderItems();
+      draw();
+      return;
+    }
+    selectedMovementSystem = null;
+    selectedMeasure = null;
+    selectedBarline = null;
+    selectedItemIndex = null;
+    movementSystemInput.value = "";
+    updateSelectionMeta();
+    renderItems();
+    draw();
+    return;
+  }
 
   // In barline correction mode, barlines usually lie inside measure boxes.
   // Prioritize the active correction surface so measure hit-testing does not
@@ -957,15 +1610,31 @@ canvas.addEventListener(
 window.addEventListener("keydown", (event) => {
   const tag = event.target && event.target.tagName ? event.target.tagName.toLowerCase() : "";
   if (tag === "input" || tag === "select" || tag === "textarea") return;
-  if (event.key === " ") spaceDown = true;
-  if (event.key === "ArrowLeft") prevBtn.click();
-  if (event.key === "ArrowRight") nextBtn.click();
+  if (event.key === " ") {
+    if (tag === "button") blurActiveControl();
+    event.preventDefault();
+    spaceDown = true;
+  }
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    prevBtn.click();
+  }
+  if (event.key === "ArrowRight") {
+    event.preventDefault();
+    nextBtn.click();
+  }
   if (event.key === "Delete" || event.key === "Backspace") deleteSelectedItem();
 });
 
 window.addEventListener("keyup", (event) => {
   if (event.key === " ") spaceDown = false;
 });
+
+window.addEventListener("mouseup", () => {
+  isPanning = false;
+});
+
+window.addEventListener("blur", releaseTransientInteraction);
 
 window.addEventListener("resize", () => {
   if (!image.complete) return;

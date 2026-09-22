@@ -35,7 +35,7 @@ By default, the package is written under the internal pipeline run directory:
     pages/<page_id>/
       source.png
       numbering_final.json
-      review_overlay.png
+      review_overlay.png        # optional pre-rendered evidence
       mmr_overrides.json
       barlines_review.json
     corrections/
@@ -45,8 +45,10 @@ By default, the package is written under the internal pipeline run directory:
 
 - relative paths are resolved from `<run_dir>`;
 - absolute paths are allowed for controlled callers that already own a review directory;
-- the materializer still reads current-run artifacts deterministically and rejects run artifacts
-  resolved outside the source run.
+- the materializer still requires derived numbering/MMR/barline artifacts from the selected
+  source run; the exact `image_path` recorded by that manifest may live outside the per-score
+  run directory (for example, a shared batch `input_images/` directory) and is copied into the
+  package without searching fallback runs.
 
 The handoff records the page identity and coordinate-space relationship needed by the GUI. Normal
 manual review must start from this handoff rather than assembling image, numbering, MMR, or barline
@@ -103,8 +105,9 @@ python3 tools/gt_relabel_gui/server.py \
 The `--handoff` route:
 
 - validates the strict same-package review contract before serving the GUI;
-- requires the source image, final numbering, review overlay, MMR evidence, and review barlines to
-  exist;
+- requires the source image, final numbering, MMR evidence, and review barlines to exist;
+- accepts a pre-rendered review overlay when present, but does not require one because the manual
+  GUI renders its active measure/barline/manual-state overlays from the underlying artifacts;
 - uses the handoff's review directory as the GUI root;
 - rejects a separate `--root` or `--config`, preventing normal use from substituting unrelated
   artifacts;
@@ -112,6 +115,35 @@ The `--handoff` route:
 
 The legacy one-page `manual_config_builder.py` remains available for development/legacy uses, but
 it is not the normal #236 review workflow because it accepts arbitrary artifact paths.
+
+### Optional movement-boundary evidence
+
+When movement-boundary review is needed, keep the same review package and attach
+the review-only Issue #333 evidence artifact:
+
+```bash
+python -m tools.movement_boundary_review attach \
+  --handoff <review_root>/manual_correction_input.json \
+  --evidence <run>/movement_boundary_evidence.json
+```
+
+The attach step copies the evidence into the package and records package-local
+paths in the handoff. It does not approve any candidate or change numbering.
+The existing GUI then exposes a **Movement boundary** correction type. A
+movement boundary always means **immediately before the target system**: the
+first measure of that system starts the new movement. Reviewers can click
+anywhere inside a system to target it; direct 1-based system entry remains
+available. Movement decisions are persisted immediately when the reviewer
+confirms **boundary** or **no boundary**; there is no separate Save step for
+this correction type. The movement UI hides unrelated Select/Draw/Save controls
+and only shows clearing controls when an existing saved decision is selected.
+The canvas uses user-facing states: **Suggested boundary**, **Confirmed
+boundary**, **Checked: no boundary**, and **Boundary used by current
+numbering**. The Pages list also annotates pages with pending suggestions and
+saved movement decisions so a whole-score review does not require opening pages
+blindly. **Finish movement review** is enabled only after all suggested
+boundaries have been reviewed; it creates the boundary input for the next
+numbering run and does not change the score currently displayed in the GUI.
 
 ### Manual GUI quick guide
 
@@ -141,14 +173,18 @@ The selected object and an active draft remain visible even when their normal ov
 hidden. Selected objects are highlighted separately so reviewers can reduce overlay density without
 losing the active target.
 
-Typical correction flow:
+Typical correction flow for MMR/barline/measure corrections:
 
 1. Choose a correction type and operation in the left sidebar.
-2. Use **Select object**, or **Draw barline box** when adding a barline.
+2. Select the target object; barline editing additionally exposes Select/Draw modes.
 3. Use **Stage change** and inspect the staged state in both the canvas and **Current page results**.
-4. Use **Unstage selected** / **Clear staged override** if the staged edit is not wanted.
-5. Use **Save corrections** to write all staged correction types for the current page as
-   package-local correction JSON under `review/corrections/`.
+4. Use the clear/unstage action if the staged edit is not wanted.
+5. Use **Save corrections** to persist those staged correction types.
+
+Movement-boundary review is deliberately simpler: select a system, confirm
+**boundary** or **no boundary**, and the decision is saved immediately. After
+all suggested boundaries are reviewed, use **Finish movement review** to create
+the boundary data consumed by the next numbering run.
 
 Visible Page / System / Measure identifiers are **1-based** for reviewer readability. Persisted
 correction targets keep the existing internal **0-based** indices; the GUI must not translate the
@@ -176,7 +212,26 @@ review/corrections/
   barline_construction_overrides.json
 ```
 
-These are GUI staging files. The pipeline consumes canonical:
+These are GUI staging files. Movement-boundary decisions do not use the
+stage-then-save interaction; each decision is saved immediately. When movement
+evidence is attached, the GUI also uses:
+
+```text
+review/
+  movement_boundary_evidence.json
+  corrections/
+    movement_boundaries_review.json
+    movement_boundaries.json
+```
+
+`movement_boundaries_review.json` retains explicit accepted/rejected/manual
+review actions. **Finish movement review** writes
+`movement_boundaries.json` as `issue268.movement_boundaries.v1`, containing
+only confirmed boundaries. Checked no-boundary locations stay in the review
+record and are not numbering inputs. This finalization step does not rerun
+numbering or alter the score shown in the review GUI.
+
+The pipeline consumes canonical:
 
 ```text
 review/corrections/
@@ -270,5 +325,5 @@ and final renderer. It does not:
 
 - add a second correction workflow or a new `pdfscorebar` public CLI;
 - change detector, HOMR, MMR, grouping, barline, or numbering accuracy behavior;
-- implement movement-boundary review; future movement review should extend the same review/correction
-  UX rather than create a disconnected path.
+- silently infer movement boundaries or convert unreviewed candidates into numbering resets; movement
+  review is explicit and package-local, and its resolved export remains separate from ordinary correction reruns.

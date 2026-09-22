@@ -153,6 +153,50 @@ only resolved records. Use `source` such as `manual`, `configured`,
 `reviewed_candidate`, or a specific validated automatic producer, and retain
 the evidence artifact identity in `provenance`.
 
+### Review-package workflow
+
+Issue #346 extends the existing manual-correction review package and GUI rather
+than introducing a separate movement editor. Generate the Issue #333 evidence
+artifact as described below, then attach it to an existing
+`review/manual_correction_input.json` package:
+
+```bash
+python -m tools.movement_boundary_review attach \
+  --handoff <review_root>/manual_correction_input.json \
+  --evidence <run>/movement_boundary_evidence.json
+```
+
+Launch the normal manual GUI from that handoff. The **Movement boundary**
+correction surface shows unresolved candidates with their raw signals and
+references. A reviewer can:
+
+- mark an explicit candidate as a movement boundary;
+- mark an explicit candidate as reviewed no-boundary; or
+- add a movement boundary at any supported page/system location even when the
+  producer emitted no candidate there.
+
+The third operation is required because the Issue #333 producer missed real
+movement starts. Candidate absence is never converted to `no_boundary`. A
+`no_boundary` review action is valid only for an explicit unresolved
+candidate.
+
+Saving writes package-local
+`corrections/movement_boundaries_review.json`. The GUI's **Export movement
+boundaries** action, or the equivalent CLI command,
+
+```bash
+python -m tools.movement_boundary_review export \
+  --handoff <review_root>/manual_correction_input.json
+```
+
+writes `corrections/movement_boundaries.json` using the unchanged
+`issue268.movement_boundaries.v1` schema. Rejected candidates are retained in
+the review record but omitted from the resolved payload. Accepted candidates
+use `source: reviewed_candidate`; manually added non-candidate boundaries use
+`source: manual`. Each exported record binds the exact evidence artifact
+SHA-256 and the review action in provenance.
+
+
 ## Geometry review producer
 
 `src.pipeline.movement_boundary_candidates.build_movement_boundary_evidence`

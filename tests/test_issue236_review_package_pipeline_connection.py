@@ -276,7 +276,7 @@ def test_pipeline_connection_treats_null_overwrite_as_default_true(monkeypatch, 
     assert call_args["overwrite"] is True
 
 
-def test_pipeline_connection_rejects_missing_review_artifact_steps(tmp_path):
+def test_pipeline_connection_allows_review_package_without_overlay_step(tmp_path):
     run_dir = tmp_path / "source_run"
     config = _fake_pipeline_config(run_dir, review_enabled=True)
     config["steps"]["overlay"] = False
@@ -284,9 +284,20 @@ def test_pipeline_connection_rejects_missing_review_artifact_steps(tmp_path):
     config["steps"]["numbering_base"] = True
 
     orchestrator = PipelineOrchestrator(config=config, run_id="source_run", run_dir=run_dir)
+    orchestrator._validate_review_package_prerequisites()
 
-    with pytest.raises(ValueError, match="manual_correction_package requires"):
-        orchestrator.run()
+
+def test_pipeline_connection_rejects_missing_required_review_artifact_steps(tmp_path):
+    run_dir = tmp_path / "source_run"
+    config = _fake_pipeline_config(run_dir, review_enabled=True)
+    config["steps"]["overlay"] = False
+    config["steps"]["mmr_overrides"] = False
+    config["steps"]["numbering_base"] = True
+
+    orchestrator = PipelineOrchestrator(config=config, run_id="source_run", run_dir=run_dir)
+
+    with pytest.raises(ValueError, match="mmr_overrides"):
+        orchestrator._validate_review_package_prerequisites()
 
 
 def test_pipeline_review_package_forces_pdf_image_persistence(tmp_path):

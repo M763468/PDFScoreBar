@@ -22,6 +22,7 @@ GUI_OUTPUT_KEYS = {
     "mmr_measure_span": "mmr_measure_spans.json",
     "measure_construction": "measure_construction_overrides.json",
     "barline_construction": "barline_construction_overrides.json",
+    "movement_boundary": "movement_boundaries_review.json",
 }
 
 STAGING_TO_CANONICAL_FILENAMES = {
@@ -32,7 +33,7 @@ STAGING_TO_CANONICAL_FILENAMES = {
 
 _REQUIRED_TOP_LEVEL_FIELDS = ("schema_version", "pages")
 _REQUIRED_PAGE_FIELDS = ("page_id", "page_number", "source_image", "numbering_final")
-_STRICT_PAGE_FIELDS = ("review_overlay", "mmr_overrides", "barlines_review")
+_STRICT_PAGE_FIELDS = ("mmr_overrides", "barlines_review")
 
 
 class ManualCorrectionHandoffError(ValueError):
@@ -142,11 +143,16 @@ def _manual_output_paths(page: Dict[str, Any], *, package_root: Optional[Path]) 
         if not isinstance(configured, dict):
             raise ManualCorrectionHandoffError("correction_outputs must be an object")
         output_paths: Dict[str, str] = {}
-        for key in GUI_OUTPUT_KEYS:
+        required_keys = set(GUI_OUTPUT_KEYS) - {"movement_boundary"}
+        for key in required_keys:
             if key not in configured:
                 raise ManualCorrectionHandoffError(f"correction_outputs.{key} is required")
+        for key, default_filename in GUI_OUTPUT_KEYS.items():
+            raw_output = configured.get(key)
+            if key == "movement_boundary" and _is_missing(raw_output):
+                raw_output = f"corrections/{default_filename}"
             resolved = _resolve_package_path(
-                configured[key],
+                raw_output,
                 package_root=package_root,
                 field=f"correction_outputs.{key}",
                 required=True,
@@ -182,7 +188,8 @@ def validate_manual_correction_handoff(
 
     ``base_v1`` accepts optional MMR/barline/review-overlay evidence so older
     review-profile producers can be adapted. ``issue229_smoke_strict`` requires
-    the artifacts needed by the #215/#229 GUI smoke path.
+    the MMR/barline artifacts used by the manual GUI; the pre-rendered review
+    overlay is optional because the GUI renders its active overlays itself.
     """
 
     if not isinstance(payload, dict):
@@ -199,6 +206,30 @@ def validate_manual_correction_handoff(
 
     package_root = _package_root(handoff_path)
     normalized = deepcopy(payload)
+
+    movement_evidence = _validate_existing_path(
+        payload.get("movement_boundary_evidence"),
+        package_root=package_root,
+        field="movement_boundary_evidence",
+        required=False,
+        require_exists=require_existing_artifacts,
+    )
+    if movement_evidence is not None:
+        normalized["movement_boundary_evidence"] = _relative_for_gui(
+            movement_evidence, package_root=package_root
+        )
+        resolved_output = _resolve_package_path(
+            payload.get("movement_boundary_resolved_output")
+            or "corrections/movement_boundaries.json",
+            package_root=package_root,
+            field="movement_boundary_resolved_output",
+            required=True,
+        )
+        assert resolved_output is not None
+        normalized["movement_boundary_resolved_output"] = _relative_for_gui(
+            resolved_output, package_root=package_root
+        )
+
     normalized_pages = []
 
     for index, page in enumerate(pages):
@@ -280,6 +311,11 @@ def build_manual_gui_config(
             gui_page["barlines"] = page["barlines_review"]
         if not _is_missing(page.get("review_overlay")):
             gui_page["review_overlay"] = page["review_overlay"]
+        if not _is_missing(normalized.get("movement_boundary_evidence")):
+            gui_page["movement_boundary_evidence"] = normalized["movement_boundary_evidence"]
+            gui_page["movement_boundary_resolved_output"] = normalized[
+                "movement_boundary_resolved_output"
+            ]
         pages.append(gui_page)
 
     return {

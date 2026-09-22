@@ -50,6 +50,28 @@ def _require_inside(path: Path, *, root: Path, description: str) -> Path:
     return resolved
 
 
+def _manifest_relative_base(manifest: dict[str, Any], *, run_root: Path) -> Path | None:
+    """Recover the base directory used by relative paths recorded in a manifest."""
+
+    raw_run_dir = manifest.get("run_dir")
+    if not isinstance(raw_run_dir, str) or not raw_run_dir:
+        return None
+    recorded_run_dir = Path(raw_run_dir)
+    if recorded_run_dir.is_absolute():
+        return None
+
+    recorded_parts = recorded_run_dir.parts
+    if len(recorded_parts) > len(run_root.parts):
+        return None
+    if tuple(run_root.parts[-len(recorded_parts) :]) != recorded_parts:
+        return None
+
+    base = run_root
+    for _ in recorded_parts:
+        base = base.parent
+    return base
+
+
 def _resolve_run_artifact(
     raw_path: Any,
     *,
@@ -57,6 +79,8 @@ def _resolve_run_artifact(
     page_id: str,
     manifest_path: Path,
     field: str,
+    manifest_relative_base: Path | None = None,
+    allow_external_manifest_input: bool = False,
 ) -> Path:
     if not isinstance(raw_path, str) or not raw_path:
         raise ManualCorrectionMaterializerError(
@@ -66,19 +90,28 @@ def _resolve_run_artifact(
 
     raw = Path(raw_path)
     candidates = [raw] if raw.is_absolute() else [run_root / raw]
+    if not raw.is_absolute() and manifest_relative_base is not None:
+        candidates.append(manifest_relative_base / raw)
     if not raw.is_absolute() and run_root.name in raw.parts:
         run_root_index = len(raw.parts) - 1 - raw.parts[::-1].index(run_root.name)
         candidates.append(run_root.joinpath(*raw.parts[run_root_index + 1 :]))
     if not raw.is_absolute():
         candidates.append(raw)
+
     checked: list[str] = []
     inside_candidates: list[Path] = []
+    seen: set[Path] = set()
     for candidate in candidates:
         resolved = candidate.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
         checked.append(str(candidate))
         try:
             resolved.relative_to(run_root)
         except ValueError:
+            if allow_external_manifest_input and resolved.exists():
+                return resolved
             continue
         inside_candidates.append(resolved)
         if resolved.exists():
@@ -210,9 +243,10 @@ def materialize_manual_correction_review_package(
 ) -> dict[str, Any]:
     """Create a review manual-correction package from one pipeline run.
 
-    The materializer only consumes artifacts inside ``run_root`` and manifest
-    paths resolved from that same run. It intentionally does not search global
-    ``logs/`` directories or fall back to older run artifacts.
+    Derived review artifacts must stay inside ``run_root``. The source image
+    may be a manifest-declared input outside the per-score run directory (for
+    example, a shared batch ``input_images/`` directory). The materializer
+    resolves only the exact manifest path and never searches other runs.
     """
 
     run_root_path = Path(run_root).resolve()
@@ -224,6 +258,7 @@ def materialize_manual_correction_review_package(
         raise FileExistsError(f"Refusing to overwrite existing review package: {review_root_path}")
 
     manifest = _load_json_object(manifest_path, description="pipeline manifest")
+    manifest_relative_base = _manifest_relative_base(manifest, run_root=run_root_path)
     selected_pages = _select_pages(manifest, pages)
 
     handoff_pages: list[dict[str, Any]] = []
@@ -237,6 +272,8 @@ def materialize_manual_correction_review_package(
             page_id=page_id,
             manifest_path=manifest_path,
             field="image_path",
+            manifest_relative_base=manifest_relative_base,
+            allow_external_manifest_input=True,
         )
         numbering_final = _require_inside(
             run_root_path / "outputs" / page_id / "numbering_final.json",
@@ -264,7 +301,6 @@ def materialize_manual_correction_review_package(
 
         required = {
             "numbering_final": numbering_final,
-            "review_overlay": review_overlay,
             "mmr_overrides": mmr_overrides,
             "barlines_review source": barlines_source,
         }
@@ -278,28 +314,29 @@ def materialize_manual_correction_review_package(
         page_dir = review_root_path / "pages" / page_id
         _copy_run_artifact(image_source, page_dir / "source.png")
         _copy_run_artifact(numbering_final, page_dir / "numbering_final.json")
-        _copy_run_artifact(review_overlay, page_dir / "review_overlay.png")
+        if review_overlay.exists():
+            _copy_run_artifact(review_overlay, page_dir / "review_overlay.png")
         _copy_run_artifact(mmr_overrides, page_dir / "mmr_overrides.json")
         _write_json(
             page_dir / "barlines_review.json",
             _extract_review_barline_records(_load_json(barlines_source), source=barlines_source),
         )
 
-        handoff_pages.append(
-            {
-                "page_id": page_id,
-                "page_number": page_number,
-                "source_image": f"pages/{page_id}/source.png",
-                "numbering_final": f"pages/{page_id}/numbering_final.json",
-                "review_overlay": f"pages/{page_id}/review_overlay.png",
-                "mmr_overrides": f"pages/{page_id}/mmr_overrides.json",
-                "barlines_review": f"pages/{page_id}/barlines_review.json",
-                "barlines_review_source": barlines_source.relative_to(run_root_path).as_posix(),
-                "barlines_review_source_kind": barlines_source_kind,
-                "barlines_review_source_manifest_field": barlines_source_field,
-                "correction_output": "corrections",
-            }
-        )
+        handoff_page = {
+            "page_id": page_id,
+            "page_number": page_number,
+            "source_image": f"pages/{page_id}/source.png",
+            "numbering_final": f"pages/{page_id}/numbering_final.json",
+            "mmr_overrides": f"pages/{page_id}/mmr_overrides.json",
+            "barlines_review": f"pages/{page_id}/barlines_review.json",
+            "barlines_review_source": barlines_source.relative_to(run_root_path).as_posix(),
+            "barlines_review_source_kind": barlines_source_kind,
+            "barlines_review_source_manifest_field": barlines_source_field,
+            "correction_output": "corrections",
+        }
+        if review_overlay.exists():
+            handoff_page["review_overlay"] = f"pages/{page_id}/review_overlay.png"
+        handoff_pages.append(handoff_page)
 
     (review_root_path / "corrections").mkdir(parents=True, exist_ok=True)
     handoff = {

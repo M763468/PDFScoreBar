@@ -125,16 +125,11 @@ def _enum(
     try:
         return enum_type(value)
     except (TypeError, ValueError) as exc:
-        raise ContractValidationError(
-            f"unsupported {field_name}: {value!r}"
-        ) from exc
+        raise ContractValidationError(f"unsupported {field_name}: {value!r}") from exc
 
 
 def _envelope(payload: Mapping[str, Any], schema: str) -> None:
-    if (
-        payload.get("schema") != schema
-        or payload.get("contract_version") != CONTRACT_VERSION
-    ):
+    if payload.get("schema") != schema or payload.get("contract_version") != CONTRACT_VERSION:
         raise ContractValidationError(f"unsupported schema/version for {schema}")
 
 
@@ -197,9 +192,7 @@ class ArtifactDescriptor:
         if self.location_kind == "relative_path":
             path = PurePosixPath(self.reference)
             if path.is_absolute() or ".." in path.parts:
-                raise ContractValidationError(
-                    "artifact relative_path must stay inside its package"
-                )
+                raise ContractValidationError("artifact relative_path must stay inside its package")
 
     def to_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {
@@ -323,17 +316,9 @@ class CorrectionSet:
 
     def __post_init__(self) -> None:
         _require_string(self.correction_set_id, "correction_set_id")
-        if (
-            self.schema != SCHEMA_CORRECTIONS
-            or self.contract_version != CONTRACT_VERSION
-        ):
-            raise ContractValidationError(
-                "unsupported correction set schema/version"
-            )
-        if (
-            self.reprocess_mode != "reuse_compatible_artifacts"
-            or self.conflict_policy != "reject"
-        ):
+        if self.schema != SCHEMA_CORRECTIONS or self.contract_version != CONTRACT_VERSION:
+            raise ContractValidationError("unsupported correction set schema/version")
+        if self.reprocess_mode != "reuse_compatible_artifacts" or self.conflict_policy != "reject":
             raise ContractValidationError(
                 "v1 corrections must reuse compatible artifacts and reject conflicts"
             )
@@ -358,15 +343,10 @@ class CorrectionSet:
             "correction.source.coordinate_space",
         )
 
-        records = tuple(
-            _validate_correction_record(record)
-            for record in self.records
-        )
+        records = tuple(_validate_correction_record(record) for record in self.records)
         ids = [record["correction_id"] for record in records]
         if len(ids) != len(set(ids)):
-            raise ContractValidationError(
-                "duplicate correction_id values are not allowed"
-            )
+            raise ContractValidationError("duplicate correction_id values are not allowed")
         object.__setattr__(self, "source", source)
         object.__setattr__(self, "records", records)
 
@@ -401,9 +381,7 @@ class CorrectionSet:
         }
         for field_name, (expected, actual) in pairs.items():
             if expected != actual:
-                raise ContractValidationError(
-                    f"stale correction source: {field_name} mismatch"
-                )
+                raise ContractValidationError(f"stale correction source: {field_name} mismatch")
 
     def to_dict(self) -> dict[str, Any]:
         records = sorted(
@@ -425,9 +403,7 @@ class CorrectionSet:
         _envelope(payload, SCHEMA_CORRECTIONS)
         records = payload.get("records", [])
         if not isinstance(records, list):
-            raise ContractValidationError(
-                "correction records must be a list"
-            )
+            raise ContractValidationError("correction records must be a list")
         return cls(
             correction_set_id=payload.get("correction_set_id"),
             source=_object(
@@ -459,19 +435,12 @@ class JobRequest:
     contract_version: str = CONTRACT_VERSION
 
     def __post_init__(self) -> None:
-        if (
-            self.schema != SCHEMA_REQUEST
-            or self.contract_version != CONTRACT_VERSION
-        ):
-            raise ContractValidationError(
-                "unsupported job request schema/version"
-            )
+        if self.schema != SCHEMA_REQUEST or self.contract_version != CONTRACT_VERSION:
+            raise ContractValidationError("unsupported job request schema/version")
 
         input_ref = _object(self.input, "input")
         if input_ref.get("kind") not in {"local_path", "engine_ref"}:
-            raise ContractValidationError(
-                "input.kind must be local_path or engine_ref"
-            )
+            raise ContractValidationError("input.kind must be local_path or engine_ref")
         _require_string(
             input_ref.get("reference"),
             "input.reference",
@@ -499,15 +468,12 @@ class JobRequest:
         unknown = set(overrides) - {"pages", "output_name"}
         if unknown:
             raise ContractValidationError(
-                "unsupported public config override(s): "
-                f"{sorted(unknown)}"
+                f"unsupported public config override(s): {sorted(unknown)}"
             )
         if "pages" in overrides:
             pages = overrides["pages"]
             if not isinstance(pages, list) or not pages:
-                raise ContractValidationError(
-                    "config_overrides.pages must be a non-empty list"
-                )
+
             overrides["pages"] = sorted(
                 {
                     _positive_int(
@@ -564,9 +530,7 @@ class JobRequest:
                 "config_overrides",
             ),
             corrections=(
-                CorrectionSet.from_dict(corrections)
-                if isinstance(corrections, Mapping)
-                else None
+                CorrectionSet.from_dict(corrections) if isinstance(corrections, Mapping) else None
             ),
             caller_reference=payload.get("caller_reference"),
             schema=payload["schema"],
@@ -575,9 +539,7 @@ class JobRequest:
 
     @classmethod
     def from_json(cls, raw: str) -> "JobRequest":
-        return cls.from_dict(
-            _object(json.loads(raw), "job request")
-        )
+        return cls.from_dict(_object(json.loads(raw), "job request"))
 
 
 @dataclass(frozen=True)
@@ -606,13 +568,8 @@ class EngineError:
             self.public_message,
             "error.public_message",
         )
-        if (
-            not isinstance(self.user_actionable, bool)
-            or not isinstance(self.retryable, bool)
-        ):
-            raise ContractValidationError(
-                "error flags must be boolean"
-            )
+        if not isinstance(self.user_actionable, bool) or not isinstance(self.retryable, bool):
+            raise ContractValidationError("error flags must be boolean")
         object.__setattr__(
             self,
             "debug_context",
@@ -621,13 +578,8 @@ class EngineError:
                 "error.debug_context",
             ),
         )
-        if (
-            self.schema != SCHEMA_ERROR
-            or self.contract_version != CONTRACT_VERSION
-        ):
-            raise ContractValidationError(
-                "unsupported engine error schema/version"
-            )
+        if self.schema != SCHEMA_ERROR or self.contract_version != CONTRACT_VERSION:
+            raise ContractValidationError("unsupported engine error schema/version")
 
     def to_dict(
         self,
@@ -691,13 +643,8 @@ class JobResult:
             "status",
             _enum(JobStatus, self.status, "status"),
         )
-        if (
-            self.schema != SCHEMA_RESULT
-            or self.contract_version != CONTRACT_VERSION
-        ):
-            raise ContractValidationError(
-                "unsupported job result schema/version"
-            )
+        if self.schema != SCHEMA_RESULT or self.contract_version != CONTRACT_VERSION:
+            raise ContractValidationError("unsupported job result schema/version")
 
         provenance = _object(
             self.provenance,
@@ -728,32 +675,20 @@ class JobResult:
                 pages.get(key),
                 f"pages.{key}",
             )
-        if (
-            pages["processed"] + pages["skipped"]
-            > pages["requested"]
-        ):
-            raise ContractValidationError(
-                "processed + skipped must not exceed requested"
-            )
+        if pages["processed"] + pages["skipped"] > pages["requested"]:
+            raise ContractValidationError("processed + skipped must not exceed requested")
         object.__setattr__(self, "pages", pages)
 
         artifacts = tuple(self.artifacts)
-        if len(
-            {artifact.artifact_id for artifact in artifacts}
-        ) != len(artifacts):
-            raise ContractValidationError(
-                "duplicate artifact_id values are not allowed"
-            )
+        if len({artifact.artifact_id for artifact in artifacts}) != len(artifacts):
+            raise ContractValidationError("duplicate artifact_id values are not allowed")
         object.__setattr__(
             self,
             "artifacts",
             artifacts,
         )
 
-        warnings = tuple(
-            _object(warning, "warning")
-            for warning in self.warnings
-        )
+        warnings = tuple(_object(warning, "warning") for warning in self.warnings)
         for warning in warnings:
             _require_string(
                 warning.get("code"),
@@ -774,19 +709,11 @@ class JobResult:
             review.get("required", False),
             bool,
         ):
-            raise ContractValidationError(
-                "review.required must be boolean"
-            )
+            raise ContractValidationError("review.required must be boolean")
         object.__setattr__(self, "review", review)
 
-        if (
-            self.status
-            in {JobStatus.FAILED, JobStatus.CANCELLED}
-            and self.failure is None
-        ):
-            raise ContractValidationError(
-                "failed/cancelled result requires failure"
-            )
+        if self.status in {JobStatus.FAILED, JobStatus.CANCELLED} and self.failure is None:
+            raise ContractValidationError("failed/cancelled result requires failure")
         if (
             self.status
             in {
@@ -795,47 +722,21 @@ class JobResult:
             }
             and self.failure is not None
         ):
-            raise ContractValidationError(
-                "non-failure result must not include failure"
-            )
-        if (
-            self.status is JobStatus.REVIEW_REQUIRED
-            and not review.get("required")
-        ):
-            raise ContractValidationError(
-                "review_required status requires "
-                "review.required=true"
-            )
-        if (
-            self.status is JobStatus.SUCCEEDED
-            and review.get("required")
-        ):
-            raise ContractValidationError(
-                "succeeded status cannot require review"
-            )
+            raise ContractValidationError("non-failure result must not include failure")
+        if self.status is JobStatus.REVIEW_REQUIRED and not review.get("required"):
+            raise ContractValidationError("review_required status requires review.required=true")
+        if self.status is JobStatus.SUCCEEDED and review.get("required"):
+            raise ContractValidationError("succeeded status cannot require review")
 
-        source_artifact_id = review.get(
-            "correction_source_artifact_id"
-        )
-        artifact_ids = {
-            artifact.artifact_id
-            for artifact in artifacts
-        }
-        if (
-            self.status is JobStatus.REVIEW_REQUIRED
-            and source_artifact_id is None
-        ):
+        source_artifact_id = review.get("correction_source_artifact_id")
+        artifact_ids = {artifact.artifact_id for artifact in artifacts}
+        if self.status is JobStatus.REVIEW_REQUIRED and source_artifact_id is None:
             raise ContractValidationError(
-                "review_required status requires "
-                "correction_source_artifact_id"
+                "review_required status requires correction_source_artifact_id"
             )
-        if (
-            source_artifact_id is not None
-            and source_artifact_id not in artifact_ids
-        ):
+        if source_artifact_id is not None and source_artifact_id not in artifact_ids:
             raise ContractValidationError(
-                "review correction source must reference "
-                "a result artifact"
+                "review correction source must reference a result artifact"
             )
 
         if self.resources is not None:
@@ -852,8 +753,7 @@ class JobResult:
                 )
                 if not valid:
                     raise ContractValidationError(
-                        f"resources.{key} must be "
-                        "finite and non-negative"
+                        f"resources.{key} must be finite and non-negative"
                     )
             object.__setattr__(
                 self,
@@ -878,48 +778,31 @@ class JobResult:
             "status": self.status.value,
             "provenance": dict(self.provenance),
             "pages": dict(self.pages),
-            "artifacts": [
-                artifact.to_dict()
-                for artifact in self.artifacts
-            ],
-            "warnings": [
-                dict(warning)
-                for warning in self.warnings
-            ],
+            "artifacts": [artifact.to_dict() for artifact in self.artifacts],
+            "warnings": [dict(warning) for warning in self.warnings],
             "review": dict(self.review),
         }
         if self.failure is not None:
-            result["failure"] = self.failure.to_dict(
-                include_debug_context
-            )
+            result["failure"] = self.failure.to_dict(include_debug_context)
         if self.resources is not None:
             result["resources"] = dict(self.resources)
         if self.caller_reference is not None:
-            result["caller_reference"] = (
-                self.caller_reference
-            )
+            result["caller_reference"] = self.caller_reference
         return result
 
     def to_json(
         self,
         include_debug_context: bool = False,
     ) -> str:
-        return canonical_json(
-            self.to_dict(include_debug_context)
-        )
+        return canonical_json(self.to_dict(include_debug_context))
 
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "JobResult":
         _envelope(payload, SCHEMA_RESULT)
         artifacts = payload.get("artifacts", [])
         warnings = payload.get("warnings", [])
-        if (
-            not isinstance(artifacts, list)
-            or not isinstance(warnings, list)
-        ):
-            raise ContractValidationError(
-                "artifacts and warnings must be lists"
-            )
+        if not isinstance(artifacts, list) or not isinstance(warnings, list):
+            raise ContractValidationError("artifacts and warnings must be lists")
         failure = payload.get("failure")
         if failure is not None and not isinstance(failure, Mapping):
             raise ContractValidationError("failure must be an object")
@@ -934,33 +817,22 @@ class JobResult:
                 payload.get("pages"),
                 "pages",
             ),
-            artifacts=tuple(
-                ArtifactDescriptor.from_dict(artifact)
-                for artifact in artifacts
-            ),
+            artifacts=tuple(ArtifactDescriptor.from_dict(artifact) for artifact in artifacts),
             warnings=tuple(warnings),
             review=_object(
                 payload.get("review"),
                 "review",
             ),
-            failure=(
-                EngineError.from_dict(failure)
-                if isinstance(failure, Mapping)
-                else None
-            ),
+            failure=(EngineError.from_dict(failure) if isinstance(failure, Mapping) else None),
             resources=payload.get("resources"),
-            caller_reference=payload.get(
-                "caller_reference"
-            ),
+            caller_reference=payload.get("caller_reference"),
             schema=payload["schema"],
             contract_version=payload["contract_version"],
         )
 
     @classmethod
     def from_json(cls, raw: str) -> "JobResult":
-        return cls.from_dict(
-            _object(json.loads(raw), "job result")
-        )
+        return cls.from_dict(_object(json.loads(raw), "job result"))
 
 
 @dataclass(frozen=True)
@@ -995,23 +867,15 @@ class ProgressEvent:
             ),
         )
         if self.stage_id not in STAGE_IDS:
-            raise ContractValidationError(
-                "unknown progress stage_id: "
-                f"{self.stage_id!r}"
-            )
+            raise ContractValidationError(f"unknown progress stage_id: {self.stage_id!r}")
         if self.page_number is not None:
             _positive_int(
                 self.page_number,
                 "progress.page_number",
             )
-        if (
-            self.completed_units is None
-        ) != (
-            self.total_units is None
-        ):
+        if (self.completed_units is None) != (self.total_units is None):
             raise ContractValidationError(
-                "completed_units and total_units "
-                "must be provided together"
+                "completed_units and total_units must be provided together"
             )
         if self.completed_units is not None:
             _nonnegative_int(
@@ -1022,25 +886,14 @@ class ProgressEvent:
                 self.total_units,
                 "progress.total_units",
             )
-            if (
-                self.completed_units
-                > self.total_units
-            ):
-                raise ContractValidationError(
-                    "completed_units must not exceed "
-                    "total_units"
-                )
+            if self.completed_units > self.total_units:
+                raise ContractValidationError("completed_units must not exceed total_units")
             _require_string(
                 self.unit,
                 "progress.unit",
             )
-        if (
-            self.schema != SCHEMA_PROGRESS
-            or self.contract_version != CONTRACT_VERSION
-        ):
-            raise ContractValidationError(
-                "unsupported progress schema/version"
-            )
+        if self.schema != SCHEMA_PROGRESS or self.contract_version != CONTRACT_VERSION:
+            raise ContractValidationError("unsupported progress schema/version")
 
     @property
     def terminal(self) -> bool:
@@ -1082,14 +935,8 @@ class ProgressEvent:
             schema=payload["schema"],
             contract_version=payload["contract_version"],
         )
-        if (
-            "terminal" in payload
-            and payload["terminal"] != event.terminal
-        ):
-            raise ContractValidationError(
-                "progress.terminal disagrees "
-                "with progress.kind"
-            )
+        if "terminal" in payload and payload["terminal"] != event.terminal:
+            raise ContractValidationError("progress.terminal disagrees with progress.kind")
         return event
 
 
@@ -1106,20 +953,11 @@ def validate_progress_sequence(
         if job_id is None:
             job_id = event.job_id
         elif event.job_id != job_id:
-            raise ContractValidationError(
-                "progress stream must contain one job_id"
-            )
-        if (
-            previous_sequence is not None
-            and event.sequence <= previous_sequence
-        ):
-            raise ContractValidationError(
-                "progress.sequence must be strictly increasing"
-            )
+            raise ContractValidationError("progress stream must contain one job_id")
+        if previous_sequence is not None and event.sequence <= previous_sequence:
+            raise ContractValidationError("progress.sequence must be strictly increasing")
         if terminal_seen:
-            raise ContractValidationError(
-                "no progress events are allowed after terminal"
-            )
+            raise ContractValidationError("no progress events are allowed after terminal")
         terminal_seen = event.terminal
         previous_sequence = event.sequence
 

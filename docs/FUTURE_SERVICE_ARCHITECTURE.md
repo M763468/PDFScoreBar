@@ -300,7 +300,9 @@ The architecture therefore requires explicit engine-side contracts for:
 
 Detailed lifecycle, safety, telemetry, and compatibility contracts are intentionally split into
 #337, #338, #339, and #340. Issue #337's accepted lifecycle semantics are recorded in
-[`ENGINE_JOB_LIFECYCLE.md`](ENGINE_JOB_LIFECYCLE.md) and preserve the v1 status/error envelope
+[`ENGINE_JOB_LIFECYCLE.md`](ENGINE_JOB_LIFECYCLE.md), and Issue #338's untrusted-PDF,
+path/network, per-job-bound, and worker-isolation semantics are recorded in
+[`ENGINE_INPUT_SAFETY.md`](ENGINE_INPUT_SAFETY.md). Both preserve the v1 status/error envelope
 from `ENGINE_JOB_CONTRACT.md`.
 
 ## 7. Phased roadmap

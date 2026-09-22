@@ -118,8 +118,10 @@ def apply_acceptance_deltas(
             raw = row.get("bbox")
             if isinstance(raw, Sequence) and not isinstance(raw, (str, bytes)) and len(raw) >= 4:
                 result.append(_norm_box(raw))
-    # Preserve independent physical strokes, but remove exact duplicates.
-    return sorted(set(result))
+    # Match the authoritative Issue #296 replay contract: preserve the producer
+    # list and apply only the recorded acceptance removals/additions. Do not
+    # silently deduplicate detector output here.
+    return result
 
 
 def _d27_deltas_by_page(summary: Mapping[str, Any]) -> dict[tuple[str, str], list[Mapping[str, Any]]]:

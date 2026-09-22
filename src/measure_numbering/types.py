@@ -77,6 +77,10 @@ class Staff:
 
     bbox: BBox
     barlines: List[Barline] = field(default_factory=list)
+    # Staff-line spacing in the same coordinate frame as bbox/barlines.
+    # The production extractor populates this from the staff mask; direct/synthetic
+    # callers may leave it unset and let normalized consumers use staff height.
+    unit_size: Optional[float] = None
 
     # Metadata for system inference
     system_index: Optional[int] = None  # Explicit index from upstream (homr)

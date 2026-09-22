@@ -9,14 +9,17 @@ generation. A causal A/B should therefore keep that upstream fixed.
 
 The harness:
 
-1. generates the current production upstream once, unless a retained inventory is supplied;
-2. records one 68-page dense inventory containing the exact image, hybrid prediction,
-   staff-mask, and clef-mask inputs;
-3. reconstructs both `full_width` and `staff_mask` probe variants from that same inventory;
+1. generates the current production upstream once per score, unless a retained upstream manifest is supplied;
+2. records one manifest that points to the five score-isolated dense inventories containing the exact image, hybrid prediction, staff-mask, and clef-mask inputs;
+3. reconstructs both `full_width` and `staff_mask` probe variants score-by-score from those same inventories;
 4. scores both variants with the current production CNN manifest/threshold;
-5. evaluates both with the canonical evaluation2 center-anchor detector evaluator;
+5. aggregates the 68 score/page outputs and evaluates them with the canonical evaluation2 center-anchor detector evaluator;
 6. records candidate-set deltas, projected-width reduction, direct probe timings,
    downstream timings, and final detector-output deltas.
+
+Score isolation is intentional. Staff-mask lookup is page-stem based inside each
+production score run, so combining all five scores into one reconstruction input
+would make repeated names such as `page_001` ambiguous.
 
 Production defaults are not changed by this experiment.
 
@@ -28,8 +31,8 @@ From the Issue #43 worktree:
 bash experiments/issue43/run_full68_x_domain_ab.sh issue43_full68_01
 ```
 
-The maintained-HOMR/SR upstream runs once. Both downstream variants reuse the
-resulting inventory.
+The maintained-HOMR/SR upstream runs once per score. Both downstream variants
+reuse the resulting score-isolated inventories.
 
 Primary report:
 
@@ -38,24 +41,25 @@ logs/issue43/full68_x_domain_ab/issue43_full68_01/
   issue43_full68_x_domain_ab_report.json
 ```
 
-Retained upstream inventory:
+Retained upstream manifest:
 
 ```text
 logs/issue43/full68_x_domain_ab/issue43_full68_01/
-  retained_upstream_inventory.json
+  retained_upstream_manifest.json
 ```
 
 ## Rerun only the downstream A/B
 
-Use a new run tag and the retained inventory:
+Use a new run tag and the retained upstream manifest:
 
 ```bash
-experiments/issue43/run_full68_x_domain_ab.sh issue43_full68_recheck \
-  --inventory \
-  logs/issue43/full68_x_domain_ab/issue43_full68_01/retained_upstream_inventory.json
+bash experiments/issue43/run_full68_x_domain_ab.sh issue43_full68_recheck \
+  --upstream-manifest \
+  logs/issue43/full68_x_domain_ab/issue43_full68_01/retained_upstream_manifest.json
 ```
 
-This skips HOMR/SR upstream inference entirely.
+This skips maintained HOMR/SR upstream inference entirely and reuses the same
+five retained inventories.
 
 ## Interpretation
 

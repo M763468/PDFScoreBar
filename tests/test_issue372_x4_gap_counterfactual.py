@@ -140,3 +140,38 @@ def test_current_evaluation_args_keep_staff_units(
 
     assert args.legacy_fixed_12px is False
     assert args.staff_units_json == str(staff_units)
+
+
+def test_late_raw_x4_union_promotes_only_unrepresented_x4() -> None:
+    from experiments.issue372.run_late_raw_x4_counterfactual import (
+        build_late_raw_x4_union,
+    )
+
+    raw = [[10, 10, 14, 110], [100, 10, 104, 110]]
+    x4 = [[10, 10, 14, 110], [200, 10, 204, 110]]
+
+    union, promoted = build_late_raw_x4_union(
+        raw_boxes=raw,
+        x4_boxes=x4,
+    )
+
+    assert promoted == [[200, 10, 204, 110]]
+    assert union == [
+        [10, 10, 14, 110],
+        [100, 10, 104, 110],
+        [200, 10, 204, 110],
+    ]
+
+
+def test_late_raw_x4_union_deduplicates_promotions() -> None:
+    from experiments.issue372.run_late_raw_x4_counterfactual import (
+        build_late_raw_x4_union,
+    )
+
+    union, promoted = build_late_raw_x4_union(
+        raw_boxes=[],
+        x4_boxes=[[20, 10, 24, 110], [20, 10, 24, 110]],
+    )
+
+    assert promoted == [[20, 10, 24, 110]]
+    assert union == [[20, 10, 24, 110]]

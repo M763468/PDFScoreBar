@@ -509,7 +509,6 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         raise FileExistsError(
             f"Counterfactual output root must be new/empty: {output_root}"
         )
-    output_root.mkdir(parents=True, exist_ok=True)
 
     issue43_report = _load_json(report_path)
     if not isinstance(issue43_report, Mapping):
@@ -523,10 +522,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     if not manifest or threshold_raw is None:
         raise ValueError("Canonical config lacks CNN manifest/threshold")
     threshold = float(threshold_raw)
+    # Resolve and integrity-check the immutable D27 CNN before creating any
+    # counterfactual output. A missing shared-cache artifact is an environment
+    # preflight failure and must not leave a run directory that looks started.
     model_path = _resolve_verified_cnn_artifact(
         str(manifest),
         cnn_threshold=threshold,
     )
+
+    output_root.mkdir(parents=True, exist_ok=True)
 
     control_inv, fallback_inv, promotions = _materialize_inventories(
         issue43_report=issue43_report,

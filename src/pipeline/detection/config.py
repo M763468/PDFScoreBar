@@ -73,12 +73,27 @@ PROBE_SCAN_KWARG_KEYS = (
     "divisi_align_min_count",
 )
 
+PROBE_X_DOMAIN_KWARG_KEYS = (
+    "scan_x_domain_mode",
+    "scan_x_domain_pad",
+    "scan_x_domain_pad_unit_ratio",
+)
+
 
 def get_probe_kwargs(det_cfg: Dict[str, Any]) -> Dict[str, Any]:
     """Extracts probe-specific keyword arguments from configuration."""
     return {
         key: det_cfg[key]
         for key in PROBE_SCAN_KWARG_KEYS
+        if key in det_cfg and det_cfg.get(key) is not None
+    }
+
+
+def get_probe_x_domain_kwargs(det_cfg: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract X-domain probe kwargs for detector routes with custom reconstruction."""
+    return {
+        key: det_cfg[key]
+        for key in PROBE_X_DOMAIN_KWARG_KEYS
         if key in det_cfg and det_cfg.get(key) is not None
     }
 

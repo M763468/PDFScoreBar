@@ -309,6 +309,8 @@ class TelemetryRecorder:
         unit: str | None = None,
         detail_code: str | None = None,
     ) -> ProgressEvent:
+        if not self._started:
+            self.start_job()
         return self.emit(
             ProgressKind.STAGE_PROGRESS,
             stage_id,
@@ -329,6 +331,8 @@ class TelemetryRecorder:
         unit: str | None = None,
         detail_code: str | None = None,
     ) -> Iterator[None]:
+        if not self._started:
+            self.start_job()
         self.emit(
             ProgressKind.STAGE_STARTED,
             stage_id,

@@ -16,6 +16,7 @@ SCHEMA_RESULT = "pdfscorebar.engine.job_result.v1"
 SCHEMA_PROGRESS = "pdfscorebar.engine.progress_event.v1"
 SCHEMA_ERROR = "pdfscorebar.engine.error.v1"
 SCHEMA_CORRECTIONS = "pdfscorebar.engine.correction_set.v1"
+MAX_REQUEST_PAGE_ENTRIES = 200
 
 STAGE_IDS = frozenset(
     {
@@ -512,6 +513,11 @@ class JobRequest:
             pages = overrides["pages"]
             if not isinstance(pages, list) or not pages:
                 raise ContractValidationError("config_overrides.pages must be a non-empty list")
+            if len(pages) > MAX_REQUEST_PAGE_ENTRIES:
+                raise ContractValidationError(
+                    "config_overrides.pages must contain at most "
+                    f"{MAX_REQUEST_PAGE_ENTRIES} entries"
+                )
 
             overrides["pages"] = sorted(
                 {
@@ -523,10 +529,21 @@ class JobRequest:
                 }
             )
         if "output_name" in overrides:
-            _require_string(
+            output_name = _require_string(
                 overrides["output_name"],
                 "config_overrides.output_name",
             )
+            if (
+                output_name in {".", ".."}
+                or "/" in output_name
+                or "\\" in output_name
+                or any(ord(char) < 32 or ord(char) == 127 for char in output_name)
+                or len(output_name.encode("utf-8")) > 200
+            ):
+                raise ContractValidationError(
+                    "config_overrides.output_name must be a safe filename stem"
+                )
+            overrides["output_name"] = output_name
         object.__setattr__(
             self,
             "config_overrides",

@@ -3,6 +3,7 @@ import math
 import pytest
 
 from src.pipeline.engine_contract import (
+    MAX_REQUEST_PAGE_ENTRIES,
     ArtifactDescriptor,
     ContractValidationError,
     CorrectionSet,
@@ -73,6 +74,14 @@ def test_job_request_round_trip_is_deterministic_and_forward_compatible():
     assert JobRequest.from_json(request.to_json()) == request
     assert request.to_json() == canonical_json(request.to_dict())
     assert "logs/" not in request.to_json()
+
+
+def test_job_request_rejects_oversized_raw_page_list_before_deduplication():
+    with pytest.raises(ContractValidationError, match="at most 200 entries"):
+        JobRequest(
+            input={"kind": "local_path", "reference": "score.pdf"},
+            config_overrides={"pages": [1] * (MAX_REQUEST_PAGE_ENTRIES + 1)},
+        )
 
 
 def test_unknown_contract_version_is_rejected():

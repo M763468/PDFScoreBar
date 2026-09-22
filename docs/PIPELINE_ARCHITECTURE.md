@@ -5,6 +5,10 @@
 > tests, and machine-readable profiles remain authoritative when they disagree with prose.
 > Historical Issue documents describe how this architecture was reached; they are not
 > required reading for understanding the current route.
+>
+> The intended future engine/service responsibility boundary is documented separately in
+> [`FUTURE_SERVICE_ARCHITECTURE.md`](FUTURE_SERVICE_ARCHITECTURE.md). That roadmap document is
+> not a source of truth for current runtime behavior.
 
 ## Scope and canonical entry points
 
@@ -322,6 +326,12 @@ downstream semantic contract rather than relying only on SR pixel equality.
 Any change to these ownership boundaries, route order, authoritative geometry, or major
 process/memory boundaries must update this document and then refresh the committed Graphify
 artifacts according to `docs/ai-workflow/GRAPHIFY.md`.
+
+When a current-runtime change also alters assumptions visible at the future engine boundary
+(one-job invocation/result semantics, externally meaningful final/review artifacts, correction
+semantics, lifecycle/error/resource ownership, or caller-visible isolation assumptions), also review
+[`FUTURE_SERVICE_ARCHITECTURE.md`](FUTURE_SERVICE_ARCHITECTURE.md). Update that document only when
+the long-term boundary materially changes; do not copy detailed pipeline internals into it.
 
 See `docs/TWO_HOMR_MILESTONE.md` for the accepted Issue #274 accuracy/performance milestone
 that precedes the Issue #284 SR scheduling/runtime optimization.

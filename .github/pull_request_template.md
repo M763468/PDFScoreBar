@@ -31,3 +31,4 @@
 - [ ] 変更内容に応じた validation を実施した、または skip/defer 理由を記載した
 - [ ] 依存関係・Docker・CI・評価条件を意図せず変更していない
 - [ ] README / ドキュメント更新の要否を確認した
+- [ ] Architecture影響がある場合、current `docs/PIPELINE_ARCHITECTURE.md` と future `docs/FUTURE_SERVICE_ARCHITECTURE.md` の双方を確認し、必要な更新または N/A 理由を記録した

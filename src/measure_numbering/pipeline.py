@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 class StaffExtractor:
     """Extracts staff regions (BBoxes) from a binary staff mask image."""
 
-    STAFF_LINE_MIN_WIDTH_RATIO = 0.25
     STAFF_SPACING_INLIER_MIN_RATIO = 0.5
     STAFF_SPACING_INLIER_MAX_RATIO = 1.5
 
@@ -54,7 +53,7 @@ class StaffExtractor:
             w = stats[i, cv2.CC_STAT_WIDTH]
             h = stats[i, cv2.CC_STAT_HEIGHT]
 
-            if h >= self.min_height and w > target_w * self.min_width_ratio:
+            if h >= self.min_height and w > w_mask * self.min_width_ratio:
                 bbox = BBox(
                     int(x * scale_x),
                     int(y * scale_y),
@@ -78,7 +77,10 @@ class StaffExtractor:
 
         foreground = bin_mask > 0
         row_coverage = np.mean(foreground, axis=1)
-        active_rows = np.flatnonzero(row_coverage >= self.STAFF_LINE_MIN_WIDTH_RATIO)
+        # Keep unit estimation available for every staff width that extraction can
+        # accept. Using a stricter page-width ratio here would force short systems
+        # onto the post-morphology staff-height fallback and reintroduce DPI drift.
+        active_rows = np.flatnonzero(row_coverage > self.min_width_ratio)
         if active_rows.size < 2:
             return None
 

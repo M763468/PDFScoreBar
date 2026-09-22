@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import errno
 import hashlib
+import os
 from pathlib import Path
 
 import fitz
 import pytest
 
+import src.pipeline.engine_input_safety as engine_input_safety
 from src.pipeline.engine_contract import ContractValidationError, JobRequest
 from src.pipeline.engine_input_safety import (
     DEFAULT_JOB_SAFETY_POLICY,
@@ -99,6 +102,36 @@ def test_symlink_input_is_rejected_by_default(tmp_path: Path):
         validate_local_pdf("score.pdf", allowed_root=tmp_path)
 
     assert exc_info.value.code == "input_reference_not_allowed"
+
+
+def test_fifo_input_is_rejected_without_blocking(tmp_path: Path):
+    if not hasattr(os, "mkfifo"):
+        pytest.skip("FIFO creation is unavailable in this environment")
+
+    fifo_path = tmp_path / "score.pdf"
+    os.mkfifo(fifo_path)
+
+    with pytest.raises(InputSafetyError) as exc_info:
+        validate_local_pdf("score.pdf", allowed_root=tmp_path)
+
+    assert exc_info.value.code == "input_pdf_unavailable"
+    assert exc_info.value.debug_context["reason"] == "input is not a regular file"
+
+
+def test_read_oserror_is_normalized(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    pdf_path = tmp_path / "score.pdf"
+    _write_pdf(pdf_path)
+
+    def fail_read(fd: int, size: int) -> bytes:
+        raise OSError(errno.EIO, "simulated read failure")
+
+    monkeypatch.setattr(engine_input_safety.os, "read", fail_read)
+
+    with pytest.raises(InputSafetyError) as exc_info:
+        validate_local_pdf("score.pdf", allowed_root=tmp_path)
+
+    assert exc_info.value.code == "input_pdf_unavailable"
+    assert exc_info.value.debug_context["exception"] == "OSError"
 
 
 def test_pdf_byte_limit_is_enforced_before_parser_work(tmp_path: Path):

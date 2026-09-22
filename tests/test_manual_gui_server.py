@@ -217,3 +217,14 @@ def test_manual_gui_separates_one_based_display_from_saved_indices():
     assert 'candidate.state === "ambiguous_review_required"' in app_source
     assert "Candidate absence is not a reviewed no-boundary" in app_source
     assert 'fetch("/api/export_movement_boundaries"' in app_source
+    assert 'id="movementBoundaryPanel"' in html_source
+    assert "immediately BEFORE the target system" in html_source
+    assert 'id="showMovementToggle"' in html_source
+    assert "Existing resolved boundary" in html_source
+    assert "function systemBounds(system)" in app_source
+    assert "function pickSystem(imgPt)" in app_source
+    assert "function drawMovementMarker(system, state, selected = false)" in app_source
+    assert "resolvedMovementBoundaries" in app_source
+    assert "boundary position is BEFORE this system" in app_source
+    assert 'currentType() === "movement_boundary"' in app_source
+    assert "System ${visibleSystem} is not present on this page." in app_source

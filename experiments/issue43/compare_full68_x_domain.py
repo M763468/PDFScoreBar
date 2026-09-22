@@ -336,9 +336,7 @@ def _sum_generation_stats(groups: Sequence[Mapping[str, Any]]) -> dict[str, Any]
 
 def _sum_rescue_stats(groups: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     full_width_columns = sum(int(group.get("full_width_columns", 0)) for group in groups)
-    eligible_domain_columns = sum(
-        int(group.get("eligible_domain_columns", 0)) for group in groups
-    )
+    eligible_domain_columns = sum(int(group.get("eligible_domain_columns", 0)) for group in groups)
     projected_columns = sum(int(group.get("projected_columns", 0)) for group in groups)
     full_width_domain_count = 0
     band_count = 0
@@ -367,9 +365,7 @@ def _sum_rescue_stats(groups: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         "eligible_domain_columns": eligible_domain_columns,
         "projected_columns": projected_columns,
         "eligible_width_ratio": (
-            eligible_domain_columns / float(full_width_columns)
-            if full_width_columns
-            else 1.0
+            eligible_domain_columns / float(full_width_columns) if full_width_columns else 1.0
         ),
         "projected_width_ratio": (
             projected_columns / float(full_width_columns) if full_width_columns else 1.0

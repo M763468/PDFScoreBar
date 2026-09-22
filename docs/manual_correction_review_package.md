@@ -35,7 +35,7 @@ By default, the package is written under the internal pipeline run directory:
     pages/<page_id>/
       source.png
       numbering_final.json
-      review_overlay.png
+      review_overlay.png        # optional pre-rendered evidence
       mmr_overrides.json
       barlines_review.json
     corrections/
@@ -105,8 +105,9 @@ python3 tools/gt_relabel_gui/server.py \
 The `--handoff` route:
 
 - validates the strict same-package review contract before serving the GUI;
-- requires the source image, final numbering, review overlay, MMR evidence, and review barlines to
-  exist;
+- requires the source image, final numbering, MMR evidence, and review barlines to exist;
+- accepts a pre-rendered review overlay when present, but does not require one because the manual
+  GUI renders its active measure/barline/manual-state overlays from the underlying artifacts;
 - uses the handoff's review directory as the GUI root;
 - rejects a separate `--root` or `--config`, preventing normal use from substituting unrelated
   artifacts;

@@ -24,6 +24,7 @@ use the current artifacts first.
 | [`ENGINE_JOB_CONTRACT.md`](ENGINE_JOB_CONTRACT.md) | **Versioned engine contract**: v1 `JobRequest` / `JobResult` / `ProgressEvent` / `EngineError` / correction schemas and compatibility rules; production executor adapter is not yet wired |
 | [`ENGINE_JOB_LIFECYCLE.md`](ENGINE_JOB_LIFECYCLE.md) | **One-job lifecycle contract**: #337 timeout/cancellation, retryability, partial-artifact publication, cleanup, and review/correction terminal semantics layered on the v1 engine contract |
 | [`ENGINE_INPUT_SAFETY.md`](ENGINE_INPUT_SAFETY.md) | **Untrusted-PDF safety contract**: #338 bounded PDF preflight, path/network rules, public-safe errors, per-job resource hooks, and worker/container assumptions |
+| [`ENGINE_TELEMETRY.md`](ENGINE_TELEMETRY.md) | **Structured engine telemetry contract**: #339 stable progress events, coarse stage timing, page progress, compact summaries, and opt-in process/GPU resource sampling |
 | [`ai-workflow/GRAPHIFY.md`](ai-workflow/GRAPHIFY.md) | Graphify query, refresh, retention, and staleness rules |
 
 The root [`README.md`](../README.md), [`AGENTS.md`](../AGENTS.md), and repository `Makefile`
@@ -37,8 +38,9 @@ are also current entry points.
 
 The future-service document is deliberately separate from current runtime guidance. It must not be
 used to infer implemented pipeline behavior. The v1 serialized engine contract is now defined in
-`ENGINE_JOB_CONTRACT.md`, while the production pipeline remains config-first until a later adapter
-wires that contract to execution. When future contract work becomes runtime behavior, update the
+`ENGINE_JOB_CONTRACT.md`. The production pipeline remains config-first until a later adapter
+wires the full request/result/error contract, while #339 now provides opt-in structured progress
+and telemetry on the current config-first runner. When future contract work becomes runtime behavior, update the
 applicable current operating/architecture documentation in the same change.
 
 ## Execution and output guidance

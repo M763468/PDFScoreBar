@@ -945,6 +945,8 @@ class ProgressEvent:
     completed_units: int | None = None
     total_units: int | None = None
     unit: str | None = None
+    elapsed_ms: int | None = None
+    detail_code: str | None = None
     schema: str = SCHEMA_PROGRESS
     contract_version: str = CONTRACT_VERSION
 
@@ -993,6 +995,16 @@ class ProgressEvent:
                 self.unit,
                 "progress.unit",
             )
+        if self.elapsed_ms is not None:
+            _nonnegative_int(
+                self.elapsed_ms,
+                "progress.elapsed_ms",
+            )
+        if self.detail_code is not None:
+            _require_string(
+                self.detail_code,
+                "progress.detail_code",
+            )
         if self.schema != SCHEMA_PROGRESS or self.contract_version != CONTRACT_VERSION:
             raise ContractValidationError("unsupported progress schema/version")
 
@@ -1015,6 +1027,8 @@ class ProgressEvent:
             "completed_units",
             "total_units",
             "unit",
+            "elapsed_ms",
+            "detail_code",
         ):
             value = getattr(self, key)
             if value is not None:
@@ -1038,6 +1052,8 @@ class ProgressEvent:
             completed_units=payload.get("completed_units"),
             total_units=payload.get("total_units"),
             unit=payload.get("unit"),
+            elapsed_ms=payload.get("elapsed_ms"),
+            detail_code=payload.get("detail_code"),
             schema=payload["schema"],
             contract_version=payload["contract_version"],
         )
@@ -1046,6 +1062,13 @@ class ProgressEvent:
         if payload["terminal"] != event.terminal:
             raise ContractValidationError("progress.terminal disagrees with progress.kind")
         return event
+
+    def to_json(self) -> str:
+        return canonical_json(self.to_dict())
+
+    @classmethod
+    def from_json(cls, raw: str) -> "ProgressEvent":
+        return cls.from_dict(_object(json.loads(raw), "progress event"))
 
 
 def validate_progress_sequence(

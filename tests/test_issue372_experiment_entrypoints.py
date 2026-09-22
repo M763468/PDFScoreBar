@@ -58,3 +58,12 @@ def test_trace_retained_hybrid_components_direct_entrypoint_bootstraps_repo(
         ROOT / "experiments/issue372/trace_retained_hybrid_components.py",
         cwd=tmp_path,
     )
+
+
+def test_run_retained_x4_gap_counterfactual_direct_entrypoint_bootstraps_repo(
+    tmp_path: Path,
+) -> None:
+    _assert_direct_help_succeeds(
+        ROOT / "experiments/issue372/run_retained_x4_gap_counterfactual.py",
+        cwd=tmp_path,
+    )

@@ -60,5 +60,9 @@ jobs:
           stub.PipelineOrchestrator = object
           sys.modules["src.pipeline.orchestrator"] = stub
 
+          images_stub = types.ModuleType("src.pipeline.utils.images")
+          images_stub.clear_image_cache = lambda: None
+          sys.modules["src.pipeline.utils.images"] = images_stub
+
           raise SystemExit(pytest.main(["tests/test_pipeline_telemetry.py", "-q"]))
           PY

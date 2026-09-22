@@ -611,16 +611,14 @@ def run_probe_scan_batch(
             float(record["detect_elapsed_seconds"]) for record in stats_records
         )
         full_width_columns = sum(
-            int(record["detector_stats"].get("full_width_columns", 0))
-            for record in stats_records
+            int(record["detector_stats"].get("full_width_columns", 0)) for record in stats_records
         )
         eligible_domain_columns = sum(
             int(record["detector_stats"].get("eligible_domain_columns", 0))
             for record in stats_records
         )
         projected_columns = sum(
-            int(record["detector_stats"].get("projected_columns", 0))
-            for record in stats_records
+            int(record["detector_stats"].get("projected_columns", 0)) for record in stats_records
         )
         stats_summary_out.write_text(
             json.dumps(
@@ -636,9 +634,7 @@ def run_probe_scan_batch(
                         else 1.0
                     ),
                     "projected_width_ratio": (
-                        projected_columns / float(full_width_columns)
-                        if full_width_columns
-                        else 1.0
+                        projected_columns / float(full_width_columns) if full_width_columns else 1.0
                     ),
                     "pages": stats_records,
                 },

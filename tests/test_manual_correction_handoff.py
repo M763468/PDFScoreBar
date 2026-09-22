@@ -103,6 +103,23 @@ def test_handoff_base_mode_allows_missing_optional_review_evidence(tmp_path):
     assert "mmr_overrides" not in normalized["pages"][0]
 
 
+def test_handoff_strict_mode_allows_missing_pre_rendered_overlay(tmp_path):
+    handoff_path, handoff = _review_package(tmp_path)
+    (handoff_path.parent / "pages" / "page_003" / "review_overlay.png").unlink()
+    handoff["pages"][0].pop("review_overlay")
+
+    normalized = validate_manual_correction_handoff(
+        handoff,
+        handoff_path=handoff_path,
+        mode="issue229_smoke_strict",
+        require_existing_artifacts=True,
+    )
+
+    assert "review_overlay" not in normalized["pages"][0]
+    assert normalized["pages"][0]["mmr_overrides"] == "pages/page_003/mmr_overrides.json"
+    assert normalized["pages"][0]["barlines_review"] == "pages/page_003/barlines_review.json"
+
+
 def test_handoff_strict_mode_requires_review_evidence(tmp_path):
     handoff_path, handoff = _review_package(tmp_path, include_strict=False)
 

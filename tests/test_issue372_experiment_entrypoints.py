@@ -49,3 +49,12 @@ def test_trace_retained_candidate_losses_direct_entrypoint_bootstraps_repo(
         ROOT / "experiments/issue372/trace_retained_candidate_losses.py",
         cwd=tmp_path,
     )
+
+
+def test_trace_retained_hybrid_components_direct_entrypoint_bootstraps_repo(
+    tmp_path: Path,
+) -> None:
+    _assert_direct_help_succeeds(
+        ROOT / "experiments/issue372/trace_retained_hybrid_components.py",
+        cwd=tmp_path,
+    )

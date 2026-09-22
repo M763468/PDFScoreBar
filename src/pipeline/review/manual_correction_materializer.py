@@ -301,7 +301,6 @@ def materialize_manual_correction_review_package(
 
         required = {
             "numbering_final": numbering_final,
-            "review_overlay": review_overlay,
             "mmr_overrides": mmr_overrides,
             "barlines_review source": barlines_source,
         }
@@ -315,28 +314,29 @@ def materialize_manual_correction_review_package(
         page_dir = review_root_path / "pages" / page_id
         _copy_run_artifact(image_source, page_dir / "source.png")
         _copy_run_artifact(numbering_final, page_dir / "numbering_final.json")
-        _copy_run_artifact(review_overlay, page_dir / "review_overlay.png")
+        if review_overlay.exists():
+            _copy_run_artifact(review_overlay, page_dir / "review_overlay.png")
         _copy_run_artifact(mmr_overrides, page_dir / "mmr_overrides.json")
         _write_json(
             page_dir / "barlines_review.json",
             _extract_review_barline_records(_load_json(barlines_source), source=barlines_source),
         )
 
-        handoff_pages.append(
-            {
-                "page_id": page_id,
-                "page_number": page_number,
-                "source_image": f"pages/{page_id}/source.png",
-                "numbering_final": f"pages/{page_id}/numbering_final.json",
-                "review_overlay": f"pages/{page_id}/review_overlay.png",
-                "mmr_overrides": f"pages/{page_id}/mmr_overrides.json",
-                "barlines_review": f"pages/{page_id}/barlines_review.json",
-                "barlines_review_source": barlines_source.relative_to(run_root_path).as_posix(),
-                "barlines_review_source_kind": barlines_source_kind,
-                "barlines_review_source_manifest_field": barlines_source_field,
-                "correction_output": "corrections",
-            }
-        )
+        handoff_page = {
+            "page_id": page_id,
+            "page_number": page_number,
+            "source_image": f"pages/{page_id}/source.png",
+            "numbering_final": f"pages/{page_id}/numbering_final.json",
+            "mmr_overrides": f"pages/{page_id}/mmr_overrides.json",
+            "barlines_review": f"pages/{page_id}/barlines_review.json",
+            "barlines_review_source": barlines_source.relative_to(run_root_path).as_posix(),
+            "barlines_review_source_kind": barlines_source_kind,
+            "barlines_review_source_manifest_field": barlines_source_field,
+            "correction_output": "corrections",
+        }
+        if review_overlay.exists():
+            handoff_page["review_overlay"] = f"pages/{page_id}/review_overlay.png"
+        handoff_pages.append(handoff_page)
 
     (review_root_path / "corrections").mkdir(parents=True, exist_ok=True)
     handoff = {

@@ -14,8 +14,8 @@ import argparse
 import copy
 import hashlib
 import json
+import os
 import shutil
-import subprocess
 import time
 from argparse import Namespace
 from dataclasses import asdict
@@ -49,11 +49,14 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _git_head() -> str:
-    return subprocess.check_output(
-        ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
-        text=True,
-    ).strip()
+def _source_commit() -> str:
+    value = os.environ.get("ISSUE43_SOURCE_COMMIT", "").strip()
+    if len(value) != 40 or any(ch not in "0123456789abcdefABCDEF" for ch in value):
+        raise RuntimeError(
+            "ISSUE43_SOURCE_COMMIT must contain the 40-character host Git commit. "
+            "Use experiments/issue43/run_full68_x_domain_ab.sh to launch the harness."
+        )
+    return value.lower()
 
 
 def _canonical_images() -> list[Path]:
@@ -211,7 +214,7 @@ def _generate_current_upstream_manifest(
         manifest_path,
         {
             "schema_version": UPSTREAM_MANIFEST_SCHEMA,
-            "source_commit": _git_head(),
+            "source_commit": _source_commit(),
             "groups": manifest_groups,
         },
     )

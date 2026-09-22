@@ -18,6 +18,10 @@ logger = logging.getLogger(__name__)
 class StaffExtractor:
     """Extracts staff regions (BBoxes) from a binary staff mask image."""
 
+    STAFF_LINE_MIN_WIDTH_RATIO = 0.25
+    STAFF_SPACING_INLIER_MIN_RATIO = 0.5
+    STAFF_SPACING_INLIER_MAX_RATIO = 1.5
+
     def __init__(self, min_height: int = 10, min_width_ratio: float = 0.1):
         self.min_height = min_height
         self.min_width_ratio = min_width_ratio
@@ -33,6 +37,7 @@ class StaffExtractor:
         scale_y = target_h / h_mask
 
         _, bin_mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
+        unit_size = self._estimate_unit_size(bin_mask, scale_y=scale_y)
 
         v_kernel = np.ones((20, 1), np.uint8)
         h_kernel = np.ones((1, 50), np.uint8)
@@ -56,9 +61,55 @@ class StaffExtractor:
                     int((x + w) * scale_x),
                     int((y + h) * scale_y),
                 )
-                staves.append(Staff(bbox=bbox))
+                staves.append(Staff(bbox=bbox, unit_size=unit_size))
 
         return sorted(staves, key=lambda s: s.bbox.y1)
+
+    def _estimate_unit_size(self, bin_mask: np.ndarray, *, scale_y: float) -> Optional[float]:
+        """Estimate page staff-line spacing from the unmodified staff mask.
+
+        This follows the same page-scale definition used by the canonical
+        barline staff-unit audit: identify horizontally persistent staff rows,
+        measure adjacent row-center spacing, reject system/inter-staff gaps, then
+        express the result in the target/page coordinate frame.
+        """
+        if bin_mask.size == 0:
+            return None
+
+        foreground = bin_mask > 0
+        row_coverage = np.mean(foreground, axis=1)
+        active_rows = np.flatnonzero(row_coverage >= self.STAFF_LINE_MIN_WIDTH_RATIO)
+        if active_rows.size < 2:
+            return None
+
+        runs: list[tuple[int, int]] = []
+        start = int(active_rows[0])
+        previous = start
+        for value in active_rows[1:]:
+            row = int(value)
+            if row != previous + 1:
+                runs.append((start, previous))
+                start = row
+            previous = row
+        runs.append((start, previous))
+
+        if len(runs) < 2:
+            return None
+
+        centers = np.asarray([(start + end) / 2.0 for start, end in runs], dtype=float)
+        spacings = np.diff(centers)
+        spacings = spacings[spacings > 0]
+        if spacings.size == 0:
+            return None
+
+        initial_median = float(np.median(spacings))
+        lower = initial_median * self.STAFF_SPACING_INLIER_MIN_RATIO
+        upper = initial_median * self.STAFF_SPACING_INLIER_MAX_RATIO
+        inliers = spacings[(spacings >= lower) & (spacings <= upper)]
+        if inliers.size == 0:
+            return None
+
+        return float(np.mean(inliers) * scale_y)
 
 
 class MeasureNumberingPipeline:

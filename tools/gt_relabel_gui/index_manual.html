@@ -76,11 +76,11 @@
           <strong>Movement boundary target</strong><br />
           A boundary is inserted <strong>immediately BEFORE the target system</strong>.
           The first measure of that system becomes the start of the new movement.
-          Click any measure in the target system; the GUI will select the whole system.
+          Click anywhere inside the target system; the GUI will select the whole system.
         </div>
         <div class="row" id="movementSystemRow">
           <label class="small">Target system (visible 1-based)
-            <input id="movementSystemInput" type="number" min="1" value="1" />
+            <input id="movementSystemInput" type="number" min="1" placeholder="e.g. 6" />
           </label>
         </div>
         <div class="movement-status" id="movementTargetMeta">No movement system selected.</div>
@@ -110,7 +110,7 @@
           </ul>
           <p><strong>Selected objects and active drafts always stay visible.</strong> This lets you hide other layers without losing the active target.</p>
           <p><strong>Correction flow:</strong> choose Type/Operation → Select object or Draw barline box → Stage change → inspect Current page results → Save corrections. Save corrections writes every staged correction type on the current page.</p>
-          <p><strong>Movement boundaries:</strong> a boundary is always placed <strong>before the selected system</strong>, never after it. Click any measure in the intended system; the measure is only a hit target and the whole system becomes the movement target. The canvas shows candidate, existing/resolved, staged boundary, and reviewed no-boundary markers. Mark boundary accepts a candidate or adds a non-candidate boundary. Mark no boundary is allowed only for an explicit candidate; candidate absence is never treated as a negative. Save before using Export movement boundaries.</p>
+          <p><strong>Movement boundaries:</strong> a boundary is always placed <strong>before the selected system</strong>, never after it. Click anywhere inside the intended system; the whole system becomes the movement target. If a measure is hit, its measure number is shown only as selection context. The canvas shows candidate, existing/resolved, staged boundary, and reviewed no-boundary markers. Mark boundary accepts a candidate or adds a non-candidate boundary. Mark no boundary is allowed only for an explicit candidate; candidate absence is never treated as a negative. Save before using Export movement boundaries.</p>
           <p>Visible Page / System / Measure identifiers are <strong>1-based</strong>. Saved correction indices keep the existing internal <strong>0-based</strong> schema.</p>
           <p><strong>Canvas:</strong> mouse wheel = zoom; Space+drag or middle mouse = pan. Left/Right arrows change page. Delete/Backspace unstages the selected correction when applicable.</p>
           <p>Save writes package-local correction JSON under <code>review/corrections/</code>; applying corrections and regenerating outputs is a separate step.</p>

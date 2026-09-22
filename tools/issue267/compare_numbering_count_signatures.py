@@ -34,7 +34,7 @@ def collect_run_signatures(run_dir: Path, *, stage: str = "numbering_base") -> d
         raise FileNotFoundError(f"Missing intermediate directory: {intermediate}")
 
     result: dict[str, list[int]] = {}
-    for page_dir in sorted(path for path in intermediate.iterdir() if path.is_dir()):
+    for page_dir in sorted(path for path in intermediate.glob("page_*") if path.is_dir()):
         payload = page_dir / f"{stage}.json"
         if not payload.is_file():
             raise FileNotFoundError(f"Missing {stage} payload: {payload}")

@@ -18,6 +18,7 @@ use the current artifacts first.
 | [`REGRESSION_TEST_WORKFLOW.md`](REGRESSION_TEST_WORKFLOW.md) | Regression-test workflow |
 | [`GT_PREPARATION_POLICY.md`](GT_PREPARATION_POLICY.md) | Ground-truth labeling policy |
 | [`BARLINE_MATCHER.md`](BARLINE_MATCHER.md) | Barline matching/evaluation contract |
+| [`NUMBERING_GEOMETRY_CONTRACT.md`](NUMBERING_GEOMETRY_CONTRACT.md) | Resolution-independent measure-numbering/system-geometry thresholds and retained morphology pixel operations |
 | [`SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md) | Current placement/lifecycle rules for production, tools, experiments, and scratch scripts |
 | [`manual_correction_review_package.md`](manual_correction_review_package.md) | Current config-first end-to-end manual-correction review workflow |
 | [`ai-workflow/GRAPHIFY.md`](ai-workflow/GRAPHIFY.md) | Graphify query, refresh, retention, and staleness rules |

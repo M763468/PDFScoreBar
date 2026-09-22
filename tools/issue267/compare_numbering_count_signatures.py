@@ -18,7 +18,9 @@ def physical_signature(path: Path) -> list[int]:
     payload = _load_json(path)
     pages = payload.get("pages")
     if not isinstance(pages, list) or len(pages) != 1:
-        raise ValueError(f"Expected one page in {path}, got {0 if not isinstance(pages, list) else len(pages)}")
+        raise ValueError(
+            f"Expected one page in {path}, got {0 if not isinstance(pages, list) else len(pages)}"
+        )
     systems = pages[0].get("systems", [])
     if not isinstance(systems, list):
         raise ValueError(f"Expected systems list in {path}")

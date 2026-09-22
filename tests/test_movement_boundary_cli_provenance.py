@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -11,6 +12,7 @@ from tools.generate_movement_boundary_candidates import (
     _validate_manifest_source_hash,
     load_json_with_sha256,
 )
+from tools.movement_boundary_review import _export_from_handoff
 
 
 def _manifest(digest: str) -> dict:
@@ -63,3 +65,76 @@ def test_movement_boundary_clis_support_direct_script_execution(tmp_path) -> Non
             check=False,
         )
         assert result.returncode == 0, result.stderr
+
+
+def test_movement_boundary_export_honors_configured_review_output(tmp_path) -> None:
+    package = tmp_path / "review"
+    custom_dir = package / "custom"
+    custom_dir.mkdir(parents=True)
+
+    evidence_path = package / "movement_boundary_evidence.json"
+    evidence_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "issue333.movement_boundary_evidence.v1",
+                "candidates": [
+                    {
+                        "id": "page:0:system:0",
+                        "page": 0,
+                        "system": 0,
+                        "state": "ambiguous_review_required",
+                    }
+                ],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    custom_review = custom_dir / "movement_review.json"
+    custom_review.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "correction_type": "movement_boundary",
+                "items": [
+                    {
+                        "op": "boundary",
+                        "page": 0,
+                        "system": 0,
+                        "reason": "test",
+                    }
+                ],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    handoff = package / "manual_correction_input.json"
+    handoff.write_text(
+        json.dumps(
+            {
+                "movement_boundary_evidence": "movement_boundary_evidence.json",
+                "movement_boundary_resolved_output": "custom/resolved.json",
+                "correction_outputs": {
+                    "movement_boundary": "custom/movement_review.json",
+                },
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    resolved = _export_from_handoff(handoff, overwrite=False)
+
+    assert resolved["boundaries"] == [
+        {
+            "page": 0,
+            "system": 0,
+            "reset_number": 1,
+            "source": "reviewed_candidate",
+            "provenance": resolved["boundaries"][0]["provenance"],
+        }
+    ]
+    assert (custom_dir / "resolved.json").exists()

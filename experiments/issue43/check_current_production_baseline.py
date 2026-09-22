@@ -50,7 +50,12 @@ def _box_set(path: Path) -> set[tuple[int, int, int, int]]:
     return result
 
 
-def _evaluation_args(results_dir: Path, output_dir: Path, threshold: float) -> Namespace:
+def _evaluation_args(
+    results_dir: Path,
+    output_dir: Path,
+    threshold: float,
+    image_root: Path,
+) -> Namespace:
     from tools.issue120 import eval_full68_from_intermediates as full68_eval
 
     return Namespace(
@@ -63,7 +68,7 @@ def _evaluation_args(results_dir: Path, output_dir: Path, threshold: float) -> N
         rule_name="center_anchor",
         vov_threshold=0.5,
         staff_units_json=str(ROOT / "data/evaluation2/staff_units.json"),
-        image_root=str(ROOT / "data/evaluation2/images"),
+        image_root=str(image_root),
         xdist_unit_ratio=full68_eval.CENTER_ANCHOR_XDIST_UNIT_RATIO,
         legacy_fixed_12px=False,
         allow_partial=False,
@@ -104,7 +109,7 @@ def _collect_production_outputs(report: Mapping[str, Any], destination: Path) ->
     return copied
 
 
-def run(report_path: Path) -> dict[str, Any]:
+def run(report_path: Path, *, image_root: Path) -> dict[str, Any]:
     from tools.issue120 import eval_full68_from_intermediates as full68_eval
 
     report = _load_json(report_path)
@@ -120,6 +125,7 @@ def run(report_path: Path) -> dict[str, Any]:
             production_root,
             run_root / "production_baseline_eval",
             threshold,
+            image_root,
         )
     )
     production_summary = asdict(evaluation.detector_summary)
@@ -181,8 +187,14 @@ def run(report_path: Path) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument(
+        "--image-root",
+        type=Path,
+        default=ROOT / "data/evaluation2/images",
+        help="Canonical evaluation2 image root used for coordinate validation.",
+    )
     args = parser.parse_args()
-    run(args.report.resolve())
+    run(args.report.resolve(), image_root=args.image_root.resolve())
     return 0
 
 

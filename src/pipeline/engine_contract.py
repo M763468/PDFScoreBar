@@ -152,7 +152,9 @@ def _enum(
         raise ContractValidationError(f"unsupported {field_name}: {value!r}") from exc
 
 
-def _envelope(payload: Mapping[str, Any], schema: str) -> None:
+def _envelope(payload: Any, schema: str) -> None:
+    if not isinstance(payload, Mapping):
+        raise ContractValidationError(f"{schema} payload must be an object")
     if payload.get("schema") != schema or payload.get("contract_version") != CONTRACT_VERSION:
         raise ContractValidationError(f"unsupported schema/version for {schema}")
 
@@ -196,6 +198,7 @@ class ArtifactDescriptor:
     def __post_init__(self) -> None:
         _require_string(self.artifact_id, "artifact_id")
         _require_string(self.role, "artifact.role")
+        _require_string(self.location_kind, "artifact.location_kind")
         if self.location_kind not in {"relative_path", "engine_ref"}:
             raise ContractValidationError(
                 "artifact.location_kind must be relative_path or engine_ref"
@@ -234,6 +237,7 @@ class ArtifactDescriptor:
 
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "ArtifactDescriptor":
+        payload = _object(payload, "artifact")
         return cls(
             artifact_id=payload.get("artifact_id"),
             role=payload.get("role"),
@@ -308,7 +312,11 @@ def _validate_correction_record(
             target.get("system"),
             "correction.target.system",
         )
-        if value.get("decision") not in {"boundary", "no_boundary"}:
+        decision = _require_string(
+            value.get("decision"),
+            "correction.value.decision",
+        )
+        if decision not in {"boundary", "no_boundary"}:
             raise ContractValidationError(
                 "movement boundary decision must be boundary or no_boundary"
             )
@@ -468,7 +476,8 @@ class JobRequest:
             raise ContractValidationError("unsupported job request schema/version")
 
         input_ref = _object(self.input, "input")
-        if input_ref.get("kind") not in {"local_path", "engine_ref"}:
+        input_kind = _require_string(input_ref.get("kind"), "input.kind")
+        if input_kind not in {"local_path", "engine_ref"}:
             raise ContractValidationError("input.kind must be local_path or engine_ref")
         _require_string(
             input_ref.get("reference"),
@@ -557,6 +566,8 @@ class JobRequest:
         corrections = payload.get("corrections")
         if corrections is not None and not isinstance(corrections, Mapping):
             raise ContractValidationError("corrections must be an object")
+        if not isinstance(payload["config_overrides"], Mapping):
+            raise ContractValidationError("config_overrides must be an object")
         return cls(
             input=_object(payload["input"], "input"),
             output_profile=payload["output_profile"],
@@ -938,6 +949,7 @@ class ProgressEvent:
                 "progress.kind",
             ),
         )
+        _require_string(self.stage_id, "progress.stage_id")
         if self.stage_id not in STAGE_IDS:
             raise ContractValidationError(f"unknown progress stage_id: {self.stage_id!r}")
         if self.page_number is not None:

@@ -241,6 +241,44 @@ def resolve_x_domains(
     return domains
 
 
+
+def compute_domain_ratios(
+    band_img: np.ndarray,
+    *,
+    kernel: np.ndarray,
+    width: int,
+    image_width: int,
+    x_domain: Tuple[int, int],
+) -> tuple[np.ndarray, int]:
+    """Compute global-indexed probe ratios while projecting only the X domain plus halo."""
+    if image_width <= 0:
+        return np.zeros(0, dtype=np.float64), 0
+
+    x1 = max(0, min(image_width - 1, int(x_domain[0])))
+    x2 = max(0, min(image_width - 1, int(x_domain[1])))
+    if x2 < x1:
+        x1, x2 = 0, image_width - 1
+
+    band_h = max(1, int(band_img.shape[0]))
+    denominator = float(band_h * width)
+
+    if x1 == 0 and x2 == image_width - 1:
+        col_sums = band_img.sum(axis=0)
+        stripe_sums = np.convolve(col_sums, kernel, mode="same")
+        return stripe_sums / denominator, image_width
+
+    halo = max(1, int(len(kernel)))
+    ext_x1 = max(0, x1 - halo)
+    ext_x2 = min(image_width - 1, x2 + halo)
+    local_col_sums = band_img[:, ext_x1 : ext_x2 + 1].sum(axis=0)
+    local_stripe_sums = np.convolve(local_col_sums, kernel, mode="same")
+
+    local_start = x1 - ext_x1
+    local_stop = local_start + (x2 - x1 + 1)
+    ratios = np.zeros(image_width, dtype=np.float64)
+    ratios[x1 : x2 + 1] = local_stripe_sums[local_start:local_stop] / denominator
+    return ratios, ext_x2 - ext_x1 + 1
+
 def scan_staff_band_from_ink(
     ink: np.ndarray,
     x_center: int,
@@ -388,9 +426,18 @@ def build_divisi_map(
         if band_img.size == 0:
             continue
 
-        col_sums = band_img.sum(axis=0)
-        stripe_sums = np.convolve(col_sums, kernel, mode="same")
-        ratios = stripe_sums / float(max(1, band_y2 - band_y1 + 1) * width)
+        x_domain = (
+            x_domains[i]
+            if x_domains is not None and i < len(x_domains)
+            else (0, ink.shape[1] - 1)
+        )
+        ratios, _ = compute_domain_ratios(
+            band_img,
+            kernel=kernel,
+            width=width,
+            image_width=ink.shape[1],
+            x_domain=x_domain,
+        )
 
         divisi_min_ratio = config.min_ratio
         if ratios.size < 3:
@@ -400,9 +447,8 @@ def build_divisi_map(
             & (ratios >= np.roll(ratios, 1))
             & (ratios >= np.roll(ratios, -1))
         )[0]
-        if x_domains is not None and i < len(x_domains):
-            x1, x2 = x_domains[i]
-            peak_indices = peak_indices[(peak_indices >= x1) & (peak_indices <= x2)]
+        x1, x2 = x_domain
+        peak_indices = peak_indices[(peak_indices >= x1) & (peak_indices <= x2)]
         for px in peak_indices:
             band_xs[i].append(float(px))
 

@@ -84,3 +84,18 @@ The final acceptance check must additionally compare current accepted
 numbering/physical-measure counts against the pre-#267 baseline. Unit tests alone
 are not sufficient evidence that the new thresholds preserve the accepted
 full-corpus counting contract.
+
+For that final gate, replay the same retained accepted upstream inputs on
+`develop` and the #267 candidate, then compare the resulting
+`intermediate/page_*/numbering_base.json` signatures with:
+
+```bash
+python tools/issue267/compare_numbering_count_signatures.py \
+  --baseline-run <develop-run-dir> \
+  --candidate-run <issue267-run-dir> \
+  --output logs/issue267/count_compare.json
+```
+
+Acceptance requires `exact_match=true`, zero changed/missing/added pages, and a
+zero total physical-measure delta. The report is also the durable per-page record
+for locating any regression if the gate fails.

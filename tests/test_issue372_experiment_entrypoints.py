@@ -139,3 +139,12 @@ def test_compare_final_numbering_semantics_direct_entrypoint(
         ROOT / "experiments/issue372/compare_final_numbering_semantics.py",
         cwd=tmp_path,
     )
+
+
+def test_run_late_raw_x4_counterfactual_direct_entrypoint_bootstraps_repo(
+    tmp_path: Path,
+) -> None:
+    _assert_direct_help_succeeds(
+        ROOT / "experiments/issue372/run_late_raw_x4_counterfactual.py",
+        cwd=tmp_path,
+    )

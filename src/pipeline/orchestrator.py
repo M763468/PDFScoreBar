@@ -185,7 +185,7 @@ class PipelineOrchestrator:
 
             self._telemetry_progress(
                 "pdf_render",
-                page_number=page_index + 1,
+                page_number=completed,
                 completed_units=completed,
                 total_units=len(rendered),
                 unit="page",
@@ -359,64 +359,64 @@ class PipelineOrchestrator:
                 page_ids, excluded_page_ids, page_ctx, user_overrides_payload
             )
 
-        # Post-processing: Combine results
-        if len(numbering_base_paths) > 1 and not self.dry_run and not self.validate_only:
-            combined_base = {
-                "pages": [
-                    page for path in numbering_base_paths for page in load_json(path)["pages"]
+        with self._telemetry_stage("artifact_materialization"):
+            # Post-processing: Combine results
+            if len(numbering_base_paths) > 1 and not self.dry_run and not self.validate_only:
+                combined_base = {
+                    "pages": [
+                        page for path in numbering_base_paths for page in load_json(path)["pages"]
+                    ]
+                }
+                write_json(self.intermediate_dir / "numbering_base.json", combined_base)
+    
+            if len(numbering_final_paths) > 1 and not self.dry_run and not self.validate_only:
+                final_pages = [
+                    page for path in numbering_final_paths for page in load_json(path)["pages"]
                 ]
-            }
-            write_json(self.intermediate_dir / "numbering_base.json", combined_base)
-
-        if len(numbering_final_paths) > 1 and not self.dry_run and not self.validate_only:
-            final_pages = [
-                page for path in numbering_final_paths for page in load_json(path)["pages"]
-            ]
-            page_metadata = [
-                load_json(path).get("numbering_metadata") for path in numbering_final_paths
-            ]
-            combined_final = {
-                "pages": final_pages,
-                "numbering_metadata": {
-                    "schema_version": FINAL_NUMBERING_SCHEMA_VERSION,
-                    "start_number": 1,
-                    "next_number": (
-                        page_metadata[-1].get("next_number")
-                        if isinstance(page_metadata[-1], dict)
-                        else None
-                    ),
-                    "movement_boundaries": movement_boundaries["boundaries"],
-                    "pages": page_metadata,
-                },
-            }
-            write_json(self.outputs_dir / "numbering_final.json", combined_final)
-
-        if not self.dry_run:
-            write_json(self.run_dir / "filters.json", {"pages": page_statuses})
-
-            manifest_resolved = self._resolved_for_manifest(
-                page_ids=page_ids,
-                resolved=resolved,
-                page_ctx=page_ctx,
-            )
-            manifest = build_manifest(
-                self.config,
-                run_id=self.run_id,
-                run_dir=self.run_dir,
-                images=images,
-                page_ids=page_ids,
-                page_runs=page_runs,
-                resolved=manifest_resolved,
-                commands=commands,
-                page_statuses=page_statuses,
-                barline_override_stats=barline_override_stats,
-                source_page_references=source_page_references,
-            )
-            write_json(self.run_dir / "manifest.json", manifest)
-            logger.info(f"Wrote manifest to {self.run_dir / 'manifest.json'}")
-            with self._telemetry_stage("artifact_materialization"):
+                page_metadata = [
+                    load_json(path).get("numbering_metadata") for path in numbering_final_paths
+                ]
+                combined_final = {
+                    "pages": final_pages,
+                    "numbering_metadata": {
+                        "schema_version": FINAL_NUMBERING_SCHEMA_VERSION,
+                        "start_number": 1,
+                        "next_number": (
+                            page_metadata[-1].get("next_number")
+                            if isinstance(page_metadata[-1], dict)
+                            else None
+                        ),
+                        "movement_boundaries": movement_boundaries["boundaries"],
+                        "pages": page_metadata,
+                    },
+                }
+                write_json(self.outputs_dir / "numbering_final.json", combined_final)
+    
+            if not self.dry_run:
+                write_json(self.run_dir / "filters.json", {"pages": page_statuses})
+    
+                manifest_resolved = self._resolved_for_manifest(
+                    page_ids=page_ids,
+                    resolved=resolved,
+                    page_ctx=page_ctx,
+                )
+                manifest = build_manifest(
+                    self.config,
+                    run_id=self.run_id,
+                    run_dir=self.run_dir,
+                    images=images,
+                    page_ids=page_ids,
+                    page_runs=page_runs,
+                    resolved=manifest_resolved,
+                    commands=commands,
+                    page_statuses=page_statuses,
+                    barline_override_stats=barline_override_stats,
+                    source_page_references=source_page_references,
+                )
+                write_json(self.run_dir / "manifest.json", manifest)
+                logger.info(f"Wrote manifest to {self.run_dir / 'manifest.json'}")
                 self._materialize_review_package_if_requested(page_ids, excluded_page_ids)
-
+    
         return self.run_dir
 
     def _materialize_review_package_if_requested(

@@ -225,6 +225,8 @@ def test_manual_gui_separates_one_based_display_from_saved_indices():
     assert "function pickSystem(imgPt)" in app_source
     assert "function drawMovementMarker(system, state, selected = false)" in app_source
     assert "resolvedMovementBoundaries" in app_source
+    assert "allMovementEvidenceCandidates" in app_source
+    assert "movement:" in app_source
     assert "boundary position is BEFORE this system" in app_source
     assert 'currentType() === "movement_boundary"' in app_source
     assert "System ${visibleSystem} is not present on this page." in app_source

@@ -22,6 +22,11 @@ class _FailingOrchestrator(_SuccessfulOrchestrator):
         raise ValueError("pipeline failed")
 
 
+class _ConstructorFailingOrchestrator:
+    def __init__(self, **kwargs):
+        raise ValueError("constructor failed")
+
+
 def _patch_minimal_pipeline(monkeypatch, orchestrator_type):
     monkeypatch.setattr(
         "src.pipeline.main.load_yaml",
@@ -77,6 +82,28 @@ def test_run_pipeline_emits_terminal_failure_without_swallowing_exception(
         run_pipeline(
             Path("unused.yaml"),
             run_id="job-failure",
+            output_root=tmp_path,
+            on_progress=events.append,
+        )
+
+    assert [event.kind for event in events] == [
+        ProgressKind.JOB_STARTED,
+        ProgressKind.JOB_FAILED,
+    ]
+
+
+
+def test_run_pipeline_emits_terminal_failure_when_orchestrator_construction_fails(
+    monkeypatch,
+    tmp_path,
+):
+    _patch_minimal_pipeline(monkeypatch, _ConstructorFailingOrchestrator)
+    events: list[ProgressEvent] = []
+
+    with pytest.raises(ValueError, match="constructor failed"):
+        run_pipeline(
+            Path("unused.yaml"),
+            run_id="job-constructor-failure",
             output_root=tmp_path,
             on_progress=events.append,
         )

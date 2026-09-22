@@ -119,6 +119,9 @@ construct its JobResult.
 
 Per-page progress is reported only where the current execution boundary can state it truthfully.
 
+page_number is the one-based page ordinal inside the engine job's ordered page set. It is
+not a promise that the source PDF page index is contiguous; the same ordinal is used across stages.
+
 When completed_units / total_units are present:
 
 - both are integers;

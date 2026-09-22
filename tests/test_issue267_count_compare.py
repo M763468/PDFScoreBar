@@ -69,10 +69,13 @@ def test_issue267_count_comparator_reports_exact_match(tmp_path: Path) -> None:
     )
 
     assert report["exact_match"] is True
+    assert report["count_match"] is True
+    assert report["semantic_match"] is True
     assert report["baseline_total_measures"] == 15
     assert report["candidate_total_measures"] == 15
     assert report["total_measure_delta"] == 0
-    assert report["changed_pages"] == []
+    assert report["count_changed_pages"] == []
+    assert report["geometry_changed_pages"] == []
 
 
 def test_issue267_count_comparator_identifies_changed_page(tmp_path: Path) -> None:
@@ -93,9 +96,11 @@ def test_issue267_count_comparator_identifies_changed_page(tmp_path: Path) -> No
     )
 
     assert report["exact_match"] is False
+    assert report["count_match"] is False
+    assert report["semantic_match"] is False
     assert report["total_measure_delta"] == -1
-    assert len(report["changed_pages"]) == 1
-    changed = report["changed_pages"][0]
+    assert len(report["count_changed_pages"]) == 1
+    changed = report["count_changed_pages"][0]
     assert changed["page_id"] == "page_001"
     assert changed["baseline_counts"] == [5, 6]
     assert changed["candidate_counts"] == [5, 5]
@@ -121,10 +126,13 @@ def test_issue267_comparator_detects_boundary_shift_with_same_counts(tmp_path: P
         collect_run_signatures(candidate),
     )
 
-    assert report["exact_match"] is False
+    assert report["exact_match"] is True
+    assert report["count_match"] is True
+    assert report["semantic_match"] is False
     assert report["total_measure_delta"] == 0
-    assert report["changed_pages"][0]["baseline_counts"] == [2]
-    assert report["changed_pages"][0]["candidate_counts"] == [2]
+    assert report["count_changed_pages"] == []
+    assert report["geometry_changed_pages"][0]["baseline_counts"] == [2]
+    assert report["geometry_changed_pages"][0]["candidate_counts"] == [2]
 
 
 def test_issue267_comparator_detects_empty_system_change(tmp_path: Path) -> None:
@@ -145,9 +153,12 @@ def test_issue267_comparator_detects_empty_system_change(tmp_path: Path) -> None
         collect_run_signatures(candidate),
     )
 
-    assert report["exact_match"] is False
+    assert report["exact_match"] is True
+    assert report["count_match"] is True
+    assert report["semantic_match"] is False
     assert report["total_measure_delta"] == 0
-    assert len(report["changed_pages"]) == 1
+    assert report["count_changed_pages"] == []
+    assert len(report["geometry_changed_pages"]) == 1
 
 
 def test_issue267_replay_resolves_accepted_retained_inputs(tmp_path: Path) -> None:

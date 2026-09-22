@@ -16,6 +16,7 @@ SCHEMA_RESULT = "pdfscorebar.engine.job_result.v1"
 SCHEMA_PROGRESS = "pdfscorebar.engine.progress_event.v1"
 SCHEMA_ERROR = "pdfscorebar.engine.error.v1"
 SCHEMA_CORRECTIONS = "pdfscorebar.engine.correction_set.v1"
+MAX_REQUEST_PAGE_ENTRIES = 200
 
 STAGE_IDS = frozenset(
     {
@@ -512,6 +513,11 @@ class JobRequest:
             pages = overrides["pages"]
             if not isinstance(pages, list) or not pages:
                 raise ContractValidationError("config_overrides.pages must be a non-empty list")
+            if len(pages) > MAX_REQUEST_PAGE_ENTRIES:
+                raise ContractValidationError(
+                    "config_overrides.pages must contain at most "
+                    f"{MAX_REQUEST_PAGE_ENTRIES} entries"
+                )
 
             overrides["pages"] = sorted(
                 {

@@ -71,7 +71,7 @@ Required semantics:
 
 v1 intentionally allows only these configuration overrides:
 
-- `pages`: one-based page numbers requested by the caller;
+- `pages`: one-based page numbers requested by the caller; v1 accepts at most 200 raw entries before normalization/deduplication;
 - `output_name`: caller-visible output stem. It is a filename stem, not a caller-selected path; Issue #338 defines the concrete safety validation.
 
 Arbitrary repository config keys, model implementation paths, output roots,

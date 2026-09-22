@@ -67,9 +67,7 @@ def _canonical_images() -> list[Path]:
         )
     missing = [str(path) for path in images if not path.is_file()]
     if missing:
-        raise FileNotFoundError(
-            "Missing canonical evaluation2 images:\n" + "\n".join(missing)
-        )
+        raise FileNotFoundError("Missing canonical evaluation2 images:\n" + "\n".join(missing))
     return images
 
 
@@ -103,9 +101,7 @@ def _validate_inventory(path: Path) -> dict[str, Any]:
         for field in ("image", "hybrid_predictions", "staff_mask", "clef_mask"):
             raw = record.get(field)
             if not raw or not Path(str(raw)).is_file():
-                raise FileNotFoundError(
-                    f"Inventory {key[0]}/{key[1]} missing {field}: {raw}"
-                )
+                raise FileNotFoundError(f"Inventory {key[0]}/{key[1]} missing {field}: {raw}")
     return payload
 
 
@@ -192,12 +188,7 @@ def _generate_current_upstream_inventory(
         if result.get("homr_profile") != "maintained_original":
             raise RuntimeError(f"Unexpected HOMR profile for {score}: {result}")
 
-        inventory = (
-            score_run_root
-            / "intermediate"
-            / "dense_full_pipeline_inputs"
-            / "inventory.json"
-        )
+        inventory = score_run_root / "intermediate" / "dense_full_pipeline_inputs" / "inventory.json"
         if not inventory.is_file():
             raise FileNotFoundError(inventory)
         inventory_paths.append(inventory)
@@ -300,9 +291,7 @@ def _run_downstream_variant(
         batch_size=int(detection.get("cnn_batch_size", 64)),
         bands_from=route.filtered_root,
         staff_vov_threshold=float(detection.get("staff_vov_threshold", 0.5)),
-        crop_recenter_on_bbox_ink=bool(
-            detection.get("crop_recenter_on_bbox_ink", False)
-        ),
+        crop_recenter_on_bbox_ink=bool(detection.get("crop_recenter_on_bbox_ink", False)),
         crop_recenter_max_shift_unit_ratio=float(
             detection.get("crop_recenter_max_shift_unit_ratio", 0.35)
         ),
@@ -311,9 +300,7 @@ def _run_downstream_variant(
     )
     scoring_elapsed = time.perf_counter() - scoring_started
     if scored != EXPECTED_PAGES:
-        raise RuntimeError(
-            f"{name}: CNN scoring processed {scored}/{EXPECTED_PAGES} pages"
-        )
+        raise RuntimeError(f"{name}: CNN scoring processed {scored}/{EXPECTED_PAGES} pages")
 
     evaluation_started = time.perf_counter()
     evaluation = full68_eval.evaluate(
@@ -327,11 +314,7 @@ def _run_downstream_variant(
 
     dense_root = variant_root / "route" / "dense_candidate_reconstruction"
     generation_summary_path = dense_root / "probe_generation_summary.json"
-    rescue_summary_path = (
-        dense_root
-        / "probe_rescue_candidates"
-        / "probe_scan_stats_summary.json"
-    )
+    rescue_summary_path = dense_root / "probe_rescue_candidates" / "probe_scan_stats_summary.json"
 
     return {
         "name": name,

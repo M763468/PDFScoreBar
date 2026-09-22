@@ -134,6 +134,23 @@ def test_manual_handoff_config_uses_strict_review_package_root(tmp_path):
     ]
 
 
+def test_manual_handoff_config_allows_missing_review_overlay(tmp_path):
+    handoff_path = _strict_review_handoff(tmp_path)
+    review_root = handoff_path.parent
+    (review_root / "pages" / "page_001" / "review_overlay.png").unlink()
+
+    payload = json.loads(handoff_path.read_text())
+    payload["pages"][0].pop("review_overlay")
+    handoff_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    root, pages = _manual_handoff_config(handoff_path)
+
+    assert root == review_root.resolve()
+    assert "review_overlay" not in pages[0]
+    assert pages[0]["mmr"] == "pages/page_001/mmr_overrides.json"
+    assert pages[0]["barlines"] == "pages/page_001/barlines_review.json"
+
+
 def test_manual_handoff_config_rejects_missing_strict_artifact(tmp_path):
     handoff_path = _strict_review_handoff(tmp_path)
     (handoff_path.parent / "pages" / "page_001" / "barlines_review.json").unlink()

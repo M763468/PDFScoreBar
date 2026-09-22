@@ -136,7 +136,9 @@ anywhere inside a system to target it; direct 1-based system entry remains
 available. The canvas draws distinct markers for unresolved candidates,
 existing resolved boundaries, reviewed/manual boundaries, and reviewed
 no-boundary locations, and highlights the complete selected system rather than
-presenting a selected measure as the boundary target. Reviewers may accept or
+presenting a selected measure as the boundary target. The Pages list also
+annotates pages with unresolved candidates and saved movement review actions so
+a whole-score review does not require opening pages blindly. Reviewers may accept or
 reject explicit candidates and may add a boundary at a non-candidate system. A
 missing candidate is not a reviewed negative and cannot be saved as
 `no_boundary`.

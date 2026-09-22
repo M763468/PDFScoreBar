@@ -21,6 +21,7 @@ use the current artifacts first.
 | [`NUMBERING_GEOMETRY_CONTRACT.md`](NUMBERING_GEOMETRY_CONTRACT.md) | Resolution-independent measure-numbering/system-geometry thresholds and retained morphology pixel operations |
 | [`SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md) | Current placement/lifecycle rules for production, tools, experiments, and scratch scripts |
 | [`manual_correction_review_package.md`](manual_correction_review_package.md) | Current config-first end-to-end manual-correction review workflow |
+| [`ENGINE_JOB_CONTRACT.md`](ENGINE_JOB_CONTRACT.md) | **Versioned engine contract**: v1 `JobRequest` / `JobResult` / `ProgressEvent` / `EngineError` / correction schemas and compatibility rules; production executor adapter is not yet wired |
 | [`ai-workflow/GRAPHIFY.md`](ai-workflow/GRAPHIFY.md) | Graphify query, refresh, retention, and staleness rules |
 
 The root [`README.md`](../README.md), [`AGENTS.md`](../AGENTS.md), and repository `Makefile`
@@ -33,8 +34,10 @@ are also current entry points.
 | [`FUTURE_SERVICE_ARCHITECTURE.md`](FUTURE_SERVICE_ARCHITECTURE.md) | **Future/roadmap only**: intended engine responsibility boundary, one-job service-readiness direction, correction flow, and separation from a future external service/control plane |
 
 The future-service document is deliberately separate from current runtime guidance. It must not be
-used to infer implemented pipeline behavior. When a future contract becomes implemented, update the
-relevant current operating/architecture documentation as part of that implementation change.
+used to infer implemented pipeline behavior. The v1 serialized engine contract is now defined in
+`ENGINE_JOB_CONTRACT.md`, while the production pipeline remains config-first until a later adapter
+wires that contract to execution. When future contract work becomes runtime behavior, update the
+applicable current operating/architecture documentation in the same change.
 
 ## Execution and output guidance
 

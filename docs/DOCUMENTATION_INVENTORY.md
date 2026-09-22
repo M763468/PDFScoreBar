@@ -21,6 +21,7 @@ Issue #280 established the repository documentation audit against the accepted #
 | `docs/HISTORY_INDEX.md` | historical lineage navigation | current/reference | point to Issues/PRs/commits and retained contracts without duplicating them |
 | `docs/PIPELINE_ARCHITECTURE.md` | production architecture | canonical/current | global architecture source, including detector-input provenance |
 | `docs/FUTURE_SERVICE_ARCHITECTURE.md` | future engine/service responsibility boundary | future/roadmap | keep explicitly separate from current runtime; update when long-term engine/caller/correction/service-boundary intent changes materially |
+| `docs/ENGINE_JOB_CONTRACT.md` | versioned one-job engine caller contract | current/reference | normative v1 serialized boundary and compatibility/correction semantics; production executor adapter remains follow-up work |
 | `docs/TWO_HOMR_MILESTONE.md` | accepted #274 architecture/accuracy/performance comparison | frozen milestone | keep as the #274 / PR #279 reproduction record; do not silently rewrite for later production changes |
 | `docs/ENVIRONMENTS.md` | execution/runtime guidance | current/reference | keep |
 | `docs/BRANCH_POLICY.md` | branch policy | current/reference | keep |

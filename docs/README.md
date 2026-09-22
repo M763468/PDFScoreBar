@@ -26,6 +26,16 @@ use the current artifacts first.
 The root [`README.md`](../README.md), [`AGENTS.md`](../AGENTS.md), and repository `Makefile`
 are also current entry points.
 
+## Future / roadmap architecture
+
+| Document | Role |
+| --- | --- |
+| [`FUTURE_SERVICE_ARCHITECTURE.md`](FUTURE_SERVICE_ARCHITECTURE.md) | **Future/roadmap only**: intended engine responsibility boundary, one-job service-readiness direction, correction flow, and separation from a future external service/control plane |
+
+The future-service document is deliberately separate from current runtime guidance. It must not be
+used to infer implemented pipeline behavior. When a future contract becomes implemented, update the
+relevant current operating/architecture documentation as part of that implementation change.
+
 ## Execution and output guidance
 
 Use `src/pipeline/main.py` through the Makefile instead of old phase-specific orchestration
@@ -86,14 +96,29 @@ later in Issue #296 / PR #310 while the #274 milestone remains useful historical
 
 ## Maintenance rule
 
-When production stage ownership, authoritative geometry, coordinate contracts, model contracts,
-or major process/memory boundaries change:
+Architecture changes must review the current and future documents according to the boundary being
+changed:
 
-1. update `PIPELINE_ARCHITECTURE.md` when the architecture contract changes;
-2. update `TWO_HOMR_MILESTONE.md` only when that accepted comparison milestone itself is deliberately replaced;
-3. check this index, `HISTORY_INDEX.md`, and `DOCUMENTATION_INVENTORY.md` for newly stale guidance;
-4. move reusable lessons out of Issue-specific narratives before retiring redundant prose;
-5. after stable docs are settled, refresh Graphify according to `ai-workflow/GRAPHIFY.md`.
+1. when production stage ownership, authoritative geometry, coordinate contracts, model/runtime
+   ownership, route order, or major process/memory boundaries change, update
+   `PIPELINE_ARCHITECTURE.md`;
+2. for those current-runtime changes, also review `FUTURE_SERVICE_ARCHITECTURE.md` when the change
+   affects assumptions visible at the engine/caller, artifact, correction, lifecycle, safety, or
+   resource boundary;
+3. when a future engine contract becomes implemented, update the applicable current operating docs
+   in the same change instead of leaving the behavior described only as roadmap intent;
+4. when final/review/correction semantics change, review both
+   `manual_correction_review_package.md` and the future engine-boundary document;
+5. update `TWO_HOMR_MILESTONE.md` only when that accepted comparison milestone itself is
+   deliberately replaced;
+6. check this index, `HISTORY_INDEX.md`, and `DOCUMENTATION_INVENTORY.md` for newly stale guidance;
+7. move reusable lessons out of Issue-specific narratives before retiring redundant prose;
+8. after stable current architecture docs are settled, refresh Graphify according to
+   `ai-workflow/GRAPHIFY.md`.
+
+The PR checklist asks authors to record whether the current and future architecture documents were
+reviewed. This is a review trigger, not a reason to duplicate detailed current pipeline internals
+into the future document.
 
 Issue-specific forensic notes do not need mechanical rewrites for every architecture change,
 but stale files should not remain linked as current operating guidance.

@@ -210,9 +210,7 @@ def build_resolved_movement_boundaries(
         for item in normalized_evidence["candidates"]
         if item["state"] == "ambiguous_review_required"
     }
-    reviewed_locations = {
-        (item["page"], item["system"]) for item in normalized_review["items"]
-    }
+    reviewed_locations = {(item["page"], item["system"]) for item in normalized_review["items"]}
     unresolved_locations = sorted(required_review_locations - reviewed_locations)
     if unresolved_locations:
         formatted = ", ".join(
@@ -347,16 +345,20 @@ def attach_movement_boundary_evidence(
         )
 
     destination = package_root / DEFAULT_EVIDENCE_FILENAME
-    normalized_evidence_bytes = (
-        json.dumps(evidence, indent=2, ensure_ascii=False) + "\n"
-    ).encode("utf-8")
+    normalized_evidence_bytes = (json.dumps(evidence, indent=2, ensure_ascii=False) + "\n").encode(
+        "utf-8"
+    )
     if destination.exists() and not overwrite:
         existing_bytes = destination.read_bytes()
         if existing_bytes not in {evidence_bytes, normalized_evidence_bytes}:
             raise FileExistsError(
                 f"Refusing to overwrite attached movement evidence: {destination}"
             )
-    if overwrite or not destination.exists() or destination.read_bytes() != normalized_evidence_bytes:
+    if (
+        overwrite
+        or not destination.exists()
+        or destination.read_bytes() != normalized_evidence_bytes
+    ):
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(normalized_evidence_bytes)
 

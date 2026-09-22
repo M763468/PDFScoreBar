@@ -435,7 +435,7 @@ def _evaluation_args(
         score_threshold=threshold,
         rule_name="center_anchor",
         vov_threshold=0.5,
-        staff_units_json=str(staff_units),
+        staff_units_json=None if legacy else str(staff_units),
         image_root=str(image_root),
         xdist_unit_ratio=full68_eval.CENTER_ANCHOR_XDIST_UNIT_RATIO,
         legacy_fixed_12px=legacy,

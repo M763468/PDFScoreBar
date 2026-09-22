@@ -56,14 +56,6 @@ def run_pipeline(
     ensure_dir(run_dir)
 
     telemetry = None
-    if on_progress is not None or telemetry_summary_path is not None or sample_resources:
-        telemetry = TelemetryRecorder(
-            run_id_value,
-            on_progress=on_progress,
-            sample_resources=sample_resources,
-            resource_sample_interval_seconds=resource_sample_interval_seconds,
-        )
-        telemetry.start_job()
 
     # Setup File Logging for this run
     log_file = run_dir / "pipeline.log"
@@ -94,22 +86,30 @@ def run_pipeline(
             handler.setLevel(console_log_level)
 
     try:
+        if on_progress is not None or telemetry_summary_path is not None or sample_resources:
+            telemetry = TelemetryRecorder(
+                run_id_value,
+                on_progress=on_progress,
+                sample_resources=sample_resources,
+                resource_sample_interval_seconds=resource_sample_interval_seconds,
+            )
+            telemetry.start_job()
+
         logger.info(f"Starting pipeline run: {run_id_value}")
         logger.info(f"Run directory: {run_dir}")
         logger.info(f"Log file: {log_file}")
 
-        orchestrator = PipelineOrchestrator(
-            config=config,
-            run_id=run_id_value,
-            run_dir=run_dir,
-            dry_run=dry_run,
-            validate_only=validate_only,
-            skip_existing=skip_existing,
-            debug=debug,
-            telemetry=telemetry,
-        )
-
         try:
+            orchestrator = PipelineOrchestrator(
+                config=config,
+                run_id=run_id_value,
+                run_dir=run_dir,
+                dry_run=dry_run,
+                validate_only=validate_only,
+                skip_existing=skip_existing,
+                debug=debug,
+                telemetry=telemetry,
+            )
             result = orchestrator.run(page_limit=page_limit)
         except Exception:
             if telemetry is not None:

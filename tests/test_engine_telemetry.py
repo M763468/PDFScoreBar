@@ -157,6 +157,15 @@ def test_stage_auto_starts_job_stream():
     validate_progress_sequence(events)
 
 
+@pytest.mark.parametrize(
+    "interval_seconds",
+    [0.0, -1.0, float("nan"), float("inf"), float("-inf")],
+)
+def test_resource_sampler_rejects_non_finite_or_non_positive_interval(interval_seconds):
+    with pytest.raises(ValueError, match="finite and positive"):
+        ResourceSampler(interval_seconds=interval_seconds)
+
+
 def test_gpu_process_memory_query_filters_to_process_tree(monkeypatch):
     def fake_check_output(command, **kwargs):
         assert "--query-compute-apps=pid,used_gpu_memory" in command

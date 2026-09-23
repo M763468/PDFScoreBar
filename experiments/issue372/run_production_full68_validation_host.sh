@@ -48,7 +48,8 @@ image_id="$(python3 scripts/docker_image_resolver.py "${resolver_args[@]}")"
 omr_manifest="$repo_root/models/omr_dln/manifest.json"
 if [[ -n "${OMR_DLN_MODEL_PATH:-}" ]]; then
   omr_host="$(
-    PYTHONPATH="$repo_root" python3 -m src.common.model_artifacts verify-file       "$omr_manifest" "$OMR_DLN_MODEL_PATH"
+    PYTHONPATH="$repo_root" python3 -m src.common.model_artifacts verify-file \
+      "$omr_manifest" "$OMR_DLN_MODEL_PATH"
   )"
 else
   cached_omr="$(
@@ -65,17 +66,21 @@ else
       exit 2
     fi
     omr_host="$(
-      PYTHONPATH="$repo_root" python3 -m src.common.model_artifacts verify-file         "$omr_manifest" "$legacy"
+      PYTHONPATH="$repo_root" python3 -m src.common.model_artifacts verify-file \
+        "$omr_manifest" "$legacy"
     )"
   fi
 fi
 omr_host="$(realpath "$omr_host")"
 omr_container="$(
-  python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["runtime_path"])'     "$omr_manifest"
+  python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["runtime_path"])' \
+    "$omr_manifest"
 )"
 
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 output="$repo_root/logs/issue372/production_full68_validation_$timestamp"
+output_rel="${output#"$repo_root"/}"
+container_output="/workspace/$output_rel"
 if [[ -e "$output" ]]; then
   echo "Refusing to reuse output: $output" >&2
   exit 2
@@ -86,5 +91,39 @@ echo "commit=$commit"
 echo "image_id=$image_id"
 echo "eval2_data_root=$eval2_data_root"
 echo "output=$output"
+echo "container_user=root (matches canonical Docker validation and image-owned model permissions)"
 
-docker run --rm --gpus all   --user "$(id -u):$(id -g)"   -v "$repo_root:/workspace"   -v "$eval2_data_root:/workspace/data/evaluation2:ro"   -v "$omr_host:$omr_container:ro"   -w /workspace   -e HOME=/tmp   -e XDG_CACHE_HOME=/tmp/.cache   -e TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor   -e TRITON_CACHE_DIR=/tmp/triton   -e PYTHONPATH=/workspace   -e "OMR_DLN_MODEL_PATH=$omr_container"   "$image_id"   /opt/venv_pipeline/bin/python   experiments/issue372/run_production_full68_validation.py   --project-root /workspace   --output "/workspace/${output#"$repo_root"/}"   --source-commit "$commit"   --counterfactual-report "/workspace/${counterfactual#"$repo_root"/}"   --reference-replay "/workspace/${reference#"$repo_root"/}"
+set +e
+docker run --rm --gpus all \
+  -v "$repo_root:/workspace" \
+  -v "$eval2_data_root:/workspace/data/evaluation2:ro" \
+  -v "$omr_host:$omr_container:ro" \
+  -w /workspace \
+  -e HOME=/tmp \
+  -e XDG_CACHE_HOME=/tmp/.cache \
+  -e TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor \
+  -e TRITON_CACHE_DIR=/tmp/triton \
+  -e PYTHONPATH=/workspace \
+  -e "OMR_DLN_MODEL_PATH=$omr_container" \
+  "$image_id" \
+  /opt/venv_pipeline/bin/python \
+  experiments/issue372/run_production_full68_validation.py \
+  --project-root /workspace \
+  --output "$container_output" \
+  --source-commit "$commit" \
+  --counterfactual-report "/workspace/${counterfactual#"$repo_root"/}" \
+  --reference-replay "/workspace/${reference#"$repo_root"/}"
+status=$?
+set -e
+
+# The canonical runtime runs as root because image-owned model artifacts are
+# root-readable. Return retained validation artifacts to the host operator even
+# when the validation command itself fails.
+if [[ -e "$output" ]]; then
+  docker run --rm \
+    -v "$repo_root:/workspace" \
+    "$image_id" \
+    chmod -R a+rwX "$container_output" >/dev/null 2>&1 || true
+fi
+
+exit "$status"

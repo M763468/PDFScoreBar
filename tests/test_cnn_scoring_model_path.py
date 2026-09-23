@@ -9,6 +9,7 @@ from src.pipeline.steps.cnn_scoring import (
     _build_model,
     _infer_model_architecture,
     _load_model,
+    _resolve_bands_from_for_image,
     _resolve_model_path,
 )
 
@@ -99,3 +100,33 @@ def test_load_model_accepts_efficientnet_b0_state_dict(tmp_path):
 
     assert loaded.classifier[1].out_features == 1
     assert loaded.training is False
+
+
+def test_per_image_band_authority_overrides_shared_band_root(tmp_path):
+    image = tmp_path / "Score" / "page_001.png"
+    image.parent.mkdir(parents=True)
+    image.write_bytes(b"image")
+    shared = tmp_path / "shared"
+    frozen = tmp_path / "hybrid.json"
+    frozen.write_text("[]")
+
+    resolved = _resolve_bands_from_for_image(
+        image,
+        bands_from=shared,
+        bands_from_by_image={image.resolve(): frozen},
+    )
+
+    assert resolved == frozen
+
+
+def test_per_image_band_authority_requires_every_image(tmp_path):
+    image = tmp_path / "Score" / "page_001.png"
+    image.parent.mkdir(parents=True)
+    image.write_bytes(b"image")
+
+    with pytest.raises(ValueError, match="Missing per-image CNN band authority"):
+        _resolve_bands_from_for_image(
+            image,
+            bands_from=None,
+            bands_from_by_image={},
+        )

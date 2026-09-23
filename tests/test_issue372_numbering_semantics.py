@@ -276,3 +276,40 @@ def test_late_raw_fp_geometry_classifies_same_x_vertical_overextension() -> None
     assert result["geometry_class"] == "same_x_vertical_overextension"
     assert result["xdist"] == 0.0
     assert result["pred_to_gt_height_ratio"] > 3.0
+
+
+def test_residual_visualizer_rejects_pre_fix_v1_schema() -> None:
+    import pytest
+    from experiments.issue372.visualize_late_raw_detector_residuals import (
+        _validate_report,
+    )
+
+    with pytest.raises(ValueError, match="Regenerate the residual report"):
+        _validate_report({
+            "schema_version": "issue372.late_raw_detector_residuals.v1",
+            "false_negatives": [],
+            "false_positives": [],
+        })
+
+
+def test_residual_visualizer_accepts_corrected_v2_schema() -> None:
+    from experiments.issue372.visualize_late_raw_detector_residuals import (
+        _validate_report,
+    )
+
+    _validate_report({
+        "schema_version": "issue372.late_raw_detector_residuals.v2",
+        "false_negatives": [
+            {
+                "score": "Score",
+                "page": "page_001",
+            }
+        ],
+        "false_positives": [
+            {
+                "score_name": "Score",
+                "page": "page_001",
+                "cnn_score": 0.9,
+            }
+        ],
+    })

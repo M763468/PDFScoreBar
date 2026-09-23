@@ -46,7 +46,7 @@ This contract does **not** define:
 - object-storage retention duration;
 - authentication/accounts/billing;
 - concrete untrusted-PDF size/page/pixel limits (#338);
-- richer progress/resource telemetry (#339);
+- progress/resource telemetry details, owned by [`ENGINE_TELEMETRY.md`](ENGINE_TELEMETRY.md) (#339);
 - service deployment or container compatibility gates (#340).
 
 ## 2. Relationship to Engine Job Contract v1
@@ -473,8 +473,12 @@ Accepted safety semantics are recorded in
 
 ### #339
 
-- structured progress/resource telemetry beyond the already-frozen v1 core event vocabulary;
-- ordering and resource instrumentation consistent with this lifecycle.
+Accepted structured telemetry semantics are recorded in
+[`ENGINE_TELEMETRY.md`](ENGINE_TELEMETRY.md):
+
+- additive elapsed/detail fields without changing the frozen v1 stage/status vocabulary;
+- monotonic ordering and exact terminal `JobStatus` mapping consistent with this lifecycle;
+- compact coarse timing and opt-in process/GPU resource instrumentation.
 
 ### #340
 

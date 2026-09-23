@@ -15,6 +15,8 @@ os.environ.setdefault("OMP_NUM_THREADS", DEFAULT_NUM_THREADS)
 os.environ.setdefault("MKL_NUM_THREADS", DEFAULT_NUM_THREADS)
 
 from src.pipeline.core.config import get_nested, load_yaml
+from src.pipeline.engine_contract import JobStatus, ProgressCallback, canonical_json
+from src.pipeline.engine_telemetry import TelemetryRecorder
 from src.pipeline.orchestrator import PipelineOrchestrator
 from src.pipeline.utils.io import ensure_dir
 
@@ -32,6 +34,10 @@ def run_pipeline(
     page_limit: Optional[int] = None,
     debug: bool = False,
     console_log_level: int = logging.INFO,
+    on_progress: ProgressCallback | None = None,
+    telemetry_summary_path: Path | None = None,
+    sample_resources: bool = False,
+    resource_sample_interval_seconds: float = 1.0,
 ) -> Path:
     """Entry point for running the full pipeline."""
     from src.pipeline.utils.images import clear_image_cache
@@ -48,6 +54,12 @@ def run_pipeline(
     )
     run_dir = Path(output_root_value) / run_id_value
     ensure_dir(run_dir)
+
+    effective_telemetry_summary_path = telemetry_summary_path
+    if sample_resources and effective_telemetry_summary_path is None:
+        effective_telemetry_summary_path = run_dir / "telemetry.json"
+
+    telemetry = None
 
     # Setup File Logging for this run
     log_file = run_dir / "pipeline.log"
@@ -78,23 +90,56 @@ def run_pipeline(
             handler.setLevel(console_log_level)
 
     try:
+        if (
+            on_progress is not None
+            or effective_telemetry_summary_path is not None
+            or sample_resources
+        ):
+            telemetry = TelemetryRecorder(
+                run_id_value,
+                on_progress=on_progress,
+                sample_resources=sample_resources,
+                resource_sample_interval_seconds=resource_sample_interval_seconds,
+            )
+            telemetry.start_job()
+
         logger.info(f"Starting pipeline run: {run_id_value}")
         logger.info(f"Run directory: {run_dir}")
         logger.info(f"Log file: {log_file}")
 
-        orchestrator = PipelineOrchestrator(
-            config=config,
-            run_id=run_id_value,
-            run_dir=run_dir,
-            dry_run=dry_run,
-            validate_only=validate_only,
-            skip_existing=skip_existing,
-            debug=debug,
-        )
-
-        return orchestrator.run(page_limit=page_limit)
+        try:
+            orchestrator = PipelineOrchestrator(
+                config=config,
+                run_id=run_id_value,
+                run_dir=run_dir,
+                dry_run=dry_run,
+                validate_only=validate_only,
+                skip_existing=skip_existing,
+                debug=debug,
+                telemetry=telemetry,
+            )
+            result = orchestrator.run(page_limit=page_limit)
+        except Exception:
+            if telemetry is not None:
+                telemetry.terminal(JobStatus.FAILED)
+            raise
+        else:
+            if telemetry is not None:
+                telemetry.terminal(JobStatus.SUCCEEDED)
+            return result
 
     finally:
+        if telemetry is not None:
+            telemetry.close()
+            if effective_telemetry_summary_path is not None:
+                try:
+                    effective_telemetry_summary_path.parent.mkdir(parents=True, exist_ok=True)
+                    effective_telemetry_summary_path.write_text(
+                        canonical_json(telemetry.summary()) + "\n",
+                        encoding="utf-8",
+                    )
+                except Exception:
+                    logger.exception("Failed to write structured telemetry summary.")
         root_logger.removeHandler(file_handler)
         file_handler.close()
         root_logger.setLevel(old_root_level)
@@ -131,22 +176,64 @@ def main() -> None:
     )
     parser.add_argument("--page-limit", type=int, help="Limit the number of pages to process.")
     parser.add_argument("--debug", action="store_true", help="Output intermediate debug files.")
+    parser.add_argument(
+        "--progress-jsonl",
+        type=Path,
+        help="Optional JSONL file receiving structured progress events.",
+    )
+    parser.add_argument(
+        "--telemetry-summary",
+        type=Path,
+        help="Optional JSON file receiving the compact stage/resource summary.",
+    )
+    parser.add_argument(
+        "--sample-resources",
+        action="store_true",
+        help="Opt in to lightweight process-tree/GPU resource sampling.",
+    )
+    parser.add_argument(
+        "--resource-sample-interval-seconds",
+        type=float,
+        default=1.0,
+        help="Resource sampling interval when --sample-resources is enabled.",
+    )
 
     args = parser.parse_args()
 
     from tqdm.contrib.logging import logging_redirect_tqdm
 
-    with logging_redirect_tqdm():
-        run_pipeline(
-            args.config,
-            run_id=args.run_id,
-            output_root=args.output_root,
-            dry_run=args.dry_run,
-            validate_only=args.validate_only,
-            skip_existing=args.skip_existing,
-            page_limit=args.page_limit,
-            debug=args.debug,
-        )
+    progress_stream = None
+    on_progress = None
+    if args.progress_jsonl is not None:
+        args.progress_jsonl.parent.mkdir(parents=True, exist_ok=True)
+        progress_stream = args.progress_jsonl.open("w", encoding="utf-8")
+
+        def write_progress(event):
+            assert progress_stream is not None
+            progress_stream.write(event.to_json() + "\n")
+            progress_stream.flush()
+
+        on_progress = write_progress
+
+    try:
+        with logging_redirect_tqdm():
+            run_pipeline(
+                args.config,
+                run_id=args.run_id,
+                output_root=args.output_root,
+                dry_run=args.dry_run,
+                validate_only=args.validate_only,
+                skip_existing=args.skip_existing,
+                page_limit=args.page_limit,
+                debug=args.debug,
+                on_progress=on_progress,
+                telemetry_summary_path=args.telemetry_summary,
+                sample_resources=args.sample_resources,
+                resource_sample_interval_seconds=args.resource_sample_interval_seconds,
+            )
+    finally:
+        if progress_stream is not None:
+            progress_stream.close()
 
 
 if __name__ == "__main__":

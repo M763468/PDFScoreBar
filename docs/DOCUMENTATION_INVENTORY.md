@@ -24,6 +24,7 @@ Issue #280 established the repository documentation audit against the accepted #
 | `docs/ENGINE_JOB_CONTRACT.md` | versioned one-job engine caller contract | current/reference | normative v1 serialized boundary and compatibility/correction semantics; production executor adapter remains follow-up work |
 | `docs/ENGINE_JOB_LIFECYCLE.md` | #337 one-job lifecycle contract | current/reference | preserve v1 status/error values while defining deadline/cancellation, retryability, publication, cleanup, and correction-attempt lifecycle semantics |
 | `docs/ENGINE_INPUT_SAFETY.md` | #338 untrusted-PDF safety contract | current/reference | define bounded preflight, path/network/resource rules, safe errors, and worker/container assumptions without changing the trusted config-first production path |
+| `docs/ENGINE_TELEMETRY.md` | #339 structured progress/resource telemetry contract | current/reference | preserve the v1 stage/status vocabulary while defining additive elapsed/detail fields, page progress, compact summaries, and opt-in process/GPU sampling |
 | `docs/TWO_HOMR_MILESTONE.md` | accepted #274 architecture/accuracy/performance comparison | frozen milestone | keep as the #274 / PR #279 reproduction record; do not silently rewrite for later production changes |
 | `docs/ENVIRONMENTS.md` | execution/runtime guidance | current/reference | keep |
 | `docs/BRANCH_POLICY.md` | branch policy | current/reference | keep |

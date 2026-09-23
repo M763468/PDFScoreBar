@@ -345,6 +345,8 @@ Every event carries:
 - stable coarse `stage_id`;
 - optional one-based `page_number`;
 - optional `completed_units`, `total_units`, and `unit`;
+- optional `elapsed_ms` for coarse monotonic wall-clock elapsed time;
+- optional `detail_code` for namespaced machine-readable progress detail;
 - derived `terminal`.
 
 v1 stage IDs are:
@@ -369,8 +371,9 @@ value that disagrees with `kind`. No event may follow a terminal event.
 `validate_progress_sequence()` enforces job identity, strict monotonicity, and
 terminal ordering.
 
-Issue #339 may extend telemetry details with additive versioned fields, but
-callers should continue to consume these stable event semantics.
+Issue #339 defines the additive telemetry semantics in
+[`ENGINE_TELEMETRY.md`](ENGINE_TELEMETRY.md). The stage/kind registries above
+remain unchanged; callers must tolerate absent or unknown additive telemetry detail fields.
 
 ## 9. Provenance and resource summary
 
@@ -386,8 +389,10 @@ material to reproducibility.
 
 `resources` is optional because not every adapter can measure every resource.
 v1 accepts non-negative finite numeric fields such as
-`wall_time_seconds`, `peak_rss_bytes`, and `peak_gpu_memory_bytes`.
-More precise lifecycle/resource semantics are owned by #337 and #339.
+`wall_time_seconds`, `peak_process_tree_rss_bytes`, and
+`peak_gpu_memory_bytes`. Lifecycle semantics are owned by #337; the stable
+progress/timing/resource observation contract is defined by
+[`ENGINE_TELEMETRY.md`](ENGINE_TELEMETRY.md).
 
 ## 10. Relationship to current output/review contracts
 
@@ -419,6 +424,6 @@ Focused tests cover:
 This contract-only change does not alter detector/MMR/numbering inference,
 model loading, GPU execution, or canonical evaluation outputs. The one-job
 lifecycle/cancellation semantics are now defined by
-[`ENGINE_JOB_LIFECYCLE.md`](ENGINE_JOB_LIFECYCLE.md), while production executor
-wiring, untrusted-input safety, richer telemetry, and container compatibility
-remain follow-up implementation work under #337-#340.
+[`ENGINE_JOB_LIFECYCLE.md`](ENGINE_JOB_LIFECYCLE.md), while production executor wiring and container compatibility remain follow-up
+implementation work. Untrusted-input safety and structured telemetry are now
+defined by the #338 and #339 contracts respectively.

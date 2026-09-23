@@ -77,7 +77,9 @@ The following are future directions, not current runtime claims:
 
 - a production adapter that executes the current pipeline through the versioned
   `JobRequest` / `JobResult` library boundary;
-- production emission of the defined structured `ProgressEvent` stream;
+- a full v1 executor adapter that owns `JobResult` construction and terminal
+  `ProgressEvent` / `EngineError` consistency; the current config-first runner can now
+  emit opt-in structured progress independently of log wording;
 - production mapping of current failures into the defined structured `EngineError`
   taxonomy;
 - a service/control-plane implementation;
@@ -90,7 +92,7 @@ The following are future directions, not current runtime claims:
 | --- | --- | --- |
 | Job invocation | Config/run-directory oriented; v1 request types are defined but not wired to production execution | Versioned one-job engine request |
 | Engine result | Internal run directory + known artifacts; v1 result/artifact types are defined | Structured result with artifact descriptors and provenance |
-| Progress | Logs/current stage behavior; v1 event semantics are defined but not emitted by production | Stable structured progress/events |
+| Progress | Config-first runner can emit opt-in v1 structured stage/page progress and compact timing/resource telemetry; logs remain diagnostic | Same stable events emitted by the future v1 executor adapter |
 | Errors | Existing exceptions/logging/exit behavior; v1 error envelope is defined but not wired | Structured engine error categories |
 | Final/review outputs | Implemented current artifacts | Stable external artifact descriptors |
 | Corrections | Config-first review package + existing GUI/apply path | Versioned correction input/output contract reusing current semantics |
@@ -140,7 +142,7 @@ The PDFScoreBar engine should own:
 - the stable versioned one-job request/result boundary;
 - stable final/review/debug artifact meanings exposed to callers;
 - correction-input semantics and deterministic correction application;
-- structured progress, warnings, and engine error semantics;
+- structured progress, warnings, timing/resource observation, and engine error semantics;
 - engine-side input validation/resource-bound hooks;
 - one-job success/failure/cancellation cleanup semantics that must be consistent regardless of
   caller;
@@ -239,7 +241,9 @@ Issue #336 defines the exact v1 serialized contract in
 [`ENGINE_JOB_CONTRACT.md`](ENGINE_JOB_CONTRACT.md), with lightweight Python representations in
 `src/pipeline/engine_contract.py`. This section remains the architecture-level summary of that
 boundary; the contract document owns exact fields, compatibility, correction provenance,
-idempotency/conflict behavior, and deterministic serialization.
+idempotency/conflict behavior, and deterministic serialization. Issue #339 defines the
+progress/timing/resource observation semantics in
+[`ENGINE_TELEMETRY.md`](ENGINE_TELEMETRY.md) without changing the v1 stage/status vocabulary.
 
 ### JobRequest
 

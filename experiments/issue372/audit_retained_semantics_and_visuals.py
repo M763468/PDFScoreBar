@@ -262,14 +262,16 @@ def _page_artifacts(
     start_delta = production_start - control_start
     next_delta = production_next - control_next
 
-    local_difference = (
-        not detector_exact_equal
-        or not topology_equal
+    local_semantic_difference = (
+        not topology_equal
         or not mmr_equal
         or not progression_equal
     )
+    detector_only_difference = (
+        not detector_exact_equal and not local_semantic_difference
+    )
     continuation_only = (
-        not local_difference
+        not local_semantic_difference
         and start_delta != 0
         and start_delta == next_delta
     )
@@ -299,7 +301,8 @@ def _page_artifacts(
         "production_next": production_next,
         "next_delta": next_delta,
         "production_movement_boundaries": production_boundaries,
-        "local_difference": local_difference,
+        "local_semantic_difference": local_semantic_difference,
+        "detector_only_difference": detector_only_difference,
         "continuation_only": continuation_only,
         "_control_boxes": control_boxes,
         "_production_boxes": production_boxes,
@@ -564,11 +567,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 )
             )
 
-    root_rows = [row for row in rows if row["local_difference"]]
+    root_rows = [row for row in rows if row["local_semantic_difference"]]
     propagation_rows = [row for row in rows if row["continuation_only"]]
     unexplained_state_rows = [
         row for row in rows
-        if not row["local_difference"]
+        if not row["local_semantic_difference"]
         and not row["continuation_only"]
         and (row["start_delta"] != 0 or row["next_delta"] != 0)
     ]
@@ -591,10 +594,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "schema_version": "issue372.retained_semantic_visual_audit.v1",
         "summary": {
             "page_count": len(rows),
-            "local_root_page_count": len(root_rows),
+            "local_semantic_root_page_count": len(root_rows),
             "continuation_only_page_count": len(propagation_rows),
             "unexplained_state_page_count": len(unexplained_state_rows),
             "detector_changed_page_count": sum(not row["detector_exact_equal"] for row in rows),
+            "detector_only_changed_page_count": sum(row["detector_only_difference"] for row in rows),
             "topology_changed_page_count": sum(not row["topology_equal"] for row in rows),
             "mmr_changed_page_count": sum(not row["mmr_equal"] for row in rows),
             "number_progression_changed_page_count": sum(
@@ -612,7 +616,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
     print("=== Issue #372 retained semantic + visual audit ===")
     print(json.dumps(result["summary"], indent=2, ensure_ascii=False))
-    print("\n=== local root pages ===")
+    print("\n=== local semantic root pages ===")
     for row in root_rows:
         print(
             f"{row['score']}/{row['page']} "

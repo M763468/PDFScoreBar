@@ -211,3 +211,12 @@ def test_diagnose_page021_row_cluster_membership_direct_entrypoint_bootstraps_re
         ROOT / "experiments/issue372/diagnose_page021_row_cluster_membership.py",
         cwd=tmp_path,
     )
+
+
+def test_diagnose_page021_row_source_attribution_direct_entrypoint_bootstraps_repo(
+    tmp_path: Path,
+) -> None:
+    _assert_direct_help_succeeds(
+        ROOT / "experiments/issue372/diagnose_page021_row_source_attribution.py",
+        cwd=tmp_path,
+    )

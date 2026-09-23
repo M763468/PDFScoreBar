@@ -298,7 +298,7 @@ def test_residual_visualizer_accepts_corrected_v2_schema() -> None:
     )
 
     _validate_report({
-        "schema_version": "issue372.late_raw_detector_residuals.v2",
+        "schema_version": "issue372.late_raw_detector_residuals.v3",
         "false_negatives": [
             {
                 "score": "Score",
@@ -313,3 +313,15 @@ def test_residual_visualizer_accepts_corrected_v2_schema() -> None:
             }
         ],
     })
+
+
+def test_residual_report_does_not_claim_zeroed_scored_value_is_raw_cnn_rejection() -> None:
+    from experiments.issue372.report_late_raw_detector_residuals import _classify_fn
+
+    classification = _classify_fn(
+        matching_candidates=[(1, 2, 3, 4)],
+        matching_scores=[{"bbox": [1, 2, 3, 4], "score": 0.0}],
+        matching_finals=[],
+    )
+
+    assert classification == "scored_artifact_below_threshold_or_postscore_filter"

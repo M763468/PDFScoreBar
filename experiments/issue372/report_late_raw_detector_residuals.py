@@ -7,7 +7,7 @@ For the Issue #372 late-raw counterfactual this tool enumerates every legacy
 fixed-12 hard FN/FP and records:
 - exact GT/pred bbox;
 - whether a matching pre-CNN candidate exists;
-- matching CNN scores;
+- matching retained scored-artifact values (which may be zeroed by post-score filters);
 - greedy one-to-one competition details;
 - exact FP identity overlap with current control;
 - nearest GT geometry for each FP;
@@ -198,7 +198,7 @@ def _classify_fn(
     if not matching_scores:
         return "candidate_not_scored"
     if max(float(row["score"]) for row in matching_scores) < THRESHOLD:
-        return "cnn_threshold_rejection"
+        return "scored_artifact_below_threshold_or_postscore_filter"
     return "post_score_filter_or_final_contract"
 
 
@@ -391,10 +391,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         fp_geometry_classes[geometry_class] = fp_geometry_classes.get(geometry_class, 0) + 1
 
     result = {
-        "schema_version": "issue372.late_raw_detector_residuals.v2",
+        "schema_version": "issue372.late_raw_detector_residuals.v3",
         "contract": {
             "matcher": "legacy center_anchor, vov>=0.5, xdist<=12px",
-            "cnn_threshold": THRESHOLD,
+            "cnn_threshold": THRESHOLD,\n            "scored_artifact_note": (\n                "pipeline2_no_peak_scored.json score values are not guaranteed raw CNN scores; "\n                "the production scorer mutates accepted-item score to 0.0 when a later staff-overlap "\n                "filter rejects the item"\n            ),
             "retained_only": True,
         },
         "summary": {

@@ -183,6 +183,31 @@ class DetectorOrchestrator:
             hybrid = self.hybrid_output_dir / "hybrid_results" / f"{stem}_hybrid.json"
             if not hybrid.is_file():
                 raise FileNotFoundError(hybrid)
+
+            support_result = (
+                self.hybrid_output_dir
+                / "current_support"
+                / score
+                / page
+                / "result.json"
+            )
+            if not support_result.is_file():
+                raise FileNotFoundError(support_result)
+            support_payload = json.loads(support_result.read_text(encoding="utf-8"))
+            if not isinstance(support_payload, dict) or support_payload.get("status") != "completed":
+                raise ValueError(f"Incomplete current x4 support result: {support_result}")
+            if support_payload.get("historical_detector_artifact_runtime_input") is not False:
+                raise ValueError(
+                    f"Current x4 support used historical detector artifacts: {support_result}"
+                )
+            current_x4_raw = support_payload.get("current_sr_detection")
+            if not current_x4_raw:
+                raise ValueError(
+                    f"Current x4 support lacks current_sr_detection: {support_result}"
+                )
+            current_x4_detection = Path(str(current_x4_raw)).resolve()
+            if not current_x4_detection.is_file():
+                raise FileNotFoundError(current_x4_detection)
             staff_mask = _first_existing(
                 baseline_page,
                 (
@@ -207,6 +232,7 @@ class DetectorOrchestrator:
                     "page": page,
                     "image": str(image.resolve()),
                     "hybrid_predictions": str(hybrid.resolve()),
+                    "current_x4_detection": str(current_x4_detection),
                     "staff_mask": str(staff_mask.resolve()),
                     "clef_mask": str(clef_mask.resolve()),
                     "run_dir": str(baseline_page.resolve()),
@@ -298,13 +324,10 @@ class DetectorOrchestrator:
             )
         if get_cnn_apply_nms(self.det_cfg):
             raise ValueError("Verified Stage E detector route requires cnn_apply_nms=false")
-        bands_from = (
-            self._dense_route.filtered_root
+        bands_from_by_image = (
+            self._dense_route.cnn_band_sources
             if self._dense_route is not None
-            else self.run_dir
-            / "intermediate"
-            / "dense_full_pipeline_route"
-            / "probe_candidates_filtered"
+            else None
         )
         if not self.dry_run:
             if self.probe_output_dir is None:
@@ -334,7 +357,8 @@ class DetectorOrchestrator:
                     self.det_cfg.get("crop_recenter_max_shift_unit_ratio", 0.35)
                 ),
                 input_image_scale=1.0,
-                bands_from=bands_from,
+                bands_from=None,
+                bands_from_by_image=bands_from_by_image,
                 staff_vov_threshold=float(self.det_cfg.get("staff_vov_threshold", 0.5)),
                 apply_nms_enabled=False,
                 in_memory_images=self.in_memory_images,
@@ -348,7 +372,7 @@ class DetectorOrchestrator:
                     "--model-manifest",
                     str(cnn_model_manifest),
                     "--bands-from",
-                    str(bands_from),
+                    "pre-probe-hybrid-inventory",
                     "--input-image-scale",
                     "1.0",
                     "--apply-nms",

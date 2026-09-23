@@ -103,6 +103,37 @@ def _load_inventory_record(path: Path) -> Mapping[str, Any]:
     return rows[0]
 
 
+def _late_artifact_roots(late_run: Path) -> dict[str, Path]:
+    """Resolve late-raw artifact roots from its retained report, not guessed names."""
+    report_path = late_run / "late_raw_x4_counterfactual_report.json"
+    if not report_path.is_file():
+        raise FileNotFoundError(report_path)
+    payload = _load_json(report_path)
+    if not isinstance(payload, Mapping):
+        raise ValueError(f"Invalid late-raw report: {report_path}")
+    late = payload.get("late_raw_x4")
+    if not isinstance(late, Mapping):
+        raise ValueError(f"Late-raw report lacks late_raw_x4 mapping: {report_path}")
+
+    fields = {
+        "raw": "raw_root",
+        "filtered": "filtered_root",
+        "probe": "aggregate_probe",
+    }
+    roots: dict[str, Path] = {}
+    for name, field in fields.items():
+        raw = late.get(field)
+        if not raw:
+            raise ValueError(f"Late-raw report lacks {field}: {report_path}")
+        path = Path(str(raw))
+        if not path.is_dir():
+            raise FileNotFoundError(
+                f"Late-raw report {field} does not exist: {path}"
+            )
+        roots[name] = path
+    return roots
+
+
 def _target_cluster(
     filtered: Sequence[tuple[int, int, int, int]],
 ) -> tuple[list[int], float, float]:
@@ -207,19 +238,17 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         x4_run / "control" / "aggregate_probe_output",
         "pipeline2_no_peak_candidates.json",
     )
+    late_roots = _late_artifact_roots(late_run)
     late_raw_path = _find(
-        late_run / "late_raw",
+        late_roots["raw"],
         "pipeline2_no_peak_candidates.json",
     )
     late_filtered_path = _find(
-        late_run / "filtered",
+        late_roots["filtered"],
         "pipeline2_no_peak_candidates.json",
     )
     late_probe_path = _find(
-        late_run
-        / "late_raw_route"
-        / "dense_candidate_reconstruction"
-        / "probe_rescue_candidates",
+        late_roots["probe"],
         "pipeline2_no_peak_candidates.json",
     )
 

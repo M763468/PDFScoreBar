@@ -157,3 +157,12 @@ def test_run_fresh_downstream_semantic_replay_direct_entrypoint_bootstraps_repo(
         ROOT / "experiments/issue372/run_fresh_downstream_semantic_replay.py",
         cwd=tmp_path,
     )
+
+
+def test_reassess_final_numbering_values_direct_entrypoint_bootstraps_repo(
+    tmp_path: Path,
+) -> None:
+    _assert_direct_help_succeeds(
+        ROOT / "experiments/issue372/reassess_final_numbering_values.py",
+        cwd=tmp_path,
+    )

@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(realpath "$(git rev-parse --show-toplevel)")"
+cd "$repo_root"
+
+branch="$(git branch --show-current)"
+if [[ "$branch" != "fix/issue372-detector-regression" ]]; then
+  echo "Unexpected branch: $branch" >&2
+  exit 2
+fi
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "Production full68 validation requires a clean checkout." >&2
+  git status --short >&2
+  exit 2
+fi
+
+commit="$(git rev-parse HEAD)"
+counterfactual="$repo_root/logs/issue372/late_raw_frozen_hybrid_bands_20260923T093728Z/counterfactual_report.json"
+reference="$repo_root/logs/issue372/combined_downstream_semantic_replay_20260923T095833Z/combined_downstream_semantic_replay.json"
+for path in "$counterfactual" "$reference"; do
+  if [[ ! -f "$path" ]]; then
+    echo "Required retained reference missing: $path" >&2
+    exit 2
+  fi
+done
+
+image_ref="${DOCKER_IMAGE:-pdfscore_pipeline_gpu}"
+resolver_args=(resolve --repo-root "$repo_root" --image-ref "$image_ref")
+if [[ -n "${DOCKER_IMAGE:-}" ]]; then
+  resolver_args+=(--explicit)
+fi
+image_id="$(python3 scripts/docker_image_resolver.py "${resolver_args[@]}")"
+
+omr_manifest="$repo_root/models/omr_dln/manifest.json"
+if [[ -n "${OMR_DLN_MODEL_PATH:-}" ]]; then
+  omr_host="$(
+    PYTHONPATH="$repo_root" python3 -m src.common.model_artifacts verify-file       "$omr_manifest" "$OMR_DLN_MODEL_PATH"
+  )"
+else
+  cached_omr="$(
+    PYTHONPATH="$repo_root" python3 -m src.common.model_artifacts path "$omr_manifest"
+  )"
+  if [[ -e "$cached_omr" || -L "$cached_omr" ]]; then
+    omr_host="$(
+      PYTHONPATH="$repo_root" python3 -m src.common.model_artifacts verify "$omr_manifest"
+    )"
+  else
+    legacy="$repo_root/external/omr_dln/models/public_models/YOLOv8m_Measures.pt"
+    if [[ ! -f "$legacy" ]]; then
+      echo "OMR-DLN model is not registered and legacy model is absent." >&2
+      exit 2
+    fi
+    omr_host="$(
+      PYTHONPATH="$repo_root" python3 -m src.common.model_artifacts verify-file         "$omr_manifest" "$legacy"
+    )"
+  fi
+fi
+omr_host="$(realpath "$omr_host")"
+omr_container="$(
+  python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["runtime_path"])'     "$omr_manifest"
+)"
+
+timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+output="$repo_root/logs/issue372/production_full68_validation_$timestamp"
+if [[ -e "$output" ]]; then
+  echo "Refusing to reuse output: $output" >&2
+  exit 2
+fi
+
+echo "=== Issue #372 production full68 ==="
+echo "commit=$commit"
+echo "image_id=$image_id"
+echo "output=$output"
+
+docker run --rm --gpus all   --user "$(id -u):$(id -g)"   -v "$repo_root:/workspace"   -v "$omr_host:$omr_container:ro"   -w /workspace   -e PYTHONPATH=/workspace   -e "OMR_DLN_MODEL_PATH=$omr_container"   "$image_id"   /opt/venv_pipeline/bin/python   experiments/issue372/run_production_full68_validation.py   --project-root /workspace   --output "/workspace/${output#"$repo_root"/}"   --source-commit "$commit"   --counterfactual-report "/workspace/${counterfactual#"$repo_root"/}"   --reference-replay "/workspace/${reference#"$repo_root"/}"

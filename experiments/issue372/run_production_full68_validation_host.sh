@@ -16,6 +16,19 @@ if [[ -n "$(git status --porcelain)" ]]; then
 fi
 
 commit="$(git rev-parse HEAD)"
+eval2_data_root="${PDFSCORE_EVAL2_DATA_ROOT:-$repo_root/data/evaluation2}"
+eval2_data_root="$(realpath "$eval2_data_root")"
+for required in \
+  "$eval2_data_root/pdfs/Va_Prokofiev_Symphony1.pdf" \
+  "$eval2_data_root/images" \
+  "$eval2_data_root/annotations" \
+  "$eval2_data_root/staff_units.json"; do
+  if [[ ! -e "$required" ]]; then
+    echo "Required evaluation2 data missing: $required" >&2
+    exit 2
+  fi
+done
+
 counterfactual="$repo_root/logs/issue372/late_raw_frozen_hybrid_bands_20260923T093728Z/counterfactual_report.json"
 reference="$repo_root/logs/issue372/combined_downstream_semantic_replay_20260923T095833Z/combined_downstream_semantic_replay.json"
 for path in "$counterfactual" "$reference"; do
@@ -71,6 +84,7 @@ fi
 echo "=== Issue #372 production full68 ==="
 echo "commit=$commit"
 echo "image_id=$image_id"
+echo "eval2_data_root=$eval2_data_root"
 echo "output=$output"
 
-docker run --rm --gpus all   --user "$(id -u):$(id -g)"   -v "$repo_root:/workspace"   -v "$omr_host:$omr_container:ro"   -w /workspace   -e PYTHONPATH=/workspace   -e "OMR_DLN_MODEL_PATH=$omr_container"   "$image_id"   /opt/venv_pipeline/bin/python   experiments/issue372/run_production_full68_validation.py   --project-root /workspace   --output "/workspace/${output#"$repo_root"/}"   --source-commit "$commit"   --counterfactual-report "/workspace/${counterfactual#"$repo_root"/}"   --reference-replay "/workspace/${reference#"$repo_root"/}"
+docker run --rm --gpus all   --user "$(id -u):$(id -g)"   -v "$repo_root:/workspace"   -v "$eval2_data_root:/workspace/data/evaluation2:ro"   -v "$omr_host:$omr_container:ro"   -w /workspace   -e PYTHONPATH=/workspace   -e "OMR_DLN_MODEL_PATH=$omr_container"   "$image_id"   /opt/venv_pipeline/bin/python   experiments/issue372/run_production_full68_validation.py   --project-root /workspace   --output "/workspace/${output#"$repo_root"/}"   --source-commit "$commit"   --counterfactual-report "/workspace/${counterfactual#"$repo_root"/}"   --reference-replay "/workspace/${reference#"$repo_root"/}"

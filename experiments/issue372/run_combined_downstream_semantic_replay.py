@@ -255,6 +255,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             f"{name}: number_value_match={comparison['number_value_match']} "
             f"changed_pages={comparison['changed_page_count']}"
         )
+        for row in comparison["changed_pages"]:
+            print(f"  changed: {row['score']}/{row['page']}")
     print("\n=== Shostakovich-Sym5-Va/page_021 ===")
     for label in ("combined", "current_control", "late_raw_x4", "accepted_d27"):
         payload = (

@@ -18,6 +18,8 @@ Environment:
   DOCKER_EXTRA_ARGS         Extra arguments passed to docker run.
   PDFSCOREBAR_MODEL_CACHE   Optional shared host model-cache root. Default: XDG/user cache
   OMR_DLN_MODEL_PATH        Optional explicit OMR-DLN compatibility override.
+  PDFSCORE_EVAL2_DATA_ROOT  Optional host data/evaluation2 root mounted read-only
+                            at /workspace/data/evaluation2 for worktree validation.
 USAGE
 }
 
@@ -161,6 +163,18 @@ common_args=(
   run --rm --gpus all
   "${extra_args[@]}"
   -v "$repo_root:/workspace"
+)
+if [[ -n "${PDFSCORE_EVAL2_DATA_ROOT:-}" ]]; then
+  eval2_data_root="$(realpath "$PDFSCORE_EVAL2_DATA_ROOT")"
+  if [[ ! -d "$eval2_data_root" ]]; then
+    echo "PDFSCORE_EVAL2_DATA_ROOT is not a directory: $eval2_data_root" >&2
+    exit 2
+  fi
+  common_args+=(-v "$eval2_data_root:/workspace/data/evaluation2:ro")
+else
+  eval2_data_root=""
+fi
+common_args+=(
   -v "$omr_host:$omr_container:ro"
   -w /workspace
   -e PYTHONPATH=/workspace
@@ -187,6 +201,7 @@ Canonical Docker validation provenance:
   omr_manifest: models/omr_dln/manifest.json
   omr_host:    $omr_host
   omr_runtime: $omr_container
+  eval2_data_root: ${eval2_data_root:-"(workspace-local)"}
 EOF
 
 echo "Validating Docker runtime contract..."

@@ -175,3 +175,12 @@ def test_report_late_raw_detector_residuals_direct_entrypoint_bootstraps_repo(
         ROOT / "experiments/issue372/report_late_raw_detector_residuals.py",
         cwd=tmp_path,
     )
+
+
+def test_visualize_late_raw_detector_residuals_direct_entrypoint_bootstraps_repo(
+    tmp_path: Path,
+) -> None:
+    _assert_direct_help_succeeds(
+        ROOT / "experiments/issue372/visualize_late_raw_detector_residuals.py",
+        cwd=tmp_path,
+    )

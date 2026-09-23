@@ -48,8 +48,8 @@ def test_production_late_raw_injection_occurs_on_existing_raw_tree(tmp_path: Pat
         x4,
         {
             "predictions": [
-                {"bbox": [10, 10, 14, 110]},
-                {"bbox": [200, 10, 204, 110]},
+                {"orig_bbox": [10, 10, 14, 110]},
+                {"orig_bbox": [200, 10, 204, 110]},
             ]
         },
     )
@@ -149,7 +149,7 @@ def test_dense_inventory_records_current_x4_detection_from_physical_support_layo
     (baseline_page / f"{stem}_debug_7_clefs_keys.png").write_bytes(b"clef")
 
     x4 = tmp_path / "x4_detection.json"
-    _write_json(x4, {"predictions": [{"bbox": [10, 20, 14, 120]}]})
+    _write_json(x4, {"predictions": [{"orig_bbox": [10, 20, 14, 120]}]})
 
     support_result = (
         hybrid_root

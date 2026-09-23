@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Visualize Issue #372 late-raw detector residuals from corrected v2 evidence.
+"""Visualize Issue #372 late-raw detector residuals from corrected evidence.
 
 Creates:
 - one full-page overlay per page containing any hard FN/FP;
@@ -30,7 +30,10 @@ if str(ROOT) not in sys.path:
 
 import cv2
 
-SCHEMAS = {\n    "issue372.late_raw_detector_residuals.v2",\n    "issue372.late_raw_detector_residuals.v3",\n}
+SCHEMAS = {
+    "issue372.late_raw_detector_residuals.v2",
+    "issue372.late_raw_detector_residuals.v3",
+}
 FN_COLOR = (0, 0, 255)
 CAND_COLOR = (0, 180, 0)
 FINAL_COLOR = (255, 0, 0)
@@ -54,9 +57,9 @@ def _write(path: Path, payload: Any) -> None:
 
 def _validate_report(payload: Mapping[str, Any]) -> None:
     schema = payload.get("schema_version")
-    if schema != SCHEMA:
+    if schema not in SCHEMAS:
         raise ValueError(
-            f"Unsupported residual schema {schema!r}; expected {SCHEMA!r}. "
+            f"Unsupported residual schema {schema!r}; expected one of {sorted(SCHEMAS)!r}. "
             "Regenerate the residual report with the current reporter instead "
             "of reusing the pre-fix v1 artifact."
         )

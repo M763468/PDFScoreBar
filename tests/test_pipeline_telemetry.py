@@ -154,9 +154,9 @@ def test_input_validation_does_not_complete_when_pdf_path_is_missing(tmp_path):
         orchestrator.run()
 
     _assert_input_validation_aborted(events)
-    assert telemetry.summary()["stage_spans"] == [
-        {"stage_id": "input_validation", "elapsed_ms": 0, "state": "aborted"}
-    ] or telemetry.summary()["stage_spans"][0]["state"] == "aborted"
+    span = telemetry.summary()["stage_spans"][0]
+    assert span["stage_id"] == "input_validation"
+    assert span["state"] == "aborted"
 
 
 def test_input_validation_does_not_complete_when_external_images_are_missing(tmp_path):

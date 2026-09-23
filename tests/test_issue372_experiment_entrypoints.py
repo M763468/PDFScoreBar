@@ -202,3 +202,12 @@ def test_diagnose_page021_staff_overlap_direct_entrypoint_bootstraps_repo(
         ROOT / "experiments/issue372/diagnose_page021_staff_overlap.py",
         cwd=tmp_path,
     )
+
+
+def test_diagnose_page021_row_cluster_membership_direct_entrypoint_bootstraps_repo(
+    tmp_path: Path,
+) -> None:
+    _assert_direct_help_succeeds(
+        ROOT / "experiments/issue372/diagnose_page021_row_cluster_membership.py",
+        cwd=tmp_path,
+    )

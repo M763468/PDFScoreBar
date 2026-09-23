@@ -177,3 +177,88 @@ def test_current_homr_staff_mask_resolves_child_current_support_result(
     )
 
     assert resolved == staff
+
+
+def test_number_value_reassessment_ignores_empty_system_bookkeeping() -> None:
+    from experiments.issue372.reassess_final_numbering_values import (
+        compare_number_values,
+    )
+
+    left = {
+        ("Score", "page_001"): {
+            "local_logical": {
+                "system_count": 1,
+                "empty_system_count": 3,
+                "systems": [{"measure_count": 2, "numbers": [1, 2]}],
+            },
+            "continued_logical": {
+                "system_count": 1,
+                "empty_system_count": 3,
+                "systems": [{"measure_count": 2, "numbers": [10, 11]}],
+            },
+            "continued_start_number": 10,
+            "continued_next_number": 12,
+            "mmr_overrides": [],
+        }
+    }
+    right = {
+        ("Score", "page_001"): {
+            "local_logical": {
+                "system_count": 1,
+                "empty_system_count": 2,
+                "systems": [{"measure_count": 2, "numbers": [1, 2]}],
+            },
+            "continued_logical": {
+                "system_count": 1,
+                "empty_system_count": 2,
+                "systems": [{"measure_count": 2, "numbers": [10, 11]}],
+            },
+            "continued_start_number": 10,
+            "continued_next_number": 12,
+            "mmr_overrides": [],
+        }
+    }
+
+    report = compare_number_values(left, right)
+
+    assert report["number_value_match"] is True
+    assert report["changed_page_count"] == 0
+
+
+def test_number_value_reassessment_detects_number_change() -> None:
+    from experiments.issue372.reassess_final_numbering_values import (
+        compare_number_values,
+    )
+
+    base = {
+        "local_logical": {
+            "system_count": 1,
+            "empty_system_count": 0,
+            "systems": [{"measure_count": 2, "numbers": [1, 2]}],
+        },
+        "continued_logical": {
+            "system_count": 1,
+            "empty_system_count": 0,
+            "systems": [{"measure_count": 2, "numbers": [10, 11]}],
+        },
+        "continued_start_number": 10,
+        "continued_next_number": 12,
+        "mmr_overrides": [],
+    }
+    changed = {
+        **base,
+        "continued_logical": {
+            "system_count": 1,
+            "empty_system_count": 0,
+            "systems": [{"measure_count": 2, "numbers": [10, 12]}],
+        },
+        "continued_next_number": 13,
+    }
+
+    report = compare_number_values(
+        {("Score", "page_001"): base},
+        {("Score", "page_001"): changed},
+    )
+
+    assert report["number_value_match"] is False
+    assert report["changed_page_count"] == 1

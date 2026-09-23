@@ -216,12 +216,27 @@ def _nearest_gt(
         ),
     )
     gt = ranked[0]
+    pred_height = max(1, abs(pred[3] - pred[1]))
+    gt_height = max(1, abs(gt[3] - gt[1]))
+    xdist = float(center_distance_x(pred, gt))
+    vov = float(barline_vertical_overlap(pred, gt))
+    iou = float(barline_iou(pred, gt))
+    if xdist <= 12.0 and vov < 0.5 and pred_height >= 1.5 * gt_height:
+        geometry_class = "same_x_vertical_overextension"
+    elif xdist <= 12.0:
+        geometry_class = "same_x_other_geometry_mismatch"
+    else:
+        geometry_class = "different_x"
     return {
         "bbox": list(gt),
-        "xdist": float(center_distance_x(pred, gt)),
-        "vov": float(barline_vertical_overlap(pred, gt)),
-        "iou": float(barline_iou(pred, gt)),
+        "xdist": xdist,
+        "vov": vov,
+        "iou": iou,
         "strong_match": _match(pred, gt),
+        "pred_height": pred_height,
+        "gt_height": gt_height,
+        "pred_to_gt_height_ratio": pred_height / gt_height,
+        "geometry_class": geometry_class,
     }
 
 
@@ -346,12 +361,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             pred = late["finals"][pred_index]
             fp_key = (score, page, pred)
             fp_rows.append({
-                "score": score,
+                "score_name": score,
                 "page": page,
                 "pred_bbox": list(pred),
                 "also_control_fp_exact": fp_key in control_fp_set,
                 "nearest_gt": _nearest_gt(pred, gts),
-                "score": max(
+                "cnn_score": max(
                     [
                         float(row["score"])
                         for row in late["scored"]
@@ -365,6 +380,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     fn_classes: dict[str, int] = {}
     for row in fn_rows:
         fn_classes[row["classification"]] = fn_classes.get(row["classification"], 0) + 1
+    fp_geometry_classes: dict[str, int] = {}
+    for row in fp_rows:
+        nearest = row.get("nearest_gt")
+        geometry_class = (
+            str(nearest.get("geometry_class"))
+            if isinstance(nearest, Mapping)
+            else "no_gt"
+        )
+        fp_geometry_classes[geometry_class] = fp_geometry_classes.get(geometry_class, 0) + 1
 
     result = {
         "schema_version": "issue372.late_raw_detector_residuals.v1",
@@ -377,11 +401,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "fn_count": len(fn_rows),
             "fp_count": len(fp_rows),
             "fn_classifications": dict(sorted(fn_classes.items())),
+            "fp_geometry_classifications": dict(sorted(fp_geometry_classes.items())),
             "fp_exact_overlap_with_control_count": len(late_fp_set & control_fp_set),
             "fp_late_only_count": len(late_fp_set - control_fp_set),
             "fp_control_only_count": len(control_fp_set - late_fp_set),
             "residual_pages_with_number_value_change": sorted({
-                (row["score"], row["page"])
+                (
+                    row.get("score", row.get("score_name")),
+                    row["page"],
+                )
                 for row in [*fn_rows, *fp_rows]
                 if row["page_number_values_changed_vs_current"]
             }),
@@ -403,7 +431,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     print("FP:")
     for row in fp_rows:
         print(
-            f"{row['score']}/{row['page']} pred={row['pred_bbox']} "
+            f"{row['score_name']}/{row['page']} pred={row['pred_bbox']} "
+            f"cnn_score={row['cnn_score']} "
+            f"geometry={row['nearest_gt']['geometry_class'] if row['nearest_gt'] else 'no_gt'} "
             f"control_fp={row['also_control_fp_exact']} "
             f"number_changed={row['page_number_values_changed_vs_current']}"
         )

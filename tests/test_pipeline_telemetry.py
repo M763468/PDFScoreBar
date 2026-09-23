@@ -3,7 +3,9 @@ from pathlib import Path
 import pytest
 
 from src.pipeline.engine_contract import ProgressEvent, ProgressKind
+from src.pipeline.engine_telemetry import TelemetryRecorder
 from src.pipeline.main import run_pipeline
+from src.pipeline.orchestrator import PipelineOrchestrator
 
 
 class _SuccessfulOrchestrator:
@@ -129,3 +131,88 @@ def test_resource_sampling_keeps_default_summary_in_run_directory(monkeypatch, t
     summary_text = summary_path.read_text()
     assert "resource_sample_count" in summary_text
     assert "pdfscorebar.engine.telemetry_summary.v1" in summary_text
+
+
+def _assert_input_validation_aborted(events: list[ProgressEvent]) -> None:
+    assert [(event.kind, event.stage_id) for event in events] == [
+        (ProgressKind.JOB_STARTED, "job"),
+        (ProgressKind.STAGE_STARTED, "input_validation"),
+    ]
+
+
+def test_input_validation_does_not_complete_when_pdf_path_is_missing(tmp_path):
+    events: list[ProgressEvent] = []
+    telemetry = TelemetryRecorder("job-invalid-pdf", on_progress=events.append)
+    orchestrator = PipelineOrchestrator(
+        config={"steps": {"pdf_to_images": True}, "inputs": {}},
+        run_id="job-invalid-pdf",
+        run_dir=tmp_path,
+        telemetry=telemetry,
+    )
+
+    with pytest.raises(ValueError, match="inputs.pdf_path"):
+        orchestrator.run()
+
+    _assert_input_validation_aborted(events)
+    assert telemetry.summary()["stage_spans"] == [
+        {"stage_id": "input_validation", "elapsed_ms": 0, "state": "aborted"}
+    ] or telemetry.summary()["stage_spans"][0]["state"] == "aborted"
+
+
+def test_input_validation_does_not_complete_when_external_images_are_missing(tmp_path):
+    events: list[ProgressEvent] = []
+    telemetry = TelemetryRecorder("job-missing-images", on_progress=events.append)
+    orchestrator = PipelineOrchestrator(
+        config={
+            "steps": {"pdf_to_images": False},
+            "inputs": {
+                "pdf_to_images": {
+                    "output_dir": str(tmp_path / "missing-images"),
+                    "image_glob": "page_*.png",
+                }
+            },
+        },
+        run_id="job-missing-images",
+        run_dir=tmp_path / "run",
+        telemetry=telemetry,
+    )
+
+    with pytest.raises(FileNotFoundError, match="No images found"):
+        orchestrator.run()
+
+    _assert_input_validation_aborted(events)
+
+
+@pytest.mark.parametrize("input_key", ["measure_overrides", "movement_boundaries"])
+def test_input_validation_does_not_complete_for_malformed_structured_input(
+    tmp_path,
+    input_key,
+):
+    image_dir = tmp_path / "images"
+    image_dir.mkdir()
+    (image_dir / "page_001.png").write_bytes(b"placeholder")
+    malformed = tmp_path / f"{input_key}.json"
+    malformed.write_text("{not-json", encoding="utf-8")
+
+    events: list[ProgressEvent] = []
+    telemetry = TelemetryRecorder(f"job-{input_key}", on_progress=events.append)
+    orchestrator = PipelineOrchestrator(
+        config={
+            "steps": {"pdf_to_images": False},
+            "inputs": {
+                "pdf_to_images": {
+                    "output_dir": str(image_dir),
+                    "image_glob": "page_*.png",
+                },
+                input_key: str(malformed),
+            },
+        },
+        run_id=f"job-{input_key}",
+        run_dir=tmp_path / "run",
+        telemetry=telemetry,
+    )
+
+    with pytest.raises(ValueError):
+        orchestrator.run()
+
+    _assert_input_validation_aborted(events)

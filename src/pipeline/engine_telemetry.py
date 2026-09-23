@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import os
 import subprocess
 import threading
@@ -38,9 +39,10 @@ class ResourceSampler:
     """
 
     def __init__(self, *, interval_seconds: float = 1.0) -> None:
-        if interval_seconds <= 0:
-            raise ValueError("resource sample interval must be positive")
-        self.interval_seconds = float(interval_seconds)
+        interval_seconds = float(interval_seconds)
+        if not math.isfinite(interval_seconds) or interval_seconds <= 0:
+            raise ValueError("resource sample interval must be finite and positive")
+        self.interval_seconds = interval_seconds
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._started = False

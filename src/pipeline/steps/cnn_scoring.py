@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 import cv2
 import numpy as np
@@ -414,6 +414,7 @@ def run_cnn_scoring_batch(
     batch_size: int = 64,
     staff_mask_dir: Optional[Path] = None,
     bands_from: Optional[Path] = None,
+    bands_from_by_image: Optional[Mapping[Path, Path]] = None,
     staff_vov_threshold: float = 0.5,
     crop_recenter_on_bbox_ink: bool = False,
     crop_recenter_max_shift_unit_ratio: float = 0.35,
@@ -434,6 +435,13 @@ def run_cnn_scoring_batch(
     for img_path in tqdm(images, desc="CNN Scoring", unit="page"):
         run_id = build_probe_run_id(img_path, score_name=score_name)
         run_dir = probe_output_root / run_id
+        page_bands_from = bands_from
+        if bands_from_by_image is not None:
+            page_bands_from = bands_from_by_image.get(img_path.resolve())
+            if page_bands_from is None:
+                raise ValueError(
+                    f"Missing per-image CNN band authority for {img_path.resolve()}"
+                )
         if _score_directory(
             run_dir=run_dir,
             image_path=img_path,
@@ -443,7 +451,7 @@ def run_cnn_scoring_batch(
             device=device,
             batch_size=batch_size,
             staff_mask_path=staff_mask_map.get(img_path.stem),
-            bands_from=bands_from,
+            bands_from=page_bands_from,
             current_score_name=score_name,
             staff_vov_threshold=staff_vov_threshold,
             crop_recenter_on_bbox_ink=crop_recenter_on_bbox_ink,

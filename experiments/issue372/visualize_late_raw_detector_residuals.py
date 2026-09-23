@@ -30,7 +30,7 @@ if str(ROOT) not in sys.path:
 
 import cv2
 
-SCHEMA = "issue372.late_raw_detector_residuals.v2"
+SCHEMAS = {\n    "issue372.late_raw_detector_residuals.v2",\n    "issue372.late_raw_detector_residuals.v3",\n}
 FN_COLOR = (0, 0, 255)
 CAND_COLOR = (0, 180, 0)
 FINAL_COLOR = (255, 0, 0)

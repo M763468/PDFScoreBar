@@ -394,7 +394,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "schema_version": "issue372.late_raw_detector_residuals.v3",
         "contract": {
             "matcher": "legacy center_anchor, vov>=0.5, xdist<=12px",
-            "cnn_threshold": THRESHOLD,\n            "scored_artifact_note": (\n                "pipeline2_no_peak_scored.json score values are not guaranteed raw CNN scores; "\n                "the production scorer mutates accepted-item score to 0.0 when a later staff-overlap "\n                "filter rejects the item"\n            ),
+            "cnn_threshold": THRESHOLD,
+            "scored_artifact_note": (
+                "pipeline2_no_peak_scored.json score values are not guaranteed raw CNN scores; "
+                "the production scorer mutates accepted-item score to 0.0 when a later staff-overlap "
+                "filter rejects the item"
+            ),
             "retained_only": True,
         },
         "summary": {

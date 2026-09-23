@@ -56,6 +56,10 @@ def run(report_path: Path) -> dict[str, Any]:
                     for r in group
                     if r["row_gt_class"] == "gt_true"
                 ),
+                "generated_distinct_gt_from_all_rows": sum(
+                    int(r["generated_distinct_gt_count"])
+                    for r in group
+                ),
                 "generated_candidates_from_false_rows": sum(
                     int(r["generated_count"])
                     for r in group
@@ -110,6 +114,10 @@ def run(report_path: Path) -> dict[str, Any]:
                     for r in suppressed
                     if r["row_gt_class"] == "gt_true"
                 ),
+                "lost_distinct_gt_from_all_rows": sum(
+                    int(r["generated_distinct_gt_count"])
+                    for r in suppressed
+                ),
                 "kept_false_rows": sum(r["row_gt_class"] == "gt_false" for r in kept),
                 "kept_true_rows": sum(r["row_gt_class"] == "gt_true" for r in kept),
             }
@@ -122,7 +130,8 @@ def run(report_path: Path) -> dict[str, Any]:
             f"false_suppressed={row['suppressed_false_rows']:>2} "
             f"true_suppressed={row['suppressed_true_rows']:>2} "
             f"useful_true_suppressed={row['suppressed_useful_true_rows']:>2} "
-            f"lost_distinct_gt={row['lost_distinct_gt_from_true_rows']:>2} "
+            f"lost_distinct_gt_all={row['lost_distinct_gt_from_all_rows']:>2} "
+            f"(true_seed_rows={row['lost_distinct_gt_from_true_rows']:>2}) "
             f"false_generated_removed={row['suppressed_false_generated_candidates']:>3} "
             f"false_kept={row['kept_false_rows']:>2}"
         )
@@ -130,8 +139,7 @@ def run(report_path: Path) -> dict[str, Any]:
     safe = [
         row
         for row in x4_only_sweeps
-        if row["suppressed_useful_true_rows"] == 0
-        and row["lost_distinct_gt_from_true_rows"] == 0
+        if row["lost_distinct_gt_from_all_rows"] == 0
     ]
     print("\n=== zero-observed-GT-loss x4-only thresholds ===")
     for row in safe:

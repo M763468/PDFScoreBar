@@ -175,3 +175,45 @@ def test_late_raw_x4_union_deduplicates_promotions() -> None:
 
     assert promoted == [[20, 10, 24, 110]]
     assert union == [[20, 10, 24, 110]]
+
+
+def test_page021_source_attribution_resolves_late_roots_from_retained_report(
+    tmp_path: Path,
+) -> None:
+    import json
+
+    from experiments.issue372.diagnose_page021_row_source_attribution import (
+        _late_artifact_roots,
+    )
+
+    late_run = tmp_path / "late"
+    raw = late_run / "raw_x4_injected"
+    filtered = late_run / "filtered"
+    probe = (
+        late_run
+        / "late_raw_route"
+        / "dense_candidate_reconstruction"
+        / "probe_rescue_candidates"
+    )
+    for path in (raw, filtered, probe):
+        path.mkdir(parents=True, exist_ok=True)
+
+    report = {
+        "late_raw_x4": {
+            "raw_root": str(raw),
+            "filtered_root": str(filtered),
+            "aggregate_probe": str(probe),
+        }
+    }
+    (late_run / "late_raw_x4_counterfactual_report.json").write_text(
+        json.dumps(report),
+        encoding="utf-8",
+    )
+
+    roots = _late_artifact_roots(late_run)
+
+    assert roots == {
+        "raw": raw,
+        "filtered": filtered,
+        "probe": probe,
+    }

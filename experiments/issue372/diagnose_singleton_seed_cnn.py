@@ -34,6 +34,9 @@ from experiments.issue372.run_retained_x4_gap_counterfactual import (
     _host_path,
     _load_config,
 )
+from src.pipeline.detection.restored_orchestrator import (
+    _resolve_verified_cnn_artifact,
+)
 from src.pipeline.steps.cnn_scoring import (
     GPUNormalize,
     IMG_SIZE,
@@ -128,24 +131,26 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             f"Unexpected competing report schema: {competing.get('schema_version')!r}"
         )
 
-    counterfactual_path = x4_run / "counterfactual_report.json"
-    counterfactual = _load_json(counterfactual_path)
-    contract = counterfactual.get("contract")
-    if not isinstance(contract, Mapping):
-        raise ValueError(f"Counterfactual report lacks contract: {counterfactual_path}")
-
-    model_path = Path(str(contract["cnn_model"]))
-    if not model_path.is_file():
-        raise FileNotFoundError(model_path)
-
-    config_path = Path(str(contract["config"]))
+    # Resolve the verified production CNN contract from tracked current source
+    # rather than assuming a particular retained counterfactual report filename.
+    config_path = ROOT / "configs" / "dense_full_pipeline.yaml"
     if not config_path.is_file():
         raise FileNotFoundError(config_path)
     config = _load_config(config_path)
     detection = config["detection"]
     assert isinstance(detection, Mapping)
 
-    threshold = float(contract["cnn_threshold"])
+    manifest_raw = detection.get("cnn_model_manifest")
+    if not manifest_raw:
+        raise ValueError(f"Production config lacks cnn_model_manifest: {config_path}")
+    if "cnn_threshold" not in detection or detection.get("cnn_threshold") is None:
+        raise ValueError(f"Production config lacks cnn_threshold: {config_path}")
+
+    threshold = float(detection["cnn_threshold"])
+    model_path = _resolve_verified_cnn_artifact(
+        str(manifest_raw),
+        cnn_threshold=threshold,
+    )
     recenter = bool(detection.get("crop_recenter_on_bbox_ink", False))
     recenter_max_shift = float(
         detection.get("crop_recenter_max_shift_unit_ratio", 0.35)
@@ -259,6 +264,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "contract": {
             "diagnostic_only": True,
             "detector_regeneration": False,
+            "production_config": str(config_path),
+            "model_manifest": str(detection["cnn_model_manifest"]),
             "model_path": str(model_path),
             "cnn_threshold": threshold,
             "device": str(device),

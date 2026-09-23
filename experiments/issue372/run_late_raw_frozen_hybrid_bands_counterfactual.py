@@ -206,11 +206,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     )
     target_payload = _load_json(target_file)
     target_final = {
-        tuple(int(round(float(v))) for v in item["bbox"])
-        for item in target_payload
-        if isinstance(item, Mapping)
-        and isinstance(item.get("bbox"), list)
-        and float(item.get("score", 0.0)) >= threshold
+        tuple(int(round(float(v))) for v in box[:4])
+        for box in full68_eval.boxes_from_candidates(target_payload)
     }
     target_presence = {
         str(list(box)): box in target_final

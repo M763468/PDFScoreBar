@@ -589,10 +589,14 @@ def _run_variant_downstream(
         override_payload = _load_json(override_path)
         if not isinstance(override_payload, Mapping):
             raise ValueError(f"Invalid MMR override payload: {override_path}")
-        global_index = int(rt["global_index"])
+        # MMRProcessor persists override.page from the page payload's
+        # page_number, which this replay sets from score_index + 1. Rebase in
+        # that same score-local coordinate frame. Using the canonical full68
+        # global index silently dropped overrides after the first score.
+        score_index = int(rt["score_index"])
         rebased = rebase_mmr_overrides_to_page_local(
             dict(override_payload),
-            page_index=global_index,
+            page_index=score_index,
         )
         # Some MMR runners emit page-local index zero when invoked over isolated
         # payloads. Accept that only if global rebasing selected no rows.

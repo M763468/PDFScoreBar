@@ -187,8 +187,8 @@ class DetectorOrchestrator:
             support_result = (
                 self.hybrid_output_dir
                 / "current_support"
-                / score
-                / page
+                / image.parent.name
+                / image.stem
                 / "result.json"
             )
             if not support_result.is_file():

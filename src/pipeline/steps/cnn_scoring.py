@@ -404,6 +404,24 @@ def _score_directory(
     return True
 
 
+def _resolve_bands_from_for_image(
+    image_path: Path,
+    *,
+    bands_from: Optional[Path],
+    bands_from_by_image: Optional[Mapping[Path, Path]],
+) -> Optional[Path]:
+    """Resolve the geometric-band authority for one image."""
+
+    if bands_from_by_image is None:
+        return bands_from
+    resolved = bands_from_by_image.get(image_path.resolve())
+    if resolved is None:
+        raise ValueError(
+            f"Missing per-image CNN band authority for {image_path.resolve()}"
+        )
+    return resolved
+
+
 def run_cnn_scoring_batch(
     *,
     probe_output_root: Path,
@@ -435,13 +453,11 @@ def run_cnn_scoring_batch(
     for img_path in tqdm(images, desc="CNN Scoring", unit="page"):
         run_id = build_probe_run_id(img_path, score_name=score_name)
         run_dir = probe_output_root / run_id
-        page_bands_from = bands_from
-        if bands_from_by_image is not None:
-            page_bands_from = bands_from_by_image.get(img_path.resolve())
-            if page_bands_from is None:
-                raise ValueError(
-                    f"Missing per-image CNN band authority for {img_path.resolve()}"
-                )
+        page_bands_from = _resolve_bands_from_for_image(
+            img_path,
+            bands_from=bands_from,
+            bands_from_by_image=bands_from_by_image,
+        )
         if _score_directory(
             run_dir=run_dir,
             image_path=img_path,

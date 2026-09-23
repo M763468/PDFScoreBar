@@ -391,7 +391,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         fp_geometry_classes[geometry_class] = fp_geometry_classes.get(geometry_class, 0) + 1
 
     result = {
-        "schema_version": "issue372.late_raw_detector_residuals.v1",
+        "schema_version": "issue372.late_raw_detector_residuals.v2",
         "contract": {
             "matcher": "legacy center_anchor, vov>=0.5, xdist<=12px",
             "cnn_threshold": THRESHOLD,

@@ -68,7 +68,7 @@ class ResourceSampler:
         if not self._started:
             return
         self._stop.set()
-        self._thread.join(timeout=max(5.0, self.interval_seconds + 4.5))
+        self._thread.join()
 
     def _sample_process_tree(self, sample_time: float) -> tuple[set[int], int, float | None]:
         process_ids = {os.getpid()}

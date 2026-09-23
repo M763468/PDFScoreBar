@@ -262,3 +262,17 @@ def test_number_value_reassessment_detects_number_change() -> None:
 
     assert report["number_value_match"] is False
     assert report["changed_page_count"] == 1
+
+
+def test_late_raw_fp_geometry_classifies_same_x_vertical_overextension() -> None:
+    from experiments.issue372.report_late_raw_detector_residuals import _nearest_gt
+
+    result = _nearest_gt(
+        (2151, 1282, 2152, 1738),
+        [(2147, 1619, 2156, 1736)],
+    )
+
+    assert result is not None
+    assert result["geometry_class"] == "same_x_vertical_overextension"
+    assert result["xdist"] == 0.0
+    assert result["pred_to_gt_height_ratio"] > 3.0

@@ -34,9 +34,6 @@ from experiments.issue372.run_retained_x4_gap_counterfactual import (
     _host_path,
     _load_config,
 )
-from experiments.issue372.diagnose_page021_row_source_attribution import (
-    _load_inventory_record,
-)
 from src.pipeline.steps.cnn_scoring import (
     GPUNormalize,
     IMG_SIZE,
@@ -52,6 +49,20 @@ from src.pipeline.utils.images import load_image
 
 def _load_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _load_inventory_record(path: Path, *, page: str) -> Mapping[str, Any]:
+    payload = _load_json(path)
+    if not isinstance(payload, Mapping) or not isinstance(payload.get("records"), list):
+        raise ValueError(f"Invalid inventory: {path}")
+    rows = [
+        row
+        for row in payload["records"]
+        if isinstance(row, Mapping) and str(row.get("page")) == page
+    ]
+    if len(rows) != 1:
+        raise ValueError(f"Expected one {page} record in {path}, got {len(rows)}")
+    return rows[0]
 
 
 def _score_box(

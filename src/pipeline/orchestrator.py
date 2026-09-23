@@ -92,6 +92,7 @@ class PipelineOrchestrator:
         self.debug = debug
         self.telemetry = telemetry
         self._movement_boundaries: Dict[str, Any] | None = None
+        self._barline_override_payload: Dict[str, Any] | None = None
 
         self.intermediate_dir = run_dir / "intermediate"
         self.outputs_dir = run_dir / "outputs"
@@ -125,6 +126,65 @@ class PipelineOrchestrator:
             unit=unit,
             detail_code=detail_code,
         )
+
+    def _validate_input_prerequisites(
+        self,
+    ) -> tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
+        """Validate required external inputs before input_validation completes."""
+        self._validate_review_package_prerequisites()
+
+        pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
+        render_pdf = bool(get_nested(self.config, "steps", "pdf_to_images", default=False))
+        if render_pdf:
+            pdf_path = get_nested(self.config, "inputs", "pdf_path")
+            if not pdf_path:
+                raise ValueError("inputs.pdf_path is required when pdf_to_images is enabled.")
+            skip_render = (
+                self.skip_existing
+                and (self.run_dir / "inputs" / "images").exists()
+                and list((self.run_dir / "inputs" / "images").glob("*.png"))
+            )
+            if not skip_render and not self.dry_run and not Path(pdf_path).is_file():
+                raise FileNotFoundError(f"PDF input not found: {pdf_path}")
+        else:
+            self._validate_external_image_inputs(pdf_opts)
+
+        user_overrides_path = get_nested(self.config, "inputs", "measure_overrides")
+        user_overrides_payload = (
+            load_json(Path(user_overrides_path)) if user_overrides_path else None
+        )
+
+        barline_overrides_path = get_nested(self.config, "inputs", "barline_overrides")
+        self._barline_override_payload = (
+            load_json(Path(barline_overrides_path)) if barline_overrides_path else None
+        )
+
+        movement_boundaries = load_movement_boundary_payload(
+            get_nested(self.config, "inputs", "movement_boundaries")
+        )
+        return user_overrides_payload, movement_boundaries
+
+    def _validate_external_image_inputs(self, pdf_opts: Dict[str, Any]) -> None:
+        """Mirror collect_images discovery without staging/copying external files."""
+        output_dir = self.run_dir / "inputs" / "images"
+        image_glob = pdf_opts.get("image_glob", "page_*.png")
+        external_dir = pdf_opts.get("output_dir")
+
+        if not output_dir.exists():
+            if external_dir:
+                output_dir = Path(external_dir)
+            else:
+                raise ValueError(
+                    "PDF images not found. Enable pdf_to_images or specify output_dir."
+                )
+
+        images = sorted(Path(output_dir).glob(image_glob))
+        if not images and external_dir:
+            external_path = Path(external_dir)
+            images = sorted(external_path.glob(image_glob))
+            output_dir = external_path
+        if not images:
+            raise FileNotFoundError(f"No images found in {output_dir} matching {image_glob}")
 
     def _run_pdf_to_images(self) -> tuple[str, list[int]] | None:
         """Step 1: Convert PDF to images in-process and retain exact source identity."""
@@ -216,7 +276,7 @@ class PipelineOrchestrator:
     def run(self, page_limit: Optional[int] = None) -> Path:
         """Executes the full pipeline."""
         with self._telemetry_stage("input_validation"):
-            self._validate_review_package_prerequisites()
+            user_overrides_payload, movement_boundaries = self._validate_input_prerequisites()
         commands: List[List[str]] = []
         pdf_rendered_this_run = False
         rendered_source_sha256: str | None = None
@@ -310,13 +370,6 @@ class PipelineOrchestrator:
             self.config, page_ids, images, resolved, excluded_indices
         )
 
-        user_overrides_path = get_nested(self.config, "inputs", "measure_overrides")
-        user_overrides_payload = None
-        if user_overrides_path:
-            user_overrides_payload = load_json(Path(user_overrides_path))
-        movement_boundaries = load_movement_boundary_payload(
-            get_nested(self.config, "inputs", "movement_boundaries")
-        )
         for boundary in movement_boundaries["boundaries"]:
             if boundary["page"] >= len(page_ids):
                 raise ValueError(
@@ -539,10 +592,7 @@ class PipelineOrchestrator:
         page_ctx: Dict[str, Dict[str, Any]] = {}
 
         apply_barlines = get_nested(self.config, "steps", "apply_barline_overrides", default=False)
-        barline_overrides_path = get_nested(self.config, "inputs", "barline_overrides")
-        barline_override_payload = None
-        if barline_overrides_path:
-            barline_override_payload = load_json(Path(barline_overrides_path))
+        barline_override_payload = self._barline_override_payload
 
         barline_override_cfg = (
             get_nested(self.config, "inputs", "barline_overrides_config", default={}) or {}

@@ -19,6 +19,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from src.common.barline_evaluation import barline_iou
+from src.pipeline.steps.hybrid_consensus import load_json_boxes
 from src.pipeline.steps.probe_scan import run_probe_scan_batch
 
 logger = logging.getLogger(__name__)
@@ -26,6 +28,7 @@ logger = logging.getLogger(__name__)
 DENSE_ROUTE_EXPECTED_PAGES = 68
 DEFAULT_LOG_HEAD_LINES = 200
 DEFAULT_LOG_TAIL_LINES = 200
+LATE_RAW_X4_IOU_THRESHOLD = 0.5
 
 GENERATION_PARAMS = {
     "band_source": "row_stats",
@@ -59,6 +62,7 @@ class DenseRouteArtifacts:
     image_paths: list[Path]
     filtered_root: Path
     probe_rescue_root: Path
+    cnn_band_sources: dict[Path, Path]
     execution_summary: dict[str, Any] | None = None
 
 
@@ -238,6 +242,152 @@ def load_route_image_paths(
     return image_paths
 
 
+def _normalize_box(box: list[int] | tuple[int, ...]) -> tuple[int, int, int, int]:
+    if len(box) != 4:
+        raise ValueError(f"Expected 4-value bbox, got {box!r}")
+    return tuple(int(v) for v in box)
+
+
+def build_late_raw_x4_union(
+    *,
+    raw_boxes: list[list[int]] | list[tuple[int, int, int, int]],
+    x4_boxes: list[list[int]] | list[tuple[int, int, int, int]],
+    iou_threshold: float = LATE_RAW_X4_IOU_THRESHOLD,
+) -> tuple[list[list[int]], list[list[int]]]:
+    """Add x4 boxes not represented by the already-generated raw candidate set."""
+
+    raw_norm = [_normalize_box(box) for box in raw_boxes]
+    promoted = [
+        _normalize_box(box)
+        for box in x4_boxes
+        if not any(barline_iou(_normalize_box(box), raw) > iou_threshold for raw in raw_norm)
+    ]
+
+    seen: set[tuple[int, int, int, int]] = set()
+    union: list[list[int]] = []
+    unique_promoted: list[list[int]] = []
+    promoted_set = set(promoted)
+    for box in [*raw_norm, *promoted]:
+        if box in seen:
+            continue
+        seen.add(box)
+        union.append(list(box))
+        if box in promoted_set and box not in raw_norm:
+            unique_promoted.append(list(box))
+    return union, unique_promoted
+
+
+def inject_current_x4_gaps(
+    *,
+    inventory: Path,
+    exclude: Path,
+    raw_root: Path,
+    summary_out: Path,
+) -> dict[str, Any]:
+    """Apply the Issue #372 late-raw compatibility boundary in-place."""
+
+    payload = json.loads(inventory.read_text(encoding="utf-8"))
+    records = payload.get("records", [])
+    if not isinstance(records, list):
+        raise ValueError("Dense route inventory records must be a list")
+
+    exclude_payload = json.loads(exclude.read_text(encoding="utf-8")) if exclude.exists() else {}
+    excluded = {
+        (str(row["score"]), str(row["page"]))
+        for row in exclude_payload.get("excluded_pages", [])
+        if isinstance(row, dict) and "score" in row and "page" in row
+    }
+
+    rows: list[dict[str, Any]] = []
+    for record in records:
+        score = str(record["score"])
+        page = str(record["page"])
+        if (score, page) in excluded:
+            continue
+
+        x4_raw = record.get("current_x4_detection")
+        if not x4_raw:
+            raise ValueError(f"{score}/{page}: inventory lacks current_x4_detection")
+        x4_path = Path(str(x4_raw))
+        if not x4_path.is_file():
+            raise FileNotFoundError(x4_path)
+
+        raw_path = raw_root / score / page / "pipeline2_no_peak_candidates.json"
+        if not raw_path.is_file():
+            raise FileNotFoundError(raw_path)
+
+        raw_boxes = [list(box) for box in load_json_boxes(raw_path)]
+        x4_boxes = [list(box) for box in load_json_boxes(x4_path)]
+        union, promoted = build_late_raw_x4_union(
+            raw_boxes=raw_boxes,
+            x4_boxes=x4_boxes,
+        )
+        raw_path.write_text(json.dumps(union, indent=2) + "\n", encoding="utf-8")
+        rows.append(
+            {
+                "score": score,
+                "page": page,
+                "raw_count_before": len(raw_boxes),
+                "x4_count": len(x4_boxes),
+                "promoted_x4_count": len(promoted),
+                "raw_count_after": len(union),
+                "current_x4_detection": str(x4_path),
+                "raw_candidates": str(raw_path),
+            }
+        )
+
+    summary = {
+        "schema_version": "pipeline.detector_routes.dense_full_pipeline.late_raw_x4.v1",
+        "injection_boundary": "after initial raw generation, before candidate filter",
+        "iou_threshold": LATE_RAW_X4_IOU_THRESHOLD,
+        "processed": len(rows),
+        "pages_with_promotions": sum(row["promoted_x4_count"] > 0 for row in rows),
+        "total_promoted_x4_boxes": sum(row["promoted_x4_count"] for row in rows),
+        "per_page": rows,
+    }
+    summary_out.parent.mkdir(parents=True, exist_ok=True)
+    summary_out.write_text(
+        json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    return summary
+
+
+def load_frozen_hybrid_band_sources(
+    *,
+    inventory: Path,
+    exclude: Path,
+) -> dict[Path, Path]:
+    """Map each route image to its pre-probe hybrid geometry authority."""
+
+    payload = json.loads(inventory.read_text(encoding="utf-8"))
+    records = payload.get("records", [])
+    if not isinstance(records, list):
+        raise ValueError("Dense route inventory records must be a list")
+
+    exclude_payload = json.loads(exclude.read_text(encoding="utf-8")) if exclude.exists() else {}
+    excluded = {
+        (str(row["score"]), str(row["page"]))
+        for row in exclude_payload.get("excluded_pages", [])
+        if isinstance(row, dict) and "score" in row and "page" in row
+    }
+
+    result: dict[Path, Path] = {}
+    for record in records:
+        score = str(record["score"])
+        page = str(record["page"])
+        if (score, page) in excluded:
+            continue
+        image = Path(str(record["image"])).resolve()
+        hybrid = Path(str(record["hybrid_predictions"])).resolve()
+        if not image.is_file():
+            raise FileNotFoundError(image)
+        if not hybrid.is_file():
+            raise FileNotFoundError(hybrid)
+        result[image] = hybrid
+    return result
+
+
 def regenerate_dense_candidates(
     *,
     inventory: Path,
@@ -254,6 +404,7 @@ def regenerate_dense_candidates(
     suggestions_root = dense_root / "filter_suggestions"
     generation_summary = dense_root / "probe_generation_summary.json"
     filter_summary = dense_root / "filter_apply_summary.json"
+    late_raw_summary = dense_root / "late_raw_x4_injection_summary.json"
     log_dir = dense_root / "logs"
 
     if dense_root.exists():
@@ -283,6 +434,18 @@ def regenerate_dense_candidates(
             verbose_logs=verbose_logs,
         )
     )
+
+    late_raw = inject_current_x4_gaps(
+        inventory=inventory,
+        exclude=exclude,
+        raw_root=raw_root,
+        summary_out=late_raw_summary,
+    )
+    if late_raw["processed"] != expected_pages:
+        raise RuntimeError(
+            "Late-raw x4 injection did not cover the dense route: "
+            f"processed={late_raw['processed']} expected={expected_pages}"
+        )
 
     filter_cmd = [
         sys.executable,
@@ -327,6 +490,8 @@ def regenerate_dense_candidates(
                 suggestions_root=str(suggestions_root),
                 generation_summary=str(generation_summary),
                 filter_summary=str(filter_summary),
+                late_raw_x4_summary=str(late_raw_summary),
+                late_raw_x4_promoted=int(late_raw["total_promoted_x4_boxes"]),
                 command_logs=[command.to_json() for command in command_summaries],
             )
         )
@@ -415,6 +580,16 @@ def reconstruct_dense_full_pipeline_route(
         )
     )
 
+    cnn_band_sources = load_frozen_hybrid_band_sources(
+        inventory=inventory,
+        exclude=exclude,
+    )
+    if len(cnn_band_sources) != len(image_paths):
+        raise RuntimeError(
+            "Frozen hybrid band-source count does not match route images: "
+            f"bands={len(cnn_band_sources)} images={len(image_paths)}"
+        )
+
     filtered_root = regenerate_dense_candidates(
         inventory=inventory,
         exclude=exclude,
@@ -439,6 +614,8 @@ def reconstruct_dense_full_pipeline_route(
         "artifacts": {
             "filtered_root": str(filtered_root),
             "probe_rescue_root": str(probe_rescue_root),
+            "cnn_band_source": "pre_probe_hybrid_inventory",
+            "cnn_band_source_count": len(cnn_band_sources),
         },
         "phases": phases,
     }
@@ -449,5 +626,6 @@ def reconstruct_dense_full_pipeline_route(
         image_paths=image_paths,
         filtered_root=filtered_root,
         probe_rescue_root=probe_rescue_root,
+        cnn_band_sources=cnn_band_sources,
         execution_summary=execution_summary,
     )

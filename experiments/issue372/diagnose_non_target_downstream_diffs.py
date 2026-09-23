@@ -22,6 +22,7 @@ from experiments.issue372.run_fresh_downstream_semantic_replay import (
     _extract_boxes,
     _find_page_file,
 )
+from experiments.issue372.run_retained_x4_gap_counterfactual import _host_path
 
 
 def load(path: Path) -> Any:
@@ -108,6 +109,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     production = load(args.production_report.resolve())
     corrected_root = args.corrected_control_root.resolve()
     x4_root = args.x4_run_root.resolve()
+    issue372_root = args.issue372_repo_root.resolve()
 
     prod_rows = {}
     for score_summary in production["score_summaries"]:
@@ -125,7 +127,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             key[1],
             "pipeline2_no_peak_filtered_cnn.json",
         )
-        production_path = Path(str(prod_rows[key]["final_detector"]))
+        production_path = _host_path(
+            str(prod_rows[key]["final_detector"]),
+            issue372_root,
+        )
         control_boxes = sorted(_extract_boxes(load(control_path)))
         production_boxes = sorted(_extract_boxes(load(production_path)))
         festival[page] = {
@@ -159,7 +164,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     if not control_override_path.is_file():
         raise FileNotFoundError(control_override_path)
 
-    production_final_path = Path(str(prod_rows[key]["final_numbering"]))
+    production_final_path = _host_path(
+        str(prod_rows[key]["final_numbering"]),
+        issue372_root,
+    )
     production_override_path = (
         production_final_path.parents[2]
         / "intermediate"
@@ -228,6 +236,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--production-report", type=Path, required=True)
+    parser.add_argument("--issue372-repo-root", type=Path, required=True)
     parser.add_argument("--corrected-control-root", type=Path, required=True)
     parser.add_argument("--x4-run-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)

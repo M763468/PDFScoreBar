@@ -1,0 +1,109 @@
+run:
+  run_id: issue43_ab_staff_mask
+  output_root: logs/full_pipeline_runs
+
+inputs:
+  pdf_path: data/evaluation2/pdfs/Va_Prokofiev_Symphony1.pdf
+  pdf_to_images:
+    output_dir: logs/full_pipeline_runs/issue43_ab_staff_mask/rendered
+    dpi: 360
+    pages: "1"
+    target_width: null
+    target_height: null
+    interpolation: area
+    prefix: page
+    format: png
+    overwrite: true
+    alpha: false
+    image_glob: "page_*.png"
+
+steps:
+  pdf_to_images: true
+  detection: true
+  filter_pages: true
+  apply_barline_overrides: false
+  numbering_base: true
+  mmr_overrides: true
+  apply_measure_overrides: true
+  overlay: true
+
+detection:
+  enable_sr: true
+  sr_scale: 4
+  sr_compile_mode: reduce-overhead
+  homr_profile: maintained_original
+  detector_route: dense_full_pipeline
+  probe_use_original_images: true
+  crop_recenter_on_bbox_ink: true
+  container_name: sr_eval_gpu_exp
+  hybrid_output_root: logs/full_pipeline_runs/issue43_ab_staff_mask/hybrid_output
+
+  band_source: row_stats
+  band_cluster_max_dist: 25.0
+  ink_threshold: 240
+  min_ratio: 0.60
+  min_height_ratio: 0.006
+  min_width_ratio: 0.0
+  probe_width: 4
+  max_per_band: 80
+  probe_scan_collect_stats: true
+  scan_x_domain_mode: staff_mask
+  scan_x_domain_pad_unit_ratio: 1.0
+  enable_heuristic_filters: true
+  candidate_filter_kwargs:
+    left_margin_ratio: 0.12
+    clef_left_ratio: 0.25
+    min_height_median_ratio: 0.6
+    ink_threshold: 180
+    min_ink_ratio: 0.18
+    paper_threshold: 200
+    min_paper_overlap_ratio: 0.6
+    min_staff_overlap_ratio: 0.02
+
+  cnn_model_manifest: models/barline_cnn/manifest.json
+  cnn_threshold: 0.4965248107910156
+  cnn_apply_nms: false
+  divisi_rescue: true
+  scan_gap_rescue: true
+  scan_gap_threshold_ratio: 1.5
+  scan_gap_rescue_min_ratio: 0.3
+  scan_x_peak_rescue: true
+  scan_rightmost_rescue: true
+  scan_center_on_peak: true
+
+filters:
+  blank_page: auto
+  blank_page_config:
+    pixel_threshold: 245
+    max_ink_ratio: 0.003
+    max_stddev: 12.0
+  staff_detect: auto
+  staff_detect_config:
+    min_nonzero_ratio: 0.001
+  user_exclude: []
+
+mmr:
+  model_path: tools/mmr_training/models/mmr_classifier_best.pth
+  ocr_lang: eng
+  enable_rotation_tta: false
+
+numbering:
+  force_single_system: false
+
+validation:
+  detector_accuracy:
+    reference_config: configs/dense_full_pipeline.yaml
+    allowed_detection_differences:
+      - probe_scan_collect_stats
+      - hybrid_output_root
+      - scan_x_domain_mode
+      - scan_x_domain_pad_unit_ratio
+    page_key: Va_Prokofiev_Symphony1/page_001
+    gt_path: data/evaluation2/annotations/Va_Prokofiev_Symphony1/page_001/boxes_sorted.json
+    staff_units_path: data/evaluation2/staff_units.json
+    expected_input_sha256: 48e073dd8184495b9751ad62e85a872bc93cce751ba0a8c988300f7c5ae444a6
+    expected_source_pdf_sha256: 19ae15f01835456df08194c072be428c9b94fb51c7a1e04fdea7c0a789a50b41
+    expected_gt_count: 85
+    expected_hard_fp_count: 0
+    expected_fn_count: 0
+    expected_soft_count: 0

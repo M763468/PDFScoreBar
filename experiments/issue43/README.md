@@ -91,9 +91,9 @@ The first one-page effective A/B on `Va_Prokofiev_Symphony1/page_001` showed:
 - E2E timing difference was larger than the entire probe cost and is therefore
   not attributed to this change.
 
-The full68 retained-upstream run is intended to answer the remaining Issue #43
-question: whether pages outside that smoke page actually contain removable
-margin/non-staff probe candidates without detector-accuracy regression.
+The full68 retained-upstream run completed on 2026-09-22 and answered the
+remaining Issue #43 question. The results and candidate audit are summarized
+below.
 
 
 ## Audit candidate deltas after full68
@@ -111,3 +111,34 @@ python experiments/issue43/audit_full68_candidate_changes.py \
 ```
 
 The audit writes `candidate_delta_audit.json` beside the main full68 report.
+
+## Completed full68 result
+
+Run `issue43_full68_20260922T121216Z` completed with exit code 0. Both variants
+used the same retained upstream inventories and the canonical evaluation2
+center-anchor detector evaluator (`GT=3567`). Final detector output was exact:
+
+| Result | `full_width` | `staff_mask`, pad 1.0 staff unit |
+| --- | ---: | ---: |
+| Predicted boxes | 3643 | 3643 |
+| TP / hard FP / FN | 3532 / 11 / 35 | 3532 / 11 / 35 |
+| Final boxes added / removed | 0 / 0 | 0 / 0 |
+| Raw probe candidates | 27868 | 27715 |
+| Rescue candidates | 29612 | 29510 |
+
+The staff-mask mode bounded all 703 bands with no full-width fallback and
+reduced projected X columns by 14.93%. Candidate-delta audit found all 157
+removed rescue candidates and all 55 added candidates below the production CNN
+threshold and unmatched to canonical GT. Of the removed candidates, 153/157
+were in the outer 12% page margins. Probe-local timings improved, but downstream
+total time did not; no end-to-end speedup is claimed.
+
+The saved current-production output in this run scored `3535 / 11 / 32`; the
+full-width reconstruction differed on three CNN rescoring results on one page.
+The broader absolute detector-metric difference from the earlier D27 result was
+investigated separately in #372. #372 closed after an equivalent full68
+physical-measure-count audit (`3287` vs `3287`), with the stroke-level D27
+comparison still recorded as a failure. #372 did not merge a production change,
+so it does not change this same-upstream #43 A/B result. This PR keeps
+`full_width` as the production default; it does not claim to restore D27
+stroke-level TP/FP/FN.

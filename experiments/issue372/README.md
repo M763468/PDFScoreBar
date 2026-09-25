@@ -1,98 +1,56 @@
-# Issue #372 retained detector regression triage
+# Issue #372: physical measure-count regression audit
 
-This directory contains investigation-only tooling for the detector regression
-tracked by Issue #372. Production behavior is unchanged.
+## Decision and scope
 
-## First retained-only comparison
+The fresh evaluation2 68-page production run reported 3562 TP / 11 hard FP /
+5 FN against the inherited D27 stroke-level comparison of 3565 / 1 / 2.
+This historical detector metric comparison remains a recorded failure, but
+is not the closure gate for this physical-count investigation. Its result is at
+`logs/issue372/production_full68_validation_20260923T123514Z/production_full68_validation.json`.
+The new FN are second strokes of merged double barlines, and the new FP are
+staff-spanning detections corresponding to two staff-local GT strokes. See
+`logs/issue372/detector_recovery/fresh68_residual_geometry_v3.json` and the
+original-image crops in `logs/issue372/detector_recovery/visual/`.
 
-The first gate compares:
+For this issue, the deciding downstream check is physical measure count from
+barline geometry. `evaluate_retained_physical_counts.py` sends the retained
+detector boxes and evaluation2 GT **barline locations only** through the same
+production builder and numberer, with identical source images and staff masks.
+It does not use printed system-start measure numbers or insert resets. The
+retained result, `logs/issue372/physical_count_audit/full68_v3.json`, matches
+all system counts across all 68 pages: 3287 measures on each side. The maximum
+interval-endpoint shift among 6574 endpoints is 14 px. Thus the stroke-level
+metric regression did not propagate to physical measure count on this set.
+This is not an independent annotation audit or proof for other scores.
 
-- accepted Issue #296 D27 full68 summary;
-- saved current-production output from the Issue #43 full68 run;
-- historical fixed-12px matcher used by D27;
-- current staff-unit matcher.
+No production detector/counting change is retained for #372. Reopen this
+investigation if a page has a changed physical count or boundary topology.
+MMR/OCR skip values and final *logical* numbering are separate, pre-existing
+issues (notably #277 and #332), not acceptance gates for this count audit.
+The experimental MMR and automatic movement-boundary implementation from this
+worktree was removed; retained logs remain historical evidence, not an enabled
+pipeline route.
 
-It does **not** run HOMR, SR, OMR-DLN, or CNN inference.
+## Reproduce the deciding check
 
-Expected D27 summary:
-
-```text
-logs/issue296/diagnostic_27_current_candidate_aligned/full68/clean_full68_summary.json
-```
-
-Expected Issue #43 run:
-
-```text
-logs/issue43/full68_x_domain_ab/issue43_full68_20260922T121216Z/
-```
-
-The Issue #43 run directory may be root-owned because it was created through
-Docker. Do not write into that retained tree. Instead, copy only the saved
-detector JSON artifacts into the writable Issue #372 worktree:
-
-```bash
-(
-  set -euo pipefail
-
-  MAIN=/home/masaki_muramatsu/ws_PDFScoreBar
-  I43=/home/masaki_muramatsu/ws_PDFScoreBar_issue43
-  I372=/home/masaki_muramatsu/ws_PDFScoreBar_issue372
-  RUN=issue43_full68_20260922T121216Z
-  REPORT="$I43/logs/issue43/full68_x_domain_ab/$RUN/issue43_full68_x_domain_ab_report.json"
-  DEST="$I372/logs/issue372/current_production_probe_output"
-
-  "$MAIN/.venv_pdf/bin/python" \
-    "$I372/experiments/issue372/materialize_issue43_production_outputs.py" \
-    --report "$REPORT" \
-    --source-repo-root "$I43" \
-    --destination "$DEST"
-)
-```
-
-This is retained-only file copying: it does not rerun HOMR, SR, OMR-DLN, or CNN.
-
-Then, from a checkout of `fix/issue372-detector-regression`:
+Use the saved production report above, the evaluation2 source images and GT,
+and the current repository's Python environment:
 
 ```bash
-cd /home/masaki_muramatsu/ws_PDFScoreBar
-git fetch origin
-git switch fix/issue372-detector-regression
-git pull --ff-only
-
-/home/masaki_muramatsu/ws_PDFScoreBar/.venv_pdf/bin/python \
-  experiments/issue372/compare_retained_detector_contracts.py \
-  --d27-summary logs/issue296/diagnostic_27_current_candidate_aligned/full68/clean_full68_summary.json \
-  --current-root /home/masaki_muramatsu/ws_PDFScoreBar_issue372/logs/issue372/current_production_probe_output \
+/home/masaki_muramatsu/ws_PDFScoreBar/.venv_pdf/bin/python -m \
+  experiments.issue372.evaluate_retained_physical_counts \
+  --report logs/issue372/production_full68_validation_20260923T123514Z/production_full68_validation.json \
+  --repo /home/masaki_muramatsu/ws_PDFScoreBar_issue372 \
   --image-root /home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/images \
-  --output logs/issue372/retained_detector_comparison.json
+  --gt-root /home/masaki_muramatsu/ws_PDFScoreBar/data/evaluation2/annotations \
+  --output logs/issue372/physical_count_audit/full68_recheck.json
 ```
 
-The report records:
+Choose an unused output filename for each rerun. The JSON records source and
+input hashes, per-page/per-system counts, and interval shifts. The original
+production run can be reproduced with `run_production_full68_validation.py`.
 
-- D27 vs current aggregate/page-level detector metrics under the same legacy
-  matcher;
-- current legacy-vs-staff-unit matcher deltas;
-- each newly missing GT bbox relative to D27;
-- whether each new FN is already absent from current candidates
-  (`stage=detector`) or present before CNN (`stage=cnn`);
-- exact-bbox hard-FP additions/removals;
-- hashes of all current saved candidate/final files consumed by the comparison.
-
-## Missing-artifact preflight
-
-Before running the comparison, these checks are sufficient:
-
-```bash
-test -f /home/masaki_muramatsu/ws_PDFScoreBar/logs/issue296/diagnostic_27_current_candidate_aligned/full68/clean_full68_summary.json
-test -f /home/masaki_muramatsu/ws_PDFScoreBar_issue43/logs/issue43/full68_x_domain_ab/issue43_full68_20260922T121216Z/issue43_full68_x_domain_ab_report.json
-find /home/masaki_muramatsu/ws_PDFScoreBar_issue372/logs/issue372/current_production_probe_output \
-  -name pipeline2_no_peak_filtered_cnn.json | wc -l
-```
-
-The final count should be 68. If the first D27 path is absent, do not rerun
-training; locate retained D27 summaries first:
-
-```bash
-find /home/masaki_muramatsu/ws_PDFScoreBar/logs/issue296 \
-  -type f -name clean_full68_summary.json -print
-```
+The worktree retains only this audit, the fresh-production validation runner,
+and this summary. Earlier one-off diagnostics remain recoverable from Git
+history at commit `36548e0b`; their retained reports and visual evidence were
+not deleted. No new detector inference is needed to rescore the saved output.

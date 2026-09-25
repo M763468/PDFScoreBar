@@ -69,13 +69,7 @@ def test_production_late_raw_injection_occurs_on_existing_raw_tree(tmp_path: Pat
     exclude = tmp_path / "exclude.json"
     _write_json(exclude, {"excluded_pages": []})
 
-    raw = (
-        tmp_path
-        / "raw"
-        / "Score"
-        / "page_001"
-        / "pipeline2_no_peak_candidates.json"
-    )
+    raw = tmp_path / "raw" / "Score" / "page_001" / "pipeline2_no_peak_candidates.json"
     _write_json(raw, [[10, 10, 14, 110]])
     summary_path = tmp_path / "summary.json"
 
@@ -152,11 +146,7 @@ def test_dense_inventory_records_current_x4_detection_from_physical_support_layo
     _write_json(x4, {"predictions": [{"orig_bbox": [10, 20, 14, 120]}]})
 
     support_result = (
-        hybrid_root
-        / "current_support"
-        / image.parent.name
-        / image.stem
-        / "result.json"
+        hybrid_root / "current_support" / image.parent.name / image.stem / "result.json"
     )
     _write_json(
         support_result,

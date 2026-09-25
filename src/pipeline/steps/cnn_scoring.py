@@ -416,9 +416,7 @@ def _resolve_bands_from_for_image(
         return bands_from
     resolved = bands_from_by_image.get(image_path.resolve())
     if resolved is None:
-        raise ValueError(
-            f"Missing per-image CNN band authority for {image_path.resolve()}"
-        )
+        raise ValueError(f"Missing per-image CNN band authority for {image_path.resolve()}")
     return resolved
 
 

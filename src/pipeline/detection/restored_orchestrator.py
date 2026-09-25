@@ -194,7 +194,10 @@ class DetectorOrchestrator:
             if not support_result.is_file():
                 raise FileNotFoundError(support_result)
             support_payload = json.loads(support_result.read_text(encoding="utf-8"))
-            if not isinstance(support_payload, dict) or support_payload.get("status") != "completed":
+            if (
+                not isinstance(support_payload, dict)
+                or support_payload.get("status") != "completed"
+            ):
                 raise ValueError(f"Incomplete current x4 support result: {support_result}")
             if support_payload.get("historical_detector_artifact_runtime_input") is not False:
                 raise ValueError(
@@ -202,9 +205,7 @@ class DetectorOrchestrator:
                 )
             current_x4_raw = support_payload.get("current_sr_detection")
             if not current_x4_raw:
-                raise ValueError(
-                    f"Current x4 support lacks current_sr_detection: {support_result}"
-                )
+                raise ValueError(f"Current x4 support lacks current_sr_detection: {support_result}")
             current_x4_detection = Path(str(current_x4_raw)).resolve()
             if not current_x4_detection.is_file():
                 raise FileNotFoundError(current_x4_detection)
@@ -325,9 +326,7 @@ class DetectorOrchestrator:
         if get_cnn_apply_nms(self.det_cfg):
             raise ValueError("Verified Stage E detector route requires cnn_apply_nms=false")
         bands_from_by_image = (
-            self._dense_route.cnn_band_sources
-            if self._dense_route is not None
-            else None
+            self._dense_route.cnn_band_sources if self._dense_route is not None else None
         )
         if not self.dry_run:
             if self.probe_output_dir is None:

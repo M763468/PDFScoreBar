@@ -18,7 +18,6 @@ import argparse
 import json
 import os
 import subprocess
-import sys
 import time
 from dataclasses import asdict
 from pathlib import Path
@@ -53,10 +52,7 @@ def _logical_signature(payload: Mapping[str, Any]) -> dict[str, Any]:
         systems.append(
             {
                 "measure_count": len(measures),
-                "numbers": [
-                    m.get("number", m.get("measure_number"))
-                    for m in measures
-                ],
+                "numbers": [m.get("number", m.get("measure_number")) for m in measures],
             }
         )
     return {
@@ -198,9 +194,9 @@ def _run_score(
     }
     if process.returncode != 0:
         result["status"] = "failed"
-        result["log_tail"] = log_path.read_text(
-            encoding="utf-8", errors="replace"
-        ).splitlines()[-120:]
+        result["log_tail"] = log_path.read_text(encoding="utf-8", errors="replace").splitlines()[
+            -120:
+        ]
         return result
 
     probe_root = (
@@ -318,9 +314,7 @@ def _compare_numbering(
     changed = []
     for key in sorted(set(fresh) | set(reference)):
         if key not in fresh or key not in reference:
-            changed.append(
-                {"score": key[0], "page": key[1], "reason": "missing_page"}
-            )
+            changed.append({"score": key[0], "page": key[1], "reason": "missing_page"})
             continue
         left = reference[key]
         right = fresh[key]
@@ -423,10 +417,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
     target_key = ("Shostakovich-Sym5-Va", "page_021")
     target = fresh_rows[target_key]
-    target_measures = [
-        system["measure_count"]
-        for system in target["continued_logical"]["systems"]
-    ]
+    target_measures = [system["measure_count"] for system in target["continued_logical"]["systems"]]
     page021_gate = {
         "measure_counts": target_measures,
         "start_number": target["continued_start_number"],

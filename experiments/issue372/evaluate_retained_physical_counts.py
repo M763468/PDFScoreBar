@@ -28,7 +28,9 @@ def digest(path: Path) -> str:
 
 
 def host_path(value: str, repo: Path) -> Path:
-    return repo / value.removeprefix("/workspace/") if value.startswith("/workspace/") else Path(value)
+    return (
+        repo / value.removeprefix("/workspace/") if value.startswith("/workspace/") else Path(value)
+    )
 
 
 def topology(pipeline: MeasureNumberingPipeline, boxes, mask: Path, image, page_number: int):
@@ -39,12 +41,14 @@ def topology(pipeline: MeasureNumberingPipeline, boxes, mask: Path, image, page_
     for raw_index, system in enumerate(page.systems):
         pipeline.numberer.number_system(system, 1)
         if system.measures:
-            rows.append({
-                "raw_index": raw_index,
-                "staff_y": [round(sum((s.bbox.y1, s.bbox.y2)) / 2) for s in system.staves],
-                "count": len(system.measures),
-                "intervals": [[m.bbox.x1, m.bbox.x2] for m in system.measures],
-            })
+            rows.append(
+                {
+                    "raw_index": raw_index,
+                    "staff_y": [round(sum((s.bbox.y1, s.bbox.y2)) / 2) for s in system.staves],
+                    "count": len(system.measures),
+                    "intervals": [[m.bbox.x1, m.bbox.x2] for m in system.measures],
+                }
+            )
     return rows
 
 
@@ -93,23 +97,32 @@ def main() -> None:
                         pred_system["intervals"], gt_system["intervals"]
                     ):
                         boundary_shifts.extend(
-                            abs(pred_x - gt_x)
-                            for pred_x, gt_x in zip(pred_interval, gt_interval)
+                            abs(pred_x - gt_x) for pred_x, gt_x in zip(pred_interval, gt_interval)
                         )
-            rows.append({
-                "score": score, "page": page_id,
-                "predicted": predicted, "gt_geometry": reference,
-                "predicted_total": sum(row["count"] for row in predicted),
-                "gt_geometry_total": sum(row["count"] for row in reference),
-                "same_system_counts": same_system_counts,
-                "boundary_max_shift_px": max(boundary_shifts) if boundary_shifts else None,
-                "boundary_count": len(boundary_shifts),
-                "image_sha256": digest(image_path),
-                "mask_sha256": digest(mask_path),
-                "pred_sha256": digest(pred_path),
-                "gt_sha256": digest(gt_path),
-            })
-            print(score, page_id, rows[-1]["predicted_total"], rows[-1]["gt_geometry_total"], flush=True)
+            rows.append(
+                {
+                    "score": score,
+                    "page": page_id,
+                    "predicted": predicted,
+                    "gt_geometry": reference,
+                    "predicted_total": sum(row["count"] for row in predicted),
+                    "gt_geometry_total": sum(row["count"] for row in reference),
+                    "same_system_counts": same_system_counts,
+                    "boundary_max_shift_px": max(boundary_shifts) if boundary_shifts else None,
+                    "boundary_count": len(boundary_shifts),
+                    "image_sha256": digest(image_path),
+                    "mask_sha256": digest(mask_path),
+                    "pred_sha256": digest(pred_path),
+                    "gt_sha256": digest(gt_path),
+                }
+            )
+            print(
+                score,
+                page_id,
+                rows[-1]["predicted_total"],
+                rows[-1]["gt_geometry_total"],
+                flush=True,
+            )
     result = {
         "schema_version": "issue372.physical_count_comparison.v1",
         "analysis_script_sha256": digest(Path(__file__)),
@@ -125,11 +138,17 @@ def main() -> None:
         "page_count": len(rows),
         "total_predicted": sum(row["predicted_total"] for row in rows),
         "total_gt_geometry": sum(row["gt_geometry_total"] for row in rows),
-        "different_page_count": sum(row["predicted_total"] != row["gt_geometry_total"] for row in rows),
+        "different_page_count": sum(
+            row["predicted_total"] != row["gt_geometry_total"] for row in rows
+        ),
         "different_system_count_pages": sum(not row["same_system_counts"] for row in rows),
         "boundary_max_shift_px": max(
-            (row["boundary_max_shift_px"] for row in rows
-             if row["boundary_max_shift_px"] is not None), default=None
+            (
+                row["boundary_max_shift_px"]
+                for row in rows
+                if row["boundary_max_shift_px"] is not None
+            ),
+            default=None,
         ),
         "boundary_count": sum(row["boundary_count"] for row in rows),
         "pages": rows,

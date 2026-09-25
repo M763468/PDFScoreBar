@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
@@ -24,6 +25,7 @@ from src.pipeline.detection import (
     resolve_paths_from_detection,
     run_detection_step,
 )
+from src.pipeline.engine_telemetry import TelemetryRecorder
 from src.pipeline.review.manual_correction_materializer import (
     materialize_manual_correction_review_package,
 )
@@ -79,6 +81,7 @@ class PipelineOrchestrator:
         validate_only: bool = False,
         skip_existing: bool = False,
         debug: bool = False,
+        telemetry: TelemetryRecorder | None = None,
     ):
         self.config = config
         self.run_id = run_id
@@ -87,7 +90,9 @@ class PipelineOrchestrator:
         self.validate_only = validate_only
         self.skip_existing = skip_existing
         self.debug = debug
+        self.telemetry = telemetry
         self._movement_boundaries: Dict[str, Any] | None = None
+        self._barline_override_payload: Dict[str, Any] | None = None
 
         self.intermediate_dir = run_dir / "intermediate"
         self.outputs_dir = run_dir / "outputs"
@@ -95,6 +100,91 @@ class PipelineOrchestrator:
         # Persistence: Link to module-level cache
         self._persistence = _PIPELINE_PERSISTENCE
         self._mmr_persistence = _MMR_PERSISTENCE
+
+    def _telemetry_stage(self, stage_id: str, *, detail_code: str | None = None):
+        if self.telemetry is None:
+            return nullcontext()
+        return self.telemetry.stage(stage_id, detail_code=detail_code)
+
+    def _telemetry_progress(
+        self,
+        stage_id: str,
+        *,
+        page_number: int | None = None,
+        completed_units: int | None = None,
+        total_units: int | None = None,
+        unit: str | None = None,
+        detail_code: str | None = None,
+    ) -> None:
+        if self.telemetry is None:
+            return
+        self.telemetry.progress(
+            stage_id,
+            page_number=page_number,
+            completed_units=completed_units,
+            total_units=total_units,
+            unit=unit,
+            detail_code=detail_code,
+        )
+
+    def _validate_input_prerequisites(
+        self,
+    ) -> tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
+        """Validate required external inputs before input_validation completes."""
+        self._validate_review_package_prerequisites()
+
+        pdf_opts = get_nested(self.config, "inputs", "pdf_to_images", default={}) or {}
+        render_pdf = bool(get_nested(self.config, "steps", "pdf_to_images", default=False))
+        if render_pdf:
+            pdf_path = get_nested(self.config, "inputs", "pdf_path")
+            if not pdf_path:
+                raise ValueError("inputs.pdf_path is required when pdf_to_images is enabled.")
+            skip_render = (
+                self.skip_existing
+                and (self.run_dir / "inputs" / "images").exists()
+                and list((self.run_dir / "inputs" / "images").glob("*.png"))
+            )
+            if not skip_render and not self.dry_run and not Path(pdf_path).is_file():
+                raise FileNotFoundError(f"PDF input not found: {pdf_path}")
+        else:
+            self._validate_external_image_inputs(pdf_opts)
+
+        user_overrides_path = get_nested(self.config, "inputs", "measure_overrides")
+        user_overrides_payload = (
+            load_json(Path(user_overrides_path)) if user_overrides_path else None
+        )
+
+        barline_overrides_path = get_nested(self.config, "inputs", "barline_overrides")
+        self._barline_override_payload = (
+            load_json(Path(barline_overrides_path)) if barline_overrides_path else None
+        )
+
+        movement_boundaries = load_movement_boundary_payload(
+            get_nested(self.config, "inputs", "movement_boundaries")
+        )
+        return user_overrides_payload, movement_boundaries
+
+    def _validate_external_image_inputs(self, pdf_opts: Dict[str, Any]) -> None:
+        """Mirror collect_images discovery without staging/copying external files."""
+        output_dir = self.run_dir / "inputs" / "images"
+        image_glob = pdf_opts.get("image_glob", "page_*.png")
+        external_dir = pdf_opts.get("output_dir")
+
+        if not output_dir.exists():
+            if external_dir:
+                output_dir = Path(external_dir)
+            else:
+                raise ValueError(
+                    "PDF images not found. Enable pdf_to_images or specify output_dir."
+                )
+
+        images = sorted(Path(output_dir).glob(image_glob))
+        if not images and external_dir:
+            external_path = Path(external_dir)
+            images = sorted(external_path.glob(image_glob))
+            output_dir = external_path
+        if not images:
+            raise FileNotFoundError(f"No images found in {output_dir} matching {image_glob}")
 
     def _run_pdf_to_images(self) -> tuple[str, list[int]] | None:
         """Step 1: Convert PDF to images in-process and retain exact source identity."""
@@ -122,6 +212,16 @@ class PipelineOrchestrator:
         from src.pdf_to_images import render_pdf_to_memory
         from src.pipeline.utils.images import get_image_cache
 
+        def report_render_progress(completed: int, _source_page_index: int) -> None:
+            self._telemetry_progress(
+                "pdf_render",
+                page_number=completed,
+                completed_units=completed,
+                total_units=len(pages),
+                unit="page",
+                detail_code="pdf_render.page_prepared",
+            )
+
         rendered = render_pdf_to_memory(
             pdf_path,
             dpi=float(pdf_opts.get("dpi", 300.0)),
@@ -131,6 +231,7 @@ class PipelineOrchestrator:
             target_height=pdf_opts.get("target_height"),
             interpolation=str(pdf_opts.get("interpolation", "area")),
             source_bytes=source_bytes,
+            on_page_rendered=report_render_progress if self.telemetry is not None else None,
         )
 
         cache = get_image_cache()
@@ -174,7 +275,8 @@ class PipelineOrchestrator:
 
     def run(self, page_limit: Optional[int] = None) -> Path:
         """Executes the full pipeline."""
-        self._validate_review_package_prerequisites()
+        with self._telemetry_stage("input_validation"):
+            user_overrides_payload, movement_boundaries = self._validate_input_prerequisites()
         commands: List[List[str]] = []
         pdf_rendered_this_run = False
         rendered_source_sha256: str | None = None
@@ -188,7 +290,8 @@ class PipelineOrchestrator:
             ):
                 logger.info("Skipping pdf_to_images: output directory exists and is not empty.")
             else:
-                render_provenance = self._run_pdf_to_images()
+                with self._telemetry_stage("pdf_render"):
+                    render_provenance = self._run_pdf_to_images()
                 commands.append(["inprocess:pdf_to_images"])
                 if render_provenance is not None:
                     rendered_source_sha256, rendered_source_pages = render_provenance
@@ -230,15 +333,19 @@ class PipelineOrchestrator:
                     self.config["detection"] = {}
                 self.config["detection"]["probe_skip_existing"] = True
 
-            det_result = run_detection_step(
-                self.config,
-                images,
-                page_ids,
-                self.run_id,
-                self.run_dir,
-                dry_run=self.dry_run,
-                in_memory_images=mem_images if not persist_to_disk else None,
-            )
+            with self._telemetry_stage(
+                "score_detection",
+                detail_code="detection.source_generation_and_scoring",
+            ):
+                det_result = run_detection_step(
+                    self.config,
+                    images,
+                    page_ids,
+                    self.run_id,
+                    self.run_dir,
+                    dry_run=self.dry_run,
+                    in_memory_images=mem_images if not persist_to_disk else None,
+                )
             commands.extend(det_result["commands"])
             probe_output_dir = det_result["probe_output_dir"]
             hybrid_output_dir = det_result["hybrid_output_dir"]
@@ -263,13 +370,6 @@ class PipelineOrchestrator:
             self.config, page_ids, images, resolved, excluded_indices
         )
 
-        user_overrides_path = get_nested(self.config, "inputs", "measure_overrides")
-        user_overrides_payload = None
-        if user_overrides_path:
-            user_overrides_payload = load_json(Path(user_overrides_path))
-        movement_boundaries = load_movement_boundary_payload(
-            get_nested(self.config, "inputs", "movement_boundaries")
-        )
         for boundary in movement_boundaries["boundaries"]:
             if boundary["page"] >= len(page_ids):
                 raise ValueError(
@@ -282,9 +382,10 @@ class PipelineOrchestrator:
         )
 
         # Phase A: Base Numbering & Barline Correction
-        res_a = self.run_base_numbering_and_barline_correction(
-            page_ids, images, resolved, excluded_page_ids
-        )
+        with self._telemetry_stage("measure_construction"):
+            res_a = self.run_base_numbering_and_barline_correction(
+                page_ids, images, resolved, excluded_page_ids
+            )
         page_ctx = res_a["page_ctx"]
         numbering_base_paths = res_a["numbering_base_paths"]
         barline_override_stats = res_a["barline_override_stats"]
@@ -303,70 +404,73 @@ class PipelineOrchestrator:
             from src.pipeline.mmr_geometry_handoff import build_mmr_page_context
 
             mmr_page_ctx = build_mmr_page_context(self, page_ids, excluded_page_ids, page_ctx)
-        self.run_mmr_batch_detection(page_ids, excluded_page_ids, mmr_page_ctx)
+        with self._telemetry_stage("measure_number_recognition"):
+            self.run_mmr_batch_detection(page_ids, excluded_page_ids, mmr_page_ctx)
 
         # Phase C: Final Numbering & Overlays
         self._movement_boundaries = movement_boundaries
-        numbering_final_paths = self.run_final_numbering_and_overlays(
-            page_ids, excluded_page_ids, page_ctx, user_overrides_payload
-        )
+        with self._telemetry_stage("numbering"):
+            numbering_final_paths = self.run_final_numbering_and_overlays(
+                page_ids, excluded_page_ids, page_ctx, user_overrides_payload
+            )
 
-        # Post-processing: Combine results
-        if len(numbering_base_paths) > 1 and not self.dry_run and not self.validate_only:
-            combined_base = {
-                "pages": [
-                    page for path in numbering_base_paths for page in load_json(path)["pages"]
+        with self._telemetry_stage("artifact_materialization"):
+            # Post-processing: Combine results
+            if len(numbering_base_paths) > 1 and not self.dry_run and not self.validate_only:
+                combined_base = {
+                    "pages": [
+                        page for path in numbering_base_paths for page in load_json(path)["pages"]
+                    ]
+                }
+                write_json(self.intermediate_dir / "numbering_base.json", combined_base)
+
+            if len(numbering_final_paths) > 1 and not self.dry_run and not self.validate_only:
+                final_pages = [
+                    page for path in numbering_final_paths for page in load_json(path)["pages"]
                 ]
-            }
-            write_json(self.intermediate_dir / "numbering_base.json", combined_base)
+                page_metadata = [
+                    load_json(path).get("numbering_metadata") for path in numbering_final_paths
+                ]
+                combined_final = {
+                    "pages": final_pages,
+                    "numbering_metadata": {
+                        "schema_version": FINAL_NUMBERING_SCHEMA_VERSION,
+                        "start_number": 1,
+                        "next_number": (
+                            page_metadata[-1].get("next_number")
+                            if isinstance(page_metadata[-1], dict)
+                            else None
+                        ),
+                        "movement_boundaries": movement_boundaries["boundaries"],
+                        "pages": page_metadata,
+                    },
+                }
+                write_json(self.outputs_dir / "numbering_final.json", combined_final)
 
-        if len(numbering_final_paths) > 1 and not self.dry_run and not self.validate_only:
-            final_pages = [
-                page for path in numbering_final_paths for page in load_json(path)["pages"]
-            ]
-            page_metadata = [
-                load_json(path).get("numbering_metadata") for path in numbering_final_paths
-            ]
-            combined_final = {
-                "pages": final_pages,
-                "numbering_metadata": {
-                    "schema_version": FINAL_NUMBERING_SCHEMA_VERSION,
-                    "start_number": 1,
-                    "next_number": (
-                        page_metadata[-1].get("next_number")
-                        if isinstance(page_metadata[-1], dict)
-                        else None
-                    ),
-                    "movement_boundaries": movement_boundaries["boundaries"],
-                    "pages": page_metadata,
-                },
-            }
-            write_json(self.outputs_dir / "numbering_final.json", combined_final)
+            if not self.dry_run:
+                write_json(self.run_dir / "filters.json", {"pages": page_statuses})
 
-        if not self.dry_run:
-            write_json(self.run_dir / "filters.json", {"pages": page_statuses})
-
-            manifest_resolved = self._resolved_for_manifest(
-                page_ids=page_ids,
-                resolved=resolved,
-                page_ctx=page_ctx,
-            )
-            manifest = build_manifest(
-                self.config,
-                run_id=self.run_id,
-                run_dir=self.run_dir,
-                images=images,
-                page_ids=page_ids,
-                page_runs=page_runs,
-                resolved=manifest_resolved,
-                commands=commands,
-                page_statuses=page_statuses,
-                barline_override_stats=barline_override_stats,
-                source_page_references=source_page_references,
-            )
-            write_json(self.run_dir / "manifest.json", manifest)
-            logger.info(f"Wrote manifest to {self.run_dir / 'manifest.json'}")
-            self._materialize_review_package_if_requested(page_ids, excluded_page_ids)
+                manifest_resolved = self._resolved_for_manifest(
+                    page_ids=page_ids,
+                    resolved=resolved,
+                    page_ctx=page_ctx,
+                )
+                manifest = build_manifest(
+                    self.config,
+                    run_id=self.run_id,
+                    run_dir=self.run_dir,
+                    images=images,
+                    page_ids=page_ids,
+                    page_runs=page_runs,
+                    resolved=manifest_resolved,
+                    commands=commands,
+                    page_statuses=page_statuses,
+                    barline_override_stats=barline_override_stats,
+                    source_page_references=source_page_references,
+                )
+                write_json(self.run_dir / "manifest.json", manifest)
+                logger.info(f"Wrote manifest to {self.run_dir / 'manifest.json'}")
+                self._materialize_review_package_if_requested(page_ids, excluded_page_ids)
 
         return self.run_dir
 
@@ -488,10 +592,7 @@ class PipelineOrchestrator:
         page_ctx: Dict[str, Dict[str, Any]] = {}
 
         apply_barlines = get_nested(self.config, "steps", "apply_barline_overrides", default=False)
-        barline_overrides_path = get_nested(self.config, "inputs", "barline_overrides")
-        barline_override_payload = None
-        if barline_overrides_path:
-            barline_override_payload = load_json(Path(barline_overrides_path))
+        barline_override_payload = self._barline_override_payload
 
         barline_override_cfg = (
             get_nested(self.config, "inputs", "barline_overrides_config", default={}) or {}
@@ -537,6 +638,14 @@ class PipelineOrchestrator:
                     "remove_requests": 0,
                     "unmatched_remove": 0,
                 }
+                self._telemetry_progress(
+                    "measure_construction",
+                    page_number=index,
+                    completed_units=index,
+                    total_units=len(page_ids),
+                    unit="page",
+                    detail_code="page_skipped.user_excluded",
+                )
                 continue
 
             # 1. Barline Correction
@@ -618,6 +727,15 @@ class PipelineOrchestrator:
                         numbering_pipeline.numberer.number_score(temp_score, start_number=1)
                         write_json(numbering_base, score_to_dict(temp_score))
 
+            self._telemetry_progress(
+                "measure_construction",
+                page_number=index,
+                completed_units=index,
+                total_units=len(page_ids),
+                unit="page",
+                detail_code="measure_construction.page_completed",
+            )
+
         return {
             "page_ctx": page_ctx,
             "numbering_base_paths": numbering_base_paths,
@@ -646,6 +764,7 @@ class PipelineOrchestrator:
         mmr_input_pages = []
         mmr_input_images = []
         mmr_output_paths = []
+        mmr_input_page_numbers = []
         mmr_support_data = []
 
         for page_id in page_ids:
@@ -663,10 +782,16 @@ class PipelineOrchestrator:
                 mmr_input_pages.append(load_json(numbering_base))
                 mmr_input_images.append(ctx["image_path"])
                 mmr_output_paths.append(overrides_mmr)
+                mmr_input_page_numbers.append(ctx["index"])
                 support_path = ctx.get("mmr_support")
                 mmr_support_data.append(load_json(support_path) if support_path else None)
             else:
                 logger.warning(f"MMR skipped for {page_id} because numbering_base.json is missing.")
+                self._telemetry_progress(
+                    "measure_number_recognition",
+                    page_number=ctx["index"],
+                    detail_code="mmr.skipped_missing_numbering_base",
+                )
 
         if mmr_input_pages:
             logger.info(f"Running MMR batch for {len(mmr_input_pages)} pages...")
@@ -706,6 +831,15 @@ class PipelineOrchestrator:
             )
             if device.type == "cuda":
                 torch.cuda.empty_cache()
+            for completed, page_number in enumerate(mmr_input_page_numbers, start=1):
+                self._telemetry_progress(
+                    "measure_number_recognition",
+                    page_number=page_number,
+                    completed_units=completed,
+                    total_units=len(mmr_input_page_numbers),
+                    unit="page",
+                    detail_code="mmr.page_completed",
+                )
         else:
             logger.info("No pages to process for MMR batch.")
 
@@ -769,6 +903,14 @@ class PipelineOrchestrator:
                             boundaries=page_boundaries,
                         )
                         write_json(empty_final, empty_payload)
+                self._telemetry_progress(
+                    "numbering",
+                    page_number=index,
+                    completed_units=index,
+                    total_units=len(page_ids),
+                    unit="page",
+                    detail_code="page_skipped.user_excluded",
+                )
                 continue
 
             mmr_overrides_payload = None
@@ -862,5 +1004,14 @@ class PipelineOrchestrator:
                             from tools.add_measure_numbers import render_overlay
 
                             render_overlay(temp_score, image_path, overlay_path)
+
+            self._telemetry_progress(
+                "numbering",
+                page_number=index,
+                completed_units=index,
+                total_units=len(page_ids),
+                unit="page",
+                detail_code="numbering.page_completed",
+            )
 
         return numbering_final_paths

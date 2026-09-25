@@ -1,4 +1,7 @@
 import logging
+import subprocess
+
+import pytest
 
 from src.pipeline.core.subprocess_utils import run_with_logging
 
@@ -16,3 +19,14 @@ def test_run_with_logging_captures_output(caplog):
     log_messages = [record.message for record in caplog.records]
     assert "|> stdout line 1" in log_messages
     assert "|> stderr line 2" in log_messages
+
+
+def test_run_with_logging_nonzero_exit_is_a_failure_boundary(caplog):
+    caplog.set_level(logging.DEBUG)
+    cmd = ["bash", "-c", "echo 'child failed' >&2; exit 7"]
+
+    with pytest.raises(subprocess.CalledProcessError) as exc_info:
+        run_with_logging(cmd)
+
+    assert exc_info.value.returncode == 7
+    assert "|> child failed" in [record.message for record in caplog.records]

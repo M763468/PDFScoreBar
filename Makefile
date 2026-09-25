@@ -3,7 +3,7 @@
 PYTHON ?= python3
 FULL_EVAL_CONFIG ?= configs/evaluation2_e2e_verification_full.yaml
 FULL_EVAL_TIMEOUT ?= 8h
-FAST_TESTS ?= tests/test_numbering_overrides.py tests/test_pipeline_detection.py tests/test_probe_bands.py tests/test_subprocess_utils.py tests/test_issue355_trusted_accuracy_smoke.py
+FAST_TESTS ?= tests/test_numbering_overrides.py tests/test_pipeline_detection.py tests/test_probe_bands.py tests/test_subprocess_utils.py tests/test_engine_contract.py tests/test_engine_telemetry.py tests/test_pipeline_telemetry.py tests/test_pdf_to_images_progress.py tests/test_job_lifecycle.py tests/test_engine_input_safety.py tests/test_issue355_trusted_accuracy_smoke.py
 DOCKER_EXTRA_ARGS ?=
 DOCKER_IMAGE ?= pdfscore_pipeline_gpu
 

@@ -6,6 +6,7 @@ Issue #280 established the repository documentation audit against the accepted #
 
 - **canonical/current:** intended to describe how the repository should be used now.
 - **current/reference:** still accurate within a narrower domain, but not the global architecture source.
+- **future/roadmap:** durable intended architecture or responsibility boundary that is explicitly not a current-runtime source of truth.
 - **historical:** useful evidence or rationale from a past Issue/experiment; keep only while it adds durable value not already recoverable from a self-contained Issue/PR/commit/source/test/tooling record.
 - **retire:** duplicates or contradicts current guidance, consists mainly of completed task-control state, or has had its unique durable content migrated elsewhere; Git history retains the old body.
 - **separate cleanup:** implementation/config cleanup that belongs to another existing track rather than this documentation audit.
@@ -19,6 +20,11 @@ Issue #280 established the repository documentation audit against the accepted #
 | `docs/README.md` | documentation index | canonical/current | keep current-vs-historical navigation accurate |
 | `docs/HISTORY_INDEX.md` | historical lineage navigation | current/reference | point to Issues/PRs/commits and retained contracts without duplicating them |
 | `docs/PIPELINE_ARCHITECTURE.md` | production architecture | canonical/current | global architecture source, including detector-input provenance |
+| `docs/FUTURE_SERVICE_ARCHITECTURE.md` | future engine/service responsibility boundary | future/roadmap | keep explicitly separate from current runtime; update when long-term engine/caller/correction/service-boundary intent changes materially |
+| `docs/ENGINE_JOB_CONTRACT.md` | versioned one-job engine caller contract | current/reference | normative v1 serialized boundary and compatibility/correction semantics; production executor adapter remains follow-up work |
+| `docs/ENGINE_JOB_LIFECYCLE.md` | #337 one-job lifecycle contract | current/reference | preserve v1 status/error values while defining deadline/cancellation, retryability, publication, cleanup, and correction-attempt lifecycle semantics |
+| `docs/ENGINE_INPUT_SAFETY.md` | #338 untrusted-PDF safety contract | current/reference | define bounded preflight, path/network/resource rules, safe errors, and worker/container assumptions without changing the trusted config-first production path |
+| `docs/ENGINE_TELEMETRY.md` | #339 structured progress/resource telemetry contract | current/reference | preserve the v1 stage/status vocabulary while defining additive elapsed/detail fields, page progress, compact summaries, and opt-in process/GPU sampling |
 | `docs/TWO_HOMR_MILESTONE.md` | accepted #274 architecture/accuracy/performance comparison | frozen milestone | keep as the #274 / PR #279 reproduction record; do not silently rewrite for later production changes |
 | `docs/ENVIRONMENTS.md` | execution/runtime guidance | current/reference | keep |
 | `docs/BRANCH_POLICY.md` | branch policy | current/reference | keep |
@@ -103,6 +109,6 @@ Graphify refresh requires a local environment with `graphifyy` installed. That o
 
 ## Future audit rule
 
-A durable document should answer one of three questions clearly: **how the system works now**, **how to operate it now**, or **what durable evidence from a past investigation still needs a local repository contract**. If it mixes those roles, split, distill, or label it.
+A durable document should answer one of four questions clearly: **how the system works now**, **how to operate it now**, **what explicitly future architecture/responsibility boundary is intended**, or **what durable evidence from a past investigation still needs a local repository contract**. If it mixes those roles, split, distill, or label it. Future/roadmap documents must identify themselves as non-current and point back to the current source of truth.
 
 For historical investigations, prefer a compact navigation/index layer plus original Issue/PR/commit evidence over a second full narrative copy. This keeps historical knowledge recoverable without making every past investigation active context.

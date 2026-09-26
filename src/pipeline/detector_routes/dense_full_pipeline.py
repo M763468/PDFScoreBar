@@ -93,6 +93,36 @@ def _add_params(cmd: list[str], params: dict[str, str]) -> None:
         cmd.extend([f"--{key.replace('_', '-')}", value])
 
 
+def _stringify_params(params: dict[str, Any] | None) -> dict[str, str]:
+    if not params:
+        return {}
+    return {key: str(value) for key, value in params.items() if value is not None}
+
+
+def _load_staff_mask_paths(inventory: Path, exclude: Path) -> dict[str, Path]:
+    inventory_obj = json.loads(inventory.read_text())
+    exclude_obj = json.loads(exclude.read_text()) if exclude.exists() else {}
+    excluded = {
+        (item.get("score"), item.get("page"))
+        for item in exclude_obj.get("excluded_pages", [])
+        if isinstance(item, dict)
+    }
+
+    result: dict[str, Path] = {}
+    for record in inventory_obj.get("records", []):
+        if not isinstance(record, dict):
+            continue
+        key = (record.get("score"), record.get("page"))
+        if key in excluded:
+            continue
+        image = record.get("image")
+        staff_mask = record.get("staff_mask")
+        if not image or not staff_mask:
+            continue
+        result[Path(str(image)).stem] = Path(str(staff_mask))
+    return result
+
+
 def _compact_log_path(log_path: Path) -> Path:
     if log_path.suffix:
         return log_path.with_name(f"{log_path.stem}.compact{log_path.suffix}")
@@ -246,6 +276,7 @@ def regenerate_dense_candidates(
     expected_pages: int = DENSE_ROUTE_EXPECTED_PAGES,
     verbose_logs: bool = False,
     phase_summaries: list[dict[str, Any]] | None = None,
+    probe_x_domain_kwargs: dict[str, Any] | None = None,
 ) -> Path:
     """Regenerate the dense candidate/filter root inside this route run."""
     dense_root = route_root / "dense_candidate_reconstruction"
@@ -276,6 +307,7 @@ def regenerate_dense_candidates(
         str(generation_summary),
     ]
     _add_params(gen_cmd, GENERATION_PARAMS)
+    _add_params(gen_cmd, _stringify_params(probe_x_domain_kwargs))
     command_summaries.append(
         _run_command(
             gen_cmd,
@@ -339,6 +371,9 @@ def regenerate_probe_rescue_candidates(
     filtered_root: Path,
     route_root: Path,
     phase_summaries: list[dict[str, Any]] | None = None,
+    probe_x_domain_kwargs: dict[str, Any] | None = None,
+    staff_mask_paths: dict[str, Path] | None = None,
+    collect_probe_stats: bool = False,
 ) -> Path:
     """Regenerate probe-rescue candidates for the dense detector route."""
     phase_started = time.perf_counter()
@@ -355,7 +390,13 @@ def regenerate_probe_rescue_candidates(
         "divisi_rescue": True,
         "scan_center_on_peak": True,
         "max_per_band": 100,
+        "band_source": "row_stats",
     }
+    if probe_x_domain_kwargs:
+        detect_probe_kwargs.update(probe_x_domain_kwargs)
+    stats_summary = (
+        probe_rescue_root / "probe_scan_stats_summary.json" if collect_probe_stats else None
+    )
     processed = run_probe_scan_batch(
         images=image_paths,
         output_root=probe_rescue_root,
@@ -368,6 +409,8 @@ def regenerate_probe_rescue_candidates(
         min_width_ratio=0.0001,
         detect_probe_kwargs=detect_probe_kwargs,
         enable_heuristic_filters=False,
+        staff_mask_paths=staff_mask_paths,
+        stats_summary_out=stats_summary,
     )
     expected_pages = len(image_paths)
     if processed != expected_pages:
@@ -382,6 +425,12 @@ def regenerate_probe_rescue_candidates(
                 output_root=str(probe_rescue_root),
                 processed_pages=processed,
                 expected_pages=expected_pages,
+                probe_stats_summary=str(stats_summary) if stats_summary is not None else None,
+                probe_stats=(
+                    json.loads(stats_summary.read_text())
+                    if stats_summary is not None and stats_summary.exists()
+                    else None
+                ),
             )
         )
     return probe_rescue_root
@@ -394,6 +443,8 @@ def reconstruct_dense_full_pipeline_route(
     route_root: Path,
     expected_pages: int = DENSE_ROUTE_EXPECTED_PAGES,
     verbose_logs: bool = False,
+    probe_x_domain_kwargs: dict[str, Any] | None = None,
+    collect_probe_stats: bool = False,
 ) -> DenseRouteArtifacts:
     """Rebuild all dense full-pipeline detector inputs from current-run sources."""
     started_at = time.perf_counter()
@@ -422,12 +473,22 @@ def reconstruct_dense_full_pipeline_route(
         expected_pages=len(image_paths),
         verbose_logs=verbose_logs,
         phase_summaries=phases,
+        probe_x_domain_kwargs=probe_x_domain_kwargs,
+    )
+    x_domain_mode = str((probe_x_domain_kwargs or {}).get("scan_x_domain_mode", "full_width"))
+    staff_mask_paths = (
+        _load_staff_mask_paths(inventory, exclude)
+        if x_domain_mode in {"staff_mask", "staff_mask_or_existing_boxes"}
+        else None
     )
     probe_rescue_root = regenerate_probe_rescue_candidates(
         image_paths=image_paths,
         filtered_root=filtered_root,
         route_root=route_root,
         phase_summaries=phases,
+        probe_x_domain_kwargs=probe_x_domain_kwargs,
+        staff_mask_paths=staff_mask_paths,
+        collect_probe_stats=collect_probe_stats,
     )
 
     execution_summary = {
@@ -436,6 +497,8 @@ def reconstruct_dense_full_pipeline_route(
         "expected_pages": expected_pages,
         "image_count": len(image_paths),
         "total_duration_sec": time.perf_counter() - started_at,
+        "probe_x_domain_kwargs": probe_x_domain_kwargs or {},
+        "collect_probe_stats": collect_probe_stats,
         "artifacts": {
             "filtered_root": str(filtered_root),
             "probe_rescue_root": str(probe_rescue_root),

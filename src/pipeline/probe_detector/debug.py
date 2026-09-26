@@ -107,14 +107,19 @@ def write_debug_output(
     width: int,
     params: Dict[str, Any],
     divisi_map: Dict[int, Dict[str, bool]],
+    x_domains: Sequence[Tuple[int, int]] | None,
     extend_top_max_ratio: float,
     extend_bottom_max_ratio: float,
 ) -> None:
     h, w = base_img.shape[:2]
     overlay = base_img.copy()
     mask_overlay = overlay.copy()
-    for y1, y2 in bands:
-        cv2.rectangle(mask_overlay, (0, y1), (w - 1, y2), (255, 255, 0), -1)
+    for band_idx, (y1, y2) in enumerate(bands):
+        if x_domains is not None and band_idx < len(x_domains):
+            x1, x2 = x_domains[band_idx]
+        else:
+            x1, x2 = 0, w - 1
+        cv2.rectangle(mask_overlay, (int(x1), y1), (int(x2), y2), (255, 255, 0), -1)
     overlay = cv2.addWeighted(mask_overlay, 0.2, overlay, 0.8, 0.0)
     for rec in debug_records:
         col = rec.get("col")
@@ -130,6 +135,7 @@ def write_debug_output(
             {
                 "params": params,
                 "bands": bands,
+                "x_domains": x_domains,
                 "divisi_map": divisi_map,
                 "records": debug_records,
             },

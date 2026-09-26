@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.pipeline.probe_detector import detect_probe_scan
+from src.pipeline.steps.probe_scan import _resolve_scale_aware_probe_kwargs
 
 
 def _load_boxes(path: Path) -> list[tuple[int, int, int, int]]:
@@ -63,6 +65,9 @@ def _run_one(
     band_source: str,
     band_cluster_max_dist: float | None,
     scan_x_peak_rescue: bool,
+    scan_x_domain_mode: str,
+    scan_x_domain_pad: int | None,
+    scan_x_domain_pad_unit_ratio: float | None,
 ) -> dict[str, Any]:
     score = record["score"]
     page = record["page"]
@@ -74,10 +79,11 @@ def _run_one(
     if image is None:
         raise FileNotFoundError(f"Failed to load image: {image_path}")
 
-    if band_source == "row_stats":
-        # row_stats only uses existing_boxes to build scan bands.
-        staff_mask = np.zeros(image.shape[:2], dtype=np.uint8)
-    else:
+    needs_staff_mask = band_source != "row_stats" or scan_x_domain_mode in {
+        "staff_mask",
+        "staff_mask_or_existing_boxes",
+    }
+    if needs_staff_mask:
         staff_mask = cv2.imread(str(staff_mask_path), cv2.IMREAD_GRAYSCALE)
         if staff_mask is None:
             raise FileNotFoundError(f"Failed to load staff mask: {staff_mask_path}")
@@ -85,6 +91,9 @@ def _run_one(
             staff_mask = cv2.resize(
                 staff_mask, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_NEAREST
             )
+    else:
+        # row_stats-only runs do not need the staff-mask artifact.
+        staff_mask = np.zeros(image.shape[:2], dtype=np.uint8)
 
     existing_boxes = _load_boxes(existing_path)
 
@@ -92,6 +101,15 @@ def _run_one(
     # Issue #36 v12 reproduction can pass --band-cluster-max-dist 25.0 to pin the
     # historical edf7bf6 row_stats clustering behavior after the current detector
     # default changed to a median-height-derived value.
+    x_domain_kwargs: dict[str, Any] = {"scan_x_domain_mode": scan_x_domain_mode}
+    if scan_x_domain_pad is not None:
+        x_domain_kwargs["scan_x_domain_pad"] = scan_x_domain_pad
+    if scan_x_domain_pad_unit_ratio is not None:
+        x_domain_kwargs["scan_x_domain_pad_unit_ratio"] = scan_x_domain_pad_unit_ratio
+    x_domain_kwargs = _resolve_scale_aware_probe_kwargs(x_domain_kwargs, existing_boxes)
+
+    probe_stats: dict[str, object] = {}
+    probe_started_at = time.perf_counter()
     candidates = detect_probe_scan(
         base_img=image,
         staff_mask=staff_mask,
@@ -113,7 +131,10 @@ def _run_one(
         max_per_band=max_per_band,
         scan_center_on_peak=True,
         vertical_closing=0,
+        scan_stats=probe_stats,
+        **x_domain_kwargs,
     )
+    probe_elapsed = time.perf_counter() - probe_started_at
 
     img_h, img_w = image.shape[:2]
     min_h_px = int(img_h * min_height_ratio)
@@ -150,9 +171,13 @@ def _run_one(
         "existing_boxes_path": str(existing_path),
         "band_source": band_source,
         "band_cluster_max_dist": band_cluster_max_dist,
+        "scan_x_domain_mode": scan_x_domain_mode,
+        "scan_x_domain_pad": x_domain_kwargs.get("scan_x_domain_pad", 0),
         "existing_count": len(existing_boxes),
         "generated_count": len(candidates),
         "final_count": len(final_list),
+        "probe_elapsed_seconds": probe_elapsed,
+        "probe_stats": probe_stats,
         "output": str(out_path),
     }
 
@@ -192,6 +217,13 @@ def parse_args() -> argparse.Namespace:
         default=True,
         help="Enable/disable x-peak rescue in probe detection.",
     )
+    parser.add_argument(
+        "--scan-x-domain-mode",
+        choices=["full_width", "staff_mask", "existing_boxes", "staff_mask_or_existing_boxes"],
+        default="full_width",
+    )
+    parser.add_argument("--scan-x-domain-pad", type=int, default=None)
+    parser.add_argument("--scan-x-domain-pad-unit-ratio", type=float, default=None)
     return parser.parse_args()
 
 
@@ -231,6 +263,9 @@ def main() -> None:
                 band_source=args.band_source,
                 band_cluster_max_dist=args.band_cluster_max_dist,
                 scan_x_peak_rescue=args.scan_x_peak_rescue,
+                scan_x_domain_mode=args.scan_x_domain_mode,
+                scan_x_domain_pad=args.scan_x_domain_pad,
+                scan_x_domain_pad_unit_ratio=args.scan_x_domain_pad_unit_ratio,
             )
             results.append(result)
         except Exception as exc:  # noqa: BLE001
@@ -254,10 +289,26 @@ def main() -> None:
             "band_source": args.band_source,
             "band_cluster_max_dist": args.band_cluster_max_dist,
             "scan_x_peak_rescue": args.scan_x_peak_rescue,
+            "scan_x_domain_mode": args.scan_x_domain_mode,
+            "scan_x_domain_pad": args.scan_x_domain_pad,
+            "scan_x_domain_pad_unit_ratio": args.scan_x_domain_pad_unit_ratio,
         },
         "processed": len(results),
         "skipped": len(skipped),
         "errors": len(errors),
+        "probe_elapsed_seconds_total": sum(
+            float(result.get("probe_elapsed_seconds", 0.0)) for result in results
+        ),
+        "full_width_columns": sum(
+            int(result.get("probe_stats", {}).get("full_width_columns", 0)) for result in results
+        ),
+        "eligible_domain_columns": sum(
+            int(result.get("probe_stats", {}).get("eligible_domain_columns", 0))
+            for result in results
+        ),
+        "projected_columns": sum(
+            int(result.get("probe_stats", {}).get("projected_columns", 0)) for result in results
+        ),
         "results": results,
         "skipped_pages": skipped,
         "error_details": errors,

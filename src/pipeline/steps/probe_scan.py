@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -62,12 +63,14 @@ def _resolve_scale_aware_probe_kwargs(
     Supported pseudo keys (removed before detect_probe_scan call):
     - min_peak_distance_unit_ratio
     - x_merge_tol_unit_ratio
+    - scan_x_domain_pad_unit_ratio
     """
     resolved = dict(kwargs)
     unit_size = _estimate_unit_size_from_existing_boxes(existing_boxes)
     if unit_size is None:
         resolved.pop("min_peak_distance_unit_ratio", None)
         resolved.pop("x_merge_tol_unit_ratio", None)
+        resolved.pop("scan_x_domain_pad_unit_ratio", None)
         return resolved
 
     if "min_peak_distance_unit_ratio" in resolved and "min_peak_distance" not in resolved:
@@ -81,6 +84,12 @@ def _resolve_scale_aware_probe_kwargs(
         resolved["x_merge_tol"] = max(1, int(round(unit_size * ratio)))
     else:
         resolved.pop("x_merge_tol_unit_ratio", None)
+
+    if "scan_x_domain_pad_unit_ratio" in resolved and "scan_x_domain_pad" not in resolved:
+        ratio = float(resolved.pop("scan_x_domain_pad_unit_ratio"))
+        resolved["scan_x_domain_pad"] = max(0, int(round(unit_size * ratio)))
+    else:
+        resolved.pop("scan_x_domain_pad_unit_ratio", None)
 
     return resolved
 
@@ -330,6 +339,8 @@ def run_probe_scan_batch(
     candidate_filter_kwargs: Optional[Dict[str, Any]] = None,
     disable_seed_splitting: bool = False,
     in_memory_images: Dict[str, Any] | None = None,
+    staff_mask_paths: Dict[str, Path] | None = None,
+    stats_summary_out: Path | None = None,
 ) -> int:
     """Generate probe candidates for all pages in-process.
 
@@ -344,6 +355,8 @@ def run_probe_scan_batch(
 
     ensure_dir(output_root)
     staff_mask_map = _build_staff_mask_map(staff_mask_dir)
+    if staff_mask_paths:
+        staff_mask_map.update(staff_mask_paths)
     clef_mask_map = _build_clef_mask_map(clef_mask_dir)
 
     if probe_row_filter_mode is not None:
@@ -375,6 +388,7 @@ def run_probe_scan_batch(
         kwargs.update(detect_probe_kwargs)
 
     processed = 0
+    stats_records: List[Dict[str, Any]] = []
     for img_path in tqdm(images, desc="Probe Scan", unit="page"):
         stem = img_path.stem
         current_score_name = score_name or img_path.parent.name
@@ -458,17 +472,23 @@ def run_probe_scan_batch(
         page_kwargs = _resolve_scale_aware_probe_kwargs(kwargs, existing_boxes)
         page_kwargs, post_cfg = _extract_candidate_postprocess_cfg(page_kwargs, existing_boxes)
         if page_kwargs is not kwargs and (
-            "min_peak_distance" in page_kwargs or "x_merge_tol" in page_kwargs
+            "min_peak_distance" in page_kwargs
+            or "x_merge_tol" in page_kwargs
+            or "scan_x_domain_pad" in page_kwargs
         ):
             logger.info(
-                "Probe scan scale-aware params for %s/%s: min_peak_distance=%s x_merge_tol=%s",
+                "Probe scan scale-aware params for %s/%s: "
+                "min_peak_distance=%s x_merge_tol=%s scan_x_domain_pad=%s",
                 current_score_name,
                 stem,
                 page_kwargs.get("min_peak_distance"),
                 page_kwargs.get("x_merge_tol"),
+                page_kwargs.get("scan_x_domain_pad"),
             )
 
         effective_band_source = page_kwargs.pop("band_source", band_source)
+        page_scan_stats: Dict[str, object] = {}
+        detect_started_at = time.perf_counter()
         candidates = detect_probe_scan(
             base_img=img,
             staff_mask=staff_mask,
@@ -479,8 +499,10 @@ def run_probe_scan_batch(
             ink_threshold=ink_threshold,
             min_ratio=min_ratio,
             vertical_closing=vertical_closing,
+            scan_stats=page_scan_stats,
             **page_kwargs,
         )
+        detect_elapsed = time.perf_counter() - detect_started_at
         logger.debug(f"--- [DEBUG_FN] {stem}: detect_probe_scan found {len(candidates)} candidates")
 
         img_h, img_w = img.shape[:2]
@@ -566,6 +588,60 @@ def run_probe_scan_batch(
 
         final_list = sorted(final_set)
         out_path.write_text(json.dumps(final_list, indent=2))
+        stats_records.append(
+            {
+                "score": current_score_name,
+                "page": stem,
+                "output": str(out_path),
+                "band_source": effective_band_source,
+                "scan_x_domain_mode": page_kwargs.get("scan_x_domain_mode", "full_width"),
+                "scan_x_domain_pad": page_kwargs.get("scan_x_domain_pad", 0),
+                "existing_count": len(existing_boxes),
+                "generated_count": len(candidates),
+                "final_count": len(final_list),
+                "detect_elapsed_seconds": detect_elapsed,
+                "detector_stats": page_scan_stats,
+            }
+        )
         processed += 1
+
+    if stats_summary_out is not None:
+        stats_summary_out.parent.mkdir(parents=True, exist_ok=True)
+        total_detect_elapsed = sum(
+            float(record["detect_elapsed_seconds"]) for record in stats_records
+        )
+        full_width_columns = sum(
+            int(record["detector_stats"].get("full_width_columns", 0)) for record in stats_records
+        )
+        eligible_domain_columns = sum(
+            int(record["detector_stats"].get("eligible_domain_columns", 0))
+            for record in stats_records
+        )
+        projected_columns = sum(
+            int(record["detector_stats"].get("projected_columns", 0)) for record in stats_records
+        )
+        stats_summary_out.write_text(
+            json.dumps(
+                {
+                    "processed": processed,
+                    "total_detect_elapsed_seconds": total_detect_elapsed,
+                    "full_width_columns": full_width_columns,
+                    "eligible_domain_columns": eligible_domain_columns,
+                    "projected_columns": projected_columns,
+                    "eligible_width_ratio": (
+                        eligible_domain_columns / float(full_width_columns)
+                        if full_width_columns
+                        else 1.0
+                    ),
+                    "projected_width_ratio": (
+                        projected_columns / float(full_width_columns) if full_width_columns else 1.0
+                    ),
+                    "pages": stats_records,
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
 
     return processed

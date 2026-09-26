@@ -15,7 +15,7 @@ from src.common.model_artifacts import (
 from src.pipeline.core.run_ids import split_score_page_from_composite_stem
 from src.pipeline.utils.io import ensure_dir
 
-from .config import get_cnn_apply_nms
+from .config import get_cnn_apply_nms, get_probe_x_domain_kwargs
 from .input_contract import build_detector_input_contract
 from .profile_hybrid import VerifiedProfileHybridDetector
 
@@ -259,6 +259,8 @@ class DetectorOrchestrator:
             exclude=exclude,
             route_root=route_root,
             expected_pages=len(self.images),
+            probe_x_domain_kwargs=get_probe_x_domain_kwargs(self.det_cfg),
+            collect_probe_stats=bool(self.det_cfg.get("probe_scan_collect_stats", False)),
         )
         summary = self._dense_route.execution_summary or {}
         return {

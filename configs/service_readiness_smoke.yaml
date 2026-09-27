@@ -18,6 +18,12 @@ inputs:
     alpha: false
     image_glob: "page_*.png"
 
+detection:
+  cnn_model_manifest: models/barline_cnn/manifest.json
+
+mmr:
+  model_path: tools/mmr_training/models/mmr_classifier_best.pth
+
 steps:
   pdf_to_images: true
   detection: false

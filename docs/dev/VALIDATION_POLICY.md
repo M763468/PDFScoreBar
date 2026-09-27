@@ -20,11 +20,15 @@ This document defines how to choose validation for local automation and manual P
 | Docs only | `git diff --check` and local review of touched links/commands | Not required | Not required | Changed docs, reason, skipped checks |
 | Shell scripts / Makefile | `bash -n` for touched scripts, `make help`, relevant `--help` or metadata-only command | Required if Docker/GPU/pipeline commands are invoked or changed | Not required unless evaluation flow changes | Command, exit code, log path |
 | Python utility | Targeted pytest or import/compile check plus `make test-fast` when applicable | Required if the utility loads models, data, Docker, GPU, or pipeline code | Usually not required | Test list and skipped checks |
+| Engine contract / service boundary | PR `engine-contract` gate plus `make test-fast`; add `make verify-service-readiness-smoke` when executor/container/public artifact wiring changes | Required only when the production GPU/model path is exercised or changed | Not required for contract/serialization/artifact-gate-only changes; required by the affected accuracy policy when numerical behavior changes | Contract version, affected public surfaces, commands, skipped checks |
 | Pipeline / detector / orchestrator | `make test-fast` plus targeted tests | Required | Required when behavior, candidate generation, routing, or outputs can change; otherwise explicitly skip with reason | Commit, config, input data, log path, risk |
 | Docker / GPU / model loading | Syntax/build check where practical plus `make verify-gpu-smoke` | Required | Required if runtime output or evaluation behavior may change | Environment, image/container, command, log path |
 | Evaluation config / metric / threshold / seed / dataset selection | Static diff review plus targeted command that reads the config | Required when local pipeline is affected | Required by default, or human-approved skip/defer | Original contract, changed contract if any, config/data, metric impact, commit, log path |
 | Baseline / canonical target | Reproduction command plus comparison artifact | Required when pipeline is involved | Required by default | Baseline, candidate, per-gate delta, PASS/FAIL under the original contract, log path |
 | Dependency / build configuration | Relevant install/build/smoke check | Required if GPU/Docker/runtime stack is affected | Depends on affected behavior; document decision | Changed files, environment, failure mode risk |
+
+For the v1 engine boundary, see [`ENGINE_SERVICE_READINESS.md`](../ENGINE_SERVICE_READINESS.md)
+for the clean container smoke and its separation from production accuracy evidence.
 
 ## Evaluation contract integrity
 

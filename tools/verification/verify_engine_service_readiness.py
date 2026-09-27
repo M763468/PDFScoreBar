@@ -15,11 +15,11 @@ from PIL import Image, ImageDraw
 
 from src.pipeline.engine_contract import (
     CONTRACT_VERSION,
+    SCHEMA_REQUEST,
     CorrectionSet,
     JobRequest,
     JobStatus,
     OutputProfile,
-    SCHEMA_REQUEST,
     validate_progress_sequence,
 )
 from src.pipeline.engine_executor import PipelineJobExecutor

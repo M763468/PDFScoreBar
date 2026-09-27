@@ -49,7 +49,12 @@ def _prepare_fixture(repo_root: Path) -> tuple[Path, Path]:
         draw.line((80, y, 520, y), fill=255, width=2)
     mask.save(fixture_root / "page_001_staff_mask.png")
 
-    barlines = [[118, 294, 122, 346], [238, 294, 242, 346], [358, 294, 362, 346], [478, 294, 482, 346]]
+    barlines = [
+        [118, 294, 122, 346],
+        [238, 294, 242, 346],
+        [358, 294, 362, 346],
+        [478, 294, 482, 346],
+    ]
     (fixture_root / "page_001_barlines.json").write_text(
         json.dumps(barlines) + "\n", encoding="utf-8"
     )

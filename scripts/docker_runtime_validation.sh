@@ -22,6 +22,7 @@ USAGE
 }
 
 config="configs/smoke_test.yaml"
+config_explicit=0
 preflight_only=0
 service_readiness_smoke=0
 
@@ -29,6 +30,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --config)
       config="${2:?missing config path}"
+      config_explicit=1
       shift 2
       ;;
     --preflight-only)
@@ -50,6 +52,10 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ "$service_readiness_smoke" -eq 1 && "$config_explicit" -eq 0 ]]; then
+  config="configs/service_readiness_smoke.yaml"
+fi
 
 for cmd in docker git realpath python3; do
   if ! command -v "$cmd" >/dev/null 2>&1; then

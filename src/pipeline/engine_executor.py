@@ -427,15 +427,11 @@ class PipelineJobExecutor:
             if not internal_handoff.is_file():
                 raise RuntimeError("review materializer did not produce its handoff")
 
-            with telemetry.stage(
-                "artifact_materialization", detail_code="engine.public_artifacts"
-            ):
+            with telemetry.stage("artifact_materialization", detail_code="engine.public_artifacts"):
                 public_review = None
                 if request.output_profile in {OutputProfile.REVIEW, OutputProfile.DEBUG}:
                     public_review = staging / "review"
-                    self._copy_review(
-                        internal_handoff.parent, public_review, source_job_id=job_id
-                    )
+                    self._copy_review(internal_handoff.parent, public_review, source_job_id=job_id)
 
                 final_summary = self._final_builder()(
                     handoff_path=internal_handoff,

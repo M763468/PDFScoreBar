@@ -1,9 +1,9 @@
-.PHONY: help lint format test-fast verify-pipeline-smoke verify-gpu-smoke verify-full-eval local-pr-validation setup-local-worktree-links
+.PHONY: help lint format test-fast verify-pipeline-smoke verify-service-readiness-smoke verify-gpu-smoke verify-full-eval local-pr-validation setup-local-worktree-links
 
 PYTHON ?= python3
 FULL_EVAL_CONFIG ?= configs/evaluation2_e2e_verification_full.yaml
 FULL_EVAL_TIMEOUT ?= 8h
-FAST_TESTS ?= tests/test_numbering_overrides.py tests/test_pipeline_detection.py tests/test_probe_bands.py tests/test_subprocess_utils.py tests/test_engine_contract.py tests/test_engine_telemetry.py tests/test_pipeline_telemetry.py tests/test_pdf_to_images_progress.py tests/test_job_lifecycle.py tests/test_engine_input_safety.py tests/test_issue355_trusted_accuracy_smoke.py
+FAST_TESTS ?= tests/test_numbering_overrides.py tests/test_pipeline_detection.py tests/test_probe_bands.py tests/test_subprocess_utils.py tests/test_engine_contract.py tests/test_engine_telemetry.py tests/test_pipeline_telemetry.py tests/test_pdf_to_images_progress.py tests/test_job_lifecycle.py tests/test_engine_input_safety.py tests/test_engine_service_readiness.py tests/test_issue355_trusted_accuracy_smoke.py
 DOCKER_EXTRA_ARGS ?=
 DOCKER_IMAGE ?= pdfscore_pipeline_gpu
 
@@ -118,6 +118,16 @@ test-fast: ## Run maintained lightweight tests without GPU or real-data requirem
 	@echo "Fast tests passed. See artifacts/test_fast.log"
 
 verify-pipeline-smoke: run-smoke ## Run the configured pipeline smoke check
+
+verify-service-readiness-smoke: ## Run offline container smoke for the v1 one-job boundary
+	@mkdir -p artifacts
+	@echo "Running service-readiness container smoke..."
+	@if ! DOCKER_EXTRA_ARGS="$(DOCKER_EXTRA_ARGS)" bash scripts/docker_runtime_validation.sh \
+		--service-readiness-smoke > artifacts/service_readiness_smoke.log 2>&1; then \
+		echo "Service-readiness smoke failed. See artifacts/service_readiness_smoke.log"; \
+		exit 1; \
+	fi
+	@echo "Service-readiness smoke passed. See artifacts/service_readiness_smoke.log"
 
 verify-gpu-smoke: ## Run GPU smoke wrapper with metadata and timeout logging
 	@scripts/gpu_smoke.sh

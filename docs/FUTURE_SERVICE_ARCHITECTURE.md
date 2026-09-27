@@ -75,13 +75,13 @@ run-directory paths.
 
 The following are future directions, not current runtime claims:
 
-- a production adapter that executes the current pipeline through the versioned
-  `JobRequest` / `JobResult` library boundary;
-- a full v1 executor adapter that owns `JobResult` construction and terminal
-  `ProgressEvent` / `EngineError` consistency; the current config-first runner can now
-  emit opt-in structured progress independently of log wording;
-- production mapping of current failures into the defined structured `EngineError`
-  taxonomy;
+The repository now includes the thin synchronous
+`src.pipeline.engine_executor.PipelineJobExecutor` reference adapter and the
+service-readiness gates defined by `ENGINE_SERVICE_READINESS.md`. Remaining
+future directions include:
+
+- direct v1 `CorrectionSet` execution through the reference adapter (the
+  retained review/correction workflow remains the concrete execution path);
 - a service/control-plane implementation;
 - a production queue, job database, or object-storage integration;
 - a guaranteed public `pdfscorebar` console surface.

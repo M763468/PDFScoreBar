@@ -1,4 +1,4 @@
-.PHONY: help lint format test-fast verify-pipeline-smoke verify-service-readiness-smoke verify-gpu-smoke verify-full-eval local-pr-validation setup-local-worktree-links
+.PHONY: help lint format test-fast verify-pipeline-smoke verify-service-readiness-smoke verify-service-readiness-container verify-gpu-smoke verify-full-eval local-pr-validation setup-local-worktree-links
 
 PYTHON ?= python3
 FULL_EVAL_CONFIG ?= configs/evaluation2_e2e_verification_full.yaml
@@ -128,6 +128,8 @@ verify-service-readiness-smoke: ## Run offline container smoke for the v1 one-jo
 		exit 1; \
 	fi
 	@echo "Service-readiness smoke passed. See artifacts/service_readiness_smoke.log"
+
+verify-service-readiness-container: docker-build verify-service-readiness-smoke ## Build canonical image, then run the offline one-job smoke
 
 verify-gpu-smoke: ## Run GPU smoke wrapper with metadata and timeout logging
 	@scripts/gpu_smoke.sh

@@ -61,9 +61,7 @@ def run_pipeline(
         effective_telemetry_summary_path = run_dir / "telemetry.json"
 
     if telemetry_recorder is not None and (
-        on_progress is not None
-        or telemetry_summary_path is not None
-        or sample_resources
+        on_progress is not None or telemetry_summary_path is not None or sample_resources
     ):
         raise ValueError(
             "telemetry_recorder owns progress/resources; do not also pass "

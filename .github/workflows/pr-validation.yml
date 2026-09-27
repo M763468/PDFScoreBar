@@ -27,3 +27,36 @@ jobs:
 
       - name: Run ruff lint and format check
         run: make lint
+
+
+  engine-contract:
+    name: engine contract compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install lightweight contract-test dependencies
+        run: python -m pip install --upgrade pip pytest PyMuPDF PyYAML psutil
+
+      - name: Check service-readiness shell syntax
+        run: bash -n scripts/docker_runtime_validation.sh
+
+      - name: Compile service-readiness entrypoints
+        run: python -m compileall -q src/pipeline/engine_executor.py tools/verification/verify_engine_service_readiness.py
+
+      - name: Run engine compatibility gate
+        run: >-
+          PYTHONPATH=. python -m pytest
+          tests/test_engine_contract.py
+          tests/test_engine_input_safety.py
+          tests/test_engine_telemetry.py
+          tests/test_job_lifecycle.py
+          tests/test_engine_service_readiness.py

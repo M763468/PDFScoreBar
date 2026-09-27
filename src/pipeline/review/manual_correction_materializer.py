@@ -261,15 +261,9 @@ def materialize_manual_correction_review_package(
     manifest_relative_base = _manifest_relative_base(manifest, run_root=run_root_path)
     selected_pages = _select_pages(manifest, pages)
     manifest_config = manifest.get("config")
-    manifest_steps = (
-        manifest_config.get("steps")
-        if isinstance(manifest_config, dict)
-        else None
-    )
+    manifest_steps = manifest_config.get("steps") if isinstance(manifest_config, dict) else None
     mmr_required = bool(
-        manifest_steps.get("mmr_overrides")
-        if isinstance(manifest_steps, dict)
-        else False
+        manifest_steps.get("mmr_overrides") if isinstance(manifest_steps, dict) else False
     )
 
     handoff_pages: list[dict[str, Any]] = []

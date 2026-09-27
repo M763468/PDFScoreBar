@@ -115,17 +115,18 @@ outputs: {}
         return {"final_pdf": str(final_pdf)}
 
     def build(job_id: str, **kwargs):
-        return PipelineJobExecutor(
-            input_root=input_root,
-            artifact_root=artifact_root,
-            base_config_path=config_path,
-            source_commit="test-commit",
-            job_id_factory=lambda: job_id,
-            pipeline_runner=fake_runner,
-            review_materializer=fake_review,
-            final_materializer=fake_final,
-            **kwargs,
-        )
+        params = {
+            "input_root": input_root,
+            "artifact_root": artifact_root,
+            "base_config_path": config_path,
+            "source_commit": "test-commit",
+            "job_id_factory": lambda: job_id,
+            "pipeline_runner": fake_runner,
+            "review_materializer": fake_review,
+            "final_materializer": fake_final,
+        }
+        params.update(kwargs)
+        return PipelineJobExecutor(**params)
 
     return build, artifact_root
 

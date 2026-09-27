@@ -122,7 +122,7 @@ verify-pipeline-smoke: run-smoke ## Run the configured pipeline smoke check
 verify-service-readiness-smoke: ## Run offline container smoke for the v1 one-job boundary
 	@mkdir -p artifacts
 	@echo "Running service-readiness container smoke..."
-	@if ! DOCKER_EXTRA_ARGS="$(DOCKER_EXTRA_ARGS)" bash scripts/docker_runtime_validation.sh \
+	@if ! DOCKER_IMAGE="$(DOCKER_IMAGE)" DOCKER_EXTRA_ARGS="$(DOCKER_EXTRA_ARGS)" bash scripts/docker_runtime_validation.sh \
 		--service-readiness-smoke > artifacts/service_readiness_smoke.log 2>&1; then \
 		echo "Service-readiness smoke failed. See artifacts/service_readiness_smoke.log"; \
 		exit 1; \

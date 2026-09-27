@@ -542,6 +542,16 @@ def test_temporary_build_does_not_clean_or_retag_canonical(tmp_path: Path) -> No
     assert "pdfscore_pipeline_gpu" not in calls[0]
 
 
+def test_service_readiness_smoke_uses_the_selected_docker_image() -> None:
+    makefile = (PROJECT_ROOT / "Makefile").read_text(encoding="utf-8")
+
+    recipe = makefile.split("verify-service-readiness-smoke:", 1)[1].split(
+        "verify-service-readiness-container:", 1
+    )[0]
+
+    assert 'DOCKER_IMAGE="$(DOCKER_IMAGE)"' in recipe
+
+
 def test_direct_build_creates_artifact_directory_before_tempfile(tmp_path: Path) -> None:
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()

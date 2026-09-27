@@ -437,7 +437,7 @@ class PipelineJobExecutor:
                     handoff_path=internal_handoff,
                     corrected_run_dir=run_dir,
                     final_root=staging / "final",
-                    review_root=public_review or work_root / ".final_summary",
+                    review_root=work_root / ".final_summary",
                     output_name=output_name,
                 )
                 final_pdf = Path(str(final_summary["final_pdf"]))

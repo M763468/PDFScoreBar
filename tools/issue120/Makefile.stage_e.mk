@@ -12,8 +12,8 @@ ISSUE120_STAGE_E_SMOKE_PAGES ?= 2
 ISSUE120_STAGE_E_EXTRA_ARGS ?=
 ISSUE120_STAGE_E_EVAL_EXTRA_ARGS ?=
 
-run-issue120-stage-e-full: ## Run the full 68-page pipeline inside sr_eval_gpu container
-	@echo "Running Full Stage E Pipeline inside sr_eval_gpu..."
+run-issue120-stage-e-full: ## Run the full 68-page pipeline inside the canonical pipeline container
+	@echo "Running Full Stage E Pipeline inside pdfscore_pipeline_gpu..."
 	@docker run --rm --gpus all -v $(PWD):/workspace -w /workspace \
 		-e PYTHONPATH=/workspace \
 		-e PDFSCORE_STAGE_E_DIAGNOSTIC_LOGS \

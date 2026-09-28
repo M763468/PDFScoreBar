@@ -39,7 +39,7 @@ ISSUE120_STAGE_D_BOX_STATS_LEFT ?= data/evaluation2/golden_baseline_eval2_bc23de
 ISSUE120_STAGE_D_BOX_STATS_RIGHT ?= $(ISSUE120_STAGE_D_BANDS_FROM)
 
 help: ## [maintained] Show maintained and retained reproduction targets
-	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@grep -hE '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 lint: ## [maintained validation] Run lint and format checks using ruff
 	uvx ruff check . && uvx ruff format --check .

@@ -37,7 +37,7 @@ eval-issue120-stage-e-full: ## Build Stage E eval inputs and write detector cont
 
 eval-issue120-stage-e-smoke: ## Smoke-check Stage E contract wiring on the first N pages
 	@echo "Smoke-checking Stage E Detector Contract wiring from full-pipeline artifacts..."
-	@$(MAKE) eval-issue120-stage-e-full \
+	@$(MAKE) -f "$(lastword $(MAKEFILE_LIST))" eval-issue120-stage-e-full \
 		ISSUE120_STAGE_E_EVAL_INPUTS_DIR=$(ISSUE120_STAGE_E_RUN_ROOT)/eval_inputs_smoke \
 		ISSUE120_STAGE_E_EVAL_DIR=$(ISSUE120_STAGE_E_RUN_ROOT)/eval_detector_smoke \
 		ISSUE120_STAGE_E_EVAL_EXTRA_ARGS="--page-limit $(ISSUE120_STAGE_E_SMOKE_PAGES) --allow-partial --allow-target-mismatch $(ISSUE120_STAGE_E_EVAL_EXTRA_ARGS)"

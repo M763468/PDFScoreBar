@@ -67,5 +67,6 @@ to `run-smoke`.
 `tools/check_makefile_references.py`, exposed as `make check-makefile`, scans literal references to
 repository scripts, source, configs, and tests in recipes. It checks the root Makefile and the
 standalone Issue #120 Stage-E Makefile. It intentionally ignores variable-expanded paths and
-operator data/model paths, whose availability depends on the local environment. Run `make help`
-alongside it when changing targets or their descriptions.
+operator data/model paths, whose availability depends on the local environment. The PR validation
+workflow runs it automatically. Run `make help` alongside it when changing targets or their
+descriptions.

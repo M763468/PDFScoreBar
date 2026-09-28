@@ -30,7 +30,7 @@ def test_score_wrapper_contract_flags_reach_each_parser() -> None:
 
 def test_make_targets_forward_canonical_contract_flags() -> None:
     stage_e = subprocess.run(
-        ["make", "-n", "eval-issue120-stage-e-full"],
+        ["make", "-f", "tools/issue120/Makefile.stage_e.mk", "-n", "eval-issue120-stage-e-full"],
         cwd=ROOT,
         check=True,
         capture_output=True,
@@ -40,6 +40,17 @@ def test_make_targets_forward_canonical_contract_flags() -> None:
     assert "--xdist-unit-ratio 0.5" in stage_e
     assert "--image-root data/evaluation2/images" in stage_e
     assert "--xdist-threshold" not in stage_e
+
+    stage_e_smoke = subprocess.run(
+        ["make", "-f", "tools/issue120/Makefile.stage_e.mk", "-n", "eval-issue120-stage-e-smoke"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    assert (
+        'make -f "tools/issue120/Makefile.stage_e.mk" eval-issue120-stage-e-full' in stage_e_smoke
+    )
 
     stage_d = subprocess.run(
         ["make", "-n", "verify-issue120-stage-d"],

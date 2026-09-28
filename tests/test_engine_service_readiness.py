@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import json
 import subprocess
+import threading
+import time
 from pathlib import Path
 
 import fitz
 import pytest
 
+import src.pipeline.engine_executor as engine_executor_module
 from src.pipeline.engine_contract import (
     CONTRACT_VERSION,
     CorrectionSet,
@@ -319,13 +322,24 @@ def test_debug_telemetry_contains_completed_materialization_stage(executor_fixtu
     )
 
 
-def test_executor_enforces_attempt_disk_budget_and_cleans_work(executor_fixture):
+def test_executor_monitors_attempt_disk_budget_and_cleans_work(executor_fixture, monkeypatch):
     build, artifact_root = executor_fixture
+    monitor_checked = threading.Event()
+    original_check = engine_executor_module._check_attempt_budget
+
+    def tracked_check(root, policy):
+        if threading.current_thread().name == "engine-disk-budget":
+            monitor_checked.set()
+        return original_check(root, policy)
+
+    monkeypatch.setattr(engine_executor_module, "_check_attempt_budget", tracked_check)
 
     def oversized_runner(_config_path, *, run_id, output_root, **_kwargs):
         run_dir = Path(output_root) / run_id
         run_dir.mkdir(parents=True, exist_ok=True)
         (run_dir / "oversized.bin").write_bytes(b"x" * 2048)
+        assert monitor_checked.wait(timeout=2)
+        time.sleep(0.3)
         return run_dir
 
     result = build(
@@ -343,3 +357,33 @@ def test_executor_enforces_attempt_disk_budget_and_cleans_work(executor_fixture)
     assert result.failure is not None
     assert result.failure.code == "attempt_disk_budget_exceeded"
     assert not (artifact_root / result.job_id / ".engine-work").exists()
+
+
+def test_retention_failure_emits_only_failed_terminal(executor_fixture, monkeypatch):
+    build, artifact_root = executor_fixture
+    original_replace = Path.replace
+
+    def fail_retention(source, target):
+        if source.name == ".engine-work" and Path(target).name == ".engine-retained":
+            raise OSError("synthetic retention failure")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(Path, "replace", fail_retention)
+    events = []
+    result = build("job-retention-failure")(
+        JobRequest(
+            input={"kind": "local_path", "reference": "score.pdf"},
+            output_profile=OutputProfile.REVIEW,
+            config_overrides={"pages": [1]},
+        ),
+        on_progress=events.append,
+    )
+    assert result.status is JobStatus.FAILED
+    assert result.failure is not None
+    assert [event for event in events if event.terminal][-1].kind is ProgressKind.JOB_FAILED
+    assert sum(event.terminal for event in events) == 1
+    package = artifact_root / result.job_id
+    assert not (package / "final").exists()
+    assert not (package / "review").exists()
+    assert not (package / ".engine-work").exists()
+    assert not (package / ".engine-retained").exists()

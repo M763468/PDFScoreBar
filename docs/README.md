@@ -15,6 +15,7 @@ use the current artifacts first.
 | [`ENVIRONMENTS.md`](ENVIRONMENTS.md) | Maintained runtime/development environments |
 | [`BRANCH_POLICY.md`](BRANCH_POLICY.md) | Branch/base/promotion policy |
 | [`dev/VALIDATION_POLICY.md`](dev/VALIDATION_POLICY.md) | Validation requirements by change type |
+| [`MAKEFILE_SURFACE.md`](MAKEFILE_SURFACE.md) | Maintained root Makefile targets, historical reproductions, and removed stale targets |
 | [`REGRESSION_TEST_WORKFLOW.md`](REGRESSION_TEST_WORKFLOW.md) | Regression-test workflow |
 | [`GT_PREPARATION_POLICY.md`](GT_PREPARATION_POLICY.md) | Ground-truth labeling policy |
 | [`BARLINE_MATCHER.md`](BARLINE_MATCHER.md) | Barline matching/evaluation contract |
@@ -28,7 +29,7 @@ use the current artifacts first.
 | [`ai-workflow/GRAPHIFY.md`](ai-workflow/GRAPHIFY.md) | Graphify query, refresh, retention, and staleness rules |
 
 The root [`README.md`](../README.md), [`AGENTS.md`](../AGENTS.md), and repository `Makefile`
-are also current entry points.
+are also current entry points. `MAKEFILE_SURFACE.md` classifies the Makefile targets.
 
 ## Future / roadmap architecture
 

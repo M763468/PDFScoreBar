@@ -12,8 +12,8 @@ ISSUE120_STAGE_E_SMOKE_PAGES ?= 2
 ISSUE120_STAGE_E_EXTRA_ARGS ?=
 ISSUE120_STAGE_E_EVAL_EXTRA_ARGS ?=
 
-run-issue120-stage-e-full: ## Run the full 68-page pipeline inside sr_eval_gpu container
-	@echo "Running Full Stage E Pipeline inside sr_eval_gpu..."
+run-issue120-stage-e-full: ## Run the full 68-page pipeline inside the canonical pipeline container
+	@echo "Running Full Stage E Pipeline inside pdfscore_pipeline_gpu..."
 	@docker run --rm --gpus all -v $(PWD):/workspace -w /workspace \
 		-e PYTHONPATH=/workspace \
 		-e PDFSCORE_STAGE_E_DIAGNOSTIC_LOGS \
@@ -37,7 +37,7 @@ eval-issue120-stage-e-full: ## Build Stage E eval inputs and write detector cont
 
 eval-issue120-stage-e-smoke: ## Smoke-check Stage E contract wiring on the first N pages
 	@echo "Smoke-checking Stage E Detector Contract wiring from full-pipeline artifacts..."
-	@$(MAKE) eval-issue120-stage-e-full \
+	@$(MAKE) -f "$(lastword $(MAKEFILE_LIST))" eval-issue120-stage-e-full \
 		ISSUE120_STAGE_E_EVAL_INPUTS_DIR=$(ISSUE120_STAGE_E_RUN_ROOT)/eval_inputs_smoke \
 		ISSUE120_STAGE_E_EVAL_DIR=$(ISSUE120_STAGE_E_RUN_ROOT)/eval_detector_smoke \
 		ISSUE120_STAGE_E_EVAL_EXTRA_ARGS="--page-limit $(ISSUE120_STAGE_E_SMOKE_PAGES) --allow-partial --allow-target-mismatch $(ISSUE120_STAGE_E_EVAL_EXTRA_ARGS)"

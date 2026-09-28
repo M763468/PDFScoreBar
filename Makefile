@@ -1,4 +1,4 @@
-.PHONY: help lint format test-fast verify-pipeline-smoke verify-service-readiness-smoke verify-service-readiness-container verify-gpu-smoke verify-full-eval local-pr-validation setup-local-worktree-links
+.PHONY: help lint format clean-artifacts clean-logs docker-clean docker-clean-full docker-build promote-log run-smoke run-smoke-sr test-fast verify-pipeline-smoke verify-service-readiness-smoke verify-service-readiness-container verify-gpu-smoke verify-full-eval local-pr-validation setup-local-worktree-links run-pipeline eval-issue120-full verify-issue120-stage-b verify-issue120-stage-b-native regen-issue120-stage-d-upstream verify-issue120-stage-d summarize-issue120-stage-d compare-issue120-stage-d-boxes repo-tree check-makefile test repo-summary issue-triage issue-post-mortem visual-diff api-explore artifact-summary
 
 PYTHON ?= python3
 FULL_EVAL_CONFIG ?= configs/evaluation2_e2e_verification_full.yaml
@@ -38,20 +38,20 @@ ISSUE120_STAGE_D_BOX_STATS_DIR ?= logs/issue120_e2e_recovery/stage_d_box_tree_st
 ISSUE120_STAGE_D_BOX_STATS_LEFT ?= data/evaluation2/golden_baseline_eval2_bc23deb
 ISSUE120_STAGE_D_BOX_STATS_RIGHT ?= $(ISSUE120_STAGE_D_BANDS_FROM)
 
-help: ## Show this help message
-	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+help: ## [maintained] Show maintained and retained reproduction targets
+	@grep -hE '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-lint: ## Run lint and format checks using ruff
+lint: ## [maintained validation] Run lint and format checks using ruff
 	uvx ruff check . && uvx ruff format --check .
 
-format: ## Format code using ruff
+format: ## [maintained helper] Format code using ruff
 	uvx ruff format .
 	uvx ruff check --fix .
 
-clean-artifacts: ## Remove all logs from the artifacts directory
+clean-artifacts: ## [maintained helper] Remove all logs from the artifacts directory
 	rm -f artifacts/*.log artifacts/*.txt
 
-clean-logs: ## Remove old logs (older than 30d) from logs/ category subdirs, excluding protected ones
+clean-logs: ## [maintained helper] Remove old logs (older than 30d) from logs/ category subdirs, excluding protected ones
 	@echo "Cleaning up old logs..."
 	@for dir in logs/runs logs/eval logs/experiments; do \
 		if [ -d "$$dir" ]; then \
@@ -64,21 +64,21 @@ clean-logs: ## Remove old logs (older than 30d) from logs/ category subdirs, exc
 		fi; \
 	done
 
-docker-clean: ## Remove the canonical pipeline container
+docker-clean: ## [maintained runtime] Remove the canonical pipeline container
 	@echo "Cleaning up Docker pipeline container..."
 	-docker rm -f pdfscore_pipeline_gpu
 
-docker-clean-full: docker-clean ## Also remove the pipeline image (explicit full cleanup)
+docker-clean-full: docker-clean ## [maintained runtime] Also remove the pipeline image (explicit full cleanup)
 	@echo "Removing Docker pipeline image..."
 	@image_id=$$(docker image ls --quiet "$(DOCKER_IMAGE)") || exit $$?; \
 	if [ -n "$$image_id" ]; then docker rmi "$(DOCKER_IMAGE)"; fi
 
-docker-build: ## Build the selected Docker image without removing containers or images
+docker-build: ## [maintained runtime] Build the selected Docker image without removing containers or images
 	@mkdir -p artifacts
 	@echo "Starting Docker build. Logging to artifacts/docker_build.log..."
 	@DOCKER_IMAGE="$(DOCKER_IMAGE)" PYTHON="$(PYTHON)" bash scripts/docker_build.sh
 
-promote-log: ## Promote a log from worktree to permanent logs (usage: make promote-log SRC=path/to/log DEST=category)
+promote-log: ## [maintained helper] Promote a log from worktree to permanent logs (usage: make promote-log SRC=path/to/log DEST=category)
 	@if [ -z "$(SRC)" ] || [ -z "$(DEST)" ]; then \
 		echo "Error: SRC and DEST are required. Usage: make promote-log SRC=logs/runs/my_run DEST=eval"; \
 		exit 1; \
@@ -94,7 +94,7 @@ promote-log: ## Promote a log from worktree to permanent logs (usage: make promo
 	@mv $(SRC) logs/$(DEST)/
 	@echo "Promoted $(SRC) to logs/$(DEST)/"
 
-run-smoke: ## Run production-representative detector accuracy smoke
+run-smoke: ## [maintained validation] Run production-representative detector accuracy smoke
 	@mkdir -p artifacts
 	@echo "Running canonical production-accuracy smoke..."
 	@if ! DOCKER_EXTRA_ARGS="$(DOCKER_EXTRA_ARGS)" bash scripts/docker_runtime_validation.sh \
@@ -104,9 +104,9 @@ run-smoke: ## Run production-representative detector accuracy smoke
 	fi
 	@echo "Production-accuracy smoke passed. See artifacts/smoke_test.log"
 
-run-smoke-sr: run-smoke ## Alias for run-smoke (deprecated)
+run-smoke-sr: run-smoke ## [legacy alias] Alias for run-smoke (deprecated)
 
-test-fast: ## Run maintained lightweight tests without GPU or real-data requirements
+test-fast: ## [maintained validation] Run maintained lightweight tests without GPU or real-data requirements
 	@mkdir -p artifacts
 	@PYTHON_BIN="$(PYTHON)"; \
 	if [ -x .venv_pdf/bin/python ]; then \
@@ -117,9 +117,9 @@ test-fast: ## Run maintained lightweight tests without GPU or real-data requirem
 		(EXIT_CODE=$$?; echo "Fast tests failed with exit code $$EXIT_CODE. See artifacts/test_fast.log"; exit $$EXIT_CODE)
 	@echo "Fast tests passed. See artifacts/test_fast.log"
 
-verify-pipeline-smoke: run-smoke ## Run the configured pipeline smoke check
+verify-pipeline-smoke: run-smoke ## [maintained validation] Run the configured pipeline smoke check
 
-verify-service-readiness-smoke: ## Run offline container smoke for the v1 one-job boundary
+verify-service-readiness-smoke: ## [maintained validation] Run offline container smoke for the v1 one-job boundary
 	@mkdir -p artifacts
 	@echo "Running service-readiness container smoke..."
 	@if ! DOCKER_IMAGE="$(DOCKER_IMAGE)" DOCKER_EXTRA_ARGS="$(DOCKER_EXTRA_ARGS)" bash scripts/docker_runtime_validation.sh \
@@ -129,18 +129,18 @@ verify-service-readiness-smoke: ## Run offline container smoke for the v1 one-jo
 	fi
 	@echo "Service-readiness smoke passed. See artifacts/service_readiness_smoke.log"
 
-verify-service-readiness-container: docker-build verify-service-readiness-smoke ## Build canonical image, then run the offline one-job smoke
+verify-service-readiness-container: docker-build verify-service-readiness-smoke ## [maintained validation] Build canonical image, then run the offline one-job smoke
 
-verify-gpu-smoke: ## Run GPU smoke wrapper with metadata and timeout logging
+verify-gpu-smoke: ## [maintained validation] Run GPU smoke wrapper with metadata and timeout logging
 	@scripts/gpu_smoke.sh
 
-verify-full-eval: ## Run opt-in full evaluation entrypoint (long-running)
+verify-full-eval: ## [maintained evaluation] Run opt-in full evaluation entrypoint (long-running)
 	@scripts/gpu_smoke.sh --timeout "$(FULL_EVAL_TIMEOUT)" --command "make run-pipeline CONFIG=$(FULL_EVAL_CONFIG) LOG_FILE=/dev/stdout"
 
-local-pr-validation: ## Run local PR validation (usage: make local-pr-validation PR=123 WITH_GPU=1 WITH_FULL_EVAL=1 POST_COMMENT=1)
+local-pr-validation: ## [maintained helper] Run local PR validation (usage: make local-pr-validation PR=123 WITH_GPU=1 WITH_FULL_EVAL=1 POST_COMMENT=1)
 	@scripts/local_pr_validation.sh $(if $(PR),--pr $(PR),) $(if $(WITH_GPU),--with-gpu,) $(if $(WITH_FULL_EVAL),--with-full-eval,) $(if $(POST_COMMENT),--post-comment,)
 
-setup-local-worktree-links: ## Link local-only data into this worktree (usage: make setup-local-worktree-links LOCAL_DATA_ROOT=/path/to/assets)
+setup-local-worktree-links: ## [maintained helper] Link local-only data into this worktree (usage: make setup-local-worktree-links LOCAL_DATA_ROOT=/path/to/assets)
 	@if [ -z "$(LOCAL_DATA_ROOT)" ]; then \
 		echo "Error: LOCAL_DATA_ROOT is required."; \
 		echo "Usage: make setup-local-worktree-links LOCAL_DATA_ROOT=/path/to/assets"; \
@@ -148,7 +148,7 @@ setup-local-worktree-links: ## Link local-only data into this worktree (usage: m
 	fi
 	@scripts/setup_local_worktree_links.sh --source "$(LOCAL_DATA_ROOT)"
 
-run-pipeline: ## Run the pipeline with a custom config (usage: make run-pipeline CONFIG=path/to/config.yaml)
+run-pipeline: ## [maintained runtime] Run the pipeline with a custom config (usage: make run-pipeline CONFIG=path/to/config.yaml)
 	@if [ -z "$(CONFIG)" ]; then echo "Error: CONFIG is required. Usage: make run-pipeline CONFIG=path/to/config.yaml"; exit 1; fi
 	@mkdir -p artifacts
 	@LOG_FILE="$${LOG_FILE:-artifacts/$$(basename "$(CONFIG)" .yaml)_$$(date +%Y%m%d_%H%M%S).log}"; \
@@ -158,7 +158,7 @@ run-pipeline: ## Run the pipeline with a custom config (usage: make run-pipeline
 		(EXIT_CODE=$$?; echo "Pipeline failed with exit code $$EXIT_CODE. See $$LOG_FILE"; exit $$EXIT_CODE); \
 	echo "Pipeline execution finished successfully. See $$LOG_FILE"
 
-eval-issue120-full: ## Evaluate Issue #120 canonical full-68 detector intermediates without running the pipeline
+eval-issue120-full: ## [issue #120 reproduction] Evaluate canonical full-68 detector intermediates without running the pipeline
 	@mkdir -p "$(ISSUE120_OUTPUT_DIR)"
 	@MEASURE_ARG=""; \
 	PROVENANCE_ARG=""; \
@@ -181,7 +181,7 @@ eval-issue120-full: ## Evaluate Issue #120 canonical full-68 detector intermedia
 		--results-dir "$(ISSUE120_RESULTS_DIR)" \
 		$$PROVENANCE_ARG
 
-verify-issue120-stage-b: ## Re-score Issue #120 candidates in Docker, then evaluate with the canonical full-68 evaluator
+verify-issue120-stage-b: ## [issue #120 reproduction] Re-score candidates in Docker, then evaluate with the canonical full-68 evaluator
 	@CLEAN_ARG=""; \
 	BANDS_ARG=""; \
 	if [ "$(ISSUE120_CLEAN_OUTPUT)" = "1" ]; then CLEAN_ARG="--clean-output"; fi; \
@@ -200,7 +200,7 @@ verify-issue120-stage-b: ## Re-score Issue #120 candidates in Docker, then evalu
 		--xdist-unit-ratio "$(ISSUE120_XDIST_UNIT_RATIO)" \
 		$$BANDS_ARG $$CLEAN_ARG
 
-verify-issue120-stage-b-native: ## Re-score Issue #120 candidates using the current host Python environment
+verify-issue120-stage-b-native: ## [issue #120 reproduction] Re-score candidates using the current host Python environment
 	@CLEAN_ARG=""; \
 	BANDS_ARG=""; \
 	if [ "$(ISSUE120_CLEAN_OUTPUT)" = "1" ]; then CLEAN_ARG="--clean-output"; fi; \
@@ -218,7 +218,7 @@ verify-issue120-stage-b-native: ## Re-score Issue #120 candidates using the curr
 		--xdist-unit-ratio "$(ISSUE120_XDIST_UNIT_RATIO)" \
 		$$BANDS_ARG $$CLEAN_ARG
 
-regen-issue120-stage-d-upstream: ## Regenerate Issue #120 Stage-D upstream artifacts in Docker/GPU
+regen-issue120-stage-d-upstream: ## [issue #120 reproduction] Regenerate Stage-D upstream artifacts in Docker/GPU
 	@mkdir -p artifacts
 	@LOG_FILE="artifacts/issue120_stage_d_regen_$$(date +%Y%m%d_%H%M%S).log"; \
 	CLEAN_ARG=""; \
@@ -235,7 +235,7 @@ regen-issue120-stage-d-upstream: ## Regenerate Issue #120 Stage-D upstream artif
 		(EXIT_CODE=$$?; echo "Stage-D upstream regeneration failed with exit code $$EXIT_CODE. See $$LOG_FILE"; exit $$EXIT_CODE); \
 	echo "Stage-D upstream regeneration complete. See $$LOG_FILE"
 
-verify-issue120-stage-d: ## Run Stage-C verifier against regenerated Stage-D upstream artifacts
+verify-issue120-stage-d: ## [issue #120 reproduction] Run Stage-C verifier against regenerated Stage-D upstream artifacts
 	@mkdir -p artifacts
 	@LOG_FILE="artifacts/issue120_stage_d_verify_$$(date +%Y%m%d_%H%M%S).log"; \
 	echo "Running Issue #120 Stage-D verifier. Logging to $$LOG_FILE..."; \
@@ -253,51 +253,48 @@ verify-issue120-stage-d: ## Run Stage-C verifier against regenerated Stage-D ups
 		(EXIT_CODE=$$?; echo "Stage-D verifier failed with exit code $$EXIT_CODE. See $$LOG_FILE"; exit $$EXIT_CODE); \
 	echo "Stage-D verifier complete. See $$LOG_FILE"
 
-summarize-issue120-stage-d: ## Summarize local Stage-D detector drift from ignored logs
+summarize-issue120-stage-d: ## [issue #120 reproduction] Summarize local Stage-D detector drift from ignored logs
 	PYTHONPATH=. python3 tools/issue120/summarize_stage_d_drift.py \
 		--eval-dir "$(ISSUE120_STAGE_D_EVAL_DIR)" \
 		--upstream-dir "$(ISSUE120_STAGE_D_OUTPUT_ROOT)" \
 		--compose-source "$(ISSUE120_STAGE_D_COMPOSE_SOURCE)" \
 		--output-md "$(ISSUE120_STAGE_D_DRIFT_SUMMARY)"
 
-compare-issue120-stage-d-boxes: ## Compare Golden Baseline fixture vs regenerated Stage-D bands box statistics
+compare-issue120-stage-d-boxes: ## [issue #120 reproduction] Compare baseline fixture and regenerated Stage-D box statistics
 	PYTHONPATH=. python3 tools/issue120/compare_box_tree_stats.py \
 		--left "$(ISSUE120_STAGE_D_BOX_STATS_LEFT)" \
 		--right "$(ISSUE120_STAGE_D_BOX_STATS_RIGHT)" \
 		--output-dir "$(ISSUE120_STAGE_D_BOX_STATS_DIR)"
 
-repo-tree: ## Generate a repository directory overview
+repo-tree: ## [maintained helper] Generate a repository directory overview (requires tree)
 	tree -L 3 -I "artifacts|logs|temp|datasets|.git|__pycache__|.venv*" > artifacts/repo_tree.txt
 
-check-consistency: ## Check repository consistency (Manifest and Freshness)
+check-makefile: ## [maintained validation] Check literal repository file references in Makefile recipes
+	@python3 tools/check_makefile_references.py
+
+test: ## [maintained validation] Run the full test suite
 	@mkdir -p artifacts
-	@python3 tools/check_repo_consistency.py --stale-days 30 > artifacts/consistency_check.log 2>&1 || \
-		(EXIT_CODE=$$?; cat artifacts/consistency_check.log; exit $$EXIT_CODE)
-	@cat artifacts/consistency_check.log
+	@PYTHON_BIN="$(PYTHON)"; \
+	if [ -x .venv_pdf/bin/python ]; then PYTHON_BIN=.venv_pdf/bin/python; fi; \
+	PYTHONPATH=. "$$PYTHON_BIN" -m pytest tests/ > artifacts/test_results.txt 2>&1 || \
+		(EXIT_CODE=$$?; echo "Test suite failed with exit code $$EXIT_CODE. See artifacts/test_results.txt"; exit $$EXIT_CODE)
 
-setup-worktree: ## Setup a new worktree and container (usage: make setup-worktree BRANCH=branch_name)
-	@if [ -z "$(BRANCH)" ]; then echo "Error: BRANCH is required."; exit 1; fi
-	@./.agents/skills/worktree-manager/run.sh add $(BRANCH)
-
-test: ## Run test suite
-	PYTHONPATH=. .venv_pdf/bin/pytest tests/ > artifacts/test_results.txt
-
-repo-summary: ## Generate comprehensive repository summary
+repo-summary: ## [maintained helper] Generate comprehensive repository summary
 	./.agents/skills/repo-summary/run.sh
 
-issue-triage: ## Fetch and triage open GitHub issues
+issue-triage: ## [maintained helper] Fetch and triage open GitHub issues
 	./.agents/skills/issue-triage/run.sh
 
-issue-post-mortem: ## Review completed work against original issue
+issue-post-mortem: ## [maintained helper] Review completed work against original issue
 	./.agents/skills/issue-post-mortem/run.sh
 
-visual-diff: ## Identify and collect recent visual evidence
+visual-diff: ## [maintained helper] Identify and collect recent visual evidence
 	./.agents/skills/visual-diff-viewer/run.sh
 
-api-explore: ## Extract API info from a Python file (usage: make api-explore FILE=path/to/file.py)
+api-explore: ## [maintained helper] Extract API info from a Python file (usage: make api-explore FILE=path/to/file.py)
 	./.agents/skills/python-api-explorer/run.sh "$(FILE)"
 
-artifact-summary: ## Summarize all artifacts
+artifact-summary: ## [maintained helper] Summarize all artifacts
 	./.agents/skills/artifact-clerk/run.sh
 
--include tools/issue120/Makefile.stage_e.mk
+# Stage E remains available through `make -f tools/issue120/Makefile.stage_e.mk <target>`.

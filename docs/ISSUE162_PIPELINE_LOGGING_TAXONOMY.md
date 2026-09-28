@@ -25,7 +25,7 @@ diagnostic verbosity is requested.
 - Raw captured stream artifact: `logs/issue120_e2e_recovery/stage_e_full_pipeline/pipeline_stdout_stderr.raw.log`
 - Captured stream summary: `pipeline_stdout_stderr.summary.json`
 - Detailed diagnostic file log: `pipeline.log`
-- `make run-issue120-stage-e-full` forwards `PDFSCORE_STAGE_E_DIAGNOSTIC_LOGS`,
+- `make -f tools/issue120/Makefile.stage_e.mk run-issue120-stage-e-full` forwards `PDFSCORE_STAGE_E_DIAGNOSTIC_LOGS`,
   `PDFSCORE_HOMR_VERBOSE_INTERNAL_LOGS`, and `PDFSCORE_SR_TILE_LOGS` into the
   Docker container.
 
@@ -242,7 +242,7 @@ progress remains visible through `tqdm`. To inspect Real-ESRGAN tiling internals
 for a focused diagnosis, run with:
 
 ```bash
-PDFSCORE_SR_TILE_LOGS=1 make run-issue120-stage-e-full
+PDFSCORE_SR_TILE_LOGS=1 make -f tools/issue120/Makefile.stage_e.mk run-issue120-stage-e-full
 ```
 
 HOMR internals such as `Dewarping staff`,
@@ -255,21 +255,21 @@ indicating the current score/page or an actionable state. Page-level
 focused HOMR investigation:
 
 ```bash
-PDFSCORE_HOMR_VERBOSE_INTERNAL_LOGS=1 make run-issue120-stage-e-full
+PDFSCORE_HOMR_VERBOSE_INTERNAL_LOGS=1 make -f tools/issue120/Makefile.stage_e.mk run-issue120-stage-e-full
 ```
 
 These environment variables are forwarded by
 `tools/issue120/Makefile.stage_e.mk` to the container used by
-`make run-issue120-stage-e-full`.
+`make -f tools/issue120/Makefile.stage_e.mk run-issue120-stage-e-full`.
 
 Use either form to restore verbose captured output for diagnosis:
 
 ```bash
-make run-issue120-stage-e-full ISSUE120_STAGE_E_EXTRA_ARGS="--pipeline-diagnostic-logs"
+make -f tools/issue120/Makefile.stage_e.mk run-issue120-stage-e-full ISSUE120_STAGE_E_EXTRA_ARGS="--pipeline-diagnostic-logs"
 ```
 
 ```bash
-PDFSCORE_STAGE_E_DIAGNOSTIC_LOGS=1 make run-issue120-stage-e-full
+PDFSCORE_STAGE_E_DIAGNOSTIC_LOGS=1 make -f tools/issue120/Makefile.stage_e.mk run-issue120-stage-e-full
 ```
 
 ## Non-Metric Boundary

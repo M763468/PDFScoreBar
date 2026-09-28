@@ -78,22 +78,22 @@ another repository.
 | `.github/**` | KEEP | CI, Issue/PR templates | Keep while referenced by current repository workflow. |
 | `.agents/**`, `.gemini/GEMINI.md` | KEEP | repository developer/agent tooling | Not end-user API. Root Makefile currently exposes several `.agents/skills/**` helpers. |
 | `Dockerfile`, `docker/**` | KEEP | canonical runtime build and runtime contract | Current Docker surface. |
-| `Dockerfile.groundingdino` | ARCHIVE | model experiment environment | Not canonical runtime. Retain only while its experiment/reproduction value remains. |
+| `Dockerfile.groundingdino` | REMOVE candidate | abandoned zero-shot model experiment environment | The accepted history records GroundingDINO as a negative experiment, the Dockerfile depends on an ignored local `external/grounding_dino` clone, and no current runtime/validation contract uses it. Git history is sufficient recovery. |
 | `Dockerfile.homr` | ARCHIVE | historical/specialized HOMR environment | Canonical pipeline uses `Dockerfile`; do not advertise this as normal runtime. |
 | `src/**` | KEEP | production/library implementation | Treat as maintained until a module-level dependency audit proves a subtree obsolete. Do not infer removability from old naming alone. |
 | `tests/**` | KEEP | current correctness/contract regression suite | Issue-numbered tests may still guard current behavior and remain KEEP unless their contract is explicitly retired. |
-| `tests_legacy/**` | UNDECIDED | legacy tests outside normal `make test` path | Narrow audit. If no unique maintained contract remains, remove rather than keeping a second test surface. |
+| `tests_legacy/**` | REMOVE after test migration/replacement | tests excluded from normal `make test` | Do not retain a second test surface. Preserve the useful thin-barline behavioral cases in `tests/`; replace the brittle GT-GUI server check with a deterministic current test, then retire the legacy directory. |
 | `configs/**` | mixed KEEP/ARCHIVE | runtime, smoke, evaluation, reproduction configs | Current production/smoke/service/review configs KEEP; Issue/experiment snapshots ARCHIVE. See config detail below. |
 | `models/**` | KEEP | versioned model manifests | Keep manifests/provenance. Large model bytes remain outside Git and are staged through the documented model-artifact mechanism. |
 | `scripts/**` | mixed KEEP/ARCHIVE | maintained automation plus scoped validators | Current Docker/PR/validation scripts KEEP; Issue-specific validators are ARCHIVE unless still part of a maintained gate. |
-| `tools/**` | mixed KEEP/ARCHIVE/UNDECIDED | reusable utilities, reproduction tooling, and accumulated one-off analysis | Keep supported utilities; retain explicit reproduction tools as ARCHIVE; audit ad-hoc root/debug scripts in small domain slices. |
+| `tools/**` | mixed KEEP/ARCHIVE/REMOVE candidate | reusable utilities, reproduction tooling, and accumulated one-off analysis | Current utilities and explicit reproduction tools remain; scripts already established as legacy by #38/#45/#96 or superseded by current source should be retired rather than kept for compatibility. |
 | `experiments/**` | ARCHIVE by default | experiments, comparison, reproduction, prototypes | Never public runtime and never an implicit production dependency. Remove one-off content after provenance/results are recoverable. |
-| `data/**` | mixed KEEP/ARCHIVE/UNDECIDED | GT, committed fixtures/baselines, and old workspace scaffolding | Canonical GT/baseline evidence is retained; do not treat tracked evaluation evidence as disposable generated output. |
+| `data/**` | mixed KEEP/REMOVE candidate | canonical GT/baselines plus superseded pre-evaluation2 scaffolding | Keep `data/evaluation2/**`; retire the old training/evaluation/workbench tracked surface after removing its remaining legacy/default-path references. |
 | `graphify-out/**` | KEEP (developer/generated) | optional repository navigation | Keep only the portable graph/report/wiki/manifest set while provenance is fresh; never use it as source of truth over source/tests. |
 | `logs/README.md` | KEEP | generated-evidence placement policy | Runtime logs themselves stay ignored. Historical path prose should be corrected when it points to retired files/tools. |
 | `artifacts/.gitkeep` | KEEP | local generated-artifact root | Artifacts are ignored/generated and are not public result API. |
-| `external/**`, `.gitmodules` | UNDECIDED | third-party/reproduction assets | Current production does not use this directory as a generic public dependency boundary. Audit the retained OEMER submodule, legacy FSRCNN blob, and stale README claims together. |
-| `setup_scripts/**` | REMOVE candidate | old local Serena/container bootstrap | Contains user-specific absolute paths and the old `pdf_score_dev_gpu` container contract; conflicts with current `AGENTS.md`/ENVIRONMENTS guidance. Verify no remaining reference, then retire. |
+| `external/**`, `.gitmodules` | REMOVE candidate | retired third-party experiment/reproduction surface | The retained OEMER runner/submodule and FSRCNN blob are not part of the current runtime. OEMER's checked-in runner contains stale path assumptions; the FSRCNN artifact belongs to a recorded failed experiment. Remove the tracked surface together with stale `external/README.md`; ignored operator caches/clones are not repository API. |
+| `setup_scripts/**` | REMOVE candidate | old local bootstrap/download helpers | `setup.sh`/`start.sh` hard-code a user checkout path, `check_container.sh` targets obsolete `pdf_score_dev_gpu`, and the DeepScores downloader hard-codes `/mnt/d/datasets/DeepScoresV2`. None is a maintained repository setup contract; DeepScores provenance does not require retaining this machine-specific downloader. |
 
 ## Config inventory
 
@@ -117,7 +117,7 @@ and `configs/cnn_barline_runs/**`.
 
 They are not default runtime choices merely because they are checked in.
 
-### UNDECIDED / cleanup candidate
+### REMOVE candidate — confirmed inert legacy key
 
 `configs/dense_full_pipeline.yaml` still contains:
 
@@ -125,10 +125,12 @@ They are not default runtime choices merely because they are checked in.
 container_name: sr_eval_gpu_exp
 ```
 
-The current canonical runtime is `pdfscore_pipeline_gpu`. Before removing this key, confirm whether
-the active code reads it or whether it is inert legacy configuration. If removal can affect runtime,
-handle it in a focused implementation PR with the validation required by
-`docs/dev/VALIDATION_POLICY.md`.
+The current canonical runtime is `pdfscore_pipeline_gpu`. A current-source audit found no
+`container_name` consumer anywhere under tracked `src/**`, and the targeted config/runtime tests
+reviewed for this inventory do not reference `sr_eval_gpu_exp`. The generic YAML loader therefore
+loads this key but no maintained source reads it. Treat it as inert legacy configuration and remove
+it in a small config cleanup change; do not spend another local investigation re-proving whether the
+key is consumed. Validate the eventual config edit according to `docs/dev/VALIDATION_POLICY.md`.
 
 ## Data inventory
 
@@ -141,14 +143,25 @@ Tracked data is not equivalent to generated runtime output.
 end-user input/output API, but it is repository evidence and must not be bulk-deleted as "artifact
 cleanup".
 
-### UNDECIDED
+### REMOVE candidates — pre-evaluation2 tracked surface
 
-The smaller `data/training/**`, `data/evaluation/**`, and `data/workbench/**` surfaces predate the
-current evaluation2 discipline and include old annotation/workspace scaffolding. Audit consumers
-before deciding whether to retain fixtures, move durable GT, or retire the remainder.
+The current GT preparation documentation identifies `data/evaluation2/**` as the canonical GT
+workflow. The older tracked surfaces can now be classified more narrowly:
 
-Large operator datasets/images remain ignored and should not be added to the public repository
-without an explicit retention decision.
+- `data/workbench/**` contains only ignored-directory scaffolding. Current script-management rules
+  already assign throwaway scratch work to ignored `tmp/`; retire the tracked workbench scaffold.
+- `data/training/**` contains Jan-2026 annotation snapshots and old training-path scaffolding. The
+  production pipeline imports `src.pdf_to_images` in-process with explicit config-owned input/output;
+  the remaining `data/training/...` values in `src/pdf_to_images.py` are standalone CLI defaults, not
+  production data contracts. Make that CLI explicit/neutral and retire the old tracked snapshots.
+- `data/evaluation/**` contains the old single-page `page_003` GT. The remaining known source defaults
+  point to legacy standalone routes (`external/oemer/run_omerer.py` and the `src/ml_detector` demo),
+  while current detector validation is based on `evaluation2`. Retire this surface together with
+  those legacy routes.
+
+Exact old annotation bytes remain recoverable from Git history; no accepted current evaluation
+contract requires keeping these directories active. Large operator datasets/images remain ignored
+and should not be added to the public repository without an explicit retention decision.
 
 ## Documentation inventory
 
@@ -204,25 +217,33 @@ This is the largest remaining mixed surface and should not be handled as one del
   retained tool;
 - experiment code with explicit provenance and continuing comparison value.
 
-### Legacy/developer example
+### Resolved legacy candidates
 
-`tools/gt_relabel_gui/manual_config_builder.py` remains available for arbitrary-path one-page
-development use but is not the supported review-package route. Keep it out of user-facing
-instructions. A later cleanup may remove it once no maintained developer workflow needs it.
+`tools/gt_relabel_gui/manual_config_builder.py` is a REMOVE candidate. The maintained manual flow
+starts from package-local `review/manual_correction_input.json`; the builder accepts arbitrary paths,
+is not imported by the current server flow, and is mentioned by current documentation only to label
+it legacy. It should not survive merely as backward-compatible public surface.
 
-### UNDECIDED bulk area
+The earlier broad tools audit (#96), GT-tool audit (#38), and CNN script cleanup (#45) already did
+the expensive historical classification work. Their durable placement rules now live in
+`docs/SCRIPT_MANAGEMENT.md`; #230 should not recreate a second all-files inventory. Apply their
+accepted classifications against current source:
 
-The many root-level `analyze_*`, `debug_*`, `visualize_*`, `probe_*`, one-off batch scripts, and
-`experiments/legacy/**` cannot safely be classified from names alone. Audit them by domain/Issue,
-checking:
+- explicitly maintained directories/tools such as `tools/verification/**`, the current
+  `tools/gt_relabel_gui/**` flow (excluding the legacy builder above),
+  `tools/movement_boundary_review.py`, and `tools/check_makefile_references.py` remain KEEP;
+- `tools/issue120/**` remains ARCHIVE because it is an explicit retained reproduction contract;
+- `tools/run_full_pipeline.py` is self-declared deprecated and superseded by `src.pipeline.main`:
+  REMOVE candidate;
+- old SR measurement helpers such as `tools/measure_sr_only.py`, `tools/measure_sr_impact.py`, and
+  `tools/measure_sr_x2_impact.py` hard-code `sr_eval_gpu` / `/opt/venv_sr` and belong to the retired
+  environment path: REMOVE candidate once any still-needed result is anchored in Issue history;
+- root-level scripts already classified Legacy by #96/#38/#45, and one-off
+  `analyze_*` / `debug_*` / `visualize_*` / `structural_*` scripts with no current caller or retained
+  reproduction contract, should be REMOVE candidates rather than indefinite UNDECIDED files.
 
-1. whether current source/tests/Makefile/CI import or invoke them;
-2. whether a current doc advertises them;
-3. whether they are the sole reproduction path for an accepted result;
-4. whether unique results/rationale are already recoverable from Issue/PR/commit/history;
-5. whether reusable logic should be promoted before deletion.
-
-If none apply, REMOVE and rely on Git history instead of retaining an active-looking script.
+A cleanup PR should still perform a mechanical inbound-reference check before deleting a concrete
+batch, but that check is deletion validation, not another open-ended classification investigation.
 
 ## Legacy environment/runtime candidates
 
@@ -231,23 +252,61 @@ If none apply, REMOVE and rely on Git history instead of retaining an active-loo
 `src/pipeline/core/python_env.py` still probes `sr_eval_gpu` and can select
 `/opt/venv_sr/bin/python` after the canonical `pdfscore_pipeline_gpu` path.
 
-This is a runtime behavior change if removed, so #230 should not delete it as documentation cleanup.
-A focused follow-up should first prove that maintained entrypoints no longer require the fallback,
-then remove it with targeted tests and the applicable runtime validation.
+The current environment guide already classifies this route as legacy compatibility rather than an
+endorsed setup recipe. The maintained operator entrypoint runs the pipeline inside
+`pdfscore_pipeline_gpu`; current workers call `get_pipeline_python()`, but on that supported route it
+selects `/opt/venv_pipeline/bin/python`. The `sr_eval_gpu` branch therefore exists for an unsupported
+host/old-container fallback, not for the documented runtime contract.
+
+Judgment: **REMOVE candidate** in a focused code cleanup. Preserve the canonical
+`pdfscore_pipeline_gpu` and explicit `PIPELINE_PYTHON` behavior, add/adjust targeted interpreter
+selection tests, and run the validation required for a pipeline-core change. Checking whether an old
+`sr_eval_gpu` container happens to be running on one workstation is not needed to decide the public
+repository surface.
 
 ### Old bootstrap scripts
 
 `setup_scripts/setup.sh` and `setup_scripts/start.sh` hard-code
 `/home/masaki_muramatsu/ws_PDFScoreBar` and start a Serena server. `setup_scripts/check_container.sh`
-targets `pdf_score_dev_gpu`, which is not the maintained runtime container. These scripts should not
-be presented as repository setup. They are REMOVE candidates after a repository-reference check.
+targets `pdf_score_dev_gpu`, which is not the maintained runtime container. The remaining
+`download_deepscores_dense.sh` hard-codes a WSL-specific `/mnt/d/datasets/DeepScoresV2` destination.
+DeepScores remains relevant historical/training provenance, but that does not make this machine-
+specific downloader a maintained setup surface. Judgment: **REMOVE the tracked setup_scripts
+surface** in a later cleanup; personal bootstrap helpers belong outside the public repository.
 
 ### Extra model Docker/external surface
 
-`Dockerfile.groundingdino`, `Dockerfile.homr`, `external/oemer/**`,
-`external/models/FSRCNN_x2.pb`, and `.gitmodules` belong to older model/reproduction lines rather
-than the canonical Docker contract. Audit them as one narrow third-party/environment slice before
-removal so reproducibility and licensing/provenance are not accidentally discarded.
+The third-party/environment slice can be separated rather than treated uniformly:
+
+- `Dockerfile.homr`: **ARCHIVE/KEEP**. `docs/ENVIRONMENTS.md` explicitly retains it for isolated or
+  historical HOMR evaluation when an Issue calls for that environment.
+- `Dockerfile.groundingdino`: **REMOVE candidate**. The accepted historical ledger records the
+  zero-shot GroundingDINO attempt as unsuccessful; the Dockerfile also assumes an ignored local
+  `external/grounding_dino` checkout. No current runtime contract depends on it.
+- `external/oemer/**` plus its `.gitmodules` entry: **REMOVE candidate**. The checked-in runner is
+  internally stale: from its present path it computes the repository root incorrectly, looks for
+  `src/archive/oemer/oemer_src` even though the submodule is declared under `external/oemer/oemer_src`,
+  and records an obsolete `src/archive/oemer/run_omerer.py` command. Current Make/Docker/package
+  surfaces do not use it; Oemer conclusions remain historical evidence.
+- `external/models/FSRCNN_x2.pb`: **REMOVE candidate**. It was introduced for a failed lightweight
+  super-resolution experiment, whose durable negative result is already preserved in the compact
+  legacy development history.
+
+`external/README.md` should be removed or rewritten with the same cleanup so it does not continue to
+advertise retired local clones as current repository dependencies.
+
+## Need for local-state investigation
+
+No additional workstation/local-state survey is required to make the classifications above.
+Current GitHub source, current durable docs, and completed Issue audits are sufficient to distinguish
+the maintained surface from legacy compatibility. In particular, re-running local `git grep` for
+facts already established above, checking whether an obsolete container happens to exist locally,
+or checking whether ignored third-party clones are present would duplicate evidence without changing
+the repository contract.
+
+Local execution becomes relevant only when a later cleanup **implements** behavior-sensitive changes
+such as removing the interpreter fallback. At that point use the validation policy for the changed
+code/config; that is implementation validation, not a remaining #230 classification question.
 
 ## Boundary for Issue #100
 
@@ -276,25 +335,34 @@ Issue #100 should not automatically migrate:
 
 Do not combine these into a single bulk deletion.
 
-1. **Legacy runtime/config compatibility**
-   - `src/pipeline/core/python_env.py`: `sr_eval_gpu` / `/opt/venv_sr` fallback;
-   - `configs/dense_full_pipeline.yaml`: `container_name: sr_eval_gpu_exp`;
-   - prove maintained entrypoints are independent before changing behavior.
+1. **Legacy interpreter/config compatibility**
+   - remove `sr_eval_gpu` / `/opt/venv_sr` fallback while preserving canonical container and explicit
+     interpreter override behavior;
+   - remove confirmed-inert `container_name: sr_eval_gpu_exp` from the dense config;
+   - validate as a focused pipeline/config change, not as another repository-surface investigation.
 
-2. **Legacy bootstrap and third-party environment surface**
-   - `setup_scripts/**`;
-   - `Dockerfile.groundingdino`, `Dockerfile.homr`;
-   - `external/**` / `.gitmodules`;
-   - update/remove stale external/setup documentation together.
+2. **Legacy tests migration**
+   - move the useful high-level thin-barline cases into normal `tests/` coverage;
+   - replace the fixed-port/sleep/static-JS GT GUI test with a deterministic current test;
+   - retire `tests_legacy/**` once no unique check remains there.
 
-3. **Tools/experiments retirement**
-   - audit root one-off analysis/debug/visualization scripts in domain-sized batches;
-   - preserve explicit reproduction tools and move any reusable logic before deletion.
+3. **Pre-evaluation2 data and legacy standalone routes**
+   - make `src/pdf_to_images.py` standalone defaults explicit/neutral rather than anchoring old
+     `data/training` paths;
+   - retire `data/training/**`, `data/evaluation/**`, and empty `data/workbench/**` tracked surface;
+   - retire/update legacy standalone consumers at the same time rather than preserving old data only
+     to keep obsolete demos runnable.
 
-4. **Legacy tests/data scaffolding**
-   - `tests_legacy/**`;
-   - pre-evaluation2 `data/training/**`, `data/evaluation/**`, `data/workbench/**`;
-   - retain only unique current fixtures/contracts.
+4. **Legacy bootstrap and third-party experiment surface**
+   - retire `setup_scripts/**`, `Dockerfile.groundingdino`, `external/oemer/**`, the Oemer submodule
+     entry, `external/models/FSRCNN_x2.pb`, and stale `external/README.md` claims;
+   - retain `Dockerfile.homr` as the explicitly documented historical HOMR environment.
+
+5. **Tools/experiments retirement**
+   - remove domain-sized batches already established as legacy/superseded by #38/#45/#96/current
+     source;
+   - preserve explicit reproduction tools such as Issue #120 and move any still-unique reusable logic
+     before deletion.
 
 ## Removal rule
 

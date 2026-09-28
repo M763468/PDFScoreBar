@@ -30,6 +30,7 @@ from src.pipeline.engine_input_safety import (
     DEFAULT_JOB_SAFETY_POLICY,
     InputSafetyError,
     JobSafetyPolicy,
+    enforce_attempt_disk_budget,
     resolve_local_input_path,
     validate_local_pdf,
     validate_output_name,
@@ -51,6 +52,25 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _attempt_bytes(root: Path) -> int:
+    total = 0
+    if not root.exists():
+        return total
+    for path in root.rglob("*"):
+        try:
+            if path.is_symlink():
+                continue
+            if path.is_file():
+                total += path.stat().st_size
+        except FileNotFoundError:
+            continue
+    return total
+
+
+def _check_attempt_budget(root: Path, policy: JobSafetyPolicy) -> None:
+    enforce_attempt_disk_budget(_attempt_bytes(root), policy=policy)
 
 
 def _source_commit(explicit: str | None) -> str:
@@ -347,6 +367,9 @@ class PipelineJobExecutor:
         telemetry: TelemetryRecorder | None = None
         requested = 0
 
+        # Correction execution needs an engine-owned retained-source resolver. Fail
+        # closed until that source identity has been validated; never rerun the raw
+        # input as though the submitted corrections had been applied.
         if request.corrections is not None:
             return self._early_failure(
                 job_id,
@@ -354,11 +377,8 @@ class PipelineJobExecutor:
                 _error(
                     ErrorCategory.CORRECTION,
                     "correction_execution_unavailable",
-                    (
-                        "This executor does not apply correction sets directly; "
-                        "use the retained review correction workflow."
-                    ),
-                    actionable=False,
+                    "The correction source cannot be resolved by this executor.",
+                    actionable=True,
                     retryable=False,
                 ),
                 on_progress,
@@ -377,6 +397,7 @@ class PipelineJobExecutor:
                 render_dpi=self._dpi(config),
                 policy=self.safety_policy,
             )
+            source_name = meta.source_name
             requested = len(meta.selected_pages)
             expected_sha = request.input.get("sha256")
             if expected_sha is not None and expected_sha != meta.sha256:
@@ -388,8 +409,43 @@ class PipelineJobExecutor:
                     retryable=False,
                 )
 
+            work_root.mkdir(parents=True, exist_ok=True)
+            staged_input = work_root / "input" / "source.pdf"
+            staged_input.parent.mkdir(parents=True, exist_ok=True)
+            with resolved.open("rb") as source, staged_input.open("wb") as target:
+                copied = 0
+                while chunk := source.read(1024 * 1024):
+                    copied += len(chunk)
+                    if copied > self.safety_policy.max_pdf_bytes:
+                        raise InputSafetyError(
+                            category=ErrorCategory.RESOURCE,
+                            code="input_pdf_too_large",
+                            public_message="The input PDF exceeds the configured size limit.",
+                            user_actionable=True,
+                            retryable=False,
+                        )
+                    target.write(chunk)
+            staged_meta = validate_local_pdf(
+                str(staged_input),
+                allowed_root=staged_input.parent,
+                requested_pages=request.config_overrides.get("pages"),
+                render_dpi=self._dpi(config),
+                policy=self.safety_policy,
+            )
+            if staged_meta.sha256 != meta.sha256:
+                raise InputSafetyError(
+                    category=ErrorCategory.INPUT,
+                    code="input_pdf_changed_during_staging",
+                    public_message="The input PDF changed while it was being staged.",
+                    user_actionable=True,
+                    retryable=False,
+                )
+            meta = staged_meta
+            requested = len(meta.selected_pages)
+            _check_attempt_budget(work_root, self.safety_policy)
+
             output_name = validate_output_name(
-                str(request.config_overrides.get("output_name") or Path(meta.source_name).stem)
+                str(request.config_overrides.get("output_name") or Path(source_name).stem)
             )
             self._clear_public(package_root)
             if staging.exists():
@@ -397,7 +453,7 @@ class PipelineJobExecutor:
             staging.mkdir(parents=True, exist_ok=True)
             config_path = self._write_config(
                 config,
-                input_path=resolved,
+                input_path=staged_input,
                 pages=meta.selected_pages,
                 job_id=job_id,
                 work_root=work_root,
@@ -416,6 +472,7 @@ class PipelineJobExecutor:
                     telemetry_recorder=telemetry,
                 )
             )
+            _check_attempt_budget(work_root, self.safety_policy)
 
             internal_handoff = run_dir / ".review_work" / "manual_correction_input.json"
             if not internal_handoff.is_file():
@@ -441,35 +498,51 @@ class PipelineJobExecutor:
                     output_name=output_name,
                 )
                 final_pdf = Path(str(final_summary["final_pdf"]))
+                final_root = (staging / "final").resolve()
+                final_pdf = final_pdf.resolve()
+                if not final_pdf.is_relative_to(final_root):
+                    raise RuntimeError("final materializer returned a path outside final output")
                 if not final_pdf.is_file():
                     raise RuntimeError("final materializer did not produce a PDF")
 
-                if request.output_profile is OutputProfile.DEBUG:
-                    debug_root = staging / "debug" / job_id
-                    debug_root.mkdir(parents=True, exist_ok=True)
-                    (debug_root / "telemetry.json").write_text(
-                        json.dumps(
-                            telemetry.summary(),
-                            ensure_ascii=False,
-                            allow_nan=False,
-                            sort_keys=True,
-                            separators=(",", ":"),
-                        )
-                        + "\n",
-                        encoding="utf-8",
+            _check_attempt_budget(work_root, self.safety_policy)
+            if request.output_profile is OutputProfile.DEBUG:
+                debug_root = staging / "debug" / job_id
+                debug_root.mkdir(parents=True, exist_ok=True)
+                (debug_root / "telemetry.json").write_text(
+                    json.dumps(
+                        telemetry.summary(),
+                        ensure_ascii=False,
+                        allow_nan=False,
+                        sort_keys=True,
+                        separators=(",", ":"),
                     )
+                    + "\n",
+                    encoding="utf-8",
+                )
 
             pages = self._page_summary(run_dir, requested)
-            artifacts = self._artifacts(staging, output_name, request.output_profile, job_id)
+            artifacts = self._artifacts(staging, final_pdf, request.output_profile, job_id)
             self._publish(staging, package_root)
             telemetry.terminal(JobStatus.SUCCEEDED)
+            warnings = tuple(
+                {"code": "final_materialization_warning", "message": str(message)}
+                for message in final_summary.get("warnings", [])
+            )
+            if request.output_profile in {OutputProfile.REVIEW, OutputProfile.DEBUG}:
+                retained = package_root / ".engine-retained"
+                if retained.exists():
+                    shutil.rmtree(retained)
+                work_root.replace(retained)
+            else:
+                shutil.rmtree(work_root, ignore_errors=True)
             return JobResult(
                 job_id=job_id,
                 status=JobStatus.SUCCEEDED,
                 provenance=self._provenance(),
                 pages=pages,
                 artifacts=artifacts,
-                warnings=(),
+                warnings=warnings,
                 review={"required": False, "reason_codes": []},
                 resources=telemetry.job_resources(),
                 caller_reference=request.caller_reference,
@@ -478,6 +551,8 @@ class PipelineJobExecutor:
             self._clear_public(package_root)
             if staging.exists():
                 shutil.rmtree(staging, ignore_errors=True)
+            shutil.rmtree(work_root, ignore_errors=True)
+            shutil.rmtree(package_root / ".engine-retained", ignore_errors=True)
             failure = _map_error(exc)
             if telemetry is None:
                 return self._early_failure(
@@ -587,15 +662,17 @@ class PipelineJobExecutor:
 
     @staticmethod
     def _artifacts(
-        staging: Path, output_name: str, profile: OutputProfile, job_id: str
+        staging: Path, final_pdf: Path, profile: OutputProfile, job_id: str
     ) -> tuple[ArtifactDescriptor, ...]:
-        final_pdf = staging / "final" / f"{output_name}_score_numbered.pdf"
+        final_pdf = final_pdf.resolve()
         artifacts = [
             ArtifactDescriptor(
                 artifact_id="final.pdf",
                 role="final.score_numbered_pdf",
                 location_kind="relative_path",
-                reference=f"final/{final_pdf.name}",
+                reference=(
+                    "final/" + final_pdf.relative_to((staging / "final").resolve()).as_posix()
+                ),
                 media_type="application/pdf",
                 sha256=_sha256(final_pdf),
             )

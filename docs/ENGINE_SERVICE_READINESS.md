@@ -32,12 +32,14 @@ Publication is success-only:
 - a failed attempt advertises no final/review artifacts and removes any staged
   public output before returning.
 
-The current reference executor does not directly apply a v1 `CorrectionSet`.
-Such a request returns the structured
-`correction_execution_unavailable` correction error. The gate nevertheless
-verifies that the review artifact descriptor hash/coordinate identity can be
-used by `CorrectionSet.assert_source_matches()`. The retained
-review/correction workflow remains the concrete correction execution path.
+The current reference executor does not execute v1 `CorrectionSet` records.
+Issue #340's correction compatibility gate is limited to publishing a stable
+review handoff and proving its artifact hash/coordinate identity can be used by
+`CorrectionSet.assert_source_matches()`. It does not claim that this repository
+exposes correction execution through the one-job boundary; that capability
+remains in the existing retained review/correction workflow. Requests carrying
+a `CorrectionSet` fail closed with `correction_execution_unavailable` rather
+than silently rerunning the uncorrected input.
 
 ## Cheap PR compatibility gate
 

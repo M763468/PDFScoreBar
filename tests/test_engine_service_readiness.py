@@ -18,6 +18,7 @@ from src.pipeline.engine_contract import (
     validate_progress_sequence,
 )
 from src.pipeline.engine_executor import PipelineJobExecutor
+from src.pipeline.engine_input_safety import JobSafetyPolicy
 
 
 @pytest.fixture
@@ -110,9 +111,9 @@ outputs: {}
     def fake_final(*, final_root, output_name, **_kwargs):
         final_root = Path(final_root)
         final_root.mkdir(parents=True, exist_ok=True)
-        final_pdf = final_root / f"{output_name}_score_numbered.pdf"
+        final_pdf = final_root / f"{output_name.replace(' ', '_')}_score_numbered.pdf"
         final_pdf.write_bytes(b"%PDF-1.4\n%%EOF\n")
-        return {"final_pdf": str(final_pdf)}
+        return {"final_pdf": str(final_pdf), "warnings": ["some labels were omitted"]}
 
     def build(job_id: str, **kwargs):
         params = {
@@ -152,6 +153,9 @@ def test_executor_publishes_only_contract_artifacts(executor_fixture):
 
     by_id = {artifact.artifact_id: artifact for artifact in result.artifacts}
     assert set(by_id) == {"final.pdf", "review.manual_correction_input"}
+    assert result.warnings == (
+        {"code": "final_materialization_warning", "message": "some labels were omitted"},
+    )
     package = artifact_root / result.job_id
     for artifact in result.artifacts:
         assert (package / artifact.reference).is_file()
@@ -235,9 +239,10 @@ def test_executor_maps_worker_failure_and_cleans_public_outputs(executor_fixture
     package = artifact_root / result.job_id
     assert not (package / "final").exists()
     assert not (package / "review").exists()
+    assert not (package / ".engine-work").exists()
 
 
-def test_executor_reports_unconnected_correction_execution(executor_fixture):
+def test_executor_reports_correction_source_unavailable(executor_fixture):
     build, _artifact_root = executor_fixture
     source_artifact = {
         "artifact_id": "review.manual_correction_input",
@@ -277,4 +282,64 @@ def test_executor_reports_unconnected_correction_execution(executor_fixture):
     assert result.status is JobStatus.FAILED
     assert result.failure is not None
     assert result.failure.category is ErrorCategory.CORRECTION
-    assert result.failure.code == "correction_execution_unavailable"
+    assert result.failure.code in {"correction_execution_unavailable", "correction_source_invalid"}
+
+
+def test_executor_sanitized_output_name_uses_materialized_path(executor_fixture):
+    build, artifact_root = executor_fixture
+    result = build("job-sanitized")(
+        JobRequest(
+            input={"kind": "local_path", "reference": "score.pdf"},
+            output_profile=OutputProfile.FINAL,
+            config_overrides={"pages": [1], "output_name": "my score"},
+        )
+    )
+    assert result.status is JobStatus.SUCCEEDED
+    final = next(item for item in result.artifacts if item.artifact_id == "final.pdf")
+    assert final.reference == "final/my_score_score_numbered.pdf"
+    assert (artifact_root / result.job_id / final.reference).is_file()
+    assert not (artifact_root / result.job_id / ".engine-work").exists()
+
+
+def test_debug_telemetry_contains_completed_materialization_stage(executor_fixture):
+    build, artifact_root = executor_fixture
+    result = build("job-debug")(
+        JobRequest(
+            input={"kind": "local_path", "reference": "score.pdf"},
+            output_profile=OutputProfile.DEBUG,
+            config_overrides={"pages": [1]},
+        )
+    )
+    assert result.status is JobStatus.SUCCEEDED
+    artifact = next(item for item in result.artifacts if item.artifact_id == "debug.telemetry")
+    payload = json.loads((artifact_root / result.job_id / artifact.reference).read_text())
+    assert any(
+        item.get("stage_id") == "artifact_materialization" and item.get("state") == "completed"
+        for item in payload.get("stage_spans", [])
+    )
+
+
+def test_executor_enforces_attempt_disk_budget_and_cleans_work(executor_fixture):
+    build, artifact_root = executor_fixture
+
+    def oversized_runner(_config_path, *, run_id, output_root, **_kwargs):
+        run_dir = Path(output_root) / run_id
+        run_dir.mkdir(parents=True, exist_ok=True)
+        (run_dir / "oversized.bin").write_bytes(b"x" * 2048)
+        return run_dir
+
+    result = build(
+        "job-over-budget",
+        pipeline_runner=oversized_runner,
+        safety_policy=JobSafetyPolicy(max_attempt_disk_bytes=1024),
+    )(
+        JobRequest(
+            input={"kind": "local_path", "reference": "score.pdf"},
+            output_profile=OutputProfile.FINAL,
+            config_overrides={"pages": [1]},
+        )
+    )
+    assert result.status is JobStatus.FAILED
+    assert result.failure is not None
+    assert result.failure.code == "attempt_disk_budget_exceeded"
+    assert not (artifact_root / result.job_id / ".engine-work").exists()

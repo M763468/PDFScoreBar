@@ -73,15 +73,13 @@ run-directory paths.
 
 ### 2.3 What does not exist yet
 
-The following are future directions, not current runtime claims:
+The repository now includes the thin synchronous
+`src.pipeline.engine_executor.PipelineJobExecutor` reference adapter and the
+service-readiness gates defined by `ENGINE_SERVICE_READINESS.md`. Remaining
+future directions, not current runtime claims, include:
 
-- a production adapter that executes the current pipeline through the versioned
-  `JobRequest` / `JobResult` library boundary;
-- a full v1 executor adapter that owns `JobResult` construction and terminal
-  `ProgressEvent` / `EngineError` consistency; the current config-first runner can now
-  emit opt-in structured progress independently of log wording;
-- production mapping of current failures into the defined structured `EngineError`
-  taxonomy;
+- direct v1 `CorrectionSet` execution through the reference adapter (the
+  retained review/correction workflow remains the concrete execution path);
 - a service/control-plane implementation;
 - a production queue, job database, or object-storage integration;
 - a guaranteed public `pdfscorebar` console surface.
@@ -90,9 +88,9 @@ The following are future directions, not current runtime claims:
 
 | Concern | Current state | Target direction |
 | --- | --- | --- |
-| Job invocation | Config/run-directory oriented; v1 request types are defined but not wired to production execution | Versioned one-job engine request |
-| Engine result | Internal run directory + known artifacts; v1 result/artifact types are defined | Structured result with artifact descriptors and provenance |
-| Progress | Config-first runner can emit opt-in v1 structured stage/page progress and compact timing/resource telemetry; logs remain diagnostic | Same stable events emitted by the future v1 executor adapter |
+| Job invocation | Config-first runner remains internal; `PipelineJobExecutor` exposes the v1 request boundary | Thin consumers call the versioned one-job engine request without depending on run layout |
+| Engine result | Reference executor returns structured result/error plus stable final/review artifact descriptors | Service-specific storage/retention remains outside the engine |
+| Progress | Reference executor forwards v1 stage/page progress and compact timing/resource telemetry; logs remain diagnostic | Workers/services forward the same stable events without parsing logs |
 | Errors | Existing exceptions/logging/exit behavior; v1 error envelope is defined but not wired | Structured engine error categories |
 | Final/review outputs | Implemented current artifacts | Stable external artifact descriptors |
 | Corrections | Config-first review package + existing GUI/apply path | Versioned correction input/output contract reusing current semantics |

@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/docker_runtime_validation.sh [--config PATH] [--preflight-only]
+Usage: scripts/docker_runtime_validation.sh [--config PATH] [--preflight-only] [--service-readiness-smoke]
 
 Validates the canonical Docker runtime contract, then runs the configured pipeline smoke.
 OMR-DLN is an external/operator-supplied artifact. Canonical validation resolves the
@@ -22,16 +22,23 @@ USAGE
 }
 
 config="configs/smoke_test.yaml"
+config_explicit=0
 preflight_only=0
+service_readiness_smoke=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --config)
       config="${2:?missing config path}"
+      config_explicit=1
       shift 2
       ;;
     --preflight-only)
       preflight_only=1
+      shift
+      ;;
+    --service-readiness-smoke)
+      service_readiness_smoke=1
       shift
       ;;
     -h|--help)
@@ -45,6 +52,10 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ "$service_readiness_smoke" -eq 1 && "$config_explicit" -eq 0 ]]; then
+  config="configs/service_readiness_smoke.yaml"
+fi
 
 for cmd in docker git realpath python3; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
@@ -157,9 +168,15 @@ if [[ -n "${DOCKER_EXTRA_ARGS:-}" ]]; then
   read -r -a extra_args <<<"${DOCKER_EXTRA_ARGS}"
 fi
 
+network_args=()
+if [[ "$service_readiness_smoke" -eq 1 ]]; then
+  network_args=(--network none)
+fi
+
 common_args=(
   run --rm --gpus all
   "${extra_args[@]}"
+  "${network_args[@]}"
   -v "$repo_root:/workspace"
   -v "$omr_host:$omr_container:ro"
   -w /workspace
@@ -198,6 +215,14 @@ docker "${common_args[@]}" \
 
 if [[ "$preflight_only" -eq 1 ]]; then
   echo "Docker runtime preflight passed."
+  exit 0
+fi
+
+if [[ "$service_readiness_smoke" -eq 1 ]]; then
+  echo "Running offline service-readiness one-job smoke..."
+  docker "${common_args[@]}" \
+    /opt/venv_pipeline/bin/python tools/verification/verify_engine_service_readiness.py
+  echo "Service-readiness Docker runtime validation completed successfully."
   exit 0
 fi
 

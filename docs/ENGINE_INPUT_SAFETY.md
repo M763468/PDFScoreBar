@@ -276,7 +276,13 @@ A worker that accepts arbitrary PDFs must provide, outside the pure helper:
 The engine exposes `max_attempt_disk_bytes` and
 `enforce_attempt_disk_budget()` as an in-process hook. A filesystem/container
 quota is still the hard backstop because a killed or compromised process cannot
-be trusted to call the hook.
+be trusted to call the hook. The reference `PipelineJobExecutor` polls the
+attempt workspace while the pipeline and materializers run, checks at their
+stage boundaries, and checks again after it writes debug telemetry. This is
+best-effort detection: polling can miss short-lived files and does not stop an
+opaque stage at the instant it crosses the limit. Production workers must keep
+a hard per-attempt filesystem/container quota enabled to prevent disk
+exhaustion.
 
 The engine does not promise cross-job fairness or isolation. A service/worker
 pool must ensure one job cannot read another job's workspace or use unbounded
@@ -338,7 +344,8 @@ Implemented now:
 Still owned by a future production `JobExecutor`/worker adapter:
 
 - invoking this preflight before current PDF rendering;
-- applying the disk hook throughout attempt writes;
+- configuring/enforcing the hard filesystem/container quota that backs up the
+  in-process attempt-disk monitor;
 - mapping terminal failures into a concrete `JobResult`;
 - hard CPU/RAM/VRAM/filesystem/container controls;
 - outbound-network policy enforcement at worker/container level;

@@ -54,8 +54,12 @@ The reusable boundary is expressed by the `JobExecutor` protocol:
 result = executor(request, on_progress=handle_event)
 ```
 
-The current production pipeline is not yet wired to this protocol. That adapter
-can be added separately without changing the serialized v1 contract.
+`src.pipeline.engine_executor.PipelineJobExecutor` is the reference synchronous
+adapter over the current config-first pipeline. It owns terminal result/error
+construction and public final/review artifact publication while keeping internal
+run/log paths out of the caller contract. Direct v1 `CorrectionSet` execution is
+not connected by this adapter; the retained review/correction workflow remains
+the concrete correction execution path.
 
 ## 3. JobRequest
 
@@ -421,9 +425,11 @@ Focused tests cover:
 - artifact path containment;
 - NaN rejection.
 
-This contract-only change does not alter detector/MMR/numbering inference,
-model loading, GPU execution, or canonical evaluation outputs. The one-job
-lifecycle/cancellation semantics are now defined by
-[`ENGINE_JOB_LIFECYCLE.md`](ENGINE_JOB_LIFECYCLE.md), while production executor wiring and container compatibility remain follow-up
-implementation work. Untrusted-input safety and structured telemetry are now
-defined by the #338 and #339 contracts respectively.
+The one-job lifecycle/cancellation semantics are defined by
+[`ENGINE_JOB_LIFECYCLE.md`](ENGINE_JOB_LIFECYCLE.md), untrusted-input safety by
+[`ENGINE_INPUT_SAFETY.md`](ENGINE_INPUT_SAFETY.md), and structured telemetry by
+[`ENGINE_TELEMETRY.md`](ENGINE_TELEMETRY.md). Issue #340 adds the reference
+executor plus CI/container compatibility gates described in
+[`ENGINE_SERVICE_READINESS.md`](ENGINE_SERVICE_READINESS.md). These gates do not
+replace detector/MMR/numbering accuracy validation when numerical behavior
+changes.

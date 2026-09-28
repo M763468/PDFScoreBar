@@ -38,6 +38,7 @@ def run_pipeline(
     telemetry_summary_path: Path | None = None,
     sample_resources: bool = False,
     resource_sample_interval_seconds: float = 1.0,
+    telemetry_recorder: TelemetryRecorder | None = None,
 ) -> Path:
     """Entry point for running the full pipeline."""
     from src.pipeline.utils.images import clear_image_cache
@@ -59,7 +60,15 @@ def run_pipeline(
     if sample_resources and effective_telemetry_summary_path is None:
         effective_telemetry_summary_path = run_dir / "telemetry.json"
 
-    telemetry = None
+    if telemetry_recorder is not None and (
+        on_progress is not None or telemetry_summary_path is not None or sample_resources
+    ):
+        raise ValueError(
+            "telemetry_recorder owns progress/resources; do not also pass "
+            "on_progress, telemetry_summary_path, or sample_resources"
+        )
+    telemetry = telemetry_recorder
+    owns_telemetry = telemetry_recorder is None
 
     # Setup File Logging for this run
     log_file = run_dir / "pipeline.log"
@@ -90,7 +99,7 @@ def run_pipeline(
             handler.setLevel(console_log_level)
 
     try:
-        if (
+        if telemetry is None and (
             on_progress is not None
             or effective_telemetry_summary_path is not None
             or sample_resources
@@ -101,6 +110,7 @@ def run_pipeline(
                 sample_resources=sample_resources,
                 resource_sample_interval_seconds=resource_sample_interval_seconds,
             )
+        if telemetry is not None:
             telemetry.start_job()
 
         logger.info(f"Starting pipeline run: {run_id_value}")
@@ -120,16 +130,16 @@ def run_pipeline(
             )
             result = orchestrator.run(page_limit=page_limit)
         except Exception:
-            if telemetry is not None:
+            if owns_telemetry and telemetry is not None:
                 telemetry.terminal(JobStatus.FAILED)
             raise
         else:
-            if telemetry is not None:
+            if owns_telemetry and telemetry is not None:
                 telemetry.terminal(JobStatus.SUCCEEDED)
             return result
 
     finally:
-        if telemetry is not None:
+        if owns_telemetry and telemetry is not None:
             telemetry.close()
             if effective_telemetry_summary_path is not None:
                 try:

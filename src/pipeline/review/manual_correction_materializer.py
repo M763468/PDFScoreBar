@@ -260,6 +260,11 @@ def materialize_manual_correction_review_package(
     manifest = _load_json_object(manifest_path, description="pipeline manifest")
     manifest_relative_base = _manifest_relative_base(manifest, run_root=run_root_path)
     selected_pages = _select_pages(manifest, pages)
+    manifest_config = manifest.get("config")
+    manifest_steps = manifest_config.get("steps") if isinstance(manifest_config, dict) else None
+    mmr_required = bool(
+        manifest_steps.get("mmr_overrides") if isinstance(manifest_steps, dict) else False
+    )
 
     handoff_pages: list[dict[str, Any]] = []
     for page in selected_pages:
@@ -301,9 +306,10 @@ def materialize_manual_correction_review_package(
 
         required = {
             "numbering_final": numbering_final,
-            "mmr_overrides": mmr_overrides,
             "barlines_review source": barlines_source,
         }
+        if mmr_required:
+            required["mmr_overrides"] = mmr_overrides
         missing = [f"{label}: {path}" for label, path in required.items() if not path.exists()]
         if missing:
             raise ManualCorrectionMaterializerError(
@@ -316,7 +322,8 @@ def materialize_manual_correction_review_package(
         _copy_run_artifact(numbering_final, page_dir / "numbering_final.json")
         if review_overlay.exists():
             _copy_run_artifact(review_overlay, page_dir / "review_overlay.png")
-        _copy_run_artifact(mmr_overrides, page_dir / "mmr_overrides.json")
+        if mmr_overrides.exists():
+            _copy_run_artifact(mmr_overrides, page_dir / "mmr_overrides.json")
         _write_json(
             page_dir / "barlines_review.json",
             _extract_review_barline_records(_load_json(barlines_source), source=barlines_source),
@@ -327,13 +334,14 @@ def materialize_manual_correction_review_package(
             "page_number": page_number,
             "source_image": f"pages/{page_id}/source.png",
             "numbering_final": f"pages/{page_id}/numbering_final.json",
-            "mmr_overrides": f"pages/{page_id}/mmr_overrides.json",
             "barlines_review": f"pages/{page_id}/barlines_review.json",
             "barlines_review_source": barlines_source.relative_to(run_root_path).as_posix(),
             "barlines_review_source_kind": barlines_source_kind,
             "barlines_review_source_manifest_field": barlines_source_field,
             "correction_output": "corrections",
         }
+        if mmr_overrides.exists():
+            handoff_page["mmr_overrides"] = f"pages/{page_id}/mmr_overrides.json"
         if review_overlay.exists():
             handoff_page["review_overlay"] = f"pages/{page_id}/review_overlay.png"
         handoff_pages.append(handoff_page)

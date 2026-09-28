@@ -1,0 +1,43 @@
+run:
+  run_id: service_readiness_smoke
+  output_root: artifacts/service_readiness_runs
+
+inputs:
+  barlines_root: artifacts/service_readiness_fixture
+  barlines_pattern: "{page_id}_barlines.json"
+  staff_mask_pattern: "{page_id}_staff_mask.png"
+  pdf_to_images:
+    dpi: 144
+    pages: "1"
+    target_width: null
+    target_height: null
+    interpolation: area
+    prefix: page
+    format: png
+    overwrite: true
+    alpha: false
+    image_glob: "page_*.png"
+
+detection:
+  cnn_model_manifest: models/barline_cnn/manifest.json
+
+mmr:
+  model_path: tools/mmr_training/models/mmr_classifier_best.pth
+
+steps:
+  pdf_to_images: true
+  detection: false
+  filter_pages: true
+  apply_barline_overrides: false
+  numbering_base: true
+  mmr_overrides: false
+  apply_measure_overrides: true
+  overlay: true
+
+filters:
+  blank_page: false
+  staff_detect: false
+  user_exclude: []
+
+numbering:
+  force_single_system: true

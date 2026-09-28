@@ -547,7 +547,6 @@ class PipelineOrchestrator:
 
         required_steps = {
             "numbering_base": get_nested(self.config, "steps", "numbering_base", default=False),
-            "mmr_overrides": get_nested(self.config, "steps", "mmr_overrides", default=False),
         }
         missing = [name for name, enabled in required_steps.items() if not enabled]
         if missing:
@@ -650,8 +649,8 @@ class PipelineOrchestrator:
 
             # 1. Barline Correction
             barlines_path = Path(resolved_item["barlines_json"])
+            corrected_path = page_intermediate / "barlines_corrected.json"
             if apply_barlines:
-                corrected_path = page_intermediate / "barlines_corrected.json"
                 if barline_override_payload and isinstance(
                     barline_override_payload.get("barline_overrides", []), list
                 ):
@@ -689,6 +688,16 @@ class PipelineOrchestrator:
                     "remove_requests": 0,
                     "unmatched_remove": 0,
                 }
+                if (
+                    self._review_package_config().enabled
+                    and not self.dry_run
+                    and barlines_path.exists()
+                ):
+                    corrected_path.write_text(
+                        barlines_path.read_text(encoding="utf-8"),
+                        encoding="utf-8",
+                    )
+                    barlines_path = corrected_path
             page_ctx[page_id]["barlines_path"] = barlines_path
 
             # 2. Base Numbering

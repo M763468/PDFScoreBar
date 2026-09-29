@@ -4,6 +4,7 @@ Run this once in each immutable runtime image against the same retained staff
 mask corpus. The script deduplicates byte-identical masks and compares the
 post-morphology boxes used by StaffExtractor without touching production code.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -58,7 +59,9 @@ def read_unique_masks(paths: list[Path]) -> list[tuple[str, Path, list[str]]]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("corpus", type=Path, help="directory containing retained *_staff_mask.png files")
+    parser.add_argument(
+        "corpus", type=Path, help="directory containing retained *_staff_mask.png files"
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     paths = sorted(args.corpus.rglob("*_staff_mask.png"))
@@ -105,7 +108,9 @@ def main() -> None:
         }
         results.append(row)
         if expected != actual:
-            mismatches.append({"sha256": digest, "path": str(path), "expected": expected, "actual": actual})
+            mismatches.append(
+                {"sha256": digest, "path": str(path), "expected": expected, "actual": actual}
+            )
 
     payload = {
         "opencv": cv2.__version__,
@@ -125,12 +130,27 @@ def main() -> None:
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(json.dumps({key: payload[key] for key in (
-        "opencv", "numpy", "path_count", "unique_mask_count", "mismatch_count",
-        "unreadable_count",
-        "connected_components_total_ms", "find_contours_total_ms",
-        "connected_components_median_ms", "find_contours_median_ms",
-    )}, indent=2, sort_keys=True))
+    print(
+        json.dumps(
+            {
+                key: payload[key]
+                for key in (
+                    "opencv",
+                    "numpy",
+                    "path_count",
+                    "unique_mask_count",
+                    "mismatch_count",
+                    "unreadable_count",
+                    "connected_components_total_ms",
+                    "find_contours_total_ms",
+                    "connected_components_median_ms",
+                    "find_contours_median_ms",
+                )
+            },
+            indent=2,
+            sort_keys=True,
+        )
+    )
 
 
 if __name__ == "__main__":

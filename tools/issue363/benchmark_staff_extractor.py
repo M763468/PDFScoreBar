@@ -48,7 +48,7 @@ def main() -> None:
     operations = (
         "dilate",
         "morphologyEx",
-        "connectedComponentsWithStats",
+        "findContours",
     )
     original_operations = {name: getattr(cv2, name) for name in operations}
     operation_times: dict[str, list[float]] = {name: [] for name in operations}
@@ -62,8 +62,7 @@ def main() -> None:
                 return _original(*op_args, **op_kwargs)
             finally:
                 current_operation_times[_name] = (
-                    current_operation_times.get(_name, 0.0)
-                    + (time.perf_counter() - start) * 1000
+                    current_operation_times.get(_name, 0.0) + (time.perf_counter() - start) * 1000
                 )
 
         setattr(cv2, operation_name, timed_operation)
@@ -80,8 +79,7 @@ def main() -> None:
         def extract():
             staves = extractor.extract(resolved, target_size)
             return [
-                [staff.bbox.x1, staff.bbox.y1, staff.bbox.x2, staff.bbox.y2]
-                for staff in staves
+                [staff.bbox.x1, staff.bbox.y1, staff.bbox.x2, staff.bbox.y2] for staff in staves
             ]
 
         for _ in range(args.warmups):
@@ -118,8 +116,7 @@ def main() -> None:
                     for name in operations
                 },
                 "operation_samples_ms": {
-                    name: operation_times[name][-args.repeats :]
-                    for name in operations
+                    name: operation_times[name][-args.repeats :] for name in operations
                 },
             }
         )

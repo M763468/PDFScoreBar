@@ -67,9 +67,10 @@ RUN uv pip install onnxruntime-gpu==1.24.4
 # Install project dependencies
 RUN uv pip install -e .
 
-# Ultralytics and HOMR declare different wheel flavors but share the cv2
-# namespace. Keep their versions aligned and reinstall the production-imported
-# wheel last so the effective implementation is reproducible.
+# HOMR installs its declared headless OpenCV distribution before project
+# dependencies. Keep the standalone project dependency on generic OpenCV only;
+# these wheel flavors share cv2, so reinstall the output-compatible production
+# wheel last in the supported Docker runtime.
 RUN uv pip install --no-cache-dir --force-reinstall --no-deps opencv-python==4.11.0.86
 
 # Maintained HOMR declares both generic and GPU ONNX Runtime distributions.  The

@@ -46,7 +46,9 @@ class StaffExtractor:
         processed = cv2.morphologyEx(processed, cv2.MORPH_CLOSE, h_kernel)
 
         staves = []
-        for x, y, w, h in self._component_bounds(processed, min_width=target_w * self.min_width_ratio):
+        for x, y, w, h in self._component_bounds(
+            processed, min_width=target_w * self.min_width_ratio
+        ):
             component_unit_size = unit_size
             if component_unit_size is None:
                 # Short systems can be extractable even when no staff row spans
@@ -66,7 +68,9 @@ class StaffExtractor:
 
         return sorted(staves, key=lambda s: s.bbox.y1)
 
-    def _component_bounds(self, processed: np.ndarray, *, min_width: float) -> List[Tuple[int, int, int, int]]:
+    def _component_bounds(
+        self, processed: np.ndarray, *, min_width: float
+    ) -> List[Tuple[int, int, int, int]]:
         """Return accepted 8-connected component boxes in CCL scan order.
 
         Contour extraction is substantially faster than OpenCV's connected

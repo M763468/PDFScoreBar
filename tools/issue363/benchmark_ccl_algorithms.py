@@ -1,4 +1,5 @@
 """Compare OpenCV connected-component algorithms on retained staff masks."""
+
 from __future__ import annotations
 
 import argparse
@@ -15,11 +16,15 @@ import numpy as np
 def boxes_for(binary: np.ndarray, algorithm: int | None) -> list[list[int]]:
     if algorithm == "findContours":
         contours, hierarchy = cv2.findContours(binary, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
-        raw_boxes = [] if hierarchy is None else [
-            cv2.boundingRect(contour)
-            for contour, node in zip(contours, hierarchy[0])
-            if node[3] == -1
-        ]
+        raw_boxes = (
+            []
+            if hierarchy is None
+            else [
+                cv2.boundingRect(contour)
+                for contour, node in zip(contours, hierarchy[0])
+                if node[3] == -1
+            ]
+        )
     else:
         if algorithm is None:
             count, _, stats, _ = cv2.connectedComponentsWithStats(binary, connectivity=8)
@@ -41,7 +46,9 @@ def main() -> None:
     parser.add_argument("masks", nargs="+", type=Path)
     parser.add_argument("--warmups", type=int, default=3)
     parser.add_argument("--repeats", type=int, default=15)
-    parser.add_argument("--algorithms", default=None, help="comma-separated subset of algorithm names")
+    parser.add_argument(
+        "--algorithms", default=None, help="comma-separated subset of algorithm names"
+    )
     args = parser.parse_args()
     if args.warmups < 0 or args.repeats < 1:
         parser.error("--warmups must be >= 0 and --repeats must be >= 1")
@@ -64,9 +71,18 @@ def main() -> None:
         if image is None:
             raise FileNotFoundError(path)
         _, binary = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
-        binary = cv2.morphologyEx(cv2.dilate(binary, np.ones((20, 1), np.uint8)), cv2.MORPH_CLOSE, np.ones((1, 50), np.uint8))
+        binary = cv2.morphologyEx(
+            cv2.dilate(binary, np.ones((20, 1), np.uint8)),
+            cv2.MORPH_CLOSE,
+            np.ones((1, 50), np.uint8),
+        )
         baseline = boxes_for(binary, None)
-        row = {"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "shape": list(image.shape), "algorithms": {}}
+        row = {
+            "path": str(path),
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "shape": list(image.shape),
+            "algorithms": {},
+        }
         for name, algorithm in algorithms.items():
             expected = boxes_for(binary, algorithm)
             for _ in range(args.warmups):
@@ -86,7 +102,19 @@ def main() -> None:
                 "samples_ms": samples,
             }
         results.append(row)
-    print(json.dumps({"opencv": cv2.__version__, "numpy": np.__version__, "warmups": args.warmups, "repeats": args.repeats, "masks": results}, indent=2, sort_keys=True))
+    print(
+        json.dumps(
+            {
+                "opencv": cv2.__version__,
+                "numpy": np.__version__,
+                "warmups": args.warmups,
+                "repeats": args.repeats,
+                "masks": results,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+    )
 
 
 if __name__ == "__main__":

@@ -66,11 +66,13 @@ Runtime to avoid provider namespace collision.
 
 There is an additional package-ownership conflict: Ultralytics requires the `opencv-python`
 distribution while HOMR requires `opencv-python-headless`. Both distributions install the same
-`cv2` module. The 4.13 / Pillow 12.3 disposable candidate satisfied both declared version ranges
-and passed imports and tests, but retaining both OpenCV flavors is not a clean package layout.
-The direct dependency dry run likewise selected both flavors (and a generic ONNX Runtime that the
-Dockerfile later removes). A candidate image was built under an isolated tag to test the complete
-runtime without changing `latest`; its results are summarized below.
+`cv2` module. The standalone project metadata pins only generic OpenCV 4.11, avoiding two competing
+wheel flavors in ordinary project installs. The maintained Docker runtime installs HOMR's
+headless distribution first and explicitly reinstalls generic 4.11 after project dependencies;
+this is the supported environment where both dependencies coexist. A direct dependency dry run
+also selected generic ONNX Runtime, which the Dockerfile later removes to preserve GPU provider
+ownership. A candidate image was built under an isolated tag to test the complete runtime without
+changing `latest`; its results are summarized below.
 
 In isolated workload checks, SciPy 1.15.3 and 1.17.1 produced identical component-label arrays
 with a 1.5% median-time difference; NumPy 1.26.4 and 2.4.5 produced identical staff-unit estimates
@@ -173,10 +175,11 @@ produced next-number values 86, 162, and 245 instead of 87, 163, and 246. An Ope
 with contour-based staff extraction still changed HOMR detections on pages 1 and 3 and produced
 next number 247 on page 3; the 4.11 diagnostic exactly preserved the prior output. Therefore the
 detector's installed generic `opencv-python` remains pinned at 4.11.0.86 and is reinstalled after
-the dependency set. `opencv-python-headless` is raised to 4.13.0.92 to satisfy the pinned HOMR
-distribution metadata; the Dockerfile's explicit final install order keeps the actually imported
-`cv2` at 4.11.0. This shared-namespace arrangement is intentional and verified by the runtime
-preflight and pipeline comparisons. The one remaining `pip check` finding is RapidOCR's generic
+the dependency set. HOMR resolves `opencv-python-headless` 4.13.0.92 to satisfy its distribution
+metadata; the Dockerfile's explicit final install order keeps the actually imported `cv2` at
+4.11.0. Standalone project metadata pins only generic OpenCV 4.11. This shared-namespace
+arrangement is intentional and verified by the runtime preflight and pipeline comparisons. The
+one remaining `pip check` finding is RapidOCR's generic
 ONNX Runtime metadata, which conflicts with the GPU runtime package intentionally owning that
 namespace.
 
@@ -208,7 +211,46 @@ geometry changes. Result files are
 `issue286_retained_candidate.log`. `pip check` reports the pre-existing RapidOCR dependency on
 generic ONNX Runtime, intentionally omitted so the GPU ONNX Runtime package owns that namespace.
 
-The old paragraph above about keeping `opencv-python-headless` at 4.10.0.84 and the old candidate
-tag/tests counts describes an intermediate candidate and is superseded by this final decision:
-headless OpenCV is 4.13.0.92, while the generic 4.11.0.86 wheel is installed last and provides
-the effective `cv2` runtime because 4.12 and 4.13 failed the output-preservation checks.
+The earlier paragraph above about keeping `opencv-python-headless` at 4.10.0.84 and the old
+candidate tag/tests counts describes an intermediate candidate and is superseded by this final
+decision: HOMR resolves headless OpenCV 4.14.0.94 transitively in the maintained Docker runtime,
+while the generic 4.11.0.86 wheel is installed last and provides the effective `cv2` runtime
+because 4.12 and 4.13 failed the output-preservation checks. The standalone project pin contains
+only generic OpenCV 4.11.0.86.
+
+## PR review follow-up (2026-09-30)
+
+PR review found two issues, both addressed in the follow-up commit. First, the standalone
+`pyproject.toml` no longer pins both OpenCV wheel flavors: it declares only output-compatible
+`opencv-python==4.11.0.86`. HOMR's `opencv-python-headless` remains a transitive
+requirement of the maintained Docker image, where the final generic-wheel reinstall controls the
+shared `cv2` namespace. Second, `benchmark_staff_extractor.py` now instruments `findContours`,
+the component extraction operation used by the current implementation, instead of the retired
+connected-components call. CI's lint failure was solely formatting: Ruff check passed, while
+Ruff format check listed four files. Those files are now formatted. Local full-repository
+`ruff check .` and `ruff format --check .` both pass (Ruff 0.14.8); `make lint` itself could not
+download its isolated Ruff tool because this environment cannot resolve PyPI. The same `develop`
+commit used as PR #391's base (`1e440dfa`) is still the current `origin/develop` tip after fetching
+again, so there were no newer upstream commits to add.
+
+The Docker build after removing the conflicting standalone headless pin succeeded. Candidate image
+`pdfscore_pipeline_gpu:issue363-pr-review` has ID
+`sha256:227711f9c3e0a4067bf7485a8a76ec04019e10ef3f81db8c5d64e0a2d2340a02`. Its dependency
+resolver selected `opencv-python-headless==4.14.0.94` for HOMR's `>=4.13,<5` requirement, then the
+Dockerfile installed `opencv-python==4.11.0.86` last. Runtime inspection confirmed both
+distribution versions, imported `cv2==4.11.0`, and the unchanged `latest` image ID. `pip check`
+still reports only the pre-existing RapidOCR/generic ONNX Runtime metadata conflict.
+
+The rebuilt candidate passed runtime preflight with CUDA and TensorRT/CUDA/CPU ONNX providers. The
+pipeline completed the configured smoke page. The first accuracy-check invocation then exposed a
+pre-existing smoke-config metadata mismatch: `configs/smoke_test.yaml` has an unused
+`detection.container_name` field absent from `configs/dense_full_pipeline.yaml`, while the
+validator allows only `hybrid_output_root` to differ. To avoid altering the Issue's evaluation
+contract, the acceptance checker was rerun against the already-retained pipeline output using a
+transient smoke-config copy with only that unused field removed. It passed: 85/85, zero hard FP,
+FN, or soft errors. The full run is under
+`logs/full_pipeline_runs/smoke_test_detection_20260929T171152Z/`; checker output is
+`logs/issue363/performance/pr_review_candidate_accuracy.log`. The corrected benchmark tool smoke
+recorded 4.81 ms median for `findContours` and 82.85 ms total `StaffExtractor.extract` time over
+two repetitions on one retained 3600x4680 mask; the JSON is
+`logs/issue363/performance/pr_review_staff_extractor_benchmark.json`.

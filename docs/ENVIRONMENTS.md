@@ -235,7 +235,7 @@ the main image/runtime but retain separate input and coordinate contracts. The h
 profile is not selected by the canonical dense route. See `TWO_HOMR_MILESTONE.md` for
 reproduction requirements.
 
-## Legacy compatibility environments
+## Historical evaluation environments
 
 ### `homr_eval_gpu`
 
@@ -243,17 +243,12 @@ reproduction requirements.
 full-pipeline environment. Use it only when an Issue explicitly requires isolated HOMR
 behavior or historical reproduction.
 
-### `sr_eval_gpu` compatibility fallback
-
-The former SR-specific environment and `Dockerfile.sr_eval`/old wrapper workflow are not
-maintained current guidance. `src/pipeline/core/python_env.py` still contains a host-side
-compatibility fallback that can select a running `sr_eval_gpu` when the unified container is
-not available. Treat that as legacy implementation compatibility, **not** as an endorsed
-setup recipe.
-
-`configs/dense_full_pipeline.yaml` also retains a legacy-looking `container_name` setting.
-Issue #280 intentionally does not alter production config/runtime semantics; removal of
-those compatibility remnants requires separate verification.
+The former SR-specific `sr_eval_gpu` / `/opt/venv_sr` compatibility selector and the inert
+`container_name: sr_eval_gpu_exp` dense-config key were removed by Issue #379. Maintained heavy
+pipeline subprocesses now select only the unified `pdfscore_pipeline_gpu` environment, with
+`PIPELINE_PYTHON` retained as the explicit interpreter override when no maintained heavy-step
+environment is selected. Historical tools that still hard-code the former SR environment are not
+setup guidance and are tracked separately for retirement.
 
 ## Data and generated output policy
 

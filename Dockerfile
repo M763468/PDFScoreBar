@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED=1
 RUN apt-get update && apt-get install -y software-properties-common && \
     add-apt-repository -y ppa:deadsnakes/ppa && \
     apt-get update && apt-get install -y \
-    python3.11 python3.11-venv python3.11-dev python3-pip \
+    python3.12 python3.12-venv python3.12-dev python3-pip \
     wget git curl build-essential \
     libgl1 libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
@@ -23,7 +23,7 @@ COPY pyproject.toml ./
 COPY docker/patch_homr_onnx_provider.py ./docker/patch_homr_onnx_provider.py
 
 # Create unified virtual environment and install dependencies
-RUN uv venv --python 3.11 /opt/venv_pipeline
+RUN uv venv --python 3.12 /opt/venv_pipeline
 ENV PATH="/opt/venv_pipeline/bin:$PATH"
 
 # Bypass poetry-dynamic-versioning for homr
@@ -66,6 +66,11 @@ RUN uv pip install onnxruntime-gpu==1.24.4
 
 # Install project dependencies
 RUN uv pip install -e .
+
+# Ultralytics and HOMR declare different wheel flavors but share the cv2
+# namespace. Keep their versions aligned and reinstall the production-imported
+# wheel last so the effective implementation is reproducible.
+RUN uv pip install --no-cache-dir --force-reinstall --no-deps opencv-python==4.11.0.86
 
 # Maintained HOMR declares both generic and GPU ONNX Runtime distributions.  The
 # generic distribution wins the import namespace if left installed, hiding the
@@ -161,7 +166,7 @@ ENV PDFSCOREBAR_MODEL_CACHE=/opt/pdfscore-assets/model-cache
 RUN apt-get update && apt-get install -y software-properties-common && \
     add-apt-repository -y ppa:deadsnakes/ppa && \
     apt-get update && apt-get install -y \
-    python3.11 python3.11-dev build-essential \
+    python3.12 python3.12-dev build-essential \
     libgl1 libgl1-mesa-glx libglib2.0-0 \
     libgtk-3-0 libxrender1 libxext6 libsm6 \
     tzdata sudo \

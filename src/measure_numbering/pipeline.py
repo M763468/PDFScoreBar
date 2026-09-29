@@ -45,34 +45,51 @@ class StaffExtractor:
         processed = cv2.dilate(bin_mask, v_kernel, iterations=1)
         processed = cv2.morphologyEx(processed, cv2.MORPH_CLOSE, h_kernel)
 
-        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(processed, connectivity=8)
-
         staves = []
-        for i in range(1, num_labels):
-            x = stats[i, cv2.CC_STAT_LEFT]
-            y = stats[i, cv2.CC_STAT_TOP]
-            w = stats[i, cv2.CC_STAT_WIDTH]
-            h = stats[i, cv2.CC_STAT_HEIGHT]
-
-            if h >= self.min_height and w > target_w * self.min_width_ratio:
-                component_unit_size = unit_size
-                if component_unit_size is None:
-                    # Short systems can be extractable even when no staff row spans
-                    # the conservative page-wide persistence floor. Estimate within
-                    # the accepted component's original-mask crop rather than
-                    # lowering the page-wide gate and mistaking system spacing for
-                    # staff-line spacing.
-                    crop = bin_mask[y : y + h, x : x + w]
-                    component_unit_size = self._estimate_unit_size(crop, scale_y=scale_y)
-                bbox = BBox(
-                    int(x * scale_x),
-                    int(y * scale_y),
-                    int((x + w) * scale_x),
-                    int((y + h) * scale_y),
-                )
-                staves.append(Staff(bbox=bbox, unit_size=component_unit_size))
+        for x, y, w, h in self._component_bounds(processed, min_width=target_w * self.min_width_ratio):
+            component_unit_size = unit_size
+            if component_unit_size is None:
+                # Short systems can be extractable even when no staff row spans
+                # the conservative page-wide persistence floor. Estimate within
+                # the accepted component's original-mask crop rather than
+                # lowering the page-wide gate and mistaking system spacing for
+                # staff-line spacing.
+                crop = bin_mask[y : y + h, x : x + w]
+                component_unit_size = self._estimate_unit_size(crop, scale_y=scale_y)
+            bbox = BBox(
+                int(x * scale_x),
+                int(y * scale_y),
+                int((x + w) * scale_x),
+                int((y + h) * scale_y),
+            )
+            staves.append(Staff(bbox=bbox, unit_size=component_unit_size))
 
         return sorted(staves, key=lambda s: s.bbox.y1)
+
+    def _component_bounds(self, processed: np.ndarray, *, min_width: float) -> List[Tuple[int, int, int, int]]:
+        """Return accepted 8-connected component boxes in CCL scan order.
+
+        Contour extraction is substantially faster than OpenCV's connected
+        components implementation on full-page staff masks. The top-row pixel
+        ordering restores the scan order that connected component labels used
+        for stable equal-y results.
+        """
+        contours, hierarchy = cv2.findContours(processed, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+        if hierarchy is None:
+            return []
+
+        accepted = []
+        for contour, node in zip(contours, hierarchy[0]):
+            if node[3] != -1:
+                continue
+            x, y, width, height = cv2.boundingRect(contour)
+            if height < self.min_height or width <= min_width:
+                continue
+            points = contour.reshape(-1, 2)
+            top_row_left = int(points[points[:, 1] == y, 0].min())
+            accepted.append(((y, top_row_left), (x, y, width, height)))
+
+        return [bounds for _, bounds in sorted(accepted, key=lambda item: item[0])]
 
     def _estimate_unit_size(self, bin_mask: np.ndarray, *, scale_y: float) -> Optional[float]:
         """Estimate page staff-line spacing from the unmodified staff mask.

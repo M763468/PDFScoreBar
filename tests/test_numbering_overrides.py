@@ -105,6 +105,32 @@ class TestNumberingOverrides(unittest.TestCase):
         self.assertAlmostEqual(extractor._estimate_unit_size(make_mask(10), scale_y=1.0), 10.0)
         self.assertAlmostEqual(extractor._estimate_unit_size(make_mask(20), scale_y=1.0), 20.0)
 
+    def test_staff_component_contours_preserve_8_connectivity_and_scan_order(self):
+        extractor = StaffExtractor(min_height=10, min_width_ratio=0.05)
+        processed = np.zeros((100, 200), dtype=np.uint8)
+        processed[10:22, 10:22] = 255
+        processed[10:22, 50:62] = 255
+        # These components touch only at a diagonal and form one 8-connected box.
+        processed[40:52, 90:102] = 255
+        processed[52:64, 102:114] = 255
+
+        self.assertEqual(
+            extractor._component_bounds(processed, min_width=10),
+            [(10, 10, 12, 12), (50, 10, 12, 12), (90, 40, 24, 24)],
+        )
+
+    def test_staff_component_contours_keep_nested_island_as_separate_component(self):
+        extractor = StaffExtractor(min_height=10, min_width_ratio=0.05)
+        processed = np.zeros((120, 160), dtype=np.uint8)
+        processed[10:90, 10:90] = 255
+        processed[25:75, 25:75] = 0
+        processed[40:60, 40:60] = 255
+
+        self.assertEqual(
+            extractor._component_bounds(processed, min_width=8),
+            [(10, 10, 80, 80), (40, 40, 20, 20)],
+        )
+
     def test_staff_unit_estimator_handles_short_extractable_staves_at_two_scales(self):
         extractor = StaffExtractor(min_width_ratio=0.1)
 

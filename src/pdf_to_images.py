@@ -11,8 +11,6 @@ import cv2
 import fitz  # PyMuPDF
 import numpy as np
 
-DEFAULT_PDF = Path("data/training/pdfs/IMSLP19910-PMLP01607-Beethoven_Symphony_9_V1.pdf")
-DEFAULT_OUTPUT = Path("data/training/images")
 INTERPOLATION_MAP = {
     "nearest": cv2.INTER_NEAREST,
     "linear": cv2.INTER_LINEAR,
@@ -31,13 +29,13 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--pdf",
         type=Path,
-        default=DEFAULT_PDF,
+        required=True,
         help="Path to the PDF file to convert",
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=DEFAULT_OUTPUT,
+        required=True,
         help="Directory where rendered images will be written",
     )
     parser.add_argument(

@@ -279,9 +279,9 @@ and could diverge from Phase A. Current MMR support instead reuses the Phase-A t
 | MMR batch | main pipeline process | reuses persistent classifier/OCR; no HOMR execution |
 
 The exact child interpreter is selected by `src/pipeline/core/python_env.py`. The maintained
-runtime is `pdfscore_pipeline_gpu` with `/opt/venv_pipeline/bin/python`. A legacy
-`sr_eval_gpu` compatibility fallback still exists in that selector, but it is not the
-canonical environment.
+runtime is `pdfscore_pipeline_gpu` with `/opt/venv_pipeline/bin/python`. Issue #379 removed the
+former SR-container compatibility selector, so heavy subprocess selection no longer falls back to a
+second legacy container/interpreter environment.
 
 ## Principal artifacts
 

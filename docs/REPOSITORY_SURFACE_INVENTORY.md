@@ -52,8 +52,8 @@ than internal run-directory details.
   `docs/manual_correction_review_package.md`.
 - The supported GUI route starts from `review/manual_correction_input.json` and enforces the
   same-package handoff.
-- `tools/gt_relabel_gui/manual_config_builder.py` is a legacy/developer helper that accepts arbitrary
-  paths; it is not the normal correction workflow.
+- Issue #383 retired the legacy arbitrary-path manual-config builder; the supported GUI route begins
+  from the package-local review handoff above.
 - Final output remains the clean score-numbered PDF; review/debug geometry and correction provenance
   do not belong in the final artifact.
 
@@ -228,28 +228,19 @@ This is the largest remaining mixed surface and should not be handled as one del
 
 ### Resolved legacy candidates
 
-`tools/gt_relabel_gui/manual_config_builder.py` is a REMOVE candidate. The maintained manual flow
-starts from package-local `review/manual_correction_input.json`; the builder accepts arbitrary paths,
-is not imported by the current server flow, and is mentioned by current documentation only to label
-it legacy. It should not survive merely as backward-compatible public surface.
+Issue #383 retired the first confirmed legacy-tool batch:
 
-The earlier broad tools audit (#96), GT-tool audit (#38), and CNN script cleanup (#45) already did
-the expensive historical classification work. Their durable placement rules now live in
-`docs/SCRIPT_MANAGEMENT.md`; #230 should not recreate a second all-files inventory. Apply their
-accepted classifications against current source:
+- the arbitrary-path manual-config builder;
+- the deprecated `tools/run_full_pipeline.py` entrypoint superseded by `src.pipeline.main`;
+- the three old SR measurement helpers that hard-coded `sr_eval_gpu` / `/opt/venv_sr`.
 
-- explicitly maintained directories/tools such as `tools/verification/**`, the current
-  `tools/gt_relabel_gui/**` flow (excluding the legacy builder above),
-  `tools/movement_boundary_review.py`, and `tools/check_makefile_references.py` remain KEEP;
-- `tools/issue120/**` remains ARCHIVE because it is an explicit retained reproduction contract;
-- `tools/run_full_pipeline.py` is self-declared deprecated and superseded by `src.pipeline.main`:
-  REMOVE candidate;
-- old SR measurement helpers such as `tools/measure_sr_only.py`, `tools/measure_sr_impact.py`, and
-  `tools/measure_sr_x2_impact.py` hard-code `sr_eval_gpu` / `/opt/venv_sr` and belong to the retired
-  environment path: REMOVE candidate once any still-needed result is anchored in Issue history;
-- root-level scripts already classified Legacy by #96/#38/#45, and one-off
-  `analyze_*` / `debug_*` / `visualize_*` / `structural_*` scripts with no current caller or retained
-  reproduction contract, should be REMOVE candidates rather than indefinite UNDECIDED files.
+The earlier broad tools audit (#96), GT-tool audit (#38), and CNN script cleanup (#45) remain the
+accepted classification basis. Explicitly maintained utilities such as `tools/verification/**`, the
+current `tools/gt_relabel_gui/**` flow, movement-boundary tooling, Makefile reference checks, and
+retained Issue #120 reproduction tooling remain KEEP/ARCHIVE according to their current contracts.
+
+Later legacy-tool cleanup can use the same accepted classifications plus a mechanical inbound-
+reference check; it should not recreate another repository-wide historical inventory.
 
 A cleanup PR should still perform a mechanical inbound-reference check before deleting a concrete
 batch, but that check is deletion validation, not another open-ended classification investigation.
@@ -364,12 +355,10 @@ Do not combine these into a single bulk deletion.
    - retain `Dockerfile.homr` as the explicitly documented historical HOMR environment.
 
 5. **#383 — Confirmed legacy tool entrypoints**
-   - first cleanup batch covers the legacy manual-config builder, deprecated full-pipeline runner,
-     and old `sr_eval_gpu` measurement helpers;
-   - later domain-sized batches may use the already accepted #38/#45/#96 classifications without
-     reopening a repository-wide historical audit;
-   - preserve explicit reproduction tools such as Issue #120 and move any still-unique reusable logic
-     before deletion.
+   - retire the legacy manual-config builder, deprecated full-pipeline runner, and old
+     `sr_eval_gpu` measurement helpers;
+   - retain current utilities and explicit reproduction contracts;
+   - use #38/#45/#96 classifications plus mechanical inbound-reference checks for later batches.
 
 ## Issue #230 completion boundary
 

@@ -322,5 +322,3 @@ def detect_barlines_ml(
     # Image.fromarray((symbols_final * 255).astype(np.uint8)).save(os.path.join(output_dir, "debug_symbols_final.png"))
 
     return barline_coords
-
-

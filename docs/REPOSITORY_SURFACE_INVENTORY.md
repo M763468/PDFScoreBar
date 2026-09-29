@@ -21,6 +21,11 @@ Inventory baseline: `develop` after PR #377 (`a924b737e23d3bc43dac2211e8f60071d7
 Issue-numbered names alone are not a removal criterion. A test, fixture, config, or tool can remain
 KEEP/ARCHIVE when it protects a current contract or is the accepted reproduction path.
 
+For the repository slices investigated by Issue #230, there are no remaining classification blockers:
+items that were initially UNDECIDED have either been assigned a concrete KEEP/ARCHIVE/REMOVE-candidate
+disposition below or reduced to implementation-time reference checks. UNDECIDED remains part of the
+classification vocabulary for future newly discovered assets; it is not an outstanding #230 result.
+
 ## Current supported boundary
 
 ### Operator/runtime entrypoint
@@ -335,34 +340,51 @@ Issue #100 should not automatically migrate:
 
 Do not combine these into a single bulk deletion.
 
-1. **Legacy interpreter/config compatibility**
+1. **#379 — Legacy interpreter/config compatibility**
    - remove `sr_eval_gpu` / `/opt/venv_sr` fallback while preserving canonical container and explicit
      interpreter override behavior;
    - remove confirmed-inert `container_name: sr_eval_gpu_exp` from the dense config;
    - validate as a focused pipeline/config change, not as another repository-surface investigation.
 
-2. **Legacy tests migration**
+2. **#380 — Legacy tests migration**
    - move the useful high-level thin-barline cases into normal `tests/` coverage;
    - replace the fixed-port/sleep/static-JS GT GUI test with a deterministic current test;
    - retire `tests_legacy/**` once no unique check remains there.
 
-3. **Pre-evaluation2 data and legacy standalone routes**
+3. **#381 — Pre-evaluation2 data and legacy standalone routes**
    - make `src/pdf_to_images.py` standalone defaults explicit/neutral rather than anchoring old
      `data/training` paths;
    - retire `data/training/**`, `data/evaluation/**`, and empty `data/workbench/**` tracked surface;
    - retire/update legacy standalone consumers at the same time rather than preserving old data only
      to keep obsolete demos runnable.
 
-4. **Legacy bootstrap and third-party experiment surface**
+4. **#382 — Legacy bootstrap and third-party experiment surface**
    - retire `setup_scripts/**`, `Dockerfile.groundingdino`, `external/oemer/**`, the Oemer submodule
      entry, `external/models/FSRCNN_x2.pb`, and stale `external/README.md` claims;
    - retain `Dockerfile.homr` as the explicitly documented historical HOMR environment.
 
-5. **Tools/experiments retirement**
-   - remove domain-sized batches already established as legacy/superseded by #38/#45/#96/current
-     source;
+5. **#383 — Confirmed legacy tool entrypoints**
+   - first cleanup batch covers the legacy manual-config builder, deprecated full-pipeline runner,
+     and old `sr_eval_gpu` measurement helpers;
+   - later domain-sized batches may use the already accepted #38/#45/#96 classifications without
+     reopening a repository-wide historical audit;
    - preserve explicit reproduction tools such as Issue #120 and move any still-unique reusable logic
      before deletion.
+
+## Issue #230 completion boundary
+
+With #379-#383 created, Issue #230 has completed the decision work it owns:
+
+- the maintained runtime/output/correction/engine boundary is recorded;
+- top-level repository surface is classified;
+- initially ambiguous legacy slices have concrete dispositions;
+- completed specialist audits are incorporated rather than repeated;
+- #100 has an explicit minimal-mainline handoff;
+- behavior-changing and deletion work is separated into scoped follow-up Issues.
+
+Actual deletion or runtime compatibility removal should therefore happen in those follow-up Issues,
+not by expanding #230 into an implementation umbrella. A cleanup PR may still cite #230 as the
+source decision, but it should close its own implementation Issue.
 
 ## Removal rule
 

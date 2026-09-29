@@ -6,7 +6,7 @@
 
 ## Prerequisites
 - Read `docs/ENVIRONMENTS.md` and run commands in the correct environment.
-- For pipeline real-data checks, use `sr_eval_gpu` container.
+- For pipeline real-data checks, use the maintained `pdfscore_pipeline_gpu` container.
 
 ## Mandatory Checks Before Commit/PR
 1. Format
@@ -42,10 +42,10 @@ python3 -m unittest tests.test_pipeline_detection -v
 ## Real-Data Smoke (Detection Path)
 Use the already organized smoke assets under `logs/issue23_smoke/`.
 
-1. Run integrated pipeline (inside `sr_eval_gpu`)
+1. Run integrated pipeline (inside `pdfscore_pipeline_gpu`)
 ```bash
-docker exec sr_eval_gpu bash -lc "cd /workspace && \
-  /opt/venv_sr/bin/python -m src.pipeline.main \
+docker exec pdfscore_pipeline_gpu bash -lc "cd /workspace && \
+  /opt/venv_pipeline/bin/python -m src.pipeline.main \
   --config logs/issue23_smoke/config_issue23_smoke_images.yaml"
 ```
 2. Confirm outputs exist
@@ -56,8 +56,8 @@ docker exec sr_eval_gpu bash -lc "cd /workspace && \
 Run parity check with the canonical script:
 
 ```bash
-docker exec sr_eval_gpu bash -lc "cd /workspace && \
-  /opt/venv_sr/bin/python tools/verification/run_probe_detector_parity_check.py \
+docker exec pdfscore_pipeline_gpu bash -lc "cd /workspace && \
+  /opt/venv_pipeline/bin/python tools/verification/run_probe_detector_parity_check.py \
   --image /workspace/data/evaluation2/images/Va_Prokofiev_Symphony1/page_001.png \
   --staff-mask /workspace/logs/issue23_smoke/runs/hybrid_issue23_smoke_images_20260207/sr/batch/page_001/page_001_proxy_debug_3_staff.png \
   --existing-boxes /workspace/logs/issue23_smoke/runs/hybrid_issue23_smoke_images_20260207/hybrid_results/page_001_hybrid.json \

@@ -122,20 +122,12 @@ and `configs/cnn_barline_runs/**`.
 
 They are not default runtime choices merely because they are checked in.
 
-### REMOVE candidate — confirmed inert legacy key
+### Removed legacy dense-container key
 
-`configs/dense_full_pipeline.yaml` still contains:
-
-```yaml
-container_name: sr_eval_gpu_exp
-```
-
-The current canonical runtime is `pdfscore_pipeline_gpu`. A current-source audit found no
-`container_name` consumer anywhere under tracked `src/**`, and the targeted config/runtime tests
-reviewed for this inventory do not reference `sr_eval_gpu_exp`. The generic YAML loader therefore
-loads this key but no maintained source reads it. Treat it as inert legacy configuration and remove
-it in a small config cleanup change; do not spend another local investigation re-proving whether the
-key is consumed. Validate the eventual config edit according to `docs/dev/VALIDATION_POLICY.md`.
+Issue #379 removed the inert `container_name: sr_eval_gpu_exp` setting from
+`configs/dense_full_pipeline.yaml`. The #230 audit had already established that tracked `src/**`
+contained no `container_name` consumer; the cleanup therefore removes stale configuration rather
+than changing detector routing or container selection.
 
 ## Data inventory
 
@@ -264,22 +256,17 @@ batch, but that check is deletion validation, not another open-ended classificat
 
 ## Legacy environment/runtime candidates
 
-### `sr_eval_gpu` fallback
+### Removed legacy SR interpreter fallback
 
-`src/pipeline/core/python_env.py` still probes `sr_eval_gpu` and can select
-`/opt/venv_sr/bin/python` after the canonical `pdfscore_pipeline_gpu` path.
+Issue #379 removed the host-side `sr_eval_gpu` probe and `/opt/venv_sr/bin/python` fallback from
+`src/pipeline/core/python_env.py`. Maintained heavy-step selection now recognizes only the unified
+`pdfscore_pipeline_gpu` environment and `/opt/venv_pipeline/bin/python`, while retaining the
+existing explicit `PIPELINE_PYTHON` override behavior when no maintained heavy-step environment is
+selected.
 
-The current environment guide already classifies this route as legacy compatibility rather than an
-endorsed setup recipe. The maintained operator entrypoint runs the pipeline inside
-`pdfscore_pipeline_gpu`; current workers call `get_pipeline_python()`, but on that supported route it
-selects `/opt/venv_pipeline/bin/python`. The `sr_eval_gpu` branch therefore exists for an unsupported
-host/old-container fallback, not for the documented runtime contract.
-
-Judgment: **REMOVE candidate** in a focused code cleanup. Preserve the canonical
-`pdfscore_pipeline_gpu` and explicit `PIPELINE_PYTHON` behavior, add/adjust targeted interpreter
-selection tests, and run the validation required for a pipeline-core change. Checking whether an old
-`sr_eval_gpu` container happens to be running on one workstation is not needed to decide the public
-repository surface.
+This completes the #230 decision for that compatibility path. Historical tools that hard-code the
+former environment remain separate #383 cleanup targets; they are not a reason to restore the
+runtime fallback.
 
 ### Old bootstrap scripts
 
@@ -355,10 +342,10 @@ Issue #100 should not automatically migrate:
 Do not combine these into a single bulk deletion.
 
 1. **#379 — Legacy interpreter/config compatibility**
-   - remove `sr_eval_gpu` / `/opt/venv_sr` fallback while preserving canonical container and explicit
-     interpreter override behavior;
-   - remove confirmed-inert `container_name: sr_eval_gpu_exp` from the dense config;
-   - validate as a focused pipeline/config change, not as another repository-surface investigation.
+   - remove the legacy SR-container/interpreter fallback while preserving canonical container and
+     explicit interpreter override behavior;
+   - remove the confirmed-inert dense `container_name` key;
+   - add focused interpreter-selection coverage and align current environment/architecture docs.
 
 2. **#380 — Legacy tests migration**
    - migrate the three high-level thin-barline behavior cases into normal `tests/` coverage;

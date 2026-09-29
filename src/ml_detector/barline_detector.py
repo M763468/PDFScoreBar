@@ -324,32 +324,3 @@ def detect_barlines_ml(
     return barline_coords
 
 
-if __name__ == "__main__":
-    """
-    このスクリプトが直接実行された場合に、テスト実行するためのメイン関数
-    """
-    # --- 設定項目 ---
-    # 入力画像のパス
-    img_path = "data/evaluation/images/page_3.png"
-    # oemerの事前学習済みモデルのパス
-    unet_model_path = "/workspace/src/archive/oemer/oemer_src/oemer/checkpoints/unet_big"
-    segnet_model_path = "/workspace/src/archive/oemer/oemer_src/oemer/checkpoints/seg_net"
-    # 結果を出力するディレクトリ
-    output_dir = "output/ml_detector/"
-
-    print("--- Barline Detection Test ---")
-    print(f"Input Image: {img_path}")
-    print(f"U-Net Model: {unet_model_path}")
-    print(f"SegNet Model: {segnet_model_path}")
-    print(f"Output Directory: {output_dir}")
-    print("------------------------------")
-
-    # 縦線検出を実行
-    try:
-        barline_coords = detect_barlines_ml(
-            img_path, unet_model_path, segnet_model_path, output_dir
-        )
-        print("\nBarline detection process completed successfully.")
-        print(f"Output image saved in '{output_dir}' directory.")
-    except Exception as e:
-        print(f"\nAn error occurred during barline detection: {e}")

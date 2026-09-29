@@ -83,7 +83,7 @@ another repository.
 | `.github/**` | KEEP | CI, Issue/PR templates | Keep while referenced by current repository workflow. |
 | `.agents/**`, `.gemini/GEMINI.md` | KEEP | repository developer/agent tooling | Not end-user API. Root Makefile currently exposes several `.agents/skills/**` helpers. |
 | `Dockerfile`, `docker/**` | KEEP | canonical runtime build and runtime contract | Current Docker surface. |
-| `Dockerfile.groundingdino` | REMOVE candidate | abandoned zero-shot model experiment environment | The accepted history records GroundingDINO as a negative experiment, the Dockerfile depends on an ignored local `external/grounding_dino` clone, and no current runtime/validation contract uses it. Git history is sufficient recovery. |
+| `Dockerfile.groundingdino` | REMOVED by #382 | retired zero-shot model experiment environment | The failed GroundingDINO experiment remains recoverable from history; the tracked experiment Dockerfile is no longer repository surface. |
 | `Dockerfile.homr` | ARCHIVE | historical/specialized HOMR environment | Canonical pipeline uses `Dockerfile`; do not advertise this as normal runtime. |
 | `src/**` | KEEP | production/library implementation | Treat as maintained until a module-level dependency audit proves a subtree obsolete. Do not infer removability from old naming alone. |
 | `tests/**` | KEEP | current correctness/contract regression suite | Issue-numbered tests may still guard current behavior and remain KEEP unless their contract is explicitly retired. |
@@ -93,12 +93,12 @@ another repository.
 | `scripts/**` | mixed KEEP/ARCHIVE | maintained automation plus scoped validators | Current Docker/PR/validation scripts KEEP; Issue-specific validators are ARCHIVE unless still part of a maintained gate. |
 | `tools/**` | mixed KEEP/ARCHIVE/REMOVE candidate | reusable utilities, reproduction tooling, and accumulated one-off analysis | Current utilities and explicit reproduction tools remain; scripts already established as legacy by #38/#45/#96 or superseded by current source should be retired rather than kept for compatibility. |
 | `experiments/**` | ARCHIVE by default, with explicit runtime exceptions | experiments, comparison, reproduction, prototypes | Never assume the whole tree is non-runtime. `experiments/models/eval_omr_dln.py` is currently a KEEP exception because the canonical dense route launches it directly; other experiment content remains ARCHIVE/remove-candidate by evidence. |
-| `data/**` | mixed KEEP/REMOVE candidate | canonical GT/baselines plus superseded pre-evaluation2 scaffolding | Keep `data/evaluation2/**`; retire the old training/evaluation/workbench tracked surface after removing its remaining legacy/default-path references. |
+| `data/**` | KEEP current evaluation evidence + ignored local data | canonical GT/baselines and operator-owned ignored data | `data/evaluation2/**` remains the tracked canonical validation/GT surface; pre-evaluation2 tracked training/evaluation/workbench trees were removed by #381. |
 | `graphify-out/**` | KEEP (developer/generated) | optional repository navigation | Keep only the portable graph/report/wiki/manifest set while provenance is fresh; never use it as source of truth over source/tests. |
 | `logs/README.md` | KEEP | generated-evidence placement policy | Runtime logs themselves stay ignored. Historical path prose should be corrected when it points to retired files/tools. |
 | `artifacts/.gitkeep` | KEEP | local generated-artifact root | Artifacts are ignored/generated and are not public result API. |
-| `external/**`, `.gitmodules` | REMOVE candidate | retired third-party experiment/reproduction surface | The retained OEMER runner/submodule and FSRCNN blob are not part of the current runtime. OEMER's checked-in runner contains stale path assumptions; the FSRCNN artifact belongs to a recorded failed experiment. Remove the tracked surface together with stale `external/README.md`; ignored operator caches/clones are not repository API. |
-| `setup_scripts/**` | REMOVE candidate | old local bootstrap/download helpers | `setup.sh`/`start.sh` hard-code a user checkout path, `check_container.sh` targets obsolete `pdf_score_dev_gpu`, and the DeepScores downloader hard-codes `/mnt/d/datasets/DeepScoresV2`. None is a maintained repository setup contract; DeepScores provenance does not require retaining this machine-specific downloader. |
+| `external/**`, `.gitmodules` | REMOVED by #382 | retired third-party experiment surface | The tracked OEMER runner/submodule, FSRCNN blob, stale external README, and the now-empty `.gitmodules` surface were removed. Ignored operator caches/clones are not repository API. |
+| `setup_scripts/**` | REMOVED by #382 | retired local bootstrap/download helpers | User-specific Serena/container/bootstrap and WSL-specific dataset download helpers were removed; current setup guidance is owned by maintained repository docs/Makefile/runtime tooling. |
 
 ## Config inventory
 
@@ -259,36 +259,19 @@ This completes the #230 decision for that compatibility path. Historical tools t
 former environment remain separate #383 cleanup targets; they are not a reason to restore the
 runtime fallback.
 
-### Old bootstrap scripts
+### Retired bootstrap and third-party experiment surface
 
-`setup_scripts/setup.sh` and `setup_scripts/start.sh` hard-code
-`/home/masaki_muramatsu/ws_PDFScoreBar` and start a Serena server. `setup_scripts/check_container.sh`
-targets `pdf_score_dev_gpu`, which is not the maintained runtime container. The remaining
-`download_deepscores_dense.sh` hard-codes a WSL-specific `/mnt/d/datasets/DeepScoresV2` destination.
-DeepScores remains relevant historical/training provenance, but that does not make this machine-
-specific downloader a maintained setup surface. Judgment: **REMOVE the tracked setup_scripts
-surface** in a later cleanup; personal bootstrap helpers belong outside the public repository.
+Issue #382 completed this cleanup:
 
-### Extra model Docker/external surface
+- `setup_scripts/**` was removed;
+- `Dockerfile.groundingdino` was removed;
+- the tracked OEMER runner/submodule and its only `.gitmodules` entry were removed;
+- `external/models/FSRCNN_x2.pb` and stale `external/README.md` were removed;
+- `Dockerfile.homr` was explicitly retained as **ARCHIVE/KEEP** for isolated/historical HOMR
+  evaluation when an Issue requires that environment.
 
-The third-party/environment slice can be separated rather than treated uniformly:
-
-- `Dockerfile.homr`: **ARCHIVE/KEEP**. `docs/ENVIRONMENTS.md` explicitly retains it for isolated or
-  historical HOMR evaluation when an Issue calls for that environment.
-- `Dockerfile.groundingdino`: **REMOVE candidate**. The accepted historical ledger records the
-  zero-shot GroundingDINO attempt as unsuccessful; the Dockerfile also assumes an ignored local
-  `external/grounding_dino` checkout. No current runtime contract depends on it.
-- `external/oemer/**` plus its `.gitmodules` entry: **REMOVE candidate**. The checked-in runner is
-  internally stale: from its present path it computes the repository root incorrectly, looks for
-  `src/archive/oemer/oemer_src` even though the submodule is declared under `external/oemer/oemer_src`,
-  and records an obsolete `src/archive/oemer/run_omerer.py` command. Current Make/Docker/package
-  surfaces do not use it; Oemer conclusions remain historical evidence.
-- `external/models/FSRCNN_x2.pb`: **REMOVE candidate**. It was introduced for a failed lightweight
-  super-resolution experiment, whose durable negative result is already preserved in the compact
-  legacy development history.
-
-`external/README.md` should be removed or rewritten with the same cleanup so it does not continue to
-advertise retired local clones as current repository dependencies.
+The negative GroundingDINO/FSRCNN and historical OEMER conclusions remain recoverable from Issue/PR/
+commit history; the removed files no longer form active-looking repository surface.
 
 ## Need for local-state investigation
 
@@ -299,9 +282,9 @@ facts already established above, checking whether an obsolete container happens 
 or checking whether ignored third-party clones are present would duplicate evidence without changing
 the repository contract.
 
-Local execution becomes relevant only when a later cleanup **implements** behavior-sensitive changes
-such as removing the interpreter fallback. At that point use the validation policy for the changed
-code/config; that is implementation validation, not a remaining #230 classification question.
+The behavior-sensitive interpreter cleanup was subsequently implemented in #379 with focused
+interpreter-selection coverage and repository PR validation. Workstation-local existence of obsolete
+containers/clones was not used as a repository-surface criterion.
 
 ## Boundary for Issue #100
 
@@ -328,41 +311,24 @@ Issue #100 should not automatically migrate:
 - old environment/bootstrap routes;
 - service/control-plane implementation that belongs outside the engine repository.
 
-## Follow-up cleanup slices
+## Completed cleanup slices
 
-Do not combine these into a single bulk deletion.
+The #230 follow-up implementation line is complete:
 
-1. **#379 — Legacy interpreter/config compatibility**
-   - remove the legacy SR-container/interpreter fallback while preserving canonical container and
-     explicit interpreter override behavior;
-   - remove the confirmed-inert dense `container_name` key;
-   - add focused interpreter-selection coverage and align current environment/architecture docs.
-
-2. **#380 — Legacy tests migration**
-   - migrate the three high-level thin-barline behavior cases into normal `tests/` coverage;
-   - retire the fixed-port/sleep/static-JS GT GUI check because it does not protect a unique current
-     server contract;
-   - remove the separate `tests_legacy/**` surface and document `tests/` as authoritative.
-
-3. **#381 — Pre-evaluation2 data and legacy standalone routes**
-   - require explicit standalone PDF conversion input/output paths;
-   - retire `data/training/**`, `data/evaluation/**`, and `data/workbench/**`;
-   - remove stale demo/default consumers and align current data/environment guidance.
-
-4. **#382 — Legacy bootstrap and third-party experiment surface**
-   - retire `setup_scripts/**`, `Dockerfile.groundingdino`, `external/oemer/**`, the Oemer submodule
-     entry, `external/models/FSRCNN_x2.pb`, and stale `external/README.md` claims;
-   - retain `Dockerfile.homr` as the explicitly documented historical HOMR environment.
-
-5. **#383 — Confirmed legacy tool entrypoints**
-   - retire the legacy manual-config builder, deprecated full-pipeline runner, and old
-     `sr_eval_gpu` measurement helpers;
-   - retain current utilities and explicit reproduction contracts;
-   - use #38/#45/#96 classifications plus mechanical inbound-reference checks for later batches.
+1. **#379 / PR #384** — removed legacy SR-container/interpreter compatibility and the inert dense
+   container config key while preserving the canonical runtime and explicit interpreter override.
+2. **#380 / PR #385** — migrated useful thin-barline behavior coverage into `tests/**` and retired
+   the separate `tests_legacy/**` surface.
+3. **#381 / PR #386** — retired pre-evaluation2 tracked data/default paths while preserving
+   `data/evaluation2/**` and keeping retired local data trees ignored.
+4. **#382 / PR #387** — retired obsolete bootstrap and abandoned GroundingDINO/OEMER/FSRCNN tracked
+   experiment surface while retaining `Dockerfile.homr`.
+5. **#383 / PR #388** — retired the confirmed legacy manual-config/full-pipeline/SR-measurement
+   entrypoints while retaining current utilities and explicit reproduction contracts.
 
 ## Issue #230 completion boundary
 
-With #379-#383 created, Issue #230 has completed the decision work it owns:
+With #379-#383 merged and closed, Issue #230's decision work and its first concrete cleanup line are complete:
 
 - the maintained runtime/output/correction/engine boundary is recorded;
 - top-level repository surface is classified;
@@ -371,9 +337,9 @@ With #379-#383 created, Issue #230 has completed the decision work it owns:
 - #100 has an explicit minimal-mainline handoff;
 - behavior-changing and deletion work is separated into scoped follow-up Issues.
 
-Actual deletion or runtime compatibility removal should therefore happen in those follow-up Issues,
-not by expanding #230 into an implementation umbrella. A cleanup PR may still cite #230 as the
-source decision, but it should close its own implementation Issue.
+The actual deletion/runtime-compatibility changes were implemented in #379-#383 rather than by
+expanding #230 into an implementation umbrella. Future cleanup should continue to use the removal
+rule below and create a focused implementation boundary only when new concrete candidates are found.
 
 ## Removal rule
 

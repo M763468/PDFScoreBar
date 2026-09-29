@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import fitz
+import pytest
 
 from src.pdf_to_images import parse_args, render_pdf_to_memory
 
@@ -30,8 +31,6 @@ def test_render_pdf_to_memory_reports_each_completed_page():
 
 
 def test_pdf_to_images_cli_requires_explicit_input_and_output():
-    import pytest
-
     with pytest.raises(SystemExit):
         parse_args([])
 

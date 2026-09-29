@@ -113,8 +113,8 @@ The `--handoff` route:
   artifacts;
 - keeps the current page-local `manual_outputs` routing.
 
-The legacy one-page `manual_config_builder.py` remains available for development/legacy uses, but
-it is not the normal #236 review workflow because it accepts arbitrary artifact paths.
+Issue #383 retired the legacy arbitrary-path `manual_config_builder.py`. The maintained manual
+workflow starts from the package-local `review/manual_correction_input.json` handoff described above.
 
 ### Optional movement-boundary evidence
 

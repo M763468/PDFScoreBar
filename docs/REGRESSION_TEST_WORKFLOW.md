@@ -23,10 +23,12 @@ python3 -m unittest tests.test_pipeline_detection -v
 ```
 
 ## Test Placement Policy
-- `tests/`: actively maintained tests for current code paths, expected to run in normal dev environments.
-- `tests_legacy/`: archive area for historical tests temporarily excluded from the default pre-PR set.
-- New tests must be added to `tests/` (or integration/verification scripts under `tools/verification/`), not to `tests_legacy/`.
-- `tests_legacy/` items may be reworked and moved back into `tests/` when related issues are addressed.
+- `tests/`: authoritative home for actively maintained lightweight tests for current code paths.
+- New deterministic unit/contract tests belong in `tests/`.
+- Environment-sensitive integration or real-data checks belong under explicit verification tooling such
+  as `tools/verification/` with their environment requirements documented.
+- Do not recreate `tests_legacy/`; Issue #380 retired that second test surface after migrating the
+  remaining useful thin-barline behavior coverage into `tests/`.
 
 ## When Adding Tests
 - Prefer deterministic unit tests first (`tests/`).
@@ -34,7 +36,8 @@ python3 -m unittest tests.test_pipeline_detection -v
 - In PR comments, report both:
   - lightweight test result (`tests/` target),
   - real-data verification result (if applicable).
-- If legacy tests are moved out, record the reason and expected return condition in `tests_legacy/README.md`.
+- If an old test cannot be retained, record the disposition in the owning Issue/PR and preserve any
+  still-useful assertion in the maintained test or verification surface.
 
 ## Real-Data Smoke (Detection Path)
 Use the already organized smoke assets under `logs/issue23_smoke/`.

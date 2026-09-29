@@ -87,7 +87,7 @@ another repository.
 | `Dockerfile.homr` | ARCHIVE | historical/specialized HOMR environment | Canonical pipeline uses `Dockerfile`; do not advertise this as normal runtime. |
 | `src/**` | KEEP | production/library implementation | Treat as maintained until a module-level dependency audit proves a subtree obsolete. Do not infer removability from old naming alone. |
 | `tests/**` | KEEP | current correctness/contract regression suite | Issue-numbered tests may still guard current behavior and remain KEEP unless their contract is explicitly retired. |
-| `tests_legacy/**` | REMOVE after test migration/replacement | tests excluded from normal `make test` | Do not retain a second test surface. Preserve the useful thin-barline behavioral cases in `tests/`; replace the brittle GT-GUI server check with a deterministic current test, then retire the legacy directory. |
+| `tests_legacy/**` | REMOVED by #380 | retired second test surface | The three useful thin-barline behavior cases were migrated into normal `tests/`; the fixed-port/sleep/static-JS GT-GUI check was retired as brittle/redundant rather than normalized into maintained coverage. |
 | `configs/**` | mixed KEEP/ARCHIVE | runtime, smoke, evaluation, reproduction configs | Current production/smoke/service/review configs KEEP; Issue/experiment snapshots ARCHIVE. See config detail below. |
 | `models/**` | KEEP | versioned model manifests | Keep manifests/provenance. Large model bytes remain outside Git and are staged through the documented model-artifact mechanism. |
 | `scripts/**` | mixed KEEP/ARCHIVE | maintained automation plus scoped validators | Current Docker/PR/validation scripts KEEP; Issue-specific validators are ARCHIVE unless still part of a maintained gate. |
@@ -369,9 +369,10 @@ Do not combine these into a single bulk deletion.
    - validate as a focused pipeline/config change, not as another repository-surface investigation.
 
 2. **#380 — Legacy tests migration**
-   - move the useful high-level thin-barline cases into normal `tests/` coverage;
-   - replace the fixed-port/sleep/static-JS GT GUI test with a deterministic current test;
-   - retire `tests_legacy/**` once no unique check remains there.
+   - migrate the three high-level thin-barline behavior cases into normal `tests/` coverage;
+   - retire the fixed-port/sleep/static-JS GT GUI check because it does not protect a unique current
+     server contract;
+   - remove the separate `tests_legacy/**` surface and document `tests/` as authoritative.
 
 3. **#381 — Pre-evaluation2 data and legacy standalone routes**
    - make `src/pdf_to_images.py` standalone defaults explicit/neutral rather than anchoring old

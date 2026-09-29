@@ -1,21 +1,17 @@
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 import cv2
 import numpy as np
 import pytest
 
-sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
-
-from common.thin_barline_finder import detect_thin_vertical_runs  # noqa: E402
+from src.common.thin_barline_finder import detect_thin_vertical_runs
 
 
 @pytest.fixture()
 def temp_image(tmp_path: Path) -> Path:
-    image_path = tmp_path / "page.png"
-    return image_path
+    return tmp_path / "page.png"
 
 
 def _write_image(path: Path, array: np.ndarray) -> None:
@@ -25,7 +21,7 @@ def _write_image(path: Path, array: np.ndarray) -> None:
 
 def test_detects_isolated_thin_barline(temp_image: Path) -> None:
     image = np.full((120, 160), 255, dtype=np.uint8)
-    image[40:64, 80:82] = 10  # slender barline
+    image[40:64, 80:82] = 10
     _write_image(temp_image, image)
 
     extras = detect_thin_vertical_runs(temp_image, [])
@@ -38,12 +34,10 @@ def test_detects_isolated_thin_barline(temp_image: Path) -> None:
 
 def test_accepts_barline_with_relaxed_adjacent_intensity(temp_image: Path) -> None:
     image = np.full((120, 160), 255, dtype=np.uint8)
-    image[50:72, 90:91] = 40  # main column
-    # Immediate neighbour is moderately dark but broken into short segments.
+    image[50:72, 90:91] = 40
     neighbour = image[50:72, 91:92]
     neighbour[:] = 170
-    neighbour[2::6] = 255  # introduce gaps so the contiguous run stays short
-    # Bright region beyond the shadow restores the relaxed heuristic.
+    neighbour[2::6] = 255
     image[50:72, 92:95] = 245
     _write_image(temp_image, image)
 
@@ -54,8 +48,8 @@ def test_accepts_barline_with_relaxed_adjacent_intensity(temp_image: Path) -> No
 
 def test_rejects_note_stem_like_region(temp_image: Path) -> None:
     image = np.full((120, 160), 255, dtype=np.uint8)
-    image[60:84, 40:42] = 15  # thin vertical run
-    image[60:84, 42:45] = 40  # dense neighbour resembling a notehead
+    image[60:84, 40:42] = 15
+    image[60:84, 42:45] = 40
     _write_image(temp_image, image)
 
     extras = detect_thin_vertical_runs(temp_image, [])

@@ -1,4 +1,0 @@
-# Ignore evaluation PDFs; keep placeholder.
-*
-!.gitignore
-!.gitkeep

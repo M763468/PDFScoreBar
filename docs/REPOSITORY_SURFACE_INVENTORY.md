@@ -339,10 +339,9 @@ Issue #100 should consume this inventory rather than infer "minimal" from direct
 
 The initial minimal-mainline KEEP set should include:
 
-0. current runtime dependencies that still live outside `src/**`, specifically
-   `experiments/models/eval_omr_dln.py` until that entrypoint is migrated into `src/**`;
-
-1. current runtime implementation and dependency/build metadata;
+1. current runtime implementation and dependency/build metadata, including runtime dependencies that
+   still live outside `src/**` such as `experiments/models/eval_omr_dln.py` until that entrypoint is
+   migrated into `src/**`;
 2. canonical runtime/config/model-manifest inputs;
 3. versioned engine/artifact/correction contracts and their tests;
 4. current output/review/correction semantics and operating documentation;

@@ -18,10 +18,11 @@ Issue #280 established the repository documentation audit against the accepted #
 | `README.md` | repository entry | current | point to canonical architecture and durable docs |
 | `AGENTS.md` | repository agent constitution | current | keep |
 | `docs/README.md` | documentation index | canonical/current | keep current-vs-historical navigation accurate |
+| `docs/REPOSITORY_SURFACE_INVENTORY.md` | repository/public-surface classification and #100 handoff | current/reference | keep maintained/reproduction/legacy boundaries current without turning historical paths into public API |
 | `docs/HISTORY_INDEX.md` | historical lineage navigation | current/reference | point to Issues/PRs/commits and retained contracts without duplicating them |
 | `docs/PIPELINE_ARCHITECTURE.md` | production architecture | canonical/current | global architecture source, including detector-input provenance |
 | `docs/FUTURE_SERVICE_ARCHITECTURE.md` | future engine/service responsibility boundary | future/roadmap | keep explicitly separate from current runtime; update when long-term engine/caller/correction/service-boundary intent changes materially |
-| `docs/ENGINE_JOB_CONTRACT.md` | versioned one-job engine caller contract | current/reference | normative v1 serialized boundary and compatibility/correction semantics; production executor adapter remains follow-up work |
+| `docs/ENGINE_JOB_CONTRACT.md` | versioned one-job engine caller contract | current/reference | normative v1 serialized boundary and compatibility/correction semantics; `PipelineJobExecutor` is the reference adapter, while direct v1 `CorrectionSet` execution remains outside that adapter |
 | `docs/ENGINE_JOB_LIFECYCLE.md` | #337 one-job lifecycle contract | current/reference | preserve v1 status/error values while defining deadline/cancellation, retryability, publication, cleanup, and correction-attempt lifecycle semantics |
 | `docs/ENGINE_INPUT_SAFETY.md` | #338 untrusted-PDF safety contract | current/reference | define bounded preflight, path/network/resource rules, safe errors, and worker/container assumptions without changing the trusted config-first production path |
 | `docs/ENGINE_TELEMETRY.md` | #339 structured progress/resource telemetry contract | current/reference | preserve the v1 stage/status vocabulary while defining additive elapsed/detail fields, page progress, compact summaries, and opt-in process/GPU sampling |

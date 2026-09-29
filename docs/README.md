@@ -11,6 +11,7 @@ use the current artifacts first.
 | [`PIPELINE_ARCHITECTURE.md`](PIPELINE_ARCHITECTURE.md) | **Canonical current production architecture**: dense route, stage ownership, coordinate spaces, process/memory boundaries, detector-input provenance |
 | [`TWO_HOMR_MILESTONE.md`](TWO_HOMR_MILESTONE.md) | Frozen accepted Issue #274 / PR #279 comparison milestone and reproduction contract |
 | [`DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md) | Audit classification of durable docs and cleanup/maintenance rules |
+| [`REPOSITORY_SURFACE_INVENTORY.md`](REPOSITORY_SURFACE_INVENTORY.md) | Issue #230 classification of maintained, reproduction, legacy, and cleanup repository surface; handoff to #100 |
 | [`HISTORY_INDEX.md`](HISTORY_INDEX.md) | Navigation across major historical Issue/experiment lineages; not a current-state source of truth |
 | [`ENVIRONMENTS.md`](ENVIRONMENTS.md) | Maintained runtime/development environments |
 | [`BRANCH_POLICY.md`](BRANCH_POLICY.md) | Branch/base/promotion policy |
@@ -22,7 +23,7 @@ use the current artifacts first.
 | [`NUMBERING_GEOMETRY_CONTRACT.md`](NUMBERING_GEOMETRY_CONTRACT.md) | Resolution-independent measure-numbering/system-geometry thresholds and retained morphology pixel operations |
 | [`SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md) | Current placement/lifecycle rules for production, tools, experiments, and scratch scripts |
 | [`manual_correction_review_package.md`](manual_correction_review_package.md) | Current config-first end-to-end manual-correction review workflow |
-| [`ENGINE_JOB_CONTRACT.md`](ENGINE_JOB_CONTRACT.md) | **Versioned engine contract**: v1 `JobRequest` / `JobResult` / `ProgressEvent` / `EngineError` / correction schemas and compatibility rules; production executor adapter is not yet wired |
+| [`ENGINE_JOB_CONTRACT.md`](ENGINE_JOB_CONTRACT.md) | **Versioned engine contract**: v1 `JobRequest` / `JobResult` / `ProgressEvent` / `EngineError` / correction schemas and compatibility rules; `PipelineJobExecutor` is the reference one-job adapter, while direct v1 `CorrectionSet` execution remains outside that adapter |
 | [`ENGINE_JOB_LIFECYCLE.md`](ENGINE_JOB_LIFECYCLE.md) | **One-job lifecycle contract**: #337 timeout/cancellation, retryability, partial-artifact publication, cleanup, and review/correction terminal semantics layered on the v1 engine contract |
 | [`ENGINE_INPUT_SAFETY.md`](ENGINE_INPUT_SAFETY.md) | **Untrusted-PDF safety contract**: #338 bounded PDF preflight, path/network rules, public-safe errors, per-job resource hooks, and worker/container assumptions |
 | [`ENGINE_TELEMETRY.md`](ENGINE_TELEMETRY.md) | **Structured engine telemetry contract**: #339 stable progress events, coarse stage timing, page progress, compact summaries, and opt-in process/GPU resource sampling |
@@ -39,10 +40,12 @@ are also current entry points. `MAKEFILE_SURFACE.md` classifies the Makefile tar
 
 The future-service document is deliberately separate from current runtime guidance. It must not be
 used to infer implemented pipeline behavior. The v1 serialized engine contract is now defined in
-`ENGINE_JOB_CONTRACT.md`. The production pipeline remains config-first until a later adapter
-wires the full request/result/error contract, while #339 now provides opt-in structured progress
-and telemetry on the current config-first runner. When future contract work becomes runtime behavior, update the
-applicable current operating/architecture documentation in the same change.
+`ENGINE_JOB_CONTRACT.md`. The production pipeline remains config-first internally, while
+`PipelineJobExecutor` now exposes the reference v1 one-job request/result/error boundary and #339
+provides opt-in structured progress and telemetry. Direct v1 `CorrectionSet` execution is not
+connected by that reference adapter; the current review-package correction flow remains the concrete
+execution path. When future contract work becomes runtime behavior, update the applicable current
+operating/architecture documentation in the same change.
 
 ## Execution and output guidance
 

@@ -92,7 +92,7 @@ another repository.
 | `models/**` | KEEP | versioned model manifests | Keep manifests/provenance. Large model bytes remain outside Git and are staged through the documented model-artifact mechanism. |
 | `scripts/**` | mixed KEEP/ARCHIVE | maintained automation plus scoped validators | Current Docker/PR/validation scripts KEEP; Issue-specific validators are ARCHIVE unless still part of a maintained gate. |
 | `tools/**` | mixed KEEP/ARCHIVE/REMOVE candidate | reusable utilities, reproduction tooling, and accumulated one-off analysis | Current utilities and explicit reproduction tools remain; scripts already established as legacy by #38/#45/#96 or superseded by current source should be retired rather than kept for compatibility. |
-| `experiments/**` | ARCHIVE by default | experiments, comparison, reproduction, prototypes | Never public runtime and never an implicit production dependency. Remove one-off content after provenance/results are recoverable. |
+| `experiments/**` | ARCHIVE by default, with explicit runtime exceptions | experiments, comparison, reproduction, prototypes | Never assume the whole tree is non-runtime. `experiments/models/eval_omr_dln.py` is currently a KEEP exception because the canonical dense route launches it directly; other experiment content remains ARCHIVE/remove-candidate by evidence. |
 | `data/**` | mixed KEEP/REMOVE candidate | canonical GT/baselines plus superseded pre-evaluation2 scaffolding | Keep `data/evaluation2/**`; retire the old training/evaluation/workbench tracked surface after removing its remaining legacy/default-path references. |
 | `graphify-out/**` | KEEP (developer/generated) | optional repository navigation | Keep only the portable graph/report/wiki/manifest set while provenance is fresh; never use it as source of truth over source/tests. |
 | `logs/README.md` | KEEP | generated-evidence placement policy | Runtime logs themselves stay ignored. Historical path prose should be corrected when it points to retired files/tools. |
@@ -202,6 +202,26 @@ scope:
 - `make check-makefile` is the lightweight reference gate.
 
 #230 must not duplicate that audit.
+
+## Production-owned exceptions under experiment paths
+
+Repository placement does not override actual runtime dependency. The current canonical dense route
+in `src/pipeline/detection/current_support_worker.py` directly launches:
+
+```text
+experiments/models/eval_omr_dln.py
+```
+
+and `docker/runtime_contract.py` fingerprints `experiments/models` as runtime-sensitive source.
+
+Therefore `experiments/models/eval_omr_dln.py` is **KEEP / current runtime dependency** despite living
+under `experiments/**`. Issue #100 must either carry this file into the minimal mainline or first
+move the maintained OMR-DLN entrypoint into `src/**` and update the runtime contract/caller
+coherently. It must not be omitted merely because its path begins with `experiments/`.
+
+This is intentionally a narrow exception. Historical GroundingDINO, YOLO-World, and other OMR-DLN
+comparison scripts under `experiments/models/**` do not become current runtime surface merely
+because the directory is fingerprinted.
 
 ## Tools and experiments
 
@@ -318,6 +338,9 @@ code/config; that is implementation validation, not a remaining #230 classificat
 Issue #100 should consume this inventory rather than infer "minimal" from directory size.
 
 The initial minimal-mainline KEEP set should include:
+
+0. current runtime dependencies that still live outside `src/**`, specifically
+   `experiments/models/eval_omr_dln.py` until that entrypoint is migrated into `src/**`;
 
 1. current runtime implementation and dependency/build metadata;
 2. canonical runtime/config/model-manifest inputs;

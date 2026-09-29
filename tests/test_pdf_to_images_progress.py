@@ -2,7 +2,7 @@ from pathlib import Path
 
 import fitz
 
-from src.pdf_to_images import render_pdf_to_memory
+from src.pdf_to_images import parse_args, render_pdf_to_memory
 
 
 def test_render_pdf_to_memory_reports_each_completed_page():
@@ -27,3 +27,14 @@ def test_render_pdf_to_memory_reports_each_completed_page():
 
     assert [page_index for page_index, _image in rendered] == [0, 1]
     assert progress == [(1, 0), (2, 1)]
+
+
+def test_pdf_to_images_cli_requires_explicit_input_and_output_paths():
+    import pytest
+
+    with pytest.raises(SystemExit):
+        parse_args([])
+
+    args = parse_args(["--pdf", "score.pdf", "--output-dir", "artifacts/rendered"])
+    assert args.pdf == Path("score.pdf")
+    assert args.output_dir == Path("artifacts/rendered")

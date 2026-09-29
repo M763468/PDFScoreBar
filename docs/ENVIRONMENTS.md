@@ -261,7 +261,7 @@ those compatibility remnants requires separate verification.
   Issue retention records.
 - Generated runs, metrics, model outputs, and large intermediate artifacts belong under
   ignored `logs/` paths unless an explicit retention policy says otherwise.
-- `data/workbench/` is local temporary work and must be reviewed before committing.
+- Local scratch/workbench material belongs under ignored `tmp/`; do not recreate a tracked `data/workbench/` tree.
 - For CNN dataset work, stage active datasets under repository `datasets/` before bulk
   operations; use `/mnt/*` as source/archive rather than metadata-heavy scratch space.
 

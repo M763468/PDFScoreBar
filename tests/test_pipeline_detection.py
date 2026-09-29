@@ -10,7 +10,7 @@ from src.pipeline.detection.hybrid import HybridDetector
 class TestPipelineDetection(unittest.TestCase):
     def _base_config(self):
         return {
-            "inputs": {"pdf_to_images": {"output_dir": "data/evaluation/images"}},
+            "inputs": {"pdf_to_images": {"output_dir": "data/evaluation2/images"}},
             "detection": {
                 "cnn_model_path": "experiments/cnn_classifier/checkpoints/best_model.pth",
                 "ink_threshold": 230,
@@ -26,7 +26,7 @@ class TestPipelineDetection(unittest.TestCase):
             hybrid_output_dir.mkdir(parents=True, exist_ok=True)
 
             config = self._base_config()
-            images = [Path("data/evaluation/images/page_001.png")]
+            images = [Path("data/evaluation2/images/page_001.png")]
             page_ids = ["page_001"]
 
             with (
@@ -71,7 +71,7 @@ class TestPipelineDetection(unittest.TestCase):
 
             config = self._base_config()
             config["detection"]["cnn_apply_nms"] = True
-            images = [Path("data/evaluation/images/page_001.png")]
+            images = [Path("data/evaluation2/images/page_001.png")]
             page_ids = ["page_001"]
 
             with (
@@ -101,7 +101,7 @@ class TestPipelineDetection(unittest.TestCase):
             hybrid_output_dir.mkdir(parents=True, exist_ok=True)
 
             config = self._base_config()
-            images = [Path("data/evaluation/images/page_001.png")]
+            images = [Path("data/evaluation2/images/page_001.png")]
             page_ids = ["page_001"]
 
             with (
@@ -135,7 +135,7 @@ class TestPipelineDetection(unittest.TestCase):
 
             config = self._base_config()
             config["detection"]["probe_score_name"] = "FixedScore"
-            images = [Path("data/evaluation/images/page_001.png")]
+            images = [Path("data/evaluation2/images/page_001.png")]
             page_ids = ["page_001"]
 
             with (
@@ -179,7 +179,7 @@ class TestPipelineDetection(unittest.TestCase):
                     "probe_use_original_images": True,
                 }
             )
-            images = [Path("data/evaluation/images/Score_page_001.png")]
+            images = [Path("data/evaluation2/images/Score_page_001.png")]
             page_ids = ["Score_page_001"]
 
             with (

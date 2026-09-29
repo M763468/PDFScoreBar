@@ -1,13 +1,7 @@
-# Ignore all data assets by default; allow documentation and directory skeletons.
+# Ignore all data assets by default; allow only explicitly retained repository evidence.
 *
 !.gitignore
 !README.md
-!training/
-!evaluation/
-!workbench/
-!training/**
-!evaluation/**
-!workbench/**
 
 # Issue #16: allow evaluation2 GT rebuild artifacts to be version-controlled.
 !evaluation2/

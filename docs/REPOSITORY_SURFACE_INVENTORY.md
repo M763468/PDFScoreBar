@@ -148,25 +148,17 @@ Tracked data is not equivalent to generated runtime output.
 end-user input/output API, but it is repository evidence and must not be bulk-deleted as "artifact
 cleanup".
 
-### REMOVE candidates — pre-evaluation2 tracked surface
+### Retired pre-evaluation2 tracked surface
 
-The current GT preparation documentation identifies `data/evaluation2/**` as the canonical GT
-workflow. The older tracked surfaces can now be classified more narrowly:
+Issue #381 removed the old tracked `data/training/**`, `data/evaluation/**`, and
+`data/workbench/**` trees after `data/evaluation2/**` became the canonical retained GT/evaluation
+surface. The standalone PDF conversion CLI now requires explicit input/output paths, the stale
+`src/ml_detector` demo path was removed, and current temporary-work guidance points to ignored
+`tmp/`.
 
-- `data/workbench/**` contains only ignored-directory scaffolding. Current script-management rules
-  already assign throwaway scratch work to ignored `tmp/`; retire the tracked workbench scaffold.
-- `data/training/**` contains Jan-2026 annotation snapshots and old training-path scaffolding. The
-  production pipeline imports `src.pdf_to_images` in-process with explicit config-owned input/output;
-  the remaining `data/training/...` values in `src/pdf_to_images.py` are standalone CLI defaults, not
-  production data contracts. Make that CLI explicit/neutral and retire the old tracked snapshots.
-- `data/evaluation/**` contains the old single-page `page_003` GT. The remaining known source defaults
-  point to legacy standalone routes (`external/oemer/run_omerer.py` and the `src/ml_detector` demo),
-  while current detector validation is based on `evaluation2`. Retire this surface together with
-  those legacy routes.
-
-Exact old annotation bytes remain recoverable from Git history; no accepted current evaluation
-contract requires keeping these directories active. Large operator datasets/images remain ignored
-and should not be added to the public repository without an explicit retention decision.
+Historical annotation bytes remain recoverable from Git history; do not recreate the retired trees
+as current GT/workbench locations. Large operator datasets/images remain ignored and should not be
+added to the public repository without an explicit retention decision.
 
 ## Documentation inventory
 
@@ -375,11 +367,9 @@ Do not combine these into a single bulk deletion.
    - remove the separate `tests_legacy/**` surface and document `tests/` as authoritative.
 
 3. **#381 — Pre-evaluation2 data and legacy standalone routes**
-   - make `src/pdf_to_images.py` standalone defaults explicit/neutral rather than anchoring old
-     `data/training` paths;
-   - retire `data/training/**`, `data/evaluation/**`, and empty `data/workbench/**` tracked surface;
-   - retire/update legacy standalone consumers at the same time rather than preserving old data only
-     to keep obsolete demos runnable.
+   - require explicit standalone PDF conversion input/output paths;
+   - retire `data/training/**`, `data/evaluation/**`, and `data/workbench/**`;
+   - remove stale demo/default consumers and align current data/environment guidance.
 
 4. **#382 — Legacy bootstrap and third-party experiment surface**
    - retire `setup_scripts/**`, `Dockerfile.groundingdino`, `external/oemer/**`, the Oemer submodule

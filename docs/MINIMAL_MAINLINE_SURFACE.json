@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "contract": "minimal-mainline",
+  "source_issue": 100,
+  "description": "Machine-readable maintained/reproduction boundary for Issue #100. The detailed repository classification remains in docs/REPOSITORY_SURFACE_INVENTORY.md.",
+  "authoritative_inputs": [
+    "docs/REPOSITORY_SURFACE_INVENTORY.md",
+    "docs/MAKEFILE_SURFACE.md",
+    "docs/PIPELINE_ARCHITECTURE.md",
+    "docs/ENGINE_JOB_CONTRACT.md",
+    "docs/FUTURE_SERVICE_ARCHITECTURE.md",
+    "docs/manual_correction_review_package.md",
+    "docs/DOCUMENTATION_INVENTORY.md",
+    "docs/dev/VALIDATION_POLICY.md"
+  ],
+  "maintained_patterns": [
+    {"pattern": "README.md", "role": "repository entry"},
+    {"pattern": "AGENTS.md", "role": "repository operating rules"},
+    {"pattern": "pyproject.toml", "role": "Python dependency/build metadata"},
+    {"pattern": "Makefile", "role": "maintained runtime/developer/validation entrypoints"},
+    {"pattern": ".github/**", "role": "CI and repository workflow"},
+    {"pattern": ".agents/**", "role": "developer/agent tooling"},
+    {"pattern": ".gemini/**", "role": "developer/agent tooling"},
+    {"pattern": "Dockerfile", "role": "canonical runtime image"},
+    {"pattern": "docker/**", "role": "canonical runtime contract/build support"},
+    {"pattern": "src/**", "role": "maintained runtime and engine implementation"},
+    {"pattern": "tests/**", "role": "current regression and contract tests"},
+    {"pattern": "configs/dense_full_pipeline.yaml", "role": "canonical production configuration"},
+    {"pattern": "configs/smoke_test.yaml", "role": "production-representative smoke configuration"},
+    {"pattern": "configs/service_readiness_smoke.yaml", "role": "engine/container compatibility smoke"},
+    {"pattern": "configs/review_manual_correction_package_example.yaml", "role": "current correction workflow example"},
+    {"pattern": "configs/detector_profiles/**", "role": "maintained detector profile contracts"},
+    {"pattern": "configs/detector_routes/**", "role": "maintained detector route contracts"},
+    {"pattern": "models/**", "role": "versioned model manifests/provenance"},
+    {"pattern": "scripts/**", "role": "maintained repository automation"},
+    {"pattern": "tools/gt_relabel_gui/**", "role": "current correction/GT GUI"},
+    {"pattern": "tools/verification/**", "role": "maintained verification tooling"},
+    {"pattern": "tools/check_makefile_references.py", "role": "maintained Makefile reference gate"},
+    {"pattern": "tools/check_repository_surface.py", "role": "Issue #100 surface drift gate"},
+    {"pattern": "docs/PIPELINE_ARCHITECTURE.md", "role": "canonical runtime architecture"},
+    {"pattern": "docs/ENGINE_JOB_CONTRACT.md", "role": "versioned engine boundary"},
+    {"pattern": "docs/FUTURE_SERVICE_ARCHITECTURE.md", "role": "future service/control-plane responsibility boundary"},
+    {"pattern": "docs/manual_correction_review_package.md", "role": "current correction operating guide"},
+    {"pattern": "docs/DOCUMENTATION_INVENTORY.md", "role": "documentation classification"},
+    {"pattern": "docs/REPOSITORY_SURFACE_INVENTORY.md", "role": "detailed current repository classification"},
+    {"pattern": "docs/MINIMAL_MAINLINE_SURFACE.md", "role": "human-readable Issue #100 target contract"},
+    {"pattern": "docs/MINIMAL_MAINLINE_SURFACE.json", "role": "machine-readable Issue #100 target contract"},
+    {"pattern": "docs/dev/VALIDATION_POLICY.md", "role": "validation contract"},
+    {"pattern": "data/evaluation2/**", "role": "canonical validation/GT evidence"}
+  ],
+  "runtime_exceptions": [
+    {
+      "pattern": "experiments/models/eval_omr_dln.py",
+      "role": "current dense-route runtime dependency outside src",
+      "removal_gate": "Move the maintained entrypoint into src and update both the caller and docker/runtime_contract.py coherently before removing this path."
+    }
+  ],
+  "retained_reproduction_patterns": [
+    {
+      "pattern": "tools/issue120/**",
+      "role": "accepted Issue #120 reproduction surface",
+      "normal_runtime": false
+    },
+    {
+      "pattern": "Dockerfile.homr",
+      "role": "historical/isolated HOMR evaluation environment",
+      "normal_runtime": false
+    }
+  ],
+  "forbidden_patterns": [
+    {"pattern": "tests_legacy/**", "reason": "retired by Issue #380"},
+    {"pattern": "data/training/**", "reason": "pre-evaluation2 tracked data retired by Issue #381"},
+    {"pattern": "data/evaluation/**", "reason": "pre-evaluation2 tracked data retired by Issue #381"},
+    {"pattern": "data/workbench/**", "reason": "pre-evaluation2 tracked data retired by Issue #381"},
+    {"pattern": "setup_scripts/**", "reason": "obsolete bootstrap surface retired by Issue #382"},
+    {"pattern": "Dockerfile.groundingdino", "reason": "retired experiment environment from Issue #382"},
+    {"pattern": "external/**", "reason": "retired third-party experiment surface from Issue #382"},
+    {"pattern": ".gitmodules", "reason": "removed with the retired OEMER submodule surface in Issue #382"}
+  ],
+  "reference_checks": [
+    {
+      "path": "docs/REPOSITORY_SURFACE_INVENTORY.md",
+      "contains": "MINIMAL_MAINLINE_SURFACE.md"
+    },
+    {
+      "path": "docs/DOCUMENTATION_INVENTORY.md",
+      "contains": "MINIMAL_MAINLINE_SURFACE.md"
+    }
+  ]
+}

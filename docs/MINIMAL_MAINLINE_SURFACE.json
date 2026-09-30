@@ -634,5 +634,12 @@
     "src/pipeline/detector_routes/dense_probe_candidate_route.py": "Issue #120 candidate CLI",
     "src/pipeline/detector_routes/stage_e_dense_full_pipeline.py": "historical Stage-E reproduction",
     "src/pipeline/movement_boundary_candidates.py": "candidate-generation/review tool, outside engine execution"
-  }
+  },
+  "documentation_patterns": [
+    {
+      "pattern": "docs/**",
+      "role": "development, operating and historical documentation; no docs files in the executable payload",
+      "include_in_runtime_bundle": false
+    }
+  ]
 }

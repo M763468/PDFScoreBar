@@ -1,6 +1,6 @@
 # Durable Documentation Inventory
 
-Issue #280 established the repository documentation audit against the accepted #274-era production state. This file now records the durable classification and the rule used for continuing audits; it is not intended to enumerate every Issue-specific forensic note individually.
+Issue #280 established the repository documentation audit against the accepted #274-era production state. This file records documentation history and maintenance rules. It is not the entrypoint for the minimum runtime selection; use `MINIMAL_MAINLINE_SURFACE.md` for that question.
 
 ## Classification rule
 
@@ -18,8 +18,8 @@ Issue #280 established the repository documentation audit against the accepted #
 | `README.md` | repository entry | current | point to canonical architecture and durable docs |
 | `AGENTS.md` | repository agent constitution | current | keep |
 | `docs/README.md` | documentation index | canonical/current | keep current-vs-historical navigation accurate |
-| `docs/REPOSITORY_SURFACE_INVENTORY.md` | repository/public-surface classification and #100 handoff | current/reference | keep maintained/reproduction/legacy boundaries current without turning historical paths into public API |
-| `docs/MINIMAL_MAINLINE_SURFACE.md` / `.json` | Issue #100 minimal-mainline extraction contract and machine-readable drift definition | current/reference | consume the repository-surface inventory; define the target keep/reproduction/exclusion boundary without re-auditing historical surface |
+| `docs/REPOSITORY_SURFACE_INVENTORY.md` | #230 development-repository audit and #100 input | historical/reference | retain for lineage; its old present-tense paths do not define the current extraction set |
+| `docs/MINIMAL_MAINLINE_SURFACE.md` / `.json` | Issue #100 minimum executable selection and machine-readable drift definition | canonical/current for extraction | use as the single explanation and exact file list for the proposed runtime subset |
 | `docs/HISTORY_INDEX.md` | historical lineage navigation | current/reference | point to Issues/PRs/commits and retained contracts without duplicating them |
 | `docs/PIPELINE_ARCHITECTURE.md` | production architecture | canonical/current | global architecture source, including detector-input provenance |
 | `docs/FUTURE_SERVICE_ARCHITECTURE.md` | future engine/service responsibility boundary | future/roadmap | keep explicitly separate from current runtime; update when long-term engine/caller/correction/service-boundary intent changes materially |

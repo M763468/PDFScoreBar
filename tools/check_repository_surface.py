@@ -48,6 +48,14 @@ def main() -> int:
             errors.append(f"runtime bundle path is not tracked: {pattern}")
 
     selected = set(runtime_paths)
+    summary = (ROOT / "docs/MINIMAL_MAINLINE_SURFACE.md").read_text(encoding="utf-8")
+    for label, pattern, expected in (
+        ("total", r"\*\*(\d+) tracked files\*\*", len(selected)),
+        ("src", r"(\d+) files under `src/`", sum(path.startswith("src/") for path in selected)),
+    ):
+        found = re.search(pattern, summary)
+        if found is None or int(found.group(1)) != expected:
+            errors.append(f"runtime summary {label} count must be {expected}")
     excluded = data.get("source_excluded", {})
     tracked_source = {path for path in files if path.startswith("src/")}
     unclassified = tracked_source - selected - set(excluded)
@@ -61,6 +69,7 @@ def main() -> int:
         errors.append(f"source both selected and excluded: {sorted(overlap)}")
 
     for section in (
+        "documentation_patterns",
         "development_validation_patterns",
         "development_tool_patterns",
         "reproduction_only_patterns",

@@ -70,7 +70,7 @@ class DetectorOrchestrator:
     ):
         if _detector_route(config) == DENSE_ROUTE_NAME:
             _validate_verified_image_stems(images)
-            from .restored_orchestrator_batch_sr import (
+            from .dense_orchestrator_batch_sr import (
                 DetectorOrchestrator as VerifiedDetectorOrchestrator,
             )
 
@@ -106,12 +106,12 @@ def run_detection_step(
     dry_run: bool,
     in_memory_images: Dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
-    """Dispatch standard or verified Stage E production detection."""
+    """Dispatch standard or verified dense production detection."""
     if _detector_route(config) == DENSE_ROUTE_NAME:
         _validate_verified_image_stems(images)
         # Issue #284 keeps Real-ESRGAN in one dedicated all-pages process which
         # exits before the verified page-local HOMR/OMR workers begin.
-        from .restored_orchestrator_batch_sr import run_detection_step as run_verified
+        from .dense_orchestrator_batch_sr import run_detection_step as run_verified
 
         return run_verified(
             config,

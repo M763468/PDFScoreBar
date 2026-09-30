@@ -13,7 +13,6 @@ from typing import Iterable
 
 SOURCE_CONTRACT_ROOTS = (
     Path("src"),
-    Path("experiments/models"),
     Path("docker"),
 )
 SOURCE_CONTRACT_FILES = (

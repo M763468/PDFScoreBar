@@ -1,0 +1,307 @@
+#!/usr/bin/env python3
+"""Package-scoped user review server. GT/developer routes live in gt_relabel_gui."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import mimetypes
+import sys
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
+from urllib.parse import parse_qs, urlparse
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+UI_ROOT = REPO_ROOT / "tools" / "gt_relabel_gui"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from src.pipeline.review.manual_correction_handoff import (  # noqa: E402
+    build_manual_gui_config,
+    load_manual_correction_handoff,
+)
+
+
+def _inside(path: Path, root: Path) -> bool:
+    return path == root or root in path.parents
+
+
+class ReviewPackage:
+    """The handoff fixes every readable artifact and writable correction sink."""
+
+    def __init__(self, handoff: Path):
+        handoff = handoff.resolve()
+        if handoff.name != "manual_correction_input.json":
+            raise ValueError("Expected a package-local manual_correction_input.json")
+        self.root = handoff.parent
+        config = build_manual_gui_config(
+            load_manual_correction_handoff(handoff),
+            handoff_path=handoff,
+            mode="issue229_smoke_strict",
+            require_existing_artifacts=True,
+        )
+        self.pages = config["pages"]
+        self.reads: dict[str, Path] = {}
+        self.outputs: dict[tuple[str, str], str] = {}
+        self.writes: dict[str, Path] = {}
+        correction_root = self.root / "corrections"
+        if correction_root.is_symlink():
+            raise ValueError("Corrections directory must not be a symlink")
+        for page in self.pages:
+            for key in (
+                "image",
+                "numbering",
+                "mmr",
+                "barlines",
+                "review_overlay",
+                "movement_boundary_evidence",
+            ):
+                rel = page.get(key)
+                if rel:
+                    self.reads[rel] = self._resolve(rel)
+            for kind, rel in page["manual_outputs"].items():
+                self._declare_output(rel, correction_root)
+                for page_key in ("page", "name"):
+                    self.outputs[(str(page[page_key]), kind)] = rel
+            rel = page.get("movement_boundary_resolved_output")
+            if rel:
+                self._declare_output(rel, correction_root)
+
+        if set(self.reads.values()) & set(self.writes.values()):
+            raise ValueError("Correction outputs overlap review artifacts")
+
+    def _resolve(self, rel: str) -> Path:
+        if not isinstance(rel, str) or Path(rel).is_absolute():
+            raise ValueError("Invalid package path")
+        path = (self.root / rel).resolve()
+        if not _inside(path, self.root):
+            raise ValueError("Path outside review package")
+        return path
+
+    def _declare_output(self, rel: str, correction_root: Path) -> None:
+        if not _inside(self.root / rel, correction_root) or (self.root / rel) == correction_root:
+            raise ValueError("Correction output must be under review/corrections")
+        path = self._resolve(rel)
+        if not _inside(path, correction_root):
+            raise ValueError("Correction output escapes review/corrections")
+        self.writes[rel] = path
+
+    def readable(self, rel: str) -> Path:
+        if rel not in self.reads or self._resolve(rel) != self.reads[rel]:
+            raise ValueError("Artifact is not declared by the handoff")
+        if not self.reads[rel].is_file():
+            raise ValueError("Declared artifact is unavailable")
+        return self.reads[rel]
+
+    def writable(self, rel: str) -> Path:
+        if rel not in self.writes or self._resolve(rel) != self.writes[rel]:
+            raise ValueError("Output is not declared by the handoff")
+        return self.writes[rel]
+
+    def output(self, page: object, kind: object) -> Path:
+        rel = self.outputs.get((str(page), str(kind)))
+        if rel is None:
+            raise ValueError("Unknown page or correction type")
+        return self.writable(rel)
+
+
+def _payload(kind: str, items: list) -> dict:
+    return {"schema_version": 1, "correction_type": kind, "items": items}
+
+
+def _load_items(path: Path, kind: str) -> list:
+    if not path.exists():
+        return []
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict) or data.get("correction_type") != kind:
+        raise ValueError("Existing correction type does not match")
+    items = data.get("items", [])
+    if not isinstance(items, list):
+        raise ValueError("Existing correction items must be a list")
+    return items
+
+
+def _load_boxes(path: Path) -> list[dict]:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    records = data.get("predictions") if isinstance(data, dict) and "predictions" in data else data
+    boxes = []
+    if isinstance(records, list):
+        for record in records:
+            if isinstance(record, list) and len(record) == 4:
+                boxes.append({"bbox": [int(value) for value in record]})
+            elif isinstance(record, dict):
+                bbox = (
+                    record.get("barline_location")
+                    or record.get("orig_bbox")
+                    or record.get("pred_bbox")
+                )
+                if bbox and len(bbox) == 4:
+                    box = {"bbox": [int(value) for value in bbox]}
+                    if record.get("barline_type") or record.get("type"):
+                        box["barline_type"] = record.get("barline_type") or record.get("type")
+                    boxes.append(box)
+    return boxes
+
+
+class ReviewHandler(BaseHTTPRequestHandler):
+    def _json(self, obj: object) -> None:
+        data = json.dumps(obj).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _file(self, path: Path, *, json_type: bool = False) -> None:
+        data = path.read_bytes()
+        content_type = (
+            "application/json"
+            if json_type
+            else (mimetypes.guess_type(path.name)[0] or "application/octet-stream")
+        )
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def do_GET(self) -> None:
+        parsed = urlparse(self.path)
+        package = self.server.package
+        if parsed.path in {"/", "/app_manual.js"}:
+            self._file(UI_ROOT / ("index_manual.html" if parsed.path == "/" else "app_manual.js"))
+            return
+        if parsed.path == "/api/pages":
+            self._json({"pages": package.pages})
+            return
+        if parsed.path == "/api/manual_corrections":
+            query = parse_qs(parsed.query)
+            kind = query.get("type", [None])[0]
+            page = query.get("page", [None])[0]
+            try:
+                path = package.output(page, kind)
+                self._json(_payload(kind, _load_items(path, kind)))
+            except (ValueError, OSError, json.JSONDecodeError) as exc:
+                self.send_error(400, str(exc))
+            return
+        if parsed.path in {"/file", "/api/template", "/api/boxes"}:
+            rel = parse_qs(parsed.query).get("path", [None])[0]
+            allowed_fields = {
+                "/file": {"image", "review_overlay"},
+                "/api/template": {"numbering", "mmr", "movement_boundary_evidence"},
+                "/api/boxes": {"barlines"},
+            }
+            if not any(
+                page.get(field) == rel
+                for page in package.pages
+                for field in allowed_fields[parsed.path]
+            ):
+                self.send_error(403, "Artifact is not declared for this route")
+                return
+            try:
+                path = package.readable(rel)
+                if parsed.path == "/api/boxes":
+                    self._json({"boxes": _load_boxes(path)})
+                else:
+                    self._file(path, json_type=parsed.path == "/api/template")
+            except (ValueError, OSError) as exc:
+                self.send_error(403, str(exc))
+            return
+        self.send_error(404, "Not found")
+
+    def do_POST(self) -> None:
+        parsed = urlparse(self.path)
+        package = self.server.package
+        if parsed.path not in {"/api/save", "/api/export_movement_boundaries"}:
+            self.send_error(404, "Not found")
+            return
+        try:
+            size = int(self.headers.get("Content-Length", "0"))
+            if size < 0 or size > 10_000_000:
+                raise ValueError("Invalid request size")
+            payload = json.loads(self.rfile.read(size))
+            if not isinstance(payload, dict):
+                raise ValueError("Request body must be an object")
+            if parsed.path == "/api/save":
+                page = payload.get("page")
+                kind = payload.get("correction_type")
+                items = payload.get("items")
+                if not isinstance(items, list):
+                    raise ValueError("Correction items must be a list")
+                if not all(isinstance(item, dict) for item in items):
+                    raise ValueError("Correction items must be objects")
+                path = package.output(page, kind)
+                existing = _load_items(path, kind)
+                merged = [item for item in existing if str(item.get("page")) != str(page)] + items
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path = package.output(page, kind)
+                path.write_text(
+                    json.dumps(_payload(kind, merged), indent=2, ensure_ascii=False) + "\n",
+                    encoding="utf-8",
+                )
+                self._json(
+                    {
+                        "output": str(path),
+                        "correction_type": kind,
+                        "count": len(merged),
+                        "page_count": len(items),
+                    }
+                )
+                return
+            config = next((p for p in package.pages if p.get("movement_boundary_evidence")), None)
+            if config is None:
+                raise ValueError("No movement boundary evidence is attached")
+            from src.pipeline.review.movement_boundary_review import (
+                write_resolved_movement_boundaries,
+            )
+
+            evidence_rel = config["movement_boundary_evidence"]
+            review_rel = config["manual_outputs"]["movement_boundary"]
+            output_rel = config["movement_boundary_resolved_output"]
+            evidence = package.readable(evidence_rel)
+            review = package.writable(review_rel)
+            output = package.writable(output_rel)
+            if not review.is_file():
+                raise ValueError("Save movement review decisions before export")
+            resolved = write_resolved_movement_boundaries(
+                evidence_path=evidence,
+                review_path=review,
+                output_path=output,
+                evidence_artifact=evidence_rel,
+                overwrite=True,
+            )
+            self._json(
+                {
+                    "output": str(output),
+                    "count": len(resolved.get("boundaries", [])),
+                    "schema_version": resolved.get("schema_version"),
+                }
+            )
+        except (ValueError, OSError, KeyError, TypeError, json.JSONDecodeError) as exc:
+            self.send_error(400, str(exc))
+
+
+def create_server(handoff: Path, *, port: int = 8010) -> HTTPServer:
+    package = ReviewPackage(handoff)
+    server = HTTPServer(("127.0.0.1", port), ReviewHandler)
+    server.package = package
+    return server
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="User review of one correction package")
+    parser.add_argument(
+        "--handoff", type=Path, required=True, help="review/manual_correction_input.json"
+    )
+    parser.add_argument("--port", type=int, default=8010)
+    args = parser.parse_args()
+    try:
+        server = create_server(args.handoff, port=args.port)
+    except (OSError, ValueError) as exc:
+        parser.error(str(exc))
+    print(f"Correction review: http://127.0.0.1:{server.server_port}")
+    server.serve_forever()
+
+
+if __name__ == "__main__":
+    main()

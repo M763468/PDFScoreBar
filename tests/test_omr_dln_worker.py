@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import cv2
 import numpy as np
 
+from src.pipeline.detection import omr_dln_worker
 from src.pipeline.detection.omr_dln_worker import run
 
 
@@ -83,3 +86,27 @@ def test_runtime_worker_rejects_missing_precomputed_sr(tmp_path: Path) -> None:
         assert "No precomputed SR image" in str(exc)
     else:
         raise AssertionError("missing precomputed SR must fail closed")
+
+
+def test_runtime_worker_resolves_model_from_repository_root(tmp_path: Path, monkeypatch) -> None:
+    source = tmp_path / "page_001.png"
+    assert cv2.imwrite(str(source), np.zeros((10, 20, 3), dtype=np.uint8))
+    sr_root = tmp_path / "sr"
+    sr = sr_root / source.stem / source.name
+    sr.parent.mkdir(parents=True)
+    assert cv2.imwrite(str(sr), np.zeros((40, 80, 3), dtype=np.uint8))
+    model_path = tmp_path / "YOLOv8m_Measures.pt"
+    model_path.write_bytes(b"test model")
+
+    seen = {}
+
+    def resolve_model(*, repository_root):
+        seen["repository_root"] = repository_root
+        return model_path
+
+    monkeypatch.setattr(omr_dln_worker, "resolve_omr_dln_model_path", resolve_model)
+    monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(YOLO=lambda path: _Model([])))
+
+    run([source], output_dir=tmp_path / "omr", precomputed_sr=sr_root)
+
+    assert seen["repository_root"] == Path(__file__).resolve().parents[1]

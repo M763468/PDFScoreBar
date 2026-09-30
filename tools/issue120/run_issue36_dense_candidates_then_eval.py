@@ -138,7 +138,8 @@ def detector_summary(eval_dir: Path) -> dict[str, Any] | None:
 def build_generation_command(args: argparse.Namespace) -> list[str]:
     cmd = [
         sys.executable,
-        "tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py",
+        "-m",
+        "src.pipeline.detector_routes.candidate_generation",
         "--inventory",
         str(args.inventory),
         "--exclude",
@@ -155,7 +156,8 @@ def build_generation_command(args: argparse.Namespace) -> list[str]:
 def build_filter_command(args: argparse.Namespace) -> list[str]:
     cmd = [
         sys.executable,
-        "tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py",
+        "-m",
+        "src.pipeline.detector_routes.candidate_filter",
         "--inventory",
         str(args.inventory),
         "--exclude",

@@ -2,9 +2,9 @@
 
 ## Answer
 
-The current proposed subset is the **105 tracked files** listed in
-[`MINIMAL_MAINLINE_SURFACE.json`](MINIMAL_MAINLINE_SURFACE.json): 91 files under `src/`,
-4 runtime helpers under `tools/`, 3 model files, 2 configs, 2 Docker helpers,
+The current proposed subset is the **102 tracked files** listed in
+[`MINIMAL_MAINLINE_SURFACE.json`](MINIMAL_MAINLINE_SURFACE.json): 92 files under `src/`,
+3 model files, 2 configs, 2 Docker helpers,
 and `Dockerfile`, `pyproject.toml`, and `README.md`. The root README is required by
 `pyproject.toml` during installation. No `docs/**`, `tests/**`, CI, GT, or experiment
 file is in the executable subset. These are selection counts, not a released package.
@@ -17,13 +17,23 @@ input for a PDF job. Production model manifests and the tracked MMR checkpoint a
 `models/`; OMR-DLN weights remain an external verified asset.
 
 **This is an explicit boundary, but the implementation is not yet sufficiently simple for
-physical extraction.** The selected Dockerfile still builds the historical Stage-E stack
+physical extraction.** The 92 source files reflect the current PDF rendering, two-HOMR
+detection, SR/OMR-DLN/CNN consensus, measure numbering/OCR, engine, and correction/review
+behavior. They are an audited dependency set for those behaviors, not a claim that 92 files
+is a desirable final architecture. Three more idle `src/` files were excluded after the
+call-path audit; shrinking further requires a behavior-preserving split of mixed modules
+or a narrower product contract.
+
+The selected Dockerfile still builds the historical Stage-E stack
 ([#398](https://github.com/M763468/PDFScoreBar/issues/398)); production HOMR code is
 still mixed with evaluation/history code under `src/homr_eval_scripts/`
-([#115](https://github.com/M763468/PDFScoreBar/issues/115)); and four production helpers
-still live under `tools/`. An isolated copy of selected files can import the engine and
-start the CLI. A full GPU run of that copy has not passed. Do not present this subset as a
-finished standalone distribution.
+([#115](https://github.com/M763468/PDFScoreBar/issues/115)). Four production helpers
+have now moved from `tools/` to `src/`, though their candidate-generation APIs still
+carry evaluation-oriented inventory structure. An isolated bind-mounted copy of the 102
+selected files completed the one-page GPU pipeline and passed the 85/85 detector accuracy
+gate. That copy used the current full image plus externally mounted validation input and
+model; building a production-only image from the selected files remains blocked by #398.
+Do not present this subset as a finished standalone distribution.
 
 ## What goes where
 
@@ -40,12 +50,18 @@ compatibility shims, HOMR evaluator CLI, and movement-boundary candidate produce
 retained in this repository but excluded from the proposed subset. Current HOMR workers
 use selected `core/` modules; directory names alone are not a dependency test.
 
-Four `tools/` files are exceptions to the directory rule: the dense route launches
-`generate_probe_candidates_from_inventory.py` and
-`apply_candidate_filter_from_inventory.py`, the latter imports
-`suggest_candidate_drops.py`, and numbering launches `add_measure_numbers.py`.
-Those exact files are selected. The checker catches new direct `tools/*.py` references
-that are missing from the list.
+Three further `src/` files were excluded after call-path review: `barline_units.py` is
+used by evaluation/tests, `ort_config.py` has no current caller, and
+`engine_lifecycle.py` is a development contract helper not wired into the executor.
+Correction application remains selected because the current product includes a separate
+review-package correction flow, even though a one-job request does not execute
+`CorrectionSet` records directly.
+
+The dense route's candidate generator, filter, and drop heuristic now live under
+`src/pipeline/detector_routes/`; the numbering CLI now lives under
+`src/measure_numbering/`. Production and maintained development callers use those
+modules. The old `tools/` commands were removed. The checker rejects new direct
+`tools/*.py` references from selected runtime source.
 
 ## Placement already corrected
 
@@ -71,8 +87,8 @@ docker/                     maintained runtime helpers
 Dockerfile, pyproject.toml, README.md
 ```
 
-The current file list still contains `src/homr_eval_scripts/core/**`, two mixed HOMR
-profile modules, and four helpers under `tools/`; the layout above is the target, not
+The current file list still contains `src/homr_eval_scripts/core/**` and two mixed HOMR
+profile modules; the layout above is the target, not
 an assertion that those moves are complete. `Dockerfile` cannot yet represent only the
 production environment because it also builds Stage-E assets (#398).
 

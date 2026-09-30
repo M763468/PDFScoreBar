@@ -78,7 +78,7 @@ def run(
     if model is None:
         from ultralytics import YOLO
 
-        model_path = resolve_omr_dln_model_path()
+        model_path = resolve_omr_dln_model_path(repository_root=Path(__file__).resolve().parents[3])
         if not model_path.is_file():
             raise FileNotFoundError(omr_dln_model_missing_message(model_path))
         model = YOLO(model_path)

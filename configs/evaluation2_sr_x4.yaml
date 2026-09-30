@@ -52,7 +52,7 @@ filters:
   staff_detect: auto
 
 mmr:
-  model_path: tools/mmr_training/models/mmr_classifier_best.pth
+  model_path: models/mmr/mmr_classifier_best.pth
   enable_rotation_tta: false
 
 numbering:

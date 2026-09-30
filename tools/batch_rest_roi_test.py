@@ -42,7 +42,7 @@ def main():
         img_path = case["homr_image"]
 
         cmd_num = (
-            f".venv_omr_dln/bin/python tools/add_measure_numbers.py "
+            f".venv_omr_dln/bin/python -m src.measure_numbering.cli "
             f"--barlines {case['gt']} "
             f"--staff-mask {case['staff_mask']} "
             f"--image {img_path} "

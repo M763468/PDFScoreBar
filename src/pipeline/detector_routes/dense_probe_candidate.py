@@ -363,7 +363,8 @@ def build_generation_command(
 ) -> list[str]:
     cmd = [
         sys.executable,
-        "tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py",
+        "-m",
+        "src.pipeline.detector_routes.candidate_generation",
         "--inventory",
         str(config.inventory),
         "--exclude",
@@ -382,7 +383,8 @@ def build_filter_command(
 ) -> list[str]:
     cmd = [
         sys.executable,
-        "tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py",
+        "-m",
+        "src.pipeline.detector_routes.candidate_filter",
         "--inventory",
         str(config.inventory),
         "--exclude",

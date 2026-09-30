@@ -53,19 +53,11 @@
       "role": "shared runtime primitives and model/resource resolvers"
     },
     {
-      "pattern": "src/common/barline_units.py",
-      "role": "shared runtime primitives and model/resource resolvers"
-    },
-    {
       "pattern": "src/common/connector_artifacts.py",
       "role": "shared runtime primitives and model/resource resolvers"
     },
     {
       "pattern": "src/common/model_artifacts.py",
-      "role": "shared runtime primitives and model/resource resolvers"
-    },
-    {
-      "pattern": "src/common/ort_config.py",
       "role": "shared runtime primitives and model/resource resolvers"
     },
     {
@@ -119,6 +111,10 @@
     {
       "pattern": "src/measure_numbering/builder.py",
       "role": "system/measure construction"
+    },
+    {
+      "pattern": "src/measure_numbering/cli.py",
+      "role": "production numbering CLI and overlay renderer"
     },
     {
       "pattern": "src/measure_numbering/connector_aware_builder.py",
@@ -269,6 +265,18 @@
       "role": "canonical detector-route package"
     },
     {
+      "pattern": "src/pipeline/detector_routes/candidate_drops.py",
+      "role": "dense route drop heuristic"
+    },
+    {
+      "pattern": "src/pipeline/detector_routes/candidate_filter.py",
+      "role": "dense route candidate filtering"
+    },
+    {
+      "pattern": "src/pipeline/detector_routes/candidate_generation.py",
+      "role": "dense route candidate generation"
+    },
+    {
       "pattern": "src/pipeline/detector_routes/dense_full_pipeline.py",
       "role": "canonical dense route reconstruction"
     },
@@ -283,10 +291,6 @@
     {
       "pattern": "src/pipeline/engine_input_safety.py",
       "role": "engine input safety"
-    },
-    {
-      "pattern": "src/pipeline/engine_lifecycle.py",
-      "role": "engine lifecycle contract"
     },
     {
       "pattern": "src/pipeline/engine_telemetry.py",
@@ -407,22 +411,6 @@
     {
       "pattern": "src/pipeline/utils/wide_split_utils.py",
       "role": "production pipeline utilities"
-    },
-    {
-      "pattern": "tools/add_measure_numbers.py",
-      "role": "numbering subprocess launched by current pipeline"
-    },
-    {
-      "pattern": "tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py",
-      "role": "dense route candidate-filter subprocess"
-    },
-    {
-      "pattern": "tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py",
-      "role": "dense route candidate-generation subprocess"
-    },
-    {
-      "pattern": "tools/verification/gt_preparation/suggest_candidate_drops.py",
-      "role": "imported by current candidate-filter subprocess"
     }
   ],
   "development_validation_patterns": [
@@ -464,12 +452,7 @@
     {
       "pattern": "tools/verification/**",
       "role": "remaining verification tooling; four runtime-used helper files are exceptions",
-      "include_in_runtime_bundle": false,
-      "runtime_exceptions": [
-        "tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py",
-        "tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py",
-        "tools/verification/gt_preparation/suggest_candidate_drops.py"
-      ]
+      "include_in_runtime_bundle": false
     }
   ],
   "development_tool_patterns": [
@@ -579,6 +562,22 @@
     {
       "pattern": ".gitmodules",
       "reason": "retired OEMER submodule surface from Issue #382"
+    },
+    {
+      "pattern": "tools/add_measure_numbers.py",
+      "reason": "production-owned helper moved to src; do not restore the obsolete command"
+    },
+    {
+      "pattern": "tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py",
+      "reason": "production-owned helper moved to src; do not restore the obsolete command"
+    },
+    {
+      "pattern": "tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py",
+      "reason": "production-owned helper moved to src; do not restore the obsolete command"
+    },
+    {
+      "pattern": "tools/verification/gt_preparation/suggest_candidate_drops.py",
+      "reason": "production-owned helper moved to src; do not restore the obsolete command"
     }
   ],
   "known_mixed_runtime_sources": [
@@ -622,6 +621,11 @@
     {
       "path": "docs/DOCUMENTATION_INVENTORY.md",
       "contains": "MINIMAL_MAINLINE_SURFACE.md"
+    },
+    {
+      "path": "configs/smoke_test.yaml",
+      "contains": "models/mmr/mmr_classifier_best.pth",
+      "not_contains": "tools/mmr_training/models/mmr_classifier_best.pth"
     }
   ],
   "source_excluded": {
@@ -633,7 +637,10 @@
     "src/pipeline/detector_routes/dense_probe_candidate.py": "Issue #120 candidate route; not called by canonical dense route",
     "src/pipeline/detector_routes/dense_probe_candidate_route.py": "Issue #120 candidate CLI",
     "src/pipeline/detector_routes/stage_e_dense_full_pipeline.py": "historical Stage-E reproduction",
-    "src/pipeline/movement_boundary_candidates.py": "candidate-generation/review tool, outside engine execution"
+    "src/pipeline/movement_boundary_candidates.py": "candidate-generation/review tool, outside engine execution",
+    "src/common/barline_units.py": "evaluation/test geometry utility; no current runtime caller",
+    "src/common/ort_config.py": "unused ONNX provider helper; no current runtime caller",
+    "src/pipeline/engine_lifecycle.py": "development contract helper; current executor does not import or call it"
   },
   "documentation_patterns": [
     {

@@ -59,7 +59,7 @@ filters:
   user_exclude: []
 
 mmr:
-  model_path: tools/mmr_training/models/mmr_classifier_best.pth
+  model_path: models/mmr/mmr_classifier_best.pth
   ocr_lang: eng
   enable_rotation_tta: false
   debug_root: null

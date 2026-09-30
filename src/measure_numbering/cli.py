@@ -6,9 +6,6 @@ from pathlib import Path
 
 import cv2
 
-project_root = Path(__file__).parent.parent
-sys.path.append(str(project_root))
-
 from src.measure_numbering.pipeline import MeasureNumberingPipeline
 from src.measure_numbering.serialization import score_to_dict
 from src.measure_numbering.types import Score

@@ -35,7 +35,6 @@ detection:
   detector_route: dense_full_pipeline
   probe_use_original_images: true
   crop_recenter_on_bbox_ink: true
-  container_name: sr_eval_gpu_exp
   hybrid_output_root: logs/full_pipeline_runs/smoke_test_detection/hybrid_output
 
   band_source: row_stats
@@ -80,7 +79,7 @@ filters:
   user_exclude: []
 
 mmr:
-  model_path: tools/mmr_training/models/mmr_classifier_best.pth
+  model_path: models/mmr/mmr_classifier_best.pth
   ocr_lang: eng
   enable_rotation_tta: false
 

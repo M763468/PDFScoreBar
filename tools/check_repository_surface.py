@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the Issue #100 minimal-mainline repository-surface contract."""
+"""Validate the Issue #100 minimal-runtime extraction contract."""
 
 from __future__ import annotations
 
@@ -32,17 +32,28 @@ def main() -> int:
     files = tracked_files()
     errors: list[str] = []
 
-    if data.get("schema_version") != 1:
-        errors.append("schema_version must be 1")
+    if data.get("schema_version") != 2:
+        errors.append("schema_version must be 2")
 
-    for section in ("maintained_patterns", "runtime_exceptions", "retained_reproduction_patterns"):
-        entries = data.get(section, [])
-        for entry in entries:
+    runtime_entries = data.get("runtime_bundle_patterns", [])
+    for entry in runtime_entries:
+        pattern = entry["pattern"]
+        if not matches(files, pattern):
+            errors.append(f"runtime bundle pattern has no tracked matches: {pattern}")
+
+    for section in (
+        "development_validation_patterns",
+        "development_tool_patterns",
+        "reproduction_only_patterns",
+    ):
+        for entry in data.get(section, []):
             pattern = entry["pattern"]
             if not matches(files, pattern):
-                errors.append(f"{section}: required tracked pattern has no matches: {pattern}")
+                errors.append(f"{section}: documented tracked pattern has no matches: {pattern}")
+            if entry.get("include_in_runtime_bundle") is not False:
+                errors.append(f"{section}: {pattern} must explicitly stay outside runtime bundle")
 
-    for entry in data.get("forbidden_patterns", []):
+    for entry in data.get("current_repository_forbidden_patterns", []):
         pattern = entry["pattern"]
         found = matches(files, pattern)
         if found:
@@ -55,9 +66,13 @@ def main() -> int:
         if not path.is_file():
             errors.append(f"reference-check file is missing: {check['path']}")
             continue
-        needle = check["contains"]
-        if needle not in path.read_text(encoding="utf-8"):
+        text = path.read_text(encoding="utf-8")
+        needle = check.get("contains")
+        if needle and needle not in text:
             errors.append(f"{check['path']} does not reference {needle}")
+        forbidden = check.get("not_contains")
+        if forbidden and forbidden in text:
+            errors.append(f"{check['path']} still references retired runtime path {forbidden}")
 
     if errors:
         print("Repository surface check failed:", file=sys.stderr)
@@ -65,16 +80,12 @@ def main() -> int:
             print(f"- {error}", file=sys.stderr)
         return 1
 
-    checked = (
-        len(data.get("maintained_patterns", []))
-        + len(data.get("runtime_exceptions", []))
-        + len(data.get("retained_reproduction_patterns", []))
-    )
     print(
         "Repository surface check passed: "
-        f"{checked} required patterns, "
-        f"{len(data.get('forbidden_patterns', []))} forbidden-pattern guards, "
-        f"{len(data.get('reference_checks', []))} documentation references."
+        f"{len(runtime_entries)} runtime patterns, "
+        f"{len(data.get('development_validation_patterns', []))} development-validation groups, "
+        f"{len(data.get('reproduction_only_patterns', []))} reproduction-only groups, "
+        f"{len(data.get('current_repository_forbidden_patterns', []))} forbidden-pattern guards."
     )
     return 0
 

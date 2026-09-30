@@ -1,97 +1,165 @@
-# Minimal Mainline Surface
+# Minimal Mainline Runtime Surface
 
-Issue #100 defines the smallest maintained repository surface that a future PDFScoreBar mainline
-extraction must preserve. This document is the human-readable contract. Its machine-readable
-companion is `docs/MINIMAL_MAINLINE_SURFACE.json`.
+Issue #100 is about extracting the smallest coherent PDFScoreBar **runtime/function surface**, not
+about copying everything that is useful while developing this repository. The current repository may
+continue to retain tests, CI, canonical validation evidence, reproduction tooling, training tools,
+and historical evidence, while those assets stay outside the executable bundle.
 
-The detailed current-tree classification remains in
-`docs/REPOSITORY_SURFACE_INVENTORY.md`. This document does not repeat that audit or turn every
-retained historical asset into a supported runtime API.
+The machine-readable contract is `docs/MINIMAL_MAINLINE_SURFACE.json`. The broader current-repository
+classification remains in `docs/REPOSITORY_SURFACE_INVENTORY.md`.
 
-## Contract
+## Three surfaces
 
-A future extraction must preserve three distinct groups.
+### 1. Minimal runtime bundle
 
-### Maintained mainline
+The runtime bundle contains only what is required to execute the canonical dense pipeline and the
+versioned one-job engine boundary:
 
-Keep the current production/runtime, contract, correction, validation, and repository-maintenance
-surface:
+- runtime dependency/build inputs (`pyproject.toml`, `Dockerfile`, runtime Docker helpers);
+- the dense algorithm base config and maintained HOMR profile;
+- production model manifests/checkpoints under `models/**`;
+- the runtime-owned `src/**` modules listed explicitly in the JSON contract;
+- the engine/correction/final-output implementation needed to turn a PDF job into published
+  artifacts.
 
-- `src/**`, canonical dependency/build metadata, `Dockerfile`, and `docker/**`;
-- canonical runtime/smoke/review configs and detector profile/route contracts;
-- model manifests/provenance under `models/**`;
-- current tests and CI/validation tooling;
-- current correction/GT GUI and verification tooling;
-- current architecture, engine, correction, repository, and validation documentation;
-- `data/evaluation2/**` as canonical validation/GT evidence.
+The JSON intentionally does **not** use `src/**` or `tests/**` as blanket keep rules.
 
-The current dense route also has one explicit runtime-owned exception outside `src/**`:
-`experiments/models/eval_omr_dln.py`. It remains part of the maintained surface until the
-entrypoint is moved into `src/**` and its caller plus `docker/runtime_contract.py` are updated
-coherently.
+`PipelineJobExecutor` is the clean extraction-facing entrypoint: it accepts a PDF job, derives a
+request-local config from the dense algorithm base, replaces evaluation-specific image input with the
+actual PDF, enables rendering, and owns output/review materialization. The fact that
+`configs/dense_full_pipeline.yaml` can still be used directly against `data/evaluation2/images` for
+canonical development/evaluation does not make `data/evaluation2/**` a runtime dependency.
 
-### Retained reproduction assets
+### 2. Development/validation surface
 
-These remain available but are not normal runtime entrypoints:
+These assets remain important in this repository, but are explicitly **not shipped in the minimal
+runtime bundle**:
 
-- `tools/issue120/**` for the accepted Issue #120 reproduction contract;
-- `Dockerfile.homr` for historical/isolated HOMR evaluation.
+- `tests/**`;
+- `.github/**` CI;
+- `data/evaluation2/**` GT/canonical validation evidence;
+- smoke/service-readiness configs;
+- repository validation scripts and `tools/verification/**`;
+- agent/Graphify/developer tooling;
+- training tools such as `tools/mmr_training/**`.
 
-Retaining these assets does not make the surrounding historical experiment surface part of the
-minimal runtime.
+This distinction lets the current repository remain safely maintainable without confusing
+maintainability evidence with runtime requirements.
 
-### Explicitly excluded retired surface
+### 3. Reproduction/history surface
 
-The minimal mainline must not recreate cleanup already completed under #379-#383. The machine
-contract rejects reintroduction of the retired second test tree, pre-evaluation2 tracked data trees,
-obsolete setup helpers, the GroundingDINO Dockerfile, the retired tracked external/submodule surface,
-and `.gitmodules`.
+Issue-specific reproduction and historical compatibility remain separately retained when useful, but
+are not part of the extracted runtime. Examples include:
 
-## Target directory structure
+- `tools/issue120/**`;
+- `Dockerfile.homr`;
+- the Stage-E historical profile and route compatibility shim;
+- `experiments/**` after the production OMR-DLN entrypoint was moved into `src/**`.
 
-The target is based on current maintained responsibilities rather than old experiment-era names:
+## Placement corrections performed by Issue #100
+
+The detailed audit found several cases where directory placement did not reflect ownership.
+
+### OMR-DLN production execution
+
+Before #100, the canonical dense route launched `experiments/models/eval_omr_dln.py`. That script
+mixed the production prediction path with evaluation-only options, visualization, optional internal
+SR, legacy single-image handling, debug output, and experiment error logging.
+
+#100 adds `src/pipeline/detection/omr_dln_worker.py` as a fail-fast production worker that accepts the
+already-owned precomputed x4 SR artifact and writes the source-coordinate predictions required by
+hybrid consensus. `current_support_worker.py` now invokes that module. `experiments/**` is therefore
+no longer a canonical runtime requirement.
+
+### Dense production orchestrator naming
+
+The canonical route previously dispatched through modules named `restored_orchestrator.py` and
+`restored_orchestrator_batch_sr.py`, even though those files implement the accepted production route.
+The production names are now `dense_orchestrator.py` and `dense_orchestrator_batch_sr.py`.
+Compatibility shims remain only for older imports and are excluded from the minimal runtime bundle.
+
+### MMR production checkpoint
+
+The canonical config previously loaded its runtime MMR checkpoint from
+`tools/mmr_training/models/mmr_classifier_best.pth`. The checkpoint now lives at
+`models/mmr/mmr_classifier_best.pth`; training tooling and runtime model ownership are no longer
+conflated.
+
+### Runtime package hygiene
+
+Two unit-test modules under `src/measure_numbering/` were moved to `tests/`, and the visualization
+helper was moved to `tools/`. `src/ml_detector/barline_detector.py` was removed: it depended directly
+on the retired OEMER stack, which is not part of the current dependency set or canonical runtime.
+
+## Remaining mixed-runtime boundaries
+
+The audit also found code that is genuinely runtime-owned but still mixed with historical/evaluation
+responsibilities. These are not grounds for copying the containing directories wholesale.
+
+### HOMR runtime under `homr_eval_scripts`
+
+The current HOMR workers import `src/homr_eval_scripts/core/**` and `segnet_cache.py`; the large
+`core/heuristics.py` is one of the explicit #115 refactor targets. In contrast,
+`src/homr_eval_scripts/homr_evaluator.py` is evaluation tooling and is not part of the runtime
+bundle.
+
+For a clean physical extraction, #115 should move/split the runtime-owned HOMR implementation into a
+production package while preserving behavior, and leave evaluation wrappers outside that package.
+This is now a **concrete #100 -> #115 dependency**, rather than a blanket requirement to split every
+large file before #100 can proceed.
+
+### Mixed HOMR profile dispatch
+
+`src/pipeline/detection/homr_profile.py` and `profile_hybrid.py` still contain both the maintained
+production route and Stage-E-compatible reproduction behavior. The JSON contract records this as an
+explicit mixed source. A physical minimal repository should split the maintained execution path from
+the historical adapter rather than carry the Stage-E branch merely because it shares a file today.
+
+## Target runtime structure
+
+The extracted runtime should converge toward this ownership structure (illustrative package names;
+the JSON contract is authoritative for current files):
 
 ```text
 .
-├── src/                         # runtime and reusable engine implementation
-├── configs/                     # canonical runtime + retained scoped configs
-├── models/                      # model manifests/provenance
-├── docker/                      # runtime contract/build support
-├── tests/                       # maintained regression/contract tests
-├── data/evaluation2/            # canonical validation/GT evidence
-├── scripts/                     # maintained repository automation
-├── tools/
-│   ├── gt_relabel_gui/          # current correction/GT tooling
-│   ├── verification/            # maintained verification tooling
-│   └── issue120/                # retained reproduction-only surface
-├── experiments/models/
-│   └── eval_omr_dln.py          # temporary runtime-owned path exception
-├── docs/                        # current contracts + selected durable evidence
-├── .github/                     # CI/repository workflow
-├── Dockerfile                   # canonical runtime image
-├── Dockerfile.homr              # retained isolated/historical evaluation image
-├── Makefile
-├── pyproject.toml
-├── README.md
-└── AGENTS.md
+├── src/
+│   ├── common/                  # shared runtime primitives
+│   ├── homr_runtime/            # target location for runtime HOMR code (coordinated with #115)
+│   ├── measure_numbering/       # runtime modules only; no tests/visualizers
+│   ├── pipeline/
+│   │   ├── core/
+│   │   ├── detection/           # dense production route and workers
+│   │   ├── detector_routes/     # canonical dense reconstruction only
+│   │   ├── probe_detector/
+│   │   ├── review/
+│   │   ├── steps/
+│   │   └── utils/
+│   └── pdf_to_images.py
+├── configs/
+│   ├── dense_full_pipeline.yaml
+│   └── detector_profiles/maintained_original_homr.json
+├── models/
+│   ├── barline_cnn/
+│   ├── omr_dln/
+│   └── mmr/
+├── docker/
+├── Dockerfile
+└── pyproject.toml
 ```
 
-This Issue does not perform the repository split or directory migration itself. A later extraction
-may move the OMR-DLN entrypoint or reproduction assets into cleaner locations, but such moves must
-update all runtime/reproduction references in the same change.
+Tests, validation datasets, CI, developer tooling, model-training code, Graphify output, Issue-specific
+reproduction, and historical compatibility are deliberately outside this runtime tree.
 
 ## Relationship to Issue #115
 
-Issue #115 is not a blanket prerequisite for this contract. The minimal mainline retains
-`src/**` as maintained source, so the current large modules can be carried without first splitting
-them.
+#115 is still not a blanket blocker. The detailed #100 audit identified one concrete coordination
+point: runtime-owned HOMR code lives under `src/homr_eval_scripts/core/**`, including the large
+`heuristics.py` that #115 already plans to split. Moving that code twice would create unnecessary
+churn, so the production-package extraction for that slice should be done as part of the #115
+responsibility split.
 
-Treat #115 as a concrete prerequisite only if a later extraction step finds a module that mixes
-retained and non-retained responsibilities such that ownership or publication cannot be separated
-safely. Record that specific boundary instead of blocking #100 on all large-file refactoring.
-
-At the time this contract was created, no such blocker was required to define the maintained
-surface.
+Other large modules should only block #100 if their retained and non-retained responsibilities cannot
+be represented or extracted safely without first splitting the module.
 
 ## Drift check
 
@@ -101,12 +169,14 @@ Run:
 python3 tools/check_repository_surface.py
 ```
 
-The check is intentionally lightweight. It verifies that:
+The checker now validates four different things rather than treating every maintained repository file
+as runtime:
 
-1. every required maintained/reproduction/runtime-exception pattern still resolves to tracked files;
-2. explicitly retired paths have not re-entered the tracked tree; and
-3. durable repository-surface documentation still references this contract.
+1. each explicitly listed runtime pattern exists;
+2. development/validation and reproduction groups are explicitly marked outside the runtime bundle;
+3. retired or wrongly placed current-repository paths do not reappear; and
+4. canonical callers no longer point at the experiment OMR-DLN path, old dense-orchestrator name, or
+   training-tool MMR model path.
 
-CI runs the same check for pull requests that can affect repository contents. The checker does not
-replace behavior tests, GPU smoke, or full evaluation; those remain governed by
-`docs/dev/VALIDATION_POLICY.md`.
+This check is a repository-structure gate only. Runtime behavior changes still require the validation
+specified by `docs/dev/VALIDATION_POLICY.md`.

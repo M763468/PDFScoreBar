@@ -22,7 +22,9 @@ versioned one-job engine boundary:
 - the engine/correction/final-output implementation needed to turn a PDF job into published
   artifacts.
 
-The JSON intentionally does **not** use `src/**` or `tests/**` as blanket keep rules.
+The JSON lists each selected runtime file exactly. It also gives a separate reason for each
+tracked `src/` file outside the canonical dense/engine execution path. The drift check fails
+when a new source file has not been classified. No test module is part of the runtime bundle.
 
 `PipelineJobExecutor` is the clean extraction-facing entrypoint: it accepts a PDF job, derives a
 request-local config from the dense algorithm base, replaces evaluation-specific image input with the
@@ -39,7 +41,7 @@ runtime bundle**:
 - `.github/**` CI;
 - `data/evaluation2/**` GT/canonical validation evidence;
 - smoke/service-readiness configs;
-- repository validation scripts and `tools/verification/**`;
+- repository validation scripts and most `tools/verification/**` files;
 - agent/Graphify/developer tooling;
 - training tools such as `tools/mmr_training/**`.
 
@@ -90,6 +92,18 @@ conflated.
 Two unit-test modules under `src/measure_numbering/` were moved to `tests/`, and the visualization
 helper was moved to `tools/`. `src/ml_detector/barline_detector.py` was removed: it depended directly
 on the retired OEMER stack, which is not part of the current dependency set or canonical runtime.
+
+The remaining source exclusions are recorded file by file in `source_excluded`: the older
+standard/hybrid detector routes, Issue #120 candidate route, Stage-E route, compatibility shims,
+HOMR evaluator CLI, and movement-boundary candidate producer. Their presence in the development
+repository does not make them dependencies of the selected dense engine route.
+
+The selected dense route still launches two scripts from `tools/verification/gt_preparation/`;
+one of those imports a third helper there. The numbering step launches
+`tools/add_measure_numbers.py`. They are **runtime
+dependencies despite their directory names**. The exact files are included in the JSON
+runtime set; the rest of `tools/verification/**` stays development-only. Relocating those
+helpers into `src/` can be done later without widening the executable selection.
 
 ## Remaining mixed-runtime boundaries
 
@@ -169,14 +183,16 @@ Run:
 python3 tools/check_repository_surface.py
 ```
 
-The checker now validates four different things rather than treating every maintained repository file
+The checker validates these boundaries rather than treating every maintained repository file
 as runtime:
 
-1. each explicitly listed runtime pattern exists;
-2. development/validation and reproduction groups are explicitly marked outside the runtime bundle;
+1. each selected runtime file is tracked, and every tracked `src/` file is selected or excluded;
+2. development/validation and reproduction groups stay outside the runtime bundle except for
+   named runtime helper files;
 3. retired or wrongly placed current-repository paths do not reappear; and
-4. canonical callers no longer point at the experiment OMR-DLN path, old dense-orchestrator name, or
-   training-tool MMR model path.
+4. source references to direct `tools/*.py` helpers stay in the runtime set, and canonical callers
+   no longer point at the experiment OMR-DLN path, old dense-orchestrator name, or training-tool
+   MMR model path.
 
 This check is a repository-structure gate only. Runtime behavior changes still require the validation
 specified by `docs/dev/VALIDATION_POLICY.md`.

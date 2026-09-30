@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import fnmatch
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -36,10 +37,28 @@ def main() -> int:
         errors.append("schema_version must be 2")
 
     runtime_entries = data.get("runtime_bundle_patterns", [])
+    runtime_paths = [entry["pattern"] for entry in runtime_entries]
+    if len(runtime_paths) != len(set(runtime_paths)):
+        errors.append("runtime bundle contains duplicate paths")
     for entry in runtime_entries:
         pattern = entry["pattern"]
-        if not matches(files, pattern):
-            errors.append(f"runtime bundle pattern has no tracked matches: {pattern}")
+        if "*" in pattern or "?" in pattern:
+            errors.append(f"runtime bundle must list files, not globs: {pattern}")
+        elif pattern not in files:
+            errors.append(f"runtime bundle path is not tracked: {pattern}")
+
+    selected = set(runtime_paths)
+    excluded = data.get("source_excluded", {})
+    tracked_source = {path for path in files if path.startswith("src/")}
+    unclassified = tracked_source - selected - set(excluded)
+    if unclassified:
+        errors.append(f"unclassified source files: {sorted(unclassified)}")
+    stale_exclusions = set(excluded) - tracked_source
+    if stale_exclusions:
+        errors.append(f"excluded source files no longer tracked: {sorted(stale_exclusions)}")
+    overlap = selected & set(excluded)
+    if overlap:
+        errors.append(f"source both selected and excluded: {sorted(overlap)}")
 
     for section in (
         "development_validation_patterns",
@@ -52,6 +71,21 @@ def main() -> int:
                 errors.append(f"{section}: documented tracked pattern has no matches: {pattern}")
             if entry.get("include_in_runtime_bundle") is not False:
                 errors.append(f"{section}: {pattern} must explicitly stay outside runtime bundle")
+            exceptions = set(entry.get("runtime_exceptions", []))
+            actual_overlap = selected & set(matches(files, pattern))
+            if actual_overlap != exceptions:
+                errors.append(
+                    f"{section}: {pattern} runtime overlap {sorted(actual_overlap)} "
+                    f"does not match documented exceptions {sorted(exceptions)}"
+                )
+
+    for path in sorted(selected):
+        if not path.startswith("src/") or not path.endswith(".py"):
+            continue
+        source = (ROOT / path).read_text(encoding="utf-8")
+        for helper in re.findall(r"tools/[\w/]+\.py", source):
+            if helper in files and helper not in selected:
+                errors.append(f"runtime source {path} references unselected helper {helper}")
 
     for entry in data.get("current_repository_forbidden_patterns", []):
         pattern = entry["pattern"]

@@ -4,105 +4,578 @@
   "source_issue": 100,
   "description": "Machine-readable target for extracting the canonical PDFScoreBar runtime. Development validation and historical reproduction remain in the current repository but are not part of the minimal executable bundle.",
   "runtime_bundle_patterns": [
-    {"pattern": "Dockerfile", "role": "canonical runtime image"},
-    {"pattern": "pyproject.toml", "role": "runtime dependency metadata"},
-    {"pattern": "docker/patch_homr_onnx_provider.py", "role": "HOMR runtime compatibility patch"},
-    {"pattern": "docker/runtime_contract.py", "role": "runtime dependency/provenance preflight"},
-    {"pattern": "configs/dense_full_pipeline.yaml", "role": "canonical dense algorithm configuration used as the engine base"},
-    {"pattern": "configs/detector_profiles/maintained_original_homr.json", "role": "maintained HOMR baseline profile"},
-    {"pattern": "models/barline_cnn/manifest.json", "role": "production barline CNN artifact manifest"},
-    {"pattern": "models/omr_dln/manifest.json", "role": "production OMR-DLN artifact manifest"},
-    {"pattern": "models/mmr/mmr_classifier_best.pth", "role": "production MMR classifier checkpoint"},
-    {"pattern": "src/common/**", "role": "shared runtime primitives and model/resource resolvers"},
-    {"pattern": "src/homr_eval_scripts/core/**", "role": "currently runtime-owned HOMR implementation pending formal package extraction"},
-    {"pattern": "src/homr_eval_scripts/segnet_cache.py", "role": "currently runtime-owned HOMR SegNet cache pending formal package extraction"},
-    {"pattern": "src/measure_numbering/__init__.py", "role": "numbering package"},
-    {"pattern": "src/measure_numbering/builder.py", "role": "system/measure construction"},
-    {"pattern": "src/measure_numbering/connector_aware_builder.py", "role": "connector-aware system construction"},
-    {"pattern": "src/measure_numbering/connector_evidence.py", "role": "connector evidence handling"},
-    {"pattern": "src/measure_numbering/mmr.py", "role": "MMR runtime"},
-    {"pattern": "src/measure_numbering/numbering.py", "role": "measure numbering"},
-    {"pattern": "src/measure_numbering/pipeline.py", "role": "numbering pipeline"},
-    {"pattern": "src/measure_numbering/rapidocr_provider.py", "role": "MMR OCR provider"},
-    {"pattern": "src/measure_numbering/serialization.py", "role": "numbering serialization"},
-    {"pattern": "src/measure_numbering/types.py", "role": "numbering data model"},
-    {"pattern": "src/pdf_to_images.py", "role": "PDF page rendering"},
-    {"pattern": "src/pipeline/core/**", "role": "pipeline core utilities"},
-    {"pattern": "src/pipeline/probe_detector/**", "role": "production probe detector"},
-    {"pattern": "src/pipeline/review/**", "role": "correction/final-output materialization used by the engine boundary"},
-    {"pattern": "src/pipeline/steps/**", "role": "production pipeline steps"},
-    {"pattern": "src/pipeline/utils/**", "role": "production pipeline utilities"},
-    {"pattern": "src/pipeline/main.py", "role": "config-first runtime"},
-    {"pattern": "src/pipeline/orchestrator.py", "role": "main runtime orchestrator"},
-    {"pattern": "src/pipeline/engine_contract.py", "role": "versioned one-job boundary"},
-    {"pattern": "src/pipeline/engine_executor.py", "role": "clean PDF-to-artifact engine adapter"},
-    {"pattern": "src/pipeline/engine_input_safety.py", "role": "engine input safety"},
-    {"pattern": "src/pipeline/engine_lifecycle.py", "role": "engine lifecycle contract"},
-    {"pattern": "src/pipeline/engine_telemetry.py", "role": "engine/runtime telemetry"},
-    {"pattern": "src/pipeline/mmr_geometry_handoff.py", "role": "dense-route MMR geometry handoff"},
-    {"pattern": "src/pipeline/mmr_support_reuse.py", "role": "dense-route MMR support reuse"},
-    {"pattern": "src/pipeline/perf_trace.py", "role": "runtime phase instrumentation used by production workers"},
-    {"pattern": "src/pipeline/detection/__init__.py", "role": "detector dispatch"},
-    {"pattern": "src/pipeline/detection/config.py", "role": "detector config helpers"},
-    {"pattern": "src/pipeline/detection/connector_artifacts.py", "role": "connector artifact capture"},
-    {"pattern": "src/pipeline/detection/current_homr_worker.py", "role": "current x4 HOMR worker"},
-    {"pattern": "src/pipeline/detection/current_sr_batch_worker.py", "role": "batch x4 SR worker"},
-    {"pattern": "src/pipeline/detection/current_sr_runtime.py", "role": "x4 SR runtime"},
-    {"pattern": "src/pipeline/detection/current_sr_worker.py", "role": "page-local x4 SR worker"},
-    {"pattern": "src/pipeline/detection/current_support_worker.py", "role": "current x4 HOMR/OMR support worker"},
-    {"pattern": "src/pipeline/detection/dense_orchestrator.py", "role": "canonical dense detector orchestrator"},
-    {"pattern": "src/pipeline/detection/dense_orchestrator_batch_sr.py", "role": "canonical batch-SR dense detector orchestrator"},
-    {"pattern": "src/pipeline/detection/homr_profile.py", "role": "mixed production/reproduction profile dispatch pending split"},
-    {"pattern": "src/pipeline/detection/homr_profile_compat.py", "role": "maintained HOMR API compatibility"},
-    {"pattern": "src/pipeline/detection/input_contract.py", "role": "detector input contract"},
-    {"pattern": "src/pipeline/detection/maintained_homr_worker.py", "role": "maintained original-page HOMR baseline"},
-    {"pattern": "src/pipeline/detection/omr_dln_model.py", "role": "OMR-DLN model resolution"},
-    {"pattern": "src/pipeline/detection/omr_dln_worker.py", "role": "formal production OMR-DLN worker"},
-    {"pattern": "src/pipeline/detection/profile_hybrid.py", "role": "mixed profile hybrid source generation pending split"},
-    {"pattern": "src/pipeline/detection/profile_hybrid_batch_sr.py", "role": "canonical batch-SR hybrid source generation"},
-    {"pattern": "src/pipeline/detection/verified_source_page_worker.py", "role": "page-isolated dense source worker"},
-    {"pattern": "src/pipeline/detection/utils.py", "role": "detector path helpers"},
-    {"pattern": "src/pipeline/detector_routes/dense_full_pipeline.py", "role": "canonical dense route reconstruction"},
-    {"pattern": "src/pipeline/detector_routes/dense_probe_candidate.py", "role": "dense candidate/probe reconstruction used by the canonical dense route"}
+    {
+      "pattern": "Dockerfile",
+      "role": "canonical runtime image"
+    },
+    {
+      "pattern": "configs/dense_full_pipeline.yaml",
+      "role": "canonical dense algorithm configuration used as the engine base"
+    },
+    {
+      "pattern": "configs/detector_profiles/maintained_original_homr.json",
+      "role": "maintained HOMR baseline profile"
+    },
+    {
+      "pattern": "docker/patch_homr_onnx_provider.py",
+      "role": "HOMR runtime compatibility patch"
+    },
+    {
+      "pattern": "docker/runtime_contract.py",
+      "role": "runtime dependency/provenance preflight"
+    },
+    {
+      "pattern": "models/barline_cnn/manifest.json",
+      "role": "production barline CNN artifact manifest"
+    },
+    {
+      "pattern": "models/mmr/mmr_classifier_best.pth",
+      "role": "production MMR classifier checkpoint"
+    },
+    {
+      "pattern": "models/omr_dln/manifest.json",
+      "role": "production OMR-DLN artifact manifest"
+    },
+    {
+      "pattern": "pyproject.toml",
+      "role": "runtime dependency metadata"
+    },
+    {
+      "pattern": "src/common/__init__.py",
+      "role": "shared runtime primitives and model/resource resolvers"
+    },
+    {
+      "pattern": "src/common/barline_evaluation.py",
+      "role": "shared runtime primitives and model/resource resolvers"
+    },
+    {
+      "pattern": "src/common/barline_units.py",
+      "role": "shared runtime primitives and model/resource resolvers"
+    },
+    {
+      "pattern": "src/common/connector_artifacts.py",
+      "role": "shared runtime primitives and model/resource resolvers"
+    },
+    {
+      "pattern": "src/common/model_artifacts.py",
+      "role": "shared runtime primitives and model/resource resolvers"
+    },
+    {
+      "pattern": "src/common/ort_config.py",
+      "role": "shared runtime primitives and model/resource resolvers"
+    },
+    {
+      "pattern": "src/common/preprocessing.py",
+      "role": "shared runtime primitives and model/resource resolvers"
+    },
+    {
+      "pattern": "src/common/realesrgan_assets.py",
+      "role": "shared runtime primitives and model/resource resolvers"
+    },
+    {
+      "pattern": "src/common/thin_barline_finder.py",
+      "role": "shared runtime primitives and model/resource resolvers"
+    },
+    {
+      "pattern": "src/homr_eval_scripts/__init__.py",
+      "role": "HOMR adapter package"
+    },
+    {
+      "pattern": "src/homr_eval_scripts/core/__init__.py",
+      "role": "currently runtime-owned HOMR implementation pending formal package extraction"
+    },
+    {
+      "pattern": "src/homr_eval_scripts/core/heuristics.py",
+      "role": "currently runtime-owned HOMR implementation pending formal package extraction"
+    },
+    {
+      "pattern": "src/homr_eval_scripts/core/metrics.py",
+      "role": "currently runtime-owned HOMR implementation pending formal package extraction"
+    },
+    {
+      "pattern": "src/homr_eval_scripts/core/predictor.py",
+      "role": "currently runtime-owned HOMR implementation pending formal package extraction"
+    },
+    {
+      "pattern": "src/homr_eval_scripts/core/reporting.py",
+      "role": "currently runtime-owned HOMR implementation pending formal package extraction"
+    },
+    {
+      "pattern": "src/homr_eval_scripts/core/utils.py",
+      "role": "currently runtime-owned HOMR implementation pending formal package extraction"
+    },
+    {
+      "pattern": "src/homr_eval_scripts/segnet_cache.py",
+      "role": "currently runtime-owned HOMR SegNet cache pending formal package extraction"
+    },
+    {
+      "pattern": "src/measure_numbering/__init__.py",
+      "role": "numbering package"
+    },
+    {
+      "pattern": "src/measure_numbering/builder.py",
+      "role": "system/measure construction"
+    },
+    {
+      "pattern": "src/measure_numbering/connector_aware_builder.py",
+      "role": "connector-aware system construction"
+    },
+    {
+      "pattern": "src/measure_numbering/connector_evidence.py",
+      "role": "connector evidence handling"
+    },
+    {
+      "pattern": "src/measure_numbering/mmr.py",
+      "role": "MMR runtime"
+    },
+    {
+      "pattern": "src/measure_numbering/numbering.py",
+      "role": "measure numbering"
+    },
+    {
+      "pattern": "src/measure_numbering/pipeline.py",
+      "role": "numbering pipeline"
+    },
+    {
+      "pattern": "src/measure_numbering/rapidocr_provider.py",
+      "role": "MMR OCR provider"
+    },
+    {
+      "pattern": "src/measure_numbering/serialization.py",
+      "role": "numbering serialization"
+    },
+    {
+      "pattern": "src/measure_numbering/types.py",
+      "role": "numbering data model"
+    },
+    {
+      "pattern": "src/pdf_to_images.py",
+      "role": "PDF page rendering"
+    },
+    {
+      "pattern": "src/pipeline/__init__.py",
+      "role": "pipeline package"
+    },
+    {
+      "pattern": "src/pipeline/core/__init__.py",
+      "role": "pipeline core utilities"
+    },
+    {
+      "pattern": "src/pipeline/core/config.py",
+      "role": "pipeline core utilities"
+    },
+    {
+      "pattern": "src/pipeline/core/manifest.py",
+      "role": "pipeline core utilities"
+    },
+    {
+      "pattern": "src/pipeline/core/python_env.py",
+      "role": "pipeline core utilities"
+    },
+    {
+      "pattern": "src/pipeline/core/run_ids.py",
+      "role": "pipeline core utilities"
+    },
+    {
+      "pattern": "src/pipeline/core/subprocess_utils.py",
+      "role": "pipeline core utilities"
+    },
+    {
+      "pattern": "src/pipeline/detection/__init__.py",
+      "role": "detector dispatch"
+    },
+    {
+      "pattern": "src/pipeline/detection/config.py",
+      "role": "detector config helpers"
+    },
+    {
+      "pattern": "src/pipeline/detection/connector_artifacts.py",
+      "role": "connector artifact capture"
+    },
+    {
+      "pattern": "src/pipeline/detection/current_homr_worker.py",
+      "role": "current x4 HOMR worker"
+    },
+    {
+      "pattern": "src/pipeline/detection/current_sr_batch_worker.py",
+      "role": "batch x4 SR worker"
+    },
+    {
+      "pattern": "src/pipeline/detection/current_sr_runtime.py",
+      "role": "x4 SR runtime"
+    },
+    {
+      "pattern": "src/pipeline/detection/current_sr_worker.py",
+      "role": "page-local x4 SR worker"
+    },
+    {
+      "pattern": "src/pipeline/detection/current_support_worker.py",
+      "role": "current x4 HOMR/OMR support worker"
+    },
+    {
+      "pattern": "src/pipeline/detection/dense_orchestrator.py",
+      "role": "canonical dense detector orchestrator"
+    },
+    {
+      "pattern": "src/pipeline/detection/dense_orchestrator_batch_sr.py",
+      "role": "canonical batch-SR dense detector orchestrator"
+    },
+    {
+      "pattern": "src/pipeline/detection/homr_profile.py",
+      "role": "mixed production/reproduction profile dispatch pending split"
+    },
+    {
+      "pattern": "src/pipeline/detection/homr_profile_compat.py",
+      "role": "maintained HOMR API compatibility"
+    },
+    {
+      "pattern": "src/pipeline/detection/input_contract.py",
+      "role": "detector input contract"
+    },
+    {
+      "pattern": "src/pipeline/detection/maintained_homr_worker.py",
+      "role": "maintained original-page HOMR baseline"
+    },
+    {
+      "pattern": "src/pipeline/detection/omr_dln_model.py",
+      "role": "OMR-DLN model resolution"
+    },
+    {
+      "pattern": "src/pipeline/detection/omr_dln_worker.py",
+      "role": "formal production OMR-DLN worker"
+    },
+    {
+      "pattern": "src/pipeline/detection/profile_hybrid.py",
+      "role": "mixed profile hybrid source generation pending split"
+    },
+    {
+      "pattern": "src/pipeline/detection/profile_hybrid_batch_sr.py",
+      "role": "canonical batch-SR hybrid source generation"
+    },
+    {
+      "pattern": "src/pipeline/detection/utils.py",
+      "role": "detector path helpers"
+    },
+    {
+      "pattern": "src/pipeline/detection/verified_source_page_worker.py",
+      "role": "page-isolated dense source worker"
+    },
+    {
+      "pattern": "src/pipeline/detector_routes/__init__.py",
+      "role": "canonical detector-route package"
+    },
+    {
+      "pattern": "src/pipeline/detector_routes/dense_full_pipeline.py",
+      "role": "canonical dense route reconstruction"
+    },
+    {
+      "pattern": "src/pipeline/engine_contract.py",
+      "role": "versioned one-job boundary"
+    },
+    {
+      "pattern": "src/pipeline/engine_executor.py",
+      "role": "clean PDF-to-artifact engine adapter"
+    },
+    {
+      "pattern": "src/pipeline/engine_input_safety.py",
+      "role": "engine input safety"
+    },
+    {
+      "pattern": "src/pipeline/engine_lifecycle.py",
+      "role": "engine lifecycle contract"
+    },
+    {
+      "pattern": "src/pipeline/engine_telemetry.py",
+      "role": "engine/runtime telemetry"
+    },
+    {
+      "pattern": "src/pipeline/main.py",
+      "role": "config-first runtime"
+    },
+    {
+      "pattern": "src/pipeline/mmr_geometry_handoff.py",
+      "role": "dense-route MMR geometry handoff"
+    },
+    {
+      "pattern": "src/pipeline/mmr_support_reuse.py",
+      "role": "dense-route MMR support reuse"
+    },
+    {
+      "pattern": "src/pipeline/orchestrator.py",
+      "role": "main runtime orchestrator"
+    },
+    {
+      "pattern": "src/pipeline/perf_trace.py",
+      "role": "runtime phase instrumentation used by production workers"
+    },
+    {
+      "pattern": "src/pipeline/probe_detector/__init__.py",
+      "role": "production probe detector"
+    },
+    {
+      "pattern": "src/pipeline/probe_detector/bands.py",
+      "role": "production probe detector"
+    },
+    {
+      "pattern": "src/pipeline/probe_detector/debug.py",
+      "role": "production probe detector"
+    },
+    {
+      "pattern": "src/pipeline/probe_detector/rescue.py",
+      "role": "production probe detector"
+    },
+    {
+      "pattern": "src/pipeline/probe_detector/types.py",
+      "role": "production probe detector"
+    },
+    {
+      "pattern": "src/pipeline/review/__init__.py",
+      "role": "correction/final-output materialization used by the engine boundary"
+    },
+    {
+      "pattern": "src/pipeline/review/apply_corrections.py",
+      "role": "correction/final-output materialization used by the engine boundary"
+    },
+    {
+      "pattern": "src/pipeline/review/final_output.py",
+      "role": "correction/final-output materialization used by the engine boundary"
+    },
+    {
+      "pattern": "src/pipeline/review/manual_correction_handoff.py",
+      "role": "correction/final-output materialization used by the engine boundary"
+    },
+    {
+      "pattern": "src/pipeline/review/manual_correction_materializer.py",
+      "role": "correction/final-output materialization used by the engine boundary"
+    },
+    {
+      "pattern": "src/pipeline/review/movement_boundary_review.py",
+      "role": "correction/final-output materialization used by the engine boundary"
+    },
+    {
+      "pattern": "src/pipeline/steps/__init__.py",
+      "role": "production pipeline steps"
+    },
+    {
+      "pattern": "src/pipeline/steps/barlines.py",
+      "role": "production pipeline steps"
+    },
+    {
+      "pattern": "src/pipeline/steps/candidate_filters.py",
+      "role": "production pipeline steps"
+    },
+    {
+      "pattern": "src/pipeline/steps/cnn_scoring.py",
+      "role": "production pipeline steps"
+    },
+    {
+      "pattern": "src/pipeline/steps/filters.py",
+      "role": "production pipeline steps"
+    },
+    {
+      "pattern": "src/pipeline/steps/hybrid_consensus.py",
+      "role": "production pipeline steps"
+    },
+    {
+      "pattern": "src/pipeline/steps/manual_corrections.py",
+      "role": "production pipeline steps"
+    },
+    {
+      "pattern": "src/pipeline/steps/numbering.py",
+      "role": "production pipeline steps"
+    },
+    {
+      "pattern": "src/pipeline/steps/probe_scan.py",
+      "role": "production pipeline steps"
+    },
+    {
+      "pattern": "src/pipeline/utils/__init__.py",
+      "role": "production pipeline utilities"
+    },
+    {
+      "pattern": "src/pipeline/utils/images.py",
+      "role": "production pipeline utilities"
+    },
+    {
+      "pattern": "src/pipeline/utils/io.py",
+      "role": "production pipeline utilities"
+    },
+    {
+      "pattern": "src/pipeline/utils/wide_split_utils.py",
+      "role": "production pipeline utilities"
+    },
+    {
+      "pattern": "tools/add_measure_numbers.py",
+      "role": "numbering subprocess launched by current pipeline"
+    },
+    {
+      "pattern": "tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py",
+      "role": "dense route candidate-filter subprocess"
+    },
+    {
+      "pattern": "tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py",
+      "role": "dense route candidate-generation subprocess"
+    },
+    {
+      "pattern": "tools/verification/gt_preparation/suggest_candidate_drops.py",
+      "role": "imported by current candidate-filter subprocess"
+    }
   ],
   "development_validation_patterns": [
-    {"pattern": "tests/**", "role": "regression/contract tests", "include_in_runtime_bundle": false},
-    {"pattern": ".github/**", "role": "CI", "include_in_runtime_bundle": false},
-    {"pattern": "data/evaluation2/**", "role": "canonical validation/GT evidence", "include_in_runtime_bundle": false},
-    {"pattern": "configs/smoke_test.yaml", "role": "development smoke input", "include_in_runtime_bundle": false},
-    {"pattern": "configs/service_readiness_smoke.yaml", "role": "service-readiness validation", "include_in_runtime_bundle": false},
-    {"pattern": "scripts/**", "role": "repository development/validation automation", "include_in_runtime_bundle": false},
-    {"pattern": "tools/verification/**", "role": "verification tooling", "include_in_runtime_bundle": false},
-    {"pattern": "tools/check_repository_surface.py", "role": "repository drift gate", "include_in_runtime_bundle": false}
+    {
+      "pattern": "tests/**",
+      "role": "regression/contract tests",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": ".github/**",
+      "role": "CI",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "data/evaluation2/**",
+      "role": "canonical validation/GT evidence",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "configs/smoke_test.yaml",
+      "role": "development smoke input",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "configs/service_readiness_smoke.yaml",
+      "role": "service-readiness validation",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "scripts/**",
+      "role": "repository development/validation automation",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "tools/check_repository_surface.py",
+      "role": "repository drift gate",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "tools/verification/**",
+      "role": "remaining verification tooling; four runtime-used helper files are exceptions",
+      "include_in_runtime_bundle": false,
+      "runtime_exceptions": [
+        "tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py",
+        "tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py",
+        "tools/verification/gt_preparation/suggest_candidate_drops.py"
+      ]
+    }
   ],
   "development_tool_patterns": [
-    {"pattern": "tools/mmr_training/**", "role": "MMR training tooling; production checkpoint no longer lives here", "include_in_runtime_bundle": false},
-    {"pattern": "tools/gt_relabel_gui/**", "role": "GT/manual review developer GUI", "include_in_runtime_bundle": false},
-    {"pattern": "tools/visualize_measure_systems.py", "role": "developer visualization helper moved out of src", "include_in_runtime_bundle": false},
-    {"pattern": ".agents/**", "role": "agent/developer tooling", "include_in_runtime_bundle": false},
-    {"pattern": ".gemini/**", "role": "agent/developer tooling", "include_in_runtime_bundle": false},
-    {"pattern": "graphify-out/**", "role": "generated repository navigation", "include_in_runtime_bundle": false}
+    {
+      "pattern": "tools/mmr_training/**",
+      "role": "MMR training tooling; production checkpoint no longer lives here",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "tools/gt_relabel_gui/**",
+      "role": "GT/manual review developer GUI",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "tools/visualize_measure_systems.py",
+      "role": "developer visualization helper moved out of src",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": ".agents/**",
+      "role": "agent/developer tooling",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": ".gemini/**",
+      "role": "agent/developer tooling",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "graphify-out/**",
+      "role": "generated repository navigation",
+      "include_in_runtime_bundle": false
+    }
   ],
   "reproduction_only_patterns": [
-    {"pattern": "tools/issue120/**", "role": "Issue #120 reproduction", "include_in_runtime_bundle": false},
-    {"pattern": "Dockerfile.homr", "role": "isolated/historical HOMR environment", "include_in_runtime_bundle": false},
-    {"pattern": "configs/detector_profiles/stage_e_verified_homr.json", "role": "historical Stage-E profile", "include_in_runtime_bundle": false},
-    {"pattern": "src/pipeline/detector_routes/stage_e_dense_full_pipeline.py", "role": "historical Stage-E compatibility shim", "include_in_runtime_bundle": false},
-    {"pattern": "experiments/**", "role": "experiment/research surface; no canonical runtime caller remains after #100 OMR-DLN migration", "include_in_runtime_bundle": false}
+    {
+      "pattern": "tools/issue120/**",
+      "role": "Issue #120 reproduction",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "Dockerfile.homr",
+      "role": "isolated/historical HOMR environment",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "configs/detector_profiles/stage_e_verified_homr.json",
+      "role": "historical Stage-E profile",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "src/pipeline/detector_routes/stage_e_dense_full_pipeline.py",
+      "role": "historical Stage-E compatibility shim",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "experiments/**",
+      "role": "experiment/research surface; no canonical runtime caller remains after #100 OMR-DLN migration",
+      "include_in_runtime_bundle": false
+    }
   ],
   "current_repository_forbidden_patterns": [
-    {"pattern": "src/ml_detector/**", "reason": "obsolete OEMER-dependent source removed by #100; OEMER runtime was already retired"},
-    {"pattern": "src/measure_numbering/test_*.py", "reason": "tests belong under tests/, not runtime source"},
-    {"pattern": "src/measure_numbering/visualize_systems.py", "reason": "developer visualization moved out of runtime source"},
-    {"pattern": "tools/mmr_training/models/mmr_classifier_best.pth", "reason": "production checkpoint moved to models/mmr"},
-    {"pattern": "tests_legacy/**", "reason": "retired by Issue #380"},
-    {"pattern": "data/training/**", "reason": "pre-evaluation2 tracked data retired by Issue #381"},
-    {"pattern": "data/evaluation/**", "reason": "pre-evaluation2 tracked data retired by Issue #381"},
-    {"pattern": "data/workbench/**", "reason": "pre-evaluation2 tracked data retired by Issue #381"},
-    {"pattern": "setup_scripts/**", "reason": "obsolete bootstrap surface retired by Issue #382"},
-    {"pattern": "Dockerfile.groundingdino", "reason": "retired experiment environment from Issue #382"},
-    {"pattern": "external/**", "reason": "retired third-party experiment surface from Issue #382"},
-    {"pattern": ".gitmodules", "reason": "retired OEMER submodule surface from Issue #382"}
+    {
+      "pattern": "src/ml_detector/**",
+      "reason": "obsolete OEMER-dependent source removed by #100; OEMER runtime was already retired"
+    },
+    {
+      "pattern": "src/measure_numbering/test_*.py",
+      "reason": "tests belong under tests/, not runtime source"
+    },
+    {
+      "pattern": "src/measure_numbering/visualize_systems.py",
+      "reason": "developer visualization moved out of runtime source"
+    },
+    {
+      "pattern": "tools/mmr_training/models/mmr_classifier_best.pth",
+      "reason": "production checkpoint moved to models/mmr"
+    },
+    {
+      "pattern": "tests_legacy/**",
+      "reason": "retired by Issue #380"
+    },
+    {
+      "pattern": "data/training/**",
+      "reason": "pre-evaluation2 tracked data retired by Issue #381"
+    },
+    {
+      "pattern": "data/evaluation/**",
+      "reason": "pre-evaluation2 tracked data retired by Issue #381"
+    },
+    {
+      "pattern": "data/workbench/**",
+      "reason": "pre-evaluation2 tracked data retired by Issue #381"
+    },
+    {
+      "pattern": "setup_scripts/**",
+      "reason": "obsolete bootstrap surface retired by Issue #382"
+    },
+    {
+      "pattern": "Dockerfile.groundingdino",
+      "reason": "retired experiment environment from Issue #382"
+    },
+    {
+      "pattern": "external/**",
+      "reason": "retired third-party experiment surface from Issue #382"
+    },
+    {
+      "pattern": ".gitmodules",
+      "reason": "retired OEMER submodule surface from Issue #382"
+    }
   ],
   "known_mixed_runtime_sources": [
     {
@@ -123,10 +596,39 @@
     }
   ],
   "reference_checks": [
-    {"path": "src/pipeline/detection/current_support_worker.py", "contains": "src.pipeline.detection.omr_dln_worker", "not_contains": "experiments/models/eval_omr_dln.py"},
-    {"path": "src/pipeline/detection/__init__.py", "contains": "dense_orchestrator_batch_sr", "not_contains": "restored_orchestrator_batch_sr"},
-    {"path": "configs/dense_full_pipeline.yaml", "contains": "models/mmr/mmr_classifier_best.pth", "not_contains": "tools/mmr_training/models/mmr_classifier_best.pth"},
-    {"path": "docs/REPOSITORY_SURFACE_INVENTORY.md", "contains": "MINIMAL_MAINLINE_SURFACE.md"},
-    {"path": "docs/DOCUMENTATION_INVENTORY.md", "contains": "MINIMAL_MAINLINE_SURFACE.md"}
-  ]
+    {
+      "path": "src/pipeline/detection/current_support_worker.py",
+      "contains": "src.pipeline.detection.omr_dln_worker",
+      "not_contains": "experiments/models/eval_omr_dln.py"
+    },
+    {
+      "path": "src/pipeline/detection/__init__.py",
+      "contains": "dense_orchestrator_batch_sr",
+      "not_contains": "restored_orchestrator_batch_sr"
+    },
+    {
+      "path": "configs/dense_full_pipeline.yaml",
+      "contains": "models/mmr/mmr_classifier_best.pth",
+      "not_contains": "tools/mmr_training/models/mmr_classifier_best.pth"
+    },
+    {
+      "path": "docs/REPOSITORY_SURFACE_INVENTORY.md",
+      "contains": "MINIMAL_MAINLINE_SURFACE.md"
+    },
+    {
+      "path": "docs/DOCUMENTATION_INVENTORY.md",
+      "contains": "MINIMAL_MAINLINE_SURFACE.md"
+    }
+  ],
+  "source_excluded": {
+    "src/homr_eval_scripts/homr_evaluator.py": "historical/evaluation CLI; maintained workers use core modules directly",
+    "src/pipeline/detection/hybrid.py": "older hybrid orchestration path; canonical dense dispatcher uses dense_orchestrator_batch_sr",
+    "src/pipeline/detection/orchestrator.py": "standard detector route; outside the selected dense engine path",
+    "src/pipeline/detection/restored_orchestrator.py": "legacy import shim for dense_orchestrator",
+    "src/pipeline/detection/restored_orchestrator_batch_sr.py": "legacy import shim for dense_orchestrator_batch_sr",
+    "src/pipeline/detector_routes/dense_probe_candidate.py": "Issue #120 candidate route; not called by canonical dense route",
+    "src/pipeline/detector_routes/dense_probe_candidate_route.py": "Issue #120 candidate CLI",
+    "src/pipeline/detector_routes/stage_e_dense_full_pipeline.py": "historical Stage-E reproduction",
+    "src/pipeline/movement_boundary_candidates.py": "candidate-generation/review tool, outside engine execution"
+  }
 }

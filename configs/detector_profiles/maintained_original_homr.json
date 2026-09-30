@@ -18,7 +18,7 @@
   },
   "runtime": {
     "python": "/opt/venv_pipeline/bin/python",
-    "homr_source": "/opt/venv_pipeline/lib/python3.11/site-packages",
+    "homr_source": "/opt/venv_pipeline/lib/python3.12/site-packages",
     "pdfscore_source": "/workspace",
     "homr_commit_marker": "/opt/homr_maintained_profile_commit.txt",
     "pdfscore_commit_marker": "/opt/pdfscore_maintained_profile_commit.txt",

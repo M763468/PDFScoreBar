@@ -15,7 +15,8 @@ classification remains in `docs/REPOSITORY_SURFACE_INVENTORY.md`.
 The runtime bundle contains only what is required to execute the canonical dense pipeline and the
 versioned one-job engine boundary:
 
-- runtime dependency/build inputs (`pyproject.toml`, `Dockerfile`, runtime Docker helpers);
+- runtime dependency/build inputs (`pyproject.toml`, its required `README.md`, `Dockerfile`,
+  runtime Docker helpers);
 - the dense algorithm base config and maintained HOMR profile;
 - production model manifests/checkpoints under `models/**`;
 - the runtime-owned `src/**` modules listed explicitly in the JSON contract;
@@ -158,6 +159,7 @@ the JSON contract is authoritative for current files):
 │   └── mmr/
 ├── docker/
 ├── Dockerfile
+├── README.md
 └── pyproject.toml
 ```
 

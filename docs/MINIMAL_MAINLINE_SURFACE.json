@@ -9,6 +9,10 @@
       "role": "canonical runtime image"
     },
     {
+      "pattern": "README.md",
+      "role": "required by pyproject readme during package installation"
+    },
+    {
       "pattern": "configs/dense_full_pipeline.yaml",
       "role": "canonical dense algorithm configuration used as the engine base"
     },

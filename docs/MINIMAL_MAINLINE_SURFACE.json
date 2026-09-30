@@ -1,73 +1,100 @@
 {
-  "schema_version": 1,
-  "contract": "minimal-mainline",
+  "schema_version": 2,
+  "contract": "minimal-runtime-extraction",
   "source_issue": 100,
-  "description": "Machine-readable maintained/reproduction boundary for Issue #100. The detailed repository classification remains in docs/REPOSITORY_SURFACE_INVENTORY.md.",
-  "authoritative_inputs": [
-    "docs/REPOSITORY_SURFACE_INVENTORY.md",
-    "docs/MAKEFILE_SURFACE.md",
-    "docs/PIPELINE_ARCHITECTURE.md",
-    "docs/ENGINE_JOB_CONTRACT.md",
-    "docs/FUTURE_SERVICE_ARCHITECTURE.md",
-    "docs/manual_correction_review_package.md",
-    "docs/DOCUMENTATION_INVENTORY.md",
-    "docs/dev/VALIDATION_POLICY.md"
-  ],
-  "maintained_patterns": [
-    {"pattern": "README.md", "role": "repository entry"},
-    {"pattern": "AGENTS.md", "role": "repository operating rules"},
-    {"pattern": "pyproject.toml", "role": "Python dependency/build metadata"},
-    {"pattern": "Makefile", "role": "maintained runtime/developer/validation entrypoints"},
-    {"pattern": ".github/**", "role": "CI and repository workflow"},
-    {"pattern": ".agents/**", "role": "developer/agent tooling"},
-    {"pattern": ".gemini/**", "role": "developer/agent tooling"},
+  "description": "Machine-readable target for extracting the canonical PDFScoreBar runtime. Development validation and historical reproduction remain in the current repository but are not part of the minimal executable bundle.",
+  "runtime_bundle_patterns": [
     {"pattern": "Dockerfile", "role": "canonical runtime image"},
-    {"pattern": "docker/**", "role": "canonical runtime contract/build support"},
-    {"pattern": "src/**", "role": "maintained runtime and engine implementation"},
-    {"pattern": "tests/**", "role": "current regression and contract tests"},
-    {"pattern": "configs/dense_full_pipeline.yaml", "role": "canonical production configuration"},
-    {"pattern": "configs/smoke_test.yaml", "role": "production-representative smoke configuration"},
-    {"pattern": "configs/service_readiness_smoke.yaml", "role": "engine/container compatibility smoke"},
-    {"pattern": "configs/review_manual_correction_package_example.yaml", "role": "current correction workflow example"},
-    {"pattern": "configs/detector_profiles/**", "role": "maintained detector profile contracts"},
-    {"pattern": "configs/detector_routes/**", "role": "maintained detector route contracts"},
-    {"pattern": "models/**", "role": "versioned model manifests/provenance"},
-    {"pattern": "scripts/**", "role": "maintained repository automation"},
-    {"pattern": "tools/gt_relabel_gui/**", "role": "current correction/GT GUI"},
-    {"pattern": "tools/verification/**", "role": "maintained verification tooling"},
-    {"pattern": "tools/check_makefile_references.py", "role": "maintained Makefile reference gate"},
-    {"pattern": "tools/check_repository_surface.py", "role": "Issue #100 surface drift gate"},
-    {"pattern": "docs/PIPELINE_ARCHITECTURE.md", "role": "canonical runtime architecture"},
-    {"pattern": "docs/ENGINE_JOB_CONTRACT.md", "role": "versioned engine boundary"},
-    {"pattern": "docs/FUTURE_SERVICE_ARCHITECTURE.md", "role": "future service/control-plane responsibility boundary"},
-    {"pattern": "docs/manual_correction_review_package.md", "role": "current correction operating guide"},
-    {"pattern": "docs/DOCUMENTATION_INVENTORY.md", "role": "documentation classification"},
-    {"pattern": "docs/REPOSITORY_SURFACE_INVENTORY.md", "role": "detailed current repository classification"},
-    {"pattern": "docs/MINIMAL_MAINLINE_SURFACE.md", "role": "human-readable Issue #100 target contract"},
-    {"pattern": "docs/MINIMAL_MAINLINE_SURFACE.json", "role": "machine-readable Issue #100 target contract"},
-    {"pattern": "docs/dev/VALIDATION_POLICY.md", "role": "validation contract"},
-    {"pattern": "data/evaluation2/**", "role": "canonical validation/GT evidence"}
+    {"pattern": "pyproject.toml", "role": "runtime dependency metadata"},
+    {"pattern": "docker/patch_homr_onnx_provider.py", "role": "HOMR runtime compatibility patch"},
+    {"pattern": "docker/runtime_contract.py", "role": "runtime dependency/provenance preflight"},
+    {"pattern": "configs/dense_full_pipeline.yaml", "role": "canonical dense algorithm configuration used as the engine base"},
+    {"pattern": "configs/detector_profiles/maintained_original_homr.json", "role": "maintained HOMR baseline profile"},
+    {"pattern": "models/barline_cnn/manifest.json", "role": "production barline CNN artifact manifest"},
+    {"pattern": "models/omr_dln/manifest.json", "role": "production OMR-DLN artifact manifest"},
+    {"pattern": "models/mmr/mmr_classifier_best.pth", "role": "production MMR classifier checkpoint"},
+    {"pattern": "src/common/**", "role": "shared runtime primitives and model/resource resolvers"},
+    {"pattern": "src/homr_eval_scripts/core/**", "role": "currently runtime-owned HOMR implementation pending formal package extraction"},
+    {"pattern": "src/homr_eval_scripts/segnet_cache.py", "role": "currently runtime-owned HOMR SegNet cache pending formal package extraction"},
+    {"pattern": "src/measure_numbering/__init__.py", "role": "numbering package"},
+    {"pattern": "src/measure_numbering/builder.py", "role": "system/measure construction"},
+    {"pattern": "src/measure_numbering/connector_aware_builder.py", "role": "connector-aware system construction"},
+    {"pattern": "src/measure_numbering/connector_evidence.py", "role": "connector evidence handling"},
+    {"pattern": "src/measure_numbering/mmr.py", "role": "MMR runtime"},
+    {"pattern": "src/measure_numbering/numbering.py", "role": "measure numbering"},
+    {"pattern": "src/measure_numbering/pipeline.py", "role": "numbering pipeline"},
+    {"pattern": "src/measure_numbering/rapidocr_provider.py", "role": "MMR OCR provider"},
+    {"pattern": "src/measure_numbering/serialization.py", "role": "numbering serialization"},
+    {"pattern": "src/measure_numbering/types.py", "role": "numbering data model"},
+    {"pattern": "src/pdf_to_images.py", "role": "PDF page rendering"},
+    {"pattern": "src/pipeline/core/**", "role": "pipeline core utilities"},
+    {"pattern": "src/pipeline/probe_detector/**", "role": "production probe detector"},
+    {"pattern": "src/pipeline/review/**", "role": "correction/final-output materialization used by the engine boundary"},
+    {"pattern": "src/pipeline/steps/**", "role": "production pipeline steps"},
+    {"pattern": "src/pipeline/utils/**", "role": "production pipeline utilities"},
+    {"pattern": "src/pipeline/main.py", "role": "config-first runtime"},
+    {"pattern": "src/pipeline/orchestrator.py", "role": "main runtime orchestrator"},
+    {"pattern": "src/pipeline/engine_contract.py", "role": "versioned one-job boundary"},
+    {"pattern": "src/pipeline/engine_executor.py", "role": "clean PDF-to-artifact engine adapter"},
+    {"pattern": "src/pipeline/engine_input_safety.py", "role": "engine input safety"},
+    {"pattern": "src/pipeline/engine_lifecycle.py", "role": "engine lifecycle contract"},
+    {"pattern": "src/pipeline/engine_telemetry.py", "role": "engine/runtime telemetry"},
+    {"pattern": "src/pipeline/mmr_geometry_handoff.py", "role": "dense-route MMR geometry handoff"},
+    {"pattern": "src/pipeline/mmr_support_reuse.py", "role": "dense-route MMR support reuse"},
+    {"pattern": "src/pipeline/perf_trace.py", "role": "runtime phase instrumentation used by production workers"},
+    {"pattern": "src/pipeline/detection/__init__.py", "role": "detector dispatch"},
+    {"pattern": "src/pipeline/detection/config.py", "role": "detector config helpers"},
+    {"pattern": "src/pipeline/detection/connector_artifacts.py", "role": "connector artifact capture"},
+    {"pattern": "src/pipeline/detection/current_homr_worker.py", "role": "current x4 HOMR worker"},
+    {"pattern": "src/pipeline/detection/current_sr_batch_worker.py", "role": "batch x4 SR worker"},
+    {"pattern": "src/pipeline/detection/current_sr_runtime.py", "role": "x4 SR runtime"},
+    {"pattern": "src/pipeline/detection/current_sr_worker.py", "role": "page-local x4 SR worker"},
+    {"pattern": "src/pipeline/detection/current_support_worker.py", "role": "current x4 HOMR/OMR support worker"},
+    {"pattern": "src/pipeline/detection/dense_orchestrator.py", "role": "canonical dense detector orchestrator"},
+    {"pattern": "src/pipeline/detection/dense_orchestrator_batch_sr.py", "role": "canonical batch-SR dense detector orchestrator"},
+    {"pattern": "src/pipeline/detection/homr_profile.py", "role": "mixed production/reproduction profile dispatch pending split"},
+    {"pattern": "src/pipeline/detection/homr_profile_compat.py", "role": "maintained HOMR API compatibility"},
+    {"pattern": "src/pipeline/detection/input_contract.py", "role": "detector input contract"},
+    {"pattern": "src/pipeline/detection/maintained_homr_worker.py", "role": "maintained original-page HOMR baseline"},
+    {"pattern": "src/pipeline/detection/omr_dln_model.py", "role": "OMR-DLN model resolution"},
+    {"pattern": "src/pipeline/detection/omr_dln_worker.py", "role": "formal production OMR-DLN worker"},
+    {"pattern": "src/pipeline/detection/profile_hybrid.py", "role": "mixed profile hybrid source generation pending split"},
+    {"pattern": "src/pipeline/detection/profile_hybrid_batch_sr.py", "role": "canonical batch-SR hybrid source generation"},
+    {"pattern": "src/pipeline/detection/verified_source_page_worker.py", "role": "page-isolated dense source worker"},
+    {"pattern": "src/pipeline/detection/utils.py", "role": "detector path helpers"},
+    {"pattern": "src/pipeline/detector_routes/dense_full_pipeline.py", "role": "canonical dense route reconstruction"},
+    {"pattern": "src/pipeline/detector_routes/dense_probe_candidate.py", "role": "dense candidate/probe reconstruction used by the canonical dense route"}
   ],
-  "runtime_exceptions": [
-    {
-      "pattern": "experiments/models/eval_omr_dln.py",
-      "role": "current dense-route runtime dependency outside src",
-      "removal_gate": "Move the maintained entrypoint into src and update both the caller and docker/runtime_contract.py coherently before removing this path."
-    }
+  "development_validation_patterns": [
+    {"pattern": "tests/**", "role": "regression/contract tests", "include_in_runtime_bundle": false},
+    {"pattern": ".github/**", "role": "CI", "include_in_runtime_bundle": false},
+    {"pattern": "data/evaluation2/**", "role": "canonical validation/GT evidence", "include_in_runtime_bundle": false},
+    {"pattern": "configs/smoke_test.yaml", "role": "development smoke input", "include_in_runtime_bundle": false},
+    {"pattern": "configs/service_readiness_smoke.yaml", "role": "service-readiness validation", "include_in_runtime_bundle": false},
+    {"pattern": "scripts/**", "role": "repository development/validation automation", "include_in_runtime_bundle": false},
+    {"pattern": "tools/verification/**", "role": "verification tooling", "include_in_runtime_bundle": false},
+    {"pattern": "tools/check_repository_surface.py", "role": "repository drift gate", "include_in_runtime_bundle": false}
   ],
-  "retained_reproduction_patterns": [
-    {
-      "pattern": "tools/issue120/**",
-      "role": "accepted Issue #120 reproduction surface",
-      "normal_runtime": false
-    },
-    {
-      "pattern": "Dockerfile.homr",
-      "role": "historical/isolated HOMR evaluation environment",
-      "normal_runtime": false
-    }
+  "development_tool_patterns": [
+    {"pattern": "tools/mmr_training/**", "role": "MMR training tooling; production checkpoint no longer lives here", "include_in_runtime_bundle": false},
+    {"pattern": "tools/gt_relabel_gui/**", "role": "GT/manual review developer GUI", "include_in_runtime_bundle": false},
+    {"pattern": "tools/visualize_measure_systems.py", "role": "developer visualization helper moved out of src", "include_in_runtime_bundle": false},
+    {"pattern": ".agents/**", "role": "agent/developer tooling", "include_in_runtime_bundle": false},
+    {"pattern": ".gemini/**", "role": "agent/developer tooling", "include_in_runtime_bundle": false},
+    {"pattern": "graphify-out/**", "role": "generated repository navigation", "include_in_runtime_bundle": false}
   ],
-  "forbidden_patterns": [
+  "reproduction_only_patterns": [
+    {"pattern": "tools/issue120/**", "role": "Issue #120 reproduction", "include_in_runtime_bundle": false},
+    {"pattern": "Dockerfile.homr", "role": "isolated/historical HOMR environment", "include_in_runtime_bundle": false},
+    {"pattern": "configs/detector_profiles/stage_e_verified_homr.json", "role": "historical Stage-E profile", "include_in_runtime_bundle": false},
+    {"pattern": "src/pipeline/detector_routes/stage_e_dense_full_pipeline.py", "role": "historical Stage-E compatibility shim", "include_in_runtime_bundle": false},
+    {"pattern": "experiments/**", "role": "experiment/research surface; no canonical runtime caller remains after #100 OMR-DLN migration", "include_in_runtime_bundle": false}
+  ],
+  "current_repository_forbidden_patterns": [
+    {"pattern": "src/ml_detector/**", "reason": "obsolete OEMER-dependent source removed by #100; OEMER runtime was already retired"},
+    {"pattern": "src/measure_numbering/test_*.py", "reason": "tests belong under tests/, not runtime source"},
+    {"pattern": "src/measure_numbering/visualize_systems.py", "reason": "developer visualization moved out of runtime source"},
+    {"pattern": "tools/mmr_training/models/mmr_classifier_best.pth", "reason": "production checkpoint moved to models/mmr"},
     {"pattern": "tests_legacy/**", "reason": "retired by Issue #380"},
     {"pattern": "data/training/**", "reason": "pre-evaluation2 tracked data retired by Issue #381"},
     {"pattern": "data/evaluation/**", "reason": "pre-evaluation2 tracked data retired by Issue #381"},
@@ -75,16 +102,31 @@
     {"pattern": "setup_scripts/**", "reason": "obsolete bootstrap surface retired by Issue #382"},
     {"pattern": "Dockerfile.groundingdino", "reason": "retired experiment environment from Issue #382"},
     {"pattern": "external/**", "reason": "retired third-party experiment surface from Issue #382"},
-    {"pattern": ".gitmodules", "reason": "removed with the retired OEMER submodule surface in Issue #382"}
+    {"pattern": ".gitmodules", "reason": "retired OEMER submodule surface from Issue #382"}
   ],
-  "reference_checks": [
+  "known_mixed_runtime_sources": [
     {
-      "path": "docs/REPOSITORY_SURFACE_INVENTORY.md",
-      "contains": "MINIMAL_MAINLINE_SURFACE.md"
+      "path": "src/homr_eval_scripts/core/**",
+      "issue": 115,
+      "problem": "production HOMR workers import this code, but it remains under an evaluation-named package and includes the large heuristics.py module",
+      "target": "move/split the runtime-owned HOMR implementation into a production package while keeping evaluation wrappers outside the runtime bundle"
     },
     {
-      "path": "docs/DOCUMENTATION_INVENTORY.md",
-      "contains": "MINIMAL_MAINLINE_SURFACE.md"
+      "path": "src/pipeline/detection/homr_profile.py",
+      "problem": "maintained production profile dispatch and historical stage_e_verified reproduction dispatch share one module",
+      "target": "separate maintained runtime profile execution from historical Stage-E profile execution before a physical minimal-repository extraction"
+    },
+    {
+      "path": "src/pipeline/detection/profile_hybrid.py",
+      "problem": "canonical maintained_original execution and Stage-E-compatible generic profile behavior share the same implementation",
+      "target": "retain the canonical maintained route in runtime and keep Stage-E reproduction adaptation outside the extracted bundle"
     }
+  ],
+  "reference_checks": [
+    {"path": "src/pipeline/detection/current_support_worker.py", "contains": "src.pipeline.detection.omr_dln_worker", "not_contains": "experiments/models/eval_omr_dln.py"},
+    {"path": "src/pipeline/detection/__init__.py", "contains": "dense_orchestrator_batch_sr", "not_contains": "restored_orchestrator_batch_sr"},
+    {"path": "configs/dense_full_pipeline.yaml", "contains": "models/mmr/mmr_classifier_best.pth", "not_contains": "tools/mmr_training/models/mmr_classifier_best.pth"},
+    {"path": "docs/REPOSITORY_SURFACE_INVENTORY.md", "contains": "MINIMAL_MAINLINE_SURFACE.md"},
+    {"path": "docs/DOCUMENTATION_INVENTORY.md", "contains": "MINIMAL_MAINLINE_SURFACE.md"}
   ]
 }

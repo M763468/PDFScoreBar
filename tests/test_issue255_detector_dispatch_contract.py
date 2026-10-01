@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 import src.pipeline.detection as detection
-import src.pipeline.detection.restored_orchestrator_batch_sr as restored_batch
+import src.pipeline.detection.dense_orchestrator_batch_sr as dense_batch
 
 
 def _dense_config(*, profile: str | None = "stage_e_verified") -> dict:
@@ -13,7 +13,7 @@ def _dense_config(*, profile: str | None = "stage_e_verified") -> dict:
     return {"detection": det}
 
 
-def test_dense_route_without_profile_reaches_restored_validation(tmp_path: Path) -> None:
+def test_dense_route_without_profile_reaches_dense_validation(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="homr_profile"):
         detection.run_detection_step(
             config=_dense_config(profile=None),
@@ -50,7 +50,7 @@ def test_exported_orchestrator_dispatches_dense_route(tmp_path: Path, monkeypatc
             captured.update(kwargs)
 
     monkeypatch.setattr(
-        restored_batch,
+        dense_batch,
         "DetectorOrchestrator",
         FakeVerifiedDetectorOrchestrator,
     )

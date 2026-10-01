@@ -9,7 +9,7 @@ import yaml
 import src.pipeline.detection.current_homr_worker as homr_worker
 import src.pipeline.detection.current_sr_worker as sr_worker
 import src.pipeline.detection.current_support_worker as support_worker
-import src.pipeline.detection.restored_orchestrator as restored
+import src.pipeline.detection.dense_orchestrator as dense
 from src.pipeline.detection.input_contract import build_detector_input_contract
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -73,8 +73,8 @@ def test_verified_profile_is_selected_for_hybrid_detection(tmp_path: Path, monke
         def run(self):
             return {"commands": [["profile"]], "hybrid_output_dir": tmp_path / "hybrid"}
 
-    monkeypatch.setattr(restored, "VerifiedProfileHybridDetector", FakeProfileDetector)
-    orchestrator = restored.DetectorOrchestrator(
+    monkeypatch.setattr(dense, "VerifiedProfileHybridDetector", FakeProfileDetector)
+    orchestrator = dense.DetectorOrchestrator(
         config=_config(),
         images=[image],
         run_id="test",
@@ -242,7 +242,7 @@ def test_dense_inventory_uses_only_current_hybrid_and_profile_masks(tmp_path: Pa
     image.parent.mkdir(parents=True)
     image.write_bytes(b"image")
     run_dir = tmp_path / "run"
-    orchestrator = restored.DetectorOrchestrator(
+    orchestrator = dense.DetectorOrchestrator(
         config=_config(),
         images=[image],
         run_id="test",
@@ -289,7 +289,7 @@ def test_dense_route_cnn_uses_manifest_original_coordinates_and_nms_false(
     model = tmp_path / "model.pth"
     model.write_bytes(b"model")
     config = _config()
-    orchestrator = restored.DetectorOrchestrator(
+    orchestrator = dense.DetectorOrchestrator(
         config=config,
         images=[image],
         run_id="test",
@@ -320,7 +320,7 @@ def test_dense_route_cnn_uses_manifest_original_coordinates_and_nms_false(
 
     fake_cnn = types.ModuleType("src.pipeline.steps.cnn_scoring")
     fake_cnn.run_cnn_scoring_batch = fake_score
-    monkeypatch.setattr(restored, "_resolve_verified_cnn_artifact", fake_resolve)
+    monkeypatch.setattr(dense, "_resolve_verified_cnn_artifact", fake_resolve)
     monkeypatch.setitem(sys.modules, "src.pipeline.steps.cnn_scoring", fake_cnn)
 
     orchestrator._run_cnn_scoring()

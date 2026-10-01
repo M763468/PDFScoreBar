@@ -276,7 +276,7 @@ def _validate_upstream_manifest(
 
 
 def _resolve_production_cnn(config: Mapping[str, Any]) -> tuple[Path, float]:
-    from src.pipeline.detection.restored_orchestrator import _resolve_verified_cnn_artifact
+    from src.pipeline.detection.dense_orchestrator import _resolve_verified_cnn_artifact
 
     detection = config["detection"]
     assert isinstance(detection, Mapping)

@@ -4,7 +4,15 @@ Issue #230 inventories the repository surface after the usability, correction-wo
 documentation, service-readiness, and Makefile cleanups. This document is the durable handoff to
 Issue #100; it does not make historical or experimental paths part of the public user interface.
 
-Inventory baseline: `develop` after PR #377 (`a924b737e23d3bc43dac2211e8f60071d7a9245f`).
+Issue #100's extraction target is defined in `docs/MINIMAL_MAINLINE_SURFACE.md`, with the
+machine-readable companion `docs/MINIMAL_MAINLINE_SURFACE.json`. This inventory remains the detailed
+current-tree classification; the #100 contract consumes it rather than duplicating its historical audit.
+
+**Historical scope:** the classifications below record the #230 audit baseline, `develop`
+after PR #377 (`a924b737e23d3bc43dac2211e8f60071d7a9245f`). Later #100 placement changes
+make some present-tense path descriptions below obsolete. For current executable files and
+their placement, use `MINIMAL_MAINLINE_SURFACE.md` and its JSON; use this document only to
+understand why older repository material was retained or retired.
 
 ## Classification
 

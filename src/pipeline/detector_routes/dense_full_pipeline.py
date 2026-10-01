@@ -296,7 +296,8 @@ def regenerate_dense_candidates(
 
     gen_cmd = [
         sys.executable,
-        "tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py",
+        "-m",
+        "src.pipeline.detector_routes.candidate_generation",
         "--inventory",
         str(inventory),
         "--exclude",
@@ -318,7 +319,8 @@ def regenerate_dense_candidates(
 
     filter_cmd = [
         sys.executable,
-        "tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py",
+        "-m",
+        "src.pipeline.detector_routes.candidate_filter",
         "--inventory",
         str(inventory),
         "--exclude",

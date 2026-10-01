@@ -245,10 +245,12 @@ def run(request_path: Path, result_path: Path) -> Path:
 
     omr_output = output_root / "omr_sr"
     # The batch worker writes the same stable per-page SR layout used by the old
-    # page-local SR worker, so OMR-DLN keeps consuming its existing persisted path.
+    # page-local SR worker. The production OMR-DLN worker accepts that persisted
+    # path directly; experiment/evaluation code is no longer part of runtime.
     sr_directory = actual_sr.parent.parent
     omr_cmd = get_pipeline_python("omr_dln") + [
-        "experiments/models/eval_omr_dln.py",
+        "-m",
+        "src.pipeline.detection.omr_dln_worker",
         "--images",
         str(image),
         "--output-dir",

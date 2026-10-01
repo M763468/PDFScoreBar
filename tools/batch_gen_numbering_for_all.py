@@ -39,7 +39,8 @@ def ensure_numbering_json(work_name, page_str, image_path, barline_path, mask_ro
 
     cmd = [
         ".venv_omr_dln/bin/python",
-        "tools/add_measure_numbers.py",
+        "-m",
+        "src.measure_numbering.cli",
         "--barlines",
         str(barline_path),
         "--staff-mask",

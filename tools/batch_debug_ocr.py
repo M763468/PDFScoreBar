@@ -44,7 +44,8 @@ def process_page(work_name, page_num, image_path, barline_path, mask_root, outpu
     initial_json = page_out_dir / "numbering_base.json"
     cmd_1 = [
         ".venv_omr_dln/bin/python",
-        "tools/add_measure_numbers.py",
+        "-m",
+        "src.measure_numbering.cli",
         "--barlines",
         str(barline_path),
         "--staff-mask",

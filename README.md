@@ -5,7 +5,10 @@ measure-number recognition, correction, and final output generation.
 
 ## Current architecture
 
-The canonical description of the production pipeline is:
+For the proposed minimum executable subset and its remaining blockers, start with
+[`docs/MINIMAL_MAINLINE_SURFACE.md`](docs/MINIMAL_MAINLINE_SURFACE.md).
+
+The current production pipeline is described in:
 
 - [`docs/PIPELINE_ARCHITECTURE.md`](docs/PIPELINE_ARCHITECTURE.md) — current dense
   production caller chain, two-HOMR ownership, coordinate/process boundaries, MMR reuse.

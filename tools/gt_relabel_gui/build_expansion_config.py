@@ -77,7 +77,8 @@ def main():
 
         cmd = [
             ".venv_omr_dln/bin/python",
-            "tools/add_measure_numbers.py",
+            "-m",
+            "src.measure_numbering.cli",
             "--barlines",
             str(page["barlines"]),
             "--staff-mask",

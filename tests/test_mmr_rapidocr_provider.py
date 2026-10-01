@@ -1,14 +1,4 @@
-import sys
-import types
-
 import pytest
-
-
-def _install_import_stubs() -> None:
-    sys.modules.setdefault("rapidocr_onnxruntime", types.SimpleNamespace(RapidOCR=object))
-
-
-_install_import_stubs()
 
 from src.measure_numbering import rapidocr_provider
 

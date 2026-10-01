@@ -113,6 +113,8 @@ def test_three_page_phase_c_preserves_manual_precedence_without_cross_page_leaka
     run_dir = tmp_path / "run"
     page_ids = ["page_001", "page_002", "page_003"]
     images = [tmp_path / f"{page_id}.png" for page_id in page_ids]
+    for image_path in images:
+        image_path.write_bytes(b"image fixture; decoding is mocked below")
     persisted_payload = _global_mmr_payload()
     manual_payload = {
         "correction_type": "mmr_measure_span",
@@ -149,7 +151,10 @@ def test_three_page_phase_c_preserves_manual_precedence_without_cross_page_leaka
         )
 
     config = {
-        "inputs": {"measure_overrides": str(manual_overrides_path)},
+        "inputs": {
+            "measure_overrides": str(manual_overrides_path),
+            "pdf_to_images": {"output_dir": str(tmp_path)},
+        },
         "steps": {
             "detection": False,
             "numbering_base": True,

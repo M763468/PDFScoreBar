@@ -141,21 +141,25 @@ def test_issue291_canonical_gt_count() -> None:
     assert total == EXPECTED_GT_COUNT
 
 
-def test_issue291_stage_e_profile_uses_corrected_final_accepted_contract() -> None:
+def test_stage_e_profile_keeps_issue291_gt_with_accepted_issue296_cnn_refresh() -> None:
     profile = json.loads(PROFILE_PATH.read_text(encoding="utf-8"))
     metrics = profile["verified_stage_e_full68"]
 
     assert metrics["gt"] == EXPECTED_GT_COUNT
     assert {key: metrics[key] for key in ("pred", "tp", "fp", "fn", "fn_det", "fn_cnn")} == {
-        "pred": 3599,
+        # Accepted by PR #310 (49a9da6a); the Issue #291 GT remains unchanged.
+        "pred": 3610,
         "tp": 3565,
-        "fp": 3,
+        "fp": 1,
         "fn": 2,
         "fn_det": 0,
         "fn_cnn": 2,
     }
-    assert metrics["soft_duplicate_or_repeat_like"] == 31
+    assert metrics["soft_duplicate_or_repeat_like"] == 44
     assert metrics["canonical_gt_rebase_issue"] == 291
+    assert metrics["cnn_refresh_issue"] == 296
+    assert metrics["cnn_architecture"] == "efficientnet_b0"
+    assert metrics["cnn_threshold"] == 0.4965248107910156
     assert metrics["evaluated_artifact"] == "pipeline2_no_peak_filtered_cnn.json"
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -19,6 +20,7 @@ def test_score_wrapper_contract_flags_reach_each_parser() -> None:
         result = subprocess.run(
             [sys.executable, script, "--help"],
             cwd=ROOT,
+            env={**os.environ, "PYTHONPATH": str(ROOT)},
             check=True,
             capture_output=True,
             text=True,

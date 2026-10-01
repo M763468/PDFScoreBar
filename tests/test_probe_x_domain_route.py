@@ -4,8 +4,8 @@ from unittest.mock import patch
 import cv2
 import numpy as np
 
+from src.pipeline.detector_routes.candidate_generation import _run_one
 from src.pipeline.detector_routes.dense_full_pipeline import regenerate_probe_rescue_candidates
-from tools.verification.gt_preparation.generate_probe_candidates_from_inventory import _run_one
 
 
 def test_inventory_generation_loads_staff_mask_for_row_stats_x_domain(tmp_path):
@@ -40,7 +40,7 @@ def test_inventory_generation_loads_staff_mask_for_row_stats_x_domain(tmp_path):
         return []
 
     with patch(
-        "tools.verification.gt_preparation.generate_probe_candidates_from_inventory.detect_probe_scan",
+        "src.pipeline.detector_routes.candidate_generation.detect_probe_scan",
         side_effect=fake_detect_probe_scan,
     ):
         result = _run_one(

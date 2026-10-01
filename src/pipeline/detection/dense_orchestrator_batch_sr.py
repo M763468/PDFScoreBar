@@ -1,12 +1,12 @@
-"""Verified dense-route orchestrator using the Issue #284 batch-SR profile."""
+"""Verified dense-route production orchestrator with dedicated batch SR."""
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Dict, List
 
+from .dense_orchestrator import DetectorOrchestrator as BaseDetectorOrchestrator
 from .profile_hybrid_batch_sr import BatchSRVerifiedProfileHybridDetector
-from .restored_orchestrator import DetectorOrchestrator as BaseDetectorOrchestrator
 
 
 class DetectorOrchestrator(BaseDetectorOrchestrator):
@@ -36,7 +36,7 @@ def run_detection_step(
     dry_run: bool,
     in_memory_images: Dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
-    """Run the verified Stage E detector with a dedicated all-pages SR phase."""
+    """Run the verified dense production detector with a dedicated all-pages SR phase."""
     if len(images) != len(page_ids):
         raise ValueError("images/page_ids length mismatch")
     orchestrator = DetectorOrchestrator(

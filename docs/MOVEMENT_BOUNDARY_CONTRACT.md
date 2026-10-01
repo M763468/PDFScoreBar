@@ -166,7 +166,9 @@ python -m tools.movement_boundary_review attach \
   --evidence <run>/movement_boundary_evidence.json
 ```
 
-Launch the normal manual GUI from that handoff. The **Movement boundary**
+Launch the user correction app from that handoff with
+`python3 tools/review_correction/server.py --handoff <review_root>/manual_correction_input.json`.
+The **Movement boundary**
 correction surface shows unresolved candidates with their raw signals and
 references. A reviewer can:
 

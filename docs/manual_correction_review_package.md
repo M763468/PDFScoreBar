@@ -62,7 +62,7 @@ or false positives as production regressions, verify that the source manifest us
 one-page detector result against canonical GT. Workflow-only or legacy smoke artifacts must not be used to
 draw conclusions about production detector accuracy.
 
-## 2. Open the existing manual GUI from the handoff
+## 2. Open the user correction app from the handoff
 
 When the review package was produced by the canonical Docker pipeline, launch the GUI in the same
 maintained Docker runtime. Pipeline artifacts on the bind-mounted worktree may be owned by the
@@ -76,16 +76,13 @@ at a container path and the `--handoff` argument must use that container-visible
 source artifacts referenced by the handoff must likewise remain reachable at the recorded paths.
 
 ```bash
-docker run --rm -it \
-  -p 127.0.0.1:8010:8010 \
+docker run --rm -it --network host \
   -v "$PWD":/workspace \
   -w /workspace \
   -e PYTHONPATH=/workspace \
   pdfscore_pipeline_gpu \
-  /opt/venv_pipeline/bin/python tools/gt_relabel_gui/server.py \
-  --mode manual \
+  /opt/venv_pipeline/bin/python tools/review_correction/server.py \
   --handoff <review_root>/manual_correction_input.json \
-  --host 0.0.0.0 \
   --port 8010
 ```
 
@@ -95,22 +92,21 @@ For a review package that is already writable by the current host user, the ligh
 remains valid:
 
 ```bash
-python3 tools/gt_relabel_gui/server.py \
-  --mode manual \
+python3 tools/review_correction/server.py \
   --handoff <review_root>/manual_correction_input.json \
-  --host 127.0.0.1 \
   --port 8010
 ```
 
-The `--handoff` route:
+The user correction entry:
 
 - validates the strict same-package review contract before serving the GUI;
 - requires the source image, final numbering, MMR evidence, and review barlines to exist;
 - accepts a pre-rendered review overlay when present, but does not require one because the manual
   GUI renders its active measure/barline/manual-state overlays from the underlying artifacts;
 - uses the handoff's review directory as the GUI root;
-- rejects a separate `--root` or `--config`, preventing normal use from substituting unrelated
-  artifacts;
+- accepts only `--handoff` and `--port`, and binds to loopback;
+- serves only artifacts declared by that handoff and writes only its declared outputs under
+  `review/corrections/`, checking resolved paths again for each request;
 - keeps the current page-local `manual_outputs` routing.
 
 Issue #383 retired the legacy arbitrary-path `manual_config_builder.py`. The maintained manual

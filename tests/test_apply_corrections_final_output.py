@@ -1,10 +1,6 @@
 import json
-import sys
-import types
 from pathlib import Path
 from unittest.mock import patch
-
-sys.modules.setdefault("fitz", types.SimpleNamespace())
 
 from src.pipeline.review.apply_corrections import apply_corrections_and_rerun
 
@@ -62,14 +58,15 @@ def _setup_review_package(tmp_path: Path) -> Path:
     return handoff_path
 
 
-@patch("src.pipeline.review.apply_corrections.materialize_corrected_final_outputs")
-@patch("src.pipeline.review.apply_corrections.run_pipeline")
+@patch("src.pipeline.review.final_output.materialize_corrected_final_outputs")
+@patch("src.pipeline.review.apply_corrections._run_retained_artifact_correction")
 def test_apply_corrections_can_generate_corrected_final_pdf(
-    mock_run_pipeline,
+    mock_retained_rerun,
     mock_materialize_final,
     tmp_path,
 ):
     handoff_path = _setup_review_package(tmp_path)
+    mock_retained_rerun.return_value = {"rerun_mode": "retained_artifacts_selective"}
     mock_materialize_final.return_value = {
         "final_pdf": str(tmp_path / "corrected_run_123" / "final" / "custom_score_numbered.pdf"),
         "summary_path": str(
@@ -85,7 +82,9 @@ def test_apply_corrections_can_generate_corrected_final_pdf(
         output_name="custom",
     )
 
-    mock_run_pipeline.assert_called_once()
+    mock_retained_rerun.assert_called_once()
+    assert mock_retained_rerun.call_args.kwargs["source_root"] == handoff_path.parent.parent
+    assert mock_retained_rerun.call_args.kwargs["new_run_dir"] == new_run_dir
     mock_materialize_final.assert_called_once_with(
         handoff_path=handoff_path.resolve(),
         corrected_run_dir=new_run_dir,
@@ -98,6 +97,7 @@ def test_apply_corrections_can_generate_corrected_final_pdf(
         (new_run_dir / "review" / "correction_summary.json").read_text(encoding="utf-8")
     )
     assert summary["generate_final_pdf"] is True
+    assert summary["rerun_mode"] == "retained_artifacts_selective"
     assert summary["final_pdf"].endswith("custom_score_numbered.pdf")
     assert summary["corrected_final_summary"].endswith("corrected_final_summary.json")
 
@@ -107,10 +107,10 @@ def test_apply_corrections_can_generate_corrected_final_pdf(
     assert back_summary["final_pdf"] == summary["final_pdf"]
 
 
-@patch("src.pipeline.review.apply_corrections.materialize_corrected_final_outputs")
-@patch("src.pipeline.review.apply_corrections.run_pipeline")
+@patch("src.pipeline.review.final_output.materialize_corrected_final_outputs")
+@patch("src.pipeline.review.apply_corrections._run_retained_artifact_correction")
 def test_apply_corrections_dry_run_does_not_generate_final_pdf(
-    mock_run_pipeline,
+    mock_retained_rerun,
     mock_materialize_final,
     tmp_path,
 ):
@@ -124,5 +124,5 @@ def test_apply_corrections_dry_run_does_not_generate_final_pdf(
         output_name="custom",
     )
 
-    mock_run_pipeline.assert_not_called()
+    mock_retained_rerun.assert_not_called()
     mock_materialize_final.assert_not_called()

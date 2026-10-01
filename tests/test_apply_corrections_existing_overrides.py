@@ -1,10 +1,6 @@
 import json
-import sys
-import types
 from pathlib import Path
 from unittest.mock import patch
-
-sys.modules.setdefault("fitz", types.SimpleNamespace())
 
 from src.pipeline.review.apply_corrections import apply_corrections_and_rerun
 

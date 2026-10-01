@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 import torch
 
+from src.common.connector_artifacts import write_connector_masks
 from src.measure_numbering.mmr import MMRProcessor
 from src.measure_numbering.types import BBox, Staff
 from src.pipeline.core.manifest import build_manifest
@@ -222,11 +223,12 @@ def test_support_none_keeps_legacy_processor_path(tmp_path: Path) -> None:
     )
 
 
-def test_ocr_candidate_scoring_receives_processed_dimensions() -> None:
+@pytest.mark.parametrize("number", [None, 4])
+@pytest.mark.parametrize("enable_rotation_tta", [False, True])
+def test_ocr_candidate_scoring_receives_processed_dimensions(number, enable_rotation_tta) -> None:
     class OCR:
-        enable_rotation_tta = False
-
         def __init__(self):
+            self.enable_rotation_tta = enable_rotation_tta
             self.dimensions = []
             self.preprocess_modes = []
 
@@ -245,7 +247,7 @@ def test_ocr_candidate_scoring_receives_processed_dimensions() -> None:
 
         def select_best_candidate(self, _result, width, height):
             self.dimensions.append((width, height))
-            return None, 0.0, ""
+            return number, 99.0 if number is not None else 0.0, ""
 
     ocr = OCR()
     processor = MMRProcessor(
@@ -262,16 +264,11 @@ def test_ocr_candidate_scoring_receives_processed_dimensions() -> None:
         200,
         100,
     )
-    assert ocr.dimensions == [(80, 60)] * 7
-    assert ocr.preprocess_modes == [
-        "standard",
-        "no_dilate",
-        "heavy_dilate",
-        "standard",
-        "standard",
-        "heavy_dilate",
-        "no_dilate",
-    ]
+    # Both ordinary variants and no-number retries must score the resized OCR
+    # image, irrespective of the accepted retry schedule introduced in #277.
+    assert ocr.dimensions
+    assert set(ocr.dimensions) == {(80, 60)}
+    assert len(ocr.dimensions) == len(ocr.preprocess_modes)
 
 
 def test_handoff_uses_sidecar_not_original_homr_worker(
@@ -288,17 +285,28 @@ def test_handoff_uses_sidecar_not_original_homr_worker(
             "resolved": {"current_homr_staff_mask": str(current)},
         }
     }
+    calls = []
+
+    def build_sidecar(**kwargs):
+        calls.append(kwargs)
+        return {"provenance": {"original_image_homr": False}}
+
+    monkeypatch.setattr("src.pipeline.mmr_geometry_handoff.build_mmr_support", build_sidecar)
     monkeypatch.setattr(
-        "src.pipeline.mmr_geometry_handoff.build_mmr_support",
-        lambda **_kwargs: {"provenance": {"original_image_homr": False}},
-    )
-    monkeypatch.setattr(
-        "src.pipeline.mmr_staff_support.prepare_mmr_staff_masks",
-        lambda *_args: pytest.fail("old worker path must be unreachable"),
+        "subprocess.run",
+        lambda *_args, **_kwargs: pytest.fail("handoff must not launch a HOMR worker"),
     )
     result = build_mmr_page_context(object(), ["page_001"], set(), ctx)
     assert result["page_001"]["numbering_base"] == base
     assert result["page_001"]["mmr_support"] == tmp_path / "mmr_support.json"
+    assert calls == [
+        {
+            "numbering_base_path": base,
+            "current_homr_staff_mask": current,
+            "output_path": tmp_path / "mmr_support.json",
+        }
+    ]
+    assert result["page_001"]["resolved"]["mmr_support"] == {"original_image_homr": False}
 
 
 def test_manifest_and_detection_resolve_explicit_current_support(tmp_path: Path) -> None:
@@ -306,6 +314,14 @@ def test_manifest_and_detection_resolve_explicit_current_support(tmp_path: Path)
     current = hybrid / "current_support" / "score" / "page_001_staff_mask.png"
     current.parent.mkdir(parents=True)
     current.write_bytes(b"mask")
+    write_connector_masks(
+        current.parent,
+        "page_001",
+        {
+            "symbols": np.zeros((60, 80), dtype=np.uint8),
+            "brace_dot": np.zeros((60, 80), dtype=np.uint8),
+        },
+    )
     (hybrid / "hybrid_results").mkdir()
     (hybrid / "hybrid_results" / "page_001_hybrid.json").write_text("[]", encoding="utf-8")
     image = tmp_path / "page_001.png"
@@ -326,3 +342,4 @@ def test_manifest_and_detection_resolve_explicit_current_support(tmp_path: Path)
         barline_override_stats={},
     )
     assert manifest["pages"][0]["mmr_support"] == {"source": "current_x4_support"}
+    assert manifest["pages"][0]["connector_evidence"]["source"] == "proxy_symbol_layers"

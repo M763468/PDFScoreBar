@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import ast
 import fnmatch
 import json
 import re
@@ -68,6 +69,60 @@ def main() -> int:
     if overlap:
         errors.append(f"source both selected and excluded: {sorted(overlap)}")
 
+    config_files = {path for path in files if path.startswith("configs/")}
+    config_groups = data.get("non_runtime_config_groups", {})
+    if set(config_groups) != {"development_validation", "reproduction"}:
+        errors.append("non-runtime config groups must be development_validation and reproduction")
+    config_memberships: dict[str, list[str]] = {path: [] for path in config_files}
+    for group, patterns in config_groups.items():
+        for pattern in patterns:
+            found = matches(sorted(config_files), pattern)
+            if not found:
+                errors.append(f"non-runtime config pattern has no tracked files: {pattern}")
+            for path in found:
+                config_memberships[path].append(group)
+    for path, groups in sorted(config_memberships.items()):
+        expected = 0 if path in selected else 1
+        if len(groups) != expected:
+            errors.append(
+                f"config {path} has {len(groups)} non-runtime classifications; expected {expected}"
+            )
+
+    test_files = {path for path in files if path.startswith("tests/")}
+    test_modules = {
+        path for path in test_files if Path(path).name.startswith("test_") and path.endswith(".py")
+    }
+    test_groups = data.get("test_module_groups", {})
+    required_test_groups = {
+        "maintained_contract",
+        "validation_harness",
+        "developer_tool",
+        "reproduction",
+    }
+    if set(test_groups) != required_test_groups:
+        errors.append("test module groups must classify the four maintained/reproduction roles")
+    classified_tests: list[str] = [path for paths in test_groups.values() for path in paths]
+    if len(classified_tests) != len(set(classified_tests)):
+        errors.append("test module groups contain duplicate paths")
+    if set(classified_tests) != test_modules:
+        errors.append(
+            f"test module classification drift: missing={sorted(test_modules - set(classified_tests))} "
+            f"stale={sorted(set(classified_tests) - test_modules)}"
+        )
+    support_memberships: dict[str, int] = {path: 0 for path in test_files - test_modules}
+    for pattern in data.get("test_support_patterns", []):
+        found = matches(sorted(test_files), pattern)
+        if not found:
+            errors.append(f"test support pattern has no tracked files: {pattern}")
+        for path in found:
+            if path in test_modules:
+                errors.append(f"test module also matched support pattern: {path}")
+            else:
+                support_memberships[path] += 1
+    for path, count in support_memberships.items():
+        if count != 1:
+            errors.append(f"test support {path} has {count} classifications; expected 1")
+
     for section in (
         "documentation_patterns",
         "development_validation_patterns",
@@ -92,9 +147,18 @@ def main() -> int:
         if not path.startswith("src/") or not path.endswith(".py"):
             continue
         source = (ROOT / path).read_text(encoding="utf-8")
-        for helper in re.findall(r"tools/[\w/]+\.py", source):
-            if helper in files and helper not in selected:
-                errors.append(f"runtime source {path} references unselected helper {helper}")
+        for node in ast.walk(ast.parse(source, filename=path)):
+            modules: list[str] = []
+            if isinstance(node, ast.Import):
+                modules = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                modules = [node.module]
+            for module in modules:
+                if module.split(".", 1)[0] in {"tools", "experiments", "tests"}:
+                    errors.append(f"runtime source {path} imports non-runtime module {module}")
+            if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                if re.search(r"(?<!\w)(?:tools|experiments)[/.][\w/.-]+", node.value):
+                    errors.append(f"runtime source {path} references a tool/experiment path")
 
     for entry in data.get("current_repository_forbidden_patterns", []):
         pattern = entry["pattern"]

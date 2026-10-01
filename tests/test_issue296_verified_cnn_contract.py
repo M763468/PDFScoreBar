@@ -6,7 +6,7 @@ pytest.importorskip("torchvision")
 import torch
 from torchvision import models
 
-from src.pipeline.detection.restored_orchestrator import _validate_verified_cnn_checkpoint
+from src.pipeline.detection.dense_orchestrator import _validate_verified_cnn_checkpoint
 from src.pipeline.steps.cnn_scoring import _build_model, _load_model
 
 

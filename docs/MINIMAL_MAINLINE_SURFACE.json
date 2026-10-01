@@ -357,10 +357,6 @@
       "role": "correction/final-output materialization used by the engine boundary"
     },
     {
-      "pattern": "src/pipeline/review/movement_boundary_review.py",
-      "role": "correction/final-output materialization used by the engine boundary"
-    },
-    {
       "pattern": "src/pipeline/steps/__init__.py",
       "role": "production pipeline steps"
     },
@@ -415,11 +411,6 @@
   ],
   "development_validation_patterns": [
     {
-      "pattern": "tests/**",
-      "role": "regression/contract tests",
-      "include_in_runtime_bundle": false
-    },
-    {
       "pattern": ".github/**",
       "role": "CI",
       "include_in_runtime_bundle": false
@@ -427,16 +418,6 @@
     {
       "pattern": "data/evaluation2/**",
       "role": "canonical validation/GT evidence",
-      "include_in_runtime_bundle": false
-    },
-    {
-      "pattern": "configs/smoke_test.yaml",
-      "role": "development smoke input",
-      "include_in_runtime_bundle": false
-    },
-    {
-      "pattern": "configs/service_readiness_smoke.yaml",
-      "role": "service-readiness validation",
       "include_in_runtime_bundle": false
     },
     {
@@ -451,7 +432,7 @@
     },
     {
       "pattern": "tools/verification/**",
-      "role": "remaining verification tooling; four runtime-used helper files are exceptions",
+      "role": "verification tooling; production candidate helpers now live under src",
       "include_in_runtime_bundle": false
     }
   ],
@@ -496,11 +477,6 @@
     {
       "pattern": "Dockerfile.homr",
       "role": "isolated/historical HOMR environment",
-      "include_in_runtime_bundle": false
-    },
-    {
-      "pattern": "configs/detector_profiles/stage_e_verified_homr.json",
-      "role": "historical Stage-E profile",
       "include_in_runtime_bundle": false
     },
     {
@@ -578,6 +554,18 @@
     {
       "pattern": "tools/verification/gt_preparation/suggest_candidate_drops.py",
       "reason": "production-owned helper moved to src; do not restore the obsolete command"
+    },
+    {
+      "pattern": "src/common/ort_config.py",
+      "reason": "unused ONNX provider helper removed after Issue #100 call-site audit"
+    },
+    {
+      "pattern": "src/pipeline/detection/restored_orchestrator.py",
+      "reason": "retired pre-#100 dense orchestrator compatibility shim; callers use canonical dense name"
+    },
+    {
+      "pattern": "src/pipeline/detection/restored_orchestrator_batch_sr.py",
+      "reason": "retired pre-#100 dense orchestrator compatibility shim; callers use canonical dense name"
     }
   ],
   "known_mixed_runtime_sources": [
@@ -632,15 +620,13 @@
     "src/homr_eval_scripts/homr_evaluator.py": "historical/evaluation CLI; maintained workers use core modules directly",
     "src/pipeline/detection/hybrid.py": "older hybrid orchestration path; canonical dense dispatcher uses dense_orchestrator_batch_sr",
     "src/pipeline/detection/orchestrator.py": "standard detector route; outside the selected dense engine path",
-    "src/pipeline/detection/restored_orchestrator.py": "legacy import shim for dense_orchestrator",
-    "src/pipeline/detection/restored_orchestrator_batch_sr.py": "legacy import shim for dense_orchestrator_batch_sr",
     "src/pipeline/detector_routes/dense_probe_candidate.py": "Issue #120 candidate route; not called by canonical dense route",
     "src/pipeline/detector_routes/dense_probe_candidate_route.py": "Issue #120 candidate CLI",
     "src/pipeline/detector_routes/stage_e_dense_full_pipeline.py": "historical Stage-E reproduction",
     "src/pipeline/movement_boundary_candidates.py": "candidate-generation/review tool, outside engine execution",
     "src/common/barline_units.py": "evaluation/test geometry utility; no current runtime caller",
-    "src/common/ort_config.py": "unused ONNX provider helper; no current runtime caller",
-    "src/pipeline/engine_lifecycle.py": "development contract helper; current executor does not import or call it"
+    "src/pipeline/engine_lifecycle.py": "development contract helper; current executor does not import or call it",
+    "src/pipeline/review/movement_boundary_review.py": "developer/manual-review authoring helper; current engine and correction rerun do not import it"
   },
   "documentation_patterns": [
     {
@@ -648,5 +634,142 @@
       "role": "development, operating and historical documentation; no docs files in the executable payload",
       "include_in_runtime_bundle": false
     }
+  ],
+  "non_runtime_config_groups": {
+    "development_validation": [
+      "configs/smoke_test.yaml",
+      "configs/service_readiness_smoke.yaml",
+      "configs/evaluation2_e2e_verification_full.yaml",
+      "configs/review_manual_correction_package_example.yaml"
+    ],
+    "reproduction": [
+      "configs/cnn_barline_runs/**",
+      "configs/detector_profiles/stage_e_verified_homr.json",
+      "configs/detector_routes/issue120_dense_probe_candidate_route.yaml",
+      "configs/evaluation2_bypass_sr.yaml",
+      "configs/evaluation2_bypass_sr_batch.yaml",
+      "configs/evaluation2_e2e_subset.yaml",
+      "configs/evaluation2_sr_x2.yaml",
+      "configs/evaluation2_sr_x4.yaml",
+      "configs/issue120_stage_e_full_pipeline.yaml",
+      "configs/issue333_provenance_smoke.yaml",
+      "configs/issue43_ab_*.yaml",
+      "configs/toy_symphony.yaml"
+    ]
+  },
+  "test_module_groups": {
+    "reproduction": [
+      "tests/test_dense_probe_candidate_route.py",
+      "tests/test_issue142_nms_policy_evidence.py",
+      "tests/test_issue252_grouped_semantic_impact.py",
+      "tests/test_issue252_prokofiev_probe_boundary.py",
+      "tests/test_issue264_phase_b_manifest.py",
+      "tests/test_issue264_phase_b_manifest_discovery.py",
+      "tests/test_issue264_phase_c_acceptance_integrity.py",
+      "tests/test_issue264_phase_c_fixture_rebase.py",
+      "tests/test_issue264_phase_c_mmr_regression.py",
+      "tests/test_issue264_phase_c_phase_a_support.py",
+      "tests/test_issue267_count_compare.py",
+      "tests/test_issue274_full68_mmr_reuse_geometry_rebased.py",
+      "tests/test_issue274_ocr_frame_causal.py",
+      "tests/test_issue274_original_geometry_graft.py",
+      "tests/test_issue274_positive_geometry_audit.py",
+      "tests/test_issue284_full68_pair_host.py",
+      "tests/test_issue284_full68_runner_provenance.py",
+      "tests/test_issue284_retained_artifact_paths.py",
+      "tests/test_issue291_residual_downstream_review.py",
+      "tests/test_issue323_cli_wiring.py",
+      "tests/test_issue43_full68_harness.py"
+    ],
+    "validation_harness": [
+      "tests/test_cnn_scoring_model_path.py",
+      "tests/test_docker_runtime_contract.py",
+      "tests/test_engine_service_readiness.py",
+      "tests/test_issue291_canonical_gt_contract.py",
+      "tests/test_issue296_cnn_dataset_matching.py",
+      "tests/test_issue296_verified_cnn_contract.py",
+      "tests/test_issue313_manifest_and_dataset.py",
+      "tests/test_issue315_production_model_artifact_contract.py",
+      "tests/test_issue329_model_artifact_contract.py",
+      "tests/test_issue355_trusted_accuracy_smoke.py",
+      "tests/test_model_artifacts.py",
+      "tests/test_verify_detector_full68.py"
+    ],
+    "developer_tool": [
+      "tests/test_manual_gui_server.py",
+      "tests/test_movement_boundary_candidates.py",
+      "tests/test_movement_boundary_cli_provenance.py",
+      "tests/test_movement_boundary_review.py"
+    ],
+    "maintained_contract": [
+      "tests/test_apply_corrections.py",
+      "tests/test_apply_corrections_existing_overrides.py",
+      "tests/test_apply_corrections_final_output.py",
+      "tests/test_apply_corrections_mmr_suppressions.py",
+      "tests/test_barline_units.py",
+      "tests/test_corrected_final_output.py",
+      "tests/test_current_homr_worker.py",
+      "tests/test_detection_config.py",
+      "tests/test_detector_input_contract.py",
+      "tests/test_detector_orchestrator_input_contract.py",
+      "tests/test_engine_contract.py",
+      "tests/test_engine_input_safety.py",
+      "tests/test_engine_telemetry.py",
+      "tests/test_homr_profile.py",
+      "tests/test_issue100_runtime_surface.py",
+      "tests/test_issue194_first_interval_guard.py",
+      "tests/test_issue197_system_connector_evidence_extractor.py",
+      "tests/test_issue197_system_grouping_connector_evidence.py",
+      "tests/test_issue208_mmr_variant_aggregation.py",
+      "tests/test_issue212_mmr_unmasked_fallback.py",
+      "tests/test_issue213_mmr_one_bar_veto.py",
+      "tests/test_issue217_empty_system_output_contract.py",
+      "tests/test_issue236_review_package_pipeline_connection.py",
+      "tests/test_issue236_review_package_source_images.py",
+      "tests/test_issue236_selective_correction_rerun.py",
+      "tests/test_issue254_connector_artifact_contract.py",
+      "tests/test_issue255_detector_dispatch_contract.py",
+      "tests/test_issue255_page_local_source_generation.py",
+      "tests/test_issue255_production_detector_restoration.py",
+      "tests/test_issue257_mmr_page_rebase.py",
+      "tests/test_issue264_phase_a_connector_geometry.py",
+      "tests/test_issue264_phase_b_mmr_geometry.py",
+      "tests/test_issue274_connector_support_contract.py",
+      "tests/test_issue274_mmr_support_reuse.py",
+      "tests/test_issue274_two_homr_profile.py",
+      "tests/test_issue283_thin_barline_preloaded_image.py",
+      "tests/test_issue283_thin_barline_stage2.py",
+      "tests/test_issue283_thin_barline_vectorization.py",
+      "tests/test_issue284_sr_batch_contract.py",
+      "tests/test_issue333_movement_boundary_fixture.py",
+      "tests/test_job_lifecycle.py",
+      "tests/test_manual_correction_handoff.py",
+      "tests/test_manual_correction_materializer.py",
+      "tests/test_manual_corrections.py",
+      "tests/test_measure_numbering_builder.py",
+      "tests/test_measure_numbering_numbering.py",
+      "tests/test_mmr_ocr_heuristics.py",
+      "tests/test_mmr_rapidocr_provider.py",
+      "tests/test_numbering_geometry_scale.py",
+      "tests/test_numbering_overrides.py",
+      "tests/test_omr_dln_worker.py",
+      "tests/test_pdf_to_images_progress.py",
+      "tests/test_pipeline_detection.py",
+      "tests/test_pipeline_integration.py",
+      "tests/test_pipeline_numbering_mmr_provider.py",
+      "tests/test_pipeline_telemetry.py",
+      "tests/test_probe_bands.py",
+      "tests/test_probe_x_domain.py",
+      "tests/test_probe_x_domain_route.py",
+      "tests/test_python_env.py",
+      "tests/test_source_page_provenance.py",
+      "tests/test_subprocess_utils.py",
+      "tests/test_thin_barline_finder.py"
+    ]
+  },
+  "test_support_patterns": [
+    "tests/README.md",
+    "tests/conftest.py",
+    "tests/fixtures/**"
   ]
 }

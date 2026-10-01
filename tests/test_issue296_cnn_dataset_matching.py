@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from src.pipeline.detection.restored_orchestrator import DetectorOrchestrator
+from src.pipeline.detection.dense_orchestrator import DetectorOrchestrator
 from tools.cnn_classifier.build_cnn_dataset import _is_canonical_candidate_match
 
 
@@ -80,7 +80,7 @@ def test_verified_route_requires_explicit_cnn_threshold(tmp_path):
     orchestrator = _verified_orchestrator(
         tmp_path,
         {
-            "cnn_model_path": "model.pth",
+            "cnn_model_manifest": "models/barline_cnn/manifest.json",
             "cnn_apply_nms": False,
         },
     )
@@ -93,7 +93,7 @@ def test_verified_route_requires_explicit_cnn_apply_nms(tmp_path):
     orchestrator = _verified_orchestrator(
         tmp_path,
         {
-            "cnn_model_path": "model.pth",
+            "cnn_model_manifest": "models/barline_cnn/manifest.json",
             "cnn_threshold": 0.4965248107910156,
         },
     )
@@ -106,7 +106,7 @@ def test_verified_route_rejects_cnn_nms_enabled(tmp_path):
     orchestrator = _verified_orchestrator(
         tmp_path,
         {
-            "cnn_model_path": "model.pth",
+            "cnn_model_manifest": "models/barline_cnn/manifest.json",
             "cnn_threshold": 0.4965248107910156,
             "cnn_apply_nms": True,
         },
@@ -120,7 +120,7 @@ def test_verified_route_accepts_explicit_d27_scoring_contract_in_dry_run(tmp_pat
     orchestrator = _verified_orchestrator(
         tmp_path,
         {
-            "cnn_model_path": "model.pth",
+            "cnn_model_manifest": "models/barline_cnn/manifest.json",
             "cnn_threshold": 0.4965248107910156,
             "cnn_apply_nms": False,
         },

@@ -2,8 +2,8 @@
 
 ## Answer
 
-The current proposed subset is the **102 tracked files** listed in
-[`MINIMAL_MAINLINE_SURFACE.json`](MINIMAL_MAINLINE_SURFACE.json): 92 files under `src/`,
+The current proposed subset is the **101 tracked files** listed in
+[`MINIMAL_MAINLINE_SURFACE.json`](MINIMAL_MAINLINE_SURFACE.json): 91 files under `src/`,
 3 model files, 2 configs, 2 Docker helpers,
 and `Dockerfile`, `pyproject.toml`, and `README.md`. The root README is required by
 `pyproject.toml` during installation. No `docs/**`, `tests/**`, CI, GT, or experiment
@@ -17,11 +17,12 @@ input for a PDF job. Production model manifests and the tracked MMR checkpoint a
 `models/`; OMR-DLN weights remain an external verified asset.
 
 **This is an explicit boundary, but the implementation is not yet sufficiently simple for
-physical extraction.** The 92 source files reflect the current PDF rendering, two-HOMR
+physical extraction.** The 91 source files reflect the current PDF rendering, two-HOMR
 detection, SR/OMR-DLN/CNN consensus, measure numbering/OCR, engine, and correction/review
-behavior. They are an audited dependency set for those behaviors, not a claim that 92 files
-is a desirable final architecture. Three more idle `src/` files were excluded after the
-call-path audit; shrinking further requires a behavior-preserving split of mixed modules
+behavior. They are an audited dependency set for those behaviors, not a claim that 91 files
+is a desirable final architecture. Three more `src/` files were excluded and one unused
+ONNX helper was removed after the call-path audit; shrinking further requires a
+behavior-preserving split of mixed modules
 or a narrower product contract.
 
 The selected Dockerfile still builds the historical Stage-E stack
@@ -29,10 +30,12 @@ The selected Dockerfile still builds the historical Stage-E stack
 still mixed with evaluation/history code under `src/homr_eval_scripts/`
 ([#115](https://github.com/M763468/PDFScoreBar/issues/115)). Four production helpers
 have now moved from `tools/` to `src/`, though their candidate-generation APIs still
-carry evaluation-oriented inventory structure. An isolated bind-mounted copy of the 102
-selected files completed the one-page GPU pipeline and passed the 85/85 detector accuracy
-gate. That copy used the current full image plus externally mounted validation input and
-model; building a production-only image from the selected files remains blocked by #398.
+carry evaluation-oriented inventory structure. An isolated bind-mounted copy of the earlier
+102 selected files completed the one-page GPU pipeline and passed the 85/85 detector accuracy
+gate. The additional file now excluded, `movement_boundary_review.py`, was not imported by
+that run or by the selected engine/correction call paths. The run used the current full image
+plus externally mounted validation input and model; building a production-only image from
+the selected files remains blocked by #398.
 Do not present this subset as a finished standalone distribution.
 
 ## What goes where
@@ -44,15 +47,28 @@ Do not present this subset as a finished standalone distribution.
 | History and reproduction | No | `experiments/**`, Issue-specific tools, Stage-E route/profile, `Dockerfile.homr` |
 | Repository documentation | No | `docs/**` remains for development and operation; it is not an execution dependency |
 
+The same JSON classifies **every tracked config and test module** outside that runtime
+selection. Among the 77 tracked configs, 2 are runtime inputs, 4 support current
+development/validation, and 71 are retained comparison or reproduction recipes. Two
+unreferenced configs with retired runtime paths (`full_pipeline_template.yaml` and
+`evaluation2_e2e_verification.yaml`) were removed. The 100 test modules are classified as
+63 maintained contracts, 12 validation-harness tests, 4 developer-tool tests, and 21
+reproduction tests. All tests and their 55 fixtures stay in the development repository;
+none is needed merely to execute a PDF job. An Issue-numbered test is not assumed to be
+obsolete solely because of its name.
+
 The JSON separately explains every tracked `src/` file excluded from the selected dense
 engine path. The old standard/hybrid route, Issue #120 candidate route, Stage-E route,
-compatibility shims, HOMR evaluator CLI, and movement-boundary candidate producer are
+HOMR evaluator CLI, and movement-boundary candidate producer are
 retained in this repository but excluded from the proposed subset. Current HOMR workers
 use selected `core/` modules; directory names alone are not a dependency test.
 
-Three further `src/` files were excluded after call-path review: `barline_units.py` is
-used by evaluation/tests, `ort_config.py` has no current caller, and
-`engine_lifecycle.py` is a development contract helper not wired into the executor.
+Three further `src/` files were excluded after call-path review. `barline_units.py` is
+used by evaluation/tests, `engine_lifecycle.py` is a development contract helper not
+wired into the executor, and `movement_boundary_review.py` supports the development GUI
+and manual review authoring. The unused `ort_config.py` was removed from the repository.
+The engine and correction rerun consume the resulting review records without importing
+the authoring helper.
 Correction application remains selected because the current product includes a separate
 review-package correction flow, even though a one-job request does not execute
 `CorrectionSet` records directly.
@@ -69,7 +85,8 @@ modules. The old `tools/` commands were removed. The checker rejects new direct
   `src/pipeline/detection/omr_dln_worker.py`. The canonical caller invokes it as a module;
   evaluation-only options remain in experiment code.
 - The dense production orchestrators have `dense_orchestrator*.py` names. The old
-  `restored_orchestrator*.py` modules are compatibility shims outside the subset.
+  `restored_orchestrator*.py` compatibility shims were removed after test and
+  reproduction callers were moved to the canonical names.
 - The production MMR checkpoint moved from training tooling to `models/mmr/` without
   changing its bytes. Source-tree tests and a visualizer moved out of `src/`; the retired
   OEMER-dependent detector was removed.
@@ -95,9 +112,10 @@ production environment because it also builds Stage-E assets (#398).
 ## Check and authority
 
 Run `python3 tools/check_repository_surface.py`. CI runs the same gate. It verifies that
-selected files are tracked, every tracked `src/` file is selected or excluded, excluded
-groups do not silently enter the runtime subset, and referenced subprocess helpers are
-selected. It does not prove that model inference or a Docker build succeeds.
+selected files are tracked, every tracked `src/` file is selected or excluded, every
+tracked config and test file has exactly one role, excluded groups do not silently enter
+the runtime subset, and referenced subprocess helpers are selected. It does not prove
+that model inference or a Docker build succeeds.
 
 This document is the sole current explanation of the extraction target. The JSON is its
 machine-readable file list. [`REPOSITORY_SURFACE_INVENTORY.md`](REPOSITORY_SURFACE_INVENTORY.md)

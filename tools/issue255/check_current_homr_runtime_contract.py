@@ -55,12 +55,12 @@ def run() -> dict[str, Any]:
     from homr.transformer.configs import Config
     from src.homr_runtime import heuristics as homr_heuristics
     from src.homr_runtime import predictor as homr_predictor
-    from src.pipeline.detection.connector_artifacts import install_homr_connector_artifact_capture
     from src.homr_runtime.api_compat import (
         build_processing_config_compat,
         install_current_homr_consumer_compat,
         processing_config_compat_mode,
     )
+    from src.pipeline.detection.connector_artifacts import install_homr_connector_artifact_capture
 
     homr_file = Path(str(homr.__file__)).resolve()
     homr_main_file = Path(str(homr_main.__file__)).resolve()

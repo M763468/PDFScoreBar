@@ -101,8 +101,8 @@ profile. `src/homr_eval_scripts/core/` retains old import adapters plus evaluati
 diagnostic CSV generation and comparison reporting. Production does not import that package.
 
 Callable compatibility and connector capture still patch the actual predictor/heuristics
-bindings held by the consumer. The predictor and Segnet cache adapters alias the canonical
-module object, preserving class/cache identity for old import paths. These ownership changes
+bindings held by the consumer. The heuristics, predictor and Segnet cache adapters alias the canonical
+module object, preserving callable patch points and class/cache identity for old import paths. These ownership changes
 do not change the two-HOMR input/coordinate or process-lifetime contracts below.
 
 ## Two-HOMR ownership contract

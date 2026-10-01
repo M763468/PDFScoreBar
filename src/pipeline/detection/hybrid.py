@@ -28,11 +28,11 @@ try:
     from homr.main import ProcessingConfig
     from homr.music_xml_generator import XmlGeneratorArguments
     from src.common.preprocessing import apply_advanced_sr
-    from src.homr_eval_scripts.core import heuristics as homr_heuristics
-    from src.homr_eval_scripts.core import predictor as homr_predictor
-    from src.homr_eval_scripts.core.metrics import BarlinePrediction
-    from src.homr_eval_scripts.core.reporting import save_homr_results
-    from src.homr_eval_scripts.core.utils import DEFAULT_TUNING
+    from src.homr_runtime import heuristics as homr_heuristics
+    from src.homr_runtime import predictor as homr_predictor
+    from src.homr_runtime.reporting import save_homr_results
+    from src.homr_runtime.settings import DEFAULT_TUNING
+    from src.homr_runtime.types import BarlinePrediction
 
     _HOMR_AVAILABLE = True
 except ImportError:

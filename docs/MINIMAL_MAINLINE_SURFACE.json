@@ -643,6 +643,7 @@
     "src/common/barline_units.py": "evaluation/test geometry utility; no current runtime caller",
     "src/homr_eval_scripts/__init__.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
     "src/homr_eval_scripts/core/__init__.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
+    "src/homr_eval_scripts/core/diagnostics.py": "evaluation-only cluster, candidate and gap diagnostics; not imported by maintained workers",
     "src/homr_eval_scripts/core/heuristics.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
     "src/homr_eval_scripts/core/metrics.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
     "src/homr_eval_scripts/core/predictor.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",

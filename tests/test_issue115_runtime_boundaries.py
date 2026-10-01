@@ -1,6 +1,9 @@
 import ast
+import importlib
+import importlib.util
+import sys
 from pathlib import Path
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 
 import numpy as np
 import pytest
@@ -37,6 +40,47 @@ def test_surface_check_finds_lazy_runtime_leaks_but_ignores_external_modules():
     )
     tracked = {"src/homr_eval_scripts/core/predictor.py"}
     assert local_import_targets("src/homr_runtime/predictor.py", imports, tracked) == tracked
+
+
+def test_legacy_heuristics_adapter_preserves_actual_consumer_patch_points(monkeypatch):
+    # All substituted modules are scoped by monkeypatch; no HOMR import or global
+    # model stubs remain after this test.
+    runtime = ModuleType("src.homr_runtime.heuristics")
+    exec(
+        "load_and_preprocess_predictions = lambda: 'original'\n"
+        "def detect_staffs_with_barlines():\n"
+        "    return load_and_preprocess_predictions()\n",
+        runtime.__dict__,
+    )
+    ends = ModuleType("src.homr_runtime.end_barlines")
+    ends._cluster_by_y_centers = lambda: None
+    ends._scan_vertical_line = lambda: None
+    diagnostics = ModuleType("src.homr_eval_scripts.core.diagnostics")
+    for name in (
+        "resolve_clusters_dry_run",
+        "resolve_tight_duplicates_dry_run",
+        "export_measure_grid_candidates",
+        "compute_candidate_stats",
+        "compute_and_save_gap_stats",
+    ):
+        setattr(diagnostics, name, lambda: None)
+    runtime_package = importlib.import_module("src.homr_runtime")
+    core_package = importlib.import_module("src.homr_eval_scripts.core")
+    monkeypatch.setattr(runtime_package, "heuristics", runtime, raising=False)
+    monkeypatch.setattr(core_package, "diagnostics", diagnostics, raising=False)
+    for module in (runtime, ends, diagnostics):
+        monkeypatch.setitem(sys.modules, module.__name__, module)
+    name = "src.homr_eval_scripts.core._issue115_adapter_test"
+    path = Path(__file__).resolve().parents[1] / "src/homr_eval_scripts/core/heuristics.py"
+    spec = importlib.util.spec_from_file_location(name, path)
+    adapter = importlib.util.module_from_spec(spec)
+    monkeypatch.setitem(sys.modules, name, adapter)
+    spec.loader.exec_module(adapter)
+    legacy = sys.modules[name]
+    assert legacy is runtime
+    legacy.load_and_preprocess_predictions = lambda: "patched"
+    assert runtime.detect_staffs_with_barlines() == "patched"
+    assert legacy.compute_candidate_stats is diagnostics.compute_candidate_stats
 
 
 def test_filtering_preserves_prediction_identity_and_partition():

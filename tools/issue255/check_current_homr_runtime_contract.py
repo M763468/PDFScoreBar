@@ -53,10 +53,10 @@ def run() -> dict[str, Any]:
     from homr.staff_detection import break_wide_fragments, detect_staff
     from homr.title_detection import detect_title
     from homr.transformer.configs import Config
-    from src.homr_eval_scripts.core import heuristics as homr_heuristics
-    from src.homr_eval_scripts.core import predictor as homr_predictor
+    from src.homr_runtime import heuristics as homr_heuristics
+    from src.homr_runtime import predictor as homr_predictor
     from src.pipeline.detection.connector_artifacts import install_homr_connector_artifact_capture
-    from src.pipeline.detection.homr_profile_compat import (
+    from src.homr_runtime.api_compat import (
         build_processing_config_compat,
         install_current_homr_consumer_compat,
         processing_config_compat_mode,

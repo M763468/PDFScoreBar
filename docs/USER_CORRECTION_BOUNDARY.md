@@ -3,7 +3,8 @@
 The supported user correction application is `tools/review_correction/server.py`. It opens one
 validated `review/manual_correction_input.json` package. The handoff selects the pages, readable
 artifacts, and correction outputs. Its server exposes only the manual review UI and routes needed
-by that UI. It listens on loopback and rechecks resolved paths, including symlinks, on each file
+by that UI. It listens on `127.0.0.1`, accepts that local address as the HTTP host, and requires
+same-origin JSON requests for writes. It rechecks resolved paths, including symlinks, on each file
 request and write. Outputs must remain in that package's `review/corrections/` directory.
 
 `tools/gt_relabel_gui/server.py` is the separate developer entrypoint. Its `gt`, `rest`, and

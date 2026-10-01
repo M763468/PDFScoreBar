@@ -144,6 +144,28 @@ def _load_boxes(path: Path) -> list[dict]:
 
 
 class ReviewHandler(BaseHTTPRequestHandler):
+    def _trusted_host(self) -> bool:
+        # A loopback bind alone does not stop browser requests sent through DNS rebinding.
+        if self.headers.get("Host") != f"127.0.0.1:{self.server.server_port}":
+            self.send_error(403, "Use the local review address")
+            return False
+        return True
+
+    def _trusted_write(self) -> bool:
+        if not self._trusted_host():
+            return False
+        origin = self.headers.get("Origin")
+        if origin is not None and origin != f"http://127.0.0.1:{self.server.server_port}":
+            self.send_error(403, "Cross-origin writes are forbidden")
+            return False
+        # Cross-site forms and no-cors fetch can send text/plain but cannot send
+        # application/json without a CORS preflight, which this server does not grant.
+        content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+        if content_type != "application/json":
+            self.send_error(415, "JSON content type required")
+            return False
+        return True
+
     def _json(self, obj: object) -> None:
         data = json.dumps(obj).encode("utf-8")
         self.send_response(200)
@@ -166,6 +188,8 @@ class ReviewHandler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self) -> None:
+        if not self._trusted_host():
+            return
         parsed = urlparse(self.path)
         package = self.server.package
         if parsed.path in {"/", "/app_manual.js"}:
@@ -211,10 +235,12 @@ class ReviewHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
-        package = self.server.package
         if parsed.path not in {"/api/save", "/api/export_movement_boundaries"}:
             self.send_error(404, "Not found")
             return
+        if not self._trusted_write():
+            return
+        package = self.server.package
         try:
             size = int(self.headers.get("Content-Length", "0"))
             if size < 0 or size > 10_000_000:

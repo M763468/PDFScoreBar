@@ -56,14 +56,16 @@ def review_server(tmp_path):
         thread.join()
 
 
-def _request(server, method, path, body=None):
+def _request(server, method, path, body=None, headers=None):
     conn = http.client.HTTPConnection("127.0.0.1", server.server_port)
     data = None if body is None else json.dumps(body)
+    request_headers = {"Content-Type": "application/json"} if body is not None else {}
+    request_headers.update(headers or {})
     conn.request(
         method,
         path,
         body=data,
-        headers={"Content-Type": "application/json"} if body is not None else {},
+        headers=request_headers,
     )
     response = conn.getresponse()
     result = response.status, response.read()
@@ -149,6 +151,33 @@ def test_review_save_cannot_select_gt_or_canonical_paths(review_server):
     ):
         assert _request(server, "POST", "/api/save", {**body, **change})[0] == 400
     assert canonical.read_bytes() == before
+
+
+def test_review_rejects_cross_origin_writes(review_server):
+    server, handoff = review_server
+    body = {"page": 0, "correction_type": "barline_construction", "items": []}
+    output = handoff.parent / "corrections" / "barline_construction_overrides.json"
+    for headers, expected in (
+        ({"Origin": "https://example.test"}, 403),
+        ({"Origin": "null"}, 403),
+        ({"Content-Type": "text/plain"}, 415),
+        ({"Host": "example.test"}, 403),
+    ):
+        assert _request(server, "POST", "/api/save", body, headers)[0] == expected
+        assert not output.exists()
+    assert _request(server, "GET", "/api/pages", headers={"Host": "example.test"})[0] == 403
+    assert (
+        _request(
+            server,
+            "POST",
+            "/api/export_movement_boundaries",
+            {},
+            {"Origin": "https://example.test"},
+        )[0]
+        == 403
+    )
+    local_origin = f"http://127.0.0.1:{server.server_port}"
+    assert _request(server, "POST", "/api/save", body, {"Origin": local_origin})[0] == 200
 
 
 def test_review_rechecks_symlinks_at_request_time(review_server, tmp_path):

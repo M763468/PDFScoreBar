@@ -17,7 +17,7 @@ from src.pipeline.utils.io import ensure_dir
 
 from .config import get_cnn_apply_nms, get_probe_x_domain_kwargs
 from .input_contract import build_detector_input_contract
-from .profile_hybrid import VerifiedProfileHybridDetector
+from .maintained_profile_hybrid import VerifiedProfileHybridDetector
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DENSE_ROUTE_NAME = "dense_full_pipeline"
@@ -160,7 +160,12 @@ class DetectorOrchestrator:
         return self.input_contract_path
 
     def _run_hybrid_detection(self) -> Dict[str, Any]:
-        detector = VerifiedProfileHybridDetector(
+        detector_cls = VerifiedProfileHybridDetector
+        if self.homr_profile != "maintained_original":
+            from .profile_hybrid import VerifiedProfileHybridDetector as HistoricalProfileDetector
+
+            detector_cls = HistoricalProfileDetector
+        detector = detector_cls(
             det_cfg=self.det_cfg,
             images=self.images,
             run_id=self.run_id,

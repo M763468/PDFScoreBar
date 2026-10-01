@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import logging
 from contextlib import nullcontext
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
@@ -28,6 +27,14 @@ from src.pipeline.detection import (
 from src.pipeline.engine_telemetry import TelemetryRecorder
 from src.pipeline.review.manual_correction_materializer import (
     materialize_manual_correction_review_package,
+)
+from src.pipeline.review.pipeline_review import (
+    ReviewPackageConfig as _ReviewPackageConfig,
+)
+from src.pipeline.review.pipeline_review import (
+    resolve_review_package_config,
+    resolved_for_manifest,
+    validate_review_package_prerequisites,
 )
 from src.pipeline.steps.barlines import (
     apply_barline_overrides,
@@ -59,14 +66,6 @@ logger = logging.getLogger(__name__)
 _PIPELINE_PERSISTENCE: Dict[str, Any] = {}
 # MMR Persistence: Cache MMRClassifier and MMROCREngine to avoid re-loading models.
 _MMR_PERSISTENCE: Dict[Any, Any] = {}
-
-
-@dataclass(frozen=True)
-class _ReviewPackageConfig:
-    enabled: bool
-    review_root: Path
-    overwrite: bool
-    source_pipeline_command: str | None
 
 
 class PipelineOrchestrator:
@@ -509,51 +508,10 @@ class PipelineOrchestrator:
         return review_config.review_root
 
     def _review_package_config(self) -> _ReviewPackageConfig:
-        """Resolve the config-first review package output contract.
-
-        This is intentionally scoped to the low-level ``run_pipeline()`` layout.
-        The #226/#227 public ``OUTPUT_DIR/{final,review,debug}`` materializer is
-        a separate follow-up surface.
-        """
-        review_cfg = get_nested(self.config, "outputs", "review", default={}) or {}
-        if not isinstance(review_cfg, dict):
-            raise ValueError("outputs.review must be a mapping when provided.")
-
-        enabled = bool(review_cfg.get("manual_correction_package", False))
-        review_root_raw = review_cfg.get("root")
-        if review_root_raw:
-            review_root = Path(str(review_root_raw))
-            if not review_root.is_absolute():
-                review_root = self.run_dir / review_root
-        else:
-            review_root = self.run_dir / "review"
-
-        source_pipeline_command_raw = review_cfg.get("source_pipeline_command")
-        source_pipeline_command = (
-            str(source_pipeline_command_raw) if source_pipeline_command_raw else None
-        )
-
-        return _ReviewPackageConfig(
-            enabled=enabled,
-            review_root=review_root,
-            overwrite=review_cfg.get("overwrite") is not False,
-            source_pipeline_command=source_pipeline_command,
-        )
+        return resolve_review_package_config(self.config, self.run_dir)
 
     def _validate_review_package_prerequisites(self) -> None:
-        review_config = self._review_package_config()
-        if not review_config.enabled:
-            return
-
-        required_steps = {
-            "numbering_base": get_nested(self.config, "steps", "numbering_base", default=False),
-        }
-        missing = [name for name, enabled in required_steps.items() if not enabled]
-        if missing:
-            raise ValueError(
-                "outputs.review.manual_correction_package requires these steps to be enabled: "
-                + ", ".join(missing)
-            )
+        validate_review_package_prerequisites(self.config, self._review_package_config())
 
     def _resolved_for_manifest(
         self,
@@ -562,15 +520,12 @@ class PipelineOrchestrator:
         resolved: List[Dict[str, Any]],
         page_ctx: Dict[str, Dict[str, Any]],
     ) -> List[Dict[str, Any]]:
-        manifest_resolved = []
-        review_enabled = self._review_package_config().enabled
-        for page_id, item in zip(page_ids, resolved):
-            manifest_item = dict(item)
-            corrected_path = page_ctx.get(page_id, {}).get("barlines_path")
-            if review_enabled and corrected_path and Path(corrected_path).exists():
-                manifest_item["barlines_json"] = str(corrected_path)
-            manifest_resolved.append(manifest_item)
-        return manifest_resolved
+        return resolved_for_manifest(
+            review_enabled=self._review_package_config().enabled,
+            page_ids=page_ids,
+            resolved=resolved,
+            page_ctx=page_ctx,
+        )
 
     def run_base_numbering_and_barline_correction(
         self,

@@ -78,6 +78,33 @@ PDF or persisted page images
 verified dense route itself requires persisted page image files; it rejects in-memory-only
 images at the detector boundary.
 
+## HOMR module ownership
+
+The maintained/current workers import production-owned `src/homr_runtime/`:
+
+| Responsibility | Module |
+| --- | --- |
+| Prediction and coordinate records | `types.py` |
+| Image/segmentation coordinate mapping | `transforms.py` |
+| Image-feature and segmentation barline candidates | `barline_candidates.py` |
+| Staff/symbol assembly and compatibility patch points | `heuristics.py` |
+| Notehead/staff filtering and end-barline recovery | `filtering.py`, `end_barlines.py` |
+| Model prediction, Segnet cache and callable API adaptation | `predictor.py`, `segnet_cache.py`, `api_compat.py` |
+| Runtime defaults, logging and prediction/mask serialization | `settings.py`, `utils.py`, `reporting.py` |
+
+`maintained_profile.py` owns maintained baseline execution. Shared source-generation and
+batch-SR scheduling live in `profile_sources*.py`; `maintained_profile_hybrid.py` selects
+the maintained backend and `maintained_source_page_worker.py`. Historical profile adapters
+remain under `homr_profile.py`, `homr_profile_compat.py`, `profile_hybrid*.py`, and
+`verified_source_page_worker.py`. They are loaded only for an explicitly selected historical
+profile. `src/homr_eval_scripts/core/` retains old import adapters plus evaluation metrics,
+diagnostic CSV generation and comparison reporting. Production does not import that package.
+
+Callable compatibility and connector capture still patch the actual predictor/heuristics
+bindings held by the consumer. The predictor and Segnet cache adapters alias the canonical
+module object, preserving class/cache identity for old import paths. These ownership changes
+do not change the two-HOMR input/coordinate or process-lifetime contracts below.
+
 ## Two-HOMR ownership contract
 
 For each page on the dense production route there are exactly two HOMR neural inference
@@ -272,7 +299,7 @@ and could diverge from Phase A. Current MMR support instead reuses the Phase-A t
 | `src/pipeline/main.py` / `PipelineOrchestrator` | main pipeline process | owns orchestration, numbering, persistent MMR classifier/OCR |
 | `current_sr_batch_worker` | one disposable process for all selected pages | owns Real-ESRGAN model/import/CUDA lifetime and persisted x4 generation |
 | SR batch process exit | hard phase boundary | releases Real-ESRGAN/compile/CUDA state before HOMR/OMR |
-| `verified_source_page_worker` | disposable top-level Python worker per page, started after SR batch | bounds lifetime of page-local verified source generation |
+| `maintained_source_page_worker` | disposable top-level Python worker per page, started after SR batch | bounds lifetime of page-local verified source generation |
 | maintained original HOMR | inside page worker | immutable maintained baseline only |
 | `current_support_worker` | child worker using precomputed x4 | current x4 HOMR + OMR-DLN support contract; does not own production SR model lifetime |
 | dense route + CNN | imported/run after source workers exit | avoids retaining heavy source-generation state |

@@ -16,12 +16,12 @@ import cv2
 import torch
 from tqdm import tqdm
 
+from src.homr_runtime.api_compat import build_processing_config_compat
 from src.pipeline.core.python_env import get_pipeline_python
 from src.pipeline.core.subprocess_utils import run_with_logging
 from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
 from src.pipeline.utils.io import ensure_dir
 
-from .homr_profile_compat import build_processing_config_compat
 from .utils import log_vram_usage
 
 try:
@@ -341,8 +341,7 @@ class HybridDetector:
 
         use_gpu_inference = torch.cuda.is_available()
         import homr.main as homr_main
-
-        from .homr_profile_compat import install_current_homr_consumer_compat
+        from src.homr_runtime.api_compat import install_current_homr_consumer_compat
 
         install_current_homr_consumer_compat(
             homr_main,

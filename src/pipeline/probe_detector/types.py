@@ -65,3 +65,17 @@ class GapRescueConfig:
     threshold_ratio: float
     min_ratio: float
     margin_ratio: float = 0.1
+
+
+@dataclass(frozen=True)
+class BandProjectionConfig:
+    band_source: str
+    band_scan_pad_ratio: float
+    band_scan_pad: int
+    band_row_pad_ratio: float
+    band_row_pad_staff_mult: float
+    staff_space: float
+    band_height_mode: str
+    band_height_min: int
+    band_height_scale: float
+    extend_scale: float

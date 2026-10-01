@@ -34,7 +34,7 @@ def install_homr_connector_artifact_capture(predictor_cls: type[Any] | None = No
 
     if predictor_cls is None:
         try:
-            from src.homr_eval_scripts.core.predictor import HomrPredictor
+            from src.homr_runtime.predictor import HomrPredictor
         except ImportError:
             return False
         predictor_cls = HomrPredictor

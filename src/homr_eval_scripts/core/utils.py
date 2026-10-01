@@ -6,18 +6,14 @@ import logging
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Sequence, Set
 
 try:
     from zoneinfo import ZoneInfo
 except ImportError:
     from backports.zoneinfo import ZoneInfo
 
-
-import homr.simple_logging
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if __name__ != "__main__":
@@ -35,48 +31,16 @@ logger = logging.getLogger("homr_evaluator")
 
 LEFT_MARGIN_FORCE_FP_GT_INDICES: Set[int] = set()
 LEFT_MARGIN_FORCE_FP_MAX_WIDTH = 2
-STEM_CONTEXT_HEURISTICS = {
-    "enabled": True,
-    "notehead_proximity_threshold_px": 5,
-    "min_overlap_px": 5,
-    "max_height_px": 24,
-    "max_width_px": 4,
-    "staff_crossing_enabled": False,
-    "min_staff_crossings": 3,
-    "cluster_resolution_dry_run": False,
-    "cluster_gap_threshold_px": 15,
-    "tight_duplicate_dry_run": False,
-    "measure_grid_export": True,
-}
-Box = Tuple[int, int, int, int]
-DEFAULT_TUNING = {
-    "barline_min_height_factor": 1.0,
-    "barline_max_width_factor": 1.0,
-    "enable_end_barline_recovery": False,
-    "end_barline_max_x_dist_px": 10,
-    "end_barline_min_height_px": 30,
-}
-
-
-def _redirect_eprint_to_logger(*args, **kwargs) -> None:
-    logger.info(" ".join(map(str, args)))
-
-
-@dataclass
-class TransformInfo:
-    original_shape: Tuple[int, int]  # width, height
-    crop_box: Tuple[int, int, int, int]  # x, y, w, h
-    resize_shape: Tuple[int, int]
-    seg_shape: Tuple[int, int]
-    resize_scale: Tuple[float, float]
-    seg_scale: Tuple[float, float]
-
-    @property
-    def total_scale(self) -> Tuple[float, float]:
-        return (
-            self.resize_scale[0] * self.seg_scale[0],
-            self.resize_scale[1] * self.seg_scale[1],
-        )
+from src.homr_runtime.settings import DEFAULT_TUNING as DEFAULT_TUNING
+from src.homr_runtime.settings import STEM_CONTEXT_HEURISTICS as STEM_CONTEXT_HEURISTICS
+from src.homr_runtime.transforms import map_pred_to_orig as map_pred_to_orig
+from src.homr_runtime.types import Box as Box
+from src.homr_runtime.types import TransformInfo as TransformInfo
+from src.homr_runtime.utils import _redirect_eprint_to_logger as _redirect_eprint_to_logger
+from src.homr_runtime.utils import current_jst as current_jst
+from src.homr_runtime.utils import ensure_dir as ensure_dir
+from src.homr_runtime.utils import eprint as eprint
+from src.homr_runtime.utils import timestamp_jst as timestamp_jst
 
 
 def load_ground_truth_mapping(args: argparse.Namespace) -> Dict[str, Path]:
@@ -92,10 +56,6 @@ def load_ground_truth_mapping(args: argparse.Namespace) -> Dict[str, Path]:
             raise FileNotFoundError(f"Ground truth file not found: {path}")
         mapping[stem] = path
     return mapping
-
-
-def ensure_dir(path: Path) -> None:
-    path.mkdir(parents=True, exist_ok=True)
 
 
 def git_info() -> Dict[str, Optional[str]]:
@@ -120,14 +80,6 @@ def git_info() -> Dict[str, Optional[str]]:
     }
 
 
-def current_jst() -> datetime:
-    return datetime.now(JST)
-
-
-def timestamp_jst() -> str:
-    return current_jst().strftime("%Y-%m-%dT%H:%M:%S") + "JST"
-
-
 def choose_run_id(args: argparse.Namespace) -> str:
     if args.force_run_id:
         return args.force_run_id
@@ -147,40 +99,8 @@ def sanitise_images(images: Iterable[str]) -> List[Path]:
     return resolved
 
 
-def map_pred_to_orig(
-    box: Tuple[int, int, int, int], transform: TransformInfo
-) -> Tuple[int, int, int, int]:
-    crop_x, crop_y, *_ = transform.crop_box
-    scale_x, scale_y = transform.total_scale
-    inv_scale_x = 1.0 / scale_x if scale_x != 0 else 0.0
-    inv_scale_y = 1.0 / scale_y if scale_y != 0 else 0.0
-    orig_w, orig_h = transform.original_shape
-
-    x1, y1, x2, y2 = box
-    x1_orig = int(round(x1 * inv_scale_x + crop_x))
-    y1_orig = int(round(y1 * inv_scale_y + crop_y))
-    x2_orig = int(round(x2 * inv_scale_x + crop_x))
-    y2_orig = int(round(y2 * inv_scale_y + crop_y))
-
-    x1_clamped = max(0, min(orig_w - 1, x1_orig))
-    y1_clamped = max(0, min(orig_h - 1, y1_orig))
-    x2_clamped = max(0, min(orig_w - 1, x2_orig))
-    y2_clamped = max(0, min(orig_h - 1, y2_orig))
-
-    if x2_clamped < x1_clamped:
-        x2_clamped = x1_clamped
-    if y2_clamped < y1_clamped:
-        y2_clamped = y1_clamped
-
-    return (x1_clamped, y1_clamped, x2_clamped, y2_clamped)
-
-
 def prepare_working_image(image: Path, dest_dir: Path) -> Path:
     ensure_dir(dest_dir)
     dest_path = dest_dir / image.name
     shutil.copy2(image, dest_path)
     return dest_path
-
-
-homr.simple_logging.eprint = _redirect_eprint_to_logger
-eprint = _redirect_eprint_to_logger

@@ -73,36 +73,56 @@
       "role": "shared runtime primitives and model/resource resolvers"
     },
     {
-      "pattern": "src/homr_eval_scripts/__init__.py",
-      "role": "HOMR adapter package"
+      "pattern": "src/homr_runtime/__init__.py",
+      "role": "responsibility-based production module extracted under Issue #115"
     },
     {
-      "pattern": "src/homr_eval_scripts/core/__init__.py",
-      "role": "currently runtime-owned HOMR implementation pending formal package extraction"
+      "pattern": "src/homr_runtime/api_compat.py",
+      "role": "responsibility-based production module extracted under Issue #115"
     },
     {
-      "pattern": "src/homr_eval_scripts/core/heuristics.py",
-      "role": "currently runtime-owned HOMR implementation pending formal package extraction"
+      "pattern": "src/homr_runtime/barline_candidates.py",
+      "role": "responsibility-based production module extracted under Issue #115"
     },
     {
-      "pattern": "src/homr_eval_scripts/core/metrics.py",
-      "role": "currently runtime-owned HOMR implementation pending formal package extraction"
+      "pattern": "src/homr_runtime/end_barlines.py",
+      "role": "responsibility-based production module extracted under Issue #115"
     },
     {
-      "pattern": "src/homr_eval_scripts/core/predictor.py",
-      "role": "currently runtime-owned HOMR implementation pending formal package extraction"
+      "pattern": "src/homr_runtime/filtering.py",
+      "role": "responsibility-based production module extracted under Issue #115"
     },
     {
-      "pattern": "src/homr_eval_scripts/core/reporting.py",
-      "role": "currently runtime-owned HOMR implementation pending formal package extraction"
+      "pattern": "src/homr_runtime/heuristics.py",
+      "role": "responsibility-based production module extracted under Issue #115"
     },
     {
-      "pattern": "src/homr_eval_scripts/core/utils.py",
-      "role": "currently runtime-owned HOMR implementation pending formal package extraction"
+      "pattern": "src/homr_runtime/predictor.py",
+      "role": "responsibility-based production module extracted under Issue #115"
     },
     {
-      "pattern": "src/homr_eval_scripts/segnet_cache.py",
-      "role": "currently runtime-owned HOMR SegNet cache pending formal package extraction"
+      "pattern": "src/homr_runtime/reporting.py",
+      "role": "responsibility-based production module extracted under Issue #115"
+    },
+    {
+      "pattern": "src/homr_runtime/segnet_cache.py",
+      "role": "responsibility-based production module extracted under Issue #115"
+    },
+    {
+      "pattern": "src/homr_runtime/settings.py",
+      "role": "responsibility-based production module extracted under Issue #115"
+    },
+    {
+      "pattern": "src/homr_runtime/transforms.py",
+      "role": "responsibility-based production module extracted under Issue #115"
+    },
+    {
+      "pattern": "src/homr_runtime/types.py",
+      "role": "responsibility-based production module extracted under Issue #115"
+    },
+    {
+      "pattern": "src/homr_runtime/utils.py",
+      "role": "responsibility-based production module extracted under Issue #115"
     },
     {
       "pattern": "src/measure_numbering/__init__.py",
@@ -221,20 +241,24 @@
       "role": "canonical batch-SR dense detector orchestrator"
     },
     {
-      "pattern": "src/pipeline/detection/homr_profile.py",
-      "role": "mixed production/reproduction profile dispatch pending split"
-    },
-    {
-      "pattern": "src/pipeline/detection/homr_profile_compat.py",
-      "role": "maintained HOMR API compatibility"
-    },
-    {
       "pattern": "src/pipeline/detection/input_contract.py",
       "role": "detector input contract"
     },
     {
       "pattern": "src/pipeline/detection/maintained_homr_worker.py",
       "role": "maintained original-page HOMR baseline"
+    },
+    {
+      "pattern": "src/pipeline/detection/maintained_profile.py",
+      "role": "responsibility-based production module extracted under Issue #115"
+    },
+    {
+      "pattern": "src/pipeline/detection/maintained_profile_hybrid.py",
+      "role": "responsibility-based production module extracted under Issue #115"
+    },
+    {
+      "pattern": "src/pipeline/detection/maintained_source_page_worker.py",
+      "role": "responsibility-based production module extracted under Issue #115"
     },
     {
       "pattern": "src/pipeline/detection/omr_dln_model.py",
@@ -245,20 +269,20 @@
       "role": "formal production OMR-DLN worker"
     },
     {
-      "pattern": "src/pipeline/detection/profile_hybrid.py",
-      "role": "mixed profile hybrid source generation pending split"
+      "pattern": "src/pipeline/detection/profile_contract.py",
+      "role": "responsibility-based production module extracted under Issue #115"
     },
     {
-      "pattern": "src/pipeline/detection/profile_hybrid_batch_sr.py",
-      "role": "canonical batch-SR hybrid source generation"
+      "pattern": "src/pipeline/detection/profile_sources.py",
+      "role": "responsibility-based production module extracted under Issue #115"
+    },
+    {
+      "pattern": "src/pipeline/detection/profile_sources_batch_sr.py",
+      "role": "responsibility-based production module extracted under Issue #115"
     },
     {
       "pattern": "src/pipeline/detection/utils.py",
       "role": "detector path helpers"
-    },
-    {
-      "pattern": "src/pipeline/detection/verified_source_page_worker.py",
-      "role": "page-isolated dense source worker"
     },
     {
       "pattern": "src/pipeline/detector_routes/__init__.py",
@@ -329,6 +353,18 @@
       "role": "production probe detector"
     },
     {
+      "pattern": "src/pipeline/probe_detector/existing.py",
+      "role": "responsibility-based production module extracted under Issue #115"
+    },
+    {
+      "pattern": "src/pipeline/probe_detector/peaks.py",
+      "role": "responsibility-based production module extracted under Issue #115"
+    },
+    {
+      "pattern": "src/pipeline/probe_detector/projections.py",
+      "role": "staff-band ink projection and optional extension regions"
+    },
+    {
       "pattern": "src/pipeline/probe_detector/rescue.py",
       "role": "production probe detector"
     },
@@ -355,6 +391,10 @@
     {
       "pattern": "src/pipeline/review/manual_correction_materializer.py",
       "role": "correction/final-output materialization used by the engine boundary"
+    },
+    {
+      "pattern": "src/pipeline/review/pipeline_review.py",
+      "role": "responsibility-based production module extracted under Issue #115"
     },
     {
       "pattern": "src/pipeline/steps/__init__.py",
@@ -568,24 +608,7 @@
       "reason": "retired pre-#100 dense orchestrator compatibility shim; callers use canonical dense name"
     }
   ],
-  "known_mixed_runtime_sources": [
-    {
-      "path": "src/homr_eval_scripts/core/**",
-      "issue": 115,
-      "problem": "production HOMR workers import this code, but it remains under an evaluation-named package and includes the large heuristics.py module",
-      "target": "move/split the runtime-owned HOMR implementation into a production package while keeping evaluation wrappers outside the runtime bundle"
-    },
-    {
-      "path": "src/pipeline/detection/homr_profile.py",
-      "problem": "maintained production profile dispatch and historical stage_e_verified reproduction dispatch share one module",
-      "target": "separate maintained runtime profile execution from historical Stage-E profile execution before a physical minimal-repository extraction"
-    },
-    {
-      "path": "src/pipeline/detection/profile_hybrid.py",
-      "problem": "canonical maintained_original execution and Stage-E-compatible generic profile behavior share the same implementation",
-      "target": "retain the canonical maintained route in runtime and keep Stage-E reproduction adaptation outside the extracted bundle"
-    }
-  ],
+  "known_mixed_runtime_sources": [],
   "reference_checks": [
     {
       "path": "src/pipeline/detection/current_support_worker.py",
@@ -617,15 +640,28 @@
     }
   ],
   "source_excluded": {
-    "src/homr_eval_scripts/homr_evaluator.py": "historical/evaluation CLI; maintained workers use core modules directly",
+    "src/common/barline_units.py": "evaluation/test geometry utility; no current runtime caller",
+    "src/homr_eval_scripts/__init__.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
+    "src/homr_eval_scripts/core/__init__.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
+    "src/homr_eval_scripts/core/heuristics.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
+    "src/homr_eval_scripts/core/metrics.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
+    "src/homr_eval_scripts/core/predictor.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
+    "src/homr_eval_scripts/core/reporting.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
+    "src/homr_eval_scripts/core/utils.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
+    "src/homr_eval_scripts/homr_evaluator.py": "historical/evaluation CLI; maintained workers use production-owned src/homr_runtime directly",
+    "src/homr_eval_scripts/segnet_cache.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
+    "src/pipeline/detection/homr_profile.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
+    "src/pipeline/detection/homr_profile_compat.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
     "src/pipeline/detection/hybrid.py": "older hybrid orchestration path; canonical dense dispatcher uses dense_orchestrator_batch_sr",
     "src/pipeline/detection/orchestrator.py": "standard detector route; outside the selected dense engine path",
+    "src/pipeline/detection/profile_hybrid.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
+    "src/pipeline/detection/profile_hybrid_batch_sr.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
+    "src/pipeline/detection/verified_source_page_worker.py": "HOMR evaluation/reproduction compatibility adapter; production owns src/homr_runtime and maintained profile backends",
     "src/pipeline/detector_routes/dense_probe_candidate.py": "Issue #120 candidate route; not called by canonical dense route",
     "src/pipeline/detector_routes/dense_probe_candidate_route.py": "Issue #120 candidate CLI",
     "src/pipeline/detector_routes/stage_e_dense_full_pipeline.py": "historical Stage-E reproduction",
-    "src/pipeline/movement_boundary_candidates.py": "candidate-generation/review tool, outside engine execution",
-    "src/common/barline_units.py": "evaluation/test geometry utility; no current runtime caller",
     "src/pipeline/engine_lifecycle.py": "development contract helper; current executor does not import or call it",
+    "src/pipeline/movement_boundary_candidates.py": "candidate-generation/review tool, outside engine execution",
     "src/pipeline/review/movement_boundary_review.py": "developer/manual-review authoring helper; current engine and correction rerun do not import it"
   },
   "documentation_patterns": [
@@ -699,7 +735,8 @@
       "tests/test_manual_gui_server.py",
       "tests/test_movement_boundary_candidates.py",
       "tests/test_movement_boundary_cli_provenance.py",
-      "tests/test_movement_boundary_review.py"
+      "tests/test_movement_boundary_review.py",
+      "tests/test_review_correction_server.py"
     ],
     "maintained_contract": [
       "tests/test_apply_corrections.py",
@@ -715,8 +752,10 @@
       "tests/test_engine_contract.py",
       "tests/test_engine_input_safety.py",
       "tests/test_engine_telemetry.py",
+      "tests/test_homr_barline_candidates.py",
       "tests/test_homr_profile.py",
       "tests/test_issue100_runtime_surface.py",
+      "tests/test_issue115_runtime_boundaries.py",
       "tests/test_issue194_first_interval_guard.py",
       "tests/test_issue197_system_connector_evidence_extractor.py",
       "tests/test_issue197_system_grouping_connector_evidence.py",
@@ -759,6 +798,7 @@
       "tests/test_pipeline_numbering_mmr_provider.py",
       "tests/test_pipeline_telemetry.py",
       "tests/test_probe_bands.py",
+      "tests/test_probe_helpers.py",
       "tests/test_probe_x_domain.py",
       "tests/test_probe_x_domain_route.py",
       "tests/test_python_env.py",
@@ -771,5 +811,19 @@
     "tests/README.md",
     "tests/conftest.py",
     "tests/fixtures/**"
-  ]
+  ],
+  "runtime_optional_source_imports": {
+    "src/pipeline/detection/__init__.py": {
+      "src/pipeline/detection/orchestrator.py": "Lazy standard-route compatibility only; the selected engine uses dense_full_pipeline."
+    },
+    "src/pipeline/detection/connector_artifacts.py": {
+      "src/pipeline/detection/hybrid.py": "Lazy default skip-existing hook for the unselected standard route; maintained workers supply their predictor class explicitly."
+    },
+    "src/pipeline/detection/dense_orchestrator.py": {
+      "src/pipeline/detection/profile_hybrid.py": "Explicit non-maintained profile selection loads the historical backend lazily; maintained_original never imports it."
+    },
+    "src/pipeline/detection/dense_orchestrator_batch_sr.py": {
+      "src/pipeline/detection/profile_hybrid_batch_sr.py": "Explicit non-maintained profile selection loads historical batch-SR execution lazily; excluded from the maintained bundle."
+    }
+  }
 }

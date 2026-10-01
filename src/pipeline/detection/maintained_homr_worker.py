@@ -186,15 +186,15 @@ def run(image: Path, output_root: Path, result_path: Path) -> dict[str, Any]:
     from homr.segmentation import config as segnet_config
     from homr.transformer.configs import Config
     from src.common.connector_artifacts import connector_mask_paths
-    from src.homr_eval_scripts.core import heuristics as homr_heuristics
-    from src.homr_eval_scripts.core import predictor as homr_predictor
-    from src.homr_eval_scripts.core.reporting import save_homr_results
-    from src.homr_eval_scripts.core.utils import DEFAULT_TUNING
-    from src.pipeline.detection.connector_artifacts import install_homr_connector_artifact_capture
-    from src.pipeline.detection.homr_profile_compat import (
+    from src.homr_runtime import heuristics as homr_heuristics
+    from src.homr_runtime import predictor as homr_predictor
+    from src.homr_runtime.api_compat import (
         build_processing_config_compat,
         install_current_homr_consumer_compat,
     )
+    from src.homr_runtime.reporting import save_homr_results
+    from src.homr_runtime.settings import DEFAULT_TUNING
+    from src.pipeline.detection.connector_artifacts import install_homr_connector_artifact_capture
 
     session_records: list[dict[str, Any]] = []
     original_inference_session = ort.InferenceSession

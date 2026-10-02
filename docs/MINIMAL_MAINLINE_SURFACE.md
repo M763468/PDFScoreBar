@@ -37,7 +37,12 @@ carry evaluation-oriented inventory structure. An isolated bind-mounted copy of 
 102 selected files completed the one-page GPU pipeline and passed the 85/85 detector accuracy
 gate. The additional file now excluded, `movement_boundary_review.py`, was not imported by
 that run or by the selected engine/correction call paths. The run used the current full image
-plus externally mounted validation input and model; production-only build and isolated bundle validation are tracked in #398.
+plus externally mounted validation input and model; Issue #398 additionally built the current 116-file bundle directly into a production-only
+image, without mounting the development checkout at `/workspace`. With networking disabled,
+the one-page PDF engine job generated final PDF and review artifacts and passed the same
+85/85 accuracy gate (hard FP/FN/soft residual all zero). Validation input, GT/checker and the
+external OMR-DLN weight were mounted separately; none entered the runtime file list.
+Both production and minimal images exclude the historical Stage-E `/opt` trees and markers.
 Do not present this subset as a finished standalone distribution.
 
 ## What goes where

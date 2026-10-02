@@ -74,20 +74,29 @@ full accuracy milestone.
 
 ## Runtime assumptions
 
-The maintained full-pipeline environment is:
+The accepted milestone used the former all-in-one `pdfscore_pipeline_gpu` image.
+Since Issue #398, historical reruns use the explicit reproduction extension:
 
-- Docker image: `pdfscore_pipeline_gpu`
+- Docker image for a new historical rerun: `pdfscore_stage_e_reproduction`
 - GPU runtime: Docker with `--gpus all`
 - working directory in container: `/workspace`
 - project interpreter: `/opt/venv_pipeline/bin/python`
 - repository mounted at `/workspace`
 - `PYTHONPATH=/workspace`
 
-Build with:
+Build the production base and reproduction extension with:
 
 ```bash
 make docker-build
+make -f tools/issue120/Makefile.stage_e.mk docker-build-stage-e
 ```
+
+The examples below describe the historical milestone's config at its accepted revision.
+Current `configs/dense_full_pipeline.yaml` selects `maintained_original`; do not use that
+changed profile as evidence of reproducing the old Stage-E result. Restore the accepted
+config/source inputs and record their revision for historical reruns. The extension retains
+the old source/model pins and runtime paths; it does not restore an older application config.
+See [`ENVIRONMENTS.md`](ENVIRONMENTS.md) for image overrides.
 
 A direct fresh run shape is:
 
@@ -96,7 +105,7 @@ docker run --rm --gpus all \
   -v "$PWD":/workspace \
   -w /workspace \
   -e PYTHONPATH=/workspace \
-  pdfscore_pipeline_gpu \
+  pdfscore_stage_e_reproduction \
   /opt/venv_pipeline/bin/python src/pipeline/main.py \
   --config configs/dense_full_pipeline.yaml \
   --run-id two_homr_milestone_reproduction
@@ -280,7 +289,7 @@ The accepted production code is the PR #279 squash merge `df130d12...`; the orig
 For a new causal performance comparison:
 
 1. stage the canonical page/model assets above and record the CNN checkpoint SHA-256;
-2. use the same `pdfscore_pipeline_gpu` image/hardware state for every compared ref;
+2. use the same immutable `pdfscore_stage_e_reproduction` image/hardware state for every compared ref;
 3. preserve the same `configs/dense_full_pipeline.yaml` content;
 4. run the production path through MMR so both removed inference boundaries are covered;
 5. capture wall time, process-tree RSS, GPU memory, and the architecture source contract;
@@ -293,7 +302,7 @@ A practical shell skeleton for each ref is:
   -v "$PWD":/workspace \
   -w /workspace \
   -e PYTHONPATH=/workspace \
-  pdfscore_pipeline_gpu \
+  pdfscore_stage_e_reproduction \
   /opt/venv_pipeline/bin/python src/pipeline/main.py \
   --config configs/dense_full_pipeline.yaml \
   --run-id "perf_<ref>"

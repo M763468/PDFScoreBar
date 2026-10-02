@@ -20,7 +20,8 @@ This is the maintained full-pipeline Docker image.
 
 The image installs project/runtime dependencies and the maintained HOMR ONNX provider patch
 from `docker/patch_homr_onnx_provider.py`. Use this image for the verified dense production
-route and Stage-E/full-pipeline validation that needs Docker/GPU execution.
+route and full-pipeline validation that needs Docker/GPU execution. Historical Stage-E
+reproduction uses a separate image (see below).
 
 `make verify-gpu-smoke` is the authoritative environment gate. Before pipeline execution it
 runs `scripts/docker_runtime_validation.sh`, which checks the bind-mounted source against the
@@ -51,7 +52,7 @@ The ownership rules are:
 |---|---|---|
 | main Python/runtime dependencies | Docker image | `/opt/venv_pipeline` |
 | maintained current HOMR package/runtime | Docker image | installed in `/opt/venv_pipeline` from the Dockerfile pin |
-| verified historical Stage-E HOMR stack | Docker image | `/opt/venv_stage_e_homr`, `/opt/homr_stage_e_profile`, `/opt/pdfscore_stage_e_profile` |
+| verified historical Stage-E HOMR stack | reproduction image only | `/opt/venv_stage_e_homr`, `/opt/homr_stage_e_profile`, `/opt/pdfscore_stage_e_profile` |
 | Real-ESRGAN x2/x4 weights | Docker image | `/opt/pdfscore-assets/realesrgan` |
 | canonical smoke CNN bytes | Docker image, derived from the tracked #315 manifest | `/opt/pdfscore-assets/barline_cnn_smoke.pth` |
 | OMR-DLN `YOLOv8m_Measures.pt` | operator/external asset | selected manifest version in the common host model cache, mounted read-only below `/opt/pdfscore-external/omr-dln-measures/<version>/` |
@@ -223,7 +224,35 @@ commit and runtime paths are stored in:
 configs/detector_profiles/maintained_original_homr.json
 ```
 
-The historical Stage-E profile remains available for reproduction. Its exact provenance,
+The historical Stage-E profile remains available only for reproduction. It is not a
+production dependency: the root `Dockerfile` contains no historical venv, cloned source,
+model downloads, or markers. Canonical preflight validates the maintained profile paths
+and the exact HOMR/evaluator marker values from its manifest.
+
+Build the reproduction extension explicitly from a production image:
+
+```bash
+make docker-build
+make -f tools/issue120/Makefile.stage_e.mk docker-build-stage-e
+make -f tools/issue120/Makefile.stage_e.mk run-issue120-stage-e-full
+```
+
+The extension is `docker/Dockerfile.stage-e`; its default output is
+`pdfscore_stage_e_reproduction`. For an isolated build, set
+`ISSUE120_PRODUCTION_IMAGE=<production-image>` and `ISSUE120_STAGE_E_IMAGE=<reproduction-image>`
+on those Make commands. Pin the base to an immutable image ID when retaining reproduction
+provenance. Its separate asset-contract label excludes it from canonical image resolution,
+including explicit overrides to production preflight. This extension retains the historical source commits, model SHA-256 checks,
+and isolated dependency versions; it does not select the historical profile for production.
+
+The old Stage-E name is retained as a compatibility identifier for #120 tools, manifests,
+and accepted historical results. Its remaining purpose is reproducing those results and
+comparison experiments. The canonical `maintained_original` route does not need it. Removing
+that reproduction contract or renaming its interfaces would be a separate retirement decision;
+no historical data, source pins, or profile is deleted here. The exact input images are still
+an external prerequisite, as recorded in the milestone below.
+
+Its exact provenance,
 package versions, model hashes, and `/opt/` runtime paths are stored in:
 
 ```text

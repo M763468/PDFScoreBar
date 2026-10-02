@@ -154,11 +154,11 @@ for the selected pinned HOMR runtime; the Docker image remains the runtime owner
   - segmentation ONNX: `e6a7c1e84f8d2f19f20a47e0889be2392cd487d27fa77984e4877b86534dee83`
   - transformer decoder ONNX: `381646983d14f17a11e4be671aaf6e4f81727b3a9edf0cf4890109a321ffce68`
   - transformer encoder ONNX: `22a443b2ea18da82128ae52e85436d6fb4728ab68aee24adb2ac9dfc2003a30c`
-- ownership: Docker image, intentionally historical/pinned
+- ownership: reproduction-only Docker image, intentionally historical/pinned
 - host materialization: Docker build cache only
 - container runtime: `/opt/homr_stage_e_profile` with isolated Python runtime
   `/opt/venv_stage_e_homr`
-- resolver/materializer: Dockerfile `download_weights()` at the pinned source commit followed by
+- resolver/materializer: `docker/Dockerfile.stage-e` `download_weights()` at the pinned source commit followed by
   explicit SHA-256 verification
 - explicit override: none in the canonical Stage-E profile
 - update procedure: this profile is historical provenance. A replacement is a new profile/model

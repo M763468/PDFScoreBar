@@ -58,8 +58,9 @@ than internal run-directory details.
 
 - Normal correction operation is the config-first review-package flow documented in
   `docs/manual_correction_review_package.md`.
-- The supported GUI route starts from `review/manual_correction_input.json` and enforces the
-  same-package handoff.
+- The supported user GUI is `tools/review_correction/server.py`; it starts from
+  `review/manual_correction_input.json` and enforces the same-package handoff. See
+  `docs/USER_CORRECTION_BOUNDARY.md` for its separation from GT/developer tooling.
 - Issue #383 retired the legacy arbitrary-path manual-config builder; the supported GUI route begins
   from the package-local review handoff above.
 - Final output remains the clean score-numbered PDF; review/debug geometry and correction provenance
@@ -221,7 +222,8 @@ This is the largest remaining mixed surface and should not be handled as one del
 
 ### KEEP examples
 
-- `tools/gt_relabel_gui/**` — current correction/GT GUI implementation;
+- `tools/review_correction/server.py` — user correction application boundary;
+- `tools/gt_relabel_gui/**` — GT/developer tooling and shared manual UI assets;
 - `tools/movement_boundary_review.py` and current movement-boundary helpers;
 - `tools/check_makefile_references.py`;
 - maintained verification/model/review utilities explicitly referenced from current docs, tests,

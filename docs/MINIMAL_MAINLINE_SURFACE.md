@@ -51,8 +51,8 @@ The same JSON classifies **every tracked config and test module** outside that r
 selection. Among the 77 tracked configs, 2 are runtime inputs, 4 support current
 development/validation, and 71 are retained comparison or reproduction recipes. Two
 unreferenced configs with retired runtime paths (`full_pipeline_template.yaml` and
-`evaluation2_e2e_verification.yaml`) were removed. The 100 test modules are classified as
-63 maintained contracts, 12 validation-harness tests, 4 developer-tool tests, and 21
+`evaluation2_e2e_verification.yaml`) were removed. The 101 test modules are classified as
+63 maintained contracts, 12 validation-harness tests, 5 developer-tool tests, and 21
 reproduction tests. All tests and their 55 fixtures stay in the development repository;
 none is needed merely to execute a PDF job. An Issue-numbered test is not assumed to be
 obsolete solely because of its name.
@@ -68,7 +68,11 @@ used by evaluation/tests, `engine_lifecycle.py` is a development contract helper
 wired into the executor, and `movement_boundary_review.py` supports the development GUI
 and manual review authoring. The unused `ort_config.py` was removed from the repository.
 The engine and correction rerun consume the resulting review records without importing
-the authoring helper.
+the authoring helper. The development manifest explicitly retains both
+`tools/movement_boundary_review.py` and its `src/pipeline/review/` implementation
+so the documented attach/export workflow survives repository cleanup.
+The lifecycle, input-safety, and telemetry documents delegated to by the engine
+job contract are also individually required in the development repository.
 Correction application remains selected because the current product includes a separate
 review-package correction flow, even though a one-job request does not execute
 `CorrectionSet` records directly.

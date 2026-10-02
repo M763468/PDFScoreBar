@@ -55,8 +55,10 @@ inventing a second correction model.
 
 The current config-first review workflow can materialize a package containing
 `review/manual_correction_input.json`, package-local page evidence, and a correction directory. The
-existing GUI can review the package, stage/save supported corrections, and the apply path can
+user correction app can review the package, stage/save supported corrections, and the apply path can
 canonicalize those corrections and regenerate corrected final numbering/PDF output.
+The maintained user entry is `tools/review_correction/server.py`; GT/evaluation editing remains a
+separate developer tool. See [`USER_CORRECTION_BOUNDARY.md`](USER_CORRECTION_BOUNDARY.md).
 
 Current correction semantics include, as applicable to the current workflow:
 

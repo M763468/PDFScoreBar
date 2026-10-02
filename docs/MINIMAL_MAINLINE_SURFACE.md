@@ -2,8 +2,8 @@
 
 ## Answer
 
-The current proposed subset is the **111 tracked files** listed in
-[`MINIMAL_MAINLINE_SURFACE.json`](MINIMAL_MAINLINE_SURFACE.json): 101 files under `src/`,
+The current proposed subset is the **116 tracked files** listed in
+[`MINIMAL_MAINLINE_SURFACE.json`](MINIMAL_MAINLINE_SURFACE.json): 106 files under `src/`,
 3 model files, 2 configs, 2 Docker helpers,
 and `Dockerfile`, `pyproject.toml`, and `README.md`. The root README is required by
 `pyproject.toml` during installation. No `docs/**`, `tests/**`, CI, GT, or experiment

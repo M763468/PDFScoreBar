@@ -121,3 +121,71 @@ def test_row_padding_ratio_precedes_staff_padding_and_clips_at_image_boundary():
     assert projection.ext_ratios is None
     assert projection.top_h == projection.bottom_h == 0
     np.testing.assert_array_equal(projection.ratios, np.ones(12))
+
+
+def _candidate_scan_config(**changes):
+    from dataclasses import replace
+
+    from src.pipeline.probe_detector.types import CandidateScanConfig
+
+    return replace(
+        CandidateScanConfig(
+            band_source="horiz_scan",
+            band_scan_width=4,
+            band_scan_line_ratio=0.5,
+            band_scan_min_lines=100,
+            extend_scale=1.0,
+            save_row_profile=True,
+            scan_center_on_peak=False,
+            scan_fallback_pred_band=False,
+            scan_peak_band_height=0,
+            scan_x_peak_rescue=True,
+            scan_x_peak_segment_height=5,
+            scan_x_peak_segment_source="scan_band",
+            scan_x_peak_ignore_staff_peak=True,
+            scan_x_peak_ignore_radius=1,
+            scan_x_peak_window=3,
+            scan_x_peak_ratio_min=1.0,
+        ),
+        **changes,
+    )
+
+
+@pytest.mark.parametrize("fallback,expected_ignored", [(False, 2), (True, 0)])
+def test_candidate_measurement_keeps_fallback_and_staff_peak_exclusion(fallback, expected_ignored):
+    from src.pipeline.probe_detector.scan_measurements import measure_candidate_scan
+
+    ink = np.ones((40, 20), np.uint8)
+    projection = project_staff_band(
+        ink,
+        y1=10,
+        y2=19,
+        existing_boxes=[],
+        global_height=0,
+        kernel=np.ones(1, np.int32),
+        width=1,
+        x_domain=(4, 12),
+        config=_projection_config(),
+    )
+    measurement = measure_candidate_scan(
+        ink,
+        local_idx=8,
+        pred_band=(12, 16),
+        staff_band=(10, 19),
+        x_domain=(4, 12),
+        projection=projection,
+        width=1,
+        kernel=np.ones(1, np.int32),
+        config=_candidate_scan_config(scan_fallback_pred_band=fallback),
+    )
+    assert measurement.scan_ratio == 1.0
+    assert measurement.scan_x_peak_ratio == 1.0
+    assert measurement.scan_x_peak_segment_pass == 1.0
+    assert measurement.scan_peak_ratio_local == 1.0
+    assert measurement.record_base["scan_x_peak_ignored_rows"] == expected_ignored
+    assert measurement.record_base["scan_peak_row"] == 10
+    assert measurement.record_base["scan_row_profile"] == [1.0] * 10
+    # A fallback measurement is not falsely reported as a detected scan band.
+    assert measurement.record_base["scan_band"] is None
+    assert measurement.record_base["pred_band"] == [12, 16]
+    assert measurement.record_base["scan_x_domain"] == [4, 12]

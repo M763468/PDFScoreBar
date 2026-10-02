@@ -369,6 +369,10 @@
       "role": "production probe detector"
     },
     {
+      "pattern": "src/pipeline/probe_detector/scan_measurements.py",
+      "role": "candidate-local ink and x-peak measurements; no acceptance decisions"
+    },
+    {
       "pattern": "src/pipeline/probe_detector/types.py",
       "role": "production probe detector"
     },
@@ -405,6 +409,10 @@
       "role": "production pipeline steps"
     },
     {
+      "pattern": "src/pipeline/steps/base_numbering_phase.py",
+      "role": "base numbering and barline correction execution"
+    },
+    {
       "pattern": "src/pipeline/steps/candidate_filters.py",
       "role": "production pipeline steps"
     },
@@ -417,6 +425,10 @@
       "role": "production pipeline steps"
     },
     {
+      "pattern": "src/pipeline/steps/final_numbering_phase.py",
+      "role": "final page numbering, movement resets and overlays"
+    },
+    {
       "pattern": "src/pipeline/steps/hybrid_consensus.py",
       "role": "production pipeline steps"
     },
@@ -425,8 +437,16 @@
       "role": "production pipeline steps"
     },
     {
+      "pattern": "src/pipeline/steps/mmr_batch_phase.py",
+      "role": "MMR batch preparation and model-cache use"
+    },
+    {
       "pattern": "src/pipeline/steps/numbering.py",
       "role": "production pipeline steps"
+    },
+    {
+      "pattern": "src/pipeline/steps/phase_services.py",
+      "role": "explicit orchestrator operation hooks passed to numbering phases"
     },
     {
       "pattern": "src/pipeline/steps/probe_scan.py",

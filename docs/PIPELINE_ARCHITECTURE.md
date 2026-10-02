@@ -78,6 +78,26 @@ PDF or persisted page images
 verified dense route itself requires persisted page image files; it rejects in-memory-only
 images at the detector boundary.
 
+## Orchestration and probe module boundaries
+
+`PipelineOrchestrator` owns input validation/rendering, phase order, shared model caches,
+telemetry and manifest/review dispatch. Its existing phase methods delegate execution to
+`steps/base_numbering_phase.py` (barline corrections and physical base layout),
+`steps/mmr_batch_phase.py` (batch preparation and persistent MMR models), and
+`steps/final_numbering_phase.py` (override application, cross-page numbering and overlays).
+`steps/phase_services.py` supplies the current orchestrator operation hooks at dispatch time;
+phase helpers share the same context and caches and do not import their caller. Review
+configuration/prerequisites and manifest projection live in `review/pipeline_review.py`.
+
+The probe entry point keeps the existing option/API contract and candidate acceptance order.
+`bands.py` resolves staff bands and eligible x domains; `projections.py` projects band and
+extension ink; `peaks.py` selects seeds; `scan_measurements.py` measures candidate-local
+scan bands, row profiles, x peaks and overhang. Measurement does not accept or rescue a
+candidate. `existing.py` owns existing-barline matching, `rescue.py` performs the existing
+cross-band/rightmost/gap rescues, `debug.py` serializes debug evidence, and `types.py` carries
+configuration records. No thresholds, rounding rules, result schemas or process lifetimes
+change with these module boundaries.
+
 ## HOMR module ownership
 
 The maintained/current workers import production-owned `src/homr_runtime/`:

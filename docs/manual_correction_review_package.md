@@ -350,3 +350,35 @@ and final renderer. It does not:
 - change detector, HOMR, MMR, grouping, barline, or numbering accuracy behavior;
 - silently infer movement boundaries or convert unreviewed candidates into numbering resets; movement
   review is explicit and package-local, and its resolved export remains separate from ordinary correction reruns.
+
+
+## Apply recorded corrections in the review application
+
+Run the package-scoped server in the maintained Python runtime with the dependencies needed by
+`src.pipeline.review.apply_corrections`:
+
+```bash
+python3 tools/review_correction/server.py --handoff /path/to/run/review/manual_correction_input.json
+```
+
+Record edits first. Movement decisions save immediately; finish movement review before applying
+those decisions. Choose **Generate corrected PDF** to invoke the authoritative retained-artifact
+engine and explicitly generate the final PDF. The browser polls application state while this runs.
+A PDF link appears only after both the corrected engine run and final PDF succeed. Changing or
+removing recorded corrections makes the previous result stale; its link remains available and is
+identified as the previous result. A failed attempt preserves that last successful result.
+
+The server accepts `POST /api/apply` with an empty JSON object. Paths, configuration, run names,
+and overwrite options cannot be supplied by the browser. One application operation is allowed per
+package; correction writes and duplicate apply requests are rejected while it runs. Attempts receive
+monotonic names under `review/application_runs/attempt_NNNN/`. Existing attempts are never replaced.
+Each contains copied declared review/correction inputs, consumed identity provenance, and the
+corrected engine run. Generated canonical correction files stay in the copy, so an application retry
+does not overwrite the recorded corrections. The final deliverable is `corrected/final/*.pdf`;
+review/application evidence remains outside that directory. `GET /api/result` serves only the last
+successful PDF after checking its stored content identity.
+
+The engine validates finalized movement data against saved review decisions and evidence. An older
+finalization, or saved decisions that have not been finalized, produces an actionable failure instead
+of silently ignoring the latest movement review. When no reviewed movement data exists, source-run
+movement inputs retain their existing meaning; unresolved candidates do not become resets.

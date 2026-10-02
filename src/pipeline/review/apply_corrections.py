@@ -1,5 +1,6 @@
 import argparse
 import datetime as dt
+import hashlib
 import json
 import logging
 from copy import deepcopy
@@ -237,6 +238,96 @@ def _resolve_retained_artifact(raw_path: Any, *, source_root: Path, role: str) -
             return candidate.resolve()
     raise FileNotFoundError(
         f"{role} does not exist in retained source context: {raw_path} (source_root={source_root})"
+    )
+
+
+def _load_movement_boundary_input(
+    *, normalized_handoff: Dict[str, Any], package_root: Path, source_config: Dict[str, Any]
+) -> tuple[Dict[str, Any], Optional[Path], Optional[str]]:
+    """Prefer a finalized package-local movement decision, with legacy fallback."""
+    from src.pipeline.review.movement_boundary_review import build_resolved_movement_boundaries
+    from src.pipeline.steps.numbering import load_movement_boundary_payload
+
+    movement_review_path = None
+    movement_review_digest = None
+    movement_output = normalized_handoff.get("movement_boundary_resolved_output")
+    evidence_rel = normalized_handoff.get("movement_boundary_evidence")
+    if movement_output:
+        try:
+            movement_review_path = _resolve_package_artifact(
+                package_root, movement_output, role="movement_boundary_resolved_output"
+            )
+        except FileNotFoundError:
+            # Handoffs may advertise the destination before the review is finalized.
+            movement_review_path = None
+    if movement_review_path is not None:
+        payload_bytes = movement_review_path.read_bytes()
+        payload = load_movement_boundary_payload(movement_review_path)
+        movement_review_digest = hashlib.sha256(payload_bytes).hexdigest()
+        if evidence_rel:
+            evidence_path = _resolve_package_artifact(
+                package_root, evidence_rel, role="movement_boundary_evidence"
+            )
+            page = next(
+                (
+                    p
+                    for p in normalized_handoff.get("pages", [])
+                    if p.get("manual_outputs", {}).get("movement_boundary")
+                ),
+                None,
+            )
+            if page is None:
+                raise ValueError("Finalized movement boundaries have no declared review artifact")
+            review_path = _resolve_package_artifact(
+                package_root,
+                page["manual_outputs"]["movement_boundary"],
+                role="movement boundary review",
+            )
+            evidence_bytes = evidence_path.read_bytes()
+            evidence = json.loads(evidence_bytes.decode("utf-8"))
+            review = json.loads(review_path.read_text(encoding="utf-8"))
+            expected = build_resolved_movement_boundaries(
+                evidence=evidence,
+                review=review,
+                evidence_artifact=str(evidence_rel),
+                evidence_sha256=hashlib.sha256(evidence_bytes).hexdigest(),
+            )
+            if payload != expected:
+                raise ValueError(
+                    "Finalized movement-boundary output is stale; export the current saved review"
+                )
+        return payload, movement_review_path, movement_review_digest
+
+    if evidence_rel:
+        page = next(
+            (
+                p
+                for p in normalized_handoff.get("pages", [])
+                if p.get("manual_outputs", {}).get("movement_boundary")
+            ),
+            None,
+        )
+        if page is not None:
+            try:
+                review_path = _resolve_package_artifact(
+                    package_root,
+                    page["manual_outputs"]["movement_boundary"],
+                    role="movement boundary review",
+                )
+            except FileNotFoundError:
+                review_path = None
+            if review_path is not None and review_path.is_file():
+                review = json.loads(review_path.read_text(encoding="utf-8"))
+                items = review.get("items") if isinstance(review, dict) else None
+                if isinstance(items, list) and items:
+                    raise ValueError(
+                        "Movement-boundary decisions are saved but not finalized; export them before applying"
+                    )
+
+    return (
+        load_movement_boundary_payload(get_nested(source_config, "inputs", "movement_boundaries")),
+        None,
+        None,
     )
 
 
@@ -664,6 +755,7 @@ def _run_retained_artifact_correction(
     canonical_paths: Dict[str, Path],
     staging_paths: Dict[str, List[str | Path]],
     new_run_dir: Path,
+    movement_boundary_input: tuple[Dict[str, Any], Optional[Path], Optional[str]],
 ) -> Dict[str, Any]:
     manifest_pages = _manifest_pages_by_id(source_manifest)
     current_barlines = _current_barline_overrides(staging_paths)
@@ -935,13 +1027,13 @@ def _run_retained_artifact_correction(
             },
         )
 
-    from src.pipeline.steps.numbering import (
-        load_movement_boundary_payload,
-        movement_boundaries_for_page,
-    )
+    from src.pipeline.steps.numbering import movement_boundaries_for_page
 
-    movement_boundaries = load_movement_boundary_payload(
-        get_nested(source_config, "inputs", "movement_boundaries")
+    movement_boundaries, movement_review_path, movement_review_digest = movement_boundary_input
+
+    first_movement_page = min(
+        (int(item["page"]) for item in movement_boundaries.get("boundaries", [])),
+        default=None,
     )
     current_number = 1
     reused_final_pages: List[str] = []
@@ -965,6 +1057,12 @@ def _run_retained_artifact_correction(
         can_reuse_final = (
             not page_has_new_correction
             and not state["barline_changed"]
+            # A movement reset changes the sequential numbering state on this
+            # page and potentially every page after it. An empty reviewed output
+            # can also remove source boundaries, so rebuild whenever the package
+            # has a finalized movement decision.
+            and movement_review_path is None
+            and (first_movement_page is None or page_index < first_movement_page)
             and source_start == current_number
             and isinstance(source_next, int)
         )
@@ -1004,6 +1102,10 @@ def _run_retained_artifact_correction(
         "applied_measure_overrides": str(applied_measure_path),
         "reused_final_pages": reused_final_pages,
         "rebuilt_final_pages": rebuilt_final_pages,
+        "movement_boundary_source": (
+            str(movement_review_path) if movement_review_path is not None else "source_config"
+        ),
+        "movement_boundary_review_sha256": movement_review_digest,
     }
 
 
@@ -1026,6 +1128,12 @@ def apply_corrections_and_rerun(
     normalized = validate_manual_correction_handoff(
         raw_payload, handoff_path=handoff_path, mode="base_v1"
     )
+    # Preserve an explicitly declared resolved-output location even for older
+    # handoffs that do not carry the companion evidence pointer.
+    if raw_payload.get("movement_boundary_resolved_output"):
+        normalized["movement_boundary_resolved_output"] = raw_payload[
+            "movement_boundary_resolved_output"
+        ]
 
     # Collect custom staging paths from normalized handoff
     staging_paths: Dict[str, List[str | Path]] = {
@@ -1074,6 +1182,36 @@ def apply_corrections_and_rerun(
 
     if not output_root and source_manifest is not None:
         output_root = manifest_path.parent.parent
+
+    # Validate and snapshot movement review provenance before allocating output
+    # or canonicalizing any correction files.
+    movement_boundary_input = _load_movement_boundary_input(
+        normalized_handoff=normalized,
+        package_root=package_root,
+        source_config=source_config,
+    )
+
+    run_id_value = run_id or f"corrected_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    if (
+        not isinstance(run_id_value, str)
+        or not run_id_value
+        or run_id_value in {".", ".."}
+        or Path(run_id_value).is_absolute()
+        or "/" in run_id_value
+        or "\\" in run_id_value
+    ):
+        raise ValueError("run_id must be a single safe path component")
+    if output_root:
+        out_root = Path(output_root)
+    else:
+        out_root = package_root.parent.parent
+    new_run_dir = out_root / run_id_value
+    try:
+        new_run_dir.mkdir(parents=True, exist_ok=False)
+    except FileExistsError as exc:
+        raise FileExistsError(
+            f"Corrected run already exists; refusing to reuse or overwrite it: {new_run_dir}"
+        ) from exc
 
     existing_override_inputs = _read_existing_override_inputs(
         source_config=source_config,
@@ -1127,17 +1265,6 @@ def apply_corrections_and_rerun(
     rerun_config["outputs"]["review"]["manual_correction_package"] = False
 
     # 5. Setup new run dir
-    run_id_value = run_id or f"corrected_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}"
-
-    if output_root:
-        out_root = Path(output_root)
-    else:
-        # Default to the same root as the original run
-        out_root = package_root.parent.parent
-
-    new_run_dir = out_root / run_id_value
-    ensure_dir(new_run_dir)
-
     new_config_path = new_run_dir / "corrected_pipeline_config.json"
     new_config_path.write_text(
         json.dumps(rerun_config, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
@@ -1179,6 +1306,7 @@ def apply_corrections_and_rerun(
         canonical_paths=canonical_paths,
         staging_paths=staging_paths,
         new_run_dir=new_run_dir,
+        movement_boundary_input=movement_boundary_input,
     )
     summary.update(selective_summary)
     _write_apply_summary(summary, new_run_dir, corrections_dir)
@@ -1195,6 +1323,20 @@ def apply_corrections_and_rerun(
         )
         summary["final_pdf"] = final_summary.get("final_pdf")
         summary["corrected_final_summary"] = final_summary.get("summary_path")
+        final_pdf_path = Path(summary["final_pdf"]) if summary["final_pdf"] else None
+        final_summary_path = (
+            Path(summary["corrected_final_summary"]) if summary["corrected_final_summary"] else None
+        )
+        if final_pdf_path is None or not final_pdf_path.is_file():
+            raise RuntimeError(
+                "Corrected run completed, but the corrected final PDF was not produced: "
+                f"{summary['final_pdf']}"
+            )
+        if final_summary_path is None or not final_summary_path.is_file():
+            raise RuntimeError(
+                "Corrected final PDF was produced without its identity summary: "
+                f"{summary['corrected_final_summary']}"
+            )
         _write_apply_summary(summary, new_run_dir, corrections_dir)
 
     return new_run_dir

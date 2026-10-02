@@ -23,6 +23,7 @@ from src.pipeline.review.manual_correction_handoff import (  # noqa: E402
     build_manual_gui_config,
     load_manual_correction_handoff,
 )
+from tools.review_correction.application import CorrectionApplication
 from tools.review_correction.state import CorrectionState
 
 
@@ -241,11 +242,12 @@ class ReviewHandler(BaseHTTPRequestHandler):
             return
         parsed = urlparse(self.path)
         package = self.server.package
-        if parsed.path in {"/", "/app_manual.js", "/correction_state.js"}:
+        if parsed.path in {"/", "/app_manual.js", "/correction_state.js", "/apply_result.js"}:
             if parsed.path == "/":
                 html = (UI_ROOT / "index_manual.html").read_text(encoding="utf-8")
                 html = html.replace(
-                    "</body>", '<script src="/correction_state.js"></script>\n</body>'
+                    "</body>",
+                    '<script src="/correction_state.js"></script>\n<script src="/apply_result.js"></script>\n</body>',
                 )
                 data = html.encode("utf-8")
                 self.send_response(200)
@@ -257,7 +259,13 @@ class ReviewHandler(BaseHTTPRequestHandler):
                 if parsed.path == "/app_manual.js":
                     self._file(UI_ROOT / "app_manual.js")
                 else:
-                    self._file(Path(__file__).with_name("correction_state.js"))
+                    self._file(Path(__file__).with_name(parsed.path.lstrip("/")))
+            return
+        if parsed.path == "/api/result":
+            try:
+                self._file(self.server.application.result())
+            except (ValueError, OSError, KeyError) as exc:
+                self.send_error(400, str(exc))
             return
         if parsed.path == "/api/pages":
             self._json({"pages": package.pages})
@@ -310,6 +318,7 @@ class ReviewHandler(BaseHTTPRequestHandler):
             "/api/export_movement_boundaries",
             "/api/state/pending",
             "/api/state/pending/clear",
+            "/api/apply",
         }:
             self.send_error(404, "Not found")
             return
@@ -323,6 +332,15 @@ class ReviewHandler(BaseHTTPRequestHandler):
             payload = json.loads(self.rfile.read(size))
             if not isinstance(payload, dict):
                 raise ValueError("Request body must be an object")
+            if parsed.path == "/api/apply":
+                if payload:
+                    raise ValueError(
+                        "Apply uses the active review package and accepts no paths or options"
+                    )
+                self._json(self.server.application.start())
+                return
+            if self.server.application.lock.locked():
+                raise ValueError("Wait for corrected PDF generation before editing corrections")
             if parsed.path in {"/api/state/pending", "/api/state/pending/clear"}:
                 page = payload.get("page")
                 kind = payload.get("correction_type")
@@ -383,6 +401,7 @@ def create_server(handoff: Path, *, port: int = 8010) -> HTTPServer:
     package = ReviewPackage(handoff)
     server = HTTPServer(("127.0.0.1", port), ReviewHandler)
     server.package = package
+    server.application = CorrectionApplication(package, handoff)
     return server
 
 

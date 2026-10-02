@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import ast
 import fnmatch
+import importlib.util
 import json
 import re
 import subprocess
@@ -27,6 +28,33 @@ def tracked_files() -> list[str]:
 
 def matches(files: list[str], pattern: str) -> list[str]:
     return [path for path in files if fnmatch.fnmatchcase(path, pattern)]
+
+
+def local_import_targets(path: str, tree: ast.AST, tracked: set[str]) -> set[str]:
+    """Resolve source imports without importing modules or loading models."""
+    package = str(Path(path).parent).replace("/", ".")
+    modules: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            modules.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            module = node.module or ""
+            if node.level:
+                module = importlib.util.resolve_name("." * node.level + module, package)
+            modules.add(module)
+            modules.update(f"{module}.{alias.name}" for alias in node.names if alias.name != "*")
+    targets: set[str] = set()
+    for module in modules:
+        if not module.startswith("src."):
+            continue
+        base = module.replace(".", "/")
+        # Check package ancestors too: their __init__ code executes on import.
+        parts = base.split("/")
+        candidates = [base + ".py"] + [
+            "/".join(parts[:index]) + "/__init__.py" for index in range(2, len(parts) + 1)
+        ]
+        targets.update(candidate for candidate in candidates if candidate in tracked)
+    return targets
 
 
 def main() -> int:
@@ -58,6 +86,13 @@ def main() -> int:
         if found is None or int(found.group(1)) != expected:
             errors.append(f"runtime summary {label} count must be {expected}")
     excluded = data.get("source_excluded", {})
+    optional_imports = data.get("runtime_optional_source_imports", {})
+    for importer, targets in optional_imports.items():
+        if importer not in selected:
+            errors.append(f"optional import owner is not selected: {importer}")
+        for target, reason in targets.items():
+            if target not in excluded or not isinstance(reason, str) or not reason:
+                errors.append(f"invalid optional source import: {importer} -> {target}")
     tracked_source = {path for path in files if path.startswith("src/")}
     unclassified = tracked_source - selected - set(excluded)
     if unclassified:
@@ -147,7 +182,15 @@ def main() -> int:
         if not path.startswith("src/") or not path.endswith(".py"):
             continue
         source = (ROOT / path).read_text(encoding="utf-8")
-        for node in ast.walk(ast.parse(source, filename=path)):
+        tree = ast.parse(source, filename=path)
+        targets = local_import_targets(path, tree, tracked_source)
+        optional = set(optional_imports.get(path, {}))
+        if optional - targets:
+            errors.append(f"stale optional source imports: {path}: {sorted(optional - targets)}")
+        missing = targets - selected - optional
+        if missing:
+            errors.append(f"runtime source {path} imports unselected source: {sorted(missing)}")
+        for node in ast.walk(tree):
             modules: list[str] = []
             if isinstance(node, ast.Import):
                 modules = [alias.name for alias in node.names]

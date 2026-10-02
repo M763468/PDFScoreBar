@@ -39,14 +39,7 @@ from src.homr_eval_scripts.core.utils import (
     LEFT_MARGIN_FORCE_FP_GT_INDICES,
     LEFT_MARGIN_FORCE_FP_MAX_WIDTH,
 )
-
-
-@dataclass
-class BarlinePrediction:
-    pred_bbox: Tuple[int, int, int, int]
-    orig_bbox: Tuple[int, int, int, int]
-    system_index: int
-    staff_index: int
+from src.homr_runtime.types import BarlinePrediction as BarlinePrediction
 
 
 @dataclass

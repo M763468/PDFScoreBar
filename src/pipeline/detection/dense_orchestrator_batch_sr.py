@@ -6,14 +6,21 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from .dense_orchestrator import DetectorOrchestrator as BaseDetectorOrchestrator
-from .profile_hybrid_batch_sr import BatchSRVerifiedProfileHybridDetector
+from .maintained_profile_hybrid import BatchSRVerifiedProfileHybridDetector
 
 
 class DetectorOrchestrator(BaseDetectorOrchestrator):
     """Keep the accepted dense route unchanged except for current-x4 SR scheduling."""
 
     def _run_hybrid_detection(self) -> Dict[str, Any]:
-        detector = BatchSRVerifiedProfileHybridDetector(
+        detector_cls = BatchSRVerifiedProfileHybridDetector
+        if self.homr_profile != "maintained_original":
+            from .profile_hybrid_batch_sr import (
+                BatchSRVerifiedProfileHybridDetector as HistoricalProfileDetector,
+            )
+
+            detector_cls = HistoricalProfileDetector
+        detector = detector_cls(
             det_cfg=self.det_cfg,
             images=self.images,
             run_id=self.run_id,

@@ -1,0 +1,315 @@
+"""Adapt callable bindings held by maintained/current HOMR consumers."""
+
+from __future__ import annotations
+
+import importlib
+import inspect
+from typing import Any
+
+_CONSUMER_COMPAT_MARKER = "_pdfscore_homr_consumer_compat"
+_CONSUMER_COMPAT_ORIGINAL = "_pdfscore_homr_consumer_original"
+
+
+def _required_positional_count(callable_obj: Any) -> int:
+    signature = inspect.signature(callable_obj)
+    return sum(
+        1
+        for parameter in signature.parameters.values()
+        if parameter.kind
+        in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+        and parameter.default is inspect.Parameter.empty
+    )
+
+
+def _original_consumer_callable(callable_obj: Any) -> Any:
+    return getattr(callable_obj, _CONSUMER_COMPAT_ORIGINAL, callable_obj)
+
+
+def processing_config_compat_mode(processing_config_cls: type[Any]) -> str:
+    signature = inspect.signature(processing_config_cls)
+    if "use_gpu_inference" in signature.parameters:
+        return "gpu_argument_injected_when_missing"
+    if {"transformer_use_gpu", "segnet_use_gpu"}.issubset(signature.parameters):
+        return "split_gpu_arguments_injected_when_missing"
+    return "native_without_gpu_argument"
+
+
+def build_processing_config_compat(
+    processing_config_cls: type[Any],
+    *,
+    enable_debug: bool,
+    enable_cache: bool,
+    write_staff_positions: bool,
+    use_gpu_inference: bool,
+) -> Any:
+    """Construct ProcessingConfig across the known five/six-field HOMR APIs."""
+    values = {
+        "enable_debug": enable_debug,
+        "enable_cache": enable_cache,
+        "write_staff_positions": write_staff_positions,
+        "read_staff_positions": False,
+        "selected_staff": -1,
+        # HOMR versions have used both one combined GPU flag and separate
+        # transformer/segnet flags. Keep the runtime choice identical.
+        "use_gpu_inference": use_gpu_inference,
+        "transformer_use_gpu": use_gpu_inference,
+        "segnet_use_gpu": use_gpu_inference,
+        "coreml_encoder": False,
+        "title_detection": False,
+    }
+    parameters = list(inspect.signature(processing_config_cls).parameters.values())
+    args: list[Any] = []
+    for parameter in parameters:
+        if parameter.kind not in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        ):
+            if parameter.default is inspect.Parameter.empty:
+                raise TypeError(
+                    f"Unsupported required HOMR ProcessingConfig parameter: {parameter}"
+                )
+            continue
+        if parameter.name not in values:
+            if parameter.default is inspect.Parameter.empty:
+                raise TypeError(
+                    f"Unsupported required HOMR ProcessingConfig parameter: {parameter.name}"
+                )
+            continue
+        args.append(values[parameter.name])
+    return processing_config_cls(*args)
+
+
+def download_weights_compat_mode(download_weights: Any) -> str:
+    signature = inspect.signature(download_weights)
+    if "use_gpu_inference" in signature.parameters:
+        return "gpu_argument_injected"
+    if {"segnet_use_gpu", "transformer_use_gpu"}.issubset(signature.parameters):
+        return "split_gpu_arguments"
+    required_arguments = _required_positional_count(download_weights)
+    if required_arguments == 0:
+        return "native_zero_argument"
+    if required_arguments == 1:
+        return "gpu_argument_injected"
+    raise TypeError(f"Unsupported HOMR download_weights signature: {signature}")
+
+
+def call_download_weights_compat(download_weights: Any, *, use_gpu_inference: bool) -> Any:
+    """Call the bound download_weights symbol using its runtime signature."""
+    mode = download_weights_compat_mode(download_weights)
+    if mode == "native_zero_argument":
+        return download_weights()
+    if mode == "split_gpu_arguments":
+        return download_weights(use_gpu_inference, use_gpu_inference, False)
+    return download_weights(use_gpu_inference)
+
+
+def load_predictions_compat_mode(load_predictions: Any) -> str:
+    signature = inspect.signature(load_predictions)
+    if "use_gpu_inference" in signature.parameters:
+        return "gpu_argument_injected_when_missing"
+    if any(name in signature.parameters for name in ("transformer_use_gpu", "segnet_use_gpu")):
+        return "split_gpu_arguments_injected_when_missing"
+    if _required_positional_count(load_predictions) <= 3:
+        return "native_without_gpu_argument"
+    raise TypeError(f"Unsupported HOMR load_and_preprocess_predictions signature: {signature}")
+
+
+def call_load_predictions_compat(
+    load_predictions: Any,
+    image_path: str,
+    *,
+    enable_debug: bool,
+    enable_cache: bool,
+    use_gpu_inference: bool,
+) -> Any:
+    """Call the bound preprocessing symbol across the known three/four-argument APIs."""
+    mode = load_predictions_compat_mode(load_predictions)
+    if mode == "gpu_argument_injected_when_missing":
+        return load_predictions(image_path, enable_debug, enable_cache, use_gpu_inference)
+    if mode == "split_gpu_arguments_injected_when_missing":
+        signature = inspect.signature(load_predictions)
+        gpu_kwargs = {
+            name: use_gpu_inference
+            for name in ("transformer_use_gpu", "segnet_use_gpu")
+            if name in signature.parameters
+        }
+        return load_predictions(image_path, enable_debug, enable_cache, **gpu_kwargs)
+    return load_predictions(image_path, enable_debug, enable_cache)
+
+
+def parse_staffs_compat_mode(parse_staffs: Any) -> str:
+    signature = inspect.signature(parse_staffs)
+    if "config" in signature.parameters:
+        return "transformer_config_injected_when_missing"
+    return "native_without_config_argument"
+
+
+def call_parse_staffs_compat(
+    parse_staffs: Any,
+    debug: Any,
+    multi_staffs: Any,
+    image: Any,
+    *,
+    selected_staff: int,
+    use_gpu_inference: bool,
+) -> Any:
+    """Call the bound parse_staffs symbol without TypeError-based fallbacks."""
+    mode = parse_staffs_compat_mode(parse_staffs)
+    if mode == "native_without_config_argument":
+        return parse_staffs(debug, multi_staffs, image, selected_staff=selected_staff)
+
+    configs_module = importlib.import_module("homr.transformer.configs")
+    transformer_config = configs_module.Config()
+    if hasattr(transformer_config, "use_gpu_inference"):
+        transformer_config.use_gpu_inference = use_gpu_inference
+    return parse_staffs(
+        debug,
+        multi_staffs,
+        image,
+        config=transformer_config,
+        selected_staff=selected_staff,
+    )
+
+
+def install_current_homr_consumer_compat(
+    homr_main: Any,
+    predictor_module: Any,
+    heuristics_module: Any,
+    *,
+    use_gpu_inference: bool,
+) -> dict[str, str]:
+    """Adapt the actual HOMR symbols consumed by the current worker.
+
+    ``HomrPredictor`` and the evaluator heuristics bind selected ``homr.main``
+    functions during module import. Patching only ``homr.main`` after those
+    imports therefore does not affect their global references. This installer
+    wraps both consumer-module bindings and the late-bound ``parse_staffs``
+    export explicitly.
+    """
+
+    original_download_weights = _original_consumer_callable(predictor_module.download_weights)
+    download_mode = download_weights_compat_mode(original_download_weights)
+
+    def predictor_download_weights_compat(requested_gpu: bool | None = None) -> Any:
+        effective_gpu = use_gpu_inference if requested_gpu is None else bool(requested_gpu)
+        return call_download_weights_compat(
+            original_download_weights,
+            use_gpu_inference=effective_gpu,
+        )
+
+    setattr(predictor_download_weights_compat, _CONSUMER_COMPAT_MARKER, True)
+    setattr(
+        predictor_download_weights_compat,
+        _CONSUMER_COMPAT_ORIGINAL,
+        original_download_weights,
+    )
+    predictor_module.download_weights = predictor_download_weights_compat
+
+    original_generate_xml = getattr(predictor_module, "generate_xml", None)
+    if original_generate_xml is not None:
+        original_generate_xml = _original_consumer_callable(original_generate_xml)
+
+        def generate_xml_consumer_compat(*args: Any, **kwargs: Any) -> Any:
+            xml = original_generate_xml(*args, **kwargs)
+            if hasattr(xml, "write"):
+                return xml
+            import xml.etree.ElementTree as element_tree
+
+            if isinstance(xml, element_tree.Element):
+                return element_tree.ElementTree(xml)
+            return xml
+
+        setattr(generate_xml_consumer_compat, _CONSUMER_COMPAT_MARKER, True)
+        setattr(generate_xml_consumer_compat, _CONSUMER_COMPAT_ORIGINAL, original_generate_xml)
+        predictor_module.generate_xml = generate_xml_consumer_compat
+
+    original_load_predictions = _original_consumer_callable(
+        heuristics_module.load_and_preprocess_predictions
+    )
+    load_mode = load_predictions_compat_mode(original_load_predictions)
+
+    def load_predictions_consumer_compat(
+        image_path: str,
+        enable_debug: bool,
+        enable_cache: bool,
+        requested_gpu: bool | None = None,
+    ) -> Any:
+        effective_gpu = use_gpu_inference if requested_gpu is None else bool(requested_gpu)
+        return call_load_predictions_compat(
+            original_load_predictions,
+            image_path,
+            enable_debug=enable_debug,
+            enable_cache=enable_cache,
+            use_gpu_inference=effective_gpu,
+        )
+
+    setattr(load_predictions_consumer_compat, _CONSUMER_COMPAT_MARKER, True)
+    setattr(
+        load_predictions_consumer_compat,
+        _CONSUMER_COMPAT_ORIGINAL,
+        original_load_predictions,
+    )
+    heuristics_module.load_and_preprocess_predictions = load_predictions_consumer_compat
+
+    original_parse_staffs = _original_consumer_callable(homr_main.parse_staffs)
+    parse_mode = parse_staffs_compat_mode(original_parse_staffs)
+
+    def parse_staffs_consumer_compat(
+        debug: Any,
+        multi_staffs: Any,
+        image: Any,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        selected_staff = int(kwargs.pop("selected_staff", -1))
+        provided_config = kwargs.pop("config", None)
+        if kwargs:
+            unexpected = ", ".join(sorted(kwargs))
+            raise TypeError(f"Unsupported parse_staffs keyword arguments: {unexpected}")
+        if len(args) > 1:
+            raise TypeError("Unsupported parse_staffs positional arguments")
+        if args:
+            if provided_config is not None:
+                raise TypeError("parse_staffs config supplied twice")
+            provided_config = args[0]
+
+        if parse_mode == "native_without_config_argument":
+            return original_parse_staffs(
+                debug,
+                multi_staffs,
+                image,
+                selected_staff=selected_staff,
+            )
+
+        if provided_config is None:
+            return call_parse_staffs_compat(
+                original_parse_staffs,
+                debug,
+                multi_staffs,
+                image,
+                selected_staff=selected_staff,
+                use_gpu_inference=use_gpu_inference,
+            )
+        if hasattr(provided_config, "use_gpu_inference"):
+            provided_config.use_gpu_inference = use_gpu_inference
+        return original_parse_staffs(
+            debug,
+            multi_staffs,
+            image,
+            config=provided_config,
+            selected_staff=selected_staff,
+        )
+
+    setattr(parse_staffs_consumer_compat, _CONSUMER_COMPAT_MARKER, True)
+    setattr(
+        parse_staffs_consumer_compat,
+        _CONSUMER_COMPAT_ORIGINAL,
+        original_parse_staffs,
+    )
+    homr_main.parse_staffs = parse_staffs_consumer_compat
+
+    return {
+        "download_weights_mode": download_mode,
+        "load_predictions_mode": load_mode,
+        "parse_staffs_mode": parse_mode,
+    }

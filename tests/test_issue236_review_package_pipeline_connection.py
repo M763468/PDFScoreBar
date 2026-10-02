@@ -1,11 +1,7 @@
 import json
-import sys
-import types
 from pathlib import Path
 
 import pytest
-
-sys.modules.setdefault("fitz", types.SimpleNamespace())
 
 from src.pipeline.core.config import load_yaml
 from src.pipeline.orchestrator import PipelineOrchestrator
@@ -287,7 +283,7 @@ def test_pipeline_connection_allows_review_package_without_overlay_step(tmp_path
     orchestrator._validate_review_package_prerequisites()
 
 
-def test_pipeline_connection_rejects_missing_required_review_artifact_steps(tmp_path):
+def test_pipeline_connection_allows_review_package_without_automatic_mmr(tmp_path):
     run_dir = tmp_path / "source_run"
     config = _fake_pipeline_config(run_dir, review_enabled=True)
     config["steps"]["overlay"] = False
@@ -296,7 +292,17 @@ def test_pipeline_connection_rejects_missing_required_review_artifact_steps(tmp_
 
     orchestrator = PipelineOrchestrator(config=config, run_id="source_run", run_dir=run_dir)
 
-    with pytest.raises(ValueError, match="mmr_overrides"):
+    orchestrator._validate_review_package_prerequisites()
+
+
+def test_pipeline_connection_rejects_missing_base_numbering(tmp_path):
+    run_dir = tmp_path / "source_run"
+    config = _fake_pipeline_config(run_dir, review_enabled=True)
+    config["steps"]["numbering_base"] = False
+
+    orchestrator = PipelineOrchestrator(config=config, run_id="source_run", run_dir=run_dir)
+
+    with pytest.raises(ValueError, match="numbering_base"):
         orchestrator._validate_review_package_prerequisites()
 
 

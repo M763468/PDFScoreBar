@@ -1,136 +1,38 @@
-# PDFScoreBar Documentation Index
+# Documentation guide
 
-This index separates **current durable guidance** from **historical investigation records**.
-When historical material conflicts with current source, tests, config, or canonical architecture,
-use the current artifacts first.
+Start with the document that answers your question. The development repository retains
+historical evidence and validation guidance; those documents are not part of the proposed
+executable package.
 
-## Start here: current durable guidance
-
-| Document | Role |
+| Question | Read first |
 | --- | --- |
-| [`PIPELINE_ARCHITECTURE.md`](PIPELINE_ARCHITECTURE.md) | **Canonical current production architecture**: dense route, stage ownership, coordinate spaces, process/memory boundaries, detector-input provenance |
-| [`TWO_HOMR_MILESTONE.md`](TWO_HOMR_MILESTONE.md) | Frozen accepted Issue #274 / PR #279 comparison milestone and reproduction contract |
-| [`DOCUMENTATION_INVENTORY.md`](DOCUMENTATION_INVENTORY.md) | Audit classification of durable docs and cleanup/maintenance rules |
-| [`REPOSITORY_SURFACE_INVENTORY.md`](REPOSITORY_SURFACE_INVENTORY.md) | Issue #230 classification of maintained, reproduction, legacy, and cleanup repository surface; handoff to #100 |
-| [`HISTORY_INDEX.md`](HISTORY_INDEX.md) | Navigation across major historical Issue/experiment lineages; not a current-state source of truth |
-| [`ENVIRONMENTS.md`](ENVIRONMENTS.md) | Maintained runtime/development environments |
-| [`BRANCH_POLICY.md`](BRANCH_POLICY.md) | Branch/base/promotion policy |
-| [`dev/VALIDATION_POLICY.md`](dev/VALIDATION_POLICY.md) | Validation requirements by change type |
-| [`MAKEFILE_SURFACE.md`](MAKEFILE_SURFACE.md) | Maintained root Makefile targets, historical reproductions, and removed stale targets |
-| [`REGRESSION_TEST_WORKFLOW.md`](REGRESSION_TEST_WORKFLOW.md) | Regression-test workflow |
-| [`GT_PREPARATION_POLICY.md`](GT_PREPARATION_POLICY.md) | Ground-truth labeling policy |
-| [`BARLINE_MATCHER.md`](BARLINE_MATCHER.md) | Barline matching/evaluation contract |
-| [`NUMBERING_GEOMETRY_CONTRACT.md`](NUMBERING_GEOMETRY_CONTRACT.md) | Resolution-independent measure-numbering/system-geometry thresholds and retained morphology pixel operations |
-| [`SCRIPT_MANAGEMENT.md`](SCRIPT_MANAGEMENT.md) | Current placement/lifecycle rules for production, tools, experiments, and scratch scripts |
-| [`manual_correction_review_package.md`](manual_correction_review_package.md) | Current config-first end-to-end manual-correction review workflow |
-| [`USER_CORRECTION_BOUNDARY.md`](USER_CORRECTION_BOUNDARY.md) | User correction application and GT/developer tool responsibilities |
-| [`ENGINE_JOB_CONTRACT.md`](ENGINE_JOB_CONTRACT.md) | **Versioned engine contract**: v1 `JobRequest` / `JobResult` / `ProgressEvent` / `EngineError` / correction schemas and compatibility rules; `PipelineJobExecutor` is the reference one-job adapter, while direct v1 `CorrectionSet` execution remains outside that adapter |
-| [`ENGINE_JOB_LIFECYCLE.md`](ENGINE_JOB_LIFECYCLE.md) | **One-job lifecycle contract**: #337 timeout/cancellation, retryability, partial-artifact publication, cleanup, and review/correction terminal semantics layered on the v1 engine contract |
-| [`ENGINE_INPUT_SAFETY.md`](ENGINE_INPUT_SAFETY.md) | **Untrusted-PDF safety contract**: #338 bounded PDF preflight, path/network rules, public-safe errors, per-job resource hooks, and worker/container assumptions |
-| [`ENGINE_TELEMETRY.md`](ENGINE_TELEMETRY.md) | **Structured engine telemetry contract**: #339 stable progress events, coarse stage timing, page progress, compact summaries, and opt-in process/GPU resource sampling |
-| [`ai-workflow/GRAPHIFY.md`](ai-workflow/GRAPHIFY.md) | Graphify query, refresh, retention, and staleness rules |
+| What is the minimum executable subset, and is it ready to extract? | [Minimal mainline surface](MINIMAL_MAINLINE_SURFACE.md) and its [exact file list](MINIMAL_MAINLINE_SURFACE.json) |
+| How does the current pipeline work? | [Pipeline architecture](PIPELINE_ARCHITECTURE.md) |
+| How do I run the current repository? | [Environments](ENVIRONMENTS.md), then [manual correction workflow](manual_correction_review_package.md) if needed |
+| How are user corrections separated from GT/developer tools? | [User correction boundary](USER_CORRECTION_BOUNDARY.md) |
+| What does an engine caller send and receive? | [Engine job contract](ENGINE_JOB_CONTRACT.md) |
+| How do I change and verify this repository? | [Branch policy](BRANCH_POLICY.md) and [validation policy](dev/VALIDATION_POLICY.md) |
+| Why was older code or evidence retained? | [Repository surface inventory](REPOSITORY_SURFACE_INVENTORY.md), [documentation inventory](DOCUMENTATION_INVENTORY.md), then [history index](HISTORY_INDEX.md) |
 
-The root [`README.md`](../README.md), [`AGENTS.md`](../AGENTS.md), and repository `Makefile`
-are also current entry points. `MAKEFILE_SURFACE.md` classifies the Makefile targets.
+The minimum selection has one prose explanation and one machine-readable list. The repository
+and documentation inventories are broader historical audits. They must not be used as a second
+runtime file list. `docs/**` and `tests/**` remain available to developers but are absent from
+the current proposed executable subset.
 
-## Future / roadmap architecture
+## More specific contracts
 
-| Document | Role |
-| --- | --- |
-| [`FUTURE_SERVICE_ARCHITECTURE.md`](FUTURE_SERVICE_ARCHITECTURE.md) | **Future/roadmap only**: intended engine responsibility boundary, one-job service-readiness direction, correction flow, and separation from a future external service/control plane |
+- [Engine lifecycle](ENGINE_JOB_LIFECYCLE.md), [input safety](ENGINE_INPUT_SAFETY.md),
+  and [telemetry](ENGINE_TELEMETRY.md) refine the one-job contract.
+- [Final output](corrected_final_output.md), [numbering geometry](NUMBERING_GEOMETRY_CONTRACT.md),
+  [GT preparation](GT_PREPARATION_POLICY.md), and [barline matching](BARLINE_MATCHER.md)
+  describe narrower output or validation behavior.
+- [Makefile surface](MAKEFILE_SURFACE.md), [regression workflow](REGRESSION_TEST_WORKFLOW.md),
+  and [script management](SCRIPT_MANAGEMENT.md) guide repository development.
+- [Future service architecture](FUTURE_SERVICE_ARCHITECTURE.md) is a roadmap, not current
+  runtime behavior. [Two-HOMR milestone](TWO_HOMR_MILESTONE.md) is a frozen comparison,
+  not the current production configuration.
 
-The future-service document is deliberately separate from current runtime guidance. It must not be
-used to infer implemented pipeline behavior. The v1 serialized engine contract is now defined in
-`ENGINE_JOB_CONTRACT.md`. The production pipeline remains config-first internally, while
-`PipelineJobExecutor` now exposes the reference v1 one-job request/result/error boundary and #339
-provides opt-in structured progress and telemetry. Direct v1 `CorrectionSet` execution is not
-connected by that reference adapter; the current review-package correction flow remains the concrete
-execution path. When future contract work becomes runtime behavior, update the applicable current
-operating/architecture documentation in the same change.
-
-## Execution and output guidance
-
-Use `src/pipeline/main.py` through the Makefile instead of old phase-specific orchestration
-or task-control documents:
-
-```bash
-make run-pipeline CONFIG=configs/dense_full_pipeline.yaml
-```
-
-The public/output-profile design records under `docs/refactors/issue226/` through
-`docs/refactors/issue229/` remain useful for their scoped contracts. They are not a second
-source of truth for detector/MMR architecture. The currently connected review-package, GUI, corrected-rerun, and corrected-final workflow is documented in
-`manual_correction_review_package.md`.
-
-## Detector, numbering, and CNN reference
-
-- Current detector and CNN runtime behavior is defined by source, tests, and the active config,
-  especially `configs/dense_full_pipeline.yaml` and `PIPELINE_ARCHITECTURE.md`.
-- The verified Stage-E CNN was refreshed in Issue #296 / PR #310 to the current-producer,
-  candidate-aligned EfficientNet-B0 contract. Older ResNet18 retraining notes are historical.
-- Historical CNN training and active-learning results have been distilled into Issue #44;
-  exact retired prose remains recoverable from Git history.
-- `GT_PREPARATION_POLICY.md` and `BARLINE_MATCHER.md` remain current labeling/evaluation references.
-- For MMR/measure-numbering maintenance, start with
-  [`refactors/issue94/MMR_CURRENT_STATE.md`](refactors/issue94/MMR_CURRENT_STATE.md), current source/tests,
-  and the Issue #94 lineage. [`DEVLOG_MEASURE_NUMBERING.md`](DEVLOG_MEASURE_NUMBERING.md) is now only a
-  compact legacy milestone ledger.
-
-## Historical / forensic records
-
-Use `HISTORY_INDEX.md` to locate the relevant lineage before opening old Issue-specific
-records. Important decisions and experiment results should be recovered from the relevant
-Issue/PR/commit and retained reproduction tooling rather than from old restart prompts,
-plans, or execution diaries.
-
-`DEVELOPMENT_LOG.md` and `DEVLOG_MEASURE_NUMBERING.md` are compact historical milestone ledgers,
-not active work logs. Their former detailed execution diaries remain recoverable through Git history.
-
-Completed task-control bundles (`Prompt.md`, `Plan.md`, `Implement.md`, dated execution
-`Log.md`, and one-off benchmark summaries) are not durable current documentation once their
-important results are captured in Issue/PR/commit history. Git history remains available for
-archaeology.
-
-The two pre-experiment model-survey PDFs formerly under `docs/model_experiments/` were retired
-after content-level audit in Issue #308. They contained exploratory literature/dataset recommendations
-rather than accepted project-specific evidence. Durable experiment results remain under
-`experiments/models/`, with exact retired survey prose recoverable from Git history.
-
-## Frozen milestones versus current production
-
-`TWO_HOMR_MILESTONE.md` intentionally freezes the accepted Issue #274 / PR #279 comparison
-contract, including the CNN checkpoint used for that comparison. It should not be silently
-rewritten whenever production later changes.
-
-For **current** production model/config values, use `configs/dense_full_pipeline.yaml`, current
-source/tests, and the active architecture document. For example, the production CNN changed
-later in Issue #296 / PR #310 while the #274 milestone remains useful historical evidence.
-
-## Maintenance rule
-
-Architecture changes must review the current and future documents according to the boundary being
-changed:
-
-1. when production stage ownership, authoritative geometry, coordinate contracts, model/runtime
-   ownership, route order, or major process/memory boundaries change, update
-   `PIPELINE_ARCHITECTURE.md`;
-2. for those current-runtime changes, also review `FUTURE_SERVICE_ARCHITECTURE.md` when the change
-   affects assumptions visible at the engine/caller, artifact, correction, lifecycle, safety, or
-   resource boundary;
-3. when a future engine contract becomes implemented, update the applicable current operating docs
-   in the same change instead of leaving the behavior described only as roadmap intent;
-4. when final/review/correction semantics change, review both
-   `manual_correction_review_package.md` and the future engine-boundary document;
-5. update `TWO_HOMR_MILESTONE.md` only when that accepted comparison milestone itself is
-   deliberately replaced;
-6. check this index, `HISTORY_INDEX.md`, and `DOCUMENTATION_INVENTORY.md` for newly stale guidance;
-7. move reusable lessons out of Issue-specific narratives before retiring redundant prose;
-8. after stable current architecture docs are settled, refresh Graphify according to
-   `ai-workflow/GRAPHIFY.md`.
-
-The PR checklist asks authors to record whether the current and future architecture documents were
-reviewed. This is a review trigger, not a reason to duplicate detailed current pipeline internals
-into the future document.
-
-Issue-specific forensic notes do not need mechanical rewrites for every architecture change,
-but stale files should not remain linked as current operating guidance.
+For a historical investigation, use the [history index](HISTORY_INDEX.md) to locate its
+Issue or accepted result. Current behavior is defined by source, tests, the active config,
+and the current architecture document. Update the relevant current contract when behavior
+changes; do not copy historical notes into another general guide.

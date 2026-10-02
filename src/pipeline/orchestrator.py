@@ -1010,7 +1010,7 @@ class PipelineOrchestrator:
                         current_number = next_number
 
                         if step_overlay and overlay_path:
-                            from tools.add_measure_numbers import render_overlay
+                            from src.measure_numbering.cli import render_overlay
 
                             render_overlay(temp_score, image_path, overlay_path)
 

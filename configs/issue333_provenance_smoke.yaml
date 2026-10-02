@@ -36,7 +36,7 @@ detection:
   cnn_model_path: /opt/pdfscore-assets/barline_cnn_smoke.pth
   cnn_threshold: 0.1
 mmr:
-  model_path: tools/mmr_training/models/mmr_classifier_best.pth
+  model_path: models/mmr/mmr_classifier_best.pth
   enable_rotation_tta: true
   threshold: 0.5
 filters:

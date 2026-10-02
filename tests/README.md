@@ -1,11 +1,16 @@
-# tests directory policy
+# Tests directory policy
 
-- `tests/` contains actively maintained, lightweight tests for current pipeline code.
-- These tests should run in the default development environment without GPU, network services, or
-  large real-data requirements.
-- Current minimum pre-PR target: `tests/test_pipeline_detection.py`.
-- OpenCV-backed unit tests are acceptable when they use synthetic/tmp-path inputs and remain
-  deterministic and lightweight.
+`tests/` is development and validation code; no test or fixture is part of the minimum
+executable package. The exact test-module roles are classified in
+`docs/MINIMAL_MAINLINE_SURFACE.json`: maintained runtime contracts, validation harnesses,
+developer tools, and retained reproduction checks. An Issue-numbered filename does not by
+itself make a test obsolete.
+
+Use `make test-fast` for the maintained lightweight pre-PR gate. Other tests may need
+different dependencies or retained evidence; select them according to
+`docs/dev/VALIDATION_POLICY.md` and their specific contract. Keep tests deterministic and
+use synthetic or temporary inputs where practical. OpenCV-backed unit tests are acceptable
+under those conditions.
 
 If a test requires a server/network dependency, GPU/model runtime, or large real data, first reduce it
 to a deterministic unit/contract test where possible. Otherwise track it as an explicit integration

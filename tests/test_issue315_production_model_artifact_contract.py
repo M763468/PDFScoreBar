@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-import src.pipeline.detection.restored_orchestrator as restored
+import src.pipeline.detection.dense_orchestrator as dense
 from src.common.model_artifacts import (
     ModelArtifactIntegrityError,
     ModelArtifactMissingError,
@@ -113,14 +113,14 @@ def test_verified_stage_e_resolves_matching_cached_artifact(tmp_path: Path, monk
     cached.write_bytes(payload)
     validated = []
 
-    monkeypatch.setattr(restored, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(dense, "PROJECT_ROOT", tmp_path)
     monkeypatch.setattr(
-        restored,
+        dense,
         "_validate_verified_cnn_checkpoint",
         lambda path: validated.append(path),
     )
 
-    resolved = restored._resolve_verified_cnn_artifact(
+    resolved = dense._resolve_verified_cnn_artifact(
         manifest,
         cnn_threshold=EXPECTED_THRESHOLD,
     )
@@ -136,15 +136,15 @@ def test_verified_stage_e_fails_loud_on_cached_hash_mismatch(tmp_path: Path, mon
     cached.parent.mkdir(parents=True)
     cached.write_bytes(b"corrupt")
 
-    monkeypatch.setattr(restored, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(dense, "PROJECT_ROOT", tmp_path)
     monkeypatch.setattr(
-        restored,
+        dense,
         "_validate_verified_cnn_checkpoint",
         lambda _path: pytest.fail("checkpoint validation must not run after digest failure"),
     )
 
     with pytest.raises(ModelArtifactIntegrityError, match="SHA-256 mismatch"):
-        restored._resolve_verified_cnn_artifact(
+        dense._resolve_verified_cnn_artifact(
             manifest,
             cnn_threshold=EXPECTED_THRESHOLD,
         )
@@ -156,15 +156,15 @@ def test_verified_stage_e_fails_loud_when_cached_artifact_is_missing(
     payload = b"verified-stage-e-checkpoint"
     manifest = _write_test_manifest(tmp_path, payload=payload)
 
-    monkeypatch.setattr(restored, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(dense, "PROJECT_ROOT", tmp_path)
     monkeypatch.setattr(
-        restored,
+        dense,
         "_validate_verified_cnn_checkpoint",
         lambda _path: pytest.fail("checkpoint validation must not run for a missing artifact"),
     )
 
     with pytest.raises(ModelArtifactMissingError, match="Materialize it explicitly"):
-        restored._resolve_verified_cnn_artifact(
+        dense._resolve_verified_cnn_artifact(
             manifest,
             cnn_threshold=EXPECTED_THRESHOLD,
         )
@@ -181,7 +181,7 @@ def test_verified_stage_e_rejects_legacy_path_and_manifest_ambiguity(tmp_path: P
             "cnn_apply_nms": False,
         }
     }
-    orchestrator = restored.DetectorOrchestrator(
+    orchestrator = dense.DetectorOrchestrator(
         config=config,
         images=[tmp_path / "page_001.png"],
         run_id="test",

@@ -8,11 +8,11 @@ Purpose: Standard scripts for Ground Truth (GT) preparation and candidate filter
 - Ensure resolution independence and consistent filtering rules across scores.
 
 ## Scripts
-- `generate_probe_candidates_from_inventory.py`
+- `python -m src.pipeline.detector_routes.candidate_generation`
   - Rebuilds probe-scan candidates from bench inventory records.
-- `suggest_candidate_drops.py`
+- `python -m src.pipeline.detector_routes.candidate_drops`
   - Generates drop suggestions based on heuristics (left margin, staff overlap, short segments, low ink).
-- `apply_candidate_filter_from_inventory.py`
+- `python -m src.pipeline.detector_routes.candidate_filter`
   - Applies filtering suggestions to all pages listed in inventory and writes filtered candidate JSONs.
 - `render_candidate_filter_overlay.py`
   - Creates visual overlays: gray=all, green=keep, red=drop.
@@ -23,8 +23,8 @@ older scripts that remain in the repository for historical/manual use cases.
 
 ### Canonical workflow (current)
 Use this flow for `evaluation2` GT rebuild / continuation:
-1. `tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py`
-2. `tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py`
+1. `python -m src.pipeline.detector_routes.candidate_generation`
+2. `python -m src.pipeline.detector_routes.candidate_filter`
 3. `tools/gt_relabel_gui/prepare_rebuild_eval2.py`
 4. `python3 tools/gt_relabel_gui/server.py --mode gt --config tools/gt_relabel_gui/evaluation2_config.json`
 
@@ -109,7 +109,7 @@ Legacy reference:
 ## Reproduction (sr_eval_gpu, v5)
 Run in this order (`generate` -> `apply`):
 ```bash
-docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py \
+docker exec -w /workspace sr_eval_gpu /opt/venv_sr/bin/python -m src.pipeline.detector_routes.candidate_generation \
   --inventory /workspace/logs/issue36_prep/20260208_bench_inventory.json \
   --exclude /workspace/logs/issue36_prep/excluded_pages_for_gt_prep.json \
   --output-root /workspace/logs/issue36_prep/probe_candidates_from_bench_v5 \
@@ -119,7 +119,7 @@ docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt
   --min-height-ratio 0.008 \
   --min-width-ratio 0.0
 
-docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py \
+docker exec -w /workspace sr_eval_gpu /opt/venv_sr/bin/python -m src.pipeline.detector_routes.candidate_filter \
   --inventory /workspace/logs/issue36_prep/20260208_bench_inventory.json \
   --exclude /workspace/logs/issue36_prep/excluded_pages_for_gt_prep.json \
   --candidates-root /workspace/logs/issue36_prep/probe_candidates_from_bench_v5 \
@@ -139,7 +139,7 @@ docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt
 ## Reproduction (sr_eval_gpu, v6: increased candidate recall)
 Run in this order (`generate` -> `apply`):
 ```bash
-docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py \
+docker exec -w /workspace sr_eval_gpu /opt/venv_sr/bin/python -m src.pipeline.detector_routes.candidate_generation \
   --inventory /workspace/logs/issue36_prep/20260208_bench_inventory.json \
   --exclude /workspace/logs/issue36_prep/excluded_pages_for_gt_prep.json \
   --output-root /workspace/logs/issue36_prep/probe_candidates_from_bench_v6 \
@@ -149,7 +149,7 @@ docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt
   --min-height-ratio 0.006 \
   --min-width-ratio 0.0
 
-docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py \
+docker exec -w /workspace sr_eval_gpu /opt/venv_sr/bin/python -m src.pipeline.detector_routes.candidate_filter \
   --inventory /workspace/logs/issue36_prep/20260208_bench_inventory.json \
   --exclude /workspace/logs/issue36_prep/excluded_pages_for_gt_prep.json \
   --candidates-root /workspace/logs/issue36_prep/probe_candidates_from_bench_v6 \
@@ -180,7 +180,7 @@ docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/split_double_ba
 ## Reproduction (sr_eval_gpu, v7: probe-only aggressive expansion)
 This variant keeps the same filter settings and only loosens probe candidate generation.
 ```bash
-docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py \
+docker exec -w /workspace sr_eval_gpu /opt/venv_sr/bin/python -m src.pipeline.detector_routes.candidate_generation \
   --inventory /workspace/logs/issue36_prep/20260208_bench_inventory.json \
   --exclude /workspace/logs/issue36_prep/excluded_pages_for_gt_prep.json \
   --output-root /workspace/logs/issue36_prep/probe_candidates_from_bench_v7 \
@@ -194,7 +194,7 @@ docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt
   --band-scan-line-ratio 0.6 \
   --band-scan-min-lines 5
 
-docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py \
+docker exec -w /workspace sr_eval_gpu /opt/venv_sr/bin/python -m src.pipeline.detector_routes.candidate_filter \
   --inventory /workspace/logs/issue36_prep/20260208_bench_inventory.json \
   --exclude /workspace/logs/issue36_prep/excluded_pages_for_gt_prep.json \
   --candidates-root /workspace/logs/issue36_prep/probe_candidates_from_bench_v7 \
@@ -214,7 +214,7 @@ docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt
 ## Reproduction (sr_eval_gpu, v8: thin-barline focused probe expansion)
 This variant further relaxes probe generation for missed thin normal barlines.
 ```bash
-docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py \
+docker exec -w /workspace sr_eval_gpu /opt/venv_sr/bin/python -m src.pipeline.detector_routes.candidate_generation \
   --inventory /workspace/logs/issue36_prep/20260208_bench_inventory.json \
   --exclude /workspace/logs/issue36_prep/excluded_pages_for_gt_prep.json \
   --output-root /workspace/logs/issue36_prep/probe_candidates_from_bench_v8 \
@@ -228,7 +228,7 @@ docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt
   --band-scan-line-ratio 0.6 \
   --band-scan-min-lines 3
 
-docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py \
+docker exec -w /workspace sr_eval_gpu /opt/venv_sr/bin/python -m src.pipeline.detector_routes.candidate_filter \
   --inventory /workspace/logs/issue36_prep/20260208_bench_inventory.json \
   --exclude /workspace/logs/issue36_prep/excluded_pages_for_gt_prep.json \
   --candidates-root /workspace/logs/issue36_prep/probe_candidates_from_bench_v8 \
@@ -249,7 +249,7 @@ docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt
 This variant keeps the v8 probe thresholds but switches `band_source` to `row_stats`
 to use row bands estimated from existing hybrid boxes.
 ```bash
-docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py \
+docker exec -w /workspace sr_eval_gpu /opt/venv_sr/bin/python -m src.pipeline.detector_routes.candidate_generation \
   --inventory /workspace/logs/issue36_prep/20260208_bench_inventory.json \
   --exclude /workspace/logs/issue36_prep/excluded_pages_for_gt_prep.json \
   --output-root /workspace/logs/issue36_prep/probe_candidates_from_bench_v9 \
@@ -264,7 +264,7 @@ docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt
   --band-scan-line-ratio 0.6 \
   --band-scan-min-lines 3
 
-docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py \
+docker exec -w /workspace sr_eval_gpu /opt/venv_sr/bin/python -m src.pipeline.detector_routes.candidate_filter \
   --inventory /workspace/logs/issue36_prep/20260208_bench_inventory.json \
   --exclude /workspace/logs/issue36_prep/excluded_pages_for_gt_prep.json \
   --candidates-root /workspace/logs/issue36_prep/probe_candidates_from_bench_v9 \
@@ -286,7 +286,7 @@ This variant is the currently adopted seed for GT relabeling. It tightens probe 
 and disables only `scan_x_peak_rescue` while keeping rightmost/divisi rescue enabled.
 The goal is to reduce broad false positives and continue with manual cleanup in GUI.
 ```bash
-docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt_preparation/generate_probe_candidates_from_inventory.py \
+docker exec -w /workspace sr_eval_gpu /opt/venv_sr/bin/python -m src.pipeline.detector_routes.candidate_generation \
   --inventory /workspace/logs/issue36_prep/20260208_bench_inventory.json \
   --exclude /workspace/logs/issue36_prep/excluded_pages_for_gt_prep.json \
   --output-root /workspace/logs/issue36_prep/probe_candidates_from_bench_v13 \
@@ -302,7 +302,7 @@ docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt
   --band-scan-line-ratio 0.6 \
   --band-scan-min-lines 5
 
-docker exec sr_eval_gpu /opt/venv_sr/bin/python /workspace/tools/verification/gt_preparation/apply_candidate_filter_from_inventory.py \
+docker exec -w /workspace sr_eval_gpu /opt/venv_sr/bin/python -m src.pipeline.detector_routes.candidate_filter \
   --inventory /workspace/logs/issue36_prep/20260208_bench_inventory.json \
   --exclude /workspace/logs/issue36_prep/excluded_pages_for_gt_prep.json \
   --candidates-root /workspace/logs/issue36_prep/probe_candidates_from_bench_v13 \

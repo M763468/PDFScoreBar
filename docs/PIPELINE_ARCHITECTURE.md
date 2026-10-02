@@ -32,7 +32,7 @@ detection:
 ```
 
 `src/pipeline/detection/__init__.py` dispatches that route to
-`src/pipeline/detection/restored_orchestrator_batch_sr.py`. This is the accepted restored
+`src/pipeline/detection/dense_orchestrator_batch_sr.py`. This is the accepted dense
 orchestrator with one Issue #284 specialization: Real-ESRGAN x4 generation is lifted into a
 dedicated all-pages phase before page-local HOMR/OMR source generation. The generic
 `src/pipeline/detection/orchestrator.py` / `HybridDetector` path is a separate standard
@@ -204,7 +204,7 @@ The hybrid step filters baseline HOMR boxes by x4 HOMR or OMR-DLN support; it do
 x4 coordinates into the returned baseline boxes. The old pinned HOMR-on-x4 inference is not
 part of this consensus. The current x4 HOMR output is the single x4 HOMR owner and is reused.
 
-`restored_orchestrator_batch_sr.py` then follows the accepted restored-orchestrator route:
+`dense_orchestrator_batch_sr.py` then follows the accepted dense-orchestrator route:
 it writes the current-run inventory and calls `reconstruct_dense_full_pipeline_route()`.
 Candidate/probe reconstruction and CNN scoring operate on the current run;
 `historical_detector_artifact_runtime_input` is false for the verified production route.

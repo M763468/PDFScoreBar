@@ -1,0 +1,16 @@
+name: Repository surface
+
+on:
+  pull_request:
+  push:
+    branches:
+      - develop
+
+jobs:
+  repository-surface:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Validate minimal-mainline surface contract
+        run: python3 tools/check_repository_surface.py

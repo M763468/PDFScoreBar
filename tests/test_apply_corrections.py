@@ -1,10 +1,5 @@
 import json
-import sys
-import types
 from pathlib import Path
-
-sys.modules.setdefault("fitz", types.SimpleNamespace())
-
 from unittest.mock import patch
 
 import pytest

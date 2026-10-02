@@ -203,7 +203,8 @@ def build_add_measure_numbers_cmd(
 ) -> list[str]:
     python_cmd = get_pipeline_python("numbering")
     cmd = python_cmd + [
-        "tools/add_measure_numbers.py",
+        "-m",
+        "src.measure_numbering.cli",
         "--barlines",
         str(barlines),
         "--staff-mask",

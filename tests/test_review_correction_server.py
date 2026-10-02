@@ -100,9 +100,11 @@ def test_review_routes_only_serve_declared_artifacts(review_server):
     assert server.server_address[0] == "127.0.0.1"
     assert _request(server, "GET", "/")[0] == 200
     assert _request(server, "GET", "/app_manual.js")[0] == 200
+    assert _request(server, "GET", "/app.js")[0] == 200
+    assert _request(server, "GET", "/strings.js")[0] == 200
     assert _request(server, "GET", "/correction_state.js")[0] == 200
     html = _request(server, "GET", "/")[1].decode("utf-8")
-    assert "/correction_state.js" in html
+    assert 'src="correction_state.js"' in html
     assert _request(server, "GET", "/api/pages")[0] == 200
     status, pages = _request(server, "GET", "/api/pages?mode=gt")
     assert status == 200
@@ -116,7 +118,6 @@ def test_review_routes_only_serve_declared_artifacts(review_server):
     hidden = handoff.parent / "pages" / "page_001" / "private.json"
     hidden.write_text('{"secret": true}', encoding="utf-8")
     for path in (
-        "/app.js",
         "/app_gt.js",
         "/app_rest.js",
         "/api/items",

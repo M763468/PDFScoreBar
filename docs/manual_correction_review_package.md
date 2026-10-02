@@ -171,11 +171,11 @@ losing the active target.
 
 Typical correction flow for MMR/barline/measure corrections:
 
-1. Choose a correction type and operation in the left sidebar.
+1. Choose a correction task and change in the right context panel.
 2. Select the target object; barline editing additionally exposes Select/Draw modes.
-3. Create an edit and inspect the pending change in both the canvas and **Current page results**.
+3. Create an edit and inspect the pending change in both the canvas and **Current page changes**.
 4. Clear the edit if the pending change is not wanted.
-5. Use **Save corrections** to record these correction types.
+5. Use **Save changes** to record these correction types.
 
 Movement-boundary review is deliberately simpler: select a system, confirm
 **boundary** or **no boundary**, and the decision is saved immediately. After
@@ -193,8 +193,9 @@ Canvas navigation:
 - previous/next page: buttons in the sticky header or Left/Right arrow keys;
 - Delete/Backspace removes the currently selected pending correction when applicable.
 
-The GUI also exposes this guide from the **Help** button in the sticky header, so the reviewer does
-not need the repository documentation open while correcting a score.
+The user application separates page navigation, score display controls, task actions, and correction
+status. Optional evidence, annotation reason, and provenance live under **Details and evidence**.
+Destructive actions appear only when a removable correction is selected.
 
 ## 3. Save corrections
 
@@ -382,3 +383,12 @@ The engine validates finalized movement data against saved review decisions and 
 finalization, or saved decisions that have not been finalized, produces an actionable failure instead
 of silently ignoring the latest movement review. When no reviewed movement data exists, source-run
 movement inputs retain their existing meaning; unresolved candidates do not become resets.
+
+
+### Reviewer-facing strings
+
+The dedicated user UI is `tools/review_correction/index.html` and `app.js`. Primary action,
+validation, and result messages are collected in `tools/review_correction/strings.js`; state labels
+come from `tools/review_correction/state.py::LABELS`. These are the controlled English inputs for
+#361. GT/developer presentation remains in `tools/gt_relabel_gui/` and is not a localization target.
+The browser displays only current-page detail alongside package-wide pending/recorded/error counts.

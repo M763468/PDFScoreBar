@@ -895,6 +895,7 @@ def verify_pdf_content(
     from src.pipeline.review.final_output import _render_final_page_image
 
     summary = load_json(run_dir / "review/corrected_final_summary.json")
+    clean_final = all(path.suffix == ".pdf" for path in (run_dir / "final").iterdir())
     pages = summary["pages"]
     page_index = next(i for i, page in enumerate(pages) if page["page_id"] == page_id)
     page = pages[page_index]
@@ -915,7 +916,8 @@ def verify_pdf_content(
             ]
             label_number = labels[row_index]["row_start_measure_number"]
             okay = (
-                len(pdf) == len(pages)
+                clean_final
+                and len(pdf) == len(pages)
                 and label_number == expected_number
                 and expected_hash in actual_hashes
             )
@@ -923,6 +925,7 @@ def verify_pdf_content(
             pdf[page_index].get_pixmap(matrix=fitz.Matrix(0.5, 0.5)).save(evidence)
             gate["pdf_content"] = {
                 "passed": okay,
+                "clean_final": clean_final,
                 "page_count": len(pdf),
                 "row_index": row_index,
                 "expected_row_start": expected_number,
@@ -1230,6 +1233,20 @@ def run_acceptance(
                 }
             )
             if denied not in (403, 404):
+                baseline_gate["status"] = "failed"
+        for route, body in (
+            ("/api/apply", {"handoff": "/etc/passwd"}),
+            ("/api/apply", {"output_root": "/tmp/another_package"}),
+            ("/api/save", {"page": 0, "correction_type": "gt", "items": []}),
+            (
+                "/api/save",
+                {"page": "another_package", "correction_type": "mmr_measure_span", "items": []},
+            ),
+        ):
+            denied, response, _ = _request(
+                session.base_url, route, payload=body, timeout=args.timeout
+            )
+            if not expect_http(denied, {400}, baseline_gate, "reject_substitution", response):
                 baseline_gate["status"] = "failed"
         results["gates"][baseline_gate["name"]] = baseline_gate
     finally:
@@ -1539,6 +1556,11 @@ def main() -> int:
         )
         return 0 if overall == "passed" else 2
     except Exception as exc:
+        if args.evidence_root.is_dir():
+            write_json(
+                args.evidence_root / "acceptance_error.json",
+                {"status": "blocked", "error": str(exc), "exception": type(exc).__name__},
+            )
         print(f"acceptance runner blocked: {exc}", file=sys.stderr)
         return 2
 

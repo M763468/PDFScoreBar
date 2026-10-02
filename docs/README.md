@@ -9,10 +9,10 @@ executable package.
 | What is the minimum executable subset, and is it ready to extract? | [Minimal mainline surface](MINIMAL_MAINLINE_SURFACE.md) and its [exact file list](MINIMAL_MAINLINE_SURFACE.json) |
 | How does the current pipeline work? | [Pipeline architecture](PIPELINE_ARCHITECTURE.md) |
 | How do I run the current repository? | [Environments](ENVIRONMENTS.md), then [manual correction workflow](manual_correction_review_package.md) if needed |
+| How are user corrections separated from GT/developer tools? | [User correction boundary](USER_CORRECTION_BOUNDARY.md) |
 | What does an engine caller send and receive? | [Engine job contract](ENGINE_JOB_CONTRACT.md) |
 | How do I change and verify this repository? | [Branch policy](BRANCH_POLICY.md) and [validation policy](dev/VALIDATION_POLICY.md) |
 | Why was older code or evidence retained? | [Repository surface inventory](REPOSITORY_SURFACE_INVENTORY.md), [documentation inventory](DOCUMENTATION_INVENTORY.md), then [history index](HISTORY_INDEX.md) |
-| Where do user correction and GT developer tooling belong? | [User correction boundary](USER_CORRECTION_BOUNDARY.md) |
 
 The minimum selection has one prose explanation and one machine-readable list. The repository
 and documentation inventories are broader historical audits. They must not be used as a second

@@ -506,6 +506,21 @@
       "pattern": "graphify-out/**",
       "role": "generated repository navigation",
       "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "tools/movement_boundary_review.py",
+      "role": "maintained movement-boundary attach/export CLI",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "src/pipeline/review/movement_boundary_review.py",
+      "role": "movement-boundary review authoring implementation used by the maintained CLI",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "tools/review_correction/**",
+      "role": "user correction application retained from develop",
+      "include_in_runtime_bundle": false
     }
   ],
   "reproduction_only_patterns": [
@@ -669,6 +684,21 @@
     {
       "pattern": "docs/**",
       "role": "development, operating and historical documentation; no docs files in the executable payload",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "docs/ENGINE_JOB_LIFECYCLE.md",
+      "role": "normative one-job lifecycle contract",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "docs/ENGINE_INPUT_SAFETY.md",
+      "role": "normative engine input safety contract",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "docs/ENGINE_TELEMETRY.md",
+      "role": "normative engine telemetry contract",
       "include_in_runtime_bundle": false
     }
   ],

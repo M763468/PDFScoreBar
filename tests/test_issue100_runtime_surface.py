@@ -3,6 +3,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -39,3 +41,30 @@ def test_production_omr_worker_is_under_src() -> None:
     )
     assert "src.pipeline.detection.omr_dln_worker" in support
     assert "experiments/models/eval_omr_dln.py" not in support
+
+
+@pytest.mark.parametrize(
+    "missing_path",
+    [
+        "tools/movement_boundary_review.py",
+        "src/pipeline/review/movement_boundary_review.py",
+        "docs/ENGINE_JOB_LIFECYCLE.md",
+        "docs/ENGINE_INPUT_SAFETY.md",
+        "docs/ENGINE_TELEMETRY.md",
+    ],
+)
+def test_surface_checker_rejects_missing_review_and_engine_contract_files(
+    missing_path: str, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from tools import check_repository_surface
+
+    files = check_repository_surface.tracked_files()
+    assert missing_path in files
+    monkeypatch.setattr(
+        check_repository_surface,
+        "tracked_files",
+        lambda: [path for path in files if path != missing_path],
+    )
+
+    assert check_repository_surface.main() == 1
+    assert f"documented tracked pattern has no matches: {missing_path}" in capsys.readouterr().err

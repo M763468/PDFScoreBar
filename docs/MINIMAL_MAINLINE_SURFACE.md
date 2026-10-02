@@ -71,7 +71,9 @@ used by evaluation/tests, `engine_lifecycle.py` is a development contract helper
 wired into the executor, and `movement_boundary_review.py` supports the development GUI
 and manual review authoring. The unused `ort_config.py` was removed from the repository.
 The engine and correction rerun consume the resulting review records without importing
-the authoring helper.
+the authoring helper. The development manifest explicitly retains the movement-boundary
+attach/export CLI and its implementation, and the lifecycle, input-safety and telemetry
+contracts delegated to by the engine job contract.
 Correction application remains selected because the current product includes a separate
 review-package correction flow, even though a one-job request does not execute
 `CorrectionSet` records directly.

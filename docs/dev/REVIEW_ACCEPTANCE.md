@@ -40,3 +40,37 @@ Keep every failed/blocked report. Corrected harness rescoring should reuse valid
 retained outputs where possible. Full detector-quality evaluation is outside these
 integration gates because detector algorithms, models and thresholds do not change.
 Browser workflow and local focused tests complement these API and artifact gates.
+
+
+### Browser workflow
+
+With an installed Playwright module and Chromium, open a fresh writable copied package using
+`tools.review_correction.server`, then run:
+
+```bash
+PLAYWRIGHT_MODULE=/path/to/playwright CHROMIUM_PATH=/path/to/chromium \
+  node tools/review_correction/browser_acceptance.cjs \
+  http://127.0.0.1:8010 logs/issue397/acceptance/<run>/browser
+```
+
+The script selects the retained first measure and uses actual form controls to save, apply,
+retrieve the PDF, and remove the correction. It checks pending/recorded/current/stale transitions
+and retains screenshots, state snapshots and the downloaded PDF. Use a fresh copied package
+whose original first-measure span is one.
+
+### Validation evidence (2026-10-03)
+
+The GPU run at `logs/issue397/acceptance/gpu01` passed all fixed gates with candidate
+`36964070dcdec8dc03f26c234c2ba36343f28a1e`, image
+`sha256:3eaccf844d6d18b6212e8aed4551bc0fb4a424fc776568058d465f8335aef3ab`, and model SHA256
+`f163fa2a7679d12c0f4fe6fc2fadc7ed1f144035779a18b83a303bfa6d35903a`.
+The browser workflow passed in `gpu01/browser02`. Supplemental isolation and final-cleanliness
+checks are in `gpu01/isolation-and-provenance.json`. Focused tests passed (44), existing UI/payload/index regression tests passed (46),
+and fast tests passed (110). Final-cleanliness and PDF-content checks were also rescored
+from retained outputs with the final harness, without rerunning inference. Source manifests do not record their historical generating commits; the frozen plan
+records this limitation and hashes the retained inputs. These retained inputs establish correction
+integration behavior, not a fresh production detector-quality comparison.
+
+The first browser attempt applied successfully but its harness used a relative PDF URL with
+Playwright's unconfigured request client. Its log and outputs remain retained; `browser02`
+corrects that harness error. No production thresholds or acceptance expectations were changed.

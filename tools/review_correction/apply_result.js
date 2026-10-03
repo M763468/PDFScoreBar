@@ -1,6 +1,11 @@
 /* Apply controls consume server state; no correction interpretation lives here. */
 (() => {
-  const host = document.getElementById("statePanel") || document.getElementById("correctionStatePanel");
+  let host = document.getElementById("applicationControls");
+  if (!host) {
+    host = document.createElement("section");
+    host.id = "applicationControls";
+    document.getElementById("sidebarHeader").appendChild(host);
+  }
   let apply = document.getElementById("applyBtn");
   let open = document.getElementById("openResultBtn");
   let status = document.getElementById("applicationStatus");

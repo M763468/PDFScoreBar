@@ -90,3 +90,10 @@ apply engine, movement helper and application adapter are unchanged from the ret
 candidate. Its numbering/PDF results remain valid evidence; no expensive inference was repeated
 solely for moving commits between PRs. The updated pending/recorded axes and failure/retry
 transitions are covered by focused tests for all four correction types.
+
+The additional asynchronous review fixes were subsequently applied in #394 and restacked through
+#395–#397. Delayed save/edit/navigation and delayed/failed movement export tests passed on both
+the shared initial user entry and the dedicated UI. The final focused stack passed 55 tests;
+`make lint` and fast tests (110) passed. The real Chromium save→generate→PDF→remove→stale
+workflow was repeated successfully in `gpu01/browser_review` with no page errors. The two
+asynchronous review threads on #402 were resolved after its latest-head CI passed.

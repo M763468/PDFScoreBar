@@ -129,6 +129,7 @@ const correctionStatePanel = node('correctionStatePanel');
 sidebarHeader.appendChild(correctionStatePanel);
 const context = {
   console, Promise,
+  ReviewStrings: {result: {apply: 'Generate PDF', open: 'Open PDF'}},
   document: {
     getElementById(id) { return byId.get(id) || null; },
     createElement() { return node(); },

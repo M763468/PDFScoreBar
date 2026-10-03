@@ -19,7 +19,7 @@ the supported way to open a user correction session. GT editor behavior is uncha
 | `tools/review_correction/application.py` | Package-bound engine invocation, immutable recorded-input copies, collision/concurrency safeguards, and verified final PDF discovery |
 | `tools/review_correction/state.py` | Page/type state and content identities for recorded corrections and successful corrected results |
 | `tools/review_correction/server.py` | User application entry, HTTP route allowlist, and package-local persistence boundary |
-| `tools/gt_relabel_gui/index_manual.html`, `app_manual.js` | Shared manual review presentation assets served by the user application |
+| `tools/review_correction/index.html`, `app.js`, `strings.js` | Dedicated user review presentation and controlled copy |
 | `src/pipeline/review/manual_correction_handoff.py` | Shared handoff validation and GUI page configuration |
 | `src/pipeline/review/movement_boundary_review.py` | Shared review evidence and resolved-output helper |
 | `tools/gt_relabel_gui/server.py` | GT/evaluation editing, relabeling, developer probe, and legacy manual compatibility entry |

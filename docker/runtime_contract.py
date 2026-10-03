@@ -216,6 +216,22 @@ def _host_provenance() -> dict[str, str | None]:
     }
 
 
+def _validate_production_provenance(workspace: Path, errors: list[str]) -> None:
+    from src.pipeline.detection.profile_contract import (
+        load_profile_manifest,
+        validate_profile_runtime,
+    )
+
+    try:
+        profile = load_profile_manifest(
+            "maintained_original",
+            workspace / "configs/detector_profiles/maintained_original_homr.json",
+        )
+        validate_profile_runtime(profile)
+    except (OSError, RuntimeError, ValueError) as exc:
+        errors.append(f"maintained production provenance is invalid: {exc}")
+
+
 def run_preflight(
     workspace: Path,
     config_path: Path,
@@ -334,11 +350,9 @@ def run_preflight(
         else:
             module_origins[module_name] = spec.origin
 
-    for marker in (
-        Path("/opt/homr_stage_e_profile_commit.txt"),
-        Path("/opt/pdfscore_stage_e_profile_commit.txt"),
-    ):
-        _require_file(marker, role="Stage-E runtime provenance marker", errors=errors)
+    # Canonical preflight shares the maintained profile's pinned marker contract.
+    # Historical profile validation belongs to its explicit reproduction runner.
+    _validate_production_provenance(workspace, errors)
 
     cuda_available = torch.cuda.is_available()
     if not cuda_available:

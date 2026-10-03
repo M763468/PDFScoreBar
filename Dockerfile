@@ -54,10 +54,6 @@ actual = payload.get("vcs_info", {}).get("commit_id")
 if actual != expected:
     raise RuntimeError(f"homr direct_url commit mismatch: expected={expected} actual={actual}")
 PY
-# The retained historical Stage-E evaluator imports the legacy musicxml package;
-# keep it in the cloned compatibility runtime even though maintained HOMR no longer
-# declares it.
-RUN uv pip install musicxml==1.4
 RUN /opt/venv_pipeline/bin/python docker/patch_homr_onnx_provider.py
 
 # HOMR's supported init command needs ONNX Runtime at this stage; the project
@@ -84,61 +80,8 @@ RUN uv pip uninstall -y onnxruntime && \
 # Do this during build so canonical GPU validation never depends on a late download.
 RUN /opt/venv_pipeline/bin/python -m homr.main --init --gpu force
 
-# Apply basicsr patch before cloning the main venv into the isolated HOMR profile runtime.
+# Apply the basicsr torchvision compatibility patch.
 RUN /opt/venv_pipeline/bin/python -c "from pathlib import Path; import sysconfig; p = Path(sysconfig.get_paths()['purelib']) / 'basicsr' / 'data' / 'degradations.py'; s = p.read_text(); p.write_text(s.replace('from torchvision.transforms.functional_tensor import rgb_to_grayscale', 'from torchvision.transforms.functional import rgb_to_grayscale'))"
-
-# Keep the verified Stage E HOMR dependency stack isolated from the main OMR/CNN runtime.
-ARG STAGE_E_HOMR_COMMIT=864e2882f7a41afcf8f16654728a473ae56826d6
-ARG STAGE_E_PDFSCORE_COMMIT=bd6ae56f8be6c87088143cfbf0ba09dee94fe0d7
-RUN cp -a /opt/venv_pipeline /opt/venv_stage_e_homr && \
-    /opt/venv_stage_e_homr/bin/python -m pip uninstall -y \
-      onnxruntime onnxruntime-gpu opencv-python opencv-python-headless numpy || true && \
-    /opt/venv_stage_e_homr/bin/python -m pip install --no-cache-dir --no-deps \
-      numpy==2.2.6 \
-      opencv-python-headless==4.12.0.88 \
-      onnxruntime-gpu==1.22.0
-RUN git clone --filter=blob:none https://github.com/liebharc/homr.git /opt/homr_stage_e_profile && \
-    git -C /opt/homr_stage_e_profile checkout --detach "${STAGE_E_HOMR_COMMIT}" && \
-    git -C /opt/homr_stage_e_profile rev-parse HEAD > /opt/homr_stage_e_profile_commit.txt
-RUN git clone --filter=blob:none https://github.com/M763468/PDFScoreBar.git /opt/pdfscore_stage_e_profile && \
-    git -C /opt/pdfscore_stage_e_profile checkout --detach "${STAGE_E_PDFSCORE_COMMIT}" && \
-    git -C /opt/pdfscore_stage_e_profile rev-parse HEAD > /opt/pdfscore_stage_e_profile_commit.txt
-RUN PYTHONPATH=/opt/homr_stage_e_profile /opt/venv_stage_e_homr/bin/python - <<'PY'
-import hashlib
-from pathlib import Path
-
-from homr.main import download_weights
-
-EXPECTED = {
-    "homr/segmentation/segnet_155-1240eedca553155b3c75fc9c7f643465383430a0.onnx":
-        "e6a7c1e84f8d2f19f20a47e0889be2392cd487d27fa77984e4877b86534dee83",
-    "homr/transformer/decoder_pytorch_model_220-c50aec7de6469480cf6f547695f48aed76d8422e-epoch-55.onnx":
-        "381646983d14f17a11e4be671aaf6e4f81727b3a9edf0cf4890109a321ffce68",
-    "homr/transformer/encoder_pytorch_model_220-c50aec7de6469480cf6f547695f48aed76d8422e-epoch-55.onnx":
-        "22a443b2ea18da82128ae52e85436d6fb4728ab68aee24adb2ac9dfc2003a30c",
-}
-
-
-def sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-download_weights()
-root = Path("/opt/homr_stage_e_profile")
-for relative, expected in EXPECTED.items():
-    path = root / relative
-    if not path.is_file():
-        raise RuntimeError(f"Stage E HOMR model was not downloaded: {relative}")
-    actual = sha256(path)
-    if actual != expected:
-        raise RuntimeError(
-            f"Stage E HOMR model hash mismatch for {relative}: expected={expected} actual={actual}"
-        )
-PY
 
 # Real-ESRGAN weights are image-owned runtime assets. Keep them outside /workspace
 # so the canonical source bind mount cannot hide them. The selected release bytes are
@@ -152,8 +95,6 @@ RUN mkdir -p /opt/weights && \
 # --- Final Stage ---
 FROM nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04
 
-ARG STAGE_E_HOMR_COMMIT=864e2882f7a41afcf8f16654728a473ae56826d6
-ARG STAGE_E_PDFSCORE_COMMIT=bd6ae56f8be6c87088143cfbf0ba09dee94fe0d7
 ARG MAINTAINED_HOMR_COMMIT=457e7c6518a10ba755db2e60883419e56c4d7369
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -175,13 +116,8 @@ RUN apt-get update && apt-get install -y software-properties-common && \
 
 WORKDIR /workspace
 
-# Copy the main runtime, image-owned SR assets, and the isolated verified Stage E HOMR runtime.
+# Copy the maintained production runtime and image-owned SR assets.
 COPY --from=builder /opt/venv_pipeline /opt/venv_pipeline
-COPY --from=builder /opt/venv_stage_e_homr /opt/venv_stage_e_homr
-COPY --from=builder /opt/homr_stage_e_profile /opt/homr_stage_e_profile
-COPY --from=builder /opt/pdfscore_stage_e_profile /opt/pdfscore_stage_e_profile
-COPY --from=builder /opt/homr_stage_e_profile_commit.txt /opt/homr_stage_e_profile_commit.txt
-COPY --from=builder /opt/pdfscore_stage_e_profile_commit.txt /opt/pdfscore_stage_e_profile_commit.txt
 RUN echo "${MAINTAINED_HOMR_COMMIT}" > /opt/homr_maintained_profile_commit.txt && \
     echo "workspace-runtime" > /opt/pdfscore_maintained_profile_commit.txt && \
     test "$(cat /opt/homr_maintained_profile_commit.txt)" = "${MAINTAINED_HOMR_COMMIT}"
@@ -221,8 +157,6 @@ RUN mkdir -p /opt/pdfscore-runtime && \
 LABEL pdfscore.detector.homr_profile="maintained_original"
 LABEL pdfscore.detector.homr_commit="${MAINTAINED_HOMR_COMMIT}"
 LABEL pdfscore.detector.pdfscore_evaluator_commit="workspace-runtime"
-LABEL pdfscore.detector.historical_homr_commit="${STAGE_E_HOMR_COMMIT}"
-LABEL pdfscore.detector.historical_pdfscore_evaluator_commit="${STAGE_E_PDFSCORE_COMMIT}"
 LABEL pdfscore.runtime.asset_contract="v1"
 LABEL pdfscore.runtime.source_fingerprint="${PDFSCORE_SOURCE_FINGERPRINT}"
 LABEL pdfscore.runtime.source_commit="${PDFSCORE_SOURCE_COMMIT}"

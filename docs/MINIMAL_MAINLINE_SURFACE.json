@@ -550,6 +550,11 @@
       "include_in_runtime_bundle": false
     },
     {
+      "pattern": "docker/Dockerfile.stage-e",
+      "role": "historical Stage-E reproduction image extension",
+      "include_in_runtime_bundle": false
+    },
+    {
       "pattern": "Dockerfile.homr",
       "role": "isolated/historical HOMR environment",
       "include_in_runtime_bundle": false

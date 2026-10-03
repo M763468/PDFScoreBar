@@ -25,7 +25,8 @@ ONNX helper was removed after the call-path audit; shrinking further requires a
 behavior-preserving split of mixed modules
 or a narrower product contract.
 
-The selected Dockerfile still builds the historical Stage-E stack
+The selected root Dockerfile builds only the maintained production stack. Historical
+Stage-E assets are isolated in `docker/Dockerfile.stage-e`
 ([#398](https://github.com/M763468/PDFScoreBar/issues/398)); production HOMR code now lives
 under `src/homr_runtime/` after the responsibility split
 ([#115](https://github.com/M763468/PDFScoreBar/issues/115)). Evaluation/core compatibility
@@ -36,8 +37,12 @@ carry evaluation-oriented inventory structure. An isolated bind-mounted copy of 
 102 selected files completed the one-page GPU pipeline and passed the 85/85 detector accuracy
 gate. The additional file now excluded, `movement_boundary_review.py`, was not imported by
 that run or by the selected engine/correction call paths. The run used the current full image
-plus externally mounted validation input and model; building a production-only image from
-the selected files remains blocked by #398.
+plus externally mounted validation input and model; Issue #398 additionally built the current 116-file bundle directly into a production-only
+image, without mounting the development checkout at `/workspace`. With networking disabled,
+the one-page PDF engine job generated final PDF and review artifacts and passed the same
+85/85 accuracy gate (hard FP/FN/soft residual all zero). Validation input, GT/checker and the
+external OMR-DLN weight were mounted separately; none entered the runtime file list.
+Both production and minimal images exclude the historical Stage-E `/opt` trees and markers.
 Do not present this subset as a finished standalone distribution.
 
 ## What goes where
@@ -113,8 +118,8 @@ The current list contains production-owned HOMR modules and maintained profile b
 `profile_sources*.py` owns shared source-generation/SR scheduling;
 `maintained_profile*.py` selects only the maintained runtime, while the old
 `homr_profile.py` and `profile_hybrid*.py` keep historical/compatibility dispatch outside
-the selected bundle. `Dockerfile` cannot yet represent only the
-production environment because it also builds Stage-E assets (#398).
+the selected bundle. `Dockerfile` represents the
+production environment; the reproduction-only extension is excluded from this bundle (#398).
 
 ## Check and authority
 

@@ -33,6 +33,7 @@ class CorrectionApplication:
     def start(self):
         if not self.lock.acquire(blocking=False):
             raise ValueError("A corrected result is already being generated")
+        apply_started = False
         try:
             self._safe_root()
             descriptor = os.open(
@@ -46,11 +47,14 @@ class CorrectionApplication:
                     "A corrected result is already being generated for this package"
                 ) from exc
             identity = self.package.state.begin_apply()
+            apply_started = True
             response = self.package.state.snapshot()
             self.thread = Thread(target=self._run, args=(identity,), daemon=True)
             self.thread.start()
             return response
-        except Exception:
+        except Exception as exc:
+            if apply_started:
+                self.package.state.fail_apply(str(exc))
             if self.process_lock is not None:
                 self.process_lock.close()
                 self.process_lock = None

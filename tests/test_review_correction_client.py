@@ -24,6 +24,7 @@ const node = () => ({setAttribute(){}, appendChild(){}, replaceChildren(){}, par
 const panel = node();
 const context = {
   console, Map, Set, JSON, String, Promise,
+  ReviewStrings: {state:{types:{}}, feedback:{}}, updateControlState(){},
   currentPage: {}, currentIndex: 0, dirtyTypes: new Set(), items: [{page:0, measure_span:2}],
   pageValue: () => 0, itemsForCurrentPage: () => context.items,
   document: {getElementById: () => panel, createElement: node},
@@ -47,7 +48,7 @@ const context = {
       phase = scenario === 'export_error' ? 'error' : 'finished';
       return {ok: scenario !== 'export_error', status:400, json: async () => ({count:1})};
     }
-    return {ok:true, json: async () => ({package:{status:phase}, states:[], labels:{}})};
+    return {ok:true, json: async () => ({package:{status:phase, counts:{pending:0,recorded:0,error:0}, current_identity:{}}, states:[], labels:{}})};
   },
 };
 context.window = context;
@@ -128,6 +129,7 @@ const correctionStatePanel = node('correctionStatePanel');
 sidebarHeader.appendChild(correctionStatePanel);
 const context = {
   console, Promise,
+  ReviewStrings: {result: {apply: 'Generate PDF', open: 'Open PDF'}},
   document: {
     getElementById(id) { return byId.get(id) || null; },
     createElement() { return node(); },

@@ -1,16 +1,13 @@
 /* Apply controls consume server state; no correction interpretation lives here. */
 (() => {
-<<<<<<< HEAD
+  const copy = window.ReviewStrings.result;
+  // Keep result controls outside the refreshed state panel so they survive state updates.
   let host = document.getElementById("applicationControls");
   if (!host) {
     host = document.createElement("section");
     host.id = "applicationControls";
     document.getElementById("sidebarHeader").appendChild(host);
   }
-=======
-  const copy = window.ReviewStrings.result;
-  const host = document.getElementById("statePanel") || document.getElementById("correctionStatePanel");
->>>>>>> 03c63c28 (feat(review): organize user interface around correction tasks (#396))
   let apply = document.getElementById("applyBtn");
   let open = document.getElementById("openResultBtn");
   let status = document.getElementById("applicationStatus");

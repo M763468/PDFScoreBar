@@ -154,7 +154,7 @@ Initial overlay state:
 | Barlines | on | Show current barline geometry. |
 | Labels | off | Show regular overlay labels. Keep this off for a less crowded score. |
 | Base MMR state | on | Show base/automatic MMR state. |
-| Manual state | on | Show staged manual corrections. |
+| Manual state | on | Show pending manual edits. |
 
 Useful review views:
 
@@ -162,7 +162,7 @@ Useful review views:
   Manual state off.
 - **Measures only:** Measures on, Barlines off, Labels off, Base MMR state off,
   Manual state off.
-- **Staged barline removals:** Barlines may be off while Manual state remains on; the staged
+- **Pending barline removals:** Barlines may be off while Manual state remains on; the pending
   removal remains visible independently of the normal barline layer.
 
 The selected object and an active draft remain visible even when their normal overlay layer is
@@ -173,9 +173,9 @@ Typical correction flow for MMR/barline/measure corrections:
 
 1. Choose a correction type and operation in the left sidebar.
 2. Select the target object; barline editing additionally exposes Select/Draw modes.
-3. Use **Stage change** and inspect the staged state in both the canvas and **Current page results**.
-4. Use the clear/unstage action if the staged edit is not wanted.
-5. Use **Save corrections** to persist those staged correction types.
+3. Create an edit and inspect the pending change in both the canvas and **Current page results**.
+4. Clear the edit if the pending change is not wanted.
+5. Use **Save corrections** to record these correction types.
 
 Movement-boundary review is deliberately simpler: select a system, confirm
 **boundary** or **no boundary**, and the decision is saved immediately. After
@@ -191,12 +191,39 @@ Canvas navigation:
 - zoom: mouse wheel;
 - pan: Space + drag or middle-mouse drag;
 - previous/next page: buttons in the sticky header or Left/Right arrow keys;
-- Delete/Backspace removes the currently selected staged correction when applicable.
+- Delete/Backspace removes the currently selected pending correction when applicable.
 
 The GUI also exposes this guide from the **Help** button in the sticky header, so the reviewer does
 not need the repository documentation open while correcting a score.
 
 ## 3. Save corrections
+
+### Shared correction state
+
+The review app reports state for each page and correction type, then gives package counts so a
+mixed review stays visible. Its controlled labels are **Edit not recorded**, **No correction
+recorded**, **Correction recorded**, **No corrected result yet**, **Corrected result is current**,
+**Recorded corrections changed since this result**, **Generating corrected result**, and **Needs
+attention**. The package summary uses **Review has different correction states** when its pages or
+correction types do not share one state.
+
+MMR measure-span, measure-construction, and barline edits stay pending until the reviewer records
+them. Movement decisions become recorded as soon as the reviewer confirms a boundary or no
+boundary; they do not have a separate record action. The finalized movement-boundary input is also
+part of the correction identity.
+
+Recording and generating a corrected result are separate. The app compares content identities for
+the handoff, declared source artifacts, source manifest when available, and correction files. A
+corrected result is current only while the source and complete recorded correction set match the
+identities consumed by that run. Editing or removing a recorded correction makes the previous result
+stale, even when an older corrected PDF still exists.
+
+Failed recording or application is reported as an error while preserving the previous recorded
+correction file and last successful corrected-result identity. State metadata is stored separately
+from correction payloads in `corrections/.correction_state.json`; it does not change engine payload
+schemas. The server exposes this contract through `GET /api/state`. The user app reports unrecorded
+drafts to the server through `POST /api/state/pending` and clears them with
+`POST /api/state/pending/clear`.
 
 The existing GUI stages corrections under the review package's `corrections/` directory. The
 current correction surfaces are:

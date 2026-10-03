@@ -7,6 +7,7 @@ from threading import Thread
 
 import pytest
 
+import tools.review_correction.server as review_server_module
 from tools.gt_relabel_gui.server import Handler as DeveloperHandler
 from tools.review_correction.server import ReviewPackage, create_server
 
@@ -99,6 +100,9 @@ def test_review_routes_only_serve_declared_artifacts(review_server):
     assert server.server_address[0] == "127.0.0.1"
     assert _request(server, "GET", "/")[0] == 200
     assert _request(server, "GET", "/app_manual.js")[0] == 200
+    assert _request(server, "GET", "/correction_state.js")[0] == 200
+    html = _request(server, "GET", "/")[1].decode("utf-8")
+    assert "/correction_state.js" in html
     assert _request(server, "GET", "/api/pages")[0] == 200
     status, pages = _request(server, "GET", "/api/pages?mode=gt")
     assert status == 200
@@ -151,6 +155,51 @@ def test_review_save_cannot_select_gt_or_canonical_paths(review_server):
     ):
         assert _request(server, "POST", "/api/save", {**body, **change})[0] == 400
     assert canonical.read_bytes() == before
+
+
+def test_failed_atomic_save_preserves_last_recorded_correction(review_server, monkeypatch):
+    server, handoff = review_server
+    output = handoff.parent / "corrections" / "barline_construction_overrides.json"
+    output.parent.mkdir(parents=True)
+    original = (
+        b'{"schema_version":1,"correction_type":"barline_construction","items":[{"page":0}]}\n'
+    )
+    output.write_bytes(original)
+
+    def fail_replace(_src, _dst):
+        raise OSError("simulated disk failure")
+
+    monkeypatch.setattr(review_server_module.os, "replace", fail_replace)
+    status, _ = _request(
+        server,
+        "POST",
+        "/api/save",
+        {"page": 0, "correction_type": "barline_construction", "items": [{"page": 0}]},
+    )
+    assert status == 400
+    assert output.read_bytes() == original
+    state = json.loads(_request(server, "GET", "/api/state")[1])
+    barline = next(s for s in state["states"] if s["correction_type"] == "barline_construction")
+    assert barline["recording_status"] == "recorded"
+    assert "error" in barline
+
+
+def test_server_state_pending_api(review_server):
+    server, _ = review_server
+    pending = {"page": 0, "correction_type": "barline_construction", "items": [{"page": 0}]}
+    assert _request(server, "POST", "/api/state/pending", pending)[0] == 200
+    state = json.loads(_request(server, "GET", "/api/state")[1])
+    barline = next(s for s in state["states"] if s["correction_type"] == "barline_construction")
+    assert barline["edit_status"] == "pending"
+    assert (
+        _request(
+            server,
+            "POST",
+            "/api/state/pending/clear",
+            {"page": 0, "correction_type": "barline_construction"},
+        )[0]
+        == 200
+    )
 
 
 def test_review_rejects_cross_origin_writes(review_server):
@@ -285,3 +334,40 @@ def test_developer_gt_save_route_still_operates(tmp_path):
         server.shutdown()
         server.server_close()
         thread.join()
+
+
+@pytest.mark.parametrize(
+    "kind",
+    ["mmr_measure_span", "measure_construction", "barline_construction", "movement_boundary"],
+)
+def test_all_corrections_share_record_transition_and_failure_preservation(
+    review_server, monkeypatch, kind
+):
+    server, _ = review_server
+    package = server.package
+    first = [{"page": 0, "op": "boundary" if kind == "movement_boundary" else "set_measure_span"}]
+    changed = [{**first[0], "reason": "new draft"}]
+    package.state.set_pending(0, kind, first)
+    package.record_correction(0, kind, first)
+    state = next(s for s in package.state.snapshot()["states"] if s["correction_type"] == kind)
+    assert state["edit_status"] == "none"
+    assert state["recording_status"] == "recorded"
+    before = package.output(0, kind).read_bytes()
+    package.state.set_pending(0, kind, changed)
+
+    def fail_replace(*args):
+        raise OSError("disk full")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(review_server_module.os, "replace", fail_replace)
+        with pytest.raises(OSError, match="disk full"):
+            package.record_correction(0, kind, changed)
+    assert package.output(0, kind).read_bytes() == before
+    state = next(s for s in package.state.snapshot()["states"] if s["correction_type"] == kind)
+    assert state["edit_status"] == "pending"
+    assert state["recording_status"] == "recorded"
+    assert state["error"] == "disk full"
+    package.record_correction(0, kind, changed)
+    state = next(s for s in package.state.snapshot()["states"] if s["correction_type"] == kind)
+    assert state["edit_status"] == "none"
+    assert "error" not in state

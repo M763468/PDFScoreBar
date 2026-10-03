@@ -25,3 +25,25 @@ the supported way to open a user correction session. GT editor behavior is uncha
 The two applications share low-level handoff/rendering concepts, but their entrypoints, route
 sets, and save sinks are separate. The user server never calls the GT handler. This boundary
 does not change correction payloads or detector, MMR, grouping, or canonical GT data.
+
+### Recording responsibility
+
+`ReviewPackage.record_correction` owns the common package-bound recording operation for every
+correction type: validate the declared sink and item shape, preserve other pages in a shared file,
+replace the correction file atomically, then clear that page/type's pending edit and recording
+error. A failed write preserves the previous recorded content and the pending edit.
+
+MMR/measure/barline explicit Save and movement confirmation differ only in their UI trigger.
+Both call `/api/save` and the same recording operation. Movement finalization remains a separate
+engine-derived input step; it does not introduce a second correction persistence model.
+
+State summary counts are independent axes: a page/type may be both recorded and pending.
+`recorded_identity` hashes the recorded page items and is `null` whenever that page/type has no
+recorded correction, even if a shared file exists for another page. Error counts count each
+page/type once, including failed apply combined with a recording error.
+
+The user state adapter compares save completion with its captured page/type draft. Edits made
+while a save is in flight remain pending; page navigation stops if its automatic save leaves newer
+edits unsaved. Movement finalization refreshes state after the actual request settles, including
+failure, rather than inferring completion from button state. These adapters are user-only and do
+not change GT/developer handlers or correction payloads.

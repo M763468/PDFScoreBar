@@ -4,9 +4,12 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import mimetypes
+import os
 import sys
+import tempfile
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -20,6 +23,7 @@ from src.pipeline.review.manual_correction_handoff import (  # noqa: E402
     build_manual_gui_config,
     load_manual_correction_handoff,
 )
+from tools.review_correction.state import CorrectionState
 
 
 def _inside(path: Path, root: Path) -> bool:
@@ -69,6 +73,7 @@ class ReviewPackage:
 
         if set(self.reads.values()) & set(self.writes.values()):
             raise ValueError("Correction outputs overlap review artifacts")
+        self.state = CorrectionState(self.root, self.pages, handoff)
 
     def _resolve(self, rel: str) -> Path:
         if not isinstance(rel, str) or Path(rel).is_absolute():
@@ -104,9 +109,53 @@ class ReviewPackage:
             raise ValueError("Unknown page or correction type")
         return self.writable(rel)
 
+    def record_correction(self, page: object, kind: object, items: object) -> dict:
+        """Record any correction type through one package-bound atomic transition.
+
+        Explicit Save and immediate movement confirmation are UI triggers for the
+        same operation. Pending edits/errors clear only after replacement succeeds.
+        """
+        try:
+            path = self.output(page, kind)
+            if not isinstance(items, list):
+                raise ValueError("Correction items must be a list")
+            if not all(isinstance(item, dict) for item in items):
+                raise ValueError("Correction items must be objects")
+            existing = _load_items(path, kind)
+            merged = [item for item in existing if str(item.get("page")) != str(page)] + items
+            path = self.output(page, kind)
+            _atomic_write(path, _payload(kind, merged))
+        except (ValueError, OSError, KeyError, TypeError) as exc:
+            try:
+                self.state.note_record_error(page, kind, str(exc))
+            except ValueError:
+                pass
+            raise
+        self.state.note_record_success(page, kind)
+        return {
+            "output": str(path),
+            "correction_type": kind,
+            "count": len(merged),
+            "page_count": len(items),
+        }
+
 
 def _payload(kind: str, items: list) -> dict:
     return {"schema_version": 1, "correction_type": kind, "items": items}
+
+
+def _atomic_write(path: Path, value: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(json.dumps(value, indent=2, ensure_ascii=False) + "\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
 
 
 def _load_items(path: Path, kind: str) -> list:
@@ -192,11 +241,32 @@ class ReviewHandler(BaseHTTPRequestHandler):
             return
         parsed = urlparse(self.path)
         package = self.server.package
-        if parsed.path in {"/", "/app_manual.js"}:
-            self._file(UI_ROOT / ("index_manual.html" if parsed.path == "/" else "app_manual.js"))
+        if parsed.path in {"/", "/app_manual.js", "/correction_state.js"}:
+            if parsed.path == "/":
+                html = (UI_ROOT / "index_manual.html").read_text(encoding="utf-8")
+                html = html.replace(
+                    "</body>", '<script src="/correction_state.js"></script>\n</body>'
+                )
+                data = html.encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+            else:
+                if parsed.path == "/app_manual.js":
+                    self._file(UI_ROOT / "app_manual.js")
+                else:
+                    self._file(Path(__file__).with_name("correction_state.js"))
             return
         if parsed.path == "/api/pages":
             self._json({"pages": package.pages})
+            return
+        if parsed.path == "/api/state":
+            try:
+                self._json(package.state.snapshot())
+            except (ValueError, OSError, json.JSONDecodeError) as exc:
+                self.send_error(400, str(exc))
             return
         if parsed.path == "/api/manual_corrections":
             query = parse_qs(parsed.query)
@@ -235,7 +305,12 @@ class ReviewHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
-        if parsed.path not in {"/api/save", "/api/export_movement_boundaries"}:
+        if parsed.path not in {
+            "/api/save",
+            "/api/export_movement_boundaries",
+            "/api/state/pending",
+            "/api/state/pending/clear",
+        }:
             self.send_error(404, "Not found")
             return
         if not self._trusted_write():
@@ -248,37 +323,27 @@ class ReviewHandler(BaseHTTPRequestHandler):
             payload = json.loads(self.rfile.read(size))
             if not isinstance(payload, dict):
                 raise ValueError("Request body must be an object")
-            if parsed.path == "/api/save":
+            if parsed.path in {"/api/state/pending", "/api/state/pending/clear"}:
                 page = payload.get("page")
                 kind = payload.get("correction_type")
-                items = payload.get("items")
-                if not isinstance(items, list):
-                    raise ValueError("Correction items must be a list")
-                if not all(isinstance(item, dict) for item in items):
-                    raise ValueError("Correction items must be objects")
-                path = package.output(page, kind)
-                existing = _load_items(path, kind)
-                merged = [item for item in existing if str(item.get("page")) != str(page)] + items
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path = package.output(page, kind)
-                path.write_text(
-                    json.dumps(_payload(kind, merged), indent=2, ensure_ascii=False) + "\n",
-                    encoding="utf-8",
-                )
+                if parsed.path.endswith("/clear"):
+                    package.state.clear_pending(page, kind)
+                else:
+                    package.state.set_pending(page, kind, payload.get("items"))
+                self._json(package.state.snapshot())
+                return
+            if parsed.path == "/api/save":
                 self._json(
-                    {
-                        "output": str(path),
-                        "correction_type": kind,
-                        "count": len(merged),
-                        "page_count": len(items),
-                    }
+                    package.record_correction(
+                        payload.get("page"), payload.get("correction_type"), payload.get("items")
+                    )
                 )
                 return
             config = next((p for p in package.pages if p.get("movement_boundary_evidence")), None)
             if config is None:
                 raise ValueError("No movement boundary evidence is attached")
             from src.pipeline.review.movement_boundary_review import (
-                write_resolved_movement_boundaries,
+                build_resolved_movement_boundaries,
             )
 
             evidence_rel = config["movement_boundary_evidence"]
@@ -289,13 +354,15 @@ class ReviewHandler(BaseHTTPRequestHandler):
             output = package.writable(output_rel)
             if not review.is_file():
                 raise ValueError("Save movement review decisions before export")
-            resolved = write_resolved_movement_boundaries(
-                evidence_path=evidence,
-                review_path=review,
-                output_path=output,
+            evidence_bytes = evidence.read_bytes()
+            resolved = build_resolved_movement_boundaries(
+                evidence=json.loads(evidence_bytes.decode("utf-8")),
+                review=json.loads(review.read_text(encoding="utf-8")),
                 evidence_artifact=evidence_rel,
-                overwrite=True,
+                evidence_sha256=hashlib.sha256(evidence_bytes).hexdigest(),
             )
+            _atomic_write(output, resolved)
+            package.state.note_record_success(config["page"], "movement_boundary")
             self._json(
                 {
                     "output": str(output),
@@ -304,6 +371,11 @@ class ReviewHandler(BaseHTTPRequestHandler):
                 }
             )
         except (ValueError, OSError, KeyError, TypeError, json.JSONDecodeError) as exc:
+            if parsed.path == "/api/export_movement_boundaries" and "config" in locals():
+                try:
+                    package.state.note_record_error(config["page"], "movement_boundary", str(exc))
+                except (KeyError, ValueError):
+                    pass
             self.send_error(400, str(exc))
 
 

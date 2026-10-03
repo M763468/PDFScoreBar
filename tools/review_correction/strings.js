@@ -69,6 +69,7 @@ window.ReviewStrings = Object.freeze({
     finishMovementFailed: "Could not finish movement review: {error}",
     movementSaveFailed: "Could not save movement decision: {error}",
     saveFailed: "Could not save changes: {error}",
+    pageEditedDuringSave: "New edits remain unsaved. Save them before changing page.",
     pageSaveFailed: "Page change stopped because saving failed: {error}",
   },
   status: "Correction status",

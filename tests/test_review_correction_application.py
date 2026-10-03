@@ -83,6 +83,34 @@ def test_failed_apply_and_pdf_generation_preserve_last_success(tmp_path, monkeyp
     )
 
 
+def test_startup_failure_after_begin_apply_is_recorded_and_retryable(tmp_path, monkeypatch):
+    app = _application(tmp_path)
+    from tools.review_correction import application
+
+    class FailingThread:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def start(self):
+            raise RuntimeError("thread start failed")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(application, "Thread", FailingThread)
+        with pytest.raises(RuntimeError, match="thread start failed"):
+            app.start()
+
+    snap = app.package.state.snapshot()
+    assert snap["package"]["status"] == "error"
+    assert snap["states"][0]["application_status"] == "error"
+    assert app.process_lock is None
+    assert not app.lock.locked()
+
+    monkeypatch.setattr(application, "apply_corrections_and_rerun", _fake_engine)
+    app.start()
+    app.thread.join(5)
+    assert app.package.state.snapshot()["package"]["current_result"] is not None
+
+
 def test_duplicate_apply_rejected_and_inputs_cannot_change_in_flight(tmp_path, monkeypatch):
     app = _application(tmp_path)
     from tools.review_correction import application

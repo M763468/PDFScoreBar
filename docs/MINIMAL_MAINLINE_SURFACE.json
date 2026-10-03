@@ -792,7 +792,8 @@
       "tests/test_movement_boundary_candidates.py",
       "tests/test_movement_boundary_cli_provenance.py",
       "tests/test_movement_boundary_review.py",
-      "tests/test_review_correction_server.py"
+      "tests/test_review_correction_server.py",
+      "tests/test_review_correction_state.py"
     ],
     "maintained_contract": [
       "tests/test_apply_corrections.py",

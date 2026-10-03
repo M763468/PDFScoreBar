@@ -109,6 +109,36 @@ class ReviewPackage:
             raise ValueError("Unknown page or correction type")
         return self.writable(rel)
 
+    def record_correction(self, page: object, kind: object, items: object) -> dict:
+        """Record any correction type through one package-bound atomic transition.
+
+        Explicit Save and immediate movement confirmation are UI triggers for the
+        same operation. Pending edits/errors clear only after replacement succeeds.
+        """
+        try:
+            path = self.output(page, kind)
+            if not isinstance(items, list):
+                raise ValueError("Correction items must be a list")
+            if not all(isinstance(item, dict) for item in items):
+                raise ValueError("Correction items must be objects")
+            existing = _load_items(path, kind)
+            merged = [item for item in existing if str(item.get("page")) != str(page)] + items
+            path = self.output(page, kind)
+            _atomic_write(path, _payload(kind, merged))
+        except (ValueError, OSError, KeyError, TypeError) as exc:
+            try:
+                self.state.note_record_error(page, kind, str(exc))
+            except ValueError:
+                pass
+            raise
+        self.state.note_record_success(page, kind)
+        return {
+            "output": str(path),
+            "correction_type": kind,
+            "count": len(merged),
+            "page_count": len(items),
+        }
+
 
 def _payload(kind: str, items: list) -> dict:
     return {"schema_version": 1, "correction_type": kind, "items": items}
@@ -276,8 +306,10 @@ class ReviewHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path not in {
-            "/api/save", "/api/export_movement_boundaries",
-            "/api/state/pending", "/api/state/pending/clear",
+            "/api/save",
+            "/api/export_movement_boundaries",
+            "/api/state/pending",
+            "/api/state/pending/clear",
         }:
             self.send_error(404, "Not found")
             return
@@ -301,32 +333,18 @@ class ReviewHandler(BaseHTTPRequestHandler):
                 self._json(package.state.snapshot())
                 return
             if parsed.path == "/api/save":
-                page = payload.get("page")
-                kind = payload.get("correction_type")
-                items = payload.get("items")
-                if not isinstance(items, list):
-                    raise ValueError("Correction items must be a list")
-                if not all(isinstance(item, dict) for item in items):
-                    raise ValueError("Correction items must be objects")
-                path = package.output(page, kind)
-                existing = _load_items(path, kind)
-                merged = [item for item in existing if str(item.get("page")) != str(page)] + items
-                path = package.output(page, kind)
-                _atomic_write(path, _payload(kind, merged))
-                package.state.note_record_success(page, kind)
                 self._json(
-                    {
-                        "output": str(path),
-                        "correction_type": kind,
-                        "count": len(merged),
-                        "page_count": len(items),
-                    }
+                    package.record_correction(
+                        payload.get("page"), payload.get("correction_type"), payload.get("items")
+                    )
                 )
                 return
             config = next((p for p in package.pages if p.get("movement_boundary_evidence")), None)
             if config is None:
                 raise ValueError("No movement boundary evidence is attached")
-            from src.pipeline.review.movement_boundary_review import build_resolved_movement_boundaries
+            from src.pipeline.review.movement_boundary_review import (
+                build_resolved_movement_boundaries,
+            )
 
             evidence_rel = config["movement_boundary_evidence"]
             review_rel = config["manual_outputs"]["movement_boundary"]
@@ -353,12 +371,7 @@ class ReviewHandler(BaseHTTPRequestHandler):
                 }
             )
         except (ValueError, OSError, KeyError, TypeError, json.JSONDecodeError) as exc:
-            if parsed.path in {"/api/save", "/api/export_movement_boundaries"} and "page" in locals() and "kind" in locals():
-                try:
-                    package.state.note_record_error(page, kind, str(exc))
-                except ValueError:
-                    pass
-            elif parsed.path == "/api/export_movement_boundaries" and "config" in locals():
+            if parsed.path == "/api/export_movement_boundaries" and "config" in locals():
                 try:
                     package.state.note_record_error(config["page"], "movement_boundary", str(exc))
                 except (KeyError, ValueError):

@@ -50,10 +50,14 @@ def test_staged_edit_then_recorded_and_mixed_page_types(tmp_path):
 
     _recorded(root / "corrections/mmr.json", "mmr_measure_span", [{"page": 0, "op": "set_span"}])
     state.note_record_success(0, "mmr_measure_span")
-    _recorded(root / "corrections/measure.json", "measure_construction", [{"page": 0, "op": "insert"}])
+    _recorded(
+        root / "corrections/measure.json", "measure_construction", [{"page": 0, "op": "insert"}]
+    )
     snap = state.snapshot()
     mmr = next(item for item in snap["states"] if item["correction_type"] == "mmr_measure_span")
-    measure = next(item for item in snap["states"] if item["correction_type"] == "measure_construction")
+    measure = next(
+        item for item in snap["states"] if item["correction_type"] == "measure_construction"
+    )
     assert mmr["recording_status"] == measure["recording_status"] == "recorded"
     assert snap["package"]["counts"]["recorded"] == 2
 
@@ -61,21 +65,36 @@ def test_staged_edit_then_recorded_and_mixed_page_types(tmp_path):
 def test_shared_correction_file_only_marks_the_page_with_recorded_items(tmp_path):
     state, root = _state(tmp_path, two_pages=True)
     _recorded(root / "corrections/mmr.json", "mmr_measure_span", [{"page": 0, "op": "set_span"}])
-    per_page = {entry["page"]: entry for entry in state.snapshot()["states"] if entry["correction_type"] == "mmr_measure_span"}
+    per_page = {
+        entry["page"]: entry
+        for entry in state.snapshot()["states"]
+        if entry["correction_type"] == "mmr_measure_span"
+    }
     assert per_page["0"]["recording_status"] == "recorded"
+    assert per_page["0"]["recorded_identity"] is not None
     assert per_page["1"]["recording_status"] == "not_recorded"
+    assert per_page["1"]["recorded_identity"] is None
 
 
 def test_movement_boundary_is_recorded_immediately_and_identity_includes_finalized_output(tmp_path):
     state, root = _state(tmp_path, movement=True)
-    _recorded(root / "corrections/movement_review.json", "movement_boundary", [{"page": 0, "op": "boundary"}])
+    _recorded(
+        root / "corrections/movement_review.json",
+        "movement_boundary",
+        [{"page": 0, "op": "boundary"}],
+    )
     (root / "corrections/movement_resolved.json").write_text(
         '{"schema_version":"issue268.movement_boundaries.v1","boundaries":[{"page":0}]}',
         encoding="utf-8",
     )
     state.note_record_success(0, "movement_boundary")
     before = state.capture_identity()
-    assert next(s for s in state.snapshot()["states"] if s["correction_type"] == "movement_boundary")["recording_status"] == "recorded"
+    assert (
+        next(s for s in state.snapshot()["states"] if s["correction_type"] == "movement_boundary")[
+            "recording_status"
+        ]
+        == "recorded"
+    )
     (root / "corrections/movement_resolved.json").write_text(
         '{"schema_version":"issue268.movement_boundaries.v1","boundaries":[]}',
         encoding="utf-8",
@@ -141,3 +160,33 @@ def test_state_metadata_rejects_symlink(tmp_path):
     handoff.write_text('{"schema_version":1}', encoding="utf-8")
     with pytest.raises(ValueError, match="must not be a symlink"):
         CorrectionState(root, [], handoff)
+
+
+def test_recorded_and_pending_are_independent_count_axes(tmp_path):
+    state, root = _state(tmp_path)
+    recorded = [{"page": 0, "op": "set_measure_span", "measure_span": 2}]
+    _recorded(root / "corrections/mmr.json", "mmr_measure_span", recorded)
+    before = state.snapshot()["states"][0]["recorded_identity"]
+    state.set_pending(0, "mmr_measure_span", [{**recorded[0], "measure_span": 3}])
+    snap = state.snapshot()
+    assert snap["package"]["counts"]["pending"] == 1
+    assert snap["package"]["counts"]["recorded"] == 1
+    assert snap["states"][0]["edit_status"] == "pending"
+    assert snap["states"][0]["recording_status"] == "recorded"
+    assert snap["states"][0]["recorded_identity"] == before
+
+
+def test_empty_recorded_file_has_no_page_recorded_identity(tmp_path):
+    state, root = _state(tmp_path)
+    _recorded(root / "corrections/mmr.json", "mmr_measure_span", [])
+    entry = state.snapshot()["states"][0]
+    assert entry["recording_status"] == "not_recorded"
+    assert entry["recorded_identity"] is None
+
+
+def test_failed_apply_counts_each_state_once(tmp_path):
+    state, _ = _state(tmp_path)
+    state.note_record_error(0, "mmr_measure_span", "record failed")
+    state.fail_apply("engine failed")
+    snap = state.snapshot()
+    assert snap["package"]["counts"]["error"] == len(snap["states"])

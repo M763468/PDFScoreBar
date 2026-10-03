@@ -19,7 +19,6 @@ CORRECTION_TYPES = (
 )
 LABELS = {
     "none": "No unrecorded edit",
-    "none": "No unrecorded edit",
     "pending": "Edit not recorded",
     "not_recorded": "No correction recorded",
     "recorded": "Correction recorded",
@@ -34,9 +33,13 @@ LABELS = {
 
 
 def _digest(value: Any) -> str:
-    data = value if isinstance(value, bytes) else json.dumps(
-        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
-    ).encode("utf-8")
+    data = (
+        value
+        if isinstance(value, bytes)
+        else json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode(
+            "utf-8"
+        )
+    )
     return hashlib.sha256(data).hexdigest()
 
 
@@ -120,7 +123,11 @@ class CorrectionState:
         for rel in rels:
             raw_path = self.root / rel
             path = raw_path.resolve()
-            if raw_path.is_symlink() or path == corrections_root or corrections_root.resolve() not in path.parents:
+            if (
+                raw_path.is_symlink()
+                or path == corrections_root
+                or corrections_root.resolve() not in path.parents
+            ):
                 raise ValueError("Correction output escapes review/corrections")
             paths.append(path)
         return paths
@@ -151,9 +158,7 @@ class CorrectionState:
     def capture_identity(self) -> dict:
         source_files: dict[str, str | None] = {}
         for page in self.pages:
-            for field in (
-                "image", "numbering", "mmr", "barlines", "movement_boundary_evidence"
-            ):
+            for field in ("image", "numbering", "mmr", "barlines", "movement_boundary_evidence"):
                 rel = page.get(field)
                 if rel:
                     source_files[rel] = self._source_identity(rel)
@@ -178,7 +183,12 @@ class CorrectionState:
                     continue
                 correction_files[f"{page_id}:{kind}"] = {
                     "files": [
-                        {"exists": path.exists(), "content": _digest(json.loads(path.read_text(encoding="utf-8"))) if path.is_file() else None}
+                        {
+                            "exists": path.exists(),
+                            "content": _digest(json.loads(path.read_text(encoding="utf-8")))
+                            if path.is_file()
+                            else None,
+                        }
                         for path in paths
                     ],
                 }
@@ -220,8 +230,10 @@ class CorrectionState:
     def begin_apply(self) -> dict:
         identity = self.capture_identity()
         snap = self.snapshot()
-        if self.applying or self.record_errors or any(
-            state["edit_status"] == "pending" for state in snap["states"]
+        if (
+            self.applying
+            or self.record_errors
+            or any(state["edit_status"] == "pending" for state in snap["states"])
         ):
             raise ValueError("Resolve pending edits or errors before generating a corrected result")
         self.applying = True
@@ -238,16 +250,22 @@ class CorrectionState:
         result_identity: str | None = None,
     ) -> dict:
         current = self.capture_identity()
-        if any(current.get(key) != identity.get(key) for key in ("source_identity", "corrections_identity")):
+        if any(
+            current.get(key) != identity.get(key)
+            for key in ("source_identity", "corrections_identity")
+        ):
             self.fail_apply("Review inputs changed while corrected result was generated")
             raise ValueError(self.apply_error)
         result = {
             **identity,
-            "result_identity": result_identity or _digest({
-                "run": corrected_run,
-                "final_pdf_sha256": final_pdf_sha256,
-                "consumed": identity["identity"],
-            }),
+            "result_identity": result_identity
+            or _digest(
+                {
+                    "run": corrected_run,
+                    "final_pdf_sha256": final_pdf_sha256,
+                    "consumed": identity["identity"],
+                }
+            ),
             "corrected_run": corrected_run,
             "final_pdf": final_pdf,
             "final_pdf_sha256": final_pdf_sha256,
@@ -273,51 +291,73 @@ class CorrectionState:
         last = self._metadata.get("last_successful_result")
         matched = bool(last and last.get("identity") == current["identity"])
         states = []
-        counts = {"pending": 0, "recorded": 0, "not_recorded": 0, "current": 0, "stale": 0, "not_applied": 0, "applying": 0, "error": 0}
+        counts = {
+            "pending": 0,
+            "recorded": 0,
+            "not_recorded": 0,
+            "current": 0,
+            "stale": 0,
+            "not_applied": 0,
+            "applying": 0,
+            "error": 0,
+        }
         for page_config in self.pages:
-            page_id = str(page_config.get("page", page_config.get("name", page_config.get("page_id", ""))))
+            page_id = str(
+                page_config.get("page", page_config.get("name", page_config.get("page_id", "")))
+            )
             for kind in CORRECTION_TYPES:
                 path = self._path_for(page_config, kind)
                 if path is None:
                     continue
-                paths = self._paths_for(page_config, kind)
-                primary_exists, items = self._content_items(path, kind)
-                exists = primary_exists or any(p.exists() for p in paths[1:])
+                _, items = self._content_items(path, kind)
                 key = (page_id, kind)
                 page_items = [item for item in items if str(item.get("page")) == page_id]
-                pending = self.pending.get(key) is not None and self.pending[key] != _digest(page_items)
+                pending = self.pending.get(key) is not None and self.pending[key] != _digest(
+                    page_items
+                )
+                recording_status = "recorded" if page_items else "not_recorded"
                 record_error = self.record_errors.get(key)
                 application = (
-                    "applying" if self.applying else "error" if self.apply_error else
-                    "current" if matched else "stale" if last else "not_applied"
+                    "applying"
+                    if self.applying
+                    else "error"
+                    if self.apply_error
+                    else "current"
+                    if matched
+                    else "stale"
+                    if last
+                    else "not_applied"
                 )
                 state = {
                     "page": page_id,
                     "page_id": str(page_config.get("name", page_config.get("page_id", page_id))),
                     "correction_type": kind,
                     "edit_status": "pending" if pending else "none",
-                    "recording_status": "recorded" if exists else "not_recorded",
+                    "recording_status": recording_status,
                     "application_status": application,
                     "source_identity": current["source_identity"],
-                    "recorded_identity": _digest(page_items) if exists else None,
+                    "recorded_identity": _digest(page_items) if page_items else None,
                     "applied_identity": last.get("identity") if last else None,
                 }
                 if record_error or self.apply_error:
                     state["error"] = record_error or self.apply_error
                 states.append(state)
-                recording_status = "recorded" if page_items else "not_recorded"
-                state["recording_status"] = recording_status
-                counts["pending" if pending else recording_status] += 1
-                counts[application] += 1
+                counts[recording_status] += 1
+                counts["pending"] += int(pending)
+                if application != "error":
+                    counts[application] += 1
                 if record_error or self.apply_error:
                     counts["error"] += 1
         statuses = {state["application_status"] for state in states}
         packages = {state["recording_status"] for state in states}
         package_status = (
-            "error" if self.apply_error or self.record_errors else
-            "mixed" if len(packages) > 1 or len(statuses) > 1 else
-            "pending" if counts["pending"] else
-            next(iter(statuses), "not_applied")
+            "error"
+            if self.apply_error or self.record_errors
+            else "mixed"
+            if len(packages) > 1 or len(statuses) > 1
+            else "pending"
+            if counts["pending"]
+            else next(iter(statuses), "not_applied")
         )
         return {
             "schema_version": SCHEMA_VERSION,

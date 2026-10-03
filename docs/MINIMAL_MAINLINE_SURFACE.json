@@ -397,6 +397,10 @@
       "role": "correction/final-output materialization used by the engine boundary"
     },
     {
+      "pattern": "src/pipeline/review/movement_boundary_review.py",
+      "role": "reviewed movement-boundary resolution and provenance validation consumed by authoritative apply"
+    },
+    {
       "pattern": "src/pipeline/review/pipeline_review.py",
       "role": "responsibility-based production module extracted under Issue #115"
     },
@@ -530,11 +534,6 @@
     {
       "pattern": "tools/movement_boundary_review.py",
       "role": "maintained movement-boundary attach/export CLI",
-      "include_in_runtime_bundle": false
-    },
-    {
-      "pattern": "src/pipeline/review/movement_boundary_review.py",
-      "role": "movement-boundary review authoring implementation used by the maintained CLI",
       "include_in_runtime_bundle": false
     },
     {
@@ -702,8 +701,7 @@
     "src/pipeline/detector_routes/dense_probe_candidate_route.py": "Issue #120 candidate CLI",
     "src/pipeline/detector_routes/stage_e_dense_full_pipeline.py": "historical Stage-E reproduction",
     "src/pipeline/engine_lifecycle.py": "development contract helper; current executor does not import or call it",
-    "src/pipeline/movement_boundary_candidates.py": "candidate-generation/review tool, outside engine execution",
-    "src/pipeline/review/movement_boundary_review.py": "developer/manual-review authoring helper; current engine and correction rerun do not import it"
+    "src/pipeline/movement_boundary_candidates.py": "candidate-generation/review tool, outside engine execution"
   },
   "documentation_patterns": [
     {

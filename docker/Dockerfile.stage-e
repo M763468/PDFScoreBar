@@ -1,4 +1,5 @@
-# Reproduction-only extension; never used by the canonical production build.
+# Isolated historical HOMR component compatibility; never used by production.
+# The main venv stays current: this does not recreate the full historical environment.
 # Build the production base first, then select it explicitly with PRODUCTION_IMAGE.
 ARG PRODUCTION_IMAGE=pdfscore_pipeline_gpu
 FROM ${PRODUCTION_IMAGE}

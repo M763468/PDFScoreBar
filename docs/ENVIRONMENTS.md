@@ -8,7 +8,9 @@ unless an active Issue explicitly revives them.
 
 ### `pdfscore_pipeline_gpu`
 
-This is the maintained full-pipeline Docker image.
+This is the maintained production-only full-pipeline Docker image. Its `/opt` payload
+contains no historical Stage-E runtime; retained compatibility tooling uses the separate
+`pdfscore_stage_e_reproduction` image.
 
 - Dockerfile: `Dockerfile`
 - Build target: `make docker-build`
@@ -224,8 +226,8 @@ commit and runtime paths are stored in:
 configs/detector_profiles/maintained_original_homr.json
 ```
 
-The historical Stage-E profile remains available only for reproduction. It is not a
-production dependency: the root `Dockerfile` contains no historical venv, cloned source,
+The historical Stage-E profile remains available as an isolated compatibility component
+for retained historical tooling. It is not a production dependency: the root `Dockerfile` contains no historical venv, cloned source,
 model downloads, or markers. Canonical preflight validates the maintained profile paths
 and the exact HOMR/evaluator marker values from its manifest.
 
@@ -242,18 +244,20 @@ The extension is `docker/Dockerfile.stage-e`; its default output is
 `ISSUE120_PRODUCTION_IMAGE=<production-image>` and `ISSUE120_STAGE_E_IMAGE=<reproduction-image>`
 on those Make commands. Pin the base to an immutable image ID when retaining reproduction
 provenance. Its separate asset-contract label excludes it from canonical image resolution,
-including explicit overrides to production preflight. This extension retains the historical source commits, model SHA-256 checks,
-and isolated dependency versions; it does not select the historical profile for production.
+including explicit overrides to production preflight. This extension retains the historical
+source commits, model SHA-256 checks, and isolated dependency versions; it does not select the historical profile for production.
 
 The old Stage-E name is retained as a compatibility identifier for #120 tools, manifests,
-and accepted historical results. Its remaining purpose is reproducing those results and
-comparison experiments. The canonical `maintained_original` route does not need it. Removing
-that reproduction contract or renaming its interfaces would be a separate retirement decision;
+and accepted historical results. Its remaining purpose is exposing the pinned component to
+retained tooling and component comparison experiments. This extension inherits the current production main
+venv; it does not reconstruct the complete historical two-HOMR environment or guarantee
+its full68 metrics. Full historical environment reproduction is outside #398 acceptance.
+The canonical `maintained_original` route does not need it. Removing that compatibility contract or renaming its interfaces would be a separate retirement decision;
 no historical data, source pins, or profile is deleted here. The exact input images are still
 an external prerequisite, as recorded in the milestone below.
 
-Its exact provenance,
-package versions, model hashes, and `/opt/` runtime paths are stored in:
+The component profile's exact provenance, package versions, model hashes, and `/opt/` runtime
+paths are stored in:
 
 ```text
 configs/detector_profiles/stage_e_verified_homr.json
@@ -289,10 +293,11 @@ setup guidance and are tracked separately for retirement.
 - For CNN dataset work, stage active datasets under repository `datasets/` before bulk
   operations; use `/mnt/*` as source/archive rather than metadata-heavy scratch space.
 
-The accepted two-HOMR milestone is **not fresh-clone reproducible** today because its exact
-evaluation page images are not retained in Git. The milestone doc records that dependency
-rather than silently substituting new artifacts. The Docker smoke removes the former
-ignored/local-only CNN dependency. OMR-DLN remains an explicit external asset, but once its
+The accepted two-HOMR milestone is **not fresh-clone reproducible** through the current
+compatibility extension: its exact evaluation images remain external, and the extension does
+not reconstruct the complete historical main dependency stack. The milestone doc separates
+those requirements from the retained Stage-E component pins. The Docker smoke removes the
+former ignored/local-only CNN dependency. OMR-DLN remains an explicit external asset, but once its
 selected version is registered in the common model cache, canonical smoke no longer depends
 on an ad-hoc checkout-local model path.
 
@@ -302,26 +307,55 @@ For repeated pipeline evaluation that also needs repository pytest, use a named 
 container based on `pdfscore_pipeline_gpu`. The production runtime intentionally does not
 include pytest; do not weaken or rewrite repository pytest coverage for that reason.
 
-Create the container when absent:
+Create the container when absent. Resolve the production tag to a verified immutable image,
+and mount the registered external OMR-DLN weight so this container can run pipeline checks:
 
 ```bash
+image_id=$(python3 scripts/docker_image_resolver.py resolve \
+  --repo-root . --image-ref pdfscore_pipeline_gpu --explicit)
+omr_host=$(python3 -m src.common.model_artifacts verify models/omr_dln/manifest.json)
+omr_runtime=$(python3 -c \
+  'import json; print(json.load(open("models/omr_dln/manifest.json"))["runtime_path"])')
 docker run -dit --gpus all \
   --name pdfscore_pipeline_pytest_dev \
   -v "$PWD":/workspace \
+  -v "$omr_host:$omr_runtime:ro" \
   -w /workspace \
   -e PYTHONPATH=/workspace \
-  pdfscore_pipeline_gpu bash
+  -e OMR_DLN_MODEL_PATH="$omr_runtime" \
+  "$image_id" bash
 ```
 
-Start it when it already exists but is stopped:
+Updating an image tag does not change an existing container's image. After a Docker/runtime
+update, inspect the container's immutable image ID and resolve that ID against the active
+checkout before reusing it:
+
+```bash
+docker inspect pdfscore_pipeline_pytest_dev --format '{{.Image}}'
+python3 scripts/docker_image_resolver.py resolve --repo-root . \
+  --image-ref "$(docker inspect pdfscore_pipeline_pytest_dev --format '{{.Image}}')" --explicit
+```
+
+When incompatible, save its inspect metadata, stop it if running, and rename it to an unused
+archive name before creating the replacement. This preserves its writable layer and bind
+mounts; do not delete it as part of a routine refresh. Reinstall pytest in the new development
+container only. Check CUDA, assets and production provenance again before pipeline use.
+
+Start a compatible container when it already exists but is stopped:
 
 ```bash
 docker start pdfscore_pipeline_pytest_dev
 ```
 
-Install pytest once into the persistent validation container if it is missing:
+Install development test tools once into the persistent validation container. Git is needed
+by the repository's mocked Docker lifecycle tests; neither tool is added to the production
+image:
 
 ```bash
+docker exec pdfscore_pipeline_pytest_dev \
+  /bin/sh -c 'apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*'
+# Root in this container accesses the host-owned checkout; trust this mount only.
+docker exec pdfscore_pipeline_pytest_dev git config --global --add safe.directory /workspace
 docker exec -w /workspace pdfscore_pipeline_pytest_dev \
   /opt/venv_pipeline/bin/python -m pip install pytest
 ```
@@ -342,6 +376,23 @@ docker exec -w /workspace -e PYTHONPATH=/workspace pdfscore_pipeline_pytest_dev 
 
 Remove this persistent container only when cleanup is explicitly intended; its purpose is to
 avoid reinstalling validation-only tooling into short-lived production-runtime containers.
+
+### Production-only adoption snapshot (#398)
+
+The local maintained environment was updated on 2026-10-03:
+
+| Reference | Adopted environment |
+| --- | --- |
+| `pdfscore_pipeline_gpu:latest` | production-only image `5311cf22ab01`, built from application revision `b25af348` |
+| `pdfscore_stage_e_reproduction:latest` | retained Stage-E component compatibility image `c5da1954371d`; current main venv, not a complete historical environment |
+| `pdfscore_pipeline_pytest_dev` | running development container based on `5311cf22ab01`, with GPU, checkout/external-model mounts, pytest 8.4.2 and Git |
+| `pdfscore_pipeline_gpu:before-issue398` | retained prior all-in-one image, excluded from current setup instructions |
+| `pdfscore_pipeline_pytest_dev_before_issue398` | stopped archive of the old development container; its writable layer was preserved |
+
+Other Issue-scoped or historical containers were not promoted to maintained environments.
+This is an adoption snapshot; tags can change later. Use `docker image inspect` and
+`docker inspect` to establish current identities. Inspect snapshots, migration commands,
+preflight and test evidence are retained locally under `logs/issue398/environment-update/`.
 
 ## Review helpers
 

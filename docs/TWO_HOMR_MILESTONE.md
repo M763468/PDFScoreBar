@@ -5,10 +5,11 @@ reproducible comparison milestone for later work, including Issue #281 performan
 optimization. It is a compact durable contract; the long Issue #274 investigation remains
 historical evidence.
 
-The intent is not to make every large evaluation/model artifact part of Git. The milestone
-is reproducible when the accepted source revision is checked out, the named external/local
-assets below are staged at their canonical paths, and their identity is recorded before a
-comparison run.
+The intent is not to make every large evaluation/model artifact part of Git. Full reproduction
+requires the accepted application revision, its complete historical
+runtime (including the main `/opt/venv_pipeline` dependencies), and the named external/local
+assets below, with their identity recorded before a comparison run. The current Stage-E
+compatibility extension alone does not reconstruct that complete environment.
 
 ## Accepted revision
 
@@ -45,7 +46,7 @@ use the JSON as the provenance source.
 
 ## Architecture reproduction contract
 
-For every dense production page, all of the following must hold:
+At the accepted revision, every dense production page had to satisfy all of the following:
 
 1. HOMR neural inference purpose count is exactly **2**.
 2. Exactly one HOMR inference is on the original/source page using the pinned
@@ -72,46 +73,43 @@ PYTHONPATH=. python -m pytest \
 These tests are guards for ownership/contract structure. They are not substitutes for the
 full accuracy milestone.
 
-## Runtime assumptions
+## Historical runtime assumptions and current compatibility scope
 
-The accepted milestone used the former all-in-one `pdfscore_pipeline_gpu` image.
-Since Issue #398, historical reruns use the explicit reproduction extension:
+The accepted milestone used the former all-in-one `pdfscore_pipeline_gpu` image:
 
-- Docker image for a new historical rerun: `pdfscore_stage_e_reproduction`
 - GPU runtime: Docker with `--gpus all`
 - working directory in container: `/workspace`
 - project interpreter: `/opt/venv_pipeline/bin/python`
 - repository mounted at `/workspace`
 - `PYTHONPATH=/workspace`
 
-Build the production base and reproduction extension with:
+That historical image name is evidence of the accepted run, not a promise about the current
+mutable tag. Root `Dockerfile` and the current `pdfscore_pipeline_gpu` tag now contain only
+the maintained production runtime, whose dense config selects `maintained_original`.
+
+Issue #398 retains `docker/Dockerfile.stage-e` / `pdfscore_stage_e_reproduction` only as an
+isolated compatibility surface for the pinned Stage-E HOMR component and retained #120
+tooling. The extension adds the isolated historical HOMR venv, source commits and models to
+a **current production base**. Its main `/opt/venv_pipeline` still uses current production
+dependencies; it does not restore the milestone's complete main runtime. Restoring an old
+application config/source alone does not close that gap.
+
+Build that component compatibility extension with:
 
 ```bash
 make docker-build
 make -f tools/issue120/Makefile.stage_e.mk docker-build-stage-e
 ```
 
-The examples below describe the historical milestone's config at its accepted revision.
-Current `configs/dense_full_pipeline.yaml` selects `maintained_original`; do not use that
-changed profile as evidence of reproducing the old Stage-E result. Restore the accepted
-config/source inputs and record their revision for historical reruns. The extension retains
-the old source/model pins and runtime paths; it does not restore an older application config.
-See [`ENVIRONMENTS.md`](ENVIRONMENTS.md) for image overrides.
+These commands do not establish full historical two-HOMR reproduction. A complete milestone
+rerun would separately require reconstruction and validation of the entire historical
+runtime, application/config revision and input/model identities against the original gates.
+That work is outside
+[#398's clarified acceptance](https://github.com/M763468/PDFScoreBar/issues/398#issuecomment-5969279832).
+#398 validates independent production/minimal builds and execution without historical bytes or historical preflight requirements. See
+[`ENVIRONMENTS.md`](ENVIRONMENTS.md) for the maintained and compatibility build paths.
 
-A direct fresh run shape is:
-
-```bash
-docker run --rm --gpus all \
-  -v "$PWD":/workspace \
-  -w /workspace \
-  -e PYTHONPATH=/workspace \
-  pdfscore_stage_e_reproduction \
-  /opt/venv_pipeline/bin/python src/pipeline/main.py \
-  --config configs/dense_full_pipeline.yaml \
-  --run-id two_homr_milestone_reproduction
-```
-
-Do not use `--skip-existing` when the purpose is a fresh production reproduction.
+Do not use `--skip-existing` when a separately prepared historical run requires fresh output.
 
 ## Required local/external assets and staging contract
 
@@ -289,24 +287,28 @@ The accepted production code is the PR #279 squash merge `df130d12...`; the orig
 For a new causal performance comparison:
 
 1. stage the canonical page/model assets above and record the CNN checkpoint SHA-256;
-2. use the same immutable `pdfscore_stage_e_reproduction` image/hardware state for every compared ref;
+2. reconstruct and validate the full historical runtime, then use the same immutable
+   image/hardware state for every compared ref;
 3. preserve the same `configs/dense_full_pipeline.yaml` content;
 4. run the production path through MMR so both removed inference boundaries are covered;
 5. capture wall time, process-tree RSS, GPU memory, and the architecture source contract;
 6. label whether the run is cold or warm with respect to image/model caches.
 
-A practical shell skeleton for each ref is:
+After that full runtime has been independently verified, a shell skeleton for each ref is:
 
 ```bash
 /usr/bin/time -v docker run --rm --gpus all \
   -v "$PWD":/workspace \
   -w /workspace \
   -e PYTHONPATH=/workspace \
-  pdfscore_stage_e_reproduction \
+  "$HISTORICAL_RUNTIME_IMAGE_ID" \
   /opt/venv_pipeline/bin/python src/pipeline/main.py \
   --config configs/dense_full_pipeline.yaml \
   --run-id "perf_<ref>"
 ```
+
+`HISTORICAL_RUNTIME_IMAGE_ID` must identify the verified complete historical environment,
+not merely the current Stage-E component extension.
 
 Use the project resource sampler when available to obtain process-tree and GPU peaks;
 `/usr/bin/time -v` alone does not reproduce the accepted GPU metric. Record the exact

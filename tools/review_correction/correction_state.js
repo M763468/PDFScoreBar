@@ -46,12 +46,16 @@
     });
     return result;
   }
+  const recordedDrafts = new Map();
+  const draftKey = (page, type) => JSON.stringify([String(page), type]);
   const originalDirty = setDirty;
   setDirty = function(type, dirty) {
-    originalDirty(type, dirty);
-    if (!currentPage) return;
+    if (!currentPage) { originalDirty(type, dirty); return; }
     const page = pageValue();
     const items = JSON.parse(JSON.stringify(itemsForCurrentPage(type)));
+    // The save completion belongs to its captured draft, not a newer editor value.
+    if (!dirty && recordedDrafts.get(draftKey(page, type)) !== JSON.stringify(items)) dirty = true;
+    originalDirty(type, dirty);
     enqueue(async () => {
       await request(dirty ? "/api/state/pending" : "/api/state/pending/clear",
         dirty ? {page, correction_type: type, items} : {page, correction_type: type});
@@ -63,14 +67,59 @@
     const captured = JSON.parse(JSON.stringify(items));
     return enqueue(async () => {
       await request("/api/state/pending", {page, correction_type: type, items: captured});
-      try { return await originalSave(type, page, captured); }
+      try {
+        const result = await originalSave(type, page, captured);
+        recordedDrafts.set(draftKey(page, type), JSON.stringify(captured));
+        return result;
+      }
       finally { await refresh(); }
     });
   };
-  // Finalizing movement review changes the consumed correction set as well.
-  exportMovementBtn.addEventListener("click", () => {
-    const timer = setInterval(() => { if (!exportMovementBtn.disabled) { clearInterval(timer); enqueue(refresh); } }, 100);
-  });
+  const feedback = (key, values, fallback) => {
+    const template = window.ReviewStrings?.feedback?.[key] || fallback;
+    return template.replace(/\{(\w+)\}/g, (_, name) => String(values[name] ?? ""));
+  };
+  // Navigation must also keep edits made while its automatic save is in flight.
+  switchPage = function(nextIndex) {
+    if (nextIndex === currentIndex) return;
+    return waitForMovementSaves()
+      .then(() => saveCorrectionTypes(Array.from(dirtyTypes)))
+      .then(() => {
+        if (dirtyTypes.size) {
+          saveStatus.textContent = feedback("pageEditedDuringSave", {},
+            "New edits remain unsaved. Save them before changing page.");
+          return;
+        }
+        currentIndex = nextIndex;
+        loadPage();
+      })
+      .catch(error => {
+        saveStatus.textContent = feedback("pageSaveFailed", {error: error.message},
+          "Page change stopped because saving failed: {error}");
+      });
+  };
+  // This user-only adapter observes completion of the actual finalization request.
+  exportMovementBtn.onclick = async function(event) {
+    event.currentTarget.blur();
+    releaseTransientInteraction();
+    const remaining = unresolvedMovementSuggestionCount();
+    if (remaining > 0) {
+      saveStatus.textContent = feedback("finishBlocked", {count: remaining},
+        "Review the remaining {count} boundary suggestions before finishing.");
+      return;
+    }
+    try {
+      await waitForMovementSaves();
+      const data = await request("/api/export_movement_boundaries", {});
+      saveStatus.textContent = feedback("finishMovement", {count: data.count},
+        "Movement review finished. {count} confirmed boundaries are ready for the next numbering run.");
+    } catch (error) {
+      saveStatus.textContent = feedback("finishMovementFailed", {error: error.message},
+        "Could not finish movement review: {error}");
+    } finally {
+      await enqueue(refresh);
+    }
+  };
   window.reviewCorrectionState = {refresh: () => enqueue(refresh), ready: () => updateChain, get: () => latestState};
   enqueue(refresh);
 })();

@@ -41,3 +41,9 @@ State summary counts are independent axes: a page/type may be both recorded and 
 `recorded_identity` hashes the recorded page items and is `null` whenever that page/type has no
 recorded correction, even if a shared file exists for another page. Error counts count each
 page/type once, including failed apply combined with a recording error.
+
+The user state adapter compares save completion with its captured page/type draft. Edits made
+while a save is in flight remain pending; page navigation stops if its automatic save leaves newer
+edits unsaved. Movement finalization refreshes state after the actual request settles, including
+failure, rather than inferring completion from button state. These adapters are user-only and do
+not change GT/developer handlers or correction payloads.

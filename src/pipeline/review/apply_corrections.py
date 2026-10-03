@@ -1240,6 +1240,10 @@ def apply_corrections_and_rerun(
 
     rerun_config["inputs"]["measure_overrides"] = str(canonical_paths["measure_overrides"])
     rerun_config["inputs"]["barline_overrides"] = str(canonical_paths["barline_overrides"])
+    if movement_boundary_input[1] is not None:
+        # Keep the retained execution config consistent with the exact reviewed
+        # boundary snapshot consumed below, including an explicitly empty set.
+        rerun_config["inputs"]["movement_boundaries"] = deepcopy(movement_boundary_input[0])
 
     if not isinstance(rerun_config.get("steps"), dict):
         rerun_config["steps"] = {}

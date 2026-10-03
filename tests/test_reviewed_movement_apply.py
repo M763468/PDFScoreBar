@@ -319,3 +319,47 @@ def test_corrected_run_collision_is_rejected_before_overrides_are_written(tmp_pa
 
     assert sorted(p.name for p in handoff_path.parent.iterdir()) == ["manual_correction_input.json"]
     assert (occupied / "keep.txt").read_text(encoding="utf-8") == "keep"
+
+
+@pytest.mark.parametrize(
+    "boundaries",
+    [
+        [],
+        [
+            {
+                "page": 0,
+                "system": 0,
+                "reset_number": 1,
+                "source": "reviewed_candidate",
+                "provenance": {"kind": "movement_boundary_review"},
+            }
+        ],
+    ],
+)
+def test_retained_config_records_exact_reviewed_movement_input(tmp_path, boundaries):
+    handoff = _handoff(tmp_path)
+    source = {
+        "schema_version": "issue268.movement_boundaries.v1",
+        "boundaries": [
+            {
+                "page": 0,
+                "system": 1,
+                "reset_number": 1,
+                "source": "configured",
+                "provenance": {"kind": "source"},
+            }
+        ],
+    }
+    reviewed = {"schema_version": "issue268.movement_boundaries.v1", "boundaries": boundaries}
+    (tmp_path / "manifest.json").write_text(
+        json.dumps(
+            {"config": {"inputs": {"movement_boundaries": source}, "steps": {}, "outputs": {}}}
+        )
+    )
+    (handoff.parent / "corrections/movement_boundaries.json").write_text(json.dumps(reviewed))
+    run = apply_corrections_and_rerun(
+        handoff, output_root=tmp_path / "runs", run_id="exact_reviewed", dry_run=True
+    )
+    config = json.loads((run / "corrected_pipeline_config.json").read_text())
+    assert config["inputs"]["movement_boundaries"] == reviewed
+    assert source != reviewed

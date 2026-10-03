@@ -51,3 +51,8 @@ while a save is in flight remain pending; page navigation stops if its automatic
 edits unsaved. Movement finalization refreshes state after the actual request settles, including
 failure, rather than inferring completion from button state. These adapters are user-only and do
 not change GT/developer handlers or correction payloads.
+
+The authoritative apply engine records the exact finalized reviewed movement payload in
+`corrected_pipeline_config.json`, including an explicitly empty boundary set. This consumed-input
+provenance belongs to the apply integration (#395); the acceptance gate (#397) verifies it on real
+artifacts without owning a second movement-input interpretation.

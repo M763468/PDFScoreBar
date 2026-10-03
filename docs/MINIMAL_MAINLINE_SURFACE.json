@@ -794,6 +794,7 @@
       "tests/test_movement_boundary_review.py",
       "tests/test_review_correction_server.py",
       "tests/test_review_correction_state.py",
+      "tests/test_review_correction_application.py",
       "tests/test_review_correction_client.py"
     ],
     "maintained_contract": [
@@ -862,7 +863,8 @@
       "tests/test_python_env.py",
       "tests/test_source_page_provenance.py",
       "tests/test_subprocess_utils.py",
-      "tests/test_thin_barline_finder.py"
+      "tests/test_thin_barline_finder.py",
+      "tests/test_reviewed_movement_apply.py"
     ]
   },
   "test_support_patterns": [

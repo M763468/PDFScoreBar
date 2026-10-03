@@ -794,7 +794,8 @@
       "tests/test_review_correction_state.py",
       "tests/test_review_correction_application.py",
       "tests/test_review_correction_client.py",
-      "tests/test_issue396_review_ui.py"
+      "tests/test_issue396_review_ui.py",
+      "tests/test_review_acceptance.py"
     ],
     "maintained_contract": [
       "tests/test_apply_corrections.py",

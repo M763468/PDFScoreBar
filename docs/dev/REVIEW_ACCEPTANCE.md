@@ -74,3 +74,19 @@ integration behavior, not a fresh production detector-quality comparison.
 The first browser attempt applied successfully but its harness used a relative PDF URL with
 Playwright's unconfigured request client. Its log and outputs remain retained; `browser02`
 corrects that harness error. No production thresholds or acceptance expectations were changed.
+
+
+### Review responsibility correction (2026-10-03)
+
+Failed-apply error counting is owned and tested by #394. Retention of the consumed reviewed
+movement payload in corrected config is owned and tested by #395. These fixes have been moved
+into their dependency PRs; #397 contains acceptance tooling, evidence documentation and the
+localization handoff. All correction recording now uses the #394 common recording operation;
+explicit Save versus movement confirmation remains only a UI trigger distinction.
+
+After restacking, the state/server/application/movement/UI/final/preparation suites passed
+(51 tests), with `make lint`, repository-surface checks and fast tests (110) passing. The actual
+apply engine, movement helper and application adapter are unchanged from the retained GPU
+candidate. Its numbering/PDF results remain valid evidence; no expensive inference was repeated
+solely for moving commits between PRs. The updated pending/recorded axes and failure/retry
+transitions are covered by focused tests for all four correction types.

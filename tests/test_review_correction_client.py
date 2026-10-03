@@ -100,3 +100,60 @@ vm.runInContext(fs.readFileSync('tools/review_correction/correction_state.js','u
         ["node", "-e", script, scenario], cwd=ROOT, capture_output=True, text=True, timeout=20
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_apply_controls_survive_state_panel_refresh():
+    script = r"""
+const fs = require('fs');
+const vm = require('vm');
+const assert = require('assert/strict');
+const byId = new Map();
+function node(initialId = '') {
+  const value = {
+    children: [], parentNode: null, textContent: '', disabled: false, hidden: false,
+    appendChild(child) { child.parentNode = this; this.children.push(child); return child; },
+    replaceChildren() { this.children = []; },
+    setAttribute() {}, addEventListener() {},
+  };
+  let id = '';
+  Object.defineProperty(value, 'id', {
+    get() { return id; },
+    set(next) { id = next; if (next) byId.set(next, value); },
+  });
+  value.id = initialId;
+  return value;
+}
+const sidebarHeader = node('sidebarHeader');
+const correctionStatePanel = node('correctionStatePanel');
+sidebarHeader.appendChild(correctionStatePanel);
+const context = {
+  console, Promise,
+  document: {
+    getElementById(id) { return byId.get(id) || null; },
+    createElement() { return node(); },
+  },
+  reviewCorrectionState: {
+    get() { return null; }, ready() { return Promise.resolve(); }, refresh() { return Promise.resolve(); },
+  },
+  addEventListener() {},
+  fetch: async () => ({ok: true}),
+  setInterval() { return 1; }, clearInterval() {},
+};
+context.window = context;
+vm.createContext(context);
+vm.runInContext(fs.readFileSync('tools/review_correction/apply_result.js','utf8'), context);
+const controls = byId.get('applicationControls');
+assert(controls);
+assert.equal(controls.parentNode, sidebarHeader);
+assert.notEqual(controls.parentNode, correctionStatePanel);
+assert(sidebarHeader.children.includes(controls));
+correctionStatePanel.replaceChildren();
+assert(sidebarHeader.children.includes(controls));
+assert.equal(byId.get('applyBtn').parentNode, controls);
+assert.equal(byId.get('openResultBtn').parentNode, controls);
+assert.equal(byId.get('applicationStatus').parentNode, controls);
+"""
+    result = subprocess.run(
+        ["node", "-e", script], cwd=ROOT, capture_output=True, text=True, timeout=20
+    )
+    assert result.returncode == 0, result.stderr

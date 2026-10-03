@@ -1,0 +1,53 @@
+/* Apply controls consume server state; no correction interpretation lives here. */
+(() => {
+  let host = document.getElementById("applicationControls");
+  if (!host) {
+    host = document.createElement("section");
+    host.id = "applicationControls";
+    document.getElementById("sidebarHeader").appendChild(host);
+  }
+  let apply = document.getElementById("applyBtn");
+  let open = document.getElementById("openResultBtn");
+  let status = document.getElementById("applicationStatus");
+  if (!apply) {
+    apply = document.createElement("button"); apply.id = "applyBtn"; apply.className = "btn";
+    apply.textContent = "Generate corrected PDF"; host.appendChild(apply);
+  }
+  if (!open) {
+    open = document.createElement("a"); open.id = "openResultBtn"; open.className = "btn";
+    open.textContent = "Open corrected PDF"; host.appendChild(open);
+  }
+  if (!status) { status = document.createElement("div"); status.id = "applicationStatus"; host.appendChild(status); }
+  let timer = null;
+  function update(state) {
+    const summary = state.package;
+    const running = (state.states || []).some(entry => entry.application_status === "applying");
+    const pending = summary.counts.pending > 0;
+    const errors = (state.states || []).some(entry => entry.error && entry.application_status !== "error");
+    apply.disabled = running || pending || errors;
+    const last = summary.last_successful_result;
+    open.hidden = !last;
+    open.href = "/api/result"; open.target = "_blank"; open.rel = "noopener";
+    status.textContent = running ? "Generating corrected PDF…" : pending ? "Record your edits before generating a corrected PDF."
+      : last && !summary.current_result ? "The previous corrected PDF does not include the current corrections."
+      : last ? "The corrected PDF includes the recorded corrections." : "Recorded corrections are ready to apply.";
+    const failure = (state.states || []).find(entry => entry.error);
+    if (failure) status.textContent = `Corrected PDF needs attention: ${failure.error}`;
+    if (running && !timer) timer = setInterval(() => window.reviewCorrectionState.refresh().catch(() => {}), 1000);
+    if (!running && timer) { clearInterval(timer); timer = null; }
+  }
+  window.addEventListener("correction-state", event => update(event.detail));
+  apply.onclick = async () => {
+    apply.disabled = true;
+    try {
+      await window.reviewCorrectionState.ready();
+      const response = await fetch("/api/apply", {method: "POST", headers: {"Content-Type": "application/json"}, body: "{}"});
+      if (!response.ok) throw new Error(`Generation request failed (${response.status})`);
+      await window.reviewCorrectionState.refresh();
+    } catch (error) {
+      status.textContent = error.message;
+      apply.disabled = false;
+    }
+  };
+  if (window.reviewCorrectionState.get()) update(window.reviewCorrectionState.get());
+})();

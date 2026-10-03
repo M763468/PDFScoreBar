@@ -2,8 +2,8 @@
 
 ## Answer
 
-The current proposed subset is the **116 tracked files** listed in
-[`MINIMAL_MAINLINE_SURFACE.json`](MINIMAL_MAINLINE_SURFACE.json): 106 files under `src/`,
+The current proposed subset is the **117 tracked files** listed in
+[`MINIMAL_MAINLINE_SURFACE.json`](MINIMAL_MAINLINE_SURFACE.json): 107 files under `src/`,
 3 model files, 2 configs, 2 Docker helpers,
 and `Dockerfile`, `pyproject.toml`, and `README.md`. The root README is required by
 `pyproject.toml` during installation. No `docs/**`, `tests/**`, CI, GT, or experiment
@@ -35,14 +35,15 @@ Four production helpers
 have now moved from `tools/` to `src/`, though their candidate-generation APIs still
 carry evaluation-oriented inventory structure. An isolated bind-mounted copy of the earlier
 102 selected files completed the one-page GPU pipeline and passed the 85/85 detector accuracy
-gate. The additional file now excluded, `movement_boundary_review.py`, was not imported by
-that run or by the selected engine/correction call paths. The run used the current full image
-plus externally mounted validation input and model; Issue #398 additionally built the current 116-file bundle directly into a production-only
-image, without mounting the development checkout at `/workspace`. With networking disabled,
-the one-page PDF engine job generated final PDF and review artifacts and passed the same
-85/85 accuracy gate (hard FP/FN/soft residual all zero). Validation input, GT/checker and the
-external OMR-DLN weight were mounted separately; none entered the runtime file list.
-Both production and minimal images exclude the historical Stage-E `/opt` trees and markers.
+gate. The earlier run did not import `movement_boundary_review.py`; the reviewed-movement apply
+contract now requires its resolution/provenance validation helper, so it is included in the runtime
+subset. Candidate-generation and the user/GT applications remain outside the selected engine. The run used the current full image
+plus externally mounted validation input and model; Issue #398 additionally built the current runtime
+bundle directly into a production-only image without mounting the development checkout at
+`/workspace`. With networking disabled, the one-page PDF engine job generated final PDF and review
+artifacts and passed the same 85/85 accuracy gate (hard FP/FN/soft residual all zero). Validation
+input, GT/checker and the external OMR-DLN weight were mounted separately; none entered the runtime
+file list. Both production and minimal images exclude the historical Stage-E `/opt` trees and markers.
 Do not present this subset as a finished standalone distribution.
 
 ## What goes where

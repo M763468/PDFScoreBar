@@ -67,12 +67,21 @@ def test_apply_corrections_can_generate_corrected_final_pdf(
 ):
     handoff_path = _setup_review_package(tmp_path)
     mock_retained_rerun.return_value = {"rerun_mode": "retained_artifacts_selective"}
+    final_pdf = tmp_path / "corrected_run_123" / "final" / "custom_score_numbered.pdf"
+    final_summary = tmp_path / "corrected_run_123" / "review" / "corrected_final_summary.json"
     mock_materialize_final.return_value = {
-        "final_pdf": str(tmp_path / "corrected_run_123" / "final" / "custom_score_numbered.pdf"),
-        "summary_path": str(
-            tmp_path / "corrected_run_123" / "review" / "corrected_final_summary.json"
-        ),
+        "final_pdf": str(final_pdf),
+        "summary_path": str(final_summary),
     }
+
+    def materialize(**_kwargs):
+        final_pdf.parent.mkdir(parents=True, exist_ok=True)
+        final_summary.parent.mkdir(parents=True, exist_ok=True)
+        final_pdf.write_bytes(b"%PDF-test")
+        final_summary.write_text("{}", encoding="utf-8")
+        return mock_materialize_final.return_value
+
+    mock_materialize_final.side_effect = materialize
 
     new_run_dir = apply_corrections_and_rerun(
         handoff_path=handoff_path,

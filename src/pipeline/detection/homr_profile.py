@@ -7,7 +7,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from src.pipeline.core.subprocess_utils import run_with_logging
+from src.pipeline.core import run_with_logging
 
 from .maintained_profile import run_homr_profile as run_maintained_profile
 from .profile_contract import load_profile_manifest

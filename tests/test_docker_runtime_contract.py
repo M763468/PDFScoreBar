@@ -10,8 +10,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from src.common.realesrgan_assets import resolve_realesrgan_weight
-from src.pipeline.detection.omr_dln_model import resolve_omr_dln_model_path
+from src.common.model_artifacts import resolve_omr_dln_model_path, resolve_realesrgan_weight
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 

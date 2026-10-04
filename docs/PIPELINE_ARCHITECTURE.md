@@ -95,10 +95,9 @@ images at the detector boundary.
 
 `PipelineOrchestrator` owns input validation/rendering, phase order, shared model caches,
 telemetry and manifest/review dispatch. Its existing phase methods delegate execution to
-`steps/base_numbering_phase.py` (barline corrections and physical base layout),
-`steps/mmr_batch_phase.py` (batch preparation and persistent MMR models), and
-`steps/final_numbering_phase.py` (override application, cross-page numbering and overlays).
-`steps/phase_services.py` supplies the current orchestrator operation hooks at dispatch time;
+`steps/numbering_phases.py` contains base layout/barline corrections, batch MMR preparation,
+and final override application, cross-page numbering and overlays.
+`NumberingPhaseServices` in that module supplies the current orchestrator operation hooks at dispatch time;
 phase helpers share the same context and caches and do not import their caller. Review
 configuration/prerequisites and manifest projection live in `review/pipeline_review.py`.
 

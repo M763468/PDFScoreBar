@@ -179,8 +179,7 @@ def run(
 
     from src.common.connector_artifacts import describe_connector_artifacts
     from src.measure_numbering.pipeline import MeasureNumberingPipeline
-    from src.measure_numbering.serialization import score_to_dict
-    from src.measure_numbering.types import Score
+    from src.measure_numbering.types import Score, score_to_dict
     from src.pipeline.steps.barlines import normalize_barlines
 
     specs = build_page_specs(input_root, support_run=support_run, page_limit=page_limit)

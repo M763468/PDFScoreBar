@@ -71,8 +71,7 @@ def run(request_path: Path, result_path: Path) -> Path:
         install_current_homr_consumer_compat,
     )
     from src.homr_runtime.reporting import save_homr_results
-    from src.homr_runtime.settings import DEFAULT_TUNING
-    from src.homr_runtime.types import BarlinePrediction
+    from src.homr_runtime.types import DEFAULT_TUNING, BarlinePrediction
     from src.pipeline.detection.connector_artifacts import install_homr_connector_artifact_capture
 
     use_gpu_inference = torch.cuda.is_available()

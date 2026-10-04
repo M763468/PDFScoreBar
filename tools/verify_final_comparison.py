@@ -12,7 +12,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from homr_eval_scripts.core.metrics import load_ground_truth_boxes
 from src.common.barline_evaluation import greedy_barline_match
-from src.pipeline.core.run_ids import build_probe_run_id
+from src.pipeline.core import build_probe_run_id
 from src.pipeline.steps.cnn_scoring import run_cnn_scoring_batch
 from src.pipeline.steps.probe_scan import run_probe_scan_batch
 

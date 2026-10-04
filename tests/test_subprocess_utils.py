@@ -3,7 +3,7 @@ import subprocess
 
 import pytest
 
-from src.pipeline.core.subprocess_utils import run_with_logging
+from src.pipeline.core import run_with_logging
 
 
 def test_run_with_logging_captures_output(caplog):

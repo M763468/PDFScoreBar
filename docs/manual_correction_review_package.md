@@ -401,7 +401,7 @@ The real-artifact acceptance procedure and fixed observable result gates are doc
 `logs/issue397/acceptance/`, separately from each clean corrected `final/` directory.
 
 For #361, the stable user surface consists of `tools/review_correction/index.html`, `strings.js`,
-`app.js`, `correction_state.js`, `apply_result.js`, and the state labels in `state.py::LABELS`.
+`app.js`, `correction_state.js`, and the state labels in `state.py::LABELS`.
 Primary copy is catalogued; some detail/status messages remain literal English in `app.js`
 (for example measure/system summaries, removal feedback and artifact-load errors). Localization
 should extract these within the user application and translate validation feedback displayed by

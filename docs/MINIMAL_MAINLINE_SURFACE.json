@@ -58,23 +58,15 @@
     },
     {
       "pattern": "src/common/model_artifacts.py",
-      "role": "Digest-verified model registration, download and cache resolution"
+      "role": "Verified model identities, download/cache and image/external asset resolution"
     },
     {
       "pattern": "src/common/preprocessing.py",
       "role": "Production detector image preprocessing"
     },
     {
-      "pattern": "src/common/realesrgan_assets.py",
-      "role": "Resolve verified image-owned SR assets"
-    },
-    {
       "pattern": "src/common/thin_barline_finder.py",
       "role": "Thin vertical barline detection used by production rescue"
-    },
-    {
-      "pattern": "src/homr_runtime/__init__.py",
-      "role": "Production   init   implementation used by maintained dense processing"
     },
     {
       "pattern": "src/homr_runtime/api_compat.py",
@@ -109,24 +101,16 @@
       "role": "Production segnet cache implementation used by maintained dense processing"
     },
     {
-      "pattern": "src/homr_runtime/settings.py",
-      "role": "Production settings implementation used by maintained dense processing"
+      "pattern": "src/homr_runtime/types.py",
+      "role": "HOMR prediction records and existing tuning defaults"
     },
     {
       "pattern": "src/homr_runtime/transforms.py",
       "role": "Production transforms implementation used by maintained dense processing"
     },
     {
-      "pattern": "src/homr_runtime/types.py",
-      "role": "Production types implementation used by maintained dense processing"
-    },
-    {
       "pattern": "src/homr_runtime/utils.py",
       "role": "Production utils implementation used by maintained dense processing"
-    },
-    {
-      "pattern": "src/measure_numbering/__init__.py",
-      "role": "numbering package"
     },
     {
       "pattern": "src/measure_numbering/builder.py",
@@ -161,28 +145,16 @@
       "role": "MMR OCR provider"
     },
     {
-      "pattern": "src/measure_numbering/serialization.py",
-      "role": "numbering serialization"
-    },
-    {
       "pattern": "src/measure_numbering/types.py",
-      "role": "numbering data model"
+      "role": "Numbering data records and JSON serialization"
     },
     {
       "pattern": "src/pdf_to_images.py",
       "role": "PDF page rendering"
     },
     {
-      "pattern": "src/pipeline/__init__.py",
-      "role": "pipeline package"
-    },
-    {
       "pattern": "src/pipeline/core/__init__.py",
-      "role": "pipeline core utilities"
-    },
-    {
-      "pattern": "src/pipeline/core/config.py",
-      "role": "pipeline core utilities"
+      "role": "Shared configuration, run identifiers, subprocess logging and output I/O"
     },
     {
       "pattern": "src/pipeline/core/manifest.py",
@@ -190,14 +162,6 @@
     },
     {
       "pattern": "src/pipeline/core/python_env.py",
-      "role": "pipeline core utilities"
-    },
-    {
-      "pattern": "src/pipeline/core/run_ids.py",
-      "role": "pipeline core utilities"
-    },
-    {
-      "pattern": "src/pipeline/core/subprocess_utils.py",
       "role": "pipeline core utilities"
     },
     {
@@ -261,10 +225,6 @@
       "role": "Production maintained source page worker implementation used by maintained dense processing"
     },
     {
-      "pattern": "src/pipeline/detection/omr_dln_model.py",
-      "role": "OMR-DLN model resolution"
-    },
-    {
       "pattern": "src/pipeline/detection/omr_dln_worker.py",
       "role": "formal production OMR-DLN worker"
     },
@@ -283,10 +243,6 @@
     {
       "pattern": "src/pipeline/detection/utils.py",
       "role": "detector path helpers"
-    },
-    {
-      "pattern": "src/pipeline/detector_routes/__init__.py",
-      "role": "canonical detector-route package"
     },
     {
       "pattern": "src/pipeline/detector_routes/candidate_drops.py",
@@ -357,28 +313,16 @@
       "role": "Production existing implementation used by maintained dense processing"
     },
     {
-      "pattern": "src/pipeline/probe_detector/peaks.py",
-      "role": "Production peaks implementation used by maintained dense processing"
-    },
-    {
-      "pattern": "src/pipeline/probe_detector/projections.py",
-      "role": "staff-band ink projection and optional extension regions"
+      "pattern": "src/pipeline/probe_detector/measurements.py",
+      "role": "Staff projections, peak selection and candidate ink measurements"
     },
     {
       "pattern": "src/pipeline/probe_detector/rescue.py",
       "role": "production probe detector"
     },
     {
-      "pattern": "src/pipeline/probe_detector/scan_measurements.py",
-      "role": "candidate-local ink and x-peak measurements; no acceptance decisions"
-    },
-    {
       "pattern": "src/pipeline/probe_detector/types.py",
       "role": "production probe detector"
-    },
-    {
-      "pattern": "src/pipeline/review/__init__.py",
-      "role": "correction/final-output materialization used by the engine boundary"
     },
     {
       "pattern": "src/pipeline/review/apply_corrections.py",
@@ -405,16 +349,12 @@
       "role": "Production pipeline review implementation used by maintained dense processing"
     },
     {
-      "pattern": "src/pipeline/steps/__init__.py",
-      "role": "production pipeline steps"
-    },
-    {
       "pattern": "src/pipeline/steps/barlines.py",
       "role": "production pipeline steps"
     },
     {
-      "pattern": "src/pipeline/steps/base_numbering_phase.py",
-      "role": "base numbering and barline correction execution"
+      "pattern": "src/pipeline/steps/numbering_phases.py",
+      "role": "Base/MMR/final numbering execution with dispatch-time orchestrator services"
     },
     {
       "pattern": "src/pipeline/steps/candidate_filters.py",
@@ -429,10 +369,6 @@
       "role": "production pipeline steps"
     },
     {
-      "pattern": "src/pipeline/steps/final_numbering_phase.py",
-      "role": "final page numbering, movement resets and overlays"
-    },
-    {
       "pattern": "src/pipeline/steps/hybrid_consensus.py",
       "role": "production pipeline steps"
     },
@@ -441,31 +377,15 @@
       "role": "production pipeline steps"
     },
     {
-      "pattern": "src/pipeline/steps/mmr_batch_phase.py",
-      "role": "MMR batch preparation and model-cache use"
-    },
-    {
       "pattern": "src/pipeline/steps/numbering.py",
       "role": "production pipeline steps"
-    },
-    {
-      "pattern": "src/pipeline/steps/phase_services.py",
-      "role": "explicit orchestrator operation hooks passed to numbering phases"
     },
     {
       "pattern": "src/pipeline/steps/probe_scan.py",
       "role": "production pipeline steps"
     },
     {
-      "pattern": "src/pipeline/utils/__init__.py",
-      "role": "production pipeline utilities"
-    },
-    {
       "pattern": "src/pipeline/utils/images.py",
-      "role": "production pipeline utilities"
-    },
-    {
-      "pattern": "src/pipeline/utils/io.py",
       "role": "production pipeline utilities"
     },
     {
@@ -920,10 +840,6 @@
     },
     {
       "pattern": "tools/review_correction/strings.js",
-      "role": "Supported package-bound correction English/Japanese browser UI asset"
-    },
-    {
-      "pattern": "tools/review_correction/apply_result.js",
       "role": "Supported package-bound correction English/Japanese browser UI asset"
     },
     {

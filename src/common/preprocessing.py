@@ -8,7 +8,7 @@ from typing import Any, Optional
 import cv2
 import numpy as np
 
-from .realesrgan_assets import resolve_realesrgan_weight
+from src.common.model_artifacts import resolve_realesrgan_weight
 
 logger = logging.getLogger(__name__)
 

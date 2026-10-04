@@ -16,8 +16,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from src.pipeline.core import run_with_logging
 from src.pipeline.core.python_env import get_pipeline_python
-from src.pipeline.core.subprocess_utils import run_with_logging
 from src.pipeline.perf_trace import set_context, span
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]

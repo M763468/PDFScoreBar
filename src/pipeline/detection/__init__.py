@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List
 
-from src.pipeline.core.config import get_nested
+from src.pipeline.core import get_nested
 
 from .utils import resolve_barlines_and_masks_config, resolve_paths_from_detection
 

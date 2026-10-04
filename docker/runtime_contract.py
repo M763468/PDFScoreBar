@@ -24,7 +24,6 @@ SOURCE_CONTRACT_FILES = (
     Path("tools/review_correction/index.html"),
     Path("tools/review_correction/app.js"),
     Path("tools/review_correction/strings.js"),
-    Path("tools/review_correction/apply_result.js"),
     Path("tools/review_correction/correction_state.js"),
 )
 SOURCE_SUFFIXES = frozenset({".py", ".toml"})
@@ -304,9 +303,11 @@ def run_preflight(
     import torch
     import yaml
 
-    from src.common.model_artifacts import resolve_model_artifact
-    from src.common.realesrgan_assets import resolve_realesrgan_weight
-    from src.pipeline.detection.omr_dln_model import resolve_omr_dln_model_path
+    from src.common.model_artifacts import (
+        resolve_model_artifact,
+        resolve_omr_dln_model_path,
+        resolve_realesrgan_weight,
+    )
 
     config = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
     inputs = config.get("inputs") or {}

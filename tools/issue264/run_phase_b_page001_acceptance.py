@@ -7,7 +7,7 @@ import argparse
 from datetime import datetime, timezone
 from pathlib import Path
 
-from src.pipeline.utils.io import load_json, write_json
+from src.pipeline.core import load_json, write_json
 from tools.issue264.phase_b_page001_acceptance import run
 
 CANONICAL_RUN = "issue255_production_restore_full68_top_level_worker_01"

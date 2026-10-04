@@ -12,7 +12,7 @@ from typing import Any, Mapping
 import cv2
 import numpy as np
 
-from src.pipeline.core.config import load_yaml
+from src.pipeline.core import load_yaml
 from src.pipeline.detection.config import get_probe_kwargs
 from src.pipeline.probe_detector import detect_probe_scan
 from src.pipeline.probe_detector.bands import build_row_stats

@@ -2,8 +2,7 @@ import numpy as np
 import pytest
 
 from src.pipeline.probe_detector.existing import ExistingBarlines
-from src.pipeline.probe_detector.peaks import select_signal_peaks
-from src.pipeline.probe_detector.projections import project_staff_band
+from src.pipeline.probe_detector.measurements import project_staff_band, select_signal_peaks
 from src.pipeline.probe_detector.types import BandProjectionConfig
 
 
@@ -153,7 +152,7 @@ def _candidate_scan_config(**changes):
 
 @pytest.mark.parametrize("fallback,expected_ignored", [(False, 2), (True, 0)])
 def test_candidate_measurement_keeps_fallback_and_staff_peak_exclusion(fallback, expected_ignored):
-    from src.pipeline.probe_detector.scan_measurements import measure_candidate_scan
+    from src.pipeline.probe_detector.measurements import measure_candidate_scan
 
     ink = np.ones((40, 20), np.uint8)
     projection = project_staff_band(

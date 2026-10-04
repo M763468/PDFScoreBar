@@ -21,7 +21,7 @@ from typing import Any
 import cv2
 import numpy as np
 
-from src.common.realesrgan_assets import resolve_realesrgan_weight
+from src.common.model_artifacts import resolve_realesrgan_weight
 
 DEFAULT_TILE_SIZE = 400
 IMAGE_SIZE_THRESHOLD_FOR_TILING = 1000

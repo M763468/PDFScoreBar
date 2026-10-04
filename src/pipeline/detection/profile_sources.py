@@ -12,11 +12,11 @@ from typing import Any, Dict
 
 from tqdm import tqdm
 
+from src.pipeline.core import ensure_dir
 from src.pipeline.steps.hybrid_consensus import (
     apply_hybrid_consensus_filter,
     load_json_boxes,
 )
-from src.pipeline.utils.io import ensure_dir
 
 
 class ProfileHybridDetector:

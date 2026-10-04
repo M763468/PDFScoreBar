@@ -3,8 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from src.measure_numbering.builder import SystemBuilder
-from src.measure_numbering.serialization import score_to_dict
-from src.measure_numbering.types import Barline, BBox, Page, Score, Staff, System
+from src.measure_numbering.types import Barline, BBox, Page, Score, Staff, System, score_to_dict
 
 
 def _staff(

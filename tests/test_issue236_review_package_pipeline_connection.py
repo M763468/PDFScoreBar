@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from src.pipeline.core.config import load_yaml
+from src.pipeline.core import load_yaml
 from src.pipeline.orchestrator import PipelineOrchestrator
 from src.pipeline.review.manual_correction_handoff import validate_manual_correction_handoff
 

@@ -33,7 +33,12 @@ def test_isolated_candidate_and_user_app_assets(candidate):
             "-c",
             "import sys; sys.path.insert(0, sys.argv[1]); "
             "from src.common import Box, barline_iou; "
-            "assert 'src.common.barline_evaluation' not in sys.modules",
+            "assert 'src.common.barline_evaluation' not in sys.modules; "
+            "from src.pipeline.core import load_json, load_yaml, run_with_logging; "
+            "from src.measure_numbering.types import BBox, score_to_dict; "
+            "from src.pipeline.steps.numbering_phases import NumberingPhaseServices; "
+            "assert BBox(0, 0, 2, 3).height == 3; "
+            "assert not any(name in sys.modules for name in ('cv2', 'numpy', 'torch', 'homr'))",
             str(candidate),
         ],
         cwd=candidate,

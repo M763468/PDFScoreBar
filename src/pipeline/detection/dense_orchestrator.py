@@ -12,8 +12,7 @@ from src.common.model_artifacts import (
     load_model_artifact_manifest,
     resolve_model_artifact,
 )
-from src.pipeline.core.run_ids import split_score_page_from_composite_stem
-from src.pipeline.utils.io import ensure_dir
+from src.pipeline.core import ensure_dir, split_score_page_from_composite_stem
 
 from .config import get_cnn_apply_nms, get_probe_x_domain_kwargs
 from .input_contract import build_detector_input_contract

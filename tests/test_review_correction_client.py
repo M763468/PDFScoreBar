@@ -24,7 +24,8 @@ const node = () => ({setAttribute(){}, appendChild(){}, replaceChildren(){}, par
 const panel = node();
 const context = {
   console, Map, Set, JSON, String, Promise,
-  ReviewStrings: {state:{types:{}}, feedback:{}}, updateControlState(){},
+  addEventListener(){}, setInterval(){return 1;}, clearInterval(){},
+  ReviewStrings: {state:{types:{}}, feedback:{}, result:{}}, updateControlState(){},
   currentPage: {}, currentIndex: 0, dirtyTypes: new Set(), items: [{page:0, measure_span:2}],
   pageValue: () => 0, itemsForCurrentPage: () => context.items,
   document: {getElementById: () => panel, createElement: node},
@@ -143,7 +144,8 @@ const context = {
 };
 context.window = context;
 vm.createContext(context);
-vm.runInContext(fs.readFileSync('tools/review_correction/apply_result.js','utf8'), context);
+const source = fs.readFileSync('tools/review_correction/correction_state.js','utf8');
+vm.runInContext(source.slice(source.indexOf('/* Apply controls')), context);
 const controls = byId.get('applicationControls');
 assert(controls);
 assert.equal(controls.parentNode, sidebarHeader);

@@ -1,7 +1,7 @@
 # Minimal distributable surface (#100 / #409)
 
-The candidate has **130 tracked files** in
-[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json): 107 files under `src/`,
+The candidate has **109 tracked files** in
+[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json): 87 files under `src/`,
 plus production config/model/Docker/package files, the package-bound user correction
 application, and minimum user documentation. The exact distribution is the union of
 `runtime_bundle_patterns`, `distribution_support_patterns`, and
@@ -25,7 +25,7 @@ and inspectable runtime/model/input identity.
 | Two canonical configs | Dense algorithm base and pinned maintained HOMR profile |
 | Three model files | CNN/download contract, verified external OMR-DLN contract, tracked production MMR checkpoint |
 | Production Docker helpers and metadata | Clean build, compatibility/preflight, normal PDF and correction operation |
-| Eight `tools/review_correction` files | Supported user server, package/state adapter, local English/Japanese UI |
+| Seven `tools/review_correction` files | Supported user server, package/state adapter, local English/Japanese UI |
 | README + user guide | Install, run, review/correct, troubleshooting and asset ownership |
 | Distribution manifest | Auditable exact release selection |
 
@@ -36,7 +36,7 @@ and production geometry callers. Unchanged geometric functions/constants now liv
 module is excluded. No thresholds or model bytes changed.
 
 The previous blanket exclusion of the user correction application is removed at the
-**distribution** boundary. Its eight operational files are selected individually;
+**distribution** boundary. Its seven operational files are selected individually;
 `acceptance.py` and `browser_acceptance.cjs` remain development validation. User and
 GT applications are already independent (#393); no GT server/assets are included.
 
@@ -54,6 +54,28 @@ The adapter creates a separate relocated `local_manifest.json` beside the immuta
 retained manifest, binds the local handoff to it, and updates the result artifact hash.
 The original manifest hash stays inspectable; engine API and correction schemas are unchanged.
 Review launch can prepare this bridge for a retained local job without detector inference.
+
+## Consolidation requested after the 130-file audit
+
+The revised candidate removes **21 files (16.2%)** while keeping the supported workflow.
+
+| Shared responsibility | Consolidation | Net reduction |
+| --- | --- | ---: |
+| Pipeline configuration, run IDs, subprocess logging, output I/O | Four helpers into `src/pipeline/core/__init__.py` | 4 |
+| Numbering records and JSON representation | Serialization into `measure_numbering/types.py` | 1 |
+| Numbering execution phases and their services | Four modules into `steps/numbering_phases.py` | 3 |
+| Probe measurements before candidate acceptance | Projections, peaks, scan measurements into `probe_detector/measurements.py` | 2 |
+| HOMR records and existing defaults | Settings into `homr_runtime/types.py` | 1 |
+| Verified model and asset resolution | SR and OMR paths into `common/model_artifacts.py` | 2 |
+| User correction state and result controls | Both browser adapters into `correction_state.js` | 1 |
+| Empty or docstring-only package markers | Native namespace packages; substantive initializers retained | 7 |
+
+All callers, including retained development tooling, use the new owners. No compatibility
+stub is shipped. Numbering scheduling, candidate acceptance, engine contracts and model
+loading remain separate responsibilities. Function/class bodies and decorators were checked
+against the pre-consolidation commit before formatting; model/config bytes remain unchanged.
+The previous 130-file validation below is historical evidence; revised acceptance is recorded
+separately after validating the 109-file candidate.
 
 ## Develop-only classification
 

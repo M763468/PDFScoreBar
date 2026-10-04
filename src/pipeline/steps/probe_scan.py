@@ -20,9 +20,10 @@ try:
 except ImportError:  # pragma: no cover - optional in minimal test env
     np = None  # type: ignore[assignment]
 
-from src.pipeline.core.run_ids import (
+from src.pipeline.core import (
     build_probe_run_id,
     build_probe_run_id_from_parts,
+    ensure_dir,
     split_score_page_from_composite_stem,
 )
 from src.pipeline.steps.candidate_filters import (
@@ -31,7 +32,6 @@ from src.pipeline.steps.candidate_filters import (
     trim_box_to_ink,
 )
 from src.pipeline.steps.hybrid_consensus import load_json_boxes
-from src.pipeline.utils.io import ensure_dir
 from src.pipeline.utils.wide_split_utils import split_wide_candidates
 
 logger = logging.getLogger(__name__)

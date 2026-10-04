@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from src.common.connector_artifacts import describe_connector_artifacts
-from src.pipeline.core.config import load_yaml
+from src.pipeline.core import load_yaml
 from src.pipeline.detection.current_homr_worker import run as run_current_homr
 
 
@@ -185,7 +185,7 @@ def augment_report(
             fallback_pages.append(page_id)
             base_path = intermediate / "numbering_base.json"
             effective_path = intermediate / "numbering_mmr_geometry.json"
-            from src.pipeline.utils.io import load_json
+            from src.pipeline.core import load_json
             from tools.issue264.run_phase_c_mmr_regression import physical_counts
 
             page["mmr_layout_decision"] = {

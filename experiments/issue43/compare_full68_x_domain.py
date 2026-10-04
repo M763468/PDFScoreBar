@@ -122,7 +122,7 @@ def _validate_inventory(path: Path, *, images: Sequence[Path]) -> dict[str, Any]
 
 
 def _load_canonical_config(path: Path) -> dict[str, Any]:
-    from src.pipeline.core.config import load_yaml
+    from src.pipeline.core import load_yaml
 
     config = load_yaml(path)
     if not isinstance(config, dict):

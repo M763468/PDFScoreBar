@@ -37,9 +37,8 @@ container state, run tags, and issue handoff notes do not belong here.
   inventing an Issue solely to satisfy an agent workflow.
 - When creating a PR, follow `.github/pull_request_template.md`. Use `N/A` for Related Issue when
   there is genuinely no Issue.
-- When asked to create an Issue, follow the matching `.github/ISSUE_TEMPLATE/`. A GitHub Draft PR is
-  an acceptable deliverable when the user asks for a draft; do not require a persisted local body
-  file just to hold that draft, and clean up any temporary body file created during the task.
+- When asked to create an Issue, follow the matching `.github/ISSUE_TEMPLATE/`.
+- Remove temporary body files created during the task.
 
 ## 4. Environment and command selection
 

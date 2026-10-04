@@ -70,10 +70,6 @@ repository log for ordinary work.
 Creating/editing Issues, comments, reviews, branches, and PRs is appropriate when the task requests or
 authorizes those actions. A read-only question should not cause an automatic GitHub write.
 
-When a draft PR is requested, a GitHub Draft PR is an acceptable deliverable and avoids retaining a
-local draft body. Remove temporary body files created during the task. Native GitHub tools may be
-used directly when available.
-
 ## Durable experiment history
 
 For substantial performance/evaluation investigations, preserve accepted/rejected decisions and

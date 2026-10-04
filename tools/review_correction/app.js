@@ -88,9 +88,10 @@ const COLOR_MOVEMENT_EXISTING = "#00c2ff";
 const COLOR_MOVEMENT_REJECTED = "#9aa0a6";
 const HIT_PADDING = 7;
 
-const OPS = window.ReviewStrings.operations;
+let OPS = window.ReviewStrings.operations;
 function reviewerCopy(key, values = {}) {
-  return Object.entries(values).reduce((message, [name, value]) => message.replaceAll(`{${name}}`, String(value)), window.ReviewStrings.feedback[key] || key);
+  const template = key.split(".").reduce((entry, part) => entry && entry[part], window.ReviewStrings) || key;
+  return Object.entries(values).reduce((message, [name, value]) => message.replaceAll(`{${name}}`, String(value)), template);
 }
 
 function fetchJSON(url) {
@@ -132,7 +133,7 @@ function displayPageNumber() {
 }
 
 function measureDisplayLabel(measure) {
-  return `S${displayIndex(measure.system)} M${displayIndex(measure.measure)}`;
+  return reviewerCopy("ui.measureOverlay", {system: displayIndex(measure.system), measure: displayIndex(measure.measure)});
 }
 
 function operationLabel(correctionType, op) {
@@ -141,16 +142,17 @@ function operationLabel(correctionType, op) {
 }
 
 function manualItemSummary(item, index, correctionType) {
+  const copy = window.ReviewStrings.ui;
   const parts = [
-    `Change ${index + 1}`,
+    reviewerCopy("ui.selectedCount", {number: index + 1}),
     operationLabel(correctionType, item.op),
-    `Page ${displayIndex(item.page)}`,
+    `${copy.page} ${displayIndex(item.page)}`,
   ];
-  if (item.system !== undefined) parts.push(`System ${displayIndex(item.system)}`);
-  if (item.measure !== undefined) parts.push(`Measure ${displayIndex(item.measure)}`);
-  if (item.interval !== undefined) parts.push(`Measure ${displayIndex(item.interval)}`);
-  if (item.measure_span !== undefined) parts.push(`span ${item.measure_span}`);
-  if (Array.isArray(item.bbox)) parts.push(`bbox=[${item.bbox.join(", ")}]`);
+  if (item.system !== undefined) parts.push(`${copy.system} ${displayIndex(item.system)}`);
+  if (item.measure !== undefined) parts.push(`${copy.measure} ${displayIndex(item.measure)}`);
+  if (item.interval !== undefined) parts.push(`${copy.measure} ${displayIndex(item.interval)}`);
+  if (item.measure_span !== undefined) parts.push(reviewerCopy("ui.measureSpanLabel", {span: item.measure_span}));
+  if (Array.isArray(item.bbox)) parts.push(`${copy.bbox}=[${item.bbox.join(", ")}]`);
   return parts.join(" · ");
 }
 
@@ -166,12 +168,18 @@ function selectedMeasureKey() {
 function setDirty(correctionType, isDirty) {
   if (isDirty) dirtyTypes.add(correctionType);
   else dirtyTypes.delete(correctionType);
+  updateDirtyStatus();
+}
+
+function updateDirtyStatus() {
   dirtyStatus.textContent = dirtyTypes.size
-    ? `Unsaved: ${Array.from(dirtyTypes).join(", ")}`
+    ? reviewerCopy("ui.unsavedTypes", {types: Array.from(dirtyTypes).map(type => window.ReviewStrings.types[type] || type).join(", ")})
     : "";
 }
 
-function updateOps() {
+function updateOps(preserveSelection = false) {
+  OPS = window.ReviewStrings.operations;
+  const selectedOperation = preserveSelection ? currentOp() : null;
   opSelect.innerHTML = "";
   OPS[currentType()].forEach(([value, label]) => {
     const option = document.createElement("option");
@@ -179,7 +187,10 @@ function updateOps() {
     option.textContent = label;
     opSelect.appendChild(option);
   });
-  selectedItemIndex = null;
+  if (selectedOperation && OPS[currentType()].some(([value]) => value === selectedOperation)) {
+    opSelect.value = selectedOperation;
+  }
+  if (!preserveSelection) selectedItemIndex = null;
   updateControlState();
 }
 
@@ -214,7 +225,7 @@ function updateControlState() {
 
   if (movementMode) {
     addItemBtn.textContent =
-      op === "boundary" ? "Confirm boundary before system" : "Confirm no boundary here";
+      op === "boundary" ? window.ReviewStrings.ui.confirmBoundary : window.ReviewStrings.ui.confirmNoBoundary;
   } else {
     addItemBtn.textContent = window.ReviewStrings.stage;
   }
@@ -330,6 +341,7 @@ function resolvedMovementAt(system) {
 }
 
 function movementStateAt(system) {
+  const copy = window.ReviewStrings.ui;
   const review = movementReviewAt(system);
   const candidate = movementCandidateAt(system);
   const resolved = resolvedMovementAt(system);
@@ -337,14 +349,14 @@ function movementStateAt(system) {
     if (review.op === "boundary") {
       return {
         kind: candidate ? "reviewed_candidate_boundary" : "manual_boundary",
-        label: candidate ? "Confirmed boundary" : "Confirmed boundary (manual)",
+        label: candidate ? copy.confirmedBoundary : copy.manualBoundary,
         color: COLOR_MOVEMENT_BOUNDARY,
         dashed: false,
       };
     }
     return {
       kind: "reviewed_no_boundary",
-      label: "Checked: no boundary",
+      label: copy.checkedNoBoundary,
       color: COLOR_MOVEMENT_REJECTED,
       dashed: true,
     };
@@ -352,7 +364,7 @@ function movementStateAt(system) {
   if (resolved) {
     return {
       kind: "existing_resolved_boundary",
-      label: "Boundary used by current numbering",
+      label: window.ReviewStrings.ui.currentNumberingBoundary,
       color: COLOR_MOVEMENT_EXISTING,
       dashed: false,
     };
@@ -360,7 +372,7 @@ function movementStateAt(system) {
   if (candidate) {
     return {
       kind: "unresolved_candidate",
-      label: "Suggested boundary — needs review",
+      label: copy.suggestedBoundary,
       color: COLOR_MOVEMENT_CANDIDATE,
       dashed: true,
     };
@@ -407,7 +419,7 @@ function drawMovementMarker(system, state, selected = false) {
   const labelBox = [x1, lineY, x2, y2];
   drawLabel(
     labelBox,
-    `${selected ? "TARGET" : state.label}: before S${displayIndex(system)}`,
+    reviewerCopy("ui.movementCanvas", {label: selected ? window.ReviewStrings.ui.target : state.label, system: displayIndex(system)}),
     selected ? COLOR_SELECTED : state.color
   );
   if (selected) drawBox(bounds, COLOR_SELECTED, 3, true);
@@ -420,19 +432,18 @@ function updateMovementTargetMeta() {
 
   const system = selectedMovementSystem;
   if (system === null || !Number.isFinite(system)) {
-    movementTargetMeta.textContent =
-      "No target system selected. Click anywhere inside the intended system or enter its system number.";
+    movementTargetMeta.textContent = window.ReviewStrings.ui.noSystem;
   } else {
     const bounds = systemBounds(system);
     const state = movementStateAt(system);
     const clicked =
       selectedMeasure && String(selectedMeasure.system) === String(system)
-        ? ` Selected via Measure ${displayIndex(selectedMeasure.measure)}; that measure is only used to identify the system.`
+        ? ` ${reviewerCopy("ui.selectedMeasure", {measure: displayIndex(selectedMeasure.measure)})}`
         : "";
-    const status = state ? ` Current state: ${state.label}.` : " Current state: no suggested or confirmed boundary.";
+    const status = state ? ` ${reviewerCopy("ui.currentState", {state: state.label})}` : ` ${window.ReviewStrings.ui.noBoundaryState}`;
     movementTargetMeta.textContent = bounds
-      ? `Target: System ${displayIndex(system)}. A boundary will be placed BEFORE this system.${clicked}${status}`
-      : `System ${displayIndex(system)} is not present on this page.`;
+      ? `${reviewerCopy("ui.targetBefore", {system: displayIndex(system)})}${clicked}${status}`
+      : reviewerCopy("ui.missingSystem", {system: displayIndex(system)});
   }
 
   const systems = movementSystemsOnPage();
@@ -450,8 +461,7 @@ function updateMovementTargetMeta() {
     else if (state.kind === "unresolved_candidate") counts.candidates += 1;
     else counts.reviewed += 1;
   });
-  movementPageStatus.textContent =
-    `This page: current-numbering boundaries ${counts.existing} · confirmed boundaries ${counts.reviewed} · checked no-boundary ${counts.rejected} · suggestions to review ${counts.candidates}`;
+  movementPageStatus.textContent = reviewerCopy("ui.movementCounts", {existing: counts.existing, confirmed: counts.reviewed, checked: counts.rejected, suggestions: counts.candidates});
   updateMovementFinishButton();
 }
 
@@ -536,7 +546,7 @@ function draw() {
     drawMovementMarker(
       selectedMovementSystem,
       movementStateAt(selectedMovementSystem) || {
-        label: "Target",
+        label: window.ReviewStrings.ui.targetLabel,
         color: COLOR_SELECTED,
         dashed: false,
       },
@@ -553,7 +563,7 @@ function draw() {
     const barlineIndex = barlines.indexOf(selectedBarline);
     drawLabel(
       selectedBarline.bbox,
-      barlineIndex >= 0 ? `Barline ${barlineIndex + 1}` : "Selected barline",
+      barlineIndex >= 0 ? reviewerCopy("ui.barlineIndex", {number: barlineIndex + 1}) : window.ReviewStrings.ui.selectedBarline,
       COLOR_SELECTED
     );
   }
@@ -574,7 +584,7 @@ function draw() {
 
   if (draftBBox) {
     drawBox(draftBBox, COLOR_DRAFT, 2);
-    drawLabel(draftBBox, "Draft", COLOR_DRAFT);
+    drawLabel(draftBBox, window.ReviewStrings.ui.draftLabel, COLOR_DRAFT);
   }
   if (isDrawing && drawStart) {
     ctx.strokeStyle = COLOR_DRAFT;
@@ -661,25 +671,19 @@ function effectiveMmrState(measure, baseMap = null, manualMap = null) {
 function updateSelectionMeta() {
   const parts = [];
   if (currentType() === "movement_boundary" && selectedMovementSystem !== null) {
-    const source =
-      selectedMeasure && String(selectedMeasure.system) === String(selectedMovementSystem)
-        ? ` (clicked Measure ${displayIndex(selectedMeasure.measure)})`
-        : "";
-    parts.push(
-      `Movement target: Page ${displayPageNumber()} / System ${displayIndex(selectedMovementSystem)}${source} — boundary position is BEFORE this system`
-    );
+    const source = selectedMeasure && String(selectedMeasure.system) === String(selectedMovementSystem)
+      ? ` · ${window.ReviewStrings.ui.measure} ${displayIndex(selectedMeasure.measure)}` : "";
+    parts.push(reviewerCopy("ui.movementSelection", {page: displayPageNumber(), system: displayIndex(selectedMovementSystem), source}));
   } else if (selectedMeasure) {
     const state = effectiveMmrState(selectedMeasure);
-    parts.push(
-      `Page ${displayPageNumber()} / System ${displayIndex(selectedMeasure.system)} / Measure ${displayIndex(selectedMeasure.measure)} | base=${state.baseSpan} effective=${state.effectiveSpan}`
-    );
+    parts.push(reviewerCopy("ui.measureSelection", {page: displayPageNumber(), system: displayIndex(selectedMeasure.system), measure: displayIndex(selectedMeasure.measure), base: state.baseSpan, effective: state.effectiveSpan}));
   }
   if (selectedBarline) {
     const barlineIndex = barlines.indexOf(selectedBarline);
-    const label = barlineIndex >= 0 ? `Barline ${barlineIndex + 1}` : "Selected barline";
-    parts.push(`${label} | bbox=[${selectedBarline.bbox.join(", ")}]`);
+    const label = barlineIndex >= 0 ? reviewerCopy("ui.barlineIndex", {number: barlineIndex + 1}) : window.ReviewStrings.ui.selectedBarline;
+    parts.push(`${label} | ${window.ReviewStrings.ui.bbox}=[${selectedBarline.bbox.join(", ")}]`);
   }
-  if (draftBBox) parts.push(`Draft bbox=[${draftBBox.join(", ")}]`);
+  if (draftBBox) parts.push(`${window.ReviewStrings.ui.draft} ${window.ReviewStrings.ui.bbox}=[${draftBBox.join(", ")}]`);
   if (selectedItemIndex !== null && currentType() !== "mmr_measure_span") {
     const item = itemsForCurrentPage(currentType())[selectedItemIndex];
     if (item) parts.push(manualItemSummary(item, selectedItemIndex, currentType()));
@@ -712,12 +716,12 @@ function updateMovementFinishButton() {
   exportMovementBtn.disabled = remaining > 0;
   exportMovementBtn.textContent =
     remaining > 0
-      ? `Finish movement review (${remaining} suggestion${remaining === 1 ? "" : "s"} left)`
-      : "Finish movement review";
+      ? reviewerCopy("ui.finishMovementRemaining", {count: remaining})
+      : window.ReviewStrings.ui.finishMovement;
   exportMovementBtn.title =
     remaining > 0
-      ? "Review every suggested boundary before finishing."
-      : "Create boundary data for the next numbering run. The displayed score will not change.";
+      ? window.ReviewStrings.ui.finishMovementHint
+      : window.ReviewStrings.ui.finishMovementDoneHint;
 }
 
 function renderPageList() {
@@ -747,12 +751,12 @@ function renderPageList() {
     const reviewedBoundaries = reviews.filter((item) => item.op === "boundary").length;
     const reviewedNoBoundary = reviews.filter((item) => item.op === "no_boundary").length;
     const movementParts = [];
-    if (unresolvedCandidates) movementParts.push(`suggested ${unresolvedCandidates}`);
-    if (reviewedBoundaries) movementParts.push(`confirmed ${reviewedBoundaries}`);
-    if (reviewedNoBoundary) movementParts.push(`checked-no-boundary ${reviewedNoBoundary}`);
-    const movementSummary = movementParts.length ? ` · movement: ${movementParts.join(", ")}` : "";
+    if (unresolvedCandidates) movementParts.push(reviewerCopy("ui.suggested", {count: unresolvedCandidates}));
+    if (reviewedBoundaries) movementParts.push(reviewerCopy("ui.confirmed", {count: reviewedBoundaries}));
+    if (reviewedNoBoundary) movementParts.push(reviewerCopy("ui.checked", {count: reviewedNoBoundary}));
+    const movementSummary = movementParts.length ? ` · ${window.ReviewStrings.ui.movement}: ${movementParts.join(", ")}` : "";
     div.textContent =
-      `Page ${pageNumber}${page.name ? ` · ${page.name}` : ""}${movementSummary}`;
+      reviewerCopy("ui.pageName", {page: pageNumber, name: page.name ? ` · ${page.name}` : ""}) + movementSummary;
     div.onclick = () => switchPage(index);
     pageList.appendChild(div);
   });
@@ -783,18 +787,18 @@ function renderMmrRows() {
     const div = document.createElement("div");
     const key = measureKey(pageValue(), measure.system, measure.measure);
     div.className = "list-item" + (key === selectedKey ? " active" : "");
-    let status = "Normal";
-    if (state.baseSpan > 1) status = "Base MMR";
+    let status = window.ReviewStrings.ui.normal;
+    if (state.baseSpan > 1) status = window.ReviewStrings.ui.baseMmr;
     if (state.manualOp === "set_measure_span") status = window.ReviewStrings.feedback.stagedSpan;
     if (state.manualOp === "suppress") status = window.ReviewStrings.feedback.stagedSuppression;
-    div.textContent = `System ${displayIndex(measure.system)} · Measure ${displayIndex(measure.measure)} | base=${state.baseSpan} → effective=${state.effectiveSpan} | ${status}`;
+    div.textContent = reviewerCopy("ui.mmrRow", {system: displayIndex(measure.system), measure: displayIndex(measure.measure), base: state.baseSpan, effective: state.effectiveSpan, status});
     div.onclick = () => selectMeasure(measure);
     itemList.appendChild(div);
   });
   if (!measures.length) {
     const div = document.createElement("div");
     div.className = "small";
-    div.textContent = "No measure boxes loaded from the numbering artifact.";
+    div.textContent = window.ReviewStrings.ui.noMeasures;
     itemList.appendChild(div);
   }
 }
@@ -823,8 +827,7 @@ function renderMovementRows() {
 
   const guide = document.createElement("div");
   guide.className = "small";
-  guide.textContent =
-    "All locations below mean BEFORE System N. Click a row to target that system on the score.";
+  guide.textContent = window.ReviewStrings.ui.movementGuide;
   itemList.appendChild(guide);
 
   systems.forEach((system) => {
@@ -843,19 +846,19 @@ function renderMovementRows() {
 
     const title = document.createElement("div");
     let suffix = state.label;
-    if (review && review.op === "boundary" && candidate) suffix = "confirmed boundary";
-    else if (review && review.op === "boundary") suffix = "confirmed boundary (manual)";
-    else if (review && review.op === "no_boundary") suffix = "checked: no boundary";
-    else if (resolved) suffix = `boundary used by current numbering · reset=${resolved.reset_number ?? 1}`;
-    else if (candidate) suffix = "suggested boundary — needs review";
-    title.textContent = `BEFORE System ${displayIndex(system)} · ${suffix}`;
+    if (review && review.op === "boundary" && candidate) suffix = window.ReviewStrings.ui.confirmedBoundary;
+    else if (review && review.op === "boundary") suffix = window.ReviewStrings.ui.manualBoundary;
+    else if (review && review.op === "no_boundary") suffix = window.ReviewStrings.ui.checkedNoBoundary;
+    else if (resolved) suffix = reviewerCopy("ui.resolvedBoundary", {reset: resolved.reset_number ?? 1});
+    else if (candidate) suffix = window.ReviewStrings.ui.suggestedBoundary;
+    title.textContent = reviewerCopy("ui.beforeSystem", {system: displayIndex(system), state: suffix});
     div.appendChild(title);
 
     if (candidate) {
       const details = document.createElement("details");
       details.className = "small";
       const summary = document.createElement("summary");
-      summary.textContent = "Detection details";
+      summary.textContent = window.ReviewStrings.ui.detectionDetails;
       const raw = document.createElement("code");
       raw.textContent = movementEvidenceText(candidate);
       details.appendChild(summary);
@@ -879,8 +882,7 @@ function renderMovementRows() {
   if (!systems.length) {
     const div = document.createElement("div");
     div.className = "small";
-    div.textContent =
-      "No suggested or current-numbering boundary is shown on this page. Click a system to confirm a boundary manually before it.";
+    div.textContent = window.ReviewStrings.ui.noBoundaryRows;
     itemList.appendChild(div);
   }
 }
@@ -1088,7 +1090,7 @@ function deleteSelectedItem() {
     renderItems();
     updateSelectionMeta();
     draw();
-    saveStatus.textContent = "Removed manual MMR correction for selected measure.";
+    saveStatus.textContent = window.ReviewStrings.ui.removedMmr;
     return;
   }
   const pageItems = itemsForCurrentPage(type);
@@ -1202,7 +1204,7 @@ function loadMmr(path) {
     })
     .catch((error) => {
       baseMmrOverrides = [];
-      saveStatus.textContent = `MMR base load failed: ${error.message}`;
+      saveStatus.textContent = reviewerCopy("ui.baseLoadFailed", {error: error.message});
     });
 }
 
@@ -1233,7 +1235,7 @@ function loadMovementEvidence(path) {
     .catch((error) => {
       movementEvidenceCandidates = [];
       allMovementEvidenceCandidates = [];
-      saveStatus.textContent = `Movement evidence load failed: ${error.message}`;
+      saveStatus.textContent = reviewerCopy("ui.movementLoadFailed", {error: error.message});
     });
 }
 
@@ -1275,7 +1277,7 @@ function loadPage() {
   selectedMovementSystem = null;
   draftBBox = null;
   saveStatus.textContent = "";
-  pageMeta.textContent = `Page ${displayPageNumber()}${currentPage.name ? ` · ${currentPage.name}` : ""}`;
+  pageMeta.textContent = reviewerCopy("ui.pageName", {page: displayPageNumber(), name: currentPage.name ? ` · ${currentPage.name}` : ""});
 
   image.onload = () => {
     resetView();
@@ -1476,6 +1478,21 @@ movementSystemInput.oninput = () => {
   toggle.onchange = draw;
 });
 
+window.addEventListener("review-language-changed", () => {
+  OPS = window.ReviewStrings.operations;
+  if (!currentPage) return;
+  pageMeta.textContent = reviewerCopy("ui.pageName", {page: displayPageNumber(), name: currentPage.name ? ` · ${currentPage.name}` : ""});
+  updateOps(true);
+  renderItems();
+  updateSelectionMeta();
+  updateMovementTargetMeta();
+  updateMovementFinishButton();
+  updateDirtyStatus();
+  renderPageList();
+  window.reviewCorrectionState?.refresh().catch(() => {});
+  window.reviewApplyResult?.refresh();
+});
+
 prevBtn.onclick = () => switchPage(Math.max(0, currentIndex - 1));
 nextBtn.onclick = () => switchPage(Math.min(pages.length - 1, currentIndex + 1));
 
@@ -1638,7 +1655,7 @@ updateOps();
 fetchJSON("/api/pages").then((data) => {
   pages = data.pages || [];
   if (!pages.length) {
-    pageMeta.textContent = "No pages configured.";
+    pageMeta.textContent = window.ReviewStrings.ui.noPages;
     return;
   }
   loadPage();

@@ -1,14 +1,152 @@
 """Small deterministic checks for Issue #397 preparation helpers."""
 
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from tools.review_correction import acceptance as runner
 
 
 class AcceptanceRunnerTests(unittest.TestCase):
+    def test_candidate_commit_uses_checkout_when_git_lookup_succeeds(self):
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch.object(
+                runner,
+                "run_git",
+                return_value={"exit_code": 0, "stdout": "abc123", "stderr": ""},
+            ),
+        ):
+            provenance = runner.candidate_commit_provenance(Path("/repo"))
+        self.assertEqual(provenance["candidate_commit"], "abc123")
+        self.assertEqual(provenance["candidate_commit_source"], "checkout")
+
+    def test_candidate_commit_requires_operator_identity_without_git(self):
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch.object(
+                runner,
+                "run_git",
+                return_value={"exit_code": 128, "stdout": "", "stderr": "not a git repository"},
+            ),
+        ):
+            with self.assertRaisesRegex(ValueError, "PDFSCOREBAR_SOURCE_COMMIT"):
+                runner.candidate_commit_provenance(Path("/container/source"))
+
+    def test_candidate_commit_accepts_explicit_identity_without_git(self):
+        with (
+            patch.dict(os.environ, {"PDFSCOREBAR_SOURCE_COMMIT": " frozen-sha "}),
+            patch.object(
+                runner,
+                "run_git",
+                return_value={"exit_code": 128, "stdout": "", "stderr": "not a git repository"},
+            ),
+        ):
+            provenance = runner.candidate_commit_provenance(Path("/container/source"))
+        self.assertEqual(provenance["candidate_commit"], "frozen-sha")
+        self.assertEqual(provenance["operator_candidate_commit"], "frozen-sha")
+        self.assertEqual(provenance["candidate_commit_source"], "operator")
+
+    def test_prepare_rejects_missing_candidate_commit_before_creating_evidence(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            evidence_root = root / "evidence"
+            args = type(
+                "Args",
+                (),
+                {
+                    "source_run": root / "source",
+                    "evidence_root": evidence_root,
+                    "repo_root": root / "gitless-source",
+                    "artifact_repo_root": root,
+                    "movement_review": None,
+                    "runtime_identity": None,
+                },
+            )()
+            with (
+                patch.dict(os.environ, {}, clear=True),
+                patch.object(
+                    runner,
+                    "run_git",
+                    return_value={"exit_code": 128, "stdout": "", "stderr": "not a git repository"},
+                ),
+            ):
+                with self.assertRaisesRegex(ValueError, "candidate source commit"):
+                    runner.prepare(args)
+            self.assertFalse(evidence_root.exists())
+
+    def test_movement_evidence_fields_survive_focused_package_subset(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source_review = root / "retained" / "review"
+            page_dir = source_review / "pages" / "page_008"
+            page_dir.mkdir(parents=True)
+            handoff = {
+                "source_artifact_root": str((root / "artifacts").resolve()),
+                "pages": [
+                    {
+                        "page_id": "page_008",
+                        "page_number": 7,
+                        "source_image": "pages/page_008/source.png",
+                        "numbering_final": "pages/page_008/numbering.json",
+                    }
+                ],
+            }
+            (source_review / "manual_correction_input.json").write_text(
+                json.dumps(handoff), encoding="utf-8"
+            )
+            (page_dir / "unused.json").write_text("{}", encoding="utf-8")
+            evidence = {
+                "schema_version": "issue333.movement_boundary_evidence.v1",
+                "source_document": {"sha256": "a" * 64, "page_order": "ordered_pipeline_input"},
+                "input_artifacts": {
+                    "numbering_base": {
+                        "path": "intermediate/numbering_base.json",
+                        "sha256": "b" * 64,
+                    }
+                },
+                "producer": {
+                    "name": "fixture",
+                    "version": "1",
+                    "source_commit": "abc",
+                    "parameters": {},
+                },
+                "candidates": [
+                    {
+                        "id": "page:6:system:5",
+                        "page": 6,
+                        "system": 5,
+                        "state": "ambiguous_review_required",
+                    }
+                ],
+            }
+            evidence_path = source_review / "movement_boundary_evidence.json"
+            evidence_path.write_text(json.dumps(evidence), encoding="utf-8")
+            destination = root / "prepared" / "movement"
+            runner._copy_package(
+                source_review,
+                destination,
+                root / "artifacts",
+                movement_evidence=evidence_path,
+                repo_root=Path(__file__).resolve().parents[1],
+                movement_page_subset=6,
+            )
+            prepared_handoff = json.loads(
+                (destination / "manual_correction_input.json").read_text(encoding="utf-8")
+            )
+            evidence_attached = (destination / "movement_boundary_evidence.json").is_file()
+        self.assertEqual(
+            prepared_handoff["movement_boundary_evidence"], "movement_boundary_evidence.json"
+        )
+        self.assertEqual(
+            prepared_handoff["movement_boundary_resolved_output"],
+            "corrections/movement_boundaries.json",
+        )
+        self.assertTrue(evidence_attached)
+
     def test_only_existing_manifest_paths_are_rebased_and_rewrite_is_recorded(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

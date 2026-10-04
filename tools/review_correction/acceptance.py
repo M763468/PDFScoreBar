@@ -94,6 +94,32 @@ def run_git(repo_root: Path, *args: str) -> dict[str, Any]:
         return {"exit_code": None, "stdout": "", "stderr": str(exc)}
 
 
+def candidate_commit_provenance(repo_root: Path) -> dict[str, Any]:
+    """Require an identifiable candidate commit even in containers without Git metadata."""
+
+    checkout = run_git(repo_root, "rev-parse", "HEAD")
+    checkout_commit = (
+        checkout["stdout"]
+        if checkout.get("exit_code") == 0 and isinstance(checkout.get("stdout"), str)
+        else ""
+    ).strip()
+    operator_commit = os.environ.get("PDFSCOREBAR_SOURCE_COMMIT", "").strip()
+    candidate_commit = operator_commit or checkout_commit
+    if not candidate_commit:
+        detail = checkout.get("stderr") or "git rev-parse HEAD returned no commit"
+        raise ValueError(
+            "Cannot freeze acceptance evidence without a candidate source commit: "
+            "the checkout commit lookup failed and PDFSCOREBAR_SOURCE_COMMIT is unset. "
+            f"Provide PDFSCOREBAR_SOURCE_COMMIT in Git-less containers. Git detail: {detail}"
+        )
+    return {
+        "current_checkout_commit": checkout,
+        "operator_candidate_commit": operator_commit or None,
+        "candidate_commit": candidate_commit,
+        "candidate_commit_source": "operator" if operator_commit else "checkout",
+    }
+
+
 def configured_model_identity(repo_root: Path, source_run: Path) -> dict[str, Any]:
     manifest = load_json(source_run / "manifest.json")
     model_ref = manifest.get("config", {}).get("mmr", {}).get("model_path")
@@ -329,7 +355,7 @@ def _copy_package(
         sys.path.insert(0, str(repo_root))
         from src.pipeline.review.movement_boundary_review import attach_movement_boundary_evidence
 
-        attach_movement_boundary_evidence(
+        handoff = attach_movement_boundary_evidence(
             handoff_path=destination / "manual_correction_input.json",
             evidence_path=movement_evidence,
             overwrite=True,
@@ -437,6 +463,7 @@ def freeze_plan(
     runtime_identity: str | None,
     source_context: dict[str, Any] | None = None,
     movement_context: dict[str, Any] | None = None,
+    candidate_provenance: dict[str, Any],
 ) -> dict[str, Any]:
     source_run = source_run.resolve()
     source_review = source_run / "review"
@@ -531,8 +558,10 @@ def freeze_plan(
             "source_commit_status": "recorded_from_manifest"
             if manifest.get("source_commit") or manifest.get("commit")
             else "not_recorded_in_source_manifest",
-            "current_checkout_commit": run_git(repo_root, "rev-parse", "HEAD"),
-            "operator_candidate_commit": os.environ.get("PDFSCOREBAR_SOURCE_COMMIT"),
+            "current_checkout_commit": candidate_provenance["current_checkout_commit"],
+            "operator_candidate_commit": candidate_provenance["operator_candidate_commit"],
+            "candidate_commit": candidate_provenance["candidate_commit"],
+            "candidate_commit_source": candidate_provenance["candidate_commit_source"],
             "source_package_inventory": _inventory_tree(source_review),
         },
         "runtime": capture_runtime_identity(repo_root, model, runtime_identity),
@@ -597,6 +626,8 @@ def prepare(args: argparse.Namespace) -> tuple[Path, dict[str, Any]]:
         if args.artifact_repo_root
         else infer_artifact_repo_root(source_run)
     )
+    # Validate provenance before creating the evidence root or copying any artifacts.
+    candidate_provenance = candidate_commit_provenance(repo_root)
     if evidence_root.exists() and any(evidence_root.iterdir()):
         raise FileExistsError(
             f"Evidence root must be absent or empty before freeze: {evidence_root}"
@@ -630,6 +661,7 @@ def prepare(args: argparse.Namespace) -> tuple[Path, dict[str, Any]]:
         runtime_identity=args.runtime_identity,
         source_context=source_context,
         movement_context=movement_context,
+        candidate_provenance=candidate_provenance,
     )
     # Freeze first. No server creation, correction write, or apply happens before this file exists.
     write_json(evidence_root / "acceptance_plan.json", plan)

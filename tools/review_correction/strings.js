@@ -6,6 +6,7 @@ const reviewEnglish = {
     change: "Change", page: "Page", system: "System", measure: "Measure", span: "span", bbox: "bbox", draft: "Draft",
     unsaved: "Unsaved", confirmBoundary: "Confirm boundary before system", confirmNoBoundary: "Confirm no boundary here",
     noSystem: "No target system selected. Click inside the intended system or enter its number.",
+    movementPrompt: "Choose a system to review its movement boundary.", noSystemSelected: "No system selected.",
     selectedMeasure: "Selected via Measure {measure}; that measure only identifies the system.",
     currentState: "Current state: {state}.", noBoundaryState: "Current state: no suggested or confirmed boundary.",
     targetBefore: "Target: System {system}. A boundary will be placed BEFORE this system.",
@@ -34,7 +35,7 @@ const reviewEnglish = {
   clearDecision: "Clear recorded decision",
   result: {
     apply: "Generate corrected PDF", open: "Open corrected PDF",
-    running: "Generating corrected PDF…",
+    loading: "Result status is loading.", running: "Generating corrected PDF…",
     pending: "Record your edits before generating a corrected PDF.",
     stale: "The previous corrected PDF does not include the current corrections.",
     current: "The corrected PDF includes the recorded corrections.",
@@ -132,6 +133,7 @@ const reviewJapanese = {
     change: "修正", page: "ページ", system: "段", measure: "小節", span: "小節数", bbox: "領域", draft: "修正案",
     unsaved: "未保存", confirmBoundary: "この段の前を楽章境界にする", confirmNoBoundary: "ここに楽章境界を設けない",
     noSystem: "対象の段が選択されていません。対象の段をクリックするか、段番号を入力してください。",
+    movementPrompt: "楽章境界を確認する段を選択してください。", noSystemSelected: "段が選択されていません。",
     selectedMeasure: "小節 {measure} から段を特定しました。小節自体は対象ではありません。",
     currentState: "現在の状態：{state}。", noBoundaryState: "現在の状態：境界候補または確定済み境界はありません。",
     targetBefore: "対象：段 {system}。この段の前に楽章境界を設定します。",
@@ -158,7 +160,7 @@ const reviewJapanese = {
   help: {pages: "画面上のページ・段・小節番号は1から始まります。保存される修正インデックスの形式は変わりません。", overlays: "重ね表示を隠しても、選択中の対象や編集中の修正案は表示されます。小節線は選択または描画でき、その他の修正は楽譜上で選択した対象を使います。", movement: "楽章境界の判断は選択した段の前に適用され、判断はすぐに保存されます。", legendMeasure: "小節", legendOriginal: "元の状態", legendRecorded: "記録した修正", legendSelected: "選択中"},
   noPageChanges: "このページと作業には変更がありません。", clearDecision: "記録した判断を解除",
   result: {
-    apply: "修正済みPDFを生成", open: "修正済みPDFを開く", running: "修正済みPDFを生成中…",
+    apply: "修正済みPDFを生成", open: "修正済みPDFを開く", loading: "修正済みPDFの状態を確認しています…", running: "修正済みPDFを生成中…",
     pending: "修正済みPDFを生成する前に、編集内容を保存してください。",
     stale: "前回の修正済みPDFには現在の修正が反映されていません。",
     current: "修正済みPDFには記録済みの修正が反映されています。",

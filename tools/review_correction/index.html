@@ -76,7 +76,7 @@
       <div id="canvasHint" data-copy="canvasHint">Scroll to zoom · Space-drag or middle-drag to pan · ←/→ changes page</div>
     </main>
     <aside id="context">
-      <button id="helpBtn" hidden type="button">Details</button>
+      <button id="helpBtn" hidden type="button" data-copy="details">Details</button>
       <section class="panel">
         <h2 data-copy="task">Correction task</h2>
         <div class="row"><label><span data-copy="taskType">Correction type</span>
@@ -96,9 +96,9 @@
           <button id="deleteItemBtn" class="btn" disabled data-copy="remove">Remove recorded change</button>
         </div>
         <div id="movementBoundaryPanel" style="display:none">
-          <div class="movement-guide">Choose a system to review its movement boundary.</div>
+          <div class="movement-guide" data-copy="ui.movementPrompt">Choose a system to review its movement boundary.</div>
           <div class="row" id="movementSystemRow"><label><span data-copy="targetSystem">Target system</span> <input id="movementSystemInput" type="number" min="1" placeholder="e.g. 6" data-copy-placeholder="ui.systemPlaceholder" /></label></div>
-          <div class="movement-status" id="movementTargetMeta">No system selected.</div>
+          <div class="movement-status" id="movementTargetMeta" data-copy="ui.noSystemSelected">No system selected.</div>
           <div class="movement-status" id="movementPageStatus"></div>
           <button id="exportMovementBtn" class="btn" style="display:none" data-copy="finishMovement">Finish movement review</button>
         </div>
@@ -109,10 +109,10 @@
         <h2 data-copy="status">Correction status</h2>
         <div id="correctionStatePanel" data-copy="stateLoading">Loading correction status…</div>
         <div id="applicationControls">
-          <p id="applicationStatus">Result status is loading.</p>
+          <p id="applicationStatus" data-copy="result.loading">Result status is loading.</p>
           <div class="row">
             <button id="saveBtn" class="btn" data-copy="save">Save changes</button>
-            <button id="applyBtn" class="btn">Apply changes</button>
+            <button id="applyBtn" class="btn" data-copy="result.apply">Generate corrected PDF</button>
             <a id="openResultBtn" class="btn" href="/api/result" target="_blank" rel="noopener" hidden data-copy="openResult">Open corrected result</a>
           </div>
         </div>

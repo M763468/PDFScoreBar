@@ -18,6 +18,10 @@ const inline = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)]
 const textNodes = [
   {dataset: {copy: 'title'}, textContent: ''},
   {dataset: {copy: 'types.barline_construction'}, textContent: ''},
+  {dataset: {copy: 'ui.movementPrompt'}, textContent: ''},
+  {dataset: {copy: 'ui.noSystemSelected'}, textContent: ''},
+  {dataset: {copy: 'result.loading'}, textContent: ''},
+  {dataset: {copy: 'result.apply'}, textContent: ''},
 ];
 const ariaNodes = [{dataset: {copyAria: 'aria.pages'}, setAttribute(name, value) { this[name] = value; }}];
 const placeholderNodes = [{dataset: {copyPlaceholder: 'ui.systemPlaceholder'}, setAttribute(name, value) { this[name] = value; }}];
@@ -53,6 +57,10 @@ assert.equal(context.document.documentElement.lang, 'ja');
 assert.equal(context.document.title, '結果を確認・修正');
 assert.equal(textNodes[0].textContent, '結果を確認・修正');
 assert.equal(textNodes[1].textContent, '小節線');
+assert.equal(textNodes[2].textContent, '楽章境界を確認する段を選択してください。');
+assert.equal(textNodes[3].textContent, '段が選択されていません。');
+assert.equal(textNodes[4].textContent, '修正済みPDFの状態を確認しています…');
+assert.equal(textNodes[5].textContent, '修正済みPDFを生成');
 assert.equal(ariaNodes[0]['aria-label'], '結果ページ');
 assert.equal(placeholderNodes[0].placeholder, '例：6');
 assert.equal(reason.value, '手動修正');
@@ -62,6 +70,10 @@ selector.value = 'en';
 selector.onchange({target: selector});
 assert.equal(reason.value, 'reviewer supplied note');
 assert.equal(textNodes[0].textContent, 'Review correction');
+assert.equal(textNodes[2].textContent, 'Choose a system to review its movement boundary.');
+assert.equal(textNodes[3].textContent, 'No system selected.');
+assert.equal(textNodes[4].textContent, 'Result status is loading.');
+assert.equal(textNodes[5].textContent, 'Generate corrected PDF');
 assert.equal(context.lastEvent.type, 'review-language-changed');
 """
     completed = subprocess.run(
@@ -108,6 +120,17 @@ def test_language_switch_rerenders_without_resetting_the_current_operation_or_ta
     assert "renderItems()" in listener
     assert "updateSelectionMeta()" in listener
     assert "renderPageList()" in listener
+
+
+def test_primary_dynamic_copy_is_backed_by_both_catalogs():
+    html = (UI / "index.html").read_text(encoding="utf-8")
+    for copy_key in (
+        'data-copy="ui.movementPrompt"',
+        'data-copy="ui.noSystemSelected"',
+        'data-copy="result.loading"',
+        'data-copy="result.apply"',
+    ):
+        assert copy_key in html
 
 
 def test_reviewer_copy_resolves_bare_feedback_keys_and_interpolates_values():

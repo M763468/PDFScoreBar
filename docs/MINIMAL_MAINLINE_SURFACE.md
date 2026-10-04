@@ -8,7 +8,7 @@ application, and minimum user documentation. The exact distribution is the union
 `distribution_metadata_patterns`. A generated `DISTRIBUTION_PROVENANCE.json` records
 source identity, dirty status, and each shipped file's hash.
 
-This is a candidate for isolated acceptance, not authorization to promote `main`.
+This is an isolated-validated candidate for #410, not authorization to promote `main`.
 #410 consumes the accepted selection and establishes release promotion separately.
 
 ## Re-audit after #115 and #398
@@ -110,3 +110,45 @@ dependency, and inspectable provenance. Keep evidence under `logs/issue409/` in 
 Full detector evaluation is unnecessary for unchanged geometry/algorithm/model bytes; focused
 geometry compatibility and production smoke still apply. Do not report the candidate accepted
 before every required packaging gate passes.
+
+## Isolated acceptance evidence
+
+Validated source: `b0bb70ec` (clean candidate06, 130 selected files). The clean tree
+was materialized at `/tmp/pdfscorebar-issue409-candidate06` and built with the production
+Dockerfile. Build cache reused the unchanged pinned dependency layers; no development
+checkout was part of that build context. Evidence remains in `logs/issue409/validation/`.
+
+| Required gate | Result / evidence |
+| --- | --- |
+| Isolated dependency/reference/content check | PASS; `materialize_distribution.py check` without Git in candidate |
+| Clean primary Docker build | PASS; `build06.log`, dedicated `pdfscore_issue409_final` image |
+| Canonical runtime preflight | PASS; `review06.log` includes candidate06 CUDA/ONNX/model/provenance check |
+| Normal PDF → numbered final PDF | PASS; `run04.log`, Prokofiev page 1, default 300 DPI, `results04/` |
+| Review → record → apply → corrected final PDF | PASS; `browser06-retry.log`, `browser04/browser-report.json` |
+| English/Japanese functional UI | PASS; `browser04/languages.json`, both screenshots, no browser errors |
+| Correction downstream semantics/provenance | PASS; `correction-semantic-check.json`: span 3 shifts following numbers by 2; second row label 8; rendered label pixels and original manifest hash checked |
+| Existing detector numerical gate | PASS; `canonical-smoke.log`: 360 DPI accepted input, 85/85 matches, hard FP/FN/soft residual all 0 |
+| Development contracts | PASS; `test-fast-details.log` (110), `contracts-tests.log` (58), `bridge-focused-tests.log` (59, overlapping coverage), lint/diff checks |
+
+The normal PDF job used candidate04 with the same production source/UI/model bytes.
+Candidate05 changed only manifest classification and an unused default image directory;
+the PDF executor removes that directory before running. Candidate06 adds the local review
+bridge and its user instructions. Its actual bridge/apply was validated against the retained
+job without repeating detector inference. `candidate04-to05.json` and fixed-base
+`geometry-ast-parity.json` record that reuse boundary. The canonical accuracy smoke uses
+external GT from develop as a regression checker; GT is absent from the candidate and its
+normal job/correction execution.
+
+Initial browser execution needed separate network-namespace access and validation-only
+Chromium dependencies in a disposable container. The first real apply exposed the missing
+local manifest connection; it failed and led to the adapter fix. A subsequent browser retry
+used span 3 because span 2 was already recorded by that failed attempt. Both failed attempts
+and the successful attempt remain retained. A text-extraction assertion was also invalid
+for the established raster PDF renderer; the corrected check verifies numbering, rendered
+label records and pixels rather than assuming a text layer.
+
+Full68 evaluation was not run: detector/OCR/MMR algorithms, geometric arithmetic, thresholds
+and model/dependency versions are unchanged. Focused parity, correction semantics and the
+canonical one-page accuracy gate cover this packaging change. The supported distribution
+is Linux/NVIDIA Docker with operator-imported OMR-DLN. Promotion, publishing and `main`
+changes belong to #410; no branch was merged or promoted here.

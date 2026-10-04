@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 ISSUE_NUMBER=$1
-BASE_BRANCH=${2:-main}
+BASE_BRANCH=${2:-develop}
 mkdir -p artifacts
 
 echo "Generating issue post-mortem data for #$ISSUE_NUMBER..."

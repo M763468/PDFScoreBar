@@ -38,16 +38,16 @@ repository/GitHub capabilities unless a narrow project-specific skill is a bette
 
 Current project-specific uses include:
 
-- `issue-creation`: apply this repository's Issue-template conventions when the user asks to draft
-  or create an Issue;
 - `issue-post-mortem`: distill a completed investigation into durable evidence when that record is
   actually needed;
+- `pr-refinement`: fetch paginated inline review comments and classify actionable feedback for a
+  specific PR;
 - `graphify`: query an existing graph for a difficult cross-module dependency/call-path question;
 - `visual-diff-viewer`: collect relevant OMR images when visual comparison is useful.
 
-Do not route routine status reporting, Issue/PR reading, PR creation/review, documentation updates,
-test generation, dependency inspection, diff explanation, or generic debugging through a dedicated
-skill solely because one exists.
+Use native capabilities for ordinary status reporting, Issue/PR reading, PR creation, documentation
+updates, test generation, dependency inspection, diff explanation, and generic debugging. Select a
+dedicated Skill only when its description matches a distinct project-specific need.
 
 ## Graphify
 
@@ -69,9 +69,6 @@ repository log for ordinary work.
 
 Creating/editing Issues, comments, reviews, branches, and PRs is appropriate when the task requests or
 authorizes those actions. A read-only question should not cause an automatic GitHub write.
-
-When shell-based `gh` commands are used for bodies containing shell metacharacters, prefer a body file
-or another quoting-safe mechanism. Native GitHub tools may be used directly when available.
 
 ## Durable experiment history
 

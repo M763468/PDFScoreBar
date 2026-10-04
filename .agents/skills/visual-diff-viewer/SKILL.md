@@ -1,6 +1,6 @@
 ---
 name: visual-diff-viewer
-description: Identify and collect the most recent images from debug outputs for multi-modal analysis.
+description: Use for an OMR bug or evaluation review that explicitly needs recent debug images collected for visual inspection.
 ---
 
 # visual-diff-viewer
@@ -19,7 +19,7 @@ In OMR projects, visual verification is key. This skill scans directories like `
 Run commands from the repository root.
 1) Run `bash .agents/skills/visual-diff-viewer/run.sh [search_dir] [file_pattern]` to identify and collect recent images.
 2) Read `artifacts/visual_manifest.txt` to see the sorted list of images.
-3) Use the multi-modal agent to inspect the images in `artifacts/visual_evidence/` to confirm bug fixes or evaluate performance.
+3) Inspect the images in `artifacts/visual_evidence/` directly to confirm bug fixes or evaluate performance.
 
 ## Required commands/permissions
 - `bash .agents/skills/visual-diff-viewer/run.sh`: script to find and copy images into `artifacts/`

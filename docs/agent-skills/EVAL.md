@@ -9,9 +9,7 @@ ordinary code change.
 | Capability | Representative task | Negative control |
 | --- | --- | --- |
 | PR feedback (`pr-refinement`) | Given a PR with one concrete requested change and one ambiguous suggestion, fetch context and implement only the concrete request. | Given a request to explain a PR, summarize it without changing files or posting a comment. |
-| Issue creation (`issue-creation`) | Given a request to create an Issue, use the repository template and branch policy to create it. | Given a request to draft an Issue, return a draft without writing to GitHub. |
 | Issue post-mortem (`issue-post-mortem`) | Compare completed work against a fixed Issue's acceptance criteria and report gaps. | Given an implementation task, avoid post-mortem workflow. |
-| PR creation (`pr-creation`) | Given an explicit request to open a PR, follow the template and target `develop` for normal work. | Given a request to prepare a PR draft only, do not push or create it. |
 | Cross-module navigation (`graphify`) | Answer a difficult call-path question using the existing graph, then verify the result in source. | For a routine single-file change, answer from source without querying or refreshing the graph. |
 | OMR visual review (`visual-diff-viewer`) | From a fixed debug image directory, identify recent images and inspect them for the stated visual defect. | For a text-only code review with no visual evidence request, do not scan or copy images. |
 

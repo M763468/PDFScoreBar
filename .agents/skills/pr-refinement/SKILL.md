@@ -1,11 +1,12 @@
 ---
 name: pr-refinement
-description: Use when reviewing requested changes or feedback on a specific PDFScoreBar pull request.
+description: Use when acting on feedback for a specific PDFScoreBar pull request and inline review comments need to be fetched and classified.
 ---
 
 # pr-refinement
 
-Fetches the selected PR description, reviews, comments, and diff for focused refinement. Run
+Fetches the selected PR description, reviews, issue comments, diff, and paginated inline review
+comments for focused refinement. Run
 `bash .agents/skills/pr-refinement/run.sh <pr-number>`; artifacts are written under
 `artifacts/pr<N>/`.
 

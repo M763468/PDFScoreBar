@@ -18,6 +18,14 @@ SOURCE_CONTRACT_ROOTS = (
 SOURCE_CONTRACT_FILES = (
     Path("Dockerfile"),
     Path("pyproject.toml"),
+    Path("tools/review_correction/server.py"),
+    Path("tools/review_correction/application.py"),
+    Path("tools/review_correction/state.py"),
+    Path("tools/review_correction/index.html"),
+    Path("tools/review_correction/app.js"),
+    Path("tools/review_correction/strings.js"),
+    Path("tools/review_correction/apply_result.js"),
+    Path("tools/review_correction/correction_state.js"),
 )
 SOURCE_SUFFIXES = frozenset({".py", ".toml"})
 RUNTIME_MODULES = ("homr", "realesrgan", "basicsr", "ultralytics")
@@ -33,7 +41,7 @@ RUNTIME_CONTRACT_FILES = (
     Path("models/barline_cnn/manifest.json"),
     Path("src/common/model_artifacts.py"),
     Path("src/common/__init__.py"),
-    Path("src/common/barline_evaluation.py"),
+    Path("src/common/barline_geometry.py"),
 )
 
 LEGACY_SOURCE_PROVENANCE_LINES = (

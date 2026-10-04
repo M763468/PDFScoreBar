@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, List, Set
 
-from src.common.barline_evaluation import (
+from src.common.barline_geometry import (
     BARLINE_DEFAULT_MIN_WIDTH,
     BARLINE_X_MARGIN,
     BARLINE_Y_MARGIN,

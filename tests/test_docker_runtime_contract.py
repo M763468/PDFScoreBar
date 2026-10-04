@@ -107,7 +107,7 @@ def test_runtime_fingerprint_ignores_bind_mounted_source_but_hashes_image_owned_
     materializer = common / "model_artifacts.py"
     materializer.write_text("MATERIALIZER = 1\n", encoding="utf-8")
     (common / "__init__.py").write_text("", encoding="utf-8")
-    (common / "barline_evaluation.py").write_text("BOX = 1\n", encoding="utf-8")
+    (common / "barline_geometry.py").write_text("BOX = 1\n", encoding="utf-8")
     source = tmp_path / "src" / "worker.py"
     source.write_text("VALUE = 1\n", encoding="utf-8")
 

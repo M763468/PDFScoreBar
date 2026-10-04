@@ -1,138 +1,105 @@
-# Minimum executable surface (Issue #100)
+# Minimal distributable surface (#100 / #409)
 
-## Answer
+The candidate has **130 tracked files** in
+[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json): 107 files under `src/`,
+plus production config/model/Docker/package files, the package-bound user correction
+application, and minimum user documentation. The exact distribution is the union of
+`runtime_bundle_patterns`, `distribution_support_patterns`, and
+`distribution_metadata_patterns`. A generated `DISTRIBUTION_PROVENANCE.json` records
+source identity, dirty status, and each shipped file's hash.
 
-The current proposed subset is the **117 tracked files** listed in
-[`MINIMAL_MAINLINE_SURFACE.json`](MINIMAL_MAINLINE_SURFACE.json): 107 files under `src/`,
-3 model files, 2 configs, 2 Docker helpers,
-and `Dockerfile`, `pyproject.toml`, and `README.md`. The root README is required by
-`pyproject.toml` during installation. No `docs/**`, `tests/**`, CI, GT, or experiment
-file is in the executable subset. These are selection counts, not a released package.
+This is a candidate for isolated acceptance, not authorization to promote `main`.
+#410 consumes the accepted selection and establishes release promotion separately.
 
-The intended entrypoint is `src.pipeline.engine_executor.PipelineJobExecutor`. It accepts
-a PDF request, uses `configs/dense_full_pipeline.yaml` as the dense algorithm base,
-renders the request PDF, and produces final and optional review artifacts. The checked-in
-config still points to development images when run directly; the executor replaces that
-input for a PDF job. Production model manifests and the tracked MMR checkpoint are in
-`models/`; OMR-DLN weights remain an external verified asset.
+## Re-audit after #115 and #398
 
-**This is an explicit boundary, but the implementation is not yet sufficiently simple for
-physical extraction.** The 101 source files reflect the current PDF rendering, two-HOMR
-detection, SR/OMR-DLN/CNN consensus, measure numbering/OCR, engine, and correction/review
-behavior. They are an audited dependency set for those behaviors, not a claim that 101 files
-is a desirable final architecture. Three more `src/` files were excluded and one unused
-ONNX helper was removed after the call-path audit; shrinking further requires a
-behavior-preserving split of mixed modules
-or a narrower product contract.
+The former #392 list was a dependency closure. This audit applies product responsibility:
+PDF input, numbered final PDF, user review, recorded corrections, corrected final PDF,
+and inspectable runtime/model/input identity.
 
-The selected root Dockerfile builds only the maintained production stack. Historical
-Stage-E assets are isolated in `docker/Dockerfile.stage-e`
-([#398](https://github.com/M763468/PDFScoreBar/issues/398)); production HOMR code now lives
-under `src/homr_runtime/` after the responsibility split
-([#115](https://github.com/M763468/PDFScoreBar/issues/115)). Evaluation/core compatibility
-adapters and the historical Stage-E profile executor are excluded from the runtime list.
-Four production helpers
-have now moved from `tools/` to `src/`, though their candidate-generation APIs still
-carry evaluation-oriented inventory structure. An isolated bind-mounted copy of the earlier
-102 selected files completed the one-page GPU pipeline and passed the 85/85 detector accuracy
-gate. The earlier run did not import `movement_boundary_review.py`; the reviewed-movement apply
-contract now requires its resolution/provenance validation helper, so it is included in the runtime
-subset. Candidate-generation and the user/GT applications remain outside the selected engine. The run used the current full image
-plus externally mounted validation input and model; Issue #398 additionally built the current runtime
-bundle directly into a production-only image without mounting the development checkout at
-`/workspace`. With networking disabled, the one-page PDF engine job generated final PDF and review
-artifacts and passed the same 85/85 accuracy gate (hard FP/FN/soft residual all zero). Validation
-input, GT/checker and the external OMR-DLN weight were mounted separately; none entered the runtime
-file list. Both production and minimal images exclude the historical Stage-E `/opt` trees and markers.
-Do not present this subset as a finished standalone distribution.
+| Selected category | Concrete release reason |
+| --- | --- |
+| `src/common`, `src/homr_runtime` | Model/resource resolution, production geometry and pinned HOMR inference |
+| `src/measure_numbering` | Grouping, MMR/OCR, numbering and overlay rendering |
+| Dense production `src/pipeline` | PDF jobs, detector/SR workers, candidate processing, corrections, final output and provenance |
+| Two canonical configs | Dense algorithm base and pinned maintained HOMR profile |
+| Three model files | CNN/download contract, verified external OMR-DLN contract, tracked production MMR checkpoint |
+| Production Docker helpers and metadata | Clean build, compatibility/preflight, normal PDF and correction operation |
+| Eight `tools/review_correction` files | Supported user server, package/state adapter, local English/Japanese UI |
+| README + user guide | Install, run, review/correct, troubleshooting and asset ownership |
+| Distribution manifest | Auditable exact release selection |
 
-## What goes where
+Every existing runtime entry was revisited against those responsibilities. GT matching was
+unnecessarily imported from `src/common/barline_evaluation.py` by shared package exports
+and production geometry callers. Unchanged geometric functions/constants now live in
+`barline_geometry.py`; evaluation exports stay lazy for develop callers. The evaluation
+module is excluded. No thresholds or model bytes changed.
 
-| Surface | Extract? | Contents |
-| --- | --- | --- |
-| Runtime | Yes | Exact files in the JSON `runtime_bundle_patterns` list; each entry is now a file path |
-| Development and validation | No | `tests/**`, CI, smoke configs, `data/evaluation2/**`, most verification tools, training tools, repository validation scripts |
-| History and reproduction | No | `experiments/**`, Issue-specific tools, Stage-E route/profile, `Dockerfile.homr` |
-| Repository documentation | No | `docs/**` remains for development and operation; it is not an execution dependency |
+The previous blanket exclusion of the user correction application is removed at the
+**distribution** boundary. Its eight operational files are selected individually;
+`acceptance.py` and `browser_acceptance.cjs` remain development validation. User and
+GT applications are already independent (#393); no GT server/assets are included.
 
-The same JSON classifies **every tracked config and test module** outside that runtime
-selection. Among the 77 tracked configs, 2 are runtime inputs, 4 support current
-development/validation, and 71 are retained comparison or reproduction recipes. Two
-unreferenced configs with retired runtime paths (`full_pipeline_template.yaml` and
-`evaluation2_e2e_verification.yaml`) were removed. The 104 test modules are classified as
-66 maintained contracts, 12 validation-harness tests, 5 developer-tool tests, and 21
-reproduction tests. All tests and their 55 fixtures stay in the development repository;
-none is needed merely to execute a PDF job. An Issue-numbered test is not assumed to be
-obsolete solely because of its name.
+Existing production scan diagnostics remain because the current scan emits those artifacts
+through `probe_detector/debug.py`. This renderer has no GT/evaluation imports. Four lazy
+legacy-route imports remain declared, plus lazy evaluation exports from `src/common`;
+one historical worker default is also excluded and overridden by the maintained subclass;
+the release supports only maintained_original/dense_full_pipeline. Their excluded modules
+are unnecessary for supported execution. These are explicit compatibility boundaries,
+not extra shipped files.
 
-The JSON separately explains every tracked `src/` file excluded from the selected dense
-engine path. The old standard/hybrid route, Issue #120 candidate route, Stage-E route,
-HOMR evaluator CLI, and movement-boundary candidate producer are
-retained in this repository but excluded from the proposed subset. Current HOMR workers
-use `src/homr_runtime/` modules; the old `core/` modules remain compatibility adapters
-and evaluation diagnostics outside the selected bundle.
+## Develop-only classification
 
-Three further `src/` files were excluded after call-path review. `barline_units.py` is
-used by evaluation/tests, `engine_lifecycle.py` is a development contract helper not
-wired into the executor, and `movement_boundary_review.py` supports the development GUI
-and manual review authoring. The unused `ort_config.py` was removed from the repository.
-The engine and correction rerun consume the resulting review records without importing
-the authoring helper. The development manifest explicitly retains the movement-boundary
-attach/export CLI and its implementation, and the lifecycle, input-safety and telemetry
-contracts delegated to by the engine job contract.
-Correction application remains selected because the current product includes a separate
-review-package correction flow, even though a one-job request does not execute
-`CorrectionSet` records directly.
+Anything outside the three exact lists stays on `develop`, including:
 
-The dense route's candidate generator, filter, and drop heuristic now live under
-`src/pipeline/detector_routes/`; the numbering CLI now lives under
-`src/measure_numbering/`. Production and maintained development callers use those
-modules. The old `tools/` commands were removed. The checker rejects new direct
-`tools/*.py` references from selected runtime source.
+- All evaluation/GT corpora, `data/**`, `datasets/**`, tests and fixtures, CI, and full
+  regression/evaluation tooling. None is required for supported product operation.
+- Stage-E reproduction image, profiles, routes and `tools/issue120/**`; historical HOMR
+  Dockerfile; experiments and issue evidence under ignored logs.
+- GT/relabel/training tools, review acceptance harnesses, broad scripts/Makefile automation,
+  repository inventory/checkers and extraction tooling.
+- Agent/Codex/Gemini automation, skills and generated Graphify output.
+- Architecture, validation, service design, history and investigation documentation.
 
-## Placement already corrected
+Source exclusions and config/test roles are individually recorded in the JSON; the default
+exclusion rule also covers future unselected files. Maintained development status does not
+confer release status. No retained development evidence is deleted by extraction.
 
-- The production OMR-DLN worker moved from `experiments/models/` to
-  `src/pipeline/detection/omr_dln_worker.py`. The canonical caller invokes it as a module;
-  evaluation-only options remain in experiment code.
-- The dense production orchestrators have `dense_orchestrator*.py` names. The old
-  `restored_orchestrator*.py` compatibility shims were removed after test and
-  reproduction callers were moved to the canonical names.
-- The production MMR checkpoint moved from training tooling to `models/mmr/` without
-  changing its bytes. Source-tree tests and a visualizer moved out of `src/`; the retired
-  OEMER-dependent detector was removed.
+## Documentation audiences
 
-## Target layout after the remaining splits
+| Audience | Release selection |
+| --- | --- |
+| User/release | README and USER_GUIDE only: build, run, review/correct, troubleshooting |
+| Operator/reference | Manifest/model identities; preflight and result provenance |
+| Developer | Architecture, environment, engine contracts, validation policy, inventories; excluded |
+| Historical/investigation | Refactor/Issue docs and accepted experiments; excluded |
 
-```text
-src/common/                 shared runtime code
-src/homr_runtime/           prediction types, transforms, candidates, filtering, inference and outputs
-src/measure_numbering/      numbering and OCR
-src/pipeline/              engine, dense detection, review and output
-configs/                    dense algorithm base and maintained HOMR profile
-models/                     CNN/OMR manifests and MMR checkpoint
-docker/                     maintained runtime helpers
-Dockerfile, pyproject.toml, README.md
+Audience patterns in the manifest describe responsibility; they do not select extra files.
+The user guide is the single operational instruction set. The previous developer README's
+links to excluded architecture/agent documentation have been removed from the release entry.
+
+## Materialization and checks
+
+From develop:
+
+```bash
+python3 tools/check_repository_surface.py
+python3 tools/materialize_distribution.py materialize /tmp/pdfscorebar-candidate
+python3 tools/materialize_distribution.py check /tmp/pdfscorebar-candidate
 ```
 
-The current list contains production-owned HOMR modules and maintained profile backends.
-`profile_sources*.py` owns shared source-generation/SR scheduling;
-`maintained_profile*.py` selects only the maintained runtime, while the old
-`homr_profile.py` and `profile_hybrid*.py` keep historical/compatibility dispatch outside
-the selected bundle. `Dockerfile` represents the
-production environment; the reproduction-only extension is excluded from this bundle (#398).
+Use a fresh directory outside the development checkout. The materializer rejects symlinks,
+path traversal, duplicates, missing inputs, and existing output directories. It copies only
+exact selected files, stores file hashes and source identity, then checks the isolated tree.
+The checker needs no Git or undeclared development file in the candidate; the developer-side
+checker examines it from outside. Checks cover local imports, known subprocess module
+references, document/UI links, content hashes and unexpected files. They complement actual
+Docker/PDF/application acceptance and do not prove numerical accuracy.
 
-## Check and authority
-
-Run `python3 tools/check_repository_surface.py`. CI runs the same gate. It verifies that
-selected files are tracked, imports from selected Python source (including relative imports
-and package initializers) stay within the selection except for four explicitly recorded lazy
-standard-route and non-maintained-profile compatibility imports. It rejects new undeclared runtime leaks and stale
-exception records. It also verifies that every tracked `src/` file is selected or excluded, every
-tracked config and test file has exactly one role, excluded groups do not silently enter
-the runtime subset, and referenced subprocess helpers are selected. It does not prove
-that model inference or a Docker build succeeds.
-
-This document is the sole current explanation of the extraction target. The JSON is its
-machine-readable file list. [`REPOSITORY_SURFACE_INVENTORY.md`](REPOSITORY_SURFACE_INVENTORY.md)
-is the broader #230 development-repository audit, not another list of files to ship.
+Run `python3 docker/distribution.py build`, `preflight`, `run` and `review` **from the candidate**
+as described in USER_GUIDE. Required acceptance is clean production build, canonical preflight,
+PDF-to-final, review/save/apply-to-corrected-final, both UI languages, no GT/development/reproduction
+dependency, and inspectable provenance. Keep evidence under `logs/issue409/` in develop.
+Full detector evaluation is unnecessary for unchanged geometry/algorithm/model bytes; focused
+geometry compatibility and production smoke still apply. Do not report the candidate accepted
+before every required packaging gate passes.

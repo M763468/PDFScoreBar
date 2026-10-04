@@ -12,6 +12,15 @@
 
 ## Scope and canonical entry points
 
+The user distribution adds `docker/distribution.py` as a Linux Docker launcher and
+`docker/distribution_job.py` as a thin adapter to the existing v1 `PipelineJobExecutor`.
+It ships the package-bound `tools/review_correction` application alongside the engine.
+The exact selection and develop-only boundary are in
+[`MINIMAL_MAINLINE_SURFACE.md`](MINIMAL_MAINLINE_SURFACE.md); user operation is in
+[`USER_GUIDE.md`](USER_GUIDE.md). Shared barline geometry lives in
+`src/common/barline_geometry.py`; GT matching stays outside the distribution.
+
+
 The maintained full-pipeline runtime is the `pdfscore_pipeline_gpu` image and the
 config-driven entry point in `src/pipeline/main.py`. The root `Dockerfile` builds only
 the maintained production runtime. Historical Stage-E source, venv, model assets and

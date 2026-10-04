@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
 
-from src.common.barline_evaluation import (
+from src.common.barline_geometry import (
     BARLINE_DEFAULT_MIN_WIDTH,
     BARLINE_X_MARGIN,
     BARLINE_Y_MARGIN,

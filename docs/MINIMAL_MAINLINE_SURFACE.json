@@ -1,8 +1,8 @@
 {
-  "schema_version": 2,
-  "contract": "minimal-runtime-extraction",
-  "source_issue": 100,
-  "description": "Machine-readable target for extracting the canonical PDFScoreBar runtime. Development validation and historical reproduction remain in the current repository but are not part of the minimal executable bundle.",
+  "schema_version": 3,
+  "contract": "minimal-user-distribution",
+  "source_issue": 409,
+  "description": "Exact candidate user/release surface: production engine, user correction app, verified model contracts and minimum operating documentation. Other tracked files remain develop-only.",
   "runtime_bundle_patterns": [
     {
       "pattern": "Dockerfile",
@@ -46,83 +46,83 @@
     },
     {
       "pattern": "src/common/__init__.py",
-      "role": "shared runtime primitives and model/resource resolvers"
+      "role": "Public production geometry exports; lazy develop-only evaluation compatibility"
     },
     {
-      "pattern": "src/common/barline_evaluation.py",
-      "role": "shared runtime primitives and model/resource resolvers"
+      "pattern": "src/common/barline_geometry.py",
+      "role": "Production barline padding, IoU and overlap; GT matching stays develop-only"
     },
     {
       "pattern": "src/common/connector_artifacts.py",
-      "role": "shared runtime primitives and model/resource resolvers"
+      "role": "Connector evidence artifact loading for system grouping"
     },
     {
       "pattern": "src/common/model_artifacts.py",
-      "role": "shared runtime primitives and model/resource resolvers"
+      "role": "Digest-verified model registration, download and cache resolution"
     },
     {
       "pattern": "src/common/preprocessing.py",
-      "role": "shared runtime primitives and model/resource resolvers"
+      "role": "Production detector image preprocessing"
     },
     {
       "pattern": "src/common/realesrgan_assets.py",
-      "role": "shared runtime primitives and model/resource resolvers"
+      "role": "Resolve verified image-owned SR assets"
     },
     {
       "pattern": "src/common/thin_barline_finder.py",
-      "role": "shared runtime primitives and model/resource resolvers"
+      "role": "Thin vertical barline detection used by production rescue"
     },
     {
       "pattern": "src/homr_runtime/__init__.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production   init   implementation used by maintained dense processing"
     },
     {
       "pattern": "src/homr_runtime/api_compat.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production api compat implementation used by maintained dense processing"
     },
     {
       "pattern": "src/homr_runtime/barline_candidates.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production barline candidates implementation used by maintained dense processing"
     },
     {
       "pattern": "src/homr_runtime/end_barlines.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production end barlines implementation used by maintained dense processing"
     },
     {
       "pattern": "src/homr_runtime/filtering.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production filtering implementation used by maintained dense processing"
     },
     {
       "pattern": "src/homr_runtime/heuristics.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production heuristics implementation used by maintained dense processing"
     },
     {
       "pattern": "src/homr_runtime/predictor.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production predictor implementation used by maintained dense processing"
     },
     {
       "pattern": "src/homr_runtime/reporting.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production reporting implementation used by maintained dense processing"
     },
     {
       "pattern": "src/homr_runtime/segnet_cache.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production segnet cache implementation used by maintained dense processing"
     },
     {
       "pattern": "src/homr_runtime/settings.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production settings implementation used by maintained dense processing"
     },
     {
       "pattern": "src/homr_runtime/transforms.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production transforms implementation used by maintained dense processing"
     },
     {
       "pattern": "src/homr_runtime/types.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production types implementation used by maintained dense processing"
     },
     {
       "pattern": "src/homr_runtime/utils.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production utils implementation used by maintained dense processing"
     },
     {
       "pattern": "src/measure_numbering/__init__.py",
@@ -250,15 +250,15 @@
     },
     {
       "pattern": "src/pipeline/detection/maintained_profile.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production maintained profile implementation used by maintained dense processing"
     },
     {
       "pattern": "src/pipeline/detection/maintained_profile_hybrid.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production maintained profile hybrid implementation used by maintained dense processing"
     },
     {
       "pattern": "src/pipeline/detection/maintained_source_page_worker.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production maintained source page worker implementation used by maintained dense processing"
     },
     {
       "pattern": "src/pipeline/detection/omr_dln_model.py",
@@ -270,15 +270,15 @@
     },
     {
       "pattern": "src/pipeline/detection/profile_contract.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production profile contract implementation used by maintained dense processing"
     },
     {
       "pattern": "src/pipeline/detection/profile_sources.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production profile sources implementation used by maintained dense processing"
     },
     {
       "pattern": "src/pipeline/detection/profile_sources_batch_sr.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production profile sources batch sr implementation used by maintained dense processing"
     },
     {
       "pattern": "src/pipeline/detection/utils.py",
@@ -354,11 +354,11 @@
     },
     {
       "pattern": "src/pipeline/probe_detector/existing.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production existing implementation used by maintained dense processing"
     },
     {
       "pattern": "src/pipeline/probe_detector/peaks.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production peaks implementation used by maintained dense processing"
     },
     {
       "pattern": "src/pipeline/probe_detector/projections.py",
@@ -402,7 +402,7 @@
     },
     {
       "pattern": "src/pipeline/review/pipeline_review.py",
-      "role": "responsibility-based production module extracted under Issue #115"
+      "role": "Production pipeline review implementation used by maintained dense processing"
     },
     {
       "pattern": "src/pipeline/steps/__init__.py",
@@ -537,8 +537,13 @@
       "include_in_runtime_bundle": false
     },
     {
-      "pattern": "tools/review_correction/**",
-      "role": "user correction application retained from develop",
+      "pattern": "tools/review_correction/acceptance.py",
+      "role": "Development-only correction acceptance validation; operational application files are selected separately",
+      "include_in_runtime_bundle": false
+    },
+    {
+      "pattern": "tools/review_correction/browser_acceptance.cjs",
+      "role": "Development-only correction acceptance validation; operational application files are selected separately",
       "include_in_runtime_bundle": false
     }
   ],
@@ -701,7 +706,8 @@
     "src/pipeline/detector_routes/dense_probe_candidate_route.py": "Issue #120 candidate CLI",
     "src/pipeline/detector_routes/stage_e_dense_full_pipeline.py": "historical Stage-E reproduction",
     "src/pipeline/engine_lifecycle.py": "development contract helper; current executor does not import or call it",
-    "src/pipeline/movement_boundary_candidates.py": "candidate-generation/review tool, outside engine execution"
+    "src/pipeline/movement_boundary_candidates.py": "candidate-generation/review tool, outside engine execution",
+    "src/common/barline_evaluation.py": "GT matching and evaluation-only compatibility exports; production geometry now in barline_geometry.py"
   },
   "documentation_patterns": [
     {
@@ -865,7 +871,8 @@
       "tests/test_source_page_provenance.py",
       "tests/test_subprocess_utils.py",
       "tests/test_thin_barline_finder.py",
-      "tests/test_reviewed_movement_apply.py"
+      "tests/test_reviewed_movement_apply.py",
+      "tests/test_distribution_surface.py"
     ]
   },
   "test_support_patterns": [
@@ -885,6 +892,100 @@
     },
     "src/pipeline/detection/dense_orchestrator_batch_sr.py": {
       "src/pipeline/detection/profile_hybrid_batch_sr.py": "Explicit non-maintained profile selection loads historical batch-SR execution lazily; excluded from the maintained bundle."
+    },
+    "src/common/__init__.py": {
+      "src/common/barline_evaluation.py": "Lazy compatibility exports for development evaluation callers only; production callers use barline_geometry."
+    }
+  },
+  "distribution_support_patterns": [
+    {
+      "pattern": "tools/review_correction/server.py",
+      "role": "Supported package-bound correction server/application"
+    },
+    {
+      "pattern": "tools/review_correction/application.py",
+      "role": "Supported package-bound correction server/application"
+    },
+    {
+      "pattern": "tools/review_correction/state.py",
+      "role": "Supported package-bound correction server/application"
+    },
+    {
+      "pattern": "tools/review_correction/index.html",
+      "role": "Supported package-bound correction English/Japanese browser UI asset"
+    },
+    {
+      "pattern": "tools/review_correction/app.js",
+      "role": "Supported package-bound correction English/Japanese browser UI asset"
+    },
+    {
+      "pattern": "tools/review_correction/strings.js",
+      "role": "Supported package-bound correction English/Japanese browser UI asset"
+    },
+    {
+      "pattern": "tools/review_correction/apply_result.js",
+      "role": "Supported package-bound correction English/Japanese browser UI asset"
+    },
+    {
+      "pattern": "tools/review_correction/correction_state.js",
+      "role": "Supported package-bound correction English/Japanese browser UI asset"
+    },
+    {
+      "pattern": "docker/distribution.py",
+      "role": "Host build, verified preflight, PDF job and local correction launcher without development Makefile"
+    },
+    {
+      "pattern": "docker/distribution_job.py",
+      "role": "Thin command adapter for existing v1 PDF engine"
+    },
+    {
+      "pattern": "docs/USER_GUIDE.md",
+      "role": "Install, model registration, processing, review and troubleshooting"
+    },
+    {
+      "pattern": ".dockerignore",
+      "role": "Keep user data and generated output outside production build context"
+    }
+  ],
+  "distribution_metadata_patterns": [
+    {
+      "pattern": "docs/MINIMAL_MAINLINE_SURFACE.json",
+      "role": "Exact candidate selection and auditable release reasons"
+    }
+  ],
+  "documentation_audiences": {
+    "user_release": [
+      "README.md",
+      "docs/USER_GUIDE.md"
+    ],
+    "operator_reference": [
+      "docs/MINIMAL_MAINLINE_SURFACE.json"
+    ],
+    "developer": [
+      "docs/*.md",
+      "docs/dev/**",
+      "docs/ai-workflow/**"
+    ],
+    "historical_investigation": [
+      "docs/refactors/**",
+      "docs/issue*",
+      "docs/ISSUE*",
+      "docs/history/**"
+    ]
+  },
+  "distribution_policy": {
+    "default": "Every tracked file outside the exact selected lists stays develop-only. Audience patterns are advisory; only exact distribution lists authorize shipping.",
+    "tests": "All regression suites and fixtures stay develop-only; operational preflight is shipped instead.",
+    "models": "MMR checkpoint tracked; CNN downloaded and hash-verified during Docker build; OMR-DLN operator-supplied under manifest, never silently redistributed.",
+    "supported_platform": "Linux Docker with NVIDIA GPU; Docker primary installation route.",
+    "exceptions": {
+      "src/pipeline/probe_detector/debug.py": "Normal candidate scan still writes diagnostic artifacts through this production renderer; no evaluation or GT imports. Debug outputs are part of retained pipeline provenance.",
+      "runtime_optional_source_imports": "Lazy compatibility routes are excluded and supported release uses only maintained_original/dense_full_pipeline."
+    }
+  },
+  "runtime_optional_module_references": {
+    "src/pipeline/detection/profile_sources.py": {
+      "src/pipeline/detection/verified_source_page_worker.py": "Historical base-class worker default, overridden by maintained_profile_hybrid production class to maintained_source_page_worker."
     }
   }
 }

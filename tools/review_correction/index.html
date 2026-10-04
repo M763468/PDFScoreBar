@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Review correction</title>
+  <style>
+    :root { color-scheme: light; font: 14px/1.4 system-ui, sans-serif; color: #17212b; background: #f3f5f7; }
+    * { box-sizing: border-box; }
+    body { margin: 0; height: 100vh; min-height: 560px; display: grid; grid-template-rows: 58px 1fr; }
+    button, select, input { font: inherit; }
+    .btn { padding: 7px 11px; border: 1px solid #bcc7d1; border-radius: 6px; background: #fff; color: #17212b; cursor: pointer; }
+    .btn:hover { background: #edf4fa; } .btn.active { color: #075b9a; border-color: #2587cb; background: #e4f3ff; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    #topbar { display:flex; align-items:center; gap:14px; padding: 0 18px; background:#fff; border-bottom:1px solid #d9e0e6; }
+    #topbar strong { font-size:16px; } #pageMeta { color:#536473; } .spacer { flex:1; }
+    #workspace { min-height:0; display:grid; grid-template-columns: 205px minmax(320px,1fr) 300px; }
+    #navigation, #context { min-height:0; overflow:auto; background:#fff; }
+    #navigation { border-right:1px solid #d9e0e6; padding:14px 10px; }
+    #context { border-left:1px solid #d9e0e6; padding:14px; }
+    h2 { margin:0 0 10px; font-size:13px; text-transform:uppercase; letter-spacing:.05em; color:#546675; }
+    #pageList { max-height:calc(100vh - 125px); overflow:auto; }
+    .list-item { padding:8px 9px; border-bottom:1px solid #edf0f2; cursor:pointer; font-size:13px; }
+    .list-item.active { background:#eaf5fd; outline:1px solid #b6dcf4; }
+    #main { min-width:0; min-height:0; display:flex; flex-direction:column; }
+    #displayControls { display:flex; align-items:center; flex-wrap:wrap; gap:10px; padding:8px 12px; background:#fff; border-bottom:1px solid #d9e0e6; }
+    #displayControls label { display:inline-flex; gap:4px; align-items:center; color:#536473; font-size:12px; }
+    #canvas { flex:1; min-height:0; width:100%; background:#15191e; cursor:default; }
+    #canvasHint { padding:6px 12px; color:#657482; font-size:11px; background:#fff; }
+    .panel { padding:12px 0; border-bottom:1px solid #e4e9ed; }
+    .row { display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin:8px 0; }
+    .row label { display:flex; align-items:center; gap:6px; }
+    select { max-width:100%; padding:6px; border:1px solid #bcc7d1; border-radius:5px; }
+    input[type=number] { width:72px; } input[type=text] { width:100%; }
+    #selectionMeta, #saveStatus, #dirtyStatus, .small { color:#5d6d7a; font-size:12px; }
+    #selectionMeta { padding:7px; background:#f3f6f8; border-radius:5px; }
+    #statePanel { padding:10px; border-radius:6px; background:#f4f7f9; }
+    #statePanel p { margin:5px 0; } #statePanel strong { color:#344553; }
+    #itemList { max-height:23vh; overflow:auto; border:1px solid #e5eaee; }
+    details { margin-top:10px; } summary { cursor:pointer; color:#425563; font-weight:600; }
+    .movement-guide, .movement-status { margin-top:7px; padding:8px; border:1px solid #ead994; border-radius:5px; background:#fff9df; font-size:12px; }
+    .legend { display:flex; flex-wrap:wrap; gap:6px 10px; font-size:11px; color:#536473; } .dot { width:9px;height:9px;display:inline-block;border:1px solid #555; }
+    #applyBtn { background:#126da8; color:white; border-color:#126da8; }
+    @media(max-width:900px) { #workspace { grid-template-columns:160px minmax(260px,1fr); } #context { grid-column:1/-1; border:0; border-top:1px solid #d9e0e6; max-height:42vh; } body { height:auto; min-height:100vh; grid-template-rows:58px auto; } #main { height:65vh; } }
+  </style>
+</head>
+<body>
+  <header id="topbar">
+    <strong data-copy="title">Review correction</strong>
+    <span id="pageMeta"></span>
+    <div class="spacer"></div>
+    <button id="prevBtn" class="btn" data-copy="previous">Previous</button>
+    <button id="nextBtn" class="btn" data-copy="next">Next</button>
+  </header>
+  <div id="workspace">
+    <nav id="navigation" aria-label="Result pages">
+      <h2 data-copy="navigation">Review result</h2>
+      <div id="pageList"></div>
+    </nav>
+    <main id="main">
+      <div id="displayControls" aria-label="Score display">
+        <strong data-copy="display">Score display</strong>
+        <label><input id="showMeasuresToggle" type="checkbox" checked /><span data-copy="measures">Measures</span></label>
+        <label><input id="showBarlinesToggle" type="checkbox" checked /><span data-copy="barlines">Barlines</span></label>
+        <label><input id="showLabelsToggle" type="checkbox" /><span data-copy="labels">Labels</span></label>
+        <label><input id="showBaseToggle" type="checkbox" checked /><span data-copy="baseState">Original grouping</span></label>
+        <label><input id="showManualToggle" type="checkbox" checked /><span data-copy="manualState">Your changes</span></label>
+        <label><input id="showMovementToggle" type="checkbox" checked /><span data-copy="movement">Movement boundaries</span></label>
+      </div>
+      <canvas id="canvas" aria-label="Score review canvas"></canvas>
+      <div id="canvasHint" data-copy="canvasHint">Scroll to zoom · Space-drag or middle-drag to pan · ←/→ changes page</div>
+    </main>
+    <aside id="context">
+      <button id="helpBtn" hidden type="button">Details</button>
+      <section class="panel">
+        <h2 data-copy="task">Correction task</h2>
+        <div class="row"><label><span data-copy="taskType">Correction type</span>
+          <select id="typeSelect">
+            <option value="mmr_measure_span" data-copy="types.mmr_measure_span">Measure grouping</option>
+            <option value="barline_construction" data-copy="types.barline_construction">Barline</option>
+            <option value="measure_construction" data-copy="types.measure_construction">Measure</option>
+            <option value="movement_boundary" data-copy="types.movement_boundary">Movement boundary</option>
+          </select>
+        </label></div>
+        <div class="row"><label><span data-copy="operation">Change</span><select id="opSelect"></select></label></div>
+        <div class="row" id="measureSpanRow"><label><span data-copy="measureSpan">Measure span</span> <input id="measureSpanInput" type="number" min="1" value="2" /></label></div>
+        <div class="row" id="actionRow">
+          <button id="selectModeBtn" class="btn active" data-copy="select">Select target</button>
+          <button id="drawModeBtn" class="btn" data-copy="draw">Draw barline</button>
+          <button id="addItemBtn" class="btn" data-copy="stage">Record change</button>
+          <button id="deleteItemBtn" class="btn" disabled data-copy="remove">Remove recorded change</button>
+        </div>
+        <div id="movementBoundaryPanel" style="display:none">
+          <div class="movement-guide">Choose a system to review its movement boundary.</div>
+          <div class="row" id="movementSystemRow"><label><span data-copy="targetSystem">Target system</span> <input id="movementSystemInput" type="number" min="1" placeholder="e.g. 6" /></label></div>
+          <div class="movement-status" id="movementTargetMeta">No system selected.</div>
+          <div class="movement-status" id="movementPageStatus"></div>
+          <button id="exportMovementBtn" class="btn" style="display:none" data-copy="finishMovement">Finish movement review</button>
+        </div>
+        <div class="row" id="reasonRow"><label><span data-copy="reason">Reason</span> <input id="reasonInput" type="text" value="manual correction" /></label></div>
+        <div id="selectionMeta" data-copy="noSelection">Select a measure, barline, or system on the score.</div>
+      </section>
+      <section class="panel" id="statePanel" aria-live="polite">
+        <h2 data-copy="status">Correction status</h2>
+        <div id="correctionStatePanel" data-copy="stateLoading">Loading correction status…</div>
+        <div id="applicationControls">
+          <p id="applicationStatus">Result status is loading.</p>
+          <div class="row">
+            <button id="saveBtn" class="btn" data-copy="save">Save changes</button>
+            <button id="applyBtn" class="btn">Apply changes</button>
+            <a id="openResultBtn" class="btn" href="/api/result" target="_blank" rel="noopener" hidden data-copy="openResult">Open corrected result</a>
+          </div>
+        </div>
+        <div id="saveStatus"></div><div id="dirtyStatus"></div>
+      </section>
+      <details class="panel" id="resultDetails"><summary data-copy="currentChanges">Current page changes</summary><div id="itemList"></div></details>
+      <details class="panel" id="helpPanel"><summary data-copy="details">Details and evidence</summary><p id="resultIdentity" class="small"></p>
+        <p class="small">Visible page, system, and measure numbers start at 1. Saved correction indices keep their existing format.</p>
+        <p class="small">Selected objects and active drafts remain visible when overlays are hidden. Barlines can be selected or drawn; other changes use the selected score target.</p>
+        <p class="small">Movement decisions apply before the selected system. Movement decisions are saved immediately.</p>
+        <div class="legend">
+          <span><i class="dot" style="background:#3aa3ff"></i> Measure</span><span><i class="dot" style="background:#46c46b"></i> Original</span>
+          <span><i class="dot" style="background:#b35cff"></i> Recorded change</span><span><i class="dot" style="background:#ff8a00"></i> Selected</span>
+        </div>
+      </details>
+    </aside>
+  </div>
+  <script src="strings.js"></script>
+  <script>document.querySelectorAll("[data-copy]").forEach((node) => { const value = node.dataset.copy.split(".").reduce((object, key) => object && object[key], window.ReviewStrings); if (value) node.textContent = value; });</script>
+  <script src="app.js"></script>
+  <script src="correction_state.js"></script>
+  <script src="apply_result.js"></script>
+</body>
+</html>

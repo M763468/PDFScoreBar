@@ -15,7 +15,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-UI_ROOT = REPO_ROOT / "tools" / "gt_relabel_gui"
+UI_ROOT = Path(__file__).resolve().parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -242,24 +242,16 @@ class ReviewHandler(BaseHTTPRequestHandler):
             return
         parsed = urlparse(self.path)
         package = self.server.package
-        if parsed.path in {"/", "/app_manual.js", "/correction_state.js", "/apply_result.js"}:
-            if parsed.path == "/":
-                html = (UI_ROOT / "index_manual.html").read_text(encoding="utf-8")
-                html = html.replace(
-                    "</body>",
-                    '<script src="/correction_state.js"></script>\n<script src="/apply_result.js"></script>\n</body>',
-                )
-                data = html.encode("utf-8")
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.send_header("Content-Length", str(len(data)))
-                self.end_headers()
-                self.wfile.write(data)
-            else:
-                if parsed.path == "/app_manual.js":
-                    self._file(UI_ROOT / "app_manual.js")
-                else:
-                    self._file(Path(__file__).with_name(parsed.path.lstrip("/")))
+        assets = {
+            "/": "index.html",
+            "/app.js": "app.js",
+            "/app_manual.js": "app.js",
+            "/strings.js": "strings.js",
+            "/correction_state.js": "correction_state.js",
+            "/apply_result.js": "apply_result.js",
+        }
+        if parsed.path in assets:
+            self._file(UI_ROOT / assets[parsed.path])
             return
         if parsed.path == "/api/result":
             try:

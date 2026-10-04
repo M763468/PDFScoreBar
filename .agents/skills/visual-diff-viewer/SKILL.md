@@ -1,6 +1,6 @@
 ---
 name: visual-diff-viewer
-description: Identify and collect the most recent images from debug outputs for multi-modal analysis.
+description: Use for an OMR bug or evaluation review that explicitly needs recent debug images collected for visual inspection.
 ---
 
 # visual-diff-viewer

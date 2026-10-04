@@ -16,7 +16,7 @@ targets are retained for provenance and are not promoted as general workflows.
 | `setup-local-worktree-links` | Maintained developer helper | Delegates to `scripts/setup_local_worktree_links.sh`. |
 | `promote-log` | Maintained developer helper | Promotes a run into an existing retained log category. |
 | `repo-tree` | Maintained developer helper | Optional overview; requires the external `tree` command. |
-| `issue-triage`, `issue-post-mortem` | Maintained Issue workflow helpers | Fetch repository Issue context or review completed Issue work. |
+| `issue-post-mortem` | Maintained Issue workflow helper | Review completed Issue work and preserve relevant disposition/provenance. |
 | `visual-diff` | OMR visual inspection helper | Collects recent debug images for visual review. |
 | `clean-artifacts`, `clean-logs` | Maintained cleanup helpers | `clean-logs` is limited to documented category roots and protects retained directories. |
 | `format` | Maintained code helper | Applies Ruff formatting and fixes. |

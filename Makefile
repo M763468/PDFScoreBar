@@ -1,4 +1,4 @@
-.PHONY: help lint format clean-artifacts clean-logs docker-clean docker-clean-full docker-build promote-log run-smoke run-smoke-sr test-fast verify-pipeline-smoke verify-service-readiness-smoke verify-service-readiness-container verify-gpu-smoke verify-full-eval local-pr-validation setup-local-worktree-links run-pipeline eval-issue120-full verify-issue120-stage-b verify-issue120-stage-b-native regen-issue120-stage-d-upstream verify-issue120-stage-d summarize-issue120-stage-d compare-issue120-stage-d-boxes repo-tree check-makefile test issue-triage issue-post-mortem visual-diff
+.PHONY: help lint format clean-artifacts clean-logs docker-clean docker-clean-full docker-build promote-log run-smoke run-smoke-sr test-fast verify-pipeline-smoke verify-service-readiness-smoke verify-service-readiness-container verify-gpu-smoke verify-full-eval local-pr-validation setup-local-worktree-links run-pipeline eval-issue120-full verify-issue120-stage-b verify-issue120-stage-b-native regen-issue120-stage-d-upstream verify-issue120-stage-d summarize-issue120-stage-d compare-issue120-stage-d-boxes repo-tree check-makefile test issue-post-mortem visual-diff
 
 PYTHON ?= python3
 FULL_EVAL_CONFIG ?= configs/evaluation2_e2e_verification_full.yaml
@@ -278,9 +278,6 @@ test: ## [maintained validation] Run the full test suite
 	if [ -x .venv_pdf/bin/python ]; then PYTHON_BIN=.venv_pdf/bin/python; fi; \
 	PYTHONPATH=. "$$PYTHON_BIN" -m pytest tests/ > artifacts/test_results.txt 2>&1 || \
 		(EXIT_CODE=$$?; echo "Test suite failed with exit code $$EXIT_CODE. See artifacts/test_results.txt"; exit $$EXIT_CODE)
-
-issue-triage: ## [maintained helper] Fetch and triage open GitHub issues
-	./.agents/skills/issue-triage/run.sh
 
 issue-post-mortem: ## [maintained helper] Review completed work against original issue
 	./.agents/skills/issue-post-mortem/run.sh

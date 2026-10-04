@@ -103,13 +103,15 @@
       <section class="panel" id="statePanel" aria-live="polite">
         <h2 data-copy="status">Correction status</h2>
         <div id="correctionStatePanel" data-copy="stateLoading">Loading correction status…</div>
-        <p id="applicationStatus">Result status is loading.</p>
-        <div id="saveStatus"></div><div id="dirtyStatus"></div>
-        <div class="row">
-          <button id="saveBtn" class="btn" data-copy="save">Save changes</button>
-          <button id="applyBtn" class="btn">Apply changes</button>
-          <a id="openResultBtn" class="btn" href="/api/result" target="_blank" rel="noopener" hidden data-copy="openResult">Open corrected result</a>
+        <div id="applicationControls">
+          <p id="applicationStatus">Result status is loading.</p>
+          <div class="row">
+            <button id="saveBtn" class="btn" data-copy="save">Save changes</button>
+            <button id="applyBtn" class="btn">Apply changes</button>
+            <a id="openResultBtn" class="btn" href="/api/result" target="_blank" rel="noopener" hidden data-copy="openResult">Open corrected result</a>
+          </div>
         </div>
+        <div id="saveStatus"></div><div id="dirtyStatus"></div>
       </section>
       <details class="panel" id="resultDetails"><summary data-copy="currentChanges">Current page changes</summary><div id="itemList"></div></details>
       <details class="panel" id="helpPanel"><summary data-copy="details">Details and evidence</summary><p id="resultIdentity" class="small"></p>

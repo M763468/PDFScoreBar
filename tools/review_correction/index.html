@@ -47,18 +47,23 @@
 <body>
   <header id="topbar">
     <strong data-copy="title">Review correction</strong>
+    <label class="language-switch"><span data-copy="language">Language</span>
+      <select id="languageSelect" aria-label="Language" data-copy-aria="aria.language">
+        <option value="en">English</option><option value="ja">日本語</option>
+      </select>
+    </label>
     <span id="pageMeta"></span>
     <div class="spacer"></div>
     <button id="prevBtn" class="btn" data-copy="previous">Previous</button>
     <button id="nextBtn" class="btn" data-copy="next">Next</button>
   </header>
   <div id="workspace">
-    <nav id="navigation" aria-label="Result pages">
+    <nav id="navigation" aria-label="Result pages" data-copy-aria="aria.pages">
       <h2 data-copy="navigation">Review result</h2>
       <div id="pageList"></div>
     </nav>
     <main id="main">
-      <div id="displayControls" aria-label="Score display">
+      <div id="displayControls" aria-label="Score display" data-copy-aria="aria.display">
         <strong data-copy="display">Score display</strong>
         <label><input id="showMeasuresToggle" type="checkbox" checked /><span data-copy="measures">Measures</span></label>
         <label><input id="showBarlinesToggle" type="checkbox" checked /><span data-copy="barlines">Barlines</span></label>
@@ -67,11 +72,11 @@
         <label><input id="showManualToggle" type="checkbox" checked /><span data-copy="manualState">Your changes</span></label>
         <label><input id="showMovementToggle" type="checkbox" checked /><span data-copy="movement">Movement boundaries</span></label>
       </div>
-      <canvas id="canvas" aria-label="Score review canvas"></canvas>
+      <canvas id="canvas" aria-label="Score review canvas" data-copy-aria="aria.canvas"></canvas>
       <div id="canvasHint" data-copy="canvasHint">Scroll to zoom · Space-drag or middle-drag to pan · ←/→ changes page</div>
     </main>
     <aside id="context">
-      <button id="helpBtn" hidden type="button">Details</button>
+      <button id="helpBtn" hidden type="button" data-copy="details">Details</button>
       <section class="panel">
         <h2 data-copy="task">Correction task</h2>
         <div class="row"><label><span data-copy="taskType">Correction type</span>
@@ -91,23 +96,23 @@
           <button id="deleteItemBtn" class="btn" disabled data-copy="remove">Remove recorded change</button>
         </div>
         <div id="movementBoundaryPanel" style="display:none">
-          <div class="movement-guide">Choose a system to review its movement boundary.</div>
-          <div class="row" id="movementSystemRow"><label><span data-copy="targetSystem">Target system</span> <input id="movementSystemInput" type="number" min="1" placeholder="e.g. 6" /></label></div>
-          <div class="movement-status" id="movementTargetMeta">No system selected.</div>
+          <div class="movement-guide" data-copy="ui.movementPrompt">Choose a system to review its movement boundary.</div>
+          <div class="row" id="movementSystemRow"><label><span data-copy="targetSystem">Target system</span> <input id="movementSystemInput" type="number" min="1" placeholder="e.g. 6" data-copy-placeholder="ui.systemPlaceholder" /></label></div>
+          <div class="movement-status" id="movementTargetMeta" data-copy="ui.noSystemSelected">No system selected.</div>
           <div class="movement-status" id="movementPageStatus"></div>
           <button id="exportMovementBtn" class="btn" style="display:none" data-copy="finishMovement">Finish movement review</button>
         </div>
-        <div class="row" id="reasonRow"><label><span data-copy="reason">Reason</span> <input id="reasonInput" type="text" value="manual correction" /></label></div>
+        <div class="row" id="reasonRow"><label><span data-copy="reason">Reason</span> <input id="reasonInput" type="text" value="manual correction" data-copy-default="ui.reasonDefault" /></label></div>
         <div id="selectionMeta" data-copy="noSelection">Select a measure, barline, or system on the score.</div>
       </section>
       <section class="panel" id="statePanel" aria-live="polite">
         <h2 data-copy="status">Correction status</h2>
         <div id="correctionStatePanel" data-copy="stateLoading">Loading correction status…</div>
         <div id="applicationControls">
-          <p id="applicationStatus">Result status is loading.</p>
+          <p id="applicationStatus" data-copy="result.loading">Result status is loading.</p>
           <div class="row">
             <button id="saveBtn" class="btn" data-copy="save">Save changes</button>
-            <button id="applyBtn" class="btn">Apply changes</button>
+            <button id="applyBtn" class="btn" data-copy="result.apply">Generate corrected PDF</button>
             <a id="openResultBtn" class="btn" href="/api/result" target="_blank" rel="noopener" hidden data-copy="openResult">Open corrected result</a>
           </div>
         </div>
@@ -115,18 +120,40 @@
       </section>
       <details class="panel" id="resultDetails"><summary data-copy="currentChanges">Current page changes</summary><div id="itemList"></div></details>
       <details class="panel" id="helpPanel"><summary data-copy="details">Details and evidence</summary><p id="resultIdentity" class="small"></p>
-        <p class="small">Visible page, system, and measure numbers start at 1. Saved correction indices keep their existing format.</p>
-        <p class="small">Selected objects and active drafts remain visible when overlays are hidden. Barlines can be selected or drawn; other changes use the selected score target.</p>
-        <p class="small">Movement decisions apply before the selected system. Movement decisions are saved immediately.</p>
+        <p class="small" data-copy="help.pages">Visible page, system, and measure numbers start at 1. Saved correction indices keep their existing format.</p>
+        <p class="small" data-copy="help.overlays">Selected objects and active drafts remain visible when overlays are hidden. Barlines can be selected or drawn; other changes use the selected score target.</p>
+        <p class="small" data-copy="help.movement">Movement decisions apply before the selected system. Movement decisions are saved immediately.</p>
         <div class="legend">
-          <span><i class="dot" style="background:#3aa3ff"></i> Measure</span><span><i class="dot" style="background:#46c46b"></i> Original</span>
-          <span><i class="dot" style="background:#b35cff"></i> Recorded change</span><span><i class="dot" style="background:#ff8a00"></i> Selected</span>
+          <span><i class="dot" style="background:#3aa3ff"></i> <span data-copy="help.legendMeasure">Measure</span></span><span><i class="dot" style="background:#46c46b"></i> <span data-copy="help.legendOriginal">Original</span></span>
+          <span><i class="dot" style="background:#b35cff"></i> <span data-copy="help.legendRecorded">Recorded change</span></span><span><i class="dot" style="background:#ff8a00"></i> <span data-copy="help.legendSelected">Selected</span></span>
         </div>
       </details>
     </aside>
   </div>
   <script src="strings.js"></script>
-  <script>document.querySelectorAll("[data-copy]").forEach((node) => { const value = node.dataset.copy.split(".").reduce((object, key) => object && object[key], window.ReviewStrings); if (value) node.textContent = value; });</script>
+  <script>window.applyReviewCopy = () => { const get = (path) => path.split(".").reduce((object, key) => object && object[key], window.ReviewStrings); document.querySelectorAll("[data-copy]").forEach((node) => { if (!node.dataset.copy) return; const value = get(node.dataset.copy); if (value) node.textContent = value; }); document.querySelectorAll("[data-copy-aria]").forEach((node) => { if (!node.dataset.copyAria) return; const value = get(node.dataset.copyAria); if (value) node.setAttribute("aria-label", value); }); document.querySelectorAll("[data-copy-placeholder]").forEach((node) => { if (!node.dataset.copyPlaceholder) return; const value = get(node.dataset.copyPlaceholder); if (value) node.setAttribute("placeholder", value); }); document.querySelectorAll("[data-copy-default]").forEach((node) => { if (!node.dataset.copyDefault) return; const value = get(node.dataset.copyDefault); if (value && ["manual correction", "手動修正"].includes(node.value)) node.value = value; }); }; window.applyReviewCopy();</script>
+  <script>
+    (() => {
+      const catalogs = window.ReviewStringCatalogs;
+      let language = "en";
+      try { language = localStorage.getItem("review-correction-language") === "ja" ? "ja" : "en"; } catch (_) {}
+      const apply = () => {
+        window.ReviewStrings = catalogs[language];
+        document.documentElement.lang = language;
+        document.title = catalogs[language].title;
+        window.applyReviewCopy();
+        document.getElementById("languageSelect").value = language;
+        window.dispatchEvent(new CustomEvent("review-language-changed", {detail: {language}}));
+      };
+      window.reviewLanguage = {get: () => language, apply};
+      document.getElementById("languageSelect").addEventListener("change", (event) => {
+        language = event.target.value === "ja" ? "ja" : "en";
+        try { localStorage.setItem("review-correction-language", language); } catch (_) {}
+        apply();
+      });
+      apply();
+    })();
+  </script>
   <script src="app.js"></script>
   <script src="correction_state.js"></script>
   <script src="apply_result.js"></script>

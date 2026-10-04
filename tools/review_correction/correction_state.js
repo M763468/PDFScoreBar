@@ -1,21 +1,20 @@
 /* Product state for the package-scoped user entry only. Engine semantics stay on the server. */
 (() => {
-  const copy = window.ReviewStrings.state;
   const panel = document.getElementById("correctionStatePanel") || document.createElement("section");
   panel.id = "correctionStatePanel";
   panel.setAttribute("aria-live", "polite");
   if (!panel.parentNode) document.getElementById("sidebarHeader").appendChild(panel);
   let updateChain = Promise.resolve();
   let latestState = null;
-  const typeNames = copy.types;
   const request = async (url, body) => {
     const response = await fetch(url, body === undefined ? {} : {
       method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body),
     });
-    if (!response.ok) throw new Error(`Request failed (${response.status})`);
+    if (!response.ok) throw new Error(`${window.ReviewStrings.state.requestFailed} (${response.status})`);
     return response.json();
   };
   function render(state) {
+    const copy = window.ReviewStrings.state;
     latestState = state;
     panel.replaceChildren();
     const heading = document.createElement("strong");
@@ -23,15 +22,17 @@
     if (!document.getElementById("statePanel")) panel.appendChild(heading);
     const summary = document.createElement("div");
     summary.className = "small";
-    summary.textContent = `${(state.labels || {})[state.package.status] || state.package.status} · ${state.package.counts.pending} ${copy.pending} · ${state.package.counts.recorded} ${copy.recorded} · ${state.package.counts.error} ${copy.errors}`;
+    const statusNames = window.ReviewStrings.state.statuses || {};
+    summary.textContent = `${statusNames[state.package.status] || (state.labels || {})[state.package.status] || state.package.status} · ${state.package.counts.pending} ${copy.pending} · ${state.package.counts.recorded} ${copy.recorded} · ${state.package.counts.error} ${copy.errors}`;
     panel.appendChild(summary);
     for (const entry of state.states || []) {
       if (currentPage && String(entry.page) !== String(pageValue())) continue;
       const line = document.createElement("div");
       line.className = "small";
       const statuses = [entry.edit_status === "none" ? null : entry.edit_status, entry.recording_status]
-        .filter(Boolean).map(key => (state.labels || {})[key] || key);
-      line.textContent = `${copy.page} ${Number(entry.page) + 1} · ${typeNames[entry.correction_type] || entry.correction_type}: ${statuses.join(" · ")}`;
+        .filter(Boolean).map(key => statusNames[key] || (state.labels || {})[key] || key);
+      const typeName = copy.types[entry.correction_type] || entry.correction_type;
+      line.textContent = `${copy.page} ${Number(entry.page) + 1} · ${typeName}: ${statuses.join(" · ")}`;
       if (entry.error) line.textContent += ` · ${entry.error}`;
       panel.appendChild(line);
     }
@@ -43,7 +44,7 @@
   function enqueue(operation) {
     const result = updateChain.then(operation);
     updateChain = result.catch(error => {
-      panel.textContent = `${copy.unavailable}: ${error.message}`;
+      panel.textContent = `${window.ReviewStrings.state.unavailable}: ${error.message}`;
     });
     return result;
   }

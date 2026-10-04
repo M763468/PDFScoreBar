@@ -43,6 +43,10 @@ directory under the output root. Its `final/` directory contains the numbered PD
 records status, warnings, artifact hashes, and source provenance. Review-required status
 means the generated result needs user attention.
 
+The local adapter binds the review handoff to a relocated retained-source manifest and
+records the original manifest hash. The same preparation runs when opening a retained
+local job.
+
 Keep the entire output directory: the review package, source manifest, and retained engine
 artifacts support correction and inspectable provenance. The launcher mounts input read-only
 at `/input` and the output root at `/results`, using stable paths across sessions.

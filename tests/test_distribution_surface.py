@@ -164,3 +164,45 @@ def test_release_launcher_uses_pinned_image_and_isolated_paths(tmp_path, monkeyp
     assert f"{(tmp_path / 'output').resolve()}:/results" in calls[1]
     assert "-m" in calls[1] and "docker.distribution_job" in calls[1]
     assert "--expected-fingerprint-value" in calls[0]
+
+
+def test_local_review_bridge_preserves_original_and_rebinds_paths(tmp_path):
+    import hashlib
+
+    from docker.distribution_job import prepare_local_review
+
+    package = tmp_path / "job-one"
+    review = package / "review"
+    review.mkdir(parents=True)
+    handoff = review / "manual_correction_input.json"
+    handoff.write_text(json.dumps({"source_job_id": "job-one", "pages": []}))
+    original = package / ".engine-retained/runs/job-one/manifest.json"
+    original.parent.mkdir(parents=True)
+    source = {
+        "run_dir": "/results/job-one/.engine-work/runs/job-one",
+        "config": {"detection": {"cnn_threshold": 0.4965248107910156}},
+        "pages": [{"image": "/results/job-one/.engine-work/runs/job-one/inputs/images/page.png"}],
+    }
+    original.write_text(json.dumps(source))
+    original_bytes = original.read_bytes()
+    result_path = package / "result.json"
+    result_path.write_text(
+        json.dumps(
+            {"artifacts": [{"reference": "review/manual_correction_input.json", "sha256": "old"}]}
+        )
+    )
+    digest = prepare_local_review(package)
+    assert original.read_bytes() == original_bytes
+    local = json.loads(original.with_name("local_manifest.json").read_text())
+    assert local["config"] == source["config"]
+    assert Path(local["pages"][0]["image"]).is_relative_to(package / ".engine-retained")
+    assert (
+        local["local_distribution_source"]["original_manifest_sha256"]
+        == hashlib.sha256(original_bytes).hexdigest()
+    )
+    assert json.loads(result_path.read_text())["artifacts"][0]["sha256"] == digest
+    payload = json.loads(handoff.read_text())
+    assert (review / payload["source_manifest"]).resolve() == original.with_name(
+        "local_manifest.json"
+    )
+    assert prepare_local_review(package) == digest

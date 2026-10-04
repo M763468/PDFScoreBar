@@ -48,6 +48,13 @@ the release supports only maintained_original/dense_full_pipeline. Their exclude
 are unnecessary for supported execution. These are explicit compatibility boundaries,
 not extra shipped files.
 
+The local job adapter also bridges the v1 engine review output to the user application.
+The engine deliberately strips filesystem source references and renames its work tree.
+The adapter creates a separate relocated `local_manifest.json` beside the immutable
+retained manifest, binds the local handoff to it, and updates the result artifact hash.
+The original manifest hash stays inspectable; engine API and correction schemas are unchanged.
+Review launch can prepare this bridge for a retained local job without detector inference.
+
 ## Develop-only classification
 
 Anything outside the three exact lists stays on `develop`, including:

@@ -159,6 +159,20 @@ def main() -> int:
             command += ["--pages", *map(str, args.pages)]
     else:
         handoff = args.handoff.resolve(strict=True).relative_to(output)
+        status = subprocess.call(
+            common
+            + [
+                image_id,
+                "/opt/venv_pipeline/bin/python",
+                "-m",
+                "docker.distribution_job",
+                "--prepare-review",
+                f"/results/{handoff.parent.parent.as_posix()}",
+            ],
+            cwd=ROOT,
+        )
+        if status:
+            return status
         # The existing user server binds container loopback. Linux host networking
         # preserves its loopback/same-origin contract without widening that bind.
         common[common.index("none")] = "host"

@@ -143,8 +143,8 @@ numbering run and does not change the score currently displayed in the GUI.
 
 ### Manual GUI quick guide
 
-The GUI is split into a left correction/navigation sidebar and a score canvas on the right.
-The overlay controls are in the toolbar above the score canvas.
+The user application places page navigation at the top, score display controls beside the canvas,
+and correction tasks, saved/result status, and action buttons in the right context panel.
 
 Initial overlay state:
 
@@ -153,7 +153,7 @@ Initial overlay state:
 | Measures | on | Show normal measure geometry. |
 | Barlines | on | Show current barline geometry. |
 | Labels | off | Show regular overlay labels. Keep this off for a less crowded score. |
-| Base MMR state | on | Show base/automatic MMR state. |
+| Original grouping | on | Show base/automatic MMR state. |
 | Manual state | on | Show pending manual edits. |
 
 Useful review views:
@@ -392,3 +392,18 @@ validation, and result messages are collected in `tools/review_correction/string
 come from `tools/review_correction/state.py::LABELS`. These are the controlled English inputs for
 #361. GT/developer presentation remains in `tools/gt_relabel_gui/` and is not a localization target.
 The browser displays only current-page detail alongside package-wide pending/recorded/error counts.
+
+
+## Acceptance and localization handoff
+
+The real-artifact acceptance procedure and fixed observable result gates are documented in
+[REVIEW_ACCEPTANCE.md](dev/REVIEW_ACCEPTANCE.md). Evidence is retained under
+`logs/issue397/acceptance/`, separately from each clean corrected `final/` directory.
+
+For #361, the stable user surface consists of `tools/review_correction/index.html`, `strings.js`,
+`app.js`, `correction_state.js`, `apply_result.js`, and the state labels in `state.py::LABELS`.
+Primary copy is catalogued; some detail/status messages remain literal English in `app.js`
+(for example measure/system summaries, removal feedback and artifact-load errors). Localization
+should extract these within the user application and translate validation feedback displayed by
+this application. GT/developer files are not part of that follow-up. The implementation surface is
+ready for #361; integration into `develop` awaits review of the dependency PRs.

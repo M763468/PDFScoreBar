@@ -95,16 +95,16 @@ images at the detector boundary.
 
 `PipelineOrchestrator` owns input validation/rendering, phase order, shared model caches,
 telemetry and manifest/review dispatch. Its existing phase methods delegate execution to
-`steps/numbering_phases.py` contains base layout/barline corrections, batch MMR preparation,
+`steps/numbering_phases.py`, which contains base layout/barline corrections, batch MMR preparation,
 and final override application, cross-page numbering and overlays.
 `NumberingPhaseServices` in that module supplies the current orchestrator operation hooks at dispatch time;
 phase helpers share the same context and caches and do not import their caller. Review
 configuration/prerequisites and manifest projection live in `review/pipeline_review.py`.
 
 The probe entry point keeps the existing option/API contract and candidate acceptance order.
-`bands.py` resolves staff bands and eligible x domains; `projections.py` projects band and
-extension ink; `peaks.py` selects seeds; `scan_measurements.py` measures candidate-local
-scan bands, row profiles, x peaks and overhang. Measurement does not accept or rescue a
+`bands.py` resolves staff bands and eligible x domains. `measurements.py` projects band and
+extension ink, selects seeds, and measures candidate-local scan bands, row profiles, x peaks
+and overhang. Measurement does not accept or rescue a
 candidate. `existing.py` owns existing-barline matching, `rescue.py` performs the existing
 cross-band/rightmost/gap rescues, `debug.py` serializes debug evidence, and `types.py` carries
 configuration records. No thresholds, rounding rules, result schemas or process lifetimes
@@ -116,13 +116,13 @@ The maintained/current workers import production-owned `src/homr_runtime/`:
 
 | Responsibility | Module |
 | --- | --- |
-| Prediction and coordinate records | `types.py` |
+| Prediction/coordinate records and established runtime defaults | `types.py` |
 | Image/segmentation coordinate mapping | `transforms.py` |
 | Image-feature and segmentation barline candidates | `barline_candidates.py` |
 | Staff/symbol assembly and compatibility patch points | `heuristics.py` |
 | Notehead/staff filtering and end-barline recovery | `filtering.py`, `end_barlines.py` |
 | Model prediction, Segnet cache and callable API adaptation | `predictor.py`, `segnet_cache.py`, `api_compat.py` |
-| Runtime defaults, logging and prediction/mask serialization | `settings.py`, `utils.py`, `reporting.py` |
+| Logging and prediction/mask serialization | `utils.py`, `reporting.py` |
 
 `maintained_profile.py` owns maintained baseline execution. Shared source-generation and
 batch-SR scheduling live in `profile_sources*.py`; `maintained_profile_hybrid.py` selects

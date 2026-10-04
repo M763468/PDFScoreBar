@@ -74,8 +74,8 @@ All callers, including retained development tooling, use the new owners. No comp
 stub is shipped. Numbering scheduling, candidate acceptance, engine contracts and model
 loading remain separate responsibilities. Function/class bodies and decorators were checked
 against the pre-consolidation commit before formatting; model/config bytes remain unchanged.
-The previous 130-file validation below is historical evidence; revised acceptance is recorded
-separately after validating the 109-file candidate.
+The previous 130-file validation below is historical evidence; the 109-file candidate
+has its own independent acceptance record.
 
 ## Develop-only classification
 
@@ -133,7 +133,44 @@ Full detector evaluation is unnecessary for unchanged geometry/algorithm/model b
 geometry compatibility and production smoke still apply. Do not report the candidate accepted
 before every required packaging gate passes.
 
-## Isolated acceptance evidence
+## Revised 109-file acceptance evidence
+
+Validated source: `d8583b65cd33e64bc6898c4aee58f88d1d69aea3`, clean candidate08 at
+`/tmp/pdfscorebar-issue409-candidate08`. Evidence is under `logs/issue409/refinement/`.
+Dedicated image: `pdfscore_issue409_consolidated`, ID
+`sha256:c7b96903a46641c28b20e742f44a3565366db77d00d8c2d370834ab4f868ac9e`.
+
+| Required gate | Result / evidence |
+| --- | --- |
+| Exact isolated distribution | PASS; `materialize08.log`, 109 files, clean source, dependency/reference/content check |
+| Independent production build and GPU preflight | PASS; `build08.log`, `run08.log`, `review08.log`; verified image/model/runtime provenance |
+| Normal PDF-to-final | PASS; `run08.log`, Prokofiev page 1 at default 300 DPI; `results08/job-c0cb1558fabe47ce8d0a062cdbdbdeb9/` |
+| Real browser save/apply/download/stale retention | PASS; `browser08/browser-report.json`, downloaded final PDF and screenshots |
+| English/Japanese application | PASS; `browser08/languages.json`, no browser errors |
+| Semantic corrected output | PASS; `correction-semantic-check.json`: span 2 changes `[1,2,3,4,5]` to `[1,3,4,5,6]`; second-row label 7 verified in PDF image pixels; downloaded PDF hash and original manifest hash verified |
+| Same canonical 360 DPI accuracy contract | PASS; `canonical-smoke.log`, 85 predictions / 85 GT / 85 matches, hard FP=0, FN=0, soft=0; fixed input/source PDF hashes and detector config parity |
+| Existing contracts | PASS; `test-fast-details.log` 110, `focused-python-tests.log` 88, `isolated-client-tests.log` 22, `pipeline-contract-tests.log` 53, `runtime-model-tests.log` 50, `model-tests.log` 12 (overlapping coverage) |
+| Unchanged numerical implementation and artifacts | PASS; `ast-parity.json`: 59 assembled definitions verified before formatting, moved definitions rechecked afterward; canonical configs and all three selected model files unchanged |
+| Static checks | PASS; repository surface, Ruff check/format and `git diff --check` |
+
+Reproduce the GPU accuracy gate from develop with:
+
+```bash
+DOCKER_IMAGE=pdfscore_issue409_consolidated bash scripts/docker_runtime_validation.sh \
+  --config logs/issue409/refinement/canonical-smoke.yaml
+```
+
+The initial mixed Docker test invocation had six Node-dependent failures because that
+Python validation container has no `node`; those tests passed on the host. The Python
+subset was then run separately in Docker. All failed-attempt evidence is retained.
+Browser-only libraries were installed in a disposable validation container, and the temporary
+review/browser containers were stopped. Production dependencies were unchanged.
+Full68 remains deferred because numerical bodies, thresholds, models and canonical config
+are unchanged; actual worker execution, existing contracts and the original canonical smoke
+were revalidated after consolidation. Current and future architectural responsibility
+boundaries remain unchanged; only current module ownership documentation required updates.
+
+## Historical 130-file acceptance evidence
 
 Validated source: `b0bb70ec` (clean candidate06, 130 selected files). The clean tree
 was materialized at `/tmp/pdfscorebar-issue409-candidate06` and built with the production

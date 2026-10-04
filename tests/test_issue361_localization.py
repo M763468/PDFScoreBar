@@ -104,6 +104,30 @@ def test_language_switch_rerenders_without_resetting_the_current_operation_or_ta
     end = app.index("\n\nprevBtn.onclick", start)
     listener = app[start:end]
     assert "updateOps(true)" in listener
+    assert listener.index("updateOps(true)") < listener.index("if (!currentPage) return;")
     assert "renderItems()" in listener
     assert "updateSelectionMeta()" in listener
     assert "renderPageList()" in listener
+
+
+def test_reviewer_copy_resolves_bare_feedback_keys_and_interpolates_values():
+    script = r"""
+const fs = require('fs');
+const vm = require('vm');
+const assert = require('assert/strict');
+const source = fs.readFileSync('tools/review_correction/app.js', 'utf8');
+const match = source.match(/function reviewerCopy\([\s\S]*?\n}/);
+assert.ok(match, 'reviewerCopy helper exists');
+const context = {window: {ReviewStrings: {feedback: {
+  selectMeasure: 'Select a measure.', missingSystem: 'System {system} is missing.'
+}}}};
+vm.createContext(context);
+vm.runInContext(`${match[0]}; globalThis.reviewerCopy = reviewerCopy;`, context);
+assert.equal(context.reviewerCopy('selectMeasure'), 'Select a measure.');
+assert.equal(context.reviewerCopy('missingSystem', {system: 4}), 'System 4 is missing.');
+assert.equal(context.reviewerCopy('feedback.missingSystem', {system: 7}), 'System 7 is missing.');
+"""
+    completed = subprocess.run(
+        ["node", "-e", script], cwd=ROOT, capture_output=True, text=True, timeout=20
+    )
+    assert completed.returncode == 0, completed.stderr

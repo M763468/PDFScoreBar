@@ -90,7 +90,10 @@ const HIT_PADDING = 7;
 
 let OPS = window.ReviewStrings.operations;
 function reviewerCopy(key, values = {}) {
-  const template = key.split(".").reduce((entry, part) => entry && entry[part], window.ReviewStrings) || key;
+  const template =
+    key.split(".").reduce((entry, part) => entry && entry[part], window.ReviewStrings) ||
+    window.ReviewStrings.feedback[key] ||
+    key;
   return Object.entries(values).reduce((message, [name, value]) => message.replaceAll(`{${name}}`, String(value)), template);
 }
 
@@ -1480,9 +1483,9 @@ movementSystemInput.oninput = () => {
 
 window.addEventListener("review-language-changed", () => {
   OPS = window.ReviewStrings.operations;
+  updateOps(true);
   if (!currentPage) return;
   pageMeta.textContent = reviewerCopy("ui.pageName", {page: displayPageNumber(), name: currentPage.name ? ` · ${currentPage.name}` : ""});
-  updateOps(true);
   renderItems();
   updateSelectionMeta();
   updateMovementTargetMeta();

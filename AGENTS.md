@@ -64,6 +64,12 @@ container state, run tags, and issue handoff notes do not belong here.
   when the change category requires it.
 - Do not impose universal `make format`, `make lint`, GPU smoke, or full-evaluation gates on changes
   for which the validation policy says they are irrelevant.
+- Carry authorized implementation through relevant validation and review of the resulting diff. If
+  blocked, report the exact constraint and remaining work. After a check passes, do not repeat or
+  broaden it unless new evidence raises a concern.
+- Disposable local checks such as focused tests, lint, and formatting may be run without waiting for
+  approval. Follow existing boundaries for destructive operations, costly evaluations, and external
+  writes.
 - Add or update tests when behavior changes. For docs-only or metadata-only work, state why runtime
   tests are not applicable.
 - Before reporting completion, record commands/checks run, pass/fail status, and any skipped or
@@ -104,6 +110,13 @@ contract as the authoritative pass/fail criterion.
   generate tests, inspect dependencies, or report status when the task can be handled directly.
 - Use a repository skill only when its narrow, project-specific workflow materially improves the
   result.
+- Read documentation contextually: start with this file and the active Issue/PR, then open only the
+  source, tests, and focused docs needed. Use `docs/HISTORY_INDEX.md` to locate older evidence instead
+  of loading historical material broadly.
+- Select a repository Skill only when its description clearly matches the task and it adds a
+  repository-specific procedure or capability. Do not enumerate or preload `.agents/skills/` for
+  routine work, and do not duplicate these rules in Skills. Prefer direct repository operations for
+  routine inspection, editing, testing, and summaries.
 - Graphify is an optional navigation aid for complex cross-module dependency/call-path questions.
   Direct source/tests remain authoritative. Do not install, refresh, or rebuild Graphify merely
   because a code question was asked.

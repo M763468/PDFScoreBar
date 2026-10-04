@@ -3,7 +3,7 @@ set -euo pipefail
 # Usage: bash .agents/skills/pr-creation/run.sh "PR Title" "PR Body File" [base_branch]
 TITLE=$1
 BODY_FILE=$2
-BASE_BRANCH=${3:-main}
+BASE_BRANCH=${3:-develop}
 TEMPLATE_PATH=".github/pull_request_template.md"
 mkdir -p artifacts
 

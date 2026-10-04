@@ -16,7 +16,8 @@ targets are retained for provenance and are not promoted as general workflows.
 | `setup-local-worktree-links` | Maintained developer helper | Delegates to `scripts/setup_local_worktree_links.sh`. |
 | `promote-log` | Maintained developer helper | Promotes a run into an existing retained log category. |
 | `repo-tree` | Maintained developer helper | Optional overview; requires the external `tree` command. |
-| `repo-summary`, `issue-triage`, `issue-post-mortem`, `visual-diff`, `api-explore`, `artifact-summary` | Maintained developer helpers | Thin wrappers around the corresponding checked-in skill scripts. |
+| `issue-triage`, `issue-post-mortem` | Maintained Issue workflow helpers | Fetch repository Issue context or review completed Issue work. |
+| `visual-diff` | OMR visual inspection helper | Collects recent debug images for visual review. |
 | `clean-artifacts`, `clean-logs` | Maintained cleanup helpers | `clean-logs` is limited to documented category roots and protects retained directories. |
 | `format` | Maintained code helper | Applies Ruff formatting and fixes. |
 
@@ -58,9 +59,8 @@ to `run-smoke`.
 - `check-consistency` referenced the absent `tools/check_repo_consistency.py`; no current repository
   contract requires that manifest/freshness checker. `check-makefile` now guards the narrower,
   verifiable Makefile contract instead.
-- `setup-worktree` referenced the absent `.agents/skills/worktree-manager/run.sh`. Worktree creation
-  is available through Git and is not given a misleading Make target until a maintained workflow
-  exists.
+- `setup-worktree` referenced an absent helper script. Worktree creation is available through Git
+  and is not given a misleading Make target until a maintained workflow exists.
 
 ## Reference-check contract
 

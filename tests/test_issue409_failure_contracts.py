@@ -218,6 +218,19 @@ def test_valid_empty_and_supported_prediction_schemas(tmp_path, payload):
     )
 
 
+@pytest.mark.parametrize("box", [[0, 0, 0, 5], [0, 0, 4, 0], [0.1, 0, 0.2, 5]])
+@pytest.mark.parametrize("schema", ["coordinates", "barline_location", "orig_bbox"])
+def test_edge_clipped_boxes_preserve_existing_conversion(tmp_path, box, schema):
+    payload = (
+        [box]
+        if schema == "coordinates"
+        else ([{schema: box}] if schema == "barline_location" else {"predictions": [{schema: box}]})
+    )
+    path = tmp_path / "edge.json"
+    path.write_text(json.dumps(payload))
+    assert load_json_boxes(path) == load_json_boxes(path, strict=False)
+
+
 def test_required_rescue_seed_missing_fails_job_but_optional_remains_allowed(tmp_path):
     args = dict(bands_from=tmp_path / "seeds", current_score_name="Score", stem="page_001")
     assert _load_bands_for_image(**args) == []

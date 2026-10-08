@@ -40,8 +40,10 @@ def load_json_boxes(path: Path, *, strict: bool = True) -> List[Box]:
                 for v in box
             ):
                 raise ValueError(f"box {index} has non-finite or non-numeric coordinates")
-            if box[2] <= box[0] or box[3] <= box[1]:
-                raise ValueError(f"box {index} has reversed or empty bounds")
+            # Existing HOMR/OMR clipping can produce zero-width/height boxes at
+            # image edges. Preserve their historical conversion and consensus behavior.
+            if box[2] < box[0] or box[3] < box[1]:
+                raise ValueError(f"box {index} has reversed bounds")
             boxes.append(tuple(int(v) for v in box))
         return boxes
     except (ValueError, TypeError) as exc:

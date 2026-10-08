@@ -406,6 +406,7 @@ def test_batch_sr_failure_propagates_through_actual_batch_parent(tmp_path, monke
     assert '"status": "failed"' in (support_root / "_sr_batch/worker.log").read_text()
     assert not (support_root / "_sr_batch/result.json").exists()
 
+
 @pytest.mark.parametrize(
     ("mask_case", "error_type"),
     [

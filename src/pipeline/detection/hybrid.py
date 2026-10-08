@@ -284,9 +284,9 @@ class HybridDetector:
                 continue
 
             if not self.dry_run:
-                baseline_boxes = load_json_boxes(baseline_json)
-                sr_boxes = load_json_boxes(sr_json)
-                omr_boxes = load_json_boxes(omr_json)
+                baseline_boxes = load_json_boxes(baseline_json, strict=False)
+                sr_boxes = load_json_boxes(sr_json, strict=False)
+                omr_boxes = load_json_boxes(omr_json, strict=False)
                 hybrid_preds = apply_hybrid_consensus_filter(
                     baseline_boxes=baseline_boxes,
                     sr_boxes=sr_boxes,

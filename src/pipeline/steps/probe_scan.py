@@ -241,12 +241,15 @@ def _load_bands_for_image(
     bands_from: Optional[Path],
     current_score_name: str,
     stem: str,
+    require_seed: bool = False,
 ) -> List[Tuple[int, int, int, int]]:
     if not bands_from:
+        if require_seed:
+            raise ValueError(f"Required rescue seed root missing for {current_score_name}/{stem}")
         return []
 
     if bands_from.is_file():
-        return load_json_boxes(bands_from)
+        return load_json_boxes(bands_from, strict=require_seed)
 
     run_subdir = build_probe_run_id_from_parts(current_score_name, stem)
     candidates = [
@@ -271,7 +274,12 @@ def _load_bands_for_image(
         )
     for path in candidates:
         if path.exists():
-            return load_json_boxes(path)
+            return load_json_boxes(path, strict=require_seed)
+    if require_seed:
+        raise FileNotFoundError(
+            f"Required rescue seed missing for {current_score_name}/{stem}; "
+            f"searched: {[str(path) for path in candidates]}"
+        )
     return []
 
 
@@ -319,6 +327,7 @@ def run_probe_scan_batch(
     output_root: Path,
     bands_from: Optional[Path],
     staff_mask_dir: Optional[Path],
+    require_seed_files: bool = False,
     clef_mask_dir: Optional[Path] = None,
     ink_threshold: int,
     min_ratio: float = 0.50,
@@ -435,6 +444,7 @@ def run_probe_scan_batch(
             bands_from=bands_from,
             current_score_name=current_score_name,
             stem=stem,
+            require_seed=require_seed_files,
         )
 
         if input_image_scale > 1.0:

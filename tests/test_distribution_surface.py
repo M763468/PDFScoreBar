@@ -32,8 +32,8 @@ def test_isolated_candidate_and_user_app_assets(candidate):
         "src/measure_numbering/cli.py",
     ):
         assert not (candidate / path).exists()
-    assert (candidate / "src/pipeline/detection/current_sr_worker.py").is_file()
-    assert (candidate / "src/common/preprocessing.py").is_file()
+    assert not (candidate / "src/pipeline/detection/current_sr_worker.py").exists()
+    assert not (candidate / "src/common/preprocessing.py").exists()
     result = subprocess.run(
         [
             "python3",

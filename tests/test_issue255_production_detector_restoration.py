@@ -4,6 +4,7 @@ import types
 from pathlib import Path
 from types import SimpleNamespace
 
+import numpy as np
 import yaml
 
 import src.pipeline.detection.current_homr_worker as homr_worker
@@ -112,11 +113,13 @@ def test_current_sr_worker_uses_verified_x4_settings(tmp_path: Path, monkeypatch
         encoding="utf-8",
     )
     captured = {}
-    monkeypatch.setattr(sr_worker, "load_image", lambda _image, _cache: object())
+    monkeypatch.setattr(
+        sr_worker, "load_image", lambda _image, _cache: np.zeros((2, 3, 3), dtype=np.uint8)
+    )
 
     def fake_sr(_image, **kwargs):
         captured.update(kwargs)
-        return object(), object()
+        return np.zeros((8, 12, 3), dtype=np.uint8), object()
 
     def fake_imwrite(path, _image):
         Path(path).write_bytes(b"sr")
@@ -135,6 +138,7 @@ def test_current_sr_worker_uses_verified_x4_settings(tmp_path: Path, monkeypatch
         "tile_pad": 10,
         "fp32": False,
         "upsampler": None,
+        "strict": True,
     }
     assert payload["sr_scale"] == 4
     assert payload["historical_detector_artifact_runtime_input"] is False
@@ -160,6 +164,7 @@ def test_current_support_runs_sr_homr_omr_as_separate_phases(tmp_path: Path, mon
                 "detection": {"sr_scale": 4},
                 "image": str(image),
                 "output_root": str(output_root),
+                "sr_mode": "page_local",
             }
         ),
         encoding="utf-8",

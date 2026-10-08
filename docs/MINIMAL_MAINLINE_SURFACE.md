@@ -1,7 +1,7 @@
 # Minimal distributable surface (#100 / #409)
 
-The candidate has **106 tracked files** in
-[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json): 84 files under `src/`,
+The candidate has **104 tracked files** in
+[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json): 82 files under `src/`,
 plus production config/model/Docker/package files, the package-bound user correction
 application, and minimum user documentation. The exact distribution is the union of
 `runtime_bundle_patterns`, `distribution_support_patterns`, and
@@ -52,7 +52,32 @@ retained manifest, binds the local handoff to it, and updates the result artifac
 The original manifest hash stays inspectable; engine API and correction schemas are unchanged.
 Review launch can prepare this bridge for a retained local job without detector inference.
 
-## Review audit: 109 to 106 files
+## Failure-contract review: 106 to 104 files
+
+The previous audit retained page-local SR because selected low-level entrypoints accepted
+absent `precomputed_sr`. That condition selects a separate compatibility mode; batch failure
+has never automatically retried it. The production contract now defaults to `batch_required`:
+missing, explicit null, or malformed precomputed SR fails before HOMR starts. The maintained
+source-page worker and batch helper validate it before baseline inference. Develop callers
+must explicitly request `sr_mode=page_local`; legacy non-batch source generation writes that
+mode. Both modes remain in develop; only batch SR is supported in the distribution.
+
+| Case | Classification and current behavior |
+| --- | --- |
+| Generic SR returns original image on failure | Historical develop compatibility: `apply_advanced_sr(strict=False)` retained. Verified page-local SR explicitly uses `strict=True`; dependency/model/init/inference errors propagate and output must be exactly x4 before it is saved or marked completed. Batch SR already raises and checks shape. |
+| No precomputed SR | Explicit develop page-local execution mode; production fails. `current_sr_worker.py` and its `common/preprocessing.py` dependency are excluded only from distribution, with the subprocess reference declared optional. |
+| Invalid HOMR/OMR JSON or coordinates | Corruption, not empty prediction: canonical consensus uses strict loader and raises with the artifact path. Legacy development loader calls explicitly use `strict=False`. |
+| Valid empty list or empty predictions list | Normal zero detections; strict loader still returns `[]`. |
+| No optional rescue seed | Generic/develop no-seed usage remains supported with `require_seed_files=False`. |
+| Missing/corrupt required rescue seed | Canonical dense rescue sets `require_seed_files=True`; missing file raises with page identity and searched paths, invalid JSON raises with its path. An existing valid empty seed remains supported. |
+
+Source files are retained. No numeric algorithm, model, threshold, coordinate rounding,
+consensus order or normal successful SR output is changed. The failure behavior is deliberately
+stricter: affected workers stop, engine jobs return FAILED, and no normal final/review artifacts
+are published. Existing v1 public engine schemas stay unchanged. Failure injection and actual
+normal workflow acceptance are recorded separately below.
+
+## Historical review audit: 109 to 106 files
 
 The review identified a develop direct-run regression: canonical image discovery still
 uses `inputs.pdf_to_images.output_dir` when PDF rendering is disabled. The path is restored
@@ -81,7 +106,7 @@ source is deleted, and `common/__init__.py` is retained. Engine debug telemetry 
 supported; only opt-in probe image diagnostics are excluded. The optional debug/wide split/
 numbering overlay features require develop and are outside the supported user distribution.
 
-## Review 106-file acceptance evidence
+## Historical 106-file acceptance evidence
 
 Validated clean source: `20ab997934f25311cff194f71809cc87f0769b4d` at
 `/tmp/pdfscorebar-issue409-review106`. Exact union: 94 runtime + 11 support + 1 metadata

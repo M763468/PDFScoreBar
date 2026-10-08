@@ -61,10 +61,6 @@
       "role": "Verified model identities, download/cache and image/external asset resolution"
     },
     {
-      "pattern": "src/common/preprocessing.py",
-      "role": "Production detector image preprocessing"
-    },
-    {
       "pattern": "src/common/thin_barline_finder.py",
       "role": "Thin vertical barline detection used by production rescue"
     },
@@ -183,10 +179,6 @@
     {
       "pattern": "src/pipeline/detection/current_sr_runtime.py",
       "role": "x4 SR runtime"
-    },
-    {
-      "pattern": "src/pipeline/detection/current_sr_worker.py",
-      "role": "page-local x4 SR worker"
     },
     {
       "pattern": "src/pipeline/detection/current_support_worker.py",
@@ -618,7 +610,9 @@
     "src/common/barline_evaluation.py": "GT matching and evaluation-only compatibility exports; production geometry now in barline_geometry.py",
     "src/pipeline/probe_detector/debug.py": "Develop-only opt-in diagnostic rendering (debug_path); canonical probe calls do not request it.",
     "src/pipeline/utils/wide_split_utils.py": "Develop-only opt-in post_split_wide_candidates; canonical config leaves it disabled.",
-    "src/measure_numbering/cli.py": "Develop-only standalone numbering CLI and steps.overlay rendering; user final PDF uses review/final_output.py."
+    "src/measure_numbering/cli.py": "Develop-only standalone numbering CLI and steps.overlay rendering; user final PDF uses review/final_output.py.",
+    "src/pipeline/detection/current_sr_worker.py": "Develop-only explicit sr_mode=page_local subprocess; canonical batch_required mode requires precomputed_sr.",
+    "src/common/preprocessing.py": "Develop-only generic SR helper used by excluded page-local SR worker and legacy hybrid/evaluation tooling."
   },
   "documentation_patterns": [
     {
@@ -783,7 +777,8 @@
       "tests/test_subprocess_utils.py",
       "tests/test_thin_barline_finder.py",
       "tests/test_reviewed_movement_apply.py",
-      "tests/test_distribution_surface.py"
+      "tests/test_distribution_surface.py",
+      "tests/test_issue409_failure_contracts.py"
     ]
   },
   "test_support_patterns": [
@@ -905,6 +900,9 @@
     },
     "src/pipeline/steps/numbering.py": {
       "src/measure_numbering/cli.py": "Develop-only build_add_measure_numbers_cmd standalone subprocess command helper; production phases use MeasureNumberingPipeline in process."
+    },
+    "src/pipeline/detection/current_support_worker.py": {
+      "src/pipeline/detection/current_sr_worker.py": "Develop-only explicit sr_mode=page_local subprocess; canonical batch_required mode requires precomputed_sr."
     }
   }
 }

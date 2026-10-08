@@ -21,6 +21,7 @@ from tqdm import tqdm
 from src.pipeline.core.python_env import get_pipeline_python
 from src.pipeline.perf_trace import span
 
+from .current_support_worker import _require_precomputed_sr
 from .profile_sources import ProfileHybridDetector
 
 
@@ -38,6 +39,7 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
         output_root: Path,
         precomputed_sr: Mapping[str, Any] | None = None,
     ) -> tuple[dict[str, Any], list[str]]:
+        _require_precomputed_sr({"precomputed_sr": precomputed_sr}, image=image)
         page_root = output_root / image.parent.name / image.stem
         # The SR batch phase intentionally creates the stable artifacts/sr tree
         # before this page-local worker starts.
@@ -49,6 +51,7 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
 
         request: dict[str, Any] = {
             "schema_version": "pipeline.current_x4_support_request.v2",
+            "sr_mode": "batch_required",
             "detection": dict(self.det_cfg),
             "image": str(image.resolve()),
             "output_root": str((page_root / "artifacts").resolve()),
@@ -112,6 +115,7 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
     ) -> dict[str, Any]:
         """Generate baseline/current support after the optional SR phase has exited."""
 
+        _require_precomputed_sr({"precomputed_sr": precomputed_sr}, image=image)
         commands: list[list[str]] = []
         baseline_result = self._run_homr_profile(
             self.profile_name,
@@ -160,6 +164,7 @@ class BatchSRProfileHybridDetector(ProfileHybridDetector):
         result_path = page_root / "result.json"
         request = {
             "schema_version": "pipeline.verified_source_page_request.v3",
+            "sr_mode": "batch_required",
             "detection": dict(self.det_cfg),
             "image": str(image.resolve()),
             "run_id": self.run_id,

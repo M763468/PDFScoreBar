@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 from pathlib import Path
 from typing import Iterable, List, Sequence
 
@@ -12,7 +13,42 @@ from src.common import Box, barline_iou
 logger = logging.getLogger(__name__)
 
 
-def load_json_boxes(path: Path) -> List[Box]:
+def load_json_boxes(path: Path, *, strict: bool = True) -> List[Box]:
+    """Read supported detection schemas; strict mode distinguishes corruption from empty results."""
+    if not strict:
+        return _load_json_boxes_tolerant(path)
+    try:
+        payload = json.loads(path.read_text())
+        if isinstance(payload, list):
+            rows = payload
+            kind = "coordinates" if not rows or isinstance(rows[0], list) else "barline_location"
+        elif isinstance(payload, dict) and isinstance(payload.get("predictions"), list):
+            rows = payload["predictions"]
+            kind = "orig_bbox"
+        else:
+            raise ValueError("expected a box list or predictions list")
+        boxes = []
+        for index, row in enumerate(rows):
+            if kind == "coordinates":
+                box = row if isinstance(row, list) else None
+            else:
+                box = row.get(kind) if isinstance(row, dict) else None
+            if not isinstance(box, list) or len(box) != 4:
+                raise ValueError(f"box {index} requires four coordinates")
+            if any(
+                isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v)
+                for v in box
+            ):
+                raise ValueError(f"box {index} has non-finite or non-numeric coordinates")
+            if box[2] <= box[0] or box[3] <= box[1]:
+                raise ValueError(f"box {index} has reversed or empty bounds")
+            boxes.append(tuple(int(v) for v in box))
+        return boxes
+    except (ValueError, TypeError) as exc:
+        raise ValueError(f"Invalid detection JSON at {path}: {exc}") from exc
+
+
+def _load_json_boxes_tolerant(path: Path) -> List[Box]:
     try:
         payload = json.loads(path.read_text())
     except json.JSONDecodeError:

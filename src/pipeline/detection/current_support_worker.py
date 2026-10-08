@@ -69,9 +69,16 @@ def _require_current_homr_bundle(payload: Mapping[str, Any]) -> dict[str, Path]:
 
 
 def _require_precomputed_sr(request: Mapping[str, Any], *, image: Path) -> dict[str, Any] | None:
+    mode = request.get("sr_mode", "batch_required")
+    if mode not in {"batch_required", "page_local"}:
+        raise ValueError(f"Unknown SR execution mode: {mode!r}")
     raw = request.get("precomputed_sr")
     if raw is None:
-        return None
+        if mode == "page_local":
+            return None
+        raise ValueError("batch_required SR requires non-null precomputed_sr")
+    if mode == "page_local":
+        raise ValueError("page_local SR cannot also supply precomputed_sr")
     if not isinstance(raw, Mapping):
         raise ValueError("precomputed_sr must be a mapping")
     if raw.get("historical_detector_artifact_runtime_input") is not False:

@@ -176,6 +176,8 @@ def apply_advanced_sr(
     pre_pad: int = 0,
     fp32: bool = False,
     upsampler: Optional[Any] = None,
+    *,
+    strict: bool = False,
 ) -> Any:
     """
     Applies advanced super-resolution using the installed Real-ESRGAN runtime.
@@ -189,6 +191,7 @@ def apply_advanced_sr(
         pre_pad: Pre-padding.
         fp32: If True, uses full precision (fp32). If False, tries to use fp16 on CUDA.
         upsampler: Pre-initialized RealESRGANer instance.
+        strict: Propagate dependency/model/inference errors instead of returning the input.
 
     Returns:
         Upscaled image (if upsampler was provided) OR Tuple[Upscaled image, upsampler].
@@ -200,6 +203,8 @@ def apply_advanced_sr(
             from basicsr.archs.rrdbnet_arch import RRDBNet
             from realesrgan import RealESRGANer
     except ImportError as e:
+        if strict:
+            raise
         logger.error("Error importing Real-ESRGAN dependencies: %s", e)
         logger.error("Please ensure you have installed the realesrgan package.")
         return image, upsampler
@@ -232,6 +237,8 @@ def apply_advanced_sr(
                 )
                 netscale = 2
             else:
+                if strict:
+                    raise ValueError(f"Unsupported SR model: {model_name}")
                 logger.warning(
                     "Model %s not explicitly supported. A default (x2plus) will be used.",
                     model_name,
@@ -253,6 +260,9 @@ def apply_advanced_sr(
                     project_root=Path(__file__).resolve().parents[2],
                 )
             )
+
+            if strict and not Path(model_path).is_file():
+                raise FileNotFoundError(f"SR model weight not found: {model_path}")
 
             try:
                 # Determine tiling strategy
@@ -281,6 +291,8 @@ def apply_advanced_sr(
                     device=device,
                 )
             except Exception as e:
+                if strict:
+                    raise
                 logger.error("Real-ESRGAN initialization failed: %s", e)
                 return image, upsampler
 
@@ -293,5 +305,7 @@ def apply_advanced_sr(
                 output, _ = upsampler.enhance(image, outscale=scale)
         return output, upsampler
     except Exception as e:
+        if strict:
+            raise
         logger.error("Real-ESRGAN inference failed: %s", e)
         return image, upsampler

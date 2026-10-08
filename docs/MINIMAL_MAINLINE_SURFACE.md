@@ -86,8 +86,12 @@ was materialized cleanly at `/tmp/pdfscorebar-issue409-failure104b`: **92 runtim
 support + 1 metadata = 104 files** (82 source + 22 others). Image
 `pdfscore_issue409_failure104`, ID
 `sha256:f55c753c9de72ea2b5892a4b996beaa569be5a0ba17da40f2d15d6bf9f4ee3dd`.
-Subsequent excluded tests/tools/documentation changes do not alter the selected file bytes;
-`final-distribution-parity.json` verifies every shipped hash against that clean candidate.
+`final-distribution-parity.json` verified the shipped hashes at the earlier `2df1f5b7`
+checkpoint. The subsequent required-staff-mask fail-fast fix changes a selected runtime
+file (`src/pipeline/steps/probe_scan.py`) without changing the 104-file selection or
+canonical `full_width` behavior. The historical Docker/PDF/browser/85/85 evidence does
+not independently validate this newer head. Recheck focused regressions, clean 104-file
+materialization and the appropriate isolated smoke before merging.
 
 | Check | Result / evidence |
 | --- | --- |

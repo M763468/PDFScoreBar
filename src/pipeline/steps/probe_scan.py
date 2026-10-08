@@ -431,8 +431,7 @@ def run_probe_scan_batch(
         if mask_path:
             if require_staff_mask and not Path(mask_path).is_file():
                 raise FileNotFoundError(
-                    f"Required staff mask file missing for {current_score_name}/{stem}: "
-                    f"{mask_path}"
+                    f"Required staff mask file missing for {current_score_name}/{stem}: {mask_path}"
                 )
             loaded_mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
             if loaded_mask is None:

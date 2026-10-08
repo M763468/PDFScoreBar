@@ -419,10 +419,24 @@ def run_probe_scan_batch(
         clef_mask = np.zeros(img.shape[:2], dtype=np.uint8)
         band_source = "row_stats"
 
+        # An explicitly mask-bound x-domain must not silently scan full width
+        # when its required mask is missing or unreadable.
+        require_staff_mask = kwargs.get("scan_x_domain_mode") == "staff_mask"
         mask_path = staff_mask_map.get(stem)
+        if require_staff_mask and mask_path is None:
+            raise FileNotFoundError(
+                f"Required staff mask missing for {current_score_name}/{stem} "
+                "(scan_x_domain_mode=staff_mask)"
+            )
         if mask_path:
             loaded_mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
-            if loaded_mask is not None:
+            if loaded_mask is None:
+                if require_staff_mask:
+                    raise ValueError(
+                        f"Required staff mask unreadable for {current_score_name}/{stem}: "
+                        f"{mask_path}"
+                    )
+            else:
                 if loaded_mask.shape[:2] != img.shape[:2]:
                     loaded_mask = cv2.resize(
                         loaded_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST

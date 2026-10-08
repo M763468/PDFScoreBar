@@ -405,3 +405,93 @@ def test_batch_sr_failure_propagates_through_actual_batch_parent(tmp_path, monke
     _engine(tmp_path, lambda: detector._batch_sr_worker(support_output=support_root))
     assert '"status": "failed"' in (support_root / "_sr_batch/worker.log").read_text()
     assert not (support_root / "_sr_batch/result.json").exists()
+
+@pytest.mark.parametrize(
+    ("mask_case", "error_type"),
+    [
+        ("unmapped", FileNotFoundError),
+        ("missing_file", FileNotFoundError),
+        ("unreadable", ValueError),
+    ],
+)
+def test_required_staff_x_domain_fails_closed_before_probe(
+    tmp_path, monkeypatch, mask_case, error_type
+):
+    from src.pipeline.steps import probe_scan
+
+    image = _image(tmp_path)
+    mask = tmp_path / "staff-mask.png"
+    paths = {} if mask_case == "unmapped" else {image.stem: mask}
+    if mask_case == "unreadable":
+        mask.write_text("not a valid image")
+    monkeypatch.setattr(
+        probe_scan,
+        "detect_probe_scan",
+        lambda **kwargs: pytest.fail("probe scan started without required staff mask"),
+    )
+
+    def operation():
+        probe_scan.run_probe_scan_batch(
+            images=[image],
+            output_root=tmp_path / "probe",
+            bands_from=None,
+            staff_mask_dir=None,
+            staff_mask_paths=paths,
+            ink_threshold=180,
+            detect_probe_kwargs={"scan_x_domain_mode": "staff_mask"},
+        )
+
+    with pytest.raises(error_type, match="Required staff mask") as exc_info:
+        operation()
+    assert f"{image.parent.name}/{image.stem}" in str(exc_info.value)
+    if paths:
+        assert str(mask) in str(exc_info.value)
+    _engine(tmp_path, operation)
+    assert not list((tmp_path / "probe").rglob("pipeline2_no_peak_candidates.json"))
+
+
+@pytest.mark.parametrize(
+    ("mode", "mask_case"),
+    [
+        ("staff_mask", "valid"),
+        ("staff_mask", "empty"),
+        ("staff_mask_or_existing_boxes", "unmapped"),
+        ("staff_mask_or_existing_boxes", "unreadable"),
+        ("full_width", "unreadable"),
+    ],
+)
+def test_probe_mask_modes_preserve_valid_and_optional_behavior(
+    tmp_path, monkeypatch, mode, mask_case
+):
+    from src.pipeline.steps import probe_scan
+
+    image = _image(tmp_path)
+    mask = tmp_path / "staff-mask.png"
+    paths = {} if mask_case == "unmapped" else {image.stem: mask}
+    if mask_case in {"valid", "empty"}:
+        pixels = np.full((8, 10), 255 if mask_case == "valid" else 0, np.uint8)
+        assert cv2.imwrite(str(mask), pixels)
+    elif mask_case == "unreadable":
+        mask.write_text("not a valid image")
+
+    observed = []
+
+    def detect(**kwargs):
+        observed.append(kwargs["staff_mask"].copy())
+        return []
+
+    monkeypatch.setattr(probe_scan, "detect_probe_scan", detect)
+    processed = probe_scan.run_probe_scan_batch(
+        images=[image],
+        output_root=tmp_path / "probe",
+        bands_from=None,
+        staff_mask_dir=None,
+        staff_mask_paths=paths,
+        ink_threshold=180,
+        detect_probe_kwargs={"scan_x_domain_mode": mode},
+    )
+    assert processed == 1 and len(observed) == 1
+    if mask_case == "valid":
+        assert np.any(observed[0])
+    else:
+        assert not np.any(observed[0])

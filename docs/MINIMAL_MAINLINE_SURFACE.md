@@ -71,6 +71,7 @@ mode. Both modes remain in develop; only batch SR is supported in the distributi
 | Edge-clipped zero-width/height box | Existing HOMR/OMR output contract retained, including `int` conversion; reversed bounds remain errors. |
 | No optional rescue seed | Generic/develop no-seed usage remains supported with `require_seed_files=False`. |
 | Missing/corrupt required rescue seed | Canonical dense rescue sets `require_seed_files=True`; missing file raises with page identity and searched paths, invalid JSON raises with its path. An existing valid empty seed remains supported. |
+| Missing/unreadable staff mask with explicit `scan_x_domain_mode=staff_mask` | Required mask is now fail-closed before probe detection, with page/path context. `staff_mask_or_existing_boxes` and `full_width` retain the existing optional-mask behavior; a decoded all-zero mask remains a valid input. |
 
 Source files are retained. No numeric algorithm, model, threshold, coordinate rounding,
 consensus order or normal successful SR output is changed. The failure behavior is deliberately

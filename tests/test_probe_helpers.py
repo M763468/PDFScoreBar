@@ -188,3 +188,93 @@ def test_candidate_measurement_keeps_fallback_and_staff_peak_exclusion(fallback,
     assert measurement.record_base["scan_band"] is None
     assert measurement.record_base["pred_band"] == [12, 16]
     assert measurement.record_base["scan_x_domain"] == [4, 12]
+
+
+def test_develop_probe_debug_remains_opt_in_and_writes_artifacts(tmp_path):
+    from src.pipeline.probe_detector import detect_probe_scan
+
+    image = np.full((70, 100, 3), 255, np.uint8)
+    image[15:45, 50:52] = 0
+    mask = np.zeros(image.shape[:2], np.uint8)
+    mask[15:45, :] = 1
+    kwargs = dict(band_source="staff_mask", min_ratio=0.1)
+    plain = detect_probe_scan(image, mask, [], **kwargs)
+    path = tmp_path / "debug.png"
+    debug = detect_probe_scan(image, mask, [], debug_path=path, **kwargs)
+    assert debug == plain
+    assert path.is_file() and path.with_suffix(".json").is_file()
+
+
+def test_develop_wide_split_opt_in_calls_existing_implementation(tmp_path, monkeypatch):
+    import cv2
+
+    from src.pipeline.steps import probe_scan
+    from src.pipeline.utils import wide_split_utils
+
+    image = np.full((70, 100, 3), 255, np.uint8)
+    image[15:45, 42:44] = 0
+    image[15:45, 57:59] = 0
+    path = tmp_path / "Score/page_001.png"
+    path.parent.mkdir()
+    cv2.imwrite(str(path), image)
+    monkeypatch.setattr(probe_scan, "detect_probe_scan", lambda *a, **k: [(38, 15, 63, 45)])
+    monkeypatch.setattr(probe_scan, "_load_bands_for_image", lambda **k: [(38, 15, 63, 45)])
+    calls = []
+    original = wide_split_utils.split_wide_candidates
+
+    def observe(**kwargs):
+        result = original(**kwargs)
+        calls.append(result)
+        return result
+
+    monkeypatch.setattr(wide_split_utils, "split_wide_candidates", observe)
+    count = probe_scan.run_probe_scan_batch(
+        images=[path],
+        output_root=tmp_path / "out",
+        bands_from=None,
+        staff_mask_dir=None,
+        ink_threshold=180,
+        min_height_ratio=0,
+        min_width_ratio=0,
+        disable_seed_splitting=True,
+        detect_probe_kwargs={"post_split_wide_candidates": True},
+    )
+    assert count == 1 and len(calls) == 1
+
+
+def test_develop_numbering_overlay_and_cli_entrypoint_remain_available(tmp_path):
+    import subprocess
+    import sys
+
+    import cv2
+
+    from src.measure_numbering.cli import render_overlay
+    from src.measure_numbering.types import BBox, Measure, Page, Score, Staff, System
+
+    path = tmp_path / "page.png"
+    image = np.full((100, 120, 3), 255, np.uint8)
+    cv2.imwrite(str(path), image)
+    bbox = BBox(10, 30, 110, 80)
+    score = Score(
+        pages=[
+            Page(
+                systems=[
+                    System(
+                        staves=[Staff(bbox=bbox)],
+                        measures=[Measure(number=1, start_bar=None, end_bar=None, bbox=bbox)],
+                    )
+                ]
+            )
+        ]
+    )
+    output = tmp_path / "overlay.png"
+    render_overlay(score, path, output)
+    assert output.is_file()
+    assert np.any(cv2.imread(str(output)) != image)
+    result = subprocess.run(
+        [sys.executable, "-m", "src.measure_numbering.cli", "--help"],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "--output-overlay" in result.stdout

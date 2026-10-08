@@ -1,7 +1,7 @@
 # Minimal distributable surface (#100 / #409)
 
-The candidate has **109 tracked files** in
-[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json): 87 files under `src/`,
+The candidate has **106 tracked files** in
+[MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json): 84 files under `src/`,
 plus production config/model/Docker/package files, the package-bound user correction
 application, and minimum user documentation. The exact distribution is the union of
 `runtime_bundle_patterns`, `distribution_support_patterns`, and
@@ -40,13 +40,10 @@ The previous blanket exclusion of the user correction application is removed at 
 `acceptance.py` and `browser_acceptance.cjs` remain development validation. User and
 GT applications are already independent (#393); no GT server/assets are included.
 
-Existing production scan diagnostics remain because the current scan emits those artifacts
-through `probe_detector/debug.py`. This renderer has no GT/evaluation imports. Four lazy
-legacy-route imports remain declared, plus lazy evaluation exports from `src/common`;
-one historical worker default is also excluded and overridden by the maintained subclass;
-the release supports only maintained_original/dense_full_pipeline. Their excluded modules
-are unnecessary for supported execution. These are explicit compatibility boundaries,
-not extra shipped files.
+The release supports only maintained_original/dense_full_pipeline. Develop-only probe
+images, wide-candidate splitting and standalone numbering CLI/overlay are excluded;
+their opt-in paths remain functional in develop. Lazy historical compatibility routes
+and evaluation exports also stay excluded with explicit manifest reasons.
 
 The local job adapter also bridges the v1 engine review output to the user application.
 The engine deliberately strips filesystem source references and renames its work tree.
@@ -55,7 +52,36 @@ retained manifest, binds the local handoff to it, and updates the result artifac
 The original manifest hash stays inspectable; engine API and correction schemas are unchanged.
 Review launch can prepare this bridge for a retained local job without detector inference.
 
-## Consolidation requested after the 130-file audit
+## Review audit: 109 to 106 files
+
+The review identified a develop direct-run regression: canonical image discovery still
+uses `inputs.pdf_to_images.output_dir` when PDF rendering is disabled. The path is restored
+to `data/evaluation2/images`. The isolated PDF executor removes that field and enables
+rendering into the job workspace; no dataset directory is shipped or required by PDF jobs.
+
+| Candidate | Decision and reachable contract |
+| --- | --- |
+| `detection/current_sr_worker.py` | Retained: `current_support_worker.run` without `precomputed_sr` explicitly launches this subprocess. The selected source-page worker also accepts absent precomputed SR. Normal batch calls supply it, but low-level worker entrypoints retain the fallback contract. No exclusion is justified without changing that contract. |
+| `common/preprocessing.py` | Retained: the retained page-local SR worker imports `apply_advanced_sr`; owns SR model resolution and x4 processing for that fallback. The separate batch worker uses `current_sr_runtime` and does not replace this implementation. |
+| `probe_detector/debug.py` | Excluded from distribution only: `detect_probe_scan` imports its renderer inside `debug_path is not None`. Canonical callers do not pass `debug_path`; develop diagnostic output is tested and preserved. |
+| `utils/wide_split_utils.py` | Excluded from distribution only: import moved inside enabled `post_split_wide_candidates` branch. Canonical config disables it; develop opt-in calls the same implementation and is tested. |
+| `measure_numbering/cli.py` | Excluded from distribution only: production phases call `MeasureNumberingPipeline` directly. `render_overlay` is already imported only for `steps.overlay=true` (canonical false); unused production `build_add_measure_numbers_cmd` still builds the develop standalone subprocess command. Engine final PDF and correction apply use `review/final_output.py`. Both optional references are declared; develop CLI and overlay are tested. |
+
+Batch SR errors, missing outputs or missing pages raise before source-page dispatch;
+invalid precomputed SR fails validation rather than retrying page-local inference. Re-running
+canonical detection regenerates batch SR. Missing `precomputed_sr` on the retained low-level
+entrypoints is different: it still selects the page-local fallback. Existing tests cover both
+paths, malformed precomputed input, and SR batch input validation. Numeric algorithms,
+model assets, thresholds, and interpreter/model provenance mechanisms are unchanged.
+
+The exact manifest declares lazy optional imports and the standalone subprocess module string.
+Source fingerprint covers the changed modules; distribution provenance records the canonical
+config hash. The image/runtime compatibility fingerprint is unchanged. No repository
+source is deleted, and `common/__init__.py` is retained. Engine debug telemetry is still
+supported; only opt-in probe image diagnostics are excluded. The optional debug/wide split/
+numbering overlay features require develop and are outside the supported user distribution.
+
+## Historical consolidation from 130 to 109 files
 
 The revised candidate removes **21 files (16.2%)** while keeping the supported workflow.
 
@@ -133,7 +159,7 @@ Full detector evaluation is unnecessary for unchanged geometry/algorithm/model b
 geometry compatibility and production smoke still apply. Do not report the candidate accepted
 before every required packaging gate passes.
 
-## Revised 109-file acceptance evidence
+## Historical 109-file acceptance evidence
 
 Validated source: `d8583b65cd33e64bc6898c4aee58f88d1d69aea3`, clean candidate08 at
 `/tmp/pdfscorebar-issue409-candidate08`. Evidence is under `logs/issue409/refinement/`.

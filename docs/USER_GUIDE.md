@@ -91,3 +91,9 @@ status and hashes for every shipped file. The machine-readable selection is
 [MINIMAL_MAINLINE_SURFACE.json](MINIMAL_MAINLINE_SURFACE.json). Image labels, preflight JSON,
 job `result.json`, and correction consumed-input records provide the remaining runtime/model
 and result identity. A dirty extraction is a development candidate, not an immutable release.
+
+## Distribution scope
+
+The distribution uses the maintained dense PDF configuration. Standalone numbering CLI,
+optional numbering overlays, probe diagnostic images and optional wide-candidate splitting
+remain develop-only tools. Engine runtime provenance and debug telemetry remain available.

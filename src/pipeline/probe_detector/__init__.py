@@ -20,7 +20,6 @@ from .bands import (
     resolve_bands,
     resolve_x_domains,
 )
-from .debug import write_debug_output
 from .existing import ExistingBarlines
 from .rescue import apply_gap_rescue, apply_rightmost_rescue
 from .types import (
@@ -699,6 +698,8 @@ def detect_probe_scan(
     )
 
     if debug_path is not None:
+        from .debug import write_debug_output
+
         debug_params = {
             "method": "probe_scan",
             "band_source": band_source,

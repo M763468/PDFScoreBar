@@ -32,7 +32,6 @@ from src.pipeline.steps.candidate_filters import (
     trim_box_to_ink,
 )
 from src.pipeline.steps.hybrid_consensus import load_json_boxes
-from src.pipeline.utils.wide_split_utils import split_wide_candidates
 
 logger = logging.getLogger(__name__)
 
@@ -563,6 +562,8 @@ def run_probe_scan_batch(
                     final_set.add(tuple(int(v) for v in nb))
 
             if post_cfg.get("split_wide_candidates"):
+                from src.pipeline.utils.wide_split_utils import split_wide_candidates
+
                 print(f"DEBUG: Attempting to split {len(final_set)} candidates...")
                 split_boxes, stats = split_wide_candidates(
                     boxes=list(final_set),

@@ -26,6 +26,14 @@ def test_isolated_candidate_and_user_app_assets(candidate):
     assert not (candidate / "tools/gt_relabel_gui").exists()
     assert not (candidate / "tools/review_correction/acceptance.py").exists()
     assert not (candidate / "src/common/barline_evaluation.py").exists()
+    for path in (
+        "src/pipeline/probe_detector/debug.py",
+        "src/pipeline/utils/wide_split_utils.py",
+        "src/measure_numbering/cli.py",
+    ):
+        assert not (candidate / path).exists()
+    assert (candidate / "src/pipeline/detection/current_sr_worker.py").is_file()
+    assert (candidate / "src/common/preprocessing.py").is_file()
     result = subprocess.run(
         [
             "python3",
@@ -211,3 +219,68 @@ def test_local_review_bridge_preserves_original_and_rebinds_paths(tmp_path):
         "local_manifest.json"
     )
     assert prepare_local_review(package) == digest
+
+
+def test_canonical_direct_run_discovers_established_external_images(tmp_path, monkeypatch):
+    from src.pipeline.core import load_yaml
+    from src.pipeline.orchestrator import PipelineOrchestrator
+    from src.pipeline.utils.images import collect_images
+
+    config = load_yaml(ROOT / "configs/dense_full_pipeline.yaml")
+    assert config["steps"]["pdf_to_images"] is False
+    assert config["inputs"]["pdf_to_images"]["output_dir"] == "data/evaluation2/images"
+    monkeypatch.chdir(tmp_path)
+    image = tmp_path / "data/evaluation2/images/page_001.png"
+    image.parent.mkdir(parents=True)
+    image.touch()  # Discovery does not decode the file or run inference.
+    run_dir = tmp_path / "run"
+    orchestrator = PipelineOrchestrator(config, "direct-run", run_dir)
+    orchestrator._validate_external_image_inputs(config["inputs"]["pdf_to_images"])
+    assert [p.resolve() for p in collect_images(config, run_dir)] == [image]
+    assert not (tmp_path / "logs/input_images").exists()
+
+
+def test_isolated_pdf_config_removes_develop_input_dependency(candidate, tmp_path):
+    from src.pipeline.core import load_yaml
+    from src.pipeline.engine_executor import PipelineJobExecutor
+
+    executor = PipelineJobExecutor(
+        input_root=tmp_path,
+        artifact_root=tmp_path / "results",
+        base_config_path=candidate / "configs/dense_full_pipeline.yaml",
+    )
+    config = executor._load_config()
+    request_config = executor._write_config(
+        config,
+        input_path=tmp_path / "input.pdf",
+        pages=(1,),
+        job_id="isolated",
+        work_root=tmp_path / "work",
+    )
+    resolved = load_yaml(request_config)
+    assert resolved["steps"]["pdf_to_images"] is True
+    assert resolved["steps"]["overlay"] is False
+    assert "output_dir" not in resolved["inputs"]["pdf_to_images"]
+    assert not (candidate / "data").exists()
+
+
+def test_isolated_probe_imports_do_not_load_develop_optional_modules(candidate):
+    import sys
+
+    script = """
+import sys
+sys.path.insert(0, sys.argv[1])
+import src.pipeline.probe_detector
+import src.pipeline.steps.probe_scan
+import src.pipeline.steps.numbering_phases
+assert not any(name in sys.modules for name in (
+    'src.pipeline.probe_detector.debug', 'src.pipeline.utils.wide_split_utils',
+    'src.measure_numbering.cli'))
+"""
+    result = subprocess.run(
+        [sys.executable, "-I", "-c", script, str(candidate)],
+        cwd=candidate,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr

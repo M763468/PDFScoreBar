@@ -80,7 +80,7 @@ def replay_page(
 ) -> PageFilterReasonRow:
     page_dir = regen_root / score / page
     raw_path = page_dir / f"eval2_{score}_{page}" / "pipeline2_no_peak_candidates.json"
-    raw_candidates = load_json_boxes(raw_path) if raw_path.exists() else []
+    raw_candidates = load_json_boxes(raw_path, strict=False) if raw_path.exists() else []
 
     image_path = PROJECT_ROOT / rec["image"] if rec and "image" in rec else None
     staff_mask_path = PROJECT_ROOT / rec["staff_mask"] if rec and "staff_mask" in rec else None

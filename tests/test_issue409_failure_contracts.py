@@ -246,6 +246,22 @@ def test_required_rescue_seed_missing_fails_job_but_optional_remains_allowed(tmp
         _load_bands_for_image(**args, require_seed=True)
 
 
+@pytest.mark.parametrize("payload", ["{broken", "{}", "[[4,0,1,5]]"])
+def test_corrupt_required_rescue_seed_fails_job(tmp_path, payload):
+    seed = tmp_path / "seeds/Score/page_001/pipeline2_no_peak_candidates.json"
+    seed.parent.mkdir(parents=True)
+    seed.write_text(payload)
+    _engine(
+        tmp_path,
+        lambda: _load_bands_for_image(
+            bands_from=tmp_path / "seeds",
+            current_score_name="Score",
+            stem="page_001",
+            require_seed=True,
+        ),
+    )
+
+
 def test_explicit_develop_modes_preserve_optional_compatibility(tmp_path):
     image = _image(tmp_path)
     assert support._require_precomputed_sr({"sr_mode": "page_local"}, image=image) is None

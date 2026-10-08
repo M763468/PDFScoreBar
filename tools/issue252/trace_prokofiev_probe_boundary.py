@@ -345,7 +345,8 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "hybrid": args.hybrid,
     }
     boxes = {
-        name: [normalize_box(box) for box in load_json_boxes(path)] for name, path in paths.items()
+        name: [normalize_box(box) for box in load_json_boxes(path, strict=False)]
+        for name, path in paths.items()
     }
     regenerated = [
         normalize_box(box)

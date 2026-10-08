@@ -68,6 +68,7 @@ mode. Both modes remain in develop; only batch SR is supported in the distributi
 | No precomputed SR | Explicit develop page-local execution mode; production fails. `current_sr_worker.py` and its `common/preprocessing.py` dependency are excluded only from distribution, with the subprocess reference declared optional. |
 | Invalid HOMR/OMR JSON or coordinates | Corruption, not empty prediction: canonical consensus uses strict loader and raises with the artifact path. Legacy development loader calls explicitly use `strict=False`. |
 | Valid empty list or empty predictions list | Normal zero detections; strict loader still returns `[]`. |
+| Edge-clipped zero-width/height box | Existing HOMR/OMR output contract retained, including `int` conversion; reversed bounds remain errors. |
 | No optional rescue seed | Generic/develop no-seed usage remains supported with `require_seed_files=False`. |
 | Missing/corrupt required rescue seed | Canonical dense rescue sets `require_seed_files=True`; missing file raises with page identity and searched paths, invalid JSON raises with its path. An existing valid empty seed remains supported. |
 
@@ -76,6 +77,52 @@ consensus order or normal successful SR output is changed. The failure behavior 
 stricter: affected workers stop, engine jobs return FAILED, and no normal final/review artifacts
 are published. Existing v1 public engine schemas stay unchanged. Failure injection and actual
 normal workflow acceptance are recorded separately below.
+
+## 104-file failure-review acceptance evidence
+
+Evidence root: `logs/issue409/failure-review-20261009/`. Runtime source `e1038b97`
+was materialized cleanly at `/tmp/pdfscorebar-issue409-failure104b`: **92 runtime + 11
+support + 1 metadata = 104 files** (82 source + 22 others). Image
+`pdfscore_issue409_failure104`, ID
+`sha256:f55c753c9de72ea2b5892a4b996beaa569be5a0ba17da40f2d15d6bf9f4ee3dd`.
+Subsequent excluded tests/tools/documentation changes do not alter the selected file bytes;
+`final-distribution-parity.json` verifies every shipped hash against that clean candidate.
+
+| Check | Result / evidence |
+| --- | --- |
+| Worker/parent/engine failure injection and compatibility | PASS; `final-focused-tests.log`, 102 tests: SR import/model/init/inference/shape, absent/null/invalid SR, broken component JSON and missing/corrupt required seed; FAILED and no final/review publication. Valid empty results, edge-clipped coordinates and explicit development modes remain supported. |
+| Public engine compatibility | PASS; `engine-contract.log`, 70 tests, same PR engine gate |
+| Lightweight regression / historical diagnostic | PASS; `test-fast-final-details.log`, 110 tests; `historical-tool-contract.log`, 15 tests; suites overlap |
+| Exact isolated distribution/build/preflight | PASS; `materialize-final.log` (dirty=false), dependency/reference/content check, `build-final.log`, GPU/ONNX/model/source provenance in `run.log` and `review.log` |
+| Independent normal 300 DPI PDF job | PASS; `run.log`, job `job-c50d9a5a755549b198e4b5ca49e8eff1`: one requested/processed page, final PDF and review handoff, no skips/warnings |
+| Actual user correction UI | PASS; `browser/browser-report.json` and `languages.json`: save/apply/PDF download/stale retention, Japanese/English, no page errors |
+| Corrected numbering and PDF semantics | PASS; `correction-semantic-check.json`: `[1,2,3,4,5]` to `[1,3,4,5,6]`, next row label 7 and 251 dark label pixels; downloaded PDF equals final PDF, original manifest hash preserved, upstream inference rerun=false |
+| Original 360 DPI canonical accuracy gate | PASS; `canonical-smoke.log`: 85/85 matches, hard FP=0, FN=0, soft=0; original PDF/render hashes and detection-config parity |
+| Retained Full68 reader compatibility | PASS; `audit_retained_json.py` / `retained-full68-json-audit-final.json`: 68 baseline, 68 current HOMR, 68 OMR and 68 required rescue seeds; strict/tolerant coordinate lists identical, no schema failures. Historical schema evidence, not fresh accuracy inference. |
+| Static checks | PASS; Ruff src/tests/tools/docker/scripts, diff/surface and excluded historical-tool compilation. An owned host pycache initially blocked compilation; disposable `PYTHONPYCACHEPREFIX` resolved it. |
+
+Reproduction command for the unchanged accuracy contract:
+
+```bash
+DOCKER_IMAGE=pdfscore_issue409_failure104 bash scripts/docker_runtime_validation.sh \
+  --config logs/issue409/failure-review-20261009/canonical-smoke.yaml
+```
+
+`unchanged-model-config.json` records byte equality against `64d4b7a2` for the dense
+config, maintained HOMR profile and all three selected model contracts/assets. Failure
+checks deliberately change invalid-input behavior; numerical bodies, ordering, rounding,
+models and thresholds are unchanged. Edge-clipped zero dimensions were identified in
+accepted historical output and preserved before runtime acceptance.
+
+Fresh Full68 inference is deferred: the changed valid-input reader contract has been checked
+against all 272 retained files, and the original canonical accuracy gate passes. This does
+not claim a fresh Full68 accuracy result. Explicit development page-local GPU inference is
+also not run: it is outside the supported 104-file distribution; real subprocess failure
+injection and development compatibility tests cover its changed contract. Both normal
+production PDF workflows ran batch SR on GPU. Temporary review/browser containers were
+stopped; browser dependencies were installed only in a disposable validation container.
+Current architecture documents these failure contracts; future service responsibility
+boundaries do not change. CI status is recorded in PR #412 for the final head.
 
 ## Historical review audit: 109 to 106 files
 

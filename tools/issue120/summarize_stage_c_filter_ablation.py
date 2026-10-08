@@ -168,7 +168,7 @@ def run(args: argparse.Namespace) -> tuple[list[ProfileSummaryRow], list[PageAbl
             / f"eval2_{record.score}_{record.page}"
             / "pipeline2_no_peak_candidates.json"
         )
-        raw_by_page[key] = load_json_boxes(raw_path) if raw_path.exists() else []
+        raw_by_page[key] = load_json_boxes(raw_path, strict=False) if raw_path.exists() else []
         historical_path = (
             args.historical_root / record.score / record.page / "pipeline2_no_peak_candidates.json"
         )

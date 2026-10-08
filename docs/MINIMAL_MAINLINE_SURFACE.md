@@ -81,6 +81,45 @@ source is deleted, and `common/__init__.py` is retained. Engine debug telemetry 
 supported; only opt-in probe image diagnostics are excluded. The optional debug/wide split/
 numbering overlay features require develop and are outside the supported user distribution.
 
+## Review 106-file acceptance evidence
+
+Validated clean source: `20ab997934f25311cff194f71809cc87f0769b4d` at
+`/tmp/pdfscorebar-issue409-review106`. Exact union: 94 runtime + 11 support + 1 metadata
+files; 84 source files and 22 other files. Image `pdfscore_issue409_review106`, ID
+`sha256:d8a36f850fc2c9dc464c4b98b3b71fc005dd8f17e7d9a4e5477b4b04eef9f791`.
+Evidence is under `logs/issue409/review-20261008/`.
+
+| Gate | Result / evidence |
+| --- | --- |
+| Direct-run input discovery and isolated PDF configuration | PASS; focused tests use the unchanged canonical config with images at `data/evaluation2/images`; PDF config removes external output_dir and enables job-local rendering |
+| Develop optional features and SR fallback contracts | PASS; `focused-tests-fixed.log`, 51 tests; actual debug artifacts, enabled wide splitter, overlay and CLI help; retained SR worker and precomputed-SR contracts |
+| Maintained fast suite | PASS; `test-fast-details.log`, 110 tests |
+| Exact clean distribution/build/preflight | PASS; `materialize.log` (106 files, dirty=false), independent dependency/reference/content check, `build.log`, GPU/model/provenance in `run.log` and `review.log` |
+| Isolated PDF-to-final | PASS; `run.log`, normal Prokofiev page 1 at 300 DPI; `results/job-a7200b3af4d44a218b42dc7af9a01c90/` |
+| Actual browser correction and languages | PASS; `browser/browser-report.json`, `browser/languages.json`; save/apply/download/stale retention, English/Japanese, no browser errors |
+| Semantic corrected final | PASS; `correction-semantic-check.json`: `[1,2,3,4,5]` → `[1,3,4,5,6]`, second-row label 7 in PDF pixels, downloaded PDF matches final PDF, original manifest hash preserved; upstream inference is not rerun |
+| Same canonical 360 DPI accuracy gate | PASS; `canonical-smoke.log`, 85/85 matches, hard FP=0, FN=0, soft=0; original source PDF/render hashes and detection-config parity |
+| Static/CI | PASS; focused Ruff, diff check, repository-surface; engine contract compatibility, make lint and repository-surface CI |
+
+Reproduce accuracy from develop:
+
+```bash
+DOCKER_IMAGE=pdfscore_issue409_review106 bash scripts/docker_runtime_validation.sh \
+  --config logs/issue409/review-20261008/canonical-smoke.yaml
+```
+
+`provenance.json` records source/image identities, exact exclusions, entrypoint/model audit,
+and whole-module AST equality after removing only the two relocated optional imports.
+Canonical config differs from the previous candidate only in the restored external input path.
+Full68 is not rerun: numerical algorithms, model assets, thresholds and detector settings are
+unchanged, and the original canonical gate passes. Page-local fallback GPU inference is also
+not rerun: that code is retained unchanged and its focused contracts pass. Normal batch SR
+was exercised with the actual GPU in both PDF runs. Those are the validation limits; the
+result does not claim a fresh Full68 or fallback GPU evaluation.
+Temporary review/browser containers were stopped; their evidence and previous acceptance
+runs were retained. Current architecture documentation reflects optional imports; future
+architecture needs no change because responsibilities and service boundaries are unchanged.
+
 ## Historical consolidation from 130 to 109 files
 
 The revised candidate removes **21 files (16.2%)** while keeping the supported workflow.

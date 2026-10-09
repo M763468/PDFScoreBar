@@ -55,6 +55,24 @@ class _FakeTwoSystemNumberingPipeline(_FakeNumberingPipeline):
         return page
 
 
+class _EmptySystemMixin:
+    def process_page(self, *args, **kwargs) -> Page:
+        page = super().process_page(*args, **kwargs)
+        systems = []
+        for system in page.systems:
+            systems.extend([System(), System(staves=[Staff(BBox(0, 0, 1000, 80))]), system])
+        page.systems = systems + [System()]
+        return page
+
+
+class _FakeEmptyNumberingPipeline(_EmptySystemMixin, _FakeNumberingPipeline):
+    pass
+
+
+class _FakeEmptyTwoSystemNumberingPipeline(_EmptySystemMixin, _FakeTwoSystemNumberingPipeline):
+    pass
+
+
 def _one_page(page_number: int) -> Page:
     page = Page(page_number=page_number, width=1000, height=200)
     staff = Staff(bbox=BBox(0, 100, 1000, 200))
@@ -106,9 +124,11 @@ def test_rebase_selects_only_current_global_page_without_mutating_source() -> No
         ]
 
 
+@pytest.mark.parametrize("with_empty_systems", [False, True])
 def test_three_page_phase_c_preserves_manual_precedence_without_cross_page_leakage(
     tmp_path: Path,
     monkeypatch,
+    with_empty_systems: bool,
 ) -> None:
     run_dir = tmp_path / "run"
     page_ids = ["page_001", "page_002", "page_003"]
@@ -165,7 +185,8 @@ def test_three_page_phase_c_preserves_manual_precedence_without_cross_page_leaka
         },
     }
     orchestrator = PipelineOrchestrator(config, "issue257-test", run_dir)
-    orchestrator._persistence = {"numbering_pipeline": _FakeNumberingPipeline()}
+    pipeline_type = _FakeEmptyNumberingPipeline if with_empty_systems else _FakeNumberingPipeline
+    orchestrator._persistence = {"numbering_pipeline": pipeline_type()}
 
     monkeypatch.setattr(
         orchestrator_module,
@@ -272,9 +293,11 @@ def test_three_page_phase_c_preserves_manual_precedence_without_cross_page_leaka
     assert combined_payload["numbering_metadata"]["next_number"] == 15
 
 
+@pytest.mark.parametrize("with_empty_systems", [False, True])
 def test_issue268_explicit_boundary_resets_at_mid_page_system_and_preserves_provenance(
     tmp_path: Path,
     monkeypatch,
+    with_empty_systems: bool,
 ) -> None:
     run_dir = tmp_path / "run"
     page_ids = ["page_001", "page_002"]
@@ -313,7 +336,12 @@ def test_issue268_explicit_boundary_resets_at_mid_page_system_and_preserves_prov
         },
     }
     orchestrator = PipelineOrchestrator(config, "issue268-boundary", run_dir)
-    orchestrator._persistence = {"numbering_pipeline": _FakeTwoSystemNumberingPipeline()}
+    pipeline_type = (
+        _FakeEmptyTwoSystemNumberingPipeline
+        if with_empty_systems
+        else _FakeTwoSystemNumberingPipeline
+    )
+    orchestrator._persistence = {"numbering_pipeline": pipeline_type()}
 
     monkeypatch.setattr(image_utils, "load_image", lambda _path: _FakeImage())
 

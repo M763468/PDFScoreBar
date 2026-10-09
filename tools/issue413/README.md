@@ -13,6 +13,22 @@ The retained input root is local ignored data, not included in a fresh checkout:
 SHA-256 is `0edfdfda89ed50be6d0dafbf28fccc80840ef6330f193d19823a94f934cb2209`.
 All original results remain intact. The runner requires a fresh output directory.
 
+`canonical_inputs.json` is a Git-retained baseline identity inventory. Before
+creating outputs or starting orchestration, the runner validates all 629 listed
+inputs against these fixed SHA-256 digests, including source/staged images,
+canonical/derived configuration, base/final JSON, MMR predictions, barlines,
+staff/connector masks and experiment/provenance records. It also rejects consumed
+paths absent from the inventory and repeats the fixed-hash comparison after the
+run. It never learns expected hashes from the current replay inputs.
+
+The image/config identities come from #409's recorded expected hashes and the
+config digest published in #413. Retained artifact identities come from the
+pre-review `run-01/input_sha256.json` snapshot; baseline final values were also
+checked against #409's recorded numbering comparison. The inventory records this
+lineage. It intentionally contains only identity metadata, with no dataset/model
+bytes. Changing this Git-reviewed inventory defines a new experiment; the replay
+has no option to generate or refresh it from possibly modified artifacts.
+
 From the checkout root, in the maintained pipeline environment:
 
 ```bash
@@ -42,14 +58,18 @@ The gates are fixed before interpreting the results:
 The initial retained replay (`logs/issue413/phase-c-replay/run-01/`) passed across
 3,287 physical measures: 104 application mismatches became zero, and 2,315 measure
 numbers changed. All 68 final PDF pages and their 637 row-start labels matched.
+That run checked input immutability during execution only; its input hashes did
+not establish canonical identity before execution. The corrected canonical-hash
+validation is a separate run under `logs/issue413/review-refinement/phase-c-replay/`.
 The original-image audit inspected all 104 physical sites on 13 contact sheets.
 The seven-measure rest in Festival Overture/page_001 is still recognized as 37;
 the corrected consumer now applies that retained prediction to the intended
 measure. This is application correctness, not an absolute-number or OCR-accuracy
 claim. Remaining recognition/GT work belongs to #414 / #415.
 
-Outputs include the predeclared contract, input hashes, all physical-measure
-records, all 104 resolved mismatches, every number delta, per-page/combined JSON,
+Outputs include the predeclared contract, canonical inventory identity and fixed
+input hashes, all physical-measure records, all 104 resolved mismatches, every
+number delta, per-page/combined JSON,
 five final PDFs and their pixel-verification records. The original-image contact
 sheets and review record for the initial run are also retained under its
 `visual-audit/` directory. Generated artifacts stay out of Git.

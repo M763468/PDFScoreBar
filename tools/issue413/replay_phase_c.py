@@ -28,6 +28,8 @@ from src.pipeline.review.final_output import (
     materialize_corrected_final_outputs,
 )
 
+CANONICAL_INPUTS_PATH = Path(__file__).with_name("canonical_inputs.json")
+
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -38,6 +40,45 @@ def local_path(raw: str, root: Path) -> Path:
     if path.is_relative_to("/workspace"):
         return root / path.relative_to("/workspace")
     return path
+
+
+def verify_input_hashes(expected_hashes: dict[str, str]) -> None:
+    """Compare to fixed baseline digests, never to observations from this run."""
+    for raw_path, expected in expected_hashes.items():
+        try:
+            actual = sha256(Path(raw_path))
+        except OSError as exc:
+            raise ValueError(f"Cannot verify canonical input: {raw_path}: {exc}") from exc
+        if actual != expected:
+            raise ValueError(
+                f"Canonical input SHA-256 mismatch: {raw_path}; "
+                f"expected={expected}, actual={actual}"
+            )
+
+
+def canonical_input_hashes(root: Path, retained: Path) -> dict[str, str]:
+    """Load the Git-retained pre-review baseline and verify it before staging."""
+    manifest = load_json(CANONICAL_INPUTS_PATH)
+    if manifest.get("schema_version") != "issue413.canonical_inputs.v1":
+        raise ValueError("Unsupported canonical input manifest")
+    expected_hashes = {}
+    for section, base in (("repo_files", root), ("retained_files", retained)):
+        entries = manifest.get(section)
+        if not isinstance(entries, dict) or not entries:
+            raise ValueError(f"Canonical input manifest requires nonempty {section}")
+        for name, expected in entries.items():
+            relative = Path(name)
+            if relative.is_absolute() or ".." in relative.parts:
+                raise ValueError(f"Canonical input path must be relative: {name}")
+            expected_hashes[str(base / relative)] = expected
+    verify_input_hashes(expected_hashes)
+    return expected_hashes
+
+
+def require_canonical_input(path: Path, expected_hashes: dict[str, str]) -> None:
+    """Reject consumption of files absent from the fixed baseline inventory."""
+    if str(path) not in expected_hashes:
+        raise ValueError(f"Replay input is not in canonical manifest: {path}")
 
 
 def geometry(page: dict) -> dict:
@@ -141,6 +182,7 @@ def replay(retained: Path, output: Path) -> dict:
     root = Path.cwd().resolve()
     if output.exists():
         raise FileExistsError(f"Use a fresh output directory: {output}")
+    hashes = canonical_input_hashes(root, retained)
     output.mkdir(parents=True)
     source = load_json(retained / "candidate/variant_summary.json")
     assert source["canonical_page_count"] == 68
@@ -155,6 +197,9 @@ def replay(retained: Path, output: Path) -> dict:
             "per-page/combined/PDF row-label agreement",
         ],
         "retained_source_commit": source["git_commit"],
+        "canonical_input_manifest": str(CANONICAL_INPUTS_PATH),
+        "canonical_input_manifest_sha256": sha256(CANONICAL_INPUTS_PATH),
+        "canonical_inputs_verified_before_orchestration": len(hashes),
         "candidate_commit": subprocess.check_output(
             ["git", "rev-parse", "HEAD"], text=True
         ).strip(),
@@ -168,7 +213,6 @@ def replay(retained: Path, output: Path) -> dict:
         "files reused via skip_existing; standard input resolution only",
     }
     write_json(output / "contract.json", contract)
-    hashes = {}
     all_records = []
     score_reports = []
     page_total = 0
@@ -177,6 +221,7 @@ def replay(retained: Path, output: Path) -> dict:
         score_root = retained / "candidate" / score_name
         old_run = local_path(entry["pipeline_run"], root)
         manifest_path = old_run / "manifest.json"
+        require_canonical_input(manifest_path, hashes)
         manifest = load_json(manifest_path)
         assert not manifest["config"]["inputs"].get("measure_overrides")
         assert not manifest["config"]["inputs"].get("movement_boundaries")
@@ -218,12 +263,15 @@ def replay(retained: Path, output: Path) -> dict:
             intermediate = new_run / "intermediate" / page_id
             intermediate.mkdir(parents=True)
             source_image = local_path(page["image_path"], root)
+            require_canonical_input(source_image, hashes)
             shutil.copyfile(source_image, images / f"{page_id}.png")
             for name in ("numbering_base.json", "overrides_mmr.json"):
                 original = old_run / "intermediate" / page_id / name
-                hashes[str(original)] = sha256(original)
+                require_canonical_input(original, hashes)
                 shutil.copyfile(original, intermediate / name)
-            old = load_json(old_run / "outputs" / page_id / "numbering_final.json")
+            old_final = old_run / "outputs" / page_id / "numbering_final.json"
+            require_canonical_input(old_final, hashes)
+            old = load_json(old_final)
             old["page_id"] = page_id
             baseline.append(old)
             predictions.append(load_json(intermediate / "overrides_mmr.json"))
@@ -236,7 +284,7 @@ def replay(retained: Path, output: Path) -> dict:
                 mask,
                 *connector_paths.values(),
             ]:
-                hashes[str(path)] = sha256(path)
+                require_canonical_input(path, hashes)
             handoff_pages.append(
                 {
                     "page_id": page_id,
@@ -245,7 +293,7 @@ def replay(retained: Path, output: Path) -> dict:
                 }
             )
         for path in (manifest_path, score_root / "config_derived.yaml"):
-            hashes[str(path)] = sha256(path)
+            require_canonical_input(path, hashes)
         write_json(new_run / "replay_config.json", config)
         orchestrator = PipelineOrchestrator(
             config, f"issue413_{score_name}", new_run, skip_existing=True
@@ -299,8 +347,7 @@ def replay(retained: Path, output: Path) -> dict:
             flush=True,
         )
     assert page_total == 68
-    for path, digest in hashes.items():
-        assert sha256(Path(path)) == digest, (path, "retained input changed")
+    verify_input_hashes(hashes)
     write_json(output / "input_sha256.json", hashes)
     baseline_errors = [r for r in all_records if r["old_applied_skip"] != r["recognized_skip"]]
     remaining_errors = [r for r in all_records if r["new_applied_skip"] != r["recognized_skip"]]

@@ -7,6 +7,7 @@ from PIL import Image
 
 from src.pipeline.core import write_json
 from src.pipeline.review.final_output import materialize_corrected_final_outputs
+from tools.issue413 import replay_phase_c
 from tools.issue413.replay_phase_c import audit_score, verify_pdf_images
 
 
@@ -72,3 +73,85 @@ def test_pdf_verification_reads_embedded_pixels_and_detects_stale_labels(tmp_pat
     write_json(numbering_path, numbering)
     with pytest.raises(AssertionError, match="PDF pixel mismatch"):
         verify_pdf_images(summary)
+
+
+@pytest.fixture
+def canonical_fixture(tmp_path, monkeypatch):
+    repo = tmp_path / "repo"
+    retained = repo / "retained"
+    image = repo / "source.png"
+    config = repo / "dense.yaml"
+    predictions = retained / "overrides_mmr.json"
+    derived = retained / "config_derived.yaml"
+    baseline = retained / "numbering_final.json"
+    retained.mkdir(parents=True)
+    Image.new("RGB", (8, 8), "white").save(image)
+    config.write_text("threshold: 0.5\n")
+    derived.write_text("threshold: 0.5\n")
+    write_json(predictions, {"measure_overrides": [{"skip": 8}]})
+    write_json(baseline, page("page_001", [1, 2], 3))
+    manifest = tmp_path / "canonical_inputs.json"
+    write_json(
+        manifest,
+        {
+            "schema_version": "issue413.canonical_inputs.v1",
+            "repo_files": {p.name: replay_phase_c.sha256(p) for p in (image, config)},
+            "retained_files": {
+                p.name: replay_phase_c.sha256(p) for p in (predictions, derived, baseline)
+            },
+        },
+    )
+    monkeypatch.setattr(replay_phase_c, "CANONICAL_INPUTS_PATH", manifest)
+    monkeypatch.chdir(repo)
+    return repo, retained, (image, config, predictions, derived, baseline)
+
+
+def test_preflight_uses_fixed_baseline_and_retains_expected_hashes(canonical_fixture):
+    repo, retained, files = canonical_fixture
+    expected = replay_phase_c.canonical_input_hashes(repo, retained)
+    assert len(expected) == 5
+    assert expected[str(files[2])] == replay_phase_c.sha256(files[2])
+    files[2].write_text('{"measure_overrides": [{"skip": 9}]}')
+    # The post-run guard also uses the original baseline, not a refreshed digest.
+    with pytest.raises(ValueError, match="SHA-256 mismatch"):
+        replay_phase_c.verify_input_hashes(expected)
+
+
+@pytest.mark.parametrize(
+    "file_index",
+    range(5),
+    ids=["source-image", "canonical-config", "mmr-predictions", "derived-config", "baseline-final"],
+)
+def test_replay_rejects_preexisting_corruption_before_orchestration(
+    canonical_fixture, monkeypatch, file_index
+):
+    _repo, retained, files = canonical_fixture
+    path = files[file_index]
+    if path.suffix == ".png":
+        Image.new("RGB", (8, 8), "black").save(path)
+    elif path.name == "overrides_mmr.json":
+        write_json(path, {"measure_overrides": [{"skip": 9}]})
+    elif path.name == "numbering_final.json":
+        write_json(path, page("page_001", [1, 5], 6))
+    else:
+        path.write_text("threshold: 0.6\n")
+
+    def unexpected_orchestration(*_args, **_kwargs):
+        pytest.fail("corrupt canonical input must be rejected before orchestration")
+
+    monkeypatch.setattr(replay_phase_c, "PipelineOrchestrator", unexpected_orchestration)
+    output = retained.parent / "output"
+    with pytest.raises(ValueError, match="SHA-256 mismatch") as error:
+        replay_phase_c.replay(retained, output)
+    assert path.name in str(error.value)
+    assert not output.exists()
+
+
+def test_preflight_rejects_missing_inputs_and_unlisted_consumers(canonical_fixture):
+    repo, retained, files = canonical_fixture
+    hashes = replay_phase_c.canonical_input_hashes(repo, retained)
+    with pytest.raises(ValueError, match="not in canonical manifest"):
+        replay_phase_c.require_canonical_input(repo / "alternate_source.png", hashes)
+    files[2].unlink()
+    with pytest.raises(ValueError, match="Cannot verify canonical input"):
+        replay_phase_c.canonical_input_hashes(repo, retained)

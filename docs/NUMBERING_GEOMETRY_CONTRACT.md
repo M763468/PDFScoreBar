@@ -51,6 +51,27 @@ Existing ratio-based logic remains ratio-based, including divisi/grouping staff
 height ratios, connector density, ghost-start median/staff-height checks, and the
 vertical morphology kernel derived from the actual inter-staff gap.
 
+## Three-or-more-staff divisi support (Issue #218)
+
+`ConnectorAwareSystemBuilder` may attach a voice with no accepted barline
+candidates when generated positive left-connector evidence forms a chain of
+at least three staves. Each new link must stay within the existing ordinary
+staff-height distance limit. Generated connector absence still splits the
+chain; the wider rescue band retains its aligned-barline requirement.
+One/two-staff grouping keeps the existing alignment contract. This prevents
+an isolated empty staff and a spurious positive connector from creating a
+new two-staff system in the accepted corpus.
+
+For systems with at least three staves, a shared measure boundary must either
+span four staff-line spaces within one staff or have aligned candidates on
+at least two distinct staves. Alignment uses the existing `1.2 * unit_size`
+X-deduplication tolerance. Ghost boundaries remain supported. This rejects
+an isolated short note/clef fragment that would otherwise split every voice
+into an extra measure. Single/two-staff numbering is unchanged.
+
+See [the real-score validation](refactors/issue218_real_divisi_validation.md)
+for fixed input contracts and regression results.
+
 ## Fixed-pixel operations intentionally retained
 
 The following fixed pixel values are implementation details rather than musical

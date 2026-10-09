@@ -142,3 +142,48 @@ def test_pipeline_extracts_pair_evidence_and_numbers_divisi_once(excerpt, mask_k
     assert [[measure.number for measure in system.measures] for system in page.systems] == metadata[
         "expected_measure_numbers"
     ]
+
+
+@pytest.mark.parametrize("case_index", [0, 1, 2], ids=["real-3div", "real-4div", "real-full-page"])
+def test_actual_model_outputs_preserve_every_voice_and_shared_boundaries(case_index):
+    fixture = json.loads((FIXTURES / "issue218_real_detection.json").read_text())
+    case = fixture["cases"][case_index]
+    staves = [Staff(BBox(*s["bbox"]), unit_size=s["unit_size"]) for s in case["staves"]]
+    bars = [Barline(BBox(*box)) for box in case["barlines"]]
+    systems = ConnectorAwareSystemBuilder().build_systems(
+        staves, bars, connector_evidence=case["connector_evidence"]
+    )
+    assert [len(system.staves) for system in systems] == case["expected_system_staff_counts"]
+    assert [id(staff) for system in systems for staff in system.staves] == [id(s) for s in staves]
+    MeasureNumberer().number_score(Score(pages=[Page(systems=systems)]))
+    assert [len(system.measures) for system in systems] == case["expected_measures_per_system"]
+
+
+@pytest.mark.parametrize("evidence", [None, False, True])
+@pytest.mark.parametrize("staff_count", [2, 3, 4])
+def test_barline_free_voice_requires_positive_multistaff_chain(evidence, staff_count):
+    staves = [
+        Staff(BBox(100, 100 + i * 152, 502, 180 + i * 152), unit_size=20)
+        for i in range(staff_count)
+    ]
+    bars = [Barline(BBox(x, 100, x + 2, 180)) for x in (100, 300, 500)]
+    pairs = None if evidence is None else {f"{i}-{i + 1}": evidence for i in range(staff_count - 1)}
+    systems = ConnectorAwareSystemBuilder().build_systems(staves, bars, connector_evidence=pairs)
+    expected = [staff_count] if evidence and staff_count >= 3 else [1] * staff_count
+    assert [len(system.staves) for system in systems] == expected
+
+
+@pytest.mark.parametrize("support", ["isolated-short", "aligned-short", "full-staff"])
+def test_multistaff_boundary_needs_staff_span_or_cross_staff_support(support):
+    from src.measure_numbering.types import System
+
+    staves = [Staff(BBox(100, y, 502, y + 80), unit_size=20) for y in (100, 252, 404)]
+    for staff in staves:
+        staff.barlines = [Barline(BBox(x, staff.bbox.y1, x + 2, staff.bbox.y2)) for x in (100, 500)]
+    height = 80 if support == "full-staff" else 10
+    staves[0].barlines.append(Barline(BBox(300, 100, 302, 100 + height)))
+    if support == "aligned-short":
+        staves[1].barlines.append(Barline(BBox(300, 252, 302, 262)))
+    system = System(staves=staves)
+    MeasureNumberer().number_system(system, 1)
+    assert len(system.measures) == (1 if support == "isolated-short" else 2)

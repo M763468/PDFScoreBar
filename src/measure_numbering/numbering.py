@@ -83,6 +83,11 @@ class MeasureNumberer:
         for staff in system.staves:
             all_barlines.update(staff.barlines)
 
+        if len(system.staves) >= 3:
+            all_barlines = self._supported_multistaff_barlines(
+                system, all_barlines, deduplication_threshold
+            )
+
         raw_sorted = sorted(
             all_barlines,
             key=lambda barline: (
@@ -177,6 +182,37 @@ class MeasureNumberer:
                 current_number += increment
 
         return current_number
+
+    def _supported_multistaff_barlines(self, system, barlines, x_tolerance):
+        """Reject isolated short ink fragments as shared multi-staff boundaries.
+
+        A boundary must span a five-line staff or have aligned support on
+        multiple staves. A note/clef fragment on just one of three/four voices
+        cannot introduce an extra measure for every voice. Existing staff-space
+        and x-deduplication units define both checks; two-staff and single-staff
+        compatibility behavior is unchanged.
+        """
+        supported = set()
+        for bar in barlines:
+            if bar.is_ghost:
+                supported.add(bar)
+                continue
+            full_staff = any(
+                min(bar.bbox.y2, staff.bbox.y2) - max(bar.bbox.y1, staff.bbox.y1)
+                >= self._system_unit_size(System(staves=[staff])) * self.STAFF_HEIGHT_UNITS_FALLBACK
+                for staff in system.staves
+            )
+            if full_staff:
+                supported.add(bar)
+                continue
+            center_x = bar.bbox.center[0]
+            staff_support = sum(
+                any(abs(other.bbox.center[0] - center_x) < x_tolerance for other in staff.barlines)
+                for staff in system.staves
+            )
+            if staff_support >= 2:
+                supported.add(bar)
+        return supported
 
     def _is_narrow_ghost_start_interval(
         self,

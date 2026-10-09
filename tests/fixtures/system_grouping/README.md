@@ -1,6 +1,6 @@
 # Issue #218: 3div./4div. connector grouping fixtures
 
-These are original synthetic score excerpts, authored for
+The `issue218_3div_*` and `issue218_4div_*` assets are original synthetic score excerpts, authored for
 [Issue #218](https://github.com/M763468/PDFScoreBar/issues/218). They contain
 five-line staves, simple notes, aligned barlines, a left/system-start connector
 chain for three or four divisi staves, and a separate following system. They
@@ -52,6 +52,66 @@ boundary.
 
 These fixtures establish grouping and numbering regression behavior under
 controlled inputs. They do not establish real-score 3div./4div. detector
-accuracy, mask-production quality, or full-pipeline/GPU performance. No
-production thresholds, detector settings, or accepted evaluation contract
-are changed by this addition.
+accuracy, mask-production quality, or full-pipeline/GPU performance. Detector settings and accepted evaluation inputs remain fixed. The real-score
+validation below covers the production grouping/numbering changes.
+
+
+## Published-score inputs and retained detections
+
+The primary material is **Claude Debussy, La Mer, violoncello part**,
+IMSLP26369 (Durand & Fils, 1909, plate D. & F. 6531, Kalmus reprint).
+The already prepared PDF and full-page 360-DPI images were recovered from the
+main worktree's `logs/issue218/materials/imslp_20261009/`.
+[The frozen contract](issue218_la_mer.json) preserves all three selected pages:
+
+| PDF / printed page | Expected system staff counts | Landmark |
+| --- | --- | --- |
+| 3 / 4 | `2, 2, 2, 2, 4` | Four cello groups near rehearsal 9 |
+| 4 / 5 | `4, 4, 2` | Four voices, then return to 2div. near rehearsal 10 |
+| 9 / 10 | `1, 1, 1, 3, 3, 1` | DIV. en 3, then UNIS near rehearsal 45 |
+
+Source: [IMSLP work page](https://imslp.org/wiki/La_Mer_(Debussy,_Claude)),
+[PDF](https://s9.imslp.org/files/imglnks/usimg/0/0f/IMSLP26369-PMLP06033-Debussy_-_La_Mer_(cello-part)a.pdf).
+This contract checks all staff membership and separation plus shared full-height
+measure geometry. It has no annotated barline-accuracy or MMR/OCR ground truth;
+passing grouping is not a claim of perfect detector accuracy or musical numbering.
+
+Supplementary material is **Akshin Alizadeh, Fourth Symphony (alla Mugham)**,
+Baku, 2010 scan, [PDF](https://musakademiya.musigi-dunya.az/noti/alizade_sim4.pdf),
+PDF page 4. It contains three full-score systems with `5, 5, 6` staves
+(two violin staves and three/four viola voices). The selected 3div./4div.
+viola crops and the entire page are all required inputs, with two physical
+measures per system and final numbering `1..10` across the three inputs.
+[The frozen scan contract](issue218_real_score.json) records the source/image
+hashes and crop rectangles; [the actual-detection fixture](issue218_real_detection.json)
+records geometry, staff spacing, barlines and connector evidence produced by
+the fresh production-model run. These are model outputs, not manual inputs to
+the real-score detector. The lightweight test checks those retained outputs
+without loading GPU models.
+
+Prepare either material from its original PDF (large scans/masks stay ignored):
+
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/verification/verify_issue218_divisi.py prepare \
+  --contract tests/fixtures/system_grouping/issue218_la_mer.json \
+  --source-pdf logs/issue218/la-mer/source/la_mer_cello.pdf \
+  --output-root logs/issue218/la-mer/reproduction
+```
+
+Omit `--contract` for the supplementary Alizadeh contract. Run the generated
+`config.yaml` with the maintained GPU validation launcher and verify the run:
+
+```bash
+PYTHONPATH=. .venv_pdf/bin/python tools/verification/verify_issue218_divisi.py verify \
+  --contract tests/fixtures/system_grouping/issue218_la_mer.json \
+  --run-dir logs/issue218/la-mer/candidate/la_mer \
+  --report logs/issue218/la-mer/candidate_report.json
+```
+
+The verifier requires canonical detector settings, the complete ordered input
+set and unchanged input hashes. It rejects forced single-system grouping and
+manual overrides. A replay must provide `--detector-run-dir` identifying the
+fresh source run and preserve the image/barline/staff-mask bytes. Expected
+staff centers are verification labels and are never passed to the pipeline.
+See `docs/refactors/issue218_real_divisi_validation.md` for outcomes, failed
+attempts, runtime identity and regression checks.

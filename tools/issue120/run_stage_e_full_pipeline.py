@@ -12,7 +12,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from src.pipeline.core.config import load_yaml
+from src.pipeline.core import load_yaml
 from src.pipeline.detector_routes.dense_full_pipeline import reconstruct_dense_full_pipeline_route
 from src.pipeline.main import run_pipeline
 

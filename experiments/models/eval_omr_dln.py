@@ -10,11 +10,8 @@ from ultralytics import YOLO
 # Add root project dir to path to import common modules
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(REPO_ROOT))
+from src.common.model_artifacts import omr_dln_model_missing_message, resolve_omr_dln_model_path
 from src.common.preprocessing import apply_advanced_sr
-from src.pipeline.detection.omr_dln_model import (
-    omr_dln_model_missing_message,
-    resolve_omr_dln_model_path,
-)
 
 # --- Configuration ---
 # NOTE TO USER: Please download the pretrained model weights from the Google Drive link

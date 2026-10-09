@@ -30,7 +30,7 @@ def test_review_surface_separates_navigation_display_task_and_result_state():
 def test_review_scripts_load_in_dependency_order_and_keep_legacy_canvas_hooks():
     html = (UI / "index.html").read_text()
     scripts = re.findall(r'<script src="([^"]+)"', html)
-    assert scripts == ["strings.js", "app.js", "correction_state.js", "apply_result.js"]
+    assert scripts == ["strings.js", "app.js", "correction_state.js"]
     app = (UI / "app.js").read_text()
     ids = set(re.findall(r'id="([^"]+)"', html))
     referenced_ids = set(re.findall(r'getElementById\("([^"]+)"\)', app))

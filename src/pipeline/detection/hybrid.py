@@ -17,10 +17,9 @@ import torch
 from tqdm import tqdm
 
 from src.homr_runtime.api_compat import build_processing_config_compat
+from src.pipeline.core import ensure_dir, run_with_logging
 from src.pipeline.core.python_env import get_pipeline_python
-from src.pipeline.core.subprocess_utils import run_with_logging
 from src.pipeline.steps.hybrid_consensus import apply_hybrid_consensus_filter, load_json_boxes
-from src.pipeline.utils.io import ensure_dir
 
 from .utils import log_vram_usage
 
@@ -31,8 +30,7 @@ try:
     from src.homr_runtime import heuristics as homr_heuristics
     from src.homr_runtime import predictor as homr_predictor
     from src.homr_runtime.reporting import save_homr_results
-    from src.homr_runtime.settings import DEFAULT_TUNING
-    from src.homr_runtime.types import BarlinePrediction
+    from src.homr_runtime.types import DEFAULT_TUNING, BarlinePrediction
 
     _HOMR_AVAILABLE = True
 except ImportError:
@@ -286,9 +284,9 @@ class HybridDetector:
                 continue
 
             if not self.dry_run:
-                baseline_boxes = load_json_boxes(baseline_json)
-                sr_boxes = load_json_boxes(sr_json)
-                omr_boxes = load_json_boxes(omr_json)
+                baseline_boxes = load_json_boxes(baseline_json, strict=False)
+                sr_boxes = load_json_boxes(sr_json, strict=False)
+                omr_boxes = load_json_boxes(omr_json, strict=False)
                 hybrid_preds = apply_hybrid_consensus_filter(
                     baseline_boxes=baseline_boxes,
                     sr_boxes=sr_boxes,

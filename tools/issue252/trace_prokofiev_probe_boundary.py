@@ -12,7 +12,7 @@ from typing import Any, Mapping
 import cv2
 import numpy as np
 
-from src.pipeline.core.config import load_yaml
+from src.pipeline.core import load_yaml
 from src.pipeline.detection.config import get_probe_kwargs
 from src.pipeline.probe_detector import detect_probe_scan
 from src.pipeline.probe_detector.bands import build_row_stats
@@ -345,7 +345,8 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "hybrid": args.hybrid,
     }
     boxes = {
-        name: [normalize_box(box) for box in load_json_boxes(path)] for name, path in paths.items()
+        name: [normalize_box(box) for box in load_json_boxes(path, strict=False)]
+        for name, path in paths.items()
     }
     regenerated = [
         normalize_box(box)

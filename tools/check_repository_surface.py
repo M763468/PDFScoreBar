@@ -62,8 +62,8 @@ def main() -> int:
     files = tracked_files()
     errors: list[str] = []
 
-    if data.get("schema_version") != 2:
-        errors.append("schema_version must be 2")
+    if data.get("schema_version") != 3:
+        errors.append("schema_version must be 3")
 
     runtime_entries = data.get("runtime_bundle_patterns", [])
     runtime_paths = [entry["pattern"] for entry in runtime_entries]
@@ -79,7 +79,15 @@ def main() -> int:
     selected = set(runtime_paths)
     summary = (ROOT / "docs/MINIMAL_MAINLINE_SURFACE.md").read_text(encoding="utf-8")
     for label, pattern, expected in (
-        ("total", r"\*\*(\d+) tracked files\*\*", len(selected)),
+        (
+            "total",
+            r"\*\*(\d+) tracked files\*\*",
+            len(selected)
+            + sum(
+                len(data.get(key, []))
+                for key in ("distribution_support_patterns", "distribution_metadata_patterns")
+            ),
+        ),
         ("src", r"(\d+) files under `src/`", sum(path.startswith("src/") for path in selected)),
     ):
         found = re.search(pattern, summary)
@@ -223,6 +231,14 @@ def main() -> int:
         forbidden = check.get("not_contains")
         if forbidden and forbidden in text:
             errors.append(f"{check['path']} still references retired runtime path {forbidden}")
+
+    sys.path.insert(0, str(ROOT))
+    from tools.materialize_distribution import check_tree, selected_files
+
+    for path in selected_files(data):
+        if path not in files:
+            errors.append(f"distribution path is not tracked: {path}")
+    errors.extend(check_tree(ROOT, verify_provenance=False))
 
     if errors:
         print("Repository surface check failed:", file=sys.stderr)

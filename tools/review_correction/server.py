@@ -248,7 +248,6 @@ class ReviewHandler(BaseHTTPRequestHandler):
             "/app_manual.js": "app.js",
             "/strings.js": "strings.js",
             "/correction_state.js": "correction_state.js",
-            "/apply_result.js": "apply_result.js",
         }
         if parsed.path in assets:
             self._file(UI_ROOT / assets[parsed.path])

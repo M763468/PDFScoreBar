@@ -1,4 +1,4 @@
-"""Versioned production model artifact manifests and local materialization."""
+"""Production model identity, verification and asset path resolution."""
 
 from __future__ import annotations
 
@@ -16,9 +16,17 @@ from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 SCHEMA_VERSION = "pdfscorebar.model_artifact.v1"
+
+
 MODEL_CACHE_ENV = "PDFSCOREBAR_MODEL_CACHE"
+
+
 XDG_CACHE_HOME_ENV = "XDG_CACHE_HOME"
+
+
 DEFAULT_CACHE_SUBDIR = Path("pdfscorebar") / "models"
+
+
 _SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 
 
@@ -432,6 +440,76 @@ def main(argv: list[str] | None = None) -> int:
         path = model_artifact_path(manifest, project_root=project_root, cache_root=args.cache_root)
     print(path)
     return 0
+
+
+WEIGHTS_ENVIRONMENT_VARIABLE = "PDFSCORE_REALESRGAN_WEIGHTS_DIR"
+
+
+IMAGE_WEIGHTS_DIR = Path("/opt/pdfscore-assets/realesrgan")
+
+
+SUPPORTED_MODELS = frozenset({"RealESRGAN_x2plus", "RealESRGAN_x4plus"})
+
+
+def resolve_realesrgan_weight(
+    model_name: str,
+    *,
+    project_root: Path,
+    environment: Mapping[str, str] | None = None,
+) -> Path:
+    """Return the configured image-owned weight or the legacy local checkout path."""
+    if model_name not in SUPPORTED_MODELS:
+        raise ValueError(f"Unsupported Real-ESRGAN model: {model_name}")
+
+    configured_environment = os.environ if environment is None else environment
+    configured_dir = configured_environment.get(WEIGHTS_ENVIRONMENT_VARIABLE)
+    if configured_dir:
+        return Path(configured_dir).expanduser() / f"{model_name}.pth"
+
+    image_weight = IMAGE_WEIGHTS_DIR / f"{model_name}.pth"
+    if image_weight.is_file():
+        return image_weight
+
+    return project_root / "external" / "realesrgan" / "weights" / f"{model_name}.pth"
+
+
+MODEL_ENVIRONMENT_VARIABLE = "OMR_DLN_MODEL_PATH"
+
+
+MODEL_RELATIVE_PATH = Path("external/omr_dln/models/public_models/YOLOv8m_Measures.pt")
+
+
+OFFICIAL_OMR_REPOSITORY = "https://github.com/dmgonzalez8/OMR"
+
+
+OFFICIAL_MODEL_FOLDER = (
+    "https://drive.google.com/drive/folders/13Z64ReEJGlMnCqPkA-dcCD8tzdtvLyqO?usp=sharing"
+)
+
+
+def resolve_omr_dln_model_path(
+    *,
+    repository_root: Path,
+    environment: Mapping[str, str] | None = None,
+) -> Path:
+    """Return the explicit model override or the compatible repository default."""
+    configured_environment = os.environ if environment is None else environment
+    override = configured_environment.get(MODEL_ENVIRONMENT_VARIABLE)
+    if override:
+        return Path(override).expanduser()
+    return repository_root / MODEL_RELATIVE_PATH
+
+
+def omr_dln_model_missing_message(path: Path) -> str:
+    """Explain how to provide the only supported OMR-DLN measure detector weight."""
+    return (
+        f"OMR-DLN measure detector model was not found at {path}.\n"
+        "Use YOLOv8m_Measures.pt (YOLOv8m, measure detection) from the official "
+        f"dmgonzalez8/OMR repository: {OFFICIAL_OMR_REPOSITORY}\n"
+        f"Official model folder: {OFFICIAL_MODEL_FOLDER}\n"
+        f"Set {MODEL_ENVIRONMENT_VARIABLE} to the existing read-only model path, or place it at "
+        f"{MODEL_RELATIVE_PATH}. Do not substitute a generic Ultralytics or symbol model."
+    )
 
 
 if __name__ == "__main__":

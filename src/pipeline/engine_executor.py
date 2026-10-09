@@ -285,7 +285,7 @@ class PipelineJobExecutor:
         }
 
     def _load_config(self) -> dict[str, Any]:
-        from src.pipeline.core.config import load_yaml
+        from src.pipeline.core import load_yaml
 
         return deepcopy(load_yaml(self.base_config_path))
 
@@ -315,7 +315,7 @@ class PipelineJobExecutor:
         job_id: str,
         work_root: Path,
     ) -> Path:
-        from src.pipeline.core.config import write_yaml
+        from src.pipeline.core import write_yaml
 
         run = config.setdefault("run", {})
         inputs = config.setdefault("inputs", {})

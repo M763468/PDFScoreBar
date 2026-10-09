@@ -193,7 +193,7 @@ def run(image: Path, output_root: Path, result_path: Path) -> dict[str, Any]:
         install_current_homr_consumer_compat,
     )
     from src.homr_runtime.reporting import save_homr_results
-    from src.homr_runtime.settings import DEFAULT_TUNING
+    from src.homr_runtime.types import DEFAULT_TUNING
     from src.pipeline.detection.connector_artifacts import install_homr_connector_artifact_capture
 
     session_records: list[dict[str, Any]] = []

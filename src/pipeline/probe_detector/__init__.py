@@ -9,17 +9,19 @@ from typing import Dict, List, Sequence
 import cv2
 import numpy as np
 
+from src.pipeline.probe_detector.measurements import (
+    measure_candidate_scan,
+    project_staff_band,
+    select_signal_peaks,
+)
+
 from .bands import (
     build_divisi_map,
     resolve_bands,
     resolve_x_domains,
 )
-from .debug import write_debug_output
 from .existing import ExistingBarlines
-from .peaks import select_signal_peaks
-from .projections import project_staff_band
 from .rescue import apply_gap_rescue, apply_rightmost_rescue
-from .scan_measurements import measure_candidate_scan
 from .types import (
     BandProjectionConfig,
     BandSelectionConfig,
@@ -696,6 +698,8 @@ def detect_probe_scan(
     )
 
     if debug_path is not None:
+        from .debug import write_debug_output
+
         debug_params = {
             "method": "probe_scan",
             "band_source": band_source,

@@ -7,9 +7,8 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from src.measure_numbering.serialization import score_to_dict
-from src.measure_numbering.types import Score
-from src.pipeline.core.config import get_nested, load_yaml
+from src.measure_numbering.types import Score, score_to_dict
+from src.pipeline.core import ensure_dir, get_nested, load_json, load_yaml, write_json
 from src.pipeline.review.manual_correction_handoff import (
     canonicalize_manual_correction_outputs,
     load_manual_correction_handoff,
@@ -22,7 +21,6 @@ from src.pipeline.steps.manual_corrections import (
     normalise_barline_overrides,
     normalise_measure_overrides,
 )
-from src.pipeline.utils.io import ensure_dir, load_json, write_json
 
 logger = logging.getLogger(__name__)
 

@@ -7,13 +7,13 @@ import src.pipeline.orchestrator as orchestrator_module
 import src.pipeline.utils.images as image_utils
 from src.measure_numbering.numbering import MeasureNumberer
 from src.measure_numbering.types import Barline, BBox, Page, Score, Staff, System
+from src.pipeline.core import load_json, write_json
 from src.pipeline.orchestrator import PipelineOrchestrator
 from src.pipeline.steps.numbering import (
     load_movement_boundary_payload,
     persisted_final_next_number,
     rebase_mmr_overrides_to_page_local,
 )
-from src.pipeline.utils.io import load_json, write_json
 
 
 class _FakeImage:

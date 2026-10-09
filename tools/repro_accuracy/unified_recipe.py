@@ -28,7 +28,11 @@ def main():
     omr_json = hybrid_run_root / "omr_sr" / page_stem / "predictions.json"
 
     # 1. UNION SEED (to maximize row coverage)
-    union = load_json_boxes(baseline_json) + load_json_boxes(sr_json) + load_json_boxes(omr_json)
+    union = (
+        load_json_boxes(baseline_json, strict=False)
+        + load_json_boxes(sr_json, strict=False)
+        + load_json_boxes(omr_json, strict=False)
+    )
     out_dir = PROJECT_ROOT / "logs/unified_recipe_verified"
     out_dir.mkdir(parents=True, exist_ok=True)
     with open(out_dir / f"{page_stem}.json", "w") as f:

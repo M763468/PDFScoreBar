@@ -31,9 +31,9 @@ logger = logging.getLogger("homr_evaluator")
 
 LEFT_MARGIN_FORCE_FP_GT_INDICES: Set[int] = set()
 LEFT_MARGIN_FORCE_FP_MAX_WIDTH = 2
-from src.homr_runtime.settings import DEFAULT_TUNING as DEFAULT_TUNING
-from src.homr_runtime.settings import STEM_CONTEXT_HEURISTICS as STEM_CONTEXT_HEURISTICS
 from src.homr_runtime.transforms import map_pred_to_orig as map_pred_to_orig
+from src.homr_runtime.types import DEFAULT_TUNING as DEFAULT_TUNING
+from src.homr_runtime.types import STEM_CONTEXT_HEURISTICS as STEM_CONTEXT_HEURISTICS
 from src.homr_runtime.types import Box as Box
 from src.homr_runtime.types import TransformInfo as TransformInfo
 from src.homr_runtime.utils import _redirect_eprint_to_logger as _redirect_eprint_to_logger

@@ -8,7 +8,11 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from .maintained_profile_hybrid import BatchSRVerifiedProfileHybridDetector
+from .current_support_worker import _require_precomputed_sr
+from .maintained_profile_hybrid import (
+    BatchSRVerifiedProfileHybridDetector,
+    VerifiedProfileHybridDetector,
+)
 
 
 def _load_request(path: Path) -> dict[str, Any]:
@@ -30,12 +34,18 @@ def run(request_path: Path, result_path: Path) -> Path:
     project_root = Path(str(request["project_root"])).resolve()
     profile_name = str(request["profile_name"])
     run_id = str(request["run_id"])
-    precomputed_sr_raw = request.get("precomputed_sr")
-    if precomputed_sr_raw is not None and not isinstance(precomputed_sr_raw, Mapping):
-        raise ValueError("Verified source-page precomputed_sr must be a mapping")
-    precomputed_sr = dict(precomputed_sr_raw) if precomputed_sr_raw is not None else None
+    mode = request.get("sr_mode", "batch_required")
+    precomputed_sr = _require_precomputed_sr(
+        {"precomputed_sr": request.get("precomputed_sr"), "sr_mode": mode},
+        image=image,
+    )
 
-    detector = BatchSRVerifiedProfileHybridDetector(
+    detector_class = (
+        VerifiedProfileHybridDetector
+        if mode == "page_local"
+        else BatchSRVerifiedProfileHybridDetector
+    )
+    detector = detector_class(
         det_cfg=dict(det_cfg),
         images=[image],
         run_id=run_id,
@@ -44,11 +54,12 @@ def run(request_path: Path, result_path: Path) -> Path:
         skip_existing=False,
         profile_name=profile_name,
     )
+    sr_arguments = {} if mode == "page_local" else {"precomputed_sr": precomputed_sr}
     payload = detector._generate_one_page_sources_in_process(
         image=image,
         baseline_output=baseline_output,
         support_output=support_output,
-        precomputed_sr=precomputed_sr,
+        **sr_arguments,
     )
     payload.update(
         {

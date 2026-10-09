@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Tuple
 import cv2  # type: ignore
 import numpy as np
 
-from src.pipeline.core.config import get_nested
+from src.pipeline.core import get_nested
 
 logger = logging.getLogger(__name__)
 

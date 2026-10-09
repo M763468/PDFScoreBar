@@ -15,8 +15,8 @@ import time
 from pathlib import Path
 from typing import Any, Mapping
 
+from src.pipeline.core import load_json, write_json
 from src.pipeline.mmr_support_reuse import build_mmr_support_data
-from src.pipeline.utils.io import load_json, write_json
 from tools.issue274.validate_mmr_support_mapping import _visible_path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]

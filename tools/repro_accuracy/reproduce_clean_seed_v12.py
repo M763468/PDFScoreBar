@@ -111,9 +111,9 @@ def main():
         if abs(dyn_scale - 1.0) > 0.01:
             print(f"INFO: Dynamic scale for {page_stem}: {dyn_scale:.4f} ({ref_w} -> {eval_w})")
 
-        baseline_boxes = load_json_boxes(baseline_json)
-        sr_boxes = load_json_boxes(sr_json)
-        omr_boxes = load_json_boxes(omr_json)
+        baseline_boxes = load_json_boxes(baseline_json, strict=False)
+        sr_boxes = load_json_boxes(sr_json, strict=False)
+        omr_boxes = load_json_boxes(omr_json, strict=False)
 
         # 2. Extract and Scale Boxes
         # We use UNION of all available sources to maximize recall
@@ -205,7 +205,7 @@ def main():
         )
         if not raw_path.exists():
             continue
-        raw_candidates = load_json_boxes(raw_path)
+        raw_candidates = load_json_boxes(raw_path, strict=False)
 
         # Apply strict filters to ensure seeds are clean (Step 3 in docs)
         img = cv2.imread(str(image_path))

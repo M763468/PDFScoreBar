@@ -13,8 +13,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from src.pipeline.core import write_json
 from src.pipeline.movement_boundary_candidates import build_movement_boundary_evidence
-from src.pipeline.utils.io import write_json
 
 
 def load_json_with_sha256(path: Path) -> tuple[object, str]:

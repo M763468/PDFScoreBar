@@ -5,8 +5,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from src.pipeline.core import load_json, write_json
 from src.pipeline.mmr_support_reuse import build_mmr_support_data
-from src.pipeline.utils.io import load_json, write_json
 
 
 def _visible_path(value: str, project_root: Path) -> Path:

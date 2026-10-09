@@ -60,6 +60,13 @@ def run(request_path: Path, result_path: Path) -> Path:
             tile_pad=int(det_cfg.get("sr_tile_pad", 10)),
             fp32=bool(det_cfg.get("sr_fp32", False)),
             upsampler=None,
+            strict=True,
+        )
+    expected_shape = (image_bgr.shape[0] * 4, image_bgr.shape[1] * 4, 3)
+    if getattr(upscaled, "shape", None) != expected_shape:
+        raise ValueError(
+            f"Current x4 SR shape mismatch: expected={expected_shape}, "
+            f"actual={getattr(upscaled, 'shape', None)}"
         )
     output.parent.mkdir(parents=True, exist_ok=True)
     with span("sr_worker.image_write"):

@@ -41,10 +41,9 @@ from src.measure_numbering.rapidocr_provider import (
     collect_rapidocr_providers,
     providers_include_cuda,
 )
-from src.pipeline.core.config import load_yaml
+from src.pipeline.core import load_json, load_yaml, write_json
 from src.pipeline.mmr_geometry_handoff import build_mmr_page_context
 from src.pipeline.orchestrator import PipelineOrchestrator
-from src.pipeline.utils.io import load_json, write_json
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CANONICAL_RUN = "issue255_production_restore_full68_top_level_worker_01"

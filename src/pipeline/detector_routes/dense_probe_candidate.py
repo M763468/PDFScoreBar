@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
-from src.pipeline.core.config import get_nested, load_yaml
+from src.pipeline.core import get_nested, load_yaml
 from src.pipeline.steps.probe_scan import run_probe_scan_batch
 from tools.issue120.eval_full68_from_intermediates import iter_manifest
 

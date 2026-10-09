@@ -67,4 +67,9 @@ def test_surface_checker_rejects_missing_review_and_engine_contract_files(
     )
 
     assert check_repository_surface.main() == 1
-    assert f"documented tracked pattern has no matches: {missing_path}" in capsys.readouterr().err
+    expected = (
+        f"runtime bundle path is not tracked: {missing_path}"
+        if missing_path.startswith("src/")
+        else f"documented tracked pattern has no matches: {missing_path}"
+    )
+    assert expected in capsys.readouterr().err

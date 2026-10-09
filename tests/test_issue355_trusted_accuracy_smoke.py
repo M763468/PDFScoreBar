@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.pipeline.core.config import load_yaml
+from src.pipeline.core import load_yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 

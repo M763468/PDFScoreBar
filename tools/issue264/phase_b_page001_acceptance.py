@@ -9,11 +9,11 @@ from typing import Any
 
 from src.measure_numbering.pipeline import MeasureNumberingPipeline
 from src.measure_numbering.types import Score
+from src.pipeline.core import load_json, score_to_dict, write_json
 from src.pipeline.mmr_geometry_handoff import build_mmr_page_context
 from src.pipeline.orchestrator import PipelineOrchestrator
 from src.pipeline.steps.barlines import normalize_barlines
 from src.pipeline.utils.images import load_image
-from src.pipeline.utils.io import load_json, score_to_dict, write_json
 
 TARGET_STEM = "Va_Prokofiev_Symphony1_page_001"
 EXPECTED_STAFF_SHA256 = "7fa9d8dd4709ed28031e3b20c68eb97abb42f3f46ef5d8abe4835180aa40e660"

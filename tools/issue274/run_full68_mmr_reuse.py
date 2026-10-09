@@ -25,9 +25,9 @@ from src.measure_numbering.rapidocr_provider import (
     create_mmr_rapidocr,
     providers_include_cuda,
 )
+from src.pipeline.core import load_json, write_json
 from src.pipeline.mmr_support_reuse import build_mmr_support
 from src.pipeline.steps.numbering import run_mmr_batch
-from src.pipeline.utils.io import load_json, write_json
 from tools.issue264.run_phase_c_mmr_regression import (
     build_page_specs,
     index_overrides,

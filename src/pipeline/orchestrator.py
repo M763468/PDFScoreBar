@@ -12,7 +12,7 @@ import torch
 from tqdm import tqdm
 
 from src.pdf_to_images import normalise_pages
-from src.pipeline.core.config import get_nested
+from src.pipeline.core import ensure_dir, get_nested, load_json, score_to_dict, write_json
 from src.pipeline.core.manifest import build_manifest
 from src.pipeline.detection import (
     resolve_barlines_and_masks_config,
@@ -31,7 +31,7 @@ from src.pipeline.review.pipeline_review import (
     resolved_for_manifest,
     validate_review_package_prerequisites,
 )
-from src.pipeline.steps import base_numbering_phase, final_numbering_phase, mmr_batch_phase
+from src.pipeline.steps import numbering_phases
 from src.pipeline.steps.barlines import (
     apply_barline_overrides,
     merge_measure_overrides,
@@ -49,13 +49,12 @@ from src.pipeline.steps.numbering import (
     reject_movement_boundaries_on_excluded_pages,
     run_mmr_batch,
 )
-from src.pipeline.steps.phase_services import NumberingPhaseServices
+from src.pipeline.steps.numbering_phases import NumberingPhaseServices
 from src.pipeline.utils.images import (
     collect_images,
     resolve_page_ids,
     resolve_source_page_references,
 )
-from src.pipeline.utils.io import ensure_dir, load_json, score_to_dict, write_json
 
 logger = logging.getLogger(__name__)
 
@@ -555,7 +554,7 @@ class PipelineOrchestrator:
         excluded_page_ids: Set[str],
     ) -> Dict[str, Any]:
         """Phase A: Base Numbering & Barline Correction."""
-        return base_numbering_phase.run_base_numbering_and_barline_correction(
+        return numbering_phases.run_base_numbering_and_barline_correction(
             self,
             page_ids,
             images,
@@ -571,7 +570,7 @@ class PipelineOrchestrator:
         page_ctx: Dict[str, Dict[str, Any]],
     ) -> None:
         """Phase B: MMR Batch Detection."""
-        return mmr_batch_phase.run_mmr_batch_detection(
+        return numbering_phases.run_mmr_batch_detection(
             self, page_ids, excluded_page_ids, page_ctx, services=self._numbering_phase_services()
         )
 
@@ -584,7 +583,7 @@ class PipelineOrchestrator:
         movement_boundaries: Optional[Dict[str, Any]] = None,
     ) -> List[Path]:
         """Phase C: Final Numbering & Overlays."""
-        return final_numbering_phase.run_final_numbering_and_overlays(
+        return numbering_phases.run_final_numbering_and_overlays(
             self,
             page_ids,
             excluded_page_ids,

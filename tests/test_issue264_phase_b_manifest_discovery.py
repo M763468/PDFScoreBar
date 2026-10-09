@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from src.pipeline.utils.io import load_json
+from src.pipeline.core import load_json
 from tools.issue264 import run_phase_b_page001_acceptance as acceptance_entry
 
 

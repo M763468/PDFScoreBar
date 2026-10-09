@@ -7,8 +7,7 @@ from pathlib import Path
 import cv2
 
 from src.measure_numbering.pipeline import MeasureNumberingPipeline
-from src.measure_numbering.serialization import score_to_dict
-from src.measure_numbering.types import Score
+from src.measure_numbering.types import Score, score_to_dict
 
 logger = logging.getLogger(__name__)
 

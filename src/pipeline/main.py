@@ -14,11 +14,10 @@ DEFAULT_NUM_THREADS = "4"
 os.environ.setdefault("OMP_NUM_THREADS", DEFAULT_NUM_THREADS)
 os.environ.setdefault("MKL_NUM_THREADS", DEFAULT_NUM_THREADS)
 
-from src.pipeline.core.config import get_nested, load_yaml
+from src.pipeline.core import ensure_dir, get_nested, load_yaml
 from src.pipeline.engine_contract import JobStatus, ProgressCallback, canonical_json
 from src.pipeline.engine_telemetry import TelemetryRecorder
 from src.pipeline.orchestrator import PipelineOrchestrator
-from src.pipeline.utils.io import ensure_dir
 
 logger = logging.getLogger(__name__)
 

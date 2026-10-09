@@ -403,6 +403,7 @@ def regenerate_probe_rescue_candidates(
         images=image_paths,
         output_root=probe_rescue_root,
         bands_from=filtered_root,
+        require_seed_files=True,
         staff_mask_dir=None,
         clef_mask_dir=None,
         ink_threshold=180,

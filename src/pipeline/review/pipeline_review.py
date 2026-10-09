@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List
 
-from src.pipeline.core.config import get_nested
+from src.pipeline.core import get_nested
 
 
 @dataclass(frozen=True)

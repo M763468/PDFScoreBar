@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from src.common.barline_evaluation import greedy_barline_match
-from src.pipeline.core.config import load_yaml
+from src.pipeline.core import load_yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 

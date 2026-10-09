@@ -12,11 +12,11 @@ from typing import Any, Dict
 
 from tqdm import tqdm
 
+from src.pipeline.core import ensure_dir
 from src.pipeline.steps.hybrid_consensus import (
     apply_hybrid_consensus_filter,
     load_json_boxes,
 )
-from src.pipeline.utils.io import ensure_dir
 
 
 class ProfileHybridDetector:
@@ -69,6 +69,7 @@ class ProfileHybridDetector:
         result_path = page_root / "result.json"
         request = {
             "schema_version": "pipeline.current_x4_support_request.v1",
+            "sr_mode": "page_local",
             "detection": dict(self.det_cfg),
             "image": str(image.resolve()),
             "output_root": str((page_root / "artifacts").resolve()),
@@ -180,6 +181,7 @@ class ProfileHybridDetector:
         result_path = page_root / "result.json"
         request = {
             "schema_version": "pipeline.verified_source_page_request.v2",
+            "sr_mode": "page_local",
             "detection": dict(self.det_cfg),
             "image": str(image.resolve()),
             "run_id": self.run_id,
@@ -334,9 +336,15 @@ class ProfileHybridDetector:
                         f"Two-HOMR hybrid components missing for {stem}: {missing}"
                     )
                 hybrid_preds = apply_hybrid_consensus_filter(
-                    baseline_boxes=load_json_boxes(baseline_json),
-                    sr_boxes=load_json_boxes(sr_json),
-                    omr_boxes=load_json_boxes(omr_json),
+                    baseline_boxes=load_json_boxes(
+                        baseline_json, strict=self.profile_name == "maintained_original"
+                    ),
+                    sr_boxes=load_json_boxes(
+                        sr_json, strict=self.profile_name == "maintained_original"
+                    ),
+                    omr_boxes=load_json_boxes(
+                        omr_json, strict=self.profile_name == "maintained_original"
+                    ),
                 )
                 output_json.write_text(
                     json.dumps(hybrid_preds, indent=2, ensure_ascii=False) + "\n",

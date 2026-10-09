@@ -25,7 +25,7 @@ RUNTIME_SCOPE = (
     "models/barline_cnn/manifest.json",
     "src/common/model_artifacts.py",
     "src/common/__init__.py",
-    "src/common/barline_evaluation.py",
+    "src/common/barline_geometry.py",
 )
 
 
@@ -166,7 +166,7 @@ files = (
     Path("models/barline_cnn/manifest.json"),
     Path("src/common/model_artifacts.py"),
     Path("src/common/__init__.py"),
-    Path("src/common/barline_evaluation.py"),
+    Path("src/common/barline_geometry.py"),
 )
 
 legacy_source_provenance_lines = (

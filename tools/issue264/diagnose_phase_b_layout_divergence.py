@@ -25,8 +25,7 @@ from typing import Any, Mapping
 import cv2
 
 from src.measure_numbering.pipeline import MeasureNumberingPipeline
-from src.measure_numbering.serialization import score_to_dict
-from src.measure_numbering.types import Score
+from src.measure_numbering.types import Score, score_to_dict
 from src.pipeline.steps.barlines import normalize_barlines
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]

@@ -1,6 +1,6 @@
-"""Shared utilities for evaluation and processing across detectors."""
+"""Shared runtime geometry; evaluation exports load only on development use."""
 
-from .barline_evaluation import (
+from .barline_geometry import (
     BARLINE_DEFAULT_MIN_WIDTH,
     BARLINE_DUPLICATE_IOU_THRESHOLD,
     BARLINE_DUPLICATE_X_TOLERANCE,
@@ -8,16 +8,9 @@ from .barline_evaluation import (
     BARLINE_VERTICAL_OVERLAP_THRESHOLD,
     BARLINE_X_MARGIN,
     BARLINE_Y_MARGIN,
-    CENTER_ANCHOR_XDIST_UNIT_RATIO,
-    BarlineMatch,
-    BarlineMatchResult,
-    BarlineSoftMatch,
     Box,
-    apply_left_margin_exclusion,
     barline_iou,
-    center_anchor_xdist_limit,
     expand_barline_box,
-    greedy_barline_match,
 )
 
 __all__ = [
@@ -39,3 +32,19 @@ __all__ = [
     "center_anchor_xdist_limit",
     "greedy_barline_match",
 ]
+
+
+def __getattr__(name):
+    if name in {
+        "BarlineMatchResult",
+        "CENTER_ANCHOR_XDIST_UNIT_RATIO",
+        "apply_left_margin_exclusion",
+        "greedy_barline_match",
+        "BarlineMatch",
+        "center_anchor_xdist_limit",
+        "BarlineSoftMatch",
+    }:
+        from . import barline_evaluation
+
+        return getattr(barline_evaluation, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

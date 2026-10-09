@@ -23,7 +23,7 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.pipeline.core.run_ids import build_probe_run_id_from_parts  # noqa: E402
+from src.pipeline.core import build_probe_run_id_from_parts
 from src.pipeline.steps.cnn_scoring import run_cnn_scoring_batch  # noqa: E402
 from tools.cnn_classifier.score_candidates_batch import (
     run_scoring_batch as run_legacy_scoring_batch,

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from src.measure_numbering.pipeline import StaffExtractor
-from src.pipeline.utils.io import load_json, write_json
+from src.pipeline.core import load_json, write_json
 
 SCHEMA_VERSION = "pipeline.mmr_support_reuse.v1"
 

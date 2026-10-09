@@ -29,9 +29,9 @@ from src.homr_runtime.heuristics import (
     filter_detections_by_notehead_proximity,
     recover_end_barlines,
 )
-from src.homr_runtime.settings import STEM_CONTEXT_HEURISTICS
 from src.homr_runtime.transforms import map_pred_to_orig
 from src.homr_runtime.types import (
+    STEM_CONTEXT_HEURISTICS,
     BarlinePrediction,
 )
 

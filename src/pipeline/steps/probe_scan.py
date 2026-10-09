@@ -20,9 +20,10 @@ try:
 except ImportError:  # pragma: no cover - optional in minimal test env
     np = None  # type: ignore[assignment]
 
-from src.pipeline.core.run_ids import (
+from src.pipeline.core import (
     build_probe_run_id,
     build_probe_run_id_from_parts,
+    ensure_dir,
     split_score_page_from_composite_stem,
 )
 from src.pipeline.steps.candidate_filters import (
@@ -31,8 +32,6 @@ from src.pipeline.steps.candidate_filters import (
     trim_box_to_ink,
 )
 from src.pipeline.steps.hybrid_consensus import load_json_boxes
-from src.pipeline.utils.io import ensure_dir
-from src.pipeline.utils.wide_split_utils import split_wide_candidates
 
 logger = logging.getLogger(__name__)
 
@@ -242,12 +241,15 @@ def _load_bands_for_image(
     bands_from: Optional[Path],
     current_score_name: str,
     stem: str,
+    require_seed: bool = False,
 ) -> List[Tuple[int, int, int, int]]:
     if not bands_from:
+        if require_seed:
+            raise ValueError(f"Required rescue seed root missing for {current_score_name}/{stem}")
         return []
 
     if bands_from.is_file():
-        return load_json_boxes(bands_from)
+        return load_json_boxes(bands_from, strict=require_seed)
 
     run_subdir = build_probe_run_id_from_parts(current_score_name, stem)
     candidates = [
@@ -272,7 +274,12 @@ def _load_bands_for_image(
         )
     for path in candidates:
         if path.exists():
-            return load_json_boxes(path)
+            return load_json_boxes(path, strict=require_seed)
+    if require_seed:
+        raise FileNotFoundError(
+            f"Required rescue seed missing for {current_score_name}/{stem}; "
+            f"searched: {[str(path) for path in candidates]}"
+        )
     return []
 
 
@@ -320,6 +327,7 @@ def run_probe_scan_batch(
     output_root: Path,
     bands_from: Optional[Path],
     staff_mask_dir: Optional[Path],
+    require_seed_files: bool = False,
     clef_mask_dir: Optional[Path] = None,
     ink_threshold: int,
     min_ratio: float = 0.50,
@@ -411,10 +419,28 @@ def run_probe_scan_batch(
         clef_mask = np.zeros(img.shape[:2], dtype=np.uint8)
         band_source = "row_stats"
 
+        # An explicitly mask-bound x-domain must not silently scan full width
+        # when its required mask is missing or unreadable.
+        require_staff_mask = kwargs.get("scan_x_domain_mode") == "staff_mask"
         mask_path = staff_mask_map.get(stem)
+        if require_staff_mask and mask_path is None:
+            raise FileNotFoundError(
+                f"Required staff mask missing for {current_score_name}/{stem} "
+                "(scan_x_domain_mode=staff_mask)"
+            )
         if mask_path:
+            if require_staff_mask and not Path(mask_path).is_file():
+                raise FileNotFoundError(
+                    f"Required staff mask file missing for {current_score_name}/{stem}: {mask_path}"
+                )
             loaded_mask = cv2.imread(str(mask_path), cv2.IMREAD_GRAYSCALE)
-            if loaded_mask is not None:
+            if loaded_mask is None:
+                if require_staff_mask:
+                    raise ValueError(
+                        f"Required staff mask unreadable for {current_score_name}/{stem}: "
+                        f"{mask_path}"
+                    )
+            else:
                 if loaded_mask.shape[:2] != img.shape[:2]:
                     loaded_mask = cv2.resize(
                         loaded_mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST
@@ -436,6 +462,7 @@ def run_probe_scan_batch(
             bands_from=bands_from,
             current_score_name=current_score_name,
             stem=stem,
+            require_seed=require_seed_files,
         )
 
         if input_image_scale > 1.0:
@@ -563,6 +590,8 @@ def run_probe_scan_batch(
                     final_set.add(tuple(int(v) for v in nb))
 
             if post_cfg.get("split_wide_candidates"):
+                from src.pipeline.utils.wide_split_utils import split_wide_candidates
+
                 print(f"DEBUG: Attempting to split {len(final_set)} candidates...")
                 split_boxes, stats = split_wide_candidates(
                     boxes=list(final_set),

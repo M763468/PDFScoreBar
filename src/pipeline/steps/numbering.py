@@ -8,9 +8,9 @@ from typing import Any, Dict, Mapping, Optional
 
 import torch
 
+from src.pipeline.core import load_json
 from src.pipeline.core.python_env import get_pipeline_python
 from src.pipeline.utils.images import load_image_size
-from src.pipeline.utils.io import load_json
 
 MOVEMENT_BOUNDARY_SCHEMA_VERSION = "issue268.movement_boundaries.v1"
 FINAL_NUMBERING_SCHEMA_VERSION = "issue268.final_numbering.v1"
@@ -307,7 +307,7 @@ def run_mmr_batch(
         create_mmr_rapidocr,
         normalize_rapidocr_provider,
     )
-    from src.pipeline.utils.io import write_json
+    from src.pipeline.core import write_json
 
     provider_mode = normalize_rapidocr_provider(rapidocr_provider)
     if _should_replace_mmr_ocr_engine(ocr_engine, provider_mode):

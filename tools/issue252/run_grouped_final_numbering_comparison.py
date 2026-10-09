@@ -15,9 +15,8 @@ import torch
 from src.common.model_artifacts import resolve_model_artifact
 from src.measure_numbering.mmr import MMRClassifier, MMROCREngine
 from src.measure_numbering.pipeline import MeasureNumberingPipeline
-from src.measure_numbering.serialization import score_to_dict
-from src.measure_numbering.types import Score
-from src.pipeline.core.config import load_yaml
+from src.measure_numbering.types import Score, score_to_dict
+from src.pipeline.core import load_yaml
 from src.pipeline.steps.cnn_scoring import (
     MEAN,
     STD,

@@ -18,6 +18,13 @@ SOURCE_CONTRACT_ROOTS = (
 SOURCE_CONTRACT_FILES = (
     Path("Dockerfile"),
     Path("pyproject.toml"),
+    Path("tools/review_correction/server.py"),
+    Path("tools/review_correction/application.py"),
+    Path("tools/review_correction/state.py"),
+    Path("tools/review_correction/index.html"),
+    Path("tools/review_correction/app.js"),
+    Path("tools/review_correction/strings.js"),
+    Path("tools/review_correction/correction_state.js"),
 )
 SOURCE_SUFFIXES = frozenset({".py", ".toml"})
 RUNTIME_MODULES = ("homr", "realesrgan", "basicsr", "ultralytics")
@@ -33,7 +40,7 @@ RUNTIME_CONTRACT_FILES = (
     Path("models/barline_cnn/manifest.json"),
     Path("src/common/model_artifacts.py"),
     Path("src/common/__init__.py"),
-    Path("src/common/barline_evaluation.py"),
+    Path("src/common/barline_geometry.py"),
 )
 
 LEGACY_SOURCE_PROVENANCE_LINES = (
@@ -296,9 +303,11 @@ def run_preflight(
     import torch
     import yaml
 
-    from src.common.model_artifacts import resolve_model_artifact
-    from src.common.realesrgan_assets import resolve_realesrgan_weight
-    from src.pipeline.detection.omr_dln_model import resolve_omr_dln_model_path
+    from src.common.model_artifacts import (
+        resolve_model_artifact,
+        resolve_omr_dln_model_path,
+        resolve_realesrgan_weight,
+    )
 
     config = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
     inputs = config.get("inputs") or {}

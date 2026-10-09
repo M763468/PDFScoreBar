@@ -16,10 +16,7 @@ from typing import Any, Iterable
 
 import cv2
 
-from src.pipeline.detection.omr_dln_model import (
-    omr_dln_model_missing_message,
-    resolve_omr_dln_model_path,
-)
+from src.common.model_artifacts import omr_dln_model_missing_message, resolve_omr_dln_model_path
 
 BARLINE_WIDTH = 4
 

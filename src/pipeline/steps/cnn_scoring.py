@@ -14,8 +14,8 @@ from PIL import Image
 from torchvision import models, transforms
 from tqdm import tqdm
 
-from src.common.barline_evaluation import barline_iou, barline_vertical_overlap
-from src.pipeline.core.run_ids import build_probe_run_id
+from src.common.barline_geometry import barline_iou, barline_vertical_overlap
+from src.pipeline.core import build_probe_run_id
 from src.pipeline.probe_detector.bands import build_row_stats, staff_bands_from_mask
 from src.pipeline.steps.filters import filter_by_staff_overlap
 from src.pipeline.steps.probe_scan import _build_staff_mask_map, _load_bands_for_image
